@@ -55,7 +55,7 @@ assert_match() {
 assert_warn() {
   local desc="$1"
   local stderr_output="$2"
-  if echo "$stderr_output" | grep -q '\[field_get\] WARN'; then
+  if [[ "$stderr_output" == *"[field_get] WARN"* ]]; then
     echo "  PASS: $desc"
     PASS=$((PASS + 1))
   else
@@ -74,7 +74,7 @@ echo "--- Test 1: shogun_to_karo.yaml → status ---"
 FILE1="${SCRIPT_DIR}/queue/shogun_to_karo.yaml"
 if [[ -f "$FILE1" ]]; then
   # STKにcmdが0件(archive後)は正常状態。cmdが存在する場合のみstatusを検証
-  cmd_count=$(grep -c '^  - id: cmd_' "$FILE1" 2>/dev/null || true)
+  cmd_count=$(awk '/^  - id: cmd_/ { c++ } END { print c+0 }' "$FILE1" 2>/dev/null)
   cmd_count=${cmd_count:-0}
   if [ "$cmd_count" -gt 0 ]; then
     result=$(field_get "$FILE1" "status")
@@ -95,8 +95,8 @@ echo ""
 echo "--- Test 2: tasks/hayate.yaml → status ---"
 FILE2="${SCRIPT_DIR}/queue/tasks/hayate.yaml"
 if [[ -f "$FILE2" ]]; then
-  result=$(field_get "$FILE2" "status")
-  assert_match "hayate: status は既知値" "^(pending|acknowledged|in_progress|completed|done|idle)$" "$result"
+  eval "$(field_get_multi "$FILE2" status parent_cmd)"
+  assert_match "hayate: status は既知値" "^(pending|acknowledged|in_progress|completed|done|idle)$" "$status"
 else
   echo "  FAIL: $FILE2 not found"
   FAIL=$((FAIL + 1))
@@ -109,10 +109,9 @@ echo ""
 echo "--- Test 3: tasks/hayate.yaml → parent_cmd ---"
 if [[ -f "$FILE2" ]]; then
   # idle状態のtask YAMLにはparent_cmdがない。assigned/in_progress時のみ検証
-  hayate_status=$(field_get "$FILE2" "status" "" 2>/dev/null | tr -d '[:space:]')
+  hayate_status="${status//[[:space:]]/}"
   if [[ "$hayate_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-    result=$(field_get "$FILE2" "parent_cmd")
-    assert_nonempty "hayate: parent_cmd は非空" "$result"
+    assert_nonempty "hayate: parent_cmd は非空" "$parent_cmd"
   else
     echo "  PASS: hayate: status=$hayate_status (タスクなし)。parent_cmdテストskip"
     PASS=$((PASS + 1))
@@ -129,8 +128,8 @@ echo ""
 echo "--- Test 4: settings.yaml → language ---"
 FILE4="${SCRIPT_DIR}/config/settings.yaml"
 if [[ -f "$FILE4" ]]; then
-  result=$(field_get "$FILE4" "language")
-  assert_match "settings: language は言語コード" "^(ja|en|es|zh|ko|fr|de)$" "$result"
+  eval "$(field_get_multi "$FILE4" language)"
+  assert_match "settings: language は言語コード" "^(ja|en|es|zh|ko|fr|de)$" "$language"
 else
   echo "  FAIL: $FILE4 not found"
   FAIL=$((FAIL + 1))
@@ -163,8 +162,8 @@ fi
 echo ""
 echo "--- Test 6: projects.yaml → name (nested) ---"
 if [[ -f "$FILE5" ]]; then
-  result=$(field_get "$FILE5" "name")
-  assert_nonempty "projects: name は非空" "$result"
+  eval "$(field_get_multi "$FILE5" name)"
+  assert_nonempty "projects: name は非空" "$name"
 else
   echo "  FAIL: $FILE5 not found"
   FAIL=$((FAIL + 1))

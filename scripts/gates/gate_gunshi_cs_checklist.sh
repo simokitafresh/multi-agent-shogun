@@ -15,91 +15,150 @@ if [ ! -f "$LOG_FILE" ]; then
     exit 1
 fi
 
-# 直近N件のself_study/consultationエントリにcs_checklistがあるか確認
-# 全件チェックは過去データに不公平(定義前)。直近10件のみ。
-# cmd_1501: causal_chainフィールドも併せてチェック
-RESULT=$(python3 -c "
-import re, sys
+RESULT=$(awk '
+function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+function emit_list(prefix, arr, count,    i, out) {
+    if (count <= 0) return
+    out = ""
+    for (i = 1; i <= count; i++) out = out (i > 1 ? "," : "") arr[i]
+    print prefix out
+}
+function flush_record(    is_ss, has_fm, has_tolerance, idx) {
+    if (!in_record) return
 
-with open('$LOG_FILE') as f:
-    content = f.read()
+    is_ss = (review_type == "self_study" || review_type == "consultation")
+    if (is_ss) {
+        ss_count++
+        ss_id[ss_count] = (entry_id != "" ? entry_id : "?")
+        ss_has_cs[ss_count] = has_cs
+        ss_has_causal[ss_count] = has_causal
+    }
 
-blocks = content.split('\n- id: ')
-recent_ss = []
-for block in blocks[1:]:
-    if 'type: self_study' in block or 'type: consultation' in block:
-        id_match = re.match(r'(\S+)', block)
-        entry_id = id_match.group(1) if id_match else '?'
-        has_cs = 'cs_checklist:' in block
-        has_causal = 'causal_chain:' in block
-        recent_ss.append((entry_id, has_cs, has_causal))
+    if (review_type == "draft") {
+        draft_count++
+        draft_id[draft_count] = (entry_id != "" ? entry_id : "?")
+        draft_obs[draft_count] = obs_text
+        draft_verdict[draft_count] = verdict
+    }
 
-cs_missing = []
-causal_missing = []
-for entry_id, has_cs, has_causal in recent_ss[-10:]:
-    if not has_cs:
-        cs_missing.append(entry_id)
-    if not has_causal:
-        causal_missing.append(entry_id)
+    in_record = 0
+    entry_id = ""
+    review_type = ""
+    verdict = ""
+    has_cs = 0
+    has_causal = 0
+    in_obs = 0
+    obs_text = ""
+}
+BEGIN {
+    fm_pat = "FM|failure|リスク|穴|通過する|偽陽性|偽陰性"
+    tol_pat = "許容|後追い|v1で|TBD|shallow|最小実装"
+}
+/^- (cmd_id|id):/ {
+    flush_record()
+    in_record = 1
+    line = $0
+    sub(/^- (cmd_id|id):[[:space:]]*/, "", line)
+    gsub(/["'\''"]/, "", line)
+    entry_id = trim(line)
+    next
+}
+{
+    if (!in_record) next
 
-if cs_missing:
-    print('CS_MISSING:' + ','.join(cs_missing))
-if causal_missing:
-    print('CAUSAL_MISSING:' + ','.join(causal_missing))
-if not cs_missing and not causal_missing:
-    print('ALL_PASS')
-" 2>/dev/null)
+    if ($0 ~ /^[[:space:]]*review_type:[[:space:]]*/) {
+        line = $0
+        sub(/^[[:space:]]*review_type:[[:space:]]*/, "", line)
+        gsub(/["'\''"]/, "", line)
+        review_type = trim(line)
+    } else if ($0 ~ /^[[:space:]]*verdict:[[:space:]]*/) {
+        line = $0
+        sub(/^[[:space:]]*verdict:[[:space:]]*/, "", line)
+        gsub(/["'\''"]/, "", line)
+        verdict = trim(line)
+    } else if ($0 ~ /^[[:space:]]*cs_checklist:[[:space:]]*$/) {
+        has_cs = 1
+    } else if ($0 ~ /^[[:space:]]*causal_chain:[[:space:]]*/) {
+        has_causal = 1
+    }
 
-cs_missing=$(echo "$RESULT" | grep '^CS_MISSING:' | sed 's/^CS_MISSING://' | tr ',' '\n')
-causal_missing=$(echo "$RESULT" | grep '^CAUSAL_MISSING:' | sed 's/^CAUSAL_MISSING://' | tr ',' '\n')
-all_pass=$(echo "$RESULT" | grep -c '^ALL_PASS' || true)
+    if ($0 ~ /^[[:space:]]*observations:[[:space:]]*$/) {
+        in_obs = 1
+        next
+    }
+    if (in_obs) {
+        if ($0 ~ /^[[:space:]]{4,}- /) {
+            obs_text = obs_text "\n" $0
+            next
+        }
+        if ($0 ~ /^[[:space:]]{2}[a-z_]+:/ || $0 ~ /^- (cmd_id|id):/) {
+            in_obs = 0
+        }
+    }
+}
+END {
+    flush_record()
+
+    start_ss = (ss_count > 10) ? ss_count - 9 : 1
+    cs_missing_count = 0
+    causal_missing_count = 0
+    for (i = start_ss; i <= ss_count; i++) {
+        if (!ss_has_cs[i]) cs_missing[++cs_missing_count] = ss_id[i]
+        if (!ss_has_causal[i]) causal_missing[++causal_missing_count] = ss_id[i]
+    }
+
+    start_draft = (draft_count > 20) ? draft_count - 19 : 1
+    fm_flagged_count = 0
+    for (i = start_draft; i <= draft_count; i++) {
+        has_fm = (draft_obs[i] ~ fm_pat)
+        has_tolerance = (draft_obs[i] ~ tol_pat)
+        if (draft_verdict[i] == "APPROVE" && has_fm && has_tolerance) {
+            fm_flagged[++fm_flagged_count] = draft_id[i]
+        }
+    }
+
+    emit_list("CS_MISSING:", cs_missing, cs_missing_count)
+    emit_list("CAUSAL_MISSING:", causal_missing, causal_missing_count)
+    emit_list("FM_TOLERANCE:", fm_flagged, fm_flagged_count)
+    if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
+    if (fm_flagged_count == 0) print "FM_PASS"
+}
+' "$LOG_FILE" 2>/dev/null)
+
+cs_missing=""
+causal_missing=""
+fm_flagged=""
+all_pass=0
+fm_pass=0
+while IFS= read -r line; do
+    case "$line" in
+        CS_MISSING:*)
+            cs_missing="${line#CS_MISSING:}"
+            ;;
+        CAUSAL_MISSING:*)
+            causal_missing="${line#CAUSAL_MISSING:}"
+            ;;
+        FM_TOLERANCE:*)
+            fm_flagged="${line#FM_TOLERANCE:}"
+            ;;
+        ALL_PASS)
+            all_pass=1
+            ;;
+        FM_PASS)
+            fm_pass=1
+            ;;
+    esac
+done <<< "$RESULT"
 
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
 fi
 
-# --- Check 2: APPROVE+FM許容パターン検出 (GP-177: なぜなぜ7回の自動化ターゲット) ---
-# 真因: FMを発見→mitigationが「許容/TBD/後追い」→APPROVEできてしまう=発見≠解決
-# 「二度と起きない」レベルのmitigationでなければAPPROVEすべきでない
-FM_TOLERANCE_RESULT=$(python3 -c "
-import re
-
-with open('$LOG_FILE') as f:
-    content = f.read()
-
-# cmd_id単位でブロック分割
-entries = re.split(r'\n- cmd_id:', content)
-fm_indicators = ['FM', 'failure', 'リスク', '穴', '通過する', '偽陽性', '偽陰性']
-tolerance_indicators = ['許容', '後追い', 'v1で', 'TBD', 'shallow', '最小実装']
-flagged = []
-for entry in entries[-20:]:
-    if 'review_type: draft' not in entry:
-        continue
-    if 'verdict: APPROVE' not in entry or 'verdict: REQUEST_CHANGES' in entry:
-        continue
-    obs_match = re.search(r'observations:(.*?)(?=\n  [a-z]|\n- cmd_id:|\Z)', entry, re.DOTALL)
-    if not obs_match:
-        continue
-    obs_text = obs_match.group(1)
-    has_fm = any(ind in obs_text for ind in fm_indicators)
-    has_tolerance = any(ind in obs_text for ind in tolerance_indicators)
-    if has_fm and has_tolerance:
-        cmd_match = re.match(r'\s*(\S+)', entry)
-        cmd_id = cmd_match.group(1) if cmd_match else '?'
-        flagged.append(cmd_id)
-
-if flagged:
-    print('FM_TOLERANCE:' + ','.join(flagged))
-else:
-    print('FM_PASS')
-" 2>/dev/null)
-
-fm_flagged=$(echo "$FM_TOLERANCE_RESULT" | grep '^FM_TOLERANCE:' | sed 's/^FM_TOLERANCE://' | tr ',' '\n')
-fm_pass=$(echo "$FM_TOLERANCE_RESULT" | grep -c '^FM_PASS' || true)
-
 if [ -n "$fm_flagged" ]; then
     echo "WARN: APPROVE+FM許容パターン検出(発見≠解決):"
-    echo "$fm_flagged" | while read -r id; do echo "  - $id: FMを発見しながらmitigationが許容/TBD。REQUEST_CHANGESの再検討を"; done
+    printf '%s\n' "$fm_flagged" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: FMを発見しながらmitigationが許容/TBD。REQUEST_CHANGESの再検討を"
+    done
     warn=1
 elif (( fm_pass > 0 )); then
     echo "PASS: APPROVE+FM許容パターンなし"
@@ -114,15 +173,19 @@ if (( all_pass > 0 )) && (( fm_pass > 0 )); then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
-    cs_count=$(echo "$cs_missing" | wc -l)
+    cs_count=$(printf '%s\n' "$cs_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
     echo "WARN: ${cs_count}件のエントリにcs_checklistなし:"
-    echo "$cs_missing" | while read -r id; do echo "  - $id"; done
+    printf '%s\n' "$cs_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id"
+    done
     warn=1
 fi
 if [ -n "$causal_missing" ]; then
-    causal_count=$(echo "$causal_missing" | wc -l)
+    causal_count=$(printf '%s\n' "$causal_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
     echo "WARN: ${causal_count}件のエントリにcausal_chainなし:"
-    echo "$causal_missing" | while read -r id; do echo "  - $id"; done
+    printf '%s\n' "$causal_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id"
+    done
     warn=1
 fi
 

@@ -203,7 +203,18 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     if [ -n "$pane_idx" ]; then
         _tmpf=$(mktemp)
         _CTX_TMPF[$ninja]=$_tmpf
-        ( tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+%' | tail -1 > "$_tmpf" ) &
+        (
+            tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null \
+                | awk '
+                    {
+                        while (match($0, /CTX:[0-9]+%/)) {
+                            ctx = substr($0, RSTART + 4, RLENGTH - 4)
+                            $0 = substr($0, RSTART + RLENGTH)
+                        }
+                    }
+                    END { if (ctx != "") print ctx }
+                ' > "$_tmpf"
+        ) &
         _CTX_PIDS+=($!)
     fi
 done
@@ -241,7 +252,7 @@ echo ""
 echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
 if [ -f "$inbox_file" ]; then
-    unread=$(grep -c 'read: false' "$inbox_file" 2>/dev/null) || unread=0
+    unread=$(awk '/read: false/ { c++ } END { print c+0 }' "$inbox_file" 2>/dev/null)
     echo "  未読: ${unread}件"
 else
     echo "  未読: 0件 (inbox不在)"
@@ -265,8 +276,11 @@ fi
 echo "■ pending_decisions"
 pd_file="$SCRIPT_DIR/queue/pending_decisions.yaml"
 if [ -f "$pd_file" ]; then
-    total_d=$(grep -c '^\- id:' "$pd_file" 2>/dev/null) || total_d=0
-    resolved_d=$(grep -c 'status: resolved' "$pd_file" 2>/dev/null) || resolved_d=0
+    IFS='|' read -r total_d resolved_d <<< "$(awk '
+        /^- id:/ { total++ }
+        /status: resolved/ { resolved++ }
+        END { printf "%d|%d\n", total+0, resolved+0 }
+    ' "$pd_file" 2>/dev/null)"
     pending_count=$((total_d - resolved_d))
     echo "  未解決: ${pending_count}件"
     if [ "$pending_count" -gt 0 ]; then
