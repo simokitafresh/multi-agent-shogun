@@ -962,8 +962,20 @@ check_ac_file_paths() {
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
+    # 単体抽出テストでも動くよう、helper未ロード時はブロック本文から直接拾う。
     local PROJECT_ID PROJECT_WD
-    PROJECT_ID="$(cmd_block_get_field "project")"
+    if declare -F cmd_block_get_field >/dev/null 2>&1; then
+        PROJECT_ID="$(cmd_block_get_field "project")"
+    else
+        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+            /^[[:space:]]*project:[[:space:]]*/ {
+                sub(/^[[:space:]]*project:[[:space:]]*/, "")
+                gsub(/^["'\''"]|["'\''"]$/, "")
+                print
+                exit
+            }
+        ')
+    fi
     [[ -z "$PROJECT_ID" ]] && PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
 
     if [[ -n "${PROJECT_ID:-}" ]]; then
