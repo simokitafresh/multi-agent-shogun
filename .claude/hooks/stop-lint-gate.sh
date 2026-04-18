@@ -20,19 +20,21 @@ _stop_lint_self="${BASH_SOURCE[0]}"
 SHOGUN_ROOT="${_stop_lint_self%/.claude/hooks/stop-lint-gate.sh}"
 unset _stop_lint_self
 
-# --- Collect changed files (staged + unstaged tracked files only) ---
-# `git diff --name-only` was the dominant cost on WSL2. Use lighter plumbing commands
-# and dedupe the staged/unstaged union before dispatching the linters.
+# --- Collect changed files (staged files only) ---
+# cmd_2076: git ls-files -m (unstaged scan) を廃止。staged-only に変更。
+# 理由: git ls-files -m は /mnt/c/ 上で全tracked fileのmtime照合のため870ms-1.5s費やす。
+#       staged files = コミット直前でlint違反を最重要チェックするタイミング。
+#       unstaged違反はpre-commit hookでも検出される。
+# 前回(cmd_2053)との差分: shebangではなくgit操作アルゴリズム変更。
 collect_changed_files() {
-    local staged_files unstaged_files
-    staged_files="$(cd "$SHOGUN_ROOT" && git diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
-    unstaged_files="$(cd "$SHOGUN_ROOT" && git ls-files -m 2>/dev/null || true)"
+    local staged_files
+    staged_files="$(git -C "$SHOGUN_ROOT" diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
 
-    if [ -z "${staged_files}${unstaged_files}" ]; then
+    if [ -z "$staged_files" ]; then
         return 0
     fi
 
-    printf '%s\n%s\n' "$staged_files" "$unstaged_files" | awk 'NF && !seen[$0]++'
+    printf '%s\n' "$staged_files" | awk 'NF && !seen[$0]++'
 }
 
 mapfile -t changed_files < <(collect_changed_files)

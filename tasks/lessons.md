@@ -3819,3 +3819,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: approved
 - **tags**: [universal]
 - gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats --jobs 8の並列実行でsetup()がglobでtmpファイルを削除するとcatが失敗する可能性。L488/L489と同じ構造。対策: TEST_ROOTベースのパス or MKTEMPのprefixをglobに含めない形で独立させる
+
+### L500: post-bash-combined: bats skip形式は'# skip'。SKIP/skippedだけでは不十分
+- **日付**: 2026-04-18
+- **出典**: cmd_2075
+- **記録者**: kagemaru
+- **status**: approved
+- **tags**: [universal]
+- Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'/'skipped'では検出できない。'# skip'パターンを明示的に追加する必要がある。テストで初回FAIL→修正の典型例。
