@@ -27,7 +27,7 @@ teardown() {
 }
 
 @test "SL-001: valid percentage is rendered and sent to tmux" {
-    run bash -lc "printf '%s' '{\"context_window\":{\"used_percentage\":33.7}}' | '$SCRIPT_PATH'"
+    run bash -c "printf '%s' '{\"context_window\":{\"used_percentage\":33.7}}' | '$SCRIPT_PATH'"
     [ "$status" -eq 0 ]
     [ "$output" = "CTX:33%" ]
     run cat "$TMUX_LOG"
@@ -37,13 +37,13 @@ teardown() {
 }
 
 @test "SL-002: invalid json falls back to zero" {
-    run bash -lc "printf '%s' 'not-json' | '$SCRIPT_PATH'"
+    run bash -c "printf '%s' 'not-json' | '$SCRIPT_PATH'"
     [ "$status" -eq 0 ]
     [ "$output" = "CTX:0%" ]
 }
 
 @test "SL-003: negative percentage is clamped to zero" {
-    run bash -lc "printf '%s' '{\"context_window\":{\"used_percentage\":-7}}' | '$SCRIPT_PATH'"
+    run bash -c "printf '%s' '{\"context_window\":{\"used_percentage\":-7}}' | '$SCRIPT_PATH'"
     [ "$status" -eq 0 ]
     [ "$output" = "CTX:0%" ]
 }

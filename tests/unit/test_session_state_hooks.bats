@@ -56,7 +56,7 @@ timestamp: '2026-04-18T11:00:00+09:00'
 summary: compact ok
 YAML
 
-    run bash -lc "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
@@ -78,7 +78,7 @@ PY
 
 @test "SSH-002: prompt_state_inject returns nothing for non-shogun" {
     export MOCK_AGENT_ID="saizo"
-    run bash -lc "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
@@ -94,7 +94,7 @@ YAML
 snapshot line
 EOF
 
-    run bash -lc "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
@@ -114,7 +114,7 @@ PY
 
 @test "SSH-004: session_end_clear_check is silent for non-shogun" {
     export MOCK_AGENT_ID="saizo"
-    run bash -lc "cd '$TEST_TMPDIR' && printf '%s' '{}' | scripts/hooks/session_end_clear_check.sh"
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{}' | scripts/hooks/session_end_clear_check.sh"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
@@ -137,7 +137,7 @@ EOF
     chmod +x "$TEST_TMPDIR/scripts/clear_prep_check.sh" "$TEST_TMPDIR/scripts/ntfy.sh"
     export NTFY_LOG="$TEST_TMPDIR/ntfy.log"
 
-    run bash -lc "cd '$TEST_TMPDIR' && printf '%s' '{}' | SESSION_END_LORD_CONVERSATION_FILE='$TEST_TMPDIR/queue/lord_conversation.jsonl' SESSION_END_CLEAR_PREP_CMD='$TEST_TMPDIR/scripts/clear_prep_check.sh' SESSION_END_NTFY_CMD='$TEST_TMPDIR/scripts/ntfy.sh' scripts/hooks/session_end_clear_check.sh"
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{}' | SESSION_END_LORD_CONVERSATION_FILE='$TEST_TMPDIR/queue/lord_conversation.jsonl' SESSION_END_CLEAR_PREP_CMD='$TEST_TMPDIR/scripts/clear_prep_check.sh' SESSION_END_NTFY_CMD='$TEST_TMPDIR/scripts/ntfy.sh' scripts/hooks/session_end_clear_check.sh"
     [ "$status" -eq 0 ]
     [ "$output" = "OK: session_end_clear_check (shogun)" ]
     run cat "$NTFY_LOG"

@@ -48,7 +48,7 @@ if [ "$_WA_MTIME" = "$_WA_CACHED_MTIME" ] && [ -f "$_WA_CACHE" ]; then
     exit 0
 fi
 
-_WA_TMP="${_WA_CACHE}.$$"
+_WA_TMP=$(mktemp /tmp/shogun_wa_wrk.XXXXXX)
 awk -v quiet="$QUIET" -v last_n="$LAST_N" -v ninja_filter="$NINJA_FILTER" '
 function trim(s) {
     sub(/^[ \t\r\n]+/, "", s)
