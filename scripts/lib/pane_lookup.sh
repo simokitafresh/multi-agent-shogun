@@ -24,11 +24,9 @@ fi
 source "${_PANE_LOOKUP_SCRIPT_DIR}/scripts/lib/agent_config.sh"
 unset _pl_self
 
-# cmd_2078 B1: Lazy initialization — マップ構築をsource時からpane_lookup()初回呼び出し時に遅延
-# 旧: source時に _agent_config_load (awk~17ms) + for loop (~8ms) = +25ms (no-args exit pathで全て無駄)
-# 新: source時は関数定義のみ。マップは pane_lookup() 初回呼び出し時に _pane_lookup_ensure_init() で初期化
-#
-# agent_status.sh等で PANE_LOOKUP_AGENT_ORDER を参照する場合は pane_lookup_ensure_initialized を先に呼べ。
+# cmd_karo_pane_lookup_fix: source時消費側(agent_status.sh / deploy_task.sh)が
+# PANE_LOOKUP_AGENT_ORDER と静的マップを即参照するため、初期化をsource時へ戻す。
+# pane_lookup() 側も防御的に ensure して、将来の呼出順変更でも空配列のまま落ちないようにする。
 _PANE_LOOKUP_INITIALIZED=0
 declare -A _PANE_LOOKUP_MAP=()
 # shellcheck disable=SC2034
@@ -61,6 +59,8 @@ pane_lookup() {
         echo "" >&2
         return 1
     fi
+
+    _pane_lookup_ensure_init
 
     # Source 1: ninja_states.yaml (動的マッピング)
     local states_path="${_PANE_LOOKUP_SCRIPT_DIR}/logs/ninja_states.yaml"
@@ -97,3 +97,6 @@ PY
     echo ""
     return 1
 }
+
+# source直後に参照する消費側がいるため、静的マップは定義時点で構築しておく。
+_pane_lookup_ensure_init
