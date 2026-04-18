@@ -3771,3 +3771,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - gate_yaml_status.shのawk(-v cmd_id)は'- id: cmd_xxx'形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx: (map key)形式を使用しており、全cmdがNOT FOUNDとなっていた。修正: awk内でmap key形式も検出するよう両方対応。バグ修正と速度改善を同時実施
+
+### L494: gate_silent_fallback.sh: WSL2/mnt/c上でrg(ripgrep)はgrepより2-3x速いがブロック解析コストが全体を支配するため全体改善は誤差範囲に留まる
+- **日付**: 2026-04-18
+- **出典**: cmd_2055
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~400ms以上費やすため全体スクリプト(578ms→576ms)の改善は誤差範囲。高コストなブロック解析をawk化すれば大幅改善が見込める。
