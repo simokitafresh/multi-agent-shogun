@@ -2127,8 +2127,8 @@ if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
     if echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
-            echo "BLOCK: 未検証前提あり。現物確認してtrust:verifiedに変更せよ" >&2
-            exit 1
+            record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
+            abort_if_block_immediate
         fi
         # AC2: trust:verified + sourceにファイルパスがある場合、プロジェクトWD内の実在確認
         _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
@@ -2178,7 +2178,7 @@ for e in entries:
                     [[ -z "$fpath" ]] && continue
                     if [[ ! -e "$_ASSUMP_PROJECT_WD/$fpath" ]]; then
                         if [[ "$_ASSUMP_HAS_MISSING" == false ]]; then
-                            echo "BLOCK: assumptions sourceのファイルパスが存在しません:" >&2
+                            record_block_reason "assumptions sourceのファイルパスが存在しません:"
                             _ASSUMP_HAS_MISSING=true
                         fi
                         echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
@@ -2186,7 +2186,7 @@ for e in entries:
                 done <<< "$_ASSUMP_VERIFIED_PATHS"
                 if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
                     echo "  現物確認してからcmd_save.shを再実行せよ" >&2
-                    exit 1
+                    abort_if_block_immediate
                 fi
             fi
         fi
@@ -2239,7 +2239,7 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
 fi
 
 # --- 結果出力 ---
-if [[ "$WARN_COUNT" -eq 0 ]]; then
+if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
     # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
     _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
@@ -2249,6 +2249,10 @@ if [[ "$WARN_COUNT" -eq 0 ]]; then
         fi
     fi
 else
-    echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
+    if [[ "$BLOCK_COUNT" -gt 0 ]]; then
+        echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
+    else
+        echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
+    fi
     exit 1
 fi
