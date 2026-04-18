@@ -3763,3 +3763,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。bash readのIFS分割+行ループより awk 1-passの方がWSL2 NTFS上で高速。stop-lint-gate cmd_2039で0.84s実証。
+
+### L493: gate_yaml_status.shのawkはlist形式のみ対応で、map key形式のcmdを常にERRORで返していた
+- **日付**: 2026-04-18
+- **出典**: cmd_2042
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [universal]
+- gate_yaml_status.shのawk(-v cmd_id)は'- id: cmd_xxx'形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx: (map key)形式を使用しており、全cmdがNOT FOUNDとなっていた。修正: awk内でmap key形式も検出するよう両方対応。バグ修正と速度改善を同時実施
