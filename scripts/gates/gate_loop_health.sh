@@ -160,7 +160,12 @@ try:
         for line in f:
             s = line.strip()
             if s.startswith('insight:'):
-                val = s[len('insight:'):].strip().strip('"')
+                raw = s[len('insight:'):].strip()
+                try:
+                    # json.loads properly decodes JSON-encoded strings (handles \\\" etc.)
+                    val = json.loads(raw) if raw.startswith('"') else raw.strip("'")
+                except Exception:
+                    val = raw.strip('"')
                 existing_insights.add(val)
 except Exception:
     pass
@@ -179,11 +184,9 @@ for pattern, count in reason_counter.most_common():
         msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:
         continue
-    # Deduplicate: normalize quotes then check substring match
-    DQ = chr(34)
-    SQ = chr(39)
-    norm_pattern = pattern.replace(chr(92)+DQ, DQ).replace(SQ, DQ)
-    if any(norm_pattern in ex.replace(chr(92)+DQ, DQ).replace(SQ, DQ) for ex in existing_insights):
+    # Deduplicate: normalize msg (unescape \" → ") then check prefix against decoded insights
+    msg_norm = msg.replace('\\"', '"')
+    if any(msg_norm[:80] in ex for ex in existing_insights):
         continue
     new_insights.append(msg)
 

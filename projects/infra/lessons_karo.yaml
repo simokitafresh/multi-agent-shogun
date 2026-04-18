@@ -462,3 +462,8 @@ lessons:
   detail: 'batsテストでbash -lcを使うとログインシェル起動でPATHがリセットされ、MOCK_BIN(テスト用偽コマンド)がPATHから消える。CIの並列実行環境で顕著。SSH/SLテスト8箇所で発生(999-1006)。修正: bash -lcをbash -cに変更。mktemp raceも同時解消(#571)。cmd_karo_ci_fix_571(影丸)で実証'
   source_cmd: 'cmd_karo_ci_fix_571'
   created_at: '2026-04-18'
+- id: 'LK085'
+  title: 'cmd起票前に対象コードの現物確認を怠った — pre-commitは既に.yaml除外済みだった'
+  detail: 'cmd_karo_precommit_yaml_dump_fpで「pre-commitのyaml.dumpチェックが.yamlを誤検知」と起票したが、pre-commit L53で.sh/.pyのみに限定済み。真因はpre_bash_combined_guard.sh(新規.sh)の全行が+として検出されること。軍師REQUEST_CHANGESで発覚。LK065(確認しないから間違える)の再違反。§0.1問い2をcmd起票前に通していれば防げた'
+  source_cmd: 'cmd_karo_precommit_yaml_dump_fp'
+  created_at: '2026-04-18'

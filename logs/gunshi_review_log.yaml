@@ -461,7 +461,7 @@
 - cmd_id: cmd_2080
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。inbox_write.sh 1229行。8ms(既に高速)の正規CoDD再改善。profiling最多312回/日"
   observations:
@@ -751,3 +751,29 @@
   gate_prediction: CLEAR
   causal_chain: "49×NTFS stat(3ms/check=146ms)→ls×4サブディレクトリ一括+bash文字列照合→stat廃止→-80%=正の複利(per-file stat排除パターン)"
   timestamp: "2026-04-18T22:00:00"
+- cmd_id: cmd_karo_precommit_yaml_dump_fp
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "前提崩壊: pre-commit L53で既に.sh/.pyのみ限定。.yaml/.md誤検知は現物で再現不可。別経路(pre-bash-combined)の可能性"
+  observations:
+    - "事実1: .git/hooks/pre-commit L53で.yaml/.mdは除外済み"
+    - "事実2: pre_bash_combined_guard.sh L256がBashコマンド文字列にyaml.dumpを検出する別経路"
+  causal_chain: "draft前提(pre-commitが.yaml誤検知)→現物確認→L53で既にフィルタ済み→前提崩壊。再現手順不明のまま修正すると無意味な変更=負の複利"
+  timestamp: "2026-04-18T22:05:00"
+- cmd_id: cmd_2080
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2080_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。inbox_write.sh write path最適化。isolated 32→25ms(-22%)、live 48→35ms(-27%)。22テストPASS"
+  observations:
+    - "事実1: 数値検算OK。(32-25)/32=21.9%、(48-35)/48=27.1%一致"
+    - "事実2: empty inbox判定builtin read化+lock_path cksum→bash sanitize。write semantics未変更"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "empty判定grep→builtin read+lock cksum→bash sanitize=固定費削減→全inbox_write呼出しに-22%/-27%=正の複利(全通信高速化)"
+  timestamp: "2026-04-18T22:10:00"

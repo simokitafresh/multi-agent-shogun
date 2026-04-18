@@ -9573,3 +9573,41 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-18T12:32:54Z"
+  - cmd_id: "cmd_karo_precommit_yaml_dump_fp"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T12:56:56Z"
+  - cmd_id: "cmd_2080"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T13:00:06Z"
+    notes: "report_format:hayate_report_cmd_2080.yaml"
+  - cmd_id: "cmd_2080"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T13:00:25Z"
+    notes: "report_format:hayate_report_cmd_2080.yaml"
+  - cmd_id: "cmd_2080"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T13:01:03Z"

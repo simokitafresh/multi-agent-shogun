@@ -3899,3 +3899,10 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。
+
+### L510: 三層学習ループ健全性は入力指標(gate数)ではなく出力指標(gate FAIL数=防いだ問題数)で計測せよ
+- **日付**: 2026-04-18
+- **出典**: gunshi_session_20260418
+- **記録者**: karo
+- **tags**: [universal]
+- gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 11に自動計測埋込み済み

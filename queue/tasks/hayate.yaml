@@ -1,21 +1,18 @@
 task:
-  _ac_task_id: cmd_2090_impl
+  _ac_task_id: cmd_karo_precommit_yaml_dump_fp_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: d4974852
+  ac_version: 59d7d64d
   acceptance_criteria:
-  - description: before計測(実行path median 5回)+CoDD spec作成。ボトルネック箇所を特定
-    id: AC1
-  - description: specに基づき実装
-    id: AC2
-  - description: after計測(同条件median 5回)。before/after差分表を報告。regression時revert
-    id: AC3
-  - description: 既存batsテスト全PASS。codd_refactor_registry.mdに追記。commit+push
-    id: AC4
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
-    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
+  - binary_checks:
+    - 'lessons.yamlを含むgit addがpre-commitをPASSするか: yes/no'
+    - 'yaml.dumpを含むtest.pyをgit addするとBLOCKされるか: yes/no'
+    description: yaml.dumpチェックが.py/.shの実行コードのみを対象とし、.yaml/.mdのテキスト内容を誤検知しない
+  - binary_checks:
+    - '変更をcommit+pushしたか: yes/no'
+    description: commit + push
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L283: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の\
+    \ ok N (hash) skip パタ\n  - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -33,38 +30,35 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  - AC4
-  parent_cmd: cmd_2090
+  parent_cmd: cmd_karo_precommit_yaml_dump_fp
   project: infra
-  report_filename: hayate_report_cmd_2090.yaml
-  report_path: queue/reports/hayate_report_cmd_2090.yaml
+  report_filename: hayate_report_cmd_karo_precommit_yaml_dump_fp.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_precommit_yaml_dump_fp.yaml
   scout_exempt: true
-  status: failed
+  status: done
   stop_for: []
-  task_id: cmd_2090_impl
+  task_id: cmd_karo_precommit_yaml_dump_fp_impl
   task_type: impl
   previous_failures:
-    attempt: 11
-    last_block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+    attempt: 5
+    last_block_reason: 'binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
     tried_approaches:
-    - 'stale_report: filename has cmd_test9 but parent_cmd=cmd_1946 (cmd_id mismatch)'
-    - 'stale_report: filename has cmd_9000 but parent_cmd=cmd_1946 (cmd_id mismatch)'
-    - 'AUTO-FIXED: binary_checks result boolean→string変換'
-    - 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_us…'
-    - 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-    - 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-    approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    - 'binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+    diagnose_reason: 'task AC の push まで機械的に通そうとしたが、忍者は push 禁止という上位規約を先に満たすべきだった。commit 完了時点で未達ACを FAIL と明示して報告するのが正しい。'
+    approach_summary: 'cli_lookup が profile間の空行で codex 到達前に break する不具合を修正し、codex clear_cmd/display_name と claude clear_cmd の再現確認を通した。push は忍者規約により未実施。'
     prior_attempts:
-    - attempt: 9
-      block_reason: 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
-    - attempt: 10
-      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
-    - attempt: 11
-      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    - attempt: 3
+      block_reason: 'binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+      diagnose_reason: 'task AC の push まで機械的に通そうとしたが、忍者は push 禁止という上位規約を先に満たすべきだった。commit 完了時点で未達ACを FAIL と明示して報告するのが正しい。'
+      approach_summary: 'cli_lookup が profile間の空行で codex 到達前に break する不具合を修正し、codex clear_cmd/display_name と claude clear_cmd の再現確認を通した。push は忍者規約により未実施。'
+    - attempt: 4
+      block_reason: 'binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+      diagnose_reason: 'task AC の push まで機械的に通そうとしたが、忍者は push 禁止という上位規約を先に満たすべきだった。commit 完了時点で未達ACを FAIL と明示して報告するのが正しい。'
+      approach_summary: 'cli_lookup が profile間の空行で codex 到達前に break する不具合を修正し、codex clear_cmd/display_name と claude clear_cmd の再現確認を通した。push は忍者規約により未実施。'
+    - attempt: 5
+      block_reason: 'binary_checks.AC3[0].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ'
+      diagnose_reason: 'task AC の push まで機械的に通そうとしたが、忍者は push 禁止という上位規約を先に満たすべきだった。commit 完了時点で未達ACを FAIL と明示して報告するのが正しい。'
+      approach_summary: 'cli_lookup が profile間の空行で codex 到達前に break する不具合を修正し、codex clear_cmd/display_name と claude clear_cmd の再現確認を通した。push は忍者規約により未実施。'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -75,15 +69,15 @@ task:
     warning: '⚠ 過去28件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 207
+      count: 227
     - pattern: 'lu_reason_empty'
-      count: 54
+      count: 60
     - pattern: 'verdict_invalid'
-      count: 37
+      count: 40
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
-      count: 27
+      count: 30
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
       count: 26
@@ -92,7 +86,7 @@ task:
       count: 3
       hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
     - reason: 'ac_version_mismatch'
-      count: 1
+      count: 2
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
     - reason: 'purpose_validation_fit_false'
       count: 1
@@ -101,6 +95,27 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
   - id: 'L502'
     summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
     detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
@@ -110,35 +125,17 @@ task:
   - id: 'L500'
     summary: '''Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''''ok N ... # skip reason''''であり、''''SKIP''''/''''skipped''''では検出できない。''''#'
     detail: '''Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''''ok N ... # skip reason''''であり、''''SKIP''''/''''skipped''''では検出できない。''''#'
-  - id: 'L499'
-    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  - id: 'L498'
-    summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-    detail: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-  - id: 'L497'
-    summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
-    detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
-  - id: 'L496'
-    summary: 'cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows'
-    detail: 'cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows'
-  - id: 'L495'
-    summary: '''report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname/cd+pwd/basename)を使っていた。string'
-    detail: '''report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname/cd+pwd/basename)を使っていた。string'
-  - id: 'L494'
-    summary: 'grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~400ms以上費やすため全体スクリプト(578ms→576ms)の改善は誤差範囲。高コストなブロック解析をawk化すれば大幅改善が見込める。'
-    detail: 'grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~400ms以上費やすため全体スクリプト(578ms→576ms)の改善は誤差範囲。高コストなブロック解析をawk化すれば大幅改善が見込める。'
-  - id: 'L493'
-    summary: '''gate_yaml_status.shのawk(-v cmd_id)は''''- id: cmd_xxx''''形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx:'
-    detail: '''gate_yaml_status.shのawk(-v cmd_id)は''''- id: cmd_xxx''''形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx:'
-  deployed_at: "2026-04-18T20:16:56"
+  deployed_at: "2026-04-18T21:46:41"
   session_state:
-    attempt: 1
-    last_block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+    attempt: 2
+    last_block_reason: 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[2]: reason is empty (教訓が有用/無用な理由を具体的に書け); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-    approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    - 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[2]: reason is empty (教訓が有用/無用な理由を具体的に書け); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'test'
     prior_attempts:
     - attempt: 1
-      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+      block_reason: 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[2]: reason is empty (教訓が有用/無用な理由を具体的に書け); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'test'
+    - attempt: 2
+      block_reason: 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[2]: reason is empty (教訓が有用/無用な理由を具体的に書け); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'test'
