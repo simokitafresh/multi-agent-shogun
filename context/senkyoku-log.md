@@ -692,3 +692,11 @@
 - 2026-04-18 教訓登録: LK082(hook catを$(</dev/stdin)に置換するな)+LK083(git log --grep choreコミット偽陽性)+LK084(bash -lc PATHリセット)
 - 2026-04-18 cmd_karo_ci_fix_571: 影丸。#571+SSH/SLテスト(999-1006)修正。GATE BLOCK(draft_lessons:1偽陽性—tasks/lessons.md L025見出し"draft"がgrepに引っかかる)。次セッションで要対処
 - 2026-04-18 cmd_2072追加修正: 半蔵。PASS_NO_IMPROVEMENT下流3箇所追加(autofix/RFS/gate_report_autofix)。push:d87edf7
+- 2026-04-18 全量CoDD再改善完了: 19/20 GATE CLEAR(cmd_2073のみ前提崩壊)。cmd_2083はYAML書漏らしだが台帳で完了確認。スクリプト高速化一巡
+- 2026-04-18 cmd_karo_sleep_fix: 小太郎。ninja_monitor.sh sleep -5エラー修正。GATE CLEAR
+- 2026-04-18 cmd_karo_precommit_yaml_dump_fp: 疾風。pre-commit yaml.dumpチェックのfalse positive修正。GATE CLEAR
+- 2026-04-18 cmd_karo_ci_fix_cli_lookup: 疾風。cli_lookup.sh空行break修正。GATE CLEAR
+- 2026-04-18 insight全消化: 47件→0件pending。軍師分析でFAIL率根因=旧報告ノイズ+計測定義ズレと判明(将軍推定「テンプレ不在」は誤り)。家老が35件旧報告cleanup
+- 2026-04-18 cmd_save.sh Check 10修正: スキャン範囲をACセクションのみに限定。command/quality_gate内のファイル名誤検出を構造的解消。17テストPASS
+- 2026-04-18 cmd_2093: 疾風作業中。insightノイズ除去(生成時自動done化+cleanカテゴリALERT除外)
+- 2026-04-18 教訓登録: LS044(cmd_save.sh BLOCK連続時は検出ロジック先確認)+LS045(数字見て分類するな中身読め)

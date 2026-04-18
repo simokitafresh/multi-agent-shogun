@@ -415,14 +415,36 @@ else
 fi
 
 # --- Check 11: 三層学習ループ健全性計測(2026-04-18殿指摘: 環境に埋め込め) ---
+# なぜなぜ7回(殿指摘): 累積FAIL数はノイズ含む。FAIL→PASS遷移=免疫が実際に発動した件数
 echo ""
 echo "■ 三層学習ループ健全性"
 _fire_log="$SCRIPT_DIR/logs/gate_fire_log.yaml"
 _wa_log="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$_fire_log" ]; then
-    _fail_count=$(grep -c 'result: FAIL' "$_fire_log" 2>/dev/null || echo 0)
-    _pass_count=$(grep -c 'result: PASS' "$_fire_log" 2>/dev/null || echo 0)
-    echo "  第三層(免疫効果): gate FAIL=${_fail_count}件(防いだ問題) / PASS=${_pass_count}件"
+    # 免疫効果 = 同一ファイルでFAIL後にPASSした件数(gateが止めて忍者が自力修正)
+    _healed=$(python3 -c "
+import re, sys
+lines = open(sys.argv[1]).readlines()
+fails = set()
+healed = 0
+for l in lines:
+    m = re.search(r'file: \"([^\"]+)\".*result: (FAIL|PASS)', l)
+    if m:
+        f, r = m.group(1), m.group(2)
+        if r == 'FAIL':
+            fails.add(f)
+        elif r == 'PASS' and f in fails:
+            healed += 1
+print(healed)
+" "$_fire_log" 2>/dev/null || echo 0)
+    _fail_total=$(grep -c 'result: FAIL' "$_fire_log" 2>/dev/null || echo 0)
+    # 現存報告のFAIL数(ノイズ除外)
+    _fail_live=0
+    while IFS= read -r _fl; do
+        if [ -f "$_fl" ]; then (( _fail_live++ )) || true; fi
+    done < <(grep 'result: FAIL' "$_fire_log" 2>/dev/null | grep -oP '/mnt/c[^"]+' | sort -u)
+    echo "  第三層(免疫効果): FAIL→PASS遷移=${_healed}件(gateが止め忍者が自力修正)"
+    echo "  第三層(参考): 累積FAIL=${_fail_total}件(うち現存報告=${_fail_live}件。差分=archive済み旧報告ノイズ)"
 fi
 if [ -f "$_wa_log" ]; then
     _wa_recent=$(tail -50 "$_wa_log" | grep -c 'workaround: true' || true)
@@ -432,4 +454,4 @@ fi
 _lessons_count=$(grep -c '^- id: LG' "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" 2>/dev/null || echo 0)
 _auto_count=$(grep -c 'automated: true' "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" 2>/dev/null || echo 0)
 echo "  第一層(個): 教訓${_lessons_count}件(automated:${_auto_count}件)"
-echo "  ★ gate FAIL数=免疫が防いだ問題数。データはあったが見方が間違っていた(LG027再発, 2026-04-18殿指摘)"
+echo "  ★ FAIL→PASS遷移が免疫の直接計測。累積FAILは旧報告ノイズ含む(なぜなぜ7回, 2026-04-18殿指摘)"
