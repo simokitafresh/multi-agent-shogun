@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hayate | `.claude/hooks/stop-lint-gate.sh` | Phase 5(再改善: 計測+実装+検証) | `650ms → 0.84s` (isolated full-repo worktree median; current repo noise isolated) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(再改善: 計測+実装+検証) | `2170ms → 1.76s` (real DB median, current data verdict=FAIL with 28 gaps) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/hooks/git-pre-commit.sh` | Phase 5(再改善: 計測+実装+検証) | `736ms → 0.16s` (current repo staged median) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_karo_startup.sh` | Phase 5(再改善: 計測+実装+検証) | `190ms → 140ms` (`-26.3%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_gunshi_cs_checklist.sh` | Phase 5(計測+実装+検証) | `199ms → 10ms` (`-95.0%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_field_get.sh` | Phase 5(計測+実装+検証) | `404ms → 40ms` (`-90.1%`, median, 10 runs) | spec+after: `docs/research/cmd_2037_codd_gate_batch_8a_20260418.md` |

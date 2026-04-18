@@ -18,18 +18,18 @@ fi
 SHOGUN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # --- Collect changed files (staged + unstaged tracked files only) ---
-# `git diff --name-only` was the dominant cost on WSL2. Use lighter plumbing commands
-# and dedupe the staged/unstaged union before dispatching the linters.
+# `git status --porcelain=v2 -z` was faster than separate staged/unstaged scans on
+# the live WSL2 worktree while still covering tracked changes from both sources.
 collect_changed_files() {
-    local staged_files unstaged_files
-    staged_files="$(GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
-    unstaged_files="$(GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" ls-files -m 2>/dev/null || true)"
-
-    if [ -z "${staged_files}${unstaged_files}" ]; then
-        return 0
-    fi
-
-    printf '%s\n%s\n' "$staged_files" "$unstaged_files" | awk 'NF && !seen[$0]++'
+    GIT_OPTIONAL_LOCKS=0 git -C "$SHOGUN_ROOT" status --porcelain=v2 -z --untracked-files=no 2>/dev/null |
+        awk -v RS='\0' '
+            /^[12u] / {
+                print $NF
+                if ($1 == "2") {
+                    getline
+                }
+            }
+        '
 }
 
 mapfile -t changed_files < <(collect_changed_files)
