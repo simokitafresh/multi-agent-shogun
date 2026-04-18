@@ -730,3 +730,6 @@
 | cmd_2069 | CoDD拡張 P5 — context/codd.md索引同期(GP-198/200/201現状反映) | infra | 04-18 | context/codd.md の索引を 2026-04-1 |
 | cmd_2070 | CoDD拡張 P2 — DIVERGENT v2: 仮説一致検知 | infra | 04-18 | DIVERGENT判定を prior_attempts[] |
 | cmd_2072 | CoDD拡張 P4 — partial failure surfacing: verdict第三状態(PASS_NO_IMPROVEMENT)導入 | infra | 04-18 | gate_report_format_main.pyにPAS |
+| cmd_karo_ci_fix_571 | CI RED修正 — test_gate_ninja_workaround_rate #571(再修正) | infra | 04-18 | テスト571（gate_ninja_workaround_r |
+| cmd_karo_ci_fix_2066 | CI RED修正 — test_assumption_invalidation(3件) + test_cmd_save(1件) + test_pending_decision(1件) | infra | 04-18 | 6件のCIテスト失敗を修正。gate_report_form |
+| cmd_karo_ci_fix_568 | CI RED修正 — test_gate_ninja_workaround_rate #568 | infra | 04-18 | gate_ninja_workaround_rate.shの |

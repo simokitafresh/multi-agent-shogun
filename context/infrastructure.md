@@ -359,7 +359,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L497 -->
+<!-- last_synced_lesson: L499 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
@@ -584,6 +584,8 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L495: SCRIPT_DIR/SELF_SCRIPT_PATH string ops化パターン（cmd_2064）
 - L496: gate_report_format.sh は/mnt/c実env では148ms(参照値71msの2倍超): /tmp計測は実運用を反映しない（cmd_2063）
 - L497: bash -lcによるPATHリセット: CI並列テストでMOCK_BIN無効化（cmd_karo_ci_fix_571）
+- L498: set -euo pipefailの呼び元でyaml_field_set内部の中間エラーが伝播する（cmd_karo_ci_fix_2066）
+- L499: /tmp固定パスのキャッシュファイルがbats --jobsでtest_tmpと混在するリスク（cmd_karo_ci_fix_568）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

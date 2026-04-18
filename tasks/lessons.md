@@ -3800,6 +3800,22 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-18
 - **出典**: cmd_karo_ci_fix_571
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: approved
 - **tags**: [universal]
 - bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される。CI環境はtmuxが非インストールのためMOCK_BINのモックが必要だが機能せず失敗。bash -cに変更で解決。ローカル実行は実tmux存在で発現しない。
+
+### L498: set -euo pipefailの呼び元でyaml_field_set内部の中間エラーが伝播する
+- **日付**: 2026-04-18
+- **出典**: cmd_karo_ci_fix_2066
+- **記録者**: kotaro
+- **status**: approved
+- **tags**: [universal]
+- yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set -euo pipefail環境から呼ぶとmap_scalarのexit 2がset -eを発火させ後段のfallbackに到達しない。rc=0;cmd||rc=$?パターンで解決
+
+### L499: /tmp固定パスのキャッシュファイルがbats --jobsでtest_tmpと混在するリスク
+- **日付**: 2026-04-18
+- **出典**: cmd_karo_ci_fix_568
+- **記録者**: tobisaru
+- **status**: approved
+- **tags**: [universal]
+- gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats --jobs 8の並列実行でsetup()がglobでtmpファイルを削除するとcatが失敗する可能性。L488/L489と同じ構造。対策: TEST_ROOTベースのパス or MKTEMPのprefixをglobに含めない形で独立させる
