@@ -14,10 +14,20 @@
 # - Uses flock -w 10 for exclusive writes.
 # - Verifies written value by re-reading; exits 1 with FATAL on mismatch.
 
-# Source lock_path helper for /tmp/-based lock files (WSL2 NTFS flock stability)
-# shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lock_path.sh" 2>/dev/null \
-    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+# Inline lock_path helper to avoid sourcing another file on the hot path.
+lock_path() {
+    local file_path="$1"
+    case "$file_path" in
+        /mnt/c/*|/mnt/d/*)
+            local hash
+            hash=$(printf '%s' "$file_path" | md5sum | cut -c1-16)
+            printf '/tmp/shogun_lock_%s.lock' "$hash"
+            ;;
+        *)
+            printf '%s.lock' "$file_path"
+            ;;
+    esac
+}
 
 _yaml_field_set_trim() {
     local s="$1"
@@ -99,6 +109,115 @@ BEGIN { replaced = 0; has_fields = 0 }
 END {
     if (!has_fields) exit 2
     if (!replaced) print field ": " yaml_safe(new_value)
+}
+' "$yaml_file" > "$out_file"
+}
+
+_yaml_field_set_apply_map_scalar() {
+    local yaml_file="$1"
+    local out_file="$2"
+    local block_id="$3"
+    local field="$4"
+    local new_value="$5"
+
+    if [[ "$block_id" == *$'\n'* ]] || [[ "$field" == *$'\n'* ]] || [[ "$new_value" == *$'\n'* ]]; then
+        return 2
+    fi
+    if [[ "$new_value" == '['* ]] || [[ "$new_value" == '{'* ]]; then
+        return 2
+    fi
+
+    awk \
+        -v block_id="$block_id" \
+        -v field="$field" \
+        -v new_value="$new_value" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+function make_indent(n,    s,i) {
+    s = ""
+    for (i = 0; i < n; i++) s = s " "
+    return s
+}
+function regex_escape(str,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(str); i++) {
+        c = substr(str, i, 1)
+        if (c ~ /[][\\.^$*+?(){}|]/) out = out "\\" c
+        else out = out c
+    }
+    return out
+}
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") out = out "\\" c
+            else out = out c
+        }
+        return "\"" out "\""
+    }
+    return v
+}
+BEGIN {
+    block_found = 0
+    in_block = 0
+    replaced = 0
+    block_indent = -1
+    field_indent = -1
+}
+{
+    if (!in_block) {
+        block_re = "^" regex_escape(block_id) ":[[:space:]]*$"
+        if ($0 ~ block_re) {
+            in_block = 1
+            block_found = 1
+            block_indent = leading_spaces($0)
+            field_indent = block_indent + 2
+        }
+        print
+        next
+    }
+
+    trimmed = trim($0)
+    indent = leading_spaces($0)
+    if (trimmed != "" && trimmed !~ /^#/ && indent <= block_indent) {
+        if (!replaced) {
+            print make_indent(field_indent) field ": " yaml_safe(new_value)
+            replaced = 1
+        }
+        in_block = 0
+        print
+        next
+    }
+
+    field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
+    if (!replaced && $0 ~ field_re) {
+        print make_indent(field_indent) field ": " yaml_safe(new_value)
+        replaced = 1
+        next
+    }
+
+    print
+}
+END {
+    if (!block_found) exit 2
+    if (in_block && !replaced) print make_indent(field_indent) field ": " yaml_safe(new_value)
 }
 ' "$yaml_file" > "$out_file"
 }
@@ -502,8 +621,23 @@ yaml_field_set() {
         }
 
         local use_root=0
-        _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
-        local rc=$?
+        local rc=2
+
+        if [ "$block_id" = "root" ]; then
+            _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value"
+            rc=$?
+            if [ "$rc" -eq 0 ]; then
+                use_root=1
+            fi
+        else
+            _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
+            rc=$?
+            if [ "$rc" -eq 2 ]; then
+                _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value"
+                rc=$?
+            fi
+        fi
+
         if [ "$rc" -eq 2 ]; then
             # Fallback: block_id not found → try root-level field update (flat YAML support)
             _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value"

@@ -37,45 +37,56 @@ fi
 mkdir -p "$ALERT_DIR"
 
 # Check context_synced for the given PD
-RESULT=$(python3 -c "
-import yaml, sys
+mapfile -t _pd_sync_lines < <(
+    awk -v pd_id="$PD_ID" '
+function flush_decision() {
+    if (!in_decision || current_id == "") return
 
-data_path = '$DATA_FILE'
-pd_id = '$PD_ID'
+    if (current_id == pd_id) {
+        if (context_seen && current_context == "true") {
+            target_result = "SYNCED"
+        } else {
+            target_result = "NOT_SYNCED"
+        }
+    }
 
-try:
-    with open(data_path) as f:
-        data = yaml.safe_load(f)
-
-    if not data or not data.get('decisions'):
-        print('NOT_FOUND')
-        print('')
-        sys.exit(0)
-
-    unsynced_ids = []
-    target_result = 'NOT_FOUND'
-
-    for d in data['decisions']:
-        if d.get('context_synced') is False:
-            did = d.get('id')
-            if did:
-                unsynced_ids.append(did)
-
-        if d.get('id') == pd_id:
-            synced = d.get('context_synced')
-            target_result = 'SYNCED' if synced is True else 'NOT_SYNCED'
-
-    print(target_result)
-    print(','.join(unsynced_ids))
-except Exception as e:
-    print(f'ERROR:{e}', file=sys.stderr)
-    print('ERROR')
-    print('')
-")
+    if (context_seen && current_context == "false") {
+        if (unsynced_ids != "") unsynced_ids = unsynced_ids ","
+        unsynced_ids = unsynced_ids current_id
+    }
+}
+BEGIN {
+    in_decision = 0
+    current_id = ""
+    current_context = ""
+    context_seen = 0
+    target_result = "NOT_FOUND"
+    unsynced_ids = ""
+}
+/^- id:[[:space:]]*/ {
+    flush_decision()
+    in_decision = 1
+    current_id = $3
+    current_context = ""
+    context_seen = 0
+    next
+}
+in_decision && /^[[:space:]]+context_synced:[[:space:]]*/ {
+    current_context = $2
+    context_seen = 1
+    next
+}
+END {
+    flush_decision()
+    print target_result
+    print unsynced_ids
+}
+' "$DATA_FILE"
+)
 
 TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
-RESULT_STATUS=$(printf '%s\n' "$RESULT" | sed -n '1p')
-UNSYNCED_IDS_RAW=$(printf '%s\n' "$RESULT" | sed -n '2p')
+RESULT_STATUS="${_pd_sync_lines[0]:-ERROR}"
+UNSYNCED_IDS_RAW="${_pd_sync_lines[1]:-}"
 
 if [ -n "$UNSYNCED_IDS_RAW" ]; then
     BLOCK_MSG="$TIMESTAMP  BLOCK: context未反映PDあり: $UNSYNCED_IDS_RAW"

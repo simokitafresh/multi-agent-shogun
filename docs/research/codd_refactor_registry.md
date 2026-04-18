@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hayate | `scripts/gates/gate_report_format.sh` | Phase 5(計測+実装+検証) | `76.0ms → 71.2ms` (`-6.3%`, valid report / cache miss median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/lib/yaml_field_set.sh` | Phase 5(計測+実装+検証) | `14.9ms → 13.7ms` (`-8.1%`, `task status done` median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |
+| 2026-04-18 | hayate | `scripts/gates/gate_pd_sync.sh` | Phase 5(計測+実装+検証) | `35.3ms → 7.2ms` (`-79.6%`, synced fixture median) | after: `docs/research/cmd_2038_codd_infra_gate_batch_20260418.md` |
 | 2026-04-18 | saizo | `scripts/cmd_save.sh` | Phase 5(再改善: 計測+実装+検証) | `1.06s → 0.98s` (`-7.5%`, warm median, reproduced save path) / delegated block path `0.90s → 0.71s` | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/ninja_done.sh` | Phase 5(再改善: 計測+実装+検証) | `168ms → 80ms` (`-52.4%`, archived report success median) | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/shutsujin_departure.sh` | Phase 5(再改善: 計測+実装+検証) | `170ms → 130ms` (`-23.5%`, `--dry-run` median) | spec+after: `docs/research/cmd_2035_codd_batch_7a_20260418.md` |
