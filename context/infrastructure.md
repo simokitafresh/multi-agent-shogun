@@ -359,7 +359,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L505 -->
+<!-- last_synced_lesson: L509 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
@@ -592,6 +592,10 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L503: dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る（cmd_2081）
 - L504: WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある（cmd_2088）
 - L505: line-based YAML scanner は sibling section 間の空行を break 条件にしてはならない（cmd_karo_ci_fix_cli_lookup）
+- L506: WSL2短命YAML走査は mawk 優先が低リスクで効く（cmd_2084）
+- L507: gate_statusキャッシュはreportファイル数が安定している場合のみ有効（cmd_2085）
+- L508: WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process 2.2x改善も実測でregression（cmd_2086）
+- L509: hot-cache計測は冷却後性能を過小評価する: cold計測を必ず実施せよ（cmd_2089）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

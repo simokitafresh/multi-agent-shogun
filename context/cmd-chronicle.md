@@ -742,3 +742,6 @@
 | cmd_karo_sleep_fix | ninja_monitor.sh sleep -5エラー修正 — codex confirm_waitデフォルト値追加 | infra | 04-18 | ninja_monitor.sh L3060付近: code |
 | cmd_2088 | CoDD正規再改善 R2-A — gate_cycle_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_cycle_health.sh CoDD正規再改善 |
 | cmd_karo_ci_fix_cli_lookup | CI赤修正 — cli_lookup.sh _cli_lookup_profile_getが空行でbreak | infra | 04-18 | cli_lookup が profile間の空行で code |
+| cmd_2084 | CoDD正規再改善 R1-L — report_merge.sh(spec省略→正規CoDD再改善) | infra | 04-18 | report_merge.sh を mawk優先化し、rea |
+| cmd_2085 | CoDD正規再改善 R1-M — archive_completed.sh(spec省略→正規CoDD再改善) | infra | 04-18 | archive_completed.sh CoDD正規再改善 |
+| cmd_2086 | CoDD正規再改善 R1-N — lesson_harvest.sh(spec省略→正規CoDD再改善) | infra | 04-18 | lesson_harvest.sh CoDD正規再改善: T |
