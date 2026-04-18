@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | kagemaru | `scripts/lib/agent_config.sh` | Phase 5(計測+実装+検証) | `36ms → 14ms` (`-61%`, get_ninja_names median) | SCRIPT_DIR $(cd)→string ops+連想配列キャッシュ(echo\|awk排除)。全テストPASS。(spec省略) |
+| 2026-04-18 | kagemaru | `scripts/lib/field_get.sh` | Phase 5(計測+実装+検証) | `33ms → 12ms` (`-64%`, FIELD_GET_NO_LOG=1 median) | SCRIPT_DIR $(cd)→string ops+grep+sed\|sed→grep -m1+bash文字列演算+logサブシェル→ブロック化+date→printf -v。16/16テストPASS。(spec省略) |
+| 2026-04-18 | kagemaru | `scripts/inbox_mark_read.sh` | Phase 5(計測+実装+検証) | `34ms → 16ms` (`-53%`, early-exit path median) | SCRIPT_DIR $(cd)→string ops+python3廃止→bash+sed(mark_all)/awk(mark_specific)。7/7テストPASS。(spec省略) |
 | 2026-04-18 | hayate | `.claude/hooks/stop-lint-gate.sh` | Phase 5(再改善: 計測+実装+検証) | `650ms → 0.84s` (isolated full-repo worktree median; current repo noise isolated) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(再改善: 計測+実装+検証) | `2170ms → 1.76s` (real DB median, current data verdict=FAIL with 28 gaps) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
 | 2026-04-18 | hayate | `scripts/hooks/git-pre-commit.sh` | Phase 5(再改善: 計測+実装+検証) | `736ms → 0.16s` (current repo staged median) | after: `docs/research/cmd_2039_codd_infra_hook_gate_batch_20260418.md` |
