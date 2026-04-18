@@ -9,7 +9,11 @@ HOOK_PAYLOAD="$(cat 2>/dev/null || true)"
 # Early exit for empty payload
 [ -n "$HOOK_PAYLOAD" ] || exit 0
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshells (~5ms savings on WSL2)
+_ltr_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_ltr_self" != /* ]] && _ltr_self="$PWD/$_ltr_self"
+SCRIPT_DIR="${_ltr_self%/scripts/log_terminal_response.sh}"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"

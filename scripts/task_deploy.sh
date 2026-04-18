@@ -6,7 +6,10 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshells (~5ms savings on WSL2)
+_td_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_td_self" != /* ]] && _td_self="$PWD/$_td_self"
+SCRIPT_DIR="${_td_self%/scripts/task_deploy.sh}"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 
 CMD_ID="$1"
@@ -15,15 +18,14 @@ TASK_TYPE="$2"
 write_gate_flag() {
     local cmd_id="$1" gate_name="$2" result="$3" reason="$4"
     local gates_dir="$SCRIPT_DIR/queue/gates"
-    mkdir -p "$gates_dir"
+    # printf -v builtin avoids spawning date; [[ -d ]] skip avoids mkdir when exists
+    local _ts
+    printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
+    [[ -d "$gates_dir" ]] || mkdir -p "$gates_dir"
     local flag_file="$gates_dir/${cmd_id}_${gate_name}.${result}"
-    cat > "$flag_file" <<EOF2
-timestamp: $(date +%Y-%m-%dT%H:%M:%S)
-cmd_id: $cmd_id
-gate_name: $gate_name
-result: $result
-reason: "$reason"
-EOF2
+    # printf builtin avoids forking cat for heredoc write
+    printf 'timestamp: %s\ncmd_id: %s\ngate_name: %s\nresult: %s\nreason: "%s"\n' \
+        "$_ts" "$cmd_id" "$gate_name" "$result" "$reason" > "$flag_file"
 }
 
 # Validate arguments

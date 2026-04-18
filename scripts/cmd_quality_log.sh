@@ -9,8 +9,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshells (~5ms savings on WSL2)
+_cql_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_cql_self" != /* ]] && _cql_self="$PWD/$_cql_self"
+SCRIPT_DIR="${_cql_self%/*}"
+REPO_ROOT="${SCRIPT_DIR%/scripts}"
 LOG_FILE="${CMD_QUALITY_LOG_FILE:-$REPO_ROOT/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/cmd_design_quality.lock"
 SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"

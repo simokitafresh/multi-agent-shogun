@@ -75,18 +75,9 @@ check_hardcodes() {
     # 全パターンを単一正規表現に結合（11grep→1grep。WSL2 I/O 11x削減）
     local combined_pattern="(is_codex|gpt-5\.|claude-(opus|sonnet|haiku)-[0-9]${_agent_patterns})"
 
-    # 検索対象ディレクトリ
-    local search_dirs=(
-        "$SCRIPT_DIR/scripts/"
-        "$SCRIPT_DIR/instructions/"
-        "$SCRIPT_DIR/config/"
-        "$SCRIPT_DIR/context/"
-    )
-
     local found
-    found=$(grep -Ern \
-        --include='*.sh' --include='*.yaml' --include='*.md' \
-        "$combined_pattern" "${search_dirs[@]}" 2>/dev/null \
+    found=$(git -C "$SCRIPT_DIR" grep -nI -E \
+        "$combined_pattern" -- scripts/ instructions/ config/ context/ 2>/dev/null \
         | grep -Ev "$exclude_filter" || true)
 
     if [[ -z "$found" ]]; then

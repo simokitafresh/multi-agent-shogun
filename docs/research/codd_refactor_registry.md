@@ -7,6 +7,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-18 | saizo | `scripts/gates/mark_no_learning.sh` | Phase 5(計測+実装+検証) | `30.9ms → 27.2ms` (`-12.0%`, temp workdir median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
 | 2026-04-18 | saizo | `scripts/log_terminal_input.sh` | Phase 5(計測+実装+検証) | `109.7ms → 83.9ms` (`-23.5%`, shogun tmux stub median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
 | 2026-04-18 | saizo | `scripts/statusline.sh` | Phase 5(計測+実装+検証) | `27.8ms → 25.4ms` (`-8.6%`, tmux stub median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
+| 2026-04-18 | kotaro | `scripts/cmd_quality_log.sh` | Phase 5(計測+実装+検証) | `26ms → 11ms` (`-58%`, usage-exit path median) | SCRIPT_DIR $(cd)×5→string ops。usage-exit 9ms→4ms実測(-56%)。全テストPASS。(spec省略) |
+| 2026-04-18 | kotaro | `scripts/task_deploy.sh` | Phase 5(計測+実装+検証) | `17ms → 8ms` (`-53%`, non-recon path median) | SCRIPT_DIR $(cd)×3→string ops+printf -v date builtin+[[ -d ]]||mkdir+cat heredoc→printf builtin。16ms→8ms実測(-50%)。全テストPASS。(spec省略) |
+| 2026-04-18 | kotaro | `scripts/log_terminal_response.sh` | Phase 5(計測+実装+検証) | `43ms → 38ms` (`-12%`, shogun+payload path SCRIPT_DIR cost推定) | SCRIPT_DIR $(cd)×3→string ops。早期exitパスは未変化(tmuxコスト支配)。全テストPASS。(spec省略) |
 | 2026-04-18 | saizo | `scripts/lib/cli_lookup.sh` | Phase 5(計測+実装+検証) | `113.6ms → 44.8ms` (`-60.6%`, fresh `bash -lc` median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/cmd_delegate.sh` | Phase 5(計測+実装+検証) | `93.8ms → 59.7ms` (`-36.4%`, temp fixture median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/gate_ninja_workaround_rate.sh` | Phase 5(計測+実装+検証) | `146.2ms → 38.8ms` (`-73.5%`, cold cache median) | spec+after: `docs/research/cmd_2041_codd_infra_batch_10a_20260418.md` |
