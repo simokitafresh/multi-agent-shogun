@@ -130,6 +130,10 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-16 | kotaro | `outputs/scripts/l1_alm_wf_engine.py` | Phase 5(計測+実装+検証)。spec先行作成 | main `0.801s → 0.527s` (`-34%`) / `reconstruct_alm_returns` `0.349s → 0.067s` (`-81%`, `5.2x`) / `_compute_metric_values_for_pattern` `0.276s → 0.264s` (`-4%`) / subset 2col全体 `0.63s → 0.35s` (`-44%`). 出力同一性diff PASS。codd measure 0/100(outputs/scripts=standalone, codd.yaml対象外) | spec: `docs/research/cmd_1991_l1_alm_wf_refactor_spec.md` |
 | 2026-04-16 | hanzo | `scripts/analysis/grid_search/run_077_oikaze.py` | Phase 5(計測+実装+検証) | `simulate_pattern` `4.648s → 0.032s` (`-99.3%`, 100pat hot path) / import bootstrap `-100%` / `numpy.isclose` `-100%` / SHA256同一性一致 / 28116pat全走PASS | spec: `docs/research/codd_spec_cmd_1990_run_077_oikaze_20260416.md` |
 
+| 2026-04-18 | kotaro | `.claude/hooks/stop-lint-gate.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `5149ms → 61ms` (`-99%`, `84x`) | git ls-files -m (全tracked file mtime照合 870-1500ms)廃止→staged-only (git diff-index --cached)。前回shebang変更→今回git操作変更。63/63テストPASS。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
+| 2026-04-18 | kotaro | `scripts/hooks/stop_check_inbox.sh` | Phase 5(計測+実装+検証)。spec先行作成 | `37ms → 14ms` (`-62%`, `2.6x`) | jq -e .(validation)+jq -r(stop_hook_active)→bash文字列マッチ2本。jq1本残存(last_assistant_message)。初回改善。63/63テストPASS。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
+| 2026-04-18 | kotaro | `scripts/gates/gate_karo_startup.sh` | Phase 5(実装→regression revert) | `110ms → 131ms cache hit` (REGRESSION) | WA rateキャッシュ(TTL 300s)実装→cache hit 131ms > before 110ms。真因: _META_PIDS awk(deepdive files on /mnt/c/)が~100ms支配→WA rate廃止してもボトルネック不変。revert済み。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
+
 ## 運用
 
 - CoDD系リファクタリングを完了したら、この台帳に1行追加する。

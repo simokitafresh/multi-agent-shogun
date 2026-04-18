@@ -431,3 +431,9 @@
   defense_level: 5
   reason: "bulletin_notifyが80文字要約→将軍が掲示板を読みに行かない→内容が届かない。通知≠閲読。読む行動の強制は新しい仕組みでなく、既に強制されている行動(inbox処理)に全文を含めることで達成。Phase 4「自動化×強制」の正しい適用: 新しい行動を強制するのではなく、既存の強制された行動に乗せる"
   evidence: "bulletin_write.sh L144 SUMMARY削除→CONTENT全文をinbox_writeに渡す"
+- id: GP-209
+  description: "cmd_complete_gate.shのreview_feedback送信前にdedup check追加(同一cmd+同一result存在時skip)"
+  status: completed
+  defense_level: 4
+  impl_details: "cmd_complete_gate.sh L3791,L4234の2箇所にgrep -qでinbox dedup条件追加。S0セルフレビュー全PASS"
+  completed_at: "2026-04-18T18:20:00"

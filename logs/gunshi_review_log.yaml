@@ -2587,7 +2587,7 @@
   report_ninja: kotaro
   report_task_id: cmd_karo_ci_fix_2066_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。CI RED 6件修正(4カテゴリ)。lesson_candidate有(set-e耐性)。CI実行中"
   observations:
     - "事実1: 私が報告した5テスト(#26-28,#303,#536)全てカバー+#921追加=6件修正"
@@ -2715,3 +2715,200 @@
   gate_prediction: CLEAR
   causal_chain: "verdict二値→全revertでもPASS→不正確シグナル。PASS_NO_IMPROVEMENT導入+下流対応→正確なverdict=正の複利"
   timestamp: "2026-04-18T17:02:00"
+- cmd_id: cmd_2073
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "3本は休眠ファイル(settings.json未登録)。本番ホットパスはpre-bash-combined.sh。対象をcombined内Guard改善に修正、またはcombinedへの反映ACが必要"
+  observations:
+    - "事実1: settings.jsonのBash PreToolUseはpre-bash-combined.shのみ登録。yaml-dump-guard/no-verify-guard/block_destructiveは独立フックとして未登録"
+    - "事実2: pre-bash-combined.sh(345行)にGuard 1(no-verify),Guard 4(block_destructive),Guard 8(yaml-dump)として統合済み。個別ファイルはdeadcode"
+    - "事実3: scripts/lib/pre_bash_combined_guard.sh(untracked,13670bytes)が共有evaluatorとして存在。combined.shはこれをsourceしていない"
+  causal_chain: "cmd_1661で4hook→1combined統合→個別ファイル休眠→cmd_2073が休眠ファイルを改善対象と指定→改善がdeadcodeに留まる×10回=負の複利(effort浪費)"
+  timestamp: "2026-04-18T17:58:00"
+- cmd_id: cmd_karo_ci_fix_2066
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_karo_ci_fix_2066_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI RED 6件修正(4カテゴリ)。set-e耐性lesson有。WA=0"
+  observations:
+    - "事実1: gate_report_format.shのPASS検出がcase文→grep -qxに変更。AUTO-FIXED出力順序に依存しない検出に改善"
+    - "事実2: yaml_field_set.shのset-e耐性付与(rc=0;cmd||rc=$?)。3段階fallback(map_scalar→list→root)がset -euo pipefailで中断する問題を解消"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "WARN(draft_lessons BLOCKリスク — lesson_candidate有)"
+  causal_chain: "CoDD改善バッチ→関数シグネチャ/出力変更→テスト未追従5件+set-e耐性問題1件→CI RED。修正→CI GREEN=負の複利停止。set-e耐性パターンは他スクリプトにも適用可能=正の複利"
+  timestamp: "2026-04-18T18:02:00"
+- cmd_id: GP-209_dedup_feedback
+  review_type: self_study
+  verdict: null
+  findings_summary: "cmd_complete_gate.shのreview_feedback送信にdedup保護がない。6通重複BLOCK蓄積を確認。殿指摘により発見"
+  observations:
+    - "事実1: cmd_karo_ci_fix_571でBLOCK feedback 6通+CLEAR 1通=計7通。うち6通は同一内容の重複"
+    - "事実2: cmd_complete_gate.sh L4234にdedup条件なし。毎回inbox_write実行"
+    - "事実3: stop_check_inbox.shが5件重複検出→stop hook blocking errorとして殿に表示"
+  proposals:
+    - id: GP-209
+      description: "cmd_complete_gate.sh feedback送信前にinbox dedup check追加(同一cmd+同一result存在時skip)"
+      status: pending
+      defense_level: 4
+  causal_chain: "gate BLOCK→家老修正→gate再実行→feedback重複送信×N→inbox肥大化→stop_hook誤発火→殿のCTX消費。dedup追加で重複=0=正の複利"
+  timestamp: "2026-04-18T18:08:00"
+- cmd_id: cmd_karo_ci_fix_568
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_ci_fix_568_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。test #568はcmd_2041(awk変換)で修正済み。新規コード変更なし。lesson有(tmpキャッシュ並列リスク)"
+  observations:
+    - "事実1: tobisaruは新規commitなし。cmd_2041のawk変換(commit 123a340)が根因修正。ローカル5/5+CI PASSで確認"
+    - "事実2: lesson_candidate(tmpキャッシュ並列リスク)はbats --jobs環境での/tmp globパターン衝突。具体的で再利用可能"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "cmd_2041 Python→awk変換→test環境差異解消→CI GREEN回復。tmpキャッシュ並列問題はbats --jobsスケール時の潜在リスク"
+  timestamp: "2026-04-18T18:12:00"
+- cmd_id: cmd_2074
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "3本中2本(shellcheck/instruction-consistency)がpost-write-edit-combined.sh Guard 2/3に統合済みで休眠。cmd_2073と同一パターン再発。(1)post-shogun-inbox-checkのみ独立。(2)(3)はcombined内Guard改善に変更が必要"
+  observations:
+    - "事実1: settings.json PostToolUseにpost-shogun-inbox-check(matcher=ALL)のみ直接登録。shellcheck/instruction-consistencyは未登録"
+    - "事実2: post-write-edit-combined.sh(194行)のGuard 2=shellcheck、Guard 3=instruction-consistency。個別ファイルはsource/callされていない"
+    - "事実3: combined.shのL2にコメント明記: 'Combined Write/Edit PostToolUse guard: shellcheck + report-guard + instruction-consistency'"
+  causal_chain: "cmd_1661統合→個別ファイル休眠→cmd_2074が再び休眠ファイルを改善対象と指定。cmd_2073で発覚した同一パターンが繰り返し=将軍のcmd起票時のhook登録確認が未自動化(根因)"
+  timestamp: "2026-04-18T18:15:00"
+- cmd_id: cmd_2075
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。3本全てsettings.json直接登録確認(休眠問題なし)。前回revert原因明記+別アプローチ方針+Session State参照。cmd_2073教訓を反映した良いcmd"
+  observations:
+    - "事実1: pre-bash-combined(PreToolUse Bash)、post-bash-combined(PostToolUse Bash)、post-search-completeness-guard(PostToolUse Grep|Glob)全てsettings.json直接登録"
+    - "事実2: cmd_2073/2074教訓を反映しassumptions trust:verified+source明記。before実測値も記載。将軍の学習ループが回っている証拠"
+  causal_chain: "前回revert(cat→IFS read悪化)→原因特定→別アプローチで再挑戦→Session State参照で同手法繰返し防止=正の複利(失敗から学び成長)"
+  timestamp: "2026-04-18T18:22:00"
+- cmd_id: cmd_2076
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。3本全てアクティブ確認(Stop hook 2本+startup gate 1本)。前回revert原因明記+別アプローチ要求。gate_karo 138msが最大改善ターゲット"
+  observations:
+    - "事実1: stop-lint-gate.sh, stop_check_inbox.shはsettings.json Stop hook登録確認。gate_karo_startup.shは実在+CLAUDE.md Step 2.85呼出し"
+    - "事実2: cmd_2073/2074教訓を反映しq7にhook設定登録確認を明記。assumptions trust:verified。将軍の学習ループ3連続回転"
+  causal_chain: "前回revert(shebang変更悪化/python3→awk限界)→原因特定→別アプローチ再挑戦+未改善hook初回→Session State参照=正の複利"
+  timestamp: "2026-04-18T18:27:00"
+- cmd_id: cmd_2077
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.sh 2202行の正規CoDD再改善。CLI直接実行で休眠問題なし。321ms→200ms目標。前回spec省略の是正"
+  observations:
+    - "事実1: cmd_save.shは将軍のcmd起票手順(shogun.md Step 2)で毎回呼出し。hook設定ではなくCLI直接実行"
+    - "事実2: 改善履歴4.02s→650ms→321ms。正規CoDDでspec先行にすることで恒久的ボトルネック可視化"
+  causal_chain: "spec省略改善(4.02s→650ms→321ms)→正規CoDDでspec先行→ボトルネック上位3箇所特定→321ms→200ms=正の複利(将軍の全cmd起票が高速化)"
+  timestamp: "2026-04-18T18:32:00"
+- cmd_id: cmd_2075
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2075_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。pre-bash -30%/-29%、post-bash test path -77%、search-guard PASS_NO_IMPROVEMENT。lesson有(bats skip形式)"
+  observations:
+    - "事実1: pre-bash-combined改善: jq→awk char-by-char置換でguard 10→7ms(-30%)、hot 45→32ms(-29%)。前回IFS readとは別アプローチ"
+    - "事実2: post-bash-combined改善: Guard 1にbash文字列マッチ事前チェック追加。fail/skip文字列なし→python3スキップ。test path 35→8ms(-77%)"
+    - "事実3: search-guard: 12行echoのみでbash起動コスト支配。PASS_NO_IMPROVEMENT報告は妥当"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "WARN(draft_lessons BLOCKリスク — lesson_candidate有)"
+  causal_chain: "前回IFS read悪化→別アプローチ(jq→awk/事前チェック)→30-77%改善=正の複利。search-guard物理限界到達→PASS_NO_IMPROVEMENT=正しい判断"
+  timestamp: "2026-04-18T18:35:00"
+- cmd_id: cmd_2078
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。deploy_task.sh 3999行の正規CoDD再改善。CLI直接実行。78ms→50ms目標。前回spec省略の是正"
+  observations:
+    - "事実1: deploy_task.shは家老配備手順で毎回呼出し。改善履歴2639ms→88ms→78ms"
+    - "事実2: cmd_2077(cmd_save.sh)と同一パターン(1cmd1スクリプト、CLI直接実行、spec省略→正規CoDD)。将軍のcmd品質が安定"
+  causal_chain: "spec省略改善(2639ms→88ms→78ms)→正規CoDDでspec先行→ボトルネック可視化→78ms→50ms=正の複利(家老の全配備が高速化)"
+  timestamp: "2026-04-18T18:38:00"
+- cmd_id: cmd_karo_ci_fix_ssh_sl
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_ssh_sl_impl
+  report_verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "FAIL 3件: (1)verdict:PASS+bc:no矛盾(LG006) (2)ac_version不一致(GATE BLOCK確実) (3)AC4 bc欠落"
+  observations:
+    - "事実1: binary_checks AC3/commit+push=no, commit=no。verdict:PASSは矛盾。忍者自身がdetailsで'push未実施''commit未達'と記載"
+    - "事実2: ac_version task=a8158d1c report=5422cf2a。不一致→GATE BLOCK確実(PRE10)"
+    - "事実3: task ACは4件(AC1-AC4)だが報告binary_checksは3セクション(AC1-AC3)。AC4(テスト全PASS+台帳+commit+push)のbc欠落"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  causal_chain: "CI修正自体は正しい(execute bit欠落特定)→しかしcommit+push未完了のまま報告→verdict:PASSと矛盾→GATE BLOCK×2(verdict+ac_version)"
+  timestamp: "2026-04-18T18:45:00"
+- cmd_id: cmd_2079
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。shutsujin_departure.sh 232行の正規CoDD再改善。CLI直接実行。87ms→50ms目標。tmux呼出し支配的"
+  observations:
+    - "事実1: 配備フロー(karo.md)から直接呼出し。改善履歴2.4s→60ms→87ms(現在値が前回改善後より微増)"
+    - "事実2: cmd_2077/2078/2079と同一パターン安定。将軍のcmd品質が恒常化"
+  causal_chain: "spec省略改善(2.4s→60ms→87ms)→正規CoDDでspec先行→tmuxボトルネック特定→87ms→50ms=正の複利"
+  timestamp: "2026-04-18T18:47:00"
+- cmd_id: cmd_2079
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2079_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。130ms→40ms(-69%)達成。verdict:FAILは正直(bc:no commit+push)。ac_version不一致→GATE BLOCK"
+  observations:
+    - "事実1: dry-run hot path 0.13s→0.04s(-69.2%)。source群遅延+healthy fast-path省略。目標50ms達成"
+    - "事実2: 前回(cmd_karo_ci_fix_ssh_sl)でverdict:PASS+bc:no矛盾→今回はverdict:FAILに修正。疾風の学習ループが回っている"
+    - "事実3: ac_version不一致(task=1c3f86c1 report=a8158d1c)。GATE BLOCK確実"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "BLOCK(ac_version不一致+commit/push未完了+draft_lessons)"
+  causal_chain: "source群+再検査が支配的→dry-run遅延+fast-path→69%改善=正の複利。ac_version不一致は家老のtask更新タイミング問題"
+  timestamp: "2026-04-18T18:54:00"
+- cmd_id: cmd_2080
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。inbox_write.sh 1229行。8ms(既に高速)の正規CoDD再改善。profiling最多312回/日"
+  observations:
+    - "事実1: profiling doc 312回/日=最高頻度。改善履歴89ms→16ms→8ms。1ms削減でも日次数百秒の複利"
+    - "事実2: 8msは物理限界に近い可能性。PASS_NO_IMPROVEMENTも想定内(AC3で報告規定)"
+  causal_chain: "最高頻度スクリプト→正規CoDDでspec先行→ボトルネック可視化→改善or物理限界確認=正の複利(知見蓄積)"
+  timestamp: "2026-04-18T18:57:00"
+- cmd_id: cmd_2077
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2077_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_save.sh 913ms→624ms(-31.7%)。3Fix(git status代替/infra early return/subshellインライン)。bats 112件PASS"
+  observations:
+    - "事実1: git diff-files(300-500ms)→git status --porcelain=v2(23-74ms)で最大改善。WSL2 NTFS stat()コストが根因"
+    - "事実2: 目標200ms未達だがWSL2 NTFS変動±200ms考慮で統計的に有意な改善と判断。追加改善は別cmdで継続"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "WARN(draft_lessons BLOCKリスク — lesson_candidate有)"
+  causal_chain: "git diff-files全tracked stat()→WSL2 NTFSで300-500ms→git status porcelain=v2(mtime cache活用)→23-74ms=正の複利(将軍全cmd起票高速化)"
+  timestamp: "2026-04-18T19:08:00"

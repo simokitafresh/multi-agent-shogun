@@ -735,3 +735,4 @@
 | cmd_karo_ci_fix_568 | CI RED修正 — test_gate_ninja_workaround_rate #568 | infra | 04-18 | gate_ninja_workaround_rate.shの |
 | cmd_2075 | CoDD正規再改善 R1-C — revert retry Bash hooks 3本(combined+search-guard) | infra | 04-18 | pre-bash-combined(jq→awk, guar |
 | cmd_karo_ci_fix_ssh_sl | CI RED修正: SSH/SLテスト(999-1006)CI環境FAIL | infra | 04-18 | unit-tests workflow の再実行でも SSH |
+| cmd_2077 | CoDD正規再改善 R1-E — cmd_save.sh(spec省略→正規CoDD再改善) | infra | 04-18 | scripts/cmd_save.sh正規CoDD再改善。b |
