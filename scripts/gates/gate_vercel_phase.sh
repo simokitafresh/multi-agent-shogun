@@ -29,6 +29,7 @@ ANY_EXTERNAL_EXISTS=false
 
 # cmd_1976最適化: RESOLVE_BASES配列を事前構築しprocess substitutionを排除
 declare -a RESOLVE_BASES=()
+declare -A FILE_CACHE=()
 
 load_external_repos() {
     # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
@@ -46,8 +47,6 @@ is_glob_ref() {
     local ref="$1"
     [[ "$ref" == *"*"* || "$ref" == *"?"* || "$ref" == *"["* ]]
 }
-
-declare -A FILE_CACHE=()
 
 build_file_cache() {
     local filepath base
@@ -69,60 +68,44 @@ ref_exists_in_base() {
     fi
 }
 
-check_context_file() {
+check_ref_record() {
     local context_file="$1"
+    local line_no="$2"
+    local raw_ref="$3"
     # cmd_1976最適化: display_path subshell排除 → bash文字列演算でインライン化
     local file_display="${context_file#"$SCRIPT_DIR"/}"
 
-    while IFS=$'\t' read -r line_no raw_ref; do
-        [ -n "$raw_ref" ] || continue
+    [ -n "$raw_ref" ] || return 0
 
-        # cmd_1976最適化: normalize_ref(sed×268回)排除
-        # awk正規表現 [a-zA-Z0-9_./*-]+ は|§`'"'"'"),.:;を含まないためnormalize_refはno-op
-        # [[ ref == docs/research/* ]] も常にtrue(awk出力はdocs/research/始まり)→省略
-        local ref="$raw_ref"
-        local key="${context_file}|${ref}"
-        if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
-            continue
+    # cmd_1976最適化: normalize_ref(sed×268回)排除
+    local ref="$raw_ref"
+    local key="${context_file}|${ref}"
+    if [[ -n "${SEEN_REFS[$key]:-}" ]]; then
+        return 0
+    fi
+    SEEN_REFS["$key"]=1
+    # shellcheck disable=SC2034
+    FIRST_ORIGIN["$key"]="${file_display}:${line_no}"
+    TOTAL_REFS=$((TOTAL_REFS + 1))
+
+    local found=false
+    local base_dir
+    for base_dir in "${RESOLVE_BASES[@]}"; do
+        [ -n "$base_dir" ] || continue
+        if ref_exists_in_base "$base_dir" "$ref"; then
+            found=true
+            break
         fi
-        SEEN_REFS["$key"]=1
-        # shellcheck disable=SC2034
-        FIRST_ORIGIN["$key"]="${file_display}:${line_no}"
-        TOTAL_REFS=$((TOTAL_REFS + 1))
+    done
 
-        local found=false
-        # cmd_1976最適化: process substitution排除 → RESOLVE_BASES配列を直接参照
-        local base_dir
-        for base_dir in "${RESOLVE_BASES[@]}"; do
-            [ -n "$base_dir" ] || continue
-            if ref_exists_in_base "$base_dir" "$ref"; then
-                found=true
-                break
-            fi
-        done
-
-        if [ "$found" = false ]; then
-            # 外部リポが存在しない環境では外部リポ参照をスキップ（偽陽性防止）
-            # 外部リポが存在する環境で見つからない場合のみFAIL（本物のリンク切れ）
-            if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
-                TOTAL_REFS=$((TOTAL_REFS - 1))
-                continue
-            fi
-            BROKEN_REFS=$((BROKEN_REFS + 1))
-            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
+    if [ "$found" = false ]; then
+        if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
+            TOTAL_REFS=$((TOTAL_REFS - 1))
+            return 0
         fi
-    done < <(
-        awk '
-            {
-                s = $0
-                while (match(s, /docs\/research\/[a-zA-Z0-9_./*-]+/)) {
-                    ref = substr(s, RSTART, RLENGTH)
-                    printf "%d\t%s\n", NR, ref
-                    s = substr(s, RSTART + RLENGTH)
-                }
-            }
-        ' "$context_file"
-    )
+        BROKEN_REFS=$((BROKEN_REFS + 1))
+        BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
+    fi
 }
 
 collect_context_files() {
@@ -158,18 +141,29 @@ main() {
     done
 
     build_file_cache
-    local context_file
-    local scanned=0
-    while IFS= read -r context_file; do
-        [ -n "$context_file" ] || continue
-        scanned=$((scanned + 1))
-        check_context_file "$context_file"
-    done < <(collect_context_files "$@")
+
+    local -a context_files=()
+    mapfile -t context_files < <(collect_context_files "$@")
+    local scanned="${#context_files[@]}"
 
     if [ "$scanned" -eq 0 ]; then
         echo "[ALERT] gate_vercel_phase: 0 context files scanned"
         return 1
     fi
+
+    while IFS=$'\t' read -r context_file line_no raw_ref; do
+        [ -n "$context_file" ] || continue
+        check_ref_record "$context_file" "$line_no" "$raw_ref"
+    done < <(
+        rg -n -o --with-filename --no-heading 'docs/research/[A-Za-z0-9_./*-]+' "${context_files[@]}" 2>/dev/null \
+            | awk -F: '{
+                file = $1
+                line = $2
+                ref = $0
+                sub(/^[^:]+:[0-9]+:/, "", ref)
+                printf "%s\t%s\t%s\n", file, line, ref
+            }'
+    )
 
     if [ "$BROKEN_REFS" -eq 0 ]; then
         echo "[OK] gate_vercel_phase: ${TOTAL_REFS} refs checked, all exist"
