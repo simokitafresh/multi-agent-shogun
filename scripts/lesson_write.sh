@@ -1,7 +1,7 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
 # Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--if "condition"] [--then "action"] [--because "reason"]
-# Tags: --tags "tag1,tag2" (explicit) or auto-inferred from title/detail. Default: universal
+# Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
 
@@ -91,6 +91,81 @@ resolve_project_field() {
 # Backward-compat wrapper
 resolve_project_path() {
     resolve_project_field "$1" "path"
+}
+
+resolve_cmd_project() {
+    local cmd_id="$1"
+    [ -z "$cmd_id" ] && return 0
+
+    CMD_ID_ENV="$cmd_id" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 <<'PY'
+import glob
+import os
+import sys
+import yaml
+
+cmd_id = os.environ.get("CMD_ID_ENV", "").strip()
+script_dir = os.environ.get("SCRIPT_DIR_ENV", "").strip()
+
+if not cmd_id or not script_dir:
+    raise SystemExit(0)
+
+def load_yaml(path):
+    try:
+        with open(path, encoding='utf-8') as fh:
+            return yaml.safe_load(fh) or {}
+    except Exception:
+        return {}
+
+def print_project(entry):
+    if not isinstance(entry, dict):
+        return False
+    project = str(entry.get('project', '') or '').strip()
+    if not project:
+        return False
+    print(project)
+    return True
+
+stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+stk_data = load_yaml(stk)
+commands = stk_data.get('commands', {})
+if isinstance(commands, dict) and print_project(commands.get(cmd_id, {})):
+    raise SystemExit(0)
+
+archive_dir = os.path.join(script_dir, 'queue', 'archive', 'cmds')
+for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{cmd_id}_*.yaml')), reverse=True):
+    data = load_yaml(cpath)
+    commands = data.get('commands', {})
+    if isinstance(commands, dict) and print_project(commands.get(cmd_id, {})):
+        raise SystemExit(0)
+    if isinstance(commands, list):
+        for cmd in commands:
+            if str(cmd.get('id', '') or '').strip() == cmd_id and print_project(cmd):
+                raise SystemExit(0)
+PY
+}
+
+infer_default_project_tag() {
+    local inferred_cmd=""
+    local inferred_project=""
+
+    if [[ "${CMD_ID:-}" == cmd_* ]]; then
+        inferred_cmd="$CMD_ID"
+    elif [[ "${SOURCE_CMD:-}" == cmd_* ]]; then
+        inferred_cmd="$SOURCE_CMD"
+    fi
+
+    if [ -n "$inferred_cmd" ]; then
+        inferred_project="$(resolve_cmd_project "$inferred_cmd")"
+    fi
+
+    if [ -z "$inferred_project" ] && [ -n "$PROJECT_ID" ]; then
+        load_project_metadata "$PROJECT_ID"
+        if [ -n "$PROJECT_META_PATH" ]; then
+            inferred_project="$PROJECT_ID"
+        fi
+    fi
+
+    printf '%s\n' "$inferred_project"
 }
 
 warn_similar_title() {
@@ -516,7 +591,12 @@ while [ $attempt -lt $max_attempts ]; do
             done
             _lw_tags_yaml+="]"
         else
-            _lw_tags_yaml="[universal]"
+            _lw_default_tag="$(infer_default_project_tag)"
+            if [ -n "$_lw_default_tag" ]; then
+                _lw_tags_yaml="[${_lw_default_tag}]"
+            else
+                _lw_tags_yaml="[universal]"
+            fi
         fi
 
         # Build and append new entry
