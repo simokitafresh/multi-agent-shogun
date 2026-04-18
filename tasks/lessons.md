@@ -3906,3 +3906,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 11に自動計測埋込み済み
+
+### L511: WSL2 NTFS: BEGIN getline from tac+early-breakが1-pass全量awk比較で-86%
+- **日付**: 2026-04-18
+- **出典**: cmd_2092
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [universal]
+- gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1 awkに留めること
