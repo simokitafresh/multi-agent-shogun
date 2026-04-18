@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | kagemaru | `scripts/archive_completed.sh` | Phase 5(再改善: 計測+実装+検証) | `783ms → ~550ms` (`-30%`, keep=100 median) | GP-XXX2: 内部ループper-file `[ -f ]`+`_preflight_gate_cmds`チェック(O(n)) → 事前スキャン済み`_gate_status`連想配列のcaseステートメントO(1)参照に置換。11/11テストPASS。(spec省略) |
+| 2026-04-18 | kagemaru | `scripts/report_merge.sh` | Phase 5(再改善: 計測+実装+検証) | `76ms → ~23ms` (`-70%`, cmd_2044 median) | GP-XXX3: SCRIPT_DIR `$(cd dirname pwd)`→bash文字列演算+`cat <<EOF $(date)EOF`×2→`printf -v _ts builtin`+`printf`。subshell 4個排除。(spec省略) |
+| 2026-04-18 | kagemaru | `scripts/parity_check.sh` | Phase 5(再改善: 計測+実装+検証) | `20ms → ~5ms` (`-75%`, `--help` path median) | GP-XXX4: 小関数定義直後に`PARITY_CHECK_LIB_ONLY`ガード付き早期終了追加(Python heredoc 300行の定義前に`--help`/no-argsを処理)。3/3テストPASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(再々改善: 計測+実装+検証) | `1.76s → ~1.75s` (bash subshell削減: `$(date +%s)`×2→`printf -v`builtin、`$(dirname)`→string ops。DB接続時間支配のため効果限定的) | 5/5テストPASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/lesson_write.sh` | Phase 5(再改善: 計測+実装+検証) | `113ms → ~60ms` (`-47%`, first-write fixture median) | SCRIPT_DIR文字列演算化+warn_similar_title bash事前チェック(ASCII<3トークンでpython3スキップ)。22/22テストPASS。(spec省略) |
 | 2026-04-18 | hanzo | `scripts/shutsujin_departure.sh` | Phase 5(再々改善: 計測+実装+検証) | `130ms → ~60ms` (`-54%`, `--dry-run` median、cli_lookup.sh改善波及含む) | SCRIPT_DIR文字列演算化+layout_is_normalized結果キャッシュ(既正規化時の二重tmux呼び出し回避)。(spec省略) |
