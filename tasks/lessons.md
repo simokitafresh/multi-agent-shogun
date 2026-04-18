@@ -3779,3 +3779,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~400ms以上費やすため全体スクリプト(578ms→576ms)の改善は誤差範囲。高コストなブロック解析をawk化すれば大幅改善が見込める。
+
+### L495: SCRIPT_DIR/SELF_SCRIPT_PATH string ops化パターン
+- **日付**: 2026-04-18
+- **出典**: cmd_2064
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [universal]
+- report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname/cd+pwd/basename)を使っていた。string ops置換パターン: _self=BASH_SOURCE[0]; not_abs→PWD prefix追加; SCRIPT_DIR=strip /scripts/xxx.sh suffix。SELF_SCRIPT_PATH 3 subshells 3.1ms/call削減、SCRIPT_DIR fallback 1.85ms/call削減。WSL2で固定パスの既知スクリプトに有効。
