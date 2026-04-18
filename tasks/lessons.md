@@ -3787,3 +3787,11 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname/cd+pwd/basename)を使っていた。string ops置換パターン: _self=BASH_SOURCE[0]; not_abs→PWD prefix追加; SCRIPT_DIR=strip /scripts/xxx.sh suffix。SELF_SCRIPT_PATH 3 subshells 3.1ms/call削減、SCRIPT_DIR fallback 1.85ms/call削減。WSL2で固定パスの既知スクリプトに有効。
+
+### L496: gate_report_format.sh は/mnt/c実env では148ms(参照値71msの2倍超): /tmp計測は実運用を反映しない
+- **日付**: 2026-04-18
+- **出典**: cmd_2063
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [universal]
+- cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows FSオーバーヘッドがpython3プロセス起動コストを倍増させる。コスト削減はプロセス数削減で初めて実効性を持つ。
