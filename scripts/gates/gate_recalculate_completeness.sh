@@ -52,7 +52,7 @@ read_cached_hostaddr() {
     [[ -f "$cache_file" ]] || return 1
 
     local now epoch_age cache_host cache_ip cache_epoch
-    now=$(date +%s)
+    printf -v now '%(%s)T' -1
     IFS='|' read -r cache_host cache_ip cache_epoch < "$cache_file" || return 1
     [[ "$cache_host" == "$expected_host" ]] || return 1
     [[ "$cache_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
@@ -68,8 +68,10 @@ write_cached_hostaddr() {
     local cache_file="${1:?cache file is required}"
     local host="${2:?host is required}"
     local ip="${3:?ip is required}"
-    mkdir -p "$(dirname "$cache_file")"
-    printf '%s|%s|%s\n' "$host" "$ip" "$(date +%s)" > "$cache_file"
+    local _now
+    printf -v _now '%(%s)T' -1
+    mkdir -p "${cache_file%/*}"
+    printf '%s|%s|%s\n' "$host" "$ip" "$_now" > "$cache_file"
 }
 
 resolve_hostaddr() {

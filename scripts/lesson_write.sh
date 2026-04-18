@@ -7,7 +7,14 @@
 
 set -e
 
-SCRIPT_DIR="${LESSON_WRITE_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+if [ -n "${LESSON_WRITE_SCRIPT_DIR:-}" ]; then
+    SCRIPT_DIR="$LESSON_WRITE_SCRIPT_DIR"
+else
+    _self="${BASH_SOURCE[0]}"
+    _self_dir="${_self%/*}"
+    [[ "$_self_dir" != /* ]] && _self_dir="$(cd "$_self_dir" && pwd)"
+    SCRIPT_DIR="${_self_dir%/scripts}"
+fi
 PROJECT_ID="${1:-}"
 TITLE="${2:-}"
 DETAIL="${3:-}"
@@ -87,6 +94,17 @@ resolve_project_path() {
 }
 
 warn_similar_title() {
+    # bash pre-check: count ASCII tokens (mirrors python3 min_tokens=3 logic)
+    # Skip python3 startup entirely when title clearly has fewer than 3 tokens
+    local _tok_count=0 _rest="$2"
+    while [[ "$_rest" =~ [a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,} ]]; do
+        (( _tok_count++ ))
+        _rest="${_rest#*"${BASH_REMATCH[0]}"}"
+        [[ $_tok_count -ge 3 ]] && break
+    done
+    if (( _tok_count < 3 )); then
+        return 0
+    fi
     LESSONS_FILE_ENV="$1" TITLE_ENV="$2" python3 <<'PY'
 import os
 import re

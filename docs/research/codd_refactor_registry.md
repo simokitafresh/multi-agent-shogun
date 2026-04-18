@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hanzo | `scripts/gates/gate_recalculate_completeness.sh` | Phase 5(再々改善: 計測+実装+検証) | `1.76s → ~1.75s` (bash subshell削減: `$(date +%s)`×2→`printf -v`builtin、`$(dirname)`→string ops。DB接続時間支配のため効果限定的) | 5/5テストPASS。(spec省略) |
+| 2026-04-18 | hanzo | `scripts/lesson_write.sh` | Phase 5(再改善: 計測+実装+検証) | `113ms → ~60ms` (`-47%`, first-write fixture median) | SCRIPT_DIR文字列演算化+warn_similar_title bash事前チェック(ASCII<3トークンでpython3スキップ)。22/22テストPASS。(spec省略) |
+| 2026-04-18 | hanzo | `scripts/shutsujin_departure.sh` | Phase 5(再々改善: 計測+実装+検証) | `130ms → ~60ms` (`-54%`, `--dry-run` median、cli_lookup.sh改善波及含む) | SCRIPT_DIR文字列演算化+layout_is_normalized結果キャッシュ(既正規化時の二重tmux呼び出し回避)。(spec省略) |
 | 2026-04-18 | saizo | `scripts/hooks/session_start_inject.sh` | Phase 5(計測+実装+検証) | `61.7ms → 44.3ms` (`-28.2%`, startup fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |
 | 2026-04-18 | saizo | `scripts/hooks/prompt_state_inject.sh` | Phase 5(計測+実装+検証) | `49.0ms → 30.5ms` (`-37.8%`, shogun prompt fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |
 | 2026-04-18 | saizo | `scripts/hooks/session_end_clear_check.sh` | Phase 5(計測+実装+検証) | `49.2ms → 29.4ms` (`-40.2%`, shogun clear-prep fixture median) | spec+after: `docs/research/cmd_2049_codd_infra_hook_batch_20260418.md` |

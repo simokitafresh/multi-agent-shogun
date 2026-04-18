@@ -10,7 +10,10 @@ if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=true
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+_self_dir="${_self%/*}"
+[[ "$_self_dir" != /* ]] && _self_dir="$(cd "$_self_dir" && pwd)"
+SCRIPT_DIR="${_self_dir%/scripts}"
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 
 log_dry() {
@@ -212,7 +215,9 @@ echo "[shutsujin] idle flags: created for all agents"
 
 # ─── レイアウト正規化 (agents window) ───
 # ペイン配置・サイズを正規状態に復元（再起動後にレイアウトが崩れる問題の根本対策）
+_layout_already_normalized=false
 if layout_is_normalized; then
+    _layout_already_normalized=true
     echo "[shutsujin] layout: reset_layout.sh skipped (already normalized)"
 elif [[ "$DRY_RUN" == true ]]; then
     log_dry "bash ${SCRIPT_DIR}/scripts/reset_layout.sh --dry-run"
@@ -220,7 +225,7 @@ elif [[ "$DRY_RUN" == true ]]; then
 else
     bash "$SCRIPT_DIR/scripts/reset_layout.sh"
 fi
-if layout_is_normalized; then
+if [[ "$_layout_already_normalized" == true ]] || layout_is_normalized; then
     echo "[shutsujin] layout: normalized"
 else
     echo "[shutsujin] layout: reset_layout.sh applied"
