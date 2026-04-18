@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hayate | `scripts/lesson_harvest.sh` | Phase 5(再改善: 計測+実装+検証) | `10.57s → 3.55s` (`-66.4%`, 3-run median) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |
+| 2026-04-18 | hayate | `scripts/post_recalculate_checks.sh` | Phase 5(再改善: 計測+実装+検証) | `2.23s → 2.15s` (`-3.6%`, 3-run median, live before 2.50s) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |
+| 2026-04-18 | hayate | `scripts/model_switch_preflight.sh` | Phase 5(再改善: 計測+実装+検証) | `1.23s → 0.34s` (`-72.4%`, 3-run median) | spec+after: `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` |
 | 2026-04-18 | saizo | `scripts/gates/mark_no_learning.sh` | Phase 5(計測+実装+検証) | `30.9ms → 27.2ms` (`-12.0%`, temp workdir median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
 | 2026-04-18 | saizo | `scripts/log_terminal_input.sh` | Phase 5(計測+実装+検証) | `109.7ms → 83.9ms` (`-23.5%`, shogun tmux stub median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
 | 2026-04-18 | saizo | `scripts/statusline.sh` | Phase 5(計測+実装+検証) | `27.8ms → 25.4ms` (`-8.6%`, tmux stub median) | spec+after: `docs/research/cmd_2048_codd_infra_batch_10b_20260418.md` |
