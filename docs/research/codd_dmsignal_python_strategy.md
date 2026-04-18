@@ -69,8 +69,10 @@ ai_command:
 | 2 | レベルA全量cProfileプロファイリング | cmd_1987 | **完了** | Top3=simulate_pattern系(yotsume 5.3s/nukimi 3.4s/oikaze 2.2s per 100pat)。本番影響確認済み: GS研究用と本番は別実装→レベルA安全 |
 | 3 | レベルA上位5本改善(cmd_1988-1992) | cmd_1988-1992 | **完了** | yotsume -99%/oikaze -99%/nukimi -63%/l1_alm_wf -81%/bunshin -78% |
 | 4a | Phase 4準備(cProfile+ツール修正) | cmd_1994/1995/1996/karo_1995_fix | **完了** | cProfile計測完了(1527s,DB I/O 75%)。compare_snapshots修正+exclude-months追加 |
-| 4b | Phase 4偵察(cache miss実測) | — | **次** | 軍師分析3点の計測(下記§4) |
-| 4c | Phase 4実装(fullrecalculate改善) | — | 待機 | 偵察結果に基づきimpl cmd設計 |
+| 4b-1 | 偵察①: cache miss/fallback/N+1実測 | cmd_1998 | **完了** | 3点全て前提崩壊。cache miss 0%/fallback 1.63%/N+1なし |
+| 4b-2 | 偵察②: SQLクエリログ分類(B面) | cmd_2000 | **進行中** | SELECT/INSERT分類+top10特定 |
+| 4b-3 | 偵察③: Render上cProfile(A面) | cmd_2001 | **進行中** | 純Python時間計測。A1-A3のROI精緻化 |
+| 4c | Phase 4実装(fullrecalculate改善) | — | 待機 | 偵察③結果に基づきimpl cmd設計 |
 | 5 | 結果評価+次の判断 | — | 待機 | — |
 
 ### §3.5 Phase 3知見 + Phase 4準備(2026-04-16軍師助言)
@@ -92,42 +94,59 @@ ai_command:
 
 → 詳細: `docs/research/codd_fullrecalc_cprofile.md`
 
-**総実行時間: 1527s** (dry-run: commit→flush+rollback)
+**総実行時間: 1527s** (dry-run: commit→flush+rollback, **WSL→Singapore RTT 80ms環境**)
 
-| 層 | 時間(s) | 割合 | 解釈 |
-|----|---------|------|------|
-| DB I/O (SQLAlchemy/psycopg2) | 1057-1152 | **69-75%** | クエリ回数削減が最大レバレッジ |
-| アプリ層計算 | 375-470 | 25-31% | Phase 3パターンB(キャッシュ+再利用)で対処 |
+| 層 | 時間(s) | 割合(ローカル) | 割合(本番推定) | 解釈 |
+|----|---------|--------------|--------------|------|
+| DB I/O (SQLAlchemy/psycopg2) | 1057-1152 | **69-75%** | **2-10%** | ローカルはRTT 80ms×10298回=828s。本番はRTT 1-5ms×10298=10-50s |
+| アプリ層計算 | 375-470 | 25-31% | **90-98%** | **本番の真のボトルネック** |
+
+**★重大注意(v2修正 2026-04-17):** cmd_1994はWSL→Singapore(RTT 80ms)で計測。本番はRender内(RTT 1-5ms)。DB I/O比率はローカルと本番で全く異なる。本番ボトルネックはPython計算。
 
 **アプリ層Top5:**
 
 | # | 関数 | 時間(s) | 呼出回数 | ボトルネック |
 |---|------|---------|----------|------------|
 | 1 | `_generate_trade_performance` | 508 | 181 | L2/L3 trade計算。最大アプリ層ホットスポット |
-| 2 | `expand_portfolio_to_tickers` | 384 | 1,168,384 | FoF展開。117万回呼出。signal_cache miss→DB SELECT |
+| 2 | `expand_portfolio_to_tickers` | 384 | 1,168,384 | FoF展開。117万回呼出。**cache miss 0%**(cmd_1998偵察) |
 | 3 | `_recalculate_fof_history` | 382 | 1 | L3 FoF全体。daily_loop/monthly_returns_gen/flush分散 |
-| 4 | `calculate_trade_period_return` | 369 | 26,738 | trade-return集約。fallback発火→DB再取得の可能性 |
+| 4 | `calculate_trade_period_return` | 369 | 26,738 | trade-return集約。**fallback 1.63%のみ**(cmd_1998偵察) |
 | 5 | `calculate_monthly_return` | 368 | 436 | 月次リターン計算 |
 
-### §4.2 改善方針(軍師分析 gunshi_phase4_improvement_plan_20260417.md)
+### §4.2 改善方針v2 — 両面作戦(軍師分析 2026-04-17)
 
-**Tier 1(高ROI):**
-- **T1-1: signal_cache完全化** — expand_portfolio_to_tickers 117万回のcache miss→DB SELECT を削減。推定-100s
-- **T1-2: fallbackゼロ化+NumPy化** — calculate_trade_period_returnのfallback発火をゼロにし、NumPy化。推定-95s
+→ 詳細: `docs/research/gunshi_phase4_improvement_plan_20260417.md`
 
-**Tier 2(中ROI):**
-- **T2-2: dw_component_weightsバッチ化** — 104 FoF×日数のN+1を解消。推定-13s
+**v1(否定済み):** cache miss/fallback/N+1削減 → cmd_1998偵察で3点全て前提崩壊
 
-**目標:** 480s → 280-320s(T1) → 250-280s(T2) → 150-200s(将来の並列化)
+**v2 両面作戦:**
 
-### §4.3 偵察計測項目(Phase 4b, 軍師助言3点)
+**面A(本番ボトルネック): Python計算最適化**
+- **A1: calculate_trade_period_return NumPy化** — 推定-50s
+- **A2: _generate_trade_performance オブジェクト軽量化** — 推定-30s
+- **A3: expand_portfolio_to_tickers 月粒度キャッシュ** — 推定-30s
 
-偵察で計測すべき3点(impl cmdの精度を決定):
-1. **signal_cacheのcache miss率** — 117万回のうちDB SELECTに落ちる割合。コード現物確認+プロファイルログから推定
-2. **monthly_returns_mapの欠損パターン** — calculate_trade_period_returnのfallback発火率。fallback時にDB再取得か0返却か。コード現物確認
-3. **FoF component_weights取得回数** — 104 FoF×日数でN+1発生有無。バッチ化ROI推定
+**面B(ローカル改善): クエリ回数削減**
+- **B1: SELECT IN句バルク化** — 推定-620s(ローカル)/-5s(本番)
 
-偵察は1忍者で十分(コード読解+grep計測)。並列不要。
+**目標:** 480s → 320-350s(A面) → 150-200s(将来の並列化)
+
+### §4.3 偵察経緯
+
+**偵察①(cmd_1998): cache miss/fallback/N+1実測 → 3点全て前提崩壊**
+→ 詳細: `docs/research/codd_phase4_cache_miss_recon.md`
+
+| 計測項目 | 結果 | v1前提との比較 |
+|---------|------|--------------|
+| signal_cache miss | 0/26806 (0%) | T1-1(-100s)崩壊。cacheは完全に機能 |
+| fallback発火 | 436/26738 (1.63%) | T1-2(-95s)限定的。全件partial_final_month |
+| N+1クエリ | なし。既バッチ化 | T2-2(-13s)既達成 |
+
+**将軍なぜなぜ7回結論:** 真因=RTT 80ms×10298回=828s。ただし本番RTT=1-5msのため本番では非支配的。
+
+**偵察②(cmd_2000, 進行中): SQLクエリログ分類** — B面偵察。SELECT/INSERT/UPDATE分類+top10特定
+
+**偵察③(次): Render上cProfile** — A面偵察。`render jobs create`でRender内RTT環境での純Python時間を計測。A1-A3のROI精緻化
 
 ## §1 目的
 

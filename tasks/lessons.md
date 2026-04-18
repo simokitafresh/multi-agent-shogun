@@ -3740,3 +3740,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: karo
 - **tags**: [universal]
 - bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下に隔離し/tmp固定パスを使わない。STOP_LINT_HASH_FILE環境変数でオーバーライド可能にした
+
+### L490: watcher起動元スクリプトの環境変数がstop hook側と不整合になるとidle判定が60秒遅延する
+- **日付**: 2026-04-17
+- **出典**: cmd_karo_gp210_fix
+- **記録者**: kagemaru
+- **status**: approved
+- **tags**: [universal]
+- restart_watchers.shがSHOGUN_STATE_DIR=/tmp/shogun_stateで起動→watcher=/tmp/shogun_state/shogun_idle_{agent}参照。Stop hookはデフォルト/tmpへ書込→パス不一致→[BUSY]常時→60秒遅延。修正: 起動側で余分な環境変数を渡さずstop hookのデフォルトと同じパスを使わせる
+
+### L491: git status -z は bash read より awk 抽出が速い
+- **日付**: 2026-04-18
+- **出典**: cmd_2039
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [universal]
+- WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の while read -d ループより awk 抽出の方が速かった。今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した。

@@ -12,7 +12,11 @@
 # 教訓L071: SCRIPT_DIR はリポルート基準 (多数派方式)
 # 教訓L073: scripts/lib/ は ../.. でリポルートに到達
 
-_FIELD_GET_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
+_fg_self="${BASH_SOURCE[0]}"
+[[ "$_fg_self" != /* ]] && _fg_self="$PWD/$_fg_self"
+_FIELD_GET_SCRIPT_DIR="${_fg_self%/scripts/lib/field_get.sh}"
+unset _fg_self
 # field_deps.tsv はホワイトリスト外 → 自動的にgit-ignored
 _FIELD_DEPS_TSV="${_FIELD_GET_SCRIPT_DIR}/scripts/lib/field_deps.tsv"
 
@@ -54,12 +58,13 @@ field_get() {
     # cmd_1355修正: トップレベル(^field:)を先に検索。なければインデント付きにフォールバック
     local field_line=""
 
-    # 1. トップレベル(インデントなし)を優先検索
-    field_line=$(grep -E "^${field}:" "$file" 2>/dev/null | head -1)
+    # 1. トップレベル(インデントなし)を優先検索 (grep -m1 + bash str ops, sed不使用)
+    field_line=$(grep -m1 -E "^${field}:" "$file" 2>/dev/null)
     if [[ -n "$field_line" ]]; then
-      result=$(echo "$field_line" \
-        | sed 's/^[^:]*:[[:space:]]*//' \
-        | sed "s/^['\"]//;s/['\"]$//")
+      result="${field_line#*:}"
+      result="${result#"${result%%[![:space:]]*}"}"   # ltrim whitespace
+      result="${result#\'}" ; result="${result%\'}"   # strip single quotes
+      result="${result#\"}" ; result="${result%\"}"   # strip double quotes
     fi
 
     # 2. トップレベルになければインデント付き(最浅マッチ)にフォールバック
@@ -74,9 +79,10 @@ field_get() {
       } END { if (NR > 0) print best }')
       if [[ -n "$field_line" ]]; then
         # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
-        result=$(echo "$field_line" \
-          | sed 's/^[[:space:]]*[^:]*:[[:space:]]*//' \
-          | sed "s/^['\"]//;s/['\"]$//")
+        result="${field_line#*:}"
+        result="${result#"${result%%[![:space:]]*}"}"   # ltrim whitespace
+        result="${result#\'}" ; result="${result%\'}"   # strip single quotes
+        result="${result#\"}" ; result="${result%\"}"   # strip double quotes
       fi
     fi
 
@@ -152,11 +158,13 @@ _field_get_log() {
   local file="$2"
   local field="$3"
   local ts
-  ts=$(date '+%Y-%m-%dT%H:%M:%S')
+  # printf -v instead of $(date) — bash built-in, no subprocess (~2ms savings)
+  printf -v ts '%(%Y-%m-%dT%H:%M:%S)T' -1
 
   local lock_file="${_FIELD_DEPS_TSV}.lock"
-  (
-    flock -n 200 || exit 0
+  # { } block instead of ( ) subshell — avoids subprocess creation (~3ms savings)
+  {
+    flock -n 200 || return 0
 
     # 10MB超で5世代ローテーション（偵察cmd_1041指摘: 無限肥大防止）
     if [[ -f "$_FIELD_DEPS_TSV" ]]; then
@@ -174,7 +182,7 @@ _field_get_log() {
     fi
 
     printf '%s\t%s\t%s\t%s\n' "$caller" "$file" "$field" "$ts" >> "$_FIELD_DEPS_TSV"
-  ) 200>"$lock_file" 2>/dev/null
+  } 200>"$lock_file" 2>/dev/null
 }
 
 # ══════════════════════════════════════════════════════

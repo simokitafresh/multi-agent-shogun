@@ -6,11 +6,16 @@
 #
 # inbox_write.sh と同じ lockfile (${INBOX}.lock) で flock を取得し、
 # mkstemp + os.replace によるアトミック書込みで Lost Update を防止する。
-# Claude Code の Edit tool による既読化を置き換える。
+# python3 を廃止し bash+sed/awk で代替 (python3 startup ~25ms 削減)
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
+_imr_self="${BASH_SOURCE[0]}"
+[[ "$_imr_self" != /* ]] && _imr_self="$PWD/$_imr_self"
+SCRIPT_DIR="${_imr_self%/scripts/inbox_mark_read.sh}"
+unset _imr_self
+
 AGENT_ID="$1"
 MSG_ID="${2:-}"
 
@@ -44,69 +49,75 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
-        INBOX_PATH="$INBOX" MSG_ID="$MSG_ID" AGENT_ID="$AGENT_ID" python3 -c "
-import sys, os, tempfile
+        # Fast early exit: no unread messages in file
+        if ! grep -q "read: false" "$INBOX" 2>/dev/null; then
+            if [ -n "$MSG_ID" ]; then
+                echo "[inbox_mark_read] msg_id=$MSG_ID not found or already read"
+            else
+                echo "[inbox_mark_read] No unread messages"
+            fi
+            exit 0
+        fi
 
-inbox_path = os.environ['INBOX_PATH']
-msg_id = os.environ.get('MSG_ID', '')
-agent_id = os.environ['AGENT_ID']
+        # Atomic write: mktemp in same dir + mv (same as original python3 os.replace)
+        _inbox_dir="${INBOX%/*}"
+        _tmp=$(mktemp "${_inbox_dir}/.imr_XXXXXX.tmp")
 
-try:
-    with open(inbox_path, encoding='utf-8') as f:
-        raw_text = f.read()
+        if [ -z "$MSG_ID" ]; then
+            # Mark all: grep count + sed replace (no python3, no awk)
+            _changed=$(grep -c "read: false" "$INBOX" 2>/dev/null || echo 0)
+            sed 's/^\([[:space:]]*read:[[:space:]]*\)false/\1true/' "$INBOX" > "$_tmp" \
+                || { rm -f "$_tmp"; exit 1; }
+        else
+            # Mark specific msg_id: stateful awk pass (no python3)
+            _cnt_file=$(mktemp /tmp/.imr_cnt_XXXXXX)
+            awk -v msg_id="$MSG_ID" -v cnt_file="$_cnt_file" '
+                BEGIN { changed=0; current_id="" }
+                {
+                    stripped=$0
+                    gsub(/^[[:space:]]+/,"",stripped)
+                    if (stripped ~ /^- /) {
+                        current_id=""
+                        inner=stripped
+                        sub(/^-[[:space:]]*/,"",inner)
+                        gsub(/^[[:space:]]+/,"",inner)
+                        if (inner ~ /^id:/) {
+                            current_id=inner
+                            sub(/^id:[[:space:]]*/,"",current_id)
+                            gsub(/^[ \t'"'"'"]*/,"",current_id)
+                            gsub(/[ \t'"'"'"]*$/,"",current_id)
+                        }
+                    } else if (stripped ~ /^id:/ && current_id=="") {
+                        current_id=stripped
+                        sub(/^id:[[:space:]]*/,"",current_id)
+                        gsub(/^[ \t'"'"'"]*/,"",current_id)
+                        gsub(/[ \t'"'"'"]*$/,"",current_id)
+                    } else if (stripped ~ /^read:/ && current_id!="" && $0 ~ /read: false/) {
+                        if (msg_id=="" || current_id==msg_id) {
+                            sub(/read: false/,"read: true")
+                            changed++
+                        }
+                    }
+                    print
+                }
+                END { print changed > cnt_file }
+            ' "$INBOX" > "$_tmp" || { rm -f "$_tmp" "$_cnt_file"; exit 1; }
+            _changed=$(cat "$_cnt_file" 2>/dev/null || echo 0)
+            rm -f "$_cnt_file"
+        fi
 
-    # Fast early exit: no unread messages in file (avoids yaml.safe_load cost)
-    if 'read: false' not in raw_text:
-        if msg_id:
-            print(f'[inbox_mark_read] msg_id={msg_id} not found or already read')
-        else:
-            print('[inbox_mark_read] No unread messages')
-        sys.exit(0)
+        if [ "${_changed:-0}" -eq 0 ]; then
+            rm -f "$_tmp"
+            if [ -n "$MSG_ID" ]; then
+                echo "[inbox_mark_read] msg_id=$MSG_ID not found or already read"
+            else
+                echo "[inbox_mark_read] No unread messages"
+            fi
+            exit 0
+        fi
 
-    # Single-pass: identify target IDs and replace read: false -> true
-    # (replaces yaml.safe_load + separate text scan with one combined pass)
-    lines = raw_text.split('\n')
-    current_id = None
-    changed = 0
-    for i, line in enumerate(lines):
-        stripped = line.lstrip()
-        if stripped.startswith('- '):
-            current_id = None
-            inner = stripped[2:].lstrip()
-            if inner.startswith('id:'):
-                current_id = inner.split(':', 1)[1].strip().strip(\"'\\\"\"  )
-        elif stripped.startswith('id:') and current_id is None:
-            current_id = stripped.split(':', 1)[1].strip().strip(\"'\\\"\"  )
-        elif stripped.startswith('read:') and current_id is not None:
-            if 'false' in stripped:
-                if not msg_id or current_id == msg_id:
-                    lines[i] = line.replace('read: false', 'read: true')
-                    changed += 1
-
-    if changed == 0:
-        if msg_id:
-            print(f'[inbox_mark_read] msg_id={msg_id} not found or already read')
-        else:
-            print('[inbox_mark_read] No unread messages')
-        sys.exit(0)
-
-    # Atomic write: preserve original text formatting
-    new_text = '\n'.join(lines)
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            f.write(new_text)
-        os.replace(tmp_path, inbox_path)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'[inbox_mark_read] Marked {changed} message(s) as read for {agent_id}')
-
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-" || exit 1
+        mv "$_tmp" "$INBOX"
+        echo "[inbox_mark_read] Marked ${_changed} message(s) as read for $AGENT_ID"
 
     ) 200>"$LOCKFILE"; then
         exit 0

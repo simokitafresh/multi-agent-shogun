@@ -442,3 +442,8 @@ lessons:
   detail: 'GA-085/089/090の真因。ninja_monitor.sh L462-466のauto-commitがinstructions/*.mdを含むcommit時にgenerated files再生成をしない。pre-commitフックはBLOCKするが2>/dev/null||trueで無視される。修正: git diff --cachedでinstructions/変更検出→build_instructions.sh実行→generated/をgit add(500f0cd)。なぜなぜ7回で到達(殿指示)'
   source_cmd: 'cmd_karo_ci_fix_blt72'
   created_at: '2026-04-17'
+- id: 'LK081'
+  title: '軍師draftレビュー依頼は再配備でも必須 — 同時配備で漏れるパターン'
+  detail: 'cmd_2001再配備時にcmd_2011と同時処理し、cmd_2011のみレビュー依頼→cmd_2001漏れ。再配備でも新規配備と同じフローが必要。deploy_task.sh完了後に1cmdずつレビュー依頼を送信するか、deploy自体に自動送信を組込むべき。LK017(品質の鎖)の実践不足'
+  source_cmd: 'cmd_2001'
+  created_at: '2026-04-17'

@@ -13,13 +13,21 @@
 #
 # キャッシュ: 初回呼び出し時にsettings.yamlを読み込み、同一プロセス内はキャッシュ
 
-_AGENT_CONFIG_SCRIPT_DIR="${_AGENT_CONFIG_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+# SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
+if [[ -z "${_AGENT_CONFIG_SCRIPT_DIR:-}" ]]; then
+    _ac_self="${BASH_SOURCE[0]}"
+    [[ "$_ac_self" != /* ]] && _ac_self="$PWD/$_ac_self"
+    _AGENT_CONFIG_SCRIPT_DIR="${_ac_self%/scripts/lib/agent_config.sh}"
+fi
 _AGENT_CONFIG_SETTINGS="${_AGENT_CONFIG_SCRIPT_DIR}/config/settings.yaml"
 
 # Cache: loaded raw data (tab-separated: name\trole\tjapanese_name)
 _AGENT_CONFIG_RAW=""
 _AGENT_CONFIG_NINJA_NAMES=""
 _AGENT_CONFIG_ALL_NAMES=""
+# Associative arrays for O(1) per-agent lookups (eliminates echo|awk spawns)
+declare -A _AGENT_CONFIG_ROLE_MAP=()
+declare -A _AGENT_CONFIG_JP_MAP=()
 
 _agent_config_load() {
     # Guard: already loaded in this process
@@ -57,6 +65,8 @@ _agent_config_load() {
     while IFS=$'\t' read -r _ac_name _ac_role _ac_jp; do
         [[ -z "$_ac_name" ]] && continue
         all_names+=("$_ac_name")
+        _AGENT_CONFIG_ROLE_MAP["$_ac_name"]="$_ac_role"
+        _AGENT_CONFIG_JP_MAP["$_ac_name"]="${_ac_jp:-$_ac_name}"
         if [[ "$_ac_role" == "ninja" ]]; then
             ninjas+=("$_ac_name")
         fi
@@ -83,9 +93,7 @@ get_agent_role() {
         return 0
     fi
     _agent_config_load
-    local role
-    role=$(echo "$_AGENT_CONFIG_RAW" | awk -F'\t' -v n="$name" '$1==n{print $2; exit}')
-    echo "${role:-ninja}"
+    echo "${_AGENT_CONFIG_ROLE_MAP[$name]:-ninja}"
 }
 
 get_japanese_name() {
@@ -95,9 +103,7 @@ get_japanese_name() {
         return 0
     fi
     _agent_config_load
-    local jp
-    jp=$(echo "$_AGENT_CONFIG_RAW" | awk -F'\t' -v n="$name" '$1==n{print $3; exit}')
-    echo "${jp:-$name}"
+    echo "${_AGENT_CONFIG_JP_MAP[$name]:-$name}"
 }
 
 get_allowed_targets() {

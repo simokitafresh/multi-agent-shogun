@@ -359,7 +359,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 → `docs/research/five-system-comparison.md`
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L490 -->
+<!-- last_synced_lesson: L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
 <!-- lesson-sort 2026-04-07: L442-L447の6件をカテゴリ分類。bash(L442/L443/L445), ゲート(L444/L446), git(L447) -->
@@ -577,6 +577,7 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L488: bats --jobs並列実行時の/tmp固定パス競合 — テスト用状態ファイルはTEST_ROOT配下に隔離せよ（cmd_karo_ci_fix_1987）
 - L489: bats並列実行での/tmp固定パス競合（cmd_karo_ci_fix_1987）
 - L490: watcher起動元スクリプトの環境変数がstop hook側と不整合になるとidle判定が60秒遅延する（cmd_karo_gp210_fix）
+- L491: git status -z は bash read より awk 抽出が速い（cmd_2039）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
