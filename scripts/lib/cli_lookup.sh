@@ -149,6 +149,7 @@ _cli_lookup_profile_get() {
     local in_list=0
     local result=""
     local line=""
+    local trimmed=""
     local item=""
     local items=()
 
@@ -162,6 +163,10 @@ _cli_lookup_profile_get() {
             [[ "$line" == "profiles:" ]] && in_profiles=1
             continue
         fi
+
+        _cli_lookup_trim "$line"
+        trimmed="$REPLY"
+        [[ -z "$trimmed" || "$trimmed" == \#* ]] && continue
 
         if [[ $in_type -eq 0 ]]; then
             if [[ "$line" == "  ${cli_type}:" ]]; then

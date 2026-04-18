@@ -65,6 +65,27 @@ teardown_file() {
     [ "$output" = "background terminal running|Streaming" ]
 }
 
+@test "cli_lookup: profile間の空行をスキップしてcodex scalarを取得できる" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="$PROJECT_ROOT/config/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_profile_get_for_type codex clear_cmd"
+    [ "$status" -eq 0 ]
+    [ "$output" = "/new" ]
+}
+
+@test "cli_lookup: profile間の空行をスキップしてcodex表示名を取得できる" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="$PROJECT_ROOT/config/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_profile_get_for_type codex display_name"
+    [ "$status" -eq 0 ]
+    [ "$output" = "Codex" ]
+}
+
+@test "cli_lookup: claude clear_cmdに回帰がない" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="$PROJECT_ROOT/config/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_profile_get_for_type claude clear_cmd"
+    [ "$status" -eq 0 ]
+    [ "$output" = "/clear" ]
+}
+
 @test "cli_lookup: model_nameを表示名へ変換できる" {
     run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
         bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_model_display gunshi"
