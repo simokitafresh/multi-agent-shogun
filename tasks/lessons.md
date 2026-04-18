@@ -3753,7 +3753,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-18
 - **出典**: cmd_2039
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [universal]
 - WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の while read -d ループより awk 抽出の方が速かった。今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した。
 
