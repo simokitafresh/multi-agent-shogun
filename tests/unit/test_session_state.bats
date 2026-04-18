@@ -38,6 +38,9 @@ create_fail_report() {
     cat > "$path" << 'YAML'
 worker_id: kagemaru
 parent_cmd: cmd_test
+result:
+  summary: "report summary text"
+diagnose_reason: "report diagnose text"
 ac_version_read: abc12345
 status: pending
 binary_checks:
@@ -118,6 +121,70 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "T-SS-002b: diagnose_reason, approach_summary, prior_attempts[] が記録される" {
+    local task_yaml="$TASK_TMPDIR/kagemaru.yaml"
+    create_task_yaml "$task_yaml"
+
+    local report="$REPO_TMPDIR/kagemaru_report_cmd_test.yaml"
+    create_fail_report "$report"
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+
+    run grep -q "diagnose_reason: 'report diagnose text'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "approach_summary: 'report summary text'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "prior_attempts:" "$task_yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "T-SS-002c: prior_attempts は最大3件保持" {
+    local task_yaml="$TASK_TMPDIR/kagemaru.yaml"
+    cat > "$task_yaml" << 'YAML'
+task:
+  parent_cmd: cmd_test
+  task_id: cmd_test_impl
+  status: assigned
+  worker_id: kagemaru
+  session_state:
+    attempt: 3
+    last_block_reason: 'reason3'
+    tried_approaches:
+    - 'reason1'
+    - 'reason2'
+    - 'reason3'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'reason1'
+      diagnose_reason: 'diag1'
+      approach_summary: 'sum1'
+    - attempt: 2
+      block_reason: 'reason2'
+      diagnose_reason: 'diag2'
+      approach_summary: 'sum2'
+    - attempt: 3
+      block_reason: 'reason3'
+      diagnose_reason: 'diag3'
+      approach_summary: 'sum3'
+YAML
+
+    local report="$REPO_TMPDIR/kagemaru_report_cmd_test.yaml"
+    create_fail_report "$report"
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+
+    run grep -c "block_reason:" "$task_yaml"
+    # last_block_reason + prior_attempts 3 entries = 4
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 4 ]
+    run grep -q "block_reason: 'reason1'" "$task_yaml"
+    [ "$status" -eq 1 ]
+}
+
 @test "T-SS-003: 有効な忍者名でないreportはtask YAMLを変更しない" {
     local task_yaml="$TASK_TMPDIR/invalid.yaml"
     create_task_yaml "$task_yaml"
@@ -153,7 +220,7 @@ YAML
     # _DEPLOY_PREV_SESSION_STATEをセットしてinject_session_state_hintsを呼ぶ
     (
         export DEPLOY_TASK_LIB_ONLY=1
-        export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL", "tried_approaches": ["binary_checks FAIL"]}'
+        export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL", "tried_approaches": ["binary_checks FAIL"], "diagnose_reason": "diag text", "approach_summary": "summary text", "prior_attempts": [{"attempt": 1, "block_reason": "older fail", "diagnose_reason": "older diag", "approach_summary": "older summary"}, {"attempt": 2, "block_reason": "binary_checks FAIL", "diagnose_reason": "diag text", "approach_summary": "summary text"}]}'
         # shellcheck disable=SC1090
         source "$PROJECT_ROOT/scripts/deploy_task.sh"
         inject_session_state_hints "$task_yaml"
@@ -167,6 +234,15 @@ YAML
     [ "$status" -eq 0 ]
 
     run grep -q "last_block_reason" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "diagnose_reason: 'diag text'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "approach_summary: 'summary text'" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "prior_attempts:" "$task_yaml"
     [ "$status" -eq 0 ]
 }
 

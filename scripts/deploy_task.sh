@@ -2981,6 +2981,9 @@ if not ss:
 attempt = ss.get('attempt', 0)
 last_reason = ss.get('last_block_reason', '')
 tried = ss.get('tried_approaches', [])
+diagnose_reason = ss.get('diagnose_reason', '')
+approach_summary = ss.get('approach_summary', '')
+prior_attempts = ss.get('prior_attempts', [])
 
 if not attempt and not last_reason:
     sys.exit(0)
@@ -2997,6 +3000,21 @@ pf_lines = ['previous_failures:',
             '  tried_approaches:']
 for t in tried:
     pf_lines.append(f'  - {_sq(t)}')
+if diagnose_reason:
+    pf_lines.append(f'  diagnose_reason: {_sq(diagnose_reason)}')
+if approach_summary:
+    pf_lines.append(f'  approach_summary: {_sq(approach_summary)}')
+if isinstance(prior_attempts, list) and prior_attempts:
+    pf_lines.append('  prior_attempts:')
+    for item in prior_attempts[-3:]:
+        if not isinstance(item, dict):
+            continue
+        pf_lines.append(f"  - attempt: {int(item.get('attempt', 0) or 0)}")
+        pf_lines.append(f"    block_reason: {_sq(item.get('block_reason', ''))}")
+        if item.get('diagnose_reason'):
+            pf_lines.append(f"    diagnose_reason: {_sq(item.get('diagnose_reason', ''))}")
+        if item.get('approach_summary'):
+            pf_lines.append(f"    approach_summary: {_sq(item.get('approach_summary', ''))}")
 pf_frag = '\n'.join(pf_lines)
 pf_indented = '\n'.join('  ' + l for l in pf_frag.split('\n'))
 
@@ -3012,7 +3030,7 @@ os.close(fd)
 with open(tmp, 'w', encoding='utf-8') as f:
     f.write(raw)
 os.replace(tmp, task_yaml)
-print(f'[SESSION_HINT] previous_failures injected: attempt={attempt}', file=sys.stderr)
+print(f'[SESSION_HINT] previous_failures injected: attempt={attempt} prior_attempts={len(prior_attempts) if isinstance(prior_attempts, list) else 0}', file=sys.stderr)
 SS_INJECT_PY
     rm -f "$ss_tmp"
 }

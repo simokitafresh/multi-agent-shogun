@@ -93,14 +93,30 @@ else
         [ "$_nn" = "$_SS_NINJA" ] && { _SS_VALID=true; break; }
     done
     if [ "$_SS_VALID" = "true" ] && [ -f "$_SS_TASK_YAML" ]; then
-        python3 - "$_SS_TASK_YAML" "$REASONS" <<'SESSION_STATE_PY' 2>/dev/null || true
+        python3 - "$_SS_TASK_YAML" "$REPORT_PATH" "$REASONS" <<'SESSION_STATE_PY' 2>/dev/null || true
 import yaml, sys, re, os, tempfile
 
 task_yaml = sys.argv[1]
-block_reason = sys.argv[2]
+report_yaml = sys.argv[2]
+block_reason = sys.argv[3]
 
 with open(task_yaml, encoding='utf-8') as f:
     raw = f.read()
+
+report_data = {}
+try:
+    with open(report_yaml, encoding='utf-8') as f:
+        report_data = yaml.safe_load(f) or {}
+except Exception:
+    report_data = {}
+
+diagnose_reason = ""
+approach_summary = ""
+if isinstance(report_data, dict):
+    diagnose_reason = str(report_data.get('diagnose_reason', '') or '').strip()
+    result_node = report_data.get('result') or {}
+    if isinstance(result_node, dict):
+        approach_summary = str(result_node.get('summary', '') or '').strip()
 
 try:
     data = yaml.safe_load(raw) or {}
@@ -108,12 +124,27 @@ try:
     ss = task_node.get('session_state') or {}
     attempt = int(ss.get('attempt', 0)) + 1
     tried = list(ss.get('tried_approaches', []))
+    prior_attempts = list(ss.get('prior_attempts', []))
 except Exception:
     attempt = 1
     tried = []
+    prior_attempts = []
 
 if block_reason and block_reason not in tried:
     tried.append(block_reason)
+
+new_attempt = {
+    'attempt': attempt,
+    'block_reason': block_reason,
+}
+if diagnose_reason:
+    new_attempt['diagnose_reason'] = diagnose_reason
+if approach_summary:
+    new_attempt['approach_summary'] = approach_summary
+
+prior_attempts = [p for p in prior_attempts if isinstance(p, dict)]
+prior_attempts.append(new_attempt)
+prior_attempts = prior_attempts[-3:]
 
 def _sq(s):
     return "'" + str(s).replace("'", "''") + "'"
@@ -124,6 +155,18 @@ frag_lines = ['session_state:',
               '  tried_approaches:']
 for t in tried:
     frag_lines.append(f'  - {_sq(t)}')
+if diagnose_reason:
+    frag_lines.append(f'  diagnose_reason: {_sq(diagnose_reason)}')
+if approach_summary:
+    frag_lines.append(f'  approach_summary: {_sq(approach_summary)}')
+frag_lines.append('  prior_attempts:')
+for item in prior_attempts:
+    frag_lines.append(f"  - attempt: {int(item.get('attempt', 0) or 0)}")
+    frag_lines.append(f"    block_reason: {_sq(item.get('block_reason', ''))}")
+    if item.get('diagnose_reason'):
+        frag_lines.append(f"    diagnose_reason: {_sq(item.get('diagnose_reason', ''))}")
+    if item.get('approach_summary'):
+        frag_lines.append(f"    approach_summary: {_sq(item.get('approach_summary', ''))}")
 frag = '\n'.join(frag_lines)
 indented = '\n'.join('  ' + l for l in frag.split('\n'))
 
@@ -139,7 +182,7 @@ os.close(fd)
 with open(tmp, 'w', encoding='utf-8') as f:
     f.write(raw)
 os.replace(tmp, task_yaml)
-print(f'[SESSION_STATE] attempt={attempt} block_reason={block_reason[:50]!r}', file=sys.stderr)
+print(f'[SESSION_STATE] attempt={attempt} block_reason={block_reason[:50]!r} prior_attempts={len(prior_attempts)}', file=sys.stderr)
 SESSION_STATE_PY
     fi
     exit 1
