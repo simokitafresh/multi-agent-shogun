@@ -9337,3 +9337,51 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-18T10:50:57Z"
+  - cmd_id: "cmd_2090"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T11:15:20Z"
+    notes: "report_format:hayate_report_cmd_2090.yaml|hayate:binary_checks_fail|draft_lessons:1"
+  - cmd_id: "cmd_2090"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T11:15:54Z"
+    notes: "report_format:hayate_report_cmd_2090.yaml|hayate:binary_checks_fail"
+  - cmd_id: "cmd_2090"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T11:19:35Z"
+    notes: "hayate:ac_version_mismatch:task=d4974852:report=1c3f86c1"
+  - cmd_id: "cmd_2090"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T11:20:28Z"
+  - cmd_id: "cmd_2087"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-18T11:24:23Z"

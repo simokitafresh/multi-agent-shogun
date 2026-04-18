@@ -1,11 +1,11 @@
 task:
-  _ac_task_id: cmd_2080_impl
+  _ac_task_id: cmd_2090_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 1c3f86c1
+  ac_version: d4974852
   acceptance_criteria:
-  - description: before計測(write path median 5回)+CoDD spec作成。1229行のボトルネック箇所を特定
+  - description: before計測(実行path median 5回)+CoDD spec作成。ボトルネック箇所を特定
     id: AC1
   - description: specに基づき実装
     id: AC2
@@ -15,7 +15,7 @@ task:
     id: AC4
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
     \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
-    \  - L288: 大半のタスクにtarget_pathがないため、report YAMLのfiles_modifiedからパス抽出する拡張を検討すべき\n\
+    \  - L220: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md\n\
     ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -35,37 +35,36 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_2080
+  parent_cmd: cmd_2090
   project: infra
-  report_filename: hayate_report_cmd_2080.yaml
-  report_path: queue/reports/hayate_report_cmd_2080.yaml
+  report_filename: hayate_report_cmd_2090.yaml
+  report_path: queue/reports/hayate_report_cmd_2090.yaml
   scout_exempt: true
-  status: in_progress
+  status: failed
   stop_for: []
-  task_id: cmd_2080_impl
+  task_id: cmd_2090_impl
   task_type: impl
   previous_failures:
-    attempt: 4
-    last_block_reason: 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.0: is dict (must be list of check items)'
+    attempt: 11
+    last_block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
     tried_approaches:
+    - 'stale_report: filename has cmd_test9 but parent_cmd=cmd_1946 (cmd_id mismatch)'
+    - 'stale_report: filename has cmd_9000 but parent_cmd=cmd_1946 (cmd_id mismatch)'
+    - 'AUTO-FIXED: binary_checks result boolean→string変換'
+    - 'lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_useful[1]: reason is empty (教訓が有用/無用な理由を具体的に書け); lessons_us…'
+    - 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
     - 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-    - 'binary_checks.0: is dict (must be list of check items); verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-    - 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.0: is dict (must be list of check items)'
-    diagnose_reason: 'binary_checks.AC2 の check に AC要約そのままの短文を入れ、実際に何を確認したかが具体化できていなかった。'
-    approach_summary: 'unit-tests workflow の再実行でも SSH/SL テストだけが継続失敗し、最終根因は jq 不在ではなく hook/statusline script 4本の execute bit 欠落であると確定した。対象4本を 100755 化し、SSH/SL 11件と tests/unit --jobs 8 全量でローカル再現PASSを確認。 C…'
+    approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
     prior_attempts:
-    - attempt: 2
-      block_reason: 'binary_checks.0: is dict (must be list of check items); verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      diagnose_reason: 'binary_checks.AC2 の check に AC要約そのままの短文を入れ、実際に何を確認したかが具体化できていなかった。'
-      approach_summary: 'unit-tests workflow の再実行でも SSH/SL テストだけが継続失敗し、最終根因は jq 不在ではなく hook/statusline script 4本の execute bit 欠落であると確定した。対象4本を 100755 化し、SSH/SL 11件と tests/unit --jobs 8 全量でローカル再現PASSを確認。 C…'
-    - attempt: 3
-      block_reason: 'binary_checks.0: is dict (must be list of check items); verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
-      diagnose_reason: 'binary_checks.AC2 の check に AC要約そのままの短文を入れ、実際に何を確認したかが具体化できていなかった。'
-      approach_summary: 'unit-tests workflow の再実行でも SSH/SL テストだけが継続失敗し、最終根因は jq 不在ではなく hook/statusline script 4本の execute bit 欠落であると確定した。対象4本を 100755 化し、SSH/SL 11件と tests/unit --jobs 8 全量でローカル再現PASSを確認。 C…'
-    - attempt: 4
-      block_reason: 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; binary_checks.0: is dict (must be list of check items)'
-      diagnose_reason: 'binary_checks.AC2 の check に AC要約そのままの短文を入れ、実際に何を確認したかが具体化できていなかった。'
-      approach_summary: 'unit-tests workflow の再実行でも SSH/SL テストだけが継続失敗し、最終根因は jq 不在ではなく hook/statusline script 4本の execute bit 欠落であると確定した。対象4本を 100755 化し、SSH/SL 11件と tests/unit --jobs 8 全量でローカル再現PASSを確認。 C…'
+    - attempt: 9
+      block_reason: 'binary_checks.AC3[1].result: \"''yes''\" は不正。\"yes\" または \"no\" のみ; verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    - attempt: 10
+      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    - attempt: 11
+      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -76,18 +75,18 @@ task:
     warning: '⚠ 過去28件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 47
-    - pattern: 'bc_result_invalid'
-      count: 34
+      count: 207
+    - pattern: 'lu_reason_empty'
+      count: 54
     - pattern: 'verdict_invalid'
-      count: 18
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+      count: 37
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
-      count: 25
+      count: 27
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 24
+      count: 26
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_yaml_missing'
       count: 3
@@ -102,6 +101,12 @@ task:
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   related_lessons:
+  - id: 'L502'
+    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+  - id: 'L501'
+    summary: '''WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル'
+    detail: '''WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル'
   - id: 'L500'
     summary: '''Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''''ok N ... # skip reason''''であり、''''SKIP''''/''''skipped''''では検出できない。''''#'
     detail: '''Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''''ok N ... # skip reason''''であり、''''SKIP''''/''''skipped''''では検出できない。''''#'
@@ -126,10 +131,14 @@ task:
   - id: 'L493'
     summary: '''gate_yaml_status.shのawk(-v cmd_id)は''''- id: cmd_xxx''''形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx:'
     detail: '''gate_yaml_status.shのawk(-v cmd_id)は''''- id: cmd_xxx''''形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx:'
-  - id: 'L492'
-    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk'
-    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk'
-  - id: 'L491'
-    summary: 'WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の'
-    detail: 'WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の'
-  deployed_at: "2026-04-18T18:50:26"
+  deployed_at: "2026-04-18T20:16:56"
+  session_state:
+    attempt: 1
+    last_block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+    tried_approaches:
+    - 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+    approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'verdict: PASS but binary_checks contain \"no\" results (verdict must be FAIL when any check fails)'
+      approach_summary: 'gate_vercel_phase.sh を正規CoDDで再改善し、docs/research 参照抽出を per-file awk から rg 一括抽出へ統合して、現物 ALERT path の中央値を 0.87s→0.57s(-34.5%) まで短縮した。'

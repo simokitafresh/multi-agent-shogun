@@ -454,7 +454,7 @@ safe_send_clear() {
     # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）
     local _uncommitted
     # WSL2 NTFS最適化: フルスキャン(1.7s)→パス限定(0.2s)。除外パターンgrepも不要に
-    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain -uno -- scripts/ instructions/ config/ context/ CLAUDE.md 2>/dev/null || true)
+    _uncommitted=$(cd "$SCRIPT_DIR" && git status --porcelain -uno -- scripts/ instructions/ config/ context/ CLAUDE.md 2>/dev/null; true)
     if [ -n "$_uncommitted" ]; then
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
@@ -3058,8 +3058,9 @@ while true; do
         if [ ${#codex_idle[@]} -gt 0 ]; then
             codex_confirm_wait=""
             codex_confirm_wait=$(cli_profile_get "${codex_idle[0]}" "confirm_wait")
+            codex_confirm_wait="${codex_confirm_wait:-$CONFIRM_WAIT}"
             extra_wait=$((codex_confirm_wait - CONFIRM_WAIT))
-            sleep "${extra_wait:-15}"
+            sleep "${extra_wait:-0}"
 
             for name in "${codex_idle[@]}"; do
                 target="${PANE_TARGETS[$name]}"

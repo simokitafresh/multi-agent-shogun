@@ -3832,6 +3832,14 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-18
 - **出典**: cmd_2076
 - **記録者**: kotaro
-- **status**: draft
+- **status**: approved
 - **tags**: [universal]
 - WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル on /mnt/c/)が~100msを占め並列支配。WA rate廃止でもtotal 131ms>before 110ms(regression)。真因: 並列処理のボトルネック特定はsum不可→max(並列全ジョブ)で考えよ。
+
+### L502: 複数ファイルの軽い抽出は per-file awk より rg 一括抽出を先に疑え
+- **日付**: 2026-04-18
+- **出典**: cmd_2090
+- **記録者**: hayate
+- **status**: approved
+- **tags**: [universal]
+- gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file awk を何十回も起動する固定費が重い。存在判定キャッシュは維持しつつ、抽出だけを rg 一括へ寄せると大きく縮む。
