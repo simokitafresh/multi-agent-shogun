@@ -7,7 +7,7 @@
 # ════════════════════════════════
 version: "3.0"
 updated: "2026-02-07"
-description: "Codex + tmux multi-agent parallel dev platform with sengoku military hierarchy"
+description: "Codex CLI + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
 hierarchy: "Lord (human) → Shogun → Karo → Ninja 1-8"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
@@ -341,7 +341,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 
 ## File Operation Rule
 
-**Always Read before Write/Edit.** Codex rejects Write/Edit on unread files.
+**Always Read before Write/Edit.** Codex CLI rejects Write/Edit on unread files.
 
 ## YAML書込み安全規則（全エージェント必読）
 

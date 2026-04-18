@@ -725,3 +725,5 @@
 | cmd_2063 | CoDD正規改善(忍者完了処理) — ninja_done.sh(再) + gate_report_format.sh(再) + post-search-completeness-guard.sh | infra | 04-18 | 3スクリプトCoDD正規改善完了。gate_report_f |
 | cmd_2061 | CoDD正規改善(忍者hook A) — stop-lint-gate.sh + pre-bash-combined.sh + post-bash-combined.sh | infra | 04-18 | hook A 3本を正規 CoDD で再評価し、Before |
 | cmd_2065 | stop-lint-gate.sh L3診断推論改善 — Session State付き正規CoDD(失敗履歴注入) | infra | 04-18 | stop-lint-gate.sh を L3診断推論 + S |
+| cmd_2051 | CoDD改善バッチ15-A — cmd_save.sh(再々) + stop-lint-gate.sh(再々) + gate_karo_startup.sh(再々) | infra | 04-18 | cmd_2051 は部分完了。cmd_save.sh の w |
+| cmd_2067 | 研究 — CoDD #5深堀り+本家リポジトリ分析 — 我が軍への応用拡張 | infra | 04-18 | CoDD #5記事と codd-dev 公開実装を深掘りし、 |
