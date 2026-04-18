@@ -206,6 +206,8 @@ STALE_FIELDS = [
     'task', 'worker_id', 'timestamp',
     # 第7層: GP-198 session state (新cmd配備時に前cmdの失敗履歴をクリア)
     'session_state', 'previous_failures',
+    # 第8層: GP-201 CoDD failure history (CoDD改善cmd配備時にregistryから再注入するため毎回クリア)
+    'codd_failure_history',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
@@ -3015,6 +3017,146 @@ SS_INJECT_PY
     rm -f "$ss_tmp"
 }
 
+# ─── GP-201: CoDD改善cmd → failure history自動注入 ───
+# CoDD改善cmdを配備する際に、同一スクリプトの過去revert/regressionエントリを
+# codd_refactor_registry.mdから検索し、タスクYAMLに自動注入する。
+# 忍者は同じ失敗アプローチを繰り返さずに済む（ステートレスリトライ→ステートフル蓄積）。
+inject_codd_failure_history() {
+    local task_file="$1"
+    local cmd_id stk registry
+
+    cmd_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -z "$cmd_id" ] && return 0
+
+    stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$stk" ] || return 0
+
+    registry="$SCRIPT_DIR/docs/research/codd_refactor_registry.md"
+    [ -f "$registry" ] || return 0
+
+    python3 - "$task_file" "$stk" "$cmd_id" "$registry" <<'CODD_HIST_PY' 2>/dev/null || true
+import sys, os, re, tempfile
+
+task_file    = sys.argv[1]
+stk_path     = sys.argv[2]
+cmd_id       = sys.argv[3]
+registry_path = sys.argv[4]
+
+# 1. shogun_to_karo.yamlからcmd_idのtitle+commandを取得 (yaml.safe_loadで確実にパース)
+try:
+    import yaml as _yaml
+    with open(stk_path, encoding='utf-8') as f:
+        stk_data = _yaml.safe_load(f) or {}
+except Exception as e:
+    print(f'[CODD_HIST] ERROR reading stk: {e}', file=sys.stderr)
+    sys.exit(0)
+
+cmds = stk_data.get('commands', {})
+cmd_entry = cmds.get(cmd_id, {})
+if not cmd_entry:
+    sys.exit(0)
+
+cmd_title   = str(cmd_entry.get('title',   '') or '')
+cmd_command = str(cmd_entry.get('command', '') or '')
+cmd_text    = cmd_title + '\n' + cmd_command
+
+# 2. CoDD改善cmdかを判定 (title/commandに"codd"または"/codd-refactor"を含む)
+if not re.search(r'codd|/codd-refactor', cmd_text, re.IGNORECASE):
+    sys.exit(0)
+
+# 3. command/titleから .sh ファイル名を抽出
+scripts = re.findall(r'[a-zA-Z0-9_./-]+\.sh', cmd_text)
+scripts = list(dict.fromkeys(scripts))  # unique, preserve order
+
+if not scripts:
+    sys.exit(0)
+
+# 4. registryからrevert/regressionエントリを検索
+# 台帳形式: | date | ninja | script | phase | before→after | spec |
+failures = []
+try:
+    with open(registry_path, encoding='utf-8') as f:
+        for line in f:
+            if '|' not in line:
+                continue
+            cols = [c.strip() for c in line.split('|')]
+            if len(cols) < 7:
+                continue
+            script_col = cols[3]   # 対象スクリプト/領域
+            phase_col  = cols[4]   # Phase到達
+            result_col = cols[5]   # Before→After
+            spec_col   = cols[6] if len(cols) > 6 else ''
+
+            for sname in scripts:
+                basename = os.path.basename(sname)
+                if not basename:
+                    continue
+                if basename in script_col:
+                    if re.search(r'revert|regression', result_col + phase_col, re.IGNORECASE):
+                        failures.append({
+                            'script': script_col.strip('`').strip(),
+                            'date':   cols[1].strip(),
+                            'ninja':  cols[2].strip(),
+                            'result': result_col.strip(),
+                            'spec':   spec_col.strip(),
+                        })
+                        break  # 同一行を重複追加しない
+except Exception as e:
+    print(f'[CODD_HIST] ERROR reading registry: {e}', file=sys.stderr)
+    sys.exit(0)
+
+if not failures:
+    sys.exit(0)
+
+# 5. タスクYAMLに codd_failure_history: ブロックを注入
+with open(task_file, encoding='utf-8') as f:
+    raw = f.read()
+
+def _sq(s):
+    return "'" + str(s).replace("'", "''") + "'"
+
+note = 'このスクリプトは過去にCoDD改善でrevert/regressionあり。同じアプローチを繰り返すな'
+frag_lines = [
+    'codd_failure_history:',
+    f'  count: {len(failures)}',
+    f'  note: {_sq(note)}',
+    '  attempts:',
+]
+for fa in failures:
+    frag_lines.append(f'  - script: {_sq(fa["script"])}')
+    frag_lines.append(f'    date:   {_sq(fa["date"])}')
+    frag_lines.append(f'    ninja:  {_sq(fa["ninja"])}')
+    frag_lines.append(f'    result: {_sq(fa["result"])}')
+    if fa['spec']:
+        frag_lines.append(f'    spec:   {_sq(fa["spec"])}')
+
+frag     = '\n'.join(frag_lines)
+indented = '\n'.join('  ' + l for l in frag.split('\n'))
+
+pat = re.compile(r'^  codd_failure_history:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
+m   = pat.search(raw)
+if m:
+    raw = raw[:m.start()] + indented + raw[m.end():]
+else:
+    raw = raw.rstrip('\n') + '\n' + indented + '\n'
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.cdd_tmp')
+os.close(fd)
+try:
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(raw)
+    os.replace(tmp, task_file)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+
+print(f'[CODD_HIST] codd_failure_history injected: {len(failures)} revert/regression entries', file=sys.stderr)
+CODD_HIST_PY
+}
+
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -3567,6 +3709,7 @@ deploy_task_apply_task_mutations() {
 
     inject_task_modifiers "$task_file" || true
     inject_session_state_hints "$task_file" || true  # GP-198
+    inject_codd_failure_history "$task_file" || true  # GP-201
     inject_engineering_preferences "$task_file" || true
     postcondition_lesson_inject "$task_file" || true
 
