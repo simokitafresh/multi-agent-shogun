@@ -87,6 +87,8 @@ _run_hook() {
     rm -f "/tmp/claude_read_log_unknown.txt"
     run env HOOK_SCRIPT="$HOOK_SCRIPT" \
         HOOK_PAYLOAD='{"tool_name":"Read","tool_input":{"file_path":"/tmp/test_fallback.txt"}}' bash -c '
+        unset MOCK_AGENT_ID
+        unset AGENT_ID
         unset TMUX_PANE
         tmux() { return 1; }
         export -f tmux

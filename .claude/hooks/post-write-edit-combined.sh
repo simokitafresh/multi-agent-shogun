@@ -3,9 +3,15 @@
 # cmd_1661: 3 hooks → 1 script. Eliminates 2 bash startup costs (~60ms each).
 # GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止
 
-payload="$(cat 2>/dev/null || true)"
-[[ -z "${payload//[[:space:]]/}" ]] && exit 0
-[[ "$payload" != *'"Write"'* && "$payload" != *'"Edit"'* ]] && exit 0
+payload="$(</dev/stdin)"
+case "$payload" in
+    *[![:space:]]*) ;;
+    *) exit 0 ;;
+esac
+case "$payload" in
+    *'"Write"'*|*'"Edit"'*) ;;
+    *) exit 0 ;;
+esac
 
 emit_context() {
     printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$1"
@@ -14,6 +20,13 @@ emit_context() {
 # Extract file_path with jq (single call for all guards)
 file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .file_path // .filePath // .path // empty' 2>/dev/null)" || exit 0
 [[ -z "$file_path" ]] && exit 0
+
+case "$file_path" in
+    *queue/reports/*_report_*.yaml) ;;
+    *.sh|*.bash) ;;
+    *CLAUDE.md|*instructions/*|*.claude/hooks/*.sh) ;;
+    *) exit 0 ;;
+esac
 
 # === Guard 1: report-guard (WARN + YAML parse check) ===
 if [[ "$file_path" =~ queue/reports/[^/]*_report_[^/]*\.yaml$ ]]; then
@@ -33,8 +46,7 @@ except yaml.YAMLError as e:
 fi
 
 # === Guard 2: shellcheck (only for .sh/.bash files) ===
-basename="${file_path##*/}"
-if [[ "$basename" == *.sh || "$basename" == *.bash ]]; then
+if [[ "${file_path##*/}" == *.sh || "${file_path##*/}" == *.bash ]]; then
     _PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || true
     HOOK_PAYLOAD="$payload" PROJECT_ROOT="${_PROJECT_ROOT:-/mnt/c/tools/multi-agent-shogun}" python3 - <<'PY' || true
 import json

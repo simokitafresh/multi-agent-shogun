@@ -4,6 +4,9 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hayate | `.claude/hooks/pre-write-edit-combined.sh` | Phase 5(計測+実装+検証) | `10.41ms → 6.75ms` (`-35.2%`, replay payload median) | spec+after: `docs/research/cmd_2062_pre_write_edit_combined_spec_20260418.md` |
+| 2026-04-18 | hayate | `.claude/hooks/post-write-edit-combined.sh` | Phase 5(計測+実装+検証) | `10.62ms → 6.82ms` (`-35.8%`, replay payload median) | spec+after: `docs/research/cmd_2062_post_write_edit_combined_spec_20260418.md` |
+| 2026-04-18 | hayate | `.claude/hooks/pre-write-read-tracker.sh` | Phase 5(計測+実装+検証) | `17.55ms → 6.76ms` (`-61.5%`, replay payload median) | spec+after: `docs/research/cmd_2062_pre_write_read_tracker_spec_20260418.md` |
 | 2026-04-18 | kagemaru | `scripts/archive_completed.sh` | Phase 5(再改善: 計測+実装+検証) | `783ms → ~550ms` (`-30%`, keep=100 median) | GP-XXX2: 内部ループper-file `[ -f ]`+`_preflight_gate_cmds`チェック(O(n)) → 事前スキャン済み`_gate_status`連想配列のcaseステートメントO(1)参照に置換。11/11テストPASS。(spec省略) |
 | 2026-04-18 | kagemaru | `scripts/report_merge.sh` | Phase 5(再改善: 計測+実装+検証) | `76ms → ~23ms` (`-70%`, cmd_2044 median) | GP-XXX3: SCRIPT_DIR `$(cd dirname pwd)`→bash文字列演算+`cat <<EOF $(date)EOF`×2→`printf -v _ts builtin`+`printf`。subshell 4個排除。(spec省略) |
 | 2026-04-18 | kagemaru | `scripts/parity_check.sh` | Phase 5(再改善: 計測+実装+検証) | `20ms → ~5ms` (`-75%`, `--help` path median) | spec+after: `docs/research/cmd_2054_parity_check_spec_20260418.md` |

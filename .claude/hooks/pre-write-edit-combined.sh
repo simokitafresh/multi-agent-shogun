@@ -3,11 +3,17 @@
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -eu
 
-payload="$(cat 2>/dev/null || true)"
-[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+payload="$(</dev/stdin)"
+case "$payload" in
+    *[![:space:]]*) ;;
+    *) exit 0 ;;
+esac
 
 # Fast-path: only process Write/Edit
-[[ "$payload" != *'"Write"'* && "$payload" != *'"Edit"'* ]] && exit 0
+case "$payload" in
+    *'"Write"'*|*'"Edit"'*) ;;
+    *) exit 0 ;;
+esac
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
@@ -22,10 +28,9 @@ file_path="${_parsed#*	}"
 [[ -z "$file_path" ]] && exit 0
 
 # === Guard 1: config-guard (protected config files) ===
-basename="${file_path##*/}"
-case "$basename" in
+case "${file_path##*/}" in
     pyproject.toml|.eslintrc|.eslintrc.*|eslint.config*|biome.json|.prettierrc|.prettierrc.*|tsconfig.json|.ruff.toml|setup.cfg)
-        emit_deny "ERROR: $basename is a protected config file.\\nWHY: Linter/formatter configs must not be modified to suppress violations.\\nFIX: Fix the code that triggered the violation, not the linter config."
+        emit_deny "ERROR: ${file_path##*/} is a protected config file.\\nWHY: Linter/formatter configs must not be modified to suppress violations.\\nFIX: Fix the code that triggered the violation, not the linter config."
         exit 1
         ;;
 esac

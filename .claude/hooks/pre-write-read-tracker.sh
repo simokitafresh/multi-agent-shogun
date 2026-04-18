@@ -5,11 +5,17 @@ set -eu
 # - PreToolUse Read: file_pathを /tmp/claude_read_log_{agent_id}.txt に追記
 # - PreToolUse Write|Edit: tmpにfile_pathがあるか確認 → 未Read+既存ファイル → deny
 
-payload="$(cat 2>/dev/null || true)"
-[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+payload="$(</dev/stdin)"
+case "$payload" in
+    *[![:space:]]*) ;;
+    *) exit 0 ;;
+esac
 
 # Fast-path: only process Read/Write/Edit
-[[ "$payload" != *'"Read"'* && "$payload" != *'"Write"'* && "$payload" != *'"Edit"'* ]] && exit 0
+case "$payload" in
+    *'"Read"'*|*'"Write"'*|*'"Edit"'*) ;;
+    *) exit 0 ;;
+esac
 
 # Extract tool_name and file_path with single jq call
 _parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
@@ -18,8 +24,11 @@ file_path="${_parsed#*	}"
 
 [[ -z "$file_path" ]] && exit 0
 
-# Get agent_id from tmux (fallback to 'unknown' on failure)
-agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
+# Get agent_id with env fast-path, fallback to tmux, then unknown
+agent_id="${MOCK_AGENT_ID:-${AGENT_ID:-}}"
+if [[ -z "$agent_id" ]]; then
+    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
+fi
 [[ -z "$agent_id" ]] && agent_id="unknown"
 
 LOG_FILE="/tmp/claude_read_log_${agent_id}.txt"
