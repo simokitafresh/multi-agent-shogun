@@ -15,6 +15,13 @@ _self_dir="${_self%/*}"
 [[ "$_self_dir" != /* ]] && _self_dir="$(cd "$_self_dir" && pwd)"
 SCRIPT_DIR="${_self_dir%/scripts}"
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+AGENTS_PANE_BORDER_FORMAT_PLACEHOLDER='<agent/model/context/inbox/task>'
+
+source_optional() {
+    local source_path="$1"
+    # shellcheck source=/dev/null
+    [ -f "$source_path" ] && source "$source_path"
+}
 
 log_dry() {
     echo "[DRY-RUN] $1"
@@ -36,22 +43,12 @@ else
     mkdir -p "$STATE_DIR"
 fi
 
-# モデル検出ライブラリ（将軍@model_name同期用）
-if [ -f "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
-fi
-if [ -f "$SCRIPT_DIR/scripts/lib/model_detect.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
-fi
-if [ -f "$SCRIPT_DIR/scripts/lib/pane_format.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$SCRIPT_DIR/scripts/lib/pane_format.sh"
-fi
-if [ -f "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+# dry-run hot path では agent_config.sh 以外の source を遅延する
+source_optional "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+if [[ "$DRY_RUN" != true ]]; then
+    source_optional "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    source_optional "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+    source_optional "$SCRIPT_DIR/scripts/lib/pane_format.sh"
 fi
 
 # 互換ターゲット解決（window名優先、なければ従来index）
@@ -116,17 +113,26 @@ layout_is_normalized() {
     [[ "$row_count" -eq "$expected_count" ]]
 }
 
-SHOGUN_WINDOW_TARGET=$(resolve_window_target "shogun:main" "shogun:1")
-AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
+if [[ "$DRY_RUN" == true ]]; then
+    SHOGUN_WINDOW_TARGET="shogun:main"
+    AGENTS_WINDOW_TARGET="shogun:agents"
+else
+    SHOGUN_WINDOW_TARGET=$(resolve_window_target "shogun:main" "shogun:1")
+    AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
+fi
 
 # ─── agentsウィンドウ自動作成 (cmd_1357) ───
 # ウィンドウ不在時に自動作成し、ターゲットを再解決
-if ! tmux list-windows -t shogun -F '#{window_name}' | grep -q '^agents$'; then
+if [[ "$DRY_RUN" != true ]] && ! tmux list-windows -t shogun -F '#{window_name}' | grep -q '^agents$'; then
     run_or_preview "tmux new-window -t shogun -n agents" tmux new-window -t shogun -n agents
     AGENTS_WINDOW_TARGET=$(resolve_window_target "shogun:agents" "shogun:2")
 fi
 
 SHOGUN_PANE_TARGET=$(resolve_first_pane_target "$SHOGUN_WINDOW_TARGET")
+LAYOUT_FAST_PATH=false
+if [[ "$DRY_RUN" == true ]] && layout_is_normalized; then
+    LAYOUT_FAST_PATH=true
+fi
 
 # ─── remain-on-exit (cmd_183) ───
 # CLIプロセスが死んでもペインを残す（OOM Kill等の原因調査用）
@@ -140,9 +146,9 @@ echo "[shutsujin] remain-on-exit: on (${AGENTS_WINDOW_TARGET})"
 # ─── pane-border-format with inbox count (cmd_188) ───
 # 色定義・フォーマット文字列は pane_format.sh に集約（DRY原則）
 run_or_preview \
-  "tmux set-option -w -t ${AGENTS_WINDOW_TARGET} pane-border-format '<agent/model/context/inbox/task>'" \
+  "tmux set-option -w -t ${AGENTS_WINDOW_TARGET} pane-border-format '${AGENTS_PANE_BORDER_FORMAT_PLACEHOLDER}'" \
   tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
-  "$AGENTS_PANE_BORDER_FORMAT" \
+  "${AGENTS_PANE_BORDER_FORMAT:-$AGENTS_PANE_BORDER_FORMAT_PLACEHOLDER}" \
   2>/dev/null
 
 # shogun: Opus紫(#cba6f7) + model_name + context_pct
@@ -161,6 +167,9 @@ run_or_preview \
     tmux set-option -p -t "$SHOGUN_PANE_TARGET" @agent_id shogun 2>/dev/null
 shogun_model=""
 if [[ "$DRY_RUN" != true ]]; then
+    source_optional "$SCRIPT_DIR/lib/cli_adapter.sh"
+    source_optional "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+    source_optional "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
     shogun_model=$(tmux show-options -p -t "$SHOGUN_PANE_TARGET" -v @model_name 2>/dev/null || echo "")
     if declare -F detect_real_model >/dev/null 2>&1; then
         detected_model=$(detect_real_model shogun "$SHOGUN_PANE_TARGET" 2>/dev/null || echo "")
@@ -169,7 +178,7 @@ if [[ "$DRY_RUN" != true ]]; then
         fi
     fi
 fi
-if [ -z "$shogun_model" ] && declare -F cli_profile_get >/dev/null 2>&1; then
+if [ -z "$shogun_model" ] && [[ "$DRY_RUN" != true ]] && declare -F cli_profile_get >/dev/null 2>&1; then
     shogun_model=$(cli_profile_get shogun "display_name" 2>/dev/null || echo "")
 fi
 shogun_model="${shogun_model:-Unknown}"
@@ -204,19 +213,25 @@ run_or_preview \
 echo "[shutsujin] keybind: Prefix+v → capture_clipboard_image.sh"
 
 # ─── idle flag initialization (cmd_455) ───
-for agent in $(get_all_agents); do
-    if [[ "$DRY_RUN" == true ]]; then
-        log_dry "touch ${STATE_DIR}/shogun_idle_${agent}"
-    else
-        touch "${STATE_DIR}/shogun_idle_${agent}"
-    fi
-done
+if [[ "$DRY_RUN" == true && "$LAYOUT_FAST_PATH" == true ]]; then
+    log_dry "touch ${STATE_DIR}/shogun_idle_{all_agents}"
+else
+    for agent in $(get_all_agents); do
+        if [[ "$DRY_RUN" == true ]]; then
+            log_dry "touch ${STATE_DIR}/shogun_idle_${agent}"
+        else
+            touch "${STATE_DIR}/shogun_idle_${agent}"
+        fi
+    done
+fi
 echo "[shutsujin] idle flags: created for all agents"
 
 # ─── レイアウト正規化 (agents window) ───
 # ペイン配置・サイズを正規状態に復元（再起動後にレイアウトが崩れる問題の根本対策）
-_layout_already_normalized=false
-if layout_is_normalized; then
+_layout_already_normalized="$LAYOUT_FAST_PATH"
+if [[ "$_layout_already_normalized" == true ]]; then
+    echo "[shutsujin] layout: reset_layout.sh skipped (already normalized)"
+elif layout_is_normalized; then
     _layout_already_normalized=true
     echo "[shutsujin] layout: reset_layout.sh skipped (already normalized)"
 elif [[ "$DRY_RUN" == true ]]; then
@@ -225,7 +240,7 @@ elif [[ "$DRY_RUN" == true ]]; then
 else
     bash "$SCRIPT_DIR/scripts/reset_layout.sh"
 fi
-if [[ "$_layout_already_normalized" == true ]] || layout_is_normalized; then
+if [[ "$_layout_already_normalized" == true ]]; then
     echo "[shutsujin] layout: normalized"
 else
     echo "[shutsujin] layout: reset_layout.sh applied"

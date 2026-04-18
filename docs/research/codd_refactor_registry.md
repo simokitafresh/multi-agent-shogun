@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-18 | hayate | `scripts/shutsujin_departure.sh` | Phase 5(正規CoDD再改善: 計測+実装+検証) | dry-run path `0.13s → 0.04s` (`-69.2%`, median 5run) | dry-run では model/pane-format 系 source を遅延、healthy fast-path で idle-flag preview と二重 layout check を省略。`bats tests/unit/test_switch_cli.bats tests/unit/test_cli_adapter.bats` PASS。spec: `docs/research/cmd_2079_codd_spec_shutsujin_departure_20260418.md` |
 | 2026-04-18 | kagemaru | `.claude/hooks/pre-bash-combined.sh` | Phase 5(再挑戦: 計測+実装+検証) | guard path `10ms → 7ms` (`-30%`) / hot path `45ms → 32ms` (`-28.9%`) | jq→awk置換(char-by-char JSON string extract)。前回revert(IFS read)と別アプローチ。9/9テストPASS。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
 | 2026-04-18 | kagemaru | `.claude/hooks/post-bash-combined.sh` | Phase 5(再挑戦: 計測+実装+検証) | test path(全PASS) `35ms → 8ms` (`-77%`, median 10run) | fail/skip事前チェック(bash文字列マッチ)でpython3到達頻度を削減。FAIL/SKIP含む場合はpython3経由で正確解析(動作維持)。`# skip`パターン追加修正済み。9/9テストPASS。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
 | 2026-04-18 | kagemaru | `.claude/hooks/post-search-completeness-guard.sh` | Phase 5(計測+検証) | `6ms → 5ms` (誤差範囲) | 12行echoのみ。bash起動コスト支配。PASS_NO_IMPROVEMENT。spec: `docs/research/cmd_2075_codd_spec_hooks_retry_20260418.md` |
