@@ -31,23 +31,6 @@ read_task_report_path() {
     FIELD_GET_NO_LOG=1 field_get "$(task_file)" "report_path" "" 2>/dev/null
 }
 
-generate_report_template_only() {
-    inject_report_only sasuke
-}
-
-deploy_task_template_only sasuke() {
-    deploy_task_ac_only sasuke
-    inject_modifiers_only sasuke
-    inject_report_only sasuke
-}
-
-generate_report_template_from_cmd() {
-    local cmd_id="$1"
-    deploy_task_resolve_only sasuke "$cmd_id"
-    inject_modifiers_only sasuke
-    inject_report_only sasuke
-}
-
 # ─── Helper: gitignore テスト用 git 環境セットアップ ───
 _setup_git_project() {
     git -C "$TEST_PROJECT" init --quiet
