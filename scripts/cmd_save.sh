@@ -22,6 +22,7 @@ QUEUE_FILE="${CMD_SAVE_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
 ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
 QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/shogun_to_karo.lock"
+CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -461,6 +462,28 @@ if load_cmd_block; then
         echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
         echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
         abort_if_block_immediate || exit 1
+    fi
+fi
+
+# --- Check 1.6: 前回PASS済みcmd pending昇格チェック ---
+# 原理: 将軍が一括起票すると前回cmdが家老に委任されないまま次のcmdを保存できてしまう
+# 1cmd毎ゲート強制=呼出し方100億パターンに対応する原理的解決(cmd_2158)
+if [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]]; then
+    _PREV_CMD_ID=$(cat "$CMD_SAVE_LAST_CMD_FILE" 2>/dev/null || true)
+    if [[ -n "$_PREV_CMD_ID" && "$_PREV_CMD_ID" != "$CMD_ID" ]]; then
+        _PREV_STATUS=$(awk -v cmd_id="$_PREV_CMD_ID" '
+            $0 == "  " cmd_id ":" { found=1; next }
+            found && /^  cmd_[0-9]+:/ { exit }
+            found && /^[[:space:]]+status:[[:space:]]/ {
+                gsub(/^[[:space:]]+status:[[:space:]]*/, "")
+                gsub(/"/, "")
+                print; exit
+            }
+        ' "$QUEUE_FILE" 2>/dev/null || true)
+        if [[ "$_PREV_STATUS" == "pending" ]]; then
+            record_block_reason "前回PASS済み ${_PREV_CMD_ID} がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
+            abort_if_block_immediate || exit 1
+        fi
     fi
 fi
 
@@ -2312,6 +2335,8 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
             echo "  status: pending — 自動設定"
         fi
     fi
+    # 前回cmd_id記録（次回呼出し時のpending昇格チェック用 — Check 1.6）
+    echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
 else
     if [[ "$BLOCK_COUNT" -gt 0 ]]; then
         echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
