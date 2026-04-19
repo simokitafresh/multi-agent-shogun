@@ -145,12 +145,14 @@ EOF
 }
 
 @test "T-SCI-005: inotifywait blocks when message arrives during wait" {
+    # T-SCI-005専用: initial check(WSL2高負荷時~200ms)完了後に確実に書き込むため延長
+    export STOP_HOOK_INOTIFY_TIMEOUT=1
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
-    # バックグラウンドで0.05秒後に未読メッセージを書き込む
-    # hookのinitial check完了後に書き込み、かつinotifywait timeout(0.2s)より前に到達
+    # バックグラウンドで0.5秒後に未読メッセージを書き込む
+    # hookのinitial check完了後に書き込み、��つinotifywait timeout(1s)より前に到達
     (
-        sleep 0.05
+        sleep 0.5
         cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
 messages:
   - id: msg_late
