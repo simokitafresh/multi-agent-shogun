@@ -11,6 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 CMD_ID="${1:-}"
 
 if [ -z "$CMD_ID" ]; then
@@ -40,6 +41,16 @@ TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
 mkdir -p "$GATES_DIR" "$LOG_DIR"
+
+# ─── CMD_ID単位ロック（cmd_2119） ───
+# 同一cmdに対する並行cmd_complete_gate実行を抑止する。
+# 早期exit系の判定より前で確保し、二重GATE CLEAR後処理を防ぐ。
+CMD_GATE_LOCK_FILE="$(lock_path "$GATES_DIR/cmd_complete_gate.lock")"
+exec 209>"$CMD_GATE_LOCK_FILE"
+if ! flock -n 209; then
+    echo "[gate] ${CMD_ID}: cmd_complete_gate already running (CMD_ID lock)"
+    exit 0
+fi
 
 # ─── CLEAR済みcmd早期exit（GP-026 B案: cmd_1332） ───
 # gate_metrics.logに当該cmd_idのCLEAR記録があれば再検査をスキップ
