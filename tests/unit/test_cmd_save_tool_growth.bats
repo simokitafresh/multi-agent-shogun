@@ -47,13 +47,15 @@ teardown() {
 }
 
 @test "TG-T002: research cmd with engine integration AC emits no WARNING" {
-    local CMD_BLOCK="    project: dm-signal
-    task_type: impl
-    command: |
-      research_engine を使う analysis runner を追加する
-    acceptance_criteria:
-      - \"AC1: 新規関数をresearch_engine.pyへ統合\"
-      - \"AC2: 呼び出し側を移設してテスト+commit\""
+    local CMD_BLOCK="  project: dm-signal
+  task_type: impl
+  command: |
+    research_engine を使う analysis runner を追加する
+  acceptance_criteria:
+    - id: AC1
+      description: \"新規関数をresearch_engine.pyへ統合\"
+    - id: AC2
+      description: \"呼び出し側を移設してテスト+commit\""
 
     run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     echo "$output" >&2

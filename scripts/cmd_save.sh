@@ -1308,10 +1308,9 @@ check_research_tool_growth_ac() {
 
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
-        /acceptance_criteria:/ { found=1; next }
-        found && /^    - / { print; next }
-        found && /^      / { print; next }
-        found { exit }
+        /^[[:space:]]*acceptance_criteria:/ { found=1; next }
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        found { print }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
 
