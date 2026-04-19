@@ -562,14 +562,10 @@ QG_TEMPLATE
         fi
     fi
 
-    # assumptions: AC数3以上で必須
-    _PF_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
-    _PF_AC_COUNT=$(( ${_PF_AC_COUNT:-0} + 0 ))
-    if [ "$_PF_AC_COUNT" -ge 3 ]; then
-        if ! cmd_block_has_field "assumptions" && ! cmd_block_has_field "quality_gate.assumptions"; then
-            MISSING_KEYS+=("assumptions")
-            MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
-        fi
+    # assumptions: 全cmdで必須（cmd_2157: AC≥3→全cmdに拡大）
+    if ! cmd_block_has_field "assumptions" && ! cmd_block_has_field "quality_gate.assumptions"; then
+        MISSING_KEYS+=("assumptions")
+        MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
     fi
 
     if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
@@ -2205,12 +2201,10 @@ fi
 
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
-# 目的: AC数3以上のcmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ
+# 目的: 全cmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ（cmd_2157: AC≥3→全cmd）
 # cmd_1906: trust:unverified→BLOCK昇格。trust:verified+sourceにファイルパスがある場合実在確認
-_ASSUMP_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
-_ASSUMP_AC_COUNT=$(( ${_ASSUMP_AC_COUNT:-0} + 0 ))
-if [ "$_ASSUMP_AC_COUNT" -ge 3 ]; then
-    # assumptions存在チェックはpreflight済み。以下は内容検証のみ
+if true; then
+    # assumptions存在チェックはpreflight(Check 3)済み。以下は内容検証のみ
     if echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
