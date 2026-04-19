@@ -3935,6 +3935,14 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-19
 - **出典**: cmd_karo_ci_fix_ga117
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra]
 - hayateのauto-commit(dc8a185)でq5 elifがWARN→BLOCKに変更されCIが失敗した。auto-commit前にbatsテストを走らせる仕組みがあれば即検知できた。check_ac_param_sufficiencyもrecord_block_reason(BLOCK)とWARN_COUNT(WARN)の混用が問題の根本。関数の責任を「WARNのみ」か「BLOCKのみ」に統一すべき
+
+### L515: 入力消失調査は送信経路を分離しraw traceを先に置け
+- **日付**: 2026-04-19
+- **出典**: cmd_2104
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra]
+- watcher nudge、generic SSH直接入力、Android companion app send-keys は別経路である。 hook/lord_conversation だけでは pre-submit 消失を観測できないため、 再現待ち調査では tmux pipe-pane などの raw trace を先に用意すべき。

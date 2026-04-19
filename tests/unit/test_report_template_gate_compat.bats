@@ -7,8 +7,13 @@
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
-    [ -f "$GATE_SCRIPT" ] || return 1
+    export GATE_SCRIPT="$BATS_FILE_TMPDIR/gate_report_fast.sh"
+    cat > "$GATE_SCRIPT" <<EOF
+#!/usr/bin/env bash
+exec python3 "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "\$@"
+EOF
+    chmod +x "$GATE_SCRIPT"
+    [ -f "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
     # Pre-generate base filled report and warm GP-073 PASS cache
     export BASE_FILLED_REPORT="$BATS_FILE_TMPDIR/base_filled_report.yaml"

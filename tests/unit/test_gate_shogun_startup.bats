@@ -168,12 +168,14 @@ setup() {
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
     export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
+    export SHOGUN_STARTUP_LIGHTWEIGHT=1
 }
 
 teardown() {
     export PATH="$ORIG_PATH"
     export HOME="$ORIG_HOME"
     unset SHOGUN_STARTUP_ROOT
+    unset SHOGUN_STARTUP_LIGHTWEIGHT
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 

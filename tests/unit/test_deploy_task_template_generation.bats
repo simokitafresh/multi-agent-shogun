@@ -31,6 +31,23 @@ read_task_report_path() {
     FIELD_GET_NO_LOG=1 field_get "$(task_file)" "report_path" "" 2>/dev/null
 }
 
+generate_report_template_only() {
+    inject_report_only sasuke
+}
+
+deploy_task_template_only sasuke() {
+    deploy_task_ac_only sasuke
+    inject_modifiers_only sasuke
+    inject_report_only sasuke
+}
+
+generate_report_template_from_cmd() {
+    local cmd_id="$1"
+    deploy_task_resolve_only sasuke "$cmd_id"
+    inject_modifiers_only sasuke
+    inject_report_only sasuke
+}
+
 # ─── Helper: gitignore テスト用 git 環境セットアップ ───
 _setup_git_project() {
     git -C "$TEST_PROJECT" init --quiet
@@ -88,12 +105,8 @@ task:
       description: "outputs/にCSVを出力する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -127,12 +140,8 @@ task:
       description: "scripts/deploy_task.shを修正する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -164,12 +173,8 @@ task:
       description: "研究ログを更新する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local scope_report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local scope_report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -186,12 +191,8 @@ task:
       description: "研究成果を保存する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local target_report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local target_report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -231,12 +232,8 @@ task:
       description: "report templateのみ更新する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -268,12 +265,8 @@ task:
       description: "後続レビューで免除する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -304,12 +297,8 @@ task:
       description: "既存の挙動を確認する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -336,12 +325,8 @@ task:
       description: "monthly returns parityを確認する。差分が0である"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -372,12 +357,8 @@ task:
         - check: "月次リターン差分を確認したか"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -405,12 +386,8 @@ task:
       description: "報告テンプレートを更新する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml
@@ -439,12 +416,8 @@ task:
       description: "報告テンプレートにsimplicity_check行を追加する"
 EOF
 
-    run deploy_task_template_only sasuke
-    [ "$status" -eq 0 ]
-
-    run read_task_report_path
-    [ "$status" -eq 0 ]
-    local report_path="$TEST_PROJECT/$output"
+    deploy_task_template_only sasuke
+    local report_path="$TEST_PROJECT/$(read_task_report_path)"
 
     run python3 - <<PYEOF
 import yaml

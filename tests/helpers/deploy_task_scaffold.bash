@@ -88,8 +88,21 @@ deploy_task_scaffold() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
 
-    mkdir -p "$TEST_PROJECT"
-    cp -a "$DEPLOY_TASK_TEMPLATE_DIR"/. "$TEST_PROJECT"/
+    mkdir -p \
+        "$TEST_PROJECT/queue/tasks" \
+        "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/logs" \
+        "$TEST_PROJECT/projects" \
+        "$TEST_PROJECT/archive"
+
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
+    cat > "$TEST_PROJECT/dashboard.md" <<'EOF'
+<!-- DASHBOARD_AUTO_START -->
+<!-- DASHBOARD_AUTO_END -->
+EOF
 }
 
 deploy_task_teardown() {
@@ -110,6 +123,7 @@ deploy_task_fast() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         parse_deploy_task_args "$@"
         cleanup_none_task_files
@@ -175,6 +189,7 @@ deploy_task_template_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         parse_deploy_task_args "$@"
         cleanup_none_task_files
@@ -239,6 +254,7 @@ deploy_task_lessons_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         local ninja_name="${1:-sasuke}"
         local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
@@ -260,6 +276,7 @@ deploy_task_ac_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         parse_deploy_task_args "$@"
         cleanup_none_task_files
@@ -290,6 +307,7 @@ deploy_task_resolve_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         parse_deploy_task_args "$@"
         cleanup_none_task_files
@@ -322,6 +340,7 @@ inject_report_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
 
         NINJA_NAME="$ninja_name"
         # SCRIPT_DIR is set by deploy_task.sh on source (BASH_SOURCE[0] → TEST_PROJECT)
@@ -356,6 +375,7 @@ inject_ac_version_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
         inject_ac_version "$task_file"
     )
 }

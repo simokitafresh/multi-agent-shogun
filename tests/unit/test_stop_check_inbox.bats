@@ -59,7 +59,7 @@ EOF
 
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
-    export STOP_HOOK_INOTIFY_TIMEOUT=1.0  # 並列負荷下での安定性確保（--jobs 4対応）
+    export STOP_HOOK_INOTIFY_TIMEOUT=0.2  # テスト用に短縮。late-arrival分岐の再現余裕を確保
     rm -f "$TEST_IDLE_FLAG"
     : > "$TMUX_LOG"
     : > "$INBOX_WRITE_LOG"
@@ -147,10 +147,10 @@ EOF
 @test "T-SCI-005: inotifywait blocks when message arrives during wait" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
-    # バックグラウンドで0.2秒後に未読メッセージを書き込む
-    # hookのinitial check完了後に書き込み、かつinotifywait timeout(1.0s)より前に到達
+    # バックグラウンドで0.05秒後に未読メッセージを書き込む
+    # hookのinitial check完了後に書き込み、かつinotifywait timeout(0.2s)より前に到達
     (
-        sleep 0.2
+        sleep 0.05
         cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
 messages:
   - id: msg_late

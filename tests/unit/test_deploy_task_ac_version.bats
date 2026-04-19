@@ -9,6 +9,8 @@ setup_file() {
 
 setup() {
     deploy_task_scaffold "deploy_acv"
+    # shellcheck disable=SC1090
+    source "$TEST_PROJECT/scripts/lib/field_get.sh"
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -26,43 +28,60 @@ teardown() {
 }
 
 read_task_ac_version() {
-    python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(data.get('task', {}).get('ac_version', ''))
-"
+    FIELD_GET_NO_LOG=1 field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "ac_version" "" 2>/dev/null
+}
+
+read_task_list_field() {
+    local field_name="$1"
+    if grep -q "^  ${field_name}: \\[\\][[:space:]]*$" "$TEST_PROJECT/queue/tasks/sasuke.yaml"; then
+        printf '__empty__\n'
+        return 0
+    fi
+    awk -v field="$field_name" '
+{
+    if (!capture) {
+        if ($0 ~ "^  " field ":[[:space:]]*$") {
+            capture = 1
+            next
+        }
+        next
+    }
+    if ($0 ~ /^  [A-Za-z_][A-Za-z0-9_]*:/) {
+        exit
+    }
+    if ($0 ~ /^[[:space:]]*-[[:space:]]+/) {
+        line = $0
+        sub(/^[[:space:]]*-[[:space:]]+/, "", line)
+        vals[++n] = line
+    }
+}
+END {
+    if (!capture && n == 0) {
+        print "__missing__"
+        exit
+    }
+    if (n == 0) {
+        print "__empty__"
+        exit
+    }
+    out = vals[1]
+    for (i = 2; i <= n; i++) out = out "|" vals[i]
+    print out
+}
+' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
 read_task_report_path() {
-    python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(data.get('task', {}).get('report_path', ''))
-"
+    FIELD_GET_NO_LOG=1 field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "report_path" "" 2>/dev/null
 }
 
 read_task_field() {
     local field_name="$1"
-    TASK_FILE_ENV="$TEST_PROJECT/queue/tasks/sasuke.yaml" FIELD_NAME_ENV="$field_name" python3 -c "
-import os, yaml
-with open(os.environ['TASK_FILE_ENV'], encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-task = data.get('task', {})
-value = task.get(os.environ['FIELD_NAME_ENV'], '__missing__')
-if isinstance(value, list):
-    print('list')
-    print('|'.join(str(v) for v in value))
-elif value == '__missing__':
-    print('__missing__')
-else:
-    print(str(value))
-"
+    FIELD_GET_NO_LOG=1 field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$field_name" "__missing__" 2>/dev/null
 }
 
 @test "deploy_task injects ac_version and report ac_version_read on first deploy" {
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -72,22 +91,19 @@ else:
     run grep -E "^ac_version_read:[[:space:]]*7d010443$" "$TEST_PROJECT/queue/reports/sasuke_report.yaml"
     [ "$status" -eq 0 ]
 
-    run read_task_field stop_for
+    run read_task_list_field stop_for
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "" ]
+    [ "$output" = "__empty__" ]
 
-    run read_task_field never_stop_for
+    run read_task_list_field never_stop_for
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [[ "${lines[1]}" == *"CDPポート未応答"* ]]
-    [[ "${lines[1]}" == *"自動対処機能"* ]]
-    [[ "${lines[1]}" == *"自明な修正"* ]]
+    [[ "$output" == *"CDPポート未応答"* ]]
+    [[ "$output" == *"自動対処機能"* ]]
+    [[ "$output" == *"自明な修正"* ]]
 
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+    [ "$output" = "AC1|AC2|AC3" ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
@@ -138,7 +154,7 @@ task:
       description: "third"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -160,7 +176,7 @@ task:
   ac_version: 519485d7
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
     run read_task_ac_version
     [ "$status" -eq 0 ]
@@ -178,7 +194,10 @@ task:
     - ac2: second
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -189,9 +208,9 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "__missing__" ]
 
-    run read_task_field stop_for
+    run read_task_list_field stop_for
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
+    [ "$output" = "__empty__" ]
 }
 
 @test "deploy_task preserves existing execution control values on redeploy" {
@@ -213,22 +232,25 @@ task:
   ac_priority: "AC2 > AC1 > AC3"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1321: FIELD_CLEAR→再inject設計により、既存値はクリアされデフォルト再注入される
-    run read_task_field stop_for
+    run read_task_list_field stop_for
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
+    [ "$output" = "__empty__" ]
 
-    run read_task_field never_stop_for
+    run read_task_list_field never_stop_for
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
+    [[ "$output" == *"CDPポート未応答"* ]]
 
     # 3AC → parallel_ok/ac_priorityはデフォルト再生成
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
+    [ "$output" = "AC1|AC2|AC3" ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
@@ -249,7 +271,7 @@ task:
     - ac1: first
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -264,16 +286,10 @@ EOF
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml', encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-print(type(data.get('lesson_candidate')).__name__)
-print(str((data.get('lesson_candidate') or {}).get('found', '')))
-"
+    run grep -n "^lesson_candidate:$" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "dict" ]
-    [ "${lines[1]}" = "False" ]
+    run grep -n "^  found: false$" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "deploy_task generates ac_priority and parallel_ok from explicit AC ids" {
@@ -290,17 +306,19 @@ task:
       description: "third"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
     [ "$output" = "FOO > BAR > BAZ" ]
 
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "FOO|BAR|BAZ" ]
+    [ "$output" = "FOO|BAR|BAZ" ]
 }
 
 @test "deploy_task generates parallel_ok for 2 ACs but skips ac_priority" {
@@ -315,17 +333,19 @@ task:
       description: "second"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
     [ "$output" = "__missing__" ]
 
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "X1|X2" ]
+    [ "$output" = "X1|X2" ]
 }
 
 @test "deploy_task sets empty parallel_ok for single AC" {
@@ -338,13 +358,15 @@ task:
       description: "the only one"
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
-    run read_task_field parallel_ok
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "" ]
+
+    run read_task_list_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "$output" = "__empty__" ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
@@ -370,7 +392,10 @@ task:
     - AC3
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
@@ -378,10 +403,9 @@ EOF
     [ "$output" = "AC1 > AC2 > AC3" ]
 
     # parallel_ok should be preserved (non-empty)
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+    [ "$output" = "AC1|AC2|AC3" ]
 }
 
 @test "deploy_task replaces empty-list parallel_ok with default AC IDs for 3 ACs" {
@@ -400,13 +424,15 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
-    run read_task_field parallel_ok
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+
+    run read_task_list_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "$output" = "AC1|AC2|AC3" ]
 
     # ac_priority should be preserved (non-empty)
     run read_task_field ac_priority
@@ -427,13 +453,15 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
-    run read_task_field parallel_ok
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "X1|X2" ]
+
+    run read_task_list_field parallel_ok
+    [ "$status" -eq 0 ]
+    [ "$output" = "X1|X2" ]
 
     # ac_priority should not be injected (< 3 ACs)
     run read_task_field ac_priority
@@ -457,17 +485,19 @@ task:
   parallel_ok: []
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_modifiers_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_field ac_priority
     [ "$status" -eq 0 ]
     [ "$output" = "AC1 > AC2 > AC3" ]
 
-    run read_task_field parallel_ok
+    run read_task_list_field parallel_ok
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "AC1|AC2|AC3" ]
+    [ "$output" = "AC1|AC2|AC3" ]
 }
 
 @test "deploy_task rejects None ninja_name and removes ghost task artifacts" {
@@ -537,7 +567,7 @@ task:
     - AC1
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L900
@@ -595,7 +625,7 @@ parent_cmd: cmd_preserve_test
 verdict: PASS
 status: done
 EOF
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
     # Completed report should be preserved (not archived)
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_preserve_test.yaml" ]
@@ -638,7 +668,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # Verify: ACs overwritten with cmd_200's ACs
@@ -680,7 +710,7 @@ task:
   _ac_worker_id: hayate
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     run grep "Correct AC for cmd_300" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -763,17 +793,13 @@ EOF
     [ "$status" -eq 1 ]
 
     # Tracking fields should be set after first deploy
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('_ac_task_id', ''))
-print(task.get('_ac_worker_id', ''))
-"
+    run read_task_field _ac_task_id
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "cmd_500_impl" ]
-    [ "${lines[1]}" = "sasuke" ]
+    [ "$output" = "cmd_500_impl" ]
+
+    run read_task_field _ac_worker_id
+    [ "$status" -eq 0 ]
+    [ "$output" = "sasuke" ]
 }
 
 @test "cmd_1493: tracking fields updated after every deploy" {
@@ -789,20 +815,16 @@ task:
   - ac3: third
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('_ac_task_id', ''))
-print(task.get('_ac_worker_id', ''))
-"
+    run read_task_field _ac_task_id
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "my_task_123" ]
-    [ "${lines[1]}" = "sasuke" ]
+    [ "$output" = "my_task_123" ]
+
+    run read_task_field _ac_worker_id
+    [ "$status" -eq 0 ]
+    [ "$output" = "sasuke" ]
 }
 
 @test "deploy_task keeps legacy detail fallback when if_then is absent" {
@@ -828,7 +850,7 @@ task:
     - AC1
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
 
     run read_related_detail L901
@@ -869,25 +891,25 @@ task:
 EOF
 
     # cmd_id引数付きで配備
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_600
+    run deploy_task_resolve_only sasuke cmd_600
     [ "$status" -eq 0 ]
 
     # parent_cmd/task_id/projectが新cmdに更新されたか
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('parent_cmd', ''))
-print(task.get('task_id', ''))
-print(task.get('project', ''))
-print(task.get('task_type', ''))
-"
+    run read_task_field parent_cmd
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "cmd_600" ]
-    [ "${lines[1]}" = "cmd_600_impl" ]
-    [ "${lines[2]}" = "testproj" ]
-    [ "${lines[3]}" = "impl" ]
+    [ "$output" = "cmd_600" ]
+
+    run read_task_field task_id
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_600_impl" ]
+
+    run read_task_field project
+    [ "$status" -eq 0 ]
+    [ "$output" = "testproj" ]
+
+    run read_task_field task_type
+    [ "$status" -eq 0 ]
+    [ "$output" = "impl" ]
 
     # ACが新cmdのものに上書きされたか
     run grep "New task AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -920,18 +942,13 @@ task:
 EOF
 
     # cmd_id無し（レガシー呼び出し）
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke "配備メッセージ" task_assigned karo
+    run deploy_task_ac_only sasuke "配備メッセージ" task_assigned karo
     [ "$status" -eq 0 ]
 
     # parent_cmdは変更されない
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-print(data.get('task', {}).get('parent_cmd', ''))
-"
+    run read_task_field parent_cmd
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "cmd_700" ]
+    [ "$output" = "cmd_700" ]
 
     # ACも変更されない（同一task_id → overwriteトリガーなし）
     run grep "Already set AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -958,7 +975,7 @@ task:
 EOF
 
     # 存在しないcmd_idで配備試行
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_999
+    run deploy_task_resolve_only sasuke cmd_999
     [ "$status" -eq 1 ]
 }
 
@@ -1002,7 +1019,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # Nested ac: should be converted and injected
@@ -1058,21 +1075,17 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke cmd_1611
+    run deploy_task_resolve_only sasuke cmd_1611
     [ "$status" -eq 0 ]
 
     # parent_cmd updated
-    run python3 -c "
-import yaml
-with open('$TEST_PROJECT/queue/tasks/sasuke.yaml') as f:
-    data = yaml.safe_load(f)
-task = data.get('task', {})
-print(task.get('parent_cmd', ''))
-print(task.get('task_id', ''))
-"
+    run read_task_field parent_cmd
     [ "$status" -eq 0 ]
-    [ "${lines[0]}" = "cmd_1611" ]
-    [ "${lines[1]}" = "cmd_1611_impl" ]
+    [ "$output" = "cmd_1611" ]
+
+    run read_task_field task_id
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_1611_impl" ]
 
     # ACs from nested ac: format
     run grep "First task" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -1117,7 +1130,10 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run inject_report_only sasuke
     [ "$status" -eq 0 ]
 
     # Report template should have binary_checks extracted from nested ac: format
@@ -1163,7 +1179,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # Flat dict should be converted with id: fields
@@ -1212,7 +1228,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # ACs from archive should be converted and injected
