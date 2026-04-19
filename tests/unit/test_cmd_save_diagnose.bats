@@ -44,7 +44,7 @@ commands:
 ${extra_quality_gate}
     assumptions:
       - claim: "cmd_save.sh はこのテスト環境で実行可能"
-        source: "scripts/cmd_save.sh code_reading"
+        source: "diagnose test fixture review"
         trust: "verified"
 YAML
 }
