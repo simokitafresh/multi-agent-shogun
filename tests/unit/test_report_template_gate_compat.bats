@@ -43,14 +43,8 @@ teardown_file() {
 }
 
 setup() {
-    export TEST_TMPDIR
-    if [ -n "${BATS_SEMAPHORE_NUMBER_OF_SLOTS:-}" ]; then
-        TEST_TMPDIR="$BATS_TEST_TMPDIR/report_tpl"
-    else
-        TEST_TMPDIR="$BATS_FILE_TMPDIR/work"
-    fi
-    rm -rf "$TEST_TMPDIR"
-    mkdir -p "$TEST_TMPDIR"
+    # Use bats-managed per-test tmpdir: pre-created, unique, no rm-rf needed
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR"
 }
 
 # Helper: generate a minimal report that follows the template structure
