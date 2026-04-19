@@ -126,6 +126,23 @@
 | yohey-w/codd-dev | CoDD: Coherence-Driven Development | 49 |
 | yohey-w/shogun-speech-2-text | デスクトップ音声認識ツール (Deepgram Nova-3) | 5 |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| 多CLI・多環境対応を「運用差異なし」とみなす | Claude/Codex/Gemini/Cursor、macOS/WSL2/Androidまで広げる設計ゆえに、起動コマンドや監視方式の差が運用コストになる | 新しいCLIや実行環境へ移植する時 |
+| Bloom Taxonomy ルーティングだけで品質が担保されると考える | 認知複雑度による配備は入口に過ぎず、実際の品質は軍師QC・家老采配・報告ゲートと組み合わさって成立する | ルーティングだけを先に導入した時 |
+| CoDD を一層だけ整備して導入する | CoDDは Prompt/Context/Harness の整合性を要求するため、どれか一層だけ整えても設計書腐敗は止まらない | specだけ、あるいはcontextだけを先に追加した時 |
+| 「考えるな、委譲しろ」を思考停止と混同する | Thinking抑制は委譲と責務分離を促す設計であり、裁定や検証まで放棄すると責任空白になる | 将軍・家老・足軽の責務境界を曖昧にした時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [vercel](vercel.md) | Vercelの受動的知識供給・docs最適化は、おしお殿のマルチエージェント運用面を補完する |
+| 競合 | [gsd](gsd.md) | どちらもAI開発の品質設計を扱うが、おしお殿は軍制と階層運用、GSDはspec-firstワークフローで解く |
+| 前提 | [claude-code](claude-code.md) | CLAUDE.md・skills・hooks などの基盤概念を主要な実装前提として利用している |
+
 ## Sources
 
 | 種別 | URL |

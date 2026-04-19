@@ -162,6 +162,23 @@ Claude Code (or 10 other hosts)
 | 2026-03以降 | CTO友人からのDM: "Your gstack is crazy. This is like god mode. Your eng review discovered a subtle cross site scripting attack that I don't even think my team is aware of." | X投稿(引用) |
 | 2026-03以降 | "Many such cases I made GStack to speed up for myself. Now everyone has it. Fork it. Improve it. Make it yours." | コミュニティ展開方針 |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| フェーズ分離を崩して1セッションで全部やる | gstackの価値はCEO/EM/QA/Reviewなどの認知モード切替にあり、まとめると `"planning is not review"` の前提が崩れる | `/plan-*` `/review` `/qa` `/ship` `/retro` を混ぜて運用した時 |
+| Browser daemon を補助機能扱いする | `/browse` や QA/Design 系スキルは Playwright daemon を前提にしており、止まると体験全体が崩れる | port 9400 の常駐や接続確認を省いた導入時 |
+| マルチホスト対応を「どのホストでも同品質」と誤解する | v0.15.6.0以降で10ホストに広がったが、slash command・browser integration・skill discovery の成熟度はホスト依存で差が出る | Claude Code以外へ横展開する時 |
+| Review Army や Team Mode を人数だけ増やして使う | suppressions や fingerprint dedup を伴わない並列化は、重複指摘やノイズ増加を招く | review運用を拡大した時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [vercel](vercel.md) | Vercelが受動的知識供給と運用基盤を担い、gstackは役割分離されたskillレイヤーでその上を厚くする |
+| 競合 | [claude-code](claude-code.md) | どちらも並列エージェント協調を扱うが、gstackはMarkdown skills主導、Claude Codeはプラットフォーム機能主導で解く |
+| 前提 | [claude-code](claude-code.md) | gstackのデフォルト運用はClaude Codeのslash command・skills・CLI体験を前提に設計されている |
+
 ## Sources
 
 | カテゴリ | URL |

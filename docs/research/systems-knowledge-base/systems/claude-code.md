@@ -138,6 +138,23 @@
 - Anthropic Engineering: https://www.anthropic.com/engineering/building-c-compiler
 - Builder.io Claude Code Updates: https://www.builder.io/blog/claude-code-updates
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| Agent Teams を一般提供済みの安定機能とみなす | 文書上でも実験的・デフォルト無効であり、共有タスクリストや直接通信の仕様は変わりうる | Teams導入を前提に運用設計した時 |
+| Checkpoint / Rewind を品質保証そのものと誤解する | 巻き戻しは変更安全性を高めるが、仕様適合やテスト通過までは保証しない | 修正後の検証を省略した時 |
+| SDK/CLI/Desktop/IDE を同一機能集合だと思い込む | Claude Codeは複数面に展開しているが、Computer Use・Teams・Monitor などは提供面や成熟度が揃わない | 配布面を跨いで同じ手順を流用した時 |
+| 高速リリースを追うだけでバージョン検証を省く | v2.1.x の更新頻度が高く、セキュリティや機能差分が短期間で変わるため、古い前提が崩れやすい | 既知手順を長期間据え置いた時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [vercel](vercel.md) | Claude Codeが実行主体なら、Vercelは受動的知識供給・sandbox・gatewayで周辺基盤を補う |
+| 競合 | [gstack](gstack.md) | どちらも複数エージェント協調を扱うが、Claude Codeは製品機能、gstackはskills主導の運用フレームとして競合する |
+| 前提 | [oshio](oshio.md) | multi-agent-shogun は CLAUDE.md・hooks・skills・MCP といった Claude Code の概念を主要前提として組んでいる |
+
 ## Sources
 
 | 種別 | URL |
