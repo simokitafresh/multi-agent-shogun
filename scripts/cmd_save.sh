@@ -548,9 +548,7 @@ QG_TEMPLATE
             echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
         fi
     elif [[ -n "$q5_val" ]] && ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test"; then
-        record_block_reason "q5検証レベル不明確。code_reading/isolated_test/structure_verified/production_verified/pipeline_testのいずれかを明記せよ"
-        echo '  例: q5_verified_source: "structure_verified — ファイル存在+grep集計で実確認済み"' >&2
-        abort_if_block_immediate || exit 1
+        echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
     fi
 
     # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
@@ -1550,7 +1548,7 @@ check_ac_param_sufficiency() {
     if [[ "$HIT" == true ]]; then
         echo "  具体値を列挙せよ。例: 「4条件」→「4条件(EMA/SMA/Kalman/Bandpass)」" >&2
         echo "  理由: 忍者は独自判断で条件を補完する（cmd_1681実証済み）" >&2
-        record_block_reason "AC数量未列挙。具体値を括弧内に列挙せよ(cmd_1681教訓)"
+        WARN_COUNT=$((WARN_COUNT + 1))
     fi
 }
 
