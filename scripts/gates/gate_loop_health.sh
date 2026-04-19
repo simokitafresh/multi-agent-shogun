@@ -303,6 +303,66 @@ for pattern, count in reason_counter.items():
     else:
         quality_fail_recent += count
 
+# === Hold-out vs Training gate FAIL分布比較 ===
+# 修行(L1-L4)でカバーしたパターン(training)と未カバーのパターン(hold-out)のFAIL数を比較。
+# 汎化成功: 両セットのFAIL数が同程度。過適合: hold-outが高止まり。
+# context/training-cycle.md §27参照
+
+TRAINING_KEYS = [
+    'verdict', 'binary_checks', 'lessons_useful', 'lesson_candidate',
+    'self_gate_check', 'files_modified', 'status', 'purpose_validation',
+    'result.summary',
+]
+HOLDOUT_KEYS = [
+    'assumption_check', 'simplicity_check', 'assumption_invalidation',
+    'knowledge_candidate', 'skill_candidate', 'decision_candidate',
+    'hook_failures', 'ac_version_read',
+]
+
+training_fails = 0
+holdout_fails = 0
+training_fail_files = set()
+holdout_fail_files = set()
+
+for e in entries:
+    if e.get('result') != 'FAIL':
+        continue
+    reasons_str = e.get('reasons', '')
+    fname = e.get('file', '')
+    for reason in reasons_str.split('; '):
+        r = reason.strip()
+        if not r:
+            continue
+        if any(k in r for k in TRAINING_KEYS):
+            training_fails += 1
+            training_fail_files.add(fname)
+        elif any(k in r for k in HOLDOUT_KEYS):
+            holdout_fails += 1
+            holdout_fail_files.add(fname)
+
+t_files = len(training_fail_files)
+h_files = len(holdout_fail_files)
+# FAILファイル数ベースのパーセント(FAILエントリのreasonは複数あるため件数ベースは100%超になる)
+fail_files_total = len(set(e.get('file', '') for e in entries if e.get('result') == 'FAIL' and e.get('file')))
+t_pct = t_files * 100 // fail_files_total if fail_files_total > 0 else 0
+h_pct = h_files * 100 // fail_files_total if fail_files_total > 0 else 0
+
+print('=== Hold-out vs Training FAIL分布 ===')
+print(f'  Training set FAIL: {training_fails}件 [{t_files}ファイル/{fail_files_total}FAILファイルの{t_pct}%]')
+print(f'  Hold-out set FAIL: {holdout_fails}件 [{h_files}ファイル/{fail_files_total}FAILファイルの{h_pct}%]')
+if fail_files_total > 0:
+    if holdout_fails == 0 and training_fails == 0:
+        print('  -> FAIL記録なし')
+    elif holdout_fails == 0:
+        print('  -> hold-outパターンのFAILなし: 汎化良好 or hold-out未計測')
+    elif h_pct > t_pct + 20:
+        print(f'  -> WARNING: hold-out FAILファイルがtraining FAILファイルより{h_pct - t_pct}pt高い。過適合の疑い。context/training-cycle.md §27 L5設計検討')
+    elif t_pct > h_pct + 20:
+        print(f'  -> training setにまだ未解決パターン多い。既存L修行継続')
+    else:
+        print(f'  -> 差{abs(h_pct - t_pct)}pt: 汎化概ね良好')
+print()
+
 print('=== Loop Status ===')
 if fail_count > 0 and autofix_count == 0:
     if sc_total > 0 and sc_pct >= 80:

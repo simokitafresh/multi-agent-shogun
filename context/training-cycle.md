@@ -825,3 +825,66 @@ review_gate.shがtitle/descriptionフィールドを検索していたが、タ�
 ### Codex(GPT-5.4) STALL傾向 — **N=1で結論を出すな（殿指摘で修正）**
 
 R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大型ファイル不向き」と結論したが、R13で才蔵がcmd_complete_gate.sh(3985行)を24倍高速化で成功。**ファイルサイズが原因ではない**ことが反証された。STALLの真因は未特定（Codexプロンプト待ち/nudge未到達/個体差の可能性）。N=1の事象で配備ルールを作るな。
+
+## §27 hold-outテスト設計 — 修行汎化の検証
+
+### 概念
+
+修行サイクル(L1-L4)は特定のgateパターンを集中的に訓練する。
+しかし**訓練したパターンだけに最適化（過適合）していないか？**を確認する仕組みが必要。
+
+機械学習のhold-out検証と同じ発想:
+- **training set**: L1-L4で明示的に訓練したgateパターン
+- **hold-out set**: 訓練タスクで登場しなかったgateパターン
+- **比較指標**: 両セットのFAIL率を比較し、訓練が汎化しているか確認
+
+訓練が汎化 → training/hold-out 両方のFAIL率が同程度  
+過適合 → training FAILは減少するがhold-out FAILは高止まり
+
+### training set（L1-L4で明示的に訓練済み）
+
+| パターン | 訓練Level |
+|---------|----------|
+| verdict: 空/非二値 | L1 |
+| binary_checks result: 空/"PASS"等 | L1 |
+| lessons_useful: dict形式(list必須) | L2 |
+| lesson_candidate: found/title/detail構造 | L2 |
+| self_gate_check: 空文字(PASS/FAIL必須) | L3 |
+| files_modified: null/dict形式 | L1/L4 |
+| status: pending(completed必須) | L1 |
+| purpose_validation: 欠落 | L1 |
+| result.summary: 空 | L1 |
+
+### hold-out set（訓練タスクで未登場のパターン）
+
+| パターン | 計測開始日 |
+|---------|----------|
+| assumption_check: 空/非具体 | 2026-04-19 |
+| simplicity_check: 空/非具体 | 2026-04-19 |
+| assumption_invalidation: 構造不正 | 2026-04-19 |
+| knowledge_candidate: 構造不正 | 2026-04-19 |
+| skill_candidate: 構造不正 | 2026-04-19 |
+| decision_candidate: 構造不正 | 2026-04-19 |
+| hook_failures: 未記入 | 2026-04-19 |
+| ac_version_read: 欠落/不一致 | 2026-04-19 |
+
+### 計測方法
+
+`gate_fire_log.yaml` のFAILエントリのreasonsフィールドを分類:
+- reasonsがtraining setパターンを含む → training FAIL
+- reasonsがhold-out setパターンを含む → hold-out FAIL
+
+`gate_loop_health.sh` が自動集計。§ Hold-out vs Training 比較セクションで出力される。
+
+### 結果の解釈
+
+| hold-out FAIL率 vs training FAIL率 | 解釈 | 対応 |
+|----------------------------------|------|------|
+| ≈ 同程度 | 汎化成功。修行原理が一般化されている | 現状維持 |
+| hold-out >> training (差が20%超) | 過適合の疑い。hold-outパターンも修行に組み込むべき | L5設計検討 |
+| hold-out << training | training setにまだ未解決パターンが多い | 既存L修行の継続 |
+
+### 自動追跡
+
+`gate_loop_health.sh` が `logs/gate_fire_log.yaml` から自動集計し、毎回の起動時に出力する。
+→ `scripts/gates/gate_loop_health.sh` の `=== Hold-out vs Training ===` セクション参照
