@@ -630,6 +630,9 @@ fi
 
 # --- Gate 13.7: cmd品質直近BLOCK（将軍のworkarounds相当） ---
 echo "■ cmd品質(直近10件)"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 _DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE" ]; then
     _dq_total=$(grep -c 'cmd_id:' "$_DQ_FILE" 2>/dev/null || true)
@@ -648,6 +651,7 @@ if [ -f "$_DQ_FILE" ]; then
     else
         echo "  直近BLOCK: なし"
     fi
+fi
 fi
 
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
@@ -891,7 +895,10 @@ fi
 _scripts_status=$(cd "$SCRIPT_DIR" && git status --porcelain --branch -- scripts/ 2>/dev/null) || _scripts_status=""
 _scripts_dirty=()
 _d_unpushed="?"
-if [ -n "$_scripts_status" ]; then
+if [ "$LIGHT_MODE" = "1" ]; then
+    _scripts_status=""
+    _d_unpushed="0"
+elif [ -n "$_scripts_status" ]; then
     while IFS= read -r _scripts_line; do
         case "$_scripts_line" in
             '## '*)
@@ -928,6 +935,9 @@ fi
 # なぜなぜ7回で到達した根因=「gate の gate 不在」メタレベル欠落
 # 目的: CLAUDE.md 記述と settings hooks 登録の乖離(意志依存 script)を検出
 echo "■ 強制度監査 (meta-gate)"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 _ENFORCE_AUDIT="$SCRIPT_DIR/scripts/gates/gate_enforcement_audit.sh"
 if [ -x "$_ENFORCE_AUDIT" ]; then
     if _ea_out=$(bash "$_ENFORCE_AUDIT" 2>&1); then
@@ -942,6 +952,7 @@ if [ -x "$_ENFORCE_AUDIT" ]; then
     fi
 else
     echo "  INFO: gate_enforcement_audit.sh 未配備"
+fi
 fi
 
 # --- 総合判定 ---
