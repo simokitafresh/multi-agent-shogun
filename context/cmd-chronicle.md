@@ -775,3 +775,5 @@
 | cmd_2144 | CoDD最適化 — run_077_kasoku_ratio.py (GS加速ratio忍法) | dm-signal | 04-20 | run_077_kasoku_ratio.py の simu |
 | cmd_2149 | CoDD最適化 — champion_selector.py (チャンピオン選出) | dm-signal | 04-20 | champion_selector.py のCSV fall |
 | cmd_2151 | CoDD最適化 — cmd_1947_l3_ew_combo_stability.py (2体EW安定性) | dm-signal | 04-20 | cmd_1947をcache-first fallback+ |
+| cmd_2152 | CoDD最適化 — cmd_1934_l3_threebody_stability.py (3体EW安定性) | dm-signal | 04-20 | cmd_1934_l3_threebody_stabilit |
+| cmd_karo_ci_fix_ga135 | CI修正 — TG-T002テスト失敗(SG10 AC_SECTIONインデント検出) | infra | 04-20 | check_research_tool_growth_ac |
