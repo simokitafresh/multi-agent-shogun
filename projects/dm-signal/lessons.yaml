@@ -1962,9 +1962,9 @@ lessons:
   - api
   - deploy
   - pipeline
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-17'
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-19'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -2566,7 +2566,7 @@ lessons:
   - frontend
   - gate
   helpful_count: 26
-  harmful_count: 16
+  harmful_count: 14
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2630,7 +2630,7 @@ lessons:
   deprecated_at: '2026-04-17T17:29:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=2'
   helpful_count: 2
-  harmful_count: 6
+  harmful_count: 5
   last_referenced: '2026-04-19'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
