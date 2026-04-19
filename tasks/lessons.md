@@ -3962,3 +3962,13 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [infra]
 - 同一入力で繰り返し実行するtemplate-generation系Batsは、fixtureを毎run再生成すると中央値がsetupに支配される。deploy_task.shの実出力で一度作ったfixtureを入力ハッシュ付き/tmp cacheで再利用すると、初回の正しさを保ったまま反復中央値を大幅に下げられる。cmd_2108実証: 17.3s→2.5s(-85.6%)
+
+### L518: WSL2 では test harness の hot path を先に削れ
+- **日付**: 2026-04-19
+- **出典**: cmd_2115
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra]
+- setup_file の 1-pass awk 化は large string 連結で 9.05-12.36s へ回帰した。
+一方で test ごとに踏む CMD_BLOCK 読込を pure Bash 化すると単発 probe は 4.21s まで改善した。
+WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減を優先すべし。

@@ -1,23 +1,26 @@
 task:
-  _ac_task_id: cmd_2112_impl
+  _ac_task_id: cmd_2120_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 046fa002
+  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5 > AC6
+  ac_version: 43dab55c
   acceptance_criteria:
-  - description: tests/unit/test_deploy_task_lifecycle.batsのbefore計測値が記録されている(time
-      5回中央値)
+  - description: sources/mizchi.md が作成されguide.mdフォーマットに準拠している
     id: AC1
-  - description: setupプロファイリング結果がdocs/research/に記載されている
+  - description: index.md にSRC02として追加されている
     id: AC2
-  - description: after計測でbefore比40%以上削減されている
+  - description: our-army/にmizchiの解釈層エントリが追加されている(我が軍との対応関係)
     id: AC3
-  - description: テスト数がbefore時点から減少せず全PASS。commit+push
+  - description: 既存エントリ(逆瀬川/gstack/karpathy等)との相互参照が追加されている
     id: AC4
+  - description: Pitfallsに(1)書き手バイアスの残存リスク (2)シナリオ過適合 (3)コスト対効果の閾値が記載されている
+    id: AC5
+  - description: commit+push
+    id: AC6
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L283: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の\
-    \ ok N (hash) skip パタ\n  - L232: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout\
-    \ 120秒を超過。テストスイート増加に伴いtimeout延長かテ\n────────────────────────────────────────"
+    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
+    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L186: IF review taskで `git\
+    \ push origin main` を行う時 THEN `git ls-remote origin refs/head\n────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -36,25 +39,17 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_2112
+  - AC5
+  - AC6
+  parent_cmd: cmd_2120
   project: infra
-  report_filename: kotaro_report_cmd_2112.yaml
-  report_path: queue/reports/kotaro_report_cmd_2112.yaml
+  report_filename: kotaro_report_cmd_2120.yaml
+  report_path: queue/reports/kotaro_report_cmd_2120.yaml
   scout_exempt: true
   status: acknowledged
   stop_for: []
-  task_id: cmd_2112_impl
+  task_id: cmd_2120_impl
   task_type: impl
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: PASS but binary_checks contain empty result(s) (全result記入後にverdictを設定せよ)'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: PASS but binary_checks contain empty result(s) (全result記入後にverdictを設定せよ)'
-    approach_summary: 'before 7.582s → after 4.981s (34.3%削減) 全51テストPASS。30%目標超過'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: PASS but binary_checks contain empty result(s) (全result記入後にverdictを設定せよ)'
-      approach_summary: 'before 7.582s → after 4.981s (34.3%削減) 全51テストPASS。30%目標超過'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
   ninja_weak_points:
@@ -72,21 +67,12 @@ task:
       count: 5
     gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
-    - reason: 'binary_checks_fail'
-      count: 11
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
-      count: 10
+      count: 3
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'empty_lessons_useful'
+    - reason: 'binary_checks_fail'
       count: 2
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'ac_version_mismatch'
-      count: 1
-      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-    - reason: 'report_yaml_missing'
-      count: 1
-      hint: 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ'
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -118,4 +104,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  deployed_at: "2026-04-19T11:50:02"
+  deployed_at: "2026-04-19T13:47:53"

@@ -472,3 +472,8 @@ lessons:
   detail: 'report_received受信時に軍師レビュー依頼+WA記録をせず放置した(cmd_2107-2111)。cmd_2094(分割配備)のパターンを独立cmdに引きずった。根因: karo.mdのInbox Protocolにtype別の具体手順がなく家老の意志依存。deepdive Phase4と同構造。対策: karo.mdに report_received処理手順を明示(受領→即: 1.軍師レビュー依頼 2.WA記録 3.LGTM後GATE)'
   source_cmd: 'cmd_2107'
   created_at: '2026-04-19'
+- id: 'LK087'
+  title: 'revert後のbefore/after再計測を強制する仕組みが必要'
+  detail: 'cmd_2107でhanzoがscaffold stub化→並列テスト破壊→自分でrevert→報告はrevert前の数値でGATE CLEAR。根因=revert後の再計測強制なし。対策: SG-PRE14(revert検出gate)実装済み(gate_gunshi_report_precheck.sh)。軍師教訓LG034候補として提出'
+  source_cmd: 'cmd_2107'
+  created_at: '2026-04-19'

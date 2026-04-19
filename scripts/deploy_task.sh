@@ -3663,6 +3663,130 @@ warn_recent_noncmd_commit_targets() {
     fi
 }
 
+# タスク明瞭性WARNING: 配備前に静的不明瞭さを軽量検査
+# cmd_2122: BLOCKではなくWARNINGで、家老が配備前にtask品質の粗さを可視化する。
+warn_task_clarity() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local parent_cmd stk_path py_output
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 0
+
+    stk_path="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$stk_path" ] || return 0
+
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env \
+        TASK_FILE_ENV="$task_file" \
+        STK_PATH_ENV="$stk_path" \
+        SCRIPT_DIR_ENV="$SCRIPT_DIR" \
+        PARENT_CMD_ENV="$parent_cmd" \
+        python3 - <<'TASK_CLARITY_PY'; then
+import os
+import re
+import sys
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+stk_path = os.environ['STK_PATH_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+parent_cmd = os.environ['PARENT_CMD_ENV']
+
+try:
+    with open(stk_path, encoding='utf-8') as f:
+        stk = yaml.safe_load(f) or {}
+except Exception as exc:
+    print(f'[TASK_CLARITY] WARN: failed to read shogun_to_karo.yaml: {exc}', file=sys.stderr)
+    sys.exit(1)
+
+cmd = ((stk.get('commands') or {}).get(parent_cmd) or {})
+if not isinstance(cmd, dict):
+    sys.exit(0)
+
+command_text = str(cmd.get('command', '') or '')
+if not command_text.strip():
+    sys.exit(0)
+
+def ac_descriptions(value):
+    descs = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                desc = item.get('description') or item.get('check') or item.get('title') or ''
+            else:
+                desc = str(item or '')
+            desc = str(desc).strip()
+            m = re.match(r'^AC[0-9A-Za-z_-]+:\s*(.+)$', desc)
+            if m:
+                desc = m.group(1).strip()
+            if desc:
+                descs.append(desc)
+    elif isinstance(value, dict):
+        for item in value.values():
+            if isinstance(item, dict):
+                desc = item.get('description') or item.get('check') or item.get('title') or ''
+            else:
+                desc = str(item or '')
+            desc = str(desc).strip()
+            if desc:
+                descs.append(desc)
+    elif value:
+        descs.append(str(value).strip())
+    return descs
+
+ac_descs = ac_descriptions(cmd.get('acceptance_criteria') or cmd.get('ac') or [])
+command_lines = [line.strip() for line in command_text.splitlines() if line.strip()]
+
+if len(command_lines) >= 10 and len(ac_descs) <= 1:
+    print(
+        f'WARNING: task clarity ({parent_cmd}) command {len(command_lines)}行に対してAC {len(ac_descs)}件。'
+        ' commandが長くACが粗いため、タスクが不明瞭な可能性あり',
+        file=sys.stderr,
+    )
+
+known_roots = (
+    'scripts/', 'queue/', 'context/', 'projects/', 'docs/', 'config/', 'memory/',
+    'logs/', 'lib/', 'tests/', 'archive/', 'instructions/',
+)
+known_exts = ('.sh', '.yaml', '.yml', '.md', '.py', '.json', '.toml', '.txt')
+path_candidates = []
+for raw in re.findall(r'(?<![A-Za-z0-9_])(?:/mnt/[^\s`"\'(),]+|[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+)', command_text):
+    cand = raw.strip().rstrip('.,:;)]}')
+    if not cand or cand.startswith(('http://', 'https://')):
+        continue
+    if not (cand.startswith('/mnt/') or cand.startswith(known_roots) or cand.endswith(known_exts)):
+        continue
+    if cand not in path_candidates:
+        path_candidates.append(cand)
+
+missing = []
+for cand in path_candidates:
+    full = cand if os.path.isabs(cand) else os.path.join(script_dir, cand)
+    if not os.path.exists(full):
+        missing.append(cand)
+
+if missing:
+    print(
+        f'WARNING: task clarity ({parent_cmd}) command内の参照パスが実在しない可能性: '
+        + ', '.join(missing),
+        file=sys.stderr,
+    )
+
+if ac_descs and not any(('確認' in desc) or ('検証' in desc) for desc in ac_descs):
+    print(
+        f'WARNING: task clarity ({parent_cmd}) ACに「確認」「検証」が含まれない。'
+        ' 行動のみで確認欠落の可能性あり',
+        file=sys.stderr,
+    )
+TASK_CLARITY_PY
+        log "WARN: task clarity check failed for ${parent_cmd} (non-fatal)"
+        return 0
+    fi
+    rm -f "$py_output"
+}
+
 notify_initial_deploy_ntfy_once() {
     local task_file="$1"
     local ninja_name="$2"
@@ -3966,6 +4090,8 @@ except Exception:
     if [ -n "$deploy_parent_cmd" ]; then
         check_firefighting_title "$deploy_parent_cmd" "$task_yaml"
     fi
+
+    warn_task_clarity "$task_yaml"
 
     # GP-110修正版: target_pathの直近コミットが非cmd self-driveならWARN
     warn_recent_noncmd_commit_targets "$task_yaml"

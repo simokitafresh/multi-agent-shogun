@@ -2198,8 +2198,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 22
-  harmful_count: 11
+  helpful_count: 24
+  harmful_count: 12
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2539,8 +2539,8 @@ lessons:
   summary: holding_signalの更新タイミングはStep0（パフォーマンス計算前）で行われ、last_generated_signals（前月末の生signal）
   tags:
   - dm-signal
-  helpful_count: 4
-  harmful_count: 0
+  helpful_count: 6
+  harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L231
   title: 大フック/大APIクライアントは helper test だけでは保守性劣化を防げない
@@ -2565,8 +2565,8 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 22
-  harmful_count: 18
+  helpful_count: 24
+  harmful_count: 20
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2882,7 +2882,7 @@ lessons:
   - recon
   - monitor
   helpful_count: 5
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-19'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる
@@ -3459,6 +3459,9 @@ lessons:
   summary: IF cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative
   tags:
   - db
+  deprecated: true
+  deprecated_at: '2026-04-19T13:34:28+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: oikaze cutoff_score epsilon tolerance(1e-12)が必要
   summary: 本番MonthlyReturnMomentumFilterBlock._cumretはprod(1+monthly_return)-1、GS側cumulativ
