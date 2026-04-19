@@ -266,7 +266,7 @@
 - cmd_id: cmd_2118
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。cmd_complete_gate.sh CoDD高速化(33秒→目標5秒)。4370行/60サブプロセス削減。パターン確立済み"
   observations:
@@ -274,3 +274,80 @@
     - "事実2: 台帳L112でテスト統合のみ(本体高速化未実施)確認。assumptions 2件verified"
   causal_chain: "家老フローなぜなぜ7回→cmd_complete_gate.sh(33秒)がTOP1→60サブプロセス削減で5秒→280秒/日の正の複利(10cmd×28秒)"
   timestamp: "2026-04-19T13:22:00"
+- cmd_id: cmd_2124
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kotaro
+  findings_summary: "4観点OK。done-by-proxy(c434447)を現物確認。gate_report_format_main.py L346-426に(a)(b)(c)全実装済み"
+  observations:
+    - "事実1: c434447 git show --statでgate_report_format_main.py +83行確認"
+    - "事実2: L346-426に(a)fm空+bc全yes (b)commit+push+git log不一致 (c)test+results空の3チェック実在"
+  causal_chain: "cmd_2125半蔵実装c434447→cmd_2124同一scope→done-by-proxy→shelved化済み。二重実装なし"
+  timestamp: "2026-04-19T14:45:00"
+- cmd_id: self_study_S137
+  review_type: self_study
+  findings_summary: "cmd_2112掲示板30回重複の根因分析→bulletin_write.shにdedup未実装→GP-210実装+S0全PASS+テスト確認"
+  observations:
+    - "事実1: bulletin_board.yamlに同一内容cmd_2112エントリ30件(13:29-13:42)。grep -cで計測"
+    - "事実2: bulletin_write.shにdedup/duplicate/重複のgrep→0件。防御層不在が確定"
+    - "事実3: GP-209(inbox dedup)は完了済みだが掲示板側は未対処だった。防御層の穴"
+  proposals:
+    - id: GP-210
+      description: "bulletin_write.sh重複投稿防止(同一content+posted_by既存チェック)"
+      status: implemented
+      defense_level: 4
+  causal_chain: "hayate cmd_complete_gate.sh繰返実行→bulletin_write.sh呼出→dedupなし→30件重複→inbox通知90件→CTX消費。dedupで根元で止める=1件通過後は全てブロック"
+  timestamp: "2026-04-19T14:48:00"
+- cmd_id: cmd_2129
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: MEDIUM
+  findings_summary: "5観点OK。CTX%取得方法が未定義(ambiguity)。assumptions「8カラム」は実際9カラム。severity: normal"
+  observations:
+    - "事実1: gate_metrics.log現在9カラム(head -1で確認)。assumptionsの8カラムは不正確(CMD_TITLE追加済み)"
+    - "事実2: cmd_complete_gate.sh L3626/L4188/L2170の3箇所でgate_metrics.logに書込み。CTX%取得手段の記載なし"
+  causal_chain: "CTX%取得方法未定義→忍者が実装時に自力判断→裁量解釈→意図と乖離リスク。取得方法明記で解消"
+  timestamp: "2026-04-19T14:52:00"
+- cmd_id: cmd_2130
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点全OK。deploy_task.shテンプレートにtask_clarity追加+gate_report_format.sh WARN+gate_loop_health.sh集計。指示文書TDD"
+  observations:
+    - "事実1: deploy_task.sh L3706にwarn_task_clarity()存在(cmd_2122)。配備前チェック=別機能。テンプレートには不在"
+    - "事実2: gate_report_format.sh/gate_loop_health.sh既存パターンと同型の追加。3ファイル変更"
+  causal_chain: "指示文書の品質計測不在→忍者のフィードバック未収集→改善ループ不回転。task_clarity_scoreで計測開始→正の複利"
+  timestamp: "2026-04-19T14:52:00"
+- cmd_id: cmd_2123
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2123_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。missed_sg第6引数追加+YAML条件付き出力+29テストPASS。commit 8ad7283(本体)+32a1744(テスト)"
+  observations:
+    - "事実1: karo_workaround_log.sh L57,L84にMISSED_SG変数初期化+第6引数受取を現物確認"
+    - "事実2: L240-241にnon-empty条件付きmissed_sgフィールド出力を現物確認。省略可設計=既存呼出元影響なし"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "SG偽陰性計測不在→missed_sgフィールド追加→WA記録時にどのSGが見逃したか追跡可能=正の複利(軍師レビュー観点改善の定量材料)"
+  timestamp: "2026-04-19T15:05:00"
+- cmd_id: cmd_2126
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2126_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。mizchi Red flags 5パターンgate化。AC1-4既存HEAD実装現物確認(5箇所)。テスト6件PASS。commit 17fa082"
+  observations:
+    - "事実1: cmd_save.sh L191(自己再読)+L207(バンドル)、deploy_task.sh L3610(同一忍者再配備)、gate_gunshi_cs_checklist.sh L217(収束1回)+L254(1シナリオ)を全て現物確認"
+    - "事実2: skip理由文書(docs/research/cmd_2126_*)に(5)LS046対処済み+(6)Session State対処済みの根拠が1行ずつ記載"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "mizchi Red flags未導入→5パターンWARNING gate化→エージェントの合理化(言い訳)を構造的検出=正の複利(全エージェント×全行動)"
+  timestamp: "2026-04-19T15:10:00"

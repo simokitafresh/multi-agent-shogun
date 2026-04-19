@@ -22,7 +22,7 @@ teardown() {
     source "$TEST_PROJECT/scripts/lib/lock_path.sh"
     lock_file="$(lock_path "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/cmd_complete_gate.lock")"
 
-    bash -lc '
+    bash -c '
         exec 9>"$1"
         flock -n 9 || exit 1
         sleep 2

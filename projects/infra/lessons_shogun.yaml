@@ -423,3 +423,10 @@ lessons:
   created_at: '2026-04-19'
   automated: true
   enforcement: 'lessons_shogun.yaml(本教訓)+context/codd.md(台帳ルール追記予定)+cmd_save.shでCoDD cmdにregistry AC確認(将来自動化ターゲット)'
+- id: 'LS048'
+  title: '計測指標にCTX%を使うな — モデルのコンテキストサイズは変動する'
+  detail: '事象: cmd_2129でCTX%をタスク負荷指標に採用→殿指摘「実時間の方が明確。CTX%はモデルのコンテキストサイズが変わると壊れる」。原因: Opus 1M→将来2Mになれば同じ作業でもCTX%は半減する。CTX%は相対値(対ウィンドウ比)であり絶対的なタスク負荷を測れない。修正: タスク負荷の計測には実時間(acknowledged→done秒数)を使う。実時間はモデル変更に依存しない不変量。'
+  source_cmd: 'cmd_2129'
+  created_at: '2026-04-19'
+  automated: true
+  enforcement: 'cmd_2129補足inbox(殿裁定)。将軍の自問に依存'

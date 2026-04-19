@@ -440,3 +440,13 @@
   defense_level: 4
   impl_details: "cmd_complete_gate.sh L3791,L4234の2箇所にgrep -qでinbox dedup条件追加。S0セルフレビュー全PASS"
   completed_at: "2026-04-18T18:20:00"
+- id: GP-210
+  description: "bulletin_write.sh重複投稿防止(同一content+同一posted_byの既存エントリあればスキップ)"
+  status: implemented
+  proposed_at: "2026-04-19T14:47:00"
+  implemented_at: "2026-04-19T14:48:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "cmd_2112 GATE CLEAR通知30回重複(13:29-13:42)。bulletin_write.shにdedup未実装が根因。30×3(inbox通知)=90メッセージnoiseでCTX消費。10回繰り返し→900件=負の複利"
+  evidence: "テスト: 1回目→正常投稿(blt_id出力)。2回目→DEDUP表示+exit 0。S0全6項PASS"

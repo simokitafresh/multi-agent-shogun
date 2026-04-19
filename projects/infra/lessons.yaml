@@ -1710,7 +1710,7 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-19'
 - id: L245
@@ -1820,7 +1820,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 24
+  helpful_count: 26
   harmful_count: 16
   last_referenced: '2026-04-19'
 - id: L228
@@ -2119,7 +2119,7 @@ lessons:
   tags:
   - review
   - git
-  helpful_count: 6
+  helpful_count: 8
   harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L185

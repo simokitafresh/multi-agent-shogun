@@ -1,20 +1,22 @@
 task:
-  _ac_task_id: cmd_2124_impl
+  _ac_task_id: cmd_2130_impl
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 612a9fe6
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 64b96c1f
   acceptance_criteria:
-  - description: scripts/gates/gate_report_format.shにbinary_checks客観裏付けチェック(a)(b)(c)が追加されている
+  - description: scripts/deploy_task.shの報告テンプレートにtask_clarity(score/unclear_points/discretion_fills)が追加されている
     id: AC1
-  - description: 矛盾検出時にWARN表示される(BLOCKではない。段階的導入)
+  - description: scripts/gates/gate_report_format.shにtask_clarity_score未記入時のWARN表示が追加されている
     id: AC2
-  - description: 既存テスト全PASS。commit+push
+  - description: scripts/gates/gate_loop_health.shにtask_clarity_score平均値表示が追加されている
     id: AC3
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop\
-    \ Hookで全batsテスト(299件)をフル実行するゲートを追\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
-    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L186: IF review taskで `git\
-    \ push origin main` を行う時 THEN `git ls-remote origin refs/head\n────────────────────────────────────────"
+  - description: 既存テスト全PASS。commit+push
+    id: AC4
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
+    \  - L229: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追\n\
+    \  - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed\n\
+    ────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -32,14 +34,15 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_2124
+  - AC4
+  parent_cmd: cmd_2130
   project: infra
-  report_filename: kotaro_report_cmd_2124.yaml
-  report_path: queue/reports/kotaro_report_cmd_2124.yaml
+  report_filename: kotaro_report_cmd_2130.yaml
+  report_path: queue/reports/kotaro_report_cmd_2130.yaml
   scout_exempt: true
   status: done
   stop_for: []
-  task_id: cmd_2124_impl
+  task_id: cmd_2130_impl
   task_type: impl
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -95,4 +98,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  deployed_at: "2026-04-19T14:34:13"
+  deployed_at: "2026-04-19T14:49:47"
