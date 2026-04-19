@@ -259,6 +259,36 @@ EOF
     [[ "$output" == *"report_yaml_format"* ]]
 }
 
+# === Test 11: 同カテゴリ3件以上 → ALERT ===
+@test "3 same workaround categories in recent 5 → ALERT" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_300
+  workaround: true
+  category: report_yaml_format
+  root_cause: "field missing"
+- cmd_id: cmd_301
+  workaround: true
+  category: report_yaml_format
+  root_cause: "wrong format"
+- cmd_id: cmd_302
+  workaround: true
+  category: report_yaml_format
+  root_cause: "schema drift"
+- cmd_id: cmd_303
+  workaround: false
+  category: none
+  root_cause: ""
+- cmd_id: cmd_304
+  workaround: false
+  category: none
+  root_cause: ""
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: 同カテゴリ report_yaml_format が直近5件で 3件累積"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
 # === Test 11: cmd配備漏れ(pending+delegated_at残存) → ALERT ===
 @test "pending cmd with delegated_at → ALERT cmd配備漏れ" {
     cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'

@@ -42,8 +42,8 @@ lessons:
     L-VerifyAfterWrite家老版: 自動化を作ったら発火していることを計測せよ。'
   source_cmd: cmd_selfimprovement_20260322
   created_at: '2026-03-22'
-  automated: false
-  enforcement: pending — cmd起票提案済み(dashboard 2026-03-22 20:36)
+  automated: true
+  enforcement: gate_report_format.sh + gate_karo_startup.sh
 - id: LK008
   title: 軍師proposalの可視化必須 — パートナーの出力を消費せよ
   detail: '軍師GP-003(report_field_set.sh強制hook)がpending放置されていた。根本原因: 軍師proposalの状態管理がダッシュボードに不在。パートナーの出力を消費しない=将軍がgunshi

@@ -410,7 +410,7 @@ if [ -f "$wa_file" ]; then
     }
     END {
         s = (n > 5) ? n-4 : 1; total = n - s + 1
-        wc=0; cat_str=""; cause_str=""
+        wc=0; cat_str=""; cause_str=""; max_cat=""; max_count=0
         for (i=s; i<=n; i++) {
             if (wa[i]) {
                 wc++
@@ -420,17 +420,29 @@ if [ -f "$wa_file" ]; then
                 }
             }
         }
-        for (c in cats) cat_str = cat_str (cat_str != "" ? ", " : "") c ":" cats[c]
+        for (c in cats) {
+            cat_str = cat_str (cat_str != "" ? ", " : "") c ":" cats[c]
+            if (cats[c] > max_count) {
+                max_count = cats[c]
+                max_cat = c
+            }
+        }
         if (cat_str == "") cat_str = "none"
         if (cause_str == "") cause_str = "none"
-        printf "%d|%d|%s|%s\n", wc, total, cat_str, cause_str
+        if (max_cat == "") max_cat = "none"
+        printf "%d|%d|%s|%s|%s|%d\n", wc, total, cat_str, cause_str, max_cat, max_count
     }
     ' "$wa_file" 2>/dev/null || echo "0|0|error|awk error")
-    IFS='|' read -r WA_COUNT WA_TOTAL WA_CATS WA_CAUSES <<< "$wa_result"
+    IFS='|' read -r WA_COUNT WA_TOTAL WA_CATS WA_CAUSES WA_MAX_CAT WA_MAX_COUNT <<< "$wa_result"
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
     if [ "$WA_COUNT" -gt 0 ]; then
         echo "  カテゴリ: ${WA_CATS}"
         echo "  原因: ${WA_CAUSES}"
+        if [ "${WA_MAX_COUNT:-0}" -ge 3 ]; then
+            echo "  ALERT: 同カテゴリ ${WA_MAX_CAT} が直近5件で ${WA_MAX_COUNT}件累積"
+            overall="ALERT"
+            alerts+=("workaround同カテゴリ累積: ${WA_MAX_CAT}=${WA_MAX_COUNT}")
+        fi
     fi
 else
     echo "  karo_workarounds.yaml不在"
