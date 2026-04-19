@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-19 | hayate | `scripts/cmd_complete_gate.sh` | Phase 5(計測+設計+実装+検証) | live median `31.956s → 4.993s` (`-84.4%`, `cmd_2112 --force`) | `docs/research/cmd_2118_cmd_complete_gate_speedup_20260419.md`。`MATCHING_TASK_FILES`再利用、HEAD contiguous commit lookup、diff-scoped scan、`rg`化、no-op push skip、WARN-only後処理のasync化。41/41 tests PASS |
 | 2026-04-19 | hanzo | `tests/unit/test_deploy_task_ac_version.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `32.2s → <16s` (`>50%削減`, AC3 PASS) | cmd_2107。setup最適化+fixture共有。31テスト維持全PASS |
 | 2026-04-19 | kotaro | `tests/unit/test_gate_shogun_startup.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7387ms → 3072ms` (`-58.4%`) | cmd_2109。python3 fast-path追加+--jobs 6並列化。18テスト維持全PASS |
 | 2026-04-19 | kotaro | `tests/unit/test_report_template_gate_compat.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7582ms → 4981ms` (`-34.3%`) | cmd_2110。gate_daemon.py新設(python3永続デーモン+FIFO IPC)。51テスト維持全PASS |
