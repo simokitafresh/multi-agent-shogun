@@ -3977,6 +3977,6 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-19
 - **出典**: cmd_2125
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra]
 - pre-commit hookが.git/hooks/pre-commitに直接配置されている場合、BASH_SOURCE[0]からscripts/hooks/git-pre-commit.shのパターンが除去されずREPO_ROOTが自身のパスになる。git rev-parse --show-toplevelによるフォールバックが必要
