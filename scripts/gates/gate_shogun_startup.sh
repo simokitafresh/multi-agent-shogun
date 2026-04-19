@@ -102,7 +102,12 @@ fi
 echo "■ 掲示板未確認"
 bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
 if [ -f "$bulletin_file" ]; then
-    bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
+    # fast-path: requires_confirmation エントリがなければ python3 スキップ (cmd_2109最適化)
+    _blt_has_rc=$(grep -c 'requires_confirmation:' "$bulletin_file" 2>/dev/null) || _blt_has_rc=0
+    if [ "${_blt_has_rc:-0}" -eq 0 ]; then
+        echo "  未確認: 0件"
+    else
+        bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
 import sys, yaml
 path, agent = sys.argv[1:3]
 with open(path, encoding="utf-8") as fh:
@@ -130,16 +135,17 @@ for item in pending[:3]:
     print(item)
 PY
 )
-    bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
-    if [ "${bulletin_count:-0}" -gt 0 ]; then
-        echo "  WARN: 未確認掲示板 ${bulletin_count}件"
-        printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-            alerts+=("掲示板未確認: ${bulletin_count}件")
+        bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
+        if [ "${bulletin_count:-0}" -gt 0 ]; then
+            echo "  WARN: 未確認掲示板 ${bulletin_count}件"
+            printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
+            if [ "$overall" != "ALERT" ]; then
+                overall="WARN"
+                alerts+=("掲示板未確認: ${bulletin_count}件")
+            fi
+        else
+            echo "  未確認: 0件"
         fi
-    else
-        echo "  未確認: 0件"
     fi
 else
     echo "  掲示板なし"
