@@ -101,6 +101,7 @@
 - 実戦教訓: `memory/tool_codd_lessons.md`
 - 軍師分析(索引): `context/gunshi-codd-analysis.md`
 - 軍師分析(全文): `docs/research/gunshi_codd_swebench_application_20260416.md`
-- リファクタ台帳: `docs/research/codd_refactor_registry.md`
+- リファクタ台帳(**正本・唯一**): `/mnt/c/tools/multi-agent-shogun/docs/research/codd_refactor_registry.md`
+  - **PJに関わらず全CoDDの結果をこの1ファイルに追記せよ。DM-Signal repo等に台帳を新規作成するな**
 - **根源ルール: CoDDで改善したものは必ず台帳に載せる。** 対象がスクリプト/テスト/ドキュメントに関わらず例外なし(殿厳命2026-04-19, LS047)
 - 既存設計書群: `docs/test/*.md` `docs/governance/*.md` `docs/design/*.md` `docs/detailed_design/*.md` `docs/plan/*.md` `docs/operations/*.md`
