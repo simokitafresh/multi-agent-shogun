@@ -36,6 +36,7 @@ teardown() {
 - cmd_id: cmd_2000
   review_type: draft
   verdict: APPROVE
+  ambiguity_points: none
   observations:
     - "通常レビュー"
   timestamp: "2026-04-18T00:01:00"

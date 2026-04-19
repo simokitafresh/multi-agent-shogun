@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import subprocess
 import sys
 
 import yaml
@@ -341,6 +342,88 @@ def main() -> int:
                 hints.append('FIX (verdict): binary_checksにno/fail/ngがある場合はverdict: FAILにせよ')
             elif verdict == "FAIL" and not bc_has_no:
                 hints.append('GP-128 WARN: verdict=FAIL but all binary_checks are "yes" — 外部制約によるFAILか確認せよ')
+
+    # ─── binary_checks 客観裏付けチェック(a)(b)(c) [cmd_2124] ───
+    # WARNのみ（段階的導入。BLOCKなし）
+    if isinstance(bc, dict) and bc:
+        _pc_for_check = str(data.get("parent_cmd", "") or "").strip()
+
+        # (a) files_modifiedが空なのにbinary_checks全yes → WARN
+        try:
+            _fm = data.get("files_modified")
+            _fm_empty = (
+                _fm is None
+                or (isinstance(_fm, list) and len(_fm) == 0)
+                or (isinstance(_fm, str) and _fm.strip() in ("", "null", "[]"))
+            )
+            if _fm_empty:
+                _bc_all_yes = True
+                _bc_has_entries = False
+                for _ac_items_a in bc.values():
+                    if isinstance(_ac_items_a, list):
+                        for _item_a in _ac_items_a:
+                            if isinstance(_item_a, dict) and "result" in _item_a:
+                                _bc_has_entries = True
+                                if str(_item_a.get("result", "")).strip().lower() != "yes":
+                                    _bc_all_yes = False
+                if _bc_has_entries and _bc_all_yes:
+                    hints.append(
+                        "GP-201a WARN: files_modifiedが空なのにbinary_checks全yes — "
+                        "変更ファイルを確認せよ。未コミット or files_modified未記入の可能性"
+                    )
+        except Exception:
+            pass
+
+        # (b) commit+pushのACがyesなのにgit logにcmd_idを含むcommitがない → WARN
+        try:
+            _commit_ac_yes = False
+            for _ac_items_b in bc.values():
+                if isinstance(_ac_items_b, list):
+                    for _item_b in _ac_items_b:
+                        if isinstance(_item_b, dict):
+                            _chk_b = str(_item_b.get("check", "")).lower()
+                            _rs_b = str(_item_b.get("result", "")).strip().lower()
+                            if _rs_b == "yes" and any(kw in _chk_b for kw in ("commit", "push")):
+                                _commit_ac_yes = True
+            if _commit_ac_yes and _pc_for_check:
+                _git_cwd = os.path.dirname(os.path.abspath(report_path))
+                _log_res = subprocess.run(
+                    ["git", "log", "--oneline", "-30"],
+                    capture_output=True, text=True, timeout=5, cwd=_git_cwd,
+                )
+                if _log_res.returncode == 0 and _pc_for_check not in _log_res.stdout:
+                    hints.append(
+                        f"GP-201b WARN: commit+push ACがyesだが直近30コミットに{_pc_for_check}が見つからない — "
+                        "pushが完了しているか確認せよ"
+                    )
+        except Exception:
+            pass
+
+        # (c) テスト全PASSのACがyesなのにtest_resultsが空 → WARN
+        try:
+            _test_ac_yes = False
+            for _ac_items_c in bc.values():
+                if isinstance(_ac_items_c, list):
+                    for _item_c in _ac_items_c:
+                        if isinstance(_item_c, dict):
+                            _chk_c = str(_item_c.get("check", "")).lower()
+                            _rs_c = str(_item_c.get("result", "")).strip().lower()
+                            if _rs_c == "yes" and any(kw in _chk_c for kw in ("test", "テスト", "bats", "pass")):
+                                _test_ac_yes = True
+            if _test_ac_yes:
+                _tr = data.get("test_results")
+                _tr_empty = (
+                    _tr is None
+                    or (isinstance(_tr, dict) and not _tr)
+                    or (isinstance(_tr, str) and _tr.strip() in ("", "null", "{}"))
+                )
+                if _tr_empty:
+                    hints.append(
+                        "GP-201c WARN: テスト全PASS ACがyesだがtest_resultsが空 — "
+                        "テスト実行結果をtest_resultsに記録せよ"
+                    )
+        except Exception:
+            pass
 
     ai = data.get("assumption_invalidation")
     if ai is None and "assumption_invalidation" in data:

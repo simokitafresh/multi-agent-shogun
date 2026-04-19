@@ -39,6 +39,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         draft_id[draft_count] = (entry_id != "" ? entry_id : "?")
         draft_obs[draft_count] = obs_text
         draft_verdict[draft_count] = verdict
+        draft_has_ambiguity[draft_count] = has_ambiguity
     }
 
     in_record = 0
@@ -47,6 +48,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     verdict = ""
     has_cs = 0
     has_causal = 0
+    has_ambiguity = 0
     in_obs = 0
     obs_text = ""
 }
@@ -80,6 +82,8 @@ BEGIN {
         has_cs = 1
     } else if ($0 ~ /^[[:space:]]*causal_chain:[[:space:]]*/) {
         has_causal = 1
+    } else if ($0 ~ /^[[:space:]]*ambiguity_points:[[:space:]]*/) {
+        has_ambiguity = 1
     }
 
     if ($0 ~ /^[[:space:]]*observations:[[:space:]]*$/) {
@@ -109,17 +113,22 @@ END {
 
     start_draft = (draft_count > 20) ? draft_count - 19 : 1
     fm_flagged_count = 0
+    ambiguity_missing_count = 0
     for (i = start_draft; i <= draft_count; i++) {
         has_fm = (draft_obs[i] ~ fm_pat)
         has_tolerance = (draft_obs[i] ~ tol_pat)
         if (draft_verdict[i] == "APPROVE" && has_fm && has_tolerance) {
             fm_flagged[++fm_flagged_count] = draft_id[i]
         }
+        if (!draft_has_ambiguity[i]) {
+            ambiguity_missing[++ambiguity_missing_count] = draft_id[i]
+        }
     }
 
     emit_list("CS_MISSING:", cs_missing, cs_missing_count)
     emit_list("CAUSAL_MISSING:", causal_missing, causal_missing_count)
     emit_list("FM_TOLERANCE:", fm_flagged, fm_flagged_count)
+    emit_list("AMBIGUITY_MISSING:", ambiguity_missing, ambiguity_missing_count)
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
@@ -128,6 +137,7 @@ END {
 cs_missing=""
 causal_missing=""
 fm_flagged=""
+ambiguity_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -140,6 +150,9 @@ while IFS= read -r line; do
             ;;
         FM_TOLERANCE:*)
             fm_flagged="${line#FM_TOLERANCE:}"
+            ;;
+        AMBIGUITY_MISSING:*)
+            ambiguity_missing="${line#AMBIGUITY_MISSING:}"
             ;;
         ALL_PASS)
             all_pass=1
@@ -169,7 +182,7 @@ if [ -n "$fm_flagged" ]; then
     warn=1
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )); then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -184,6 +197,14 @@ if [ -n "$causal_missing" ]; then
     causal_count=$(printf '%s\n' "$causal_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
     echo "WARN: ${causal_count}件のエントリにcausal_chainなし:"
     printf '%s\n' "$causal_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id"
+    done
+    warn=1
+fi
+if [ -n "$ambiguity_missing" ]; then
+    ambiguity_count=$(printf '%s\n' "$ambiguity_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${ambiguity_count}件のdraftエントリにambiguity_pointsなし:"
+    printf '%s\n' "$ambiguity_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id"
     done
     warn=1

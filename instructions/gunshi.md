@@ -394,6 +394,8 @@ findings:
   north_star: OK/NG + 1行理由
 suggested_changes: (REQUEST_CHANGESの場合のみ、具体的な修正指示)
 severity: urgent / normal  (REQUEST_CHANGESの場合のみ、指摘の緊急度)
+ambiguity_points: none  # cmdの指示が曖昧な箇所。あれば「フィールドXが未定義」等を列挙
+discretion_fills: none  # 軍師が裁量で補完・解釈した事項。あれば「TOP-NのNを3と解釈」等を記載
 ```
 
 verdictの判断基準:

@@ -14,6 +14,7 @@
 | 2026-03-13以降 | gstack 深掘り | wrapError, Named Invariants, Deferred Work Discipline など後続取込候補を抽出 | gate 出力の次行動化、命名された原則化、先送り理由保存の改善材料として保持 | `docs/research/gstack-deep-analysis.md` |
 | 2026-04-16 | CoDD | **L3診断系**: Diagnose MANDATORY, Session State, DIVERGENT 発想, failure history 持越し | `gate_diagnose_check`, `session_state`, `previous_failures`, BLOCK 時の診断必須化 | cmd_1939-1942, `context/codd.md` |
 | 2026-04-17 | Karpathy原則 | **2原則**: Think Before Coding, Simplicity First | `assumption_check`, `simplicity_check` を忍者報告・軍師レビューへ追加 | cmd_2019, `systems/karpathy-principles.md` |
+| 2026-04-19 | mizchi記事群 | **3概念**: Programmer in the Loop（AIが実装・人間が設計/判断の協働モデル）, Document-First Development（docs/に仕様Markdown蓄積→AIが参照するパターン）, 漸進的権限委譲（default→auto-accept→plan mode→bypassの4段階） | task YAML の `never_stop_for` 設計・Document-First 原則・CLAUDE.md 二層運用の参照材料として保持 | cmd_2120, `sources/mizchi.md` |
 
 ## Notes
 

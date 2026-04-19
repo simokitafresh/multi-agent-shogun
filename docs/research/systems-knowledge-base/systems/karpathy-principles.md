@@ -111,6 +111,7 @@
 | 軸 | 対象 | 関係 |
 |----|------|------|
 | 補完 | [逆瀬川 (Harness Engineering)](../sources/gyakusegawa.md) | 個別LLM指示ルールに対し、フィードバック速度ヒエラルキー・Skill設計・AGENTS.md等のハーネス全体設計視点を補完する |
+| 補完 | [mizchi](../sources/mizchi.md) | KarpathyのThink Before Coding原則に対し、mizchiのDocument-First Development（仕様をdocsに先行蓄積）が実践的な前準備パターンとして補完する |
 | 競合 | [gsd](gsd.md) | Karpathyはシンプルさ優先でLLM指示を最小化する一方、GSDは役割分担・QA・shipまでの明示的なロール設計を優先する点で最適化方向が異なる |
 | 前提 | [our-army](our-army.md) | 原則をCLAUDE.mdへ埋め込み実際に稼働させるには、our-armyのようなYAML配備フロー・gate・binary check方式の実運用基盤が前提となる |
 

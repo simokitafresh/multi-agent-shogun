@@ -176,6 +176,7 @@ Claude Code (or 10 other hosts)
 | 軸 | 対象 | 関係 |
 |----|------|------|
 | 補完 | [vercel](vercel.md) | Vercelが受動的知識供給と運用基盤を担い、gstackは役割分離されたskillレイヤーでその上を厚くする |
+| 補完 | [mizchi](../sources/mizchi.md) | gstackのcognitive mode切替・組織的skill管理に対し、mizchiのProgrammer in the Loop（個人開発での人間判断役割の明確化）が個人スケールでの補完視点となる |
 | 競合 | [claude-code](claude-code.md) | どちらも並列エージェント協調を扱うが、gstackはMarkdown skills主導、Claude Codeはプラットフォーム機能主導で解く |
 | 前提 | [claude-code](claude-code.md) | gstackのデフォルト運用はClaude Codeのslash command・skills・CLI体験を前提に設計されている |
 

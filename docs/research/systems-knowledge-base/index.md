@@ -31,11 +31,12 @@ systems-knowledge-base/
 | S07 | Vercel Context Engineering | 受動的知識配置と agent-friendly docs を中核にした運用基盤 | [`systems/vercel.md`](systems/vercel.md) |
 | S08 | 我が軍 (current fork) | YAML 一次データ、学習ループ、GATE、復帰手順を統合した現行運用系 | [`systems/our-army.md`](systems/our-army.md) |
 
-## Sources (1 entry)
+## Sources (2 entries)
 
 | ID | 情報源 | 1行概要 | ファイル |
 |----|--------|---------|---------|
 | SRC01 | 逆瀬川ちゃん (@gyakuse) | Coding Agent のワークフロー、Harness Engineering、Skill 設計を扱う日本語一次資料群 | [`sources/gyakusegawa.md`](sources/gyakusegawa.md) |
+| SRC02 | mizchi | "Programmer in the Loop" を掲げる TypeScript/AI エンジニア。技術的特異点論・Document-First・漸進的権限委譲など Claude Code 実践知見を発信 | [`sources/mizchi.md`](sources/mizchi.md) |
 
 ## Interpretation Layer
 

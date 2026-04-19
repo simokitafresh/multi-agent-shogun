@@ -147,9 +147,10 @@ A4: Coding Agentワークフロー総括 (2026-03-14)
 
 | 軸 | 対象 | 関係 |
 |----|------|------|
-| 補完 | [karpathy-principles](karpathy-principles.md) | 逆瀬川のHarness全体設計・Skill構成に対し、LLM個別の思考・精度・ゴール設定に関する指示原則を補完する |
-| 競合 | [ace](ace.md) | 逆瀬川はフィードバック速度と環境設計を中心に置く実装ファーストのアプローチで、ACEの抽象的6層認知モデルとは設計の出発点が異なる |
-| 前提 | [our-army](our-army.md) | inotifywait + YAML mailbox + gate によるハーネス基盤が整っていることが、記事の知見をフル活用する前提条件となる |
+| 補完 | [karpathy-principles](../systems/karpathy-principles.md) | 逆瀬川のHarness全体設計・Skill構成に対し、LLM個別の思考・精度・ゴール設定に関する指示原則を補完する |
+| 補完 | [mizchi](mizchi.md) | 逆瀬川のHarness Engineering・AGENTS.md自動生成に対し、mizchiのDocument-First開発と漸進的権限委譲が実践面の補完知見となる |
+| 競合 | [ace](../systems/ace.md) | 逆瀬川はフィードバック速度と環境設計を中心に置く実装ファーストのアプローチで、ACEの抽象的6層認知モデルとは設計の出発点が異なる |
+| 前提 | [our-army](../systems/our-army.md) | inotifywait + YAML mailbox + gate によるハーネス基盤が整っていることが、記事の知見をフル活用する前提条件となる |
 
 ## Sources
 
