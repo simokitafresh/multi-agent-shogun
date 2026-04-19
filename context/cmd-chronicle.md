@@ -739,3 +739,4 @@
 | cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。docs/research/systems-kn |
 | cmd_karo_ci_fix_ga116 | CI修正 — test_cmd_save.bats 8テスト失敗修正 | infra | 04-19 | CI修正完了。abort_if_block_immediat |
 | cmd_2098 | 実装 — AI開発知識辞書 鮮度チェックgate (CoDDドキュメント適用Phase1) | infra | 04-19 | 知識辞書verified_at鮮度gateを追加し、将軍st |
+| cmd_2100 | 実装 — AI開発知識辞書 落とし穴+相互参照の補完 (全エントリ) | infra | 04-19 | ace/vercel/gsd に Pitfalls/Cros |

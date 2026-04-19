@@ -409,3 +409,10 @@ lessons:
   created_at: '2026-04-18'
   automated: true
   enforcement: '未自動化。将軍の自問に依存。insight_write.shの自動done化(cmd_2093)で生成側は対処中だが、将軍の確認行動は意志依存のまま'
+- id: 'LS046'
+  title: 'WARNスルー事故 — 品質WARNと形式WARNの混在が全WARNオプショナル化を招く'
+  detail: '事故: cmd_2100でWARN6件(q4/q5/q6/q7/q10/AC数量)が出たのに全てスルーして委任。殿指摘で発覚。原因: WARNが二種類混在(品質WARN=AC数量未列挙・q5レベル不明確 / 形式WARN=q4/q6/q7/q10未記入)しているため、将軍が全WARNをオプショナル扱いする習慣が形成された。加えてUnicodeDecodeErrorの対処に気を取られ確認を飛ばした(Phase 2「出力=仕事の罠」の再発)。修正: 品質WARN2件(AC数量未列挙+q5検証レベル不明確)をBLOCK昇格。将軍が直接cmd_save.sh L551/L1553を修正。意志依存ゼロで品質WARNスルーを構造的に防止。'
+  source_cmd: 'cmd_2100'
+  created_at: '2026-04-19'
+  automated: true
+  enforcement: 'cmd_save.sh L551(q5検証レベルBLOCK)+L1553(AC数量未列挙BLOCK)。将軍直接修正+bats 53テスト全PASS確認済み'

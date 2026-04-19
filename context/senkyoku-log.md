@@ -18,6 +18,7 @@
 | cmd_2099 | 我が軍エントリ+index.md+解釈層 | GATE CLEAR。our-army.md+index.md+adoption-log.md | 殿「われら自身も載せよう」 |
 | cmd_2100 | 落とし穴+相互参照の補完 | 稼働中 | 殿「深さが足りているか」「品質を高めよう」→金融ML辞書比較で欠如セクション特定 |
 | (将軍直接) | cmd_save.sh品質WARN→BLOCK昇格 | q5+AC数量の2件。bats 53テスト全PASS | 殿「WARNのままでなぜOKとした？」→なぜなぜ7回→品質WARN/形式WARN混在が根因→LS046登録 |
+| cmd_2073 | **クローズ判定** | 対象不適切のため完了扱い(19/20→**実質20/20**) | 3本(yaml-dump-guard/no-verify-guard/block_destructive)は全てpre-bash-combined.shに統合済みの休眠ファイル。本番ホットパスはcmd_2075-2079で全て改善済み。リトライ不要 |
 
 ## 2026-04-18
 

@@ -940,3 +940,70 @@
   gate_prediction: CLEAR
   causal_chain: "段階的BLOCK3回→集約型1回→全cmd正の複利"
   timestamp: "2026-04-19T01:08:00"
+- cmd_id: cmd_karo_ci_fix_ga116
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_karo_ci_fix_ga116_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI修正(abort_if_block_immediate戻り値伝播+テスト関数エクスポート)。8失敗テストPASS"
+  observations:
+    - "事実1: cmd_2096のBLOCK集約導入でrecord_block_reason/abort_if_block_immediateが新設→テスト側でexport -f漏れ→127エラー"
+    - "事実2: lesson_candidate有: 関数抽出時に呼出依存関数もエクスポート必須。再利用可能な具体知見"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: "WARN(lesson_candidate有→draft_lessons BLOCKリスク)"
+  causal_chain: "cmd_2096 BLOCK集約導入→新関数export -f漏れ→CI RED→修正→テストPASS。cmd_2096の副作用だが修正は最小"
+  timestamp: "2026-04-19T01:14:00"
+- cmd_id: cmd_2098
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。知識辞書鮮度チェックgate。CoDDのverify概念をドキュメントに適用Phase1。startup gate組込"
+  observations:
+    - "事実1: 全8ファイルにverified_atフィールド存在(grep確認済み)。フォーマット混在(YYYY-MM-DD/ISO)だがcmdで対応明記"
+    - "事実2: gate_shogun_startup.sh 831行に1行追加。実行時間影響は数十ms(8ファイルgrep+日付比較)"
+  causal_chain: "37日放置再発リスク→verified_at鮮度チェック→startup gate毎セッション自動検知=正の複利(陳腐化の構造的防止)"
+  timestamp: "2026-04-19T09:18:00"
+- cmd_id: cmd_2099
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。我が軍エントリ+index.md+adoption-log.md(解釈層)。辞書完成cmd。殿直接指示"
+  observations:
+    - "事実1: 8エントリ+guide+sources作成済み。our-army/index/adoption-logが残りで辞書完成"
+    - "事実2: 情報源4件(CLAUDE.md/infrastructure.md/infra.yaml/system-comparison)全て現物確認済み"
+  causal_chain: "殿指示→我が軍エントリ+索引+解釈層→辞書完成→横断参照+鮮度追跡基盤=正の複利"
+  timestamp: "2026-04-19T09:20:00"
+- cmd_id: cmd_2098
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2098_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gate_knowledge_freshness.sh作成+startup gate組込。全9ファイルFRESH/フォーマット混在パース正常"
+  observations:
+    - "事実1: gate実行テスト: 9ファイル全FRESH(0 days old)。ISO 8601/YYYY-MM-DD混在を正常パース"
+    - "事実2: gate_shogun_startup.shに1行組込確認(grep hit 1件)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "verified_at鮮度チェック→startup gate毎セッション自動→30日超STALE検知=正の複利"
+  timestamp: "2026-04-19T09:23:00"
+- cmd_id: cmd_2099
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2099_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。our-army.md+index.md+adoption-log.md全存在。AI開発知識辞書完成"
+  observations:
+    - "事実1: 3ファイル全存在(our-army 7896B/index 2848B/adoption-log 2973B)"
+    - "事実2: context_reflux推奨: CLAUDE.md Knowledge MapにAI開発知識辞書パス追記"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "殿指示→9systems+1source+index+guide+adoption-log→辞書完成→横断参照+鮮度追跡基盤"
+  timestamp: "2026-04-19T09:25:00"

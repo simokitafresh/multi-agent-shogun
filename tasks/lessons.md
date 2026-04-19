@@ -3922,3 +3922,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [universal]
 - gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。
+
+### L513: テスト関数抽出後は呼出依存関数も必ずエクスポートせよ
+- **日付**: 2026-04-19
+- **出典**: cmd_karo_ci_fix_ga116
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [infra]
+- check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason/abort_if_block_immediateも同様にエクスポートしないとcommand not found(127)でテスト失敗する。関数抽出時は呼出グラフを辿って全依存関数をエクスポートせよ。
+
+### L514: auto-commitがテストとの不整合を引き起こす: WARNING→BLOCKの意図せぬ変化
+- **日付**: 2026-04-19
+- **出典**: cmd_karo_ci_fix_ga117
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [infra]
+- hayateのauto-commit(dc8a185)でq5 elifがWARN→BLOCKに変更されCIが失敗した。auto-commit前にbatsテストを走らせる仕組みがあれば即検知できた。check_ac_param_sufficiencyもrecord_block_reason(BLOCK)とWARN_COUNT(WARN)の混用が問題の根本。関数の責任を「WARNのみ」か「BLOCKのみ」に統一すべき

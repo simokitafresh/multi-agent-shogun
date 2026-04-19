@@ -2195,8 +2195,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 21
-  harmful_count: 13
+  helpful_count: 23
+  harmful_count: 16
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2387,6 +2387,9 @@ lessons:
   - api
   - frontend
   - tmux
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-19'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -2559,8 +2562,8 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 20
-  harmful_count: 21
+  helpful_count: 23
+  harmful_count: 24
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2623,9 +2626,9 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-17T17:29:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=2'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 6
-  last_referenced: '2026-04-18'
+  last_referenced: '2026-04-19'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
   summary: Render Static -> Vercel/Cloudflare/Netlify への frontend-only 移行は、deploy体験・preview
@@ -2745,6 +2748,9 @@ lessons:
   summary: cmd_645(Content-Type書き換え)とcmd_646(API SWRキャッシュ)は同じsw.jsへの変更。統合実装で1回のSW更新により「SPA遷
   tags:
   - api
+  helpful_count: 0
+  harmful_count: 3
+  last_referenced: '2026-04-19'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -2872,9 +2878,9 @@ lessons:
   tags:
   - recon
   - monitor
-  helpful_count: 4
-  harmful_count: 2
-  last_referenced: '2026-04-18'
+  helpful_count: 9
+  harmful_count: 3
+  last_referenced: '2026-04-19'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる
   summary: IF 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差
@@ -3874,7 +3880,7 @@ lessons:
     (1'
   tags:
   - deploy
-  helpful_count: 3
+  helpful_count: 0
   harmful_count: 2
   last_referenced: '2026-04-18'
 - id: L027
