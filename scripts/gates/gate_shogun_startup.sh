@@ -55,6 +55,20 @@ if echo "$result2" | grep -q "ALERT\|WARN"; then
 fi
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
+echo "■ 知識辞書鮮度"
+result2_5=$("$GATE_DIR/gate_knowledge_freshness.sh" 2>&1 | tail -1)
+echo "  $result2_5"
+if echo "$result2_5" | grep -q "ALERT\|WARN"; then
+    if echo "$result2_5" | grep -q "ALERT"; then
+        overall="ALERT"
+        alerts+=("知識辞書鮮度: ALERT")
+    elif [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("知識辞書鮮度: WARN")
+    fi
+fi
+
+# --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ cmd委任状態"
 result3=$("$GATE_DIR/gate_cmd_state.sh" 2>&1 | tail -1)
 echo "  $result3"

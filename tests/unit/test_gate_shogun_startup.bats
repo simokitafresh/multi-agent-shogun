@@ -42,6 +42,13 @@ echo "p̄鮮度: OK"
 MOCK
     chmod +x "$SHARED_BASE/scripts/gates/gate_p_average_freshness.sh"
 
+    # Gate 2.5 mock: gate_knowledge_freshness.sh → OK
+    cat > "$SHARED_BASE/scripts/gates/gate_knowledge_freshness.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "知識鮮度: OK — fresh=8 stale=0 warn=0 total=8"
+MOCK
+    chmod +x "$SHARED_BASE/scripts/gates/gate_knowledge_freshness.sh"
+
     # Gate 3 mock: gate_cmd_state.sh → OK
     cat > "$SHARED_BASE/scripts/gates/gate_cmd_state.sh" <<'MOCK'
 #!/usr/bin/env bash
@@ -356,6 +363,20 @@ MOCK
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "知識辞書鮮度 ALERT → 総合判定: ALERT" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "知識鮮度: ALERT — fresh=7 stale=1 warn=0 total=8"
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"知識辞書鮮度"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
 # === Test 14: 未処理PROPOSAL → WARN ===
 @test "pending proposals → WARN with proposal count" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
@@ -468,4 +489,3 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"WARNING: AC不一致"* ]]
 }
-
