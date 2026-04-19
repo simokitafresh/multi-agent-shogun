@@ -43,17 +43,18 @@ deploy_task_setup_file() {
         "$DEPLOY_TASK_TEMPLATE_DIR/config" \
         "$DEPLOY_TASK_TEMPLATE_DIR/projects"
 
-    ln -s "$SRC_DEPLOY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh"
-    ln -s "$SRC_CLI_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/cli_lookup.sh"
-    ln -s "$SRC_FIELD_GET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/field_get.sh"
-    ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/yaml_field_set.sh"
-    ln -s "$SRC_AGENT_STATE_LIB" "$DEPLOY_TASK_TEMPLATE_DIR/lib/agent_state.sh"
-    ln -s "$SRC_CTX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/ctx_utils.sh"
-    ln -s "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"
-    ln -s "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
-    ln -s "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
-    ln -s "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
-    ln -s "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
+    # cmd_2117: cp instead of ln -s → reads from /tmp (Linux ext4) not /mnt/c (WSL2 NTFS)
+    cp "$SRC_DEPLOY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh"
+    cp "$SRC_CLI_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/cli_lookup.sh"
+    cp "$SRC_FIELD_GET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/field_get.sh"
+    cp "$SRC_YAML_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_AGENT_STATE_LIB" "$DEPLOY_TASK_TEMPLATE_DIR/lib/agent_state.sh"
+    cp "$SRC_CTX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/ctx_utils.sh"
+    cp "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"
+    cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
+    cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
+    cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
+    cp "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
 
     for stub in inbox_write ntfy_cmd lesson_check; do
         printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"
@@ -80,6 +81,37 @@ profiles:
     idle_pattern: ""
 EOF
 
+    # cmd_2117: pre-build template project dir for fast cp -r per test (avoid mkdir+ln-s overhead)
+    export DEPLOY_TASK_PROJECT_TEMPLATE
+    DEPLOY_TASK_PROJECT_TEMPLATE="$(mktemp -d "$BATS_TMPDIR/dts_proj_tmpl.XXXXXX")"
+    mkdir -p \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/queue/tasks" \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/queue/reports" \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/queue/inbox" \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/logs" \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/projects" \
+        "$DEPLOY_TASK_PROJECT_TEMPLATE/archive"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$DEPLOY_TASK_PROJECT_TEMPLATE/scripts"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$DEPLOY_TASK_PROJECT_TEMPLATE/lib"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/config" "$DEPLOY_TASK_PROJECT_TEMPLATE/config"
+    printf '<!-- DASHBOARD_AUTO_START -->\n<!-- DASHBOARD_AUTO_END -->\n' \
+        > "$DEPLOY_TASK_PROJECT_TEMPLATE/dashboard.md"
+
+    # cmd_2117 (c): preload deploy_task.sh once → export -f all functions → skip source per test
+    export DEPLOY_TASK_LIB_ONLY=1
+    # shellcheck disable=SC1090,SC1091
+    source "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh" || true
+    # shellcheck disable=SC2317
+    log() { :; }
+    local _preload_fn
+    while IFS= read -r _preload_fn; do
+        # shellcheck disable=SC2163
+        export -f "$_preload_fn" 2>/dev/null || true
+    done < <(declare -F | awk '{print $3}')
+    export SCRIPT_DIR LOG
+    export _DEPLOY_TASK_PRELOADED=1
+    unset DEPLOY_TASK_LIB_ONLY
+
 }
 
 deploy_task_scaffold() {
@@ -88,21 +120,23 @@ deploy_task_scaffold() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
 
-    mkdir -p \
-        "$TEST_PROJECT/queue/tasks" \
-        "$TEST_PROJECT/queue/reports" \
-        "$TEST_PROJECT/queue/inbox" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/projects" \
-        "$TEST_PROJECT/archive"
-
-    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
-    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
-    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
-    cat > "$TEST_PROJECT/dashboard.md" <<'EOF'
-<!-- DASHBOARD_AUTO_START -->
-<!-- DASHBOARD_AUTO_END -->
-EOF
+    # cmd_2117: cp -rP preserves symlinks (scripts/lib/config → /tmp copies)
+    if [[ -n "${DEPLOY_TASK_PROJECT_TEMPLATE:-}" && -d "$DEPLOY_TASK_PROJECT_TEMPLATE" ]]; then
+        cp -rP "$DEPLOY_TASK_PROJECT_TEMPLATE" "$TEST_PROJECT"
+    else
+        mkdir -p \
+            "$TEST_PROJECT/queue/tasks" \
+            "$TEST_PROJECT/queue/reports" \
+            "$TEST_PROJECT/queue/inbox" \
+            "$TEST_PROJECT/logs" \
+            "$TEST_PROJECT/projects" \
+            "$TEST_PROJECT/archive"
+        ln -s "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
+        ln -s "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
+        ln -s "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
+        printf '<!-- DASHBOARD_AUTO_START -->\n<!-- DASHBOARD_AUTO_END -->\n' \
+            > "$TEST_PROJECT/dashboard.md"
+    fi
 }
 
 deploy_task_teardown() {
@@ -110,6 +144,7 @@ deploy_task_teardown() {
 }
 
 teardown_file() {
+    [ -n "${DEPLOY_TASK_PROJECT_TEMPLATE:-}" ] && [ -d "$DEPLOY_TASK_PROJECT_TEMPLATE" ] && rm -rf "$DEPLOY_TASK_PROJECT_TEMPLATE"
     [ -n "$DEPLOY_TASK_TEMPLATE_DIR" ] && [ -d "$DEPLOY_TASK_TEMPLATE_DIR" ] && rm -rf "$DEPLOY_TASK_TEMPLATE_DIR"
 }
 
@@ -121,8 +156,12 @@ deploy_task_fast() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
+        # shellcheck disable=SC2317
         log() { :; }
 
         parse_deploy_task_args "$@"
@@ -254,6 +293,7 @@ deploy_task_lessons_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # shellcheck disable=SC2317
         log() { :; }
 
         local ninja_name="${1:-sasuke}"
@@ -340,6 +380,7 @@ inject_report_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # shellcheck disable=SC2317
         log() { :; }
 
         NINJA_NAME="$ninja_name"
@@ -375,6 +416,7 @@ inject_ac_version_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # shellcheck disable=SC2317
         log() { :; }
         inject_ac_version "$task_file"
     )

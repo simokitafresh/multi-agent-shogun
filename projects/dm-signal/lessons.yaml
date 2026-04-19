@@ -2166,8 +2166,8 @@ lessons:
   summary: IS 46M + OOS 32MでR²_OOS=0.02-0.05の改善は有意にならない可能性が高い。Clark-West検定でも最低水準。169M共通パネルの
   tags:
   - testing
-  helpful_count: 1
-  harmful_count: 3
+  helpful_count: 0
+  harmful_count: 2
   last_referenced: '2026-04-18'
 - id: L287
   title: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ
@@ -2198,8 +2198,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 24
-  harmful_count: 12
+  helpful_count: 23
+  harmful_count: 11
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2565,8 +2565,8 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 24
-  harmful_count: 20
+  helpful_count: 23
+  harmful_count: 19
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
