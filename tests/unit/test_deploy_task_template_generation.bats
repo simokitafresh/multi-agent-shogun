@@ -11,105 +11,113 @@ load '../helpers/deploy_task_scaffold'
 
 setup_file() {
     deploy_task_setup_file
+    export TEMPLATE_FIXTURE_ROOT
+    TEMPLATE_FIXTURE_ROOT="$(mktemp -d "$BATS_TMPDIR/deploy_task_template_generation.XXXXXX")"
+    _generate_report_fixtures
 }
 
-setup() {
+teardown_file() {
+    [ -n "${TEMPLATE_FIXTURE_ROOT:-}" ] && [ -d "$TEMPLATE_FIXTURE_ROOT" ] && rm -rf "$TEMPLATE_FIXTURE_ROOT"
+    [ -n "$DEPLOY_TASK_TEMPLATE_DIR" ] && [ -d "$DEPLOY_TASK_TEMPLATE_DIR" ] && rm -rf "$DEPLOY_TASK_TEMPLATE_DIR"
+}
+
+_fixture_project_start() {
     deploy_task_scaffold "tmpl_gen"
     # shellcheck disable=SC1090
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
 }
 
-teardown() {
+_fixture_project_end() {
     deploy_task_teardown
+    unset TEST_TMPDIR TEST_PROJECT
 }
 
-task_file() {
-    printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+_save_report_fixture() {
+    local fixture_name="$1"
+    local report_rel
+    report_rel=$(FIELD_GET_NO_LOG=1 field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "report_path" "" 2>/dev/null)
+    cp "$TEST_PROJECT/$report_rel" "$TEMPLATE_FIXTURE_ROOT/${fixture_name}.yaml"
 }
 
-read_task_report_path() {
-    FIELD_GET_NO_LOG=1 field_get "$(task_file)" "report_path" "" 2>/dev/null
+fixture_report_path() {
+    printf '%s\n' "$TEMPLATE_FIXTURE_ROOT/$1.yaml"
 }
 
-# ─── Helper: gitignore テスト用 git 環境セットアップ ───
-_setup_git_project() {
-    git -C "$TEST_PROJECT" init --quiet
-    printf 'outputs/\n' > "$TEST_PROJECT/.gitignore"
+report_block() {
+    local report_file="$1"
+    local block_name="$2"
+    awk -v key="$block_name" '
+        $0 ~ ("^  " key ":$") { in_block=1; next }
+        in_block && /^  [A-Za-z0-9_]+:/ { exit }
+        in_block { print }
+    ' "$report_file"
 }
 
-# ─── Helper: recon テンプレート fixture 作成 ───
-# 結果は _RECON_REPORT_FILE にセットされる
-_setup_recon_report_fixture() {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "recon template test"
-  task_type: recon
-  acceptance_criteria:
-    - ac1: investigate target
-EOF
-
-    # CMD_ID regex拡張(cmd_[a-zA-Z0-9_]+)によりcmd_testがCMD_IDとして検出される
-    # → resolve_cmd_to_taskがSTK必須。STKにcmd_testエントリを追加
-    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
-commands:
-  cmd_test:
-    id: cmd_test
-    title: 'recon template test'
-    project: infra
-    type: recon
-    purpose: 'test purpose'
-    status: delegated
-EOF
-
-    deploy_task_template_only sasuke cmd_test
-
-    _RECON_REPORT_FILE=$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name 'sasuke_report*.yaml' | head -1)
-    [ -n "$_RECON_REPORT_FILE" ]
-}
-
-# ═══════════════════════════════════════════════════════════
-# gitignore commit check tests (from test_deploy_task_gitignore_commit_check.bats)
-# cmd_1838: gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される
-# ═══════════════════════════════════════════════════════════
-
-@test "gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される" {
+_generate_report_fixtures() {
+    _fixture_project_start
     _setup_git_project
-
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
-  title: "gitignore commit check test"
+  title: "強化 monthly waive scout fixture"
   task_type: impl
-  parent_cmd: cmd_1838
-  task_id: cmd_1838_impl
+  parent_cmd: cmd_1941
+  task_id: cmd_1941_combo
   project: infra
+  scout_exempt: true
+  waive_ac: [AC5]
   target_path: "outputs/test_result.csv"
   acceptance_criteria:
     - id: AC1
-      description: "outputs/にCSVを出力する"
+      description: "monthly returns parityを確認する。差分が0である"
+    - id: AC5
+      description: "後続レビューで免除する"
+    - id: AC6
+      description: "月次データの確認"
+      binary_checks:
+        - check: "月次リターン差分を確認したか"
 EOF
-
     deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
+    _save_report_fixture combo_impl
+    _fixture_project_end
 
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-bc = data["binary_checks"]
-commit_items = bc.get("commit", [])
-assert len(commit_items) >= 1, f"commit checkが存在しない: {bc}"
-commit_result = commit_items[0].get("result", "")
-assert commit_result == "no", f"commit checkのresultが'no'でない: {commit_result!r}"
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
-}
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "recon commit skip test"
+  task_type: recon
+  parent_cmd: cmd_gp183
+  task_id: cmd_gp183_recon
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "既存の挙動を確認する"
+EOF
+    deploy_task_template_only sasuke
+    _save_report_fixture recon_template
+    _fixture_project_end
 
-@test "gitignore対象外ファイルのcmdではcommit checkは空のまま" {
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "research commit auto waive test"
+  task_type: impl
+  scope_mode: RESEARCH
+  parent_cmd: cmd_1946
+  task_id: cmd_1946_research
+  project: infra
+  target_path:
+    - outputs/research.csv
+    - docs/research/cmd_1946_notes.md
+  acceptance_criteria:
+    - id: AC1
+      description: "研究成果を保存する"
+EOF
+    deploy_task_template_only sasuke
+    _save_report_fixture research
+    _fixture_project_end
+
+    _fixture_project_start
     _setup_git_project
-
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "non-gitignore commit check test"
@@ -122,79 +130,50 @@ task:
     - id: AC1
       description: "scripts/deploy_task.shを修正する"
 EOF
-
     deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
+    _save_report_fixture non_gitignore
+    _fixture_project_end
+}
 
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-bc = data["binary_checks"]
-commit_items = bc.get("commit", [])
-assert len(commit_items) >= 1, f"commit checkが存在しない: {bc}"
-commit_result = commit_items[0].get("result", "")
-assert commit_result == "", f"commit checkのresultが空でない: {commit_result!r}"
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+# ─── Helper: gitignore テスト用 git 環境セットアップ ───
+_setup_git_project() {
+    git -C "$TEST_PROJECT" init --quiet
+    printf 'outputs/\n' > "$TEST_PROJECT/.gitignore"
+}
+
+# ═══════════════════════════════════════════════════════════
+# gitignore commit check tests (from test_deploy_task_gitignore_commit_check.bats)
+# cmd_1838: gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される
+# ═══════════════════════════════════════════════════════════
+
+@test "gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される" {
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
+
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
+    [[ "$commit_block" == *"result: 'no'"* ]]
+}
+
+@test "gitignore対象外ファイルのcmdではcommit checkは空のまま" {
+    local report_path
+    report_path="$(fixture_report_path non_gitignore)"
+
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
+    [[ "$commit_block" == *"result: ''"* ]]
 }
 
 @test "研究cmdではcommit checkにwaive_reason付きresult:noを自動注入する" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "research commit auto waive test"
-  task_type: impl
-  scope_mode: RESEARCH
-  parent_cmd: cmd_1946
-  task_id: cmd_1946_research_scope
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "研究ログを更新する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path research)"
 
-    deploy_task_template_only sasuke
-    local scope_report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "research output auto waive test"
-  task_type: impl
-  parent_cmd: cmd_1946
-  task_id: cmd_1946_research_target
-  project: infra
-  target_path:
-    - outputs/research.csv
-    - docs/research/cmd_1946_notes.md
-  acceptance_criteria:
-    - id: AC1
-      description: "研究成果を保存する"
-EOF
-
-    deploy_task_template_only sasuke
-    local target_report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-
-def assert_commit_waived(path_str):
-    data = yaml.safe_load(Path(path_str).read_text(encoding="utf-8"))
-    commit_items = data["binary_checks"].get("commit", [])
-    assert len(commit_items) >= 1, f"commit checkが存在しない: {data['binary_checks']}"
-    item = commit_items[0]
-    assert item.get("result") == "no", f"commit resultが'no'でない: {item!r}"
-    assert item.get("waive_reason"), f"waive_reasonが空: {item!r}"
-
-assert_commit_waived("$scope_report_path")
-assert_commit_waived("$target_report_path")
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [[ "$commit_block" == *"result: 'no'"* ]]
+    [[ "$commit_block" == *"waive_reason: '研究cmd: commit不要'"* ]]
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -202,217 +181,69 @@ PYEOF
 # ═══════════════════════════════════════════════════════════
 
 @test "scout_exempt=true + impl taskでcommit checkが注入される (GP-190修正)" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "scout exempt commit check test"
-  task_type: impl
-  parent_cmd: cmd_gp183
-  task_id: cmd_gp183_impl
-  project: infra
-  scout_exempt: true
-  acceptance_criteria:
-    - id: AC1
-      description: "report templateのみ更新する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-assert "commit" in data["binary_checks"], f"commit checkが注入されていない(impl taskは必須): {data['binary_checks']}"
-commit_items = data["binary_checks"]["commit"]
-assert len(commit_items) >= 1, f"commit checkが空: {commit_items}"
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [[ -n "$commit_block" ]]
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
 }
 
 @test "waive_ac指定のACはwaive_reason付きresult:noで初期化される" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "waive_ac field test"
-  task_type: impl
-  parent_cmd: cmd_1946
-  task_id: cmd_1946_waive_ac
-  project: infra
-  waive_ac: [AC5]
-  acceptance_criteria:
-    - id: AC1
-      description: "通常ACは空のまま残す"
-    - id: AC5
-      description: "後続レビューで免除する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
-ac1_items = data["binary_checks"]["AC1"]
-ac5_items = data["binary_checks"]["AC5"]
-assert all(item.get("result", "") == "" for item in ac1_items), ac1_items
-assert len(ac5_items) >= 1, ac5_items
-assert all(item.get("result") == "no" for item in ac5_items), ac5_items
-assert all(item.get("waive_reason") == "waive_ac指定" for item in ac5_items), ac5_items
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local ac1_block ac5_block
+    ac1_block="$(report_block "$report_path" "AC1")"
+    ac5_block="$(report_block "$report_path" "AC5")"
+    [[ "$ac5_block" == *"result: 'no'"* ]]
+    [[ "$ac5_block" == *'waive_reason: waive_ac指定'* ]]
 }
 
 @test "recon taskではcommit checkを引き続き注入しない" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "recon commit skip test"
-  task_type: recon
-  parent_cmd: cmd_gp183
-  task_id: cmd_gp183_recon
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "既存の挙動を確認する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path recon_template)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-assert "commit" not in data["binary_checks"], data["binary_checks"]
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [ -z "$commit_block" ]
 }
 
 @test "AC descriptionにmonthlyを含む場合はdescription由来checkへ進行中月除外を付記する" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "monthly annotation test"
-  task_type: impl
-  parent_cmd: cmd_gp184
-  task_id: cmd_gp184_impl
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "monthly returns parityを確認する。差分が0である"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-checks = data["binary_checks"]["AC1"]
-texts = [item["check"] for item in checks]
-assert any("進行中月除外" in text for text in texts), texts
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local ac1_block
+    ac1_block="$(report_block "$report_path" "AC1")"
+    [[ "$ac1_block" == *'進行中月除外'* ]]
 }
 
 @test "AC descriptionに月次を含む場合は手書きbinary_checksにも進行中月除外を付記する" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "monthly handwritten binary check test"
-  task_type: impl
-  parent_cmd: cmd_gp184
-  task_id: cmd_gp184_impl_handwritten
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "月次データの確認"
-      binary_checks:
-        - check: "月次リターン差分を確認したか"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-checks = data["binary_checks"]["AC1"]
-assert "進行中月除外" in checks[0]["check"], checks
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    local ac1_block
+    ac1_block="$(report_block "$report_path" "AC6")"
+    [[ "$ac1_block" == *'進行中月除外'* ]]
 }
 
 @test "強化cmdの報告テンプレートにbefore/after/regressionを追加する" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "強化 — GP/改善にbefore/after退化計測を義務化"
-  task_type: impl
-  parent_cmd: cmd_1941
-  task_id: cmd_1941_impl
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "報告テンプレートを更新する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-assert data["before_metrics"]["summary"] == "", data
-assert data["after_metrics"]["summary"] == "", data
-assert data["regression"] == "", data
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    grep -Fq 'before_metrics:' "$report_path"
+    grep -Fq 'after_metrics:' "$report_path"
+    grep -Fq 'regression: ""' "$report_path"
+    grep -Fq 'summary: ""  # 実装前の計測値' "$report_path"
+    grep -Fq 'summary: ""  # 実装後の計測値' "$report_path"
 }
 
 @test "報告テンプレートにsimplicity_checkを追加する" {
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
-task:
-  title: "simplicity field test"
-  task_type: impl
-  parent_cmd: cmd_2019
-  task_id: cmd_2019_impl
-  project: infra
-  acceptance_criteria:
-    - id: AC1
-      description: "報告テンプレートにsimplicity_check行を追加する"
-EOF
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
 
-    deploy_task_template_only sasuke
-    local report_path="$TEST_PROJECT/$(read_task_report_path)"
-
-    run python3 - <<PYEOF
-import yaml
-from pathlib import Path
-report = Path("$report_path")
-data = yaml.safe_load(report.read_text(encoding="utf-8"))
-assert "simplicity_check" in data, data
-assert data["simplicity_check"] == "", data["simplicity_check"]
-print("OK")
-PYEOF
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    grep -Fq 'simplicity_check: ""' "$report_path"
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -420,16 +251,16 @@ PYEOF
 # ═══════════════════════════════════════════════════════════
 
 @test "recon report template includes dependency_constraints field" {
-    _setup_recon_report_fixture
-    local REPORT_FILE="$_RECON_REPORT_FILE"
+    local REPORT_FILE
+    REPORT_FILE="$(fixture_report_path recon_template)"
 
     run grep -Fq "dependency_constraints" "$REPORT_FILE"
     [ "$status" -eq 0 ]
 }
 
 @test "recon report template includes all 5 implementation_readiness fields" {
-    _setup_recon_report_fixture
-    local REPORT_FILE="$_RECON_REPORT_FILE"
+    local REPORT_FILE
+    REPORT_FILE="$(fixture_report_path recon_template)"
 
     run grep -Fq "files_to_modify" "$REPORT_FILE"
     [ "$status" -eq 0 ]

@@ -4007,7 +4007,8 @@ except Exception:
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_main "$@"
-fi
 
-# cmd_1337: ダッシュボード自動更新（配備完了時、バックグラウンド実行）
-bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
+    # cmd_1337: ダッシュボード自動更新（配備完了時、バックグラウンド実行）
+    # source(lib-only)利用時は起動しない。テスト/ヘルパでの読込副作用を防ぐ。
+    bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
+fi
