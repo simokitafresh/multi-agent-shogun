@@ -37,6 +37,20 @@ RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1
 
 echo "$RESULT"
 
+# cmd_2130: task_clarity_score WARN (non-blocking)
+python3 - "$REPORT_PATH" <<'CLARITY_WARN_PY' 2>/dev/null || true
+import yaml, sys
+try:
+    with open(sys.argv[1], encoding='utf-8') as f:
+        data = yaml.safe_load(f) or {}
+    tc = data.get('task_clarity') or {}
+    score = str(tc.get('score', '') or '').strip()
+    if not score:
+        print('WARN: task_clarity.score未記入 (0-100で記入せよ)')
+except Exception:
+    pass
+CLARITY_WARN_PY
+
 RESULT_IS_PASS=0
 if printf '%s\n' "$RESULT" | grep -qxE 'PASS|PASS_NO_IMPROVEMENT'; then
     RESULT_IS_PASS=1

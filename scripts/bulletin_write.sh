@@ -89,6 +89,13 @@ elif rc_raw.lower() in {"0", "false", "no", "n", ""}:
 else:
     agents = [a.strip() for a in rc_raw.split(",") if a.strip()]
     req = agents if agents else False
+# GP-210: 同一content+同一posted_byの重複投稿を防止
+for existing in entries:
+    if (existing.get("content", "").strip() == content.strip()
+            and existing.get("posted_by", "") == posted_by):
+        print(f"DEDUP: 同一内容の掲示板エントリが既存 ({existing.get('id')})")
+        sys.exit(0)
+
 entries.append({
     "id": entry_id,
     "content": content,

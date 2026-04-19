@@ -1174,6 +1174,10 @@ purpose_validation:
   purpose_gap: ""
 simplicity_check: ""  # 既存仕組みで足りるか / 複雑さ追加が必要なら理由を1文で記せ
 assumption_check: ""  # ACの前提に疑問はないか？不明な点があればdecision_candidateに書け(Karpathy原則1)
+task_clarity:
+  score: ""         # 0-100: タスクの明瞭度(100=完全明瞭, 0=全不明)。cmdの品質を記録
+  unclear_points: ""   # 不明瞭だった点を1文で(なければ"なし")
+  discretion_fills: "" # 独自判断で補完した内容(なければ"なし")
 ${_before_after_block}
 files_modified: []
 lesson_candidate:

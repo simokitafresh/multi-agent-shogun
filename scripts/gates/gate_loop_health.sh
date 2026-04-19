@@ -20,8 +20,9 @@ GATE_LOG_FILE="$LOG_FILE" \
 GATE_WA_FILE="$WORKAROUND_FILE" \
 GATE_REPO_ROOT="$REPO_ROOT" \
 python3 << 'PYEOF'
-import sys, re, os, json
+import sys, re, os, json, glob, statistics
 from collections import Counter, defaultdict
+import yaml
 
 # Pre-compile patterns (minor speedup)
 RE_TS = re.compile(r'ts:\s*"([^"]*)"')
@@ -35,6 +36,7 @@ RE_BC = re.compile(r'binary_checks\.\w+')
 log_path = os.environ['GATE_LOG_FILE']
 wa_path = os.environ['GATE_WA_FILE']
 repo_root = os.environ['GATE_REPO_ROOT']
+gate_metrics_path = os.path.join(repo_root, 'logs', 'gate_metrics.log')
 
 # --- Load gate fire log (flow-style format, parsed via regex) ---
 entries = []
@@ -149,6 +151,43 @@ if recommendations:
         print(f'  {r}')
 else:
     print('  現時点で成熟提案なし')
+
+# --- CTX% anomaly detection from recent CLEAR cmds ---
+ctx_rows = []
+if os.path.isfile(gate_metrics_path):
+    with open(gate_metrics_path, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            parts = line.rstrip('\n').split('\t')
+            if len(parts) < 10 or parts[2] != 'CLEAR':
+                continue
+            m = re.search(r'ctx=(\d+)%', parts[9])
+            if not m:
+                continue
+            ctx_rows.append({
+                'ts': parts[0],
+                'cmd_id': parts[1],
+                'ctx_pct': int(m.group(1)),
+            })
+
+recent_ctx_rows = ctx_rows[-20:] if len(ctx_rows) > 20 else ctx_rows
+if len(recent_ctx_rows) >= 5:
+    median_ctx = statistics.median(row['ctx_pct'] for row in recent_ctx_rows)
+    anomalies = []
+    for row in recent_ctx_rows:
+        ctx_pct = row['ctx_pct']
+        delta = ctx_pct - median_ctx
+        ratio = (ctx_pct / median_ctx) if median_ctx > 0 else float('inf')
+        if delta >= 15 and ratio >= 1.5:
+            anomalies.append((ratio, row, delta))
+
+    if anomalies:
+        print()
+        print('=== CTX% Outlier Check ===')
+        for ratio, row, delta in sorted(anomalies, key=lambda item: (-item[0], -item[2], item[1]['cmd_id']))[:3]:
+            print(
+                f'WARNING: CTX%異常値 {row["cmd_id"]} '
+                f'(ctx={row["ctx_pct"]}%, median={median_ctx:.1f}%, ratio={ratio:.2f}x, delta=+{delta:.1f}pt)'
+            )
 
 # === Auto-insight generation: recurring patterns → queue/insights.yaml ===
 # Phase 4原則: 理解だけでは行動は変わらない → 自動化×強制
@@ -361,6 +400,27 @@ if fail_files_total > 0:
         print(f'  -> training setにまだ未解決パターン多い。既存L修行継続')
     else:
         print(f'  -> 差{abs(h_pct - t_pct)}pt: 汎化概ね良好')
+print()
+
+# === task_clarity_score 平均 (cmd_2130) ===
+_tc_scores = []
+for _rdir in [os.path.join(repo_root, 'queue', 'reports'), os.path.join(repo_root, 'archive', 'reports')]:
+    for _rp in glob.glob(os.path.join(_rdir, '*_report_*.yaml')):
+        try:
+            with open(_rp, encoding='utf-8') as _rf:
+                _rd = yaml.safe_load(_rf) or {}
+            _tc = _rd.get('task_clarity') or {}
+            _score = _tc.get('score', '')
+            if _score is not None and str(_score).strip() not in ('', 'null'):
+                _tc_scores.append(float(str(_score).strip()))
+        except Exception:
+            pass
+print('=== task_clarity_score 平均 ===')
+if _tc_scores:
+    _tc_avg = sum(_tc_scores) / len(_tc_scores)
+    print(f'  対象: {len(_tc_scores)}件 / 平均: {_tc_avg:.1f} / 最小: {min(_tc_scores):.0f} / 最大: {max(_tc_scores):.0f}')
+else:
+    print('  データなし (task_clarity.score記入済み報告が0件)')
 print()
 
 print('=== Loop Status ===')

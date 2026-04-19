@@ -228,6 +228,58 @@ notify_idle_shogun_gate_clear() {
     fi
 }
 
+# ─── GATE CLEAR時 CTX%記録（cmd_2129） ───
+# 取得元は tmux @context_pct を優先し、pane未解決時のみ karo_snapshot.txt を補助利用する。
+# 複数忍者cmdでは最大CTX%を採用し、直近cmd群との比較で異常値検知に使う。
+build_clear_ctx_metric() {
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    local task_file ninja_name ctx_num pane_id
+    local max_ctx=-1
+    local resolved=0
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        ctx_num=""
+
+        if command -v tmux >/dev/null 2>&1; then
+            pane_id=$(tmux list-panes -a -F '#{pane_id}|#{@agent_id}' 2>/dev/null | awk -F'|' -v ninja="$ninja_name" '$2 == ninja { print $1; exit }' || true)
+            if [ -n "$pane_id" ]; then
+                ctx_num=$(tmux show-options -p -t "$pane_id" -v @context_pct 2>/dev/null | grep -oE '[0-9]+' | tail -1 || true)
+            fi
+        fi
+
+        if [ -z "$ctx_num" ] && [ -f "$snapshot_file" ]; then
+            ctx_num=$(awk -F'|' -v ninja="$ninja_name" '
+                $1 == "ninja" && $2 == ninja {
+                    for (i = 1; i <= NF; i++) {
+                        if ($i ~ /^CTX:[0-9]+%$/) {
+                            v = $i
+                            sub(/^CTX:/, "", v)
+                            sub(/%$/, "", v)
+                            print v
+                            exit
+                        }
+                    }
+                }
+            ' "$snapshot_file" 2>/dev/null || true)
+        fi
+
+        if [ -n "$ctx_num" ] && [ "$ctx_num" -ge 0 ] 2>/dev/null; then
+            if [ "$ctx_num" -gt "$max_ctx" ]; then
+                max_ctx="$ctx_num"
+            fi
+            resolved=$((resolved + 1))
+        fi
+    done
+
+    if [ "$resolved" -gt 0 ] && [ "$max_ctx" -ge 0 ] 2>/dev/null; then
+        printf 'ctx=%s%%' "$max_ctx"
+    else
+        printf 'ctx=unknown'
+    fi
+}
+
 # ─── status自動更新関数 ───
 update_status() {
     local cmd_id="$1"
@@ -3622,8 +3674,9 @@ fi
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
+    GATE_CTX_METRIC=$(build_clear_ctx_metric)
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
     (bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" >/dev/null 2>&1 || true) &

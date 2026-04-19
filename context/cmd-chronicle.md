@@ -757,3 +757,5 @@
 | cmd_2122 | 強化(家老) — deploy_task.sh タスク明瞭性チェック追加 (配備前検証) | infra | 04-19 | HEAD上でcmd_2122要件が既に実装済みと確認。dep |
 | cmd_2127 | 強化 — 軍師LGTM収束判定 (ambiguity_points 0件をLGTM条件に) | infra | 04-19 | instructions/gunshi.md のdraftレ |
 | cmd_2128 | 強化 — 修行サイクルhold-outテスト設計 (gate過適合検出) | infra | 04-19 | context/training-cycle.md §27 |
+| cmd_2124 | 強化(忍者) — gate_report_format binary_checks客観裏付け (git diff突合) | infra | 04-19 | gate_report_format_main.pyにbin |
+| cmd_2123 | 強化(軍師) — karo_workaround_log.sh SG紐付けフィールド追加 (偽陰性計測) | infra | 04-19 | karo_workaround_log.shへ任意の第6引数 |
