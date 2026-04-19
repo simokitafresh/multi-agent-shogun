@@ -124,6 +124,22 @@
 | Blog | Agent responsibly | https://vercel.com/blog/agent-responsibly |
 | Integrations | Claude Code / Codex / OpenCode / Cline / Roo / Conductor / Crush / Superset | AI Gateway経由で接続可能 |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| 単一repoでは全体像を代表しない | 公開数値メタデータは `agent-browser` をアンカーにしているが、Vercel system全体はdocs + hosted product + platform機能の複合体である | 比較調査、バージョン追跡、メタデータ要約時 |
+| platform依存が強い | Sandbox、AI Gateway、Vercel Agentの統合価値は高い反面、完全ローカル運用やベンダー非依存を求める環境へは移植しにくい | self-host前提組織、閉域運用、コスト比較時 |
+| 変化速度が速い | blog/docs/releases/hosted機能が短周期で更新されるため、一度の調査結果を長期固定すると陳腐化しやすい | 再検証なしの再利用、比較表の長期保守時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [gsd](gsd.md) | Vercelが知識供給と実行基盤を閉じるのに対し、GSDは要件トレーサビリティとverify主導の開発手順を補完する |
+| 競合 | [ace](ace.md) | Vercelはplatform-nativeな運用統合を重視し、ACEはlocal/model-agnosticな自律認知構造を優先する |
+| 前提 | [oshio](oshio.md) | Vercel式の受動的知識注入を他システムへ移すには、oshioのようなAGENTS/queue/harnessを持つ運用基盤が前提になる |
+
 ## Sources
 
 | 種別 | URL |

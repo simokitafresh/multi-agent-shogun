@@ -157,6 +157,22 @@ Verify Phase: 品質ゲート + テストカバレッジ確認
 **対応ランタイム (15種, 2026-04-18時点)**:
 Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, Qwen Code, Cline, CodeBuddy + All (一括インストール)
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| CTX指標の過信 | Context Rot対策は中核だが、CTX残量が多いこと自体は要件充足や本番正当性の証明にならない | verify不足、ドメイン制約見落とし時 |
+| フェーズと成果物が増える | planner/checker/executor/verifier や `.planning/` 群は強力だが、小規模作業では運用面の負荷になりうる | 小修正、単発実装、導入初期 |
+| 高速リリース由来の鮮度リスク | v1.23.0→v1.37.1まで短期間で機能面が大きく変化しており、旧理解のまま使うと構成やコマンド体系を外しやすい | 旧資料参照、複数ランタイム対応、セットアップ時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [vercel](vercel.md) | GSDがspec/verifyの手順を与え、Vercelがagent-friendly docsと実行基盤を与えるため、併用時に知識供給と実装運用が噛み合う |
+| 競合 | [ace](ace.md) | GSDは要件トレーサビリティと検証フローを前面化し、ACEは内部認知と倫理階層を主題に置くため、主たる最適化対象が異なる |
+| 前提 | [oshio](oshio.md) | GSDの多段フェーズやハーネス強制を継続運用するには、oshioのような役割分担・状態管理・通信基盤があると実装しやすい |
+
 ## Sources
 
 | 種別 | URL |

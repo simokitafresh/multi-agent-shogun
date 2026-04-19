@@ -131,6 +131,22 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 | 紹介記事 | Medium記事「Autonomous Agents Are Here: Introducing the ACE Framework」(2023-09-17) |
 | アーカイブ状態 | 2024-08-13以降 read-only。後継プロジェクト等の明示なし |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| archived前提の採用 | リポジトリは2024-08-13以降read-onlyで、上流の機能追加・脆弱性修正・運用改善を期待できない | 長期運用、依存更新、実装継続時 |
+| 自然言語バスの曖昧さ | 層間通信を自然言語に寄せるため、人間可読性は高いが、厳密な状態同期や機械検証は別途設計が要る | 複雑なタスク引継ぎ、監査、再現性要求時 |
+| 概念先行で運用層が薄い | 6層認知モデルは強いが、CI/CD、権限制御、レビュー、障害復旧などの実運用面はフレームワーク外で補う必要がある | 本番導入、チーム運用、複数エージェント配備時 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [gstack](gstack.md) | ACEが示す抽象的な認知階層に対し、gstackはレビュー・QA・shipまでの実務ロール分離を提供する |
+| 競合 | [vercel](vercel.md) | ACEは100% local / model agnosticを重視する一方、VercelはSandbox・Gateway・Hosted Agentを含むplatform-native運用を採る |
+| 前提 | [oshio](oshio.md) | ACEの概念を実際の多エージェント運用へ落とすには、oshioのような通信・状態遷移・ハーネス層が別途必要になる |
+
 ## Sources
 
 | カテゴリ | URL |

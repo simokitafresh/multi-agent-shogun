@@ -11,7 +11,8 @@
 1. **省略禁止**: 圧縮ではなく再構造化。偵察報告の情報量を100%維持してフォーマット変換する
 2. **Vercelスタイル**: `index.md`(未作成)= 索引層（1行要約+リンク）、各エントリ = 詳細層（全情報）
 3. **相互参照必須**: 補完/競合/前提の3軸で関連エントリをリンクする
-4. **拡張性**: 全エントリが同一フォーマット。後続偵察結果も同形式で追加
+4. **Pitfalls必須**: 各エントリに `## Pitfalls` を置き、少なくとも3項目の落とし穴をテーブルで残す
+5. **拡張性**: 全エントリが同一フォーマット。後続偵察結果も同形式で追加
 
 ## 2層構造ルール
 
@@ -100,8 +101,30 @@ sources/{kebab-case-著者名}.md  # 記事・知見源
 | Changelog since YYYY-MM-DD | 日付/バージョン/変更/影響 テーブル | 禁止 |
 | Notable Techniques | テクニック名/説明/このシステム固有か テーブル | 禁止 |
 | Ecosystem | コミュニティ/フォーク/統合先/記事 | 禁止 |
+| Pitfalls | 落とし穴/何が問題か/どこで表面化するか の3列テーブル。3項目以上 | 禁止 |
+| Cross-References | 補完/競合/前提の3軸を必ず埋めるテーブル | 禁止 |
 | Sources | Repository/Documentation/Blog/Articles のURL | 禁止 |
 | Verification | verified_at/method/source | 禁止 |
+
+#### 必須テンプレート断片
+
+```markdown
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| 例1 | 例1 | 例1 |
+| 例2 | 例2 | 例2 |
+| 例3 | 例3 | 例3 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [vercel](systems/vercel.md) | どの層を補うかを1文で書く |
+| 競合 | [ace](systems/ace.md) | 最適化対象や前提の違いを1文で書く |
+| 前提 | [oshio](systems/oshio.md) | 取り込む時に必要な運用基盤や前提条件を1文で書く |
+```
 
 ### Step 4: 偵察報告からの情報抽出
 
@@ -117,19 +140,27 @@ sources/{kebab-case-著者名}.md  # 記事・知見源
 | `techniques` / `prompt_patterns` | § Notable Techniques |
 | `community` / `integrations` | § Ecosystem |
 | `references` / `sources` | § Sources |
+| `pitfalls` / `failure_modes` | § Pitfalls |
+| `related_systems` / `comparative_notes` | § Cross-References |
 | `lesson_candidate` | decision_candidateへ（我が軍固有判断のため一次知識層に混入禁止） |
 
-### Step 5: 相互参照の更新（将来 index.md 作成後）
+### Step 5: Cross-References の更新
 
-新エントリ追加時、既存エントリの「Related Systems」セクションも更新する:
+新エントリ追加時、既存エントリの `## Cross-References` も更新する:
 
 ```markdown
-## Related Systems
+## Cross-References
 
-- 設計類似: [システム名](相対パス.md)（どう類似するかの1行説明）
-- 技術重複: [システム名](相対パス.md)（どの機能が重なるか）
-- 技術移転元: [システム名](相対パス.md)（どの技術を提供しているか）
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [システム名](相対パス.md) | 補完する層・役割を1文で書く |
+| 競合 | [システム名](相対パス.md) | 競合する前提・最適化軸を1文で書く |
+| 前提 | [システム名](相対パス.md) | 採用時に必要な基盤・条件を1文で書く |
 ```
+
+- 3軸は必須。行の欠落禁止
+- 優劣比較ではなく、関係の種類と接続点だけを書く
+- `oshio.md` では優劣比較を書かない。事実のみ
 
 ### Step 6: index.md 更新（将来作成後）
 
@@ -172,6 +203,8 @@ sources/{kebab-case-著者名}.md  # 記事・知見源
 - [ ] Basic Info テーブルの全項目（Author/Status/Stars/Version/Repo/License）が記入されているか
 - [ ] Changelog の日付が「YYYY-MM-DD」形式で記入されているか
 - [ ] Notable Techniques の「このシステム固有か」列が記入されているか
+- [ ] `## Pitfalls` があり、3項目以上の落とし穴がテーブルで記入されているか
+- [ ] `## Cross-References` があり、補完/競合/前提の3軸がすべて埋まっているか
 - [ ] Sources に URL が含まれているか
 - [ ] `## Verification` に verified_at・method・source の3項目があるか
 - [ ] ファイル名が kebab-case になっているか
@@ -195,4 +228,4 @@ sources/{kebab-case-著者名}.md  # 記事・知見源
 | 数学的定式化 必須 | 不要（ソフトウェア仕様に置換） | 数式ではなくアーキテクチャ記述 |
 | DM-Signal適用設計 | shogun-analysis/（将来）に分離 | 我が軍固有解釈を純度保護のため分離 |
 | `methods/_template.md` | `systems/_template.md`（将来作成） | 同構造を外部システム向けに調整 |
-| 相互参照（補完/競合/前提） | Related Systems（設計類似/技術重複/移転元） | ソフトウェアシステム間の関係性に合わせた軸 |
+| 相互参照（補完/競合/前提） | Cross-References（補完/競合/前提） | ソフトウェアシステム間の関係性に合わせた軸 |
