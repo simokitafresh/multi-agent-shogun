@@ -274,3 +274,63 @@ Round 2でOpus 4名全員がWF+DSR+パーミュテーションに収束。これ
 2. **忍法別の粒度**: 現在の検証はL2全体としての優位性。忍法別(分身/追い風/抜き身/変わり身/加速)の個別評価はcmd_186で実施
 3. **WF合議知見の保持**: cmd_176のQ0統合結果（3本柱: 層別・極値・反証可能性）は棚上げだが知見として保持。将来のL3深掘り時の出発点となる
 4. **殿の4指標**: MRU(Max Run-Up) / TCR(Tail Conditional Return) / LTJ(Left-Tail Jumps) / NHF(New High Frequency)による極値ベース検定手法は未設計。教科書にない可能性もあり、独自設計が必要かもしれない
+
+---
+
+## 6. L3秘奥義 — 選出ルールと構成 (2026-04-17確定)
+
+### 6.1 選出プロセス
+
+**入力**: L2奥義42体 (①SSS 21体 + ⑤ASS 21体)
+
+**Step 1: N体EW全組み合わせ生成+4手法安定性計測** (cmd_1947-1950)
+
+| cmd | パターン | 2体EW | 3体EW |
+|-----|---------|-------|-------|
+| cmd_1947 | ⑤×⑤ | 210通り | — |
+| cmd_1948 | ①×① | 210通り | — |
+| cmd_1949 | ①×⑤クロス (①多め) | 441通り | 4,410通り |
+| cmd_1950 | ①×⑤クロス (⑤多め) | — | 4,410通り |
+| cmd_1934 | ⑤×⑤ 3体 | — | 1,330通り |
+| **合計** | | **861通り** | **10,150通り** |
+
+各組み合わせについて92列の安定性指標を計測:
+- **4検証手法**: IS(In-Sample) / OOS(Out-of-Sample) / Expanding Window / WF(Walk-Forward)
+- **各手法×6指標α**: CAGR / NHF / MaxDD / MRU / Calmar / UWP
+- **レジーム分析**: Bull / Bear / Sideways 各α + 全レジーム正判定
+
+**Step 2: 全プール合算からWF α Top1選出** (cmd_2024)
+
+| 選出基準 | 列 | 方向 |
+|---------|-----|------|
+| CAGR最大 | wf_alpha_cagr | 降順Top1 |
+| NHF最大 | wf_alpha_nhf | 降順Top1 |
+| MaxDD最小 | wf_alpha_max_dd | 昇順Top1 |
+
+2体EWプール(861) × 3目的 = 3体 + 3体EWプール(10,150) × 3目的 = 3体 → **計6体**
+
+**選出理由**: 4検証+レジーム分析を全て計測した上で、WF αのみで最終選出。理由: WFが最も過適合耐性が高い(IS情報がOOSに漏洩しない)。レジーム分析はフィルタ条件としては使用せず参考指標として保持。
+
+### 6.2 秘奥義6体の構成
+
+| # | 名称 | 目的 | 構成 | WF α指標 |
+|---|------|------|------|---------|
+| 1 | 秘奥義-2-激攻 | CAGR | ①kasoku_diff激攻 × ⑤nukimi激攻 | wf_α_cagr=+108.9% |
+| 2 | 秘奥義-2-常勝 | NHF | ①kasoku_diff激攻 × ⑤kasoku_ratio激攻 | wf_α_nhf=79.0% |
+| 3 | 秘奥義-2-鉄壁 | MaxDD | ①kasoku_ratio激攻 × ⑤yotsume鉄壁 | wf_α_maxdd=+8.0% |
+| 4 | 秘奥義-3-激攻 | CAGR | ①kasoku_diff激攻 × ⑤kasoku_diff激攻 × ⑤nukimi激攻 | wf_α_cagr=+107.9% |
+| 5 | 秘奥義-3-常勝 | NHF | ①kasoku_diff激攻 × ⑤kasoku_diff激攻 × ⑤kasoku_ratio激攻 | wf_α_nhf=81.5% |
+| 6 | 秘奥義-3-鉄壁 | MaxDD | ①kasoku_ratio激攻 × ①kasoku_ratio鉄壁 × ⑤nukimi常勝 | wf_α_maxdd=+6.3% |
+
+### 6.3 本番登録 (cmd_2025)
+
+- フォルダー: `秘奥義` (portfolio_folders, hidden=true)
+- 登録日: 2026-04-17
+- pipeline_config: 設定済み
+- fullrecalculate: 実行済み+パリティ確認済み
+
+### 6.4 データソース
+
+- 安定性CSV: `outputs/analysis/alm_research/cmd_{1947,1948,1949,1950,1934}_l3_*_stability.csv`
+- 最終候補CSV: `outputs/analysis/alm_research/cmd_2024_l3_pool_candidates.csv`
+- 比較分析: cmd_2032 (秘奥義6体EW vs モメンタムBest)

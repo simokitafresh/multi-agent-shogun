@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-04-13 鮮度確認(FE変更なし。直近はバックエンド研究+インフラ改善) -->
+<!-- last_updated: 2026-04-20 3レジーム市場分析FE実装(cmd_2138)+revert(cmd_2140)。Sideways行追加予定(cmd_2141 draft) -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
