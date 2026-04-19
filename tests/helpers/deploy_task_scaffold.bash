@@ -53,11 +53,11 @@ deploy_task_setup_file() {
     ln -s "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
     ln -s "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     ln -s "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
-    ln -s "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
-
     for stub in inbox_write ntfy_cmd lesson_check; do
         printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"
     done
+
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
 
     chmod +x "$DEPLOY_TASK_TEMPLATE_DIR/scripts/"*.sh
 
