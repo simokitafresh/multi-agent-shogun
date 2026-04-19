@@ -30,6 +30,9 @@ setup_file() {
     exec {GATE_FD_IN}<>"$GATE_FIFO_IN"
     exec {GATE_FD_OUT}<>"$GATE_FIFO_OUT"
     export GATE_FD_IN GATE_FD_OUT
+    # Mutex lock file: serializes _run_gate() across --jobs parallel test processes
+    export GATE_LOCK_FILE="$BATS_FILE_TMPDIR/gate.lock"
+    touch "$GATE_LOCK_FILE"
     python3 "$_gate_daemon" <"$GATE_FIFO_IN" >"$GATE_FIFO_OUT" 2>/dev/null &
     export GATE_DAEMON_PID=$!
 }
@@ -131,16 +134,21 @@ _prepare_report() {
 
 _run_gate() {
     local _path="$1" _line _ec="" _lines=() _sep=""
-    # Send report path to persistent gate daemon via FIFO
-    printf '%s\n' "$_path" >&"$GATE_FD_IN"
-    # Read response until ---END--- sentinel
-    while IFS= read -r -u "$GATE_FD_OUT" _line; do
-        case "$_line" in
-            EXIT:*) _ec="${_line#EXIT:}" ;;
-            ---END---) break ;;
-            *) _lines+=("$_line") ;;
-        esac
-    done
+    # Serialize FIFO access across --jobs parallel test processes to prevent
+    # response interleaving (race: multiple tests read/write same shared FIFOs).
+    {
+        flock -x 9
+        # Send report path to persistent gate daemon via FIFO
+        printf '%s\n' "$_path" >&"$GATE_FD_IN"
+        # Read response until ---END--- sentinel
+        while IFS= read -r -u "$GATE_FD_OUT" _line; do
+            case "$_line" in
+                EXIT:*) _ec="${_line#EXIT:}" ;;
+                ---END---) break ;;
+                *) _lines+=("$_line") ;;
+            esac
+        done
+    } 9>"$GATE_LOCK_FILE"
     status="${_ec:-0}"
     output=""
     local _l
