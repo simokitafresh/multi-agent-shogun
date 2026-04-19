@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-04-19
+
+| cmd | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2094 | 6システム知識辞書(ACE/Vercel/GSD/gstack/おしお殿/Claude Code) | GATE CLEAR。docs/research/systems-knowledge-base/systems/ に7エントリ+guide.md作成。GSD★54,610(+91%), gstack★75,800(×182) | 殿指示「投資知識辞書と同じで他システム知識辞書が欲しい」→金融ML知識辞書と同じ2層構造で新規作成 |
+| cmd_2095 | 教訓タグ洗浄(デフォルトuniversal→PJ自動推定) | GATE CLEAR。lesson_write.sh修正+318件タグ洗浄 | 家老なぜなぜ7回: 有効率22%の根因=デフォルトタグuniversalで全cmd無条件注入 |
+| cmd_2096 | cmd_save.sh全BLOCK一括表示 | GATE CLEAR。段階的exit→全チェック1回実行+一括表示 | cmd_2095で3回連続BLOCK(殿指摘)→モグラ叩き構造を根本解決 |
+| cmd_2097 | AI開発知識辞書追加(CoDD/Karpathy/逆瀬川) | GATE CLEAR。systems/codd.md+karpathy.md+sources/gyakusegawa.md | 殿「AI開発ツール全般」にスコープ拡張 |
+| cmd_2098 | 鮮度チェックgate(CoDDドキュメント適用Phase1) | GATE CLEAR。gate_knowledge_freshness.sh+startup gate組込 | 殿「OSSには設計書を作っておけば更新時に抜け漏れが減る」→verified_at 30日超ALERT |
+| cmd_2099 | 我が軍エントリ+index.md+解釈層 | GATE CLEAR。our-army.md+index.md+adoption-log.md | 殿「われら自身も載せよう」 |
+| cmd_2100 | 落とし穴+相互参照の補完 | 稼働中 | 殿「深さが足りているか」「品質を高めよう」→金融ML辞書比較で欠如セクション特定 |
+| (将軍直接) | cmd_save.sh品質WARN→BLOCK昇格 | q5+AC数量の2件。bats 53テスト全PASS | 殿「WARNのままでなぜOKとした？」→なぜなぜ7回→品質WARN/形式WARN混在が根因→LS046登録 |
+
 ## 2026-04-18
 
 | cmd | 意図 | 結果 | 因果 |
