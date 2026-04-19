@@ -763,3 +763,4 @@
 | cmd_2130 | 強化 — 指示文書TDD (忍者task_clarity_scoreで指示品質を計測) | infra | 04-19 | deploy_task.shテンプレートにtask_clar |
 | cmd_karo_ci_fix_lk084 | CI修正 — test_cmd_complete_gate_locking.bats bash -lc→bash -c (LK084) | infra | 04-19 | tests/unit/test_cmd_complete_g |
 | cmd_2131 | 偵察(緊急) — FoF monthly_returns 0件の根因特定 | dm-signal | 04-19 | FoF monthly_returns 0件の主因は sig |
+| cmd_2132 | 修正(緊急) — sync-standard FoF分離 + monthly_returns crash-safe化 | dm-signal | 04-19 | sync_standardの親FoF波及を止め、Monthl |
