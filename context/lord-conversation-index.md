@@ -1,31 +1,32 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-19 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-19T14:57:16+09:00 -->
+<!-- generated_at: 2026-04-19T15:04:43+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-19T15:04:43+09:00 | terminal | response | Recovery完了。現況を整理する。 --- **殿、将軍復帰いたした。** **現況:** | 忍者 | cmd | 状態 | 備考 | |------|-----|------|------| | 才蔵 | cmd_2129 | i…
+- 2026-04-19T15:04:34+09:00 | ntfy | outbound | 【将軍】復帰済み。Recovery完了。
+- 2026-04-19T15:04:07+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_lk084 初回配備開始 (title=CI修正 — test_cmd_complete_gate_locking.bats bash -lc→bash -c (LK084), ninja=haya…
+- 2026-04-19T15:03:21+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-19 14:48:08|cmd_2123
+- 2026-04-19T15:00:40+09:00 | terminal | inbound | y
+- 2026-04-19T15:00:39+09:00 | ntfy | outbound | 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=51件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 2件: AC3, AC3…
+- 2026-04-19T14:59:41+09:00 | terminal | response | cmd_complete_gate.shのdiffが空 — CTX%コードが破棄された(git checkoutされた)。gate_loop_health.shも空。才蔵がCTX%実装を全破棄した。 [meta] stop_reason=…
+- 2026-04-19T14:58:35+09:00 | ntfy | outbound | 【tobisaru】cmd_2123_impl完了。missed_sg引数追加(karo_workaround_log.sh)。29テスト全PASS。gate PASS。報告: queue/reports/tobisaru_report_…
+- 2026-04-19T14:57:21+09:00 | terminal | inbound | 最後までやって、違うことをやりましたの報告はナンセンスだ
 - 2026-04-19T14:57:16+09:00 | terminal | response | 指示済み。CTX%実装を全て破棄し、実時間一本で一から作り直すよう命令した。殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
-- 2026-04-19T14:56:58+09:00 | terminal | inbound | 才蔵にサンクコストを捨て、正しいやり方で実装するように指示しろ
-- 2026-04-19T14:56:04+09:00 | terminal | response | 家老のinboxに補足2件(CTX%→実時間変更)が残っている。だが家老がまだ才蔵に転送していない。才蔵はCTX%版で作業を進めている。 殿、才蔵は補足を受け取っておらず**CTX%版で実装を進めている**(Working 4分53秒)。…
-- 2026-04-19T14:55:46+09:00 | terminal | inbound | 将軍が直接指示しろ
-- 2026-04-19T14:55:11+09:00 | terminal | response | 才蔵のinboxに未読0件。補足は家老宛に送信した=家老から才蔵に転送される前に才蔵が作業を進めている可能性。 [meta] stop_reason=tool_use
-- 2026-04-19T14:54:39+09:00 | terminal | inbound | 確認せよ
-- 2026-04-19T14:54:28+09:00 | terminal | response | 才蔵はin_progressで作業中。テスト実行済みでバックグラウンド待ち。補足inbox(CTX%→実時間変更)の反映待ちの状態。 殿、才蔵(cmd_2129)はテスト実行済みで作業進行中。CTX%→実時間への修正補足を受け取って反映中…
-- 2026-04-19T14:54:08+09:00 | terminal | inbound | 2129はどうなった？
-- 2026-04-19T14:53:37+09:00 | terminal | response | はっ。殿の指摘を教訓に記録する。モデルのコンテキストウィンドウサイズは変動する前提で設計すべき。 [meta] stop_reason=tool_use
-- 2026-04-19T14:53:19+09:00 | terminal | inbound | なぜならコンテキスト量が％だと、今後のモデルが大きなコンテキスト搭載になるとかわるからだ
 
 ## 未解決確認事項
+- Recovery完了。現況を整理する。 --- **殿、将軍復帰いたした。** **現況:** | 忍者 | cmd | 状態 | 備考 | |------|-----|------|------| | 才蔵 | cmd_2129 | in_progress (CTX:20%)…
+- 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=51件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 2件: AC3, AC3 [3.🚨要対応] 0件 [4.忍者] …
 - 確認せよ
 - はっ。想像するな確認せよ。完了済みcmdの効果を現物で検証する。 [meta] stop_reason=tool_use
 - cmd_2123掲示板通知(才蔵完遂)。確認済み。 [meta] stop_reason=tool_use
 - mizchi氏のスタイルの本質をなぜなぜ。今のCMDで完全に吸収できているか確認せよ
 - 特定した。cmd_2118のcmd_complete_gate.sh高速化は**auto-commitに含まれている**(1a45390)。commitメッセージが"chore: auto-commit before /clear"だが、中身に261行追加/305行削除=高速化…
 - いまのCMDのこうかはクリアしなくても出るか？確認せよ
-- **実測検証完了。** | cmd | 報告値 | 実測検証 | 判定 | |-----|--------|---------|------| | **cmd_2118** | 31.9s→5.0s (-84.4%) | 実測**21.8s**(cmd_2117はBLOCK=フ…
-- 完了済みを確認しよう
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-19T15:04:43+09:00 | Recovery完了。現況を整理する。 --- **殿、将軍復帰いたした。** **現況:** | 忍者 | cmd | 状態 | 備考 | |------|-----|------|------| | 才蔵 | cmd_2129 | in_progress (CTX:20%)…
 - 2026-04-19T14:57:16+09:00 | 指示済み。CTX%実装を全て破棄し、実時間一本で一から作り直すよう命令した。殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
 - 2026-04-19T14:56:58+09:00 | 才蔵にサンクコストを捨て、正しいやり方で実装するように指示しろ
 - 2026-04-19T14:55:46+09:00 | 将軍が直接指示しろ
@@ -33,7 +34,6 @@
 - 2026-04-19T14:53:15+09:00 | 家老に修正指示送信済み。CTX%→実時間(task duration)に変更。殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
 - 2026-04-19T14:49:53+09:00 | 【家老】cmd_2130 初回配備開始 (title=強化 — 指示文書TDD (忍者task_clarity_scoreで指示品質を計測), ninja=kotaro) 強化 📋 https://gist.github.com/simokitafresh/6eb495d917…
 - 2026-04-19T14:48:30+09:00 | cmd_2123 GATE CLEAR。mizchi応用シリーズの完了状況: | cmd | 内容 | 状態 | |-----|------|------| | cmd_2120 | mizchi辞書SRC02 | ✅完了 | | cmd_2122 | 家老タスク明瞭性 | ✅…
-- 2026-04-19T14:36:54+09:00 | cmd_2127 GATE CLEAR。これでambiguity_points 0件がLGTM条件に組み込まれた。反復構造が成立。 残り稼働中: hayate(cmd_2126合理化gate), kotaro(cmd_2128 hold-out or cmd_2124)。殿のご…
 
 ## 参照cmd
 - cmd_21
