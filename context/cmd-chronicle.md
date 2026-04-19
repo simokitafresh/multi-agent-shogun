@@ -744,3 +744,8 @@
 | cmd_2102 | 改善 — gate_shogun_startup.sh CoDD再改善 (サブプロセス削減で1.3秒→目標0.5秒) | infra | 04-19 | gate_shogun_startup.sh を 1.28s |
 | cmd_2104 | 偵察 — Android SSH入力消失の原因調査 (両面調査) | infra | 04-19 | Android/SSH入力消失を5観点で切り分け、P1=Cl |
 | cmd_2105 | 実装 — 変更連動テスト実行 (git diff→対応テストのみ実行) | infra | 04-19 | scripts/test_select.sh を新規作成。g |
+| cmd_2103 | 改善 — テストCoDD高速化第一弾 TOP5ファイル (32秒→目標10秒) | infra | 04-19 | — |
+| cmd_2109 | 改善 — テストCoDD高速化 test_gate_shogun_startup.bats (6.8秒→目標3秒) | infra | 04-19 | Gate 4.5 python3 fast-path追加 + |
+| cmd_2107 | 改善 — テストCoDD高速化 test_deploy_task_ac_version.bats (32秒→目標10秒) | infra | 04-19 | AC4完了: test_deploy_task_ac_ver |
+| cmd_2111 | 改善 — テストCoDD高速化 test_stop_check_inbox.bats (6.2秒→目標3秒) | infra | 04-19 | test_stop_check_inbox.bats 46. |
+| cmd_2113 | 改善 — テストCoDD高速化 test_cli_adapter.bats (4.6秒→目標2秒) | infra | 04-19 | test_cli_adapter.bats の fixtur |

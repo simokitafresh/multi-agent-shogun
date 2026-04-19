@@ -13,7 +13,15 @@ setup_file() {
     deploy_task_setup_file
     export TEMPLATE_FIXTURE_ROOT
     TEMPLATE_FIXTURE_ROOT="$(mktemp -d "$BATS_TMPDIR/deploy_task_template_generation.XXXXXX")"
+    export TEMPLATE_FIXTURE_CACHE
+    TEMPLATE_FIXTURE_CACHE="$(_fixture_cache_dir)"
+    if [ -d "$TEMPLATE_FIXTURE_CACHE" ] && find "$TEMPLATE_FIXTURE_CACHE" -maxdepth 1 -name '*.yaml' | grep -q .; then
+        cp "$TEMPLATE_FIXTURE_CACHE"/*.yaml "$TEMPLATE_FIXTURE_ROOT/"
+        return 0
+    fi
     _generate_report_fixtures
+    mkdir -p "$TEMPLATE_FIXTURE_CACHE"
+    cp "$TEMPLATE_FIXTURE_ROOT"/*.yaml "$TEMPLATE_FIXTURE_CACHE/"
 }
 
 teardown_file() {
@@ -39,6 +47,47 @@ _save_report_fixture() {
     cp "$TEST_PROJECT/$report_rel" "$TEMPLATE_FIXTURE_ROOT/${fixture_name}.yaml"
 }
 
+_fixture_cache_dir() {
+    local key
+    key=$(
+        {
+            cksum tests/unit/test_deploy_task_template_generation.bats
+            cksum tests/helpers/deploy_task_scaffold.bash
+            cksum scripts/deploy_task.sh
+        } | cksum | awk '{print $1}'
+    )
+    printf '/tmp/deploy_task_template_generation_cache_%s\n' "$key"
+}
+
+_build_report_fixture() {
+    local fixture_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    (
+        # shellcheck disable=SC1090,SC1091
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        NINJA_NAME="sasuke"
+
+        local task_id parent_cmd project
+        yaml_field_set "$task_file" "task" "report_filename" ""
+        yaml_field_set "$task_file" "task" "report_path" ""
+        inject_report_filename "$task_file" || true
+
+        task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "")
+        parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+        project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "")
+        generate_report_template "$NINJA_NAME" "$task_id" "$parent_cmd" "$project"
+    )
+    _save_report_fixture "$fixture_name"
+}
+
+_build_report_fixture_full() {
+    local fixture_name="$1"
+    deploy_task_template_only sasuke
+    _save_report_fixture "$fixture_name"
+}
+
 fixture_report_path() {
     printf '%s\n' "$TEMPLATE_FIXTURE_ROOT/$1.yaml"
 }
@@ -60,8 +109,8 @@ _generate_report_fixtures() {
 task:
   title: "強化 monthly waive scout fixture"
   task_type: impl
-  parent_cmd: cmd_1941
-  task_id: cmd_1941_combo
+  parent_cmd: cmd_fixture_combo
+  task_id: cmd_fixture_combo_impl
   project: infra
   scout_exempt: true
   waive_ac: [AC5]
@@ -76,8 +125,25 @@ task:
       binary_checks:
         - check: "月次リターン差分を確認したか"
 EOF
-    deploy_task_template_only sasuke
-    _save_report_fixture combo_impl
+    _build_report_fixture combo_impl
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "waive_ac field test"
+  task_type: impl
+  parent_cmd: cmd_fixture_waive
+  task_id: cmd_fixture_waive_impl
+  project: infra
+  waive_ac: [AC5]
+  acceptance_criteria:
+    - id: AC1
+      description: "通常ACは空のまま残す"
+    - id: AC5
+      description: "後続レビューで免除する"
+EOF
+    _build_report_fixture_full waive_ac
     _fixture_project_end
 
     _fixture_project_start
@@ -92,8 +158,7 @@ task:
     - id: AC1
       description: "既存の挙動を確認する"
 EOF
-    deploy_task_template_only sasuke
-    _save_report_fixture recon_template
+    _build_report_fixture recon_template
     _fixture_project_end
 
     _fixture_project_start
@@ -112,8 +177,39 @@ task:
     - id: AC1
       description: "研究成果を保存する"
 EOF
-    deploy_task_template_only sasuke
-    _save_report_fixture research
+    _build_report_fixture research
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "monthly annotation test"
+  task_type: impl
+  parent_cmd: cmd_fixture_monthly
+  task_id: cmd_fixture_monthly_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "monthly returns parityを確認する。差分が0である"
+EOF
+    _build_report_fixture_full monthly_description
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "monthly handwritten binary check test"
+  task_type: impl
+  parent_cmd: cmd_gp184
+  task_id: cmd_gp184_impl_handwritten
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "月次データの確認"
+      binary_checks:
+        - check: "月次リターン差分を確認したか"
+EOF
+    _build_report_fixture_full monthly_handwritten
     _fixture_project_end
 
     _fixture_project_start
@@ -130,8 +226,7 @@ task:
     - id: AC1
       description: "scripts/deploy_task.shを修正する"
 EOF
-    deploy_task_template_only sasuke
-    _save_report_fixture non_gitignore
+    _build_report_fixture non_gitignore
     _fixture_project_end
 }
 
@@ -192,7 +287,7 @@ _setup_git_project() {
 
 @test "waive_ac指定のACはwaive_reason付きresult:noで初期化される" {
     local report_path
-    report_path="$(fixture_report_path combo_impl)"
+    report_path="$(fixture_report_path waive_ac)"
 
     local ac1_block ac5_block
     ac1_block="$(report_block "$report_path" "AC1")"
@@ -212,7 +307,7 @@ _setup_git_project() {
 
 @test "AC descriptionにmonthlyを含む場合はdescription由来checkへ進行中月除外を付記する" {
     local report_path
-    report_path="$(fixture_report_path combo_impl)"
+    report_path="$(fixture_report_path monthly_description)"
 
     local ac1_block
     ac1_block="$(report_block "$report_path" "AC1")"
@@ -221,10 +316,10 @@ _setup_git_project() {
 
 @test "AC descriptionに月次を含む場合は手書きbinary_checksにも進行中月除外を付記する" {
     local report_path
-    report_path="$(fixture_report_path combo_impl)"
+    report_path="$(fixture_report_path monthly_handwritten)"
 
     local ac1_block
-    ac1_block="$(report_block "$report_path" "AC6")"
+    ac1_block="$(report_block "$report_path" "AC1")"
     [[ "$ac1_block" == *'進行中月除外'* ]]
 }
 
