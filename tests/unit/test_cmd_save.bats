@@ -51,6 +51,18 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field record_block_reason abort_if_block_immediate
 
+    # テストハーネスではQUEUE_FILEが単純なので、CMD_BLOCK読込のみpure bash化してI/O起動コストを削る
+    load_cmd_block() {
+        if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
+            [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
+            return $?
+        fi
+
+        _setup_cmd_block "$CMD_ID"
+        [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
+    }
+    export -f load_cmd_block
+
     # check_quality_gate: Check 3インラインセクション(質問ゲートブロック)を関数化 + 成功時OK出力
     local _qg_start _qg_end
     _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
@@ -114,12 +126,27 @@ create_queue_file() {
 # --- ヘルパー: CMD_BLOCK/CMD_BLOCK_NCをQUEUE_FILEから設定 ---
 _setup_cmd_block() {
     local cid="${1:-$CMD_ID}"
+    local line found=0
     CMD_BLOCK_LOADED=1
     CMD_BLOCK_FOUND=0
     CMD_BLOCK_CACHE_LOADED=0
     declare -gA CMD_BLOCK_CACHE=()
-    CMD_BLOCK=$(awk "/^  ${cid}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
-    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+
+    CMD_BLOCK=""
+    CMD_BLOCK_NC=""
+    while IFS= read -r line; do
+        if (( found == 0 )); then
+            [[ "$line" == "  ${cid}:" ]] && found=1
+            continue
+        fi
+
+        [[ "$line" =~ ^\ \ cmd_[0-9]+: ]] && break
+        CMD_BLOCK+="${line}"$'\n'
+        [[ "$line" =~ ^[[:space:]]*# ]] || CMD_BLOCK_NC+="${line}"$'\n'
+    done < "$QUEUE_FILE"
+
+    CMD_BLOCK="${CMD_BLOCK%$'\n'}"
+    CMD_BLOCK_NC="${CMD_BLOCK_NC%$'\n'}"
     [[ -n "$CMD_BLOCK" ]] && CMD_BLOCK_FOUND=1
     export CMD_BLOCK CMD_BLOCK_NC
 }
