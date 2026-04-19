@@ -226,8 +226,12 @@ deploy_task_template_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
+        # shellcheck disable=SC2317
         log() { :; }
 
         parse_deploy_task_args "$@"
@@ -291,8 +295,11 @@ deploy_task_lessons_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -314,8 +321,12 @@ deploy_task_ac_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
+        # shellcheck disable=SC2317
         log() { :; }
 
         parse_deploy_task_args "$@"
@@ -345,8 +356,12 @@ deploy_task_resolve_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
+        # shellcheck disable=SC2317
         log() { :; }
 
         parse_deploy_task_args "$@"
@@ -378,8 +393,11 @@ inject_report_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -414,8 +432,11 @@ inject_ac_version_only() {
     (
         # shellcheck disable=SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # cmd_2117 (c): skip source if functions preloaded by setup_file
+        if [[ -z "${_DEPLOY_TASK_PRELOADED:-}" ]]; then
+            # shellcheck disable=SC1090,SC1091
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+        fi
         # shellcheck disable=SC2317
         log() { :; }
         inject_ac_version "$task_file"

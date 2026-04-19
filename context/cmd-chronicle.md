@@ -754,3 +754,4 @@
 | cmd_karo_pane_lookup_fix | pane_lookup.sh lazy init修正 — deploy_task.sh pane解決障害の真因修正 | infra | 04-19 | cmd_karo_pane_lookup_fix は com |
 | cmd_2115 | 改善 — テストCoDD高速化 test_cmd_save.bats (4.2秒→目標2秒) | infra | 04-19 | test_cmd_save.bats の CMD_BLOCK |
 | cmd_2112 | 改善 — テストCoDD高速化 test_deploy_task_lifecycle.bats (4.7秒→目標2秒) | infra | 04-19 | before 7.104s → after 4.134s ( |
+| cmd_2122 | 強化(家老) — deploy_task.sh タスク明瞭性チェック追加 (配備前検証) | infra | 04-19 | HEAD上でcmd_2122要件が既に実装済みと確認。dep |
