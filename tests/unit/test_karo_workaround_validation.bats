@@ -172,3 +172,17 @@ teardown() {
 
     [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
 }
+
+@test "AC1拡張: 6th arg missed_sg指定時のみYAMLへ出力される" {
+    run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test fix description" report_yaml_format SG4
+    [ "$status" -eq 0 ]
+    run grep -n "missed_sg: 'SG4'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC1拡張: missed_sg未指定時はYAMLへ出力しない" {
+    run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test fix description" report_yaml_format
+    [ "$status" -eq 0 ]
+    run grep -n "missed_sg:" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}

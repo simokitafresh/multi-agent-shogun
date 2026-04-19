@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # karo_workaround_log.sh — 家老ワークアラウンド記録スクリプト
-# Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category]
+# Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]
 #
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
@@ -54,6 +54,7 @@ fi
 # --- Argument validation ---
 CLEAN_MODE=false
 EXPLICIT_CATEGORY=""
+MISSED_SG=""
 if [[ "${1:-}" = "--clean" ]]; then
     CLEAN_MODE=true
     shift
@@ -70,8 +71,8 @@ if [[ "${1:-}" = "--clean" ]]; then
         exit 1
     fi
 else
-    if [[ $# -lt 4 || $# -gt 5 ]]; then
-        echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category]" >&2
+    if [[ $# -lt 4 || $# -gt 6 ]]; then
+        echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category] [missed_sg]" >&2
         echo "  --clean mode: bash scripts/karo_workaround_log.sh --clean <cmd_id> <ninja_name>" >&2
         exit 1
     fi
@@ -80,6 +81,7 @@ else
     ISSUE="$3"
     FIX="$4"
     EXPLICIT_CATEGORY="${5:-}"  # optional 5th arg for category
+    MISSED_SG="${6:-}"          # optional 6th arg for missed SG checklist id
     if [[ -z "$CMD_ID" || -z "$NINJA_NAME" || -z "$ISSUE" ]]; then
         echo "[karo_workaround_log] Error: cmd_id, ninja_name, issue must be non-empty" >&2
         exit 1
@@ -224,7 +226,9 @@ EOF
         # Old format used nested "entries:" + 2-space indent → YAML structure conflict with manual entries
         SAFE_ISSUE=$(yaml_escape_sq "$ISSUE")
         SAFE_FIX=$(yaml_escape_sq "$FIX")
-        cat >> "$LOG_FILE" <<EOF
+        SAFE_MISSED_SG=$(yaml_escape_sq "$MISSED_SG")
+        {
+            cat <<EOF
 - cmd_id: $CMD_ID
   timestamp: '$TIMESTAMP'
   ninja: $NINJA_NAME
@@ -232,8 +236,14 @@ EOF
   category: $CATEGORY
   detail: '$SAFE_ISSUE'
   root_cause: '$SAFE_FIX'
+EOF
+            if [[ -n "$MISSED_SG" ]]; then
+                echo "  missed_sg: '$SAFE_MISSED_SG'"
+            fi
+            cat <<EOF
   resolved_by_cmd: ''
 EOF
+        } >> "$LOG_FILE"
 
         # --- Alert mechanism (AC1: cmd_1211) ---
         if [[ "$CATEGORY" != "clean" && $OCCURRENCE -ge 3 ]]; then

@@ -2566,7 +2566,7 @@ lessons:
   - frontend
   - gate
   helpful_count: 24
-  harmful_count: 18
+  harmful_count: 16
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2630,7 +2630,7 @@ lessons:
   deprecated_at: '2026-04-17T17:29:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=2'
   helpful_count: 2
-  harmful_count: 7
+  harmful_count: 6
   last_referenced: '2026-04-19'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する

@@ -217,6 +217,54 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
+# --- Check 4.5: missed_sg傾向（見逃したSG観点の蓄積） ---
+echo "■ missed_sg Top3"
+if [ -f "$wa_file" ]; then
+    missed_sg_lines=$(awk '
+    function flush_entry() {
+        if (entry_started && is_wa && missed_sg != "") counts[missed_sg]++
+    }
+    /^- (cmd_id|cmd|timestamp|category):/ {
+        flush_entry()
+        entry_started=1
+        is_wa=0
+        missed_sg=""
+        next
+    }
+    /^  workaround:/ {
+        v=$2
+        if (v ~ /true|yes/) is_wa=1
+        next
+    }
+    /^  missed_sg:/ {
+        v=$0
+        sub(/^  missed_sg: */, "", v)
+        gsub(/["'"'"' ]/, "", v)
+        if (v != "" && v != "null" && v != "none") missed_sg=v
+        next
+    }
+    END {
+        flush_entry()
+        for (sg in counts) print counts[sg] "|" sg
+    }
+    ' "$wa_file" 2>/dev/null | sort -t'|' -k1,1nr -k2,2 | head -3)
+    if [ -n "$missed_sg_lines" ]; then
+        while IFS='|' read -r sg_count sg_name; do
+            [ -n "$sg_name" ] || continue
+            echo "  ${sg_name}: ${sg_count}件"
+            if [ "$sg_count" -ge 3 ]; then
+                echo "  ALERT: missed_sg ${sg_name} が${sg_count}件蓄積。軍師レビュー観点の構造改善を急げ"
+                overall="ALERT"
+                alerts+=("missed_sg ${sg_name} が${sg_count}件")
+            fi
+        done <<< "$missed_sg_lines"
+    else
+        echo "  missed_sg記録なし"
+    fi
+else
+    echo "  karo_workarounds.yaml不在"
+fi
+
 # --- Check 5: lessons_gunshi.yaml存在確認 ---
 echo "■ レビュー教訓"
 lessons_file="$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml"
