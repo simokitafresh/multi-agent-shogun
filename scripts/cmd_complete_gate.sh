@@ -336,20 +336,24 @@ detect_task_types() {
     local cmd_id="$1"
     local has_recon=false
     local has_implement=false
+    local task_files=()
 
-    for task_file in "$TASKS_DIR"/*.yaml; do
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        task_files=("${MATCHING_TASK_FILES[@]}")
+    else
+        task_files=("$TASKS_DIR"/*.yaml)
+    fi
+
+    for task_file in "${task_files[@]}"; do
         [ -f "$task_file" ] || continue
-        # parent_cmdが一致するか確認
-        if is_cmd_task "$task_file"; then
-            local ttype
-            ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
-            case "$ttype" in
-                recon) has_recon=true ;;
-                implement) has_implement=true ;;
-                review) ;; # 既知の種別。条件ゲートには影響しない
-                *) echo "[WARN] Unknown task_type: '$ttype'" >&2 ;;
-            esac
-        fi
+        local ttype
+        ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
+        case "$ttype" in
+            recon) has_recon=true ;;
+            implement) has_implement=true ;;
+            review) ;; # 既知の種別。条件ゲートには影響しない
+            *) echo "[WARN] Unknown task_type: '$ttype'" >&2 ;;
+        esac
     done
 
     # 結果を標準出力に返す（スペース区切り）
@@ -471,11 +475,16 @@ collect_gate_metrics_extra() {
     local models_csv=""
     local bloom_levels_csv=""
     local _seen_types="" _seen_models="" _seen_bloom_levels=""
+    local task_files=()
 
-    for task_file in "$TASKS_DIR"/*.yaml; do
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        task_files=("${MATCHING_TASK_FILES[@]}")
+    else
+        task_files=("$TASKS_DIR"/*.yaml)
+    fi
+
+    for task_file in "${task_files[@]}"; do
         [ -f "$task_file" ] || continue
-        is_cmd_task "$task_file" || continue
-
         # task_type収集
         local ttype
         ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
@@ -1074,10 +1083,16 @@ check_gs_bench_gate_warn() {
 
     local found_run077=false
     local warn_count=0
+    local task_files=()
 
-    for task_file in "$TASKS_DIR"/*.yaml; do
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        task_files=("${MATCHING_TASK_FILES[@]}")
+    else
+        task_files=("$TASKS_DIR"/*.yaml)
+    fi
+
+    for task_file in "${task_files[@]}"; do
         [ -f "$task_file" ] || continue
-        is_cmd_task "$task_file" || continue
 
         local ninja_name report_file
         ninja_name=$(basename "$task_file" .yaml)
@@ -1582,12 +1597,18 @@ run_review_quality_check() {
     local reviewer_ids="|"
     local task_file task_role ninja_name report_file impl_worker_id review_status
     local verdict_status self_gate_status review_worker_id overlapping_workers
+    local task_files=()
 
     level_heading "[L2]" "Review quality check:"
 
-    for task_file in "$TASKS_DIR"/*.yaml; do
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        task_files=("${MATCHING_TASK_FILES[@]}")
+    else
+        task_files=("$TASKS_DIR"/*.yaml)
+    fi
+
+    for task_file in "${task_files[@]}"; do
         [ -f "$task_file" ] || continue
-        cmd_task_matches "$task_file" "$CMD_ID" || continue
 
         task_role=$(detect_task_role "$task_file")
         ninja_name=$(basename "$task_file" .yaml)
@@ -1663,10 +1684,9 @@ run_todo_fixme_residual_check() {
     level_heading "[L2]" "TODO/FIXME residual check:"
 
     cmd_num="${cmd_id#cmd_}"
-    # 2回のgrep -rn → 1回のgrep -rEn に統合（WSL2 filesystem walk コスト半減）
-    todo_hits=$(grep -rEn "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts/" "$SCRIPT_DIR/lib/" 2>/dev/null | sort -u || true)
-    todo_count=$(printf '%s' "$todo_hits" | grep -c '.' 2>/dev/null || true)
-    todo_count=${todo_count:-0}
+    # rg 1-pass scan: grep -rEn より /mnt/c WSL2 上で速い
+    todo_hits=$(rg -n -S "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/lib" 2>/dev/null | sort -u || true)
+    todo_count=$(printf '%s\n' "$todo_hits" | awk 'NF{c++} END{print c+0}')
 
     if [ "$todo_count" -gt 0 ]; then
         echo "  [CRITICAL] NG ← ${todo_count}件のTODO/FIXMEが残存:"
@@ -1861,9 +1881,7 @@ preflight_gate_flags() {
         echo "  lesson: checking lesson_candidates..."
         local has_found_true=false
         local pf_task_file
-        for pf_task_file in "$TASKS_DIR"/*.yaml; do
-            [ -f "$pf_task_file" ] || continue
-            is_cmd_task "$pf_task_file" || continue
+        for pf_task_file in "${MATCHING_TASK_FILES[@]}"; do
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -1893,9 +1911,7 @@ preflight_gate_flags() {
         # cmd_536 AC2 fix: else分岐でもfound:trueをスキャンする（has_found_trueスコープ不整合修正）
         local has_found_true=false
         local pf_task_file
-        for pf_task_file in "$TASKS_DIR"/*.yaml; do
-            [ -f "$pf_task_file" ] || continue
-            is_cmd_task "$pf_task_file" || continue
+        for pf_task_file in "${MATCHING_TASK_FILES[@]}"; do
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -1940,9 +1956,7 @@ preflight_gate_flags() {
     echo "  target_path uncommitted check:"
     local tp_warn_count=0
     local tp_task_file
-    for tp_task_file in "$TASKS_DIR"/*.yaml; do
-        [ -f "$tp_task_file" ] || continue
-        is_cmd_task "$tp_task_file" || continue
+    for tp_task_file in "${MATCHING_TASK_FILES[@]}"; do
         local tp_info
         # task.project と task.target_path を取得
         local _tp_project_id _tp_target_raw _tp_project_path
@@ -2033,6 +2047,39 @@ done
 # O(1) lookup: is_cmd_task "$task_file" → 0 if matching, 1 otherwise
 is_cmd_task() { [[ "${_CMD_TASK_MAP["$1"]+_}" ]]; }
 
+get_cmd_head_hashes() {
+    local cmd_id="$1"
+
+    git -C "$SCRIPT_DIR" log --format='%H%x1f%s%x1f%b%x1e' -n 100 2>/dev/null | \
+    awk -v cmd="$cmd_id" '
+        BEGIN { RS="\x1e" }
+        {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+            if ($0 == "") next
+            split($0, parts, "\x1f")
+            hash = parts[1]
+            subject = parts[2]
+            body = parts[3]
+            haystack = subject "\n" body
+            if (index(haystack, cmd) > 0 && index(subject, " chore:") == 0) {
+                print hash
+                found = 1
+                next
+            }
+            if (found) exit
+        }
+    '
+}
+
+get_cmd_changed_files() {
+    local cmd_id="$1"
+    local cmd_hash
+
+    for cmd_hash in $(get_cmd_head_hashes "$cmd_id"); do
+        git -C "$SCRIPT_DIR" diff-tree --no-commit-id --name-only -r "$cmd_hash" 2>/dev/null || true
+    done | awk 'NF && !seen[$0]++'
+}
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -2053,13 +2100,12 @@ ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 IFS=$'\t' read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate_metrics_extra "$CMD_ID")"
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
+CMD_CHANGED_FILES="$(get_cmd_changed_files "$CMD_ID" || true)"
 
 # ─── cmd_776 B層: 報告YAML自動正規化（auto-draft前に実行） ───
 NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
 echo "Normalize report candidates (B層):"
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -2087,9 +2133,7 @@ echo "Auto-draft lesson candidates:"
 if [[ "$_prev_block_reason" == draft_lessons* ]]; then
     echo "  SKIP: 前回BLOCK理由=draft_lessons。循環防止のため自動draft生成をスキップ"
 else
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -2265,9 +2309,7 @@ REPORT_TASK_COUNT=0
 REPORT_FOUND_COUNT=0
 REPORT_MISSING_FILES=()
 REPORT_WAIT_NINJAS=()
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     REPORT_TASK_COUNT=$((REPORT_TASK_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
@@ -2368,9 +2410,7 @@ validate_report_format_file() {
     fi
 }
 
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2390,9 +2430,7 @@ fi
 # ─── related_lessons存在チェック（deploy_task.sh経由確認） ───
 level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     RL_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -2418,9 +2456,7 @@ fi
 # ─── lessons_useful検証（related_lessonsあり→報告にlessons_useful必須） ───
 level_heading "[L2]" "Lessons useful check:"
 LESSON_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     # related_lessonsの有無をチェック（空リスト[]やnullは除外）
     rl_count=$(awk '/related_lessons:/,/^[^ ]/{if(/^\s*- /)c++} END{print c+0}' "$task_file" 2>/dev/null)
@@ -2521,9 +2557,7 @@ level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_5
 # ─── ac_version照合（task.ac_version vs report.ac_version_read） ───
 level_heading "[L3]" "AC version check:"
 AC_VERSION_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     AC_VERSION_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -2587,9 +2621,7 @@ fi
 # ─── lesson_candidate検証（found:trueなのに未登録を防止） ───
 level_heading "[L1]" "Lesson candidate check:"
 LC_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2737,9 +2769,7 @@ fi
 # ─── binary_checks検証（AC二値チェック全PASS確認） ───
 level_heading "[L1]" "Binary checks validation:"
 BC_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2821,9 +2851,7 @@ fi
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
 level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2864,9 +2892,7 @@ if [ "$HAS_RECON" = true ] && [ "$HAS_IMPLEMENT" = false ]; then
     echo "  SKIP (recon-only cmd)"
 else
     DC_DUP_CHECKED=false
-    for task_file in "$TASKS_DIR"/*.yaml; do
-        [ -f "$task_file" ] || continue
-        is_cmd_task "$task_file" || continue
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -2904,9 +2930,7 @@ fi
 # ─── deviation回数チェック（WARNのみ、4回以上でWARNING） ───
 level_heading "[L2]" "Deviation count check:"
 DEVIATION_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -2966,9 +2990,7 @@ fi
 # ─── analysis_paralysis_triggeredチェック（WARNのみ） ───
 level_heading "[L2]" "Analysis paralysis check:"
 ANALYSIS_PARALYSIS_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3016,9 +3038,7 @@ fi
 # ─── skill_candidate検証（WARNのみ、ブロックしない） ───
 level_heading "[L1]" "Skill candidate check:"
 SC_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3063,9 +3083,7 @@ fi
 # ─── decision_candidate検証（WARNのみ、ブロックしない） ───
 level_heading "[L1]" "Decision candidate check:"
 DC_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3110,9 +3128,7 @@ fi
 # ─── how_it_works検証（implementタスクはWARN導入） ───
 level_heading "[L2]" "Implementation walkthrough check:"
 HOW_IT_WORKS_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     task_role=$(detect_task_role "$task_file")
     [ "$task_role" = "implement" ] || continue
@@ -3186,36 +3202,47 @@ fi
 # ─── grep直書きYAMLアクセス検出（WARNのみ、ブロックしない） L070 ───
 level_heading "[L2]" "Raw grep YAML access check (L070):"
 RAW_GREP_COUNT=0
-# 検出対象: scripts/*.sh と scripts/lib/*.sh
-# 除外: scripts/lib/field_get.sh 自身, scripts/gates/ 配下
-# 検出パターン: grep で YAML キーを直接抽出するパターン (^\s+field: or ^  field:)
-for script_file in "$SCRIPT_DIR"/scripts/*.sh "$SCRIPT_DIR"/scripts/lib/*.sh; do
-    [ -f "$script_file" ] || continue
-    rel_path="${script_file#"$SCRIPT_DIR"/}"
-    # 除外: field_get.sh自身, gates/配下
-    case "$rel_path" in
-        scripts/lib/field_get.sh) continue ;;
-        scripts/gates/*) continue ;;
+last_rel_path=""
+line_count=0
+RAW_GREP_TARGETS=()
+while IFS= read -r changed_file; do
+    [ -n "$changed_file" ] || continue
+    case "$changed_file" in
+        scripts/*.sh|scripts/lib/*.sh)
+            case "$changed_file" in
+                scripts/gates/*|scripts/lib/field_get.sh) ;;
+                *) RAW_GREP_TARGETS+=("$SCRIPT_DIR/$changed_file") ;;
+            esac
+            ;;
     esac
-    # 検出: grep で YAML キー抽出パターン (^\s or ^  で始まるYAMLフィールドアクセス)
-    # Stage 1: grep + '^\s' or '^  ' パターンを検出
-    # Stage 2: コメント行・field_get言及を除外
-    # Stage 3: field_name: パターンを含む行のみ保持
-    hits=$(grep -nE "grep.*['\"]\\^(\\\\s|  )" "$script_file" 2>/dev/null \
-        | grep -vE '^[[:space:]]*#' \
-        | grep -v 'field_get' \
-        | grep -E '[a-z_]+:' \
-        || true)
-    if [ -n "$hits" ]; then
-        echo "  [INFO] ${rel_path} — raw grep YAML access detected:"
-        echo "$hits" | head -3 | while IFS= read -r line; do
-            echo "    $line"
-        done
-        RAW_GREP_COUNT=$((RAW_GREP_COUNT + 1))
-    fi
-done
+done <<< "$CMD_CHANGED_FILES"
+
+hits=""
+if [ "${#RAW_GREP_TARGETS[@]}" -gt 0 ]; then
+    hits=$(rg -n "grep.*['\\\"]\\^(\\\\s|  ).*[a-z_]+:" "${RAW_GREP_TARGETS[@]}" 2>/dev/null | grep -v 'field_get' || true)
+fi
+if [ -n "$hits" ]; then
+    while IFS=: read -r hit_file hit_line hit_rest; do
+        [ -n "$hit_file" ] || continue
+        rel_path="${hit_file#"$SCRIPT_DIR"/}"
+        if [ "$last_rel_path" != "$rel_path" ]; then
+            echo "  [INFO] ${rel_path} — raw grep YAML access detected:"
+            RAW_GREP_COUNT=$((RAW_GREP_COUNT + 1))
+            last_rel_path="$rel_path"
+            line_count=0
+        fi
+        if [ "$line_count" -lt 3 ]; then
+            echo "    ${hit_line}:${hit_rest}"
+            line_count=$((line_count + 1))
+        fi
+    done <<< "$hits"
+fi
 if [ "$RAW_GREP_COUNT" -eq 0 ]; then
-    echo "  OK (no raw grep YAML access detected in scripts/)"
+    if [ "${#RAW_GREP_TARGETS[@]}" -eq 0 ]; then
+        echo "  SKIP (no scripts/*.sh changes in ${CMD_ID} commits)"
+    else
+        echo "  OK (no raw grep YAML access detected in changed scripts)"
+    fi
 else
     echo "  [INFO] ${RAW_GREP_COUNT} script(s) use raw grep for YAML field access. Migrate to field_get (scripts/lib/field_get.sh)"
 fi
@@ -3413,30 +3440,34 @@ esac
 
 # ─── 配線検証（WARNのみ、Existence != Integration） ───
 level_heading "[L3]" "Wiring verification:"
-WIRING_OUTPUT=$(check_script_wiring "$CMD_ID" 2>/dev/null || true)
-if [ -z "$WIRING_OUTPUT" ]; then
-    echo "  [INFO] wiring verification returned no result"
+if ! printf '%s\n' "$CMD_CHANGED_FILES" | grep -qE '^(scripts/|instructions/|CLAUDE\.md$)'; then
+    echo "  SKIP (no scripts/instructions changes in ${CMD_ID} commits)"
 else
-    while IFS=$'\t' read -r row_type scope status message; do
-        case "$row_type" in
-            CHECK)
-                case "$status" in
-                    WARN)
-                        echo "  [INFO] ${scope}: WARN (${message})"
-                        ;;
-                    SKIP)
-                        echo "  ${scope}: SKIP (${message})"
-                        ;;
-                    *)
-                        echo "  ${scope}: OK (${message})"
-                        ;;
-                esac
-                ;;
-            DETAIL)
-                echo "    ${message}"
-                ;;
-        esac
-    done <<< "$WIRING_OUTPUT"
+    WIRING_OUTPUT=$(check_script_wiring "$CMD_ID" 2>/dev/null || true)
+    if [ -z "$WIRING_OUTPUT" ]; then
+        echo "  [INFO] wiring verification returned no result"
+    else
+        while IFS=$'\t' read -r row_type scope status message; do
+            case "$row_type" in
+                CHECK)
+                    case "$status" in
+                        WARN)
+                            echo "  [INFO] ${scope}: WARN (${message})"
+                            ;;
+                        SKIP)
+                            echo "  ${scope}: SKIP (${message})"
+                            ;;
+                        *)
+                            echo "  ${scope}: OK (${message})"
+                            ;;
+                    esac
+                    ;;
+                DETAIL)
+                    echo "    ${message}"
+                    ;;
+            esac
+        done <<< "$WIRING_OUTPUT"
+    fi
 fi
 
 run_todo_fixme_residual_check "$CMD_ID"
@@ -3457,9 +3488,7 @@ fi
 # ─── テストSKIP検査（skip_count > 0 で BLOCK） ───
 level_heading "[L2]" "Test skip count check:"
 TEST_SKIP_CHECKED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3525,8 +3554,8 @@ fi
 # Bug fix: HEAD~1がauto-commitの場合、無関係なcontext変更で偽陽性BLOCK(ci_gate_mismatch 13件WA)
 # → cmd固有commitのcontext変更のみ検出。auto-commit由来のcontext変更を除外
 level_heading "[L3]" "Vercel phase link check:"
-# chore: commitを除外（偽陽性防止: choreメッセージ内の文脈説明にcmd_idが含まれるケース）
-_vercel_hashes=$(git -C "$SCRIPT_DIR" log --grep="${CMD_ID}" --format="%H %s" 2>/dev/null | grep -v ' chore:' | awk '{print $1}' || true)
+# HEAD contiguous commit window only: full-history grep は /mnt/c 上で極端に遅い
+_vercel_hashes=$(get_cmd_head_hashes "$CMD_ID" || true)
 changed_contexts=""
 for _vh in $_vercel_hashes; do
     changed_contexts="$changed_contexts $(git -C "$SCRIPT_DIR" diff-tree --no-commit-id --name-only -r "$_vh" 2>/dev/null | grep '^context/' || true)"
@@ -3554,9 +3583,7 @@ fi
 # ─── CI status check（push済みcmdでCI赤を検知 — failure時WARN。CLAUDE.md準拠） ───
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
-for task_file in "$TASKS_DIR"/*.yaml; do
-    [ -f "$task_file" ] || continue
-    is_cmd_task "$task_file" || continue
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -3568,33 +3595,26 @@ for task_file in "$TASKS_DIR"/*.yaml; do
 done
 
 if [ "$CI_PUSH_DETECTED" = true ]; then
-    if command -v gh >/dev/null 2>&1; then
-        ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1 --json conclusion,databaseId 2>/dev/null || true)
-        if [ -n "$ci_result" ]; then
-            ci_conclusion=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].conclusion // "" else "" end' 2>/dev/null)
-            ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].databaseId // "" else "" end' 2>/dev/null)
-            case "$ci_conclusion" in
-                success)
-                    echo "  OK (CI green, run ${ci_run_id})"
-                    ;;
-                failure)
-                    echo "  WARN: CI赤 (run ${ci_run_id}) — push後にCI失敗。修正必要(CLAUDE.md準拠: WARN)"
-                    # CLAUDE.md: 「CI緑維持 — BLOCKではなくWARN」。ALL_CLEAR維持。
-                    # 旧: ALL_CLEAR=false + record_block_reason → 12回連続workaround(ci_gate_mismatch)
-                    ;;
-                "")
-                    echo "  [INFO] CI結果取得不可（進行中またはデータなし）"
-                    ;;
-                *)
-                    echo "  [INFO] CI結果=${ci_conclusion} (run ${ci_run_id})"
-                    ;;
-            esac
+    (
+        if command -v gh >/dev/null 2>&1; then
+            ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1 --json conclusion,databaseId 2>/dev/null || true)
+            if [ -n "$ci_result" ]; then
+                ci_conclusion=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].conclusion // "" else "" end' 2>/dev/null)
+                ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].databaseId // "" else "" end' 2>/dev/null)
+                case "$ci_conclusion" in
+                    success) echo "[async][ci] OK (CI green, run ${ci_run_id})" ;;
+                    failure) echo "[async][ci] WARN: CI赤 (run ${ci_run_id})" ;;
+                    "") echo "[async][ci] INFO: CI結果取得不可（進行中またはデータなし）" ;;
+                    *) echo "[async][ci] INFO: CI結果=${ci_conclusion} (run ${ci_run_id})" ;;
+                esac
+            else
+                echo "[async][ci] SKIP (gh run list returned empty)"
+            fi
         else
-            echo "  SKIP (gh run list returned empty)"
+            echo "[async][ci] SKIP (gh CLI not available)"
         fi
-    else
-        echo "  SKIP (gh CLI not available)"
-    fi
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  queued (async)"
 else
     echo "  SKIP (no push detected in reports)"
 fi
@@ -3606,15 +3626,8 @@ if [ "$ALL_CLEAR" = true ]; then
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
-    if gate_yaml_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1); then
-        echo "$gate_yaml_output"
-        if ! echo "$gate_yaml_output" | grep -qE "UPDATED|ALREADY_OK"; then
-            echo "  [ERROR] GATE_YAML_STATUS_VERIFY: expected UPDATED/ALREADY_OK but got: $gate_yaml_output"
-        fi
-    else
-        echo "$gate_yaml_output"
-        echo "  [INFO] gate_yaml_status.sh failed (non-blocking)"
-    fi
+    (bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
+    echo "gate_yaml_status: queued (async)"
     if status_output=$(update_status "$CMD_ID" 2>&1); then
         echo "$status_output"
         if ! echo "$status_output" | grep -qE "STATUS UPDATED|STATUS ALREADY COMPLETED"; then
@@ -3624,56 +3637,23 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "$status_output"
         echo "  [INFO] update_status failed (non-blocking)"
     fi
-    if changelog_output=$(append_changelog "$CMD_ID" 2>&1); then
-        echo "$changelog_output"
-        if ! grep -q "$CMD_ID" "$SCRIPT_DIR/queue/completed_changelog.yaml" 2>/dev/null; then
-            echo "  [ERROR] APPEND_CHANGELOG_VERIFY: $CMD_ID entry not found in completed_changelog.yaml"
-        fi
-    else
-        echo "$changelog_output"
-        echo "  [INFO] append_changelog failed (non-blocking)"
-    fi
-    if tracking_output=$(append_lesson_tracking "$CMD_ID" "CLEAR" 2>&1); then
-        echo "$tracking_output"
-        if ! echo "$tracking_output" | grep -q "LESSON_TRACKING:"; then
-            echo "  [ERROR] APPEND_LESSON_TRACKING_VERIFY: expected LESSON_TRACKING: in output but got: $tracking_output"
-        fi
-    else
-        echo "$tracking_output"
-        echo "  [INFO] append_lesson_tracking failed (non-blocking)"
-    fi
-    if impact_output=$(update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1); then
-        echo "$impact_output"
-        if echo "$impact_output" | grep -q "no pending rows"; then
-            echo "  [ERROR] LESSON_IMPACT_VERIFY: updated=0 for $CMD_ID"
-        fi
-    else
-        echo "$impact_output"
-        echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
-    fi
-    bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
-    if sync_output=$(bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1); then
-        echo "$sync_output"
-        if echo "$sync_output" | grep -qi "error"; then
-            echo "  [ERROR] SYNC_COUNTERS_VERIFY: sync-counters output contains error: $sync_output"
-        fi
-    else
-        echo "$sync_output"
-        echo "  [INFO] sync-counters failed (non-blocking)"
-    fi
+    (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
+    echo "CHANGELOG: queued (async)"
+    (append_lesson_tracking "$CMD_ID" "CLEAR" >/dev/null 2>&1 || true) &
+    echo "LESSON_TRACKING: queued (async)"
+    (update_lesson_impact_tsv "$CMD_ID" "CLEAR" >/dev/null 2>&1 || true) &
+    echo "LESSON_IMPACT: queued (async)"
+    (
+        bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
+        bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || true
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  lesson_impact follow-up: queued (async)"
 
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
-        context_warn_lines=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" 2>/dev/null || true)
-        if [ -n "$context_warn_lines" ]; then
-            while IFS= read -r warn_line; do
-                [ -n "$warn_line" ] || continue
-                echo "  ${warn_line}"
-            done <<< "$context_warn_lines"
-        else
-            echo "  OK: no stale project context files"
-        fi
+        (bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" >/dev/null 2>&1 || true) &
+        echo "  queued (async)"
     else
         echo "  [INFO] context_freshness_check.sh not found (skip)"
     fi
@@ -3696,9 +3676,7 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "Lesson score update (helpful):"
     if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
         SCORE_UPDATED=0
-        for task_file in "$TASKS_DIR"/*.yaml; do
-            [ -f "$task_file" ] || continue
-            is_cmd_task "$task_file" || continue
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
             ninja_name=$(basename "$task_file" .yaml)
             report_file=$(resolve_report_file "$ninja_name")
             if [ -f "$report_file" ]; then
@@ -3761,18 +3739,12 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "Auto-notification (GATE CLEAR):"
 
     # dashboard_update（最初に実行。dashboard.mdを更新）
-    if SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
-        echo "  dashboard_update: OK ($CMD_ID)"
-    else
-        echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
-    fi
+    (SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
+    echo "  dashboard_update: queued (async)"
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
-    if bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1; then
-        echo "  gist_sync: OK"
-    else
-        echo "  [INFO] gist_sync: WARN (sync failed, non-blocking)" >&2
-    fi
+    (bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1 || true) &
+    echo "  gist_sync: queued (async)"
 
     # ntfy_cmd（gist_sync後に実行）
     if send_info_cmd_notification "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
@@ -3790,11 +3762,8 @@ if [ "$ALL_CLEAR" = true ]; then
         /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
         cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
     ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
-    if timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false 2>/dev/null; then
-        echo "  bulletin: OK"
-    else
-        echo "  [INFO] bulletin: WARN (failed, non-blocking)" >&2
-    fi
+    (timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false >/dev/null 2>&1 || true) &
+    echo "  bulletin: queued (async)"
 
     # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
     # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
@@ -3812,24 +3781,23 @@ if [ "$ALL_CLEAR" = true ]; then
     echo ""
     echo "Auto-deprecate check (unused - GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/knowledge_metrics.sh" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
-        UNUSED_DEPRECATE_COUNT=0
-        if metrics_json=$(bash "$SCRIPT_DIR/scripts/knowledge_metrics.sh" --json 2>/dev/null); then
-            elimination_ids=$(echo "$metrics_json" | jq -r '.elimination_candidates[]? | select(.lesson_id != "" and .lesson_id != null and .project != "" and .project != null) | [.lesson_id, .project, (.inject_count // 0 | tostring)] | join("\t")' 2>/dev/null)
-            if [ -n "$elimination_ids" ]; then
-                while IFS=$'\t' read -r lid project injected; do
-                    [ -z "$lid" ] && continue
-                    if bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$project" "$lid" "AUTO-DEPRECATE(unused): injected=${injected} referenced=0" 2>&1; then
-                        echo "  [gate] AUTO-DEPRECATE(unused): ${lid} project=${project} (injected=${injected} referenced=0)"
+        (
+            UNUSED_DEPRECATE_COUNT=0
+            if metrics_json=$(bash "$SCRIPT_DIR/scripts/knowledge_metrics.sh" --json 2>/dev/null); then
+                elimination_ids=$(echo "$metrics_json" | jq -r '.elimination_candidates[]? | select(.lesson_id != "" and .lesson_id != null and .project != "" and .project != null) | [.lesson_id, .project, (.inject_count // 0 | tostring)] | join("\t")' 2>/dev/null)
+                if [ -n "$elimination_ids" ]; then
+                    while IFS=$'\t' read -r lid project injected; do
+                        [ -z "$lid" ] && continue
+                        bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$project" "$lid" "AUTO-DEPRECATE(unused): injected=${injected} referenced=0" >/dev/null 2>&1 || true
                         UNUSED_DEPRECATE_COUNT=$((UNUSED_DEPRECATE_COUNT + 1))
-                    else
-                        echo "  [INFO] ${lid}: auto-deprecate failed (non-blocking)"
-                    fi
-                done <<< "$elimination_ids"
+                    done <<< "$elimination_ids"
+                fi
+                echo "[async][deprecate] Auto-deprecated (unused): ${UNUSED_DEPRECATE_COUNT} lesson(s)"
+            else
+                echo "[async][deprecate] SKIP (knowledge_metrics.sh failed)"
             fi
-            echo "  Auto-deprecated (unused): ${UNUSED_DEPRECATE_COUNT} lesson(s)"
-        else
-            echo "  SKIP (knowledge_metrics.sh failed)"
-        fi
+        ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+        echo "  auto-deprecate: queued (async)"
     else
         echo "  SKIP (knowledge_metrics.sh or lesson_deprecate.sh not found)"
     fi
@@ -3838,11 +3806,8 @@ if [ "$ALL_CLEAR" = true ]; then
     echo ""
     echo "Lesson effectiveness scan (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all 2>&1; then
-            echo "  lesson_deprecation_scan: OK"
-        else
-            echo "  [INFO] lesson_deprecation_scan: WARN (scan failed, non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" --project all >/dev/null 2>&1 || true) &
+        echo "  lesson_deprecation_scan: queued (async)"
     else
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
     fi
@@ -3851,11 +3816,8 @@ if [ "$ALL_CLEAR" = true ]; then
     echo ""
     echo "Cmd quality log (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" 2>&1; then
-            echo "  cmd_quality_log: OK"
-        else
-            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >/dev/null 2>&1 || true) &
+        echo "  cmd_quality_log: queued (async)"
     else
         echo "  SKIP (cmd_quality_log.sh not found)"
     fi
@@ -3974,9 +3936,7 @@ END_GV_PY
     INSIGHT_TMP=$(mktemp)
     trap 'rm -f "$INSIGHT_TMP"' EXIT
     INSIGHT_COUNT=0
-    for task_file in "$TASKS_DIR"/*.yaml; do
-        [ -f "$task_file" ] || continue
-        is_cmd_task "$task_file" || continue
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
@@ -4038,9 +3998,7 @@ END_GV_PY
     echo ""
     echo "Lesson candidate registration check (GATE CLEAR):"
     LC_WARN_COUNT=0
-    for task_file in "$TASKS_DIR"/*.yaml; do
-        [ -f "$task_file" ] || continue
-        is_cmd_task "$task_file" || continue
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
@@ -4110,11 +4068,8 @@ END_GV_PY
     # ─── status: completed 自動設定（GATE CLEAR後。cmdライフサイクル完了） ───
     echo ""
     echo "Status completed (post-GATE CLEAR):"
-    if bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed 2>/dev/null; then
-        echo "  status: completed — OK"
-    else
-        echo "  [INFO] status: completed — WARN (set failed, non-blocking)"
-    fi
+    (bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1 || true) &
+    echo "  status: completed — queued (async)"
 
     # ─── gunshi_verdict 自動記録（GATE CLEAR時、archive前） ───
     echo ""
@@ -4199,7 +4154,10 @@ END_VERDICT_PY
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
     echo "Git push (post-GATE CLEAR):"
-    if git -C "$SCRIPT_DIR" push 2>&1; then
+    upstream_ref=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    if [ -n "$upstream_ref" ] && [ "$(git -C "$SCRIPT_DIR" rev-parse HEAD 2>/dev/null || true)" = "$(git -C "$SCRIPT_DIR" rev-parse '@{upstream}' 2>/dev/null || true)" ]; then
+        echo "  git push: SKIP (already up-to-date with ${upstream_ref})"
+    elif git -C "$SCRIPT_DIR" push 2>&1; then
         echo "  git push: OK"
     else
         echo "  [INFO] git push: WARN (push failed, non-blocking)"
