@@ -20,7 +20,7 @@ task:
   parent_cmd: cmd_karo_gp110_deploy_warn
   task_id: cmd_karo_gp110_deploy_warn_impl
   project: infra
-  target_path: "scripts/target.sh"
+  target_path: "logs/target.sh"
   acceptance_criteria:
     - id: AC1
       description: "warn behavior"
@@ -55,30 +55,30 @@ make_commit() {
 @test "軍師/家老の自走commit(cmd_を含まないmessage+24h以内)があるファイルを含むcmd配備でWARN出力される" {
     local recent_date
     recent_date="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    make_commit "scripts/target.sh" "refactor deploy warning check" "$recent_date"
+    make_commit "logs/target.sh" "refactor deploy warning check" "$recent_date"
 
     run run_recent_commit_warn
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARNING: target_path=scripts/target.sh"* ]]
+    [[ "$output" == *"WARNING: target_path=logs/target.sh"* ]]
     [[ "$output" == *"refactor deploy warning check"* ]]
 }
 
 @test "忍者のcmd commit(messageにcmd_XXXXを含む)があるファイルではWARN出力されない" {
     local recent_date
     recent_date="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    make_commit "scripts/target.sh" "cmd_1891 adjust deploy behavior" "$recent_date"
+    make_commit "logs/target.sh" "cmd_1891 adjust deploy behavior" "$recent_date"
 
     run run_recent_commit_warn
     [ "$status" -eq 0 ]
-    [[ "$output" != *"WARNING: target_path=scripts/target.sh"* ]]
+    [[ "$output" != *"WARNING: target_path=logs/target.sh"* ]]
 }
 
 @test "24h以上前のcommitではWARN出力されない" {
     local old_date
     old_date="$(date -u -d '2 days ago' '+%Y-%m-%dT%H:%M:%SZ')"
-    make_commit "scripts/target.sh" "refactor deploy warning check" "$old_date"
+    make_commit "logs/target.sh" "refactor deploy warning check" "$old_date"
 
     run run_recent_commit_warn
     [ "$status" -eq 0 ]
-    [[ "$output" != *"WARNING: target_path=scripts/target.sh"* ]]
+    [[ "$output" != *"WARNING: target_path=logs/target.sh"* ]]
 }
