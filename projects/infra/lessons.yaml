@@ -1,8 +1,18 @@
 ssot_path: '/mnt/c/tools/multi-agent-shogun/tasks/lessons.md'
-last_synced: '2026-04-19T10:28:45'
+last_synced: '2026-04-19T12:36:20'
 archive_path: '/mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml'
-lesson_count: 511
+lesson_count: 513
 lessons:
+- id: 'L517'
+  title: 'setup-heavy Batsはcode-generated fixtureを/tmp cache再利用せよ'
+  summary: '同一入力で繰り返し実行するtemplate-generation系Batsは、fixtureを毎run再生成すると中央値がsetupに支配される。deploy_'
+  tags:
+  - 'infra'
+- id: 'L516'
+  title: 'テスト高速化: FIFO経由永続デーモンでpython3起動コストを排除'
+  summary: 'batsテストで同一スクリプトを51回呼ぶ場合、1回の起動でFIFO経由IPCに置換すると100ms×N→7ms×Nに削減できる。L509(cold計測必須)通'
+  tags:
+  - 'infra'
 - id: 'L515'
   title: '入力消失調査は送信経路を分離しraw traceを先に置け'
   summary: 'watcher nudge、generic SSH直接入力、Android companion app send-keys は別経路である。 hook/lord'
@@ -244,7 +254,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:49+09:00'
+  deprecated_at: '2026-04-19T12:39:42+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
 - id: 'L467'
   title: 'REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ'
@@ -317,7 +327,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:48+09:00'
+  deprecated_at: '2026-04-19T12:39:42+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
 - id: 'L453'
   title: '復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須'
@@ -325,7 +335,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:48+09:00'
+  deprecated_at: '2026-04-19T12:39:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
 - id: 'L452'
   title: 'SCOUT/exempt系テスト関数にもq8_why_whatが必要'
@@ -333,7 +343,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:48+09:00'
+  deprecated_at: '2026-04-19T12:39:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: 'L451'
   title: 'STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき'
@@ -346,7 +356,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:47+09:00'
+  deprecated_at: '2026-04-19T12:39:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: 'L449'
   title: '分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決'
@@ -354,7 +364,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:47+09:00'
+  deprecated_at: '2026-04-19T12:39:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
 - id: 'L448'
   title: '[自動生成] draft教訓の査読を怠った: cmd_karo_fix_precommit_comment'
@@ -362,7 +372,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:47+09:00'
+  deprecated_at: '2026-04-19T12:39:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
 - id: 'L447'
   title: '外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須'
@@ -370,7 +380,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:47+09:00'
+  deprecated_at: '2026-04-19T12:39:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: 'L446'
   title: 'AC3設計書参照検知はq5_verified_sourceベースが信頼性高い'
@@ -383,7 +393,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:46+09:00'
+  deprecated_at: '2026-04-19T12:39:39+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
 - id: 'L444'
   title: '外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止'
@@ -401,7 +411,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:46+09:00'
+  deprecated_at: '2026-04-19T12:39:39+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: 'L441'
   title: 'hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する'
@@ -580,7 +590,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:46+09:00'
+  deprecated_at: '2026-04-19T12:39:39+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: 'L412'
   title: 'inbox_prune.shもyaml.dump禁止規則の対象漏れ'
@@ -601,7 +611,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:46+09:00'
+  deprecated_at: '2026-04-19T12:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: 'L409'
   title: 'precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき'
@@ -615,7 +625,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:45+09:00'
+  deprecated_at: '2026-04-19T12:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: 'L407'
   title: 'L074適用対象の拡張: 境界値チェックはset -e環境の安全弁'
@@ -769,7 +779,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:45+09:00'
+  deprecated_at: '2026-04-19T12:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: 'L380'
   title: 'daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク'
@@ -908,7 +918,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:45+09:00'
+  deprecated_at: '2026-04-19T12:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: 'L357'
   title: 'yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反'
@@ -978,7 +988,7 @@ lessons:
   - 'monitor'
   - 'inbox'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:50+09:00'
+  deprecated_at: '2026-04-19T12:39:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: 'L346'
   title: 'stderr/stdout混合キャプチャは値汚染バグの温床'
@@ -1142,6 +1152,9 @@ lessons:
   - 'git'
   - 'inbox'
   - 'reporting'
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-19'
 - id: 'L320'
   title: 'infraテストは全件必要と判定（後半27テスト）'
   summary: 'test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間'
@@ -1393,8 +1406,8 @@ lessons:
   summary: 'batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash) skip パタ'
   tags:
   - 'universal'
-  helpful_count: 23
-  harmful_count: 14
+  helpful_count: 22
+  harmful_count: 11
   last_referenced: '2026-04-19'
 - id: 'L282'
   title: 'PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御'
@@ -1530,9 +1543,6 @@ lessons:
   - 'gate'
   - 'bash'
   - 'git'
-  helpful_count: 1
-  harmful_count: 2
-  last_referenced: '2026-04-18'
 - id: 'L261'
   title: '全体設定変更時のテスト整合性チェック不足'
   summary: 'settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ'
@@ -1722,6 +1732,9 @@ lessons:
   tags:
   - 'testing'
   - 'git'
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-04-19'
 - id: 'L231'
   title: 'ruffの出力判定は終了コードか--quietで行うべき'
   summary: 'ruffはlint成功時にAll checks passed!を標準出力する。出力の空判定(if [ -n ruff_out ])では偽陽性。修正: ruff '
@@ -1740,11 +1753,8 @@ lessons:
   tags:
   - 'infra'
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-19T10:29:01+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE: harmful=24 > helpful=23'
-  helpful_count: 23
-  harmful_count: 22
+  helpful_count: 22
+  harmful_count: 18
   last_referenced: '2026-04-19'
 - id: 'L228'
   title: 'ast-grepのregex ruleはkind併記が要る'
@@ -1768,7 +1778,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:01+09:00'
+  deprecated_at: '2026-04-19T12:36:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=0'
   helpful_count: 0
   harmful_count: 6
@@ -1805,7 +1815,7 @@ lessons:
   - 'process'
   - 'git'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:02+09:00'
+  deprecated_at: '2026-04-19T12:36:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=2'
   helpful_count: 2
   harmful_count: 7
@@ -2029,8 +2039,8 @@ lessons:
   tags:
   - 'review'
   - 'git'
-  helpful_count: 9
-  harmful_count: 3
+  helpful_count: 5
+  harmful_count: 2
   last_referenced: '2026-04-19'
 - id: 'L185'
   title: 'report_path 注入だけで報告テンプレート未生成→忍者が手動補完'
@@ -2150,7 +2160,7 @@ lessons:
   tags:
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:45+09:00'
+  deprecated_at: '2026-04-19T12:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: 'L167'
   title: 'ストリーム購読系デーモンは singleton lock + message idempotency を必須セットで実装すべき'
@@ -2563,7 +2573,7 @@ lessons:
   - 'yaml'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:50+09:00'
+  deprecated_at: '2026-04-19T12:39:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: 'L101'
   title: 'gate_metrics.logはTSV形式(YAMLではない)'
@@ -2611,7 +2621,7 @@ lessons:
   - 'gate'
   - 'reporting'
   deprecated: true
-  deprecated_at: '2026-04-19T10:29:44+09:00'
+  deprecated_at: '2026-04-19T12:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: 'L094'
   title: 'scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存'
@@ -3016,9 +3026,6 @@ lessons:
   tags:
   - 'git'
   - 'review'
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-18'
 - id: 'L026'
   title: '知識陳腐化の定量実態と解決方針(cmd_237合議3名統合)'
   summary: 'IF 知識ファイルの陳腐化が疑われる時 THEN 追加onlyの運用を見直し、定期的な削除・更新サイクルを導入せよ'

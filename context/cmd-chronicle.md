@@ -749,3 +749,4 @@
 | cmd_2107 | 改善 — テストCoDD高速化 test_deploy_task_ac_version.bats (32秒→目標10秒) | infra | 04-19 | AC4完了: test_deploy_task_ac_ver |
 | cmd_2111 | 改善 — テストCoDD高速化 test_stop_check_inbox.bats (6.2秒→目標3秒) | infra | 04-19 | test_stop_check_inbox.bats 46. |
 | cmd_2113 | 改善 — テストCoDD高速化 test_cli_adapter.bats (4.6秒→目標2秒) | infra | 04-19 | test_cli_adapter.bats の fixtur |
+| cmd_2108 | 改善 — テストCoDD高速化 test_deploy_task_template_generation.bats (9.8秒→目標4秒) | infra | 04-19 | deploy_task template generatio |

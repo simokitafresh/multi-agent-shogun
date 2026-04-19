@@ -131,7 +131,10 @@
 # | 209 | generated指示矛盾修正 | ★implemented      | S163 | generated/ashigaru*.md 4ファイルのEdit tool指示→report_field_set.sh経由に統一。hook矛盾解消 |
 # | 210 | STATE_DIR統一         | karo_sent          | S164 | inbox_watcher/Stop hookのSTATE_DIRパス不一致→家老nudge遅延。将軍撤回→軍師分析正の確認(blt_20260417_021610) |
 # | 211 | 結論突合警告           | ★implemented      | S165 | stop_check_inbox.sh: CONCLUSION_TYPES検出→突合警告付加。全エージェント共通。テスト9/9 PASS |
-# 集計: ★implemented:105(+GP-209,211) / ★resolved:8(GP-114,115,117,122,124,125,126,178) / ★将軍解決:3(GP-033,034,084) / ✗撤去(消火):5(GP-091,093,094,070→autofixから撤去) / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4(+GP-132) / ✗rejected:2(GP-113,119) / pending:0 / ★karo_applied:2(GP-111,112) / proposed:0 / in_progress:0 / karo_sent:10(GP-170,171,183,184,186,189,190,191,192,210) = 計134GP (2026-04-17T02:30更新)
+# | 212 | SG-PRE14 revert検出  | ★implemented      | S170 | files_modified直近5 commitにrevert含→WARN。cmd_2107事故(revert後AC3:yesのまま報告)対策。shellcheck clean |
+# | 213 | SG-PRE15 並列負荷警告 | ★implemented      | S170 | 忍者3名以上稼働中→before/after計測値汚染WARN。WSL2 I/O負荷考慮。shellcheck clean |
+# | 214 | SG-PRE9 BLOCK固定    | ★implemented      | S170 | result:no→BLOCK固定(waive有無に関わらず)。cmd_2093誤予測対策。review_logヘッダ+gate文言修正 |
+# 集計: ★implemented:108(+GP-212,213,214) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4 / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 = 計137GP (2026-04-19T12:40更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ

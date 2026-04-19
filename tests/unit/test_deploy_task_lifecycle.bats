@@ -122,28 +122,18 @@ resolve_fixture_task() {
 get_task_values() {
     local file="$1"
     shift
-    python3 - "$file" "$@" <<'PY'
-import sys
-import yaml
-
-with open(sys.argv[1], encoding="utf-8") as f:
-    data = yaml.safe_load(f) or {}
-task = data.get("task", {})
-
-for field in sys.argv[2:]:
-    value = task.get(field)
-    if value is None:
-        rendered = "<missing>"
-    elif isinstance(value, list):
-        rendered = f"<list:{len(value)}>"
-    elif isinstance(value, dict):
-        rendered = f"<dict:{len(value)}>"
-    elif isinstance(value, bool):
-        rendered = str(value).lower()
-    else:
-        rendered = str(value)
-    print(f"{field}={rendered}")
-PY
+    local fields_str="$*"
+    awk -v fs="$fields_str" '
+        BEGIN { n=split(fs,f," "); for(i=1;i<=n;i++) want[f[i]]=1 }
+        /^task:/ { in_task=1; next }
+        in_task && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ {
+            key=$0; sub(/^  /,"",key); sub(/:.*$/,"",key)
+            if (key in want) { val=$0; sub(/^  [^:]+:[[:space:]]*/,"",val); found[key]=val }
+            next
+        }
+        in_task && /^[^ ]/ { in_task=0 }
+        END { for(i=1;i<=n;i++) print f[i] "=" ((f[i] in found && found[f[i]]!="") ? found[f[i]] : "<missing>") }
+    ' "$file"
 }
 
 assert_missing_fields() {
@@ -168,23 +158,32 @@ run_double_deploy_guard() {
 
     log() { echo "$*" >> "$log_file"; }
 
-    local DEPLOY_PARENT_CMD DEPLOY_TASK_ID
-    DEPLOY_PARENT_CMD=$(grep -m1 '^\s*parent_cmd:' "$_TASK_YAML" 2>/dev/null | sed "s/.*parent_cmd:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
-    DEPLOY_TASK_ID=$(grep -m1 '^\s*task_id:' "$_TASK_YAML" 2>/dev/null | sed "s/.*task_id:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+    local DEPLOY_PARENT_CMD="" DEPLOY_TASK_ID="" _line
+    while IFS= read -r _line; do
+        [[ -z "$DEPLOY_PARENT_CMD" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && {
+            DEPLOY_PARENT_CMD="${BASH_REMATCH[1]//\'/}"; DEPLOY_PARENT_CMD="${DEPLOY_PARENT_CMD//\"/}"
+        }
+        [[ -z "$DEPLOY_TASK_ID" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && {
+            DEPLOY_TASK_ID="${BASH_REMATCH[1]//\'/}"; DEPLOY_TASK_ID="${DEPLOY_TASK_ID//\"/}"
+        }
+    done < "$_TASK_YAML"
 
     if [ -n "$DEPLOY_PARENT_CMD" ]; then
         for _dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
             [ -f "$_dd_task" ] || continue
             _dd_ninja=$(basename "$_dd_task" .yaml)
             [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
-            _dd_pcmd=$(grep -m1 '^\s*parent_cmd:' "$_dd_task" 2>/dev/null | sed "s/.*parent_cmd:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
+            local _dd_pcmd="" _dd_tid="" _dd_status=""
+            while IFS= read -r _line; do
+                [[ -z "$_dd_pcmd" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && { _dd_pcmd="${BASH_REMATCH[1]//\'/}"; _dd_pcmd="${_dd_pcmd//\"/}"; }
+                [[ -z "$_dd_tid" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && { _dd_tid="${BASH_REMATCH[1]//\'/}"; _dd_tid="${_dd_tid//\"/}"; }
+                [[ -z "$_dd_status" && "$_line" =~ ^[[:space:]]*status:[[:space:]]+(.*) ]] && { _dd_status="${BASH_REMATCH[1]//\'/}"; _dd_status="${_dd_status//\"/}"; }
+            done < "$_dd_task"
             [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
-            _dd_tid=$(grep -m1 '^\s*task_id:' "$_dd_task" 2>/dev/null | sed "s/.*task_id:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
             if [ -n "$DEPLOY_TASK_ID" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
                 log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
                 continue
             fi
-            _dd_status=$(grep -m1 '^\s*status:' "$_dd_task" 2>/dev/null | sed "s/.*status:[[:space:]]*//" | sed "s/['\"]//g" | sed 's/[[:space:]]*$//')
             case "$_dd_status" in
                 assigned|acknowledged|in_progress)
                     log "BLOCK: ${DEPLOY_PARENT_CMD} is already assigned to ${_dd_ninja} (status: ${_dd_status}, task_id: ${_dd_tid})"
@@ -255,37 +254,27 @@ run_own_stale_archive() {
 # ─── engineering_preferences ヘルパー関数 ───
 
 read_task_engineering_preferences() {
-    python3 - <<'PY'
-import os
-import yaml
-
-task_file = os.path.join(os.environ['TEST_PROJECT'], 'queue', 'tasks', 'sasuke.yaml')
-with open(task_file, encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-
-prefs = (data.get('task') or {}).get('engineering_preferences') or []
-for pref in prefs:
-    print(pref)
-PY
+    awk '
+        /^task:/ { in_task=1; next }
+        in_task && /^  engineering_preferences:/ { in_prefs=1; next }
+        in_prefs && /^  - / { line=$0; sub(/^  - /,"",line); print line; next }
+        in_prefs && /^  [a-zA-Z_]/ { in_prefs=0 }
+        in_prefs && /^[^ ]/ { in_prefs=0; in_task=0 }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
 # ─── gate_blocks ヘルパー関数 ───
 
 read_gate_blocks() {
-    python3 - <<'PY'
-import os
-import yaml
-
-task_file = os.path.join(os.environ['TEST_PROJECT'], 'queue', 'tasks', 'sasuke.yaml')
-with open(task_file, encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-
-nwp = (data.get('task') or {}).get('ninja_weak_points') or {}
-blocks = nwp.get('gate_blocks') or []
-
-for item in blocks:
-    print(f"reason={item['reason']},count={item['count']}")
-PY
+    awk '
+        /^    gate_blocks:/ { in_b=1; cnt=""; next }
+        in_b && /^    - count:/ { cnt=$NF; next }
+        in_b && /^      count:/ { cnt=$NF; next }
+        in_b && /^      hint:/ { next }
+        in_b && /^      reason:/ { print "reason=" $NF ",count=" cnt; cnt=""; next }
+        in_b && /^    [a-zA-Z_]/ { in_b=0 }
+        in_b && /^  [a-zA-Z]/ { in_b=0 }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
 run_gate_blocks_inject() {
@@ -359,23 +348,14 @@ with open(task_file, \"w\") as f:
 # ─── gate_fail_top3 ヘルパー関数 ───
 
 read_task_gate_fail_top3() {
-    python3 - <<'PY'
-import os
-import yaml
-
-task_file = os.path.join(os.environ['TEST_PROJECT'], 'queue', 'tasks', 'sasuke.yaml')
-with open(task_file, encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
-
-nwp = (data.get('task') or {}).get('ninja_weak_points') or {}
-top3 = nwp.get('gate_fail_top3') or []
-warning = nwp.get('gate_warning') or ''
-
-for item in top3:
-    print(f"pattern={item['pattern']},count={item['count']}")
-if warning:
-    print(f"warning={warning}")
-PY
+    awk '
+        /^    gate_fail_top3:/ { in_top3=1; cnt=""; next }
+        in_top3 && /^    - count:/ { cnt=$NF; next }
+        in_top3 && /^      count:/ { cnt=$NF; next }
+        in_top3 && /^      pattern:/ { print "pattern=" $NF ",count=" cnt; cnt=""; next }
+        /^    gate_warning:/ { line=$0; sub(/^    gate_warning:[[:space:]]*/,"",line); print "warning=" line; next }
+        in_top3 && /^    [a-zA-Z_]/ { in_top3=0 }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
 create_workarounds() {
@@ -475,19 +455,30 @@ teardown_file() {
 }
 
 setup() {
-    deploy_task_scaffold "lifecycle"
-    source "$SRC_FIELD_GET_SCRIPT"
-    export FIELD_GET_NO_LOG=1
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR"
+    export TEST_PROJECT="$TEST_TMPDIR/project"
     mkdir -p \
+        "$TEST_PROJECT/queue/tasks" \
+        "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/logs" \
+        "$TEST_PROJECT/projects" \
+        "$TEST_PROJECT/archive" \
         "$TEST_TMPDIR/queue/tasks" \
         "$TEST_TMPDIR/queue/reports" \
         "$TEST_TMPDIR/archive/reports" \
         "$TEST_TMPDIR/archive/reports/stale" \
         "$TEST_TMPDIR/logs"
+    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
+    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
+    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
+    printf '<!-- DASHBOARD_AUTO_START -->\n<!-- DASHBOARD_AUTO_END -->\n' > "$TEST_PROJECT/dashboard.md"
+    source "$SRC_FIELD_GET_SCRIPT"
+    export FIELD_GET_NO_LOG=1
 }
 
 teardown() {
-    deploy_task_teardown
+    true
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -1247,33 +1238,13 @@ with open(task_file, \"w\") as f:
 GFEOF
 
     run bash -c "
-        cd '$TEST_PROJECT'
-        TASK_FILE_ENV='$TEST_PROJECT/queue/tasks/sasuke.yaml' \
-        WORKAROUNDS_FILE_ENV='$TEST_PROJECT/logs/karo_workarounds.yaml' \
-        NINJA_NAME_ENV='sasuke' \
-        python3 -c '
-import os, re, yaml
-
-task_file = os.environ[\"TASK_FILE_ENV\"]
-with open(task_file) as f:
-    data = yaml.safe_load(f)
-task = data[\"task\"]
-task[\"ninja_weak_points\"] = {\"source\": \"test\"}
-
-gate_log_path = os.path.join(os.path.dirname(os.environ[\"WORKAROUNDS_FILE_ENV\"]), \"gate_fire_log.yaml\")
-fail_cats = {}
-with open(gate_log_path) as gf:
-    for gline in gf:
-        gline = gline.strip()
-        if not gline.startswith(\"- \") or \"/sasuke_report\" not in gline:
-            continue
-        if \"/tmp/\" in gline:
-            continue
-        if \"result: FAIL\" not in gline:
-            continue
-        fail_cats[\"test\"] = 1
-print(\"SKIP_OK\" if not fail_cats else \"SKIP_FAIL\")
-'
+        count=0
+        while IFS= read -r line; do
+            [[ \"\$line\" != *\"/sasuke_report\"* ]] && continue
+            [[ \"\$line\" == *\"/tmp/\"* ]] && continue
+            [[ \"\$line\" == *'result: FAIL'* ]] && count=\$((count+1))
+        done < '$TEST_PROJECT/logs/gate_fire_log.yaml'
+        [ \$count -eq 0 ] && echo SKIP_OK || echo SKIP_FAIL
     "
     [ "$status" -eq 0 ]
     [[ "${output}" == *"SKIP_OK"* ]]
@@ -1284,25 +1255,7 @@ print(\"SKIP_OK\" if not fail_cats else \"SKIP_FAIL\")
     create_workarounds
     # No gate_fire_log.yaml file
 
-    run bash -c "
-        cd '$TEST_PROJECT'
-        TASK_FILE_ENV='$TEST_PROJECT/queue/tasks/sasuke.yaml' \
-        WORKAROUNDS_FILE_ENV='$TEST_PROJECT/logs/karo_workarounds.yaml' \
-        NINJA_NAME_ENV='sasuke' \
-        python3 -c '
-import os, yaml
-
-task_file = os.environ[\"TASK_FILE_ENV\"]
-with open(task_file) as f:
-    data = yaml.safe_load(f)
-task = data[\"task\"]
-task[\"ninja_weak_points\"] = {\"source\": \"test\"}
-
-gate_log_path = os.path.join(os.path.dirname(os.environ[\"WORKAROUNDS_FILE_ENV\"]), \"gate_fire_log.yaml\")
-exists = os.path.exists(gate_log_path)
-print(\"NO_FILE_OK\" if not exists else \"UNEXPECTED_FILE\")
-'
-    "
+    run bash -c "[ -f '$TEST_PROJECT/logs/gate_fire_log.yaml' ] && echo UNEXPECTED_FILE || echo NO_FILE_OK"
     [ "$status" -eq 0 ]
     [[ "${output}" == *"NO_FILE_OK"* ]]
 }
@@ -1317,29 +1270,14 @@ print(\"NO_FILE_OK\" if not exists else \"UNEXPECTED_FILE\")
 GFEOF
 
     run bash -c "
-        cd '$TEST_PROJECT'
-        TASK_FILE_ENV='$TEST_PROJECT/queue/tasks/sasuke.yaml' \
-        WORKAROUNDS_FILE_ENV='$TEST_PROJECT/logs/karo_workarounds.yaml' \
-        NINJA_NAME_ENV='sasuke' \
-        python3 -c '
-import os, re, yaml
-
-task_file = os.environ[\"TASK_FILE_ENV\"]
-ninja_name = os.environ[\"NINJA_NAME_ENV\"]
-gate_log_path = os.path.join(os.path.dirname(os.environ[\"WORKAROUNDS_FILE_ENV\"]), \"gate_fire_log.yaml\")
-
-fail_count = 0
-with open(gate_log_path) as gf:
-    for gline in gf:
-        gline = gline.strip()
-        if not gline.startswith(\"- \") or f\"/{ninja_name}_report\" not in gline:
-            continue
-        if \"/tmp/\" in gline or \"result: FAIL\" not in gline:
-            continue
-        fail_count += 1
-# Only sasuke entry should match (not hanzo)
-print(f\"FILTERED_COUNT={fail_count}\")
-'
+        count=0
+        while IFS= read -r line; do
+            [[ \"\$line\" != *\"/sasuke_report\"* ]] && continue
+            [[ \"\$line\" == *\"/tmp/\"* ]] && continue
+            [[ \"\$line\" == *'result: FAIL'* ]] || continue
+            count=\$((count+1))
+        done < '$TEST_PROJECT/logs/gate_fire_log.yaml'
+        echo \"FILTERED_COUNT=\$count\"
     "
     [ "$status" -eq 0 ]
     [[ "${output}" == *"FILTERED_COUNT=1"* ]]

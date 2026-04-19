@@ -416,3 +416,10 @@ lessons:
   created_at: '2026-04-19'
   automated: true
   enforcement: 'cmd_save.sh L551(q5検証レベルBLOCK)+L1553(AC数量未列挙BLOCK)。将軍直接修正+bats 53テスト全PASS確認済み'
+- id: 'LS047'
+  title: 'CoDD改善は台帳に載せる — シンプルな根源ルール'
+  detail: '事故: cmd_2107-2113(テストCoDD高速化5件)がcodd_refactor_registry.mdに未登録。cmdのACに台帳追記を含めなかった設計漏れ。殿指摘で発覚。原因: 台帳追記はスクリプト本体のCoDD改善では習慣化していたが、テストファイルのCoDD改善は初めてで台帳対象と認識していなかった。修正: 根源ルール「CoDDで改善したものは台帳に載せる」を環境に埋め込む。対象がスクリプト/テスト/ドキュメントに関わらず、CoDD改善=台帳追記。'
+  source_cmd: 'cmd_2107'
+  created_at: '2026-04-19'
+  automated: true
+  enforcement: 'lessons_shogun.yaml(本教訓)+context/codd.md(台帳ルール追記予定)+cmd_save.shでCoDD cmdにregistry AC確認(将来自動化ターゲット)'

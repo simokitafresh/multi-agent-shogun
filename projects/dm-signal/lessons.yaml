@@ -1946,6 +1946,9 @@ lessons:
   - testing
   - gate
   - oauth
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-19'
 - id: L320
   title: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合
   summary: p̄検定は月次リターンの一貫した正のリターンを検定する。 朱雀のDNAはTMF/TMV切替で「大きな方向転換で稼ぐ」設計であり、
@@ -2195,8 +2198,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 23
-  harmful_count: 14
+  helpful_count: 22
+  harmful_count: 11
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2536,9 +2539,9 @@ lessons:
   summary: holding_signalの更新タイミングはStep0（パフォーマンス計算前）で行われ、last_generated_signals（前月末の生signal）
   tags:
   - dm-signal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-04-16'
+  last_referenced: '2026-04-19'
 - id: L231
   title: 大フック/大APIクライアントは helper test だけでは保守性劣化を防げない
   summary: DM-Signal では `useAdminPage.ts` と `signals-context.tsx` が browser API・localStorag
@@ -2562,8 +2565,8 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 23
-  harmful_count: 22
+  helpful_count: 22
+  harmful_count: 18
   last_referenced: '2026-04-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2878,8 +2881,8 @@ lessons:
   tags:
   - recon
   - monitor
-  helpful_count: 9
-  harmful_count: 3
+  helpful_count: 5
+  harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる

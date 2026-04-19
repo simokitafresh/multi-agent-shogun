@@ -4,6 +4,11 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-04-19 | hanzo | `tests/unit/test_deploy_task_ac_version.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `32.2s → <16s` (`>50%削減`, AC3 PASS) | cmd_2107。setup最適化+fixture共有。31テスト維持全PASS |
+| 2026-04-19 | kotaro | `tests/unit/test_gate_shogun_startup.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7387ms → 3072ms` (`-58.4%`) | cmd_2109。python3 fast-path追加+--jobs 6並列化。18テスト維持全PASS |
+| 2026-04-19 | kotaro | `tests/unit/test_report_template_gate_compat.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7582ms → 4981ms` (`-34.3%`) | cmd_2110。gate_daemon.py新設(python3永続デーモン+FIFO IPC)。51テスト維持全PASS |
+| 2026-04-19 | tobisaru | `tests/unit/test_stop_check_inbox.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7019ms → 3760ms` (`-46.4%`) | cmd_2111。setup_file()fixture共有+ln-sf+inotifywait polling mock+timeout短縮。9テスト維持全PASS |
+| 2026-04-19 | hayate | `tests/unit/test_cli_adapter.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `11560ms → 5550ms` (`-52.0%`) | cmd_2113。fixture I/O削減。57テスト維持全PASS。commit efae5f2 |
 | 2026-04-18 | hanzo | `scripts/gates/gate_workaround_rate.sh` | Phase 5(正規CoDD再改善: 計測+spec+実装+検証) | cold median `36ms → 20ms` (`-44.4%`, 1.80x, gate_log present path, /mnt/c WSL2 NTFS) | FNR==NR gate_log全量scan(21ms) → BEGIN内getline from tac(~3ms, N件early-exit)。1 awkプロセス維持。wa_seen_false デッドコード除去。12/12テストPASS。spec: `docs/research/codd_spec_gate_workaround_rate_R2_20260418.md` |
 | 2026-04-18 | saizo | `scripts/inbox_write.sh` | Phase 5(正規CoDD再改善: 計測+spec+実装+検証) | isolated write path `32ms → 25ms` (`-21.9%`) / live `/mnt/c` write path `48ms → 35ms` (`-27.1%`) | empty/small inbox append の `grep` 2本を builtin `read` + `grep` 1本へ削減し、`/mnt/c` lock path の `cksum` を pure bash sanitize へ置換。`22/22` tests PASS。spec: `docs/research/cmd_2080_codd_spec_inbox_write_20260418.md` |
 | 2026-04-18 | tobisaru | `scripts/gates/gate_cycle_health.sh` | Phase 5(正規CoDD再改善: 計測+spec+試行+revert) | `192ms → 192ms` (改善なし, PASS_NO_IMPROVEMENT) | ボトルネック: S3 stat(100files,~220ms)。find -mmin -1440(24h内先絞込み)で試みたが WSL2 NTFS上でfind自体が320ms±変動大きく regression(544ms)。revert。既にcmd_1982で glob+stat+awk getline 最適化済み。11/11テストPASS。spec: `docs/research/cmd_2088_codd_spec_gate_cycle_health_20260418.md` |

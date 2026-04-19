@@ -3946,3 +3946,19 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **status**: confirmed
 - **tags**: [infra]
 - watcher nudge、generic SSH直接入力、Android companion app send-keys は別経路である。 hook/lord_conversation だけでは pre-submit 消失を観測できないため、 再現待ち調査では tmux pipe-pane などの raw trace を先に用意すべき。
+
+### L516: テスト高速化: FIFO経由永続デーモンでpython3起動コストを排除
+- **日付**: 2026-04-19
+- **出典**: cmd_2110
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [infra]
+- batsテストで同一スクリプトを51回呼ぶ場合、1回の起動でFIFO経由IPCに置換すると100ms×N→7ms×Nに削減できる。L509(cold計測必須)通り冷却後計測でbefore=7.58s確認。FD継承の動作確認はデバッグbatsテストで事前検証してから実装した(想像せずに確認)
+
+### L517: setup-heavy Batsはcode-generated fixtureを/tmp cache再利用せよ
+- **日付**: 2026-04-19
+- **出典**: cmd_2108
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra]
+- 同一入力で繰り返し実行するtemplate-generation系Batsは、fixtureを毎run再生成すると中央値がsetupに支配される。deploy_task.shの実出力で一度作ったfixtureを入力ハッシュ付き/tmp cacheで再利用すると、初回の正しさを保ったまま反復中央値を大幅に下げられる。cmd_2108実証: 17.3s→2.5s(-85.6%)
