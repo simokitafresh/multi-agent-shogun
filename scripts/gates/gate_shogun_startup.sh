@@ -21,14 +21,18 @@ echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
 # --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
-_TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp)
-trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13"' EXIT
+_TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
+trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED"' EXIT
 "$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 _PID_G1=$!
 bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
 _PID_G12=$!
 bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
 _PID_G13=$!
+"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
+_PID_G25=$!
+(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
+_PID_UNPUSHED=$!
 
 # --- Gate 1: Memory健全度 (Step 2.5) ---
 echo "■ Memory健全度"
@@ -56,7 +60,8 @@ fi
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ 知識辞書鮮度"
-result2_5=$("$GATE_DIR/gate_knowledge_freshness.sh" 2>&1 | tail -1)
+wait $_PID_G25 || true
+result2_5=$(tail -1 "$_TMP_G25")
 echo "  $result2_5"
 if echo "$result2_5" | grep -q "ALERT\|WARN"; then
     if echo "$result2_5" | grep -q "ALERT"; then
@@ -143,7 +148,15 @@ fi
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
 if [ -f "$snapshot" ]; then
-    snap_time=$(head -2 "$snapshot" | grep "Generated:" | sed 's/.*Generated: //')
+    IFS=$'\t' read -r snap_time _snapshot_active_cmds _snapshot_total_ninjas _snapshot_idle_or_done <<< "$(awk '
+/^# Generated:/ { sub(/^# Generated: /, ""); snap=$0 }
+/^ninja\|/ {
+    total++
+    if ($0 ~ /\|(in_progress|assigned|acknowledged)\|/) active++
+    if ($0 ~ /\|(idle|done)\|/) idle_done++
+}
+END { printf "%s\t%d\t%d\t%d\n", snap, active, total, idle_done }
+' "$snapshot")"
     echo "  最終更新: $snap_time"
 else
     echo "  WARNING: karo_snapshot.txt不在"
@@ -174,25 +187,33 @@ fi
 
 # Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
-for _ddfile in "$REQUIRED_READ" "$REQUIRED_READ2"; do
-    [ -f "$_ddfile" ] || continue
-    echo "  $(basename "$_ddfile"):"
-    python3 -c "
+_phase_guides=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" <<'PY'
+from pathlib import Path
 import sys
-lines = []
-with open(sys.argv[1]) as f:
-    for i, line in enumerate(f, 1):
-        if line.startswith('## Phase'):
-            lines.append((i, line.strip().replace('## ', '')))
-    total = i
-if lines:
-    print(f'    前文: Read(offset=1, limit={lines[0][0]-2})')
-for j, (start, title) in enumerate(lines):
-    end = lines[j+1][0]-1 if j+1 < len(lines) else total
-    limit = end - start + 1
-    print(f'    {title}: Read(offset={start}, limit={limit})')
-" "$_ddfile"
-done
+
+for path in sys.argv[1:]:
+    p = Path(path)
+    if not p.is_file():
+        continue
+    print(f"{p.name}:")
+    lines = []
+    total = 0
+    with p.open(encoding="utf-8", errors="ignore") as fh:
+        for total, line in enumerate(fh, 1):
+            if line.startswith("## Phase"):
+                lines.append((total, line.strip().replace("## ", "")))
+    if lines:
+        print(f"  前文: Read(offset=1, limit={lines[0][0]-2})")
+    for idx, (start, title) in enumerate(lines):
+        end = lines[idx + 1][0] - 1 if idx + 1 < len(lines) else total
+        limit = end - start + 1
+        print(f"  {title}: Read(offset={start}, limit={limit})")
+PY
+)
+while IFS= read -r _pg_line; do
+    [ -n "$_pg_line" ] || continue
+    echo "  $_pg_line"
+done <<< "$_phase_guides"
 echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
@@ -452,10 +473,9 @@ echo "  軍師draft RC傾向(直近20件): ${rc_data}"
 echo "■ idle自走トリガー"
 IDLE_TRIGGER="OFF"
 if [ -f "$snapshot" ]; then
-    # ninja行から稼働中cmd(in_progress/assigned/acknowledged)を数える
-    active_cmds=$(grep "^ninja|" "$snapshot" | grep -cE "\|(in_progress|assigned|acknowledged)\|" || true)
-    total_ninjas=$(grep -c "^ninja|" "$snapshot" || true)
-    idle_or_done=$(grep "^ninja|" "$snapshot" | grep -cE "\|(idle|done)\|" || true)
+    active_cmds=${_snapshot_active_cmds:-0}
+    total_ninjas=${_snapshot_total_ninjas:-0}
+    idle_or_done=${_snapshot_idle_or_done:-0}
 
     if [ "$active_cmds" -eq 0 ] && [ "$total_ninjas" -gt 0 ] && [ "$idle_or_done" -eq "$total_ninjas" ]; then
         IDLE_TRIGGER="ON"
@@ -480,13 +500,22 @@ log_proposals=0
 
 # 11a: ダッシュボードの[PROPOSAL]
 if [ -f "$DASHBOARD" ]; then
-    dash_proposals=$(grep -c '\[PROPOSAL\]' "$DASHBOARD" 2>/dev/null) || dash_proposals=0
-fi
-
-# 11a.5: dashboardで完了済みGP-IDを抽出→review_log pendingフィルタに使用
-completed_gps=""
-if [ -f "$DASHBOARD" ]; then
-    completed_gps=$(grep '完了:.*GP-' "$DASHBOARD" | grep -oP 'GP-[0-9]+[a-z]*' | paste -sd '|' -)
+    IFS=$'\t' read -r dash_proposals completed_gps <<< "$(awk '
+BEGIN { dash = 0; done_count = 0 }
+/\[PROPOSAL\]/ { dash++ }
+/完了:.*GP-/ {
+    while (match($0, /GP-[0-9]+[a-z]*/)) {
+        done[++done_count] = substr($0, RSTART, RLENGTH)
+        $0 = substr($0, RSTART + RLENGTH)
+    }
+}
+END {
+    printf "%d\t", dash
+    for (i = 1; i <= done_count; i++) {
+        printf "%s%s", (i > 1 ? "|" : ""), done[i]
+    }
+    printf "\n"
+}' "$DASHBOARD")"
 fi
 
 # 11b: gunshi_review_log.yamlのproposals status=pending (completed_gps除外)
@@ -603,19 +632,38 @@ fi
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
 echo "■ 軍師分析状態"
-GUNSHI_CONTEXT_FILES=$(find "$SCRIPT_DIR/context" -name "gunshi-*.md" -type f 2>/dev/null)
-if [ -n "$GUNSHI_CONTEXT_FILES" ]; then
-    _gunshi_info=""
-    while IFS= read -r gfile; do
-        [ -z "$gfile" ] || [ ! -f "$gfile" ] && continue
-        _g_title=$(head -5 "$gfile" | grep -m1 '^#' | sed 's/^# *//')
-        _g_mtime=$(date -r "$gfile" '+%m-%d %H:%M' 2>/dev/null || echo "?")
-        _gunshi_info="${_gunshi_info}  $(basename "$gfile") [${_g_mtime}] — ${_g_title}\n"
-    done <<< "$GUNSHI_CONTEXT_FILES"
-    if [ -n "$_gunshi_info" ]; then
-        echo -e "$_gunshi_info"
-        echo "  → cmd起票前にこれらを確認せよ（cmd_1451重複防止）"
-    fi
+_gunshi_info=$(
+    python3 - "$SCRIPT_DIR/context" <<'PY'
+from pathlib import Path
+import sys
+import time
+
+context_dir = Path(sys.argv[1])
+for gfile in sorted(context_dir.glob("gunshi-*.md")):
+    if not gfile.is_file():
+        continue
+    title = ""
+    try:
+        with gfile.open(encoding="utf-8", errors="ignore") as fh:
+            for _ in range(5):
+                line = fh.readline()
+                if not line:
+                    break
+                if line.startswith("#"):
+                    title = line.lstrip("#").strip()
+                    break
+        mtime = time.strftime("%m-%d %H:%M", time.localtime(gfile.stat().st_mtime))
+    except Exception:
+        mtime = "?"
+    print(f"{gfile.name}\t{mtime}\t{title}")
+PY
+)
+if [ -n "$_gunshi_info" ]; then
+    while IFS=$'\t' read -r _g_name _g_mtime _g_title; do
+        [ -n "$_g_name" ] || continue
+        printf '  %s [%s] — %s\n' "$_g_name" "$_g_mtime" "$_g_title"
+    done <<< "$_gunshi_info"
+    echo "  → cmd起票前にこれらを確認せよ（cmd_1451重複防止）"
 else
     echo "  軍師分析ファイルなし"
 fi
@@ -635,45 +683,79 @@ _get_context_author() {
 echo "■ 進化検知（孤立context）"
 _evo_orphans=""
 _evo_count=0
-# 知識マップの核心ファイルを結合（context/自体は含めない = 自己参照除外）
-_KMAP_TMP=$(mktemp)
-# MEMORY.mdはClaude homeにある（リポジトリ内ではない）
-_MEMORY_MD="$HOME/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md"
-: > "$_KMAP_TMP"
 _KMAP_MISSING=()
-_append_kmap_source() {
-    local _kmap_src="$1"
-    if [ -f "$_kmap_src" ]; then
-        cat "$_kmap_src" >> "$_KMAP_TMP"
-    else
-        _KMAP_MISSING+=("$(basename "$_kmap_src")")
-    fi
-}
-_append_kmap_source "$SCRIPT_DIR/CLAUDE.md"
-_append_kmap_source "$_MEMORY_MD"
-for _kmap_src in "$SCRIPT_DIR"/instructions/*.md; do
-    [ -f "$_kmap_src" ] || continue
-    _append_kmap_source "$_kmap_src"
-done
-_append_kmap_source "$SCRIPT_DIR/config/projects.yaml"
-_append_kmap_source "$SCRIPT_DIR/dashboard.md"
+_evo_scan=$(
+    python3 - "$SCRIPT_DIR" "$HOME" <<'PY'
+from pathlib import Path
+import sys
+import time
+
+script_dir = Path(sys.argv[1])
+home_dir = Path(sys.argv[2])
+sources = [
+    script_dir / "CLAUDE.md",
+    home_dir / ".claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md",
+]
+sources.extend(sorted((script_dir / "instructions").glob("*.md")))
+sources.extend([
+    script_dir / "config/projects.yaml",
+    script_dir / "dashboard.md",
+])
+
+kmap_parts = []
+missing = []
+for src in sources:
+    if src.is_file():
+        try:
+            kmap_parts.append(src.read_text(encoding="utf-8", errors="ignore"))
+        except Exception:
+            missing.append(src.name)
+    else:
+        missing.append(src.name)
+kmap_text = "\n".join(kmap_parts)
+
+for name in missing:
+    print(f"MISSING\t{name}")
+
+for cfile in sorted((script_dir / "context").glob("*.md")):
+    if not cfile.is_file() or cfile.name == "README.md":
+        continue
+    if cfile.name in kmap_text:
+        continue
+    title = ""
+    try:
+        with cfile.open(encoding="utf-8", errors="ignore") as fh:
+            for _ in range(5):
+                line = fh.readline()
+                if not line:
+                    break
+                if line.startswith("#"):
+                    title = line.lstrip("#").strip()
+                    break
+        mtime = time.strftime("%m-%d %H:%M", time.localtime(cfile.stat().st_mtime))
+    except Exception:
+        mtime = "?"
+    print(f"ORPHAN\t{cfile.name}\t{mtime}\t{title}")
+PY
+)
+if [ -n "$_evo_scan" ]; then
+    while IFS=$'\t' read -r _evo_kind _evo_name _evo_mtime _evo_title; do
+        case "$_evo_kind" in
+            MISSING)
+                [ -n "$_evo_name" ] && _KMAP_MISSING+=("$_evo_name")
+                ;;
+            ORPHAN)
+                [ -n "$_evo_name" ] || continue
+                _c_author=$(_get_context_author "$_evo_name")
+                _evo_orphans="${_evo_orphans}  ${_evo_name} [${_evo_mtime}] by ${_c_author} — ${_evo_title}\n"
+                _evo_count=$((_evo_count + 1))
+                ;;
+        esac
+    done <<< "$_evo_scan"
+fi
 if [ ${#_KMAP_MISSING[@]} -gt 0 ]; then
     echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"
 fi
-for cfile in "$SCRIPT_DIR"/context/*.md; do
-    [ ! -f "$cfile" ] && continue
-    _cbase=$(basename "$cfile")
-    [ "$_cbase" = "README.md" ] && continue
-    # 知識マップにファイル名の参照があるか？
-    if ! grep -q "$_cbase" "$_KMAP_TMP" 2>/dev/null; then
-        _c_title=$(head -5 "$cfile" | grep -m1 '^#' | sed 's/^# *//')
-        _c_mtime=$(date -r "$cfile" '+%m-%d %H:%M' 2>/dev/null || echo "?")
-        _c_author=$(_get_context_author "$_cbase")
-        _evo_orphans="${_evo_orphans}  ${_cbase} [${_c_mtime}] by ${_c_author} — ${_c_title}\n"
-        _evo_count=$((_evo_count + 1))
-    fi
-done
-rm -f "$_KMAP_TMP"
 if [ "$_evo_count" -gt 0 ]; then
     echo -e "$_evo_orphans"
     echo "  → ${_evo_count}件: 知識マップ(CLAUDE.md/MEMORY.md/instructions/config)に未参照。進化シグナルか確認し統合せよ"
@@ -776,14 +858,35 @@ fi
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
 # 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
 # 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
-_scripts_dirty=$(cd "$SCRIPT_DIR" && git status --porcelain -- scripts/ 2>/dev/null | grep -v '^?? scripts/oneshot/') || _scripts_dirty=""
-if [ -n "$_scripts_dirty" ]; then
-    _sd_count=$(echo "$_scripts_dirty" | wc -l)
+_scripts_status=$(cd "$SCRIPT_DIR" && git status --porcelain --branch -- scripts/ 2>/dev/null) || _scripts_status=""
+_scripts_dirty=()
+_d_unpushed="?"
+if [ -n "$_scripts_status" ]; then
+    while IFS= read -r _scripts_line; do
+        case "$_scripts_line" in
+            '## '*)
+                if [[ "$_scripts_line" =~ \[ahead[[:space:]]+([0-9]+) ]]; then
+                    _d_unpushed="${BASH_REMATCH[1]}"
+                else
+                    _d_unpushed="0"
+                fi
+                ;;
+            '?? scripts/oneshot/'*)
+                ;;
+            '')
+                ;;
+            *)
+                _scripts_dirty+=("$_scripts_line")
+                ;;
+        esac
+    done <<< "$_scripts_status"
+fi
+if [ ${#_scripts_dirty[@]} -gt 0 ]; then
+    _sd_count=${#_scripts_dirty[@]}
     echo "■ scripts/未コミット変更"
-    while IFS= read -r _sd_line; do
-        [ -z "$_sd_line" ] && continue
+    for _sd_line in "${_scripts_dirty[@]}"; do
         echo "  WARN: $_sd_line"
-    done <<< "$_scripts_dirty"
+    done
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
     fi
@@ -821,7 +924,11 @@ if [ ${#alerts[@]} -gt 0 ]; then
 fi
 echo ""
 # ─── ダイジェスト: 全項目1行（grepフィルタ不要化。殿裁定2026-03-24） ───
-_d_unpushed=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?")
+wait "$_PID_UNPUSHED" || true
+if [ -z "${_d_unpushed:-}" ] || [ "${_d_unpushed:-?}" = "?" ]; then
+    _d_unpushed=$(cat "$_TMP_UNPUSHED" 2>/dev/null)
+    [ -n "$_d_unpushed" ] || _d_unpushed="?"
+fi
 echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
