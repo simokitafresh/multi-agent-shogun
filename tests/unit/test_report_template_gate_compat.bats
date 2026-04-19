@@ -18,11 +18,37 @@ setup_file() {
     # Pre-generate shared fixtures once. Tests copy them into their workspace.
     _generate_filled_report "$BASE_EMPTY_REPORT" "empty"
     _generate_filled_report "$BASE_FILLED_REPORT" "filled"
+
+    # --- Persistent gate daemon (cmd_2110 perf) ---
+    # Start one python3 process for the entire file; _run_gate communicates via FIFO.
+    # Eliminates ~100ms python3 startup cost per _run_gate call (~42 calls total).
+    local _gate_daemon="$PROJECT_ROOT/scripts/gates/gate_daemon.py"
+    export GATE_FIFO_IN="$BATS_FILE_TMPDIR/gate_req.fifo"
+    export GATE_FIFO_OUT="$BATS_FILE_TMPDIR/gate_res.fifo"
+    mkfifo "$GATE_FIFO_IN" "$GATE_FIFO_OUT"
+    # Open both FIFOs in O_RDWR mode to avoid open()-blocking (no-FIFO-partner deadlock)
+    exec {GATE_FD_IN}<>"$GATE_FIFO_IN"
+    exec {GATE_FD_OUT}<>"$GATE_FIFO_OUT"
+    export GATE_FD_IN GATE_FD_OUT
+    python3 "$_gate_daemon" <"$GATE_FIFO_IN" >"$GATE_FIFO_OUT" 2>/dev/null &
+    export GATE_DAEMON_PID=$!
+}
+
+teardown_file() {
+    # Close our write end → daemon gets EOF on stdin → exits cleanly
+    eval "exec ${GATE_FD_IN}>&-" 2>/dev/null || true
+    eval "exec ${GATE_FD_OUT}<&-" 2>/dev/null || true
+    kill "$GATE_DAEMON_PID" 2>/dev/null || true
+    wait "$GATE_DAEMON_PID" 2>/dev/null || true
 }
 
 setup() {
     export TEST_TMPDIR
-    TEST_TMPDIR="$BATS_FILE_TMPDIR/work"
+    if [ -n "${BATS_SEMAPHORE_NUMBER_OF_SLOTS:-}" ]; then
+        TEST_TMPDIR="$BATS_TEST_TMPDIR/report_tpl"
+    else
+        TEST_TMPDIR="$BATS_FILE_TMPDIR/work"
+    fi
     rm -rf "$TEST_TMPDIR"
     mkdir -p "$TEST_TMPDIR"
 }
@@ -110,7 +136,21 @@ _prepare_report() {
 }
 
 _run_gate() {
-    run python3 "$GATE_PY" "$1"
+    local _path="$1" _line _ec="" _lines=() _sep=""
+    # Send report path to persistent gate daemon via FIFO
+    printf '%s\n' "$_path" >&"$GATE_FD_IN"
+    # Read response until ---END--- sentinel
+    while IFS= read -r -u "$GATE_FD_OUT" _line; do
+        case "$_line" in
+            EXIT:*) _ec="${_line#EXIT:}" ;;
+            ---END---) break ;;
+            *) _lines+=("$_line") ;;
+        esac
+    done
+    status="${_ec:-0}"
+    output=""
+    local _l
+    for _l in "${_lines[@]}"; do output+="${_sep}${_l}"; _sep=$'\n'; done
 }
 
 _replace_section() {
