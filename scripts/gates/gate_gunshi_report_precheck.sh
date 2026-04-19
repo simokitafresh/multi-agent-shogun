@@ -235,6 +235,47 @@ else
     echo "  SKIP: files_modified不明"
 fi
 
+# ─── SG-PRE14: revert検出 (cmd_2107事故: revert後にAC3:yesのまま報告) ───
+echo ""
+echo "■ SG-PRE14: revert検出(files_modified内にrevertされたファイルがないか)"
+REVERT_FOUND=0
+if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
+    while IFS= read -r line; do
+        fpath=$(echo "$line" | sed 's/.*path: *//' | tr -d "'\"")
+        [ -z "$fpath" ] && continue
+        [[ "$fpath" == -* ]] && continue
+        # files_modifiedの各ファイルについて直近5 commitにrevertが含まれるか
+        if git -C "$REPO_ROOT" log --oneline -5 -- "$fpath" 2>/dev/null | grep -qi 'revert'; then
+            echo "  ★★★ WARN: $fpath に直近revert commitあり。before/after数値がrevert前の可能性。再計測を確認せよ"
+            REVERT_FOUND=1
+        fi
+    done <<< "$FILES_MODIFIED"
+    if [ "$REVERT_FOUND" -eq 0 ]; then
+        echo "  PASS: revertなし"
+    fi
+else
+    echo "  SKIP"
+fi
+
+# ─── SG-PRE15: 並列負荷警告 (計測値汚染リスク) ───
+echo ""
+echo "■ SG-PRE15: 並列負荷警告(before/after計測値の信頼性)"
+BUSY_NINJAS=0
+for task_file in "$REPO_ROOT"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml; do
+    [ -f "$task_file" ] || continue
+    task_status=$(grep -m1 'status:' "$task_file" 2>/dev/null | sed 's/.*status: *//' | tr -d "'\"" || true)
+    if [ "$task_status" = "in_progress" ] || [ "$task_status" = "acknowledged" ]; then
+        BUSY_NINJAS=$((BUSY_NINJAS + 1))
+    fi
+done
+if [ "$BUSY_NINJAS" -ge 3 ]; then
+    echo "  ★★★ WARN: ${BUSY_NINJAS}名の忍者が稼働中。before/after計測値がWSL2 I/O負荷で汚染されている可能性。全忍者idle後の再計測を推奨"
+elif [ "$BUSY_NINJAS" -ge 1 ]; then
+    echo "  INFO: ${BUSY_NINJAS}名の忍者が稼働中。計測値への影響は軽微"
+else
+    echo "  PASS: 全忍者idle。計測値は信頼可能"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="

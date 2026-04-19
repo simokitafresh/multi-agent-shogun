@@ -102,4 +102,5 @@
 - 軍師分析(索引): `context/gunshi-codd-analysis.md`
 - 軍師分析(全文): `docs/research/gunshi_codd_swebench_application_20260416.md`
 - リファクタ台帳: `docs/research/codd_refactor_registry.md`
+- **根源ルール: CoDDで改善したものは必ず台帳に載せる。** 対象がスクリプト/テスト/ドキュメントに関わらず例外なし(殿厳命2026-04-19, LS047)
 - 既存設計書群: `docs/test/*.md` `docs/governance/*.md` `docs/design/*.md` `docs/detailed_design/*.md` `docs/plan/*.md` `docs/operations/*.md`
