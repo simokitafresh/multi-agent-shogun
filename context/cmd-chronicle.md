@@ -743,3 +743,4 @@
 | cmd_karo_ci_fix_ga117 | CI修正 — test_cmd_save.bats 5テスト失敗(BLOCK集約副作用) | infra | 04-19 | cmd_save.shの2箇所を修正: (1)q5 elif |
 | cmd_2102 | 改善 — gate_shogun_startup.sh CoDD再改善 (サブプロセス削減で1.3秒→目標0.5秒) | infra | 04-19 | gate_shogun_startup.sh を 1.28s |
 | cmd_2104 | 偵察 — Android SSH入力消失の原因調査 (両面調査) | infra | 04-19 | Android/SSH入力消失を5観点で切り分け、P1=Cl |
+| cmd_2105 | 実装 — 変更連動テスト実行 (git diff→対応テストのみ実行) | infra | 04-19 | scripts/test_select.sh を新規作成。g |
