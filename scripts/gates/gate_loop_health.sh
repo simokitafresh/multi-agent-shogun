@@ -152,41 +152,41 @@ if recommendations:
 else:
     print('  現時点で成熟提案なし')
 
-# --- CTX% anomaly detection from recent CLEAR cmds ---
-ctx_rows = []
+# --- task duration anomaly detection from recent CLEAR cmds ---
+duration_rows = []
 if os.path.isfile(gate_metrics_path):
     with open(gate_metrics_path, encoding='utf-8', errors='replace') as f:
         for line in f:
             parts = line.rstrip('\n').split('\t')
             if len(parts) < 10 or parts[2] != 'CLEAR':
                 continue
-            m = re.search(r'ctx=(\d+)%', parts[9])
+            m = re.search(r'duration_sec=(\d+)', parts[9])
             if not m:
                 continue
-            ctx_rows.append({
+            duration_rows.append({
                 'ts': parts[0],
                 'cmd_id': parts[1],
-                'ctx_pct': int(m.group(1)),
+                'duration_sec': int(m.group(1)),
             })
 
-recent_ctx_rows = ctx_rows[-20:] if len(ctx_rows) > 20 else ctx_rows
-if len(recent_ctx_rows) >= 5:
-    median_ctx = statistics.median(row['ctx_pct'] for row in recent_ctx_rows)
+recent_duration_rows = duration_rows[-20:] if len(duration_rows) > 20 else duration_rows
+if len(recent_duration_rows) >= 5:
+    median_duration = statistics.median(row['duration_sec'] for row in recent_duration_rows)
     anomalies = []
-    for row in recent_ctx_rows:
-        ctx_pct = row['ctx_pct']
-        delta = ctx_pct - median_ctx
-        ratio = (ctx_pct / median_ctx) if median_ctx > 0 else float('inf')
-        if delta >= 15 and ratio >= 1.5:
+    for row in recent_duration_rows:
+        duration_sec = row['duration_sec']
+        delta = duration_sec - median_duration
+        ratio = (duration_sec / median_duration) if median_duration > 0 else float('inf')
+        if delta >= 900 and ratio >= 1.5:
             anomalies.append((ratio, row, delta))
 
     if anomalies:
         print()
-        print('=== CTX% Outlier Check ===')
+        print('=== Task Duration Outlier Check ===')
         for ratio, row, delta in sorted(anomalies, key=lambda item: (-item[0], -item[2], item[1]['cmd_id']))[:3]:
             print(
-                f'WARNING: CTX%異常値 {row["cmd_id"]} '
-                f'(ctx={row["ctx_pct"]}%, median={median_ctx:.1f}%, ratio={ratio:.2f}x, delta=+{delta:.1f}pt)'
+                f'WARNING: task duration異常値 {row["cmd_id"]} '
+                f'(duration={row["duration_sec"]}s, median={median_duration:.1f}s, ratio={ratio:.2f}x, delta=+{delta:.1f}s)'
             )
 
 # === Auto-insight generation: recurring patterns → queue/insights.yaml ===

@@ -217,10 +217,45 @@ import sys
 from pathlib import Path
 line = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1]
 parts = line.split("\t")
-print(f"{len(parts)}|{parts[5]}|{parts[6]}")
+print(f"{len(parts)}|{parts[5]}|{parts[6]}|{parts[9]}")
 PY
 )"
-    [ "$result" = "9|gpt-5.4_high_fast|routine" ]
+    [ "$result" = "10|gpt-5.4_high_fast|routine|duration_sec=unknown" ]
+}
+
+@test "cmd_complete_gate records duration metric from task timestamps when available" {
+    write_gate_cmd_fixture
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  assigned_to: sasuke
+  task_type: review
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons: []
+  deployed_at: "2026-03-06T14:00:00"
+  completed_at: "2026-03-06T14:03:33"
+EOF
+
+    mkdir -p "$TEST_TMPDIR/bin"
+    printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+    printf '#!/bin/sh\nfor a in "$@"; do [ "$a" = "push" ] && { echo "Everything up-to-date"; exit 0; }; done\nexec /usr/bin/git "$@"\n' > "$TEST_TMPDIR/bin/git"
+    chmod +x "$TEST_TMPDIR/bin/git"
+
+    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+
+    result="$(python3 - <<'PY' "$TEST_PROJECT/logs/gate_metrics.log"
+import sys
+from pathlib import Path
+line = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1]
+parts = line.split("\t")
+print(parts[9])
+PY
+)"
+    [ "$result" = "duration_sec=213" ]
 }
 
 @test "model_analysis decodes encoded labels and avoids fragment model rows" {
