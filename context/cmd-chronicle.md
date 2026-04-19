@@ -772,3 +772,4 @@
 | cmd_2142 | CoDD最適化 — run_077_bunshin.py (GS分身忍法) | dm-signal | 04-20 | run_077_bunshin.py の serial ho |
 | cmd_2143 | CoDD最適化 — run_077_kasoku_diff.py (GS加速diff忍法) | dm-signal | 04-20 | run_077_kasoku_diff.py に month |
 | cmd_2146 | CoDD最適化 — run_077_nukimi.py (GS抜き身忍法) | dm-signal | 04-20 | run_077_nukimi.py CoDD再最適化完了。s |
+| cmd_2144 | CoDD最適化 — run_077_kasoku_ratio.py (GS加速ratio忍法) | dm-signal | 04-20 | run_077_kasoku_ratio.py の simu |
