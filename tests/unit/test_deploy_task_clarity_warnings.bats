@@ -19,7 +19,6 @@ run_clarity_check() {
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
         source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        log() { :; }
         warn_task_clarity "'"$TEST_PROJECT/queue/tasks/$ninja_name.yaml"'"
     '
 }

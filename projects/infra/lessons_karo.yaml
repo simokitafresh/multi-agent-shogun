@@ -477,3 +477,8 @@ lessons:
   detail: 'cmd_2107でhanzoがscaffold stub化→並列テスト破壊→自分でrevert→報告はrevert前の数値でGATE CLEAR。根因=revert後の再計測強制なし。対策: SG-PRE14(revert検出gate)実装済み(gate_gunshi_report_precheck.sh)。軍師教訓LG034候補として提出'
   source_cmd: 'cmd_2107'
   created_at: '2026-04-19'
+- id: 'LK088'
+  title: '配備後の軍師draftレビュー依頼は自動化せよ — 意志依存で3件連続漏れ'
+  detail: 'cmd_2122/2123/2124の3件でdraftレビュー依頼を漏らした。LK081(cmd_2001再配備時にも漏れ)と同根。deploy_task.sh完了後に軍師レビュー依頼を送る手順が意志依存のまま。自動化ターゲット: deploy_task.sh配備完了時にgunshi inbox_writeを自動送信。deepdive Phase4(理解しても行動は変わらない)の再証明'
+  source_cmd: 'cmd_2122'
+  created_at: '2026-04-19'
