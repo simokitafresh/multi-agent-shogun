@@ -20,32 +20,96 @@ setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export BUILD_SCRIPT="$PROJECT_ROOT/scripts/build_instructions.sh"
     export OUTPUT_DIR="$PROJECT_ROOT/instructions/generated"
-    export BUILD_STATUS_FILE
-    export BUILD_HASH_FILE
+    export BUILD_STATUS_FILE BUILD_HASH_FILE BUILD_HASH2_FILE
     BUILD_STATUS_FILE="$(mktemp)"
     BUILD_HASH_FILE="$(mktemp)"
+    BUILD_HASH2_FILE="$(mktemp)"
 
     # パーツディレクトリの存在確認（前提条件）
     [ -d "$PROJECT_ROOT/instructions/roles" ] || return 1
     [ -d "$PROJECT_ROOT/instructions/common" ] || return 1
     [ -d "$PROJECT_ROOT/instructions/cli_specific" ] || return 1
 
-    # ビルド実行（全テストの前に1回のみ）
+    # cmd_2116: agents test temp_repo → setup_file()で1回のみ事前構築
+    export AGENTS_TMPDIR AGENTS_BUILD_STATUS_FILE AGENTS_BUILD_OUTPUT_FILE
+    AGENTS_TMPDIR="$(mktemp -d)"
+    AGENTS_BUILD_STATUS_FILE="$(mktemp)"
+    AGENTS_BUILD_OUTPUT_FILE="$(mktemp)"
+
+    mkdir -p \
+        "$AGENTS_TMPDIR/scripts/lib" \
+        "$AGENTS_TMPDIR/config" \
+        "$AGENTS_TMPDIR/instructions/roles" \
+        "$AGENTS_TMPDIR/instructions/common" \
+        "$AGENTS_TMPDIR/instructions/cli_specific"
+    cp "$PROJECT_ROOT/scripts/build_instructions.sh" "$AGENTS_TMPDIR/scripts/build_instructions.sh"
+    cp "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$AGENTS_TMPDIR/scripts/lib/cli_lookup.sh"
+    cat > "$AGENTS_TMPDIR/CLAUDE.md" <<'EOF'
+---
+role: root
+---
+Auto-load file for Claude Code.
+EOF
+    cat > "$AGENTS_TMPDIR/config/settings.yaml" <<'EOF'
+cli:
+  default: claude
+EOF
+    cat > "$AGENTS_TMPDIR/config/cli_profiles.yaml" <<'EOF'
+profiles:
+  claude:
+    display_name: "Claude Display"
+  copilot:
+    display_name: "Copilot Display"
+  codex:
+    display_name: "Codex Display"
+EOF
+    for role in shogun karo gunshi ashigaru; do
+        cat > "$AGENTS_TMPDIR/instructions/${role}.md" <<EOF
+---
+role: ${role}
+---
+EOF
+        printf '%s role\n' "$role" > "$AGENTS_TMPDIR/instructions/roles/${role}_role.md"
+    done
+    printf 'protocol\n'    > "$AGENTS_TMPDIR/instructions/common/protocol.md"
+    printf 'task flow\n'   > "$AGENTS_TMPDIR/instructions/common/task_flow.md"
+    printf 'forbidden\n'   > "$AGENTS_TMPDIR/instructions/common/forbidden_actions.md"
+    printf 'claude tools\n'  > "$AGENTS_TMPDIR/instructions/cli_specific/claude_tools.md"
+    printf 'codex tools\n'   > "$AGENTS_TMPDIR/instructions/cli_specific/codex_tools.md"
+    printf 'copilot tools\n' > "$AGENTS_TMPDIR/instructions/cli_specific/copilot_tools.md"
+    printf 'kimi tools\n'    > "$AGENTS_TMPDIR/instructions/cli_specific/kimi_tools.md"
+
+    # cmd_2116: agents buildをバックグラウンドで並列実行 (main build 1と同時。I/O競合なし: /tmp vs /mnt/c)
+    local _agents_pid
+    (
+        out=$(bash "$AGENTS_TMPDIR/scripts/build_instructions.sh" 2>&1)
+        st=$?
+        printf '%s\n' "$st"  > "$AGENTS_BUILD_STATUS_FILE"
+        printf '%s\n' "$out" > "$AGENTS_BUILD_OUTPUT_FILE"
+    ) &
+    _agents_pid=$!
+
+    # main build 1 (agents buildと並列)
     bash "$BUILD_SCRIPT" > /dev/null 2>&1
     printf '%s\n' "$?" > "$BUILD_STATUS_FILE"
-    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$BUILD_HASH_FILE"
+    # cmd_2116: find -exec md5sum (16サブプロセス) → md5sum glob (1サブプロセス)
+    md5sum "$OUTPUT_DIR"/*.md 2>/dev/null | sort > "$BUILD_HASH_FILE"
+
+    # cmd_2116: 冪等性チェック用 2回目build → setup_file()に移動 (test bodyから除去)
+    bash "$BUILD_SCRIPT" > /dev/null 2>&1
+    md5sum "$OUTPUT_DIR"/*.md 2>/dev/null | sort > "$BUILD_HASH2_FILE"
+
+    wait "$_agents_pid" || true
 }
 
 teardown_file() {
-    rm -f "${BUILD_STATUS_FILE:-}"
-    rm -f "${BUILD_HASH_FILE:-}"
+    rm -f "${BUILD_STATUS_FILE:-}" "${BUILD_HASH_FILE:-}" "${BUILD_HASH2_FILE:-}"
+    rm -f "${AGENTS_BUILD_STATUS_FILE:-}" "${AGENTS_BUILD_OUTPUT_FILE:-}"
+    rm -rf "${AGENTS_TMPDIR:-}"
 }
 
-setup() {
-    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    BUILD_SCRIPT="$PROJECT_ROOT/scripts/build_instructions.sh"
-    OUTPUT_DIR="$PROJECT_ROOT/instructions/generated"
-}
+# cmd_2116: setup()のサブシェル削除 (PROJECT_ROOT/BUILD_SCRIPT/OUTPUT_DIRはsetup_file()でexport済み)
+setup() { :; }
 
 # =============================================================================
 # ビルド実行テスト
@@ -227,65 +291,14 @@ setup() {
 }
 
 @test "agents: AGENTS.md prefers codex profile over first non-default profile" {
-    local temp_repo
-    temp_repo="$(mktemp -d)"
-
-    mkdir -p \
-        "$temp_repo/scripts/lib" \
-        "$temp_repo/config" \
-        "$temp_repo/instructions/roles" \
-        "$temp_repo/instructions/common" \
-        "$temp_repo/instructions/cli_specific"
-
-    cp "$PROJECT_ROOT/scripts/build_instructions.sh" "$temp_repo/scripts/build_instructions.sh"
-    cp "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$temp_repo/scripts/lib/cli_lookup.sh"
-
-    cat > "$temp_repo/CLAUDE.md" <<'EOF'
----
-role: root
----
-Auto-load file for Claude Code.
-EOF
-
-    cat > "$temp_repo/config/settings.yaml" <<'EOF'
-cli:
-  default: claude
-EOF
-
-    cat > "$temp_repo/config/cli_profiles.yaml" <<'EOF'
-profiles:
-  claude:
-    display_name: "Claude Display"
-  copilot:
-    display_name: "Copilot Display"
-  codex:
-    display_name: "Codex Display"
-EOF
-
-    for role in shogun karo gunshi ashigaru; do
-        cat > "$temp_repo/instructions/${role}.md" <<EOF
----
-role: ${role}
----
-EOF
-        printf '%s role\n' "$role" > "$temp_repo/instructions/roles/${role}_role.md"
-    done
-
-    printf 'protocol\n' > "$temp_repo/instructions/common/protocol.md"
-    printf 'task flow\n' > "$temp_repo/instructions/common/task_flow.md"
-    printf 'forbidden\n' > "$temp_repo/instructions/common/forbidden_actions.md"
-    printf 'claude tools\n' > "$temp_repo/instructions/cli_specific/claude_tools.md"
-    printf 'codex tools\n' > "$temp_repo/instructions/cli_specific/codex_tools.md"
-    printf 'copilot tools\n' > "$temp_repo/instructions/cli_specific/copilot_tools.md"
-    printf 'kimi tools\n' > "$temp_repo/instructions/cli_specific/kimi_tools.md"
-
-    run bash "$temp_repo/scripts/build_instructions.sh"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Generating: AGENTS.md (codex auto-load)"* ]]
-    grep -q "Codex Display" "$temp_repo/AGENTS.md"
-    ! grep -q "Copilot Display" "$temp_repo/AGENTS.md"
-
-    rm -rf "$temp_repo"
+    # cmd_2116: temp_repo構築+build → setup_file()に移動済み。キャッシュ結果を使用
+    local build_exit build_out
+    build_exit=$(cat "$AGENTS_BUILD_STATUS_FILE")
+    build_out=$(cat "$AGENTS_BUILD_OUTPUT_FILE")
+    [ "$build_exit" -eq 0 ]
+    [[ "$build_out" == *"Generating: AGENTS.md (codex auto-load)"* ]]
+    grep -q "Codex Display" "$AGENTS_TMPDIR/AGENTS.md"
+    ! grep -q "Copilot Display" "$AGENTS_TMPDIR/AGENTS.md"
 }
 
 # =============================================================================
@@ -306,16 +319,9 @@ EOF
 # =============================================================================
 
 @test "idempotent: second build produces identical output" {
-    local second_file
-    second_file="$(mktemp)"
-
-    bash "$BUILD_SCRIPT" > /dev/null 2>&1
-    find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort > "$second_file"
-
-    if ! cmp -s "$BUILD_HASH_FILE" "$second_file"; then
-        diff -u "$BUILD_HASH_FILE" "$second_file" >&2 || true
+    # cmd_2116: 2回目buildをsetup_file()に移動済み。hash file比較のみ
+    if ! cmp -s "$BUILD_HASH_FILE" "$BUILD_HASH2_FILE"; then
+        diff -u "$BUILD_HASH_FILE" "$BUILD_HASH2_FILE" >&2 || true
         false
     fi
-
-    rm -f "$second_file"
 }
