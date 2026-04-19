@@ -176,7 +176,9 @@ cmd_block_get_field() {
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
+    # assumptions/diagnosis内のパス参照はバンドル対象外(cmd_2160 environment_change: バンドル誤検出3回繰返し修正)
     printf '%s\n' "$CMD_BLOCK_NC" \
+        | awk '/^[[:space:]]*(assumptions|diagnosis):/{skip=1} /^[[:space:]]*[a-z_]+:/{if(!/assumptions|diagnosis/) skip=0} !skip{print}' \
         | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
         | sed 's/[.,:;]$//' \
         | awk '
@@ -569,6 +571,26 @@ if [[ -n "$CMD_DIAGNOSIS" ]]; then
     if [[ "$_DIAG_HAS_BLOCK_REASON" -eq 0 || "$_DIAG_HAS_TAISAKU" -eq 0 ]]; then
         record_block_reason "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
         echo '  例: diagnosis: "BLOCK理由: q8にWHYが未記入 対策: q8に殿の指示引用を追加"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+fi
+
+# --- Check 3.6: environment_change強制（cmd_2160） ---
+# 目的: BLOCK後の再PASS時に「環境に何を埋め込んだか」を強制。免疫系の抗体生成フェーズ。
+# 軍師原理(blt_20260420_021639): 「BLOCKの度に環境が1つ強くなるまで、次を許すな。」
+# 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
+if (( PRIOR_ATTEMPT_COUNT > 0 )); then
+    _ENV_CHANGE="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+    if [[ -z "$_ENV_CHANGE" ]]; then
+        record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+        echo '  例: environment_change: "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+    # 禁止値チェック: 意志依存の低品質回答をBLOCK（AC2: cmd_2160）
+    _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A)$"
+    if echo "$_ENV_CHANGE" | grep -qE "$_ENV_VAGUE_PATTERN"; then
+        record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
+        echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
         abort_if_block_immediate || exit 1
     fi
 fi
