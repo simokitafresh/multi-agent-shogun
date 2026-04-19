@@ -21,7 +21,27 @@ INBOX="/mnt/c/tools/multi-agent-shogun/queue/inbox/shogun.yaml"
 
 # awk でカウント(subshell 不要)
 UNREAD=$(awk '/read: false/{n++}END{print n+0}' "$INBOX")
-[ "${UNREAD:-0}" -gt 0 ] || exit 0
 
-# 1通でも重要な報告が含まれる可能性(殿指摘2026-04-16)。全未読で⚠️警告
-printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"⚠️ INBOX %d件未読。殿に応答する前にinboxと掲示板を確認せよ"}}\n' "$UNREAD"
+# 殿の直近指示を取得(LS055: 100億回従う原理的保証)
+LORD_CONV="/mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl"
+LORD_LAST=""
+if [ -f "$LORD_CONV" ]; then
+    LORD_LAST=$(tail -50 "$LORD_CONV" 2>/dev/null | awk '/"direction"[[:space:]]*:[[:space:]]*"inbound"/{
+        match($0, /"summary"[[:space:]]*:[[:space:]]*"([^"]*)"/, a)
+        if(a[1]) lines[++n] = substr(a[1],1,80)
+    }END{
+        start = (n > 5) ? n - 4 : 1
+        for(i=start; i<=n; i++) printf "%s | ", lines[i]
+    }' 2>/dev/null)
+fi
+
+# 出力組立て
+MSG=""
+if [ "${UNREAD:-0}" -gt 0 ]; then
+    MSG="⚠️ INBOX ${UNREAD}件未読。殿に応答する前にinboxと掲示板を確認せよ"
+fi
+if [ -n "$LORD_LAST" ]; then
+    MSG="${MSG:+${MSG}\\n}★殿の直近指示: ${LORD_LAST}"
+fi
+
+[ -n "$MSG" ] && printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$MSG"

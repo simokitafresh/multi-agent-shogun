@@ -154,6 +154,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-04-18 | kagemaru | `scripts/gates/gate_loop_health.sh` | Phase 5(計測+spec+実装+検証)。正規CoDD再改善 | `442ms → 55ms` (`-87.5%`, `8x`) | insight dedup修正: json.loads()で\\\"→"正規化+pattern_norm[:60]でcount変動対応。insight_write.sh × 6subprocess(全SKIP)→0回。spec: `docs/research/cmd_2091_codd_spec_gate_loop_health_20260418.md` |
 
+
 ## 運用
 
 - CoDD系リファクタリングを完了したら、この台帳に1行追加する。

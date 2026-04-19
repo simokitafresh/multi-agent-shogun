@@ -3980,3 +3980,11 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **status**: confirmed
 - **tags**: [infra]
 - pre-commit hookが.git/hooks/pre-commitに直接配置されている場合、BASH_SOURCE[0]からscripts/hooks/git-pre-commit.shのパターンが除去されずREPO_ROOTが自身のパスになる。git rev-parse --show-toplevelによるフォールバックが必要
+
+### L520: chunkに複数指示が混在するとAC担当者未配備が発生する
+- **日付**: 2026-04-20
+- **出典**: cmd_2145
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [dm-signal]
+- chunk='AC4のみ担当。systems/gstack.mdを作成せよ'のようにAC担当指示と別タスク指示が混在するとAC1-AC3の担当者が配備されない状態になる。実際にはAC1-AC3が未完了でAC4単独では実行不可だった。chunkフィールドは1つの明確な担当範囲のみを記述すべき。

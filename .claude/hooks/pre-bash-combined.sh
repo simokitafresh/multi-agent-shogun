@@ -91,6 +91,19 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
     fi
 fi
 
+# === Guard 4: shogun_to_karo.yaml status manipulation block ===
+# cmd_2134事故: 将軍がsed/python regexでstatusをdraft→pending→delegatedに強制変更し
+# cmd_delegate.shのgate迂回路を開けた。statusの変更はEdit tool(手動確認付き)のみ許可。
+# sed/awk/python regexによるshogun_to_karo.yamlのstatus操作はBLOCK。
+if [[ -n "${command:-}" ]]; then
+    if [[ "$command" == *'shogun_to_karo'* ]]; then
+        if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *"\.replace("* || "$command" == *'awk '* ]]; then
+            emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。(cmd_2134事故: gate迂回防止)"
+            exit 1
+        fi
+    fi
+fi
+
 # === Guard 5: bats full-run block (test_optimization_journal) ===
 if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
     if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
@@ -145,6 +158,7 @@ if [[ "$payload" == *'wf_runner.py'* ]]; then
         exit 1
     fi
 fi
+
 
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
