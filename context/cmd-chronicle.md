@@ -750,3 +750,7 @@
 | cmd_2111 | 改善 — テストCoDD高速化 test_stop_check_inbox.bats (6.2秒→目標3秒) | infra | 04-19 | test_stop_check_inbox.bats 46. |
 | cmd_2113 | 改善 — テストCoDD高速化 test_cli_adapter.bats (4.6秒→目標2秒) | infra | 04-19 | test_cli_adapter.bats の fixtur |
 | cmd_2108 | 改善 — テストCoDD高速化 test_deploy_task_template_generation.bats (9.8秒→目標4秒) | infra | 04-19 | deploy_task template generatio |
+| cmd_2116 | 改善 — テストCoDD高速化 test_build_system.bats (3.6秒→目標1.5秒) | infra | 04-19 | test_build_system.bats を37.6%高 |
+| cmd_karo_pane_lookup_fix | pane_lookup.sh lazy init修正 — deploy_task.sh pane解決障害の真因修正 | infra | 04-19 | cmd_karo_pane_lookup_fix は com |
+| cmd_2115 | 改善 — テストCoDD高速化 test_cmd_save.bats (4.2秒→目標2秒) | infra | 04-19 | test_cmd_save.bats の CMD_BLOCK |
+| cmd_2112 | 改善 — テストCoDD高速化 test_deploy_task_lifecycle.bats (4.7秒→目標2秒) | infra | 04-19 | before 7.104s → after 4.134s ( |
