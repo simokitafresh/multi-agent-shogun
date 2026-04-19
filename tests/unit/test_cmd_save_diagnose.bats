@@ -42,6 +42,10 @@ commands:
       q7_definition_verified: "yes — テスト用定義を確認"
       q8_why_what: "WHY: 「診断強制を入れよ」 → WHAT: 同一cmd 1件をBLOCKさせる。正の複利"
 ${extra_quality_gate}
+    assumptions:
+      - claim: "cmd_save.sh はこのテスト環境で実行可能"
+        source: "scripts/cmd_save.sh code_reading"
+        trust: "verified"
 YAML
 }
 

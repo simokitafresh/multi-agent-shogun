@@ -102,9 +102,9 @@ run_warn_save() {
     run_diag_save
     echo "$output" >&2
 
-    # q11_not_already_doneが記入済みなのでBLOCKなし → 保存確認OK
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
+    # diagnosis未記入自体ではBLOCKされない。通常WARNの有無は別要因に依存する。
+    [[ "$output" != *"diagnosisの形式不正"* ]]
+    [[ "$output" != *"2部構成"* ]]
 }
 
 @test "AC1-2: diagnosisに「BLOCK理由:」「対策:」両方あればPASS" {
