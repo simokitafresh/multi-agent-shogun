@@ -313,7 +313,7 @@
 - cmd_id: cmd_2130
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点全OK。deploy_task.shテンプレートにtask_clarity追加+gate_report_format.sh WARN+gate_loop_health.sh集計。指示文書TDD"
   observations:
@@ -341,7 +341,7 @@
   report_ninja: hayate
   report_task_id: cmd_2126_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。mizchi Red flags 5パターンgate化。AC1-4既存HEAD実装現物確認(5箇所)。テスト6件PASS。commit 17fa082"
   observations:
     - "事実1: cmd_save.sh L191(自己再読)+L207(バンドル)、deploy_task.sh L3610(同一忍者再配備)、gate_gunshi_cs_checklist.sh L217(収束1回)+L254(1シナリオ)を全て現物確認"
@@ -351,3 +351,48 @@
   gate_prediction: CLEAR
   causal_chain: "mizchi Red flags未導入→5パターンWARNING gate化→エージェントの合理化(言い訳)を構造的検出=正の複利(全エージェント×全行動)"
   timestamp: "2026-04-19T15:10:00"
+- cmd_id: cmd_2129
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2129_impl
+  report_verdict: FAIL
+  gate_result: null
+  findings_summary: "才蔵自己申告FAIL正当。AC1-2 CTX%→duration不整合+AC3 push未達+commit未完了。将軍補足で仕様変更→AC文言未更新"
+  observations:
+    - "事実1: AC1-2文言=CTX%だが実装=duration_sec。将軍補足でCTX%→duration変更が入ったがtask YAML AC文言は旧のまま"
+    - "事実2: commit 3ada0d7はローカルのみ。git push未達(remote main=3b6bbf0のまま)。才蔵自身が報告で正直に申告"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: BLOCK
+  causal_chain: "将軍補足でCTX%→duration変更→AC文言未更新→才蔵は最新指示優先で実装→AC不整合→FAIL。途中仕様変更時のAC文言同期が課題"
+  timestamp: "2026-04-19T15:15:00"
+- cmd_id: cmd_2130
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_2130_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。task_clarity_score導入(テンプレート+gate WARN+平均値表示)。3ファイル現物確認。テストPASS"
+  observations:
+    - "事実1: deploy_task.sh L1177-1180にtask_clarity(score/unclear_points/discretion_fills)テンプレート確認"
+    - "事実2: gate_report_format.sh L49にtask_clarity.score未記入WARN、gate_loop_health.sh L405-423にscore平均値表示を確認"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "指示文書品質計測不在→task_clarity_score導入→忍者が曖昧さを定量報告→改善ループ回転=正の複利"
+  timestamp: "2026-04-19T15:20:00"
+- cmd_id: cmd_karo_ci_fix_lk084
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_lk084_impl
+  report_verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。done-by-proxy(c665e30)。bash -lc→-c修正はkotaro auto-commitで完了済み。1175テストPASS。GATE BLOCK(GP-128 result:no)"
+  observations:
+    - "事実1: git show c665e30でtest_cmd_complete_gate_locking.bats L25 bash -lc→bash -c修正を現物確認"
+    - "事実2: commit+push result:no(waive_reason付き)→GP-128機械的BLOCK。修正自体はorigin/mainに反映済み"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: BLOCK
+  causal_chain: "CI RED→家老CI修正cmd→kotaro auto-commitで先行解消→hayate追加差分なし→done-by-proxy。result:noでGATE機械的BLOCK"
+  timestamp: "2026-04-19T15:25:00"

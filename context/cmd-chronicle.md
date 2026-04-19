@@ -760,3 +760,5 @@
 | cmd_2124 | 強化(忍者) — gate_report_format binary_checks客観裏付け (git diff突合) | infra | 04-19 | gate_report_format_main.pyにbin |
 | cmd_2123 | 強化(軍師) — karo_workaround_log.sh SG紐付けフィールド追加 (偽陰性計測) | infra | 04-19 | karo_workaround_log.shへ任意の第6引数 |
 | cmd_2023 | L3選出 — 6パターン×3目的関数 WF-α Top1 候補リスト生成 | dm-signal | 04-19 | — |
+| cmd_2130 | 強化 — 指示文書TDD (忍者task_clarity_scoreで指示品質を計測) | infra | 04-19 | deploy_task.shテンプレートにtask_clar |
+| cmd_karo_ci_fix_lk084 | CI修正 — test_cmd_complete_gate_locking.bats bash -lc→bash -c (LK084) | infra | 04-19 | tests/unit/test_cmd_complete_g |
