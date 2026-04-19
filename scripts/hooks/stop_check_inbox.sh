@@ -75,14 +75,15 @@ if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
 fi
 
 if (( unread_count > 0 )); then
-  unread_summary="$(
-    INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" python3 - <<'PY'
-import os
-import yaml
+  touch "$idle_flag"
+  # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
+  INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
+import os, json, yaml
 
 inbox_path = os.environ["INBOX_FILE"]
 limit = int(os.environ["SUMMARY_LIMIT_ENV"])
 snippet_len = int(os.environ["SUMMARY_SNIPPET_LEN_ENV"])
+unread_count = int(os.environ["UNREAD_COUNT"])
 
 with open(inbox_path, encoding="utf-8") as f:
     data = yaml.safe_load(f) or {}
@@ -107,20 +108,13 @@ for msg in data.get("messages", []):
 result = " | ".join(parts)
 if has_conclusion:
     result += " | ★結論を含む通知あり。自分の証拠と突合せよ。矛盾があれば問い返せ。撤回は突合後。"
-print(result)
-PY
-  )"
-  touch "$idle_flag"
-  if [[ -n "$unread_summary" ]]; then
-    reason_text="inbox未読${unread_count}件あり。内容: ${unread_summary}"
-  else
-    reason_text="inbox未読${unread_count}件あり"
-  fi
-  REASON_TEXT="$reason_text" python3 - <<'PY'
-import json
-import os
 
-print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
+if result:
+    reason_text = f"inbox未読{unread_count}件あり。内容: {result}"
+else:
+    reason_text = f"inbox未読{unread_count}件あり"
+
+print(json.dumps({"decision": "block", "reason": reason_text}, ensure_ascii=False))
 PY
 else
   # inotifywait待機: 未読0件でも新メッセージ到着を短時間待つ（おしお殿知見）
@@ -132,11 +126,8 @@ else
     if [[ "$recheck_count" =~ ^[0-9]+$ ]] && (( recheck_count > 0 )); then
       touch "$idle_flag"
       reason_text="inbox未読${recheck_count}件あり(待機中に到着)"
-      REASON_TEXT="$reason_text" python3 - <<'PY'
-import json
-import os
-print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
-PY
+      # cmd_2111: python3→jqでサブプロセスコスト削減
+      jq -n --arg reason "$reason_text" '{"decision":"block","reason":$reason}'
       exit 0
     fi
   fi
