@@ -10382,3 +10382,22 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-19T04:42:30Z"
+  - cmd_id: "cmd_2122"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-19T05:23:10Z"
+  - cmd_id: "cmd_2117"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-19T05:27:19Z"
+    notes: "report_format:tobisaru_report_cmd_2117.yaml|draft_lessons:1|vercel_phase:broken_references"

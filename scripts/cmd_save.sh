@@ -171,6 +171,57 @@ cmd_block_get_field() {
     fi
 }
 
+collect_primary_cmd_targets() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" \
+        | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
+        | sed 's/[.,:;]$//' \
+        | awk '
+            !/^tests\// &&
+            !/^docs\/research\// &&
+            !/^queue\/reports\// &&
+            !/^queue\/archive\// {
+                print
+            }
+        ' \
+        | sort -u
+}
+
+check_self_reread_red_flag() {
+    local combined
+
+    combined=$(printf '%s\n%s\n%s\n' \
+        "$(cmd_block_get_field "title")" \
+        "$(cmd_block_get_field "purpose")" \
+        "$CMD_BLOCK_NC")
+
+    if echo "$combined" | grep -qiE '(自己(再読|申告|確認|評価)|自分で(読み|読|確認|評価)|読み直|読み返|目視確認|セルフレビュー|自問)'; then
+        if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguity|clarity|明瞭|レビュー|判定|確認)'; then
+            echo "WARNING: 自己再読パターンを検出。書き手自身の目視確認/自己申告は mizchi Red flag『自分で読み直せば同じ効果』になりうる。別役割の評価者へ分離せよ" >&2
+            WARN_COUNT=$((WARN_COUNT + 1))
+        fi
+    fi
+}
+
+check_bundle_red_flag() {
+    local targets target_count bundle_signal targets_inline
+
+    targets="$(collect_primary_cmd_targets || true)"
+    target_count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    bundle_signal=0
+
+    if printf '%s\n' "$CMD_BLOCK_NC" | grep -qiE '(^|[^A-Za-z])(bundle|バンドル)([^A-Za-z]|$)|\+|一気に|まとめて|同時に|複数|[0-9]+点|[0-9]+件|[0-9]+パターン|統合'; then
+        bundle_signal=1
+    fi
+
+    if (( target_count >= 3 )) || { (( target_count >= 2 )) && (( bundle_signal == 1 )); }; then
+        targets_inline=$(printf '%s\n' "$targets" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
+        echo "WARNING: バンドルパターンを検出。1cmdで複数対象(${target_count}): ${targets_inline}。無関係な修正を一気に束ねていないか確認せよ" >&2
+        WARN_COUNT=$((WARN_COUNT + 1))
+    fi
+}
+
 record_block_reason() {
     local reason="${1:-}"
     [[ -n "$reason" ]] || return 0
@@ -667,6 +718,14 @@ QG_TEMPLATE
         echo "WARNING: q_ambiguity未記入。このcmdに曖昧な指示・未定義の前提はないか？あれば明記し、なければ\"none\"と記入せよ" >&2
         echo '  形式例: q_ambiguity: "none — 全前提定義済み" or "あり: TOP-N の N が未定義 → 将軍が3と定義"' >&2
     fi
+
+    # mizchi Red flag (1): 「自分で読み直せば同じ効果」
+    # 自己申告/目視確認/自問で曖昧さや品質を担保しようとしていないかをWARNINGで可視化
+    check_self_reread_red_flag
+
+    # mizchi Red flag (4): 「複数の不明瞭点を一気に潰そう」
+    # 1cmdに複数の主要対象を束ねた設計をWARNINGで可視化
+    check_bundle_red_flag
 
     # q11_not_already_done: 存在チェックはpreflight済み。以下は自動検索のみ
 

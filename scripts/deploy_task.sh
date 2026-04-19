@@ -3603,6 +3603,44 @@ check_firefighting_title() {
     fi
 }
 
+warn_same_ninja_redeploy() {
+    local task_file="$1"
+    local ninja_name="$2"
+    local parent_cmd="${3:-}"
+    local report_file report_status report_verdict reason_text=""
+    local -a reasons=()
+
+    [ -f "$task_file" ] || return 0
+    [ -n "$ninja_name" ] || return 0
+
+    if [ -z "$parent_cmd" ]; then
+        parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    fi
+    [ -n "$parent_cmd" ] || return 0
+
+    if [ -n "${_DEPLOY_PREV_PARENT_CMD:-}" ] && [ "$_DEPLOY_PREV_PARENT_CMD" = "$parent_cmd" ]; then
+        reasons+=("同一parent_cmd再投入")
+    fi
+    if [ -n "${_DEPLOY_PREV_SESSION_STATE:-}" ]; then
+        reasons+=("session_state残存")
+    fi
+
+    report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
+    if [ -f "$report_file" ]; then
+        report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
+        report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        if [ -z "$report_verdict" ] || [ "$report_verdict" = "FAIL" ] || [ "$report_status" != "completed" ]; then
+            reasons+=("同忍者の既存報告あり")
+        fi
+    fi
+
+    [ "${#reasons[@]}" -gt 0 ] || return 0
+
+    reason_text=$(printf '%s\n' "${reasons[@]}" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
+    echo "WARNING: same-ninja redeploy (${parent_cmd} → ${ninja_name}) を検出。${reason_text}。mizchi Red flag『同じsubagentを使い回そう』の可能性あり。別忍者配備か、記憶依存でない理由を確認せよ" >&2
+    log "same_ninja_redeploy_warn: cmd=${parent_cmd} ninja=${ninja_name} reasons=${reason_text}"
+}
+
 # 直近24hの非cmd commit検知: target_pathの直近コミットmessageにcmd_が無ければWARN
 # 殿承認GP-110修正版: 忍者完了パスに依存せず、配備直前のgit実態をその場で確認する
 warn_recent_noncmd_commit_targets() {
@@ -3963,6 +4001,7 @@ deploy_task_main() {
         # GP-198: session_stateをstale reset前に保存（再配備時のhint注入用）
         # cmd_2078 B3: awk fast-path — session_stateフィールドが存在しなければpython3をスキップ (~53ms節約)
         _DEPLOY_PREV_SESSION_STATE=""
+        _DEPLOY_PREV_PARENT_CMD=$(FIELD_GET_NO_LOG=1 field_get "$task_yaml" "parent_cmd" "" 2>/dev/null || true)
         if grep -qE '^[[:space:]]+session_state:' "$task_yaml" 2>/dev/null; then
             _DEPLOY_PREV_SESSION_STATE=$(python3 -c "
 import yaml, json, sys
@@ -3977,6 +4016,7 @@ except Exception:
 " 2>/dev/null || true)
         fi
         export _DEPLOY_PREV_SESSION_STATE
+        export _DEPLOY_PREV_PARENT_CMD
         reset_stale_fields "$NINJA_NAME"
         if [ "$DIRECT_MODE" = true ]; then
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
@@ -4048,6 +4088,10 @@ except Exception:
 
     deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
     deploy_task_id=$(field_get "$task_yaml" "_ac_task_id" "")
+
+    if [ -n "$deploy_parent_cmd" ]; then
+        warn_same_ninja_redeploy "$task_yaml" "$NINJA_NAME" "$deploy_parent_cmd"
+    fi
 
     # _ac_task_id必須チェック: 分割配備の判定に必要。未設定だとparent_cmdクリア事故(cmd_1751/1752)
     if [ -z "$deploy_task_id" ]; then
