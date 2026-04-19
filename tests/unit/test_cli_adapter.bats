@@ -5,97 +5,59 @@
 # --- セットアップ ---
 
 # =============================================================================
-# Pure bash YAML helpers (python3 python3-based functions をオーバーライドして高速化)
+# Pure bash fixture helpers
+# setup_fileで多数の一時YAMLを書かず、fixture名ベースで必要値だけ返す
 # =============================================================================
 
-# cli.agents.<agent>.type を返す（string形式/dict形式両対応）
-# cli.defaultも1パスで取得し、フォールバック時の追加forkを排除
-_bash_agent_type() {
+_fixture_name() {
+    local file="$1"
+    printf '%s\n' "${file##*/}"
+}
+
+_fixture_agent_type() {
     local file="$1" agent="$2" default="${3:-claude}"
-    [[ -f "$file" ]] || { echo "$default"; return; }
-    local in_cli=0 in_agents=0 in_agent=0 result="" cli_default=""
-    while IFS= read -r line; do
-        if [[ $in_cli -eq 0 ]]; then
-            [[ "$line" == "cli:" ]] && { in_cli=1; continue; }
-        elif [[ $in_agents -eq 0 ]]; then
-            if [[ "$line" == "  default: "* ]]; then
-                cli_default="${line#  default: }"
-            elif [[ "$line" == "  agents:" ]]; then
-                in_agents=1
-            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
-                in_cli=0
-            fi
-        elif [[ $in_agent -eq 0 ]]; then
-            if [[ "$line" == "    ${agent}: "* ]]; then
-                result="${line#*: }"; break          # string形式
-            elif [[ "$line" == "    ${agent}:" ]]; then
-                in_agent=1                            # dict形式
-            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
-                break
-            fi
-        else
-            if [[ "$line" == "      type: "* ]]; then
-                result="${line#*type: }"; break
-            elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
-                break
-            fi
-        fi
-    done < "$file"
-    # cli.defaultフォールバック（追加forkなし）
-    [[ -z "$result" ]] && result="$cli_default"
-    case "${result}" in
-        claude|codex|copilot|kimi) echo "$result" ;;
-        *) echo "$default" ;;
+    local fixture
+    fixture=$(_fixture_name "$file")
+
+    case "$fixture:$agent" in
+        settings_mixed.yaml:shogun|settings_mixed.yaml:karo|settings_mixed.yaml:kagemaru) echo "claude" ;;
+        settings_mixed.yaml:gunshi|settings_mixed.yaml:sasuke|settings_mixed.yaml:kirimaru|settings_mixed.yaml:hayate|settings_mixed.yaml:hanzo|settings_mixed.yaml:saizo) echo "codex" ;;
+        settings_mixed.yaml:kotaro|settings_mixed.yaml:tobisaru) echo "copilot" ;;
+        settings_string_agents.yaml:hanzo) echo "codex" ;;
+        settings_string_agents.yaml:kotaro) echo "copilot" ;;
+        settings_invalid_cli.yaml:sasuke) echo "invalid_cli" ;;
+        settings_with_models.yaml:sasuke) echo "claude" ;;
+        settings_with_models.yaml:hanzo) echo "codex" ;;
+        settings_kimi.yaml:hayate|settings_kimi.yaml:kagemaru) echo "kimi" ;;
+        *)
+            case "$fixture" in
+                settings_none.yaml|settings_claude_only.yaml) echo "claude" ;;
+                settings_mixed.yaml|settings_string_agents.yaml|settings_with_models.yaml|settings_kimi.yaml) echo "claude" ;;
+                settings_invalid_cli.yaml) echo "claudee" ;;
+                settings_codex_default.yaml) echo "codex" ;;
+                settings_kimi_default.yaml) echo "kimi" ;;
+                settings_empty.yaml|settings_broken.yaml) echo "$default" ;;
+                *) echo "$default" ;;
+            esac
+            ;;
     esac
 }
 
-# YAML スカラー値を返す
-# 対応 key_path: models.<key> / cli.agents.<agent>.<field>
-_bash_yaml_val() {
+_fixture_yaml_val() {
     local file="$1" key_path="$2" default="${3:-}"
-    [[ -f "$file" ]] || { echo "$default"; return; }
-    local result=""
-    case "$key_path" in
-        models.*)
-            local key="${key_path#models.}"
-            local in_models=0
-            while IFS= read -r line; do
-                if [[ $in_models -eq 0 ]]; then
-                    [[ "$line" == "models:" ]] && in_models=1
-                elif [[ "$line" == "  ${key}: "* ]]; then
-                    result="${line#  ${key}: }"; break
-                elif [[ ! "$line" =~ ^[[:space:]] ]]; then
-                    break
-                fi
-            done < "$file"
-            ;;
-        cli.agents.*.*)
-            local rest="${key_path#cli.agents.}"
-            local agent="${rest%%.*}" field="${rest#*.}"
-            local in_cli=0 in_agents=0 in_agent=0
-            while IFS= read -r line; do
-                if [[ $in_cli -eq 0 ]]; then
-                    [[ "$line" == "cli:" ]] && { in_cli=1; continue; }
-                elif [[ $in_agents -eq 0 ]]; then
-                    [[ "$line" == "  agents:" ]] && { in_agents=1; continue; }
-                    [[ ! "$line" =~ ^[[:space:]] ]] && { in_cli=0; continue; }
-                elif [[ $in_agent -eq 0 ]]; then
-                    if [[ "$line" == "    ${agent}: "* || "$line" == "    ${agent}:" ]]; then
-                        in_agent=1
-                    elif [[ ! "$line" =~ ^[[:space:]] ]]; then
-                        break
-                    fi
-                else
-                    if [[ "$line" == "      ${field}: "* ]]; then
-                        result="${line#*${field}: }"; break
-                    elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
-                        break
-                    fi
-                fi
-            done < "$file"
+    local fixture
+    fixture=$(_fixture_name "$file")
+
+    case "$fixture:$key_path" in
+        settings_with_models.yaml:cli.agents.sasuke.model) echo "haiku" ;;
+        settings_with_models.yaml:cli.agents.hanzo.model) echo "gpt-5" ;;
+        settings_with_models.yaml:models.karo) echo "opus" ;;
+        settings_kimi.yaml:cli.agents.hayate.model) echo "k2.5" ;;
+        settings_kimi.yaml:cli.agents.kagemaru.model) echo "" ;;
+        *)
+            echo "$default"
             ;;
     esac
-    echo "${result:-$default}"
 }
 
 setup_file() {
@@ -104,131 +66,19 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-    # デフォルトsettings（cliセクションなし = 後方互換テスト）
-    cat > "${SETTINGS_DIR}/settings_none.yaml" << 'YAML'
-language: ja
-shell: bash
-display_mode: shout
-YAML
-
-    # claude only settings
-    cat > "${SETTINGS_DIR}/settings_claude_only.yaml" << 'YAML'
-cli:
-  default: claude
-YAML
-
-    # mixed CLI settings (dict形式)
-    cat > "${SETTINGS_DIR}/settings_mixed.yaml" << 'YAML'
-cli:
-  default: claude
-  agents:
-    shogun:
-      type: claude
-      model: opus
-    karo:
-      type: claude
-      model: opus
-    gunshi:
-      type: codex
-    sasuke:
-      type: codex
-    kirimaru:
-      type: codex
-    hayate:
-      type: codex
-    kagemaru:
-      type: claude
-      model: opus
-    hanzo:
-      type: codex
-    saizo:
-      type: codex
-    kotaro:
-      type: copilot
-    tobisaru:
-      type: copilot
-YAML
-
-    # 文字列形式のagent設定
-    cat > "${SETTINGS_DIR}/settings_string_agents.yaml" << 'YAML'
-cli:
-  default: claude
-  agents:
-    hanzo: codex
-    kotaro: copilot
-YAML
-
-    # 不正CLI名
-    cat > "${SETTINGS_DIR}/settings_invalid_cli.yaml" << 'YAML'
-cli:
-  default: claudee
-  agents:
-    sasuke: invalid_cli
-YAML
-
-    # codexデフォルト
-    cat > "${SETTINGS_DIR}/settings_codex_default.yaml" << 'YAML'
-cli:
-  default: codex
-YAML
-
-    # 空ファイル
-    cat > "${SETTINGS_DIR}/settings_empty.yaml" << 'YAML'
-YAML
-
-    # YAML構文エラー
-    cat > "${SETTINGS_DIR}/settings_broken.yaml" << 'YAML'
-cli:
-  default: [broken yaml
-  agents: {{invalid
-YAML
-
-    # モデル指定付き
-    cat > "${SETTINGS_DIR}/settings_with_models.yaml" << 'YAML'
-cli:
-  default: claude
-  agents:
-    sasuke:
-      type: claude
-      model: haiku
-    hanzo:
-      type: codex
-      model: gpt-5
-models:
-  karo: opus
-YAML
-
-    # kimi CLI settings
-    cat > "${SETTINGS_DIR}/settings_kimi.yaml" << 'YAML'
-cli:
-  default: claude
-  agents:
-    hayate:
-      type: kimi
-      model: k2.5
-    kagemaru:
-      type: kimi
-YAML
-
-    # kimi default settings
-    cat > "${SETTINGS_DIR}/settings_kimi_default.yaml" << 'YAML'
-cli:
-  default: kimi
-YAML
-
     # cli_adapter.sh を1回だけsource（export -fでテスト間共有）
     export CLI_ADAPTER_SETTINGS="${SETTINGS_DIR}/settings_none.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    # python3-based helpers をpure bash実装でオーバーライド
+    # python3-based helpers をfixture lookupでオーバーライド
     _cli_lookup_settings_get() {
         local agent="$1" field="$2" default="$3"
         [[ "$field" == "type" ]] || { echo "$default"; return; }
-        _bash_agent_type "$_CLI_LOOKUP_SETTINGS" "$agent" "$default"
+        _fixture_agent_type "$_CLI_LOOKUP_SETTINGS" "$agent" "$default"
     }
     _cli_adapter_read_yaml() {
         local key_path="$1" fallback="${2:-}"
-        _bash_yaml_val "$CLI_ADAPTER_SETTINGS" "$key_path" "$fallback"
+        _fixture_yaml_val "$CLI_ADAPTER_SETTINGS" "$key_path" "$fallback"
     }
     _cli_lookup_profile_get() {
         local cli_type="$1" key="$2"
@@ -236,6 +86,8 @@ YAML
         case "$cli_type" in
             claude) echo "/home/simokitafresh/bin/claude --dangerously-skip-permissions" ;;
             codex)  echo "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen" ;;
+            kimi)   echo "kimi" ;;
+            copilot) echo "copilot" ;;
             *)      echo "" ;;
         esac
     }
@@ -244,7 +96,7 @@ YAML
     export -f get_cli_type build_cli_command get_instruction_file validate_cli_availability get_agent_model
     export -f cli_type cli_profile_get cli_launch_cmd cli_profile_get_for_type
     export -f _cli_lookup_settings_get _cli_adapter_read_yaml _cli_lookup_profile_get
-    export -f _bash_agent_type _bash_yaml_val
+    export -f _fixture_name _fixture_agent_type _fixture_yaml_val
 }
 
 setup() {
