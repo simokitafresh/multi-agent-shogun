@@ -162,6 +162,10 @@ commands:
   cmd_1002:
     command: "GP-031+GP-033統合修正"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1002"; export CMD_ID
@@ -181,6 +185,10 @@ commands:
   cmd_1010:
     command: "inbox_write.shのリファクタリング"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1010"; export CMD_ID
@@ -200,6 +208,10 @@ commands:
   cmd_1002:
     command: "GP-031の追加修正"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1002"; export CMD_ID
@@ -219,6 +231,10 @@ commands:
   cmd_1002:
     command: "GP-042の再実装"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1002"; export CMD_ID
@@ -238,6 +254,10 @@ commands:
   cmd_1002:
     command: "GP-031+GP-033+GP-034統合"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1002"; export CMD_ID
@@ -257,6 +277,10 @@ commands:
   cmd_1002:
     command: "GP-031の再実装"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_1002"; export CMD_ID
@@ -304,6 +328,10 @@ commands:
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
       q11_not_already_done: "未達成。grep 'q11_not_already_done' scripts/cmd_save.sh で未実装を確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_9999"; export CMD_ID
@@ -326,6 +354,10 @@ commands:
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_9998"; export CMD_ID
@@ -350,6 +382,10 @@ commands:
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: テスト用 → WHAT: テストcmd 1件作成"
       q11_not_already_done: "未達成。grep 'BLOCK: q11_not_already_done' scripts/cmd_save.sh で未実装を確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_9997"; export CMD_ID
@@ -375,6 +411,10 @@ commands:
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: q11補助情報の確認 → WHAT: deploy_task.sh関連docs表示を確認"
       q11_not_already_done: "未達成。docs/research自動検索INFOは未実装だったため追加対象と確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_9996"; export CMD_ID
@@ -399,6 +439,10 @@ commands:
       q5_verified_source: "コード確認"
       q8_why_what: "WHY: q11補助情報の非表示確認 → WHAT: スクリプト名なしcmd 1件確認"
       q11_not_already_done: "未達成。commandにスクリプト名を含まないケースを作成した"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_9995"; export CMD_ID
@@ -415,6 +459,10 @@ commands:
     id: cmd_8888
     command: "quality_gate無しcmd"
     status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8888"; export CMD_ID
@@ -439,6 +487,10 @@ commands:
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9必須化を確認"
       q11_not_already_done: "未達成。title確認で消火cmd、q9未記入のため未完成と判断"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8801"; export CMD_ID
@@ -465,6 +517,10 @@ commands:
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9付きcmd 1件確認"
       q11_not_already_done: "未達成。q9付き正常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 分岐条件の整理不足で再発した | prevention: gateで真因記入と再発防止記載を強制する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8802"; export CMD_ID
@@ -490,6 +546,10 @@ commands:
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9形式不備検出確認"
       q11_not_already_done: "未達成。q9をTBDにしておりroot_cause欠落ケースを再現した"
       q9_firefighting_root_cause: "TBD"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8804"; export CMD_ID
@@ -515,6 +575,10 @@ commands:
       q8_why_what: "WHY: 消火cmd検証 → WHAT: q9短文検出確認"
       q11_not_already_done: "未達成。root_cause を短文TBDにしてBLOCK対象を維持した"
       q9_firefighting_root_cause: "root_cause: TBD | prevention: gateで真因記入を強制する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8806"; export CMD_ID
@@ -540,6 +604,10 @@ commands:
       q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention欠落検出確認"
       q11_not_already_done: "未達成。prevention欠落の異常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: テスト不足"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8805"; export CMD_ID
@@ -565,6 +633,10 @@ commands:
       q8_why_what: "WHY: 消火cmd検証 → WHAT: prevention短文検出確認"
       q11_not_already_done: "未達成。prevention をTBDにして短文BLOCKケースを再現した"
       q9_firefighting_root_cause: "root_cause: 分岐条件が未定義だった | prevention: TBD"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8807"; export CMD_ID
@@ -589,6 +661,10 @@ commands:
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: 学習ループ改善 → WHAT: gate可視化 1件追加"
       q11_not_already_done: "未達成。gate可視化追加の正常系ケースを新規作成した"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8803"; export CMD_ID
@@ -614,6 +690,10 @@ commands:
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: gate強化 → WHAT: title限定検出の偽陽性排除確認"
       q11_not_already_done: "未達成。title限定判定の偽陽性排除ケースを新規作成した"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8808"; export CMD_ID
@@ -638,6 +718,10 @@ commands:
       q5_verified_source: "code_reading + structure_verified"
       q8_why_what: "WHY: バグ系キーワード検証 → WHAT: q9必須BLOCKを確認"
       q11_not_already_done: "未達成。titleにバグを含めた異常系ケースを新規作成した"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8809"; export CMD_ID
@@ -663,6 +747,10 @@ commands:
       q8_why_what: "WHY: prevention意志依存検証 → WHAT: WARNING出力を確認"
       q11_not_already_done: "未達成。prevention意志依存WARNINGの確認ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけるよう共有する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8810"; export CMD_ID
@@ -688,6 +776,10 @@ commands:
       q8_why_what: "WHY: prevention仕組み化検証 → WHAT: gate追加時はWARNINGを出さない"
       q11_not_already_done: "未達成。gate追加による正常系 prevention ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: q9判定語彙が不足し検知から漏れた | prevention: title判定に不具合を追加しgateで再発を防ぐ"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8811"; export CMD_ID
@@ -714,6 +806,10 @@ commands:
       q8_why_what: "WHY: 活用形検証 → WHAT: 気をつけて形でWARNINGを確認"
       q11_not_already_done: "未達成。気をつけて活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 判定観点が曖昧でレビュー時に見落とした | prevention: 次回は気をつけてレビューする"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8812"; export CMD_ID
@@ -739,6 +835,10 @@ commands:
       q8_why_what: "WHY: 活用形検証 → WHAT: 注意して形でWARNINGを確認"
       q11_not_already_done: "未達成。注意して活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 確認手順が曖昧だった | prevention: 毎回注意してチェックリストを確認する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8813"; export CMD_ID
@@ -764,6 +864,10 @@ commands:
       q8_why_what: "WHY: 活用形検証 → WHAT: 意識して形でWARNINGを確認"
       q11_not_already_done: "未達成。意識して活用形のWARNINGケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: レビュー観点が欠けていた | prevention: 品質を意識してレビューを実施する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8814"; export CMD_ID
@@ -789,6 +893,10 @@ commands:
       q8_why_what: "WHY: 仕組み系偽陽性排除検証 → WHAT: gate追加で自動検出する旨はWARNINGなし"
       q11_not_already_done: "未達成。自動検出する prevention 正常系ケースを新規作成した"
       q9_firefighting_root_cause: "root_cause: 検知パターンが語幹未対応だった | prevention: gateを追加して自動検出する"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_8815"; export CMD_ID
@@ -818,6 +926,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3001"; export CMD_ID
@@ -849,6 +961,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3002"; export CMD_ID
@@ -877,6 +993,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3003"; export CMD_ID
@@ -904,6 +1024,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3004"; export CMD_ID
@@ -931,6 +1055,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3005"; export CMD_ID
@@ -958,6 +1086,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3006"; export CMD_ID
@@ -986,6 +1118,10 @@ commands:
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "コード確認"
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
 YAML
 
     CMD_ID="cmd_3007"; export CMD_ID
