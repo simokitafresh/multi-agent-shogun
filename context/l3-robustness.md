@@ -334,3 +334,45 @@ Round 2でOpus 4名全員がWF+DSR+パーミュテーションに収束。これ
 - 安定性CSV: `outputs/analysis/alm_research/cmd_{1947,1948,1949,1950,1934}_l3_*_stability.csv`
 - 最終候補CSV: `outputs/analysis/alm_research/cmd_2024_l3_pool_candidates.csv`
 - 比較分析: cmd_2032 (秘奥義6体EW vs モメンタムBest)
+
+---
+
+## 7. ASSS — L3 ASS忍法FoF構想 (2026-04-20殿指示)
+
+### 7.1 定義
+
+**ASSS** = ASS(⑤ALMシン忍法)21体を構成PFとして、7忍法×3モード=21体のFoF を作る。
+L2忍法FoFと同じ構造の1層上。構成PFが「シン忍法20体→ASS 21体」に変わるだけ。
+
+### 7.2 構造
+
+| レイヤー | 名前 | 構成PF | 手法 |
+|---------|------|--------|------|
+| L0 | 基本PF | 個別DM戦略 | パラメータGS |
+| L1 | 四神FoF | L0チャンピオン | Greedy Forward Selection |
+| L2-① | SSS(シン忍法) | シン四神 | 7忍法×3目的GS(事後選出) |
+| L2-⑤ | ASS(ALMシン忍法) | ALM四神 | 7忍法×3目的GS(事後選出) |
+| **L3** | **ASSS** | **ASS 21体** | **7忍法×3目的GS(事後選出)** |
+
+### 7.3 実行パイプライン
+
+ASSと同じパイプライン。構成PFが変わるだけ:
+1. ASS 21体のuniverse YAML作成 (`config/portfolio_universes/asss_21.yaml`)
+2. `run_077_*.py --universe asss_21.yaml` で7忍法のGS実行
+3. `champion_selector.py` で3目的(CAGR/NHF/MaxDD)×7忍法=21チャンピオン選出
+4. 安定性検証(4検証+レジーム)
+5. 本番登録
+
+### 7.4 道具磨き(完了)
+
+cmd_2142-2149でGSスクリプト7本+champion_selector.pyをCoDD最適化済み。
+→ DM-Signal repo台帳 `docs/research/codd_refactor_registry.md` 参照
+
+### 7.5 状態
+
+- 道具磨き: **完了** (2026-04-20)
+- universe YAML: 未作成
+- GS実行: 未着手
+- 選出: 未着手
+- 安定性検証: 未着手
+- 本番登録: 未着手
