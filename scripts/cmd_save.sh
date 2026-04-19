@@ -438,7 +438,6 @@ entries = data.get("entries", []) if isinstance(data, dict) else []
 count = sum(
     1 for entry in entries
     if isinstance(entry, dict)
-    and entry.get("cmd_id") == cmd_id
     and entry.get("source") == "cmd_save_warn"
     and entry.get("gate_result") == "WARN"
     and warn_pattern in str(entry.get("notes", "") or "")
@@ -2414,9 +2413,9 @@ fi
 
 # --- WARN累計昇格: 同一WARNパターンが3回以上でBLOCK昇格（cmd_2159） ---
 # 目的: WARNを3回無視し続けるとBLOCKに昇格。WARNを解消しない運用を防ぐ
-_WARN_ESCALATE_THRESHOLD=3
+_WARN_ESCALATE_THRESHOLD=1
 if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
-    log_cmd_save_warns
+    # カウントを先に(log書込み前)。書込み後だと自分自身をカウントする(閾値1で即BLOCK)
     for _warn_r in "${WARN_REASONS[@]}"; do
         _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
         [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
@@ -2424,6 +2423,7 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
             record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
         fi
     done
+    log_cmd_save_warns
 fi
 
 # --- 結果出力 ---

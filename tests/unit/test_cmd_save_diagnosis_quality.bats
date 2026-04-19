@@ -144,13 +144,13 @@ run_warn_save() {
     run_warn_save
     echo "$output" >&2
 
-    # q8_複利の問いWARNが出るが1回目はBLOCKなし
+    # q8_複利の問いWARNが出るが1回目(過去0件)はBLOCKなし
     [ "$status" -ne 0 ]   # WARNがあるのでNG
     [[ "$output" != *"WARN累計昇格"* ]]
     [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
 }
 
-@test "AC2-2: 同一WARNが2回目もWARNのまま" {
+@test "AC2-2: 同一WARNが2回目でBLOCK昇格(閾値1)" {
     write_warn_cmd
     # 1回目実行(ログに記録)
     env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
@@ -158,13 +158,13 @@ run_warn_save() {
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
 
-    # 2回目実行
+    # 2回目実行 — 過去1件あるのでBLOCK昇格
     write_warn_cmd
     run_warn_save
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
-    [[ "$output" != *"WARN累計昇格"* ]]
+    [[ "$output" == *"WARN累計昇格"* ]]
 }
 
 @test "AC2-3: 同一WARNが3回目でBLOCK昇格" {
