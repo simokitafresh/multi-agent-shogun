@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L636 -->
+<!-- last_synced_lesson: L637 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -176,3 +176,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L634: マイグレーションスクリプトのテーブル名バグが本番未適用の根因（cmd_2016）
 - L635: Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える（cmd_2021）
 - L636: nested FoFのMonthlyReturnは生成ログだけでは信用するな（cmd_2025）
+- L637: upfront cleanup後の長時間再計算は worker restart で本番データを空にしうる（cmd_2131）
