@@ -108,6 +108,22 @@
 | Notifications | `scripts/ntfy.sh` による `shogun-simokitafresh` topic 通知 |
 | Current Focus | `dm-signal` が current project として設定されている |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| 陣形図(karo_snapshot)と実態の乖離 | karo_snapshot.txtは定期生成だが、STALLした忍者やペイン消失はcapture-paneで実態確認しないと見落とす。陣形図を事実として信じると誤判断を招く | 長時間タスク実行中、ペイン消失後のリカバリ、家老の状況判断 |
+| task/report YAMLへのyaml.dump直接書き込み | yaml.dump/yaml.safe_dumpで運用YAMLを上書きすると複雑なマルチライン文字列のround-tripに失敗してエントリが消失する(cmd_1399事故) | Python経由での運用YAML書き込み、一括更新スクリプト作成時 |
+| inbox_watcher遅延によるnudge不達 | WSL2上ではinotifywaitがstatポーリングになるため、inbox_write直後にnudgeが届かず忍者がidle待機を続けるケースがある。nudgeだけを信頼してinbox自体を確認しない設計は危険 | inbox_write直後の反応確認、WSL2 /mnt/c上ファイル変更検知 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [oshio](oshio.md) | our-armyの実運用フローに対し、oshioのCoDD整合性保証・Bloom Taxonomyルーティング・OSS設計思想が設計の洗練を補完する |
+| 競合 | [ace](ace.md) | our-armyはYAML鎖型通信と実運用ゲートを中心に置く一方、ACEは抽象的な自然言語バスと6層認知モデルを前提とする |
+| 前提 | [逆瀬川 (Harness Engineering)](../sources/gyakusegawa.md) | our-armyのハーネス設計思想はHarness Engineeringの7原則と同方向性であり、Skill/Hook/AGENTS.md設計の知識が前提基盤となる |
+
 ## Sources
 
 | 種別 | パス/URL |

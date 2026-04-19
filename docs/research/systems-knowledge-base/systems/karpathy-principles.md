@@ -98,6 +98,22 @@
 | 解説記事 | Antigravity | https://antigravity.codes/blog/karpathy-claude-code-skills-guide |
 | DeepWiki | forrestchang/andrej-karpathy-skills | https://deepwiki.com/forrestchang/andrej-karpathy-skills |
 
+## Pitfalls
+
+| 落とし穴 | 何が問題か | どこで表面化するか |
+|---------|-----------|------------------|
+| 全ルール適用タイミングの誤判断 | 自明な修正（typo等）にも全4原則を適用しようとすると実行速度が落ちる。「非自明な変更にのみ全リゴール適用」という原文の例外条件を見落としやすい | 修正タスクの粒度判断時、CI自動修正、小規模バグ修正 |
+| Goal-Driven変換における成功基準の曖昧化 | 「Fix the bug」を宣言型に変換せずに残すと、LLMが成功を判定できずに反復ループを脱出できないか、誤った完了判定をする | 反復タスク設計時、テスト駆動開発の成功基準定義 |
+| Surgical Changesの過剰解釈による放置 | 「隣接コードを改善するな」を誤解し、明らかな誤りや不整合も修正禁止と判断する。原則は不要な改善を禁止するのであり、タスク起因の変更は対象外 | コードレビュー統合、大規模リファクタリングとの組合せ運用 |
+
+## Cross-References
+
+| 軸 | 対象 | 関係 |
+|----|------|------|
+| 補完 | [逆瀬川 (Harness Engineering)](../sources/gyakusegawa.md) | 個別LLM指示ルールに対し、フィードバック速度ヒエラルキー・Skill設計・AGENTS.md等のハーネス全体設計視点を補完する |
+| 競合 | [gsd](gsd.md) | Karpathyはシンプルさ優先でLLM指示を最小化する一方、GSDは役割分担・QA・shipまでの明示的なロール設計を優先する点で最適化方向が異なる |
+| 前提 | [our-army](our-army.md) | 原則をCLAUDE.mdへ埋め込み実際に稼働させるには、our-armyのようなYAML配備フロー・gate・binary check方式の実運用基盤が前提となる |
+
 ## Sources
 
 | 種別 | URL |
