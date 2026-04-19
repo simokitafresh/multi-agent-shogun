@@ -771,3 +771,4 @@
 | cmd_2140 | 修正 — cmd_2138 frontend変更revert + 本番スクリーンショット撮影 | dm-signal | 04-19 | frontend 3ファイルを origin/main 一致 |
 | cmd_2142 | CoDD最適化 — run_077_bunshin.py (GS分身忍法) | dm-signal | 04-20 | run_077_bunshin.py の serial ho |
 | cmd_2143 | CoDD最適化 — run_077_kasoku_diff.py (GS加速diff忍法) | dm-signal | 04-20 | run_077_kasoku_diff.py に month |
+| cmd_2146 | CoDD最適化 — run_077_nukimi.py (GS抜き身忍法) | dm-signal | 04-20 | run_077_nukimi.py CoDD再最適化完了。s |
