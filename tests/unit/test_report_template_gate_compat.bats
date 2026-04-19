@@ -7,27 +7,24 @@
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export GATE_SCRIPT="$BATS_FILE_TMPDIR/gate_report_fast.sh"
-    cat > "$GATE_SCRIPT" <<EOF
-#!/usr/bin/env bash
-exec python3 "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "\$@"
-EOF
-    chmod +x "$GATE_SCRIPT"
-    [ -f "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" ] || return 1
+    export GATE_PY="$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py"
+    export GATE_AUTOFIX_SH="$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh"
+    export GATE_FORMAT_SH="$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
+    [ -f "$GATE_PY" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-    # Pre-generate base filled report and warm GP-073 PASS cache
+
+    export BASE_EMPTY_REPORT="$BATS_FILE_TMPDIR/base_empty_report.yaml"
     export BASE_FILLED_REPORT="$BATS_FILE_TMPDIR/base_filled_report.yaml"
+    # Pre-generate shared fixtures once. Tests copy them into their workspace.
+    _generate_filled_report "$BASE_EMPTY_REPORT" "empty"
     _generate_filled_report "$BASE_FILLED_REPORT" "filled"
-    bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT" > /dev/null 2>&1 || true
 }
 
 setup() {
     export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/report_tpl.XXXXXX")"
-}
-
-teardown() {
+    TEST_TMPDIR="$BATS_FILE_TMPDIR/work"
     rm -rf "$TEST_TMPDIR"
+    mkdir -p "$TEST_TMPDIR"
 }
 
 # Helper: generate a minimal report that follows the template structure
@@ -100,6 +97,63 @@ verdict: PASS
 EOF
 }
 
+_prepare_report() {
+    local outfile="$1"
+    local lessons_useful="${2:-empty}"
+    local source="$BASE_EMPTY_REPORT"
+
+    if [ "$lessons_useful" = "filled" ]; then
+        source="$BASE_FILLED_REPORT"
+    fi
+
+    cp "$source" "$outfile"
+}
+
+_run_gate() {
+    run python3 "$GATE_PY" "$1"
+}
+
+_replace_section() {
+    local file="$1"
+    local section="$2"
+    local replacement="${3-}"
+    local tmp="$file.tmp"
+
+    awk -v section="$section" -v replacement="$replacement" '
+        BEGIN {
+            replacement_len = split(replacement, replacement_lines, "\n")
+            in_section = 0
+            replaced = 0
+        }
+        function is_top_level(line) {
+            return line ~ /^[A-Za-z_][A-Za-z0-9_]*:/
+        }
+        {
+            if (!replaced && $0 ~ ("^" section ":")) {
+                if (replacement != "") {
+                    for (i = 1; i <= replacement_len; i++) {
+                        print replacement_lines[i]
+                    }
+                }
+                in_section = 1
+                replaced = 1
+                next
+            }
+
+            if (in_section) {
+                if (is_top_level($0)) {
+                    in_section = 0
+                } else {
+                    next
+                }
+            }
+
+            print
+        }
+    ' "$file" > "$tmp"
+    mv "$tmp" "$file"
+}
+
 @test "filled report with empty lessons_useful is rejected by gate (GP-064)" {
     # GP-088: gate checks task YAML for related_lessons — create one so empty [] is rejected
     mkdir -p "$TEST_TMPDIR/queue/tasks"
@@ -111,8 +165,8 @@ task:
 TASK
     # Place report under queue/reports/ so dirname(dirname(report)) finds tasks/
     mkdir -p "$TEST_TMPDIR/queue/reports"
-    _generate_filled_report "$TEST_TMPDIR/queue/reports/report.yaml" "empty"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/report.yaml"
+    _prepare_report "$TEST_TMPDIR/queue/reports/report.yaml" "empty"
+    _run_gate "$TEST_TMPDIR/queue/reports/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"lessons_useful"* ]]
@@ -120,7 +174,7 @@ TASK
 }
 
 @test "filled report with populated lessons_useful passes gate" {
-    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
+    _run_gate "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -132,9 +186,9 @@ task:
   title: "強化 — GP/改善にbefore/after退化計測を義務化"
   task_type: impl
 TASK
-    _generate_filled_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml" "filled"
     sed -i 's/parent_cmd: cmd_test/parent_cmd: cmd_1941/' "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
+    _run_gate "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
     [[ "$output" == *"GP-199 WARN: before_metrics未記入"* ]]
@@ -149,106 +203,92 @@ task:
   title: "通常実装"
   task_type: impl
 TASK
-    _generate_filled_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml" "filled"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml"
+    _prepare_report "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml" "filled"
+    _run_gate "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_test.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
     [[ "$output" != *"GP-199 WARN"* ]]
 }
 
 @test "binary_checks as string is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    # Replace proper binary_checks with string version
-    python3 -c "
-content = open('$TEST_TMPDIR/report.yaml').read()
-# Remove proper binary_checks block and replace with string
-import re
-content = re.sub(r'binary_checks:.*?verdict:', 'binary_checks: \"AC1: yes\"\nverdict:', content, flags=re.DOTALL)
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" 'binary_checks: "AC1: yes"'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"binary_checks"* ]]
 }
 
 @test "lessons_useful null is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
     # Replace empty list with null
     sed -i 's/lessons_useful: \[\]/lessons_useful: null/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"lessons_useful"* ]]
 }
 
 @test "lesson_candidate found=true without title is rejected" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lesson_candidate'] = {'found': True, 'title': '', 'detail': 'test'}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lesson_candidate" $'lesson_candidate:\n  found: true\n  title: ""\n  detail: "test"'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
 }
 
 @test "verdict CONDITIONAL_PASS is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
     sed -i 's/verdict: PASS/verdict: CONDITIONAL_PASS/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"verdict"* ]]
 }
 
 @test "verdict PASS passes gate" {
-    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
+    _run_gate "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "binary_checks result PASS is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
     sed -i '0,/result: "yes"/s//result: PASS/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"binary_checks.AC1[0].result"* ]]
 }
 
 @test "binary_checks result yes passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "verdict FAIL passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i 's/verdict: PASS/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "verdict null is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
     sed -i 's/verdict: PASS/verdict: null/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"verdict"* ]]
 }
 
 @test "verdict empty string is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
     sed -i 's/verdict: PASS/verdict: ""/' "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"verdict"* ]]
@@ -257,55 +297,28 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 @test "lessons_useful numbered dict is auto-fixed to list by autofix pre-step (GP-196)" {
     # GP-196: gate_report_format.shのpre-step autofixがnumbered dict→list変換を適用する
     # 旧: 変換なし→gate BLOCK。新: 変換あり→gate PASS
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = {0: {'id': 'L074', 'useful': True, 'reason': 'test'}}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" $'lessons_useful:\n  0:\n    id: L074\n    useful: true\n    reason: test'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    # autofix適用後、lessons_usefulがlistに変換されていること
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    d = yaml.safe_load(f)
-lu = d['lessons_useful']
-assert isinstance(lu, list), f'Expected list after autofix, got {type(lu)}'
-assert lu[0]['id'] == 'L074', f'Expected L074, got {lu[0][\"id\"]}'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    grep -q '^lessons_useful:$' "$TEST_TMPDIR/report.yaml"
+    grep -q '^- id: L074$' "$TEST_TMPDIR/report.yaml"
+    ! grep -q '^  0:$' "$TEST_TMPDIR/report.yaml"
 }
 
 @test "lessons_useful entry missing id is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
-    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
-lessons_useful:
-  - useful: true
-    reason: test
-EOF
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" $'lessons_useful:\n  - useful: true\n    reason: test'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"missing \"id\""* ]]
 }
 
 @test "lessons_useful useful=string is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
-    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
-lessons_useful:
-  - id: L074
-    useful: 'yes'
-    reason: test
-EOF
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" $'lessons_useful:\n  - id: L074\n    useful: '\''yes'\''\n    reason: test'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"useful="* ]]
@@ -313,31 +326,18 @@ EOF
 }
 
 @test "lessons_useful FILL_THIS in useful is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    sed -i '/^lessons_useful: \[\]$/d' "$TEST_TMPDIR/report.yaml"
-    cat >> "$TEST_TMPDIR/report.yaml" <<'EOF'
-lessons_useful:
-  - id: L074
-    useful: FILL_THIS
-    reason: test
-EOF
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" $'lessons_useful:\n  - id: L074\n    useful: FILL_THIS\n    reason: test'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"FILL_THIS"* ]]
 }
 
 @test "binary_checks AC value as string is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks'] = {'AC1': 'yes', 'AC2': [{'check': 'ok', 'result': 'yes'}]}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1: yes\n  AC2:\n    - check: ok\n      result: yes'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"binary_checks.AC1"* ]]
@@ -345,16 +345,9 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 }
 
 @test "binary_checks AC value as dict is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks'] = {'AC1': {'check': 'ok', 'result': 'yes'}}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1:\n    check: ok\n    result: yes'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"binary_checks.AC1"* ]]
@@ -362,16 +355,9 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 }
 
 @test "lesson_candidate found=false without no_lesson_reason is rejected" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "empty"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lesson_candidate'] = {'found': False}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lesson_candidate" $'lesson_candidate:\n  found: false'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"no_lesson_reason"* ]]
@@ -379,16 +365,9 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 
 # --- GP-065: files_modified type validation ---
 @test "files_modified as dict is rejected by gate (GP-065)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['files_modified'] = {0: 'path/to/file.py'}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "files_modified" $'files_modified:\n  0: path/to/file.py'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"files_modified"* ]]
@@ -396,23 +375,16 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 }
 
 @test "files_modified as null is rejected by gate (GP-065)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['files_modified'] = None
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "files_modified" 'files_modified: null'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"files_modified"* ]]
 }
 
 @test "files_modified as string passes gate (GP-065)" {
-    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
+    _run_gate "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -423,30 +395,25 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 # Helper: run the template detection logic extracted from inbox_write.sh
 _detect_template_state() {
     local report_file="$1"
-    REPORT_YAML="$report_file" python3 -c "
-import yaml, os, sys
-try:
-    with open(os.environ['REPORT_YAML']) as f:
-        data = yaml.safe_load(f)
-    if not data or not isinstance(data, dict):
-        print('yes')
-        sys.exit(0)
-    verdict = data.get('verdict', '')
-    if not verdict or str(verdict).strip() == '':
-        print('yes')
-        sys.exit(0)
-    bc = data.get('binary_checks', {})
-    if isinstance(bc, dict):
-        for ac_val in bc.values():
-            if isinstance(ac_val, list):
-                for item in ac_val:
-                    if isinstance(item, dict) and 'FILL_THIS' in str(item.get('result', '')):
-                        print('yes')
-                        sys.exit(0)
-    print('no')
-except Exception:
-    print('yes')
-" 2>/dev/null
+    local verdict
+    verdict="$(awk -F': ' '/^verdict:/{print $2; exit}' "$report_file")"
+
+    if [ -z "$verdict" ] || [ "$verdict" = '""' ] || [ "$verdict" = "null" ]; then
+        echo "yes"
+        return 0
+    fi
+
+    if awk '
+        /^binary_checks:/ { in_binary_checks = 1; next }
+        in_binary_checks && /^[A-Za-z_][A-Za-z0-9_]*:/ { in_binary_checks = 0 }
+        in_binary_checks && /result:[[:space:]]*.*FILL_THIS/ { found = 1 }
+        END { exit(found ? 0 : 1) }
+    ' "$report_file"; then
+        echo "yes"
+        return 0
+    fi
+
+    echo "no"
 }
 
 # Helper: generate a template-state report (as deploy_task.sh produces)
@@ -504,30 +471,22 @@ EOF
 }
 
 @test "GP-071: template state detected when FILL_THIS in binary_checks result" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # Replace binary_checks result with FILL_THIS
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks'] = {'AC1': [{'check': 'test check', 'result': 'FILL_THIS'}]}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1:\n    - check: test check\n      result: FILL_THIS'
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "yes" ]
 }
 
 @test "GP-071: non-template detected when verdict=PASS and no FILL_THIS" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "no" ]
 }
 
 @test "GP-071: non-template detected when verdict=FAIL and no FILL_THIS" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i 's/verdict: PASS/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
@@ -541,88 +500,68 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 # 新: autofixはMISSINGを放置 → gate_report_format.shがBLOCK → 忍者が修正 → 品質向上
 
 @test "Fix22-28撤去: binary_checks MISSING → autofixせず残存 → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import re
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = re.sub(r'^binary_checks:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks"
     # autofix does NOT restore MISSING fields
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"binary_checks MISSING"* ]]
     # gate catches it
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_FORMAT_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"binary_checks"* ]]
 }
 
 @test "Fix22-28撤去: verdict MISSING → autofixせず残存 → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i '/^verdict:/d' "$TEST_TMPDIR/report.yaml"
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"verdict MISSING"* ]]
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_FORMAT_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
 }
 
 @test "Fix22-28撤去: files_modified MISSING → autofixせず → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import re
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = re.sub(r'^files_modified:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "files_modified"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"files_modified MISSING"* ]]
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_FORMAT_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"files_modified"* ]]
 }
 
 @test "Fix6撤去: lessons_useful MISSING → autofixせず → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import re
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = re.sub(r'^lessons_useful:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful"
     # Fix6撤去(cmd_1888): autofix does NOT restore lessons_useful — gate_report_format.sh BLOCKs
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"lessons_useful MISSING"* ]]
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_FORMAT_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"lessons_useful: MISSING"* ]]
 }
 
 @test "Fix22-28撤去: lesson_candidate MISSING → autofixせず → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import re
-content = open('$TEST_TMPDIR/report.yaml').read()
-content = re.sub(r'^lesson_candidate:(\n[ \t]+[^\n]*)*', '', content, flags=re.MULTILINE)
-open('$TEST_TMPDIR/report.yaml', 'w').write(content)
-"
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lesson_candidate"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" != *"lesson_candidate MISSING"* ]]
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_FORMAT_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"lesson_candidate"* ]]
 }
 
 @test "GP-071: template state when verdict is null" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i 's/^verdict: PASS$/verdict: null/' "$TEST_TMPDIR/report.yaml"
     run _detect_template_state "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
@@ -648,9 +587,9 @@ EOF
 }
 
 @test "self_gate_check result=ok is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     _add_self_gate_check "$TEST_TMPDIR/report.yaml" "ok" "PASS" "PASS" "PASS"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"self_gate_check.lesson_ref"* ]]
@@ -658,24 +597,24 @@ EOF
 }
 
 @test "self_gate_check result=PASS passes gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     _add_self_gate_check "$TEST_TMPDIR/report.yaml" "PASS" "PASS" "PASS" "PASS"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "self_gate_check result=FAIL passes gate (FAIL is valid value)" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     _add_self_gate_check "$TEST_TMPDIR/report.yaml" "PASS" "FAIL" "PASS" "PASS"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "self_gate_check absent does not cause gate failure (impl tasks)" {
     # BASE_FILLED_REPORT has no self_gate_check — simulates impl task
-    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
+    _run_gate "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
@@ -685,32 +624,15 @@ EOF
 # 旧Step3(YES/NO推定)とは異なり、文字列をそのままcheck名に使うため情報捏造なし
 
 @test "Fix5-Step3復活: binary_checks散文 → autofixでlist変換" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # binary_checksを散文テキストに置き換え
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks'] = {'AC1': 'API接続確認済み、全てPASS、問題なし'}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1: API接続確認済み、全てPASS、問題なし'
     # Fix5 Step3(cmd_1496復活): autofix converts prose to [{check: prose, result: 'yes'}]
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
-    # Verify the value is now a list (converted from string)
-    run python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-bc = data.get('binary_checks', {}).get('AC1')
-assert isinstance(bc, list), f'Expected list, got {type(bc)}'
-assert bc[0]['check'] == 'API接続確認済み、全てPASS、問題なし', f'check text mismatch: {bc[0][\"check\"]}'
-assert bc[0]['result'] == 'yes', f'result should be yes'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    grep -q '^binary_checks:$' "$TEST_TMPDIR/report.yaml"
+    grep -q '^  AC1:$' "$TEST_TMPDIR/report.yaml"
+    grep -q '^  - check: API接続確認済み、全てPASS、問題なし$' "$TEST_TMPDIR/report.yaml"
+    grep -q "^    result: 'yes'$" "$TEST_TMPDIR/report.yaml"
 }
 
 # === GP-104撤去テスト: GP-091 YAML parse修復がautofixされないことを確認 ===
@@ -722,16 +644,16 @@ print('OK')
 # 期待: autofixは補完せず、ac_version_readは空のまま
 
 @test "GP-106撤去: ac_version_read欠落 → autofixせず → gate FAIL" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     # ac_version_readを消去
     sed -i '/^ac_version_read:/d' "$TEST_TMPDIR/report.yaml"
     # autofixが補完しないことを確認
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/report.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
     run bash -c "grep -qE '^ac_version_read:' '$TEST_TMPDIR/report.yaml' && echo FILLED || echo MISSING"
     [[ "$output" == *"MISSING"* ]]
     # format gateがBLOCKすることを確認
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
 }
@@ -746,7 +668,7 @@ lesson_candidate: "some string value"
   title: "orphaned"
 verdict: PASS
 BROKEN
-    run bash "$PROJECT_ROOT/scripts/gates/gate_report_autofix.sh" "$TEST_TMPDIR/broken.yaml"
+    run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/broken.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"UNFIXABLE"* ]]
     [[ "$output" == *"YAML parse error"* ]]
@@ -755,61 +677,36 @@ BROKEN
 # === GP-108テスト: FIXヒント完全化+重複排除 ===
 
 @test "GP-108: lesson_candidate found=false no_reason → FIX hint表示" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lesson_candidate'] = {'found': False}
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lesson_candidate" $'lesson_candidate:\n  found: false'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"no_lesson_reason"* ]]
     [[ "$output" == *"FIX (lesson_candidate)"* ]]
 }
 
 @test "GP-108: self_gate_check as string → FIX hint表示" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     echo 'self_gate_check: "all good"' >> "$TEST_TMPDIR/report.yaml"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"self_gate_check: is str"* ]]
     [[ "$output" == *"FIX (self_gate_check)"* ]]
 }
 
 @test "GP-108: lessons_useful null → FIX hint表示" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = None
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" 'lessons_useful: null'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"lessons_useful: null"* ]]
     [[ "$output" == *"FIX (lessons_useful)"* ]]
 }
 
 @test "GP-108: ヒント重複排除 — 3つのreason emptyで1つのFIX hint" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['lessons_useful'] = [
-    {'id': 'L001', 'useful': True, 'reason': ''},
-    {'id': 'L002', 'useful': True, 'reason': ''},
-    {'id': 'L003', 'useful': False, 'reason': ''},
-]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "lessons_useful" $'lessons_useful:\n  - id: L001\n    useful: true\n    reason: ""\n  - id: L002\n    useful: true\n    reason: ""\n  - id: L003\n    useful: false\n    reason: ""'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     # 3つのエラーがセミコロン区切りで1行に出る
     local error_count
@@ -828,56 +725,34 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 # --- GP-163: verdict=PASS + empty binary_checks result contradiction (cmd_1663) ---
 
 @test "GP-163: verdict=PASS with empty BC result is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    # AC2のresultを空にしてverdict=PASSのまま → 矛盾検出
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks']['AC2'] = [{'check': '矛盾検出確認', 'result': ''}]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1:\n    - check: "テスト確認1"\n      result: "yes"\n  AC2:\n    - check: "矛盾検出確認"\n      result: ""'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"verdict: PASS but binary_checks contain empty result"* ]]
 }
 
 @test "GP-163: verdict=PASS with null BC result is rejected by gate" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks']['AC1'] = [{'check': 'テスト確認', 'result': None}]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1:\n    - check: "テスト確認"\n      result: null\n  AC2:\n    - check: "テスト確認2"\n      result: "yes"'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"FAIL"* ]]
     [[ "$output" == *"verdict: PASS but binary_checks contain empty result"* ]]
 }
 
 @test "GP-163: verdict=PASS with all results filled passes gate" {
-    run bash "$GATE_SCRIPT" "$BASE_FILLED_REPORT"
+    _run_gate "$BASE_FILLED_REPORT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
 
 @test "GP-163: verdict=FAIL with empty BC result does not trigger contradiction error" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['binary_checks']['AC2'] = [{'check': '矛盾検出確認', 'result': ''}]
-data['verdict'] = 'FAIL'
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "binary_checks" $'binary_checks:\n  AC1:\n    - check: "テスト確認1"\n      result: "yes"\n  AC2:\n    - check: "矛盾検出確認"\n      result: ""'
+    sed -i 's/^verdict: PASS$/verdict: FAIL/' "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
     # verdict=FAILなので矛盾エラーは出ない（ただし空resultの個別エラーは出る）
     [[ "$output" != *"verdict: PASS but binary_checks contain empty result"* ]]
 }
@@ -885,39 +760,19 @@ with open('$TEST_TMPDIR/report.yaml', 'w') as f:
 # --- GP-202: files_modified×parent_cmdプレフィックス不一致WARN (LK069/cmd_1948事故) ---
 
 @test "GP-202: files_modifiedにparent_cmdプレフィックスが0件 → WARN表示" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     # parent_cmd=cmd_testだがfiles_modifiedにcmd_testを含まないファイルのみ
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['parent_cmd'] = 'cmd_1948'
-data['files_modified'] = [
-    {'path': 'scripts/oneshot/cmd_1947_l3_ew_combo_stability.py', 'change': 'modified'},
-    {'path': 'outputs/analysis/cmd_1947_l3_onebody_stability.csv', 'change': 'modified'},
-]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    sed -i 's/^parent_cmd: cmd_test$/parent_cmd: cmd_1948/' "$TEST_TMPDIR/report.yaml"
+    _replace_section "$TEST_TMPDIR/report.yaml" "files_modified" $'files_modified:\n  - path: scripts/oneshot/cmd_1947_l3_ew_combo_stability.py\n    change: modified\n  - path: outputs/analysis/cmd_1947_l3_onebody_stability.csv\n    change: modified'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [[ "$output" == *"GP-202 WARN"* ]]
     [[ "$output" == *"cmd_1948"* ]]
 }
 
 @test "GP-202: files_modifiedにparent_cmdプレフィックスが含まれる → WARN非表示" {
-    _generate_filled_report "$TEST_TMPDIR/report.yaml" "filled"
-    python3 -c "
-import yaml
-with open('$TEST_TMPDIR/report.yaml') as f:
-    data = yaml.safe_load(f)
-data['parent_cmd'] = 'cmd_1948'
-data['files_modified'] = [
-    {'path': 'outputs/analysis/cmd_1948_l3_1body_1x1.csv', 'change': 'modified'},
-    {'path': 'scripts/oneshot/cmd_1948_nbody_1x1.py', 'change': 'modified'},
-]
-with open('$TEST_TMPDIR/report.yaml', 'w') as f:
-    yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-"
-    run bash "$GATE_SCRIPT" "$TEST_TMPDIR/report.yaml"
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    sed -i 's/^parent_cmd: cmd_test$/parent_cmd: cmd_1948/' "$TEST_TMPDIR/report.yaml"
+    _replace_section "$TEST_TMPDIR/report.yaml" "files_modified" $'files_modified:\n  - path: outputs/analysis/cmd_1948_l3_1body_1x1.csv\n    change: modified\n  - path: scripts/oneshot/cmd_1948_nbody_1x1.py\n    change: modified'
+    _run_gate "$TEST_TMPDIR/report.yaml"
     [[ "$output" != *"GP-202 WARN"* ]]
 }
