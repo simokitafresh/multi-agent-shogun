@@ -55,10 +55,19 @@ BATS_TEST_TMPDIR使用により両方不要になる。
 
 ## After 計測
 
-(実装後に記入)
+```
+実行: bats tests/unit/test_deploy_task_lifecycle.bats (sequential)
+runs: 4103, 4114, 4134, 4203, 4226ms (sorted: 4103, 4114, 4134, 4203, 4226)
+中央値: 4.134s
+削減率: 41.8% (before 7.104s → after 4.134s)
+テスト数: 36 (before時点から変化なし、全PASS)
+```
 
-```
-runs: (TBD)
-中央値: (TBD)
-削減率: (TBD)
-```
+## 最適化結果サマリー
+
+| 指標 | Before | After | 削減 |
+|------|--------|-------|------|
+| 中央値 | 7.104s | 4.134s | 2.970s (41.8%) |
+| テスト数 | 36 | 36 | 変化なし |
+
+目標: before比40%削減 → **PASS** (41.8% > 40%)

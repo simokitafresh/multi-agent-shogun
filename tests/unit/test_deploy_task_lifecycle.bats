@@ -279,70 +279,76 @@ read_gate_blocks() {
 
 run_gate_blocks_inject() {
     local ninja_name="$1"
-    run bash -c "
-        cd '$TEST_PROJECT'
-        python3 -c '
-import os, re, sys, yaml, tempfile
+    local task_file="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local gate_metrics_path="$TEST_PROJECT/logs/gate_metrics.log"
+    local _ok=0
 
-task_file = \"$TEST_PROJECT/queue/tasks/sasuke.yaml\"
-ninja_name = \"$ninja_name\"
-logs_dir = \"$TEST_PROJECT/logs\"
+    # Parse gate_metrics.log for BLOCK categories
+    local block_data=""
+    if [ -f "$gate_metrics_path" ]; then
+        block_data=$(awk -v ninja="$ninja_name" '
+            BEGIN {
+                split("kagemaru hanzo hayate tobisaru saizo kotaro sasuke kirimaru", arr, " ")
+                for (i in arr) nn[arr[i]] = 1
+            }
+            {
+                n = split($0, cols, "\t")
+                if (n < 4 || cols[3] != "BLOCK") next
+                nr = split(cols[4], reasons, "|")
+                for (i = 1; i <= nr; i++) {
+                    r = reasons[i]
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", r)
+                    matched = ""
+                    for (x in nn) {
+                        pfx = x ":"
+                        if (substr(r, 1, length(pfx)) == pfx) { matched = x; break }
+                    }
+                    if (matched != "") {
+                        if (matched == ninja) {
+                            rest = substr(r, length(matched)+2)
+                            split(rest, parts, /[:=]/)
+                            cat = parts[1]
+                            if (cat != "") counts[cat]++
+                        }
+                        continue
+                    }
+                    if (index(r, ":" ninja "_report") || index(r, "_" ninja "_report") || index(r, "/" ninja "_report")) {
+                        if (index(r, ":") > 0) { split(r, rp, ":"); cat = rp[1] }
+                        else cat = "report_issue"
+                        counts[cat]++
+                    }
+                }
+            }
+            END { for (cat in counts) print counts[cat] "\t" cat }
+        ' "$gate_metrics_path" | sort -rn) || _ok=1
+    fi
 
-with open(task_file) as f:
-    data = yaml.safe_load(f)
+    # Append ninja_weak_points section to task YAML
+    {
+        printf "  ninja_weak_points:\n"
+        if [ -n "$block_data" ]; then
+            printf "    gate_blocks:\n"
+            local n_injected=0 hint
+            while IFS=$'\t' read -r cnt cat; do
+                case "$cat" in
+                    empty_lessons_useful)     hint="lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止" ;;
+                    lesson_done_source)        hint="lesson_candidate登録後にlesson_done確認が必要。lesson_write.sh経由で正式登録" ;;
+                    lesson_candidate_missing) hint="lesson_candidate.found欄を必ず記入(true/false)。省略禁止" ;;
+                    binary_checks_fail)        hint="binary_checksのresultがyesでない項目あり。全ACのチェック完了を確認" ;;
+                    ac_version_mismatch)       hint="ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込" ;;
+                    report_format)             hint="report YAMLのフォーマットエラー。report_field_set.sh使用必須" ;;
+                    report_yaml_missing)       hint="report YAMLが存在しない。report_pathのファイルを作成・記入せよ" ;;
+                    *)                         hint="gate BLOCK: $cat" ;;
+                esac
+                printf "    - count: %s\n      hint: %s\n      reason: %s\n" "$cnt" "$hint" "$cat"
+                n_injected=$((n_injected+1))
+            done <<< "$block_data"
+            echo "INJECTED $n_injected categories" >&2
+        fi
+        printf "    source: test\n    total_workarounds: 1\n"
+    } >> "$task_file" || _ok=1
 
-task = data[\"task\"]
-task[\"ninja_weak_points\"] = {\"source\": \"test\", \"total_workarounds\": 1}
-
-gate_metrics_path = os.path.join(logs_dir, \"gate_metrics.log\")
-if os.path.exists(gate_metrics_path):
-    NINJA_NAMES = {\"kagemaru\", \"hanzo\", \"hayate\", \"tobisaru\", \"saizo\", \"kotaro\", \"sasuke\", \"kirimaru\"}
-    BLOCK_HINT_MAP = {
-        \"empty_lessons_useful\": \"lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止\",
-        \"lesson_done_source\": \"lesson_candidate登録後にlesson_done確認が必要。lesson_write.sh経由で正式登録\",
-        \"lesson_candidate_missing\": \"lesson_candidate.found欄を必ず記入(true/false)。省略禁止\",
-        \"binary_checks_fail\": \"binary_checksのresultがyesでない項目あり。全ACのチェック完了を確認\",
-        \"ac_version_mismatch\": \"ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込\",
-        \"report_format\": \"report YAMLのフォーマットエラー。report_field_set.sh使用必須\",
-        \"report_yaml_missing\": \"report YAMLが存在しない。report_pathのファイルを作成・記入せよ\",
-    }
-    block_cats = {}
-    with open(gate_metrics_path, encoding=\"utf-8\") as gmf:
-        for line in gmf:
-            cols = line.rstrip(\"\\n\").split(\"\\t\")
-            if len(cols) < 4 or cols[2] != \"BLOCK\":
-                continue
-            reasons = cols[3].split(\"|\")
-            for reason in reasons:
-                reason = reason.strip()
-                matched_ninja = False
-                for nn in NINJA_NAMES:
-                    if reason.startswith(nn + \":\"):
-                        if nn == ninja_name:
-                            rest = reason[len(nn)+1:]
-                            cat = re.split(r\"[:=]\", rest)[0]
-                            if cat:
-                                block_cats[cat] = block_cats.get(cat, 0) + 1
-                        matched_ninja = True
-                        break
-                if matched_ninja:
-                    continue
-                if f\":{ninja_name}_report\" in reason or f\"_{ninja_name}_report\" in reason or f\"/{ninja_name}_report\" in reason:
-                    cat = reason.split(\":\")[0] if \":\" in reason else \"report_issue\"
-                    block_cats[cat] = block_cats.get(cat, 0) + 1
-    if block_cats:
-        sorted_blocks = sorted(block_cats.items(), key=lambda x: -x[1])
-        gate_blocks = [
-            {\"reason\": cat, \"count\": cnt, \"hint\": BLOCK_HINT_MAP.get(cat, f\"gate BLOCK: {cat}\")}
-            for cat, cnt in sorted_blocks
-        ]
-        task[\"ninja_weak_points\"][\"gate_blocks\"] = gate_blocks
-        print(f\"INJECTED {len(gate_blocks)} categories\", file=sys.stderr)
-
-with open(task_file, \"w\") as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-'
-    " 2>&1
+    if [ "$_ok" -eq 0 ]; then run true; else run false; fi
 }
 
 # ─── gate_fail_top3 ヘルパー関数 ───
