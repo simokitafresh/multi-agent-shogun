@@ -39,6 +39,7 @@ teardown() {
   ambiguity_points: none
   observations:
     - "通常レビュー"
+    - "別観測あり"
   timestamp: "2026-04-18T00:01:00"
 YAML
 
@@ -80,4 +81,39 @@ YAML
     [ "$status" -eq 1 ]
     [[ "$output" == *"WARN: APPROVE+FM許容パターン検出"* ]]
     [[ "$output" == *"cmd_2999"* ]]
+}
+
+@test "single-scenario draft is warned" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3001
+  review_type: draft
+  verdict: APPROVE
+  ambiguity_points: none
+  observations:
+    - "事実1のみ"
+  timestamp: "2026-04-18T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"1シナリオ観測のみ"* ]]
+    [[ "$output" == *"cmd_3001"* ]]
+}
+
+@test "zero ambiguity only once emits INFO" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3002
+  review_type: draft
+  verdict: APPROVE
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-04-18T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: ambiguity_points=0 が1回だけのdraftを検出"* ]]
+    [[ "$output" == *"cmd_3002"* ]]
 }

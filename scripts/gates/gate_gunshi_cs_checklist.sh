@@ -38,8 +38,10 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         draft_count++
         draft_id[draft_count] = (entry_id != "" ? entry_id : "?")
         draft_obs[draft_count] = obs_text
+        draft_obs_count[draft_count] = obs_count
         draft_verdict[draft_count] = verdict
         draft_has_ambiguity[draft_count] = has_ambiguity
+        draft_ambiguity[draft_count] = ambiguity_text
     }
 
     in_record = 0
@@ -49,7 +51,9 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     has_cs = 0
     has_causal = 0
     has_ambiguity = 0
+    ambiguity_text = ""
     in_obs = 0
+    obs_count = 0
     obs_text = ""
 }
 BEGIN {
@@ -84,6 +88,10 @@ BEGIN {
         has_causal = 1
     } else if ($0 ~ /^[[:space:]]*ambiguity_points:[[:space:]]*/) {
         has_ambiguity = 1
+        line = $0
+        sub(/^[[:space:]]*ambiguity_points:[[:space:]]*/, "", line)
+        gsub(/["'\''"]/, "", line)
+        ambiguity_text = trim(line)
     }
 
     if ($0 ~ /^[[:space:]]*observations:[[:space:]]*$/) {
@@ -93,6 +101,7 @@ BEGIN {
     if (in_obs) {
         if ($0 ~ /^[[:space:]]{4,}- /) {
             obs_text = obs_text "\n" $0
+            obs_count++
             next
         }
         if ($0 ~ /^[[:space:]]{2}[a-z_]+:/ || $0 ~ /^- (cmd_id|id):/) {
@@ -114,14 +123,26 @@ END {
     start_draft = (draft_count > 20) ? draft_count - 19 : 1
     fm_flagged_count = 0
     ambiguity_missing_count = 0
-    for (i = start_draft; i <= draft_count; i++) {
+    single_scenario_count = 0
+    convergence_once_count = 0
+    for (i = 1; i <= draft_count; i++) {
         has_fm = (draft_obs[i] ~ fm_pat)
         has_tolerance = (draft_obs[i] ~ tol_pat)
-        if (draft_verdict[i] == "APPROVE" && has_fm && has_tolerance) {
+        zero_ambiguity = (tolower(draft_ambiguity[i]) ~ /^(none|なし|0|\[\]|\{\})$/)
+        if (i >= start_draft && draft_verdict[i] == "APPROVE" && has_fm && has_tolerance) {
             fm_flagged[++fm_flagged_count] = draft_id[i]
         }
-        if (!draft_has_ambiguity[i]) {
+        if (i >= start_draft && !draft_has_ambiguity[i]) {
             ambiguity_missing[++ambiguity_missing_count] = draft_id[i]
+        }
+        if (i >= start_draft && draft_obs_count[i] <= 1) {
+            single_scenario[++single_scenario_count] = draft_id[i]
+        }
+        if (i >= start_draft && zero_ambiguity && zero_ambiguity_seen[draft_id[i]] == 0) {
+            convergence_once[++convergence_once_count] = draft_id[i]
+        }
+        if (zero_ambiguity) {
+            zero_ambiguity_seen[draft_id[i]]++
         }
     }
 
@@ -129,6 +150,8 @@ END {
     emit_list("CAUSAL_MISSING:", causal_missing, causal_missing_count)
     emit_list("FM_TOLERANCE:", fm_flagged, fm_flagged_count)
     emit_list("AMBIGUITY_MISSING:", ambiguity_missing, ambiguity_missing_count)
+    emit_list("SINGLE_SCENARIO:", single_scenario, single_scenario_count)
+    emit_list("CONVERGENCE_ONCE:", convergence_once, convergence_once_count)
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
@@ -138,6 +161,8 @@ cs_missing=""
 causal_missing=""
 fm_flagged=""
 ambiguity_missing=""
+single_scenario=""
+convergence_once=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -153,6 +178,12 @@ while IFS= read -r line; do
             ;;
         AMBIGUITY_MISSING:*)
             ambiguity_missing="${line#AMBIGUITY_MISSING:}"
+            ;;
+        SINGLE_SCENARIO:*)
+            single_scenario="${line#SINGLE_SCENARIO:}"
+            ;;
+        CONVERGENCE_ONCE:*)
+            convergence_once="${line#CONVERGENCE_ONCE:}"
             ;;
         ALL_PASS)
             all_pass=1
@@ -182,7 +213,14 @@ if [ -n "$fm_flagged" ]; then
     warn=1
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ]; then
+if [ -n "$convergence_once" ]; then
+    echo "INFO: ambiguity_points=0 が1回だけのdraftを検出。mizchi Red flag『不明瞭点0が1回出たから終わり』を避け、連続ゼロ収束を確認せよ:"
+    printf '%s\n' "$convergence_once" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id"
+    done
+fi
+
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -206,6 +244,14 @@ if [ -n "$ambiguity_missing" ]; then
     echo "WARN: ${ambiguity_count}件のdraftエントリにambiguity_pointsなし:"
     printf '%s\n' "$ambiguity_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id"
+    done
+    warn=1
+fi
+if [ -n "$single_scenario" ]; then
+    single_scenario_count=$(printf '%s\n' "$single_scenario" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${single_scenario_count}件のdraftエントリが1シナリオ観測のみ:"
+    printf '%s\n' "$single_scenario" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: 観測が1件のみ。mizchi Red flag『1シナリオで充分』の可能性"
     done
     warn=1
 fi
