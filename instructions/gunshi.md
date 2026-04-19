@@ -399,8 +399,8 @@ discretion_fills: none  # 軍師が裁量で補完・解釈した事項。あれ
 ```
 
 verdictの判断基準:
-- **APPROVE**: 6観点で重大問題なし。confidence HIGH/MEDIUM。即配備可能
-- **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**
+- **APPROVE**: 6観点で重大問題なし。confidence HIGH/MEDIUM。即配備可能。**draftレビューではLGTM相当であり、ambiguity_points は 0件（`none`）が条件**
+- **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**。**ambiguity_points が 1件以上ある場合も REQUEST_CHANGES とし、曖昧箇所の解消を要求する**
 - **REJECT**: 根本的な前提崩壊 or confidence LOW。再偵察または再設計が必要
 
 ### REQUEST_CHANGES時の還流（2種）
