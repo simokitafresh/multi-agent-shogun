@@ -1214,10 +1214,9 @@ check_impl_push_ac() {
     # acceptance_criteria セクションを抽出
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
-        /acceptance_criteria:/ { found=1; next }
-        found && /^    - / { print; next }
-        found && /^      / { print; next }
-        found { exit }
+        /^[[:space:]]*acceptance_criteria:/ { found=1; next }
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        found { print }
     ')
 
     # acceptance_criteriaがない場合はCMD_BLOCK_NC全体にフォールバック
@@ -1244,10 +1243,9 @@ check_ac_must_should_mix() {
 
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
-        /acceptance_criteria:/ { found=1; next }
-        found && /^    - / { print; next }
-        found && /^      / { print; next }
-        found { exit }
+        /^[[:space:]]*acceptance_criteria:/ { found=1; next }
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        found { print }
     ')
     [[ -z "$AC_SECTION" ]] && return 0
 
