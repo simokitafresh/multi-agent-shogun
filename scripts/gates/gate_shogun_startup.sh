@@ -8,6 +8,7 @@ set -e
 run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
+local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
 
 overall="OK"
 alerts=()
@@ -186,6 +187,9 @@ else
 fi
 
 # Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  ■ Phase逐次読込ガイド: SKIP(lightweight)"
+else
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
 _phase_guides=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" <<'PY'
 from pathlib import Path
@@ -215,11 +219,16 @@ while IFS= read -r _pg_line; do
     echo "  $_pg_line"
 done <<< "$_phase_guides"
 echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+fi
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
 # gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
+if [ "$LIGHT_MODE" = "1" ]; then
+echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
+echo "  SKIP(lightweight)"
+else
 _prev_session_summary=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
 import sys, json
 log_file = sys.argv[1]
@@ -254,10 +263,14 @@ echo "  [前セッション出来事] ${_prev_session_summary}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
 echo "  ※ 結論(自動化×強制が大事)を書くな。今の自分の具体的状況を書け。"
 echo "  ※ reason: 結論を知っていることが追体験を殺す。テキスト処理ではなく自己診断(2026-04-07殿指摘)"
+fi
 
 # --- Gate 7: 前セッション裁定の知識還流チェック ---
 LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
 echo "■ 前セッション裁定"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 if [ -f "$LORD_INDEX" ]; then
     ruling_count=$(grep -c "^- " <(sed -n '/殿の直近裁定・方針/,/^## /p' "$LORD_INDEX") 2>/dev/null) || ruling_count=0
     if [ "$ruling_count" -gt 0 ]; then
@@ -268,11 +281,15 @@ if [ -f "$LORD_INDEX" ]; then
 else
     echo "  lord-conversation-index.md不在"
 fi
+fi
 
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
 echo "■ 気づきキュー"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 if [ -f "$INSIGHTS_FILE" ]; then
     # Auto-archive: done/monitoring/observation/deferred が合計5件以上なら自動アーカイブ
     # 高速パス: grepで先にarchivable件数チェック（閾値未満ならPythonスキップ）
@@ -345,9 +362,13 @@ if [ -f "$INSIGHTS_FILE" ]; then
 else
     echo "  キューなし"
 fi
+fi
 
 # --- Gate 9: 将軍パフォーマンスフィードバック ---
 echo "■ 将軍パフォーマンスフィードバック"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 DESIGN_QUALITY="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 WORKAROUNDS_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 REWORK_PCT="N/A"
@@ -468,6 +489,7 @@ print(f"RC={rc_count}/{total} ({rc_pct}%){kw_str}")
 END_RC_PY
 ) || rc_data="N/A (スクリプトエラー)"
 echo "  軍師draft RC傾向(直近20件): ${rc_data}"
+fi
 
 # --- Gate 10: idle自走トリガー ---
 echo "■ idle自走トリガー"
@@ -632,6 +654,9 @@ fi
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
 echo "■ 軍師分析状態"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 _gunshi_info=$(
     python3 - "$SCRIPT_DIR/context" <<'PY'
 from pathlib import Path
@@ -667,6 +692,7 @@ if [ -n "$_gunshi_info" ]; then
 else
     echo "  軍師分析ファイルなし"
 fi
+fi
 
 # --- Context著者: 遅延取得（孤立ファイルのみgit log -1） ---
 # 高速化: 全履歴走査(2.5s/1965行)→孤立時のみper-file git log -1(0s〜0.1s)
@@ -681,6 +707,9 @@ _get_context_author() {
 #        参照されていないファイルがあれば、進化シグナルとしてフラグ。知識循環を自動促進
 # 高速版: 核心ファイルをcatして一括grepで判定(WSL2 /mnt/c でのfull-repo scan回避)
 echo "■ 進化検知（孤立context）"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
 _evo_orphans=""
 _evo_count=0
 _KMAP_MISSING=()
@@ -752,6 +781,7 @@ if [ -n "$_evo_scan" ]; then
                 ;;
         esac
     done <<< "$_evo_scan"
+fi
 fi
 if [ ${#_KMAP_MISSING[@]} -gt 0 ]; then
     echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"

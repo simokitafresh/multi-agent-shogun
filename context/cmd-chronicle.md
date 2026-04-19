@@ -741,3 +741,4 @@
 | cmd_2098 | 実装 — AI開発知識辞書 鮮度チェックgate (CoDDドキュメント適用Phase1) | infra | 04-19 | 知識辞書verified_at鮮度gateを追加し、将軍st |
 | cmd_2100 | 実装 — AI開発知識辞書 落とし穴+相互参照の補完 (全エントリ) | infra | 04-19 | ace/vercel/gsd に Pitfalls/Cros |
 | cmd_karo_ci_fix_ga117 | CI修正 — test_cmd_save.bats 5テスト失敗(BLOCK集約副作用) | infra | 04-19 | cmd_save.shの2箇所を修正: (1)q5 elif |
+| cmd_2102 | 改善 — gate_shogun_startup.sh CoDD再改善 (サブプロセス削減で1.3秒→目標0.5秒) | infra | 04-19 | gate_shogun_startup.sh を 1.28s |

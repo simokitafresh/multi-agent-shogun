@@ -42,6 +42,11 @@ if printf '%s\n' "$RESULT" | grep -qxE 'PASS|PASS_NO_IMPROVEMENT'; then
     RESULT_IS_PASS=1
 fi
 
+# Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
+if [[ "${GATE_FAST_EXIT:-0}" = "1" ]]; then
+    [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
+fi
+
 # --- GATE_NO_LOG guard: skip fire_log writing ---
 if [[ "${GATE_NO_LOG:-}" = "1" ]]; then
     [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
