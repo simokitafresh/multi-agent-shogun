@@ -1589,6 +1589,77 @@ report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 PY_GATE_WARN
     log "report_template: gate warning comments injected"
 
+    # cmd_2161: gate_report_format 学習済みパターンが閾値超なら、空欄再発しやすい項目を
+    # FILL_THIS placeholder に昇格して template state を明示する。
+    REPORT_FILE_ENV="$report_file" \
+    LEARNING_FILE_ENV="${GATE_REPORT_FORMAT_LEARNING_FILE:-$SCRIPT_DIR/logs/gate_report_format_learning.yaml}" \
+    python3 - <<'PY_LEARNED_PREFILL'
+import os
+import re
+from pathlib import Path
+
+import yaml
+
+report_path = Path(os.environ["REPORT_FILE_ENV"])
+learning_path = Path(os.environ["LEARNING_FILE_ENV"])
+
+if not learning_path.exists():
+    raise SystemExit(0)
+
+try:
+    learning = yaml.safe_load(learning_path.read_text(encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+
+patterns = learning.get("patterns", {})
+if not isinstance(patterns, dict):
+    raise SystemExit(0)
+
+active = {
+    name for name, meta in patterns.items()
+    if isinstance(meta, dict) and meta.get("prefill_active") is True
+}
+if not active:
+    raise SystemExit(0)
+
+lines = report_path.read_text(encoding="utf-8").splitlines()
+new_lines: list[str] = []
+in_lessons = False
+in_binary_checks = False
+lu_note = "# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ"
+bc_note = "# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ"
+
+for line in lines:
+    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*:", line):
+        in_lessons = False
+        in_binary_checks = False
+
+    if line.startswith("lessons_useful:"):
+        if "lu_reason_empty" in active:
+            new_lines.append(lu_note)
+        in_lessons = True
+        new_lines.append(line)
+        continue
+
+    if line.startswith("binary_checks:"):
+        if "bc_result_empty" in active:
+            new_lines.append(bc_note)
+        in_binary_checks = True
+        new_lines.append(line)
+        continue
+
+    if in_lessons and "lu_reason_empty" in active and "FILL_THIS" not in line:
+        line = re.sub(r"^(\s+reason:)\s*''(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+
+    if in_binary_checks and "bc_result_empty" in active and "FILL_THIS" not in line:
+        line = re.sub(r"^(\s+result:)\s*''(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+
+    new_lines.append(line)
+
+report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+PY_LEARNED_PREFILL
+    log "report_template: learned prefills injected"
+
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     # cmd_1983: field_get_multiで一括取得済み → task_type/type/scope_mode変数を参照
     local report_task_type="${task_type:-${type:-${scope_mode}}}"

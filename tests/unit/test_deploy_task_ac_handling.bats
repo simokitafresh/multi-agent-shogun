@@ -746,6 +746,59 @@ EOF
     [ "$status" -ne 0 ]
 }
 
+@test "cmd_2161: learned prefills replace empty reason/result placeholders and avoid same BLOCK text" {
+    cat > "$TEST_PROJECT/logs/gate_report_format_learning.yaml" <<'EOF'
+threshold: 10
+patterns:
+  bc_result_empty:
+    count: 12
+    prefill_active: true
+  lu_reason_empty:
+    count: 11
+    prefill_active: true
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "learned prefill injection test"
+  task_type: impl
+  parent_cmd: cmd_2161
+  task_id: cmd_2161_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "学習済みtemplateが挿入される"
+  related_lessons:
+    - id: L246
+      title: "dummy"
+      summary: "dummy"
+      detail: "dummy"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F 'reason: FILL_THIS' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F 'result: FILL_THIS' "$report_path"
+    [ "$status" -eq 0 ]
+
+    run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"reason is empty"* ]]
+    [[ "$output" != *"result: 空文字"* ]]
+    [[ "$output" == *"FILL_THIS"* ]]
+}
+
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
     run inject_ac_version_only sasuke
     [ "$status" -eq 0 ]

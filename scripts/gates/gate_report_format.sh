@@ -17,6 +17,8 @@ fi
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
+LEARNING_FILE="${GATE_REPORT_FORMAT_LEARNING_FILE:-$REPO_ROOT/logs/gate_report_format_learning.yaml}"
+PREFILL_THRESHOLD="${GATE_REPORT_FORMAT_PREFILL_THRESHOLD:-10}"
 # perf: cache keyはshellで組み立て、realpath起動を避ける。
 if [[ "$REPORT_PATH" = /* ]]; then
     _CANON="$REPORT_PATH"
@@ -90,14 +92,91 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     fi
     exit 0
 else
-    REASONS="$RESULT"
-    REASONS="${REASONS#FAIL: }"
-    REASONS="${REASONS%%$'\n'*}"
+    REASONS="$(printf '%s\n' "$RESULT" | awk '/^FAIL: /{sub(/^FAIL: /,""); print; exit}')"
+    if [ -z "$REASONS" ]; then
+        REASONS="$RESULT"
+        REASONS="${REASONS#FAIL: }"
+        REASONS="${REASONS%%$'\n'*}"
+    fi
     REASONS="${REASONS//\"/\\\"}"
     (
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    GATE_REASONS="$REASONS" \
+    GATE_REPORT_PATH="$REPORT_PATH" \
+    GATE_LEARNING_FILE="$LEARNING_FILE" \
+    GATE_PREFILL_THRESHOLD="$PREFILL_THRESHOLD" \
+    python3 - <<'LEARNING_PY' 2>/dev/null || true
+import os
+import json
+import tempfile
+from datetime import datetime, timezone
+
+import yaml
+
+
+def extract_patterns(reason_text: str) -> list[str]:
+    patterns = []
+    for reason in [r.strip() for r in reason_text.split(";") if r.strip()]:
+        if reason.startswith("lessons_useful[") and "reason is empty" in reason:
+            patterns.append("lu_reason_empty")
+        elif reason.startswith("binary_checks.") and (".result: 空文字" in reason or '.result: ""' in reason):
+            patterns.append("bc_result_empty")
+    return sorted(set(patterns))
+
+
+reason_text = os.environ.get("GATE_REASONS", "")
+patterns = extract_patterns(reason_text)
+if not patterns:
+    raise SystemExit(0)
+
+learning_file = os.environ["GATE_LEARNING_FILE"]
+threshold = int(os.environ.get("GATE_PREFILL_THRESHOLD", "10") or "10")
+report_path = os.environ.get("GATE_REPORT_PATH", "")
+
+try:
+    with open(learning_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    data = {}
+except Exception:
+    data = {}
+
+if not isinstance(data, dict):
+    data = {}
+
+pattern_map = data.get("patterns")
+if not isinstance(pattern_map, dict):
+    pattern_map = {}
+data["patterns"] = pattern_map
+data["threshold"] = threshold
+data["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+report_name = os.path.basename(report_path) if report_path else ""
+for pattern in patterns:
+    entry = pattern_map.get(pattern)
+    if not isinstance(entry, dict):
+        entry = {}
+    try:
+        count = int(entry.get("count", 0) or 0)
+    except Exception:
+        count = 0
+    count += 1
+    entry["count"] = count
+    entry["prefill_active"] = count >= threshold
+    entry["last_report"] = report_name
+    entry["last_seen"] = data["updated_at"]
+    pattern_map[pattern] = entry
+
+os.makedirs(os.path.dirname(learning_file), exist_ok=True)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(learning_file), suffix=".learning.tmp")
+os.close(fd)
+with open(tmp, "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=False)
+    f.write("\n")
+os.replace(tmp, learning_file)
+LEARNING_PY
     _DIAGNOSE_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_diagnose_check.sh"
     if [ -f "$_DIAGNOSE_GATE" ]; then
         bash "$_DIAGNOSE_GATE" "$REPORT_PATH" "$REASONS" || true
