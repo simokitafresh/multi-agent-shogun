@@ -283,6 +283,7 @@ resolve_cmd_to_task() {
             else if (key == "title")      title      = val
             else if (key == "purpose")    purpose    = val
             else if (key == "depends_on") depends_on = val
+            else if (key == "target_path") target_path = val
             else if (key == "scout_exempt") scout_exempt = val
         }
         END {
@@ -293,6 +294,7 @@ resolve_cmd_to_task() {
             print "title="         title
             print "purpose="       purpose
             print "depends_on="    depends_on
+            print "target_path="   target_path
             print "scout_exempt="  scout_exempt
         }
     ' "$stk") || {
@@ -301,7 +303,7 @@ resolve_cmd_to_task() {
     }
 
     # cmd_2078: 6x echo|grep|cut (18 subprocesses) → while+IFS one-pass (0 subprocesses, -17ms)
-    local project task_type title purpose _depends_on _scout_exempt_stk
+    local project task_type title purpose _depends_on _target_path _scout_exempt_stk
     local _rv_k _rv_v
     declare -A _rv=()
     while IFS='=' read -r _rv_k _rv_v; do
@@ -312,6 +314,7 @@ resolve_cmd_to_task() {
     title="${_rv[title]:-}"
     purpose="${_rv[purpose]:-}"
     _depends_on="${_rv[depends_on]:-}"
+    _target_path="${_rv[target_path]:-}"
     _scout_exempt_stk="${_rv[scout_exempt]:-}"
     unset _rv _rv_k _rv_v
     [ -z "$task_type" ] && task_type="impl"
@@ -327,6 +330,7 @@ resolve_cmd_to_task() {
     local _batch_args=("parent_cmd=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=")
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
+    [ -n "$_target_path" ] && _batch_args+=("target_path=$_target_path")
     # scout_exempt: STKからtask YAMLに転記（reset_stale_fieldsでクリアされるため復元が必要）
     [ "$_scout_exempt_stk" = "true" ] && _batch_args+=("scout_exempt=true")
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \

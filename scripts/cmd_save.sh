@@ -178,7 +178,7 @@ collect_primary_cmd_targets() {
 
     # assumptions/diagnosis内のパス参照はバンドル対象外(cmd_2160 environment_change: バンドル誤検出3回繰返し修正)
     printf '%s\n' "$CMD_BLOCK_NC" \
-        | awk '/^[[:space:]]*(assumptions|diagnosis):/{skip=1} /^[[:space:]]*[a-z_]+:/{if(!/assumptions|diagnosis/) skip=0} !skip{print}' \
+        | awk 'BEGIN{skip=0; skip_indent=999} /^[[:space:]]*(assumptions|diagnosis):/{skip=1; match($0,/^[[:space:]]*/); skip_indent=RLENGTH} skip && /^[[:space:]]*[a-z_]+:/{match($0,/^[[:space:]]*/); if(RLENGTH<=skip_indent && !/assumptions|diagnosis/) {skip=0}} !skip{print}' \
         | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
         | sed 's/[.,:;]$//' \
         | awk '
