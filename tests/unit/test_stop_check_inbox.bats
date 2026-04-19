@@ -8,6 +8,57 @@ setup_file() {
     [ -f "$SOURCE_SCRIPT" ] || return 1
     command -v jq >/dev/null 2>&1 || return 1
     python3 -c "import yaml" >/dev/null 2>&1 || return 1
+
+    # cmd_2111: 共有モックをsetup_fileで一度だけ作成(fixture共有。per-test cat+chmod廃止)
+    export SHARED_BIN="$BATS_SUITE_TMPDIR/shared_bin"
+    export SHARED_SCRIPTS="$BATS_SUITE_TMPDIR/shared_scripts"
+    mkdir -p "$SHARED_BIN" "$SHARED_SCRIPTS"
+
+    cat > "$SHARED_SCRIPTS/inbox_write.sh" <<'EOF'
+#!/bin/bash
+printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "$INBOX_WRITE_LOG"
+EOF
+    chmod +x "$SHARED_SCRIPTS/inbox_write.sh"
+
+    cat > "$SHARED_BIN/tmux" <<'EOF'
+#!/bin/bash
+if [[ "$1" == "display-message" ]]; then
+    printf '%s\n' "${TMUX_AGENT_ID:-hayate}"
+    exit 0
+fi
+printf '%s\n' "$*" >> "$TMUX_LOG"
+exit 0
+EOF
+    chmod +x "$SHARED_BIN/tmux"
+
+    # cmd_2111: タイムアウト比例ポーリング — 短時間(0.01s)は高速終了、長時間(1s)は変化検知で早期脱出
+    cat > "$SHARED_BIN/inotifywait" <<'EOF'
+#!/bin/bash
+timeout_val=1
+file_to_watch=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --timeout) timeout_val="$2"; shift 2 ;;
+        -e) shift 2 ;;
+        -*) shift ;;
+        *) file_to_watch="$1"; shift ;;
+    esac
+done
+if [ -n "$file_to_watch" ] && [ -f "$file_to_watch" ]; then
+    init_size=$(wc -c < "$file_to_watch" 2>/dev/null || echo 0)
+    polls=$(awk "BEGIN{n = int($timeout_val / 0.05); print (n < 1) ? 1 : n}")
+    sleep_per=$(awk "BEGIN{printf \"%.4f\", $timeout_val / $polls}")
+    for ((i=0; i<polls; i++)); do
+        sleep "$sleep_per"
+        cur_size=$(wc -c < "$file_to_watch" 2>/dev/null || echo 0)
+        [ "$cur_size" != "$init_size" ] && exit 0
+    done
+else
+    sleep "$timeout_val"
+fi
+exit 0
+EOF
+    chmod +x "$SHARED_BIN/inotifywait"
 }
 
 setup() {
@@ -22,44 +73,16 @@ setup() {
     export TEST_IDLE_FLAG="$SHOGUN_STATE_DIR/shogun_idle_${TMUX_AGENT_ID}"
 
     mkdir -p "$TEST_PROJECT/scripts/hooks" "$TEST_PROJECT/scripts" "$TEST_PROJECT/queue/inbox" "$TEST_BIN" "$SHOGUN_STATE_DIR"
-    cp "$SOURCE_SCRIPT" "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
-    chmod +x "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
 
-    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
-#!/bin/bash
-printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "$INBOX_WRITE_LOG"
-EOF
-    chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
-
-    cat > "$TEST_BIN/tmux" <<'EOF'
-#!/bin/bash
-if [[ "$1" == "display-message" ]]; then
-    printf '%s\n' "${TMUX_AGENT_ID:-hayate}"
-    exit 0
-fi
-printf '%s\n' "$*" >> "$TMUX_LOG"
-exit 0
-EOF
-    chmod +x "$TEST_BIN/tmux"
-
-    # inotifywait不在環境(CI等)用mock: timeout分sleepして終了
-    cat > "$TEST_BIN/inotifywait" <<'EOF'
-#!/bin/bash
-timeout_val=1
-while [ "$#" -gt 0 ]; do
-    case "$1" in
-        --timeout) timeout_val="$2"; shift 2 ;;
-        *) shift ;;
-    esac
-done
-sleep "$timeout_val"
-exit 0
-EOF
-    chmod +x "$TEST_BIN/inotifywait"
+    # cmd_2111: cp+chmod → ln -sf でサブプロセス削減(fixture共有)
+    ln -sf "$SOURCE_SCRIPT" "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
+    ln -sf "$SHARED_SCRIPTS/inbox_write.sh" "$TEST_PROJECT/scripts/inbox_write.sh"
+    ln -sf "$SHARED_BIN/tmux" "$TEST_BIN/tmux"
+    ln -sf "$SHARED_BIN/inotifywait" "$TEST_BIN/inotifywait"
 
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
-    export STOP_HOOK_INOTIFY_TIMEOUT=0.2  # テスト用に短縮。late-arrival分岐の再現余裕を確保
+    export STOP_HOOK_INOTIFY_TIMEOUT=0.01  # cmd_2111: 0.2→0.01。T-SCI-005は上書き
     rm -f "$TEST_IDLE_FLAG"
     : > "$TMUX_LOG"
     : > "$INBOX_WRITE_LOG"
@@ -150,7 +173,7 @@ EOF
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
     # バックグラウンドで0.5秒後に未読メッセージを書き込む
-    # hookのinitial check完了後に書き込み、��つinotifywait timeout(1s)より前に到達
+    # hookのinitial check完了後に書き込み、かつinotifywait timeout(1s)より前に到達
     (
         sleep 0.5
         cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
