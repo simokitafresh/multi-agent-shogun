@@ -39,8 +39,8 @@ if [[ -z "$CMD_ID" || -z "$GATE_RESULT" || -z "$KARO_REWORK" || -z "$SUPPLEMENTA
 fi
 
 # Validate gate_result
-if [[ "$GATE_RESULT" != "CLEAR" && "$GATE_RESULT" != "FAIL" && "$GATE_RESULT" != "BLOCK" ]]; then
-    echo "[cmd_quality_log] Error: gate_result must be CLEAR, FAIL, or BLOCK (got: $GATE_RESULT)" >&2
+if [[ "$GATE_RESULT" != "CLEAR" && "$GATE_RESULT" != "FAIL" && "$GATE_RESULT" != "BLOCK" && "$GATE_RESULT" != "WARN" ]]; then
+    echo "[cmd_quality_log] Error: gate_result must be CLEAR, FAIL, BLOCK, or WARN (got: $GATE_RESULT)" >&2
     exit 1
 fi
 

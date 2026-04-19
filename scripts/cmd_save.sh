@@ -36,6 +36,7 @@ CMD_BLOCK_LOADED=0
 CMD_BLOCK_FOUND=0
 CMD_BLOCK_CACHE_LOADED=0
 declare -a BLOCK_REASONS=()
+declare -a WARN_REASONS=()
 declare -A CMD_BLOCK_CACHE=()
 exec 3>&2
 exec 2> >(tee -a "$CMD_SAVE_STDERR_LOG" >&3)
@@ -200,7 +201,7 @@ check_self_reread_red_flag() {
     if echo "$combined" | grep -qiE '(自己(再読|申告|確認|評価)|自分で(読み|読|確認|評価)|読み直|読み返|目視確認|セルフレビュー|自問)'; then
         if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguity|clarity|明瞭|レビュー|判定|確認)'; then
             echo "WARNING: 自己再読パターンを検出。書き手自身の目視確認/自己申告は mizchi Red flag『自分で読み直せば同じ効果』になりうる。別役割の評価者へ分離せよ" >&2
-            WARN_COUNT=$((WARN_COUNT + 1))
+            record_warn_reason "自己再読パターン"
         fi
     fi
 }
@@ -219,7 +220,7 @@ check_bundle_red_flag() {
     if (( target_count >= 3 )) || { (( target_count >= 2 )) && (( bundle_signal == 1 )); }; then
         targets_inline=$(printf '%s\n' "$targets" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
         echo "WARNING: バンドルパターンを検出。1cmdで複数対象(${target_count}): ${targets_inline}。無関係な修正を一気に束ねていないか確認せよ" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "バンドルパターン"
     fi
 }
 
@@ -230,6 +231,13 @@ record_block_reason() {
     echo "BLOCK: $reason" >&2
     BLOCK_REASONS+=("$reason")
     BLOCK_COUNT=$((BLOCK_COUNT + 1))
+}
+
+record_warn_reason() {
+    local reason="${1:-}"
+    [[ -n "$reason" ]] || return 0
+    WARN_REASONS+=("$reason")
+    WARN_COUNT=$((WARN_COUNT + 1))
 }
 
 abort_if_block_immediate() {
@@ -389,6 +397,54 @@ log_cmd_save_block() {
     bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 || true
 }
 
+log_cmd_save_warns() {
+    [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+    local reason
+    for reason in "${WARN_REASONS[@]}"; do
+        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+        CMD_QUALITY_SOURCE="cmd_save_warn" \
+        CMD_QUALITY_DIAGNOSIS="" \
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$reason" >/dev/null 2>&1 || true
+    done
+}
+
+count_same_warn_pattern() {
+    local warn_pattern="${1:-}"
+    [[ -n "$warn_pattern" && -f "$QUALITY_LOG_FILE" ]] || {
+        echo 0
+        return 0
+    }
+    CMD_SAVE_CMD_ID="$CMD_ID" \
+    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    CMD_SAVE_WARN_PATTERN="$warn_pattern" \
+    python3 - <<'PY'
+import os
+import yaml
+
+cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+warn_pattern = os.environ.get("CMD_SAVE_WARN_PATTERN", "").strip()
+
+if not cmd_id or not warn_pattern or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+with open(log_path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = data.get("entries", []) if isinstance(data, dict) else []
+count = sum(
+    1 for entry in entries
+    if isinstance(entry, dict)
+    and entry.get("cmd_id") == cmd_id
+    and entry.get("source") == "cmd_save_warn"
+    and entry.get("gate_result") == "WARN"
+    and warn_pattern in str(entry.get("notes", "") or "")
+)
+print(count)
+PY
+}
+
 handle_cmd_save_exit() {
     local status=$?
     trap - EXIT
@@ -444,10 +500,10 @@ CMD_BLOCK_NC=""
 # --- Check 1: cmdブロック存在確認 ---
 if [[ ! -f "$QUEUE_FILE" ]]; then
     echo "WARN: $QUEUE_FILE が存在しません" >&2
-    WARN_COUNT=$((WARN_COUNT + 1))
+    record_warn_reason "queue_file_missing"
 elif ! load_cmd_block; then
     echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
-    WARN_COUNT=$((WARN_COUNT + 1))
+    record_warn_reason "cmd_block_missing"
 fi
 
 # --- Check 1.5: 委任済みcmd再保存BLOCK ---
@@ -492,7 +548,7 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     # パターン: cmd_XXXX_completed_YYYYMMDD.yaml
     if ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_completed_*.yaml 1>/dev/null 2>&1; then
         echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "archive_duplicate"
     fi
 fi
 
@@ -500,6 +556,21 @@ fi
 if load_cmd_block; then
     CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
     show_prior_attempts
+fi
+
+# --- Check 3.5: diagnosis質検査（cmd_2159） ---
+# 目的: diagnosisが記入されている場合、「BLOCK理由:」「対策:」の2部構成を強制
+# 低品質diagnosisを再BLOCKすることで診断内容の質を担保する
+if [[ -n "$CMD_DIAGNOSIS" ]]; then
+    _DIAG_HAS_BLOCK_REASON=0
+    _DIAG_HAS_TAISAKU=0
+    if echo "$CMD_DIAGNOSIS" | grep -q "BLOCK理由:"; then _DIAG_HAS_BLOCK_REASON=1; fi
+    if echo "$CMD_DIAGNOSIS" | grep -q "対策:"; then _DIAG_HAS_TAISAKU=1; fi
+    if [[ "$_DIAG_HAS_BLOCK_REASON" -eq 0 || "$_DIAG_HAS_TAISAKU" -eq 0 ]]; then
+        record_block_reason "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
+        echo '  例: diagnosis: "BLOCK理由: q8にWHYが未記入 対策: q8に殿の指示引用を追加"' >&2
+        abort_if_block_immediate || exit 1
+    fi
 fi
 
 # --- Check 3: quality_gateフィールド検査 ---
@@ -651,7 +722,7 @@ QG_TEMPLATE
         if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表'; then
             echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
-            WARN_COUNT=$((WARN_COUNT + 1))
+            record_warn_reason "q8_縮小表現"
         fi
         # COMPOUND(複利の問い)検査（WARN — 2026-04-15 殿指摘「将軍に因果をたどる仕組みを」）
         # 起源: 軍師のcausal_chain+複利の問いが因果思考を強制。将軍にはなかった
@@ -659,7 +730,7 @@ QG_TEMPLATE
         if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
             echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
             echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
-            WARN_COUNT=$((WARN_COUNT + 1))
+            record_warn_reason "q8_複利の問い"
         fi
         # WHY部分に殿の指示引用を強制（WARN — 2026-04-14 L-CmdDialogueFirst）
         # 起源: 殿の指示→即cmd起票で4/4失敗。対話完了前のcmd起票を防ぐ
@@ -668,7 +739,7 @@ QG_TEMPLATE
         if ! echo "$_Q8_WHY_PART" | grep -qE '「.*」|殿指示|殿裁定|殿指摘|殿提案'; then
             echo "WARN: q8 WHYに殿の指示引用がありません。対話で理解を固めてからcmd起票せよ" >&2
             echo "  → 「殿の言葉を引用」 or 殿指示/殿裁定/殿指摘 を含めよ(L-CmdDialogueFirst)" >&2
-            WARN_COUNT=$((WARN_COUNT + 1))
+            record_warn_reason "q8_WHY引用"
         fi
     fi
 
@@ -2315,8 +2386,22 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "command_steps_over_ac"
     fi
+fi
+
+# --- WARN累計昇格: 同一WARNパターンが3回以上でBLOCK昇格（cmd_2159） ---
+# 目的: WARNを3回無視し続けるとBLOCKに昇格。WARNを解消しない運用を防ぐ
+_WARN_ESCALATE_THRESHOLD=3
+if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
+    log_cmd_save_warns
+    for _warn_r in "${WARN_REASONS[@]}"; do
+        _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
+        [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
+        if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
+            record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+        fi
+    done
 fi
 
 # --- 結果出力 ---
