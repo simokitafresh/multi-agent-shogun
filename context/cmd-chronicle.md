@@ -766,3 +766,4 @@
 | cmd_2132 | 修正(緊急) — sync-standard FoF分離 + monthly_returns crash-safe化 | dm-signal | 04-19 | sync_standardの親FoF波及を止め、Monthl |
 | cmd_2134 | 設計 — 3レジーム市場分析ページ CoDD設計書 | dm-signal | 04-19 | 3レジーム分析の spec と CoDD 設計文書 3 本を |
 | cmd_2135 | 修正(緊急) — DM-Signal PR #15 コンフリクト解決+マージ+Renderデプロイ | dm-signal | 04-19 | PR #15 の2競合を解消し、FoF flush help |
+| cmd_2137 | 設計 — 3レジーム市場分析 Frontend CoDD設計書 | dm-signal | 04-19 | Regime analysis frontend向けのspe |
