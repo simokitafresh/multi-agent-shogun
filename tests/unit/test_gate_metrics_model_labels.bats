@@ -7,6 +7,7 @@ setup_file() {
     export SRC_CONTEXT_FRESHNESS_SCRIPT="$PROJECT_ROOT/scripts/context_freshness_check.sh"
     export SRC_MODEL_ANALYSIS="$PROJECT_ROOT/scripts/model_analysis.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
+    export SRC_LOCK_PATH_SCRIPT="$PROJECT_ROOT/scripts/lib/lock_path.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     export SRC_NORMALIZE_REPORT_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
     export SRC_GUNSHI_NOTIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/gunshi_notify.sh"
@@ -15,6 +16,7 @@ setup_file() {
     [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
     [ -f "$SRC_MODEL_ANALYSIS" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
+    [ -f "$SRC_LOCK_PATH_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_NORMALIZE_REPORT_SCRIPT" ] || return 1
     [ -f "$SRC_GUNSHI_NOTIFY_SCRIPT" ] || return 1
@@ -43,6 +45,7 @@ setup() {
     cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
     cp "$SRC_MODEL_ANALYSIS" "$TEST_PROJECT/scripts/model_analysis.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
+    cp "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
     cp "$SRC_NORMALIZE_REPORT_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
     cp "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
@@ -85,6 +88,7 @@ EOF
         "$TEST_PROJECT/scripts/context_freshness_check.sh" \
         "$TEST_PROJECT/scripts/model_analysis.sh" \
         "$TEST_PROJECT/scripts/lib/field_get.sh" \
+        "$TEST_PROJECT/scripts/lib/lock_path.sh" \
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
         "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
         "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh"
