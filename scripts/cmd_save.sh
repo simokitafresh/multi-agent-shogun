@@ -660,6 +660,14 @@ QG_TEMPLATE
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
     fi
 
+    # q_ambiguity: 不明瞭自覚の自己申告（段階的導入 — WARNING）
+    # 起源: cmd_2121 — 将軍がcmd設計時の曖昧な点を自己申告させることで定義確認を促す
+    # 目的: cmdに曖昧な指示・未定義の前提がある場合、将軍に自覚と記録を促す
+    if ! cmd_block_has_field "quality_gate.q_ambiguity"; then
+        echo "WARNING: q_ambiguity未記入。このcmdに曖昧な指示・未定義の前提はないか？あれば明記し、なければ\"none\"と記入せよ" >&2
+        echo '  形式例: q_ambiguity: "none — 全前提定義済み" or "あり: TOP-N の N が未定義 → 将軍が3と定義"' >&2
+    fi
+
     # q11_not_already_done: 存在チェックはpreflight済み。以下は自動検索のみ
 
     # q11自動検索: command内スクリプト名とdocs/researchの既存成果物を照合（INFO）
