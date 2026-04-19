@@ -774,3 +774,4 @@
 | cmd_2146 | CoDD最適化 — run_077_nukimi.py (GS抜き身忍法) | dm-signal | 04-20 | run_077_nukimi.py CoDD再最適化完了。s |
 | cmd_2144 | CoDD最適化 — run_077_kasoku_ratio.py (GS加速ratio忍法) | dm-signal | 04-20 | run_077_kasoku_ratio.py の simu |
 | cmd_2149 | CoDD最適化 — champion_selector.py (チャンピオン選出) | dm-signal | 04-20 | champion_selector.py のCSV fall |
+| cmd_2151 | CoDD最適化 — cmd_1947_l3_ew_combo_stability.py (2体EW安定性) | dm-signal | 04-20 | cmd_1947をcache-first fallback+ |
