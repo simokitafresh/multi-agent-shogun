@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.shogun.android.ssh.SshManager
 import com.shogun.android.util.Defaults
 import com.shogun.android.util.PrefsKeys
+import com.shogun.android.util.TmuxCommandBuilder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -174,15 +175,12 @@ class AgentsViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
             val target = "${agentsTarget()}.$paneIndex"
-            val escaped = text.replace("'", "'\\''")
-            // Send text and Enter SEPARATELY with 0.3s gap (Claude Code requirement)
-            val sendResult = sshManager.execCommand("${Defaults.TMUX} send-keys -t $target '$escaped'")
+            // Keep text injection and Enter in one SSH exec to avoid the old two-step send-keys race.
+            val sendResult = sshManager.execCommand(TmuxCommandBuilder.pasteBufferSendCommand(target, text))
             if (sendResult.isFailure) {
                 _errorMessage.value = "送信失敗: ${sendResult.exceptionOrNull()?.message}"
                 return@launch
             }
-            delay(300)
-            sshManager.execCommand("${Defaults.TMUX} send-keys -t $target Enter")
             delay(1000)
             refreshAllPanes()
         }
