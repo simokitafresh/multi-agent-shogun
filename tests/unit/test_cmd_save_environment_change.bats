@@ -179,7 +179,7 @@ YAML
 
 @test "AC3-1: environment_change=gate追加+ファイルパス→PASS" {
     create_prior_block
-    write_full_cmd "Check 3.6追加(scripts/cmd_save.sh L576) + lesson_Y追加"
+    write_full_cmd "type=gate;file=scripts/cmd_save.sh;pattern=environment_change強制"
     run_save
     echo "$output" >&2
 
@@ -189,7 +189,7 @@ YAML
 
 @test "AC3-2: environment_change=lesson登録→PASS" {
     create_prior_block
-    write_full_cmd "lesson_L053追加(infra_lessons): 低品質diagnosis再BLOCK防止"
+    write_full_cmd "type=lesson;file=projects/infra/lessons.yaml;pattern=L053"
     run_save
     echo "$output" >&2
 
@@ -199,7 +199,7 @@ YAML
 
 @test "AC3-3: environment_change=hook変更→PASS" {
     create_prior_block
-    write_full_cmd "pre-bash-combined.sh hook修正: environment_change検査ルール追加"
+    write_full_cmd "type=hook;file=scripts/hooks/pre-write-report-deny.sh;pattern=hookEventName"
     run_save
     echo "$output" >&2
 
@@ -229,13 +229,12 @@ YAML
     [[ "$output" == *"THIS_PATTERN_DOES_NOT_EXIST_2173"* ]]
 }
 
-@test "AC4-3: 自由テキストenvironment_changeは従来通りPASS" {
+@test "AC4-3: 自由テキストenvironment_changeはBLOCK" {
     create_prior_block
     write_full_cmd "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"
     run_save
     echo "$output" >&2
 
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
-    [[ "$output" != *"environment_change未実装"* ]]
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"environment_changeが非構造化"* ]]
 }
