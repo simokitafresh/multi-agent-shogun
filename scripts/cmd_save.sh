@@ -214,7 +214,9 @@ collect_primary_cmd_targets() {
             !/^tests\// &&
             !/^docs\/research\// &&
             !/^queue\/reports\// &&
-            !/^queue\/archive\// {
+            !/^queue\/archive\// &&
+            !/^outputs\// &&
+            !/^context\// {
                 print
             }
         ' \
