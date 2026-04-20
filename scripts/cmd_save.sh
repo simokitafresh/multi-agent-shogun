@@ -2161,7 +2161,7 @@ check_gunshi_design_num_relax() {
         found { exit }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
-    AC_NUMS=$(echo "$AC_SECTION" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    AC_NUMS=$(echo "$AC_SECTION" | sed 's|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
     if [[ -z "$AC_NUMS" ]]; then
         echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2

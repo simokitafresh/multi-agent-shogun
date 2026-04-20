@@ -803,3 +803,4 @@
 | cmd_2181 | 道具磨き — run_077_kasoku_diff.py CoDDメモリ削減(8.5GB→3-4GB) | dm-signal | 04-20 | AC4: 全batsテスト(unit 1158件+top-l |
 | cmd_2182 | 道具磨き — run_077_kasoku_ratio.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_kasoku_ratio.py は既に ka |
 | cmd_2184 | 道具磨き — run_077_oikaze.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_oikaze.py に kasoku_dif |
+| cmd_2183 | 道具磨き — run_077_nukimi.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_nukimi.py に PatternSpe |
