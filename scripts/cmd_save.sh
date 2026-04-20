@@ -2099,8 +2099,9 @@ ${FULL_CMD}"
 
     local HIT_GS=false HIT_WF=false
 
-    # GS検出: run_077 / grid_search / GS(大文字) / グリッドサーチ
-    if echo "$SEARCH_TEXT" | grep -qE 'run_077|grid[_-]search|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
+    # GS検出: bare grid_search は outputs/grid_search/*.csv を誤検出するため、
+    # 研究スクリプト参照または明示的なGS文言に限定する。
+    if echo "$SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
         HIT_GS=true
     fi
 
