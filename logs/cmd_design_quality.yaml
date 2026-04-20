@@ -10996,3 +10996,673 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-19T16:52:47Z"
+  - cmd_id: "cmd_2158"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-19T16:56:37Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2158"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-19T16:57:02Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2160"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-19T17:18:56Z"
+    diagnosis: "初回起票"
+    notes: "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
+  - cmd_id: "cmd_2162"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-19T17:38:35Z"
+    diagnosis: "BLOCK理由: 該当なし 対策: 初回起票"
+    notes: "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2164"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-19T23:37:53Z"
+    diagnosis: "初回起票"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2164"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:05:35Z"
+    diagnosis: "BLOCK理由: diagnosis形式不正+assumptions sourceパス未解決 対策: diagnosis 2部構成化+sourceをフルパス記載に修正"
+    notes: "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T00:07:24Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:07:25Z"
+    diagnosis: "初回起票"
+    notes: "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T00:08:30Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:08:31Z"
+    diagnosis: "BLOCK理由: diagnosis形式不正(2部構成必須) 対策: 2部構成に修正。cmd_2164で同じBLOCKを経験済みだが初回起票テンプレートに反映していなかった"
+    notes: "WARN累計昇格: 「バンドルパターン」が1回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T00:08:56Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:08:57Z"
+    diagnosis: "BLOCK理由: バンドルパターンWARN累計昇格(command内にgate_shogun_startup.shを参考として言及→2ファイル検出) 対策: 参考先記述を削除し変更対象をgate_karo_startup.shのみに限定"
+    notes: "WARN累計昇格: 「バンドルパターン」が2回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T00:09:35Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:09:36Z"
+    diagnosis: "BLOCK理由: バンドルパターンWARN累計昇格(q5/assumptionsにも別gateのフルパスが残存→2ファイル検出継続) 対策: 全フィールドからフルパス参照を削除し変更対象を1ファイルに限定"
+    notes: "WARN累計昇格: 「バンドルパターン」が3回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_karo_ci_fix_ga137"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:09:52Z"
+    notes: "hayate:binary_checks_fail|hayate:purpose_validation_fit_false|draft_lessons:1"
+  - cmd_id: "cmd_karo_ci_fix_ga137"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:12:36Z"
+    notes: "report_format:hayate_report_cmd_karo_ci_fix_ga137.yaml|hayate:binary_checks_fail"
+  - cmd_id: "cmd_karo_ci_fix_ga137"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:13:48Z"
+  - cmd_id: "cmd_2166"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T00:14:01Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2166"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:31:05Z"
+  - cmd_id: "cmd_2165"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:33:38Z"
+  - cmd_id: "cmd_2164"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T00:38:07Z"
+  - cmd_id: "cmd_2167"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T03:33:42Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2167"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T03:33:43Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "WARN累計昇格: 「バンドルパターン」が4回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2168"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T03:46:44Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2168"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T03:46:45Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "WARN累計昇格: 「バンドルパターン」が5回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T03:51:51Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T03:51:53Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "WARN累計昇格: 「バンドルパターン」が6回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2167"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T03:54:17Z"
+    notes: "hayate:binary_checks_fail|draft_lessons:1"
+  - cmd_id: "cmd_2167"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T03:54:55Z"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T03:59:44Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T03:59:55Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:00:11Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:00:33Z"
+    notes: "vercel_phase:broken_references"
+  - cmd_id: "cmd_2169"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:01:25Z"
+  - cmd_id: "cmd_2168"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:02:06Z"
+  - cmd_id: "cmd_2170"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T04:14:31Z"
+    notes: "q8_複利の問い"
+  - cmd_id: "cmd_2170"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T04:14:31Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2170"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T04:14:32Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "WARN累計昇格: 「バンドルパターン」が7回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2170"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T04:15:29Z"
+    diagnosis: "BLOCK理由: assumptions sourceパス未解決+バンドルWARN累計昇格(command内にconfig/パス重複) 対策: sourceフルパス化+command内のディレクトリパスを概要表現に変更"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2171"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T04:21:28Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "前回PASS済み cmd_2172 がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
+  - cmd_id: "cmd_2171"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T04:21:51Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
+  - cmd_id: "cmd_2173"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T04:31:20Z"
+    diagnosis: "BLOCK理由: 該当なし(初回) 対策: 初回起票"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2170"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:32:40Z"
+  - cmd_id: "cmd_2174"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T04:35:07Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2171"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:39:24Z"
+  - cmd_id: "cmd_2172"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:49:51Z"
+  - cmd_id: "cmd_2174"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T04:51:20Z"
+  - cmd_id: "cmd_2175"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:00:05Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2175"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:00:27Z"
+  - cmd_id: "cmd_2173"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:03:37Z"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T05:15:40Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:15:41Z"
+    notes: "WARN累計昇格: 「バンドルパターン」が9回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T05:21:32Z"
+    notes: "q8_複利の問い"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T05:21:33Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:21:34Z"
+    notes: "WARN累計昇格: 「バンドルパターン」が10回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-20T05:24:02Z"
+    notes: "バンドルパターン"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:24:03Z"
+    notes: "WARN累計昇格: 「バンドルパターン」が11回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:26:19Z"
+    notes: "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:26:29Z"
+    notes: "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-20T05:27:51Z"
+    notes: "前回PASS済み cmd_2177 がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:37:01Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:37:40Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2176"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:38:07Z"
+  - cmd_id: "cmd_2177"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:39:12Z"
+    notes: "saizo:binary_checks_fail"
+  - cmd_id: "cmd_2177"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T05:39:31Z"
+  - cmd_id: "cmd_2178"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T06:23:33Z"
+  - cmd_id: "cmd_2160"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-20T08:26:31Z"

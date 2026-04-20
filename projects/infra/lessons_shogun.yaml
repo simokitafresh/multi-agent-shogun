@@ -479,3 +479,17 @@ lessons:
   created_at: '2026-04-20'
   automated: true
   enforcement: 'lessons_shogun.yaml起動時通読。LS053/LS054との三連教訓。殿の指示の文字通りの遵守は自動化不能(指示の粒度は毎回異なる)。将軍の自問に依存'
+- id: 'LS056'
+  title: 'バンドル検出3段階修正 — 各論パッチではなく定義を正しくする'
+  detail: '事故: cmd_2165-2170でバンドルWARN累計昇格10回以上。Phase 1: 個別フィールドスキップ追加(各論パッチ)→殿指摘「定義を正しくせよ」。Phase 2: スキャン範囲をtarget_path+commandに限定(cmd_2166定義修正)→command内の非変更パスが残る。Phase 3: 除外リスト追加(cmd_2169)+重複排除(cmd_2171)。教訓: (1)最初の各論パッチで止まらず定義を疑え (2)定義を直しても残る穴は別レイヤの問題 (3)軍師に確認を依頼し構造分析を得よ。殿の「バンドルパターンの定義を正しくすることではないか」が転換点'
+  source_cmd: 'cmd_2166'
+  created_at: '2026-04-20'
+  automated: true
+  enforcement: 'cmd_2166(定義修正)+cmd_2169(除外リスト)+cmd_2171(重複排除)。3段階で構造的に修正'
+- id: 'LS057'
+  title: 'environment_change自動検証 — Phase 4を構造的に不可能にする'
+  detail: '事象: cmd_2159/2160でenvironment_change記載を強制したが、記載=テキスト出力であり環境変化ではない(Phase 4)。殿「自動で学習ループを回す仕組みはどうなってるんだ」で発覚。軍師提案(A)自動ヒント(B)WARN自動学習(C)自動検証の3層。なぜなぜ7回で穴検証: (A)はPhase 4と同構造(表示しても行動しない)、(C)が本丸だが自由テキスト→検証不能。根因=environment_changeの非構造化。解: type/file/patternに構造化→次回cmd_save時にfileをpatternでgrep→未実装ならBLOCK。cmd_2173で実装中'
+  source_cmd: 'cmd_2173'
+  created_at: '2026-04-20'
+  automated: true
+  enforcement: 'cmd_2173(environment_change構造化+自動検証)。配備中'

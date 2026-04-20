@@ -1,8 +1,19 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-04-20T01:50:01'
+last_synced: '2026-04-20T14:39:08'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 637
+lesson_count: 639
 lessons:
+- id: L642
+  title: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ
+  summary: cmd_2177で champion_selector.py が cmd_2175_bunshin_wf_alm12_monthly_fast.cache.ar
+  tags:
+  - dm-signal
+- id: L641
+  title: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致
+  summary: 'wf_alm_12.yaml(source_type: csv)で run_077_kawarimi.py を実行すると AC1検証(batch
+    vs sequ'
+  tags:
+  - dm-signal
 - id: L640
   title: DB経由データのCoDD最適化検証では同一プロセス・同一データで比較せよ
   summary: 本番ポートフォリオのbenchmark_returnは常時更新される。別プロセスで比較すると30秒の間にDB更新が入り数値が変わりFAILになる。同一プロセスで
@@ -140,16 +151,16 @@ lessons:
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
   tags:
   - universal
-  helpful_count: 8
-  harmful_count: 2
+  helpful_count: 11
+  harmful_count: 5
   last_referenced: '2026-04-20'
 - id: L616
   title: cmdの完了記録≠成果物の所在記録 — 多段パイプラインの進行表に物理的所在必須
   summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ
   tags:
   - universal
-  helpful_count: 0
-  harmful_count: 1
+  helpful_count: 3
+  harmful_count: 4
   last_referenced: '2026-04-20'
 - id: L615
   title: Cell B(シン×ALM)の一部忍法はGSパラメータ数=1のためALM動的選出≡静的選出
@@ -199,7 +210,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:55+09:00'
+  deprecated_at: '2026-04-20T14:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
 - id: L606
   title: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)
@@ -207,7 +218,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:55+09:00'
+  deprecated_at: '2026-04-20T14:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
 - id: L605
   title: 'CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW'
@@ -215,7 +226,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:55+09:00'
+  deprecated_at: '2026-04-20T14:39:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: L604
   title: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)
@@ -223,7 +234,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:54+09:00'
+  deprecated_at: '2026-04-20T14:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: L603
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4'
@@ -231,7 +242,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:54+09:00'
+  deprecated_at: '2026-04-20T14:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
@@ -239,7 +250,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:54+09:00'
+  deprecated_at: '2026-04-20T14:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
 - id: L601
   title: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)
@@ -247,7 +258,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:53+09:00'
+  deprecated_at: '2026-04-20T14:39:37+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
 - id: L600
   title: np.fromstringは空セル連続のwide CSV行を安全に読めない
@@ -256,7 +267,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:53+09:00'
+  deprecated_at: '2026-04-20T14:39:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=28 referenced=0'
 - id: L599
   title: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致
@@ -346,7 +357,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:53+09:00'
+  deprecated_at: '2026-04-20T14:39:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=20 referenced=0'
 - id: L582
   title: '[自動生成] draft教訓の査読を怠った: cmd_1795'
@@ -354,7 +365,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:52+09:00'
+  deprecated_at: '2026-04-20T14:39:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   retired: true
 - id: L581
@@ -363,7 +374,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:52+09:00'
+  deprecated_at: '2026-04-20T14:39:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
 - id: L580
   title: 38メトリクスは6目的関数を維持しつつ後計算で添付が最速
@@ -371,7 +382,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:52+09:00'
+  deprecated_at: '2026-04-20T14:39:35+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=30 referenced=0'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
@@ -379,7 +390,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:51+09:00'
+  deprecated_at: '2026-04-20T14:39:35+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   retired: true
 - id: L578
@@ -388,7 +399,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:51+09:00'
+  deprecated_at: '2026-04-20T14:39:35+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
 - id: L577
   title: 月次データcache最適化でexact date lookupを使う場合、ビジネスデー vs 月末日ミスマッチによる全NULL問題
@@ -396,7 +407,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:51+09:00'
+  deprecated_at: '2026-04-20T14:39:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
 - id: L576
   title: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる
@@ -404,7 +415,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:50+09:00'
+  deprecated_at: '2026-04-20T14:39:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: L575
   title: FoF絶対モメンタムブロックのdict直接.get()は月末日ミスマッチでCashを生む
@@ -412,7 +423,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:50+09:00'
+  deprecated_at: '2026-04-20T14:39:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
 - id: L574
   title: FoF月次データのexact dict lookup禁止 — bisect-based検索必須
@@ -420,7 +431,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:50+09:00'
+  deprecated_at: '2026-04-20T14:39:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
 - id: L573
   title: FoF月次キャッシュをdictに変えるときも lookup は exact get でなく bisect helper に統一せよ
@@ -429,7 +440,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:49+09:00'
+  deprecated_at: '2026-04-20T14:39:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
@@ -628,7 +639,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:49+09:00'
+  deprecated_at: '2026-04-20T14:39:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
 - id: L534
   title: 'L1 cvxpy最適化: ticker×lambdaキャッシュで重複計算を解消すると実行時間が4時間→1時間に短縮'
@@ -663,7 +674,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:49+09:00'
+  deprecated_at: '2026-04-20T14:39:32+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L529
   title: NewHigh/UWP選出指標はLB短区間で差別化力が弱い
@@ -671,7 +682,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:49+09:00'
+  deprecated_at: '2026-04-20T14:39:32+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L528
   title: Windows環境YAMLファイル読み書きにはencoding=utf-8が必須
@@ -687,7 +698,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:48+09:00'
+  deprecated_at: '2026-04-20T14:39:32+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
 - id: L526
   title: 短LB momentum選出はβ緩和するがリスク指標を大幅悪化させる
@@ -700,7 +711,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:48+09:00'
+  deprecated_at: '2026-04-20T14:39:31+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L524
   title: momentum選出のα効率はK増加で単調減少(分散効果のパラドックス)
@@ -718,7 +729,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-20T01:52:47+09:00'
+  deprecated_at: '2026-04-20T14:39:31+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L521
   title: β中立指標(Sortino/Calmar)のα効率はmomentumの2倍以上だが超越条件は不十分
@@ -972,8 +983,8 @@ lessons:
   summary: Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 0
+  helpful_count: 5
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L480
   title: selection-based FoF初月のmonthly_returns.holding_signal=NULL問題
@@ -1074,8 +1085,8 @@ lessons:
   tags:
   - pipeline
   - gate
-  helpful_count: 3
-  harmful_count: 0
+  helpful_count: 4
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L464
   title: binary_check語の曖昧性→LLM最浅解釈(HOLD事件と同一クラス)
@@ -1806,6 +1817,9 @@ lessons:
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
   tags:
   - testing
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-20'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
@@ -2187,8 +2201,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 14
-  harmful_count: 7
+  helpful_count: 6
+  harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2319,6 +2333,9 @@ lessons:
   tags:
   - api
   - frontend
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L261
   title: キャッシュ系 precompute テーブル欠落は health endpoint で degraded に昇格させる
   summary: 事前計算テーブル欠落は性能劣化だけでなく fallback 経路の常時発火を招く。prices>0 && precompute=0 のような矛盾条件は
@@ -2361,9 +2378,6 @@ lessons:
   - api
   - frontend
   - tmux
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-19'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -2426,7 +2440,7 @@ lessons:
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
   tags:
   - api
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 4
   last_referenced: '2026-04-20'
 - id: L245
@@ -2530,8 +2544,8 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 33
-  harmful_count: 13
+  helpful_count: 26
+  harmful_count: 8
   last_referenced: '2026-04-20'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
@@ -2591,7 +2605,7 @@ lessons:
   tags:
   - api
   - frontend
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-20'
 - id: L219
@@ -2704,9 +2718,6 @@ lessons:
   summary: cmd_645(Content-Type書き換え)とcmd_646(API SWRキャッシュ)は同じsw.jsへの変更。統合実装で1回のSW更新により「SPA遷
   tags:
   - api
-  helpful_count: 0
-  harmful_count: 3
-  last_referenced: '2026-04-19'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -2831,8 +2842,8 @@ lessons:
   tags:
   - recon
   - monitor
-  helpful_count: 9
-  harmful_count: 2
+  helpful_count: 4
+  harmful_count: 1
   last_referenced: '2026-04-19'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる
@@ -2922,7 +2933,7 @@ lessons:
   - db
   - deploy
   - testing
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L172
@@ -3035,6 +3046,9 @@ lessons:
   tags:
   - db
   - api
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L155
   title: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた
   summary: _check_pending_for_month()と_create_pending_entry()の両方でget_last_rebalance_month_e
@@ -3444,6 +3458,9 @@ lessons:
   summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-20'
 - id: L084
   title: recalculate-statusのis_running=Noneは完了ではない
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
@@ -3719,6 +3736,9 @@ lessons:
   summary: IF sync_lessons.shを実施する時 THEN cmd_137 cmd_137
   tags:
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L037
   title: standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック
   summary: IF Portfolio(type=standard)はschema上pipeline_config optionalのため、登録スクリプトで未付与でも保存され
@@ -3806,7 +3826,7 @@ lessons:
   tags:
   - bash
   deprecated: true
-  deprecated_at: '2026-04-20T09:13:49+09:00'
+  deprecated_at: '2026-04-20T15:23:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

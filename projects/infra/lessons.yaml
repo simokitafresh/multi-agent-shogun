@@ -220,8 +220,8 @@ lessons:
     file
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 0
+  helpful_count: 5
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
@@ -307,8 +307,8 @@ lessons:
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 0
+  helpful_count: 4
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
@@ -1077,6 +1077,9 @@ lessons:
   tags:
   - bash
   - git
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-20'
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -1473,8 +1476,8 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 14
-  harmful_count: 7
+  helpful_count: 6
+  harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
@@ -1610,6 +1613,9 @@ lessons:
   - gate
   - bash
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
   summary: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ
@@ -1718,7 +1724,7 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 4
   last_referenced: '2026-04-20'
 - id: L245
@@ -1828,8 +1834,8 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 33
-  harmful_count: 13
+  helpful_count: 26
+  harmful_count: 8
   last_referenced: '2026-04-20'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
@@ -1895,7 +1901,7 @@ lessons:
   deprecated: true
   deprecated_at: '2026-04-20T09:09:53+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=2'
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-20'
 - id: L219
@@ -2133,8 +2139,8 @@ lessons:
   tags:
   - review
   - git
-  helpful_count: 9
-  harmful_count: 2
+  helpful_count: 4
+  harmful_count: 1
   last_referenced: '2026-04-19'
 - id: L185
   title: report_path 注入だけで報告テンプレート未生成→忍者が手動補完
@@ -2221,7 +2227,7 @@ lessons:
   - frontend
   - git
   - reporting
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L172
@@ -2326,6 +2332,9 @@ lessons:
     形式で受けよ
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L155
   title: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
   summary: IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
@@ -2794,6 +2803,9 @@ lessons:
   - gate
   - yaml
   - reporting
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-20'
 - id: L084
   title: roles/ashigaru_role.mdは現在不存在 — build_instructions.shがashigaru.md直接処理
   summary: L005は「ashigaru.mdの本文はroles/ashigaru_role.mdから取得」と言うが、2026-02-27時点でroles/ディレクトリ自体
@@ -3079,6 +3091,9 @@ lessons:
   - testing
   - knowledge
   - gate
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L037
   title: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する
   summary: 'auto_failure_lesson.sh作成時にもCRLF混入(L008)。Write tool経由の新規.shは100%CRLFになる前提でsed

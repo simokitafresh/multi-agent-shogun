@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-20T15:26:06+09:00 -->
+<!-- generated_at: 2026-04-20T17:22:31+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-20T15:26:06+09:00 | terminal | response | L2両翼委任完了。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2179 | WF-SSS奥義(SS 21体BB × 忍法GS 7本 + 事後選出) | 委任済み | | cmd_2180 …
-- 2026-04-20T15:25:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 15:23:32|cmd_2178
-- 2026-04-20T15:25:37+09:00 | ntfy | outbound | 【家老】cmd_2179 初回配備開始 (title=研究 — WF L2 WF-SSS奥義: SS事後21体BBで忍法GS 7本+事後選出21体, ninja=hayate) 研究 📋 https://gist.github.com/s…
-- 2026-04-20T15:17:57+09:00 | terminal | response | はっ。その通り。 | L2名称 | L0(BB) | L1(忍法) | L2(奥義) | |--------|--------|---------|---------| | **WF-SSS** | WFシン四神 | シン忍法(事後選出)…
-- 2026-04-20T15:17:44+09:00 | terminal | inbound | wf-ALM,S,S とwf-S,S,Sだよな
-- 2026-04-20T15:16:17+09:00 | ntfy | outbound | 【家老】cmd_2178 初回配備開始 (title=研究 — WF L2準備: L1事後選出42体のBB用月次リターンCSV+universe YAML作成(SS21体+AS21体), ninja=hayate) 研究 📋 https:…
-- 2026-04-20T15:15:45+09:00 | terminal | response | cmd_2178(L2準備)委任完了。 Step 0が完了したら、Step 1+2のSS/AS並列cmdを起票する。全忍者idleのため即配備可能。 殿のご指示をお待ちつかまつる。 [meta] stop_reason=tool_use
-- 2026-04-20T15:13:03+09:00 | terminal | inbound | じゃあL2をやろう。今作った42体で通常のシン忍法をやろう
-- 2026-04-20T14:55:06+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 14:55:06|CI緑: run 24650307134
-- 2026-04-20T14:40:26+09:00 | terminal | response | 比較CSVを読む。 [meta] stop_reason=tool_use
+- 2026-04-20T17:22:31+09:00 | terminal | response | 状況を把握した。両方のL2 cmd(2179/2180)はタスクYAML配備済みだが忍者がCLI再起動で/clear済み(CTX:0%)。再起動が必要。 universe YAMLの存在を確認してから家老にnudgeする。 [meta] …
+- 2026-04-20T17:20:03+09:00 | ntfy | outbound | 【watchdog】ntfy_listener.shを自動再起動しました
+- 2026-04-20T17:19:50+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-20T17:19:20+09:00 | terminal | inbound | y
+- 2026-04-20T17:18:57+09:00 | ntfy | outbound | 🏯 出陣！将軍システム起動完了。
+- 2026-04-20T16:47:51+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
+- 2026-04-20T16:39:15+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
+- 2026-04-20T16:39:15+09:00 | ntfy | outbound | 【CLI再起動成功】kagemaru: pane_cmd=claude
+- 2026-04-20T16:39:15+09:00 | ntfy | outbound | 【CLI再起動成功】hanzo: pane_cmd=claude
+- 2026-04-20T16:39:15+09:00 | ntfy | outbound | 【CLI再起動成功】saizo: pane_cmd=node
 
 ## 未解決確認事項
+- 状況を把握した。両方のL2 cmd(2179/2180)はタスクYAML配備済みだが忍者がCLI再起動で/clear済み(CTX:0%)。再起動が必要。 universe YAMLの存在を確認してから家老にnudgeする。 [meta] stop_reason=tool_use
 - 確認完了。事実を報告する。 **1. deploy_task.sh target_path転写漏れ — 既に修正済み。** - commit `d8387b6`(2026-04-20 02:41:54)で家老が恒久修正をコミット済み - awk抽出にtarget_path追加、…
 - 掲示板の殿裁定で未起票のもの: 1. deploy_task.sh target_path転写漏れ(blt_20260420_023721) — 殿「まずこの2つのバグ解消」。手動注入で応急対処済みだが恒久修正未実施 2. LK007/LK008 automated enfor…
 - 確認完了。事実を報告する。 **陣形図(現時点):** | 忍者 | cmd | 状態 | 備考 | |------|-----|------|------| | hayate | cmd_2174(WF-SS忍法21体) | **GATE CLEAR** | 完了。idle化…
@@ -23,7 +24,6 @@
 - テーブルL0行の「3目的」がシン(CAGR/NHF/MaxDD)なのかALM(MRU/Calmar/UWP)なのか曖昧。cmd_2167の報告ではWFシン四神=CAGR/NHF/MaxDD、WF ALM四神=MRU/Calmar/UWPで選出した。しかし殿は「シン忍法の目的変数…
 - 永続化完了。 **永続化した内容:** - `l3-robustness.md §8.7`: WF L1進捗(Step 0完了、cmd_2174/2175並列実行中) - `l3-robustness.md §8.8`: 本セッションinfra改善一覧(cmd_2164-217…
 - cmd_2174 PASS。WARN確認: q4_depth=deep(GS 7本+WF 7回)とCheck 21(数値絶対値)。q4は研究cmdの性質上分割困難(7忍法は1忍者で直列実行が安全)。Check 21の「7本」「7 GS CSV」は実行手順の定数。 pending…
-- はっ。軍師提案に穴がないか、なぜなぜ7回で掘る。 **なぜなぜ7回: 軍師提案(A)(B)(C)の穴検証** 1. **(A)自動ヒント層 — 同一BLOCKの過去成功environment_changeを表示。穴は？** → 将軍がヒントを**読んでも行動しない**。Phas…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-20T15:26:06+09:00 | L2両翼委任完了。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2179 | WF-SSS奥義(SS 21体BB × 忍法GS 7本 + 事後選出) | 委任済み | | cmd_2180 | WF-ASS奥義(AS 21体BB …
@@ -51,12 +51,9 @@
 - cmd_2152
 - cmd_2153
 - cmd_2154
-- cmd_2157
 - cmd_2158
 - cmd_2159
 - cmd_2161
-- cmd_2162
-- cmd_2163
 - cmd_2164
 - cmd_2165
 - cmd_2166
@@ -66,6 +63,9 @@
 - cmd_2170
 - cmd_2171
 - cmd_2172
+- cmd_2173
+- cmd_2174
+- cmd_2175
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
