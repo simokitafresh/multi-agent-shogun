@@ -721,4 +721,11 @@
 - 2026-04-20 cmd_2170: WF L1準備GATE CLEAR。BB CSV 2本+universe YAML 2本(wf_shin_12/wf_alm_12)作成
 - 2026-04-20 cmd_2174+2175: WF L1忍法GS+WFα選出(WF-SS 21体+WF-AS 21体)並列実行中
 - 2026-04-20 cmd_2173: environment_change構造化+自動検証(免疫系完成の本丸)配備中。Phase 4(書いただけで行動しない)を構造的に不可能にする
+- 2026-04-20 cmd_2174+2175: WF L1 GATE CLEAR(WF-SS 21体+WF-AS 21体)。従来L1 vs WF L1比較: WF勝利2/21。L0ではWF有効だがL1では逆効果
+- 2026-04-20 cmd_2176+2177: WF L1事後選出GATE CLEAR。殿指示「WFαでなく従来の事後選出で」→42体確定(SS21+AS21)
+- 2026-04-20 cmd_2178: WF L2準備GATE CLEAR。universe YAML 2本(wf_l2_ss_21/wf_l2_as_21)+BB CSV作成
+- 2026-04-20 cmd_2179+2180: WF L2 GS実行→**3回OOM/pane death**(hayate/saizo/hanzo)→殿中止命令。真因: kasoku_diff RSS=8.5GB+swap枯渇。7本束ね+並列配備が原因ではなく単独でも死亡
+- 2026-04-20 殿裁定「100%確実にやる」→1忍法1CMD完全直列(案A)で再設計。LS058登録
+- 2026-04-20 殿方針転換「CoDDでメモリ削減にトライ」→軍師分析: CoDD速度最適化はメモリ不変。メモリ削減は別途CoDDパイプラインで実施可能(8.5GB→3.4GB目標)。根本策=mmap直接ストリーム(monthly_dict全排除)
+- 2026-04-20 cmd_2181: kasoku_diff CoDDメモリ削減。才蔵配備中(AC1 before計測実行中RSS=5.48GB)。成功すれば他6忍法にgs_runner.py共通コードとして自動波及→7本束ねCMD復活
 - 2026-04-20 殿指摘3連: 「gateの警告を無視するな」→「WARNの度にも即時強くなれ」→「自動で学習ループを回す仕組みは？」→environment_change自動検証(cmd_2173)に到達

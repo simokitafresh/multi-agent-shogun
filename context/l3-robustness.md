@@ -466,6 +466,96 @@ L0からL3まで全てWFα選別で一貫させる。
 2. cmd: Step 1+2 WF-SS(GS 7本 + WFα選出) — 並列可
 3. cmd: Step 1+2 WF-AS(GS 7本 + WFα選出) — 並列可
 
+### 8.4.1 L2 GS配備ルール（OOM実証+殿裁定 2026-04-20, LS058）
+
+**忍法GSは1忍法1CMD×1忍者。7本束ね禁止。並列配備禁止。**
+
+**CoDD最適化の影響**: 速度のみ改善(simulate_pattern -93%〜-99%)。**メモリは不変**。BATCH_CHUNK=500は最適化前から存在。
+
+**各忍法ピークRSS(BB 21体, 断片化1.5倍補正)**:
+
+| 忍法 | パターン数 | RSS |
+|------|-----------|-----|
+| bunshin | 7,525 | 0.8GB |
+| yotsume | 45,150 | 1.0GB |
+| kawarimi | 270,900 | 2.9GB |
+| oikaze | 270,900 | 2.9GB |
+| nukimi | 586,950 | 4.9GB |
+| kasoku_diff | 1,151,325 | **8.5GB**(実測) |
+| kasoku_ratio | 1,151,325 | **8.5GB** |
+
+**半蔵(3回目)死亡の真因**: swap 4GB全消費(全CLI+OS)。GS実行でphysical RAM不足→swap thrashing→OOM Killer。殿指示「前忍者/clear」でswap解放→available 12.6GB > RSS 8.5GB → 安全マージン4GB確保。
+
+**事故経緯**: cmd_2179+2180並列配備→両pane死亡(15:52)→家老が直列に切替→半蔵単独でも死亡(19:00, swap枯渇)→殿中止命令→軍師分析→案A確定
+
+**殿裁定(2026-04-20)**: 「ギリギリを攻めるメリットなし。100%確実にやる」
+
+**確定: 案A(完全直列7CMD+統合CMD)**:
+- SS系統(8CMD): cmd_A1〜A7(各1忍法) + cmd_A8(champion_selector+比較)
+- AS系統(8CMD): 同構造(--universe wf_l2_as_21.yaml)
+- 合計16CMD
+
+**配備ルール**:
+1. 1CMD完了→前忍者/clear→`free -h`でメモリ解放確認→次CMD配備
+2. 並列配備禁止(OOM実証: python3 RSS=8.5GB + swap枯渇)
+3. 忍者はround-robin。担当者固定不要
+
+**CLI引数(全忍法共通)**:
+```
+--universe config/portfolio_universes/wf_l2_ss_21.yaml  (AS系統は wf_l2_as_21.yaml)
+--out-dir outputs/grid_search/cmd_{XXXX}_wf_l2_ss      (AS系統は _wf_l2_as)
+--output-prefix cmd_{XXXX}_{忍法}_grid
+--skip-verify
+```
+
+**champion_selector引数**:
+```
+--csv-dir outputs/grid_search/cmd_{XXXX}_wf_l2_ss
+--cmd-id cmd_{XXXX}
+```
+
+### 8.4.2 CoDDメモリ削減計画 (2026-04-20, 殿承認)
+
+**方針**: 道具を磨いてからL2再実行。CoDDパイプラインでGSスクリプトのメモリ削減→7本束ねCMD復活。
+
+**対象**: 7忍法(kasoku_diff→kasoku_ratio→nukimi→kawarimi→oikaze→yotsume→bunshin)。重い順。
+**手法(A)-(F)はgs_runner.py共通コード**のため、kasoku_diffで実証すれば他6忍法に自動波及。
+
+**メモリ消費内訳(kasoku_diff 115万パターン, RSS=8.5GB)**:
+
+| 消費源 | サイズ | 削減手法 | 削減量 |
+|--------|--------|----------|--------|
+| SHM→monthly_dict二重保持 | 2.6GB | (A) SHM直接streaming | 1.3GB |
+| BytesIO一括保持 | 1.6GB | (B) チャンク直接書出し | 1.6GB |
+| rows_fast保持 | 0.5GB | (C) df_fast変換後にdel | 0.5GB |
+| grid dict overhead | 0.46GB | (D) namedtuple化 | 0.35GB |
+| global_scores/cum_ret | 0.3GB | (E) Phase 2後にdel | 0.3GB |
+| **根本策**: monthly_dict全排除 | 1.3GB | **(F) mmap直接ストリーム** | 追加1.3GB |
+
+**根本策(F)の設計** (軍師分析 blt_20260420_205721):
+```
+現状: simulate_batch → monthly_dict{115万key}全蓄積 → write_monthly_csv_streaming
+改善: simulate_batch → mmap arr(float32, ディスク上0.65GB) → 全完了後にNPY→CSV変換
+```
+- Phase 2: mmap arr (142×1,151,325×4B = 0.65GB)をディスクに確保。simulate完了ごとにarr[:,idx]に直接書込み
+- Phase 3: mmapからnp.savetxt行ごと出力(BytesIOもmonthly_dictも不要)
+- 効果: **8.5GB → 3.4GB**(+C+D適用後)。全CLI稼働中でも安全(11.4GB >> 3.4GB)
+
+**検証方法**: SHA256パリティ(GS結果CSV改善前後で同一)
+
+**CoDDとの相性**: 速度改善(cmd_2142-2156)と同構造。tracemalloc計測をmeasureフェーズに追加。
+
+**進捗**:
+- cmd_2181(kasoku_diff): 才蔵配備中。AC1(before計測)実行中、Phase 2途中RSS=5.48GB
+- 才蔵の分析: 「monthly_dict + DataFrame + BytesIO の三重保持が真因」← 軍師分析と一致
+
+**過去有効手法(CoDD registry参照)**:
+- pandas→numpy置換(cmd_1836): to_csv→savetxtで60x高速+メモリ半減
+- NPYキャッシュ同時生成(cmd_1842): 二重読込排除
+- numpy line-by-line parser(cmd_1839): pandas.read_csv排除
+- dead-code除去(cmd_2147/2148): 未使用前計算削除
+- write_monthly_csv_streaming: 既存(cmd_1836)。BytesIO排除が今回の拡張
+
 ### 8.5 必要スクリプト — 全14本CoDD済み (2026-04-20確認)
 
 | # | スクリプト | CoDD cmd | 改善幅 |
@@ -503,15 +593,19 @@ L0からL3まで全てWFα選別で一貫させる。
 
 詳細: `cmd_2167_wf_shin_summary.csv` / `cmd_2167_wf_alm_summary.csv` / `cmd_2167_existing_vs_wf_shin.csv` / `cmd_2167_summary.{md,json}`
 
-### 8.7 WF L1進捗 (2026-04-20)
+### 8.7 WF L1進捗 (2026-04-20) — 完了
 
 **Step 0(準備)**: cmd_2170 **GATE CLEAR**
 - `config/portfolio_universes/wf_shin_12.yaml` + `wf_alm_12.yaml` 作成済み
 - `outputs/analysis/wf_l0_shijin/wf_shin_12_monthly_returns.csv` + `wf_alm_12_monthly_returns.csv` 作成済み
 
-**Step 1+2(GS+WFα選出)**: 2cmd並列実行中
-- cmd_2174: WF-SS忍法21体(WFシン四神BB × 忍法GS 7本 + WFα選出) — hayate稼働中
-- cmd_2175: WF-AS忍法21体(WF ALM四神BB × 忍法GS 7本 + WFα選出) — kagemaru稼働中
+**Step 1+2(GS+WFα選出)**: **両方GATE CLEAR**
+- cmd_2174: WF-SS忍法21体(WFシン四神BB × 忍法GS 7本 + WFα選出) — GATE CLEAR
+- cmd_2175: WF-AS忍法21体(WF ALM四神BB × 忍法GS 7本 + WFα選出) — GATE CLEAR
+
+**L1事後選出(WFαではなく従来の事後選出で同じBBから選出)**:
+- cmd_2176: WF-SS事後選出21体 — GATE CLEAR
+- cmd_2177: WF-AS事後選出21体 — GATE CLEAR
 
 ### 8.8 infra改善(本セッション cmd_2164-2173)
 
@@ -577,8 +671,36 @@ SS=攻撃力(CAGR/NHF)、AS=防御力(MaxDD)の傾向。ただしASはデータ�
 - `docs/research/cmd_2174_wf_shin_ninpo_summary.md`
 - `docs/research/cmd_2175_wf_alm_ninpo_summary.md`
 
-### 8.10 状態
+### 8.10 WF L1事後選出結果 (cmd_2176/2177, 2026-04-20)
 
-- WF四神(L0): **完了** (cmd_2167 GATE CLEAR) — 全12体WF改善
-- WF忍法(L1): **完了** (cmd_2174 SS + cmd_2175 AS GATE CLEAR) — **WF 2勝19敗。従来L1が優位**
-- WF奥義(L2): 未着手(L1結果を踏まえて殿判断待ち)
+殿指示「WFαではなく従来のシン忍法で作成するとどうなる？」→ WF四神BBに対し事後選出(champion_selector)でチャンピオンを選ぶ。
+
+- cmd_2176: WF-SS事後選出21体 — GATE CLEAR
+- cmd_2177: WF-AS事後選出21体 — GATE CLEAR
+
+成果物:
+- `outputs/analysis/cmd_2176_wf_shin_12/cmd_2176_champion_21_summary.csv`
+- `outputs/analysis/cmd_2177_wf_alm_12/cmd_2177_champion_21_summary.csv`
+
+### 8.11 WF L2進捗 (2026-04-20)
+
+**殿指示**: 「今作った42体(SS事後21体+AS事後21体)で通常のシン忍法をやろう」= WF-SSS + WF-ASS
+
+**L2準備(Step 0)**: cmd_2178 **GATE CLEAR**
+- `config/portfolio_universes/wf_l2_ss_21.yaml` + `wf_l2_as_21.yaml` 作成済み
+- BB月次リターンCSV作成済み
+
+**L2 GS実行(Step 1+2)**: cmd_2179/2180 → **中止(殿命令)**
+- 3回連続OOM/pane death (hayate/saizo/hanzo)
+- 真因: swap枯渇。詳細は§8.4.1参照
+- 殿裁定: 1忍法1CMD完全直列(案A)で再起票。→ §8.4.1
+
+### 8.12 状態 (2026-04-20 20:28更新)
+
+- WF四神(L0): **完了** (cmd_2167) — 全12体WF改善
+- WF忍法(L1 WFα): **完了** (cmd_2174/2175) — WF 2勝19敗。従来L1が優位
+- WF忍法(L1事後): **完了** (cmd_2176/2177) — 事後選出で42体確定
+- WF奥義(L2): **cmd_2179/2180中止→再設計完了→CMD起票待ち(殿承認後)**
+  - 確定案: 1忍法1CMD×7 + 統合1CMD × 2系統 = 16CMD
+  - 配備: 完全直列。/clear+メモリ確認。並列禁止
+  - 詳細: §8.4.1

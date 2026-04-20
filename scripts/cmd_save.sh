@@ -297,6 +297,7 @@ collect_primary_cmd_targets() {
 
             in_block && /^[[:space:]]{6,}/ { print }
         ' \
+        | sed 's/--[A-Za-z_-]*[[:space:]]*[^[:space:]]*//g' \
         | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
         | sed 's/[.,:;]$//' \
         | while IFS= read -r path; do

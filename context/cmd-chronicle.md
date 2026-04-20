@@ -798,3 +798,6 @@
 | cmd_2176 | L1でWFα選出が逆効果(2勝19敗)だった。WF四神BB(L0改善済み)はそのまま活かし、忍法チャンピオン選出だけ事後選出に戻す。WFα選出(cmd_2174)との比較で、どの選出方式が有効かを判定する材料を得る | dm-signal | 04-20 | cmd_2174 GS成果物へ champion_selec |
 | cmd_2178 | L2奥義のBBを準備する。cmd_2176(SS事後21体)+cmd_2177(AS事後21体)のチャンピオンpattern_idをL1 GS月次CSVから抽出し、L2用BB月次リターンCSV+universe YAMLを作成する。cmd_2170(L0→L1準備)と同構造 | dm-signal | 04-20 | L2 WF universe準備完了。SS/AS月次CSV各 |
 | cmd_2129 | 強化 — CTX消費率による忍者タスク負荷検出 (tool_uses質的解釈の代替) | infra | 04-20 | GATE CLEAR時にCTX%をgate_metrics. |
+| cmd_2179 | L2奥義SS系統。cmd_2178で作成したSS 21体BBで忍法GS 7本→事後選出で21体(7忍法×3目的)を確定する。L0 WF四神+L1事後選出+L2事後選出の3層積み上げ | dm-signal | 04-20 | — |
+| cmd_2180 | L2奥義AS系統。cmd_2178で作成したAS 21体BBで忍法GS 7本→事後選出で21体(7忍法×3目的)を確定する。cmd_2179のAS版 | dm-signal | 04-20 | — |
+| cmd_2181 | 道具磨き — run_077_kasoku_diff.py CoDDメモリ削減(8.5GB→3-4GB) | dm-signal | 04-20 | AC4: 全batsテスト(unit 1158件+top-l |
