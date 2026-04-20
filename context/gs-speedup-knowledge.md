@@ -1,5 +1,5 @@
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
-<!-- last_updated: 2026-04-09 freshness review: no content drift found -->
+<!-- last_updated: 2026-04-20 cmd_karo_ctx_reflux_2188 memory-structure-unification section added -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->
 <!-- GS実行ランブック → docs/research/gs-runbook.md (軍師作成 2026-04-03) -->
 
@@ -135,6 +135,20 @@
 - L596: pandas to_csvは大規模wide CSV(10万列超)で低速。numpy savetxtで59x、.npyで2200x（cmd_1834）
 - L597: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ（cmd_1832）
 - L598: numpy savetxt(float32)のyear_month混在CSV: BytesIO中継+行単位プレフィックス追記パターン（cmd_1836）
+
+### メモリ構造統一（2026-04-20, BB 21体 / cmd_2181-2187）
+- 本節のRSSは `wf_l2_ss_21.yaml` を使うL2奥義GSの安全化文脈。§3/§6の `PPE6` 性能比較（主に12体ベンチやパターン単価）とは別軸で、目的は `workers=2` 復帰時のOOM回避である。
+- 統一方針: `PatternSpec(slots=True)` 化、`monthly_dict` 排除、SHM/streaming or memmap直書き、`rows_fast`/大型配列の即時 `del` を7忍法へ横展開。`bunshin` は直列構造のため適用範囲を限定する。
+
+| 忍法 | RSS before | RSS after | workers=2安全性 | 根拠 |
+|------|-----------:|----------:|-----------------|------|
+| 加速D (`kasoku_diff`) | 8.5GB | 5.5GB | テンプレート起点。本cmdでは未個別再測定だが、後続6忍法の統一方針の基準 | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| 加速R (`kasoku_ratio`) | 8.5GB級 | 370MB級 | OK (`370MB`) | `context/l3-robustness.md` §8.4.2 / `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| 抜き身 (`nukimi`) | 978MB | 518MB | OK (`518MB`) | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| 変わり身 (`kawarimi`) | 403MB | 278MB | OOMなし | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| 追い風 (`oikaze`) | 342MB | 272MB | OK (`274MB`) | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| 四つ目 (`yotsume`) | 1.0GB級 | 0.68GB級 | OK（2026-04-20 local harness snapshot: 親 `214MB` + 子 `235MB`×2 ≒ `684MB`） | `context/l3-robustness.md` §8.4.1 + local harness |
+| 分身 (`bunshin`) | 138MB | 134MB | N/A（直列構造） | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 
 ---
 

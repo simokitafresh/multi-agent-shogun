@@ -727,5 +727,7 @@
 - 2026-04-20 cmd_2179+2180: WF L2 GS実行→**3回OOM/pane death**(hayate/saizo/hanzo)→殿中止命令。真因: kasoku_diff RSS=8.5GB+swap枯渇。7本束ね+並列配備が原因ではなく単独でも死亡
 - 2026-04-20 殿裁定「100%確実にやる」→1忍法1CMD完全直列(案A)で再設計。LS058登録
 - 2026-04-20 殿方針転換「CoDDでメモリ削減にトライ」→軍師分析: CoDD速度最適化はメモリ不変。メモリ削減は別途CoDDパイプラインで実施可能(8.5GB→3.4GB目標)。根本策=mmap直接ストリーム(monthly_dict全排除)
-- 2026-04-20 cmd_2181: kasoku_diff CoDDメモリ削減。才蔵配備中(AC1 before計測実行中RSS=5.48GB)。成功すれば他6忍法にgs_runner.py共通コードとして自動波及→7本束ねCMD復活
+- 2026-04-20 cmd_2181: kasoku_diff CoDDメモリ削減 GATE CLEAR。kasoku_diffは既に最適化済み(軍師発見)。真の問題=他6忍法が旧コード
+- 2026-04-20 cmd_2182-2187: 6忍法CoDDメモリ+速度横展開(kasoku_ratio/nukimi/oikaze/kawarimi/yotsume/bunshin)。6/7 GATE CLEAR。kawarimi稼働中。kasoku_ratioも既に移植済み(軍師発見)。軍師がgate偽陽性3件を自走修正(バンドルCLI除外+Check17数値緩和+Check18 scout_exempt提案)
+- 2026-04-20 週報作成: 2026-04-20_weekly.md生成。API+Grok x_search使用。全検証PASS
 - 2026-04-20 殿指摘3連: 「gateの警告を無視するな」→「WARNの度にも即時強くなれ」→「自動で学習ループを回す仕組みは？」→environment_change自動検証(cmd_2173)に到達

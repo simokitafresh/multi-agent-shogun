@@ -660,6 +660,100 @@ if [ -f "$_DQ_FILE" ]; then
 fi
 fi
 
+# --- Gate 13.8: Gate偽陽性率（事後→事前フィードバック） ---
+# 起源: cmd_2181バンドル偽陽性12回蓄積→累計昇格BLOCK。gateの精度劣化を計測する仕組みがなかった
+# 目的: cmd_save WARNを出したcmdがcmd_complete_gateでCLEARした場合、そのWARNは偽陽性候補。FP率が高いWARN typeをALERT
+echo "■ gate偽陽性率"
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+else
+if [ -f "$_DQ_FILE" ]; then
+    _fp_report=$(python3 - "$_DQ_FILE" <<'PY'
+import sys
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+
+dq_file = sys.argv[1]
+cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+# Parse entries from YAML (simple line-based parsing)
+entries = []
+current = {}
+with open(dq_file, 'r', encoding='utf-8', errors='ignore') as f:
+    for line in f:
+        line = line.rstrip()
+        if '  - cmd_id:' in line:
+            if current:
+                entries.append(current)
+            current = {'cmd_id': line.split('"')[1] if '"' in line else ''}
+        elif 'gate_result:' in line and current:
+            current['gate_result'] = line.split('"')[1] if '"' in line else ''
+        elif 'source:' in line and current:
+            current['source'] = line.split('"')[1] if '"' in line else ''
+        elif 'notes:' in line and current:
+            current['notes'] = line.split('"')[1] if '"' in line else line.split('notes:')[1].strip().strip('"')
+        elif 'timestamp:' in line and current:
+            current['timestamp'] = line.split('"')[1] if '"' in line else ''
+    if current:
+        entries.append(current)
+
+# Filter to last 30 days only
+entries = [e for e in entries if e.get('timestamp', '') >= cutoff[:10]]
+
+# Find WARNs from cmd_save_warn
+warn_by_cmd = defaultdict(set)  # cmd_id -> set of warn notes
+for e in entries:
+    if e.get('source') == 'cmd_save_warn' and e.get('gate_result') == 'WARN':
+        warn_by_cmd[e['cmd_id']].add(e.get('notes', 'unknown'))
+
+# Find CLEARed cmds from cmd_complete_gate
+cleared_cmds = set()
+for e in entries:
+    if e.get('source') == 'cmd_complete_gate' and e.get('gate_result') == 'CLEAR':
+        cleared_cmds.add(e['cmd_id'])
+
+# Compute FP rate per WARN type
+warn_type_total = defaultdict(int)
+warn_type_fp = defaultdict(int)
+for cmd_id, notes_set in warn_by_cmd.items():
+    for note in notes_set:
+        warn_type_total[note] += 1
+        if cmd_id in cleared_cmds:
+            warn_type_fp[note] += 1
+
+# Report
+if not warn_type_total:
+    print("  WARN記録なし")
+    sys.exit(0)
+
+high_fp = []
+for wtype, total in sorted(warn_type_total.items(), key=lambda x: -x[1]):
+    fp = warn_type_fp.get(wtype, 0)
+    rate = fp * 100 // total if total > 0 else 0
+    if total >= 3 and rate >= 60:
+        high_fp.append(f"  ALERT: \"{wtype}\" FP率={rate}% ({fp}/{total}) → gate精度劣化。修正を検討せよ")
+    elif total >= 3:
+        print(f"  OK: \"{wtype}\" FP率={rate}% ({fp}/{total})")
+
+if high_fp:
+    for line in high_fp:
+        print(line)
+else:
+    print("  高FP率のWARN typeなし")
+PY
+)
+    echo "$_fp_report"
+    if echo "$_fp_report" | grep -q "ALERT"; then
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("gate偽陽性: 高FP率のWARN type検出。精度改善を検討せよ")
+        fi
+    fi
+else
+    echo "  cmd_design_quality.yaml不在"
+fi
+fi
+
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える

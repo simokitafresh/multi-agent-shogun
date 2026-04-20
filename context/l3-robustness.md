@@ -545,9 +545,15 @@ L0からL3まで全てWFα選別で一貫させる。
 
 **CoDDとの相性**: 速度改善(cmd_2142-2156)と同構造。tracemalloc計測をmeasureフェーズに追加。
 
-**進捗**:
-- cmd_2181(kasoku_diff): 才蔵配備中。AC1(before計測)実行中、Phase 2途中RSS=5.48GB
-- 才蔵の分析: 「monthly_dict + DataFrame + BytesIO の三重保持が真因」← 軍師分析と一致
+**進捗(2026-04-20 23:00)**:
+- cmd_2181(kasoku_diff計測): GATE CLEAR。既に最適化済みと判明(RSS=5.5GB)
+- cmd_2182(kasoku_ratio): GATE CLEAR。既にkasoku_diffと同時移植済みだった(workers=2 RSS 370MB確認)
+- cmd_2183(nukimi): GATE CLEAR。横展開成功
+- cmd_2184(oikaze): GATE CLEAR。横展開成功
+- cmd_2185(kawarimi): 疾風稼働中(CTX:40%)
+- cmd_2186(yotsume): GATE CLEAR。横展開成功
+- cmd_2187(bunshin): GATE CLEAR。直列構造のため移植範囲限定
+- **gate改善(軍師自走)**: Check 17数値緩和偽陽性修正(run_077→077抽出問題)+Check 18 scout_exempt除外提案+バンドルCLI引数除外
 
 **過去有効手法(CoDD registry参照)**:
 - pandas→numpy置換(cmd_1836): to_csv→savetxtで60x高速+メモリ半減
@@ -695,12 +701,16 @@ SS=攻撃力(CAGR/NHF)、AS=防御力(MaxDD)の傾向。ただしASはデータ�
 - 真因: swap枯渇。詳細は§8.4.1参照
 - 殿裁定: 1忍法1CMD完全直列(案A)で再起票。→ §8.4.1
 
-### 8.12 状態 (2026-04-20 20:28更新)
+### 8.12 状態 (2026-04-20 23:00更新)
 
 - WF四神(L0): **完了** (cmd_2167) — 全12体WF改善
 - WF忍法(L1 WFα): **完了** (cmd_2174/2175) — WF 2勝19敗。従来L1が優位
 - WF忍法(L1事後): **完了** (cmd_2176/2177) — 事後選出で42体確定
-- WF奥義(L2): **cmd_2179/2180中止→再設計完了→CMD起票待ち(殿承認後)**
-  - 確定案: 1忍法1CMD×7 + 統合1CMD × 2系統 = 16CMD
-  - 配備: 完全直列。/clear+メモリ確認。並列禁止
-  - 詳細: §8.4.1
+- WF奥義(L2準備): **cmd_2178 GATE CLEAR** — universe YAML+BB CSV作成済み
+- WF奥義(L2 GS): **cmd_2179/2180中止**(OOM 3回)→ **CoDDメモリ横展開で道具磨き中**
+- CoDDメモリ横展開(7忍法): cmd_2181-2187 **6/7 GATE CLEAR、1本(cmd_2185 kawarimi)稼働中**
+  - kasoku_diff/ratio: 既に最適化済みだった(発見)
+  - nukimi/oikaze/bunshin: GATE CLEAR(横展開成功)
+  - kawarimi: 疾風稼働中(CTX:40%)
+  - yotsume: GATE CLEAR
+- **次ステップ**: 全7本GATE CLEAR後 → workers=2フルテスト → WF L2本番(workers=2, SS+AS≈68min)
