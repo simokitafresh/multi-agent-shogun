@@ -777,3 +777,12 @@
 | cmd_2151 | CoDD最適化 — cmd_1947_l3_ew_combo_stability.py (2体EW安定性) | dm-signal | 04-20 | cmd_1947をcache-first fallback+ |
 | cmd_2152 | CoDD最適化 — cmd_1934_l3_threebody_stability.py (3体EW安定性) | dm-signal | 04-20 | cmd_1934_l3_threebody_stabilit |
 | cmd_karo_ci_fix_ga135 | CI修正 — TG-T002テスト失敗(SG10 AC_SECTIONインデント検出) | infra | 04-20 | check_research_tool_growth_ac |
+| cmd_2157 | 強化 — cmd_save.sh assumptions全cmd必須化(CMD品質原理的解決) | infra | 04-20 | cmd_save.shのassumptions必須チェック閾 |
+| cmd_2158 | 強化 — cmd_save.sh 1cmd毎ゲート強制(前回cmd未昇格ならBLOCK) | infra | 04-20 | cmd_save.sh に Check 1.6 を追加: P |
+| cmd_2159 | 強化 — cmd_save.sh BLOCK/WARN学習ループ強制(diagnosis質検査+WARN累計昇格) | infra | 04-20 | diagnosis質検査(Check 3.5)とWARN累計 |
+| cmd_2160 | 強化 — cmd_save.sh environment_change強制(BLOCK→環境埋込の免疫系完成) | infra | 04-20 | BLOCK後の再PASS時にenvironment_chan |
+| cmd_2161 | 強化 — gate_report_format 忍者BLOCK学習ループ(同一パターンN回→テンプレート自動改善) | infra | 04-20 | gate_report_formatの反復BLOCK学習ルー |
+| cmd_2162 | 修正 — deploy_task.sh target_path転写漏れ恒久修正 | infra | 04-20 | deploy_task.shのcmd解決経路へtarget_ |
+| cmd_2163 | 強化 — LK007環境埋込: workaroundパターン3件累積で構造的解決cmd自動起票催促 | infra | 04-20 | gate_karo_startup.sh に同カテゴリwor |
+| cmd_karo_ci_fix_ga137 | CI修正 — cmd_save系bats 16件FAIL(cmd_2157-2160新フィールド未対応) | infra | 04-20 | cmd_save系batsフィクスチャをassumption |
+| cmd_2166 | 修正 — cmd_save.sh バンドル定義修正: 変更対象(target_path+command)のみスキャン | infra | 04-20 | collect_primary_cmd_targetsをta |
