@@ -427,11 +427,41 @@ WFシン四神12体 + WF ALM四神12体 = **24体**を追加で選出。
 
 L0からL3まで全てWFα選別で一貫させる。
 
-| 層 | 内容 | 既存(事後選出) | WF選別(新規) |
-|----|------|--------------|-------------|
-| L0 | 四神 | シン四神12体 / ALM四神12体 | **WFシン四神12体** / **WF ALM四神12体** |
-| L1 | 忍法 | シン忍法20体 / ALMシン忍法19体 | **WF-SS忍法** / **WF-AS忍法** (忍法パラメータもWFα選別) |
-| L2 | 奥義 | SSS奥義21体 / ASS奥義21体 | **WF-SSS奥義21体** / **WF-ASS奥義21体** |
+**全層共通**: チャンピオン選出は**WFα**。目的変数はシン忍法の3目的(**CAGR/NHF/MaxDD**)。
+
+| 層 | 名称 | BB | 忍法 | 体数 | 選出 |
+|----|------|-----|------|------|------|
+| L0 | WFシン四神 | GS全パターン | — | 12体(4DM×3目的) | WFα |
+| L0 | WF ALM四神 | GS全パターン(ALM動的) | — | 12体(4DM×3目的) | WFα |
+| L1 | WF-SS忍法 | **WFシン四神** | シン忍法7本 | 21体(7忍法×3目的) | WFα |
+| L1 | WF-AS忍法 | **WF ALM四神** | シン忍法7本 | 21体(7忍法×3目的) | WFα |
+| L2 | WF-SSS奥義 | WF-SS忍法 | — | TBD | WFα |
+| L2 | WF-ASS奥義 | WF-AS忍法 | — | TBD | WFα |
+
+**命名規則**: A=ALM四神BB、S=シン四神BB。2文字目S=シン忍法。WF-AS=ALM四神BB×シン忍法。
+
+**L1作成手順(3段階)**:
+
+**Step 0(準備)**: WF四神のBB用月次リターンCSV + universe YAML作成
+- WFシン四神12体: cmd_2167のwf_shin_summaryからpattern_id取得 → shin_shijin_l1 GS CSVから該当12列抽出 → 1本のCSV
+- WF ALM四神12体: cmd_2167のalm_returns CSVから動的選出の合成月次リターン抽出 → 1本のCSV
+- universe YAML 2本作成(`wf_shin_12.yaml`, `wf_alm_12.yaml`)
+- 参考: 既存universe構造 = `config/portfolio_universes/shin_shijin_v2_12.yaml`(source_type:csv, csv_dir+k_files+families)
+- 忍法GSスクリプトは`--universe <yaml>`でBB構成を切替可能(run_077_bunshin.py L87)
+
+**Step 1**: 忍法GS実行(新規。BBが変わるのでGS結果も変わる)
+- `run_077_*.py --universe wf_shin_12.yaml --out-dir wf_l1_ss/` × 7忍法 → WF-SS用GS CSV
+- `run_077_*.py --universe wf_alm_12.yaml --out-dir wf_l1_as/` × 7忍法 → WF-AS用GS CSV
+- 計14回(6忍者並列で時間短縮可能。SS/ASは独立)
+
+**Step 2**: WFα選出
+- GS CSVにl1_alm_wf_engine.py --multi-is → WFαでチャンピオン選出
+- WF-SS忍法21体(7忍法×3目的) + WF-AS忍法21体 = 42体
+
+**cmd分割案**:
+1. cmd: Step 0(BB CSV抽出 + universe YAML作成)
+2. cmd: Step 1+2 WF-SS(GS 7本 + WFα選出) — 並列可
+3. cmd: Step 1+2 WF-AS(GS 7本 + WFα選出) — 並列可
 
 ### 8.5 必要スクリプト — 全14本CoDD済み (2026-04-20確認)
 

@@ -662,7 +662,7 @@
 | cmd_2010 | インフラ修正 — cmd初期statusをdraftに変更(gate未通過配備防止) | infra | 04-17 | — |
 | cmd_2006 | Phase 4 B1 impl — monthly_returns preload条件変更(N+1解消) | dm-signal | 04-17 | monthly_returns の FoF partial- |
 | cmd_1997 | Phase 4準備②補足 — compare_snapshots.py列名不一致修正 | dm-signal | 04-17 | compare tool修正はbranch履歴に存在しpus |
-| cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | docs/research/gunshi_phase4_im |
+| cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | Phase4設計書更新完了 |
 | cmd_2001 | Phase 4偵察③ — Render上cProfile計測(純Python時間取得) | dm-signal | 04-17 | Render cProfile結果を docs/resear |
 | cmd_2012 | Phase 4偵察⑥ — DELETE FROM signals 2505s(77%)の真因特定 | dm-signal | 04-17 | signals cleanup経路を特定し、DELETE条件 |
 | cmd_2013 | Phase 4偵察⑦ — fullrecalculate PF×date網羅性検証(UPSERT化可否判定) | dm-signal | 04-17 | full recalcのPF取得・date範囲・inacti |
@@ -736,7 +736,7 @@
 | cmd_2092 | CoDD正規再改善 R2-E — gate_workaround_rate.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_workaround_rate.sh CoDD正規 |
 | cmd_2091 | CoDD正規再改善 R2-D — gate_loop_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_loop_health.sh CoDD正規再改善: |
 | cmd_2093 | insightノイズ除去 — 生成時自動done化 + cleanカテゴリALERT除外 | infra | 04-18 | insightノイズの上流生成を停止。auto-done/S |
-| cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。docs/research/systems-kn |
+| cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。知識辞書一次層作成 |
 | cmd_karo_ci_fix_ga116 | CI修正 — test_cmd_save.bats 8テスト失敗修正 | infra | 04-19 | CI修正完了。abort_if_block_immediat |
 | cmd_2098 | 実装 — AI開発知識辞書 鮮度チェックgate (CoDDドキュメント適用Phase1) | infra | 04-19 | 知識辞書verified_at鮮度gateを追加し、将軍st |
 | cmd_2100 | 実装 — AI開発知識辞書 落とし穴+相互参照の補完 (全エントリ) | infra | 04-19 | ace/vercel/gsd に Pitfalls/Cros |
@@ -788,3 +788,5 @@
 | cmd_2166 | 修正 — cmd_save.sh バンドル定義修正: 変更対象(target_path+command)のみスキャン | infra | 04-20 | collect_primary_cmd_targetsをta |
 | cmd_2164 | 強化 — 忍者BLOCK学習ループ汎用化: 全BLOCKパターン自動学習→テンプレートprefill | infra | 04-20 | gate_report_format学習ループを汎化し、pr |
 | cmd_2167 | 研究 — WF L0四神24体作成: shin_shijin_l1 GS 4CSV × WFエンジン → シン12体+ALM12体チャンピオン選出 | dm-signal | 04-20 | AC1-AC4完了。shin_shijin_l1 の 4 C |
+| cmd_2169 | 修正 — cmd_save.sh ���ンドル除外リストにoutputs/とcontext/を追加(非変更パス誤検出) | infra | 04-20 | scripts/cmd_save.shのL213-220 a |
+| cmd_2168 | 修正 — cmd_save.sh Check 18 GS誤検出修正: outputs/grid_searchパスをGS実行と判定しない | infra | 04-20 | cmd_save.shのGS検出を出力CSVパスでは反応しな |
