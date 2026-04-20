@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # karo_workaround_log.sh — 家老ワークアラウンド記録スクリプト
-# Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]
+# Usage:
+#   bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]
+#   bash scripts/karo_workaround_log.sh --wa <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg] [environment_change]
 #
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
@@ -53,8 +55,10 @@ fi
 
 # --- Argument validation ---
 CLEAN_MODE=false
+WA_MODE=false
 EXPLICIT_CATEGORY=""
 MISSED_SG=""
+ENVIRONMENT_CHANGE=""
 if [[ "${1:-}" = "--clean" ]]; then
     CLEAN_MODE=true
     shift
@@ -70,9 +74,29 @@ if [[ "${1:-}" = "--clean" ]]; then
         echo "[karo_workaround_log] Error: cmd_id and ninja_name must be non-empty" >&2
         exit 1
     fi
+elif [[ "${1:-}" = "--wa" ]]; then
+    WA_MODE=true
+    shift
+    if [[ $# -lt 4 || $# -gt 7 ]]; then
+        echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh --wa <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category] [missed_sg] [environment_change]" >&2
+        echo "  structured environment_change: type=gate|lesson|hook; file=path; pattern=grep_pattern" >&2
+        exit 1
+    fi
+    CMD_ID="$1"
+    NINJA_NAME="$2"
+    ISSUE="$3"
+    FIX="$4"
+    EXPLICIT_CATEGORY="${5:-}"
+    MISSED_SG="${6:-}"
+    ENVIRONMENT_CHANGE="${7:-}"
+    if [[ -z "$CMD_ID" || -z "$NINJA_NAME" || -z "$ISSUE" ]]; then
+        echo "[karo_workaround_log] Error: cmd_id, ninja_name, issue must be non-empty" >&2
+        exit 1
+    fi
 else
     if [[ $# -lt 4 || $# -gt 6 ]]; then
         echo "[karo_workaround_log] Usage: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category] [missed_sg]" >&2
+        echo "  --wa mode: bash scripts/karo_workaround_log.sh --wa <cmd_id> <ninja_name> \"<issue>\" \"<fix>\" [category] [missed_sg] [environment_change]" >&2
         echo "  --clean mode: bash scripts/karo_workaround_log.sh --clean <cmd_id> <ninja_name>" >&2
         exit 1
     fi
@@ -87,6 +111,62 @@ else
         exit 1
     fi
 fi
+
+# --- Structured environment_change parsing (cmd_karo_env_change_gate) ---
+parse_structured_environment_change() {
+    local env_change="${1:-}"
+    [[ -n "$env_change" ]] || return 1
+
+    ENV_CHANGE_TEXT="$env_change" python3 - <<'PY'
+import os
+import re
+import sys
+
+text = os.environ.get("ENV_CHANGE_TEXT", "")
+if not text:
+    raise SystemExit(1)
+
+def extract(key: str) -> str:
+    pattern = rf'(?:^|;)\s*{key}\s*=\s*([^;]+)'
+    match = re.search(pattern, text)
+    if not match:
+        return ""
+    value = match.group(1).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value.strip()
+
+etype = extract("type")
+efile = extract("file")
+epattern = extract("pattern")
+
+if not (etype and efile and epattern):
+    raise SystemExit(1)
+
+print(f"{etype}\t{efile}\t{epattern}")
+PY
+}
+
+verify_environment_change() {
+    local env_change="${1:-}"
+    local env_structured="" env_type="" env_file="" env_pattern="" env_file_resolved=""
+
+    if [[ -z "$env_change" ]]; then
+        echo "[karo_workaround_log] WARN: environment_change未記入。--wa時は何を環境に埋め込んだか記録せよ" >&2
+        return 0
+    fi
+
+    if env_structured="$(parse_structured_environment_change "$env_change" 2>/dev/null)"; then
+        IFS=$'\t' read -r env_type env_file env_pattern <<< "$env_structured"
+        env_file_resolved="$env_file"
+        [[ "$env_file_resolved" == /* ]] || env_file_resolved="$REPO_ROOT/$env_file_resolved"
+        if grep -qE -- "$env_pattern" "$env_file_resolved" 2>/dev/null; then
+            echo "[karo_workaround_log] INFO: environment_change検証OK: type=${env_type} file=${env_file} pattern=${env_pattern}" >&2
+        else
+            echo "[karo_workaround_log] WARN: environment_change未実装。file=${env_file} に pattern=${env_pattern} が見つからない" >&2
+        fi
+    fi
+}
 
 # --- AC1(cmd_1542): ninja_id validation ---
 # cmd_1967高速化: task dirループ(basename subprocess×10=45ms)廃止。
@@ -171,6 +251,10 @@ if [[ "$CLEAN_MODE" != true ]]; then
     fi
 fi
 
+if [[ "$WA_MODE" = true ]]; then
+    verify_environment_change "$ENVIRONMENT_CHANGE"
+fi
+
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
 count_category_entries() {
     local category="$1"
@@ -227,6 +311,7 @@ EOF
         SAFE_ISSUE=$(yaml_escape_sq "$ISSUE")
         SAFE_FIX=$(yaml_escape_sq "$FIX")
         SAFE_MISSED_SG=$(yaml_escape_sq "$MISSED_SG")
+        SAFE_ENVIRONMENT_CHANGE=$(yaml_escape_sq "$ENVIRONMENT_CHANGE")
         {
             cat <<EOF
 - cmd_id: $CMD_ID
@@ -239,6 +324,9 @@ EOF
 EOF
             if [[ -n "$MISSED_SG" ]]; then
                 echo "  missed_sg: '$SAFE_MISSED_SG'"
+            fi
+            if [[ "$WA_MODE" = true && -n "$ENVIRONMENT_CHANGE" ]]; then
+                echo "  environment_change: '$SAFE_ENVIRONMENT_CHANGE'"
             fi
             cat <<EOF
   resolved_by_cmd: ''

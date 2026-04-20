@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_karo_workaround_validation.bats — cmd_1542 AC1+AC2 単体テスト
+# test_karo_workaround_validation.bats — cmd_1542 + cmd_karo_env_change_gate 単体テスト
 # AC1: validate_ninja_id() — ninja_id有効性チェック
 # AC2: root_cause最小長+null/empty拒否
 
@@ -49,6 +49,12 @@ echo "PD:$*" >> "${BASH_SOURCE[0]%.sh}.log"
 exit 0
 SH
     chmod +x "$TEST_DIR/scripts/pending_decision_write.sh"
+
+    cat > "$TEST_DIR/scripts/sample_gate.sh" <<'SH'
+#!/usr/bin/env bash
+echo "ENV_CHANGE_MARKER"
+SH
+    chmod +x "$TEST_DIR/scripts/sample_gate.sh"
 
     # Copy the actual script, replacing REPO_ROOT discovery
     sed "s|REPO_ROOT=.*|REPO_ROOT=\"$TEST_DIR\"|" "$SCRIPT" > "$TEST_DIR/scripts/karo_workaround_log.sh"
@@ -185,4 +191,27 @@ teardown() {
     [ "$status" -eq 0 ]
     run grep -n "missed_sg:" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -ne 0 ]
+}
+
+@test "AC3: --wa modeでenvironment_change未記入ならWARN" {
+    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"environment_change未記入"* ]]
+}
+
+@test "AC4: --wa modeでstructured environment_changeを検証してYAML記録" {
+    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
+        "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"environment_change検証OK"* ]]
+    run grep -n "environment_change: 'type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC4: --wa modeでstructured environment_change不一致ならWARN表示" {
+    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
+        "type=gate; file=scripts/sample_gate.sh; pattern=DOES_NOT_EXIST_2185"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"environment_change未実装"* ]]
+    [[ "$output" == *"DOES_NOT_EXIST_2185"* ]]
 }
