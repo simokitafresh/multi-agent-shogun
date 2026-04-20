@@ -708,9 +708,7 @@ SS=攻撃力(CAGR/NHF)、AS=防御力(MaxDD)の傾向。ただしASはデータ�
 - WF忍法(L1事後): **完了** (cmd_2176/2177) — 事後選出で42体確定
 - WF奥義(L2準備): **cmd_2178 GATE CLEAR** — universe YAML+BB CSV作成済み
 - WF奥義(L2 GS): **cmd_2179/2180中止**(OOM 3回)→ **CoDDメモリ横展開で道具磨き中**
-- CoDDメモリ横展開(7忍法): cmd_2181-2187 **6/7 GATE CLEAR、1本(cmd_2185 kawarimi)稼働中**
+- CoDDメモリ横展開(7忍法): cmd_2181-2187 **全7本GATE CLEAR** (2026-04-20 23:20完了)
   - kasoku_diff/ratio: 既に最適化済みだった(発見)
-  - nukimi/oikaze/bunshin: GATE CLEAR(横展開成功)
-  - kawarimi: 疾風稼働中(CTX:40%)
-  - yotsume: GATE CLEAR
-- **次ステップ**: 全7本GATE CLEAR後 → workers=2フルテスト → WF L2本番(workers=2, SS+AS≈68min)
+  - nukimi/oikaze/kawarimi/bunshin/yotsume: 横展開成功
+- **次ステップ**: workers=2フルテストcmd起票 → WF L2本番(workers=2, SS+AS≈68min)

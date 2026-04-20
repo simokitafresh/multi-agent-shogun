@@ -453,6 +453,31 @@ if [ "$_fixed_input" != "$_val_input" ]; then
         fi
     fi
 fi
+# ★構造的矛盾排除: verdict書込み時にbc:noがあればFAIL強制(間違える余地を潰す)
+if [[ "$DOT_KEY" == "verdict" ]] && [[ "$_val_input" == "PASS" || "$_val_input" == "PASS_NO_IMPROVEMENT" ]]; then
+    _bc_has_no=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+import yaml, sys, os
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    sys.exit(0)
+with open(rp) as f:
+    data = yaml.safe_load(f) or {}
+bc = data.get('binary_checks', {})
+if isinstance(bc, dict):
+    for ac_val in bc.values():
+        if isinstance(ac_val, list):
+            for item in ac_val:
+                if isinstance(item, dict) and str(item.get('result', '')).strip().lower() == 'no':
+                    print('yes', end='')
+                    sys.exit(0)
+" 2>/dev/null) || true
+    if [[ "$_bc_has_no" == "yes" ]]; then
+        echo "★ verdict自動修正: PASS→FAIL(bc:noあり。矛盾状態を作れない構造)" >&2
+        _val_input="FAIL"
+        VALUE="FAIL"
+        if [ -n "$STDIN_VALUE" ]; then STDIN_VALUE="FAIL"; fi
+    fi
+fi
 # Validate: 意味的エラーはBLOCK
 if ! _validate_field_value "$DOT_KEY" "$_val_input"; then
     echo "[report_field_set] BLOCKED: 値フォーマット不正。上記メッセージに従い修正せよ。" >&2
@@ -961,5 +986,31 @@ if issues:
         echo "$_bc_check" >&2
         echo "FIX: check=「確認した内容」 result=\"yes\" or \"no\"" >&2
         echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
+    fi
+    # ★穴B/C対策: bc書込み後にverdictを自動再導出(矛���状態を時間軸でも作れない)
+    _cur_verdict=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+import yaml, os, sys
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    sys.exit(0)
+with open(rp) as f:
+    data = yaml.safe_load(f) or {}
+verdict = str(data.get('verdict', '')).strip()
+if verdict not in ('PASS', 'PASS_NO_IMPROVEMENT'):
+    sys.exit(0)  # FAILや未設定なら何もしない
+bc = data.get('binary_checks', {})
+if not isinstance(bc, dict):
+    sys.exit(0)
+for ac_val in bc.values():
+    if isinstance(ac_val, list):
+        for item in ac_val:
+            if isinstance(item, dict) and str(item.get('result', '')).strip().lower() == 'no':
+                print('INCONSISTENT', end='')
+                sys.exit(0)
+" 2>/dev/null) || true
+    if [[ "$_cur_verdict" == "INCONSISTENT" ]]; then
+        # verdict:PASSだがbc:noあり → FAILに自動修正
+        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null
+        echo "★ verdict自動再導出: bc:no追加によりPASS→FAIL強制(時間軸矛盾排除)" >&2
     fi
 fi

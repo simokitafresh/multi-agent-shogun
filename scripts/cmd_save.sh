@@ -593,6 +593,25 @@ handle_cmd_save_exit() {
             echo "★ 診断せよ: なぜこのBLOCKが起きたか？根本原因を1行で書け。" >&2
             echo '★ 修正前に: quality_gateに diagnosis: "根本原因の1行記述" を追加してから再実行せよ。' >&2
 
+            # --- resolution_hint: BLOCK理由に対応する解消手順を自動表示 ---
+            # 軍師提案(A): 行動コストを下げて同じBLOCKの繰り返しを防ぐ
+            case "$block_reason" in
+                *"ファイルパスが存在しません"*|*"親ディレクトリも不在"*)
+                    echo "★ 解消: ls でパスを確認。見つからなければ grep -rn 'ファイル名' で検索せよ。" >&2 ;;
+                *"必須項目"*"未記入"*)
+                    echo "★ 解消: quality_gate: に q1_firefighting/q2_learning/q3_next_quality を追加。各1行で理由を書け。" >&2 ;;
+                *"q9_firefighting_root_cause"*)
+                    echo "★ 解消: q9_firefighting_root_cause: \"真因: ... 再発防止: ...\" を追加せよ。" >&2 ;;
+                *"q5="*"code_reading"*)
+                    echo "★ 解消: q5を isolated_test/structure_verified/production_verified に昇格。確認した証拠を1行追記。" >&2 ;;
+                *"未検証前提"*|*"trust:unverified"*)
+                    echo "★ 解消: assumptions内のtrust:unverifiedをtrust:verifiedに変更。確認手段(コマンド/ファイル)を明記。" >&2 ;;
+                *"既に委任済み"*)
+                    echo "★ 解消: cmd_idが重複。新しいcmd_idで起票し直せ。" >&2 ;;
+                *"WARN累計昇格"*)
+                    echo "★ 解消: 繰り返しWARNの根因を修正せよ。偽陽性ならgateのチェック条件を修正。" >&2 ;;
+            esac
+
             same_reason_count="$(count_same_reason_prior_blocks "$block_reason" | tr -d '[:space:]')"
             [[ "$same_reason_count" =~ ^[0-9]+$ ]] || same_reason_count=0
             if (( same_reason_count >= 1 )); then
@@ -705,10 +724,12 @@ if [[ -n "$CMD_DIAGNOSIS" ]]; then
     fi
 fi
 
-# --- Check 3.6: environment_change強制（cmd_2160） ---
-# 目的: BLOCK後の再PASS時に「環境に何を埋め込んだか」を強制。免疫系の抗体生成フェーズ。
+# --- Check 3.6: environment_change強制（cmd_2160, 殿指摘2026-04-20拡張） ---
+# 目的: BLOCK/WARN後に「環境に何を埋め込んだか」を強制。免疫系の抗体生成フェーズ。
 # 軍師原理(blt_20260420_021639): 「BLOCKの度に環境が1つ強くなるまで、次を許すな。」
+# 殿指摘: WARNもスルーするな。WARNされたら次のCMDでBLOCKされないように成長せよ。
 # 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
+# ★ WARN_COUNT > 0 のケースは全チェック完了後(L2594付近)で処理(WARNは後段で蓄積されるため)
 if (( PRIOR_ATTEMPT_COUNT > 0 )); then
     _ENV_STRUCTURED=""
     _ENV_TYPE=""
@@ -722,7 +743,7 @@ if (( PRIOR_ATTEMPT_COUNT > 0 )); then
         abort_if_block_immediate || exit 1
     fi
     # 禁止値チェック: 意志依存の低品質回答をBLOCK（AC2: cmd_2160）
-    _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A)$"
+    _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A|初回起票|初回|該当なし|なし.*初回|対策:.*初回)$"
     if echo "$_ENV_CHANGE" | grep -qE "$_ENV_VAGUE_PATTERN"; then
         record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
         echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
@@ -742,6 +763,13 @@ if (( PRIOR_ATTEMPT_COUNT > 0 )); then
             echo "  実装してからcmd_save.shを再実行せよ" >&2
             abort_if_block_immediate || exit 1
         fi
+    else
+        # 非構造化テキスト = 実装検証不能 = 意志依存 = 成長しない(deepdive Phase 5)
+        # 構造化形式を強制: type=xxx; file=xxx; pattern=xxx
+        record_block_reason "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
+        echo '  例: environment_change: "type=gate; file=scripts/cmd_save.sh; pattern=WARN_COUNT"' >&2
+        echo '  理由: 自由テキストは実装を検証できない。構造化形式なら自動grepで実在を証明する' >&2
+        abort_if_block_immediate || exit 1
     fi
 fi
 
@@ -2565,8 +2593,37 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     fi
 fi
 
-# --- WARN累計昇格: 同一WARNパターンが3回以上でBLOCK昇格（cmd_2159） ---
-# 目的: WARNを3回無視し続けるとBLOCKに昇格。WARNを解消しない運用を防ぐ
+# --- Check 3.6b: WARN時environment_change強制（殿指摘2026-04-20） ---
+# 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
+# Check 3.6(PRIOR_ATTEMPT_COUNT>0)は過去BLOCK後の再PASS用。こちらはWARN初回用。
+# 全チェック完了後に配置(WARNは後段のCheckで蓄積されるため)
+if (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
+    if load_cmd_block; then
+        _ENV_CHANGE_WARN="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+        if [[ -z "$_ENV_CHANGE_WARN" ]]; then
+            record_block_reason "WARNが${WARN_COUNT}件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"
+            echo '  形式: environment_change: "type=gate|lesson|hook; file=対象パス; pattern=grep検証文字列"' >&2
+        else
+            # 構造化形式チェック(Check 3.6と同一ロジック)
+            if _ENV_WARN_STRUCTURED="$(parse_structured_environment_change "$_ENV_CHANGE_WARN" 2>/dev/null)"; then
+                IFS=$'\t' read -r _EW_TYPE _EW_FILE _EW_PATTERN <<< "$_ENV_WARN_STRUCTURED"
+                _EW_FILE_RESOLVED="$_EW_FILE"
+                [[ "$_EW_FILE_RESOLVED" == /* ]] || _EW_FILE_RESOLVED="$PROJECT_DIR/$_EW_FILE_RESOLVED"
+                if ! grep -qE -- "$_EW_PATTERN" "$_EW_FILE_RESOLVED" 2>/dev/null; then
+                    record_block_reason "environment_change未実装(WARN対応)。file=${_EW_FILE} に pattern=${_EW_PATTERN} が見つからない"
+                fi
+            else
+                record_block_reason "environment_changeが非構造化(WARN対応)。type=xxx; file=xxx; pattern=xxx の形式で記載せよ"
+            fi
+        fi
+    fi
+fi
+
+# --- WARN累計昇格: 同一WARNパターンが繰り返しでBLOCK昇格（cmd_2159） ---
+# 目的: WARNを無視し続けるとBLOCKに昇格。WARNを解消しない運用を防ぐ
+# 穴2対処(殿指摘2026-04-20): environment_changeを書いたのに同じWARNが再発
+#   = 前回の環境変化が無効だった証拠。通常のWARN累計昇格メッセージに加え、
+#   「前回のenvironment_changeが効いていない」を明示的にフィードバック。
 _WARN_ESCALATE_THRESHOLD=1
 if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
     # カウントを先に(log書込み前)。書込み後だと自分自身をカウントする(閾値1で即BLOCK)
@@ -2575,6 +2632,8 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
         [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
         if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
             record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+            echo "  ★ 前回このWARNに対してenvironment_changeを書いたはず。効いていない。" >&2
+            echo "  ★ 前回の環境変化の質が低い(根に到達していない)。なぜなぜ7回で深く掘り直せ。" >&2
         fi
     done
     log_cmd_save_warns

@@ -807,3 +807,4 @@
 | cmd_2187 | 道具磨き — run_077_bunshin.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_bunshin.py に PatternSp |
 | cmd_2185 | 道具磨き — run_077_kawarimi.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_kawarimi.py に kasoku_d |
 | cmd_2186 | 道具磨き — run_077_yotsume.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_yotsume.py に kasoku_di |
+| cmd_karo_ctx_reflux_2188 | context還流 — gs-speedup-knowledge.md にcmd_2181-2187成果反映 | dm-signal | 04-20 | context/gs-speedup-knowledge.m |
