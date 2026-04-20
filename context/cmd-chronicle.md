@@ -812,3 +812,6 @@
 | cmd_karo_ci_fix_env_change | CI RED修正 — test_cmd_save_environment_change.bats 3件FAIL修正 | infra | 04-21 | environment_change系テスト4件の期待値を現 |
 | cmd_karo_ci_fix_aggregation | CI RED修正 — test_cmd_save_block_aggregation.bats AC2期待値更新 | infra | 04-21 | cmd_save BLOCK集約テストの期待値を現行挙動へ更 |
 | cmd_2189 | 研究 — WF L2 GS bunshin(SS系統): wf_l2_ss_21体でbunshin忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでbunshin GSをex |
+| cmd_2190 | 研究 — WF L2 GS kasoku_diff(SS系統): wf_l2_ss_21体でkasoku_diff忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_diff G |
+| cmd_2191 | 研究 — WF L2 GS kasoku_ratio(SS系統): wf_l2_ss_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_ratio |
+| cmd_2192 | 研究 — WF L2 GS nukimi(SS系統): wf_l2_ss_21体でnukimi忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでnukimi GSをexi |
