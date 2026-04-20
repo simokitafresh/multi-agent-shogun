@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-20T14:28:48+09:00 -->
+<!-- generated_at: 2026-04-20T15:17:57+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-20T14:28:47+09:00 | terminal | response | cmd_2176 + cmd_2177 両方委任完了。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2176 | WF-SS事後選出(WFシン四神BB × champion_selector…
-- 2026-04-20T14:24:13+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 14:18:50|CI緑: run 24649360818
-- 2026-04-20T14:13:53+09:00 | terminal | inbound | やろう
-- 2026-04-20T14:13:30+09:00 | terminal | response | 記録完了。l3-robustness.md §8.9に従来L1 vs WF L1の全比較テーブル+分析を追記し、§8.10に状態を更新した。 殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
-- 2026-04-20T14:13:08+09:00 | terminal | inbound | ではL1をwfαではなく、従来のシン忍法で作成するとどうなる？意味は分かるか？
-- 2026-04-20T14:11:49+09:00 | terminal | response | はっ。l3-robustness.mdに記録する。 [meta] stop_reason=tool_use
-- 2026-04-20T14:11:02+09:00 | terminal | inbound | この分析を記録しておいて
-- 2026-04-20T14:09:52+09:00 | terminal | response | ## 従来L1 vs WF-SS L1 — 6α比較 ### 忍法別・モード別（選出目的での比較） | 忍法 | モード | 既存OOS | WF-OOS | Δ | 勝敗 | |------|--------|---------|---…
-- 2026-04-20T14:08:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 14:00:26|cmd_2175 2026-04-20 14:03:36|cmd_2173
-- 2026-04-20T14:07:44+09:00 | terminal | inbound | 従来のL1とwf-L1のパフォーマンスを比較して。アルファ6項目をみたい
+- 2026-04-20T15:17:57+09:00 | terminal | response | はっ。その通り。 | L2名称 | L0(BB) | L1(忍法) | L2(奥義) | |--------|--------|---------|---------| | **WF-SSS** | WFシン四神 | シン忍法(事後選出)…
+- 2026-04-20T15:17:44+09:00 | terminal | inbound | wf-ALM,S,S とwf-S,S,Sだよな
+- 2026-04-20T15:16:17+09:00 | ntfy | outbound | 【家老】cmd_2178 初回配備開始 (title=研究 — WF L2準備: L1事後選出42体のBB用月次リターンCSV+universe YAML作成(SS21体+AS21体), ninja=hayate) 研究 📋 https:…
+- 2026-04-20T15:15:45+09:00 | terminal | response | cmd_2178(L2準備)委任完了。 Step 0が完了したら、Step 1+2のSS/AS並列cmdを起票する。全忍者idleのため即配備可能。 殿のご指示をお待ちつかまつる。 [meta] stop_reason=tool_use
+- 2026-04-20T15:13:03+09:00 | terminal | inbound | じゃあL2をやろう。今作った42体で通常のシン忍法をやろう
+- 2026-04-20T14:55:06+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 14:55:06|CI緑: run 24650307134
+- 2026-04-20T14:40:26+09:00 | terminal | response | 比較CSVを読む。 [meta] stop_reason=tool_use
+- 2026-04-20T14:39:33+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-20 14:38:06|cmd_2176 2026-04-20 14:39:30|cmd_2177
+- 2026-04-20T14:38:32+09:00 | terminal | response | 陣形図: cmd_2176 GATE CLEAR(hayate完了)、cmd_2177 saizo done(GATE CLEAR間近)。 cmd_2177の完了を待ってから、4パターン比較(BB種類×選出方式)を報告する。殿のご指示をお…
+- 2026-04-20T14:37:43+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 
 ## 未解決確認事項
 - 確認完了。事実を報告する。 **1. deploy_task.sh target_path転写漏れ — 既に修正済み。** - commit `d8387b6`(2026-04-20 02:41:54)で家老が恒久修正をコミット済み - awk抽出にtarget_path追加、…
@@ -26,14 +26,14 @@
 - はっ。軍師提案に穴がないか、なぜなぜ7回で掘る。 **なぜなぜ7回: 軍師提案(A)(B)(C)の穴検証** 1. **(A)自動ヒント層 — 同一BLOCKの過去成功environment_changeを表示。穴は？** → 将軍がヒントを**読んでも行動しない**。Phas…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-20T15:15:45+09:00 | cmd_2178(L2準備)委任完了。 Step 0が完了したら、Step 1+2のSS/AS並列cmdを起票する。全忍者idleのため即配備可能。 殿のご指示をお待ちつかまつる。 [meta] stop_reason=tool_use
+- 2026-04-20T14:38:32+09:00 | 陣形図: cmd_2176 GATE CLEAR(hayate完了)、cmd_2177 saizo done(GATE CLEAR間近)。 cmd_2177の完了を待ってから、4パターン比較(BB種類×選出方式)を報告する。殿のご指示をお待ちつかまつる。 [meta] stop…
 - 2026-04-20T14:28:47+09:00 | cmd_2176 + cmd_2177 両方委任完了。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2176 | WF-SS事後選出(WFシン四神BB × champion_selector) | 家老に委任済み | | cmd_…
 - 2026-04-20T14:13:30+09:00 | 記録完了。l3-robustness.md §8.9に従来L1 vs WF L1の全比較テーブル+分析を追記し、§8.10に状態を更新した。 殿のご指示をお待ちつかまつる。 [meta] stop_reason=end_turn
 - 2026-04-20T14:04:13+09:00 | 掲示板全件close完了。open: 0件。 **現在の状態:** - 全忍者idle(6名) - WF L0: 完了、WF L1: 完了、(C)自動検証: 完了 - 次: **WF L2(奥義)** 殿のご指示をお待ちつかまつる。 [meta] stop_reason=end…
 - 2026-04-20T13:54:05+09:00 | 確認完了。事実を報告する。 **1. deploy_task.sh target_path転写漏れ — 既に修正済み。** - commit `d8387b6`(2026-04-20 02:41:54)で家老が恒久修正をコミット済み - awk抽出にtarget_path追加、…
 - 2026-04-20T13:52:33+09:00 | 掲示板の殿裁定で未起票のもの: 1. deploy_task.sh target_path転写漏れ(blt_20260420_023721) — 殿「まずこの2つのバグ解消」。手動注入で応急対処済みだが恒久修正未実施 2. LK007/LK008 automated enfor…
 - 2026-04-20T13:52:18+09:00 | 確認完了。事実を報告する。 **陣形図(現時点):** | 忍者 | cmd | 状態 | 備考 | |------|-----|------|------| | hayate | cmd_2174(WF-SS忍法21体) | **GATE CLEAR** | 完了。idle化…
-- 2026-04-20T13:51:00+09:00 | --- **復帰完了。** 状態を整理する。 **WF L1(主戦線)**: | cmd | 内容 | 忍者 | 状態 | |-----|------|------|------| | cmd_2174 | WF-SS忍法21体(WFシン四神BB×忍法GS 7本+WFα選出) …
-- 2026-04-20T13:44:23+09:00 | 更新完了。全層テーブルに目的変数が明示された。 | 層 | 目的変数 | 理由 | |---|---------|------| | L0 シン四神 | CAGR/NHF/MaxDD | シン四神の目的 | | L0 ALM四神 | MRU/Calmar/UWP | ALM固有…
 
 ## 参照cmd
 - cmd_1798
@@ -54,7 +54,6 @@
 - cmd_2157
 - cmd_2158
 - cmd_2159
-- cmd_2160
 - cmd_2161
 - cmd_2162
 - cmd_2163
@@ -66,6 +65,7 @@
 - cmd_2169
 - cmd_2170
 - cmd_2171
+- cmd_2172
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

@@ -795,3 +795,4 @@
 | cmd_2172 | 修正 — cmd_save.sh Check 18 WF誤検出修正: WFエンジンを使わないcmdでWF WARN発火しない | infra | 04-20 | WF検出前にWF四神とWF選別を説明ラベルとして無害化し、w |
 | cmd_2175 | 研究 — WF L1 WF-AS忍法21体: WF ALM四神BBで忍法GS 7本実行 + WFα選出 | dm-signal | 04-20 | WF ALM四神BBで忍法GS 7本実行(全rc=0)・WF |
 | cmd_2173 | 強化 — cmd_save.sh environment_change構造化+自動検証: 約束の履行をBLOCKで強制 | infra | 04-20 | environment_change が type=...; |
+| cmd_2176 | L1でWFα選出が逆効果(2勝19敗)だった。WF四神BB(L0改善済み)はそのまま活かし、忍法チャンピオン選出だけ事後選出に戻す。WFα選出(cmd_2174)との比較で、どの選出方式が有効かを判定する材料を得る | dm-signal | 04-20 | cmd_2174 GS成果物へ champion_selec |
