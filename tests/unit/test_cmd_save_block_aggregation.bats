@@ -67,5 +67,6 @@ YAML
     [[ "$output" == *"BLOCK: q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"* ]]
     [[ "$output" == *"BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"* ]]
     [[ "$output" == *"BLOCK: assumptions sourceのファイルパスが存在しません:"* ]]
-    [[ "$output" == *"保存確認NG: cmd_multi_block (4件のBLOCK, 2件のWARN)"* ]]
+    [[ "$output" == *"BLOCK: WARNが2件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"* ]]
+    [[ "$output" == *"保存確認NG: cmd_multi_block (5件のBLOCK, 2件のWARN)"* ]]
 }
