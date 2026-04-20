@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-20 -->
+<!-- last_updated: 2026-04-21 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -808,3 +808,4 @@
 | cmd_2185 | 道具磨き — run_077_kawarimi.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_kawarimi.py に kasoku_d |
 | cmd_2186 | 道具磨き — run_077_yotsume.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_yotsume.py に kasoku_di |
 | cmd_karo_ctx_reflux_2188 | context還流 — gs-speedup-knowledge.md にcmd_2181-2187成果反映 | dm-signal | 04-20 | context/gs-speedup-knowledge.m |
+| cmd_karo_env_change_gate | karo_workaround_log.shにenvironment_change強制+grep検証を追加 | infra | 04-21 | karo_workaround_log.sh に --wa |

@@ -392,7 +392,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
-- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
+- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
+- **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
 - CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定

@@ -225,7 +225,7 @@ if found is True:
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
-                REPORT_PATH="$REPORT_PATH" python3 -c "
+                REPORT_PATH="$REPORT_PATH" FIELD_VAL="$val" python3 -c "
 import yaml, sys, os
 rp = os.environ.get('REPORT_PATH', '')
 if not rp or not os.path.exists(rp):
@@ -258,8 +258,24 @@ if isinstance(lu, list):
             r = str(item.get('reason', '')).strip()
             if not r:
                 issues.append(f'lessons_useful[{i}].reason が空')
-# GP-072c4: binary_checks results must not be all empty
+# GP-072c5: binary_checks に 'no' があるのに verdict=PASS は矛盾 → 自動FAIL化
+# 真因: フィールド間整合性制約がなく矛盾状態を作れた(なぜなぜ7回 2026-04-21)
+# 原理: 間違える余地がない構造。gateで止めるのではなく書込み時に矛盾を不可能にする
 bc = data.get('binary_checks', {})
+verdict_val = os.environ.get('FIELD_VAL', '')
+if isinstance(bc, dict) and bc and verdict_val == 'PASS':
+    has_no = False
+    for ac_key, ac_val in bc.items():
+        if isinstance(ac_val, list):
+            for item in ac_val:
+                if isinstance(item, dict) and str(item.get('result', '')).strip().lower() == 'no':
+                    has_no = True
+                    break
+        if has_no:
+            break
+    if has_no:
+        issues.append('binary_checks に result:no があるのに verdict=PASS は矛盾。verdict=FAIL に変更せよ')
+# GP-072c4: binary_checks results must not be all empty
 if isinstance(bc, dict) and bc:
     total_checks = 0
     empty_results = 0
