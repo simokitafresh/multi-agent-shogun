@@ -715,3 +715,10 @@
 - 2026-04-18 cmd_2093: 疾風作業中。insightノイズ除去(生成時自動done化+cleanカテゴリALERT除外)
 - 2026-04-18 教訓登録: LS044(cmd_save.sh BLOCK連続時は検出ロジック先確認)+LS045(数字見て分類するな中身読め)
 - cmd_2093: insightキューのノイズ生成を上流で停止(auto-done+clean除外)。将軍のinsight消化効率向上(47件→16件相当)。正の複利。(2026-04-18)
+- 2026-04-20 WF全層パイプライン始動(殿指示): L0→L1→L2を全てWFα選別で一貫させる構想。四神とシン四神は別物(同じGS CSV、選出方法が違う)。ALM=Adaptive Lookback Momentum=WF動的選出
+- 2026-04-20 cmd_2164-2169: infra改善6件GATE CLEAR。忍者BLOCK学習ループ汎用化+LK008環境埋込+バンドル定義修正(3段階: 定義→除外リスト→重複排除)。殿指摘「定義を正しくせよ」が転換点
+- 2026-04-20 cmd_2167: WF L0四神24体作成GATE CLEAR。既存事後選出と**pattern_id一致0/12**、全12体でWFシンが改善。WF選別の効果確認
+- 2026-04-20 cmd_2170: WF L1準備GATE CLEAR。BB CSV 2本+universe YAML 2本(wf_shin_12/wf_alm_12)作成
+- 2026-04-20 cmd_2174+2175: WF L1忍法GS+WFα選出(WF-SS 21体+WF-AS 21体)並列実行中
+- 2026-04-20 cmd_2173: environment_change構造化+自動検証(免疫系完成の本丸)配備中。Phase 4(書いただけで行動しない)を構造的に不可能にする
+- 2026-04-20 殿指摘3連: 「gateの警告を無視するな」→「WARNの度にも即時強くなれ」→「自動で学習ループを回す仕組みは？」→environment_change自動検証(cmd_2173)に到達

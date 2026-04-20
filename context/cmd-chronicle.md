@@ -790,3 +790,6 @@
 | cmd_2167 | 研究 — WF L0四神24体作成: shin_shijin_l1 GS 4CSV × WFエンジン → シン12体+ALM12体チャンピオン選出 | dm-signal | 04-20 | AC1-AC4完了。shin_shijin_l1 の 4 C |
 | cmd_2169 | 修正 — cmd_save.sh ���ンドル除外リストにoutputs/とcontext/を追加(非変更パス誤検出) | infra | 04-20 | scripts/cmd_save.shのL213-220 a |
 | cmd_2168 | 修正 — cmd_save.sh Check 18 GS誤検出修正: outputs/grid_searchパスをGS実行と判定しない | infra | 04-20 | cmd_save.shのGS検出を出力CSVパスでは反応しな |
+| cmd_2170 | 研究 — WF L1準備: WF四神BB月次リターンCSV抽出 + universe YAML 2本作成 | dm-signal | 04-20 | WFシン12体/月次CSV、WF ALM12体/月次CSV、 |
+| cmd_2171 | 修正 — cmd_save.sh バンドル検出: target_pathとcommandの重複パスを除外(dedup) | infra | 04-20 | collect_primary_cmd_targetsでta |
+| cmd_2172 | 修正 — cmd_save.sh Check 18 WF誤検出修正: WFエンジンを使わないcmdでWF WARN発火しない | infra | 04-20 | WF検出前にWF四神とWF選別を説明ラベルとして無害化し、w |

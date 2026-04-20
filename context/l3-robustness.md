@@ -427,16 +427,19 @@ WFシン四神12体 + WF ALM四神12体 = **24体**を追加で選出。
 
 L0からL3まで全てWFα選別で一貫させる。
 
-**全層共通**: チャンピオン選出は**WFα**。目的変数はシン忍法の3目的(**CAGR/NHF/MaxDD**)。
+**全層共通**: チャンピオン選出は**WFα**。目的変数は層・BB種類で決まる:
+- **シン四神(L0)**: CAGR/NHF/MaxDD
+- **ALM四神(L0)**: MRU/Calmar/UWP (ALM固有3目的)
+- **シン忍法(L1)**: CAGR/NHF/MaxDD (忍法の種類で決まる)
 
-| 層 | 名称 | BB | 忍法 | 体数 | 選出 |
-|----|------|-----|------|------|------|
-| L0 | WFシン四神 | GS全パターン | — | 12体(4DM×3目的) | WFα |
-| L0 | WF ALM四神 | GS全パターン(ALM動的) | — | 12体(4DM×3目的) | WFα |
-| L1 | WF-SS忍法 | **WFシン四神** | シン忍法7本 | 21体(7忍法×3目的) | WFα |
-| L1 | WF-AS忍法 | **WF ALM四神** | シン忍法7本 | 21体(7忍法×3目的) | WFα |
-| L2 | WF-SSS奥義 | WF-SS忍法 | — | TBD | WFα |
-| L2 | WF-ASS奥義 | WF-AS忍法 | — | TBD | WFα |
+| 層 | 名称 | BB | 忍法 | 目的変数 | 体数 | 選出 |
+|----|------|-----|------|---------|------|------|
+| L0 | WFシン四神 | GS全パターン | — | CAGR/NHF/MaxDD | 12体(4DM×3) | WFα |
+| L0 | WF ALM四神 | GS全パターン(ALM動的) | — | MRU/Calmar/UWP | 12体(4DM×3) | WFα |
+| L1 | WF-SS忍法 | **WFシン四神** | シン忍法7本 | CAGR/NHF/MaxDD | 21体(7忍法×3) | WFα |
+| L1 | WF-AS忍法 | **WF ALM四神** | シン忍法7本 | CAGR/NHF/MaxDD | 21体(7忍法×3) | WFα |
+| L2 | WF-SSS奥義 | WF-SS忍法 | シン忍法7本 | CAGR/NHF/MaxDD | 21体(7忍法×3) | WFα |
+| L2 | WF-ASS奥義 | WF-AS忍法 | シン忍法7本 | CAGR/NHF/MaxDD | 21体(7忍法×3) | WFα |
 
 **命名規則**: A=ALM四神BB、S=シン四神BB。2文字目S=シン忍法。WF-AS=ALM四神BB×シン忍法。
 
@@ -500,8 +503,33 @@ L0からL3まで全てWFα選別で一貫させる。
 
 詳細: `cmd_2167_wf_shin_summary.csv` / `cmd_2167_wf_alm_summary.csv` / `cmd_2167_existing_vs_wf_shin.csv` / `cmd_2167_summary.{md,json}`
 
-### 8.7 状態
+### 8.7 WF L1進捗 (2026-04-20)
+
+**Step 0(準備)**: cmd_2170 **GATE CLEAR**
+- `config/portfolio_universes/wf_shin_12.yaml` + `wf_alm_12.yaml` 作成済み
+- `outputs/analysis/wf_l0_shijin/wf_shin_12_monthly_returns.csv` + `wf_alm_12_monthly_returns.csv` 作成済み
+
+**Step 1+2(GS+WFα選出)**: 2cmd並列実行中
+- cmd_2174: WF-SS忍法21体(WFシン四神BB × 忍法GS 7本 + WFα選出) — hayate稼働中
+- cmd_2175: WF-AS忍法21体(WF ALM四神BB × 忍法GS 7本 + WFα選出) — kagemaru稼働中
+
+### 8.8 infra改善(本セッション cmd_2164-2173)
+
+| cmd | 内容 | 状態 |
+|-----|------|------|
+| cmd_2164 | 忍者BLOCK学習ループ汎用化(全パターン自動学習→prefill) | GATE CLEAR |
+| cmd_2165 | LK008環境埋込(proposal pending検出WARN) | GATE CLEAR |
+| cmd_2166 | バンドル定義修正(target_path+commandのみスキャン) | GATE CLEAR |
+| cmd_2168 | Check 18 GS誤検出修正(outputsパス除外) | GATE CLEAR |
+| cmd_2169 | バンドル除外リスト追加(outputs/context/) | GATE CLEAR |
+| cmd_2171 | バンドル重複排除(target_path dedup) | saizo done |
+| cmd_2172 | Check 18 WF誤検出修正(WF検出条件をスクリプト名限定) | saizo稼働中 |
+| cmd_2173 | **environment_change構造化+自動検証**(免疫系完成の本丸) | 配備中 |
+
+**cmd_2173の設計**: environment_changeを構造化(type/file/pattern)→次回cmd_save実行時にfileをpatternでgrep→未実装ならBLOCK。Phase 4(書いただけで行動しない)を構造的に不可能にする。殿指示+なぜなぜ7回+軍師分析の穴検証から到達。
+
+### 8.9 状態
 
 - WF四神(L0): **完了** (cmd_2167 GATE CLEAR)
-- WF忍法(L1): 未着手
-- WF奥義(L2): 未着手
+- WF忍法(L1): **実行中** (cmd_2170準備完了 + cmd_2174 SS + cmd_2175 AS並列)
+- WF奥義(L2): 未着手(L1完了後)
