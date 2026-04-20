@@ -797,3 +797,4 @@
 | cmd_2173 | 強化 — cmd_save.sh environment_change構造化+自動検証: 約束の履行をBLOCKで強制 | infra | 04-20 | environment_change が type=...; |
 | cmd_2176 | L1でWFα選出が逆効果(2勝19敗)だった。WF四神BB(L0改善済み)はそのまま活かし、忍法チャンピオン選出だけ事後選出に戻す。WFα選出(cmd_2174)との比較で、どの選出方式が有効かを判定する材料を得る | dm-signal | 04-20 | cmd_2174 GS成果物へ champion_selec |
 | cmd_2178 | L2奥義のBBを準備する。cmd_2176(SS事後21体)+cmd_2177(AS事後21体)のチャンピオンpattern_idをL1 GS月次CSVから抽出し、L2用BB月次リターンCSV+universe YAMLを作成する。cmd_2170(L0→L1準備)と同構造 | dm-signal | 04-20 | L2 WF universe準備完了。SS/AS月次CSV各 |
+| cmd_2129 | 強化 — CTX消費率による忍者タスク負荷検出 (tool_uses質的解釈の代替) | infra | 04-20 | GATE CLEAR時にCTX%をgate_metrics. |
