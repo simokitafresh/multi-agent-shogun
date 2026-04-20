@@ -787,3 +787,4 @@
 | cmd_karo_ci_fix_ga137 | CI修正 — cmd_save系bats 16件FAIL(cmd_2157-2160新フィールド未対応) | infra | 04-20 | cmd_save系batsフィクスチャをassumption |
 | cmd_2166 | 修正 — cmd_save.sh バンドル定義修正: 変更対象(target_path+command)のみスキャン | infra | 04-20 | collect_primary_cmd_targetsをta |
 | cmd_2164 | 強化 — 忍者BLOCK学習ループ汎用化: 全BLOCKパターン自動学習→テンプレートprefill | infra | 04-20 | gate_report_format学習ループを汎化し、pr |
+| cmd_2167 | 研究 — WF L0四神24体作成: shin_shijin_l1 GS 4CSV × WFエンジン → シン12体+ALM12体チャンピオン選出 | dm-signal | 04-20 | AC1-AC4完了。shin_shijin_l1 の 4 C |

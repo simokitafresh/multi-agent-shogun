@@ -220,6 +220,9 @@ lessons:
     file
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
   summary: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
@@ -304,6 +307,9 @@ lessons:
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L464
   title: 想像した数字を報告するな — 実測値のみ報告せよ
   summary: capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定
@@ -1355,7 +1361,7 @@ lessons:
   - git
   - inbox
   helpful_count: 4
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-20'
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
@@ -1467,7 +1473,7 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 15
+  helpful_count: 14
   harmful_count: 7
   last_referenced: '2026-04-19'
 - id: L282
@@ -1822,7 +1828,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 34
+  helpful_count: 33
   harmful_count: 13
   last_referenced: '2026-04-20'
 - id: L228
@@ -2093,6 +2099,9 @@ lessons:
   tags:
   - review
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L189
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ
   summary: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
@@ -2108,6 +2117,9 @@ lessons:
   - communication
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L187
   title: Compose の zoom 下限は viewport 配下の onTextLayout 幅から計算するな
   summary: IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
@@ -2821,9 +2833,9 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-19'
+  last_referenced: '2026-04-20'
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
   summary: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie

@@ -141,13 +141,16 @@ lessons:
   tags:
   - universal
   helpful_count: 8
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-20'
 - id: L616
   title: cmdの完了記録≠成果物の所在記録 — 多段パイプラインの進行表に物理的所在必須
   summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ
   tags:
   - universal
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-20'
 - id: L615
   title: Cell B(シン×ALM)の一部忍法はGSパラメータ数=1のためALM動的選出≡静的選出
   summary: cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフ
@@ -969,6 +972,9 @@ lessons:
   summary: Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設
   tags:
   - universal
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L480
   title: selection-based FoF初月のmonthly_returns.holding_signal=NULL問題
   summary: selection block付きFoF21体中、初月monthly_returns.holding_signalがNULLの体がある。signals
@@ -1068,6 +1074,9 @@ lessons:
   tags:
   - pipeline
   - gate
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L464
   title: binary_check語の曖昧性→LLM最浅解釈(HOLD事件と同一クラス)
   summary: check項目「整合しているか」をLLMは「矛盾しない」(受動的)と解釈しPASSを出したが、実際は「既存チェックリストにも反映」(能動的統合)が必要だった。H
@@ -2084,7 +2093,7 @@ lessons:
   - grid-search
   - architecture
   helpful_count: 4
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-20'
 - id: L298
   title: FracDiffのd最適化を全期間一括で行うな
@@ -2178,7 +2187,7 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 15
+  helpful_count: 14
   harmful_count: 7
   last_referenced: '2026-04-19'
 - id: L282
@@ -2521,7 +2530,7 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 34
+  helpful_count: 33
   harmful_count: 13
   last_referenced: '2026-04-20'
 - id: L228
@@ -2795,6 +2804,9 @@ lessons:
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
   tags:
   - db
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L189
   title: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい
   summary: IF ナビ順序や表示対象を複数ファイルで個別定義すると、1箇所更新時に他所が追従せず差分ドリフトが起きる時 THEN ナビ順序や表示対象を複数ファイルで個別定義
@@ -2805,6 +2817,9 @@ lessons:
   summary: IF ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併
   tags:
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L187
   title: ジェネリックソートフックのnull処理は方向別(multiplier)との合成結果まで検証する
   summary: IF compare関数単体でnull末尾でも、desc時の符号反転で順序が逆転し得る時 THEN compare関数単体でnull末尾でも、desc時の符号反
@@ -3468,9 +3483,9 @@ lessons:
   tags:
   - api
   - deploy
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-19'
+  last_referenced: '2026-04-20'
 - id: L078
   title: PortfolioRepository.load()は1PFバリデーションエラーで全PF読込失敗する単一障害点
   summary: IF benchmark_ticker=空文字等のバリデーションエラーが1つでもあるとPortfolioRepository.load()がNoneを返しrec
