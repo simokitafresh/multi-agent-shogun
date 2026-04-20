@@ -2153,7 +2153,7 @@ check_research_tool_explicit() {
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # title + command本文から研究ツールキーワード検出
-    local FULL_CMD TITLE_LINE SEARCH_TEXT
+    local FULL_CMD TITLE_LINE SEARCH_TEXT WF_SEARCH_TEXT
     FULL_CMD=$(echo "$CMD_BLOCK_NC" | awk '
         /^\s*command:\s*\|/ { found=1; next }
         /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
@@ -2165,6 +2165,8 @@ check_research_tool_explicit() {
 ${FULL_CMD}"
 
     local HIT_GS=false HIT_WF=false
+    # cmd_2172: WF四神/WF選別はWF engine実行ではなく分類ラベル。説明文だけでの誤検出を避ける。
+    WF_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | sed -E 's/WF(四神|選別)//g')
 
     # GS検出: bare grid_search は outputs/grid_search/*.csv を誤検出するため、
     # 研究スクリプト参照または明示的なGS文言に限定する。
@@ -2173,7 +2175,7 @@ ${FULL_CMD}"
     fi
 
     # WF検出: l1_alm_wf_engine / walk.forward / WF(大文字) / ウォークフォワード
-    if echo "$SEARCH_TEXT" | grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで'; then
+    if echo "$WF_SEARCH_TEXT" | grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで'; then
         HIT_WF=true
     fi
 

@@ -68,3 +68,37 @@ teardown() {
     [[ "$output" == *"GS道具"* ]]
     [[ "$output" == *"run_077_oikaze.py"* ]]
 }
+
+@test "RTE-T003: WF四神とWF選別の説明文だけではWF警告しない" {
+    local CMD_BLOCK='    project: dm-signal
+    title: "設計 — WF四神の説明整理"
+    command: |
+      WF四神 と WF選別 の違いを説明文として整理する
+    acceptance_criteria:
+      - id: AC1
+        description: "説明文を更新する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WF道具"* ]]
+    [[ "$output" != *"Check 18"* ]]
+}
+
+@test "RTE-T004: wf_engine参照は従来通りWF警告する" {
+    local CMD_BLOCK='    project: dm-signal
+    title: "検証 — WF engine再実行"
+    command: |
+      outputs/scripts/l1_alm_wf_engine.py を使って再計測する
+    acceptance_criteria:
+      - id: AC1
+        description: "結果CSVを比較する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WF道具"* ]]
+    [[ "$output" == *"l1_alm_wf_engine.py"* ]]
+}
