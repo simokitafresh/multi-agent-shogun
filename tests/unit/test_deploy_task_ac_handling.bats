@@ -1547,6 +1547,7 @@ commands:
     - 'AC1: New task AC'
     - 'AC2: Second AC'
     project: testproj
+    target_path: scripts/deploy_task.sh
     type: impl
     purpose: test resolve
     title: resolve test
@@ -1573,12 +1574,13 @@ EOF
     run deploy_task_resolve_only sasuke cmd_600
     [ "$status" -eq 0 ]
 
-    run read_task_fields parent_cmd task_id project task_type
+    run read_task_fields parent_cmd task_id project task_type target_path
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "cmd_600" ]
     [ "${lines[1]}" = "cmd_600_impl" ]
     [ "${lines[2]}" = "testproj" ]
     [ "${lines[3]}" = "impl" ]
+    [ "${lines[4]}" = "scripts/deploy_task.sh" ]
 
     run grep "New task AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]

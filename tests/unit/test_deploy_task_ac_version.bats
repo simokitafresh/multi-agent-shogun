@@ -866,6 +866,7 @@ commands:
     - 'AC1: New task AC'
     - 'AC2: Second AC'
     project: testproj
+    target_path: scripts/deploy_task.sh
     type: impl
     purpose: test resolve
     title: resolve test
@@ -910,6 +911,10 @@ EOF
     run read_task_field task_type
     [ "$status" -eq 0 ]
     [ "$output" = "impl" ]
+
+    run read_task_field target_path
+    [ "$status" -eq 0 ]
+    [ "$output" = "scripts/deploy_task.sh" ]
 
     # ACが新cmdのものに上書きされたか
     run grep "New task AC" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
