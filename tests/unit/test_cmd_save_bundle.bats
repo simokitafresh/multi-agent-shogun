@@ -60,6 +60,35 @@ YAML
     [ "$count" -eq 3 ]
 }
 
+@test "BDL-T002c: target_pathディレクトリとcommand内同配下パスは1回だけ数える" {
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "修正 — scripts配下の単一束"
+    target_path: scripts
+    command: |
+      scripts/cmd_save.sh と scripts/inbox_write.sh を確認
+YAML
+)"
+    targets="$(collect_primary_cmd_targets || true)"
+    count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    [ "$count" -eq 1 ]
+    [[ "$targets" == *"scripts"* ]]
+}
+
+@test "BDL-T002d: target_path外のcommandパスは従来通り別カウント" {
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "修正 — scriptsとlibの2対象"
+    target_path: scripts
+    command: |
+      scripts/cmd_save.sh と lib/firefighting_keywords.sh を修正
+YAML
+)"
+    targets="$(collect_primary_cmd_targets || true)"
+    count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    [ "$count" -eq 2 ]
+    [[ "$targets" == *"scripts"* ]]
+    [[ "$targets" == *"lib/firefighting_keywords.sh"* ]]
+}
+
 @test "BDL-T003: diagnosis内パスはバンドル対象外" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "強化 — 単一修正"

@@ -176,6 +176,61 @@ cmd_block_get_field() {
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
+    normalize_bundle_path() {
+        local path="${1:-}"
+        local repo_root="${PROJECT_DIR:-${PROJECT_ROOT:-}}"
+        path="${path%/}"
+
+        if [[ -n "$repo_root" ]]; then
+            path="${path#"$repo_root"/}"
+            [[ "$path" == "$repo_root" ]] && path=""
+        fi
+
+        printf '%s\n' "$path"
+    }
+
+    detect_target_scope() {
+        local raw_path="${1:-}"
+        local repo_root="${PROJECT_DIR:-${PROJECT_ROOT:-}}"
+        local normalized_path basename
+        [[ -n "$raw_path" ]] || return 1
+
+        normalized_path="$(normalize_bundle_path "$raw_path")"
+        normalized_path="${normalized_path%/}"
+        [[ -n "$normalized_path" ]] || return 1
+
+        basename="${normalized_path##*/}"
+        if [[ "$raw_path" == */ ]]; then
+            printf '%s\n' "$normalized_path"
+            return 0
+        fi
+        if [[ -n "$repo_root" && -d "$repo_root/$normalized_path" ]]; then
+            printf '%s\n' "$normalized_path"
+            return 0
+        fi
+        if [[ "$raw_path" = /* && -d "$raw_path" ]]; then
+            printf '%s\n' "$normalized_path"
+            return 0
+        fi
+        [[ "$basename" == *.* ]] && return 1
+        return 1
+    }
+
+    local target_path_raw target_scope
+    target_path_raw="$(
+        printf '%s\n' "$CMD_BLOCK_NC" \
+            | awk '
+                /^[[:space:]]{4}target_path:[[:space:]]*/ {
+                    sub(/^[[:space:]]{4}target_path:[[:space:]]*/, "")
+                    if ($0 !~ /^[|>][-+]?$/) {
+                        print
+                    }
+                    exit
+                }
+            '
+    )"
+    target_scope="$(detect_target_scope "$target_path_raw" || true)"
+
     printf '%s\n' "$CMD_BLOCK_NC" \
         | awk '
             function emit_inline(value) {
@@ -210,6 +265,16 @@ collect_primary_cmd_targets() {
         ' \
         | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
         | sed 's/[.,:;]$//' \
+        | while IFS= read -r path; do
+            local normalized_path
+            normalized_path="$(normalize_bundle_path "$path")"
+            [[ -n "$normalized_path" ]] || continue
+            if [[ -n "$target_scope" && ( "$normalized_path" == "$target_scope" || "$normalized_path" == "$target_scope/"* ) ]]; then
+                printf '%s\n' "$target_scope"
+            else
+                printf '%s\n' "$normalized_path"
+            fi
+        done \
         | awk '
             !/^tests\// &&
             !/^docs\/research\// &&
