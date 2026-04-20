@@ -793,3 +793,4 @@
 | cmd_2170 | 研究 — WF L1準備: WF四神BB月次リターンCSV抽出 + universe YAML 2本作成 | dm-signal | 04-20 | WFシン12体/月次CSV、WF ALM12体/月次CSV、 |
 | cmd_2171 | 修正 — cmd_save.sh バンドル検出: target_pathとcommandの重複パスを除外(dedup) | infra | 04-20 | collect_primary_cmd_targetsでta |
 | cmd_2172 | 修正 — cmd_save.sh Check 18 WF誤検出修正: WFエンジンを使わないcmdでWF WARN発火しない | infra | 04-20 | WF検出前にWF四神とWF選別を説明ラベルとして無害化し、w |
+| cmd_2175 | 研究 — WF L1 WF-AS忍法21体: WF ALM四神BBで忍法GS 7本実行 + WFα選出 | dm-signal | 04-20 | WF ALM四神BBで忍法GS 7本実行(全rc=0)・WF |

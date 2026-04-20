@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L640 -->
+<!-- last_synced_lesson: L641 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -180,3 +180,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L638: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる（cmd_2131）
 - L639: EqualWeight GSにpipeline import guardを混入させるな（cmd_2142）
 - L640: DB経由データのCoDD最適化検証では同一プロセス・同一データで比較せよ（cmd_2152）
+- L641: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致（cmd_2175）
