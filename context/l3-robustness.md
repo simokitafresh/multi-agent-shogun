@@ -387,6 +387,21 @@ cmd_2142-2149でGSスクリプト7本+champion_selector.pyをCoDD最適化済み
 下位層も WFαで選別し直すことで、全層で過適合耐性が一貫する。
 L3-robustness §2.4の「L1情報漏洩」問題の根本解決にもなる。
 
+### 8.1.1 シン四神 vs ALM四神 — 同じGS CSV、選出方法が違う (2026-04-20確認)
+
+**GS入力CSV(共通)**: `outputs/grid_search/shin_shijin_l1/monthly_returns_DM{2,3,6,7P}.csv`（4ファイル、191,796パターン）
+
+| | シン四神(固定) | ALM四神(動的) |
+|--|--------------|-------------|
+| **選出方法** | champion_selector.py 事後選出（全期間ベスト1つ） | l1_alm_wf_engine.py --multi-is WF動的選出（IS窓6M-72M毎月切替） |
+| **パラメータ** | 固定（全期間で1つのpattern_id） | 動的（毎月IS窓内ベストを選出、月ごとにpattern_idが変わる） |
+| **GS CSV** | shin_shijin_l1 monthly_returns | **同じ**（ALM専用GSは存在しない） |
+| **ALMの本質** | — | WFエンジンの動的IS窓選出メカニズム自体がAdaptive Lookback Momentum |
+| **構成** | 4 DMファミリー × 3モード(激攻/鉄壁/常勝) = 12体 | 同じ構造 = 12体 |
+| **既存作成cmd** | cmd_246(本番登録済み) | cmd_1798/1799(WF実行)+cmd_1769(登録) |
+
+**WF L0で何が変わるか**: 既存シン四神は事後選出。WFシン四神はWFαでチャンピオン選出(=ALM四神と同じ道具だが、WFα値で固定チャンピオンを1体選ぶ)。WF ALM四神はWFα基準で動的選出のIS窓パラメータを再最適化。
+
 ### 8.2 命名規則（既存との区別）
 
 | 層 | 既存(事後選出) | WF選別(新規) |
@@ -418,8 +433,27 @@ L0からL3まで全てWFα選別で一貫させる。
 | L1 | 忍法 | シン忍法20体 / ALMシン忍法19体 | **WF-SS忍法** / **WF-AS忍法** (忍法パラメータもWFα選別) |
 | L2 | 奥義 | SSS奥義21体 / ASS奥義21体 | **WF-SSS奥義21体** / **WF-ASS奥義21体** |
 
-### 8.5 状態
+### 8.5 必要スクリプト — 全14本CoDD済み (2026-04-20確認)
 
-- WF四神(L0): 未着手
+| # | スクリプト | CoDD cmd | 改善幅 |
+|---|-----------|----------|--------|
+| 1 | l1_alm_wf_engine.py | cmd_1991 | -34% |
+| 2 | run_077_bunshin.py | cmd_2142 | -96.9% |
+| 3 | run_077_kasoku_diff.py | cmd_2143 | -99.7% |
+| 4 | run_077_kasoku_ratio.py | cmd_2144 | ~-100% |
+| 5 | run_077_kawarimi.py | cmd_2145+2155 | -40.3% |
+| 6 | run_077_nukimi.py | cmd_2146 | -63.3% |
+| 7 | run_077_oikaze.py | cmd_2147 | -99.3% |
+| 8 | run_077_yotsume.py | cmd_2148+2156 | -98.6% |
+| 9 | champion_selector.py | cmd_2149 | -54.4% |
+| 10 | gs_runner.py | cmd_2150 | GATE CLEAR |
+| 11 | cmd_1947_l3_ew_combo_stability.py | cmd_2151 | GATE CLEAR |
+| 12 | cmd_1934_l3_threebody_stability.py | cmd_2152 | 10x |
+| 13 | cmd_1949_l3_cross_pattern_stability.py | cmd_2153 | GATE CLEAR |
+| 14 | cmd_1950_l3_pattern1_ew_combo_stability.py | cmd_2154 | GATE CLEAR |
+
+### 8.6 状態
+
+- WF四神(L0): 未着手 — 道具準備完了
 - WF忍法(L1): 未着手
 - WF奥義(L2): 未着手
