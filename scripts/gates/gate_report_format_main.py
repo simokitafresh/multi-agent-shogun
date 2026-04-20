@@ -63,6 +63,17 @@ def main() -> int:
                 hints.append(field_hint)
 
     fm = data.get("files_modified")
+    def files_modified_has_fill_this(items) -> bool:
+        if isinstance(items, str):
+            return items.strip() == "FILL_THIS"
+        if isinstance(items, list):
+            for item in items:
+                if isinstance(item, str) and item.strip() == "FILL_THIS":
+                    return True
+                if isinstance(item, dict) and str(item.get("path", "")).strip() == "FILL_THIS":
+                    return True
+        return False
+
     if fm is None and "files_modified" in data:
         errors.append("files_modified: null (must be string or list of file paths)")
         hints.append("FIX (files_modified): nullではなく変更ファイルパスを記入せよ:\n  files_modified:\n    - path/to/file.py")
@@ -71,6 +82,8 @@ def main() -> int:
         hints.append("FIX (files_modified): 文字列またはリスト形式で記入せよ:\n  files_modified: path/to/file.py\n  または\n  files_modified:\n    - path/to/file1.py\n    - path/to/file2.py")
     elif isinstance(fm, bool):
         errors.append(f"files_modified: is bool ({fm}), must be string or list of file paths")
+    elif files_modified_has_fill_this(fm):
+        errors.append("files_modified: FILL_THIS placeholder remaining (must fill actual file paths)")
     elif isinstance(fm, list) and len(fm) == 0 and data.get("status") == "completed":
         hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で "偵察のみ" と記入')
 
@@ -302,8 +315,11 @@ def main() -> int:
 
     result = data.get("result", {})
     if isinstance(result, dict):
-        if not result.get("summary"):
+        summary = result.get("summary")
+        if not summary:
             errors.append("result.summary: MISSING or empty")
+        elif isinstance(summary, str) and summary.strip() == "FILL_THIS":
+            errors.append("result.summary: FILL_THIS placeholder remaining (must fill actual summary)")
     else:
         errors.append("result: not a dict")
 

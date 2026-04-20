@@ -746,24 +746,34 @@ EOF
     [ "$status" -ne 0 ]
 }
 
-@test "cmd_2161: learned prefills replace empty reason/result placeholders and avoid same BLOCK text" {
+@test "cmd_2164: learned prefills replace targeted placeholders and keep gate blocking on FILL_THIS" {
     cat > "$TEST_PROJECT/logs/gate_report_format_learning.yaml" <<'EOF'
 threshold: 10
 patterns:
   bc_result_empty:
     count: 12
     prefill_active: true
+    prefill_field: binary_checks.result
+  files_modified_missing:
+    count: 14
+    prefill_active: true
+    prefill_field: files_modified
   lu_reason_empty:
     count: 11
     prefill_active: true
+    prefill_field: lessons_useful.reason
+  result_summary_empty:
+    count: 13
+    prefill_active: true
+    prefill_field: result.summary
 EOF
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
-  title: "learned prefill injection test"
+  title: "learned generic prefill injection test"
   task_type: impl
-  parent_cmd: cmd_2161
-  task_id: cmd_2161_impl
+  parent_cmd: cmd_2164
+  task_id: cmd_2164_impl
   project: infra
   acceptance_criteria:
     - id: AC1
@@ -787,15 +797,27 @@ EOF
     [ "$status" -eq 0 ]
     run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ' "$report_path"
     [ "$status" -eq 0 ]
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ' "$report_path"
+    [ "$status" -eq 0 ]
     run grep -F 'reason: FILL_THIS' "$report_path"
     [ "$status" -eq 0 ]
     run grep -F 'result: FILL_THIS' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F 'summary: FILL_THIS' "$report_path"
+    [ "$status" -eq 0 ]
+    run grep -F '  - FILL_THIS' "$report_path"
     [ "$status" -eq 0 ]
 
     run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
     [ "$status" -eq 1 ]
     [[ "$output" != *"reason is empty"* ]]
     [[ "$output" != *"result: 空文字"* ]]
+    [[ "$output" != *"result.summary: MISSING or empty"* ]]
+    [[ "$output" != *"files_modified: MISSING"* ]]
+    [[ "$output" == *"result.summary: FILL_THIS placeholder remaining"* ]]
+    [[ "$output" == *"files_modified: FILL_THIS placeholder remaining"* ]]
     [[ "$output" == *"FILL_THIS"* ]]
 }
 

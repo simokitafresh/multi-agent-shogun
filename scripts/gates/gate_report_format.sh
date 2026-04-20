@@ -116,14 +116,46 @@ from datetime import datetime, timezone
 import yaml
 
 
-def extract_patterns(reason_text: str) -> list[str]:
-    patterns = []
+PATTERN_DEFS = [
+    {
+        "name": "lu_reason_empty",
+        "prefill_field": "lessons_useful.reason",
+        "match": lambda reason: reason.startswith("lessons_useful[") and "reason is empty" in reason,
+    },
+    {
+        "name": "bc_result_empty",
+        "prefill_field": "binary_checks.result",
+        "match": lambda reason: reason.startswith("binary_checks.") and (".result: 空文字" in reason or '.result: ""' in reason),
+    },
+    {
+        "name": "ac_version_read_missing",
+        "match": lambda reason: reason.startswith("ac_version_read: MISSING"),
+    },
+    {
+        "name": "result_summary_empty",
+        "prefill_field": "result.summary",
+        "match": lambda reason: reason == "result.summary: MISSING or empty",
+    },
+    {
+        "name": "files_modified_missing",
+        "prefill_field": "files_modified",
+        "match": lambda reason: reason.startswith("files_modified: MISSING"),
+    },
+]
+
+
+def extract_patterns(reason_text: str) -> list[dict[str, str]]:
+    patterns = {}
     for reason in [r.strip() for r in reason_text.split(";") if r.strip()]:
-        if reason.startswith("lessons_useful[") and "reason is empty" in reason:
-            patterns.append("lu_reason_empty")
-        elif reason.startswith("binary_checks.") and (".result: 空文字" in reason or '.result: ""' in reason):
-            patterns.append("bc_result_empty")
-    return sorted(set(patterns))
+        for pattern_def in PATTERN_DEFS:
+            if pattern_def["match"](reason):
+                entry = {"name": pattern_def["name"]}
+                prefill_field = pattern_def.get("prefill_field")
+                if prefill_field:
+                    entry["prefill_field"] = prefill_field
+                patterns[pattern_def["name"]] = entry
+                break
+    return [patterns[name] for name in sorted(patterns)]
 
 
 reason_text = os.environ.get("GATE_REASONS", "")
@@ -154,7 +186,8 @@ data["threshold"] = threshold
 data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
 report_name = os.path.basename(report_path) if report_path else ""
-for pattern in patterns:
+for pattern_meta in patterns:
+    pattern = pattern_meta["name"]
     entry = pattern_map.get(pattern)
     if not isinstance(entry, dict):
         entry = {}
@@ -165,6 +198,8 @@ for pattern in patterns:
     count += 1
     entry["count"] = count
     entry["prefill_active"] = count >= threshold
+    if pattern_meta.get("prefill_field"):
+        entry["prefill_field"] = pattern_meta["prefill_field"]
     entry["last_report"] = report_name
     entry["last_seen"] = data["updated_at"]
     pattern_map[pattern] = entry

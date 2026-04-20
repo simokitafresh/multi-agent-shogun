@@ -136,3 +136,64 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "cmd_2164: learning records generic pattern names and prefill metadata" {
+    local report_path="$TEST_TMPDIR/queue/reports/hayate_report_cmd_2164.yaml"
+    cat > "$report_path" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2164
+status: completed
+result:
+  summary: ""
+  details: "詳細"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンの再現"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: ""
+binary_checks:
+  AC1:
+    - check: "学習ループ確認"
+      result: ""
+verdict: FAIL
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env \
+        GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
+        GATE_REPORT_FORMAT_PREFILL_THRESHOLD=5 \
+        bash "$TEST_GATE" "$report_path"
+    [ "$status" -eq 1 ]
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$LEARNING_FILE").read_text(encoding="utf-8"))
+patterns = data["patterns"]
+assert patterns["lu_reason_empty"]["count"] == 1
+assert patterns["lu_reason_empty"]["prefill_field"] == "lessons_useful.reason"
+assert patterns["bc_result_empty"]["count"] == 1
+assert patterns["bc_result_empty"]["prefill_field"] == "binary_checks.result"
+assert patterns["result_summary_empty"]["count"] == 1
+assert patterns["result_summary_empty"]["prefill_field"] == "result.summary"
+assert patterns["files_modified_missing"]["count"] == 1
+assert patterns["files_modified_missing"]["prefill_field"] == "files_modified"
+assert patterns["ac_version_read_missing"]["count"] == 1
+assert "prefill_field" not in patterns["ac_version_read_missing"]
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}

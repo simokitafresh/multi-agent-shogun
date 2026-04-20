@@ -1619,44 +1619,72 @@ patterns = learning.get("patterns", {})
 if not isinstance(patterns, dict):
     raise SystemExit(0)
 
-active = {
-    name for name, meta in patterns.items()
-    if isinstance(meta, dict) and meta.get("prefill_active") is True
-}
-if not active:
+active_fields = {}
+for name, meta in patterns.items():
+    if not isinstance(meta, dict) or meta.get("prefill_active") is not True:
+        continue
+    field = str(meta.get("prefill_field", "") or "").strip()
+    if field:
+        active_fields[field] = name
+
+if not active_fields:
     raise SystemExit(0)
 
 lines = report_path.read_text(encoding="utf-8").splitlines()
 new_lines: list[str] = []
 in_lessons = False
 in_binary_checks = False
+in_result = False
 lu_note = "# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ"
 bc_note = "# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ"
+summary_note = "# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ"
+files_note = "# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ"
 
 for line in lines:
     if re.match(r"^[A-Za-z_][A-Za-z0-9_]*:", line):
         in_lessons = False
         in_binary_checks = False
+        in_result = False
 
     if line.startswith("lessons_useful:"):
-        if "lu_reason_empty" in active:
+        if "lessons_useful.reason" in active_fields:
             new_lines.append(lu_note)
         in_lessons = True
         new_lines.append(line)
         continue
 
     if line.startswith("binary_checks:"):
-        if "bc_result_empty" in active:
+        if "binary_checks.result" in active_fields:
             new_lines.append(bc_note)
         in_binary_checks = True
         new_lines.append(line)
         continue
 
-    if in_lessons and "lu_reason_empty" in active and "FILL_THIS" not in line:
-        line = re.sub(r"^(\s+reason:)\s*''(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+    if line.startswith("result:"):
+        if "result.summary" in active_fields:
+            new_lines.append(summary_note)
+        in_result = True
+        new_lines.append(line)
+        continue
 
-    if in_binary_checks and "bc_result_empty" in active and "FILL_THIS" not in line:
-        line = re.sub(r"^(\s+result:)\s*''(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+    if line.startswith("files_modified:"):
+        if "files_modified" in active_fields:
+            new_lines.append(files_note)
+            if re.match(r"^files_modified:\s*\[\]\s*(?:#.*)?$", line):
+                new_lines.append("files_modified:")
+                new_lines.append("  - FILL_THIS")
+                continue
+        new_lines.append(line)
+        continue
+
+    if in_lessons and "lessons_useful.reason" in active_fields and "FILL_THIS" not in line:
+        line = re.sub(r"^(\s+reason:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+
+    if in_binary_checks and "binary_checks.result" in active_fields and "FILL_THIS" not in line:
+        line = re.sub(r"^(\s+result:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+
+    if in_result and "result.summary" in active_fields and "FILL_THIS" not in line:
+        line = re.sub(r"^(\s+summary:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
 
     new_lines.append(line)
 
