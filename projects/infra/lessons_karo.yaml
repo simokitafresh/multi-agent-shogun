@@ -51,8 +51,8 @@ lessons:
     があれば次cmdサイクルで対処する。proposalはレビューログ(gunshi_review_log.yaml)内の proposalsフィールドに格納される。'
   source_cmd: cmd_selfimprovement_20260322
   created_at: '2026-03-22'
-  automated: false
-  enforcement: dashboard軍師セクションにproposal状態表示を追加済み(2026-03-22)
+  automated: true
+  enforcement: "dashboard軍師セクションにproposal状態表示を追加済み(2026-03-22) / gate_karo_startup.sh Check 3.7でGP pending自動検出→WARN(cmd_2165)"
 - id: LK009
   title: STALL再配備は「検証→クリア→再配備」の3段階必須
   detail: 'STALL検知→別忍者に再配備する際、(A)検証なしで即再配備 (B)旧忍者のtask YAMLをidleにクリアしなかった。結果: 小太郎と疾風がcmd_1281

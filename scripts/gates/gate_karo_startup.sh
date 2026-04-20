@@ -372,6 +372,21 @@ else
     echo "  未確認: 0件"
 fi
 
+# --- Check 3.7: 軍師GP pending検出 ---
+_gp_log="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+if [ -f "$_gp_log" ]; then
+    _gp_pending_count=$(awk '/^#/{next} /status:[[:space:]]*pending[[:space:]]*$/{c++} END{print c+0}' "$_gp_log" 2>/dev/null)
+    if [ "${_gp_pending_count:-0}" -gt 0 ]; then
+        echo "■ 軍師GP pending"
+        echo "  WARN: pending GP ${_gp_pending_count}件 (logs/gunshi_review_log.yaml)"
+        echo "  → 次cmdサイクルで対処せよ"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("軍師GP pending: ${_gp_pending_count}件")
+        fi
+    fi
+fi
+
 # --- Check 4: pending_decisions未解決件数 ---
 echo "■ pending_decisions"
 pd_file="$SCRIPT_DIR/queue/pending_decisions.yaml"

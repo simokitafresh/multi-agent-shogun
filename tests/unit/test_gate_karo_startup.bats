@@ -315,3 +315,41 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 配備漏れcmdなし"* ]]
 }
+
+# === Test 14: GP pending 2件 → WARN表示 (AC1) ===
+@test "gunshi GP 2 pending → WARN表示" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_100
+  review_type: draft
+  proposals:
+    - id: GP-001
+      description: "test proposal 1"
+      status: pending
+    - id: GP-002
+      description: "test proposal 2"
+      status: pending
+    - id: GP-003
+      description: "implemented proposal"
+      status: implemented
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: pending GP 2件"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+# === Test 15: GP pending 0件 → 出力なし (AC2) ===
+@test "gunshi GP 0 pending → 静かに通過" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_100
+  review_type: draft
+  proposals:
+    - id: GP-001
+      description: "implemented proposal"
+      status: implemented
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"軍師GP pending"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
