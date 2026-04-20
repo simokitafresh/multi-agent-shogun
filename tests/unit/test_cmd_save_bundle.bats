@@ -43,6 +43,23 @@ YAML
     [ "$count" -ge 3 ]
 }
 
+@test "BDL-T002b: target_path+commandのみで3パスなら検出される" {
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "修正 — 単一定義の検出"
+    purpose: "title/purposeに scripts/ignored.sh があっても無視される"
+    target_path: scripts/cmd_save.sh
+    command: |
+      scripts/inbox_write.sh と scripts/ninja_done.sh を修正
+    quality_gate:
+      q5_verified_source: "scripts/ignored_q5.sh と scripts/ignored_q5b.sh を確認"
+    environment_change: "scripts/ignored_env.sh と scripts/ignored_env2.sh を追加"
+YAML
+)"
+    targets="$(collect_primary_cmd_targets || true)"
+    count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    [ "$count" -eq 3 ]
+}
+
 @test "BDL-T003: diagnosis内パスはバンドル対象外" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "強化 — 単一修正"
@@ -55,4 +72,25 @@ YAML
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
     [ "$count" -le 1 ]
+}
+
+@test "BDL-T004: q5/assumptions/environment_change内パスはバンドル対象外" {
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "強化 — 単一修正"
+    purpose: "purpose内の scripts/ignored_purpose.sh は無視"
+    target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
+    command: |
+      単一ファイル修正を実施
+    quality_gate:
+      q5_verified_source: "scripts/ignored_q5.sh + scripts/ignored_q5b.sh"
+    assumptions:
+      - claim: "複数パスを書いても無視"
+        source: "scripts/ignored_assumption.sh と scripts/ignored_assumption_b.sh"
+        trust: verified
+    environment_change: "scripts/ignored_env.sh + scripts/ignored_env_b.sh"
+YAML
+)"
+    targets="$(collect_primary_cmd_targets || true)"
+    count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    [ "$count" -eq 1 ]
 }

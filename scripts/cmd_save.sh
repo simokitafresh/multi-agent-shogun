@@ -176,9 +176,38 @@ cmd_block_get_field() {
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    # assumptions/diagnosis内のパス参照はバンドル対象外(cmd_2160 environment_change: バンドル誤検出3回繰返し修正)
     printf '%s\n' "$CMD_BLOCK_NC" \
-        | awk 'BEGIN{skip=0; skip_indent=999} /^[[:space:]]*(assumptions|diagnosis):/{skip=1; match($0,/^[[:space:]]*/); skip_indent=RLENGTH} skip && /^[[:space:]]*[a-z_]+:/{match($0,/^[[:space:]]*/); if(RLENGTH<=skip_indent && !/assumptions|diagnosis/) {skip=0}} !skip{print}' \
+        | awk '
+            function emit_inline(value) {
+                if (value != "" && value !~ /^[|>][-+]?$/) {
+                    print value
+                }
+            }
+
+            /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ {
+                if (in_block && $0 !~ /^[[:space:]]{6,}/) {
+                    in_block=0
+                }
+
+                match($0, /^[[:space:]]{4}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$/, m)
+                key=m[1]
+                value=m[2]
+
+                if (key == "target_path" || key == "command") {
+                    if (value ~ /^[|>][-+]?$/) {
+                        in_block=1
+                    } else {
+                        in_block=0
+                        emit_inline(value)
+                    }
+                } else {
+                    in_block=0
+                }
+                next
+            }
+
+            in_block && /^[[:space:]]{6,}/ { print }
+        ' \
         | grep -oE '((scripts|docs|context|config|projects|queue|lib|memory|logs|instructions|tests)/[^[:space:]`"'\''(),]+|/mnt/[^[:space:]`"'\''(),]+)' 2>/dev/null \
         | sed 's/[.,:;]$//' \
         | awk '
