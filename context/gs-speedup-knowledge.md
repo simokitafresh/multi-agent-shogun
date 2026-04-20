@@ -147,7 +147,7 @@
 | 抜き身 (`nukimi`) | 978MB | 518MB | OK (`518MB`) | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 | 変わり身 (`kawarimi`) | 403MB | 278MB | OOMなし | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 | 追い風 (`oikaze`) | 342MB | 272MB | OK (`274MB`) | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
-| 四つ目 (`yotsume`) | 1.0GB級 | 0.68GB級 | OK（2026-04-20 local harness snapshot: 親 `214MB` + 子 `235MB`×2 ≒ `684MB`） | `context/l3-robustness.md` §8.4.1 + local harness |
+| 四つ目 (`yotsume`) | 1.0GB級 | 0.80GB級 | OK（2026-04-20 local harness: 親 peak `331MB` + worker snapshot `235MB`×2 ≒ `801MB`） | `context/l3-robustness.md` §8.4.1 + local harness |
 | 分身 (`bunshin`) | 138MB | 134MB | N/A（直列構造） | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 
 ---
