@@ -70,6 +70,40 @@ trim_inline_yaml_scalar() {
     printf '%s' "$value"
 }
 
+parse_structured_environment_change() {
+    local env_change="${1:-}"
+    [[ -n "$env_change" ]] || return 1
+
+    ENV_CHANGE_TEXT="$env_change" python3 - <<'PY'
+import os
+import re
+import sys
+
+text = os.environ.get("ENV_CHANGE_TEXT", "")
+if not text:
+    raise SystemExit(1)
+
+def extract(key: str) -> str:
+    pattern = rf'(?:^|;)\s*{key}\s*=\s*([^;]+)'
+    match = re.search(pattern, text)
+    if not match:
+        return ""
+    value = match.group(1).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value.strip()
+
+etype = extract("type")
+efile = extract("file")
+epattern = extract("pattern")
+
+if not (etype and efile and epattern):
+    raise SystemExit(1)
+
+print(f"{etype}\t{efile}\t{epattern}")
+PY
+}
+
 load_cmd_block() {
     if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -675,6 +709,11 @@ fi
 # 軍師原理(blt_20260420_021639): 「BLOCKの度に環境が1つ強くなるまで、次を許すな。」
 # 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
 if (( PRIOR_ATTEMPT_COUNT > 0 )); then
+    _ENV_STRUCTURED=""
+    _ENV_TYPE=""
+    _ENV_FILE=""
+    _ENV_PATTERN=""
+    _ENV_FILE_RESOLVED=""
     _ENV_CHANGE="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
     if [[ -z "$_ENV_CHANGE" ]]; then
         record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
@@ -687,6 +726,21 @@ if (( PRIOR_ATTEMPT_COUNT > 0 )); then
         record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
         echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
         abort_if_block_immediate || exit 1
+    fi
+
+    if _ENV_STRUCTURED="$(parse_structured_environment_change "$_ENV_CHANGE" 2>/dev/null)"; then
+        IFS=$'\t' read -r _ENV_TYPE _ENV_FILE _ENV_PATTERN <<< "$_ENV_STRUCTURED"
+        _ENV_FILE_RESOLVED="$_ENV_FILE"
+        if [[ "$_ENV_FILE_RESOLVED" != /* ]]; then
+            _ENV_FILE_RESOLVED="$PROJECT_DIR/$_ENV_FILE_RESOLVED"
+        fi
+
+        if ! grep -qE -- "$_ENV_PATTERN" "$_ENV_FILE_RESOLVED"; then
+            record_block_reason "environment_change未実装。file=${_ENV_FILE} に pattern=${_ENV_PATTERN} が見つからない"
+            echo "  structured environment_change: type=${_ENV_TYPE} file=${_ENV_FILE} pattern=${_ENV_PATTERN}" >&2
+            echo "  実装してからcmd_save.shを再実行せよ" >&2
+            abort_if_block_immediate || exit 1
+        fi
     fi
 fi
 

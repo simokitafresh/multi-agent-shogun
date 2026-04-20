@@ -206,3 +206,36 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK"* ]]
 }
+
+@test "AC4-1: 構造化environment_changeでgrep検証PASSなら静かにPASS" {
+    create_prior_block
+    write_full_cmd "type=gate_add;file=scripts/cmd_save.sh;pattern=environment_change強制"
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"environment_change未実装"* ]]
+}
+
+@test "AC4-2: 構造化environment_changeでpattern不一致ならBLOCK" {
+    create_prior_block
+    write_full_cmd "type=gate_add;file=scripts/cmd_save.sh;pattern=THIS_PATTERN_DOES_NOT_EXIST_2173"
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"environment_change未実装"* ]]
+    [[ "$output" == *"THIS_PATTERN_DOES_NOT_EXIST_2173"* ]]
+}
+
+@test "AC4-3: 自由テキストenvironment_changeは従来通りPASS" {
+    create_prior_block
+    write_full_cmd "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"environment_change未実装"* ]]
+}
