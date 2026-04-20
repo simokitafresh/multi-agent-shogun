@@ -189,6 +189,43 @@ if len(recent_duration_rows) >= 5:
                 f'(duration={row["duration_sec"]}s, median={median_duration:.1f}s, ratio={ratio:.2f}x, delta=+{delta:.1f}s)'
             )
 
+# --- CTX% anomaly detection from recent CLEAR cmds (cmd_2129) ---
+ctx_rows = []
+if os.path.isfile(gate_metrics_path):
+    with open(gate_metrics_path, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            parts = line.rstrip('\n').split('\t')
+            if len(parts) < 3 or parts[2] != 'CLEAR':
+                continue
+            m = re.search(r'ctx_pct=(\d+)', line)
+            if not m:
+                continue
+            ctx_rows.append({
+                'ts': parts[0],
+                'cmd_id': parts[1],
+                'ctx_pct': int(m.group(1)),
+            })
+
+recent_ctx_rows = ctx_rows[-20:] if len(ctx_rows) > 20 else ctx_rows
+if len(recent_ctx_rows) >= 5:
+    median_ctx = statistics.median(row['ctx_pct'] for row in recent_ctx_rows)
+    ctx_anomalies = []
+    for row in recent_ctx_rows:
+        ctx_pct = row['ctx_pct']
+        delta = ctx_pct - median_ctx
+        ratio = (ctx_pct / median_ctx) if median_ctx > 0 else float('inf')
+        if delta >= 20 and ratio >= 1.5:
+            ctx_anomalies.append((ratio, row, delta))
+
+    if ctx_anomalies:
+        print()
+        print('=== CTX% Outlier Check ===')
+        for ratio, row, delta in sorted(ctx_anomalies, key=lambda item: (-item[0], -item[2], item[1]['cmd_id']))[:3]:
+            print(
+                f'WARNING: CTX%異常値 {row["cmd_id"]} '
+                f'(ctx_pct={row["ctx_pct"]}%, median={median_ctx:.1f}%, ratio={ratio:.2f}x, delta=+{delta:.1f}pt)'
+            )
+
 # === Auto-insight generation: recurring patterns → queue/insights.yaml ===
 # Phase 4原則: 理解だけでは行動は変わらない → 自動化×強制
 # 成熟候補を自動でinsight起票し、アクション強制

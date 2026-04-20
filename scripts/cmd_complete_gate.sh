@@ -298,6 +298,36 @@ PY
     fi
 }
 
+# ─── GATE CLEAR時 CTX%記録（cmd_2129） ───
+# MATCHING_TASK_FILES内の各忍者のtmuxペインからCTX%を取得し最大値を返す。
+# 取得不可の場合は ctx_pct=unknown を返す。
+build_clear_ctx_metric() {
+    local max_ctx=-1
+    local resolved=0
+    local task_file ninja_name pane_target ctx_val ctx_num
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        pane_target=$(agent_pane_target "$ninja_name" 2>/dev/null || true)
+        [ -n "$pane_target" ] || continue
+        ctx_val=$(tmux show-options -p -t "$pane_target" -v @context_pct 2>/dev/null || true)
+        ctx_num=$(echo "$ctx_val" | grep -oE '[0-9]+' | tail -1)
+        if [ -n "$ctx_num" ] && [ "$ctx_num" -ge 0 ] 2>/dev/null; then
+            if [ "$ctx_num" -gt "$max_ctx" ]; then
+                max_ctx="$ctx_num"
+            fi
+            resolved=$((resolved + 1))
+        fi
+    done
+
+    if [ "$resolved" -gt 0 ] && [ "$max_ctx" -ge 0 ] 2>/dev/null; then
+        printf 'ctx_pct=%s' "$max_ctx"
+    else
+        printf 'ctx_pct=unknown'
+    fi
+}
+
 # ─── status自動更新関数 ───
 update_status() {
     local cmd_id="$1"
@@ -3693,8 +3723,9 @@ fi
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
+    GATE_CTX_METRIC=$(build_clear_ctx_metric)
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}" >> "$GATE_METRICS_LOG"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
     (bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" >/dev/null 2>&1 || true) &

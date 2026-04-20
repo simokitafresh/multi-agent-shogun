@@ -220,7 +220,7 @@ parts = line.split("\t")
 print(f"{len(parts)}|{parts[5]}|{parts[6]}|{parts[9]}")
 PY
 )"
-    [ "$result" = "10|gpt-5.4_high_fast|routine|duration_sec=unknown" ]
+    [ "$result" = "11|gpt-5.4_high_fast|routine|duration_sec=unknown" ]
 }
 
 @test "cmd_complete_gate records duration metric from task timestamps when available" {
