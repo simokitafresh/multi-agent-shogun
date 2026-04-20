@@ -452,8 +452,26 @@ L0からL3まで全てWFα選別で一貫させる。
 | 13 | cmd_1949_l3_cross_pattern_stability.py | cmd_2153 | GATE CLEAR |
 | 14 | cmd_1950_l3_pattern1_ew_combo_stability.py | cmd_2154 | GATE CLEAR |
 
-### 8.6 状態
+### 8.6 WF L0結果 (cmd_2167, 2026-04-20)
 
-- WF四神(L0): 未着手 — 道具準備完了
+**実行**: shin_shijin_l1 GS 4CSV × l1_alm_wf_engine.py --multi-is → 全4本rc=0
+**成果物**: `outputs/analysis/wf_l0_shijin/` 配下(CSV/MD/JSON)
+
+**WFシン四神12体 vs 既存四神(事後選出):**
+- pattern_id一致率: **0/12**(全て異なるチャンピオン)
+- 目的指標改善率: **12/12**(全体でWFシンが改善)
+- 例: DM2激攻 ΔWFα-CAGR=+0.136, ΔOOSα-CAGR=+0.142 / DM6鉄壁 ΔWFα-MaxDD=+0.317
+
+**WF ALM四神12体:**
+- ALM動的系列は固定pattern_idなし → selection_timeline最頻出championを代表IDとして記録
+- 例: DM7P 3モードとも`maximum_drawdown`系列が勝ち、WFα-MRU=182.9, WFα-Calmar=0.87
+
+**発見**: 事後選出チャンピオンはWF検証で最良ではない。WF選別の効果が確認された。
+
+詳細: `cmd_2167_wf_shin_summary.csv` / `cmd_2167_wf_alm_summary.csv` / `cmd_2167_existing_vs_wf_shin.csv` / `cmd_2167_summary.{md,json}`
+
+### 8.7 状態
+
+- WF四神(L0): **完了** (cmd_2167 GATE CLEAR)
 - WF忍法(L1): 未着手
 - WF奥義(L2): 未着手
