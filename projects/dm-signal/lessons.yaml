@@ -2178,8 +2178,8 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 22
-  harmful_count: 9
+  helpful_count: 15
+  harmful_count: 7
   last_referenced: '2026-04-19'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
@@ -2352,7 +2352,7 @@ lessons:
   - api
   - frontend
   - tmux
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L254
@@ -2418,7 +2418,7 @@ lessons:
   tags:
   - api
   helpful_count: 3
-  harmful_count: 2
+  harmful_count: 4
   last_referenced: '2026-04-20'
 - id: L245
   title: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ
@@ -2521,7 +2521,7 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 41
+  helpful_count: 34
   harmful_count: 13
   last_referenced: '2026-04-20'
 - id: L228
@@ -2584,7 +2584,7 @@ lessons:
   - frontend
   helpful_count: 2
   harmful_count: 3
-  last_referenced: '2026-04-19'
+  last_referenced: '2026-04-20'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
   summary: Render Static -> Vercel/Cloudflare/Netlify への frontend-only 移行は、deploy体験・preview
@@ -2907,7 +2907,7 @@ lessons:
   - db
   - deploy
   - testing
-  helpful_count: 8
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L172
@@ -3790,6 +3790,9 @@ lessons:
   summary: '`scripts/download_all_prices.py` を実行しようとして `No such file` エラー。正しくは `scripts/anal'
   tags:
   - bash
+  deprecated: true
+  deprecated_at: '2026-04-20T09:13:49+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）
   summary: 案B（PipelineEngine統合）実装後、5PFが不一致。PipelineEngineのシグナル自体は本番と完全一致しているのに、月次リターンが不一致

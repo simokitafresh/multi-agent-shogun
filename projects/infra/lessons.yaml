@@ -1467,8 +1467,8 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 22
-  harmful_count: 9
+  helpful_count: 15
+  harmful_count: 7
   last_referenced: '2026-04-19'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
@@ -1650,7 +1650,7 @@ lessons:
   tags:
   - yaml
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L254
@@ -1713,7 +1713,7 @@ lessons:
   tags:
   - universal
   helpful_count: 3
-  harmful_count: 2
+  harmful_count: 4
   last_referenced: '2026-04-20'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
@@ -1822,7 +1822,7 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 41
+  helpful_count: 34
   harmful_count: 13
   last_referenced: '2026-04-20'
 - id: L228
@@ -1886,9 +1886,12 @@ lessons:
   tags:
   - process
   - git
+  deprecated: true
+  deprecated_at: '2026-04-20T09:09:53+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=2'
   helpful_count: 2
   harmful_count: 3
-  last_referenced: '2026-04-19'
+  last_referenced: '2026-04-20'
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
   summary: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
@@ -2206,7 +2209,7 @@ lessons:
   - frontend
   - git
   - reporting
-  helpful_count: 8
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L172
