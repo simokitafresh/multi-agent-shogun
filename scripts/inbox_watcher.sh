@@ -377,8 +377,40 @@ send_cli_command() {
 # ─── Agent self-watch detection ───
 # Check if the agent has an active inotifywait on its inbox.
 # If yes, the agent will self-wake — no nudge needed.
+_pid_is_descendant_of_self() {
+    local candidate_pid="$1"
+    local self_pid="${ASW_SELF_PID:-$$}"
+    local parent_pid=""
+
+    while [[ "$candidate_pid" =~ ^[0-9]+$ ]] && [ "$candidate_pid" -gt 1 ]; do
+        if [ "$candidate_pid" = "$self_pid" ]; then
+            return 0
+        fi
+
+        parent_pid=$(ps -p "$candidate_pid" -o ppid= 2>/dev/null | awk 'NR==1 {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print}')
+        if ! [[ "$parent_pid" =~ ^[0-9]+$ ]] || [ "$parent_pid" = "$candidate_pid" ]; then
+            break
+        fi
+
+        candidate_pid="$parent_pid"
+    done
+
+    return 1
+}
+
 agent_has_self_watch() {
-    pgrep -f "inotifywait.*inbox/${AGENT_ID}.yaml" >/dev/null 2>&1
+    local watch_pids pid
+
+    watch_pids=$(pgrep -f "inotifywait.*inbox/${AGENT_ID}.yaml" 2>/dev/null || true)
+    [ -n "$watch_pids" ] || return 1
+
+    for pid in $watch_pids; do
+        if ! _pid_is_descendant_of_self "$pid"; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # ─── Send wake-up nudge ───

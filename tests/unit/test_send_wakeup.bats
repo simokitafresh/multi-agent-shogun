@@ -9,11 +9,12 @@
 #   T-SW-004: send_wakeup — fallback nudge includes Enter keystroke
 #   T-SW-005: send_wakeup — timeout on paste-buffer
 #   T-SW-006: agent_has_self_watch — detects inotifywait process
-#   T-SW-007: agent_has_self_watch — no inotifywait → returns 1
-#   T-SW-008: send_cli_command — /clear still uses send-keys (kept)
-#   T-SW-009: send_cli_command — /model still uses send-keys (kept)
-#   T-SW-010: process_unread — integration: self-watch skips nudge
-#   T-SW-011: backward compat — no inotifywait installed → fallback works
+#   T-SW-007: agent_has_self_watch — watcher自身の子プロセスは除外
+#   T-SW-008: agent_has_self_watch — no inotifywait → returns 1
+#   T-SW-009: send_cli_command — /clear still uses send-keys (kept)
+#   T-SW-010: send_cli_command — /model still uses send-keys (kept)
+#   T-SW-011: process_unread — integration: self-watch skips nudge
+#   T-SW-012: backward compat — no inotifywait installed → fallback works
 
 # --- セットアップ ---
 
@@ -62,6 +63,14 @@ exit 1
 MOCK
     chmod +x "$MOCK_PGREP"
 
+    # Create mock ps
+    export MOCK_PS="$TEST_TMPDIR/mock_ps"
+    cat > "$MOCK_PS" << 'MOCK'
+#!/bin/bash
+exit 1
+MOCK
+    chmod +x "$MOCK_PS"
+
     # Create test inbox
     export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
     mkdir -p "$TEST_INBOX_DIR"
@@ -78,16 +87,48 @@ INBOX="$TEST_INBOX_DIR/test_agent.yaml"
 LOCKFILE="\${INBOX}.lock"
 SEND_KEYS_TIMEOUT=5
 SCRIPT_DIR="$PROJECT_ROOT"
+ASW_SELF_PID=4242
 
 # Override commands with mocks
 tmux() { "$MOCK_TMUX" "\$@"; }
 timeout() { "$MOCK_TIMEOUT" "\$@"; }
 pgrep() { "$MOCK_PGREP" "\$@"; }
-export -f tmux timeout pgrep
+ps() { "$MOCK_PS" "\$@"; }
+export -f tmux timeout pgrep ps
 
-# agent_has_self_watch: check if agent has active inotifywait
+_pid_is_descendant_of_self() {
+    local candidate_pid="\$1"
+    local self_pid="\${ASW_SELF_PID:-\$\$}"
+    local parent_pid=""
+
+    while [[ "\$candidate_pid" =~ ^[0-9]+$ ]] && [ "\$candidate_pid" -gt 1 ]; do
+        if [ "\$candidate_pid" = "\$self_pid" ]; then
+            return 0
+        fi
+
+        parent_pid=\$(ps -p "\$candidate_pid" -o ppid= 2>/dev/null | awk 'NR==1 {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print}')
+        if ! [[ "\$parent_pid" =~ ^[0-9]+$ ]] || [ "\$parent_pid" = "\$candidate_pid" ]; then
+            break
+        fi
+
+        candidate_pid="\$parent_pid"
+    done
+
+    return 1
+}
+
 agent_has_self_watch() {
-    pgrep -f "inotifywait.*inbox/\${AGENT_ID}.yaml" >/dev/null 2>&1
+    local watch_pids pid
+    watch_pids=\$(pgrep -f "inotifywait.*inbox/\${AGENT_ID}.yaml" 2>/dev/null || true)
+    [ -n "\$watch_pids" ] || return 1
+
+    for pid in \$watch_pids; do
+        if ! _pid_is_descendant_of_self "\$pid"; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # New send_wakeup with fallback logic
@@ -248,15 +289,43 @@ MOCK
 
 # --- T-SW-007: agent_has_self_watch — no inotifywait ---
 
-@test "T-SW-007: agent_has_self_watch returns 1 when no inotifywait" {
+@test "T-SW-007: agent_has_self_watch ignores watcher-owned inotifywait child" {
+    cat > "$MOCK_PGREP" << 'MOCK'
+#!/bin/bash
+echo "99999"
+exit 0
+MOCK
+    chmod +x "$MOCK_PGREP"
+
+    cat > "$MOCK_PS" << 'MOCK'
+#!/bin/bash
+if [ "$1" = "-p" ] && [ "$2" = "99999" ]; then
+    echo " 4242"
+    exit 0
+fi
+if [ "$1" = "-p" ] && [ "$2" = "4242" ]; then
+    echo " 1"
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$MOCK_PS"
+
+    run bash -c "source '$TEST_HARNESS' && agent_has_self_watch"
+    [ "$status" -eq 1 ]
+}
+
+# --- T-SW-008: agent_has_self_watch — no inotifywait ---
+
+@test "T-SW-008: agent_has_self_watch returns 1 when no inotifywait" {
     # Default mock returns 1
     run bash -c "source '$TEST_HARNESS' && agent_has_self_watch"
     [ "$status" -eq 1 ]
 }
 
-# --- T-SW-008: /clear still uses send-keys ---
+# --- T-SW-009: /clear still uses send-keys ---
 
-@test "T-SW-008: send_cli_command /clear still uses send-keys (kept)" {
+@test "T-SW-009: send_cli_command /clear still uses send-keys (kept)" {
     run bash -c "source '$TEST_HARNESS' && send_cli_command /clear"
     [ "$status" -eq 0 ]
 
@@ -268,9 +337,9 @@ MOCK
     ! grep -q "paste-buffer" "$MOCK_LOG"
 }
 
-# --- T-SW-009: /model still uses send-keys ---
+# --- T-SW-010: /model still uses send-keys ---
 
-@test "T-SW-009: send_cli_command /model still uses send-keys (kept)" {
+@test "T-SW-010: send_cli_command /model still uses send-keys (kept)" {
     run bash -c "source '$TEST_HARNESS' && send_cli_command '/model opus'"
     [ "$status" -eq 0 ]
 
@@ -278,9 +347,9 @@ MOCK
     ! grep -q "paste-buffer" "$MOCK_LOG"
 }
 
-# --- T-SW-010: nudge content format ---
+# --- T-SW-011: nudge content format ---
 
-@test "T-SW-010: nudge content format is inboxN (backward compatible)" {
+@test "T-SW-011: nudge content format is inboxN (backward compatible)" {
     run bash -c "source '$TEST_HARNESS' && send_wakeup 7"
     [ "$status" -eq 0 ]
 
@@ -288,9 +357,9 @@ MOCK
     grep -q "set-buffer -b nudge_test_agent inbox7" "$MOCK_LOG"
 }
 
-# --- T-SW-011: backward compat — functions exist ---
+# --- T-SW-012: backward compat — functions exist ---
 
-@test "T-SW-011: inbox_watcher.sh contains send_wakeup and agent_has_self_watch functions" {
+@test "T-SW-012: inbox_watcher.sh contains send_wakeup and agent_has_self_watch functions" {
     # After implementation, verify the new functions exist in the script
     grep -q "send_wakeup()" "$WATCHER_SCRIPT"
     grep -q "agent_has_self_watch\|pgrep.*inotifywait\|paste-buffer" "$WATCHER_SCRIPT"
