@@ -124,6 +124,7 @@ while i < len(lines):
     because_reason = None
     retired = None
     retired_at = None
+    target_files = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -251,6 +252,11 @@ while i < len(lines):
             m_fretired = re.match(r'- \*\*retired\*\*:\s*(.+)', sline)
             if m_fretired:
                 retired = m_fretired.group(1).strip().lower() == 'true'
+        # Extract target_files from **target_files** field
+        if target_files is None:
+            m_ftf = re.match(r'- \*\*target_files\*\*:\s*\[(.+)\]', sline)
+            if m_ftf:
+                target_files = [t.strip() for t in m_ftf.group(1).split(',')]
         # Extract retired_at field
         if retired_at is None:
             m_fretired_at = re.match(r'- \*\*retired_at\*\*:\s*(.+)', sline)
@@ -262,7 +268,7 @@ while i < len(lines):
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|target_files|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -298,6 +304,10 @@ while i < len(lines):
         if because_reason:
             if_then['because'] = because_reason
         entry['if_then'] = if_then
+
+    # 明示的target_files（markdownフィールド）を優先
+    if target_files:
+        entry['target_files'] = target_files
 
     # 忍者成長速度改善2: target_files自動抽出（教訓テキストからファイルパスを検出）
     if 'target_files' not in entry:
@@ -468,6 +478,8 @@ for l in active_lessons:
         'summary': (l.get('summary') or l.get('title', ''))[:80],
         'tags': FlowList(l.get('tags', ['universal'])),
     })
+    if l.get('target_files'):
+        entry['target_files'] = FlowList(l['target_files'])
     if l.get('retired'):
         entry['retired'] = True
     index_entries.append(entry)

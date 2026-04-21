@@ -529,6 +529,48 @@ fi
 
 TIMESTAMP=$(date "+%Y-%m-%d")
 
+# 忍者成長速度改善2: source_cmdのtarget_pathを教訓のtarget_filesに自動設定
+_LW_TARGET_FILES=""
+if [ -n "${SOURCE_CMD:-}" ]; then
+    # shogun_to_karo.yaml + archive からtarget_pathを取得
+    _lw_tp=""
+    for _lw_yaml in "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/queue/archive"/shogun_to_karo_*.yaml; do
+        [ -f "$_lw_yaml" ] || continue
+        _lw_tp=$(awk -v cmd="$SOURCE_CMD" '
+            /^[[:space:]]*cmd_[0-9]+:/ || /^[[:space:]]*'"$SOURCE_CMD"':/ {
+                found = ($0 ~ cmd":")
+            }
+            found && /target_path:/ {
+                sub(/.*target_path:[[:space:]]*/, "")
+                gsub(/["'"'"']/, "")
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+                if (length($0) > 0) print
+                found = 0
+                exit
+            }
+        ' "$_lw_yaml" 2>/dev/null)
+        [ -n "$_lw_tp" ] && break
+    done
+    # 報告YAMLからfiles_modifiedも取得（path フィールド）
+    _lw_fm=""
+    for _lw_report in "$SCRIPT_DIR/queue/reports"/*_report_"${SOURCE_CMD}".yaml; do
+        [ -f "$_lw_report" ] || continue
+        _lw_fm=$(awk 'BEGIN{f=0} /^files_modified:/{f=1;next} f && /^[a-z_]/{f=0} f && /path:/{sub(/.*path: */,""); gsub(/"/,""); print}' "$_lw_report" 2>/dev/null | head -5 | tr '\n' ',')
+        _lw_fm="${_lw_fm%,}"
+        break
+    done
+    # 結合: target_path + files_modified (重複除去、最大5件)
+    _lw_all_files=""
+    [ -n "$_lw_tp" ] && _lw_all_files="$_lw_tp"
+    if [ -n "$_lw_fm" ]; then
+        [ -n "$_lw_all_files" ] && _lw_all_files="${_lw_all_files},${_lw_fm}" || _lw_all_files="$_lw_fm"
+    fi
+    if [ -n "$_lw_all_files" ]; then
+        # 重複除去して最大5件
+        _LW_TARGET_FILES=$(echo "$_lw_all_files" | tr ',' '\n' | awk '!seen[$0]++ && NR<=5' | tr '\n' ',' | sed 's/,$//')
+    fi
+fi
+
 # Temp file for passing lesson ID out of flock subshell
 LESSON_ID_FILE=$(mktemp)
 trap 'rm -f "$LESSON_ID_FILE"' EXIT
@@ -630,6 +672,7 @@ print(','.join(tags[:3]))
             printf -- '- **記録者**: %s\n' "${AUTHOR:-karo}"
             [ "${STATUS:-confirmed}" = "draft" ] && printf -- '- **status**: draft\n'
             printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
+            [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"
             [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"
             [ -n "${THEN_ACTION:-}" ] && printf -- '- **then**: %s\n' "$THEN_ACTION"
             [ -n "${BECAUSE_REASON:-}" ] && printf -- '- **because**: %s\n' "$BECAUSE_REASON"
