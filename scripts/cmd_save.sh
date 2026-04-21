@@ -2692,6 +2692,18 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     fi
 fi
 
+# --- Check 22: ACにpush要求があればWARN（忍者はpush禁止） ---
+# 根因: 将軍がACに「commit+push」を習慣的に記載→忍者はpush不可→gate BLOCK→家老WA
+# cmd_2225/cmd_2226で実証(2026-04-22殿指摘)
+if load_cmd_block; then
+    _AC_BLOCK="$(extract_acceptance_criteria_block)"
+    if printf '%s\n' "$_AC_BLOCK" | grep -qiE '\bpush\b'; then
+        echo "WARN: ACに'push'が含まれている。忍者はpush禁止(CLAUDE.md)。'commit'のみに変更せよ" >&2
+        echo "  pushは家老が行う。ACに含めると忍者がbinary_checks no→gate BLOCK→毎回WA" >&2
+        record_warn_reason "ac_contains_push"
+    fi
+fi
+
 # --- Check 3.6b: WARN時environment_change強制（殿指摘2026-04-20） ---
 # 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
 # Check 3.6(PRIOR_ATTEMPT_COUNT>0)は過去BLOCK後の再PASS用。こちらはWARN初回用。

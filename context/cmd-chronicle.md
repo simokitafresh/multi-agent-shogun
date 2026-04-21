@@ -849,3 +849,5 @@
 | cmd_2224 | 検証 — CLAUDE.md英語化の突合+4ロールテスト(cmd_2223後追い) | infra | 04-22 | CLAUDE.md日本語原本との40行突合を完了し、4ロール |
 | cmd_2225 | 整備 — Language Policy Phase 3b deploy_task.sh出力英語化 | infra | 04-22 | — |
 | cmd_2226 | 整備 — Language Policy Phase 3a/3d/3e 小規模スクリプト出力英語化 | infra | 04-22 | — |
+| cmd_karo_ci_fix_2225 | CI RED修正 — deploy_task.sh英語化によるテスト期待値不一致4件 | infra | 04-22 | Updated the two failing deploy |
+| cmd_karo_ci_fix_gp199 | CI RED修正 — GP-199テスト期待値が日本語のまま | infra | 04-22 | Updated the GP-199 warning exp |
