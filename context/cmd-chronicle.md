@@ -840,3 +840,4 @@
 | cmd_2215 | 研究 — WF ALM四神 α6指標top安定性検証(計算期間3M短縮) | dm-signal | 04-21 | WF ALM四神4ファミリーの6objectiveについて、 |
 | cmd_2216 | 整備 — 長期ロバストネス検証方法カタログ作成 | dm-signal | 04-21 | 7手法の長期ロバストネス検証カタログを新規作成し、cmd_2 |
 | cmd_2221 | 修正 — scripts/cmd_save.sh バンドル検出のcommandスキャンバグ | infra | 04-21 | cmd_save.sh のバンドル検出で command フ |
+| cmd_2217 | 研究 — L1シン忍法21体 ロバストネス検証(foldパーセンタイル+top安定性) | dm-signal | 04-21 | シン忍法21体ロバストネス検証完了。AC1(foldパーセン |

@@ -2268,6 +2268,7 @@ check_gunshi_design_num_relax() {
         echo "WARN: 軍師設計書参照cmdで数値緩和を検出（cmd_1783教訓）" >&2
         echo "  q8のWHAT最大値: ${Q8_MAX} → AC最大値: ${AC_MAX}（ACがq8より大きい=緩和の可能性）" >&2
         echo "  設計書の数値をACで緩和するな。元の設計書数値を維持せよ" >&2
+        record_warn_reason "設計書数値緩和"
     fi
 }
 
