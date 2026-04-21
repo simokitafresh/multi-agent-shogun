@@ -78,3 +78,15 @@ setup() {
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
+
+@test "bundle red flag: docs_research+outputs/projects参照ではWARNINGしない" {
+    CMD_BLOCK_NC='    title: "追記 — research note更新"
+    target_path: docs/research/
+    command: |
+      outputs/analysis/cmd_2221_after.txt と projects/infra.yaml を参照して追記'
+    export CMD_BLOCK_NC
+
+    run check_bundle_red_flag
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}

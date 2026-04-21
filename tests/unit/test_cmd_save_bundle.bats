@@ -123,3 +123,17 @@ YAML
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
     [ "$count" -eq 1 ]
 }
+
+@test "BDL-T005: docs_research起点でoutputs/projects参照してもバンドル対象外" {
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "文書化 — research bundle false positive防止"
+    target_path: docs/research/
+    command: |
+      outputs/analysis/cmd_2221_after.txt と projects/infra.yaml を参照して追記
+YAML
+)"
+    targets="$(collect_primary_cmd_targets || true)"
+    count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    [ "$count" -eq 1 ]
+    [[ "$targets" == "projects/infra.yaml" ]]
+}

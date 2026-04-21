@@ -312,12 +312,12 @@ collect_primary_cmd_targets() {
             fi
         done \
         | awk '
-            !/^tests\// &&
-            !/^docs\/research\// &&
-            !/^queue\/reports\// &&
-            !/^queue\/archive\// &&
-            !/^outputs\// &&
-            !/^context\// {
+            !/^tests(\/|$)/ &&
+            !/^docs\/research(\/|$)/ &&
+            !/^queue\/reports(\/|$)/ &&
+            !/^queue\/archive(\/|$)/ &&
+            !/^outputs(\/|$)/ &&
+            !/^context(\/|$)/ {
                 print
             }
         ' \
