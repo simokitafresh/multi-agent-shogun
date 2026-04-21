@@ -615,12 +615,9 @@ from collections import Counter
 from datetime import datetime, timedelta
 with open('$SCRIPT_DIR/logs/cmd_design_quality.yaml') as f:
     data = yaml.safe_load(f) or {}
-cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat()
+entries = data.get('entries', [])[-50:]  # 直近50cmd
 c = Counter()
-for e in data.get('entries', []):
-    ts = e.get('timestamp', '')
-    if ts and ts < cutoff:
-        continue
+for e in entries:
     notes = e.get('notes', '') or ''
     for p in notes.split('|'):
         p = p.strip()
@@ -628,9 +625,9 @@ for e in data.get('entries', []):
             c[p] += 1
 if c:
     for reason, count in c.most_common(5):
-        print(f'  {count:4d}回(7d)  {reason[:65]}')
+        print(f'  {count:4d}回(50cmd)  {reason[:65]}')
 else:
-    print('  直近7日のWARN/BLOCKなし — 学習ループ健全')
+    print('  直近50cmdのWARN/BLOCKなし — 学習ループ健全')
 " 2>/dev/null)
     if [ -n "$_retro_top" ]; then
         echo "$_retro_top"
