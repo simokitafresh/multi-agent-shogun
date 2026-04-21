@@ -386,8 +386,8 @@ Decision criterion: "Who actually needs to read this post?" → notify only thos
 ## File Reading Rule (all agents)
 
 If a file is under 80 lines, read the whole file. If it is 80 lines or more, read the first 40 lines + the last 40 lines.
-Exceptions: deepdive (phase-by-phase sequential read), `context/*.md` (section-targeted read by `§`).
-Reason: Japanese YAML at 80 lines is about 2,400 tokens, just before Lost in the Middle degradation begins around 2,600 tokens.
+Exceptions: deepdive (phase-by-phase sequential read), `context/*.md` (section-targeted read by `§`), `instructions/*.md` (role rules, read in full), `projects/infra/lessons_{role}.yaml` (startup gate requires full read), `projects/{id}.yaml` (core knowledge incl. PI/DB rules/UUIDs, read in full).
+Reason: At 80 lines, Japanese YAML ≈ 2,400 tokens and English YAML ≈ 960 tokens, both within the Lost-in-the-Middle degradation threshold (~2,600 tokens). The 80-line limit is conservative for English but safe for mixed JP/EN during migration.
 
 ## File Operation Rule
 
