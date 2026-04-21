@@ -851,3 +851,4 @@
 | cmd_2226 | 整備 — Language Policy Phase 3a/3d/3e 小規模スクリプト出力英語化 | infra | 04-22 | — |
 | cmd_karo_ci_fix_2225 | CI RED修正 — deploy_task.sh英語化によるテスト期待値不一致4件 | infra | 04-22 | Updated the two failing deploy |
 | cmd_karo_ci_fix_gp199 | CI RED修正 — GP-199テスト期待値が日本語のまま | infra | 04-22 | Updated the GP-199 warning exp |
+| cmd_2227 | research-tool — Vintage分析パイプライン雛形作成(道具磨き) | dm-signal | 04-22 | Implemented vintage_pipeline.p |

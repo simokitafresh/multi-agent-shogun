@@ -6,6 +6,11 @@ skill:
 cli:
   default: claude
   agents:
+    karo:
+      type: codex
+      model_name: claude-opus-4-6
+      role: karo
+      japanese_name: 家老
     gunshi:
       type: claude
       model_name: claude-opus-4-6

@@ -43,6 +43,24 @@ else
     mkdir -p "$STATE_DIR"
 fi
 
+# ─── 指揮官デフォルトCLI復元（Opus保証） ───
+# /switch-to-codex でsettings.yamlが変更されていても、再起動時はデフォルトOpusに戻す。
+# 殿裁定(2026-04-22): デフォルトは将軍・家老・軍師=Opus。Codex切替は手動スキル実行時のみ。
+_SETTINGS="$SCRIPT_DIR/config/settings.yaml"
+for _commander in karo gunshi; do
+    if grep -q "^    ${_commander}:" "$_SETTINGS" 2>/dev/null; then
+        _current_type=$(awk "/^    ${_commander}:/{found=1} found && /type:/{print \$2; exit}" "$_SETTINGS" 2>/dev/null)
+        if [[ "$_current_type" == "codex" ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                echo "[DRY-RUN] Reset ${_commander} type: codex → claude (default Opus)"
+            else
+                sed -i "/^    ${_commander}:/,/^    [a-z]/{s/type: codex/type: claude/}" "$_SETTINGS" 2>/dev/null
+                echo "[shutsujin] Reset ${_commander}: codex → claude (default Opus)"
+            fi
+        fi
+    fi
+done
+
 # dry-run hot path では agent_config.sh 以外の source を遅延する
 source_optional "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 if [[ "$DRY_RUN" != true ]]; then
