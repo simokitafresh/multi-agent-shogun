@@ -233,9 +233,9 @@ TASK
     _run_gate "$TEST_TMPDIR/queue/reports/test_ninja_report_cmd_1941.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
-    [[ "$output" == *"GP-199 WARN: before_metrics未記入"* ]]
-    [[ "$output" == *"GP-199 WARN: after_metrics未記入"* ]]
-    [[ "$output" == *"GP-199 WARN: regression未記入"* ]]
+    [[ "$output" == *"GP-199 WARN: before_metrics is missing"* ]]
+    [[ "$output" == *"GP-199 WARN: after_metrics is missing"* ]]
+    [[ "$output" == *"GP-199 WARN: regression is missing"* ]]
 }
 
 @test "通常cmdではbefore/after/regression WARNを出さない" {
