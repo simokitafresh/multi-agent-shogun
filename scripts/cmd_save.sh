@@ -909,9 +909,10 @@ QG_TEMPLATE
         abort_if_block_immediate || exit 1
     fi
 
-    # q4_depth: 段階的導入のためBLOCKではなくWARNING（WARN_COUNTに加算しない）
+    # q4_depth: WARN_COUNTに加算（段階的導入→本格化 2026-04-21殿裁定）
     if ! cmd_block_has_field "quality_gate.q4_depth"; then
-        echo "WARNING: q4_depth未記入。深堀り度を記入推奨: q4_depth: \"shallow/medium/deep — 理由\"" >&2
+        echo "WARNING: q4_depth未記入。深堀り度を記入せよ: q4_depth: \"shallow/medium/deep — 理由\"" >&2
+        record_warn_reason "q4_depth未記入"
     else
         # q4_depth値チェック: deep/mediumは時間コスト大。概算表示で確認を促す（WARN_COUNTに加算しない）
         _Q4_VAL="$(cmd_block_get_field "quality_gate.q4_depth")"
@@ -951,12 +952,13 @@ QG_TEMPLATE
         echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
     fi
 
-    # q6_not_hiding: SG8自動消火チェック（段階的導入 — BLOCKではなくWARNING）
+    # q6_not_hiding: SG8自動消火チェック（WARN_COUNTに加算 2026-04-21殿裁定）
     # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止
     # 起源: cmd_1278事件 — lessons.yaml読込削除が7,552行の構造問題を隠蔽
     if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
+        record_warn_reason "q6_not_hiding未記入"
     fi
 
     # q7_definition_verified: cmd内定義の一次情報照合明示
@@ -970,6 +972,7 @@ QG_TEMPLATE
         if [[ "${_Q7_PROJECT:-}" != "dm-signal" || "${_Q7_TASK_TYPE:-}" != "impl" ]]; then
             echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
             echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
+            record_warn_reason "q7_definition_verified未記入"
         fi
     fi
 
@@ -1052,12 +1055,13 @@ QG_TEMPLATE
 
     # (q8_tool_readiness各論パッチは削除。q5の複利の問いで十分 — cmd_1742 cancel 2026-04-05)
 
-    # q10_knowledge_boundary: 検証済み空間の明示（段階的導入 — WARNING）
+    # q10_knowledge_boundary: 検証済み空間の明示（WARN_COUNTに加算 2026-04-21殿裁定）
     # 起源: cmd_1903 — Phase 31-32の11過ちが全てgateを通過。「無知の知」がcmd起票に強制されていない
     # 目的: cmdの前提が「前Phase/前cmdの到達点(検証済み事実)」に基づいているかを明示させる
     if ! cmd_block_has_field "quality_gate.q10_knowledge_boundary"; then
         echo "WARNING: q10_knowledge_boundary未記入。cmdの前提は検証済み空間内か？前Phase/前cmdの到達点を使っているか？" >&2
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
+        record_warn_reason "q10_knowledge_boundary未記入"
     fi
 
     # q_ambiguity: 不明瞭自覚の自己申告（段階的導入 — WARNING）
@@ -2362,6 +2366,7 @@ ${FULL_CMD}"
 
     if [[ "$HIT" == true ]]; then
         echo "  道具カタログ: context/dm-signal-ops.md §18 参照" >&2
+        record_warn_reason "研究cmd道具未記載"
     fi
 }
 
