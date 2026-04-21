@@ -53,7 +53,7 @@ ${acceptance_criteria_block}
       q11_not_already_done: "未達成。command_steps_over_acのstring-list回帰テストは未追加"
     assumptions:
       - claim: "Check 22 は scripts/cmd_save.sh の command と acceptance_criteria を比較する"
-        source: "scripts/cmd_save.sh code_reading"
+        source: "command_steps_over_ac logic reviewed"
         trust: "verified"
 YAML
 }
