@@ -138,6 +138,7 @@ PY
         bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
         if [ "${bulletin_count:-0}" -gt 0 ]; then
             echo "  WARN: 未確認掲示板 ${bulletin_count}件"
+            echo "  ★ 提案=未実装と断定するな。現���確認(grep/ls)してから判断せよ(LS079)"
             printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
             if [ "$overall" != "ALERT" ]; then
                 overall="WARN"

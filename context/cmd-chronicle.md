@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-21 -->
+<!-- last_updated: 2026-04-22 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -45,24 +45,6 @@
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
-| cmd_1241 | startup gateにGate 10(idle自走トリガー)を追加し、パイプライン空+全忍者idle時に将軍が自動的にidle時自己分析手順に入る仕組みを作る | infra | 03-22 | — |
-| cmd_1242 | CI赤(run 23387382972)を修正し、全CIジョブを緑に戻す | infra | 03-22 | — |
-| cmd_1244 | commit_missing(変更ありcommitなし)をcmd_complete_gate.shでBLOCK化し、忍者のcommit漏れを構造的に防止する | infra | 03-22 | — |
-| cmd_1243 | L0-M_XLU holding_signal不一致の根本解決。^VIX/DTB3 cache汚染修正 | dm-signal | 03-22 | 64/65 PASS。PI-010追加 |
-| cmd_1245 | シン青龍-鉄壁 2024-11パリティ最後の1件。65/65 PASS目標 | dm-signal | 03-22 | — |
-| cmd_1246 | gate_report_format.shにverdict二値バリデーション追加。CONDITIONAL_PASS早期検出 | infra | 03-22 | PASS。テスト5件追加、退行なし |
-| cmd_1247 | 偵察 — 33体本番DB登録の前提条件チェック(runbook突合+GAP検出) | dm-signal | 03-22 | — |
-| cmd_1248 | gate_report_format.sh: lessons_useful/binary_checks形式バリデーション強化 | infra | 03-22 | — |
-| cmd_1249 | cmd_1247偵察で発見されたFoF 21体のCRITICAL GAP 2件(component_portfolios旧v1構成+selection params全空)を解消し、v2正本CSVと一致させる | dm-signal | 03-22 | — |
-| cmd_1252 | — | infra | 03-22 | — |
-| cmd_1257 | シン四神・シン忍法登録ランブックをv2(33体)に更新し、本番登録cmdの前提条件を整える | dm-signal | 03-22 | — |
-| cmd_1258 | dashboard CI状態の自動反映 + 陳腐化防止 | infra | 03-22 | — |
-| cmd_1259 | dm-signal.yaml pipeline flow + registration陳腐化ステータス更新 | dm-signal | 03-22 | — |
-| cmd_1260 | 軍師S6提案実装 — lessons_useful/binary_checksプリフィル + report構造強制 | infra | 03-22 | — |
-| cmd_1261 | 軍師提案パイプライン構造化 — YAMLコメント→構造化フィールド+自動サーフェシング | infra | 03-22 | — |
-| cmd_1262 | ninja_monitor.sh AUTO-DONE重複書込みバグ修正 — idle通知嵐の根絶 | infra | 03-22 | — |
-| cmd_1264 | inbox_write.sh gate発火100%化 — サイレントスキップ→BLOCK | infra | 03-22 | — |
-| cmd_1266 | 偵察 — FoF selection_pipeline動作乖離の根本原因調査 | dm-signal | 03-22 | — |
 | cmd_1263 | ninja_monitorにcommit未完了チェック追加 — commit_missing構造的根絶 | infra | 03-23 | — |
 | cmd_1268 | CI RED修正 — Unit Tests 9件失敗(ntfy_ack mock不備+auto_deploy_done不整合) | infra | 03-23 | — |
 | cmd_1269 | FoFパリティ検証 バッチ1(7体) — cmd_1251スクリプト展開 | dm-signal | 03-23 | — |
@@ -847,3 +829,23 @@
 | cmd_karo_ci_fix_2221_r2 | CI RED修正 — test_cmd_save_command_steps_vs_ac.bats 1件FAIL残存 | infra | 04-21 | scripts/cmd_save.sh の command |
 | cmd_karo_inbox_watcher_selfwatch | fix — inbox_watcher self-watch誤検知で将軍nudge不送信 | infra | 04-21 | agent_has_self_watchがwatcher自身 |
 | cmd_2223 | 整備 — CLAUDE.md英語化(Language Policy Phase 2) | infra | 04-21 | Translated CLAUDE.md into Engl |
+| cmd_1825 | 奥義-シン忍法 WF直列実行 — AC1完了済み7 CSVに対し1本ずつWF実行 | dm-signal | 04-22 | — |
+| cmd_1824 | 研究道具レジストリ構築 — cmd起票時に道具の最新CLI引数を自動表示 | infra | 04-22 | — |
+| cmd_karo_gs_benchmark | GS Phase1c — 8スクリプト現行ベンチマーク | dm-signal | 04-22 | — |
+| cmd_1775 | ALM四神 pipeline_config再生成 — 本番制約内champion再選別 | dm-signal | 04-22 | — |
+| cmd_1806 | fix — CI赤根治 — gunshi_role.md commit + bats期待値動的化 + 未追跡.md検出 | infra | 04-22 | — |
+| cmd_1818 | ALM青龍-激攻 1体パリティ — 研究L0リターンと本番monthly_returnsの完全一致 | dm-signal | 04-22 | — |
+| cmd_1820 | ALM四神 本番パリティ — 研究vs本番の月次リターン不一致原因特定+修正 | dm-signal | 04-22 | — |
+| cmd_1822 | 奥義-シン忍法(再) — シン忍法20体を材料にGS新規実行+67窓WF | dm-signal | 04-22 | — |
+| cmd_1839 | 奥義-シン忍法 WF実行+チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-22 | — |
+| cmd_1843 | perf — wf_runner.py WF並列ランナー新規作成（7忍法メモリグループ並列） | dm-signal | 04-22 | — |
+| cmd_1828 | fix — l1_alm_wf_engine.py メモリ削減第2弾（中間配列float32化+drawdown追従） | dm-signal | 04-22 | — |
+| cmd_1876 | L2奥義 正しい設計で再実行 — 各方式3目的(最大21体)universe+GS+8パターン選出+因子分析 | dm-signal | 04-22 | — |
+| cmd_karo_ci_fix_1885 | CI修正 — cmd_1885 autofix pre-step導入によるテスト期待値不整合4件 | infra | 04-22 | — |
+| cmd_1895 | L3忍法GS — L2奥義84体(GS固定①③⑤⑦)を材料にした既存忍法パイプライン実行+β調整 | dm-signal | 04-22 | — |
+| cmd_karo_ci_fix_ga122 | CI修正 — cmd_2109副作用のテスト10件失敗修正 | infra | 04-22 | — |
+| cmd_2121 | 強化(将軍) — cmd_save.sh q_ambiguity追加 (不明瞭自覚の自己申告) | infra | 04-22 | scripts/cmd_save.shにq_ambiguit |
+| cmd_karo_ci_fix_2221 | CI RED修正 — cmd_save.sh関連テスト16件FAIL | infra | 04-22 | — |
+| cmd_2224 | 検証 — CLAUDE.md英語化の突合+4ロールテスト(cmd_2223後追い) | infra | 04-22 | CLAUDE.md日本語原本との40行突合を完了し、4ロール |
+| cmd_2225 | 整備 — Language Policy Phase 3b deploy_task.sh出力英語化 | infra | 04-22 | — |
+| cmd_2226 | 整備 — Language Policy Phase 3a/3d/3e 小規模スクリプト出力英語化 | infra | 04-22 | — |

@@ -754,9 +754,9 @@ archive_cmds() {
         function _flush(    i,stat,arch_stat,out) {
             stat=tolower(cur_status)
             if(stat==""&&(cur_cmd in cl)) stat="completed"
-            if(stat~/^(completed|cancelled|absorbed|halted|superseded|done)/) {
+            if(stat~/^(completed|cancelled|absorbed|halted|superseded|done|shelved|delegated|closed)/) {
                 completed_count++
-                match(stat,/^(completed|cancelled|absorbed|halted|superseded|done)/)
+                match(stat,/^(completed|cancelled|absorbed|halted|superseded|done|shelved|delegated|closed)/)
                 arch_stat=substr(stat,1,RLENGTH)
                 out=tmp_dir "/entry_" cur_cmd ".tmp"
                 for(i=1;i<=buf_n;i++) print buf[i] > out; close(out)
