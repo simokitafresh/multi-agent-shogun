@@ -2627,6 +2627,30 @@ check_ac_absolute_literals() {
     done <<< "$ABSOLUTE_HITS"
 }
 
+extract_acceptance_criteria_block() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*acceptance_criteria:/ { in_ac=1; next }
+        in_ac && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        in_ac { print }
+    '
+}
+
+count_acceptance_criteria_items() {
+    local ac_block
+    ac_block="$(extract_acceptance_criteria_block)"
+    [[ -n "$ac_block" ]] || {
+        printf '0'
+        return 0
+    }
+
+    printf '%s\n' "$ac_block" | awk '
+        /^[[:space:]]*-[[:space:]]/ { c++ }
+        END { print c+0 }
+    '
+}
+
 check_ac_absolute_literals
 
 # --- Check 22: command欄ステップ数 vs AC数の不整合検出（WARN） ---
@@ -2644,7 +2668,7 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
         /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ { c++ }
         END { print c+0 }
     ')
-    _AC_COUNT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '/description:/ { c++ } END { print c+0 }')
+    _AC_COUNT="$(count_acceptance_criteria_items)"
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
