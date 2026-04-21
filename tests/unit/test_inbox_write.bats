@@ -557,6 +557,16 @@ _run_inbox_write() {
     bash "$TEST_INBOX_WRITE" "$@" 2>&1
 }
 
+_wait_for_file() {
+    local path="$1"
+    local _attempt
+    for _attempt in {1..100}; do
+        [ -f "$path" ] && return 0
+        sleep 0.02
+    done
+    return 1
+}
+
 @test "report_received: uncommitted changes in files_modified → BLOCKED" {
     setup_git_test_env
 
@@ -594,6 +604,33 @@ _run_inbox_write() {
     # src/test_file.sh is clean, src/another_file.sh is dirty but not in check scope
     run _run_inbox_write karo "報告完了" report_received testninja
     [ "$status" -eq 0 ]
+}
+
+@test "report_received: auto-sends report_review to gunshi" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    echo 'status: completed' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gunshi_notify: SENT"* ]]
+
+    python3 <<EOF
+import yaml
+
+with open('$TEST_TMPDIR/queue/inbox/gunshi.yaml') as f:
+    data = yaml.safe_load(f)
+
+assert len(data['messages']) == 1
+msg = data['messages'][0]
+assert msg['type'] == 'report_review'
+assert msg['from'] == 'karo'
+assert 'cmd_test_001' in msg['content']
+assert 'testninja' in msg['content']
+EOF
+
+    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_notify_testninja.done" ]
 }
 
 @test "task_assigned: codex ninja delivery verification retries up to 2 times" {
@@ -662,6 +699,62 @@ with open('$TEST_TMPDIR/queue/tasks/testninja.yaml') as f:
     data = yaml.safe_load(f)
 assert data['task']['status'] == 'acknowledged'
 EOF
+}
+
+@test "report_review_result: LGTM updates placeholder and starts cmd_complete_gate in background" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
+
+    cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
+timestamp: 2026-04-21T13:00:00
+source: deploy_preflight
+note: placeholder
+EOF
+
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"review_gate.done updated: cmd_karo_auto_review_gate"* ]]
+    [[ "$output" == *"cmd_complete_gate.sh started in background for cmd_karo_auto_review_gate"* ]]
+
+    _wait_for_file "$INBOX_WRITE_BG_LOG"
+    grep -q '^cmd_karo_auto_review_gate$' "$INBOX_WRITE_BG_LOG"
+    grep -q '^source: gunshi_review$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    grep -q '^result: LGTM$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+}
+
+@test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
+
+    cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
+timestamp: 2026-04-21T13:00:00
+source: deploy_preflight
+note: placeholder
+EOF
+
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"review_gate.done updated"* ]]
+    [[ "$output" != *"cmd_complete_gate.sh started in background"* ]]
+
+    grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    [ ! -f "$INBOX_WRITE_BG_LOG" ]
 }
 
 @test "review_result: forwarded to active ninjas only as task_supplement" {

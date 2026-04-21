@@ -494,6 +494,22 @@ forward_gunshi_review_result_to_active_ninjas() {
     done < <(list_active_ninjas)
 }
 
+trigger_cmd_complete_gate_background() {
+    local cmd_id="$1"
+    local gate_script="$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+
+    [ -n "$cmd_id" ] || return 0
+    [ -f "$gate_script" ] || {
+        echo "[inbox_write] WARN: cmd_complete_gate.sh not found for ${cmd_id}" >&2
+        return 0
+    }
+
+    (
+        bash "$gate_script" "$cmd_id" >/dev/null 2>&1 || true
+    ) &
+    echo "[inbox_write] cmd_complete_gate.sh started in background for ${cmd_id}" >&2
+}
+
 inbox_append_message_fast_locked() {
     local inbox_file="$1"
     local message_block="$2"
@@ -1167,11 +1183,14 @@ while [ $attempt -lt $max_attempts ]; do
                     fi
 
                     report_found=0
+                    REPORT_FULL_PATH=""
                     if [ -n "$REPORT_FILENAME" ]; then
                         if [ -f "$SCRIPT_DIR/queue/reports/$REPORT_FILENAME" ]; then
                             report_found=1
+                            REPORT_FULL_PATH="$SCRIPT_DIR/queue/reports/$REPORT_FILENAME"
                         elif [ -f "$SCRIPT_DIR/queue/archive/reports/$REPORT_FILENAME" ]; then
                             report_found=1
+                            REPORT_FULL_PATH="$SCRIPT_DIR/queue/archive/reports/$REPORT_FILENAME"
                         else
                             # Archive files may have date suffix
                             base="${REPORT_FILENAME%.yaml}"
@@ -1180,6 +1199,7 @@ while [ $attempt -lt $max_attempts ]; do
                             shopt -u nullglob
                             if [ "${#archived[@]}" -gt 0 ]; then
                                 report_found=1
+                                REPORT_FULL_PATH="${archived[0]}"
                             fi
                         fi
                     fi
@@ -1187,6 +1207,14 @@ while [ $attempt -lt $max_attempts ]; do
                     if [ "$report_found" -eq 0 ]; then
                         echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
                     else
+                        _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
+                        if [ -n "$_parent_cmd" ] && [ -n "$REPORT_FULL_PATH" ] && [ -f "$REPORT_FULL_PATH" ] && [ -f "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh" ]; then
+                            PROJECT_ROOT="$SCRIPT_DIR"
+                            # shellcheck source=/dev/null
+                            source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"
+                            notify_gunshi_for_report "$FROM" "$REPORT_FULL_PATH" "$_parent_cmd"
+                        fi
+
                         # Check current status — don't overwrite terminal states
                         CURRENT_STATUS=$(inbox_yaml_field_get "$TASK_YAML" "status" "")
                         case "$CURRENT_STATUS" in
@@ -1210,7 +1238,7 @@ while [ $attempt -lt $max_attempts ]; do
         # 軍師のLGTM verdict受信時にplaceholderを正式版に上書きし、archive_completed.shが報告をアーカイブ可能にする
         if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
             # メッセージからcmd_idとverdictを抽出
-            _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
+            _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_[A-Za-z0-9_]+' | head -1 || true)
             _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
             if [ -n "$_rr_cmd_id" ] && [ "$_rr_verdict" = "LGTM" ]; then
                 _rr_gate_file="$SCRIPT_DIR/queue/gates/${_rr_cmd_id}/review_gate.done"
@@ -1222,6 +1250,7 @@ result: LGTM
 note: 軍師レビュー完了。placeholderから上書き(GP-133)。
 REVIEWEOF
                     echo "[inbox_write] review_gate.done updated: ${_rr_cmd_id} (placeholder→gunshi_review LGTM)" >&2
+                    trigger_cmd_complete_gate_background "$_rr_cmd_id"
                 fi
             fi
         fi
