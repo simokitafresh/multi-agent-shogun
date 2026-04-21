@@ -1023,7 +1023,9 @@ QG_TEMPLATE
             next
         }
     ')
-    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN"; then
+    # q1が「品質向上」なら消火ではない（gate修正/CoDD改善等はtitleに「修正」を含むがFP）
+    _Q1_VAL="$(cmd_block_get_field "quality_gate.q1_firefighting")"
+    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN" && ! echo "$_Q1_VAL" | grep -q "品質向上"; then
         if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
             record_block_reason "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
