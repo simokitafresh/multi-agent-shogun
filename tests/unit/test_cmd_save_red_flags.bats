@@ -54,10 +54,10 @@ setup() {
 
 @test "bundle red flag: 主要対象3本でWARNING" {
     CMD_BLOCK_NC='    title: "強化 — 5パターン統合"
-    command: |
-      scripts/cmd_save.sh を修正
-      scripts/gates/gate_gunshi_cs_checklist.sh を修正
-      scripts/deploy_task.sh を修正'
+    target_path: |
+      scripts/cmd_save.sh
+      scripts/gates/gate_gunshi_cs_checklist.sh
+      scripts/deploy_task.sh'
     export CMD_BLOCK_NC
 
     run check_bundle_red_flag

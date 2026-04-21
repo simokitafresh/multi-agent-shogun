@@ -31,7 +31,7 @@ YAML
     [ "$count" -le 1 ]
 }
 
-@test "BDL-T002: command内3パスは検出される" {
+@test "BDL-T002: command内3パスは検出されない" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "修正 — 3スクリプト一括修正"
     command: |
@@ -40,10 +40,10 @@ YAML
 )"
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
-    [ "$count" -ge 3 ]
+    [ "$count" -eq 0 ]
 }
 
-@test "BDL-T002b: target_path+commandのみで3パスなら検出される" {
+@test "BDL-T002b: target_path+command併記でもtarget_pathのみを数える" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "修正 — 単一定義の検出"
     purpose: "title/purposeに scripts/ignored.sh があっても無視される"
@@ -57,10 +57,11 @@ YAML
 )"
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
-    [ "$count" -eq 3 ]
+    [ "$count" -eq 1 ]
+    [[ "$targets" == "scripts/cmd_save.sh" ]]
 }
 
-@test "BDL-T002c: target_pathディレクトリとcommand内同配下パスは1回だけ数える" {
+@test "BDL-T002c: target_pathディレクトリ単体はファイル単位カウントしない" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "修正 — scripts配下の単一束"
     target_path: scripts
@@ -70,22 +71,21 @@ YAML
 )"
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
-    [ "$count" -eq 1 ]
-    [[ "$targets" == *"scripts"* ]]
+    [ "$count" -eq 0 ]
 }
 
-@test "BDL-T002d: target_path外のcommandパスは従来通り別カウント" {
+@test "BDL-T002d: target_path複数指定の本来バンドルは別カウント" {
     CMD_BLOCK_NC="$(cat <<'YAML'
     title: "修正 — scriptsとlibの2対象"
-    target_path: scripts
-    command: |
-      scripts/cmd_save.sh と lib/firefighting_keywords.sh を修正
+    target_path: |
+      scripts/cmd_save.sh
+      lib/firefighting_keywords.sh
 YAML
 )"
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
     [ "$count" -eq 2 ]
-    [[ "$targets" == *"scripts"* ]]
+    [[ "$targets" == *"scripts/cmd_save.sh"* ]]
     [[ "$targets" == *"lib/firefighting_keywords.sh"* ]]
 }
 
@@ -134,6 +134,5 @@ YAML
 )"
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
-    [ "$count" -eq 1 ]
-    [[ "$targets" == "projects/infra.yaml" ]]
+    [ "$count" -eq 0 ]
 }

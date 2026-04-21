@@ -283,7 +283,7 @@ collect_primary_cmd_targets() {
                 key=m[1]
                 value=m[2]
 
-                if (key == "target_path" || key == "command") {
+                if (key == "target_path") {
                     if (value ~ /^[|>][-+]?$/) {
                         in_block=1
                     } else {
