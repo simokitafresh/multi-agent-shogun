@@ -836,3 +836,5 @@
 | cmd_2211 | 偵察 — WF四神の本番fullrecalculate計算可能性調査 | dm-signal | 04-21 | 既存四神の保存実体を特定。シン四神pipeline_conf |
 | cmd_2212 | 修正 — scripts/cmd_save.sh Check 22 AC数検出バグ | infra | 04-21 | Check 22のAC件数カウントを acceptance_ |
 | cmd_2213 | 整備 — WF四神命名ルール+L2命名修正をドキュメント反映 | infra | 04-21 | WF命名ルールとL2命名乖離を文書へ反映し、wfシン/wfA |
+| cmd_2214 | 研究 — WFシン四神championの各foldパーセンタイル安定性検証 | dm-signal | 04-21 | WFシン四神12体のglobal fold percenti |
+| cmd_2215 | 研究 — WF ALM四神 α6指標top安定性検証(計算期間3M短縮) | dm-signal | 04-21 | WF ALM四神4ファミリーの6objectiveについて、 |
