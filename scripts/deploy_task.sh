@@ -2133,24 +2133,19 @@ try:
                     return True
         return False
 
+    # target_filesフィルタ: タグマッチした教訓は除外しない(忍者成長速度改善: タグ優先)
+    _tf_excluded_ids = set()  # target_files不一致で除外候補のID
     if _all_task_files:
-        _pre_tf = len(confirmed_lessons)
-        _tf_filtered = []
-        _tf_skipped = 0
         for _l in confirmed_lessons:
             _ltf = _l.get('target_files', [])
             if not _ltf:
-                _tf_filtered.append(_l)
                 continue
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
-            if _target_files_match(_ltf, _all_task_files):
-                _tf_filtered.append(_l)
-            else:
-                _tf_skipped += 1
-        confirmed_lessons = _tf_filtered
-        if _tf_skipped > 0:
-            print(f'[INJECT] target_files filter: removed {_tf_skipped}/{_pre_tf} lessons (task files: {[os.path.basename(f) for f in _all_task_files[:3]]})', file=sys.stderr)
+            if not _target_files_match(_ltf, _all_task_files):
+                _tf_excluded_ids.add(_l.get('id', ''))
+        if _tf_excluded_ids:
+            print(f'[INJECT] target_files filter: {len(_tf_excluded_ids)} lessons marked for exclusion (task files: {[os.path.basename(f) for f in _all_task_files[:3]]})', file=sys.stderr)
 
     # ═══ タグマッチ: 教訓をフィルタ ═══
     # universal教訓は別管理（常に注入）
@@ -2186,6 +2181,20 @@ try:
     if not task_tags:
         tag_candidates = [l for l in confirmed_lessons if l not in universal_lessons]
 
+    # target_filesフィルタ適用: タグマッチしなかった教訓のみ除外(タグ優先原則)
+    if _tf_excluded_ids and task_tags:
+        _pre_tf_count = len(tag_candidates)
+        tag_candidates = [l for l in tag_candidates if l.get('id','') not in _tf_excluded_ids or (set(task_tags) & set(str(t).lower() for t in (l.get('tags',[]) if isinstance(l.get('tags',[]), list) else [l.get('tags','')])))]
+        _tf_actually_removed = _pre_tf_count - len(tag_candidates)
+        if _tf_actually_removed > 0:
+            print(f'[INJECT] target_files post-filter: removed {_tf_actually_removed} (tag-matched preserved)', file=sys.stderr)
+    elif _tf_excluded_ids:
+        _pre_tf_count = len(tag_candidates)
+        tag_candidates = [l for l in tag_candidates if l.get('id','') not in _tf_excluded_ids]
+        _tf_actually_removed = _pre_tf_count - len(tag_candidates)
+        if _tf_actually_removed > 0:
+            print(f'[INJECT] target_files post-filter: removed {_tf_actually_removed}', file=sys.stderr)
+
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []
     for lesson in tag_candidates:
@@ -2207,6 +2216,14 @@ try:
 
         if score > 0:
             scored.append((score, lid, l_summary or l_title))
+
+    # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
+    if not scored and task_tags and tag_candidates:
+        _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in tag_candidates]
+        _tag_fallback.sort(key=lambda x: -x[0])
+        scored = [(1, lid, summ) for hc, lid, summ in _tag_fallback[:MAX_INJECT]]
+        if scored:
+            print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} tag-matched lessons by helpful_count', file=sys.stderr)
 
     # cmd_1564+karo_idle_fix: useful_rate decay — 活用率が低い教訓のスコアを減衰
     # フィードバックデータ(record_lesson_feedback.sh)から実有用率を算出

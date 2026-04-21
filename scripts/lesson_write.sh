@@ -592,8 +592,31 @@ while [ $attempt -lt $max_attempts ]; do
             _lw_tags_yaml+="]"
         else
             _lw_default_tag="$(infer_default_project_tag)"
-            if [ -n "$_lw_default_tag" ]; then
-                _lw_tags_yaml="[${_lw_default_tag}]"
+            # 忍者成長速度改善: lesson_tags.yamlルールで教訓テキストからタグ自動推定
+            _lw_auto_tags=""
+            _lw_lesson_text="${TITLE} ${DETAIL}"
+            if [ -f "$SCRIPT_DIR/config/lesson_tags.yaml" ]; then
+                _lw_auto_tags=$(python3 -c "
+import re, yaml, sys
+text = sys.argv[1]
+with open(sys.argv[2]) as f:
+    rules = yaml.safe_load(f).get('tag_rules', [])
+tags = []
+for r in rules:
+    for p in r.get('patterns', []):
+        if re.search(p, text):
+            tags.append(r['tag'])
+            break
+print(','.join(tags[:3]))
+" "$_lw_lesson_text" "$SCRIPT_DIR/config/lesson_tags.yaml" 2>/dev/null || true)
+            fi
+            _lw_all_tags=""
+            [ -n "$_lw_default_tag" ] && _lw_all_tags="$_lw_default_tag"
+            if [ -n "$_lw_auto_tags" ]; then
+                [ -n "$_lw_all_tags" ] && _lw_all_tags="${_lw_all_tags},${_lw_auto_tags}" || _lw_all_tags="$_lw_auto_tags"
+            fi
+            if [ -n "$_lw_all_tags" ]; then
+                _lw_tags_yaml="[${_lw_all_tags}]"
             else
                 _lw_tags_yaml="[universal]"
             fi

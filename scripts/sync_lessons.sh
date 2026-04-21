@@ -94,6 +94,21 @@ in_numbered_section = False  # True when inside ## N. section
 has_l_style_entries = any(re.match(r'^###\s+L\d+\s*[:：]\s*', ln) for ln in lines)
 current_category = "未分類"
 
+# 忍者成長速度改善2: ファイルキャッシュ+パターンをループ外で1回だけ構築
+_tf_path_pat = re.compile(r'(?:scripts|tests|context|backend|frontend|config|queue|docs|app)/[\w/.-]+\.(?:sh|py|bats|yaml|md|json|ts|tsx|js)')
+_tf_file_pat = re.compile(r'[a-zA-Z_][\w-]*\.(?:sh|py|bats|yaml|md|json)')
+_tf_file_cache = set()
+for _tf_search_base in [os.environ.get('SCRIPT_DIR', ''), '/mnt/c/Python_app/DM-signal']:
+    if not _tf_search_base or not os.path.isdir(_tf_search_base):
+        continue
+    for _tf_sd in ('scripts', 'tests', 'context', 'config', 'backend', 'frontend', 'docs'):
+        _tf_dir = os.path.join(_tf_search_base, _tf_sd)
+        if not os.path.isdir(_tf_dir):
+            continue
+        for _tf_root, _, _tf_files in os.walk(_tf_dir):
+            for _tf_f in _tf_files:
+                _tf_file_cache.add(_tf_f)
+
 while i < len(lines):
     line = lines[i]
 
@@ -283,6 +298,16 @@ while i < len(lines):
         if because_reason:
             if_then['because'] = because_reason
         entry['if_then'] = if_then
+
+    # 忍者成長速度改善2: target_files自動抽出（教訓テキストからファイルパスを検出）
+    if 'target_files' not in entry:
+        _tf_text = f'{entry.get("title", "")} {entry.get("summary", "")}'
+        _tf_found = list(dict.fromkeys(_tf_path_pat.findall(_tf_text)))
+        if not _tf_found:
+            _tf_basenames = _tf_file_pat.findall(_tf_text)
+            _tf_found = [bn for bn in dict.fromkeys(_tf_basenames) if bn in _tf_file_cache]
+        if _tf_found:
+            entry['target_files'] = _tf_found[:5]
 
     lessons.append(entry)
     i = j if j > i + 1 else i + 1

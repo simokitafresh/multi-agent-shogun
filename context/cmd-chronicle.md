@@ -832,3 +832,4 @@
 | cmd_2209 | 修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗 | infra | 04-21 | cmd_save.sh の cmd 境界判定を非数字 cmd |
 | cmd_karo_gate_wait | cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証 | infra | 04-21 | cmd_complete_gate の GATE CLEAR |
 | cmd_2208 | 修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能) | infra | 04-21 | cmd_2209で先行反映済みのWARN経路統一を現物確認し |
+| cmd_karo_pipeline_verify | 検証 — 自動パイプライン全段動作確認(draftレビュー→report_review→GATE→bulletin) | infra | 04-21 | context/senkyoku-log.md に cmd_ |
