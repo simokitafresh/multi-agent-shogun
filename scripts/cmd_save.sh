@@ -2589,10 +2589,10 @@ for line in lines:
             if current:
                 entries.append(dict(current))
             current = {}
-        m = re.search(r'^\s+source\s*:\s*(.+)', line)
-        if m: current['source'] = m.group(1).strip().strip('\"').strip(\"'\")
-        m = re.search(r'trust\s*:\s*(.+)', line)
-        if m: current['trust'] = m.group(1).strip().strip('\"').strip(\"'\")
+        # GP-216: source/trust以外の任意フィールド(tool_verified/csv_paths等)もキャプチャ
+        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
         if line and not line[0].isspace() and line.strip():
             in_assumptions = False
             if current: entries.append(dict(current))
@@ -2602,8 +2602,12 @@ pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|
 for e in entries:
     trust = e.get('trust', '')
     if 'verified' in trust and 'unverified' not in trust:
-        for m in pat.finditer(e.get('source', '')):
-            print(m.group(0))
+        # GP-216: source以外の全フィールド(tool_verified/csv_paths等)からもパス抽出
+        for key, val in e.items():
+            if key == 'trust':
+                continue
+            for m in pat.finditer(val):
+                print(m.group(0))
 " 2>/dev/null || true)
             if [[ -n "${_ASSUMP_VERIFIED_PATHS:-}" ]]; then
                 _ASSUMP_HAS_MISSING=false

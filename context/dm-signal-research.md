@@ -948,3 +948,9 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - **N体EW比較を横並び化**: cmd_1947-1950系列で1/2/3体EWを同一評価軸に整列。alpha-CalmarはIS/OOS/Expandingで2-3体優位、WFは1体優位。→ `context/l2-okugi-progress.md` §L3 N体EW比較 | `context/senkyoku-log.md`
 - **CoDD適用方式はハイブリッドで確定**: OSS版CoDDは `extract`/`measure` を使用し、spec/cProfile/実装/検証は手動で回す。`review`/`implement` は codd-pro 依存で対象外。→ `docs/research/codd_dmsignal_python_strategy.md` §0, §1
 - **Phase 4は準備中**: 前提は `(1)` fullrecalculate read-only cProfile, `(2)` cmd_1985偵察結果の設計書反映(compare_recalc_results.py差分), `(3)` `--exclude-months` 実装。→ `docs/research/codd_dmsignal_python_strategy.md` §3.5
+
+### Vintage 2020 OOS検証 (cmd_2228)
+<!-- last_updated: 2026-04-22 cmd_2228 -->
+- **ss完了**: `outputs/analysis/vintage/2020/vintage_2020_ss_*` 5成果物生成。α6は全objectiveで `alpha_positive=true`。`maximum_drawdown` が最良 (`alpha_annual=2.247561`, `beta_adj_cagr=2.637799`, `alpha_max_dd=0.093083`)。`cagr`/`max_run_up` は bear regime alpha が負で `regime_all_positive=false`。→ `queue/reports/saizo_report_cmd_2228.yaml`
+- **as完了**: `outputs/analysis/vintage/2020/vintage_2020_as_*` 5成果物生成。α6は全objectiveで `alpha_positive=true`。`maximum_drawdown` が最良 (`alpha_annual=3.113478`, `beta_adj_cagr=3.621199`, `alpha_max_dd=0.117064`)。`nhf` のみ bull alpha `-0.048525` で `regime_all_positive=false`。`l2_timeline` 19行は IS短縮によるfold減少で設計内。→ `queue/reports/hayate_report_cmd_2228.yaml`
+- **共通所見**: 実行入口は `scripts/analysis/alm_research/vintage_pipeline.py`。cmd本文の `outputs/scripts/vintage_pipeline.py` は stale。future contamination は `fold.oos_end <= cutoff` filter + `AssertionError` (`scripts/analysis/alm_research/vintage_pipeline.py` L160-L166付近) で担保。
