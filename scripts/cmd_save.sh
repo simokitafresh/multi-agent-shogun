@@ -372,6 +372,14 @@ record_warn_reason() {
     [[ -n "$reason" ]] || return 0
     WARN_REASONS+=("$reason")
     WARN_COUNT=$((WARN_COUNT + 1))
+    # 遡及学習: 過去の同一WARN件数を即表示（殿裁定2026-04-21）
+    # 1回目で「過去N回出ている」と気づけば根本修正のROIが分かる
+    local _prior_count
+    _prior_count=$(count_same_warn_pattern "$reason" 2>/dev/null || echo 0)
+    [[ "$_prior_count" =~ ^[0-9]+$ ]] || _prior_count=0
+    if (( _prior_count > 0 )); then
+        echo "  ★ このWARNは過去${_prior_count}回出現。消火ではなく根本修正を検討せよ。" >&2
+    fi
 }
 
 abort_if_block_immediate() {
