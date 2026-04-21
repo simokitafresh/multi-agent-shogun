@@ -288,6 +288,7 @@ if [ -f "$LORD_INDEX" ]; then
 else
     echo "  lord-conversation-index.md不在"
 fi
+echo "  ⚠ lord_conversationの「未完了」「未実装」は当時の事実。現在も未完了かはls/grepで現物確認せよ(LS080)"
 fi
 
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---

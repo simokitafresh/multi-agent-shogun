@@ -2327,7 +2327,10 @@ ${FULL_CMD}"
 
     # GS検出: bare grid_search は outputs/grid_search/*.csv を誤検出するため、
     # 研究スクリプト参照または明示的なGS文言に限定する。
-    if echo "$SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
+    # "GS CSV" = データファイル参照であり研究スクリプト実行ではないため除外(cmd_2227 FP修正)
+    local GS_SEARCH_TEXT
+    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | sed -E 's/GS[[:space:]]*CSV//g')
+    if echo "$GS_SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
         HIT_GS=true
     fi
 
