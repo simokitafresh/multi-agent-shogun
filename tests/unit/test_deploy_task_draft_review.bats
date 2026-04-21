@@ -6,8 +6,21 @@ setup_file() {
     deploy_task_setup_file
 }
 
+materialize_scripts_dir() {
+    local scripts_target
+
+    if [ ! -L "$TEST_PROJECT/scripts" ]; then
+        return 0
+    fi
+
+    scripts_target="$(readlink "$TEST_PROJECT/scripts")"
+    rm "$TEST_PROJECT/scripts"
+    cp -r "$scripts_target" "$TEST_PROJECT/scripts"
+}
+
 setup() {
     deploy_task_scaffold "deploy_draft_review"
+    materialize_scripts_dir
 
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:
