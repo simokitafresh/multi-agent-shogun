@@ -431,8 +431,9 @@ send_wakeup() {
     local effective_cli
     effective_cli=$(get_effective_cli_type)
 
-    # Codex/non-claude: nudgeにtask YAMLパスを付与してSTALL防止
-    if [[ "$effective_cli" != "claude" ]]; then
+    # Codex/non-claude ninja: nudgeにtask YAMLパスを付与してSTALL防止
+    # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
+    if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]]; then
         nudge="${nudge} — タスクYAML: queue/tasks/${AGENT_ID}.yaml を読んで作業開始せよ"
     fi
 
