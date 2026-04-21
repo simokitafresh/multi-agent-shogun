@@ -1230,7 +1230,7 @@ fi
 # flock -n: ノンブロッキング。取得成功=競合なし、取得失敗=家老が書き込み中
 if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
     echo "WARN: $LOCK_FILE がロック中です（家老が書き込み中の可能性）" >&2
-    WARN_COUNT=$((WARN_COUNT + 1))
+    record_warn_reason "flock_lock_contention"
 fi
 
 show_recent_completed_ninjas() {
@@ -1538,7 +1538,7 @@ check_ac_file_paths() {
 
     if [[ "$HAS_MISSING" == true ]]; then
         echo "  BLOCK: 親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "ac_missing_parent_path"
     fi
 }
 
@@ -1961,7 +1961,7 @@ check_ac_param_sufficiency() {
     if [[ "$HIT" == true ]]; then
         echo "  具体値を列挙せよ。例: 「4条件」→「4条件(EMA/SMA/Kalman/Bandpass)」" >&2
         echo "  理由: 忍者は独自判断で条件を補完する（cmd_1681実証済み）" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "ac_param_sufficiency"
     fi
 }
 
@@ -2207,7 +2207,7 @@ check_param_space_shrink() {
         echo "WARN: パラメータ空間を縮小していないか？(${HITS}箇所で縮小表現を検出)" >&2
         echo "  → 計算量が多いなら: (1)道具を磨け (2)並列にせよ (3)チャンクに分けよ" >&2
         echo "  → 範囲を狭めることは殿の時間を奪う最大の無駄(2026-04-04殿厳命)" >&2
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "param_space_shrink_expression"
     fi
 }
 
@@ -2528,7 +2528,7 @@ if [[ "${_CHECK19_SCOPE}" != "SCOUT" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 
         for m in "${PARITY_MISSING[@]}"; do
             echo "  ✗ $m"
         done
-        WARN_COUNT=$((WARN_COUNT + 1))
+        record_warn_reason "parity_ac_missing"
     fi
 fi
 

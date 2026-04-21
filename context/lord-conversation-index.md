@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-21T13:29:18+09:00 -->
+<!-- generated_at: 2026-04-21T13:41:22+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-21T13:41:21+09:00 | terminal | response | 殿、WF L2 両系統のchampion選出結果を報告する。 ## SS系統（シンBB×シン忍法21体） — 82秒で完走 | 忍法 | CAGR champion | NHF champion | MaxDD champion | |-…
+- 2026-04-21T13:40:19+09:00 | terminal | inbound | l2の結果はどうだったんだっけ？
+- 2026-04-21T13:38:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:25:51|cmd_karo_lk086_update 2026-04-21 13:35:38|CI緑: run 24703920048 2026-04-21 13:35:51|cmd_22…
+- 2026-04-21T13:38:21+09:00 | ntfy | outbound | 【家老】cmd_2208 初回配備開始 (title=修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能), ninja=hayate) 修正 📋 https://gist.github.com/simokit…
+- 2026-04-21T13:38:14+09:00 | terminal | response | cmd_2208委任完了。 殿、両cmd配備済み。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2209 | awk regex修正 | **GATE CLEAR** | | cmd_220…
+- 2026-04-21T13:36:50+09:00 | terminal | inbound | 進捗を確認しよう
+- 2026-04-21T13:35:09+09:00 | ntfy | outbound | 【家老】cmd_karo_gate_wait 初回配備開始 (title=cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証, ninja=saizo) cmd_c…
+- 2026-04-21T13:29:54+09:00 | ntfy | outbound | 【家老】cmd_2209 初回配備開始 (title=修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗, ninja=hayate) 修正 📋 https://gist.github.com/simok…
 - 2026-04-21T13:29:18+09:00 | terminal | response | PASS。pending昇格→委任。 [meta] stop_reason=tool_use
 - 2026-04-21T13:27:51+09:00 | terminal | inbound | 先に単独修正をしよう
-- 2026-04-21T13:27:02+09:00 | terminal | response | バンドル検出が隣接cmdのパスを含めている。CMD_BLOCKの抽出範囲を確認する。 [meta] stop_reason=tool_use
-- 2026-04-21T13:23:41+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:23:19|cmd_karo_self_gate_template 2026-04-21 13:23:39|CI緑: run 24703500858
-- 2026-04-21T13:21:02+09:00 | terminal | inbound | 続けて。gateでblockがでると将軍は止まってしまうようになったのかな？
-- 2026-04-21T13:19:53+09:00 | terminal | response | cmd_save.shで保存確認→pending昇格→委任。 [meta] stop_reason=tool_use
-- 2026-04-21T13:18:02+09:00 | ntfy | outbound | 【家老】cmd_karo_lk086_update 初回配備開始 (title=LK086+karo.md更新 — report_review自動化に伴う3アクション→2アクションへ, ninja=hayate) LK086+karo.m…
-- 2026-04-21T13:13:05+09:00 | ntfy | outbound | 【家老】cmd_karo_self_gate_template 初回配備開始 (title=deploy_task.shのreportテンプレートにself_gate_check 4項目を自動注入, ninja=saizo) deploy…
-- 2026-04-21T13:12:30+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-143)
-- 2026-04-21T13:09:44+09:00 | ntfy | outbound | 【将軍】復帰済み。WF L2 SS+AS全完遂確認(cmd_2207 GATE CLEAR)。全忍者idle。自走開始。
 
 ## 未解決確認事項
+- 進捗を確認しよう
 - バンドル検出が隣接cmdのパスを含めている。CMD_BLOCKの抽出範囲を確認する。 [meta] stop_reason=tool_use
 - cmd_save.shで保存確認→pending昇格→委任。 [meta] stop_reason=tool_use
 - 【将軍】復帰済み。WF L2 SS+AS全完遂確認(cmd_2207 GATE CLEAR)。全忍者idle。自走開始。
@@ -23,7 +24,6 @@
 - 【家老】cmd_2206 初回配備開始 (title=強化 — 品質gate Session StateにBLOCK後教訓記録確認WARNを追加, ninja=hayate) 強化 📋 https://gist.github.com/simokitafresh/6eb495d9…
 - cmd_2206委任完了。本セッションの成長ループ: **気づき** → cmd_2198で25回BLOCK後にテンプレート学んだが教訓記録遅延 **なぜなぜ7回** → 真因: BLOCK修正と教訓記録が分離。意志依存 **即座にできること** → LS061(テンプレートル…
 - CMDの品質は上がったか確認せよ
-- cmd起票の3段階手順(shogun.md §cmd起票手順): 1. **書く**: Read toolでshogun_to_karo.yaml末尾確認 → Edit toolでcmdブロック追記(**status: draft**で書く。pendingにするとninja_m…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-21T13:00:10+09:00 | cmd_2207(AS champion統合)委任完了。一発PASS。 cmd_2207 GATE CLEARで**WF L2 両系統(SS+AS)完成**。 本セッション成果: - **19cmd起票**(cmd_2189-2207) — SS 7GS+champion + …
@@ -40,7 +40,6 @@
 - cmd_2129
 - cmd_2159
 - cmd_2160
-- cmd_2166
 - cmd_2173
 - cmd_2178
 - cmd_2179
@@ -66,6 +65,7 @@
 - cmd_2201
 - cmd_2202
 - cmd_2203
+- cmd_2204
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
