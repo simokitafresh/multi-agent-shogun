@@ -806,14 +806,14 @@ fi
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
     usage >&2
-    echo "Received arguments: $*" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$TARGET" == cmd_* ]]; then
-    echo "ERROR: The first argument must be target_agent (for example: karo, hanzo), not a cmd_id." >&2
+    echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
     usage >&2
-    echo "Received arguments: $*" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
@@ -1224,7 +1224,7 @@ while [ $attempt -lt $max_attempts ]; do
                                 # on WSL2/DrvFs (POSIX flock treats different open file descriptions
                                 # independently; same-process exclusive vs exclusive = blocked).
                                 if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>/dev/null; then
-                                    echo "[inbox_write] auto-done: failed to update task status (non-fatal; message delivery already succeeded)" >&2
+                                    echo "[inbox_write] auto-done: task status更新失敗（非致命的。メッセージ送信は成功済み）" >&2
                                 fi
                                 ;;
                         esac

@@ -76,27 +76,27 @@ teardown() {
 @test "AC1: valid ninja_id (hayate) — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test fix description"
     # Should NOT contain WARN about ninja_id
-    [[ "$output" != *"有効なエージェント名ではない"* ]]
+    [[ "$output" != *"is not a valid agent name"* ]]
 }
 
 @test "AC1: valid ninja_id (karo) — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test karo "test issue" "test fix description"
-    [[ "$output" != *"有効なエージェント名ではない"* ]]
+    [[ "$output" != *"is not a valid agent name"* ]]
 }
 
 @test "AC1: invalid ninja_id — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test unknown_agent "test issue" "test fix description"
-    [[ "$output" == *"有効なエージェント名ではない"* ]]
+    [[ "$output" == *"is not a valid agent name"* ]]
 }
 
 @test "AC1: invalid ninja_id (typo) — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayat "test issue" "test fix description"
-    [[ "$output" == *"有効なエージェント名ではない"* ]]
+    [[ "$output" == *"is not a valid agent name"* ]]
 }
 
 @test "AC1: valid ninja_id from tasks dir (kotaro) — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test kotaro "test issue" "test fix description"
-    [[ "$output" != *"有効なエージェント名ではない"* ]]
+    [[ "$output" != *"is not a valid agent name"* ]]
 }
 
 # =============================================
@@ -105,49 +105,49 @@ teardown() {
 
 @test "AC2: empty root_cause — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" ""
-    [[ "$output" == *"root_causeが無効値"* ]]
+    [[ "$output" == *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: null root_cause — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "null"
-    [[ "$output" == *"root_causeが無効値"* ]]
+    [[ "$output" == *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: None root_cause — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "None"
-    [[ "$output" == *"root_causeが無効値"* ]]
+    [[ "$output" == *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: NULL root_cause — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "NULL"
-    [[ "$output" == *"root_causeが無効値"* ]]
+    [[ "$output" == *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: none root_cause — emits WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "none"
-    [[ "$output" == *"root_causeが無効値"* ]]
+    [[ "$output" == *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: 1-char root_cause — emits short WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "x"
-    [[ "$output" == *"root_causeが短すぎる"* ]]
+    [[ "$output" == *"root_cause is too short"* ]]
 }
 
 @test "AC2: 2-char root_cause — emits short WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "ab"
-    [[ "$output" == *"root_causeが短すぎる"* ]]
+    [[ "$output" == *"root_cause is too short"* ]]
 }
 
 @test "AC2: 3-char root_cause — no WARN (minimum met)" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "fix"
-    [[ "$output" != *"root_causeが短すぎる"* ]]
-    [[ "$output" != *"root_causeが無効値"* ]]
+    [[ "$output" != *"root_cause is too short"* ]]
+    [[ "$output" != *"root_cause has an invalid value"* ]]
 }
 
 @test "AC2: valid root_cause — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test hayate "test issue" "report_field_set.shでフォーマット修正"
-    [[ "$output" != *"root_causeが短すぎる"* ]]
-    [[ "$output" != *"root_causeが無効値"* ]]
+    [[ "$output" != *"root_cause is too short"* ]]
+    [[ "$output" != *"root_cause has an invalid value"* ]]
 }
 
 # =============================================
@@ -156,8 +156,8 @@ teardown() {
 
 @test "clean mode: skips root_cause validation" {
     run bash "$TEST_SCRIPT" --clean cmd_test hayate
-    [[ "$output" != *"root_causeが無効値"* ]]
-    [[ "$output" != *"root_causeが短すぎる"* ]]
+    [[ "$output" != *"root_cause has an invalid value"* ]]
+    [[ "$output" != *"root_cause is too short"* ]]
     [[ "$output" == *"Clean:"* ]]
 }
 
@@ -196,14 +196,14 @@ teardown() {
 @test "AC3: --wa modeでenvironment_change未記入ならWARN" {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4
     [ "$status" -eq 0 ]
-    [[ "$output" == *"environment_change未記入"* ]]
+    [[ "$output" == *"environment_change is missing"* ]]
 }
 
 @test "AC4: --wa modeでstructured environment_changeを検証してYAML記録" {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
         "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"environment_change検証OK"* ]]
+    [[ "$output" == *"environment_change verified"* ]]
     run grep -n "environment_change: 'type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER'" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -eq 0 ]
 }
@@ -212,6 +212,6 @@ teardown() {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
         "type=gate; file=scripts/sample_gate.sh; pattern=DOES_NOT_EXIST_2185"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"environment_change未実装"* ]]
+    [[ "$output" == *"environment_change not implemented"* ]]
     [[ "$output" == *"DOES_NOT_EXIST_2185"* ]]
 }
