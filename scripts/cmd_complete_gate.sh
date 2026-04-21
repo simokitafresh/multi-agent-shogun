@@ -2353,6 +2353,11 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [INFO] git push: WARN (push failed, non-blocking)"
     fi
 
+    echo ""
+    echo "Async completion wait (pre-exit):"
+    wait || true
+    echo "  async jobs: drained"
+
     exit 0
 fi
 
@@ -4267,6 +4272,11 @@ END_VERDICT_PY
 
     # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
     bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
+
+    echo ""
+    echo "Async completion wait (pre-exit):"
+    wait || true
+    echo "  async jobs: drained"
 
     exit 0
 else

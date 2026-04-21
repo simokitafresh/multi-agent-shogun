@@ -827,3 +827,6 @@
 | cmd_2205 | 研究 — WF L2 GS yotsume(AS系統): wf_l2_as_21体でyotsume忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでyotsume G |
 | cmd_2207 | 研究 — WF L2 AS系統 champion_selector統合: 7忍法GSからchampion事後選出 | dm-signal | 04-21 | wf_l2_as 配下の7忍法 monthly CSV/ca |
 | cmd_karo_auto_review_gate | inbox_write.shにreport_review自動送信+GATE自動実行を追加 | infra | 04-21 | report_received→report_review自 |
+| cmd_karo_self_gate_template | deploy_task.shのreportテンプレートにself_gate_check 4項目を自動注入 | infra | 04-21 | deploy_task.shの報告テンプレートへself_g |
+| cmd_karo_lk086_update | LK086+karo.md更新 — report_review自動化に伴う3アクション→2アクションへ | infra | 04-21 | LK086を2アクション運用へ更新し、AC2はinstruc |
+| cmd_2209 | 修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗 | infra | 04-21 | cmd_save.sh の cmd 境界判定を非数字 cmd |
