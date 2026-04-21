@@ -3710,6 +3710,78 @@ check_firefighting_title() {
     fi
 }
 
+count_task_acceptance_criteria() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+task_file = sys.argv[1]
+count = 0
+
+try:
+    with open(task_file, encoding='utf-8') as f:
+        data = yaml.safe_load(f) or {}
+    task = data.get('task') or {}
+    acs = task.get('acceptance_criteria')
+    if isinstance(acs, list):
+        count = len(acs)
+    elif isinstance(acs, dict):
+        count = len(acs)
+    elif acs:
+        count = 1
+except Exception:
+    count = 0
+
+print(count)
+PY
+}
+
+maybe_notify_draft_review() {
+    local task_file="$1"
+    local cmd_id="$2"
+    local ninja_name="$3"
+    local deploy_type="${4:-task_assigned}"
+    local title ac_count message
+
+    if [ "$deploy_type" != "task_assigned" ]; then
+        log "draft_review: SKIP (type=${deploy_type})"
+        return 0
+    fi
+
+    if [ "${SKIP_DRAFT_REVIEW:-0}" = "1" ]; then
+        log "draft_review: SKIP (env)"
+        return 0
+    fi
+
+    if [ -z "$cmd_id" ]; then
+        log "draft_review: SKIP (cmd_id empty)"
+        return 0
+    fi
+
+    title=$(resolve_dispatch_title "$cmd_id" "$task_file")
+    if printf '%s' "$title" | grep -q 'CI RED'; then
+        log "draft_review: SKIP (CI RED)"
+        return 0
+    fi
+
+    ac_count=$(count_task_acceptance_criteria "$task_file")
+    if ! [[ "$ac_count" =~ ^[0-9]+$ ]]; then
+        ac_count=0
+    fi
+    if [ "$ac_count" -le 1 ]; then
+        log "draft_review: SKIP (ac_count<=1: ${ac_count})"
+        return 0
+    fi
+
+    message="draft ${cmd_id} レビュー依頼。${title:-$cmd_id}。ninja=${ninja_name}。"
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "$message" review_draft karo; then
+        log "draft_review: SENT (gunshi)"
+    else
+        log "draft_review: WARN (inbox_write failed)"
+    fi
+}
+
 warn_same_ninja_redeploy() {
     local task_file="$1"
     local ninja_name="$2"
@@ -4279,6 +4351,7 @@ except Exception:
         echo "$NINJA_NAME" > "$rr_pointer_file"
     ) 201>"$rr_lock_file" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
 
+    maybe_notify_draft_review "$task_yaml" "$deploy_parent_cmd" "$NINJA_NAME" "$TYPE"
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
 }
 
