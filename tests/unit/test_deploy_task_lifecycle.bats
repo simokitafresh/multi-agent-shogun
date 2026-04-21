@@ -1185,14 +1185,14 @@ for e in entries:
 
 total = sum(cats.values())
 top_cat, top_count = max(cats.items(), key=lambda x: x[1]) if cats else (\"none\", 0)
-breakdown = \", \".join(f\"{k}({v}件)\" for k, v in sorted(cats.items(), key=lambda x: -x[1]))
-warning = f\"⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{{}},1:{{}})禁止。verdict二値(PASS/FAIL)厳守\"
+breakdown = \", \".join(f\"{k}({v})\" for k, v in sorted(cats.items(), key=lambda x: -x[1]))
+warning = \"WARNING: always use report_field_set.sh. lessons_useful must stay a list; dict(0:{},1:{}) is forbidden. verdict must stay binary (PASS/FAIL).\"
 
 task = data[\"task\"]
 task[\"ninja_weak_points\"] = {
     \"source\": \"karo_workarounds.yaml\",
     \"total_workarounds\": total,
-    \"top_pattern\": f\"{top_cat}({top_count}件)\",
+    \"top_pattern\": f\"{top_cat}({top_count})\",
     \"breakdown\": breakdown,
     \"warning\": warning,
 }
@@ -1201,17 +1201,17 @@ gate_log_path = os.path.join(os.path.dirname(workarounds_file), \"gate_fire_log.
 if os.path.exists(gate_log_path):
     fail_cats = {}
     GATE_FAIL_WARNING = {
-        \"lu_reason_empty\": \"lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止\",
-        \"bc_result_empty\": \"binary_checksの各check項目にresult(yes/no)を記入。空文字禁止\",
-        \"verdict_invalid\": \"verdictはPASS/FAILの二値のみ。空文字/None禁止\",
-        \"field_missing\": \"必須フィールド(binary_checks/files_modified/result.summary)を省略するな\",
-        \"type_error\": \"YAML型注意。dict禁止→list形式\",
-        \"bc_result_invalid\": \"binary_checksのresultはyes/noのみ\",
-        \"lu_structure_error\": \"lessons_usefulフィールド必須\",
-        \"yaml_parse_error\": \"YAML構文エラー\",
-        \"fill_this_remaining\": \"FILL_THIS残存\",
-        \"no_lesson_reason\": \"no_lesson_reasonに理由記入\",
-        \"status_pending\": \"statusをcompletedに更新\",
+        \"lu_reason_empty\": \"Every lessons_useful entry must include a reason. Empty strings are forbidden.\",
+        \"bc_result_empty\": \"Fill every binary_checks check item result with yes/no. Empty strings are forbidden.\",
+        \"verdict_invalid\": \"verdict must be binary: PASS/FAIL. Empty strings and None are forbidden.\",
+        \"field_missing\": \"Do not omit required fields (binary_checks/files_modified/result.summary).\",
+        \"type_error\": \"YAML type warning. dict is forbidden; use list format.\",
+        \"bc_result_invalid\": \"binary_checks results must be yes/no only.\",
+        \"lu_structure_error\": \"Each lessons_useful item must include the required fields.\",
+        \"yaml_parse_error\": \"YAML syntax error\",
+        \"fill_this_remaining\": \"FILL_THIS still present\",
+        \"no_lesson_reason\": \"Fill no_lesson_reason\",
+        \"status_pending\": \"Update status to completed\",
     }
     with open(gate_log_path) as gf:
         for gline in gf:
@@ -1239,7 +1239,7 @@ if os.path.exists(gate_log_path):
         top3 = [{\"pattern\": p, \"count\": c} for p, c in sorted_cats]
         gate_warnings = [GATE_FAIL_WARNING.get(p, p) for p, _ in sorted_cats]
         task[\"ninja_weak_points\"][\"gate_fail_top3\"] = top3
-        task[\"ninja_weak_points\"][\"gate_warning\"] = \"⚠ gate頻出FAIL: \" + \"; \".join(gate_warnings)
+        task[\"ninja_weak_points\"][\"gate_warning\"] = \"WARNING: frequent gate FAIL patterns: \" + \"; \".join(gate_warnings)
 
 with open(task_file, \"w\") as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)

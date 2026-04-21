@@ -803,7 +803,7 @@ for ninja in ("ninja_a", "ninja_b"):
     msg = data["messages"][0]
     assert msg["from"] == "gunshi", f"{ninja} sender mismatch"
     assert msg["type"] == "task_supplement", f"{ninja} type mismatch"
-    assert msg["content"] == "軍師レビュー補足: verdict: FAIL cmd_999 要確認", f"{ninja} content mismatch"
+    assert msg["content"] == "Gunshi review supplement: verdict: FAIL cmd_999 要確認", f"{ninja} content mismatch"
 
 assert not os.path.exists(os.path.join(root, "ninja_c.yaml")), "idle ninja should not receive forwarded message"
 EOF

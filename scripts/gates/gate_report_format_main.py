@@ -161,16 +161,16 @@ def main() -> int:
     )
     if needs_before_after:
         if not metric_filled(data.get("before_metrics")):
-            hints.append("GP-199 WARN: before_metrics未記入 — GP/改善cmdは実装前の計測値を記録せよ")
+            hints.append("GP-199 WARN: before_metrics is missing — GP/improvement cmds must record the measurement before implementation")
         if not metric_filled(data.get("after_metrics")):
-            hints.append("GP-199 WARN: after_metrics未記入 — GP/改善cmdは実装後の計測値を記録せよ")
+            hints.append("GP-199 WARN: after_metrics is missing — GP/improvement cmds must record the measurement after implementation")
         regression = data.get("regression")
         if isinstance(regression, bool):
             regression_norm = "yes" if regression else "no"
         else:
             regression_norm = str(regression or "").strip().lower()
         if regression_norm not in ("yes", "no"):
-            hints.append("GP-199 WARN: regression未記入 — GP/改善cmdは退化有無を yes/no で記録せよ")
+            hints.append("GP-199 WARN: regression is missing — GP/improvement cmds must record regression as yes/no")
 
     assigned_acs_raw = task_data.get("assigned_acs", "") or ""
     if isinstance(assigned_acs_raw, str) and assigned_acs_raw.strip():

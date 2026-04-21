@@ -278,11 +278,11 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "queue/reports/sasuke_report_cmd_999.yaml" ]
 
-    run grep -F "# Step1: Read this file" \
+    run grep -F "# Step 1: Read this file" \
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 
-    run grep -F "  # found: true/false を書け。リスト形式[] 禁止" \
+    run grep -F "  # Set found: true/false. List format [] is forbidden." \
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 

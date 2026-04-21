@@ -582,7 +582,7 @@ assert list(bc.keys()) == ["AC1", "AC2", "AC3", "commit"], bc.keys()
 assert bc["AC1"][0]["check"] == "first check"
 assert bc["AC2"][0]["check"] == "quoted check"
 assert bc["AC3"][0]["check"] == "third check"
-assert bc["commit"][0]["check"] == "git commitが完了したか(untracked/modified=0)"
+assert bc["commit"][0]["check"] == "Was git commit completed (untracked/modified=0)?"
 
 item_count = sum(len(items) for items in bc.values())
 assert item_count == 4, item_count
@@ -622,7 +622,7 @@ check = data["binary_checks"]["AC1"][0]["check"]
 
 assert "bash scripts/affected_tests.sh" in check, check
 assert "bats --jobs 4 tests/unit" in check, check
-assert "フォールバック" in check, check
+assert "fall back" in check, check
 print("OK")
 EOF
     [ "$status" -eq 0 ]
@@ -658,11 +658,11 @@ EOF
     [ "$status" -eq 0 ]
     local report_path="$TEST_PROJECT/$output"
 
-    run grep -F '# ⚠ あなたの頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ' "$report_path"
+    run grep -F '# WARNING: your frequent FAIL pattern: verdict must be binary: "PASS" or "FAIL".' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# ⚠ あなたの頻出FAIL: binary_checksの各resultに"yes"/"no"を記入' "$report_path"
+    run grep -F '# WARNING: your frequent FAIL pattern: Fill every binary_checks result with "yes" or "no".' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# ⚠ あなたの頻出FAIL: lesson_candidate.found=false時はno_lesson_reasonに理由記入' "$report_path"
+    run grep -F '# WARNING: your frequent FAIL pattern: When lesson_candidate.found=false, fill no_lesson_reason.' "$report_path"
     [ "$status" -eq 0 ]
 
     run python3 - <<EOF
@@ -672,9 +672,9 @@ lines = Path("$report_path").read_text(encoding="utf-8").splitlines()
 verdict_idx = next(i for i, line in enumerate(lines) if line.startswith('verdict: "'))
 binary_checks_idx = lines.index('binary_checks:')
 no_lesson_idx = next(i for i, line in enumerate(lines) if line.startswith('  no_lesson_reason: "'))
-assert lines[verdict_idx - 1] == '# ⚠ あなたの頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ'
-assert lines[binary_checks_idx - 1] == '# ⚠ あなたの頻出FAIL: binary_checksの各resultに"yes"/"no"を記入'
-assert lines[no_lesson_idx - 1] == '# ⚠ あなたの頻出FAIL: lesson_candidate.found=false時はno_lesson_reasonに理由記入'
+assert lines[verdict_idx - 1] == '# WARNING: your frequent FAIL pattern: verdict must be binary: "PASS" or "FAIL".'
+assert lines[binary_checks_idx - 1] == '# WARNING: your frequent FAIL pattern: Fill every binary_checks result with "yes" or "no".'
+assert lines[no_lesson_idx - 1] == '# WARNING: your frequent FAIL pattern: When lesson_candidate.found=false, fill no_lesson_reason.'
 print("OK")
 EOF
     [ "$status" -eq 0 ]
@@ -713,9 +713,9 @@ EOF
     [ "$status" -eq 0 ]
     local report_path="$TEST_PROJECT/$output"
 
-    run grep -F 'L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用' "$report_path"
+    run grep -F 'Useful because it matches the L246 return-1 trap and guided set -e caller verification' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '今回の変更では未使用。対象箇所と無関係' "$report_path"
+    run grep -F 'Not used in this task; unrelated to the target area' "$report_path"
     [ "$status" -eq 0 ]
 }
 
@@ -742,7 +742,7 @@ EOF
     [ "$status" -eq 0 ]
     local report_path="$TEST_PROJECT/$output"
 
-    run grep -F '# ⚠ あなたの頻出FAIL:' "$report_path"
+    run grep -F '# WARNING: your frequent FAIL pattern:' "$report_path"
     [ "$status" -ne 0 ]
 }
 
@@ -793,13 +793,13 @@ EOF
     [ "$status" -eq 0 ]
     local report_path="$TEST_PROJECT/$output"
 
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: learned from gate_report_format — prevents empty reason recurrence. Replace FILL_THIS with a concrete reason.' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: learned from gate_report_format — prevents empty result recurrence. Replace FILL_THIS with yes/no.' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: learned from gate_report_format — prevents empty result.summary recurrence. Replace FILL_THIS with a summary.' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: learned from gate_report_format — prevents missing files_modified recurrence. Replace FILL_THIS with the modified file list.' "$report_path"
     [ "$status" -eq 0 ]
     run grep -F 'reason: FILL_THIS' "$report_path"
     [ "$status" -eq 0 ]
@@ -979,11 +979,11 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "queue/reports/sasuke_report_cmd_999.yaml" ]
 
-    run grep -F "# Step1: Read this file" \
+    run grep -F "# Step 1: Read this file" \
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 
-    run grep -F "  # found: true/false を書け。リスト形式[] 禁止" \
+    run grep -F "  # Set found: true/false. List format [] is forbidden." \
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
     [ "$status" -eq 0 ]
 

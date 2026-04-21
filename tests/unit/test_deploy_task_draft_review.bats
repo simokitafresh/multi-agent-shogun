@@ -75,7 +75,7 @@ run_draft_review() {
     [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
     run cat "$TEST_PROJECT/logs/inbox_write_calls.log"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"gunshi draft cmd_normal レビュー依頼。通常cmd。ninja=sasuke。 review_draft karo"* ]]
+    [[ "$output" == *"gunshi Draft review requested for cmd_normal. 通常cmd. ninja=sasuke. review_draft karo"* ]]
 }
 
 @test "CI RED title skips draft review" {
