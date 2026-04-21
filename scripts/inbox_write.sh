@@ -504,10 +504,9 @@ trigger_cmd_complete_gate_background() {
         return 0
     }
 
-    (
-        bash "$gate_script" "$cmd_id" >/dev/null 2>&1 || true
-    ) &
-    echo "[inbox_write] cmd_complete_gate.sh started in background for ${cmd_id}" >&2
+    nohup bash "$gate_script" "$cmd_id" >/dev/null 2>&1 &
+    disown
+    echo "[inbox_write] cmd_complete_gate.sh started in background for ${cmd_id} (nohup+disown)" >&2
 }
 
 inbox_append_message_fast_locked() {
