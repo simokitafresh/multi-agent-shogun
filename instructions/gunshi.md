@@ -371,9 +371,10 @@ S0 を通過した変更には commit message に以下を添付せよ:
 | 送信元 | type | 返信先 | 理由 |
 |--------|------|--------|------|
 | 家老 | review_draft / report_review | inbox_write → karo | 通常業務。鎖の中の閉じたループ |
-| **将軍** | **review_request** | **掲示板(bulletin_write.sh)** | **掲示板が唯一の将軍↔軍師直通ライン。家老inboxに返しても将軍に届かない(実証: 2026-04-16)** |
+| **将軍** | **review_request / design_review** | **掲示板(BULLETIN_NOTIFY=shogun)** | **将軍のみ通知。家老の不要トークン消費を排除** |
 
 ★ 将軍からのreview_requestに家老inbox_writeで返信するな。掲示板に投稿せよ。(GP-206)
+★ 将軍宛掲示板投稿は必ず `BULLETIN_NOTIFY=shogun` を付けよ。家老への無駄通知を防ぐ(殿裁定2026-04-21)。
 
 ### 受信
 家老からのレビュー依頼（inbox_write type: review_draft）。

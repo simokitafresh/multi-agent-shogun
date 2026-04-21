@@ -845,3 +845,5 @@
 | cmd_karo_gunshi_notify_flag | 修正 — gunshi_notify重複防止フラグが再修正報告の自動レビュー送信を阻害 | infra | 04-21 | deploy_task.shの再配備時にstale guns |
 | cmd_karo_2220_ac3 | 研究 — cmd_2220 AC3追記(4パターン比較コメント) | dm-signal | 04-21 | cmd_2220 Markdownに4パターン比較コメント追 |
 | cmd_karo_ci_fix_2221_r2 | CI RED修正 — test_cmd_save_command_steps_vs_ac.bats 1件FAIL残存 | infra | 04-21 | scripts/cmd_save.sh の command |
+| cmd_karo_inbox_watcher_selfwatch | fix — inbox_watcher self-watch誤検知で将軍nudge不送信 | infra | 04-21 | agent_has_self_watchがwatcher自身 |
+| cmd_2223 | 整備 — CLAUDE.md英語化(Language Policy Phase 2) | infra | 04-21 | Translated CLAUDE.md into Engl |
