@@ -143,11 +143,16 @@ print(entry_id)
 PY
 } 200>"$LOCK_FILE"
 
-# --- 投稿者以外の将軍・家老・軍師に自動通知 ---
+# --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
 if [[ -f "$INBOX_WRITE" ]]; then
-    # 通知先: 将軍+家老+軍師（投稿者自身は除外）
-    NOTIFY_TARGETS=("shogun" "karo" "gunshi")
+    # BULLETIN_NOTIFY: 環境変数で通知先を限定可能(カンマ区切り)
+    # 未指定時は将軍+家老+軍師の全3者
+    if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
+        IFS=',' read -ra NOTIFY_TARGETS <<< "$BULLETIN_NOTIFY"
+    else
+        NOTIFY_TARGETS=("shogun" "karo" "gunshi")
+    fi
     # GP-208: 掲示板全文をinboxに含める。80文字要約→全文。
     # 理由: 通知だけでは読みに行く行動は強制できない。
     # inboxを読む行動は既に強制されている(startup gate+stop hook)。
