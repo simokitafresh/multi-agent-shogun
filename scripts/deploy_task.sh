@@ -1755,8 +1755,8 @@ task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
 
 DEDUP_THRESHOLD = 0.25
-USEFUL_RATE_THRESHOLD = 0.15  # useful_rate below this → score decay
-USEFUL_RATE_DECAY = 0.5       # multiplier for low useful_rate lessons
+USEFUL_RATE_THRESHOLD = 0.30  # useful_rate below this → score decay (0.15→0.30: 忍者成長速度改善3)
+USEFUL_RATE_DECAY = 0.3       # multiplier for low useful_rate lessons (0.5→0.3: より積極的に低有効教訓を退場)
 
 def tech_terms(text):
     '''技術用語のみ抽出（日本語テキスト対応）'''
@@ -2272,8 +2272,8 @@ try:
     # cmd_karo_gp196: AC1 — MAX_INJECT=3 総合注入上限（universalは内数）
     MAX_INJECT = 3
 
-    # cmd_1457: universal教訓の準備（max 2、helpful_count上位）— task-specificに最低3枠確保
-    MAX_UNIVERSAL = 2
+    # cmd_1457: universal教訓の準備（max 1、helpful_count上位）— task-specificに最低2枠確保(忍者成長速度改善1: 2→1)
+    MAX_UNIVERSAL = 1
     universal_total_count = len(universal_lessons)
     universal_lessons.sort(key=lambda l: -(l.get('helpful_count', 0) or 0))
     universal_lessons = universal_lessons[:MAX_UNIVERSAL]

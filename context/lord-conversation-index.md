@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-21T13:47:56+09:00 -->
+<!-- generated_at: 2026-04-21T14:12:01+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-21T14:12:01+09:00 | terminal | response | gistにアップロードする。 [meta] stop_reason=tool_use
+- 2026-04-21T14:09:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:58:19|CI緑: run 24704523152
+- 2026-04-21T14:04:11+09:00 | terminal | inbound | 記事は将軍が書く。いつもそうやっていたよね。追体験できる記事がいいね。たくさんの記事を将軍は書いてきた。
+- 2026-04-21T14:00:43+09:00 | terminal | inbound | 現在の本番DBにある21体＋21体のL2と、今回作成した新しいL2の42体を比較した記事を作成してgistで共有して。具体的な実数値とアルファ6項目、検証の4パターン＋レジーム分析も加えてほしい
+- 2026-04-21T13:54:26+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:45:15|cmd_karo_gate_wait 2026-04-21 13:46:32|cmd_2208
 - 2026-04-21T13:47:56+09:00 | terminal | response | 記録完了。`context/l2-okugi-progress.md`にWF L2 SS+AS両系統のchampion選出結果を追記した。 [meta] stop_reason=tool_use
 - 2026-04-21T13:46:49+09:00 | terminal | inbound | 記録しておいて
 - 2026-04-21T13:41:21+09:00 | terminal | response | 殿、WF L2 両系統のchampion選出結果を報告する。 ## SS系統（シンBB×シン忍法21体） — 82秒で完走 | 忍法 | CAGR champion | NHF champion | MaxDD champion | |-…
 - 2026-04-21T13:40:19+09:00 | terminal | inbound | l2の結果はどうだったんだっけ？
 - 2026-04-21T13:38:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:25:51|cmd_karo_lk086_update 2026-04-21 13:35:38|CI緑: run 24703920048 2026-04-21 13:35:51|cmd_22…
-- 2026-04-21T13:38:21+09:00 | ntfy | outbound | 【家老】cmd_2208 初回配備開始 (title=修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能), ninja=hayate) 修正 📋 https://gist.github.com/simokit…
-- 2026-04-21T13:38:14+09:00 | terminal | response | cmd_2208委任完了。 殿、両cmd配備済み。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2209 | awk regex修正 | **GATE CLEAR** | | cmd_220…
-- 2026-04-21T13:36:50+09:00 | terminal | inbound | 進捗を確認しよう
-- 2026-04-21T13:35:09+09:00 | ntfy | outbound | 【家老】cmd_karo_gate_wait 初回配備開始 (title=cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証, ninja=saizo) cmd_c…
-- 2026-04-21T13:29:54+09:00 | ntfy | outbound | 【家老】cmd_2209 初回配備開始 (title=修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗, ninja=hayate) 修正 📋 https://gist.github.com/simok…
 
 ## 未解決確認事項
 - 進捗を確認しよう
@@ -36,7 +36,6 @@
 - 2026-04-21T09:16:38+09:00 | 記録完了。l3-robustness.md §8.12を更新。 内容: - SS系統6/7 GATE CLEAR + 速度実測データ(4.6倍速) - kawarimi verifyバグの経緯(FAIL→現物確認→殿指摘→バグ修正cmd) - 次ステップ(cmd_2197→ch…
 
 ## 参照cmd
-- cmd_2
 - cmd_2129
 - cmd_2159
 - cmd_2160
@@ -66,6 +65,7 @@
 - cmd_2202
 - cmd_2203
 - cmd_2204
+- cmd_2205
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
