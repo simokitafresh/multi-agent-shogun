@@ -339,6 +339,27 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
+## Bulletin Board Notification Targeting (全エージェント共通)
+
+掲示板投稿時、全員共有でなければ `BULLETIN_NOTIFY` で通知先を限定せよ。不要通知のトークン消費を排除する。
+
+```bash
+# 特定エージェントのみ通知（カンマ区切り）
+BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "将軍宛回答"
+BULLETIN_NOTIFY=shogun,gunshi bash scripts/bulletin_write.sh karo "将軍+軍師宛"
+
+# 未指定 = 従来通り全3者(shogun+karo+gunshi)
+bash scripts/bulletin_write.sh karo "全員共有の内容"
+```
+
+判断基準: 「この投稿を読む必要があるのは誰か？」→ 該当者のみ指定。
+
+## File Reading Rule (全エージェント共通)
+
+80行未満のファイルは全文読め。80行以上は先頭40行+末尾40行を読め。
+例外: deepdive(Phase単位逐次読込)、context/*.md(§セクション指定読み)。
+根拠: 日本語YAML 80行≈2,400トークン。Lost in the Middle劣化開始(2,600tok)直前。
+
 ## File Operation Rule
 
 **Always Read before Write/Edit.** Claude Code rejects Write/Edit on unread files.
