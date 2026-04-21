@@ -54,13 +54,15 @@ build_file_cache() {
         [ -d "${base}/docs/research" ] || continue
         while IFS= read -r filepath; do
             FILE_CACHE["$filepath"]=1
-        done < <(find "${base}/docs/research" -type f 2>/dev/null)
+        done < <(find "${base}/docs/research" \( -type f -o -type d \) 2>/dev/null)
     done
 }
 
 ref_exists_in_base() {
     local base_dir="$1"
     local ref="$2"
+    # 末尾スラッシュを除去(ディレクトリ参照対応)
+    ref="${ref%/}"
     if is_glob_ref "$ref"; then
         compgen -G "${base_dir}/${ref}" > /dev/null
     else
@@ -156,6 +158,7 @@ main() {
         check_ref_record "$context_file" "$line_no" "$raw_ref"
     done < <(
         rg -n -o --with-filename --no-heading 'docs/research/[A-Za-z0-9_./*-]+' "${context_files[@]}" 2>/dev/null \
+            | grep -v 'XXX\|YYY\|ZZZ\|{.*}' \
             | awk -F: '{
                 file = $1
                 line = $2
