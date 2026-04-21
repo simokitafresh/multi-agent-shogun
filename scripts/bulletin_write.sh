@@ -96,7 +96,7 @@ for existing in entries:
         print(f"DEDUP: 同一内容の掲示板エントリが既存 ({existing.get('id')})")
         sys.exit(0)
 
-entries.append({
+entries.insert(0, {
     "id": entry_id,
     "content": content,
     "posted_by": posted_by,
