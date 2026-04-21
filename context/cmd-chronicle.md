@@ -839,3 +839,4 @@
 | cmd_2214 | 研究 — WFシン四神championの各foldパーセンタイル安定性検証 | dm-signal | 04-21 | WFシン四神12体のglobal fold percenti |
 | cmd_2215 | 研究 — WF ALM四神 α6指標top安定性検証(計算期間3M短縮) | dm-signal | 04-21 | WF ALM四神4ファミリーの6objectiveについて、 |
 | cmd_2216 | 整備 — 長期ロバストネス検証方法カタログ作成 | dm-signal | 04-21 | 7手法の長期ロバストネス検証カタログを新規作成し、cmd_2 |
+| cmd_2221 | 修正 — scripts/cmd_save.sh バンドル検出のcommandスキャンバグ | infra | 04-21 | cmd_save.sh のバンドル検出で command フ |
