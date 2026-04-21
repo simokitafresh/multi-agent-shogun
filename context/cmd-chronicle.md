@@ -816,3 +816,4 @@
 | cmd_2191 | 研究 — WF L2 GS kasoku_ratio(SS系統): wf_l2_ss_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_ratio |
 | cmd_2192 | 研究 — WF L2 GS nukimi(SS系統): wf_l2_ss_21体でnukimi忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでnukimi GSをexi |
 | cmd_2194 | 研究 — WF L2 GS oikaze(SS系統): wf_l2_ss_21体でoikaze忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでoikaze GSをexi |
+| cmd_karo_auto_draft_review | deploy_task.shにdraftレビュー自動送信を追加 | infra | 04-21 | deploy_task.sh に draft review |
