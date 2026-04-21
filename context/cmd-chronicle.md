@@ -822,3 +822,4 @@
 | cmd_karo_ci_fix_draft_review | CI RED修正 — test deploy draft_review送信テスト修正 | infra | 04-21 | draft review CI失敗の根因を特定し、並列テスト |
 | cmd_2199 | 研究 — WF L2 GS bunshin(AS系統): wf_l2_as_21体でbunshin忍法GS実行 | dm-signal | 04-21 | WF L2 AS bunshin GSを完了。exit 0 |
 | cmd_2200 | 研究 — WF L2 GS kasoku_diff(AS系統): wf_l2_as_21体でkasoku_diff忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkasoku_di |
+| cmd_2201 | 研究 — WF L2 GS kasoku_ratio(AS系統): wf_l2_as_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkasoku_ra |
