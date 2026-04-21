@@ -834,3 +834,4 @@
 | cmd_2208 | 修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能) | infra | 04-21 | cmd_2209で先行反映済みのWARN経路統一を現物確認し |
 | cmd_karo_pipeline_verify | 検証 — 自動パイプライン全段動作確認(draftレビュー→report_review→GATE→bulletin) | infra | 04-21 | context/senkyoku-log.md に cmd_ |
 | cmd_2211 | 偵察 — WF四神の本番fullrecalculate計算可能性調査 | dm-signal | 04-21 | 既存四神の保存実体を特定。シン四神pipeline_conf |
+| cmd_2212 | 修正 — scripts/cmd_save.sh Check 22 AC数検出バグ | infra | 04-21 | Check 22のAC件数カウントを acceptance_ |
