@@ -735,5 +735,48 @@ SS=攻撃力(CAGR/NHF)、AS=防御力(MaxDD)の傾向。ただしASはデータ�
   - cmd_2203 kawarimi: PASS (cmd_2197 verify修正済み。SS系統と違いFAILなし)
   - cmd_2204 oikaze: PASS
   - cmd_2205 yotsume: PASS
-- **次ステップ**: AS系統champion_selector統合cmd → WF L2両系統完成
-- SS+AS見通し: 旧推定108min → 実測ベース24min (+配備/clear 14min = **38min**)
+- **WF L2両系統完成**: cmd_2198(SS champion) + cmd_2207(AS champion) 共にGATE CLEAR
+- SS+AS合計: 旧推定108min → 実測24min (+配備14min = **38min**)
+
+### 8.13 WF四神 本番登録計画 (2026-04-21 殿裁定)
+
+**命名規則(殿裁定+本番DB現物確認済み):**
+- L0: wfシン{家名}-{モード} / wfALM{家名}-{モード}
+- L1: wfシン{忍法名}-{モード} / wfALM{忍法名}-{モード}
+- L2: 奥義-wfSSS-{忍法名}-{モード} / 奥義-wfASS-{忍法名}-{モード}
+- 本番DB実態: L2は`奥義-SSS-`形式(ドキュメントの`奥義シンシン-`とは異なる。cmd_2213で修正済み)
+
+**偵察結果(cmd_2211 GATE CLEAR):**
+- WFシン四神: pattern_idは本番DBに直接フィールドなし → `pipeline_config.gs_metadata`にprovenance保持
+- WF ALM四神: 既存`alm_config.is_window_months`で設定可能(直接)
+- 安全手順: 新名称+新UUID+hide_portfolio=true+merge save+readback検証+visibility切替
+
+**本番DB現物(186体)**: 2026-04-21将軍が本番APIで全PF名取得し確認済み
+
+### 8.14 WFシン四神 ロバストネス検証結果 (cmd_2214 GATE CLEAR)
+
+殿仮説「ランダム(50%)より上位なら信頼できる」の検証。
+WFシン四神champion 12体の各foldパーセンタイル(191,796パターン中):
+- **全体中央値72.5%** — 上位約27%
+- **11/12体が中央値50%超**(ランダムより上位)
+- DM2が最安定(中央値81-89%)。DM7P/DM6鉄壁はギリギリ(48-56%)
+- 詳細: `outputs/analysis/wf_l0_shijin/cmd_2214_wf_shin_body_summary.csv`
+
+### 8.15 WF ALM四神 α6指標top安定性 (cmd_2215 GATE CLEAR)
+
+計算期間3M短縮時のtop10/50入替わり率(Jaccard係数):
+- **最もロバスト**: UWP(0.837) > MaxDD(0.775) > NHF(0.719)
+- **最も不安定**: CAGR(0.497)
+- DM7Pが最安定(3指標でJaccard=1.0)
+- **含意**: リスク系指標(MaxDD/UWP/NHF)で選出したchampionは長期安定。CAGR単独は陳腐化リスク高
+- 詳細: `outputs/analysis/wf_l0_shijin/cmd_2215_metric_stability_summary.csv`
+
+### 8.16 長期ロバストネス検証カタログ (cmd_2216 GATE CLEAR)
+
+7手法を体系化: → `context/robustness-verification-catalog.md`
+デケイ/Vintage/近傍/ストレス/foldパーセンタイル/α6top安定性/レジーム
+
+### 8.17 L1ロバストネス横断比較 (cmd_2217-2220 進行中)
+
+殿仮説「不安定なものがレイヤーを重ねることでロバストになる可能性がある」の検証。
+4パターン: シン忍法(2217 CLEAR)/ALM忍法(2218 CLEAR)/wfシン忍法(2219進行中)/wfALM忍法(2220 failed→AC3未達、再配備必要)
