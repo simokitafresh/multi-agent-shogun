@@ -137,3 +137,22 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK"* ]]
 }
+
+@test "非数字cmd境界: 次cmdのstatusを誤読せずPASS" {
+    cat > "$QUEUE_FILE" <<YAML
+commands:
+  cmd_prev:
+    title: "status未記入の前回cmd"
+  cmd_training_next:
+    status: pending
+YAML
+    echo "cmd_prev" > "$CMD_SAVE_LAST_CMD_FILE"
+    CMD_ID="cmd_new"
+    export CMD_ID BLOCK_COUNT
+
+    run check_prev_cmd_pending
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK"* ]]
+}

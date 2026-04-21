@@ -120,7 +120,7 @@ load_cmd_block() {
 
     CMD_BLOCK=$(awk -v cmd_id="$CMD_ID" '
         $0 == "  " cmd_id ":" { found = 1; next }
-        found && /^  cmd_[0-9]+:/ { exit }
+        found && /^  cmd_[^:]+:/ { exit }
         found { print }
     ' "$QUEUE_FILE")
 
@@ -738,7 +738,7 @@ if [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]]; then
     if [[ -n "$_PREV_CMD_ID" && "$_PREV_CMD_ID" != "$CMD_ID" ]]; then
         _PREV_STATUS=$(awk -v cmd_id="$_PREV_CMD_ID" '
             $0 == "  " cmd_id ":" { found=1; next }
-            found && /^  cmd_[0-9]+:/ { exit }
+            found && /^  cmd_[^:]+:/ { exit }
             found && /^[[:space:]]+status:[[:space:]]/ {
                 gsub(/^[[:space:]]+status:[[:space:]]*/, "")
                 gsub(/"/, "")
@@ -1295,7 +1295,7 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     NEW_GP=$(echo "$NEW_CMD_LINE" | grep -oE 'GP-[0-9]+' | sort -u || true)
 
     if [[ -n "$NEW_GP" ]]; then
-        RECENT_CMDS=$(grep -oE "^  cmd_[0-9]+:" "$QUEUE_FILE" | sed 's/: *$//; s/^ *//' | tail -20 | grep -v "^${CMD_ID}$" || true)
+        RECENT_CMDS=$(grep -oE "^  cmd_[^:]+:" "$QUEUE_FILE" | sed 's/: *$//; s/^ *//' | tail -20 | grep -v "^${CMD_ID}$" || true)
 
         if [[ -n "$RECENT_CMDS" ]]; then
             while IFS= read -r OTHER_CMD; do
