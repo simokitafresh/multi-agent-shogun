@@ -815,3 +815,4 @@
 | cmd_2190 | 研究 — WF L2 GS kasoku_diff(SS系統): wf_l2_ss_21体でkasoku_diff忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_diff G |
 | cmd_2191 | 研究 — WF L2 GS kasoku_ratio(SS系統): wf_l2_ss_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_ratio |
 | cmd_2192 | 研究 — WF L2 GS nukimi(SS系統): wf_l2_ss_21体でnukimi忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでnukimi GSをexi |
+| cmd_2194 | 研究 — WF L2 GS oikaze(SS系統): wf_l2_ss_21体でoikaze忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでoikaze GSをexi |
