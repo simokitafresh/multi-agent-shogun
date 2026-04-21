@@ -825,3 +825,5 @@
 | cmd_2201 | 研究 — WF L2 GS kasoku_ratio(AS系統): wf_l2_as_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkasoku_ra |
 | cmd_2203 | 研究 — WF L2 GS kawarimi(AS系統): wf_l2_as_21体でkawarimi忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkawarimi |
 | cmd_2205 | 研究 — WF L2 GS yotsume(AS系統): wf_l2_as_21体でyotsume忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでyotsume G |
+| cmd_2207 | 研究 — WF L2 AS系統 champion_selector統合: 7忍法GSからchampion事後選出 | dm-signal | 04-21 | wf_l2_as 配下の7忍法 monthly CSV/ca |
+| cmd_karo_auto_review_gate | inbox_write.shにreport_review自動送信+GATE自動実行を追加 | infra | 04-21 | report_received→report_review自 |
