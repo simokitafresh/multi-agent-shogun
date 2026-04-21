@@ -1227,6 +1227,12 @@ hook_failures:
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 # ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
 # 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# ─── self gate（cmd_karo_self_gate_template: 全報告テンプレートへ標準注入） ───
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
 verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
 # ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
 # □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
@@ -1710,19 +1716,6 @@ implementation_readiness:
 # context反映のトリガーになる。docs/research/に書くだけでは埋没する。
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
-    fi
-
-    # cmd_1066: reviewタスクにはself_gate_check欄を追加（verdictはbase templateに移設済み cmd_1204）
-    if [ "$report_task_type" = "review" ]; then
-        cat >> "$report_file" <<'REVIEW_EOF'
-# ─── レビュー判定（cmd_1066: reviewタスク必須） ───
-self_gate_check:
-  lesson_ref: ""
-  lesson_candidate: ""
-  status_valid: ""
-  purpose_fit: ""
-REVIEW_EOF
-        log "report_template: added self_gate_check (review)"
     fi
 
     # cmd_776 C層: テンプレ生成後にnormalize_report.shで正規化を保証

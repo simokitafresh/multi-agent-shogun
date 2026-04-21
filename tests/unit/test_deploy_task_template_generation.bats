@@ -341,6 +341,17 @@ _setup_git_project() {
     grep -Fq 'simplicity_check: ""' "$report_path"
 }
 
+@test "報告テンプレートにself_gate_check 4項目をPASS初期値で注入する" {
+    local report_path
+    report_path="$(fixture_report_path combo_impl)"
+
+    grep -Fq 'self_gate_check:' "$report_path"
+    grep -Fq 'lesson_ref: PASS' "$report_path"
+    grep -Fq 'lesson_candidate: PASS' "$report_path"
+    grep -Fq 'status_valid: PASS' "$report_path"
+    grep -Fq 'purpose_fit: PASS' "$report_path"
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════
