@@ -1530,11 +1530,11 @@ check_ac_file_paths() {
     local HAS_CREATABLE=false
     while IFS= read -r fpath; do
         [[ -z "$fpath" ]] && continue
-        if [[ ! -e "$PROJECT_WD/$fpath" ]]; then
+        if [[ ! -e "$PROJECT_WD/$fpath" ]] && [[ ! -e "$PROJECT_DIR/$fpath" ]]; then
             local parent_dir
             parent_dir=$(dirname "$fpath")
 
-            if [[ -d "$PROJECT_WD/$parent_dir" ]]; then
+            if [[ -d "$PROJECT_WD/$parent_dir" ]] || [[ -d "$PROJECT_DIR/$parent_dir" ]]; then
                 if [[ "$HAS_CREATABLE" == false ]]; then
                     echo "INFO: AC内の未作成ファイルは親ディレクトリが存在するため作成対象として扱います:" >&2
                     HAS_CREATABLE=true
