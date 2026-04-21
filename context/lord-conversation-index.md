@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-21T13:41:22+09:00 -->
+<!-- generated_at: 2026-04-21T13:47:56+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-21T13:47:56+09:00 | terminal | response | 記録完了。`context/l2-okugi-progress.md`にWF L2 SS+AS両系統のchampion選出結果を追記した。 [meta] stop_reason=tool_use
+- 2026-04-21T13:46:49+09:00 | terminal | inbound | 記録しておいて
 - 2026-04-21T13:41:21+09:00 | terminal | response | 殿、WF L2 両系統のchampion選出結果を報告する。 ## SS系統（シンBB×シン忍法21体） — 82秒で完走 | 忍法 | CAGR champion | NHF champion | MaxDD champion | |-…
 - 2026-04-21T13:40:19+09:00 | terminal | inbound | l2の結果はどうだったんだっけ？
 - 2026-04-21T13:38:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-21 13:25:51|cmd_karo_lk086_update 2026-04-21 13:35:38|CI緑: run 24703920048 2026-04-21 13:35:51|cmd_22…
@@ -12,8 +14,6 @@
 - 2026-04-21T13:36:50+09:00 | terminal | inbound | 進捗を確認しよう
 - 2026-04-21T13:35:09+09:00 | ntfy | outbound | 【家老】cmd_karo_gate_wait 初回配備開始 (title=cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証, ninja=saizo) cmd_c…
 - 2026-04-21T13:29:54+09:00 | ntfy | outbound | 【家老】cmd_2209 初回配備開始 (title=修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗, ninja=hayate) 修正 📋 https://gist.github.com/simok…
-- 2026-04-21T13:29:18+09:00 | terminal | response | PASS。pending昇格→委任。 [meta] stop_reason=tool_use
-- 2026-04-21T13:27:51+09:00 | terminal | inbound | 先に単独修正をしよう
 
 ## 未解決確認事項
 - 進捗を確認しよう

@@ -236,6 +236,47 @@ GS実行残量: **0本(全完了)** — cmd_1877で全52ブロック完了(2026-
 - 2026-04-13 06:18 ④4-5 kawarimi WF選出 ✅(hanzo, cmd_1877_block_36)
 - 2026-04-13 05:12 ④4-2 oikaze WF選出 ✅(hayate, cmd_1877_block_33)
 
+## WF L2 SS+AS系統 GS+Champion統合 (cmd_2189-2207, 2026-04-21完遂)
+
+2×2因子分析マトリクスの⑤⑥列（ALM-BB×シン忍法）でWF動的選出用のGS実行+champion事後選出。
+道具磨き(cmd_2181-2187: メモリ最適化)の副次効果で4.6倍高速化。1忍法1CMD×直列配備(OOM対策)。
+
+### SS系統（wf_l2_ss: シンBB×シン忍法21体, 142ヶ月）
+
+| 忍法 | CAGR champion | NHF champion | MaxDD champion |
+|------|:---:|:---:|:---:|
+| kasoku_ratio | **137.5%** | 78.0% | 7.3% |
+| kasoku_diff | **134.9%** | 78.0% | 7.5% |
+| nukimi | 126.1% | 79.7% | 7.8% |
+| kawarimi | 117.1% | **82.9%** | **6.9%** |
+| oikaze | 115.1% | 75.9% | 8.5% |
+| yotsume | 112.6% | 78.3% | 8.4% |
+| bunshin | 96.6% | 78.2% | 7.5% |
+
+成果物: `outputs/grid_search/wf_l2_ss/l2ss_wf_l2_ss_champions.json` (82秒)
+cmd: cmd_2189-2195(GS 7忍法), cmd_2198(champion統合)
+
+### AS系統（wf_l2_as: ALM-BB×シン忍法21体, 112ヶ月）
+
+| 忍法 | CAGR champion | NHF champion | MaxDD champion |
+|------|:---:|:---:|:---:|
+| kasoku_diff | **163.5%** | 77.9% | 6.9% |
+| kasoku_ratio | **143.2%** | **82.0%** | 7.9% |
+| nukimi | 124.4% | 77.6% | 8.4% |
+| oikaze | 120.0% | 75.7% | 10.3% |
+| kawarimi | 112.4% | 80.8% | **6.8%** |
+| yotsume | 107.3% | 75.2% | 9.7% |
+| bunshin | 96.0% | 77.7% | 9.0% |
+
+成果物: `outputs/grid_search/wf_l2_as/l2as_wf_l2_as_champions.json` (20秒)
+cmd: cmd_2199-2205(GS 7忍法), cmd_2207(champion統合)
+
+### 両系統の傾向
+- CAGR: kasoku_diff/kasoku_ratioが両系統で首位。AS kasoku_diff **163.5%** が最高値
+- NHF: kawarimi SS(82.9%), kasoku_ratio AS(82.0%)が突出
+- MaxDD: kawarimi が両系統最小(SS 6.9%, AS 6.8%)
+- AS系統はSS系統より処理4倍速(期間差: 112ヶ月 vs 142ヶ月)
+
 ## L3 β調整分析
 
 | cmd | 内容 | 結果 | 成果物 |

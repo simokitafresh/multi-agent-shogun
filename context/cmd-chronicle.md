@@ -830,3 +830,5 @@
 | cmd_karo_self_gate_template | deploy_task.shのreportテンプレートにself_gate_check 4項目を自動注入 | infra | 04-21 | deploy_task.shの報告テンプレートへself_g |
 | cmd_karo_lk086_update | LK086+karo.md更新 — report_review自動化に伴う3アクション→2アクションへ | infra | 04-21 | LK086を2アクション運用へ更新し、AC2はinstruc |
 | cmd_2209 | 修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗 | infra | 04-21 | cmd_save.sh の cmd 境界判定を非数字 cmd |
+| cmd_karo_gate_wait | cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証 | infra | 04-21 | cmd_complete_gate の GATE CLEAR |
+| cmd_2208 | 修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能) | infra | 04-21 | cmd_2209で先行反映済みのWARN経路統一を現物確認し |
