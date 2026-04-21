@@ -8,9 +8,10 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     # check_ac_param_sufficiency: Check 13 — 関数をそのまま抽出
     eval "$(sed -n '/^check_ac_param_sufficiency()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f check_ac_param_sufficiency
+    export -f record_warn_reason check_ac_param_sufficiency
 }
 
 setup() {
