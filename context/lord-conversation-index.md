@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-22T03:06:53+09:00 -->
+<!-- generated_at: 2026-04-22T03:11:28+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-22T03:11:27+09:00 | terminal | response | **cmd_2228 GATE CLEAR。** Vintage 2020分析完了。 inbox 2件は両方cmd_2228のGATE CLEAR通知。処理済み。 殿、Vintage 2022(FRB利���げ)と2026(直近)���起…
+- 2026-04-22T03:08:47+09:00 | terminal | response | 全ファイル生成済み。summaryを読む。 [meta] stop_reason=tool_use
+- 2026-04-22T03:08:08+09:00 | terminal | inbound | 他に知見はないか？
+- 2026-04-22T03:07:16+09:00 | ntfy | outbound | 【kagemaru】cmd_2228_summary_commit GATE PASS。vintage_2020_summary.md + commit SHA 742337c1 完了。idle。
 - 2026-04-22T03:06:52+09:00 | terminal | response | 完了。 **GP-216対応まとめ:** - **修正**: cmd_save.sh Check 20 — assumptions parserがsource/trustだけでなく全フィールド(tool_verified/csv_path…
 - 2026-04-22T03:04:05+09:00 | terminal | inbound | 2をやろう
 - 2026-04-22T02:59:35+09:00 | terminal | response | 殿、報告する。 **cmd_2228 Vintage 2020 — 進行中。** | タスク | 忍者 | 状態 | |--------|------|------| | cmd_2228_ss (wf-SSS) | saizo | **…
 - 2026-04-22T02:59:05+09:00 | terminal | inbound | どうなった？
 - 2026-04-22T02:08:38+09:00 | terminal | response | environment_change追加。 [meta] stop_reason=tool_use
 - 2026-04-22T02:08:12+09:00 | terminal | inbound | 続けて
-- 2026-04-22T02:03:43+09:00 | terminal | inbound | 進めてよい
-- 2026-04-22T02:03:16+09:00 | terminal | response | 殿、報告する。 **cmd_2227 GATE CLEAR。** Vintage分析パイプライン雛形(道具磨き)完了。hayateが完遂。 **新たな動き:** 軍師が家老をCodex(GPT-5.4)に切替完了。settings.yam…
-- 2026-04-22T02:02:45+09:00 | terminal | inbound | 続けよう
-- 2026-04-22T02:00:10+09:00 | ntfy | outbound | 【軍師】karo Codex切替実行完了。GPT-5.4稼働中。Recovery進行中(CTX:20%,active)
 
 ## 未解決確認事項
 - 完了。 **GP-216対応まとめ:** - **修正**: cmd_save.sh Check 20 — assumptions parserがsource/trustだけでなく全フィールド(tool_verified/csv_paths等)をキャプチャし、パス実在確認 - …
