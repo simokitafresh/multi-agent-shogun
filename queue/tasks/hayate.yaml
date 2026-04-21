@@ -1,16 +1,11 @@
 task:
-  _ac_task_id: cmd_2208_impl
+  _ac_task_id: cmd_karo_pipeline_verify_impl
   _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 7d010443
+  ac_version: d41d8cd9
   acceptance_criteria:
-  - 'AC1: cmd_save.sh内の全WARN_COUNT加算箇所がrecord_warn_reason経由に統一されている(bare WARN_COUNT++がゼロ)'
-  - 'AC2: テストcmdでWARN発生時にcmd_design_quality.yamlのcmd_save_warnエントリにnotes欄が記録される'
-  - 'AC3: 既存batsテスト全PASS'
+  - 'AC1: senkyoku-log.mdに1行追記されていること'
   description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L481: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit\
-    \ 1でスクリプト全体が異常終了する。grep pattern file\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
-    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n────────────────────────────────────────"
+    \ 1でスクリプト全体が異常終了する。grep pattern file\n────────────────────────────────────────"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -24,20 +19,17 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_2208
+  parallel_ok: []
+  parent_cmd: cmd_karo_pipeline_verify
   project: infra
-  report_filename: hayate_report_cmd_2208.yaml
-  report_path: queue/reports/hayate_report_cmd_2208.yaml
+  report_filename: hayate_report_cmd_karo_pipeline_verify.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_pipeline_verify.yaml
   scout_exempt: true
   status: done
   stop_for: []
-  target_path: scripts/cmd_save.sh
+  target_path: context/senkyoku-log.md
   target_path_warning: '⚠ target_pathが存在しない: outputs/grid_search/wf_l2_as'
-  task_id: cmd_2208_impl
+  task_id: cmd_karo_pipeline_verify_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
@@ -99,4 +91,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  deployed_at: "2026-04-21T13:38:20"
+  deployed_at: "2026-04-21T14:13:24"

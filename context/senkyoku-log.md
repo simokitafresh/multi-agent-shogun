@@ -738,3 +738,4 @@
 - 2026-04-20 cmd_2182-2187: 6忍法CoDDメモリ+速度横展開(kasoku_ratio/nukimi/oikaze/kawarimi/yotsume/bunshin)。6/7 GATE CLEAR。kawarimi稼働中。kasoku_ratioも既に移植済み(軍師発見)。軍師がgate偽陽性3件を自走修正(バンドルCLI除外+Check17数値緩和+Check18 scout_exempt提案)
 - 2026-04-20 週報作成: 2026-04-20_weekly.md生成。API+Grok x_search使用。全検証PASS
 - 2026-04-20 殿指摘3連: 「gateの警告を無視するな」→「WARNの度にも即時強くなれ」→「自動で学習ループを回す仕組みは？」→environment_change自動検証(cmd_2173)に到達
+- 2026-04-21 cmd_karo_pipeline_verify: 疾風。`context/senkyoku-log.md` へ履歴1行を追記し、パイプライン検証cmdの記録を一次データへ反映
