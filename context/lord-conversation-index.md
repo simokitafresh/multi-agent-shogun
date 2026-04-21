@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-22T01:20:30+09:00 -->
+<!-- generated_at: 2026-04-22T02:08:38+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-04-22T01:20:29+09:00 | terminal | response | **PASS。** pending昇格→委任。 [meta] stop_reason=tool_use
-- 2026-04-22T01:15:24+09:00 | terminal | inbound | 止まってるぞ？バグか？
-- 2026-04-22T01:14:32+09:00 | terminal | response | 不足フィールドを全て追加する。 [meta] stop_reason=tool_use
-- 2026-04-22T01:13:03+09:00 | terminal | inbound | 続けて
-- 2026-04-22T01:12:11+09:00 | terminal | response | 次はcmd_2227。設計書§3-§5に基づいて道具磨きcmdを書く。 [meta] stop_reason=tool_use
-- 2026-04-22T01:10:21+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 00:57:52|cmd_karo_ci_fix_gp199 2026-04-22 00:58:29|cmd_2225 2026-04-22 01:00:56|cmd_2226
-- 2026-04-22T01:10:07+09:00 | terminal | inbound | Vintage分析の道具磨きだけまずやろう
-- 2026-04-22T01:08:14+09:00 | terminal | response | テスト実行して確認する。 [meta] stop_reason=tool_use
-- 2026-04-22T01:06:33+09:00 | terminal | inbound | 時系列を確認しないのはバグだよね？タイムスタンプの重要性は周知しているし、因果について起動時に読み込んでるから。バグは修正しよう
-- 2026-04-22T01:05:27+09:00 | terminal | response | **永続化されていた。** `docs/research/vintage_analysis_design_20260421.md` — 105行、殿の言葉の引用・3vintage設計・パイプライン・リスク・CSV命名・ACチェックリストま…
+- 2026-04-22T02:08:38+09:00 | terminal | response | environment_change追加。 [meta] stop_reason=tool_use
+- 2026-04-22T02:08:12+09:00 | terminal | inbound | 続けて
+- 2026-04-22T02:03:43+09:00 | terminal | inbound | 進めてよい
+- 2026-04-22T02:03:16+09:00 | terminal | response | 殿、報告する。 **cmd_2227 GATE CLEAR。** Vintage分析パイプライン雛形(道具磨き)完了。hayateが完遂。 **新たな動き:** 軍師が家老をCodex(GPT-5.4)に切替完了。settings.yam…
+- 2026-04-22T02:02:45+09:00 | terminal | inbound | 続けよう
+- 2026-04-22T02:00:10+09:00 | ntfy | outbound | 【軍師】karo Codex切替実行完了。GPT-5.4稼働中。Recovery進行中(CTX:20%,active)
+- 2026-04-22T01:56:30+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 01:48:33|CI緑: run 24734374584
+- 2026-04-22T01:41:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 01:34:31|cmd_2227
+- 2026-04-22T01:25:40+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 01:11:11|CI緑: run 24732659721
+- 2026-04-22T01:21:34+09:00 | ntfy | outbound | 【家老】cmd_2227 初回配備開始 (title=research-tool — Vintage分析パイプライン雛形作成(道具磨き), ninja=hayate) research-tool 📋 https://gist.github…
 
 ## 未解決確認事項
 - テスト実行して確認する。 [meta] stop_reason=tool_use
@@ -48,12 +48,12 @@
 - cmd_2216
 - cmd_2217
 - cmd_2218
-- cmd_2219
 - cmd_2221
 - cmd_2223
 - cmd_2224
 - cmd_2225
 - cmd_2226
+- cmd_2227
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
