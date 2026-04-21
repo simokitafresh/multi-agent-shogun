@@ -50,7 +50,7 @@ EOF
 
     run_clarity_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *"command 10行に対してAC 1件"* ]]
+    [[ "$output" == *"has 1 ACs for a 10-line command"* ]]
 }
 
 @test "task clarity: warns when command references missing file paths" {
@@ -98,7 +98,7 @@ EOF
 
     run_clarity_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *"ACに「確認」「検証」が含まれない"* ]]
+    [[ "$output" == *"ACs do not include confirm/verify wording"* ]]
 }
 
 @test "task clarity: stays quiet when command is concise, paths exist, and AC includes 確認" {
@@ -112,9 +112,9 @@ commands:
       scripts/deploy_task.sh を確認せよ
     acceptance_criteria:
       - id: AC1
-        description: "動作確認を実施する"
+        description: "Confirm the behavior"
       - id: AC2
-        description: "既存テストを確認する"
+        description: "Verify the existing tests"
 EOF
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
