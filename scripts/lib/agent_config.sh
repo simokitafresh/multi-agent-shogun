@@ -6,10 +6,10 @@
 #
 # API:
 #   get_ninja_names       → role=ninjaのエージェント名をスペース区切りで返す
-#   get_all_agents        → karo + 全エージェント名をスペース区切りで返す
+#   get_all_agents        → karo + (gunshi + 全ninja) をスペース区切りで返す
 #   get_agent_role <name> → ninja / gunshi / karo
 #   get_japanese_name <name> → 日本語名
-#   get_allowed_targets   → inbox_writeの送信先一覧（karo + 全agents + shogun）
+#   get_allowed_targets   → inbox_writeの送信先一覧（karo + gunshi + 全ninja + shogun）
 #
 # キャッシュ: 初回呼び出し時にsettings.yamlを読み込み、同一プロセス内はキャッシュ
 
@@ -70,9 +70,11 @@ _agent_config_load() {
 
     while IFS=$'\t' read -r _ac_name _ac_role _ac_jp; do
         [[ -z "$_ac_name" ]] && continue
-        all_names+=("$_ac_name")
         _AGENT_CONFIG_ROLE_MAP["$_ac_name"]="$_ac_role"
         _AGENT_CONFIG_JP_MAP["$_ac_name"]="${_ac_jp:-$_ac_name}"
+        if [[ "$_ac_role" != "shogun" && "$_ac_role" != "karo" ]]; then
+            all_names+=("$_ac_name")
+        fi
         if [[ "$_ac_role" == "ninja" ]]; then
             ninjas+=("$_ac_name")
         fi
