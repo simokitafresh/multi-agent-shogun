@@ -188,6 +188,17 @@ check_idle() {
 reset_stale_fields() {
     local ninja_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local current_parent_cmd=""
+    local current_notify_flag=""
+
+    current_parent_cmd=$(awk -F': *' '/^  parent_cmd:/ {gsub(/["'\'']/, "", $2); print $2; exit}' "$task_file" 2>/dev/null || true)
+    if [ -n "$current_parent_cmd" ]; then
+        current_notify_flag="$SCRIPT_DIR/queue/gates/${current_parent_cmd}/gunshi_notify_${ninja_name}.done"
+        if [ -f "$current_notify_flag" ]; then
+            rm -f "$current_notify_flag"
+            log "[STALE_RESET] Removed stale gunshi notify flag for ${ninja_name}: queue/gates/${current_parent_cmd}/gunshi_notify_${ninja_name}.done"
+        fi
+    fi
 
     python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
 import os, sys, tempfile, yaml, re

@@ -729,6 +729,26 @@ EOF
     [[ "$root_field_name" == task:* ]]
 }
 
+@test "reset_stale_fields removes stale gunshi notify flag on redeploy" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_notify.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local notify_flag="$direct_root/queue/gates/cmd_8888/gunshi_notify_tobisaru.done"
+
+    mkdir -p "$(dirname "$notify_flag")"
+    touch "$notify_flag"
+
+    SCRIPT_DIR="$direct_root"
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    [ ! -f "$notify_flag" ]
+
+    rm -rf "$direct_root"
+}
+
 @test "--directモード: reset_stale_fieldsがstaleフィールドを清掃する(AC2)" {
     local direct_root
     direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct.XXXXXX")"
