@@ -818,3 +818,4 @@
 | cmd_2194 | 研究 — WF L2 GS oikaze(SS系統): wf_l2_ss_21体でoikaze忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでoikaze GSをexi |
 | cmd_karo_auto_draft_review | deploy_task.shにdraftレビュー自動送信を追加 | infra | 04-21 | deploy_task.sh に draft review |
 | cmd_2197 | 修正 — run_077_kawarimi.py verify部分のsequential/batch整合バグ修正 | dm-signal | 04-21 | AC1/AC2はPASS。AC3はcmd_2196基準CSV |
+| cmd_2198 | 研究 — WF L2 SS系統 champion_selector統合: 7忍法GSからchampion事後選出 | dm-signal | 04-21 | wf_l2_ss の 7忍法 monthly/cache を |
