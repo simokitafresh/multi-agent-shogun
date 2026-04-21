@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
+<!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
 <!-- last_synced_lesson: L644 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -57,6 +57,7 @@
 | 27 | シン四神v2設計（2026-03-19確定） | research |
 | 28 | 2026-03-12〜03-20 主要更新（シン四神v2/GS高速化/パリティ） | (本ファイル) |
 | 29 | 2026-03-28〜03-29 第2最適化サイクル（357.28s+crash-safety+GP-124） | (本ファイル) |
+| 30 | 2026-04-20〜04-21 主要研究更新（GS memory最適化/L2 GS vs WF/vintage設計） | (本ファイル) |
 
 ## 弱体化確率推定(P_det)
 
@@ -129,6 +130,14 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 | OPT-12~15(軍師直接) | gc.collect削減+dead code除去+ネステッドFoF回帰修正+signals flush INSERT化+component_weights commit集約 | `context/gunshi-fullrecalc-speed-analysis.md` |
 | PI-016/017追加 | N+1 pre-load原則(PI-016)+StockData API 1000件制限(PI-017) | `projects/dm-signal.yaml` production_invariants |
 
+## §30 2026-04-20〜04-21 主要研究更新
+
+| 領域 | 結論 | 参照 |
+|---|---|---|
+| GSメモリ+速度最適化 | 7忍法横展開を完了。`workers=2` が安全圏へ復帰し、最大RSSは `kasoku_diff 8.5GB→5.5GB`、`nukimi 978→518MB`、`kawarimi 403→278MB`。`bunshin` は直列構造ゆえ SHM/PPE 非適用が正解 | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+| L2奥義 GS固定 vs WF動的比較 | L0選出方式だけを変えた 42体×42体比較で、WF系が champion 比較 `40勝-2敗 (95.2%)`、β調整 `α6指標×4試練` でも `48勝-0敗`。L2でも WF動的土台が優位 | `docs/research/l2_gs_vs_wf_comparison_20260421.md` |
+| Vintage robustness設計 | 「現championが強いか」ではなく「L0→L1→L2の再選出機構が頑健か」を測る設計へ確定。2020/2022/2026 の3 vintageで IS-only 再選出→OOS測定、fold future contamination 禁止、`1 vintage = 1 cmd` | `docs/research/vintage_analysis_design_20260421.md` |
+
 ## 補助ポインタ
 
 - プロジェクト核心知識: `projects/dm-signal.yaml`
@@ -175,9 +184,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L632は振り分け済 → ops教訓索引ツール。L633はAUTO-DEPRECATE(referenced=0)→振り分けスキップ）
 - （L634-L637は振り分け済 → core§19.2(L635:deferred flush UPSERT), ops教訓索引(L634:DB/L636:運用/L637:運用)）
 - L638: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる（cmd_2131）
-- L639: EqualWeight GSにpipeline import guardを混入させるな（cmd_2142）
-- L640: DB経由データのCoDD最適化検証では同一プロセス・同一データで比較せよ（cmd_2152）
+- （L639/L640は振り分け済 → core§19.2(L639:EqualWeight GSへpipeline import guard混入禁止), core§19.1(L640:DB経由CoDD比較は同一プロセス・同一データ)）
 - L641: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致（cmd_2175）
-- L642: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ（cmd_2177）
+- （L642は振り分け済 → core§19.5(GS成果物globはcmd_id直後にninjutsu名が来る命名も対象)）
 - L643: ALM忍法21体のfold percentile中央値はL0 WFシン四神(72.5)より低い64.3（cmd_2218）
 - L644: fold_percentiles.csvはlong-format(fold粒度)で出力せよ（cmd_2219）

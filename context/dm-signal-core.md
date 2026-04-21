@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-04-13 鮮度確認(コア構造変更なし。直近はL2奥義研究+ALM忍法+消火撤去) -->
+<!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 教訓索引更新(L639/L640/L642) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -388,6 +388,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L128 | `experiments.db`はスナップショットでありSSOTではない | cmd_222 |
 | L511 | fof_component_weightsのactual_weight/driftがNULL(未計算状態)。Admin画面ウェイト未表示の根因 | cmd_1566 |
 | L512 | experiments.db進行中月データは日次更新本番と構造的に乖離する(完了月diff=0、進行中月のみ4-7%差) | cmd_1567 |
+| L640 | DB経由データのCoDD最適化検証では同一プロセス・同一データで比較せよ | cmd_2152 |
 
 ### 19.2 BB仕様・バグ修正
 
@@ -406,6 +407,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L445 | DTB3を株式用momentum関数で処理してはならない | cmd_1194 |
 | L447 | nukimiのみ`_run_mp`関数不在で構造差異 | cmd_1196 |
 | L513 | OPT-A(cmd_1450)で非リバランス日momentum_data={skipped:true}→weightsキー消失→EWフォールバック。Ward/KalmanMetaのみ影響 | cmd_1568 |
+| L639 | EqualWeight GSにpipeline import guardを混入させるな。本番pipeline lazy importは `blocks/__init__` 副作用を招く | cmd_2142 |
 | L631 | TRF insufficient_candidatesパス(len<2)でcurrent_tickers=set()するな。単独ティッカー通過不能バグ。dict.get→bisect修正と同根(cmd_1899) | cmd_1899 |
 | L635 | Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える必要あり | cmd_2021 |
 
@@ -443,6 +445,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L112 | `monthly_returns.signal`がJSON辞書形式(`'{"TECL":1.0}'`)のとき`json.loads`でキー抽出必須 | cmd_274 |
 | L125 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | cmd_222 |
 | L134 | GS結果を利用する際は`DATA_CATALOG.md`と`meta.yaml`を必ず参照する | cmd_222 |
+| L642 | champion_selectorの成果物探索は `cmd_id` 直後に `ninjutsu` 名が来る現行命名もglob対象に含めよ | cmd_2177 |
 
 ### 19.6 追加統合（cmd_322）
 
