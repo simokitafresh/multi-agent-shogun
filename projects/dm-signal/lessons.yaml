@@ -151,16 +151,16 @@ lessons:
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
   tags:
   - universal
-  helpful_count: 11
-  harmful_count: 5
-  last_referenced: '2026-04-20'
+  helpful_count: 12
+  harmful_count: 7
+  last_referenced: '2026-04-21'
 - id: L616
   title: cmdの完了記録≠成果物の所在記録 — 多段パイプラインの進行表に物理的所在必須
   summary: 多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つ
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 4
+  helpful_count: 5
+  harmful_count: 5
   last_referenced: '2026-04-20'
 - id: L615
   title: Cell B(シン×ALM)の一部忍法はGSパラメータ数=1のためALM動的選出≡静的選出
@@ -983,9 +983,9 @@ lessons:
   summary: Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設
   tags:
   - universal
-  helpful_count: 5
-  harmful_count: 1
-  last_referenced: '2026-04-20'
+  helpful_count: 11
+  harmful_count: 4
+  last_referenced: '2026-04-21'
 - id: L480
   title: selection-based FoF初月のmonthly_returns.holding_signal=NULL問題
   summary: selection block付きFoF21体中、初月monthly_returns.holding_signalがNULLの体がある。signals
@@ -1665,6 +1665,9 @@ lessons:
   summary: Numbaはpure NumPyループ(simulate_pattern hot loop, momentum kernel)に適用可能だがpandas境界(r
   tags:
   - universal
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L368
   title: 'GS忍法間共有化: 性能インパクトはcontext build(0.058%)でなくsimulate_pattern(99.94%)が支配的'
   summary: 5忍法のcontext build共有で削減できるのは約48s/83,482s(0.058%)。性能改善はsimulate_pattern最適化に集中すべき。共
@@ -1971,9 +1974,9 @@ lessons:
   - api
   - deploy
   - pipeline
-  helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-20'
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -2106,8 +2109,8 @@ lessons:
   tags:
   - grid-search
   - architecture
-  helpful_count: 4
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L298
   title: FracDiffのd最適化を全期間一括で行うな
@@ -2201,9 +2204,9 @@ lessons:
     = targe
   tags:
   - gate
-  helpful_count: 6
-  harmful_count: 2
-  last_referenced: '2026-04-19'
+  helpful_count: 8
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
   summary: 'pairwise相関mean 0.610/median 0.623/p90 0.814。3層依存構造: (1)同一ファミリーρ≈0.85-0.99
@@ -2440,9 +2443,9 @@ lessons:
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
   tags:
   - api
-  helpful_count: 4
-  harmful_count: 4
-  last_referenced: '2026-04-20'
+  helpful_count: 2
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L245
   title: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ
   summary: compare-summary/deteriorationはSet multi-select、selector/navはscalar single-select
@@ -2518,7 +2521,7 @@ lessons:
   summary: holding_signalの更新タイミングはStep0（パフォーマンス計算前）で行われ、last_generated_signals（前月末の生signal）
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L231
@@ -2544,15 +2547,15 @@ lessons:
   - api
   - frontend
   - gate
-  helpful_count: 26
-  harmful_count: 8
-  last_referenced: '2026-04-20'
+  helpful_count: 1
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
   summary: FE api-client.tsはresponse.ok(200-299のみtrue)で成功判定しており、304 Not Modifiedがエラー扱いされる。I
   tags:
   - api
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L227
@@ -2700,6 +2703,9 @@ lessons:
   - api
   - frontend
   - reporting
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L207
   title: years=0 prefetch追加単独では本番9秒級遅延は解消しない
   summary: cmd_668でusePrefetch.tsへyears=0を追加しても、本番PF切替9.3-9.7秒、ページ遷移9.3-9.5秒。キャッシュキー不一致修正だけ
@@ -2842,8 +2848,8 @@ lessons:
   tags:
   - recon
   - monitor
-  helpful_count: 4
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる
@@ -3046,7 +3052,7 @@ lessons:
   tags:
   - db
   - api
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-20'
 - id: L155
@@ -3386,6 +3392,9 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
+  helpful_count: 2
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L096
   title: skip処理のデータ頻度判定はis_monthly_data()を使え（行数ヒューリスティック禁止）
   summary: IF SVMF(L125)/MVMF(L145)のskip処理がlen(df)<base*5で月次/日次を判定していたが、同一ファイル(base.py)にインタ
@@ -3458,9 +3467,9 @@ lessons:
   summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-20'
+  last_referenced: '2026-04-21'
 - id: L084
   title: recalculate-statusのis_running=Noneは完了ではない
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
@@ -3473,6 +3482,9 @@ lessons:
   tags:
   - db
   - recon
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
@@ -3500,7 +3512,7 @@ lessons:
   tags:
   - api
   - deploy
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-20'
 - id: L078
@@ -3532,6 +3544,9 @@ lessons:
   summary: L071(quarterly_jan)と同様、quarterly_marも初期化Cash月が複数月発生する。現skipロジックは最初の1Cash月しかスキップし
   tags:
   - universal
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-21'
 - id: L073
   title: FoFパリティ検証ではコンポーネント初期化月をスキップするな
   summary: IF FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する時 THEN FoFのEqualWeight計算はコンポーネントの
@@ -3610,6 +3625,9 @@ lessons:
   summary: IF GS側MonthlyProductMomentumCache(product(1+r)-1)と本番側calculate_momentum_for_mont
   tags:
   - deploy
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L061
   title: verify_all_portfolios.pyはFoF(type=fof)をスキップする — L1四神パリティは未検証だった
   summary: 'verify_all_portfolios.py L76: Skip FoF, L202: WHERE type=standard。L0 Standard
@@ -3805,6 +3823,9 @@ lessons:
     (1'
   tags:
   - deploy
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-20'
 - id: L027
   title: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)（2026-02-15）
   summary: 'IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN

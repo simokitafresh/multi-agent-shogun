@@ -220,9 +220,9 @@ lessons:
     file
   tags:
   - universal
-  helpful_count: 5
-  harmful_count: 1
-  last_referenced: '2026-04-20'
+  helpful_count: 11
+  harmful_count: 4
+  last_referenced: '2026-04-21'
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
   summary: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
@@ -901,6 +901,9 @@ lessons:
   tags:
   - api
   - yaml
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L368
   title: 'send_alertの呼び出し漏れパターン: 計算済み値の未消費'
   summary: usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった。値を計算したら全消費箇所で使われ
@@ -1231,9 +1234,9 @@ lessons:
   - gate
   - yaml
   - inbox
-  helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-20'
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -1363,8 +1366,8 @@ lessons:
   - yaml
   - git
   - inbox
-  helpful_count: 4
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-20'
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
@@ -1476,9 +1479,9 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 6
-  harmful_count: 2
-  last_referenced: '2026-04-19'
+  helpful_count: 8
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
@@ -1724,9 +1727,9 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 4
-  harmful_count: 4
-  last_referenced: '2026-04-20'
+  helpful_count: 2
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
   summary: ホワイトリスト型gitignore環境でscripts/lib/に新規shファイル追加時、.gitignoreホワイトリスト追記漏れでCIのみ失敗する。ローカル
@@ -1812,7 +1815,7 @@ lessons:
   tags:
   - testing
   - git
-  helpful_count: 6
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-19'
 - id: L231
@@ -1834,16 +1837,16 @@ lessons:
   tags:
   - infra
   - universal
-  helpful_count: 26
-  harmful_count: 8
-  last_referenced: '2026-04-20'
+  helpful_count: 1
+  harmful_count: 3
+  last_referenced: '2026-04-21'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
   summary: 'ast-grep rule を regex ベースで書く場合、kind を伴わない composite rule は `Rule must
     specify a '
   tags:
   - frontend
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L227
@@ -1863,9 +1866,9 @@ lessons:
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
   - universal
-  helpful_count: 8
+  helpful_count: 3
   harmful_count: 1
-  last_referenced: '2026-04-20'
+  last_referenced: '2026-04-21'
 - id: L224
   title: MCP obsに運用ルールと殿の好みを混在させると陳腐化が加速する
   summary: 53obsの突合でMCPに混在していた重複・旧版化項目の多くが本来context/instructionsに置くべき運用ルールだった。MCPは殿の好み/哲学を中
@@ -1990,6 +1993,9 @@ lessons:
   - testing
   - gate
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L207
   title: field_getはYAML block scalar指示子をリテラル文字列で返す
   summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML
@@ -2139,8 +2145,8 @@ lessons:
   tags:
   - review
   - git
-  helpful_count: 4
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-19'
 - id: L185
   title: report_path 注入だけで報告テンプレート未生成→忍者が手動補完
@@ -2332,7 +2338,7 @@ lessons:
     形式で受けよ
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-20'
 - id: L155
@@ -2722,6 +2728,9 @@ lessons:
   - bash
   - yaml
   - reporting
+  helpful_count: 2
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L096
   title: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
   summary: bash,variable-scope,preflight
@@ -2803,9 +2812,9 @@ lessons:
   - gate
   - yaml
   - reporting
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-20'
+  last_referenced: '2026-04-21'
 - id: L084
   title: roles/ashigaru_role.mdは現在不存在 — build_instructions.shがashigaru.md直接処理
   summary: L005は「ashigaru.mdの本文はroles/ashigaru_role.mdから取得」と言うが、2026-02-27時点でroles/ディレクトリ自体
@@ -2818,6 +2827,9 @@ lessons:
   tags:
   - db
   - yaml
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-21'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code
@@ -2845,7 +2857,7 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-20'
 - id: L078
@@ -2876,6 +2888,9 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - bash
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-21'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
   summary: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う
@@ -2953,6 +2968,9 @@ lessons:
   - yaml
   - parse
   - type-safety
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-20'
 - id: L061
   title: 統合設計レビューではソースコード実地確認が必須
   summary: 3提案はそれぞれデータ構造を調査したが、cmd_complete_gate.shの実コード(1052行)を読んで初めて永続化追記の最適箇所(GATE判定直前)が
@@ -3084,6 +3102,9 @@ lessons:
   tags:
   - wsl2
   - api
+  deprecated: true
+  deprecated_at: '2026-04-21T12:50:06+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=5 referenced=0'
 - id: L038
   title: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
   summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
@@ -3156,6 +3177,9 @@ lessons:
   tags:
   - git
   - review
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-20'
 - id: L026
   title: 知識陳腐化の定量実態と解決方針(cmd_237合議3名統合)
   summary: IF 知識ファイルの陳腐化が疑われる時 THEN 追加onlyの運用を見直し、定期的な削除・更新サイクルを導入せよ

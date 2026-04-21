@@ -432,7 +432,7 @@
   report_ninja: hayate
   report_task_id: cmd_2193_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。FAIL報告として適切。kawarimi batch/sequential md5不一致。L641既知パターン拡大"
   observations:
     - "事実1: 270,900パターン到達後に内蔵AC1検証で停止。忍者ミスではなくスクリプト問題"
@@ -447,7 +447,7 @@
   report_ninja: hayate
   report_task_id: cmd_2194_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。oikaze 270,900pat完遂。57s/OOMなし。推定6.8min→実測1.0min(7.1x速)"
   observations:
     - "事実1: elapsed 57s。内蔵md5 gate PASS(kawariminと異なりoikazeは正常)"
@@ -462,7 +462,7 @@
   report_ninja: hayate
   report_task_id: cmd_2193_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。FAIL報告として適切。batch vs sequential md5不一致。kawarimi固有(union計算エッジケース)"
   observations:
     - "事実1: TRF sequential=shared_momentum_cache月別蓄積 vs batch=precomputed_masks一括3D argsort。計算パス差"
@@ -701,7 +701,7 @@
 - cmd_id: cmd_2206
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "6観点OK。Session State BLOCK後教訓確認WARN。意志依存→環境強制"
   observations:
     - "事実1: 25回BLOCK→教訓遅延→10回同FP再発の計測データ(本セッション)"
@@ -713,7 +713,7 @@
   report_ninja: hayate
   report_task_id: cmd_2206_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。Session State BLOCK後教訓確認WARN。bats 23件PASS"
   observations:
     - "事実1: BLOCK回数1以上+教訓未記録→WARN表示。偽陽性防止(grep source_cmd)"
@@ -763,7 +763,7 @@
   report_ninja: hayate
   report_task_id: cmd_2207_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。AS champion 21体。L2 WF-ASS完成。SS+AS全完了"
   observations:
     - "事実1: ninjutsu_count=7, champion_count=21"
@@ -803,3 +803,165 @@
   gate_prediction: CLEAR
   causal_chain: "draftレビュー手動送信→自動化(LG032既存強制行動に乗せる: deploy=既に強制)→軍師レビュー漏れ防止=正の複利"
   timestamp: "2026-04-21T09:25:00"
+- cmd_id: cmd_karo_self_gate_template
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_self_gate_template_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。base templateにself_gate_check 4項目常設。review専用分岐撤去。bats 190件PASS"
+  observations:
+    - "事実1: commit 1772ad0。deploy_task.sh +6行(self_gate_check PASS初期値) -13行(review専用分岐撤去)"
+    - "事実2: 4項目名(lesson_ref/lesson_candidate/status_valid/purpose_fit)がcmd_complete_gate.shと一致確認"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "review専用→全報告常設。PASS初期値で既存フロー無影響。review分岐撤去で条件分岐減=正の複利(シンプル化)"
+  timestamp: "2026-04-21T13:25:00"
+- cmd_id: cmd_karo_lk086_update
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。karo.md L155既に2アクション更新済み。LK086明示化+テスト。shallow"
+  observations:
+    - "事実1: karo.md L155は既に2アクション表記(report_received hook自動化注記済み)"
+    - "事実2: LK086 detailの対策部は「1.WA記録 2.既読化」表記あり。明示化の余地はタイトル等"
+  causal_chain: "コード変更(inbox_write.sh自動化)→知識基盤未更新(LK090)→次の家老が旧フロー→二重送信穴→LK086+karo.md明示化で予防=正の複利"
+  timestamp: "2026-04-21T13:26:00"
+- cmd_id: cmd_karo_lk086_update
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_lk086_update_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。LK086 3→2アクション更新。karo.md現物確認済み。commit 620c908"
+  observations:
+    - "事実1: LK086 title/detail両方を2アクション(WA記録+既読化)に更新。hook自動化を明記"
+    - "事実2: commit 620c908にLK089-091(家老uncommitted分)同梱。scope逸脱なし(共有ファイル同梱)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "コード自動化(inbox_write.sh)→知識基盤未更新(LK091)→LK086更新で連動→次の家老が正しいフローを読む=正の複利"
+  timestamp: "2026-04-21T13:30:00"
+- cmd_id: cmd_2209
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。L123 /cmd_[0-9]+:/ →[a-zA-Z0-9_]+拡張。非数字cmd_id境界検出修正。正の複利"
+  observations:
+    - "事実1: L123現物確認 /^  cmd_[0-9]+:/ が原因。cmd_karo_*で境界未検出→次cmdコンテンツ混入"
+    - "事実2: environment_change記載あり(type=gate, pattern=cmd_[a-zA-Z0-9_])。成長ループ準拠"
+  causal_chain: "数字のみ正規表現→非数字cmd_id境界未検出→バンドル偽陽性→WARN累計昇格→cmd BLOCK不能→regex拡張で全形式対応=正の複利"
+  timestamp: "2026-04-21T13:33:00"
+- cmd_id: consultation_gate_async_orphan_20260421
+  review_type: consultation
+  verdict: null
+  findings_summary: "GATE auto実行時15+background childがorphan化。Option C(wait追加)推奨。1行で全子プロセス完走保証"
+  observations:
+    - "事実1: cmd_complete_gate.sh CLEARパスに15以上の(... ) &がある(L3731-3921)"
+    - "事実2: inbox_write.sh trigger_cmd_complete_gate_background()が(bash gate ... ) &で呼出し→二重background→orphan"
+    - "事実3: L2328(直接呼出しパス)はbulletin同期、L3867(auto呼出しパス)は非同期。パス分岐が原因"
+  cs_checklist:
+    cs1_full_source: "cmd_complete_gate.sh全&箇所をgrep確認。15+子��ロセス特定"
+    cs2_own_data: "bulletin欠落は家老が実観測。15子のorphan化はコード構造から論理的に導出"
+    cs3_code_compare: "L2328(sync)とL3867(async)の2パスを比較。直接呼出しではsyncなので問題なし"
+    cs4_action: "Option C(wait追加)をconsultation_resultで家老に送信。cmdに変換可能"
+    cs5_unverified: "他14子プロセスの実際の失敗頻度は未計測。async.logで事後確認推奨"
+    cs6_causal: "inbox_write(&)→cmd_complete_gate(exit)→children orphan→WSL2 session loss→bulletin欠落"
+  causal_chain: "inbox_write background→cmd_complete_gate spawn 15 children→parent exit→children orphan→WSL2 kills orphans→bulletin(and possibly others) lost。wait追加→parent stays alive→children complete→bulletin delivered"
+  timestamp: "2026-04-21T13:38:00"
+- cmd_id: cmd_2209
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2209_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。cmd_save.sh 3箇所横展開修正(L123/L741/L1298)。新テスト2ファイル。144件PASS"
+  observations:
+    - "事実1: commit b30e97c。cmd_[0-9]+→cmd_[^:]+に3箇所修正。+71/-3行"
+    - "事実2: discretion_fills横展開(L741/L1298)は同一バグ・同一パターンでscope内。回帰テスト追加"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "数字のみregex→非数字cmd_id境界未検出→バンドル偽陽性→3箇所横展開+テスト=全形式対応=正の複利"
+  timestamp: "2026-04-21T13:40:00"
+- cmd_id: cmd_karo_gate_wait
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。wait追加は既にcommit 84067bfに実装済み(L2358+L4278)。忍者は検証+テスト+push"
+  observations:
+    - "事実1: git blame確認。L2357-2359,L4277-4279ともcommit 84067bf(2026-04-21T13:37:50)。hayate auto-commitに同梱"
+    - "事実2: 2箇所のwaitはGATE CLEARパス内の異なるセクション(L2358=前半, L4278=後半)で15+子プロセスをカバー"
+  causal_chain: "consultation→Option C推奨→karo実装→commit済み→cmd=形式化+テスト+push。正のプロセス"
+  timestamp: "2026-04-21T13:42:00"
+- cmd_id: cmd_karo_gate_wait
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_gate_wait_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。HEAD移動検知+wait存在テスト追加。AC3(push)忍者禁則で未実施。gate_prediction:BLOCK"
+  observations:
+    - "事実1: 84067bfに既にwait含まれ、忍者は存在確認テスト(挙動固定)に適応"
+    - "事実2: binary_checks commit:no+AC3:no → gate機械的BLOCK。家老override+push必要"
+  lesson_quality: N/A
+  karo_workaround_needed: true
+  gate_prediction: BLOCK
+  causal_chain: "auto-commit→wait既存→忍者適応(テスト追加)→AC3忍者不可→BLOCK→家老push→CLEAR見込み"
+  timestamp: "2026-04-21T13:47:00"
+- cmd_id: cmd_2208
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "前提崩壊。5箇所bare WARN_COUNTはcmd_2209(b30e97c)横展開で既に統一済み。cmd目的達成済み"
+  observations:
+    - "事実1: git show b30e97c~1→WARN_COUNT++6箇所。git show HEAD→L374(関数内)のみ。差分5箇所は既に修正済み"
+    - "事実2: cmd_2209のhayateがdiscretion_fillsで横展開(L741/L1298)→同時にWARN_COUNT統一も実施"
+  causal_chain: "cmd_2209横展開→bare WARN_COUNT 5箇所がrecord_warn_reason統一→cmd_2208の修正対象消失→前提崩壊"
+  timestamp: "2026-04-21T13:48:00"
+- cmd_id: cmd_2208
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2208_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。前提崩壊→検証+テスト追加に適応。bare WARN静的検査+notes回帰テスト。163件PASS"
+  observations:
+    - "事実1: commit ef9c810。cmd_save.sh本体未変更。テスト4ファイル(新規1+修正3)"
+    - "事実2: 軍師RC(前提崩壊)後に配備→hayateが現物確認→実装→検証タスクに切替。適応的判断"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "cmd_2209横展開→bare WARN消滅→cmd_2208前提崩壊→hayate適応(テスト追加)→静的検査で再発防止=正の複利"
+  timestamp: "2026-04-21T13:50:00"
+- cmd_id: cmd_karo_pipeline_verify
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_pipeline_verify_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。senkyoku-log.md 1行追記。commit 5626311。シンプル"
+  observations:
+    - "事実1: commit 5626311。context/senkyoku-log.md +1行のみ"
+    - "事実2: GATE起動がnohup+disownで実行された(bulletin欠落修正の初回稼働確認)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "戦局日誌追記→cmd履歴一次データ化→将軍/clear後に参照可能=正の複利(微小)"
+  timestamp: "2026-04-21T14:18:00"
+- cmd_id: cmd_karo_pipeline_verify
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_pipeline_verify_impl
+  report_verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "LGTM→BLOCK(vercel_phase:broken_reference)。報告品質問題なし。context索引のリンク切れ"
+  observations:
+    - "事実1: vercel_phaseはcontext索引の壊れた参照を検出。報告4観点では検出不可能な独立チェック"
+  causal_chain: "senkyoku-log.md追記→vercel_phase gate→context内のbroken_reference検出→BLOCK。報告品質とは独立の層"
+  timestamp: "2026-04-21T14:20:00"
