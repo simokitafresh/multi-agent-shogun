@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-22T03:11:28+09:00 -->
+<!-- generated_at: 2026-04-22T03:29:00+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-22T03:29:00+09:00 | terminal | response | cmd_2228_summary_commit GATE CLEAR。Vintage 2020の全工程完了。 陣形: hayateとsaizoがCI RED偵察(cmd_karo_ci_red_ga154)完了。全忍者idle見込み。 殿…
+- 2026-04-22T03:28:41+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 03:28:27|cmd_2228_summary_commit
+- 2026-04-22T03:23:01+09:00 | ntfy | outbound | CI赤: run 24738722086 Unit Tests (bats)
+- 2026-04-22T03:21:26+09:00 | ntfy | outbound | 【tobisaru】回復完了。cmd_2155_impl完了済み。idle待機中。
+- 2026-04-22T03:18:04+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-154)
+- 2026-04-22T03:13:30+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-22 03:11:01|cmd_2228
 - 2026-04-22T03:11:27+09:00 | terminal | response | **cmd_2228 GATE CLEAR。** Vintage 2020分析完了。 inbox 2件は両方cmd_2228のGATE CLEAR通知。処理済み。 殿、Vintage 2022(FRB利���げ)と2026(直近)���起…
 - 2026-04-22T03:08:47+09:00 | terminal | response | 全ファイル生成済み。summaryを読む。 [meta] stop_reason=tool_use
 - 2026-04-22T03:08:08+09:00 | terminal | inbound | 他に知見はないか？
 - 2026-04-22T03:07:16+09:00 | ntfy | outbound | 【kagemaru】cmd_2228_summary_commit GATE PASS。vintage_2020_summary.md + commit SHA 742337c1 完了。idle。
-- 2026-04-22T03:06:52+09:00 | terminal | response | 完了。 **GP-216対応まとめ:** - **修正**: cmd_save.sh Check 20 — assumptions parserがsource/trustだけでなく全フィールド(tool_verified/csv_path…
-- 2026-04-22T03:04:05+09:00 | terminal | inbound | 2をやろう
-- 2026-04-22T02:59:35+09:00 | terminal | response | 殿、報告する。 **cmd_2228 Vintage 2020 — 進行中。** | タスク | 忍者 | 状態 | |--------|------|------| | cmd_2228_ss (wf-SSS) | saizo | **…
-- 2026-04-22T02:59:05+09:00 | terminal | inbound | どうなった？
-- 2026-04-22T02:08:38+09:00 | terminal | response | environment_change追加。 [meta] stop_reason=tool_use
-- 2026-04-22T02:08:12+09:00 | terminal | inbound | 続けて
 
 ## 未解決確認事項
 - 完了。 **GP-216対応まとめ:** - **修正**: cmd_save.sh Check 20 — assumptions parserがsource/trustだけでなく全フィールド(tool_verified/csv_paths等)をキャプチャし、パス実在確認 - …
@@ -36,18 +36,14 @@
 - 2026-04-22T00:33:55+09:00 | 1013行。肥大化している。 - **delegated/shelved/done/completed**: 18件（もう不要） - **pending/draft**: 3件（活きているのはこれだけ） - アーカイブ先: `queue/archive/cmds/` が存在し稼…
 
 ## 参照cmd
-- cmd_1012
 - cmd_1846
 - cmd_1848
-- cmd_1934
 - cmd_2211
 - cmd_2212
 - cmd_2213
 - cmd_2214
-- cmd_2215
 - cmd_2216
 - cmd_2217
-- cmd_2218
 - cmd_2221
 - cmd_2223
 - cmd_2224
