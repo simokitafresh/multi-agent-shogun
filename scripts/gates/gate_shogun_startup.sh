@@ -612,17 +612,25 @@ if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
     _retro_top=$(python3 -c "
 import yaml
 from collections import Counter
+from datetime import datetime, timedelta
 with open('$SCRIPT_DIR/logs/cmd_design_quality.yaml') as f:
     data = yaml.safe_load(f) or {}
+cutoff = (datetime.utcnow() - timedelta(days=30)).isoformat()
 c = Counter()
 for e in data.get('entries', []):
+    ts = e.get('timestamp', '')
+    if ts and ts < cutoff:
+        continue
     notes = e.get('notes', '') or ''
     for p in notes.split('|'):
         p = p.strip()
         if p and not p.startswith('draft_lessons') and ':binary_checks_fail' not in p and not p.startswith('ci_failure'):
             c[p] += 1
-for reason, count in c.most_common(5):
-    print(f'  {count:4d}回  {reason[:70]}')
+if c:
+    for reason, count in c.most_common(5):
+        print(f'  {count:4d}回(30d)  {reason[:65]}')
+else:
+    print('  直近30日のWARN/BLOCKなし — 学習ループ健全')
 " 2>/dev/null)
     if [ -n "$_retro_top" ]; then
         echo "$_retro_top"
