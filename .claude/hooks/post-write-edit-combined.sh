@@ -2,6 +2,7 @@
 # Combined Write/Edit PostToolUse guard: shellcheck + report-guard + instruction-consistency
 # cmd_1661: 3 hooks → 1 script. Eliminates 2 bash startup costs (~60ms each).
 # GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止
+# Guard 0: replace_all確認 (LS069 — 2026-04-21殿裁定)
 
 # cmd_2074: Read stdin without spawning cat subprocess
 # Note: read -d '' returns non-zero on EOF; use || true to preserve data read
@@ -36,8 +37,18 @@ case "$file_path" in
     *queue/reports/*_report_*.yaml) ;;
     *.sh|*.bash) ;;
     *CLAUDE.md|*instructions/*) ;;
-    *) exit 0 ;;
+    *) ;; # continue to replace_all check for all files
 esac
+
+# === Guard 0: replace_all confirmation (LS069 — 2026-04-21殿裁定) ===
+_replace_all="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .replace_all // false' 2>/dev/null)" || true
+if [[ "$_replace_all" == "true" ]]; then
+    _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // empty' 2>/dev/null)" || true
+    if [[ -n "$_old_string" ]]; then
+        _short="${_old_string:0:50}"
+        emit_context "★ replace_all=true 使用。適用件数を確認せよ: grep -c '${_short//\"/\\\"}' ${file_path}"
+    fi
+fi
 
 # === Guard 1: report-guard (WARN + YAML parse check) ===
 if [[ "$file_path" =~ queue/reports/[^/]*_report_[^/]*\.yaml$ ]]; then

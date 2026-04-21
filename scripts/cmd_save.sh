@@ -2584,7 +2584,7 @@ for line in lines:
             if current:
                 entries.append(dict(current))
             current = {}
-        m = re.search(r'source\s*:\s*(.+)', line)
+        m = re.search(r'^\s+source\s*:\s*(.+)', line)
         if m: current['source'] = m.group(1).strip().strip('\"').strip(\"'\")
         m = re.search(r'trust\s*:\s*(.+)', line)
         if m: current['trust'] = m.group(1).strip().strip('\"').strip(\"'\")
