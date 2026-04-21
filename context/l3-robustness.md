@@ -701,14 +701,31 @@ SS=攻撃力(CAGR/NHF)、AS=防御力(MaxDD)の傾向。ただしASはデータ�
 - 真因: swap枯渇。詳細は§8.4.1参照
 - 殿裁定: 1忍法1CMD完全直列(案A)で再起票。→ §8.4.1
 
-### 8.12 状態 (2026-04-20 23:00更新)
+### 8.12 状態 (2026-04-21 09:13更新)
 
 - WF四神(L0): **完了** (cmd_2167) — 全12体WF改善
 - WF忍法(L1 WFα): **完了** (cmd_2174/2175) — WF 2勝19敗。従来L1が優位
 - WF忍法(L1事後): **完了** (cmd_2176/2177) — 事後選出で42体確定
 - WF奥義(L2準備): **cmd_2178 GATE CLEAR** — universe YAML+BB CSV作成済み
-- WF奥義(L2 GS): **cmd_2179/2180中止**(OOM 3回)→ **CoDDメモリ横展開で道具磨き中**
 - CoDDメモリ横展開(7忍法): cmd_2181-2187 **全7本GATE CLEAR** (2026-04-20 23:20完了)
-  - kasoku_diff/ratio: 既に最適化済みだった(発見)
-  - nukimi/oikaze/kawarimi/bunshin/yotsume: 横展開成功
-- **次ステップ**: workers=2フルテストcmd起票 → WF L2本番(workers=2, SS+AS≈68min)
+- **WF奥義(L2 GS SS系統): 6/7 GATE CLEAR** (2026-04-21 09:07完了)
+  - cmd_2189 bunshin: PASS (3.1s)
+  - cmd_2190 kasoku_diff: PASS (228s = 3.8min)
+  - cmd_2191 kasoku_ratio: PASS (209s = 3.5min)
+  - cmd_2192 nukimi: PASS (187s = 3.1min)
+  - cmd_2194 oikaze: PASS (57s = 1.0min)
+  - cmd_2195 yotsume: PASS (26s)
+  - cmd_2193 kawarimi: **FAIL** (batch/sequential md5 mismatch)
+  - cmd_2196 kawarimi --skip-verify: CSV生成成功(270,900行, avg CAGR 4.25, NaN 0)
+    - batch結果は信頼できる(軍師分析: 検証側sequential計算パスにバグ)
+    - 殿指摘「パリティ未達のデータは信用できるのか？」→ 現物確認で妥当性確認済み
+    - 殿指示「どちらにせよバグは修正が必要」→ cmd_2197起票済み
+  - cmd_2197 kawarimi verifyバグ修正: **配備中** (hayate assigned)
+    - 根因: L163 set union vs L377 boolean OR (edge case n_valid < 2*select_n)
+    - 修正後にverify PASSで完了
+- **速度実績(メモリ最適化副次効果):**
+  - 旧推定 SS系統合計: 54min → **実測: 11.8min (4.6倍速)**
+  - workers=2復活なしで十分高速。OOMリスクを取る必要なし
+  - 根因: dict→slots属性アクセス高速化 + BytesIO→memmap直読みでGC圧力激減
+- **次ステップ**: cmd_2197完了 → SS系統champion_selector統合cmd → AS系統7本起票
+- SS+AS見通し: 旧推定108min → 実測ベース24min (+配備/clear 14min = **38min**)
