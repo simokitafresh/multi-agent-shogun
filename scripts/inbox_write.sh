@@ -1226,6 +1226,23 @@ REVIEWEOF
             fi
         fi
 
+        # 重複report_review防止: type=report_review to=gunshi 時にgunshi_notify.shと同じフラグを書く
+        # gunshi_notify.sh(cmd_complete_gate.sh経由)が後から発火しても重複送信しない
+        if [ "$TYPE" = "report_review" ] && [ "$TARGET" = "gunshi" ]; then
+            _dr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_\w+' | head -1 || true)
+            _dr_ninja=$(echo "$CONTENT" | grep -oP '\b(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)\b' | head -1 || true)
+            if [ -n "$_dr_cmd_id" ] && [ -n "$_dr_ninja" ]; then
+                _dr_gates_dir="$SCRIPT_DIR/queue/gates/${_dr_cmd_id}"
+                mkdir -p "$_dr_gates_dir"
+                _dr_flag="${_dr_gates_dir}/gunshi_notify_${_dr_ninja}.done"
+                if [ ! -f "$_dr_flag" ]; then
+                    echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$_dr_flag"
+                    echo "ninja: ${_dr_ninja}" >> "$_dr_flag"
+                    echo "source: inbox_write_dedup" >> "$_dr_flag"
+                fi
+            fi
+        fi
+
         # 軍師review_resultのみ、配備中忍者へ補足として自動forwardする
         # task_supplement/review_feedback 等の二次通知はforwardしない（再帰ループ防止）
         if [ "$TYPE" = "review_result" ] && [ "$FROM" = "gunshi" ] && [ "$TARGET" = "karo" ]; then
