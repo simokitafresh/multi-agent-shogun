@@ -23,6 +23,7 @@ ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
 QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/shogun_to_karo.lock"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
+CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -407,7 +408,7 @@ if not cmd_id or not log_path or not os.path.exists(log_path):
 with open(log_path, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 
-entries = data.get("entries", []) if isinstance(data, dict) else []
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
 filtered = []
 for entry in entries:
     if not isinstance(entry, dict):
@@ -476,7 +477,7 @@ if not cmd_id or not current_reason or not log_path or not os.path.exists(log_pa
 with open(log_path, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 
-entries = data.get("entries", []) if isinstance(data, dict) else []
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
 filtered = [
     entry for entry in entries
     if isinstance(entry, dict)
@@ -565,7 +566,7 @@ if not cmd_id or not warn_pattern or not log_path or not os.path.exists(log_path
 with open(log_path, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 
-entries = data.get("entries", []) if isinstance(data, dict) else []
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
 count = sum(
     1 for entry in entries
     if isinstance(entry, dict)
@@ -575,6 +576,63 @@ count = sum(
 )
 print(count)
 PY
+}
+
+count_cmd_save_blocks_for_cmd() {
+    local target_cmd_id="${1:-}"
+    [[ -n "$target_cmd_id" && -f "$QUALITY_LOG_FILE" ]] || {
+        echo 0
+        return 0
+    }
+
+    CMD_SAVE_TARGET_CMD_ID="$target_cmd_id" \
+    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    python3 - <<'PY'
+import os
+import yaml
+
+cmd_id = os.environ.get("CMD_SAVE_TARGET_CMD_ID", "")
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+
+if not cmd_id or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+with open(log_path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
+count = sum(
+    1
+    for entry in entries
+    if isinstance(entry, dict)
+    and entry.get("cmd_id") == cmd_id
+    and entry.get("gate_result") == "BLOCK"
+    and entry.get("source") == "cmd_save"
+)
+print(count)
+PY
+}
+
+warn_missing_prev_cmd_lesson() {
+    [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]] || return 0
+
+    local prev_cmd_id prev_block_count warn_msg
+    prev_cmd_id="$(tr -d '[:space:]' < "$CMD_SAVE_LAST_CMD_FILE" 2>/dev/null || true)"
+    [[ -n "$prev_cmd_id" && "$prev_cmd_id" != "$CMD_ID" ]] || return 0
+
+    prev_block_count="$(count_cmd_save_blocks_for_cmd "$prev_cmd_id")"
+    [[ "$prev_block_count" =~ ^[0-9]+$ ]] || prev_block_count=0
+    (( prev_block_count > 0 )) || return 0
+
+    if [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] && \
+       grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${prev_cmd_id}['\"]?$" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        return 0
+    fi
+
+    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+    echo "WARN: ${warn_msg}" >&2
+    record_warn_reason "$warn_msg"
 }
 
 handle_cmd_save_exit() {
@@ -707,6 +765,7 @@ fi
 if load_cmd_block; then
     CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
     show_prior_attempts
+    warn_missing_prev_cmd_lesson
 fi
 
 # --- Check 3.5: diagnosis質検査（cmd_2159） ---
