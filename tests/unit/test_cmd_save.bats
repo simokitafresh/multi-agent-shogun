@@ -37,7 +37,7 @@ $(sed -n '/# --- Check 3.7:/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
 
     # check_q4_depth: q4_depthインラインセクションを関数化
     eval "check_q4_depth() {
-$(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:space:]]*# q5_verified_source:/d;p}' "$SRC_SAVE_SCRIPT")
 }"
     export -f check_q4_depth
 
@@ -47,10 +47,13 @@ $(sed -n '/# q4_depth: 段階的導入/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRI
     eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets check_self_reread_red_flag check_bundle_red_flag record_warn_reason record_block_reason abort_if_block_immediate
 
     # テストハーネスではQUEUE_FILEが単純なので、CMD_BLOCK読込のみpure bash化してI/O起動コストを削る
     load_cmd_block() {
@@ -112,6 +115,7 @@ setup() {
     export CMD_SAVE_ACCUMULATE_BLOCKS=0
     export BLOCK_COUNT=0
     declare -ga BLOCK_REASONS=()
+    declare -ga WARN_REASONS=()
     declare -gA CMD_BLOCK_CACHE=()
     # --jobs 8並列実行時の競合を回避するためQUEUE_FILEをテストごとに一意化
     export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo_${BATS_TEST_NUMBER}.yaml"
@@ -482,7 +486,7 @@ commands:
     command: "FAILしているhookを修正"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -511,7 +515,7 @@ commands:
       障害復旧のため修復する
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -540,7 +544,7 @@ commands:
     command: "FAILしているテストを修正"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -569,7 +573,7 @@ commands:
     command: "障害を修復"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -598,7 +602,7 @@ commands:
     command: "壊れた機能を修復"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -627,7 +631,7 @@ commands:
     command: "FAILした機能を復旧"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -713,7 +717,7 @@ commands:
     command: "挙動差分を調査する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -741,7 +745,7 @@ commands:
     command: "壊れた通知を復旧する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -770,7 +774,7 @@ commands:
     command: "再発防止まで実装する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -800,7 +804,7 @@ commands:
     command: "パターンを更新する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -829,7 +833,7 @@ commands:
     command: "パターンを更新する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -858,7 +862,7 @@ commands:
     command: "パターンを更新する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"
@@ -887,7 +891,7 @@ commands:
     command: "パターンを更新する"
     status: pending
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q5_verified_source: "code_reading + structure_verified"

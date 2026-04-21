@@ -45,10 +45,14 @@ commands:
       q1_firefighting: "no"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
+      q4_depth: "shallow"
       q5_verified_source: "code_reading + isolated_test"
+      q6_not_hiding: "no — 前cmd教訓WARN確認であり表面的対処ではない"
+      q7_definition_verified: "yes — lessons_shogun.yaml の source_cmd 一致だけを確認する"
       q8_why_what: "WHY: 殿指摘「前cmd BLOCK後の教訓記録を確認せよ」 → WHAT: Session Stateへ確認WARN追加。正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats の検証済み範囲のみ使用"
       q11_not_already_done: "未達成。grep 'warn_missing_prev_cmd_lesson' scripts/cmd_save.sh で未実装を確認"
+      q_ambiguity: "none"
     assumptions:
       - claim: "前cmd BLOCK回数と将軍教訓の source_cmd を照合する"
         source: "tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats"
@@ -64,10 +68,10 @@ write_quality_log_with_prev_blocks() {
         i=1
         while [ "$i" -le "$count" ]; do
             cat <<YAML
-- cmd_id: cmd_prev
-  gate_result: BLOCK
-  source: cmd_save
-  notes: "missing_field_$i"
+  - cmd_id: cmd_prev
+    gate_result: BLOCK
+    source: cmd_save
+    notes: "missing_field_$i"
 YAML
             i=$((i + 1))
         done

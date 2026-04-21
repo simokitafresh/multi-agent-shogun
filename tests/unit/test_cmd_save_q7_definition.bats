@@ -14,7 +14,8 @@ setup_file() {
     _helpers="$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")
 $(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")
 $(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")
-$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
 
     eval "check_q7_definition() {
 declare -A CMD_BLOCK_CACHE=()

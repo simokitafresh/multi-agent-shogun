@@ -43,8 +43,12 @@ ${acceptance_criteria_block}
       q1_firefighting: "no"
       q2_learning: "acceptance_criteria項目数だけを数える"
       q3_next_quality: "番号付きcommandとACの対応関係を誤判定しない"
+      q4_depth: "shallow"
       q5_verified_source: "code_reading + isolated_test"
+      q6_not_hiding: "no — command欄とAC件数の対応確認であり表面的対処ではない"
+      q7_definition_verified: "yes — AC件数はacceptance_criteria実項目数のみを数える"
       q8_why_what: "WHY: 殿指摘「AC数を正しく数えよ」 → WHAT: command欄5手順とAC件数の比較回帰を固定する。正の複利"
+      q_ambiguity: "none"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_command_steps_vs_ac.bats の検証範囲のみ使用"
       q11_not_already_done: "未達成。command_steps_over_acのstring-list回帰テストは未追加"
     assumptions:

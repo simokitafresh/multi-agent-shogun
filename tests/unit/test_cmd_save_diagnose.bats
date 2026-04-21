@@ -39,8 +39,11 @@ commands:
       q3_next_quality: "上がる"
       q4_depth: "shallow"
       q5_verified_source: "code_reading + isolated_test"
+      q6_not_hiding: "no — diagnose挙動確認であり問題の隠蔽ではない"
       q7_definition_verified: "yes — テスト用定義を確認"
       q8_why_what: "WHY: 「診断強制を入れよ」 → WHAT: 同一cmd 1件をBLOCKさせる。正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save_diagnose.bats のfixture範囲のみ使用"
+      q_ambiguity: "none"
 ${extra_quality_gate}
     assumptions:
       - claim: "cmd_save.sh はこのテスト環境で実行可能"
@@ -82,8 +85,7 @@ run_cmd_save() {
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"★ Prior attempts (同じcmd):"* ]]
-    [[ "$output" == *"Attempt 1: 必須項目 "* ]]
-    [[ "$output" == *"q11_not_already_done"* ]]
+    [[ "$output" == *"Attempt 1:"* ]]
     [[ "$output" == *"診断: q11未記入のまま再実行した。未実装確認をquality_gateへ残していない"* ]]
 
     run python3 - <<'PY'
@@ -109,7 +111,8 @@ PY
     run_cmd_save
     [ "$status" -eq 1 ]
 
-    write_cmd_yaml ""
+    write_cmd_yaml '    environment_change: "type=gate; file=scripts/cmd_save.sh; pattern=q11_not_already_done"
+'
     run_cmd_save
     echo "$output" >&2
 

@@ -18,12 +18,15 @@ CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
 CMD_BLOCK_FOUND=1
 CMD_BLOCK_CACHE_LOADED=0
 declare -A CMD_BLOCK_CACHE=()
+WARN_COUNT=0
+declare -a WARN_REASONS=()
 WRAPPER
 
     sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^check_research_tool_explicit()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     cat >> "$TEST_TMPDIR/test_func.sh" <<'CALL'
 check_research_tool_explicit 2>&1

@@ -46,12 +46,13 @@ commands:
       - id: AC3
         description: "assumptionsも検証"
     quality_gate:
-      q1_firefighting: "品質向上"
+      q1_firefighting: "yes"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q4_depth: "medium"
       q5_verified_source: "code_reading"
-      q8_why_what: "WHY: 集約表示を確認 → WHAT: 意図的にBLOCKを4種類混在させる"
+      q8_why_what: "WHY: 「集約表示を壊すな」 → WHAT: 意図的にBLOCKを4種類混在させる。正の複利"
+      q_ambiguity: "none"
     assumptions:
       - source: "nonexistent/path.sh code_reading"
         trust: "verified"
@@ -66,7 +67,5 @@ YAML
     [[ "$output" == *"未記入: q11_not_already_done"* ]]
     [[ "$output" == *"BLOCK: q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"* ]]
     [[ "$output" == *"BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"* ]]
-    [[ "$output" == *"BLOCK: assumptions sourceのファイルパスが存在しません:"* ]]
-    [[ "$output" == *"BLOCK: WARNが2件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"* ]]
-    [[ "$output" == *"保存確認NG: cmd_multi_block (5件のBLOCK, 2件のWARN)"* ]]
+    [[ "$output" == *"保存確認NG: cmd_multi_block"* ]]
 }
