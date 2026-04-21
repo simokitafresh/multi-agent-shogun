@@ -842,3 +842,4 @@
 | cmd_2221 | 修正 — scripts/cmd_save.sh バンドル検出のcommandスキャンバグ | infra | 04-21 | cmd_save.sh のバンドル検出で command フ |
 | cmd_2217 | 研究 — L1シン忍法21体 ロバストネス検証(foldパーセンタイル+top安定性) | dm-signal | 04-21 | シン忍法21体ロバストネス検証完了。AC1(foldパーセン |
 | cmd_2218 | 研究 — L1 ALM忍法21体 ロバストネス検証(foldパーセンタイル+top安定性) | dm-signal | 04-21 | AC1/AC2/AC3: ALM忍法21体(7忍法×3目的) |
+| cmd_karo_gunshi_notify_flag | 修正 — gunshi_notify重複防止フラグが再修正報告の自動レビュー送信を阻害 | infra | 04-21 | deploy_task.shの再配備時にstale guns |

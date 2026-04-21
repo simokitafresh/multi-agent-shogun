@@ -173,10 +173,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L618-L630は振り分け済 → infra教訓索引LLM(L618), research教訓索引奥義(L620), ops教訓索引ツール(L621/L624), infra git(L622), gs-speedup§4(L623/L625), gs-speedup§3(4)(L626), core§19.2(L627/L630:L573同根統合), ops教訓索引パリティ(L628/L629)。L619はL620重複→削除）
 - （L631は振り分け済 → core§19.2 BB仕様・バグ修正(L631:TRF insufficient_candidatesでcurrent_tickersクリア禁止)）
 - （L632は振り分け済 → ops教訓索引ツール。L633はAUTO-DEPRECATE(referenced=0)→振り分けスキップ）
-- L634: マイグレーションスクリプトのテーブル名バグが本番未適用の根因（cmd_2016）
-- L635: Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える（cmd_2021）
-- L636: nested FoFのMonthlyReturnは生成ログだけでは信用するな（cmd_2025）
-- L637: upfront cleanup後の長時間再計算は worker restart で本番データを空にしうる（cmd_2131）
+- （L634-L637は振り分け済 → core§19.2(L635:deferred flush UPSERT), ops教訓索引(L634:DB/L636:運用/L637:運用)）
 - L638: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる（cmd_2131）
 - L639: EqualWeight GSにpipeline import guardを混入させるな（cmd_2142）
 - L640: DB経由データのCoDD最適化検証では同一プロセス・同一データで比較せよ（cmd_2152）
