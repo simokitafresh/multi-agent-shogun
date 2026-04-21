@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-13 cmd_1888 L2奥義56ブロック全完了+ALM19体確定+消火撤去+GP-183/184実装+FAIL率改善 -->
-<!-- last_synced_lesson: L643 -->
+<!-- last_synced_lesson: L644 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -183,3 +183,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L641: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致（cmd_2175）
 - L642: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ（cmd_2177）
 - L643: ALM忍法21体のfold percentile中央値はL0 WFシン四神(72.5)より低い64.3（cmd_2218）
+- L644: fold_percentiles.csvはlong-format(fold粒度)で出力せよ（cmd_2219）
