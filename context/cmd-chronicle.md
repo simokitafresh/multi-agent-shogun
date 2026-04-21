@@ -838,3 +838,4 @@
 | cmd_2213 | 整備 — WF四神命名ルール+L2命名修正をドキュメント反映 | infra | 04-21 | WF命名ルールとL2命名乖離を文書へ反映し、wfシン/wfA |
 | cmd_2214 | 研究 — WFシン四神championの各foldパーセンタイル安定性検証 | dm-signal | 04-21 | WFシン四神12体のglobal fold percenti |
 | cmd_2215 | 研究 — WF ALM四神 α6指標top安定性検証(計算期間3M短縮) | dm-signal | 04-21 | WF ALM四神4ファミリーの6objectiveについて、 |
+| cmd_2216 | 整備 — 長期ロバストネス検証方法カタログ作成 | dm-signal | 04-21 | 7手法の長期ロバストネス検証カタログを新規作成し、cmd_2 |
