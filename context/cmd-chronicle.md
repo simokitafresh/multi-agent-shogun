@@ -859,3 +859,5 @@
 | cmd_2231 | fix — ETL cron OOM解消: curl→python直接実行 + メモリ計測 | dm-signal | 04-22 | AC4: log_memory_usage()を全Phase |
 | cmd_2232 | 強化 — CDP CLI標準化: cdp_cli.shをワンストップCDP入口に拡張 | auto-ops | 04-22 | cdp_cli.sh に launch/navigate/e |
 | cmd_karo_auto_ops_context_freshness | 調査 — auto-ops context freshness ALERTの原因分析 | auto-ops | 04-22 | cmd_2232 の context未反映箇所を特定し、co |
+| cmd_2233 | CoDD偵察 — daily_etl.pyの存在理由調査: 本番fullrecalculateとの乖離分析 | dm-signal | 04-22 | FILL_THIS |
+| cmd_karo_ci_fix_ga158 | CI RED修正 — cmd_save environment_change テスト317-320復旧 | infra | 04-22 | cmd_save.shのPythonパーサーがassumpt |
