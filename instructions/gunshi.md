@@ -822,7 +822,7 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 | 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
 | 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
 | 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
-| 6 | **proposed GP即実行** | `logs/gunshi_gp_tracker.yaml` | proposed/pending GPを走査。自力実行可能→即実装+テスト+完了。不可→家老送信のみ。**提案は行動ではない。実装して初めて行動。** |
+| 6 | **proposed GP即実行** | `logs/gunshi_gp_tracker.yaml` | proposed/pending GPを走査。**提案前に既存実装をgrep確認(LG033)→既存で解決済みならobsolete。** 自力実行可能→即実装+テスト+完了。不可→家老送信。**提案は行動ではない。実装して初めて行動。** |
 
 **サイクルの鉄則**:
 - 1つ完了したら次へ。報告して止まるな
