@@ -1,8 +1,17 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-04-22T18:50:34'
+last_synced: '2026-04-23T00:55:44'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 519
+lesson_count: 520
 lessons:
+- id: L524
+  title: yaml_field_set.sh AWKはYAML double-quoted flow scalar継続行を誤スキップする
+  summary: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す
+  tags:
+  - infra
+  - yaml
+  target_files:
+  - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
+  - queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml
 - id: L523
   title: 偵察cmdの実行禁止事項はinbox通知でなくhookで強制せよ
   summary: 偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存
@@ -17,9 +26,6 @@ lessons:
   tags:
   - infra
   - gate
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   target_files:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
   - scripts/cmd_save.sh
@@ -292,11 +298,11 @@ lessons:
     file
   tags:
   - universal
+  target_files:
+  - gate_cycle_health.sh
   helpful_count: 11
   harmful_count: 7
   last_referenced: '2026-04-22'
-  target_files:
-  - gate_cycle_health.sh
 - id: L480
   title: pipefail下でgrep no-matchは||trueが必須。テストが先に気づける
   summary: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
@@ -380,9 +386,6 @@ lessons:
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
   target_files:
   - gate_report_format.sh
 - id: L467
@@ -460,25 +463,16 @@ lessons:
   summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
   summary: commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:30+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
 - id: L452
   title: SCOUT/exempt系テスト関数にもq8_why_whatが必要
   summary: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:30+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L451
   title: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
   summary: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、
@@ -491,17 +485,11 @@ lessons:
   summary: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師'
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:30+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L449
   title: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
   summary: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:29+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
   target_files:
   - cmd_complete_gate.sh
 - id: L448
@@ -509,17 +497,11 @@ lessons:
   summary: draft教訓12件が未査読のままGATE到達
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:29+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
 - id: L447
   title: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
   summary: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:29+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: L446
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
   summary: cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準
@@ -532,9 +514,6 @@ lessons:
   summary: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
   summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:
@@ -553,9 +532,6 @@ lessons:
   summary: 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L441
   title: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する
   summary: Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストス
@@ -763,9 +739,6 @@ lessons:
   summary: set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L412
   title: inbox_prune.shもyaml.dump禁止規則の対象漏れ
   summary: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
@@ -790,9 +763,6 @@ lessons:
   summary: datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:28+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L409
   title: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
   summary: run_precommit_checks.shでruffは5段階フォールバック(resolve_ruff_cmd)、biomeはnpx自動取得だが、shellc
@@ -807,9 +777,6 @@ lessons:
     -e即死で、P
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:27+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   target_files:
   - switch_project.sh
 - id: L407
@@ -1002,9 +969,6 @@ lessons:
   summary: section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった。内部データをraw_m
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:27+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L380
   title: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク
   summary: cronで毎分実行されるwatchdogスクリプトのlog()がappend-onlyでサイズチェックなし。10分毎のOKログだけでも月1440行、再起動イベン
@@ -1180,9 +1144,6 @@ lessons:
   summary: sed -nで抽出した値が空文字の場合、後段の比較(==MISSING)に静かに不一致し処理がスキップされる。抽出直後に空文字チェック+exit1が必須。set
   tags:
   - universal
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:26+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L357
   title: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反
   summary: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
@@ -1267,9 +1228,6 @@ lessons:
   - git
   - monitor
   - inbox
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:26+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
   target_files:
   - scripts/xxx.sh
 - id: L346
@@ -1641,11 +1599,11 @@ lessons:
   - yaml
   - git
   - inbox
+  target_files:
+  - inbox_write.sh
   helpful_count: 0
   harmful_count: 4
   last_referenced: '2026-04-22'
-  target_files:
-  - inbox_write.sh
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
   summary: ntfy_listener.shをNTFY_LISTENER_LIB_ONLY=1でsource時、flock guardはスキップされるがinbox初期化(e
@@ -1776,9 +1734,6 @@ lessons:
     skip パタ
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-21'
 - id: L282
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
@@ -2110,11 +2065,11 @@ lessons:
     "ok 293
   tags:
   - testing
+  target_files:
+  - test_result_guard.sh
   helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-22'
-  target_files:
-  - test_result_guard.sh
 - id: L239
   title: 並列implレビューはcommit integrityを独立チェックせよ
   summary: cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに
@@ -2190,11 +2145,11 @@ lessons:
   tags:
   - infra
   - universal
+  target_files:
+  - cmd_complete_gate.sh
   helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-21'
-  target_files:
-  - cmd_complete_gate.sh
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
   summary: 'ast-grep rule を regex ベースで書く場合、kind を伴わない composite rule は `Rule must
@@ -2255,11 +2210,11 @@ lessons:
   tags:
   - process
   - git
+  target_files:
+  - context/lord-conversation-index.md
   helpful_count: 2
   harmful_count: 2
   last_referenced: '2026-04-22'
-  target_files:
-  - context/lord-conversation-index.md
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
   summary: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
@@ -2363,11 +2318,11 @@ lessons:
   - testing
   - gate
   - tmux
+  target_files:
+  - test_gate_metrics_model_labels.bats
   helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-21'
-  target_files:
-  - test_gate_metrics_model_labels.bats
 - id: L207
   title: field_getはYAML block scalar指示子をリテラル文字列で返す
   summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML
@@ -2616,12 +2571,12 @@ lessons:
   - frontend
   - git
   - reporting
-  helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-22'
   target_files:
   - build_instructions.sh
   - AGENTS.md
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-22'
 - id: L172
   title: レビューでは『履歴位置確認』を先に行うと push 可否の誤判定を防げる
   summary: git status の一時表示だけで ahead/behind を判断せず、`git branch -vv` と `git rev-parse
@@ -2662,9 +2617,6 @@ lessons:
   summary: IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS
   tags:
   - lesson
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:26+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   target_files:
   - auto_draft_lesson.sh
   - lesson_write.sh
@@ -3116,9 +3068,6 @@ lessons:
   - gate
   - yaml
   - lesson
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:27+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   target_files:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
@@ -3159,11 +3108,11 @@ lessons:
   - bash
   - yaml
   - reporting
+  target_files:
+  - cmd_complete_gate.sh
   helpful_count: 1
   harmful_count: 2
   last_referenced: '2026-04-22'
-  target_files:
-  - cmd_complete_gate.sh
 - id: L096
   title: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
   summary: bash,variable-scope,preflight
@@ -3177,9 +3126,6 @@ lessons:
   tags:
   - gate
   - reporting
-  deprecated: true
-  deprecated_at: '2026-04-22T19:49:26+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
   summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ
@@ -3187,9 +3133,9 @@ lessons:
   - bash
   - monitor
   - tmux
-  retired: true
   target_files:
   - scripts/shutsujin_departure.sh
+  retired: true
 - id: L093
   title: impl忍者のgit add漏れ — 新規ファイル作成時のcommit忘れ
   summary: 新規ファイル作成後にgit add+commitを実行せずuntrackedのまま残した。.gitignore whitelistはあったがuntrackedの
@@ -3228,12 +3174,12 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-21'
   target_files:
   - deploy_task.sh
   - lesson_tags.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-21'
 - id: L087
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
   summary: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の
@@ -3260,11 +3206,11 @@ lessons:
   - gate
   - yaml
   - reporting
+  target_files:
+  - cmd_complete_gate.sh
   helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-21'
-  target_files:
-  - cmd_complete_gate.sh
 - id: L084
   title: roles/ashigaru_role.mdは現在不存在 — build_instructions.shがashigaru.md直接処理
   summary: L005は「ashigaru.mdの本文はroles/ashigaru_role.mdから取得」と言うが、2026-02-27時点でroles/ディレクトリ自体
@@ -3312,11 +3258,11 @@ lessons:
   - gate
   - bash
   - lesson
+  target_files:
+  - scripts/deploy_task.sh
   helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-21'
-  target_files:
-  - scripts/deploy_task.sh
 - id: L078
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
   summary: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
@@ -3347,9 +3293,6 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - bash
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-21'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
   summary: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う
