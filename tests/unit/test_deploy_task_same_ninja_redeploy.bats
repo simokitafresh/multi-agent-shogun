@@ -43,9 +43,9 @@ EOF
 
     run_same_ninja_warn sasuke cmd_9005
     [ "$status" -eq 0 ]
-    [[ "$output" == *"same-ninja redeploy detected (cmd_9005 -> sasuke)"* ]]
-    [[ "$output" == *"session_state still present"* ]]
-    [[ "$output" == *"existing report for the same ninja"* ]]
+    [[ "$output" == *"same-ninja redeploy (cmd_9005 → sasuke)"* ]]
+    [[ "$output" == *"session_state残存"* ]]
+    [[ "$output" == *"同忍者の既存報告あり"* ]]
 }
 
 @test "same ninja redeploy: fresh deploy stays quiet" {

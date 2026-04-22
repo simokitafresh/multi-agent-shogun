@@ -247,7 +247,7 @@ _setup_git_project() {
 
     local commit_block
     commit_block="$(report_block "$report_path" "commit")"
-    [[ "$commit_block" == *'check: Was git commit completed (untracked/modified=0)?'* ]]
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
     [[ "$commit_block" == *"result: 'no'"* ]]
 }
 
@@ -257,7 +257,7 @@ _setup_git_project() {
 
     local commit_block
     commit_block="$(report_block "$report_path" "commit")"
-    [[ "$commit_block" == *'check: Was git commit completed (untracked/modified=0)?'* ]]
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
     [[ "$commit_block" == *"result: ''"* ]]
 }
 
@@ -268,7 +268,7 @@ _setup_git_project() {
     local commit_block
     commit_block="$(report_block "$report_path" "commit")"
     [[ "$commit_block" == *"result: 'no'"* ]]
-    [[ "$commit_block" == *"waive_reason: 'research cmd: commit not required'"* ]]
+    [[ "$commit_block" == *"waive_reason: '研究cmd: commit不要'"* ]]
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -282,10 +282,10 @@ _setup_git_project() {
     local commit_block
     commit_block="$(report_block "$report_path" "commit")"
     [[ -n "$commit_block" ]]
-    [[ "$commit_block" == *'check: Was git commit completed (untracked/modified=0)?'* ]]
+    [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
 }
 
-@test "waive_ac ACs are initialized with result:no and waive_reason" {
+@test "waive_ac指定のACはwaive_reason付きresult:noで初期化される" {
     local report_path
     report_path="$(fixture_report_path waive_ac)"
 
@@ -293,7 +293,7 @@ _setup_git_project() {
     ac1_block="$(report_block "$report_path" "AC1")"
     ac5_block="$(report_block "$report_path" "AC5")"
     [[ "$ac5_block" == *"result: 'no'"* ]]
-    [[ "$ac5_block" == *'waive_reason: waive_ac specified'* ]]
+    [[ "$ac5_block" == *'waive_reason: waive_ac指定'* ]]
 }
 
 @test "recon taskではcommit checkを引き続き注入しない" {
@@ -305,22 +305,22 @@ _setup_git_project() {
     [ -z "$commit_block" ]
 }
 
-@test "monthly in AC description appends exclude in-progress month to description-derived checks" {
+@test "AC descriptionにmonthlyを含む場合はdescription由来checkへ進行中月除外を付記する" {
     local report_path
     report_path="$(fixture_report_path monthly_description)"
 
     local ac1_block
     ac1_block="$(report_block "$report_path" "AC1")"
-    [[ "$ac1_block" == *'exclude in-progress month'* ]]
+    [[ "$ac1_block" == *'進行中月除外'* ]]
 }
 
-@test "Japanese monthly wording in AC description also appends exclude in-progress month to handwritten binary_checks" {
+@test "AC descriptionに月次を含む場合は手書きbinary_checksにも進行中月除外を付記する" {
     local report_path
     report_path="$(fixture_report_path monthly_handwritten)"
 
     local ac1_block
     ac1_block="$(report_block "$report_path" "AC1")"
-    [[ "$ac1_block" == *'exclude in-progress month'* ]]
+    [[ "$ac1_block" == *'進行中月除外'* ]]
 }
 
 @test "強化cmdの報告テンプレートにbefore/after/regressionを追加する" {
@@ -330,8 +330,8 @@ _setup_git_project() {
     grep -Fq 'before_metrics:' "$report_path"
     grep -Fq 'after_metrics:' "$report_path"
     grep -Fq 'regression: ""' "$report_path"
-    grep -Fq 'summary: ""  # Measurement before implementation' "$report_path"
-    grep -Fq 'summary: ""  # Measurement after implementation' "$report_path"
+    grep -Fq 'summary: ""  # 実装前の計測値' "$report_path"
+    grep -Fq 'summary: ""  # 実装後の計測値' "$report_path"
 }
 
 @test "報告テンプレートにsimplicity_checkを追加する" {
