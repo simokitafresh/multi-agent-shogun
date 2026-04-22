@@ -2578,13 +2578,24 @@ import sys, re
 content = sys.stdin.read()
 lines = content.split('\n')
 in_assumptions = False
+assumptions_indent = -1
 current = {}
 entries = []
 for line in lines:
-    if re.match(r'\s*assumptions\s*:', line):
+    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
+    if m_aline and not in_assumptions:
         in_assumptions = True
+        assumptions_indent = len(m_aline.group(1))
         continue
     if in_assumptions:
+        # Exit if line is non-empty and at same/lower indentation as assumptions: (peer/parent key)
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= assumptions_indent:
+                in_assumptions = False
+                if current: entries.append(dict(current))
+                current = {}
+                continue
         if re.match(r'\s*-\s', line):
             if current:
                 entries.append(dict(current))
@@ -2593,10 +2604,6 @@ for line in lines:
         m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
         if m:
             current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
-        if line and not line[0].isspace() and line.strip():
-            in_assumptions = False
-            if current: entries.append(dict(current))
-            current = {}
 if current: entries.append(current)
 pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
 for e in entries:
