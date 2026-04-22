@@ -83,6 +83,7 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L319: p_average_results本番テーブルが空（バッチ未実行 or cold sleep）（cmd_981）
 - L330: sync-fof API実行後の検証は60秒以上待て。locked=falseでも再計算進行中の可能性あり（cmd_1004）
 - L332: FoF of FoF partial recalculate-syncはlive dataを欠損させうる。L3正規経路で復旧（cmd_1004）
+- L645: sync-status解除だけでL3完走と見なすな。manual syncのL3は current run の `[RECALC] Layer 3 completed` ログまたは timing-history 新規行を一次証跡とし、71/109 FoF時点の進捗断片ではFAIL扱いとする。L0=12s/L1=13s/L2=151sまでは完走確認済み（cmd_2235）
 - L474: recalculate_fast.pyの事前計算はPipelineEngineと同一データソース(df_dtb3_raw)を使え。reindex済みデータは日付ズレの原因（cmd_1245）
 - L475: Phase 3.7 DTB3リサンプル問題。DTB3をprice_datesにreindexするとrolling(N)の参照日がPipelineEngine(DTB3固有日付)と不一致。PI-010同根（cmd_1245）
 - L477: FoF recalculate時のPYTHONPATH問題。CLIからrecalculate_fast.py実行時にsys.path.insert(0,backend)必要。selection_pipeline動作乖離も確認（cmd_1250）
