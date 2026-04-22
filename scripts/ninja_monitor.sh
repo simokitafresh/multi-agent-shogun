@@ -1805,6 +1805,12 @@ check_inbox_renudge() {
                     local _kts
                     _kts=$(awk '/^  status:/{print $2; exit}' "$_ktf" 2>/dev/null || true)
                     if [ "$_kts" = "done" ]; then
+                        # GATE CLEAR済みならpending workではない
+                        local _kpcmd
+                        _kpcmd=$(awk '/^  parent_cmd:/{print $2; exit}' "$_ktf" 2>/dev/null || true)
+                        if [ -n "$_kpcmd" ] && ls "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* >/dev/null 2>&1; then
+                            continue  # archived=GATE CLEAR済み
+                        fi
                         _karo_pending=true
                         break
                     fi
