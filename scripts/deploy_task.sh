@@ -342,7 +342,7 @@ resolve_cmd_to_task() {
     # R1: task YAMLの中核フィールドを一括設定（7回flock→1回batch。CoDD refactor_sequence準拠）
     local _deploy_ts
     _deploy_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
-    local _batch_args=("parent_cmd=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=★前taskは無効���このYAMLが${cmd_id}の最新指示(${_deploy_ts})。最初か���読み直せ。")
+    local _batch_args=("parent_cmd=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for ${cmd_id} (deployed ${_deploy_ts}). Read from the beginning.")
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
     [ -n "$_target_path" ] && _batch_args+=("target_path=$_target_path")
