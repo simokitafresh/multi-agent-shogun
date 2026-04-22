@@ -62,32 +62,18 @@ pane_lookup() {
 
     _pane_lookup_ensure_init
 
-    # Source 1: ninja_states.yaml (動的マッピング)
-    local states_path="${_PANE_LOOKUP_SCRIPT_DIR}/logs/ninja_states.yaml"
-    if [ -f "$states_path" ]; then
-        local pane
-        pane=$(
-            SCRIPT_DIR_ENV="$_PANE_LOOKUP_SCRIPT_DIR" NAME_ENV="$name" python3 - <<'PY' 2>/dev/null
-import os
-import yaml
-
-try:
-    states_path = os.path.join(os.environ['SCRIPT_DIR_ENV'], 'logs', 'ninja_states.yaml')
-    with open(states_path) as f:
-        data = yaml.safe_load(f)
-    ninja = data.get('ninjas', {}).get(os.environ['NAME_ENV'], {})
-    print(ninja.get('pane', ''))
-except Exception:
-    pass
-PY
-        )
-        if [ -n "$pane" ]; then
-            echo "$pane"
+    # Source 1: tmux @agent_id (実際のpane配置を直接参照 — 常に正確)
+    if command -v tmux >/dev/null 2>&1; then
+        local pane_line
+        pane_line=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null \
+            | grep " ${name}$" | head -1)
+        if [ -n "$pane_line" ]; then
+            echo "shogun:agents.${pane_line%% *}"
             return 0
         fi
     fi
 
-    # Source 2: 静的フォールバック
+    # Source 2: 静的フォールバック (tmux未起動時)
     local static_pane="${_PANE_LOOKUP_MAP[$name]:-}"
     if [ -n "$static_pane" ]; then
         echo "$static_pane"
