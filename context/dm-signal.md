@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L646 -->
+<!-- last_synced_lesson: L640 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -191,3 +191,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L644: fold_percentiles.csvはlong-format(fold粒度)で出力せよ（cmd_2219）
 - L645: sync-status解除だけでL3完走と見なしてはならない（cmd_2235）
 - L646: IMPL/SCOUT矛盾時はkaro確認を優先せよ（cmd_2238）
+- L640: codd extract静的解析はPython大型ファイル(3048行)で関数検出が不十分（cmd_2245）
