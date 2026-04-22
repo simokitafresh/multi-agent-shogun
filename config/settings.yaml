@@ -12,7 +12,7 @@ cli:
       role: shogun
       japanese_name: 将軍
     karo:
-      type: codex
+      type: claude
       model_name: claude-opus-4-6
       role: karo
       japanese_name: 家老
