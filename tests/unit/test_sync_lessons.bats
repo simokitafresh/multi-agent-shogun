@@ -82,6 +82,77 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons propagates explicit target_files from markdown to index" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: deploy_task.shのtarget_filesマッチング不備
+- **日付**: 2026-04-21
+- **出典**: cmd_2200
+- **tags**: [dm-signal]
+- **target_files**: [scripts/deploy_task.sh, scripts/lesson_write.sh]
+- deploy_task.shのtarget_filesマッチングが教訓にtarget_filesがないため不活性だった
+EOF
+
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-04-20T00:00:00'
+lessons: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    # index に target_files が伝搬しているか確認
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+lessons = data.get('lessons', [])
+assert len(lessons) == 1, f'expected 1 lesson, got {len(lessons)}'
+tf = lessons[0].get('target_files', [])
+assert 'scripts/deploy_task.sh' in tf, f'target_files missing deploy_task.sh: {tf}'
+assert 'scripts/lesson_write.sh' in tf, f'target_files missing lesson_write.sh: {tf}'
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
+@test "sync_lessons auto-extracts target_files from lesson text when no explicit field" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: run_077_kawarimi.pyのbatch vs sequential不一致
+- **日付**: 2026-04-21
+- **tags**: [dm-signal]
+- run_077_kawarimi.pyでbatch結果とsequential結果のMD5が不一致
+EOF
+
+    # Create file cache target so auto-extraction finds it
+    mkdir -p "$EXT_PROJECT/scripts"
+    touch "$EXT_PROJECT/scripts/run_077_kawarimi.py"
+
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-04-20T00:00:00'
+lessons: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+lessons = data.get('lessons', [])
+assert len(lessons) == 1, f'expected 1 lesson, got {len(lessons)}'
+tf = lessons[0].get('target_files', [])
+assert len(tf) > 0, f'auto-extracted target_files should not be empty: {tf}'
+assert 'run_077_kawarimi.py' in tf, f'expected run_077_kawarimi.py in {tf}'
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
 @test "sync_lessons writes back project-local injection_count from lesson_impact.tsv" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: sample lesson

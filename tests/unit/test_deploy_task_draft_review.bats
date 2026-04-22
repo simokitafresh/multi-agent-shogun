@@ -78,6 +78,42 @@ run_draft_review() {
     [[ "$output" == *"gunshi draft cmd_normal レビュー依頼。通常cmd。ninja=sasuke。 review_draft karo"* ]]
 }
 
+@test "malformed task YAML falls back to cmd source AC count and still sends draft review" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_normal
+  acceptance_criteria:
+  _deploy_notice: "broken"
+    dangling continuation
+YAML
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_normal:
+    title: "通常cmd"
+    acceptance_criteria:
+      - id: AC1
+        description: "通常配備"
+      - id: AC2
+        description: "draft review送信"
+YAML
+
+    run_draft_review "cmd_normal"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+}
+
+@test "draft review is sent only once per cmd" {
+    run_draft_review "cmd_normal"
+    [ "$status" -eq 0 ]
+    run_draft_review "cmd_normal"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: SKIP (already sent)"* ]]
+    run grep -c "review_draft karo" "$TEST_PROJECT/logs/inbox_write_calls.log"
+    [ "$status" -eq 0 ]
+    [ "$output" = "1" ]
+}
+
 @test "CI RED title skips draft review" {
     run_draft_review "cmd_ci_red"
 
