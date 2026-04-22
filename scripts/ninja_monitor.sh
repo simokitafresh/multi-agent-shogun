@@ -390,8 +390,10 @@ check_idle() {
         if [ -n "$_ht_last_active" ] && [ "$_ht_last_active" -gt 0 ] 2>/dev/null; then
             _ht_elapsed=$((_ht_now - _ht_last_active))
         fi
-        # stale補正: @last_activeが空(=hookが動いていない=Codex等)または5分(300秒)以上→idle補正
-        if [ -z "$_ht_last_active" ] || [ "$_ht_elapsed" -ge 300 ]; then
+        # stale補正: @last_activeが空(=hookが動いていない=Codex等)または60秒以上→idle補正
+        # 旧300秒→60秒に短縮(2026-04-22殿指摘: 5分遅延で掲示板/inbox通知が届かない)
+        # 15秒grace period(L350)がthinking pauseを保護するため60秒で安全
+        if [ -z "$_ht_last_active" ] || [ "$_ht_elapsed" -ge 60 ]; then
             log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} stale (last_active=${_ht_last_active}, ${_ht_elapsed}s ago), corrected to idle"
             tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
             [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
