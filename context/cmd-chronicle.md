@@ -856,3 +856,6 @@
 | cmd_2229 | research-tool — Vintage L0→L1→L2全レイヤーGSにend_date引数追加(道具磨き) | dm-signal | 04-22 | Added end-date cutoff propagat |
 | cmd_2230 | 殿裁定: 英語化により全エージェントの日本語理解が著しく低下。 CLAUDE.md/AGENTS.md/スクリプト出力/テストを全て日本語に戻す。 設計書: docs/research/rollback_english_design_20260422.md 軍師レビュー: APPROVE (confidence: HIGH, 指摘0件) | infra | 04-22 | Phase 3の10本をgit historyから日本語期待 |
 | cmd_karo_context_freshness_2224 | 整備 — dm-signal context鮮度回復(9日未更新) | dm-signal | 04-22 | dm-signal context indexes refr |
+| cmd_2231 | fix — ETL cron OOM解消: curl→python直接実行 + メモリ計測 | dm-signal | 04-22 | AC4: log_memory_usage()を全Phase |
+| cmd_2232 | 強化 — CDP CLI標準化: cdp_cli.shをワンストップCDP入口に拡張 | auto-ops | 04-22 | cdp_cli.sh に launch/navigate/e |
+| cmd_karo_auto_ops_context_freshness | 調査 — auto-ops context freshness ALERTの原因分析 | auto-ops | 04-22 | cmd_2232 の context未反映箇所を特定し、co |
