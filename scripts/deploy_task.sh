@@ -3748,11 +3748,16 @@ check_firefighting_title() {
 
 count_task_acceptance_criteria() {
     local task_file="$1"
-    python3 - "$task_file" <<'PY'
+    local cmd_id="${2:-}"
+    python3 - "$task_file" "$cmd_id" "$SCRIPT_DIR" <<'PY'
 import sys
+import os
 import yaml
+from pathlib import Path
 
 task_file = sys.argv[1]
+cmd_id = sys.argv[2].strip()
+script_dir = Path(sys.argv[3])
 count = 0
 
 try:
@@ -3769,8 +3774,66 @@ try:
 except Exception:
     count = 0
 
+if count <= 0 and cmd_id:
+    search_files = [
+        script_dir / "queue" / "shogun_to_karo.yaml",
+    ]
+    archive_dir = script_dir / "queue" / "archive" / "cmds"
+    if archive_dir.is_dir():
+        search_files.extend(sorted(archive_dir.glob(f"{cmd_id}_*.yaml"), reverse=True))
+
+    for path in search_files:
+        try:
+            with open(path, encoding='utf-8') as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+
+        commands = data.get("commands") or {}
+        if isinstance(commands, dict):
+            cmd = commands.get(cmd_id) or {}
+        elif isinstance(commands, list):
+            cmd = next((c for c in commands if str(c.get("id", "")).strip() == cmd_id), {})
+        else:
+            cmd = {}
+
+        acs = cmd.get("acceptance_criteria")
+        if isinstance(acs, list):
+            count = len(acs)
+        elif isinstance(acs, dict):
+            count = len(acs)
+        elif acs:
+            count = 1
+
+        if count > 0:
+            break
+
 print(count)
 PY
+}
+
+mark_draft_review_once() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local title="$3"
+    local state_dir="$SCRIPT_DIR/queue/draft_review_started"
+    local marker="$state_dir/${cmd_id}.started"
+    local ts
+    ts="$(date '+%Y-%m-%dT%H:%M:%S')"
+
+    mkdir -p "$state_dir"
+
+    if ( set -o noclobber; : > "$marker" ) 2>/dev/null; then
+        cat > "$marker" <<EOF
+timestamp: ${ts}
+cmd_id: ${cmd_id}
+ninja: ${ninja_name}
+title: ${title}
+EOF
+        return 0
+    fi
+
+    return 1
 }
 
 maybe_notify_draft_review() {
@@ -3801,12 +3864,17 @@ maybe_notify_draft_review() {
         return 0
     fi
 
-    ac_count=$(count_task_acceptance_criteria "$task_file")
+    ac_count=$(count_task_acceptance_criteria "$task_file" "$cmd_id")
     if ! [[ "$ac_count" =~ ^[0-9]+$ ]]; then
         ac_count=0
     fi
     if [ "$ac_count" -le 1 ]; then
         log "draft_review: SKIP (ac_count<=1: ${ac_count})"
+        return 0
+    fi
+
+    if ! mark_draft_review_once "$cmd_id" "$ninja_name" "${title:-$cmd_id}"; then
+        log "draft_review: SKIP (already sent)"
         return 0
     fi
 
