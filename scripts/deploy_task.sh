@@ -1955,10 +1955,10 @@ try:
         except Exception:
             return []
 
-    # Vercel-style: archive has full data, index is slim. Try archive first, fallback to index.
-    archive_path = os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml')
+    # Active lessons (index) for injection. Archive is for detail lookup only (GP-219).
     index_path = os.path.join(script_dir, 'projects', project, 'lessons.yaml')
-    lessons_path = archive_path if os.path.exists(archive_path) else index_path
+    archive_path = os.path.join(script_dir, 'projects', project, 'lessons_archive.yaml')
+    lessons_path = index_path if os.path.exists(index_path) else archive_path
     lessons = load_lessons_cached(lessons_path)
     if not lessons and not os.path.exists(lessons_path):
         print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
@@ -1972,9 +1972,9 @@ try:
                 pdata = yaml.load(pf, Loader=yaml.SafeLoader)
             for pj in (pdata or {}).get('projects', []):
                 if pj.get('type') == 'platform' and pj.get('id') != project:
-                    plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
                     plat_index = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
-                    plat_path = plat_archive if os.path.exists(plat_archive) else plat_index
+                    plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
+                    plat_path = plat_index if os.path.exists(plat_index) else plat_archive
                     plat_lessons = load_lessons_cached(plat_path)
                     platform_count += len(plat_lessons)
                     lessons.extend(plat_lessons)

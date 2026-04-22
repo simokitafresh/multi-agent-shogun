@@ -42,6 +42,7 @@
 # ★退化計測原理(CoDD#3): GP/改善を入れたら「退化していないか」をbefore/afterで計測せよ。参照率(行動有無)≠有効率(行動効果)。計測対象を間違えると盲点が構造的に生まれる(2026-04-16: useful率26%をreferenced率76%が隠していた)
 # ★GP提案前に既存実装grep確認必須(LG033強制)。「自力不可→家老送信」の前に「そもそも必要か？」を現物で確認。未確認→不要提案→家老CTX消費=負の複利(GP-216事故: deploy_task.sh L2261-2278に既存filter→obsolete)
 # ★Codex家老STALL検知: Codex CLIは宣言出力後にプロンプト(›)で停止する。レビュー送信後にcapture-pane 2回比較(差分なし=停止)で確認。1回見て「動いている」と判断するな(2026-04-22殿指摘)
+# ★スコープ一致原則: 対策のスコープは問題のスコープと一致させよ。一時的問題(cmd固有)に恒久対策(hook)を使うな。自問「この問題はいつまで存在する？この対策はいつまで残る？一致しているか？」(2026-04-22殿指摘: 単発禁止にpre-bash hook設置→外し忘れ→将来の全cmdBLOCK=負の複利)
 # Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
 # Think Before Coding観点: 忍者が暗黙の前提を置いていないか。ACの前提が曖昧なまま実装していないか。不確実なら止まって聞いたか(Karpathy原則1)
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
@@ -1897,6 +1898,108 @@
   gate_prediction: CLEAR
   causal_chain: "CLI実装(hayate)+daemon除去(saizo)+テスト(kagemaru)+docs(kotaro)=CDP標準化完了=正の複利"
   timestamp: "2026-04-22T17:34:00"
+- cmd_id: cmd_karo_2231_ac7_retry
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_2231_ac7_retry_impl
+  report_verdict: FAIL
+  gate_result: null
+  findings_summary: "AC1 PASS(env diff 13key補完)。AC2 PASS(10分超異常報告)。AC3 FAIL(cron run hang→signal比較不可)。Render側問題の可能性"
+  observations:
+    - "事実1: web/cron env diff→13key欠損発見+補完。残差=DATABASE_URL値差のみ"
+    - "事実2: run 1776848082が08:54:42Z started→09:05:16Zでもeventsにended出ず。前回成功job(d7k7k1cm0tmc73acvga0)は08:40:29Z succeeded"
+    - "事実3: 忍者の手順は正しい(独自deploy等なし)。Render cron runのjob実体化前hangの疑い"
+  fail_reasons:
+    - "AC3:no cron run未完走のためsignal比較不可"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: BLOCK(AC3:no)
+  causal_chain: "env diff補完→cron run→Render側hang→job未完走→signal比較不可→AC3 FAIL"
+  timestamp: "2026-04-22T18:08:00"
+- cmd_id: cmd_karo_auto_ops_context_freshness
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_auto_ops_context_freshness_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Q1-Q3三層分析。根本原因=context_update未指定でgate SKIP。commit 45021f1c"
+  observations:
+    - "事実1: environment_change=context/auto-ops.md指定あり→context_update未指定→gate_context_freshness SKIP"
+    - "事実2: 横展開候補: infra context/infrastructure.md L2も2026-04-17のまま(同パターン)"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "cmd完了→environment_change有→context_update無→gate SKIP→context stale放置。context_update必須注入で構造的防止"
+  timestamp: "2026-04-22T17:56:00"
+- cmd_id: cmd_2233
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2233_scout
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。禁止事項違反なし。66分内訳DB実測: 前段152s(3.8%)/L2 2382s(60.1%)/L3 1151s(29.1%)。daily_etl部分廃止可"
+  observations:
+    - "事実1: 前段3ステップのうちDataFetcher/ticker_returnsはsync cron(01:00/01:05)と重複。maintenance_checkのみ代替なし"
+    - "事実2: DB recalculation_timings実測。L2_portfolio=2382s(60%)が最大ボトルネック"
+    - "事実3: 禁止事項確認: cron実行/API POST/fullrecalculate実行なし。DB SELECT(読取り)のみ"
+  lesson_quality: N/A
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "daily_etl 66分→前段152s(3.8%重複可)+L2 2382s(60%)+L3 1151s(29%)→L2最適化が最大ROI"
+  timestamp: "2026-04-22T18:58:00"
+- cmd_id: cmd_2233
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2233_scout
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。禁止事項違反なし。hanzoと独立収束(DataFetcher/ticker重複、maintenance必要)。Render logs不取得→コード推定で代替"
+  observations:
+    - "事実1: hanzo(DB実測)とtobisaru(コード推定)が独立に同結論→信頼度高"
+    - "事実2: AC2のRender logs不在→既存計測データ(cmd_1505=440s/cmd_2021=843s)+コード構造で推定。禁止事項遵守"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: WARN(lesson_candidate有)
+  causal_chain: "daily_etl前段重複→sync cron(01:00)が先行実行済み→ETL(03:00)で再実行=純粋な無駄"
+  timestamp: "2026-04-22T19:08:00"
+- cmd_id: cmd_2234
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。sync-prices L0を730日固定→FULL_HISTORY_START全期間取得+UPSERT差分に変更。殿方針完全整合"
+  observations:
+    - "事実1: DEFAULT_LOOKBACK_DAYS=730(sync_layers.py L58)、DEFAULT_FETCH_DAYS=730(data_fetcher.py L19)現存確認"
+    - "事実2: FULL_HISTORY_START=date(2000,1,1)(constants.py L36)。変更先の定数が存在"
+    - "事実3: 殿方針(2026-04-22): 全部再計算は自明。取得=全期間、書込み=UPSERT差分"
+  causal_chain: "730日固定→730日以前のsplit/遡及修正を見逃し→データ不正確性。全期間取得で構造的解消=正の複利"
+  timestamp: "2026-04-22T19:28:00"
+- cmd_id: cmd_2233
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。CoDD偵察。daily_etl 4ステップvs admin fullrecalculate照合+Render logs実測。殿方針(本番が正)に沿った設計"
+  observations:
+    - "事実1: daily_etl.py前段3ステップ(maintenance/data_fetch/ticker_returns)+recalculate_history_fast。adminはfastのみ"
+    - "事実2: 軍師のbottleneck分析(推定値)との整合あり。本cmdで実測値に置換"
+  causal_chain: "66分cron→前段3ステップが不要なら10分で完了=殿方針(本番が正)の検証=正の複利"
+  timestamp: "2026-04-22T18:43:00"
+- cmd_id: cmd_karo_ci_fix_ga158
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_ga158_impl
+  report_verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI RED根因(assumptions parser終了検出バグ)修正。テスト13/13 PASS。commit f3497e78"
+  observations:
+    - "事実1: 旧コード '行頭非空白で終了' → CMD_BLOCK全行インデント済みで機能しない"
+    - "事実2: assumptions:のインデント幅記録→同幅以下で離脱に修正。environment_change混入防止"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: WARN(lesson_candidate有)
+  causal_chain: "インデント済みブロック→旧終了条件無効→兄弟キー混入→CI環境パス不在→BLOCK→4テストFAIL"
+  timestamp: "2026-04-22T18:43:00"
 - cmd_id: cmd_2232
   review_type: draft
   verdict: APPROVE
@@ -1923,3 +2026,15 @@
       defense_level: 4
   causal_chain: "タスクファイルなし→if分岐のelseなし→_tf_excluded_ids空→post-filter除外0→全教訓注入→328件がマッチ不可能なタスクへ→NOT_USEFUL量産→useful率9.9%"
   timestamp: "2026-04-22T16:50:00"
+- cmd_id: cmd_2235
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。sync cron L0-L3手動実行検証。sync_layers.py 4関数全実在確認。DEFAULT_HISTORY_START_DATE=2000-01-01。cmd_2234 commit確認。ETL cron廃止判断に直結"
+  observations:
+    - "事実1: sync_layers.py L61(sync_prices)/L135(sync_tickers)/L189(sync_standard)/L298(sync_fof) — 4関数実在。cmd記載とL番号微小ずれだが関数は正しい"
+    - "事実2: cmd_2234 commit 68ecf76f確認。sync_pricesが730日固定→FULL_HISTORY_START全期間取得に変更済み"
+    - "事実3: DEFAULT_HISTORY_START_DATE=date(2000,1,1)。constants.py現物確認"
+  causal_chain: "L0全期間取得(cmd_2234)→L0-L3手動完走確認→daily_etl冗長性実証→廃止可能=cron5本→4本=正の複利(メンテ削減+障害点削減)"
+  timestamp: "2026-04-22T20:35:00"
