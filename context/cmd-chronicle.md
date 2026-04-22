@@ -862,3 +862,5 @@
 | cmd_2233 | CoDD偵察 — daily_etl.pyの存在理由調査: 本番fullrecalculateとの乖離分析 | dm-signal | 04-22 | FILL_THIS |
 | cmd_karo_ci_fix_ga158 | CI RED修正 — cmd_save environment_change テスト317-320復旧 | infra | 04-22 | cmd_save.shのPythonパーサーがassumpt |
 | cmd_2234 | fix — sync-prices(L0)を全期間取得+UPSERTに変更: 730日固定→FULL_HISTORY_START | dm-signal | 04-22 | sync_layers.py DEFAULT_LOOKBAC |
+| cmd_2236 | 廃止 — daily_etl.py + ETL cron削除: L0-L3 sync cronに統一 | dm-signal | 04-22 | ETL cron廃止完了。Render ETL cron(c |
+| cmd_2235 | 検証 — sync cron L0→L3手動実行: 全期間再取得+再計算の完走確認 | dm-signal | 04-22 | L0/L1/L2はRender logs+timinig h |
