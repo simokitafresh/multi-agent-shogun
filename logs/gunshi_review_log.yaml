@@ -2393,3 +2393,17 @@
   gate_prediction: CLEAR
   causal_chain: "sync_layers.py extract+spec→4関数の責務・呼出し関係を文書化→全L0-L3最適化の設計基盤=正の複利"
   timestamp: "2026-04-23T00:50:00"
+- cmd_id: cmd_karo_ci_fix_ga159
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。yaml_field_set.sh AWK flow scalar継続行スキップバグ修正。+9行-1行。テスト31件全PASS"
+  observations:
+    - "事実1: inject_task_modifiers.py yaml.dumpが|-→\"変換→AWK継続行スキップ→不正YAML。根因特定が正確"
+    - "事実2: cmd target_path(cmd_save.sh)≠実修正対象(yaml_field_set.sh)。tobisaruはGA run追跡で真因に到達"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: WARN
+  causal_chain: "yaml.dump |-→\"変換→AWK prev_inline_scalar→継続行skip→不正YAML→CI RED。flow_contフラグで根本修正"
+  timestamp: "2026-04-23T00:55:00"
