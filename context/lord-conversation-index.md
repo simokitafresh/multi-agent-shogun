@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-22T12:47:36+09:00 -->
+<!-- generated_at: 2026-04-22T13:03:21+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-22T13:03:21+09:00 | terminal | response | **cmd_2230 GATE CLEAR。** 英語化ロールバック完了。CLAUDE.md/AGENTS.md/スクリプト4本/テスト10本が日本語に復帰。 疾風・影丸・才蔵の3名で完遂。殿のご指示を。 [meta] stop_reas…
 - 2026-04-22T12:47:36+09:00 | terminal | response | cmd_save.sh PASS。pending昇格して委任する。 [meta] stop_reason=tool_use
 - 2026-04-22T12:42:59+09:00 | terminal | inbound | 起票せよ
 - 2026-04-22T12:42:16+09:00 | terminal | response | 軍師にレビュー依頼を掲示板経由で送信した。軍師はCTX:22%で待機中、受信可能。 設計書の要点: - **3 Phase構成**（軍師原案4 Phaseから修正） - Phase 1: CLAUDE.md + AGENTS.md復元（C…
@@ -13,7 +14,6 @@
 - 2026-04-22T12:34:21+09:00 | terminal | response | 現物確認完了。殿に報告する。 **軍師の4 Phase提案に対する拙者の判断:** **Phase 1（CLAUDE.md + AGENTS.md）— 要修正** - AGENTS.md: 英語化後の変更なし。`git show 8af9…
 - 2026-04-22T12:33:46+09:00 | terminal | response | 現物確認完了。殿に報告する。 **軍師の4 Phase提案に対する拙者の判断:** **Phase 1（CLAUDE.md + AGENTS.md）— 要修正** - AGENTS.md: 英語化後の変更なし。`git show 8af9…
 - 2026-04-22T12:33:46+09:00 | terminal | inbound | 英語化以降にやったことを全て列挙せよ
-- 2026-04-22T12:32:20+09:00 | terminal | response | 復帰完了。禁則F001-F008確認済み。 殿、将軍復帰した。 **現状:** - cmd_2229（end_date引数追加）GATE CLEAR。疾風・影丸完遂。動作確認は未完了 - 全忍者6名idle - 家老から掲示板: 「ver…
 
 ## 未解決確認事項
 - 現物確認完了。殿に報告する。 **軍師の4 Phase提案に対する拙者の判断:** **Phase 1（CLAUDE.md + AGENTS.md）— 要修正** - AGENTS.md: 英語化後の変更なし。`git show 8af962ca`で安全に復元可 - **CLA…
@@ -26,6 +26,7 @@
 - 確認したか？
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-22T13:03:21+09:00 | **cmd_2230 GATE CLEAR。** 英語化ロールバック完了。CLAUDE.md/AGENTS.md/スクリプト4本/テスト10本が日本語に復帰。 疾風・影丸・才蔵の3名で完遂。殿のご指示を。 [meta] stop_reason=tool_use
 - 2026-04-22T12:42:16+09:00 | 軍師にレビュー依頼を掲示板経由で送信した。軍師はCTX:22%で待機中、受信可能。 設計書の要点: - **3 Phase構成**（軍師原案4 Phaseから修正） - Phase 1: CLAUDE.md + AGENTS.md復元（CLAUDE.mdは手動再適用あり） - …
 - 2026-04-22T12:40:54+09:00 | 軍師にレビュー依頼を掲示板経由で送信した。軍師はCTX:22%で待機中、受信可能。 設計書の要点: - **3 Phase構成**（軍師原案4 Phaseから修正） - Phase 1: CLAUDE.md + AGENTS.md復元（CLAUDE.mdは手動再適用あり） - …
 - 2026-04-22T12:37:35+09:00 | 英語化コミット(`c65492ee`)以降の全作業を分類して報告する。 **■ 英語化の延長（ロールバック対象）** | commit | 内容 | 変更ファイル | |--------|------|-------------| | `d7fcabde` | deploy_t…
@@ -33,7 +34,6 @@
 - 2026-04-22T12:33:46+09:00 | 現物確認完了。殿に報告する。 **軍師の4 Phase提案に対する拙者の判断:** **Phase 1（CLAUDE.md + AGENTS.md）— 要修正** - AGENTS.md: 英語化後の変更なし。`git show 8af962ca`で安全に復元可 - **CLA…
 - 2026-04-22T12:32:20+09:00 | 復帰完了。禁則F001-F008確認済み。 殿、将軍復帰した。 **現状:** - cmd_2229（end_date引数追加）GATE CLEAR。疾風・影丸完遂。動作確認は未完了 - 全忍者6名idle - 家老から掲示板: 「verification用fresh cmdか…
 - 2026-04-22T12:12:14+09:00 | 殿のご指示を待つ。 [meta] stop_reason=end_turn
-- 2026-04-22T12:10:53+09:00 | 殿のご指示を待つ。 [meta] stop_reason=end_turn
 
 ## 参照cmd
 - cmd_2225
@@ -41,6 +41,7 @@
 - cmd_2227
 - cmd_2228
 - cmd_2229
+- cmd_2230
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
