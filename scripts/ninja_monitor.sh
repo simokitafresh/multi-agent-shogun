@@ -1189,9 +1189,11 @@ _handle_auto_clear() {
     agent_id=$(tmux display-message -t "$target" -p '#{@agent_id}' 2>/dev/null)
 
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
-    local ctx_now
+    # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
+    local ctx_now _ac_cli_type
     ctx_now=$(get_context_pct "$target" "$name")
-    if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
+    _ac_cli_type=$(cli_type "$name" 2>/dev/null || echo "claude")
+    if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null && [ "$_ac_cli_type" != "codex" ]; then
         # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
         CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
         local skip_count=${CLEAR_SKIP_COUNT[$name]}
