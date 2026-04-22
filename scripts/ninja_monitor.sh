@@ -113,6 +113,19 @@ log() {
     printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$1" >> "$LOG"
 }
 
+acquire_singleton_lock() {
+    local lock_file="${STATE_DIR}/ninja_monitor.singleton.lock"
+    exec 9>"$lock_file"
+    if ! flock -n 9; then
+        log "SINGLETON-EXIT: another ninja_monitor instance already holds ${lock_file}"
+        exit 0
+    fi
+}
+
+if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
+    acquire_singleton_lock
+fi
+
 send_inbox_message() {
     local to="$1"
     local message="$2"
@@ -390,14 +403,34 @@ check_idle() {
         if [ -n "$_ht_last_active" ] && [ "$_ht_last_active" -gt 0 ] 2>/dev/null; then
             _ht_elapsed=$((_ht_now - _ht_last_active))
         fi
-        # stale補正: @last_activeが空(=hookが動いていない=Codex等)または60秒以上→idle補正
-        # 旧300秒→60秒に短縮(2026-04-22殿指摘: 5分遅延で掲示板/inbox通知が届かない)
-        # 15秒grace period(L350)がthinking pauseを保護するため60秒で安全
+        # stale補正: @last_activeが空(=hookが動いていない=Codex等)または60秒以上なら
+        # 「まず実画面のbusy/idleを確認してから」補正する。
+        # 旧実装は stale だけで idle 扱いし、Codex の "Working ..." 中に
+        # idle通知を飛ばす誤判定を起こした。
         if [ -z "$_ht_last_active" ] || [ "$_ht_elapsed" -ge 60 ]; then
-            log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} stale (last_active=${_ht_last_active}, ${_ht_elapsed}s ago), corrected to idle"
-            tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
-            [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
-            return 0  # stale hook → idle
+            local _stale_state_rc
+            if check_agent_busy "$pane_target" "$agent_name"; then
+                _stale_state_rc=0
+            else
+                _stale_state_rc=$?
+            fi
+
+            case "$_stale_state_rc" in
+                0)
+                    log "AGENT-STATE-CORRECTION: ${agent_name} @agent_state=${agent_state} stale (last_active=${_ht_last_active}, ${_ht_elapsed}s ago), pane confirms idle"
+                    tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+                    [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
+                    return 0
+                    ;;
+                1)
+                    log "HOOK-STALE-BUT-BUSY: ${agent_name} @agent_state=${agent_state} stale, but pane still busy"
+                    return 1
+                    ;;
+                *)
+                    log "HOOK-STALE-UNKNOWN: ${agent_name} @agent_state=${agent_state} stale, pane state unknown -> keep busy"
+                    return 1
+                    ;;
+            esac
         fi
         log "HOOK-TRUST: ${agent_name} @agent_state=${agent_state}, hooks trusted as BUSY (last_active=${_ht_elapsed}s ago)"
         return 1  # hooks say non-idle → BUSY
@@ -1142,6 +1175,16 @@ _handle_deploy_stall() {
 _handle_idle_notify() {
     local name="$1"
     local now="$2"
+
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    if [ -f "$task_file" ]; then
+        local task_status
+        task_status=$(yaml_field_get "$task_file" "status")
+        if [ "$task_status" = "failed" ]; then
+            log "IDLE-NOTIFY-SKIP: $name task status=failed (not assignable)"
+            return
+        fi
+    fi
 
     [ "${PREV_STATE[$name]}" = "idle" ] && return
 
@@ -2286,7 +2329,7 @@ write_karo_snapshot() {
                         if [ -z "$task_status" ] && [ -f "$task_file" ]; then
                             task_status=$(yaml_field_get "$task_file" "status")
                         fi
-                        if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ]; then
+                        if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ] && [ "$task_status" != "failed" ]; then
                             idle_list="${idle_list}${name},"
                         fi
                     fi
