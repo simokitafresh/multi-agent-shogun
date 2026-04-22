@@ -249,3 +249,46 @@ EOF
 
     grep -q '^karo|hayate、エラー停止|error_report|hayate$' "$INBOX_WRITE_LOG"
 }
+
+@test "T-SCI-010: karo sees pending work when inbox is empty but ninja status=done" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    # shogun_to_karo not needed for this test
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"次アクションあり"* ]]
+    [[ "$output" == *"hayate"* ]]
+    [[ "$output" == *"done"* ]]
+}
+
+@test "T-SCI-011: karo no pending work when all ninjas idle" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: idle
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"次アクションあり"* ]]
+}

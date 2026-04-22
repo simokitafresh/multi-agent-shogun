@@ -131,6 +131,45 @@ else
       exit 0
     fi
   fi
+
+  # 家老向け: inbox未読0でもpending workがあれば次アクションを表示(Codex STALL防止)
+  if [[ "$agent_id" == "karo" ]]; then
+    _pending_actions=()
+
+    # 1. 完了忍者の報告パイプライン(status=done → レビュー/GATE処理が必要)
+    for _tf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
+      [[ -f "$_tf" ]] || continue
+      _ninja_name="$(basename "$_tf" .yaml)"
+      _task_status="$(awk '/^  status:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
+      _task_pcmd="$(awk '/^  parent_cmd:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
+      if [[ "$_task_status" == "done" ]]; then
+        _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
+      fi
+    done
+
+    # 2. 未配備CMD(status=delegated + task未作成)
+    _delegated_cmds="$(awk '/^  cmd_[0-9]+:/{cmd=$1; gsub(/:$/,"",cmd)} cmd && /status:.*delegated/{print cmd; cmd=""}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)"
+    for _dcmd in $_delegated_cmds; do
+      _has_task=false
+      for _tf2 in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
+        if grep -q "parent_cmd:.*${_dcmd}" "$_tf2" 2>/dev/null; then
+          _has_task=true
+          break
+        fi
+      done
+      if [[ "$_has_task" == "false" ]]; then
+        _pending_actions+=("${_dcmd} status=delegated → 忍者配備を進めよ")
+      fi
+    done
+
+    if (( ${#_pending_actions[@]} > 0 )); then
+      _action_text="$(printf '%s; ' "${_pending_actions[@]}")"
+      _reason="inbox未読0件だが次アクションあり: ${_action_text%%; }"
+      jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
+      exit 0
+    fi
+  fi
+
   touch "$idle_flag"
 fi
 
