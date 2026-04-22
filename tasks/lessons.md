@@ -3988,3 +3988,37 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **status**: confirmed
 - **tags**: [dm-signal]
 - chunk='AC4のみ担当。systems/gstack.mdを作成せよ'のようにAC担当指示と別タスク指示が混在するとAC1-AC3の担当者が配備されない状態になる。実際にはAC1-AC3が未完了でAC4単独では実行不可だった。chunkフィールドは1つの明確な担当範囲のみを記述すべき。
+
+### L521: Pythonパーサーのassumptions:終了検出: 行頭非空白条件ではインデント済みブロックで機能しない
+- **日付**: 2026-04-22
+- **出典**: cmd_karo_ci_fix_ga158
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,gate]
+- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
+- cmd_save.shのassumptionsパーサーが'行頭が非空白のみ終了'としていたため、CMD_BLOCKの全行インデント済み構造では兄弟キー(environment_change等)がassumptionエントリに混入。fix: assumptionsのインデント幅を記録し同幅以下の行で終了
+
+### L522: Pythonパーサーのassumptions終了検出はインデント幅で判定せよ
+- **日付**: 2026-04-22
+- **出典**: cmd_karo_ci_fix_ga158
+- **記録者**: karo
+- **tags**: [infra,gate]
+- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
+- cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environment_change等)がassumptionエントリへ混入した。assumptions開始行のインデント幅を記録し、同幅以下の非空行でブロック離脱すること。
+
+### L523: 偵察cmdの実行禁止事項はinbox通知でなくhookで強制せよ
+- **日付**: 2026-04-22
+- **出典**: cmd_2233
+- **記録者**: gunshi
+- **tags**: [dm-signal,api,deploy,pipeline]
+- 偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存となり、既に作業開始した忍者を止めきれない。事後確認は事実上の許可になる。禁止事項はpre-bash hookやgateでBLOCKし、実行不能な構造に先に変換せよ。cmd_2233で顕在化。
+
+### L524: yaml_field_set.sh AWKはYAML double-quoted flow scalar継続行を誤スキップする
+- **日付**: 2026-04-23
+- **出典**: cmd_karo_ci_fix_ga159
+- **記録者**: tobisaru
+- **status**: draft
+- **tags**: [infra,yaml]
+- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml]
+- yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去する不具合。
+修正: インラインスカラー行がバックスラッシュで終わる場合flow_cont=1を設定し継続行を保護

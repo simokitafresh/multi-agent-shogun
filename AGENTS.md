@@ -339,6 +339,34 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
+## Bulletin Board Notification Targeting (全エージェント共通)
+
+掲示板投稿時、全員共有でなければ `BULLETIN_NOTIFY` で通知先を限定せよ。不要通知のトークン消費を排除する。
+
+```bash
+# 特定エージェントのみ通知（カンマ区切り）
+BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "将軍宛回答"
+BULLETIN_NOTIFY=shogun,gunshi bash scripts/bulletin_write.sh karo "将軍+軍師宛"
+
+# 未指定 = 従来通り全3者(shogun+karo+gunshi)
+bash scripts/bulletin_write.sh karo "全員共有の内容"
+```
+
+判断基準: 「この投稿を読む必要があるのは誰か？」→ 該当者のみ指定。
+
+## File Reading Rule (全エージェント共通)
+
+80行未満のファイルは全文読め。80行以上は先頭40行+末尾40行を読め。
+Exceptions:
+- `memory/deepdive_*.md` (phase-by-phase sequential read, enumerated: `deepdive_why_chain_20260321.md`, `deepdive_causal_tracing_20260415.md`, `deepdive_karo_verification_20260405.md`, `deepdive_backward_validation_20260327.md`)
+- `memory/dialogue_*.md` (research journals — tail-only read by default, full read when Lord directs)
+- `context/*.md` (section-targeted read by `§`)
+- `instructions/*.md` (role rules, read in full)
+- `projects/infra/lessons_{role}.yaml` (startup gate requires full read)
+- `projects/{id}.yaml` (core knowledge incl. PI/DB rules/UUIDs, read in full)
+- `queue/bulletin_board.yaml` (prepend-ordered; startup gate reads latest entries automatically)
+Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トークン。Lost-in-the-Middle劣化閾値(~2,600トークン)以内。80行制限は英語には保守的だが日英混在移行期の安全マージン。
+
 ## File Operation Rule
 
 **Always Read before Write/Edit.** Codex rejects Write/Edit on unread files.
@@ -392,7 +420,8 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/new,家老/new(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
-- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)
+- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
+- **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
 - CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
@@ -438,7 +467,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
 - context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
-- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md` `context/gunshi-4metrics-design.md` `context/gunshi-flair-deepdive.md` `context/gunshi-fof-deterioration-analysis.md` `context/gunshi-gs-landscape-analysis.md` `context/gunshi-gs-speed-optimization-design.md` `context/gunshi-interpretation-layer-design.md` `context/gunshi-metrics-engine-design.md` `context/gunshi-alm-38metrics-design.md`
+- 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md` `context/gunshi-4metrics-design.md` `context/gunshi-flair-deepdive.md` `context/gunshi-fof-deterioration-analysis.md` `context/gunshi-gs-landscape-analysis.md` `context/gunshi-gs-speed-optimization-design.md` `context/gunshi-interpretation-layer-design.md` `context/gunshi-metrics-engine-design.md` `context/gunshi-alm-38metrics-design.md` `context/robustness-verification-catalog.md`
 - チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md` `context/checklist-alm-registration.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
