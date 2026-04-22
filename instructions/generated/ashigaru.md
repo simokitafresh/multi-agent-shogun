@@ -455,7 +455,8 @@ When you receive `inboxN` (e.g. `inbox3`):
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
 4. Mark each processed entry as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`
-5. Resume normal workflow
+5. `inbox0` は終了指示ではない。未読0件なら「確認完了」とみなし、元の主作業（進行中cmd・改善サイクル・再現検証）へ即復帰せよ
+6. Resume normal workflow
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
 This is a safety net — even if the wake-up nudge was missed, messages are still in the file.
