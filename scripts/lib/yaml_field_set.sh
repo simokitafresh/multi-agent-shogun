@@ -191,6 +191,7 @@ BEGIN {
     prev_inline_scalar = 0
     block_indent = -1
     field_indent = -1
+    flow_cont = 0
 }
 {
     if (!in_block) {
@@ -224,7 +225,9 @@ BEGIN {
     }
 
     if (prev_inline_scalar && indent > field_indent && trimmed != "" && trimmed !~ /^#/ && trimmed !~ /^-/) {
-        next
+        if (!flow_cont) { next }
+        # YAML double-quoted flow scalar continuation — detect closing quote
+        if (trimmed ~ /[^\\]"$/ || trimmed == "\"") flow_cont = 0
     }
 
     field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
@@ -238,6 +241,11 @@ BEGIN {
 
     if (indent == field_indent) {
         prev_inline_scalar = is_inline_scalar_field($0)
+        if (prev_inline_scalar && $0 ~ /\\$/) {
+            flow_cont = 1
+        } else {
+            flow_cont = 0
+        }
     }
     print
 }
