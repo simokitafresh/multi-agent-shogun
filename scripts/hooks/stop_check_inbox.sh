@@ -56,7 +56,7 @@ notify_completion() {
   ) >/dev/null 2>&1 &
 }
 
-if [[ -n "$last_assistant_message" ]]; then
+if [[ -n "$last_assistant_message" && "$agent_id" != "shogun" && "$agent_id" != "gunshi" ]]; then
   if printf '%s\n' "$last_assistant_message" | grep -Eiq "$COMPLETE_PATTERN"; then
     notify_completion "report_completed" "${agent_id}、タスク完了"
   elif printf '%s\n' "$last_assistant_message" | grep -Eiq "$ERROR_PATTERN"; then

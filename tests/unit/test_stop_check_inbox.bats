@@ -132,7 +132,7 @@ EOF
     grep -q '^karo|hayate、タスク完了|report_completed|hayate$' "$INBOX_WRITE_LOG"
 }
 
-@test "T-SCI-003: shogun exits before karo notification logic" {
+@test "T-SCI-003: shogun skips karo notification but runs inbox check" {
     export TMUX_AGENT_ID="shogun"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
 
