@@ -2220,6 +2220,10 @@ try:
         if _tf_actually_removed > 0:
             print(f'[INJECT] target_files post-filter: removed {_tf_actually_removed}', file=sys.stderr)
 
+    # cmd_karo_gp196: AC1 — MAX_INJECT=3 総合注入上限（universalは内数）
+    # tag fallback/useful_rate処理より前に定義し、条件分岐での未定義参照を防ぐ
+    MAX_INJECT = 3
+
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []
     for lesson in tag_candidates:
@@ -2310,9 +2314,6 @@ try:
     scored = [(s, lid, summ) for _, s, lid, summ in scored_with_helpful]
 
     # AC4: スコア0時のフォールバック = 注入なし（無関連教訓のCTX浪費防止）
-
-    # cmd_karo_gp196: AC1 — MAX_INJECT=3 総合注入上限（universalは内数）
-    MAX_INJECT = 3
 
     # cmd_1457: universal教訓の準備（max 1、helpful_count上位）— task-specificに最低2枠確保(忍者成長速度改善1: 2→1)
     MAX_UNIVERSAL = 1

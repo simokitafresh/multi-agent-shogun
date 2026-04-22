@@ -1298,6 +1298,63 @@ print(len(related))
     [ "$output" = "3" ]
 }
 
+@test "deploy_task tag fallback injects top 3 tag-matched lessons without MAX_INJECT NameError" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L920
+    title: amber lantern
+    summary: orbit maple quartz
+    status: confirmed
+    helpful_count: 4
+    tags: [deploy]
+  - id: L921
+    title: cobalt harbor
+    summary: velvet prism harbor
+    status: confirmed
+    helpful_count: 9
+    tags: [deploy]
+  - id: L922
+    title: ember satellite
+    summary: lattice canyon signal
+    status: confirmed
+    helpful_count: 7
+    tags: [deploy]
+  - id: L923
+    title: fable orchard
+    summary: copper meadow syntax
+    status: confirmed
+    helpful_count: 6
+    tags: [deploy]
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy rollout"
+  description: "trigger tag fallback without keyword overlap"
+  task_type: impl
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+ids = [entry.get('id') for entry in related]
+assert len(related) == 3, related
+assert ids == ['L921', 'L922', 'L923'], ids
+print('|'.join(ids))
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "L921|L922|L923" ]
+}
+
 # === GP-105: stale report reassignment detection ===
 
 @test "GP-105: stale other ninja template archived on reassignment (verdict empty)" {
