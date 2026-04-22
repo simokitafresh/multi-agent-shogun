@@ -14,6 +14,7 @@
 # 自己研鑽: S107(deepdiveサイクル:WA率71%根因→GP-043/044/045+Fix11。テスト6/6。WA率43%予測)+S108(WAサイクル第2弾:GP-046 lc list+Fix12+GP-047 PreToolUse DENY。テスト5/5。DENY=WA率根本解)+S111(WAサイクル第5弾:GP-049 WA入力品質ゲート。忍者名+detail検証+カテゴリ拡張)+S112(WAサイクル第6弾:GP-050 --cleanモード)+S113(WAサイクル第7弾:GP効果圏定量分析→WARN無効→GP-047唯一解)+S114(WAサイクル第8弾:Fix14 lu id UNKNOWN解決)+S117(WAサイクル第11弾:Fix15 bc{name:val}→{check,result}正規化。テスト4/4)+S118(WAサイクル第12弾:GP-052 WAデータ品質ゲート+GP-047補正WA率33%→理論0%到達)+S119(WAサイクル第13弾:遡及データ修正19件。null0%+FP0%。正確WA率68%。post-GP047=33%)
 # 自己研鑽: S76(GP全件完了:30GP=27impl+1mon+3obs)+S77(WA率50%+autofix race13.6%発見→GP-031)+S78(GP優先順再評価+YAML parse→GP-032)+S79(利他:insights棚卸し15→8+verdict autofix設計→GP-033)+S80(BLOCK原因分類:first-attempt CLEAR65%→GP-031で85%予測)+S81(GP-025効果検証:archive BLOCK根絶+残存format BLOCK分析→GP-034)+S82(GP-031+033+034合体cmd設計)+S83(deepdive自己gate→GP-035)+S84(第二層パイプライン定量検証:35GP/84%変換/平均滞留5cmd/gate型17.5cmd遅延)+S85(忍者品質プロファイル:才蔵◎飛猿◎>影丸○>半蔵△小太郎△>疾風✗。GP-031=ROI最大)+S86(疾風dict根因:race condition70%=GP-031根治。追加教訓不要)+S87(insights棚卸し:pending9→2。7件resolve=GP紐付け+旧cmd遺物確認。残=dashboard重複+Edit解放)
 # 自己研鑽: S88(教訓候補LG008+LG009抽出→家老送信)+S89(GP-031コード案作成→LG009実践)+S90(レビュー精度再計測:content miss0%)+S91(影丸交差検証:独立収束→GP-031確信度最大化。第二層「対」実証)+S92(uncategorized WA分類:4件→commit_missing2+stale_report2。stale_report防御ゼロ→GP-036)+S93(pending GP 3バッチ設計:A=031+033+034合体/B=036/C=035。WA率14→2%ロードマップ)+S94(将軍pane観察:GP消費速度>鎖伝達速度+recon教訓スキップ根因→GP-037+第三層ループ兆候)+S95(条件付き配備委譲設計:5倍速実証+5条件+3安全弁。常備命令モデルでPD候補)+S96(セッション俯瞰:12サイクル。Phase8利他が主軸。三層ループ全層実証。螺旋構造=内→外→全)+S97(家老pane統合分析:YAML3層構造発見。Layer2=parse不能=autofix不能)+S98(WHY9段:無限vs有限=whack-a-mole。根本=安全な一括APIなし→GP-038+039。事後検証→構造保証)+S99(WHY13段:FAIL率∝型複雑度法則。3セクション80%集中。テンプレート上書き不能化=真の解)+S100(WHY15段:テンプレート指示矛盾発見→GP-040。4層根因完全特定。FAIL率→0%理論到達可能)+S101(行動棚卸し:pending GP6件全karo送信+GP-040/039を軍師直接修正。「分析→記録=完了」の錯覚を打破。将軍行動モデル適用)
+# ─── GP必須フィールド: existing_impl_check(提案前に既存実装grep確認結果を記載。未記載=不完全。GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費) ───
 # ─── GP追跡表(S42整理:殿指示2026-03-23) ───
 # | GP  | 内容(10字以内)         | status            | 出典 | 備考 |
 # | 001 | useful事前埋め         | ★implemented      | S6   | cmd_1260 |
@@ -134,7 +135,8 @@
 # | 212 | SG-PRE14 revert検出  | ★implemented      | S170 | files_modified直近5 commitにrevert含→WARN。cmd_2107事故(revert後AC3:yesのまま報告)対策。shellcheck clean |
 # | 213 | SG-PRE15 並列負荷警告 | ★implemented      | S170 | 忍者3名以上稼働中→before/after計測値汚染WARN。WSL2 I/O負荷考慮。shellcheck clean |
 # | 214 | SG-PRE9 BLOCK固定    | ★implemented      | S170 | result:no→BLOCK固定(waive有無に関わらず)。cmd_2093誤予測対策。review_logヘッダ+gate文言修正 |
-# 集計: ★implemented:108(+GP-212,213,214) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:4 / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 = 計137GP (2026-04-19T12:40更新)
+# | 219 | archive→active優先   | ★implemented      | S233 | deploy_task.sh教訓注入をlessons.yaml優先に変更。archive-only教訓NOT_USEFUL量産修正。bats15/15。D0直接実装 |
+# 集計: ★implemented:112(+GP-219) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計141GP (2026-04-22T20:40更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -450,3 +452,61 @@
   defense_level: 4
   reason: "cmd_2112 GATE CLEAR通知30回重複(13:29-13:42)。bulletin_write.shにdedup未実装が根因。30×3(inbox通知)=90メッセージnoiseでCTX消費。10回繰り返し→900件=負の複利"
   evidence: "テスト: 1回目→正常投稿(blt_id出力)。2回目→DEDUP表示+exit 0。S0全6項PASS"
+- id: GP-211
+  description: "忍者成長速度改善: 枠配分逆転(MAX_UNIVERSAL=2→1)+useful_rate閾値引上げ(0.15→0.30, decay 0.5→0.3)"
+  status: implemented
+  proposed_at: "2026-04-21T14:06:00"
+  implemented_at: "2026-04-21T20:00:00"
+  implemented_by: "prior_session(改善1+3)"
+  defense_level: 4
+  reason: "lessons_useful有効率27%。task-specific枠1→2倍増+有効率閾値引上げでunseful教訓のフロー削減→忍者の注入精度向上。殿承認済み"
+  evidence: "deploy_task.sh L2276(MAX_UNIVERSAL=1), L1758(0.30), L1759(0.3)。bats 6/6 PASS"
+- id: GP-212
+  description: "忍者成長速度改善: target_files自動設定+backfill。lesson_write.shでsource_cmdのtarget_pathを教訓に自動付与"
+  status: implemented
+  proposed_at: "2026-04-21T14:06:00"
+  implemented_at: "2026-04-21T20:32:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 5
+  reason: "deploy_task.sh L2105-2153のマッチング機構が活性化。task-specific教訓注入精度が構造的に向上"
+  evidence: "lesson_write.sh+sync_lessons.sh修正。backfill 80/639件。bats 4/4(+2新規) PASS。掲示板blt_20260421_203248"
+- id: GP-215
+  description: "cmd_save.sh Check 22: ACにpush含→WARN。忍者push禁止との矛盾を構造的に防止"
+  status: implemented
+  proposed_at: "2026-04-22T00:50:00"
+  implemented_at: "2026-04-22T00:51:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  defense_level: 4
+  reason: "cmd_2225/2226で将軍がACにcommit+push記載→忍者push不可→bc:no→gate BLOCK→家老WA。殿指摘(2026-04-22)。Check 22でACのpush検出→WARN。2回目BLOCK昇格"
+- id: GP-216
+  description: "deploy_task.shのuniversal候補からNOT_USEFUL頻度>5の教訓を除外"
+  status: "✗obsolete"
+  proposed_at: "2026-04-22T06:05:00"
+  self_executable: false
+  defense_level: 4
+  reason: "既存実装で既にカバー済み(L2261-2278: rate==0.0→完全除外、rate<0.30→decay 0.3倍)。LG033違反: 既存の仕組みを確認せず提案した"
+  evidence: "deploy_task.sh L2261-2278にuseful_rate filter実装済み。Explore確認(2026-04-22)"
+- id: GP-217
+  description: "GP提案前に既存実装grep確認を必須化(existing_impl_check)"
+  status: implemented
+  proposed_at: "2026-04-22T14:00:00"
+  implemented_at: "2026-04-22T14:05:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'existing_impl\|既存実装.*確認' gunshi.md gp_tracker review_log → 0件(変更前)"
+  defense_level: 2
+  reason: "GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費。LG033(Level 2)が行動を変えなかった→フロー3箇所に1行埋込で毎回目に入る構造に"
+  evidence: "gunshi.md L825+gp_tracker L17+review_log L43に埋込確認。S0全6項PASS"
+- id: GP-218
+  description: "target_filesフィルタ空タスクファイルバイパス修正。タスクファイルなし→target_files持ち教訓を除外"
+  status: implemented
+  proposed_at: "2026-04-22T16:45:00"
+  implemented_at: "2026-04-22T16:50:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n '_all_task_files' deploy_task.sh → L2153にif分岐あり。elseブランチ不在が根因"
+  defense_level: 4
+  reason: "useful率9.9%(S230:16.9%からさらに低下)。根因=_all_task_files空時にtarget_filesフィルタ完全バイパス(L2153 if _all_task_files:のelseなし)。640教訓中328件(51%)のtarget_files持ち教訓がマッチ不可能なタスクに注入→NOT_USEFUL量産。10回繰返し→10回×328件除外=正の複利"
+  evidence: "bats 9/9 PASS(新規2件含む)。commit af8a2ebc。S0全6項PASS"

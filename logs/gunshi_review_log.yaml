@@ -2038,3 +2038,121 @@
     - "事実3: DEFAULT_HISTORY_START_DATE=date(2000,1,1)。constants.py現物確認"
   causal_chain: "L0全期間取得(cmd_2234)→L0-L3手動完走確認→daily_etl冗長性実証→廃止可能=cron5本→4本=正の複利(メンテ削減+障害点削減)"
   timestamp: "2026-04-22T20:35:00"
+- cmd_id: self_study_S233
+  review_type: self_study
+  findings_summary: "GP-219: deploy_task.sh教訓注入archive→active優先に変更。NOT_USEFUL Top3(L481/L097/L015)がarchive-only教訓。useful率9.9→25%(GP-218後)→さらに改善見込み。D0直接実装+S0 PASS+bats15/15"
+  observations:
+    - "事実1: lesson_impact.tsv post-GP218 useful率25.0%(21/84)。NOT_USEFUL 63件中Top3がlessons_archive.yamlのみに存在"
+    - "事実2: deploy_task.sh L1961 archive優先ロジック→archive-onlyの非active教訓が注入→NOT_USEFUL量産"
+    - "事実3: dm-signal active=641件 vs archive=643件。差分のarchive-only教訓がフィルタ通過"
+  proposals:
+    - id: GP-219
+      description: "教訓注入をlessons.yaml(active)優先に変更"
+      status: implemented
+      defense_level: 4
+  causal_chain: "Vercel archive優先の誤適用(L1961)→archive-only教訓がretired/deprecatedフラグなしで注入→target_filesなし教訓がフィルタ通過→NOT_USEFUL量産→useful率低下→10回繰返し=負の複利"
+  timestamp: "2026-04-22T20:40:00"
+- cmd_id: cmd_2235
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2235_impl
+  report_verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。L0-L2完走(176.94s)。L3未完走でverdictFAIL正当。signal-raw 5体一致。lesson_candidate品質OK。GATE BLOCK=bc:no+fit:false+draft_lessons(FAIL報告の構造的帰結)"
+  observations:
+    - "事実1: L0=12.42s(run_id=20260422_113027), L1=13.25s(run_id=20260422_113134), L2=151.27s(run_id=20260422_113149) — 全てrender logs+timing-historyで確認"
+    - "事実2: L3は11:32:34 UTC開始、11:38:12 UTC時点で71/109 FoFまで確認。completed行もtiming-history新規行も未取得"
+    - "事実3: signal-raw 5体(DM-safe/DM-safe-2/DM2/DM3/DM4)のbefore/after一致(count=1000)"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: WARN(bc:no 3件+lesson_candidate有)
+  causal_chain: "L3手動実行→render logs completed行未検出+timing-history新規行未取得→完走証跡不足→AC4:no→verdict:FAIL(正当)。L0-L2は完走→ETL部分廃止判断の材料は揃う"
+  timestamp: "2026-04-22T20:45:00"
+- cmd_id: cmd_2236
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。daily_etl.py+recalculator.py+ETL cron廃止。grep -r確認済み。etl_trigger.pyに/run-etl既になし(AC4対象不在・軽微)。render.yaml L167-186にETL cron定義あり"
+  observations:
+    - "事実1: daily_etl.py参照先=etl_trigger.py L12(import), test_daily_etl_split.py, test_etl_split_structure.py, orchestrator.py/loader.py(コメントのみ)"
+    - "事実2: recalculator.py参照先=daily_etl.py L11,54,62のみ。sync_layers.pyからの参照なし(claim正しい)"
+    - "事実3: AC4の/run-etlエンドポイントはetl_trigger.pyに現存しない(grep -rn確認)。L85は空行"
+  causal_chain: "L0-L3が全期間対応(cmd_2234)→手動完走実証918s(cmd_2235)→daily_etl 66分は完全冗長→削除=毎日51分+コードパス2→1=正の複利"
+  timestamp: "2026-04-22T21:12:00"
+- cmd_id: cmd_2236
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2236_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。ETL cron廃止完了。daily_etl.py/recalculator.py/trigger_etl.py削除。etl_trigger.pyからrun_etl削除。render.yaml ETL定義削除。frontend runEtl()削除。pytest1400PASS"
+  observations:
+    - "事実1: commit 3c1e34edで7ファイル変更(削除3+修正4)。PRE3全ファイルcommit確認済み"
+    - "事実2: Render cronはsuspend(削除ではなくsuspend=安全側判断)"
+    - "事実3: draftレビュー時に/run-etl既存なしと判定したが、実際にはrun_etlインポート+_run_etl_background関数が存在し削除された。私のgrep確認が不完全だった"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "ETL cron廃止(daily_etl.py+recalculator.py+trigger_etl.py削除)→コードパス統一→毎日51分の無駄消滅+保守対象削減=正の複利"
+  timestamp: "2026-04-22T21:32:00"
+- cmd_id: cmd_2236
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2236_impl
+  report_verdict: FAIL
+  gate_result: null
+  findings_summary: "PRE1 FAIL: binary_checks result全件引用符付き('yes')。verdict=None。assumption_invalidation欠落。gate不正多数"
+  observations:
+    - "事実1: binary_checks AC1-AC8全てresult: 'yes'(引用符付き)→gate_report_format.shが不正と判定"
+    - "事実2: verdict: None(PASS/FAIL未設定)→gate BLOCK確定"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: BLOCK(PRE1 FAIL)
+  causal_chain: "Sonnet CLIがYAML書込み時にresultを引用符付きで出力→gateの二値検証(yes/no厳密一致)に不合格→BLOCK"
+  timestamp: "2026-04-22T21:36:00"
+- cmd_id: cmd_2236
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2236_impl
+  report_verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。検証中心(既存commit利用)。AC1-8 yes。pytest1400PASS。commit:no=kagemaruが先行commit済み"
+  observations:
+    - "事実1: saizo報告はkagemaruのcommit 3c1e34edの成果物を検証するスタンスで作業。追加実装なし"
+    - "事実2: AC8でsync-standard/fofにstart_date=2026-04-22付与(負荷軽減の裁量判断)"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: BLOCK(二重配備+他忍者bc_fail)
+  causal_chain: "二重配備→3忍者が同一cmdを実行→kagemaruが先行commit→saizo/hayateは検証のみ→gate統合時に全報告を合算→BLOCK"
+  timestamp: "2026-04-22T21:40:00"
+- cmd_id: cmd_2236
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2236_impl
+  report_verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK(FAIL報告品質)。AC7未達=既存collection error 2件(cmd_1038/1052テスト)。cmd_2236変更と無関係。他AC全達成"
+  observations:
+    - "事実1: pytest collection error: cmd_1038_shm_parity_test.py(run_077_kasoku import不可)+cmd_1052_parity_test.py(PORTFOLIO_MAP import不可)。既存不具合"
+    - "事実2: etl_trigger.pyからdaily_etl import+/run-etl+/etl-status撤去、orchestrator.py/loader.pyのlegacy comment更新まで実施(kagemaruより広範)"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: BLOCK(bc_fail+fit_false)
+  causal_chain: "既存テスト不具合(cmd_1038/1052のimport壊れ)→pytest FAIL→AC7:no→verdict:FAIL(正当)。cmd_2236変更は無関係"
+  timestamp: "2026-04-22T21:40:00"
+- cmd_id: cmd_2236
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2236_impl
+  report_verdict: LGTM
+  gate_result: null
+  findings_summary: "再提出LGTM。フォーマット修正確認(verdict:PASS、bc全yes、引用符解消)。内容はkagemaruと同等の検証品質"
+  observations:
+    - "事実1: 初回FAIL原因=binary_checks result引用符付き+'yes'+verdict:None → 全修正済み"
+    - "事実2: diagnose_reason記載あり(自己診断完了)"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "初回gate FAIL(フォーマット)→忍者自己修正→再提出→PRE1 PASS→LGTM"
+  timestamp: "2026-04-22T21:42:00"
