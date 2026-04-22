@@ -146,6 +146,15 @@ function make_indent(n,    s,i) {
     for (i = 0; i < n; i++) s = s " "
     return s
 }
+function is_inline_scalar_field(line,    rhs) {
+    if (line !~ ("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*")) return 0
+    rhs = line
+    sub("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*", "", rhs)
+    rhs = trim(rhs)
+    if (rhs == "") return 0
+    if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
+    return 1
+}
 function regex_escape(str,    out,i,c) {
     out = ""
     for (i = 1; i <= length(str); i++) {
@@ -179,6 +188,7 @@ BEGIN {
     in_block = 0
     replaced = 0
     skip_replaced_continuation = 0
+    prev_inline_scalar = 0
     block_indent = -1
     field_indent = -1
 }
@@ -213,14 +223,22 @@ BEGIN {
         skip_replaced_continuation = 0
     }
 
+    if (prev_inline_scalar && indent > field_indent && trimmed != "" && trimmed !~ /^#/ && trimmed !~ /^-/) {
+        next
+    }
+
     field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
     if (!replaced && $0 ~ field_re) {
         print make_indent(field_indent) field ": " yaml_safe(new_value)
         replaced = 1
         skip_replaced_continuation = 1
+        prev_inline_scalar = 1
         next
     }
 
+    if (indent == field_indent) {
+        prev_inline_scalar = is_inline_scalar_field($0)
+    }
     print
 }
 END {
@@ -398,11 +416,12 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_continuation,line_indent,line_trimmed) {
+function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_continuation,line_indent,line_trimmed,last_scalar_indent) {
     indent_str = make_indent(field_indent)
     field_re = "^" indent_str regex_escape(field) ":[[:space:]]*"
     replaced = 0
     skip_replaced_continuation = 0
+    last_scalar_indent = -1
 
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
@@ -414,12 +433,23 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
             }
             skip_replaced_continuation = 0
         }
+        if (last_scalar_indent >= 0) {
+            line_indent = leading_spaces(line)
+            line_trimmed = trim(line)
+            if (line_trimmed == "" || line_indent > last_scalar_indent) {
+                continue
+            }
+            last_scalar_indent = -1
+        }
         if (i > 1 && !replaced && line ~ field_re) {
             print indent_str field ": " yaml_safe(new_value)
             replaced = 1
             skip_replaced_continuation = 1
         } else {
             print line
+            if (line ~ "^" indent_str "[A-Za-z0-9_.-]+:[[:space:]]*\".*\"[[:space:]]*$") {
+                last_scalar_indent = field_indent
+            }
         }
     }
 
@@ -785,6 +815,15 @@ function regex_escape(str,    out,i,c) {
     }
     return out
 }
+function is_inline_scalar_field(line,    rhs) {
+    if (line !~ ("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*")) return 0
+    rhs = line
+    sub("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*", "", rhs)
+    rhs = trim(rhs)
+    if (rhs == "") return 0
+    if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
+    return 1
+}
 function yaml_safe(v,    out,i,c,nq) {
     nq = 0
     if (index(v, ":") > 0) nq = 1
@@ -834,11 +873,12 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
     indent_str = make_indent(field_indent)
     replaced_count = 0
     skip_replaced_continuation = 0
+    prev_inline_scalar = 0
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
+        line_indent = leading_spaces(line)
+        line_trimmed = trim(line)
         if (skip_replaced_continuation) {
-            line_indent = leading_spaces(line)
-            line_trimmed = trim(line)
             if (line_trimmed == "") {
                 continue
             }
@@ -846,6 +886,9 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
                 continue
             }
             skip_replaced_continuation = 0
+        }
+        if (prev_inline_scalar && line_indent > field_indent && line_trimmed != "" && line_trimmed !~ /^#/ && line_trimmed !~ /^-/) {
+            continue
         }
         if (i > 1) {
             for (j = 1; j <= nf; j++) {
@@ -856,13 +899,19 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
                         replaced[j] = 1
                         replaced_count++
                         skip_replaced_continuation = 1
+                        prev_inline_scalar = 1
                         line = ""
                         break
                     }
                 }
             }
         }
-        if (line != "") print line
+        if (line != "") {
+            print line
+            if (line_indent == field_indent) {
+                prev_inline_scalar = is_inline_scalar_field(line)
+            }
+        }
     }
     for (j = 1; j <= nf; j++) {
         if (!replaced[j]) {

@@ -207,6 +207,43 @@ EOF
     [[ "$output" != *"FATAL"* ]]
 }
 
+@test "scalar replace: 継続行つき field を更新しても旧継続行を残さない" {
+    cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
+task:
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_2235 (deployed 2026-04-22T20:27:51). Read from the beginning."
+    (deployed 2026-04-22T19:44:45). Read from the beginning.
+  status: idle
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/test.yaml" task _deploy_notice "STALE TASK INVALID. This YAML is the latest instruction for cmd_2236 (deployed 2026-04-22T21:09:20). Read from the beginning."
+    [ "$status" -eq 0 ]
+    run python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$TEST_TMPDIR/test.yaml"
+    [ "$status" -eq 0 ]
+    run grep -n "2026-04-22T19:44:45" "$TEST_TMPDIR/test.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "batch replace: 継続行つき field を更新してもYAML parse errorにならない" {
+    cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
+task:
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_2235 (deployed 2026-04-22T20:27:51). Read from the beginning."
+    (deployed 2026-04-22T19:44:45). Read from the beginning.
+  status: idle
+EOF
+    run bash -lc '
+        source "'"$YFS"'"
+        yaml_field_set_batch "'"$TEST_TMPDIR/test.yaml"'" task \
+          "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for cmd_2236 (deployed 2026-04-22T21:09:20). Read from the beginning." \
+          "status=assigned"
+    '
+    [ "$status" -eq 0 ]
+    run python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$TEST_TMPDIR/test.yaml"
+    [ "$status" -eq 0 ]
+    run grep -n "2026-04-22T19:44:45" "$TEST_TMPDIR/test.yaml"
+    [ "$status" -ne 0 ]
+    run grep -n "^  status: assigned$" "$TEST_TMPDIR/test.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # --- 追加: block_id不在時のエラー ---
 
 @test "block_idもroot fieldも不在でエラー" {
@@ -288,4 +325,58 @@ YAML
 
     run grep -c "^  task_id:" "$yaml"
     [ "$output" = "1" ]
+}
+
+@test "yaml_field_set: 置換後に旧継続行を残さず parseable を維持" {
+    local yaml="$TEST_TMPDIR/single_multiline_cleanup.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_old (deployed 2026-04-22T21:09:20). Read from the beginning."
+    (deployed 2026-04-22T20:00:00). Read from the beginning.
+  status: assigned
+YAML
+
+    run bash "$YFS" "$yaml" task status in_progress
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$yaml").read_text())
+assert data["task"]["status"] == "in_progress"
+assert data["task"]["_deploy_notice"].startswith("STALE TASK INVALID.")
+print("PARSE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARSE_OK"* ]]
+
+    run grep -n "2026-04-22T20:00:00" "$yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "yaml_field_set_batch: 置換後に旧継続行を残さず parseable を維持" {
+    local yaml="$TEST_TMPDIR/batch_multiline_cleanup.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_old (deployed 2026-04-22T21:09:20). Read from the beginning."
+    (deployed 2026-04-22T20:00:00). Read from the beginning.
+  status: assigned
+YAML
+
+    run bash -lc "source \"$YFS\" && yaml_field_set_batch \"$yaml\" task \"_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for cmd_new (deployed 2026-04-22T22:23:28). Read from the beginning.\" \"status=acknowledged\""
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$yaml").read_text())
+assert data["task"]["status"] == "acknowledged"
+assert data["task"]["_deploy_notice"].startswith("STALE TASK INVALID. This YAML is the latest instruction for cmd_new")
+print("PARSE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARSE_OK"* ]]
+
+    run grep -n "2026-04-22T20:00:00" "$yaml"
+    [ "$status" -eq 1 ]
 }

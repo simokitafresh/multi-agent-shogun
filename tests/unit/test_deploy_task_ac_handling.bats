@@ -1610,6 +1610,53 @@ EOF
     [ "$status" -eq 1 ]
 }
 
+@test "resolve_cmd_to_task: broken _deploy_notice continuation line を除去して task YAML を再生する" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_601:
+    acceptance_criteria:
+    - 'AC1: recover broken task yaml'
+    project: testproj
+    target_path: scripts/lib/yaml_field_set.sh
+    type: impl
+    purpose: recover broken task yaml
+    title: recover broken task yaml
+    status: pending
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_601"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_601/report_merge.done"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_old (deployed 2026-04-22T21:09:20). Read from the beginning."
+    (deployed 2026-04-22T20:00:00). Read from the beginning.
+  status: done
+  task_type: recon
+  parent_cmd: cmd_old
+  task_id: cmd_old_recon
+EOF
+
+    run deploy_task_resolve_only sasuke cmd_601
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$TEST_PROJECT/queue/tasks/sasuke.yaml").read_text())
+task = data["task"]
+assert task["parent_cmd"] == "cmd_601"
+assert task["task_id"] == "cmd_601_impl"
+assert task["task_type"] == "impl"
+assert "cmd_601" in task["_deploy_notice"]
+print("PARSE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARSE_OK"* ]]
+
+    run grep -n "2026-04-22T20:00:00" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
 @test "resolve_cmd_to_task: cmd_id未指定時は既存動作維持（後方互換）" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
