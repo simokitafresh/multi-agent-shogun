@@ -769,6 +769,16 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     fi
 fi
 
+# --- Check 2.5: 同時draft複数BLOCK（LS088: 1CMD1ゲート。一括起票禁止） ---
+OTHER_DRAFTS=$(awk -v current="$CMD_ID" '
+    /^  cmd_[^:]+:/ { id = $1; sub(/:$/, "", id); sub(/^  /, "", id); next }
+    id && id != current && /status:.*draft/ { print id }
+' "$QUEUE_FILE" 2>/dev/null)
+if [[ -n "$OTHER_DRAFTS" ]]; then
+    printf 'BLOCK\tother_draft_exists: %s もdraft状態。1本ずつゲートを通せ(LS088)\n' "$(echo "$OTHER_DRAFTS" | tr '\n' ',')" >&2
+    record_block_reason "other_draft_exists"
+fi
+
 # --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
 if load_cmd_block; then
     CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"

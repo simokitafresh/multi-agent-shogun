@@ -865,3 +865,6 @@
 | cmd_2236 | 廃止 — daily_etl.py + ETL cron削除: L0-L3 sync cronに統一 | dm-signal | 04-22 | ETL cron廃止完了。Render ETL cron(c |
 | cmd_2235 | 検証 — sync cron L0→L3手動実行: 全期間再取得+再計算の完走確認 | dm-signal | 04-22 | L0/L1/L2はRender logs+timinig h |
 | cmd_karo_deploy_notice_fix | 修正 — deploy_task.sh task YAML破損(_deploy_notice継続行残留)を根治 | infra | 04-22 | yaml_field_set.sh が scalar sib |
+| cmd_2237 | fix — 壊れた一回限りパリティテスト2本削除: pytest collection error解消 | dm-signal | 04-22 | 壊れたパリティテスト2本を削除して commit e7c69 |
+| cmd_2238 | 偵察 — pytest残存失敗8件の切り分け(修正候補 vs 削除候補) | dm-signal | 04-22 | FILL_THIS |
+| cmd_karo_max_inject_fix | 修正 — deploy_task lesson注入でMAX_INJECT未定義になる経路を根治 | infra | 04-22 | MAX_INJECT を tag fallback 前へ前倒 |
