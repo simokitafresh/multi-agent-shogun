@@ -434,7 +434,7 @@ send_wakeup() {
     # Codex/non-claude ninja: nudgeにtask YAMLパスを付与してSTALL防止
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
     if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]]; then
-        nudge="${nudge} — タスクYAML: queue/tasks/${AGENT_ID}.yaml を読んで作業開始せよ"
+        nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
     fi
 
     # 家老向け: cmd_new未処理があればnudgeに配備指示を付与（STALL防止）
