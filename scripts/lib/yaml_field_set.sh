@@ -178,6 +178,7 @@ BEGIN {
     block_found = 0
     in_block = 0
     replaced = 0
+    skip_replaced_continuation = 0
     block_indent = -1
     field_indent = -1
 }
@@ -206,10 +207,17 @@ BEGIN {
         next
     }
 
+    if (skip_replaced_continuation) {
+        if (trimmed == "") next
+        if (indent > field_indent) next
+        skip_replaced_continuation = 0
+    }
+
     field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
     if (!replaced && $0 ~ field_re) {
         print make_indent(field_indent) field ": " yaml_safe(new_value)
         replaced = 1
+        skip_replaced_continuation = 1
         next
     }
 
@@ -390,16 +398,26 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-function flush_block(    i,line,indent_str,field_re,replaced) {
+function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_continuation,line_indent,line_trimmed) {
     indent_str = make_indent(field_indent)
     field_re = "^" indent_str regex_escape(field) ":[[:space:]]*"
     replaced = 0
+    skip_replaced_continuation = 0
 
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
+        if (skip_replaced_continuation) {
+            line_indent = leading_spaces(line)
+            line_trimmed = trim(line)
+            if (line_trimmed == "" || line_indent > field_indent) {
+                continue
+            }
+            skip_replaced_continuation = 0
+        }
         if (i > 1 && !replaced && line ~ field_re) {
             print indent_str field ": " yaml_safe(new_value)
             replaced = 1
+            skip_replaced_continuation = 1
         } else {
             print line
         }
