@@ -437,6 +437,20 @@ send_wakeup() {
         nudge="${nudge} — タスクYAML: queue/tasks/${AGENT_ID}.yaml を読んで作業開始せよ"
     fi
 
+    # 家老向け: cmd_new未処理があればnudgeに配備指示を付与（STALL防止）
+    if [[ "$AGENT_ID" == "karo" ]]; then
+        local _has_cmd_new=0
+        _has_cmd_new=$(awk '
+            /^- /{block=""; read_state=""}
+            /read:[[:space:]]*false/{read_state="unread"}
+            /type:.*cmd_new/{if(read_state=="unread"){print 1; exit}}
+            END{if(!NR) print 0}
+        ' "${SCRIPT_DIR}/queue/inbox/karo.yaml" 2>/dev/null || echo 0)
+        if [[ "$_has_cmd_new" == "1" ]]; then
+            nudge="${nudge} — CMD受領済み。queue/shogun_to_karo.yaml を読みレビュー+忍者配備を開始せよ"
+        fi
+    fi
+
     # Tier 1: Agent self-watch — skip nudge entirely
     if agent_has_self_watch; then
         echo "[$(date)] [SKIP] Agent $AGENT_ID has active self-watch, no nudge needed" >&2
