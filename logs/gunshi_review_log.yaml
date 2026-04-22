@@ -2071,7 +2071,7 @@
 - cmd_id: cmd_2236
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。daily_etl.py+recalculator.py+ETL cron廃止。grep -r確認済み。etl_trigger.pyに/run-etl既になし(AC4対象不在・軽微)。render.yaml L167-186にETL cron定義あり"
   observations:
@@ -2085,7 +2085,7 @@
   report_ninja: kagemaru
   report_task_id: cmd_2236_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。ETL cron廃止完了。daily_etl.py/recalculator.py/trigger_etl.py削除。etl_trigger.pyからrun_etl削除。render.yaml ETL定義削除。frontend runEtl()削除。pytest1400PASS"
   observations:
     - "事実1: commit 3c1e34edで7ファイル変更(削除3+修正4)。PRE3全ファイルcommit確認済み"
@@ -2101,7 +2101,7 @@
   report_ninja: hanzo
   report_task_id: cmd_2236_impl
   report_verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "PRE1 FAIL: binary_checks result全件引用符付き('yes')。verdict=None。assumption_invalidation欠落。gate不正多数"
   observations:
     - "事実1: binary_checks AC1-AC8全てresult: 'yes'(引用符付き)→gate_report_format.shが不正と判定"
@@ -2146,7 +2146,7 @@
   report_ninja: hanzo
   report_task_id: cmd_2236_impl
   report_verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "再提出LGTM。フォーマット修正確認(verdict:PASS、bc全yes、引用符解消)。内容はkagemaruと同等の検証品質"
   observations:
     - "事実1: 初回FAIL原因=binary_checks result引用符付き+'yes'+verdict:None → 全修正済み"

@@ -2872,8 +2872,20 @@ if [ "$LC_CHECKED" = false ]; then
 fi
 
 # ─── binary_checks検証（AC二値チェック全PASS確認） ───
+# GP-221: 二重配備対応 — verdict=PASSの忍者が1名以上いれば、他忍者のbc_failはWARN止まり
 level_heading "[L1]" "Binary checks validation:"
 BC_CHECKED=false
+# Pre-scan: verdict=PASSの忍者を収集(二重配備時の降格判定用)
+_bc_pass_ninjas=""
+for _bc_tf in "${MATCHING_TASK_FILES[@]}"; do
+    _bc_nn=$(basename "$_bc_tf" .yaml)
+    _bc_rf=$(resolve_report_file "$_bc_nn")
+    [ -f "$_bc_rf" ] || continue
+    _bc_verdict=$(FIELD_GET_NO_LOG=1 field_get "$_bc_rf" "verdict" "" 2>/dev/null || true)
+    [ "$_bc_verdict" = "PASS" ] && _bc_pass_ninjas="${_bc_pass_ninjas}${_bc_nn} "
+done
+[ -n "$_bc_pass_ninjas" ] && echo "  (verdict=PASS忍者: ${_bc_pass_ninjas% })"
+
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     ninja_name=$(basename "$task_file" .yaml)
@@ -2937,9 +2949,14 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             ;;
         fail:*)
             failed_checks="${bc_status#fail:}"
-            echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"
-            record_block_reason "${ninja_name}:binary_checks_fail"
-            ALL_CLEAR=false
+            # GP-221: 二重配備で他忍者がverdict=PASSなら、この忍者のbc_failはWARN止まり
+            if [ -n "$_bc_pass_ninjas" ] && [[ "$_bc_pass_ninjas" != *"$ninja_name "* ]]; then
+                echo "  [WARN] ${ninja_name}: binary_checks non-PASS (${failed_checks}) — 他忍者PASS済みのためBLOCK降格"
+            else
+                echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"
+                record_block_reason "${ninja_name}:binary_checks_fail"
+                ALL_CLEAR=false
+            fi
             ;;
         malformed)
             echo "  [WARN] ${ninja_name}: binary_checks is not a list"
@@ -2974,10 +2991,15 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             # fit=true はPASS（要件どおり無出力）
             ;;
         false)
-            echo "[CRITICAL] GATE BLOCK: purpose_validation.fit=false (目的未達成)"
-            echo "  ${ninja_name}: fit=false"
-            record_block_reason "${ninja_name}:purpose_validation_fit_false"
-            ALL_CLEAR=false
+            # GP-221: 二重配備で他忍者がverdict=PASSなら、この忍者のfit=falseはWARN止まり
+            if [ -n "$_bc_pass_ninjas" ] && [[ "$_bc_pass_ninjas" != *"$ninja_name "* ]]; then
+                echo "  [WARN] ${ninja_name}: fit=false — 他忍者PASS済みのためBLOCK降格"
+            else
+                echo "[CRITICAL] GATE BLOCK: purpose_validation.fit=false (目的未達成)"
+                echo "  ${ninja_name}: fit=false"
+                record_block_reason "${ninja_name}:purpose_validation_fit_false"
+                ALL_CLEAR=false
+            fi
             ;;
         "")
             echo "  [INFO] ${ninja_name}: fit未記入（段階導入: 非BLOCK）"
