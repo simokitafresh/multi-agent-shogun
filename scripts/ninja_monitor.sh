@@ -508,7 +508,7 @@ get_context_pct() {
 
     # Source 2: Parse CTX from capture-pane output (statusline display)
     local output
-    output=$(tmux capture-pane -t "$pane_target" -p -J -S -5 2>/dev/null)
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -30 2>/dev/null)
 
     # cli_profiles.yamlからパターンとモードを取得
     local ctx_pattern ctx_mode
