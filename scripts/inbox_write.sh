@@ -365,7 +365,7 @@ send_codex_task_nudge() {
     local target="$1"
     local pane_target="$2"
     local unread_count="$3"
-    local nudge="inbox${unread_count} — Read queue/tasks/${target}.yaml and start work."
+    local nudge="inbox${unread_count} — タスクYAML: queue/tasks/${target}.yaml を読んで作業開始せよ"
 
     tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || return 1
     run_tmux_with_timeout paste-buffer -t "$pane_target" -b "nudge_${target}" -d >/dev/null 2>&1 || return 1
@@ -484,7 +484,7 @@ forward_gunshi_review_result_to_active_ninjas() {
 
     while IFS= read -r ninja; do
         [ -n "$ninja" ] || continue
-        forward_message="Gunshi review supplement: $review_content"
+        forward_message="軍師レビュー補足: $review_content"
         if ! INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" \
             INBOX_WRITE_TEST="${INBOX_WRITE_TEST:-}" \
             bash "$SELF_SCRIPT_PATH" \
@@ -806,14 +806,14 @@ fi
 # Validate arguments
 if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
     usage >&2
-    echo "Received arguments: $*" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
 if [[ "$TARGET" == cmd_* ]]; then
-    echo "ERROR: The first argument must be target_agent (for example: karo, hanzo), not a cmd_id." >&2
+    echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
     usage >&2
-    echo "Received arguments: $*" >&2
+    echo "受け取った引数: $*" >&2
     exit 1
 fi
 
@@ -900,13 +900,13 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" =
         _capture=$(tmux capture-pane -t "shogun:agents.${_pane_idx}" -p 2>/dev/null | tail -8 || true)
         echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
         echo "$_capture"
-        echo "10x question: If this action is repeated 10 times, does it create positive or negative compounding?"
-        echo "Assumption question: Did you verify the numbers and conditions in this instruction yourself? What is the source? Are you trusting a relayed claim without verification?"
+        echo "★10回問い: このアクションを10回繰り返したら正の複利か負の複利か？"
+        echo "★前提問い: この指示に含まれる数値・条件は自分で確認したか？出典は？中継元の主張を鵜呑みにしていないか？"
         # CTX:0%検知 — task_assigned送信先がCTX:0%なら反応しない可能性を警告
         if [ "$TYPE" = "task_assigned" ]; then
             _ctx_val=$(echo "$_capture" | grep -oP 'CTX:\K[0-9]+' | tail -1)
             if [ "${_ctx_val:-99}" = "0" ]; then
-                echo "⚠⚠⚠ WARNING: ${TARGET} CTX:0% — high stall risk. Check the pane again in 30 seconds. ⚠⚠⚠"
+                echo "⚠⚠⚠ WARNING: ${TARGET} CTX:0% — STALL高リスク。30秒後にペイン確認せよ ⚠⚠⚠"
             fi
         fi
         echo "---"
@@ -951,14 +951,14 @@ if [ "$TYPE" = "cmd_new" ]; then
             found && /^  [a-zA-Z]/ { exit }
         ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null)
         if [ -z "$_CMD_STATUS" ]; then
-            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} does not exist in shogun_to_karo.yaml" >&2
+            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} がshogun_to_karo.yamlに存在しない" >&2
             exit 1
         fi
         if [ "$_CMD_STATUS" = "pending" ]; then
             echo "" >&2
             echo "==============================" >&2
-            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} has status=pending (gate not passed)" >&2
-            echo "[cmd_new_gate] Use the standard cmd_save.sh -> cmd_delegate.sh flow to pass the gate" >&2
+            echo "[cmd_new_gate] BLOCKED: ${_CMD_NEW_ID} はstatus=pending(gate未通過)" >&2
+            echo "[cmd_new_gate] cmd_save.sh→cmd_delegate.shの正規フローでgateを通せ" >&2
             echo "==============================" >&2
             exit 1
         fi
@@ -993,13 +993,13 @@ if [ "$TYPE" = "report_received" ]; then
                     FALLBACK=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${FROM}_report_${CMD_ID}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
                     if [ -n "$FALLBACK" ]; then
                         FULL_REPORT="$FALLBACK"
-                        echo "[report_format_gate] fallback: report_path is unset -> detected $(basename "$FALLBACK")" >&2
+                        echo "[report_format_gate] fallback: report_path未設定 → $(basename "$FALLBACK") を検出" >&2
                     else
-                        echo "[report_format_gate] BLOCKED: report YAML not found: queue/reports/${FROM}_report_${CMD_ID}*.yaml" >&2
+                        echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: queue/reports/${FROM}_report_${CMD_ID}*.yaml" >&2
                         exit 1
                     fi
                 else
-                    echo "[report_format_gate] BLOCKED: report YAML not found: report_path unset and parent_cmd unset (ninja: ${FROM})" >&2
+                    echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: report_path未設定 + parent_cmd未設定 (ninja: ${FROM})" >&2
                     exit 1
                 fi
             fi
@@ -1025,14 +1025,14 @@ if [ "$TYPE" = "report_received" ]; then
                             # 新: exit 1でBLOCK → 忍者がフィールドを埋めてから再送信（品質向上）
                             echo "" >&2
                             echo "==============================" >&2
-                            echo "[report_format_gate] BLOCKED: report is incomplete (ninja: ${FROM})" >&2
-                            echo "[report_format_gate] verdict is unset or FILL_THIS remains. Fill every field and resend." >&2
-                            echo "[report_format_gate] FAIL reasons:" >&2
+                            echo "[report_format_gate] BLOCKED: 報告が未完了 (ninja: ${FROM})" >&2
+                            echo "[report_format_gate] verdict未記入 or FILL_THIS残存。フィールドを全て埋めてから再送信せよ" >&2
+                            echo "[report_format_gate] FAIL理由:" >&2
                             while IFS= read -r _gate_line; do
                                 echo "  $_gate_line" >&2
                             done <<< "$GATE_RESULT"
                             echo "" >&2
-                            echo "[report_format_gate] Resend after fixing: bash scripts/inbox_write.sh karo \"Report complete\" report_received ${FROM}" >&2
+                            echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
                             echo "==============================" >&2
                             exit 1
                         fi
@@ -1051,7 +1051,7 @@ if [ "$TYPE" = "report_received" ]; then
                                 printf 'messages: []\n' > "$GUNSHI_INBOX"
                             fi
                             _gunshi_msg="$(inbox_build_message_block \
-                                content "[Monitor notice] Ninja ${FROM} hit gate FAIL on the report YAML. The ninja is already blocked and must fix it locally before resending. Gunshi must not patch it directly. Record for pattern analysis." \
+                                content "【監視通知】忍者${FROM}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。" \
                                 from "system" \
                                 id "$ROUTE_ID" \
                                 read "false" \
@@ -1062,29 +1062,29 @@ if [ "$TYPE" = "report_received" ]; then
                                 report_path "$FULL_REPORT")"$'\n'
                             inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
                         ) 200>"$(lock_path "$GUNSHI_INBOX")" \
-                            && echo "[report_quality_route] Quality issue routed to gunshi for monitoring (the ninja must do the fix)" >&2 \
+                            && echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2 \
                             || echo "[report_quality_route] WARN: gunshi notification skipped (flock timeout)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2
                         echo "==============================" >&2
-                        echo "[report_format_gate] BLOCKED: report YAML quality issue (ninja: ${FROM})" >&2
-                        echo "[report_format_gate] FAIL reasons:" >&2
+                        echo "[report_format_gate] BLOCKED: 報告YAML品質問題 (ninja: ${FROM})" >&2
+                        echo "[report_format_gate] FAIL理由:" >&2
                         while IFS= read -r _gate_line; do
                             echo "  $_gate_line" >&2
                         done <<< "$GATE_RESULT"
                         echo "" >&2
-                        echo "[report_format_gate] Fix with: bash scripts/report_field_set.sh <report_path> <key> <value>" >&2
-                        echo "[report_format_gate] Examples:" >&2
+                        echo "[report_format_gate] 修正方法: bash scripts/report_field_set.sh <report_path> <key> <value>" >&2
+                        echo "[report_format_gate] 修正例:" >&2
                         echo "  bash scripts/report_field_set.sh $REPORT_PATH verdict PASS" >&2
                         echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.found false" >&2
-                        echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.no_lesson_reason 'Same pattern as known lesson L084'" >&2
-                        echo "  bash scripts/report_field_set.sh $REPORT_PATH result.summary 'Implementation complete'" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.no_lesson_reason '既知のL084と同じパターン'" >&2
+                        echo "  bash scripts/report_field_set.sh $REPORT_PATH result.summary '実装完了'" >&2
                         echo "==============================" >&2
-                        echo "[report_format_gate] Resend after fixing: bash scripts/inbox_write.sh karo \"Report complete\" report_received ${FROM}" >&2
+                        echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
                         exit 1
                     fi
                 else
-                    echo "[report_format_gate] BLOCKED: report YAML not found: $FULL_REPORT" >&2
+                    echo "[report_format_gate] BLOCKED: 報告YAMLが見つからない: $FULL_REPORT" >&2
                     exit 1
                 fi
             fi
@@ -1115,11 +1115,11 @@ if [ "$TYPE" = "report_received" ]; then
                 fi
                 UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
                 if [ -n "$UNCOMMITTED" ]; then
-                    echo "[git_uncommitted_gate] BLOCKED: uncommitted files remain (ninja: ${FROM})" >&2
+                    echo "[git_uncommitted_gate] BLOCKED: 未commitファイルあり (ninja: ${FROM})" >&2
                     while IFS= read -r _uline; do
                         echo "  $_uline" >&2
                     done <<< "$UNCOMMITTED"
-                    echo "[git_uncommitted_gate] Run git add + git commit before reporting" >&2
+                    echo "[git_uncommitted_gate] git add + git commitを実行してから報告せよ" >&2
                     exit 1
                 fi
             fi
@@ -1224,7 +1224,7 @@ while [ $attempt -lt $max_attempts ]; do
                                 # on WSL2/DrvFs (POSIX flock treats different open file descriptions
                                 # independently; same-process exclusive vs exclusive = blocked).
                                 if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>/dev/null; then
-                                    echo "[inbox_write] auto-done: failed to update task status (non-fatal; message delivery already succeeded)" >&2
+                                    echo "[inbox_write] auto-done: task status更新失敗（非致命的。メッセージ送信は成功済み）" >&2
                                 fi
                                 ;;
                         esac
@@ -1246,7 +1246,7 @@ while [ $attempt -lt $max_attempts ]; do
 timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
 source: gunshi_review
 result: LGTM
-note: Gunshi review completed. Replaced placeholder entry (GP-133).
+note: 軍師レビュー完了。placeholderから上書き(GP-133)。
 REVIEWEOF
                     echo "[inbox_write] review_gate.done updated: ${_rr_cmd_id} (placeholder→gunshi_review LGTM)" >&2
                     trigger_cmd_complete_gate_background "$_rr_cmd_id"

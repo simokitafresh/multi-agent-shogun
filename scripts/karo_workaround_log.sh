@@ -152,7 +152,7 @@ verify_environment_change() {
     local env_structured="" env_type="" env_file="" env_pattern="" env_file_resolved=""
 
     if [[ -z "$env_change" ]]; then
-        echo "[karo_workaround_log] WARN: environment_change is missing. In --wa mode, record what was embedded into the environment." >&2
+        echo "[karo_workaround_log] WARN: environment_change未記入。--wa時は何を環境に埋め込んだか記録せよ" >&2
         return 0
     fi
 
@@ -161,9 +161,9 @@ verify_environment_change() {
         env_file_resolved="$env_file"
         [[ "$env_file_resolved" == /* ]] || env_file_resolved="$REPO_ROOT/$env_file_resolved"
         if grep -qE -- "$env_pattern" "$env_file_resolved" 2>/dev/null; then
-            echo "[karo_workaround_log] INFO: environment_change verified: type=${env_type} file=${env_file} pattern=${env_pattern}" >&2
+            echo "[karo_workaround_log] INFO: environment_change検証OK: type=${env_type} file=${env_file} pattern=${env_pattern}" >&2
         else
-            echo "[karo_workaround_log] WARN: environment_change not implemented. pattern=${env_pattern} was not found in file=${env_file}" >&2
+            echo "[karo_workaround_log] WARN: environment_change未実装。file=${env_file} に pattern=${env_pattern} が見つからない" >&2
         fi
     fi
 }
@@ -190,7 +190,7 @@ validate_ninja_id() {
 }
 
 if ! validate_ninja_id "$NINJA_NAME"; then
-    echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' is not a valid agent name. Check config/settings.yaml and queue/tasks/." >&2
+    echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' は有効なエージェント名ではない。config/settings.yaml・queue/tasks/を確認せよ" >&2
 fi
 
 # --- YAML single-quote escaping (cmd_cycle_L4_026: injection防止) ---
@@ -239,15 +239,15 @@ TZ=UTC printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%SZ)T' -1
 
 # AC1(cmd_1538): WARN when category is uncategorized
 if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "uncategorized" ]]; then
-    echo "[karo_workaround_log] WARN: category is uncategorized. Pass an explicit category as the 5th argument: $CMD_ID/$NINJA_NAME" >&2
+    echo "[karo_workaround_log] WARN: categoryが未分類(uncategorized)。5番目の引数で明示的にcategoryを指定せよ: $CMD_ID/$NINJA_NAME" >&2
 fi
 
 # AC2(cmd_1538+cmd_1542): root_cause validation (empty/null/short)
 if [[ "$CLEAN_MODE" != true ]]; then
     if [[ -z "$FIX" || "$FIX" == "null" || "$FIX" == "None" || "$FIX" == "NULL" || "$FIX" == "none" ]]; then
-        echo "[karo_workaround_log] WARN: root_cause has an invalid value ('$FIX'). Record a meaningful fix description: $CMD_ID/$NINJA_NAME" >&2
+        echo "[karo_workaround_log] WARN: root_causeが無効値('$FIX')。意味のある修正説明を記録せよ: $CMD_ID/$NINJA_NAME" >&2
     elif [[ ${#FIX} -lt 3 ]]; then
-        echo "[karo_workaround_log] WARN: root_cause is too short (${#FIX} chars, minimum 3). Record a meaningful fix description: $CMD_ID/$NINJA_NAME" >&2
+        echo "[karo_workaround_log] WARN: root_causeが短すぎる(${#FIX}文字, 最小3文字)。意味のある修正説明を記録せよ: $CMD_ID/$NINJA_NAME" >&2
     fi
 fi
 
@@ -335,13 +335,13 @@ EOF
 
         # --- Alert mechanism (AC1: cmd_1211) ---
         if [[ "$CATEGORY" != "clean" && $OCCURRENCE -ge 3 ]]; then
-            echo "[karo_workaround_log] ALERT: category '${CATEGORY}' has occurred ${OCCURRENCE} times. Create a structural countermeasure cmd."
+            echo "[karo_workaround_log] ALERT: カテゴリ「${CATEGORY}」が${OCCURRENCE}件。構造対策cmdを起票せよ"
             bash "$SCRIPT_DIR/ntfy.sh" "【家老ALERT】workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件。構造対策cmd起票を強制" 2>/dev/null || true
             bash "$SCRIPT_DIR/insight_write.sh" "workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件蓄積。構造対策cmdの起票が必要" "high" "karo_workaround_log" 2>/dev/null || true
             # なぜなぜ7回到達: ALERTを行動に接続（表示→PD自動起票→将軍startup gate検知）
             bash "$SCRIPT_DIR/pending_decision_write.sh" create "workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件蓄積。構造対策cmdの起票・裁定が必要" "${CMD_ID}" escalation karo 2>/dev/null || true
         elif [[ "$CATEGORY" != "clean" && $OCCURRENCE -eq 2 ]]; then
-            echo "[karo_workaround_log] WARN: category '${CATEGORY}' has occurred twice. Consider creating a structural countermeasure cmd."
+            echo "[karo_workaround_log] WARN: 同一カテゴリ「${CATEGORY}」が2件。構造対策cmdの起票を検討せよ"
         else
             echo "[karo_workaround_log] Logged: $CMD_ID/$NINJA_NAME [$CATEGORY]"
         fi

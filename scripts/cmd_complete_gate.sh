@@ -2654,7 +2654,7 @@ if [ "$LESSON_CHECKED" = false ]; then
     echo "  (no tasks with related_lessons for this cmd)"
 fi
 
-# ─── reviewed:false leftover check (retired: moved to push-style flow in cmd_533) ───
+# ─── reviewed:false残存チェック（廃止: cmd_533でpush型に移行） ───
 # reviewed:falseフィールドはdeploy_task.shで付与されなくなった（detail埋込に移行）
 # 旧タスクYAMLにreviewed:falseが残存していても後方互換でブロックしない
 level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_533)"

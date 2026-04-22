@@ -2,9 +2,9 @@
 # shellcheck disable=SC1091
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
 # Usage: bash scripts/deploy_task.sh [--direct] <ninja_name> [cmd_id] [message] [type] [from]
-# Example: bash scripts/deploy_task.sh hanzo cmd_1510 "Read the task YAML and start work." task_assigned karo
+# Example: bash scripts/deploy_task.sh hanzo cmd_1510 "タスクYAMLを読んで作業開始せよ" task_assigned karo
 # Direct:  bash scripts/deploy_task.sh --direct kagemaru cmd_training_L4_R5_kagemaru
-# Legacy:  bash scripts/deploy_task.sh hanzo "Read the task YAML and start work." task_assigned karo
+# Legacy:  bash scripts/deploy_task.sh hanzo "タスクYAMLを読んで作業開始せよ" task_assigned karo
 #
 # 機能:
 #   1. 対象忍者のCTX%とidle状態を自動検知
@@ -36,7 +36,7 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 # WSL2 NTFS最適化: field_getの依存ログ(flock+stat+write)を抑制。65回×20ms=1.3s削減
 export FIELD_GET_NO_LOG=1
 
-DEFAULT_MESSAGE="Read the task YAML and start work."
+DEFAULT_MESSAGE="タスクYAMLを読んで作業開始せよ。"
 DIRECT_MODE=false
 NINJA_NAME=""
 CMD_ID=""
@@ -129,18 +129,18 @@ deploy_task_validate_cli_target() {
     if [ -z "$ninja_name" ] || [ "${ninja_name,,}" = "none" ]; then
         echo "ERROR: ninja_name is required and cannot be empty/None." >&2
         echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-        echo "Example 1: deploy_task.sh hanzo" >&2
-        echo "Example 2: deploy_task.sh hanzo \"Read the task YAML and start work.\" task_assigned karo" >&2
-        echo "Received args: $*" >&2
+        echo "例1: deploy_task.sh hanzo" >&2
+        echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+        echo "受け取った引数: $*" >&2
         return 1
     fi
 
     if [[ "$ninja_name" == cmd_* ]]; then
-        echo "ERROR: The first argument must be ninja_name (for example: hanzo, hayate), not cmd_id." >&2
+        echo "ERROR: 第1引数はninja_name（例: hanzo, hayate）。cmd_idではない。" >&2
         echo "Usage: deploy_task.sh <ninja_name> [message] [type] [from]" >&2
-        echo "Example 1: deploy_task.sh hanzo" >&2
-        echo "Example 2: deploy_task.sh hanzo \"Read the task YAML and start work.\" task_assigned karo" >&2
-        echo "Received args: $*" >&2
+        echo "例1: deploy_task.sh hanzo" >&2
+        echo "例2: deploy_task.sh hanzo \"タスクYAMLを読んで作業開始せよ\" task_assigned karo" >&2
+        echo "受け取った引数: $*" >&2
         return 1
     fi
 }
@@ -332,7 +332,7 @@ resolve_cmd_to_task() {
 
     # LK054: depends_on検出時にAC単位依存分析を促すWARN
     if [ -n "$_depends_on" ]; then
-        echo "WARN: depends_on=${_depends_on} detected. Does every AC truly depend on it? Are any ACs safe to run in parallel? (LK054)" >&2
+        echo "WARN: depends_on=${_depends_on} 検出。全ACが依存先に本当に依存するか？並列可能なACはないか？(LK054)" >&2
     fi
 
     local task_id="${cmd_id}_${task_type}"
@@ -484,7 +484,7 @@ _compute_ac_hash() {
 
 # ─── _overwrite_ac_from_cmd: cmdソースからAC上書き（cmd_1493） ───
 # shogun_to_karo.yaml → archive/cmds/ の順でparent_cmdのACを探し、task YAMLに上書き。
-# Clear the injected-lesson marker as well so lesson injection can run again.
+# 教訓マーカー(【注入教訓】)もクリアして再注入を促す。
 _overwrite_ac_from_cmd() {
     local task_file="$1"
     local parent_cmd
@@ -683,7 +683,7 @@ else:
             raw = raw.rstrip('\n') + '\n' + indented + '\n'
 
 # Clear lesson injection marker so inject_related_lessons re-injects with new ACs
-raw = re.sub(r'\[Injected Lessons\].*?─{10,}\n\n?', '', raw, flags=re.DOTALL)
+raw = re.sub(r'【注入教訓】.*?─{10,}\n\n?', '', raw, flags=re.DOTALL)
 
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
 try:
@@ -1004,7 +1004,7 @@ for ac_id in waive_ac:
         if not isinstance(item, dict):
             continue
         item['result'] = 'no'
-        item['waive_reason'] = 'waive_ac specified'
+        item['waive_reason'] = 'waive_ac指定'
 
 if is_research:
     items = bc.get('commit')
@@ -1014,7 +1014,7 @@ if is_research:
                 continue
             item['result'] = 'no'
             if not str(item.get('waive_reason') or '').strip():
-                item['waive_reason'] = 'research cmd: commit not required'
+                item['waive_reason'] = '研究cmd: commit不要'
 
 print(yaml.safe_dump({'binary_checks': bc}, allow_unicode=True, sort_keys=False).rstrip())
 PY_BC_WAIVE
@@ -1145,10 +1145,10 @@ generate_report_template() {
     if is_before_after_required_task "$task_file" "$resolved_parent_cmd" "$title" "$task_type"; then
         _before_after_block=$(cat <<'EOF'
 before_metrics:
-  summary: ""  # Measurement before implementation
+  summary: ""  # 実装前の計測値
   details: ""
 after_metrics:
-  summary: ""  # Measurement after implementation
+  summary: ""  # 実装後の計測値
   details: ""
 regression: ""  # yes or no
 EOF
@@ -1156,28 +1156,28 @@ EOF
     fi
 
     cat > "$report_file" <<EOF
-# !! Preserve the top-level structure. Do not wrap with report: !!
-# !! Use report_field_set.sh for every field. Direct Edit/Write is forbidden !!
-# Step 1: Read this file -> Step 2: fill fields with bash scripts/report_field_set.sh <this_file> <key> <value>
-# ━━━ report_field_set.sh dot-notation quick reference ━━━
-# RFS="bash scripts/report_field_set.sh <this_file>"
-# \$RFS result.summary "summary text"
-# \$RFS result.details "detailed text"
+# !! トップレベル構造を維持せよ。report: で包むな !!
+# !! report_field_set.sh で各フィールドを設定せよ。直接Edit/Write禁止 !!
+# Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
+# ━━━ report_field_set.sh ドット記法クイックリファレンス ━━━
+# RFS="bash scripts/report_field_set.sh <このファイル>"
+# \$RFS result.summary "要約文"
+# \$RFS result.details "詳細文"
 # \$RFS lesson_candidate.found "false"
-# \$RFS lesson_candidate.no_lesson_reason "Matches known pattern L084"
+# \$RFS lesson_candidate.no_lesson_reason "既知パターンL084"
 # \$RFS verdict "PASS"
-# echo '[{check: "description", result: "yes"}]' | \$RFS binary_checks.AC1 -
-# !! Space-separated paths like (lesson_candidate found false) are invalid -> dot notation is required !!
-# ━━━ Submission steps (run in order) ━━━
-# 1. Fill content: result.summary/details, purpose_validation, lesson_candidate, files_modified
-# 2. Fill structure: every binary_checks result -> yes/no, every lessons_useful reason, verdict -> PASS/FAIL, status -> completed
-# 3. Run gate: bash scripts/gates/gate_report_format.sh <this_file>
-# 4. After PASS: report to Karo via inbox_write
+# echo '[{check: "内容", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# !! スペース区切り(lesson_candidate found false)は不可 → ドット記法必須 !!
+# ━━━ 提出手順（番号順に実行せよ）━━━
+# 1. 内容記入: result.summary/details, purpose_validation, lesson_candidate, files_modified
+# 2. 構造記入: binary_checks全result→yes/no, lessons_useful全reason記入, verdict→PASS/FAIL, status→completed
+# 3. gate実行: bash scripts/gates/gate_report_format.sh <このファイル>
+# 4. PASS確認後: inbox_writeで家老に報告
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
-timestamp: ""  # Get with: date "+%Y-%m-%dT%H:%M:%S"
+timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
@@ -1187,69 +1187,69 @@ purpose_validation:
   cmd_purpose: ""
   fit: true
   purpose_gap: ""
-simplicity_check: ""  # Is the existing mechanism sufficient? If more complexity is required, explain why in one sentence.
-assumption_check: ""  # Any doubts about the AC premises? If something is unclear, record it in decision_candidate (Karpathy Principle 1).
+simplicity_check: ""  # 既存仕組みで足りるか / 複雑さ追加が必要なら理由を1文で記せ
+assumption_check: ""  # ACの前提に疑問はないか？不明な点があればdecision_candidateに書け(Karpathy原則1)
 task_clarity:
-  score: ""         # 0-100: task clarity (100=fully clear, 0=fully unclear). Record cmd quality.
-  unclear_points: ""   # What was unclear? One sentence ("none" if nothing).
-  discretion_fills: "" # What you filled in by discretion ("none" if nothing).
+  score: ""         # 0-100: タスクの明瞭度(100=完全明瞭, 0=全不明)。cmdの品質を記録
+  unclear_points: ""   # 不明瞭だった点を1文で(なければ"なし")
+  discretion_fills: "" # 独自判断で補完した内容(なければ"なし")
 ${_before_after_block}
 files_modified: []
 lesson_candidate:
-  # Set found: true/false. List format [] is forbidden.
-  # ── When found:true (title/detail/project are all required) ──
+  # found: true/false を書け。リスト形式[] 禁止
+  # ── found:true の場合（title/detail/project 全て必須）──
   # \$RFS lesson_candidate.found "true"
-  # \$RFS lesson_candidate.title "Lesson title"
-  # \$RFS lesson_candidate.detail "What happened and what was learned"
+  # \$RFS lesson_candidate.title "教訓タイトル"
+  # \$RFS lesson_candidate.detail "何が起きて何を学んだか"
   # \$RFS lesson_candidate.project "${project}"
-  # ── When found:false (no_lesson_reason is required) ──
+  # ── found:false の場合（no_lesson_reason 必須）──
   # \$RFS lesson_candidate.found "false"
-  # \$RFS lesson_candidate.no_lesson_reason "Same pattern as known lesson L084"
+  # \$RFS lesson_candidate.no_lesson_reason "既知のL084と同じパターン"
   found: false
-  no_lesson_reason: ""  # Required when found:false. Write the reason in one sentence. Bare false is returned by Karo (L247).
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
   title: ""
   detail: ""
   project: ${project}
 lessons_useful: null
 skill_candidate:
-  found: false  # Set found: true if you repeated the same procedure 3+ times.
-  # If found: true, also fill:
-  # name: ""        # Skill name, e.g. "cdp-page-measure"
-  # description: "" # What the skill does, e.g. "Run page measurements over CDP automatically"
-  # reason: ""      # Why it should be a skill, e.g. "The CDP measurement flow was run manually 5+ times"
-  # project: ""     # Target project, e.g. "dm-signal"
+  found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
+  # found: true の場合は以下も記入:
+  # name: ""        # スキル名 例: "cdp-page-measure"
+  # description: "" # 何をするスキルか 例: "CDP経由でページ計測を自動実行"
+  # reason: ""      # なぜスキル化すべきか 例: "CDP計測手順を5回以上手動実行した"
+  # project: ""     # 対象PJ 例: "dm-signal"
 decision_candidate:
   found: false
 knowledge_candidate:
-  found: false  # Did you discover new factual data during the task (DB column name, API contract, config value, etc.)?
-  # If found: true, also fill:
+  found: false  # タスク中に新たな事実データ(DBカラム名/API仕様/設定値等)を発見したか？
+  # found: true の場合は以下も記入:
   # items:
-  #   - fact: "Discovered fact in one sentence"  # Example: "The recalculation_timings column is finished_at (completed_at does not exist)"
-  #     source: "Verified file/line"  # Example: "backend/app/db/models.py L601"
-  # ★ Difference from lesson_candidate: lesson = action rule ("Do not guess"), knowledge = factual data ("The correct column name is X")
-  # ★ Karo feeds knowledge_candidate back into projects/{id}.yaml
+  #   - fact: "発見した事実を1文で"  # 例: "recalculation_timingsのカラム名はfinished_at(completed_atは不在)"
+  #     source: "確認元ファイル/行"  # 例: "backend/app/db/models.py L601"
+  # ★ lesson_candidateとの違い: lessonは行動ルール(「推測するな」)、knowledgeは事実データ(「正しいカラム名はX」)
+  # ★ 家老がknowledge_candidateをprojects/{id}.yamlに還流させる
 assumption_invalidation:
-  found: false  # Does this result change assumptions from any past cmd? true/false
-  affected_cmds: []  # If found:true, list affected cmd IDs, e.g. [cmd_1400, cmd_1410]
-  detail: ""  # What changed and how. Empty is fine when found:false.
+  found: false  # この結果は過去のどのcmdの前提を変更するか？ true/false
+  affected_cmds: []  # found:true時、前提が変わるcmd_IDリスト 例: [cmd_1400, cmd_1410]
+  detail: ""  # 何がどう変わるか。found:false時は空文字でよい
 hook_failures:
   count: 0
   details: ""
-binary_checks: {}  # For each completed AC, fill ACN: [{check: "verification item", result: "yes/no"}]
-# ⚠ result values must be only "yes" or "no". true/false/PASS/FAIL/OK and similar values are BLOCKed.
-# Example: echo '[{check: "Comment was added", result: "yes"}]' | \$RFS binary_checks.AC1 -
-# ─── self gate (cmd_karo_self_gate_template: standard injection for all report templates) ───
+binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
+# ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
+# 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# ─── self gate（cmd_karo_self_gate_template: 全報告テンプレートへ標準注入） ───
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: ""  # After all binary_checks are complete, set PASS or FAIL
-# ━━━ Final pre-submit checklist (verify all fields before running the gate) ━━━
-# □ binary_checks: every result for every AC is "yes" or "no" ("PASS" is invalid)
-# □ lessons_useful: every reason field explains why it was useful or not useful
-# □ verdict: filled with "PASS" or "FAIL"
-# □ status: updated to completed
+verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
+# ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
+# □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
+# □ lessons_useful: 全reason欄に有用/無用の具体的理由を記入したか
+# □ verdict: "PASS" or "FAIL" を記入したか
+# □ status: completed に変更したか
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 
@@ -1264,19 +1264,19 @@ EOF
     if [ -z "$_lu_ids" ]; then
         # GP-088: related_lessonsなし or id抽出不能 → null→[]に変換
         if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
-            sed -i 's/lessons_useful: null/lessons_useful: []  # No injected lessons. If you add one, use the id\/useful\/reason format./' "$report_file"
+            sed -i 's/lessons_useful: null/lessons_useful: []  # ★教訓なし。追加教訓があればid\/useful\/reason形式で記入/' "$report_file"
             log "report_template: lessons_useful null→[] fallback"
         fi
     else
         # IDリストからlessons_useful雛形を生成
-        local _lu_block="lessons_useful:  # Injected lessons are present. Do not overwrite with []. Fill useful + reason for each lesson."
+        local _lu_block="lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"
         local _lu_count=0
         while IFS= read -r _lid; do
             [ -z "$_lid" ] && continue
             _lu_block="${_lu_block}
   - id: ${_lid}
     useful: false
-    reason: ''  # Example: \"Useful because it matches the L246 return-1 trap and guided set -e caller verification\" / \"Not used in this task; unrelated to the target area\""
+    reason: ''  # 例: \"L246のreturn 1罠と一致し、set -e呼出元確認の指針として有用\" / \"今回の変更では未使用。対象箇所と無関係\""
             _lu_count=$((_lu_count + 1))
         done <<< "$_lu_ids"
 
@@ -1326,11 +1326,11 @@ EOF
         }
         function normalize_check_text(text, ac_desc, out) {
             out = text
-            if (ac_desc ~ /(monthly|月次)/ && out !~ /exclude in-progress month/) {
-                out = out " (exclude in-progress month)"
+            if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
+                out = out " (進行中月除外)"
             }
             if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
-                out = "Run the tests listed by bash scripts/affected_tests.sh; if it returns an empty list, fall back to bats --jobs 4 tests/unit and confirm PASS"
+                out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
             }
             return out
         }
@@ -1380,7 +1380,7 @@ EOF
     local _commit_bc=""
     if [ "$_deploy_task_type" != "scout" ] && [ "$_deploy_task_type" != "recon" ]; then
         _commit_bc='  commit:
-  - check: "Was git commit completed (untracked/modified=0)?"
+  - check: "git commitが完了したか(untracked/modified=0)"
     result: ""  # yes or no'
     fi
 
@@ -1422,8 +1422,8 @@ EOF
                 done
                 if [ "$_all_ignored" = "true" ]; then
                     _commit_bc='  commit:
-  - check: "Was git commit completed (untracked/modified=0)?"
-    result: "no"  # Only gitignored files are targeted: commit not required'
+  - check: "git commitが完了したか(untracked/modified=0)"
+    result: "no"  # gitignore対象ファイルのみ: commit不要'
                     log "binary_checks: commit check auto-set to no (all target_path are gitignored)"
                 fi
             fi
@@ -1437,14 +1437,14 @@ EOF
         _cmd_command=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$CMD_ID" "command" 2>/dev/null || true)
         if echo "$_cmd_command" | grep -qiE 'commit.*禁止|commit一切禁止|登録.*のみ.*commit'; then
             _commit_bc='  commit:
-  - check: "Was git commit completed (untracked/modified=0)?"
+  - check: "git commitが完了したか(untracked/modified=0)"
     result: "no"
-    waive_reason: "cmd constraint: commit prohibited"'
-            log "binary_checks: commit check waived (cmd constraint: commit prohibited)"
+    waive_reason: "cmd制約: commit禁止"'
+            log "binary_checks: commit check waived (cmd constraint: commit禁止)"
         fi
     fi
 
-    local _bc_placeholder='binary_checks: {}  # For each completed AC, fill ACN: [{check: "verification item", result: "yes/no"}]'
+    local _bc_placeholder='binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入'
 
     if [ -n "$_bc_block" ]; then
         local _bc_full="binary_checks:
@@ -1462,11 +1462,11 @@ ${_commit_bc}"
             }
             function normalize_check_text(text, ac_desc, out) {
                 out = text
-                if (ac_desc ~ /(monthly|月次)/ && out !~ /exclude in-progress month/) {
-                    out = out " (exclude in-progress month)"
+                if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
+                    out = out " (進行中月除外)"
                 }
                 if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
-                    out = "Run the tests listed by bash scripts/affected_tests.sh; if it returns an empty list, fall back to bats --jobs 4 tests/unit and confirm PASS"
+                    out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
                 }
                 return out
             }
@@ -1482,7 +1482,7 @@ ${_commit_bc}"
                             if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
                         }
                     } else {
-                        printf "  - check: \"FILL: Write the verification item for %s\"\n    result: \"\"  # yes or no\n", cur_id
+                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
                     }
                 }
                 cur_id=""; desc=""
@@ -1515,7 +1515,7 @@ ${_commit_bc}"
                             if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
                         }
                     } else {
-                        printf "  - check: \"FILL: Write the verification item for %s\"\n    result: \"\"  # yes or no\n", cur_id
+                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
                     }
                 }
             }
@@ -1569,16 +1569,16 @@ if not isinstance(top3, list) or not top3:
     raise SystemExit(0)
 
 warning_map = {
-    "lu_reason_empty": ('lessons_useful:', 'Every lessons_useful entry must include a reason. Empty strings are forbidden.'),
-    "empty_lessons_useful": ('lessons_useful:', 'Every lessons_useful entry must include useful(true/false) + reason. Do not submit it empty.'),
-    "lu_structure_error": ('lessons_useful:', 'Each lessons_useful item must include id/reason/useful. null/empty list/dict are forbidden. Do not break the template structure.'),
-    "bc_result_empty": ('binary_checks:', 'Fill every binary_checks result with "yes" or "no".'),
-    "bc_result_invalid": ('binary_checks:', 'binary_checks results must be only "yes" or "no". Values like "PASS"/"FAIL"/"pending" are invalid.'),
-    "binary_checks_fail": ('binary_checks:', 'At least one binary_checks result is not "yes". Confirm every AC verification is complete.'),
-    "verdict_invalid": ('verdict:', 'verdict must be binary: "PASS" or "FAIL".'),
-    "status_pending": ('status: pending', 'After completion, update status to "completed". Do not submit with "pending".'),
-    "no_lesson_reason": ('  no_lesson_reason:', 'When lesson_candidate.found=false, fill no_lesson_reason.'),
-    "lesson_candidate_no_reason_empty": ('  no_lesson_reason:', 'When lesson_candidate.found=false, fill no_lesson_reason.'),
+    "lu_reason_empty": ('lessons_useful:', 'lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'),
+    "empty_lessons_useful": ('lessons_useful:', 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'),
+    "lu_structure_error": ('lessons_useful:', 'lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'),
+    "bc_result_empty": ('binary_checks:', 'binary_checksの各resultに"yes"/"no"を記入'),
+    "bc_result_invalid": ('binary_checks:', 'binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'),
+    "binary_checks_fail": ('binary_checks:', 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'),
+    "verdict_invalid": ('verdict:', 'verdictは"PASS"/"FAIL"の二値のみ'),
+    "status_pending": ('status: pending', '完了後にstatusを"completed"に更新。"pending"のまま報告禁止'),
+    "no_lesson_reason": ('  no_lesson_reason:', 'lesson_candidate.found=false時はno_lesson_reasonに理由記入'),
+    "lesson_candidate_no_reason_empty": ('  no_lesson_reason:', 'lesson_candidate.found=false時はno_lesson_reasonに理由記入'),
 }
 
 anchor_comments: dict[str, list[str]] = {}
@@ -1603,7 +1603,7 @@ for line in lines:
     for anchor, comments in anchor_comments.items():
         if line.startswith(anchor):
             for warning in comments:
-                new_lines.append(f'# WARNING: your frequent FAIL pattern: {warning}')
+                new_lines.append(f'# ⚠ あなたの頻出FAIL: {warning}')
     new_lines.append(line)
 
 report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
@@ -1652,10 +1652,10 @@ new_lines: list[str] = []
 in_lessons = False
 in_binary_checks = False
 in_result = False
-lu_note = "# AUTO-PREFILL: learned from gate_report_format — prevents empty reason recurrence. Replace FILL_THIS with a concrete reason."
-bc_note = "# AUTO-PREFILL: learned from gate_report_format — prevents empty result recurrence. Replace FILL_THIS with yes/no."
-summary_note = "# AUTO-PREFILL: learned from gate_report_format — prevents empty result.summary recurrence. Replace FILL_THIS with a summary."
-files_note = "# AUTO-PREFILL: learned from gate_report_format — prevents missing files_modified recurrence. Replace FILL_THIS with the modified file list."
+lu_note = "# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ"
+bc_note = "# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ"
+summary_note = "# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ"
+files_note = "# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ"
 
 for line in lines:
     if re.match(r"^[A-Za-z_][A-Za-z0-9_]*:", line):
@@ -1715,16 +1715,16 @@ PY_LEARNED_PREFILL
     report_task_type=$(echo "$report_task_type" | tr '[:upper:]' '[:lower:]')
     if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
         cat >> "$report_file" <<'RECON_EOF'
-# ─── Recon implementation-readiness: 5 direct requirements (cmd_754+cmd_1476: required, WARN if empty) ───
+# ─── 偵察 実装直結5要件（cmd_754+cmd_1476: 必須。空欄でWARN） ───
 implementation_readiness:
-  files_to_modify: []   # Target files and line numbers, e.g. ["src/api/auth.py:45-60"]
-  affected_files: []    # Other files impacted by the change, e.g. ["tests/test_auth.py"]
-  related_tests: []     # Related tests and whether they need updates, e.g. ["tests/test_auth.py — needs update"]
-  edge_cases: []        # Edge cases / side effects, e.g. ["Re-auth flow when the token expires"]
-  dependency_constraints: []  # Dependency / ordering constraints, e.g. ["Start AC2 only after AC1", "DB migration must come first"]
-# ─── ★Record major gaps/findings from recon in knowledge_candidate ───
-# Findings such as "missing in our system", "mismatch from production", or "design change required"
-# should be recorded with found: true. That becomes the trigger for context updates.
+  files_to_modify: []   # 変更対象ファイルと行番号 例: ["src/api/auth.py:45-60"]
+  affected_files: []    # 変更が波及する他ファイル 例: ["tests/test_auth.py"]
+  related_tests: []     # 関連テストの有無と修正要否 例: ["tests/test_auth.py — 修正必要"]
+  edge_cases: []        # エッジケース・副作用 例: ["トークン期限切れ時の再認証フロー"]
+  dependency_constraints: []  # 依存関係・順序制約 例: ["AC1完了後にAC2着手", "DB migration先行必須"]
+# ─── ★偵察で発見した重要Gap/知見はknowledge_candidateに記入せよ ───
+# 「我が軍に欠落」「本番と不一致」「設計変更が必要」等の発見は found: true にして記録。
+# context反映のトリガーになる。docs/research/に書くだけでは埋没する。
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
@@ -2362,9 +2362,9 @@ try:
     desc_modified = False
     if related:
         desc = task.get('description', '')
-        marker = '[Injected Lessons]'
+        marker = '【注入教訓】'
         if marker not in str(desc):
-            lines = [marker + ' Review these before starting work.']
+            lines = [marker + ' 必ず確認してから作業開始せよ']
             for r in related:
                 lines.append(f"  - {r['id']}: {r['summary'][:80]}")
             lines.append('─' * 40)
@@ -2581,7 +2581,7 @@ inject_target_path_check() {
     # WARN注入
     local missing_str
     missing_str=$(IFS=', '; echo "${missing[*]}")
-    local warn_msg="WARNING: target_path does not exist: ${missing_str}"
+    local warn_msg="⚠ target_pathが存在しない: ${missing_str}"
     yaml_field_set "$task_file" "task" "target_path_warning" "$warn_msg"
     log "[INJECT_TARGET_PATH] WARN: target_path does not exist: ${missing_str}"
 
@@ -2633,7 +2633,7 @@ inject_role_reminder() {
         return 0
     fi
 
-    yaml_field_set "$task_file" "task" "role_reminder" "Ninja ${ninja_name}. Execute only this task. No out-of-scope improvements or decisions. Record findings in lesson_candidate/decision_candidate."
+    yaml_field_set "$task_file" "task" "role_reminder" "忍者${ninja_name}。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ"
     log "[ROLE_REMINDER] Injected for ${ninja_name}"
 }
 
@@ -2827,15 +2827,15 @@ try:
 
     # warning生成（top categoryに応じた具体的な注意事項）
     WARNING_MAP = {
-        'report_yaml_format': 'WARNING: always use report_field_set.sh. lessons_useful must stay a list; dict(0:{},1:{}) is forbidden. verdict must stay binary (PASS/FAIL).',
-        'commit_missing': 'WARNING: after code changes, always run git add + git commit before reporting completion. Missing commits are forbidden.',
-        'report_missing': 'WARNING: finish creating the report YAML before reporting completion. Completion reports without a report file are forbidden.',
-        'file_disappearance': 'WARNING: verify file existence after file operations, especially that the report YAML did not disappear.',
+        'report_yaml_format': '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守',
+        'commit_missing': '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁',
+        'report_missing': '⚠ 報告YAML作成を必ず完了してから完了報告。report未作成での完了報告禁止',
+        'file_disappearance': '⚠ ファイル操作後は存在確認。特にreport YAMLが消失していないか検証',
     }
-    warning = WARNING_MAP.get(top_cat, f'WARNING: {total} workarounds have occurred previously. Watch quality carefully.')
+    warning = WARNING_MAP.get(top_cat, f'⚠ 過去{total}件のworkaround発生。品質に注意')
 
     # category内訳文字列
-    breakdown = ', '.join(f'{cat}({cnt})' for cat, cnt in sorted(cat_counts.items(), key=lambda x: -x[1]))
+    breakdown = ', '.join(f'{cat}({cnt}件)' for cat, cnt in sorted(cat_counts.items(), key=lambda x: -x[1]))
 
     # task YAMLに注入
     with open(task_file) as f:
@@ -2855,7 +2855,7 @@ try:
     task['ninja_weak_points'] = {
         'source': 'karo_workarounds.yaml',
         'total_workarounds': total,
-        'top_pattern': f'{top_cat}({top_count})',
+        'top_pattern': f'{top_cat}({top_count}件)',
         'breakdown': breakdown,
         'warning': warning,
     }
@@ -2865,17 +2865,17 @@ try:
     if os.path.exists(gate_log_path):
         fail_cats = {}
         GATE_FAIL_WARNING = {
-            'lu_reason_empty': 'Every lessons_useful entry must include a reason. Empty strings are forbidden.',
-            'bc_result_empty': 'Fill every binary_checks check item result with "yes"/"no". Empty strings are forbidden.',
-            'verdict_invalid': 'verdict must be binary: "PASS"/"FAIL". Empty strings and None are forbidden.',
-            'status_pending': 'After completion, update status to "completed". Do not submit with "pending".',
-            'field_missing': 'Do not omit required fields (binary_checks/files_modified/result.summary).',
-            'type_error': 'YAML type warning. dict({0:{},1:{}}) is forbidden; use list([{},{},{}]) instead.',
-            'no_lesson_reason': 'When lesson_candidate.found=false, fill no_lesson_reason.',
-            'bc_result_invalid': 'binary_checks results must be only "yes"/"no". Values like "PASS"/"FAIL"/"pending" are invalid.',
-            'lu_structure_error': 'Each lessons_useful item must include id/reason/useful. null/empty list/dict are forbidden. Do not break the template structure.',
-            'yaml_parse_error': 'YAML syntax error. Check indentation, spaces after colons, and unclosed quotes.',
-            'fill_this_remaining': 'FILL_THIS is still present. Replace every template placeholder with a real value.',
+            'lu_reason_empty': 'lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止',
+            'bc_result_empty': 'binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止',
+            'verdict_invalid': 'verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止',
+            'status_pending': '完了後にstatusを"completed"に更新。"pending"のまま報告禁止',
+            'field_missing': '必須フィールド(binary_checks/files_modified/result.summary)を省略するな',
+            'type_error': 'YAML型注意。dict({0:{},1:{}})禁止→list([{},{},{}])形式',
+            'no_lesson_reason': 'lesson_candidate.found=false時はno_lesson_reasonに理由記入',
+            'bc_result_invalid': 'binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値',
+            'lu_structure_error': 'lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな',
+            'yaml_parse_error': 'YAML構文エラー。インデント・コロン後のスペース・引用符の閉じ忘れを確認せよ',
+            'fill_this_remaining': 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ',
         }
         try:
             with open(gate_log_path) as gf:
@@ -2921,7 +2921,7 @@ try:
                 top3 = [{'pattern': p, 'count': c} for p, c in sorted_cats]
                 gate_warnings = [GATE_FAIL_WARNING.get(p, p) for p, _ in sorted_cats]
                 task['ninja_weak_points']['gate_fail_top3'] = top3
-                task['ninja_weak_points']['gate_warning'] = 'WARNING: frequent gate FAIL patterns: ' + '; '.join(gate_warnings)
+                task['ninja_weak_points']['gate_warning'] = '⚠ gate頻出FAIL: ' + '; '.join(gate_warnings)
                 print(f'[NINJA_WP] {ninja_name}: gate FAIL top3 injected: {sorted_cats}', file=sys.stderr)
         except Exception as ge:
             print(f'[NINJA_WP] gate_fire_log parse warning: {ge}', file=sys.stderr)
@@ -2930,24 +2930,24 @@ try:
     gate_metrics_path = os.path.join(os.path.dirname(workarounds_file), 'gate_metrics.log')
     if os.path.exists(gate_metrics_path):
         BLOCK_HINT_MAP = {
-            'empty_lessons_useful': 'Every lessons_useful entry must include useful(true/false) + reason. Do not submit it empty.',
-            'lesson_done_source': 'After registering lesson_candidate, lesson_done must be confirmed. Use lesson_write.sh for formal registration.',
-            'lesson_candidate_missing': 'lesson_candidate.found must always be filled (true/false). Do not omit it.',
-            'lesson_candidate_legacy_list': 'lesson_candidate must use dict format (found/title/detail). List [] format is forbidden.',
-            'lesson_done_missing': 'Lesson registration completion was not confirmed. Confirm done after running lesson_write.sh.',
-            'lesson_candidate_parse_error': 'YAML syntax error in lesson_candidate. Check indentation and quotes.',
-            'ac_version_mismatch': 'ac_version_read does not match task YAML ac_version. Reload the latest task.',
-            'invalid_lessons_useful_format': 'lessons_useful must be a list of {id,useful,reason}. dict/null are forbidden.',
-            'lesson_candidate_no_reason_empty': 'When lesson_candidate.found=false, no_lesson_reason is required.',
-            'purpose_validation_fit_false': 'purpose_validation.fit is false. Check for drift between cmd purpose and the work performed.',
-            'empty_lesson_referenced': 'A related_lessons reference is empty. Recheck the lessons specified by the task.',
-            'null_lessons_useful': 'lessons_useful is null. Preserve the template list structure.',
-            'fill_this_remaining': 'FILL_THIS is still present. Replace every template placeholder with a real value.',
-            'binary_checks_fail': 'At least one binary_checks result is not "yes". Confirm every AC verification is complete.',
-            'unreviewed_lessons': 'Unreviewed lessons remain. Finish lesson review.',
-            'lesson_candidate_found_missing': 'lesson_candidate.found is missing. Explicitly set true/false.',
-            'report_format': 'The report YAML format is invalid. report_field_set.sh is required.',
-            'report_yaml_missing': 'The report YAML does not exist. Create and fill the file at report_path.',
+            'empty_lessons_useful': 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止',
+            'lesson_done_source': 'lesson_candidate登録後にlesson_done確認が必要。lesson_write.sh経由で正式登録',
+            'lesson_candidate_missing': 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止',
+            'lesson_candidate_legacy_list': 'lesson_candidateはdict形式(found/title/detail)。リスト[]形式禁止',
+            'lesson_done_missing': 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認',
+            'lesson_candidate_parse_error': 'lesson_candidateのYAML構文エラー。インデント・引用符を確認',
+            'ac_version_mismatch': 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込',
+            'invalid_lessons_useful_format': 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止',
+            'lesson_candidate_no_reason_empty': 'lesson_candidate.found=false時はno_lesson_reasonに理由記入必須',
+            'purpose_validation_fit_false': 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認',
+            'empty_lesson_referenced': 'related_lessonsの参照教訓が空。タスクで指定された教訓を確認',
+            'null_lessons_useful': 'lessons_usefulがnull。テンプレートのリスト構造を維持せよ',
+            'fill_this_remaining': 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ',
+            'binary_checks_fail': 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認',
+            'unreviewed_lessons': '未レビューのlessonが残存。lesson確認を完了させよ',
+            'lesson_candidate_found_missing': 'lesson_candidate.found欄がない。true/falseを明記',
+            'report_format': 'report YAMLのフォーマットエラー。report_field_set.sh使用必須',
+            'report_yaml_missing': 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ',
         }
         NINJA_NAMES = {'kagemaru', 'hanzo', 'hayate', 'tobisaru', 'saizo', 'kotaro', 'sasuke', 'kirimaru'}
         try:
@@ -3495,8 +3495,8 @@ check_entrance_gate() {
     if [ -n "$result" ]; then
         # trailing ", " を除去
         result="${result%, }"
-        log "BLOCK: previous task for ${NINJA_NAME} still has reviewed:false [${result}]. Finish consuming the lessons before redeploying."
-        echo "BLOCK: previous task for ${NINJA_NAME} still has reviewed:false [${result}]. Finish consuming the lessons before redeploying." >&2
+        log "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ"
+        echo "BLOCK: ${NINJA_NAME}の前タスクにreviewed:false残存 [${result}]。教訓を消化してから再配備せよ" >&2
         exit 1
     fi
 
@@ -3600,8 +3600,8 @@ check_scout_gate() {
 
     # BLOCK
     log "BLOCK(scout_gate): ${parent_cmd} — scout done=${done_count}/2, scout_exempt=false"
-    echo "BLOCK(scout_gate): scouting is incomplete. Fewer than 2 scout_reports exist and scout_exempt is not set. Request scout_exempt from the Shogun or deploy scouts first." >&2
-    echo "Details: ${parent_cmd} — scout done=${done_count}/2, scout_exempt=false" >&2
+    echo "BLOCK(scout_gate): 偵察未完了。scout_reportsが2件未満かつscout_exemptなし。将軍にscout_exempt申請するか、先に偵察を配備せよ" >&2
+    echo "詳細: ${parent_cmd} — scout done=${done_count}/2, scout_exempt=false" >&2
     exit 1
 }
 
@@ -3726,7 +3726,7 @@ check_firefighting_title() {
         return 0
     fi
     if echo "$title" | grep -qiE "$FIREFIGHTING_PATTERN"; then
-        echo "⚠️ WARNING: firefighting cmd detected. Re-check the root cause and recurrence prevention. (title: ${title})" >&2
+        echo "⚠️ WARNING: 消火cmdを検知。真因と再発防止を検討せよ (title: ${title})" >&2
         log "firefighting_title_warn: ${cmd_id} title='${title}'"
     fi
 }
@@ -3795,7 +3795,7 @@ maybe_notify_draft_review() {
         return 0
     fi
 
-    message="Draft review requested for ${cmd_id}. ${title:-$cmd_id}. ninja=${ninja_name}."
+    message="draft ${cmd_id} レビュー依頼。${title:-$cmd_id}。ninja=${ninja_name}。"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "$message" review_draft karo; then
         log "draft_review: SENT (gunshi)"
     else
@@ -3819,10 +3819,10 @@ warn_same_ninja_redeploy() {
     [ -n "$parent_cmd" ] || return 0
 
     if [ -n "${_DEPLOY_PREV_PARENT_CMD:-}" ] && [ "$_DEPLOY_PREV_PARENT_CMD" = "$parent_cmd" ]; then
-        reasons+=("same parent_cmd redeployed")
+        reasons+=("同一parent_cmd再投入")
     fi
     if [ -n "${_DEPLOY_PREV_SESSION_STATE:-}" ]; then
-        reasons+=("session_state still present")
+        reasons+=("session_state残存")
     fi
 
     report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
@@ -3830,14 +3830,14 @@ warn_same_ninja_redeploy() {
         report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
         report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
         if [ -z "$report_verdict" ] || [ "$report_verdict" = "FAIL" ] || [ "$report_status" != "completed" ]; then
-            reasons+=("existing report for the same ninja")
+            reasons+=("同忍者の既存報告あり")
         fi
     fi
 
     [ "${#reasons[@]}" -gt 0 ] || return 0
 
     reason_text=$(printf '%s\n' "${reasons[@]}" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
-    echo "WARNING: same-ninja redeploy detected (${parent_cmd} -> ${ninja_name}). ${reason_text}. This may match the mizchi red flag: 'trying to reuse the same subagent'. Consider deploying a different ninja or confirm a reason that does not depend on remembered context." >&2
+    echo "WARNING: same-ninja redeploy (${parent_cmd} → ${ninja_name}) を検出。${reason_text}。mizchi Red flag『同じsubagentを使い回そう』の可能性あり。別忍者配備か、記憶依存でない理由を確認せよ" >&2
     log "same_ninja_redeploy_warn: cmd=${parent_cmd} ninja=${ninja_name} reasons=${reason_text}"
 }
 
@@ -3890,14 +3890,14 @@ warn_recent_noncmd_commit_targets() {
 
         _age_sec=$((_now_epoch - _commit_epoch))
         if [ "$_age_sec" -le 86400 ] && [[ "$_subject" != *cmd_* ]]; then
-            echo "WARNING: target_path=${_git_path} has a non-cmd commit message within the last 24h. A self-driven Gunshi/Karo commit may be mixed in: ${_subject}" >&2
+            echo "WARNING: target_path=${_git_path} の直近commitが24h以内かつ非cmd message。軍師/家老の自走commit混入の可能性あり: ${_subject}" >&2
             log "recent_noncmd_commit_warn: target=${_git_path} age=${_age_sec}s subject='${_subject}'"
             _warned=true
         fi
     done
 
     if [ "$_warned" = "true" ]; then
-        echo "  Inspect the latest commit for target_path and confirm you are not absorbing a self-driven Gunshi/Karo fix." >&2
+        echo "  target_pathの直近commitを確認し、軍師/家老の自走修正を吸収していないか見極めよ" >&2
     fi
 }
 
@@ -3979,8 +3979,8 @@ command_lines = [line.strip() for line in command_text.splitlines() if line.stri
 
 if len(command_lines) >= 10 and len(ac_descs) <= 1:
     print(
-        f'WARNING: task clarity ({parent_cmd}) has {len(ac_descs)} ACs for a {len(command_lines)}-line command. '
-        'The command is long and the ACs are coarse, so the task may be unclear.',
+        f'WARNING: task clarity ({parent_cmd}) command {len(command_lines)}行に対してAC {len(ac_descs)}件。'
+        ' commandが長くACが粗いため、タスクが不明瞭な可能性あり',
         file=sys.stderr,
     )
 
@@ -4007,15 +4007,15 @@ for cand in path_candidates:
 
 if missing:
     print(
-        f'WARNING: task clarity ({parent_cmd}) may reference non-existent paths in the command: '
+        f'WARNING: task clarity ({parent_cmd}) command内の参照パスが実在しない可能性: '
         + ', '.join(missing),
         file=sys.stderr,
     )
 
-if ac_descs and not any(re.search(r'(?i)\b(confirm|verify|validation|check)\b', desc) for desc in ac_descs):
+if ac_descs and not any(('確認' in desc) or ('検証' in desc) for desc in ac_descs):
     print(
-        f'WARNING: task clarity ({parent_cmd}) ACs do not include confirm/verify wording. '
-        'The task may list actions only and omit explicit verification.',
+        f'WARNING: task clarity ({parent_cmd}) ACに「確認」「検証」が含まれない。'
+        ' 行動のみで確認欠落の可能性あり',
         file=sys.stderr,
     )
 TASK_CLARITY_PY
@@ -4193,7 +4193,7 @@ deploy_task_main() {
     if [ "$pre_resolve_status" = "in_progress" ] && [ -n "$CMD_ID" ]; then
         pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${pre_resolve_cmd:-unknown}. 前タスク完了を待て。"
-        echo "BLOCK: ${NINJA_NAME} is already executing ${pre_resolve_cmd:-unknown}. Double deployment is forbidden (GP-069)." >&2
+        echo "BLOCK: ${NINJA_NAME} は ${pre_resolve_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
         return 1
     fi
 
@@ -4244,7 +4244,7 @@ except Exception:
             log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
         else
             log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
-            echo "ERROR: failed to resolve ${CMD_ID}. Confirm that the cmd_id exists in shogun_to_karo.yaml." >&2
+            echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
             return 1
         fi
     fi
@@ -4268,7 +4268,7 @@ except Exception:
         if [ "$task_status" = "in_progress" ]; then
             current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
             log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
-            echo "BLOCK: ${NINJA_NAME} is already executing ${current_cmd:-unknown}. Double deployment is forbidden (GP-069)." >&2
+            echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
             return 1
         fi
         yaml_field_set "$task_yaml" "task" "status" "in_progress"
@@ -4282,7 +4282,7 @@ except Exception:
     if [ "$task_status" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
         current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
-        echo "BLOCK: ${NINJA_NAME} is already executing ${current_cmd:-unknown}. Double deployment is forbidden (GP-069)." >&2
+        echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
         return 1
     fi
 
@@ -4296,7 +4296,7 @@ except Exception:
     # _ac_task_id必須チェック: 分割配備の判定に必要。未設定だとparent_cmdクリア事故(cmd_1751/1752)
     if [ -z "$deploy_task_id" ]; then
         log "WARN: _ac_task_id is empty — split deploy detection may misfire"
-        echo "WARN: _ac_task_id is not set. Split deployment may be misclassified as double deployment. Set _ac_task_id in the task YAML." >&2
+        echo "WARN: _ac_task_id が未設定。分割配備時に二重配備と誤判定する可能性あり。task YAMLに _ac_task_id を設定せよ。" >&2
     fi
 
     if [ -n "$deploy_parent_cmd" ]; then
@@ -4343,7 +4343,7 @@ except Exception:
     # AC3: _STALE_RESET_DONE確認ゲート — CMD_ID配備時にreset_stale_fieldsが実行済みか検証
     if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
         log "BLOCK(AC3): _STALE_RESET_DONE not set — reset_stale_fields が未実行。配備を中止。"
-        echo "BLOCK: stale field reset (reset_stale_fields) was not run. Deployment is aborted. Check the reset_stale_fields call path in deploy_task.sh." >&2
+        echo "BLOCK: stale field reset (reset_stale_fields) が未実行。配備を中止。deploy_task.shのreset_stale_fields呼出し経路を確認せよ。" >&2
         return 1
     fi
 

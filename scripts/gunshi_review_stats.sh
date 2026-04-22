@@ -114,7 +114,7 @@ END {
     for (n in ninja_weak) {
         jp = get_jp(n)
         if (weak_str != "") weak_str = weak_str ","
-        weak_str = weak_str jp ":" ninja_weak[n]
+        weak_str = weak_str jp ninja_weak[n] "回"
     }
     printf "NINJA_WEAK=%s\n", weak_str
 
@@ -123,7 +123,7 @@ END {
     for (n in ninja_high) {
         jp = get_jp(n)
         if (high_str != "") high_str = high_str ","
-        high_str = high_str jp ":" ninja_high[n]
+        high_str = high_str jp ninja_high[n]
     }
     printf "NINJA_HIGH=%s\n", high_str
 }
@@ -188,12 +188,12 @@ function process() {
 }
 
 function get_jp(name) {
-    if (name == "hayate") return "hayate"
-    if (name == "kagemaru") return "kagemaru"
-    if (name == "hanzo") return "hanzo"
-    if (name == "saizo") return "saizo"
-    if (name == "kotaro") return "kotaro"
-    if (name == "tobisaru") return "tobisaru"
+    if (name == "hayate") return "疾風"
+    if (name == "kagemaru") return "影丸"
+    if (name == "hanzo") return "半蔵"
+    if (name == "saizo") return "才蔵"
+    if (name == "kotaro") return "小太郎"
+    if (name == "tobisaru") return "飛猿"
     return name
 }
 ' "$tmpfile")
@@ -211,21 +211,21 @@ while IFS='=' read -r key value; do
 done <<< "$STATS"
 
 # --- Step 4: Build replacement header lines ---
-total_line="# Cumulative: ${TOTAL} entries (draft:${DRAFTS}, report:${REPORTS}) | ${EARLIEST}-"
+total_line="# 累計: ${TOTAL}件 (draft:${DRAFTS}, report:${REPORTS}) | ${EARLIEST}〜"
 
 if [[ $ACCURACY -ge 0 ]]; then
-    accuracy_line="# accuracy: known gate_result ${ACCURACY}% (${GATE_CLEAR}/${GATE_KNOWN} CLEAR, ${GATE_FAIL} FAIL)"
+    accuracy_line="# accuracy: gate_result判明分 ${ACCURACY}% (${GATE_CLEAR}/${GATE_KNOWN} CLEAR, ${GATE_FAIL} FAIL)"
 else
-    accuracy_line="# accuracy: known gate_result N/A (0 known entries)"
+    accuracy_line="# accuracy: gate_result判明分 N/A (判明0件)"
 fi
-null_line="#   Unknown: ${GATE_NULL} entries (${GATE_NULL_PCT}%)"
+null_line="#   未判明: ${GATE_NULL}件(${GATE_NULL_PCT}%)"
 
-verdict_line="# Verdict distribution: APPROVE:${APPROVE} LGTM:${LGTM} REQ_CHANGES:${REQ_CHANGES} FAIL:${FAIL}"
+verdict_line="# verdict分布: APPROVE:${APPROVE} LGTM:${LGTM} REQ_CHANGES:${REQ_CHANGES} FAIL:${FAIL}"
 
-flag_line="# Frequent quality flags: binary_checks-related (${BC_FLAG})"
+flag_line="# 品質Flag頻出: binary_checks関連(${BC_FLAG}回)"
 
 # Ninja quality
-ninja_line="# Ninja quality:"
+ninja_line="# 忍者別品質:"
 if [[ -n "${NINJA_WEAK:-}" ]]; then
     ninja_line="${ninja_line} WEAK=${NINJA_WEAK}"
 fi
@@ -234,7 +234,7 @@ if [[ -n "${NINJA_HIGH:-}" ]]; then
     ninja_line="${ninja_line} HIGH=${NINJA_HIGH}"
 fi
 if [[ -z "${NINJA_WEAK:-}" && -z "${NINJA_HIGH:-}" ]]; then
-    ninja_line="${ninja_line} (none)"
+    ninja_line="${ninja_line} (特記なし)"
 fi
 
 # --- Step 5: Replace auto-computed lines in the header ---
@@ -245,15 +245,15 @@ awk -v total_line="$total_line" \
     -v flag_line="$flag_line" \
     -v ninja_line="$ninja_line" \
 '
-/^# (累計|Cumulative):/ { print total_line; next }
+/^# 累計:/ { print total_line; next }
 /^# accuracy:/ { print accuracy_line; next }
-/^#[[:space:]]+(未判明|Unknown):/ { print null_line; next }
-/^# (verdict分布|Verdict distribution):/ { print verdict_line; next }
-/^# (品質Flag頻出|Frequent quality flags):/ { print flag_line; next }
-/^# (忍者別品質|Ninja quality):/ { print ninja_line; next }
+/^#[[:space:]]+未判明:/ { print null_line; next }
+/^# verdict分布:/ { print verdict_line; next }
+/^# 品質Flag頻出:/ { print flag_line; next }
+/^# 忍者別品質:/ { print ninja_line; next }
 { print }
 ' "$MAIN_LOG" > "${MAIN_LOG}.tmp"
 
 mv "${MAIN_LOG}.tmp" "$MAIN_LOG"
 
-echo "[gunshi_review_stats] Header update complete: ${TOTAL} entries (draft:${DRAFTS}, report:${REPORTS}), accuracy:${ACCURACY}%, verdict:A${APPROVE}/L${LGTM}/R${REQ_CHANGES}/F${FAIL}"
+echo "[gunshi_review_stats] ヘッダ更新完了: ${TOTAL}件 (draft:${DRAFTS}, report:${REPORTS}), accuracy:${ACCURACY}%, verdict:A${APPROVE}/L${LGTM}/R${REQ_CHANGES}/F${FAIL}"
