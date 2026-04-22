@@ -815,8 +815,20 @@ function is_boundary(line,    indent,t) {
 function flush_block(    i,line,indent_str,j,fre,replaced_count) {
     indent_str = make_indent(field_indent)
     replaced_count = 0
+    skip_replaced_continuation = 0
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
+        if (skip_replaced_continuation) {
+            line_indent = leading_spaces(line)
+            line_trimmed = trim(line)
+            if (line_trimmed == "") {
+                continue
+            }
+            if (line_indent > field_indent) {
+                continue
+            }
+            skip_replaced_continuation = 0
+        }
         if (i > 1) {
             for (j = 1; j <= nf; j++) {
                 if (!replaced[j]) {
@@ -825,6 +837,7 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
                         print indent_str farr[j] ": " yaml_safe(varr[j])
                         replaced[j] = 1
                         replaced_count++
+                        skip_replaced_continuation = 1
                         line = ""
                         break
                     }
