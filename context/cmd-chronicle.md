@@ -861,3 +861,4 @@
 | cmd_karo_auto_ops_context_freshness | 調査 — auto-ops context freshness ALERTの原因分析 | auto-ops | 04-22 | cmd_2232 の context未反映箇所を特定し、co |
 | cmd_2233 | CoDD偵察 — daily_etl.pyの存在理由調査: 本番fullrecalculateとの乖離分析 | dm-signal | 04-22 | FILL_THIS |
 | cmd_karo_ci_fix_ga158 | CI RED修正 — cmd_save environment_change テスト317-320復旧 | infra | 04-22 | cmd_save.shのPythonパーサーがassumpt |
+| cmd_2234 | fix — sync-prices(L0)を全期間取得+UPSERTに変更: 730日固定→FULL_HISTORY_START | dm-signal | 04-22 | sync_layers.py DEFAULT_LOOKBAC |
