@@ -2161,6 +2161,16 @@ try:
                 _tf_excluded_ids.add(_l.get('id', ''))
         if _tf_excluded_ids:
             print(f'[INJECT] target_files filter: {len(_tf_excluded_ids)} lessons marked for exclusion (task files: {[os.path.basename(f) for f in _all_task_files[:3]]})', file=sys.stderr)
+    else:
+        # GP-218: タスクファイルなし→target_files設定ありの教訓は除外(マッチ不可能)
+        for _l in confirmed_lessons:
+            _ltf = _l.get('target_files', [])
+            if isinstance(_ltf, str):
+                _ltf = [_ltf]
+            if _ltf and any(str(p).strip() for p in _ltf):
+                _tf_excluded_ids.add(_l.get('id', ''))
+        if _tf_excluded_ids:
+            print(f'[INJECT] target_files filter (no task files): {len(_tf_excluded_ids)} lessons with target_files excluded', file=sys.stderr)
 
     # ═══ タグマッチ: 教訓をフィルタ ═══
     # universal教訓は別管理（常に注入）

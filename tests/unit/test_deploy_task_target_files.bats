@@ -57,6 +57,17 @@ if _all_task_files:
         if _target_files_match(_ltf, _all_task_files):
             _tf_filtered.append(_l)
     confirmed_lessons = _tf_filtered
+else:
+    # GP-218: no task files → exclude lessons WITH target_files
+    _tf_filtered = []
+    for _l in confirmed_lessons:
+        _ltf = _l.get('target_files', [])
+        if isinstance(_ltf, str):
+            _ltf = [_ltf]
+        if _ltf and any(str(p).strip() for p in _ltf):
+            continue
+        _tf_filtered.append(_l)
+    confirmed_lessons = _tf_filtered
 
 for l in confirmed_lessons:
     print(l['id'])
@@ -108,13 +119,22 @@ PY
     [[ "$output" == *"L002"* ]]
 }
 
-@test "target_files: empty task_files skips filter (all pass)" {
+@test "target_files: empty task_files excludes lessons WITH target_files (GP-218)" {
     run run_target_files_filter \
         '[{"id": "L001", "target_files": ["ntfy.sh"]}, {"id": "L002", "tags": ["python"]}]' \
         '[]'
     [ "$status" -eq 0 ]
-    [[ "$output" == *"L001"* ]]
+    [[ "$output" != *"L001"* ]]
     [[ "$output" == *"L002"* ]]
+}
+
+@test "target_files: empty task_files passes lessons WITHOUT target_files (GP-218)" {
+    run run_target_files_filter \
+        '[{"id": "L001", "tags": ["bash"]}, {"id": "L002", "target_files": ["frontend/src/"]}]' \
+        '[]'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L001"* ]]
+    [[ "$output" != *"L002"* ]]
 }
 
 @test "target_files: string target_files (not list) is handled" {
