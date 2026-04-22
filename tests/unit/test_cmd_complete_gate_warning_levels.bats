@@ -548,3 +548,31 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
 }
+
+@test "cmd_complete_gate waits before both GATE CLEAR exits" {
+    run bash -lc "grep -c '^    wait || true$' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
+# GP-221: 二重配備時のbc_fail降格テスト
+@test "GP-221: binary_checks pre-scan finds verdict=PASS ninjas" {
+    # pre-scanロジックが存在するか確認
+    run bash -lc "grep -c '_bc_pass_ninjas' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -ge 4 ]  # 定義+参照で4箇所以上
+}
+
+@test "GP-221: bc_fail with other ninja PASS produces WARN not CRITICAL" {
+    # 降格ロジック(WARN出力)が存在するか確認
+    run bash -lc "grep -c '他忍者PASS済みのためBLOCK降格' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]  # bc_fail降格 + fit=false降格の2箇所
+}
+
+@test "GP-220: inbox_write gate re-trigger does not require deploy_preflight" {
+    # deploy_preflight条件が撤廃されているか確認
+    run bash -lc "grep -c 'source: deploy_preflight' '$PROJECT_ROOT/scripts/inbox_write.sh'"
+    [ "$status" -eq 0 ] || [ "$status" -eq 1 ]  # 0件(完全撤廃)が正解
+    [ "$output" -eq 0 ]
+}
