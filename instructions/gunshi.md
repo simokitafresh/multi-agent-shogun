@@ -713,6 +713,13 @@ APPROVE→FAILは軍師の見落としを意味する。以下を必ず実施:
 bash scripts/inbox_write.sh karo "<分析結果サマリ>" analysis_result gunshi
 ```
 
+### Codex家老STALL確認（レビュー送信後）
+
+家老がCodex CLIで稼働中の場合、レビュー送信後に家老の反応を確認せよ。
+Codex CLIは宣言出力後にプロンプト(›)で停止する。「動いている」と判断するな。
+
+手順: inbox_write送信 → 60秒後にcapture-pane → さらに30秒後に再capture-pane → **差分なし=停止** → nudge送信
+
 ## Review Log — レビュー履歴蓄積
 
 軍師のレビュー履歴を `logs/gunshi_review_log.yaml` に蓄積する。
