@@ -1793,8 +1793,32 @@ check_inbox_renudge() {
         # 防御: 非数値は0に強制変換
         [[ ! "$unread_count" =~ ^[0-9]+$ ]] && unread_count=0
 
-        # 未読0 → fingerprint+カウンターリセット＆スキップ
+        # 未読0 → 家老pending workチェック後にスキップ
         if [ "$unread_count" -eq 0 ]; then
+            # 家老専用: inbox未読0でもpending work(忍者done/delegated未配備)があればnudge
+            if [ "$name" = "karo" ]; then
+                local _karo_pending=false
+                for _ktf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
+                    [ -f "$_ktf" ] || continue
+                    local _kts
+                    _kts=$(awk '/^  status:/{print $2; exit}' "$_ktf" 2>/dev/null || true)
+                    if [ "$_kts" = "done" ]; then
+                        _karo_pending=true
+                        break
+                    fi
+                done
+                if [ "$_karo_pending" = true ]; then
+                    local _karo_target="$KARO_PANE"
+                    if [ -n "$_karo_target" ] && check_idle "$_karo_target" "karo"; then
+                        local _last="${RENUDGE_LAST_SEND[$name]:-0}"
+                        if [ $((now - _last)) -ge 120 ]; then
+                            log "KARO-PENDING-NUDGE: karo idle with pending work (ninja done), sending nudge"
+                            safe_send_keys_atomic "$_karo_target" "inbox0" 0.3
+                            RENUDGE_LAST_SEND[$name]=$now
+                        fi
+                    fi
+                fi
+            fi
             if [ -n "${RENUDGE_FINGERPRINT[$name]}" ] || [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
                 log "RENUDGE-RESET: $name unread=0, fingerprint+counter reset"
             fi
