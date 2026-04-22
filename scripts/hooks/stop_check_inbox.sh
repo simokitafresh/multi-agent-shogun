@@ -170,6 +170,20 @@ else
     fi
   fi
 
+  # 忍者向け: task完了後にCodexが勝手な作業を始めるのを防止
+  # status=done/completed + inbox未読0 → 「待機せよ」を表示
+  if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
+    _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
+    if [[ -f "$_ninja_task" ]]; then
+      _ninja_status="$(awk '/^  status:/{print $2; exit}' "$_ninja_task" 2>/dev/null || true)"
+      if [[ "$_ninja_status" == "done" || "$_ninja_status" == "completed" ]]; then
+        _reason="Task ${_ninja_status}. Wait for next task assignment from karo. Do NOT start new work or generate code. Read queue/tasks/${agent_id}.yaml when new task arrives."
+        jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
+        exit 0
+      fi
+    fi
+  fi
+
   touch "$idle_flag"
 fi
 
