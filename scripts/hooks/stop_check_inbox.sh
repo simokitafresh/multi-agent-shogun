@@ -29,7 +29,7 @@ if command -v tmux >/dev/null 2>&1; then
   fi
 fi
 
-if [[ -z "$agent_id" || "$agent_id" == "shogun" ]]; then
+if [[ -z "$agent_id" ]]; then
   exit 0
 fi
 
