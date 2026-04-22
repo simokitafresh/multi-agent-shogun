@@ -853,3 +853,4 @@
 | cmd_karo_ci_fix_gp199 | CI RED修正 — GP-199テスト期待値が日本語のまま | infra | 04-22 | Updated the GP-199 warning exp |
 | cmd_2227 | research-tool — Vintage分析パイプライン雛形作成(道具磨き) | dm-signal | 04-22 | Implemented vintage_pipeline.p |
 | cmd_2228 | research — Vintage 2020分析(コロナショック L0→L1→L2再選出+OOS検証) | dm-signal | 04-22 | python3 scripts/analysis/alm_r |
+| cmd_2229 | research-tool — Vintage L0→L1→L2全レイヤーGSにend_date引数追加(道具磨き) | dm-signal | 04-22 | Added end-date cutoff propagat |
