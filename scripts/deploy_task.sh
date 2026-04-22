@@ -217,6 +217,8 @@ STALE_FIELDS = [
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
     'type', 'report_template',
+    # 第9層: resolve_cmd_to_taskで上書きされるが安全網(cmd_2231 saizo stale contamination: title/report_path残留)
+    'title', 'report_path', 'report_filename', 'assigned_acs',
     # 第6層: ネスト残留+旧メタデータ(cmd_1527発見: 前cmdの全task:ブロックが残留)
     'task', 'worker_id', 'timestamp',
     # 第7層: GP-198 session state (新cmd配備時に前cmdの失敗履歴をクリア)
