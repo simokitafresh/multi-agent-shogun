@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-22 -->
+<!-- last_updated: 2026-04-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -45,70 +45,7 @@
 | cmd_980 | 偵察 — 教訓注入率低下の原因精査と改善提案 | | infra | 03-16 | — |
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
-| cmd_1263 | ninja_monitorにcommit未完了チェック追加 — commit_missing構造的根絶 | infra | 03-23 | — |
-| cmd_1268 | CI RED修正 — Unit Tests 9件失敗(ntfy_ack mock不備+auto_deploy_done不整合) | infra | 03-23 | — |
-| cmd_1269 | FoFパリティ検証 バッチ1(7体) — cmd_1251スクリプト展開 | dm-signal | 03-23 | — |
-| cmd_1270 | FoFパリティ検証 バッチ2(7体) — 第2陣並列実行 | dm-signal | 03-23 | — |
-| cmd_1271 | FoFパリティ検証 バッチ3(7体) — 第3陣並列実行 | dm-signal | 03-23 | — |
-| cmd_1272 | L1シン四神12体 登録スクリプト構築+dry-run検証 | dm-signal | 03-23 | — |
-| cmd_1273 | 本番登録環境PI-006検証 — ランブックv2全Step実行可能性の事前確認 | dm-signal | 03-23 | — |
-| cmd_1265 | report_field_set.sh強制hook — 忍者の直接Edit禁止で源流から構造不正防止 | infra | 03-23 | — |
-| cmd_1275 | GS混乱候補スクリプト7本削除 — 忍法スクリプト誤用防止 | dm-signal | 03-23 | — |
-| cmd_1277 | deploy_task.sh配備高速化 — preflight_gate_artifacts()からarchive_completed.sh呼出を除去し、配備時間を50秒→5秒に短縮する | infra | 03-23 | — |
-| cmd_1279 | gate発火ログ計測基盤の構築 — gate_report_format.shの発火・結果をログに記録し、gate効果の定量的計測を可能にする | infra | 03-23 | — |
-| cmd_1280 | lessons.yaml 3ファイルのVercel化 — 索引+アーカイブ分離で500行以下に圧縮し、読込エージェントのCTX浪費を構造的に解消する | infra | 03-23 | — |
-| cmd_1282 | 運用ファイル3件のVercel化 — context/cmd-chronicle.md + context/infrastructure.md + logs/gunshi_review_log.yaml を500行以下に圧縮する | infra | 03-23 | — |
-| cmd_1281 | 核心知識ファイル3件のVercel化 — projects/dm-signal.yaml + instructions/shogun.md + instructions/karo.md を500行以下に圧縮する | infra | 03-23 | dm-signal.yaml 307行+shogun.md 275行+karo.md 367行。二重配備(小太郎+疾風)発生もファイル破損なし |
-| cmd_1283 | lesson_update_score.shのCACHE_FILE→lessons_archive.yaml切替 — Vercel化索引の再膨張防止 | infra | 03-23 | — |
-| cmd_1284 | dashboard🚨要対応セクション清掃 + report_field_set.sh BLOCK昇格 | infra | 03-23 | — |
-| cmd_1285 | 家老用スタートアップゲート作成 — deepdive必読の自動化×強制 | infra | 03-23 | — |
-| cmd_1286 | GP-014 commit層自動防御 — report完了前のgit uncommittedチェックgate | infra | 03-23 | — |
-| cmd_1290 | insightsキュー自動アーカイブ — doneエントリの残存防止 | infra | 03-23 | — |
-| cmd_1291 | 報告YAMLアーカイブ時期修正 — 家老レビュー完了前のアーカイブ防止 | infra | 03-23 | — |
-| cmd_1292 | ninja_monitor report存在チェック — report未作成での/clear防止 | infra | 03-23 | — |
-| cmd_1293 | 忍者報告テンプレート導線修復 — format workaround源流根絶(GP-017) | infra | 03-23 | — |
-| cmd_1294 | PreToolUse DENY実装 — Write/Editでの報告YAML直接作成を阻止(GP-003完遂) | infra | 03-23 | — |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1302 | cmd_complete_gate.sh archive実行タイミング修正 — GATE外完了の根絶 | infra | 03-23 | cmd_complete_gate.sh内のarchive_completed.sh呼出しをpreflight(L1581)からGATE CLEAR後(L381 |
-| cmd_1303 | ninja_monitor uncommittedチェック scope修正 — 運用ファイル除外 | infra | 03-23 | git uncommittedチェックにgrep -v運用ファイル除外フィルタ追加。dashboard.md/logs/queue/inbox/.claude/ |
-| cmd_1304 | 削除済みスクリプト参照27ファイルのクリーンアップ | infra | 03-23 | — |
-| cmd_1305 | lesson_update_score.sh書込先修正 — Vercel化後のarchive参照切替 | infra | 03-23 | cmd_1283で既に対応済み。lesson_update_ |
-| cmd_1306 | test_result_guard.sh偽陽性修正 — last_assistant_messageのSKIP誤検知除去 | infra | 03-23 | — |
-| cmd_1307 | GP-021 ninja-adaptive failure injection — 忍者別過去失敗パターン自動注入 | infra | 03-23 | — |
-| cmd_1308 | workaround率自動計測gate — cmd_complete_gate統合でpost-GP効果を自動追跡 | infra | 03-23 | — |
-| cmd_1309 | queue/tasks/subtask_*.yaml 47件をarchive移動 — 旧アーキテクチャ残骸清掃 | infra | 03-23 | — |
-| cmd_1310 | CI RED修正 — test_sync_lessons_injection_count_sync.bats L77 失敗 | infra | 03-23 | — |
-| cmd_1311 | GP-003正規表現バグ修正 — report YAML hookが全忍者で未発火 | infra | 03-23 | — |
-| cmd_1289 | GP-011 忍者別workaround率の自動計測・startup gate表示 | infra | 03-23 | — |
-| cmd_1322 | GP-032 target_path存在検査WARN注入 | infra | 03-23 | inject_target_path_check関数をdeploy_task.shに追加。inject_credential_files直後に呼び出し。存在しな |
-| cmd_1323 | STALL再配備時の旧報告テンプレート自動cleanup | infra | 03-23 | — |
-| cmd_1324 | fix: lesson_impact.tsv タブ文字エスケープバグ修正+既存データ復旧 | infra | 03-23 | — |
-| cmd_1326 | feat: cmd_complete_gate.sh GATE CLEAR後処理のpost-write verify横展開 | infra | 03-23 | — |
-| cmd_1327 | fix: CI RED修復 — E2Eテスト2ファイルを現行編成に適合 | infra | 03-23 | — |
-| cmd_1329 | fix: insights.yaml棚卸し — pending 25件の分類・重複削除・resolved更新 | infra | 03-23 | — |
-| cmd_1328 | recon: GP-026実装設計 — report_yaml_missing BLOCK自動待機メカニズム | infra | 03-23 | report_yaml_missingの根本原因は2パターン: (1)gateが忍者未完了時に発火(61.5%), (2)CLEAR後archive移動→再ga |
-| cmd_1330 | feat: GP-027実装 — commit漏れ検出WARN(gate check前) | infra | 03-23 | — |
-| cmd_1331 | fix: CI Unit Test FAIL — test_text_utils.bats bash -lc を bash -c に修正 | infra | 03-23 | — |
-| cmd_1334 | feat: GP-029実装 — insights自動起票品質改善(dedup+ID一意化) | infra | 03-23 | — |
-| cmd_1332 | feat: GP-026実装(B案) — CLEAR済みcmd再check防止+全non-done WAIT | infra | 03-23 | — |
-| cmd_1333 | feat: GP-028実装 — 教訓注入projectフィールドフォールバック | infra | 03-23 | — |
-| cmd_1335 | feat: GP-023実装 — 軍師レビュー時cross-ninja WA率チェック | infra | 03-23 | — |
-| cmd_1336 | CLEAR率65→85%向上、WA率53→27%半減。autofix→format check順序でrace condition根絶 | infra | 03-23 | — |
-| cmd_1337 | ダッシュボード更新の意志依存を排除。イベント駆動で即時更新し将軍の判断速度を向上 | infra | 03-23 | — |
-| cmd_1338 | GATE時にautofixを再実行しrace condition根絶。verdict/no_lesson_reason自動補完で61 FAIL根絶。CLEAR率65→85%。家老workaround構造的根絶 | infra | 03-23 | — |
-| cmd_1339 | 将軍のcmd重複起票を構造的に防止。今日のcmd_1338重複事故(家老cmd_1336と同内容)のwhy chain分析から特定した自動化ターゲット | infra | 03-23 | — |
-| cmd_1340 | 偵察教訓注入率0%(cmd_513全スキップ)を解消。偵察固有教訓が偵察タスクに伝わらず改善ループが断絶している。偵察は全cmdの前段であり品質の起点 | infra | 03-23 | recon/scout/researchの教訓全スキップを偵察固有7教訓(L219,L211,L213,L159,L104,L129,L128)のみ注入に変更。 |
-| cmd_1341 | LLMには時系列の概念がない(殿指摘)。累積値は安心を与えるが因果を隠す。直近値は変化のシグナルを示す。recon注入率36%(実質0%)の誤認を構造的に防止 | infra | 03-23 | — |
-| cmd_1342 | Step 2 Phase B — 既存追い風FoFパリティ検証（MomentumFilter） | dm-signal | 03-23 | 追い風FoF 3体(常勝/激攻/鉄壁)全期間パリティ検証完了。monthly_return(close/open)全月PASS。hs_cross_checkは各 |
-| cmd_1343 | Step 2 Phase C — 既存抜き身FoFパリティ検証（SingleViewMomentumFilter） | dm-signal | 03-23 | — |
-| cmd_1344 | Step 2 Phase D — 既存変わり身FoFパリティ検証（TrendReversalFilter） | dm-signal | 03-23 | — |
-| cmd_1346 | Step 2 Phase E2 — 既存加速D FoFパリティ検証（MomentumAccelerationFilter diff） | dm-signal | 03-23 | — |
-| cmd_1345 | Step 2 Phase E1 — 既存加速R FoFパリティ検証（MomentumAccelerationFilter ratio） | dm-signal | 03-23 | — |
-| cmd_1347 | Step 2 Phase F — 既存FoFパリティ検証（MultiViewMomentumFilter 5体） | dm-signal | 03-23 | — |
-| cmd_1350 | Step 1やり直し — numpy快速パスの本番パリティ検証 | dm-signal | 03-23 | — |
-| cmd_1349 | Step 3 — シン四神v2 12体作成（shin_shijin_l1_gs.py）【中止】 | dm-signal | 03-23 | — |
-| cmd_1348 | Step 2 Phase G — 既存ネステッドFoFパリティ検証（7体） | dm-signal | 03-23 | — |
-| cmd_1351 | Step 1補強 — 本番standard PF全65体のnumpy快速パスパリティ検証 | dm-signal | 03-23 | — |
 | cmd_1352 | 全standard PF numpy快速パス完全パリティ（hs+ret両方）+ L0-M_XLU原因特定 | dm-signal | 03-24 | — |
 | cmd_1353 | numpy快速パス 53/53完全一致達成 — ^VIX grid汚染修正+hs順序一致 | dm-signal | 03-24 | — |
 | cmd_1394 | — | infra | 03-25 | テスト4件全PASS。修正不要。awk実装はinvalid_lessons_useful_format/形式が不正を正しく出力しており、テスト期待値と整合済み。 |
@@ -868,3 +805,15 @@
 | cmd_2237 | fix — 壊れた一回限りパリティテスト2本削除: pytest collection error解消 | dm-signal | 04-22 | 壊れたパリティテスト2本を削除して commit e7c69 |
 | cmd_2238 | 偵察 — pytest残存失敗8件の切り分け(修正候補 vs 削除候補) | dm-signal | 04-22 | FILL_THIS |
 | cmd_karo_max_inject_fix | 修正 — deploy_task lesson注入でMAX_INJECT未定義になる経路を根治 | infra | 04-22 | MAX_INJECT を tag fallback 前へ前倒 |
+| cmd_2141 | 実装 — Up vs Down MarketにSideways行追加 + レスポンシブ対応 | dm-signal | 04-23 | — |
+| cmd_2210 | 研究 — L2 GS固定選出 vs WF動的選出 比較分析記事+gist共有 | dm-signal | 04-23 | — |
+| cmd_2239 | CoDD最適化 — ticker_returns.py(L1: リターン計算) | dm-signal | 04-23 | — |
+| cmd_2240 | CoDD最適化 — recalculate_fast.py(L2/L3計算本体) | dm-signal | 04-23 | — |
+| cmd_2241 | CoDD最適化 — recalculate_fof.py(L3: FoF再計算, 最大ボトルネック) | dm-signal | 04-23 | — |
+| cmd_2242 | CoDD最適化 — sync_layers.py(オーケストレーター) | dm-signal | 04-23 | — |
+| cmd_2243 | CoDD準備 — data_fetcher.py(L0) extract+spec作成 | dm-signal | 04-23 | 既存sandbox抽出物とspecの再確認でAC1/AC2は |
+| cmd_2244 | CoDD準備 — ticker_returns.py(L1) extract+spec作成 | dm-signal | 04-23 | AC1: CoDD extract完了(codd/extra |
+| cmd_2245 | CoDD準備 — recalculate_fast.py(L2/L3計算本体) extract+spec作成 | dm-signal | 04-23 | recalculate_fast.py(3048行)のcod |
+| cmd_2246 | CoDD準備 — recalculate_fof.py(L3: FoF再計算, 最大ボトルネック) extract+spec作成 | dm-signal | 04-23 | CoDD extractとspec作成は完了したが、AC3の |
+| cmd_2247 | CoDD準備 — sync_layers.py(オーケストレーター) extract+spec作成 | dm-signal | 04-23 | FILL_THIS |
+| cmd_karo_2231_ac7_retry | 検証 — cmd_2231 AC7やり直し: 既存成功job基準のsignal比較のみ | dm-signal | 04-23 | 既存成功job d7k7k1cm0tmc73acvga0 を |
