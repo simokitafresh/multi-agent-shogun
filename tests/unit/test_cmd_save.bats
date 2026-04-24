@@ -48,6 +48,9 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -56,7 +59,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets check_self_reread_red_flag check_bundle_red_flag build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # テストハーネスではQUEUE_FILEが単純なので、CMD_BLOCK読込のみpure bash化してI/O起動コストを削る
     load_cmd_block() {
@@ -88,7 +91,7 @@ echo \"保存確認OK: \${CMD_ID}\"
     # check_20_assumptions: Check 20インラインセクション（assumptions検査）を関数化
     eval "check_20_assumptions() {
 local WARN_COUNT=0
-$(sed -n '/^# --- Check 20:/,/^# --- 結果出力/{/^# --- 結果出力/d;p}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^# --- Check 20:/,/^# --- Check 21:/{/^# --- Check 21:/d;p}' "$SRC_SAVE_SCRIPT")
 if [[ \"\${BLOCK_COUNT:-0}\" -gt 0 ]]; then
     return 1
 fi
@@ -458,6 +461,66 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"INFO: 関連する既存成果物を検出:"* ]]
+}
+
+@test "Check1-5: gate追加cmdでq11に既存代替の現物確認なしならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9994:
+    id: cmd_9994
+    title: "gate追加でLS009をgate化"
+    purpose: "cmd_save.shへ新規gateを追加して各論パッチ検出を強制する"
+    command: "bash scripts/cmd_save.sh 9994"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q11 WARNの局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh L1-L2900 code_reading + structure_verified(抽出関数でq11 WARN分岐確認)"
+      q8_why_what: "WHY: LS009再発防止 → WHAT: gate追加cmdのq11記載品質を点検"
+      q11_not_already_done: "未達成。grep 'q11_existing_alternative_verification' scripts/cmd_save.sh で未実装を確認"
+    assumptions:
+      - claim: "2026-04-24時点でテスト前提は固定"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_9994"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q11_existing_alternative_verification"* ]]
+}
+
+@test "Check1-5: gate追加cmdでもq11に既存代替の現物確認があればWARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_9993:
+    id: cmd_9993
+    title: "gate追加でLS009をgate化"
+    purpose: "cmd_save.shへ新規gateを追加して各論パッチ検出を強制する"
+    command: "bash scripts/cmd_save.sh 9993"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q11 WARN抑止の局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh L1-L2900 code_reading + structure_verified(抽出関数でq11 WARN抑止分岐確認)"
+      q8_why_what: "WHY: 既存代替確認済みの正常系確認 → WHAT: q11 WARN抑止を確認"
+      q11_not_already_done: "未達成。既存代替は scripts/cmd_save.sh 内の既存WARN群を rg -n 'record_warn_reason' で現物確認済み。今回追加差分のみ未達成"
+    assumptions:
+      - claim: "2026-04-24時点でテスト前提は固定"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_9993"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q11_existing_alternative_verification"* ]]
 }
 
 @test "Check1-5: quality_gate未記入でBLOCK" {
@@ -1387,5 +1450,41 @@ description: AC2'
     export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
     run check_20_assumptions
     echo "$output" >&2
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.5: assumptions claimに日付なし→WARNING" {
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"assumptions claimに日付がありません"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.6: assumptions claimに日付あり→WARNINGなし" {
+    CMD_BLOCK='description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-04-24時点で既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"assumptions claimに日付がありません"* ]]
     [ "$status" -eq 0 ]
 }
