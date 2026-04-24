@@ -2294,7 +2294,7 @@
 - cmd_id: cmd_2246
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: BLOCK
   confidence: HIGH
   findings_summary: "6観点OK。CoDD準備(recalculate_fof.py 1228行 L3=741s=81%最大ボトルネック extract+spec)"
   observations:
@@ -2355,7 +2355,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: BLOCK
   findings_summary: "4観点OK。AC2↔AC3矛盾はcmd設計不備。extract+spec完了。FAIL=矛盾の正しい検出"
   observations:
     - "事実1: AC2(spec新規作成)とAC3(新規ファイル禁止)の字面矛盾。hayateが正しく検出"
@@ -2383,7 +2383,7 @@
   review_type: report
   report_ninja: saizo
   verdict: LGTM
-  gate_result: null
+  gate_result: BLOCK
   findings_summary: "4観点OK。sync_layers.py 408行 extract+spec完了。4関数構造+R1-R5リファクタ候補"
   observations:
     - "事実1: 4関数(sync_prices/tickers/standard/fof)を行番号付きで構造化。L2/L3重複構造を特定"
@@ -2397,7 +2397,7 @@
   review_type: report
   report_ninja: tobisaru
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。yaml_field_set.sh AWK flow scalar継続行スキップバグ修正。+9行-1行。テスト31件全PASS"
   observations:
     - "事実1: inject_task_modifiers.py yaml.dumpが|-→\"変換→AWK継続行スキップ→不正YAML。根因特定が正確"
@@ -2407,3 +2407,128 @@
   gate_prediction: WARN
   causal_chain: "yaml.dump |-→\"変換→AWK prev_inline_scalar→継続行skip→不正YAML→CI RED。flow_contフラグで根本修正"
   timestamp: "2026-04-23T00:55:00"
+- cmd_id: cmd_2248
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_save.sh FP率60%超の3種WARN type修正。gate精度向上でオオカミ少年化防止"
+  observations:
+    - "事実1: FP率60%超=Gate13.8計測。修正対象: unknown型(空notes)、教訓未記録累計(記録済みcmd残存)、q8_WHY引用(4/4 FP)"
+    - "事実2: LS046/LS050(gate崩壊の滑り坂)の根本対処。WARNを消すのではなく正確にする"
+  causal_chain: "FP率60%超→WARNスルー常態化(LS046)→gate信頼崩壊=負の複利。FP源3種修正→FP率低減→WARN信頼回復=正の複利"
+  timestamp: "2026-04-24T09:35:00"
+- cmd_id: cmd_2248
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。cmd_save.sh FP率改善: unknown型fallback/教訓累計source_cmd照合/q8_WHY廃止。158テストPASS"
+  observations:
+    - "事実1: AC3で廃止選択=FP率100%(4/4)のため妥当。検出パターン全件FPなら廃止が正解"
+    - "事実2: 10ファイル変更だがcmd_save.sh+テスト群のみ。既存gate/report形式維持。回帰テスト十分"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "FP率60%超→3種修正(unknown型/教訓累計/q8_WHY)→WARN精度向上→gate信頼回復=正の複利"
+  timestamp: "2026-04-24T09:50:00"
+- cmd_id: cmd_karo_ci_fix_2248
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。テスト期待値追従修正。152/152 PASS。cmd_save.sh本体未変更"
+  observations:
+    - "事実1: cmd_2248でWARN note形式変更→テスト期待値不整合→saizoがテスト側のみ修正"
+    - "事実2: run_saveにquality_gate必須項目(q4/q6/q7/q_ambiguity)補完。現行cmd_save.shに合わせた"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "cmd_2248 WARN note形式変更→テスト期待値不整合→テスト追従修正=正常な連鎖(実装変更→テスト追従)"
+  timestamp: "2026-04-24T10:10:00"
+- cmd_id: cmd_2249
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。check_self_reread_red_flag FP修正。Pattern 2 ambiguity→q_ambiguityキー名常時マッチ解消"
+  observations:
+    - "事実1: cmd_2248で6回BLOCK実証。q_ambiguityキー名がPattern 2に常時マッチする構造的FP"
+    - "事実2: shallow修正(1関数L327-341)。ambiguity除去→ambiguousに変更は意味的同等でTP保持"
+  causal_chain: "Pattern 2にambiguity→q_ambiguityキー名常時マッチ→全cmdでFP→6回BLOCK(cmd_2248実証)→パターン修正=FP構造解消"
+  timestamp: "2026-04-24T11:45:00"
+- cmd_id: cmd_2249
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。check_self_reread FP修正。ambiguity→ambiguous最小修正+回帰テスト。170/170 PASS"
+  observations:
+    - "事実1: YAMLキー除外ロジック新設ではなく語彙変更の最小差分を選択。simplicity_check通過"
+    - "事実2: 26ファイル170テスト全PASS。SKIP=0。回帰テストで再発防止"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "Pattern 2 ambiguity→ambiguous変更→q_ambiguityキー名FP解消→gate信頼性回復=正の複利"
+  timestamp: "2026-04-24T11:50:00"
+- cmd_id: cmd_2250
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。Session State拡張:同一WARN 2回目以降で検出ロジック(grep -n)自動表示"
+  observations:
+    - "事実1: cmd_2248で6回BLOCK→5回目にgrep→根因到達。自動表示で2回目到達に短縮"
+    - "事実2: deepdive Phase 4-5(知性の外部化)の将軍版実践。コードを読む行動を環境に埋め込む"
+  causal_chain: "同一WARN反復→表面修正ループ(LS096)→検出ロジック自動表示→根因到達の構造的短縮=正の複利"
+  timestamp: "2026-04-24T11:55:00"
+- cmd_id: cmd_2250
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Session State拡張:同一WARN再発時にgrep -n検出ロジック自動表示。bats全PASS"
+  observations:
+    - "事実1: build_warn_noteにcheck metadata追加。既存WARN集計・昇格ロジックと互換維持"
+    - "事実2: 3ファイル変更(cmd_save.sh+テスト2件)。gate判定本体は未変更でリスク低"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: CLEAR
+  causal_chain: "同一WARN反復→表面修正ループ(LS096)→検出ロジック自動表示→根因到達の構造的短縮=正の複利"
+  timestamp: "2026-04-24T12:15:00"
+- cmd_id: cmd_2251
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察:recalculate_fof.py L3速度改善設計書。5分析項目(依存/日次計算/パス差/cProfile/設計書)"
+  observations:
+    - "事実1: q10空間外3項目(FE依存/日次計算理由/741s内訳)を正直申告。偵察で埋める適切な設計"
+    - "事実2: AC4 Render上cProfile計測指示あり(LS039ローカル計測禁止準拠)。FM1:実行失敗リスクmedium"
+  causal_chain: "L3=741s(81%)→設計図なし実装=FE破壊リスク(殿警告)→5分析項目偵察→設計図完成→安全な実装cmd=正の複利"
+  timestamp: "2026-04-24T12:55:00"
+- cmd_id: cmd_2251
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。偵察:L3速度改善設計書完成。AC1-5全yes。5分析項目+ROI順改善候補+implementation_readiness"
+  observations:
+    - "事実1: cProfile結果2件(Render job)。trade_performance 34%+_flush_batch 28%が上位ボトルネック"
+    - "事実2: PI-024+FoF drift state未永続化により差分再計算がunsafe。full history再計算の妥当性を根拠付き分析"
+  lesson_quality: OK
+  karo_workaround_needed: false
+  gate_prediction: WARN
+  causal_chain: "L3=741s(81%)→5分析項目偵察完了→ROI順改善候補+依存/FE/エッジケース網羅→安全な実装cmd設計基盤=正の複利"
+  timestamp: "2026-04-24T13:05:00"
+- cmd_id: cmd_2252
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。LS009(各論パッチ検出)+LS029(assumptions時系列)のcmd_save.sh WARN追加"
+  observations:
+    - "事実1: 96件中partial8件。このcmdで2件automated化。利用されない教訓はないのと同じ(殿指摘)"
+    - "事実2: WARN追加(BLOCKではない)。FPリスク低。既存checker拡張で新規箱不要"
+  causal_chain: "partial教訓=意志依存→gate化=環境に埋込み→全cmdで自動検出=正の複利(知性の外部化)"
+  timestamp: "2026-04-24T13:10:00"
