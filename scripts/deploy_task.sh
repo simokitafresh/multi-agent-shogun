@@ -244,9 +244,12 @@ for line in lines:
     stripped = line.lstrip(' ')
     indent = len(line) - len(stripped)
 
-    # スキップ中: 空行 or より深いインデント → 子要素として除去
+    # スキップ中: 空行 or より深いインデント or 同インデントのリスト項目 → 子要素として除去
     if skip_indent >= 0:
         if stripped == '' or indent > skip_indent:
+            continue
+        # 同インデントでもリスト項目(- で始まる)はフィールドの子要素
+        if indent == skip_indent and stripped.startswith('- '):
             continue
         skip_indent = -1  # インデントが戻った → スキップ終了
 
