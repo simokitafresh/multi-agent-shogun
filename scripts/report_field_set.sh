@@ -249,6 +249,13 @@ for mf in ('worker_id', 'parent_cmd', 'ac_version_read'):
     v = data.get(mf)
     if not v or str(v).strip() in ('', 'null', 'None'):
         issues.append(f'{mf} が空。テンプレートの値を保持せよ')
+# P8 fix: report filename と parent_cmd の整合性チェック
+_pcmd = str(data.get('parent_cmd', '')).strip()
+if _pcmd and rp:
+    import os as _os
+    _basename = _os.path.basename(rp)  # e.g. hayate_report_cmd_2073.yaml
+    if _pcmd and _pcmd not in _basename:
+        issues.append(f'parent_cmd={_pcmd} がreportファイル名 {_basename} に含まれない。テンプレート再利用時のparent_cmd更新漏れの可能性')
 # GP-072c2: result.summary not empty
 result = data.get('result', {})
 if isinstance(result, dict):
@@ -298,10 +305,29 @@ if isinstance(bc, dict) and bc and verdict_val == 'PASS':
     if has_no:
         issues.append('binary_checks に result:no があるのに verdict=PASS は矛盾。verdict=FAIL に変更せよ')
 # GP-072c4: binary_checks results must not be all empty
+# P4 fix: assigned_acs がある場合、担当外ACの空resultは除外
+import glob
+_assigned_acs = set()
+_task_files = glob.glob(os.path.join(os.path.dirname(rp), '..', 'tasks', '*.yaml'))
+for _tf in _task_files:
+    try:
+        with open(_tf) as _tfh:
+            _td = yaml.safe_load(_tfh) or {}
+        _task = _td.get('task', _td)
+        _aa = str(_task.get('assigned_acs', '') or '').strip()
+        _pcmd = str(_task.get('parent_cmd', '') or '').strip()
+        _rpcmd = str(data.get('parent_cmd', '') or '').strip()
+        if _aa and _pcmd == _rpcmd:
+            _assigned_acs = {a.strip() for a in _aa.replace(',', ' ').split()}
+            break
+    except Exception:
+        pass
 if isinstance(bc, dict) and bc:
     total_checks = 0
     empty_results = 0
     for ac_key, ac_val in bc.items():
+        if _assigned_acs and ac_key != 'commit' and ac_key not in _assigned_acs:
+            continue  # P4: 担当外ACはスキップ
         if isinstance(ac_val, list):
             for item in ac_val:
                 if isinstance(item, dict) and 'check' in item:
