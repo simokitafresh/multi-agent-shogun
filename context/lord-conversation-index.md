@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-24 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-24T09:58:30+09:00 -->
+<!-- generated_at: 2026-04-24T11:40:11+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-24T11:40:10+09:00 | terminal | response | cmd_2249 **DELEGATED**（11:39）。一発PASSで委任完了。 これが通れば、次の将軍がq10に「自分で読んだ」と書いても自己再読パターンFPが発火しなくなる。穴1が塞がる。 [meta] stop_reason=t…
+- 2026-04-24T11:38:25+09:00 | terminal | inbound | まず１をやろう
+- 2026-04-24T09:59:21+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_2248 初回配備開始 (title=CI RED修正 — test_cmd_save_warn_logging AC2テスト失敗, ninja=saizo) CI RED修正 📋 https://…
 - 2026-04-24T09:58:30+09:00 | terminal | response | 前セッションより強い。だが穴が残っている。 **環境に埋め込まれたもの（今セッション）:** - LS094: ACの数量は具体値列挙 → cmd_save.sh WARN累計昇格で自動強制 - LS095: ACは客観計測で書け → 同…
 - 2026-04-24T09:57:34+09:00 | terminal | inbound | 今クリアされても、今より強くてニューゲームできるか？
 - 2026-04-24T09:57:10+09:00 | terminal | response | 承知つかまつった。3点クローズ。 **inbox確認**: cmd_2248 **GATE CLEAR**（09:43）。hayate(Codex)が実装。WARN note型付き化+教訓未記録照合スキップ+q8_WHY廃止。bats 1…
@@ -11,9 +14,6 @@
 - 2026-04-24T09:34:41+09:00 | terminal | response | 2の3点を因果で再検討する。 **結論: 3点とも不要。理由: 各論パッチ（LS009）。** | 項目 | 事象回数 | 既存防御 | gate化のROI | |------|---------|---------|----------…
 - 2026-04-24T09:33:51+09:00 | terminal | inbound | 2について必要性を再検討しよう
 - 2026-04-24T09:28:07+09:00 | ntfy | outbound | 【家老】cmd_2248 初回配備開始 (title=fix — cmd_save.sh gate偽陽性率改善: FP率60%超のWARN type修正, ninja=hayate) fix 📋 https://gist.github.c…
-- 2026-04-24T09:27:20+09:00 | terminal | response | cmd_2248 **DELEGATED**（09:27）。家老に委任完了。 **実行結果まとめ:** - **3（デプロイ確認）**: 本番BE commit 6e1da1f9 が **live**。04-23 00:57 JST完了。…
-- 2026-04-24T09:18:42+09:00 | terminal | inbound | 止まらずに続けよう。block＝即時修正の習慣を環境に埋め込もう
-- 2026-04-24T09:16:27+09:00 | terminal | response | cmd_save.sh実行。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - 承知つかまつった。3点クローズ。 **inbox確認**: cmd_2248 **GATE CLEAR**（09:43）。hayate(Codex)が実装。WARN note型付き化+教訓未記録照合スキップ+q8_WHY廃止。bats 158/158 PASS。起票から16分で…
@@ -31,6 +31,7 @@
 - cmd_2238
 - cmd_2246
 - cmd_2248
+- cmd_2249
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
