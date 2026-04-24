@@ -830,3 +830,5 @@
 | cmd_2255 | 実装 — DM-Signal本番ヘルスチェックスクリプト（DB→API→FE 3レイヤー貫通確認） | dm-signal | 04-24 | scripts/health_check.py を追加し、D |
 | cmd_karo_ci_fix_2252 | fix — CI RED修正: cmd_save.bats 12テスト失敗 | infra | 04-24 | 6件テストフィクスチャのassumptions claimに |
 | cmd_2257 | 偵察+設計 — FoF増分計算化のCoDD設計書生成(recalculate_fof.py + recalculate_fast.py L2528-2638) | dm-signal | 04-24 | _recalculate_fof_history全文読解完了 |
+| cmd_2258 | impl — FoF sync-fof増分計算化(Signal差分+MR増分。462.8s→60s目標) | dm-signal | 04-24 | FoF増分計算実装完了。sync-fof(PORTFOLIO |
+| cmd_2259 | impl — FoF MR生成高速化: signal_cacheバッチ事前ロード+共有化(PI-024準拠・全期間再計算維持) | dm-signal | 04-24 | cmd_2259を完了した。初回修正(af469454)でs |
