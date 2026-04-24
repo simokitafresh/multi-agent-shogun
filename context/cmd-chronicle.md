@@ -821,3 +821,4 @@
 | cmd_2249 | fix — cmd_save.sh check_self_reread_red_flag FP修正: YAMLキー名をgrep対象から除外 | infra | 04-24 | check_self_reread_red_flag の P |
 | cmd_2250 | fix — cmd_save.sh Session State拡張: 同一WARN 2回目以降で検出ロジック自動表示 | infra | 04-24 | cmd_save.sh の WARN記録に check me |
 | cmd_2251 | 偵察 — recalculate_fof.py L3速度改善設計書: 依存分析+cProfile+FE整合性 | dm-signal | 04-24 | recalculate_fof/fullrecalculat |
+| cmd_2252 | fix — cmd_save.sh LS009/LS029 gate化: 各論パッチ検出+assumptions時系列強制 | infra | 04-24 | cmd_save の LS009/LS029 挙動を回帰テス |
