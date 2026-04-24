@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-25 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-25T03:13:11+09:00 -->
+<!-- generated_at: 2026-04-25T03:18:28+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-25T03:18:28+09:00 | terminal | response | Sortino/Calmarで見ると**DMS-TVPの優位が拡大**。 ## 四神激攻4体 | | CAGR | **Sortino** | **Calmar** | MaxDD | NHF | Bear | |--|------|--…
+- 2026-04-25T03:16:36+09:00 | terminal | inbound | 実際のパフォーマンスはsharpeは上方のボラを罰せるから、違う指標で見てみたいな。
 - 2026-04-25T03:13:11+09:00 | terminal | response | 最低相関4体: **加速D, 加速R, 抜��身, 追い風**（avg=0.580） | | 加速D | 加速R | 抜き�� | 追い風 | |--|------|------|------|------| | 加速D | — | 0.…
 - 2026-04-25T03:12:04+09:00 | terminal | inbound | 最低ペアと最低4体を走らせてみて
 - 2026-04-25T03:11:15+09:00 | terminal | response | 忍法6体(分身抜き)でもDMSはEWに負ける。 | | CAGR | Sharpe | MaxDD | Bear | |--|------|--------|-------|------| | DMS Top1 [8M,9M] | 65.…
@@ -12,8 +14,6 @@
 - 2026-04-25T03:07:07+09:00 | terminal | inbound | 分身を抜くとどうなる？
 - 2026-04-25T03:04:47+09:00 | terminal | response | 四神激攻4体は**低相関**（0.25〜0.60）。奥義SSS 21体とは根本的に違う。 ## 結果 | | CAGR | Sharpe | MaxDD | Calmar | Bear | Bull | |--|------|------…
 - 2026-04-25T03:04:00+09:00 | terminal | inbound | 7忍法の相関関係はどうかな？
-- 2026-04-25T03:01:04+09:00 | terminal | response | 因果をたどる。 ## DMS-TVPがワークしない構造的理由 **核心: 21体のモメンタム戦略は高相関。「どれを選ぶか」の予測に価値がない。** ``` Bull期間: 21体全体が+方向 → どれを選んでも+。DMS選出の付加価値なし…
-- 2026-04-25T02:59:38+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_2253 (ctx_pct=57%, median=5.0%, ratio=11.40x, delta=+52.0pt) WARNING: CTX%異常値 cmd_karo…
 
 ## 未解決確認事項
 - 単体のSSS奥義に負けるようでは役に立たないかもな。確認して
