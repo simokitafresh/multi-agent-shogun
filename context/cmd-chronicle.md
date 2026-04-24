@@ -818,3 +818,4 @@
 | cmd_karo_ci_fix_ga159 | CI RED修正 — deploy_task if_then/legacy detailテスト2件 | infra | 04-24 | cmd_save diagnose 系は HEAD 時点で既 |
 | cmd_2248 | fix — cmd_save.sh gate偽陽性率改善: FP率60%超のWARN type修正 | infra | 04-24 | cmd_save.sh のWARN noteを型付き化し、r |
 | cmd_karo_ci_fix_2248 | CI RED修正 — test_cmd_save_warn_logging AC2テスト失敗 | infra | 04-24 | test_cmd_save_warn_logging.bat |
+| cmd_2249 | fix — cmd_save.sh check_self_reread_red_flag FP修正: YAMLキー名をgrep対象から除外 | infra | 04-24 | check_self_reread_red_flag の P |
