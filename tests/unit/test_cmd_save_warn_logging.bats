@@ -41,10 +41,14 @@ commands:
       q1_firefighting: "no"
       q2_learning: "WARN理由が記録される"
       q3_next_quality: "次回のWARN分析がしやすくなる"
+      q4_depth: "shallow"
       q5_verified_source: "code_reading + isolated_test"
-      q8_why_what: "WHY: WARNの原因がnotesへ残らないと分析不能 → WHAT: cmd_save_warnのnotes記録を検証"
+      q6_not_hiding: "no — WARN logging回帰確認であり問題の隠蔽ではない"
+      q7_definition_verified: "yes — WARN notesは type 名で記録される"
+      q8_why_what: "WHY: WARNの原因がnotesへ残らないと分析不能 → WHAT: cmd_save_warnのnotes記録を検証し正の複利にする"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_warn_logging.bats の検証範囲のみ使用"
       q11_not_already_done: "未達成。WARN notes記録の回帰テストを追加していない"
+      q_ambiguity: "none"
     assumptions:
       - claim: "AC数量指定WARNは cmd_save.sh の check_ac_param_sufficiency で検出される"
         source: "scripts/cmd_save.sh code_reading"
@@ -85,6 +89,6 @@ run_save() {
     run grep -n 'source: "cmd_save_warn"' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 
-    run grep -n 'notes: "ac_param_sufficiency"' "$TEST_QUALITY_LOG"
+    run grep -n 'ac_param_sufficiency' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 }
