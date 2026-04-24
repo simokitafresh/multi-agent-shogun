@@ -233,18 +233,40 @@ STALE_FIELDS = [
 with open(task_file, 'r', encoding='utf-8') as f:
     raw = f.read()
 
-for field in STALE_FIELDS:
-    # フィールド行+その下の子行(インデントが深い行)を一括削除
-    # task:ブロック内の2スペースインデントフィールドを対象
-    pat = re.compile(
-        r'^  ' + re.escape(field) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
-        re.MULTILINE | re.DOTALL,
-    )
-    raw = pat.sub('', raw)
+# 行ベースのインデント追跡でstaleフィールドを除去（正規表現の誤マッチ防止）
+# 正規表現はダブルクォート内エスケープ/ネスト構造/リスト項目で誤動作する
+stale_set = set(STALE_FIELDS)
+lines = raw.split('\n')
+result = []
+skip_indent = -1  # >= 0: この深さ以下の行をスキップ中
 
-# ルートレベルstaleフィールド除去（task:以外の0-indentフィールドを全削除）
-# 根因: flat YAML fallback(ninja_monitor L652)等がroot-levelに書込む→normalize後も残留
-raw = re.sub(r'^(?!task:)[a-zA-Z_][a-zA-Z0-9_]*:.*\n?', '', raw, flags=re.MULTILINE)
+for line in lines:
+    stripped = line.lstrip(' ')
+    indent = len(line) - len(stripped)
+
+    # スキップ中: 空行 or より深いインデント → 子要素として除去
+    if skip_indent >= 0:
+        if stripped == '' or indent > skip_indent:
+            continue
+        skip_indent = -1  # インデントが戻った → スキップ終了
+
+    # task:ブロック内フィールド(indent=2)のstale判定
+    if indent == 2 and ':' in stripped:
+        field_name = stripped.split(':')[0].split(' ')[0]  # "field:" or "field: value"
+        if field_name in stale_set:
+            skip_indent = indent
+            continue
+
+    # ルートレベルstaleフィールド除去（task:以外の0-indentフィールド）
+    if indent == 0 and ':' in stripped and stripped != '' and not stripped.startswith('#'):
+        root_field = stripped.split(':')[0]
+        if root_field != 'task':
+            skip_indent = indent
+            continue
+
+    result.append(line)
+
+raw = '\n'.join(result)
 
 # 空行の連続を整理
 raw = re.sub(r'\n{3,}', '\n\n', raw)
