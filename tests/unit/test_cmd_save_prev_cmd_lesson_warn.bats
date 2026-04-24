@@ -63,7 +63,7 @@ YAML
       q_ambiguity: "none"
 ${environment_change_yaml}
     assumptions:
-      - claim: "前cmd BLOCK回数と将軍教訓の source_cmd を照合する"
+      - claim: "2026-04-24時点で前cmd BLOCK回数と将軍教訓の source_cmd を照合する"
         source: "tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats"
         trust: "verified"
 YAML

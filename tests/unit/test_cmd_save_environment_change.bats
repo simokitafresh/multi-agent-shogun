@@ -54,7 +54,7 @@ commands:
       q11_not_already_done: "未達成。grep 'Check 3.6' scripts/cmd_save.sh で確認"
       q_ambiguity: "none"
     assumptions:
-      - claim: "environment_change必須チェックの動作を確認済み"
+      - claim: "2026-04-24時点でenvironment_change必須チェックの動作を確認済み"
         source: "tests/unit/test_cmd_save_environment_change.bats"
         trust: "verified"
 ${env_yaml}
@@ -92,7 +92,7 @@ commands:
       q10_knowledge_boundary: "tests/unit/test_cmd_save_environment_change.bats のprior block生成のみ使用"
       q_ambiguity: "none"
     assumptions:
-      - claim: "テスト前提"
+      - claim: "2026-04-24時点でテスト前提は固定"
         source: "tests/unit/test_cmd_save_environment_change.bats"
         trust: "verified"
 YAML

@@ -41,7 +41,7 @@ commands:
       q11_not_already_done: "未達成。q8 WHY引用WARNが残っていないことを未確認"
       q_ambiguity: "none"
     assumptions:
-      - claim: "q8 WHY引用チェックの有無は cmd_save.sh の出力で判定できる"
+      - claim: "2026-04-24時点で q8 WHY引用チェックの有無は cmd_save.sh の出力で判定できる"
         source: "tests/unit/test_cmd_save_q8_why_relaxed.bats"
         trust: "verified"
 YAML

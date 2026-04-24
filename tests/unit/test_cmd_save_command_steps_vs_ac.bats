@@ -50,9 +50,9 @@ ${acceptance_criteria_block}
       q8_why_what: "WHY: 殿指摘「AC数を正しく数えよ」 → WHAT: command欄5手順とAC件数の比較回帰を固定する。正の複利"
       q_ambiguity: "none"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_command_steps_vs_ac.bats の検証範囲のみ使用"
-      q11_not_already_done: "未達成。command_steps_over_acのstring-list回帰テストは未追加"
+      q11_not_already_done: "未達成。rg 'command_steps_over_ac' tests/unit/ で既存テストを確認し、string-list回帰テストは未追加と確認"
     assumptions:
-      - claim: "Check 22 は scripts/cmd_save.sh の command と acceptance_criteria を比較する"
+      - claim: "2026-04-24時点で Check 22 は scripts/cmd_save.sh の command と acceptance_criteria を比較する"
         source: "command_steps_over_ac logic reviewed"
         trust: "verified"
 YAML

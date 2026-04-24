@@ -46,7 +46,7 @@ commands:
       q_ambiguity: "none"
 ${extra_quality_gate}
     assumptions:
-      - claim: "cmd_save.sh はこのテスト環境で実行可能"
+      - claim: "2026-04-24時点で cmd_save.sh はこのテスト環境で実行可能"
         source: "diagnose test fixture review"
         trust: "verified"
 YAML

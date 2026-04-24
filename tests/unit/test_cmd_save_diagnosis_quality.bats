@@ -53,7 +53,7 @@ commands:
       q_ambiguity: "none"
 ${diag_yaml}
     assumptions:
-      - claim: "diagnosis質検査の動作を確認済み"
+      - claim: "2026-04-24時点でdiagnosis質検査の動作を確認済み"
         source: "tests/unit/test_cmd_save_diagnosis_quality.bats"
         trust: "verified"
 YAML
@@ -90,7 +90,7 @@ commands:
       q11_not_already_done: "未達成。grep 'WARN累計' scripts/cmd_save.sh で未実装を確認"
       q_ambiguity: "none"
     assumptions:
-      - claim: "WARN累計の動作を確認済み"
+      - claim: "2026-04-24時点でWARN累計の動作を確認済み"
         source: "tests/unit/test_cmd_save_diagnosis_quality.bats"
         trust: "verified"
 YAML
