@@ -826,3 +826,4 @@
 | cmd_2253 | 最適化 — trade_performance生成 速度改善（設計書Rank 1） | dm-signal | 04-24 | FILL_THIS |
 | cmd_karo_conflict_marker_gate | fix — lessons SSOT conflict markers検出gate | infra | 04-24 | gate_lesson_health.sh に SSOT l |
 | cmd_karo_pd_summary_fix | fix — pending_decisions.yaml summary自動再計算 | infra | 04-24 | pending_decision_write.shにreca |
+| cmd_2254 | fix — FoF MonthlyReturn DB永続化バグ修正（precompute rollback巻き添え防止） | dm-signal | 04-24 | precomputeをPF単位savepoint化し、例外時 |
