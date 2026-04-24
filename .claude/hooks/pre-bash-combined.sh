@@ -183,6 +183,7 @@ reason="$(
 import os
 import re
 import shlex
+import subprocess
 
 command = os.environ.get("COMMAND", "")
 project_root = os.path.realpath(os.environ.get("PROJECT_ROOT", "."))
@@ -319,6 +320,23 @@ def check_main_branch_protection(tokens, full_cmd):
     # If in project tree, allow (infra repo uses main branch directly)
     if effective == project_root or effective.startswith(project_root + os.sep):
         return ""
+    # Check task YAML for push_allowed: true (karo sets this for measurement cmds)
+    try:
+        tmux_pane = os.environ.get("TMUX_PANE", "")
+        if tmux_pane:
+            agent_id = subprocess.run(
+                ["tmux", "display-message", "-t", tmux_pane, "-p", "#{@agent_id}"],
+                capture_output=True, text=True, timeout=3
+            ).stdout.strip()
+            if agent_id:
+                task_yaml = os.path.join(project_root, "queue", "tasks", f"{agent_id}.yaml")
+                if os.path.isfile(task_yaml):
+                    with open(task_yaml) as f:
+                        for line in f:
+                            if re.match(r'\s*push_allowed:\s*true\s*$', line, re.IGNORECASE):
+                                return ""
+    except Exception:
+        pass  # On any error, fall through to block (safe default)
     return f"G2: Direct push to main/master in external repo is forbidden ({effective})"
 
 
