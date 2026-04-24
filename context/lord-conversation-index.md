@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-24 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-24T14:23:14+09:00 -->
+<!-- generated_at: 2026-04-24T14:28:21+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-24T14:28:21+09:00 | terminal | response | cmd_2254 **DELEGATED**（14:28）。FoF MonthlyReturn永続化バグ修正（savepoint化）。家老に委任完了。codex忍者に配備される。 なお、cmd_2253（trade_perf速度改善）は半…
+- 2026-04-24T14:23:40+09:00 | terminal | inbound | 起票しよう。codex忍者にやらせよう
 - 2026-04-24T14:23:14+09:00 | terminal | response | **軍師の分析が来た。根因が特定された。** ## 軍師の因果分析 **根因**: precompute例外時の`db.rollback()`（recalculate_fast.py L2790）がFoF MRを巻き添えで消失させる ``…
 - 2026-04-24T14:22:51+09:00 | terminal | inbound | Bだけではだめなのか？
 - 2026-04-24T14:22:06+09:00 | terminal | response | **軍師の分析が来た。根因が特定された。** ## 軍師の因果分析 **根因**: precompute例外時の`db.rollback()`（recalculate_fast.py L2790）がFoF MRを巻き添えで消失させる ``…
@@ -12,8 +14,6 @@
 - 2026-04-24T14:14:49+09:00 | terminal | inbound | 将軍が確認してはどうだ？確実だな
 - 2026-04-24T14:13:43+09:00 | terminal | response | **cmd_2253（trade_perf速度改善）報告あり。** 半蔵がAC1/AC2/AC5 PASS（commit b994cb6d、pytest 1400 PASS）。ただしG2フックにより**DM-signalリポジトリへのma…
 - 2026-04-24T14:13:22+09:00 | terminal | inbound | つまりbackendでは正しく計算されており、DBにデータはあるがfrontendに表示されないバグがあるということか？
-- 2026-04-24T14:12:01+09:00 | terminal | response | **cmd_2253（trade_perf速度改善）報告あり。** 半蔵がAC1/AC2/AC5 PASS（commit b994cb6d、pytest 1400 PASS）。ただしG2フックにより**DM-signalリポジトリへのma…
-- 2026-04-24T14:11:34+09:00 | ntfy | outbound | 【karo】復帰済み。cmd_2253 push承認待ち(掲示板投稿済)。cmd_karo_ci_fix_2252 小太郎作業中。idle忍者5名。
 
 ## 未解決確認事項
 - `MonthlyReturnsCalculator.calculate()`がデータソース。これがDBから読むか動的計算かを確認する。 [meta] stop_reason=tool_use
@@ -26,6 +26,7 @@
 - 本番確認結果: **再計算は走っていない**（最終完了: 本日01:49 UTC / 10:49 JST、518.87s正常完了）。 **欠損パターンが明確:** | 区分 | PF数 | signals | monthly_returns | |------|------|-…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-24T14:28:21+09:00 | cmd_2254 **DELEGATED**（14:28）。FoF MonthlyReturn永続化バグ修正（savepoint化）。家老に委任完了。codex忍者に配備される。 なお、cmd_2253（trade_perf速度改善）は半蔵がAC1/AC2/AC5 PASS済み…
 - 2026-04-24T14:13:43+09:00 | **cmd_2253（trade_perf速度改善）報告あり。** 半蔵がAC1/AC2/AC5 PASS（commit b994cb6d、pytest 1400 PASS）。ただしG2フックにより**DM-signalリポジトリへのmain pushに殿の承認が必要**。pu…
 - 2026-04-24T14:12:01+09:00 | **cmd_2253（trade_perf速度改善）報告あり。** 半蔵がAC1/AC2/AC5 PASS（commit b994cb6d、pytest 1400 PASS）。ただしG2フックにより**DM-signalリポジトリへのmain pushに殿の承認が必要**。pu…
 - 2026-04-24T14:11:34+09:00 | 【karo】復帰済み。cmd_2253 push承認待ち(掲示板投稿済)。cmd_karo_ci_fix_2252 小太郎作業中。idle忍者5名。
@@ -33,7 +34,6 @@
 - 2026-04-24T13:45:55+09:00 | cmd_karo_gate_clear_idle + cmd_karo_conflict_marker_gate、両方GATE CLEAR。karo cmd 2件完了の掲示板通知。処理済み。 hanzo cmd_2253（trade_performance速度改善）稼働中（CT…
 - 2026-04-24T13:45:04+09:00 | 復帰完了。前セッションの修正は環境に永続している。 ## 現況報告 **陣形図**: - hanzo cmd_2253稼働中（trade_performance速度改善 Rank 1、CTX:44%） - kagemaru cmd_karo_pd_summary_fix（CTX…
 - 2026-04-24T13:38:29+09:00 | cmd_2253 **DELEGATED**（13:38）。trade_performance速度改善（設計書Rank 1）。家老に委任完了。 殿の次の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-04-24T13:20:48+09:00 | 前セッションの修正は環境に永続している。L2496に`AC[0-9]\{1,\}`除外パターンが確認できた。 ## 現況報告 **陣形図**: saizo cmd_2252稼働中（LS009/LS029 gate化、CTX:13%）。5名idle。 **前セッション成果**（全…
 
 ## 参照cmd
 - cmd_2223
@@ -50,6 +50,7 @@
 - cmd_2251
 - cmd_2252
 - cmd_2253
+- cmd_2254
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
