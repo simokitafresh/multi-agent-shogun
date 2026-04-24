@@ -367,18 +367,70 @@ record_block_reason() {
     BLOCK_COUNT=$((BLOCK_COUNT + 1))
 }
 
+build_warn_note() {
+    local reason="${1:-}"
+    local warn_type="${2:-}"
+    shift 2 || true
+
+    [[ -n "$warn_type" ]] || warn_type="${reason:-warn_unknown}"
+
+    local note="$warn_type"
+    local metadata
+    for metadata in "$@"; do
+        [[ -n "$metadata" ]] || continue
+        note="${note}|${metadata}"
+    done
+
+    if [[ -n "$reason" && "$reason" != "$warn_type" ]]; then
+        note="${note}|${reason}"
+    fi
+
+    printf '%s' "$note"
+}
+
+warn_note_key() {
+    local note="${1:-}"
+    printf '%s' "${note%%|*}"
+}
+
+warn_note_message() {
+    local note="${1:-}"
+    [[ -n "$note" ]] || return 0
+
+    local segment display=""
+    IFS='|' read -r -a _warn_segments <<< "$note"
+    if [[ ${#_warn_segments[@]} -le 1 ]]; then
+        printf '%s' "$note"
+        return 0
+    fi
+
+    for segment in "${_warn_segments[@]:1}"; do
+        [[ -n "$segment" && "$segment" != *=* ]] || continue
+        display="$segment"
+    done
+
+    printf '%s' "${display:-${_warn_segments[0]}}"
+}
+
 record_warn_reason() {
     local reason="${1:-}"
-    [[ -n "$reason" ]] || return 0
-    WARN_REASONS+=("$reason")
+    local warn_type="${2:-}"
+    shift 2 || true
+
+    local warn_note warn_key display_reason
+    warn_note="$(build_warn_note "$reason" "$warn_type" "$@")"
+    warn_key="$(warn_note_key "$warn_note")"
+    display_reason="$(warn_note_message "$warn_note")"
+
+    WARN_REASONS+=("$warn_note")
     WARN_COUNT=$((WARN_COUNT + 1))
     # 遡及学習: 過去の同一WARN件数を即表示（殿裁定2026-04-21）
     # 1回目で「過去N回出ている」と気づけば根本修正のROIが分かる
     local _prior_count
-    _prior_count=$(count_same_warn_pattern "$reason" 2>/dev/null || echo 0)
+    _prior_count=$(count_same_warn_pattern "$warn_key" 2>/dev/null || echo 0)
     [[ "$_prior_count" =~ ^[0-9]+$ ]] || _prior_count=0
     if (( _prior_count > 0 )); then
-        echo "  ★ このWARNは過去${_prior_count}回出現。消火ではなく根本修正を検討せよ。" >&2
+        echo "  ★ このWARN(${display_reason})は過去${_prior_count}回出現。消火ではなく根本修正を検討せよ。" >&2
     fi
 }
 
@@ -541,12 +593,12 @@ log_cmd_save_block() {
 
 log_cmd_save_warns() {
     [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
-    local reason
-    for reason in "${WARN_REASONS[@]}"; do
+    local warn_note
+    for warn_note in "${WARN_REASONS[@]}"; do
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save_warn" \
         CMD_QUALITY_DIAGNOSIS="" \
-        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$reason" >/dev/null 2>&1 || true
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 || true
     done
 }
 
@@ -559,28 +611,52 @@ count_same_warn_pattern() {
     CMD_SAVE_CMD_ID="$CMD_ID" \
     CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
     CMD_SAVE_WARN_PATTERN="$warn_pattern" \
+    CMD_SAVE_SHOGUN_LESSONS_FILE="$CMD_SAVE_SHOGUN_LESSONS_FILE" \
     python3 - <<'PY'
 import os
+import re
 import yaml
 
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 warn_pattern = os.environ.get("CMD_SAVE_WARN_PATTERN", "").strip()
+lessons_path = os.environ.get("CMD_SAVE_SHOGUN_LESSONS_FILE", "")
 
 if not cmd_id or not warn_pattern or not log_path or not os.path.exists(log_path):
     print(0)
     raise SystemExit(0)
+
+resolved_source_cmds = set()
+if lessons_path and os.path.exists(lessons_path):
+    with open(lessons_path, encoding="utf-8") as fh:
+        for line in fh:
+            match = re.match(r'^\s*source_cmd:\s*["\']?([^"\']+)["\']?\s*$', line)
+            if match:
+                resolved_source_cmds.add(match.group(1).strip())
 
 with open(log_path, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 count = sum(
-    1 for entry in entries
+    1
+    for entry in entries
     if isinstance(entry, dict)
     and entry.get("source") == "cmd_save_warn"
     and entry.get("gate_result") == "WARN"
-    and warn_pattern in str(entry.get("notes", "") or "")
+    and (
+        lambda note: (
+            (note.split("|", 1)[0].strip() == warn_pattern or warn_pattern in note)
+            and not (
+                note.split("|", 1)[0].strip() == "missing_prev_cmd_lesson"
+                and any(
+                    part.startswith("source_cmd=")
+                    and part.split("=", 1)[1].strip() in resolved_source_cmds
+                    for part in note.split("|")[1:]
+                )
+            )
+        )
+    )(str(entry.get("notes", "") or "").strip())
 )
 print(count)
 PY
@@ -640,7 +716,7 @@ warn_missing_prev_cmd_lesson() {
 
     warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
     echo "WARN: ${warn_msg}" >&2
-    record_warn_reason "$warn_msg"
+    record_warn_reason "$warn_msg" "missing_prev_cmd_lesson" "source_cmd=${prev_cmd_id}"
 }
 
 handle_cmd_save_exit() {
@@ -1012,15 +1088,8 @@ QG_TEMPLATE
             echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
             record_warn_reason "q8_複利の問い"
         fi
-        # WHY部分に殿の指示引用を強制（WARN — 2026-04-14 L-CmdDialogueFirst）
-        # 起源: 殿の指示→即cmd起票で4/4失敗。対話完了前のcmd起票を防ぐ
-        # 方法: q8 WHYに殿の言葉(「」引用 or 殿指示/殿裁定)が含まれるか検査
-        _Q8_WHY_PART="${_Q8_WW_VAL%%→ WHAT:*}"
-        if ! echo "$_Q8_WHY_PART" | grep -qE '「.*」|殿指示|殿裁定|殿指摘|殿提案'; then
-            echo "WARN: q8 WHYに殿の指示引用がありません。対話で理解を固めてからcmd起票せよ" >&2
-            echo "  → 「殿の言葉を引用」 or 殿指示/殿裁定/殿指摘 を含めよ(L-CmdDialogueFirst)" >&2
-            record_warn_reason "q8_WHY引用"
-        fi
+        # q8 WHY引用検査はcmd_2248で廃止。
+        # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
     fi
 
     # q9_firefighting_root_cause: 消火cmdでは真因+再発防止を必須化（BLOCK — cmd_1801）

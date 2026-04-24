@@ -46,6 +46,9 @@ PROJECT_DIR="__PROJECT_DIR__"
 CMD_BLOCK="$1"
 WRAPPER
 
+    sed -n '/^build_warn_note()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^warn_note_key()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^warn_note_message()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^record_warn_reason()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     # cmd_save.shからcheck_ac_file_paths関数定義を抽出
     sed -n '/^check_ac_file_paths()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"

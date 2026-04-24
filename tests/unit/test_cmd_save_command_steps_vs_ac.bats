@@ -107,6 +107,6 @@ run_save() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN: command欄に3ステップあるがACは0個"* ]]
 
-    run grep -n 'notes: "command_steps_over_ac"' "$TEST_QUALITY_LOG"
+    run grep -n 'command_steps_over_ac' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 }

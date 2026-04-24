@@ -27,10 +27,18 @@ teardown() {
 }
 
 write_cmd_queue() {
+    local prev_cmd_id="${1:-cmd_prev}"
+    local environment_change="${2:-}"
+    local environment_change_yaml=""
+    if [[ -n "$environment_change" ]]; then
+        environment_change_yaml="    environment_change: \"$environment_change\""
+    fi
     cat > "$TEST_QUEUE" <<'YAML'
 commands:
-  cmd_prev:
-    id: cmd_prev
+YAML
+    cat >> "$TEST_QUEUE" <<YAML
+  ${prev_cmd_id}:
+    id: ${prev_cmd_id}
     title: "infra — 前cmd"
     project: infra
     command: "前cmd"
@@ -53,12 +61,13 @@ commands:
       q10_knowledge_boundary: "tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats の検証済み範囲のみ使用"
       q11_not_already_done: "未達成。grep 'warn_missing_prev_cmd_lesson' scripts/cmd_save.sh で未実装を確認"
       q_ambiguity: "none"
+${environment_change_yaml}
     assumptions:
       - claim: "前cmd BLOCK回数と将軍教訓の source_cmd を照合する"
         source: "tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats"
         trust: "verified"
 YAML
-    printf '%s\n' "cmd_prev" > "$TEST_LAST_CMD"
+    printf '%s\n' "$prev_cmd_id" > "$TEST_LAST_CMD"
 }
 
 write_quality_log_with_prev_blocks() {
@@ -89,6 +98,21 @@ lessons:
 YAML
 }
 
+write_quality_log_with_prior_warn() {
+    local source_cmd="${1:-cmd_prev}"
+    cat > "$TEST_QUALITY_LOG" <<YAML
+entries:
+  - cmd_id: "cmd_prev2"
+    gate_result: BLOCK
+    source: cmd_save
+    notes: "missing_field_1"
+  - cmd_id: "cmd_hist"
+    gate_result: "WARN"
+    source: "cmd_save_warn"
+    notes: "missing_prev_cmd_lesson|source_cmd=${source_cmd}|前${source_cmd}で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+YAML
+}
+
 run_save() {
     run env \
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
@@ -110,6 +134,9 @@ run_save() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"保存確認NG"* ]]
+
+    run grep -n 'notes: "missing_prev_cmd_lesson|source_cmd=cmd_prev|前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"' "$TEST_QUALITY_LOG"
+    [ "$status" -eq 0 ]
 }
 
 @test "AC3-1: 前cmd BLOCKあり + 教訓記録済み → WARNなし" {
@@ -136,4 +163,17 @@ run_save() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"教訓未記録"* ]]
+}
+
+@test "AC3-3: source_cmdが既に解消済みの過去WARNは累計昇格へ数えない" {
+    write_cmd_queue "cmd_prev2" "type=gate; file=scripts/cmd_save.sh; pattern=warn_missing_prev_cmd_lesson"
+    write_quality_log_with_prior_warn "cmd_prev"
+    write_lessons_file "cmd_prev"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARN: 前cmd_prev2で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+    [[ "$output" != *"WARN累計昇格"* ]]
 }

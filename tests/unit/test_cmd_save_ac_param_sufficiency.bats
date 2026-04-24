@@ -8,10 +8,13 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     # check_ac_param_sufficiency: Check 13 — 関数をそのまま抽出
     eval "$(sed -n '/^check_ac_param_sufficiency()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f record_warn_reason check_ac_param_sufficiency
+    export -f build_warn_note warn_note_key warn_note_message record_warn_reason check_ac_param_sufficiency
 }
 
 setup() {
