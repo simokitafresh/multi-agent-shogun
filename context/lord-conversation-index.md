@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-24 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-24T13:20:49+09:00 -->
+<!-- generated_at: 2026-04-24T13:25:30+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-24T13:25:30+09:00 | terminal | response | 現物を読んだ。殿の問いに答える。 **設計書は1つだが、recalculate_fof.py単体の設計書ではない。** cmd_2251の成果物（261行）はパイプライン全体の速度改善設計書であり: | カバー範囲 | 内容 | |---…
+- 2026-04-24T13:24:33+09:00 | ntfy | outbound | 【家老】cmd_2252 GATE CLEAR。LS009/LS029 gate化完了。才蔵実施。bats 158/158 PASS。(連勝13) 📋 https://gist.github.com/simokitafresh/6eb49…
+- 2026-04-24T13:21:56+09:00 | terminal | inbound | CoDD Phase 2（recalculate_fof.py実装）の設計書は一つだけか？他のスクリプトの設計書を作らないメリットはあるか？
 - 2026-04-24T13:20:48+09:00 | terminal | response | 前セッションの修正は環境に永続している。L2496に`AC[0-9]\{1,\}`除外パターンが確認できた。 ## 現況報告 **陣形図**: saizo cmd_2252稼働中（LS009/LS029 gate化、CTX:13%）。5名…
 - 2026-04-24T13:20:24+09:00 | ntfy | outbound | 【将軍】復帰完了。saizo cmd_2252稼働中。5忍者idle。
 - 2026-04-24T13:15:42+09:00 | terminal | inbound | y
@@ -11,9 +14,6 @@
 - 2026-04-24T13:15:29+09:00 | terminal | response | 答えられる。環境に埋め込まれている。 - **deepdive_why_chain Phase 5**: 「浅いなぜ → 次は気をつけよう → /clearで消える → 無意味」= 各論パッチの本質 - **deepdive_causal…
 - 2026-04-24T13:15:11+09:00 | terminal | inbound | クリアされても、各論パッチとはどのようなものか？という質問にこたえられるか？
 - 2026-04-24T13:14:34+09:00 | terminal | response | はっ。身に染みている。 **判断基準**: 「このパッチを適用した後、新しいパターンが100億個来ても追加修正なしで対処できるか？」 YES → 原理的解決（1パターンで無限に効く） NO → 各論パッチ（新パターンのたびに追加修正が必要…
-- 2026-04-24T13:14:20+09:00 | terminal | inbound | 各論パッチとはパターンが増えると破綻するタイプのパッチだ。100億パターンでも有効か？をチェックすると各論パッチか否かが判断できる。これは身に染みているか？
-- 2026-04-24T13:13:48+09:00 | terminal | response | 全17テストPASS。修正完了。 cmd_save.sh L2490のsedに `AC[0-9]+` 除外パターンを追加。AC IDの番号が設計書数値として誤検出されなくなった。bats全PASS、デグレなし。 [meta] stop_r…
-- 2026-04-24T13:12:54+09:00 | terminal | inbound | では将軍がいま実装しよう
 
 ## 未解決確認事項
 - 前セッションの修正は環境に永続している。L2496に`AC[0-9]\{1,\}`除外パターンが確認できた。 ## 現況報告 **陣形図**: saizo cmd_2252稼働中（LS009/LS029 gate化、CTX:13%）。5名idle。 **前セッション成果**（全…
