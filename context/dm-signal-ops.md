@@ -428,3 +428,34 @@ import metrics_research_engine as MRE
 | 穴1/2/3 | 全対策完了 |
 | PF健全性スイープ | cmd_1091: 全122PF×5項目パス。定期実行候補(L417) |
 | FoF MR非線形根因+パリティ検証標準 | Schema Portfolio型不一致→preload空振り→240.6s。ゴールデンデータ方式: 前後比較×→残存正常データと突合○ → `docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md` §8-§9 |
+| FoF MR高速化(cmd_2259+2260) | 240.6s→26.53s→~1.5s(DB fallback 356→0件)。L3_fof: 462s→226s。L2: 186s→15s。全体: 720s→257s(64%削減) |
+| SIGNAL_DEFERRED_BATCH_SIZE倍増(cmd_2260後) | constants.py 5000→10000。commit 169cd744。期待-15~20s |
+
+## §31 ALM浄化記録 (2026-04-25)
+
+### 発見した事実
+
+1. **奥義-ASS 21体は偽物だった**: component_portfoliosがALM忍法(L1)ではなくSSS奥義(L2)を参照。ALMデータは一切含まれていなかった
+2. **ALM忍法(L1)は本番DBに一度も存在しなかった**: `name LIKE 'ALM%' AND type='fof'` = 0件
+3. **⑤の研究(cmd_1897)はALM四神経由ではなかった**: GS空間名がokugi_alm_shinだが、実態はSSS奥義(①)のEW合成。ALM四神→ALM忍法→奥義のパイプラインは研究でも本番でも未実行
+4. **ALM四神(L0) 12体はDB登録済みだったが**: pipeline_config内のalm_configは構造的に正しい(enabled=true, candidates_months=[1..24]等)。ただしobjectiveが全12体"cagr"（殿裁定ではモード別MRU/calmar/UWP）
+5. **秘奥義6体は壊れ参照**: 削除した奥義-ASSのUUIDを参照→NOT FOUND
+6. **BEにALM実装済み**(Phase 4.6 ALM second pass)、**FEにALM config UI未実装**
+
+### 浄化実施
+
+| 削除対象 | PF数 | 関連レコード | 理由 |
+|----------|------|-------------|------|
+| 奥義-ASS(L2) | 21体 | 64,445件 | ALM不含の偽FoF |
+| ALM四神(L0) | 12体 | 55,745件 | objective誤設定+再登録前提 |
+| 秘奥義 | 6体 | 17,817件 | 壊れ参照 |
+| **合計** | **39体** | **138,007件** | |
+
+本番PF数: 178→**126体**。MEMORY.md記載の「奥義ASS 21体登録済み(cmd_1897)」は事実と乖離していた。
+
+### 正しいALM構築の前提
+
+- ALM四神(L0): 再登録が必要。objectiveをモード別(激攻=MRU/常勝=calmar/鉄壁=UWP)で正しく設定
+- ALM忍法(L1): ゼロから構築。チェックリストStep 3c(champion確定)から再開
+- 奥義-ASS(L2): ALM忍法(L1)登録後に構築
+- FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
