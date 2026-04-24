@@ -695,15 +695,26 @@ def _list_item(item, ind):
 frag = '\n'.join(_yaml_lines('acceptance_criteria', cmd_acs))
 indented = '\n'.join('  ' + line for line in frag.split('\n'))
 
-# Replace acceptance_criteria section
-pat = re.compile(
-    r'^  acceptance_criteria:.*?(?=\n  [a-zA-Z_]|\Z)',
-    re.MULTILINE | re.DOTALL,
-)
-m = pat.search(raw)
-if m:
-    raw = raw[:m.start()] + indented + raw[m.end():]
-else:
+# Replace acceptance_criteria section（行ベース置換）
+_lines = raw.split('\n')
+_result = []
+_skip = False
+_inserted = False
+for _l in _lines:
+    _s = _l.lstrip(' ')
+    _i = len(_l) - len(_s)
+    if _skip:
+        if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+            continue
+        _skip = False
+    if _i == 2 and _s.startswith('acceptance_criteria:'):
+        _skip = True
+        _result.append(indented)
+        _inserted = True
+        continue
+    _result.append(_l)
+raw = '\n'.join(_result)
+if not _inserted:
     task_match = re.search(r'^task:', raw, re.MULTILINE)
     if task_match:
         rest = raw[task_match.end():]
@@ -2478,14 +2489,26 @@ try:
         """Replace a 2-space-indented section under task: without full yaml.dump"""
         frag = '\n'.join(_yaml_lines(section_name, new_value))
         indented = '\n'.join('  ' + line for line in frag.split('\n'))
-        pat = re.compile(
-            r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
-            re.MULTILINE | re.DOTALL,
-        )
-        m = pat.search(text)
-        if m:
-            text = text[:m.start()] + indented + text[m.end():]
-        else:
+        # 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）
+        _lines = text.split('\n')
+        _result = []
+        _skip = False
+        _inserted = False
+        for _l in _lines:
+            _s = _l.lstrip(' ')
+            _i = len(_l) - len(_s)
+            if _skip:
+                if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+                    continue
+                _skip = False
+            if _i == 2 and _s.startswith(section_name + ':'):
+                _skip = True
+                _result.append(indented)
+                _inserted = True
+                continue
+            _result.append(_l)
+        text = '\n'.join(_result)
+        if not _inserted:
             task_idx = text.index('task:')
             rest = text[task_idx + 5:]
             top_m = re.search(r'^\S', rest, re.MULTILINE)
@@ -3098,14 +3121,26 @@ try:
         """Replace a 2-space-indented section under task: without full yaml.dump"""
         frag = '\n'.join(_yaml_lines(section_name, new_value))
         indented = '\n'.join('  ' + line for line in frag.split('\n'))
-        pat = re.compile(
-            r'^  ' + re.escape(section_name) + r':.*?(?=\n  [a-zA-Z_]|\Z)',
-            re.MULTILINE | re.DOTALL,
-        )
-        m = pat.search(text)
-        if m:
-            text = text[:m.start()] + indented + text[m.end():]
-        else:
+        # 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）
+        _lines = text.split('\n')
+        _result = []
+        _skip = False
+        _inserted = False
+        for _l in _lines:
+            _s = _l.lstrip(' ')
+            _i = len(_l) - len(_s)
+            if _skip:
+                if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+                    continue
+                _skip = False
+            if _i == 2 and _s.startswith(section_name + ':'):
+                _skip = True
+                _result.append(indented)
+                _inserted = True
+                continue
+            _result.append(_l)
+        text = '\n'.join(_result)
+        if not _inserted:
             task_idx = text.index('task:')
             rest = text[task_idx + 5:]
             top_m = re.search(r'^\S', rest, re.MULTILINE)
@@ -3209,12 +3244,27 @@ if isinstance(prior_attempts, list) and prior_attempts:
 pf_frag = '\n'.join(pf_lines)
 pf_indented = '\n'.join('  ' + l for l in pf_frag.split('\n'))
 
-pat = re.compile(r'^  previous_failures:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
-m = pat.search(raw)
-if m:
-    raw = raw[:m.start()] + pf_indented + raw[m.end():]
-else:
-    raw = raw.rstrip('\n') + '\n' + pf_indented + '\n'
+# 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）
+_lines = raw.split('\n')
+_result = []
+_skip = False
+_inserted = False
+for _l in _lines:
+    _s = _l.lstrip(' ')
+    _i = len(_l) - len(_s)
+    if _skip:
+        if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+            continue
+        _skip = False
+    if _i == 2 and _s.startswith('previous_failures:'):
+        _skip = True
+        _result.append(pf_indented)
+        _inserted = True
+        continue
+    _result.append(_l)
+if not _inserted:
+    _result.append(pf_indented)
+raw = '\n'.join(_result)
 
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_yaml), suffix='.pf_tmp')
 os.close(fd)
@@ -3345,12 +3395,27 @@ for fa in failures:
 frag     = '\n'.join(frag_lines)
 indented = '\n'.join('  ' + l for l in frag.split('\n'))
 
-pat = re.compile(r'^  codd_failure_history:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
-m   = pat.search(raw)
-if m:
-    raw = raw[:m.start()] + indented + raw[m.end():]
-else:
-    raw = raw.rstrip('\n') + '\n' + indented + '\n'
+# 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）
+_lines = raw.split('\n')
+_result = []
+_skip = False
+_inserted = False
+for _l in _lines:
+    _s = _l.lstrip(' ')
+    _i = len(_l) - len(_s)
+    if _skip:
+        if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+            continue
+        _skip = False
+    if _i == 2 and _s.startswith('codd_failure_history:'):
+        _skip = True
+        _result.append(indented)
+        _inserted = True
+        continue
+    _result.append(_l)
+if not _inserted:
+    _result.append(indented)
+raw = '\n'.join(_result)
 
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.cdd_tmp')
 os.close(fd)

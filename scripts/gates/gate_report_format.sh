@@ -303,12 +303,27 @@ for item in prior_attempts:
 frag = '\n'.join(frag_lines)
 indented = '\n'.join('  ' + l for l in frag.split('\n'))
 
-pat = re.compile(r'^  session_state:.*?(?=\n  [a-zA-Z_]|\Z)', re.MULTILINE | re.DOTALL)
-m = pat.search(raw)
-if m:
-    raw = raw[:m.start()] + indented + raw[m.end():]
-else:
-    raw = raw.rstrip('\n') + '\n' + indented + '\n'
+# 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）
+_lines = raw.split('\n')
+_result = []
+_skip = False
+_inserted = False
+for _l in _lines:
+    _s = _l.lstrip(' ')
+    _i = len(_l) - len(_s)
+    if _skip:
+        if _s == '' or _i > 2 or (_i == 2 and _s.startswith('- ')):
+            continue
+        _skip = False
+    if _i == 2 and _s.startswith('session_state:'):
+        _skip = True
+        _result.append(indented)
+        _inserted = True
+        continue
+    _result.append(_l)
+if not _inserted:
+    _result.append(indented)
+raw = '\n'.join(_result)
 
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_yaml), suffix='.ss_tmp')
 os.close(fd)
