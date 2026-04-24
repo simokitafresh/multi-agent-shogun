@@ -94,13 +94,27 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-BEGIN { replaced = 0; has_fields = 0 }
+BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
 {
+    # When replacing a nested mapping header, skip its indented children
+    if (skip_children) {
+        if ($0 ~ /^[[:space:]]/ && $0 !~ /^[A-Za-z0-9_.-]+:/) {
+            next
+        }
+        skip_children = 0
+    }
     field_re = "^" regex_escape(field) ":[[:space:]]*"
     if (!replaced && $0 ~ field_re) {
+        # Detect if the original line is a nested mapping header (value is empty)
+        rhs = $0
+        sub("^" regex_escape(field) ":[[:space:]]*", "", rhs)
+        sub(/[[:space:]]+$/, "", rhs)
         print field ": " yaml_safe(new_value)
         replaced = 1
         has_fields = 1
+        if (rhs == "" || rhs ~ /^#/) {
+            skip_children = 1
+        }
         next
     }
     if ($0 ~ /^[A-Za-z0-9_.-]+:[[:space:]]/) has_fields = 1
