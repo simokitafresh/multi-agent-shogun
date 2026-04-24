@@ -105,6 +105,92 @@ print(f"{etype}\t{efile}\t{epattern}")
 PY
 }
 
+is_gate_or_hook_addition_cmd() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local q11_context=""
+
+    [[ -n "$block_text" ]] || return 1
+
+    q11_context=$(printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]*(title|purpose):/ { print; next }
+        /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ { print; next }
+        in_command && /^[[:space:]]{4,}/ { print; next }
+        in_command && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0 }
+    ')
+
+    [[ -n "${q11_context:-}" ]] || return 1
+    printf '%s\n' "$q11_context" | grep -qiE 'gate|hook|ゲート|フック' || return 1
+    printf '%s\n' "$q11_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
+    return 0
+}
+
+q11_has_existing_alternative_verification() {
+    local q11_value="${1:-}"
+
+    [[ -n "$q11_value" ]] || return 1
+    if ! printf '%s\n' "$q11_value" | grep -qiE '既存|代替|現行|既設'; then
+        printf '%s\n' "$q11_value" | grep -qiE '(^|[^A-Za-z_])(existing|already|current)([^A-Za-z_]|$)' || return 1
+    fi
+    printf '%s\n' "$q11_value" | grep -qiE 'grep|rg|sed|cat|read|確認|照合|現物|実測|docs/research|一次情報|verified' || return 1
+    return 0
+}
+
+collect_assumption_claims_missing_dates() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+
+    [[ -n "$block_text" ]] || return 0
+
+    ASSUMPTION_BLOCK_TEXT="$block_text" python3 - <<'PY'
+import os
+import re
+
+content = os.environ.get("ASSUMPTION_BLOCK_TEXT", "")
+lines = content.splitlines()
+in_assumptions = False
+assumptions_indent = -1
+current = {}
+entries = []
+
+for line in lines:
+    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
+    if m_aline and not in_assumptions:
+        in_assumptions = True
+        assumptions_indent = len(m_aline.group(1))
+        continue
+
+    if in_assumptions:
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= assumptions_indent:
+                in_assumptions = False
+                if current:
+                    entries.append(dict(current))
+                current = {}
+                continue
+        if re.match(r'\s*-\s', line):
+            if current:
+                entries.append(dict(current))
+            current = {}
+        m = re.match(r'^\s*-\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+            continue
+        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+
+if current:
+    entries.append(current)
+
+date_pat = re.compile(r'(?:19|20)\d{2}-\d{2}-\d{2}')
+for entry in entries:
+    claim = entry.get("claim", "").strip()
+    if claim and not date_pat.search(claim):
+        print(claim)
+PY
+}
+
 load_cmd_block() {
     if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -1356,6 +1442,13 @@ QG_TEMPLATE
         fi
     fi
 
+    _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
+    if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "$_Q11_VAL"; then
+        echo "WARNING: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
+        echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
+        record_warn_reason "q11に既存代替の現物確認なし" "check=q11_existing_alternative_verification"
+    fi
+
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案
@@ -2400,7 +2493,7 @@ check_gunshi_design_num_relax() {
         found { exit }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
-    AC_NUMS=$(echo "$AC_SECTION" | sed 's|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    AC_NUMS=$(echo "$AC_SECTION" | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
     if [[ -z "$AC_NUMS" ]]; then
         echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2
@@ -2771,6 +2864,15 @@ for e in entries:
                     abort_if_block_immediate || exit 1
                 fi
             fi
+        fi
+        _ASSUMP_CLAIMS_MISSING_DATES="$(collect_assumption_claims_missing_dates "$CMD_BLOCK_NC")"
+        if [[ -n "${_ASSUMP_CLAIMS_MISSING_DATES//[[:space:]]/}" ]]; then
+            echo "WARNING: assumptions claimに日付がありません。claimへ YYYY-MM-DD を含めて時系列を固定してください" >&2
+            while IFS= read -r _assump_claim; do
+                [[ -z "$_assump_claim" ]] && continue
+                echo "  - $_assump_claim" >&2
+            done <<< "$_ASSUMP_CLAIMS_MISSING_DATES"
+            record_warn_reason "assumptions claimに日付なし" "check=assumptions_claim_date"
         fi
     fi
 fi
