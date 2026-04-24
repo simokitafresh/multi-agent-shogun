@@ -276,6 +276,50 @@ else
     echo "  PASS: 全忍者idle。計測値は信頼可能"
 fi
 
+# ─── SG-PRE16: BE impl ゴールデンデータ突合チェック (L-GoldenDataFirst) ───
+echo ""
+echo "■ SG-PRE16: ゴールデンデータ突合チェック"
+if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
+    # target_pathにbackendを含むimpl/fixか判定
+    TASK_TYPE=""
+    if [ -n "${TASK_FILE:-}" ] && [ -f "${TASK_FILE}" ]; then
+        TASK_TYPE=$(python3 -c "
+import yaml, sys
+try:
+    d = yaml.safe_load(open('${TASK_FILE}'))
+    t = d.get('task', {})
+    tp = str(t.get('target_path', ''))
+    tt = str(t.get('task_type', ''))
+    if 'backend' in tp and tt in ('impl', 'fix'):
+        print('be_impl')
+except: pass
+" 2>/dev/null || true)
+    fi
+    if [ "$TASK_TYPE" = "be_impl" ]; then
+        # 報告のdetails/summaryにgolden/snapshot/ゴールデン/パリティの記述があるか
+        HAS_GOLDEN=$(python3 -c "
+import yaml, re, sys
+try:
+    d = yaml.safe_load(open('${REPORT_PATH}'))
+    texts = str(d.get('result', {}).get('summary', '')) + str(d.get('result', {}).get('details', ''))
+    pat = re.compile(r'golden|snapshot.*比較|ゴールデン|golden\.json|パリティ.*diff.*0|parity.*diff.*0', re.I)
+    print('yes' if pat.search(texts) else 'no')
+except: print('no')
+" 2>/dev/null || echo "no")
+        if [ "$HAS_GOLDEN" = "no" ]; then
+            echo "  ★★★ WARN: BE impl報告にゴールデンデータ突合の記述なし"
+            echo "  → 壊れた前後比較ではないか確認せよ(L-GoldenDataFirst)"
+            echo "  → docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md §8"
+        else
+            echo "  PASS: ゴールデンデータ突合の記述あり"
+        fi
+    else
+        echo "  SKIP: BE impl/fixタスクではない"
+    fi
+else
+    echo "  SKIP: DM-Signalプロジェクトではない"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
