@@ -427,3 +427,4 @@ import metrics_research_engine as MRE
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
 | 穴1/2/3 | 全対策完了 |
 | PF健全性スイープ | cmd_1091: 全122PF×5項目パス。定期実行候補(L417) |
+| FoF MR非線形根因+パリティ検証標準 | Schema Portfolio型不一致→preload空振り→240.6s。ゴールデンデータ方式: 前後比較×→残存正常データと突合○ → `docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md` §8-§9 |
