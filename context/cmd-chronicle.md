@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-23 -->
+<!-- last_updated: 2026-04-24 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,8 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1352 | 全standard PF numpy快速パス完全パリティ（hs+ret両方）+ L0-M_XLU原因特定 | dm-signal | 03-24 | — |
-| cmd_1353 | numpy快速パス 53/53完全一致達成 — ^VIX grid汚染修正+hs順序一致 | dm-signal | 03-24 | — |
 | cmd_1394 | — | infra | 03-25 | テスト4件全PASS。修正不要。awk実装はinvalid_lessons_useful_format/形式が不正を正しく出力しており、テスト期待値と整合済み。 |
 | cmd_1392 | dashboard_auto_section.sh 高速化 — 22.5秒→5秒以下 | infra | 03-25 | model_analysis.sh --summaryをPython→bash/awkに置換。6.4s→0.8s(WSL2)。2秒以下達成 |
 | cmd_1391 | CI RED修正 — simokitafresh/multi-agent-shogun 15テスト失敗 | infra | 03-25 | 担当テスト(ninja_monitor 9件)は他忍者(tobisaru+kotaro)のcommitで解決済み。追加作業不要 |
@@ -817,3 +815,6 @@
 | cmd_2246 | CoDD準備 — recalculate_fof.py(L3: FoF再計算, 最大ボトルネック) extract+spec作成 | dm-signal | 04-23 | CoDD extractとspec作成は完了したが、AC3の |
 | cmd_2247 | CoDD準備 — sync_layers.py(オーケストレーター) extract+spec作成 | dm-signal | 04-23 | FILL_THIS |
 | cmd_karo_2231_ac7_retry | 検証 — cmd_2231 AC7やり直し: 既存成功job基準のsignal比較のみ | dm-signal | 04-23 | 既存成功job d7k7k1cm0tmc73acvga0 を |
+| cmd_karo_ci_fix_ga159 | CI RED修正 — deploy_task if_then/legacy detailテスト2件 | infra | 04-24 | cmd_save diagnose 系は HEAD 時点で既 |
+| cmd_2248 | fix — cmd_save.sh gate偽陽性率改善: FP率60%超のWARN type修正 | infra | 04-24 | cmd_save.sh のWARN noteを型付き化し、r |
+| cmd_karo_ci_fix_2248 | CI RED修正 — test_cmd_save_warn_logging AC2テスト失敗 | infra | 04-24 | test_cmd_save_warn_logging.bat |
