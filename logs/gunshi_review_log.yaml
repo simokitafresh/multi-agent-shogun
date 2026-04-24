@@ -2884,3 +2884,18 @@
     - "事実3: シンGS CSV 191,796パターンのlookback次元一意値確認が未実施。candidate_lookbacks=[1..24]との網羅性を事前確認すべき"
   causal_chain: "偽FoF発見→ALM忍法DB不在→研究やり直し→シンGS CSV再利用で計算量を最小化=正の複利(191,796パターンの再計算回避)"
   timestamp: "2026-04-25T00:47:00"
+- cmd_id: GP-219_gate_sync_archive_patterns
+  review_type: self_study
+  findings_summary: "gate_sync.sh findパターン拡張。_delegated_→CLEAR, _cancelled_/_halted_→N/A。gate_result null 18→0件"
+  observations:
+    - "事実1: findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。2130→2243件(+113件,+5.3%)"
+    - "事実2: _cancelled_2件+_halted_1件=N/A。_delegated_12件=CLEAR。cmd_2228_recon手動CLEAR"
+    - "事実3: 残存null 0件。アーカイブログ側も5件解消(cmd_1806/1818/1820/1822/1828)"
+  proposals:
+    - id: GP-219
+      description: "gate_sync.sh _delegated_/_cancelled_/_halted_アーカイブパターン追加"
+      status: implemented
+      defense_level: 3
+  causal_chain: "findパターン不足→_delegated_アーカイブ未捕捉→gate_result null蓄積→accuracy分母の盲点。パターン追加で構造的解消=正の複利(今後のアーカイブも自動捕捉)"
+  timestamp: "2026-04-25T03:30:00"
+  timestamp: "2026-04-25T00:47:00"

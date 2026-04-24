@@ -510,3 +510,15 @@
   defense_level: 4
   reason: "useful率9.9%(S230:16.9%からさらに低下)。根因=_all_task_files空時にtarget_filesフィルタ完全バイパス(L2153 if _all_task_files:のelseなし)。640教訓中328件(51%)のtarget_files持ち教訓がマッチ不可能なタスクに注入→NOT_USEFUL量産。10回繰返し→10回×328件除外=正の複利"
   evidence: "bats 9/9 PASS(新規2件含む)。commit af8a2ebc。S0全6項PASS"
+- id: GP-219
+  description: "gate_sync.sh _delegated_/_cancelled_/_halted_アーカイブパターン追加。gate_result null 18→0件"
+  status: implemented
+  proposed_at: "2026-04-25T03:25:00"
+  implemented_at: "2026-04-25T03:30:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n '_done_\|_completed_' gunshi_gate_sync.sh → L60のみ。_delegated_/_cancelled_/_halted_未対応"
+  defense_level: 3
+  reason: "gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%)"
+  evidence: "dry-run 20件正常更新確認。実行後null 0件。commit d575e390。S0全6項PASS"
+  evidence: "bats 9/9 PASS(新規2件含む)。commit af8a2ebc。S0全6項PASS"
