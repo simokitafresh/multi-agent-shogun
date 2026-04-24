@@ -169,6 +169,13 @@ for i, item in enumerate(data):
                     echo "BLOCK: lessons_useful id=\"$val\" は不正。テンプレートに注入済みのID(L074等)を使え。UNKNOWNは禁止。" >&2
                     return 1
                 fi
+            # P5 fix: lessons_useful.{non-numeric}.field → IDベースアクセスをBLOCK+正しい方法を案内
+            elif [[ "$dot_key" =~ ^lessons_useful\.[^0-9] ]]; then
+                local bad_key="${dot_key#lessons_useful.}"
+                echo "BLOCK: lessons_useful.${bad_key} は不正。lessons_usefulはYAML listのためindex指定が必要。" >&2
+                echo "  正: lessons_useful.0.reason / lessons_useful.1.useful" >&2
+                echo "  誤: lessons_useful.L636.reason (IDベースアクセスは不可)" >&2
+                return 1
             fi
             ;;
         binary_checks)
@@ -254,6 +261,17 @@ if isinstance(lc, dict) and str(lc.get('found', '')).lower() == 'false':
     nlr = str(lc.get('no_lesson_reason', '')).strip()
     if not nlr:
         issues.append('lesson_candidate.found=false だが no_lesson_reason が空')
+# P7 fix: assumption_invalidation必須フィールドガード
+ai = data.get('assumption_invalidation', {})
+if isinstance(ai, dict):
+    ai_found = str(ai.get('found', '')).lower()
+    if ai_found == 'true':
+        ai_detail = str(ai.get('detail', '')).strip()
+        ai_cmds = ai.get('affected_cmds', [])
+        if not ai_detail:
+            issues.append('assumption_invalidation.found=true だが detail が空')
+        if not ai_cmds or (isinstance(ai_cmds, list) and len(ai_cmds) == 0):
+            issues.append('assumption_invalidation.found=true だが affected_cmds が空')
 # GP-072c2: lessons_useful items must have non-empty reason
 lu = data.get('lessons_useful', [])
 if isinstance(lu, list):
