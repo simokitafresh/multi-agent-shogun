@@ -829,3 +829,4 @@
 | cmd_2254 | fix — FoF MonthlyReturn DB永続化バグ修正（precompute rollback巻き添え防止） | dm-signal | 04-24 | precomputeをPF単位savepoint化し、例外時 |
 | cmd_2255 | 実装 — DM-Signal本番ヘルスチェックスクリプト（DB→API→FE 3レイヤー貫通確認） | dm-signal | 04-24 | scripts/health_check.py を追加し、D |
 | cmd_karo_ci_fix_2252 | fix — CI RED修正: cmd_save.bats 12テスト失敗 | infra | 04-24 | 6件テストフィクスチャのassumptions claimに |
+| cmd_2257 | 偵察+設計 — FoF増分計算化のCoDD設計書生成(recalculate_fof.py + recalculate_fast.py L2528-2638) | dm-signal | 04-24 | _recalculate_fof_history全文読解完了 |
