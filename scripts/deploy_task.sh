@@ -225,6 +225,9 @@ STALE_FIELDS = [
     'session_state', 'previous_failures',
     # 第8層: GP-201 CoDD failure history (CoDD改善cmd配備時にregistryから再注入するため毎回クリア)
     'codd_failure_history',
+    # 第10層: inject_related_lessons/inject_task_modifiersで毎回再注入されるが、
+    # 配備前に旧値が残るとCodex忍者がSTALLする(LK092: cmd_2250 hayate STALL実証)
+    'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
 ]
 
 with open(task_file, 'r', encoding='utf-8') as f:
