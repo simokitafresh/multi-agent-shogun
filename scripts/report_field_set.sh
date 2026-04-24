@@ -293,6 +293,8 @@ if isinstance(bc, dict) and bc:
                         empty_results += 1
     if total_checks > 0 and empty_results == total_checks:
         issues.append(f'binary_checks {total_checks}件全てのresultが空。yes/noを記入してからverdictを書け')
+    elif total_checks > 0 and empty_results > 0:
+        issues.append(f'binary_checks {empty_results}/{total_checks}件のresultが未記入。全件yes/noを記入してからverdictを書け')
 if issues:
     for iss in issues:
         print(f'BLOCK: {iss}', file=sys.stderr)
