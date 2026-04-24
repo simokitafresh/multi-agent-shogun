@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-25 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-25T02:37:43+09:00 -->
+<!-- generated_at: 2026-04-25T03:01:04+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-25T03:01:04+09:00 | terminal | response | 因果をたどる。 ## DMS-TVPがワークしない構造的理由 **核心: 21体のモメンタム戦略は高相関。「どれを選ぶか」の予測に価値がない。** ``` Bull期間: 21体全体が+方向 → どれを選んでも+。DMS選出の付加価値なし…
+- 2026-04-25T02:59:38+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_2253 (ctx_pct=57%, median=5.0%, ratio=11.40x, delta=+52.0pt) WARNING: CTX%異常値 cmd_karo…
+- 2026-04-25T02:59:37+09:00 | terminal | inbound | なるほど。では四神の激攻のみの4体でやるとどうなるかな？
 - 2026-04-25T02:37:43+09:00 | terminal | response | レジーム分析が機能した。Bull=36, Neutral=60, Bear=35。 ## α6指標 完全比較 | | CAGR | Sharpe | MaxDD | Calmar | α | **Bear** | **Bull** | |…
 - 2026-04-25T02:36:58+09:00 | terminal | inbound | DMSはいまいちだな。なぜワークしないのか？
 - 2026-04-25T02:11:46+09:00 | terminal | response | レジーム分析が機能した。Bull=36, Neutral=60, Bear=35。 ## α6指標 完全比較 | | CAGR | Sharpe | MaxDD | Calmar | α | **Bear** | **Bull** | |…
@@ -11,9 +14,6 @@
 - 2026-04-25T02:08:55+09:00 | terminal | response | ## 本番レジーム分析の計算式 **分布ベースの動的閾値**（固定±2%ではない）: ```python μ = benchmark_return の平均 σ = benchmark_return の標準偏差 lower = μ - 0.…
 - 2026-04-25T02:08:19+09:00 | terminal | inbound | 本番でmetricsページでやっているレジーム分析はどのような計算だった？
 - 2026-04-25T02:07:03+09:00 | terminal | response | SPYレジームが全月Sideways判定（月次リターン±2%閾値が粗すぎ）でBearSharpe=0。レジーム分析が無効化している。ただし他5指標で比較できる。 ## α6指標比較（BearSharpe除く5指標） | | CAGR | …
-- 2026-04-25T02:05:34+09:00 | terminal | inbound | 4検証＋レジーム分析でアルファ6項目を比べてみよう。K=2 DMS-TVP 全66組合せ結果と● C(21,2)=210 均等保有ペア結果を比較しよう
-- 2026-04-25T02:02:43+09:00 | terminal | response | ## C(21,2)=210 均等保有ペア結果 | # | Pair | Sharpe | CAGR | MaxDD | |---|------|--------|------|-------| | 1 | **加速R-激攻 + 変わり身…
-- 2026-04-25T02:01:47+09:00 | terminal | inbound | 奥義SSS21体を2C21の組合せの均等保有するとどうなる？
 
 ## 未解決確認事項
 - 単体のSSS奥義に負けるようでは役に立たないかもな。確認して
@@ -42,7 +42,6 @@
 - cmd_1791
 - cmd_1897
 - cmd_2244
-- cmd_2245
 - cmd_2253
 - cmd_2257
 - cmd_2258
