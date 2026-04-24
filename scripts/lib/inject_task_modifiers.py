@@ -519,6 +519,42 @@ _PARITY_RE = re.compile(r'パリティ|parity', re.IGNORECASE)
 _TARGET_DATE_AC = 'target_dateがproduction fullrecalculateと同一であること'
 
 
+_GOLDEN_MARKER = '【ゴールデンデータ検証必須】'
+
+_GOLDEN_INSTRUCTION = (
+    '【ゴールデンデータ検証必須】BE変更impl。作業開始前にgolden snapshotを取得せよ。\n'
+    '  手順: python backend/scripts/snapshot_recalc_results.py '
+    '--output outputs/analysis/cmd_XXXX_parity/golden.json\n'
+    '  修正後: fullrecalculate → golden.jsonとdiff。diff=0でパリティ証明。\n'
+    '  ★修正の前後snapshotだけの比較は禁止(両方壊れていればdiff=0=偽パリティ)。\n'
+    '  詳細→ docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md §8'
+)
+
+
+def inject_golden_snapshot_for_be(task):
+    """BE変更implタスクにゴールデンデータ取得指示を自動注入。
+
+    条件: target_pathに'backend/'を含む AND task_typeがimpl
+    既に注入済みならスキップ。
+    """
+    target_path = str(task.get('target_path', '') or '')
+    task_type = str(task.get('task_type', '') or '')
+
+    if 'backend' not in target_path:
+        return False
+    if task_type and task_type not in ('impl', 'fix'):
+        return False
+
+    desc = str(task.get('description', '') or '')
+    if _GOLDEN_MARKER in desc:
+        return False
+
+    task['description'] = _GOLDEN_INSTRUCTION + '\n  ────────────────────────────────────────\n' + desc
+    print('[GOLDEN] Injected golden snapshot instruction for BE impl task',
+          file=sys.stderr)
+    return True
+
+
 def inject_parity_target_date_ac(task, script_dir):
     """パリティcmd検出 → target_date AC自動注入。
 
@@ -605,6 +641,8 @@ def main():
          lambda: inject_report_template(task, script_dir)),
         ('execution_controls',
          lambda: inject_execution_controls(task)),
+        ('golden_snapshot_for_be',
+         lambda: inject_golden_snapshot_for_be(task)),
         ('parity_target_date_ac',
          lambda: inject_parity_target_date_ac(task, script_dir)),
     ]
