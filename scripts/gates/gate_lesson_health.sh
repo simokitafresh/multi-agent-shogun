@@ -43,6 +43,50 @@ emit_actionable() {
     echo "action: $action"
 }
 
+check_ssot_conflict_markers() {
+    local pid="$1"
+    local lessons_file="$2"
+    local ssot_path=""
+    local conflict_hits=""
+
+    ssot_path=$(awk '
+        /^ssot_path:[[:space:]]*/ {
+            sub(/^ssot_path:[[:space:]]*/, "", $0)
+            gsub(/^["'"'"']|["'"'"']$/, "", $0)
+            print
+            exit
+        }
+    ' "$lessons_file" 2>/dev/null || true)
+
+    if [ -z "$ssot_path" ]; then
+        emit_actionable \
+            "WARN: ${pid} ssot_path未設定のため conflict markers を確認できません" \
+            "projects/${pid}/lessons.yaml の ssot_path を設定し、SSOT lessons.md を参照可能にせよ。"
+        return 1
+    fi
+
+    if [ ! -f "$ssot_path" ]; then
+        emit_actionable \
+            "WARN: ${pid} SSOT file not found: ${ssot_path}" \
+            "projects/${pid}/lessons.yaml の ssot_path を正しい lessons.md に修正せよ。"
+        return 1
+    fi
+
+    conflict_hits=$(grep -nE '^[[:space:]]*(<<<<<<<|[|]{7}|=======|>>>>>>>)' "$ssot_path" || true)
+    if [ -z "$conflict_hits" ]; then
+        echo "OK: ${pid} SSOT conflict markersなし"
+        return 0
+    fi
+
+    echo "$conflict_hits" | while IFS= read -r line; do
+        [ -n "$line" ] && echo "  - ${ssot_path}:${line}"
+    done
+    emit_actionable \
+        "ALERT: ${pid} SSOTにgit conflict markers検出" \
+        "SSOT lessons.md の conflict markers(<<<<<<< / ||||||| / ======= / >>>>>>>)を解消せよ。"
+    return 1
+}
+
 # ─── 高速化: lessons.yaml を1回だけ読んで全統計を計算 ───
 # 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint
 # 追加行: PROBLEM:L番号: injection=N, helpful=0 [pid]
@@ -325,6 +369,10 @@ for _pid in "${_target_pids[@]}"; do
     if [ ! -f "$_lessons_file" ]; then
         echo "OK: ${_pid} lessons.yaml不在(lesson 0件)"
         continue
+    fi
+
+    if ! check_ssot_conflict_markers "$_pid" "$_lessons_file"; then
+        EXIT_CODE=1
     fi
 
     # context_file パスを取得 (awk1回のキャッシュから)
