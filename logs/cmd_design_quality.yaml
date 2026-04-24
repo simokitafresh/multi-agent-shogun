@@ -15959,3 +15959,134 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-04-24T04:44:33Z"
+  - cmd_id: "cmd_karo_pd_summary_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-24T04:48:03Z"
+  - cmd_id: "cmd_2253"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-24T05:06:07Z"
+    notes: "hanzo:binary_checks_fail"
+  - cmd_id: "cmd_2253"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-24T05:16:19Z"
+    notes: "hanzo:binary_checks_fail"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:25:11Z"
+    notes: "q4_depth未記入|check=quality_gate_q4_depth"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:25:15Z"
+    notes: "q6_not_hiding未記入|check=quality_gate_q6_not_hiding"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:25:17Z"
+    notes: "q7_definition_verified未記入|check=quality_gate_q7_definition_verified"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:25:18Z"
+    notes: "q10_knowledge_boundary未記入|check=quality_gate_q10_knowledge_boundary"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:25:20Z"
+    notes: "q11に既存代替の現物確認なし|check=q11_existing_alternative_verification"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-24T05:25:22Z"
+    notes: "WARN累計昇格: 「q11に既存代替の現物確認なし|check=q11_existing_alternative_verification」が1回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:26:14Z"
+    notes: "q11に既存代替の現物確認なし|check=q11_existing_alternative_verification"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T05:26:16Z"
+    notes: "assumptions claimに日付なし|check=assumptions_claim_date"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-24T05:26:19Z"
+    diagnosis: "根本原因: precomputeループ例外処理でdb.rollback()がトランザクション全体を巻き戻しFoF MRを消失させる。savepoint未使用が原因"
+    notes: "WARN累計昇格: 「assumptions claimに日付なし|check=assumptions_claim_date」が1回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2254"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-04-24T05:27:02Z"
+    diagnosis: "BLOCK理由: quality_gate必須フィールド未記入+environment_change非構造化+assumptions日付なし 対策: 全フィールド追記+構造化形式+日付追加"
+    notes: "assumptions sourceのファイルパスが存在しません:"

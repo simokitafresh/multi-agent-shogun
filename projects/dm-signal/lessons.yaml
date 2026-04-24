@@ -1627,7 +1627,7 @@ lessons:
   tags:
   - deploy
   - gate
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-24'
 - id: L388
@@ -1902,6 +1902,9 @@ lessons:
   summary: experiments.db monthly_returnsテーブルのsignals JSONカラムに格納されたティッカー構成からL1ファミリー分類が可能。TM
   tags:
   - db
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-24'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -2373,7 +2376,7 @@ lessons:
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
   tags:
   - api
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-24'
 - id: L272

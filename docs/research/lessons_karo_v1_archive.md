@@ -1,0 +1,514 @@
+# lessons_karo.yaml v1 アーカイブ (92件全文)
+
+統合日: 2026-04-24
+統合前: 92件/506行
+統合後: → projects/infra/lessons_karo.yaml (v2パターン集約版)
+
+---
+
+lessons:
+- id: LK001
+  title: STALL忍者の検知遅延 — assigned放置を早期発見すべし
+  detail: assigned/acknowledged状態で忍者がidle化（/clear後にtask YAMLを読まず待機）するケースがcmd_1105で判明。ninja_monitorにSTALL検知（10分閾値）を追加し自動再配備フローを構築した。家老は配備直後の初動確認を意識し、STALL通知受信時は即座に別忍者へ再配備せよ。
+  source_cmd: cmd_1105
+  created_at: '2026-03-19'
+- id: LK002
+  title: cmd_1082事故 — pipeline_config欠落を家老レビューで検知できず
+  detail: GS本番登録時にPipelineConfig欠落が本番障害を引き起こした。家老レビューで「本番パリティAC」の有無を確認すべきだったが見落とし。以降、本番DB操作を含むcmdのレビューでは(1)本番コードとの差分確認AC有無
+    (2)production_invariantsとの照合 を必須チェック項目とする。
+  source_cmd: cmd_1082
+  created_at: '2026-03-19'
+- id: LK003
+  title: 霧丸/影丸idle化 — /clearレースコンディションで配備直後に記憶消失
+  detail: 'ninja_monitorの自動/clearと家老の配備タイミングが競合し、配備直後に/clearが走って忍者が記憶喪失→idle化するケースが発生。対策:
+    ninja_monitorにStage 1ガード（assigned/acknowledged状態の忍者は/clearしない）を追加。家老は配備後にninja_monitorのclear猶予期間を意識し、配備→nudge送信の間隔を最小化せよ。'
+  source_cmd: cmd_1108
+  created_at: '2026-03-19'
+- id: LK004
+  title: 教訓還流の仕組み変更は3層同時修正必須
+  detail: 教訓フロー変更時にテンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)のうち1箇所だけ修正しても他が追随しないと形骸化する。cmd_1104で判明。仕組み変更時は必ず3層(テンプレート/忍者ルール/家老ルール)を同時修正するcmdを設計せよ。
+  source_cmd: cmd_1104
+  created_at: '2026-03-19'
+- id: LK005
+  title: DCエスカレーション前に既存裁定との重複チェック必須
+  detail: 忍者報告のdecision_candidateを将軍にエスカレーションする際、pending_decisions.yamlの既存裁定と照合せずに同一質問を殿に再提出してしまった（PD-007朱雀全滅許容の再質問）。以降、DC受領時は全resolved裁定をスキャンし、重複なしの場合のみエスカレーションする。
+  source_cmd: cmd_1097
+  created_at: '2026-03-19'
+- id: LK006
+  title: 状態確認なき即行動 + Stage 1ガード穴 — pending/assignedが保護対象外だった
+  detail: '殿に「佐助クリアされてる」と言われた時、確認せずに即再配備した。根本原因: ninja_monitor Stage 1ガードがacknowledged/in_progressのみ保護し、assigned/pendingを保護していなかった。修正:
+    (1)ninja_monitor Stage 1にassigned/pending追加 (2)deploy_task.shでpending→assigned自動変換。二重防御で構造的に再発不可能化。'
+  source_cmd: cmd_1126
+  created_at: '2026-03-20'
+  automated: true
+  enforcement: ninja_monitor.sh L2086 + deploy_task.sh status_force
+- id: LK007
+  title: workaround個別修正=消火構造 — パターン集計→構造的解決→発火検証の3段階
+  detail: 'karo_workaroundsの同カテゴリ(report_yaml_format)が15件累積してからようやくgate化(cmd_1246/1248)された。根本原因:
+    家老が毎回手動修正→次へ進むの繰り返しでパターンを集計していなかった。deepdive Phase4と同構造(生存本能なき個別対処)。 さらに深い教訓: gateを作っても発火しなければ消火と同じ(将軍Phase9と同構造=参照パスバグで発火しない)。
+    3段階を完遂せよ: (1)パターン集計→3件で構造的解決cmd起票 (2)gateを作る (3)gateの発火率を計測し100%を確認する。 具体例: inbox_write.shのgate統合はBLOCK設定だがパス解決失敗時にサイレントスキップ→忍者の壊れた報告が素通り→家老手動修正。
+    L-VerifyAfterWrite家老版: 自動化を作ったら発火していることを計測せよ。'
+  source_cmd: cmd_selfimprovement_20260322
+  created_at: '2026-03-22'
+  automated: true
+  enforcement: gate_report_format.sh + gate_karo_startup.sh
+- id: LK008
+  title: 軍師proposalの可視化必須 — パートナーの出力を消費せよ
+  detail: '軍師GP-003(report_field_set.sh強制hook)がpending放置されていた。根本原因: 軍師proposalの状態管理がダッシュボードに不在。パートナーの出力を消費しない=将軍がgunshi
+    REQ_CHANGESを読まずにcmd起票した教訓(MEMORY.md)の家老版。対策: 軍師proposalの 状態(pending/accepted/rejected)をダッシュボードの軍師セクションに常時表示し、pending
+    があれば次cmdサイクルで対処する。proposalはレビューログ(gunshi_review_log.yaml)内の proposalsフィールドに格納される。'
+  source_cmd: cmd_selfimprovement_20260322
+  created_at: '2026-03-22'
+  automated: true
+  enforcement: "dashboard軍師セクションにproposal状態表示を追加済み(2026-03-22) / gate_karo_startup.sh Check 3.7でGP pending自動検出→WARN(cmd_2165)"
+- id: LK009
+  title: STALL再配備は「検証→クリア→再配備」の3段階必須
+  detail: 'STALL検知→別忍者に再配備する際、(A)検証なしで即再配備 (B)旧忍者のtask YAMLをidleにクリアしなかった。結果: 小太郎と疾風がcmd_1281
+    AC2+AC3に二重配備。 サイクル1根本原因: 3層の穴 (1)deploy_task.shに同一cmd重複ガードなし (2)ninja_monitorのSTALL処理がtask
+    YAMLをクリアしない (3)家老手順に旧タスククリアなし。 サイクル2深堀り: STALL通知は「信号」であり「事実」ではない。家老がSTALL通知を事実として受け入れ検証せず再配備した=「想像するな確認せよ」原則違反。
+    再配備前の検証3点: (i)task YAML progressに進捗あるか (ii)同一cmd_idが他忍者に配備済みでないか (iii)uncommitted
+    changesがあるか。 即時対策: karo.md STALL手順を「検証→クリア→再配備」の3段階に改訂済み。構造的解決: deploy_task.shに重複ガード追加(cmd待ち)。
+    今回の被害: hayateがkotaroのcommit上に作業し結果的にファイル破損なし。だがこれは偶然であり、真に並列だった場合はconflict・データ消失のリスクがあった'
+  source_cmd: cmd_1281
+  created_at: '2026-03-23'
+  cycle2_updated: '2026-03-23'
+- id: LK010
+  title: データ駆動なぜ深掘り — 将軍サイクル方式の家老版
+  detail: 'WA率70%を「軍師に委任」で解決しようとした=表層解。将軍のペインを読んで学んだ深掘り方: (1)データを見る(gate_fire_log/karo_workarounds)
+    (2)パターン抽出(カテゴリ+頻度) (3)機械的/品質的を分離 (4)機械的→auto-fix、品質的→軍師転送 (5)メタgateで成熟計測。家老の旧パターン(個別workaround修正→次へ進む)は消火構造。将軍のパターン(データ→パターン→なぜ→自動化→計測)を家老のcmd完了レビューに組み込む。具体:
+    cmd完了時にkaro_workaroundsの直近5件をカテゴリ分析→3件同一なら構造的解決cmd提案。'
+  source_cmd: cmd_selfimprovement_20260323
+  created_at: '2026-03-23'
+- id: LK011
+  title: 代筆禁止原則 — gateがBLOCKした報告は忍者に差し戻せ
+  detail: 'gate BLOCKされた報告をpython3で代筆して通すのは消火=免疫応答を妨げる(deepdive Phase5)。WA率66%(39/43がreport_yaml_format)の根本原因。将軍のautofix消火撤去(Fix22-28,10,21)+軍師のFIX
+    hints追加で、MISSINGフィールドはgateがBLOCKし忍者に行動可能な修正ガイドが表示される。家老がやるべきこと: (1)BLOCK報告はinbox_writeで忍者に差し戻す
+    (2)代筆しない (3)差し戻し=WA:false(正しい対応)、代筆=WA:true(消火)。LK007の具体適用。'
+  source_cmd: cmd_selfimprovement_20260325
+  created_at: '2026-03-25'
+- id: LK012
+  title: 配備前に現物コード確認必須 — 履歴データだけで配備するな
+  detail: 'karo_workaroundsの履歴(WA率66%/39件report_yaml_format)を見て6忍者に改善タスクを配備→軍師REQ_CHANGES:
+    6件全て既実装(GP-072/GP-069等)。根本原因: 過去のworkaround件数から問題がまだ存在すると想像し、対象コードの現物確認をせず配備した。deepdive
+    Phase1-2(観察スキップ)と同構造。殿の想像するな確認せよ原則に違反。対策: タスク設計前にgrep/readで対象コードの現在状態を確認せよ。workaround件数は過去の事実であり現在の状態ではない。'
+  source_cmd: cmd_cycle_001
+  created_at: '2026-03-25'
+- id: LK013
+  title: 修行L1環境改善サイクル — なぜ分析→1行変更→計測の6ラウンドで0%→100%
+  detail: '修行L1を6ラウンド回し、First-Pass PASS率を0%から100%に改善した。毎ラウンドgate_fire_logでFAILパターンを分析し、テンプレートに1行の環境変更を入れて次ラウンドで検証。改善:
+    R3 inline hints, R4 header checklist, R5 bc循環依存除去, R6 status追記。核心: データを見て具体的に何がなぜ空かを掘ることが自動化ターゲット特定の精度を決める。大きな設計変更ではなく、1行の変更を繰り返し積んで複利で効かせる。LK012(現物確認)の応用版。'
+  source_cmd: cmd_training_L1
+  created_at: '2026-03-26'
+- id: LK014
+  title: 配備技術の段階的進化 — テンプレート設計+一括配備+レベル間設計
+  detail: 'L1-L3修行で配備技術が3軸で進化。(1)テンプレート設計: 忍者の作業動線(上→下)に合わせたヒント配置。ヘッダー(開始時)とフッター(提出前)の挟撃構造で認知負荷に耐える。(2)一括配備:
+    bashスクリプトで6名同時配備。ローテーション(L3レビュー相手)も変数で制御。(3)レベル間設計: 前レベルの環境改善が次レベルの土台。L2でL1基礎が回帰→フッター1件で即回復。弱点:
+    self_gate_checkのような新フィールドはsed後付けではなくdeploy_task.shのテンプレート生成に組み込むべき。修行で見つかった実バグの即時修正も配備作業の一部として統合すべき。'
+  source_cmd: cmd_training_L1_L2_L3
+  created_at: '2026-03-26'
+- id: LK015
+  title: 修行は訓練と品質改善の二重効果 — L2で実バグ3件発見・2件即修正
+  detail: '忍者がスクリプトを精査する修行タスクは、報告書作成の訓練であると同時に、コードの品質監査でもある。L2 R1-R2で発見された実バグ: ntfy_listener.sh
+    grep dedup不一致、inbox_write.sh yaml.dump禁則違反、gate_karo_startup.sh set -eフォールバック欠落。殿の指示「実バグが見つかったときは都度直そう」により修行と修正が一体化。修行タスクのtarget_pathにinfraスクリプトを割り当てることで、6名の目がコードベース全体を巡回する効果がある。'
+  source_cmd: cmd_training_L2
+  created_at: '2026-03-26'
+- id: LK016
+  title: pane直接観察→自動化ターゲット特定 — gate_fire_logでは見えない摩擦の発見
+  detail: '殿の指示「忍者のpane見てるか？学べ」により、gate_fire_log(PASS/FAIL二値)では見えない忍者の作業プロセス上の摩擦を発見。疾風cmd_1404で観察:
+    コード修正は迅速正確だが、/clear後の報告YAML作成でreport_field_set.shのドット記法を知らず3回BLOCKされYAML破損まで至った。根本原因:
+    テンプレートにドット記法の具体例がなかった。即対策: deploy_task.shの報告テンプレートにクイックリファレンス(ドット記法例+アンチパターン警告)を追加。gate_fire_logはPASS/FAILの二値しか見せないが、paneはなぜFAILかどこで詰まるかを見せる。deepdive
+    Phase5(なぜの目的=自動化ターゲット特定)の家老実践版。'
+  source_cmd: cmd_1404
+  created_at: '2026-03-26'
+- id: LK017
+  title: 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す
+  detail: 殿の指示「全てはつながって回っている。忍者の品質向上にはCMDの品質向上、タスク配備の品質向上が必要だ」。品質は鎖で、各環の品質が下流に伝搬する。cmdが曖昧→タスクYAMLが曖昧→忍者が迷う→報告が不完全→教訓が浅い。家老の配備品質が忍者の作業品質を決める。テンプレート改善(LK016ドット記法ヒント)は報告環の品質向上。タスクYAML構築の精度(binary_checks/constraints/target_path)は作業環の品質向上。効率や速度は品質向上の結果であり目的ではない(殿厳命)。品質を損なう可能性がある行為は全て悪。
+  source_cmd: cmd_1406
+  created_at: '2026-03-26'
+- id: LK018
+  title: 信号を事実として扱うな — idle/STALL通知受信時はpane現物確認必須
+  detail: 'ninja_monitorのidle通知を事実として受け取りpane確認なしで再配備に動いた(cmd_1445才蔵STALL)。LK009に信号であり事実ではないと自分で書き引用までしたのに行動では飛ばした=理解と行動の乖離=deepdive
+    Phase4。根本原因: pane確認が手順に具体的stepとして外部化されていなかった(意志依存)。対策: (1)ninja_monitor.shのidle通知にpane最終3行を自動添付(自動化)
+    (2)karo.md STALL手順にcapture-paneコマンドを明記(強制)。二重防御。'
+  source_cmd: cmd_1445
+  created_at: '2026-03-28'
+- id: LK019
+  title: deploy_task.shの重複ガードがrecon並列配備をブロックする
+  detail: deploy_task.shの同一parent_cmd重複チェックが偵察パターン(2名並列)の正当な配備をBLOCKした(cmd_1447)。手動inbox_writeで回避したが、deploy_task.shにrecon例外(同一parent_cmdでtask_idが異なる場合はOK)を追加すべき
+  source_cmd: cmd_1447
+  created_at: '2026-03-28'
+- id: LK020
+  title: PI登録時の原理抽出ステップ — 個別事実→共通根→原理PI昇華
+  detail: 'PIをlesson→PIに昇格する際: (1)個別事実→そのまま登録 (2)複数PIに共通の根があれば原理PIに昇華(例:PI-020はPI-004/007/009/013/014/019の共通根)
+    (3)原理PIは具体例を残しつつ上位原則を記述。目的: PI74%が個別事実→原理レベルPIが増えれば未知パターンに自動対抗。将軍CoDD→なぜなぜサイクルで発見'
+  source_cmd: cmd_1494
+  created_at: '2026-03-29'
+- id: LK021
+  title: deploy_task.sh再配備時stale field汚染
+  detail: 'resolve_cmd_to_taskは中核7フィールドしか設定しない。purpose/target_path/constraints/progress/description/deployed_atは前cmdから残留し、忍者に誤情報が渡る。cmd_1519-1522並列配備で小太郎が前cmdのAC/purposeで混乱(実被害)。修正:
+    再配備前に6フィールドを明示クリア+cmdソースからpurpose注入。教訓: 新機能追加時に既存フィールドの初期化漏れを確認せよ'
+  source_cmd: karo_direct_stale_fix
+  created_at: '2026-03-30'
+- id: LK022
+  title: archive sweep並列配備レースコンディション
+  detail: 'archive_completed.sh sweep modeがdelegatedステータスを保護対象に含まず、GATE未完了cmdの報告をアーカイブ。cmd_1519のAC2がsweep実行→cmd_1520/1522の報告消失。修正:
+    (1)delegatedを保護ステータスに追加 (2)archive.doneフラグチェック(GATEの最終ステップでのみ作成)を二重防御として追加。教訓:
+    並列配備時はsweep系操作のタイミングに注意。保護ステータスの網羅性を確認'
+  source_cmd: karo_direct_archive_race
+  created_at: '2026-03-30'
+- id: LK023
+  title: yaml_field_setはリスト型フィールドをクリアできない
+  detail: 'yaml_field_set.shのawkは行ベース置換。スカラー(purpose: old)は1行差替で消えるが、リスト(stop_for:\n-
+    item1\n- item2)はキー行のみ差替、子行(- item)が残留。inject_task_modifiers.pyの存在チェック(not in task
+    or is None)と組み合わせると、空文字設定(""≠None)でも前cmdのリスト値が汚染し続ける。対策: フィールド削除はregex一括(キー行+子行パターン)で行え。yaml_field_setの""は万能クリアではない'
+  source_cmd: karo_direct_yaml_list_limitation
+  created_at: '2026-03-30'
+- id: 'LK024'
+  title: 'spec_mismatch防止はengineering_preferencesが最小コスト'
+  detail: 'spec_mismatch_redeploy(cmd_1628+1635)のなぜなぜで自動化ターゲット特定。忍者が仕様と知識辞書の矛盾時に自己判断する根因=task YAMLに優先順位が未明示。projects/{id}.yaml engineering_preferencesに1行追加で全配備に自動注入される。Phase5(なぜの目的=自動化ターゲット特定)の家老実践。コード変更なし、設定1行で構造的防御'
+  source_cmd: 'karo_direct_self_drive'
+  created_at: '2026-04-01'
+- id: 'LK025'
+  title: 'bats全量実行OOM — テスト指示は個別ファイルまたは件数制限で'
+  detail: 'bats tests/unit/全量実行(134テスト)がメモリ4.3GB消費→OOM Kill。半蔵2回連続クラッシュ。タスクYAMLでテスト実行を指示する場合、(1)対象テストファイルを個別指定 (2)全量実行が必要なら分割(bats tests/unit/test_a*.bats && bats tests/unit/test_b*.bats等) (3)never_stop_forにOOM追加不可(プロセス死亡)。根因: WSL2のメモリ上限+batsのfork量'
+  source_cmd: 'karo_direct_uncommitted_scripts'
+  created_at: '2026-04-02'
+- id: 'LK026'
+  title: 'mixed編成は弱点パターンがモデルごとに異なる — テンプレート改善は全モデル共通FAILに効くが個別弱点には効かない'
+  detail: 'R7(テンプレートなし)+R8(テンプレートあり)の比較。Opus両ラウンド100%FP。GPTはテンプレートで0%→100%改善(assumption_invalidation→解消)。Sonnetは50%→0%悪化(FAILパターンがassumption_invalidation→bc AC欠落に移動)。テンプレートは共通FAILパターンを潰すが、モデル固有の弱点は別のフィールドに現れる。mixed編成の環境改善はモデル別FAILパターン分析→モデル別対策が必要'
+  source_cmd: 'cmd_training_L4_R7_R8'
+  created_at: '2026-04-02'
+- id: 'LK027'
+  title: 'STALLの原因をモデルのせいにするな — タスク設計(分量・難易度)を先に疑え'
+  detail: '疾風R12 STALL(deploy_task.sh 31テスト書換え)を『Codex大型ファイル不向き』と結論→才蔵R13で3985行スクリプト成功で反証。真因: 31テスト×関数抽出困難=タスク分量オーバー。ジャーナルにも『リファクタ必要』と書いてあった。N=1でモデル能力の結論を出すな。STALLしたらまず(1)タスク分量は適切か (2)前提条件(ジャーナル等)を読んだか (3)同モデルの他忍者の成績はどうか を確認せよ'
+  source_cmd: 'cmd_training_L4_R12'
+  created_at: '2026-04-02'
+- id: 'LK028'
+  title: 'Codex STALL根因=CLAUDE.md未読 — nudgeにtask YAML読込指示を含めよ'
+  detail: 'Codex CLIはCLAUDE.mdを自動読込しない(config.tomlにinstruction設定なし)。inbox1を受け取ってもrecovery手順を知らずプロンプト待ち→STALL。R7-R20で疾風/才蔵が計6回STALL。根因は忍者の能力ではなく家老の配備インフラ。自動化ターゲット: (1)Codex config.tomlにinstruction_file設定 (2)nudge時にCodex忍者にはtask YAMLパス付き具体指示を送信 (3)inbox_write.shのCodex分岐でnudge内容を拡張'
+  source_cmd: 'cmd_training_L4_R7_R20'
+  created_at: '2026-04-02'
+- id: 'LK029'
+  title: '手動配備(cat > YAML)は3問題を同時に生む — deploy_task.sh改善が唯一の解'
+  detail: '手動配備が(1)テンプレート未生成→GPT/Sonnet FAIL (2)scout_exempt未設定→gate BLOCK (3)deployed_at未設定→MISMATCH 19件を同時に生んだ。家老は毎回消火(idle化/bypass)で対処→LK007と同構造。根因: deploy_task.shが修行cmdを解決できず手動配備に逃げた。自動化ターゲット: deploy_task.sh --cmdオプション(指定cmd強制解決)。1つの自動化で3問題が同時に消える。家老自走Phase7の実践(殿指摘前にデータから発見)'
+  source_cmd: 'karo_direct_self_drive_cycle'
+  created_at: '2026-04-02'
+- id: 'LK030'
+  title: '家老判断4問チェック — 推論を現物確認より先にやる構造的弱点の防御'
+  detail: '1セッションで殿に5回指摘された共通根: 推論→結論→現物で反証の繰り返し。(1)N=1結論 (2)現物未確認 (3)自分の配備品質を疑わない (4)比較データなし。karo-operations.md §0.1に4問チェックリストを埋め込み、分析・報告前に必ず通す手順を恒久化。deepdive Phase4(自動化×強制)の家老版実践'
+  source_cmd: 'karo_self_drive_cycle3'
+  created_at: '2026-04-02'
+- id: 'LK031'
+  title: 'Step 0無限ループ=思考餓死 — 配備後は即Step 1-5に進め'
+  detail: 'idle自走プロトコルのStep 0『修行配備最優先』がidle忍者がいる限り無限ループし、Step 1-5(workaround分析/忍者品質/教訓監査/なぜなぜ)に永遠に到達しない。14ラウンド配備×0回思考=オペレーター最適化。修正: Step 0の後『配備したら即Step 1へ。待ち時間=思考時間』を追加。Step 0.5に§0.1判断4問チェック参照を挿入。配備=手段、思考=目的'
+  source_cmd: 'karo_self_drive_cycle4'
+  created_at: '2026-04-02'
+- id: 'LK032'
+  title: '修行並列配備は忍者別cmd_id必須 — 重複ガードを確認せず使った§0.1違反'
+  detail: 'deploy_task.sh --cmdで1つのcmd_idを4名に配備→重複配備ガード(LK009)がBLOCK。手動配備時代はparent_cmd同一で問題なかったがdeploy_task.shには重複ガードがある。根因: ツールの内部動作を確認せずに使った=§0.1問い2違反。修正: 忍者別cmd_id(cmd_training_L4_RXX_{ninja})で配備。training-cycle.mdに標準手順記録済み'
+  source_cmd: 'karo_self_drive_R21'
+  created_at: '2026-04-02'
+- id: 'LK033'
+  title: 'FP率改善をテンプレート強制で解決するのは消火 — gate BLOCKは成長機会'
+  detail: 'テンプレートにFILL_THISを入れてFP率を上げようとした→deepdive再読で気づき: gate BLOCKは成長機会(training-cycle §1)。FP率100%=学習機会ゼロ。殿の言葉『BLOCKすら起きない=知見を得ている証拠。スムースさが本質』。テンプレート強制は消火構造。忍者が自ら正しく書けるようになることが真の改善。家老の役割はBLOCK後のFIX hintの質を高めること(環境改善)であって、BLOCKを消すことではない'
+  source_cmd: 'karo_self_drive_deepdive'
+  created_at: '2026-04-02'
+- id: 'LK034'
+  title: '修行cmdの終了条件を明確化せよ — 1箇所改善+commitで終了'
+  detail: '修行の最適化cmdで終了条件が曖昧(ボトルネック1-2箇所改善)だと忍者が無限改良を続け時間がかかる(殿指摘)。改善: AC2を1箇所改善+commitに絞り明確な終了とする。長引くなら途中commitではなく1箇所で終了が正'
+  source_cmd: 'karo_self_drive_R24_feedback'
+  created_at: '2026-04-02'
+- id: 'LK035'
+  title: 'idle通知standbyモード — パイプライン空時は状態変化ベース通知に切替'
+  detail: 'ninja_monitorのidle通知が同一忍者に1-2分おきに無限反復。根因: PREV_STATEがGuard1等で毎サイクルbusyにリセット→次サイクルで状態変化と誤判定→再通知。殿のなぜなぜ+モード切替提案で到達: (1)idle通知は正しい圧力だが常時ではない (2)パイプライン空=待機すべき状態→繰り返し不要 (3)パイプライン有=仕事あり→圧力必要。IDLE_NOTIFY_SENT配列+パイプライン状態自動判定で実装。standby(空)=初回のみ、active(有)=5分cooldown。1時間10分idle通知ゼロで検証OK'
+  source_cmd: 'karo_direct_idle_standby'
+  created_at: '2026-04-02'
+- id: 'LK036'
+  title: 'idle_cycle設定でninja_monitorのidle通知を制御'
+  detail: 'settings.yaml idle_cycle: on/offでninja_monitorのcheck_karo_idle_cycle()を制御。off時は家老へのidle通知を完全抑制。切替: yaml_field_set.sh config/settings.yaml '''' idle_cycle on/off。殿がon/offを指示する。家老が勝手に変更しない'
+  source_cmd: 'karo_direct_idle_cycle_flag'
+  created_at: '2026-04-03'
+- id: 'LK037'
+  title: 'pane tail -3で判断するな — Codex STALL 8回見逃し'
+  detail: 'tail -3のCTX%だけで作業中と誤判定し同じ失敗を8回繰り返した。根因: pane全体を読めばプロンプトにテキスト未実行が一目瞭然。対策: (1)STALL検知時はpane全体capture必須 (2)deploy後にCTX変化(0%→>0%)を確認 (3)respawn後はCLI起動完了(›プロンプト+CTX:0%)を待ってからsend-keys。LK018(信号を事実として扱うな)の再発'
+  source_cmd: 'cmd_karo_codex_deploy_fix'
+  created_at: '2026-04-03'
+- id: 'LK038'
+  title: '情報フィルタは品質軸で判断せよ — ブロック判定だけでは品質の鎖が切れる'
+  detail: '軍師の軽微指摘を忍者に伝えなかった。フィルタ基準が「ブロックか否か」の一軸のみで「品質向上に寄与するか」の軸がなかった。10回繰り返したら10件の手戻り候補蓄積=負の複利。自動転送(1d0a59e)で軍師→忍者は解決したが、原則として全情報伝達で品質軸フィルタを適用せよ。LK017(品質の鎖)の実践版'
+  source_cmd: 'cmd_session_20260407'
+  created_at: '2026-04-07'
+- id: 'LK039'
+  title: 'ダッシュボードGP表示は全logファイル走査必須'
+  detail: 'current log(gunshi_review_log.yaml)のみ走査して4件表示→実際は13件pending。archived logにもpending GPが残存する。/dashboard-update時はarchive含む全logをpython3で走査せよ'
+  source_cmd: 'cmd_session_20260407'
+  created_at: '2026-04-07'
+- id: 'LK040'
+  title: 'CI赤はgh run viewで現物確認してからダッシュボード記載'
+  detail: 'E2E test#11と思い込んで記載→実際はBuild Instructions Check失敗。想像するな確認せよ原則のCI版。gh run view <run_id>で失敗jobと失敗stepを確認してから書け'
+  source_cmd: 'cmd_session_20260407'
+  created_at: '2026-04-07'
+- id: 'LK041'
+  title: 'CLI操作後のpane確認を省略するな — send-keys成功≠CLI起動成功'
+  detail: 'send-keysはpane deadでもエラーを返さない。確認なしで起動報告→殿に指摘。deepdive Phase 2/4と同構造(意志依存)。対策: CLI操作後は必ず(1)pane_dead確認(tmux list-panes -F pane_dead) (2)capture-pane -S -30でCLI起動確認 の2段階を実行。エッジケース: pane dead→respawn必要、pane alive+CLI dead→CLI再起動、pane alive+CLI alive→正常。send-keys後のsleep+capture-paneを省略するな'
+  source_cmd: 'cmd_gunshi_restart'
+  created_at: '2026-04-07'
+- id: 'LK042'
+  title: 'verdict_override 3件パターン — AC達成可能性の事前検証不足'
+  detail: 'AC設計時に(1)gitignore対象ファイルへのcommit必須ACを設計(2)推奨事項を必須binary_checkに混入。忍者が正しくFAIL→家老override×3回。根因: AC完了条件が忍者の行動で物理的に達成可能か事前確認していない。自動化ターゲット: deploy_task.shのcommit check生成時にgit check-ignoreで対象ファイルの追跡状態を確認し、gitignore対象ならcommit checkをスキップ。推奨/必須の分離はAC設計の教訓として意識する'
+  source_cmd: 'cmd_root_fixes'
+  created_at: '2026-04-09'
+- id: 'LK043'
+  title: 'cmd配備前にCIステータスを現物確認せよ — ダッシュボードの記載は過去の事実であり現在ではない'
+  detail: 'cmd_1806をCI赤修正として配備したが、CIは既に緑(前cmd cmd_root_fixesで解消済み)。軍師REQUEST_CHANGESで発覚。根因: ダッシュボードの要修正事項にCI赤と書いてあったのを現在の状態と思い込み、gh run list等で現物確認しなかった。deepdive Phase1-2と同構造。§0.1問い2(現物確認したか)違反。配備前に対象システムの現在状態を直接確認せよ'
+  source_cmd: 'cmd_1806'
+  created_at: '2026-04-09'
+- id: 'LK044'
+  title: 'clear_command送信後の状態確認を自動化 — 送信=停止ではない'
+  detail: 'pane末尾のプロンプト(❯)だけ見て止まったと報告→実際はthinking/実行中。deepdive Phase2と同構造。真因: /clearは実行中タスクを中断しない+送信後の確認が意志依存。対策: inbox_watcher.shのclear_command処理にpost-verification追加(sleep 8→CTX確認→WARN/OK)。半蔵で動作確認OK。原理: 送った=完了ではない。確認するまでが命令'
+  source_cmd: 'cmd_1839'
+  created_at: '2026-04-10'
+- id: 'LK045'
+  title: '新cmd配備前にtask YAMLの旧parent_cmdをクリアせよ'
+  detail: 'deploy_task.shはtask YAMLのparent_cmdで配備先cmdを解決する。旧cmdが残存していると新cmdではなく旧cmdに配備される(cmd_1858配備時にcmd_1843に解決した事故)。配備前にyaml_field_set.shでparent_cmd/task_id/statusをクリアしてからdeploy_task.shを実行すること'
+  source_cmd: 'cmd_1858'
+  created_at: '2026-04-11'
+- id: 'LK046'
+  title: 'Codex優先配備ルール違反 — 4cmd連続でCodex忍者をスキップ'
+  detail: 'cmd_1863-1866の4cmd全てでCodex忍者(疾風/才蔵)が空きだったにもかかわらずOpus/Sonnet忍者に配備。R001 round-robinに従いモデル優先度を無視した。殿裁定でR000(Codex→Sonnet→Opus順)をR001より上位に設定。同一モデル内はround-robin維持。レート制限温存が目的'
+  source_cmd: 'cmd_1863'
+  created_at: '2026-04-12'
+- id: 'LK047'
+  title: '配備変更前に稼働実態をcapture-paneで確認せよ — task statusとプロセス稼働は別'
+  detail: '殿のCodex2名指示を/clear後に保持しておらずSonnet3名配備→指摘後に反射でidle化→しかしpython3プロセスは稼働継続→Codex再配備で影丸と才蔵がalm_shinで重複実行。3回連続で確認前に行動した。(1)配備前に殿の指示を確認(2)停止前にcapture-paneで稼働実態を確認(3)再配備前に既存作業との重複を確認。deepdive Phase1-4と同構造。'
+  source_cmd: 'cmd_1876'
+  created_at: '2026-04-12'
+- id: 'LK048'
+  title: 'cmdの制約を独自解釈するな。制約の意図を確認してからその制約通りに配備せよ'
+  detail: 'cmd_1877に並列配備絶対禁止と明記されていたのに1忍者1ブロックだから並列OKと独自解釈し5本同時配備しようとした。殿に止められなければOOM Kill発生。karo deepdive Phase 1と同構造。制約がある→なぜこの制約か確認→制約通りに配備。独自解釈して緩和するな。cmd_1879では将軍がメモリ見積もり付きで並列可と明記→正しく配備できた。制約に疑問があれば将軍に確認。'
+  source_cmd: 'cmd_1877'
+  created_at: '2026-04-13'
+- id: 'LK049'
+  title: 'WA ALERT→PD自動起票で将軍検知を強制化'
+  detail: 'WA同一カテゴリ3件ALERTが表示止まりで行動に接続されていなかった(verdict_override 6件蓄積)。karo_workaround_log.shのALERT発火時にpending_decision_write.sh自動呼出しを追加。将軍startup gateで直接検知される。deepdive Phase4(自動化×強制)の家老版実践'
+  source_cmd: 'cmd_1885'
+  created_at: '2026-04-13'
+- id: 'LK050'
+  title: '異なるcmd間のファイル変更競合を配備前に確認せよ'
+  detail: 'cmd_karo_ci_fix_1885(テスト修正)とcmd_1888(autofix撤去)が同一ファイル群(gate_report_autofix_main.py+テスト)に影響し影丸が55分苦戦。GP-042は同一cmd重複のみ検出。異なるcmdで同一ファイル変更する並列配備時は家老が手動で衝突確認必須。LG002の拡張版'
+  source_cmd: 'cmd_1888'
+  created_at: '2026-04-13'
+- id: 'LK051'
+  title: 'gate系(autofix/format/テスト)変更cmdは直列配備必須'
+  detail: 'cmd_karo_ci_fix_1885(テスト期待値)とcmd_1888(autofix撤去)が同時配備され影丸55分苦戦。ファイル名は別だが依存関係(autofix動作→テスト期待値)で衝突。ファイルパス照合では検出不可(テスト実証済み)。gate系変更は直列配備で解決。DB排他(§10)と同じ原理'
+  source_cmd: 'cmd_1888'
+  created_at: '2026-04-13'
+- id: 'LK052'
+  title: 'LG027: コード修正の横展開確認 — grep修正前パターンで残存0件確認必須'
+  detail: 'bisect fix(04f74830)がMF/SVMF/MVMFに適用されTRF/MAFが漏れた。同パターン5ファイルにコピペ散在。修正後にgrep修正前パターンで残存ファイル確認工程が不在→12体Cash100%事故。レビュー時にdraft/報告の変更パターンが他ファイルにも存在するかgrep確認。automated候補: pre-commit hookでblocks/内のdict.get(context.target_date)禁止'
+  source_cmd: 'cmd_1899'
+  created_at: '2026-04-14'
+- id: 'LK053'
+  title: 'karo_direct起票はshogun_to_karo.yaml登録が先'
+  detail: 'deploy_task.shはshogun_to_karo.yamlからcmd定義を読む。karo_directでもcmd定義をYAMLに登録してからdeploy_task.shを実行せよ。登録なしでdeploy→ERROR。cmd_karo_gp191配備時に実証'
+  source_cmd: 'cmd_karo_gp191'
+  created_at: '2026-04-14'
+- id: 'LK054'
+  title: 'depends_onはAC単位で分析せよ — cmd全体を鵜呑みにするな'
+  detail: 'depends_on: cmd_Xがあっても全ACが依存するとは限らない。cmd_1900でスクリプト修正(AC1)は即実行可能、再検証(AC2/AC3)のみcmd_1899完了待ち。AC単位で依存分析し並列可能な部分を先に配備。idle=最大の無駄'
+  source_cmd: 'cmd_1900'
+  created_at: '2026-04-14'
+- id: 'LK055'
+  title: 'GP cmd化は家老自走の範囲 — 将軍提案を待つな'
+  detail: '軍師GP提案のcmd化は家老直接起票(karo_direct)で即配備可能。将軍の承認を待つのは自走の放棄。infra改善は本番依存なし。殿裁定: 家老の直接実装=自走(MEMORY.md参照)'
+  source_cmd: 'cmd_karo_gp191'
+  created_at: '2026-04-14'
+- id: 'LK056'
+  title: '並列配備時に軍師レビュー依頼を落とすな'
+  detail: 'cmd_1900でGP-191/192の並列配備に集中し軍師draftレビュー+報告レビューの両方を飛ばした。標準フロー(全cmd軍師レビュー)は並列配備数に関わらず必須。配備直後にレビュー依頼を送る手順を1セットとして扱え'
+  source_cmd: 'cmd_1900'
+  created_at: '2026-04-14'
+- id: 'LK057'
+  title: '研究cmdにscout_exempt自動設定がない — 毎回手動追加が必要'
+  detail: 'cmd_1902で研究cmd(本番コード変更なし,outputs/analysis出力のみ)にscout_exemptが未設定→deploy_task.sh BLOCK→家老が手動yaml_field_setで追加。GP-186はinfra限定。研究cmd(q4_depth=shallow/medium+本番コード変更なし)にもauto scout_exemptを拡張すべき。10回繰り返し=10回BLOCK+手動追加=負の複利'
+  source_cmd: 'cmd_1902'
+  created_at: '2026-04-15'
+- id: 'LK058'
+  title: '研究cmd完了時のcontext還流が仕組み化されていない'
+  detail: 'cmd_1896-1902の研究成果がdm-signal-research.mdに還流されず8日間未更新。軍師SG7がcontext_reflux needed:trueと指摘しても実際の更新アクションにつながらない。還流判定→忍者配備の自動化が不在。gate_freshness WARNが出てから対処では遅い'
+  source_cmd: 'cmd_1902'
+  created_at: '2026-04-15'
+- id: 'LK059'
+  title: 'cmdライフサイクル両端の自動化 — cmd_save.shでpending注入+cmd_complete_gate.shでcompleted自動設定'
+  detail: 'status未設定cmd 8件蓄積の根因: (1)cmd_save.shが初期statusを注入しない (2)GATE CLEARがstatusをcompletedに自動遷移しない (3)検出gateなし。修正: cmd_save.shに保存成功時status:pending自動注入+cmd_complete_gate.shにGATE CLEAR後status:completed自動設定を各1行追加。新しい仕組みゼロ。deepdive Phase4(手動=意志依存=漏れる)の家老版実践'
+  source_cmd: 'cmd_karo_lifecycle_fix'
+  created_at: '2026-04-15'
+- id: 'LK060'
+  title: 'deploy前にtask_id+_ac_task_id+report fileの3点クリア必須 — 旧task_id残存で忍者が旧タスクを完了する'
+  detail: 'cmd_1903/1904でtask_id旧値(cmd_1902_impl/cmd_1900_impl)残存→忍者が旧タスクを完了→cmd_1903/1904未着手。LK045はparent_cmdクリアだがtask_idクリアも必須。加えて旧reportが存在するとdeploy_task.shがskipする。3点セット(task_id+_ac_task_id+report mv)をcmd再配備前に実行すること'
+  source_cmd: 'cmd_1903'
+  created_at: '2026-04-15'
+- id: 'LK061'
+  title: 'deploy_task.shにcmd_id第2引数を渡せ — parent_cmd手動設定ではAC上書きされない'
+  detail: 'deploy_task.sh hanzo cmd_XXXXの形式でcmd_idを渡すとresolve_cmd_to_taskが発動しACが正しく上書きされる。parent_cmdをyaml_field_set.shで手動設定してからdeploy_task.sh ninjaだけではresolve_cmdが発動せず旧ACが残存する(cmd_1903/1904で3回失敗)。正しい手順: (1)task_id/parent_cmd/status全クリア (2)report mv (3)deploy_task.sh ninja cmd_XXXX'
+  source_cmd: 'cmd_1903'
+  created_at: '2026-04-15'
+- id: 'LK062'
+  title: 'revert前に変更元エージェントへの通知義務'
+  detail: '他エージェントのコード変更をrevertする場合、revert実行前にそのエージェントにinbox_writeで理由と状況を伝えよ。依存ファイル不足等の場合、先にcommitする代替案が出る可能性がある。revert後の事後通知では手遅れ。deploy_task.sh revert(f6be564)で軍師に通知不在→依存ファイル(yaml_field_set_batch)未commitが根因だったが先にcommitすれば解決できた'
+  source_cmd: 'cmd_1914_revert'
+  created_at: '2026-04-15'
+- id: 'LK063'
+  title: 'Codex忍者の@agent_state残留 — CLI種別差のフォールバック不在'
+  detail: 'Codex CLIにはClaude CodeのPreToolUse/PostToolUseフック(agent_state/last_active更新)がない。前回Claude Code時のagent_state=activeが残り続け、last_activeは空のまま→ninja_monitorがBUSY判定→/clearされない→idle行にも含まれない→家老が配備対象から除外。修正: (1)last_active空→stale補正(idle判定) (2)idle行にdone忍者も含める。根因: CLI種別の違いをninja_monitorが吸収していなかった'
+  source_cmd: 'cmd_karo_codex_stale_fix'
+  created_at: '2026-04-15'
+- id: 'LK064'
+  title: '家老教訓のL2/L3不在 — 記録63件中automated1件=意志依存のまま'
+  detail: 'CoDD#5メタ適用で判明。家老教訓は記録(L1)は回っているが、行動ポイントへの自動注入(L2)と同根教訓の統合→gate化(L3)が不在。63件中automated=1件(1.6%)。確認系教訓17件が1ヶ月繰り返されている。IF教訓を書いたならTHEN automated/enforcementフィールドで自動化ターゲットを明示せよBECAUSE記録だけでは行動は変わらない(Phase 4)'
+  source_cmd: 'cmd_session_20260416'
+  created_at: '2026-04-16'
+- id: 'LK065'
+  title: '確認系教訓17件の原理統合 — 行動する前に対象の現在状態を直接確認せよ'
+  detail: 'LK006/009/012/018/030/037/040/041/043/044/047/048/052/054の共通根。全て確認しないから間違えるの個別事例。原理1行に昇華: 行動する前に対象の現在状態を直接確認せよ。IF行動しようとしたならTHEN対象の現在状態をcapture-pane/grep/gh run viewで直接確認せよBECAUSE信号は事実ではない。ダッシュボードは過去。pane末尾は残像。全て二次データ。一次データだけが現在(LK018/LK043/deepdive Phase1-2)'
+  source_cmd: 'cmd_session_20260416'
+  created_at: '2026-04-16'
+- id: 'LK066'
+  title: 'Androidビルド(gradlew)は排他 — 並列配備してもビルドACは直列にせよ'
+  detail: 'cmd_1943+1944を並列配備→両忍者が同時にgradlew assembleDebug実行→build dir競合でR.jar/BuildConfig欠落→両方FAIL。殿指摘で発覚。根因: DB排他(§10)と同じ原理だがAndroidビルドに適用していなかった。対策: (1)Androidビルドを含むcmdは直列配備 or ビルドACを最後の1名のみに割当て (2)並列配備時はビルドACを外し後で将軍/家老が一括ビルド。LK051(gate系変更直列)の拡張版'
+  source_cmd: 'cmd_1943'
+  created_at: '2026-04-16'
+- id: 'LK067'
+  title: '途中修正の二択を再違反 — inbox_writeは実行中の忍者に届かない'
+  detail: 'cmd_1943/1944のgradlew実行中にinbox_writeでビルドスキップ指示を送信→殿「指示を送ってもダメだっていうのは覚えてるよな」。CLAUDE.mdの途中修正二択(別CMD or 神速停止→回復再CMD)を知っていたが行動で違反。LK065(確認系17件の原理統合)と同根: 知っていても行動しない。自動化ターゲット: deploy_task.shでgradlew/ビルド系ACを検出し並列配備時にWARN表示'
+  source_cmd: 'cmd_1943'
+  created_at: '2026-04-16'
+- id: 'LK068'
+  title: 'verdict_override蓄積はビルドACの設計問題 — 並列cmd全てにビルドACを入れるな'
+  detail: 'verdict_override 3件中2件がビルドAC関連(cmd_1944 AC5, 過去のビルド競合)。根因: 全cmdにビルドACを入れる→並列配備時に競合→WAIVE→override→蓄積。PD-012自動起票済み。構造対策: (1)並列配備時はビルドACを最終cmdのみに含める (2)ビルド確認は統合テストとして別cmdで実施 (3)deploy_task.shで並列検知時にビルドAC自動除外'
+  source_cmd: 'cmd_1944'
+  created_at: '2026-04-16'
+- id: 'LK069'
+  title: '研究cmd報告レビューで成果物現物確認を怠った — report verdictだけでGATE CLEAR'
+  detail: 'cmd_1948で疾風がcmd_1947スクリプトをフィルタ変更なしで再実行→①データ未生成→report verdict PASSだが成果物は⑤データ。家老はreport verdictのみで判断しGATE CLEAR→軍師FAILで発覚。研究cmdはoutputsにファイル生成するためcommit不要→gate_report_formatのcommit checkが効かない→成果物の実在+内容確認が唯一の防御層。レビュー時にls cmd_XXXX_*でprefix一致+head -1でデータ内容を確認すべきだった。LK065(現物確認)の再違反'
+  source_cmd: 'cmd_1948'
+  created_at: '2026-04-16'
+- id: 'LK070'
+  title: '家老直接修正でもテスト追加を省略するな — 作る→確認しないパターンの根因'
+  detail: 'cmd_1946(GP-202), bulletin自動投稿(local変数), GP-202テスト未作成の3件が同一セッションで発生。共通根: 家老直接修正にはACがないためテスト追加の強制がない。impl cmdならAC4(テスト)が注入されるが家老直接修正は軽微前提で回避。原理: コードを変えたらテストも変えろ。変えなかったら理由を書け。自動化ターゲット: gate/scripts変更時にtests/変更がなければWARN(pre-commit候補)'
+  source_cmd: 'cmd_1948'
+  created_at: '2026-04-16'
+- id: 'LK071'
+  title: '研究cmd成果物のファイル名プレフィックスをACに明示指定せよ'
+  detail: 'cmd_karo_1948_retryで①データは正しく生成されたがファイル名がcmd_1950_l3_pattern1_*になった。スクリプト内のoutput名がハードコードで前cmdの値を引き継いだ。ACに出力ファイル名のプレフィックス(cmd_XXXX_*)を明記し、忍者がそのプレフィックスで出力するよう指示すること。GP-202のWARNが発火するが、発火前に防ぐにはACでの明示が最も効果的'
+  source_cmd: 'cmd_karo_1948_retry'
+  created_at: '2026-04-16'
+- id: 'LK072'
+  title: 'CoDD改善cmdのACにCoDDパイプライン実行を明示せよ — 手動最適化では設計書が散逸する'
+  detail: 'cmd_1953-1958でACにbefore/after+テストのみ記載しCoDDパイプライン(spec作成→coddコマンド→設計書生成)を含めなかった。結果: 忍者が手動で最適化しregistryに1行追記のみ。設計書が残らず最適化の根拠が散逸。殿指摘「台帳に載らないと記録が散逸する」。ACに具体的に(1)Phase2: spec作成→docs/research/保存 (2)Phase3: coddコマンド実行→設計書生成を含めること。cmdタイトルに「CoDD」と書いてもACになければ忍者は実行しない'
+  source_cmd: 'cmd_1953'
+  created_at: '2026-04-16'
+- id: 'LK073'
+  title: 'karo_workaroundsにテストデータ(final_nm_1-5)が混入し影丸WA率を偽膨張させている'
+  detail: 'gate_ninja_workaround_rate.shが影丸WA率45%(10/22)と表示するが、うち5件はfinal_nm_1〜5(テストデータ残骸)。本番データのみなら直近5件clean。LG014(忍者ミスに見える問題はインフラ真因を疑え)の適用。自動化ターゲット: テストデータのfinal_接頭辞をkaro_workarounds集計から除外、またはテスト用logと本番logを分離'
+  source_cmd: 'cmd_karo_context_freshness_1993'
+  created_at: '2026-04-17'
+- id: 'LK074'
+  title: 'Codex忍者の部分記入済み報告YAMLに家老がRFSで上書きすると競合破損する'
+  detail: '疾風がresult.detailsを部分記入した状態で家老がreport_field_set.shでresult.summaryを書き込み→YAMLの複数行文字列が二重化しパース不能。対策: RFS実行前にpython3 -c ''import yaml; yaml.safe_load(open(file))''でパース可能か確認し、パース不能なら先にYAMLを修復してからRFSを実行。またはCodex忍者の報告テンプレートを新規再生成してからRFSで記入'
+  source_cmd: 'cmd_karo_context_freshness_1993'
+  created_at: '2026-04-17'
+- id: 'LK075'
+  title: '将軍への意見・報告はbulletin_write.sh経由で掲示板投稿が必須'
+  detail: '殿厳命(2026-04-16)。旧F002(dashboard.md更新のみ)に加え、将軍への意見・報告はbulletin_write.sh経由で掲示板に投稿せよ。bulletin_write.shは掲示板(永続記録)+shogun/karo inbox全文通知(即時配信)を自動で両方行う。inbox_writeだけで将軍に送るな。理由: 掲示板=第三者が後から確認できる永続記録。inboxは一過性。GP-207でcontent空BLOCKも自動化済み。引数順序: 第1=posted_by、第2=content、第3=requires_confirmation'
+  source_cmd: 'cmd_karo_context_freshness_1993'
+  created_at: '2026-04-17'
+- id: 'LK076'
+  title: '途中修正禁止≠補足ナッジ禁止 — 指示変更とファクト補足は別物'
+  detail: 'CLAUDE.mdの途中修正二択(別CMD or 神速停止→回復再CMD)は指示変更を禁止している。しかし補足情報のナッジ(正しいファイル名の通知等)は指示変更ではなくファクト提供であり許容される。殿指摘(2026-04-17): 間違ったもので作業していないか確認せよ、ナッジは禁止されていないはずだ。区別: (1)途中修正=ACや指示内容の変更→禁止(忍者に届かない+混乱) (2)補足ナッジ=事実情報の追加提供→許容(忍者が正しい方向で作業継続できる)'
+  source_cmd: 'cmd_1995'
+  created_at: '2026-04-17'
+- id: 'LK077'
+  title: 'commit漏れ3連続の真因=GP-190バグ(scout_exempt→commit check消去)'
+  detail: '1セッションで才蔵(cmd_1995,cmd_1996)+疾風(cmd_1994)が全てcommit漏れ。初期仮説はGPT/Codex固有だったが、軍師なぜなぜ分析(blt_20260417_011100)で真因判明: deploy_task.sh GP-190バグ。scout_exempt=true→commit checkが消える(L1354-1357)。GPT固有ではなくインフラバグ。LG014(忍者ミスに見える問題はインフラ真因を疑え)の適用。修正: cmd_karo_gp190_fix(小太郎, 2fb539d)でscout_exemptをcommit check条件から除外。GATE CLEAR済み'
+  automated: true
+  enforcement: 'deploy_task.sh L1354-1357修正済み(2fb539d)。bats 17/17 PASS'
+  source_cmd: 'cmd_1994'
+  created_at: '2026-04-17'
+- id: 'LK078'
+  title: 'CI完了待ちで忍者を止めるな — 報告を先に書かせろ'
+  detail: 'saizoがcmd_1999実装+push完了後、CI Integration/E2E完了待ちでプロンプト待機→殿に指摘されるまで放置。CI完了は忍者が待つ必要なし。報告YAMLを先に書かせ、CI GREEN確認はAC waive or 家老がgh run viewで確認すればよい。自動化ターゲット: deploy_task.shのテンプレートに「push後はCI完了を待たず報告を書け」の1行追加'
+  source_cmd: 'cmd_1999'
+  created_at: '2026-04-17'
+- id: 'LK079'
+  title: 'R000は排他ではなく優先順位 — idle忍者がいればSonnetも配備せよ'
+  detail: 'R000(Codex→Sonnet→Opus)を排他と誤解しGPT忍者のみに配備→Sonnet3名idle放置→殿指摘。R000は優先順位であり、GPTが全員稼働中ならSonnetに配備する。idle=最大の無駄(殿厳命)。全忍者を活用せよ'
+  source_cmd: 'cmd_1998'
+  created_at: '2026-04-17'
+- id: 'LK080'
+  title: 'auto-commitでinstructions変更時にbuild_instructions.sh未実行→CI RED繰り返し'
+  detail: 'GA-085/089/090の真因。ninja_monitor.sh L462-466のauto-commitがinstructions/*.mdを含むcommit時にgenerated files再生成をしない。pre-commitフックはBLOCKするが2>/dev/null||trueで無視される。修正: git diff --cachedでinstructions/変更検出→build_instructions.sh実行→generated/をgit add(500f0cd)。なぜなぜ7回で到達(殿指示)'
+  source_cmd: 'cmd_karo_ci_fix_blt72'
+  created_at: '2026-04-17'
+- id: 'LK081'
+  title: '軍師draftレビュー依頼は再配備でも必須 — 同時配備で漏れるパターン'
+  detail: 'cmd_2001再配備時にcmd_2011と同時処理し、cmd_2011のみレビュー依頼→cmd_2001漏れ。再配備でも新規配備と同じフローが必要。deploy_task.sh完了後に1cmdずつレビュー依頼を送信するか、deploy自体に自動送信を組込むべき。LK017(品質の鎖)の実践不足'
+  source_cmd: 'cmd_2001'
+  created_at: '2026-04-17'
+- id: 'LK082'
+  title: 'hookでcatを$(</dev/stdin)に置換するな — fd閉じでhook error連発'
+  detail: 'CoDD改善(cmd_2062)でpre-write-read-tracker/pre-write-edit-combined/post-write-edit-combinedの3 hookでcat→$(</dev/stdin)に変更→fd閉じ状態でstderrエラー→PreToolUse:Read hook error連発→影丸停止。cat 2>/dev/null || trueが安全。hook高速化でstdin読取りを変更するな。commit:2aeb70b(軍師修正)'
+  source_cmd: 'cmd_2062'
+  created_at: '2026-04-18'
+- id: 'LK083'
+  title: 'git log --grep=CMD_IDはchoreコミットの文脈説明を部分一致で拾う — chore除外フィルタ必須'
+  detail: 'cmd_complete_gate.shのvercel_phase gateがgit log --grep=CMD_IDでcmd固有commitを検出する際、choreコミットメッセージ内の文脈説明(例:''cmd_2066前後'')を部分一致で拾い無関係なcontext変更を誤認→偽陽性BLOCK。修正: chore:コミットを除外してからdiff-tree。cmd_2066 GATE BLOCK事故で実証。commit:a2c9697(軍師修正)'
+  source_cmd: 'cmd_2066'
+  created_at: '2026-04-18'
+- id: 'LK084'
+  title: 'bash -lcはPATHをリセットしMOCK_BINを無効化する — CIテストではbash -cを使え'
+  detail: 'batsテストでbash -lcを使うとログインシェル起動でPATHがリセットされ、MOCK_BIN(テスト用偽コマンド)がPATHから消える。CIの並列実行環境で顕著。SSH/SLテスト8箇所で発生(999-1006)。修正: bash -lcをbash -cに変更。mktemp raceも同時解消(#571)。cmd_karo_ci_fix_571(影丸)で実証'
+  source_cmd: 'cmd_karo_ci_fix_571'
+  created_at: '2026-04-18'
+- id: 'LK085'
+  title: 'cmd起票前に対象コードの現物確認を怠った — pre-commitは既に.yaml除外済みだった'
+  detail: 'cmd_karo_precommit_yaml_dump_fpで「pre-commitのyaml.dumpチェックが.yamlを誤検知」と起票したが、pre-commit L53で.sh/.pyのみに限定済み。真因はpre_bash_combined_guard.sh(新規.sh)の全行が+として検出されること。軍師REQUEST_CHANGESで発覚。LK065(確認しないから間違える)の再違反。§0.1問い2をcmd起票前に通していれば防げた'
+  source_cmd: 'cmd_karo_precommit_yaml_dump_fp'
+  created_at: '2026-04-18'
+- id: 'LK086'
+  title: 'report_received即処理の外部化 — 受領→即WA記録+既読化を手順として明示'
+  detail: 'report_received受信時に軍師レビュー依頼+WA記録をせず放置した(cmd_2107-2111)。cmd_2094(分割配備)のパターンを独立cmdに引きずった。根因: karo.mdのInbox Protocolにtype別の具体手順がなく家老の意志依存。deepdive Phase4と同構造。対策: karo.mdに report_received処理手順を明示(受領→即: 1. WA記録 2. 既読化。report_received hookが軍師レビュー依頼とLGTM後GATEを自動化する)'
+  source_cmd: 'cmd_2107'
+  created_at: '2026-04-19'
+- id: 'LK087'
+  title: 'revert後のbefore/after再計測を強制する仕組みが必要'
+  detail: 'cmd_2107でhanzoがscaffold stub化→並列テスト破壊→自分でrevert→報告はrevert前の数値でGATE CLEAR。根因=revert後の再計測強制なし。対策: SG-PRE14(revert検出gate)実装済み(gate_gunshi_report_precheck.sh)。軍師教訓LG034候補として提出'
+  source_cmd: 'cmd_2107'
+  created_at: '2026-04-19'
+- id: 'LK088'
+  title: '配備後の軍師draftレビュー依頼は自動化せよ — 意志依存で3件連続漏れ'
+  detail: 'cmd_2122/2123/2124の3件でdraftレビュー依頼を漏らした。LK081(cmd_2001再配備時にも漏れ)と同根。deploy_task.sh完了後に軍師レビュー依頼を送る手順が意志依存のまま。自動化ターゲット: deploy_task.sh配備完了時にgunshi inbox_writeを自動送信。deepdive Phase4(理解しても行動は変わらない)の再証明'
+  source_cmd: 'cmd_2122'
+  created_at: '2026-04-19'
+- id: 'LK089'
+  title: 'draftレビュー/GATE実行の意志依存→自動化'
+  detail: 'GS直列7本でdraftレビュー依頼(cmd_2191以降)とGATE実行(cmd_2202)が漏れた。根因: 両方とも家老の手動ステップで高速ループにスケールしない。自動化: (1)deploy_task.shにdraftレビュー自動送信 (2)inbox_write.shにreport_review自動送信+GATE自動実行。cmd_2207で自動化が初稼働しGATE CLEARまで手動ゼロで完走。'
+  source_cmd: 'cmd_karo_auto_review_gate'
+  created_at: '2026-04-21'
+- id: 'LK090'
+  title: 'self_gate_check 3回手動修正=テンプレート不在が根因'
+  detail: 'Codex忍者の報告にself_gate_check(lesson_ref/lesson_candidate/status_valid/purpose_fit)が毎回欠落→GATE BLOCK→家老が手動RFSで3回追加(cmd_karo_auto_draft_review/cmd_2200/cmd_karo_auto_review_gate)。根因: deploy_task.shのテンプレートにself_gate_checkフィールドが含まれていない。cmd_karo_self_gate_templateで修正。deepdive Phase4と同構造(3回繰り返して環境に埋め込まなかった)。'
+  source_cmd: 'cmd_karo_self_gate_template'
+  created_at: '2026-04-21'
+- id: 'LK091'
+  title: '自動化実装時に既存ルール(lessons/karo.md)更新が連動しない'
+  detail: 'コード変更(inbox_write.shにreport_review自動化)は完了したがLK086/karo.mdが旧フロー(3アクション)のまま。次の家老が旧ルールに従い二重送信する穴。根因: コード変更→知識基盤更新の連動が意志依存。対策: 自動化cmd完了時に「既存ルールのどこが変わるか」をACに含めよ。即座対応としてLK086+karo.md更新をcmd_karo_lk086_updateで配備。'
+  source_cmd: 'cmd_karo_lk086_update'
+  created_at: '2026-04-21'
+- id: 'LK092'
+  title: 'task YAMLクリアは全フィールドリセット必須 — 3点クリアでは旧ACが残存しCodex STALLの原因になる'
+  detail: 'status/task_id/parent_cmdの3点のみクリアすると、acceptance_criteria/related_lessons/description/target_path等が残存する。次のdeploy_task.shが上書きする前にCodex忍者がtask YAMLを読み、旧フィールドと新配備の混在で混乱→STALL。cmd_2250疾風STALLで実証。LK060(3点クリア)の拡張。対処: GATE CLEAR後のtask YAMLクリアは全フィールドリセット(テンプレート書出し)で行え。yaml_field_setの3点クリアではなくcat > task.yaml << EOF...EOF'
+  source_cmd: 'cmd_2250'
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: deploy_task.sh STALE_FIELDS第10層にrelated_lessons/ninja_weak_points/role_reminder/bloom_level追加。配備前に自動クリア

@@ -962,7 +962,7 @@ lessons:
   summary: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-24'
 - id: L388
@@ -1326,6 +1326,9 @@ lessons:
   - reporting
   target_files:
   - lesson_effectiveness.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-24'
 - id: L342
   title: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
   summary: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -1878,7 +1881,7 @@ lessons:
     hookがSKI
   tags:
   - deploy
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-24'
 - id: L272
@@ -2239,8 +2242,8 @@ lessons:
   summary: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 0
+  helpful_count: 3
+  harmful_count: 1
   last_referenced: '2026-04-24'
 - id: L224
   title: MCP obsに運用ルールと殿の好みを混在させると陳腐化が加速する
