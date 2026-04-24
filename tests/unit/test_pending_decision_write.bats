@@ -309,3 +309,46 @@ EOF
     grep -q "  resolved: 1$" "$df"
     grep -q "  pending: 1$"  "$df"
 }
+
+# ── Test 21: recalc - fixes stale summary to match actual decisions ──
+@test "recalc fixes stale summary to match actual decisions" {
+    # Set up a file with stale summary (resolved=1 but actually 2 resolved)
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+summary:
+  total: 2
+  resolved: 1
+  pending: 1
+decisions:
+- id: PD-001
+  type: lord_decision
+  summary: First decision
+  source_cmd: cmd_1300
+  status: resolved
+  created_at: '2026-04-01T00:00:00+09:00'
+  created_by: shogun
+  resolved_at: '2026-04-02T00:00:00+09:00'
+  resolved_content: done
+  resolved_by: direct
+- id: PD-002
+  type: escalation
+  summary: Second decision
+  source_cmd: cmd_1301
+  status: resolved
+  created_at: '2026-04-03T00:00:00+09:00'
+  created_by: karo
+  resolved_at: '2026-04-04T00:00:00+09:00'
+  resolved_content: also done
+  resolved_by: direct
+EOF
+
+    run _run_pd recalc
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"total=2"* ]]
+    [[ "$output" == *"resolved=2"* ]]
+    [[ "$output" == *"pending=0"* ]]
+
+    local df="$TEST_TMPDIR/queue/pending_decisions.yaml"
+    grep -q "  total: 2$"    "$df"
+    grep -q "  resolved: 2$" "$df"
+    grep -q "  pending: 0$"  "$df"
+}

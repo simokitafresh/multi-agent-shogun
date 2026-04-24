@@ -558,6 +558,54 @@ END {
     ' "$DATA_FILE"
 }
 
+# ── recalc ──────────────────────────────────────
+cmd_recalc() {
+    init_data_file
+
+    attempt=0
+    max_attempts=3
+
+    while [ $attempt -lt $max_attempts ]; do
+        if recalc_output=$(
+            (
+            flock -w 5 200 || exit 1
+
+            # Pass 1: count decisions and resolved status lines
+            _total=$(awk '/^- id: /{c++} END{print c+0}' "$DATA_FILE")
+            _resolved=$(awk '/^  status: resolved$/{c++} END{print c+0}' "$DATA_FILE")
+            _pending=$(( _total - _resolved ))
+
+            # Pass 2: update summary fields with targeted line replacement
+            _tmpfile=$(mktemp "${DATA_FILE}.XXXXXX.tmp")
+            awk -v total="$_total" -v resolved="$_resolved" -v pending="$_pending" '
+                /^  total: /{print "  total: " total; next}
+                /^  resolved: /{print "  resolved: " resolved; next}
+                /^  pending: /{print "  pending: " pending; next}
+                {print}
+            ' "$DATA_FILE" > "$_tmpfile" && mv "$_tmpfile" "$DATA_FILE" || {
+                rm -f "$_tmpfile"
+                exit 1
+            }
+
+            echo "[pending_decision] Recalculated summary: total=$_total, resolved=$_resolved, pending=$_pending"
+
+            ) 200>"$LOCKFILE"
+        ); then
+            echo "$recalc_output"
+            return 0
+        else
+            attempt=$((attempt + 1))
+            if [ $attempt -lt $max_attempts ]; then
+                echo "[pending_decision] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2
+                sleep 1
+            else
+                echo "[pending_decision] Failed to acquire lock after $max_attempts attempts" >&2
+                exit 1
+            fi
+        fi
+    done
+}
+
 # ── main dispatch (source guard) ─────────────────
 # Allow `source pending_decision_write.sh` for unit tests without triggering dispatch
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -575,13 +623,17 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
             shift
             cmd_list "$@"
             ;;
+        recalc)
+            cmd_recalc
+            ;;
         *)
-            echo "Usage: pending_decision_write.sh <create|resolve|list> [args...]" >&2
+            echo "Usage: pending_decision_write.sh <create|resolve|list|recalc> [args...]" >&2
             echo "" >&2
             echo "Subcommands:" >&2
             echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
             echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
             echo "  list    [--status pending|resolved|all]" >&2
+            echo "  recalc  (no args) recalculate summary from actual decisions" >&2
             exit 1
             ;;
     esac

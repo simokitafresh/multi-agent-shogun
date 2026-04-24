@@ -138,17 +138,21 @@ with open(lessons_file, encoding='utf-8') as f:
 
 lessons = data.get('lessons', [])
 
-# Find max numeric ID (LS format)
+# Find max numeric ID (LS format: LS001, LS-A01, etc.)
 max_id = 0
 for lesson in lessons:
-    lid = lesson.get('id', '')
+    lid = str(lesson.get('id', ''))
     if lid.startswith('LS'):
-        try:
-            num = int(lid[2:])
-            if num > max_id:
-                max_id = num
-        except ValueError:
-            pass
+        # Extract trailing digits: LS097→97, LS-A01→01, LS-A21→21
+        import re
+        m = re.search(r'(\d+)$', lid)
+        if m:
+            try:
+                num = int(m.group(1))
+                if num > max_id:
+                    max_id = num
+            except ValueError:
+                pass
 
 new_id = max_id + 1
 new_id_str = f'LS{new_id:03d}'

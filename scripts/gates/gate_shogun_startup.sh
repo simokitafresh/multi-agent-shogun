@@ -663,8 +663,14 @@ fi
 echo "■ 将軍教訓"
 _LS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
 if [ -f "$_LS_FILE" ]; then
-    _ls_count=$(grep -c '^- id: ' "$_LS_FILE" 2>/dev/null || echo 0)
-    echo "  OK: lessons_shogun.yaml (${_ls_count}件)"
+    _ls_count=$(grep -c '^- id:' "$_LS_FILE" 2>/dev/null || echo 0)
+    if [ "$_ls_count" -ge 35 ]; then
+        echo "  WARN: lessons_shogun.yaml ${_ls_count}件(上限35件)。統合・パターン昇格が必要"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("将軍教訓: ${_ls_count}件(上限35)。既存教訓を統合せよ")
+    else
+        echo "  OK: lessons_shogun.yaml (${_ls_count}件/上限35)"
+    fi
 else
     echo "  WARN — lessons_shogun.yaml不在。将軍教訓ファイルが存在しない"
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi

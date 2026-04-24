@@ -822,3 +822,5 @@
 | cmd_2250 | fix — cmd_save.sh Session State拡張: 同一WARN 2回目以降で検出ロジック自動表示 | infra | 04-24 | cmd_save.sh の WARN記録に check me |
 | cmd_2251 | 偵察 — recalculate_fof.py L3速度改善設計書: 依存分析+cProfile+FE整合性 | dm-signal | 04-24 | recalculate_fof/fullrecalculat |
 | cmd_2252 | fix — cmd_save.sh LS009/LS029 gate化: 各論パッチ検出+assumptions時系列強制 | infra | 04-24 | cmd_save の LS009/LS029 挙動を回帰テス |
+| cmd_karo_gate_clear_idle | fix — GATE CLEAR後のtask YAML自動idle化 | infra | 04-24 | cmd_complete_gate.sh に GATE CL |
+| cmd_2253 | 最適化 — trade_performance生成 速度改善（設計書Rank 1） | dm-signal | 04-24 | FILL_THIS |
