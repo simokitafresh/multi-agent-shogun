@@ -33,13 +33,17 @@ REPORT_PATH="$1"
 DOT_KEY="$2"
 VALUE="$3"
 
-if [ -z "$REPORT_PATH" ] || [ -z "$DOT_KEY" ] || [ -z "$VALUE" ]; then
+if [ -z "$REPORT_PATH" ] || [ -z "$DOT_KEY" ]; then
     echo "Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>" >&2
-    echo "  value が '-' ならstdinから読む" >&2
+    echo "  value が '-' ならstdinから読む。空文字列は ''(YAML空文字)として書込み。" >&2
     echo "Examples:" >&2
     echo "  bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.status PASS" >&2
     echo "  echo 'long text' | bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.notes -" >&2
     exit 1
+fi
+# Pattern1 fix: 空文字値を許可。$3未指定/空→YAML空文字列('')として書込み
+if [ -z "$VALUE" ]; then
+    VALUE="''"
 fi
 
 # Resolve to absolute path if relative
