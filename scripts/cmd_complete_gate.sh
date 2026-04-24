@@ -376,6 +376,63 @@ except Exception as e:
     echo "STATUS UPDATED: ${cmd_id} → done"
 }
 
+# ─── GATE CLEAR後 task YAML を idle 化（cmd_karo_gate_clear_idle） ───
+# 報告読取と archive 完了後にのみ実行し、次の配備で stale task を残さない。
+set_matching_tasks_idle() {
+    local task_file ninja_name current_status verify_status
+    local updated_count=0 skipped_count=0 warn_count=0
+
+    echo ""
+    echo "Task idle transition (post-GATE CLEAR):"
+
+    if [ "${#MATCHING_TASK_FILES[@]}" -eq 0 ]; then
+        echo "  (no tasks found for this cmd)"
+        return 0
+    fi
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        current_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
+
+        if [ "$current_status" = "idle" ]; then
+            echo "  ${ninja_name}: already idle"
+            skipped_count=$((skipped_count + 1))
+            continue
+        fi
+
+        if yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1; then
+            verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
+            if [ "$verify_status" = "idle" ]; then
+                echo "  ${ninja_name}: ${current_status:-unknown} → idle"
+                updated_count=$((updated_count + 1))
+            else
+                echo "  [INFO] ${ninja_name}: WARN status verification failed (${current_status:-unknown} → ${verify_status:-empty})"
+                warn_count=$((warn_count + 1))
+            fi
+            continue
+        fi
+
+        # 後方互換: 旧flat YAML taskでも idle 化を試みる。
+        if grep -q '^status:' "$task_file" 2>/dev/null; then
+            sed -i "s/^status: .*/status: idle/" "$task_file"
+            verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
+            if [ "$verify_status" = "idle" ]; then
+                echo "  ${ninja_name}: ${current_status:-unknown} → idle (flat fallback)"
+                updated_count=$((updated_count + 1))
+            else
+                echo "  [INFO] ${ninja_name}: WARN flat fallback verification failed (${current_status:-unknown} → ${verify_status:-empty})"
+                warn_count=$((warn_count + 1))
+            fi
+        else
+            echo "  [INFO] ${ninja_name}: WARN task status update skipped (${current_status:-unknown})"
+            warn_count=$((warn_count + 1))
+        fi
+    done
+
+    echo "  summary: updated=${updated_count} skipped=${skipped_count} warn=${warn_count}"
+}
+
 # ─── changelog自動記録関数 ───
 append_changelog() {
     local cmd_id="$1"
@@ -4279,6 +4336,8 @@ END_VERDICT_PY
     else
         echo "  archive: already exists (skip)"
     fi
+
+    set_matching_tasks_idle
 
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""

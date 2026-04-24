@@ -1,0 +1,87 @@
+worker_id: hayate
+task_id: cmd_karo_gate_clear_idle_impl
+parent_cmd: cmd_karo_gate_clear_idle
+timestamp: '2026-04-24T13:41:29'
+status: completed
+ac_version_read: 2342d4a4
+result:
+  summary: cmd_complete_gate.sh に GATE CLEAR 後の task idle 化を追加し、cmd_complete_gate
+    系 bats 50件と新規 idle 回帰テスト 3件を全PASSさせた。
+  details: 'AC1: `scripts/cmd_complete_gate.sh` に `set_matching_tasks_idle()` を追加し、GATE
+    CLEAR 後処理の archive 完了後かつ git push 前に呼ぶよう変更した。対象 cmd の `MATCHING_TASK_FILES` を走査し、task
+    YAML を `idle` へ遷移させる。
+
+
+    AC2: idle 化呼び出しは post-GATE CLEAR セクションに 1 箇所だけ配線した。BLOCK 側には呼ばれないことを新規 bats で検証した。
+
+
+    AC3: `bash -n scripts/cmd_complete_gate.sh`、`bats tests/unit/test_cmd_complete_gate_task_idle.bats`、`bats
+    tests/unit/test_cmd_complete_gate*.bats` を実行し、3件 + 50件が全PASSした。'
+purpose_validation:
+  cmd_purpose: GATE CLEAR時にtask YAMLが自動idle化される実装を追加し、GATE BLOCKではidle化されないことを検証する
+  fit: true
+  purpose_gap: none
+simplicity_check: 既存の cmd_complete_gate CLEAR 後処理へ小さな helper を追加するだけで足り、新しい hook や別監視は不要だった。
+assumption_check: task YAML 再読込で AC 差し替えがないことを確認済み。GATE BLOCKでは clear branch に入らないため
+  idle 化されない前提をテストで固定した。
+task_clarity:
+  score: 95
+  unclear_points: なし
+  discretion_fills: なし
+files_modified:
+- change: modified
+  path: scripts/cmd_complete_gate.sh
+- change: added
+  path: tests/unit/test_cmd_complete_gate_task_idle.bats
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存の GATE CLEAR 後処理へ局所追加する既知パターンで収まり、新規の再発防止ルール追加までは要しなかった
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L225
+  useful: false
+  reason: L225は裁定保存先の正本突合に関する教訓であり、今回の task idle 化ロジックには直接関与しなかった。
+- id: L402
+  useful: false
+  reason: L402は/tmp状態ファイルの永続性に関する教訓で、今回の変更範囲である cmd_complete_gate の status 遷移とは無関係だった。
+- id: L314
+  useful: false
+  reason: L314は block reason フォールバックの教訓であり、今回は clear branch 限定の配線追加なので直接は使っていない。
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: none
+binary_checks:
+  AC1:
+  - check: GATE CLEAR時にtask YAMLが自動idle化される実装追加
+    result: 'yes'
+  AC2:
+  - check: GATE BLOCK時はidle化されないことを確認
+    result: 'yes'
+  AC3:
+  - check: batsテスト全PASS (SKIP=0)
+    result: 'yes'
+  - check: bats tests/unit/test_cmd_complete_gate_task_idle.bats
+    result: 'yes'
+  - check: bats tests/unit/test_cmd_complete_gate*.bats (50 tests, SKIP=0)
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
