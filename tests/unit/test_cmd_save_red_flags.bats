@@ -56,6 +56,19 @@ setup() {
     [ -z "$output" ]
 }
 
+@test "self reread red flag: q_ambiguityキー名とq10通読済みではWARNINGしない" {
+    CMD_BLOCK_NC='    title: "強化 — 自分で読み直した履歴を残す"
+    purpose: "通読済み状態を記録する"
+    quality_gate:
+      q10_knowledge_boundary: "cmd_2248 を通読済み"
+      q_ambiguity: "none"'
+    export CMD_BLOCK_NC
+
+    run check_self_reread_red_flag
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "bundle red flag: 主要対象3本でWARNING" {
     CMD_BLOCK_NC='    title: "強化 — 5パターン統合"
     target_path: |
