@@ -828,3 +828,4 @@
 | cmd_karo_pd_summary_fix | fix — pending_decisions.yaml summary自動再計算 | infra | 04-24 | pending_decision_write.shにreca |
 | cmd_2254 | fix — FoF MonthlyReturn DB永続化バグ修正（precompute rollback巻き添え防止） | dm-signal | 04-24 | precomputeをPF単位savepoint化し、例外時 |
 | cmd_2255 | 実装 — DM-Signal本番ヘルスチェックスクリプト（DB→API→FE 3レイヤー貫通確認） | dm-signal | 04-24 | scripts/health_check.py を追加し、D |
+| cmd_karo_ci_fix_2252 | fix — CI RED修正: cmd_save.bats 12テスト失敗 | infra | 04-24 | 6件テストフィクスチャのassumptions claimに |
