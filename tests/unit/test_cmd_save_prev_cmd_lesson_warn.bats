@@ -109,7 +109,7 @@ entries:
   - cmd_id: "cmd_hist"
     gate_result: "WARN"
     source: "cmd_save_warn"
-    notes: "missing_prev_cmd_lesson|source_cmd=${source_cmd}|前${source_cmd}で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+    notes: "missing_prev_cmd_lesson|source_cmd=${source_cmd}|check=warn_missing_prev_cmd_lesson|前${source_cmd}で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
 YAML
 }
 
@@ -135,7 +135,7 @@ run_save() {
     [[ "$output" == *"WARN: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"保存確認NG"* ]]
 
-    run grep -n 'notes: "missing_prev_cmd_lesson|source_cmd=cmd_prev|前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"' "$TEST_QUALITY_LOG"
+    run grep -n 'notes: "missing_prev_cmd_lesson|source_cmd=cmd_prev|check=warn_missing_prev_cmd_lesson|前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 }
 

@@ -91,4 +91,27 @@ run_save() {
 
     run grep -n 'ac_param_sufficiency' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
+
+    run grep -n 'check=check_ac_param_sufficiency' "$TEST_QUALITY_LOG"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC3: 同一WARN type 2回目以降はSession Stateにgrep -n結果が表示される" {
+    write_warn_cmd_queue
+
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: "cmd_hist"
+    gate_result: "WARN"
+    source: "cmd_save_warn"
+    notes: "ac_param_sufficiency|check=check_ac_param_sufficiency|ACに数量指定があるが具体値が列挙されていません"
+YAML
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
+    [[ "$output" == *"★ Session State: 検出ロジック該当行"* ]]
+    [[ "$output" == *"check=check_ac_param_sufficiency"* ]]
 }

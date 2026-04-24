@@ -335,7 +335,7 @@ check_self_reread_red_flag() {
     if echo "$combined" | grep -qiE '(自己(再読|申告|確認|評価)|自分で(読み|読|確認|評価)|読み直|読み返|目視確認|セルフレビュー|自問)'; then
         if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguous|clarity|明瞭|レビュー|判定|確認)'; then
             echo "WARNING: 自己再読パターンを検出。書き手自身の目視確認/自己申告は mizchi Red flag『自分で読み直せば同じ効果』になりうる。別役割の評価者へ分離せよ" >&2
-            record_warn_reason "自己再読パターン"
+            record_warn_reason "自己再読パターン" "check=check_self_reread_red_flag"
         fi
     fi
 }
@@ -354,7 +354,7 @@ check_bundle_red_flag() {
     if (( target_count >= 3 )) || { (( target_count >= 2 )) && (( bundle_signal == 1 )); }; then
         targets_inline=$(printf '%s\n' "$targets" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
         echo "WARNING: バンドルパターンを検出。1cmdで複数対象(${target_count}): ${targets_inline}。無関係な修正を一気に束ねていないか確認せよ" >&2
-        record_warn_reason "バンドルパターン"
+        record_warn_reason "バンドルパターン" "check=check_bundle_red_flag"
     fi
 }
 
@@ -369,8 +369,13 @@ record_block_reason() {
 
 build_warn_note() {
     local reason="${1:-}"
-    local warn_type="${2:-}"
-    shift 2 || true
+    shift || true
+
+    local warn_type=""
+    if [[ $# -gt 0 && "$1" != *=* ]]; then
+        warn_type="$1"
+        shift || true
+    fi
 
     [[ -n "$warn_type" ]] || warn_type="${reason:-warn_unknown}"
 
@@ -414,11 +419,35 @@ warn_note_message() {
 
 record_warn_reason() {
     local reason="${1:-}"
-    local warn_type="${2:-}"
-    shift 2 || true
+    shift || true
+
+    local warn_args=("$@")
+    local has_check_metadata=0
+    local warn_arg
+    for warn_arg in "${warn_args[@]}"; do
+        if [[ "$warn_arg" == check=* ]]; then
+            has_check_metadata=1
+            break
+        fi
+    done
+
+    if [[ "$has_check_metadata" -eq 0 ]]; then
+        local caller_fn=""
+        local stack_fn
+        for stack_fn in "${FUNCNAME[@]:1}"; do
+            case "$stack_fn" in
+                ""|record_warn_reason|main|source)
+                    continue
+                    ;;
+            esac
+            caller_fn="$stack_fn"
+            break
+        done
+        [[ -n "$caller_fn" ]] && warn_args+=("check=${caller_fn}")
+    fi
 
     local warn_note warn_key display_reason
-    warn_note="$(build_warn_note "$reason" "$warn_type" "$@")"
+    warn_note="$(build_warn_note "$reason" "${warn_args[@]}")"
     warn_key="$(warn_note_key "$warn_note")"
     display_reason="$(warn_note_message "$warn_note")"
 
@@ -431,6 +460,36 @@ record_warn_reason() {
     [[ "$_prior_count" =~ ^[0-9]+$ ]] || _prior_count=0
     if (( _prior_count > 0 )); then
         echo "  ★ このWARN(${display_reason})は過去${_prior_count}回出現。消火ではなく根本修正を検討せよ。" >&2
+
+        local _note_segment _check_name="" _src_file _grep_output=""
+        IFS='|' read -r -a _warn_segments <<< "$warn_note"
+        for _note_segment in "${_warn_segments[@]:1}"; do
+            [[ "$_note_segment" == check=* ]] || continue
+            _check_name="${_note_segment#check=}"
+            break
+        done
+
+        _src_file="${SRC_SAVE_SCRIPT:-${BASH_SOURCE[0]:-$0}}"
+        if [[ ! -f "$_src_file" && -n "${SAVE_SCRIPT:-}" && -f "$SAVE_SCRIPT" ]]; then
+            _src_file="$SAVE_SCRIPT"
+        fi
+
+        if [[ -f "$_src_file" ]]; then
+            if [[ -n "$_check_name" ]]; then
+                _grep_output="$(grep -nF -- "$_check_name" "$_src_file" | head -n 2 || true)"
+            fi
+            if [[ -z "$_grep_output" && -n "$warn_key" ]]; then
+                _grep_output="$(grep -nF -- "$warn_key" "$_src_file" | head -n 2 || true)"
+            fi
+        fi
+
+        if [[ -n "$_grep_output" ]]; then
+            echo "  ★ Session State: 検出ロジック該当行" >&2
+            while IFS= read -r _grep_line; do
+                [[ -n "$_grep_line" ]] || continue
+                echo "    ${_grep_line}" >&2
+            done <<< "$_grep_output"
+        fi
     fi
 }
 
@@ -716,7 +775,7 @@ warn_missing_prev_cmd_lesson() {
 
     warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
     echo "WARN: ${warn_msg}" >&2
-    record_warn_reason "$warn_msg" "missing_prev_cmd_lesson" "source_cmd=${prev_cmd_id}"
+    record_warn_reason "$warn_msg" "missing_prev_cmd_lesson" "source_cmd=${prev_cmd_id}" "check=warn_missing_prev_cmd_lesson"
 }
 
 handle_cmd_save_exit() {
@@ -793,10 +852,10 @@ CMD_BLOCK_NC=""
 # --- Check 1: cmdブロック存在確認 ---
 if [[ ! -f "$QUEUE_FILE" ]]; then
     echo "WARN: $QUEUE_FILE が存在しません" >&2
-    record_warn_reason "queue_file_missing"
+    record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
 elif ! load_cmd_block; then
     echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
-    record_warn_reason "cmd_block_missing"
+    record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
 fi
 
 # --- Check 1.5: 委任済みcmd再保存BLOCK ---
@@ -841,7 +900,7 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     # パターン: cmd_XXXX_completed_YYYYMMDD.yaml
     if ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_completed_*.yaml 1>/dev/null 2>&1; then
         echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
-        record_warn_reason "archive_duplicate"
+        record_warn_reason "archive_duplicate" "check=check_archive_duplicate"
     fi
 fi
 
@@ -1006,7 +1065,7 @@ QG_TEMPLATE
     # q4_depth: WARN_COUNTに加算（段階的導入→本格化 2026-04-21殿裁定）
     if ! cmd_block_has_field "quality_gate.q4_depth"; then
         echo "WARNING: q4_depth未記入。深堀り度を記入せよ: q4_depth: \"shallow/medium/deep — 理由\"" >&2
-        record_warn_reason "q4_depth未記入"
+        record_warn_reason "q4_depth未記入" "check=quality_gate_q4_depth"
     else
         # q4_depth値チェック: deep/mediumは時間コスト大。概算表示で確認を促す（WARN_COUNTに加算しない）
         _Q4_VAL="$(cmd_block_get_field "quality_gate.q4_depth")"
@@ -1052,7 +1111,7 @@ QG_TEMPLATE
     if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
         echo '  例: q6_not_hiding: "no — Vercel化は構造改革であり表面的対処ではない"' >&2
-        record_warn_reason "q6_not_hiding未記入"
+        record_warn_reason "q6_not_hiding未記入" "check=quality_gate_q6_not_hiding"
     fi
 
     # q7_definition_verified: cmd内定義の一次情報照合明示
@@ -1066,7 +1125,7 @@ QG_TEMPLATE
         if [[ "${_Q7_PROJECT:-}" != "dm-signal" || "${_Q7_TASK_TYPE:-}" != "impl" ]]; then
             echo "WARNING: q7_definition_verified未記入。High/Lowなどcmd固有定義を一次情報へ照合したか記載推奨" >&2
             echo '  例: q7_definition_verified: "yes — High=rolling max。trade-rule/テスト期待値に定義を固定"' >&2
-            record_warn_reason "q7_definition_verified未記入"
+            record_warn_reason "q7_definition_verified未記入" "check=quality_gate_q7_definition_verified"
         fi
     fi
 
@@ -1078,7 +1137,7 @@ QG_TEMPLATE
         if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表'; then
             echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
-            record_warn_reason "q8_縮小表現"
+            record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
         fi
         # COMPOUND(複利の問い)検査（WARN — 2026-04-15 殿指摘「将軍に因果をたどる仕組みを」）
         # 起源: 軍師のcausal_chain+複利の問いが因果思考を強制。将軍にはなかった
@@ -1086,7 +1145,7 @@ QG_TEMPLATE
         if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
             echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
             echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
-            record_warn_reason "q8_複利の問い"
+            record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
         fi
         # q8 WHY引用検査はcmd_2248で廃止。
         # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
@@ -1150,7 +1209,7 @@ QG_TEMPLATE
     if ! cmd_block_has_field "quality_gate.q10_knowledge_boundary"; then
         echo "WARNING: q10_knowledge_boundary未記入。cmdの前提は検証済み空間内か？前Phase/前cmdの到達点を使っているか？" >&2
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
-        record_warn_reason "q10_knowledge_boundary未記入"
+        record_warn_reason "q10_knowledge_boundary未記入" "check=quality_gate_q10_knowledge_boundary"
     fi
 
     # q_ambiguity: 不明瞭自覚の自己申告（段階的導入 — WARNING）
@@ -1323,7 +1382,7 @@ fi
 # flock -n: ノンブロッキング。取得成功=競合なし、取得失敗=家老が書き込み中
 if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
     echo "WARN: $LOCK_FILE がロック中です（家老が書き込み中の可能性）" >&2
-    record_warn_reason "flock_lock_contention"
+    record_warn_reason "flock_lock_contention" "check=check_lock_contention"
 fi
 
 show_recent_completed_ninjas() {
@@ -1631,7 +1690,7 @@ check_ac_file_paths() {
 
     if [[ "$HAS_MISSING" == true ]]; then
         echo "  BLOCK: 親ディレクトリも不在のパスはcmd品質低下の根因。現物確認してからcmd_save.shを再実行せよ" >&2
-        record_warn_reason "ac_missing_parent_path"
+        record_warn_reason "ac_missing_parent_path" "check=check_ac_file_paths"
     fi
 }
 
@@ -2054,7 +2113,7 @@ check_ac_param_sufficiency() {
     if [[ "$HIT" == true ]]; then
         echo "  具体値を列挙せよ。例: 「4条件」→「4条件(EMA/SMA/Kalman/Bandpass)」" >&2
         echo "  理由: 忍者は独自判断で条件を補完する（cmd_1681実証済み）" >&2
-        record_warn_reason "ac_param_sufficiency"
+        record_warn_reason "ac_param_sufficiency" "check=check_ac_param_sufficiency"
     fi
 }
 
@@ -2300,7 +2359,7 @@ check_param_space_shrink() {
         echo "WARN: パラメータ空間を縮小していないか？(${HITS}箇所で縮小表現を検出)" >&2
         echo "  → 計算量が多いなら: (1)道具を磨け (2)並列にせよ (3)チャンクに分けよ" >&2
         echo "  → 範囲を狭めることは殿の時間を奪う最大の無駄(2026-04-04殿厳命)" >&2
-        record_warn_reason "param_space_shrink_expression"
+        record_warn_reason "param_space_shrink_expression" "check=check_param_space_shrink_expression"
     fi
 }
 
@@ -2357,7 +2416,7 @@ check_gunshi_design_num_relax() {
         echo "WARN: 軍師設計書参照cmdで数値緩和を検出（cmd_1783教訓）" >&2
         echo "  q8のWHAT最大値: ${Q8_MAX} → AC最大値: ${AC_MAX}（ACがq8より大きい=緩和の可能性）" >&2
         echo "  設計書の数値をACで緩和するな。元の設計書数値を維持せよ" >&2
-        record_warn_reason "設計書数値緩和"
+        record_warn_reason "設計書数値緩和" "check=check_gunshi_reference_numeric_relaxation"
     fi
 }
 
@@ -2459,7 +2518,7 @@ ${FULL_CMD}"
 
     if [[ "$HIT" == true ]]; then
         echo "  道具カタログ: context/dm-signal-ops.md §18 参照" >&2
-        record_warn_reason "研究cmd道具未記載"
+        record_warn_reason "研究cmd道具未記載" "check=check_research_tool_explicit"
     fi
 }
 
@@ -2626,7 +2685,7 @@ if [[ "${_CHECK19_SCOPE}" != "SCOUT" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 
         for m in "${PARITY_MISSING[@]}"; do
             echo "  ✗ $m"
         done
-        record_warn_reason "parity_ac_missing"
+        record_warn_reason "parity_ac_missing" "check=check_parity_ac_requirements"
     fi
 fi
 
@@ -2781,7 +2840,7 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
-        record_warn_reason "command_steps_over_ac"
+        record_warn_reason "command_steps_over_ac" "check=check_command_steps_vs_ac"
     fi
 fi
 
@@ -2793,7 +2852,7 @@ if load_cmd_block; then
     if printf '%s\n' "$_AC_BLOCK" | grep -qiE '\bpush\b'; then
         echo "WARN: ACに'push'が含まれている。忍者はpush禁止(CLAUDE.md)。'commit'のみに変更せよ" >&2
         echo "  pushは家老が行う。ACに含めると忍者がbinary_checks no→gate BLOCK→毎回WA" >&2
-        record_warn_reason "ac_contains_push"
+        record_warn_reason "ac_contains_push" "check=check_ac_contains_push"
     fi
 fi
 
