@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L647 -->
+<!-- last_synced_lesson: L648 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -193,3 +193,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L646: IMPL/SCOUT矛盾時はkaro確認を優先せよ（cmd_2238）
 - L640: codd extract静的解析はPython大型ファイル(3048行)で関数検出が不十分（cmd_2245）
 - L647: monthly_returns_genがFoF数増加に対し非線形増大する（cmd_2257）
+- L648: dw_signals_flush(62s)は計測システムから除外されておりunmeasured_pctを誤解させる（cmd_2261）

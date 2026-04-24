@@ -833,3 +833,4 @@
 | cmd_2258 | impl — FoF sync-fof増分計算化(Signal差分+MR増分。462.8s→60s目標) | dm-signal | 04-24 | FoF増分計算実装完了。sync-fof(PORTFOLIO |
 | cmd_2259 | impl — FoF MR生成高速化: signal_cacheバッチ事前ロード+共有化(PI-024準拠・全期間再計算維持) | dm-signal | 04-24 | cmd_2259を完了した。初回修正(af469454)でs |
 | cmd_2260 | impl — FoF MR生成 DB fallback穴塞ぎ(356→0件目標。26.53s→1.5s) | dm-signal | 04-24 | price_ratio_calculatorのcomplet |
+| cmd_2261 | 偵察 — L3_fof daily_loop 224sの内訳計測+高速化ターゲット特定 | dm-signal | 04-24 | cmd_2261_scout完了。live timing(r |
