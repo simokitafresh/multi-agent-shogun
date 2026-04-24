@@ -37,7 +37,7 @@ task:
   parent_cmd: cmd_karo_gate_clear_idle
   project: infra
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/cmd_complete_gate.sh
   target_path_warning: '⚠ target_pathが存在しない: docs/research/recalculate_fof_speed_design.md'

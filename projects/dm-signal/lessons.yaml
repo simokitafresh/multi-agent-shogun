@@ -152,6 +152,9 @@ lessons:
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
   tags:
   - universal
+  deprecated: true
+  deprecated_at: '2026-04-24T12:59:23+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=2'
   helpful_count: 2
   harmful_count: 5
   last_referenced: '2026-04-22'
@@ -760,6 +763,9 @@ lessons:
   summary: momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかし
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L520
   title: CLUSTER_LOOKBACK=IS長のときIS増加は選択に影響しない
   summary: WF-OOSでCLUSTER_LOOKBACK=36、IS≥36の場合、クラスタリング窓は常にISの末尾36ヶ月。IS=48/60でも使用されるのは同じ36ヶ月
@@ -810,6 +816,9 @@ lessons:
   - api
   - deploy
   - production_invariant
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L511
   title: fof_component_weightsのactual_weight/driftが未計算状態
   summary: Ward PFのfof_component_weightsテーブルにtarget_weightは記録されているがactual_weight=None,
@@ -1027,8 +1036,8 @@ lessons:
   summary: Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設
   tags:
   - universal
-  helpful_count: 11
-  harmful_count: 7
+  helpful_count: 8
+  harmful_count: 6
   last_referenced: '2026-04-22'
 - id: L480
   title: selection-based FoF初月のmonthly_returns.holding_signal=NULL問題
@@ -1542,6 +1551,9 @@ lessons:
   summary: cmd_1036 kirimaru Phase4
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L401
   title: 正確性修正(tiebreak+normalize)は全性能最適化に先行すべき。性能最適化のパリティ基準が不正確だと最適化後の検証自体が無効になる
   summary: cmd_1037 kotaro AC7統合
@@ -1615,6 +1627,9 @@ lessons:
   tags:
   - deploy
   - gate
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L388
   title: PPE result pickleがoverhead最大要因。月次リターンndarrayのserializeが支配
   summary: IF PPE結果をmain processにreturnする THEN result pickleがオーバーヘッド最大要因になる。 50Kパターンで877ms（
@@ -2046,9 +2061,9 @@ lessons:
   - api
   - deploy
   - pipeline
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-22'
+  last_referenced: '2026-04-24'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -2082,6 +2097,9 @@ lessons:
   tags:
   - api
   - bash
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L313
   title: apiCache.clear()はETag IDBを削除しない→304エラーの可能性
   summary: DM-signal FEのキャッシュは5層構成(memory Map→IDB apiCache→IDB ETag→localStorage manifest→S
@@ -2259,9 +2277,9 @@ lessons:
   summary: IS 46M + OOS 32MでR²_OOS=0.02-0.05の改善は有意にならない可能性が高い。Clark-West検定でも最低水準。169M共通パネルの
   tags:
   - testing
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-21'
+  last_referenced: '2026-04-24'
 - id: L287
   title: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
@@ -2355,9 +2373,9 @@ lessons:
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
   tags:
   - api
-  helpful_count: 0
+  helpful_count: 2
   harmful_count: 1
-  last_referenced: '2026-04-22'
+  last_referenced: '2026-04-24'
 - id: L272
   title: IndexedDB非同期参照はSWRバックグラウンドrevalidationのタイミングを遅延させる
   summary: IndexedDB get()のawaitがrequestOnceInternal内に入るとSWRバックグラウンドrevalidationでfetchが呼ばれる
@@ -2537,9 +2555,9 @@ lessons:
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
   tags:
   - api
-  helpful_count: 2
-  harmful_count: 2
-  last_referenced: '2026-04-22'
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-24'
 - id: L245
   title: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ
   summary: compare-summary/deteriorationはSet multi-select、selector/navはscalar single-select
@@ -2582,9 +2600,9 @@ lessons:
   summary: Open/Closeのデフォルトを判断する時は、このシステムのデフォルトがOpen-to-OpenでありClose-to-Closeではないことを前提にする。D
   tags:
   - trade-rule
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
-  last_referenced: '2026-04-22'
+  last_referenced: '2026-04-24'
 - id: L239
   title: '誤解13 IF-THEN: Open-to-Openは異なる日のOpen同士を結ぶ'
   summary: Open-to-Open計算を修正する時は、T日Open→T+N日Openという異なる日のOpen同士を結ぶ定義を守る。T日Open→T日CloseはOpen-
@@ -2656,8 +2674,8 @@ lessons:
   - frontend
   - gate
   helpful_count: 3
-  harmful_count: 1
-  last_referenced: '2026-04-21'
+  harmful_count: 0
+  last_referenced: '2026-04-24'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
   summary: FE api-client.tsはresponse.ok(200-299のみtrue)で成功判定しており、304 Not Modifiedがエラー扱いされる。I
@@ -3337,6 +3355,9 @@ lessons:
   tags:
   - deploy
   - grid_search
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-24'
 - id: L127
   title: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する（2026-02-14）
   summary: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する（2026-02-14）
@@ -3534,8 +3555,8 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-22'
 - id: L096
   title: skip処理のデータ頻度判定はis_monthly_data()を使え（行数ヒューリスティック禁止）

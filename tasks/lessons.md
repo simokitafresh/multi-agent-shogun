@@ -4017,7 +4017,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-23
 - **出典**: cmd_karo_ci_fix_ga159
 - **記録者**: tobisaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,yaml]
 - **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml]
 - yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去する不具合。

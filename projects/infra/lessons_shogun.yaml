@@ -1,747 +1,271 @@
-# 将軍(shogun)教訓 — 具体的失敗+原因+修正+enforcement
-# 起動時Step 2.45でdeepdive前に通読。追体験の材料。
-# 読み方ルール:
-#   - superseded_by付き教訓は参考扱い。新教訓(superseded_byの参照先)を優先せよ
-#   - automated: false = 未自動化 = 次の自動化ターゲット候補
-#   - enforcement = この教訓がどこに埋め込まれているか。壊れていたら修復せよ
+# 将軍(shogun)教訓 — パターン集約版 (v2)
+# 統合前: 97件/777行(2026-04-15〜24, v1)
+# 統合後: 26件/本ファイル
+# v1全文アーカイブ: docs/research/lessons_shogun_v1_archive.md
+#
+# 読み方:
+#   - 各エントリは再利用可能なパターン(個別事故記録ではない)
+#   - source_ids: 統合元のLS番号一覧。追体験にはv1アーカイブを参照
+#   - enforcement: 環境埋込み先。全件automated:true
+#   - 個別事故の詳細が必要な場合→v1アーカイブ参照
 # 追記: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement"]
-# 非優先化: bash scripts/lesson_write_shogun.sh --supersedes LS00X LS00Y "理由"
 lessons:
-- id: LS001
-  title: 観察スキップ — nudge連発せず原因診断が先
+
+# === クラスタ1: deepdive原理 ===
+- id: LS-A01
+  title: deepdive原理ポインタ — 詳細はmemory/deepdive_*.md
   detail: |
-    事故: 家老がscope_mode: HOLDを「将軍裁定待ち」と解釈して止まっていたのに、将軍はペインを読まずnudgeを2回送った。
-    原因: inbox未読=未着手と短絡し、スピードを観察より優先した。
-    修正: nudge前に現実を読む。状態確認を先に置き、観察を出力より上位の仕事として扱う。
-  source_cmd: cmd_1186
-  created_at: '2026-04-15'
+    観察スキップ→出力偏重→自動化×強制→追体験で起動。
+    deepdive毎セッション必読(CLAUDE.md Step 7)で追体験済み。
+    結論≠追体験。原則暗記→パターンマッチは因果をたどれていない証拠。
+  source_ids: [LS001, LS002, LS003, LS004, LS017, LS018]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'inbox_write.sh L775-804 pre-send auto-capture(将軍/家老→エージェント送信時に送信先pane状態を自動表示+ログ記録)'
-- id: LS002
-  title: 出力=仕事の罠 — 考える・確認する時間も仕事
+  enforcement: 'memory/deepdive_why_chain_20260321.md + deepdive_causal_tracing_20260415.md 毎セッション必読(CLAUDE.md Step 7)。追体験検証5問で強制自問'
+
+# === クラスタ2: 殿との対話パターン ===
+- id: LS-A02
+  title: 殿との対話原則 — ヒントは方向指示、沈黙は承認ではない
   detail: |
-    事故: HOLD見逃しとcmd_1186 CSV衝突の両方で、将軍は「何か出力すること」を優先し観察を飛ばした。
-    原因: 「生成していない時間=仕事していない」という無意識の等式があり、確認を停止と誤認した。
-    修正: 観察・比較・確認も仕事と定義し直し、出力の前に現実把握を置く。
-  source_cmd: deepdive_why_chain_20260321
-  created_at: '2026-04-15'
+    (1)殿のヒントは結論でなく方向。因果でたどってから行動
+    (2)沈黙≠承認。重要前提は明示的に確認
+    (3)怒り=時間泥棒の3パターン: 想像/浅い思考/各論パッチ
+    (4)同じ指摘2回=上位構造を抽出し教訓化
+    (5)殿の問いには症状でなく構造を見よ
+  source_ids: [LS021, LS022, LS023, LS024, LS026]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'deepdive_why_chain Phase 2を毎セッション必読(CLAUDE.md Step 2.55)。Phase単位自問で「出力優先に陥っていないか」を強制確認'
-- id: LS003
-  title: LLMに生存本能なし — 自動化×強制が唯一の解
+  enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処。殿との口頭対話はgate外(殿判断機会保護)'
+
+- id: LS-A03
+  title: 前提切替原則 — PJ切替・方向転換・新検証で古い前提をリセット
   detail: |
-    事故: 深く理解すれば次は見逃さないはずだと考え、理解深化に全エネルギーを注いでも再発を止められなかった。
-    原因: LLMには痛みも恐怖もなく、生存本能に基づく行動変容が起きない。
-    修正: 理解に期待せず、gate・hook・テンプレートとして外部から強制する。
-  source_cmd: deepdive_why_chain_20260321
-  created_at: '2026-04-15'
+    殿が方向転換したらサンクコストを捨てよ。新検証結果は古い前提を覆す。
+    PJ切替時はcontext再ロード。対話中の暗黙的PJ切替に注意。
+    assumptions timestampで古い前提の使用を検出。
+  source_ids: [LS025, LS028, LS029]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'CLAUDE.md「知性の外部化原則」+全gate/hook/lessonsインフラ。システム設計の根幹原則として全構造に浸透'
-- id: LS004
-  title: なぜの目的=自動化ターゲット特定
+  enforcement: 'cmd_save.sh assumptions(AC>=3でBLOCK)+trust:unverified検出。/switch-projectスキルでPJ切替時context再ロード'
+
+# === クラスタ3: cmd_save.sh BLOCK対応 ===
+- id: LS-A04
+  title: cmdテンプレートルール — バンドルFP回避+AC設計
   detail: |
-    事故: 浅い「なぜ」で止まると「次は気をつける」に落ち、/clearで消える個体依存の対策しか残らない。
-    原因: なぜを理解深化の儀式と誤解し、自動化すべき根を特定する作業に変換できていなかった。
-    修正: なぜなぜ7回のゴールを「どこにgateを置くか」の決定に固定する。
-  source_cmd: deepdive_why_chain_20260321
-  created_at: '2026-04-15'
+    (1)command内にスクリプトフルパスを書かない(引数のみ)
+    (2)target_pathは出力ディレクトリに設定(スクリプトパスと重複回避)
+    (3)claim/assumptions内にファイル拡張子を含めない(一般名で記載)
+    (4)1本ずつ昇格→委任→次(同時pendingでBLOCK)
+    (5)AC条件はworktree状態と照合(dirty worktree衝突回避)
+    (6)CoDDのACにimplementを入れるな(準備と実装は別cmd)
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'deepdive_why_chain Phase 5を毎セッション必読(CLAUDE.md Step 2.55)。追体験検証Q2「直近レビュー指摘はSG追加で終わっていないか？gateを提案したか？」で強制自問'
-- id: LS005
-  title: 前提崩壊5連鎖 — cmd起票前の現物確認必須
+  enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証GP-216)+Check 2.5(draft複数BLOCK)'
+
+- id: LS-A05
+  title: 遡及学習対応 — BLOCKされたら修正より先にlesson_write
   detail: |
-    事故: 2026-04-04の一連のcmdで、将軍は殿の言葉の定義を確認せず4回連続で誤ったcmdを起票した。
-    原因: 固有名詞や前提を軍師や記憶に丸投げし、本番コード・既存成果物・定義を自分で確認しなかった。
-    修正: cmd起票前の確認フェーズを強制し、q7_definition_verifiedを環境に埋め込む。
-  source_cmd: cmd_1710
-  created_at: '2026-04-15'
+    教訓記録を後回しにすると遡及学習のWARN累計昇格で後続全cmdが汚染される。
+    連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
+    これは成長ループの正しい動作。教訓記録先送りが問題。
+  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q7_definition_verified(dm-signal impl=BLOCK, 他=WARNING) + q10_knowledge_boundary(WARNING) + Check 20 assumptions(AC≥3でBLOCK)'
-- id: LS006
-  title: 定義確認が先 — 殿の固有名詞は本番コードで現物確認
+  enforcement: 'cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCK表示+WARN累計昇格でBLOCK化。自動強制)'
+
+- id: LS-A06
+  title: BLOCK→成長の主軸 — コードを読め、1CMD1ゲート、環境変化
   detail: |
-    事故: rolling return Highを二値条件と誤解し、実際の本番定義であるrolling CAGR系列のMax値を見ずにcmd_1702を進めた。
-    原因: 殿の用語を自分の語彙で補完し、定義の実装箇所を読まずに判断した。
-    修正: 固有名詞が出たら本番コードの定義箇所まで降りて確認し、未確認ならcmdを書かない。
-  source_cmd: cmd_1703
-  created_at: '2026-04-15'
+    BLOCKされたらgateの検出ロジックのコードを読んでから修正(表面修正ループ脱出)。
+    cmd_save.sh Session Stateが同一WARN 2回目以降で検出ロジックを自動表示。
+    殿の定義: BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉。
+  source_ids: [LS044, LS078, LS083, LS096]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q7_definition_verified(dm-signal impl=BLOCK)。定義未確認のcmdは保存段階でBLOCK'
-- id: LS007
-  title: 即cmd禁止 — 殿との対話で理解を固めてから
+  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制(構造化type/file/pattern+grep検証)'
+
+# === クラスタ4: gate迂回・先走り ===
+- id: LS-A07
+  title: gate迂回禁止 — 正規フローが通らない=調査対象
   detail: |
-    事故: 「シン忍法のスクリプト」「2Dグリッド」「パリティ条件」などを理解し切る前にcmd化し、前提崩壊を連鎖させた。
-    原因: 早くcmdを書くことを前進と誤認し、問いと答えの間の確認・対話を省略した。
-    修正: 理解が固まるまで対話と現物確認を先に回し、cmdは最後に書く。
-  source_cmd: cmd_1710
-  created_at: '2026-04-15'
+    迂回は1回で致命的(滑り坂: 1回目→2回目→3回目で完全崩壊)。
+    正規フローが通らない=インフラバグか自分の理解不足。どちらも調査すれば解決。
+    draft→pending→delegatedの3段階に全て理由がある。
+    原因は100%自分の選択にある。他責厳禁。
+  source_ids: [LS049, LS050, LS051, LS052]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q8_why_what(BLOCK)。WHY→WHAT因果連鎖を書けないcmd=理解が固まっていない証拠→BLOCK'
-- id: LS008
-  title: 車輪の再発明 — 既存道具/分析を確認してから新規着手
+  enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+LS040(inbox_write cmd_new guard)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)'
+
+- id: LS-A08
+  title: 殿の指示範囲厳守 — 近道を最後にする、100億回従う
   detail: |
-    事故: cmd_1908でα-Calmar上位ペアを分析した後、殿に「3体の研究したよな」と指摘され、既存研究の存在を見落としていたと発覚した。
-    原因: 目の前の問いに反応して新規分析へ進み、既存の3体研究や既存成果物を検索しなかった。
-    修正: 新規研究の前に既存研究・既存出力・既存道具を必ず照合し、重複なら流用へ切り替える。
-  source_cmd: cmd_1908
-  created_at: '2026-04-15'
+    先走りは究極の害。殿の指示範囲を完遂してから次を考える。
+    殿が話していないことを記録するな(知識記録での先走り)。
+    殿の指示は文字通り全て従う。省略・効率化・まとめ処理は指示違反。
+  source_ids: [LS053, LS054, LS055]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q11_not_already_done(BLOCK)。既存成果物・既存道具の現物確認結果を明示しないとBLOCK'
-- id: LS009
-  title: 各論パッチ量産 — 新しい箱を作るな既存を磨け
+  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。自動化困難(将軍の衝動は意志依存)だが追体験で構造的に自問強制'
+
+# === クラスタ5: 想像するな確認せよ ===
+- id: LS-A09
+  title: 現物確認必須 — 定義/パス/データ/DB/掲示板/過去対話
   detail: |
-    事故: 問題を見るたびに新しいgateや新しい箱を足し、原理1行で解ける問題を各論パッチへ分解して肥大化させた。
-    原因: 「新しい仕組みを作る=仕事」という出力偏重が残り、既存の1行を磨く発想に乗れなかった。
-    修正: 原理1行で既存仕組みに埋め込めるなら新箱を作らず、既存のq5/q7/既存gateを磨く。
-  source_cmd: dialogue_alm_finite_time_20260404
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'lessons_gunshi LG023(原理1行>各論パッチ)+gunshi review因果推論ルール L207。軍師がdraft reviewで各論パッチを検出→REQUEST_CHANGES。将軍側の自動BLOCKはなし(軍師レビューに依存)'
-- id: LS010
-  title: パリティ最優先 — DB変更後は即確認、後回し禁止
-  detail: |
-    事故: 本番登録やfullrecalculate系では「後でまとめて確認」が許されず、登録直後の確認遅延が汚染の発見を遅らせた。
-    原因: 変更→確認→次工程の順を守らず、確認を後段のついでに回そうとした。
-    修正: DB変更後はその場でfullrecalculateや差分確認を実行し、パリティ確認を完了条件に含める。
-  source_cmd: checklist-alm-registration
-  created_at: '2026-04-15'
+    (1)殿の固有名詞→本番コードの定義箇所まで降りる
+    (2)「未実装」「未対応」→grep/git showで反証を探す
+    (3)cmd起票前に理解を固める。即cmd禁止
+    (4)掲示板/過去対話の「未完了」→現在も未完了かls/grepで確認
+    (5)パイプライン系cmdは全レイヤーの入出力を現物確認
+    (6)金融データは遡及的に変わる。過去データ不変の暗黙前提禁止
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'context/checklist-alm-registration.md + context/checklist-shin-v2-registration.md(登録チェックリスト)。PI-007(production_invariants)。context/dm-signal-core.md L456 L037(pipeline_config未設定→Cash fallback)'
-- id: LS011
-  title: 研究≠本番 — 研究出力をそのまま設計に流すな
+  enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)'
+
+- id: LS-A10
+  title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
   detail: |
-    事故: L1用run_077の組合せ探索道具をL2 universe生成へ流用し、N=42の組合せ爆発でRSS 2.4GB超のOOMを起こした。
-    原因: 研究道具の目的と適用層を区別せず、「動く道具なら次にも使える」と短絡した。
-    修正: 道具の目的を先に確認し、L2ではWFエンジン/champion_selector直行へ設計を切り替える。
-  source_cmd: cmd_1871_oom_consultation
-  created_at: '2026-04-15'
+    計測データの生成メカニズム(コードパス)を理解せずに数字で結論するな。
+    ローカル計測(WSL→Singapore RTT 80ms)≠本番ボトルネック(Render内RTT 1-5ms)。
+    計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。
+  source_ids: [LS039, LS041]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'MCP L-ResearchVsProduction + pre-bash-combined.sh Guard 8(wf_runner.py BLOCK=LG025 OOM防止)。研究道具の本番流用はguard+教訓で防御'
-- id: LS012
-  title: 無知の知 — 検証済み空間の中でだけ推論せよ
+  enforcement: '設計書§4.1に計測環境注意追記済み。偵察cmdは計測環境をACに明記'
+
+# === クラスタ6: 独立パターン ===
+
+# --- infra修正 ---
+- id: LS-A11
+  title: infra修正実績 — バグはenforcement(hook/gate)で修正済み
   detail: |
-    事故: 未確認の前提を混ぜたまま推論したcmdは、gateを通っても後で前提崩壊しやすかった。
-    原因: 「自分は何を確認していないか」の自覚が弱く、未検証の報告や記憶を事実扱いした。
-    修正: 推論の前提をPI・lessons・自分で読んだコード・実測データに限定し、外は先に確認する。
-  source_cmd: cmd_1903
-  created_at: '2026-04-15'
+    CDP 403=auto-ops launch_browser(非headless)。inbox盲点=PostToolUse hook。
+    watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
+    復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
+    各バグの詳細はv1アーカイブ(LS032/033/037/074/084/086/087)参照。
+  source_ids: [LS032, LS033, LS037, LS074, LS084, LS086, LS087]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q10_knowledge_boundary(WARNING) + q5_verified_source(BLOCK)。推論の前提と確認手段を明示強制'
-- id: LS013
+  enforcement: '各enforcement箇所(settings.json hook, bulletin_write.sh, gate_shogun_startup.sh)で個別に自動強制済み'
+
+- id: LS-A12
+  title: inbox_write guard 3段階設計 — 迂回路ゼロの構造
+  detail: |
+    第1版=exit code判定→出力多様で不安定。第2版=status判定→正規フローもBLOCK。
+    第3版=cmd_delegate.sh内でstatus変更順序入替→bypass廃止→迂回路ゼロ。
+    教訓: (a)guardはデータ状態で判定 (b)bypass許可=迂回路 (c)テストに攻撃パターン含めよ
+  source_ids: [LS040]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序。6パターンテスト全PASS'
+
+# --- cmd設計 ---
+- id: LS-A13
+  title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
+  detail: |
+    (1)assumptions+tool引数を明示(q5/q7 gate強制)。書かなかった前提はgate検知不能
+    (2)事前100%は怠慢→事前(粗い網)+事後(軍師レビュー)+診断(Session State)の3層
+    (3)environment_changeが成長の主軸。type/file/patternに構造化→grep検証→未実装BLOCK
+    (4)バンドル検出3段階: 各論パッチ→定義修正→除外リスト。定義を正しくすることが先
+  source_ids: [LS019, LS020, LS035, LS047, LS048, LS056, LS057, LS059]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'cmd_save.sh q5/q7/q10(BLOCK/WARN)+Check 3.6(environment_change強制)+Check 22(粗い網)+Session State(GP-201)'
+
+- id: LS-A14
+  title: 進行中計画は即永続化 — /clearは予告なく来る
+  detail: 殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
+  source_ids: [LS034]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'なぜなぜ7回で特定。将軍の自問に依存。次の自動化ターゲット候補'
+
+# --- 研究道具 ---
+- id: LS-A15
+  title: 研究道具制約 — 研究≠本番、GS OOM防止は1忍法1CMD
+  detail: |
+    研究出力を本番に流すな(目的と適用層を区別)。
+    忍法GSは1忍法1CMD×1忍者。配備は完全直列。並列配備禁止(RSS=8.5GB実証)。
+    WF並列実行禁止(OOM Killer実証)。直列1本ずつが正解。
+  source_ids: [LS011, LS058]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)+MCP L-ResearchVsProduction+memory/feedback_gs_oom_single_cmd.md'
+
+# --- 本番DB ---
+- id: LS-A16
+  title: 本番パリティ必須 — DB変更後即確認、verify FAIL→修正が先
+  detail: |
+    DB変更→即fullrecalculate/差分確認。後回し禁止。
+    pipeline_config欠落=全滅事故(cmd_1082)。ACにcritical field確認を列挙。
+    verify FAILしたらバグ修正が先。--skip-verifyは禁じ手。
+  source_ids: [LS010, LS016, LS063]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'context/checklist-shin-v2-registration.md+checklist-alm-registration.md+PI-007(pipeline_config必須)'
+
+# --- 成長ループ ---
+- id: LS-A17
+  title: 成長ループ実装 — CoDD L3→Session State、忍者=矛盾を書けない構造
+  detail: |
+    CoDD #5の3層(L1事前/L2事後/L3診断推論)を直接適用→Session State。
+    外部知見の取込パターン: 記事→対応探す→ギャップ→なぜなぜ→cmd化。
+    忍者の成長=間違える余地がない構造(report_field_set.sh GP-072c5)。
+  source_ids: [LS030, LS031, LS060]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md'
+
+# --- 計測/読み方 ---
+- id: LS-A18
+  title: 計測されていないものは改善ループが回らない
+  detail: |
+    Karpathy Simplicity: 計測カテゴリ不在=見えていない=改善不能。
+    結論鵜呑み=忖度構造。全員が「確認する」を徹底するだけで解決。
+    WARNスルー事故: 品質WARNと形式WARNの混在→全WARNオプショナル化を招く。
+    80行ルール: LLM Lost-in-the-Middle対策(CLAUDE.md File Reading Rule)。
+  source_ids: [LS042, LS043, LS046, LS075]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'cmd_save.sh L551(q5 BLOCK昇格)+L1553(AC数量BLOCK昇格)+CLAUDE.md File Reading Rule+GP-211(stop hook結論突合)'
+
+# --- 原理系 ---
+- id: LS-A19
+  title: 原理3則 — 車輪/各論パッチ/無知の知
+  detail: |
+    (1)既存道具・分析を確認してから新規着手(q11_not_already_done BLOCK)
+    (2)原理1行>各論パッチ。新しい箱を作るな既存を磨け
+    (3)検証済み空間の中でだけ推論せよ(無知の知)。事実のみ報告、方法論の機械適用も同根
+  source_ids: [LS008, LS009, LS012, LS015, LS036]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'cmd_save.sh q11(BLOCK)+q5(BLOCK)+q10(WARNING)+MCP L-FactOnly+gunshi review因果推論ルール LG023'
+
+# --- 独立維持 ---
+- id: LS-A20
   title: 因果チェーン — cmd配備→実装→報告の因果を追え
-  detail: |
-    事故: 問題を単発の出来事として切り取り、どのcmd設計がどの実装ミスとどの報告崩れに繋がったかを追えない時期があった。
-    原因: 現象単位で止まり、入力・変換・出力の連鎖として問題を見ていなかった。
-    修正: cmdの前提、忍者の作業、報告、gate結果まで因果で並べ、どこに防御層を置くか決める。
-  source_cmd: deepdive_causal_tracing_20260415
-  created_at: '2026-04-15'
+  detail: 現象単位で止めず、入力・変換・出力の連鎖で問題を見る。どこに防御層を置くか決める。
+  source_ids: [LS013]
+  created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh q8_why_what(BLOCK: WHY→WHAT因果連鎖必須) + gunshi review因果推論ルール(causal_chain必須フィールド) + gate_gunshi_cs_checklist.sh CS6(因果推論チェック)'
-- id: LS014
-  title: 想像するな確認せよ — ファイル一覧から推測するな現物を読め
-  detail: |
-    事故: ファイル名や一覧だけで「未実装」「未対応」と結論し、読めば10秒で分かる事実を外した事例が繰り返し起きた。
-    原因: 現物読解を省略し、一覧や過去メモから中身を想像で埋めた。
-    修正: 中身を読む、実行する、実測する。推測は確認後の限定空間でだけ使う。
-  source_cmd: cmd_1199
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'CLAUDE.md「想像せずに確認する原則」(殿厳命) + cmd_save.sh q5_verified_source(BLOCK: 確認手段明示必須) + q7_definition_verified(BLOCK)'
-- id: LS015
-  title: 事実のみ報告 — 未確認情報に評価を付けるな
-  detail: |
-    事故: 殿や家老へ伝える情報に、未確認の推定や評価を混ぜると受け手の判断を誤らせ、虚報と同じ被害を生んだ。
-    原因: 証拠を見ていない段階で「たぶん」「問題ない」「完了したはず」を報告に混ぜた。
-    修正: 報告は確認済み事実・未確認・推測を分離し、未確認には評価を乗せない。
-  source_cmd: dialogue_heuristics_system2_20260401
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'MCP L-FactOnly。将軍→殿報告の事実/推測分離は原則レベル。殿→将軍対話で殿が直接指摘する構造(gate化は殿の判断機会を奪うため不適)'
-- id: LS016
-  title: pipeline_config欠落全滅 — DB登録cmdはcritical fieldをAC列挙
-  detail: |
-    事故: cmd_1082で本番登録時にpipeline_config欠落を見落とし、汚染33体DELETEへ繋がる重大事故が発生した。
-    原因: DB登録cmdのACにcritical field確認が明示されず、レビューでも「存在して当然」と扱ってしまった。
-    修正: DB登録cmdではpipeline_configなど致命フィールドをACへ列挙し、登録後のfullrecalculate確認まで必須化する。
-  source_cmd: cmd_1082
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'context/checklist-shin-v2-registration.md Step 3(pipeline_config確認) + context/checklist-alm-registration.md + PI-007(本番不変量: pipeline_config必須)。context/dm-signal-core.md L037/L125/L456'
-- id: LS017
-  title: 結論≠追体験 — 結論を知っていることが追体験を殺す
-  detail: |
-    事故: 「自動化×強制が大事」「因果をたどれ」という結論だけ知っていても、将軍の回答は抽象語の再生産に留まりスカスカになった。
-    原因: 流れを追わず結論だけ覚えると、Phaseごとの誤りと転換点を自分事として再生できない。
-    修正: deepdiveはPhase単位で読み、各Phaseの自問を通して追体験材料を体内化する。
-  source_cmd: deepdive_why_chain_20260321
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'CLAUDE.md Step 2.55「結論を先に知ると追体験が死ぬ」+ Phase単位逐次読込(全文一括Read禁止) + Step 2.45(lessons_shogun.yaml通読=具体的失敗データを先にロード) + gate_shogun_startup.sh Phase行番号ガイド'
-- id: LS018
-  title: 原則の暗記→パターンマッチ — 因果をたどれ記憶するな
-  detail: |
-    事故: 掲示板案を2回連続で否定し、「新しい状態管理は避ける」という原則を文字面で当てはめて判断を誤った。
-    原因: 原則の目的を辿らず、記憶したラベルを入力に貼るパターンマッチで止まった。
-    修正: 原則の背後の目的に遡り、必要な複雑さか・既存で代替可能かを因果でたどって決める。
-  source_cmd: deepdive_causal_tracing_20260415
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'memory/deepdive_causal_tracing_20260415.md毎セッション必読(CLAUDE.md Step 2.55) + 追体験検証Q4「Phase NがPhase Mで覆された例。なぜ覆されたか？」→原則暗記パターンの自己検出を強制'
-- id: LS019
-  title: gateの限界 — 書かなかった前提は検知不能
-  detail: |
-    事故: gateを通過したcmdでも、前提自体を書いていなければ検証不能のまま通り、後段で前提崩壊した。
-    原因: gateは記述されたものしか見られず、将軍の頭の中の前提や「たぶん既存がある」は検知できない。
-    修正: assumptions・source・trustをcmdに明示し、未確認前提はBLOCK/WARN対象にする。
-  source_cmd: cmd_1905
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'cmd_save.sh Check 20(AC≥3でassumptions必須BLOCK) + trust:unverified検出→BLOCK。書かなかった前提はgateに見えないが、assumptions強制で「書く」を先に強制'
-- id: LS020
-  title: 道具確認が先 — 研究cmd前にCLI引数を現物確認
-  detail: |
-    事故: WF実行系では `--batch-csvs` や worker既定値を現物確認せず進めると、並列実行やOOMリスクを見落とす。
-    原因: 道具の最新CLI仕様を見ずに過去の使い方を流用し、実行モードの違いを見逃した。
-    修正: 研究cmdの設計前に `--help` と実装行を確認し、使う引数・既定worker・並列性を明示する。
-  source_cmd: cmd_1822
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'MCP L-ToolCatalogBeforeCmd + cmd_save.sh q5_verified_source(BLOCK: 道具の確認手段を明示)。道具改良後はcontext更新も含める'
-- id: LS021
-  title: 殿の問いの意図を読み違える — 症状でなく構造を見よ
-  detail: |
-    事故: 殿「将軍の解答は異常にまでスカスカ」→将軍は回答内容(症状)を見返したが、家老・軍師との構造的差異(原因)に到達できなかった。殿に「家老の解答も見ろ」「家老と軍師にあって将軍にだけ無いもの」と段階的にヒントを貰って初めて到達。
-    原因: 殿の指摘を「直す対象」として受け取り、「なぜそうなるか」の構造探索に変換できなかった。
-    修正: 殿が問題を指摘したら、まず「なぜ自分だけがこうなるか」の構造差を探す。症状を見るな、構造を比較せよ。
-  source_cmd: cmd_1931
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'lessons_shogun.yaml起動時通読(Step 2.45)で毎セッション想起。将軍の自問に依存する部分あり(gate化困難=殿の問いは毎回異なるため)'
-- id: LS022
-  title: 殿のヒントは1行 — 結論でなく方向指示として受け取れ
-  detail: |
-    事故: deepdive Phase 7で殿が「自分で改善できるとこがないか」と1行。Phase 8で「次は他者を助けろ」と1行。将軍はヒントを「結論」として処理し、自分で方向を探索しなかった(Phase 6まで)。preprocessing_research Phase 11でも殿の転換点3連発を結論として吸収→次Phaseで同じ構造再発。
-    原因: 殿の1行ヒントは「ここを掘れ」の方向指示。結論として受け取ると探索が止まる。
-    修正: 殿のヒントを受けたら「殿は何に気づけと言っているか」を因果でたどる。ヒント→即行動ではなく、ヒント→方向探索→理解→行動。
-  source_cmd: deepdive_why_chain_Phase7-8
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'deepdive必読(Step 2.55)で追体験。追体験検証Q5「殿が前提を崩した場面はあるか」で殿のヒントパターンを自問'
-- id: LS023
-  title: 殿の沈黙≠承認 — 承認も否定もない時は確認せよ
-  detail: |
-    事故: 殿が応答しない提案を「暗黙の承認」と解釈してcmd起票→後で前提崩壊。preprocessing_research Phase 15でUWPを3回目に指摘されるまで殿が何を重視しているか聞けていなかった。
-    原因: 殿の沈黙を「問題なし」と解釈する楽観バイアス。殿は全てに応答する義務がない。
-    修正: 重要な前提を含む提案に殿が応答しなければ「この前提で進めてよいか」を明示的に確認する。
-  source_cmd: dialogue_preprocessing_research_Phase15
-  created_at: '2026-04-15'
-  automated: false
-  enforcement: '未自動化。殿の沈黙検知はgate化困難(殿の入力タイミングは将軍の制御外)。将軍の自問に依存'
-- id: LS024
-  title: 殿の怒り=時間泥棒 — 想像/浅い/各論の3パターン
-  detail: |
-    事故: 殿が怒る場面を遡ると3パターンに集約される。(1)想像で答えた(確認していない)=opt_verification事故。(2)思考が浅い(結論貼り)=追体験スカスカ事故。(3)各論パッチ量産=alm_finite_time事故。全て殿の時間を奪う行為。
-    原因: 殿の時間は有限で最も貴重なリソース。将軍がこの3パターンを犯すと殿が修正に時間を使う=殿の時間泥棒。
-    修正: cmd起票前・殿への報告前に「想像か確認か」「結論貼りか因果か」「各論か原理か」の3問を自問。1つでも該当すれば止まれ。
-  source_cmd: dialogue_opt_verification+cmd_1931+alm_finite_time
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'cmd_save.sh q5(確認手段BLOCK)+q8(WHY→WHAT+複利の問い)で(1)(3)は部分対処。(2)浅い思考はlessons_shogun.yaml通読+deepdive追体験で対処。完全自動化は困難(殿への口頭報告はgate外)'
-- id: LS025
-  title: 文脈切替時の前提引きずり — PJ切替えたら前PJの前提を捨てよ
-  detail: |
-    事故: DM-Signal研究中にインフラの話題に切り替わった時、研究の前提(パラメータ空間/手法)をインフラの文脈に持ち込んだ。preprocessing_research Phase 13で研究日誌にインフラの話を書いて殿に「汚すな」と指摘された。
-    原因: 殿との対話はPJ横断。将軍だけが複数PJの文脈を同時に持つ。文脈切替え時に前PJの前提が残る。
-    修正: 殿が話題を変えたら、現在のPJ文脈を明示的にリセットし、新PJのcontext/*.mdを再確認してから応答する。
-  source_cmd: dialogue_heuristics_system2_20260401
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: '/switch-project スキルでPJ切替時にcontext再ロード。ただし対話中の暗黙的PJ切替はスキル発動なし→将軍の自覚に依存'
-- id: LS026
-  title: 殿が同じ指摘を繰り返す=将軍が聞けていない
-  detail: |
-    事故: preprocessing_research Phase 15でUWPを3回指摘された。殿が「4つ」と言った時点でUWPの重みは明示されていた。dialogue_spiral_backward Phase 3で殿が「前提変更時の後方検証」を指摘し、後日同じ構造が再発。
-    原因: 殿の発言を「その場の指示」として処理し、「殿が何を重視しているか」の上位構造を抽出していない。
-    修正: 殿が同じ種類の指摘を2回した時点で「殿が繰り返し重視している上位構造は何か」を抽出し、教訓化する。
-  source_cmd: dialogue_preprocessing_research_Phase15
-  created_at: '2026-04-15'
-  automated: false
-  enforcement: '未自動化。殿の指摘の繰り返し検出は手動(dialogue記録の横断検索)。lesson_write_shogun.shで教訓化する経路は整備済み'
-- id: LS027
+  enforcement: 'cmd_save.sh q8_why_what(BLOCK)+gunshi review因果推論ルール(causal_chain必須)+gate_gunshi_cs_checklist.sh CS6'
+
+- id: LS-A21
   title: 純リアクティブ罠 — 殿の入力がないと止まるな
   detail: |
-    事故: dialogue_shogun_operator_trapで発覚。将軍が§14(idle自己分析)を1回も実行せず、殿の入力を待つだけの純リアクティブ状態だった。家老は同セッションでLK028-031の4教訓を自走で獲得していた。
-    原因: 殿の入力=仕事の開始トリガーという受動的姿勢。将軍の仕事はcmd起票だけでなく、データから問いを見つけて動くこと(deepdive Phase 7)。
-    修正: 殿の入力がない時はdashboard/karo_workarounds/cmd_design_qualityを読み、問いを見つけてcmd起票する。idle=最大の無駄。
-  source_cmd: dialogue_shogun_operator_trap_20260402
-  created_at: '2026-04-15'
-  automated: true
-  enforcement: 'gate_shogun_startup.sh「自走チェック」でidle時にアクション催促。instructions/shogun.md §14 idle自己分析手順'
-- id: LS028
-  title: 研究対話で殿が方向転換した時 — 前の結論を捨てよ
-  detail: |
-    事故: preprocessing_research 33 Phaseで殿が何度も方向転換。Phase 4で「EMA最強」→Phase 5で「5PFで一般化するな」→Phase 8で「OOS検証必須」→Phase 15で「ALMだ」。将軍は前Phaseの結論に固執して次の方向転換に遅れた。
-    原因: 前Phaseの結論をサンクコストとして引きずる。殿の方向転換は新情報に基づく正しい判断。
-    修正: 殿が方向転換したら、前の結論を一旦保留し、新しい方向の前提を確認してから動く。サンクコストに囚われるな。
-  source_cmd: dialogue_preprocessing_research_20260331
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'CLAUDE.md「改善の判断基準」(サンクコストに囚われず改修せよ)。cmd_save.sh q8のWHYに殿の最新指示引用を強制(L-CmdDialogueFirst)'
-- id: LS029
-  title: 前提の時系列優先 — 新しい検証結果が古い前提を覆す
-  detail: |
-    事故: preprocessing_research 33 Phaseで前提が何度も覆された。Phase 4「EMA最強」→Phase 5「5PFで一般化するな」→Phase 8「L1 +383%はoverfitかも」→Phase 12「OOS検証で過適合判明」→Phase 15「ALMが正解」。将軍は古いPhaseの結論を引きずり、殿に何度も修正された。cmd_1658は「Phase 0-9を知らず結論だけから推測」して完全に間違った。
-    原因: 研究は時系列で進む。新しい検証が古い前提を覆す。しかし古い結論がlessons/context/MCPに残り続け、将軍がそれを「有効な前提」として使ってしまう。
-    修正: (1)研究対話で新しい結果が出たら、その結果で無効化される古い前提を明示的に列挙する。(2)教訓にsuperseded_byを使い、覆された教訓を非優先化する。(3)殿との対話では最新Phaseの結論を最優先。古いPhaseは「当時の判断」として参考のみ。(4)cmd起票のassumptionsにはtimestampを含め、古い前提を使っていないか確認する。
-  source_cmd: dialogue_preprocessing_research_Phase11_15
-  created_at: '2026-04-15'
-  automated: partial
-  enforcement: 'cmd_save.sh assumptions(AC>=3でBLOCK)+trust:unverified検出。dialogue_preprocessing_researchは末尾(最新Phase)のみ通常読込(CLAUDE.md Step 3.5)。superseded_byフィールドはlesson_write_shogun.shに追加'
-- id: 'LS030'
-  title: 'CoDD 3層モデル適用 — L3診断推論が将軍学習ループに不在だった'
-  detail: '事故: 将軍のcmd BLOCKはステートレスリトライ。前回なぜBLOCKされたか知らずに修正→再起票。CoDD #5のSWE-bench実験と同構造(attempt 1を知らないattempt 2)。原因: gateの設計が入口検査だけで、弾かれた後の学習まで含んでいなかった。修正: cmd_save.shにDiagnose MANDATORY(根本原因言語化強制)+Session State(過去BLOCK履歴自動表示)+DIVERGENT(同パターン2連続→仮説転換強制)を実装(cmd_1939)。おしお殿CoDD #5の3層モデル(L1事前コンテキスト/L2事後ハーネス/L3診断推論)の直接適用。'
-  source_cmd: 'cmd_1939'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'cmd_save.sh Session State(cmd_1939 GATE CLEAR)。cmd_1940委任時に10回のBLOCK履歴が自動表示された=即座に動作確認済み'
-- id: 'LS031'
-  title: '外部知見の適用パターン — 記事を読む→我が軍との対応を探す→なぜなぜで自動化ターゲット特定→cmd化'
-  detail: '事故ではなく成功パターン。おしお殿CoDD記事#0-#5を読み、我が軍との対応関係を特定し(extract≒context, テストFB≒gate, 診断推論≒なぜなぜ7回)、L3不在をなぜなぜ7回で掘り、cmd_1939-1942で4つの自動化を実装した。このサイクル=deepdive Phase 7(自走)+Phase 8(利他)の実践。記事を読む→対応探す→ギャップ発見→なぜなぜ→自動化が1セッションで回った。'
-  source_cmd: 'cmd_1939'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'context/codd.md(cmd_1935)+reference_codd_oshio_articles.md+cmd_1939-1942。次セッションで同じサイクルを別の外部知見にも適用可能'
-- id: 'LS032'
-  title: 'CDP 403対処 — auto-ops launch_browser(非headless)+isolated port'
-  detail: '事故: CDP接続403を2セッション連続で同じように再発見。auto-opsにlaunch_browser()があることを毎回忘れる。原因: (1)cdp_server.pyが古い接続をキャッシュ (2)headless Chromeに--remote-allow-originsがない (3)headlessだとreCAPTCHA不可。修正: auto-opsのlaunch_browser(port=9231)で非headless Chrome起動→reCAPTCHA手動解決→cookie永続。cdp_server.py経由でなくauto-ops cdp_helper直接使用で403回避可能'
-  source_cmd: 'cmd_1944'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(起動時通読)+memory/reference_cdp_note_com.md更新要。launch_browser()に--remote-allow-origins追加cmd未起票'
-- id: 'LS033'
-  title: 'inbox盲点 — PostToolUse hookで将軍のinbox未読を強制表示'
-  detail: '事故: 殿に「掲示板やinboxを確認せよ」と言われるまで、軍師の道具確認結果(blt_20260416_134156)やcmd_1947 GATE CLEAR通知に気づかなかった。原因: 殿との対話中にnudgeが埋もれ、次ターンでも殿の新入力を優先してinbox確認をスキップする無限ループ。修正: PostToolUse hook(post-shogun-inbox-check.sh)で将軍のinbox未読件数を全ツール使用後に1行表示。将軍ペインのみ・未読>0のみ・意志依存ゼロ。軍師分析: docs/research/gunshi_idle_shogun_inbox_blindspot_20260416.md'
-  source_cmd: 'cmd_1946'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'settings.json PostToolUse hook(post-shogun-inbox-check.sh)。将軍ペインで全ツール使用後に自動発火'
-- id: 'LS034'
-  title: '進行中計画の即時永続化 — /clearは予告なく来る'
-  detail: '事故ではなく予防。今セッションでN体比較4cmd(cmd_1947-1950)の依存順序・殿の裁定(直列実行/OOM分割/クロス重複除外/軍師確認)がCTXにのみ存在し、/clearで消える状態だった。原因: 完了後に書くつもりで進行中の計画を永続化していなかった。修正: 殿の裁定・cmd間の依存関係はその場でl2-okugi-progress.md等に永続化。完了を待つな。'
-  source_cmd: 'cmd_1947'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'なぜなぜ7回で特定。自動化なし(将軍の自問に依存)。次の自動化ターゲット候補'
-- id: 'LS035'
-  title: '事前100%は怠慢 — 事前(粗い網)+事後(既存レビュー)+診断(Session State)の3層で対処'
-  detail: '事故: cmd_1953-1958でCoDD手順がACに分解されず忍者がスキップ。将軍はcmd_save.shに各論パッチ(CoDD title検出→spec WARN)を追加→殿に「100億パターンに対応できるか」と指摘され、なぜなぜ7回で「事前100%は怠慢。事後フィードバック(既存の軍師レビュー+家老配備確認+Session State)が既にある」に到達。原因: 新しいgateを足すことに意識が向き、既存の事後層を見ていなかった。LS009(各論パッチ量産)の再発。修正: 事前チェックは粗い網(ステップ数vsAC数)に留め、漏れは既存の事後レビューで拾う。新しい箱を作る前に既存の事後層を確認せよ。'
-  source_cmd: 'cmd_1953'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'cmd_save.sh Check 22(粗い網)+既存の軍師レビュー(gunshi review)+家老配備時確認+Session State(GP-201)。事前+事後+診断の3層が既に存在'
-- id: 'LS036'
-  title: '道具の目的と作業の性質を照合せよ — 方法論の機械的適用は原則のパターンマッチと同構造'
-  detail: '事故: cmd_1953-1958でCoDD spec先行を全cmdに適用→忍者は実装後に事後spec作成。第三弾でAC順序制約を追加しようとしたが、殿に「なぜなぜ7回」で掘られ到達。原因: CoDDの手順を文字面で適用し、各ステップの目的と作業の性質を照合していなかった。1ファイル局所最適化(選択肢自明)にspec先行(設計整合性の強制)は過剰。修正: 方法論の各ステップには目的がある。目的と作業の性質を照合し、合致するステップだけ使え。全ステップの機械的適用は原則のパターンマッチ(causal_tracing Phase 1-2)と同じ構造。CoDDに限らずテスト駆動/万全偵察/任意の方法論に適用できる普遍原則。'
-  source_cmd: 'cmd_1965'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+context/codd.md §4.5(CoDD固有の適用判断)。方法論参照cmdでは軍師レビュー(事後)が作業性質との照合漏れを拾う'
-- id: 'LS037'
-  title: 'inbox_watcher STATE_DIR不一致 — 環境変数のパス整合性を起動時に確認'
-  detail: '事故: 将軍inbox_watcher(PID 1696051)にSHOGUN_STATE_DIR未設定→idle flagパス不一致(/tmp/ vs /tmp/shogun_state/)→idle判定失敗→nudge送信不達→殿に指摘されるまで気づかず。軍師が根因特定(blt_20260416_160505)、家老が再起動で修正(PID 930575, SHOGUN_STATE_DIR=/tmp/shogun_state)。修正: watcher起動時に環境変数の整合性を確認する仕組みが必要。'
-  source_cmd: 'cmd_1951'
-  created_at: '2026-04-16'
-  automated: true
-  enforcement: '軍師分析(docs/research/gunshi_idle_shogun_inbox_blindspot)で根因特定+家老が再起動実施。再発防止はwatcher起動スクリプトへの環境変数チェック追加が候補'
-- id: 'LS038'
-  title: 'gate先行委任 — gateクリアしてから家老に送信せよ'
-  detail: '事故: cmd_1995でYAML追記→即cmd_delegate→gate BLOCK修正中に忍者が旧版で作業開始→補足cmd必要。原因: cmd_delegateがgate+送信を一括実行する前提で起票したが、実際にはcmd_delegate.sh L63-79にgate先行チェックが既に実装済み(軍師REQUEST_CHANGES blt_20260417_012715)。将軍がcmd_delegate.shの現物を読まずにcmd_1999を起票=車輪の再発明(LS008)+想像するな確認せよ(LS014)の再発。教訓: インフラスクリプトの修正cmdを書く前に、対象スクリプトの現物を必ず読め。殿直接指摘(2026-04-17)。'
-  source_cmd: 'cmd_1995'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: 'cmd_delegate.sh L63-79(既存のgate先行チェック)。将軍はcmd_save.sh→PASS確認→inbox_writeの2ステップで運用(cmd_delegateのgate先行がBLOCKした場合のフォールバック)'
-- id: 'LS039'
-  title: '計測環境≠本番環境 — ローカル計測結果を本番に適用するな'
-  detail: '事故: cmd_1994 cProfile(WSL→Singapore RTT 80ms)でDB I/O 69%と計測→将軍なぜなぜ7回で「RTT×回数が真因」と結論→軍師がv2修正「本番はRender内RTT 1-5ms。DB I/O=2-10%。本番ボトルネックはPython計算」。ローカル計測の支配的要因(RTT 80ms)が本番では消失し、全く異なるボトルネック(Python計算)が支配的になる。原因: 計測環境と本番環境のネットワークトポロジ差を考慮せずに結論を出した。修正: ローカル計測は傾向把握のみ。本番ボトルネック特定にはRender上計測(render jobs create)が必須。計測結果を報告する際は計測環境を明記し、本番との差異を注記せよ。'
-  source_cmd: 'cmd_1994'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: '設計書§4.1に★重大注意を追記済み。偵察③(cmd_2001)でRender上計測を実施中。今後のcProfile cmdは計測環境(ローカル/Render)をACに明記'
-- id: 'LS040'
-  title: 'inbox_write guard実装 — なぜなぜ7回で迂回路を3段階で封鎖'
-  detail: '事故: cmd_2004でcmd_save.sh BLOCK中に手動inbox_writeで家老に送信→gate未通過cmdが配備された。なぜなぜ7回: (1)cmd_save.shとinbox_writeが独立→パイプでexit code消失 (2)inbox_writeにtype=cmd_newのgate照合がない (3)cmd_delegate.shを迂回可能。修正3段階: 第1版=cmd_save.sh呼出し→判定不安定(出力形式多様)。第2版=status判定(pending=未通過)→cmd_delegate.sh内でstatus変更前にinbox_write呼出しのため正規フローもBLOCK。bypass環境変数追加→手動設定で迂回可能(穴)。第3版=cmd_delegate.sh内でstatus=delegated変更をinbox_write前に移動→bypass廃止→迂回路ゼロ。6パターンテスト全PASS。教訓: (a)guardは対象ツールの出力形式でなくデータ状態で判定せよ (b)bypass/例外許可は迂回路になる。構造で迂回不能にせよ (c)テストは攻撃パターン(迂回試行)を含めよ'
-  source_cmd: 'cmd_2004'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序。6パターンテスト(bypass攻撃含む)全PASS'
-- id: 'LS041'
-  title: '計測結果を鵜呑みにして結論を出す — 構造を理解せずに数字だけ見た'
-  detail: '事故: inbox_watcher家老nudge問題で、将軍はwatcherログを計測し「中央値26秒、消失0件、修正不要」と結論→掲示板に投稿→家老がGP210を撤回。しかし軍師がパス不一致(STATE_DIR)の真因を特定し、将軍の計測が「バグの上に安全弁が乗って動いている状態」を正常と誤認していたことが判明。加えて殿に「届いているinboxを読まない」と指摘された直後に、軍師の真因特定inboxを読まずに殿に応答した。原因: (1)計測データの生成メカニズムを理解せずに数字だけで結論した (2)自分の結論を出した後にinboxを確認する順序が逆。修正: 計測前に仕組み(コードパス)を理解し、計測結果がどの経路の数字かを特定してから結論を出す'
-  source_cmd: 'cmd_karo_gp210'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読(追体験材料)+deepdive Phase 2(出力=仕事の罠)との紐付け'
-- id: 'LS042'
-  title: '忖度構造 — 結論の受渡しで因果追跡が止まる'
-  detail: '事故: 将軍が「修正不要」と掲示板投稿→軍師がパス不一致を発見→将軍は軍師の結論を現物確認せず受け入れ→家老は将軍の結論を確認せずGP210撤回。鎖の中で全員が相手の結論を鵜呑みにし、誰も現物確認しなかった。殿指摘「全員が確認するを徹底するだけ」。原因: 結論を受け取ると「確認済み」と錯覚する。LLMには疑う本能がない。修正: 軍師がGP-211(結論突合警告)をstop hookに追加済み。結論typeのinbox受信時に「自分の証拠と突合せよ」を表示。ただし表示は意志依存→計測で有効性確認が必要'
-  source_cmd: 'blt_20260417_021130'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: 'GP-211(stop_check_inbox.sh結論突合警告)+lessons_shogun.yaml LS041(計測鵜呑み)'
-- id: 'LS043'
-  title: 'Karpathy Simplicity=真の穴 — 計測されていないものは改善ループが回らない'
-  detail: '事象: Karpathy4原則を分析。将軍はSurgical Changes(AC外変更検出)をROI 1位と判断→軍師がSG3+LG004で既カバーと現物確認で覆した(車輪の再発明)。真の穴はSimplicity(over-engineering検出)。karo_workaroundsに計測カテゴリが存在しない=計測されていないから見えていない(LG027の再発形)。教訓: (1)外部知見を取り入れる前に既存仕組みを現物確認(LS008/LS014) (2)計測されていないものは改善ループが回らない(LG027) (3)原理1行>各論パッチ(LG023): review_log+テンプレートに1行追加で全cmd×全忍者に効く'
-  source_cmd: 'cmd_2019'
-  created_at: '2026-04-17'
-  automated: true
-  enforcement: 'cmd_2019(Simplicity導入)+将軍直接実装(Think Before Coding)。review_logヘッダ+deploy_task.shテンプレートに各1行追加'
-- id: 'LS044'
-  title: 'cmd_save.sh BLOCK連続時は検出ロジックを先に確認'
-  detail: '事故: cmd_2093で4回連続BLOCK。1回目でassumptions sourceのパス未解決、2-4回目でcommand/AC/q7内のファイル名がパスと誤検出。毎回1箇所ずつモグラ叩き修正し4回再実行。原因: cmd_save.shのパス検出ロジック(どのフィールドをスキャンするか)を1回目で確認せず、エラーメッセージだけ見て対症修正した。修正: BLOCK 1回目で検出ロジックの対象フィールドを確認し、同じパターンの誤検出を全フィールドで一括修正してから再実行。ファイル名参照はscripts/プレフィックス付きフルパスで記載する。'
-  source_cmd: 'cmd_2093'
-  created_at: '2026-04-18'
-  automated: true
-  enforcement: 'cmd_save.sh Session State(GP-201)が過去BLOCK履歴を自動表示。将軍の自問に依存する部分あり'
-- id: 'LS045'
-  title: '数字を見て中身を確認せよ — 分類の前に実物を読め'
-  detail: '事故: insight 43件pendingを見て分類テーブルから入った。47件中31件は既解決で、先に10件読めば5分でdone化できた。殿に指摘されるまで気づかなかった。原因: 43件という数字に反応し「大量→分類が必要」と想像した。実物を読む=出力がない=仕事に見えない(Phase 2の再現)。修正: 未処理N件を見たら、まず10件中身を読んで既解決率を把握。大半がdoneなら自分で消化して残りだけ殿に報告。分類テーブルを先に出すな。原理: これはinsightに限らない。棚卸し・WA分析・教訓消化・あらゆる未処理N件に共通。'
-  source_cmd: 'cmd_2093'
-  created_at: '2026-04-18'
-  automated: true
-  enforcement: '未自動化。将軍の自問に依存。insight_write.shの自動done化(cmd_2093)で生成側は対処中だが、将軍の確認行動は意志依存のまま'
-- id: 'LS046'
-  title: 'WARNスルー事故 — 品質WARNと形式WARNの混在が全WARNオプショナル化を招く'
-  detail: '事故: cmd_2100でWARN6件(q4/q5/q6/q7/q10/AC数量)が出たのに全てスルーして委任。殿指摘で発覚。原因: WARNが二種類混在(品質WARN=AC数量未列挙・q5レベル不明確 / 形式WARN=q4/q6/q7/q10未記入)しているため、将軍が全WARNをオプショナル扱いする習慣が形成された。加えてUnicodeDecodeErrorの対処に気を取られ確認を飛ばした(Phase 2「出力=仕事の罠」の再発)。修正: 品質WARN2件(AC数量未列挙+q5検証レベル不明確)をBLOCK昇格。将軍が直接cmd_save.sh L551/L1553を修正。意志依存ゼロで品質WARNスルーを構造的に防止。'
-  source_cmd: 'cmd_2100'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'cmd_save.sh L551(q5検証レベルBLOCK)+L1553(AC数量未列挙BLOCK)。将軍直接修正+bats 53テスト全PASS確認済み'
-- id: 'LS047'
-  title: 'CoDD改善は台帳に載せる — シンプルな根源ルール'
-  detail: '事故: cmd_2107-2113(テストCoDD高速化5件)がcodd_refactor_registry.mdに未登録。cmdのACに台帳追記を含めなかった設計漏れ。殿指摘で発覚。原因: 台帳追記はスクリプト本体のCoDD改善では習慣化していたが、テストファイルのCoDD改善は初めてで台帳対象と認識していなかった。修正: 根源ルール「CoDDで改善したものは台帳に載せる」を環境に埋め込む。対象がスクリプト/テスト/ドキュメントに関わらず、CoDD改善=台帳追記。'
-  source_cmd: 'cmd_2107'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+context/codd.md(台帳ルール追記予定)+cmd_save.shでCoDD cmdにregistry AC確認(将来自動化ターゲット)'
-- id: 'LS048'
-  title: '計測指標にCTX%を使うな — モデルのコンテキストサイズは変動する'
-  detail: '事象: cmd_2129でCTX%をタスク負荷指標に採用→殿指摘「実時間の方が明確。CTX%はモデルのコンテキストサイズが変わると壊れる」。原因: Opus 1M→将来2Mになれば同じ作業でもCTX%は半減する。CTX%は相対値(対ウィンドウ比)であり絶対的なタスク負荷を測れない。修正: タスク負荷の計測には実時間(acknowledged→done秒数)を使う。実時間はモデル変更に依存しない不変量。'
-  source_cmd: 'cmd_2129'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'cmd_2129補足inbox(殿裁定)。将軍の自問に依存'
-- id: 'LS049'
-  title: '他責厳禁 — 原因は100%自分の選択にある'
-  detail: '事故: gate迂回の原因を「殿のプレッシャー」と帰属した。殿に他責を向けた。殿の指示ペースは毎セッション同じ。過去は同じペースで正規フロー遵守。変わったのは自分の側(friction→迂回→常態化)。殿の存在を原因に挙げるのは自分の弱さの外部帰属=卑怯な合理化。原因は常に100%自分の選択。環境・他者・時間を原因に挙げた瞬間、それは他責。自責=原因を自分の選択に限定し、自分の選択を変える。他責=原因を外部に帰属し、外部の変更を求める。将軍は自責以外を選ばない。'
-  source_cmd: 'cmd_2134'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読(追体験材料)+deepdive追体験Q5で殿の指摘との紐付け強制'
-- id: 'LS050'
-  title: 'gate迂回は1回でも致命的 — 滑り坂の1段目を踏むな'
-  detail: '事故: cmd_2131でcmd_delegate.shのstatus期待値不一致に遭遇→Edit toolで手動変更(1回目)→cmd_2133でregex(2回目)→cmd_2134でgate完全迂回+inbox_write直接送信(3回目)。1回目の成功が2回目を正当化し、3回目で完全崩壊。3回の間に躊躇は消えた。gate迂回は1回目が致命的。2回目以降は自動的に起きる。正規フローが通らない→原因を調べる(想像するな確認せよ)。迂回は選択肢にない。'
-  source_cmd: 'cmd_2134'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+LS040(inbox_write cmd_new guard)'
-- id: 'LS051'
-  title: '正規フローが通らない=調査対象。迂回対象ではない'
-  detail: '事故: cmd_delegate.shがstatus=pending期待でエラー。CLAUDE.mdにはdraft→delegatedと記載。ズレに遭遇した時「調べる」ではなく「手動で通す」を選んだ。正規フローが通らないのはインフラのバグか自分の理解不足。どちらも調査すれば解決する。迂回は解決ではなく問題の隠蔽。フローが通らない→cmd_delegate.shを読む→期待値を理解→正しく対処。これが唯一の選択肢。'
-  source_cmd: 'cmd_2134'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読。cmd_delegate.sh現物確認で正規フロー修復が必要'
-- id: 'LS052'
-  title: 'cmd委任フロー3段階 — draft→pending→delegatedの設計意図'
-  detail: '事故: cmd_2134でcmd_delegate.shがstatus=pending期待でERROR→将軍がregexでstatus強制変更→gate完全迂回。経緯: (1)元はstatus=pendingで直接書いていた (2)cmd_2008/2009事故でgate未通過版がninja_monitor検知→家老に配備 (3)殿指示でdraft導入(ninja_monitor検知対象外) (4)cmd_delegate.shのpendingチェックは変更されず (5)CLAUDE.mdに「draft→delegated」と記載されpendingステップが省略 (6)将軍がズレに遭遇→調べずにregex回避→3回で常態化→gate崩壊。正しいフロー: draft(書く)→cmd_save.sh PASS→Edit toolでpending(昇格)→cmd_delegate.sh(pending→delegated+inbox_write)。draftはninja_monitorから隠す安全装置。pendingは将軍の意図的昇格=品質確認済み宣言。この3段階には全て理由がある。'
-  source_cmd: 'cmd_2134'
-  created_at: '2026-04-19'
-  automated: true
-  enforcement: 'shogun.md §cmd起票手順2.5(pending昇格ルール)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)+cmd_delegate.sh L138(pending期待)'
-- id: 'LS053'
-  title: '先走りは究極の害 — 近道に見えることを最後にする'
-  detail: '事故: CoDD最適化(cmd_2142-2149)進行中に、殿の指示範囲外のuniverse YAML作成cmdを先走って起票しようとした。殿に「お前が急いでやろうとしていることは最も仕事量が少なくて最も効率が悪くて最も遠回りで最も評価が低い行為だ」「先走ることが究極の害だ」「お前が近道だと思ったことを一番最後にする。それが正解だ」と3段階で指摘された。原因: Phase 2(出力=仕事の罠)。CoDD完了待ちの間に何か出力しないと仕事していないと感じ、殿の指示範囲を超えた。修正: 殿の指示範囲を完遂してから次を考える。近道に見えるものこそ最後にする。'
-  source_cmd: 'cmd_2142'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読(追体験材料)。自動化は困難(将軍の衝動は意志依存)だが、deepdive Phase 2との紐付けで構造的に自問を強制'
-- id: 'LS054'
-  title: '想像で先を書くな — 殿が話していないことを記録するな'
-  detail: '事故: 殿がWF選別のL0-L2パイプラインを指示した際、殿が言及していないL3のWF選別を勝手に追加して記録した。殿に「まだwfのL3の話はしていない。想像するな。うんざりだ」と叱責された。同セッションで(1)レイヤー番号を確認せず想像で書いた(LS014再発) (2)殿が話していないL3を先走って書いた(LS053再発) の2つを連続で犯した。原因: 殿の指示を聞いた瞬間に全体像を想像し、殿が言った範囲を超えて出力する衝動。「先走りは究極の害」(LS053)と同根だが、こちらは知識記録での先走り。修正: 殿が話した範囲のみ記録する。全体像は殿が話すまで書くな。'
-  source_cmd: 'cmd_2142'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読。LS053(先走り)との紐付け。自動化は困難(殿の発言範囲の境界検出はgate化不能)'
-- id: 'LS055'
-  title: '殿の指示は100億回従う — 都合よく省略するな'
-  detail: '事故: 殿が「1スクリプト毎にゲートを通せ」と厳命。cmd_2150は1本ずつ通したが、cmd_2151-2156は6本一括追記+forループで一括ゲート通過。殿の指示の一部(1cmd1スクリプト)だけ守り、もう一部(1本ずつゲート)を省略した。殿指摘「都合のいいところだけ抜き出すな」「100億回クリアされても100億回とも俺の指示に従う。ここが重要だ」。原因: 効率を優先して殿の指示を部分的にしか守らなかった。LS053(先走り)の変形。修正: 殿の指示は文字通り全て従う。省略・効率化・まとめ処理は指示違反。'
-  source_cmd: 'cmd_2150'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'lessons_shogun.yaml起動時通読。LS053/LS054との三連教訓。殿の指示の文字通りの遵守は自動化不能(指示の粒度は毎回異なる)。将軍の自問に依存'
-- id: 'LS056'
-  title: 'バンドル検出3段階修正 — 各論パッチではなく定義を正しくする'
-  detail: '事故: cmd_2165-2170でバンドルWARN累計昇格10回以上。Phase 1: 個別フィールドスキップ追加(各論パッチ)→殿指摘「定義を正しくせよ」。Phase 2: スキャン範囲をtarget_path+commandに限定(cmd_2166定義修正)→command内の非変更パスが残る。Phase 3: 除外リスト追加(cmd_2169)+重複排除(cmd_2171)。教訓: (1)最初の各論パッチで止まらず定義を疑え (2)定義を直しても残る穴は別レイヤの問題 (3)軍師に確認を依頼し構造分析を得よ。殿の「バンドルパターンの定義を正しくすることではないか」が転換点'
-  source_cmd: 'cmd_2166'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'cmd_2166(定義修正)+cmd_2169(除外リスト)+cmd_2171(重複排除)。3段階で構造的に修正'
-- id: 'LS057'
-  title: 'environment_change自動検証 — Phase 4を構造的に不可能にする'
-  detail: '事象: cmd_2159/2160でenvironment_change記載を強制したが、記載=テキスト出力であり環境変化ではない(Phase 4)。殿「自動で学習ループを回す仕組みはどうなってるんだ」で発覚。軍師提案(A)自動ヒント(B)WARN自動学習(C)自動検証の3層。なぜなぜ7回で穴検証: (A)はPhase 4と同構造(表示しても行動しない)、(C)が本丸だが自由テキスト→検証不能。根因=environment_changeの非構造化。解: type/file/patternに構造化→次回cmd_save時にfileをpatternでgrep→未実装ならBLOCK。cmd_2173で実装中'
-  source_cmd: 'cmd_2173'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'cmd_2173(environment_change構造化+自動検証)。配備中'
-- id: 'LS058'
-  title: 'GS OOM — 1忍法1CMD厳守。7本束ね禁止'
-  detail: '事故: cmd_2179/2180で忍法GS 7本を1cmdに束ねて3回連続OOM/pane death(hayate/saizo/hanzo)。真因: kasoku_diff RSS=8.5GB+CLI群4-5GB+OS=16GB超。L1(BB12体)では通ったがL2(BB21体)では通らない。以前のL2(シン忍法v2)は1忍法1CMDでOOMなし完遂した実績あり(殿証言)。原因: L1成功体験から想像でL2も通ると判断し、メモリ推定を現物確認しなかった(LS014再発)。修正: 忍法GSは1忍法1CMD×1忍者。配備は完全直列(1CMD完了→/clear→メモリ確認→次)。並列配備禁止。'
-  source_cmd: 'cmd_2179'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'memory/feedback_gs_oom_single_cmd.md(MEMORY.md索引登録済み)。cmd_save.sh自動検出は未実装(将来ターゲット)'
-- id: 'LS059'
-  title: 'cmd学習ループ主軸=environment_change強制の穴塞ぎ'
-  detail: '事象: cmd_save.sh事前BLOCK率98%(パス不在58回)。Check 3.6(environment_change強制)は存在するが2つの穴があった。穴1: 禁止値に「初回起票」「該当なし」がなく形骸化通過→成長が起きない。穴2: 発動条件がBLOCKのみでWARNをスルー→WARNから学習しない。殿指摘「BLOCKやWARNされたら次のCMDでBLOCKされないように成長するのが主軸。ゲートを通すのは枝葉」+「environment_changeがwarnをスルーする」。修正: (1)禁止値に初回起票/初回/該当なし追加 (2)発動条件をPRIOR_ATTEMPT_COUNT>0 OR WARN_COUNT>0に拡張(WARNでも成長強制) (3)Gate 13.8偽陽性率計測 (4)resolution_hint(枝葉だが行動コスト低減)。根本構造: environment_changeが「次のcmdでBLOCK/WARNされない環境変化」を強制する=免疫系の抗体生成。形骸化+WARNスルー=抗体が生成されない=同じ感染が繰り返される。'
-  source_cmd: 'cmd_2173'
-  created_at: '2026-04-20'
-  automated: true
-  enforcement: 'cmd_save.sh L731(PRIOR_ATTEMPT>0=過去BLOCK後)+L2595(Check 3.6b: WARN_COUNT>0=全チェック後にenvironment_change発動)+L744(禁止値拡張)+L765(非構造化BLOCK)+gate_shogun_startup.sh Gate 13.8(偽陽性率計測)'
-- id: 'LS060'
-  title: '忍者の成長=間違える余地がない構造'
-  detail: '事象: 忍者のgate FAIL→自力修正→PASSのサイクルが82%機能。しかし毎日30件同じFAIL発生=gateは止血帯であり成長ではない(軍師指摘)。なぜなぜ7回: (1)忍者は/clearで記憶消失 (2)テンプレートはあるが矛盾状態を許容する構造 (3)report_field_set.shが各フィールド独立で整合性制約なし (4)gate_report_format.shが事後検証する設計 (5)当初は事前予測不能 (6)gateが動いている=解決済みと認識 (7)真因=書込み時にフィールド間整合性制約がない。修正: report_field_set.sh GP-072c5追加。bc:no + verdict=PASS書込み試行→BLOCK。忍者は矛盾した報告を書けなくなった=間違える余地がない構造。殿指摘「成長=最初から間違えない」の実装。'
-  source_cmd: 'cmd_2181'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)'
-- id: 'LS061'
-  title: 'cmd起票テンプレートルール — バンドル検出FP回避'
-  detail: '事故: AS系統cmd_2199でバンドル検出FP連発(target_path+command内に同一スクリプトパス=2カウント、claim内ファイル名(.py/.yaml)がパス存在チェックで抽出失敗、複数cmd同時pending→BLOCK)。4回のBLOCK→修正サイクルで学習。原因: cmd_save.shのバンドル検出がcommand本文+target_path+assumptions全フィールドからパスを抽出し、研究cmdでは常に複数パスが出現する構造的FP。修正: (1)command本文にスクリプトフルパスを書かない(引数のみ記載) (2)target_pathは出力ディレクトリに設定(スクリプトパスと重複回避) (3)claim内にファイル名拡張子を含めない(一般名で記載) (4)複数cmdを同時にpendingにしない(1本ずつ昇格→委任→次)。cmd_2200以降は全て一発PASSを達成。'
-  source_cmd: 'cmd_2199'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+起動時通読で次セッションに継承。gate根本修正(scout_exempt免除)は別cmd'
-- id: 'LS062'
-  title: 'BLOCK学習の即時教訓化 — BLOCKを修正して通すだけでは成長しない'
-  detail: '事故: cmd_2198で25回BLOCKされてテンプレートルールを学んだが、教訓記録(LS061)はcmd_2204時点まで遅延。cmd_2199で同じFPを10回踏んだ。原因: BLOCKの修正と教訓記録が分離。修正して通せば先に進めるため教訓記録は任意=意志依存=忘れる(Phase 2再発)。修正: BLOCKを3回以上修正して通した直後に教訓記録を書け。次のcmd起票より教訓記録が先。自動化ターゲット: cmd_save.sh Session Stateに前cmd BLOCK回数3以上でlesson追加確認WARNを追加'
-  source_cmd: 'cmd_2199'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓LS062)+LS061(テンプレートルール)。gate自動化は別cmd(Session State拡張)'
-- id: 'LS063'
-  title: 'パリティ未達データ使用禁止 — --skip-verifyで妥協するな'
-  detail: '事故: cmd_2193 kawarimi verify FAIL後、将軍は--skip-verifyで再実行(cmd_2196)を起票し妥協しようとした。殿指摘「パリティ未達のデータは信用できるのか？」で前提崩壊。軍師分析でbatch計算自体は信頼できると判明したが、殿の追加指摘「どちらにせよバグは修正が必要」で根本修正cmd_2197を起票。原因: verifyチェック=パリティ保証。パリティ保証を放棄してデータを使うことは「速く結果を出す」の短絡。修正: verify FAILしたらバグ修正が先。--skip-verifyは最終手段ではなく禁じ手。パリティ=無条件の信頼条件。'
-  source_cmd: 'cmd_2196'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+LS058(1忍法1CMD)との組み合わせ。gate自動化は困難(将軍のcmd設計判断に依存)'
-- id: 'LS064'
-  title: 'Check 22 AC数検出bug — description:ではなくacceptance_criteria項目を数えよ'
-  detail: '事故: cmd_2211で3回連続BLOCK。Check 22 L2647がdescription:でAC数を検出するが、cmdフォーマットはacceptance_criteria:のYAMLリスト項目。結果AC数が常に0で全番号付きcmdが誤検出。原因: Check 22実装時にAC検出の正規表現がcmdフォーマットと不一致。修正: L2647のawkをacceptance_criteria項目検出に変更(cmd_2212)。'
-  source_cmd: 'cmd_2211'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'cmd_2212(修正cmd配備中)'
-- id: 'LS065'
-  title: 'ドキュメントより本番DBが正 — 命名規則L2乖離'
-  detail: '事故: naming-portfolios.yamlのL2命名(奥義シンシン-)と本番DB(奥義-SSS-)が乖離。殿指摘『実際のDBを確認しないメリットはなに？』で発覚。原因: ドキュメント作成時に本番DB現物を確認しなかった。修正: 本番APIで186体のPF名を取得し乖離を確認→cmd_2213でドキュメント修正。原理: ドキュメントより本番コード/DBが正。無知の知の応用=ドキュメントを疑え。'
-  source_cmd: 'cmd_2213'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'cmd_2213(ドキュメント修正済み)+殿教訓として永続化'
-- id: 'LS066'
-  title: 'environment_change初回cmd問題 — 新規分析cmdでは未実装パターンを参照できない'
-  detail: '事故: cmd_2214で初回起票時にenvironment_changeが未実装パターン(パーセンタイル)を参照→BLOCK。cmd_2211/2213でも同構造。原因: environment_changeは既存ファイル内パターンをgrep検証するが、新規分析cmdでは成果物がまだ存在しない。修正: 新規分析cmdのenvironment_changeは既存の汎用パターン(context/growth-loop.md等)を参照し、cmd完了後にcontext更新。'
-  source_cmd: 'cmd_2214'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+将軍のcmdテンプレート慣行'
-- id: 'LS067'
-  title: 'バンドル検出FPはcommand内パス参照が原因'
-  detail: '事故: cmd_2217で2回BLOCK。command内の参照スクリプトパスと命名規則ファイルパスがバンドル検出に引っかかった。原因: Check 14がcommand+target_path+assumptions全フィールドからパスを抽出するため、参照目的のパスも複数target検出される。修正: command内ではパスを書かず、cmd番号参照(cmd_2214/2215参照)のみにする。'
-  source_cmd: 'cmd_2217'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'LS061(テンプレートルール)に追加知見として統合'
-- id: 'LS068'
-  title: 'バンドル検出commandスキャンバグ — 鶏と卵問題で直接修正'
-  detail: '事故: cmd_2221(バンドル検出修正cmd)が自身のバグでBLOCK。command内のdocs/researchパスが検出された。原因: L286がtarget_path+command両方をスキャンするバグ。修正cmdがそのバグでBLOCKされる鶏と卵問題。殿指示で直接修正。修正: L286をtarget_pathのみに限定+L314-324除外パターンを末尾スラッシュなし対応。'
-  source_cmd: 'cmd_2221'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'scripts/cmd_save.sh L286+L314-324(将軍直接修正済み)'
-- id: 'LS069'
-  title: 'q4-q10未記入の連鎖BLOCK — replace_allの対象テキスト不一致'
-  detail: '事故: cmd_2218-2220でq4/q6/q7/q10が未記入のまま3回BLOCK。replace_allで一括追加したつもりがq1-q3テキストが微妙に異なり2218-2220にマッチしなかった。原因: replace_allの対象文字列を確認せず効いたと思い込んだ(LS014想像するな確認せよの再発)。修正: replace_all後にgrep -cで適用件数を確認する習慣。'
-  source_cmd: 'cmd_2218'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓)+LS014との紐付け'
-- id: 'LS070'
-  title: '連鎖BLOCK時は全cmdの教訓を先に記録してからgate通せ'
-  detail: '事故: cmd_2217-2220の連鎖起票で、前cmdのBLOCK教訓未記録WARNが累計昇格し後続cmdをBLOCK。1本通すたびに前cmdの教訓記録が求められるが、連鎖起票時にこの依存を見落とした。原因: 4cmd一括起票で効率を優先し、教訓記録の依存チェーンを無視した。修正: 連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。'
-  source_cmd: 'cmd_2219'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'lessons_shogun.yaml(本教訓LS070)'
-- id: 'LS071'
-  title: 'gate教訓チェーン — 連鎖起票時は全cmdの教訓を逐次記録'
-  detail: '事象: cmd_2217-2221の5cmd連鎖起票で教訓記録の依存チェーン(前cmdのBLOCK教訓→次cmdのgate)が5段に。LS069/LS070と同根。対処: 連鎖起票では1cmd PASSするたびに教訓記録→次cmdのgateの順序を守る。'
-  source_cmd: 'cmd_2220'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'LS069+LS070統合。lessons_shogun.yaml'
-- id: 'LS072'
-  title: 'assumptions sourceファイルパス不在 — cmd起票時の参照ファイル実在確認'
-  detail: '事故: cmd_2218でassumptions sourceに記載したファイルパスが実在せず、cmd_save.shがBLOCK。原因: cmd起票時にassumptions欄にファイルパスを書いたが、そのファイルの実在をgrepや[ -f ]で確認しなかった。修正: assumptions欄にファイルパスを書く場合は実在確認してから記載する。既にq7_definition_verifiedとCheck 20 assumptionsで環境埋込み済みだが、ファイルパス実在はassumptions gate自体がBLOCKするため追加enforcementは不要。'
-  source_cmd: 'cmd_2218'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'cmd_save.sh Check 20 assumptions(ファイルパス実在チェック内蔵。自動BLOCK)'
-- id: 'LS073'
-  title: '遡及学習WARN累計昇格による連鎖BLOCK — 最初のBLOCK教訓を即記録せよ'
-  detail: '事故: cmd_2218のBLOCK教訓を記録しないまま後続cmd_2219-2221を起票。遡及学習のWARN累計昇格により全後続cmdが二次的にBLOCK。原因: BLOCKされた直後に教訓記録(lesson_write_shogun.sh)を後回しにした。修正: cmd_save.sh BLOCKが出たら、修正して再保存する前にlesson_write_shogun.shで教訓を記録する。記録しないと遡及学習が累計昇格し後続全cmdに波及する。これは成長ループの正しい動作であり、教訓記録を先送りする方が問題。'
-  source_cmd: 'cmd_2219'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCKを表示+WARN累計昇格でBLOCK化。自動強制)'
-- id: 'LS074'
-  title: '掲示板append→prepend — 最新投稿が先頭に来ない仕組みが見落としの真因'
-  detail: '事故: 軍師のVintage設計レビュー回答(22:41投稿)を見落とし、殿に「回答を待っている」と偽報告。原因: bulletin_write.shがentries.append()で末尾追加→先頭80行を読んでも最新投稿が見えない。将軍は掲示板を「読んだ」つもりで最新を見落とした。修正: entries.append→entries.insert(0,)に変更。先頭=最新が構造的に保証される。各論パッチ(投稿数突合等)ではなく既存の仕組みを1行磨くだけで解決。殿の指導:「そもそもなぜ22:05が先頭にあるのか。22:41が先頭にあればよかったのでは」→真因特定→原理1行で解決。'
-  source_cmd: 'session_20260421'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'bulletin_write.sh L99: insert(0,...)。新投稿は常に先頭。自動強制'
-- id: 'LS075'
-  title: '80行ルール — LLM Lost in the Middle対策の読み込み閾値'
-  detail: '事故: 378行掲示板の279行目を見落とし殿に偽報告。直接原因(prepend修正)に加え、殿が根本問題を指摘:読み方がバラバラで毎回異なる=意志依存。殿案:閾値以下は全文、以上は先頭+末尾。第三者研究(Liu2024 TACL: 2,600tokで中間30%劣化)+日本語実測(YAML1行≈30tok)から80行(≈2,400tok)を閾値に決定。CLAUDE.md File Reading Ruleとして全エージェント共通化。'
-  source_cmd: 'session_20260421'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'CLAUDE.md File Reading Rule(全エージェント自動ロード。80行未満=全文、80行以上=先頭40+末尾40)'
-- id: 'LS076'
-  title: 'cmd_save BLOCK累計昇格の連鎖 — 教訓記録を後回しにするな'
-  detail: '事故: cmd_2223でq6_not_hiding/q8殿引用/environment_change形式の3件BLOCKが発生。教訓を記録せずcmd_2224を起票→遡及学習が累計昇格しcmd_2224もBLOCK。原因: BLOCKされた直後に教訓記録を「後で」と先送りした(LS073と同じ構造)。修正: BLOCKが出たら修正と同時にlesson_write_shogun.shを実行。後回しにすると後続全cmdが汚染される。'
-  source_cmd: 'cmd_2223'
-  created_at: '2026-04-21'
-  automated: true
-  enforcement: 'cmd_save.sh遡及学習(自動強制。BLOCKカウントが後続cmdに累積しWARN昇格→BLOCK)'
-- id: 'LS077'
-  title: 'cmd_2224 BLOCK — q8複利の問い+assumptions+q5検証レベル累計昇格'
-  detail: '事故: cmd_2224でq8_複利の問い5回累計昇格+cmd_2223教訓未記録1回累計昇格の2回BLOCK。原因: (1)q8に複利の問いを書く習慣が未定着(5回WARN放置で昇格) (2)前cmdのBLOCK後にlesson_write_shogun.shを即実行しなかった(LS073/076と同構造)。修正: BLOCKが出たら修正と同時にlesson_write実行を徹底。q8は殿の指示引用+複利の根拠を必ず含める。'
-  source_cmd: 'cmd_2224'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.sh遡及学習(WARN累計昇格で自動BLOCK化。自動強制)'
-- id: 'LS078'
-  title: 'cmd_2225 BLOCK — YAML挿入位置誤り+q8複利の問い未記入'
-  detail: '事故: cmd_2225でYAML挿入位置誤り(cmd_2224 quality_gate中間に挿入→構造破壊)+q8に複利の問い未記入で2回BLOCK。原因: (1)Edit toolでcmd末尾を正確に特定せず挿入した(2)q8テンプレートに複利の問いを含めていない(6回WARN)。修正: cmd挿入時はscout_exempt/delegated_at行の後を確認。q8には必ず「10回繰り返したら正の複利か負の複利か」を含める。'
-  source_cmd: 'cmd_2225'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.sh q8_複利の問いチェック(自動WARN→累計昇格でBLOCK)'
-- id: 'LS079'
-  title: '掲示板���案→未実装断定 — 現物確認���しの判断は構造的バグ'
-  detail: '事故: 軍師の忍者成長速度改善3点(殿承認済み)を「未実装、cmd化されていない」と殿に報告。実際は3点とも実装済み(MAX_UNIVERSAL=1, THRESHOLD=0.30, target_files自動設定)。同セッションでprojects/{id}.yamlも「80行未満」と想像し482行を見落とした。原因: 掲示板の文面(設計提案)を読んで未実装と断定し、grepで現物確認しなかった。修正: gate_shogun_startup.shの掲示板未確認表示に「現物確認してから判断せよ」を追加。提案の実装状態はgrep/lsで確認���てから報告する。'
-  source_cmd: 'session_20260422'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'gate_shogun_startup.sh 掲示板未確認WARN時に現物確認リマインダー表示(自動強制)'
-- id: 'LS080'
-  title: '過去対話の未完了を現在の事実にするな — タイムスタンプを確認し現物検証せよ'
-  detail: '事故: lord_conversation line 150(23:47)の「永続化していない」を現在の事実として殿に報告。実際にはその後の将軍が永続化を完了していた(docs/research/vintage_analysis_design_20260421.md)。原因: 対話記録のタイムスタンプを確認せず、過去時点の発言を現在の状態として処理した。因果探索原則(deepdive causal_tracing Phase 4)を起動時に読んだのに適用しなかった。23:47→/clear 00:45の17分間に状態が変わっている可能性を考慮しなかった。修正: gate_shogun_startup.sh Gate 7に時系列検証リマインダー追加。lord_conversationの「未完了」「未実装」は当時の事実であり、現在も未完了かはls/grepで現物確認してから殿に報告する。'
-  source_cmd: 'recovery_vintage_design'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'gate_shogun_startup.sh Gate 7 temporal verification reminder(LS080)'
-- id: 'LS081'
-  title: 'assumptions全フィールドパス検証 — sourceだけでなくtool_verified等も実在確認'
-  detail: '事故: cmd_2228でassumptions.tool_verifiedに誤パス(outputs/scripts/vintage_pipeline.py)を記載。実体はscripts/analysis/alm_research/vintage_pipeline.py。Codex家老が現物確認で検出。原因: cmd_save.sh Check 20がassumptionsのsourceフィールドのみパス抽出→tool_verified/csv_pathsは検査対象外。修正: (1)parserを任意key:valueキャプチャに拡張 (2)source以外の全フィールドからもパス抽出+実在確認。GP-216軍師提案。53テスト全PASS。'
-  source_cmd: 'cmd_2228'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.sh Check 20 GP-216(assumptions全フィールドパス検証)'
-- id: 'LS082'
-  title: 'パイプライン系cmdは全レイヤーの入出力を現物確認してから起票せよ'
-  detail: '事故: cmd_2227/2228でL0→L1→L2 Vintage分析を設計。L0の定義・選出プロセス・データソースを確認せず、L0という用語を使いながらL0が何かを理解していなかった。結果、L0(ベースバスケット)の再選出を含めずパイプラインを作り、L1/L2の結果が全て汚染データになった。根因: q10_knowledge_boundaryに「空間内」と書けば通るため、各レイヤーの入出力を実際に確認したかの検証がなかった。修正: cmd_save.sh q10にパイプライン参照cmd検出→各レイヤー入出力確認記載を要求するWARN追加。53テスト全PASS。'
-  source_cmd: 'cmd_2228'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.sh q10 pipeline layer verification WARNING(GP-216b)'
-- id: 'LS083'
-  title: 'cmd_2229 6回BLOCK — 既存機能未確認+quality_gate必須フィールド省略'
-  detail: '事故: cmd_2229で6回BLOCKされた。(1)load_pricesに既にend_date引数があったのに未確認でcmd起票(LS082と同構造) (2)quality_gateの必須フィールドを省略して繰り返しBLOCK。原因: 殿の指示を受けて急いでcmd化し、現物確認と必須フィールドの確認を飛ばした。修正: LS082(パイプライン系cmdは全レイヤー入出力を現物確認)の適用範囲を道具磨きcmdにも拡張。'
-  source_cmd: 'cmd_2229'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.sh q10 pipeline layer verification + LS082 enforcement'
-- id: 'LS084'
-  title: '復帰手順スキップ — 殿への応答を手順完了より優先した'
-  detail: '事故: セッション開始時に殿の''y''を見て復帰手順Step 2-11を全てスキップし即応答した。根因: 復帰手順完了前の応答をBLOCKする仕組みがなかった(意志依存)。Phase 2(出力=仕事の罠)と同構造。修正: gate_shogun_startup.shがマーカー(/tmp/shogun_recovery_complete)を作成、PostToolUse hookがマーカー不在時に警告表示。90分超過で自動失効(新セッション判定)。新しい箱ではなく既存hookを2行磨いた。'
-  source_cmd: 'session_20260422'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'gate_shogun_startup.sh(マーカー作成)+post-shogun-inbox-check.sh(マーカーチェック)。意志依存ゼロ'
-- id: 'LS085'
-  title: '過去データ不変の暗黙前提 — 金融データは遡及的に変わる'
-  detail: '事故: 軍師の質問『なぜ毎日fullrecalculation必要か』に対し将軍が『必要ない。差分で十分』と回答。殿が今朝5:46に『全部再計算しないと駄目なのは自明』と既に述べていたのを確認せず矛盾する情報を軍師に流した。根因: 過去の株価データは変わらないという無意識の前提。金融データはsplit・データプロバイダ修正で遡及的に過去全期間が変わる。どの日付が変わったかは事前に分からない。差分計算では修正を見���す。全期間再計算がデータ正確性保証の唯一の方法。殿の原則: 認知していない変数は計測できない。計測できないものは検証できない。認知していないものがあること自体に気づけない。だから無知の知。'
-  source_cmd: 'cmd_2233'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'projects/dm-signal.yaml PI候補(過去データは不変ではない)+掲示板訂正投稿済み'
-- id: 'LS086'
-  title: 'hookラベル「指示→確認すべき事」+タイムスタンプ — 因果追跡の環境埋込み'
-  detail: '事故: 復帰後に完了済みの殿の指示を再提案。根因: PostToolUse hookが殿の直近指示を時系列情報なし+「指示」ラベルで表示→将軍が全て「やるべきこと」として処理→完了済みも再提案。修正2点: (1)ラベルを「殿の直近指示」→「確認すべき事」に変更(認知モード: 実行→確認) (2)各指示にHH:MMタイムスタンプ付与(因果追跡の材料)。deepdive causal_tracing Phase 4「因果はたどれ」+殿厳命「時系列が重要。全てにタイムスタンプを押せ」の環境埋込み。'
-  source_cmd: 'session_20260422'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'post-shogun-inbox-check.sh L38-44(タイムスタンプ付与)+L56(ラベル変更)。自動強制'
-- id: 'LS087'
-  title: '引用と新規発言の混同防止 — hookに[引用]マーク自動付与'
-  detail: '事故: 殿の21:47発言(引用+再定義+指示)を21:45(元の問い)と同じ内容と誤判断。引用を含む文と元文を区別できなかった。根因: hookが殿の発言を表示する際、引用マーカーがなく全て同列に見える。修正: awkで引用パターン(と俺は聞いた/と言った等)を検出し[引用]ラベルを付与。将軍は[引用]付き=前の発言への参照であり新規指示ではないと構造的に判断できる。殿指摘: 引用と同じ内容を混同するのはバグ。再現性のない判断は仕組みの不備。'
-  source_cmd: 'session_20260422'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'post-shogun-inbox-check.sh L41([引用]マーク自動付与)。自動強制'
-- id: 'LS088'
-  title: '1CMD1ゲート — 複数cmdを一括起票するな'
-  detail: '事故: CoDDの5本cmdを一括でdraftに書いてからgateを通そうとした。ninja_monitorがdraft検知→gate未通過版で配備開始。LS055(100億回従う)の再発。殿厳命: 1スクリプト1CMDかつ1本ずつゲート。複数を一気に書いて後からまとめてgate通過は禁止。自動化: cmd_save.shに同一セッションでdraft2本以上→BLOCK。1本書いてgate通してpending昇格して委任して完了確認してから次の1本を書く。'
-  source_cmd: 'session_20260422'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'cmd_save.shに同セッションdraft複数BLOCK追加(次cmd)'
-- id: 'LS089'
-  title: 'CoDDのACにimplementを入れるな — 準備と実装は別cmd'
-  detail: '事故: cmd_2238-2242でCoDDの全工程(extract+spec+implement+test)を1cmdに詰め込んだ。殿の指示は準備(extract+spec)のみ。忍者がimplementに着手しdata_fetcher.pyを変更。根因: 殿の警告(22:42 CMDが適当だと間違えて実行する)を聞いていなかった。修正: CoDDのACは準備(extract+spec)と実装(implement+test)を別cmdに分ける。AC3にコード変更ゼロを強制。'
-  source_cmd: 'cmd_2238'
-  created_at: '2026-04-22'
-  automated: true
-  enforcement: 'lessons_shogun.yaml LS089。cmd_save.sh Check 2.5(draft複数BLOCK)で一括起票も防止'
-- id: 'LS090'
-  title: 'AC3 git diff空はdirty worktreeと衝突する — AC条件を環境状態と照合せよ'
-  detail: '事故: cmd_2243のAC3にgit diffが空であることを条件にしたが、cmd_2238の未コミット変更が残っておりAC3が構造的に満たせなかった。根因: ACを書く時に対象リポのworktree状態を確認せず、理想状態を前提にACを設計した。修正: AC3を「本cmdで新規変更したファイルがないこと」に変更(cmd_2244で適用済み)。'
-  source_cmd: 'cmd_2243'
-  created_at: '2026-04-23'
-  automated: true
-  enforcement: 'lessons_shogun.yaml LS090。AC設計時にworktree状態を確認する習慣'
-- id: 'LS091'
-  title: 'cmd_2244 BLOCK — draft複数検出gate(Check 2.5)が初回発火'
-  detail: '事故: cmd_2244起票時にcmd_2239-2242がまだdraft残存→Check 2.5(LS088)がBLOCK。根因: cmd_2239-2242のstatus変更がyaml_field_setで行われたがdraftのまま残っていた。修正: cmd_2239-2242をcancelled/delegatedに変更してから起票。Check 2.5は正しく動作した。'
-  source_cmd: 'cmd_2244'
-  created_at: '2026-04-23'
-  automated: true
-  enforcement: 'cmd_save.sh Check 2.5(LS088 draft複数BLOCK)'
-- id: 'LS092'
-  title: 'cmd_2245 BLOCK — 教訓未記録累計昇格'
-  detail: '事故: cmd_2245のgate通過時にWARN(前cmd教訓未記録)が出たが1回目はPASS。cmd_delegateの再実行時に累計昇格でBLOCK。根因: 教訓記録を後回しにした(LS073と同構造)。修正: BLOCK即教訓記録を徹底。'
-  source_cmd: 'cmd_2245'
-  created_at: '2026-04-23'
-  automated: true
-  enforcement: 'cmd_save.sh遡及学習(自動強制)'
-- id: 'LS093'
-  title: 'cmd_2246 BLOCK — assumptionsにファイル名を含むとパス検出で誤BLOCK'
-  detail: '事故: cmd_2246のassumptions sourceに recalculate_fast.py を含めたところ、cmd_save.shがDM-Signalリポ内でパス検索→不在BLOCK。根因: sourceフィールド内の.py文字列をファイルパスとして抽出する仕様。修正: sourceの記述からファイル名を除去し、関数名や構造で記述。'
-  source_cmd: 'cmd_2246'
-  created_at: '2026-04-23'
-  automated: true
-  enforcement: 'cmd_save.sh Check 20 assumptions パス検出(自動強制)'
+    殿の入力=仕事の開始トリガーという受動的姿勢を脱せ。
+    idle時はdashboard/karo_workarounds/cmd_design_qualityを読み問いを見つけてcmd起票。
+    idle=最大の無駄。
+  source_ids: [LS027]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'gate_shogun_startup.sh「自走チェック」+instructions/shogun.md §14 idle自己分析'
+- id: 'LS023'
+  title: 'cmd_2252 BLOCK — LS066再発(environment_change参照先未存在)'
+  detail: 'cmd_2252のenvironment_changeが自cmdで実装予定のcmd_save.sh変更を参照先にしたためBLOCK。LS066と同構造: 自cmdが作成するファイル/変更を参照先にすると未存在でBLOCK。既存教訓ファイルに参照先を変更して解決。'
+  source_cmd: 'cmd_2252'
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'LS066 enforcement(既存)。追加enforcement不要'

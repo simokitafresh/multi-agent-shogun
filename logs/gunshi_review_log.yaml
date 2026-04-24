@@ -2422,7 +2422,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。cmd_save.sh FP率改善: unknown型fallback/教訓累計source_cmd照合/q8_WHY廃止。158テストPASS"
   observations:
     - "事実1: AC3で廃止選択=FP率100%(4/4)のため妥当。検出パターン全件FPなら廃止が正解"
@@ -2436,7 +2436,7 @@
   review_type: report
   report_ninja: saizo
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。テスト期待値追従修正。152/152 PASS。cmd_save.sh本体未変更"
   observations:
     - "事実1: cmd_2248でWARN note形式変更→テスト期待値不整合→saizoがテスト側のみ修正"
@@ -2461,7 +2461,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。check_self_reread FP修正。ambiguity→ambiguous最小修正+回帰テスト。170/170 PASS"
   observations:
     - "事実1: YAMLキー除外ロジック新設ではなく語彙変更の最小差分を選択。simplicity_check通過"
@@ -2524,7 +2524,7 @@
 - cmd_id: cmd_2252
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点OK。LS009(各論パッチ検出)+LS029(assumptions時系列)のcmd_save.sh WARN追加"
   observations:
@@ -2532,3 +2532,53 @@
     - "事実2: WARN追加(BLOCKではない)。FPリスク低。既存checker拡張で新規箱不要"
   causal_chain: "partial教訓=意志依存→gate化=環境に埋込み→全cmdで自動検出=正の複利(知性の外部化)"
   timestamp: "2026-04-24T13:10:00"
+- cmd_id: cmd_karo_gate_clear_idle
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。GATE CLEAR後のtask idle化自動化。家老WA削減"
+  observations:
+    - "cmd_complete_gate.sh L4197にGATE CLEAR処理存在確認。worker_idはreport YAMLに実在"
+  causal_chain: "GATE CLEAR→task status:done残存→stop hookブロック→家老手動idle→自動化で解消"
+  timestamp: "2026-04-24T13:45:00"
+- cmd_id: cmd_karo_conflict_marker_gate
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。conflict markers予防gate。現在0件=予防的施策"
+  observations:
+    - "gate_lesson_health.sh 425行。既存チェック項目に追加する形で自然に拡張可能"
+  causal_chain: "git stash衝突→markers混入→GATE BLOCK→事前検出gateで予防→修復コスト削減"
+  timestamp: "2026-04-24T13:45:00"
+- cmd_id: cmd_karo_pd_summary_fix
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。summary自動再計算。既存yaml.dump2箇所はscope外"
+  observations:
+    - "pending_decision_write.shにyaml.dump 2箇所(L227,L412)が既存。新規コードはawk/python3で制約遵守"
+  causal_chain: "PD書込み→summary手動更新忘れ→乖離蓄積→gate_shogun_startup.shで偽情報表示→自動再計算で解消"
+  timestamp: "2026-04-24T13:45:00"
+- cmd_id: cmd_karo_gate_clear_idle
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  gate_result: null
+  findings_summary: "4観点OK。GATE CLEAR後task idle化追加。bats 53件全PASS"
+  observations:
+    - "set_matching_tasks_idle()をCLEAR後処理archive後/push前に配置。新規bats 3件追加"
+  causal_chain: "GATE CLEAR→task done残存→stop hook繰返しBLOCK→家老手動idle→自動化で手動工程排除"
+  timestamp: "2026-04-24T13:50:00"
+- cmd_id: cmd_karo_conflict_marker_gate
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  gate_result: CLEAR
+  findings_summary: "4観点OK。SSOT conflict markers検出gate追加。bats 20件全PASS"
+  observations:
+    - "ssot_path参照で正しい対象検出。|||||||も追加(discretion_fills妥当)"
+  causal_chain: "git stash衝突→markers混入→GATE BLOCK原因不明→事前検出ALERTで即座に修復可能に"
+  timestamp: "2026-04-24T13:50:00"

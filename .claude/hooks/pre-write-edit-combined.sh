@@ -80,4 +80,13 @@ if [[ "$tool_name" == "Edit" && "$file_path" == *'/lessons.yaml' ]]; then
     fi
 fi
 
+# === Guard 6: lessons_shogun.yaml肥大化防止 (v2統合後: 上限35件) ===
+if [[ "$file_path" == *'lessons_shogun.yaml' ]]; then
+    _ls_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
+    if [ "$_ls_count" -ge 35 ]; then
+        emit_deny "BLOCKED: lessons_shogun.yaml ${_ls_count}件(上限35件)。\\nWHY: 肥大化防止(v1: 97件→v2統合で21件に圧縮)。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。\\n参考: docs/research/lessons_shogun_v1_archive.md"
+        exit 1
+    fi
+fi
+
 exit 0

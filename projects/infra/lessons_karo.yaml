@@ -497,3 +497,10 @@ lessons:
   detail: 'コード変更(inbox_write.shにreport_review自動化)は完了したがLK086/karo.mdが旧フロー(3アクション)のまま。次の家老が旧ルールに従い二重送信する穴。根因: コード変更→知識基盤更新の連動が意志依存。対策: 自動化cmd完了時に「既存ルールのどこが変わるか」をACに含めよ。即座対応としてLK086+karo.md更新をcmd_karo_lk086_updateで配備。'
   source_cmd: 'cmd_karo_lk086_update'
   created_at: '2026-04-21'
+- id: 'LK092'
+  title: 'task YAMLクリアは全フィールドリセット必須 — 3点クリアでは旧ACが残存しCodex STALLの原因になる'
+  detail: 'status/task_id/parent_cmdの3点のみクリアすると、acceptance_criteria/related_lessons/description/target_path等が残存する。次のdeploy_task.shが上書きする前にCodex忍者がtask YAMLを読み、旧フィールドと新配備の混在で混乱→STALL。cmd_2250疾風STALLで実証。LK060(3点クリア)の拡張。対処: GATE CLEAR後のtask YAMLクリアは全フィールドリセット(テンプレート書出し)で行え。yaml_field_setの3点クリアではなくcat > task.yaml << EOF...EOF'
+  source_cmd: 'cmd_2250'
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: deploy_task.sh STALE_FIELDS第10層にrelated_lessons/ninja_weak_points/role_reminder/bloom_level追加。配備前に自動クリア
