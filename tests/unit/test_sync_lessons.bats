@@ -126,8 +126,9 @@ print('ok')
 EOF
 
     # Create file cache target so auto-extraction finds it
-    mkdir -p "$EXT_PROJECT/scripts"
-    touch "$EXT_PROJECT/scripts/run_077_kawarimi.py"
+    # _tf_file_cache scans SCRIPT_DIR (=$TEST_PROJECT), not EXT_PROJECT
+    mkdir -p "$TEST_PROJECT/scripts"
+    touch "$TEST_PROJECT/scripts/run_077_kawarimi.py"
 
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 ssot_path: /tmp/dummy
