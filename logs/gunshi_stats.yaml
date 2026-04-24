@@ -4,7 +4,7 @@
 # 累計: ~1225件 (draft:~374, report:~572, self_study:~228, verify:3, consultation:~9, other:~43) | '2026-03-22〜 (2026-04-20T23:10更新。アーカイブ12本)
 # accuracy公式: gate_result判明分 99.5% (656/659 CLEAR, 3 BLOCK) ← Goodhart注意。BLOCK3件
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
-#   gate_result null: 72件(7%)
+#   gate_result null: 0件(GP-219で18→0解消。N/A追加。旧72件はアーカイブ+sync済み)
 # verdict分布: APPROVE:316 LGTM:446 REQ_CHANGES:42 FAIL:16
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
