@@ -49,15 +49,23 @@ for f in queue/inbox/archive/gunshi_*.yaml; do
     done < <(extract_gate_results "$f")
 done
 
-# archiveでstatus: doneのcmdはCLEARと推定
+# archiveでstatus: done/completed/delegatedのcmdはCLEARと推定
+# cancelled/halted/superseded/absorbed/shelvedはN/A（gateなし）
 # 高速化: glob展開+basename loop(3.1s/1740files)→ls+awk(0.014s, 220x)
 # WSL2 NTFSではglob展開が個別stat→致命的に遅い
 if [[ -d "queue/archive/cmds" ]]; then
+    # CLEAR: done/completed/delegated（delegated=STK未更新だが実質完了）
     while read -r local_cmd_id; do
         [[ -n "$local_cmd_id" ]] || continue
         [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
         GATE_MAP["$local_cmd_id"]="CLEAR"
-    done < <(find queue/archive/cmds/ -maxdepth 1 -name '*_done_*.yaml' -o -name '*_completed_*.yaml' 2>/dev/null | sed 's|.*/||; s/_done_.*//; s/_completed_.*//' | sort -u)
+    done < <(find queue/archive/cmds/ -maxdepth 1 \( -name '*_done_*.yaml' -o -name '*_completed_*.yaml' -o -name '*_delegated_*.yaml' \) 2>/dev/null | sed 's|.*/||; s/_done_.*//; s/_completed_.*//; s/_delegated_.*//' | sort -u)
+    # N/A: cancelled/halted/superseded/absorbed/shelved（gateなし）
+    while read -r local_cmd_id; do
+        [[ -n "$local_cmd_id" ]] || continue
+        [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
+        GATE_MAP["$local_cmd_id"]="N/A"
+    done < <(find queue/archive/cmds/ -maxdepth 1 \( -name '*_cancelled_*.yaml' -o -name '*_halted_*.yaml' -o -name '*_superseded_*.yaml' -o -name '*_absorbed_*.yaml' -o -name '*_shelved_*.yaml' \) 2>/dev/null | sed 's|.*/||; s/_cancelled_.*//; s/_halted_.*//; s/_superseded_.*//; s/_absorbed_.*//; s/_shelved_.*//' | sort -u)
 fi
 
 echo "=== gunshi_gate_sync: ${#GATE_MAP[@]}件のgate_result情報収集済み ==="
