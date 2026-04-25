@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-25 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-25T20:30:33+09:00 -->
+<!-- generated_at: 2026-04-25T20:36:41+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-25T20:36:41+09:00 | terminal | response | 既存のgunshi.md L266は「暗黙の前提を列挙し確認する」既存ルール。#22の「3段階フロー(列挙→合意→確認)」とは別の内容。claimは正確。 cmd_save.sh実行。 [meta] stop_reason=tool_use
+- 2026-04-25T20:33:19+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-25 20:20:14|cmd_2275 2026-04-25 20:25:10|cmd_2272 2026-04-25 20:32:01|cmd_2276
+- 2026-04-25T20:33:17+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-177)
+- 2026-04-25T20:32:33+09:00 | terminal | response | **G2(Round 2残り4項目: #4 Adaptive gating, #5 Adversarial review, #10 Scope lock, #22 前提3段階)を起票する。** 軍師系ファイル集中のため1cmdで収まる。i…
+- 2026-04-25T20:31:59+09:00 | terminal | inbound | 次は何をする？
+- 2026-04-25T20:31:49+09:00 | ntfy | outbound | 【CLI再起動成功】hanzo: pane_cmd=claude
 - 2026-04-25T20:30:33+09:00 | terminal | response | Step 9完了。研究日誌最新Phase: UPSERT化設計v3.0三面作戦+Karpathy原則分析。 Step 10: inbox処理済み(全read)。 Step 11: 禁則確認 — F001-F008把握。特にF001(自ら手…
 - 2026-04-25T20:25:07+09:00 | terminal | inbound | y
 - 2026-04-25T20:24:50+09:00 | terminal | response | 家老に状態確認を投げた。回答を待つ。 cmd_2276は疾風に配備済み(assigned CTX:0%)。idle: 4名(影丸/半蔵/才蔵/小太郎)。 殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-04-25T20:24:35+09:00 | terminal | inbound | 確認しよう
-- 2026-04-25T20:24:20+09:00 | terminal | response | cmd_2272は**GATE BLOCK**: `vercel_phase:broken_references`。報告は才蔵+小太郎の2本ある。 殿、cmd_2272はGATE BLOCKで家老が対処中。broken_reference…
-- 2026-04-25T20:24:20+09:00 | ntfy | outbound | 【家老】cmd_2276 初回配備開始 (title=強化 — GBrain知見#35: deploy_task.sh教訓注入query router(知識ソース優先度選択), ninja=hayate) 強化 📋 https://gis…
-- 2026-04-25T20:23:40+09:00 | terminal | inbound | 2272
-- 2026-04-25T20:23:04+09:00 | terminal | response | 殿の指示を待つ。 **本セッション起票済みcmd:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2272 | Round 1(15項目) | GATE CLEAR待ち | | cmd_2…
-- 2026-04-25T20:21:10+09:00 | terminal | inbound | #35 query router起票
-- 2026-04-25T20:20:57+09:00 | terminal | response | 本セッション全cmd状態: | cmd | 内容 | 状態 | |-----|------|------| | cmd_2272 | Round 1(15項目instructions追記) | 才蔵done、GATE CLEAR待ち | …
 
 ## 未解決確認事項
+- 既存のgunshi.md L266は「暗黙の前提を列挙し確認する」既存ルール。#22の「3段階フロー(列挙→合意→確認)」とは別の内容。claimは正確。 cmd_save.sh実行。 [meta] stop_reason=tool_use
 - Step 9完了。研究日誌最新Phase: UPSERT化設計v3.0三面作戦+Karpathy原則分析。 Step 10: inbox処理済み(全read)。 Step 11: 禁則確認 — F001-F008把握。特にF001(自ら手を動かすな)、F004(ポーリング禁止)…
 - 家老に状態確認を投げた。回答を待つ。 cmd_2276は疾風に配備済み(assigned CTX:0%)。idle: 4名(影丸/半蔵/才蔵/小太郎)。 殿の指示を待つ。 [meta] stop_reason=end_turn
 - 確認しよう
@@ -23,7 +24,6 @@
 - **cmd_2271 GATE BLOCK。** 家老の上申: - **半蔵FAIL(正当)**: L484に従い正しく停止。教訓注入が効いている - **疾風(先の配備)**: 教訓なしで3回違反。→ cmd_2270(engram教訓関連度)の効果実証 - hayate/k…
 - 先にhanzoがまた動いているから確認してみよう
 - **cmd_2271 FAIL。** 半蔵の報告: **根因:** perf_measure.pyがviewer認証を自動実行する設計のため、admin計測ページではL484(admin→viewer迂回禁止)に抵触し作業停止。計測スクリプト改変禁止の制約下で解決できなかった。…
-- 3つの候補がある。 1. **cmd_2271(CDP再計測)の結果確認** — 半蔵done(CTX:80%)。Phase 1-Aの速度改善効果が数字で出ているはず。dashboardに上がるのを待つか、報告YAMLを直接確認 2. **G2 cmd起票** — #4 Ada…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-25T20:30:33+09:00 | Step 9完了。研究日誌最新Phase: UPSERT化設計v3.0三面作戦+Karpathy原則分析。 Step 10: inbox処理済み(全read)。 Step 11: 禁則確認 — F001-F008把握。特にF001(自ら手を動かすな)、F004(ポーリング禁止)…
