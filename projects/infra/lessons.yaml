@@ -137,8 +137,8 @@ lessons:
   summary: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
   tags:
   - universal
-  helpful_count: 5
-  harmful_count: 4
+  helpful_count: 7
+  harmful_count: 7
   last_referenced: '2026-04-25'
   target_files:
   - gate_loop_health.sh
@@ -1034,6 +1034,9 @@ lessons:
   - oauth
   target_files:
   - token_refresh.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L385
   title: リスト切り捨て前にソートすべき:ファイル内順序≠論理順序
   summary: conversation_retention.shのoverflow切り捨てがファイル内位置順で行われていた。JSONLへの追記順が時系列と一致する保証はなく、
@@ -2177,6 +2180,9 @@ lessons:
   target_files:
   - block_destructive.sh
   - shutsujin_departure.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L240
   title: test_result_guard.sh正規表現がbats TAP出力のテスト番号+テスト名を誤マッチ
   summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
@@ -2604,6 +2610,9 @@ lessons:
   target_files:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_675.yaml
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L184
   title: set -u配下で任意引数を追加するbash関数は既存呼び出し互換を守れ
   summary: '`download_attachment_image()` に第2引数を追加した際、旧テストが1引数呼び出しのままで `local attachment_nam'
