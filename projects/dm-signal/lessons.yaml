@@ -698,6 +698,9 @@ lessons:
   summary: '2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache を {da'
   tags:
   - 'universal'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:44:00+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: 'L572'
   title: 'GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search'
   summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana'
@@ -1011,6 +1014,9 @@ lessons:
   summary: 'cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テ'
   tags:
   - 'universal'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:43:59+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - 'outputs/analysis/standard_pf_preprocessing/dm6_5_extended_results.yaml'
   - 'scripts/analysis/standard_pf_preprocessing/dm6_5_extended_study.py'
@@ -1057,6 +1063,9 @@ lessons:
   summary: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点が'
   tags:
   - 'universal'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:43:59+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/analysis/nested_fof/r30_denoised_optics_vs_ward.yaml'
@@ -1067,6 +1076,9 @@ lessons:
   summary: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せ'
   tags:
   - 'universal'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:43:59+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   target_files:
   - 'outputs/analysis/nested_fof/r29g_shin_clsel_2d_grid_extra_results.yaml'
   - 'scripts/analysis/nested_fof/r29g_shin_clsel_2d_grid_extra.py'
@@ -1213,7 +1225,7 @@ lessons:
   - 'deploy'
   - 'production_invariant'
   helpful_count: 3
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-25'
   target_files:
   - 'tasks/lessons.md'
@@ -5031,6 +5043,9 @@ lessons:
   summary: '`scripts/download_all_prices.py` を実行しようとして `No such file` エラー。正しくは `scripts/anal'
   tags:
   - 'bash'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:43:52+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
   target_files:
   - 'scripts/download_all_prices.py'
   - 'scripts/analysis/data_sync/download_all_prices.py'

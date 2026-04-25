@@ -3154,7 +3154,7 @@
 - cmd_id: cmd_2270
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "6観点全OK。engram的教訓関連度検索。deploy_task.sh L2538付近の注入ロジック改修。有用率7.7%→改善"
   observations:
@@ -3176,3 +3176,16 @@
     - "lesson_candidate: CDP retry artifact分離必須。登録推奨(再発防止)"
   causal_chain: "CI PASS前提→repo workflow不在→AC1未達。CDPリトライ→同一artifact path上書き→比較データ汚染→AC2/AC3未達。根因=cmd前提の検証不足(CI有無)+retry分離設計不在"
   timestamp: "2026-04-25T17:50:00"
+- cmd_id: cmd_2270
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2270_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。教訓注入スコアリング導入。frequency count(title×3)+PJ boost(+2)+MAX_INJECT=10。テスト9/9"
+  observations:
+    - "commit a5b9e57c。deploy_task.sh 3箇所変更+テスト1本新規(9件)"
+    - "presence→frequency count改善。title重み×3でキーワード豊富な教訓を正確にランク"
+    - "lesson_candidate有: スコアリング設計知見(presence<frequency, PJ boost有効)"
+  causal_chain: "tag match均等注入(有用率7.7%)→frequency+PJ boostスコアリング→関連教訓優先→有用率改善→忍者学習効率向上=正の複利"
+  timestamp: "2026-04-25T17:55:00"

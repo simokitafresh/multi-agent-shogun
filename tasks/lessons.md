@@ -4045,7 +4045,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-25
 - **出典**: cmd_2270
 - **記録者**: hanzo
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra]
 - **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lesson_scoring.bats]
 - 単純なin演算子(presence)より頻度カウント(title.count(kw)*3)の方が、キーワードが多い教訓を正確に上位にランクできる。プロジェクト一致ボーナス+2でDM-Signal等プロジェクト固有の教訓が適切に優先される。MAX_INJECT=3は過小で関連教訓を捨てていた(10に拡大で改善)。

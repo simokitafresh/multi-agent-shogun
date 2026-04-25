@@ -17187,7 +17187,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17197,7 +17197,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17207,7 +17207,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -17249,7 +17249,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17259,7 +17259,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17269,7 +17269,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -17322,7 +17322,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17332,7 +17332,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -17342,7 +17342,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -17359,3 +17359,22 @@ entries:
     source: "cmd_complete_gate"
     timestamp: "2026-04-25T08:41:55Z"
     notes: "hayate:binary_checks_fail|hayate:purpose_validation_fit_false|draft_lessons:1"
+  - cmd_id: "cmd_2270"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-25T08:43:16Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2270"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-25T08:43:52Z"
