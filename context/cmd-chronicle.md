@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-24 -->
+<!-- last_updated: 2026-04-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,10 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1394 | — | infra | 03-25 | テスト4件全PASS。修正不要。awk実装はinvalid_lessons_useful_format/形式が不正を正しく出力しており、テスト期待値と整合済み。 |
-| cmd_1392 | dashboard_auto_section.sh 高速化 — 22.5秒→5秒以下 | infra | 03-25 | model_analysis.sh --summaryをPython→bash/awkに置換。6.4s→0.8s(WSL2)。2秒以下達成 |
-| cmd_1391 | CI RED修正 — simokitafresh/multi-agent-shogun 15テスト失敗 | infra | 03-25 | 担当テスト(ninja_monitor 9件)は他忍者(tobisaru+kotaro)のcommitで解決済み。追加作業不要 |
-| cmd_1397 | シン四神v2(12体standard) + シン忍法v2(20体FoF)を本番DBに登録する。チェックリストStep 6 | dm-signal | 03-25 | シン四神v2 12体(standard)+シン忍法v2 20体(FoF)を本番DBに登録完了。全32体がAPI GET存在確認+フォルダー所属+pipeline |
 | cmd_1398 | — | dm-signal | 03-26 | 全65 active standard PF ALL PASS (hs=完全一致, ret=完全一致)。シン四神v2 12体+既存53 PF全てパリティ検証完了 |
 | cmd_1399 | — | dm-signal | 03-26 | シン忍法v2 20体パリティ検証完了。PASS=2体、FAIL=18体。18体のFAILは全てL485既知パターン（初月hs_cross不一致のみ）。構造的FA |
 | cmd_1400 | — | infra | 03-26 | AgentsViewModel.kt L115の capture-pane -S パラメータを -50 から -500 に変更。assembleDebug BU |
