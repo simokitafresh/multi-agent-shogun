@@ -841,3 +841,6 @@
 | cmd_2270 | deploy_task.shの教訓注入で、タスク内容に基づく関連度スコアリングを導入。engram(autoresearch-engram)の頻度重み付きクロスセッション知識検索を参考に、教訓有用率を7.7%から大幅改善する。 | infra | 04-25 | deploy_task.shの教訓注入にキーワード関連度スコ |
 | cmd_2271 | cmd_2268のCDP計測失敗を条件調整して再実行。Phase 1-A(signals slim化)の速度改善効果とバグ有無を確認する。 | dm-signal | 04-25 | FILL_THIS |
 | cmd_karo_ci_fix_2270 | cmd_2270でMAX_INJECT=3→10に変更したがテスト2件(test 444/445)が旧値3を期待してFAIL。テストを新値10に更新しCI GREEN復帰する。 | infra | 04-25 | MAX_INJECT=10変更に追随して deploy_ta |
+| cmd_2272 | GStack/GBrain深掘りカタログ(docs/research/gstack-gbrain-takeaway-catalog.md §8)のRound 1全15項目をinstructions/context/templateに追記。全cmdのレビュー品質・偵察品質・報告品質に複利で効く。 | infra | 04-25 | AC2(ashigaru.md: bisect commit |
+| cmd_2273 | cmd_complete_gate.shに4つの新検証を追加し、忍者のscope逸脱・レビュー陳腐化・部分完了・修正暴走を構造的に検出する。cmd_2271事故(scope外174行改変)の再発防止。 | infra | 04-25 | cmd_complete_gate.shに4新検証(scop |
+| cmd_2274 | CDP計測結果にbaseline比較・回帰閾値判定・health score算出を追加。deploy後の性能変化を自動検出し、Phase毎の改善効果を数値で追跡可能にする。 | infra | 04-25 | scripts/cdp/cdp_benchmark.py(. |

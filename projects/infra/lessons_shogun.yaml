@@ -346,3 +346,17 @@ lessons:
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh assumptions sourceパス検証(既存自動)+LS033'
+- id: 'LS035'
+  title: 'command_steps_over_ac — commandはターゲットファイル単位で構成せよ'
+  detail: 'commandを番号付きステップで列挙するとcommand_steps_over_acが発火する。ACと1:1対応させるにはターゲットファイル単位(gunshi.md/ashigaru.md/template等)でグループ化して記載する。番号付き15ステップ→9ファイルグループに再構成で解消。'
+  source_cmd: 'cmd_2272'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh command_steps_over_ac検出(既存自動)。将軍の書き方是正'
+- id: 'LS036'
+  title: 'environment_change自cmd参照BLOCK再発(LS023)'
+  detail: 'cmd_2273でenvironment_changeにtype=gate;file=cmd_complete_gate.sh;pattern=check_scope_driftと書いたが、これは自cmdが実装する関数であり未存在でBLOCK。LS023と同構造。対策: environment_changeは前cmdのBLOCKで記録した既存教訓を参照先にする。自cmdの成果物は参照先にしない。'
+  source_cmd: 'cmd_2273'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh environment_change grep検証(既存自動)。将軍の書き方是正(LS023と同根)'
