@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-25 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-25T16:34:38+09:00 -->
+<!-- generated_at: 2026-04-25T16:49:25+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-25T16:49:25+09:00 | terminal | response | cmd_2267のcommit(`773efb9f`)はローカルにあるがorigin/mainにpush未済。Render deployにはpush→CIが必要。 殿、cmd_2267をpushしてRender deployした後にCDP…
+- 2026-04-25T16:40:40+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-25 16:33:58|CI緑: run 24925673596
+- 2026-04-25T16:35:21+09:00 | ntfy | outbound | 【家老】cmd_2267 初回配備開始 (title=最適化 — /api/signals FoF display展開の事前計算化(Phase 1-A), ninja=hayate) 最適化 📋 https://gist.github.c…
 - 2026-04-25T16:34:38+09:00 | terminal | response | はっ。Phase 1-A完了後にCDP再計測を挟む。計測→改善→再計測のサイクルを回す。 cmd_2267の完了を待つ。殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-04-25T16:34:31+09:00 | terminal | inbound | phase毎にCDPでバグがないか、速度改善があるか確認を挟もう。2267が完了したらやろう
 - 2026-04-25T16:34:25+09:00 | terminal | response | **cmd_2267 委任完了。** Phase 1-A（`/api/signals` FoF display展開の事前計算化）。 本セッションの戦果: | cmd | 内容 | 状態 | |-----|------|------| | …
@@ -11,9 +14,6 @@
 - 2026-04-25T16:28:52+09:00 | terminal | response | 設計書§6の補完で穴が埋まった。更新されたプランを報告する。 ## 更新プラン（補完調査反映） ### 変更点 **§6.1の発見: ボトルネックの本丸が特定された** - `/api/signals` 500-700msのうち、**#6…
 - 2026-04-25T16:28:14+09:00 | terminal | inbound | 新しいプランはどうなった？
 - 2026-04-25T16:25:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-25 16:13:51|cmd_2265 2026-04-25 16:24:39|cmd_2266
-- 2026-04-25T16:25:10+09:00 | terminal | response | 殿、2件処理完了。 - **cmd_2266 GATE CLEAR** — 設計書補完（穴6件: BE profiling + FEフィールドマッピング + Render構成 + Static Export制約 + 依存関係 + 計測値分…
-- 2026-04-25T16:23:46+09:00 | terminal | response | 全テスト通過: 57 + 12 = **69 PASS / 0 FAIL**。 殿、検証結果をまとめる。 ## 修正結果 | 修正 | ファイル | 内容 | Before→After | |------|---------|------…
-- 2026-04-25T16:21:42+09:00 | ntfy | outbound | 【軍師テスト】ntfy listener健全性確認
 
 ## 未解決確認事項
 - phase毎にCDPでバグがないか、速度改善があるか確認を挟もう。2267が完了したらやろう
