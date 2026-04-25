@@ -871,6 +871,9 @@ archive_reports() {
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
+    # --- GP-230 symlink cleanup (archive移動後の残置symlinkを削除) ---
+    for f in "$REPORTS_DIR"/*; do [ -L "$f" ] && rm -f "$f"; done 2>/dev/null || true
+
     # --- 非YAMLファイルの掃除 (忍者の成果物混入防止) ---
     shopt -s nullglob
     local all_files=("$REPORTS_DIR"/*)
