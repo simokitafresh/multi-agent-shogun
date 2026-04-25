@@ -846,3 +846,6 @@
 | cmd_2274 | CDP計測結果にbaseline比較・回帰閾値判定・health score算出を追加。deploy後の性能変化を自動検出し、Phase毎の改善効果を数値で追跡可能にする。 | infra | 04-25 | scripts/cdp/cdp_benchmark.py(. |
 | cmd_2275 | 教訓管理の陳腐化検出(Prune)、プロジェクト横断教訓検索、deploy再実行の冪等性、差分テストの4機能を追加。教訓品質と配備効率に複利で効く。 | infra | 04-25 | AC1: ~/.claude/skills/dream/SK |
 | cmd_2276 | deploy_task.shの教訓注入がtarget_pathベースのタグマッチのみでCDP教訓が0件注入された事故(cmd_2271)の根因修正。purpose/command/context_filesのキーワードも加味し、タスク内容に関連する教訓を正しくルーティングする。 | infra | 04-25 | FILL_THIS |
+| cmd_2277 | 強化 — GStack知見Round 2-G2: レビュー系4項目(Adaptive gating/Adversarial review/Scope lock/前提3段階) | infra | 04-25 | FILL_THIS |
+| cmd_2278 | 強化 — GStack知見Round 3: L工数4項目(Deploy後監視/check-resolvable/routing-eval/ハイブリッド検索) | infra | 04-25 | AC1 cdp_canary.sh と AC4 hybrid |
+| cmd_2279 | 修正 — cmd_save.sh check_gunshi_design_num_relax カタログ参照FP除外 | infra | 04-25 | FILL_THIS |

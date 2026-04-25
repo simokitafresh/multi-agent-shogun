@@ -4049,3 +4049,27 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra]
 - **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lesson_scoring.bats]
 - 単純なin演算子(presence)より頻度カウント(title.count(kw)*3)の方が、キーワードが多い教訓を正確に上位にランクできる。プロジェクト一致ボーナス+2でDM-Signal等プロジェクト固有の教訓が適切に優先される。MAX_INJECT=3は過小で関連教訓を捨てていた(10に拡大で改善)。
+
+### L528: 共有workspaceでのcommitは--onlyでpath固定する
+- **日付**: 2026-04-25
+- **出典**: cmd_2278
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,git]
+- **target_files**: [scripts/cdp_canary.sh,scripts/hybrid_search.sh,scripts/gates/gate_skill_health.sh,tests/skill_routing_eval.bats]
+- git diff --cached --name-onlyで2ファイルだけ確認した直後、共有indexに別担当成果物が入り、通常のgit commitが4ファイルを含んだ。multi-agent共有workspaceではcommit対象を確認するだけでなく git commit --only <担当path...> でcommit treeを固定する必要がある。
+
+### L529: 共有workspaceで並列忍者がcommitする際はgit commit --onlyで担当pathのみcommit treeに固定せよ
+- **日付**: 2026-04-25
+- **出典**: cmd_2278
+- **記録者**: karo
+- **tags**: [infra,git]
+- **target_files**: [scripts/cdp_canary.sh,scripts/hybrid_search.sh,scripts/gates/gate_skill_health.sh,tests/skill_routing_eval.bats]
+- 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を限定することで意図しないファイル混入を防ぐ。cmd_2278でhayateがkagemaruのAC2/AC3成果物を巻き込んだ事例
+
+### L530: 共有workspaceでのgit commitは--onlyオプションでpath固定する
+- **日付**: 2026-04-25
+- **出典**: cmd_2278
+- **記録者**: karo
+- **tags**: [infra,git]
+- multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --only担当pathでcommit treeを固定し担当外ファイルの混入を防げ。cmd_2278でhayateが4ファイルcommit(担当2ファイル)した実証あり。
