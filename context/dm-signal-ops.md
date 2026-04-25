@@ -458,4 +458,31 @@ import metrics_research_engine as MRE
 - ALM四神(L0): 再登録が必要。objectiveをモード別(激攻=MRU/常勝=calmar/鉄壁=UWP)で正しく設定
 - ALM忍法(L1): ゼロから構築。チェックリストStep 3c(champion確定)から再開
 - 奥義-ASS(L2): ALM忍法(L1)登録後に構築
+
+## §32 バグパターン認識表 (2026-04-25)
+<!-- GStack/GBrain takeaway #8 (パターン認識表 — バグ署名→初期仮説6パターン) -->
+
+> 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
+
+### 共通パターン (汎用6)
+
+| # | 症状シグナル | 初期仮説 | 最初に確認すること |
+|---|------------|---------|------------------|
+| B-01 | `NullPointerException` / `AttributeError: NoneType` | Null/undefined 未チェック | Noneチェック欠落箇所をgrepで特定 |
+| B-02 | タイムアウト / `Connection refused` | 接続先が落ちているか設定ミス | サービス稼働確認 + 環境変数のURL/Port確認 |
+| B-03 | `TypeError` / `ValueError` / 型キャストエラー | 型不一致・フォーマット違い | データソースの型定義とコード側の型仮定を照合 |
+| B-04 | `401 Unauthorized` / `403 Forbidden` | APIキー/トークン切れ・設定ミス | .env の認証情報 + Basic Auth/Bearer の区別確認 |
+| B-05 | Race condition / Deadlock / 中途半端な状態 | 排他制御の欠落・競合 | pg_advisory_lock / flock / mutex の使用箇所確認 |
+| B-06 | 件数ゼロ / 期待レコードが消えた | データ欠損・ETLパイプライン断絶 | データソースとETLログを確認。delete/overwriteを追う |
+
+### DM-Signal 固有パターン (6)
+
+| # | 症状シグナル | 初期仮説 | 最初に確認すること |
+|---|------------|---------|------------------|
+| DM-B-01 | recalculate_fast.py が途中停止・再実行できない | pg_advisory_lock が解放されていない | `SELECT pg_advisory_unlock(8675309)` で強制解放。`recalculation_status` テーブルの is_running 確認 |
+| DM-B-02 | signal 件数ゼロ / PF 登録後シグナルが表示されない | fullrecalculate が未実行、またはPhase4 dict miss | `_check_signal_integrity` ログ確認 + `/admin/recalculate-sync` 手動トリガー |
+| DM-B-03 | FoF 計算結果不一致 / 成分PFが見つからない | component_portfolios の UUID 参照切れ | DB で `SELECT * FROM component_portfolios WHERE portfolio_id=<uuid>` 確認 |
+| DM-B-04 | GS パラメータが想定外の値になっている | GS CSV 列定義のずれ / pipeline_config 誤設定 | grid_search 出力 CSV の列名と `pipeline_config` の `param_grid` を照合 |
+| DM-B-05 | ALM 計算がデフォルト(lookback)に fallback する | alm_config.enabled=false または objective 誤設定 | `pipeline_config` の `alm_config` フィールド確認。PI-003/PI-009 準拠か |
+| DM-B-06 | FoF monthly-returns が 240s 超 / タイムアウト | DB fallback クエリ大量発生 (DB_FALLBACK_COUNT > 0) | `/admin/recalculate-sync` ログで `DB_FALLBACK_COUNT` 確認。preload キャッシュのヒット率確認 |
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)

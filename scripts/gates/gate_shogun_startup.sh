@@ -697,6 +697,35 @@ else
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
 fi
 
+# --- Gate 13.6: 教訓Stats (type別/活用率) ---
+# GStack/GBrain takeaway #12 (教訓Stats — type別/信頼度/活用率)
+echo "■ 教訓Stats"
+if [ -f "$_LS_FILE" ]; then
+    # クラスタ別件数
+    _cluster_stats=$(awk '
+        /^# === クラスタ/ { gsub(/^# === クラスタ[0-9]+: /, ""); gsub(/ ===$/, ""); cluster=$0; count[cluster]=0 }
+        /^- id:/ && cluster != "" { count[cluster]++ }
+        END { for (c in count) printf "    %s: %d件\n", c, count[c] }
+    ' "$_LS_FILE" 2>/dev/null | sort || true)
+    if [ -n "$_cluster_stats" ]; then
+        echo "  クラスタ別:"
+        echo "$_cluster_stats"
+    fi
+    # 活用率: queue/reports/ の lessons_useful から useful:true/false 集計
+    _rep_dir="$SCRIPT_DIR/queue/reports"
+    if [ -d "$_rep_dir" ]; then
+        _useful_true=$(grep -rc "useful: true" "$_rep_dir/" 2>/dev/null | awk -F: '{s+=$NF}END{print s+0}')
+        _useful_false=$(grep -rc "useful: false" "$_rep_dir/" 2>/dev/null | awk -F: '{s+=$NF}END{print s+0}')
+        _useful_total=$(( _useful_true + _useful_false ))
+        if [ "$_useful_total" -gt 0 ]; then
+            _useful_rate=$(( _useful_true * 100 / _useful_total ))
+            echo "  活用率: ${_useful_true}/${_useful_total} (${_useful_rate}%)"
+        else
+            echo "  活用率: 計測データなし"
+        fi
+    fi
+fi
+
 # --- Gate 13.7: cmd品質直近BLOCK（将軍のworkarounds相当） ---
 echo "■ cmd品質(直近10件)"
 if [ "$LIGHT_MODE" = "1" ]; then

@@ -199,6 +199,18 @@ Always: `date "+%Y-%m-%dT%H:%M:%S"` — Never guess.
 
 commit前の`git add`に含めるな: `queue/tasks/`, `queue/reports/`, `queue/gates/` (運用データ、.gitignore対象)
 
+## Bisect Commit Rule (git commit)
+<!-- GStack/GBrain takeaway #21 (Bisect commit — 論理単位分割) -->
+
+複数ファイルのchangesetを**1コミット1論理単位**に分割せよ。
+
+| NG | OK |
+|----|----|
+| `feat: add login + fix null check` | commit 1: `feat: add login` / commit 2: `fix: null check` |
+| `chore: update deps + fix bug` | commit 1: `chore: update deps` / commit 2: `fix: bug` |
+
+判断基準: commitメッセージが「X + Y」になる場合は分割対象。flock排他制御は各commitに適用。
+
 ## Push Safety
 
 `git push`→pre-pushフックがテスト実行。失敗→push中止。成功後もCI(test.yml)が走る。
@@ -260,6 +272,32 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 | .yaml/.yml | `python3 -c "import yaml; yaml.safe_load(open('<file>'))"` |
 
 結果→report.result.test_result。テストSKIP=FAIL扱い。テスト不可→test_blockerに理由記載。
+
+### E2E Blame Protocol (E2E テスト失敗の帰属)
+<!-- GStack/GBrain takeaway #27 (E2E blame protocol — 既存バグには base branch 証明) -->
+
+E2Eテスト失敗を「既存バグ（pre-existing）」と主張する場合、**base branch(main)での同一失敗を証明せよ。**
+
+```bash
+# base branchでも同じテストが失敗するか確認
+git stash && git checkout main && <test_command>; git checkout - && git stash pop
+```
+
+証明なし → 「自ブランチ起因」扱い。必ず修正してからdone報告せよ。
+
+### Testing Tiers (テスト階層)
+<!-- GStack/GBrain takeaway #29 (Testing tiers — gate(毎回) vs periodic(定期)) -->
+
+| Tier | 種別 | 実行タイミング | 例 |
+|------|------|-------------|-----|
+| **gate** | 構文・型・lint チェック | commit/push 前 毎回 | bash -n, py_compile, yaml.safe_load |
+| **periodic** | 統合・E2E・セキュリティスキャン | 定期 or 大型cmd後 | bats E2E, pip-audit, bandit |
+
+**Security Scan (periodic tier)**:
+- Python: `pip-audit` (依存脆弱性) / `bandit -r <dir>` (コードセキュリティ)
+- Shell: `shellcheck <file>` (バグ検出)
+- 実行タイミング: 依存関係変更時 / 外部APIとの接続コード追加時
+- 結果 → `report.result.security_scan` 欄に記載 (実行した場合のみ)
 
 ## Lint Violation Handling
 
