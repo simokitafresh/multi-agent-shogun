@@ -35,6 +35,15 @@
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-edit-pi-inject.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
