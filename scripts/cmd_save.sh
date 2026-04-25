@@ -32,6 +32,8 @@ CMD_DIAGNOSIS=""
 PRIOR_ATTEMPT_COUNT=0
 CMD_SAVE_STDERR_LOG="$(mktemp)"
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
+BLOCK_RETRY_NUDGE="止まるな、修正して再実行せよ"
+BLOCK_RETRY_NUDGE_EMITTED=0
 BLOCK_COUNT=0
 CMD_BLOCK_LOADED=0
 CMD_BLOCK_FOUND=0
@@ -447,6 +449,11 @@ check_bundle_red_flag() {
 record_block_reason() {
     local reason="${1:-}"
     [[ -n "$reason" ]] || return 0
+
+    if [[ "${BLOCK_RETRY_NUDGE_EMITTED:-0}" -eq 0 ]]; then
+        echo "${BLOCK_RETRY_NUDGE:-止まるな、修正して再実行せよ}" >&2
+        BLOCK_RETRY_NUDGE_EMITTED=1
+    fi
 
     echo "BLOCK: $reason" >&2
     BLOCK_REASONS+=("$reason")
