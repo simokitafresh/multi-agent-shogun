@@ -671,3 +671,31 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 ### North Star
 カスタムフロントマターフィールドはClaude Codeに無視される。
 判断基準はMarkdown本文に記載すること。
+
+## Diff-aware Testing 方針（GStack/GBrain #26）
+
+**原則**: テストは変更されたファイルに関連するものを優先実行し、無関係なテストの全量実行でCTXと時間を浪費しない。
+
+### 適用判断フロー
+
+| 状況 | テスト範囲 | 理由 |
+|------|-----------|------|
+| 変更が1-3ファイルに限定 | 変更ファイルの関連テストのみ | 全量は過剰 |
+| 変更が共通基盤（deploy_task.sh等）| 全テスト | 波及範囲が広い |
+| CI修正 / ゲート改修 | 対象テストファイル + smoke test | 最小限で確認 |
+| 本番リリース前 / cmd_complete_gate実行時 | 全テスト必須 | SKIP=FAILルール適用 |
+
+### 変更ファイルに関連するテスト特定方法
+```bash
+# 変更ファイルのテストを特定
+git diff --name-only HEAD | while read f; do
+  # 対応するbatsテストを探す
+  base=$(basename "$f" .sh)
+  find tests/ -name "*${base}*" -o -name "test_${base}*" 2>/dev/null
+done | sort -u
+```
+
+### 制約（SKIP=FAILルール、Test Rules §1）
+- **SKIP=FAIL**: Diff-aware実行でもSKIP数1以上は「テスト未完了」扱い
+- **本番前は全量**: cmd_complete_gate.sh実行前・PR作成前は必ず全量テスト
+- **全量前提の場合**: 呼び出し元が「全件テスト必須」と明示した場合はDiff-awareを適用しない（#26デメリット緩和策）
