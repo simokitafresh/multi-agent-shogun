@@ -66,18 +66,6 @@ if not read_msgs:
 if unread:
     print(f'[inbox_archive] NOTE: {len(unread)} unread messages will be preserved')
 
-# Append to archive file
-if os.path.exists(archive_path):
-    with open(archive_path, encoding='utf-8') as f:
-        archive_data = yaml.safe_load(f) or {}
-else:
-    archive_data = {}
-
-if not archive_data.get('messages'):
-    archive_data['messages'] = []
-
-archive_data['messages'].extend(read_msgs)
-
 # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
 def _sv(v):
     if isinstance(v, bool): return str(v).lower()
@@ -87,30 +75,40 @@ def _sv(v):
     sq = chr(39)
     return sq + s.replace(sq, sq+sq) + sq
 
+def _write_msg_entries(f, messages):
+    for m in messages:
+        keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
+        extra = sorted(k for k in m if k not in keys)
+        first = True
+        for k in keys + extra:
+            if k not in m: continue
+            p = '- ' if first else '  '
+            first = False
+            f.write(f'{p}{k}: {_sv(m[k])}\n')
+
 def _write_messages(f, messages):
     if not messages:
         f.write('messages: []\n')
     else:
         f.write('messages:\n')
-        for m in messages:
-            keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
-            extra = sorted(k for k in m if k not in keys)
-            first = True
-            for k in keys + extra:
-                if k not in m: continue
-                p = '- ' if first else '  '
-                first = False
-                f.write(f'{p}{k}: {_sv(m[k])}\n')
+        _write_msg_entries(f, messages)
 
-# Write archive (atomic)
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(archive_path), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        _write_messages(f, archive_data['messages'])
-    os.replace(tmp_path, archive_path)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+# Write archive (append-only: avoid loading existing archive for O(k) performance)
+if os.path.exists(archive_path):
+    # Existing archive: append entries directly (O(k), no full reload)
+    with open(archive_path, 'a', encoding='utf-8') as f:
+        _write_msg_entries(f, read_msgs)
+else:
+    # New archive file: create atomically with header
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(archive_path), suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write('messages:\n')
+            _write_msg_entries(f, read_msgs)
+        os.replace(tmp_path, archive_path)
+    except Exception:
+        os.unlink(tmp_path)
+        raise
 
 # Rewrite inbox with unread only (atomic)
 new_data = {'messages': unread} if unread else {'messages': []}
