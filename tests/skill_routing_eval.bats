@@ -271,7 +271,21 @@ EOF
 # SR-007: 実スキルディレクトリ → FAILしない (exit 0 or 2)
 @test "SR-007: real skills dir passes health check (no FAIL)" {
     local real_skills_dir="$HOME/.claude/skills"
-    [ -d "$real_skills_dir" ] || skip "~/.claude/skills が存在しない"
+    if [ ! -d "$real_skills_dir" ]; then
+        # CI環境: ~/.claude/skills不在 → mockスキルで検証
+        real_skills_dir="$TEST_TMPDIR/mock_skills_sr007"
+        mkdir -p "$real_skills_dir/mock-ci-skill"
+        cat > "$real_skills_dir/mock-ci-skill/SKILL.md" <<'SKILLEOF'
+---
+description: |
+  Mock skill for CI gate validation.
+  TRIGGER: /mock-ci-skill, mock ci skill
+  DO NOT TRIGGER: unrelated tasks
+---
+# Mock CI Skill
+CI environment test skill.
+SKILLEOF
+    fi
     run env SKILLS_DIR="$real_skills_dir" bash "$GATE"
     # exit 0=PASS or exit 2=WARN は許容。exit 1=FAIL はNG
     [ "$status" -ne 1 ] || {
@@ -285,12 +299,26 @@ EOF
 # SR-010: 実スキルのTRIGGERキーワードが抽出できる
 @test "SR-010: real skill TRIGGER keywords are extractable" {
     local real_skills_dir="$HOME/.claude/skills"
-    [ -d "$real_skills_dir" ] || skip "~/.claude/skills が存在しない"
+    if [ ! -d "$real_skills_dir" ]; then
+        # CI環境: ~/.claude/skills不在 → mockスキルで検証
+        real_skills_dir="$TEST_TMPDIR/mock_skills_sr010"
+        mkdir -p "$real_skills_dir/mock-ci-skill"
+        cat > "$real_skills_dir/mock-ci-skill/SKILL.md" <<'SKILLEOF'
+---
+description: |
+  Mock skill for CI TRIGGER extraction test.
+  TRIGGER: /mock-ci-skill, mock ci skill
+  DO NOT TRIGGER: unrelated tasks
+---
+# Mock CI Skill
+CI environment test skill.
+SKILLEOF
+    fi
     local result
-    result=$(python3 - <<'PYEOF'
+    result=$(SKILLS_DIR_FOR_TEST="$real_skills_dir" python3 - <<'PYEOF'
 import os, re, sys
 
-skills_dir = os.path.expanduser("~/.claude/skills")
+skills_dir = os.environ.get("SKILLS_DIR_FOR_TEST", os.path.expanduser("~/.claude/skills"))
 total = 0
 with_trigger = 0
 for entry in os.scandir(skills_dir):
