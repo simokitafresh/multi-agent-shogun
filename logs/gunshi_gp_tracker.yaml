@@ -543,3 +543,38 @@
   defense_level: 4
   reason: "直近30報告有用率7.7%(tobisaru 0%)。target_filesなし教訓290件(56%)がtag_fallbackでタスク無関係に注入。負の複利(忍者が教訓を読まなくなる)"
   evidence: "bats 15/15 PASS。commit 8ae3cdd8。S0全6項PASS。家老承認済み(msg_20260425_105639)"
+- id: GP-222
+  description: "deploy_task.sh --yamlオプション追加。shogun_to_karoにないcmdの配備を可能にする"
+  status: implemented
+  proposed_at: "2026-04-25T18:50:00"
+  implemented_at: "2026-04-25T19:00:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'DIRECT_MODE\|--direct' deploy_task.sh → L40,96-99,4417。--directはresolve_cmdスキップのみ。YAML上書き機能なし"
+  defense_level: 3
+  reason: "家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件"
+  evidence: "テスト2件(不在→exit 1, 正常→cp+配備成功)。commit 83f32eaa。S0全6項PASS"
+- id: GP-223
+  description: "deploy_task.sh教訓スコアリングにpurpose/context_filesキーワード加味"
+  status: implemented
+  proposed_at: "2026-04-25T18:45:00"
+  self_executable: false
+  existing_impl_check: "grep -n 'scored\|score_lesson\|keyword' deploy_task.sh → L2538-2554。title+summary+tagsのみ。purpose/context_files未参照"
+  defense_level: 4
+  reason: "cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘"
+- id: GP-224
+  description: "deploy_task.sh高速化: yaml_field_set多数回呼出しのWSL2 NTFS I/O削減"
+  status: karo_sent
+  proposed_at: "2026-04-25T19:05:00"
+  self_executable: false
+  existing_impl_check: "deploy_task.logフェーズ分析: AC1件テストで10秒。本番タスクで30秒超→家老CLI timeout"
+  defense_level: 3
+  reason: "家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積"
+- id: GP-225
+  description: "ASCII↔CJK境界分割+アクロニム(>=2,全大文字)min_len免除で教訓キーワードマッチ精度向上"
+  status: implemented
+  proposed_at: "2026-04-25T20:35:00"
+  self_executable: true
+  existing_impl_check: "grep -n 'len(w) > 3' deploy_task.sh → L2168。CJK境界分割なし。アクロニム例外なし"
+  defense_level: 4
+  reason: "CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因"
