@@ -2286,8 +2286,10 @@ try:
             scored.append((score, lid, l_summary or l_title))
 
     # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
+    # GP-221: target_filesなし教訓のフォールバック注入廃止。タスク無関係教訓のNOT_USEFUL量産防止
     if not scored and task_tags and tag_candidates:
-        _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in tag_candidates]
+        _relevant_fallback = [l for l in tag_candidates if l.get('tags') or l.get('target_files')]
+        _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in _relevant_fallback]
         _tag_fallback.sort(key=lambda x: -x[0])
         scored = [(1, lid, summ) for hc, lid, summ in _tag_fallback[:MAX_INJECT]]
         if scored:
