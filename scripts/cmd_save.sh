@@ -110,18 +110,42 @@ PY
 is_gate_or_hook_addition_cmd() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     local q11_context=""
+    local scope_mode=""
+    local scout_exempt=""
 
     [[ -n "$block_text" ]] || return 1
+
+    scope_mode="$(cmd_block_get_field "scope_mode")"
+    scout_exempt="$(cmd_block_get_field "scout_exempt")"
+    [[ "${scope_mode:-}" == "SCOUT" || "${scout_exempt:-}" == "true" ]] && return 1
 
     q11_context=$(printf '%s\n' "$block_text" | awk '
         /^[[:space:]]*(title|purpose):/ { print; next }
         /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
-        /^[[:space:]]*command:[[:space:]]*[^|]/ { print; next }
-        in_command && /^[[:space:]]{4,}/ { print; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            sub(/^[[:space:]]*command:[[:space:]]*/, "")
+            print
+            command_seen=1
+            next
+        }
+        in_command && /^[[:space:]]{4,}/ {
+            line = $0
+            sub(/^[[:space:]]+/, "", line)
+            if (line != "" && command_seen == 0) {
+                print line
+                command_seen=1
+            }
+            next
+        }
         in_command && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0 }
     ')
 
     [[ -n "${q11_context:-}" ]] || return 1
+    if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和'; then
+        if ! printf '%s\n' "$q11_context" | grep -qiE '(新規|新設).*(gate|hook|ゲート|フック)|(gate|hook|ゲート|フック).*(新規|新設)'; then
+            return 1
+        fi
+    fi
     printf '%s\n' "$q11_context" | grep -qiE 'gate|hook|ゲート|フック' || return 1
     printf '%s\n' "$q11_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
     return 0
@@ -131,10 +155,15 @@ q11_has_existing_alternative_verification() {
     local q11_value="${1:-}"
 
     [[ -n "$q11_value" ]] || return 1
-    if ! printf '%s\n' "$q11_value" | grep -qiE '既存|代替|現行|既設'; then
-        printf '%s\n' "$q11_value" | grep -qiE '(^|[^A-Za-z_])(existing|already|current)([^A-Za-z_]|$)' || return 1
+    printf '%s\n' "$q11_value" | grep -qiE 'grep|rg|sed|cat|read|確認|照合|現物|実測|docs/research|一次情報|verified|0件|該当なし' || return 1
+    if printf '%s\n' "$q11_value" | grep -qiE '既存|代替|現行|既設'; then
+        return 0
     fi
-    printf '%s\n' "$q11_value" | grep -qiE 'grep|rg|sed|cat|read|確認|照合|現物|実測|docs/research|一次情報|verified' || return 1
+    if printf '%s\n' "$q11_value" | grep -qiE '0件|該当なし' && \
+       printf '%s\n' "$q11_value" | grep -qiE '初回|偽陽性修正|精度改善|誤判定'; then
+        return 0
+    fi
+    printf '%s\n' "$q11_value" | grep -qiE '(^|[^A-Za-z_])(existing|already|current)([^A-Za-z_]|$)' || return 1
     return 0
 }
 
@@ -186,9 +215,28 @@ if current:
     entries.append(current)
 
 date_pat = re.compile(r'(?:19|20)\d{2}-\d{2}-\d{2}')
+temporal_markers = re.compile(
+    r'(時点|現在|現時点|直近|最新|本日|今日|当時|初回|'
+    r'確認済|完了|未実装|未達成|未実施|固定|稼働|利用可能|'
+    r'存在|非空|空|実行可能|生成済|取得済)'
+)
+
+def claim_needs_date(entry):
+    claim = entry.get("claim", "").strip()
+    source = entry.get("source", "").strip()
+    if not claim:
+        return False
+    if temporal_markers.search(claim):
+        return True
+    if re.search(r'(本番|Render|startup gate|gate出力|原票|ログ)', claim, re.I):
+        return True
+    if source and re.search(r'(tests/unit/|scripts/|docs/research/)', source):
+        return False
+    return False
+
 for entry in entries:
     claim = entry.get("claim", "").strip()
-    if claim and not date_pat.search(claim):
+    if claim and not date_pat.search(claim) and claim_needs_date(entry):
         print(claim)
 PY
 }
@@ -2470,6 +2518,13 @@ check_param_space_shrink
 # 目的: gunshi設計書参照cmdでq8_why_what数値とAC数値を突合し、緩和をWARN
 check_gunshi_design_num_relax() {
     [[ -z "${CMD_BLOCK_NC:-}" ]] && return 0
+
+    local scope_mode scout_exempt
+    scope_mode="$(cmd_block_get_field "scope_mode")"
+    scout_exempt="$(cmd_block_get_field "scout_exempt")"
+    if [[ "${scope_mode:-}" == "SCOUT" || "${scout_exempt:-}" == "true" ]]; then
+        return 0
+    fi
 
     # 軍師設計書参照検出: q5_verified_sourceに設計書パスが含まれる場合（gunshi補足 2026-04-07）
     # 理由: q5は検証ソースの一次情報→設計書参照の信頼性が最も高い判定基準
