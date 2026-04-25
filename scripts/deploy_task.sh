@@ -2001,6 +2001,9 @@ try:
     lessons = load_lessons_cached(lessons_path)
     if not lessons and not os.path.exists(lessons_path):
         print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
+    # cmd_2270: プロジェクトソーストラッキング (project-source boostに使用)
+    for _l in lessons:
+        _l['_source_project'] = project
 
     # ═══ Platform教訓の追加読み込み ═══
     projects_yaml_path = os.path.join(script_dir, 'config', 'projects.yaml')
@@ -2015,6 +2018,9 @@ try:
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
                     plat_path = plat_index if os.path.exists(plat_index) else plat_archive
                     plat_lessons = load_lessons_cached(plat_path)
+                    # cmd_2270: platformソースをトラッキング
+                    for _l in plat_lessons:
+                        _l['_source_project'] = pj['id']
                     platform_count += len(plat_lessons)
                     lessons.extend(plat_lessons)
         except Exception as pe:
@@ -2259,9 +2265,10 @@ try:
         if _tf_actually_removed > 0:
             print(f'[INJECT] target_files post-filter: removed {_tf_actually_removed}', file=sys.stderr)
 
-    # cmd_karo_gp196: AC1 — MAX_INJECT=3 総合注入上限（universalは内数）
+    # cmd_karo_gp196: AC1 — MAX_INJECT=10 総合注入上限（universalは内数）
+    # cmd_2270: 3→10に拡大。キーワード関連度スコアリングで上位10件に絞る
     # tag fallback/useful_rate処理より前に定義し、条件分岐での未定義参照を防ぐ
-    MAX_INJECT = 3
+    MAX_INJECT = 10
 
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []
@@ -2277,12 +2284,14 @@ try:
 
         score = 0
         for kw in keywords:
-            if kw in title_text:
-                score += 3
-            elif kw in other_text:
-                score += 1
+            # cmd_2270: 頻度重み付きスコアリング (engram-style: presence→frequency count)
+            # タイトル内出現回数×3 + その他テキスト内出現回数×1
+            score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
         if score > 0:
+            # cmd_2270: プロジェクト一致ボーナス — 同プロジェクト教訓を優先注入
+            if lesson.get('_source_project') == project:
+                score += 2
             scored.append((score, lid, l_summary or l_title))
 
     # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
