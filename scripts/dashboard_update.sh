@@ -517,24 +517,45 @@ validate_dashboard() {
         fi
     done < "$template"
 
-    for pattern in "${check_patterns[@]}"; do
-        if ! grep -qF "$pattern" "$dashboard"; then
-            echo "[WARN] Missing section: $pattern" >&2
-        fi
-    done
+    # (a)+(b) 単一awkパス: N回grep+N回awk → 1回awk（WSL2プロセス起動コスト削減 L511）
+    if [[ ${#check_patterns[@]} -gt 0 ]]; then
+        local _pat_tmp
+        _pat_tmp=$(mktemp)
+        printf '%s\n' "${check_patterns[@]}" > "$_pat_tmp"
+        local _line_nums
+        _line_nums=$(awk '
+            NR==FNR { patterns[FNR]=$0; n=FNR; next }
+            { for(i=1;i<=n;i++) if(!found[i] && index($0, patterns[i])) found[i]=NR }
+            END { for(i=1;i<=n;i++) print (found[i]+0) }
+        ' "$_pat_tmp" "$dashboard")
+        rm -f "$_pat_tmp"
 
-    # (b) セクション順序チェック
-    local prev_line=0
-    for pattern in "${check_patterns[@]}"; do
-        local line_num
-        line_num=$(awk -v pat="$pattern" 'index($0, pat) {print NR; exit}' "$dashboard")
-        if [[ -n "$line_num" && "$line_num" -gt 0 ]]; then
-            if [[ "$line_num" -le "$prev_line" ]]; then
-                echo "[WARN] Section order violation: '$pattern' at line $line_num (expected after line $prev_line)" >&2
+        local -a _lnums
+        readarray -t _lnums <<< "$_line_nums"
+
+        # (a) 存在チェック
+        local _i=0
+        for pattern in "${check_patterns[@]}"; do
+            if [[ "${_lnums[$_i]:-0}" -eq 0 ]]; then
+                echo "[WARN] Missing section: $pattern" >&2
             fi
-            prev_line=$line_num
-        fi
-    done
+            (( _i++ )) || true
+        done
+
+        # (b) 順序チェック
+        local prev_line=0
+        _i=0
+        for pattern in "${check_patterns[@]}"; do
+            local line_num="${_lnums[$_i]:-0}"
+            (( _i++ )) || true
+            if [[ "$line_num" -gt 0 ]]; then
+                if [[ "$line_num" -le "$prev_line" ]]; then
+                    echo "[WARN] Section order violation: '$pattern' at line $line_num (expected after line $prev_line)" >&2
+                fi
+                prev_line=$line_num
+            fi
+        done
+    fi
 
     # (c) モデル欄整合性チェック（settings.yaml vs dashboard忍者テーブル）
     export SETTINGS_FILE="$settings_file"
