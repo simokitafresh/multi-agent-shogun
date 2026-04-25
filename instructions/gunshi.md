@@ -326,6 +326,8 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 ### Step 3: Runtime Simulation（時系列で回せ）
 配備→AC1→AC2→...→報告の流れをステップ実行。AC依存関係・並行衝突・忍者の再現性を検証。
 
+**AC実行可能性チェック（必須）**: 全ACのbinary checkが物理的に実行可能か確認。gitignore対象へのcommit要求、進行中月データの完全一致要求、推奨事項の必須混同はNG→REQUEST_CHANGES(verdict_override WA根因。直近6件中5件がAC設計ミス)
+
 **時間効率チェック（必須）**: q4_depth=deep or 計算量が他cmdの10倍超の場合、以下を確認:
 - 「idle忍者がいるのに1忍者単独配備か？」→YES→REQUEST_CHANGES(severity: urgent)。分割並列案を提示
 - 判断基準: WF数×計算重み。100 WF超かつidle忍者2名以上→分割必須
