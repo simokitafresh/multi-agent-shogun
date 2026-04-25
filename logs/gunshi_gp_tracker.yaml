@@ -578,3 +578,14 @@
   existing_impl_check: "grep -n 'len(w) > 3' deploy_task.sh → L2168。CJK境界分割なし。アクロニム例外なし"
   defense_level: 4
   reason: "CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因"
+- id: GP-229
+  description: "gunshi.md Step 3にAC実行可能性チェック追加(verdict_override WA根因対処)"
+  status: implemented
+  proposed_at: "2026-04-25T23:25:00"
+  implemented_at: "2026-04-25T23:28:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'AC実行可能性' instructions/gunshi.md → 0件(実装前)"
+  defense_level: 2
+  reason: "verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった"
+  evidence: "commit 576ebd29(kotaro auto-commitに含まれた)。S0全6項PASS"

@@ -1,8 +1,67 @@
 task:
+  _ac_task_id: cmd_2279_impl
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2279
+  ac_version: 7d010443
+  acceptance_criteria:
+  - description: check_gunshi_design_num_relax()にカタログ参照除外条件が追加されている。q5にカタログ|catalog|takeaway-catalogを含む場合スキップ
+    id: AC1
+  - description: LS-A22のq11 SCOUT記載が実装済みに更新されている
+    id: AC2
+  - description: 既存テスト全PASS。回帰なし
+    id: AC3
   assigned_to: kotaro
-  status: idle
-  task_id: 
-  _ac_task_id: 
-  parent_cmd: cmd_training_L4_R3_kotaro
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L512: gate_loop_health.shのinsight dedup\
+  parent_cmd: cmd_2279
   project: infra
+  scout_exempt: true
+  status: completed
+  task_id: cmd_2279_impl
   task_type: impl
+  report_filename: kotaro_report_cmd_2279.yaml
+  report_path: queue/reports/kotaro_report_cmd_2279.yaml
+  related_lessons:
+  - id: 'L512'
+    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+  - id: 'L511'
+    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  deployed_at: "2026-04-25T22:17:51"
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC3[1].check: \"回帰なし\" が短すぎる(確認内容を具体的に書け)'
+    tried_approaches:
+    - 'binary_checks.AC3[1].check: \"回帰なし\" が短すぎる(確認内容を具体的に書け)'
+    approach_summary: 'check_gunshi_design_num_relax()にカタログ参照除外条件を追加(q5にカタログ|catalog|takeaway-catalog含む場合スキップ)。LS-A22のenforcement/detailを実装済みに更新。全テストPASS。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC3[1].check: \"回帰なし\" が短すぎる(確認内容を具体的に書け)'
+      approach_summary: 'check_gunshi_design_num_relax()にカタログ参照除外条件を追加(q5にカタログ|catalog|takeaway-catalog含む場合スキップ)。LS-A22のenforcement/detailを実装済みに更新。全テストPASS。'
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  bloom_level: 
