@@ -1247,7 +1247,7 @@ EOF
     [ "$output" = "IF: trigger condition → THEN: take action (BECAUSE: expected effect)" ]
 }
 
-@test "deploy_task caps injected related_lessons at 3 entries" {
+@test "deploy_task injects all related_lessons when below MAX_INJECT=10" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
@@ -1291,14 +1291,14 @@ import yaml
 with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 related = (data.get('task') or {}).get('related_lessons') or []
-assert len(related) == 3, related
+assert len(related) == 4, related
 print(len(related))
 "
     [ "$status" -eq 0 ]
-    [ "$output" = "3" ]
+    [ "$output" = "4" ]
 }
 
-@test "deploy_task tag fallback injects top 3 tag-matched lessons without MAX_INJECT NameError" {
+@test "deploy_task tag fallback injects all tag-matched lessons below MAX_INJECT=10" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
@@ -1347,12 +1347,12 @@ with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 related = (data.get('task') or {}).get('related_lessons') or []
 ids = [entry.get('id') for entry in related]
-assert len(related) == 3, related
-assert ids == ['L921', 'L922', 'L923'], ids
+assert len(related) == 4, related
+assert ids == ['L921', 'L922', 'L923', 'L920'], ids
 print('|'.join(ids))
 "
     [ "$status" -eq 0 ]
-    [ "$output" = "L921|L922|L923" ]
+    [ "$output" = "L921|L922|L923|L920" ]
 }
 
 # === GP-105: stale report reassignment detection ===
