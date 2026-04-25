@@ -4022,3 +4022,12 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml]
 - yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去する不具合。
 修正: インラインスカラー行がバックスラッシュで終わる場合flow_cont=1を設定し継続行を保護
+
+### L525: 新gate追加時は既存テストフィクスチャのassumptionsにも日付を追加せよ
+- **日付**: 2026-04-24
+- **出典**: cmd_karo_ci_fix_2252
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [infra,process,gate]
+- **target_files**: [tests/unit/test_cmd_save.bats,tests/unit/test_cmd_save_command_steps_vs_ac.bats,tests/unit/test_cmd_save_diagnose.bats,tests/unit/test_cmd_save_diagnosis_quality.bats,tests/unit/test_cmd_save_environment_change.bats]
+- cmd_save.shに『assumptions claimに日付なし』チェックを追加した際、既存6テストファイルのフィクスチャが未対応でCI REDとなった。新gate追加後は既存テストフィクスチャへの影響を確認し、assumptions claimに日付を追加する手順を標準化すべき
