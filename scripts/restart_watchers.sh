@@ -105,6 +105,16 @@ else
     exit 1
 fi
 
+# GP-226: ヘルスチェック — inotifywaitプロセスが実際に稼働しているか確認
+echo "[+] ヘルスチェック (inotifywait)..."
+sleep 2
+inotify_count=$(pgrep -fc "inotifywait.*queue/inbox" 2>/dev/null) || inotify_count=0
+if [[ "$inotify_count" -lt "$ok" ]]; then
+    echo "  WARN: inotifywait ${inotify_count}/${ok} — watcher起動したがinotifywait未稼働の可能性"
+else
+    echo "  OK: inotifywait ${inotify_count}/${ok}"
+fi
+
 # ペイン変数同期
 echo "[+] ペイン変数同期..."
 bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh"
