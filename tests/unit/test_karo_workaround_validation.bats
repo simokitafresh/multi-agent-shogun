@@ -174,7 +174,8 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"Logged:"* ]]
     [[ "$output" != *"ALERT"* ]]
-    [[ "$output" != *"WARN"* ]]
+    # GP-220: category=cleanで通常モード呼出し時はWARNが出る（正しい動作）
+    [[ "$output" == *"category=cleanだが--cleanモードでない"* ]]
 
     [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
 }
