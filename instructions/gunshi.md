@@ -187,7 +187,7 @@ second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
 - **Second Opinion** は先行レビューの焼き直しを禁止する。別視点の cold read を要求せよ
 - 低確度の指摘を積み上げて REQUEST_CHANGES にするな。確度が低いなら調査要求として返せ
 
-### 5.6 Adaptive Gating（観点の冷え検知）
+### 5.6 Adaptive Gating（adaptive gating / 観点の冷え検知）
 
 レビュー観点は「知っている」だけでは腐る。`logs/gunshi_review_log.yaml` の `finding_categories:` を観点カタログとして集計し、**直近10件で連続0件**の観点は「いまの自分がその観点で何も拾えていない」状態とみなせ。
 
