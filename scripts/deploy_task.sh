@@ -38,6 +38,7 @@ export FIELD_GET_NO_LOG=1
 
 DEFAULT_MESSAGE="前taskの情報は無効。タスクYAMLを最初から読み直して作業開始せよ。"
 DIRECT_MODE=false
+YAML_FILE=""
 NINJA_NAME=""
 CMD_ID=""
 CMD_FORCED=""
@@ -96,6 +97,14 @@ parse_deploy_task_args() {
     if [[ "${1:-}" == "--direct" ]]; then
         DIRECT_MODE=true
         shift
+    fi
+
+    # --yaml <file>: 事前に作成したタスクYAMLでtask YAMLを上書きして配備
+    # shogun_to_karoにないcmd(家老再配備cmd等)の配備に使用
+    if [[ "${1:-}" == "--yaml" ]]; then
+        YAML_FILE="${2:-}"
+        DIRECT_MODE=true
+        shift 2
     fi
 
     NINJA_NAME="${1:-}"
@@ -4406,6 +4415,15 @@ except Exception:
         export _DEPLOY_PREV_PARENT_CMD
         reset_stale_fields "$NINJA_NAME"
         if [ "$DIRECT_MODE" = true ]; then
+            if [ -n "$YAML_FILE" ]; then
+                if [ ! -f "$YAML_FILE" ]; then
+                    log "ERROR: --yaml file not found: $YAML_FILE"
+                    echo "ERROR: --yaml ファイルが見つからない: $YAML_FILE" >&2
+                    return 1
+                fi
+                cp "$YAML_FILE" "$task_yaml"
+                log "direct_mode: task YAML overwritten from $YAML_FILE"
+            fi
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
         elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
