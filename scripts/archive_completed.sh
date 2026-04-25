@@ -1168,6 +1168,7 @@ archive_reports() {
         fi
 
         mv "$report_file" "$dest_path" || { echo "[archive] WARN: mv failed: $report_file → $dest_path" >&2; continue; }
+        ln -sf "$dest_path" "$report_file" 2>/dev/null || true  # GP-230: 忍者BLOCK修正中のファイル参照を保護
         archived=$((archived + 1))
     done
 
