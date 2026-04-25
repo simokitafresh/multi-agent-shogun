@@ -991,6 +991,10 @@ if [ "$TYPE" = "report_received" ]; then
                 CMD_ID=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 if [ -n "$CMD_ID" ]; then
                     FALLBACK=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${FROM}_report_${CMD_ID}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
+                    if [ -z "$FALLBACK" ]; then
+                        # archive fallback: queue/reports/に不在→queue/archive/reports/を検索
+                        FALLBACK=$(find "$SCRIPT_DIR/queue/archive/reports" -maxdepth 1 -name "${FROM}_report_${CMD_ID}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
+                    fi
                     if [ -n "$FALLBACK" ]; then
                         FULL_REPORT="$FALLBACK"
                         echo "[report_format_gate] fallback: report_path未設定 → $(basename "$FALLBACK") を検出" >&2
@@ -1005,6 +1009,16 @@ if [ "$TYPE" = "report_received" ]; then
             fi
 
             if [ -n "$FULL_REPORT" ]; then
+                # archive fallback: FULL_REPORTが見つからない場合→queue/archive/reports/を検索
+                # (archive_completed.shがreportを移動した後にsymlink作成失敗した場合に発生)
+                if [ ! -f "$FULL_REPORT" ]; then
+                    _RPT_BASE="$(basename "$FULL_REPORT" .yaml)"
+                    _ARCHIVE_MATCH=$(find "$SCRIPT_DIR/queue/archive/reports" -maxdepth 1 -name "${_RPT_BASE}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
+                    if [ -n "$_ARCHIVE_MATCH" ] && [ -f "$_ARCHIVE_MATCH" ]; then
+                        echo "[report_format_gate] archive fallback: $(basename "$_ARCHIVE_MATCH") を検出" >&2
+                        FULL_REPORT="$_ARCHIVE_MATCH"
+                    fi
+                fi
                 if [ -f "$FULL_REPORT" ]; then
                     # Phase 1: 機械的フォーマット自動修正（忍者ペインで局所免疫）
                     AUTOFIX_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$FULL_REPORT" 2>&1 || true)
@@ -1208,6 +1222,7 @@ while [ $attempt -lt $max_attempts ]; do
                     else
                         _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                         if [ -n "$_parent_cmd" ] && [ -n "$REPORT_FULL_PATH" ] && [ -f "$REPORT_FULL_PATH" ] && [ -f "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh" ]; then
+                            # shellcheck disable=SC2034  # PROJECT_ROOT is used by sourced gunshi_notify.sh
                             PROJECT_ROOT="$SCRIPT_DIR"
                             # shellcheck source=/dev/null
                             source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"

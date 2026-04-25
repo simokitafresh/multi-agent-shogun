@@ -843,6 +843,20 @@ assert not os.path.exists(os.path.join(root, "ninja_b.yaml")), "task_supplement 
 EOF
 }
 
+@test "report_received: report moved to archive (no symlink) → archive fallback succeeds" {
+    setup_git_test_env
+
+    # archive_completed.sh移動後にsymlink作成失敗したケースをシミュレート:
+    # queue/reports/からqueue/archive/reports/へ移動(シムリンク無し)
+    mkdir -p "$TEST_TMPDIR/queue/archive/reports"
+    mv "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" \
+       "$TEST_TMPDIR/queue/archive/reports/testninja_report_cmd_test_001_20260425.yaml"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"archive fallback"* ]]
+}
+
 @test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
