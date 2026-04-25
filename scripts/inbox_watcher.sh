@@ -86,7 +86,7 @@ if ! command -v inotifywait &>/dev/null; then
 fi
 
 # ─── Extract unread message info (lock-free read) ───
-# Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv
+# Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv \t has_task_assigned
 # specials_tsv: newline-separated "id\ttype\tbase64_content" lines (base64-encoded as whole)
 # inbox_write.sh emits a constrained YAML shape, so use a lightweight line parser
 # instead of PyYAML full-load on every watch cycle.
@@ -97,6 +97,7 @@ get_unread_info() {
 import sys, os, base64, ast
 
 SPECIAL_TYPES = {'clear_command', 'model_switch'}
+TASK_NUDGE_TYPES = {'task_assigned'}
 
 def decode_scalar(value):
     value = value.strip()
@@ -117,6 +118,7 @@ try:
     inbox_path = os.environ['INBOX_PATH']
     normal_ids = []
     specials = []
+    task_nudge_ids = []
     current = None
     state = {'block_key': None, 'block_lines': []}
 
@@ -134,6 +136,8 @@ try:
             specials.append(current)
         else:
             normal_ids.append(current.get('id', ''))
+            if current.get('type', '') in TASK_NUDGE_TYPES:
+                task_nudge_ids.append(current.get('id', ''))
 
     def assign_field(target, key, raw_value):
         value = raw_value.lstrip()
@@ -172,7 +176,7 @@ try:
     flush_message()
 
     if not normal_ids and not specials:
-        print('0\tfalse\t-\t-')
+        print('0\tfalse\t-\t-\tfalse')
         sys.exit(0)
 
     normal_count = len(normal_ids)
@@ -184,9 +188,10 @@ try:
             content_b64 = base64.b64encode(str(s.get('content', '')).encode('utf-8')).decode('ascii')
             lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
-    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\")
+    has_task_assigned = 'true' if task_nudge_ids else 'false'
+    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\t{has_task_assigned}\")
 except Exception:
-    print('0\tfalse\t-\t-')
+    print('0\tfalse\t-\t-\tfalse')
 " 2>/dev/null
 }
 
@@ -420,6 +425,7 @@ agent_has_self_watch() {
 # timeout prevents the 1.5-hour hang incident from recurring.
 send_wakeup() {
     local unread_count="$1"
+    local has_task_assigned="${2:-false}"
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
         return 0
@@ -431,9 +437,10 @@ send_wakeup() {
     local effective_cli
     effective_cli=$(get_effective_cli_type)
 
-    # Codex/non-claude ninja: nudgeにtask YAMLパスを付与してSTALL防止
+    # Codex/non-claude ninja: task_assigned時のみ「前task無効+再読」ナッジを付与してSTALL防止
+    # task_info等の補足メッセージでは付与しない（CTX浪費防止）
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
-    if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]]; then
+    if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
         nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
     fi
 
@@ -574,13 +581,14 @@ send_wakeup() {
 
 # ─── Process cycle ───
 process_unread() {
-    # Single python3 call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64"
+    # Single python3 call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64 \t has_task_assigned"
     local raw_info
     raw_info=$(get_unread_info)
-    local normal_count has_specials _current_fp specials_b64
-    IFS=$'\t' read -r normal_count has_specials _current_fp specials_b64 <<< "$raw_info"
+    local normal_count has_specials _current_fp specials_b64 has_task_assigned
+    IFS=$'\t' read -r normal_count has_specials _current_fp specials_b64 has_task_assigned <<< "$raw_info"
     normal_count="${normal_count:-0}"
     has_specials="${has_specials:-false}"
+    has_task_assigned="${has_task_assigned:-false}"
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null || [ "$has_specials" = "true" ]; then
         mark_first_unread_seen
@@ -703,7 +711,7 @@ process_unread() {
             write_state_file "$FINGERPRINT_FILE" "$current_fp" "fingerprint" || true
             write_state_file "$RETRY_COUNT_FILE" "0" "retry_count" || true
             local wake_rc=0
-            send_wakeup "$normal_count" || wake_rc=$?
+            send_wakeup "$normal_count" "$has_task_assigned" || wake_rc=$?
             if [ "$wake_rc" -eq 2 ]; then
                 refresh_debounce_file || true
                 echo "[$(date)] [WAKE-DEFER] Deferred initial nudge for $AGENT_ID (busy gating)" >&2
@@ -719,7 +727,7 @@ process_unread() {
             if [ "$retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
                 # Unacknowledged nudge → retry immediately (next cycle)
                 local wake_rc=0
-                send_wakeup "$normal_count" || wake_rc=$?
+                send_wakeup "$normal_count" "$has_task_assigned" || wake_rc=$?
                 if [ "$wake_rc" -eq 2 ]; then
                     refresh_debounce_file || true
                     echo "[$(date)] [RETRY-DEFER] Busy gating deferred retry (${retry_count}/${RETRY_MAX}) for $AGENT_ID" >&2
@@ -736,7 +744,7 @@ process_unread() {
                 if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
                     echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
                     touch_state_file "$FINGERPRINT_FILE" "fingerprint" || true  # reset mtime for next backoff cycle
-                    send_wakeup "$normal_count"
+                    send_wakeup "$normal_count" "$has_task_assigned"
                 else
                     echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s, retries exhausted), waiting for backoff for $AGENT_ID" >&2
                 fi
