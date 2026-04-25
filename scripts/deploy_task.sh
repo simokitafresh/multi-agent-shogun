@@ -4517,6 +4517,7 @@ deploy_task_apply_task_mutations() {
     parent_cmd=$(field_get "$task_file" "parent_cmd" "")
     project=$(field_get "$task_file" "project" "")
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
+    inject_done_redeploy_hints "$task_file" || true
 }
 
 # ═══════════════════════════════════════
@@ -4553,6 +4554,7 @@ deploy_task_main() {
     fi
 
     if [ -n "$CMD_ID" ]; then
+        capture_done_redeploy_context "$task_yaml" "$CMD_ID"
         # GP-198: session_stateをstale reset前に保存（再配備時のhint注入用）
         # cmd_2078 B3: awk fast-path — session_stateフィールドが存在しなければpython3をスキップ (~53ms節約)
         _DEPLOY_PREV_SESSION_STATE=""
