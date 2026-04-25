@@ -86,6 +86,20 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/bulletin_board.yaml" ]
 }
 
+@test "bulletin_write duplicate post does not notify again" {
+    export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun,gunshi" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "重複禁止"
+    [ "$status" -eq 0 ]
+
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun,gunshi" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "重複禁止"
+    [ "$status" -eq 0 ]
+    [[ "$output" == DEDUP:* ]]
+
+    run wc -l "$INBOX_WRITE_LOG"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "2 $INBOX_WRITE_LOG" ]]
+}
+
 @test "bulletin_confirm adds agent to confirmed_by" {
     entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "確認対象")"
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/bulletin_confirm.sh" saizo "$entry_id"

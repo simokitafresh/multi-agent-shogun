@@ -115,7 +115,7 @@ ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"
 
 mkdir -p "$(dirname "$BULLETIN_FILE")"
 
-{
+WRITE_RESULT="$({
     flock -x 200
     python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$CONTENT" "$POSTED_BY" "$POSTED_AT" "$REQUIRES_CONFIRMATION" <<'PY'
 import os
@@ -194,7 +194,12 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
 os.replace(tmp_file, bulletin_file)
 print(entry_id)
 PY
-} 200>"$LOCK_FILE"
+} 200>"$LOCK_FILE")"
+
+if [[ "$WRITE_RESULT" == DEDUP:* ]]; then
+    printf '%s\n' "$WRITE_RESULT"
+    exit 0
+fi
 
 # --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
@@ -216,3 +221,5 @@ if [[ -f "$INBOX_WRITE" ]]; then
         fi
     done
 fi
+
+printf '%s\n' "$WRITE_RESULT"
