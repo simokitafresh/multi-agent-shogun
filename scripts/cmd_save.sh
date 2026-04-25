@@ -2910,9 +2910,11 @@ pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|
 for e in entries:
     trust = e.get('trust', '')
     if 'verified' in trust and 'unverified' not in trust:
-        # GP-216: source以外の全フィールド(tool_verified/csv_paths等)からもパス抽出
+        # GP-216: source/tool_verified/csv_paths等の明示的パスフィールドからパス抽出
+        # claim はフリーテキストのため除外（LS033: ファイル名パターン誤検出防止）
+        skip_keys = {'trust', 'claim'}
         for key, val in e.items():
-            if key == 'trust':
+            if key in skip_keys:
                 continue
             for m in pat.finditer(val):
                 print(m.group(0))
