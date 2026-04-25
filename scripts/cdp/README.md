@@ -2,6 +2,28 @@
 
 WSL2からWindows上のChrome/Edgeを自動操作するためのCDPツールキット。
 
+## Baseline / Regression Wrapper
+
+`cdp_benchmark.sh` (`cdp_benchmark.py` の薄いラッパー) は `auto-ops/workflows/perf_measure.py` の JSON 出力を取り込み、
+この repo の `outputs/cdp-baselines/` に保存しつつ baseline 比較と health score を付与する。
+
+```bash
+# 通常計測（perf_measure.py の引数は -- の後ろへ渡す）
+bash scripts/cdp/cdp_benchmark.sh -- --profile production --pages dashboard
+
+# 今回の結果を baseline として固定
+bash scripts/cdp/cdp_benchmark.sh --baseline -- --profile production --pages dashboard
+
+# 直近 trend も表示
+bash scripts/cdp/cdp_benchmark.sh --trend -- --profile production --pages dashboard
+```
+
+出力:
+- 保存先: `outputs/cdp-baselines/{branch}_{timestamp}.json`
+- baseline pointer: `outputs/cdp-baselines/{branch}_latest.json`
+- 追加情報: timing/bundle/request count の回帰判定 (`PASS/WARN/REGRESSION`)
+- 追加情報: Health Score 0-100
+
 ## 正式手段: Daemon Mode（cdp_server.py + cdp_cli.sh）
 
 **Daemon modeが唯一の正式なCDP操作手段。** persistent WebSocket接続を維持するHTTPデーモンで、毎回のWebSocket接続/切断コストを排除する。

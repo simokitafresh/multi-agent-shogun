@@ -175,6 +175,8 @@ queue/ntfy_batch_queue.txt
 !outputs/analysis/cmd_1094_runbook_audit.csv
 !outputs/baselines/
 !outputs/baselines/.gitkeep
+!outputs/cdp-baselines/
+!outputs/cdp-baselines/.gitkeep
 
 # Docs (knowledge base — glob: 研究成果は全て追跡)
 !docs/
