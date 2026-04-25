@@ -299,9 +299,12 @@ YAML
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
 
-    [ ! -f "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" ]
-    [ ! -f "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" ]
-    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" ]
+    [ -L "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml" ]
+    [ -L "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml" ]
+    [ -L "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml" ]
+    [ -f "$(readlink "$TEST_PROJECT/queue/reports/kotaro_report_cmd_training_001.yaml")" ]
+    [ -f "$(readlink "$TEST_PROJECT/queue/reports/hayate_report_cmd_cycle_002.yaml")" ]
+    [ -f "$(readlink "$TEST_PROJECT/queue/reports/hanzo_report_cmd_selfimprovement_003.yaml")" ]
 }
 
 @test "GP-133: report archive skips when review_gate.done is deploy_preflight placeholder" {
@@ -369,8 +372,9 @@ GATE
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
 
-    # Report SHOULD be archived (real review = complete)
-    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1624.yaml" ]
+    # Report SHOULD be archived (real review = complete) with a GP-230 symlink left behind.
+    [ -L "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1624.yaml" ]
+    [ -f "$(readlink "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1624.yaml")" ]
 }
 
 @test "report archive: regular cmd still requires review_gate.done" {
