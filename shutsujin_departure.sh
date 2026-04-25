@@ -592,7 +592,7 @@ for i in $(seq 0 $((AGENT_COUNT-1))); do
             codex)
                 _codex_model=$(grep '^model ' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
                 _codex_effort=$(grep '^model_reasoning_effort' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-                _codex_model=${_codex_model:-gpt-5.4}
+                _codex_model=${_codex_model:-gpt-5.5}
                 _codex_effort=${_codex_effort:-high}
                 MODEL_NAMES[$i]="${_codex_model}/${_codex_effort}"
                 ;;

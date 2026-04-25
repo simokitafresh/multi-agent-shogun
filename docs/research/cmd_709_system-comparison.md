@@ -49,7 +49,7 @@
 |----|-------------|------------|-----------|
 | **品質保証** | 軍師(Gunshi)によるQCレビュー | GATE CLEAR機械検査(7項目)+別忍者レビュー必須 | おしお殿=人的QC信頼、我が軍=機械検査+相互レビュー |
 | **知識管理** | MCP Memory自由形式 + YAML Slim(トークン節約) | 8段階教訓サイクル(発見→淘汰) + Vercel式2層圧縮 | おしお殿=記録保持、我が軍=知識を循環させて陳腐化を自動排除 |
-| **モデル戦略** | Bloom Level Routing(難度→モデル自動割当) + 4CLI対応 | round-robin + dual vendor(Opus4+GPT-5.4) | おしお殿=最適配分、我が軍=ベンダー分散+ゲート品質保証 |
+| **モデル戦略** | Bloom Level Routing(難度→モデル自動割当) + 4CLI対応 | round-robin + dual vendor(Opus4+GPT-5.5) | おしお殿=最適配分、我が軍=ベンダー分散+ゲート品質保証 |
 | **復帰機構** | ASW 3フェーズ(nudge→抑制→/clear) + flag file idle | 陣形図(karo_snapshot) + SessionStart hook + inbox永続 | おしお殿=問題発生時の段階的対処、我が軍=復帰時の完全状態再構築 |
 | **テスト** | bats E2E 12スイート + GitHub Actions CI/CD | GATE CLEAR実戦検証(710cmd, 連勝340) | おしお殿=事前検証、我が軍=実戦計測 |
 | **可搬性** | macOS互換(bash 3.2) + first_setup.sh | WSL2専用 | おしお殿=多環境、我が軍=単一環境最適化 |
@@ -133,7 +133,7 @@ GitHub Actions:
 
 **我が軍のround-robin:**
 - 配備順序のみ。モデル選択は殿が手動設定
-- Opus4名 + GPT-5.4 4名の固定編成
+- Opus4名 + GPT-5.5 4名の固定編成
 - GATE CLEARで品質担保(モデル問わず)
 
 **分析**: Bloom Routingは「正しいモデルに正しいタスクを振る」コスト最適化。我が軍は「どのモデルでもGATEを通れば良い」品質担保。我が軍のCLEAR率100%(全モデル)が示すように、現行タスクの難度では**モデル選択が品質のボトルネックになっていない**。ただし、コスト効率の観点では簡単なタスクにOpusを使う無駄が発生している。
@@ -229,7 +229,7 @@ experimental。lead→teammate 2層。worktree隔離。
 | 軸 | 我が軍 | おしお殿 | GSD | ACE | Vercel | Teams |
 |----|--------|---------|-----|-----|--------|-------|
 | エージェント構造 | 4層(殿→将軍→家老→忍者8) | 4層(殿→将軍→家老→足軽7+軍師) | 1+サブ12 | 3役割線形 | 単体 | 2層(lead→3-5) |
-| モデル混成 | Opus4+GPT-5.4 4(dual vendor) | Claude+Codex+Copilot+Kimi(4CLI) | 単一 | 単一 | 単一 | 任意 |
+| モデル混成 | Opus4+GPT-5.5 4(dual vendor) | Claude+Codex+Copilot+Kimi(4CLI) | 単一 | 単一 | 単一 | 任意 |
 | CTX崩壊防止 | Vercel2層+autocompact+/clear+陣形図復帰 | YAML Slim+/clear+ASW escalation | Monitor(35%/25%)+Fractal Sum+pause | delta蓄積 | 3層pipe | 独立CTX窓 |
 | 知識永続化 | 6層(CLAUDE/instr/proj/lessons/queue/MCP) | 4層(MCP/PJ/YAML/session) | state+milestone+SUMMARY | playbook | AGENTS.md+Skills | CLAUDE.md(揮発) |
 | 復帰耐性 | 陣形図+hook+inbox(完全復帰) | /clear Recovery+ASW+flag file | continue-here.md | playbook再読 | AGENTS.md再読 | 再開不可 |

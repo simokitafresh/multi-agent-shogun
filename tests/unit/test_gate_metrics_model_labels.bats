@@ -114,7 +114,7 @@ cli:
   agents:
     sasuke:
       type: codex
-      model_name: gpt-5.4 high fast
+      model_name: gpt-5.5 high fast
       role: ninja
     kagemaru:
       model_name: claude-opus-4-6
@@ -125,7 +125,7 @@ EOF
     cat > "$TEST_PROJECT/config/cli_profiles.yaml" <<'EOF'
 profiles:
   codex:
-    display_name: GPT-5.4
+    display_name: GPT-5.5
   claude:
     display_name: Opus
 EOF
@@ -220,7 +220,7 @@ parts = line.split("\t")
 print(f"{len(parts)}|{parts[5]}|{parts[6]}|{parts[9]}")
 PY
 )"
-    [ "$result" = "11|gpt-5.4_high_fast|routine|duration_sec=unknown" ]
+    [ "$result" = "11|gpt-5.5_high_fast|routine|duration_sec=unknown" ]
 }
 
 @test "cmd_complete_gate records duration metric from task timestamps when available" {
@@ -258,16 +258,16 @@ PY
     [ "$result" = "duration_sec=213" ]
 }
 
-@test "model_analysis decodes encoded labels and avoids fragment model rows" {
+@test "model_analysis decodes encoded GPT-5 labels and avoids fragment model rows" {
     cat > "$TEST_PROJECT/logs/gate_metrics.log" <<'EOF'
-2026-03-06T13:44:27	cmd_594	CLEAR	all_gates_passed	recon	Opus_4.6_high,Codex_5.4_high_fast	complex	none	recon title
+2026-03-06T13:44:27	cmd_594	CLEAR	all_gates_passed	recon	Opus_4.6_high,Codex_5.5_high_fast	complex	none	recon title
 2026-03-06T13:55:57	cmd_595	CLEAR	all_gates_passed	review	gpt-5.4_high_fast	routine	none	review title
 EOF
 
     run bash "$TEST_PROJECT/scripts/model_analysis.sh" --summary
     [ "$status" -eq 0 ]
-    [[ "$output" == *$'model_row=codex_5_4_high_fast\tCodex 5.4 high fast\t100.0'* ]]
-    # gpt-5.4 and Codex 5.4 are same family (gpt_5_4) → merged into one row
+    [[ "$output" == *$'model_row=codex_5_5_high_fast\tCodex 5.5 high fast\t100.0'* ]]
+    # gpt-5.4 and Codex 5.5 are same GPT-5 family → merged into one row
     [[ "$output" != *$'model_row=gpt_5_4_high_fast\t'* ]]
     [[ "$output" == *$'model_row=opus_4_6_high\tOpus 4.6 high\t100.0'* ]]
     [[ "$output" != *$'\tCodex high\t'* ]]

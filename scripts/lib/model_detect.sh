@@ -101,7 +101,7 @@ detect_real_model() {
 
                 if [ -n "$model_line" ]; then
                     # "model:" の後ろ、"/model" or "│" の前
-                    # cmd_583: tr -s ' ' で連続空白を正規化（fast ON時に "gpt-5.4 high fast" を得る）
+                    # cmd_583: tr -s ' ' で連続空白を正規化（fast ON時に "gpt-5.5 high fast" を得る）
                     model=$(echo "$model_line" | sed -E 's/.*model:[[:space:]]*//' | sed -E 's/[[:space:]]*(\/model|│).*//' | tr -s ' ')
                 fi
 

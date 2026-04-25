@@ -103,8 +103,8 @@ if [[ "$MODE" == "summary" ]]; then
         _low=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | tr '-' ' ')
         if [[ "$_low" == *opus* ]] && [[ "$_low" == *4.6* || "$_low" == *4\ 6* ]]; then
             ACTIVE_FAM_MAP["opus_4_6"]=1
-        elif [[ "$_low" == *gpt* || "$_low" == *codex* ]] && [[ "$_low" == *5.4* || "$_low" == *5\ 4* ]]; then
-            ACTIVE_FAM_MAP["gpt_5_4"]=1
+        elif [[ "$_low" == *gpt* || "$_low" == *codex* ]] && [[ "$_low" == *5.4* || "$_low" == *5\ 4* || "$_low" == *5.5* || "$_low" == *5\ 5* ]]; then
+            ACTIVE_FAM_MAP["gpt_5"]=1
         else
             _slug=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g; s/^_\+//; s/_\+$//')
             ACTIVE_FAM_MAP["${_slug:-unknown}"]=1
@@ -127,7 +127,7 @@ if [[ "$MODE" == "summary" ]]; then
     function get_family(label,   low) {
         low = tolower(label); gsub(/-/, " ", low); gsub(/_/, " ", low)
         if (low ~ /opus/ && (low ~ /4\.6/ || low ~ /4 6/)) return "opus_4_6"
-        if ((low ~ /gpt/ || low ~ /codex/) && (low ~ /5\.4/ || low ~ /5 4/)) return "gpt_5_4"
+        if ((low ~ /gpt/ || low ~ /codex/) && (low ~ /5\.4/ || low ~ /5 4/ || low ~ /5\.5/ || low ~ /5 5/)) return "gpt_5"
         low = tolower(normalize(label)); gsub(/[^a-z0-9]+/, "_", low); gsub(/^_+|_+$/, "", low)
         return (low == "" ? "unknown" : low)
     }
@@ -314,10 +314,10 @@ def extract_model_family(label):
     low = label.lower().replace("-", " ").replace("_", " ")
     if "opus" in low and ("4.6" in low or "4 6" in low):
         return "opus_4_6"
-    if "gpt" in low and ("5.4" in low or "5 4" in low):
-        return "gpt_5_4"
-    if "codex" in low and ("5.4" in low or "5 4" in low):
-        return "gpt_5_4"
+    if ("gpt" in low or "codex" in low) and (
+        "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
+    ):
+        return "gpt_5"
     return model_slug(label)
 
 def load_yaml(path):

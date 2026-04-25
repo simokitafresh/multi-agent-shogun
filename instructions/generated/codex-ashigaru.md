@@ -875,7 +875,7 @@ args = ["-y", "@anthropic/github-mcp"]
 
 ```bash
 codex --model codex-mini-latest      # Lightweight model
-codex --model gpt-5.4                # Full model (subscription)
+codex --model gpt-5.5                # Full model (subscription)
 codex --model o4-mini                # Reasoning model
 ```
 

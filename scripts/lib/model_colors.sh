@@ -2,12 +2,12 @@
 # model_colors.sh — モデル別ペイン色定義（DRY原則: ここが唯一の定義元）
 # Usage: source scripts/lib/model_colors.sh
 
-# モデル表示名を正規化（"gpt-5.4 high" → "Codex", "Sonnet 4.6 high" → "Sonnet" 等）
+# モデル表示名を正規化（"gpt-5.5 high" / "gpt-5.4 high" → "Codex", "Sonnet 4.6 high" → "Sonnet" 等）
 _normalize_model_name() {
   local model_display="$1"
   case "$model_display" in
     *[Cc]odex*)  echo "Codex" ;;
-    gpt-*)       echo "Codex" ;;
+    [Gg][Pp][Tt]-*) echo "Codex" ;;
     *[Oo]pus*)   echo "Opus" ;;
     *[Ss]onnet*) echo "Sonnet" ;;
     *[Hh]aiku*)  echo "Haiku" ;;

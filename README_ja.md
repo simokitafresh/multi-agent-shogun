@@ -31,7 +31,7 @@
 **multi-agent-shogun** は、実運用向けのマルチエージェント開発基盤です。現行の生きた編成は以下です。
 
 - 将軍 + 家老: **Claude Code / Opus**
-- 佐助・霧丸・疾風・才蔵: **Codex / gpt-5.4**
+- 佐助・霧丸・疾風・才蔵: **Codex / gpt-5.5**
 - 影丸・半蔵・小太郎・飛猿: **Claude Code / Opus**
 
 **なぜ使うのか？**
@@ -135,7 +135,7 @@
 | CLI | 特徴 | デフォルトモデル |
 |-----|------|-----------------|
 | **Claude Code** | tmux統合の実績、Memory MCP、専用ファイルツール（Read/Write/Edit/Glob/Grep） | Claude Opus 4.6 |
-| **OpenAI Codex** | サンドボックス実行、JSONL構造化出力、`codex exec` ヘッドレスモード | gpt-5.4 |
+| **OpenAI Codex** | サンドボックス実行、JSONL構造化出力、`codex exec` ヘッドレスモード | gpt-5.5 |
 | **GitHub Copilot** | GitHub MCP組込、4種の特化エージェント（Explore/Task/Plan/Code-review）、`/delegate` | Provider-managed |
 | **Kimi Code** | 無料プランあり、多言語サポート | Kimi k2 |
 
@@ -903,7 +903,7 @@ SayTaskは個人の生産性を担当（キャプチャ → スケジュール �
 | 部隊 | 現在のCLI / モデル | 備考 |
 |------|--------------------|------|
 | 将軍・家老 | Claude Code / Opus | 戦略・統制系 |
-| Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.4 | Codex隊 |
+| Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.5 | Codex隊 |
 | Kagemaru, Hanzo, Kotaro, Tobisaru | Claude Code / Opus | Opus隊 |
 
 現行ローテーションは 2026-02-27 から継続中。配備は CLI 特性とタスク適性で決まる。

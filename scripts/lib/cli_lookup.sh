@@ -284,7 +284,7 @@ cli_profile_get_for_type() {
 
 # cli_model_display <agent_name>
 # settings.yamlのmodel_nameからユーザーフレンドリーな表示名を導出
-# claude-opus-4-6 → "Opus 4.6", claude-sonnet-4-6 → "Sonnet 4.6", gpt-5.4 → "gpt-5.4"
+# claude-opus-4-6 → "Opus 4.6", claude-sonnet-4-6 → "Sonnet 4.6", gpt-5.5 → "gpt-5.5"
 cli_model_display() {
     local agent="$1"
     local model_name

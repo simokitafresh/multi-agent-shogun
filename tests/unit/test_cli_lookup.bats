@@ -92,3 +92,9 @@ teardown_file() {
     [ "$status" -eq 0 ]
     [ "$output" = "Opus 4.6" ]
 }
+
+@test "model_colors: GPT-5.5表示名をCodex色へ正規化できる" {
+    run bash -lc "source '$PROJECT_ROOT/scripts/lib/model_colors.sh'; resolve_border_fg_color 'GPT-5.5 high'"
+    [ "$status" -eq 0 ]
+    [ "$output" = "#a6e3a1" ]
+}

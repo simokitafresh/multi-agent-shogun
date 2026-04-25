@@ -60,7 +60,7 @@ lib/cli_adapter.sh L88: `model != "opus"`の場合のみ`--model`付与。opus�
 
 | 項目 | 値 | 設定箇所 |
 |------|----|---------| 
-| モデル | gpt-5.4 | `~/.codex/config.toml` model |
+| モデル | gpt-5.5 | `~/.codex/config.toml` model |
 | context | **272K**（デフォルト） | 未設定 = 272K |
 | effort | high | `model_reasoning_effort = "high"` |
 
@@ -74,7 +74,7 @@ model_auto_compact_token_limit = 900000
 
 ### /hensei mixed注意事項
 
-- モデル名: `gpt-5`は古い → 正しくは`gpt-5.4`
+- モデル名: `gpt-5`は古い → 正しくは`gpt-5.5`
 - context: config.toml 1M設定なしでは272Kで稼働
 - claude↔codex切替: `/model`不可。respawn必須
 

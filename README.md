@@ -33,7 +33,7 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: a **mixed Claude
 
 - Shogun + Karo on **`cli.default`** from `config/settings.yaml` (currently Claude Code)
 - Gunshi (military advisor) on **Claude Code / Opus 4.6**
-- Hayate and Saizo on **Codex / gpt-5.4**
+- Hayate and Saizo on **Codex / gpt-5.5**
 - Kagemaru and Kotaro on **Claude Code / Sonnet 4.6**
 - Hanzo and Tobisaru on **Claude Code / Opus 4.6**
 
@@ -929,7 +929,7 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 | Shogun | `cli.default` (currently Claude Code) | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
 | Karo | `cli.default` (currently Claude Code) | Enabled | Task distribution requires careful judgment |
 | Gunshi | Opus 4.6 | Enabled | Strategic analysis and advisory |
-| Hayate, Saizo | gpt-5.4 (Codex) | Enabled | Fast implementation/research workers on the Codex side |
+| Hayate, Saizo | gpt-5.5 (Codex) | Enabled | Fast implementation/research workers on the Codex side |
 | Kagemaru, Kotaro | Sonnet 4.6 | Enabled | Lower-cost Claude workers for parallel execution |
 | Hanzo, Tobisaru | Opus 4.6 | Enabled | Higher-capability Claude workers for heavier tasks |
 

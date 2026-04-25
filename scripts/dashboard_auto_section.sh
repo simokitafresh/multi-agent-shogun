@@ -720,8 +720,7 @@ END {
             m = mdl_arr[mi]; gsub(/^[ \t]+|[ \t]+$/, "", m); if (m == "") continue
             low = tolower(m); gsub(/[-_]/, " ", low); fam = "unknown"
             if (index(low, "opus") && (index(low, "4.6") || index(low, "4 6"))) fam = "opus_4_6"
-            else if (index(low, "gpt") && (index(low, "5.4") || index(low, "5 4"))) fam = "gpt_5_4"
-            else if (index(low, "codex") && (index(low, "5.4") || index(low, "5 4"))) fam = "gpt_5_4"
+            else if ((index(low, "gpt") || index(low, "codex")) && (index(low, "5.4") || index(low, "5 4") || index(low, "5.5") || index(low, "5 5"))) fam = "gpt_5"
             else { fam = low; gsub(/[^a-z0-9]+/, "_", fam); gsub(/^_|_$/, "", fam); if (fam == "") fam = "unknown" }
             if (row_action[i] == "injected") {
                 o_mdl_inj[fam]++; o_mdl_total[fam]++
