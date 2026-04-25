@@ -2148,14 +2148,19 @@ try:
         sys.exit(0)
 
     # Build task text for keyword extraction
+    # GP-223: purpose/target_path/context_files追加でキーワード関連度向上
     title = task.get('title', '')
     description = task.get('description', '')
+    purpose = str(task.get('purpose') or '')
+    target_path = str(task.get('target_path') or '')
+    _cf = task.get('context_files')
+    context_files = ' '.join(str(f) for f in _cf if f) if isinstance(_cf, list) else str(_cf or '')
     ac_list = task.get('acceptance_criteria', [])
     if isinstance(ac_list, list):
         ac_text = ' '.join(str(a.get('description', '')) if isinstance(a, dict) else str(a) for a in ac_list)
     else:
         ac_text = str(ac_list or '')
-    task_text = f'{title} {description} {ac_text}'
+    task_text = f'{title} {description} {purpose} {target_path} {context_files} {ac_text}'
 
     # Extract keywords: split by non-word chars, exclude <=3 chars, lowercase, dedup
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
