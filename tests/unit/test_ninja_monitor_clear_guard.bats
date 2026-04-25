@@ -253,3 +253,123 @@ fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: verdict present → return 0 (allowed)"* ]]
 }
+
+# cmd_2279: PSTREE-OVERRIDE-SKIP: task status=idleならbash subprocess有でもIDLE扱い
+@test "check_idle: PSTREE-OVERRIDE-SKIP when task status=idle" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
+task:
+  status: idle
+  task_id: cmd_test_pstree
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+tmux() {
+    case "$*" in
+        *"@agent_state"*) echo "idle" ;;
+        *"@last_active"*) echo "0" ;;
+        *) echo "" ;;
+    esac
+}
+export -f tmux
+_agent_state_has_busy_subprocess() { return 0; }
+_all_subprocesses_long_running() { return 1; }
+
+check_idle "shogun:2.3" "hayate"
+result=$?
+
+if [ "$result" -eq 0 ]; then
+    echo "PASS: task.status=idle + bash subprocess → IDLE"
+else
+    echo "FAIL: expected return 0, got $result"
+    cat "$LOG"
+    exit 1
+fi
+
+if grep -q "PSTREE-OVERRIDE-SKIP" "$LOG"; then
+    echo "PASS: PSTREE-OVERRIDE-SKIP logged"
+else
+    echo "FAIL: PSTREE-OVERRIDE-SKIP not in log"
+    cat "$LOG"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: task.status=idle + bash subprocess → IDLE"* ]]
+    [[ "$output" == *"PASS: PSTREE-OVERRIDE-SKIP logged"* ]]
+}
+
+# cmd_2279: PSTREE-OVERRIDE: task status=assignedならbash subprocess有でBUSY扱い維持
+@test "check_idle: PSTREE-OVERRIDE still fires when task status=assigned" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
+task:
+  status: assigned
+  task_id: cmd_test_pstree
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+tmux() {
+    case "$*" in
+        *"@agent_state"*) echo "idle" ;;
+        *"@last_active"*) echo "0" ;;
+        *) echo "" ;;
+    esac
+}
+export -f tmux
+_agent_state_has_busy_subprocess() { return 0; }
+_all_subprocesses_long_running() { return 1; }
+
+result=0
+check_idle "shogun:2.3" "hayate" || result=$?
+
+if [ "$result" -eq 1 ]; then
+    echo "PASS: task.status=assigned + bash subprocess → BUSY"
+else
+    echo "FAIL: expected return 1, got $result"
+    cat "$LOG"
+    exit 1
+fi
+
+if grep -q "PSTREE-OVERRIDE:" "$LOG"; then
+    echo "PASS: PSTREE-OVERRIDE logged"
+else
+    echo "FAIL: PSTREE-OVERRIDE not in log"
+    cat "$LOG"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: task.status=assigned + bash subprocess → BUSY"* ]]
+    [[ "$output" == *"PASS: PSTREE-OVERRIDE logged"* ]]
+}

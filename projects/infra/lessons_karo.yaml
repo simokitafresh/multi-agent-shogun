@@ -239,3 +239,8 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §1配備時のdepends_on分析手順'
+- id: 'LK001'
+  title: 'バックグラウンドshell残存でninja_monitorの/clearが発動しない'
+  detail: '忍者がrun_in_backgroundでbashを起動すると、タスク完了後もシェルプロセスが残存する。ninja_monitorのPSTREE-OVERRIDEがbash subprocessを検出しBUSY扱いにするため、idle+タスクなし→/clearの条件を満たさない。結果: CTX消費継続+予期せぬ復帰時に旧タスク残骸で動くリスク。飛猿cmd_karo_ci_fix_skipで実証(23:51-23:56の5回連続PSTREE-OVERRIDE)。'
+  source_cmd: 'cmd_karo_ci_fix_skip'
+  created_at: '2026-04-25'
