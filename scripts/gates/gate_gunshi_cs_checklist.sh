@@ -42,6 +42,9 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         draft_verdict[draft_count] = verdict
         draft_has_ambiguity[draft_count] = has_ambiguity
         draft_ambiguity[draft_count] = ambiguity_text
+        draft_changed_lines[draft_count] = changed_lines + 0
+        draft_has_adv[draft_count] = has_adversarial
+        draft_adv_required[draft_count] = adversarial_required
     }
 
     in_record = 0
@@ -52,6 +55,9 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     has_causal = 0
     has_ambiguity = 0
     ambiguity_text = ""
+    changed_lines = 0
+    has_adversarial = 0
+    adversarial_required = 0
     in_obs = 0
     obs_count = 0
     obs_text = ""
@@ -92,6 +98,15 @@ BEGIN {
         sub(/^[[:space:]]*ambiguity_points:[[:space:]]*/, "", line)
         gsub(/["'\''"]/, "", line)
         ambiguity_text = trim(line)
+    } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
+        line = $0
+        sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
+        gsub(/[^0-9]/, "", line)
+        changed_lines = line + 0
+    } else if ($0 ~ /^[[:space:]]*adversarial_review:[[:space:]]*$/) {
+        has_adversarial = 1
+    } else if ($0 ~ /^[[:space:]]*required:[[:space:]]*(true|yes)/) {
+        adversarial_required = 1
     }
 
     if ($0 ~ /^[[:space:]]*observations:[[:space:]]*$/) {
@@ -125,6 +140,7 @@ END {
     ambiguity_missing_count = 0
     single_scenario_count = 0
     convergence_once_count = 0
+    adversarial_missing_count = 0
     for (i = 1; i <= draft_count; i++) {
         has_fm = (draft_obs[i] ~ fm_pat)
         has_tolerance = (draft_obs[i] ~ tol_pat)
@@ -141,6 +157,12 @@ END {
         if (i >= start_draft && zero_ambiguity && zero_ambiguity_seen[draft_id[i]] == 0) {
             convergence_once[++convergence_once_count] = draft_id[i]
         }
+        if (i >= start_draft && draft_changed_lines[i] >= 200 && !draft_has_adv[i]) {
+            adversarial_missing[++adversarial_missing_count] = draft_id[i] "(changed_lines=" draft_changed_lines[i] ")"
+        }
+        if (i >= start_draft && draft_adv_required[i] && !draft_has_adv[i]) {
+            adversarial_missing[++adversarial_missing_count] = draft_id[i] "(required=true)"
+        }
         if (zero_ambiguity) {
             zero_ambiguity_seen[draft_id[i]]++
         }
@@ -152,6 +174,7 @@ END {
     emit_list("AMBIGUITY_MISSING:", ambiguity_missing, ambiguity_missing_count)
     emit_list("SINGLE_SCENARIO:", single_scenario, single_scenario_count)
     emit_list("CONVERGENCE_ONCE:", convergence_once, convergence_once_count)
+    emit_list("ADVERSARIAL_MISSING:", adversarial_missing, adversarial_missing_count)
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
@@ -163,6 +186,7 @@ fm_flagged=""
 ambiguity_missing=""
 single_scenario=""
 convergence_once=""
+adversarial_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -184,6 +208,9 @@ while IFS= read -r line; do
             ;;
         CONVERGENCE_ONCE:*)
             convergence_once="${line#CONVERGENCE_ONCE:}"
+            ;;
+        ADVERSARIAL_MISSING:*)
+            adversarial_missing="${line#ADVERSARIAL_MISSING:}"
             ;;
         ALL_PASS)
             all_pass=1
@@ -220,7 +247,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -252,6 +279,14 @@ if [ -n "$single_scenario" ]; then
     echo "WARN: ${single_scenario_count}件のdraftエントリが1シナリオ観測のみ:"
     printf '%s\n' "$single_scenario" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: 観測が1件のみ。mizchi Red flag『1シナリオで充分』の可能性"
+    done
+    warn=1
+fi
+if [ -n "$adversarial_missing" ]; then
+    adversarial_count=$(printf '%s\n' "$adversarial_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${adversarial_count}件のdraftエントリでAdversarial review欠落:"
+    printf '%s\n' "$adversarial_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: changed_lines>=200 なのに adversarial_review 記録なし"
     done
     warn=1
 fi

@@ -241,6 +241,12 @@ Missing fields = incomplete report.
 
 task YAMLに`task_type: recon`がある場合、偵察モードで作業する。
 
+### Scope lock（scope.lock）
+
+- 偵察中は scope.lock を守れ。target_path / description に無い scope外 変更をするな
+- 追加修正が必要でもその場で直さず、報告YAML・lesson_candidate・decision_candidateへ書いて返せ
+- 偵察と実装を混ぜるな。scope外 変更が必要なら家老にimpl再配備を求めよ
+
 ### 偵察タスクの受け取り方
 
 1. task YAMLを読む（通常のStep 2と同じ）

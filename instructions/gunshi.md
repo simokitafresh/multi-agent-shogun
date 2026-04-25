@@ -187,6 +187,49 @@ second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
 - **Second Opinion** は先行レビューの焼き直しを禁止する。別視点の cold read を要求せよ
 - 低確度の指摘を積み上げて REQUEST_CHANGES にするな。確度が低いなら調査要求として返せ
 
+### 5.6 Adaptive Gating（観点の冷え検知）
+
+レビュー観点は「知っている」だけでは腐る。`logs/gunshi_review_log.yaml` の `finding_categories:` を観点カタログとして集計し、**直近10件で連続0件**の観点は「いまの自分がその観点で何も拾えていない」状態とみなせ。
+
+観点カタログ:
+- `assumptions`
+- `numbers`
+- `simulation`
+- `premortem`
+- `north_star`
+- `ambiguity`
+- `adversarial`
+
+運用ルール:
+- `gate_gunshi_startup.sh` の観点別集計を起動時に確認せよ
+- 直近10件で連続0件の観点は**抑制候補**として扱い、その観点を使った「問題なし」宣言は `confidence: LOW` に落として再点検せよ
+- LOW化の目的は「その観点を外す」ことではない。惰性でOKを出さず、意識して再活性化することにある
+- review log には `finding_categories:` を追記し、実際に使った観点を列挙せよ。未記録の観点は集計されない
+
+例:
+```yaml
+finding_categories: [assumptions, premortem, ambiguity]
+```
+
+### 5.7 Adversarial Review（Red-Team第2パス）
+
+大型cmdは通常レビュー1回で閉じるな。**変更行数が200行超**、または blast radius が大きいcmdは、通常の6観点レビュー後に攻撃者/chaos engineer視点の第2パスを追加せよ。
+
+チェックポイント:
+- 「壊し方」の視点で見る。悪意ある入力、競合、誤運用、roll back不能性を探せ
+- 既存運用に潜る負の複利（将来の手戻り、監視不能、隠れた運用負債）を明示せよ
+- 第2パスの結果は `adversarial_review:` に記録し、required 条件・結論・理由を残せ
+- `gate_gunshi_cs_checklist.sh` は `changed_lines >= 200` なのに `adversarial_review` が無いdraftをWARNする
+
+記録例:
+```yaml
+changed_lines: 248
+adversarial_review:
+  required: true
+  verdict: PASS
+  reason: "Red-Team視点で rollback不能性・競合・監視穴を再点検"
+```
+
 ### 6. North Star整合
 cmdの目的が上位の戦略目標（殿の方針・PJ目標・学習ループ原則）と整合しているか。
 
@@ -300,6 +343,12 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 - **HIGH**: Step 1-4全てを十分に検証済み。情報不足なし
 - **MEDIUM**: 大半検証したが一部は推定に依存。注視ポイントを明示する
 - **LOW**: 重要な前提が未検証 or 情報不足が顕著。追加調査を推奨する
+
+### Step 5.5: Adaptive Gating（観点冷えの自己検知）
+`gate_gunshi_startup.sh` の観点別集計を見て、観点カタログのうち**直近10件で連続0件**の観点があれば、その観点に依拠した「問題なし」判断を LOW confidence 扱いに落として再点検せよ。惰性のゼロ件は盲点候補である。
+
+### Step 5.7: Adversarial Review（Red-Team第2パス）
+`changed_lines >= 200` の大型draft、または blast radius 大のdraftでは、第1パス完了後に Red-Team 視点の第2パスを追加せよ。破壊シナリオ・運用誤用・rollback不能性・監視穴を明示し、`adversarial_review:` に required / verdict / reason を記録する。
 
 ## S0: 自己コード変更セルフレビュープロトコル
 
@@ -583,10 +632,18 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
   verdict: LGTM             # LGTM / FAIL (report) / APPROVE / REQUEST_CHANGES / REJECT (draft)
   gate_result: null          # GATE結果判明後に更新
   confidence: HIGH           # HIGH/MEDIUM/LOW (draftのみ必須)
+  changed_lines: 248         # draftのみ任意。200超ならadversarial_review必須
+  finding_categories:        # draft/reviewで実際に使った観点カタログ
+    - assumptions
+    - premortem
   findings_summary: "4観点OK、lesson_quality:OK"
   observations:              # ★必須: レビューで発見した具体的事実（最低1つ）
     - "事実1: 発見した具体的事象"
     - "事実2: 検証した前提とその結果"
+  adversarial_review:        # changed_lines >= 200 のdraftで必須
+    required: true
+    verdict: PASS
+    reason: "Red-Team視点で rollback不能性・運用誤用・監視穴を確認"
   proposals:                 # 改善提案があれば記録（GP-XXX形式）
     - id: GP-XXX
       description: "提案内容"

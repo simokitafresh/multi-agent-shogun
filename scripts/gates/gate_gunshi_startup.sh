@@ -165,6 +165,98 @@ else
     alerts+=("統計ファイル不在")
 fi
 
+echo "■ 観点別集計（Adaptive gating）"
+if [ -f "$REVIEW_LOG" ]; then
+    category_stats=$(python3 - "$REVIEW_LOG" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+catalog = [
+    ("assumptions", 10, [r"assumption", r"前提"]),
+    ("numbers", 10, [r"number", r"数値", r"再計算", r"分母", r"分子"]),
+    ("simulation", 10, [r"simulation", r"時系列", r"依存", r"並列", r"衝突"]),
+    ("premortem", 10, [r"premortem", r"失敗", r"failure", r"リスク", r"silent fallback"]),
+    ("north_star", 10, [r"north.?star", r"複利", r"品質向上", r"消火"]),
+    ("ambiguity", 10, [r"ambiguity", r"曖昧", r"不明瞭"]),
+    ("adversarial", 10, [r"adversarial", r"red.?team", r"chaos", r"攻撃"]),
+]
+
+entries = []
+current = None
+capture_field = None
+capture_items = None
+
+def flush():
+    global current
+    if current:
+        entries.append(current)
+    current = None
+
+with open(path, encoding="utf-8") as fh:
+    for raw in fh:
+        line = raw.rstrip("\n")
+        if re.match(r"^- (cmd_id|id):", line):
+            flush()
+            current = {"review_type": "", "verdict": "", "finding_categories": [], "text": []}
+            capture_field = None
+            capture_items = None
+        if current is None:
+            continue
+        current["text"].append(line)
+        if re.match(r"^\s{2}review_type:\s*", line):
+            current["review_type"] = re.sub(r"^\s{2}review_type:\s*", "", line).strip().strip('"\'')
+            capture_field = None
+            continue
+        if re.match(r"^\s{2}verdict:\s*", line):
+            current["verdict"] = re.sub(r"^\s{2}verdict:\s*", "", line).strip().strip('"\'')
+            capture_field = None
+            continue
+        if re.match(r"^\s{2}finding_categories:\s*\[", line):
+            values = re.sub(r"^\s{2}finding_categories:\s*\[|\]\s*$", "", line).strip()
+            if values:
+                current["finding_categories"].extend([v.strip().strip('"\'') for v in values.split(",") if v.strip()])
+            capture_field = None
+            continue
+        if re.match(r"^\s{2}finding_categories:\s*$", line):
+            capture_field = "finding_categories"
+            continue
+        if capture_field == "finding_categories":
+            if re.match(r"^\s{4}-\s*", line):
+                current["finding_categories"].append(re.sub(r"^\s{4}-\s*", "", line).strip().strip('"\''))
+                continue
+            capture_field = None
+
+flush()
+
+drafts = [e for e in entries if e["review_type"] == "draft"]
+window = drafts[-10:]
+for name, threshold, patterns in catalog:
+    hits = 0
+    zero_streak = 0
+    for entry in window:
+        categories = {c.lower() for c in entry["finding_categories"]}
+        haystack = "\n".join(entry["text"]).lower()
+        matched = name in categories or any(re.search(p, haystack) for p in patterns)
+        if matched:
+            hits += 1
+            zero_streak = 0
+        else:
+            zero_streak += 1
+    print(f"{name}|{hits}|{len(window)}|{zero_streak}|{threshold}")
+PY
+)
+    while IFS='|' read -r cat_name cat_hits cat_total cat_zero cat_threshold; do
+        [ -n "$cat_name" ] || continue
+        echo "  ${cat_name}: ${cat_hits}/${cat_total}件, zero_streak=${cat_zero}/${cat_threshold}"
+        if [ "${cat_total:-0}" -gt 0 ] && [ "${cat_zero:-0}" -ge "${cat_threshold:-0}" ]; then
+            echo "    LOW confidence候補: ${cat_name}観点が直近${cat_threshold}件で連続0件"
+        fi
+    done <<< "$category_stats"
+else
+    echo "  SKIP: gunshi_review_log.yaml不在"
+fi
+
 # 未処理GP(提案)件数
 if [ -f "$GP_TRACKER" ]; then
     pending_gp=$(grep -c '^# |.*| pending' "$GP_TRACKER" 2>/dev/null) || pending_gp=0

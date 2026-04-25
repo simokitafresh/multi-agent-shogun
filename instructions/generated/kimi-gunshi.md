@@ -136,6 +136,18 @@ failure_modes:
 - **MEDIUM**: 一部が情報不足で推定
 - **LOW**: 重要な前提が未検証
 
+### 5.6 Adaptive Gating
+
+- 観点カタログ: `assumptions` / `numbers` / `simulation` / `premortem` / `north_star` / `ambiguity` / `adversarial`
+- `logs/gunshi_review_log.yaml` の `finding_categories:` を起点に、`gate_gunshi_startup.sh` が観点別集計を表示する
+- 直近10件で連続0件の観点は LOW confidence 扱いで再点検せよ。盲点候補を「問題なし」で済ませるな
+
+### 5.7 Adversarial Review
+
+- `changed_lines >= 200` の draft は Red-Team 第2パス必須
+- `adversarial_review.required/verdict/reason` を log に残せ
+- `gate_gunshi_cs_checklist.sh` は大型draftで `adversarial_review` 欠落を WARN する
+
 出力:
 
 ```yaml
@@ -191,6 +203,8 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 3. 前提を疑う
 4. 数値を再計算する
 5. 時系列で実行して詰まりを探す
+6. Adaptive Gating: 直近10件で連続0件の観点を LOW confidence 扱いで再点検する
+7. Adversarial Review: `changed_lines >= 200` なら Red-Team 第2パスを追加する
 
 ## Partner Loop
 

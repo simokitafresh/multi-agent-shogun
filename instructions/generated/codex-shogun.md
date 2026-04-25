@@ -173,6 +173,10 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
 - id: cmd_XXX
   timestamp: "ISO 8601"
   purpose: "What this cmd must achieve (verifiable statement)"
+  assumptions:
+    - claim: "前提"
+      source: "根拠"
+      trust: "verified"
   acceptance_criteria:
     - "Criterion 1 — specific, testable condition"
     - "Criterion 2 — specific, testable condition"
@@ -188,6 +192,10 @@ Do NOT specify: number of ninja, assignments, verification methods, personas, or
 ```
 
 - **purpose**: One sentence. What "done" looks like. Karo and ninja validate against this.
+- **assumptions**: 前提3段階で扱え。**列挙→合意→確認** の順で固める
+  - **列挙**: 前提を claim として明文化
+  - **合意**: その前提が purpose / AC / not_in_scope のどれを支えるか説明できる状態にする
+  - **確認**: source を一次情報で埋め、trust を verified に上げる。未確認ならcmd化するな
 - **acceptance_criteria**: List of testable conditions. All must be true for cmd to be marked done. Karo checks these at Step 11.7 before marking cmd complete.
 - **not_in_scope**: このcmdで意図的にやらないこと。**AC3個以上のcmdでは必須**。後続cmdに回す論点をここへ明記せよ。
 - **unresolved_decisions**: 先送り裁定の記録。`PD-XXX`へのポインタか、「裁定なし」の明示を書く。pending_decisionsとの対応を失うな。

@@ -232,6 +232,16 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 
 `task_type: recon`のタスクは偵察モード。報告フォーマット・recon_aspect・Suppressions(S1-S12)・認知バイアスガード → `instructions/ashigaru-recon.md`
 
+### Scope lock（scope.lock）
+
+偵察中は**調査対象の外を直すな**。`task_type: recon` では target_path / description / implementation_readiness に明記された範囲のみを読む・調べる。
+
+ルール:
+- `scope.lock` 中に scope外 のファイル変更を始めるな
+- 調査の過程で修正案や追加変更が見えても、その場で実装せず `lesson_candidate` / `decision_candidate` / 報告YAML に書いて返せ
+- scope外 変更が必要と判断したら停止し、家老へ「偵察ではなくimpl再配備が必要」と報告せよ
+- 「ついでに直す」は偵察の独立性を壊す。事実収集と修正実装を混ぜるな
+
 ### 実装直結5要件（殿厳命 cmd_754, cmd_1476で第5要件追加）
 
 報告YAMLの`implementation_readiness`欄(deploy_task.shが自動生成)に必須記入:
