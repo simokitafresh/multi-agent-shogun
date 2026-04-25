@@ -608,14 +608,20 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-BEGIN { replaced = 0; has_fields = 0 }
+BEGIN { replaced = 0; has_fields = 0; skip_continuation = 0 }
 {
     field_re = "^" regex_escape(field) ":[[:space:]]*"
     if (!replaced && $0 ~ field_re) {
         print field ": " yaml_safe(new_value)
         replaced = 1
         has_fields = 1
+        skip_continuation = 1
         next
+    }
+    # GP-234: block scalar continuation行スキップ
+    if (skip_continuation) {
+        if ($0 ~ /^[[:space:]]/ || $0 ~ /^$/) { next }
+        skip_continuation = 0
     }
     if ($0 ~ /^[A-Za-z0-9_.-]+:[[:space:]]/) has_fields = 1
     print
@@ -711,7 +717,16 @@ BEGIN {
     if (!replaced && $0 ~ field_re) {
         print make_indent(field_indent) field ": " yaml_safe(new_value)
         replaced = 1
+        skip_continuation = 1
         next
+    }
+
+    # GP-234: block scalar continuation行スキップ（旧マルチライン値の残骸除去）
+    if (skip_continuation) {
+        if (trimmed == "" || indent > field_indent) {
+            next  # continuation行をスキップ
+        }
+        skip_continuation = 0  # 同レベル以上のフィールドに到達→スキップ終了
     }
 
     print
