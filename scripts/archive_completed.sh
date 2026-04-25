@@ -1077,8 +1077,17 @@ archive_reports() {
                 # GP-XXX2: O(1) lookup via pre-scanned _gate_status (per-file [ -f ] + grep -q を排除)
                 case "${_gate_status[$check_cmd_for_review]:-missing}" in
                     missing)
-                        echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $_bname"
-                        kept=$((kept + 1)); continue ;;
+                        # review_gate.done 不在でも gate_metrics.log に CLEAR 記録があればアーカイブを許可
+                        local _gate_metrics_log="$PROJECT_DIR/logs/gate_metrics.log"
+                        if [ -f "$_gate_metrics_log" ] && awk -F'\t' -v cmd="$check_cmd_for_review" \
+                                '$2==cmd && $3=="CLEAR" {found=1; exit} END{exit !found}' \
+                                "$_gate_metrics_log" 2>/dev/null; then
+                            echo "[archive] FALLBACK: review_gate.done missing but gate_metrics CLEAR found for ${check_cmd_for_review}: $_bname"
+                        else
+                            echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $_bname"
+                            kept=$((kept + 1)); continue
+                        fi
+                        ;;
                     placeholder)
                         # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
                         echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $_bname"
