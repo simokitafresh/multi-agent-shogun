@@ -430,7 +430,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
 
 ## Cross-Project Context
-- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
+- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
 - 修行サイクル: `context/training-cycle.md` — L1-L4全実績+モデル別FP率(§24-25: mixed編成Opus100%/Sonnet0-50%/GPT0-100%)+環境改善履歴。idle忍者配備時に参照
 
 ## Agents
