@@ -1355,6 +1355,71 @@ print('|'.join(ids))
     [ "$output" = "L921|L922|L923|L920" ]
 }
 
+@test "deploy_task injects cross-project lessons when command keywords match lesson title threshold" {
+    mkdir -p "$TEST_PROJECT/projects/mainproj" "$TEST_PROJECT/projects/otherproj"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
+projects:
+  - id: mainproj
+    name: "Main"
+    status: active
+  - id: otherproj
+    name: "Other"
+    status: active
+current_project: mainproj
+EOF
+
+    cat > "$TEST_PROJECT/projects/mainproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L930
+    title: local deploy checklist
+    summary: local summary
+    status: confirmed
+    helpful_count: 3
+EOF
+
+    cat > "$TEST_PROJECT/projects/otherproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L931
+    title: cache invalidation sequencing
+    summary: cross-project match
+    status: confirmed
+    helpful_count: 8
+    tags: [database]
+  - id: L932
+    title: unrelated observability lesson
+    summary: should stay out
+    status: confirmed
+    helpful_count: 9
+    tags: [ops]
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "cross-project injection"
+  description: "validate other project lesson opt-in"
+  command: "Run cache invalidation sequencing before deploy cutover."
+  task_type: impl
+  project: mainproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+ids = [entry.get('id') for entry in related]
+assert 'L931' in ids, ids
+assert 'L932' not in ids, ids
+print('|'.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
 # === GP-105: stale report reassignment detection ===
 
 @test "GP-105: stale other ninja template archived on reassignment (verdict empty)" {
