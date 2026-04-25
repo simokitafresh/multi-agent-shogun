@@ -1270,7 +1270,7 @@ lesson_candidate:
   # \$RFS lesson_candidate.found "false"
   # \$RFS lesson_candidate.no_lesson_reason "既知のL084と同じパターン"
   found: false
-  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
+  no_lesson_reason: FILL_THIS  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
   title: ""
   detail: ""
   project: ${project}
