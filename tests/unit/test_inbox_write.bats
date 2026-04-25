@@ -721,7 +721,7 @@ EOF
 
     run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。" report_review_result gunshi
     [ "$status" -eq 0 ]
-    [[ "$output" == *"review_gate.done updated: cmd_karo_auto_review_gate"* ]]
+    [[ "$output" == *"review_gate.done created/updated: cmd_karo_auto_review_gate"* ]]
     [[ "$output" == *"cmd_complete_gate.sh started in background for cmd_karo_auto_review_gate"* ]]
 
     _wait_for_file "$INBOX_WRITE_BG_LOG"
