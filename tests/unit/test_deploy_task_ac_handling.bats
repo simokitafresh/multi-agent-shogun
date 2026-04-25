@@ -1420,6 +1420,51 @@ print('|'.join(ids))
     [ "$status" -eq 0 ]
 }
 
+@test "deploy_task injects CDP lesson from purpose and command when target_path is outputs" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L274
+    title: cdp reload benchmark auth wall
+    summary: cdp reload計測は認証壁込みで扱う
+    status: confirmed
+    helpful_count: 7
+  - id: L941
+    title: unrelated lesson
+    summary: should stay out
+    status: confirmed
+    helpful_count: 9
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "outputs only task"
+  description: "target_pathだけではCDP文脈が出ない"
+  purpose: "CDP再計測の教訓を正しく注入する"
+  command: "Use auth wall aware benchmark routing for the reload run."
+  target_path: outputs/benchmarks/cdp-reload.json
+  task_type: impl
+  project: infra
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+ids = [entry.get('id') for entry in related]
+assert 'L274' in ids, ids
+assert 'L941' not in ids, ids
+print('|'.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
 # === GP-105: stale report reassignment detection ===
 
 @test "GP-105: stale other ninja template archived on reassignment (verdict empty)" {

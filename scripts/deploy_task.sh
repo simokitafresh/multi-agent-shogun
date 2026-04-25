@@ -2149,6 +2149,7 @@ try:
 
     # Build task text for keyword extraction
     # GP-223: purpose/target_path/context_files追加でキーワード関連度向上
+    # cmd_2276: commandも統合し、target_path非依存でタスク意図を教訓注入に反映
     title = task.get('title', '')
     description = task.get('description', '')
     purpose = str(task.get('purpose') or '')
@@ -2160,7 +2161,7 @@ try:
         ac_text = ' '.join(str(a.get('description', '')) if isinstance(a, dict) else str(a) for a in ac_list)
     else:
         ac_text = str(ac_list or '')
-    task_text = f'{title} {description} {purpose} {target_path} {context_files} {ac_text}'
+    task_text = f'{title} {description} {purpose} {command_text} {target_path} {context_files} {ac_text}'
 
     # Extract keywords: split by non-word chars, exclude <=3 chars, lowercase, dedup
     words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
