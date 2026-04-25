@@ -168,6 +168,25 @@ confidence: HIGH/MEDIUM/LOW
 confidence_reason: "{確信度の根拠。MEDIUM/LOW時は不確実な箇所を明示}"
 ```
 
+<!-- GStack/GBrain takeaway #1, #2, #23 -->
+### 5.5 Finding Confidence / Fix-First / Second Opinion
+
+レビュー所見は「見つけた」だけで終えるな。各主要指摘に、どれだけ確からしいか、まず何を直すべきか、第二読者が必要かを併記せよ。
+
+追加フィールド:
+```yaml
+finding_confidence_1_10: 1-10  # 10=現物確認済みで高確度、1=仮説段階
+fix_first: AUTO-FIX / ASK      # AUTO-FIX=機械的修正で前進可 / ASK=判断待ち
+second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
+```
+
+運用ルール:
+- **finding_confidence_1_10** は重大指摘ごとに付けよ。3以下は「疑い」に留め、断定口調で返すな
+- **Fix-First** は二分のみ。AUTO-FIXは仕様解釈不要の機械的修正、ASKは裁定・設計判断が要る変更
+- **Second Opinion** は `finding_confidence_1_10 <= 4`、blast radius大、または前提が複数層に跨る時に **REQUIRED**
+- **Second Opinion** は先行レビューの焼き直しを禁止する。別視点の cold read を要求せよ
+- 低確度の指摘を積み上げて REQUEST_CHANGES にするな。確度が低いなら調査要求として返せ
+
 ### 6. North Star整合
 cmdの目的が上位の戦略目標（殿の方針・PJ目標・学習ループ原則）と整合しているか。
 
@@ -393,6 +412,9 @@ findings:
   premortem: OK/NG + 1行理由
   confidence: HIGH/MEDIUM/LOW + 根拠
   north_star: OK/NG + 1行理由
+finding_confidence_1_10: 1-10  # 主要指摘の総合確度
+fix_first: AUTO-FIX / ASK
+second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
 suggested_changes: (REQUEST_CHANGESの場合のみ、具体的な修正指示)
 severity: urgent / normal  (REQUEST_CHANGESの場合のみ、指摘の緊急度)
 ambiguity_points: none  # cmdの指示が曖昧な箇所。あれば「フィールドXが未定義」等を列挙

@@ -1252,6 +1252,11 @@ task_clarity:
   score: ""         # 0-100: タスクの明瞭度(100=完全明瞭, 0=全不明)。cmdの品質を記録
   unclear_points: ""   # 不明瞭だった点を1文で(なければ"なし")
   discretion_fills: "" # 独自判断で補完した内容(なければ"なし")
+# GStack/GBrain takeaway #9, #18 — 4-way debug verdict と test ownership triage を追加。
+# gate互換のため top-level verdict は PASS/FAIL/PASS_NO_IMPROVEMENT を維持し、
+# 4択は status_detail に分離して保持する。
+status_detail: ""  # DONE / WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT
+test_triage: ""  # in_branch / pre_existing / unknown
 ${_before_after_block}
 files_modified: []
 lesson_candidate:
@@ -1303,7 +1308,7 @@ self_gate_check:
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: ""  # 全binary_checks完了後に PASS or FAIL を記入
+verdict: ""  # 全binary_checks完了後に PASS / FAIL / PASS_NO_IMPROVEMENT を記入(status_detailではない)
 # ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
 # □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
 # □ lessons_useful: 全reason欄に有用/無用の具体的理由を記入したか

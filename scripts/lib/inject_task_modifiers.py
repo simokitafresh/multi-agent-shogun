@@ -514,6 +514,43 @@ def inject_execution_controls(task):
     return changed
 
 
+# ─── recon task template hints ───
+def inject_recon_task_template(task):
+    task_type = str(task.get('task_type', '') or '').lower()
+    if task_type not in ('recon', 'scout'):
+        return False
+
+    changed = False
+
+    # GStack/GBrain takeaway #7 — 偵察は仮説を最低3本持ち、3連続不発でエスカレーション。
+    if task.get('hypothesis_count') in (None, ''):
+        task['hypothesis_count'] = 3
+        changed = True
+
+    if task.get('three_strike_rule') in (None, ''):
+        task['three_strike_rule'] = (
+            '仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告'
+        )
+        changed = True
+
+    marker = '【3-strike rule】'
+    desc = str(task.get('description', '') or '')
+    if marker not in desc:
+        prefix = (
+            f'{marker}\n'
+            '  - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ\n'
+            '  - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ\n'
+            '  ────────────────────────────────────────\n\n'
+        )
+        task['description'] = prefix + desc
+        changed = True
+
+    if changed:
+        print('[RECON_TEMPLATE] Injected 3-strike rule + hypothesis_count',
+              file=sys.stderr)
+    return changed
+
+
 # ─── parity_target_date_ac ───
 _PARITY_RE = re.compile(r'パリティ|parity', re.IGNORECASE)
 _TARGET_DATE_AC = 'target_dateがproduction fullrecalculateと同一であること'
@@ -641,6 +678,8 @@ def main():
          lambda: inject_report_template(task, script_dir)),
         ('execution_controls',
          lambda: inject_execution_controls(task)),
+        ('recon_task_template',
+         lambda: inject_recon_task_template(task)),
         ('golden_snapshot_for_be',
          lambda: inject_golden_snapshot_for_be(task)),
         ('parity_target_date_ac',

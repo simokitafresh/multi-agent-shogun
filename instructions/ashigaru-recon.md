@@ -11,9 +11,26 @@ task YAMLに`task_type: recon`がある場合、偵察モードで作業する�
 1. task YAMLを読む（通常のStep 2と同じ）
 2. `project:`フィールドがあれば知識ベースを読む（「Task Start Rule」参照）
 3. 調査対象（target_path / description内の指示）を確認
-4. **独立調査を実施** — 他の忍者の報告・結果は絶対に見るな（並行偵察ルール）
-5. 偵察報告を書く（下記フォーマット）
-6. 通常通りinbox_writeで家老に報告
+4. `hypothesis_count` と `three_strike_rule` があれば、それを今回の仮説運用の基準にせよ
+5. **独立調査を実施** — 他の忍者の報告・結果は絶対に見るな（並行偵察ルール）
+6. 偵察報告を書く（下記フォーマット）
+7. 通常通りinbox_writeで家老に報告
+
+<!-- GStack/GBrain takeaway #7 -->
+### 3-strike rule + hypothesis_count
+
+偵察task templateには以下を注入してよい。存在する場合は必ず従え。
+
+```yaml
+hypothesis_count: 3
+three_strike_rule: "仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告"
+```
+
+運用ルール:
+- 初期仮説は最低 `hypothesis_count` 本を立てよ。1本で突撃するな
+- 仮説が3回連続で外れたら、その偵察は「深掘り継続」ではなく「情報不足 or 前提崩壊」と見なせ
+- 3-strike到達後は、新しい仮説を黙って足すな。外れた仮説と証拠を報告に残し、家老へ返せ
+- これは調査放棄ではない。無限探索を止め、次の判断に必要な一次情報を返すための規律である
 
 ### 偵察報告フォーマット
 
