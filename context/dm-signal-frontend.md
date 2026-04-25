@@ -1,8 +1,9 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-04-20 3レジーム市場分析FE実装(cmd_2138)+revert(cmd_2140)。Sideways行追加予定(cmd_2141 draft) -->
+<!-- last_updated: 2026-04-25 cmd_2264設計書反映: セマフォ4/prefetch budget=2/signals TTL 60min/hard navigation構造/ボトルネック分析追記 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
+> **速度改善設計書**: `docs/research/fe-speed-improvement-design.md` — 計測データ(cmd_2262)+FE/BEコード分析+改善ロードマップ(§1-§5)。ボトルネック: `/api/signals`が全ページ共通律速(500-700ms)。
 
 パス: `/mnt/c/Python_app/DM-signal/frontend/`
 
@@ -59,7 +60,7 @@ UIライブラリなし（全13コンポーネント手製）。
 4 Context: Signals(PF選択+prefetch), ExecutionTiming(OPEN/CLOSE), ViewerPermissions(3ロール), AdminAuth(Cookie+PFリスト)
 7 Hook: usePrefetch, useAdminPage(550行), useChartInteraction, useAppVisibility, usePortfolioParam, useSortableTable, useIsMobile
 
-データフロー: SignalsProvider(SWR: stale即表示+BG fresh fetch, cmd_765)→prefetch(selected PF 3本のみ, cmd_733)→IndexedDB+メモリ2層キャッシュ→PF切替即描画
+データフロー: SignalsProvider(SWR: stale即表示+BG fresh fetch, cmd_765)→prefetch(selected PFのみ, budget=2, cmd_733)→IndexedDB+メモリ2層キャッシュ→PF切替即描画。次PFのprefetchは不在(cmd_2264設計書§3.3)。ナビゲーションは`window.location.href`統一=hard navigation→SignalsProvider毎回再初期化→`/api/signals`が全遷移の律速(cmd_2264設計書§3.2)
 
 → 詳細資料: `docs/research/frontend-components.md` §3, §5
 - L201: useEffectの依存配列にstate変数を含めると意図しないタイミングでeffectが発火する（cmd_642）
@@ -67,7 +68,7 @@ UIライブラリなし（全13コンポーネント手製）。
 
 ## 4. APIクライアント
 
-`lib/api-client.ts` (1121行)。TTLキャッシュ(5min/LRU100)、セマフォ(同時2)、リトライ(2回/指数バックオフ)、AbortController(8s)。
+`lib/api-client.ts` (1121行)。TTLキャッシュ(`/api/signals`=60min, 他=5min/LRU100)、セマフォ(`RequestSemaphore(4)`)、リトライ(2回/指数バックオフ)、AbortController(8s)。current-page prefetch budget=2。SWR対象: signals/mtd/performance/metrics/monthly-returns/annual-returns/monthly-trade/rolling-returns/drawdowns/deterioration/p-average(cmd_2264設計書§1.2)。
 認証: Admin(Cookie+BasicAuth) / Viewer(Bearerトークン)。401→セッションクリア+イベント発火。
 
 補助参照: `docs/research/frontend-api-spec.md` §1, §2
