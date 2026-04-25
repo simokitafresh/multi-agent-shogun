@@ -875,6 +875,8 @@ ALM L0材料4本を忍法スクリプト7種で束ね、既存シン忍法20体�
 - L560: ALM buffer計算(L708-715)にcandidate_lookbacksのmax値を含める必要あり。378日不足（cmd_1753）
 - L561: pipeline_config=Dict[str,Any]でalm_config未検証保存。ALM実装時にバリデーション追加必要（cmd_1753）
 - L562: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)（cmd_1759）
+- L641: csv source universe使用時のkawarimi batch vs sequential MD5不一致（cmd_2175）
+- L643: ALM忍法21体fold percentile中央値64.3はL0 WFシン四神(72.5)より低い（cmd_2218）
 - L563: cmd_1762 BE第一弾完了(da14b6b7)。AlmConfig schema+Phase3.7 ALM cache+vectorized signals実装済み。注意: alm_config読取位置がblock config(実装)とPipelineConfig(schema)で分離→後続cmdで統一必要
 
 ### ALM L1: 忍法パラメータ動的選出（2026-04-06殿との設計議論）

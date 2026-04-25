@@ -616,6 +616,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L525: 新gate追加時は既存テストフィクスチャのassumptionsにも日付を追加せよ（cmd_karo_ci_fix_2252）
 - L526: validate_dashboardのN回grep+N回awk→1回awk two-file統合でWSL2起動コスト削減（cmd_training_L4_R3_kotaro）
 - L527: 教訓注入スコアリングはpresenceではなく頻度カウント+プロジェクト一致ボーナスで有用率が上がる（cmd_2270）
+- L646: IMPL/SCOUT矛盾時はkaro確認を優先せよ（cmd_2238）
+- L640: codd extract静的解析はPython大型ファイル(3048行)で関数検出が不十分（cmd_2245）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

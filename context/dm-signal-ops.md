@@ -88,6 +88,9 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L475: Phase 3.7 DTB3リサンプル問題。DTB3をprice_datesにreindexするとrolling(N)の参照日がPipelineEngine(DTB3固有日付)と不一致。PI-010同根（cmd_1245）
 - L477: FoF recalculate時のPYTHONPATH問題。CLIからrecalculate_fast.py実行時にsys.path.insert(0,backend)必要。selection_pipeline動作乖離も確認（cmd_1250）
 - L502: momentum_data月中縮小でDB書込み95%削減可能。LOOP-1 Signal DB書込みは月変わり以外は差分なし（cmd_1447）
+- L638: upfront cleanup後worker restartで本番データ空化リスク。replace系precomputeはbegin_nested(savepoint)で範囲限定必須[PI-025]（cmd_2131）
+- L647: monthly_returns_genがFoF数増加(59→109体+85%)に対し非線形増大(49s→241s+391%)（cmd_2257）
+- L648: dw_signals_flush(62s)が計測システムから除外されunmeasured_pctを誤解させる（cmd_2261）
 
 ## §9 性能ベースライン
 
@@ -185,6 +188,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 | ID | 結論(1行) | 分類 | 出典 |
 |---|---|---|---|
+| L644 | cron新設時は既存cronとの処理重複を先に照合せよ | 運用 | cmd_2219 |
+| L645 | sync-status解除≠L3完走。timing-history新規行を一次証跡とせよ | 運用 | cmd_2235 |
+| L649 | CDP再計測retryはartifact pathを分離せよ(stale run上書き防止) | ツール | cmd_2268 |
 | L558 | 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能 | 運用 | cmd_1750 |
 | L621 | monthly_fast成果物探索はcache-onlyも許容せよ（.csv欠損+.cache.*.npyのみ残存ケースあり） | ツール | cmd_1882 |
 | L624 | 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因 | ツール | cmd_1877 |

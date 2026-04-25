@@ -209,6 +209,7 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
 - （L340は§4 APIクライアントへ振り分け済）
+- L650: perf_measure.pyはviewer認証専用。admin計測にはCDPプリフライト手順か別スクリプトが必要（cmd_2271）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

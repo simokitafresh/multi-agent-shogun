@@ -183,16 +183,6 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L631は振り分け済 → core§19.2 BB仕様・バグ修正(L631:TRF insufficient_candidatesでcurrent_tickersクリア禁止)）
 - （L632は振り分け済 → ops教訓索引ツール。L633はAUTO-DEPRECATE(referenced=0)→振り分けスキップ）
 - （L634-L637は振り分け済 → core§19.2(L635:deferred flush UPSERT), ops教訓索引(L634:DB/L636:運用/L637:運用)）
-- L638: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる（cmd_2131）
+- （L638-L650は振り分け済 → ops§6-7(L638[PI-025]/L647/L648), research§35(L641/L643), ops索引(L644/L645/L649), infra索引(L646/L640:codd), frontend§12(L650)）
 - （L639/L640は振り分け済 → core§19.2(L639:EqualWeight GSへpipeline import guard混入禁止), core§19.1(L640:DB経由CoDD比較は同一プロセス・同一データ)）
-- L641: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致（cmd_2175）
 - （L642は振り分け済 → core§19.5(GS成果物globはcmd_id直後にninjutsu名が来る命名も対象)）
-- L643: ALM忍法21体のfold percentile中央値はL0 WFシン四神(72.5)より低い64.3（cmd_2218）
-- L644: fold_percentiles.csvはlong-format(fold粒度)で出力せよ（cmd_2219）
-- L645: sync-status解除だけでL3完走と見なしてはならない（cmd_2235）
-- L646: IMPL/SCOUT矛盾時はkaro確認を優先せよ（cmd_2238）
-- L640: codd extract静的解析はPython大型ファイル(3048行)で関数検出が不十分（cmd_2245）
-- L647: monthly_returns_genがFoF数増加に対し非線形増大する（cmd_2257）
-- L648: dw_signals_flush(62s)は計測システムから除外されておりunmeasured_pctを誤解させる（cmd_2261）
-- L649: CDP再計測retryはartifact pathを分離せよ（cmd_2268）
-- L650: perf_measure.pyはviewer認証専用。admin計測には別手順が必要（cmd_2271）
