@@ -341,19 +341,48 @@ Vector + BM25 + Graph traversal の3層:
 5. **Production Invariants**: 本番不変量24件。GBrainのConventions 5件より具体的かつ多い
 6. **成長ループ3層**: 個(ロール)・対(セット)・全(システム)のスコープ分離
 
-### 5.3 将軍システムが取り込むべきもの
+### 5.3 将軍システムが取り込むべきもの（2026-04-25 深掘り更新）
 
-| 優先度 | 取り込み元 | 概念 | 取り込み方法 |
-|--------|-----------|------|-------------|
-| **P0** | Skillify | check-resolvable(スキル到達可能性+MECE+DRY) | スキル数20超でCI化。現時点は未必要 |
-| **P0** | Skillify | routing-eval(intent→expectedSkillテスト) | スキルdescription品質検証として取り込み |
-| **P1** | GBrain | Minions的決定論/判断分離の明示化 | 既にbashスクリプトで実現済み。設計書に原理を明文化 |
-| **P1** | GBrain | cross-modal review(第2モデル品質ゲート) | 軍師レビューが同等。ただし自動ルーティング(refusal fallback)は未実装 |
-| **P1** | GBrain | ハイブリッド検索(Vector+BM25+Graph) | MCP Memoryの検索強化。現状キーワードマッチのみ |
-| **P2** | gstack | /canary(デプロイ後監視) | CDP計測のcron化で実現可能 |
-| **P2** | gstack | /benchmark(Core Web Vitals) | cmd_2262+Phase 1-Aで着手済み |
-| **P2** | GBrain | soul-audit(エージェントIDペルソナ定義) | instructions/*.mdが同等 |
-| **P3** | gstack | MLクラシファイア注入防御 | 現状ルールベースで十分。スケール時に検討 |
+> 前版(概要レベル)を実コード/SKILL.mdの深掘りで更新。具体的実装パターンを記載。
+
+#### Tier 1: 即効+複利（既存インフラへの追記で実装可能）
+
+| # | 取り込み元 | 概念 | 具体的実装パターン(出典) | 取り込み方法 |
+|---|-----------|------|------------------------|-------------|
+| 1 | /review | **Confidence 1-10 + Fix-First分類** | 全findingに信頼度1-10。9-10=検証済み/7-8=高確信/5-6=注意付き/3-4=抑制/1-2=P0以外抑制。findingをAUTO-FIX(formatting/style)とASK(architecture/judgment)に分類。報告で終わらない | instructions/gunshi.md SGプロトコルに追記。レビュー報告テンプレートにconfidence列追加 |
+| 2 | /investigate | **3-strike rule + パターン認識表** | 仮説3回失敗→AskUserQuestion(続行/エスカレーション/計装追加)。6パターン表: race condition(timing依存)/null propagation(optional値)/state corruption(トランザクション境界)/integration failure(API契約)/config drift(環境変数)/stale cache(Redis/CDN/ブラウザ) | 偵察task templateに3-strike ruleとDM-Signal固有パターン表を追加 |
+| 3 | /learn | **Prune(参照ファイル存在検証+矛盾検出)** | Glob/grepで教訓が参照するファイルの存在検証。同一keyで対立するinsightを検出。DONE/KEEP/UPDATE選択 | /dreamスキルのPrune Phaseに統合 |
+
+#### Tier 2: 設計が必要（新しい仕組みだが既存と競合しない）
+
+| # | 取り込み元 | 概念 | 具体的実装パターン(出典) | 取り込み方法 |
+|---|-----------|------|------------------------|-------------|
+| 4 | /review | **Scope drift検出** | Step 1.5: 「要求されたもの以上/以下を作っていないか」をdiff vs intent(AC)で検証。driftがあればREQUIREMENTS MISSINGフラグ | cmd_complete_gate.shにdiff vs ACアライメント検証を追加 |
+| 5 | /investigate | **報告status拡張** | DONE/DONE_WITH_CONCERNS/BLOCKED/NEEDS_CONTEXT。「修正したが懸念あり」を表現 | 報告YAMLのverdict選択肢を拡張 |
+| 6 | /review | **Adaptive gating** | 10回連続finding=0の専門家を自動抑制(security/data-migration=保険枠は除外)。抑制時に[GATE_CANDIDATE]マーク | gunshi review_logの指摘カテゴリ別集計→0件連続のカテゴリを自動省略 |
+| 7 | /review | **Adversarial review(Red-Team)** | Step 5.7: 攻撃者/chaos engineer視点の独立レビュー。>200行 or P1 findingでdispatch。cross-model合成(複数モデル一致で信頼度+1) | 軍師レビューの第2パスとして実装候補 |
+
+#### Tier 3: 温め（将来 or 基盤安定後）
+
+| # | 取り込み元 | 概念 | 具体的実装パターン(出典) | 取り込み方法 |
+|---|-----------|------|------------------------|-------------|
+| 8 | /canary | **Deploy後継続監視** | baseline capture→60秒間隔チェック×10分→2回連続異常でアラート→deploy verdict(GO/NO-GO)。4段階severity: page load failure(critical)/console error(high)/2x性能劣化(medium)/404(low) | CDP canary mode。CDP基盤安定後 |
+| 9 | Skillify | **check-resolvable** | スキル到達可能性+MECE+DRY+ルーティングgap検出。40スキル中15%が到達不能だった実績 | スキル30超で必要。現在20+で猶予あり |
+| 10 | CLAUDE.md | **Slop-scan(AI生成コード品質)** | fix対象: 空catch→safeUnlink/safeKill、冗長return await。don't-fix: 文字列マッチon error message、cleanup path tightening | PostToolUse hookパターンとして検討 |
+| 11 | CLAUDE.md | **E2E blame protocol** | 「既存バグ」主張にはbase branchで同じテスト実行+失敗証明が必須。証明なしの「pre-existing」は却下 | テスト失敗分析プロトコルとしてinstructions/に追記 |
+| 12 | /retro | **Session検出+retro** | 45分gap→session分離。Deep(50min+)/Medium(20-50)/Micro(<20)分類。per-person praise+growth opportunity。shipping streak | dashboard拡張候補(cmd品質の時系列分析) |
+
+#### 既に持っているもの（パリティ確認済み）
+
+| GStack/GBrain | 将軍システム | 状態 |
+|--------------|-------------|------|
+| /careful(破壊操作警告) | Tier 1/2/3 ABSOLUTE BAN | **将軍が上回る**(safe exceptionsまで定義) |
+| /learn(永続学習) | lessons.yaml + PI + deepdive | **将軍が上回る**(追体験・なぜなぜ・三層ループ) |
+| Minions(決定論タスク) | bashスクリプト群 | **同等**(設計思想同一・実装方法異なる) |
+| cross-modal review | 軍師レビュー(第2モデル) | **同等**(ただしrefusal fallbackは未実装) |
+| soul-audit | instructions/*.md | **同等**(ペルソナ定義) |
+| /benchmark | cmd_2262(CDP計測) | **着手済み** |
+| Bisect commits | 暗黙ルール | 明文化候補 |
 
 ---
 
@@ -374,3 +403,5 @@ Vector + BM25 + Graph traversal の3層:
 ### 6.4 将軍システムへの示唆
 - 現在20+スキル。30超えるとcheck-resolvable相当の仕組みが必要
 - routing-eval的なテストを修行サイクルに統合すると予防的
+
+→ §7-§8は `docs/research/gstack-gbrain-takeaway-catalog.md` に分離（500行制限）
