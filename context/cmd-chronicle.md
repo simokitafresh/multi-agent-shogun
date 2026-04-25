@@ -830,3 +830,5 @@
 | cmd_2259 | impl — FoF MR生成高速化: signal_cacheバッチ事前ロード+共有化(PI-024準拠・全期間再計算維持) | dm-signal | 04-24 | cmd_2259を完了した。初回修正(af469454)でs |
 | cmd_2260 | impl — FoF MR生成 DB fallback穴塞ぎ(356→0件目標。26.53s→1.5s) | dm-signal | 04-24 | price_ratio_calculatorのcomplet |
 | cmd_2261 | 偵察 — L3_fof daily_loop 224sの内訳計測+高速化ターゲット特定 | dm-signal | 04-24 | cmd_2261_scout完了。live timing(r |
+| cmd_2262 | 本番FEのユーザー体験速度を定量計測する。全ページの初回表示時間、PF切替時の再描画速度(10回連続)、ページ間遷移時間を計測し、ボトルネック特定の基礎データを取得する。コード変更なし。 | dm-signal | 04-25 | FILL_THIS |
+| cmd_2263 | cmd_save.sh BLOCK時に将軍が止まる問題を自動化×強制で解消する。BLOCK出力の冒頭に「止まるな、修正して再実行」ナッジを1行追加。 | infra | 04-25 | cmd_save.shのBLOCK初回出力にだけ「止まるな、 |
