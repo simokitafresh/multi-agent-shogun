@@ -212,6 +212,9 @@ lessons:
     GIL
   tags:
   - universal
+  helpful_count: 0
+  harmful_count: 3
+  last_referenced: '2026-04-26'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -769,8 +772,8 @@ lessons:
   - bash
   - yaml
   helpful_count: 1
-  harmful_count: 3
-  last_referenced: '2026-04-25'
+  harmful_count: 4
+  last_referenced: '2026-04-26'
   target_files:
   - archive_completed.sh
 - id: L425
@@ -808,8 +811,8 @@ lessons:
   - gate
   - bash
   helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-25'
+  harmful_count: 3
+  last_referenced: '2026-04-26'
 - id: L420
   title: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
   summary: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
@@ -1645,6 +1648,9 @@ lessons:
   - reporting
   target_files:
   - pre-bash-report-deny.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L315
   title: テストとテスト対象は同一コミットに含めよ
   summary: cmd_1554でテストのみコミットされgate scriptの変更が未コミットだったためCI FAIL。テストとテスト対象の変更は必ず同一コミットに含めること
@@ -1658,8 +1664,8 @@ lessons:
   - gate
   - lesson
   helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-25'
+  harmful_count: 2
+  last_referenced: '2026-04-26'
   target_files:
   - cmd_complete_gate.sh
 - id: L313
@@ -1766,6 +1772,9 @@ lessons:
   - gate
   target_files:
   - cmd_complete_gate.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L299
   title: git_uncommitted_gateはプロジェクトリポジトリを解決すべし
   summary: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit
@@ -1874,8 +1883,8 @@ lessons:
   - gate
   - yaml
   helpful_count: 1
-  harmful_count: 3
-  last_referenced: '2026-04-25'
+  harmful_count: 4
+  last_referenced: '2026-04-26'
   target_files:
   - gate_shogun_startup.sh
 - id: L286
@@ -1918,8 +1927,8 @@ lessons:
   tags:
   - gate
   helpful_count: 1
-  harmful_count: 1
-  last_referenced: '2026-04-25'
+  harmful_count: 3
+  last_referenced: '2026-04-26'
 - id: L281
   title: bats mock環境でsource先stub追加漏れ
   summary: ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so
@@ -1975,6 +1984,9 @@ lessons:
   - inbox
   target_files:
   - inbox_write.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L275
   title: gunshi_review_log大規模ファイルのRead制限
   summary: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
@@ -2083,8 +2095,8 @@ lessons:
   - bash
   - git
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-25'
+  harmful_count: 4
+  last_referenced: '2026-04-26'
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
   summary: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ
@@ -2111,6 +2123,9 @@ lessons:
   - yaml
   - monitor
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L258
   title: ログローテーション世代数不足+task_idログ欠損
   summary: ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック
@@ -2133,8 +2148,8 @@ lessons:
   - deploy
   - lesson
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-25'
+  harmful_count: 1
+  last_referenced: '2026-04-26'
   target_files:
   - deploy_task.sh
 - id: L255
@@ -2253,8 +2268,8 @@ lessons:
   - gate
   - git
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-25'
+  harmful_count: 3
+  last_referenced: '2026-04-26'
   target_files:
   - block_destructive.sh
   - shutsujin_departure.sh
@@ -2455,6 +2470,9 @@ lessons:
   - tmux
   target_files:
   - settings.yaml
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-26'
 - id: L214
   title: ローカルIDを複数PJで再利用する系ではメトリクスキーを(project,id)にせよ
   summary: 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。fi
@@ -2617,6 +2635,9 @@ lessons:
   - testing
   - yaml
   - git
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L192
   title: review配備前にcommit完了とgenerated派生物差分を分離確認せよ
   summary: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て
@@ -2839,6 +2860,9 @@ lessons:
   summary: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
   tags:
   - bash
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L163
   title: MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要
   summary: IF MAX_ENTRIES等の定数変更時 THEN impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
@@ -2966,8 +2990,8 @@ lessons:
   - gate
   - git
   helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-25'
+  harmful_count: 3
+  last_referenced: '2026-04-26'
 - id: L143
   title: gitignoreエラーはgateログに記録されず暗数化する — 15日間で最低11件、モデル非依存
   summary: IF gitignoreエラー時 THEN 対策は(1)ashigaru.md明文化(即効)→(2)pre-commitフック(根治)の段階実施が有効
@@ -3035,6 +3059,9 @@ lessons:
   - deploy
   - gate
   - lesson
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L135
   title: build_instructions.sh は --help 指定でも生成処理を実行する
   summary: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
@@ -3299,8 +3326,8 @@ lessons:
   - gate
   - yaml
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-25'
+  harmful_count: 1
+  last_referenced: '2026-04-26'
   target_files:
   - queue/gate_metrics.yaml
 - id: L100
@@ -3333,6 +3360,9 @@ lessons:
   - reporting
   target_files:
   - cmd_complete_gate.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L096
   title: preflight_gate_flags()でlocal変数をif/else跨ぎで参照する場合、両ブロックのどちらが実行されても参照可能なスコープ（関数先頭等）で宣言・初期化すべき。bashのlocalは関数スコープだが、宣言がif内にあると実行されないelseブロックでは未初期化になる。
   summary: bash,variable-scope,preflight
@@ -3411,6 +3441,9 @@ lessons:
   - lesson
   target_files:
   - knowledge_metrics.sh
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-26'
 - id: L086
   title: auto_draft_lesson.shがlesson_write.shをCMD_ID空で呼ぶためlesson.done未生成
   summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
@@ -3482,8 +3515,8 @@ lessons:
   - bash
   - lesson
   helpful_count: 1
-  harmful_count: 2
-  last_referenced: '2026-04-25'
+  harmful_count: 3
+  last_referenced: '2026-04-26'
   target_files:
   - scripts/deploy_task.sh
 - id: L078
@@ -3493,8 +3526,8 @@ lessons:
   - review
   - gate
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-25'
+  harmful_count: 2
+  last_referenced: '2026-04-26'
 - id: L077
   title: Vercel構造分離では全セクション移動先マッピングを事前作成せよ
   summary: karo.md→operations.md分離でgenin/jonin詳細表、Status Transitions、停滞タイムアウト値等が除去されたがopera
@@ -3519,6 +3552,9 @@ lessons:
   summary: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
   tags:
   - bash
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L073
   title: タスク指示のパス相対指定は実ファイル位置で必ず検証せよ
   summary: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う

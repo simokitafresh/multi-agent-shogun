@@ -276,3 +276,38 @@ lessons:
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh is_gate_or_hook_addition_cmd(既存)。SCOUT除外実装済み(L120)。カタログ閾値除外実装済み(cmd_2279 check_gunshi_design_num_relax)'
+- id: 'LS023'
+  title: 'BLOCK後自走強制 — 修正→再実行を殿待ちせず自走'
+  detail: 'cmd_2283起票でcmd_save.sh BLOCK(q5_verified_source/q8_why_what未記入)。BLOCKメッセージに「止まるな」と表示されていたが将軍は殿に報告して止まった。出力メッセージは意志依存=壊れる。自動化×強制が必要。対策: PostToolUse hookでBLOCK検知→自走強制メッセージ注入'
+  source_cmd: 'cmd_2283'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'PostToolUse hook(cmd_save.sh exit 1検知→自走強制メッセージ注入)で環境埋め込み'
+- id: 'LS024'
+  title: 'environment_change形式 — 1行形式必須(YAML list不可)'
+  detail: 'cmd_2284起票でenvironment_changeをYAML list形式(type:/file:/pattern:の3行)で記載→cmd_save.sh L1117のawkが同一行の値を期待→未記入BLOCK。原因: cmd_save.shのパース方式を確認せずに書いた。修正: 1行形式 type=xxx; file=xxx; pattern=xxx に変更→PASS'
+  source_cmd: 'cmd_2284'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh L1117 awk(environment_change:同一行値抽出)で自動検証済み'
+- id: 'LS025'
+  title: '同時draft禁止+diagnosis形式 — 1本ずつ+2部構成'
+  detail: 'cmd_2284起票時にcmd_2283もdraft状態→other_draft_exists BLOCK。diagnosis形式も「BLOCK理由: ... 対策: ...」の2部構成が必要だが自由テキストで書いた。修正: cmd_2283一時退避→1本ずつ通す+diagnosis 2部構成に修正→PASS'
+  source_cmd: 'cmd_2284'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh other_draft_exists(同時draft BLOCK)+diagnosis形式チェックで自動検証済み'
+- id: 'LS026'
+  title: 'q11既存代替キーワード必須 — q11_has_existing_alternative_verification L159'
+  detail: 'gate/hook追加cmdのq11にgrep確認結果を書いてもq11_has_existing_alternative_verification()L159が既存/代替/現行/既設キーワードを要求→不在でWARN→13回累計昇格→BLOCK。修正: q11テキストに既存代替なしを含めてL159通過'
+  source_cmd: 'cmd_2285'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh q11_has_existing_alternative_verification L159(既存|代替|現行|既設 grep)で自動検証済み'
+- id: 'LS027'
+  title: 'bugfix cmdにはq9_firefighting_root_cause必須'
+  detail: 'cmd_2287起票でtype=bugfixなのにq9_firefighting_root_cause未記入→BLOCK。cmd_save.shが消火cmd(type=bugfix)を検出しq9_firefighting_root_causeを要求する。修正: root_cause+prevention形式で追記→PASS'
+  source_cmd: 'cmd_2287'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh消火cmd検出+q9_firefighting_root_cause必須チェックで自動検証済み'

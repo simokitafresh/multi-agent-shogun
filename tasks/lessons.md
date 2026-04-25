@@ -4078,7 +4078,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-25
 - **出典**: cmd_2282
 - **記録者**: hanzo
-- **status**: draft
+- **status**: approved
 - **tags**: [infra,gate,lesson]
 - 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマインドしない=意志依存。CLEARリマインドはL3086 CLEAR判定ブロック内(L3096直後)でcount_cmd_save_blocks_for_cmd(CMD_ID)を呼びBLOCK回数>0かつ教訓未記録ならREMIND出力する新処理が必要。
 
