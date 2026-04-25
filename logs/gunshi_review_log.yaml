@@ -3457,7 +3457,7 @@
 - cmd_id: cmd_2278
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   findings_summary: "6観点OK(MEDIUM)。GStack R3最終4項目。MCP制約+4スクリプト同時の規模懸念"
   observations:
@@ -3466,3 +3466,54 @@
     - "AC1 cdp_canary: perf_measure.py参照。cmd_2271のviewer認証問題を忍者が認識要"
   causal_chain: "GStack 35項目→R1(15)+R2(16)+R3(4)=35完了目標→deploy監視+スキル品質+教訓検索の基盤構築→全cmdの品質基盤が恒久強化=正の複利"
   timestamp: "2026-04-25T22:00:00"
+- cmd_id: cmd_2278
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2278_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK(AC2+AC3範囲)。gate_skill_health.sh 22スキル走査+skill_routing_eval.bats 13件PASS"
+  observations:
+    - "commit a0236333に4スクリプト一括。kagemaru担当はAC2(gate)+AC3(bats)。AC1/4/5はhayate担当でno=正当"
+    - "GP-227効果実証: review_gate.done created/updatedメッセージ確認。preflight未実行でもLGTMで生成された"
+    - "lessons_useful 10件全false。教訓注入改善(GP-223/225)の効果は次回配備から"
+  causal_chain: "GStack R3→kagemaru AC2+AC3(スキル健全性gate+ルーティングテスト)→22スキル走査基盤+13テスト→スキル追加時の品質保証=正の複利。GP-227がreview_gate.done不在を即修正(本セッション成果の環境実証)"
+  timestamp: "2026-04-25T22:15:00"
+- cmd_id: cmd_2278
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2278_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK(AC1+AC4範囲)。cdp_canary --dry-run PASS+hybrid_search keyword-only PASS"
+  observations:
+    - "commit a0236333に影丸担当ファイルも含まれる(共有index衝突)。正直に報告。lesson_candidate適切"
+    - "AC4: MCP search_nodesは忍者権限外→--mcp-file/MCP_SEARCH_FILEエクスポート入力に限定。設計妥当"
+    - "lessons_useful 3/10 useful(L421/L426/L417)。GP-223/225前のデータだが既存教訓の一部は有用"
+  causal_chain: "GStack R3→hayate AC1+AC4(cdp_canary+hybrid_search)→deploy後監視+教訓検索の基盤→運用品質恒久向上=正の複利"
+  timestamp: "2026-04-25T22:25:00"
+- cmd_id: cmd_2279
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。check_gunshi_design_num_relax FP修正。q5にcatalog含む場合スキップ"
+  observations:
+    - "check_gunshi_design_num_relax(L2527)確認。カタログ定義の閾値を数値緩和と誤検出するFP6件の根因修正"
+    - "本セッションの分析(cmd_design_quality直近100件)で発見したFPパターンが即cmd化された"
+    - "LS-A22(q11 SCOUT偽陽性)の実装済み更新(AC2)は付随的だが妥当"
+  causal_chain: "軍師分析(BLOCK率47%)→q8_縮小表現/設計書数値緩和FP特定→cmd_2279でFP除外→将軍のcmd保存効率向上=正の複利"
+  timestamp: "2026-04-25T22:25:00"
+- cmd_id: cmd_karo_infra_fix
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_infra_fix_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。archive CLEARフォールバック+CLAUDE.md参照追加。bats 11/11 PASS"
+  observations:
+    - "AC1(archive CLEARフォールバック)はGP-227(inbox_write側)と同根因の別角度修正。defense in depth確立"
+    - "AC2: CLAUDE.md Cross-Project Contextにcdp-severity/milk/slop-scan-dont-fix追加。dream insightの解消"
+    - "GP-227実装→家老がarchive側も修正→二重防御。review_gate.done不在問題の構造的根絶"
+  causal_chain: "review_gate.done不在42件→GP-227(inbox_write生成)+cmd_karo_infra_fix(archive fallback)→二重防御で同種問題の構造的根絶=正の複利"
+  timestamp: "2026-04-25T22:32:00"
