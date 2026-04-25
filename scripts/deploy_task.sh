@@ -2163,9 +2163,13 @@ try:
         ac_text = str(ac_list or '')
     task_text = f'{title} {description} {purpose} {command_text} {target_path} {context_files} {ac_text}'
 
-    # Extract keywords: split by non-word chars, exclude <=3 chars, lowercase, dedup
-    words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', task_text)
-    keywords = list(set(w.lower() for w in words if len(w) > 3))
+    # Extract keywords: split by non-word chars, then ASCII↔CJK boundary split, dedup
+    # GP-225: ASCII↔CJK境界分割で"CDP計測"→["CDP","計測"]に分離+アクロニム(>=2,全大文字)はmin_len免除
+    _CJK = r'\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF'
+    _boundary = re.compile(rf'(?<=[a-zA-Z0-9_])(?=[{_CJK}])|(?<=[{_CJK}])(?=[a-zA-Z0-9_])')
+    words = re.split(rf'[^a-zA-Z0-9_{_CJK}]+', task_text)
+    expanded = [part for w in words for part in _boundary.split(w) if part]
+    keywords = list(set(w.lower() for w in expanded if len(w) > 3 or (len(w) >= 2 and w.isupper() and w.isascii())))
 
     # ═══ タグマッチ: タスクタグの決定 ═══
     # (1) タスクYAMLにtagsフィールドがあればそれを使用
