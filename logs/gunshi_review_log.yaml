@@ -2898,4 +2898,18 @@
       defense_level: 3
   causal_chain: "findパターン不足→_delegated_アーカイブ未捕捉→gate_result null蓄積→accuracy分母の盲点。パターン追加で構造的解消=正の複利(今後のアーカイブも自動捕捉)"
   timestamp: "2026-04-25T03:30:00"
+- cmd_id: GP-220_wa_data_quality
+  review_type: self_study
+  findings_summary: "karo_workarounds.yamlデータ品質分析。clean+workaround=true矛盾9件(8%)検出→GP-220 WARN追加。deploy_task.sh起因WA 29件(26%)全修正済み確認。resolved_by_cmd空96/112(86%)"
+  observations:
+    - "事実1: workaround=true+category=clean矛盾9件。7/9件が2026-04-17に集中。家老が--cleanモードでなく通常モードでcategoryにcleanを渡した"
+    - "事実2: deploy_task.sh起因WA4経路(target_path未注入/stale chunk/MAX_INJECT未定義/stale notice二重挿入)全て修正済み(reset_stale_fields/a9326c35/apply_patch改修)"
+    - "事実3: resolved_by_cmd空96/112(86%)。修正追跡ループが回っていない"
+  proposals:
+    - id: GP-220
+      description: "karo_workaround_log.sh category=clean矛盾検出WARN"
+      status: implemented
+      defense_level: 2
+  causal_chain: "家老が--cleanでなく通常モードでcategoryにclean渡し→workaround=true+clean矛盾→WA率過大計算→改善優先順位歪み。WARN追加で10回繰返し→10回×矛盾0件=正の複利"
+  timestamp: "2026-04-25T09:30:00"
   timestamp: "2026-04-25T00:47:00"

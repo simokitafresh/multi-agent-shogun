@@ -16,7 +16,7 @@
 | P2 | YAML特殊文字→パース破壊 | 2 | Edit直接書込み時クォート漏れ | **既存対処あり** (gate FAILで検出) |
 | P3 | 更新順序→不整合 | 4 | 並列更新/verdict先行 | **修正済み** (本セッション P6統合) |
 | P4 | chunk担当時AC空残 | 2 | assigned_acs未設定でchunk配備 | △ 仕組みあり(未使用) |
-| P5 | lessons_useful list形式問題 | 5 | dot記法`L636.reason`→listは`0.reason` | **要修正** |
+| P5 | lessons_useful list形式問題 | 5 | dot記法`L636.reason`→listは`0.reason` | **修正済み** (report_field_set.sh L172-175 BLOCKガード) |
 | P6 | verdict先行書込み | 6 | bc未完了でverdict=PASS | **修正済み** (P3に統合) |
 | P7 | assumption_invalidation必須フィールド漏れ | 3 | found=falseだけ書きaffected_cmds省略 | △ テンプレートで対処可 |
 | P8 | report_path/parent_cmd不一致 | 3 | テンプレート再利用時の更新漏れ | △ deploy_taskで検出可 |

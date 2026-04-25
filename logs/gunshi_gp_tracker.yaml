@@ -521,4 +521,14 @@
   defense_level: 3
   reason: "gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%)"
   evidence: "dry-run 20件正常更新確認。実行後null 0件。commit d575e390。S0全6項PASS"
-  evidence: "bats 9/9 PASS(新規2件含む)。commit af8a2ebc。S0全6項PASS"
+- id: GP-220
+  description: "karo_workaround_log.sh category=clean矛盾検出WARN。workaround=true+category=clean防止"
+  status: implemented
+  proposed_at: "2026-04-25T09:25:00"
+  implemented_at: "2026-04-25T09:30:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'category.*clean' karo_workaround_log.sh → L232のみ(--cleanモード判定)。通常モードでclean渡しの検出なし"
+  defense_level: 2
+  reason: "workaround=true+category=clean矛盾9件(112件中8%)。2026-04-17に7件集中。根因=家老が--cleanではなく通常モードでcleanカテゴリを渡した"
+  evidence: "bats 32/32 PASS。commit 3961e597。S0全6項PASS。分析永続化=docs/research/gunshi_idle_wa_data_quality_20260425.md"

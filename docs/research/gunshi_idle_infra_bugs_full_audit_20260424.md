@@ -32,11 +32,11 @@
 
 ### 未修正インフラバグ（構造的に再発しうる）
 
-#### BUG-1: yaml_field_set verdictがresultフィールドを上書き（4/20, 1件）
+#### BUG-1: yaml_field_set verdictがresultフィールドを上書き（4/20, 1件）→沈静化
 - **現象**: yaml_field_set.shでverdictを書込むとresultフィールドが上書きされYAML破損
-- **根因**: 未調査。AWK経路のキーマッチングが`result`と`verdict`で混同する可能性
-- **影響**: 報告YAMLのresult.summaryが消失
-- **優先度**: HIGH（データ消失）
+- **根因(2026-04-25調査)**: yaml_field_set.shのバグではなく、WA記録自体のYAML構造が壊れている(ninja/category/detail/root_causeフィールドが入替り)。家老のkaro_workaround_log.sh引数順序ミス。再現テストで正常動作確認済み
+- **影響**: 単発。再発なし(4/20以降clean連続)
+- **優先度**: LOW（沈静化。LK074で家老教訓として記録済み）
 
 #### BUG-2: deploy_notice二重挿入（4/22, 1件, cmd_2235）
 - **現象**: deploy_task.shがstale notice(STALE TASK INVALID...)を��重挿入→YAML破損
