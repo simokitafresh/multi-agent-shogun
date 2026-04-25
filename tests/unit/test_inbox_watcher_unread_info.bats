@@ -49,11 +49,12 @@ source "$PROJECT_ROOT/scripts/inbox_watcher.sh"
 INBOX="$TMP_ROOT/queue/inbox/hayate.yaml"
 
 raw="$(get_unread_info)"
-IFS=$'\''\t'\'' read -r normal_count has_specials fingerprint specials_b64 <<< "$raw"
+IFS=$'\''\t'\'' read -r normal_count has_specials fingerprint specials_b64 has_task_assigned <<< "$raw"
 
 [ "$normal_count" = "1" ]
 [ "$has_specials" = "true" ]
 [ "$fingerprint" = "msg_002" ]
+[ "$has_task_assigned" = "true" ]
 
 decoded="$(printf %s "$specials_b64" | base64 -d)"
 printf "%s\n" "$decoded" | grep -q "^msg_001"
