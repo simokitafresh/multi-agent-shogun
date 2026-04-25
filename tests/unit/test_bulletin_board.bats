@@ -20,7 +20,11 @@ setup() {
     cp "$SRC_CONFIRM" "$TEST_TMPDIR/scripts/bulletin_confirm.sh"
     cp "$SRC_CLOSE" "$TEST_TMPDIR/scripts/bulletin_close.sh"
     cp "$SRC_AGENT_CONFIG" "$TEST_TMPDIR/scripts/lib/agent_config.sh"
-    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh"
+    cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG:?}"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
     cat > "$TEST_TMPDIR/scripts/bin/tmux" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "${BULLETIN_TEST_AGENT_ID:-hayate}"
@@ -54,6 +58,32 @@ teardown() {
     [[ "$output" == *"共有連絡"* ]]
     [[ "$output" == *"posted_by: 'saizo'"* ]]
     [[ "$output" == *"confirmed_by: []"* ]]
+}
+
+@test "bulletin_write accepts explicit posted_by from shared agent config" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=hayate TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "名義指定"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"posted_by: 'saizo'"* ]]
+    [[ "$output" == *"名義指定"* ]]
+}
+
+@test "bulletin_write trims BULLETIN_NOTIFY targets before notifying" {
+    export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun, gunshi" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "通知確認"
+    [ "$status" -eq 0 ]
+    run cat "$INBOX_WRITE_LOG"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun|掲示板新規投稿("* ]]
+    [[ "$output" == *"gunshi|掲示板新規投稿("* ]]
+}
+
+@test "bulletin_write rejects unknown requires_confirmation agents" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "確認先不正" "shogun, unknown_agent"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"unknown requires_confirmation agent"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/bulletin_board.yaml" ]
 }
 
 @test "bulletin_confirm adds agent to confirmed_by" {

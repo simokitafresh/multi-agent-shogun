@@ -1,15 +1,64 @@
 #!/usr/bin/env bash
 # bulletin_write.sh — 全エージェント共有掲示板への書込み
-# Usage: bash scripts/bulletin_write.sh <content> [requires_confirmation]
+# Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]
+#    or: bash scripts/bulletin_write.sh <content> [requires_confirmation]
 
 set -euo pipefail
 
 SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
+AGENT_CONFIG="$SCRIPT_DIR/scripts/lib/agent_config.sh"
+
+KNOWN_AGENTS_RAW=""
+if [[ -f "$AGENT_CONFIG" ]]; then
+    # shellcheck disable=SC1090
+    source "$AGENT_CONFIG"
+    KNOWN_AGENTS_RAW="$(get_allowed_targets)"
+fi
+
+if [[ -z "$KNOWN_AGENTS_RAW" ]]; then
+    KNOWN_AGENTS_RAW="shogun karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru"
+fi
+
+is_known_agent() {
+    local candidate="$1"
+    local agent=""
+    for agent in $KNOWN_AGENTS_RAW; do
+        [[ "$agent" == "$candidate" ]] && return 0
+    done
+    return 1
+}
+
+normalize_csv_agents() {
+    local raw="$1"
+    local field_name="$2"
+    local token=""
+    local trimmed=""
+    local normalized=()
+
+    IFS=',' read -ra _bw_tokens <<< "$raw"
+    for token in "${_bw_tokens[@]}"; do
+        trimmed="${token#"${token%%[![:space:]]*}"}"
+        trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+        [[ -z "$trimmed" ]] && continue
+        if ! is_known_agent "$trimmed"; then
+            echo "ERROR: unknown ${field_name} agent: $trimmed" >&2
+            return 1
+        fi
+        normalized+=("$trimmed")
+    done
+
+    if [[ ${#normalized[@]} -eq 0 ]]; then
+        printf '\n'
+        return 0
+    fi
+
+    printf '%s\n' "$(printf '%s\n' "${normalized[@]}" | awk '!seen[$0]++' | paste -sd ',' -)"
+}
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: bash scripts/bulletin_write.sh <content> [requires_confirmation]" >&2
+    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
     exit 1
 fi
 
@@ -34,28 +83,32 @@ if [[ $# -ge 2 ]]; then
     CONTENT="$2"
     REQUIRES_CONFIRMATION="${3:-false}"
     # posted_byが既知エージェント名なら引数を信頼
-    case "$POSTED_BY_ARG" in
-        shogun|karo|gunshi|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
-            POSTED_BY="$POSTED_BY_ARG"
-            ;;
-        *)
-            # 第1引数がエージェント名でない→旧形式(content, requires_confirmation)
-            CONTENT="$1"
-            REQUIRES_CONFIRMATION="${2:-false}"
-            ;;
-    esac
+    if is_known_agent "$POSTED_BY_ARG"; then
+        POSTED_BY="$POSTED_BY_ARG"
+    else
+        # 第1引数がエージェント名でない→旧形式(content, requires_confirmation)
+        CONTENT="$1"
+        REQUIRES_CONFIRMATION="${2:-false}"
+    fi
 else
     CONTENT="$1"
     REQUIRES_CONFIRMATION="false"
 fi
 
 # GP-207: contentがエージェント名のみの場合はBLOCK(引数順序ミス検出)
-case "$CONTENT" in
-    shogun|karo|gunshi|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
-        echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
-        exit 1
-        ;;
-esac
+if is_known_agent "$CONTENT"; then
+    echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+    exit 1
+fi
+
+if [[ "$REQUIRES_CONFIRMATION" == *,* ]]; then
+    REQUIRES_CONFIRMATION="$(normalize_csv_agents "$REQUIRES_CONFIRMATION" "requires_confirmation")"
+fi
+
+if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
+    BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"
+fi
+
 POSTED_AT="$(date '+%Y-%m-%dT%H:%M:%S')"
 RAND_SUFFIX="$(printf '%s' "$(date +%s%N)$POSTED_BY$CONTENT" | sha1sum | cut -c1-6)"
 ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"
