@@ -79,6 +79,12 @@ def main():
                 task_data.get('task', task_data)
                 if isinstance(task_data, dict) else {}
             )
+            # project判定: task YAMLのprojectフィールドで補完(files_modified判定の穴を塞ぐ)
+            task_project = task.get('project', '')
+            if task_project == 'dm-signal' and not is_dm_signal:
+                is_dm_signal = True
+                result['IS_DM_SIGNAL'] = '1'
+
             task_bc = task.get('binary_checks') or {}
             report_bc = report.get('binary_checks') or {}
 
