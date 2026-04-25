@@ -46,6 +46,28 @@ run_hook() {
     [[ "$context" == *'ERROR: 1 test(s) SKIPPED'* ]]
 }
 
+@test "cmd_save BLOCK emits rerun guidance" {
+    local payload
+    payload="$(jq -cn --arg cmd "bash scripts/cmd_save.sh cmd_100" --arg result "BLOCK: mock failure" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:{exit_code:1, stderr:$result}}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
+    context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+    [ "$hook_name" = "PostToolUse" ]
+    [[ "$context" == *'cmd_save.sh がBLOCK(exit 1)しました。'* ]]
+    [[ "$context" == *'再実行してPASSを確認'* ]]
+}
+
+@test "cmd_save PASS stays silent" {
+    local payload
+    payload="$(jq -cn --arg cmd "bash scripts/cmd_save.sh cmd_100" --arg result "CMD_SAVE PASS" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:{exit_code:0, stdout:$result}}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "commit-reminder path warns when project has uncommitted changes" {
     cat > "$TEST_ROOT/queue/tasks/saizo.yaml" <<'YAML'
 task:

@@ -7,6 +7,34 @@ payload="$(cat 2>/dev/null || true)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 
+# === Guard 0: cmd_save.sh BLOCK reminder ===
+if [[ "$payload" == *'cmd_save.sh'* ]]; then
+    cmd_save_meta="$(PAYLOAD="$payload" jq -r '
+        def walk_objects:
+            .. | objects;
+        [
+            (.tool_input.command // .toolInput.command // ""),
+            ([
+                walk_objects
+                | (.exit_code? // .exitCode? // .status?)
+                | select(type == "number" or type == "string")
+                | tostring
+            ] | first // "")
+        ] | @tsv
+    ' 2>/dev/null <<< "$payload" || true)"
+    cmd_save_command="${cmd_save_meta%%$'\t'*}"
+    cmd_save_exit=""
+    if [[ "$cmd_save_meta" == *$'\t'* ]]; then
+        cmd_save_exit="${cmd_save_meta#*$'\t'}"
+    fi
+
+    if [[ "$cmd_save_command" == *'cmd_save.sh'* && "$cmd_save_exit" == "1" ]]; then
+        msg=$'cmd_save.sh がBLOCK(exit 1)しました。\nWHY: gate未通過のcmdをpending/委任へ進めると、品質ゲートを迂回した配備になります。\nFIX: BLOCK理由を修正し、bash scripts/cmd_save.sh <cmd_id> を再実行してPASSを確認してから次へ進めてください。'
+        printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+        exit 0
+    fi
+fi
+
 # === Guard 1: test_result_guard ===
 if [[ "$payload" == *'pytest'* || "$payload" == *'bats'* || "$payload" == *'jest'* || \
       "$payload" == *'npm test'* || "$payload" == *'pnpm test'* || "$payload" == *'yarn test'* || \
