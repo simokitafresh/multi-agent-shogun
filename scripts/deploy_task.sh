@@ -99,11 +99,18 @@ parse_deploy_task_args() {
         shift
     fi
 
-    # --yaml <file>: 事前に作成したタスクYAMLでtask YAMLを上書きして配備
+    # --yaml <file> <ninja> [cmd_id]: 事前に作成したタスクYAMLでtask YAMLを上書きして配備
     # shogun_to_karoにないcmd(家老再配備cmd等)の配備に使用
+    # cmd_idはYAMLのparent_cmdから自動取得。引数指定でも可
     if [[ "${1:-}" == "--yaml" ]]; then
         YAML_FILE="${2:-}"
+        if [ ! -f "$YAML_FILE" ]; then
+            echo "ERROR: --yaml ファイルが見つからない: $YAML_FILE" >&2
+            return 1
+        fi
         DIRECT_MODE=true
+        # YAMLからparent_cmdを自動取得してCMD_IDに設定
+        CMD_ID=$(grep -m1 'parent_cmd:' "$YAML_FILE" | sed "s/.*parent_cmd:[[:space:]]*//" | tr -d "'" | tr -d '"')
         shift 2
     fi
 
