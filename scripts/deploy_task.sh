@@ -1936,6 +1936,32 @@ try:
     task = data['task']
     project = task.get('project', '')
     task_type = str(task.get('task_type') or task.get('type') or task.get('scope_mode') or 'unknown').lower().strip()
+    parent_cmd = str(task.get('parent_cmd', '') or '').strip()
+    CROSS_PROJECT_SCORE_THRESHOLD = 3
+
+    def extract_keywords(text, min_len=4):
+        words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', str(text or ''))
+        seen = set()
+        keywords = []
+        for word in words:
+            word = word.lower().strip()
+            if len(word) < min_len or word in seen:
+                continue
+            seen.add(word)
+            keywords.append(word)
+        return keywords
+
+    command_text = str(task.get('command', '') or '')
+    stk_path = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+    if not command_text and parent_cmd and os.path.exists(stk_path):
+        try:
+            with open(stk_path, encoding='utf-8') as stk_f:
+                stk_data = yaml.load(stk_f, Loader=yaml.SafeLoader) or {}
+            cmd_entry = (stk_data.get('commands') or {}).get(parent_cmd, {})
+            command_text = str(cmd_entry.get('command', '') or '')
+        except Exception as e:
+            print(f'[INJECT] WARN: shogun_to_karo.yaml read failed for command keywords: {e}', file=sys.stderr)
+    command_keywords = extract_keywords(command_text)
 
     # ═══ 偵察固有教訓リスト (cmd_1340) ═══
     # recon/scout/research タスクには以下の教訓のみ注入(全スキップ→固定リスト注入に変更)
@@ -1951,9 +1977,7 @@ try:
     if not project:
         # GP-028: 3段フォールバック (task→cmd→current_project)
         fallback_source = None
-        parent_cmd = str(task.get('parent_cmd', '') or '').strip()
         if parent_cmd:
-            stk_path = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
             if os.path.exists(stk_path):
                 try:
                     with open(stk_path) as stk_f:
@@ -2029,6 +2053,9 @@ try:
     # ═══ Platform教訓の追加読み込み ═══
     projects_yaml_path = os.path.join(script_dir, 'config', 'projects.yaml')
     platform_count = 0
+    cross_project_count = 0
+    cross_project_projects = 0
+    pdata = {}
     if os.path.exists(projects_yaml_path):
         try:
             with open(projects_yaml_path) as pf:
@@ -2046,6 +2073,41 @@ try:
                     lessons.extend(plat_lessons)
         except Exception as pe:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
+
+    # GStack #13: Cross-project learnings
+    # task.command由来キーワードで other project lesson.title を照合し、
+    # 関連度スコア(タイトル一致回数×3)が閾値以上のもののみ opt-in 候補化する。
+    if command_keywords and pdata:
+        for pj in (pdata or {}).get('projects', []):
+            other_id = str(pj.get('id', '') or '').strip()
+            if not other_id or other_id == project or pj.get('type') == 'platform':
+                continue
+            other_index = os.path.join(script_dir, 'projects', other_id, 'lessons.yaml')
+            other_archive = os.path.join(script_dir, 'projects', other_id, 'lessons_archive.yaml')
+            other_path = other_index if os.path.exists(other_index) else other_archive
+            other_lessons = load_lessons_cached(other_path)
+            if not other_lessons:
+                continue
+            matched = []
+            for _l in other_lessons:
+                title_text = str(_l.get('title', '') or '').lower()
+                if not title_text:
+                    continue
+                score = 0
+                for kw in command_keywords:
+                    score += title_text.count(kw) * 3
+                if score < CROSS_PROJECT_SCORE_THRESHOLD:
+                    continue
+                _copy = dict(_l)
+                _copy['_source_project'] = other_id
+                _copy['_cross_project_opt_in'] = True
+                _copy['_cross_project_score'] = score
+                matched.append(_copy)
+            if matched:
+                cross_project_projects += 1
+                cross_project_count += len(matched)
+                lessons.extend(matched)
+                print(f'[INJECT] cross_project opt-in: {other_id} matched {len(matched)} lessons (threshold={CROSS_PROJECT_SCORE_THRESHOLD})', file=sys.stderr)
 
     # Deduplicate lessons by ID — last wins (後勝ち: 同一IDで内容が異なる場合は後の値を採用)
     _id_to_lesson = {}
@@ -2218,6 +2280,8 @@ try:
     _tf_excluded_ids = set()  # target_files不一致で除外候補のID
     if _all_task_files:
         for _l in confirmed_lessons:
+            if _l.get('_cross_project_opt_in'):
+                continue
             _ltf = _l.get('target_files', [])
             if not _ltf:
                 continue
@@ -2230,6 +2294,8 @@ try:
     else:
         # GP-218: タスクファイルなし→target_files設定ありの教訓は除外(マッチ不可能)
         for _l in confirmed_lessons:
+            if _l.get('_cross_project_opt_in'):
+                continue
             _ltf = _l.get('target_files', [])
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
@@ -2248,6 +2314,10 @@ try:
         if isinstance(l_tags, str):
             l_tags = [l_tags]
         l_tags = [str(t).lower().strip() for t in l_tags if t]
+
+        if lesson.get('_cross_project_opt_in'):
+            tag_candidates.append(lesson)
+            continue
 
         # universal教訓は常に注入対象
         if 'universal' in l_tags:
@@ -2308,6 +2378,10 @@ try:
             # cmd_2270: 頻度重み付きスコアリング (engram-style: presence→frequency count)
             # タイトル内出現回数×3 + その他テキスト内出現回数×1
             score += title_text.count(kw) * 3 + other_text.count(kw) * 1
+
+        cross_project_score = lesson.get('_cross_project_score', 0) or 0
+        if cross_project_score and score < cross_project_score:
+            score = cross_project_score
 
         if score > 0:
             # cmd_2270: プロジェクト一致ボーナス — 同プロジェクト教訓を優先注入
@@ -2581,7 +2655,7 @@ try:
     scored_count = len(scored)
     tag_candidate_count = len(tag_candidates)
     print(f'[INJECT] Injected {len(related)} lessons (universal={universal_added}/{universal_total_count}, task_specific={len(related)-universal_added}, platform={platform_count}): {ids}', file=sys.stderr)
-    print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
+    print(f'[INJECT]   project={project} {tag_info} scored={scored_count}/{tag_candidate_count} cross_project={cross_project_count}/{cross_project_projects} top_scores={[(s,i) for s,i,_ in scored[:5]]}', file=sys.stderr)
     print(f'[INJECT]   filtered: draft={filtered_draft} deprecated={filtered_deprecated} retired={filtered_retired}', file=sys.stderr)
     dedup_removed = pre_dedup_count - len(scored)
     print(f'[INJECT]   dedup: {dedup_removed} duplicates removed (threshold={DEDUP_THRESHOLD})', file=sys.stderr)
@@ -4009,6 +4083,79 @@ maybe_notify_draft_review() {
     else
         log "draft_review: WARN (inbox_write failed)"
     fi
+}
+
+capture_done_redeploy_context() {
+    local task_file="$1"
+    local requested_cmd="${2:-}"
+    local ninja_name prev_status prev_parent_cmd prev_report_path prev_report_filename prev_task_id prev_ac_task_id
+
+    export _DEPLOY_DONE_REUSE=0
+    export _DEPLOY_DONE_REPORT_PATH=""
+    export _DEPLOY_DONE_PARENT_CMD=""
+    export _DEPLOY_DONE_TASK_ID=""
+    export _DEPLOY_DONE_AC_TASK_ID=""
+
+    [ -f "$task_file" ] || return 0
+
+    ninja_name=$(basename "$task_file" .yaml)
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        status parent_cmd report_path report_filename task_id _ac_task_id 2>/dev/null)" || true
+
+    prev_status="${status:-}"
+    prev_parent_cmd="${parent_cmd:-}"
+    prev_report_path="${report_path:-}"
+    prev_report_filename="${report_filename:-}"
+    prev_task_id="${task_id:-}"
+    prev_ac_task_id="${_ac_task_id:-}"
+
+    [ "$prev_status" = "done" ] || return 0
+    [ -n "$requested_cmd" ] || requested_cmd="$prev_parent_cmd"
+    [ -n "$requested_cmd" ] || return 0
+    [ "$prev_parent_cmd" = "$requested_cmd" ] || return 0
+
+    if [ -z "$prev_report_path" ] && [ -n "$prev_report_filename" ]; then
+        prev_report_path="queue/reports/${prev_report_filename}"
+    fi
+    if [ -z "$prev_report_path" ] && [ -n "$prev_parent_cmd" ]; then
+        prev_report_path="queue/reports/${ninja_name}_report_${prev_parent_cmd}.yaml"
+    fi
+    if [ -n "$prev_report_path" ] && [ ! -f "$SCRIPT_DIR/$prev_report_path" ]; then
+        prev_report_path=""
+    fi
+
+    export _DEPLOY_DONE_REUSE=1
+    export _DEPLOY_DONE_REPORT_PATH="$prev_report_path"
+    export _DEPLOY_DONE_PARENT_CMD="$prev_parent_cmd"
+    export _DEPLOY_DONE_TASK_ID="$prev_task_id"
+    export _DEPLOY_DONE_AC_TASK_ID="$prev_ac_task_id"
+    log "done_redeploy_capture: cmd=${prev_parent_cmd} report=${prev_report_path:-none} task_id=${prev_task_id:-none} ac_task_id=${prev_ac_task_id:-none}"
+}
+
+inject_done_redeploy_hints() {
+    local task_file="$1"
+    local report_path report_filename existing_desc note
+
+    [ "${_DEPLOY_DONE_REUSE:-0}" = "1" ] || return 0
+    [ -f "$task_file" ] || return 0
+
+    report_path="${_DEPLOY_DONE_REPORT_PATH:-}"
+    [ -n "$report_path" ] || return 0
+
+    note="【再配備引継ぎ】 前回報告(${report_path})の files_modified/binary_checks を引継ぎ済み。前回結果を参照し、差分のみ再検証せよ。"
+    existing_desc=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "description" "" 2>/dev/null || true)
+    if [[ "$existing_desc" != *"【再配備引継ぎ】"* ]]; then
+        if [ -n "$existing_desc" ]; then
+            yaml_field_set "$task_file" "task" "description" "${note}"$'\n'"${existing_desc}" || true
+        else
+            yaml_field_set "$task_file" "task" "description" "$note" || true
+        fi
+    fi
+
+    report_filename=$(basename "$report_path")
+    yaml_field_set "$task_file" "task" "report_path" "$report_path" || true
+    [ -n "$report_filename" ] && yaml_field_set "$task_file" "task" "report_filename" "$report_filename" || true
+    log "done_redeploy_hint: reused report=${report_path}"
 }
 
 warn_same_ninja_redeploy() {
