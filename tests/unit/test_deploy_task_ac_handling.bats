@@ -671,7 +671,7 @@ from pathlib import Path
 lines = Path("$report_path").read_text(encoding="utf-8").splitlines()
 verdict_idx = next(i for i, line in enumerate(lines) if line.startswith('verdict: "'))
 binary_checks_idx = lines.index('binary_checks:')
-no_lesson_idx = next(i for i, line in enumerate(lines) if line.startswith('  no_lesson_reason: "'))
+no_lesson_idx = next(i for i, line in enumerate(lines) if line.startswith('  no_lesson_reason:'))
 assert lines[verdict_idx - 1] == '# ⚠ あなたの頻出FAIL: verdictは"PASS"/"FAIL"の二値のみ'
 assert lines[binary_checks_idx - 1] == '# ⚠ あなたの頻出FAIL: binary_checksの各resultに"yes"/"no"を記入'
 assert lines[no_lesson_idx - 1] == '# ⚠ あなたの頻出FAIL: lesson_candidate.found=false時はno_lesson_reasonに理由記入'
