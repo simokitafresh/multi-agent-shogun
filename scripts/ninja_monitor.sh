@@ -370,15 +370,16 @@ check_idle() {
                     log "PSTREE-LONGRUN: ${agent_name} bash subprocess detected but all running >=${PSTREE_LONGRUN_THRESHOLD}s, treating as IDLE"
                 else
                     # cmd_2279: task status=idle/completed/doneならbash subprocessがあっても/clearを許可
+                    # GP-233: yaml_field_get→grep簡素化(WSL2 NTFS遅延でfield_getが空文字を返すバグ修正)
                     local _pstree_task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
                     local _pstree_task_status=""
                     if [ -f "$_pstree_task_file" ]; then
-                        _pstree_task_status=$(yaml_field_get "$_pstree_task_file" "status" 2>/dev/null || true)
+                        _pstree_task_status=$(grep -m1 -E '^\s*status:\s*' "$_pstree_task_file" 2>/dev/null | sed 's/.*status:\s*//' | tr -d "\"' " || true)
                     fi
                     if [[ "$_pstree_task_status" =~ ^(idle|completed|done)$ ]]; then
                         log "PSTREE-OVERRIDE-SKIP: ${agent_name} task.status=${_pstree_task_status}, bash subprocess ignored, treating as IDLE"
                     else
-                        log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
+                        log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, task.status=${_pstree_task_status:-EMPTY}, treating as BUSY"
                         return 1
                     fi
                 fi
