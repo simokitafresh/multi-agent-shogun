@@ -19,6 +19,10 @@ emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
 }
 
+emit_context() {
+    printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":.}}'
+}
+
 # Single jq call to extract tool_name and file_path
 _parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
 tool_name="${_parsed%%	*}"
@@ -26,6 +30,15 @@ file_path="${_parsed#*	}"
 
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
+
+# === Guard 0: shogun_to_karo.yaml起票前確認3問 ===
+if [[ "$tool_name" == "Edit" && "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
+    emit_context "起票前確認3問:
+1. 対象現物を確認したか？
+2. 既存代替で足りないことを確認したか？
+3. cmd_save.sh関連チェック名を確認したか？"
+    exit 0
+fi
 
 # === Guard 1: config-guard (protected config files) ===
 case "${file_path##*/}" in
