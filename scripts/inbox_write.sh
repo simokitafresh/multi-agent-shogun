@@ -1240,17 +1240,18 @@ while [ $attempt -lt $max_attempts ]; do
             _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_[A-Za-z0-9_]+' | head -1 || true)
             _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
             if [ -n "$_rr_cmd_id" ] && [ "$_rr_verdict" = "LGTM" ]; then
-                _rr_gate_file="$SCRIPT_DIR/queue/gates/${_rr_cmd_id}/review_gate.done"
-                if [ -f "$_rr_gate_file" ]; then
+                _rr_gate_dir="$SCRIPT_DIR/queue/gates/${_rr_cmd_id}"
+                _rr_gate_file="${_rr_gate_dir}/review_gate.done"
+                # GP-227: mkdir -pで不在時も生成。preflight未実行でもLGTMで解放
+                mkdir -p "$_rr_gate_dir"
                     cat > "$_rr_gate_file" <<REVIEWEOF
 timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
 source: gunshi_review
 result: LGTM
 note: 軍師レビュー完了。LGTM受信でgate再起動(GP-220)。
 REVIEWEOF
-                    echo "[inbox_write] review_gate.done updated: ${_rr_cmd_id} (→gunshi_review LGTM, gate re-trigger)" >&2
+                    echo "[inbox_write] review_gate.done created/updated: ${_rr_cmd_id} (→gunshi_review LGTM, gate re-trigger)" >&2
                     trigger_cmd_complete_gate_background "$_rr_cmd_id"
-                fi
             fi
         fi
 
