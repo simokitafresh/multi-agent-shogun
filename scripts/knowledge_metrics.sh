@@ -636,15 +636,9 @@ gate_log_path = os.path.join(os.path.dirname(tsv_file), "gate_metrics.log")
 gate_rows = load_gate_rows(gate_log_path)
 dedup_gate_rows = {row["cmd_id"]: row for row in dedup_cmd_rows([r for r in gate_rows if r["gate_result"] in ("CLEAR", "BLOCK")])}
 cmd_block_reasons = defaultdict(list)
-if os.path.isfile(gate_log_path):
-    with open(gate_log_path, "r", encoding="utf-8") as gf:
-        for gline in gf:
-            gline = gline.strip()
-            if not gline:
-                continue
-            gparts = gline.split("\t")
-            if len(gparts) >= 4 and gparts[2] == "BLOCK":
-                cmd_block_reasons[gparts[1]].append(gparts[3])
+for row in gate_rows:
+    if row["gate_result"] == "BLOCK" and row["detail"]:
+        cmd_block_reasons[row["cmd_id"]].append(row["detail"])
 
 def is_structural_block(cmd_id):
     """cmd_idの最終BLOCK理由が全て構造的パターンならTrue."""
