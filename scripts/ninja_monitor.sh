@@ -1231,6 +1231,18 @@ _handle_auto_clear() {
 
     agent_id=$(tmux display-message -t "$target" -p '#{@agent_id}' 2>/dev/null)
 
+    # GP-223: タスクが配備済み(assigned/acknowledged/in_progress)ならAUTO-CLEARしない
+    # DEPLOY-STALLで処理すべき。AUTO-CLEARすると忍者のrecoveryが中断され無限ループになる
+    local _ac_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    if [ -f "$_ac_task_file" ]; then
+        local _ac_task_status
+        _ac_task_status=$(yaml_field_get "$_ac_task_file" "status")
+        if [[ "$_ac_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+            log "AUTO-CLEAR-SKIP: $name has active task (status=$_ac_task_status), deferring to DEPLOY-STALL"
+            return
+        fi
+    fi
+
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
     # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
     local ctx_now _ac_cli_type
