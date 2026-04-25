@@ -1288,6 +1288,301 @@ check_gs_bench_gate_warn() {
     fi
 }
 
+# ─── cmd_2273: scope drift検出（WARNのみ、target_path外変更を検知） ───
+check_scope_drift() {
+    level_heading "[L2]" "Scope drift check (cmd_2271事故 再発防止):"
+    local sd_checked=false
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        local ninja_name report_file
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+
+        if [ ! -f "$report_file" ]; then
+            echo "  ${ninja_name}: SKIP (report not found)"
+            continue
+        fi
+
+        sd_checked=true
+
+        # target_path を task YAML から取得（単一値またはリスト両対応）
+        local target_path
+        target_path=$(awk '
+            /^[[:space:]]+target_path:/ {
+                val = $0; sub(/.*target_path:[[:space:]]*/, "", val)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", val)
+                if (val != "" && val !~ /^\[/) { print val; exit }
+                in_tp = 1; next
+            }
+            in_tp && /^[[:space:]]+- / {
+                val = $0; sub(/^[[:space:]]+- [[:space:]]*/, "", val)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", val); print val; next
+            }
+            in_tp && /^[[:space:]]+[^ -]/ { exit }
+            in_tp && /^[^ ]/ { exit }
+        ' "$task_file" 2>/dev/null)
+
+        if [ -z "$target_path" ]; then
+            echo "  ${ninja_name}: SKIP (target_path not set in task)"
+            continue
+        fi
+
+        # files_modified[].path を抽出
+        local modified_paths
+        modified_paths=$(awk '
+            /^files_modified:/ { in_fm=1; next }
+            in_fm && /^[^ ]/ { in_fm=0 }
+            in_fm && /^[[:space:]]+path:/ {
+                val=$0; sub(/.*path:[[:space:]]*/, "", val)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", val); print val
+            }
+        ' "$report_file" 2>/dev/null)
+
+        if [ -z "$modified_paths" ]; then
+            echo "  ${ninja_name}: SKIP (files_modified empty or no path entries)"
+            continue
+        fi
+
+        local drift_count=0 total_count=0 drift_list=""
+        while IFS= read -r fp; do
+            [ -z "$fp" ] && continue
+            total_count=$((total_count + 1))
+            local matched=false
+            while IFS= read -r tp; do
+                [ -z "$tp" ] && continue
+                if [[ "$fp" == "$tp"* ]]; then
+                    matched=true
+                    break
+                fi
+            done <<< "$target_path"
+            if [ "$matched" = false ]; then
+                drift_count=$((drift_count + 1))
+                drift_list="${drift_list}    → ${fp}\n"
+            fi
+        done <<< "$modified_paths"
+
+        if [ "$drift_count" -gt 0 ]; then
+            echo "  [WARN] ${ninja_name}: SCOPE DRIFT: ${drift_count}/${total_count} file(s) outside target_path"
+            printf '%b' "$drift_list" | head -5
+        else
+            echo "  ${ninja_name}: OK (全${total_count}件 target_path内)"
+        fi
+    done
+
+    if [ "$sd_checked" = false ]; then
+        echo "  (no reports found for this cmd)"
+    fi
+}
+
+# ─── cmd_2273: レビュー陳腐化検出（WARNのみ、review_gate.done後のcommitを検知） ───
+check_review_staleness() {
+    level_heading "[L2]" "Review staleness check:"
+
+    local review_done="$GATES_DIR/review_gate.done"
+    if [ ! -f "$review_done" ]; then
+        echo "  SKIP (review_gate.done not found)"
+        return 0
+    fi
+
+    # deploy_preflight placeholderはスキップ（実レビュー前）
+    if grep -q 'source: deploy_preflight' "$review_done" 2>/dev/null; then
+        echo "  SKIP (review_gate.done is deploy placeholder)"
+        return 0
+    fi
+
+    local review_ts
+    review_ts=$(awk '/^timestamp:/ { print $2; exit }' "$review_done" 2>/dev/null)
+    if [ -z "$review_ts" ]; then
+        echo "  SKIP (review timestamp not found)"
+        return 0
+    fi
+
+    local post_review_count=0 post_review_lines=""
+    while IFS= read -r commit_hash; do
+        [ -z "$commit_hash" ] && continue
+        local commit_ts
+        commit_ts=$(git -C "$SCRIPT_DIR" log -1 --format='%aI' "$commit_hash" 2>/dev/null || true)
+        if [ -n "$commit_ts" ] && [[ "$commit_ts" > "$review_ts" ]]; then
+            post_review_count=$((post_review_count + 1))
+            local subj
+            subj=$(git -C "$SCRIPT_DIR" log -1 --format='%s' "$commit_hash" 2>/dev/null)
+            post_review_lines="${post_review_lines}    ${commit_hash:0:8}: ${subj}\n"
+        fi
+    done < <(get_cmd_head_hashes "$CMD_ID")
+
+    if [ "$post_review_count" -gt 0 ]; then
+        echo "  [WARN] ${post_review_count} commit(s) after review (${review_ts}) — review may be stale:"
+        printf '%b' "$post_review_lines" | head -5
+    else
+        echo "  OK (no commits after review ${review_ts})"
+    fi
+}
+
+# ─── cmd_2273: 部分完了検出（WARNのみ、binary_checks AC部分一致を通知） ───
+check_partial_completion() {
+    level_heading "[L2]" "Partial completion check:"
+    local pc_checked=false
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        local ninja_name report_file
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+
+        if [ ! -f "$report_file" ]; then
+            echo "  ${ninja_name}: SKIP (report not found)"
+            continue
+        fi
+
+        pc_checked=true
+
+        local pc_result
+        pc_result=$(python3 - "$report_file" <<'PY'
+import sys, re
+
+try:
+    with open(sys.argv[1]) as f:
+        lines = f.readlines()
+except Exception:
+    print("skip\tcannot read report")
+    sys.exit(0)
+
+in_bc = False
+bc_lines = []
+for line in lines:
+    if re.match(r'^binary_checks:', line):
+        in_bc = True
+        continue
+    if in_bc and line.rstrip() and not line[0].isspace():
+        break
+    if in_bc:
+        bc_lines.append(line.rstrip())
+
+if not bc_lines:
+    print("skip\tbinary_checks not found")
+    sys.exit(0)
+
+ac_pass, ac_fail, fail_keys = 0, 0, []
+cur_key, cur_results = None, []
+
+def flush():
+    global ac_pass, ac_fail, fail_keys, cur_key, cur_results
+    if cur_key is None or cur_key == 'commit':
+        return
+    if cur_results and all(r == 'yes' for r in cur_results):
+        ac_pass += 1
+    else:
+        ac_fail += 1
+        fail_keys.append(cur_key)
+
+for line in bc_lines:
+    km = re.match(r'^  ([A-Z][A-Z0-9_]*):\s*$', line)
+    rm = re.match(r"^\s+result:\s*['\"]?(\w+)['\"]?", line)
+    if km:
+        flush()
+        cur_key, cur_results = km.group(1), []
+    elif rm and cur_key:
+        cur_results.append(rm.group(1))
+flush()
+
+total = ac_pass + ac_fail
+if total == 0:
+    print("skip\tno AC keys in binary_checks")
+elif ac_fail == 0:
+    print(f"ok\t{ac_pass}/{total}")
+else:
+    print(f"partial\t{ac_pass}/{total}\t" + ",".join(fail_keys))
+PY
+)
+        local pc_kind pc_nums pc_fails
+        pc_kind=$(printf '%s' "$pc_result" | cut -f1)
+        pc_nums=$(printf '%s' "$pc_result" | cut -f2)
+        pc_fails=$(printf '%s' "$pc_result" | cut -f3-)
+
+        case "$pc_kind" in
+            partial)
+                echo "  [WARN] ${ninja_name}: PARTIAL: ${pc_nums} ACs passed (未完了: ${pc_fails})"
+                (BULLETIN_NOTIFY=karo bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
+                    "check_partial: ${CMD_ID}/${ninja_name} PARTIAL ${pc_nums} ACs (${pc_fails})" false 2>/dev/null || true) &
+                ;;
+            ok)
+                echo "  ${ninja_name}: OK (全AC passed: ${pc_nums})"
+                ;;
+            skip)
+                echo "  ${ninja_name}: SKIP (${pc_nums})"
+                ;;
+            *)
+                echo "  ${ninja_name}: SKIP (parse error)"
+                ;;
+        esac
+    done
+
+    if [ "$pc_checked" = false ]; then
+        echo "  (no reports found for this cmd)"
+    fi
+}
+
+# ─── cmd_2273: 修正暴走リスク検出（WARNのみ、files>15 or revert>=3） ───
+check_wtf_likelihood() {
+    level_heading "[L2]" "WTF likelihood check (修正暴走リスク):"
+    local wtf_checked=false
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        local ninja_name report_file
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+
+        if [ ! -f "$report_file" ]; then
+            echo "  ${ninja_name}: SKIP (report not found)"
+            continue
+        fi
+
+        wtf_checked=true
+
+        # files_modified のパスエントリ数をカウント
+        local file_count
+        file_count=$(awk '
+            /^files_modified:/ { in_fm=1; next }
+            in_fm && /^[^ ]/ { in_fm=0 }
+            in_fm && /^[[:space:]]+path:/ { count++ }
+            END { print count+0 }
+        ' "$report_file" 2>/dev/null)
+
+        # revert commit数をカウント
+        local revert_count=0
+        while IFS= read -r h; do
+            [ -z "$h" ] && continue
+            local subj
+            subj=$(git -C "$SCRIPT_DIR" log -1 --format='%s' "$h" 2>/dev/null || true)
+            if printf '%s' "$subj" | grep -qiE 'revert|rollback|undo'; then
+                revert_count=$((revert_count + 1))
+            fi
+        done < <(get_cmd_head_hashes "$CMD_ID")
+
+        local warns=()
+        if [ "${file_count:-0}" -gt 15 ]; then
+            warns+=("files=${file_count} > 15")
+        fi
+        if [ "${revert_count:-0}" -ge 3 ]; then
+            warns+=("revert=${revert_count} >= 3")
+        fi
+
+        if [ "${#warns[@]}" -gt 0 ]; then
+            local warn_str=""
+            for w in "${warns[@]}"; do
+                [ -n "$warn_str" ] && warn_str="${warn_str}, "
+                warn_str="${warn_str}${w}"
+            done
+            echo "  [WARN] ${ninja_name}: WTF_LIKELIHOOD: ${warn_str}"
+        else
+            echo "  ${ninja_name}: OK (files=${file_count:-0}, revert=${revert_count:-0})"
+        fi
+    done
+
+    if [ "$wtf_checked" = false ]; then
+        echo "  (no reports found for this cmd)"
+    fi
+}
+
 # ─── lesson tracking追記（ベストエフォート） ───
 append_lesson_tracking() {
     local cmd_id="$1"
@@ -3802,6 +4097,12 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
 else
     echo "  SKIP (no push detected in reports)"
 fi
+
+# ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
+check_scope_drift
+check_review_staleness
+check_partial_completion
+check_wtf_likelihood
 
 # ─── 判定結果 ───
 echo ""
