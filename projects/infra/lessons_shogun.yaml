@@ -311,3 +311,38 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh WARN累計昇格(自動強制)'
+- id: 'LS030'
+  title: 'q8は3部構成(WHY→WHAT→複利)で書け'
+  detail: 'q8をWHY→WHATの2部で書き終えて複利の問いを忘れる。2回目WARN累計昇格。根因: q8フィールドに「複利」という単語を含め忘れる。対策: q8を書いたら最後に「→複利: この実装選択を10回繰り返したら正の複利か負の複利か」を必ず追記。検出条件(L1234): q8内に「複利」or「compound」がなければWARN'
+  source_cmd: 'cmd_2262'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh L1234 q8_compound検出(既存自動)。将軍の書き方を是正するだけ'
+- id: 'LS031'
+  title: 'q11 SCOUT偽陽性 — scope_mode=SCOUTはgate/hook追加ではない'
+  detail: 'is_gate_or_hook_addition_cmd()がcommand本文全体をgrepし、quality_gate説明文中の''gate''にマッチして偵察cmdをgate追加cmdと誤判定(LS027と同根)。9回累計昇格。根因: scope_mode=SCOUTの除外条件が未実装(L1447)。暫定対策: q11に既存代替のgrep確認結果を詳細記載して通過。根本修正: is_gate_or_hook_addition_cmdにscope_mode=SCOUT除外を追加するcmd起票'
+  source_cmd: 'cmd_2262'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh L1447 is_gate_or_hook_addition_cmd(既存)。scope_mode=SCOUT除外は未実装=次の自動化ターゲット'
+- id: 'LS032'
+  title: 'assumptions claimは独立行にYYYY-MM-DD日付を明記'
+  detail: 'claim内に日付を埋め込んでいるが日本語文中(2026-04-25確認済み)だとgateの正規表現が検出できない場合がある。4回累計昇格。対策: 各claim行の末尾に「(確認日: YYYY-MM-DD)」の形式で独立パターンとして日付を記載'
+  source_cmd: 'cmd_2262'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh L2875 assumptions_claim_date検出(既存自動)。将軍の書き方を是正するだけ'
+- id: 'LS033'
+  title: 'claim内ファイル名パス検索BLOCK 3連発 — claimからファイル名を完全排除せよ'
+  detail: 'cmd_2262/2264/2265で3連続同じBLOCK。claim内のファイル名(*.json/*.sh)がcmd_save.shのassumptions source検証でPJパス内検索に引っかかる。LS032記録済みだが将軍の行動が変わっていない。根因: claimにファイル名を含める習慣。対策: claimには「何を確認したか」だけ書き、ファイル名はcommand欄に書け'
+  source_cmd: 'cmd_2265'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh assumptions sourceパス検証(既存自動)。将軍の書き方是正'
+- id: 'LS034'
+  title: 'cmd_2264/2268/2269 BLOCK — claim除外+other_draft+q8縮小表現+environment_change(根本修正済み)'
+  detail: 'claim内ファイル名=6428f9d6で根本修正。other_draft=1本ずつ処理。q8縮小表現=のみ/だけを避ける。environment_change=新規作成ファイルは既存lessonsを参照'
+  source_cmd: 'cmd_2269'
+  created_at: '2026-04-25'
+  automated: true
+  enforcement: 'cmd_save.sh assumptions sourceパス検証(既存自動)+LS033'

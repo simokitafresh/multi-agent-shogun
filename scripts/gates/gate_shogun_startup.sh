@@ -522,6 +522,27 @@ else
     echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 10.5: idle時BLOCK提案自動化 ---
+echo "■ idle時BLOCK提案"
+_AUTOFIX_PROPOSAL_GATE="$GATE_DIR/gate_autofix_proposal.sh"
+if [ "$IDLE_TRIGGER" = "ON" ]; then
+    if [ -x "$_AUTOFIX_PROPOSAL_GATE" ]; then
+        _autofix_output=$(bash "$_AUTOFIX_PROPOSAL_GATE" 2>&1 || true)
+        if [ -n "$_autofix_output" ]; then
+            while IFS= read -r _autofix_line; do
+                [ -n "$_autofix_line" ] || continue
+                echo "  $_autofix_line"
+            done <<< "$_autofix_output"
+        else
+            echo "  INFO: 出力なし"
+        fi
+    else
+        echo "  INFO: gate_autofix_proposal.sh 未配備"
+    fi
+else
+    echo "  SKIP: active cmdあり"
+fi
+
 # --- Gate 11: 未処理PROPOSAL (cmd_1256 + cmd_1261) ---
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
 REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"

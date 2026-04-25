@@ -1,8 +1,16 @@
 ssot_path: '/mnt/c/Python_app/DM-signal/tasks/lessons.md'
-last_synced: '2026-04-24T23:15:11'
+last_synced: '2026-04-25T17:41:44'
 archive_path: '/mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml'
-lesson_count: 645
+lesson_count: 646
 lessons:
+- id: 'L649'
+  title: 'CDP再計測retryはartifact pathを分離せよ'
+  summary: '同一cmdでCDP retry runを複数並行させると outputs/cmd_2268_measurements.json が stale run に上書き'
+  tags:
+  - 'dm-signal'
+  target_files:
+  - 'outputs/'
+  - 'outputs/cmd_2268_measurements.json'
 - id: 'L648'
   title: 'dw_signals_flush(62s)は計測システムから除外されておりunmeasured_pctを誤解させる'
   summary: 'profiling[''dw_signals_flush'']はmeasured_totalに含まれず、unmeasured_sec(73s)の大部分(62.4s)'
@@ -309,9 +317,9 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-04-24T23:15:20+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=2'
-  helpful_count: 2
+  deprecated_at: '2026-04-25T17:41:56+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=6 > helpful=1'
+  helpful_count: 1
   harmful_count: 6
   last_referenced: '2026-04-24'
   target_files:
@@ -409,9 +417,6 @@ lessons:
   summary: 'GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:38+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - 'scripts/oneshot/cmd_1855_register_bunshin_gekko.py'
 - id: 'L606'
@@ -419,9 +424,6 @@ lessons:
   summary: 'l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:38+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - 'outputs/analysis/alm_research/cmd_1856_regression_l1_wf_alm_returns.csv'
   - 'outputs/analysis/alm_research/cmd_1856_regression_l1_wf_baseline_comparison.csv'
@@ -433,9 +435,6 @@ lessons:
   summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:38+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/scripts/cmd_1847_neighbor_analysis.py'
@@ -444,9 +443,6 @@ lessons:
   summary: '7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:37+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/analysis/cmd_1848_is_oos_champion_analysis.md'
@@ -456,9 +452,6 @@ lessons:
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:37+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/analysis/cmd_1845_three_layer_comparison.md'
@@ -468,9 +461,6 @@ lessons:
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:37+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/analysis/cmd_1845_three_layer_comparison.md'
@@ -480,9 +470,6 @@ lessons:
   summary: 'cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:36+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
   target_files:
   - 'tasks/lessons.md'
 - id: 'L600'
@@ -490,9 +477,6 @@ lessons:
   summary: '481650列のnukimi monthly_fast.csvで先頭月がほぼ空セルの行に対し、np.fromstring(line, sep=,)は unmat'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:36+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=28 referenced=0'
 - id: 'L599'
   title: 'TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致'
   summary: 'momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_ticker'
@@ -636,9 +620,6 @@ lessons:
   summary: '119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:36+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=20 referenced=0'
   target_files:
   - 'tasks/lessons.md'
 - id: 'L582'
@@ -646,9 +627,6 @@ lessons:
   summary: 'draft教訓1件が未査読のままGATE到達'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:35+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   retired: true
   target_files:
   - 'tasks/lessons.md'
@@ -661,9 +639,6 @@ lessons:
   summary: 'build_component_names_from_config は config[''unit_naming''].format(display=fam[''di'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:35+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'config/portfolio_universes/alm_l0_12.yaml'
@@ -675,17 +650,11 @@ lessons:
   summary: 'select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:35+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=30 referenced=0'
 - id: 'L579'
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
   summary: 'draft教訓31件が未査読のままGATE到達'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:34+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   retired: true
   target_files:
   - 'queue/tasks/kotaro.yaml'
@@ -694,9 +663,6 @@ lessons:
   summary: 'MomentumFilter/SVMF/MVMFのmonthly pathがComponentPriceCache月末日付(月末)をdictキーに変換しexac'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:34+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   target_files:
   - 'queue/tasks/kotaro.yaml'
 - id: 'L577'
@@ -704,9 +670,6 @@ lessons:
   summary: 'MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でe'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:33+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - 'queue/tasks/kotaro.yaml'
 - id: 'L576'
@@ -714,9 +677,6 @@ lessons:
   summary: 'FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、conte'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:33+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - 'queue/tasks/kotaro.yaml'
 - id: 'L575'
@@ -724,9 +684,6 @@ lessons:
   summary: 'MomentumFilterの_lookup_cachedはdict型キャッシュに対して.get(context.target_date)を使う。月次データはm'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:33+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   target_files:
   - 'queue/tasks/kotaro.yaml'
 - id: 'L574'
@@ -734,9 +691,6 @@ lessons:
   summary: 'MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:32+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   target_files:
   - 'queue/tasks/kotaro.yaml'
 - id: 'L573'
@@ -744,9 +698,6 @@ lessons:
   summary: '2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache を {da'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:32+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: 'L572'
   title: 'GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search'
   summary: 'task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana'
@@ -1060,9 +1011,6 @@ lessons:
   summary: 'cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テ'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:32+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - 'outputs/analysis/standard_pf_preprocessing/dm6_5_extended_results.yaml'
   - 'scripts/analysis/standard_pf_preprocessing/dm6_5_extended_study.py'
@@ -1109,9 +1057,6 @@ lessons:
   summary: 'OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点が'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   target_files:
   - 'tasks/lessons.md'
   - 'outputs/analysis/nested_fof/r30_denoised_optics_vs_ward.yaml'
@@ -1122,9 +1067,6 @@ lessons:
   summary: 'NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せ'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   target_files:
   - 'outputs/analysis/nested_fof/r29g_shin_clsel_2d_grid_extra_results.yaml'
   - 'scripts/analysis/nested_fof/r29g_shin_clsel_2d_grid_extra.py'
@@ -1147,9 +1089,6 @@ lessons:
   summary: 'Sortino LB=2mのfull-sample CAGR=0.933/Calmar=6.76は異常に高く、OOSで56.9%劣化しOVERFIT。LB=12'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:31+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
   target_files:
   - 'outputs/analysis/nested_fof/r29d_shin_wf_oos_sortino_lb2m_results.yaml'
   - 'scripts/analysis/nested_fof/r29d_shin_wf_oos_sortino_lb2m.py'
@@ -1158,9 +1097,6 @@ lessons:
   summary: 'cmd_1594でLB=2mが最適momentum持続性(t=4.04)と判明したが、ClSelバックテストでは全K(3,4,5)でCAGR/MaxDD/UWP'
   tags:
   - 'recon'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-21'
   target_files:
   - 'outputs/analysis/nested_fof/r28_lb2m_comparison.yaml'
   - 'scripts/analysis/nested_fof/r28_lb2m_cluster_selection.py'
@@ -1276,9 +1212,9 @@ lessons:
   - 'api'
   - 'deploy'
   - 'production_invariant'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-24'
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-25'
   target_files:
   - 'tasks/lessons.md'
 - id: 'L511'
@@ -1560,7 +1496,7 @@ lessons:
   summary: 'Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設'
   tags:
   - 'universal'
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 5
   last_referenced: '2026-04-22'
   target_files:
@@ -3282,7 +3218,7 @@ lessons:
   summary: 'IS 46M + OOS 32MでR²_OOS=0.02-0.05の改善は有意にならない可能性が高い。Clark-West検定でも最低水準。169M共通パネルの'
   tags:
   - 'testing'
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-24'
 - id: 'L287'
@@ -3574,9 +3510,12 @@ lessons:
   summary: 'monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick'
   tags:
   - 'api'
+  deprecated: true
+  deprecated_at: '2026-04-25T17:41:56+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=3'
   helpful_count: 3
-  harmful_count: 4
-  last_referenced: '2026-04-24'
+  harmful_count: 5
+  last_referenced: '2026-04-25'
 - id: 'L245'
   title: 'フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ'
   summary: 'compare-summary/deteriorationはSet multi-select、selector/navはscalar single-select'
@@ -3689,7 +3628,7 @@ lessons:
   - 'api'
   - 'frontend'
   - 'gate'
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-24'
   target_files:
@@ -4095,9 +4034,6 @@ lessons:
   - 'recon'
   - 'security'
   - 'oauth'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-21'
 - id: 'L177'
   title: '本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる'
   summary: 'IF FastAPI系の404では本番/openapi.jsonに当該pathが存在するか先に見ると、コード不具合ではなくデプロイドリフトを短時間で確定できる時'
@@ -4702,9 +4638,6 @@ lessons:
   tags:
   - 'frontend'
   - 'testing'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-21'
 - id: 'L087'
   title: 'kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する'
   summary: 'IF 本番は504日分の日次データが揃うまでCash(≈0%リターン)時 THEN 本番は504日分の日次データが揃うまでCash(≈0%リターン) 本番は50'
@@ -4761,9 +4694,6 @@ lessons:
   tags:
   - 'api'
   - 'deploy'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-21'
 - id: 'L078'
   title: 'PortfolioRepository.load()は1PFバリデーションエラーで全PF読込失敗する単一障害点'
   summary: 'IF benchmark_ticker=空文字等のバリデーションエラーが1つでもあるとPortfolioRepository.load()がNoneを返しrec'
@@ -5101,9 +5031,6 @@ lessons:
   summary: '`scripts/download_all_prices.py` を実行しようとして `No such file` エラー。正しくは `scripts/anal'
   tags:
   - 'bash'
-  deprecated: true
-  deprecated_at: '2026-04-24T23:17:30+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
   target_files:
   - 'scripts/download_all_prices.py'
   - 'scripts/analysis/data_sync/download_all_prices.py'

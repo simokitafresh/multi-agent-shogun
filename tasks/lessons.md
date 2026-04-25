@@ -4031,3 +4031,21 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,process,gate]
 - **target_files**: [tests/unit/test_cmd_save.bats,tests/unit/test_cmd_save_command_steps_vs_ac.bats,tests/unit/test_cmd_save_diagnose.bats,tests/unit/test_cmd_save_diagnosis_quality.bats,tests/unit/test_cmd_save_environment_change.bats]
 - cmd_save.shに『assumptions claimに日付なし』チェックを追加した際、既存6テストファイルのフィクスチャが未対応でCI REDとなった。新gate追加後は既存テストフィクスチャへの影響を確認し、assumptions claimに日付を追加する手順を標準化すべき
+
+### L526: validate_dashboardのN回grep+N回awk→1回awk two-file統合でWSL2起動コスト削減
+- **日付**: 2026-04-25
+- **出典**: cmd_training_L4_R3_kotaro
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [infra,wsl2,reporting]
+- **target_files**: [scripts/dashboard_update.sh]
+- validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配的(L511)。mktemp経由でawk two-file技法を使うと単一awk invocationでN全パターンの行番号を取得できる。N=20時40→1プロセス削減。同様のNループgrep/awkパターンは全スクリプトで同手法を適用せよ。
+
+### L527: 教訓注入スコアリングはpresenceではなく頻度カウント+プロジェクト一致ボーナスで有用率が上がる
+- **日付**: 2026-04-25
+- **出典**: cmd_2270
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [infra]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lesson_scoring.bats]
+- 単純なin演算子(presence)より頻度カウント(title.count(kw)*3)の方が、キーワードが多い教訓を正確に上位にランクできる。プロジェクト一致ボーナス+2でDM-Signal等プロジェクト固有の教訓が適切に優先される。MAX_INJECT=3は過小で関連教訓を捨てていた(10に拡大で改善)。

@@ -1,30 +1,38 @@
 task:
-  _ac_task_id: cmd_karo_gate_clear_idle_impl
+  _ac_task_id: cmd_2268_impl
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_karo_gate_clear_idle
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2268
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  ac_version: 2342d4a4
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 2edf2958
   acceptance_criteria:
-  - description: GATE CLEAR時にtask YAMLが自動idle化される実装追加
-    id: AC1
-  - description: GATE BLOCK時はidle化されないことを確認
-    id: AC2
-  - description: batsテスト全PASS (SKIP=0)
-    id: AC3
+  - ac: DM-Signalリポジトリへのpush+CI PASS+Render BEデプロイ完了が確認されている
+    binary: true
+  - ac: 全17ページの初回表示時間が計測され、cmd_2262ベースラインとの差分(ms, %)が報告に記載
+    binary: true
+  - ac: 8ページPF切替10回の応答時間が計測され、ベースラインとの差分が報告に記載
+    binary: true
+  - ac: 全ページでデータ表示異常なし(バグ0件)が確認され報告に記載
+    binary: true
   assigned_to: hayate
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ\n\
-    \  - L402: gate_improvement_trigger.shの冪等性チェック用状態ファイルが/tmpに配置されていた。WSL再起動で/tmpが消去されるため、再起動後\n\
-    \  - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf\n\
-    ────────────────────────────────────────"
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L512: gate_loop_health.shのinsight dedup\
+    \ checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte\n────────────────────────────────────────"
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
+  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
+  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
+  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
+  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
+  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
+  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
+    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -34,24 +42,26 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_karo_gate_clear_idle
-  project: infra
+  - AC4
+  parent_cmd: cmd_2268
+  project: dm-signal
+  purpose: cmd_2267(FoF display事前計算化)をpush→Render deploy→CDP再計測し、速度改善効果とバグ有無を確認する。cmd_2262のベースラインと比較。
   scout_exempt: true
-  status: idle
+  status: failed
   stop_for: []
-  target_path: scripts/cmd_complete_gate.sh
-  target_path_warning: '⚠ target_pathが存在しない: docs/research/recalculate_fof_speed_design.md'
-  task_id: cmd_karo_gate_clear_idle_impl
+  target_path: outputs/
+  target_path_warning: '⚠ target_pathが存在しない: backend/app/api/signals.py'
+  task_id: cmd_2268_impl
   task_type: impl
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_gate_clear_idle.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_gate_clear_idle.yaml
+  report_filename: hayate_report_cmd_2268.yaml
+  report_path: queue/reports/hayate_report_cmd_2268.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 31
+    total_workarounds: 28
     top_pattern: 'report_yaml_format(4件)'
-    breakdown: 'report_yaml_format(4件), verdict_override(4件), commit_missing(3件), clean(3件), task_redeploy(2件), stale_report(2件), ci_gate_mismatch(2件), uncategorized(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
+    breakdown: 'report_yaml_format(4件), verdict_override(4件), commit_missing(3件), task_redeploy(2件), stale_report(2件), ci_gate_mismatch(2件), uncategorized(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), deploy_error(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
@@ -59,14 +69,14 @@ task:
     - pattern: 'lu_reason_empty'
       count: 88
     - pattern: 'bc_result_invalid'
-      count: 69
+      count: 75
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'
     gate_blocks:
     - reason: 'binary_checks_fail'
-      count: 52
+      count: 60
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
-      count: 30
+      count: 36
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'purpose_validation_fit_false'
       count: 11
@@ -78,34 +88,34 @@ task:
       count: 1
       hint: 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ'
   related_lessons:
-  - id: 'L512'
-    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  deployed_at: "2026-04-24T13:36:13"
+  - id: 'L636'
+    summary: 'Render fullrecalculateでは nested FoF に対して `MonthlyReturn generated` ログが出てもDB'
+    detail: 'Render fullrecalculateでは nested FoF に対して `MonthlyReturn generated` ログが出てもDB'
+  - id: 'L635'
+    summary: 'recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred'
+    detail: 'recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred'
+  - id: 'L634'
+    summary: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
+    detail: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
+  - id: 'L633'
+    summary: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
+    detail: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
+  - id: 'L632'
+    summary: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
+    detail: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
+  - id: 'L626'
+    summary: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+    detail: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+  - id: 'L625'
+    summary: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+    detail: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+  - id: 'L624'
+    summary: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+    detail: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+  - id: 'L623'
+    summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+    detail: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+  - id: 'L622'
+    summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+    detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+  deployed_at: "2026-04-25T16:56:35"

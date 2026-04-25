@@ -325,12 +325,33 @@ EOF
     [[ "$output" == *"idle時自己分析に入れ"* ]]
 }
 
+@test "all ninjas idle → gate_autofix_proposal runs automatically" {
+    cat > "$TEST_TMPDIR/queue/karo_snapshot.txt" <<EOF
+# 家老陣形図(karo_snapshot)
+# Generated: $(date '+%Y-%m-%dT%H:%M:%S')
+ninja|hayate|cmd_100_impl|idle|infra|CTX:0%
+ninja|kagemaru|cmd_101_impl|idle|infra|CTX:0%
+EOF
+    cat > "$TEST_TMPDIR/scripts/gates/gate_autofix_proposal.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "AUTOFIX-PROPOSAL-RAN"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_autofix_proposal.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ idle時BLOCK提案"* ]]
+    [[ "$output" == *"AUTOFIX-PROPOSAL-RAN"* ]]
+}
+
 # === Test 10: active忍者あり → idle trigger OFF ===
 @test "active ninjas → no idle trigger" {
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" != *"全忍者idle"* ]]
     [[ "$output" == *"稼働中cmd"* ]]
+    [[ "$output" == *"■ idle時BLOCK提案"* ]]
+    [[ "$output" == *"SKIP: active cmdあり"* ]]
 }
 
 # Test 11 (--brief mode) は 2026-04-12 殿裁定で削除。
