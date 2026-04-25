@@ -754,13 +754,21 @@ for e in entries:
     if e.get('source') == 'cmd_complete_gate' and e.get('gate_result') == 'CLEAR':
         cleared_cmds.add(e['cmd_id'])
 
+# Count cmd_save executions per cmd (to distinguish "fixed then CLEAR" from "WARN ignored then CLEAR")
+cmd_save_runs = defaultdict(int)
+for e in entries:
+    if e.get('source') in ('cmd_save_warn', 'cmd_save_block') and e.get('cmd_id'):
+        cmd_save_runs[e['cmd_id']] += 1
+
 # Compute FP rate per WARN type
+# FP = WARN出た + CLEARされた + 同一cmdでcmd_save実行が1回のみ(=修正せずに通った)
+# TP = WARN出た + CLEARされた + 同一cmdでcmd_save実行が2回以上(=修正して通した=gateが機能した)
 warn_type_total = defaultdict(int)
 warn_type_fp = defaultdict(int)
 for cmd_id, notes_set in warn_by_cmd.items():
     for note in notes_set:
         warn_type_total[note] += 1
-        if cmd_id in cleared_cmds:
+        if cmd_id in cleared_cmds and cmd_save_runs.get(cmd_id, 0) <= 1:
             warn_type_fp[note] += 1
 
 # Report

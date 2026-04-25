@@ -909,9 +909,17 @@ warn_missing_prev_cmd_lesson() {
     [[ "$prev_block_count" =~ ^[0-9]+$ ]] || prev_block_count=0
     (( prev_block_count > 0 )) || return 0
 
-    if [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] && \
-       grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${prev_cmd_id}['\"]?$" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
-        return 0
+    if [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]]; then
+        # v1形式: source_cmd: cmd_XXXX
+        if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${prev_cmd_id}['\"]?" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+            return 0
+        fi
+        # v2形式: source_ids: [..., LSXXX, ...] — prev_cmd_idがsource_idsの近辺にある場合
+        # v2ではsource_cmdがないが、LS統合後にLS-A*として存在する
+        # prev_cmd_idがlesson本文のdetailやenforcement内に言及されていれば記録済みと判定
+        if grep -qF "${prev_cmd_id}" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+            return 0
+        fi
     fi
 
     warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
