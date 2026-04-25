@@ -23,6 +23,7 @@ cli:
       japanese_name: 軍師
     hayate:
       type: codex
+      model_name: gpt-5.5-high
       role: ninja
       japanese_name: 疾風
     kagemaru:
@@ -39,6 +40,7 @@ cli:
       model: sonnet
     saizo:
       type: codex
+      model_name: gpt-5.5-high
       role: ninja
       japanese_name: 才蔵
     kotaro:
