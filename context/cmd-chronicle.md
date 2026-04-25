@@ -836,3 +836,6 @@
 | cmd_2265 | cmd_save.shのgate偽陽性率が高すぎる(16件がFP率66%超)。偽陽性は将軍のBLOCK対応時間を浪費し殿の時間を奪う。共通根を修正し全cmdに複利で効くgate精度改善を行う。 | infra | 04-25 | FILL_THIS |
 | cmd_2266 | cmd_2264設計書の穴6件を埋める補完偵察。BE profiling + FEフィールド使用マッピング + Render構成制約 + デプロイ順序 + Static Export制約 + 依存関係の正確な整理を行い、設計書を補完更新する。 | dm-signal | 04-25 | cmd_2266補完偵察完了。`docs/research/ |
 | cmd_2267 | /api/signalsの最大ボトルネック(FoF display展開 220-360ms/500-700ms)を事前計算化して初回表示・ページ遷移を250-400ms短縮する。設計書§4.2 Measure A + §6.1の分析に基づく。 | dm-signal | 04-25 | FoF displayをrequest時再展開から事前計算l |
+| cmd_2268 | cmd_2267(FoF display事前計算化)をpush→Render deploy→CDP再計測し、速度改善効果とバグ有無を確認する。cmd_2262のベースラインと比較。 | dm-signal | 04-25 | push・Render deploy・healthz確認まで |
+| cmd_2269 | gate BLOCKパターン分析→instructions修正提案を自動生成する仕組みを構築。GEPA(ICLR 2026 Oral)の自然言語反射アプローチを将軍システムに適用。deepdive Phase 5「なぜの目的=自動化ターゲット特定」の機械化。 | infra | 04-25 | FILL_THIS |
+| cmd_2270 | deploy_task.shの教訓注入で、タスク内容に基づく関連度スコアリングを導入。engram(autoresearch-engram)の頻度重み付きクロスセッション知識検索を参考に、教訓有用率を7.7%から大幅改善する。 | infra | 04-25 | deploy_task.shの教訓注入にキーワード関連度スコ |

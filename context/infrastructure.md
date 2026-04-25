@@ -26,7 +26,10 @@ review品質機械検査(607), ntfy_listener dual watchdog(609), lesson_impact f
 ## 直近改善（cmd_875〜cmd_878）
 
 gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review+Gate [CRITICAL]/[INFO]分離。CDP daemon化(877): persistent WebSocket+@ref体系。教訓同期修復(878): 淘汰カウント精度向上
-→ `docs/research/gstack-analysis.md` / `scripts/cdp/README.md` / `context/cmd-chronicle.md` 03-13
+→ `docs/research/gstack-analysis.md` (v0.0.2, 2026-03-13)
+
+**GStack v1.11 + GBrain v0.19 + Skillify全分析(2026-04-25更新)**: gstack 6→23スキル、GBrain新登場(29スキル+21cron+17888ページ本番稼働)、Skillify(失敗→永続スキル化10ステップ, 766k views)。将軍の独自強み: 鎖/追体験/なぜなぜ/PI。取り込み候補: check-resolvable(スキル到達可能性)+routing-eval(intent→skillテスト)+ハイブリッド検索(Vector+BM25+Graph)。Minions(決定論的$0実行)=将軍のbashスクリプト群と同設計思想
+→ `docs/research/gstack-gbrain-skillify-2026-04.md`
 
 ## 直近改善（cmd_1039〜cmd_1120）
 

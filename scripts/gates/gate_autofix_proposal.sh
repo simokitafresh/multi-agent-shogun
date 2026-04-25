@@ -19,7 +19,7 @@ fi
 _tmp_recent="$(mktemp)"
 trap 'rm -f "$_tmp_recent"' EXIT
 
-tac "$LOG_FILE" | awk -F'\t' -v limit="$WINDOW" '
+awk -F'\t' -v limit="$WINDOW" '
     $3 == "BLOCK" {
         print
         c++
@@ -27,7 +27,7 @@ tac "$LOG_FILE" | awk -F'\t' -v limit="$WINDOW" '
             exit
         }
     }
-' > "$_tmp_recent"
+' < <(tac "$LOG_FILE") > "$_tmp_recent"
 
 if [[ ! -s "$_tmp_recent" ]]; then
     echo "NO DATA: recent BLOCK rows not found"
