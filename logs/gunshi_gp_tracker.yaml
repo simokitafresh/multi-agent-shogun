@@ -534,9 +534,12 @@
   evidence: "bats 32/32 PASS。commit 3961e597。S0全6項PASS。分析永続化=docs/research/gunshi_idle_wa_data_quality_20260425.md"
 - id: GP-221
   description: "deploy_task.sh tag_fallback: target_filesなし教訓のfallback注入廃止。有用率回復"
-  status: proposed
+  status: implemented
   proposed_at: "2026-04-25T09:45:00"
-  self_executable: false
+  implemented_at: "2026-04-25T10:58:00"
+  implemented_by: gunshi_direct
+  self_executable: true
   existing_impl_check: "grep -n 'tag_fallback' deploy_task.sh → L2290-2292。helpful_count降順のみ。タスク関連性フィルタなし"
   defense_level: 4
   reason: "直近30報告有用率7.7%(tobisaru 0%)。target_filesなし教訓290件(56%)がtag_fallbackでタスク無関係に注入。負の複利(忍者が教訓を読まなくなる)"
+  evidence: "bats 15/15 PASS。commit 8ae3cdd8。S0全6項PASS。家老承認済み(msg_20260425_105639)"
