@@ -53,6 +53,7 @@ EOF
     eval "$(sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    eval "$(sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^detect_task_role()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^check_how_it_works_status()/,/^}/p' "$SRC_GATE_SCRIPT")"
 
@@ -103,6 +104,41 @@ skill_candidate:
 decision_candidate:
   found: false
 lessons_useful: []
+EOF
+}
+
+write_binary_check_fail_report() {
+    local triage="${1:-}"
+    cat > "$REPORT_FILE" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-10T00:00:00"
+status: done
+ac_version_read: 1
+verdict: FAIL
+test_triage: ${triage}
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+result:
+  summary: "binary_checks triage test"
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test fixture"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful: []
+binary_checks:
+  AC1:
+    - check: "binary check failure fixture"
+      result: no
 EOF
 }
 
@@ -568,6 +604,33 @@ EOF
     run bash -lc "grep -c '他忍者PASS済みのためBLOCK降格' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]  # bc_fail降格 + fit=false降格の2箇所
+}
+
+@test "test_triage pre_existing downgrades binary_checks fail to WARN reason" {
+    write_binary_check_fail_report "pre_existing"
+
+    run binary_checks_warn_reason "$REPORT_FILE" "sasuke" ""
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "test_triage=pre_existingのためWARN降格" ]]
+}
+
+@test "test_triage in_branch keeps binary_checks fail as BLOCK" {
+    write_binary_check_fail_report "in_branch"
+
+    run binary_checks_warn_reason "$REPORT_FILE" "sasuke" ""
+
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+}
+
+@test "blank test_triage keeps binary_checks fail as BLOCK" {
+    write_binary_check_fail_report ""
+
+    run binary_checks_warn_reason "$REPORT_FILE" "sasuke" ""
+
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
 }
 
 @test "GP-220: inbox_write gate re-trigger does not require deploy_preflight" {

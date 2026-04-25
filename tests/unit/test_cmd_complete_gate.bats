@@ -104,6 +104,93 @@ task:
 EOF
 }
 
+write_triage_report_fixture() {
+    local triage="${1:-}"
+    local result="${2:-no}"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+verdict: FAIL
+test_triage: ${triage}
+purpose_validation:
+  fit: true
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+result:
+  summary: "binary_checks triage fixture"
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test fixture"
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+lessons_useful: []
+test_skip_count: 0
+binary_checks:
+  AC1:
+    - check: "binary check triage fixture"
+      result: ${result}
+EOF
+}
+
+prepare_full_gate_triage_fixture() {
+    local triage="${1:-}"
+    write_cmd_yaml "without_context"
+    write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+    write_triage_report_fixture "$triage" "no"
+
+    cat > "$TEST_PROJECT/scripts/lib/normalize_report.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "no normalization needed"
+exit 1
+EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_report_autofix.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_report_format.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "PASS"
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "OK: no duplicate"
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/ntfy_cmd.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<'EOF'
+messages: []
+EOF
+    chmod +x \
+        "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_report_autofix.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_report_format.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh" \
+        "$TEST_PROJECT/scripts/inbox_write.sh" \
+        "$TEST_PROJECT/scripts/bulletin_write.sh" \
+        "$TEST_PROJECT/scripts/ntfy_cmd.sh"
+}
+
 write_cmd_yaml() {
     local mode="$1"
     if [ "$mode" = "with_context" ]; then
@@ -483,4 +570,38 @@ EOF
     run run_report_format_validation
     [ "$status" -eq 1 ]
     [[ "$output" == *"custom_gate_target.yaml: FAIL: custom report hit formatter"* ]]
+}
+
+@test "test_triage pre_existing binary_checks fail is WARN and allows GATE CLEAR" {
+    prepare_full_gate_triage_fixture "pre_existing"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[WARN] sasuke: binary_checks non-PASS"* ]]
+    [[ "$output" == *"test_triage=pre_existingのためWARN降格"* ]]
+    [[ "$output" == *"GATE CLEAR: cmd完了許可"* ]]
+    [[ "$output" != *"sasuke:binary_checks_fail"* ]]
+}
+
+@test "test_triage in_branch binary_checks fail remains GATE BLOCK" {
+    prepare_full_gate_triage_fixture "in_branch"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"[CRITICAL] sasuke: NG ← binary_checks has non-PASS results"* ]]
+    [[ "$output" == *"GATE BLOCK"* ]]
+    [[ "$output" == *"sasuke:binary_checks_fail"* ]]
+}
+
+@test "blank test_triage binary_checks fail remains GATE BLOCK" {
+    prepare_full_gate_triage_fixture ""
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"[CRITICAL] sasuke: NG ← binary_checks has non-PASS results"* ]]
+    [[ "$output" == *"GATE BLOCK"* ]]
+    [[ "$output" == *"sasuke:binary_checks_fail"* ]]
 }

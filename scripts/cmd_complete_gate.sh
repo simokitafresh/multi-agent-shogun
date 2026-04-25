@@ -1952,6 +1952,27 @@ level_heading() {
     echo "${level} ${title}"
 }
 
+binary_checks_warn_reason() {
+    local report_file="$1"
+    local ninja_name="$2"
+    local pass_ninjas="$3"
+    local test_triage
+
+    test_triage=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "test_triage" "" 2>/dev/null || true)
+    if [ "$test_triage" = "pre_existing" ]; then
+        echo "test_triage=pre_existingのためWARN降格"
+        return 0
+    fi
+
+    # GP-221: 二重配備で他忍者がverdict=PASSなら、この忍者のbc_failはWARN止まり
+    if [ -n "$pass_ninjas" ] && [[ "$pass_ninjas" != *"$ninja_name "* ]]; then
+        echo "他忍者PASS済みのためBLOCK降格"
+        return 0
+    fi
+
+    return 1
+}
+
 detect_task_role() {
     local task_file="$1"
 
@@ -3301,9 +3322,9 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             ;;
         fail:*)
             failed_checks="${bc_status#fail:}"
-            # GP-221: 二重配備で他忍者がverdict=PASSなら、この忍者のbc_failはWARN止まり
-            if [ -n "$_bc_pass_ninjas" ] && [[ "$_bc_pass_ninjas" != *"$ninja_name "* ]]; then
-                echo "  [WARN] ${ninja_name}: binary_checks non-PASS (${failed_checks}) — 他忍者PASS済みのためBLOCK降格"
+            warn_reason=$(binary_checks_warn_reason "$report_file" "$ninja_name" "$_bc_pass_ninjas" || true)
+            if [ -n "$warn_reason" ]; then
+                echo "  [WARN] ${ninja_name}: binary_checks non-PASS (${failed_checks}) — ${warn_reason}"
             else
                 echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"
                 record_block_reason "${ninja_name}:binary_checks_fail"
