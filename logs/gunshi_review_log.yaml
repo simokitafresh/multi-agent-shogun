@@ -2912,4 +2912,18 @@
       defense_level: 2
   causal_chain: "家老が--cleanでなく通常モードでcategoryにclean渡し→workaround=true+clean矛盾→WA率過大計算→改善優先順位歪み。WARN追加で10回繰返し→10回×矛盾0件=正の複利"
   timestamp: "2026-04-25T09:30:00"
+- cmd_id: GP-221_useful_rate_analysis
+  review_type: self_study
+  findings_summary: "教訓有用率7.7%(直近30報告)。tobisaru 0%(38件全NOT_USEFUL)。tag_fallbackがtarget_filesなし教訓をhelpful_count順で無差別注入→GP-221提案"
+  observations:
+    - "事実1: 直近30報告はsaizo(10.6%)+tobisaru(0.0%)のみ。tobisaru38件全NOT_USEFULだがreason具体的で評価は正確"
+    - "事実2: deploy_task.sh L2290-2292のtag_fallbackはhelpful_count降順のみ。タスクとの関連性を考慮しない"
+    - "事実3: 521教訓中target_filesなし290件(56%)がフィルタなしで全タスクに流入する構造"
+  proposals:
+    - id: GP-221
+      description: "target_filesなし教訓のfallback注入廃止"
+      status: proposed
+      defense_level: 4
+  causal_chain: "target_filesなし教訓290件→tag_fallback(helpful_count順)→タスク無関係に注入→NOT_USEFUL量産→有用率7.7%→忍者が教訓を読まなくなる=負の複利。フィルタ追加で10回→10回×関連教訓のみ=正の複利"
+  timestamp: "2026-04-25T09:45:00"
   timestamp: "2026-04-25T00:47:00"
