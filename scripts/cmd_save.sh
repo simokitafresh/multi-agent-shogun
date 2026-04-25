@@ -1146,6 +1146,7 @@ if (( PRIOR_ATTEMPT_COUNT > 0 )); then
         # 構造化形式を強制: type=xxx; file=xxx; pattern=xxx
         record_block_reason "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
         echo '  例: environment_change: "type=gate; file=scripts/cmd_save.sh; pattern=WARN_COUNT"' >&2
+        echo '  注意: YAML list形式(- type: ...)は非対応。必ず1行テキストで書け' >&2
         echo '  理由: 自由テキストは実装を検証できない。構造化形式なら自動grepで実在を証明する' >&2
         abort_if_block_immediate || exit 1
     fi
