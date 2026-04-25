@@ -33,6 +33,7 @@ BEGIN {
     bc_flag=0
     in_entry=0
     earliest=""
+    latest=""
 }
 
 /^- cmd_id:/ {
@@ -108,6 +109,7 @@ END {
     printf "GATE_NULL_PCT=%d\n", gate_null_pct
     printf "BC_FLAG=%d\n", bc_flag
     printf "EARLIEST=%s\n", earliest
+    printf "LATEST=%s\n", latest
 
     # Ninja quality: WEAK
     weak_str=""
@@ -185,6 +187,8 @@ function process() {
 
     # Earliest date
     if (ts != "" && (earliest == "" || ts < earliest)) earliest = ts
+    # Latest date
+    if (ts != "" && (latest == "" || ts > latest)) latest = ts
 }
 
 function get_jp(name) {
@@ -203,7 +207,7 @@ declare -A _allowed_keys=(
     [TOTAL]=1 [DRAFTS]=1 [REPORTS]=1 [APPROVE]=1 [LGTM]=1
     [REQ_CHANGES]=1 [FAIL]=1 [GATE_CLEAR]=1 [GATE_FAIL]=1
     [GATE_NULL]=1 [GATE_KNOWN]=1 [ACCURACY]=1 [GATE_NULL_PCT]=1
-    [BC_FLAG]=1 [EARLIEST]=1 [NINJA_WEAK]=1 [NINJA_HIGH]=1
+    [BC_FLAG]=1 [EARLIEST]=1 [LATEST]=1 [NINJA_WEAK]=1 [NINJA_HIGH]=1
 )
 while IFS='=' read -r key value; do
     [[ -z "$key" || -z "${_allowed_keys[$key]+x}" ]] && continue
@@ -211,7 +215,7 @@ while IFS='=' read -r key value; do
 done <<< "$STATS"
 
 # --- Step 4: Build replacement header lines ---
-total_line="# 累計: ${TOTAL}件 (draft:${DRAFTS}, report:${REPORTS}) | ${EARLIEST}〜"
+total_line="# 累計: ${TOTAL}件 (draft:${DRAFTS}, report:${REPORTS}) | ${EARLIEST}〜${LATEST}"
 
 if [[ $ACCURACY -ge 0 ]]; then
     accuracy_line="# accuracy: gate_result判明分 ${ACCURACY}% (${GATE_CLEAR}/${GATE_KNOWN} CLEAR, ${GATE_FAIL} FAIL)"
