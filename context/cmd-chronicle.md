@@ -845,3 +845,4 @@
 | cmd_2273 | cmd_complete_gate.shに4つの新検証を追加し、忍者のscope逸脱・レビュー陳腐化・部分完了・修正暴走を構造的に検出する。cmd_2271事故(scope外174行改変)の再発防止。 | infra | 04-25 | cmd_complete_gate.shに4新検証(scop |
 | cmd_2274 | CDP計測結果にbaseline比較・回帰閾値判定・health score算出を追加。deploy後の性能変化を自動検出し、Phase毎の改善効果を数値で追跡可能にする。 | infra | 04-25 | scripts/cdp/cdp_benchmark.py(. |
 | cmd_2275 | 教訓管理の陳腐化検出(Prune)、プロジェクト横断教訓検索、deploy再実行の冪等性、差分テストの4機能を追加。教訓品質と配備効率に複利で効く。 | infra | 04-25 | AC1: ~/.claude/skills/dream/SK |
+| cmd_2276 | deploy_task.shの教訓注入がtarget_pathベースのタグマッチのみでCDP教訓が0件注入された事故(cmd_2271)の根因修正。purpose/command/context_filesのキーワードも加味し、タスク内容に関連する教訓を正しくルーティングする。 | infra | 04-25 | FILL_THIS |
