@@ -4073,3 +4073,18 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: karo
 - **tags**: [infra,git]
 - multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --only担当pathでcommit treeを固定し担当外ファイルの混入を防げ。cmd_2278でhayateが4ファイルcommit(担当2ファイル)した実証あり。
+
+### L531: warn_missing_prev_cmd_lesson()はCLEAR直後リマインドにならない。CLEARパス内(L3096直後)への別挿入が必要
+- **日付**: 2026-04-25
+- **出典**: cmd_2282
+- **記録者**: hanzo
+- **status**: draft
+- **tags**: [infra,gate,lesson]
+- 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマインドしない=意志依存。CLEARリマインドはL3086 CLEAR判定ブロック内(L3096直後)でcount_cmd_save_blocks_for_cmd(CMD_ID)を呼びBLOCK回数>0かつ教訓未記録ならREMIND出力する新処理が必要。
+
+### L532: warn_missing_prev_cmd_lessonはCLEAR直後リマインドにならない
+- **日付**: 2026-04-25
+- **出典**: cmd_2282
+- **記録者**: karo
+- **tags**: [infra,gate,lesson]
+- 現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしない=意志依存。CLEARリマインドはL3086 CLEAR判定ブロック内L3096直後でcount_cmd_save_blocks_for_cmdを呼びBLOCK回数>0かつ教訓未記録ならREMIND出力する新処理が必要。

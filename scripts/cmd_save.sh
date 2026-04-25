@@ -898,6 +898,22 @@ print(count)
 PY
 }
 
+cmd_save_shogun_lesson_exists_for_cmd() {
+    local source_cmd_id="${1:-}"
+    [[ -n "$source_cmd_id" && -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || return 1
+
+    # v1形式: source_cmd: cmd_XXXX
+    if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        return 0
+    fi
+    # v2形式: source_cmdがなくても、detail/enforcement等でcmd_idに言及されていれば記録済みとみなす
+    if grep -qF "${source_cmd_id}" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
 warn_missing_prev_cmd_lesson() {
     [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]] || return 0
 
@@ -909,22 +925,23 @@ warn_missing_prev_cmd_lesson() {
     [[ "$prev_block_count" =~ ^[0-9]+$ ]] || prev_block_count=0
     (( prev_block_count > 0 )) || return 0
 
-    if [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]]; then
-        # v1形式: source_cmd: cmd_XXXX
-        if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${prev_cmd_id}['\"]?" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
-            return 0
-        fi
-        # v2形式: source_ids: [..., LSXXX, ...] — prev_cmd_idがsource_idsの近辺にある場合
-        # v2ではsource_cmdがないが、LS統合後にLS-A*として存在する
-        # prev_cmd_idがlesson本文のdetailやenforcement内に言及されていれば記録済みと判定
-        if grep -qF "${prev_cmd_id}" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
-            return 0
-        fi
-    fi
+    cmd_save_shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
     warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
     echo "WARN: ${warn_msg}" >&2
     record_warn_reason "$warn_msg" "missing_prev_cmd_lesson" "source_cmd=${prev_cmd_id}" "check=warn_missing_prev_cmd_lesson"
+}
+
+remind_missing_current_cmd_lesson_after_clear() {
+    local current_block_count remind_msg
+    current_block_count="$(count_cmd_save_blocks_for_cmd "$CMD_ID")"
+    [[ "$current_block_count" =~ ^[0-9]+$ ]] || current_block_count=0
+    (( current_block_count > 0 )) || return 0
+
+    cmd_save_shogun_lesson_exists_for_cmd "$CMD_ID" && return 0
+
+    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+    echo "REMIND: ${remind_msg}" >&2
 }
 
 handle_cmd_save_exit() {
@@ -3094,6 +3111,7 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     fi
     # 前回cmd_id記録（次回呼出し時のpending昇格チェック用 — Check 1.6）
     echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
+    remind_missing_current_cmd_lesson_after_clear
 else
     if [[ "$BLOCK_COUNT" -gt 0 ]]; then
         echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
