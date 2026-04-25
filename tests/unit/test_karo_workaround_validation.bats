@@ -216,3 +216,46 @@ teardown() {
     [[ "$output" == *"environment_change未実装"* ]]
     [[ "$output" == *"DOES_NOT_EXIST_2185"* ]]
 }
+
+@test "legacy key order: category-first entryも件数集計に含めて3件目でALERT" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- category: report_yaml_format
+  cmd_id: cmd_legacy_1
+  detail: 'legacy'
+  ninja: hayate
+  root_cause: 'legacy root cause'
+  timestamp: '2026-04-25T00:00:00Z'
+  workaround: true
+  resolved_by_cmd: ''
+- cmd_id: cmd_modern_2
+  timestamp: '2026-04-25T00:01:00Z'
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  detail: 'modern'
+  root_cause: 'modern root cause'
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" cmd_test_3 kotaro "third issue" "third root cause" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件"* ]]
+}
+
+@test "legacy key order: --reclassify updates category-first entry" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- category: report_yaml_format
+  cmd_id: cmd_legacy_target
+  detail: 'legacy'
+  ninja: hayate
+  root_cause: 'legacy root cause'
+  timestamp: '2026-04-25T00:00:00Z'
+  workaround: true
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" --reclassify cmd_legacy_target verdict_override
+    [ "$status" -eq 0 ]
+    run grep -n "^- category: verdict_override$" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}

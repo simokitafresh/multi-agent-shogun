@@ -28,9 +28,50 @@ if [[ "${1:-}" == "--reclassify" ]]; then
         flock -w 10 200 || { echo "[reclassify] Error: lock" >&2; exit 1; }
         TMPFILE=$(mktemp)
         awk -v pat="$PATTERN" -v newcat="$NEW_CAT" '
-        /^- (cmd_id|cmd):/ { pending=0; if ($0 ~ pat) pending=1 }
-        pending && /^  category:/ { print "  category: " newcat; pending=0; next }
-        { print }
+        function trim_scalar(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            if (value ~ /^'\''.*'\''$/ || value ~ /^".*"$/) {
+                value = substr(value, 2, length(value) - 2)
+            }
+            return value
+        }
+        function reset_entry() {
+            delete entry_lines
+            entry_len = 0
+            entry_cmd = ""
+        }
+        function flush_entry(    idx, line, matches, replaced) {
+            if (entry_len == 0) return
+            matches = (entry_cmd != "" && entry_cmd ~ pat)
+            replaced = 0
+            for (idx = 1; idx <= entry_len; idx++) {
+                line = entry_lines[idx]
+                if (matches && !replaced && line ~ /^- category:[[:space:]]*/) {
+                    print "- category: " newcat
+                    replaced = 1
+                    continue
+                }
+                if (matches && !replaced && line ~ /^  category:[[:space:]]*/) {
+                    print "  category: " newcat
+                    replaced = 1
+                    continue
+                }
+                print line
+            }
+            reset_entry()
+        }
+        /^- [A-Za-z0-9_]+:[[:space:]]*/ {
+            flush_entry()
+        }
+        {
+            entry_lines[++entry_len] = $0
+            if ($0 ~ /^(-|  )cmd(_id)?:[[:space:]]*/) {
+                value = $0
+                sub(/^(-|  )cmd(_id)?:[[:space:]]*/, "", value)
+                entry_cmd = trim_scalar(value)
+            }
+        }
+        END { flush_entry() }
         ' "$LOG_FILE" > "$TMPFILE"
         mv "$TMPFILE" "$LOG_FILE"
         echo "[reclassify] Updated entries matching '$PATTERN' → category: $NEW_CAT"
@@ -42,7 +83,7 @@ fi
 if [[ "${1:-}" == "--normalize" ]]; then
     (
         flock -w 10 200 || { echo "[normalize] Error: lock" >&2; exit 1; }
-        BEFORE=$(grep -c "^- cmd: " "$LOG_FILE" 2>/dev/null || echo 0)
+        BEFORE=$(awk 'BEGIN { count = 0 } /^- cmd: / { count++ } END { print count + 0 }' "$LOG_FILE" 2>/dev/null)
         if [[ "$BEFORE" -gt 0 ]]; then
             TMPFILE=$(mktemp)
             sed "s/^- cmd: /- cmd_id: /" "$LOG_FILE" > "$TMPFILE"
@@ -268,18 +309,38 @@ count_category_entries() {
         return
     fi
     awk -v target="$category" '
-    /^- (cmd_id|timestamp):/ {
-        if (n > 0 && cat == target && is_wa && !resolved) count++
-        n++; cat=""; resolved=0; is_wa=0
+    function trim_scalar(value) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+        if (value ~ /^'\''.*'\''$/ || value ~ /^".*"$/) {
+            value = substr(value, 2, length(value) - 2)
+        }
+        return value
     }
-    /^  workaround: true/ { is_wa=1 }
-    /^  category:/ { sub(/^  category: */, ""); gsub(/["'"'"' ]/, "", $0); cat=$0 }
-    /^  resolved_by_cmd:/ {
-        v=$0; sub(/^  resolved_by_cmd: */, "", v); gsub(/["'"'"' ]/, "", v)
-        if (v != "") resolved=1
+    function flush_entry() {
+        if (entry_started && cat == target && is_wa && !resolved) count++
+        cat = ""
+        resolved = 0
+        is_wa = 0
+        entry_started = 0
+    }
+    function apply_field(key, value) {
+        value = trim_scalar(value)
+        if (key == "workaround" && value == "true") is_wa = 1
+        else if (key == "category") cat = value
+        else if (key == "resolved_by_cmd" && value != "") resolved = 1
+    }
+    match($0, /^- ([A-Za-z0-9_]+):[[:space:]]*(.*)$/, m) {
+        flush_entry()
+        entry_started = 1
+        apply_field(m[1], m[2])
+        next
+    }
+    match($0, /^  ([A-Za-z0-9_]+):[[:space:]]*(.*)$/, m) {
+        if (entry_started) apply_field(m[1], m[2])
+        next
     }
     END {
-        if (n > 0 && cat == target && is_wa && !resolved) count++
+        flush_entry()
         print count+0
     }
     ' "$LOG_FILE"
