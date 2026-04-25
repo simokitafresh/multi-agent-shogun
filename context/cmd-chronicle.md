@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-25 -->
+<!-- last_updated: 2026-04-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,12 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1398 | — | dm-signal | 03-26 | 全65 active standard PF ALL PASS (hs=完全一致, ret=完全一致)。シン四神v2 12体+既存53 PF全てパリティ検証完了 |
-| cmd_1399 | — | dm-signal | 03-26 | シン忍法v2 20体パリティ検証完了。PASS=2体、FAIL=18体。18体のFAILは全てL485既知パターン（初月hs_cross不一致のみ）。構造的FA |
-| cmd_1400 | — | infra | 03-26 | AgentsViewModel.kt L115の capture-pane -S パラメータを -50 から -500 に変更。assembleDebug BU |
-| cmd_1401 | — | infra | 03-26 | RateLimitContentパース全null時rawTextフォールバック表示追加+execRateLimitCheck SSH空結果1回リトライ追加。ビル |
-| cmd_1402 | — | infra | 03-26 | VoiceDictionarySection.ktをAnimatedVisibilityでアコーディオン化(デフォルト折りたたみ、タップ展開)。Constant |
-| cmd_1403 | — | infra | 03-26 | Androidアプリからntfy通知機能を完全削除。3ファイル削除(NtfyService.kt/NotificationHelper.kt/NtfySetti |
 | cmd_1414 | Auto-dreamを超える5 Phase Memory Consolidation。殿の原理(タイムスタンプ=因果推論/免疫系=進化)を実装。12システム調査の車輪(Zep二重タイムスタンプ/Audrey矛盾管理/Mnemosyne秒精度)を統合。Phase | infra | 03-27 | Dream-skill SKILL.md作成完了。設計書§2の全文を~/.claude/skills/dream/SKILL.mdに忠実配置。232行。diff |
 | cmd_1077 | シン四神・シン忍法の本番DB登録手順書を作成し、忍者が即実行できる状態にする | dm-signal | 03-27 | — |
 | cmd_1078 | シン玄武(DM7+)をXLU固定でPhase 3+Phase 4やり直し。DNA準拠の4体を再選定する | dm-signal | 03-27 | — |

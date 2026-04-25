@@ -369,8 +369,18 @@ check_idle() {
                 if _all_subprocesses_long_running "$pane_target"; then
                     log "PSTREE-LONGRUN: ${agent_name} bash subprocess detected but all running >=${PSTREE_LONGRUN_THRESHOLD}s, treating as IDLE"
                 else
-                    log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
-                    return 1
+                    # cmd_2279: task status=idle/completed/doneならbash subprocessがあっても/clearを許可
+                    local _pstree_task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+                    local _pstree_task_status=""
+                    if [ -f "$_pstree_task_file" ]; then
+                        _pstree_task_status=$(yaml_field_get "$_pstree_task_file" "status" 2>/dev/null || true)
+                    fi
+                    if [[ "$_pstree_task_status" =~ ^(idle|completed|done)$ ]]; then
+                        log "PSTREE-OVERRIDE-SKIP: ${agent_name} task.status=${_pstree_task_status}, bash subprocess ignored, treating as IDLE"
+                    else
+                        log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, treating as BUSY"
+                        return 1
+                    fi
                 fi
             fi
             return 0  # IDLE確定（grace period経過）
