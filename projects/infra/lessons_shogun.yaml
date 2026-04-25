@@ -1,6 +1,6 @@
-# 将軍(shogun)教訓 — パターン集約版 (v2)
-# 統合前: 97件/777行(2026-04-15〜24, v1)
-# 統合後: 26件/本ファイル
+# 将軍(shogun)教訓 — パターン集約版 (v3)
+# v2: 21クラスタ+14個別=35件(2026-04-24〜25)
+# v3: 14個別を既存クラスタに吸収→22件(2026-04-25統合)
 # v1全文アーカイブ: docs/research/lessons_shogun_v1_archive.md
 #
 # 読み方:
@@ -35,7 +35,7 @@ lessons:
   source_ids: [LS021, LS022, LS023, LS024, LS026]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処。殿との口頭対話はgate外(殿判断機会保護)'
+  enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処'
 
 - id: LS-A03
   title: 前提切替原則 — PJ切替・方向転換・新検証で古い前提をリセット
@@ -50,7 +50,7 @@ lessons:
 
 # === クラスタ3: cmd_save.sh BLOCK対応 ===
 - id: LS-A04
-  title: cmdテンプレートルール — バンドルFP回避+AC設計
+  title: cmdテンプレートルール — バンドルFP回避+AC設計+書き方是正
   detail: |
     (1)command内にスクリプトフルパスを書かない(引数のみ)
     (2)target_pathは出力ディレクトリに設定(スクリプトパスと重複回避)
@@ -58,19 +58,26 @@ lessons:
     (4)1本ずつ昇格→委任→次(同時pendingでBLOCK)
     (5)AC条件はworktree状態と照合(dirty worktree衝突回避)
     (6)CoDDのACにimplementを入れるな(準備と実装は別cmd)
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097]
-  created_at: '2026-04-24'
+    (7)environment_changeは自cmdの成果物を参照先にしない(未存在でBLOCK。既存教訓を参照)
+    (8)quality_gate拡張フィールド(q4-q11+diagnosis)全記入。省略→WARN累計昇格
+    (9)q8は3部構成(WHY→WHAT→複利)。複利の問い忘れ→WARN
+    (10)assumptions claimは末尾に「(確認日: YYYY-MM-DD)」独立パターン
+    (11)claim内にファイル名を書くな。「何を確認したか」だけ書け
+    (12)commandはターゲットファイル単位でグループ化(番号付きステップ列挙→command_steps_over_ac発火)
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS026, LS030, LS032, LS033, LS034, LS035, LS036]
+  created_at: '2026-04-25'
   automated: true
-  enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証GP-216)+Check 2.5(draft複数BLOCK)'
+  enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac'
 
 - id: LS-A05
   title: 遡及学習対応 — BLOCKされたら修正より先にlesson_write
   detail: |
     教訓記録を後回しにすると遡及学習のWARN累計昇格で後続全cmdが汚染される。
     連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
+    緊急対応モードでもgate形式フィールドを省略するな(cmd_2259事故)。
     これは成長ループの正しい動作。教訓記録先送りが問題。
-  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092]
-  created_at: '2026-04-24'
+  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092, LS029]
+  created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCK表示+WARN累計昇格でBLOCK化。自動強制)'
 
@@ -83,7 +90,7 @@ lessons:
   source_ids: [LS044, LS078, LS083, LS096]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制(構造化type/file/pattern+grep検証)'
+  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制'
 
 # === クラスタ4: gate迂回・先走り ===
 - id: LS-A07
@@ -96,7 +103,7 @@ lessons:
   source_ids: [LS049, LS050, LS051, LS052]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+LS040(inbox_write cmd_new guard)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)'
+  enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)'
 
 - id: LS-A08
   title: 殿の指示範囲厳守 — 近道を最後にする、100億回従う
@@ -107,11 +114,11 @@ lessons:
   source_ids: [LS053, LS054, LS055]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。自動化困難(将軍の衝動は意志依存)だが追体験で構造的に自問強制'
+  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。追体験で構造的に自問強制'
 
 # === クラスタ5: 想像するな確認せよ ===
 - id: LS-A09
-  title: 現物確認必須 — 定義/パス/データ/DB/掲示板/過去対話
+  title: 現物確認必須 — 定義/パス/データ/DB/掲示板/過去対話/PI全量照合
   detail: |
     (1)殿の固有名詞→本番コードの定義箇所まで降りる
     (2)「未実装」「未対応」→grep/git showで反証を探す
@@ -119,8 +126,9 @@ lessons:
     (4)掲示板/過去対話の「未完了」→現在も未完了かls/grepで確認
     (5)パイプライン系cmdは全レイヤーの入出力を現物確認
     (6)金融データは遡及的に変わる。過去データ不変の暗黙前提禁止
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085]
-  created_at: '2026-04-24'
+    (7)技術的可能≠ビジネス制約クリア。PI全量照合して禁止制約確認してからcmd起票(cmd_2258 PI-024事故)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS028]
+  created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)'
 
@@ -136,15 +144,12 @@ lessons:
   enforcement: '設計書§4.1に計測環境注意追記済み。偵察cmdは計測環境をACに明記'
 
 # === クラスタ6: 独立パターン ===
-
-# --- infra修正 ---
 - id: LS-A11
   title: infra修正実績 — バグはenforcement(hook/gate)で修正済み
   detail: |
     CDP 403=auto-ops launch_browser(非headless)。inbox盲点=PostToolUse hook。
     watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
     復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
-    各バグの詳細はv1アーカイブ(LS032/033/037/074/084/086/087)参照。
   source_ids: [LS032, LS033, LS037, LS074, LS084, LS086, LS087]
   created_at: '2026-04-24'
   automated: true
@@ -159,9 +164,8 @@ lessons:
   source_ids: [LS040]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序。6パターンテスト全PASS'
+  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序'
 
-# --- cmd設計 ---
 - id: LS-A13
   title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
   detail: |
@@ -182,7 +186,6 @@ lessons:
   automated: true
   enforcement: 'なぜなぜ7回で特定。将軍の自問に依存。次の自動化ターゲット候補'
 
-# --- 研究道具 ---
 - id: LS-A15
   title: 研究道具制約 — 研究≠本番、GS OOM防止は1忍法1CMD
   detail: |
@@ -192,21 +195,21 @@ lessons:
   source_ids: [LS011, LS058]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)+MCP L-ResearchVsProduction+memory/feedback_gs_oom_single_cmd.md'
+  enforcement: 'pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)+MCP L-ResearchVsProduction'
 
-# --- 本番DB ---
 - id: LS-A16
-  title: 本番パリティ必須 — DB変更後即確認、verify FAIL→修正が先
+  title: 本番パリティ必須 — DB変更後即確認+3レイヤー貫通+savepoint
   detail: |
     DB変更→即fullrecalculate/差分確認。後回し禁止。
     pipeline_config欠落=全滅事故(cmd_1082)。ACにcritical field確認を列挙。
     verify FAILしたらバグ修正が先。--skip-verifyは禁じ手。
-  source_ids: [LS010, LS016, LS063]
-  created_at: '2026-04-24'
+    precompute rollback巻き添え→savepoint(begin_nested)で範囲限定(cmd_2254)。
+    本番確認は3レイヤー貫通: DB(データ存在)+API(BEが返すか)+FE(ユーザーに届くか)(cmd_2255)。
+  source_ids: [LS010, LS016, LS063, LS024, LS025]
+  created_at: '2026-04-25'
   automated: true
-  enforcement: 'context/checklist-shin-v2-registration.md+checklist-alm-registration.md+PI-007(pipeline_config必須)'
+  enforcement: 'checklist-shin-v2-registration.md+checklist-alm-registration.md+PI-007+PI-025(begin_nested)+health_check.py'
 
-# --- 成長ループ ---
 - id: LS-A17
   title: 成長ループ実装 — CoDD L3→Session State、忍者=矛盾を書けない構造
   detail: |
@@ -218,20 +221,17 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md'
 
-# --- 計測/読み方 ---
 - id: LS-A18
   title: 計測されていないものは改善ループが回らない
   detail: |
     Karpathy Simplicity: 計測カテゴリ不在=見えていない=改善不能。
     結論鵜呑み=忖度構造。全員が「確認する」を徹底するだけで解決。
     WARNスルー事故: 品質WARNと形式WARNの混在→全WARNオプショナル化を招く。
-    80行ルール: LLM Lost-in-the-Middle対策(CLAUDE.md File Reading Rule)。
   source_ids: [LS042, LS043, LS046, LS075]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh L551(q5 BLOCK昇格)+L1553(AC数量BLOCK昇格)+CLAUDE.md File Reading Rule+GP-211(stop hook結論突合)'
 
-# --- 原理系 ---
 - id: LS-A19
   title: 原理3則 — 車輪/各論パッチ/無知の知
   detail: |
@@ -243,7 +243,6 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh q11(BLOCK)+q5(BLOCK)+q10(WARNING)+MCP L-FactOnly+gunshi review因果推論ルール LG023'
 
-# --- 独立維持 ---
 - id: LS-A20
   title: 因果チェーン — cmd配備→実装→報告の因果を追え
   detail: 現象単位で止めず、入力・変換・出力の連鎖で問題を見る。どこに防御層を置くか決める。
@@ -262,101 +261,18 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'gate_shogun_startup.sh「自走チェック」+instructions/shogun.md §14 idle自己分析'
-- id: 'LS023'
-  title: 'cmd_2252 BLOCK — LS066再発(environment_change参照先未存在)'
-  detail: 'cmd_2252のenvironment_changeが自cmdで実装予定のcmd_save.sh変更を参照先にしたためBLOCK。LS066と同構造: 自cmdが作成するファイル/変更を参照先にすると未存在でBLOCK。既存教訓ファイルに参照先を変更して解決。'
-  source_cmd: 'cmd_2252'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'LS066 enforcement(既存)。追加enforcement不要'
-- id: 'LS024'
-  title: 'precompute rollback巻き添え — savepoint化で範囲限定'
-  detail: 'recalculate_fast.py L2790のdb.rollback()がprecompute例外時にトランザクション全体を巻き戻し、直前commitのFoF MonthlyReturnを消失させた(2026-04-24殿発見)。db.begin_nested()(savepoint)でrollback範囲を当該portfolio限定にする修正(cmd_2254)。手動MR生成は永続化確認済みだがsync-fofパイプラインでは消失。'
-  source_cmd: 'cmd_2254'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_2254でdb.begin_nested()化実装。recalculate_fast.py L2719-2797'
-- id: 'LS025'
-  title: '本番確認は3レイヤー貫通(DB→API→FE)'
-  detail: 'cmd_2254調査でDBにFoF MR有→API 0件を検出できず。DB確認のみでは正常と誤判断する穴がある。DB(データ存在)+API(BEが返すか)+FE(ユーザーに届くか)の3レイヤー確認が必要。health_check.pyで標準化(cmd_2255)'
-  source_cmd: 'cmd_2255'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_2255でhealth_check.py実装'
-- id: 'LS026'
-  title: 'quality_gate拡張フィールド全記入'
-  detail: 'cmd起票時にq1-q3だけでなくq4_depth/q5_verified_source/q6_not_hiding/q7_definition_verified/q8_why_what/q10_knowledge_boundary/q11_not_already_done/q_ambiguity/diagnosisを全て記入せよ。cmd_save.shが全件チェックしWARN累計昇格でBLOCKする。LS-A04の補完。'
-  source_cmd: 'cmd_2256'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_save.sh quality_gate全フィールドチェック(自動強制)'
-- id: 'LS027'
-  title: 'q11 FP累計昇格 — is_gate_or_hook_addition_cmdがcommand本文のgateキーワードで誤発火'
-  detail: 'cmd_2257で偵察cmdがgate/hook追加と誤分類されq11 WARN累計昇格でBLOCK。根因: is_gate_or_hook_addition_cmd()がtitle/purposeだけでなくcommand本文全体をgrepし、quality_gateの説明文中のgateやcodd設計書生成の作成にマッチ。対処: q11にgrep確認結果+既存代替キーワードを明示して通過。根本修正: scope_mode=SCOUTを除外条件に追加するcmd(未起票)。'
-  source_cmd: 'cmd_2257'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_save.sh is_gate_or_hook_addition_cmd L108-126。scope_mode=SCOUT除外は未実装'
-- id: 'LS028'
-  title: 'PI-024(差分計算禁止)抵触 — 技術的可能をビジネス制約無視でやってよいにすり替えた'
-  detail: 'cmd_2258でFoF増分計算化を起票。設計書§3.3の技術的可能(全状態DB復元可能)をやってよいにすり替え、PI-024(殿厳命2026-04-22: 差分計算禁止)を見落とした。cmd_save.shはPI番号衝突(PI-015)を検出したがPI-024は検出せず(cmdにPI-024キーワードなし)。教訓: cmdの技術的実現性を検討する前に、PI全量を照合して禁止制約を確認せよ。'
-  source_cmd: 'cmd_2258'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_save.sh PI番号衝突検出(部分対応)。PI全量照合は未自動化=次の自動化ターゲット'
-- id: 'LS029'
-  title: 'cmd_2259 BLOCK — PI-024抵触後の起票でgate形式WARN累積'
-  detail: 'cmd_2258でPI-024抵触→HALT→方針修正→cmd_2259起票。cmd_save.shでq8複利の問い/q11既存代替確認/assumptions日付の3種WARNが累積昇格。原因: 緊急対応モードでgate形式フィールドを省略した。緊急時も形式は省略するな'
-  source_cmd: 'cmd_2259'
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'cmd_save.sh WARN累計昇格(自動強制)'
-- id: 'LS030'
-  title: 'q8は3部構成(WHY→WHAT→複利)で書け'
-  detail: 'q8をWHY→WHATの2部で書き終えて複利の問いを忘れる。2回目WARN累計昇格。根因: q8フィールドに「複利」という単語を含め忘れる。対策: q8を書いたら最後に「→複利: この実装選択を10回繰り返したら正の複利か負の複利か」を必ず追記。検出条件(L1234): q8内に「複利」or「compound」がなければWARN'
-  source_cmd: 'cmd_2262'
+
+- id: LS-A22
+  title: gate FPパターン — q11 SCOUT偽陽性+設計書数値緩和FP
+  detail: |
+    (1)is_gate_or_hook_addition_cmd()がcommand本文全体をgrepし、quality_gate説明文中の
+    gateキーワードで偵察cmdをgate追加cmdと誤判定。scope_mode=SCOUT除外が未実装。
+    暫定: q11にgrep確認結果を詳細記載して通過。
+    実装済み(cmd_2279): is_gate_or_hook_addition_cmd() L120でSCOUT/scout_exempt除外実装済み確認。
+    (2)check_gunshi_reference_numeric_relaxationがカタログ由来の閾値を数値緩和と誤検出。
+    暫定: ACから具体数値を除去しカタログ参照に変える。
+    実装済み(cmd_2279): check_gunshi_design_num_relax() q5にカタログ|catalog|takeaway-catalog含む場合スキップ追加。
+  source_ids: [LS027, LS031]
   created_at: '2026-04-25'
   automated: true
-  enforcement: 'cmd_save.sh L1234 q8_compound検出(既存自動)。将軍の書き方を是正するだけ'
-- id: 'LS031'
-  title: 'q11 SCOUT偽陽性 — scope_mode=SCOUTはgate/hook追加ではない'
-  detail: 'is_gate_or_hook_addition_cmd()がcommand本文全体をgrepし、quality_gate説明文中の''gate''にマッチして偵察cmdをgate追加cmdと誤判定(LS027と同根)。9回累計昇格。根因: scope_mode=SCOUTの除外条件が未実装(L1447)。暫定対策: q11に既存代替のgrep確認結果を詳細記載して通過。根本修正: is_gate_or_hook_addition_cmdにscope_mode=SCOUT除外を追加するcmd起票'
-  source_cmd: 'cmd_2262'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh L1447 is_gate_or_hook_addition_cmd(既存)。scope_mode=SCOUT除外は未実装=次の自動化ターゲット'
-- id: 'LS032'
-  title: 'assumptions claimは独立行にYYYY-MM-DD日付を明記'
-  detail: 'claim内に日付を埋め込んでいるが日本語文中(2026-04-25確認済み)だとgateの正規表現が検出できない場合がある。4回累計昇格。対策: 各claim行の末尾に「(確認日: YYYY-MM-DD)」の形式で独立パターンとして日付を記載'
-  source_cmd: 'cmd_2262'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh L2875 assumptions_claim_date検出(既存自動)。将軍の書き方を是正するだけ'
-- id: 'LS033'
-  title: 'claim内ファイル名パス検索BLOCK 3連発 — claimからファイル名を完全排除せよ'
-  detail: 'cmd_2262/2264/2265で3連続同じBLOCK。claim内のファイル名(*.json/*.sh)がcmd_save.shのassumptions source検証でPJパス内検索に引っかかる。LS032記録済みだが将軍の行動が変わっていない。根因: claimにファイル名を含める習慣。対策: claimには「何を確認したか」だけ書き、ファイル名はcommand欄に書け'
-  source_cmd: 'cmd_2265'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh assumptions sourceパス検証(既存自動)。将軍の書き方是正'
-- id: 'LS034'
-  title: 'cmd_2264/2268/2269 BLOCK — claim除外+other_draft+q8縮小表現+environment_change(根本修正済み)'
-  detail: 'claim内ファイル名=6428f9d6で根本修正。other_draft=1本ずつ処理。q8縮小表現=のみ/だけを避ける。environment_change=新規作成ファイルは既存lessonsを参照'
-  source_cmd: 'cmd_2269'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh assumptions sourceパス検証(既存自動)+LS033'
-- id: 'LS035'
-  title: 'command_steps_over_ac — commandはターゲットファイル単位で構成せよ'
-  detail: 'commandを番号付きステップで列挙するとcommand_steps_over_acが発火する。ACと1:1対応させるにはターゲットファイル単位(gunshi.md/ashigaru.md/template等)でグループ化して記載する。番号付き15ステップ→9ファイルグループに再構成で解消。'
-  source_cmd: 'cmd_2272'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh command_steps_over_ac検出(既存自動)。将軍の書き方是正'
-- id: 'LS036'
-  title: 'environment_change自cmd参照BLOCK再発(LS023)'
-  detail: 'cmd_2273でenvironment_changeにtype=gate;file=cmd_complete_gate.sh;pattern=check_scope_driftと書いたが、これは自cmdが実装する関数であり未存在でBLOCK。LS023と同構造。対策: environment_changeは前cmdのBLOCKで記録した既存教訓を参照先にする。自cmdの成果物は参照先にしない。'
-  source_cmd: 'cmd_2273'
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh environment_change grep検証(既存自動)。将軍の書き方是正(LS023と同根)'
+  enforcement: 'cmd_save.sh is_gate_or_hook_addition_cmd(既存)。SCOUT除外実装済み(L120)。カタログ閾値除外実装済み(cmd_2279 check_gunshi_design_num_relax)'

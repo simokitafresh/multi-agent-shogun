@@ -2542,6 +2542,12 @@ check_gunshi_design_num_relax() {
         return 0
     fi
 
+    # カタログ参照除外: q5にカタログ|catalog|takeaway-catalogが含まれる場合スキップ（LS-A22 cmd_2279）
+    # 理由: カタログ由来の閾値は設計書数値でなく分類基準→緩和と誤検出される
+    if echo "$Q5_VAL" | grep -qiE 'カタログ|catalog|takeaway-catalog'; then
+        return 0
+    fi
+
     # q8_why_whatの存在確認（なければ上のBLOCKで終了済み）
     local Q8_LINE
     Q8_LINE="$(cmd_block_get_field "quality_gate.q8_why_what")"
