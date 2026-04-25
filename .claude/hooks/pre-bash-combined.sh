@@ -320,7 +320,8 @@ def check_main_branch_protection(tokens, full_cmd):
     # If in project tree, allow (infra repo uses main branch directly)
     if effective == project_root or effective.startswith(project_root + os.sep):
         return ""
-    # Check task YAML for push_allowed: true (karo sets this for measurement cmds)
+    # Allow shogun/karo/gunshi to push to external repos (they have judgment authority)
+    # Ninja push requires push_allowed: true in task YAML (karo sets per-cmd)
     try:
         tmux_pane = os.environ.get("TMUX_PANE", "")
         if tmux_pane:
@@ -328,6 +329,8 @@ def check_main_branch_protection(tokens, full_cmd):
                 ["tmux", "display-message", "-t", tmux_pane, "-p", "#{@agent_id}"],
                 capture_output=True, text=True, timeout=3
             ).stdout.strip()
+            if agent_id in ("shogun", "karo", "gunshi"):
+                return ""
             if agent_id:
                 task_yaml = os.path.join(project_root, "queue", "tasks", f"{agent_id}.yaml")
                 if os.path.isfile(task_yaml):
