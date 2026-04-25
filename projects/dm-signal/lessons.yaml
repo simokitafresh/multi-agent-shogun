@@ -1615,7 +1615,7 @@ lessons:
   tags:
   - universal
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 1
   last_referenced: '2026-04-22'
   target_files:
   - scripts/registration/register_shin_shijin_l1.py
@@ -2136,7 +2136,7 @@ lessons:
   - process
   - production_invariant
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-25'
   target_files:
   - outputs/analysis/cmd_1106_parity_analysis.csv
@@ -2220,7 +2220,7 @@ lessons:
   tags:
   - pipeline
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-25'
   target_files:
   - outputs/analysis/cmd_1091_pf_health.csv
@@ -3411,7 +3411,7 @@ lessons:
   tags:
   - universal
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-25'
 - id: L286
   title: ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置
@@ -3448,7 +3448,7 @@ lessons:
   - recon
   - gate
   helpful_count: 1
-  harmful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-25'
 - id: L281
   title: レバレッジETF fat tails(尖度5-8)は正規性仮定の全統計手法でリスク。t分布 or ノンパラメトリック手法を優先すべき
@@ -3474,8 +3474,8 @@ lessons:
   - frontend
   - monitor
   helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-04-22'
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L277
   title: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する
   summary: Deterioration Monitorのhistory UIは、batchがcurrent monthしかUPSERTしない状態ではhistory
@@ -3543,7 +3543,7 @@ lessons:
   - db
   - api
   helpful_count: 1
-  harmful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-25'
 - id: L268
   title: managed DBではpool_pre_ping=True必須。workerごと独立キャッシュはヒット率低下する
@@ -3590,7 +3590,7 @@ lessons:
   - frontend
   helpful_count: 0
   harmful_count: 1
-  last_referenced: '2026-04-22'
+  last_referenced: '2026-04-25'
   target_files:
   - frontend/src/
   - backend/app/
@@ -3727,7 +3727,7 @@ lessons:
   deprecated_at: '2026-04-25T20:03:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE: harmful=5 > helpful=3'
   helpful_count: 3
-  harmful_count: 5
+  harmful_count: 6
   last_referenced: '2026-04-25'
 - id: L245
   title: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ
@@ -4047,6 +4047,9 @@ lessons:
   tags:
   - deploy
   - testing
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L206
   title: prefetchキャッシュキー不一致はprefetch戦略の致命的バグ
   summary: 'prefetchと消費側でAPIパラメータ(years等)が一致しないとキャッシュが永久ミスする。 usePrefetch.ts: years=3,20
@@ -4733,6 +4736,9 @@ lessons:
   summary: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最
   tags:
   - universal
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-25'
 - id: L113
   title: ターゲット再定義は予測タスクの性質を変えるがSNR限界は克服しない
   summary: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawd

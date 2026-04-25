@@ -87,6 +87,23 @@ YAML
     } > "$TEST_QUALITY_LOG"
 }
 
+write_quality_log_with_current_blocks() {
+    local count="${1:-2}"
+    {
+        echo "entries:"
+        i=1
+        while [ "$i" -le "$count" ]; do
+            cat <<YAML
+  - cmd_id: cmd_curr
+    gate_result: BLOCK
+    source: cmd_save
+    notes: "current_missing_field_$i"
+YAML
+            i=$((i + 1))
+        done
+    } > "$TEST_QUALITY_LOG"
+}
+
 write_lessons_file() {
     local source_cmd="${1:-}"
     cat > "$TEST_LESSONS" <<YAML
@@ -176,4 +193,33 @@ run_save() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN: 前cmd_prev2で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" != *"WARN累計昇格"* ]]
+}
+
+@test "AC1: CLEAR時に現cmd BLOCK履歴あり + 教訓未記録 → REMIND表示して通過" {
+    write_cmd_queue "cmd_prev" "type=gate; file=scripts/cmd_save.sh; pattern=remind_missing_current_cmd_lesson_after_clear"
+    printf '%s\n' "cmd_curr" > "$TEST_LAST_CMD"
+    write_quality_log_with_current_blocks 2
+    write_lessons_file "cmd_other"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_curr"* ]]
+    [[ "$output" == *"REMIND: cmd_currで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+}
+
+@test "AC2: CLEAR時に現cmd BLOCK履歴あり + 教訓記録済み → REMINDなし" {
+    write_cmd_queue "cmd_prev" "type=gate; file=scripts/cmd_save.sh; pattern=remind_missing_current_cmd_lesson_after_clear"
+    printf '%s\n' "cmd_curr" > "$TEST_LAST_CMD"
+    write_quality_log_with_current_blocks 1
+    write_lessons_file "cmd_curr"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_curr"* ]]
+    [[ "$output" != *"REMIND:"* ]]
+    [[ "$output" != *"教訓未記録"* ]]
 }

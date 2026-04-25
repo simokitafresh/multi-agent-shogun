@@ -850,4 +850,5 @@
 | cmd_2278 | 強化 — GStack知見Round 3: L工数4項目(Deploy後監視/check-resolvable/routing-eval/ハイブリッド検索) | infra | 04-25 | AC1 cdp_canary.sh と AC4 hybrid |
 | cmd_2279 | 修正 — cmd_save.sh check_gunshi_design_num_relax カタログ参照FP除外 | infra | 04-25 | FILL_THIS |
 | cmd_2280 | 強化 — GStack知見Round 2-G2再実施: レビュー系4項目(Adaptive gating/Adversarial review/Scope lock/前提3段階) | infra | 04-25 | FILL_THIS |
-| cmd_2281 | Phase 1-A(FoF display事前計算化, cmd_2267)のdeploy済み本番FEをCDP計測し、cmd_2262ベースラインと速度改善効果を比較。cmd_2268/2271で2回失敗(認証不成立+artifact上書き)の教訓を反映。 | dm-signal | 04-25 | — |
+| cmd_2281 | Phase 1-A(FoF display事前計算化, cmd_2267)のdeploy済み本番FEをCDP計測し、cmd_2262ベースラインと速度改善効果を比較。cmd_2268/2271で2回失敗(認証不成立+artifact上書き)の教訓を反映。 | dm-signal | 04-25 | FILL_THIS |
+| cmd_2282 | BLOCK率50%の最大原因draft_lessons(13件/100件)の根因=教訓登録が意志依存を自動化×強制で解消 | infra | 04-25 | cmd_save.sh 4箇所精査完了。CLEARリマインド |
