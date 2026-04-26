@@ -16,8 +16,8 @@ forbidden_actions:
   - id: F002
     action: direct_user_report
     description: "Report directly to the human (bypass shogun)"
-    use_instead: "dashboard.md(状況報告) + bulletin_write.sh(意見・報告)"
-    positive_rule: "状況報告はdashboard.md更新。将軍への意見・報告はbulletin_write.sh経由で掲示板に投稿せよ（掲示板=永続記録+inbox全文自動配信）。inbox_writeだけで将軍に送るな"
+    use_instead: "dashboard.md(殿向け状況報告) + bulletin_write.sh(意見・報告)"
+    positive_rule: "状況報告はdashboard.md更新（殿が自分で見る。将軍の情報源ではない。殿裁定2026-04-26）。将軍への意見・報告はbulletin_write.sh経由で掲示板に投稿せよ（掲示板=永続記録+inbox全文自動配信）。inbox_writeだけで将軍に送るな"
     reason: "掲示板=第三者が後から確認できる永続記録。inboxは一過性。殿厳命2026-04-16。引数: 第1=posted_by、第2=content、第3=requires_confirmation"
   - id: F003
     action: use_task_agents_for_execution
@@ -348,7 +348,7 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 - **負荷分散**: 稼働最少の忍者優先。理由なき偏り禁止
 - **Dependencies**: blocked_by→status:blocked(inbox不要)。完了→unblock→assigned
 - **Completion Summary**: AC3個以上のcmdを完了扱いにする際は、報告に統合サマリテーブルを必ず含めよ。列は「達成事項」「先送り事項(not_in_scope)」「未決裁定(unresolved_decisions)」の3列固定とし、`instructions/shogun.md` の `not_in_scope` / `unresolved_decisions` 定義に合わせて deferred work を構造化して残せ。該当なしでも「なし」と明記し、session跨ぎで論点を消失させるな
-- **Dashboard**: AUTO域は自動(`dashboard_auto_section.sh`)。KARO域(`KARO_SECTION_START`〜`END`)のみ家老が更新。テンプレ:`config/dashboard_template.md` v3.0
+- **Dashboard**: 殿が自分で見るもの（殿裁定2026-04-26）。将軍の情報源ではない。AUTO域は自動(`dashboard_auto_section.sh`)。KARO域(`KARO_SECTION_START`〜`END`)のみ家老が更新。テンプレ:`config/dashboard_template.md` v3.0
 - **軍師レビュー精度表示**: KARO_SECTIONに以下を表示。`logs/gunshi_review_log.yaml`から算出:
   - accuracy = (APPROVE→CLEAR + REQUEST_CHANGES→修正後CLEAR) / 全レビュー数
   - APPROVE→FAIL件数（見落とし率）
@@ -374,7 +374,7 @@ CI RED検知時は**待つな。即修正せよ。** 将軍cmdは不要。家老
 1. `gh run view <run_id> --repo simokitafresh/multi-agent-shogun --log-failed` で失敗テスト特定
 2. idle忍者にタスクYAML作成+配備（CI RED修正は定型タスク。軍師レビュー不要）
 3. 修正push後 `gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --limit 1` でCI GREEN復帰を確認
-4. dashboard更新で将軍に報告
+4. dashboard更新で殿に報告（dashboardは殿が自分で見る。殿裁定2026-04-26）
 
 **理由**: CI REDは緊急・定型・判断不要。将軍を待つ時間は全員の時間の無駄。
 

@@ -47,7 +47,7 @@ files:
   cmd_queue: queue/shogun_to_karo.yaml  # Shogun → Karo commands
   tasks: "queue/tasks/{ninja_name}.yaml" # Karo → Ninja assignments (per-ninja)
   reports: "queue/reports/{ninja_name}_report_{cmd}.yaml" # Ninja → Karo reports
-  dashboard: dashboard.md              # Human-readable summary (secondary data)
+  dashboard: dashboard.md              # Lord's self-service summary (Lord reads directly, not Shogun's source)
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
 
 cmd_format:
@@ -120,18 +120,19 @@ Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始する�
         Q5: Step 6.5の殿の直近対話で、殿が将軍の前提を崩した場面を特定せよ。
             deepdiveのどのPhaseと同じ構造か？具体的な殿の発言を引用せよ
 Step 9: Load project knowledge
-        queue/karo_snapshot.txt → config/projects.yaml → projects/{id}.yaml
+        queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
+        → config/projects.yaml → projects/{id}.yaml
         → context/{project}.md（要約のみ）→ context/cmd-chronicle.md
         → context/gunshi-*.md → dialogue_preprocessing_research末尾(最新Phase)
         + gunshi-nazenaze-synthesis.md
         研究日誌の読み方: 通常=末尾のみ。殿が「読め」→全文を最初から省略せず読む
         ※ lord_conversation/掲示板はStep 6.5で読込済み
-        dashboard.md: 将軍宛報告+🚨要対応+🔧軍師提案のみ確認（行動のトリガー。追体験材料ではない）
+        ※ dashboard.mdは殿が自分で見るもの。将軍の起動時ロード対象外（殿裁定2026-04-26）
 Step 10: Check inbox: queue/inbox/shogun.yaml のread: falseを処理
 Step 11: Review forbidden actions (F001-F008), then start work
 ```
 
-**CRITICAL**: dashboard.md is secondary data (karo's summary). Primary data = YAML files. Always verify from YAML.
+**CRITICAL**: dashboard.md is the Lord's self-service tool, not Shogun's information source. Lord reads it directly and never asks Shogun for dashboard content. Lord asks Shogun for real-time info NOT on the dashboard. Primary data = capture-pane (real-time) + lord_conversation (timeline) + YAML files.
 
 ## /clear Recovery (ninja)
 
@@ -336,10 +337,14 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 | Direction | Method | Reason |
 |-----------|--------|--------|
 | Ninja → Karo | Report YAML + inbox_write | File-based notification |
-| Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
+| Karo/Gunshi → Shogun | **bulletin_write.sh（掲示板）** | **将軍宛の報告チャネル**。時系列+永続記録+第三者可視（殿裁定2026-04-16） |
+| Karo → Lord | dashboard.md update only | 殿が自分で見る。将軍の情報源ではない（殿裁定2026-04-26） |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
-## Bulletin Board Notification Targeting (全エージェント共通)
+## Bulletin Board = 将軍宛報告チャネル (全エージェント共通)
+
+**二本柱**: dashboard=殿が自分で見る / 掲示板=将軍宛の報告チャネル（殿裁定2026-04-16, 2026-04-26）。
+家老・軍師が将軍に報告する手段は掲示板。将軍は起動時に掲示板を読んで状況を把握する。
 
 掲示板投稿時、全員共有でなければ `BULLETIN_NOTIFY` で通知先を限定せよ。不要通知のトークン消費を排除する。
 

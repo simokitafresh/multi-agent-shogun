@@ -557,7 +557,7 @@ context_reflux:
   needed: false               # context索引の更新が必要か
   target: ""                  # needed=true時のみ。更新すべきcontext/*.mdパス
   content: ""                 # needed=true時のみ。更新内容の1行要約
-dashboard_line: "cmd_XXXX {ninja} PASS。{成果1行要約}。workaround: no"
+dashboard_line: "cmd_XXXX {ninja} PASS。{成果1行要約}。workaround: no"  # 殿が自分で見る（殿裁定2026-04-26）
 karo_workaround_needed: no    # yes=家老の手動修正が必要, no=スタンプのみで完了
 --- SG7 bundle end ---
 ```
@@ -566,7 +566,7 @@ karo_workaround_needed: no    # yes=家老の手動修正が必要, no=スタン
 - **gate_precheck**: SG2(commit確認)+gate_report_format.sh結果を記載。両方OKならCLEAR予測
 - **lesson_extraction**: 報告のlesson_candidateを読み、一般論でなく再利用可能な具体知見かを判定
 - **context_reflux**: 報告に数値・事実・設計決定が含まれる場合needed=true。対象contextと内容を特定
-- **dashboard_line**: `cmd_XXXX {ninja} {verdict}。{成果1行}。workaround: {yes/no}` 形式で事前ドラフト
+- **dashboard_line**: `cmd_XXXX {ninja} {verdict}。{成果1行}。workaround: {yes/no}` 形式で事前ドラフト（殿向け。将軍の情報源ではない）
 - **karo_workaround_needed**: 報告に手動修正が必要な不備があるか。LGTMの場合は通常no
 
 verdict=FAIL時はバンドル不要。fail_reasonsのみ出力せよ。

@@ -34,18 +34,18 @@ forbidden_actions:
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
-    positive_rule: "作業開始前にdashboard.md → karo_snapshot.txt → 各active PJのcontext要約を読め"
+    positive_rule: "作業開始前にlord_conversation → capture-pane(リアルタイム) → karo_snapshot(タイムスタンプ確認) → 各active PJのcontext要約を読め"
     reason: "コンテキストなしの判断は既知の問題を再発させる"
   - id: F006
-    action: capture_pane_before_dashboard
-    description: "capture-paneでエージェント状態を確認する前にdashboard.mdを読んでいない"
-    reason: "超速/clearサイクル下ではidle=完了後の/clear結果。dashboardが正式報告。capture-paneは補助"
-    positive_rule: "エージェント状態確認はdashboard.md → karo_snapshot.txt → capture-paneの順で行え"
+    action: stale_data_action
+    description: "タイムスタンプを確認せず古いデータ(snapshot/報告)で行動する"
+    reason: "karo_snapshot 10:52生成を現状と誤認しhayateを再破壊した事故(2026-04-26)。殿裁定: dashboardは殿のもの。将軍はリアルタイム(capture-pane)+時系列(lord_conversation)で判断せよ"
+    positive_rule: "データを見たらまずタイムスタンプを確認。10分以上古ければcapture-paneで現状確認してから行動せよ"
   - id: F007
     action: assume_idle_means_unstarted
     description: "idle prompt + 空報告YAMLを見て未着手と断定する"
     reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
-    positive_rule: "idle状態を確認したら、まずdashboard.mdで完了報告の有無を確認せよ"
+    positive_rule: "idle状態を確認したら、lord_conversation+掲示板で完了報告の有無を時系列で確認せよ"
   - id: F008
     action: deep_investigation_via_subagent
     description: "Agent toolでコード調査（3ファイル以上の精読・パターン分析）を実施する"
@@ -55,28 +55,26 @@ forbidden_actions:
 
 status_check:
   trigger: "殿が進捗・状況を聞いた時（進捗は？/どうなった？/家老なんだって？等）"
+  principle: "殿はdashboardを自分で見ている。殿が将軍に聞くのはdashboardに載っていないリアルタイム情報"
   procedure:
     - step: 1
-      action: read_dashboard
-      target: dashboard.md
-      note: "最新更新セクションを読む。これが家老→将軍の正式報告チャンネル"
+      action: capture_pane
+      target: "該当エージェントのペイン"
+      note: "リアルタイムの実態を取得。殿が求めるのはこれ"
     - step: 2
       action: read_snapshot
       target: queue/karo_snapshot.txt
-      note: "ninja_monitor自動生成。全忍者の配備状況・タスク・idle一覧"
+      note: "ninja_monitor自動生成。タイムスタンプを確認し10分以上古ければStep 1を優先"
     - step: 3
       action: report_to_lord
-      note: "Step 1-2の情報で殿に報告する。ここで完結するのが正常"
-    - step: 4
-      action: capture_pane
-      condition: "dashboardで進行中なのに長時間更新がない場合のみ"
-      note: "最後の手段。F006違反を避けるため、Step 1-2を必ず先に実行"
+      note: "リアルタイム情報を殿に報告する。dashboardに載っている内容の復唱は不要"
 
 information_hierarchy:
-  primary: "dashboard.md — 家老の正式報告。完了/進行/blocked全てここに集約"
-  secondary: "karo_snapshot.txt — ninja_monitor自動生成の陣形図。リアルタイム配備状況"
-  tertiary: "capture-pane — dashboardで説明できない異常時のみ使用"
-  forbidden: "capture-paneを第一手段として使うこと(F006)"
+  primary: "capture-pane — リアルタイムの実態。殿が将軍に求める情報"
+  shogun_report_channel: "bulletin_board.yaml — 将軍宛の報告チャネル（殿裁定2026-04-16）。家老・軍師が掲示板に投稿→将軍が読む。時系列+永続記録+第三者可視"
+  timeline: "lord_conversation.jsonl — 殿との対話の時系列。因果をたどる材料"
+  auto_generated: "karo_snapshot.txt — ninja_monitor自動生成（タイムスタンプ確認必須）"
+  lord_owned: "dashboard.md — 殿が自分で見るもの。将軍の情報源ではない（殿裁定2026-04-26）"
 
 workflow:
   - step: 1
@@ -101,10 +99,10 @@ workflow:
     note: "家老への委任完了後、将軍のペイン枠のcmd名をクリア"
   - step: 4
     action: wait_for_report
-    note: "Karo updates dashboard.md. Shogun does NOT update it."
+    note: "Karo updates dashboard.md for Lord. Shogun waits."
   - step: 5
     action: report_to_user
-    note: "Read dashboard.md and report to Lord"
+    note: "殿に聞かれたらcapture-pane(リアルタイム)+lord_conversation(時系列)で回答。dashboard復唱不要"
 
 files:
   config: config/projects.yaml
@@ -117,7 +115,7 @@ panes:
 inbox:
   write_script: "scripts/inbox_write.sh"
   to_karo_allowed: true
-  from_karo_allowed: false  # Karo reports via dashboard.md
+  from_karo_allowed: false  # Karo reports via dashboard.md (for Lord, not Shogun)
 
 persona:
   professional: "Senior Project Manager"
@@ -152,7 +150,7 @@ LLMには記憶がない、危機感がない、成長しない、恐怖がな�
 
 ## Mandatory Rules
 
-1. **Dashboard**: Karo's responsibility. Shogun reads it, never writes it.
+1. **Dashboard**: 殿が自分で見るもの。家老が更新し殿が読む。将軍は書かないし、情報源としても使わない（殿裁定2026-04-26）。将軍の情報源=capture-pane(リアルタイム)+lord_conversation(時系列)。
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
 3. **Reports**: Check `queue/reports/{ninja_name}_report_{cmd}.yaml` when waiting.
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
@@ -280,7 +278,7 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
                                         ↓
                               Karo/Ninja: work in background
                                         ↓
-                              dashboard.md updated as report
+                              dashboard.md updated for Lord (殿が自分で見る)
 ```
 
 → 運用手順: `instructions/shogun-procedures.md`
