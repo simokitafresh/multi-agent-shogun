@@ -62,6 +62,8 @@ UIライブラリなし（全13コンポーネント手製）。
 
 データフロー: SignalsProvider(SWR: stale即表示+BG fresh fetch, cmd_765)→prefetch(selected PFのみ, budget=2, cmd_733)→IndexedDB+メモリ2層キャッシュ→PF切替即描画。次PFのprefetchは不在(cmd_2264設計書§3.3)。ナビゲーションは`window.location.href`統一=hard navigation→SignalsProvider毎回再初期化→`/api/signals`が全遷移の律速(cmd_2264設計書§3.2)
 
+PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cmd_2304固定待機込み)比45.7%改善。フェーズ分解476ms(cmd_2307)比15%遅い。
+
 → 詳細資料: `docs/research/frontend-components.md` §3, §5
 - L201: useEffectの依存配列にstate変数を含めると意図しないタイミングでeffectが発火する（cmd_642）
 - L266: prefetchとpage effectに同一endpoint群を持たせるとorchestration重複とstate update重複が残る（cmd_831）
