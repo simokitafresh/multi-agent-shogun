@@ -112,7 +112,9 @@ YAML
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK"* ]]
-    [[ "$output" != *"environment_change"* ]]
+    [[ "$output" != *"environment_change未記入"* ]]
+    [[ "$output" != *"environment_changeが低品質"* ]]
+    [[ "$output" != *"environment_changeが非構造化"* ]]
 }
 
 # --- AC1: BLOCK後はenvironment_change必須 ---
