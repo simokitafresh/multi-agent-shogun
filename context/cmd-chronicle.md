@@ -876,3 +876,4 @@
 | cmd_2313 | 修正 — Codex config.toml approval_mode=full-auto追加(STALL根絶) | infra | 04-26 | FILL_THIS |
 | cmd_2312 | 計測 — Measure D/A効果検証(修正済み計測手法でCDP PF切替再計測) | dm-signal | 04-26 | FILL_THIS |
 | cmd_2311 | 配備 — Measure D/A/計測手法修正のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2308/2309はDM-Signal GitHub |
+| cmd_karo_ci_fix_357 | CI修正 — batsテスト#357失敗修正 | infra | 04-26 | FILL_THIS |
