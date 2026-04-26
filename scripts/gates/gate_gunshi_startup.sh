@@ -229,8 +229,8 @@ with open(path, encoding="utf-8") as fh:
 
 flush()
 
-drafts = [e for e in entries if e["review_type"] == "draft"]
-window = drafts[-10:]
+reviews = [e for e in entries if e["review_type"] in ("draft", "report")]
+window = reviews[-10:]
 for name, threshold, patterns in catalog:
     hits = 0
     zero_streak = 0
