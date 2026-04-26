@@ -206,6 +206,23 @@ else
     echo "  PASS: lesson_candidateなし"
 fi
 
+# ─── SG-PRE12b: draft_lessons検出 (GP-237) ───
+echo ""
+echo "■ SG-PRE12b: draft_lessons検出(project lessons.md)"
+_draft_lessons_total=0
+for _lf in "$REPO_ROOT/tasks/lessons.md" "${PROJECT_DIR:+${PROJECT_DIR}/tasks/lessons.md}"; do
+    [ -z "$_lf" ] || [ ! -f "$_lf" ] && continue
+    _dc=$(grep -c '^\- \*\*status\*\*: draft' "$_lf" 2>/dev/null || true)
+    _dc=${_dc:-0}
+    if [ "$_dc" -gt 0 ]; then
+        echo "  ★★★ WARN: $_lf にdraft教訓${_dc}件。gate_prediction: WARN(draft_lessons)"
+        _draft_lessons_total=$((_draft_lessons_total + _dc))
+    fi
+done
+if [ "$_draft_lessons_total" -eq 0 ]; then
+    echo "  PASS: draft教訓なし"
+fi
+
 # ─── SG-PRE13: hook/gate系ファイルの大規模削減検出 (GP-205, cmd_1975反省) ───
 echo ""
 echo "■ SG-PRE13: hook/gate大規模削減検出"

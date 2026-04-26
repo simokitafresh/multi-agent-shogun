@@ -877,3 +877,6 @@
 | cmd_2312 | 計測 — Measure D/A効果検証(修正済み計測手法でCDP PF切替再計測) | dm-signal | 04-26 | FILL_THIS |
 | cmd_2311 | 配備 — Measure D/A/計測手法修正のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2308/2309はDM-Signal GitHub |
 | cmd_karo_ci_fix_357 | CI修正 — batsテスト#357失敗修正 | infra | 04-26 | FILL_THIS |
+| cmd_karo_reprofile_freq | インフラスクリプト頻度再計測 — 直近24h | infra | 04-26 | 直近24hのインフラスクリプト頻度を5ソースで再計測し、do |
+| cmd_2314 | 偵察 — GS CSV パラメータ→月次リターン列マッピング調査 | dm-signal | 04-26 | summary CSV行i == monthly CSV列i |
+| cmd_karo_reprofile_bench | インフラスクリプト実行時間再計測 — Top 20 × 5回 | infra | 04-26 | 前回プロファイリングTop20を5回中央値で再計測し、doc |
