@@ -11,12 +11,10 @@ setup() {
     grep -q -- '--connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL"' "$SCRIPT"
 }
 
-@test "cdp_measure: CDP preflight auto-starts browser when port is not responding" {
-    grep -q 'auto-starting (port ${CDP_PORT})' "$SCRIPT"
-    grep -q 'PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3' "$SCRIPT"
-    grep -q 'from cdp import cdp_helper' "$SCRIPT"
-    grep -q 'cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)' "$SCRIPT"
-    grep -q 'CDP_CHECK="python-preflight-ok"' "$SCRIPT"
+@test "cdp_measure: CDP auth uses cdp_cli.sh auth with admin verification" {
+    grep -q 'CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"' "$SCRIPT"
+    grep -q 'bash "$CDP_CLI" auth --env "$ENV_FILE" --port "$CDP_PORT"' "$SCRIPT"
+    grep -q 'admin_authenticated' "$SCRIPT"
 }
 
 @test "cdp_measure: perf_measure runs with auto-ops on PYTHONPATH" {
@@ -27,6 +25,6 @@ setup() {
 @test "cdp_measure: auth preflight reports failures instead of set-e silent exit" {
     grep -q '^set +e$' "$SCRIPT"
     grep -Fq 'AUTH_RC=$?' "$SCRIPT"
-    grep -q 'if \[\[ "$AUTH_RC" -ne 0 || "$AUTH_CHECK" != "OK" \]\]' "$SCRIPT"
-    grep -q "data.get('passwords', \\[\\])" "$SCRIPT"
+    grep -q 'if \[\[ "$AUTH_RC" -ne 0 \]\]' "$SCRIPT"
+    grep -q 'ADMIN_AUTH' "$SCRIPT"
 }

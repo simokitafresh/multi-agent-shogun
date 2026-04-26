@@ -68,87 +68,31 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. 認証確認（env_fileからcredentials読み取り+viewer password取得テスト）
-echo -n "  Auth preflight: "
+# 1c. CDP認証 — cdp_cli.sh auth でブラウザにViewer+Admin Cookieを注入
+#     旧Phase 1c(API疎通テストのみ)+旧Phase 1d(CDP接続確認)を統合
+#     cdp_cli.sh authは内部でpreflight_cdp_flow→タブ作成→Cookie注入を一括実行
+CDP_PORT="${CDP_PORT:-9222}"
+CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"
+ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
+echo -n "  CDP Auth (Viewer+Admin): "
 set +e
-AUTH_CHECK=$(python3 -c "
-import sys, json, base64
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
-from pathlib import Path
-
-env_file = Path('/mnt/c/Python_app/DM-signal/backend/.env')
-if not env_file.exists():
-    print('FAIL: .env not found')
-    sys.exit(1)
-
-env_vars = {}
-for line in env_file.read_text().splitlines():
-    line = line.strip()
-    if not line or line.startswith('#') or '=' not in line:
-        continue
-    k, v = line.split('=', 1)
-    env_vars[k.strip()] = v.strip()
-
-user = env_vars.get('ADMIN_USER', '')
-pw = env_vars.get('ADMIN_PASS', '')
-if not user or not pw:
-    print('FAIL: ADMIN_USER or ADMIN_PASS missing in .env')
-    sys.exit(1)
-
-# Test: fetch viewer password
-url = '${BACKEND_URL}/api/admin/tiers/passwords'
-cred = base64.b64encode(f'{user}:{pw}'.encode()).decode()
-req = Request(url, headers={'Authorization': f'Basic {cred}'})
-try:
-    resp = urlopen(req, timeout=15)
-    data = json.loads(resp.read())
-    passwords = data.get('passwords', [])
-    viewer_pw = data.get('viewer', '')
-    if viewer_pw or (isinstance(passwords, list) and passwords):
-        print('OK')
-    else:
-        print('FAIL: viewer password empty')
-        sys.exit(1)
-except HTTPError as e:
-    print(f'FAIL: HTTP {e.code}')
-    sys.exit(1)
-except Exception as e:
-    print(f'FAIL: {e}')
-    sys.exit(1)
-" 2>&1)
+AUTH_RESULT=$(bash "$CDP_CLI" auth --env "$ENV_FILE" --port "$CDP_PORT" --api-base-url "$BACKEND_URL" --base-url "$FRONTEND_URL" 2>&1)
 AUTH_RC=$?
 set -e
-echo "$AUTH_CHECK"
-if [[ "$AUTH_RC" -ne 0 || "$AUTH_CHECK" != "OK" ]]; then
-    echo "  → 認証に失敗。.envの ADMIN_USER/ADMIN_PASS を確認せよ" >&2
+if [[ "$AUTH_RC" -ne 0 ]]; then
+    echo "FAIL" >&2
+    echo "  → CDP認証に失敗。出力: ${AUTH_RESULT}" >&2
+    echo "  → .envのADMIN_USER/ADMIN_PASS/VIEWER_PASSを確認。Chrome CDPが起動しているか確認。" >&2
     exit 1
 fi
-
-# 1d. Chrome CDP接続確認
-echo -n "  Chrome CDP: "
-CDP_PORT="${CDP_PORT:-9222}"
-CDP_CHECK=$(curl -fsS --connect-timeout 5 --max-time 10 "http://localhost:${CDP_PORT}/json/version" 2>/dev/null || true)
-if [[ -z "$CDP_CHECK" ]]; then
-    echo "auto-starting (port ${CDP_PORT})"
-    if ! PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 - "$CDP_PORT" <<'PY'
-import sys
-
-from cdp import cdp_helper
-
-port = int(sys.argv[1])
-cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)
-
-raise SystemExit(0)
-PY
-    then
-        echo "  FAIL: Chrome CDP auto-start failed (port ${CDP_PORT})" >&2
-        exit 1
-    fi
-    CDP_CHECK="python-preflight-ok"
-    echo -n "  Chrome CDP: "
+# auth結果からadmin_authenticated確認
+ADMIN_AUTH=$(echo "$AUTH_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('admin_authenticated') else 'no')" 2>/dev/null || echo "unknown")
+if [[ "$ADMIN_AUTH" != "yes" ]]; then
+    echo "FAIL (admin not authenticated)" >&2
+    echo "  → Admin認証が不成立。出力: ${AUTH_RESULT}" >&2
+    exit 1
 fi
-echo "OK (port ${CDP_PORT})"
+echo "OK (port ${CDP_PORT}, admin+viewer authenticated)"
 
 echo ""
 
