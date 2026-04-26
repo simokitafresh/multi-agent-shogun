@@ -31,7 +31,7 @@ lessons:
   - dm-signal
   - frontend
   - deploy
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-26'
   target_files:
@@ -231,7 +231,7 @@ lessons:
     flu
   tags:
   - universal
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
@@ -1504,8 +1504,8 @@ lessons:
   summary: 'commit d49a9174がis_kalman_metaガードを除去した際、prev_ward_weightsが全FoFで更新される副作用が発生。Ward '
   tags:
   - git
-  helpful_count: 1
-  harmful_count: 1
+  helpful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
   - tasks/lessons.md
@@ -1601,6 +1601,9 @@ lessons:
   - outputs/analysis/nested_fof/ninpo21_monthly_returns.csv
   - outputs/analysis/nested_fof/r1_equal_weight_performance.yaml
   - outputs/analysis/nested_fof/r1_vs_individual_comparison.csv
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L492
   title: oikaze NaN修正はGS結果に影響なし — momentum_cubeにNaN未発生のためブロック固有
   summary: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。
@@ -2173,6 +2176,9 @@ lessons:
   - outputs/analysis/cmd_1126_parity_check.py
   - outputs/analysis/cmd_1126_performance.csv
   - outputs/analysis/cmd_1126_register.py
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L430
   title: valid_start_date修正1ヶ月差がチャンピオン選出を大幅変更する
   summary: GS共通コードの修正(valid_start_date計算の全シンボル考慮)によりcommon periodが1ヶ月短縮(167→166ヶ月)。この1ヶ月差がメ
@@ -2194,7 +2200,7 @@ lessons:
   summary: GS側Fix Bがrelative_assetsのみでcommon_startを計算しsafe_haven(例:TQQQ 2010開始)が含まれず本番と不一致。
   tags:
   - deploy
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-04-26'
   target_files:
@@ -2222,8 +2228,8 @@ lessons:
   - testing
   - process
   - production_invariant
-  helpful_count: 2
-  harmful_count: 2
+  helpful_count: 1
+  harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
   - outputs/analysis/cmd_1106_parity_analysis.csv
@@ -2357,7 +2363,7 @@ lessons:
   tags:
   - frontend
   helpful_count: 1
-  harmful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:
   - frontend/lib/constants.ts
@@ -2888,6 +2894,9 @@ lessons:
   - outputs/analysis/cmd_1019_phase2_metrics_correlation.md
   - scripts/analysis/cmd_1019_ac12_family_rolling.py
   - scripts/analysis/cmd_1019_ac3_dd_corr.py
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L353
   title: 共有出力ファイルにWriteツール上書きで他忍者の成果消失リスク
   summary: 複数忍者が同一ファイルに書き込むreconでWriteツール(全上書き)を使うと先行忍者のセクションが消失する。Edit(追記)を使うかセクション分離ファイルで
@@ -3153,6 +3162,9 @@ lessons:
   - backend/tests/test_p_bar_backtest.py
   - backend/tests/test_p_bar_selection_block.py
   - scripts/analysis/p_bar_window_backtest.py
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L323
   title: rolling p̄ BTでは no-selection warm-up を別指標で明示せよ
   summary: n_splits=5 の rolling p̄ 選出は月次returnsを5分割し各chunk最低12期間を要するため、live selection開始前に長い
@@ -3178,6 +3190,9 @@ lessons:
   - oauth
   target_files:
   - tests/test_admin_tiers.py
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L320
   title: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合
   summary: p̄検定は月次リターンの一貫した正のリターンを検定する。 朱雀のDNAはTMF/TMV切替で「大きな方向転換で稼ぐ」設計であり、
@@ -3272,7 +3287,7 @@ lessons:
   - frontend
   - recon
   - gate
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-04-26'
   target_files:
@@ -3405,8 +3420,8 @@ lessons:
   tags:
   - grid-search
   - architecture
-  helpful_count: 0
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-26'
   target_files:
   - docs/research/knowledge-base/index.md
@@ -3468,7 +3483,7 @@ lessons:
   tags:
   - architecture
   - statistics
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:
@@ -3511,6 +3526,9 @@ lessons:
   summary: 91PF pairwise相関mean 0.610。panel OOS評価やranking系統はmonth-cluster/PF-clusterを考慮。pool
   tags:
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L288
   title: n=84でのOOS R²は検出力不足。予測力なし≠予測力がない(データ不足の可能性)
   summary: IS 46M + OOS 32MでR²_OOS=0.02-0.05の改善は有意にならない可能性が高い。Clark-West検定でも最低水準。169M共通パネルの
@@ -3524,7 +3542,7 @@ lessons:
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L286
@@ -3564,7 +3582,7 @@ lessons:
   tags:
   - recon
   - gate
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L281
@@ -3591,7 +3609,7 @@ lessons:
   - frontend
   - monitor
   helpful_count: 2
-  harmful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L277
   title: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する
@@ -3903,7 +3921,7 @@ lessons:
   tags:
   - universal
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
   - docs/rule/trade-rule.md
@@ -4086,7 +4104,7 @@ lessons:
   - wsl2
   target_files:
   - app/DM-signal/frontend/next.config.js
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-26'
 - id: L215
@@ -4098,7 +4116,7 @@ lessons:
   - process
   - security
   - oauth
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L214
@@ -4225,7 +4243,7 @@ lessons:
   summary: 現行sw.jsはL75-79で/api/*リクエストを完全バイパスしている。 このため、APIレスポンスはSW Cache APIに保存されず、
   tags:
   - api
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-26'
 - id: L202
@@ -4344,7 +4362,7 @@ lessons:
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
   tags:
   - db
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-26'
 - id: L189
@@ -4551,7 +4569,7 @@ lessons:
   - testing
   - process
   helpful_count: 0
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L163
   title: ルートディスコンは『差し替え+_deprecated退避』にすると復活が1コミットで戻せる
@@ -4577,6 +4595,9 @@ lessons:
   - deploy
   - security
   - oauth
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L159
   title: SignalsProvider層で障害判定すると全ページ一括でフォールバック制御できる
   summary: IF layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全時
@@ -4771,6 +4792,9 @@ lessons:
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
   tags:
   - universal
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L133
   title: noteのMermaidは保守的構文に寄せると失敗率が下がる
   summary: IF flowchart や非ASCIIラベル直書きは環境によってコードブロック表示にフォールバックする場合がある時 THEN `flowchart`
@@ -4869,6 +4893,9 @@ lessons:
     s
   tags:
   - recon
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L119
   title: DATA_CATALOG.mdの86銘柄は本番PostgreSQL側の情報。experiments.db(SQLite)のdaily_pricesは実際14銘柄のみ(ETF12+DTB3+VIX)。カタログと実データの乖離に注意。
   summary: hayate(cmd_282,subtask_282_integ)
@@ -5018,7 +5045,7 @@ lessons:
   summary: IF MultiViewはSKIP_MONTHS_LIST=[0,1,2,3]固定のため、base_period_months≤3だとeffective_mon
   tags:
   - gate
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-26'
 - id: L099
@@ -5039,8 +5066,8 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
-  helpful_count: 0
-  harmful_count: 2
+  helpful_count: 1
+  harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L096
   title: skip処理のデータ頻度判定はis_monthly_data()を使え（行数ヒューリスティック禁止）
@@ -5110,7 +5137,7 @@ lessons:
   tags:
   - frontend
   - testing
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L087
@@ -5136,6 +5163,9 @@ lessons:
   summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow
   tags:
   - universal
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L084
   title: recalculate-statusのis_running=Noneは完了ではない
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
@@ -5189,8 +5219,8 @@ lessons:
   summary: IF benchmark_ticker=空文字等のバリデーションエラーが1つでもあるとPortfolioRepository.load()がNoneを返しrec
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 3
+  helpful_count: 0
+  harmful_count: 4
   last_referenced: '2026-04-26'
 - id: L077
   title: GS CSV monthly_return = open-based / Production cumulative_return = close-based
@@ -5452,6 +5482,9 @@ lessons:
   tags:
   - deploy
   - grid_search
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L039
   title: 064_champion CSVとC12 UUIDは別データ。064はcmd_064時点の旧チャンピオン(143ヶ月)、C12はcmd_123登録の新パターン(177-192ヶ月)。GS比較には同一ソースデータが必須。
   summary: IF 064_champion CSVはcmd_064時点の旧チャンピオンで期間は2014-03から2026-01の143ヶ月時 THEN 064_champi
@@ -5483,7 +5516,7 @@ lessons:
   - frontend
   - pipeline
   helpful_count: 0
-  harmful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
@@ -5637,6 +5670,9 @@ lessons:
   - deploy
   target_files:
   - trade-rule.md
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L017
   title: FoFリターン計算方式の乖離 → 根本原因特定・修正完了（2026-02-14）
   summary: 'IF 計算方式の違いで100%パリティは「構造的に不可能」としていた時 THEN **当初の誤結論**: 計算方式の違いで100%パリティは「構造的に不可能」と'
@@ -5759,7 +5795,7 @@ lessons:
   summary: ブロック名は BlockType enum 値で統一する（2026-02-14）
   tags:
   - gate
-  helpful_count: 5
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L001
@@ -5767,6 +5803,6 @@ lessons:
   summary: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）
   tags:
   - pipeline
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-26'
