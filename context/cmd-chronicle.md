@@ -850,3 +850,4 @@
 | cmd_2285 | 強化 — cmd起票前の事前確認gate（PreToolUse:Edit hook for shogun_to_karo.yaml） | infra | 04-26 | shogun_to_karo.yaml Edit時の起票前確 |
 | cmd_2286 | 強化 — 忍者版事前ワクチン（DM-Signal本番ファイル編集時にPI注入） | infra | 04-26 | FILL_THIS |
 | cmd_2287 | 修正 — cmd_complete_gate.shにtest_triage判定追加（pre_existing FAIL誤判定バグ修正） | infra | 04-26 | cmd_complete_gateのbinary_check |
+| cmd_2284 | 強化 — cmd_save.sh BLOCK後の将軍自走強制hook | infra | 04-26 | cmd_save.sh BLOCK(exit 1)時だけPo |
