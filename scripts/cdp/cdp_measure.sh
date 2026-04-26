@@ -68,9 +68,10 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. CDP認証 — cdp_cli.sh auth でブラウザ起動+Viewer+Admin Cookie注入
-#     CDP哲学: 人間と同じようにブラウザを操作する=未起動でも起動してログインする
-#     cdp_cli.sh authは内部でpreflight_cdp_flow→タブ作成→Cookie注入を一括実行
+# 1c. CDP認証 — ブラウザ起動+Viewer+Admin Cookie注入
+#     CDP哲学: 人間と同じ操作=未起動でも起動、ポート塞がりは自動探索。並列可能
+#     ポート自動探索はcdp_helper.preflight_cdp_flowが処理(全CDPツール共通)
+#     cdp_cli.sh authがpreflight_cdp_flow→タブ作成→Cookie注入を一括実行
 CDP_PORT="${CDP_PORT:-9222}"
 CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"
 ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
@@ -82,7 +83,7 @@ set -e
 if [[ "$AUTH_RC" -ne 0 ]]; then
     echo "FAIL" >&2
     echo "  → CDP認証に失敗。出力: ${AUTH_RESULT}" >&2
-    echo "  → .envのADMIN_USER/ADMIN_PASS/VIEWER_PASSを確認。Chrome CDPが起動しているか確認。" >&2
+    echo "  → .envのcredentialsを確認。" >&2
     exit 1
 fi
 # auth結果からadmin_authenticated確認
@@ -92,7 +93,7 @@ if [[ "$ADMIN_AUTH" != "yes" ]]; then
     echo "  → Admin認証が不成立。出力: ${AUTH_RESULT}" >&2
     exit 1
 fi
-echo "OK (port ${CDP_PORT}, admin+viewer authenticated)"
+echo "OK"
 
 echo ""
 
