@@ -16,9 +16,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
 PERF_MEASURE="/mnt/c/Python_app/auto-ops/workflows/perf_measure.py"
 PERF_CONFIG="/mnt/c/Python_app/auto-ops/workflows/perf_config.yaml"
 OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
+FRONTEND_URL="${FRONTEND_URL:-https://dm-signal-frontend.onrender.com}"
+FRONTEND_HEALTH_URL="${FRONTEND_HEALTH_URL:-${FRONTEND_URL}/}"
 BACKEND_URL="https://dm-signal-backend.onrender.com"
 
 # ─── 引数解析 ───
@@ -55,18 +58,19 @@ if [[ ! -f "$PERF_MEASURE" ]]; then
 fi
 echo "  OK: perf_measure.py exists"
 
-# 1b. Backend healthz確認
-echo -n "  Backend healthz: "
-HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 "${BACKEND_URL}/healthz" 2>/dev/null || true)
+# 1b. Frontend healthz確認
+echo -n "  Frontend healthz: "
+HTTP_CODE=$(curl -sS -L -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL" 2>/dev/null || true)
 if [[ "$HTTP_CODE" != "200" ]]; then
     echo "FAIL (HTTP ${HTTP_CODE:-timeout})" >&2
-    echo "  → Backend が起動していない or Render cold-start中。数分待って再実行せよ" >&2
+    echo "  → Frontend が起動していない or Render cold-start中。数分待って再実行せよ" >&2
     exit 1
 fi
 echo "OK (HTTP 200)"
 
 # 1c. 認証確認（env_fileからcredentials読み取り+viewer password取得テスト）
 echo -n "  Auth preflight: "
+set +e
 AUTH_CHECK=$(python3 -c "
 import sys, json, base64
 from urllib.request import Request, urlopen
@@ -99,8 +103,9 @@ req = Request(url, headers={'Authorization': f'Basic {cred}'})
 try:
     resp = urlopen(req, timeout=15)
     data = json.loads(resp.read())
+    passwords = data.get('passwords', [])
     viewer_pw = data.get('viewer', '')
-    if viewer_pw:
+    if viewer_pw or (isinstance(passwords, list) and passwords):
         print('OK')
     else:
         print('FAIL: viewer password empty')
@@ -112,8 +117,10 @@ except Exception as e:
     print(f'FAIL: {e}')
     sys.exit(1)
 " 2>&1)
+AUTH_RC=$?
+set -e
 echo "$AUTH_CHECK"
-if [[ "$AUTH_CHECK" != "OK" ]]; then
+if [[ "$AUTH_RC" -ne 0 || "$AUTH_CHECK" != "OK" ]]; then
     echo "  → 認証に失敗。.envの ADMIN_USER/ADMIN_PASS を確認せよ" >&2
     exit 1
 fi
@@ -121,12 +128,25 @@ fi
 # 1d. Chrome CDP接続確認
 echo -n "  Chrome CDP: "
 CDP_PORT="${CDP_PORT:-9222}"
-CDP_CHECK=$(curl -s --connect-timeout 5 "http://localhost:${CDP_PORT}/json/version" 2>/dev/null || true)
+CDP_CHECK=$(curl -fsS --connect-timeout 5 --max-time 10 "http://localhost:${CDP_PORT}/json/version" 2>/dev/null || true)
 if [[ -z "$CDP_CHECK" ]]; then
-    echo "FAIL (port ${CDP_PORT} no response)"
-    echo "  → Chromeが起動していない。以下で起動:" >&2
-    echo "    chrome.exe --remote-debugging-port=${CDP_PORT} --user-data-dir=\"C:\\cdp_profile\"" >&2
-    exit 1
+    echo "auto-starting (port ${CDP_PORT})"
+    if ! PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 - "$CDP_PORT" <<'PY'
+import sys
+
+from cdp import cdp_helper
+
+port = int(sys.argv[1])
+cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)
+
+raise SystemExit(0)
+PY
+    then
+        echo "  FAIL: Chrome CDP auto-start failed (port ${CDP_PORT})" >&2
+        exit 1
+    fi
+    CDP_CHECK="python-preflight-ok"
+    echo -n "  Chrome CDP: "
 fi
 echo "OK (port ${CDP_PORT})"
 
@@ -170,7 +190,7 @@ echo "  Command: ${MEASURE_CMD[*]}"
 echo "  ─────────────────────────────────────────"
 
 measure_rc=0
-"${MEASURE_CMD[@]}" || measure_rc=$?
+PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" "${MEASURE_CMD[@]}" || measure_rc=$?
 echo "  ─────────────────────────────────────────"
 if [[ "$measure_rc" -ne 0 ]]; then
     echo "  FAIL: 計測失敗 (exit ${measure_rc})" >&2
