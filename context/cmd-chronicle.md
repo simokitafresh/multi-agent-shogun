@@ -858,3 +858,4 @@
 | cmd_2293 | 強化 — 殿の質問に対する確認強制hook(事前ワクチン系譜) | infra | 04-26 | FILL_THIS |
 | cmd_2294 | 修正 — dm-signal context §0陳腐化修正+L0/L1/L2定義統一 | dm-signal | 04-26 | FILL_THIS |
 | cmd_2295 | 強化 — projects/dm-signal.yaml Vercel圧縮(491→80行) | dm-signal | 04-26 | — |
+| cmd_2296 | 強化 — dm-signal context 4ファイルVercel圧縮+500行制限適用 | dm-signal | 04-26 | FILL_THIS |
