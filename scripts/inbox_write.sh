@@ -482,8 +482,23 @@ forward_gunshi_review_result_to_active_ninjas() {
     local ninja=""
     local forward_message=""
 
+    # review_contentからcmd_idを抽出(先頭のcmd_XXXX or cmd_karo_XXX)
+    local review_cmd_id=""
+    review_cmd_id=$(printf '%s' "$review_content" | grep -oP '^cmd_[a-zA-Z0-9_]+' | head -1)
+
     while IFS= read -r ninja; do
         [ -n "$ninja" ] || continue
+
+        # cmd_idフィルタ: 忍者のtask YAMLのparent_cmdと一致する場合のみ転送
+        if [ -n "$review_cmd_id" ]; then
+            local ninja_parent_cmd=""
+            local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+            ninja_parent_cmd=$(inbox_yaml_field_get "$task_file" "parent_cmd" "")
+            if [ "$ninja_parent_cmd" != "$review_cmd_id" ]; then
+                continue  # この忍者の担当cmdではない→スキップ
+            fi
+        fi
+
         forward_message="軍師レビュー補足: $review_content"
         if ! INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" \
             INBOX_WRITE_TEST="${INBOX_WRITE_TEST:-}" \

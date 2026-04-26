@@ -7,8 +7,9 @@
 [[ -z "$TMUX_PANE" ]] && exit 0
 
 # Cache agent_id per pane to avoid tmux IPC on every PostToolUse invocation
+# TTL 30min: ペイン再配置(/reset-layout)後に古い値が残る問題を防止(2026-04-26 gunshi修正)
 _AID_CACHE="/tmp/shogun_aid_${TMUX_PANE//[^a-zA-Z0-9_]/_}"
-if [[ -f "$_AID_CACHE" ]]; then
+if [[ -f "$_AID_CACHE" ]] && [[ -z "$(find "$_AID_CACHE" -mmin +30 2>/dev/null)" ]]; then
     { IFS= read -r AGENT_ID; } < "$_AID_CACHE"
 else
     AGENT_ID=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null)
