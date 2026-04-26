@@ -332,3 +332,10 @@ lessons:
   created_at: '2026-04-26'
   automated: true
   enforcement: 'deepdive追体験Q5+事前ワクチンQ1(対象現物確認)で構造的自問。ただし今回の場面(config.toml Edit)は事前ワクチン射程外→射程拡大が次の自動化ターゲット'
+- id: 'LS031'
+  title: 'q8縮小表現6回累計 — のみ/だけを無意識に使う'
+  detail: 'cmd_2295起票でq8に「根幹定義のみ残す」と記載→q8_縮小表現WARN(6回累計)→BLOCK。「のみ」は全量やることと矛盾する印象を与える。修正: 索引に残す内容を列挙し「のみ」を排除。根因: 圧縮cmdでは自然に「Xだけ残す」と書きたくなるが、gateは全量保証を要求する'
+  source_cmd: 'cmd_2295'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh q8_scope_expression(縮小表現検出)で自動BLOCK済み'

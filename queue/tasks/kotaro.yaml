@@ -1,26 +1,77 @@
 task:
-  _ac_task_id: cmd_karo_pstree_fix_impl
+  _ac_task_id: cmd_2293_normal
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2279
-  ac_version: 7d010443
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2293
+  ac_version: 3a884d1a
   acceptance_criteria:
-  - description: check_gunshi_design_num_relax()にカタログ参照除外条件が追加されている。q5にカタログ|catalog|takeaway-catalogを含む場合スキップ
+  - check: 殿の入力に質問パターンが含まれるとき、hookが確認強制メッセージを注入する
+    description: echo出力にprojects/{id}.yaml確認指示が含まれることをテスト入力で確認
     id: AC1
-  - description: LS-A22のq11 SCOUT記載が実装済みに更新されている
+  - check: 質問パターンがない通常入力ではメッセージが注入されない
+    description: 通常入力(y、起票せよ等)で誤発火しないことを確認
     id: AC2
-  - description: 既存テスト全PASS。回帰なし
-    id: AC3
   assigned_to: kotaro
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L512: gate_loop_health.shのinsight dedup\
-  parent_cmd: cmd_karo_pstree_fix
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L502: gate_vercel_phase.sh のように多数の小さい context\
+    \ file から同じパターンを拾う処理では、WSL2 では per-file aw\n  - L066: 将軍が揺れた論点(殿が決定した事項)は必ず3箇所に恒久化する:\
+    \ (1)MCP Memory(将軍教訓として) (2)projects/*.yaml(PJ核心知識\n  - L287: karo_workarounds.yamlのYAML構造が壊れていた(line\
+    \ 135付近に不正インデント)。gate_shogun_startup.shと同様\n  - L340: cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo\
+    \ \n  - L426: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc Pythonでのdump呼出はpre-\n\
+    \  - L031: master_csv.drive_id=16Bfc-6OOILZDHq58N6uxbzp_2TRHKTrV は実際には『2026確定申告\
+    \ 個人事業』フォルダID\n  - L524: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す\n\
+    \  - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY\n\
+    \  - L286: context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions\n\
+    \  - L412: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_\n\
+    ────────────────────────────────────────"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_2293
   project: infra
-  scout_exempt: true
-  status: idle
-  task_id: cmd_2279_impl
-  task_type: impl
-  report_filename: kotaro_report_cmd_karo_pstree_fix.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_pstree_fix.yaml
+  status: done
+  stop_for: []
+  task_id: cmd_2293_normal
+  task_type: normal
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_2293.yaml
+  report_path: queue/reports/kotaro_report_cmd_2293.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 11
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件), wrong_task_execution(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'lu_structure_error'
+      count: 18
+    - pattern: 'bc_result_empty'
+      count: 14
+    - pattern: 'fill_this_remaining'
+      count: 13
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; FILL_THISが残存。全テンプレート値を実際の値に置換せよ'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 4
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 4
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'fill_this_remaining'
+      count: 1
+      hint: 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ'
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -52,17 +103,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  deployed_at: "2026-04-25T22:17:51"
-  session_state:
-    attempt: 1
-    last_block_reason: 'lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field'
-    tried_approaches:
-    - 'lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field'
-    approach_summary: 'ninja_monitor.sh PSTREE-OVERRIDEバグ修正完了。task.status=idle/completed/doneならbash subprocess有でもIDLE扱い。check_gunshi_design_num_relax()カタログ除外条件+LS-A22 SCOUT記載は前回セッションで実装済み確認。テスト2件追加+既存全PASS。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field'
-      approach_summary: 'ninja_monitor.sh PSTREE-OVERRIDEバグ修正完了。task.status=idle/completed/doneならbash subprocess有でもIDLE扱い。check_gunshi_design_num_relax()カタログ除外条件+LS-A22 SCOUT記載は前回セッションで実装済み確認。テスト2件追加+既存全PASS。'
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
-  command: "ninja_monitor.shのPSTREE-OVERRIDEバグ修正。現状: task status=idle+タスクなしでもbash subprocessがあるとBUSY扱いになり/clearが発動しない。修正: PSTREE-OVERRIDE判定にtask statusチェックを追加。status=idle/completed/doneの場合はbash subprocessがあっても/clearを許可する。(1)ninja_monitor.shのPSTREE-OVERRIDE判定箇所を特定(ログ: PSTREE-OVERRIDE: {ninja} @agent_state=idle but bash subprocess detected) (2)task YAMLのstatus確認を条件に追加(status=idle/completed/done→PSTREE-OVERRIDEをスキップ) (3)テスト追加: status=idle+bash subprocess→/clear許可 (4)既存テスト全PASS確認 (5)git push"
+  deployed_at: "2026-04-26T14:03:04"

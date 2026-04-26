@@ -4093,7 +4093,16 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-26
 - **出典**: cmd_karo_cdp_measure_fix
 - **記録者**: saizo
-- **status**: draft
+- **status**: approved
 - **tags**: [infra,testing,bash,wsl2]
 - **target_files**: [scripts/cdp/cdp_measure.sh,tests/unit/test_cdp_measure.bats]
 - cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl localhost:9222で再確認するとfalse negativeになり、成功した自動起動をFAIL扱いした。CDP計測本体がauto-ops cdp_helperを使う場合、preflightも同じhelper結果を正とし、別transportのcurlを最終判定に使わない。加えてset -e下のAUTH_CHECK=は失敗時にecho前で無音終了するため、診断preflightはset +eでrcを捕捉する。
+
+### L534: 軍師動的指摘がcmd_save出力を汚染しテスト誤検知
+- **日付**: 2026-04-26
+- **出典**: cmd_karo_ci_fix_env_change
+- **記録者**: hanzo
+- **status**: approved
+- **tags**: [infra,inbox]
+- **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
+- 動的コンテンツ(軍師指摘)に否定アサーション対象文字列が混入可能。修正: 動的コンテンツ依存の否定アサーションは具体的エラーメッセージパターンに絞れ。
