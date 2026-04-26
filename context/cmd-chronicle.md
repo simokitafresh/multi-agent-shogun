@@ -869,3 +869,6 @@
 | cmd_2303 | 配備 — cmd_2300(Measure C prefetch)のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2303_normal: GitHub main と |
 | cmd_2306 | 偵察 — Measure A残り(pending_map/folders/portfolio全件/momentum payload)削減箇所特定 | dm-signal | 04-26 | FILL_THIS |
 | cmd_2305 | 偵察 — Measure D(full fetch defer)実装箇所特定+波及分析 | dm-signal | 04-26 | dashboard/monthly-returns/annu |
+| cmd_2308 | 実装 — Measure D: full fetch idle後ろ倒し(dashboard/monthly/annual 3ページ) | dm-signal | 04-26 | FILL_THIS |
+| cmd_2309 | 実装 — Measure A: signals.py pending_map月中スキップ+portfolio lazy load | dm-signal | 04-26 | FILL_THIS |
+| cmd_2307 | 偵察 — PF切替1009msフェーズ分解(API fetch vs FE処理の実測内訳) | dm-signal | 04-26 | PF切替1008-1009msをperf_measure定義 |
