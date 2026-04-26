@@ -853,3 +853,5 @@
 | cmd_2284 | 強化 — cmd_save.sh BLOCK後の将軍自走強制hook | infra | 04-26 | cmd_save.sh BLOCK(exit 1)時だけPo |
 | cmd_2288 | 検証 — Phase 1-B CDP再計測（handoff cache効果確認+ベースライン比較） | dm-signal | 04-26 | FILL_THIS |
 | cmd_2289 | 強化 — 第三層指標転換（忙しさ→賢さ: 同クラス再発率+ワクチン有効率をstartup gateに追加） | infra | 04-26 | Gate 12.5拡張完了。再発率(前50cmd vs直近5 |
+| cmd_2291 | 検証 — CDP再計測（道具磨き後・全ページ+PF切替） | dm-signal | 04-26 | — |
+| cmd_2292 | 偵察 — シン四神→シン忍法→シン奥義 L0→L2経路の現物検証 | dm-signal | 04-26 | シン四神12体(type=standard, compone |
