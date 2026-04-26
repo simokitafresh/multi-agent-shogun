@@ -627,20 +627,60 @@ else
     echo "  gate_loop_health.sh不在"
 fi
 
-# --- Gate 12.5: 遡及学習 — WARN/BLOCK頻度TOP 5 (殿裁定2026-04-21) ---
-# 目的: 毎セッション起動時に「何を根本修正すべきか」を自動表示
-# 過去データから最も頻出のパターンを特定→消火ではなく根本修正のROIが最大の対象を示す
-echo "■ 遡及学習(WARN/BLOCK頻度)"
-if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
-    _retro_top=$(python3 -c "
-import yaml
+# --- Gate 12.5: 遡及学習 — WARN/BLOCK頻度TOP 5 + 再発率/有効率 (殿裁定2026-04-21, cmd_2289拡張) ---
+# 目的: 毎セッション起動時に「何を根本修正すべきか」+「ワクチンが効いているか」を自動表示
+# 再発率=前50cmdに出現したパターンが直近50cmdにも再出現した割合(将軍定義 2026-04-26)
+# 有効率=前50cmdに出現したパターンが直近50cmdで消滅した割合
+echo "■ 遡及学習(WARN/BLOCK頻度+再発率)"
+_DQ_FILE_125="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+if [ -f "$_DQ_FILE_125" ]; then
+    _retro_result=$(python3 - "$_DQ_FILE_125" <<'RETRO_PY'
+import sys
 from collections import Counter
-from datetime import datetime, timedelta
-with open('$SCRIPT_DIR/logs/cmd_design_quality.yaml') as f:
-    data = yaml.safe_load(f) or {}
-entries = data.get('entries', [])[-50:]  # 直近50cmd
+
+dq_file = sys.argv[1]
+NINJA_NAMES = {'hayate', 'kagemaru', 'hanzo', 'saizo', 'kotaro', 'tobisaru'}
+SKIP_STARTS = ('draft_lessons', 'ci_failure')
+
+def normalize_class(p):
+    p = p.strip()
+    if not p: return None
+    if any(p.startswith(s) for s in SKIP_STARTS) or ':binary_checks_fail' in p: return None
+    parts = p.split(':')
+    cls = parts[0].strip()
+    if cls in NINJA_NAMES and len(parts) > 1:
+        cls = parts[1].strip()
+    return cls if cls else None
+
+# Fast line-based parse (yaml.safe_load takes ~4s on WSL2/NTFS)
+entries_raw = []
+current = {}
+with open(dq_file, encoding='utf-8', errors='ignore') as f:
+    for line in f:
+        line = line.rstrip()
+        if '  - cmd_id:' in line:
+            if current.get('cmd_id') and current.get('timestamp'):
+                entries_raw.append(current)
+            current = {}
+            current['cmd_id'] = line.split('cmd_id:', 1)[1].strip().strip('"')
+        elif 'gate_result:' in line and current:
+            current['gate_result'] = line.split('gate_result:', 1)[1].strip().strip('"')
+        elif '    notes:' in line and current:
+            current['notes'] = line.split('notes:', 1)[1].strip().strip('"')
+        elif 'timestamp:' in line and current:
+            current['timestamp'] = line.split('timestamp:', 1)[1].strip().strip('"')
+    if current.get('cmd_id') and current.get('timestamp'):
+        entries_raw.append(current)
+
+entries = sorted(entries_raw, key=lambda e: e.get('timestamp', ''))
+
+# Sliding windows: 直近50cmd vs 前50cmd
+recent50 = entries[-50:]
+prev50 = entries[-100:-50] if len(entries) >= 100 else []
+
+# TOP 5: 直近50件のWARN/BLOCK頻出パターン (full pattern for specificity)
 c = Counter()
-for e in entries:
+for e in recent50:
     notes = e.get('notes', '') or ''
     for p in notes.split('|'):
         p = p.strip()
@@ -651,9 +691,36 @@ if c:
         print(f'  {count:4d}回(50cmd)  {reason[:65]}')
 else:
     print('  直近50cmdのWARN/BLOCKなし — 学習ループ健全')
-" 2>/dev/null)
-    if [ -n "$_retro_top" ]; then
-        echo "$_retro_top"
+
+# 再発率/有効率: 前50cmdパターン vs 直近50cmdパターン (class-normalized)
+def extract_classes(entry_list):
+    classes = set()
+    for e in entry_list:
+        if e.get('gate_result') not in ('BLOCK', 'WARN'):
+            continue
+        notes = e.get('notes', '') or ''
+        for p in notes.split('|'):
+            cls = normalize_class(p)
+            if cls and 'environment_change' not in cls and 'WARN累計昇格' not in cls:
+                classes.add(cls)
+    return classes
+
+classes_recent = extract_classes(recent50)
+classes_prev = extract_classes(prev50)
+
+if classes_prev:
+    recur = classes_prev & classes_recent
+    elim = classes_prev - classes_recent
+    rate = len(recur) * 100 // len(classes_prev)
+    eff = len(elim) * 100 // len(classes_prev)
+    print(f'  再発率 {rate}% — 前50cmdパターンが直近50cmdに再出現({len(recur)}/{len(classes_prev)}クラス)')
+    print(f'  有効率 {eff}% — 前50cmdパターンが直近50cmdで消滅({len(elim)}/{len(classes_prev)}クラス)')
+else:
+    print('  再発率/有効率: データ不足(前50cmd未満)')
+RETRO_PY
+) 2>/dev/null
+    if [ -n "$_retro_result" ]; then
+        echo "$_retro_result"
     else
         echo "  データなし"
     fi
