@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-26 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-26T16:00:26+09:00 -->
+<!-- generated_at: 2026-04-26T16:06:33+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-26T16:06:33+09:00 | terminal | response | cmd_2300 GATE CLEAR。実装部分(AC1)のcommitは完了済み(2acc4d6b)。 **現況(16:06):** - cmd_2302(AC混在検出WARN): 家老に委任済み、配備待ち - idle忍者: 全6名 …
+- 2026-04-26T16:06:07+09:00 | terminal | response | cmd_2302委任完了+教訓LS035記録完了。 **完了した対処:** 1. cmd_2302(AC混在検出WARN)を家老に委任 → cmd_save.shに環境埋め込み 2. 教訓LS034(1cmd1作業原則)+LS035(en…
+- 2026-04-26T16:01:53+09:00 | terminal | inbound | 自分でやれ
+- 2026-04-26T16:01:07+09:00 | terminal | inbound | CMDの正しい出し方は、クリア後も汎用的に守れるか？環境に埋め込んだか？
 - 2026-04-26T16:00:26+09:00 | terminal | response | 2件既読化。 - **cmd_karo_ci_fix_375**: GATE CLEAR完了 - **掲示板通知**: 同上 **最新状況(16:00):** | 忍者 | cmd | 状態 | |------|-----|------|…
 - 2026-04-26T15:59:40+09:00 | terminal | response | 事実報告。 **cmd_2300(Measure C)失敗理由:** - **AC1(実装)**: PASS。usePrefetch.tsにpredictive prefetch実装完了。Jest 256テストPASS、build PAS…
 - 2026-04-26T15:58:51+09:00 | terminal | inbound | 気をつけろ。現在の最新状況を常に把握。タイムラグを無視することが多いからな。
 - 2026-04-26T15:51:30+09:00 | terminal | inbound | 候補を見つけたら、すかさずなぜなぜ7回。成長しよう
 - 2026-04-26T15:48:20+09:00 | terminal | response | Dream完了。Memory健全度: **ALERT → WARN** に改善(183→180行)。 **ALERT 3件対処結果:** | # | ALERT | 対処 | 結果 | |---|-------|------|------…
 - 2026-04-26T15:48:01+09:00 | terminal | inbound | <task-notification> <task-id>bcwe6nc8q</task-id> <tool-use-id>toolu_01JBCbV4n1h9K2fYPgG3fF1y</tool-use-id> <output-file…
-- 2026-04-26T15:47:56+09:00 | terminal | response | Dream完了。健全度再確認。 [meta] stop_reason=tool_use
-- 2026-04-26T15:41:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-26 15:40:06|cmd_2299
-- 2026-04-26T15:41:33+09:00 | terminal | inbound | やろう
-- 2026-04-26T15:41:08+09:00 | terminal | response | 現況報告。 **ALERT 3件の内訳:** | # | ALERT | 内容 | 対処 | |---|-------|------|------| | 1 | Memory健全度 | /dream実行が必要 | `/dream`スキル実…
 
 ## 未解決確認事項
 - Dream完了。健全度再確認。 [meta] stop_reason=tool_use
@@ -26,6 +26,7 @@
 - 家老はcmd_2297のGATE処理中+cmd_2298の配備を進めている。リアルタイムで確認済み。 cmd_2297のGATE CLEAR処理が完了次第、cmd_2298がCodex(GPT)忍者に配備される。家老は動いている。 殿の指示を待つ。 [meta] stop_re…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-26T16:06:07+09:00 | cmd_2302委任完了+教訓LS035記録完了。 **完了した対処:** 1. cmd_2302(AC混在検出WARN)を家老に委任 → cmd_save.shに環境埋め込み 2. 教訓LS034(1cmd1作業原則)+LS035(environment_change参照パタ…
 - 2026-04-26T16:00:26+09:00 | 2件既読化。 - **cmd_karo_ci_fix_375**: GATE CLEAR完了 - **掲示板通知**: 同上 **最新状況(16:00):** | 忍者 | cmd | 状態 | |------|-----|------| | kagemaru | CI fix…
 - 2026-04-26T15:59:40+09:00 | 事実報告。 **cmd_2300(Measure C)失敗理由:** - **AC1(実装)**: PASS。usePrefetch.tsにpredictive prefetch実装完了。Jest 256テストPASS、build PASS - **AC2(CDP計測)**: …
 - 2026-04-26T15:48:20+09:00 | Dream完了。Memory健全度: **ALERT → WARN** に改善(183→180行)。 **ALERT 3件対処結果:** | # | ALERT | 対処 | 結果 | |---|-------|------|------| | 1 | Memory健全度ALE…
@@ -33,9 +34,9 @@
 - 2026-04-26T15:37:58+09:00 | 軍師がinbox_write.shのcmd_idフィルタ不在バグを検出→修正完了。無関係cmdの軍師レビュー補足が混入していた問題。S0 PASS。対応不要。 殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-04-26T15:36:41+09:00 | 復帰完了。 **現在の状況:** | 忍者 | cmd | 状態 | CTX | |------|-----|------|-----| | hayate | cmd_2299(弱点計測hook) | Working | 91% | | saizo | cmd_2300(Mea…
 - 2026-04-26T15:28:38+09:00 | cmd_2300委任完了。Measure C(PF切替高速化)が忍者に配備される。 **今セッション全11cmd起票完了:** | # | cmd | 内容 | 状態 | |---|-----|------|------| | 1 | cmd_2290 | 軍師報告経路hook…
-- 2026-04-26T15:25:16+09:00 | 全完了。cmd_2299委任+inbox既読+教訓LS033記録。 **今セッション全cmd(10本):** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2290 | 軍師報告経路hook | GATE CLEAR | | cmd…
 
 ## 参照cmd
+- cmd_2
 - cmd_2281
 - cmd_2285
 - cmd_2286
@@ -52,6 +53,7 @@
 - cmd_2298
 - cmd_2299
 - cmd_2300
+- cmd_2302
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
