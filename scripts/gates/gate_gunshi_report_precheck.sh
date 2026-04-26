@@ -320,6 +320,29 @@ else
     echo "  SKIP: DM-Signalプロジェクトではない"
 fi
 
+# ─── SG-PRE17: AC ID照合(stale AC contamination検出 GP-235) ───
+echo ""
+echo "■ SG-PRE17: AC ID照合(stale AC検出)"
+if [ -n "${PARENT_CMD:-}" ] && [ -n "${CMD_SPEC:-}" ]; then
+    # cmdソースからAC IDを抽出
+    CMD_AC_IDS=$(echo "$CMD_SPEC" | grep -oP '(?<=id: )AC[0-9]+' | sort -u)
+    # 報告binary_checksからAC IDを抽出(commitは除外)
+    REPORT_AC_IDS=$(awk '/^binary_checks:/{bc=1;next} bc && /^[^ ]/{exit} bc && /^  [A-Z]/{gsub(/:.*$/,"",$0);gsub(/^ +/,"",$0);print}' "$REPORT_PATH" 2>/dev/null | grep -v '^commit$' | sort -u)
+    if [ -n "$CMD_AC_IDS" ] && [ -n "$REPORT_AC_IDS" ]; then
+        STALE_ACS=$(comm -23 <(echo "$REPORT_AC_IDS") <(echo "$CMD_AC_IDS"))
+        if [ -n "$STALE_ACS" ]; then
+            echo "  ★★★ WARN: stale AC検出! 報告にcmd原本にないAC ID: ${STALE_ACS//$'\n'/, }"
+            echo "  → cmd原本AC: ${CMD_AC_IDS//$'\n'/, } / 報告AC: ${REPORT_AC_IDS//$'\n'/, }"
+        else
+            echo "  PASS: 報告AC IDはcmd原本と一致"
+        fi
+    else
+        echo "  SKIP: AC ID抽出不可(cmd_spec=${#CMD_AC_IDS} report=${#REPORT_AC_IDS})"
+    fi
+else
+    echo "  SKIP: cmd仕様取得不可"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
