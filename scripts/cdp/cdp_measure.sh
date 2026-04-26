@@ -22,7 +22,7 @@ PERF_CONFIG="/mnt/c/Python_app/auto-ops/workflows/perf_config.yaml"
 OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
 FRONTEND_URL="${FRONTEND_URL:-https://dm-signal-frontend.onrender.com}"
 FRONTEND_HEALTH_URL="${FRONTEND_HEALTH_URL:-${FRONTEND_URL}/}"
-# BACKEND_URL removed — CDP哲学: 殿の既存Chromeセッションを使うためAPI認証不要
+BACKEND_URL="https://dm-signal-backend.onrender.com"
 
 # ─── 引数解析 ───
 CMD_ID="${1:-}"
@@ -68,18 +68,31 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. Chrome CDP接続確認 — 殿の既存Chromeセッションに接続
-#     CDP哲学: 既存Chromeに接続=殿のログイン状態がそのまま使える
-#     API経由の新規認証は不要。殿のブラウザは既にadminログイン済み
+# 1c. CDP認証 — cdp_cli.sh auth でブラウザ起動+Viewer+Admin Cookie注入
+#     CDP哲学: 人間と同じようにブラウザを操作する=未起動でも起動してログインする
+#     cdp_cli.sh authは内部でpreflight_cdp_flow→タブ作成→Cookie注入を一括実行
 CDP_PORT="${CDP_PORT:-9222}"
-echo -n "  Chrome CDP: "
-CDP_CHECK=$(curl -fsS --connect-timeout 5 --max-time 10 "http://localhost:${CDP_PORT}/json/version" 2>/dev/null || true)
-if [[ -z "$CDP_CHECK" ]]; then
-    echo "FAIL (port ${CDP_PORT} not responding)" >&2
-    echo "  → 殿のChromeがCDPモードで起動していない。--remote-debugging-port=${CDP_PORT} で起動せよ" >&2
+CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"
+ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
+echo -n "  CDP Auth (Viewer+Admin): "
+set +e
+AUTH_RESULT=$(bash "$CDP_CLI" auth --env "$ENV_FILE" --port "$CDP_PORT" --api-base-url "$BACKEND_URL" --base-url "$FRONTEND_URL" 2>&1)
+AUTH_RC=$?
+set -e
+if [[ "$AUTH_RC" -ne 0 ]]; then
+    echo "FAIL" >&2
+    echo "  → CDP認証に失敗。出力: ${AUTH_RESULT}" >&2
+    echo "  → .envのADMIN_USER/ADMIN_PASS/VIEWER_PASSを確認。Chrome CDPが起動しているか確認。" >&2
     exit 1
 fi
-echo "OK (port ${CDP_PORT})"
+# auth結果からadmin_authenticated確認
+ADMIN_AUTH=$(echo "$AUTH_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('admin_authenticated') else 'no')" 2>/dev/null || echo "unknown")
+if [[ "$ADMIN_AUTH" != "yes" ]]; then
+    echo "FAIL (admin not authenticated)" >&2
+    echo "  → Admin認証が不成立。出力: ${AUTH_RESULT}" >&2
+    exit 1
+fi
+echo "OK (port ${CDP_PORT}, admin+viewer authenticated)"
 
 echo ""
 
