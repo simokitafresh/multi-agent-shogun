@@ -17,6 +17,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
+
+# 終了時にCDPブラウザをcleanup（成功/失敗/中断どれでも）
+_cdp_cleanup() {
+    PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 -c "
+from cdp import cdp_helper
+cdp_helper.cleanup_chrome(${CDP_PORT:-9222})
+" 2>/dev/null || true
+}
+trap _cdp_cleanup EXIT
 PERF_MEASURE="/mnt/c/Python_app/auto-ops/workflows/perf_measure.py"
 PERF_CONFIG="/mnt/c/Python_app/auto-ops/workflows/perf_config.yaml"
 OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
@@ -175,6 +184,18 @@ elif [[ -z "$BASELINE_PATH" ]]; then
 elif [[ ! -f "$BASELINE_PATH" ]]; then
     echo "  WARN: baseline not found: $BASELINE_PATH"
 fi
+echo ""
+
+# ─── Phase 5: CDP Cleanup ───
+echo "■ Phase 5: CDP Cleanup"
+PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 -c "
+from cdp import cdp_helper
+cleaned = cdp_helper.cleanup_chrome(${CDP_PORT})
+if cleaned:
+    print('  OK: CDPブラウザを終了')
+else:
+    print('  SKIP: PIDファイルなし(手動起動のCDPは残存)')
+" 2>&1 || echo "  WARN: cleanup失敗(無視可)"
 echo ""
 
 echo "═══════════════════════════════════════════════════"
