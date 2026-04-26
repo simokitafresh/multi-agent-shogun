@@ -11,12 +11,11 @@ setup() {
     grep -q -- '--connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL"' "$SCRIPT"
 }
 
-@test "cdp_measure: CDP login uses UI operation not API injection" {
+@test "cdp_measure: CDP login uses ui_login (shared CDP philosophy)" {
     grep -q 'CDP Admin Login (UI)' "$SCRIPT"
-    grep -q 'type_ref' "$SCRIPT"
-    grep -q 'click_ref' "$SCRIPT"
-    grep -q 'snapshot_items' "$SCRIPT"
+    grep -q 'cdp_helper.ui_login' "$SCRIPT"
     ! grep -q 'cdp_cli.sh auth' "$SCRIPT"
+    ! grep -q 'Network.setCookie' "$SCRIPT"
 }
 
 @test "cdp_measure: perf_measure runs with auto-ops on PYTHONPATH" {
