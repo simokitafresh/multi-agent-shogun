@@ -872,3 +872,4 @@
 | cmd_2308 | 実装 — Measure D: full fetch idle後ろ倒し(dashboard/monthly/annual 3ページ) | dm-signal | 04-26 | FILL_THIS |
 | cmd_2309 | 実装 — Measure A: signals.py pending_map月中スキップ+portfolio lazy load | dm-signal | 04-26 | FILL_THIS |
 | cmd_2307 | 偵察 — PF切替1009msフェーズ分解(API fetch vs FE処理の実測内訳) | dm-signal | 04-26 | PF切替1008-1009msをperf_measure定義 |
+| cmd_2310 | 改善 — perf_measure.py PF切替計測手法修正(dropdown固定待機520ms排除) | dm-signal | 04-26 | FILL_THIS |
