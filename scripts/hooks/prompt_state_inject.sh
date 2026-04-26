@@ -95,6 +95,7 @@ fi
 if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
+agent_id="${PROMPT_STATE_AGENT_ID:-$agent_id}"
 
 # --- shogun only (exit 0 for all others) ---
 if [[ "$agent_id" != "shogun" ]]; then
@@ -106,6 +107,54 @@ printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
 if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
   timestamp="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
 fi
+
+count_lord_responses() {
+  local lord_conversation_file="$1"
+  [[ -f "$lord_conversation_file" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  python3 - "$lord_conversation_file" <<'PY'
+import json
+import sys
+
+count = 0
+with open(sys.argv[1], encoding="utf-8") as fh:
+    for line in fh:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if entry.get("type") == "inbound" and entry.get("source") == "lord":
+            count += 1
+print(count)
+PY
+}
+
+record_shogun_growth_metrics() {
+  local lord_response_count="$1"
+  local metrics_file="${PROMPT_STATE_GROWTH_METRICS_FILE:-$SCRIPT_DIR/logs/shogun_growth_metrics.yaml}"
+
+  mkdir -p "$(dirname "$metrics_file")"
+  {
+    flock 9
+    {
+      printf -- '- timestamp: "%s"\n' "$timestamp"
+      printf '  source: "prompt_state_inject.sh"\n'
+      printf '  agent_id: "%s"\n' "$agent_id"
+      printf '  lord_response_count: %s\n' "$lord_response_count"
+    } >> "$metrics_file"
+  } 9>"${metrics_file}.lock"
+}
+
+# --- Growth metrics: automatic lord response count recording ---
+lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
+record_shogun_growth_metrics "$lord_response_count" 2>/dev/null || true
 
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"

@@ -3054,6 +3054,44 @@ if load_cmd_block; then
     fi
 fi
 
+# --- Check 23: new_file/new_structure request warning ---
+# 目的: ACやcommandに新規ファイル/新規構造作成が含まれるときWARNし、既存活用を促す。
+check_new_file_structure_warning() {
+    local ac_block command_block search_text hits
+
+    ac_block="$(extract_acceptance_criteria_block)"
+    command_block="$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            found=1
+            sub(/^[[:space:]]*command:[[:space:]]*/, "")
+            print
+            next
+        }
+        found && /^[[:space:]]{4,}/ {
+            line=$0
+            sub(/^[[:space:]]+/, "", line)
+            print line
+            next
+        }
+        found && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { exit }
+    ')"
+    search_text="${ac_block}"$'\n'"${command_block}"
+    [[ -n "${search_text//[[:space:]]/}" ]] || return 0
+
+    hits="$(printf '%s\n' "$search_text" | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
+    [[ -n "$hits" ]] || return 0
+
+    echo "WARN: new_file/new_structure要求を検出。既存活用できるファイル・構造がないか確認せよ" >&2
+    echo "$hits" | head -n 5 >&2
+    echo "  既存活用を優先し、新規作成が必要なら理由と既存代替の現物確認をcmdに明記せよ" >&2
+    record_warn_reason "new_file_or_structure_requested" "check=check_new_file_structure_warning"
+}
+
+if load_cmd_block; then
+    check_new_file_structure_warning
+fi
+
 # --- Check 3.6b: WARN時environment_change強制（殿指摘2026-04-20） ---
 # 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
 # Check 3.6(PRIOR_ATTEMPT_COUNT>0)は過去BLOCK後の再PASS用。こちらはWARN初回用。
