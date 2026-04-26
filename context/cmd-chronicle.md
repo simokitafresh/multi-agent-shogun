@@ -873,3 +873,6 @@
 | cmd_2309 | 実装 — Measure A: signals.py pending_map月中スキップ+portfolio lazy load | dm-signal | 04-26 | FILL_THIS |
 | cmd_2307 | 偵察 — PF切替1009msフェーズ分解(API fetch vs FE処理の実測内訳) | dm-signal | 04-26 | PF切替1008-1009msをperf_measure定義 |
 | cmd_2310 | 改善 — perf_measure.py PF切替計測手法修正(dropdown固定待機520ms排除) | dm-signal | 04-26 | FILL_THIS |
+| cmd_2313 | 修正 — Codex config.toml approval_mode=full-auto追加(STALL根絶) | infra | 04-26 | FILL_THIS |
+| cmd_2312 | 計測 — Measure D/A効果検証(修正済み計測手法でCDP PF切替再計測) | dm-signal | 04-26 | — |
+| cmd_2311 | 配備 — Measure D/A/計測手法修正のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2308/2309はDM-Signal GitHub |

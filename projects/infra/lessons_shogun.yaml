@@ -293,7 +293,7 @@ lessons:
 - id: 'LS025'
   title: '同時draft禁止+diagnosis形式 — 1本ずつ+2部構成'
   detail: 'cmd_2284起票時にcmd_2283もdraft状態→other_draft_exists BLOCK。diagnosis形式も「BLOCK理由: ... 対策: ...」の2部構成が必要だが自由テキストで書いた。修正: cmd_2283一時退避→1本ずつ通す+diagnosis 2部構成に修正→PASS'
-  source_cmd: 'cmd_2284'
+  source_cmd: cmd_2284,cmd_2308,cmd_2309,cmd_2312
   created_at: '2026-04-26'
   automated: true
   enforcement: 'cmd_save.sh other_draft_exists(同時draft BLOCK)+diagnosis形式チェックで自動検証済み'
@@ -360,3 +360,10 @@ lessons:
   created_at: '2026-04-26'
   automated: true
   enforcement: 'cmd_save.shにAC混在検出(実装AC+計測ACの共存WARN)を追加予定'
+- id: 'LS035'
+  title: 'environment_change参照パターン — 自cmd成果物禁止+同一行grep'
+  detail: 'cmd_2302で4回BLOCK。(1)q5検証レベル未明記(structure_verified書き忘れ) (2)environment_changeに自cmd成果物(check_ac_phase_mixing)を参照→未存在BLOCK (3)教訓LS034参照時にid行とtitle行が別行→LS034.*1cmd1作業が同一行grepで不一致。修正: (1)structure_verified+証拠明記 (2)動機の既存教訓を参照 (3)titleテキストのみでpattern指定'
+  source_cmd: 'cmd_2302'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh environment_change grep検証(既存)で自動BLOCK済み'

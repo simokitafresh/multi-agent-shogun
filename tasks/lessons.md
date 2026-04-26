@@ -4106,3 +4106,12 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,inbox]
 - **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
 - 動的コンテンツ(軍師指摘)に否定アサーション対象文字列が混入可能。修正: 動的コンテンツ依存の否定アサーションは具体的エラーメッセージパターンに絞れ。
+
+### L535: CI並列bats実行で共有lockファイルによるflockレース
+- **日付**: 2026-04-26
+- **出典**: cmd_karo_ci_fix_375
+- **記録者**: kagemaru
+- **status**: approved
+- **tags**: [infra,testing]
+- **target_files**: [tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats]
+- bats --jobs Nで並列実行時、cmd_save.shが/tmp/shogun_to_karo.lockを取り合いWARNが偽発火する。修正: LOCK_FILE変数をCMD_SAVE_LOCK_FILE env varでオーバーライド可能にし、テストのsetupでTEST_TMPDIRにユニークなパスを指定する。
