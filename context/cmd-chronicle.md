@@ -861,3 +861,6 @@
 | cmd_2296 | 強化 — dm-signal context 4ファイルVercel圧縮+500行制限適用 | dm-signal | 04-26 | FILL_THIS |
 | cmd_2297 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定 | dm-signal | 04-26 | FE設計書(fe-speed-improvement-des |
 | cmd_2298 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定(Codex独立視点) | dm-signal | 04-26 | FILL_THIS |
+| cmd_2299 | 強化 — 将軍弱点2計測hook(因果展開ステップ数+新規vs既存判断) | infra | 04-26 | prompt_state_inject.shへ殿入力回数の自 |
+| cmd_2300 | 実装 — Measure C: next-portfolio predictive prefetch(PF切替高速化) | dm-signal | 04-26 | FILL_THIS |
+| cmd_karo_ci_fix_375 | CI修正 — batsテスト#375失敗修正 | infra | 04-26 | FILL_THIS |
