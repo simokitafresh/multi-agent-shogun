@@ -860,4 +860,4 @@
 | cmd_2295 | 強化 — projects/dm-signal.yaml Vercel圧縮(491→80行) | dm-signal | 04-26 | — |
 | cmd_2296 | 強化 — dm-signal context 4ファイルVercel圧縮+500行制限適用 | dm-signal | 04-26 | FILL_THIS |
 | cmd_2297 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定 | dm-signal | 04-26 | FE設計書(fe-speed-improvement-des |
-| cmd_2298 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定(Codex独立視点) | dm-signal | 04-26 | — |
+| cmd_2298 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定(Codex独立視点) | dm-signal | 04-26 | FILL_THIS |
