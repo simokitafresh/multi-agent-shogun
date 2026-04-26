@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L650 -->
+<!-- last_synced_lesson: L651 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -186,3 +186,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L638-L650は振り分け済 → ops§6-7(L638[PI-025]/L647/L648), research§35(L641/L643), ops索引(L644/L645/L649), infra索引(L646/L640:codd), frontend§12(L650)）
 - （L639/L640は振り分け済 → core§19.2(L639:EqualWeight GSへpipeline import guard混入禁止), core§19.1(L640:DB経由CoDD比較は同一プロセス・同一データ)）
 - （L642は振り分け済 → core§19.5(GS成果物globはcmd_id直後にninjutsu名が来る命名も対象)）
+- L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
