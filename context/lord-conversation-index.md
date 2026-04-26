@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-26 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-26T12:30:24+09:00 -->
+<!-- generated_at: 2026-04-26T12:35:53+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-26T12:35:53+09:00 | terminal | response | inbox確認: cmd_2288小太郎報告(AC2 FAIL: CDP未起動)。把握した。cmd_2290委任+inbox既読化を実行。 [meta] stop_reason=tool_use
+- 2026-04-26T12:34:33+09:00 | ntfy | outbound | CI赤: run 24946570793 Unit Tests (bats)
+- 2026-04-26T12:32:03+09:00 | ntfy | outbound | 【CDP計測】ブラウザ自動起動失敗。手動起動してください。
+- 2026-04-26T12:31:52+09:00 | terminal | inbound | 止まっているよ。今後止まらないよう
+- 2026-04-26T12:30:43+09:00 | ntfy | outbound | 【CDP計測】ブラウザ自動起動失敗。手動起動してください。
 - 2026-04-26T12:30:24+09:00 | terminal | response | 起票前確認3問: (1)gunshi.md L441-447現物確認済み (2)既存テーブルにreview_request/design_reviewの2行のみ、自発的検証の経路なし確認済み (3)q5/q7/q8/q11/environ…
 - 2026-04-26T12:29:27+09:00 | ntfy | outbound | 【将軍】復帰完了。前セッション裁定(軍師報告経路+検証義務)の環境埋込み未完了を検出。cmd起票して埋め込む。
 - 2026-04-26T12:29:23+09:00 | ntfy | outbound | 【CDP計測】ブラウザ自動起動失敗。手動起動してください。
 - 2026-04-26T12:28:02+09:00 | ntfy | outbound | 【CDP計測】ブラウザ自動起動失敗。手動起動してください。
 - 2026-04-26T12:26:13+09:00 | ntfy | outbound | 【CDP計測】ブラウザ自動起動失敗。手動起動してください。
-- 2026-04-26T12:21:08+09:00 | terminal | inbound | y
-- 2026-04-26T12:21:00+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_2289 (ctx_pct=75%, median=49.5%, ratio=1.52x, delta=+25.5pt) WARNING: FAIL率20%超。gate強化…
-- 2026-04-26T12:20:52+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-26 10:48:29|cmd_karo_cdp_measure_fix 2026-04-26 10:56:37|cmd_karo_perm_fix 2026-04-26 11:42:56|cmd_22…
-- 2026-04-26T12:20:52+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-184)
-- 2026-04-26T12:19:55+09:00 | terminal | response | 殿の指示を待つ。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- inbox確認: cmd_2288小太郎報告(AC2 FAIL: CDP未起動)。把握した。cmd_2290委任+inbox既読化を実行。 [meta] stop_reason=tool_use
 - 起票前確認3問: (1)gunshi.md L441-447現物確認済み (2)既存テーブルにreview_request/design_reviewの2行のみ、自発的検証の経路なし確認済み (3)q5/q7/q8/q11/environment_change/diagnosi…
 - そうだ。軍師は掲示板で将軍に直接報告できる。実際にやっている（`BULLETIN_NOTIFY=shogun`）。 ということは今回の問題は「家老経由」ではなく、**検証せずに報告した**ことだけが根因。伝達経路は既に正しい。 拙者が「家老経由で伝えようとした」という前提で分析…
 - 家老から掲示板経由の報告: **cmd_2288 CDP計測ブロッカー**: `.env`のcredentialsが本番と不一致。 - Admin: `ADMIN_USER`/`ADMIN_PASS`が本番不一致 - Viewer: `VIEWER_PASS`に制御文字混入疑い…
@@ -23,7 +24,6 @@
 - アーカイブ報告からの参照のみ。現在のインフラでは使われていない。放置で問題なし。 全修正完了。変更の全貌: | ファイル | 修正箇所 | 内容 | |---------|---------|------| | **CLAUDE.md** | Step 9, CRITICAL,…
 - 全箇所修正完了。変更まとめ: | ファイル | 変更 | |---------|------| | CLAUDE.md Step 9 | dashboard読込を削除。snapshotタイムスタンプ確認追記 | | CLAUDE.md CRITICAL | dashboard=…
 - 理解した。 **事実の整理:** - dashboard = 殿が自分で見るもの。陳腐化前提で殿が確認する - 殿が将軍に聞くのは = dashboardに**載っていない**リアルタイム情報 - 将軍が起動時にdashboardを読む = 殿が既に持っている情報を将軍が後追い…
-- そうだね。ダッシュボードは俺が勝手に見るものであって、ダッシュボードにのっていないリアルタイムを将軍に聞くことはあっても、ダッシュボードにのっている情報を聞くことはない。俺はダッシュボードが陳腐化されている前提で確認しているから問題はない
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-26T12:29:27+09:00 | 【将軍】復帰完了。前セッション裁定(軍師報告経路+検証義務)の環境埋込み未完了を検出。cmd起票して埋め込む。
@@ -40,7 +40,6 @@
 - cmd_2131
 - cmd_2267
 - cmd_2273
-- cmd_2279
 - cmd_2281
 - cmd_2282
 - cmd_2283
