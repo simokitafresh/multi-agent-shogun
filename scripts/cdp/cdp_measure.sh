@@ -95,8 +95,9 @@ if [[ "$AUTH_RC" -ne 0 ]]; then
     echo "  → .envのcredentialsを確認。" >&2
     exit 1
 fi
-# auth結果からadmin_authenticated確認
-ADMIN_AUTH=$(echo "$AUTH_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('admin_authenticated') else 'no')" 2>/dev/null || echo "unknown")
+# auth結果からJSON行を抽出（CDPログ行を除外）してadmin_authenticated確認
+AUTH_JSON=$(echo "$AUTH_RESULT" | grep '^{' | tail -1)
+ADMIN_AUTH=$(echo "$AUTH_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('admin_authenticated') else 'no')" 2>/dev/null || echo "unknown")
 if [[ "$ADMIN_AUTH" != "yes" ]]; then
     echo "FAIL (admin not authenticated)" >&2
     echo "  → Admin認証が不成立。出力: ${AUTH_RESULT}" >&2
