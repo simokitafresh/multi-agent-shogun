@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L653 -->
+<!-- last_synced_lesson: L654 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -189,3 +189,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
 - L652: context §0のL2体数・L3状態・四神体数が実態と乖離しており更新が必要（cmd_2292）
 - L653: cdp_measure baseline比較は生成JSONへの統合確認を必須にする（cmd_2291）
+- L654: FE設計書の計測セクション(§2)はcmd更新時に陳腐化する。新計測結果とのdiff確認をAC化すべき（cmd_2297）
