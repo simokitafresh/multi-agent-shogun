@@ -530,6 +530,14 @@ safe_send_clear() {
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
         return 1
     fi
+    if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
+        # /clear resets Claude Code to accept-edits; shift+tab twice restores bypass permissions.
+        sleep 2
+        safe_send_keys "$pane" S-Tab || true
+        sleep 0.1
+        safe_send_keys "$pane" S-Tab || true
+        log "BYPASS-PERMISSIONS-TOGGLE: $agent_name sent shift+tab x2 after $clear_cmd"
+    fi
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }
