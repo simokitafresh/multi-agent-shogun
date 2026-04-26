@@ -169,12 +169,25 @@ if (( unread_count >= 1 )); then
 ⚠️ INBOX ${unread_count}件未読。殿に応答する前にinboxと掲示板を確認せよ。"
 fi
 
+# --- Question pattern detection → confirmation injection (cmd_2293) ---
+question_warning=""
+if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知って'; then
+  current_project="unknown"
+  projects_yaml="$SCRIPT_DIR/config/projects.yaml"
+  if [[ -f "$projects_yaml" ]]; then
+    current_project="$(grep '^current_project:' "$projects_yaml" | awk '{print $2}' | tr -d '"')"
+    [[ -z "$current_project" ]] && current_project="unknown"
+  fi
+  question_warning="
+⚠ 質問検知。回答前にprojects/${current_project}.yaml + context/${current_project}.mdを確認してから答えよ。"
+fi
+
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${inbox_warning}
+inbox_unread: ${unread_count}${inbox_warning}${question_warning}
 --- karo_snapshot ---
 "
 
