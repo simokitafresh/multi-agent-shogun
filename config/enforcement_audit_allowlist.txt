@@ -1,0 +1,27 @@
+# enforcement_audit_allowlist.txt
+# gate_enforcement_audit.sh が許容する script の basename リスト
+# 書式: 1行1 basename。'#' でコメント行。
+#
+# 意味: ここに記載された script は「CLAUDE.md で参照されているが hooks 未登録」
+# であっても意志依存ではないと見なす。具体的には:
+#   - session_start_inject.sh 等の他 hook スクリプトから間接的に呼ばれる
+#   - ランタイムに必要な「道具」スクリプト(エージェントが明示的に呼ぶもの)
+#   - 条件付き実行の gate
+
+# ---- 起動 gate: session_start_inject.sh から自動実行される(2026-04-12 埋込) ----
+gate_shogun_startup.sh
+gate_karo_startup.sh
+gate_gunshi_startup.sh
+
+# ---- 条件付き実行 gate (起動 gate の ALERT 対応で呼ばれる) ----
+gate_lesson_health.sh
+
+# ---- エージェント間通信の道具 (毎回の作業で呼ぶ、hook 対象外) ----
+inbox_write.sh
+bulletin_write.sh
+inbox_mark_read.sh
+inbox_archive.sh
+ntfy.sh
+
+# ---- ライブラリ参照 (source されるか、直接実行されるユーティリティ) ----
+yaml_field_set.sh
