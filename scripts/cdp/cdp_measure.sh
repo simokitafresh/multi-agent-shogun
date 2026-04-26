@@ -77,8 +77,8 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. CDP認証 — ブラウザ起動+UIでadmin login（人間と同じ操作）
-#     CDP哲学: 人間と同じ=ブラウザ開く→フォーム入力→ボタン押す。API+Cookie注入ではない
+# 1c. CDP認証 — cdp_helper.ui_login（CDP哲学の共通基盤）
+#     人間と同じ: ブラウザ起動→ページ開く→フォーム入力→ボタン押す
 CDP_PORT="${CDP_PORT:-9222}"
 ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
 ADMIN_URL="${FRONTEND_URL}/admin"
@@ -93,15 +93,15 @@ port = int(sys.argv[1])
 env_file = Path(sys.argv[2])
 admin_url = sys.argv[3]
 
-# Step 1: ブラウザ起動(自動起動+ポート探索+別ブラウザfallback)
+# ブラウザ起動(自動起動+ポート探索+別ブラウザfallback)
 result = cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)
 actual_port = result.get("cdp_port", port)
 
-# Step 2: admin loginページにナビゲート
+# admin loginページにナビゲート
 tab_id = cdp_helper.create_tab(url=admin_url, port=actual_port, timeout=30)
 time.sleep(4)
 
-# Step 3: .envからcredentials読取り
+# .envからcredentials読取り
 env = {}
 for line in env_file.read_text().splitlines():
     line = line.strip()
@@ -116,29 +116,8 @@ if not user or not pw:
     print("FAIL: ADMIN_USER or ADMIN_PASS missing in .env")
     sys.exit(1)
 
-# Step 4: UI操作でlogin（人間と同じ）
-items = cdp_helper.snapshot_items(tab_id, port=actual_port)
-textboxes = [i["ref"] for i in items if i.get("ref") and i.get("role") == "textbox"]
-login_btn = [i["ref"] for i in items if i.get("ref") and i.get("name") == "Login" and i.get("role") == "button"]
-
-if len(textboxes) < 2 or not login_btn:
-    if any("Portfolio" in i.get("name", "") or "Visibility" in i.get("name", "") for i in items):
-        print(f"OK:already_logged_in:port={actual_port}")
-        sys.exit(0)
-    print(f"FAIL: Login form not found")
-    sys.exit(1)
-
-cdp_helper.type_ref(tab_id, textboxes[0], user, port=actual_port)
-cdp_helper.type_ref(tab_id, textboxes[1], pw, port=actual_port)
-cdp_helper.click_ref(tab_id, login_btn[0], port=actual_port)
-time.sleep(3)
-
-# Step 5: ログイン成功確認
-items2 = cdp_helper.snapshot_items(tab_id, port=actual_port)
-if any("Login" == i.get("name", "") and i.get("role") == "button" for i in items2):
-    print("FAIL: Still on login page after submit")
-    sys.exit(1)
-
+# ui_login: CDP哲学の共通実装
+cdp_helper.ui_login(tab_id, user, pw, port=actual_port)
 print(f"OK:port={actual_port}")
 LOGINPY
 )
