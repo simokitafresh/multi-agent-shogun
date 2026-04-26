@@ -1974,7 +1974,7 @@ try:
     project = task.get('project', '')
     task_type = str(task.get('task_type') or task.get('type') or task.get('scope_mode') or 'unknown').lower().strip()
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
-    CROSS_PROJECT_SCORE_THRESHOLD = 3
+    CROSS_PROJECT_SCORE_THRESHOLD = 9  # 3キーワード以上要求(FP率0%是正: 旧3=1kw通過→37件全NOT_USEFUL)
 
     def extract_keywords(text, min_len=4):
         words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', str(text or ''))
