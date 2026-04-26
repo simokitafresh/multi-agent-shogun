@@ -117,7 +117,7 @@ lessons:
   tags:
   - infra
   - yaml
-  helpful_count: 0
+  helpful_count: 2
   harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:
@@ -286,7 +286,7 @@ lessons:
     aw
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-04-26'
   target_files:
@@ -782,7 +782,7 @@ lessons:
   - bash
   - yaml
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-25'
   target_files:
   - scripts/lib/yaml_safe_write.py
@@ -793,6 +793,9 @@ lessons:
   tags:
   - db
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L426
   title: heredoc内Python yaml.dumpはpre-bash hookで検出不可 — grepパターン追加必要
   summary: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc Pythonでのdump呼出はpre-
@@ -800,8 +803,8 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 1
-  harmful_count: 4
+  helpful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
   - archive_completed.sh
@@ -840,7 +843,7 @@ lessons:
   - gate
   - bash
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L420
   title: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
@@ -869,8 +872,8 @@ lessons:
   - process
   - bash
   - yaml
-  helpful_count: 0
-  harmful_count: 4
+  helpful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
   target_files:
   - cmd_friction_log.sh
@@ -921,6 +924,9 @@ lessons:
   target_files:
   - inbox_prune.sh
   - inbox_write.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L411
   title: /tmpロックファイルは揮発性で信頼できない
   summary: cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_
@@ -985,6 +991,9 @@ lessons:
     list-p
   tags:
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L402
   title: gate状態ファイルを/tmpに置くと再起動で冪等性喪失
   summary: gate_improvement_trigger.shの冪等性チェック用状態ファイルが/tmpに配置されていた。WSL再起動で/tmpが消去されるため、再起動後
@@ -1126,6 +1135,9 @@ lessons:
   - reporting
   target_files:
   - report_field_set.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L383
   title: Python埋込コードのシェル変数展開はコードインジェクション源
   summary: lesson_delete.shでSCRIPT_DIR/PROJECT_IDをPythonヒアドク内にシェル展開で直接埋込していた。シングルクォート含む入力で任
@@ -1218,6 +1230,9 @@ lessons:
   - tmux
   target_files:
   - agent_status.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L371
   title: Python内シェル変数展開は環境変数経由に統一せよ
   summary: auto_deploy_next.shの第2Pythonブロックでドル記号VAR形式のシェル変数展開を使用していた。同スクリプト内の第1ブロックはos.envi
@@ -1233,6 +1248,9 @@ lessons:
   - tmux
   target_files:
   - sync_pane_vars.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L369
   title: ac_physical_verify.shのAC抽出正規表現にリテラル文字除外バグ
   summary: '[^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X'
@@ -1305,6 +1323,9 @@ lessons:
   - reporting
   target_files:
   - clear_prep_check.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L360
   title: decision_write.shのPython内変数参照がexport/os.environ方式と直接補間で不整合
   summary: 同一スクリプト内でPython呼出しが2箇所あり、flock内(L60-70)はexport+os.environ[]で安全だが、PJ検索(L26-31)はシェ
@@ -1334,7 +1355,7 @@ lessons:
   - process
   - yaml
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-26'
   target_files:
@@ -1474,7 +1495,7 @@ lessons:
   tags:
   - bash
   - yaml
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:
@@ -1562,6 +1583,9 @@ lessons:
   tags:
   - bash
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L327
   title: ハードコード値は動的取得済みデータの活用漏れを疑え
   summary: dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動
@@ -1604,6 +1628,9 @@ lessons:
   - tmux
   target_files:
   - restart_watchers.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L322
   title: case文のステータス網羅性を実行結果で検証せよ
   summary: model_switch_preflight.shのcase文がacknowledgedを未処理のまま長期放置されていた。静的コードレビューだけでは気付きにくい
@@ -1639,7 +1666,7 @@ lessons:
   - yaml
   - inbox
   helpful_count: 2
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-26'
 - id: L318
   title: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
@@ -1860,8 +1887,8 @@ lessons:
   - testing
   - security
   - oauth
-  helpful_count: 1
-  harmful_count: 0
+  helpful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-26'
 - id: L293
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
@@ -1911,8 +1938,8 @@ lessons:
   - process
   - gate
   - yaml
-  helpful_count: 1
-  harmful_count: 5
+  helpful_count: 3
+  harmful_count: 4
   last_referenced: '2026-04-26'
   target_files:
   - gate_shogun_startup.sh
@@ -1923,6 +1950,9 @@ lessons:
   - yaml
   target_files:
   - context/dm-signal-core.mdがprojects/dm-signal.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L285
   title: lesson_update_score.shの書込先がindex(lessons.yaml)のままでblock-style書き戻しが発生する
   summary: sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s
@@ -2081,6 +2111,9 @@ lessons:
   summary: 3列レイアウト等でペインインデックスが非連番になる場合、作成順にインデックスを追跡し列順(column-major)でPANE_IDS配列を構築すれば後続コード
   tags:
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L267
   title: 'cmd_1143: 推薦先行+WHY形式を将軍ルールに恒久化'
   summary: 殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと
@@ -2173,7 +2206,7 @@ lessons:
   - frontend
   - deploy
   - lesson
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:
@@ -2186,6 +2219,9 @@ lessons:
   - lesson
   target_files:
   - cmd-chronicle.md
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L254
   title: 教訓注入ログの構造化不足が効果検証を阻害
   summary: deploy_task.shは教訓を注入しているがcmd_id+注入lesson数+lesson_idsの構造化ログが未記録のため、教訓注入量とCLEAR率の相
@@ -2212,6 +2248,9 @@ lessons:
   - monitor
   target_files:
   - ninja_monitor.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L251
   title: no_lesson_reasonフィールド追加時は報告テンプレート+instructions+レビュー条件の3層を同時修正せよ
   summary: 教訓還流の仕組み変更は、テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)の3層を同時に修正
@@ -2259,8 +2298,8 @@ lessons:
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 2
+  helpful_count: 2
+  harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L245
   title: ホワイトリスト型gitignoreで新規lib追加時はgitignore反映を確認せよ
@@ -2386,7 +2425,7 @@ lessons:
   - infra
   - universal
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-25'
   target_files:
   - cmd_complete_gate.sh
@@ -2512,11 +2551,17 @@ lessons:
   - recon
   - gate
   - reporting
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L212
   title: '一次データ不可侵原則: 外部知識(論文/API仕様/書籍等)は原典のまま保存し、自軍の解釈・適用は別セクション/別ファイルに分離する。改変は捏造。全PJ共通適用'
   summary: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'
   tags:
   - api
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L211
   title: 大規模偵察(8名以上)には統合専任担当(水平H)をcmd設計段階で組み込むべき
   summary: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
@@ -2586,6 +2631,9 @@ lessons:
   - tmux
   target_files:
   - ninja_monitor.sh
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -2595,11 +2643,17 @@ lessons:
   - yaml
   - wsl2
   - monitor
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L203
   title: xAI x_searchはResponses API+grok-4ファミリー限定
   summary: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
   tags:
   - api
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L202
   title: Compose で固定テーマ定数が広く直参照されている時は Material colorScheme 追加だけでは多テーマ化できない
   summary: 今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig
@@ -2984,6 +3038,9 @@ lessons:
   - deploy
   - yaml
   - lesson
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L146
   title: AC6系レビューは実配備YAML確認だけでなく一時環境での再現実行を必須にすべき
   summary: IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実
@@ -3010,7 +3067,7 @@ lessons:
   - gate
   - git
   helpful_count: 0
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-26'
 - id: L143
   title: gitignoreエラーはgateログに記録されず暗数化する — 15日間で最低11件、モデル非依存
@@ -3131,6 +3188,9 @@ lessons:
   - recon
   - process
   - wsl2
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L128
   title: OSS参照タスクはcanonical repository解決を初手に入れる
   summary: IF OSS参照タスク時 THEN task記載URLが移転/非公開化されている場合がある
@@ -3157,6 +3217,9 @@ lessons:
   tags:
   - testing
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-26'
 - id: L124
   title: paste-bufferの-dフラグはタイムアウト時に発動しない — 明示的delete-buffer必須
   summary: IF paste-bufferの-dフラグはタイムアウト時 THEN timeout N tmux paste-buffer -b name
@@ -3242,8 +3305,8 @@ lessons:
   - gate
   - monitor
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-25'
+  harmful_count: 2
+  last_referenced: '2026-04-26'
 - id: L113
   title: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない
   summary: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
@@ -3259,6 +3322,9 @@ lessons:
   - recon
   - yaml
   - monitor
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L111
   title: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
   summary: IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
@@ -3316,6 +3382,9 @@ lessons:
   - pipeline
   - gate
   - wsl2
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
@@ -3447,7 +3516,7 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-26'
   target_files:
@@ -3500,6 +3569,9 @@ lessons:
   - yaml
   target_files:
   - cli_profiles.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code
@@ -3535,7 +3607,7 @@ lessons:
   - bash
   - lesson
   helpful_count: 1
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-04-26'
   target_files:
   - scripts/deploy_task.sh
@@ -3560,6 +3632,9 @@ lessons:
   - deploy
   target_files:
   - deploy_task.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L075
   title: L075
   summary: IF ファイル内容を特定の区切り文字で分割パースする時 THEN content.split(delimiter)ではなくline-by-lineで処理せよ
@@ -3608,6 +3683,9 @@ lessons:
   target_files:
   - deploy_task.sh
   - archive_completed.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L069
   title: スキルがsystem-reminderに検出されるにはSKILL.mdにYAMLフロントマター(---/name/description/allowed-tools/---)が必須
   summary: shogun-param-neighbor-checkはMarkdown見出しのみでフロントマターなし→スキル検出システムに認識されず。他8スキルは全てフロント
@@ -3632,9 +3710,9 @@ lessons:
   - tmux
   - model-detection
   - background-color
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-25'
+  last_referenced: '2026-04-26'
   target_files:
   - reset_layout.sh
 - id: L066
@@ -3643,9 +3721,9 @@ lessons:
   summary: integration,yaml-key-mismatch,dry-run-limitation
   tags:
   - api
-  helpful_count: 1
-  harmful_count: 2
-  last_referenced: '2026-04-25'
+  helpful_count: 2
+  harmful_count: 1
+  last_referenced: '2026-04-26'
   target_files:
   - reset_layout.sh
   - settings.yaml
@@ -3871,9 +3949,9 @@ lessons:
   - yaml-schema
   - knowledge
   - tmux
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-25'
+  last_referenced: '2026-04-26'
   target_files:
   - lesson_write.sh
   - sync_lessons.sh
@@ -3887,6 +3965,9 @@ lessons:
   summary: IF CLAUDE.md PJ固有比率時 THEN 95%以上がPJ非依存骨格
   tags:
   - knowledge
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L030
   title: current_projectフィールドは宣言のみで読み取りスクリプトがゼロの死コード状態
   summary: config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジ
@@ -4091,7 +4172,7 @@ lessons:
   tags:
   - communication
   - scripting
-  helpful_count: 1
+  helpful_count: 4
   harmful_count: 1
   last_referenced: '2026-04-26'
   target_files:

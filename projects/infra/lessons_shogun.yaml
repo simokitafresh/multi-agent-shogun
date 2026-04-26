@@ -339,3 +339,24 @@ lessons:
   created_at: '2026-04-26'
   automated: true
   enforcement: 'cmd_save.sh q8_scope_expression(縮小表現検出)で自動BLOCK済み'
+- id: 'LS032'
+  title: 'command欄ステップ列挙12回累計 — LS-A04(12)の再発'
+  detail: 'cmd_2297起票でcommand欄に(1)(2)(3)ステップ列挙→command_steps_over_ac WARN(12回累計)→BLOCK。LS028(LS-A04(12))と同一パターン。根因: 偵察cmdでやることを列挙する癖。修正: 1ブロック記述に統合'
+  source_cmd: 'cmd_2297'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh check_command_steps_vs_ac L3041で自動BLOCK済み'
+- id: 'LS033'
+  title: 'self_reread_red_flag 4回BLOCK — トリガーワード残存箇所の特定不足'
+  detail: 'cmd_2299起票でcheck_self_reread_red_flag L471-472が4回連続発火。根因: (1)AC1 descriptionに「自己申告」残存→修正 (2)command欄に「自己申告」残存→修正 (3)diagnosisに「自己申告」残存→修正。3箇所に分散していたトリガーワードを1箇所ずつ修正するアプローチが非効率。grep -niEで全箇所を事前特定すべきだった(3回目で初めてgrepした)'
+  source_cmd: 'cmd_2299'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh check_self_reread_red_flag L463-477で自動WARN+累計昇格BLOCK済み'
+- id: 'LS034'
+  title: '1cmd1作業原則 — 実装+commit+計測を混在させるな'
+  detail: 'cmd_2300でAC1=実装+AC2=CDP計測を1cmdに混在。殿指摘: 近道のようで遠回り。実装→レビュー→commit/push→計測は各ステップで判断ポイントが必要。途中で問題があっても止められない構造は最悪。真因: 将軍がcmd起票の効率を追求し因果連鎖の判断ポイントを潰した。gateコスト3倍を避けた結果、品質を犠牲にした。'
+  source_cmd: 'cmd_2300'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.shにAC混在検出(実装AC+計測ACの共存WARN)を追加予定'
