@@ -66,6 +66,7 @@ run_save() {
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_LOCK_FILE="$TEST_TMPDIR/shogun_to_karo.lock" \
         bash "$SAVE_SCRIPT" cmd_envtest
 }
 
