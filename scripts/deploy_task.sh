@@ -306,6 +306,43 @@ STALE_FIELD_RESET_PY
     _STALE_RESET_DONE=1
 }
 
+# ─── --yamlモード: task YAMLに記録されたスクリプトの鮮度チェック ───
+# command欄から "bash scripts/..." or "scripts/..." パターンを抽出し、
+# YAML作成後にgitコミットされたスクリプトがあればWARN。BLOCKにはしない（段階的導入）。
+check_yaml_freshness() {
+    local yaml_file="$1"
+    local git_root="$2"
+
+    # command欄からスクリプトパスを抽出（bash scripts/foo.sh または scripts/foo.sh 形式）
+    local script_paths
+    script_paths=$(grep -oE '(bash )?scripts/[^ "\\]+\.sh' "$yaml_file" 2>/dev/null \
+        | sed 's/^bash //' | sort -u)
+
+    [ -z "$script_paths" ] && return 0
+
+    # YAMLファイルのmtime (Unix epoch秒)
+    local yaml_mtime
+    yaml_mtime=$(stat -c %Y "$yaml_file" 2>/dev/null || echo 0)
+
+    while IFS= read -r script_path; do
+        [ -z "$script_path" ] && continue
+
+        # git log で最新commit時刻とhashを取得
+        local commit_iso commit_hash commit_epoch
+        commit_iso=$(git -C "$git_root" log -1 --format="%aI" -- "$script_path" 2>/dev/null || true)
+        [ -z "$commit_iso" ] && continue
+
+        commit_epoch=$(date -d "$commit_iso" +%s 2>/dev/null || true)
+        [ -z "$commit_epoch" ] && continue
+
+        commit_hash=$(git -C "$git_root" log -1 --format="%h" -- "$script_path" 2>/dev/null || true)
+
+        if [ "$commit_epoch" -gt "$yaml_mtime" ]; then
+            echo "[DEPLOY] WARN: ${script_path} はYAML作成後に更新されている(commit: ${commit_hash})。task YAMLを再作成せよ" >&2
+        fi
+    done <<< "$script_paths"
+}
+
 # ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
 # cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
 # これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
@@ -4164,7 +4201,7 @@ inject_done_redeploy_hints() {
 
     report_filename=$(basename "$report_path")
     yaml_field_set "$task_file" "task" "report_path" "$report_path" || true
-    [ -n "$report_filename" ] && yaml_field_set "$task_file" "task" "report_filename" "$report_filename" || true
+    if [ -n "$report_filename" ]; then yaml_field_set "$task_file" "task" "report_filename" "$report_filename" || true; fi
     log "done_redeploy_hint: reused report=${report_path}"
 }
 
@@ -4594,6 +4631,7 @@ except Exception:
                 fi
                 cp "$YAML_FILE" "$task_yaml"
                 log "direct_mode: task YAML overwritten from $YAML_FILE"
+                check_yaml_freshness "$YAML_FILE" "$SCRIPT_DIR"
             fi
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
         elif [ -n "$CMD_FORCED" ]; then
