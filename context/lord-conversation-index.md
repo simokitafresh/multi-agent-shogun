@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-26 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-26T16:22:35+09:00 -->
+<!-- generated_at: 2026-04-26T16:39:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-26T16:39:51+09:00 | terminal | response | **推薦: cmd_2300の後続を2cmdに分割して起票する。** 理由: Measure C(PF切替高速化)の実装は完了しcommit済み(2acc4d6b)。レビューもGATE CLEAR済み。残りはpush→deploy→CDP…
+- 2026-04-26T16:39:30+09:00 | terminal | inbound | これから何をやる
+- 2026-04-26T16:28:35+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-26 16:17:15|CI緑: run 24950721342 2026-04-26 16:22:13|cmd_2302
+- 2026-04-26T16:24:43+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2302/2300/2299 GATE CLEAR | idle:6名 | pipeline:0件
 - 2026-04-26T16:22:35+09:00 | terminal | response | **cmd_2302(AC混在検出WARN) GATE CLEAR。** 環境埋め込み完了。 これで殿の問い「/clear後も守れるか？」に対して: **守れる。** cmd_save.shが実装+計測/commit混在を自動検出→WAR…
 - 2026-04-26T16:13:02+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-26 16:00:07|cmd_karo_ci_fix_375 2026-04-26 16:06:15|cmd_2300
 - 2026-04-26T16:07:36+09:00 | ntfy | outbound | 【家老】cmd_2302 初回配備開始 (title=強化 — cmd_save.shにAC混在検出WARN追加(実装+計測/commit混在を自動防止), ninja=hayate) 強化 📋 https://gist.github.c…
 - 2026-04-26T16:06:33+09:00 | terminal | response | cmd_2300 GATE CLEAR。実装部分(AC1)のcommitは完了済み(2acc4d6b)。 **現況(16:06):** - cmd_2302(AC混在検出WARN): 家老に委任済み、配備待ち - idle忍者: 全6名 …
 - 2026-04-26T16:06:07+09:00 | terminal | response | cmd_2302委任完了+教訓LS035記録完了。 **完了した対処:** 1. cmd_2302(AC混在検出WARN)を家老に委任 → cmd_save.shに環境埋め込み 2. 教訓LS034(1cmd1作業原則)+LS035(en…
 - 2026-04-26T16:01:53+09:00 | terminal | inbound | 自分でやれ
-- 2026-04-26T16:01:07+09:00 | terminal | inbound | CMDの正しい出し方は、クリア後も汎用的に守れるか？環境に埋め込んだか？
-- 2026-04-26T16:00:26+09:00 | terminal | response | 2件既読化。 - **cmd_karo_ci_fix_375**: GATE CLEAR完了 - **掲示板通知**: 同上 **最新状況(16:00):** | 忍者 | cmd | 状態 | |------|-----|------|…
-- 2026-04-26T15:59:40+09:00 | terminal | response | 事実報告。 **cmd_2300(Measure C)失敗理由:** - **AC1(実装)**: PASS。usePrefetch.tsにpredictive prefetch実装完了。Jest 256テストPASS、build PAS…
-- 2026-04-26T15:58:51+09:00 | terminal | inbound | 気をつけろ。現在の最新状況を常に把握。タイムラグを無視することが多いからな。
 
 ## 未解決確認事項
 - Dream完了。健全度再確認。 [meta] stop_reason=tool_use
@@ -37,7 +37,6 @@
 
 ## 参照cmd
 - cmd_2
-- cmd_2281
 - cmd_2288
 - cmd_2289
 - cmd_2290
@@ -52,6 +51,8 @@
 - cmd_2299
 - cmd_2300
 - cmd_2302
+- cmd_2303
+- cmd_2304
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
