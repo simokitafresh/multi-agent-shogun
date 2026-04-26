@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L656 -->
+<!-- last_synced_lesson: L657 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -192,3 +192,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L654: FE設計書の計測セクション(§2)はcmd更新時に陳腐化する。新計測結果とのdiff確認をAC化すべき（cmd_2297）
 - L655: FE設計書§2は計測cmd更新時に陳腐化する（cmd_2297）
 - L656: 計測スクリプトの固定待機排除はDOMポーリングで行う（cmd_2310）
+- L657: deploy cmdは依存cmdの報告とcommit SHAを起票前に照合する（cmd_2311）
