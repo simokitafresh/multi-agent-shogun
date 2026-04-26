@@ -136,7 +136,8 @@
 # | 213 | SG-PRE15 並列負荷警告 | ★implemented      | S170 | 忍者3名以上稼働中→before/after計測値汚染WARN。WSL2 I/O負荷考慮。shellcheck clean |
 # | 214 | SG-PRE9 BLOCK固定    | ★implemented      | S170 | result:no→BLOCK固定(waive有無に関わらず)。cmd_2093誤予測対策。review_logヘッダ+gate文言修正 |
 # | 219 | archive→active優先   | ★implemented      | S233 | deploy_task.sh教訓注入をlessons.yaml優先に変更。archive-only教訓NOT_USEFUL量産修正。bats15/15。D0直接実装 |
-# 集計: ★implemented:112(+GP-219) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計141GP (2026-04-22T20:40更新)
+# | 236 | adversarial blast判定 | ★implemented      | 自走 | review_logヘッダにblast_radius対象(hook/gate/CLAUDE.md/instructions/settings)→adversarial_review.required:true義務化1行追加。gate L163-165が既に検出。D0直接実装(2026-04-26)
+# 集計: ★implemented:113(+GP-236) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計142GP (2026-04-26T11:40更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -589,3 +590,58 @@
   defense_level: 2
   reason: "verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった"
   evidence: "commit 576ebd29(kotaro auto-commitに含まれた)。S0全6項PASS"
+- id: GP-230
+  description: "archive報告移動後にsymlink残置で忍者BLOCK修正中のファイル参照を保護"
+  status: implemented
+  proposed_at: "2026-04-25T23:45:00"
+  implemented_at: "2026-04-25T23:48:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'ln -s' scripts/archive_completed.sh → 0件(実装前)"
+  defense_level: 4
+  reason: "tobisaru cmd_karo_ci_fix_skipで実証。GATE CLEAR→archive移動→忍者BLOCK修正中にファイル消失→再作成が必要に。symlinkで元パス参照を保護"
+  evidence: "commit ab6585bd。S0全6項PASS"
+- id: GP-231
+  description: "CDP計測ワンコマンドラッパー cdp_measure.sh(なぜなぜ7回 自動化ターゲット1-3)"
+  status: implemented
+  proposed_at: "2026-04-26T00:16:00"
+  implemented_at: "2026-04-26T00:22:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "ls scripts/cdp/cdp_measure.sh → 不在(新規作成)"
+  defense_level: 4
+  reason: "CDP計測4回実行10.5時間(殿の時間10時間浪費)。根因=pre-flight check不在+artifact競合+忍者判断依存。4 Phase自動化で28分/回に短縮"
+  evidence: "commit 911a6a40。shellcheck clean。S0全項PASS"
+- id: GP-233
+  description: "PSTREE-OVERRIDE task status取得をgrep簡素化(WSL2 NTFS遅延修正)"
+  status: implemented
+  proposed_at: "2026-04-26T00:55:00"
+  implemented_at: "2026-04-26T00:57:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n yaml_field_get scripts/ninja_monitor.sh L376"
+  defense_level: 4
+  reason: "tobisaruで6分間PSTREE-OVERRIDE連続。field_getのawkフォールバックがWSL2 NTFSで遅延→空文字"
+  evidence: "commit 42d621b1。tobisaru/hayate両方でgrep取得テスト成功"
+- id: GP-234
+  description: "report_field_set.sh awk経路block scalar continuation行除去"
+  status: implemented
+  proposed_at: "2026-04-26T01:00:00"
+  implemented_at: "2026-04-26T01:05:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n skip_continuation scripts/report_field_set.sh → 0件(実装前)"
+  defense_level: 4
+  reason: "hayate cmd_2284でresult.details上書き時に旧continuation行が残留しYAML破損。手動4行削除が必要だった"
+  evidence: "commit 5bf5715a。bats 22/22 PASS"
+- id: GP-235
+  description: "SG-PRE17 stale AC contamination検出(報告AC ID↔cmdソースAC ID照合)"
+  status: implemented
+  proposed_at: "2026-04-26T10:25:00"
+  implemented_at: "2026-04-26T10:35:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'stale.*AC\|AC.*照合' scripts/gates/gate_gunshi_report_precheck.sh → 0件(実装前)"
+  defense_level: 3
+  reason: "cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN"
+  evidence: "commit 79ebceb7。テスト: 正常AC→PASS、stale AC5→WARN検出。S0全6項PASS"

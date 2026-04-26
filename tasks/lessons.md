@@ -4088,3 +4088,12 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: karo
 - **tags**: [infra,gate,lesson]
 - 現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしない=意志依存。CLEARリマインドはL3086 CLEAR判定ブロック内L3096直後でcount_cmd_save_blocks_for_cmdを呼びBLOCK回数>0かつ教訓未記録ならREMIND出力する新処理が必要。
+
+### L533: CDP preflightの疎通確認は計測本体と同じtransportで検証せよ
+- **日付**: 2026-04-26
+- **出典**: cmd_karo_cdp_measure_fix
+- **記録者**: saizo
+- **status**: draft
+- **tags**: [infra,testing,bash,wsl2]
+- **target_files**: [scripts/cdp/cdp_measure.sh,tests/unit/test_cdp_measure.bats]
+- cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl localhost:9222で再確認するとfalse negativeになり、成功した自動起動をFAIL扱いした。CDP計測本体がauto-ops cdp_helperを使う場合、preflightも同じhelper結果を正とし、別transportのcurlを最終判定に使わない。加えてset -e下のAUTH_CHECK=は失敗時にecho前で無音終了するため、診断preflightはset +eでrcを捕捉する。

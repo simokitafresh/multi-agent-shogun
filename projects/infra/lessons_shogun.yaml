@@ -311,3 +311,24 @@ lessons:
   created_at: '2026-04-26'
   automated: true
   enforcement: 'cmd_save.sh消火cmd検出+q9_firefighting_root_cause必須チェックで自動検証済み'
+- id: 'LS028'
+  title: 'command欄はステップ列挙するな — 1ブロック記述でcommand_steps_over_ac回避'
+  detail: 'cmd_2289起票でcommand欄に(1)(2)のステップ列挙→command_steps_over_ac WARN(11回累計)→BLOCK。cmd_save.sh L3041がcommand内のステップ数とAC数を比較。修正: ステップ列挙を排除し1ブロック記述に圧縮→PASS'
+  source_cmd: 'cmd_2289'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'cmd_save.sh check_command_steps_vs_ac L3041で自動検証済み'
+- id: 'LS029'
+  title: 'データソースのフィールド存在確認必須 — ファイル存在≠フィールド存在'
+  detail: 'cmd_2289起票でcmd_design_quality.yamlにenvironment_changeフィールドが記録されている前提でACを書いた→軍師が0/1940件と指摘→前提崩壊。事前ワクチンの対象現物確認はファイル存在だけでなくフィールド/データ件数まで確認すべき。修正: notesパターン時系列で代替'
+  source_cmd: 'cmd_2289'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: '事前ワクチン3問(pre-edit-cmd-preflight.sh)のQ1を対象現物+データ件数確認に拡張すべき'
+- id: 'LS030'
+  title: '自分の提案が壊した→修正された→確認せず再破壊の3連鎖'
+  detail: 'config.toml full提案→殿承認→Codex忍者2名セッション破損→殿が軍師にtrusted修正指示→将軍が確認せずfullに2回再変更→殿に指摘されて初めて気づく。根因: (1)自分の提案が壊した因果を認識しなかった (2)変更を見た時に理由を確認せず想像で行動 (3)lord_conversation/軍師inbox/掲示板の1つも確認しなかった。deepdive Phase 6(他責)と同構造'
+  source_cmd: 'cmd_2289'
+  created_at: '2026-04-26'
+  automated: true
+  enforcement: 'deepdive追体験Q5+事前ワクチンQ1(対象現物確認)で構造的自問。ただし今回の場面(config.toml Edit)は事前ワクチン射程外→射程拡大が次の自動化ターゲット'

@@ -1370,7 +1370,7 @@ lessons:
   - error-handling
   target_files:
   - tasks/lessons.md
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 3
   last_referenced: '2026-04-26'
 - id: L507
@@ -2767,6 +2767,9 @@ lessons:
   summary: 本番DB確認はPostgreSQL必須。SQLiteミラー(backend/static/data/dm_signal.db)は不完全。加速FoFが本番3体/S
   tags:
   - db
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306
@@ -2889,9 +2892,9 @@ lessons:
   summary: experiments.db monthly_returnsテーブルのsignals JSONカラムに格納されたティッカー構成からL1ファミリー分類が可能。TM
   tags:
   - db
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
-  last_referenced: '2026-04-24'
+  last_referenced: '2026-04-26'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -3163,6 +3166,9 @@ lessons:
   - recon
   target_files:
   - frontend/lib/api-client.ts
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L310
   title: 'apiCache.clear()はETag IDB(dm-signal-etag-store)を削除しない。clear直後のAPI呼出でETag送信→304→キャッシュなしエラーが発生しうる。clearSignalsCache()は独自対策済みだが汎用clear()にはない。修正対象:
     frontend/lib/api-cache.ts:204-212, frontend/lib/api-client.ts:254-259'
@@ -3176,6 +3182,9 @@ lessons:
   target_files:
   - frontend/lib/api-cache.ts
   - frontend/lib/api-client.ts
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L309
   title: static export(output:'export')アプリでは<Link>SPA遷移を使うな — window.location.hrefで統一せよ
   summary: Next.js 14.x App Router + output:'export'環境では、<Link>によるclient-side navigation(RS
@@ -3721,6 +3730,9 @@ lessons:
   - context/dm-signal-frontend.md
   - context/dm-signal-ops.md
   - context/dm-signal-research.md
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L248
   title: グローバルProviderのroute非依存prefetchは『選択PF向け最適化』でも別ページではAPIファンアウト再発になる
   summary: SignalsProvider が fresh `/api/signals` 後に常に dashboard用 `mtd + performance(3y/ful
@@ -3907,6 +3919,9 @@ lessons:
   summary: DM-Signalのbackend/.envにはそのままsourceすると副作用を起こす行がある。ADMIN_USER/ADMIN_PASSのような必要キーだけ
   tags:
   - universal
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L222
   title: summarize_runs()のfloat出力をshell整数比較に渡す時はint変換必須
   summary: statistics.median/meanはfloatを返すため、JSON経由でshellに渡す際にint()変換が必要。 bash [ "$var"
@@ -5362,6 +5377,9 @@ lessons:
   tags:
   - pipeline
   - gate
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L029
   title: gs_metadata による FoF 鮮度追跡（2026-02-15）
   summary: 本番DBに登録されたFoFが「いつのGSに基づくか」「データ最終月はいつか」が不明。ローカルの `.meta.yaml` にしか情報がなく、本番DBから逆引きで
@@ -5494,6 +5512,9 @@ lessons:
   - frontend
   - deploy
   - testing
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-26'
 - id: L013
   title: GS の align_months 交差集合は lookback warm-up を失う（2026-02-14）
   summary: 'IF 原因2: align_months() が全PFの交差集合（最短PFの開始月）に切り詰め → 先頭14ヶ月はlookback不足で None
@@ -5579,7 +5600,7 @@ lessons:
   summary: ブロック名は BlockType enum 値で統一する（2026-02-14）
   tags:
   - gate
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-26'
 - id: L001

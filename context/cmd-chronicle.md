@@ -851,3 +851,4 @@
 | cmd_2286 | 強化 — 忍者版事前ワクチン（DM-Signal本番ファイル編集時にPI注入） | infra | 04-26 | FILL_THIS |
 | cmd_2287 | 修正 — cmd_complete_gate.shにtest_triage判定追加（pre_existing FAIL誤判定バグ修正） | infra | 04-26 | cmd_complete_gateのbinary_check |
 | cmd_2284 | 強化 — cmd_save.sh BLOCK後の将軍自走強制hook | infra | 04-26 | cmd_save.sh BLOCK(exit 1)時だけPo |
+| cmd_2288 | 検証 — Phase 1-B CDP再計測（handoff cache効果確認+ベースライン比較） | dm-signal | 04-26 | FILL_THIS |
