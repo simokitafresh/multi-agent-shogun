@@ -11,10 +11,12 @@ setup() {
     grep -q -- '--connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL"' "$SCRIPT"
 }
 
-@test "cdp_measure: CDP auth uses cdp_cli.sh auth with admin verification" {
-    grep -q 'CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"' "$SCRIPT"
-    grep -q 'bash "$CDP_CLI" auth --env "$ENV_FILE" --port "$CDP_PORT"' "$SCRIPT"
-    grep -q 'admin_authenticated' "$SCRIPT"
+@test "cdp_measure: CDP login uses UI operation not API injection" {
+    grep -q 'CDP Admin Login (UI)' "$SCRIPT"
+    grep -q 'type_ref' "$SCRIPT"
+    grep -q 'click_ref' "$SCRIPT"
+    grep -q 'snapshot_items' "$SCRIPT"
+    ! grep -q 'cdp_cli.sh auth' "$SCRIPT"
 }
 
 @test "cdp_measure: perf_measure runs with auto-ops on PYTHONPATH" {
@@ -22,9 +24,8 @@ setup() {
     grep -q 'PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" "${MEASURE_CMD\[@\]}"' "$SCRIPT"
 }
 
-@test "cdp_measure: auth preflight reports failures instead of set-e silent exit" {
-    grep -q '^set +e$' "$SCRIPT"
-    grep -Fq 'AUTH_RC=$?' "$SCRIPT"
-    grep -q 'if \[\[ "$AUTH_RC" -ne 0 \]\]' "$SCRIPT"
-    grep -q 'ADMIN_AUTH' "$SCRIPT"
+@test "cdp_measure: login failure exits with clear message and cleanup runs on exit" {
+    grep -q 'LOGIN_RC' "$SCRIPT"
+    grep -q 'trap _cdp_cleanup EXIT' "$SCRIPT"
+    grep -q 'cleanup_chrome' "$SCRIPT"
 }

@@ -31,7 +31,7 @@ PERF_CONFIG="/mnt/c/Python_app/auto-ops/workflows/perf_config.yaml"
 OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
 FRONTEND_URL="${FRONTEND_URL:-https://dm-signal-frontend.onrender.com}"
 FRONTEND_HEALTH_URL="${FRONTEND_HEALTH_URL:-${FRONTEND_URL}/}"
-BACKEND_URL="https://dm-signal-backend.onrender.com"
+# BACKEND_URL不要 — CDP哲学: UI操作でログイン。API直呼出しはしない
 
 # ─── 引数解析 ───
 CMD_ID="${1:-}"
@@ -77,33 +77,81 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. CDP認証 — ブラウザ起動+Viewer+Admin Cookie注入
-#     CDP哲学: 人間と同じ操作=未起動でも起動、ポート塞がりは自動探索。並列可能
-#     ポート自動探索はcdp_helper.preflight_cdp_flowが処理(全CDPツール共通)
-#     cdp_cli.sh authがpreflight_cdp_flow→タブ作成→Cookie注入を一括実行
+# 1c. CDP認証 — ブラウザ起動+UIでadmin login（人間と同じ操作）
+#     CDP哲学: 人間と同じ=ブラウザ開く→フォーム入力→ボタン押す。API+Cookie注入ではない
 CDP_PORT="${CDP_PORT:-9222}"
-CDP_CLI="/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh"
 ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
-echo -n "  CDP Auth (Viewer+Admin): "
+ADMIN_URL="${FRONTEND_URL}/admin"
+echo -n "  CDP Admin Login (UI): "
 set +e
-AUTH_RESULT=$(bash "$CDP_CLI" auth --env "$ENV_FILE" --port "$CDP_PORT" --api-base-url "$BACKEND_URL" --base-url "$FRONTEND_URL" 2>&1)
-AUTH_RC=$?
+LOGIN_RESULT=$(PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 - "$CDP_PORT" "$ENV_FILE" "$ADMIN_URL" <<'LOGINPY'
+import sys, time
+from pathlib import Path
+from cdp import cdp_helper
+
+port = int(sys.argv[1])
+env_file = Path(sys.argv[2])
+admin_url = sys.argv[3]
+
+# Step 1: ブラウザ起動(自動起動+ポート探索+別ブラウザfallback)
+result = cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)
+actual_port = result.get("cdp_port", port)
+
+# Step 2: admin loginページにナビゲート
+tab_id = cdp_helper.create_tab(url=admin_url, port=actual_port, timeout=30)
+time.sleep(4)
+
+# Step 3: .envからcredentials読取り
+env = {}
+for line in env_file.read_text().splitlines():
+    line = line.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        continue
+    k, _, v = line.partition("=")
+    env[k.strip()] = v.strip().strip('"').strip("'")
+
+user = env.get("ADMIN_USER", "")
+pw = env.get("ADMIN_PASS", "")
+if not user or not pw:
+    print("FAIL: ADMIN_USER or ADMIN_PASS missing in .env")
+    sys.exit(1)
+
+# Step 4: UI操作でlogin（人間と同じ）
+items = cdp_helper.snapshot_items(tab_id, port=actual_port)
+textboxes = [i["ref"] for i in items if i.get("ref") and i.get("role") == "textbox"]
+login_btn = [i["ref"] for i in items if i.get("ref") and i.get("name") == "Login" and i.get("role") == "button"]
+
+if len(textboxes) < 2 or not login_btn:
+    if any("Portfolio" in i.get("name", "") or "Visibility" in i.get("name", "") for i in items):
+        print(f"OK:already_logged_in:port={actual_port}")
+        sys.exit(0)
+    print(f"FAIL: Login form not found")
+    sys.exit(1)
+
+cdp_helper.type_ref(tab_id, textboxes[0], user, port=actual_port)
+cdp_helper.type_ref(tab_id, textboxes[1], pw, port=actual_port)
+cdp_helper.click_ref(tab_id, login_btn[0], port=actual_port)
+time.sleep(3)
+
+# Step 5: ログイン成功確認
+items2 = cdp_helper.snapshot_items(tab_id, port=actual_port)
+if any("Login" == i.get("name", "") and i.get("role") == "button" for i in items2):
+    print("FAIL: Still on login page after submit")
+    sys.exit(1)
+
+print(f"OK:port={actual_port}")
+LOGINPY
+)
+LOGIN_RC=$?
 set -e
-if [[ "$AUTH_RC" -ne 0 ]]; then
+if [[ "$LOGIN_RC" -ne 0 ]]; then
     echo "FAIL" >&2
-    echo "  → CDP認証に失敗。出力: ${AUTH_RESULT}" >&2
-    echo "  → .envのcredentialsを確認。" >&2
+    echo "  → ${LOGIN_RESULT}" >&2
     exit 1
 fi
-# auth結果からJSON行を抽出（CDPログ行を除外）してadmin_authenticated確認
-AUTH_JSON=$(echo "$AUTH_RESULT" | grep '^{' | tail -1)
-ADMIN_AUTH=$(echo "$AUTH_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('admin_authenticated') else 'no')" 2>/dev/null || echo "unknown")
-if [[ "$ADMIN_AUTH" != "yes" ]]; then
-    echo "FAIL (admin not authenticated)" >&2
-    echo "  → Admin認証が不成立。出力: ${AUTH_RESULT}" >&2
-    exit 1
-fi
-echo "OK"
+CDP_PORT=$(echo "$LOGIN_RESULT" | grep -oP 'port=\K[0-9]+' | tail -1)
+CDP_PORT="${CDP_PORT:-9222}"
+echo "OK (port ${CDP_PORT})"
 
 echo ""
 
