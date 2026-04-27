@@ -502,38 +502,48 @@ import metrics_research_engine as MRE
 
 **殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番。
 
-### Phase構造(v3.4 — 2026-04-28 04:05更新)
+### Phase構造(v3.5 — 2026-04-28 04:32更新)
 
-| Phase | 内容 | 状態 |
-|-------|------|------|
-| 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** |
-| 1.9a | 清掃+SQLite直接出力改修(cmd_2331)+OUTPUT_DIR§3.1準拠(cmd_2332) | **完了** |
-| 1.9b | フルGS再実行(191,796pat、SQLite+CSV出力。cmd_2334) | **完了**(GATE CLEAR 2026-04-28) |
-| 1.9c | GS選出シン四神12体選出(SQLite直読、cmd_2335)+本番突合(cmd_2337) | **完了** |
-| 道具 | cmd_1125_v2_champion_select.py(四神L0用、SQLite入力。cmd_2333) | **完了** |
-| 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
-| 3A | gs_data_loader CSV経路廃止(cmd_2339, saizo) | **完了**(GATE CLEAR 2026-04-28) |
-| 3B | gs_data_loader UUID一元化(cmd_2340, hayate) | **完了**(GATE CLEAR 2026-04-28) |
-| 4 | 旧データ削除: 偵察(cmd_2343)+削除(cmd_2345, saizo)。9件371KB削除済み | **完了**(GATE CLEAR 2026-04-28) |
-| 5 | 消費者改修: run_077全7本のdefaultをokugi_shin_ninpo_20.yaml(db)に統一(cmd_2344) | **完了**(GATE CLEAR 2026-04-28) |
-| 6 | GS出力SQLite化: run_077全7本の出力をCSV→SQLite化。**後続Aの前に必須**(軍師確認) | **次はここ** |
-| 7 | neighbor: 隣接パラメータ確認 | 待ち(後続A後) |
-| 後続A | L1忍法GS再実行(run_077使用。7忍法×1CMD。**直列配備=OOM防止LG025**) | 待ち(**Phase 6必須**) |
-| 後続B | L1チャンピオン選出(7忍法×3モード=21体→吸収→20体) | 待ち(後続A依存) |
-| 後続C | L1本番突合(本番シン忍法20体 vs GS選出。L0のcmd_2337と同パターン) | 待ち(後続B依存) |
-| 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(後続C依存) |
+**目的**: CSV汚染を根絶し、DB直読+SQLite出力のクリーンなGSパイプラインを構築→L1忍法チャンピオン再選出→本番突合→ロバストネス検証
+**殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番
+
+#### 基盤整備(Phase 0-6) — CSV依存の完全排除
+
+| Phase | 内容 | 状態 | cmd |
+|-------|------|------|-----|
+| 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** | — |
+| 1.9a-c | SQLite出力改修+フルGS再実行+L0四神選出+本番突合(12/12全MATCH) | **完了** | cmd_2331-2337 |
+| 3A | gs_data_loader CSV入力経路廃止(source_type=csv→ValueError) | **完了** | cmd_2339 |
+| 3B | gs_data_loader UUID一元化(L1_PORTFOLIO_MAPハードコード廃止) | **完了** | cmd_2340 |
+| 4 | 旧GS入力CSV 9件削除(outputs/analysis配下。偵察+削除) | **完了** | cmd_2343,2345 |
+| 5 | 消費者改修: run_077全7本のdefaultをokugi_shin_ninpo_20.yaml(db)に統一 | **完了** | cmd_2344 |
+| 6A | GS結果SQLite出力共通モジュール作成(CSV出力廃止。殿裁定) | **配備中** | cmd_2346 |
+| 6B | run_077全7本のCSV出力をSQLite共通モジュールに切替 | **待ち**(6A依存) | cmd_2347 |
+
+#### 本番検証(後続A-D) — チャンピオン再選出+検証
+
+| Phase | 内容 | 状態 | 規模 |
+|-------|------|------|------|
+| 後続A | L1忍法GS再実行(run_077使用。7忍法×1CMD。**直列配備**=OOM防止LG025) | 待ち(Phase 6必須) | 7cmd直列 |
+| 後続B | L1チャンピオン選出(7忍法×3モード=21体→吸収→20体) | 待ち(後続A依存) | 1cmd |
+| 後続C | L1本番突合(本番シン忍法20体 vs GS選出。L0 cmd_2337と同パターン) | 待ち(後続B依存) | 1cmd |
+| 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(後続C依存) | 複数cmd |
+| 7 | neighbor: 隣接パラメータ確認 | 待ち(後続A後) | 1cmd |
+
+### 進捗サマリ(2026-04-28 04:32)
+
+- **基盤整備**: Phase 0-5完了(8cmd GATE CLEAR)。Phase 6進行中(2cmd配備済み)
+- **全体進捗**: 基盤整備≒90%完了。Phase 6完了後に本番検証フェーズに移行
+- **本番検証**: 後続A(7cmd)+B(1)+C(1)+D(複数)+7(1)=約12cmd残
+- **目的整合**: CSV入力廃止✅ CSV出力廃止(Phase 6で完了予定) DB直読統一✅ → 殿裁定に完全準拠
+- **殿裁定追加(2026-04-28)**: CSV出力も廃止(軍師のCSV残存推奨を却下)。デバッグはsqlite3/pd.read_sql/ログで代替
 
 ### 軍師確認事項(2026-04-28 04:04)
 
-- run_077全7本のGS出力は現在CSV形式。SQLite出力なし→Phase 6でSQLite化が**後続Aの前に必須**
+- run_077全7本のGS出力は現在CSV形式→Phase 6でSQLite化が**後続Aの前に必須**
 - shin_shijin_l1_gs.pyはL0四神用。L1忍法GSにはrun_077を使う
 - 後続Aは**直列配備**(RSS 3-4GB/プロセス。6並列不可。LG025)
-
-### Phase 3完了時の現物確認(2026-04-28 03:15)
-
-- GS結果CSV: grid_search/配下に0件。SQLite/npyも0件
-- universe config source_type分布: db=2件 / csv=16件
-- run_077_bunshin.pyデフォルト: alm_l0_12.yaml(csv)→Phase 3でValueError化済み
+- CSV出力廃止確定(殿裁定)。軍師review_logヘッダに埋込み済み
 - Codex config.toml修正: approval_mode=full-auto(無効値)→approval_policy=never + DM-signal trust追加
 
 ### Phase 1.9c結果(2026-04-28完了)
