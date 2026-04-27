@@ -507,10 +507,11 @@ import metrics_research_engine as MRE
 | Phase | 内容 | 状態 |
 |-------|------|------|
 | 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** |
-| 1.9a | 清掃+SQLite直接出力改修(cmd_2331) | **配備中** |
-| 1.9b | フルGS再実行(191,796pat、SQLite直接出力) | 待ち(1.9a依存) |
-| 1.9c | チャンピオン12体選出+本番DB突合 | 待ち(1.9b依存) |
-| 2 | CSV→SQLite変換 → **不要に**(1.9bで直接出力) | 省略 |
+| 1.9a | 清掃+SQLite直接出力改修(cmd_2331)+OUTPUT_DIR§3.1準拠(cmd_2332) | **完了** |
+| 1.9b | フルGS再実行(191,796pat、SQLite+CSV出力。cmd_2334) | **実行中** |
+| 1.9c | チャンピオン12体選出+本番DB突合(cmd_2335予定) | 待ち(1.9b依存) |
+| 道具 | champion_select.py SQLite入力対応(cmd_2333) | **完了** |
+| 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
 | 3-7 | gs_data_loader v2→旧データ削除→消費者改修→GS生成改修→neighbor | 未着手 |
 | 後続 | 忍法(L1)段階: ユニバースDB直読化+忍法GS再実行 | 設計待ち |
 
@@ -519,6 +520,8 @@ import metrics_research_engine as MRE
 - shin_shijin_l1_gs.pyエンジン精度: 12体全PASS(≤1e-6。cmd_2330)
 - LOOKBACK_TERMS: 内部でtrading days変換済み(2M=42D。改修不要)
 - shijin-design.yaml DNA制約: 本番config全項目一致確認済み
+- OUTPUT_DIR: 設計書§3.1準拠(outputs/grid_search/{YYYYMMDD}/L0/shin/)。latest.txt atomic pointer(WSL2 symlink不可のため。L663)
+- champion_select.py: SQLite入力対応済み(--db-path引数。cmd_2333)
 
 ### PI候補
 
