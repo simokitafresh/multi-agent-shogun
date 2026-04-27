@@ -197,6 +197,9 @@ def main() -> int:
                     if "id" not in item:
                         errors.append(f'lessons_useful[{i}]: missing "id" field (must have lesson ID like L074)')
                         hints.append(f'FIX (lessons_useful[{i}]): id フィールド必須。テンプレート注入済みの教訓IDを確認せよ:\n  - id: L074\n    useful: true\n    reason: "理由"')
+                    elif isinstance(item["id"], str) and not re.match(r'^L\d+$', item["id"]):
+                        errors.append(f'lessons_useful[{i}]: id="{item["id"]}" is invalid (must match L+number, e.g. L074)')
+                        hints.append(f'FIX (lessons_useful[{i}]): idはL+数字形式のみ。テンプレート注入済みの教訓IDを確認せよ')
                     if "useful" not in item:
                         errors.append(f'lessons_useful[{i}]: missing "useful" field')
                         hints.append(f"FIX (lessons_useful[{i}]): useful: true or false を記入せよ")

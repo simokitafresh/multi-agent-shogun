@@ -2574,6 +2574,8 @@ check_gunshi_design_num_relax() {
     # WHAT部分から数値を抽出
     local WHAT_PART Q8_NUMS Q8_MAX
     WHAT_PART="${Q8_LINE#*WHAT:}"
+    # FP修正(2026-04-27): 複利の問い「10回繰り返したら」の10は設計パラメータではない
+    WHAT_PART="${WHAT_PART%%複利:*}"
     Q8_NUMS=$(echo "$WHAT_PART" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
     [[ -z "$Q8_NUMS" ]] && return 0
     Q8_MAX=$(echo "$Q8_NUMS" | tail -1)
@@ -2681,7 +2683,7 @@ ${FULL_CMD}"
 
     # GS検出 → ACにrun_077が含まれるか確認
     if [[ "$HIT_GS" == true ]]; then
-        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run'; then
+        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run|shin_shijin_l1_gs'; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
                 HIT=true
@@ -2842,7 +2844,8 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description
 # --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
 # 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
 # トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
-_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:|description:' || true)
+# FP修正(2026-04-27): descriptionにPARITY_PATH等の変数名があると偽陽性。title+purposeのみでトリガー
+_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' || true)
 # scope_mode=SCOUT/VERIFYはDB変更なし→パリティP3-P5不要
 _CHECK19_SCOPE="$(cmd_block_get_field "scope_mode")"
 if [[ "${_CHECK19_SCOPE}" != "SCOUT" && "${_CHECK19_SCOPE}" != "VERIFY" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then

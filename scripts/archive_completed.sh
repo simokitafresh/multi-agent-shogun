@@ -1051,8 +1051,8 @@ archive_reports() {
 
         local status_val parent_cmd base_name target_name dest_path
         local _bname; _bname="${report_file##*/}"
-        status_val="${_rpt_status[$_bname]}"
-        parent_cmd="${_rpt_parent[$_bname]}"
+        status_val="${_rpt_status[$_bname]:-}"
+        parent_cmd="${_rpt_parent[$_bname]:-}"
 
         # cmd指定時は該当cmdの報告のみを対象化
         if [ -n "$CMD_ID" ] && [ -n "$parent_cmd" ] && [ "$parent_cmd" != "$CMD_ID" ]; then
