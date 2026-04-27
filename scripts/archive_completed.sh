@@ -530,13 +530,19 @@ CUTOFF_DAYS = 30
 
 completed_ids = set()
 
-# Source 1: archive/cmds/ のファイル名
+# Source 1: archive/cmds/ のファイル名 (非完了status=delegatedを除外)
+# delegatedはSTKに残るべき。completed/done/cancelled/absorbed/superseded/closed/shelved/halted=STK除去対象
+_NON_COMPLETED_STATUSES = {"delegated"}
 if os.path.isdir(archive_cmd_dir):
     for fname in os.listdir(archive_cmd_dir):
         if fname.startswith("cmd_") and fname.endswith(".yaml"):
             parts = fname.split("_")
-            if len(parts) >= 2:
-                completed_ids.add(f"{parts[0]}_{parts[1]}")
+            if len(parts) >= 3:
+                status_part = parts[2]
+                if status_part not in _NON_COMPLETED_STATUSES:
+                    completed_ids.add(f"{parts[0]}_{parts[1]}")
+            elif len(parts) == 2:
+                completed_ids.add(f"{parts[0]}_{parts[1].replace('.yaml', '')}")
 
 # Source 2: 現行報告 (status: done/completed) — GP-080: TSVキャッシュから読取り
 cache_path = os.path.join(os.environ.get("TMP", "/tmp"), "report_fields_cache.tsv")
