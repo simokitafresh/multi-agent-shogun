@@ -867,3 +867,4 @@
 | cmd_2318 | 実装 — GS正規化Phase 1.5b: verify_gs_db.py(CSV-SQLite照合検証) | dm-signal | 04-27 | scripts/analysis/verify_gs_db. |
 | cmd_2319 | 実装 — GS正規化Phase 1.5c: gs_db_summary.py(SQLiteサマリ表示) | dm-signal | 04-27 | gs_db_summary.py を新規作成。--db-pa |
 | cmd_2320 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | — |
+| cmd_2321 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | gs_db_utilsの8関数に対するround-trip単 |
