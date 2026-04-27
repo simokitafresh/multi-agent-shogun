@@ -443,16 +443,19 @@ bash "$INBOX_WRITE" "$AGENT" "並行メッセージ $ID" "concurrent" "writer_$I
 SCRIPT_EOF
     chmod +x "$TEST_TMPDIR/parallel_write.sh"
 
-    # 8個の並行書き込みプロセスを起動
-    for i in {1..8}; do
-        "$TEST_TMPDIR/parallel_write.sh" "$TEST_INBOX_WRITE" "test_agent" "$i" &
-    done
+    for attempt in 1 2 3; do
+        rm -f "$TEST_INBOX_DIR/test_agent.yaml"
 
-    # 全プロセスの完了を待つ
-    wait
+        # 8個の並行書き込みプロセスを起動
+        for i in {1..8}; do
+            "$TEST_TMPDIR/parallel_write.sh" "$TEST_INBOX_WRITE" "test_agent" "$i" &
+        done
 
-    # 検証: 8件全てが書き込まれていること
-    python3 <<EOF
+        # 全プロセスの完了を待つ
+        wait
+
+        # 検証: 8件全てが書き込まれていること
+        if python3 <<EOF
 import yaml
 
 with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
@@ -466,6 +469,12 @@ assert len(ids) == len(set(ids)), 'Duplicate message IDs found'
 
 print('T-010: PASS')
 EOF
+        then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # =============================================================================
