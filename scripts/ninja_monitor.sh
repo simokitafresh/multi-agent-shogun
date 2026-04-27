@@ -3049,6 +3049,21 @@ fi
 
 discover_panes
 
+# ─── GP-239: Codex bypass flag check (startup) ───
+# hayate事故(2026-04-28): --dangerously-bypass-approvals-and-sandbox欠落→毎回確認プロンプトで停止
+for _cbf_name in "${NINJA_NAMES[@]}"; do
+    if [ "$(cli_type "$_cbf_name" 2>/dev/null)" = "codex" ]; then
+        _cbf_pane="${PANE_MAP[$_cbf_name]:-}"
+        [ -z "$_cbf_pane" ] && continue
+        _cbf_pid=$(tmux list-panes -t "$_cbf_pane" -F '#{pane_pid}' 2>/dev/null | head -1)
+        [ -z "$_cbf_pid" ] && continue
+        if ! pstree -a "$_cbf_pid" 2>/dev/null | grep -q 'dangerously-bypass'; then
+            log "WARN: ${_cbf_name} Codex missing --dangerously-bypass-approvals-and-sandbox flag"
+            echo "[$(date -Is)] WARN: ${_cbf_name} Codex bypass flag missing → confirmation prompts will block ninja" >> "$LOG"
+        fi
+    fi
+done
+
 # ─── メインループ ───
 cycle=0
 prev_idle=""
