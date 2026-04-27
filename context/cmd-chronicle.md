@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-26 -->
+<!-- last_updated: 2026-04-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,25 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1414 | Auto-dreamを超える5 Phase Memory Consolidation。殿の原理(タイムスタンプ=因果推論/免疫系=進化)を実装。12システム調査の車輪(Zep二重タイムスタンプ/Audrey矛盾管理/Mnemosyne秒精度)を統合。Phase | infra | 03-27 | Dream-skill SKILL.md作成完了。設計書§2の全文を~/.claude/skills/dream/SKILL.mdに忠実配置。232行。diff |
-| cmd_1077 | シン四神・シン忍法の本番DB登録手順書を作成し、忍者が即実行できる状態にする | dm-signal | 03-27 | — |
-| cmd_1078 | シン玄武(DM7+)をXLU固定でPhase 3+Phase 4やり直し。DNA準拠の4体を再選定する | dm-signal | 03-27 | — |
-| cmd_1079 | FE MAX_PORTFOLIOS を120→200に修正。BE(cmd_1076)との整合 | dm-signal | 03-27 | — |
-| cmd_1084 | シン四神10体のpipeline_config欠落を修正し、full recalculateを再実行して正常なシグナル・月次リターンを生成する | dm-signal | 03-27 | — |
-| cmd_1085 | LookbackPeriodスキーマのmonths上限を24→36に引き上げ、忍法FoFの長期lookbackを許容する | dm-signal | 03-27 | — |
-| cmd_1101 | cmd_1096の診断結果に基づきFoF BBの不具合を修正し、シン忍法21体を再recalculateする | dm-signal | 03-27 | — |
-| cmd_1133 | 家老の学習ループを構築する。karo.mdのレビュー・配備・GATE処理の各フェーズに品質チェックを組み込み、家老自身の判断を二値計測→還流する仕組みを作る | infra | 03-27 | — |
-| cmd_1404 | — | infra | 03-27 | handleShareIntent内でURI→ByteArray読み取りをコルーチン外(同期)に移動。sendImageToNtfyの引数をUri→ByteAr |
-| cmd_1405 | — | infra | 03-27 | E2Eテスト4件のタイムアウト失敗を修正。根本原因: get_unread_info()のPython出力で空normal_idsフィールドが連続タブを生成し、 |
-| cmd_1406 | — | infra | 03-27 | gitignoreホワイトリスト整理完了。運用ファイル70件をgit rm --cachedで追跡解除、新規hooks4件+tests5件をgit add、co |
-| cmd_1407 | — | infra | 03-27 | insight_write.sh環境変数サニタイズ(AC1)+deploy_task.sh安全書込み(AC2)+新規テスト14件全PASS(AC3)。既存36テ |
-| cmd_1408 | — | infra | 03-27 | 防御的コーディング4件修正完了: (1)cmd_complete_gate.sh || true除去+エラー適切ログ (2)ntfy.sh ntfy_valid |
-| cmd_1411 | — | dm-signal | 03-27 | AC3 PASS: R2(74.5%)>R1(63.8%) CAGR, R2(1.92)>R1(1.79) Sharpe。AC4: N=2-10全9パターン完了 |
-| cmd_1412 | ネステッドFoFのR4(Half-Kelly)実装+外部レジーム(DTB3/VIX/SPY)分析。R1(63.8%)→R2(74.5%)→R4→R6_extの進化を検証し、最終ルールを決定する | dm-signal | 03-27 | R4 Half-Kelly実装完了。全出力ファイル生成済み。R4 CAGR=69.9% Sharpe=1.79 vs R2 CAGR=74.5% Sharpe= |
-| cmd_1413 | R2(CAGR74.5%/Sharpe1.92/パラメータ0)を超えるか？最もシンプルな改善3手法(逆ボラ/絶対モメンタム/連続VIX)でテスト。R6_extルックアヘッドバイアス修正を含む。高度さではなくシンプルさで勝負 | dm-signal | 03-27 | R9(lag-1 VIX連続スケーリング)+R6_ext_lag1(離散lag-1)実装完了。全4出力ファイル生成済み。R9 CAGR=54.9% Sharpe |
-| cmd_1436 | R1-R26の研究結論をビルディングブロック化する。Ward+二段EWの構造が構成PF非依存でワークすることを3段階（12体/21体/65体）で確認済み。内部グリッドサーチでK/LBを自動決定する汎用モジュールを実装し、R24/R25/R26の既知結果で検証する。 | dm-signal | 03-27 | PASS。building_block.py WardTwoStageEWクラス+共通関数3本。R24/R25/R26全検証8/8 PASS |
-| cmd_1437 | WardTwoStageEWBlock実装。building_block.pyのWard+二段EWロジックをTerminalBlockとして本番パイプラインに移植 | dm-signal | 03-27 | PASS。ward_two_stage_ew.py実装。BlockType enum/registry/__init__.py登録。import+スキーマ検証全PASS |
-| cmd_1443 | Ward二段EW weight pipeline修正。weightsが下流に伝わらないバグ5箇所修正+後方互換検証 | dm-signal | 03-27 | PASS。AC1(final_weights)+AC2(is_kalman_meta除去5箇所)+AC3(58FoF×9509行完全一致)。performance fix別途(9d845ad4) |
 | cmd_1444 | 旧忍法15体を構成PFとする新Ward FoFを本番DB新規作成+既存123体完全不変証明 | dm-signal | 03-28 | PASS。旧忍法-Ward(0012f956)登録。k=5クラスタ二段EW(0.05/0.0667/0.10)。349s。既存123体差異0 |
 | cmd_1446 | Ward FoF日次ETL(sync-fof)動作検証。cmd_1445修正がsync-fofコードパスもカバーしているか確認し、日次ETL後にWard FoFデータが消失しないことを証明する | dm-signal | 03-28 | sync-fofはfullrecalculateと同一コードパス(_recalculate_fof_history in recalculate_fof.py) |
 | cmd_1451 | FoF MonthlyReturn生成(本番120.8s/15%)のボトルネック特定偵察。116 Optimization(Shared PriceCache)実装済みなのに120.8s — 何が遅いか | dm-signal | 03-28 | — |
@@ -880,3 +861,4 @@
 | cmd_karo_reprofile_freq | インフラスクリプト頻度再計測 — 直近24h | infra | 04-26 | 直近24hのインフラスクリプト頻度を5ソースで再計測し、do |
 | cmd_2314 | 偵察 — GS CSV パラメータ→月次リターン列マッピング調査 | dm-signal | 04-26 | summary CSV行i == monthly CSV列i |
 | cmd_karo_reprofile_bench | インフラスクリプト実行時間再計測 — Top 20 × 5回 | infra | 04-26 | 前回プロファイリングTop20を5回中央値で再計測し、doc |
+| cmd_2315 | 偵察 — GS CSV正規化Phase 0.5: スクリプト130本全量分類+サブディレクトリ最終確定 | dm-signal | 04-27 | cmd_2315 Phase 0.5偵察として、GS関連スク |
