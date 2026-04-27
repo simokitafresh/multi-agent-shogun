@@ -875,3 +875,4 @@
 | cmd_2326 | 実装 — GS正規化Phase 2: L0シン nukimi CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
 | cmd_2327 | 実装 — GS正規化Phase 2: L0シン kasoku_diff CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | FILL_THIS |
 | cmd_2328 | 実装 — GS正規化Phase 2: L0シン kasoku_ratio CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | — |
+| cmd_2329 | 修正 — gs_db_utils.py write_monthly NaN→NULL許容改修 | dm-signal | 04-27 | FILL_THIS |

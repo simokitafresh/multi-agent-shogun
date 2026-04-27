@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L660 -->
+<!-- last_synced_lesson: L661 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -196,3 +196,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L658: GS正規化前にsource CSV期間とproduction最新月を照合する（cmd_2322）
 - L659: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける（cmd_2323）
 - L660: kawarimi等GS monthly CSVのNaN値はNULL許容スキーマで保持せよ（cmd_2325）
+- L661: verify_gs_db.pyはNaN除外後の非NaN行数を期待値にする必要がある（cmd_2326）
