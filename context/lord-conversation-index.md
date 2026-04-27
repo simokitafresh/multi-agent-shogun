@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-27T13:02:06+09:00 -->
+<!-- generated_at: 2026-04-27T13:08:09+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-27T13:08:09+09:00 | terminal | response | 殿、状況を報告する。 **cmd_2315(偵察cmd)のBLOCKが2つ残っている:** 1. **前cmd教訓未記録WARN累計昇格**: LS023-LS035(13件)を既存クラスタに吸収統合して件数を減らしたいが、lessons…
+- 2026-04-27T13:03:01+09:00 | terminal | inbound | 設計書の更新に必要な偵察CMDを書こう
 - 2026-04-27T13:02:06+09:00 | terminal | response | #7も解決。 [meta] stop_reason=tool_use
 - 2026-04-27T13:01:15+09:00 | terminal | inbound | 設計書に未定義や未決定部分がないか確認せよ
 - 2026-04-27T13:00:50+09:00 | terminal | response | 軍師の指摘3点を全て設計書に反映し、gistも更新完了した。 **反映内容:** | 指摘 | 対処 | |------|------| | スクリプト72本→130本 | §2.3に未分類58本の行を追加。Phase 0.5で全量特定と…
@@ -12,8 +14,6 @@
 - 2026-04-27T12:56:49+09:00 | terminal | response | 殿、設計書4点をgistに公開した。 https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d | ファイル | 内容 | |---------|----…
 - 2026-04-27T12:56:36+09:00 | terminal | inbound | 設計書をgistで共有して
 - 2026-04-27T12:55:37+09:00 | terminal | response | 軍師にレビュー依頼完了。掲示板+inboxで通知済み。レビュー結果を待つ。 殿、指示あれば。 [meta] stop_reason=end_turn
-- 2026-04-27T12:55:15+09:00 | terminal | inbound | 設計書を軍師にレビューしてもらおう
-- 2026-04-27T12:53:45+09:00 | terminal | response | 殿の通りでござる。現状の設計書は「何を作るか」だけで「なぜ」「今がどうなっているか」の構造が弱い。 設計書を As-Is / To-Be / Why / What / How の5軸で再構成する。 [meta] stop_reason=t…
 
 ## 未解決確認事項
 - 設計書に未定義や未決定部分がないか確認せよ
@@ -64,6 +64,7 @@
 - cmd_2312
 - cmd_2313
 - cmd_2314
+- cmd_2315
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
