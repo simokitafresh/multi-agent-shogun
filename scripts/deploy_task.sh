@@ -363,11 +363,19 @@ resolve_cmd_to_task() {
         /^  [^ ]/ {
             if (in_cmd) { exit }
             s = $0; sub(/^  /, "", s); sub(/:.*/, "", s)
-            if (s == cmd) { in_cmd = 1; next }
+            if (s == cmd) { in_cmd = 1; skip_ml = 0; next }
         }
+        in_cmd && skip_ml && /^      / { next }
+        in_cmd && skip_ml { skip_ml = 0 }
         in_cmd && /^    [a-z_]+:/ {
             key = $0; sub(/^    /, "", key); sub(/:.*/, "", key)
             val = $0; sub(/^[^:]+:[[:space:]]*/, "", val)
+            # YAML multiline (| or >) → skip continuation lines (LK002: cmd_2330 resolve failure)
+            if (val == "|" || val == ">" || val == "|+" || val == "|-" || val == ">-") {
+                skip_ml = 1; val = ""
+                if (key == "purpose") purpose = val
+                next
+            }
             fc = substr(val, 1, 1); lc = substr(val, length(val), 1)
             if (length(val) >= 2 && ((fc == "\"" && lc == "\"") || (fc == "'"'"'" && lc == "'"'"'")))
                 val = substr(val, 2, length(val) - 2)

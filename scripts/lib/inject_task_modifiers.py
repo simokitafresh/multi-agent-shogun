@@ -626,6 +626,12 @@ def inject_parity_target_date_ac(task, script_dir):
     if not is_parity:
         return False
 
+    # 2.5. scope_mode=NORMAL(変換/実装cmd)はパリティACの対象外 (LK002: AC4 stale contamination防止)
+    #       パリティACが必要なのは scope_mode=PARITY/VERIFY/未設定のcmdのみ
+    scope_mode = str(task.get('scope_mode', '') or '').strip().upper()
+    if scope_mode == 'NORMAL':
+        return False
+
     # 3. 既にtarget_dateACが存在すればスキップ
     ac_list = task.get('acceptance_criteria') or []
     for ac in ac_list:
