@@ -1367,7 +1367,7 @@ EOF
     _lu_ids=$(awk '
         /^  related_lessons:/ { in_rl=1; next }
         in_rl && /^  [a-z]/ { exit }
-        in_rl && /id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
+        in_rl && /^[[:space:]]*- id:/ { sub(/.*- id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
     ' "$task_file" 2>/dev/null)
 
     if [ -z "$_lu_ids" ]; then
