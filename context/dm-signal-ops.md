@@ -512,8 +512,15 @@ import metrics_research_engine as MRE
 | 1.9c | GS選出シン四神12体選出(SQLite直読、cmd_2335)+本番突合(cmd_2337) | **完了** |
 | 道具 | cmd_1125_v2_champion_select.py(四神L0用、SQLite入力。cmd_2333) | **完了** |
 | 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
-| 3-7 | gs_data_loader v2→旧データ削除→消費者改修→GS生成改修→neighbor | 未着手 |
-| 後続 | 忍法(L1)段階: ユニバースDB直読化+忍法GS再実行 | 設計待ち |
+| 3 | gs_data_loader v2: CSV経路廃止+UUID一元化+db一本化(軍師設計案2026-04-28) | **次はここ** |
+| 4 | 旧データ削除: 汚染CSV/旧GS結果の清掃。飛ばさない(殿指摘2026-04-28) | 待ち(Phase 3依存) |
+| 5 | 消費者改修: run_077_*.py 7本のuniverse configをdb化 | 待ち(Phase 3依存。Phase 4と並列可) |
+| 6 | GS生成改修: L1忍法GS出力パイプライン統一(SQLite化等) | 待ち(Phase 5依存) |
+| 7 | neighbor: 隣接パラメータ確認 | 待ち(Phase 6依存) |
+| 後続A | L1忍法GS再実行(7忍法×DB直読。1忍法1CMD×7本。6忍者並列) | 待ち(Phase 5依存) |
+| 後続B | L1チャンピオン選出(7忍法×3モード=21体→吸収→20体) | 待ち(後続A依存) |
+| 後続C | L1本番突合(本番シン忍法20体 vs GS選出。L0のcmd_2337と同パターン) | 待ち(後続B依存) |
+| 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(後続C依存) |
 
 ### Phase 1.9c結果(2026-04-28完了)
 
@@ -537,6 +544,24 @@ import metrics_research_engine as MRE
 - cmd_2335チャンピオン選出完了(2026-04-28): GS選出シン四神12体確定(吸収なし)。GATE CLEAR
 - cmd_2337本番突合完了(2026-04-28): 本番シン四神12体とGS選出シン四神12体が12/12全MATCH。GATE CLEAR
 - pipeline_config=None上書き(L1394): shin_shijin_l1_gs.pyがfamily_pipeline_configsを全てNoneで上書き。設計意図確認要(軍師指摘)
+- gs_data_loader.py現物確認(2026-04-28): L438-451でsource_type分岐実装済み(db/csv)。ただしCSV経路残存+UUIDハードコード(L531-547)。Phase 3(v2化)でCSV経路廃止+UUID一元化が必要
+
+### Phase 3-7設計(軍師分析 2026-04-28)
+
+**最終ゴール**: ロバストネス検証(β調整+4試練+レジーム+α6指標)。Phase 3-7はそこに至る基盤整備。全Phase飛ばさない(殿指摘2026-04-28)。
+
+**Phase 3(gs_data_loader v2)核心**:
+- CSV経路(`_load_csv_monthly_returns`)廃止。source_type='csv'→ValueError
+- L1_PORTFOLIO_MAP(UUIDハードコードL531-547)廃止→universe config(YAML)に統合
+- 戻り値形式(Dict[str, pd.Series])は変更なし→消費者(run_077等)への影響ゼロ
+
+**消費者影響範囲(軍師確認)**:
+- run_077_*.py 7本: gs_data_loaderをimport。universe configのsource_type: db化が必要
+- champion_selector.py: gs_data_loader非使用。Phase 3影響なし
+- cmd_1125_v2_champion_select.py: gs_db_utils使用。Phase 3影響なし
+- shin_shijin_l1_gs.py: 独自DB接続。Phase 3影響なし
+
+**Phase 3-7依存関係**: 3→(4,5並列可)→6→7→後続A-D
 
 ### PI候補
 
