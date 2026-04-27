@@ -661,6 +661,17 @@
   defense_level: 4
   reason: "numbers偽cold streak(7/10)。根因=adaptive gating windowがdraft限定。report(数値検算の主戦場)を除外していた"
   evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7→0。S0全6項PASS"
+- id: GP-239
+  description: "ninja_monitor Codex bypass flag startup check。フラグ欠落をWARN"
+  status: implemented
+  proposed_at: "2026-04-28T04:10:00"
+  implemented_at: "2026-04-28T04:15:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'bypass' scripts/ninja_monitor.sh → 0件(実装前)"
+  defense_level: 3
+  reason: "hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出"
+  evidence: "commit 4840c4f8。syntax PASS, stall 10/10 PASS。S0全6項PASS"
 - id: GP-238
   description: "lessons_useful reason defaultを''→'未参照'に変更。FILL_THIS二重BLOCKサイクル解消"
   status: implemented

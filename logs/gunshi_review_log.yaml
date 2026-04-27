@@ -1518,7 +1518,7 @@
 - cmd_id: cmd_2340
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_confidence_1_10: 9
   findings_summary: "6観点OK。UUID一元化(L1_PORTFOLIO_MAP削除+config統合)。17行削除+参照3箇所変更。行番号シフト(L531→L439)はgrep確認で問題なし"
@@ -1530,3 +1530,146 @@
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   causal_chain: "UUID二重管理(ハードコード+YAML)→片方更新忘れ→データ不整合リスク。一元化で構造的排除=正の複利"
   timestamp: "2026-04-28T02:50:00"
+- cmd_id: cmd_2341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。STALL変数クリア漏れ修正。L1339-1340でSTALL_FIRST_SEENのみunset→STALL_COUNTもunset追加"
+  observations:
+    - "STALL_COUNT L1178-1180: stall_count_key=${name}:${subtask_id}でインクリメント。unsetは_cleanup_stale_keys(L1385)のみ(inactive agent限定)"
+    - "L1339-1340: busy復帰時にSTALL_FIRST_SEENの2キークリアあり、STALL_COUNTクリアなし=バグ確認"
+    - "cmd_2340/hayateで29秒後に41140秒STALL誤検知の実証あり(purpose記載)"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "STALL_COUNTクリア漏れ→前task値が持越し→新task配備直後にESCALATE誤検知→家老の無駄対応。unset追加で構造的排除=正の複利"
+  timestamp: "2026-04-28T02:55:00"
+- cmd_id: cmd_2342
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。cmd_save.sh テストACスコープ検証WARN追加。全テストPASS AC→忍者FAIL→waive消火循環の設計段階防止"
+  observations:
+    - "check_test_ac_scope関数は未実装(grep確認)。既存check関数+record_warn_reasonパターンに従う"
+    - "cmd_2339で実証: AC4全テストPASS→pre-existing 4件でFAIL→test_triage:pre_existingで事後降格"
+    - "WARNなのでBLOCK過検出リスクなし。将軍がスコープ限定して書き直す契機を提供"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "将軍が全テストPASS AC→忍者FAIL→家老waive→毎回消火。設計段階WARNで消火循環根絶=正の複利(全impl cmd)"
+  timestamp: "2026-04-28T03:00:00"
+- cmd_id: cmd_2341
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2341_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。STALL変数クリア関数追加。3パターンキー全クリア+set -u安全展開+回帰テスト10/10+ログ検証"
+  observations:
+    - "_clear_stall_tracking_for_completed_idle: 単体/deploy_stall_/name:task形式の3パターンキーを全削除"
+    - "テスト: stall 10/10 + clear_guard 7/7。配備後30秒ESCALATE無しをログ確認"
+    - "discretion_fill: 将来のname:task形式キーも掃除対象に含めた(合理的)"
+    - "lessons_useful useful率60%(6/10)。L112/L204/L258/L280/L205/L134が具体的に有用"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "STALL_COUNTクリア漏れ→前task値持越し→誤ESCALATE。完了時全キークリアで構造的排除=正の複利"
+  timestamp: "2026-04-28T03:05:00"
+- cmd_id: cmd_2342
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2342_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。check_ac_test_scope関数追加+bats 9件PASS+FP除外。既存パターン踏襲"
+  observations:
+    - "既存check関数パターン踏襲。extract_acceptance_criteria_block+record_warn_reason再利用"
+    - "FP除外: 変更対象/関連テスト/pre-existing/.bats/scripts/含む行をgrep -vでスキップ"
+    - "lessons_useful useful率0%(0/10)。教訓注入タスク関連度が低い(infra対象cmdに非infra教訓)"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, premortem]
+  causal_chain: "全テストPASS AC→忍者FAIL→waive消火循環。設計段階WARNで根絶=正の複利"
+  timestamp: "2026-04-28T02:53:00"
+- cmd_id: cmd_2340
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2340_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。L1_PORTFOLIO_MAP完全削除+ヘルパー一元化。smoke 12体+28テストPASS"
+  observations:
+    - "grep L1_PORTFOLIO_MAP = 0件。完全削除確認"
+    - "3箇所None fallback→load_legacy_shijin_portfolio_map()。build_portfolio_map_from_config()経由"
+    - "smoke: count=12, latest=2026-03。consistency 10+benchmark 18=28 PASS"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "UUID二重管理→一元化完了。Phase 3全体(CSV廃止+UUID統一)完結=正の複利"
+  timestamp: "2026-04-28T03:12:00"
+- cmd_id: cmd_2343
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。偵察: outputs/analysis配下CSV選別(削除対象vs保護対象)。Phase 4前提調査"
+  observations:
+    - "CSV保存先outputs/analysis/を軍師が掲示板回答で現物確認済み"
+    - "AC3の分類基準(gs_data_loader参照有無grep)が明確。判断不能カテゴリも含む3分類"
+    - "読取専用調査。削除は別cmd(Phase 4)で実行"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "旧CSV残存→再利用で汚染混入リスク。選別調査→正確な削除対象特定=正の複利(誤削除防止)"
+  timestamp: "2026-04-28T03:33:00"
+- cmd_id: cmd_2344
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。run_077全7本のデフォルト→okugi_shin_ninpo_20.yaml(db)。bunshin L107出力先分岐は正常動作"
+  observations:
+    - "全7本default=alm_l0_12.yaml(csv)を軍師grepで確認済み。1行×7本の変更"
+    - "run_077_bunshin.py L107: universe_id!=C12_legacy_shijin→出力先shin_ninpo_v2_20body/。正常動作(L1はL0と別ディレクトリ)"
+    - "他6本にC12_legacy_shijinチェックなし。影響は出力先変更のみ"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "CSV経路廃止→デフォルトcsv版のまま→ValueError。db版に統一で全L1 GS正常動作=正の複利"
+  timestamp: "2026-04-28T03:38:00"
+- cmd_id: cmd_2343
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2343_scout
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。CSV選別偵察: 807件→削除9/保護674/不明124。3層分類根拠(config+head5+gs_data_loader)。BLOCK→CLEAR(家老lesson登録後)"
+  observations:
+    - "削除候補9件: alm_l0_12_returns, cmd_1024_K1-K3, wf_shin/alm_12, wf_l2_as/ss_21。全てsource_type:csv universeのk_files参照"
+    - "保護674件: 研究成果物(champion_selector, vintage, robustness等)"
+    - "判断不能124件: smoke/profile/cache系。保守的に非削除扱い"
+    - "lesson_candidate有→gate_prediction:WARN(draft_lessons BLOCKリスク)"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "旧CSV残存→削除対象9件特定→Phase 4で正確な削除可能=正の複利(誤削除ゼロ)"
+  timestamp: "2026-04-28T03:42:00"
+- cmd_id: cmd_2344
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2344_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。run_077全7本db版config統一。rg旧0/新7件。importlib全7本成功(C20/20体)。28テストPASS。BLOCK→CLEAR(lesson登録後)"
+  observations:
+    - "7本全てokugi_shin_ninpo_20.yaml。rg確認: alm_l0_12.yaml=0件(完全除去)"
+    - "importlib: 7本C20_okugi_shin_ninpo/components=20。help文も更新"
+    - "PRE-12b: dm-signal tasks/lessons.mdにdraft教訓1件(cmd_2343由来)→gate_prediction:WARN"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "デフォルトcsv版→ValueError。db版統一で全L1 GS正常動作+データ汚染構造的排除=正の複利"
+  timestamp: "2026-04-28T03:48:00"
