@@ -491,4 +491,36 @@ import metrics_research_engine as MRE
 | DM-B-04 | GS パラメータが想定外の値になっている | GS CSV 列定義のずれ / pipeline_config 誤設定 | grid_search 出力 CSV の列名と `pipeline_config` の `param_grid` を照合 |
 | DM-B-05 | ALM 計算がデフォルト(lookback)に fallback する | alm_config.enabled=false または objective 誤設定 | `pipeline_config` の `alm_config` フィールド確認。PI-003/PI-009 準拠か |
 | DM-B-06 | FoF monthly-returns が 240s 超 / タイムアウト | DB fallback クエリ大量発生 (DB_FALLBACK_COUNT > 0) | `/admin/recalculate-sync` ログで `DB_FALLBACK_COUNT` 確認。preload キャッシュのヒット率確認 |
+
+## §33 GS正規化 進捗 (2026-04-27)
+
+### 汚染発覚と方針転換
+
+246系CSV(C12_shin_shijin_v2)の月次リターンが本番と完全不一致(0.0%)。根因: `shin_v2_12_monthly_returns.csv`(ユニバース)が2026-03-24で凍結、GS再実行(04-03)で未更新。CSVという腐りうる中間ファイルが汚染源。
+
+**殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番。
+
+### Phase構造(v3)
+
+| Phase | 内容 | 状態 |
+|-------|------|------|
+| 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** |
+| 1.9a | 清掃+SQLite直接出力改修(cmd_2331) | **配備中** |
+| 1.9b | フルGS再実行(191,796pat、SQLite直接出力) | 待ち(1.9a依存) |
+| 1.9c | チャンピオン12体選出+本番DB突合 | 待ち(1.9b依存) |
+| 2 | CSV→SQLite変換 → **不要に**(1.9bで直接出力) | 省略 |
+| 3-7 | gs_data_loader v2→旧データ削除→消費者改修→GS生成改修→neighbor | 未着手 |
+| 後続 | 忍法(L1)段階: ユニバースDB直読化+忍法GS再実行 | 設計待ち |
+
+### 検証済み事実
+
+- shin_shijin_l1_gs.pyエンジン精度: 12体全PASS(≤1e-6。cmd_2330)
+- LOOKBACK_TERMS: 内部でtrading days変換済み(2M=42D。改修不要)
+- shijin-design.yaml DNA制約: 本番config全項目一致確認済み
+
+### PI候補
+
+- **PI-026(候補)**: GS入力ユニバースはsource_type:"db"(本番DB直読)をデフォルトとする。source_type:"csv"は腐りうる中間ファイルでありサイレント汚染の原因(2026-04-27実証)
+
+設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
