@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-27 -->
+<!-- last_updated: 2026-04-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,19 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1444 | 旧忍法15体を構成PFとする新Ward FoFを本番DB新規作成+既存123体完全不変証明 | dm-signal | 03-28 | PASS。旧忍法-Ward(0012f956)登録。k=5クラスタ二段EW(0.05/0.0667/0.10)。349s。既存123体差異0 |
-| cmd_1446 | Ward FoF日次ETL(sync-fof)動作検証。cmd_1445修正がsync-fofコードパスもカバーしているか確認し、日次ETL後にWard FoFデータが消失しないことを証明する | dm-signal | 03-28 | sync-fofはfullrecalculateと同一コードパス(_recalculate_fof_history in recalculate_fof.py) |
-| cmd_1451 | FoF MonthlyReturn生成(本番120.8s/15%)のボトルネック特定偵察。116 Optimization(Shared PriceCache)実装済みなのに120.8s — 何が遅いか | dm-signal | 03-28 | — |
-| cmd_1447 | fullrecalculate内部の日次ループ（1日ずつ回す計算）がボトルネック。recalculate_fast.py / recalculate_fof.py のコードを分析し、日次ループしている処理を特定。月次単位にまとめられる処理と、どうしても日次が必要な処理を分類し、高速化の設計材料を作る | dm-signal | 03-28 | recalculate_fast.pyの日次ループを6箇所特定。Phase4のperf_calc(L1497-1621)が最大の月次化候補。累積リターンを毎日計 |
-| cmd_1445 | fullrecalculate(portfolio_id=None)でWard FoFのsignals/monthly_returnsが生成されないバグを修正。日次ETL(sync-fof)でも同様の問題が起きる可能性あり | dm-signal | 03-28 | 根因はcommit 9d845ad4(cmd_1443)のis_custom_weight分離不足。d49a9174がis_kalman_metaガードを除去し |
-| cmd_1448 | trade_perfの53K DBクエリを除去するOPT-1/2をcommit+push+本番検証。ローカル実証済み: trade_perf 4627s→242s(94.8%削減) | dm-signal | 03-28 | OPT-1/2 commit f3b66500 push成功。本番fullrecalculate 118s完了(旧3324s→96.4%削減)。trade_pe |
-| cmd_1450 | FoF日次ループのmomentum_data月中縮小(OPT-A)。本番L3 db_write 144.5sのうち月中冗長データ95%を削除。cmd_1447小太郎偵察で実証済み | dm-signal | 03-28 | recalculate_fof.py momentum_data月中縮小(OPT-A)実装完了。リバランス日のみ完全版、月中は{skipped:True}に最小 |
-| cmd_1454 | OPT-A/OPT-6/perf_calc除去の3コミットを本番push+fullrecalculate一括検証。118s(OPT-1/2後)からの追加削減を実測 | dm-signal | 03-28 | 3コミット(OPT-A/OPT-6/perf_calc除去) |
-| cmd_1456 | L3 pipeline_exec 626s(Ward scipy)の相関行列キャッシュ実現可能性偵察。fullrecalculate最大残存ボトルネック | dm-signal | 03-28 | Ward FoF=1体(旧忍法-Ward)。pipeline |
-| cmd_1449 | Phase 4 perf_calc(L1497-1622)がorphaned codeであることを実証し除去。cmd_1447偵察でprev_perf_cacheがDB/signals未出力と判明。除去でPhase | dm-signal | 03-28 | Phase 4 perf_calc(L1498-1622, |
-| cmd_1457 | deploy_task.sh教訓注入のマシュー効果を修正。helpful_count優先ソートがkeyword_score(関連度)を上書きし、有用率13%。ソート優先順序を反転+universal/task-specific枠分離で注入精度を改善 | infra | 03-28 | inject_related_lessonsのソート優先順序 |
-| cmd_1460 | — | dm-signal | 03-28 | — |
-| cmd_1461 | — | dm-signal | 03-28 | — |
 | cmd_1493 | — | infra | 03-29 | deploy_task.sh再配備時AC上書きスキップバグ修 |
 | cmd_1494 | — | infra | 03-29 | 3ファイルのgate_fire_log書込み箇所にgate名 |
 | cmd_1495 | — | dm-signal | 03-29 | Phase4.5/5 precompute失敗数をstats |
@@ -880,3 +867,4 @@
 | cmd_2331 | shin_shijin_l1_gs.pyの出力にSQLite直接出力を追加する(道具磨き)。 合わせてPhase 2で生成した汚染.dbとbypass独自スクリプトを清掃する。 Phase 1.9b(フルGS再実行)の前提。道具が正しく動かなければGS再実行は無意味。 | dm-signal | 04-27 | 旧SQLite成果物と変換用一時スクリプト2本を削除し、sh |
 | cmd_2332 | shin_shijin_l1_gs.pyの出力パスを設計書§3.1の命名規則に合わせる。 日付バージョニング+layer/method構造+latest symlinkを追加し、GS結果の管理基盤を整備する。 フルGS再実行(cmd_2334)の前提となる道具磨き。 | dm-signal | 04-27 | — |
 | cmd_2333 | cmd_1125_v2_champion_select.pyの入力をCSV→SQLite(gs_db_utils.read_*)に変更する。 チャンピオン突合(cmd_2335)の前提となる道具磨き。cmd_2332と並列実行可能。 | dm-signal | 04-27 | cmd_1125_v2_champion_select.py |
+| cmd_2334 | shin_shijin_l1_gs.pyで4family(DM2/DM3/DM6/DM7+)のフルGSを最新株価で再実行する。 cmd_2332でOUTPUT_DIRを設計書§3.1準拠に変更済み。設計書準拠パスにSQLite+CSV同時出力。 チャンピオン12体選出(cmd_2335)の前提。 | dm-signal | 04-28 | shin_shijin_l1_gs.pyを--familie |
