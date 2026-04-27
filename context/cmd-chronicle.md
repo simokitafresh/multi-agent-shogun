@@ -862,3 +862,8 @@
 | cmd_2314 | 偵察 — GS CSV パラメータ→月次リターン列マッピング調査 | dm-signal | 04-26 | summary CSV行i == monthly CSV列i |
 | cmd_karo_reprofile_bench | インフラスクリプト実行時間再計測 — Top 20 × 5回 | infra | 04-26 | 前回プロファイリングTop20を5回中央値で再計測し、doc |
 | cmd_2315 | 偵察 — GS CSV正規化Phase 0.5: スクリプト130本全量分類+サブディレクトリ最終確定 | dm-signal | 04-27 | cmd_2315 Phase 0.5偵察として、GS関連スク |
+| cmd_2316 | 実装 — GS正規化Phase 1: マニフェスト記録 | dm-signal | 04-27 | outputs/gs_backup/20260427_pre |
+| cmd_2317 | 実装 — GS正規化Phase 1.5a: gs_db_utils.py(SQLite write/read共通層) | dm-signal | 04-27 | FILL_THIS |
+| cmd_2318 | 実装 — GS正規化Phase 1.5b: verify_gs_db.py(CSV-SQLite照合検証) | dm-signal | 04-27 | scripts/analysis/verify_gs_db. |
+| cmd_2319 | 実装 — GS正規化Phase 1.5c: gs_db_summary.py(SQLiteサマリ表示) | dm-signal | 04-27 | gs_db_summary.py を新規作成。--db-pa |
+| cmd_2320 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | — |
