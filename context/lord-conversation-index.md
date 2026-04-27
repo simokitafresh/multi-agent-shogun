@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T02:00:00+09:00 -->
+<!-- generated_at: 2026-04-28T02:05:08+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T02:05:08+09:00 | terminal | response | cmd_2339(CSV経路廃止)委任完了。cmd_2340(UUID一元化)はparkedで待機。cmd_2339完了後にparked→draft→pending→委任の順で進める。 殿、Phase 3の2cmd(2339+2340)が…
+- 2026-04-28T02:00:42+09:00 | terminal | inbound | よい。ではCMDを書こう
 - 2026-04-28T02:00:00+09:00 | terminal | response | cmd_2338委任完了。 殿の問いに答える。 **Phase 3(gs_data_loader v2)を1cmdにまとめるメリットとトレードオフ:** **メリット(軍師根拠):** - 変更ファイル1本(gs_data_loader.…
 - 2026-04-28T01:59:59+09:00 | ntfy | outbound | 【家老】cmd_2338 初回配備開始 (title=修正 — gunshi_notify重複防止フラグ目的別分離(draft/report共有バグ), ninja=hayate) 修正 📋 https://gist.github.com…
 - 2026-04-28T01:58:03+09:00 | terminal | inbound | 先に2を起票せよ
@@ -12,8 +14,6 @@
 - 2026-04-28T01:55:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 01:44:04|CI緑: run 25006257317
 - 2026-04-28T01:54:33+09:00 | terminal | response | 軍師にレビュー依頼を送った。CTX:27%。回答を待つ。殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-28T01:54:08+09:00 | terminal | inbound | CMDをきちんと分解しているか？原理に従え。焦るな。
-- 2026-04-28T01:54:00+09:00 | terminal | response | 軍師にレビュー依頼を送った。CTX:27%。回答を待つ。殿、指示あれば。 [meta] stop_reason=end_turn
-- 2026-04-28T01:53:36+09:00 | terminal | inbound | 軍師にレビューしてもらえ
 
 ## 未解決確認事項
 - cmd_2338委任完了。 殿の問いに答える。 **Phase 3(gs_data_loader v2)を1cmdにまとめるメリットとトレードオフ:** **メリット(軍師根拠):** - 変更ファイル1本(gs_data_loader.py)で密結合。分割すると中間状態(CS…
@@ -54,6 +54,8 @@
 - cmd_2336
 - cmd_2337
 - cmd_2338
+- cmd_2339
+- cmd_2340
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
