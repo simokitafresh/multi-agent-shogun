@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-27T18:11:35+09:00 -->
+<!-- generated_at: 2026-04-27T18:13:48+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-27T18:13:48+09:00 | terminal | response | cmd_2329(NaN修正) APPROVE、saizo作業中。cmd_2328(kasoku_ratio)は家老が配備待ち。 残る作業: - cmd_2328(kasoku_ratio): 配備待ち→忍者完了待ち - cmd_2329…
+- 2026-04-27T18:13:10+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-27 18:03:20|CI緑: run 24985708806 2026-04-27 18:07:50|cmd_2326 2026-04-27 18:10:53|cmd_2327
 - 2026-04-27T18:11:35+09:00 | terminal | response | 殿、5/6忍法GATE CLEAR。kasoku_ratio(cmd_2328)とNaN修正(cmd_2329)が配備中。 | cmd | 忍法 | 状態 | |-----|------|------| | cmd_2322 | buns…
 - 2026-04-27T18:10:52+09:00 | ntfy | outbound | 【家老】cmd_2329 初回配備開始 (title=修正 — gs_db_utils.py write_monthly NaN→NULL許容改修, ninja=saizo) 修正 📋 https://gist.github.com/si…
 - 2026-04-27T18:10:13+09:00 | terminal | response | cmd_2329(NaN修正)委任完了。 殿、現況報告。 **Phase 2 L0シン方式:** | cmd | 忍法 | 状態 | |-----|------|------| | cmd_2322 | bunshin | **GATE …
@@ -12,8 +14,6 @@
 - 2026-04-27T17:55:06+09:00 | terminal | response | 殿、2つの問題が同時に発覚。整理する。 **問題1: yotsumeのC12_shin_shijin_v2版GS不在** - 246系6忍法はC12_shin_shijin_v2(本番シン四神v2)で揃い → 正規化対象として正しい - …
 - 2026-04-27T17:54:31+09:00 | terminal | response | 核心がわかった。 **C12_legacy_shijinのUUIDは本番シン四神のUUIDと全て一致しない。** | 本番シン四神 | UUID | C12_legacy_shijin | |------------|------|---…
 - 2026-04-27T17:42:13+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-27 17:35:09|cmd_2323
-- 2026-04-27T17:40:15+09:00 | terminal | response | 確定した。 **C12_legacy_shijinのみが7忍法全て揃っている。** - C12_shin_shijin_v2はyotsumeが不在(6/7) - C12_alm_l0はALM方式(Phase 8) **しかし今Phase …
-- 2026-04-27T17:39:03+09:00 | terminal | inbound | もう同じミスはないか？全ての忍法は同一のルールに基づく四神を構成PFにしているか？シン忍法の構成PFは7忍法全て同一だ
 
 ## 未解決確認事項
 - 確定した。 **C12_legacy_shijinのみが7忍法全て揃っている。** - C12_shin_shijin_v2はyotsumeが不在(6/7) - C12_alm_l0はALM方式(Phase 8) **しかし今Phase 2で配備済みのcmd_2322-2328…
@@ -38,15 +38,12 @@
 ## 参照cmd
 - cmd_2
 - cmd_23
-- cmd_176
-- cmd_177
 - cmd_214
 - cmd_1200
 - cmd_1795
 - cmd_1845
 - cmd_1880
 - cmd_1934
-- cmd_2214
 - cmd_2215
 - cmd_2218
 - cmd_2307
@@ -66,6 +63,8 @@
 - cmd_2325
 - cmd_2326
 - cmd_2327
+- cmd_2328
+- cmd_2329
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
