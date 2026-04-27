@@ -509,23 +509,25 @@ import metrics_research_engine as MRE
 | 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** |
 | 1.9a | 清掃+SQLite直接出力改修(cmd_2331)+OUTPUT_DIR§3.1準拠(cmd_2332) | **完了** |
 | 1.9b | フルGS再実行(191,796pat、SQLite+CSV出力。cmd_2334) | **完了**(GATE CLEAR 2026-04-28) |
-| 1.9c1 | 道具磨き: champion_selector.pyに--familyモード追加(cmd_2335) | **設計中** |
-| 1.9c2 | チャンピオン12体選出実行+吸収判定(cmd_2336予定) | 待ち(1.9c1依存) |
-| 1.9d | 本番DB突合(現行チャンピオンとの差分確認) | 待ち(1.9c2依存) |
+| 1.9c | チャン��オン12体選出(SQLite直読)+吸収判定+本番差分(cmd_2335) | **起票準備中** |
 | 道具 | champion_select.py SQLite入力対応(cmd_2333) | **完了** |
 | 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
 | 3-7 | gs_data_loader v2→旧データ削除→消費者改修→GS生成改修→neighbor | 未着手 |
 | 後続 | 忍法(L1)段階: ユニバースDB直読化+忍法GS再実行 | 設計待ち |
 
-### ★ Phase 1.9c接続問題(軍師発見 2026-04-28)
+### ★ Phase 1.9c設計(2026-04-28確定)
 
-champion_selector.pyは**忍法名(bunshin等)で検索する設計**。四神GS出力は**family名(DM2等)で命名**。
-そのままでは四神GS CSVに接続できない。--familyモード追加が必要(軍師推奨案A)。
+2つのchampion selectスクリプトが存在(軍師確認 2026-04-28):
+- `outputs/scripts/champion_selector.py`: 忍法(L2)用。CSV/npy入力。月次リターンから指標計算
+- `scripts/analysis/grid_search/cmd_1125_v2_champion_select.py`: **四神(L0)用。SQLite入力。事前計算metricsから選出+DNA制約+吸収**
+
+四神チャンピオン選出はcmd_1125_v2_champion_select.pyで--db-path指定。道具磨き不要。
+実行: `python scripts/analysis/grid_search/cmd_1125_v2_champion_select.py --db-path outputs/grid_search/20260428/L0/shin`
 
 注意点:
-- MaxDD方向テーブルが四神用パスで正しく適用されるか確認(cmd_1840バグ再発防止)
-- float64保証を四神用パスでも維持
-- 吸収判定: 同一パラメータIDの文字列完全一致。4family×3モード=12→吸収後10体実績あり
+- MaxDD方向テーブルが正しく適用されるか確認(cmd_1840バグ���発防止)
+- 吸収判定: 同一パラメータIDの文字列��全一致。4family×3モード=12→吸収後10体実績あり
+- 旧チャンピオン(cmd_246/cmd_1018)との差分確認をACに含める
 
 ### 検証済み事実
 
