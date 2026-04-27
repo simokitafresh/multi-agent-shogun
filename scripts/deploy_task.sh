@@ -3916,7 +3916,7 @@ mark_dispatch_ntfy_once() {
     local ninja_name="$2"
     local title="$3"
     local state_dir="$SCRIPT_DIR/queue/dispatch_ntfy_started"
-    local marker="$state_dir/${cmd_id}.draft_review.started"
+    local marker="$state_dir/${cmd_id}.started"
     local ts
     ts="$(date '+%Y-%m-%dT%H:%M:%S')"
 
@@ -4076,7 +4076,7 @@ mark_draft_review_once() {
     local ninja_name="$2"
     local title="$3"
     local state_dir="$SCRIPT_DIR/queue/draft_review_started"
-    local marker="$state_dir/${cmd_id}.started"
+    local marker="$state_dir/${cmd_id}.draft_review.started"
     local ts
     ts="$(date '+%Y-%m-%dT%H:%M:%S')"
 
