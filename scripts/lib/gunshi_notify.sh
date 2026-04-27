@@ -26,10 +26,12 @@ notify_gunshi_for_report() {
         return 0
     fi
 
-    # レポート内のstatus確認（completed or done）
+    # レポート内のstatus確認（LK002: status未設定でもnotify発火させる）
+    # report YAMLが存在する時点で忍者は報告を書いた=完了意思。statusがcompleted/done以外でもnotify。
+    # 旧コード: status!=completed&&!=done→return0 がhayate(cmd_2317 index.lock STALL後)でnotify不発の根因。
     local report_status
     report_status=$(grep -E '^\s*status:' "$report_path" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
-    if [ "$report_status" != "completed" ] && [ "$report_status" != "done" ]; then
+    if [ "$report_status" = "failed" ] || [ "$report_status" = "cancelled" ]; then
         return 0
     fi
 

@@ -521,7 +521,7 @@ from datetime import datetime, timedelta, timezone
 import yaml
 
 stk_path, archive_cmd_dir, reports_dir, archive_report_dir, stk_archive_dir = sys.argv[1:6]
-SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned"}
+SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned", "parked", "draft"}
 DONE_STATUSES = {"done", "cancelled", "absorbed"}
 TRIM_STATUSES = {"done", "absorbed", "cancelled"}
 CUTOFF_DAYS = 30
@@ -586,6 +586,10 @@ for cmd_id, entry in cmds.items():
         entry["status"] = "done"
         status = "done"
         synced += 1
+    elif status == "delegated":
+        # LK002: delegatedだが未完了 → 保護(cmd_2320消失事故の根因修正)
+        keep_after_sync[cmd_id] = entry
+        continue
     if status in DONE_STATUSES:
         archive_path = os.path.join(archive_cmd_dir, f"{cmd_id}_{status}_{date_stamp}.yaml")
         if not os.path.exists(archive_path):

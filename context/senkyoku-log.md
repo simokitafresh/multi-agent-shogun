@@ -744,4 +744,15 @@
 - 2026-04-20 cmd_2182-2187: 6忍法CoDDメモリ+速度横展開(kasoku_ratio/nukimi/oikaze/kawarimi/yotsume/bunshin)。6/7 GATE CLEAR。kawarimi稼働中。kasoku_ratioも既に移植済み(軍師発見)。軍師がgate偽陽性3件を自走修正(バンドルCLI除外+Check17数値緩和+Check18 scout_exempt提案)
 - 2026-04-20 週報作成: 2026-04-20_weekly.md生成。API+Grok x_search使用。全検証PASS
 - 2026-04-20 殿指摘3連: 「gateの警告を無視するな」→「WARNの度にも即時強くなれ」→「自動で学習ループを回す仕組みは？」→environment_change自動検証(cmd_2173)に到達
+
+## 2026-04-27
+
+- cmd_2322-2329: GS正規化Phase 2(CSV→SQLite変換)6忍法配備→5/6 GATE CLEAR+NaN修正
+- **汚染発覚**: 246系CSV(C12_shin_shijin_v2)の月次リターンが本番と完全不一致(0.0%)。根因: shin_v2_12_monthly_returns.csv(ユニバース)が2026-03-24で凍結、GS再実行(04-03)で未更新
+- 殿裁定6項目: 「本番データを使うな、理論ベースで計算→パリティで検証」「チャンピオンは事後で決まる」「CSVをまた作るな、DB直読せよ」「フルGSでチャンピオン再選出が正しい順番」「想像せず確認。ドキュメントは陳腐化する」「正しく計算するための遠回り=プラス」
+- cmd_2330(検証): shin_shijin_l1_gs.py精度確認→12体全PASS(≤1e-6)。鉄壁初報FAILはpattern_id誤対応(軍師特定)。エンジン信頼性確立
+- LOOKBACK_TERMS内部変換確認: 2M=42 trading days(grid_search_metrics_v2.py L57 TRADING_DAYS_PER_MONTH=21)。統一改修は不要
+- 設計書改訂v3: Phase 1.9a(清掃+SQLite直接出力改修)→1.9b(フルGS再実行)→1.9c(チャンピオン突合)。Phase 2は不要に。忍法(L1)は後回し
+- cmd_2331(Phase 1.9a): 清掃+shin_shijin_l1_gs.py SQLite直接出力改修→家老委任
+- gate修正: cmd_save.sh L2848 check_parity_ac_requirements にVERIFY除外追加(将軍直接修正)
 - 2026-04-21 cmd_karo_pipeline_verify: 疾風。`context/senkyoku-log.md` へ履歴1行を追記し、パイプライン検証cmdの記録を一次データへ反映
