@@ -32,7 +32,7 @@
 # ★precheck省略禁止。偵察報告でも必ずgate_gunshi_report_precheck.sh実行。SG-PRE12がlesson_candidate自動検出→gate_prediction誤予測の唯一の防御(cmd_2131: 省略→CLEAR→BLOCK)
 # AC commit check → (a)対象ファイルがgitignore/outputs/なら除外設計か確認 (b)cmd制約にcommit禁止→report review時にSG7 gate_prediction:WARNでGP-128 BLOCK予測を明記。一律適用=負の複利(cmd_1897 LGTM→BLOCK: T1違反)
 # verdict=FAIL報告にLGTM → gate_prediction:BLOCK必須。binary_checks result:noがあればgate機械的BLOCK。報告品質OKでも予測を付記せよ(cmd_1900: T1再発。cmd_1897と同構造)
-# ★SG-PRE9 result:no → gate_prediction:BLOCK固定。waive_reasonの有無に関わらず(GP-190はテンプレート側のみ、gate側にwaive免除なし。cmd_2093で誤予測WARN→実際BLOCK)
+# ★SG-PRE9 result:no → gate_prediction:BLOCK固定。**例外: test_triage=pre_existingはWARN降格でCLEAR**(cmd_2339で実証。cmd_complete_gate.sh L1962)。waive_reasonの有無に関わらず(GP-190はテンプレート側のみ、gate側にwaive免除なし。cmd_2093で誤予測WARN→実際BLOCK)
 # REQUEST_CHANGES verdict → severity: urgent/normal 必須。欠落→家老がurgent/normal判断できず対応遅延(cmd_1836/1841で2件欠落, 2026-04-11検出)
 # 「既実装」判定 → git show HEAD~1:file で変更前状態を確認。HEADは並行commit影響を受ける(cmd_1860 premature_shelve: LG001違反の変形)
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
@@ -47,6 +47,7 @@
 # ★スコープ一致原則: 対策のスコープは問題のスコープと一致させよ。一時的問題(cmd固有)に恒久対策(hook)を使うな。自問「この問題はいつまで存在する？この対策はいつまで残る？一致しているか？」(2026-04-22殿指摘: 単発禁止にpre-bash hook設置→外し忘れ→将来の全cmdBLOCK=負の複利)
 # Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
 # Think Before Coding観点: 忍者が暗黙の前提を置いていないか。ACの前提が曖昧なまま実装していないか。不確実なら止まって聞いたか(Karpathy原則1)
+# ★ambiguity観点シフト(将軍承認2026-04-26): 「表現の曖昧性」→「解釈の曖昧性」。(1)AC数値は固定か可変か(並行cmd/時間経過で変動？) (2)推奨と必須の分離(「すべき」がACに？→notesへ) (3)暗黙のデータ前提(取得タイミング/鮮度が明示？)。cmd_save gateが上流で表現曖昧性を除去→残留パターンが軍師固有の検出点
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
 # RESEARCH cmd(commit免除): files_modifiedファイルの実在+parent_cmd命名一致を確認せよ。手段の免除≠目的の免除(cmd_1948: 成果物0件がGATE CLEAR。GP-202+PRE3で二重防御)
 # golden data検証基準: 生成時のコード状態(commit)を確認。バグ状態で生成されたgolden dataは検証基準にならない(cmd_1899: TRFバグ状態のgolden=全選択≠正しいTop+Worst)
@@ -71,585 +72,8 @@
 # 詳細エントリ: 20260416b_to_20260418a(cmd_1942〜cmd_2051) → logs/archive/gunshi_review_log_20260416b_to_20260418a.yaml
 # 詳細エントリ: cmd_2179_to_cmd_2231 → logs/archive/gunshi_review_log_cmd_2179_to_cmd_2231.yaml
 # 詳細エントリ: 20260420b_to_20260425a(cmd_2231〜GP-221) → logs/archive/gunshi_review_log_20260420b_to_20260425a.yaml
+# 詳細エントリ: 20260425b_to_20260426a(GP-222〜cmd_2283) → logs/archive/gunshi_review_log_20260420b_to_20260426a.yaml
 # ─────────────────────────
-- cmd_id: GP-222
-  review_type: self_study
-  verdict: IMPLEMENTED
-  findings_summary: "deploy_task.sh --yamlオプション追加。家老配備ブロッカー3件(cmd未発見/hookブロック/timeout)のうち2件解消"
-  observations:
-    - "バグ1: deploy_task.shがshogun_to_karoにないcmdを解決できない→--yamlで回避"
-    - "バグ2: Write hookがtask YAML直書きをブロック→--yaml内部cpで回避"
-    - "バグ3: 30秒timeout(3回発生)→根因はWSL2 NTFS I/O。timeout延長で暫定対処。GP-224で本格対応"
-  proposals:
-    - id: GP-223
-      description: "教訓スコアリングにpurpose/context_files加味"
-      status: proposed
-      defense_level: 4
-    - id: GP-224
-      description: "deploy_task.sh WSL2 NTFS I/O高速化"
-      status: proposed
-      defense_level: 3
-  causal_chain: "shogun_to_karoにないcmd→resolve_cmd失敗→配備不能→Write試行→hookブロック→家老スタック→殿指示の実行遅延=負の複利。--yamlオプションで経路追加=正の複利"
-  timestamp: "2026-04-25T19:10:00"
-- cmd_id: consultation_gstack_gbrain_20260425
-  review_type: consultation
-  verdict: RESOLVED
-  findings_summary: "GStack/GBrain 33項目カタログ3点相談に回答。見落とし2件発見(security scan+query router)。実装順序OK+複利提案"
-  observations:
-    - "#1 Confidence 1-10は既存3段階と対応表で共存可。SGプロトコル§5に1行追記"
-    - "見落としA: security scan(依存脆弱性)がカタログ未収録。pip-audit相当。工数S"
-    - "見落としB: query router=GP-223(教訓スコアリング改善)と合流可能。今日のhayate事故が実例"
-  causal_chain: "GStack/GBrain分析→33項目抽出→軍師検証で2件追加→35項目。#1/#2先行で残り項目レビュー時に即効果=正の複利"
-  timestamp: "2026-04-25T19:15:00"
-- cmd_id: cmd_2272
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: CLEAR
-  confidence: MEDIUM
-  findings_summary: "5観点OK、premortem NG。AC3 verdict 4選択肢がcmd_complete_gate.sh+deploy_task.shの二値検証と衝突"
-  observations:
-    - "cmd_complete_gate.sh L1721: PASS/FAIL/PASS_NO_IMPROVEMENTの3値のみ許可。DONE等は不正値でBLOCK"
-    - "deploy_task.sh L1637: verdict_invalidチェックがPASS/FAILの二値のみ。L2923でも二値厳守"
-    - "AC物理検証: 8/9ファイル存在。slop-scan-dont-fix.mdは新規作成で正当。q11: 既存重複なし"
-  causal_chain: "GStack DEBUG REPORT verdict(4値)→忍者テンプレート追記→gate二値検証と衝突→BLOCK多発=負の複利。status_detail欄分離で共存可能"
-  timestamp: "2026-04-25T19:25:00"
-- cmd_id: cmd_2273
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: CLEAR
-  confidence: MEDIUM
-  findings_summary: "5観点OK、premortem NG。AC3 DONE_WITH_CONCERNS verdictがevaluate_review_report_status L1721の3値検証と衝突(cmd_2272と同根)"
-  observations:
-    - "cmd_complete_gate.sh 4532行確認。scope_drift/staleness/PARTIAL/WTF全て未実装(grep 0件)"
-    - "L1721: PASS/FAIL/PASS_NO_IMPROVEMENTの3値のみ。DONE_WITH_CONCERNSは不正値→BLOCK"
-    - "cmd_2272 AC3(verdict 4選択肢)と同根。verdict拡張はL1721+deploy_task.sh L1637の同時修正が必要"
-  causal_chain: "DONE_WITH_CONCERNS導入→忍者使用→L1721不正値判定→BLOCK→workaround=負の複利。verdict値維持+WARN分離で衝突回避=正の複利"
-  timestamp: "2026-04-25T19:30:00"
-- cmd_id: cmd_2274
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: CLEAR
-  confidence: MEDIUM
-  findings_summary: "5観点OK、premortem NG。perf_measure.pyとの統合方法未定義。cmd_2271再発リスク"
-  observations:
-    - "scripts/cdp/ 4ファイル存在。baseline/regression/health_score未実装(grep 0件)"
-    - "Health Scoreルーブリック: 40+20+20+10+10=100。GStack閾値と一致"
-    - "perf_measure.py変更禁止が制約に未明記。忍者がperf_measure.py改変する可能性(cmd_2271と同パターン)"
-  causal_chain: "統合方法未定義→忍者がperf_measure.py改変→計測条件汚染→baseline比較無効=負の複利。後処理新スクリプト明記で回避=正の複利"
-  timestamp: "2026-04-25T19:40:00"
-- cmd_id: cmd_2272
-  review_type: report
-  report_ninja: kotaro
-  report_task_id: cmd_2272_impl
-  verdict: LGTM
-  gate_result: BLOCK(saizo側: fill_this_remaining+report_format。kotaro報告は問題なし)
-  findings_summary: "4観点OK。ChunkB(AC2,5,6,8,9)。ashigaru.md+dm-signal-ops.md+gate_shogun_startup.sh+slop-scan-dont-fix.md。SC2126修正済み"
-  observations:
-    - "commit 8a577413確認。4ファイル変更+slop-scan新規作成(150行)。cmd_id含むcommit"
-    - "Gate13.6教訓Stats追加。bash -n PASS。ShellCheck PASS"
-    - "二重配備WARN(saizo in_progress)は分割配備(チャンク分担)で正当。WA率0%(3件中0件)"
-  causal_chain: "GStack/GBrain知見→instructions/context追記→全cmdのレビュー・偵察・報告品質向上=正の複利(Round1チャンクB完了)"
-  timestamp: "2026-04-25T19:42:00"
-- cmd_id: cmd_2274
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2274_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。perf_measure.py未変更(cmd_2271制約遵守)。cdp_benchmark.py/sh新規+テスト3件。回帰閾値+Health Score実装"
-  observations:
-    - "commit 145479ea。変更6ファイル全てscripts/cdp/+tests/+.gitignore。perf_measure.py差分なし"
-    - "閾値: timing>20%WARN/>50%REGRESSION、bundle>10%/>25%、request>30%。GStack原文一致"
-    - "inbox補足(perf_measure.py変更禁止)がRC指摘→制約明記→忍者遵守の因果鎖が機能"
-  causal_chain: "RC指摘(perf_measure.py変更禁止)→制約明記→hayate遵守→後処理ラッパー設計→既存計測汚染なし=正の複利(cmd_2271教訓が環境に定着)"
-  timestamp: "2026-04-25T19:50:00"
-- cmd_id: cmd_2272
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2272_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。ChunkA(AC1,3,4,7,9)。RC指摘(verdict gate衝突)をstatus_detail分離で正しく対応"
-  observations:
-    - "commit f82c6a8b。6ファイル変更。verdict PASS/FAIL維持+status_detail欄で4選択肢を実装"
-    - "instructions/gunshi.mdにconfidence 1-10+Fix-First+Second Opinion追記"
-    - "deploy_task.shにstatus_detail/test_triageテンプレート追加。verdict検証(L1721)と非衝突確認"
-  causal_chain: "RC指摘(gate衝突)→status_detail分離→verdict二値維持→gate BLOCK回避=正の複利。軍師レビュー→家老補足→忍者実装の第二層ループが機能"
-  timestamp: "2026-04-25T19:52:00"
-- cmd_id: cmd_2273
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_2273_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。4新検証(scope_drift/staleness/partial/wtf)。RC指摘反映(PASS/FAIL維持)。bats 55件PASS"
-  observations:
-    - "commit 82cbb2c8。cmd_complete_gate.sh 1ファイル変更のみ。既存テスト全PASS"
-    - "AC3: DONE_WITH_CONCERNS禁止→WARN PARTIAL:{N}/{M}+掲示板通知。verdict二値維持"
-    - "check_review_staleness: deployプレースホルダSKIPは妥当(source:deploy_preflight≠忍者commit)"
-  causal_chain: "cmd_2271事故(scope外174行改変)→RC指摘(verdict衝突)→影丸実装(4検証WARN)→scope_drift+wtf_likelihoodで同種事故を構造的検出=正の複利"
-  timestamp: "2026-04-25T19:55:00"
-- cmd_id: cmd_2271
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_2271_impl
-  verdict: LGTM
-  gate_result: BLOCK(hayate旧報告report_format。hanzo報告は問題なし)
-  findings_summary: "4観点OK。verdict=FAIL正当。perf_measure.py viewer認証矛盾→L484に従い停止→decision_candidate記録。教訓注入効果実証"
-  observations:
-    - "hayate(教訓なし)=viewer迂回3回違反。hanzo(教訓あり)=構造的矛盾検出→正しく停止。教訓注入の効果差が明確"
-    - "decision_candidate: admin localStorage認証確立方法。perf_measure.py=viewer認証専用の設計的制約"
-    - "lesson_candidate: perf_measure.py認証方式の事前確認を標準手順化。登録推奨"
-  causal_chain: "教訓注入(L484/L274)→hanzoが認証矛盾を検出→停止+報告→hayate違反パターンの構造的防止を実証=正の複利(教訓注入精度改善の投資回収)"
-  timestamp: "2026-04-25T20:00:00"
-- cmd_id: cmd_2275
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点全OK。教訓Prune+Cross-PJ+冪等デプロイ+Diff-aware testing。GStack Round2-G3b"
-  observations:
-    - "deploy_task.sh 4602行、dreamスキル存在確認。prune/cross_project/idempotent/diff_aware全て未実装(grep 0件)"
-    - "Cross-PJ(AC2)とGP-223(purpose加味)は直交: AC2=スコープ拡張、GP-223=既存スコアリング改善"
-    - "Cross-PJノイズリスクは閾値3+MAX_INJECT=10で緩和。カタログにもデメリット「ノイズ(スコアで緩和)」記載"
-  causal_chain: "教訓有用率7.7%→Prune(陳腐化除去)+Cross-PJ(候補拡大)+スコアリング改善(GP-223)で三方向から品質向上=正の複利"
-  timestamp: "2026-04-25T20:05:00"
-- cmd_id: cmd_2275
-  review_type: report
-  report_ninja: kotaro
-  report_task_id: cmd_2275_impl
-  verdict: LGTM
-  gate_result: BLOCK
-  findings_summary: "4観点OK。AC1(dream Prune Phase)+AC4(Diff-aware testing)。2ファイル追記"
-  observations:
-    - "commit 045857f2。infrastructure.md+dream SKILL.md。dreamはgit管轄外だが更新確認済み"
-    - "Prune対象を参照フィールド(target_path/source_file/enforcement)に限定=妥当な裁量判断"
-    - "二重配備WARN(saizo)は分割配備(AC2/AC3担当)で正当"
-  causal_chain: "教訓陳腐化→Prune検証で古い参照を検出→insight登録→次の/dreamで自動処理=正の複利"
-  timestamp: "2026-04-25T20:07:00"
-- cmd_id: GP-223
-  review_type: self_study
-  verdict: IMPLEMENTED
-  findings_summary: "D0直接実装。deploy_task.sh教訓スコアリングにpurpose/target_path/context_files追加。キーワード3→11。bats 9/9 PASS"
-  observations:
-    - "root cause: task_textにtitle/description/ACのみ→purpose/target_path/context_files未参照→キーワードスコア0頻発→fallback発動→NOT_USEFUL量産"
-    - "fix: 3フィールド追加(+5行)。None安全(or ''パターン)。context_filesはlist/str/None全対応"
-    - "効果: hayateタスク実測でkeywords 3→11。cdp_benchmark/signal等の関連キーワードが追加"
-  proposals: []
-  causal_chain: "purpose/target_path未参照→keyword score=0→fallback発動→helpful_count順で無関係教訓注入→NOT_USEFUL率93%→教訓注入の信頼性崩壊=負の複利。3フィールド追加でfallback発動率低下=正の複利"
-  timestamp: "2026-04-25T20:15:00"
-- cmd_id: cmd_2275
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2275_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。AC2/AC3回帰テスト追加。本体変更なし。bats 57件PASS。前回BLOCK(fill_this)修正済み"
-  observations:
-    - "commit 4d0c414a。test_deploy_task_ac_handling.bats+test_deploy_task_same_ninja_redeploy.bats修正"
-    - "分割配備(saizo=AC2/AC3, kotaro=AC1/AC4)でファイル衝突なし。担当範囲はinbox指示が正本"
-    - "lessons_useful: L512=false(gate_loop_health insight dedup→無関係)。理由具体的"
-  causal_chain: "AC2/AC3実装済み→回帰テスト追加で担保→既存機能のregression検出基盤=正の複利(次回変更時に自動検証)"
-  timestamp: "2026-04-25T20:20:00"
-- cmd_id: cmd_2276
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。GP-223がAC1部分充足。hayateがcommand_text統合済み(L2164)。weighted scoring未実装だがflat十分"
-  observations:
-    - "GP-223(commit 06677487)がpurpose/target_path/context_filesをtask_textに追加済み。hayateがL2152コメントで認識しcommand_text追加"
-    - "assumption「purpose未実装」は陳腐化(GP-223)だがhayateが現物確認で適応。LG003パターンだが自然解消"
-    - "command_text(L1954)は既存抽出済み。task_textへの追加(1行)でAC1完了。設計通りの最小変更"
-  causal_chain: "cmd_2271(CDP教訓0件)→根因(target_pathのみ参照)→GP-223(purpose追加)+cmd_2276(command追加)→keyword網羅性向上→fallback発動率低下→有用率回復=正の複利"
-  timestamp: "2026-04-25T20:28:00"
-- cmd_id: cmd_2276
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2276_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。command_text追加+CDPテスト。bats 55 PASS。GP-223との正しい積み上げ"
-  observations:
-    - "commit 9926347b。GP-223(06677487)→cmd_2275(4d0c414a)→cmd_2276(9926347b)の正しい積み上げ確認"
-    - "lessons_useful 10件全false。注入教訓が全て無関係=本cmd/GP-223が修正する問題そのものの証拠"
-    - "simplicity_check: command_textは既にL1954で抽出済み。task_textに追加する1変数追加のみ。最小変更"
-  causal_chain: "cmd_2271(CDP教訓0件)→GP-223(purpose追加)+cmd_2276(command追加)→keyword網羅性向上→lessons_useful 0/10が将来改善される基盤構築=正の複利"
-  timestamp: "2026-04-25T20:32:00"
-- cmd_id: GP-225
-  review_type: self_study
-  verdict: IMPLEMENTED
-  findings_summary: "D0直接実装。ASCII↔CJK境界分割+アクロニム例外。CDP教訓スコア0→3改善。bats 9/9 PASS"
-  observations:
-    - "root cause: 'CDP計測'が1キーワード→CDP(3文字)がmin_len>3で除外→教訓title.count('cdp')に到達不能"
-    - "fix: boundary split(lookahead/lookbehind)で'CDP'と'計測'に分離。アクロニム(>=2,全大文字)はmin_len免除"
-    - "GP-223→cmd_2276→GP-225の3段改善。purpose追加→command追加→境界分割で教訓注入精度の複利"
-  proposals: []
-  causal_chain: "日本語テキストにASCIIが隣接→1キーワード化→短いアクロニムが消失→教訓スコア0→NOT_USEFUL量産=負の複利。境界分割+アクロニム例外で3文字ドメイン用語を復活=正の複利"
-  timestamp: "2026-04-25T20:38:00"
-- cmd_id: cmd_2277
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。GStack R2-G2 4項目(adaptive/adversarial/scope_lock/前提3段階)。全未実装確認済み"
-  observations:
-    - "4項目grep 0件確認。gate 2本+対象ファイル5本全存在。前提全有効"
-    - "AC1 adaptive gating: 10回連続0件でLOW扱い。Phase5(自動化×強制)の自己チューニング実装"
-    - "FM3件: startup負荷(review_log 3400行パース)/行数取得方法(cmd?diff?)/gate改修リスク。全low-medium"
-  causal_chain: "GStack 35項目→R2-G2 4項目(レビュー系)→gunshi.md/ashigaru.md/shogun-procedures.md/gate 2本に環境埋込み→レビュー精度+偵察品質+cmd設計品質の恒久向上=正の複利"
-  timestamp: "2026-04-25T20:55:00"
-- cmd_id: cmd_2278
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: MEDIUM
-  findings_summary: "6観点OK(MEDIUM)。GStack R3最終4項目。MCP制約+4スクリプト同時の規模懸念"
-  observations:
-    - "4スクリプト全て未存在確認。既存参照(perf_measure.py/deploy_task.sh)存在"
-    - "AC4 hybrid_search: MCP search_nodesは将軍専用。忍者からアクセス不可→keyword-onlyにfallback"
-    - "AC1 cdp_canary: perf_measure.py参照。cmd_2271のviewer認証問題を忍者が認識要"
-  causal_chain: "GStack 35項目→R1(15)+R2(16)+R3(4)=35完了目標→deploy監視+スキル品質+教訓検索の基盤構築→全cmdの品質基盤が恒久強化=正の複利"
-  timestamp: "2026-04-25T22:00:00"
-- cmd_id: cmd_2278
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_2278_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK(AC2+AC3範囲)。gate_skill_health.sh 22スキル走査+skill_routing_eval.bats 13件PASS"
-  observations:
-    - "commit a0236333に4スクリプト一括。kagemaru担当はAC2(gate)+AC3(bats)。AC1/4/5はhayate担当でno=正当"
-    - "GP-227効果実証: review_gate.done created/updatedメッセージ確認。preflight未実行でもLGTMで生成された"
-    - "lessons_useful 10件全false。教訓注入改善(GP-223/225)の効果は次回配備から"
-  causal_chain: "GStack R3→kagemaru AC2+AC3(スキル健全性gate+ルーティングテスト)→22スキル走査基盤+13テスト→スキル追加時の品質保証=正の複利。GP-227がreview_gate.done不在を即修正(本セッション成果の環境実証)"
-  timestamp: "2026-04-25T22:15:00"
-- cmd_id: cmd_2278
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2278_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK(AC1+AC4範囲)。cdp_canary --dry-run PASS+hybrid_search keyword-only PASS"
-  observations:
-    - "commit a0236333に影丸担当ファイルも含まれる(共有index衝突)。正直に報告。lesson_candidate適切"
-    - "AC4: MCP search_nodesは忍者権限外→--mcp-file/MCP_SEARCH_FILEエクスポート入力に限定。設計妥当"
-    - "lessons_useful 3/10 useful(L421/L426/L417)。GP-223/225前のデータだが既存教訓の一部は有用"
-  causal_chain: "GStack R3→hayate AC1+AC4(cdp_canary+hybrid_search)→deploy後監視+教訓検索の基盤→運用品質恒久向上=正の複利"
-  timestamp: "2026-04-25T22:25:00"
-- cmd_id: cmd_2279
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。check_gunshi_design_num_relax FP修正。q5にcatalog含む場合スキップ"
-  observations:
-    - "check_gunshi_design_num_relax(L2527)確認。カタログ定義の閾値を数値緩和と誤検出するFP6件の根因修正"
-    - "本セッションの分析(cmd_design_quality直近100件)で発見したFPパターンが即cmd化された"
-    - "LS-A22(q11 SCOUT偽陽性)の実装済み更新(AC2)は付随的だが妥当"
-  causal_chain: "軍師分析(BLOCK率47%)→q8_縮小表現/設計書数値緩和FP特定→cmd_2279でFP除外→将軍のcmd保存効率向上=正の複利"
-  timestamp: "2026-04-25T22:25:00"
-- cmd_id: cmd_karo_infra_fix
-  review_type: report
-  report_ninja: tobisaru
-  report_task_id: cmd_karo_infra_fix_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。archive CLEARフォールバック+CLAUDE.md参照追加。bats 11/11 PASS"
-  observations:
-    - "AC1(archive CLEARフォールバック)はGP-227(inbox_write側)と同根因の別角度修正。defense in depth確立"
-    - "AC2: CLAUDE.md Cross-Project Contextにcdp-severity/milk/slop-scan-dont-fix追加。dream insightの解消"
-    - "GP-227実装→家老がarchive側も修正→二重防御。review_gate.done不在問題の構造的根絶"
-  causal_chain: "review_gate.done不在42件→GP-227(inbox_write生成)+cmd_karo_infra_fix(archive fallback)→二重防御で同種問題の構造的根絶=正の複利"
-  timestamp: "2026-04-25T22:32:00"
-- cmd_id: cmd_2280
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "4項目全て既に実装済み(cmd_2277忍者auto-commitで保存済み)。CLI切断で消失した診断が誤り。配備不要"
-  observations:
-    - "Adaptive Gating: gunshi.md L190,L347。gate_gunshi_startup.shで観点別集計動作確認済み"
-    - "Adversarial Review: gunshi.md L214-232。gate_gunshi_cs_checklist.sh L46,L106に閾値チェック実在"
-    - "Scope lock: ashigaru.md L235-242。commit b27ac668(saizo auto-commit)で保存済み"
-    - "前提3段階: shogun-procedures.md L152。commit内容確認済み"
-    - "cmd_2277の忍者auto-commit(49ae5a04 hayate, b27ac668 saizo)が4項目全ての変更を保存。消失していない"
-  finding_categories: [assumptions]
-  causal_chain: "cmd_2277完了→CLI切断→auto-commitは成功(変更保存)→GATE完了アーカイブ→将軍が「変更消失」と診断→cmd_2280再起票→4項目grep全ヒット=既実装。根因: auto-commitの保存範囲を想像で判断し現物確認せず(LG003パターン)"
-  timestamp: "2026-04-25T22:50:00"
-- cmd_id: cmd_karo_nudge_fix
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_karo_nudge_fix_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Codexナッジ再読指示をtask_assigned時のみ付与。5フィールド目追加+条件判定。最小変更"
-  observations:
-    - "commit 7513b8da。inbox_watcher.sh 20行追加/12行削除。TASK_NUDGE_TYPES集合+has_task_assignedフラグの2段構造"
-    - "send_wakeup()の3カ所(初回/retry/backoff)全てにhas_task_assigned引数を渡している。漏れなし"
-    - "テストはac_version_read(4a180419)と一致する先行commitで更新済み。本commitに含まれないが正当"
-    - "lessons_useful: L512=false(dedup check→無関係)。注入教訓の関連性は低いが害なし"
-  finding_categories: [assumptions, simulation]
-  causal_chain: "Codex忍者への全ナッジに再読指示→task_info時もCTX浪費→type判定追加で条件分岐→task_assigned時のみ付与=正の複利(CTX節約→忍者の作業効率向上)"
-  timestamp: "2026-04-25T22:55:00"
-- cmd_id: cmd_2279
-  review_type: report
-  report_ninja: kotaro
-  report_task_id: cmd_2279_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。cmd_save.shカタログ参照FP除外(6行追加)+LS-A22更新+lessons_shogun v3統合"
-  observations:
-    - "commit 7c5b91cb。cmd_save.sh 6行追加、lessons_shogun.yaml v2→v3統合(35→22件)"
-    - "除外条件: grep -qiE 'カタログ|catalog|takeaway-catalog'。既存SCOUT除外と同パターン構造"
-    - "lessons_useful 10件全false。注入教訓が全て無関係(gate_loop_health/DATA_CATALOG等)"
-  finding_categories: [assumptions, premortem]
-  causal_chain: "cmd_design_quality BLOCK率47%→q8縮小表現/カタログFP特定→cmd_2279でFP除外→将軍cmd保存効率向上=正の複利"
-  timestamp: "2026-04-25T22:58:00"
-- cmd_id: cmd_2280
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2280_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。4項目既実装確認のみ(PASS_NO_IMPROVEMENT)。新規差分なし。軍師RC(既実装指摘)と一致"
-  observations:
-    - "files_modified空。新規commitなし。verdict: PASS_NO_IMPROVEMENT。正当な判断"
-    - "疾風がgrep/gate実行で全4項目を現物確認。軍師のRC指摘をそのまま検証した形"
-    - "decision_candidate: cmd取消は家老権限→忍者として適切な越権回避"
-    - "lessons_useful 3/10 useful(L426/L275/L190)。有用率30%は改善傾向"
-  finding_categories: [assumptions]
-  causal_chain: "cmd_2277完了→auto-commit保存→cmd_2280再起票(消失誤診)→軍師RC(既実装指摘)→疾風が確認→PASS_NO_IMPROVEMENT。軍師レビューが不要配備を事前検出した実例"
-  timestamp: "2026-04-25T23:05:00"
-- cmd_id: cmd_karo_ci_fix_430
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_karo_ci_fix_430_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。GP-228(FILL_THIS化)に伴うテスト430期待値修正1行。55件PASS"
-  observations:
-    - "commit dbb81a00。1ファイル1行変更。startswith緩和(ダブルクォート除去)"
-    - "GP-228→テンプレート変更→テスト不一致→CI RED→家老即配備→修正。CI RED自走修正フロー正常動作"
-  finding_categories: [assumptions]
-  causal_chain: "GP-228(no_lesson_reason FILL_THIS化)→テスト430がダブルクォート開始を期待→CI RED→家老CI RED自走修正→saizo配備→1行修正→PASS=正の複利(GP変更に伴うCI維持)"
-  timestamp: "2026-04-25T23:15:00"
-- cmd_id: cmd_2281
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。Phase 1-A CDP再計測(3回目)。計測のみ(コード変更なし)。L649/L650教訓反映。ベースライン139KB存在確認"
-  observations:
-    - "perf_measure.py(2412行)存在。outputs/cmd_2262_measurements.json(139KB)存在。前提全verified"
-    - "cmd_2268(認証失敗)+cmd_2271(scope外事故)の2回失敗教訓がStep 1(viewer認証)+AC3(artifact分離)に反映"
-    - "q_ambiguityに「admin認証ページはviewer範囲のみ」明記。ambiguity 0件"
-  finding_categories: [assumptions, premortem, north_star]
-  causal_chain: "Phase 1-A deploy済み→効果未計測(2回失敗)→教訓反映で3回目→計測成功なら速度改善定量化→次Phase判断の基盤=正の複利"
-  timestamp: "2026-04-25T23:20:00"
-- cmd_id: GP-229
-  review_type: self_study
-  verdict: IMPLEMENTED
-  findings_summary: "D0直接実装。gunshi.md Step 3にAC実行可能性チェック追加。verdict_override WA根因対処"
-  observations:
-    - "karo_workarounds直近30件: WA率30%(9件)。verdict_override 5件が最大パターン"
-    - "根因: AC設計ミス(gitignore commit要求/進行中月完全一致/推奨≠必須混同)。5/6件が同根因"
-    - "対策: Step 3にbinary check物理実行可能性チェック1行追加。commit 576ebd29"
-    - "q8_縮小表現6件はTP(正当検出)確認。将軍がWARN→修正→CLEARで正常動作"
-  proposals:
-    - id: GP-229
-      description: "gunshi.md Step 3にAC実行可能性チェック追加"
-      status: implemented
-      defense_level: 2
-  causal_chain: "verdict_override WA 5件→AC設計品質低→忍者正当FAIL→家老override=負の複利→draftレビューStep 3で事前検出→RC差し戻し→AC修正→WA削減=正の複利"
-  timestamp: "2026-04-25T23:30:00"
-- cmd_id: cmd_2282
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_2282_impl
-  verdict: LGTM
-  gate_result: BLOCK
-  findings_summary: "4観点OK。cmd_save.sh CLEARリマインド挿入点偵察。行番号全一致。L3096直後推奨は妥当"
-  observations:
-    - "handle_cmd_save_exit(L930)/warn_missing_prev_cmd_lesson(L901)/LAST_CMD_FILE(L25)/lessons検索(L912-922) 全行番号現物確認一致"
-    - "lesson_candidate有用: warn_missing_prev_cmd_lessonはL1070(次回cmd_save時)発火。CLEAR直後リマインドではない→意志依存の根因"
-    - "insert_point B(L3096直後): BLOCK_COUNT=0&&WARN_COUNT=0の既存ifブロック内。count_cmd_save_blocks_for_cmd()再利用で最小変更"
-    - "edge_case: v2 grep -qF部分マッチリスク(cmd_12→cmd_120)。4桁以上idで実害低。正直な報告"
-  finding_categories: [assumptions, premortem]
-  causal_chain: "draft_lessons BLOCK 13件→根因(教訓登録の意志依存)→偵察でCLEARリマインド挿入点特定→実装cmdで自動化×強制=正の複利"
-  timestamp: "2026-04-25T23:38:00"
-- cmd_id: cmd_2282
-  review_type: draft
-  verdict: APPROVE
-  gate_result: BLOCK
-  confidence: HIGH
-  findings_summary: "6観点OK。cmd_save.sh CLEAR後教訓リマインド。偵察完了+既存ロジック転用。BLOCK率22%根因を自動化×強制"
-  observations:
-    - "軍師自身の分析(BLOCK率50%、draft_lessons13+missing9=22件)が直接引用されている"
-    - "偵察報告(hanzo)で行番号・挿入点・edge_case全確認済み。実装リスク低"
-    - "リマインドはINFO(非BLOCK)。CLEAR出力に続けて表示。忍者の作業を妨げない"
-    - "GP-229(AC実行可能性チェック)適用: 全ACのbinary checkは物理的に実行可能"
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  causal_chain: "軍師分析(BLOCK率50%)→draft_lessons22件根因特定→偵察(hanzo)→実装cmd(saizo)→CLEAR後リマインド自動化→教訓登録漏れ根絶→BLOCK率22%減少=正の複利"
-  timestamp: "2026-04-25T23:40:00"
-- cmd_id: cmd_karo_ci_fix_skip
-  review_type: report
-  report_ninja: tobisaru
-  report_task_id: cmd_karo_ci_fix_skip_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。SR-007/SR-010 SKIP解消(mock skill)。76/76 PASS SKIP=0。gate FAIL自己修正"
-  observations:
-    - "commit 76333fed。1ファイル32行追加/4行削除。SKILLS_DIR_FOR_TEST環境変数でCI互換化"
-    - "gate FAIL(files_modified dict形式+binary_checks AC数不一致)→忍者自己修正→再送信。学習ループ機能"
-    - "lessons_useful 10件全false。全て無関係(L503-L512はインフラ高速化系教訓)"
-  finding_categories: [assumptions, premortem]
-  causal_chain: "CI環境~/.claude/skills不在→SR-007/SR-010 SKIP→SKIP=FAILポリシー違反→mockスキル+環境変数で解消→CI完全GREEN維持=正の複利"
-  timestamp: "2026-04-25T23:42:00"
-- cmd_id: GP-230
-  review_type: self_study
-  verdict: IMPLEMENTED
-  findings_summary: "D0直接実装。archive報告移動後にsymlink残置。忍者BLOCK修正中のファイル消失防止"
-  observations:
-    - "tobisaru cmd_karo_ci_fix_skipで実証: 23:35:40 1st BLOCK→23:36:38 archive移動→ファイル消失→report_field_set.shで再作成"
-    - "根因: mv後にsymlinkなし。忍者のBLOCK修正とarchive移動が競合する構造"
-    - "修正: L1171にln -sf追加。冪等(既存symlink上書き)。忍者は元パスでアクセス可能"
-  proposals:
-    - id: GP-230
-      description: "archive報告移動後にsymlink残置"
-      status: implemented
-      defense_level: 4
-  causal_chain: "GATE CLEAR→archive_completed.sh mv→忍者BLOCK修正中にファイル消失→再作成コスト=負の複利。symlink残置で参照保護→再作成不要=正の複利"
-  timestamp: "2026-04-25T23:48:00"
-- cmd_id: cmd_2282
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2282_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。CLEAR時BLOCK教訓REMIND実装。関数2本+CLEAR呼出し1箇所。テスト6+3+9=18 PASS"
-  observations:
-    - "cmd_save_shogun_lesson_exists_for_cmd(L901)+remind_missing_current_cmd_lesson_after_clear(L935)+L3114呼出し。偵察(hanzo)の推奨挿入点L3096と一致"
-    - "commit 900b778d(関数追加)+98476e60(テスト追加)の2 commit。ac_version_read=98476e60と報告一致"
-    - "広域テスト113件中1件order-dependent FAIL→単体PASS。今回変更範囲外と才蔵が判断。妥当"
-    - "軍師分析(BLOCK率50%/draft_lessons13件)→偵察(hanzo)→実装(saizo)→LGTM。因果鎖が完結"
-  finding_categories: [assumptions, simulation, premortem]
-  causal_chain: "軍師分析(draft_lessons22件=BLOCK率22%)→hanzo偵察→saizo実装(CLEAR時REMIND)→教訓登録の意志依存を自動化×強制→BLOCK率22%減少見込み=正の複利"
-  timestamp: "2026-04-26T00:05:00"
-- cmd_id: cmd_2281
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2281_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Phase 1-A CDP計測完了。初回表示-89〜-95%短縮。PF切替+146%悪化(要注意)"
-  observations:
-    - "16ページ初回表示全計測。admin 2ページ未定義(perf_config差異)+DNS失敗でcaveat記載"
-    - "PF切替中央値1005ms vs baseline 408ms=+146%。Phase 1-A副作用の可能性。将軍判断事項"
-    - "artifact分離OK(outputs/cmd_2281_measurements.json)。L649/L650教訓が機能。3回目で計測成功"
-    - "lessons_useful: L650=true(認証制約教訓)。教訓注入が実際に有用だった実例"
-  finding_categories: [assumptions, premortem, north_star]
-  causal_chain: "Phase 1-A deploy→2回失敗(認証/scope外)→教訓反映→3回目成功→初回表示大幅改善だがPF切替悪化→次Phase設計の判断材料=正の複利(計測手順確立)"
-  timestamp: "2026-04-26T00:12:00"
-- cmd_id: cmd_karo_pstree_fix
-  review_type: report
-  report_ninja: kotaro
-  report_task_id: cmd_2279_impl
-  verdict: LGTM
-  gate_result: null
-  findings_summary: "4観点OK。PSTREE-OVERRIDE修正+カタログ除外は全てcmd_2279で既実装。テスト80件全PASS"
-  observations:
-    - "PSTREE-OVERRIDE-SKIP(L378-379)は既存コード。kotaroは既実装確認として報告"
-    - "task_id=cmd_2279_impl vs parent_cmd=cmd_karo_pstree_fix → task_id不一致。stale task YAMLの可能性"
-    - "テスト80件: clear_guard7+stale_grace4+stall8+cmd_save57+q11_fp4=80件全PASS"
-  finding_categories: [assumptions]
-  causal_chain: "PSTREE-OVERRIDEバグ(軍師分析)→cmd_2279で修正済み→kotaroが再確認→テスト全PASS=既存修正の品質保証"
-  timestamp: "2026-04-26T00:28:00"
-- cmd_id: cmd_karo_ci_fix_archive
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2282_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。GP-230(symlink残置)のテスト期待値更新。11/11+2/2 PASS。本体変更なし"
-  observations:
-    - "commit f1055412。test_archive_completed.bats 9行追加/5行削除。symlinkの存在+archive実体確認に変更"
-    - "GP-230(軍師実装ab6585bd)の副作用をsaizoが即修正。第二層ループ(軍師→忍者)が機能"
-    - "lessons_useful: L509=true(推測せず再現して確認)。計測cold/hot教訓のCI修正への応用"
-  finding_categories: [assumptions]
-  causal_chain: "GP-230(symlink残置)→旧テストが元パス不在を期待→CI RED→saizo修正→テスト期待値をsymlink仕様に合わせ→CI GREEN=正の複利"
-  timestamp: "2026-04-26T00:30:00"
-- cmd_id: cmd_2284
-  review_type: draft
-  verdict: APPROVE
-  gate_result: BLOCK
-  confidence: HIGH
-  findings_summary: "6観点OK。PostToolUse hookでcmd_save.sh BLOCK後の将軍自走強制。既存hookパターン応用"
-  observations:
-    - "q11に3件grep確認記載(cmd_save/settings.json/既存出力)。未実装確認済み"
-    - "将軍がcmd_save.sh BLOCK→殿待ちで止まるパターン3回以上再発。本日セッションでも再現"
-    - "FM1: PostToolUse hookは全bash完了時に発火するがcmd_save.sh以外は即return。影響軽微"
-    - "GP-229(AC実行可能性チェック)適用: 全ACのbinary checkは物理的に実行可能"
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  causal_chain: "将軍BLOCK後停止(3回以上)→意志依存で解決不能→PostToolUse hookで自走強制→BLOCK→即修正→再実行が自動化=正の複利"
-  timestamp: "2026-04-26T00:35:00"
-- cmd_id: cmd_2283
-  review_type: draft
-  verdict: APPROVE
-  gate_result: BLOCK
-  confidence: HIGH
-  findings_summary: "6観点OK。Phase 1-B handoff cache。PF切替+146%悪化の根本対策。設計書§4.3+計測データに基づく"
-  observations:
-    - "全4ファイル存在確認。sessionStorage/handoff grep 0件。未実装確認済み"
-    - "Phase 1-A(cmd_2267)→計測(cmd_2281)→課題特定(PF切替悪化)→対策(cmd_2283)の正しい順序"
-    - "FM3件: sessionStorage容量(→数百KB問題なし)、stale判定(→3要素で十分)、static export(→§6.4確認済み)"
-    - "AC5件。deep depth。handoff cache=遷移UXの構造的改善。Phase 2 prefetchの基盤=正の複利"
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  causal_chain: "Phase 1-A deploy→PF切替+146%悪化(cmd_2281計測)→根因(BE計算が遷移ごと)→handoff cacheで即描画+BG revalidate→全遷移instant化=正の複利"
-  timestamp: "2026-04-26T00:40:00"
-- cmd_id: cmd_2284
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2284_normal
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。PostToolUse hookでcmd_save.sh BLOCK後自走強制。jq payload解析+additionalContext"
-  observations:
-    - "commit 6f521749。post-bash-combined.sh 28行追加+テスト22行追加"
-    - "Guard 0としてGuard 1(test_result_guard)の前に配置。cmd_save.sh以外は即通過"
-    - "hayateがYAML破損(continuation行残留)を自力修正。diagnose_reasonに経緯記載"
-    - "bats 5/5(test_post_bash_combined)+76/76(全体)PASS"
-  finding_categories: [assumptions, simulation, premortem]
-  causal_chain: "将軍BLOCK後停止3回以上→PostToolUse hookで自走強制→BLOCK→即修正→再実行が自動化=正の複利(全cmd起票で有効)"
-  timestamp: "2026-04-26T00:55:00"
-- cmd_id: cmd_2285
-  review_type: draft
-  verdict: APPROVE
-  gate_result: BLOCK
-  confidence: HIGH
-  findings_summary: "6観点OK。PreToolUse:Edit hookでcmd起票前3問注入。事前gate不在(律速)の自動化"
-  observations:
-    - "既存hookパターン(pre-edit-report-deny.sh)の応用。grep 0件で未実装確認済み"
-    - "事後gate(cmd_save.sh)は充実だが事前gate不在→確認せず起票→BLOCK繰返しの律速"
-    - "3問: (1)対象現物grep (2)既存代替grep (3)cmd_save.shチェック名確認。表示のみ非BLOCK"
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  causal_chain: "事前gate不在→将軍が確認せず起票→cmd_save.sh BLOCK 3回/セッション→事前3問注入で確認強制→BLOCK率低下=正の複利"
-  timestamp: "2026-04-26T01:05:00"
-- cmd_id: cmd_2283
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2283_normal
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Phase 1-B handoff cache実装。254tests PASS。PF切替即描画+BG revalidate"
-  observations:
-    - "commit c4ed9c1a。signals-context.tsx+テスト2ファイル+constants.test.ts修正"
-    - "sessionStorage HANDOFF_CACHE_KEY: data/selectedPortfolioId/asOf/calculatedAt/storedAtを保存"
-    - "stale判定: PF ID不一致 or as_of/calculated_at変化→fresh fetch強制。設計書§4.3準拠"
-    - "lessons_useful 4/10 useful(40%)。L002/L650/L215/L193が有用。教訓注入改善(GP-223/225)前のデータだが改善傾向"
-  finding_categories: [assumptions, premortem, north_star]
-  causal_chain: "Phase 1-A PF切替+146%悪化→handoff cache(Phase 1-B)で即描画→PF切替体感0ms化→全ページ遷移UX改善=正の複利"
-  timestamp: "2026-04-26T01:10:00"
 - cmd_id: cmd_2286
   review_type: draft
   verdict: APPROVE
@@ -774,7 +198,7 @@
 - cmd_id: cmd_2289
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_confidence_1_10: 9
   fix_first: ASK
@@ -805,3 +229,1304 @@
       existing_impl_check: "gate_gunshi_cs_checklist.sh L163-165がrequired:trueを既検出。新規gate不要。レビューフロー(review_logヘッダ)に1行追加のみ"
   causal_chain: "小規模cmd連続→changed_lines<200→adversarial gate未発火→zero_streak増加→blind spot risk。blast_radius判定追加で小規模infra変更もadversarial強制=正の複利(全infra変更で攻撃者視点保証)"
   timestamp: "2026-04-26T11:35:00"
+- cmd_id: cmd_karo_ci_fix_env_change
+  review_type: report
+  report_ninja: hanzo
+  report_verdict: FAIL
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "AC3:no(push未実施)。AC1-2 OK(13テストPASS)。動的コンテンツ汚染修正"
+  observations:
+    - "cmd_save.sh出力に軍師動的指摘混入→否定アサーション誤FAIL→具体パターン絞込みで修正"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "軍師RC指摘→動的コンテンツ混入→汎用否定アサーション誤マッチ→CI RED→具体パターン修正=正の複利"
+  timestamp: "2026-04-26T13:25:00"
+- cmd_id: cmd_2291
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。CDP再計測。cdp_measure.sh 1コマンド。CDP哲学準拠"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "CDP道具磨き→再計測cmd→成功=全忍者CDP安定稼働=正の複利"
+  timestamp: "2026-04-26T13:35:00"
+- cmd_id: cmd_2292
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察:シン四神→忍法→奥義L0→L2経路の現物検証。DB読取りのみ"
+  observations:
+    - "dm-signal-core.md §0(L8)にレイヤー定義存在。L361に削除許可行。references確認済み"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "ALM浄化39体削除後→既存L0→L2経路未検証→偵察で現物確認→ALM再構築の設計精度向上=正の複利"
+  timestamp: "2026-04-26T13:45:00"
+- cmd_id: cmd_2292
+  review_type: report
+  report_ninja: hanzo
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察高品質。乖離4点特定(L2体数/L3状態/四神体数/L1定義逆転)"
+  observations:
+    - "シン四神12体=standard(components=[])。シン忍法20体=fof(components=シン四神12体)。奥義-SSS21体=fof(components=シン忍法17体)"
+    - "context§0乖離: L2=12→実20、L3=未着手→21体、四神=10→12、AC1前提逆転"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "context§0と実態乖離→エージェントが誤前提で作業→偵察で4点特定→context更新で再発防止=正の複利"
+  timestamp: "2026-04-26T13:55:00"
+- cmd_id: cmd_2293
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点+adversarial OK。殿質問検知→確認強制hook。想像するな確認せよの環境埋込み"
+  observations:
+    - "session_context_inject.shに質問パターン検知追加。AC2で通常入力非発火を検証"
+    - "adversarial: hooks/対象(GP-236)。過検出リスクはAC2抑制+context消費数行で許容"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/hooks/対象(GP-236)。全入力発火リスクをAC2で抑制"
+  causal_chain: "殿質問→確認せず想像回答→殿の時間消費→hook強制で確認後回答=正の複利(全質問で確認強制)"
+  timestamp: "2026-04-26T14:05:00"
+- cmd_id: cmd_2291
+  review_type: report
+  report_ninja: saizo
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。★CDP再計測成功。16ページ+PF切替。PF切替1009ms(BL1005ms +0.43%)"
+  observations:
+    - "cdp_measure.sh Phase1-3成功(ui_login+Edge fallback機能)。Phase4 cdp_benchmark不整合(インタフェース不一致)"
+    - "才蔵がJSON統合で補完。outputs/cmd_2291_measurements.json存在+valid"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CDP道具磨き→才蔵が再計測成功→全忍者CDP安定稼働実証=正の複利。Phase4バグ→次の道具磨きターゲット"
+  timestamp: "2026-04-26T14:10:00"
+- cmd_id: cmd_2294
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。context§0陳腐化修正。偵察cmd_2292の乖離4件反映"
+  observations:
+    - "L0=四神12/L1=忍法20/L2=奥義21。殿定義+DB現物verified"
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  causal_chain: "偵察→乖離4件発見→context修正→全エージェント正しい前提=正の複利"
+  timestamp: "2026-04-26T14:15:00"
+- cmd_id: cmd_2291
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。CDP再計測(道具磨き後)。cdp_measure.sh 1コマンド。CDP哲学準拠(旧前提なし)"
+  observations:
+    - "commandにcdp_measure.sh 1行のみ。殿Chrome要求/手動起動指示なし=CDP哲学準拠"
+    - "assumptions: 改修commit 3本(cb77284/1e63366/663152a7)+ベースライン存在=verified"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "CDP道具磨き(ui_login+Edge fallback+ポート探索)→再計測cmd→成功なら全忍者CDP安定稼働=正の複利"
+  timestamp: "2026-04-26T13:35:00"
+- cmd_id: cmd_2293
+  review_type: report
+  report_ninja: kotaro
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。質問検知→確認強制hook。AC1発火+AC2非発火確認"
+  observations:
+    - "prompt_state_inject.sh L172-183に質問パターン検知追加。shogunのみ発火"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "殿質問→想像回答→hook強制で確認後回答=正の複利"
+  timestamp: "2026-04-26T14:15:00"
+- cmd_id: cmd_2295
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。projects/dm-signal.yaml Vercel圧縮491→80行"
+  observations:
+    - "491行→80行索引+docs/research/移動。Vercelルール準拠(500行以下)"
+    - "cmd_save q8_scope_expression 6回WARN→BLOCK。将軍段階で縮小表現除去済み"
+  finding_categories: [assumptions, premortem, north_star]
+  causal_chain: "491行Lost in Middle→80行索引+移動先詳細=正の複利"
+  timestamp: "2026-04-26T14:20:00"
+- cmd_id: cmd_2296
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。context 4ファイルVercel圧縮+research分割。500行制限適用"
+  observations:
+    - "dm-signal-research.md 959行→分割。4ファイル全て500行以下"
+    - "cmd_save command_steps_over_ac 4回WARN。ACとcommandの整合性を将軍段階で修正"
+  finding_categories: [assumptions, premortem, north_star]
+  causal_chain: "research959行制限違反→4ファイルVercel化→Lost in Middle回避=正の複利"
+  timestamp: "2026-04-26T14:20:00"
+- cmd_id: cmd_2295
+  review_type: report
+  report_ninja: kotaro
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。dm-signal.yaml 80行確認、3研究ファイル存在+commit確認"
+  observations:
+    - "wc -l=80行(AC1 ≤80 PASS)。PI-001〜005/naming_convention/DBテーブル全て80行内"
+    - "commit 40ccd47eに3ファイル(research/)。projects/はgitignoreのため非tracking(正常)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "491行Lost in Middle→80行索引化→全エージェントの前提品質向上=正の複利"
+  timestamp: "2026-04-26T15:05:00"
+- cmd_id: cmd_2297
+  review_type: report
+  report_ninja: tobisaru
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR(BLOCK→draft_lessons解消→CLEAR)
+  findings_summary: "4観点OK。偵察5要件全記入。Measure B/A commit現物確認。PF切替根因=dashboard API on-demand fetch"
+  observations:
+    - "c4ed9c1a(Measure B handoff cache)+773efb9f(Measure A FoF precompute)をDM-Signalリポジトリで現物確認"
+    - "§2の407ms vs cmd_2291の1009ms乖離を忍者が測定方法差異として自発指摘=高品質"
+    - "lesson_candidate: 設計書§2陳腐化→新計測時に測定条件更新AC追加推奨(register_recommended: true)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "偵察で5要件全記入→次Phase判断材料完備→Measure C設計に直結=正の複利"
+  timestamp: "2026-04-26T15:05:00"
+- cmd_id: cmd_2298
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_2297と同一偵察をCodex独立視点で。deploy_hint通りGPT忍者に配備"
+  observations:
+    - "cmd_2297(Sonnet)と同一ACで独立実行→同一Top3に収束。万全偵察の並行独立分析パターン"
+  finding_categories: [assumptions, simulation, north_star]
+  causal_chain: "独立視点2者→同一結論収束→結論の信頼度が上がる=正の複利"
+  timestamp: "2026-04-26T15:25:00"
+- cmd_id: cmd_2298
+  review_type: report
+  report_ninja: hayate
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Codex独立視点でcmd_2297と同一Top3に収束。偵察5要件全記入"
+  observations:
+    - "Top3: (1)dashboard page-specific API on-demand fetch (2)/api/signals残存コスト (3)full defer未実装。cmd_2297と順位・構成一致"
+    - "PF切替内訳: mtd 262.6ms + performance years=0 241.8ms + years=3 241.2ms。具体API名+ms=高品質"
+    - "task_clarity=90。§1-§5を章内施策単位で判定(discretion_fills記載)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "独立視点で同一結論→Measure C優先度確定→次cmdの方針が明確=正の複利"
+  timestamp: "2026-04-26T15:28:00"
+- cmd_id: cmd_2299
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "前提崩壊: AC1対象session_context_inject.shはhook未登録。正=prompt_state_inject.sh"
+  observations:
+    - "session_context_inject.sh→settings.json未登録(grep確認)。prompt_state_inject.shがUserPromptSubmitに登録"
+    - "session_context_inject.shはscripts/に存在するが旧ファイル。hooks/には非配置"
+  finding_categories: [assumptions, simulation, ambiguity]
+  severity: normal
+  suggested_changes: "command/AC1/assumptions[0]のsession_context_inject.sh→prompt_state_inject.shに変更"
+  ambiguity_points: none
+  causal_chain: "ファイル名誤り→忍者が未登録ファイル編集→hookとして発火せず計測不能→cmd目的未達成。ファイル名修正1箇所で解決"
+  timestamp: "2026-04-26T15:32:00"
+- cmd_id: cmd_2300
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。Measure C実装。設計書§4.4 L394確認。2モデル偵察Top1収束。AC4件自然依存順序"
+  observations:
+    - "設計書§4.4 L394にMeasure C定義確認。usePrefetch拡張+page API catalog"
+    - "ベースライン1009ms(cmd_2291)+2モデル偵察収束→実装根拠が堅固"
+  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
+  causal_chain: "PF切替on-demand fetch→先読みで解消→全PF切替が恒久高速化=正の複利"
+  timestamp: "2026-04-26T15:35:00"
+- cmd_id: cmd_karo_ci_fix_375
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。CI RED urgent修正。テスト#375+AC2リグレッション確認。スコープ明確"
+  observations:
+    - "batsテスト#375 AC1 CLEAR+BLOCK履歴+教訓未記録→REMIND表示。exit code期待値不一致"
+    - "CI run 24950078718指定。gh run viewで確認可能"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "CI RED→テスト修正→CI GREEN復帰→全push安全=正の複利"
+  timestamp: "2026-04-26T15:38:00"
+- cmd_id: cmd_2299
+  review_type: report
+  report_ninja: hayate
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。REQUEST_CHANGES指摘(ファイル名誤り)反映確認。prompt_state+cmd_save改修。bats174PASS"
+  observations:
+    - "commit f589e7d4: prompt_state_inject.sh +49行/cmd_save.sh +38行。正しいファイルに実装"
+    - "隔離実測: lord_response_count=2記録+new_file WARN発火=両AC動作確認済み"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "REQUEST_CHANGES→ファイル名修正→正しいhookに計測埋込→将軍弱点が可視化=正の複利"
+  timestamp: "2026-04-26T15:42:00"
+- cmd_id: cmd_2300
+  review_type: report
+  report_ninja: saizo
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR(BLOCK→家老対応→CLEAR)
+  findings_summary: "4観点OK。AC1/3/4 PASS。AC2 FAIL=未deploy本番計測不可(cmd前提不成立、忍者ミスではない)。verdict:FAIL報告=正直"
+  observations:
+    - "usePrefetch.ts拡張+signals-context.tsx接続。Jest 40 suites/256 tests PASS。build PASS"
+    - "AC2: 未deploy差分を本番URL計測→旧コード計測にしかならない。忍者が正しく識別しFAIL報告"
+    - "decision_candidate: deploy後再計測 or preview環境認定の家老判断要。lesson_candidate: deploy確認必須(register推奨)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem, ambiguity]
+  causal_chain: "AC2=本番計測→未deploy→計測不可→FAIL(正しい)。deploy後に再計測cmdで効果検証=正の複利。cmd設計時にdeploy前提をAC明記すべきだった(ambiguity)"
+  timestamp: "2026-04-26T15:57:00"
+- cmd_id: neighbor_robustness_design_review
+  review_type: consultation
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "設計書3点レビュー。骨格堅固。改善5点: 車輪の再発明3箇所(β調整/α6/WF fold)+MRU≡Sharpe矛盾+VerdictJudge中央値→極値。U1解決済みU2-4偵察要"
+  observations:
+    - "cmd_1880_l2_beta_adjusted.py:compute_beta_adjusted()が既存。設計書はscipy linregressで再実装=車輪"
+    - "vintage_pipeline.pyにalpha6フル計算。AlphaCalculatorの6関数は車輪の再発明"
+    - "build_walk_forward_windows()がcmd_1748系に4重複。新FoldManagerは5つ目"
+    - "MRU=mean/std=Sharpe。spec R1 Sharpe廃止と矛盾。殿確認要"
+    - "VerdictJudge: 6指標中央値→殿哲学(極値が全て)と矛盾。最悪指標ベース推奨"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "既存コード未確認→再実装→保守コスト倍増+バグ分岐=負の複利。既存import→1関数で統一→保守1箇所=正の複利"
+  timestamp: "2026-04-26T21:27:00"
+- cmd_id: cmd_karo_ci_fix_357
+  review_type: report
+  report_ninja: kotaro
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI RED修正(CMD_SAVE_LOCK_FILE 1行追加)。1292全テストPASS。lesson_candidate有(register推奨)"
+  observations:
+    - "run_save()にCMD_SAVE_LOCK_FILE未設定→--jobs 8並列でflock競合WARN→WARN_COUNT>0→保存NG。1行追加で解消"
+    - "test_cmd_save_prev_cmd_lesson_warn.batsは既対策済み→同パターン横展開=正しいアプローチ"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "並列テスト共有ロック→競合WARN→CI RED。ロック分離1行で解消→CI GREEN=正の複利。教訓登録で他テストにも横展開促進"
+  timestamp: "2026-04-26T21:18:00"
+- cmd_id: cmd_2312
+  review_type: report
+  report_ninja: saizo
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。数値検算: median547.2ms正確(中央値+差分一致)。初回7ページ試行を自己申告=高品質"
+  observations:
+    - "runs=[551.6,542.3,547.2]→median=547.2ms正確。cmd_2304比=-460.8ms(45.7%改善)、cmd_2307比=+71.2ms(15.0%遅い)"
+    - "初回cmd_2312(7ページ全計測)を実行→7 SKIP exit1→AC対象外と正しく自己判断→cmd_2312_pfで再計測=誠実な報告"
+    - "outputs/成果物: gitignore対象のためcommitなし=正常。計測cmdの標準パターン"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "修正済み計測(cmd_2310)→deploy後初回本番計測→547.2ms(旧1008ms比45.7%改善)=正確なベースライン確立→全後続改善の判断精度向上=正の複利"
+  timestamp: "2026-04-26T20:58:00"
+- cmd_id: gunshi_idle_numbers_cold_bugfix
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "adaptive gating draft-only集計バグ修正。numbers偽cold streak(7→0)解消。report entries追加"
+  observations:
+    - "L232: drafts = [e for e in entries if review_type==draft] → report除外=numbers偽cold streak"
+    - "実データ: 直近10件中numbers=5件。gate報告: 1件。乖離=バグ確定"
+    - "修正後: numbers 5/10, adversarial 0/10(正常: reportにadversarial非適用)"
+  proposals:
+    - id: GP-236
+      description: "gate_gunshi_startup.sh adaptive gating window: draft→draft+report"
+      status: implemented
+      defense_level: 4
+  causal_chain: "draft-only window→report除外→numbers偽cold→不要LOW confidence→時間浪費=負の複利。修正で計測精度回復=正の複利"
+  timestamp: "2026-04-26T20:55:00"
+- cmd_id: gunshi_idle_immune_evidence
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "免疫系定量証拠。7カテゴリ42件WA根絶(直近30件=0)。clean率47→67%。全根絶カテゴリにGP紐付け確認"
+  observations:
+    - "根絶TOP3: report_yaml_format(13件→0,GP-001/002/064/087-089), ci_gate_mismatch(13件→0,LG015), recording_error(6件→0,GP-049/050)"
+    - "残存: verdict_override(5件,AC設計品質→GP-229), stale_ac(2件→GP-235 SG-PRE17)"
+    - "clean率推移: 全体47%→直近30件67%(+20pp)"
+  causal_chain: "失敗→なぜなぜ→GP実装→gate/hook永続→同クラスWA=0=免疫獲得。42件根絶は構造的防御の実証=正の複利の蓄積"
+  timestamp: "2026-04-26T21:35:00"
+- cmd_id: cmd_karo_reprofile_freq
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。AC2件明確。計測方法5種網羅。前回参照先302行確認済み"
+  observations:
+    - "gate_fire_log 2752件+codd_infra_script_profiling.md 302行を現物確認。計測基盤健全"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "鮮度10日の再計測→CoDD/リファクタ判断材料更新→道具磨きの精度向上=正の複利"
+  timestamp: "2026-04-26T21:40:00"
+- cmd_id: cmd_karo_reprofile_bench
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。20本全スクリプト+CoDD台帳の存在確認済み。AC3件明確。5回中央値計測"
+  observations:
+    - "20本全スクリプトファイル存在確認(grep MISS=0件)。前回値20個がcmd文面に明記"
+    - "deploy_task.sh/cmd_complete_gate.shは引数必要→timeout 5s指示あり。hookはJSON payload要"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "鮮度10日のベンチマーク再計測→CoDD台帳と照合→リファクタ優先順位更新→道具磨き精度向上=正の複利"
+  timestamp: "2026-04-26T21:42:00"
+- cmd_id: cmd_2314
+  review_type: draft
+  verdict: APPROVE→訂正(scope不足)
+  gate_result: CLEAR
+  confidence: MEDIUM(訂正後)
+  findings_summary: "U5(GS CSV)は網羅的だがU1/U3/U4の既存コード調査が欠落。設計書レビューの自分の指摘をcmd scopeと突合しなかった"
+  observations:
+    - "outputs/grid_search/ 53ファイル=cmd文面と一致(wc -l確認)"
+    - "★欠落: cmd_1880_l2_beta_adjusted.py(U1), vintage_pipeline.py(U3), backend/app/api/portfolio.py(U4)"
+    - "殿指摘で発覚。自分の設計書レビュー5指摘とcmd scope突合を怠った"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "設計書レビュー指摘→偵察cmd scope確認時に突合せず→車輪の再発明リスクが偵察で解消されない=負の複利。突合必須"
+  timestamp: "2026-04-26T21:45:00"
+- cmd_id: cmd_karo_reprofile_bench
+  review_type: report
+  report_ninja: saizo
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR(BLOCK→draft_lessons解消→CLEAR)
+  findings_summary: "4観点OK。20本全計測+5回中央値。隔離fixture副作用回避。CoDD台帳照合完了"
+  observations:
+    - "成果物7314行。追加2本(deploy_task/cmd_complete_gate)は前回値N/Aで正しく補完"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Top20ベンチマーク鮮度更新→CoDD台帳照合→リファクタ優先順位確定=正の複利"
+  timestamp: "2026-04-26T21:48:00"
+- cmd_id: cmd_karo_reprofile_freq
+  review_type: report
+  report_ninja: hayate
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR(BLOCK→draft_lessons解消→CLEAR)
+  findings_summary: "4観点OK。235本全頻度計測。5ソース集計。計測定義差明記。★gate_prediction CLEAR→BLOCK(draft_lessons)→CLEAR"
+  observations:
+    - "成果物19373行。Top: inbox_write 326件, gate_report_format 122件, gate_report_autofix 103件"
+    - "前回220本→235本(15本増)。母集団変更を明記=誠実な報告"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "頻度鮮度更新→高頻度スクリプト=最適化ROI最大→道具磨き精度向上=正の複利"
+  timestamp: "2026-04-26T21:48:00"
+- cmd_id: gunshi_gate_prediction_miss_draft_lessons
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続。SG-PRE12はlesson_candidate検出のみ。draft_lessons(project lessons.md内draft件数)は未検出"
+  observations:
+    - "infra tasks/lessons.mdにdraft 1件(kotaro cmd_karo_ci_fix_357のロック分離教訓)"
+    - "SG-PRE12: lesson_candidate=false→PASS。draft_lessonsはproject-level stateで別経路"
+    - "draft_lessons BLOCK率34%(本日分析済み)。gate_predictionにproject draft検出を追加すべき"
+  proposals:
+    - id: GP-237
+      description: "SG7 gate_predictionにdraft_lessons検出追加(project lessons.md draft件数チェック)"
+      status: proposed
+      defense_level: 4
+  causal_chain: "draft_lessons未検出→gate_prediction CLEAR→実際BLOCK→家老に不正確な予測提供=負の複利。検出追加→正確な予測=正の複利"
+  timestamp: "2026-04-26T21:52:00"
+- cmd_id: cmd_2314
+  review_type: report
+  report_ninja: kagemaru
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察SCOUT。119,493全数照合。GS CSV構造確定。WF窓定数差異をdecision_candidateに記録=高品質"
+  observations:
+    - "summary行i pattern_id == monthly列i+1: 119,493行全数確認。champion=列名直接対応"
+    - "_alpha_metrics_np: cmd_1934_v2_fast.py L99。import可能(sys.path追加)。依存: cmd_1880→cmd_1878→psycopg2"
+    - "WF窓不一致: cmd_1934(TRAIN=24/OOS=6/SHIFT=3) vs l1_alm_wf_engine(IS=36/OOS=12/STEP=4)。decision_candidateで正しくエスカレーション"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "GS CSVマッピング確定→L0近傍リターン取得が確実に実装可能→neighbor robustness check品質=正の複利"
+  timestamp: "2026-04-26T21:55:00"
+- cmd_id: gs_data_normalization_design_review
+  review_type: consultation
+  verdict: APPROVE(3改善点付き)
+  confidence: HIGH
+  findings_summary: "5観点レビュー。設計堅実。殿裁定3点全反映。改善3点: スクリプト72→130本差分/npyキャッシュ363ファイル未定義/metrics列+層別params列仕様未明示"
+  observations:
+    - "grep実測: grid_search参照スクリプト130本(pycache除外)。設計書72本との差分58本がPhase 0.5で明示的調査対象化されていない"
+    - "outputs/grid_search/に.npy 363ファイル存在。正規化形式にnpy扱い未定義。月次119,493列ではnpyキャッシュ性能上必須"
+    - "29サブディレクトリ全数を現物確認→設計書の分類に漏れなし。殿裁定(互換禁止/backup/シン優先)は全箇所に一貫反映"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "正規化形式確定→全分析ツール同一I/O→新ツール追加コスト≈0→道具の再利用性指数関数的向上=正の複利"
+  timestamp: "2026-04-27T12:57:00"
+- cmd_id: gs_data_normalization_re_review
+  review_type: consultation
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "更新版再レビュー。前回指摘3点全て適切反映。新指摘=§番号ズレ+72→130整合性(軽微)。neighbor-robustness-design.mdも正規化前提に更新確認"
+  observations:
+    - "130本スクリプト: §2.3 L65未分類58本追加。Phase 0.5で全量特定と明記"
+    - "npyキャッシュ: §3.1に3ファイル(arr/columns/index)追加。363ファイル現存を記載"
+    - "§5.1 L154/§5.2 L168に72本残存→130本に更新すべき(軽微整合性)"
+  finding_categories: [assumptions, numbers]
+  causal_chain: "指摘→反映→再確認→APPROVE=レビューサイクル正常動作。正規化設計確定→Phase 1着手可能=正の複利"
+  timestamp: "2026-04-27T13:05:00"
+- cmd_id: cmd_2315
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察SCOUT。130本スクリプト+29サブディレクトリ全量分類。gs_data_loader/gs_csv_loader存在確認済み"
+  observations:
+    - "gs_data_loader.py+gs_csv_loader.py: DM-Signal scripts/analysis/grid_search/に存在確認"
+    - "AC4件: スクリプト6カテゴリ分類+ディレクトリ3分類+最新版特定+loader関数調査。MECE偵察として網羅的"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "130本全量分類確定→改修対象リスト漏れゼロ→Phase 2以降の手戻り防止=正の複利"
+  timestamp: "2026-04-27T13:14:00"
+- cmd_id: gs_data_normalization_v3_review
+  review_type: consultation
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "v3(SQLite移行)最終レビュー。CSV+npy→SQLite正当。PI-002棲み分け明確。8Phase+判断ポイント。指摘2点: neighbor design.mdのCSV→SQLite未更新+monthly long format性能注記"
+  observations:
+    - "neighbor-robustness-design.md L34/55/398がまだCSV参照(read_csv/params.csv)。Phase 7前にSQLite対応更新必要"
+    - "monthly 119,493×300月≈35M行long format。bulk読込はCSV wide formatより遅いがmetrics経由で回避可能"
+    - "前回軽微指摘3点(§番号/72→130)全て反映確認済み"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "SQLite統一→INDEX検索+外部キー整合性+npyキャッシュ不要→全分析ツールの信頼性+保守性向上=正の複利"
+  timestamp: "2026-04-27T13:33:00"
+- cmd_id: cmd_2315
+  review_type: report
+  report_ninja: hayate
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Phase 0.5偵察。160本6カテゴリ+29ディレクトリ+21関数/35caller。needs_review→backup_only反映済み(利他フィードバック)"
+  observations:
+    - "160本=130+30 drift。隠さず追加記載=誠実。分類根拠(import/CSV/GS参照/mtime)が各行に付与"
+    - "needs_review 3件(cmd_1829/1831/1831_ac3)は軍師事前分析→家老補足→backup_only分類反映。利他サイクル完了"
+    - "巨大CSVのROWCOUNT_TIMEOUTは列数/size/mtimeで補完。偵察スコープとして適切"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Phase 0.5全量棚卸し確定→設計書MECE漏れゼロ→Phase 1以降の手戻り防止=正の複利。利他(軍師→家老→忍者)で品質向上"
+  timestamp: "2026-04-27T13:44:00"
+- cmd_id: gs_normalization_v4_plus_neighbor_spec_review
+  review_type: consultation
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "v4+neighbor-spec。偵察160本反映+gs_data_loader影響35呼出元明記+全層±1 grid step統一。指摘: L2離散軸定義曖昧+130→160残存2箇所"
+  observations:
+    - "§2.3.1新設: DB直読15+CSV直読20=35呼出元。インターフェース維持で改修最小限の方針が明確"
+    - "§R3: swap-one削除→全層±1 grid step。全層GS全探索であることから論理的に正しい。コード単純化"
+    - "L2 subset_components「離散軸は隣接組合せ」の定義不明。実装前に具体例で定義すべき"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "偵察結果反映→MECE漏れゼロ+全層統一近傍→実装の単純化+手戻り防止=正の複利"
+  timestamp: "2026-04-27T13:51:00"
+- cmd_id: gs_normalization_v5_ninja_review
+  review_type: consultation
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "v5忍者実装可能性レビュー。§4.5実装詳細9項で大幅改善。忍者配備可能レベル。残り2箇所: L2 regex例+L3 metrics生成方法"
+  observations:
+    - "§4.5.1-9: コード例6箇所、CLI仕様、チャンク��式、DDL動的生成。忍者がコピペで動くレベル"
+    - "§4.5.3 L2: cmd_1877_shin_ninpo_20_bunshin_→忍法名bunshin抽出のregex例がない(L0にはある)"
+    - "§4.5.4 L3: results CSVなし→metricsテーブル生成方法未定義。monthly→metrics計算方���が必要"
+    - "前回軽微指摘(130→160/backup先)は全て反映済み"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "実装詳細明記→忍者の迷い排除→手戻り・WA削減→Phase 2着手可能=正の複利"
+  timestamp: "2026-04-27T14:37:00"
+- cmd_id: gs_normalization_v6_tools_review
+  review_type: consultation
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "v6(マニフェスト+並列+OOM対策)。道具提案4点: gs_db_utils.py共通層/パリティ検証/SQLiteサマリ/テストフィクスチャ。OOM対策は十分(WALサイズ+並列フラグ管理を補足)"
+  observations:
+    - "82GB物理コピー廃止→manifest.yaml記録のみ。導出データ+git管理で正当"
+    - "Phase 2 write → Phase 6再利用。Phase 3 read → Phase 5/7再利用。gs_db_utils.pyで共通化が最適"
+    - "§5.4 OOM: CHUNK_COLS制御+gc+RSS監視。SQLite WALサイズとparallel禁止フラグの運用担保が追加検討事項"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "道具先行→Phase間再利用→実装速度+品質向上+手戻り防止=正の複利"
+  timestamp: "2026-04-27T14:57:00"
+- cmd_id: cmd_2316
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  finding_confidence_1_10: 8
+  fix_first: AUTO-FIX
+  second_opinion: NOT_NEEDED
+  severity: normal
+  findings_summary: "AC1「全1040ファイルのrows+cols」で非CSVファイル634本(npy363/yaml168/md16/json10/bak57)のrows/cols取得方法が未定義"
+  observations:
+    - "find -type f | wc -l = 1040。ただしCSV=406本のみ。npy=363, yaml=168, md=16, json=10, bak類=57"
+    - "設計書§4.5.8 manifest.yaml exampleはCSV前提(rows: 119493, cols: 21)。非CSV未定義"
+    - "忍者がnpyにwc -l実行→バイナリで意味不明数値。yaml/mdにcols取得→定義不明。実装時判断を迫られる"
+  ambiguity_points: "非CSVファイル634本のrows/cols取得方法"
+  discretion_fills: none
+  finding_categories: [assumptions, simulation, premortem, ambiguity]
+  causal_chain: "設計書CSV前提example→cmd全1040ファイルに適用→非CSVで定義未定→忍者実装時判断要→WA発生リスク。ファイルタイプ別定義は全Phase共通で再利用可能=正の複利"
+  timestamp: "2026-04-27T15:05:00"
+- cmd_id: cmd_2317
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  finding_confidence_1_10: 8
+  fix_first: AUTO-FIX
+  second_opinion: NOT_NEEDED
+  severity: normal
+  findings_summary: "3点: (1)配置先矛盾AC1(scripts/analysis/) vs AC2(grid_search/) (2)read系4関数の戻り値型未定義 (3)設計書に仕様があるのは2/8関数のみ"
+  observations:
+    - "AC1: scripts/analysis/gs_db_utils.py。AC2: 「gs_data_loader.pyと同じディレクトリ」=scripts/analysis/grid_search/。矛盾"
+    - "設計書§4.5.5(write_monthly)+§4.5.6(create_params_table)の2関数のみ仕様明記。残り6関数のシグネチャはcmd文面のみ"
+    - "read系4関数の戻り値型(DataFrame? dict?)未定義。道具なのでPhase 3/5/7全てに波及"
+  ambiguity_points: "配置先矛盾+read系戻り値型+write_metrics入力形式"
+  discretion_fills: none
+  finding_categories: [assumptions, simulation, premortem, ambiguity]
+  causal_chain: "設計書2関数→cmd8関数拡張→6関数仕様暗黙→忍者独自判断→Phase3以降不整合リスク。配置先矛盾はAC間整合ミス。道具の仕様明確化は全Phase品質向上=正の複利"
+  timestamp: "2026-04-27T15:09:00"
+- cmd_id: cmd_2318
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。verify_gs_db.py(パリティ検証)。スコープ明確・ACテスタブル。軽微: CSV行数xCSV列数のヘッダ/index除外未明記だがpandas前提で問題なし"
+  observations:
+    - "monthly CSV実測: 119,494cols×167rows。long format=(167-1)×(119,494-1)=19,835,838行。cmdの「CSV行数xCSV列数」は近似表現"
+    - "depends_on cmd_2317(RC中)。修正→完了後に着手。順序保証OK"
+    - "AC2にスコープ限定(本番DB操作なし)が明記。安全設計"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "CSV→SQLite変換のパリティ未検証→行数/pattern_id不一致が下流汚染→自動検証で変換品質保証=正の複利(Phase 2+全変換で再利用)"
+  timestamp: "2026-04-27T15:12:00"
+- cmd_id: cmd_2319
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。gs_db_summary.py(SQLiteサマリ)。シンプルなsqlite3 SELECT組合せ。AC2エラーハンドリング適切"
+  observations:
+    - "1引数(--db-path)→テーブル一覧+COUNT(*)+meta全キー値。sqlite3モジュールのみ使用"
+    - "depends_on cmd_2317は論���的依存(スキーマ定義)。コード依存ではない(sqlite3直接クエリ)"
+    - "AC2: 存在しない.dbパスでエラー表示+正常終了。殿が安全に使える設計"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: ".db中身確認手段なし→手動SELECT多数→1コマンド統合表示=正の複利(全SQLite DB検査で再利用)"
+  timestamp: "2026-04-27T15:15:00"
+- cmd_id: cmd_2318
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2318_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。verify_gs_db.py 186行新規。4チェック項目。monthly列数でyear_month除外を正しく処理。ダミーDBでPASS/FAILテスト済み"
+  observations:
+    - "commit 2e34f37b: verify_gs_db.py新規作成。sqlite3+pandas read_csv。186行"
+    - "monthly行数計算: csv-results行数×(csv-monthly列数-year_month列)。ヘッダ/index除外を正しく処理"
+    - "AC3 discretion_fill: target_dateをツール機能ではなくデータ要件と解釈。妥当"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "新規検証ツール→4チェック項目でCSV-SQLiteパリティ保証→Phase 2変換品質の構造的担保=正の複利"
+  timestamp: "2026-04-27T15:22:00"
+- cmd_id: cmd_2319
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2319_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gs_db_summary.py 87行新規。4テーブルCOUNT(*)+meta全キー表示。AC2エラーハンドリング確認済み"
+  observations:
+    - "commit 85ca782e: gs_db_summary.py新規作成。sqlite3のみ使用。87行"
+    - "gs_db_utils.pyの4テーブル(meta/metrics/monthly/params)に対して動作確認済み"
+    - "PRE3 WARN: commit messageにcmd_id不含。gate機械的BLOCKリスクなし(binary_checks commit:yes)"
+  lesson_quality: OK
+  finding_categories: [assumptions, premortem]
+  causal_chain: ".db中身手動確認→1コマンド統合表示→殿がPhase 2以降で即確認可能=正の複利"
+  timestamp: "2026-04-27T15:25:00"
+- cmd_id: cmd_2316
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2316_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。1040ファイルmanifest生成。軍師RC(非CSV rows/cols)を才蔵がdiscretion_fillsで適切処理(CSV=実測/npy=shape/text=行数+null/other=null)"
+  observations:
+    - "commit d0a3b485: manifest.yaml生成。1040ファイル全件のpath/rows/cols/size_bytes/mtime記録"
+    - "非CSV対応: npy/npz=numpy shape、text=行数+cols:null、other=rows/cols:null。RC指摘と完全整合"
+    - "git_hash+git_status+recovery_procedure(AC2/AC3)全て記録済み"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "82GB物理コピー廃止→マニフェスト記録のみ→復元可能性担保+非CSV対応で全ファイル型カバー=正の複利"
+  timestamp: "2026-04-27T15:25:00"
+- cmd_id: cmd_2317
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2317_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gs_db_utils.py 303行8関数。軍師RC3点(配置先/read戻り値/write_metrics入力)全解消。CHUNK_COLS=512(保守的)"
+  observations:
+    - "commit 792530dc: gs_db_utils.py新規。write_params/write_monthly/write_metrics/write_meta/read_params/read_monthly/read_metrics/read_meta"
+    - "RC解消: 配置先=scripts/analysis/(AC1通り)、read系=pd.DataFrame統一、write_metrics=pattern_id+metric列DataFrame"
+    - "hook_failures 1件(ruff SIM108/S608)→修正済み。CHUNK_COLS既定512(cmd欄1000だがACは引数変更可能のみ)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "RC3点指摘→家老補足→忍者実装で全解消→Phase 2-7共通道具の品質保証=正の複利(全Phase再利用)"
+  timestamp: "2026-04-27T15:30:00"
+- cmd_id: cmd_2321
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。test_gs_db_utils.py(8関数round-tripテスト+10行5列フィクスチャ)。テスト先行でPhase 2前に道具品質保証"
+  observations:
+    - "gs_db_utils.py cmd_2317 CLEAR完了済み。テスト対象8関数のシグネチャ確定"
+    - "フィクスチャ: tests/fixtures/に10行5列ダミーCSV(params用+monthly用)。最小構成で十分"
+    - "元cmd_2320の再起票(archive_completed.shで消失)。内容同一"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "共通道具テストなし→バグが全Phase波及→round-tripテストでリグレッション即検知=正の複利(道具改修時)"
+  timestamp: "2026-04-27T15:33:00"
+- cmd_id: cmd_2321
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2321_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。test_gs_db_utils.py 146行。pytest 7 passed SKIP=0(0.76s)。8関数round-tripテスト+フィクスチャ10行5列×2"
+  observations:
+    - "commit cff4e807(cmd_2321含む): テスト+フィクスチャ3ファイル。既存コード変更なし"
+    - "7テスト=write/readペア4組(params/monthly/metrics/meta)のround-trip。SKIP=0(L389参照)"
+    - "metrics/metaはfixture要件外のためDataFrame/dictで最小round-trip作成(discretion_fills妥当)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "テストなし→道具バグが全Phase波及→7テストround-trip完備→リグレッション即検知=正の複利"
+  timestamp: "2026-04-27T15:40:00"
+- cmd_id: cmd_2322
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。Phase 2開始: L0 bunshin 4family(781pat) CSV→SQLite変換。入力CSV 8本確認済み。道具準備完了"
+  observations:
+    - "入力: 214_bunshin_{DM2,DM3,DM6,DM7P}_grid_{results,monthly}_fast.csv 8本全存在"
+    - "出力: outputs/grid_search/20260427/L0/shin/gs_bunshin_{family}.db 4ファイル。新規ディレクトリ"
+    - "verify_gs_db.py+gs_db_summary.pyで変換後検証。Phase 1.5道具を本番データで初使用"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "旧CSV個別読込→SQLite統一→全ツール共通アクセス。小規模検証で道具の本番データ動作確認=正の複利"
+  timestamp: "2026-04-27T16:08:00"
+- cmd_id: cmd_2322
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2322_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC1-3全PASS(4 .db+verify全PASS+summary)。AC4=stale contamination(cmd原本に不在)→gate BLOCK予測。lesson_candidate有"
+  observations:
+    - "DM2/DM6=781pat, DM3/DM7P=11pat。monthly行数整合(DM2: 130,427=781×167)"
+    - "AC4(target_date 2026-01 vs production 2026-04)はcmd原本AC1-3に不在。deploy_task.sh自動注入のstale AC"
+    - "decision_candidate: source CSV期間更新 or AC4比較対象変更の裁定要。knowledge_candidate: production monthly_returns MAX=2026-04"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "道具(gs_db_utils)本番データ初使用→4 DB生成+verify全PASS→道具品質実証。AC4 stale=deploy_task.shのAC注入フィルタ問題(既知)"
+  timestamp: "2026-04-27T16:14:00"
+- cmd_id: cmd_2323
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。L0 oikaze 4family。cmd_2322(bunshin)と同一パターン。入力CSV 8本確認済み"
+  observations:
+    - "入力: 246_oikaze_{DM2,DM3,DM6,DM7P}_grid_{results,monthly}_fast.csv 8本存在"
+    - "cmd_2322と同一手順・同一道具(gs_db_utils+verify+summary)。パイプライン検証済み"
+    - "bunshin CLEAR後の連続変換。L0シン7忍法を順次完了する流れ"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "bunshin検証済みパイプライン再利用→oikaze変換→L0シン順次完了=正の複利"
+  timestamp: "2026-04-27T17:11:00"
+- cmd_id: cmd_2324
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 10
+  fix_first: ASK
+  second_opinion: NOT_NEEDED
+  severity: urgent
+  findings_summary: "★前提崩壊: 入力パス246_yotsume_*が存在しない(0件)。yotsume=1026(246=oikaze)。1026_yotsume_*は全て.bak"
+  observations:
+    - "find 246_yotsume_*_grid_*_fast.csv → 0件。ファイル番号ミス(246=oikaze, yotsume=1026)"
+    - "1026_yotsume_*は全8件.bak_cmd1186。実データはcmd_1831/またはshin_ninpo_v2_12body/配下"
+    - "assumptions q5 verified=structure_verifiedだが入力パス自体が不正。忍者実行で全AC FAIL"
+  ambiguity_points: "正しい入力パスの特定が必要"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "ファイル番号246→実際は1026→.bakのみ→入力不在→全AC FAIL。assumptions現物確認でファイル番号をCSV名から取り違え"
+  timestamp: "2026-04-27T17:15:00"
+- cmd_id: cmd_2325
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。L0 kawarimi 4family。入力CSV 8本確認済み(246_kawarimi_*)。cmd_2322と同一パターン"
+  observations:
+    - "入力: 246_kawarimi_{DM2,DM3,DM6,DM7P}_grid_{results,monthly}_fast.csv 8本存在"
+    - "cmd_2322(bunshin)と同一手順・同一道具。パイプライン検証済み"
+    - "cmd_2324(yotsume)はRC(入力パスミス)だがkawariminは246で正しい"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "bunshin検証済みパイプライン再利用→kawarimi変換=正の複利"
+  timestamp: "2026-04-27T17:16:00"
+- cmd_id: cmd_2326
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。L0 nukimi 4family。入力CSV 8本確認済み(246_nukimi_*)。cmd_2322と同一パターン"
+  observations:
+    - "入力: 246_nukimi_{DM2,DM3,DM6,DM7P}_grid_{results,monthly}_fast.csv 8本存在"
+    - "cmd_2322(bunshin)と同一手順・同一道具。パイプライン検証済み"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "bunshin検証済みパイプライン再利用→nukimi変換=正の複利"
+  timestamp: "2026-04-27T17:18:00"
+- cmd_id: cmd_2327
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。L0 kasoku_diff 4family(大規模119K pat)。OOM対策(CHUNK_COLS=500+1忍者1ファイル+RSS記録)明記。ベンチ実測済み"
+  observations:
+    - "入力: 246_kasoku_diff_{DM2,DM3,DM6,DM7P}_grid_{results,monthly}_fast.csv 8本存在"
+    - "大規模: 119,493pat/family。Peak RSS 1.7GB実測済み。133s/file"
+    - "AC3にRSS記録含む(§5.4対応)。1忍者1ファイル厳守で並列OOMリスク回避"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "大規模CSV変換→OOM対策+RSS記録で安全確保→大規模変換実績蓄積=正の複利"
+  timestamp: "2026-04-27T17:20:00"
+- cmd_id: cmd_2323
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2323_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。oikaze 4family DB生成+verify全PASS。DM2/DM6=28,116pat DM3/DM7P=396pat。lesson_candidate有(DB preflight)"
+  observations:
+    - "DM2: params=28,116 monthly=4,667,256(28,116×166)。DM3: params=396 monthly=65,736(396×166)。整合"
+    - "run_077_oikaze.pyのDB参照(ALM青龍-常勝)はCSV計算で未使用。ダミー化で回避(元スクリプト変更なし)"
+    - "knowledge_candidate: DB参照が_run_mpで未使用(lines 1129-1139, 1261-1272)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "bunshin検証済みパイプライン→oikaze変換+DB参照問題発見→CSV runnerのDB preflight知見蓄積=正の複利"
+  timestamp: "2026-04-27T17:33:00"
+- cmd_id: cmd_2325
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2325_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。kawarimi 4family DB+verify全PASS。★gs_db_utils.write_monthlyがNaN drop→行数不一致→独自_write_monthly_with_nullsで迂回"
+  observations:
+    - "DM2/DM6=28,116pat monthly=4,667,256(NaN含む)。DM3/DM7P=396pat monthly=65,736(NaN含む)"
+    - "gs_db_utils.write_monthlyはNaN行drop→kawarimi monthly行数不一致FAIL。独自_write_monthly_with_nullsでNULL保持"
+    - "共通道具迂回は保守リスク。gs_db_utils.py本体にNaN→NULL対応を組込む改修推奨"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "gs_db_utils NaN未対応→kawarimi行数不一致→独自実装で迂回→共通道具改修が正解(10回繰返したら10回独自実装=負の複利)"
+  timestamp: "2026-04-27T17:52:00"
+- cmd_id: cmd_2326
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2326_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。nukimi 4family DB+verify全PASS。★NaN戦略矛盾: cmd_2325(NULL保持) vs cmd_2326(NaN DROP+verify修正)。統一要"
+  observations:
+    - "DM2/DM6=60,918pat monthly=9,495,398。DM3/DM7P=858pat monthly=133,738。整合"
+    - "verify_gs_db.py修正(NaN除外行数を期待値に)。共有道具変更"
+    - "★NaN戦略矛盾: 影丸=write_monthly bypass+NULL保持、半蔵=NaN DROP維持+verify修正。逆アプローチ"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "NaN問題→2忍者が逆アプローチ→共有道具の一貫性破壊→統一改修が必要(放置=10回繰返すたびに混乱=負の複利)"
+  timestamp: "2026-04-27T18:07:00"
+- cmd_id: cmd_2327
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_2327_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。kasoku_diff 4family大規模DB+verify全PASS。DM2/DM6=119,493pat RSS=1,694MB。OOMなし"
+  observations:
+    - "DM2/DM6: 119,493pat monthly=18,484,708行 .db=2.6GB Peak RSS=1,694MB(ベンチ1.7GB整合)"
+    - "DM3/DM7P: 1,683pat monthly=260,348行 .db=37MB Peak RSS=89MB"
+    - "kawarimi(cmd_2325)パイプライン完全再利用。CHUNK_COLS=500。新規抽象化なし"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "大規模119K pat→CHUNK_COLS=500+1忍者1ファイル→OOMなし+verify全PASS→大規模変換安全実績確立=正の複利"
+  timestamp: "2026-04-27T18:11:00"
+- cmd_id: cmd_2329
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。NaN→NULL許容改修。将軍裁定実装。write_monthly 1関数+NaNテスト追加"
+  observations:
+    - "将軍裁定(blt_20260427_180742): NULL保持に統一。NaN=データ不在→NULL=データ不在で意味保存"
+    - "cmd_2325(影丸bypass)+cmd_2326(半蔵verify修正)の矛盾を本体修正で統一解決"
+    - "q9 root_cause記載: pandas meltデフォルトNaN drop。テストにNaNフィクスチャ追加で再発防止"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "NaN drop→2忍者逆アプローチ→将軍裁定NULL保持→本体修正で統一=正の複利(全忍法NaN問題根絶)"
+  timestamp: "2026-04-27T18:13:00"
+- cmd_id: cmd_2329
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2329_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。NaN→NULL改修完了。write_monthly+verify+テスト3ファイル。pytest 8 passed。NaN fixture verify PASS(4×6=24行)"
+  observations:
+    - "commit c84b5c58: gs_db_utils.py(dropna削除+_scalar None化)+verify_gs_db.py(全セル数期待)+test(NaN fixture追加)"
+    - "NaN fixture: kawarimi由来4pat×6months=24行(NULL4件含む)でverify PASS"
+    - "assumption_invalidation: cmd_2326のverify修正(非NaN行数期待)が将軍裁定で無効化。正しく認識"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "将軍裁定NULL保持→本体修正で統一→全忍法NaN問題根絶+テスト再発防止=正の複利"
+  timestamp: "2026-04-27T18:17:00"
+- cmd_id: cmd_2330
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。検証cmd。shin_shijin_l1_gs.py精度+シン四神12体本番DB突合。最上流検証=正道"
+  observations:
+    - "AC1: 4 family --parity-only(既存L1270)。AC2: 12体月次リターン突合(run_parity_check L521参考に拡張)"
+    - "verify型: DB書込みなし。FAIL自体が価値ある情報(汚染原因特定の材料)"
+    - "q10: simulate_strategy_vectorized内部は未読(シグネチャのみ確認)。deep cmdとして適切"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "246系CSV汚染→最上流検証→PASS=GS基盤信頼確立/FAIL=修正先特定=正の複利"
+  timestamp: "2026-04-27T20:57:00"
+- cmd_id: cmd_2330
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2330_verify
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC1 PASS(4family一致)。AC2 FAIL(11体≤1e-6丸め差、★鉄壁のみ56か月diff>1e-4 max=0.298)。AC4 PASS"
+  observations:
+    - "AC1: DM2/DM3/DM6/DM7+ 全てmismatch=0。エンジン正常確定"
+    - "AC2: 11体は167か月全て≤1e-6(浮動小数点丸め)。シン青龍-鉄壁のみ56か月>1e-4、max_diff=0.298(2018-10)=構造的不一致"
+    - "鉄壁の代表不一致: 2012-05 calc=-0.242 DB=-0.003(diff=0.238)。config/universe/パラメータ問題の可能性"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "最上流検証→エンジン正常(AC1)+鉄壁のみ構造的不一致(AC2)→鉄壁config調査が次ステップ=問題の局所化成功"
+- cmd_id: karo_direct_fix_20260427
+  review_type: report
+  verdict: LGTM
+  findings_summary: "家老直接修正4件一括レビュー。(1)deploy_task.sh YAML多行記号skip_ml(2)inject_task_modifiers.py scope_mode=NORMAL除外(3)gunshi_notify.sh status条件緩和(4)archive_completed.sh delegated保護。全件batsテストPASS。副作用リスクは(3)のみ中程度(誤status通知)だがレポート存在ガードで許容"
+  observations:
+    - "4件とも根因修正。cmd_2330 resolve失敗/AC4 stale汚染/cmd_2317 notify不発/cmd_2320消失の各事故を構造的に遮断"
+    - "(3)gunshi_notify.sh: 旧=completed|done限定→新=failed|cancelled以外全発火。whitelist→blacklist反転で網羅性向上"
+    - "(4)archive_completed.sh: delegated&&!completed→keep_after_syncで保持。委譲待機cmdの誤消失を防止"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "4事故の各根因→個別修正→テストPASS=再発防止。根因修正×4件=正の複利(同類事故クラス消滅)"
+  timestamp: "2026-04-27T22:05:00"
+- cmd_id: cmd_2331
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。shin_shijin_l1_gs.py SQLite直接出力+旧データ清掃。道具磨き=Phase 1.9b前提。--families追加でAC3支援"
+  observations:
+    - "gs_db_utils 3関数(L160/L246/L188)+_scalar NaN処理(L110-115)+test 8本現物確認。前提全て検証済み"
+    - "commit 8ae20345: +61/-416(bypass2本削除)。parse_family_filter(None)=FAMILY_ORDER→回帰なし"
+    - "EXPECTED_PATTERN_COUNTSがselected_familiesベースに更新→部分実行時も検証正確。write_metaにSQLiteメタ追加(md5+rows)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "CSV唯一出力→Phase 2変換必要→SQLite並列出力追加→Phase 2不要化+round-trip保証=正の複利(全GS出力がSQLite化で分析ツール統一)"
+  timestamp: "2026-04-27T22:12:00"
+- cmd_id: cmd_2331
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2331_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC0(清掃完了)AC1(SQLite統合+CSV維持)AC2(8/8 PASS)AC3(DM7+ 96pat round-trip 16032行完全一致)。テストパス表記ずれをsaizoが実配置で正しく処理"
+  observations:
+    - "commit 8ae20345: 3ファイル(shin_shijin_l1_gs.py modified+bypass2本deleted)。PRE3全PASS"
+    - "AC3数値検算: 96pat×167months=16,032行。readback check_exact=True一致。params=96 metrics=96整合"
+    - "才蔵WA率0%(13件/0WA)。assumption_check: tests/→tests/unit/表記ず���を正しく認識"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "SQLite直接出力統合→round-trip一致確認→Phase 1.9b(フルGS)の前提確立=正の複利"
+  timestamp: "2026-04-27T22:20:00"
+- cmd_id: cmd_karo_ci_fix_flock
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_flock
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。T-010 flock並行テスト3回リトライ化。本体未変更。+17/-8行。10回連続PASS+26/26全PASS"
+  observations:
+    - "commit 59c6d910: test_inbox_write.bats 1ファイ��のみ。attempt間rm -fでclean start保証"
+    - "3回全失敗=return 1。flaky隠蔽ではなくCI環境一時競合(LG016 WSL2 NTFS flock)への許容。本体バグ検出能力維持"
+    - "hayate WA率0%(5件/0WA)。simplicity_check適切: 本体非変更+テストのみ閉じ込め"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "WSL2 NTFS flock一時競合→T-010 1件lost→CI RED→3回リトライで吸収+本体検出能力維持=正の複利(CI安定化で全cmdのpush品質向上)"
+  timestamp: "2026-04-27T22:35:00"
+- cmd_id: cmd_2332
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 10
+  severity: normal
+  findings_summary: "AC2 latest symlinkがWSL2 NTFSで動作しない(実測3パターン全FAIL)。テキストポインタ方式に変更要。他5観点OK"
+  observations:
+    - "WSL2 NTFS symlink実測: os.symlink成功→is_dir=False→listdir ENOENT。target_is_directory=True→os.replace ENOENT。remove+recreate→traverse ENOENT"
+    - "代替: latest.txt(テキストポインタ)。write_text=atomic+WSL2-safe。下流はPath(read_text().strip())で参照"
+    - "AC1/AC3/AC4はOK。OUTPUT_DIR変更+pytest+DM7+検証の構造に問題なし"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "設計書§3.1 symlink仕様→WSL2 NTFS非互換→忍者実装後にFAIL→手戻り。事前検死で検出→テキストポインタ代替で回避=正の複利(WSL2環境での全symlink仕様に波及)"
+  timestamp: "2026-04-27T22:58:00"
+- cmd_id: cmd_2333
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。champion_select.py CSV→SQLite入力改修。列名互換性実測確認(CAGR/MaxDD/NHF/Calmar_Ratio完全一致)。AC3のlatestパス注意(cmd_2332 RC中)"
+  observations:
+    - "SQLite metrics列: pattern_id,Max_Run-up,UD_Ratio,Skewness,Tail_Contribution,NHF,Underwater_Period,Calmar_Ratio,Left-tail_Jumps,CAGR,MaxDD。champion_select参照と完全一致"
+    - "params列: family,rebalance_code,safe_haven_asset,top_n,lookback_terms_json等。DNA filterの全参照列がSQLiteに存在"
+    - "cmd_2332と並列実行可能: champion_select改修はOUTPUT_DIR変更に依存しない(CLI --db-path)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "CSV入力→SQLite統一→列名一致で選出ロジック不変→道具磨き完了→チャンピオン突合の前提確立=正の複利"
+  timestamp: "2026-04-27T23:00:00"
+- cmd_id: cmd_2333
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2333_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。champion_select.py CSV→SQLite改修完了。DM7P玄武3体選出確認。接尾辞付き出力で全体レポート非上書き"
+  observations:
+    - "commit 375bbe6d: champion_select.py(470行)+selection_report_DM7P.md(23行)。PRE3全PASS"
+    - "玄武3体: 激攻DM7P_RXLU_T1_M_L0001/常勝L0002/鉄壁L0003。one_to_one merge(params+metrics)で既存ロジック不変"
+    - "裁量判断: 単一family実行→_DM7P接尾辞付き出力(全体レポート非上書き)。適切"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CSV入力廃止→SQLite read_params+read_metrics→one_to_one merge→選出ロジック不変で3体正常出力=正の複利"
+  timestamp: "2026-04-27T23:05:00"
+- cmd_id: cmd_2332
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2332_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。REQUEST_CHANGES(symlink→latest.txt)完全反映。OUTPUT_DIR=YYYYMMDD/L0/shin。atomic pointer(tmp+os.replace+PID)。設計書同時更新"
+  observations:
+    - "commit f3481e06: shin_shijin_l1_gs.py(1480行)+gs-data-normalization-spec.md(612行)。PRE3全PASS"
+    - "update_latest_pointer(): GRID_OUTPUT_ROOT/.latest.txt.tmp.{pid}→os.replace→latest.txt。内容=outputs/grid_search/20260427"
+    - "DM7+実走: gs_DM7P.db params=96 monthly=16032(96×167) metrics=96。20260427/L0/shin/に正しく出力"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "REQUEST_CHANGES(symlink非互換)→latest.txt方式→atomic pointer実装→WSL2-safe+設計書準拠=正の複利(全GS出力が統一パス管理)"
+  timestamp: "2026-04-27T23:38:00"
+- cmd_id: cmd_2334
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。フルGS再実行(4family 191,796pat)。コード変更なし。道具整備完了(cmd_2331-2333 CLEAR)。見積り24分"
+  observations:
+    - "パターン数検算: 76680+38340+76680+96=191,796。EXPECTED_PATTERN_COUNTSハードコードと一致"
+    - "依存cmd全CLEAR: cmd_2331(SQLite出力)+cmd_2332(OUTPUT_DIR§3.1)+cmd_2333(champion_select)"
+    - "pipeline_config=None: GS用の正しい動作(将軍確認blt_20260427_233747)。本番DBから株価直接取得"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "道具整備完了→フルGS再実行→最新株価+SQLite+CSV同時出力→チャンピオン選出基盤確立=正の複利"
+  timestamp: "2026-04-27T23:58:00"
+- cmd_id: gunshi_direct_fix_awk_id_pattern
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "deploy_task.sh L1370 awk /id:/ → /^[[:space:]]*- id:/。L290 summary内cmd_id:がゴミID注入。hayate cmd_2332/2334 BLOCK根因"
+  observations:
+    - "gate_fire_log: lessons_useful id=/nested timestamp)。yaml.safe_lo が hayate 2回BLOCK"
+    - "L290 summary: (cmd:/cmd_id:/nested timestamp)。awk /id:/が自由テキスト内のid:にマッチ"
+    - "修正後: awk /^[[:space:]]*- id:/ でYAML構造行のみマッチ。テスト: 旧3行(ゴミ含)→新2行(正常のみ)"
+  causal_chain: "L290 summary内cmd_id:→awk /id:/マッチ→ゴミID注入→lessons_useful不正ID→gate BLOCK。修正で教訓text内id:パターン全根絶=正の複利"
+  timestamp: "2026-04-28T00:32:00"
+- cmd_id: shogun_consultation_report_yaml_quality
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "将軍consultation回答。3案全て消火ではなくPhase4正当適用。(1)は既にgate実装済み。(2)はGP-001/002/133重複確認要。assumption_invalidation=FAIL56%が残存最大カテゴリ"
+  observations:
+    - "FILL_THIS 59件+プレースホルダ12件=71件。gate既にBLOCK済み(GP-096/187)"
+    - "assumption_invalidation 401件/712 FAIL(56%)。残存最大カテゴリ"
+    - "bc stub: GP-001/002/133で既に事前生成済み。将軍案(2)との重複確認必要"
+  finding_categories: [assumptions, premortem, north_star]
+  causal_chain: "忍者FILL_THIS残存→gate BLOCK→retry増→道具(テンプレート)改善で初回PASS率向上が正解。BLOCKは機能しているが忍者初回品質が低い=道具を磨け"
+  timestamp: "2026-04-28T00:34:00"
+- cmd_id: cmd_2334
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2334_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。フルGS4family 191,796pat。CSV/SQLite cross-check整合。commit 28d2ff91。WA:no"
+  observations:
+    - "数値検算: DM2=76680+DM3=38340+DM6=76680+DM7P=96=191,796。AC3期待値と完全一致"
+    - "lessons_useful 20件中useful 6件(30%)。L342/L660/L377/L625/L624/L623。reason具体的"
+    - "サンドボックスDNS制約で外部実行。成果物はDM-Signalリポ内。セキュリティリスクなし"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "道具整備完了(cmd_2331-2333)→フルGS再実行→191,796pat+SQLite+CSV+meta=チャンピオン選出基盤確立=正の複利"
+  timestamp: "2026-04-28T00:42:00"
+- cmd_id: shogun_consultation_cmd_2335_champion
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "cmd_2335設計consultation。champion_selector.pyは忍法専用(7本)。shin四神GS出力はfamily名で命名→接続問題あり。--familyモード追加を推奨。12スロット(4×3)設計確認。DNA制約・吸収ルール・MaxDD方向バグ防止を注意点として回答"
+  observations:
+    - "champion_selector.py L53: ALL_NINJUTSU=7忍法。四神family(DM2/DM3等)にマッチしない"
+    - "cmd_2334出力: monthly_returns_{family}.csv。champion_selector期待: {cmd_id}_{ninjutsu}_*"
+    - "SQLite(.db)からの直接選出も選択肢だが、既存NaN-safe+chunkロジック再利用がリスク最小"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "忍法専用selector→四神family名不一致→cmd実行時ERROR。事前検出→設計段階で対処=正の複利(全四神チャンピオン選出cmdで再利用可能)"
+  timestamp: "2026-04-28T00:48:00"
+- cmd_id: shogun_consultation_cmd_2335_sqlite_correction
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "前回回答訂正。cmd_1125_v2_champion_select.py(四神用SQLite対応)を見落とし。--db-path実装済み。SQLite(params+metrics)に全データあり。DNA制約+3モード+吸収が一発実行可能"
+  observations:
+    - "champion_selector.py(忍法用CSV)のみ確認しSQLite未対応と断言=想像するな確認せよ違反"
+    - "cmd_1125_v2_champion_select.py L287: --db-path required=True。resolve_db_paths()でgs_{family}.db自動検出"
+    - "gs_DM2.db現物確認: params 76680行+metrics 76680行(CAGR/MaxDD/NHF)+monthly 12.8M行"
+  finding_categories: [assumptions, numbers]
+  causal_chain: "忍法用selectorのみ確認→四神用selector見落とし→SQLite未対応と誤報告。grep範囲をscripts/全体に広げれば検出できた=検索範囲不足が根因"
+  timestamp: "2026-04-28T00:58:00"
+- cmd_id: cmd_2335
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。SQLite直読チャンピオン12体選出。cmd_1125_v2_champion_select.py実行のみ(コード変更なし)。MaxDD方向(idxmax on negatives)現物確認。DM7P 96pat→DNA後16+件(0件リスクなし)"
+  observations:
+    - "MaxDD値確認: gs_DM2.db MaxDD range=[-0.82,-0.45](マイナス値)。idxmax=-0.45=最小損失=鉄壁定義に合致"
+    - "DM7P: 96パターン→rebalance=M 16件。DNA制約後0件リスクなし(cmd_1018で1体選出実績)"
+    - "assumptions.trust=verified: 軍師が現物確認した事実をcmd quality gateが記録。検証チェーン閉じている"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "汚染CSV由来旧チャンピオン→DB直読GS結果で再選出→正確なチャンピオン確立=正の複利(全四神本番登録の基盤)"
+  timestamp: "2026-04-28T01:07:00"
+- cmd_id: cmd_2336
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。cmd_delegate.sh L180偽陽性修正。grep全文→type:cmd_new限定。1ファイル1箇所。AC3件(修正+偽陽性テスト+二重委任テスト)"
+  observations:
+    - "L180現物確認: grep -Fqm1 CMD_ID KARO_INBOX がtype区別なし全文検索。偽陽性根因確定"
+    - "L187 dashboard検査(WARN only)は別パス。修正対象外。影響なし"
+    - "FM1(awk YAML解析堅牢性)→AC2/AC3テストで検出可能。テスト設計が安全弁"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "grep全文検索→lesson_candidate内cmd_id誤マッチ→偽陽性BLOCK→type限定修正で全cmd委任の信頼性向上=正の複利"
+  timestamp: "2026-04-28T01:10:00"
+- cmd_id: cmd_2335
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2335_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。チャンピオン12体選出(吸収なし)。DNAフィルタ: DM2=3864/DM3=24/DM6=2160/DM7P=3。旧差分10/12→decision_candidate。knowledge_candidate有用"
+  observations:
+    - "DNAフィルタ後: 6051件/191796(3.2%)。DM7P=3件(最少)だがcmd_1018で1体実績あり。合理的"
+    - "吸収なし=12体確定。前回cmd_1018は2体吸収→10体。今回全モードで異なるpattern_id"
+    - "commit 4f68676cにcmd_2335未含有(PRE-3 WARN)。成果物はcommit済み。軽微"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "SQLite直読→DNA制約→3モード選出→吸収なし12体→旧差分10/12殿裁定待ち。正確なGSからの正確なチャンピオン確立=正の複利"
+  timestamp: "2026-04-28T01:12:00"
+- cmd_id: cmd_2336
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2336_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_delegate.sh偽陽性修正。inbox_has_cmd_new_for_cmd()でawk構造解析。bats 20/20 PASS SKIP 0"
+  observations:
+    - "実装: grep -Fqm1→awk block解析(type:cmd_new+cmd_id両方検査)。構造的に正しい昇格"
+    - "テスト: lesson_candidate内cmd_id通過+cmd_new二重委任BLOCK。2ケース追加で計20件"
+    - "discretion_fill: メッセージ境界認識を実運用形式に限定(箇条書き誤認防止)"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "grep全文検索→別type内cmd_id誤マッチ→偽陽性BLOCK→awk構造解析で全cmd委任の信頼性向上=正の複利"
+  timestamp: "2026-04-28T01:15:00"
+- cmd_id: cmd_2337
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。偵察cmd: 本番DB12体 vs GS選出12体パラメータ差分。読取専用。AC3件(DB取得+突合+差分サマリ)"
+  observations:
+    - "偵察デフォルト品質: 差分テーブル生成が目的。本番変更なし(読取専用)"
+    - "フィールド名対応: DB=pipeline_config(lookback_terms等) vs JSON=lookback等。命名類似で対応可能"
+    - "cmd_2335旧10体比較の補正。殿指摘で本番12体との正確な突合が必要"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "旧JSON10体比較→殿指摘→本番DB12体との正確な差分確立→殿裁定材料=正の複利(本番突合標準手順確立)"
+  timestamp: "2026-04-28T01:26:00"
+- cmd_id: cmd_2337
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2337_scout
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察: 本番12体 vs GS選出12体 = 12/12完全一致(変更0件)。チャンピオン堅牢性の実証"
+  observations:
+    - "12/12 MATCH: 最新株価GS再実行でも同一チャンピオンが選出=堅牢性の直接証拠"
+    - "フィールド名正規化: GS M/Be/Qj→DB monthly/bimonthly_even/quarterly_jan。21営業日=1M変換"
+    - "knowledge_candidate: 一致結果+フィールド名差異。context還流推奨(dm-signal-core.md)"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "旧10体比較→殿指摘→本番12体正確突合→12/12一致=チャンピオン堅牢性実証=正の複利(本番更新不要の根拠確立)"
+  timestamp: "2026-04-28T01:29:00"
+- cmd_id: shogun_consultation_l1_db_migration
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "L1シン忍法DB直読化。gs_data_loader.pyがsource_type分岐で自動切替。universe configのdb化でコード変更ゼロ。7忍法6忍者並列可能(LG025制約内)。Phase 3-7よりL1 GS再実行を先に推奨"
+  observations:
+    - "gs_data_loader.py L438: source_type=='db'→PostgreSQL直読、'csv'→CSV。全7本がこのモジュール使用"
+    - "全7本のデフォルト: alm_l0_12.yaml(csv)。--universeでdb版に切替可能"
+    - "okugi_shin_ninpo_20.yaml: source_type=db(既存)。shin_shijin_v2_12.yaml: csv(要変更)"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "gs_data_loader source_type分岐→universe config db化→全7本自動DB直読→コード変更ゼロ=正の複利(全忍法GSの入力統一)"
+  timestamp: "2026-04-28T01:47:00"
+- cmd_id: shogun_consultation_l1_phase37_corrected
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "§33 Phase 3-7順序準拠。v2設計: CSV経路廃止+UUID一元化+source_type db一本化。消費者影響ゼロ(戻り値不変)。Phase 3→4/5並列→6→7。残4ステップ(GS再実行→チャンピオン→突合→ロバストネス)"
+  observations:
+    - "L1_PORTFOLIO_MAP(L531-547): 12体UUIDハードコード。universe configと二重管理が根因"
+    - "source_type分岐6箇所(L438/446/468/475/498/506)。csv経路廃止で3関数×2分岐→1経路に簡素化"
+    - "消費者(run_077)はgs_data_loaderのimport不変。戻り値Dict[str,pd.Series]も不変→影響ゼロ"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "CSV+ハードコードUUID混在→v2でdb一本化+YAML一元化→全消費者が自動的にDB直読=正の複利(全GS/全忍法の入力品質統一)"
+  timestamp: "2026-04-28T01:49:00"
+- cmd_id: shogun_consultation_phase3_design
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "Phase 3 cmd設計レビュー。削除対象補正(csv分岐4箇所+関数54行+UUID17行)。legacy_shijin_12.yamlが既存DB版config(新規不要)。AC5追加提案(integration smoke test)。1cmdで完結"
+  observations:
+    - "csv分岐4箇所(L341/446/475/506)。将軍の6箇所は前回の軍師誤カウント(L438/468/498はdb分岐)"
+    - "legacy_shijin_12.yaml: L1_PORTFOLIO_MAP(L531-547)のYAML版。UUID完全一致。source_type:db"
+    - "build_component_names_from_config L341-350のcsv分岐も削除対象(families/patterns構造はcsv専用)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "正確な削除対象特定→1cmd完結→Phase 3最短完了→Phase 4/5並列着手可能=正の複利"
+  timestamp: "2026-04-28T01:55:00"
+- cmd_id: cmd_2338
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。gunshi_notifyフラグ目的別分離。draft/report共有バグ修正。AC3件(分離+E2E+回帰)"
+  observations:
+    - "cmd_2334で実証: draft送信済みフラグ存在→report_review不発。根因=フラグ名共有"
+    - "FM: 旧フラグファイルのクリーンアップロジック取り残しリスク→忍者確認範囲"
+    - "shallow修正。全cmdの軍師レビュー確実化=正の複利"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "フラグ名共有→draft送信後report不発→軍師レビュー欠落→品質低下。目的別分離で全cmd両方発火=正の複利"
+  timestamp: "2026-04-28T02:02:00"
+- cmd_id: cmd_2338
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2338_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gunshi_notifyフラグ目的別分離。draft側のみ実差分(report側は既に種別付き)。E2E+回帰テスト実証済み"
+  observations:
+    - "フラグ名: cmd_id.started→cmd_id.draft_review.started。report側はgunshi_report_review_notify_*で既に分離済み"
+    - "discretion_fill: report_review側が既存で種別付き→draft側のみ修正。適切な最小変更判断"
+    - "lessons_useful useful率50%(5/10)。L190/L321/L275/L185/L127が具体的に有用"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "フラグ共有→draft後report不発→種別分離で独立発火=正の複利(全cmdで軍師レビュー確実化)"
+  timestamp: "2026-04-28T02:07:00"
+- cmd_id: cmd_2339
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。CSV経路廃止(関数削除+分岐ValueError化+docstring更新)。削除対象全行番号実在確認済み。外部呼出しなし。テスト内csv参照なし"
+  observations:
+    - "_load_csv_monthly_returns L364-417(54行)実在。呼出し3箇所(L449,478,509)全てcsv elif分岐内"
+    - "外部ファイルからの_load_csv_monthly_returns呼出し: 0件(grep全量確認)"
+    - "universe config 10個がsource_type:csvのまま残存。Phase 5で対処予定。ValueError=意図的旧経路ブロック"
+    - "tests/内にcsv path参照0件→AC4(pytest全PASS)は安全"
+    - "AC数=5(LG021 WARN)だが同一ファイル一体変更。分割すると中間不整合"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "CSV経路残存→汚染データGS実行リスク→ValueError強制で旧経路構造的廃止=正の複利。10回繰返せばCSV事故ゼロ"
+  timestamp: "2026-04-28T02:25:00"
+- cmd_id: cmd_2339
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2339_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CSV経路廃止実装完了(AC1-3,5 met)。AC4のみunmet=pre-existing failures(numba/lookback/fof)。gate_prediction:BLOCK→実際CLEAR(test_triage:pre_existing WARN降格)"
+  observations:
+    - "rg _load_csv=0件, families/patterns/k_values=0件。CSV経路完全削除確認"
+    - "全体pytest 4 failed/4 errors: test_numba_parity/test_lookback_accuracy/fof_preprocessing。全て今回変更外"
+    - "限定pytest 26 passed(gs_benchmark_compare+test_gs_db_utils)。gs関連テスト影響なし"
+    - "commit 546758a7存在。cmd_id不一致(PRE-3 WARN)だがコミットは正当"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CSV関数削除+分岐ValueError化→gs関連26テストPASS→pre-existing4 failures残→AC4機械的FAIL。実装品質は完全=正の複利"
+  timestamp: "2026-04-28T02:33:00"
+- cmd_id: cmd_2340
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。UUID一元化(L1_PORTFOLIO_MAP削除+config統合)。17行削除+参照3箇所変更。行番号シフト(L531→L439)はgrep確認で問題なし"
+  observations:
+    - "L1_PORTFOLIO_MAP L439-455(17行)実在。cmd記載L531-547からcmd_2339 CSV削除で92行シフト"
+    - "参照3箇所(L127/185/258)全て同パターン: if portfolio_map is None: portfolio_map = L1_PORTFOLIO_MAP"
+    - "build_portfolio_map_from_config() L318に既存。from_universe系(L363/390/413)で実績あり"
+    - "pre-existing pytest failures→test_triage:pre_existingでWARN降格(cmd_2339で実証済み)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "UUID二重管理(ハードコード+YAML)→片方更新忘れ→データ不整合リスク。一元化で構造的排除=正の複利"
+  timestamp: "2026-04-28T02:50:00"

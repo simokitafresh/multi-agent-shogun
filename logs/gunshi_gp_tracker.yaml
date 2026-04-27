@@ -40,7 +40,7 @@
 # | 021 | ninja-adaptive注入    | ★implemented      | S43  | cmd_1307(hanzo) LGTM。deploy_task.sh L2038 |
 # | 022 | bc evidence必須化     | ✗obsolete          | S46  | 忍者がresult:内に自然にevidence埋込(e.g."yes(36/36)")。形式強制は過剰 |
 # | 023 | SG9 cross-ninja検出   | ★implemented      | S43  | cmd_1335。SG9にninja_weak_points参照+WA率>50%追加チェック定義 |
-# | 024 | archive race根本修正  | ★monitoring       | S44  | cmd_1302(archive→GATE後移動)。review_gate.done 548件存在。要観察 |
+# | 024 | archive race根本修正  | ★resolved         | S44  | cmd_1302(archive→GATE後移動)。2509件正常蓄積。race対処済み。2026-04-26棚卸し |
 # | 025 | archive gate循環修正  | ★implemented      | S46  | cmd_1314。DEFERRED_GATES配列実装 |
 # | 026 | report_yaml_missing待機| ★implemented      | S49  | cmd_1332。CLEAR済みcmd早期exit+status判定拡張 |
 # | 027 | commit漏れ検出WARN    | ★implemented      | S50  | cmd_1330(kotaro)+cmd_1317。target_path未commit変更検出WARN |
@@ -48,7 +48,7 @@
 # | 029 | insights起票品質改善  | ★implemented      | S70  | cmd_1334。ID 4hex化+先頭50文字dedup追加 |
 # | 030 | autofix bc dict→list | ★implemented      | S72  | cmd_1316。gate_report_autofix.sh Fix8 |
 # | 031 | GATE autofix追加       | ★implemented      | S77  | cmd_complete_gate.sh L2080にgate_report_autofix.sh呼出あり。S125で現物確認。race condition防止済み |
-# | 032 | YAML parse prevention | ★partial(WARN only) | S103 | PostToolUse WARN表示のみ(post-write-edit-combined.sh Guard1)。YAML構文検証(parse check)は未実装。post-edit-report-guard.shファイル不在。GP-197で根因対処予定 |
+# | 032 | YAML parse prevention | ✗superseded(GP-197) | S103 | GP-197(PostToolUse Edit hook YAML構文検証)で根因対処済み。post-edit-report-guard.sh不在=GP-197に統合。2026-04-26棚卸し |
 # | 033 | verdict autofix Fix9  | ★将軍解決         | S79  | 将軍Phase15: boolバグ修正+TRUE/FALSEマッチ追加。私の方向性は正→将軍が現物でbugfix |
 # | 034 | no_lesson_reason自動補完| ★将軍解決(除去)   | S81  | 将軍Phase15: gateがN/Aをplaceholder reject→Fix10除去。私の提案は誤り(end-to-end未検証) |
 # | 035 | gunshi self-gate       | ★implemented      | S102 | SG10として実装。5項目送信前チェック。軍師直接修正 |
@@ -130,7 +130,7 @@
 # | 135 | gateキャッシュmtime  | ★implemented      | 軍師自走 | gate_report_format.sh: PASSキャッシュにgate自体のmtime含め変更時自動無効化(e1a8bdb) |
 # | 136 | yaml.dump静的チェック | ★implemented      | S159+S160 | pre-commit hookにstaged diff yaml.dump/safe_dumpチェック実装。tests/除外。4テストPASS(検出2+副作用なし2) |
 # | 209 | generated指示矛盾修正 | ★implemented      | S163 | generated/ashigaru*.md 4ファイルのEdit tool指示→report_field_set.sh経由に統一。hook矛盾解消 |
-# | 210 | STATE_DIR統一         | karo_sent          | S164 | inbox_watcher/Stop hookのSTATE_DIRパス不一致→家老nudge遅延。将軍撤回→軍師分析正の確認(blt_20260417_021610) |
+# | 210 | STATE_DIR統一         | ★resolved          | S164 | 両方STATE_DIR=${SHOGUN_STATE_DIR:-/tmp}で収束確認。将軍撤回+軍師現物確認済み。2026-04-26棚卸し |
 # | 211 | 結論突合警告           | ★implemented      | S165 | stop_check_inbox.sh: CONCLUSION_TYPES検出→突合警告付加。全エージェント共通。テスト9/9 PASS |
 # | 212 | SG-PRE14 revert検出  | ★implemented      | S170 | files_modified直近5 commitにrevert含→WARN。cmd_2107事故(revert後AC3:yesのまま報告)対策。shellcheck clean |
 # | 213 | SG-PRE15 並列負荷警告 | ★implemented      | S170 | 忍者3名以上稼働中→before/after計測値汚染WARN。WSL2 I/O負荷考慮。shellcheck clean |
@@ -559,18 +559,23 @@
   description: "deploy_task.sh教訓スコアリングにpurpose/context_filesキーワード加味"
   status: implemented
   proposed_at: "2026-04-25T18:45:00"
-  self_executable: false
+  implemented_at: "2026-04-25T20:15:00"
+  implemented_by: gunshi_direct
+  self_executable: true
   existing_impl_check: "grep -n 'scored\|score_lesson\|keyword' deploy_task.sh → L2538-2554。title+summary+tagsのみ。purpose/context_files未参照"
   defense_level: 4
   reason: "cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘"
+  evidence: "commit 06677487。deploy_task.sh L2201-2208。GP-225(CJKアクロニム)と連携"
 - id: GP-224
   description: "deploy_task.sh高速化: yaml_field_set多数回呼出しのWSL2 NTFS I/O削減"
-  status: karo_sent
+  status: obsolete
   proposed_at: "2026-04-25T19:05:00"
+  closed_at: "2026-04-26T21:05:00"
   self_executable: false
   existing_impl_check: "deploy_task.logフェーズ分析: AC1件テストで10秒。本番タスクで30秒超→家老CLI timeout"
   defense_level: 3
   reason: "家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積"
+  obsolete_reason: "2026-04-26計測: 直近10件全て5-14秒(max14秒)。30秒timeout到達0件。自然解消"
 - id: GP-225
   description: "ASCII↔CJK境界分割+アクロニム(>=2,全大文字)min_len免除で教訓キーワードマッチ精度向上"
   status: implemented
@@ -645,3 +650,37 @@
   defense_level: 3
   reason: "cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN"
   evidence: "commit 79ebceb7。テスト: 正常AC→PASS、stale AC5→WARN検出。S0全6項PASS"
+- id: GP-236
+  description: "gate_gunshi_startup.sh adaptive gating window: draft-only→draft+report"
+  status: implemented
+  proposed_at: "2026-04-26T20:50:00"
+  implemented_at: "2026-04-26T20:55:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'drafts.*review_type.*draft' scripts/gates/gate_gunshi_startup.sh L232 → draft限定確認"
+  defense_level: 4
+  reason: "numbers偽cold streak(7/10)。根因=adaptive gating windowがdraft限定。report(数値検算の主戦場)を除外していた"
+  evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7→0。S0全6項PASS"
+- id: GP-238
+  description: "lessons_useful reason defaultを''→'未参照'に変更。FILL_THIS二重BLOCKサイクル解消"
+  status: implemented
+  proposed_at: "2026-04-28T02:40:00"
+  implemented_at: "2026-04-28T02:45:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n \"reason: ''\" scripts/deploy_task.sh L1393。pre-fill L1812がreason空→FILL_THIS変換"
+  defense_level: 5
+  reason: "265件のFILL_THIS BLOCK根因。テンプレートreason空→gate BLOCK→pre-fill FILL_THIS→再BLOCKの二重サイクル。'未参照'で両方不発"
+  evidence: "commit dc218f52。template 19/19, autofix 20/20, useful_rate 6/6 PASS。S0全6項PASS"
+- id: GP-237
+  description: "SG-PRE12b draft_lessons検出(project lessons.md draft件数→gate_prediction WARN)"
+  status: implemented
+  proposed_at: "2026-04-26T21:52:00"
+  implemented_at: "2026-04-26T21:55:00"
+  implemented_by: gunshi_direct
+  self_executable: true
+  existing_impl_check: "grep -n 'draft_lessons' scripts/gates/gate_gunshi_report_precheck.sh → 0件(実装前)"
+  defense_level: 4
+  reason: "gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった"
+  evidence: "実行検証: infra tasks/lessons.mdのdraft 1件を正確にWARN検出。S0全6項PASS"
+  evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7��0。S0全6項PASS"

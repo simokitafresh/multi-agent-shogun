@@ -44,9 +44,9 @@ lessons:
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
   source_cmd: cmd_1242
   created_at: '2026-03-22'
-  automated: false
-  enforcement_level: 2
-  enforcement: gunshi_review_log T1(GATEシミュレーション)で即時適用
+  automated: true
+  enforcement_level: 4
+  enforcement: gate_gunshi_report_precheck.sh SG-PRE1(gate_report_format.sh自動実行)+SG-PRE9(result:no→BLOCK予測)。review_log T1で毎レビュー適用
 - id: LG007
   title: capture-pane=残像、ファイルタイムスタンプ=現在 — 状態確認の優先順位
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
@@ -243,9 +243,9 @@ lessons:
     BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
   source_cmd: gunshi_codd_session_20260416
   created_at: '2026-04-16'
-  automated: false
-  enforcement_level: 2
-  enforcement: cmd_1940でgate_lesson_health.sh閾値をuseful率に変更(実装中)
+  automated: true
+  enforcement_level: 4
+  enforcement: gate_lesson_health.sh L273-274でuseful率もALERT/WARN判定に組込済み(commit 6c60b0fc)。referenced率+useful率の二重閾値チェック
 - id: LG028
   title: スケーラビリティ推定で内部ループ回数を計上せよ — per_combo固定は過小評価
   detail: |
