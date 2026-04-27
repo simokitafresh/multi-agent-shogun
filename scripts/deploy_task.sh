@@ -2592,6 +2592,12 @@ try:
             task['description'] = prefix + str(desc or '')
             desc_modified = True
 
+    # GP-240: description埋込IDとrelated_lessons IDの不一致検出
+    desc_ids = set(r['id'] for r in related) if related else set()
+    rl_ids = set(r['id'] for r in task.get('related_lessons', []) if isinstance(r, dict))
+    if desc_ids != rl_ids:
+        print(f'[INJECT] WARN: description/related_lessons ID mismatch. desc={sorted(desc_ids)} rl={sorted(rl_ids)}', file=sys.stderr)
+
     # --- Safe targeted write (avoid full yaml.dump — cmd_1407 AC2) ---
     with open(task_file, 'r', encoding='utf-8') as f:
         raw = f.read()

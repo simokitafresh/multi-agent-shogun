@@ -20,6 +20,18 @@ cmd_2342の実態:
 ## 10回繰返したら？
 毎cmdで忍者がdescription埋込IDとrelated_lessonsテンプレートIDの不一致に遭遇 → 混乱×10回 = 負の複利
 
+## 追加調査 (2026-04-28 04:25)
+
+コード上はdescription埋込とrelated_lessonsは同じ`related`リストから生成(L2579+L2583-2589)。
+理論的には一致するはずだが、kagemaru cmd_2342で不一致が発生。
+
+related_lessons=L503-L512(全10件universal)。description=L508,L536,L308等(task-specific混在)。
+MAX_UNIVERSAL=1なのにrelated_lessonsが全10件universalは異常。
+原因候補: safe targeted write(L2595-2608)のYAML手動構築バグ、またはtask-specificスコア0で全枠universalフォールバック。
+
+結論: **根因未確定。** 次回配備時にdeploy_task.shログで`[INJECT]`行を確認し再現条件を特定する。
+
 ## 改善方向
-- related_lessonsとdescription埋込を統合: lessons_usefulテンプレートにdescription埋込IDも含める
-- または: description埋込IDをrelated_lessonsに統合し、1系統にする
+- 短期: lessons_usefulテンプレートにdescription埋込IDも含めるawkパッチ(L1372拡張)
+- 中期: inject_related_lessonsのログにdescription埋込ID一覧を出力→不一致自動検出
+- 長期: description埋込廃止→related_lessonsに一本化
