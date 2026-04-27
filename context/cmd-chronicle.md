@@ -868,3 +868,4 @@
 | cmd_2319 | 実装 — GS正規化Phase 1.5c: gs_db_summary.py(SQLiteサマリ表示) | dm-signal | 04-27 | gs_db_summary.py を新規作成。--db-pa |
 | cmd_2320 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | — |
 | cmd_2321 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | gs_db_utilsの8関数に対するround-trip単 |
+| cmd_2322 | 実装 — GS正規化Phase 2: L0シン bunshin CSV→SQLite変換(4family) | dm-signal | 04-27 | L0/shin bunshin 4familyのCSV→SQ |
