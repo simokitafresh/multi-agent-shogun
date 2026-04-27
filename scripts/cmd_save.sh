@@ -3056,12 +3056,44 @@ check_ac_phase_mixing() {
     fi
 }
 
+check_ac_test_scope() {
+    local ac_block scope_hits
+
+    ac_block="$(extract_acceptance_criteria_block)"
+    [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
+
+    # スコープ未指定のテスト全件条件を検出
+    # FP除外: 変更対象/関連テスト/ファイル名/.bats/pre-existing を含む行はスコープ済みとみなし除外
+    scope_hits="$(printf '%s\n' "$ac_block" | \
+        grep -v -iE '(変更対象|対象の関連|関連テスト|pre[_\-]?existing|\.bats|scripts/)' | \
+        grep -inE \
+        '全[[:space:]]*(テスト|test)[[:space:]]*(PASS|通過|成功|pass|green)|テスト[[:space:]]*全[[:space:]]*(PASS|通過|成功|pass|green)|0[[:space:]]*(failures?|errors?|skips?|失敗|エラー|スキップ)|all[[:space:]]*(tests?|テスト)[[:space:]]*(pass|green|通過)|no[[:space:]]*(failures?|errors?|skips?)' \
+        || true)"
+    [[ -n "$scope_hits" ]] || return 0
+
+    echo "WARN: ACにスコープ未指定のテスト全件条件を検出。変更対象の関連テストのみに限定すべき" >&2
+    printf '%s\n' "$scope_hits" | head -n 5 | while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*(description|check|id):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
+    done
+    echo "  修正例: 「全テストPASS」→「変更対象(scripts/cmd_save.sh)の関連テストPASS」" >&2
+    echo "  修正例: 「0 failures」→「変更ファイルに対応するテスト(test_cmd_save*.bats等)0 failures」" >&2
+    echo "  理由: スコープ未指定のAC=pre-existing failureを全て抱え込み、AC達成不能になりうる(cmd_2342教訓)" >&2
+    record_warn_reason "ac_test_scope_too_broad" "check=check_ac_test_scope"
+}
+
 check_ac_absolute_literals
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL
 # 目的: 実装フェーズと計測/commit/deployフェーズの同居を検出し、cmd分割を促す
 check_ac_phase_mixing
+
+# --- Check 21.6: ACテストスコープ検証（WARN） ---
+# 起源: cmd_2342 — ACに「全テストPASS」「0 failures」等のスコープ未指定条件を記載すると
+#         pre-existing failureを全て抱え込みAC達成不能になる
+# 目的: スコープ未指定のテスト全件条件を検出し、変更対象の関連テストのみへの限定を促す
+check_ac_test_scope
 
 # --- Check 22: command欄ステップ数 vs AC数の不整合検出（WARN） ---
 # 起源: cmd_1953-1958でcommand欄に(1)(2)(3)(4)の4ステップを書いたがAC2個→忍者がspec/設計書をスキップ
