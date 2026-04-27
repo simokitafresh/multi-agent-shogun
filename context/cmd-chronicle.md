@@ -872,4 +872,4 @@
 | cmd_2336 | cmd_delegate.sh L180のkaro inbox重複検出がgrep -F "$CMD_ID"で全文検索するため、 軍師のlesson_candidateやbulletin_notify等に含まれるcmd_id文字列にも誤マッチする。 type:cmd_newのエントリのみを検査対象に限定する。 | infra | 04-28 | cmd_delegate.shの家老inbox重複検出をcm |
 | cmd_2337 | 本番DBのシン四神12体のconfig(lookback/rebalance/top_n)を取得し、 cmd_2335で選出したGS選出シン四神12体と正確に12体vs12体で突合する。 cmd_2335のスクリプトは旧JSON(吸収後10体)と比較しており、本番DB12体との正しい差分が未確認。 | dm-signal | 04-28 | 本番PostgreSQLのシン四神12体pipeline_c |
 | cmd_2338 | gunshi_notifyの重複防止フラグがdraft_reviewとreport_reviewで共有されており、 draft送信済みフラグが存在するとreport_received時のreport_reviewが不発になるバグを修正する。 cmd_2334で実証(家老報告 2026-04-28)。 | infra | 04-28 | draft_reviewの重複防止マーカーをcmd_id.s |
-| cmd_2339 | gs_data_loader.pyからCSV読込経路を完全に廃止し、DB直読を唯一のデータ取得経路にする。 殿裁定「CSVをまた作るな。DB直読せよ」の構造的実装。§33 Phase 3の前半。 | dm-signal | 04-28 | — |
+| cmd_2339 | gs_data_loader.pyからCSV読込経路を完全に廃止し、DB直読を唯一のデータ取得経路にする。 殿裁定「CSVをまた作るな。DB直読せよ」の構造的実装。§33 Phase 3の前半。 | dm-signal | 04-28 | gs_data_loader.pyからCSV読込関数を削除し |
