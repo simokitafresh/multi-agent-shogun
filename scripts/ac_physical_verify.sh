@@ -48,6 +48,22 @@ print(text)
         echo "FAIL: cmd_id '${CMD_ID}' not found in shogun_to_karo.yaml" >&2
         exit 1
     fi
+
+    # LG021 gate: AC数カウント (AC>4→WARN)
+    AC_COUNT=$(REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
+import yaml, os
+repo_root = os.environ['REPO_ROOT']
+cmd_id = os.environ['CMD_ID']
+with open(os.path.join(repo_root, 'queue', 'shogun_to_karo.yaml')) as f:
+    data = yaml.safe_load(f)
+cmds = data.get('commands', data)
+cmd = cmds.get(cmd_id, {})
+acs = cmd.get('acceptance_criteria', [])
+print(len(acs) if isinstance(acs, list) else 0)
+" 2>/dev/null || echo "0")
+    if [[ "$AC_COUNT" -gt 4 ]]; then
+        echo "★ WARN(LG021): AC数=${AC_COUNT} > 4。cmd分割を検討せよ(REQUEST_CHANGES候補)"
+    fi
 fi
 
 # Run verification

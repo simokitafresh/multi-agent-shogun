@@ -1245,6 +1245,16 @@ QG_TEMPLATE
         fi
     fi
 
+    # LG022 gate: 研究cmdにbaseline無し→WARN
+    _LG022_TYPE="$(cmd_block_get_field "type")"
+    if echo "$_LG022_TYPE" | grep -qiE 'research|analysis|investigation'; then
+        _LG022_TEXT="$(cmd_block_raw)"
+        if ! echo "$_LG022_TEXT" | grep -qiE 'baseline|比較対象|before.*after|対照'; then
+            echo "WARNING(LG022): type=research系cmdにbaseline/比較対象がありません。改善主張には比較対象が必須" >&2
+            record_warn_reason "研究cmdにbaseline無し(LG022)" "check=research_baseline"
+        fi
+    fi
+
     # q5_verified_source: 存在チェックはpreflight済み。以下は内容検証のみ
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）
     # cmd_1481教訓: code_readingをproduction_verifiedに見せかけた。忍者に信頼度を正直に伝える(利他)
