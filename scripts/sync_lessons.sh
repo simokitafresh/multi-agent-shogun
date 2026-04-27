@@ -53,7 +53,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
     export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID
     python3 << 'PYEOF'
 import csv
-import re, yaml, os, tempfile
+import re, yaml, os, sys, tempfile
 from datetime import datetime
 from collections import defaultdict
 

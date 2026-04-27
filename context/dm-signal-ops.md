@@ -91,6 +91,10 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L638: upfront cleanup後worker restartで本番データ空化リスク。replace系precomputeはbegin_nested(savepoint)で範囲限定必須[PI-025]（cmd_2131）
 - L647: monthly_returns_genがFoF数増加(59→109体+85%)に対し非線形増大(49s→241s+391%)（cmd_2257）
 - L648: dw_signals_flush(62s)が計測システムから除外されunmeasured_pctを誤解させる（cmd_2261）
+- L634: マイグレーションスクリプトのテーブル名バグが本番未適用の根因（cmd_2016）
+- L636: nested FoFのMonthlyReturnは生成ログでなくDB実データ確認必須（cmd_2025）
+- L357: 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全（cmd_1025）
+- L261: precomputeテーブル欠落はhealth endpointでdegradedに昇格させる（cmd_828）
 
 ## §9 性能ベースライン
 
@@ -128,6 +132,12 @@ OPT一覧(1-15):
 軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
+- L136: 改善候補調査前に既存最適化履歴を照合する（cmd_474）
+- L137: FoF計測はLayerTimer.substepではなくL3 metadata.profilingで確認（cmd_475）
+- L138: trade_perf調査はtiming実測→コード読解の順（cmd_475）
+- L545: 逐次PF計測では先頭PFウォームアップ外れ値を切り分けよ（cmd_metrics_R1）
+- L589: tracemallocデフォルトdepth=1では不足。depth=30+ファイルフィルタで真の呼出行特定（cmd_1826）
+- L649: CDP再計測retryはartifact pathを分離せよ（stale run上書き防止）（cmd_2268）
 詳細: `docs/research/gunshi-opt12-fullrecalc-analysis.md` §本番内訳 参照
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2（scripts一覧）
 | 項目 | 結論 | 参照 |
@@ -154,6 +164,9 @@ GS全6ブロック: `scripts/analysis/grid_search/run_077_{block}.py`
 PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic制約明記+PARAM_GRID修正で運用。
 補助参照: `docs/research/cmd_484_dm-signal-supplemental-catalog-2.md` AC1-2
 - L175: 統合レビューでのパリティ検証は関数シグネチャ+定数+アルゴリズム3層で行う（cmd_550）
+- L621: monthly_fast成果物探索はcache-onlyも許容せよ(.csv欠損+.cache.*.npyのみ残存ケースあり)（cmd_1882）
+- L585: AC output_pathはoutputs/grid_searchとoutputs/analysisを混同するな（cmd_1796）
+- L142: CSV記述は入力ソースと成果物を分離しないと知識汚染が再発（cmd_492）
 
 ## §14 ドキュメントインデックス
 
@@ -181,48 +194,30 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L149: key_files成果物パターンは実在ファイル名規約と定期照合しないと再汚染する（cmd_493）
 - L150: 復旧ドキュメントは『在庫あり証跡』と『在庫不足』を分離記述すると誤再構成を防げる（cmd_493）
 - L307: 偵察3回×延べ24名の知識基盤構築には統合専任担当(水平H)が不可欠（cmd_862）
+- L144: context圧縮時は参照先存在確認を先に実施。リンク先なき圧縮禁止（cmd_492）
+- L143: research層消失はリポジトリ側git操作起因の可能性を先に切り分ける（cmd_492）
+- L141: docs実在性チェックをCI化しないと運用手順が陳腐化（cmd_492）
+- L140: registry統合など構造変更時は知識汚染が集中する（cmd_492）
+- L553: 原理1行が各論パッチ30行に勝る。既存の仕組みを1行磨け（cmd_1741）
+- L552: 因果推論に複利の問いを含めよ。10回繰り返し効果を自問（cmd_1741）
+- L536: auto-commit巻き込み確認: git status+git log直近セットで差分確認（cmd_1693）
+- L329: 生成artifact修正はgenerator scriptへも同修正を戻せ（cmd_1005）
+- L139: 依存マップはgrepより先にAST循環解析を実行する（cmd_478）
 - L308: KB浄化cmdは解釈移送先ファイルをACで明示せよ（cmd_871）
 
 ## Ops教訓索引
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
 
-| ID | 結論(1行) | 分類 | 出典 |
-|---|---|---|---|
-| L644 | cron新設時は既存cronとの処理重複を先に照合せよ | 運用 | cmd_2219 |
-| L645 | sync-status解除≠L3完走。timing-history新規行を一次証跡とせよ | 運用 | cmd_2235 |
-| L649 | CDP再計測retryはartifact pathを分離せよ(stale run上書き防止) | ツール | cmd_2268 |
-| L558 | 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能 | 運用 | cmd_1750 |
-| L621 | monthly_fast成果物探索はcache-onlyも許容せよ（.csv欠損+.cache.*.npyのみ残存ケースあり） | ツール | cmd_1882 |
-| L624 | 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因 | ツール | cmd_1877 |
-| L632 | snapshot比較器は保存していないフィールドを比較対象に含めるな（cmd_karo_1995_fixで修正済み） | ツール | cmd_1985 |
-| L634 | マイグレーションスクリプトのテーブル名バグが本番未適用の根因 | DB | cmd_2016 |
-| L636 | nested FoFのMonthlyReturnは生成ログだけでは信用するな — DB実データ確認必須 | 運用 | cmd_2025 |
-| L637 | upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる | 運用 | cmd_2131 |
-| L628 | パリティスクリプトtarget_date: productionの日付定義と揃えよ（skip_months増幅リスク） | パリティ | cmd_1899 |
-| L629 | golden data有効性: 生成時のコード状態を確認せよ（バグ下で生成=検証基準にならない） | テスト | cmd_1899 |
-| L579 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1786 |
-| L582 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1795 |
-| L584 | [自動生成] draft教訓の査読を怠った | 自動生成 | cmd_1796 |
-| L585 | AC2 output_pathがoutputs/grid_searchなのにoutputs/analysisと記載 | 運用 | cmd_1796 |
-| L589 | tracemallocデフォルトdepth=1ではnumpy内部行のみ。depth=30+ファイルフィルタで真の呼出行特定 | ツール | cmd_1826 |
-| L571 | baseline_v2タスクの'2012-07'記述はCSV実態(2012-04)と不一致—タスク記述の参照を確認せよ [deprecated] | 運用 | cmd_baseline_v2 |
-| L553 | 原理1行が各論パッチ30行に勝る。既存の仕組みを1行磨け | 判断原則 | cmd_1741 |
-| L552 | 因果推論に複利の問いを含めよ。全レビューで10回繰り返し効果を自問 | 判断原則 | cmd_1741 |
-| L536 | auto-commit巻き込み確認: git status+git log直近セットで差分確認 | git | cmd_1693 |
-| L545 | 逐次PF計測では先頭PFのウォームアップ外れ値を切り分けよ | 計測 | cmd_metrics_R1 |
-| L357 | 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全 | DB | cmd_1025 |
-| L329 | 生成artifactの指摘修正はgenerator scriptへも同修正を戻せ | 開発プロセス | cmd_1005 |
-| L261 | キャッシュ系precomputeテーブル欠落はhealth endpointでdegradedに昇格させる | 運用手順 | cmd_828 |
-| L256 | [自動生成] 有効教訓の記録を怠った: cmd_814 | 自動生成 | cmd_814 |
-| L144 | context圧縮時は参照先存在確認を先に実施。リンク先なき圧縮は禁止 | 知識基盤 | cmd_492 |
-| L143 | research層消失はリポジトリ側git操作起因の可能性を先に切り分ける | 知識基盤 | cmd_492 |
-| L142 | CSV記述は入力ソースと成果物を分離しないと知識汚染が再発する | 知識基盤 | cmd_492 |
-| L141 | docs実在性チェックをCI化しないと運用手順が陳腐化する | 知識基盤 | cmd_492 |
-| L140 | registry統合など構造変更時は知識汚染が集中する | 知識基盤 | cmd_492 |
-| L139 | 依存マップはgrepより先にAST循環解析を実行する | 運用手順 | cmd_478 |
-| L138 | trade_perf調査はtiming実測→コード読解の順で進める | 運用手順 | cmd_475 |
-| L137 | FoF計測はLayerTimer.substepではなくL3 metadata.profilingで確認 | 運用手順 | cmd_475 |
-| L136 | 改善候補調査前に既存最適化履歴を照合する | 運用手順 | cmd_474 |
+<!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
+  §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
+  §9: L136,L137,L138,L545,L589,L649
+  §12: L621,L585,L142
+  §16: L144,L143,L141,L140,L553,L552,L536,L329,L139
+  §17: L644
+  §18: L624,L558
+  §32: L628,L629,L632
+  削除: L579,L582,L584,L256(自動生成具体性なし),L571(deprecated)
+-->
 | L135 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L010） | 知識基盤 | cleanup |
 | L134 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L025） | 知識基盤 | cleanup |
 | L133 | セッション開始時にtodo.md/lessons.md必読 | 運用手順 | — |
@@ -402,6 +397,8 @@ import metrics_research_engine as MRE
 
 - **用途**: 本番MetricsCalculatorへのブリッジ。research_engineから内部呼び出し
 - **依存**: `backend/app/services/metrics_calculator.py`（本番同一エンジン）
+- L624: 道具の全引数(--output-prefix等)をcmdに明記せよ。デフォルト依存はprefix不統一の原因（cmd_1877）
+- L558: 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能（cmd_1750）
 
 ## §19 サービスURL一覧（CDP/API操作前に必ず参照）
 
@@ -433,6 +430,7 @@ import metrics_research_engine as MRE
 | SVMF/MVMFバグ | 修正完了(cmd_235+cmd_244) |
 | 穴1/2/3 | 全対策完了 |
 | PF健全性スイープ | cmd_1091: 全122PF×5項目パス。定期実行候補(L417) |
+- L644: cron新設時は既存cronとの処理重複を先に照合せよ（cmd_2219）
 | FoF MR非線形根因+パリティ検証標準 | Schema Portfolio型不一致→preload空振り→240.6s。ゴールデンデータ方式: 前後比較×→残存正常データと突合○ → `docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md` §8-§9 |
 | FoF MR高速化(cmd_2259+2260) | 240.6s→26.53s→~1.5s(DB fallback 356→0件)。L3_fof: 462s→226s。L2: 186s→15s。全体: 720s→257s(64%削減) |
 | SIGNAL_DEFERRED_BATCH_SIZE倍増(cmd_2260後) | constants.py 5000→10000。commit 169cd744。期待-15~20s |
@@ -491,6 +489,10 @@ import metrics_research_engine as MRE
 | DM-B-04 | GS パラメータが想定外の値になっている | GS CSV 列定義のずれ / pipeline_config 誤設定 | grid_search 出力 CSV の列名と `pipeline_config` の `param_grid` を照合 |
 | DM-B-05 | ALM 計算がデフォルト(lookback)に fallback する | alm_config.enabled=false または objective 誤設定 | `pipeline_config` の `alm_config` フィールド確認。PI-003/PI-009 準拠か |
 | DM-B-06 | FoF monthly-returns が 240s 超 / タイムアウト | DB fallback クエリ大量発生 (DB_FALLBACK_COUNT > 0) | `/admin/recalculate-sync` ログで `DB_FALLBACK_COUNT` 確認。preload キャッシュのヒット率確認 |
+
+- L628: パリティスクリプトtarget_date: productionの日付定義と揃えよ（skip_months増幅リスク）（cmd_1899）
+- L629: golden data有効性: 生成時のコード状態を確認せよ（バグ下生成=検証基準にならない）（cmd_1899）
+- L632: snapshot比較器は保存していないフィールドを比較対象に含めるな（cmd_1985）
 
 ## §33 GS正規化 進捗 (2026-04-27)
 
