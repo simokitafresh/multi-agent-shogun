@@ -209,10 +209,15 @@ reset_stale_fields() {
 
     current_parent_cmd=$(awk -F': *' '/^  parent_cmd:/ {gsub(/["'\'']/, "", $2); print $2; exit}' "$task_file" 2>/dev/null || true)
     if [ -n "$current_parent_cmd" ]; then
+        current_notify_flag="$SCRIPT_DIR/queue/gates/${current_parent_cmd}/gunshi_report_review_notify_${ninja_name}.done"
+        if [ -f "$current_notify_flag" ]; then
+            rm -f "$current_notify_flag"
+            log "[STALE_RESET] Removed stale gunshi report_review notify flag for ${ninja_name}: queue/gates/${current_parent_cmd}/gunshi_report_review_notify_${ninja_name}.done"
+        fi
         current_notify_flag="$SCRIPT_DIR/queue/gates/${current_parent_cmd}/gunshi_notify_${ninja_name}.done"
         if [ -f "$current_notify_flag" ]; then
             rm -f "$current_notify_flag"
-            log "[STALE_RESET] Removed stale gunshi notify flag for ${ninja_name}: queue/gates/${current_parent_cmd}/gunshi_notify_${ninja_name}.done"
+            log "[STALE_RESET] Removed legacy gunshi notify flag for ${ninja_name}: queue/gates/${current_parent_cmd}/gunshi_notify_${ninja_name}.done"
         fi
     fi
 
@@ -3911,7 +3916,7 @@ mark_dispatch_ntfy_once() {
     local ninja_name="$2"
     local title="$3"
     local state_dir="$SCRIPT_DIR/queue/dispatch_ntfy_started"
-    local marker="$state_dir/${cmd_id}.started"
+    local marker="$state_dir/${cmd_id}.draft_review.started"
     local ts
     ts="$(date '+%Y-%m-%dT%H:%M:%S')"
 

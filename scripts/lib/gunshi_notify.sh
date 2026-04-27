@@ -21,7 +21,7 @@ notify_gunshi_for_report() {
     # 重複通知防止（フラグファイル）
     local gates_dir="$project_root/queue/gates/${cmd_id}"
     mkdir -p "$gates_dir"
-    local flag_file="${gates_dir}/gunshi_notify_${ninja_name}.done"
+    local flag_file="${gates_dir}/gunshi_report_review_notify_${ninja_name}.done"
     if [ -f "$flag_file" ]; then
         return 0
     fi

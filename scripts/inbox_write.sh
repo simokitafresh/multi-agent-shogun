@@ -1293,7 +1293,7 @@ REVIEWEOF
             if [ -n "$_dr_cmd_id" ] && [ -n "$_dr_ninja" ]; then
                 _dr_gates_dir="$SCRIPT_DIR/queue/gates/${_dr_cmd_id}"
                 mkdir -p "$_dr_gates_dir"
-                _dr_flag="${_dr_gates_dir}/gunshi_notify_${_dr_ninja}.done"
+                _dr_flag="${_dr_gates_dir}/gunshi_report_review_notify_${_dr_ninja}.done"
                 if [ ! -f "$_dr_flag" ]; then
                     echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$_dr_flag"
                     echo "ninja: ${_dr_ninja}" >> "$_dr_flag"
