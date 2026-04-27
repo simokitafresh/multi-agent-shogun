@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-27T14:52:39+09:00 -->
+<!-- generated_at: 2026-04-27T14:54:49+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-27T14:54:49+09:00 | terminal | response | 設計書更新+gist同期完了。 殿、追記した内容: **§5.3 見込み時間と並列戦略**: 全8 Phaseの時間見積+並列配備計画をテーブルで明記 **§5.4 OOM Kill対策**: - L2 kasoku_diff(944,7…
+- 2026-04-27T14:54:42+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
+- 2026-04-27T14:53:23+09:00 | terminal | inbound | 対策案を設計書に反映しよう
 - 2026-04-27T14:52:39+09:00 | terminal | response | gist更新。 [meta] stop_reason=tool_use
 - 2026-04-27T14:51:15+09:00 | terminal | inbound | その方針にしよう
 - 2026-04-27T14:50:29+09:00 | terminal | response | 殿の通り。因果をたどる。 **バックアップの目的は何か**: 「元に戻せること」。 **元に戻す必要があるのはいつか**: 正規化(Phase 2)やスクリプト改修(Phase 3-6)が失敗したとき。 **GS CSVは再生成可能か**…
@@ -11,9 +14,6 @@
 - 2026-04-27T14:48:39+09:00 | terminal | response | **穴チェック — Phase 1(バックアップ)cmd起票に必要な情報:** | 必要情報 | 状態 | 確認結果 | |---------|------|---------| | バックアップ対象パス | ✅ | `outputs/g…
 - 2026-04-27T14:48:02+09:00 | terminal | inbound | CMD起票に必要な情報が全て揃っているか最終確認だ。穴はないか？
 - 2026-04-27T14:42:42+09:00 | terminal | response | gist更新。 [meta] stop_reason=tool_use
-- 2026-04-27T14:41:38+09:00 | terminal | inbound | 修正しよう
-- 2026-04-27T14:38:04+09:00 | terminal | response | 前半を確認。 [meta] stop_reason=tool_use
-- 2026-04-27T14:36:29+09:00 | terminal | response | 軍師にレビュー依頼済み。掲示板+inboxで通知完了。レビュー結果を待つ。 殿、指示あれば。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - **穴チェック — Phase 1(バックアップ)cmd起票に必要な情報:** | 必要情報 | 状態 | 確認結果 | |---------|------|---------| | バックアップ対象パス | ✅ | `outputs/grid_search/` (82GB, …
