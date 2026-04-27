@@ -1088,11 +1088,47 @@ notify_idle_batch() {
 
 # ─── handle_confirmed_idle サブ関数群 ───
 
+_clear_stall_tracking_for_completed_idle() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    [ -f "$task_file" ] || return 0
+
+    local task_status
+    task_status=$(yaml_field_get "$task_file" "status")
+    case "$task_status" in
+        done|completed|idle) ;;
+        *) return 0 ;;
+    esac
+
+    local key cleared_first=0 cleared_count=0
+    for key in "${!STALL_FIRST_SEEN[@]}"; do
+        case "$key" in
+            "$name"|"deploy_stall_${name}"|"${name}:"*)
+                unset "STALL_FIRST_SEEN[$key]"
+                cleared_first=$((cleared_first + 1))
+                ;;
+        esac
+    done
+
+    for key in "${!STALL_COUNT[@]}"; do
+        case "$key" in
+            "$name"|"deploy_stall_${name}"|"${name}:"*)
+                unset "STALL_COUNT[$key]"
+                cleared_count=$((cleared_count + 1))
+                ;;
+        esac
+    done
+
+    if [ "$cleared_first" -gt 0 ] || [ "$cleared_count" -gt 0 ]; then
+        log "STALL-TRACKING-CLEAR: $name status=$task_status first_seen=${cleared_first} count=${cleared_count}"
+    fi
+}
+
 # post_clear_cmd送信（cmd_583: /new後の/fast自動有効化）
 # 戻り値: 0=処理済み(呼び出し元でreturn), 1=未処理(続行)
 _handle_post_clear_pending() {
     local name="$1"
-    [ -z "${POST_CLEAR_PENDING[$name]}" ] && return 1
+    [ -z "${POST_CLEAR_PENDING[$name]:-}" ] && return 1
 
     local pc_target="${PANE_TARGETS[$name]}"
     [ -z "$pc_target" ] && return 1
@@ -1208,7 +1244,7 @@ _handle_idle_notify() {
     [ "${PREV_STATE[$name]}" = "idle" ] && return
 
     # モード切替: 既に通知済みの場合、パイプライン状態で判断
-    if [ -n "${IDLE_NOTIFY_SENT[$name]}" ]; then
+    if [ -n "${IDLE_NOTIFY_SENT[$name]:-}" ]; then
         local pipeline_count
         pipeline_count=$(grep -cE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
         if [ "${pipeline_count:-0}" -eq 0 ]; then
@@ -1320,6 +1356,7 @@ handle_confirmed_idle() {
 
     local now
     now=$EPOCHSECONDS
+    _clear_stall_tracking_for_completed_idle "$name"
     _handle_idle_notify "$name" "$now"
     _handle_auto_clear "$name" "$now"
 

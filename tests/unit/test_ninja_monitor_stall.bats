@@ -328,6 +328,81 @@ cat "$TEST_MESSAGES"
     [[ "$output" == *"[pane tail 5]<NL>l8<NL>l9<NL>l10<NL>l11<NL>l12"* ]]
 }
 
+@test "handle_confirmed_idle: completed task clears matching stall tracking keys" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+declare -A PREV_STATE LAST_NOTIFIED LAST_CLEARED STALL_FIRST_SEEN STALL_NOTIFIED
+declare -A STALL_COUNT PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+declare -A AUTO_DEPLOY_DONE IDLE_NOTIFY_SENT
+NEWLY_IDLE=()
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  task_id: cmd_2341_normal
+  subtask_id: cmd_2341_normal
+EOF
+
+log() { echo "$1" >> "$LOG"; }
+is_task_deployed() { return 1; }
+yaml_field_get() {
+    case "$2" in
+        status) echo "done" ;;
+        task_id) echo "cmd_2341_normal" ;;
+        subtask_id) echo "cmd_2341_normal" ;;
+        *) echo "${3:-}" ;;
+    esac
+}
+cli_profile_get() { echo "60"; }
+get_context_pct() { echo "0"; }
+cli_type() { echo "codex"; }
+tmux() { echo ""; }
+safe_send_clear() { return 0; }
+can_send_clear_with_report_gate() { return 0; }
+
+PANE_TARGETS[saizo]="shogun:2.6"
+PREV_STATE[saizo]="busy"
+STALL_FIRST_SEEN[saizo]=100
+STALL_FIRST_SEEN[deploy_stall_saizo]=101
+STALL_FIRST_SEEN["saizo:old_task"]=102
+STALL_FIRST_SEEN[kagemaru]=200
+STALL_COUNT["saizo:old_task"]=2
+STALL_COUNT["saizo:cmd_2341_normal"]=1
+STALL_COUNT["kagemaru:old_task"]=3
+
+handle_confirmed_idle saizo
+
+echo "FIRST_SAIZO=${STALL_FIRST_SEEN[saizo]:-missing}"
+echo "FIRST_DEPLOY=${STALL_FIRST_SEEN[deploy_stall_saizo]:-missing}"
+echo "FIRST_COMPOUND=${STALL_FIRST_SEEN[saizo:old_task]:-missing}"
+echo "FIRST_OTHER=${STALL_FIRST_SEEN[kagemaru]:-missing}"
+echo "COUNT_OLD=${STALL_COUNT[saizo:old_task]:-missing}"
+echo "COUNT_CURRENT=${STALL_COUNT[saizo:cmd_2341_normal]:-missing}"
+echo "COUNT_OTHER=${STALL_COUNT[kagemaru:old_task]:-missing}"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FIRST_SAIZO=missing"* ]]
+    [[ "$output" == *"FIRST_DEPLOY=missing"* ]]
+    [[ "$output" == *"FIRST_COMPOUND=missing"* ]]
+    [[ "$output" == *"FIRST_OTHER=200"* ]]
+    [[ "$output" == *"COUNT_OLD=missing"* ]]
+    [[ "$output" == *"COUNT_CURRENT=missing"* ]]
+    [[ "$output" == *"COUNT_OTHER=3"* ]]
+    [[ "$output" == *"STALL-TRACKING-CLEAR: saizo status=done first_seen=3 count=2"* ]]
+}
+
 # =============================================================================
 # auto_deploy_done tests (merged from test_ninja_monitor_auto_deploy_done.bats)
 # =============================================================================
