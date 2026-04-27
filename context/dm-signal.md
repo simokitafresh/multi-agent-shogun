@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L658 -->
+<!-- last_synced_lesson: L659 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -194,3 +194,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L656: 計測スクリプトの固定待機排除はDOMポーリングで行う（cmd_2310）
 - L657: deploy cmdは依存cmdの報告とcommit SHAを起票前に照合する（cmd_2311）
 - L658: GS正規化前にsource CSV期間とproduction最新月を照合する（cmd_2322）
+- L659: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける（cmd_2323）

@@ -869,3 +869,9 @@
 | cmd_2320 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | — |
 | cmd_2321 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | gs_db_utilsの8関数に対するround-trip単 |
 | cmd_2322 | 実装 — GS正規化Phase 2: L0シン bunshin CSV→SQLite変換(4family) | dm-signal | 04-27 | L0/shin bunshin 4familyのCSV→SQ |
+| cmd_2323 | 実装 — GS正規化Phase 2: L0シン oikaze CSV→SQLite変換(4family) | dm-signal | 04-27 | cmd_2323 oikaze L0シン4familyをCS |
+| cmd_2324 | 実装 — GS正規化Phase 2: L0シン yotsume CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
+| cmd_2325 | 実装 — GS正規化Phase 2: L0シン kawarimi CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
+| cmd_2326 | 実装 — GS正規化Phase 2: L0シン nukimi CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
+| cmd_2327 | 実装 — GS正規化Phase 2: L0シン kasoku_diff CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | FILL_THIS |
+| cmd_2328 | 実装 — GS正規化Phase 2: L0シン kasoku_ratio CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | — |
