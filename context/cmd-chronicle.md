@@ -877,3 +877,4 @@
 | cmd_2328 | 実装 — GS正規化Phase 2: L0シン kasoku_ratio CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | — |
 | cmd_2329 | 修正 — gs_db_utils.py write_monthly NaN→NULL許容改修 | dm-signal | 04-27 | FILL_THIS |
 | cmd_2330 | shin_shijin_l1_gs.pyのシミュレーション精度を現在株価で検証。GS正規化Phase 1.9の前提条件。読取+計算+比較のみ | dm-signal | 04-27 | AC1: shin_shijin_l1_gs.py --pa |
+| cmd_2331 | shin_shijin_l1_gs.pyの出力にSQLite直接出力を追加する(道具磨き)。 合わせてPhase 2で生成した汚染.dbとbypass独自スクリプトを清掃する。 Phase 1.9b(フルGS再実行)の前提。道具が正しく動かなければGS再実行は無意味。 | dm-signal | 04-27 | 旧SQLite成果物と変換用一時スクリプト2本を削除し、sh |
