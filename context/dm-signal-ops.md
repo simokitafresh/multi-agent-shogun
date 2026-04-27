@@ -502,32 +502,29 @@ import metrics_research_engine as MRE
 
 **殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番。
 
-### Phase構造(v3.1 — 2026-04-28更新)
+### Phase構造(v3.2 — 2026-04-28更新)
 
 | Phase | 内容 | 状態 |
 |-------|------|------|
 | 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** |
 | 1.9a | 清掃+SQLite直接出力改修(cmd_2331)+OUTPUT_DIR§3.1準拠(cmd_2332) | **完了** |
 | 1.9b | フルGS再実行(191,796pat、SQLite+CSV出力。cmd_2334) | **完了**(GATE CLEAR 2026-04-28) |
-| 1.9c | チャン��オン12体選出(SQLite直読)+吸収判定+本番差分(cmd_2335) | **起票準備中** |
-| 道具 | champion_select.py SQLite入力対応(cmd_2333) | **完了** |
+| 1.9c | GS選出シン四神12体選出(SQLite直読、cmd_2335)+本番突合(cmd_2337) | **完了** |
+| 道具 | cmd_1125_v2_champion_select.py(四神L0用、SQLite入力。cmd_2333) | **完了** |
 | 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
 | 3-7 | gs_data_loader v2→旧データ削除→消費者改修→GS生成改修→neighbor | 未着手 |
 | 後続 | 忍法(L1)段階: ユニバースDB直読化+忍法GS再実行 | 設計待ち |
 
-### ★ Phase 1.9c設計(2026-04-28確定)
+### Phase 1.9c結果(2026-04-28完了)
 
-2つのchampion selectスクリプトが存在(軍師確認 2026-04-28):
-- `outputs/scripts/champion_selector.py`: 忍法(L2)用。CSV/npy入力。月次リターンから指標計算
-- `scripts/analysis/grid_search/cmd_1125_v2_champion_select.py`: **四神(L0)用。SQLite入力。事前計算metricsから選出+DNA制約+吸収**
+2つのchampion selectスクリプト(軍師確認 2026-04-28):
+- `outputs/scripts/champion_selector.py`: 忍法(L1/L2)用。CSV/npy入力
+- `scripts/analysis/grid_search/cmd_1125_v2_champion_select.py`: **四神(L0)用。SQLite入力+DNA制約+吸収**
 
-四神チャンピオン選出はcmd_1125_v2_champion_select.pyで--db-path指定。道具磨き不要。
 実行: `python scripts/analysis/grid_search/cmd_1125_v2_champion_select.py --db-path outputs/grid_search/20260428/L0/shin`
 
-注意点:
-- MaxDD方向テーブルが正しく適用されるか確認(cmd_1840バグ���発防止)
-- 吸収判定: 同一パラメータIDの文字列��全一致。4family×3モード=12→吸収後10体実績あり
-- 旧チャンピオン(cmd_246/cmd_1018)との差分確認をACに含める
+**結果**: GS選出シン四神12体 = 本番シン四神12体。**12/12全MATCH、変更0件**(cmd_2337偵察確認)。
+吸収なし(重複pattern_idなし)→12体確定。本番DBパラメータ更新は不要。
 
 ### 検証済み事実
 
@@ -535,10 +532,11 @@ import metrics_research_engine as MRE
 - LOOKBACK_TERMS: 内部でtrading days変換済み(2M=42D。改修不要)
 - shijin-design.yaml DNA制約: 本番config全項目一致確認済み
 - OUTPUT_DIR: 設計書§3.1準拠(outputs/grid_search/{YYYYMMDD}/L0/shin/)。latest.txt atomic pointer(WSL2 symlink不可のため。L663)
-- champion_select.py: SQLite入力対応済み(--db-path引数。cmd_2333)
+- cmd_1125_v2_champion_select.py: SQLite入力対応済み(--db-path引数。cmd_2333)
 - cmd_2334フルGS完了(2026-04-28): 4family×191,796パターン SQLite+CSV同時出力。GATE CLEAR
+- cmd_2335チャンピオン選出完了(2026-04-28): GS選出シン四神12体確定(吸収なし)。GATE CLEAR
+- cmd_2337本番突合完了(2026-04-28): 本番シン四神12体とGS選出シン四神12体が12/12全MATCH。GATE CLEAR
 - pipeline_config=None上書き(L1394): shin_shijin_l1_gs.pyがfamily_pipeline_configsを全てNoneで上書き。設計意図確認要(軍師指摘)
-- champion_selector.py接続問題: 忍法名検索前提→family名CSVにマッチしない。--familyモード追加が必要(軍師分析 2026-04-28)
 
 ### PI候補
 

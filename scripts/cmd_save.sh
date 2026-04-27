@@ -3123,7 +3123,9 @@ check_new_file_structure_warning() {
     search_text="${ac_block}"$'\n'"${command_block}"
     [[ -n "${search_text//[[:space:]]/}" ]] || return 0
 
-    hits="$(printf '%s\n' "$search_text" | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
+    # Filter out quality_gate/diagnosis/assumptions content that may leak into search scope
+    # (defensive: extract functions should exclude these, but edge cases exist)
+    hits="$(printf '%s\n' "$search_text" | grep -v -E '^\s*(diagnosis|quality_gate|q[0-9]_|assumptions|trust|claim|environment_change|delegated_at):' | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARN: new_file/new_structure要求を検出。既存活用できるファイル・構造がないか確認せよ" >&2
