@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L663 -->
+<!-- last_synced_lesson: L664 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -199,3 +199,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L661: verify_gs_db.pyはNaN除外後の非NaN行数を期待値にする必要がある（cmd_2326）
 - L662: シン四神12体突合は完全一致と丸め許容を分離して報告せよ（cmd_2330）
 - L663: WSL2 NTFSディレクトリsymlinkは使うな（cmd_2332）
+- L664: outputs/analysis棚卸しはsource_type csv参照を軸に分類する（cmd_2343）

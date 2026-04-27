@@ -873,3 +873,9 @@
 | cmd_2337 | 本番DBのシン四神12体のconfig(lookback/rebalance/top_n)を取得し、 cmd_2335で選出したGS選出シン四神12体と正確に12体vs12体で突合する。 cmd_2335のスクリプトは旧JSON(吸収後10体)と比較しており、本番DB12体との正しい差分が未確認。 | dm-signal | 04-28 | 本番PostgreSQLのシン四神12体pipeline_c |
 | cmd_2338 | gunshi_notifyの重複防止フラグがdraft_reviewとreport_reviewで共有されており、 draft送信済みフラグが存在するとreport_received時のreport_reviewが不発になるバグを修正する。 cmd_2334で実証(家老報告 2026-04-28)。 | infra | 04-28 | draft_reviewの重複防止マーカーをcmd_id.s |
 | cmd_2339 | gs_data_loader.pyからCSV読込経路を完全に廃止し、DB直読を唯一のデータ取得経路にする。 殿裁定「CSVをまた作るな。DB直読せよ」の構造的実装。§33 Phase 3の前半。 | dm-signal | 04-28 | gs_data_loader.pyからCSV読込関数を削除し |
+| cmd_2340 | gs_data_loader.pyのL1_PORTFOLIO_MAP(L531-547、UUIDハードコード)を廃止し、 universe config(YAML)のcomponentsセクションをUUIDの唯一の供給源にする。 §33 Phase 3の後半。cmd_2339(CSV経路廃止)の完了が前提。 | dm-signal | 04-28 | — |
+| cmd_2341 | ninja_monitorでtask正常完了→idle遷移時にSTALL_FIRST_SEEN/STALL_COUNTがクリアされず、 新task配備直後に前taskの停滞時間+回数が持ち越されてESCALATE誤検知が発生する。 cmd_2340/hayateで29秒後に41140秒idle+2回STALLと誤検知された実証あり(家老掲示板報告)。 | infra | 04-28 | ninja_monitorの完了/idle遷移でSTALL_ |
+| cmd_2342 | ACに「全テストPASS」「0 failures, 0 skips」等のパターンがあった場合にWARNし、 「変更対象の関連テストPASS(pre-existing failure除外)」へのスコープ限定を促す。 将軍のcmd設計段階で達成不可能なACを防ぎ、忍者FAIL→家老waiveの消火循環を根絶する。 | infra | 04-28 | — |
+| cmd_2343 | outputs/analysis/配下のCSVファイルを調査し、GS入力用CSV(削除対象)と研究成果物(保護対象)を選別する。 Phase 3でCSV経路を廃止したが、旧CSV入力ファイルがoutputs/analysis/に残存(軍師確認済み)。 削除対象を特定してPhase 4実行cmdの前提とする。 | dm-signal | 04-28 | outputs/analysis配下CSVは807件・923 |
+| cmd_2344 | run_077_*.py 7本のデフォルトuniverse configをalm_l0_12.yaml(source_type:csv)から okugi_shin_ninpo_20.yaml(source_type:db, 20体UUID付き)に変更する。 Phase 3でCSV経路廃止済み→現状のデフォルトで実行するとValueError。DB直読を唯一の経路にする。 | dm-signal | 04-28 | run_077系7本のデフォルト--universeをoku |
+| cmd_2345 | cmd_2343偵察で特定した旧GS入力CSV 9件(371KB)を削除する。 Phase 3でCSV経路廃止済み(source_type=csv→ValueError)のため、これらを参照するコードパスは存在しない。 GS再実行(後続A)前にクリーンな状態にする。 | dm-signal | 04-28 | 旧GS入力CSV 9件を /mnt/c/Python_app |

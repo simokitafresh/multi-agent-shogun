@@ -756,3 +756,9 @@
 - cmd_2331(Phase 1.9a): 清掃+shin_shijin_l1_gs.py SQLite直接出力改修→家老委任
 - gate修正: cmd_save.sh L2848 check_parity_ac_requirements にVERIFY除外追加(将軍直接修正)
 - 2026-04-21 cmd_karo_pipeline_verify: 疾風。`context/senkyoku-log.md` へ履歴1行を追記し、パイプライン検証cmdの記録を一次データへ反映
+- 2026-04-28 cmd_2341: 才蔵。ninja_monitor STALL変数クリア漏れ修正(task完了時にSTALL_FIRST_SEEN/STALL_COUNT未リセット→新task誤ESCALATE防止)。GATE CLEAR
+- 2026-04-28 cmd_2342: 影丸。cmd_save.sh Check 21.6 ACテストスコープ検証追加(全テストPASS等のスコープ未指定パターン検出→WARN)。GATE CLEAR
+- 2026-04-28 cmd_2340: 疾風。GS正規化Phase 3完了。gs_data_loader L1_PORTFOLIO_MAP(UUIDハードコード)廃止→build_portfolio_map_from_config()一元化。CSV経路削除。28テストPASS。GATE CLEAR
+- 2026-04-28 cmd_2343: 才蔵。GS正規化Phase 4偵察。outputs/analysis CSV選別(807件→削除候補9/保護674/不明124)。GATE CLEAR
+- 2026-04-28 cmd_2344: 疾風。GS正規化Phase 5完了。run_077全7本デフォルトをokugi_shin_ninpo_20.yaml(db)に統一。28テストPASS。GATE CLEAR
+- 2026-04-28 cmd_2345: 才蔵。GS正規化Phase 4完了。旧GS入力CSV 9件(371KB)削除。GATE CLEAR

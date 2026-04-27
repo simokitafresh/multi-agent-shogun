@@ -502,7 +502,7 @@ import metrics_research_engine as MRE
 
 **殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番。
 
-### Phase構造(v3.2 — 2026-04-28更新)
+### Phase構造(v3.4 — 2026-04-28 04:05更新)
 
 | Phase | 内容 | 状態 |
 |-------|------|------|
@@ -512,15 +512,29 @@ import metrics_research_engine as MRE
 | 1.9c | GS選出シン四神12体選出(SQLite直読、cmd_2335)+本番突合(cmd_2337) | **完了** |
 | 道具 | cmd_1125_v2_champion_select.py(四神L0用、SQLite入力。cmd_2333) | **完了** |
 | 2 | CSV→SQLite変換 → **不要**(1.9aで直接出力。cmd_2324-2328 cancelled) | 省略 |
-| 3 | gs_data_loader v2: CSV経路廃止+UUID一元化+db一本化(軍師設計案2026-04-28) | **次はここ** |
-| 4 | 旧データ削除: 汚染CSV/旧GS結果の清掃。飛ばさない(殿指摘2026-04-28) | 待ち(Phase 3依存) |
-| 5 | 消費者改修: run_077_*.py 7本のuniverse configをdb化 | 待ち(Phase 3依存。Phase 4と並列可) |
-| 6 | GS生成改修: L1忍法GS出力パイプライン統一(SQLite化等) | 待ち(Phase 5依存) |
-| 7 | neighbor: 隣接パラメータ確認 | 待ち(Phase 6依存) |
-| 後続A | L1忍法GS再実行(7忍法×DB直読。1忍法1CMD×7本。6忍者並列) | 待ち(Phase 5依存) |
+| 3A | gs_data_loader CSV経路廃止(cmd_2339, saizo) | **完了**(GATE CLEAR 2026-04-28) |
+| 3B | gs_data_loader UUID一元化(cmd_2340, hayate) | **完了**(GATE CLEAR 2026-04-28) |
+| 4 | 旧データ削除: 偵察(cmd_2343)+削除(cmd_2345, saizo)。9件371KB削除済み | **完了**(GATE CLEAR 2026-04-28) |
+| 5 | 消費者改修: run_077全7本のdefaultをokugi_shin_ninpo_20.yaml(db)に統一(cmd_2344) | **完了**(GATE CLEAR 2026-04-28) |
+| 6 | GS出力SQLite化: run_077全7本の出力をCSV→SQLite化。**後続Aの前に必須**(軍師確認) | **次はここ** |
+| 7 | neighbor: 隣接パラメータ確認 | 待ち(後続A後) |
+| 後続A | L1忍法GS再実行(run_077使用。7忍法×1CMD。**直列配備=OOM防止LG025**) | 待ち(**Phase 6必須**) |
 | 後続B | L1チャンピオン選出(7忍法×3モード=21体→吸収→20体) | 待ち(後続A依存) |
 | 後続C | L1本番突合(本番シン忍法20体 vs GS選出。L0のcmd_2337と同パターン) | 待ち(後続B依存) |
 | 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(後続C依存) |
+
+### 軍師確認事項(2026-04-28 04:04)
+
+- run_077全7本のGS出力は現在CSV形式。SQLite出力なし→Phase 6でSQLite化が**後続Aの前に必須**
+- shin_shijin_l1_gs.pyはL0四神用。L1忍法GSにはrun_077を使う
+- 後続Aは**直列配備**(RSS 3-4GB/プロセス。6並列不可。LG025)
+
+### Phase 3完了時の現物確認(2026-04-28 03:15)
+
+- GS結果CSV: grid_search/配下に0件。SQLite/npyも0件
+- universe config source_type分布: db=2件 / csv=16件
+- run_077_bunshin.pyデフォルト: alm_l0_12.yaml(csv)→Phase 3でValueError化済み
+- Codex config.toml修正: approval_mode=full-auto(無効値)→approval_policy=never + DM-signal trust追加
 
 ### Phase 1.9c結果(2026-04-28完了)
 
