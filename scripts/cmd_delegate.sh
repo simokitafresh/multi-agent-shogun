@@ -129,6 +129,42 @@ END {
 ' "$yaml_file" 2>/dev/null || true
 }
 
+inbox_has_cmd_new_for_cmd() {
+    local inbox_file="$1"
+    local cmd_id="$2"
+
+    awk -v cmd_id="$cmd_id" '
+function flush_block() {
+    if (block_has_cmd && block_is_cmd_new) {
+        found = 1
+    }
+}
+function reset_block() {
+    block_has_cmd = 0
+    block_is_cmd_new = 0
+}
+BEGIN {
+    reset_block()
+}
+/^-[[:space:]]/ || /^  -[[:space:]]/ {
+    flush_block()
+    reset_block()
+}
+{
+    if (index($0, cmd_id) > 0) {
+        block_has_cmd = 1
+    }
+    if ($0 ~ /^[[:space:]]*type:[[:space:]]*['\''"]?cmd_new['\''"]?([[:space:]]|$)/) {
+        block_is_cmd_new = 1
+    }
+}
+END {
+    flush_block()
+    exit(found ? 0 : 1)
+}
+' "$inbox_file"
+}
+
 # Step 1: cmd_id が存在し status=pending か検証
 status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
     echo "ERROR: cmd_id '$CMD_ID' not found in shogun_to_karo.yaml" >&2
@@ -176,8 +212,8 @@ if [ -n "$undeployed_cmds" ]; then
     done <<< "$undeployed_cmds"
 fi
 
-# Step 3.5: 家老inboxに既にcmd_idが存在するかチェック（別経路委任の検出）
-if [ -f "$KARO_INBOX" ] && grep -Fqm1 "$CMD_ID" "$KARO_INBOX" 2>/dev/null; then
+# Step 3.5: 家老inboxのcmd_newメッセージに既にcmd_idが存在するかチェック（別経路委任の検出）
+if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; then
     echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
     echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
     exit 1
