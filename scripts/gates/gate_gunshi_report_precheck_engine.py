@@ -31,6 +31,7 @@ def main():
         'TASK_FILE': '',
         'BC_HAS_NO': '0',
         'BC_NO_ITEMS': '',
+        'TEST_TRIAGE': '',
         'HAS_LESSON_CANDIDATE': '0',
     }
 
@@ -141,6 +142,7 @@ def main():
                     bc_no_items.append(f'{ac_key}/{check_name}')
     result['BC_HAS_NO'] = '1' if bc_no_items else '0'
     result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
+    result['TEST_TRIAGE'] = str(report.get('test_triage', '') or '').strip()
 
     # ── 2c. ac_version照合 → ac_version_mismatch BLOCK予防 ─────────────
     ac_ver_msg = '  SKIP: task YAML not loaded'
