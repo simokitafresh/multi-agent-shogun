@@ -7,7 +7,8 @@ lessons:
   detail: draft/report reviewで「既実装か」を判定する際、Read toolはuncommittedな変更も含めて表示する。cmd_1178-1181で3件誤判定が発生。対策はgit show HEAD:ファイルで確定済みのコードのみ確認すること。
   source_cmd: cmd_1178
   created_at: '2026-03-21'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: review_logヘッダL26「既実装判定→git show HEAD~1」+gunshi.md §1前提検証に明記
 - id: LG002
   title: 並行配備衝突チェック — 事前検死で同一ファイル変更衝突を確認
@@ -21,7 +22,8 @@ lessons:
   detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
   source_cmd: cmd_1176
   created_at: '2026-03-21'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: review_logヘッダL28「全称判定→反証を探せ」+gunshi.md §1前提検証で「未実装」主張の現物再検証が義務化
 - id: LG004
   title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
@@ -42,21 +44,24 @@ lessons:
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
   source_cmd: cmd_1242
   created_at: '2026-03-22'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi_review_log T1(GATEシミュレーション)で即時適用
 - id: LG007
   title: capture-pane=残像、ファイルタイムスタンプ=現在 — 状態確認の優先順位
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
   source_cmd: gunshi_S5_cycle2
   created_at: '2026-03-22'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: SG6(軍師レビューログに外部化済み)+review_logヘッダL14に状態確認順序1行追加(2026-04-09)
 - id: LG010
   title: 防御階層原則 — GP設計はLevel4(フロー内埋込BLOCK)を目指せ
   detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK) < Level5(事前コンテキスト提供)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
   source_cmd: GP-053-060
   created_at: '2026-03-24'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md GP提案テンプレートにdefense_level必須フィールド追加(2026-04-09)
 - id: LG011
   title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
@@ -70,7 +75,8 @@ lessons:
   detail: 'cmdがチェックリストの特定Stepを実行する場合、隣接Step(特に直後Step)の禁則がcmd AC/制約に転写されているか確認せよ。cmd_1397でStep6実行時にStep7禁則(再計算禁止=殿が実行)が転写されず影丸が再計算を実行。draft review時にチェックリスト参照先の前後Stepを確認し、禁則の欠落をREQUEST_CHANGESで指摘すること。'
   source_cmd: cmd_1397
   created_at: '2026-03-25'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi_review_logヘッダL13に原理1行として埋込済み。毎レビュー時に読む
 - id: LG013
   title: consultation/self_studyにプロトコル不在 — 148件が品質保証なしで通過
@@ -100,7 +106,8 @@ lessons:
     karo_workarounds.yamlで同一categoryが3件以上あれば道具を疑え。
   source_cmd: gunshi_deepdive_20260406
   created_at: '2026-04-06'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi_review_log ヘッダ2行目に原理として埋込済み。毎レビュー時に読む
 - id: LG015
   title: HEAD~1はauto-commitを指す — cmd固有diffには git log --grep=CMD_ID を使え
@@ -145,21 +152,24 @@ lessons:
   detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md idle Step 6 + gate_gunshi_startup.sh Check 9
 - id: LG019
   title: タイムボックス原則 — 見込み不明タスクにtimeout 60先行
   detail: 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md セルフレビュー3点+gate Check 9.5
 - id: LG020
   title: 数値は実測 — 設計書中の数値を入力データから再計算して検証
   detail: 設計書やcmd文面の数値を鵜呑みにせず入力データから再計算。セルフレビュー3点に埋込み済み
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md セルフレビュー3点
 - id: LG021
   title: cmd分割3基準 — 任意忍者実行可能/短完了/依存並列考慮
@@ -167,20 +177,23 @@ lessons:
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
   automated: true
-  enforcement: review_logヘッダに「AC>4→REQUEST_CHANGES」1行埋込み(2026-04-09)+gunshi.md Step 3時間効率チェック
+  enforcement_level: 4
+  enforcement: ac_physical_verify.sh AC数カウント(AC>4→WARN)。draft review Step 0.5で自動実行。2026-04-27 gate化
 - id: LG022
   title: baseline必須 — 改善主張の研究cmdに比較対象を含める
   detail: 改善を主張する研究cmdには必ず比較対象(baseline)を含める。改善幅の定量評価に必須
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
   automated: true
-  enforcement: review_logヘッダに「研究cmdにbaselineなし→REQUEST_CHANGES」1行埋込み(2026-04-09)
+  enforcement_level: 4
+  enforcement: cmd_save.sh LG022 gate(type=research系+baseline/比較対象無し→WARN+record_warn_reason)。2026-04-27 gate化
 - id: LG023
   title: 原理1行>各論パッチ — シンプルな原則をプロセスに膨らませるな
   detail: 既存の1行原理で解決できることに各論パッチ(30行hook等)を作るな。deepdive Phase4-5の家老版実践
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md §因果推論ルール L207に原理1行埋込み済み+review_logヘッダ(複利の問い)で毎レビュー時強制読込
 - id: LG024
   title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
@@ -192,7 +205,8 @@ lessons:
     根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと。
   source_cmd: cmd_gunshi_ruling_20260408
   created_at: '2026-04-08'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md F-G05例外条項として文書化済み(Level 2)。家老は軍師direct_fixをinbox受領後にレビュー
 - id: LG025
   title: WF並列実行禁止 — 直列1本ずつが正解。OOM事故実証済み
@@ -217,7 +231,8 @@ lessons:
     対象=hook/gate/CLAUDE.md/instructions/settings系に限定。
   source_cmd: gunshi_session_20260412
   created_at: '2026-04-12'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: Level 2(ドキュメント化+フロー組込)。設計書=docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md §S0セクション追加済み(2026-04-13)
 - id: LG027
   title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
@@ -228,7 +243,8 @@ lessons:
     BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
   source_cmd: gunshi_codd_session_20260416
   created_at: '2026-04-16'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: cmd_1940でgate_lesson_health.sh閾値をuseful率に変更(実装中)
 - id: LG028
   title: スケーラビリティ推定で内部ループ回数を計上せよ — per_combo固定は過小評価
@@ -241,7 +257,8 @@ lessons:
     一般原理: 計算時間推定はO(外側ループ)×O(内側ループ)×単位時間。外側のみで推定するな。
   source_cmd: cmd_1949_scalability
   created_at: '2026-04-16'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: review_logヘッダ+掲示板(blt_20260416_140131)に記録。次回のスケーラビリティ検証時に内部ループ回数を明記
 - id: LG029
   title: 手段の免除≠目的の免除 — waive時に代替検証を埋め込め
@@ -264,7 +281,8 @@ lessons:
     自分の環境に埋め込む(自立)と他者の環境に埋め込む(利他)は別ステップ。
   source_cmd: gunshi_session_20260416
   created_at: '2026-04-16'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: instructions/gunshi.md サイクルの鉄則に「行動完了≠還流完了」1行埋込み済み。毎サイクル自動読込
 - id: LG031
   title: hook/gate大規模削減をレビューで見落とすな — files_modifiedにhook/gate含む場合はgit diff --statで変更規模確認
@@ -283,7 +301,8 @@ lessons:
     GP設計時の自問: 「既存の強制された行動に乗せられないか？」。deepdive Phase 6(原理1行を環境に埋め込む)の軍師版実践。
   source_cmd: GP-208
   created_at: '2026-04-17'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: gunshi.md idle Step 6のGP設計時に自問追加
 - id: LG033
   title: 既存の仕組みを確認せず「仕組みがない」と結論するな — grep/Readで現物確認必須
@@ -292,5 +311,6 @@ lessons:
     想像するな確認せよ原則の再適用。GP提案前にgrep/Readで既存実装を現物確認。
   source_cmd: GP-208
   created_at: '2026-04-17'
-  automated: true
+  automated: false
+  enforcement_level: 2
   enforcement: GP提案前に既存実装grep確認をgunshi.md SGプロトコルに追加
