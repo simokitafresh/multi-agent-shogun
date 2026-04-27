@@ -38,6 +38,7 @@
 # AC絶対条件(「全期間」「100%」「全ファイル」)→構造的例外の有無を確認。例外あれば除外条件をAC文面に明示(5件verdict_override共通根因, 2026-04-12分析)
 # 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
 # ★前提崩壊=RC最大原因(79%, 11/14件)。cmdが参照する全数値・パス・状態を現物確認。特にCSV→wc -l、メモリ→実測RSS、CI→run確認(cmd_1896/1825/1806)
+# ★dm-signal CSV出力禁止(殿裁定2026-04-28): CSVは汚染の温床。SQLiteのみ出力。「CSV互換」「CSV残す」提案は殿裁定と突合せよ
 # 軍師自己コード変更(hooks/gates/CLAUDE.md/instructions/settings)→S0プロトコル必須。docs/research/gunshi_sg_s0_self_code_change_20260412.md(LG026)
 # ★blast_radius判定: draft対象がhook/gate/CLAUDE.md/instructions/settings含む→adversarial_review.required:trueを設定(GP-236。changed_lines<200でもblast radius大=adversarial必須)
 # 2系統計算パス(batch+sequential/verify)がある場合→両方の更新がACに含まれているか確認(cmd_2193/2197: kawarimi verify FAIL=sequential未同期)
@@ -1638,6 +1639,23 @@
   finding_categories: [assumptions, simulation, premortem]
   causal_chain: "CSV経路廃止→デフォルトcsv版のまま→ValueError。db版に統一で全L1 GS正常動作=正の複利"
   timestamp: "2026-04-28T03:38:00"
+- cmd_id: cmd_2345
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2345_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。旧GS入力CSV 9件削除完了。ls Not Found×9+find残存0件"
+  observations:
+    - "削除対象9件はcmd_2343偵察結果と完全一致。rm使用(rm -rf未使用)"
+    - "outputs/analysis=gitignore対象。commit対象外=正常(PRE-3 WARN)"
+    - "config側旧csv参照はcmd_2344で対処済み(run_077デフォルト変更)"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "旧CSV残存→汚染リスク。9件削除でoutputs/analysis clean=正の複利(Phase 4完了)"
+  timestamp: "2026-04-28T04:22:00"
 - cmd_id: cmd_2343
   review_type: report
   report_ninja: saizo
