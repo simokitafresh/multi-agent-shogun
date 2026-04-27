@@ -328,6 +328,53 @@ YAML
     [ "$status" -ne 0 ]
 }
 
+@test "cmd_delegate: lesson_candidate内のcmd_idは重複委任扱いしない" {
+    create_shogun_yaml_with_pending
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: report_msg
+    content: "lesson_candidate: cmd_100に関連する改善案"
+    type: report_received
+    from: hayate
+    read: false
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" != *"Refusing to send duplicate"* ]]
+
+    run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+    run cat "${TEST_TMP}/inbox_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_new"* ]]
+}
+
+@test "cmd_delegate: cmd_new内の同一cmd_idは重複委任としてBLOCKする" {
+    create_shogun_yaml_with_pending
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: cmd_msg
+    content: "cmd_100を書いた。配備せよ。"
+    type: cmd_new
+    from: shogun
+    read: false
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Refusing to send duplicate"* ]]
+
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -ne 0 ]
+    run grep "status: pending" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # gate_cmd_state.sh テスト
 # ============================================================
