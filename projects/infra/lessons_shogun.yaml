@@ -64,10 +64,16 @@ lessons:
     (10)assumptions claimは末尾に「(確認日: YYYY-MM-DD)」独立パターン
     (11)claim内にファイル名を書くな。「何を確認したか」だけ書け
     (12)commandはターゲットファイル単位でグループ化(番号付きステップ列挙→command_steps_over_ac発火)
+    (13)diagnosisにgate関数名を引用するな(関数名内キーワードがregexマッチ→偽陽性BLOCK。L番号のみで参照。cmd_2337で4回BLOCK実証)
+    (14)1道具1CMD(殿裁定cmd_2316)。複数道具バンドル→other_draft_exists BLOCK
+    (15)cmdブロック全文(AC+command+q11+diagnosis)がgrep対象。トリガーワード(新規作成/新規構造等)をq11/diagnosisに含めるとnew_file_structure検出マッチ
+    (16)ACセクションgrepはAC配下のみ。command欄のツールパスはACチェック対象外→ACに明記必須
+    (17)q8縮小表現(一部/全体の一部)→q8_scope_expression WARN。全量保証と矛盾する印象
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS026, LS030, LS032, LS033, LS034, LS035, LS036]
+  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337]
   created_at: '2026-04-25'
   automated: true
-  enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac'
+  enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac+q8_scope_expression+other_draft_exists'
 
 - id: LS-A05
   title: 遡及学習対応 — BLOCKされたら修正より先にlesson_write
@@ -77,6 +83,7 @@ lessons:
     緊急対応モードでもgate形式フィールドを省略するな(cmd_2259事故)。
     これは成長ループの正しい動作。教訓記録先送りが問題。
   source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092, LS029]
+  source_cmds_v3: [cmd_2329]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCK表示+WARN累計昇格でBLOCK化。自動強制)'
@@ -113,8 +120,9 @@ lessons:
     殿の指示は文字通り全て従う。省略・効率化・まとめ処理は指示違反。
   source_ids: [LS053, LS054, LS055]
   created_at: '2026-04-24'
-  automated: true
-  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。追体験で構造的に自問強制'
+  automated: false
+  enforcement_level: 2
+  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。追体験で自問(意志依存。gate/hookなし)'
 
 # === クラスタ5: 想像するな確認せよ ===
 - id: LS-A09
@@ -140,8 +148,9 @@ lessons:
     計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。
   source_ids: [LS039, LS041]
   created_at: '2026-04-24'
-  automated: true
-  enforcement: '設計書§4.1に計測環境注意追記済み。偵察cmdは計測環境をACに明記'
+  automated: false
+  enforcement_level: 2
+  enforcement: '設計書§4.1に計測環境注意追記済み(ドキュメント記載のみ。gate/hookなし)'
 
 # === クラスタ6: 独立パターン ===
 - id: LS-A11
@@ -183,8 +192,9 @@ lessons:
   detail: 殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
   source_ids: [LS034]
   created_at: '2026-04-24'
-  automated: true
-  enforcement: 'なぜなぜ7回で特定。将軍の自問に依存。次の自動化ターゲット候補'
+  automated: false
+  enforcement_level: 2
+  enforcement: '将軍の自問に依存(意志依存。gate/hookなし)。次の自動化ターゲット: cmd起票時にdepends_on未記入→WARN'
 
 - id: LS-A15
   title: 研究道具制約 — 研究≠本番、GS OOM防止は1忍法1CMD
@@ -263,107 +273,54 @@ lessons:
   enforcement: 'gate_shogun_startup.sh「自走チェック」+instructions/shogun.md §14 idle自己分析'
 
 - id: LS-A22
-  title: gate FPパターン — q11 SCOUT偽陽性+設計書数値緩和FP
+  title: gate FPパターン — SCOUT偽陽性+研究道具FP+parity FP+教訓上限デッドロック
   detail: |
-    (1)is_gate_or_hook_addition_cmd()がcommand本文全体をgrepし、quality_gate説明文中の
-    gateキーワードで偵察cmdをgate追加cmdと誤判定。scope_mode=SCOUT除外が未実装。
-    暫定: q11にgrep確認結果を詳細記載して通過。
-    実装済み(cmd_2279): is_gate_or_hook_addition_cmd() L120でSCOUT/scout_exempt除外実装済み確認。
-    (2)check_gunshi_reference_numeric_relaxationがカタログ由来の閾値を数値緩和と誤検出。
-    暫定: ACから具体数値を除去しカタログ参照に変える。
-    実装済み(cmd_2279): check_gunshi_design_num_relax() q5にカタログ|catalog|takeaway-catalog含む場合スキップ追加。
+    (1)is_gate_or_hook_addition_cmd(): SCOUT除外実装済み(cmd_2279 L120)
+    (2)check_gunshi_reference_numeric_relaxation: カタログ閾値除外実装済み(cmd_2279)
+    (3)check_research_tool_explicit FP: commandのgrid_search/walk_forwardパスでGSツール検出マッチ。偵察/道具作成cmdは実行しない。暫定: ACにrun_077手動追加。修正(cmd_2332): L2684にshin_shijin_l1_gs追加
+    (4)check_parity_ac_requirements FP: parity語でトリガー。修正済み(cmd_2332): title+purposeのみに限定
+    (5)q8 multiline(|)で_Q8_WW_VAL抽出失敗。単行化必須
+    (6)教訓上限デッドロック: Edit全BLOCK。修正済み: Guard 6にid数比較追加(削除方向許可)
   source_ids: [LS027, LS031]
+  source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332]
   created_at: '2026-04-25'
   automated: true
-  enforcement: 'cmd_save.sh is_gate_or_hook_addition_cmd(既存)。SCOUT除外実装済み(L120)。カタログ閾値除外実装済み(cmd_2279 check_gunshi_design_num_relax)'
+  enforcement: 'cmd_save.sh check_research_tool_explicit(L2684修正)+check_parity_ac_requirements(L2845修正)+is_gate_or_hook_addition_cmd(SCOUT除外L120)+check_gunshi_design_num_relax(カタログ除外)+pre-write-edit-combined.sh Guard 6(id数比較)'
+# === LS023-LS035統合完了 (2026-04-28) ===
+# 13件→LS-A04(14-17追記)+LS-A05(cmd_2329)+LS-A22(3-6追記)に吸収完了
+# source_cmds: cmd_2314-cmd_2337
 - id: 'LS023'
-  title: 'BLOCK後自走強制 — 修正→再実行を殿待ちせず自走'
-  detail: 'cmd_2283起票でcmd_save.sh BLOCK(q5_verified_source/q8_why_what未記入)。BLOCKメッセージに「止まるな」と表示されていたが将軍は殿に報告して止まった。出力メッセージは意志依存=壊れる。自動化×強制が必要。対策: PostToolUse hookでBLOCK検知→自走強制メッセージ注入'
-  source_cmd: 'cmd_2283'
-  created_at: '2026-04-26'
+  title: 'テストACスコープ限定 — 変更対象の関連テストに限定せよ'
+  detail: 'cmd_2339 AC4で全テスト0 failures要求→pre-existing failure(numba/lookback/fof, cmd変更外)で達成不可能→忍者verdict:FAILは正当→家老waive。教訓: impl cmdのテストACは変更対象の関連テストPASSにスコープ限定。全体pytest PASSを要求するならpre-existing failureの許容条件を明示(例: numba関連除外等)'
+  source_cmd: 'cmd_2339'
+  created_at: '2026-04-28'
   automated: true
-  enforcement: 'PostToolUse hook(cmd_save.sh exit 1検知→自走強制メッセージ注入)で環境埋め込み'
+  enforcement: 'cmd起票時の自問(将軍意志依存)。gate化候補: cmd_save.shでACにpytest含む場合にスコープ確認WARN'
 - id: 'LS024'
-  title: 'environment_change形式 — 1行形式必須(YAML list不可)'
-  detail: 'cmd_2284起票でenvironment_changeをYAML list形式(type:/file:/pattern:の3行)で記載→cmd_save.sh L1117のawkが同一行の値を期待→未記入BLOCK。原因: cmd_save.shのパース方式を確認せずに書いた。修正: 1行形式 type=xxx; file=xxx; pattern=xxx に変更→PASS'
-  source_cmd: 'cmd_2284'
-  created_at: '2026-04-26'
+  title: 'ACに推奨混在パターン — 実装詳細(文言内容)をACに書くな'
+  detail: 'cmd_2342 AC2にWARN時の推奨文言表示を記載→推奨混在BLOCK。根因: ACに実装の詳細(表示文言の中身)まで書いた。ACはMUST(二値判定)のみ。LS-A04(4)と同構造'
+  source_cmd: 'cmd_2342'
+  created_at: '2026-04-28'
   automated: true
-  enforcement: 'cmd_save.sh L1117 awk(environment_change:同一行値抽出)で自動検証済み'
+  enforcement: 'cmd_save.sh ACに推奨事項が混在検出(既存gate)で自動BLOCK'
 - id: 'LS025'
-  title: '同時draft禁止+diagnosis形式 — 1本ずつ+2部構成'
-  detail: 'cmd_2284起票時にcmd_2283もdraft状態→other_draft_exists BLOCK。diagnosis形式も「BLOCK理由: ... 対策: ...」の2部構成が必要だが自由テキストで書いた。修正: cmd_2283一時退避→1本ずつ通す+diagnosis 2部構成に修正→PASS'
-  source_cmd: cmd_2284,cmd_2308,cmd_2309,cmd_2312
-  created_at: '2026-04-26'
+  title: '偵察cmdのcommandにrun_077を含めるとcheck_research_tool_explicitマッチ'
+  detail: 'cmd_2343偵察cmdのcommand欄にrun_077からの参照有無をgrepで確認と記載→研究道具チェック累計昇格BLOCK。偵察は実行しないが調査対象名でマッチ。LS-A22(3)同一パターン。対処: command欄からrun_077除去+AC3に参照元フルパスを記載'
+  source_cmd: 'cmd_2343'
+  created_at: '2026-04-28'
   automated: true
-  enforcement: 'cmd_save.sh other_draft_exists(同時draft BLOCK)+diagnosis形式チェックで自動検証済み'
+  enforcement: 'cmd_save.sh check_research_tool_explicit L2658で自動検出済み'
 - id: 'LS026'
-  title: 'q11既存代替キーワード必須 — q11_has_existing_alternative_verification L159'
-  detail: 'gate/hook追加cmdのq11にgrep確認結果を書いてもq11_has_existing_alternative_verification()L159が既存/代替/現行/既設キーワードを要求→不在でWARN→13回累計昇格→BLOCK。修正: q11テキストに既存代替なしを含めてL159通過'
-  source_cmd: 'cmd_2285'
-  created_at: '2026-04-26'
+  title: 'q5 code_readingのみBLOCK — grepで確認してもstructure_verifiedと明記せよ'
+  detail: 'cmd_2344でq5_verified_sourceをcode_readingと記載→BLOCK。実際にはgrep -nで全18ファイルのsource_type分布を確認済みだが、ラベルをcode_readingにした。対処: structure_verifiedに昇格。根因: 確認レベルの語彙選択ミス'
+  source_cmd: 'cmd_2344'
+  created_at: '2026-04-28'
   automated: true
-  enforcement: 'cmd_save.sh q11_has_existing_alternative_verification L159(既存|代替|現行|既設 grep)で自動検証済み'
+  enforcement: 'cmd_save.sh q5 code_readingのみBLOCK(既存gate)で自動検出済み'
 - id: 'LS027'
-  title: 'bugfix cmdにはq9_firefighting_root_cause必須'
-  detail: 'cmd_2287起票でtype=bugfixなのにq9_firefighting_root_cause未記入→BLOCK。cmd_save.shが消火cmd(type=bugfix)を検出しq9_firefighting_root_causeを要求する。修正: root_cause+prevention形式で追記→PASS'
-  source_cmd: 'cmd_2287'
-  created_at: '2026-04-26'
+  title: 'ACにgit commitを含めるとac_phase_mixing BLOCK'
+  detail: 'cmd_2345 AC2に削除+git commitを同居→ac_phase_mixing累計昇格BLOCK。根因: commitはcmd_complete_gateが自動処理するのにACに書いた。対策: ACは実装フェーズのみ。commit/deploy/pushは別フェーズ'
+  source_cmd: 'cmd_2345'
+  created_at: '2026-04-28'
   automated: true
-  enforcement: 'cmd_save.sh消火cmd検出+q9_firefighting_root_cause必須チェックで自動検証済み'
-- id: 'LS028'
-  title: 'command欄はステップ列挙するな — 1ブロック記述でcommand_steps_over_ac回避'
-  detail: 'cmd_2289起票でcommand欄に(1)(2)のステップ列挙→command_steps_over_ac WARN(11回累計)→BLOCK。cmd_save.sh L3041がcommand内のステップ数とAC数を比較。修正: ステップ列挙を排除し1ブロック記述に圧縮→PASS'
-  source_cmd: 'cmd_2289'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.sh check_command_steps_vs_ac L3041で自動検証済み'
-- id: 'LS029'
-  title: 'データソースのフィールド存在確認必須 — ファイル存在≠フィールド存在'
-  detail: 'cmd_2289起票でcmd_design_quality.yamlにenvironment_changeフィールドが記録されている前提でACを書いた→軍師が0/1940件と指摘→前提崩壊。事前ワクチンの対象現物確認はファイル存在だけでなくフィールド/データ件数まで確認すべき。修正: notesパターン時系列で代替'
-  source_cmd: 'cmd_2289'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: '事前ワクチン3問(pre-edit-cmd-preflight.sh)のQ1を対象現物+データ件数確認に拡張すべき'
-- id: 'LS030'
-  title: '自分の提案が壊した→修正された→確認せず再破壊の3連鎖'
-  detail: 'config.toml full提案→殿承認→Codex忍者2名セッション破損→殿が軍師にtrusted修正指示→将軍が確認せずfullに2回再変更→殿に指摘されて初めて気づく。根因: (1)自分の提案が壊した因果を認識しなかった (2)変更を見た時に理由を確認せず想像で行動 (3)lord_conversation/軍師inbox/掲示板の1つも確認しなかった。deepdive Phase 6(他責)と同構造'
-  source_cmd: 'cmd_2289'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'deepdive追体験Q5+事前ワクチンQ1(対象現物確認)で構造的自問。ただし今回の場面(config.toml Edit)は事前ワクチン射程外→射程拡大が次の自動化ターゲット'
-- id: 'LS031'
-  title: 'q8縮小表現6回累計 — のみ/だけを無意識に使う'
-  detail: 'cmd_2295起票でq8に「根幹定義のみ残す」と記載→q8_縮小表現WARN(6回累計)→BLOCK。「のみ」は全量やることと矛盾する印象を与える。修正: 索引に残す内容を列挙し「のみ」を排除。根因: 圧縮cmdでは自然に「Xだけ残す」と書きたくなるが、gateは全量保証を要求する'
-  source_cmd: 'cmd_2295'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.sh q8_scope_expression(縮小表現検出)で自動BLOCK済み'
-- id: 'LS032'
-  title: 'command欄ステップ列挙12回累計 — LS-A04(12)の再発'
-  detail: 'cmd_2297起票でcommand欄に(1)(2)(3)ステップ列挙→command_steps_over_ac WARN(12回累計)→BLOCK。LS028(LS-A04(12))と同一パターン。根因: 偵察cmdでやることを列挙する癖。修正: 1ブロック記述に統合'
-  source_cmd: 'cmd_2297'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.sh check_command_steps_vs_ac L3041で自動BLOCK済み'
-- id: 'LS033'
-  title: 'self_reread_red_flag 4回BLOCK — トリガーワード残存箇所の特定不足'
-  detail: 'cmd_2299起票でcheck_self_reread_red_flag L471-472が4回連続発火。根因: (1)AC1 descriptionに「自己申告」残存→修正 (2)command欄に「自己申告」残存→修正 (3)diagnosisに「自己申告」残存→修正。3箇所に分散していたトリガーワードを1箇所ずつ修正するアプローチが非効率。grep -niEで全箇所を事前特定すべきだった(3回目で初めてgrepした)'
-  source_cmd: 'cmd_2299'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.sh check_self_reread_red_flag L463-477で自動WARN+累計昇格BLOCK済み'
-- id: 'LS034'
-  title: '1cmd1作業原則 — 実装+commit+計測を混在させるな'
-  detail: 'cmd_2300でAC1=実装+AC2=CDP計測を1cmdに混在。殿指摘: 近道のようで遠回り。実装→レビュー→commit/push→計測は各ステップで判断ポイントが必要。途中で問題があっても止められない構造は最悪。真因: 将軍がcmd起票の効率を追求し因果連鎖の判断ポイントを潰した。gateコスト3倍を避けた結果、品質を犠牲にした。'
-  source_cmd: 'cmd_2300'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.shにAC混在検出(実装AC+計測ACの共存WARN)を追加予定'
-- id: 'LS035'
-  title: 'environment_change参照パターン — 自cmd成果物禁止+同一行grep'
-  detail: 'cmd_2302で4回BLOCK。(1)q5検証レベル未明記(structure_verified書き忘れ) (2)environment_changeに自cmd成果物(check_ac_phase_mixing)を参照→未存在BLOCK (3)教訓LS034参照時にid行とtitle行が別行→LS034.*1cmd1作業が同一行grepで不一致。修正: (1)structure_verified+証拠明記 (2)動機の既存教訓を参照 (3)titleテキストのみでpattern指定'
-  source_cmd: 'cmd_2302'
-  created_at: '2026-04-26'
-  automated: true
-  enforcement: 'cmd_save.sh environment_change grep検証(既存)で自動BLOCK済み'
+  enforcement: 'cmd_save.sh check_ac_phase_mixing L3033で自動検出済み'

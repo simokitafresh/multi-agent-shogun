@@ -4120,7 +4120,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-26
 - **出典**: cmd_karo_ci_fix_357
 - **記録者**: kotaro
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,testing,lesson]
 - **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
 - bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→flockロック競合WARN→WARN_COUNT>0→保存確認NG。test_cmd_save_prev_cmd_lesson_warn.batsは既に対策済みだったが他テストが未対応。cmd_save.shを呼ぶテストは全てCMD_SAVE_LOCK_FILE=/shogun_to_karo.lockを設定すべき。

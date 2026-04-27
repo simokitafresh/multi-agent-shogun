@@ -33,10 +33,12 @@ file_path="${_parsed#*	}"
 
 # === Guard 0: shogun_to_karo.yaml起票前確認3問 ===
 if [[ "$tool_name" == "Edit" && "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
-    emit_context "起票前確認3問:
+    emit_context "起票前確認5問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
-3. cmd_save.sh関連チェック名を確認したか？"
+3. cmd_save.sh関連チェック名を確認したか？
+4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？(LS023/LS027: 研究道具チェック累計昇格)
+5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？(LS026/LS028: タイトル/diagnosis偽陽性)"
     exit 0
 fi
 
@@ -94,29 +96,50 @@ if [[ "$tool_name" == "Edit" && "$file_path" == *'/lessons.yaml' ]]; then
 fi
 
 # === Guard 6: lessons_shogun.yaml肥大化防止 (v2統合後: 上限35件) ===
+# 件数が増えないEdit(既存エントリ修正・統合による削減)は許可する
 if [[ "$file_path" == *'lessons_shogun.yaml' ]]; then
     _ls_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_ls_count" -ge 35 ]; then
-        emit_deny "BLOCKED: lessons_shogun.yaml ${_ls_count}件(上限35件)。\\nWHY: 肥大化防止(v1: 97件→v2統合で21件に圧縮)。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。\\n参考: docs/research/lessons_shogun_v1_archive.md"
-        exit 1
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
+        _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        if [ "$_new_ids" -gt "$_old_ids" ]; then
+            emit_deny "BLOCKED: lessons_shogun.yaml ${_ls_count}件(上限35件)。\\nWHY: 肥大化防止(v1: 97件→v2統合で21件に圧縮)。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。\\n参考: docs/research/lessons_shogun_v1_archive.md"
+            exit 1
+        fi
     fi
 fi
 
 # === Guard 7: lessons_karo.yaml肥大化防止 (v2統合後: 上限35件) ===
+# 件数が増えないEdit(既存エントリ修正・統合による削減)は許可する
 if [[ "$file_path" == *'lessons_karo.yaml' ]]; then
     _lk_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_lk_count" -ge 35 ]; then
-        emit_deny "BLOCKED: lessons_karo.yaml ${_lk_count}件(上限35件)。\\nWHY: 肥大化防止(v1: 92件→v2統合で22件に圧縮)。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。\\n参考: docs/research/lessons_karo_v1_archive.md"
-        exit 1
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
+        _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        if [ "$_new_ids" -gt "$_old_ids" ]; then
+            emit_deny "BLOCKED: lessons_karo.yaml ${_lk_count}件(上限35件)。\\nWHY: 肥大化防止(v1: 92件→v2統合で22件に圧縮)。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。\\n参考: docs/research/lessons_karo_v1_archive.md"
+            exit 1
+        fi
     fi
 fi
 
 # === Guard 8: lessons_gunshi.yaml肥大化防止 (上限35件) ===
+# 件数が増えないEdit(既存エントリ修正・統合による削減)は許可する
 if [[ "$file_path" == *'lessons_gunshi.yaml' ]]; then
     _lg_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_lg_count" -ge 35 ]; then
-        emit_deny "BLOCKED: lessons_gunshi.yaml ${_lg_count}件(上限35件)。\\nWHY: 肥大化防止。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。"
-        exit 1
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
+        _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
+        if [ "$_new_ids" -gt "$_old_ids" ]; then
+            emit_deny "BLOCKED: lessons_gunshi.yaml ${_lg_count}件(上限35件)。\\nWHY: 肥大化防止。\\nFIX: 既存教訓を統合・パターン昇格してから追加せよ。"
+            exit 1
+        fi
     fi
 fi
 
