@@ -136,6 +136,9 @@ parse_deploy_task_args() {
         TYPE="${3:-task_assigned}"
         FROM="${4:-karo}"
     fi
+
+    # Codex忍者はDM-Signal CWDで起動→CLAUDE.mdの相対パスが解決不能(2026-04-28殿指示)
+    MESSAGE="${MESSAGE} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${NINJA_NAME}.yaml を読んで作業開始せよ"
 }
 
 deploy_task_validate_cli_target() {
@@ -1390,7 +1393,7 @@ EOF
             _lu_block="${_lu_block}
   - id: ${_lid}
     useful: false
-    reason: '未参照'  # 有用なら具体的理由に書換えよ。例: \"set -e罠と一致し有用\" / \"対象外で未使用\""
+    reason: '未参照'  # 有用なら具体的理由に書換えよ。例: \"${_lid}のreturn 1罠と一致し、set -e呼出元確認の指針として有用\" / \"今回の変更では未使用。対象箇所と無関係\""
             _lu_count=$((_lu_count + 1))
         done <<< "$_lu_ids"
 
