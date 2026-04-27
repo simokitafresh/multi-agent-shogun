@@ -763,4 +763,6 @@
 - 2026-04-28 cmd_2344: 疾風。GS正規化Phase 5完了。run_077全7本デフォルトをokugi_shin_ninpo_20.yaml(db)に統一。28テストPASS。GATE CLEAR
 - 2026-04-28 cmd_2345: 才蔵。GS正規化Phase 4完了。旧GS入力CSV 9件(371KB)削除。GATE CLEAR
 - 2026-04-28 cmd_2348: 才蔵。shin_shijin_l1_gs.py CSV出力2行削除(殿裁定CSV廃止準拠)。DataFrame直接渡しに変更。GATE CLEAR
-- 2026-04-28 cmd_2346: 疾風revert+再配備。task YAML未読で不正実装→git stash退避→/clear→再配備
+- 2026-04-28 cmd_2346: 疾風revert+再配備。task YAML未読で不正実装→git stash退避→/clear→再配備→成果物活用(gs_sqlite_output.py)
+- 2026-04-28 cmd_2349: 才蔵。CSV入力フォールバック廃止(gs_sqlite_output.py+gs_db_utils.py pd.read_csv→ValueError)。GATE CLEAR。CSV全経路封鎖完了
+- 2026-04-28 cmd_2347: 才蔵配備中。run_077全7本のCSV出力をSQLite共通モジュールに切替(Phase 6B)
