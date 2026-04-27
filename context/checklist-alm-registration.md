@@ -1,5 +1,9 @@
-<!-- last_updated: 2026-04-08 -->
+<!-- last_updated: 2026-04-28 -->
 # ALM忍法 本番登録チェックリスト
+
+> **⚠ 2026-04-25浄化+2026-04-28殿裁定: ALM関連PFは本番DBから全削除済み(39体/138,007レコード)。**
+> **ALM四神は構造から再定義が必要。本チェックリストは先送り中。再開時はStep 0(設計)からやり直し。**
+> → 浄化詳細: `context/dm-signal-ops.md §31`
 
 > シン四神v2チェックリスト(`checklist-shin-v2-registration.md`)を踏襲。
 > L2材料プール = シン忍法20体 + ALM忍法。多様性最大化が設計原理。
@@ -118,13 +122,16 @@ ALM四神の3目的関数を、L2材料プール全体の多様性を最大化�
 |---|---------|------|---------|
 | 2a | ALM四神12体のpipeline_config JSON作成（PI-013 Pydanticバリデーション） | cmd_1769 commit 15647b1a ✅ | 2026-04-07 |
 | 2a✓ | **miniパリティ**: JSON内の全12体がPydantic PASS確認 | cmd_1769報告: smoke 27件PASS ✅ | 2026-04-07 |
-| 2b | 本番DB登録（L0 Standard PF × 12体） + **global_visibility_settingsでhide_portfolio=true** | cmd_1770 commit e9f59f8b ✅ / cmd_1773 hide ✅ | 2026-04-07 |
-| 2b✓ | **miniパリティ**: DB直読で12体存在+非表示確認+API応答にALM PF不在確認 | DB確認: 12体存在+hide=true ✅ | 2026-04-07 |
-| 2c | fullrecalculate実行（殿が実行。2パス方式） | ✅ 殿実行完了。recalculation_status id=43, 2026-04-07 10:37-10:44 JST (cmd_1787才蔵報告) | 2026-04-07 |
-| 2c✓ | **miniパリティ**: momentum_dataにALMメタデータ(selected_lookback等)が存在するか確認。存在しない=Phase 4.6未動作=FAIL | ✅ momentum_dataにALMメタデータ存在確認済み (cmd_1774半蔵報告: relative/absolute/risk_free/safe_haven) | 2026-04-07 |
-| 2d | ALM L0パリティ: 研究スクリプト vs 本番DB（hs+ret完全一致 × 12体） | ✅ 12体全PASS (hs一致+ret差1e-11+momentum_data完備) (cmd_1774) | 2026-04-07 |
-| 2d✓ | **miniパリティ**: 全12体PASSかつfallbackではなくALM動的選出であることを確認 | ✅ 12体PASS+fallbackではなくALM動的選出確認済み (cmd_1774) | 2026-04-07 |
-| 2e | **visibility解除**: パリティPASS後にglobal_visibility_settingsからhide_portfolio=trueを削除 | N/A — 殿裁定(2026-04-07): ALM四神はhide維持。解除しない | 2026-04-07 |
+| 2b | 本番DB登録（L0 Standard PF × 12体） + **global_visibility_settingsでhide_portfolio=true** | ~~cmd_1770 ✅~~ **⚠浄化で削除(2026-04-25)。再登録必要。objective全12体"cagr"→モード別MRU/calmar/UWPに修正して再登録** | ~~2026-04-07~~ |
+| 2b✓ | **miniパリティ**: DB直読で12体存在+非表示確認+API応答にALM PF不在確認 | ~~✅~~ **無効(浄化で12体削除済み)** | ~~2026-04-07~~ |
+| 2c | fullrecalculate実行（殿が実行。2パス方式） | ~~✅~~ **無効(浄化で12体削除済み)** | ~~2026-04-07~~ |
+| 2c✓ | **miniパリティ**: momentum_dataにALMメタデータ存在確認 | ~~✅~~ **無効** | ~~2026-04-07~~ |
+| 2d | ALM L0パリティ: 研究スクリプト vs 本番DB（hs+ret完全一致 × 12体） | ~~✅~~ **無効** | ~~2026-04-07~~ |
+| 2d✓ | **miniパリティ**: 全12体PASSかつALM動的選出確認 | ~~✅~~ **無効** | ~~2026-04-07~~ |
+| 2e | **visibility解除** | N/A — 殿裁定(2026-04-07): ALM四神はhide維持 | 2026-04-07 |
+
+> **⚠ 2026-04-25浄化により Step 2b-2d は無効化。** ALM四神12体はDBから削除済み(dm-signal-ops.md §31参照)。
+> objective誤設定(全12体"cagr"→正しくはモード別MRU/calmar/UWP)を修正して再登録が必要。Step 2bからやり直し。
 
 > **🛑 必ずここで止まれ**: L0パリティ結果を殿に報告。全12体PASS確認後にStep 3へ
 > **🔴 DB登録時は必ずhide_portfolio=trueで登録。パリティPASS後に解除。中間状態をユーザーに見せるな。**
