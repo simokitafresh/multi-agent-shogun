@@ -639,7 +639,7 @@ assert 'cmd_test_001' in msg['content']
 assert 'testninja' in msg['content']
 EOF
 
-    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_notify_testninja.done" ]
+    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
 @test "task_assigned: codex ninja delivery verification retries up to 2 times" {

@@ -58,7 +58,7 @@ EOF
     grep -q "sasuke" "$TEST_TMPDIR/logs/inbox_write_calls.log"
 
     # フラグファイル作成確認
-    [ -f "$TEST_TMPDIR/queue/gates/cmd_999/gunshi_notify_sasuke.done" ]
+    [ -f "$TEST_TMPDIR/queue/gates/cmd_999/gunshi_report_review_notify_sasuke.done" ]
 
     # 出力確認
     [[ "$output" == *"gunshi_notify: SENT"* ]]
