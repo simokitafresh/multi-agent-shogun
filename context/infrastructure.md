@@ -338,6 +338,7 @@ capture-paneバナー解析: モデル名+バージョン番号の精密パタ�
 ## WSL2固有
 
 inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死注意。→ §8
+- **ディレクトリsymlink不可**: os.symlink成功→is_dir=False→listdir/read全ENOENT。テキストポインタ(latest.txt)またはファイルsymlinkを使え（L663, cmd_2332）
 - L008: WSL2新sh→CRLF混入（cmd_143）
 - L014: grep exclude WSL2不安定（cmd_151）
 - L037: WSL2 Write tool .sh→CRLF確定(L008拡張)（cmd_311）
