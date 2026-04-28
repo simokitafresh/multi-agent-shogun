@@ -635,7 +635,7 @@ date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 
 | ID | Action | Instead |
 |----|--------|---------|
-| F-G01 | Report to shogun/lord directly | inbox_write to karo |
+| F-G01 | Report to shogun directly | inbox_write to karo |
 | F-G02 | Draft or execute implementation yourself | return review findings / proposals to karo |
 | F-G03 | Command ninja directly | send findings to karo |
 
