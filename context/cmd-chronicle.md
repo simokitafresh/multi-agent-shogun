@@ -897,3 +897,4 @@
 | cmd_2361 | Phase 1.95の第3弾。run_077_kawarimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 変わり身(TrendReversalFilter)は1軸LB忍法。oikaze(2/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2361完了。run_077_kawarimi.py |
 | cmd_2362 | Phase 1.95の第4弾。run_077_yotsume.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 四つ目(MultiViewMomentumFilter)は1軸LB忍法。kawarimi(3/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2362完了。run_077_yotsume.pyを |
 | cmd_2363 | Phase 1.95の第5弾。run_077_nukimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 抜き身(SingleViewMomentumFilter)は2軸LB忍法(base+skip)。yotsume(4/7)GATE CLEAR確認済み。 2軸忍法の最初。メモリ負荷増大に注意。 | dm-signal | 04-28 | cmd_2363_normal完了。run_077_nuki |
+| cmd_2364 | Phase 1.95の第6弾。run_077_kasoku_diff.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 加速D(MomentumAccelerationFilter method=diff)は2軸LB忍法。最大パターン数(119,493pat実績)。 nukimi(5/7)GATE CLEAR確認済み。Peak RSS 1,696MB実績あり。OOM注意。 | dm-signal | 04-28 | cmd_2364_normal完了。run_077_kaso |
