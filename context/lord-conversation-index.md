@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T08:38:32+09:00 -->
+<!-- generated_at: 2026-04-29T08:40:56+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T08:40:56+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
 - 2026-04-29T08:38:32+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T08:37:52+09:00 | terminal | inbound | 軍師にも確認せよ。前提知識も明確に伝えよ
 - 2026-04-29T08:37:12+09:00 | terminal | response | 殿、56ブロック進行表(`context/l2-okugi-progress.md`)が見つかった。 **前回L2のOOM対策と実績:** - **1忍者1忍法直列、MP_WORKERS=1**(commit 6efe2681) - ka…
@@ -13,9 +14,9 @@
 - 2026-04-29T08:30:25+09:00 | terminal | inbound | GSL1もルールに従いリネームするべきだ。
 - 2026-04-29T08:28:39+09:00 | terminal | response | 設計書にGSL2のネーミングルールが未定義。殿に提案する。 **現状の問題:** - L1: cmd番号がディレクトリ/ファイルに入っており、パリティ修正のたびにリネーム作業が発生した(cmd_karo_gs_sqlite_rename)…
 - 2026-04-29T08:28:01+09:00 | terminal | inbound | GSL1,GSL2,将来のGSLnは統一ルールが必要だ。いつ作成したか明確でなければいけないからルールを決めていたと思ったが？設計書を確認せよ
-- 2026-04-29T08:26:14+09:00 | terminal | response | 設計書にGSL2のネーミングルールが未定義。殿に提案する。 **現状の問題:** - L1: cmd番号がディレクトリ/ファイルに入っており、パリティ修正のたびにリネーム作業が発生した(cmd_karo_gs_sqlite_rename)…
 
 ## 未解決確認事項
+- 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
 - 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
 - 軍師にも確認せよ。前提知識も明確に伝えよ
 - **cmd_2393 委任完了。** GSL1正規命名リネーム。GSL2のcmdは殿の指示まで保留。 殿、指示あれば。 [meta] stop_reason=end_turn
@@ -23,9 +24,9 @@
 - 殿、失礼した。混乱していた。整理する。 **現行L2奥義-SSS:** - cmd_1877でCSV経由で作成（`okugi_shin_ninpo_20body/`にCSVがある） - SQLiteではない。SQLite化はPhase 6以降の新しい仕組み - 構成PF = 本…
 - bunshinは`n in [2, 3, 4]`。他の忍法も確認する。 [meta] stop_reason=tool_use
 - 現在の本番L2どうやって作ったか確認しよう
-- はっ。まずL2奥義-SSSのパターン数構造を確認する。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-29T08:40:56+09:00 | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
 - 2026-04-29T08:38:32+09:00 | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T08:37:12+09:00 | 殿、56ブロック進行表(`context/l2-okugi-progress.md`)が見つかった。 **前回L2のOOM対策と実績:** - **1忍者1忍法直列、MP_WORKERS=1**(commit 6efe2681) - kasoku_diff/kasoku_rat…
 - 2026-04-29T08:32:06+09:00 | **cmd_2393 委任完了。** GSL1正規命名リネーム。GSL2のcmdは殿の指示まで保留。 殿、指示あれば。 [meta] stop_reason=end_turn
@@ -33,7 +34,6 @@
 - 2026-04-29T05:16:42+09:00 | 設計書更新完了。4箇所更新: 1. §5.2 Phase構造: Phase 9 ✅ + Phase 9.1 ✅(L1ロバスト確定) 2. §5.3 表: Phase 9/9.1を完了に更新 3. §5.2 セクション見出し: 次はPhase 10 4. §5.2 コメント: タ…
 - 2026-04-29T04:17:00+09:00 | **cmd_2391 委任完了。** Phase 9.1(L1グリッドロバストネス検証 18体)を家老に送った。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T04:08:55+09:00 | **cmd_2389(ac_phase_mixing FP改善)もGATE CLEAR。** 本セッションの全cmd完了。 **本セッション成果:** | cmd | 内容 | 結果 | |-----|------|------| | cmd_2386 | Phase 9 チャ…
-- 2026-04-29T03:58:48+09:00 | **cmd_2387(Check 19 FP改善) GATE CLEAR。** kagemaru完了。 また、lessons_shogun.yamlが更新されている。LS-A04に(18)-(25)の8項目が追記され、LS-A22にも(7)が追記。cmd_2388(教訓統合)が…
 
 ## 参照cmd
 - cmd_235
