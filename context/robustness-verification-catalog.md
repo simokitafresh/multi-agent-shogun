@@ -1,15 +1,27 @@
 # 長期ロバストネス検証カタログ
-<!-- last_updated: 2026-04-21 cmd_2216 -->
+<!-- last_updated: 2026-04-28 Phase 7.1 L0実証+アルファ空間原則追加 -->
 
-> 目的: WF四神 / 忍法 / 奥義について、3年 / 5年 / 10年スパンの頑健性をいつでも再検証できるよう、実行可能な手法を7種に整理した実務カタログ。
+> 目的: WF四神 / 忍法 / 奥義について、3年 / 5年 / 10年スパンの頑健性をいつでも再検証できるよう、実行可能な手法を8種に整理した実務カタログ。
+
+## §0. アルファ空間原則（殿裁定 2026-04-28）
+
+> 「どこでもアルファがあるのなら、その中で何を選ぶかは過適合とは言わない。」
+
+**ロバストネスの第一指標 = パラメータ空間全体のCAGR正率。**
+
+- 正率100% → 戦略の構造自体にアルファがある。champion選びは「アルファ空間内の最適化」であり過適合ではない
+- 正率が低い → アルファが特定パラメータに局在。champion選びが過適合リスクを持つ
+- peak_ratio(champion/隣接比)は正率100%の空間では「孤立スパイク=過適合」を意味しない。「全体がアルファの中でさらに良い点を選んだ」だけ
+- **この原則は7手法全ての前に適用する。** 正率100%なら7手法は「過適合でないことの確認」ではなく「最適点の安定性の確認」になる
 
 ## §1. 先に結論
 
 | 手法 | 何を問うか | 主対象層 | 既存の現物 |
 |---|---|---|---|
+| **アルファ空間検証** | **パラメータ空間全体にアルファがあるか(CAGR正率)** | **L0/L1/L2** | **`scripts/analysis/gs_grid_robustness.py`** |
 | デケイ分析 | 一度強かった champion が時間とともに弱っていないか | L0/L1/L2 | `scripts/analysis/deterioration/run_full_verification.py` |
 | Vintage分析 | 違う時点で選ばれた champion 同士で OOS が再現するか | L0/L1/L2 | `scripts/oneshot/cmd_1846_selection_timeline.py`, `cmd_1848_is_oos_champion_analysis.py` |
-| パラメータ近傍分析 | champion が孤立ピークでないか | L0/L1/L2 | `scripts/analysis/cmd_1012_overfit_check.py` |
+| パラメータ近傍分析 | champion が孤立ピークでないか(§0正率100%なら安定性確認に読替え) | L0/L1/L2 | `scripts/analysis/gs_grid_robustness.py` (peak_ratio) |
 | ストレステスト | 極端局面でも benchmark より壊れにくいか | L1/L2/奥義 | `scripts/analysis/nested_fof/r28d_stress_test.py` |
 | foldパーセンタイル検証 | 固定 champion が各 fold の母集団内でランダム以上を維持するか | L0 | `scripts/oneshot/cmd_2214_wf_shin_fold_percentiles.py` |
 | α6指標top安定性 | 計算期間短縮で top 集合が崩れないか | L0/L1 | `scripts/analysis/standard_pf_preprocessing/cmd_2215_wf_alm_top_stability.py` |
@@ -43,7 +55,24 @@
 
 参照: `/mnt/c/Python_app/DM-signal/docs/research/cmd_2215_wf_alm_top_stability_20260421.md`
 
-## §4. 7手法カタログ
+### 3.3 アルファ空間検証の現物 (`cmd_2357`, Phase 7.1)
+
+- L0シン四神 4family × 全3,195パターン(DM7+は4) = **CAGR正率100%**
+- どのlookbackを選んでも全てプラスのアルファ
+
+| family | 全パターン | CAGR正率 | 最低CAGR | 中央CAGR | 最高CAGR |
+|--------|----------|--------|---------|---------|---------|
+| DM2 | 3,195 | 100% | 19.8% | 36.1% | 49.3% |
+| DM3 | 3,195 | 100% | 4.2% | 16.8% | 37.9% |
+| DM6 | 3,195 | 100% | 7.5% | 28.5% | 53.0% |
+| DM7+ | 4 | 100% | 26.7% | 31.6% | 36.8% |
+
+- 含意: L0四神は戦略構造自体にアルファがある。champion選びは過適合ではない(§0原則)
+- L1/L2は未検証。Phase 9.1/11.1で同じ検証を実施予定
+
+参照: `outputs/robustness/20260428/L0/robustness_summary.yaml`
+
+## §4. 8手法カタログ
 
 ### 4.1 デケイ分析
 
@@ -195,9 +224,10 @@ sed -n '1,160p' outputs/analysis/alm_research/cmd_1934_v2_fast_summary.md
 
 | 優先 | 手法 | 理由 |
 |---|---|---|
+| **0** | **アルファ空間検証** | **CAGR正率で過適合リスクの有無を一発判定。100%なら以降は安定性確認に集中** |
 | 1 | foldパーセンタイル | 固定 champion が fold 母集団でどれだけ保つかを最短で見られる |
 | 2 | α6指標top安定性 | top 入替の大きさを一目で見られる |
-| 3 | パラメータ近傍分析 | 孤立ピークか broad peak かを切り分けられる |
+| 3 | パラメータ近傍分析 | §0正率100%なら「安定性確認」に読替え。broad peakかを見る |
 | 4 | Vintage分析 | 選出時点依存を直接見られる |
 | 5 | ストレステスト | 極端局面だけの脆さを拾える |
 | 6 | レジーム条件付き検証 | Bear / Sideways 依存の偽装強者を落とせる |
