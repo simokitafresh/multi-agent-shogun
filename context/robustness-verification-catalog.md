@@ -241,6 +241,13 @@ sed -n '1,160p' outputs/analysis/alm_research/cmd_1934_v2_fast_summary.md
 | WATCH | 7手法中 3-4手法PASS、または CAGR系だけ崩れるが防御系は維持 |
 | NO-GO | fold percentile / neighbor / vintage / stress のうち2つ以上で明確FAIL |
 
+## §6.1 L1 grid robustness実績 (cmd_2391, 2026-04-29)
+
+- 対象: GS事後最適18体(bunshin除く6忍法×3モード)
+- 結果: 高リスク10/18体。加速D鉄壁peak_ratio=11.2(最大)
+- L674: 従属ラベル列を固定条件から外さないとpattern_count=1に潰れる
+- 出力: `outputs/robustness/20260429/L1/` (JSON 18件・PNG 216件)
+
 ## §7. 次に追加すべき実装
 
 1. `cmd_1848` を単一の前半/後半 split から、3年刻みの multi-vintage ladder に一般化する。

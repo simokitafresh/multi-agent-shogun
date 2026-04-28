@@ -910,3 +910,4 @@
 | cmd_2387 | cmd_save.sh L2861のcheck_parity_ac_requirementsがtitle/purposeの文脈を見ず語句マッチのみで判定するため、分析cmdでFP発火する(cmd_2386で実証。startup gateでもFP率ALERT)。過去形コンテキスト(修正後/修正版/修正済み/完了)を除外し本番DB変更cmdのみトリガーさせる。 | infra | 04-29 | Check 19 _CHECK19_TRIGGERに過去形除 |
 | cmd_2388 | lessons_shogun.yaml 35件(上限35件)到達で新教訓記録不可。成長ループが断絶。LS023-LS035の13件を既存クラスタに吸収し空きを確保する。v1→v3統合(97→22件)と同パターン。 | infra | 04-29 | lessons_shogun.yaml: LS023-LS0 |
 | cmd_2389 | check_ac_phase_mixing(L3033)のFP率66%(3件中2件FP、startup gate ALERT)。impl_hitsのキーワード(修正/変更/追加等)が殆どのcmdにマッチし、ACに計測/commit語が偶然含まれると誤発火。AC単位の文脈判定を追加しFPを削減する。 | infra | 04-29 | check_ac_phase_mixingにAC単位文脈判定 |
+| cmd_2391 | cmd_2386で再選出したGS事後最適チャンピオン21体のうちbunshin(0軸)を除く6忍法×3モード=18体について、gs_grid_robustness.pyでLB×α6グリッドを生成し、championの面的頑健性を検証する。過適合リスクの定量評価。cmd_2357(L0 12体)と同パターン。 | dm-signal | 04-29 | 6忍法×3モード=18体のL1 GS robustnessを |

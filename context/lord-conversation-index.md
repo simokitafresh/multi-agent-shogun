@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T04:17:00+09:00 -->
+<!-- generated_at: 2026-04-29T04:31:17+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T04:31:17+09:00 | terminal | response | 殿、Phase 9.1結果を報告する。 **18体中10体が高リスク(integrated_score≥1.5 or max_peak_ratio≥2.0)** 特に危険な3体(統合スコア2.0超): | 忍法 | モード | 統合スコア…
+- 2026-04-29T04:29:54+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 04:25:52|CI緑: run 25072412640
+- 2026-04-29T04:17:32+09:00 | ntfy | outbound | 【家老】cmd_2391 初回配備開始 (title=Phase 9.1 — L1グリッドロバストネス検証(GS事後最適18体、bunshin除く), ninja=saizo) Phase 9.1 📋 https://gist.githu…
 - 2026-04-29T04:17:00+09:00 | terminal | response | **cmd_2391 委任完了。** Phase 9.1(L1グリッドロバストネス検証 18体)を家老に送った。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T04:14:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 04:02:48|cmd_2388 2026-04-29 04:05:23|cmd_2390 2026-04-29 04:08:36|cmd_2389
 - 2026-04-29T04:13:54+09:00 | terminal | inbound | 先にPhase 9.1(グリッド分析)で過適合リスクを確認する
@@ -11,9 +14,6 @@
 - 2026-04-29T04:08:55+09:00 | terminal | response | **cmd_2389(ac_phase_mixing FP改善)もGATE CLEAR。** 本セッションの全cmd完了。 **本セッション成果:** | cmd | 内容 | 結果 | |-----|------|------| | c…
 - 2026-04-29T04:05:43+09:00 | terminal | response | cmd_2390もGATE CLEAR。比較結果は先ほど殿に報告済み。殿の判断を待つ。 [meta] stop_reason=end_turn
 - 2026-04-29T04:05:30+09:00 | terminal | response | 殿、比較結果を報告する。 **総合勝敗: GS 14勝 / 本番 3勝 / tie 3 / GS_ONLY 1** GS事後最適チャンピオンが大半で本番を上回っている。特に顕著な差: | 忍法 | モード | 本番α-CAGR | GSα…
-- 2026-04-29T03:59:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 03:48:23|cmd_2386 2026-04-29 03:50:01|cmd_2386 2026-04-29 03:58:26|cmd_2387
-- 2026-04-29T03:58:48+09:00 | terminal | response | **cmd_2387(Check 19 FP改善) GATE CLEAR。** kagemaru完了。 また、lessons_shogun.yamlが更新されている。LS-A04に(18)-(25)の8項目が追記され、LS-A22にも(7…
-- 2026-04-29T03:53:19+09:00 | ntfy | outbound | 【家老】cmd_2390 初回配備開始 (title=分析 — 本番シン忍法20体 vs GS事後最適21体 α6指標比較(修正版SQLite), ninja=saizo) 分析 📋 https://gist.github.com/sim…
 
 ## 未解決確認事項
 - 先にPhase 9.1(グリッド分析)で過適合リスクを確認する
