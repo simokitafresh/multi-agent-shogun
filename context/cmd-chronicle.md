@@ -905,3 +905,4 @@
 | cmd_2382 | cmd_2378の3修正を四つ目に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | cmd_2382: run_077_yotsume.pyへc |
 | cmd_2381 | cmd_2378の3修正(close累積momentum/全履歴shift/初回signal等ウェイト)を変わり身に適用。 修正版で全パターン計算→新SQLite生成→本番monthly_return_openと100%一致検証→旧SQLite削除。 | dm-signal | 04-29 | 変わり身run_077にcmd_2378の3修正（produ |
 | cmd_2383 | cmd_2378の3修正を抜き身に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_nukimi.pyにcmd_2378の3修正 |
+| cmd_2384 | cmd_2378の3修正を加速Dに適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_kasoku_diff.pyにcmd_237 |
