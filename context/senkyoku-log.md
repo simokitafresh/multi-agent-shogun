@@ -777,3 +777,4 @@
 - 2026-04-29 cmd_2386: 才蔵。Phase 9 L1チャンピオン再選出。修正版SQLiteから21体選出(MATCH 2/MISMATCH 18/未登録1)。L672登録(champion_list append guard)。GATE CLEAR
 - 2026-04-29 cmd_2387: 影丸。cmd_save.sh Check 19 FP改善(過去形除外条件追加)。bats 7PASS。L538登録(parity_target_date FP)。GATE CLEAR
 - 2026-04-29 cmd_2388: 飛猿。将軍教訓統合(LS023-035→LS-A04/LS-A22吸収、35→22件)。GATE CLEAR
+- 2026-04-29 cmd_2390: 才蔵。本番20体vsGS21体α6指標比較(MATCH2/MISMATCH18/missing1)。GATE CLEAR
