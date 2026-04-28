@@ -158,9 +158,9 @@ lessons:
   tags:
   - infra
   - yaml
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
   - queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml
@@ -276,9 +276,9 @@ lessons:
     GIL
   tags:
   - universal
-  helpful_count: 16
+  helpful_count: 17
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -907,9 +907,9 @@ lessons:
   - process
   - bash
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - cmd_friction_log.sh
 - id: L416
@@ -959,9 +959,9 @@ lessons:
   - bash
   - yaml
   - inbox
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - inbox_prune.sh
   - inbox_write.sh
@@ -1180,9 +1180,9 @@ lessons:
   tags:
   - yaml
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - report_field_set.sh
 - id: L383
@@ -1569,9 +1569,9 @@ lessons:
   tags:
   - bash
   - yaml
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - cmd_quality_log.sh
 - id: L339
@@ -2024,9 +2024,9 @@ lessons:
   - process
   - gate
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - gate_shogun_startup.sh
 - id: L286
@@ -3121,6 +3121,9 @@ lessons:
   - deploy
   - yaml
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-29'
 - id: L146
   title: AC6系レビューは実配備YAML確認だけでなく一時環境での再現実行を必須にすべき
   summary: IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実
@@ -3503,9 +3506,9 @@ lessons:
   tags:
   - gate
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 1
-  last_referenced: '2026-04-28'
+  last_referenced: '2026-04-29'
   target_files:
   - queue/gate_metrics.yaml
 - id: L100
@@ -3819,6 +3822,9 @@ lessons:
   target_files:
   - reset_layout.sh
   - settings.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-04-29'
 - id: L065
   title: テンプレート定義とvalidation対象の一致確認義務
   summary: IF テンプレートを新規作成または変更する時 THEN (1)セクション名が実ファイルと完全一致するか (2)既存コードの依存セクションがテンプレートに含まれて
