@@ -173,6 +173,7 @@ def main() -> int:
         bc_dict_fixed = False
         bc15_fixed = False
         bc_bool_fixed = False
+        bc_quote_fixed = False
         bc19_fixed = False
 
         for ac_key, ac_val in bc.items():
@@ -252,6 +253,11 @@ def main() -> int:
 
                     norm = item.get("result")
                     if isinstance(norm, str):
+                        stripped = norm.strip().strip("'\"")
+                        if stripped != norm:
+                            item["result"] = stripped
+                            norm = stripped
+                            bc_quote_fixed = True
                         bc_result_total += 1
                         if norm == "yes":
                             bc_pass_count += 1
@@ -270,6 +276,8 @@ def main() -> int:
             fixes.append("binary_checks {name:val}→{check:name,result:val}正規化")
         if bc_bool_fixed:
             fixes.append("binary_checks result boolean→string変換")
+        if bc_quote_fixed:
+            fixes.append("binary_checks result quote除去('yes'→yes)")
         if bc19_fixed:
             fixes.append("binary_checks [N]キー→check/result正規化")
 
