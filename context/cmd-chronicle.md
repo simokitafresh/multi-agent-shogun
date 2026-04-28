@@ -904,3 +904,4 @@
 | cmd_2368 | run_077のGSはPydanticバリデーションなしでパラメータグリッドを生成している。 GS選出チャンピオン21体のconfigを本番ビルディングブロック(MomentumFilter等)に通し、 バリデーションエラーで弾かれるパターンがないか検証する。 本番バリデーション下でGS結果と現行本番configが同一になるか確認する。 | dm-signal | 04-28 | cmd_2366選出21体を本番Pydantic入口(Pip |
 | cmd_2369 | 殿の仮説: 本番シン忍法はWF-α(Walk-Forward OOS alpha)で選出された可能性。 今回のGS結果(cmd_2359-2365 SQLite)からWF-α方式でチャンピオンを選出し、 (1)事後選出(cmd_2366)との差異、(2)本番configとの一致率を比較する。 WF-α-CAGR=激攻、WF-α-NHF=常勝、WF-α-MaxDD=鉄壁。 | dm-signal | 04-28 | cmd_2369: 7忍法run_077 SQLite DB |
 | cmd_2370 | cmd_1902のα6指標手法(alpha_t = return_t - beta * spy_return_t)を使い、 本番シン忍法20体と事後GS選出21体のβ調整α6指標を算出・比較する。 本番L1の月次リターンは本番DB(FoFパイプライン計算済み)から読取。 事後GS L1の月次リターンはrun_077 GS SQLiteから読取。 | dm-signal | 04-28 | 本番シン忍法20体とcmd_2366 L1事後GS21体につ |
+| cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定し、 OOS窓でα6指標(alpha-CAGR/NHF/MaxDD/MRU/Calmar/UWP)を計算。 20個の独立OOS結果を連結して最終α6を算出。 | dm-signal | 04-28 | cmd_2372: 本番シン忍法20体と事後GS21体のSP |
