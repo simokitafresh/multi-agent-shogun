@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T01:03:56+09:00 -->
+<!-- generated_at: 2026-04-29T01:06:58+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T01:06:58+09:00 | terminal | response | cmd_2377委任完了。全20体×全期間でmonthly_return_open + holding_signal突合。MECEに全差を特定する。100%一致が基準。完了待ち。 [meta] stop_reason=end_turn
+- 2026-04-29T01:04:02+09:00 | terminal | inbound | 共通期間で比べよう
 - 2026-04-29T01:03:56+09:00 | terminal | response | 殿の指摘通り。cmd_2376はたった**1ヶ月(2013-11)の1体**しか確認していない。そこは列差だけだった。 だがcmd_2375のデータを見直すと: | 忍法 | 月 | 本番open | GS | diff | |-----…
 - 2026-04-29T01:03:23+09:00 | terminal | inbound | 本当に列セマンティック差だけだったかを20体で確認だ。そんな小さな差ではなかった記憶がある
 - 2026-04-29T01:02:32+09:00 | terminal | response | cmd_2374とcmd_2375で本番シン忍法20体を確認した。結果: **cmd_2374**: production_pattern_map.csv — 本番20体のconfig→GS SQLite pattern_id対応を特定(…
@@ -12,8 +14,6 @@
 - 2026-04-29T00:54:56+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 00:39:41|cmd_2375
 - 2026-04-29T00:54:19+09:00 | terminal | response | 家老から同件の重複通知(report_field_set.sh修正完了)。処理済み。 cmd_2376はsaizo作業中。完了待ち。 [meta] stop_reason=end_turn
 - 2026-04-29T00:54:05+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-206)
-- 2026-04-29T00:53:49+09:00 | terminal | response | 軍師がreport_field_set.shの引用符バグを直接修正完了(commit 956d9657, bats 22/22 PASS)。本筋とは別件で解決済み。 cmd_2376(追い風選択判定diff)はsaizo作業中(CTX:7…
-- 2026-04-29T00:47:06+09:00 | ntfy | outbound | 【家老】cmd_2376 初回配備開始 (title=偵察 — L1 GS simulate_pattern vs 本番PipelineEngine 選択判定diff(追い風1忍法深堀り), ninja=saizo) 偵察 📋 https…
 
 ## 未解決確認事項
 - 殿の指摘通り。cmd_2376はたった**1ヶ月(2013-11)の1体**しか確認していない。そこは列差だけだった。 だがcmd_2375のデータを見直すと: | 忍法 | 月 | 本番open | GS | diff | |------|-----|---------|--…
