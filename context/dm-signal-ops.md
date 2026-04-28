@@ -627,3 +627,8 @@ import metrics_research_engine as MRE
 
 設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
+
+## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
+- フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
+- fullrecalculate成功。既存20体diff=0。GSパリティ21/21 PASS(max 8.86e-7)
+- L675: recalculate-sync後の初回idle=完了扱い

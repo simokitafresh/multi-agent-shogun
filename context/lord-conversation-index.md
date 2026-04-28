@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T07:48:26+09:00 -->
+<!-- generated_at: 2026-04-29T07:52:27+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T07:52:27+09:00 | terminal | response | Check 21(L2998)もAC_TEXTを使う。旧ロジックではAC_TEXTが空→`return 0`で即スキップ→数値絶対値の検出が効いていなかった。AC_TEXT修正で自動的に修復された。 **発見したバグと修正状況:** | …
 - 2026-04-29T07:48:26+09:00 | terminal | response | Check 21(L2998)もAC_TEXTを使う。旧ロジックではAC_TEXTが空→`return 0`で即スキップ→数値絶対値の検出が効いていなかった。AC_TEXT修正で自動的に修復された。 **発見したバグと修正状況:** | …
 - 2026-04-29T07:46:52+09:00 | terminal | inbound | 他にバグはないか確認せよ
 - 2026-04-29T07:39:03+09:00 | terminal | response | **全P1-P5 PASS。** description:形式もAC1:インライン形式も両方カバー。 修正完了。AC_TEXTがacceptance_criteriaセクション全行を拾うようになった。`command:`行でawkが正しく…
@@ -13,7 +14,6 @@
 - 2026-04-29T07:29:23+09:00 | terminal | response | 教訓記録完了(LS-A22(8)追記)。 殿、cmd_2392(GSシン忍法21体hide登録)を家老に委任済み。本番DB操作のため直列配備。fullrecalculate含むので完了まで時間がかかる。 殿、指示あれば。 [meta] s…
 - 2026-04-29T07:23:08+09:00 | terminal | inbound | 続けて
 - 2026-04-29T05:17:45+09:00 | terminal | inbound | 次は本番のシン忍法は残したままGSシン忍法を登録する。フォルダーはGSシン忍法。GSシン抜き身-鉄壁のようにGSをプレフィックスにつける。hideの状態で登録せよ
-- 2026-04-29T05:16:42+09:00 | terminal | response | 設計書更新完了。4箇所更新: 1. §5.2 Phase構造: Phase 9 ✅ + Phase 9.1 ✅(L1ロバスト確定) 2. §5.3 表: Phase 9/9.1を完了に更新 3. §5.2 セクション見出し: 次はPhas…
 
 ## 未解決確認事項
 - Check 21(L2998)もAC_TEXTを使う。旧ロジックではAC_TEXTが空→`return 0`で即スキップ→数値絶対値の検出が効いていなかった。AC_TEXT修正で自動的に修復された。 **発見したバグと修正状況:** | # | バグ | 修正 | |---|-…

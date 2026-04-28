@@ -911,3 +911,4 @@
 | cmd_2388 | lessons_shogun.yaml 35件(上限35件)到達で新教訓記録不可。成長ループが断絶。LS023-LS035の13件を既存クラスタに吸収し空きを確保する。v1→v3統合(97→22件)と同パターン。 | infra | 04-29 | lessons_shogun.yaml: LS023-LS0 |
 | cmd_2389 | check_ac_phase_mixing(L3033)のFP率66%(3件中2件FP、startup gate ALERT)。impl_hitsのキーワード(修正/変更/追加等)が殆どのcmdにマッチし、ACに計測/commit語が偶然含まれると誤発火。AC単位の文脈判定を追加しFPを削減する。 | infra | 04-29 | check_ac_phase_mixingにAC単位文脈判定 |
 | cmd_2391 | cmd_2386で再選出したGS事後最適チャンピオン21体のうちbunshin(0軸)を除く6忍法×3モード=18体について、gs_grid_robustness.pyでLB×α6グリッドを生成し、championの面的頑健性を検証する。過適合リスクの定量評価。cmd_2357(L0 12体)と同パターン。 | dm-signal | 04-29 | 6忍法×3モード=18体のL1 GS robustnessを |
+| cmd_2392 | cmd_2386で再選出したGS事後最適21体を本番DBにhide状態で登録する。既存シン忍法20体は維持。フォルダ「GSシン忍法」を新規作成し、名前は「GSシン{忍法名}-{モード}」(例: GSシン抜き身-鉄壁)。登録後fullrecalculate→パリティ検証。 | dm-signal | 04-29 | GSシン忍法フォルダーを作成し、cmd_2386 GSチャン |
