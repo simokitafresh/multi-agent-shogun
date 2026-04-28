@@ -899,3 +899,4 @@
 | cmd_2373 | cmd_2366のチャンピオン選出スクリプトが忍法×モードごとに正しい目的関数で選出しているか検証する。 疑い: (1)鉄壁のMaxDD最小化で符号が逆転していないか (2)異なる忍法で同一パターンが選ばれる原因 (3)常勝3忍法のMaxDD完全一致(-0.3371)の原因特定。 | dm-signal | 04-29 | cmd_2366 L1チャンピオン選出ロジックを監査し、選出 |
 | cmd_2374 | 本番シン忍法20体のconfigパラメータ(component_set+lookback+top_n)でGS SQLiteを検索し、 該当パターンの月次リターンと本番DBのmonthly_returnsが一致するか検証する。 本番configがGS空間内に存在すること自体の確認+リターンパリティ。 | dm-signal | 04-29 | 本番シン忍法20体の同一パラメータpattern_idをGS |
 | cmd_2375 | cmd_2374で発見した「L1パリティ0/20 FAIL」の原因がmonthly_return(close) vs monthly_return_open(open)の列取り違えかを確認する。 本番DB側をmonthly_return_openに揃えて再突合し、GS L1にバグがあるか白黒つける。 | dm-signal | 04-29 | cmd_2375としてcmd_2374ベースのmonthly |
+| cmd_2376 | cmd_2375で判明した「選択ブロック忍法17体のL1パリティ不一致」の原因を特定する。 追い風-激攻(oikaze)の不一致月を1つ取り、本番PipelineEngine(MomentumFilterBlock)と GS simulate_pattern()がその月にどのL0四神を選択したかを比較し、差分の根因を特定する。 | dm-signal | 04-29 | 追い風-激攻 oikaze_N4_0569_18M_N1_R |
