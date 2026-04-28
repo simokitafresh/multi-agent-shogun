@@ -2848,8 +2848,13 @@ show_gunshi_pane_status() {
 
 show_gunshi_pane_status
 
-# AC_TEXT: acceptance_criteriaセクションのdescription行を結合（Check 19/20で使用）
-AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description:' || true)
+# AC_TEXT: acceptance_criteriaセクション全行を結合（Check 19/20で使用）
+# description:形式とAC1:"..."形式の両方をカバー
+AC_TEXT=$(echo "$CMD_BLOCK" | awk '
+  /acceptance_criteria:/ { found=1; next }
+  found && /^[[:space:]]{0,4}[a-z_]+:/ && !/^[[:space:]]*AC[0-9]/ && !/^[[:space:]]*description:/ { exit }
+  found { print }
+' || true)
 
 # --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
 # 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
