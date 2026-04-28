@@ -883,3 +883,4 @@
 | cmd_2347 | cmd_2346で作成したSQLite出力共通モジュールを使い、run_077全7本のCSV出力をSQLite出力に切替える。 CSV出力関数(to_csv/write_monthly_csv_streaming)の呼出しを共通モジュールのSQLite出力に置換。 殿裁定「CSVをまた作るな」に従いCSV出力コードは削除。 | dm-signal | 04-28 | — |
 | cmd_2348 | shin_shijin_l1_gs.py L1042-1043のCSV出力2行を削除する。 殿裁定「CSVをまた作るな」に違反する残存コード。 gs_db_utilsはDataFrameを直接受付可能(_as_frame L47-50)のためCSV経由は不要。 cmd_2346がこのファイルを参考実装として使うため、CSV出力を除去してから参考にさせる。 | dm-signal | 04-28 | shin_shijin_l1_gs.pyのGS出力をCSV中 |
 | cmd_2349 | gs_sqlite_output.py L56とgs_db_utils.py L50のpd.read_csv(CSV入力フォールバック)をValueErrorに変更する。 殿裁定「CSVをまた作るな」の徹底。DataFrame直接渡しが正規パス。CSV経由の裏口を完全封鎖。 cmd_2346の成果物(gs_sqlite_output.py)は機能するがCSV fallbackが残存→この補足cmdで修正。 | dm-signal | 04-28 | GS SQLite書込み系のCSVパス入力を拒否し、Data |
+| cmd_2350 | gs-data-normalization-spec.md Phase 7(近傍分析道具)の設計書を書くために必要な4つの未調査事項を確認する。 道具を作る前に入力データの構造と既存道具の改修範囲を把握する。 | dm-signal | 04-28 | cmd_1012の月次return入力、指定L0 SQLit |
