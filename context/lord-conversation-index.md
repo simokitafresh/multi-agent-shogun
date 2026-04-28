@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T18:12:27+09:00 -->
+<!-- generated_at: 2026-04-28T18:56:19+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T18:56:19+09:00 | terminal | response | 殿の指摘は本質的。GS選出が本番より性能が良い=ルックアヘッドバイアスの可能性がある。慎重に確認する。 [meta] stop_reason=tool_use
+- 2026-04-28T18:53:07+09:00 | terminal | inbound | GS選出モードにルックアヘッドバイアスなどはないか。慎重に確認しよう
+- 2026-04-28T18:30:20+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 18:20:57|CI緑: run 25044294921
+- 2026-04-28T18:14:46+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 18:11:35|cmd_2367
 - 2026-04-28T18:12:26+09:00 | terminal | response | 殿、詳細分析結果を報告する。 **MISMATCH 13体の分類:** | 分類 | 件数 | 説明 | |------|------|------| | component_set_only | 5体 | パラメータ同一だが構成PF(ど…
 - 2026-04-28T18:11:37+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝79
 - 2026-04-28T18:06:26+09:00 | ntfy | outbound | 【家老】cmd_2367 初回配備開始 (title=偵察 — L1チャンピオンMISMATCH 12体の詳細分析(GS選出 vs 本番パラメータ比較), ninja=saizo) 偵察 📋 https://gist.github.com…
 - 2026-04-28T18:06:07+09:00 | terminal | response | PASS。pending→委任。 [meta] stop_reason=tool_use
 - 2026-04-28T18:03:10+09:00 | terminal | inbound | 違いの内訳が欲しいな。L0が同じで構成PFが違うならどう違うのか？詳しい分析が必要だ
 - 2026-04-28T17:59:40+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 17:57:10|CI緑: run 25042792389
-- 2026-04-28T17:43:56+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 17:38:08|cmd_2366
-- 2026-04-28T17:39:04+09:00 | terminal | response | 殿、Phase 9結果。 **L1シン忍法チャンピオン選出+本番突合: 21体選出、MATCH 8/21。** | 忍法 | 激攻 | 常勝 | 鉄壁 | |------|------|------|------| | 分身 | MISM…
-- 2026-04-28T17:38:29+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝78
-- 2026-04-28T17:28:51+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 17:21:33|CI緑: run 25041663117
 
 ## 未解決確認事項
+- 殿の指摘は本質的。GS選出が本番より性能が良い=ルックアヘッドバイアスの可能性がある。慎重に確認する。 [meta] stop_reason=tool_use
+- GS選出モードにルックアヘッドバイアスなどはないか。慎重に確認しよう
 - 確認する。想像ではなく現物で。 [meta] stop_reason=tool_use
 - 現物確認完了。報告する。 **cmd_2358 GATE CLEAR。実装は§5.5.4を遵守している。** 確認した事実: - `load_monthly_returns_from_local_sqlite()` (L487-557): **sqlite3.connect()…
 - 本番DBのデータは使わないんだな？忍者と家老は遵守しているんだな？確認せずに答えていないか？
 - 殿、どの前提が間違っているか。確認せずに想像したくない。指摘いただきたい。 [meta] stop_reason=end_turn
 - 殿、現物確認した。 **cumulative版 = 本番PostgreSQLの`cumulative_return`列を直接読む関数。** 本番のモメンタム計算は `cumulative_return → pct_change(期間月数)` 方式。run_077はこの本番準拠の…
 - 確認する。 [meta] stop_reason=tool_use
-- 殿の問い「db=SQLiteではないのか？」に対する回答: **現物確認の結果、source_type: "db"は本番PostgreSQL専用。** - L140: `SELECT portfolio_id, year_month, monthly_return_open F…
-- 確認完了。 **SQLiteのmonthly_returnは既にopen-to-openベース。** 根拠: - L1097: `month_start_opens` = `month_start_array` — 変数名が明示的に"opens" - L840-843: `st…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-28T17:26:25+09:00 | 設計書更新完了。§5.2と§5.3の両方を実態に合わせた。 **更新内容:** - Phase 7.1: ✅完了(cmd_2357。CAGR正率100%+アルファ空間原則) - Phase 1.95: ✅完了(cmd_2359-2365。全7本CLEAR。道具磨きcmd_235…
