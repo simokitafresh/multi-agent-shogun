@@ -980,9 +980,10 @@ if [ "$TYPE" = "cmd_new" ]; then
     fi
 fi
 
-# Report format gate: type=report_received → 報告YAMLのフォーマット検証
+# Report format gate: type=report_received/task_done → 報告YAMLのフォーマット検証
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
-if [ "$TYPE" = "report_received" ]; then
+# LK013: Codex忍者がtask_done typeで報告→gunshi_notify不発を防止
+if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
     # Find report YAML path from task YAML
     ensure_agent_config_loaded
     is_ninja_reporter=0
@@ -1187,8 +1188,8 @@ while [ $attempt -lt $max_attempts ]; do
     ) 200>"$LOCKFILE"; then
         # Success — inbox message persisted
 
-        # Hook: report_received from ninja → auto-update task YAML to done
-        if [ "$TYPE" = "report_received" ]; then
+        # Hook: report_received/task_done from ninja → auto-update task YAML to done
+        if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
             ensure_agent_config_loaded
             is_ninja=0
             for ninja in $NINJA_NAMES; do
