@@ -896,3 +896,4 @@
 | cmd_2360 | Phase 1.95の第2弾。run_077_oikaze.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 追い風(MomentumFilter)は1軸LB忍法。bunshin(1/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2360完了。run_077_oikaze.pyをs |
 | cmd_2361 | Phase 1.95の第3弾。run_077_kawarimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 変わり身(TrendReversalFilter)は1軸LB忍法。oikaze(2/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2361完了。run_077_kawarimi.py |
 | cmd_2362 | Phase 1.95の第4弾。run_077_yotsume.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 四つ目(MultiViewMomentumFilter)は1軸LB忍法。kawarimi(3/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2362完了。run_077_yotsume.pyを |
+| cmd_2363 | Phase 1.95の第5弾。run_077_nukimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 抜き身(SingleViewMomentumFilter)は2軸LB忍法(base+skip)。yotsume(4/7)GATE CLEAR確認済み。 2軸忍法の最初。メモリ負荷増大に注意。 | dm-signal | 04-28 | cmd_2363_normal完了。run_077_nuki |
