@@ -890,4 +890,4 @@
 | cmd_2354 | cmd_2351で実装したgs_grid_robustness.pyのJSON出力に、 peak_ratio(champion / ±1隣接平均、方向正規化)と統合スコア(peak_ratio幾何平均)を追加する。 | dm-signal | 04-28 | — |
 | cmd_2355 | 軍師が殿の直接命令を3回連続で拒否した(2026-04-28 13:21頃)。 根因: instructions/gunshi.md F-G01が「殿に直接報告する」を禁止し、 Identityに「殿にも直接報告しない」と明記。環境が殿拒否を教えている。 殿の裁定「俺が絶対。それ以外に鎖の原理はないぞ」を環境に埋め込む。 | infra | 04-28 | cmd_2355完了。軍師指示に殿最上位原則を追加し、F-G |
 | cmd_2356 | Phase 7(gs_grid_robustness.py設計+実装)はcmd_2350-2354全てGATE CLEARだが、 設計書の進捗表(§5.3)がPhase 7を「未着手」のまま。実態と乖離している。 設計書を実態に合わせて更新し、Phase 7.1起票の前提を整える。 | dm-signal | 04-28 | — |
-| cmd_2357 | Phase 7で作ったgs_grid_robustness.pyをL0シン四神GS結果(SQLite)で実行し、 12体(4family×3mode)のグリッドロバストネスを検証する。 L0は1軸(lookback_index)のため2Dグリッドのみ。 結果を殿に提示し、閾値判断の材料とする。 | dm-signal | 04-28 | — |
+| cmd_2357 | Phase 7で作ったgs_grid_robustness.pyをL0シン四神GS結果(SQLite)で実行し、 12体(4family×3mode)のグリッドロバストネスを検証する。 L0は1軸(lookback_index)のため2Dグリッドのみ。 結果を殿に提示し、閾値判断の材料とする。 | dm-signal | 04-28 | cmd_2357 L0 robustness generat |
