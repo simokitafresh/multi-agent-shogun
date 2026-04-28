@@ -365,7 +365,7 @@ send_codex_task_nudge() {
     local target="$1"
     local pane_target="$2"
     local unread_count="$3"
-    local nudge="inbox${unread_count} — タスクYAML: queue/tasks/${target}.yaml を読んで作業開始せよ"
+    local nudge="inbox${unread_count} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${target}.yaml を読んで作業開始せよ"
 
     tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || return 1
     run_tmux_with_timeout paste-buffer -t "$pane_target" -b "nudge_${target}" -d >/dev/null 2>&1 || return 1
