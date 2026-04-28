@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T02:07:24+09:00 -->
+<!-- generated_at: 2026-04-29T02:17:04+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T02:17:04+09:00 | terminal | response | **5/5全cmd委任完了。** | cmd | 忍法 | 状態 | |-----|------|------| | cmd_2381 | 変わり身 | delegated | | cmd_2382 | 四つ目 | delegated |…
+- 2026-04-29T02:16:12+09:00 | ntfy | outbound | 【家老】cmd_2384 初回配備開始 (title=修正 — run_077_kasoku_diff 本番一致達成+旧SQLite削除(cmd_2378横展開), ninja=hanzo) 修正 📋 https://gist.githu…
+- 2026-04-29T02:15:57+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
+- 2026-04-29T02:15:18+09:00 | ntfy | outbound | 【家老】cmd_2383 初回配備開始 (title=修正 — run_077_nukimi 本番一致達成+旧SQLite削除(cmd_2378横展開), ninja=kagemaru) 修正 📋 https://gist.github.…
+- 2026-04-29T02:14:21+09:00 | ntfy | outbound | 【家老】cmd_2382 初回配備開始 (title=修正 — run_077_yotsume 本番一致達成+旧SQLite削除(cmd_2378横展開), ninja=hayate) 修正 📋 https://gist.github.c…
+- 2026-04-29T02:13:12+09:00 | ntfy | outbound | 【家老】cmd_2381 初回配備開始 (title=修正 — run_077_kawarimi 本番一致達成+旧SQLite削除(cmd_2378横展開), ninja=saizo) 修正 📋 https://gist.github.c…
+- 2026-04-29T02:11:41+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 01:56:17|cmd_2378 2026-04-29 01:58:00|cmd_2379 2026-04-29 02:04:17|CI緑: run 25066381225
+- 2026-04-29T02:08:07+09:00 | terminal | inbound | やろう
 - 2026-04-29T02:07:24+09:00 | terminal | response | 殿の通り。整理する。 **修正後のsimulate_pattern()で計算したパリティ検証用データ = そのまま正しいGSデータ。** わざわざ全量再実行する必要がない。パリティ検証の過程で全パターンの月次リターンを計算するなら、それが…
 - 2026-04-29T02:07:05+09:00 | terminal | inbound | GS全量再実行する必要ないのでは？パリティが確認できたらそのデータをそのまま使えばいい。そもそも既存のデータはバグデータなので不要だ。むしろバグデータは削除しないと汚染の原因だな
-- 2026-04-29T02:05:13+09:00 | terminal | response | cmd_2380取消を家老に送信した。5忍法×5忍者の並列cmdは明日起票する。殿、今夜はここまでにするか。 [meta] stop_reason=end_turn
-- 2026-04-29T02:04:58+09:00 | terminal | inbound | とりあえず取り消そう
-- 2026-04-29T02:04:28+09:00 | terminal | response | 殿の通り。5忍者idle × 5忍法残(変わり身/四つ目/抜き身/加速D/加速R) = **全員に1忍法ずつ配って並列。** パリティ確認は軽い(月次比較だけ)。修正適用+パリティ検証を並列で回し、GS全量再実行だけ直列にすればOOM回避…
-- 2026-04-29T02:03:57+09:00 | terminal | inbound | 並列で1忍法ずつパリティ確認だろう？
-- 2026-04-29T02:03:43+09:00 | terminal | response | 殿の指摘通り。**1忍法1CMD(LG025/LS-A15)に反している。** 6忍法を1cmdにバンドルした。 理由はない。横着した。6cmd直列で起票し直す。 殿、ただし時刻が02:03。6cmd起票+gate通過+委任は時間がかかる…
-- 2026-04-29T02:03:28+09:00 | terminal | inbound | なぜ原理に反して1cmdにしたんだ？
-- 2026-04-29T02:02:52+09:00 | ntfy | outbound | 【家老】cmd_2380 初回配備開始 (title=修正 — run_077 残6忍法simulate_pattern 本番一致横展開(cmd_2378の3修正適用+全量GS再実行), ninja=hayate) 修正 📋 https:…
-- 2026-04-29T02:02:20+09:00 | terminal | response | cmd_2380委任完了。6忍法横展開+全量GS再実行。直列配備で進行する。 これは時間がかかる(6忍法×修正+パリティ検証+GS再実行)。殿、本日はここまでにするか、それとも他に指示あるか。 [meta] stop_reason=end…
 
 ## 未解決確認事項
 - GS全量再実行する必要ないのでは？パリティが確認できたらそのデータをそのまま使えばいい。そもそも既存のデータはバグデータなので不要だ。むしろバグデータは削除しないと汚染の原因だな
@@ -63,6 +63,9 @@
 - cmd_2378
 - cmd_2379
 - cmd_2380
+- cmd_2381
+- cmd_2382
+- cmd_2383
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
