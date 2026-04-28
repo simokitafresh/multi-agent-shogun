@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T22:25:19+09:00 -->
+<!-- generated_at: 2026-04-28T22:29:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T22:29:52+09:00 | terminal | response | 殿の指摘通り。先ほどの比較表で使った値が間違っていた。 **full_sample_metricsを表示していた。これはWF-α選出パターンの全期間成績であり、WF-αのOOS成績ではない。** 正しい値は: - `wf_alpha_me…
+- 2026-04-28T22:29:12+09:00 | terminal | inbound | 計算ロジックにバグがありそうだな
 - 2026-04-28T22:25:19+09:00 | terminal | response | 殿の指摘通り。MaxDD = -0.6102が全体に張り付いているのは明らかにおかしい。確認する。 [meta] stop_reason=tool_use
 - 2026-04-28T22:24:27+09:00 | terminal | inbound | wf-アルファは明らかに計算ミスでは？
 - 2026-04-28T22:23:21+09:00 | terminal | response | 殿、三者比較結果。 **CAGR比較(激攻の目的関数):** | 忍法 | 本番 | 事後GS#1 | WF-α | |------|------|---------|------| | 追い風 | **72.9%** | 71.4% |…
@@ -12,8 +14,6 @@
 - 2026-04-28T22:16:53+09:00 | ntfy | outbound | 【monitor】将軍CTX:59%。/compactをご検討ください
 - 2026-04-28T22:06:33+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 21:54:07|cmd_2369
 - 2026-04-28T21:55:08+09:00 | terminal | response | cmd_2369 GATE CLEAR。結果を確認する。 [meta] stop_reason=tool_use
-- 2026-04-28T21:54:35+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝81
-- 2026-04-28T21:46:11+09:00 | ntfy | outbound | 【monitor】将軍CTX:58%。/compactをご検討ください
 
 ## 未解決確認事項
 - 殿の指摘通り。MaxDD = -0.6102が全体に張り付いているのは明らかにおかしい。確認する。 [meta] stop_reason=tool_use
