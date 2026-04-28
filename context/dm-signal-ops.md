@@ -178,6 +178,8 @@ docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証
 - L170: 仕様レビューは章番号突合+commit差分限定の二段検証で誤判定を防げる（cmd_549）
 - L184: Docsの新指標説明は判定条件をテーブル化すると実装定義との突合が速い（cmd_557）
 - L194: テスト棚卸しcmd発行前にvenv/pytest環境確認を前提条件に含める（cmd_623）
+- L657: deploy cmdは依存cmdの報告とcommit SHAを起票前に照合する（cmd_2311）
+- L666: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな（cmd_2346）
 
 ## §16 知識基盤改善（穴1/2/3対策完了 — 2026-02-22）
 
@@ -555,6 +557,15 @@ import metrics_research_engine as MRE
 実行: `python scripts/analysis/grid_search/cmd_1125_v2_champion_select.py --db-path outputs/grid_search/20260428/L0/shin`
 
 **結果**: GS選出シン四神12体 = 本番シン四神12体。**12/12全MATCH、変更0件**(cmd_2337偵察確認)。
+
+### GS正規化関連教訓
+- L658: GS正規化前にsource CSV期間とproduction最新月を照合する（cmd_2322）
+- L659: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける（cmd_2323）
+- L660: kawarimi等GS monthly CSVのNaN値はNULL許容スキーマで保持せよ（cmd_2325）
+- L661: verify_gs_db.pyはNaN除外後の非NaN行数を期待値にする必要がある（cmd_2326）
+- L662: シン四神12体突合は完全一致と丸め許容を分離して報告せよ（cmd_2330）
+- L664: outputs/analysis棚卸しはsource_type csv参照を軸に分類する（cmd_2343）
+- L665: L0四神GS vs L1忍法GS レイヤー混同禁止（cmd_2346）
 吸収なし(重複pattern_idなし)→12体確定。本番DBパラメータ更新は不要。
 
 ### 検証済み事実

@@ -886,3 +886,5 @@
 | cmd_2350 | gs-data-normalization-spec.md Phase 7(近傍分析道具)の設計書を書くために必要な4つの未調査事項を確認する。 道具を作る前に入力データの構造と既存道具の改修範囲を把握する。 | dm-signal | 04-28 | cmd_1012の月次return入力、指定L0 SQLit |
 | cmd_2351 | 設計書(docs/design/gs-data-normalization-spec.md §5.2 Phase 7)のgs_grid_robustness.pyのコア機能を実装する。 SQLite .dbからparams+metricsを読み、指定されたgrid_axes軸で全パターンの指標値を抽出し、JSON出力する。 可視化(PNG)とpeak_ratio計算は後続cmdで追加する。本cmdはデータ抽出+JSON出力のみ。 | dm-signal | 04-28 | scripts/analysis/gs_grid_robus |
 | cmd_2352 | L0シン四神12体のchampion_pattern_idをSQLite .dbのparamsテーブルから特定し、 タイムスタンプ付きYAML(champion_list.yaml)に記録する。 gs_grid_robustness.pyの入力データとなるchampionリスト。 | dm-signal | 04-28 | outputs/robustness/champion_li |
+| cmd_2353 | cmd_2351で実装したgs_grid_robustness.pyのJSON出力を入力として、 PNGヒートマップ(α6指標ごとにchampionマーカー付き)と断面プロット(champion固定LBスイープ1Dライン)を生成する機能を追加する。 | dm-signal | 04-28 | gs_grid_robustness.pyに--visual |
+| cmd_2354 | cmd_2351で実装したgs_grid_robustness.pyのJSON出力に、 peak_ratio(champion / ±1隣接平均、方向正規化)と統合スコア(peak_ratio幾何平均)を追加する。 | dm-signal | 04-28 | — |

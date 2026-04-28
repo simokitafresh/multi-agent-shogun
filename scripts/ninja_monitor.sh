@@ -525,6 +525,10 @@ safe_send_clear() {
     local clear_cmd
     clear_cmd=$(cli_profile_get "$agent_name" "clear_cmd")
     clear_cmd=${clear_cmd:-"/clear"}
+    # LK012: /clear前にpane CWDをSHOGUN_ROOTにリセット（Codex忍者がDM-Signal側CWDで起動→task YAML未到達を防止）
+    safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
+    log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
+
     log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
     if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"

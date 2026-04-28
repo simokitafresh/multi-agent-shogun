@@ -212,6 +212,11 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
 - （L340は§4 APIクライアントへ振り分け済）
 - L650: perf_measure.pyはviewer認証専用。admin計測にはCDPプリフライト手順か別スクリプトが必要（cmd_2271）
+- L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
+- L653: cdp_measure baseline比較は生成JSONへの統合確認を必須にする（cmd_2291）
+- L654: FE設計書§2計測セクションはcmd更新時に陳腐化。diff確認をAC化すべき（cmd_2297）
+- L655: FE設計書§2陳腐化(L654と同根)（cmd_2297）
+- L656: 計測スクリプトの固定待機排除はDOMポーリングで行う（cmd_2310）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 
