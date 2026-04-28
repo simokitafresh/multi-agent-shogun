@@ -906,3 +906,4 @@
 | cmd_2381 | cmd_2378の3修正(close累積momentum/全履歴shift/初回signal等ウェイト)を変わり身に適用。 修正版で全パターン計算→新SQLite生成→本番monthly_return_openと100%一致検証→旧SQLite削除。 | dm-signal | 04-29 | 変わり身run_077にcmd_2378の3修正（produ |
 | cmd_2383 | cmd_2378の3修正を抜き身に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_nukimi.pyにcmd_2378の3修正 |
 | cmd_2384 | cmd_2378の3修正を加速Dに適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_kasoku_diff.pyにcmd_237 |
+| cmd_2386 | Phase 1.96でrun_077全7忍法のsimulate_pattern修正完了(cmd_2378-2385)。修正版SQLiteでL1チャンピオン再選出し本番シン忍法configと突合する。cmd_2366の再実行。修正前SQLiteで選出したチャンピオンは無効。 | dm-signal | 04-29 | cmd_2366_l1_champion_select.py |

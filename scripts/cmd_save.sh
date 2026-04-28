@@ -2855,7 +2855,8 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '/acceptance_criteria:/,0' | grep 'description
 # 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
 # トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
 # FP修正(2026-04-27): descriptionにPARITY_PATH等の変数名があると偽陽性。title+purposeのみでトリガー
-_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' || true)
+# FP修正(2026-04-29): 過去形コンテキスト(修正後/修正版/修正済み/完了)の行を除外して分析cmdの誤検出を防ぐ
+_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' | grep -viE '修正後|修正版|修正済み|完了' || true)
 # scope_mode=SCOUT/VERIFYはDB変更なし→パリティP3-P5不要
 _CHECK19_SCOPE="$(cmd_block_get_field "scope_mode")"
 if [[ "${_CHECK19_SCOPE}" != "SCOUT" && "${_CHECK19_SCOPE}" != "VERIFY" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then

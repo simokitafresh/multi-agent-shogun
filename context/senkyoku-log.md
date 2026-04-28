@@ -774,3 +774,4 @@
 - 2026-04-29 cmd_2384: 半蔵。run_077_kasoku_diff 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR
 - 2026-04-29 cmd_2385: 小太郎。run_077_kasoku_ratio 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR。5忍法横展開全完了
 - 2026-04-29 cmd_karo_gs_sqlite_rename: 飛猿。GS SQLiteディレクトリリネーム(cmd_2360→2378, cmd_2361→2381)+旧dir削除+参照パス更新。GATE CLEAR
+- 2026-04-29 cmd_2386: 才蔵。Phase 9 L1チャンピオン再選出。修正版SQLiteから21体選出(MATCH 2/MISMATCH 18/未登録1)。L672登録(champion_list append guard)。GATE CLEAR
