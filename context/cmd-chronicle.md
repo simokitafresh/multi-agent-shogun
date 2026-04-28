@@ -904,3 +904,4 @@
 | cmd_2378 | 追い風(oikaze)のsimulate_pattern()を本番MomentumFilterBlockと完全一致するよう修正する。 ラルフループ: コード読み比べ→差分特定→修正→パリティ検証→不一致あれば再修正→100%達成まで。 追い風3体(激攻/常勝/鉄壁)の本番monthly_return_openと完全一致(1e-6以内)が完了条件。 | dm-signal | 04-29 | run_077_oikaze.pyのNumPy快速版を検証し |
 | cmd_2382 | cmd_2378の3修正を四つ目に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | cmd_2382: run_077_yotsume.pyへc |
 | cmd_2381 | cmd_2378の3修正(close累積momentum/全履歴shift/初回signal等ウェイト)を変わり身に適用。 修正版で全パターン計算→新SQLite生成→本番monthly_return_openと100%一致検証→旧SQLite削除。 | dm-signal | 04-29 | 変わり身run_077にcmd_2378の3修正（produ |
+| cmd_2383 | cmd_2378の3修正を抜き身に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_nukimi.pyにcmd_2378の3修正 |
