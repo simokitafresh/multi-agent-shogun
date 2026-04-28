@@ -902,3 +902,4 @@
 | cmd_2366 | Phase 1.95で再実行したL1全7忍法GS結果(ローカルSQLite 7本)からチャンピオンを選出し、 本番DBのシン忍法configと突合する。cmd_2335(L0四神)と同パターン。 L1は7忍法×3モード(激攻CAGR/常勝NHF/鉄壁MaxDD)。吸収判定後の体数がL1の確定体数になる。 | dm-signal | 04-28 | L1 7忍法×3モード=21チャンピオンをrun_077 S |
 | cmd_2367 | cmd_2366でL1チャンピオン21体中MATCH 8/MISMATCH 12/未登録1と判明。 殿の問い「L0が同じで構成PFが違うならどう違うのか」に答える分析。 MISMATCH 12体それぞれのGS選出パラメータ vs 本番パラメータを並べ、 乖離のパターン(component_set/lookback/top_n等)を分類する。 | dm-signal | 04-28 | MISMATCH 12体+未登録1体の詳細比較をMarkdo |
 | cmd_2368 | run_077のGSはPydanticバリデーションなしでパラメータグリッドを生成している。 GS選出チャンピオン21体のconfigを本番ビルディングブロック(MomentumFilter等)に通し、 バリデーションエラーで弾かれるパターンがないか検証する。 本番バリデーション下でGS結果と現行本番configが同一になるか確認する。 | dm-signal | 04-28 | cmd_2366選出21体を本番Pydantic入口(Pip |
+| cmd_2369 | 殿の仮説: 本番シン忍法はWF-α(Walk-Forward OOS alpha)で選出された可能性。 今回のGS結果(cmd_2359-2365 SQLite)からWF-α方式でチャンピオンを選出し、 (1)事後選出(cmd_2366)との差異、(2)本番configとの一致率を比較する。 WF-α-CAGR=激攻、WF-α-NHF=常勝、WF-α-MaxDD=鉄壁。 | dm-signal | 04-28 | cmd_2369: 7忍法run_077 SQLite DB |
