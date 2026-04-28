@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T00:03:05+09:00 -->
+<!-- generated_at: 2026-04-29T00:08:31+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T00:08:31+09:00 | terminal | response | 殿、cmd_2374結果。**重大な発見。** **全20体がGS SQLite内に存在する（pattern_exists=True）。しかし月次リターンは20体中0体で一致。** | 事実 | 値 | |------|-----| | …
+- 2026-04-29T00:08:12+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝85
+- 2026-04-29T00:03:57+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-205)
 - 2026-04-29T00:03:05+09:00 | terminal | response | 殿、cmd_2373結果。 **選出ロジックに符号バグなし。選出は正しい。** | 検証項目 | 結果 | |---------|------| | 激攻=CAGR最大化 | ✅ `cagr DESC` | | 常勝=NHF最大化 | ✅…
 - 2026-04-29T00:02:23+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率96% 連勝84
 - 2026-04-28T23:55:04+09:00 | ntfy | outbound | 【家老】cmd_2374 初回配備開始 (title=偵察 — L1シン忍法 本番config存在確認+月次リターン突合(GS SQLite), ninja=saizo) 偵察 📋 https://gist.github.com/simo…
@@ -11,9 +14,6 @@
 - 2026-04-28T23:53:30+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 23:45:16|CI緑: run 25059099999
 - 2026-04-28T23:52:40+09:00 | terminal | inbound | まずパリティを確認してみないか？簡単だよな
 - 2026-04-28T23:51:58+09:00 | terminal | response | その通り。GS SQLiteは全パラメータ組み合わせを網羅的に探索した結果だから、本番configの組み合わせ(component_set + lookback + top_n)も必ず1パターンとして存在するはず。 つまりGS SQLit…
-- 2026-04-28T23:51:35+09:00 | terminal | inbound | 理論上本番シン忍法は必ずこのGS内に存在するはずだよな？
-- 2026-04-28T23:49:54+09:00 | terminal | response | はっ。その通り。cmd_2359-2365で7忍法それぞれのGS SQLiteが存在する: | cmd | 忍法 | SQLite | |-----|------|--------| | 2359 | 分身 | `outputs/grid…
-- 2026-04-28T23:49:45+09:00 | terminal | inbound | なんか複雑なことをやっているけど、L1の忍法毎のGS結果はローカルSQLにあるんだよな？
 
 ## 未解決確認事項
 - 【家老】cmd_2374 初回配備開始 (title=偵察 — L1シン忍法 本番config存在確認+月次リターン突合(GS SQLite), ninja=saizo) 偵察 📋 https://gist.github.com/simokitafresh/6eb495d917…
