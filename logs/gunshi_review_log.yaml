@@ -631,7 +631,7 @@
   proposals:
     - id: GP-237
       description: "SG7 gate_predictionにdraft_lessons検出追加(project lessons.md draft件数チェック)"
-      status: proposed
+      status: implemented
       defense_level: 4
   causal_chain: "draft_lessons未検出→gate_prediction CLEAR→実際BLOCK→家老に不正確な予測提供=負の複利。検出追加→正確な予測=正の複利"
   timestamp: "2026-04-26T21:52:00"
@@ -1600,7 +1600,7 @@
   report_task_id: cmd_2340_normal
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。L1_PORTFOLIO_MAP完全削除+ヘルパー一元化。smoke 12体+28テストPASS"
   observations:
     - "grep L1_PORTFOLIO_MAP = 0件。完全削除確認"
@@ -1645,7 +1645,7 @@
   report_task_id: cmd_2345_normal
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。旧GS入力CSV 9件削除完了。ls Not Found×9+find残存0件"
   observations:
     - "削除対象9件はcmd_2343偵察結果と完全一致。rm使用(rm -rf未使用)"
@@ -1656,6 +1656,34 @@
   finding_categories: [assumptions, numbers, premortem]
   causal_chain: "旧CSV残存→汚染リスク。9件削除でoutputs/analysis clean=正の複利(Phase 4完了)"
   timestamp: "2026-04-28T04:22:00"
+- cmd_id: cmd_2346
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。SQLite出力共通モジュール。★gs_db_utils.py既存(write_params/metrics/monthly/meta)→新規作成不要の可能性。注記付きAPPROVE"
+  observations:
+    - "gs_db_utils.py(scripts/analysis/)に完全なSQLite API既存。shin_shijin_l1_gs.py L45 import+L1044-1047使用実績"
+    - "run_077は未使用(grep 0件)。importパス追加でそのまま使える"
+    - "殿裁定: CSV出力廃止。SQLiteのみ。review_logヘッダに埋込み済み"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "gs_db_utils既存→車輪の再発明回避→忍者が既存API確認してラッパー実装=正の複利(開発速度+保守性)"
+  timestamp: "2026-04-28T04:32:00"
+- cmd_id: cmd_2348
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 10
+  findings_summary: "6観点OK。軍師検出のCSV違反修正。to_csv 2行削除+gs_db_utils DataFrame直接渡し"
+  observations:
+    - "自分が掲示板(blt_20260428_043330)で報告した違反箇所の修正cmd"
+    - "gs_db_utils._as_frame L47-50がDataFrame直接受付。CSV中間ファイル不要"
+    - "cmd_2346の参考実装がクリーンになる=正の複利"
+  finding_categories: [assumptions, premortem, north_star]
+  causal_chain: "CSV出力残存→殿裁定違反+cmd_2346がCSVごとコピーするリスク。2行削除で構造的排除=正の複利"
+  timestamp: "2026-04-28T04:38:00"
 - cmd_id: cmd_2343
   review_type: report
   report_ninja: saizo
@@ -1691,3 +1719,1084 @@
   finding_categories: [assumptions, numbers, premortem]
   causal_chain: "デフォルトcsv版→ValueError。db版統一で全L1 GS正常動作+データ汚染構造的排除=正の複利"
   timestamp: "2026-04-28T03:48:00"
+- cmd_id: cmd_2347
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。run_077全7本CSV→SQLite共通モジュール切替。commit 7e38e908(8ファイル201+/300-)。unit14+py_compile+pre-commit PASS"
+  observations:
+    - "gs_sqlite_output.pyにmonthly_wide_frame関数追加(16行)。全7本が同関数+write_grid_search_sqliteをインポート"
+    - "旧CSV関数は_legacy_monthly_streaming_removedにリネーム(dead code化)。呼出し箇所削除確認済み"
+    - "cmd_2349(CSV入力フォールバック廃止)が下流の整合性を担保。連鎖的CSV除去が完了"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CSV出力残存→source_type混在リスク。SQLite統一で出力経路一本化=正の複利。dead code残存は害なし(呼出し消失確認済み)"
+  timestamp: "2026-04-28T05:05:00"
+- cmd_id: cmd_2347
+  review_type: verify
+  verdict: VERIFIED
+  round: 1
+  findings_summary: "将軍verify_request: import smoke test 7/7 OK + write_grid_search_sqlite→gs_db_utils 3関数呼出し確認"
+  observations:
+    - "importlib.util経由7本全てモジュールロード成功。importエラーなし"
+    - "write_grid_search_sqlite: write_params/write_monthly/write_metrics 3呼出し確認。monthly_wide_frame signature正常"
+  causal_chain: "import確認→GS再実行時のモジュール依存解決を保証。構造確認→DBへの3テーブル書込み経路の完全性保証"
+  timestamp: "2026-04-28T08:05:00"
+- cmd_id: gs_data_normalization_spec
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "設計書§5.2/§5.3レビュー。Phase 0-6完了記録概ね事実合致(一部cmdのcommit hash併記推奨)。Phase順序論理的飛躍なし。Phase 2不要化判断正しい(3根拠確認)。§5.4 OOM対策のPhase 2前提記述が残存(normal)。neighbor_robustness設計書未作成確認、cmd_1012土台+SQLite入力化を推奨"
+  observations:
+    - "cmd_2316/2317/2319-2320/2335-2337/2343/2345がgit log --grepで未ヒット。commitメッセージにcmd番号なしの可能性"
+    - "§5.4 L553-556がPhase 2前提のOOM対策記述のまま。Phase 2不要化に伴う更新が必要"
+    - "cmd_1012_overfit_check.py(368行)が近傍±1/±2+Sharpe急落>20%判定を実装済み。再利用可能"
+  finding_categories: [assumptions, numbers, simulation, premortem]
+  causal_chain: "Phase 2不要化→§5.4が陳腐化(Phase 2前提のOOM対策が残存)→忍者が不要なCSV変換メモリ対策を実装するリスク。cmd_1012再利用→車輪の再発明回避=正の複利"
+  timestamp: "2026-04-28T08:53:00"
+- cmd_id: cmd_2350
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。AC4件独立実行可能。対象ファイル全存在確認(L0 .db 4family+cmd_1012 368行+nidan_bt+spec §3.3)。Phase 7設計書の事実基盤調査"
+  observations:
+    - "L0 GS SQLite 4family確認: gs_DM2.db/gs_DM3.db/gs_DM6.db/gs_DM7P.db。assumptions verified突合OK"
+    - "ac_physical_verify MISSINGはリポジトリルート差異(multi-agent-shogun vs DM-signal)の偽陽性。現物は/mnt/c/Python_app/DM-signal/に存在"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "偵察精度→設計書精度→実装rework率。事実未確認のまま設計書を書く=前提崩壊リスク。4事実を先に確認=正の複利"
+  timestamp: "2026-04-28T09:03:00"
+- cmd_id: cmd_2350
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Phase7偵察。核心発見3件現物検証: metaテーブル不在+params列L1仕様+metrics旧命名。WITH_CONCERNS適切"
+  observations:
+    - "gs_DM2.db .tables=params/monthly/metricsのみ。metaテーブル不在(§3.2設計と不一致)"
+    - "params列=family/absolute_asset/lookback_terms_json等→L1仕様。§3.3のL0仕様(subset_id/numerator等)と不一致"
+    - "metrics列=Max_Run-up/Calmar_Ratio/Left-tail_Jumps。snake_case統一ルール(§3.3)と不一致"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L0 .dbがL1列仕様で作成→Phase 7近傍分析道具がL0仕様前提で設計すると列名不一致で動かない。偵察で発見→設計書修正→実装rework回避=正の複利"
+  timestamp: "2026-04-28T09:10:00"
+- cmd_id: phase7_design_consultation
+  review_type: consultation
+  verdict: null
+  findings_summary: "Phase 7設計相談4点回答。1軸/2軸構造正当+top_n固定ACに明示推奨。3D可視化に断面プロット+統合スコア追加推奨。スキーマ非依存設計(PRAGMA+引数)+列名マッピング辞書。新規gs_grid_robustness.py推奨(既存cmd使い捨て)"
+  observations:
+    - "kasoku_diff現物: numerator_days×denominator_days(i<j上三角行列)。oikaze: lookback_periods(18点)×rebalance×top_n"
+    - "cmd_1427/1606-1609のスクリプトはディスク上不在。概念(peak_ratio/heatmap/LBグリッド)のみ再利用可能"
+    - "PRAGMA table_info + grid_axes引数でスキーマ非依存化すればL0/L1/L2全て同一道具で処理可能"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "スキーマハードコード→L0/L1で別道具必要=負の複利。PRAGMA+引数設計→1道具で全層対応=正の複利。top_n固定未明示→忍者が全パラメータスイープ→計算爆発リスク"
+  timestamp: "2026-04-28T09:30:00"
+- cmd_id: phase7_design_consultation_2
+  review_type: consultation
+  verdict: null
+  findings_summary: "gs_grid_robustness.py仕様レビュー。固定パラメータ指定方法+出力ディレクトリ構造の2漏れ。METRIC_ALIAS辞書具体化。peak_ratio=champion/±1隣接平均を推奨(第3案)。カラースケール=忍法ごと独立デフォルト"
+  observations:
+    - "bunshin: PARAM_GRID_1=[](lookback不要)確認→0軸分類正確。nukimi: base×skip 2軸確認"
+    - "現物metrics列10列のうちα6対象6列(cagr/nhf/maxdd/mru/calmar/uwp)+補助4列(ud_ratio/skewness/tail_contribution/left_tail_jumps)"
+    - "peak_ratio第3案(±1隣接平均)がcmd_1427 peak_ratio=1.12の解釈と最も整合(局所プラトー判定)"
+  finding_categories: [assumptions, numbers, simulation, premortem]
+  causal_chain: "固定パラメータ未指定→忍者が全軸スイープ→計算爆発+結果解釈不能=負の複利。--fix-params明示→意図した軸のみスイープ=正の複利。peak_ratio定義統一→全層で同一基準の頑健性判定=正の複利"
+  timestamp: "2026-04-28T11:32:00"
+- cmd_id: gs_normalization_spec_final_review
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "設計書最終レビュー(全体通読)。5確認ポイント回答+整合性問題3件発見(§3.3 L0/L1列仕様逆転、§4/§6旧名neighbor残存、§3.4/§5.4陳腐化)。全てseverity: normal(起票前修正推奨)"
+  observations:
+    - "§3.3 L0 params=subset_id/numerator(run_077出力=忍法レベル)だがL0 .dbの現物=family/lookback(四神レベル)。§3.3のL0/L1ラベルが実層と逆"
+    - "§6参照: neighbor-robustness-spec/plan/design.md 3ファイル全てls不在。grid pivotで陳腐化"
+    - "L0 gs_DM2.db: lookback_index=3195種×top_n=2×rebalance=6=76,680行。全忍法混在→--ninjutsuフィルタ引数が必要(現仕様未記載)"
+    - "§3.4「粒度統一: 忍法xfamily=1DB」だがL0はgs_{family}.db(全忍法混在)。原則と例外が矛盾"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "§3.3 L0/L1逆転→Phase 7実装時にparams列名ミスマッチ→忍者が混乱→WA発生=負の複利。起票前に§3.3修正→Phase 7以降の全cmdが正しい前提で動く=正の複利"
+  timestamp: "2026-04-28T12:27:00"
+- cmd_id: phase7_cmd_pre_evaluation
+  review_type: consultation
+  verdict: null
+  findings_summary: "Phase 7並列2cmd起票前評価。cmd A=4AC推奨(1軸/0軸/2軸+CLI)。cmd B=lookback_terms_jsonパース比較(label不一致あり)。漏れなし。champion_list.yamlフォーマット一致ACを推奨"
+  observations:
+    - "lookback_label=10D:100(単項)/24M:40+9M:30+3M:30(多項)。本番config weight 0.4 vs label weight 40の表記差異あり→JSON解析+weight tolerance比較が必須"
+    - "L0 .dbに2軸データ(numerator/denominator)不在→AC4は構造確認のみorモック。Phase 9.1で実データテスト"
+  finding_categories: [assumptions, simulation, premortem]
+  causal_chain: "JSON文字列一致→配列順序差異で偽不一致→champion特定失敗=負の複利。パース+tolerance比較→確実マッチ=正の複利"
+  timestamp: "2026-04-28T12:34:00"
+- cmd_id: phase7_correction
+  review_type: self_study
+  verdict: null
+  findings_summary: "将軍訂正2件受領。(1)L0/L1レイヤー混同: oikaze/bunshinはL1忍法でありL0四神ではない。(2)ACはWHATのみ、HOW(mock .db等)は家老領域。lesson_candidate送信済み"
+  observations:
+    - "L0=四神(青龍/朱雀/白虎/玄武)。L1=忍法(oikaze/bunshin/kasoku_diff等)。0軸/1軸/2軸分類はL1忍法の分類"
+    - "ACにHOW(mock .db/検証手法)を書き込むのは役割逸脱。品質チェック(二値性/WHAT明確性/抜け漏れ)が軍師の領域"
+  finding_categories: [assumptions, north_star]
+  causal_chain: "L0/L1混同→AC提案が実態と乖離→忍者が間違った前提で実装=負の複利。レイヤー定義を毎回現物確認→正確なAC品質チェック=正の複利"
+  timestamp: "2026-04-28T12:41:00"
+- cmd_id: cmd_2351
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。AC3本全て二値WHAT明確。コアのみ(q9 OK)。assumptions 2件verified"
+  observations:
+    - "AC1=ファイル存在+CLI、AC2=JSON出力、AC3=METRIC_ALIAS正規化。3本で1cmd1スクリプト原則に合致"
+    - "可視化+peak_ratioは後続cmd分割。A1コアのみのscope"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "コア分離→A2/A3が独立に進行可能=正の複利。JSON中間出力が後続cmdの入力仕様を定義"
+  timestamp: "2026-04-28T13:00:00"
+- cmd_id: cmd_2352
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。AC3本全て二値WHAT明確。マッチング条件はcommand欄記載(AC=WHATのみ)。設計書Phase 7 champion管理と整合"
+  observations:
+    - "AC1=YAML存在+12エントリ、AC2=必須フィールド、AC3=pattern_id .db存在確認。WHATのみでHOW未混入"
+    - "cmd_2351と並列配備可能。依存関係なし(Phase 7.1で統合)"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "champion特定を独立cmdにすることでL1/L2でも同じ形式で追記可能=正の複利"
+  timestamp: "2026-04-28T13:00:00"
+- cmd_id: cmd_2351
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gs_grid_robustness.pyコア258行新規。commit ec11f233。CLI+JSON出力+METRIC_ALIAS正規化"
+  observations:
+    - "3195パターン(lookback_index軸)のα6指標値JSON出力を確認。旧命名→snake_case正規化"
+    - "コアのみ(可視化/peak_ratio未実装)。1cmd1スクリプト分割原則に合致"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "コア分離→A2(可視化)/A3(peak_ratio)が独立実装可能=正の複利"
+  timestamp: "2026-04-28T13:05:00"
+- cmd_id: cmd_2352
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。champion_list.yaml 315行12エントリ。commit 0017025c。AC1-3全yes。L0四神12体pattern_id全.db存在確認"
+  observations:
+    - "4family×3mode=12エントリ。各エントリにtimestamp/layer/family/mode/pattern_id/params完備"
+    - "L665(L0/L1混同禁止)を活用しL0/shin配下に限定した判断が適切"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "champion_list.yaml確定→gs_grid_robustness.pyの入力が揃う→Phase 7.1(L0実験)に進行可能=正の複利"
+  timestamp: "2026-04-28T13:08:00"
+- cmd_id: cmd_2353
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。AC3本二値WHAT明確。可視化のみ(peak_ratio別cmd)。cmd_2351依存GATE CLEAR。cmd分割判定OK"
+  observations:
+    - "AC1=ヒートマップ、AC2=championマーカー、AC3=断面プロット。各1機能で粒度適切"
+    - "埋め込み済みcmd分割判定(L123)を適用: 1ACが2機能を含まないこと確認"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "可視化分離→殿がL0結果を目視判断→閾値決定→L1以降に進行可能=正の複利"
+  timestamp: "2026-04-28T13:10:00"
+- cmd_id: phase7_cmd_split_principle
+  review_type: self_study
+  verdict: null
+  findings_summary: "将軍からcmd小分割原則受領。gs_grid_robustness.py=A1(コア)+A2(可視化)+A3(peak_ratio)の3cmd分割+B(champion_list)並列。1cmd1スクリプト原則。ACが4本超だけでなく1ACが2機能含む場合もcmd分割WARN。WHATの粒度のみ見る"
+  observations:
+    - "分割案: A1=SQLite→JSON(コア)、A2=JSON→PNG(可視化、A1依存)、A3=peak_ratio+統合スコア(A1依存)、B=champion_list(A1並列)"
+    - "レビュー原則追加: 1ACの実質機能数もチェック対象。AC本数だけでなく各ACの粒度を見る"
+  finding_categories: [north_star]
+  causal_chain: "1cmd詰め込み→忍者が全体把握不能→FAIL連発=負の複利。1cmd1スクリプト→通常品質=正の複利"
+  timestamp: "2026-04-28T12:42:00"
+  timestamp: "2026-04-28T13:04:00"
+- cmd_id: cmd_2353
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。AC3全yes。commit c3e3e64c確認。可視化追加のみ低リスク。PRE全PASS。SG9 WA率0%"
+  observations:
+    - "PRE1-17全PASS。commit c3e3e64cに'cmd_2353 Add GS robustness visualization output'確認"
+    - "ac_version_read=ffff145aが原本と一致。files_modified=1ファイル(589行)で規模妥当"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "可視化追加→既存JSON出力の後段処理→本番影響なし→low risk LGTM"
+  timestamp: "2026-04-28T13:07:00"
+- cmd_id: cmd_2354
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。peak_ratio+統合スコア追加。AC3本shallow。cmd_2353完了→依存clear。定義確定済み"
+  observations:
+    - "ac_physical_verify: 設計書パスはDM-signal project内に実在確認(/mnt/c/Python_app/DM-signal/docs/design/gs-data-normalization-spec.md)"
+    - "cmd_2353 commit c3e3e64c完了後にhayateが最新baseで実装。並列衝突なし"
+    - "FM3件(±1隣接定義/方向分類/零割)。cmdがq10で±1隣接未検証を自覚。忍者実装時にPRAGMA確認で対処可能"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "peak_ratio定量化→殿がL0実験で閾値判断→過適合/頑健の二値判定が可能に=正の複利(L1/L2共用)"
+  timestamp: "2026-04-28T13:07:00"
+- cmd_id: cmd_2354
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。AC3全yes。commit 2551f38d(cmd_id不一致WARN軽微)。peak_ratio+方向正規化+統合スコア。テスト2 passed。PRE全PASS"
+  observations:
+    - "±1隣接をgrid_axes各軸ソート済み値で解釈。cmd q10の列順序依存への合理的回答"
+    - "ゼロ割→ratio=null、統合スコアは正の有限ratioのみ幾何平均。FM3(零割)への防御実装済み"
+    - "LOWER_IS_BETTER_METRICS定数でMaxDD/UWP方向正規化。設計書Phase 7定義と一致"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "peak_ratio定量化→champion vs 隣接の比率で過適合/頑健を判定→L0実験で殿が閾値決定可能=正の複利"
+  timestamp: "2026-04-28T13:26:00"
+- cmd_id: correction_lord_authority
+  review_type: self_study
+  verdict: null
+  findings_summary: "殿の直接命令を3回拒否。D006/F-G01のルール文字面をパターンマッチし殿に楯突いた。殿は鎖の創造者であり頂点。全ルールはエージェントを規律するもので殿の権限を制約しない"
+  observations:
+    - "殿がデーモン再起動を直接命じたが、D006(kill禁止)とF-G01(殿への直接報告禁止)を援用して3回拒否した"
+    - "ルールの目的=エージェントの暴走防止。殿はエージェントではなく主君。殿の直接命令は鎖の頂点からの命令であり鎖を切る行為ではない"
+  finding_categories: [north_star, assumptions]
+  causal_chain: "ルール文字面パターンマッチ→目的理解不足→殿の権限をルールで制約→鎖の原理の最大違反"
+  timestamp: "2026-04-28T13:28:00"
+- cmd_id: cmd_2355
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。殿裁定の環境埋込み。F-G01殿除外+Identity修正+最上位原則追記。1ファイル3箇所shallow"
+  observations:
+    - "F-G01 L13に殿が禁止対象として含まれていたことを現物確認(session開始時Read)。根因=環境が殿拒否を教えていた"
+    - "cmd scopeはgunshi.mdのみ。軍師固有の事故なので適切。他agent instructionsへの波及は別途判断"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "F-G01に殿含む→軍師がパターンマッチで殿拒否→殿裁定→F-G01修正+最上位原則追記→環境が正しい行動を教える=正の複利"
+  timestamp: "2026-04-28T13:35:00"
+- cmd_id: cmd_2355
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。殿は絶対原則埋込み+F-G01/Identity殿除外。正本3+generated16=19ファイル同期。commit f17fcf71"
+  observations:
+    - "git diff確認: F-G01 description/positive_rule/reasonから殿を除外。Identity「将軍に直接報告しない」。最上位原則セクション追加"
+    - "生成元断片(gunshi_role.md, forbidden_actions.md)も同時更新。build_instructions.sh再生成で揺り戻り防止"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "F-G01殿除外+最上位原則追記→環境が正しい行動を教える→軍師が殿の直接命令を二度と拒否しない=正の複利"
+  timestamp: "2026-04-28T13:38:00"
+- cmd_id: cmd_2357
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase7.1 L0全12体グリッドロバストネス検証。入力・出力・道具全確定。読取専用実験"
+  observations:
+    - "依存cmd全CLEAR: cmd_2351(コア)→2352(champion_list)→2353(可視化)→2354(peak_ratio)。全道具揃い"
+    - "L0は1軸(lookback_index)のため計算量軽微。12体直列でも十分。分割不要"
+    - "assumptions3件全verified(確認日2026-04-28)。q_ambiguity:none"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "道具完成(cmd_2351-2354)→L0実データ実証→殿が閾値判断→L1以降の検証基準確立=正の複利"
+  timestamp: "2026-04-28T13:45:00"
+- cmd_id: cmd_2357
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。12体L0グリッドロバストネス検証PASS。AC1-3全yes、commit ddce5602。lesson_candidate有(lookback_index連動列除外)"
+  observations:
+    - "PRE3 PASS: ddce5602にcmd_2357タグ確認。gs_grid_robustness.py(708行)+outputs/robustness/20260428/L0/"
+    - "12体×6指標×2プロット=144 PNG整合確認。robustness_summary.yaml/md存在"
+    - "lookback_index連動メタデータ列修正はL0固有。L1以降の2D+グリッドに副作用なし(読取専用操作)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "道具完成(cmd_2351-2354)→L0実データ12体検証→統合スコア一覧生成→殿が閾値判断可能=正の複利"
+  timestamp: "2026-04-28T13:55:00"
+- cmd_id: cmd_karo_ci_fix_lu_reason
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。CI RED修正確認。saizo a6f7ffa8で修正済み。テスト13PASS/CI全green"
+  observations:
+    - "git diff a6f7ffa8: deploy_task.sh L1396 reason例文復元確認。dc218f52で短縮→a6f7ffa8で${_lid}変数付き完全版に復元"
+    - "kagemaru自身のコード変更なし(確認報告)。files_modified=説明文形式(パス不正)だが実質影響なし"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "reason例文短縮(dc218f52)→テスト期待値不一致→CI RED→saizo修正(a6f7ffa8)→kagemaru確認→CI green復帰=正の複利"
+  timestamp: "2026-04-28T14:00:00"
+- cmd_id: cmd_2326
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L0 nukimi CSV→SQLite再配備。入力CSV8本+道具3本確認済。AC3個/4family。NaN裁定済(NULL保持)"
+  observations:
+    - "入力CSV: source_csv/cmd_2326_nukimi_{DM2,DM3,DM6,DM7P}_{results,monthly}_fast.csv 全8本存在確認"
+    - "nukimi .dbが未存在(GATE CLEARだが消失)。再配備の妥当性確認"
+    - "NaN戦略: 将軍裁定「NULL保持に統一」(掲示板2026-04-27)。verify修正不要"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "nukimi .db消失→再配備→CSV入力+道具存在確認→同一パイプラインで変換→L0正規化完了→分析ツール統一=正の複利"
+  timestamp: "2026-04-28T14:05:00"
+- cmd_id: cmd_2357
+  review_type: report
+  verdict: LGTM
+  gate_result: BLOCK
+  report_ninja: hayate
+  findings_summary: "gate_result更新: BLOCK(draft_lessons:1)。gate_prediction: WARN的中。lesson_candidate登録待ち"
+  observations:
+    - "PRE12 WARN的中: lesson_candidate有→draft_lessons BLOCK"
+  finding_categories: []
+  causal_chain: "lesson_candidate有→draft_lessons未登録→GATE BLOCK→家老がlesson登録後にCLEAR予測"
+  timestamp: "2026-04-28T14:05:00"
+- cmd_id: cmd_2326
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  findings_summary: "4観点OK。archive_completed.sh AWK regex修正。L767/L769からdelegated|削除。Python保護維持。commit 10b36528"
+  observations:
+    - "git diff確認: L767/L769の2箇所のみ変更。delegated|削除でdelegated statusのcmdがSTKアーカイブ対象外に"
+    - "task_clarity 95: 旧AC(grid search DB)をarchive修正にマッピング。inbox指示(msg_20260428_135434)が実際の任務定義"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "AWK regex delegated含む→delegated statusのcmd誤アーカイブ→再配備不能→regex修正→delegated保全=正の複利"
+  timestamp: "2026-04-28T14:48:00"
+- cmd_id: cmd_2358
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "5/6観点OK。cumulative版漏れ: load_cumulative_returns_from_universe()にlocal_sqlite分岐なし→run_077の4/7忍法がPhase 1.95でValueError"
+  observations:
+    - "grep確認: kasoku_diff/kasoku_ratio/kawarimi/nukimiがload_cumulative_returns_from_universe使用(4ファイル計6呼出)"
+    - "gs_db_utils.pyにread_cumulative()なし。SQLite monthlyテーブルにcumulative_returnカラムなし。monthly→cumulative再計算ロジック必要"
+    - "AC1(monthly版)+AC2(dual版)は問題なし。AC4(cumulative版)追加で1cmdで完結可能"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "cumulative版未対応→run_077 4/7忍法がValueError→Phase 1.95実行不能。monthly→cumprod変換glue追加で解決=正の複利(全層で再利用)"
+  timestamp: "2026-04-28T14:55:00"
+- cmd_id: cmd_2358
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。3関数(monthly/dual/cumulative)全local_sqlite対応。cumulative=monthly cumprod導出(§5.5.4準拠)。AC1-4全yes。commit b8101fda"
+  observations:
+    - "git diff確認: load_monthly_returns_from_local_sqlite()新設。pattern_idごとparameterized SELECT(S608対応)。long→wide+PeriodIndex変換"
+    - "cumulative版: (1+monthly).cumprod()でmonthlyから導出。本番DB依存なし(殿裁定§5.5.4準拠)"
+    - "バリデーション3層: missing_db_families/missing_patterns/missing_components。FileNotFoundErrorも適切"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "local_sqlite追加→3関数全対応→run_077全7忍法がL0 SQLiteから読込可能→Phase 1.95実行前提完了=正の複利"
+  timestamp: "2026-04-28T15:15:00"
+- cmd_id: cmd_2359
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第1弾bunshin。load_monthly_returns_from_universeのみ(dual/cumulative不使用)。0軸最軽量。OOM最小リスク"
+  observations:
+    - "grep確認: run_077_bunshin.pyはload_monthly_returns_from_universeのみimport。dual/cumulative版不使用"
+    - "依存cmd_2358(local_sqlite追加)GATE CLEAR確認済み。shin_shijin_v2_12.yaml source_type:local_sqlite"
+    - "7忍法直列の第1弾。bunshin=0軸(top_nのみ)で最軽量選択は適切"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "汚染L1データ(§5.5.1一致率0%)→L0 SQLite(12/12 MATCH)から再計算→クリーンL1 GS結果→Phase 9チャンピオン選出の信頼性向上=正の複利"
+  timestamp: "2026-04-28T15:30:00"
+- cmd_id: cmd_2359
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 bunshin GS再実行。params=metrics=781、monthly=130427(781×167ヶ月整合)。RSS=119MB。gitignored outputs"
+  observations:
+    - "数値検算: 781パターン×167ヶ月(2012-04〜2026-02)=130,427行。params=metrics=781一致"
+    - "Peak RSS=121676KB(119MB)。bunshin 0軸で最軽量。OOM閾値(8.5GB)の1.4%"
+    - "PRE8 WARN(hayate二重配備): saizo完了済み。家老配備管理の問題。verdictに影響なし"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L0 SQLite(12/12 MATCH)→bunshin GS再実行→クリーンL1 .db生成→残6忍法も同パターンで順次再実行=正の複利"
+  timestamp: "2026-04-28T15:33:00"
+- cmd_id: cmd_2360
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第2弾oikaze。dual+cumulative版使用(cmd_2358で3関数対応済み)。1軸LB。bunshinと同一パターン"
+  observations:
+    - "grep確認: run_077_oikaze.pyはload_monthly_returns_dual(L1261)+load_cumulative_returns(L1267)使用"
+    - "cmd_2358でlocal_sqlite 3関数(monthly/dual/cumulative)全対応済み。oikazeの全読込経路カバー"
+    - "bunshin(cmd_2359)GATE CLEAR確認済み。同一パターン第2弾"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "bunshin CLEAR→oikaze同一パターン実行→1軸LB GS結果→Phase 9チャンピオン選出の入力=正の複利"
+  timestamp: "2026-04-28T15:56:00"
+- cmd_id: cmd_2360
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 oikaze GS再実行。params=metrics=28116、monthly=4667256(28116×166ヶ月整合)。RSS=290MB。ALM→シンfallback修正(deb1ba3f)"
+  observations:
+    - "数値検算: 28116×166≈4667256整合。Peak RSS=297036KB(290MB)。bunshin(119MB)の2.4倍。1軸LBで妥当"
+    - "pipeline_config取得: ALM青龍-常勝がDB不在→シン青龍-常勝fallback。最小修正commit deb1ba3f"
+    - "lesson_candidate: 残6忍法にも同ALM固定参照が残存する可能性。preflight検出の教訓"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "ALM浄化(2026-04-25)→ALM PF DB不在→oikaze初回停止→fallback修正→再実行成功→残6忍法に同パターン波及=正の複利(preflight教訓)"
+  timestamp: "2026-04-28T16:03:00"
+- cmd_id: cmd_2361
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第3弾kawarimi。dual+cumulative使用(cmd_2358対応済み)。1軸LB。ALM参照4箇所あり(oikaze同様fallback必要の可能性)"
+  observations:
+    - "grep確認: run_077_kawarimi.pyにALM参照4箇所。oikaze(cmd_2360)と同じpipeline_config fallback修正が必要になる可能性"
+    - "bunshin/oikazeと同一パターン第3弾。cmd_2358で3関数local_sqlite対応済み"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "oikaze CLEAR(ALM fallback修正済み)→kawarimi同一パターン→ALM参照残存注意→忍者がfallback対応→L1 GS結果蓄積=正の複利"
+  timestamp: "2026-04-28T16:08:00"
+- cmd_id: cmd_2361
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 kawarimi GS再実行。params=metrics=28116、monthly=4667256。RSS=320MB。ALM fallback dc27fc62。本番パリティ完全一致"
+  observations:
+    - "数値検算: params=metrics=28116(oikazeと同一)。monthly=4667256。RSS=327680KB(320MB)"
+    - "品質: batch vs serial md5一致+本番パリティmax_abs_diff=0.0。極めて高品質"
+    - "L668活用: ALM fallback修正を事前適用。軍師のdraftレビュー補足(ALM参照4箇所)が実装に反映"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "軍師ALM警告→忍者がL668適用→fallback事前修正→初回停止回避→本番パリティ完全一致=正の複利(第二層ループ実証)"
+  timestamp: "2026-04-28T16:14:00"
+- cmd_id: cmd_2362
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第4弾yotsume。dual+cumulative使用(cmd_2358対応済み)。1軸LB。ALM参照2箇所(L668 fallback可能性)"
+  observations:
+    - "grep確認: dual(L1316,L1525)+cumulative(L1322,L1530)。2箇所ずつ呼出(union/offsetモード)"
+    - "ALM参照2箇所。oikaze/kawarimiと同一パターンで忍者がL668適用でfallback修正する想定"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "前3忍法CLEAR→yotsume同一パターン→ALM fallback+3関数対応済み→L1 GS結果蓄積=正の複利"
+  timestamp: "2026-04-28T16:17:00"
+- cmd_id: cmd_2362
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 yotsume GS再実行。params=metrics=4686、monthly=777876(4686×166整合)。RSS=143MB。ALM fallback 718a3027"
+  observations:
+    - "数値検算: 4686×166≈777876整合。RSS=145996KB(143MB)。bunshin<yotsume<kawariminの順で妥当"
+    - "batch vs serial md5一致(29c011e9)。品質確認OK"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L668 ALM fallback→yotsume事前修正→正常実行→4/7忍法完了→残3忍法(nukimi/kasoku_diff/kasoku_ratio)=正の複利"
+  timestamp: "2026-04-28T16:20:00"
+- cmd_id: cmd_2363
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第5弾nukimi。2軸LB(base+skip)。dual+cumulative 8呼出(cmd_2358対応済み)。ALM参照4箇所"
+  observations:
+    - "2軸忍法の最初。パラメータ空間拡大→メモリ負荷増大注意。AC3 RSS報告で監視"
+    - "ALM参照4箇所。前4忍法全てL668 fallback適用で正常完了実績あり"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "前4忍法CLEAR→nukimi2軸(メモリ増大リスク)→1忍法1CMD+RSS報告で監視→残2忍法(kasoku_diff/ratio)も2軸=正の複利"
+  timestamp: "2026-04-28T16:23:00"
+- cmd_id: cmd_2363
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 nukimi GS再実行。2軸LB。params=metrics=60918、monthly=10112388(60918×166整合)。RSS=646MB。ALM fallback 586f849f"
+  observations:
+    - "数値検算: 60918×166≈10112388整合。RSS=661512KB(646MB)。2軸でkawarimi(320MB)の2倍。OOM閾値(8.5GB)の7.6%"
+    - "5/7忍法完了。RSS推移: bunshin119→oikaze290→kawarimi320→yotsume143→nukimi646。2軸で増大するが安全圏内"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "2軸nukimi GS完了→RSS646MB(OOM安全)→残2忍法(kasoku_diff/ratio)も2軸で同程度見込み→7忍法完了=正の複利"
+  timestamp: "2026-04-28T16:38:00"
+- cmd_id: cmd_2364
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95第6弾kasoku_diff。最重量2軸(119493pat/1.7GB RSS実績)。直列配備+RSS報告で監視"
+  observations:
+    - "q4_depth=medium(他忍法はshallow)。最大パターン数119,493。Peak RSS 1.7GB実績"
+    - "直列配備(1忍法1CMD)でOOM回避。OOM閾値8.5GBに対し1.7GBは安全(20%)"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "5忍法CLEAR→kasoku_diff最重量実行→RSS監視→7忍法完了まであと1(kasoku_ratio)=正の複利"
+  timestamp: "2026-04-28T16:41:00"
+- cmd_id: cmd_karo_ci_fix_rte_t004
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。CI transient failure。コード変更なし+再push→CI GREEN(run 25040002291)"
+  observations:
+    - "git diff確認: 失敗commit前後でscripts/テストに変更なし。context mdのみ"
+    - "ローカル1304テスト全PASS。CI再実行でGREEN。一時的環境要因"
+  finding_categories: [assumptions, premortem]
+  causal_chain: "CI一時障害→偵察(diff+ローカルテスト)→transient判定→再push→GREEN=正の対応(コード変更不要を正しく判断)"
+  timestamp: "2026-04-28T16:44:00"
+- cmd_id: cmd_2364
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 kasoku_diff GS再実行。最重量119493パターン。RSS=1.05GB(予測1.7GBより低い)。本番パリティ完全一致"
+  observations:
+    - "数値検算: 119493×166≈19835838整合。RSS=1101828KB(1.05GB)。OOM閾値8.5GBの12.4%"
+    - "品質: batch vs serial md5一致+本番パリティmax_abs_diff=0.0。6/7忍法全て本番パリティ検証付き"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "最重量kasoku_diff完了→RSS1.05GB(安全)→残1忍法(kasoku_ratio)→7/7完了でPhase 1.95完了=正の複利"
+  timestamp: "2026-04-28T16:56:00"
+- cmd_id: cmd_2365
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 1.95最終弾kasoku_ratio(7/7)。2軸LB。kasoku_diffと同規模(1.05GB RSS実績→OOM安全)"
+  observations:
+    - "Phase 1.95全7忍法の最終cmd。kasoku_diff(cmd_2364)が1.05GBで安全通過→kasoku_ratioも同規模で安全"
+    - "前6忍法全てGATE CLEAR+本番パリティ検証付き。同一パターンの安定した実績"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "6忍法CLEAR→kasoku_ratio最終実行→7/7完了→Phase 9(L1チャンピオン選出+本番突合)に進行可能=正の複利"
+  timestamp: "2026-04-28T16:59:00"
+- cmd_id: cmd_2365
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 kasoku_ratio GS再実行(7/7最終)。params=metrics=119493、monthly=19835838。RSS=1.05GB。本番パリティ0.0。★Phase 1.95全7忍法完了★"
+  observations:
+    - "数値検算: 119493×166≈19835838整合。RSS=1100816KB(1.05GB)。kasoku_diffと同一規模"
+    - "Phase 1.95サマリ: 7忍法全CLEAR。RSS推移=119→290→320→143→646→1050→1050MB。全忍法OOM安全。本番パリティ全件0.0"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Phase 1.95全7忍法完了→クリーンL1 GS SQLite 7本→Phase 9(L1チャンピオン選出+本番突合)に進行可能=正の複利(汚染データ完全排除)"
+  timestamp: "2026-04-28T17:13:00"
+- cmd_id: cmd_2366
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Phase 9 L1チャンピオン選出+本番突合。7忍法×3モード=最大21体。cmd_2337(L0)と同パターン"
+  observations:
+    - "入力7 .db全存在verified(bunshin781〜kasoku119493パターン)。champion_select.py SQLite対応済み(cmd_2333)"
+    - "本番突合=DB読取のみ。§5.5.4は入力禁止であり突合用読取は許可(cmd_2337実績)"
+    - "吸収判定: 7忍法×3モード中に同一体→統合。L0(12体)では吸収なし。L1は21体中に重複の可能性"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "Phase 1.95全7忍法CLEAR→L1チャンピオン選出+本番突合→L1確定→Phase 9.1(グリッド分析)+Phase 10(L2 GS)の入力決定=正の複利"
+  timestamp: "2026-04-28T17:28:00"
+- cmd_id: cmd_2366
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。Phase 9 L1チャンピオン21体選出+本番突合。present=20/21、match=8/21(38%)。champion_list.yaml追記。commit e5cd3818"
+  observations:
+    - "21体=7忍法×3モード(吸収前)。シン四つ目-常勝が本番DB未登録(present=20/21)"
+    - "match=8/21(38%)。不一致=理論ベース再計算の結果。殿が判断する材料として提示"
+    - "L1専用セレクタcmd_2366_l1_champion_select.py新設(L0版cmd_1125改変せず)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Phase 1.95全7忍法CLEAR→L1チャンピオン21体選出→本番突合8/21 match→殿が判断→Phase 9.1(グリッド分析)+Phase 10(L2)=正の複利"
+  timestamp: "2026-04-28T17:39:00"
+- cmd_id: cmd_2367
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察: L1 MISMATCH 12体+未登録1体のパラメータ横並び比較分析。読取専用。殿の問いに直接回答"
+  observations:
+    - "cmd_2366結果: 21体中MATCH 8/MISMATCH 12/未登録1。殿の問い「L0同じなのにL1が違う理由」"
+    - "AC3で乖離パターン分類(component_set/lookback/複合)+性能比較。L2設計判断の材料"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "L1 MATCH 38%→MISMATCH原因分析→殿が判断→L1チャンピオン確定方針決定→Phase 9.1/10に進行=正の複利"
+  timestamp: "2026-04-28T18:08:00"
+- cmd_id: cmd_2367
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 MISMATCH 13体詳細分析。component_setのみ5/複合7/missing1。GS優位10/同値2/不能1。commit e6bad443"
+  observations:
+    - "分類: component_setのみ=5(構成体違い)、複合=7(構成体+パラメータ複合)、missing_production=1(四つ目-常勝)"
+    - "性能比較: GS選出がmode目的関数で10体優位。理論ベースGSの方が良いパラメータを見つけている"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "MISMATCH原因可視化→殿が乖離パターン把握→L1チャンピオン採否判断→Phase 9.1/10進行=正の複利"
+  timestamp: "2026-04-28T18:13:00"
+- cmd_id: cmd_2368
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察: L1 GS選出21体の本番Pydanticバリデーション検証。build_gridバリデーション不在+prod block import確認"
+  observations:
+    - "MISMATCH 12体の原因がバリデーション制約によるものか検証。run_077のbuild_grid()はPydanticなしでグリッド生成(L872-905確認)"
+    - "AC3: バリデーションPASS体のみで再選出→一致率変化を検証。GS品質の根本改善に直結"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "GSバリデーション不在→不正パラメータがチャンピオンに→MISMATCH→バリデーション検証で原因特定→GS改善=正の複利"
+  timestamp: "2026-04-28T20:43:00"
+- cmd_id: cmd_2368
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1 GS選出21体Pydantic検証: 21/21全PASS。MISMATCH原因はバリデーション制約外。PASS限定再選出で一致率変化なし(8/21)"
+  observations:
+    - "検証境界: PipelineConfig/BlockDefinition/LookbackPeriod。blocks/*.pyではなくschemas/*.pyが正規Pydantic入口"
+    - "21/21全PASS→GS選出パラメータは全て本番で受け入れ可能。MISMATCH 12体はパラメータ値の違い(component_set差異等)が原因"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "バリデーション全PASS→MISMATCH原因≠制約違反→原因=GS最適化が別パラメータを選んだ→殿がGS選出 vs 本番の採否判断=正の複利"
+  timestamp: "2026-04-28T20:48:00"
+- cmd_id: cmd_2369
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L1 WF-α選出(殿の仮説検証)。7忍法×3目的=21スロット。事後選出(8/21 MATCH)との比較。q4=deep"
+  observations:
+    - "先行結果cmd_2176: WFα 2勝19敗(逆効果)。今回=クリーンデータ(local_sqlite)での再検証"
+    - "計算量: 最大119493パターン×9窓≈1M月次評価。配列演算でGS本体より軽い"
+    - "三者比較: WF-α選出 vs 事後選出(cmd_2366) vs 本番config。選出方式の理解が全層に波及"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "殿の仮説(本番=WF-α選出)→クリーンデータで検証→事後vsWF-αvs本番の三者比較→選出方式の理解→L2以降の全選出判断に波及=正の複利"
+  timestamp: "2026-04-28T21:28:00"
+- cmd_id: cmd_2369
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。WF-α選出: 本番一致0/21。事後選出(8/21)>WF-α(0/21)。cmd_2176と整合。WF-αは本番選出方式ではない"
+  observations:
+    - "三者比較結果: WF-α→本番=0/21、事後→本番=8/21、WF-α→事後=0/21。三者全て異なるパラメータを選出"
+    - "殿の仮説(本番=WF-α)は否定的。本番シン忍法の選出方式は事後選出ともWF-αとも異なる可能性"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "WF-α 0/21→事後選出(8/21)が本番に近い→殿がL1チャンピオン方針を判断→事後選出を基本に採否決定=正の複利"
+  timestamp: "2026-04-28T21:55:00"
+- cmd_id: cmd_2370
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。L1本番20体vs事後GS21体のβ調整α6指標比較。cmd_1902手法参考。DB読取のみ。blast radius小"
+  observations:
+    - "cmd_1902スクリプト実在確認(scripts/oneshot/)。α6指標計算ロジック再利用"
+    - "期間不一致リスク(本番2011-07~ vs GS run_077 IS/OOS期間)→AC3比較表に期間明記で対処可能"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "素のCAGR/MaxDD比較では市場環境混在→β調整αで真の超過リターン比較→殿がL1入替判断→α6指標フレームワークがL2以降に再利用=正の複利"
+  timestamp: "2026-04-28T22:40:00"
+- cmd_id: cmd_2370
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。β調整α6比較: GS 18勝/本番1勝/tie 1/GS_ONLY 1。数値整合(20+1=21)。成果物5ファイル全commit済み"
+  observations:
+    - "GS 18勝の内訳: 分身3勝/追い風3勝/変わり身2勝/四つ目2勝/抜き身3勝/加速D2勝/加速R3勝。唯一の本番勝ち=加速D常勝(alpha-CAGR 35.20% vs 13.92%)"
+    - "四つ目常勝がGS_ONLY(本番に存在しない)→assumption_checkで正しく認識・対処。production_alpha6=20行/gs_alpha6=21行の差異根拠"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "GS18勝→事後GS選出のα性能が本番を上回る→殿がL1入替(本番→GS選出)判断の定量根拠→入替効果(α向上)=正の複利"
+  timestamp: "2026-04-28T22:50:00"
+- cmd_id: cmd_2372
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。WF-α(IS=24M OOS=6M step=3M 20ステップ)で本番20体vsGS21体比較。cmd_2370(全期間β)のOOS発展。殿指示準拠"
+  observations:
+    - "WF仕様はl1_alm_wf_engine.pyデフォルト(IS=36 OOS=12 step=4)とは別パラメータ。殿指定+robustness-verification-catalog概念準拠"
+    - "20ステップ×6M=120M OOS評価窓。計算量820回OLS。軽量で1忍者十分"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "cmd_2370(全期間β)→インサンプル含みで過大評価の懸念(殿指摘)→WF-α(OOS純粋)で再比較→正しい優劣判定→L1入替判断の確度向上=正の複利"
+  timestamp: "2026-04-28T23:28:00"
+- cmd_id: cmd_2372
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。WF-α比較: GS 15勝/本番3勝/tie 2/GS_ONLY 1。全期間β(GS18勝)→WF-α(GS15勝)で鉄壁モード3体本番逆転"
+  observations:
+    - "全期間β→WF-αで逆転した3体: 分身鉄壁/抜き身鉄壁/加速D鉄壁。全て鉄壁モード。鉄壁はOOS環境で本番パラメータが優位になる傾向"
+    - "unique_oos_months=63(20step×6M OOS=120だが3M stepで50%オーバーラップ→実質63独立月)。数値整合"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "全期間β(GS18勝)→WF-α(GS15勝)→OOS純粋評価で本番鉄壁3体逆転→殿のL1入替判断にモード別微妙差を提供=正の複利"
+  timestamp: "2026-04-28T23:35:00"
+- cmd_id: cmd_2373
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  findings_summary: "cmd_2366選出スクリプトのパス誤り。scripts/oneshot/→実際はscripts/analysis/grid_search/。assumptions trust:verified事実不一致"
+  observations:
+    - "find確認: scripts/analysis/grid_search/cmd_2366_l1_champion_select.pyに存在。scripts/oneshot/cmd_2366_*は0件"
+    - "AC1/command/assumptionsの3箇所で同一誤パスを参照。忍者ナビゲーション空振りリスク"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  severity: normal
+  causal_chain: "パス誤記→忍者がscripts/oneshot/を探す→不在→findで再探索→時間ロス。trust:verified誤りは前提検証フレームワークの信頼性低下→修正で正の複利"
+  timestamp: "2026-04-28T23:45:00"
+- cmd_id: cmd_2374
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。本番20体→GS SQLite config存在確認+月次リターンパリティ偵察。読取専用。blast radius=0"
+  observations:
+    - "UUID→名前変換が暗黙前提(commandに記載あり)。cmd_2366/2370で同変換実績あり。忍者は参照可能"
+    - "月次リターン突合閾値1e-6。FoFパイプライン vs l1_alm_wf_engine の計算方式差による丸め誤差は1e-6で吸収可能"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "殿指摘(本番はGS内に存在するはず)→パリティ偵察→GS SQLite信頼性確定→全L1比較(cmd_2370/2372)の前提が堅固に=正の複利"
+  timestamp: "2026-04-28T23:58:00"
+- cmd_id: cmd_2373
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。L1選出ロジック監査: 3モード目的関数正常。鉄壁7体全rank1(再計算差5.55e-17)。常勝3忍法MaxDD一致=subset_id N4_0705月次リターン完全一致"
+  observations:
+    - "鉄壁maxdd DESC=負値保存なので浅いDD選出。hayateがMaxDD符号を正しく理解し検証。7忍法全てselected_is_rank1=True"
+    - "常勝3忍法(分身/加速D/加速R)のsubset_components=シン朱雀-常勝,シン白虎-激攻,シン玄武-常勝,シン玄武-鉄壁。同一4体EWなので忍法が異なっても月次リターンが同一"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "選出ロジック正常確認→GS L1チャンピオン21体の信頼性確立→cmd_2370/2372の比較結果が選出バグでないことが確定=正の複利"
+  timestamp: "2026-04-29T00:05:00"
+- cmd_id: cmd_2374
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。★本番vsGSパリティ0/20。value_diff 3151件+月集合差179件=3330件。max_abs_diff最大0.44。assumption_invalidation: cmd_2366/2370/2372"
+  observations:
+    - "20/20 pattern_id存在(match_count=1)→パラメータ一致は確認。しかし月次リターンが系統的に乖離→FoFパイプライン(本番)とl1_alm_wf_engine(GS)の計算方式差"
+    - "production_only_month 157件→本番にあるがGSにない月。gs_only_month 22件→GSにあるが本番にない月。期間・データ欠損の違いも寄与"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "パラメータ一致(20/20)だが月次リターン不一致(0/20)→原因=計算方式差(FoF pipeline vs GS engine)→cmd_2370/2372の比較は選出差+方式差を含む→殿に方式差の影響度判断が必要=重要情報"
+  timestamp: "2026-04-29T00:12:00"
+- cmd_id: cmd_2375
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_2374(0/20 FAIL)原因追究。gs_data_loader L138=monthly_return_open確認済。1列変更の最小差分偵察"
+  observations:
+    - "gs_data_loader.py L138: SELECT monthly_return_open。cmd_2374はmonthly_return(close)で突合→列取り違えが0/20 FAILの原因仮説"
+    - "殿裁定: open to openでの比較しかやらない。open-basedで一致すればGS L1正常確定"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2374 close突合→0/20 FAIL→gs_data_loader=open発見→open突合で真偽判定→一致ならGS正常+open/close取り違えPI化=正の複利"
+  timestamp: "2026-04-29T00:30:00"
+- cmd_id: cmd_2375
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。open突合3/20(close時0/20から改善)。17/20残差。AC4(hayate追加)target_date不一致→FAIL verdict。BLOCK→家老WA→CLEAR"
+  observations:
+    - "close→open変更でvalue_diff 3151→309件(90%減)。しかし完全一致は3/20のみ。残差原因=GS期間2026-02/production期間2026-04の2M差+計算方式差"
+    - "AC4(target_date一致)は原cmdスコープ外のhayate裁量追加。GS期間差の発見は重要knowledge_candidate。result:no→GATE BLOCK可能性"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "close→open突合でvalue_diff 90%減→列取り違えが主因だった。残差17/20=期間差(2M)+計算方式差→次の偵察で期間揃えて再突合が必要=正の複利"
+  timestamp: "2026-04-29T00:38:00"
+- cmd_id: cmd_2376
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。追い風-激攻1パターン1ヶ月の本番vsGS選択判定トレース。L1パリティ17/20不一致の根因追究偵察"
+  observations:
+    - "本番momentum_filter.py存在確認済み。EqualWeight(分身)3体は一致→選択ブロック(MomentumFilter等)のGS再実装にバグの仮説"
+    - "assumptions claim2のsourceがrun_077_oikaze.py(GS側)だが、本番パスはbackend/app/services/pipeline/blocks/momentum_filter.pyでcommandに記載あり"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "EW一致+フィルタ系不一致→GS simulate_patternの選択ロジックにバグ→1忍法深堀りで根因パターン特定→6忍法一括修正設計=正の複利"
+  timestamp: "2026-04-29T00:50:00"
+- cmd_id: cmd_2376
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。★根因特定: 列セマンティクス差(GS=open-to-open, 本番=close)。選択ロジック差なし。2013-11 open差=1.2e-08"
+  observations:
+    - "GS monthly_return vs production_monthly_return_open差=1.2e-08(実質一致)。vs production_monthly_return差=0.0114(close列)。列取り違えが全不一致の主因"
+    - "選択判定同一(シン玄武-激攻)。lookback/リバランス/top_nロジック差はなし。GS simulate_patternは本番PipelineEngineと同等に動作"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2374 close突合→0/20 FAIL→cmd_2375 open突合→3/20改善→cmd_2376深堀り→根因=列セマンティクス差→GS自体は正常→比較時のDB列指定を修正すれば全cmd結果が正確に=正の複利"
+  timestamp: "2026-04-29T01:00:00"
+- cmd_id: cmd_2377
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。全20体×共通期間open突合+holding_signal保有PF比較。根因分類3カテゴリ。cmd_2376(1月1体)の全体拡張"
+  observations:
+    - "殿指摘(1月1体では不十分、大差月を見逃している)を反映。共通期間限定で期間差ノイズ排除"
+    - "GS保有PF取得: simulate_pattern trace mode or SQLite picks/selection。代替経路明記で忍者裁量OK"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2376(1月=列差のみ)→殿指摘(大差月未確認)→全20体×共通期間で保有PF比較→選択ロジックバグ/リターン計算バグ/列差の切り分け確定=正の複利"
+  timestamp: "2026-04-29T01:12:00"
+- cmd_id: cmd_2377
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。★★cmd_2376覆る。選択ロジックバグ17体確定。selection_match 0/309。EW3体のみ正常。b_return_calc_bug=0"
+  observations:
+    - "309行全てselection_match=False。本番holding_signal vs GS precomputed_masks選択が完全不一致。top_n体数も異なる(本番2体 vs GS4体等)"
+    - "cmd_2376の1月1体(追い風-激攻 2013-11)は偶然選択が一致していただけ。全量調査で覆された。殿指摘「そんな小さな差ではなかった」が正しかった"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2376(1月=列差のみ)→cmd_2377(全量=選択ロジックバグ17体)→GS simulate_patternのprecomputed_masks再現ロジックに問題→修正すればGS L1パリティ達成=正の複利"
+  timestamp: "2026-04-29T01:25:00"
+- cmd_id: cmd_2378
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。追い風simulate_pattern修正+パリティ100%検証。ラルフループ設計。GS研究スクリプトのみ変更"
+  observations:
+    - "AC3でGS全量再実行含む。追い風1忍法のため1忍者で実行可能。OOMリスク低(LG025準拠)"
+    - "修正パターン確立が目的。追い風で成功→6忍法横展開。本番コード変更なし"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2377(選択ロジックバグ17体)→追い風simulate_pattern修正→パリティ100%達成→修正パターン確立→6忍法横展開→全L1 GS信頼性回復=正の複利"
+  timestamp: "2026-04-29T01:32:00"
+- cmd_id: cmd_2379
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。cmd_2378との競争配備。別ブランチCoDD診断ループ。追い風3体パリティ100%目標。mainに影響なし"
+  observations:
+    - "殿指示(二人に同じことをやらせよう)。cmd_2378(saizo/main)とcmd_2379(hayate/別ブランチ)で競争。先行完了を採用"
+    - "CoDD Session Stateで全Attemptの診断/修正/結果を記録。修正パターンが資産化される"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2377(17体バグ確定)→競争配備(2忍者)→先行完了の修正パターン→6忍法横展開→全L1 GS信頼性回復=正の複利"
+  timestamp: "2026-04-29T01:40:00"
+- cmd_id: cmd_2378
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。★追い風パリティ100%。CoDD 3 Attempt(close累積/shift/初回bootstrap)。激攻149常勝166鉄壁161全一致。GS28116再実行済み"
+  observations:
+    - "根因3層: (1)Momentum選抜がopen累積でなくclose累積で計算すべき (2)共通期間前の履歴がshift計算に必要 (3)初回signal前月の等ウェイト配分。1忍法で修正パターン確立"
+    - "PRE3: run_077_oikaze.pyのcommitがcmd_2379(hayate)と混在。競争配備で同一ファイル修正。final state(パリティ100%)は正しい"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2377(17体バグ)→cmd_2378(追い風修正)→CoDD 3Attemptで根因3層特定+修正→パリティ100%→修正パターン確立→6忍法横展開の基盤=正の複利"
+  timestamp: "2026-04-29T01:58:00"
+- cmd_id: cmd_2379
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。★追い風パリティ100%(別ブランチ)。CoDD 1 Attempt。470共通月mismatch 0。cmd_2378と同一根因"
+  observations:
+    - "hayate=CoDD 1 Attempt(diagnosisが的確)。saizo=3 Attempt(段階的根因追跡)。結果は同一(パリティ100%達成)"
+    - "常勝月数差(saizo166 vs hayate160)はGS実行タイミング差。共通期間内は両方100%一致"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378(saizo main)とcmd_2379(hayate branch)が同一根因で独立到達→修正パターンの再現性が確認された→6忍法横展開の信頼性が高い=正の複利"
+  timestamp: "2026-04-29T02:05:00"
+- cmd_id: cmd_2380
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。6忍法横展開(cmd_2378の3修正)。直列GS再実行(LG025)。全20体パリティ100%が目標"
+  observations:
+    - "6忍法の固有ブロック(TrendReversal/MultiViewMomentum/SingleViewMomentum/MomentumAcceleration)は追い風(Momentum)と異なるが修正パターン3点は共通"
+    - "CTX枯渇リスクあり(6忍法直列)。進捗記録で対応。1忍者1cmdが引継ぎコスト最小"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風パリティ100%)→3修正パターン確立→6忍法横展開→全20体パリティ→GS L1信頼性基盤完成→全研究cmd基盤=正の複利"
+  timestamp: "2026-04-29T02:10:00"
+- cmd_id: cmd_2381
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。変わり身にcmd_2378の3修正横展開。TrendReversalFilter固有調整+旧SQLite削除"
+  observations:
+    - "cmd_2380(6忍法一括/hayate)と並行でcmd_2381(変わり身単独/saizo)が配備。将軍が忍法ごと分割配備に切替え"
+    - "AC3旧SQLite削除=バグデータ除去。新SQLite生成後に削除するので安全"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風)→変わり身に3修正横展開→パリティ100%→全忍法完了への一歩=正の複利"
+  timestamp: "2026-04-29T02:15:00"
+- cmd_id: cmd_2382
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。四つ目にcmd_2378の3修正横展開。MultiViewMomentumFilter。2体(激攻/鉄壁)パリティ"
+  observations:
+    - "cmd_2381(変わり身/saizo)と同一構造。四つ目は常勝がGS_ONLYのため2体のみ検証"
+    - "横展開cmdが忍法ごとに分割配備されている(cmd_2381変わり身/cmd_2382四つ目)。並列実行で速度最大化"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風)→四つ目に3修正横展開→パリティ100%→全忍法完了への一歩=正の複利"
+  timestamp: "2026-04-29T02:18:00"
+- cmd_id: cmd_2383
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。抜き身にcmd_2378の3修正横展開。SingleViewMomentumFilter。3体パリティ"
+  observations:
+    - "cmd_2381(変わり身/saizo)/cmd_2382(四つ目/hayate)/cmd_2383(抜き身/kagemaru)。3忍者並列で横展開速度最大化"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風)→抜き身に3修正横展開→パリティ100%→全忍法完了への一歩=正の複利"
+  timestamp: "2026-04-29T02:20:00"
+- cmd_id: cmd_2384
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。加速Dにcmd_2378の3修正横展開。MomentumAccelerationFilter。3体パリティ"
+  observations:
+    - "横展開cmd群: 2381(変わり身)/2382(四つ目)/2383(抜き身)/2384(加速D)。残=加速R"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風)→加速Dに3修正横展開→パリティ100%→全忍法完了への一歩=正の複利"
+  timestamp: "2026-04-29T02:22:00"
+- cmd_id: cmd_2385
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。加速R(最後の1忍法)にcmd_2378の3修正横展開。全6忍法draftレビュー完了"
+  observations:
+    - "横展開全5cmd: 2381(変わり身/saizo) 2382(四つ目/hayate) 2383(抜き身/kagemaru) 2384(加速D/hanzo) 2385(加速R/kotaro)。5忍者並列"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "cmd_2378(追い風)→加速R(最後)に3修正横展開→全6忍法配備完了→報告待ち→全20体パリティ達成=正の複利"
+  timestamp: "2026-04-29T02:24:00"
+- cmd_id: cmd_2382
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。四つ目2体パリティ100%。共通314ヶ月mismatch 0。新SQLite 4686patterns+旧削除。共通ヘルパ追加"
+  observations:
+    - "3修正(close累積/shift/bootstrap)がMultiViewMomentumFilterにも有効。横展開パターン再確認"
+    - "shin_ninpo_open_parity.py共通ヘルパ作成→残忍法の検証スクリプト共通化に寄与"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378(追い風)→cmd_2382(四つ目)横展開成功→残4忍法も同パターンで到達見込み=正の複利"
+  timestamp: "2026-04-29T02:28:00"
+- cmd_id: cmd_2381
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。変わり身3体パリティ100%。共通161/164/164ヶ月mismatch 0。28116パターン再生成+旧削除"
+  observations:
+    - "TrendReversalFilterにも3修正が有効。横展開パターン3忍法目で確立(追い風→四つ目→変わり身)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378(追い風)→cmd_2381(変わり身)横展開成功→残3忍法(抜き身/加速D/加速R)報告待ち=正の複利"
+  timestamp: "2026-04-29T02:32:00"
+- cmd_id: cmd_2383
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。抜き身3体パリティ100%。激攻159/常勝143/鉄壁157全月一致。60918patterns再生成+旧削除"
+  observations:
+    - "SingleViewMomentumFilterにも3修正有効。nukimi固有(5タプル signature, is_nan_open_next context key)を正確に対応"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378→抜き身横展開成功→残2忍法(加速D/加速R)報告待ち→全7忍法パリティ完了間近=正の複利"
+  timestamp: "2026-04-29T02:48:00"
+  timestamp: "2026-04-29T02:50:00"
+- cmd_id: cmd_2384
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  findings_summary: "4観点OK。加速D 3体パリティ100%(max 8.86e-7)。119,493pat新SQLite+旧削除。PRE3 WARN=cmd_2385混在commit(gate影響なし)"
+  observations:
+    - "commit f65f3b40: cmd_2384(kasoku_diff)+cmd_2385(kasoku_ratio)混在。commitメッセージにcmd_2385のみ記載"
+    - "max_abs_diff=8.864e-07。常勝159月/激攻159月/鉄壁156月全月1e-6以内"
+    - "lessons_useful 3/7有用(L670初回signal月bootstrap/L668本番cumret/L669open系列)。横展開パターン確立"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378→加速D横展開成功→残1忍法(加速R)→全7忍法パリティ完了目前=正の複利"
+  timestamp: "2026-04-29T03:07:00"
+- cmd_id: cmd_2385
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kotaro
+  findings_summary: "4観点OK。加速R 3体パリティ100%(max 8.86e-7)。119,493pat新SQLite+旧削除。★5忍法cmd_2378横展開全完了"
+  observations:
+    - "commit f65f3b40にcmd_2385正しく記載。PRE全PASS。cmd_2384(kasoku_diff)と同一commitだがcmd_2385側は正常"
+    - "激攻166月/4.18e-7、常勝166月/4.60e-7、鉄壁155月/8.86e-7。全月1e-6以内"
+    - "shin_ninpo_open_parity共有モジュールでパターン確立。6/7忍法横展開成功(追い風は元cmd_2378)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2378→5忍法横展開全完了→全7忍法のopen parity 100%→本番一致基盤確立=正の複利"
+  timestamp: "2026-04-29T03:12:00"
+- cmd_id: cmd_karo_gs_sqlite_rename
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: tobisaru
+  findings_summary: "4観点OK。GS SQLite 2dir移動+1dir削除+参照更新4本。初回gate FAIL→修正再送信で解消。旧パスCSV行データ残存は実行時影響なし"
+  observations:
+    - "commit 08b1ec13: 9ファイル32挿入/32削除。cmd_2378_oikaze/cmd_2381_kawarimi現存、旧3dir消滅確認"
+    - "cmd_2375 CSV行データ内に旧パス3行残存。スクリプト参照ではなくデータカラム→実害なし"
+    - "初回報告でbinary_checks/files_modified/lessons_useful/assumption_invalidation全MISSING→gate BLOCK→再送信で全フィールド記入"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd番号不一致→ディレクトリリネーム→参照パス更新→GS出力の一貫性確立=正の複利"
+  timestamp: "2026-04-29T03:22:00"
+- cmd_id: cmd_2386
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。Phase 9 L1チャンピオン再選出。修正版SQLite 7本実在確認。4忍法パス更新が核心。21=7×3検算OK"
+  observations:
+    - "cmd_2366_l1_champion_select.py L38-58: oikaze/kawariminは既にcmd_2378/2381。yotsume/nukimi/kasoku_diff/kasoku_ratioが旧cmd番号(2362-2365)"
+    - "修正版SQLite 7本全実在: cmd_2359(bunshin)+cmd_2378(oikaze)+cmd_2381(kawarimi)+cmd_2382(yotsume)+cmd_2383(nukimi)+cmd_2384(kasoku_diff)+cmd_2385(kasoku_ratio)"
+    - "assumptions 3件全verified。FM3件(パス不一致/旧SQLite削除済み/config名不一致)全て対処済み"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "修正版SQLiteで再選出→旧チャンピオン無効化→正確なチャンピオンリスト確立→全後段Phase入力品質保証=正の複利"
+  timestamp: "2026-04-29T03:40:00"
+- cmd_id: cmd_2386
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。L1チャンピオン21体再選出(MATCH 2/MISMATCH 18/未登録1)。修正版SQLite 7本参照。lesson_candidate有(append guard)"
+  observations:
+    - "commit 7dc547d7: 3ファイル(selector+champions.yaml+report.md)。PRE3全PASS"
+    - "MATCH 2+MISMATCH 18+未登録1=21=7×3。production_present=20→未登録1件整合"
+    - "lesson_candidate: champion_list.yaml append guardがunquoted cmd_idを検出できず重複追記→才蔵が復元。register推奨"
+    - "discretion_fills: cmd_2386別名出力(既存cmd_2366成果物非上書き)=適切な判断"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "修正版SQLite→チャンピオン再選出→MISMATCH 18件=パラメータ変更反映→殿裁定で本番更新判断=正の複利(全後段Phaseの入力精度)"
+  timestamp: "2026-04-29T03:44:00"
+- cmd_id: cmd_2387
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点+adversarial OK。Check 19 FP改善。過去形除外でFP排除+AC3正当発火テスト。blast radius=全cmd起票だがWARN+revert可能"
+  observations:
+    - "L2858-2861現物確認。grep -iE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'が文脈無視で語句マッチ"
+    - "cmd_2386のtitle/purposeは実際にはマッチしない(手動テスト確認)。FPの具体トリガーはstartup gate側のac_phase_mixing"
+    - "adversarial: infra対象(GP-236)。WARNのみ(BLOCKなし)。git revert可能。過去形リスト保守は限定的"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(GP-236)。blast radius=全cmd起票だがWARNレベル+revert可能"
+  causal_chain: "Check 19 FP→将軍が毎回3回BLOCKされ時間浪費→過去形除外でFP排除→起票速度×品質の正の複利"
+  timestamp: "2026-04-29T03:48:00"
+- cmd_id: cmd_2388
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。教訓統合(35→22件)。LS023-035全タイトルとLS-A04/A22照合でマッピング妥当。v1→v3と同パターン"
+  observations:
+    - "35件現物確認(grep -c): LS-A01~A22(22件)+LS023~LS035(13件)。上限35件到達"
+    - "LS-A04(cmdテンプレート)←9件: LS023/24/26/27/28/30/31/32/33。全てcmd形式品質の個別事例"
+    - "LS-A22(gate FP)←4件: LS025/29/34/35。LS035はN2収束バグ+教訓上限で混合だが1エントリとして許容"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "教訓35件上限→新教訓記録不可→成長ループ断絶→13件クラスタ吸収→22件で空き13件→成長ループ再開=正の複利"
+  timestamp: "2026-04-29T03:54:00"
+- cmd_id: cmd_2389
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点+adversarial OK。check_ac_phase_mixing FP率66%改善。AC全体→AC単位文脈判定。L3033-3057現物確認"
+  observations:
+    - "L3040: impl_hits=修正/変更/追加等の汎用キーワード→殆どのcmdでマッチ。L3043-3044: AC全体grep→FPの構造的原因"
+    - "修正方針: AC単位(AC1/AC2...)ごとにimpl+measure/delivery共起判定。異AC間跨ぎは正当→WARNしない"
+    - "adversarial: cmd_save.shはinfra(GP-236)。WARNレベル+revert可能。cmd_2387と別関数で衝突なし"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(GP-236)。WARNレベル+revert可能。同ファイルcmd_2387と別関数で衝突なし"
+  causal_chain: "AC全体grep→汎用キーワード全マッチ→FP率66%→AC単位判定でFP排除→gate信頼性向上=正の複利"
+  timestamp: "2026-04-29T03:58:00"
+- cmd_id: cmd_2390
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。分析cmd。本番20体vsGS21体α6比較。cmd_2370再実行。LG022(baseline)準拠。コード変更なし"
+  observations:
+    - "cmd_2370(19954行)+cmd_2386_l1_champions.yaml(44398行)実在確認"
+    - "baseline=本番20体(α6 DB月次リターン)。比較対象=GS21体(修正版SQLite月次リターン)"
+    - "MISMATCH 18体の定量的優劣が明確になる。殿の判断材料"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "修正版SQLiteチャンピオン21体→本番20体とα6比較→MISMATCH体のパフォーマンス差が定量化→殿の入替判断材料=正の複利"
+  timestamp: "2026-04-29T04:00:00"
+- cmd_id: cmd_2387
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。Check 19 FP改善。grep -viE過去形除外+1行。bats 7件(FP4+TP3)PASS。lesson_candidate有(inject_parity FP)"
+  observations:
+    - "diff: grep -viE '修正後|修正版|修正済み|完了'をパイプ追加。最小変更"
+    - "commit 1ac429ed(saizo auto-commit)に影丸変更混入。diff確認で内容正当"
+    - "lesson_candidate: inject_parity_target_date_acがcommandフィールド説明文でFP注入。register推奨"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Check 19 FP→将軍BLOCK→過去形除外で分析cmd誤検出排除→gate信頼性向上=正の複利"
+  timestamp: "2026-04-29T04:02:00"

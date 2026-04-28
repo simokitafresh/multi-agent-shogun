@@ -1,57 +1,42 @@
 task:
-  _ac_task_id: cmd_2288_normal
+  _ac_task_id: cmd_2382_normal
   _ac_worker_id: null
-  _deploy_notice: 家老再配備。修正済みcdp_measure.sh(commit ccd2f308+824b12c3)でCDP計測。DNS一時障害は解消確認済み
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2382
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
-  ac_version: 747b2127
+  ac_priority: AC1 > AC2 > AC3
+  ac_version: 88572c76
   acceptance_criteria:
-  - check: cdp_measure.sh出力JSONに全ページの計測結果+ベースライン比較が含まれる
-    description: 全ページ初回表示時間が計測され、cmd_2281ベースラインとの差分(ms, %)が報告に記載されている
+  - checks:
+    - check: run_077_yotsume.pyにcmd_2378の3修正が適用され、四つ目2体(激攻/鉄壁)の本番monthly_return_openと共通月全月1e-6以内一致(run_077
+        l1_alm_wf_engine相当)
     id: AC1
-  - check: PF切替中央値がベースラインより改善したか数値で確認
-    description: PF切替応答時間が計測され、cmd_2281ベースライン(中央値1005ms)との差分が報告に記載されている
+  - checks:
+    - check: 修正版で全パターン計算し新SQLiteが生成されている
     id: AC2
-  - check: ファイル存在確認
-    description: 計測結果がoutputs/cmd_2288_measurements.jsonに保存されている
+  - checks:
+    - check: 旧SQLite(バグデータ)が削除されている
     id: AC3
-  - check: 計測のみ
-    description: コード変更なし(git diff --stat = 0行)。perf_config.yaml改変禁止
-    id: AC4
   assigned_to: hayate
-  command: '修正済みcdp_measure.sh(commit ccd2f308)でPhase 1-B CDP再計測。
-
-
-
-
-
-
   context_files:
   - context/dm-signal.md
-  - context/dm-signal-ops.md
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
-    \ -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn\n  - L002: cmd_746佐助発見。本番URL前提が誤りPF\
-    \ selectorもrole=combobox/optionではなくplain button群だった\n  - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit\
-    \ status確認すべき\n  - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit\
-    \ --only <担当ファイル>でcommit対象を\n  - L278: cmd_1264でkagemaruがcommit完了・task status\
-    \ doneだが報告YAML未作成のまま/clearされた。ninja_monitor\n  - L150: IF commit関連のACを検証する時 THEN\
-    \ git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ\n  - L139: IF scope外変更のrevert確認時\
-    \ THEN 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味di\n  - L233: review/push\
-    \ task で `git diff --check` を repo 全体に対して要求すると、対象 commit が clean でも un\n  - L110:\
-    \ IF settings.local.json時 THEN .claude/settings.local.jsonはgitignore whitelist未登録で\n\
-    \  - L426: CLAUDE.mdでyaml.dump禁止が明記されているが、archive_completed.sh内のheredoc Pythonでのdump呼出はpre-\n\
+  - context/dm-signal-core.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L561: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p\n\
+    \  - L670: 本番fullrecalculateはMomentumFilterの初回signal月まではFoF初期配分(EqualWeight)のmonthly_return\n\
+    \  - L668: run_077_oikaze.pyはlocal_sqlite入力でもpipeline_config取得のためALM青龍-常勝をDB参照し、現DBにはALMがなく\n\
+    \  - L669: run_077 local_sqliteのmonthly.monthly_returnはopen-to-open系列であり、本番monthly_returns.\n\
+    \  - L237: Codex CLIの使用量はローカルSQLite(~/.codex/state_5.sqlite)のthreadsテーブルtokens_usedから取得せよ\n\
+    \  - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置\n  - L082:\
+    \ CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code\n\
     ────────────────────────────────────────"
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。特にRULE05/06/08/11を先に照合せよ
-  - prefer 実API diffによる全数値フィールド完全一致検証 over 数学的に同じはずという推測
-  - prefer 本番selection blockでの正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開 + holding_signal + signal_date規則 over 『前月末』『当月シグナル』の短絡理解
-  - prefer PostgreSQL直読/直書き + UPSERT + 本番コードパス over SQLite書き込み・DELETE+INSERT分離・ローカル専用経路
-  - prefer explicit/minimal diff over clever abstraction。ただしSSOT整合性とSKIP=FAILの検証義務は削るな
-  - prefer cmd仕様のパラメータ値 over 知識辞書・論文・独自判断。矛盾・物理的不適合を発見したらdecision_candidateに報告し、cmd仕様通りに実装せよ
-  - prefer .npyキャッシュ(outputs/grid_search/*/*.cache.*.npy) or pd.read_csv(usecols=[target_col])
-    over pd.read_csv全量読み。GS CSVは最大944Kパターン(1.1GB+)のため全量読みはOOM Kill。champion_selector.py(outputs/scripts/)が.npy+チャンク+NaN-safe読込の実装例
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -61,17 +46,48 @@ task:
   - AC1
   - AC2
   - AC3
-  - AC4
-  parent_cmd: cmd_2288
+  parent_cmd: cmd_2382
   project: dm-signal
-  report_filename: hayate_report_cmd_2288.yaml
-  report_path: queue/reports/hayate_report_cmd_2288.yaml
-  status: acknowledged
+  status: idle
+  status_detail: DONE
   stop_for: []
-  task_id: cmd_2288_normal
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_2382_normal
   task_type: normal
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_2382.yaml
+  report_path: queue/reports/hayate_report_cmd_2382.yaml
   bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 28
+    top_pattern: 'report_yaml_format(4件)'
+    breakdown: 'report_yaml_format(4件), verdict_override(4件), commit_missing(3件), task_redeploy(2件), stale_report(2件), recording_error(2件), ci_gate_mismatch(2件), deploy_error(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 308
+    - pattern: 'bc_result_invalid'
+      count: 91
+    - pattern: 'lu_reason_empty'
+      count: 88
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値; lessons_usefulの各教訓にreason(理由)を必ず記入。空文字禁止'
+    gate_blocks:
+    - reason: 'binary_checks_fail'
+      count: 46
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_format'
+      count: 17
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'purpose_validation_fit_false'
+      count: 13
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
+    - reason: 'fill_this_remaining'
+      count: 2
+      hint: 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   related_lessons:
   - id: 'L636'
     summary: 'Render fullrecalculateでは nested FoF に対して `MonthlyReturn generated` ログが出てもDB'
@@ -103,4 +119,4 @@ task:
   - id: 'L622'
     summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
     detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
-  deployed_at: "2026-04-26T11:31:25"
+  deployed_at: "2026-04-29T02:14:13"

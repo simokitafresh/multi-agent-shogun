@@ -907,3 +907,4 @@
 | cmd_2383 | cmd_2378の3修正を抜き身に適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_nukimi.pyにcmd_2378の3修正 |
 | cmd_2384 | cmd_2378の3修正を加速Dに適用。修正版で全パターン計算→新SQLite生成→本番一致100%検証→旧SQLite削除。 | dm-signal | 04-29 | run_077_kasoku_diff.pyにcmd_237 |
 | cmd_2386 | Phase 1.96でrun_077全7忍法のsimulate_pattern修正完了(cmd_2378-2385)。修正版SQLiteでL1チャンピオン再選出し本番シン忍法configと突合する。cmd_2366の再実行。修正前SQLiteで選出したチャンピオンは無効。 | dm-signal | 04-29 | cmd_2366_l1_champion_select.py |
+| cmd_2387 | cmd_save.sh L2861のcheck_parity_ac_requirementsがtitle/purposeの文脈を見ず語句マッチのみで判定するため、分析cmdでFP発火する(cmd_2386で実証。startup gateでもFP率ALERT)。過去形コンテキスト(修正後/修正版/修正済み/完了)を除外し本番DB変更cmdのみトリガーさせる。 | infra | 04-29 | Check 19 _CHECK19_TRIGGERに過去形除 |

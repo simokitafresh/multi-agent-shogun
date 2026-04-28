@@ -4132,3 +4132,20 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra]
 - **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
 - bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→flockロック競合WARN→保存確認NG。cmd_save.shを呼ぶテストは全てCMD_SAVE_LOCK_FILEを設定すべき。
+
+### L538: inject_parity_target_date_acのFP: commandフィールドの説明文に過去形/分析コンテキストでパリティという語が含まれると誤注入
+- **日付**: 2026-04-29
+- **出典**: cmd_2387
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,testing,recon]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save_check19_fp.bats]
+- cmd_2387のcommandに「パリティ修正後/修正版/修正済み/完了」という説明文があり、_PARITY_RE(パリティ|parity)がマッチしてtarget_date ACが誤注入された。commandフィールドは除外対象とするか、修正対象を説明する語句には除外条件が必要。
+
+### L539: inject_parity_target_date_acのFP: commandフィールド説明文の過去形パリティ語がマッチし誤注入
+- **日付**: 2026-04-29
+- **出典**: cmd_2387
+- **記録者**: karo
+- **tags**: [infra,testing]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save_check19_fp.bats]
+- cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。commandフィールドは除外対象とするか修正対象を説明する語句に除外条件が必要

@@ -173,7 +173,7 @@ lessons:
   - dm-signal
   - db
   - grid_search
-  helpful_count: 11
+  helpful_count: 9
   harmful_count: 2
   last_referenced: '2026-04-29'
   target_files:
@@ -190,7 +190,7 @@ lessons:
   - db
   - pipeline
   - tmux
-  helpful_count: 8
+  helpful_count: 6
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -207,7 +207,7 @@ lessons:
   - communication
   - reporting
   - grid_search
-  helpful_count: 13
+  helpful_count: 11
   harmful_count: 3
   last_referenced: '2026-04-29'
   target_files:
@@ -1205,7 +1205,7 @@ lessons:
     PFのcand
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -1626,6 +1626,9 @@ lessons:
   - reporting
   target_files:
   - tasks/lessons.md
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-29'
 - id: L509
   title: target_pathのservices/jobs不一致に注意
   summary: タスクYAMLのtarget_pathがjobs配下だったが実際はservices配下。target_path_warningを先に確認すべき
@@ -1793,7 +1796,7 @@ lessons:
   - deploy
   - pipeline
   - testing
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 1
   last_referenced: '2026-04-28'
   target_files:
@@ -2420,9 +2423,9 @@ lessons:
   - testing
   - process
   - production_invariant
-  helpful_count: 4
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  helpful_count: 3
+  harmful_count: 1
+  last_referenced: '2026-04-29'
   target_files:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
@@ -2557,7 +2560,7 @@ lessons:
   summary: IF backend/app/constants.pyの定数を変更する THEN frontend/lib/constants.tsに同名・同目的の定数がないか
   tags:
   - frontend
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-28'
   target_files:
@@ -2879,7 +2882,7 @@ lessons:
   tags:
   - yaml
   - git
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 2
   last_referenced: '2026-04-28'
   target_files:
@@ -2942,6 +2945,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   - scripts/analysis/grid_search/run_077_oikaze.py
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-29'
 - id: L372
   title: 'GS並列化: context buildがボトルネック、ThreadPool無効、PPE 6w最適'
   summary: '(1) GS並列化のボトルネックはcontext build(get_*_context)でありパターンsim自体ではない。 kasoku:
@@ -3215,9 +3221,9 @@ lessons:
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
   tags:
   - testing
-  helpful_count: 7
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  helpful_count: 5
+  harmful_count: 1
+  last_referenced: '2026-04-29'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
@@ -3233,7 +3239,7 @@ lessons:
   tags:
   - db
   - api
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-28'
   target_files:
@@ -3296,8 +3302,8 @@ lessons:
   - api
   - frontend
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  harmful_count: 1
+  last_referenced: '2026-04-29'
 - id: L332
   title: FoF of FoF の partial recalculate-sync は live data を欠損させうる
   summary: FoF of FoF 15体に対して `/admin/recalculate-sync?portfolio_id=...` を partial
@@ -3382,8 +3388,8 @@ lessons:
   tags:
   - testing
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  harmful_count: 1
+  last_referenced: '2026-04-29'
   target_files:
   - backend/app/services/p_bar_backtest.py
   - backend/app/services/pipeline/blocks/p_bar_selection.py
@@ -4352,8 +4358,8 @@ lessons:
   - oauth
   - reporting
   helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-28'
+  harmful_count: 2
+  last_referenced: '2026-04-29'
   target_files:
   - frontend/app/dashboard/page.tsx
   - frontend/hooks/usePrefetch.ts
@@ -4673,8 +4679,8 @@ lessons:
   - testing
   - review
   helpful_count: 3
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  harmful_count: 1
+  last_referenced: '2026-04-29'
   target_files:
   - backend/app/services/deterioration.py
 - id: L174
@@ -4880,8 +4886,8 @@ lessons:
   tags:
   - yaml
   helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  harmful_count: 1
+  last_referenced: '2026-04-29'
   target_files:
   - docs/skills/building-block-pattern.md
   - docs/skills/database-schema.md
@@ -5006,7 +5012,7 @@ lessons:
   summary: git,commit,staging,verification
   tags:
   - git
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-28'
   target_files:
@@ -5088,7 +5094,7 @@ lessons:
   tags:
   - db
   - deploy
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-28'
 - id: L118
@@ -5264,9 +5270,9 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  helpful_count: 1
+  harmful_count: 1
+  last_referenced: '2026-04-29'
 - id: L096
   title: skip処理のデータ頻度判定はis_monthly_data()を使え（行数ヒューリスティック禁止）
   summary: IF SVMF(L125)/MVMF(L145)のskip処理がlen(df)<base*5で月次/日次を判定していたが、同一ファイル(base.py)にインタ
@@ -5826,7 +5832,7 @@ lessons:
   - db
   - deploy
   - testing
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-28'
 - id: L019
