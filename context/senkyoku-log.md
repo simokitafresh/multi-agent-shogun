@@ -766,3 +766,11 @@
 - 2026-04-28 cmd_2346: 疾風revert+再配備。task YAML未読で不正実装→git stash退避→/clear→再配備→成果物活用(gs_sqlite_output.py)
 - 2026-04-28 cmd_2349: 才蔵。CSV入力フォールバック廃止(gs_sqlite_output.py+gs_db_utils.py pd.read_csv→ValueError)。GATE CLEAR。CSV全経路封鎖完了
 - 2026-04-28 cmd_2347: 才蔵。Phase 6B完了。run_077全7本CSV出力→SQLite共通モジュール(gs_sqlite_output.py)切替。GATE CLEAR。Phase 6全完了→後続Aへ
+
+## 2026-04-29
+- 2026-04-29 cmd_2381: 才蔵。run_077_kawarimi 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR
+- 2026-04-29 cmd_2382: 疾風。run_077_yotsume 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR
+- 2026-04-29 cmd_2383: 影丸。run_077_nukimi 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR
+- 2026-04-29 cmd_2384: 半蔵。run_077_kasoku_diff 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR
+- 2026-04-29 cmd_2385: 小太郎。run_077_kasoku_ratio 本番一致達成+旧SQLite削除(cmd_2378横展開)。GATE CLEAR。5忍法横展開全完了
+- 2026-04-29 cmd_karo_gs_sqlite_rename: 飛猿。GS SQLiteディレクトリリネーム(cmd_2360→2378, cmd_2361→2381)+旧dir削除+参照パス更新。GATE CLEAR
