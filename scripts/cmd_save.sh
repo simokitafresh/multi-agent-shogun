@@ -3032,29 +3032,53 @@ count_acceptance_criteria_items() {
 }
 
 check_ac_phase_mixing() {
-    local ac_block impl_hits measure_hits delivery_hits
-
+    local ac_block
     ac_block="$(extract_acceptance_criteria_block)"
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
 
-    impl_hits="$(printf '%s\n' "$ac_block" | grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' || true)"
-    [[ -n "$impl_hits" ]] || return 0
+    # AC単位の文脈判定: 同一AC内にimpl+measure/deliveryが共起する場合のみWARN
+    # 異なるAC間にまたがる場合は正当(実装ACとテストACの共存)
+    local mixing_found
+    mixing_found="$(printf '%s\n' "$ac_block" | awk '
+    function check_buf(text,    lt) {
+        if (text == "") return
+        lt = tolower(text)
+        if (lt !~ /実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce/) return
+        if (lt ~ /cdp|計測|測定|実測|measure|measurement|benchmark|ベンチ/ ||
+            lt ~ /commit|push|deploy|コミット|デプロイ/) { print "FOUND" }
+    }
+    BEGIN { min_indent = -1; buf = "" }
+    {
+        if (min_indent == -1 && /^[[:space:]]*- /) {
+            s = $0; gsub(/[^ ].*/, "", s); min_indent = length(s)
+        }
+        s = $0; gsub(/[^ ].*/, "", s)
+        if (min_indent >= 0 && length(s) == min_indent && substr($0, min_indent+1, 2) == "- ") {
+            check_buf(buf); buf = $0 "\n"
+        } else {
+            buf = buf $0 "\n"
+        }
+    }
+    END { check_buf(buf) }
+    ')"
 
+    [[ -n "$mixing_found" ]] || return 0
+
+    local impl_hits measure_hits delivery_hits
+    impl_hits="$(printf '%s\n' "$ac_block" | grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' || true)"
     measure_hits="$(printf '%s\n' "$ac_block" | grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' || true)"
     delivery_hits="$(printf '%s\n' "$ac_block" | grep -inE 'commit|push|deploy|コミット|デプロイ' || true)"
 
-    if [[ -n "$measure_hits" || -n "$delivery_hits" ]]; then
-        echo "WARN: ACフェーズ混在を検出。1cmdに実装と計測/commit/deployが同居しています" >&2
-        echo "  実装ACと後続フェーズACはcmdを分割せよ(cmd_2300教訓)" >&2
-        echo "  実装側: $(printf '%s\n' "$impl_hits" | head -n 2 | tr '\n' ' ')" >&2
-        if [[ -n "$measure_hits" ]]; then
-            echo "  計測側: $(printf '%s\n' "$measure_hits" | head -n 2 | tr '\n' ' ')" >&2
-        fi
-        if [[ -n "$delivery_hits" ]]; then
-            echo "  commit/deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
-        fi
-        record_warn_reason "ac_phase_mixing" "check=check_ac_phase_mixing"
+    echo "WARN: ACフェーズ混在を検出。同一AC内に実装と計測/commit/deployが共起しています" >&2
+    echo "  実装ACと後続フェーズACはcmdを分割せよ(cmd_2300教訓)" >&2
+    echo "  実装側: $(printf '%s\n' "$impl_hits" | head -n 2 | tr '\n' ' ')" >&2
+    if [[ -n "$measure_hits" ]]; then
+        echo "  計測側: $(printf '%s\n' "$measure_hits" | head -n 2 | tr '\n' ' ')" >&2
     fi
+    if [[ -n "$delivery_hits" ]]; then
+        echo "  commit/deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
+    fi
+    record_warn_reason "ac_phase_mixing" "check=check_ac_phase_mixing"
 }
 
 check_ac_test_scope() {

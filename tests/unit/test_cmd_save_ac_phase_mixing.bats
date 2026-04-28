@@ -23,12 +23,56 @@ _set_cmd_block_nc() {
     export CMD_BLOCK CMD_BLOCK_NC
 }
 
-@test "実装ACと計測ACが同居するとWARNが発火する" {
+@test "実装ACと計測ACが別ACに分離されているとWARNしない(FP修正)" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
       check: 'scripts/cmd_save.shにcheck_ac_phase_mixingを実装する'
     - id: AC2
       check: 'CDP計測でbefore/afterを確認する'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_message()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^record_warn_reason()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_phase_mixing()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        declare -a WARN_REASONS=()
+        check_ac_phase_mixing
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "実装ACとcommit ACが別ACに分離されているとWARNしない(FP修正)" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      check: 'scripts/cmd_save.shにチェックを追加する'
+    - id: AC2
+      check: 'git commitが完了している'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_message()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^record_warn_reason()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_phase_mixing()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        declare -a WARN_REASONS=()
+        check_ac_phase_mixing
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "同一AC内に実装と計測が共起するとWARNが発火する(TP)" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      check: '修正してCDP計測でbefore/afterを確認する'"
     run bash -c '
         eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
         eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
@@ -48,12 +92,10 @@ _set_cmd_block_nc() {
     [[ "$output" == *"check=check_ac_phase_mixing"* ]]
 }
 
-@test "実装ACとcommit ACが同居するとWARNが発火する" {
+@test "同一AC内に実装とcommitが共起するとWARNが発火する(TP)" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
-      check: 'scripts/cmd_save.shにチェックを追加する'
-    - id: AC2
-      check: 'git commitが完了している'"
+      check: '追加してgit commitする'"
     run bash -c '
         eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
         eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
@@ -65,10 +107,12 @@ _set_cmd_block_nc() {
         declare -a WARN_REASONS=()
         check_ac_phase_mixing
         echo "WARN_COUNT=$WARN_COUNT"
+        printf "WARN_REASONS=%s\n" "${WARN_REASONS[*]}"
     '
     echo "$output" >&2
     [[ "$output" == *"WARN: ACフェーズ混在を検出"* ]]
     [[ "$output" == *"WARN_COUNT=1"* ]]
+    [[ "$output" == *"check=check_ac_phase_mixing"* ]]
 }
 
 @test "実装のみのACはWARNしない" {
