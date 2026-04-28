@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T15:10:04+09:00 -->
+<!-- generated_at: 2026-04-28T15:12:17+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T15:12:16+09:00 | terminal | response | 現物確認完了。報告する。 **cmd_2358 GATE CLEAR。実装は§5.5.4を遵守している。** 確認した事実: - `load_monthly_returns_from_local_sqlite()` (L487-557):…
+- 2026-04-28T15:12:07+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝69
+- 2026-04-28T15:11:13+09:00 | terminal | inbound | 本番DBのデータは使わないんだな？忍者と家老は遵守しているんだな？確認せずに答えていないか？
 - 2026-04-28T15:10:04+09:00 | terminal | response | 殿、どの前提が間違っているか。確認せずに想像したくない。指摘いただきたい。 [meta] stop_reason=end_turn
 - 2026-04-28T15:09:48+09:00 | terminal | inbound | それならいい
 - 2026-04-28T15:09:42+09:00 | terminal | response | 殿、どの前提が間違っているか。確認せずに想像したくない。指摘いただきたい。 [meta] stop_reason=end_turn
@@ -11,19 +14,16 @@
 - 2026-04-28T15:08:50+09:00 | terminal | response | 殿、現物確認した。 **cumulative版 = 本番PostgreSQLの`cumulative_return`列を直接読む関数。** 本番のモメンタム計算は `cumulative_return → pct_change(期間月数)…
 - 2026-04-28T15:08:31+09:00 | terminal | inbound | そもそも本番DBのデータは使用禁止だ
 - 2026-04-28T15:07:51+09:00 | terminal | response | 確認する。 [meta] stop_reason=tool_use
-- 2026-04-28T15:07:16+09:00 | terminal | inbound | cumulative版ってなんだ？
-- 2026-04-28T15:07:08+09:00 | terminal | response | 殿、軍師のREQUEST_CHANGES(cumulative版にもlocal_sqlite対応必要)を承認し、AC4追加を家老に指示済み。saizo作業中に伝達される。 cmd_2358完了待ち。完了後にL1 GS 7cmd直列起票に進…
-- 2026-04-28T15:03:32+09:00 | ntfy | outbound | 【家老】cmd_2358 初回配備開始 (title=道具磨き — gs_data_loader source_type:local_sqlite追加+shin_shijin_v2_12.yaml更新, ninja=saizo) 道具磨き…
 
 ## 未解決確認事項
+- 現物確認完了。報告する。 **cmd_2358 GATE CLEAR。実装は§5.5.4を遵守している。** 確認した事実: - `load_monthly_returns_from_local_sqlite()` (L487-557): **sqlite3.connect()…
+- 本番DBのデータは使わないんだな？忍者と家老は遵守しているんだな？確認せずに答えていないか？
 - 殿、どの前提が間違っているか。確認せずに想像したくない。指摘いただきたい。 [meta] stop_reason=end_turn
 - 殿、現物確認した。 **cumulative版 = 本番PostgreSQLの`cumulative_return`列を直接読む関数。** 本番のモメンタム計算は `cumulative_return → pct_change(期間月数)` 方式。run_077はこの本番準拠の…
 - 確認する。 [meta] stop_reason=tool_use
 - 殿の問い「db=SQLiteではないのか？」に対する回答: **現物確認の結果、source_type: "db"は本番PostgreSQL専用。** - L140: `SELECT portfolio_id, year_month, monthly_return_open F…
 - 確認完了。 **SQLiteのmonthly_returnは既にopen-to-openベース。** 根拠: - L1097: `month_start_opens` = `month_start_array` — 変数名が明示的に"opens" - L840-843: `st…
 - そもそもSQliteのmonthly returnは本当にcloseなのか？openの可能性は？確認せよ
-- 殿の指摘通り。本番はopenベース。SQLiteに`monthly_return_open`がなければL1 GSは正しく動かない。 **確認した事実:** - shin_shijin_l1_gs.pyは`open_prices`を入力に取り計算に使っている(L495,537,9…
-- ではどのようなCMDを書くつもりだ？未調査や未決定部分はないか？確認せよ
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-28T15:07:08+09:00 | 殿、軍師のREQUEST_CHANGES(cumulative版にもlocal_sqlite対応必要)を承認し、AC4追加を家老に指示済み。saizo作業中に伝達される。 cmd_2358完了待ち。完了後にL1 GS 7cmd直列起票に進む。指示あれば。 [meta] stop…
@@ -41,15 +41,8 @@
 - cmd_1434
 - cmd_1606
 - cmd_1847
-- cmd_2315
-- cmd_2316
-- cmd_2317
-- cmd_2331
 - cmd_2337
 - cmd_2339
-- cmd_2343
-- cmd_2344
-- cmd_2346
 - cmd_2350
 - cmd_2351
 - cmd_2352
