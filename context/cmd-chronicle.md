@@ -901,3 +901,4 @@
 | cmd_2375 | cmd_2374で発見した「L1パリティ0/20 FAIL」の原因がmonthly_return(close) vs monthly_return_open(open)の列取り違えかを確認する。 本番DB側をmonthly_return_openに揃えて再突合し、GS L1にバグがあるか白黒つける。 | dm-signal | 04-29 | cmd_2375としてcmd_2374ベースのmonthly |
 | cmd_2376 | cmd_2375で判明した「選択ブロック忍法17体のL1パリティ不一致」の原因を特定する。 追い風-激攻(oikaze)の不一致月を1つ取り、本番PipelineEngine(MomentumFilterBlock)と GS simulate_pattern()がその月にどのL0四神を選択したかを比較し、差分の根因を特定する。 | dm-signal | 04-29 | 追い風-激攻 oikaze_N4_0569_18M_N1_R |
 | cmd_2377 | cmd_2375で17/20不一致だった原因を特定する。cmd_2376は1ヶ月1体しか確認せず大差月を見逃した。 全20体×共通期間のみでmonthly_return_open突合し、共通期間内にvalue_diffがある月について 本番holding_signal(保有PF) vs GS simulate_patternの選択結果を比較する。 | dm-signal | 04-29 | cmd_2377: シン忍法20体のmonthly_retu |
+| cmd_2378 | 追い風(oikaze)のsimulate_pattern()を本番MomentumFilterBlockと完全一致するよう修正する。 ラルフループ: コード読み比べ→差分特定→修正→パリティ検証→不一致あれば再修正→100%達成まで。 追い風3体(激攻/常勝/鉄壁)の本番monthly_return_openと完全一致(1e-6以内)が完了条件。 | dm-signal | 04-29 | run_077_oikaze.pyのNumPy快速版を検証し |

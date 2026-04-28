@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L669 -->
+<!-- last_synced_lesson: L670 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -190,3 +190,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L667: lookback_index軸のGS robustnessでは連動メタデータ列を固定条件から外す（cmd_2357）
 - L668: shin universe GS runnerはALM固定DB参照をpreflightで検出する（cmd_2360）
 - L669: GS monthly_returnの列セマンティクスを本番monthly_returnと混同するな（cmd_2376）
+- L670: Oikaze NumPy GSはproduction first_signal_monthまで初期EqualWeightを再現する（cmd_2379）
