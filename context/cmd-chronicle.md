@@ -903,3 +903,4 @@
 | cmd_2367 | cmd_2366でL1チャンピオン21体中MATCH 8/MISMATCH 12/未登録1と判明。 殿の問い「L0が同じで構成PFが違うならどう違うのか」に答える分析。 MISMATCH 12体それぞれのGS選出パラメータ vs 本番パラメータを並べ、 乖離のパターン(component_set/lookback/top_n等)を分類する。 | dm-signal | 04-28 | MISMATCH 12体+未登録1体の詳細比較をMarkdo |
 | cmd_2368 | run_077のGSはPydanticバリデーションなしでパラメータグリッドを生成している。 GS選出チャンピオン21体のconfigを本番ビルディングブロック(MomentumFilter等)に通し、 バリデーションエラーで弾かれるパターンがないか検証する。 本番バリデーション下でGS結果と現行本番configが同一になるか確認する。 | dm-signal | 04-28 | cmd_2366選出21体を本番Pydantic入口(Pip |
 | cmd_2369 | 殿の仮説: 本番シン忍法はWF-α(Walk-Forward OOS alpha)で選出された可能性。 今回のGS結果(cmd_2359-2365 SQLite)からWF-α方式でチャンピオンを選出し、 (1)事後選出(cmd_2366)との差異、(2)本番configとの一致率を比較する。 WF-α-CAGR=激攻、WF-α-NHF=常勝、WF-α-MaxDD=鉄壁。 | dm-signal | 04-28 | cmd_2369: 7忍法run_077 SQLite DB |
+| cmd_2370 | cmd_1902のα6指標手法(alpha_t = return_t - beta * spy_return_t)を使い、 本番シン忍法20体と事後GS選出21体のβ調整α6指標を算出・比較する。 本番L1の月次リターンは本番DB(FoFパイプライン計算済み)から読取。 事後GS L1の月次リターンはrun_077 GS SQLiteから読取。 | dm-signal | 04-28 | 本番シン忍法20体とcmd_2366 L1事後GS21体につ |

@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T22:42:09+09:00 -->
+<!-- generated_at: 2026-04-28T22:54:37+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T22:54:36+09:00 | terminal | response | 殿、WF-α結果の全体像。 **最大の問題: N2_0000パターンへの収束** | 忍法 | モード | WF-α champion | concat CAGR | avg-fold obj | concat MaxDD | |----…
+- 2026-04-28T22:53:37+09:00 | terminal | inbound | wf-アルファ
+- 2026-04-28T22:53:32+09:00 | terminal | response | 全6指標×7忍法×3モードの全量データを整理する。2表に分割して表示する。 **表1: リターン系(高い=良い)** | 忍法 | モード | 本αCAGR | GSαCAGR | 本αCalmar | GSαCalmar | 本αNHF…
+- 2026-04-28T22:52:09+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 22:48:52|cmd_2370
+- 2026-04-28T22:50:44+09:00 | terminal | inbound | amアルファ6項目×７忍法×本番＆GSを見たい
+- 2026-04-28T22:49:35+09:00 | terminal | response | 殿、cmd_2370 GATE CLEAR。β調整α6指標比較結果。 **総合: GS勝 18 / 本番勝 1 / tie 1 / GS_ONLY 1** β調整(SPY市場リターン除去)後でもGSが圧倒的。主な差: | 忍法 | モード…
+- 2026-04-28T22:49:02+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝82
 - 2026-04-28T22:42:09+09:00 | terminal | response | inbox全件既読。未読なし。 **Step 11: 禁則確認完了。** - F001: 自ら手を動かさない → 遵守 - F002: 忍者に直接指示しない → 遵守 - F004: ポーリングしない → 遵守 - F006: 古いデータ…
 - 2026-04-28T22:37:25+09:00 | ntfy | outbound | 【家老】cmd_2370 初回配備開始 (title=実験 — L1シン忍法 β調整α6指標比較(本番20体 vs 事後GS21体), ninja=hayate) 実験 📋 https://gist.github.com/simokita…
 - 2026-04-28T22:36:55+09:00 | terminal | inbound | y
-- 2026-04-28T22:36:51+09:00 | ntfy | outbound | 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=59件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 0件: なし [3.🚨要…
-- 2026-04-28T22:36:27+09:00 | terminal | response | 理解した。`alpha_t = pair_return_t - beta * spy_return_t` でβ調整α6指標を計算し、本番L1 vs 事後GS L1を比較する。 これは本番DBから月次リターンを読む必要がある(本番L1の実績…
-- 2026-04-28T22:33:10+09:00 | terminal | inbound | 事後GSL1をl3_alpha_6metrics_gist.mdのやり方で本番のL1と比較したいね
-- 2026-04-28T22:29:52+09:00 | terminal | response | 殿の指摘通り。先ほどの比較表で使った値が間違っていた。 **full_sample_metricsを表示していた。これはWF-α選出パターンの全期間成績であり、WF-αのOOS成績ではない。** 正しい値は: - `wf_alpha_me…
-- 2026-04-28T22:29:12+09:00 | terminal | inbound | 計算ロジックにバグがありそうだな
-- 2026-04-28T22:25:19+09:00 | terminal | response | 殿の指摘通り。MaxDD = -0.6102が全体に張り付いているのは明らかにおかしい。確認する。 [meta] stop_reason=tool_use
-- 2026-04-28T22:24:27+09:00 | terminal | inbound | wf-アルファは明らかに計算ミスでは？
 
 ## 未解決確認事項
 - inbox全件既読。未読なし。 **Step 11: 禁則確認完了。** - F001: 自ら手を動かさない → 遵守 - F002: 忍者に直接指示しない → 遵守 - F004: ポーリングしない → 遵守 - F006: 古いデータで行動しない → 陣形図22:40確認済…
@@ -43,8 +43,6 @@
 - cmd_2176
 - cmd_2337
 - cmd_2339
-- cmd_2350
-- cmd_2354
 - cmd_2355
 - cmd_2357
 - cmd_2358
