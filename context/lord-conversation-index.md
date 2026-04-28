@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T13:31:51+09:00 -->
+<!-- generated_at: 2026-04-28T13:34:50+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T13:34:49+09:00 | terminal | response | 設計書更新完了。4箇所修正: 1. §5.2 Phase 7: `★次★` → `✅ (cmd_2350-2354)` 2. §5.2 Phase 7.1: `← ★次★` 追記 3. §5.3 進捗表 Phase 7: `未着手` → …
+- 2026-04-28T13:33:58+09:00 | terminal | inbound | 設計書の更新は将軍が行うのがルールだ
+- 2026-04-28T13:33:09+09:00 | ntfy | outbound | 【家老】cmd_2355 初回配備開始 (title=修正 — instructions/gunshi.md「殿は絶対」原則埋め込み+殿拒否の根因除去, ninja=saizo) 修正 📋 https://gist.github.com/…
+- 2026-04-28T13:32:25+09:00 | terminal | inbound | 設計書を先に更新せよ
 - 2026-04-28T13:31:50+09:00 | terminal | response | 殿、設計書の進捗を現物確認した。 **設計書が古い。Phase 7は完了しているが、設計書は「未着手」のまま。** | Phase | 設計書の表示 | 実態 | |-------|------------|------| | 0-6 |…
 - 2026-04-28T13:26:22+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝65
 - 2026-04-28T13:23:21+09:00 | terminal | inbound | 将軍に任せる。環境に埋め込んだかまで確認せよ
 - 2026-04-28T13:23:11+09:00 | ntfy | outbound | 【三層ループALERT】 WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須
 - 2026-04-28T13:22:42+09:00 | terminal | response | 殿、拝見した。 軍師の違反は明白。鎖の原理の本質を根本から取り違えている。 **鎖の原理の本質**: 殿が絶対。鎖は殿→将軍→家老→忍者という「殿の意志を伝達する構造」であり、殿を縛る構造ではない。殿は鎖の創造者であり頂点。殿が誰に直接命…
 - 2026-04-28T13:22:08+09:00 | ntfy | outbound | 【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要
-- 2026-04-28T13:21:49+09:00 | terminal | inbound | 軍師のpaneを読め。軍師が鎖の原理の本質に違反している
-- 2026-04-28T13:21:08+09:00 | ntfy | outbound | 【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要
-- 2026-04-28T13:20:07+09:00 | ntfy | outbound | 【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要
-- 2026-04-28T13:19:26+09:00 | terminal | response | 全文脈把握完了。 - 12:59「やろう」= cmd_2353/2354起票の承認 - 13:12「y」= /clear確認 - 殿の指示(軍師へのcmd小分割伝達)は前セッション将軍が12:42:41に完了済み。殿「よい」で確認済み 復…
 
 ## 未解決確認事項
 - 殿、設計書の進捗を現物確認した。 **設計書が古い。Phase 7は完了しているが、設計書は「未着手」のまま。** | Phase | 設計書の表示 | 実態 | |-------|------------|------| | 0-6 | ✅完了 | ✅一致 | | **7**…
