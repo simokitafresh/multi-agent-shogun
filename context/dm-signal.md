@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L666 -->
+<!-- last_synced_lesson: L667 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -187,3 +187,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L639/L640は振り分け済 → core§19.2(L639:EqualWeight GSへpipeline import guard混入禁止), core§19.1(L640:DB経由CoDD比較は同一プロセス・同一データ)）
 - （L642は振り分け済 → core§19.5(GS成果物globはcmd_id直後にninjutsu名が来る命名も対象)）
 - （L651-L666は振り分け済 → frontend§12(L651/L653/L654/L655/L656), core§0(L652), ops§14(L657/L666), ops§33(L658/L659/L660/L661/L662/L664/L665), infra WSL2(L663)）
+- L667: lookback_index軸のGS robustnessでは連動メタデータ列を固定条件から外す（cmd_2357）
