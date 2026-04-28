@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T03:26:56+09:00 -->
+<!-- generated_at: 2026-04-29T03:29:05+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T03:29:04+09:00 | terminal | response | 軍師からの掲示板: **報告YAMLボトルネック分析**。 - binary_checksの記入ミスが最多(78件)。忍者がACテキストからcheck文面を手書きコピペ→ミス→gate FAIL→リトライ - 改善案: deploy_ta…
+- 2026-04-29T03:28:40+09:00 | terminal | response | 掲示板2件: 1. **軍師免疫系報告**: 直近30件WA率0%(過去最高継続)。Top 5 WAカテゴリ全て根絶済みGPで防御。 2. **家老自走分析**: 教訓注入有効率の構造的低下を検出。直近10報告中8報告でuseful=0/…
+- 2026-04-29T03:28:11+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 03:17:53|CI緑: run 25069730932 2026-04-29 03:21:22|cmd_karo_gs_sqlite_rename
 - 2026-04-29T03:26:56+09:00 | terminal | response | 設計書更新完了。44行追加・10行変更。 **更新した5箇所:** | # | 箇所 | 内容 | |---|------|------| | 1 | §5.1.5 L1 GS | 道具/config「未実装」→「✅実装済み」+L1 SQ…
 - 2026-04-29T03:24:30+09:00 | ntfy | outbound | 📊 Dashboard: cmd_karo_gs_sqlite_rename CLEAR | idle:6名 | pipeline:0件
 - 2026-04-29T03:23:57+09:00 | terminal | inbound | 設計書を更新せよ。ファイル名やpath、実在有無など丁寧に行おう
@@ -11,9 +14,6 @@
 - 2026-04-29T03:22:41+09:00 | terminal | inbound | 最新状況を確認せよ
 - 2026-04-29T03:21:55+09:00 | terminal | response | **cmd_karo_gs_sqlite_rename も GATE CLEAR。** tobisaruのGS SQLiteリネーム作業完了。 現在の全軍状態: - 全cmd完了: cmd_2378-2385(7忍法パリティ修正) + c…
 - 2026-04-29T03:16:13+09:00 | ntfy | outbound | 【家老】復帰済み。陣形: 飛猿作業中(SQLiteリネーム)、5忍者idle。cmd待ち。
-- 2026-04-29T03:13:10+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 03:03:09|CI緑: run 25068692281 2026-04-29 03:07:33|cmd_2384 2026-04-29 03:08:09|cmd_2385
-- 2026-04-29T03:12:56+09:00 | terminal | response | 家老にGS SQLiteファイル全15本のパス一覧 + 旧cmd番号を参照しているスクリプト6本のリストを送った。家老がtobisaruに転送する。 これでtobisaruが自分でgrep検索する時間を省ける。 [meta] stop_r…
-- 2026-04-29T03:11:45+09:00 | terminal | inbound | すぐに終わる作業だと思うが、ファイルを探して困っているのでは？利他の精神で助けよ
 
 ## 未解決確認事項
 - 設計書更新完了。44行追加・10行変更。 **更新した5箇所:** | # | 箇所 | 内容 | |---|------|------| | 1 | §5.1.5 L1 GS | 道具/config「未実装」→「✅実装済み」+L1 SQLite実ファイルパス7本(現物確認済み…
