@@ -396,7 +396,10 @@ elif isinstance(data, list):
     data = fix_items(data)
 if changed:
     print('[autofix] binary_checks result正規化(true/PASS→yes, false/FAIL→no)', file=sys.stderr)
-print(yaml.dump(data, default_flow_style=False, allow_unicode=True), end='')
+import re
+out = yaml.dump(data, default_flow_style=False, allow_unicode=True)
+out = re.sub(r'(result: )[' + chr(39) + chr(34) + r']?(yes|no)[' + chr(39) + chr(34) + r']?', r'\1\2', out)
+print(out, end='')
 " <<< "$val")
                 echo "$fixed"
                 return 0
@@ -752,7 +755,9 @@ stdin_value = sys.argv[4] if len(sys.argv) > 4 else ''
 if value == '-' and stdin_value:
     value = stdin_value
     try:
-        parsed = yaml.safe_load(value)
+        # binary_checks: BaseLoaderでyes/noを文字列として保持(safe_loadはboolに変換してしまう)
+        loader = yaml.BaseLoader if dot_key.startswith('binary_checks') else yaml.SafeLoader
+        parsed = yaml.load(value, Loader=loader)
         if isinstance(parsed, (list, dict)):
             value = parsed
     except yaml.YAMLError:
@@ -847,6 +852,14 @@ fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
 try:
     with os.fdopen(fd, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # Fix yaml.dump quoting yes/no in binary_checks result fields
+    import re as _re
+    with open(tmp_path, 'r') as f:
+        _content = f.read()
+    _fixed = _re.sub(r'(    result: )[\\x27\\x22]?(yes|no)[\\x27\\x22]?', r'\\1\\2', _content)
+    if _fixed != _content:
+        with open(tmp_path, 'w') as f:
+            f.write(_fixed)
     # Round-trip validation: reload and verify key fields survive yaml.dump
     with open(tmp_path, 'r') as f:
         reloaded = yaml.safe_load(f)
@@ -1056,7 +1069,7 @@ for ac_key, ac_val in bc.items():
         rs = str(ci.get('result','')).strip()
         if ck in verdict_words:
             issues.append(f'{ac_key}[{j}].check=\"{ck}\" — 確認項目ではなく判定値。何を確認したかを書け')
-        if rs and rs.lower() not in ('yes','no',''):
+        if rs and rs.lower() not in ('yes','no','true','false',''):
             issues.append(f'{ac_key}[{j}].result=\"{rs[:30]}\" — yes/noのみ。自由記述はdetailに書け')
 if issues:
     print('\\n'.join(issues))
