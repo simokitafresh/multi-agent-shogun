@@ -894,3 +894,5 @@
 | cmd_2358 | Phase 1.95(L1 GS再実行)の前提。run_077がgs_data_loaderで構成PF月次リターンを読むが、 現在source_type:dbのみ(本番PostgreSQL直読=§5.5.4違反)。 L0 SQLite .dbにopen-to-open月次リターンが存在する(設計書§5.1.5確認済み)。 source_type:local_sqliteを追加し、ローカルSQLiteからchampion月次リターンを読む経路を作る。 | dm-signal | 04-28 | cmd_2358完了。gs_data_loader.pyにs |
 | cmd_2359 | Phase 1.95の第1弾。run_077_bunshin.pyをsource_type:local_sqlite(L0 SQLite直読)で実行し、 L1分身忍法のGS結果をSQLite .dbに出力する。 bunshinは0軸(LBなし、top_nのみ)で最軽量。OOMリスク最小。 | dm-signal | 04-28 | cmd_2359完了。run_077_bunshin.pyを |
 | cmd_2360 | Phase 1.95の第2弾。run_077_oikaze.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 追い風(MomentumFilter)は1軸LB忍法。bunshin(1/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2360完了。run_077_oikaze.pyをs |
+| cmd_2361 | Phase 1.95の第3弾。run_077_kawarimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 変わり身(TrendReversalFilter)は1軸LB忍法。oikaze(2/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2361完了。run_077_kawarimi.py |
+| cmd_2362 | Phase 1.95の第4弾。run_077_yotsume.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 四つ目(MultiViewMomentumFilter)は1軸LB忍法。kawarimi(3/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2362完了。run_077_yotsume.pyを |
