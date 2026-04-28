@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-28 -->
+<!-- last_updated: 2026-04-29 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,15 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1493 | — | infra | 03-29 | deploy_task.sh再配備時AC上書きスキップバグ修 |
-| cmd_1494 | — | infra | 03-29 | 3ファイルのgate_fire_log書込み箇所にgate名 |
-| cmd_1495 | — | dm-signal | 03-29 | Phase4.5/5 precompute失敗数をstats |
-| cmd_1496 | gate_report_autofix.sh強化 — binary_checks str→list自動変換 + lessons_useful MISSING時デフォルト注入 | infra | 03-29 | Fix5 str→list変換+Fix6 MISSING/null→スケルトン生成。テスト12件PASS |
-| cmd_1498 | ninja_monitorに家老idle検知追加 — パイプライン空+全忍者idle時にkaro自走サイクル起動 | infra | 03-29 | 家老idle検知→自走サイクル起動の自動化 |
-| cmd_1499 | deploy_task.sh改善 — GP-051分割配備対応 + テンプレート欠損防止 | infra | 03-29 | 分割配備+テンプレート欠損防止 |
-| cmd_1500 | cmd_save.sh改善 — AC内ファイルパス存在チェック + impl push AC検知 | infra | 03-29 | AC内パス存在チェック+push AC検知 |
-| cmd_1502 | gate_cycle_health.sh heartbeatテスト追加 + insight_resolve.shヘルパー作成 | infra | 03-29 | heartbeatテスト+insight解決ヘルパー |
-| cmd_1506 | 'L3 daily_loop=67.88s(全体の14%)。trade_perfに次ぐ第2ボトルネック。batch化の余地を特定する偵察' | dm-signal | 03-29 | _recalculate_fof_history(L114- |
 | cmd_1505 | ローカルに2件未push(docs L508/509 + precompute integrity check)。加えてcmd_1504のCash修正後に一括push→Render | dm-signal | 03-30 | git push 3コミット→Render deploy l |
 | cmd_1510 | 'cmd_1503偵察でwhileループがreturn_calculator.py L319-364(calculate_trade_period_return)と特定。月次リターン複利合成をNumPyプレフィックスプロダクトに置換しtrade_perf 142.78sを削減' | dm-signal | 03-30 | calculate_trade_period_returnの |
 | cmd_1511 | 'cmd_1508偵察でSF LOW 17箇所中Group A(ログ追加のみ)5箇所を特定。Group C 12箇所は無害。残る修正対象5箇所にlogger追加' | dm-signal | 03-30 | Group A 5箇所にlogger.warning(exc |
@@ -905,3 +896,4 @@
 | cmd_2369 | 殿の仮説: 本番シン忍法はWF-α(Walk-Forward OOS alpha)で選出された可能性。 今回のGS結果(cmd_2359-2365 SQLite)からWF-α方式でチャンピオンを選出し、 (1)事後選出(cmd_2366)との差異、(2)本番configとの一致率を比較する。 WF-α-CAGR=激攻、WF-α-NHF=常勝、WF-α-MaxDD=鉄壁。 | dm-signal | 04-28 | cmd_2369: 7忍法run_077 SQLite DB |
 | cmd_2370 | cmd_1902のα6指標手法(alpha_t = return_t - beta * spy_return_t)を使い、 本番シン忍法20体と事後GS選出21体のβ調整α6指標を算出・比較する。 本番L1の月次リターンは本番DB(FoFパイプライン計算済み)から読取。 事後GS L1の月次リターンはrun_077 GS SQLiteから読取。 | dm-signal | 04-28 | 本番シン忍法20体とcmd_2366 L1事後GS21体につ |
 | cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定し、 OOS窓でα6指標(alpha-CAGR/NHF/MaxDD/MRU/Calmar/UWP)を計算。 20個の独立OOS結果を連結して最終α6を算出。 | dm-signal | 04-28 | cmd_2372: 本番シン忍法20体と事後GS21体のSP |
+| cmd_2373 | cmd_2366のチャンピオン選出スクリプトが忍法×モードごとに正しい目的関数で選出しているか検証する。 疑い: (1)鉄壁のMaxDD最小化で符号が逆転していないか (2)異なる忍法で同一パターンが選ばれる原因 (3)常勝3忍法のMaxDD完全一致(-0.3371)の原因特定。 | dm-signal | 04-29 | cmd_2366 L1チャンピオン選出ロジックを監査し、選出 |
