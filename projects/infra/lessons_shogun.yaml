@@ -70,7 +70,7 @@ lessons:
     (16)ACセクションgrepはAC配下のみ。command欄のツールパスはACチェック対象外→ACに明記必須
     (17)q8縮小表現(一部/全体の一部)→q8_scope_expression WARN。全量保証と矛盾する印象
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS026, LS030, LS032, LS033, LS034, LS035, LS036]
-  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337]
+  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2372, cmd_2376, cmd_2386]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac+q8_scope_expression+other_draft_exists'
@@ -282,7 +282,7 @@ lessons:
     (5)q8 multiline(|)で_Q8_WW_VAL抽出失敗。単行化必須
     (6)教訓上限デッドロック: Edit全BLOCK。修正済み: Guard 6にid数比較追加(削除方向許可)
   source_ids: [LS027, LS031]
-  source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332]
+  source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh check_research_tool_explicit(L2684修正)+check_parity_ac_requirements(L2845修正)+is_gate_or_hook_addition_cmd(SCOUT除外L120)+check_gunshi_design_num_relax(カタログ除外)+pre-write-edit-combined.sh Guard 6(id数比較)'
@@ -304,12 +304,13 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh ACに推奨事項が混在検出(既存gate)で自動BLOCK'
 - id: 'LS025'
-  title: '偵察cmdのcommandにrun_077を含めるとcheck_research_tool_explicitマッチ'
-  detail: 'cmd_2343偵察cmdのcommand欄にrun_077からの参照有無をgrepで確認と記載→研究道具チェック累計昇格BLOCK。偵察は実行しないが調査対象名でマッチ。LS-A22(3)同一パターン。対処: command欄からrun_077除去+AC3に参照元フルパスを記載'
+  title: 'check_research_tool_explicit FP統合 — grid_search/WFパス含むcmdはACにrun_077/l1_alm_wf_engine記載'
+  detail: 'cmd_2343/2355/2358/2366/2367/2368で繰返しBLOCK。command/AC内にgrid_search/walk_forwardパスがあるとGS/WF道具チェック発火。道具磨き/偵察/分析cmdでも誤マッチ。対処: ACにrun_077またはl1_alm_wf_engineを含めて回避。根本修正はgate側除外リスト拡張が必要'
   source_cmd: 'cmd_2343'
+  source_cmds_merged: [cmd_2343, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368]
   created_at: '2026-04-28'
   automated: true
-  enforcement: 'cmd_save.sh check_research_tool_explicit L2658で自動検出済み'
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=check_research_tool_explicit'
 - id: 'LS026'
   title: 'q5 code_readingのみBLOCK — grepで確認してもstructure_verifiedと明記せよ'
   detail: 'cmd_2344でq5_verified_sourceをcode_readingと記載→BLOCK。実際にはgrep -nで全18ファイルのsource_type分布を確認済みだが、ラベルをcode_readingにした。対処: structure_verifiedに昇格。根因: 確認レベルの語彙選択ミス'
@@ -324,3 +325,59 @@ lessons:
   created_at: '2026-04-28'
   automated: true
   enforcement: 'cmd_save.sh check_ac_phase_mixing L3033で自動検出済み'
+- id: 'LS028'
+  title: 'cmdフォーマット辞書形式強制 — リスト形式(- id:)でcmd_block_missing 2回BLOCK'
+  detail: 'cmd_2350でshogun_to_karo.yamlにリスト形式(- id: cmd_2350)で書いた→cmd_save.shがcmdブロックを検出できずcmd_block_missing。正しくは辞書形式(  cmd_2350:)。archive済みcmdの現物確認で判明。根因: Write toolで全文書き直す際にYAMLリスト構文を使ってしまう'
+  source_cmd: 'cmd_2350'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=リスト形式.*禁止'
+- id: 'LS029'
+  title: 'AC内§番号が数値として誤検出+other_draft_exists'
+  detail: 'cmd_2351で2回BLOCK。(1)2cmd同時draftでother_draft_exists。(2)AC内の§5.2がセクション番号なのに数値5.2としてcheck_gunshi_reference_numeric_relaxationに検出。対策: 1本ずつdraft→pending→delegate+ACからセクション番号を除去しcommand欄に移動'
+  source_cmd: 'cmd_2351'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=check_gunshi_reference_numeric_relaxation'
+- id: 'LS030'
+  title: '出力パス親ディレクトリ不在+assumptions sourceパス不正'
+  detail: 'cmd_2352でBLOCK。(1)AC内のoutputs/robustness/20260428/の親ディレクトリが未存在(新規ディレクトリ)。(2)assumptions sourceにqueue/reports/saizo_report_cmd_2350.yamlと書いたがcmd_save.shはDM-Signal WDで検索→不在BLOCK。対策: 出力パスを相対記述(配下に作成)+sourceからファイルパスを除去'
+  source_cmd: 'cmd_2352'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=check_ac_file_paths'
+- id: 'LS031'
+  title: 'diagnosis形式不正の繰返し — 初回起票時に2部構成で書け'
+  detail: 'cmd_2353で1回BLOCK。diagnosis=「BLOCK理由: なし(初回起票)」はgate形式不正。初回でも「BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載」と書くべき。同パターンがcmd_2351/2352/2353で3回連続'
+  source_cmd: 'cmd_2353'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'
+- id: 'LS032'
+  title: 'environment_changeはcmd成果物を参照先にするな'
+  detail: 'cmd_2355で3回BLOCK。(1)command番号付きステップでcommand_steps_over_ac (2)YAML構造体で非構造化BLOCK (3)cmd成果物(未存在ファイル)をpatternに指定しgrep検証BLOCK。根因: environment_changeはcmd自身の成果物ではなく既存の教訓・gate・hookを参照すべき'
+  source_cmd: 'cmd_2355'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=environment_change'
+- id: 'LS033'
+  title: 'assumptions sourceはフルパスで記載せよ'
+  detail: 'cmd_2358で2回BLOCK。sourceにgs_db_utils.pyと書いたがcmd_save.shはDM-Signal WDで検索→scripts/analysis/gs_db_utils.pyが正しいフルパス。check_research_tool_explicit FPはLS025に統合'
+  source_cmd: 'cmd_2358'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=check_ac_file_paths'
+- id: 'LS034'
+  title: 'WF/grid_searchパス含むcmdはACにl1_alm_wf_engine/run_077記載(LS025統合)'
+  detail: 'cmd_2368で1回BLOCK。check_research_tool_explicit累計昇格+教訓上限到達。LS025に統合済み。LS034/035削除で上限解消'
+  source_cmd: 'cmd_2368'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=check_research_tool_explicit'
+- id: 'LS035'
+  title: 'WF-α選出スクリプトのN2収束バグ+教訓上限到達時の統合手順'
+  detail: 'cmd_2369で2回BLOCK。(1)check_research_tool_explicit累計昇格→ACにl1_alm_wf_engine記載で解消 (2)前cmd教訓未記録→教訓上限35件到達→LS025に統合(LS034/035削除)で空き確保。WF-α結果自体はN2_0000収束バグ疑い'
+  source_cmd: 'cmd_2369'
+  created_at: '2026-04-28'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=check_research_tool_explicit'

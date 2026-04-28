@@ -31,14 +31,27 @@ file_path="${_parsed#*	}"
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
 
-# === Guard 0: shogun_to_karo.yaml起票前確認3問 ===
-if [[ "$tool_name" == "Edit" && "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
-    emit_context "起票前確認5問:
+# === Guard 0: shogun_to_karo.yaml起票前確認+リスト形式BLOCK ===
+if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
+    # Guard 0a: リスト形式(- id: cmd_)をBLOCK。正しくは辞書形式(  cmd_XXXX:)
+    _stk_content=""
+    if [[ "$tool_name" == "Edit" ]]; then
+        _stk_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+    elif [[ "$tool_name" == "Write" ]]; then
+        _stk_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .content // ""' 2>/dev/null)" || true
+    fi
+    if printf '%s' "$_stk_content" | grep -qE '^\s*-\s+id:\s+cmd_'; then
+        emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmdを参照せよ(LS-A04(13))"
+        exit 1
+    fi
+    if [[ "$tool_name" == "Edit" ]]; then
+        emit_context "起票前確認5問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
 4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？(LS023/LS027: 研究道具チェック累計昇格)
 5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？(LS026/LS028: タイトル/diagnosis偽陽性)"
+    fi
     exit 0
 fi
 
