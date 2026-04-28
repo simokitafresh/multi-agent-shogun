@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L665 -->
+<!-- last_synced_lesson: L666 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -201,3 +201,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L663: WSL2 NTFSディレクトリsymlinkは使うな（cmd_2332）
 - L664: outputs/analysis棚卸しはsource_type csv参照を軸に分類する（cmd_2343）
 - L665: L0四神GS vs L1忍法GS レイヤー混同禁止（cmd_2346）
+- L666: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな（cmd_2346）
