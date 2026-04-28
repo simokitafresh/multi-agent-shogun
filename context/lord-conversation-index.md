@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-28T21:17:08+09:00 -->
+<!-- generated_at: 2026-04-28T21:25:02+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-28T21:25:02+09:00 | terminal | response | PASS。pending→委任。 [meta] stop_reason=tool_use
+- 2026-04-28T21:20:19+09:00 | terminal | inbound | こういうときは試すのが一番だ。WF-アルファで選別したシン忍法を見せてくれ
+- 2026-04-28T21:20:18+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 21:06:35|CI緑: run 25050981131
+- 2026-04-28T21:19:04+09:00 | terminal | response | 殿、関連する履歴を発見。 **最も関連するcmd:** | cmd | 内容 | 結果 | |-----|------|------| | **cmd_1844** | 奥義-シン忍法 GS事後チャンピオン選出 — **3目的(CAGR/…
+- 2026-04-28T21:17:58+09:00 | terminal | inbound | WF-アルファーCAGRが激攻、WF-α -NHFが常勝、WF-α-MAXDDが鉄壁。これの可能性があるな。これをやった履歴はどこかにあるか？
 - 2026-04-28T21:17:08+09:00 | terminal | response | スプレッドシートのデータ投入に問題がある(2行のみ重複)。gws +appendの挙動がCSVのカンマ区切りと干渉している。 殿、スプレッドシートの修正を続けるか、WF-αの確認を先に進めるか。殿の判断を。 [meta] stop_rea…
 - 2026-04-28T21:16:32+09:00 | terminal | inbound | <task-notification> <task-id>bbq617ugx</task-id> <tool-use-id>toolu_01JvtWQytw48RUCgpjcakvyy</tool-use-id> <output-file…
 - 2026-04-28T21:15:40+09:00 | terminal | response | 重複データが入っている。スプレッドシートをクリアして正しくやり直す。 [meta] stop_reason=tool_use
 - 2026-04-28T21:15:27+09:00 | ntfy | outbound | 【monitor】将軍CTX:55%。/compactをご検討ください
 - 2026-04-28T21:11:22+09:00 | terminal | inbound | <task-notification> <task-id>balvp465d</task-id> <tool-use-id>toolu_0129TbCiY9YMwWtxqPA3tpR2</tool-use-id> <output-file…
-- 2026-04-28T21:11:16+09:00 | terminal | response | 殿、結果が出た。 **本番シン忍法のGS内順位:** | 忍法 | 激攻(CAGR) | 常勝(NHF) | 鉄壁(MaxDD) | |------|-----------|----------|------------| | 分身 | …
-- 2026-04-28T21:04:46+09:00 | terminal | inbound | さっきのスプレッドシートは確認した？
-- 2026-04-28T20:50:02+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-28 20:46:47|cmd_2368
-- 2026-04-28T20:47:35+09:00 | terminal | response | cmd_2368 GATE CLEAR。バリデーション検証結果を確認する。 [meta] stop_reason=tool_use
-- 2026-04-28T20:46:48+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝80
 
 ## 未解決確認事項
 - スプレッドシートのデータ投入に問題がある(2行のみ重複)。gws +appendの挙動がCSVのカンマ区切りと干渉している。 殿、スプレッドシートの修正を続けるか、WF-αの確認を先に進めるか。殿の判断を。 [meta] stop_reason=end_turn
@@ -36,6 +36,11 @@
 - 2026-04-28T16:14:13+09:00 | cmd_2362(yotsume 4/7)委任完了。1軸忍法4本全て投入済み。 次は2軸忍法(nukimi→kasoku_diff→kasoku_ratio)。メモリ負荷が大きくなる。yotsume完了後に5/7 nukimiを起票する。 殿、指示あれば。 [meta] sto…
 
 ## 参照cmd
+- cmd_1604
+- cmd_1606
+- cmd_1708
+- cmd_1844
+- cmd_2176
 - cmd_2337
 - cmd_2339
 - cmd_2350
