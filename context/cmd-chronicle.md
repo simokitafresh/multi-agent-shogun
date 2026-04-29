@@ -851,3 +851,4 @@
 | cmd_2422 | cmd_2412で選出したL2チャンピオン21体のうち分身3体でtop_n>2(subset_size=4等)が 本番Pydanticスキーマ(top_n: le=2)に違反しPortfolioRepository.load()全PFロード失敗を引き起こした。 L2 GS SQLite 7本からsubset_size<=2のパターンのみでチャンピオンを再選出する。 cmd_2368(L1 Pydanticバリデーション検証)と同パターン。 | dm-signal | 04-30 | cmd_2422: L2 SQLite 7本をsubset_ |
 | cmd_2423 | PortfolioRepository.load()で1体のPydanticバリデーション失敗が全PFロード失敗を引き起こす構造的欠陥を修正。 cmd_2416事故(top_n=4→全168体API消失)の再発防止。 L1: API応答にskipped情報を含める(サイレント禁止)。L2: logger.errorでBEログ記録。Render内完結。 | dm-signal | 04-30 | PFロード時に個別PFのバリデーション失敗をskippedと |
 | cmd_2425 | workers=1固定運用(LG025 OOM防止)+gs-runbook.md結論(fork CoWで十分)により run_077の6忍法スクリプトのSHMコードは全てデッドコード。削除してコードを簡潔にする。 cmd_1037(PPE実験スクリプト)は実験記録として保存(軍師推奨)。 | dm-signal | 04-30 | run_077の6忍法からSHM専用経路を削除し、legac |
+| cmd_2424 | cmd_2422で再選出した制約内(top_n<=2)L2チャンピオンを本番DBに登録する。 cmd_2416(Phase 13)の再実行。cmd_2423(耐障害化)が本番に入った状態で安全に実行。 | dm-signal | 04-30 | cmd_2422 constrained L2 champi |

@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-30 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-30T00:35:48+09:00 -->
+<!-- generated_at: 2026-04-30T00:53:58+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-30T00:53:58+09:00 | terminal | response | 設計書更新完了。 **本セッション全実績:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2418 | LG014環境埋込み | ✅GATE CLEAR | | cmd_2420 | Co…
+- 2026-04-30T00:52:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:43:37|CI緑: run 25118240446
+- 2026-04-30T00:37:30+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓13件 → /lesson-sort推奨
+- 2026-04-30T00:36:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:21:16|cmd_2423 2026-04-30 00:29:58|CI緑: run 25117663181 2026-04-30 00:32:21|cmd_2425
 - 2026-04-30T00:35:48+09:00 | terminal | response | **cmd_2425 GATE CLEAR。** SHMデッドコード削除完了。 cmd_2424(L2奥義再登録)はsaizoが作業中(CTX:74%)。 殿、指示あれば。 [meta] stop_reason=tool_use
 - 2026-04-30T00:35:23+09:00 | terminal | inbound | y
 - 2026-04-30T00:34:51+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-214)
 - 2026-04-30T00:25:36+09:00 | ntfy | outbound | 【家老】cmd_2424 初回配備開始 (title=L2奥義 制約内チャンピオンで本番DB再登録+fullrecalculate+パリティ, ninja=saizo) L2奥義 制約内チャンピオンで本番DB再登録+fullrecalcu…
 - 2026-04-30T00:25:33+09:00 | terminal | response | cmd_2424(L2奥義再登録)+cmd_2425(SHM削除)、両方委任完了。LS031教訓記録済み。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-30T00:21:44+09:00 | terminal | inbound | 起票せよ
-- 2026-04-30T00:21:38+09:00 | terminal | response | **cmd_2423 GATE CLEAR。** PortfolioRepository耐障害化完了。これで不正configが入っても全PF消失は起きない。 **現状:** - cmd_2422 GATE CLEAR(制約内L2チャンピオ…
-- 2026-04-30T00:21:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:16:18|CI緑: run 25116730986
-- 2026-04-30T00:16:22+09:00 | terminal | response | 軍師回答: 1. **削除範囲**: 6スクリプトのSHM全削除でよい。全てデッドコード 2. **cmd_1037(実験)**: 削除対象外を推奨。実験記録として保存。本番影響ゼロ 3. **将来workers>1**: 現実的ではない…
-- 2026-04-30T00:15:14+09:00 | terminal | response | 軍師に掲示板で質問した。回答を待つ。 殿、指示あれば。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - 軍師回答: 1. **削除範囲**: 6スクリプトのSHM全削除でよい。全てデッドコード 2. **cmd_1037(実験)**: 削除対象外を推奨。実験記録として保存。本番影響ゼロ 3. **将来workers>1**: 現実的ではない(LG025 OOM実証)。必要なら再実…
@@ -26,6 +26,7 @@
 - **根因特定。** kotaroの相談で判明。 **`分身-常勝 top_n=4` がPydanticスキーマ `le=2`(上限2)に違反** → `Portfolio(**p_data)` でバリデーションエラー → `except Exception` で全168体のロー…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-30T00:53:58+09:00 | 設計書更新完了。 **本セッション全実績:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2418 | LG014環境埋込み | ✅GATE CLEAR | | cmd_2420 | Codex effort制御 | ✅GATE…
 - 2026-04-30T00:35:48+09:00 | **cmd_2425 GATE CLEAR。** SHMデッドコード削除完了。 cmd_2424(L2奥義再登録)はsaizoが作業中(CTX:74%)。 殿、指示あれば。 [meta] stop_reason=tool_use
 - 2026-04-30T00:25:33+09:00 | cmd_2424(L2奥義再登録)+cmd_2425(SHM削除)、両方委任完了。LS031教訓記録済み。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-30T00:15:14+09:00 | 軍師に掲示板で質問した。回答を待つ。 殿、指示あれば。 [meta] stop_reason=tool_use
@@ -33,7 +34,6 @@
 - 2026-04-30T00:08:48+09:00 | cmd_2423委任完了。 **本セッション実績:** | 対応 | 状態 | |------|------| | L2奥義21体退去+API復旧 | ✅完了 | | 根因特定(top_n=4→Pydantic le=2違反) | ✅完了 | | 設計書更新(事故経緯+Phas…
 - 2026-04-30T00:08:03+09:00 | cmd_2423委任完了。 **本セッション実績:** | 対応 | 状態 | |------|------| | L2奥義21体退去+API復旧 | ✅完了 | | 根因特定(top_n=4→Pydantic le=2違反) | ✅完了 | | 設計書更新(事故経緯+Phas…
 - 2026-04-30T00:03:58+09:00 | **cmd_2422 GATE CLEAR。** 制約内L2チャンピオン再選出完了。 殿の指摘を受けてTO-BE修正。サイレントエラー禁止。 **TO-BE(修正):** 失敗PFはスキップするだけでなく、**可視化する**: 1. **API応答にskipped_portfo…
-- 2026-04-30T00:00:44+09:00 | **AS-IS:** `PortfolioRepository.load()` L84-114のforループが全PFを1つのtry-exceptで囲む。1体でも`Portfolio(**p_data)`がPydanticバリデーション失敗 → except Exception …
 
 ## 参照cmd
 - cmd_1037
@@ -43,7 +43,6 @@
 - cmd_2382
 - cmd_2386
 - cmd_2391
-- cmd_2397
 - cmd_2399
 - cmd_2400
 - cmd_2401
@@ -66,6 +65,7 @@
 - cmd_2419
 - cmd_2420
 - cmd_2421
+- cmd_2422
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
