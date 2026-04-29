@@ -388,6 +388,27 @@ else
     echo "  PASS: infra対象ファイルなし"
 fi
 
+# ─── SG-PRE19: total changed_lines計算 (adversarial観点冷え対策) ───
+echo ""
+echo "■ SG-PRE19: total changed_lines(adversarial review必要性判定)"
+TOTAL_ADDED=0
+TOTAL_DELETED=0
+if [ -n "${PARENT_CMD:-}" ]; then
+    while IFS=$'\t' read -r added deleted _; do
+        [[ "$added" == "-" ]] && continue
+        TOTAL_ADDED=$((TOTAL_ADDED + added))
+        TOTAL_DELETED=$((TOTAL_DELETED + deleted))
+    done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+    TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))
+    echo "  changed_lines: +${TOTAL_ADDED}/-${TOTAL_DELETED} = ${TOTAL_CHANGED}"
+    if [ "$TOTAL_CHANGED" -ge 200 ]; then
+        echo "  ★★★ adversarial_review必須(changed_lines=${TOTAL_CHANGED} >= 200)"
+        echo "  → review_logにchanged_lines: ${TOTAL_CHANGED}とadversarial_review:を記録せよ"
+    fi
+else
+    echo "  SKIP: PARENT_CMD未取得"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
