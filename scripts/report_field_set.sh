@@ -833,6 +833,7 @@ else:
     # --- GP-053 cycle 3: binary_checks check項目保護 ---
     # テンプレートで事前展開されたcheck項目を忍者の上書きから保護。
     # 忍者はresultのみ更新可能。check項目はテンプレートのまま維持。
+    # ★ただしFILLプレースホルダは保護対象外（忍者の具体的check文で上書き可能）
     if keys[0] == 'binary_checks' and len(keys) == 2 and isinstance(value, list):
         existing = current.get(last_key, [])
         if isinstance(existing, list) and existing:
@@ -841,6 +842,9 @@ else:
                 if i < len(value) and isinstance(ex_item, dict) and isinstance(value[i], dict):
                     ex_check = ex_item.get('check', '')
                     if ex_check and isinstance(ex_check, str) and len(ex_check.strip()) > 5:
+                        # FILLプレースホルダは保護しない（忍者が具体的check文で上書きすべき）
+                        if ex_check.strip().startswith('FILL'):
+                            continue
                         value[i]['check'] = ex_check
                         protected += 1
             if protected > 0:
