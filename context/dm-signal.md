@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L686 -->
+<!-- last_synced_lesson: L687 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -198,3 +198,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L684: run_077スクリプトは--out-dirのみ定義で--output-dirエイリアスが欠落しているケースがある（cmd_2411）
 - L685: 別layerへ既存selectorを流用する前に固定パスと突合分岐を確認する（cmd_2412）
 - L686: robustness実行前にSQLite月次保存形式を確認する（cmd_2413）
+- L687: [自動生成] 有効教訓の記録を怠った: cmd_2422（cmd_2422）

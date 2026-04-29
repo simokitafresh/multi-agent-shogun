@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-29 -->
+<!-- last_updated: 2026-04-30 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,93 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1505 | ローカルに2件未push(docs L508/509 + precompute integrity check)。加えてcmd_1504のCash修正後に一括push→Render | dm-signal | 03-30 | git push 3コミット→Render deploy l |
-| cmd_1510 | 'cmd_1503偵察でwhileループがreturn_calculator.py L319-364(calculate_trade_period_return)と特定。月次リターン複利合成をNumPyプレフィックスプロダクトに置換しtrade_perf 142.78sを削減' | dm-signal | 03-30 | calculate_trade_period_returnの |
-| cmd_1511 | 'cmd_1508偵察でSF LOW 17箇所中Group A(ログ追加のみ)5箇所を特定。Group C 12箇所は無害。残る修正対象5箇所にlogger追加' | dm-signal | 03-30 | Group A 5箇所にlogger.warning(exc |
-| cmd_1512 | 'GP-116。commit_missing 7件の構造的原因=ashigaru.md Step4→Step5間にgit commit手順未定義。Step 4.6を追加しcommit漏れを構造的に予防' | infra | 03-30 | ashigaru.mdにStep 4.6(git add+c |
-| cmd_1513 | 'Stop hookで毎ターン発火するlog_terminal_response.shが418ms。4回のpython3起動(各50-80ms)が主因。1回に統合して累積時間を70%以上削減する' | infra | 03-30 | log_terminal_response.shの5つのpy |
-| cmd_1514 | '最も遅いゲート(9.4s)。find+ファイル毎のgrepループがWSL2の/mnt/c I/Oペナルティで遅い。grep -rnの1パス検索に変更しI/O回数を激減させる' | infra | 03-30 | gate_silent_fallback.shをgrep - |
-| cmd_1515 | '2番目に遅いゲート(6.0s)。context mdからresearch参照を抽出し各参照のファイル存在確認。find+個別-fチェックのWSL2 I/Oペナルティが主因。既存ファイル一覧を先に取得してメモリ内照合に変更' | infra | 03-30 | gate_vercel_phase.shの個別ファイル存在チ |
-| cmd_1516 | '起動ゲート(3.2s)の内部でGate 1(211ms), Gate 12(206ms), Gate 13(1873ms)を逐次実行→並列実行に変更。加えてgate_cycle_health.shのreportファイルループ(stat+grep逐次)をfindバッチに変更' | infra | 03-30 | Gate1/12/13並列化(background+tmpf |
-| cmd_1517 | 'deploy_task.sh L1878が task_type="implement"を期待するがtask YAMLは"impl"。この不一致でreview_gate.doneが生成されず、archive_completed.shが報告をスキップ。CLEAR済み182件が滞留中' | infra | 03-30 | deploy_task.shのtask_type比較を'im |
-| cmd_1518 | 'lesson_impact.tsv(29K行/2.5MB)にローテーション機構なし。3月だけで29K行に爆発。gate_lesson_health.shのawk全量reverse(259ms)をtail+tac(10ms)に最適化。古いデータはarchive TSVに退避' | infra | 03-30 | AC1: gate_lesson_health.sh awk |
-| cmd_1526 | 'WSL2 /mnt/c(NTFS)上のflockが不安定。yaml_field_set.sh/inbox_write.sh/inbox_mark_read.shのlockファイルパスを/tmp/(ext4)に移動し排他制御を安定化' | infra | 03-30 | — |
-| cmd_1527 | 'cmd_1144設計のL3未実装。忍者が報告完了→家老が手動でgunshi inboxに通知→軍師レビュー、の手動ステップを自動化。家老のレビュー配備負荷を削減' | infra | 03-30 | — |
-| cmd_1528 | '軍師提案GP-113〜GP-126が17件(重複含む)pending。重複除去+要否判定→実行推奨リスト+却下理由を提出し、将軍のcmd起票材料とする' | infra | 03-30 | — |
-| cmd_1529 | 'gate_fire初回CLEAR率69.0%=31%がBLOCKで家老rework発生。直近50cmdのBLOCK原因を分析し、忍者教育 or gate改善で初回CLEAR率80%以上を目指す' | infra | 03-30 | — |
-| cmd_1530 | 'karo_workarounds.yaml workaround率60%(79/130)。最大category=report_yaml_format(41件)。根因パターン分析→構造的対策3件提案' | infra | 03-30 | — |
-| cmd_1531 | '将軍がルール（既存裁定の文字面）で判断し殿に持っていく依存パターンを構造的に解消。原則で判断する力=自立を instructions/shogun.md に明文化' | infra | 03-30 | — |
-| cmd_1533 | '報告テンプレート(report_field_set.sh)のコメントにTop5 BLOCK原因パターンの具体的FIX hintを追加。特にlesson_candidate(found:true/false両パターンの記入例)とbinary_checks(yes/no限定)を明示し、report_format BLOCK(32%・最多)を構造的に削減する' | infra | 03-30 | — |
-| cmd_1532 | 'cmd_complete_gate.sh L3832のunknown_block_reasonフォールバックを修正。BLOCK_REASONSとMISSING_GATES両方空のelse分岐で各gate個別結果をblock_reasonに含めることで、直近50BLOCKの17.7%(11件)のRCA不能状態を解消する' | infra | 03-30 | — |
-| cmd_1534 | 'deploy_task.shのninja_weak_points生成ロジックにgate_metrics.logのBLOCKパターン集計を追加。忍者別の頻出BLOCK原因をtask YAMLに注入し、忍者が自分の弱点を認識した上で作業開始できるようにする' | infra | 03-30 | — |
-| cmd_1535 | autofix lessons_useful dict→list変換パターン網羅 | infra | 03-30 | WA率Top1のdict→list 16件を構造変換autofixで根絶。全15テストPASS |
-| cmd_1536 | report YAML直接編集hookブロック(RFS使用強制) | infra | 03-30 | 既存hookがAC1-3カバー。偵察不足で重複cmd判明 |
-| cmd_1537 | typeフィールドSTALE_FIELDS追加+残留清掃 | infra | 03-30 | _CLEAR_FIELDSにtype追加。修行001発見のtype残留バグ修正 |
-| cmd_1538 | karo_workaround_log.shにcategory必須化+gate WARN | infra | 03-30 | uncategorized急増(1→16件)対策。WARN表示で分類品質向上 |
-| cmd_1539 | GP-114 Production Branch Coverage Check実装 | infra | 03-30 | cmd_save.shにq7追加。条件分岐変更cmdで本番実データ突合漏れ防止 |
-| cmd_1540 | GP-117 fullrecalculate baseline自動保存+差分比較 | infra | 03-30 | fullrecalculate.sh新規作成。変更の正当性を数値証明 |
-| cmd_1541 | GP-115 post-deploy verification AC自動提案 | infra | 03-30 | cmd_save.shにWARN追加。デプロイ後検証AC構造的リマインド |
-| cmd_1542 | GP-125b karo_workaround_log.shバリデーション強化 | infra | 03-30 | ninja_id検証+root_cause最小長チェック追加。WA計測データ品質向上 |
-| cmd_1543 | 本セッション改善効果の計測検証 | infra | 03-30 | CLEAR率62.7%→84.6%(+21.9pt)。unknown_block_reason 9→0件(-100%) |
-| cmd_1544 | 今セッション変更の結合テスト一括実行 | infra | 03-30 | 592テスト全PASS。deploy_task.sh並列修正3件の相互作用バグなし |
-| cmd_1545 | GP-126c cmd_save.sh内容重複チェック実装 | infra | 03-30 | Check12追加(Jaccard類似度50%超でWARN)。テスト5件PASS |
-| cmd_1546 | 本セッション全改善commitのpush+CI green確認 | infra | 03-30 | CI GREEN(全5ジョブPASS)。本セッション20+commitの一括検証 |
-| cmd_1547 | context/infrastructure.md 本セッション改善の索引還流 | infra | 03-30 | cmd_1532-1543改善セクション追加。CLEAR率84.6%更新 |
-| cmd_1548 | gate_metrics.logローテーション実装 | infra | 03-30 | 1000行超で自動アーカイブ実装。ログ無制限成長防止 |
-| cmd_1549 | GP実装済みステータス更新 | infra | 03-30 | cmd_1528トリアージ結果+本セッション実装GP還流 |
-| cmd_1550 | batsテスト構造マップ作成 | infra | 03-30 | 58bats/593テスト+未テスト131スクリプト分類。カバレッジ盲点可視化 |
-| cmd_1560 | shogun_to_karo.yamlが1937行に肥大化。旧セッションcmd(cmd_1082-1524)をqueue/archive/cmds/に個別YAML退避し、本体をcmd_1525以降のみに軽量化 | infra | 03-30 | shogun_to_karo.yamlからcmd_1525よ |
-| cmd_1561 | 'なぜ分析(殿指摘): shogun_to_karo.yamlが肥大化する根因=cmd完了時にstatusがdelegatedのまま更新されない→archive_completed.shが退避できない。cmd_complete_gate.sh | infra | 03-30 | GATE CLEAR時にSTK statusをdoneに更新 |
-| cmd_training_structural_001 | 自身のtask YAMLを精査し、deploy_task.shの配備フローで設定されるフィールドと残留しうるフィールドを全列挙。構造的な問題があれば報告 | infra | 03-30 | STALE_FIELDS(21)とinject_task_m |
-| cmd_training_structural_002 | inject_task_modifiers.pyの全フィールド注入ロジックを精査。存在チェック(not in task/is None)パターンを全列挙し、stale | infra | 03-30 | inject_task_modifiers.pyの全7関数を |
-| cmd_training_structural_003 | archive_completed.shのsweep modeにおけるreport保護条件(status/archive.done/review_gate.done)を全列���し、レースコンディションが残っていないか検証 | infra | 03-30 | archive_completed.sh sweep mod |
-| cmd_training_structural_004 | cmd_complete_gate.shのGATEチェック全項目を列挙し、GATE CLEAR後のアーカイブ・教訓同期フローの構造的問題がないか検証 | infra | 03-30 | cmd_complete_gate.sh(3937行)の全G |
-| cmd_training_structural_005 | yaml_field_set.shの内部ロジック(AWK flush_block)を���査し、リスト型・ネスト型フィールドの処理制約を全列挙。flock | infra | 03-30 | flush_block(AWK)はスカラー値・空値・コロン含 |
-| cmd_1525 | 教訓301件中272件(90.4%)がuseful:true 0回。注入はされているが活用されない構造問題。根因を特定し改善アクションを設計する | infra | 03-30 | 直近30cmd(1527-1561)の報告YAML202件を |
-| cmd_1562 | 現在771テスト(root:80 + unit:673 + e2e:18)がCI毎回実行。殿指摘「必要性のないテストは負債」。3基準(リグレッション実績/変更頻度/コスト見合い)で全テストを仕分け、削除候補を特定する | infra | 03-30 | 全77テスト監査完了。削除候補(非本番フロー+変更頻度ゼロ) |
-| cmd_1564 | cmd_1525偵察の改善提案3。活用率15%未満の教訓の注入スコアを半減させ、死蔵教訓が永久に枠を占拠する問題を解消する | infra | 03-30 | deploy_task.shの教訓注入スコアにuseful_ |
-| cmd_1563 | cmd_1525偵察で判明した教訓注入useful:false 76.6%の根因（タグ粒度不足+ファイルレベルマッチング欠如）を解消し、教訓活用率を6.2%から大幅改善する | infra | 03-30 | AC1: infra lessons.yamlの全20件un |
-| cmd_1565 | cmd_1562偵察で発見された重複テスト3組(gate_cycle_health/inbox_write/yaml_field_set)をtests/unit/に統合し、CI setup/teardownオーバーヘッドを削減する | infra | 03-30 | 重複テスト3組(gate_cycle_health/inbo |
-| cmd_training_comprehensive_004 | model_switch_preflight.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | model_switch_preflight.shを精査し改 |
-| cmd_training_comprehensive_003 | restart_watchers.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | restart_watchers.shを精査し改善点3つ特定 |
-| cmd_training_comprehensive_002 | dashboard_auto_section.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | dashboard_auto_section.shを精査し改 |
-| cmd_training_comprehensive_001 | reset_layout.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習 | infra | 03-30 | reset_layout.sh Step 7サマリループを最 |
-| cmd_training_comprehensive_006 | restart_watchers.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習。003とは異なる観点で改善点を発見すること | infra | 03-30 | restart_watchers.shを精査し改善点3つ特定 |
-| cmd_training_comprehensive_005 | dashboard_auto_section.shを精査し改善点3つ特定→1つ実装→lesson_candidate付き完全報告。L4=L1-L3全スキル同時要求の総合演習。002とは異なる観点で改善点を発見すること | infra | 03-30 | dashboard_auto_section.shを精査し改 |
-| cmd_1566 | admin画面のFoF managementでWard PFの内部ウェイト(クラスタリング結果・各構成PFへのウェイト配分)が可視化されておらず、FoF構築時にブラックボックスになっている。現状のadmin画面表示内容と、可視化に必要なデータフローを特定する | dm-signal | 03-30 | FoF管理画面(admin/fof)は構成PF名・数・パイプ |
-| cmd_1567 | シミュレーション(ローカルexperiments.db/fullrecalculate)のパフォーマンス結果と本番DB(Render PostgreSQL)のパフォーマンス結果が乖離している。乖離の原因を特定する | dm-signal | 03-30 | Ward FoF本番vsローカル乖離の根因=experime |
-| cmd_1569 | WardFoFのpipeline_configが本番DBとローカル(fullrecalculate時)で同一か検証。configの差異がパフォーマンス乖離の原因となりうる | dm-signal | 03-30 | Ward FoF pipeline_config本番DB v |
-| cmd_1568 | 'Ward PFのウェイトがmomentum_data["weights"]経由でexpand_portfolio_to_tickersに正しく伝達されているか検証。price_ratio_calculator.py:1067-1070のEWフォールバックが本番で意図せず発動している可能性がある(Silent Failure仮説)' | dm-signal | 03-30 | Ward PFのウェイト伝達パスにSilent Failur |
-| cmd_1570 | 殿がWard FoFのパフォーマンスを「記憶よりショボい」と報告。Ward Two-Stage EW(k=5)の構造的制約、素材(旧忍法15体)の性能、k値の最適性を検証し、パフォーマンス低下の因果を特定する | dm-signal | 03-30 | Ward FoF(旧忍法-Ward)の12ヶ月パフォーマンス |
-| cmd_1571 | 'cmd_1568偵察で発見。recalculate_fof.py:866で非リバランス日のenhanced_momentum_dataが{skipped:true}のみとなり、weightsキーが消失する。bimonthly/quarterly Ward/KalmanMeta FoFでexpand_portfolio_to_tickersのEWフォールバック(price_ratio_calculator.py:1067-1070)が意図せず発動する時限爆弾。現在の月次Wardは影響なしだが予防的に修正' | dm-signal | 03-30 | 非リバランス日のenhanced_momentum_data |
-| cmd_1572 | cmd_1567偵察で発見。experiments.dbにWard FoF自体(0件)、四つ目3PF(常勝/激攻/鉄壁)、ティッカー4種が欠損。download_prod_data.pyの対象スコープを拡張し再DLでデータ完全性を確保する | dm-signal | 03-30 | download_prod_data.pyのdownload |
-| cmd_1577 | cmd_1570は12ヶ月累積リターンのみ比較(Ward+54.93%,EW+54.69%,差+0.25%)。リスク調整後指標で比較すればWardの分散効果が見える可能性がある(R24-R26ではMaxDD優位率86-96%)。本番141ヶ月全期間でSharpe/MaxDD/Sortino/月次Volatilityを計算 | dm-signal | 03-30 | Ward FoFは1/N EWに対しリスク調整後指標で非優位 |
-| cmd_1579 | 殿の新設計。現行Ward FoFは全15体保有(ウェイト調整のみ)で動的ローテーションがゼロ。Ward clusteringの役割をウェイト決定からselection scope定義に変更する。K個のクラスタに分割→各クラスタ内momentum top 1体を選出→K体EW保有→毎月リバランス。building_block.pyの既存Ward+EWロジックを改変し、旧忍法15体でバックテスト | dm-signal | 03-30 | Ward Cluster Selection(K=3,4,5 |
-| cmd_1581 | cmd_1579は旧忍法15体。シン忍法v2(20体)は相関構造が異なり(cmd_1578:距離26%狭,separability11%悪化)、Wardクラスタが動的(ARI安定性45.5%)。異なる素材プールでWard Cluster Selectionの頑健性を検証。シンのトップ(96.5%)は旧の倍以上で超越条件を満たしやすい可能性 | dm-signal | 03-30 | シンWard Cluster Selection(K=3)は |
-| cmd_1580 | cmd_1579のバックテスト結果が良くても過適合の可能性がある。Walk-Forward OOS(in-sample 60ヶ月→OOS 12ヶ月ローリング)で検証し、OOS期間でもselection ruleの予測力が維持されるか確認する。殿指示「やってみて過適合ではないか検証する」 | dm-signal | 03-30 | Walk-Forward OOS(IS=60m,OOS=12 |
-| cmd_1584 | 殿はN=2-5が現実的と指定。cmd_1579はK=3,4,5をカバー。K=2(2クラスタ→各top1→2体EW)は最小保有数で管理最容易だが集中リスク最大。K=2の特性を独立検証し超越条件を満たすか判定する | dm-signal | 03-30 | 旧忍法15体K=2: CAGR=61.3%,Sharpe=1 |
-| cmd_1582 | cmd_1579はmomentum(12ヶ月累積リターン)で各クラスタtop1を選出。しかしmomentumが最適な選択指標とは限らない。Sharpe/Calmar/Sortinoなど他のリスク調整指標で選出した場合の結果を比較し、R28の最適な選択指標を特定する | dm-signal | 03-30 | Ward Cluster Selection 4指標×K=3 |
-| cmd_1583 | R28のWard Cluster Selectionはmomentum(過去リターン)で次月の保有PFを選出する。もし旧忍法のリターンに平均回帰(mean reversion)が働くなら、momentum strategyは逆効果になる。R28の理論的前提(momentum持続性)を統計的に検証する | dm-signal | 03-30 | 旧忍法15体のmomentum持続性を3観点で検証。AC1: |
-| cmd_1585 | cmd_1581でシンWard ClSel K=3がCalmar4.60/UWP3mで超越条件B+C PASSという重大成果。しかしfull-sample結果のみで過適合未検証。cmd_1580(旧忍法OOS)と同じWalk-Forwardフレームワークでシン素材のOOS検証を実施し、超越条件が過適合でないことを確認する | dm-signal | 03-30 | ShinWardClSel WF-OOS(IS=60m,OO |
-| cmd_1586 | cmd_1581でシンClSel K=3がmomentumでCAGR74.6%。cmd_1582は旧忍法で指標感度分析するが、超越条件PASSしたシン素材での指標感度がより重要。Sharpe/Calmar/Sortinoで選出した場合にCalmar4.60/UWP3mを超える組み合わせがあるか検証 | dm-signal | 03-30 | シンWard ClSel K=3,4,5 x 4指標(mom |
-| cmd_1588 | シンClSel K=3のMaxDD -16.2%は全体統計。実運用では市場暴落時にどう振る舞うかが重要。下落期での月次リターンを個別分析し、ストレス時の耐性を評価する | dm-signal | 03-30 | シンClSel K=3のストレス耐性分析完了。市場下落月(E |
-| cmd_1587 | シンClSel K=3は月次ローテーションだが、実際にどの程度入替が発生するか未知。毎月3体入替なら取引コスト大、同一PF連続選出が多ければ低コスト。本番採用判断に取引コスト/安定性の情報が必須 | dm-signal | 03-30 | Ward ClSel K=3(LB=36m,momentum |
-| cmd_1589 | R28研究シリーズ(cmd_1579-1588)の全結果を1つの統合比較表+推奨にまとめる。殿が本番採用の意思決定を1ファイルで行えるようにする | dm-signal | 03-30 | R28研究シリーズ(cmd_1579-1588)全10報告統 |
-| cmd_1591 | 殿指摘。R28の全分析はraw returnでありベータ未制御。momentum選出は高ベータPFを構造的に掴むバイアスがある。CAGR向上がアルファ(選別の巧さ)なのかベータ(市場露出)なのかを分離し、ClSelの真の付加価値を定量化する | dm-signal | 03-30 | ClSel K=3(momentum)のCAGR向上はほぼ全 |
-| cmd_1590 | cmd_1586でSortino K=3がCalmar5.29/MaxDD-14.2%と全指標最良。cmd_1585ではmomentum K=3のCalmar劣化41.6%(MaxDD-16.2→-25.7)で過適合フラグ。SortinoのMaxDDが元々良好(-14.2%)ならOOS劣化幅が小さい可能性。Sortino選出のOOS信頼性を検証する | dm-signal | 03-30 | Sortino選出Ward ClSel WF-OOS(IS= |
-| cmd_1592 | 殿指摘。超越条件はfull-sampleでのみ判定しておりOOS期間での判定が未実施。OOS同士で比較しなければ公正ではない。OOS期間で個体ベストを再計算し超越条件を判定する | dm-signal | 03-30 | OOS期間(2018-10~2026-03)個体ベスト再計算 |
-| cmd_1593 | 殿指摘。IS=60ヶ月は保守的すぎる可能性。IS長を変えるとOOS結合期間・窓数・結論が変わるか検証する。IS=36(LB=36mちょうど)/48(LB36+momentum12)/60(現行)の3水準でOOS結果を比較し、IS長への結論の頑健性を確認する | dm-signal | 03-30 | シン忍法v2 20体のWard ClSel K=3(mome |
-| cmd_1596 | cmd_1591でmomentumのα寄与4.2%と判明。しかし他3指標(Sortino/Sharpe/Calmar)のβ調整後パフォーマンスは未検証。4指標全てのβ調整後比較テーブルを作成し、真にα効率が高い選出指標を特定する。β露出に頼らない方式の有無を確認 | dm-signal | 03-30 | 4指標(momentum/Sharpe/Calmar/Sor |
-| cmd_1595 | cmd_1591でmomentum選出のα寄与が4.2%と判明(95.8%はβ)。Sortino選出のβプロファイルが異なるか検証する。またcmd_1592がSortino OOS超越条件未完(FAIL)だったが、cmd_1590完了により補完可能。2つの残課題を1cmdで解決 | dm-signal | 03-30 | Sortino選出βプロファイルはmomentumと構造的に |
-| cmd_1594 | 殿指摘。cmd_1583は3/6/12ヶ月の3点しか検証しておらず、過去データで有効とされた4-5ヶ月・10-11ヶ月の隙間期間が未検証。1-12ヶ月の全12水準でクロスセクショナル持続性(hit rate + t検定)を算出し、最適lookback期間を特定する。標準LB(3/6/12)が最適とは限らない | dm-signal | 03-30 | 旧忍法15体+シン忍法v2 20体のクロスセクショナルmom |
-| cmd_1597 | cmd_1589統合レポートで3条件(超越PASS+OOS劣化<30%+Turnover)全PASSはシンClSel K=4 momentum唯一。しかしcmd_1591のβ分離はK=3のみでα4.2%。K=4でもβ主導なら、R28で本番採用に値する方式はゼロとなる。3条件唯一PASSの方式の真の付加価値を最終検証 | dm-signal | 03-30 | K=2-5全水準でβ調整後超越条件全FAIL(16判定全FA |
-| cmd_1599 | cmd_1594でLB=2mが最適momentum持続性と判明(t=4.04)。しかし全ClSelバックテスト(cmd_1581等)はLB=12mで実行。LB短縮で(a)momentum予測力向上→CAGR改善(b)高β | dm-signal | 03-30 | LB=2mはLB=12m対比で全K(3,4,5)でCAGR/ |
-| cmd_1600 | cmd_1599でLB=2mのfull-sample結果を取得後、OOSで過適合検証が必要。LB=12m(cmd_1585)ではCalmar劣化41.6%でOVERFIT。LB=2mは持続性が強い(t=4.04)ためOOS劣化が小さい可能性。LB変更がOOS安定性を改善するか検証 | dm-signal | 03-30 | LB=2m WF-OOS(IS=60m,OOS=12m,st |
-| cmd_1601 | cmd_1600でLB=2m momentumのOOS劣化が-23.5%(改善方向)と判明。cmd_1595でSortinoがα最高効率(10%)と判明。最も有望な組み合わせ=Sortino×LB=2mは未検証。ただしSortinoは下方偏差計算に十分なデータが必要→LB=2mでSortino ratioが安定するか含め検証 | dm-signal | 03-30 | Sortino LB=2mはLB=12m対比で全K全指標劣後 |
-| cmd_1604 | > | dm-signal | 03-30 | 20体全個体WF-OOS(8窓,90m)+buy&holdベ |
-| cmd_1605 | > | dm-signal | 03-30 | 20体個体WF-OOS(IS=60m,OOS=12m,ste |
-| cmd_1606 | > | dm-signal | 03-30 | シン忍法v2 LB×4指標 2DグリッドClSel WF-O |
-| cmd_1608 | > | dm-signal | 03-30 | r29g_shin_clsel_2d_grid_extra. |
 | cmd_1612 | R29研究成果のcontext索引更新（R29f-kyu/R29g-shin/R29g-kyu/R30-shin/cmd_1610の結論還流） | dm-signal | 03-31 | R29g-shin(cmd_1608)+R29g-kyu(c |
 | cmd_1611 | 旧忍法15体の個体WF-OOSベンチマーク（R30-kyu: cmd_1604と同一手法で旧版比較データ作成） | dm-signal | 03-31 | 旧忍法15体個体WF-OOS(7窓84m)完了。全15体CA |
 | cmd_1613 | ClSel本番化偵察: 研究スクリプト→本番パイプライン移行に必要な変更箇所の特定 | dm-signal | 03-31 | ClSel(Cluster Selection)ロジック偵察 |
@@ -933,3 +846,6 @@
 | cmd_2418 | 軍師LG014(道具を疑え)がLevel 2(ドキュメント=意志依存)のまま。 gate_ninja_workaround_rate.shにcategory集計を追加し、同一category 3件以上→WARN。 軍師レビュー前に自動表示されるため意志依存がゼロになる。 本セッションのrfs binary_checks保護バグ(cmd_2397)はこのgateがあれば事前検出できた。 | infra | 04-29 | gate_ninja_workaround_rate.sh |
 | cmd_2421 | cmd_publish.shを実装したが、instructions/shogun.md §cmd起票手順に未反映。 将軍の起票ワークフローを「Edit(draft)→cmd_publish.sh」の2ステップに更新する。 | infra | 04-29 | instructions/shogun.mdのcmd起票手順 |
 | cmd_2420 | config.toml共有でhayateがlow(殿裁定medium)。Codex CLIは-c model_reasoning_effort=XXXで 起動時override可能(codex --help確認済み)。cli_profiles.yamlにper-agent launch_argsを追加し、 settings.yamlのmodel_nameからeffort部分を抽出→起動コマンドに-cフラグを付与する。 | infra | 04-29 | cli_launch_cmd()にmodel_nameからe |
+| cmd_2416 | cmd_2412で選出したL2チャンピオン21体を本番DBにhide状態で登録する。 cmd_2392(L1 GSシン忍法21体登録)と同パターン。 フォルダー「GSシン奥義」を新規作成。名前は「奥義-GS-{忍法名}-{モード}」(例: 奥義-GS-加速R-常勝)。 登録後fullrecalculate→L2 GS SQLiteとのパリティ検証。 | dm-signal | 04-30 | — |
+| cmd_2419 | commit 48356b69のSHM修正(workers<=1でUSE_SHM=False + Phase 0.5 psm_*自動清掃)が kasoku_diffのrun_077にのみ適用。残6忍法(bunshin/oikaze/kawarimi/yotsume/nukimi/kasoku_ratio)に横展開する。 cmd_2396(OOMkill対策横展開)と同パターン。 | dm-signal | 04-30 | commit 48356b69のSHMリーク対策をrun_0 |
+| cmd_2422 | cmd_2412で選出したL2チャンピオン21体のうち分身3体でtop_n>2(subset_size=4等)が 本番Pydanticスキーマ(top_n: le=2)に違反しPortfolioRepository.load()全PFロード失敗を引き起こした。 L2 GS SQLite 7本からsubset_size<=2のパターンのみでチャンピオンを再選出する。 cmd_2368(L1 Pydanticバリデーション検証)と同パターン。 | dm-signal | 04-30 | cmd_2422: L2 SQLite 7本をsubset_ |
