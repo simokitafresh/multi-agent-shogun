@@ -4759,6 +4759,8 @@ except Exception:
                     yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
                     yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
                     yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
+                    yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
+                    yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
                     log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
                     echo "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status})" >&2
                     echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${dd_ninja}.yaml task status idle" >&2

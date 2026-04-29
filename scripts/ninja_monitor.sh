@@ -1258,6 +1258,11 @@ _handle_deploy_stall() {
             return 0
         fi
         unset "STALL_FIRST_SEEN[$deploy_stall_key]"
+        # STALL-CLEAR: report_path/report_filename残骸を消去（二重配備残骸問題防止）
+        # 旧忍者のtask YAMLにreport_pathが残ると、別忍者に再配備後も空報告が生成される
+        yaml_field_set "$task_file" "task" "report_path" "" 2>/dev/null || true
+        yaml_field_set "$task_file" "task" "report_filename" "" 2>/dev/null || true
+        log "DEPLOY-STALL-CLEAR: cleared report_path/report_filename for $name"
         # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット
         if [ -n "$(cli_profile_get "$name" "post_clear_cmd")" ]; then
             POST_CLEAR_PENDING[$name]=$now
