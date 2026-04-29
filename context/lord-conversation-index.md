@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-30 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-30T01:40:59+09:00 -->
+<!-- generated_at: 2026-04-30T01:43:42+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-30T01:43:42+09:00 | terminal | response | 見つけた。**M31: Dynamic Momentum Learning — DMS (Dynamic Model Selection)**。 知識辞書エントリ: `docs/research/knowledge-base/method…
+- 2026-04-30T01:43:07+09:00 | terminal | inbound | DMSかも。どのルックバック期間が期待できるか一つ選ぶ奴だ
+- 2026-04-30T01:41:31+09:00 | ntfy | outbound | 【gunshi】復帰済み。idle自走開始。
+- 2026-04-30T01:41:25+09:00 | terminal | inbound | 投資知識辞書 Lopez
 - 2026-04-30T01:40:59+09:00 | terminal | response | 殿、「DSM」が何を指すか確認させていただきたい。DM-Signalの略称か、あるいは別のものか。想像で答えたくない。 [meta] stop_reason=end_turn
 - 2026-04-30T01:40:38+09:00 | terminal | inbound | DSMを覚えているか？
 - 2026-04-30T01:23:38+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 01:09:20|CI緑: run 25119300339
 - 2026-04-30T01:07:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:52:43|cmd_2424
 - 2026-04-30T00:53:58+09:00 | terminal | response | 設計書更新完了。 **本セッション全実績:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2418 | LG014環境埋込み | ✅GATE CLEAR | | cmd_2420 | Co…
 - 2026-04-30T00:52:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:43:37|CI緑: run 25118240446
-- 2026-04-30T00:37:30+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓13件 → /lesson-sort推奨
-- 2026-04-30T00:36:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 00:21:16|cmd_2423 2026-04-30 00:29:58|CI緑: run 25117663181 2026-04-30 00:32:21|cmd_2425
-- 2026-04-30T00:35:48+09:00 | terminal | response | **cmd_2425 GATE CLEAR。** SHMデッドコード削除完了。 cmd_2424(L2奥義再登録)はsaizoが作業中(CTX:74%)。 殿、指示あれば。 [meta] stop_reason=tool_use
-- 2026-04-30T00:35:23+09:00 | terminal | inbound | y
 
 ## 未解決確認事項
 - 殿、「DSM」が何を指すか確認させていただきたい。DM-Signalの略称か、あるいは別のものか。想像で答えたくない。 [meta] stop_reason=end_turn
@@ -40,7 +40,6 @@
 - cmd_2223
 - cmd_2226
 - cmd_2357
-- cmd_2382
 - cmd_2386
 - cmd_2391
 - cmd_2399
@@ -66,6 +65,7 @@
 - cmd_2420
 - cmd_2421
 - cmd_2422
+- cmd_2423
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
