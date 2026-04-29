@@ -710,7 +710,7 @@ for filename in sorted(os.listdir(tasks_dir)):
         continue
     if not isinstance(data, dict):
         continue
-    task = data.get("task", {})
+    task = data.get("task", data)
     if not isinstance(task, dict):
         continue
     if str(task.get("parent_cmd", "")).strip() != cmd_id:
@@ -1642,7 +1642,7 @@ for filename in sorted(os.listdir(tasks_dir)):
         continue
     if not isinstance(data, dict):
         continue
-    task = data.get("task", {})
+    task = data.get("task", data)
     if not isinstance(task, dict):
         continue
     if str(task.get("parent_cmd", "")).strip() != cmd_id:
@@ -1830,7 +1830,7 @@ except Exception:
 
 for task_path in task_files:
     data = parse_yaml(task_path)
-    task = data.get("task", {})
+    task = data.get("task", data)
     if not isinstance(task, dict):
         continue
     if str(task.get("parent_cmd", "")).strip() != cmd_id:
