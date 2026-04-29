@@ -552,6 +552,62 @@ YAML
     [ "$result" = "true" ] || { echo "Expected 'true' but got '$result'"; false; }
 }
 
+@test "AC overwrite preserves quoted lesson-injected description" {
+    _fixture_project_start
+
+    mkdir -p "$TEST_PROJECT/queue"
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_2404:
+    status: delegated
+    acceptance_criteria:
+      AC1:
+        description: "first injected AC"
+      AC2:
+        description: "second injected AC"
+YAML
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  _ac_task_id: null
+  _ac_worker_id: null
+  ac_version: old
+  assigned_to: sasuke
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2\
+  に支配される\n  ────────────────────────────────────────\n\n元の説明"
+  parent_cmd: cmd_2404
+  task_id: cmd_2404_normal
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    checks: []
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_ac_version "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    )
+
+    python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+task = data['task']
+assert '【注入教訓】' in task['description']
+acs = task['acceptance_criteria']
+assert len(acs) == 2
+assert acs[0]['id'] == 'AC1'
+assert acs[0]['checks'][0]['check'] == 'first injected AC'
+assert acs[1]['id'] == 'AC2'
+PY
+
+    _fixture_project_end
+}
+
 @test "scout_gate AWK returns empty when scout_exempt is false" {
     local stk_yaml
     stk_yaml=$(cat <<'YAML'
