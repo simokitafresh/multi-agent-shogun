@@ -30,8 +30,27 @@ PI_YAML="${REPO_ROOT}/projects/dm-signal.yaml"
 DM_PATH="$(awk '/id: dm-signal/{found=1} found && /path:/{match($0, /"([^"]+)"/, a); print a[1]; found=0; exit}' "$PROJECTS_YAML" 2>/dev/null)" || DM_PATH=""
 [[ -z "$DM_PATH" ]] && DM_PATH="/mnt/c/Python_app/DM-signal"
 
+INFRA_PATH="$(awk '/id: infra/{found=1} found && /path:/{match($0, /"([^"]+)"/, a); print a[1]; found=0; exit}' "$PROJECTS_YAML" 2>/dev/null)" || INFRA_PATH=""
+[[ -z "$INFRA_PATH" ]] && INFRA_PATH="/mnt/c/tools/multi-agent-shogun"
+
+is_under_path() {
+    local child="$1"
+    local parent="${2%/}"
+
+    [[ -n "$parent" ]] || return 1
+    [[ "$parent" != "/" && "$parent" != "/mnt" && "$parent" != "/mnt/c" ]] || return 1
+    [[ "$child" == "$parent" || "$child" == "$parent/"* ]]
+}
+
+# infra platform files are outside DM-Signal and must never receive DM-Signal PI injection.
+if is_under_path "$file_path" "$INFRA_PATH"; then
+    exit 0
+fi
+
 # DM-Signal以外は無発火 (AC3)
-[[ "$file_path" != "${DM_PATH}"* ]] && exit 0
+if ! is_under_path "$file_path" "$DM_PATH"; then
+    exit 0
+fi
 
 emit_context() {
     printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":.}}'

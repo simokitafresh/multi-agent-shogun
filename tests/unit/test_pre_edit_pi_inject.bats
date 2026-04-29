@@ -127,6 +127,12 @@ _run_hook() {
     [ -z "$output" ]
 }
 
+@test "AC3: DM-Signal sibling prefix path does not trigger hook" {
+    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test-old/backend/app/service.py"}}'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "AC3: empty payload exits cleanly" {
     _run_hook '{}'
     [ "$status" -eq 0 ]
