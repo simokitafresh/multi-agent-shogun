@@ -53,6 +53,8 @@ STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
+HANG_DETECT_SEC="${HANG_DETECT_SEC:-300}"  # seconds before daemon_watchdog.sh considers this watcher hung
+LOOP_HEARTBEAT_FILE="${STATE_DIR}/inbox_watcher_loop_hb_${AGENT_ID}"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
@@ -738,6 +740,7 @@ process_unread() {
 }
 
 if [ "${INBOX_WATCHER_LIB_ONLY:-0}" = "1" ]; then
+    # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
 fi
 
@@ -796,4 +799,7 @@ while true; do
 
     process_unread
     check_script_update "$AGENT_ID" "$PANE_TARGET"
+
+    # Heartbeat: daemon_watchdog.sh がhang検知に使う
+    date +%s > "$LOOP_HEARTBEAT_FILE"
 done

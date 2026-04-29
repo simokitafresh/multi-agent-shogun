@@ -145,6 +145,56 @@ check_ntfy_listener() {
 # =============================================================================
 # inbox_watcher.sh — エージェント毎のメールボックス監視
 # =============================================================================
+# inbox_watcher ループhangチェック
+# heartbeatファイルの更新が INBOX_WATCHER_HANG_SEC 秒以上止まっていて
+# かつ未読メッセージがある場合、hangとみなしてwatcherプロセスをkillする
+INBOX_WATCHER_HANG_SEC="${INBOX_WATCHER_HANG_SEC:-300}"
+STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+
+_check_inbox_watcher_hang() {
+    local agent="$1"
+    local hb_file="${STATE_DIR}/inbox_watcher_loop_hb_${agent}"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${agent}.yaml"
+
+    # heartbeatファイルがなければhang検知不能（まだ1ループ目 or 機能未サポート）
+    [[ -f "$hb_file" ]] || return 0
+
+    local now
+    now=$(date +%s)
+    local hb_time
+    hb_time=$(cat "$hb_file" 2>/dev/null || echo 0)
+    [[ "$hb_time" =~ ^[0-9]+$ ]] || return 0
+
+    local age=$(( now - hb_time ))
+    if (( age < INBOX_WATCHER_HANG_SEC )); then
+        return 0  # 正常
+    fi
+
+    # heartbeatが古い — 未読があるか確認
+    local has_unread=0
+    if [[ -f "$inbox_file" ]]; then
+        has_unread=$(grep -c 'read:[[:space:]]*false' "$inbox_file" 2>/dev/null || echo 0)
+    fi
+
+    if (( has_unread == 0 )); then
+        return 0  # 未読なし — hangではなくidle(変更なし)の可能性
+    fi
+
+    log "HANG-DETECT: inbox_watcher(${agent}) heartbeat ${age}s old (>= ${INBOX_WATCHER_HANG_SEC}s) with ${has_unread} unread message(s)"
+    notify "【watchdog/WARN】inbox_watcher(${agent})がhang検知。未読${has_unread}件。強制再起動"
+
+    # hangプロセスをkillして再起動させる（watchdogの次サイクルで再起動）
+    local watcher_pids
+    watcher_pids=$(pgrep -f "[i]nbox_watcher\.sh.*${agent}" 2>/dev/null || true)
+    for pid in $watcher_pids; do
+        kill -TERM "$pid" 2>/dev/null || true
+        log "HANG-KILL: inbox_watcher(${agent}) PID $pid killed (SIGTERM)"
+    done
+    # heartbeatをリセット（killが届かなかった場合の誤再通知防止）
+    rm -f "$hb_file"
+    return 0
+}
+
 check_inbox_watchers() {
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -156,6 +206,8 @@ check_inbox_watchers() {
     for agent in "${agents[@]}"; do
         # pgrep -f でエージェント名を含むinbox_watcherプロセスを検索
         if pgrep -f "[i]nbox_watcher\.sh.*${agent}" > /dev/null 2>&1; then
+            # プロセス生存中でもhangしていないか確認
+            _check_inbox_watcher_hang "$agent" || true
             continue
         fi
 
