@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L677 -->
+<!-- last_synced_lesson: L678 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -189,3 +189,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L651-L666は振り分け済 → frontend§12(L651/L653/L654/L655/L656), core§0(L652), ops§14(L657/L666), ops§33(L658/L659/L660/L661/L662/L664/L665), infra WSL2(L663)）
 - （L667-L676は振り分け済 → research§GS結果(L667:robustness連動メタ列/L674:L1従属ラベル列), core§19.2(L669:monthly_returnセマンティクス[open-to-open]/L670:Oikaze first_signal EW/L671:Yotsume close cumulative+bootstrap), ops索引(L668:ALM DB preflight/L672:champion_list追記制御/L676:SQLite quick_check), ops§6-7(L675:recalculate-sync待機)。L673はL672重複→削除）
 - L677: 大容量SQLite移動後検証はquick_check+MD5で十分。full integrity_checkは10分かかる（cmd_2393）
+- L678: 既コミット変更のベンチマーク測定は合成データで実施せよ（cmd_2397）
