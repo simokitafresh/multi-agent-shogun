@@ -143,6 +143,12 @@ agent_is_busy_check() {
         return 0
     fi
 
+    # Codex/Claude background work can leave an idle prompt/status footer visible.
+    # Treat explicit background markers as busy before matching idle footers.
+    if printf '%s\n' "$pane_tail" | grep -qiE 'background terminal running|Working'; then
+        return 0
+    fi
+
     local idle_pat
     idle_pat=$(_agent_state_profile_get "$agent_id" "idle_pattern")
     if [ -z "$idle_pat" ]; then
@@ -199,16 +205,6 @@ check_agent_busy() {
         return 1
     fi
 
-    local idle_flag
-    idle_flag=$(_agent_state_idle_flag_path "$agent_id")
-    local agent_state
-    agent_state=$(tmux display-message -t "$pane_target" -p '#{@agent_state}' 2>/dev/null || true)
-
-    if [ "$agent_state" = "idle" ]; then
-        [ ! -f "$idle_flag" ] && touch "$idle_flag"
-        return 0
-    fi
-
     local state_rc
     if agent_is_busy_check "$pane_target" "$agent_id"; then
         state_rc=0
@@ -221,12 +217,23 @@ check_agent_busy() {
             return 1
             ;;
         1)
+            local idle_flag
+            idle_flag=$(_agent_state_idle_flag_path "$agent_id")
             tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
             [ ! -f "$idle_flag" ] && touch "$idle_flag"
             return 0
             ;;
-        *)
-            return 2
-            ;;
     esac
+
+    local idle_flag
+    idle_flag=$(_agent_state_idle_flag_path "$agent_id")
+    local agent_state
+    agent_state=$(tmux display-message -t "$pane_target" -p '#{@agent_state}' 2>/dev/null || true)
+
+    if [ "$agent_state" = "idle" ]; then
+        [ ! -f "$idle_flag" ] && touch "$idle_flag"
+        return 0
+    fi
+
+    return 2
 }

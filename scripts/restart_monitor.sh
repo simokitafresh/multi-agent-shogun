@@ -47,8 +47,10 @@ if [ -n "$OLD_PIDS" ]; then
             [ "$pid" -eq "$$" ] && continue
             kill -9 "$pid" 2>/dev/null || true
         done
-        sleep 1
     fi
+
+    # Give the old process a moment to close fd 9 and release the singleton flock.
+    sleep 1
 else
     echo "[$(date)] No existing ninja_monitor process found"
 fi

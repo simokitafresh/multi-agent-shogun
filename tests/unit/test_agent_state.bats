@@ -66,7 +66,7 @@ rmdir "$SHOGUN_STATE_DIR"
     [ "$status" -eq 0 ]
 }
 
-@test "check_agent_busy short-circuits when @agent_state is already idle" {
+@test "check_agent_busy verifies pane before trusting @agent_state idle" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 STATE_DIR="$(mktemp -d)"
@@ -87,12 +87,38 @@ tmux() {
 check_agent_busy "shogun:agents.2" "$agent_id"
 rc=$?
 [ "$rc" -eq 0 ]
-[ "$capture_calls" -eq 0 ]
+[ "$capture_calls" -eq 1 ]
 [ -f "$flag" ]
 rm -f "$flag"
 rmdir "$SHOGUN_STATE_DIR"
 '
     [ "$status" -eq 0 ]
+}
+
+@test "check_agent_busy returns busy when background marker appears with idle footer" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1" in
+        display-message)
+            case "$5" in
+                *pane_pid*) echo "12345"; return 0 ;;
+                *agent_state*) echo "idle"; return 0 ;;
+                *) echo "%1"; return 0 ;;
+            esac
+            ;;
+        capture-pane) printf "background terminal running\nWorking on task\n85%% context left\n"; return 0 ;;
+        set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+pstree() { echo "bash(12345)---node(23456)---codex(34567)"; return 0; }
+pgrep() { return 1; }
+ps() { return 1; }
+check_agent_busy "shogun:agents.2" "sasuke"
+'
+    [ "$status" -eq 1 ]
 }
 
 @test "check_agent_busy returns unknown when neither busy nor idle pattern matches" {
