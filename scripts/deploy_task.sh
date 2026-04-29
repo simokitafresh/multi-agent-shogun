@@ -620,8 +620,10 @@ def _convert_nested_ac(ac_dict):
         if 'title' in ac_body:
             entry['title'] = ac_body['title']
         criteria = ac_body.get('criteria', [])
-        if isinstance(criteria, list):
+        if isinstance(criteria, list) and criteria:
             entry['checks'] = [{'check': str(c)} for c in criteria]
+        elif isinstance(ac_body.get('description'), str):
+            entry['checks'] = [{'check': ac_body['description']}]
         result.append(entry)
     return result if result else None
 
@@ -793,9 +795,6 @@ if not _inserted:
             raw = raw[:pos] + indented + '\n' + raw[pos:]
         else:
             raw = raw.rstrip('\n') + '\n' + indented + '\n'
-
-# Clear lesson injection marker so inject_related_lessons re-injects with new ACs
-raw = re.sub(r'【注入教訓】.*?─{10,}\n\n?', '', raw, flags=re.DOTALL)
 
 tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
 try:

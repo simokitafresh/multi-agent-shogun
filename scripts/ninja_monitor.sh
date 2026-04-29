@@ -571,6 +571,22 @@ safe_send_clear() {
     safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
     log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
 
+    # Codex CLI: /new is blocked while task in progress → Ctrl-C + relaunch
+    if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
+        local _launch_cmd
+        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        if [ -n "$_launch_cmd" ]; then
+            log "CODEX-RESTART: $agent_name Ctrl-C + relaunch (task-in-progress workaround)"
+            safe_send_keys "$pane" C-c || true
+            sleep 1
+            safe_send_keys "$pane" C-c || true
+            sleep 1
+            safe_send_keys_atomic "$pane" "$_launch_cmd" 0.5 || true
+            rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
+            return 0
+        fi
+    fi
+
     log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
     if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
