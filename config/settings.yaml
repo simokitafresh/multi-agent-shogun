@@ -27,8 +27,8 @@ cli:
       role: ninja
       japanese_name: 疾風
     kagemaru:
-      type: claude
-      model_name: claude-sonnet-4-6
+      type: codex
+      model_name: gpt-5.5-low
       role: ninja
       japanese_name: 影丸
       model: sonnet
