@@ -660,7 +660,7 @@
   existing_impl_check: "grep -n 'drafts.*review_type.*draft' scripts/gates/gate_gunshi_startup.sh L232 → draft限定確認"
   defense_level: 4
   reason: "numbers偽cold streak(7/10)。根因=adaptive gating windowがdraft限定。report(数値検算の主戦場)を除外していた"
-  evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7→0。S0全6項PASS"
+  evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7→0。S0全6項PASS。Level 4昇格: SG-PRE18(report_precheck.sh)にinfra対象ファイル→adversarial_review必須WARN追加(commit 9c530bdb, 将軍承認blt_20260429_230941)"
 - id: GP-239
   description: "ninja_monitor Codex bypass flag startup check。フラグ欠落をWARN"
   status: implemented

@@ -341,3 +341,10 @@ lessons:
   created_at: '2026-04-29'
   automated: true
   enforcement: 'cmd_save.sh check_research_tool_explicit+check_parity_ac_requirements(既存WARN累計BLOCK)'
+- id: 'LS029'
+  title: 'ac_param_sufficiency — ACの数量表現には具体値列挙必須'
+  detail: 'cmd_2421でACに「旧3ステップ」→数量検出→累計昇格BLOCK。Step番号+Usage例を明記で解消。ACに数量を書く場合は必ず具体値(Step名/項目名)を列挙せよ。'
+  source_cmd: 'cmd_2421'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh check_ac_param_sufficiency(既存WARN累計BLOCK)'

@@ -1,14 +1,33 @@
 task:
-  _ac_task_id: cmd_2410_normal
+  _ac_task_id: cmd_2416_normal
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2410
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2416
+  ac_version: 999de9ed
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '本番DBにフォルダー「GSシン奥義」を作成し、cmd_2412の21体を奥義-GS-{忍法名}-{モード}形式で登録。全体hide状態。登録後のportfolio_id一覧を報告'
+  - id: 'AC2'
+    checks:
+    - check: 'fullrecalculate実行(portfolio_id指定なしの全体再計算)完了。エラーなし'
+  - id: 'AC3'
+    checks:
+    - check: '登録21体のmonthly_return_openとL2 GS SQLite(outputs/grid_search/20260429/L2/shin/*.db、run_077修正版+l1_alm_wf_engine相当)の対応パターンのmonthly_returnを突合。一致率を報告'
+  - id: 'AC4'
+    checks:
+    - check: 'P1:holding_signal完全一致(登録21体のholding_signalがGS SQLiteのsimulate_pattern選択結果と一致)'
+  - id: 'AC5'
+    checks:
+    - check: 'P3:既存PF不変(登録前後でGSシン忍法21体+L0四神12体のmonthly_return_openが変化しないことを確認)'
+  - id: 'AC6'
+    checks:
+    - check: 'P4:FE UIでGSシン奥義フォルダーが表示され21体が閲覧可能(hide解除不要。admin画面で確認)'
   assigned_to: kotaro
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
   - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L493: gate_yaml_status.shのawk(-v cmd_id)は'-\
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L246: 関数がデフォルト値をechoしつつreturn 1する設計は、set\
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
   - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
@@ -24,32 +43,14 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2410
+  parent_cmd: cmd_2416
   project: dm-signal
-  status: done
+  status: acknowledged
   stop_for: []
-  task_id: cmd_2410_normal
+  task_id: cmd_2416_normal
   task_type: normal
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
-    tried_approaches:
-    - 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
-    approach_summary: 'teardown内のrm -rfに|| trueを追加。bats 11/11 PASS。commit: 8d0de5e6。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
-      approach_summary: 'teardown内のrm -rfに|| trueを追加。bats 11/11 PASS。commit: 8d0de5e6。'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'GS_MP_WORKERS=1 GS_FAST_WRITE=1 python3 scripts/analysis/grid_search/run_077_nukimi.py --universe config/portfolio_universes/gsl2_shin_ninpo_21.yaml --output-dir outputs/grid_search/20260429/L2/shin/ で実行完了。出力DBファイル存在+サイズ報告。run_077修正版+l1_alm_wf_engine相当'
-  - id: 'AC2'
-    checks:
-    - check: 'elapsed_sec/peak_rss_mbを報告'
-  ac_version: 2edf2958
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_2410.yaml
+  report_filename: kotaro_report_cmd_2416.yaml
   report_path: 
   bloom_level: 
   related_lessons:

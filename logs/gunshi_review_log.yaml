@@ -3081,7 +3081,7 @@
 - cmd_id: cmd_2399
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: N/A
   confidence: HIGH
   finding_confidence_1_10: 9
   findings_summary: "6観点OK。GSL2 kasoku_diff再実行(高速化版)。コマンド確定。AC2閾値120sec=見込み26secの4.6倍余裕。OOMリスク低"
@@ -3209,7 +3209,7 @@
 - cmd_id: cmd_2403
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_confidence_1_10: 9
   findings_summary: "6観点OK。将軍inbox nudge有効化。shogun分岐(ASW_DISABLE_ESCALATION=1)削除。2ファイル3AC"
@@ -3226,7 +3226,7 @@
   report_task_id: cmd_2403_normal
   report_verdict: FAIL
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "AC3未完了(D006 kill禁止→watcher再起動不可)+commit未完了。影丸のD006遵守は正しい"
   observations:
     - "commit f88cd049: ninja_monitor.sh+daemon_watchdog.shからshogun分岐削除。AC1/AC2 PASS"
@@ -3252,7 +3252,7 @@
   report_task_id: cmd_2404_normal
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。AC空配備根因2点修正(raw regex破壊+AC形式未変換)。bats 20PASS。lesson_candidate登録推奨"
   observations:
     - "根因1: _overwrite_ac_from_cmdのraw regex(【注入教訓】削除)がPyYAML二重引用description破壊→parse error"
@@ -3262,3 +3262,266 @@
   finding_categories: [assumptions, numbers, premortem]
   causal_chain: "raw regex→YAML破壊→parse error→AC空配備→忍者自力復元→品質の鎖断絶=負の複利。構造化操作に変更→全cmd配備でAC正常注入=正の複利"
   timestamp: "2026-04-29T15:43:00"
+- cmd_id: gunshi_d0_singleton_race_fix
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "D0直接実装。AUTO-RESTART時のSINGLETON-EXIT再発修正。exec前にfd 9 closeでflock解放"
+  observations:
+    - "根因: script_update.sh exec前にfd 9未解放→daemon_watchdogが別インスタンス起動→lock競合"
+    - "本セッション5回SINGLETON-EXIT。exec 9>&-追加で解消"
+    - "script_update.shはninja_monitor+inbox_watcher+ntfy_listenerが使用。fd 9はninja_monitorのみ→副作用なし"
+  causal_chain: "exec時fd 9継承→daemon_watchdog別インスタンス→lock競合→SINGLETON-EXIT→monitor再起動失敗=負の複利。fd close追加→全AUTO-RESTARTでrace解消=正の複利"
+  timestamp: "2026-04-29T15:44:00"
+- cmd_id: cmd_2405
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2405_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GSL2 bunshin完走。7525pat/9.38sec/RSS 131MB。SHM修正効果確認"
+  observations:
+    - "0軸最軽量忍法。7525pat vs kasoku_diff 1.15Mpat=1/150。RSS 131MB vs 10.1GB=SHM修正効果(USE_SHM=False)"
+    - "--output-dir(cmd)vs--out-dir(実装)不一致→影丸が--out-dir併用で対処。decision_candidate報告"
+    - "lesson_candidate: GS runner CLI引数をAC記載前にargparse定義と照合。登録推奨"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "SHM修正→USE_SHM=False(workers=1)→RSS 131MB(10.1GBから98.7%削減)→OOMリスク解消=正の複利"
+  timestamp: "2026-04-29T16:10:00"
+- cmd_id: cmd_2407
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2407_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GSL2 oikaze完走。270,900pat/303sec/RSS 1,892MB/DB 200MB"
+  observations:
+    - "1軸忍法。kasoku_diff比1/4パターン、RSS 1/5以下。SHM修正効果あり(USE_SHM=False)"
+    - "--output-dir不一致はcmd_2405と同パターン。hayateも--out-dir併記で対処"
+    - "lesson_candidate(CLI引数照合)=cmd_2405と同一。統合登録推奨"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "oikaze 1軸+SHM修正→RSS 1.9GB(kasoku_diff 10.1GBの1/5)→OOMリスク大幅低減=正の複利"
+  timestamp: "2026-04-29T16:20:00"
+- cmd_id: cmd_2408
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2408_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GSL2 kawarimi完走。270,900pat/DB 176MB。--output-dir不一致は同パターン"
+  observations:
+    - "1軸忍法。270,900pat=oikazeと同数。DB 176MB。rows整合(metrics/params各270,900)"
+    - "AC2 elapsed/RSS未明示だがmeta.yaml記録で充足と判断"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "kawarimi完走→GSL2 7忍法中4完了=正の複利"
+  timestamp: "2026-04-29T16:24:00"
+- cmd_id: cmd_2409
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2409_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: N/A
+  findings_summary: "4観点OK。GSL2 yotsume完走。45,150pat/38.5sec/RSS 323MB/DB 41MB。--output-dir alias追加"
+  observations:
+    - "1軸忍法最軽量。commit 17ba1ab2で--output-dirエイリアス追加=根本修正(他忍者の併記回避策より一歩進む)"
+    - "45Kpat/38.5sec/RSS 323MB。bunshin(131MB)に次ぐ軽量"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "--output-dir alias追加→後続cmdでCLI不一致解消=正の複利。ただし他runner未適用(横展開候補)"
+  timestamp: "2026-04-29T16:24:00"
+- cmd_id: cmd_2410
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_2410_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GSL2 nukimi完走。586,950pat/530sec/RSS 4,849MB/DB 382MB"
+  observations:
+    - "2軸忍法。kasoku_diff(1.15Mpat/10.1GB)比でRSS半分以下。SHM修正効果あり"
+    - "hook_failures:1(初回BLOCK→自己修正)。diagnose_reason記載=成長ループ機能"
+    - "lesson_candidate(CLI引数突合)はcmd_2405系と統合登録推奨"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "nukimi 2軸完走→GSL2 7忍法中6完了。残kasoku_ratio 1本=正の複利"
+  timestamp: "2026-04-29T16:28:00"
+- cmd_id: cmd_2411
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_confidence_1_10: 9
+  findings_summary: "6観点OK。GSL2最終弾kasoku_ratio。同フィルタkasoku_diff実績(543sec)と同等見込み。SHM修正適用済み"
+  observations:
+    - "kasoku_diff(method=diff)と同パターン数(~1.15Mpat)。同条件で543sec完走実績"
+    - "SHM修正(48356b69)後はUSE_SHM=False(workers=1)→RSS改善見込み"
+    - "GSL2 7忍法最終。完了でチャンピオン選出に進める"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "kasoku_ratio完走→GSL2全7忍法完了→チャンピオン選出→L2奥義構築=正の複利"
+  timestamp: "2026-04-29T16:32:00"
+- cmd_id: cmd_2411
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2411_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。GSL2 kasoku_ratio完走。1,151,325pat/633sec/RSS 8,697MB/DB 730MB。全7忍法完了"
+  observations:
+    - "kasoku_diffと同パターン数。elapsed+16%(633vs544)、RSS-14%(8.7vs10.1GB)"
+    - "SHM修正(48356b69)はkasoku_diffのみ適用。kasoku_ratio含む残6 run_077は未横展開→RSS改善余地"
+    - "--output-dir alias追加(12047a7f)。kasoku_diff/yotsumeに続き3本目"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "GSL2全7忍法完走→チャンピオン選出フェーズへ進行可能=正の複利。SHM横展開でRSS更に改善見込み"
+  timestamp: "2026-04-29T16:48:00"
+- cmd_id: cmd_2412
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2412_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。L2チャンピオン21体選出(7忍法×3モード)。selector L2対応拡張"
+  observations:
+    - "commit f0e10abe。cmd_2366_l1_champion_select.pyに--layer/--db-dir/--skip-production-compare追加"
+    - "champion_count=21=7×3。YAML構造正常。best CAGR=89.5%(bunshin激攻)"
+    - "L2は未登録のため--skip-production-compare正しい"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L2全7忍法GS→チャンピオン21体選出→奥義構築フェーズへ=正の複利"
+  timestamp: "2026-04-29T17:12:00"
+- cmd_id: cmd_2412
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2412_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "テンプレート未記入(status:pending/summary空/bc未記入)。hayate報告で既にLGTM済み。二重配備の可能性"
+  observations:
+    - "status:pending、result.summary空、binary_checks未記入、verdict空"
+    - "hayateのcmd_2412報告は同タイミングでLGTM→GATE処理中"
+  lesson_quality: N/A
+  finding_categories: [assumptions]
+  causal_chain: "二重配備→未記入報告→レビュー時間浪費=負の複利"
+  timestamp: "2026-04-29T17:14:00"
+- cmd_id: cmd_2413
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2413_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。L2 robustness 18体完走。JSON18+PNG216。high_risk=6。monthly_blob対応追加"
+  observations:
+    - "6忍法×3モード=18体(bunshin除外=0軸LBなし)。commit e77cbf89。pytest 2 PASS"
+    - "monthly_blob/monthly_meta形式対応をgs_grid_robustness.pyに追加。L1 long形式との互換維持"
+    - "加速R-激攻が最高統合スコア2.197(peak max 7.620)"
+  lesson_quality: OK
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L2 robustness完走→18体のpeak_ratio定量化→高リスク6体特定→奥義構築時の選定判断基準=正の複利"
+  timestamp: "2026-04-29T18:10:00"
+- cmd_id: cmd_2413
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2413_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "テンプレート未記入(status:pending/summary空)。saizoで既にLGTM済み。二重配備(cmd_2412 kagemaruと同パターン)"
+  observations:
+    - "status:pending、result.summary空、binary_checks未記入。cmd_2412二重配備の再発"
+    - "GP-069(二重配備ゲート)が2連続で機能していない。調査推奨"
+  lesson_quality: N/A
+  finding_categories: [assumptions, simulation]
+  causal_chain: "二重配備→未記入報告→レビュー時間浪費×2件連続=負の複利。GP-069不発の調査が必要"
+  timestamp: "2026-04-29T18:12:00"
+- cmd_id: cmd_2414
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2414_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。L2 alpha-CAGR正率全21行100%。パターン数GS実績整合"
+  observations:
+    - "7忍法×3モード=21行。全行100.00%。β調整後も全パターンα-CAGR正"
+    - "パターン数: bunshin7525/oikaze270900/kawarimi270900/yotsume45150/nukimi586950/kasoku_diff1151325/kasoku_ratio1151325=GS実績と完全一致"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "L2全パターンα-CAGR正率100%→β調整後のリターン品質確認→奥義構築の前提条件充足=正の複利"
+  timestamp: "2026-04-29T19:53:00"
+- cmd_id: cmd_2415
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2415_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。設計書更新Phase10-13+SHM修正記録。全7忍法実測値記載"
+  observations:
+    - "commit b02c471b。§5.3進捗表Phase10(7忍法実測値)/11(チャンピオン21体)/11.1(robustness18体)/12(α正率100%)を✅完了"
+    - "Phase13追記: 本番DB L2奥義登録+fullrecalculate+パリティ。命名: 奥義-GS-{忍法名}-{モード}"
+    - "§5.4 SHM修正(48356b69)記録追加"
+  lesson_quality: N/A
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "設計書SSOT更新→次cmdの前提確認精度向上=正の複利"
+  timestamp: "2026-04-29T22:28:00"
+- cmd_id: gunshi_consultation_lg014
+  review_type: consultation
+  verdict: N/A
+  findings_summary: "LG014環境埋込み調査。現状Level 2(doc)。Level 4昇格案: gate_ninja_workaround_rate.shにcategory 3件WARN追加"
+  observations:
+    - "instructions/gunshi.md+review_logヘッダにLevel 2埋込み。gate/hookでの自動強制なし"
+    - "gate_ninja_workaround_rate.shは既にcategoryパース済み。ENDブロックに集計+WARN追加で実装可能"
+    - "SG-PRE2が既にこのgateを呼出し→レビュー前自動表示の経路確立済み"
+  finding_categories: [north_star]
+  causal_chain: "LG014 Level 2→意志依存→見落とし→道具バグ放置=負の複利。Level 4昇格→自動WARN→道具調査が構造的に強制=正の複利"
+  timestamp: "2026-04-29T22:48:00"
+- cmd_id: cmd_2417
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2417_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "テンプレート完全未記入。gate FAIL 2回後も未修正。二重配備空テンプレート6件目"
+  observations:
+    - "status:pending/summary空/bc空/verdict空。gate FAIL 2回(22:54+22:55)後もテンプレートのまま"
+    - "二重配備パターン6件: cmd_2412(kagemaru)/2413(hayate)/2414(kagemaru)/2415(saizo)/2417(tobisaru×2)"
+    - "GP-069(二重配備ゲート)不発が深刻。deploy_task.shの根因調査が急務"
+  lesson_quality: N/A
+  finding_categories: [assumptions, simulation]
+  causal_chain: "GP-069不発→同一cmd二重配備→空テンプレート報告→gate BLOCK→家老workaround×6=負の複利の蓄積"
+  timestamp: "2026-04-29T22:58:00"
+- cmd_id: gunshi_d0_gp069_fix
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "D0直接実装。GP-069二重配備ゲート不発修正。reset_stale_fields後のtask_id空→BLOCKスルーを修正"
+  observations:
+    - "根因: L4648 reset_stale_fields→_ac_task_id空→L4751 task_id空=分割配備判定→スルー"
+    - "6件発生(cmd_2412 kagemaru/2413 hayate/2414 kagemaru/2415 saizo/2417 tobisaru×2)"
+    - "修正: task_id空時はparent_cmd一致+相手active=BLOCK。bats 37 PASS"
+  causal_chain: "reset→task_id空→GP-069素通り→二重配備→空テンプレート報告→GATE BLOCK→家老workaround×6=負の複利。条件分岐修正→全配備で二重配備検出=正の複利"
+  timestamp: "2026-04-29T22:59:00"
+- cmd_id: cmd_2417
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_2417_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK(家老再補完後)。inbox_watcher hang検知+daemon_watchdog hang検知。gate PASS"
+  observations:
+    - "家老が3回補完(tobisaru二重配備テンプレート→FILL_THIS残存→再補完でPASS)"
+    - "inbox_watcher heartbeat+daemon_watchdog _check_inbox_watcher_hang実装"
+  lesson_quality: N/A
+  finding_categories: [assumptions, premortem]
+  causal_chain: "watcher hang検知→自動再起動→nudge到達保証=正の複利"
+  timestamp: "2026-04-29T23:04:00"
