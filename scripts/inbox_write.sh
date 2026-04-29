@@ -887,12 +887,7 @@ fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
 LOCKFILE="$(lock_path "$INBOX")"
-
-# Initialize inbox if not exists
-if [ ! -f "$INBOX" ]; then
-    mkdir -p "$(dirname "$INBOX")"
-    echo "messages: []" > "$INBOX"
-fi
+mkdir -p "$(dirname "$INBOX")"
 
 # Generate message ID and timestamp using bash builtins to avoid subprocess overhead
 printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
@@ -1164,6 +1159,11 @@ max_attempts=3
 while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
+
+        # Initialize inbox under the same flock that protects message append.
+        if [ ! -f "$INBOX" ]; then
+            printf 'messages: []\n' > "$INBOX"
+        fi
 
         if [ -n "$ACTION" ]; then
             _msg_block="$(inbox_build_message_block \
