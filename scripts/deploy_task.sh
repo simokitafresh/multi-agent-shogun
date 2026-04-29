@@ -4745,12 +4745,19 @@ except Exception:
             dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "parent_cmd" "")
             [ "$dd_pcmd" != "$deploy_parent_cmd" ] && continue
             dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "_ac_task_id" "")
-            # BLOCKは「両方のtask_idが存在し同一」の場合のみ(真の二重配備)。
-            # task_idが片方でも空なら分割配備の可能性 → スキップ。
-            # 旧ロジック: task_idが空だとBLOCK→parent_cmdクリア→report_filename破壊(cmd_1751/1752事故)
-            if [ -z "$deploy_task_id" ] || [ -z "$dd_tid" ] || [ "$deploy_task_id" != "$dd_tid" ]; then
-                log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
-                continue
+            # 二重配備判定: deploy_task_idが空(reset_stale_fields後)の場合は
+            # parent_cmd一致+相手がactive=二重配備とみなす。
+            # deploy_task_idが存在する場合は task_id同一チェックで分割配備を許可。
+            if [ -n "$deploy_task_id" ]; then
+                # 両方にtask_idがある場合: 同一task_idのみBLOCK(分割配備はtask_id異なるため許可)
+                if [ -z "$dd_tid" ] || [ "$deploy_task_id" != "$dd_tid" ]; then
+                    log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
+                    continue
+                fi
+            else
+                # deploy_task_id空(reset後): parent_cmd一致だけで二重配備と判定
+                # ただし相手もidle/completedならスキップ(前回の残骸)
+                :
             fi
             dd_status=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "status" "")
             case "$dd_status" in
