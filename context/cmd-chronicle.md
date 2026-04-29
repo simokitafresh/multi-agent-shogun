@@ -924,3 +924,4 @@
 | cmd_2405 | GSL2残6忍法の第1弾。bunshinは0軸(LBなし、top_nのみ)で最軽量。 kasoku_diff実績(1.15Mpat, 543sec, RSS 10.1GB)よりパターン数が少なく安全。 SHMリーク修正(commit 48356b69)適用済み。 | dm-signal | 04-29 | GSL2 shin 21体universeでrun_077_ |
 | cmd_2406 | 「1本ずつ昇格→委任→次」が意志依存のまま。cmd_save.shにdraft複数BLOCKはあるが、 Edit toolでのpending昇格時に既存pending cmdの存在チェックがない。 pre-write-edit-combined.shにshogun_to_karo.yaml status:pending書き込み時の 既存pending検出BLOCKを追加し、自動化×強制で1CMD1ゲートを保証する。 | infra | 04-29 | — |
 | cmd_2410 | GSL2残2忍法の第5弾。nukimi(抜き身)は2軸LB忍法(SingleViewMomentumFilter、base+skip)。 2軸忍法はパターン数が多い。kasoku_diff(2軸、1.15Mpat)実績で安全確認済み。 | dm-signal | 04-29 | run_077_nukimi.py (抜き身L2 GS) を |
+| cmd_2411 | GSL2最終弾。kasoku_ratio(加速R)は2軸LB忍法(MomentumAccelerationFilter method=ratio)。 kasoku_diff(同フィルタ method=diff)と同パターン数。全7忍法完了でL2チャンピオン選出に進める。 | dm-signal | 04-29 | run_077_kasoku_ratio.py GSL2実行 |
