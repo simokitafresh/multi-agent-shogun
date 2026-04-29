@@ -928,3 +928,4 @@
 | cmd_2412 | GSL2全7忍法GS完走(cmd_2402-2411)。L2 SQLite 7本からチャンピオンを選出する。 cmd_2366(L1チャンピオン選出)と同パターン。cmd_2366_l1_champion_select.pyをL2用に実行。 7忍法×3モード(激攻CAGR/常勝NHF/鉄壁MaxDD)。吸収判定後の体数がL2の確定体数になる。 | dm-signal | 04-29 | L2 SQLite 7本から7忍法×3モード=21チャンピオ |
 | cmd_2413 | cmd_2412で選出したL2チャンピオン21体のうちbunshin(0軸)を除く6忍法×3モード=18体について、 gs_grid_robustness.pyでLB×α6グリッドを生成し、championの面的頑健性を検証する。 cmd_2391(L1 robustness)と同パターン。過適合リスクの定量評価。 | dm-signal | 04-29 | L2 SQLite 6本(bunshin除く)で18体のLB |
 | cmd_2414 | robustness-verification-catalog §0アルファ空間原則: ロバストネスの第一指標=パラメータ空間全体のCAGR正率。 cmd_2413はpeak_ratio(隣接±1比)のみ。全パターンのα-CAGR正率を未計算。 L2 SQLite 7本の全パターンについてβ調整α-CAGRを計算し、正率を忍法×モード別に報告する。 殿指摘: 「いつもは全探索でやっていなかったか？」 | dm-signal | 04-29 | L2 SQLite 7本の全パターンについてβ調整alpha |
+| cmd_2415 | 設計書§5.3の進捗表がPhase 10=★次★のまま。実態: Phase 10-12全完了+SHM修正。 進捗表を実態に合わせて更新し、次Phase(13: 本番DB登録+パリティ確認)を追記する。 | dm-signal | 04-29 | docs/design/gs-data-normalizat |
