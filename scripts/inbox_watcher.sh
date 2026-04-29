@@ -618,34 +618,10 @@ process_unread() {
             local special_ok=true
             case "$special_type" in
                 clear_command)
-                    local effective_cli
-                    effective_cli=$(get_effective_cli_type)
-                    local defer_clear=false
-                    if [[ "$effective_cli" == "claude" ]]; then
-                        local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
-                        if [ ! -f "$idle_flag" ] && ! maybe_force_idle_flag "$effective_cli"; then
-                            defer_clear=true
-                        fi
-                    else
-                        local agent_state
-                        agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
-                        if [ "$agent_state" = "active" ]; then
-                            defer_clear=true
-                        else
-                            local busy_rc
-                            if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
-                                busy_rc=0
-                            else
-                                busy_rc=$?
-                            fi
-                            [ "$busy_rc" -eq 1 ] && defer_clear=true
-                        fi
-                    fi
-
-                    if [ "$defer_clear" = true ]; then
-                        echo "[$(date)] [BUSY] Agent $AGENT_ID is busy — /clear (clear_command) deferred to next cycle" >&2
-                        break
-                    fi
+                    # clear_commandはbusy gatingをバイパスする。
+                    # 停止命令がbusy判定でブロックされるのは論理矛盾。
+                    # バックグラウンドshellが残っている場合でも/clearを強制送信する。
+                    echo "[$(date)] [CLEAR-FORCE] clear_command received for $AGENT_ID — bypassing busy gating" >&2
 
                     if ! send_cli_command "/clear"; then
                         special_ok=false
