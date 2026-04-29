@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T17:44:50+09:00 -->
+<!-- generated_at: 2026-04-29T17:48:01+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T17:48:01+09:00 | terminal | response | cmd_2413（L2ロバストネス検証）委任完了。殿、指示あれば。 [meta] stop_reason=end_turn
+- 2026-04-29T17:46:38+09:00 | terminal | inbound | ロバストネスの検証をしよう
 - 2026-04-29T17:44:50+09:00 | terminal | response | L2チャンピオン21体のパフォーマンス一覧: **激攻（CAGR最大化）** | 忍法 | CAGR | MaxDD | NHF | |------|-----:|------:|----:| | 抜き身 | **132.98%** | …
 - 2026-04-29T17:44:17+09:00 | terminal | inbound | L2チャンピオンのパフォーマンスが知りたい
 - 2026-04-29T17:29:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:21:10|cmd_2412
@@ -12,8 +14,6 @@
 - 2026-04-29T17:21:40+09:00 | terminal | response | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report re…
 - 2026-04-29T17:13:55+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:03:55|CI緑: run 25097122235
 - 2026-04-29T17:11:54+09:00 | terminal | response | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report re…
-- 2026-04-29T16:58:34+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 16:48:51|cmd_2411
-- 2026-04-29T16:51:40+09:00 | terminal | response | cmd_publish.sh初の実戦テスト成功。gate→pending→委任の3ステップが1コマンドで完結した。 cmd_2412（L2チャンピオン選出）委任完了。殿、指示あれば。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起動後生存確認を追加。 軍師報告「本セッシ…
@@ -26,6 +26,7 @@
 - 掲示板全件確認完了。新規の未把握情報はない。既に報告済みの内容と一致。 **掲示板サマリ（時系列）:** | 時刻 | 投稿 | |------|------| | 12:52 | cmd_2401 GATE CLEAR（effort設定整合） | | 12:55 | cmd_…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-29T17:48:01+09:00 | cmd_2413（L2ロバストネス検証）委任完了。殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T17:21:40+09:00 | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report review待ち。 殿、指示あれば。 [me…
 - 2026-04-29T17:11:54+09:00 | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report review待ち。 殿、指示あれば。 [me…
 - 2026-04-29T16:51:40+09:00 | cmd_publish.sh初の実戦テスト成功。gate→pending→委任の3ステップが1コマンドで完結した。 cmd_2412（L2チャンピオン選出）委任完了。殿、指示あれば。 [meta] stop_reason=tool_use
@@ -33,7 +34,6 @@
 - 2026-04-29T16:46:44+09:00 | 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起動後生存確認を追加。 軍師報告「本セッシ…
 - 2026-04-29T16:42:14+09:00 | 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起動後生存確認を追加。 軍師報告「本セッシ…
 - 2026-04-29T16:26:00+09:00 | **cmd_2410 GATE CLEAR。** GSL2 nukimi完了。 進捗: kasoku_diff ✅ bunshin ✅ oikaze ✅ yotsume ✅ kawarimi ✅ nukimi ✅ / kasoku_ratio（残1、家老が配備中） 殿、指示あれ…
-- 2026-04-29T16:22:00+09:00 | **cmd_2408 GATE CLEAR。** GSL2 kawarimi完了。 進捗: kasoku_diff ✅ bunshin ✅ oikaze ✅ yotsume ✅ kawarimi ✅ / nukimi, kasoku_ratio（残2、家老が順次配備中） 殿、指…
 
 ## 参照cmd
 - cmd_1844
