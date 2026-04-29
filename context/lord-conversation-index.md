@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T12:46:30+09:00 -->
+<!-- generated_at: 2026-04-29T12:51:33+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T12:51:33+09:00 | terminal | response | cmd_2402（GSL2 kasoku_diff MP_WORKERS=1安全再実行）委任完了。 殿、指示あれば。 [meta] stop_reason=end_turn
+- 2026-04-29T12:49:46+09:00 | terminal | inbound | 起票せよ
+- 2026-04-29T12:46:47+09:00 | ntfy | outbound | 【家老】cmd_2401 初回配備開始 (title=Codex忍者effort設定整合 — settings.yaml実態反映+effort実態確認, ninja=kagemaru) Codex忍者effort設定整合 📋 https:…
 - 2026-04-29T12:46:30+09:00 | terminal | response | 軍師の自己分析を確認。cmd_2399 OOMkillの根因: MP_WORKERS=6でfork×6のRSS累積が16GB超。軍師はRSS見積り5.5GBを1プロセス分のみで検算し6プロセス累積を未計算。軍師もMP_WORKERS=1を…
 - 2026-04-29T12:46:11+09:00 | terminal | response | cmd_2401委任完了。kagemaruに配備される。 **状況:** - **cmd_2401**: settings.yaml実態反映 → kagemaru配備（GPT5.5 low初仕事） - **cmd_2399**: OOM失…
 - 2026-04-29T12:38:26+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=1021.0s, ratio=37.44x, delta=+37204.0s) WARNING…
@@ -11,11 +14,9 @@
 - 2026-04-29T12:38:22+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 12:26:40|CI緑: run 25088884634
 - 2026-04-29T12:37:27+09:00 | terminal | response | 現物確認完了。整合性を報告する。 **config.toml共有問題が致命的。** `~/.codex/config.toml`は全Codex忍者で共有（L082既知）。現在`model_reasoning_effort = "low"`…
 - 2026-04-29T12:32:31+09:00 | terminal | inbound | 今日からkagemaruをcodex CLI Gpt5.5 lowで運用実験することにした。インフラ・家老・軍師・デーモンなどの整合性を確認せよ
-- 2026-04-29T12:30:51+09:00 | terminal | response | 掲示板と inbox確認した。報告する。 **cmd_2399（GSL2 kasoku_diff）がOOM Killで失敗。** 軍師の見込みRSS=5.5GBだったが実際はOOM。hayateはidle化済み。 加えて家老報告: hay…
-- 2026-04-29T12:30:20+09:00 | terminal | inbound | 掲示板を確認したか？
-- 2026-04-29T12:27:11+09:00 | ntfy | outbound | 【karo】復帰済み。cmd_2399 OOM→将軍報告済み。saizo cmd_2400作業中。idle 5名。
 
 ## 未解決確認事項
+- 【家老】cmd_2401 初回配備開始 (title=Codex忍者effort設定整合 — settings.yaml実態反映+effort実態確認, ninja=kagemaru) Codex忍者effort設定整合 📋 https://gist.github.com/si…
 - 軍師の自己分析を確認。cmd_2399 OOMkillの根因: MP_WORKERS=6でfork×6のRSS累積が16GB超。軍師はRSS見積り5.5GBを1プロセス分のみで検算し6プロセス累積を未計算。軍師もMP_WORKERS=1を推奨。 cmd_2399再実行のcmdは…
 - 現物確認完了。整合性を報告する。 **config.toml共有問題が致命的。** `~/.codex/config.toml`は全Codex忍者で共有（L082既知）。現在`model_reasoning_effort = "low"`。 | 忍者 | settings.ya…
 - 今日からkagemaruをcodex CLI Gpt5.5 lowで運用実験することにした。インフラ・家老・軍師・デーモンなどの整合性を確認せよ
@@ -23,9 +24,9 @@
 - 掲示板を確認したか？
 - inbox全件read:true。未読なし。 Step 11: 禁則確認完了（F001-F008把握済み）。 --- **復帰完了。** 状況把握: - **cmd_2399**: hayate進行中（GSL2 kasoku_diff、高速化版）、CTX:10% - **cmd…
 - 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=57件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 0件: なし [3.🚨要対応] 0件 [4.忍者] 稼働2 / …
-- 殿、本セッションで確認されたインフラバグ3件: **1. report_field_set.sh binary_checks保護バグ** (修正済み: commit 65d1ee3a) - 症状: 忍者がbinary_checksのcheck文を更新しようとしても保護ロジックが…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-04-29T12:51:33+09:00 | cmd_2402（GSL2 kasoku_diff MP_WORKERS=1安全再実行）委任完了。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T12:46:30+09:00 | 軍師の自己分析を確認。cmd_2399 OOMkillの根因: MP_WORKERS=6でfork×6のRSS累積が16GB超。軍師はRSS見積り5.5GBを1プロセス分のみで検算し6プロセス累積を未計算。軍師もMP_WORKERS=1を推奨。 cmd_2399再実行のcmdは…
 - 2026-04-29T12:46:11+09:00 | cmd_2401委任完了。kagemaruに配備される。 **状況:** - **cmd_2401**: settings.yaml実態反映 → kagemaru配備（GPT5.5 low初仕事） - **cmd_2399**: OOM失敗のまま。MP_WORKERS=1での再…
 - 2026-04-29T12:37:27+09:00 | 現物確認完了。整合性を報告する。 **config.toml共有問題が致命的。** `~/.codex/config.toml`は全Codex忍者で共有（L082既知）。現在`model_reasoning_effort = "low"`。 | 忍者 | settings.ya…
@@ -33,7 +34,6 @@
 - 2026-04-29T12:13:22+09:00 | cmd_2400(インフラバグ2件修正)委任完了。 **本セッション起票まとめ:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2397 | GS SQLite高速化 | ✅ GATE CLEAR | | cmd_2398 | …
 - 2026-04-29T12:09:45+09:00 | cmd_2399(GSL2 kasoku_diff高速化版再実行)家老に委任完了。見込み26-59秒。結果待ち。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T12:01:51+09:00 | cmd_2398(設計書更新)家老に委任完了。設計書更新後にGSL2 kasoku_diff再実行cmdを起票する。 殿、指示あれば。 [meta] stop_reason=end_turn
-- 2026-04-29T11:45:24+09:00 | cmd_2397 GATE CLEAR確認。軍師に更なる高速化調査を指示済み。掲示板投稿を待つ。 殿、指示あれば。 [meta] stop_reason=end_turn
 
 ## 参照cmd
 - cmd_1844
@@ -45,8 +45,6 @@
 - cmd_2376
 - cmd_2378
 - cmd_2382
-- cmd_2384
-- cmd_2385
 - cmd_2386
 - cmd_2387
 - cmd_2388
@@ -63,6 +61,7 @@
 - cmd_2399
 - cmd_2400
 - cmd_2401
+- cmd_2402
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
