@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T17:21:40+09:00 -->
+<!-- generated_at: 2026-04-29T17:44:50+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T17:44:50+09:00 | terminal | response | L2チャンピオン21体のパフォーマンス一覧: **激攻（CAGR最大化）** | 忍法 | CAGR | MaxDD | NHF | |------|-----:|------:|----:| | 抜き身 | **132.98%** | …
+- 2026-04-29T17:44:17+09:00 | terminal | inbound | L2チャンピオンのパフォーマンスが知りたい
+- 2026-04-29T17:29:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:21:10|cmd_2412
+- 2026-04-29T17:28:42+09:00 | ntfy | outbound | CI赤: run 25098410758 Unit Tests (bats)
+- 2026-04-29T17:26:17+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-211)
 - 2026-04-29T17:21:40+09:00 | terminal | response | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report re…
 - 2026-04-29T17:13:55+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:03:55|CI緑: run 25097122235
 - 2026-04-29T17:11:54+09:00 | terminal | response | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report re…
 - 2026-04-29T16:58:34+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 16:48:51|cmd_2411
 - 2026-04-29T16:51:40+09:00 | terminal | response | cmd_publish.sh初の実戦テスト成功。gate→pending→委任の3ステップが1コマンドで完結した。 cmd_2412（L2チャンピオン選出）委任完了。殿、指示あれば。 [meta] stop_reason=tool_use
-- 2026-04-29T16:49:53+09:00 | terminal | inbound | やろう
-- 2026-04-29T16:49:12+09:00 | terminal | response | **cmd_2411 GATE CLEAR。GSL2全7忍法GS完走。** L2チャンピオン選出cmdを起票する。殿、よいか。 [meta] stop_reason=end_turn
-- 2026-04-29T16:48:17+09:00 | terminal | response | 軍師指摘: SHM修正(commit 48356b69)がkasoku_diffのrun_077にのみ適用。残6忍法には未横展開。cmd_2396でOOMkill対策は横展開済みだが、SHM修正(workers<=1でUSE_SHM=Fa…
-- 2026-04-29T16:46:44+09:00 | terminal | response | 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起…
-- 2026-04-29T16:42:49+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 16:39:26|CI緑: run 25096078718
 
 ## 未解決確認事項
 - 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起動後生存確認を追加。 軍師報告「本セッシ…
