@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T09:36:52+09:00 -->
+<!-- generated_at: 2026-04-29T09:46:32+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T09:46:32+09:00 | terminal | response | 軍師の続報でOOM根因が確定した。 **根因**: 前回CSV経路はnpyキャッシュ(memmap)でmonthly全量をディスクマップ→RSSに計上されなかった。SQLite移行でmemmap最適化が失われ、monthly_matrix…
+- 2026-04-29T09:45:02+09:00 | terminal | response | 殿、報告。 **cmd_2395(GSL2 kasoku_diff)で才蔵CLI死亡。** pythonプロセスも死亡、出力ゼロ。OOMkillの可能性が高い。 家老が対応済み: 疾風(CTX:83%)に再配備。才蔵はninja_moni…
+- 2026-04-29T09:39:43+09:00 | terminal | response | 殿、報告。 **cmd_2395(GSL2 kasoku_diff)で才蔵CLI死亡。** pythonプロセスも死亡、出力ゼロ。OOMkillの可能性が高い。 家老が対応済み: 疾風(CTX:83%)に再配備。才蔵はninja_moni…
 - 2026-04-29T09:36:52+09:00 | terminal | response | 2件確認: 1. **cmd_karo_ci_fix_teardown GATE CLEAR** — 家老のCI修正(テスト teardown)完了 2. lesson_health ALERT — lesson-sort済み(先ほど実行…
 - 2026-04-29T09:36:26+09:00 | terminal | inbound | 3inbox2
 - 2026-04-29T09:32:48+09:00 | terminal | response | §6-7にL675を追記。 [meta] stop_reason=tool_use
@@ -11,9 +14,6 @@
 - 2026-04-29T09:30:59+09:00 | ntfy | outbound | CI赤: run 25084488155 Unit Tests (bats)
 - 2026-04-29T09:21:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 09:10:55|CI緑: run 25083789041 2026-04-29 09:17:47|cmd_2394
 - 2026-04-29T09:18:59+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓11件 → /lesson-sort推奨
-- 2026-04-29T09:18:56+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-208)
-- 2026-04-29T09:18:26+09:00 | terminal | response | **cmd_2394(GSL2用universe YAML) GATE CLEAR。** cmd_2395(kasoku_diff先行)の配備条件が揃った。家老がdepends_on=cmd_2394を確認して配備するはず。 陣形図ではs…
-- 2026-04-29T09:17:46+09:00 | ntfy | outbound | 【家老】cmd_2395 初回配備開始 (title=GSL2 GS先行 — kasoku_diff(最重量忍法、RSS監視), ninja=saizo) GSL2 GS先行 📋 https://gist.github.com/simok…
 
 ## 未解決確認事項
 - 2件確認: 1. **cmd_karo_ci_fix_teardown GATE CLEAR** — 家老のCI修正(テスト teardown)完了 2. lesson_health ALERT — lesson-sort済み(先ほど実行完了) cmd_2395(GSL2 ka…
