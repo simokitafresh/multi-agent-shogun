@@ -60,8 +60,8 @@ EOF
 }
 
 teardown() {
-    rm -rf "$TMP_DIR"
-    rm -rf "/tmp/dm-signal-test"
+    rm -rf "$TMP_DIR" || true
+    rm -rf "/tmp/dm-signal-test" || true
 }
 
 _run_hook() {
