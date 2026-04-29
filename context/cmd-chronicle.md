@@ -914,3 +914,4 @@
 | cmd_2392 | cmd_2386で再選出したGS事後最適21体を本番DBにhide状態で登録する。既存シン忍法20体は維持。フォルダ「GSシン忍法」を新規作成し、名前は「GSシン{忍法名}-{モード}」(例: GSシン抜き身-鉄壁)。登録後fullrecalculate→パリティ検証。 | dm-signal | 04-29 | GSシン忍法フォルダーを作成し、cmd_2386 GSチャン |
 | cmd_2393 | GSL1 SQLite 7本が設計書§3.1の命名ルール(outputs/grid_search/{YYYYMMDD}/{layer}/{method}/gs_{ninjutsu}.db)に従っていない。cmd番号付き命名やファイル名揺れ(_results_fast/_grid_results_fast)を正規化する。GSL2実行前に入力元パスを確定させる。 | dm-signal | 04-29 | GSL1 SQLite 7本を outputs/grid_s |
 | cmd_2394 | GSL2 GS実行の前提。GSシン忍法21体のUUID+source_type:local_sqlite+GSL1 SQLite正規パスを含むuniverse YAMLを作成する。okugi_shin_ninpo_20.yamlをベースに差し替え。 | dm-signal | 04-29 | GSL2用のGSシン忍法21体 universe YAMLを |
+| cmd_2396 | 軍師がkasoku_diffに適用したOOMkill対策(commit 40d40e55: monthly_wide_frame除去+numpy直接SQLite書込み)を残6忍法に横展開。各run_077の_run_mp()内のmonthly_wide_frame()呼出し除去+main関数のwrite_grid_search_sqlite呼出しをnumpy配列パスに変更。1忍法あたり変更2箇所。 | dm-signal | 04-29 | run_077残6本(bunshin/oikaze/kawa |
