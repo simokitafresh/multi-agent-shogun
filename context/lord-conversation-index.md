@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T18:08:07+09:00 -->
+<!-- generated_at: 2026-04-29T18:12:20+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T18:12:20+09:00 | terminal | response | 家老報告: STALL→別忍者再配備時に旧忍者のtask YAMLにreport_path残骸→空報告生成→軍師FAIL。cmd_2412/2413で連続発生。インフラバグ。 対策(A)がシンプル: STALLクリア時にreport_pa…
 - 2026-04-29T18:08:07+09:00 | terminal | response | **cmd_2413 saizo完了。** L2ロバストネス検証18体完走。JSON 18件+ヒートマップPNG 216件生成。commit e77cbf89。軍師report review待ち。 GATE CLEAR通知を待つ。殿、指示…
 - 2026-04-29T18:00:11+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:52:50|CI緑: run 25098881411
 - 2026-04-29T17:48:01+09:00 | terminal | response | cmd_2413（L2ロバストネス検証）委任完了。殿、指示あれば。 [meta] stop_reason=end_turn
@@ -13,7 +14,6 @@
 - 2026-04-29T17:29:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 17:21:10|cmd_2412
 - 2026-04-29T17:28:42+09:00 | ntfy | outbound | CI赤: run 25098410758 Unit Tests (bats)
 - 2026-04-29T17:26:17+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-211)
-- 2026-04-29T17:21:40+09:00 | terminal | response | **cmd_2412 hayate完了。** L2チャンピオン21体選出。成果物: `outputs/analysis/cmd_2412_l2_champion_report.md`。commit f0e10abe。軍師report re…
 
 ## 未解決確認事項
 - 軍師がdaemon_watchdogのmonitor死亡未検知バグを修正（commit c994406d）。50分間monitor不在の原因: nohup起動後のSINGLETON-EXIT即死をfire-and-forgetで見逃し。起動後生存確認を追加。 軍師報告「本セッシ…
