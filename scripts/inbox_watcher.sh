@@ -405,6 +405,19 @@ _pid_is_descendant_of_self() {
     return 1
 }
 
+_pid_has_live_parent() {
+    local candidate_pid="$1"
+    local parent_pid=""
+
+    [[ "$candidate_pid" =~ ^[0-9]+$ ]] || return 1
+
+    parent_pid=$(ps -p "$candidate_pid" -o ppid= 2>/dev/null | awk 'NR==1 {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print}')
+    [[ "$parent_pid" =~ ^[0-9]+$ ]] || return 1
+    [ "$parent_pid" -gt 1 ] || return 1
+
+    ps -p "$parent_pid" >/dev/null 2>&1
+}
+
 agent_has_self_watch() {
     local watch_pids pid
 
@@ -412,7 +425,7 @@ agent_has_self_watch() {
     [ -n "$watch_pids" ] || return 1
 
     for pid in $watch_pids; do
-        if ! _pid_is_descendant_of_self "$pid"; then
+        if _pid_has_live_parent "$pid" && ! _pid_is_descendant_of_self "$pid"; then
             return 0
         fi
     done

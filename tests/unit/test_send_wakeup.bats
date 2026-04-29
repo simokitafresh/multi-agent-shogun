@@ -117,13 +117,26 @@ _pid_is_descendant_of_self() {
     return 1
 }
 
+_pid_has_live_parent() {
+    local candidate_pid="\$1"
+    local parent_pid=""
+
+    [[ "\$candidate_pid" =~ ^[0-9]+$ ]] || return 1
+
+    parent_pid=\$(ps -p "\$candidate_pid" -o ppid= 2>/dev/null | awk 'NR==1 {gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print}')
+    [[ "\$parent_pid" =~ ^[0-9]+$ ]] || return 1
+    [ "\$parent_pid" -gt 1 ] || return 1
+
+    ps -p "\$parent_pid" >/dev/null 2>&1
+}
+
 agent_has_self_watch() {
     local watch_pids pid
     watch_pids=\$(pgrep -f "inotifywait.*inbox/\${AGENT_ID}.yaml" 2>/dev/null || true)
     [ -n "\$watch_pids" ] || return 1
 
     for pid in \$watch_pids; do
-        if ! _pid_is_descendant_of_self "\$pid"; then
+        if _pid_has_live_parent "\$pid" && ! _pid_is_descendant_of_self "\$pid"; then
             return 0
         fi
     done
@@ -188,6 +201,20 @@ echo "12345 inotifywait -q -t 120 -e modify inbox/test_agent.yaml"
 exit 0
 MOCK
     chmod +x "$MOCK_PGREP"
+
+    cat > "$MOCK_PS" << 'MOCK'
+#!/bin/bash
+if [ "$1" = "-p" ] && [ "$2" = "12345" ]; then
+    echo " 54321"
+    exit 0
+fi
+if [ "$1" = "-p" ] && [ "$2" = "54321" ]; then
+    echo " 2222"
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$MOCK_PS"
 
     run bash -c "source '$TEST_HARNESS' && send_wakeup 3"
     [ "$status" -eq 0 ]
@@ -283,6 +310,20 @@ exit 0
 MOCK
     chmod +x "$MOCK_PGREP"
 
+    cat > "$MOCK_PS" << 'MOCK'
+#!/bin/bash
+if [ "$1" = "-p" ] && [ "$2" = "99999" ]; then
+    echo " 54321"
+    exit 0
+fi
+if [ "$1" = "-p" ] && [ "$2" = "54321" ]; then
+    echo " 2222"
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$MOCK_PS"
+
     run bash -c "source '$TEST_HARNESS' && agent_has_self_watch"
     [ "$status" -eq 0 ]
 }
@@ -319,6 +360,28 @@ MOCK
 
 @test "T-SW-008: agent_has_self_watch returns 1 when no inotifywait" {
     # Default mock returns 1
+    run bash -c "source '$TEST_HARNESS' && agent_has_self_watch"
+    [ "$status" -eq 1 ]
+}
+
+@test "T-SW-008b: agent_has_self_watch ignores orphaned stale inotifywait" {
+    cat > "$MOCK_PGREP" << 'MOCK'
+#!/bin/bash
+echo "99999"
+exit 0
+MOCK
+    chmod +x "$MOCK_PGREP"
+
+    cat > "$MOCK_PS" << 'MOCK'
+#!/bin/bash
+if [ "$1" = "-p" ] && [ "$2" = "99999" ]; then
+    echo " 1"
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$MOCK_PS"
+
     run bash -c "source '$TEST_HARNESS' && agent_has_self_watch"
     [ "$status" -eq 1 ]
 }
