@@ -267,6 +267,48 @@ check_pane_survival() {
         fi
     done
 
+    # LK009 enforcement: @agent_id重複検知+自動修復
+    # 同一agent_idが複数paneに存在 = CLI再起動時の汚染
+    local pane_mapping
+    pane_mapping=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+    local -A expected_pane  # agent_name → expected pane_index (from PANE_TARGETS)
+    for name in "${NINJA_NAMES[@]}"; do
+        local pt="${PANE_TARGETS[$name]:-}"
+        if [ -n "$pt" ]; then
+            # extract pane_index from "shogun:agents.N" or "shogun:2.N"
+            expected_pane[$name]="${pt##*.}"
+        fi
+    done
+    # also check karo and gunshi
+    for name in karo gunshi; do
+        local pt_core=""
+        pt_core=$(echo "$pane_mapping" | awk -v n="$name" '$2==n {print $1; exit}')
+        if [ -n "$pt_core" ]; then
+            expected_pane[$name]="$pt_core"
+        fi
+    done
+    while read -r pidx aid; do
+        [ -z "$aid" ] && continue
+        local exp="${expected_pane[$aid]:-}"
+        if [ -n "$exp" ] && [ "$pidx" != "$exp" ]; then
+            # This pane has a wrong agent_id (belongs to another pane)
+            # Find what agent should be on this pane
+            local correct_agent=""
+            for ca in "${!expected_pane[@]}"; do
+                if [ "${expected_pane[$ca]}" = "$pidx" ]; then
+                    correct_agent="$ca"
+                    break
+                fi
+            done
+            if [ -n "$correct_agent" ]; then
+                log "AGENT-ID-COLLISION: pane ${pidx} has @agent_id='${aid}' but should be '${correct_agent}' → fixing"
+                tmux set-option -t "shogun:agents.${pidx}" -p @agent_id "$correct_agent" 2>/dev/null || true
+                tmux set-option -t "shogun:agents.${pidx}" -p @agent_state idle 2>/dev/null || true
+                bash "$SCRIPT_DIR/scripts/ntfy.sh" "【@agent_id修復】pane ${pidx}: ${aid}→${correct_agent}(LK009)" 2>/dev/null || true
+            fi
+        fi
+    done <<< "$pane_mapping"
+
     if [ ${#missing[@]} -eq 0 ]; then
         # 全員生存 — 前回消失状態をリセット
         if [ -n "$PREV_PANE_MISSING" ]; then
@@ -2498,6 +2540,13 @@ check_ninja_cli_dead() {
                 tmux send-keys -t "$_pane_target_bg" "$_launch_bg" Enter 2>/dev/null || true
             fi
             sleep 30
+            # LK009 enforcement: CLI再起動後に@agent_idを再設定（pane変数汚染防止）
+            local _current_agent_id
+            _current_agent_id=$(tmux display-message -t "$_pane_target_bg" -p '#{@agent_id}' 2>/dev/null || true)
+            if [ "$_current_agent_id" != "$_name_bg" ]; then
+                log "AGENT-ID-FIX: ${_name_bg}@${_pane_target_bg} agent_id was '${_current_agent_id}' → resetting to '${_name_bg}'"
+                tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
+            fi
             local post_cmd
             post_cmd=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_current_command}' 2>/dev/null || true)
             case "$post_cmd" in
