@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T09:57:21+09:00 -->
+<!-- generated_at: 2026-04-29T10:00:19+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T10:00:18+09:00 | terminal | response | PASS。pending昇格→委任。 [meta] stop_reason=tool_use
+- 2026-04-29T09:58:29+09:00 | terminal | inbound | 起票しよう
 - 2026-04-29T09:57:21+09:00 | terminal | response | **軍師のOOMkill対策実装完了。** commit 40d40e55。 修正内容: - `gs_db_utils.py`: `write_monthly_from_array()`追加(numpy→SQLiteチャンク直接書込み) …
 - 2026-04-29T09:56:17+09:00 | terminal | response | はっ。軍師の修正完了報告を待つ。 現状: Sonnet忍者4名停止済み(dead)。メモリ空き9.2GB。GPT忍者2名(hayate/saizo)はidle。軍師がストリーミング書込みの実装中。 殿、報告が来たらお知らせする。 [met…
 - 2026-04-29T09:55:25+09:00 | ntfy | outbound | 【CLI再起動成功】kagemaru: pane_cmd=claude
@@ -12,8 +14,6 @@
 - 2026-04-29T09:55:25+09:00 | ntfy | outbound | 【CLI再起動成功】tobisaru: pane_cmd=claude
 - 2026-04-29T09:55:04+09:00 | terminal | response | はっ。軍師の修正完了報告を待つ。 現状: Sonnet忍者4名停止済み(dead)。メモリ空き9.2GB。GPT忍者2名(hayate/saizo)はidle。軍師がストリーミング書込みの実装中。 殿、報告が来たらお知らせする。 [met…
 - 2026-04-29T09:54:50+09:00 | terminal | inbound | 軍師の報告を待つ
-- 2026-04-29T09:54:22+09:00 | terminal | response | Sonnet忍者4名のCLI停止完了。 **メモリ回復: 7.6GB使用 → 5.8GB使用(1.8GB解放)。空き9.2GB。** | 残存プロセス | RSS | |------------|-----| | Opus #1(家老) …
-- 2026-04-29T09:53:12+09:00 | terminal | inbound | まずsonnet忍者を一回止めるか
 
 ## 未解決確認事項
 - 殿、現在のメモリ状況: | 項目 | 値 | |------|-----| | 全体 | **16GB** | | 使用中 | **7.9GB** | | 空き | **7.3GB**(available 7.8GB) | | **Swap** | **4GB中4GB使用(空き…
