@@ -920,31 +920,12 @@ check_and_update_done_task() {
                     fi
                 else
                     # completed_at自動記録（cmd_387: 既存なら上書きしない）
-                    TASK_FILE_ENV="$task_file" COMPLETED_AT_ENV="$completed_ts" python3 -c "
-import yaml, sys, os, tempfile
-task_file = os.environ['TASK_FILE_ENV']
-completed_at = os.environ['COMPLETED_AT_ENV']
-try:
-    with open(task_file) as f:
-        data = yaml.safe_load(f)
-    if not data or 'task' not in data:
-        sys.exit(0)
-    task = data['task']
-    if task.get('completed_at'):
-        sys.exit(0)
-    task['completed_at'] = completed_at
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, task_file)
-    except:
-        os.unlink(tmp_path)
-        raise
-except Exception as e:
-    print(f'[COMPLETED_AT] ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-" 2>/dev/null || true
+                    if [ -z "$(yaml_field_get "$task_file" "completed_at")" ]; then
+                        if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at "$completed_ts"; then
+                            log "ERROR: yaml_field_set failed for ${name} task completed_at update"
+                            exit 1
+                        fi
+                    fi
                 fi
             ) 200>"$lock_file"
             # subshell+fd redirection の戻り値
