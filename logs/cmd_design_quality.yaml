@@ -22066,3 +22066,23 @@ entries:
     source: "cmd_complete_gate"
     timestamp: "2026-04-29T06:43:52Z"
     notes: "draft_lessons:1"
+  - cmd_id: "cmd_2403"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-29T06:44:29Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2404"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-04-29T06:44:37Z"
+    notes: "draft_lessons:1"
