@@ -1190,6 +1190,17 @@ generate_report_template() {
             if [[ "$stale_basename" == "${ninja_name}_report_"* ]]; then
                 continue
             fi
+            local _other_ninja="${stale_basename%%_report_*}"
+            local _other_task_file="$SCRIPT_DIR/queue/tasks/${_other_ninja}.yaml"
+            if [ -f "$_other_task_file" ]; then
+                local _other_task_parent _other_task_status
+                _other_task_parent=$(field_get "$_other_task_file" "parent_cmd" "" 2>/dev/null || true)
+                _other_task_status=$(field_get "$_other_task_file" "status" "" 2>/dev/null || true)
+                if [[ "$_other_task_parent" == "$_p_parent_cmd" ]] && [[ "$_other_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+                    log "report_template: PROTECTED active other ninja report (${stale_basename}, status=${_other_task_status})"
+                    continue
+                fi
+            fi
             # GP-105: 他忍者の報告: verdict判定でstale検出(STALL再配備対応)
             # 旧: 無条件保護 → STALL時にテンプレートが残留 → gate BLOCK → 家老手動移動(WA)
             # 新: verdict空=テンプレート(stale)→アーカイブ、verdict有=完了報告→保護
@@ -1505,6 +1516,10 @@ EOF
         # cmd_1983: field_get_multiで一括取得済み → 変数参照
         local _tp_raw="${target_path}"
         local _scout_exempt="${scout_exempt}"
+        # karo_direct cmd is absent from shogun_to_karo.yaml; preserve task-local scout_exempt.
+        if [ -z "$_scout_exempt" ]; then
+            _scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null || true)
+        fi
         # GP-190改: task fileはstale resetで消えるためSTKも確認。task fileが残っている場合(テスト等)は優先
         if [ "$_scout_exempt" != "true" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ] && [ -n "$_p_parent_cmd" ]; then
             _scout_exempt=$(awk -v cmd="$_p_parent_cmd" '
@@ -3834,6 +3849,14 @@ check_scout_gate() {
             log "scout_gate: PASS: scout_exempt=true for ${parent_cmd}"
             return 0
         fi
+    fi
+
+    # 3.1 karo_direct cmd is not present in shogun_to_karo.yaml; trust task-local exemption.
+    local task_scout_exempt
+    task_scout_exempt=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "scout_exempt" "" 2>/dev/null || true)
+    if [ "$task_scout_exempt" = "true" ]; then
+        log "scout_gate: PASS: scout_exempt=true in task YAML for ${parent_cmd}"
+        return 0
     fi
 
     # 3.5 研究cmd自動scout_exempt: q4_depth=shallow → 本番コード変更なし (LK057)
