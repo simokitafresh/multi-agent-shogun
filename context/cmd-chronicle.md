@@ -925,3 +925,4 @@
 | cmd_2406 | 「1本ずつ昇格→委任→次」が意志依存のまま。cmd_save.shにdraft複数BLOCKはあるが、 Edit toolでのpending昇格時に既存pending cmdの存在チェックがない。 pre-write-edit-combined.shにshogun_to_karo.yaml status:pending書き込み時の 既存pending検出BLOCKを追加し、自動化×強制で1CMD1ゲートを保証する。 | infra | 04-29 | — |
 | cmd_2410 | GSL2残2忍法の第5弾。nukimi(抜き身)は2軸LB忍法(SingleViewMomentumFilter、base+skip)。 2軸忍法はパターン数が多い。kasoku_diff(2軸、1.15Mpat)実績で安全確認済み。 | dm-signal | 04-29 | run_077_nukimi.py (抜き身L2 GS) を |
 | cmd_2411 | GSL2最終弾。kasoku_ratio(加速R)は2軸LB忍法(MomentumAccelerationFilter method=ratio)。 kasoku_diff(同フィルタ method=diff)と同パターン数。全7忍法完了でL2チャンピオン選出に進める。 | dm-signal | 04-29 | run_077_kasoku_ratio.py GSL2実行 |
+| cmd_2412 | GSL2全7忍法GS完走(cmd_2402-2411)。L2 SQLite 7本からチャンピオンを選出する。 cmd_2366(L1チャンピオン選出)と同パターン。cmd_2366_l1_champion_select.pyをL2用に実行。 7忍法×3モード(激攻CAGR/常勝NHF/鉄壁MaxDD)。吸収判定後の体数がL2の確定体数になる。 | dm-signal | 04-29 | L2 SQLite 7本から7忍法×3モード=21チャンピオ |
