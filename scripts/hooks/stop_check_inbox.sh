@@ -140,7 +140,7 @@ else
     for _tf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
       [[ -f "$_tf" ]] || continue
       _ninja_name="$(basename "$_tf" .yaml)"
-      _task_status="$(awk '/^  status:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
+      _task_status="$(awk '/^[[:space:]]*status:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
       _task_pcmd="$(awk '/^  parent_cmd:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
       if [[ "$_task_status" == "done" ]]; then
         _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
@@ -175,7 +175,7 @@ else
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
-      _ninja_status="$(awk '/^  status:/{print $2; exit}' "$_ninja_task" 2>/dev/null || true)"
+      _ninja_status="$(awk '/^[[:space:]]*status:/{print $2; exit}' "$_ninja_task" 2>/dev/null || true)"
       if [[ "$_ninja_status" == "done" || "$_ninja_status" == "completed" ]]; then
         _reason="Task ${_ninja_status}. Wait for next task assignment from karo. Do NOT start new work or generate code. Read queue/tasks/${agent_id}.yaml when new task arrives."
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'

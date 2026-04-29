@@ -287,7 +287,7 @@ echo "■ 忍者ペインCTX実態"
 # task status を先にキャッシュ。active忍者のみ capture-pane 対象にする
 declare -A _NINJA_STATUS_CACHE
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    _NINJA_STATUS_CACHE[$ninja]=$(awk '/^  status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
+    _NINJA_STATUS_CACHE[$ninja]=$(awk '/^[[:space:]]*status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
 done
 
 # capture-pane を並列実行（R2）
@@ -484,7 +484,7 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
     ninja_status=${_NINJA_STATUS_CACHE[$ninja]:-""}
     if [ -z "$ninja_status" ]; then
         task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
-        [ -f "$task_file" ] && ninja_status=$(awk '/^  status:/{print $2; exit}' "$task_file" 2>/dev/null)
+        [ -f "$task_file" ] && ninja_status=$(awk '/^[[:space:]]*status:/{print $2; exit}' "$task_file" 2>/dev/null)
     fi
     if [[ "$ninja_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
         active_ninjas=$((active_ninjas + 1))
