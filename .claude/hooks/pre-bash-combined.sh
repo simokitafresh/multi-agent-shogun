@@ -30,11 +30,11 @@ emit_deny() {
 }
 
 # === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
-if [[ "$payload" == *'filter-repo'* ]]; then
-    if [[ -n "$command" && "$command" == *'filter-repo'* && "$command" != *'echo'* && "$command" != *'grep'* && "$command" != *'commit'* ]]; then
-        emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
-        exit 1
-    fi
+# コマンド呼出し位置(行頭 or ;|&&||| の後)のみマッチ。引数内の文字列は無視。
+# 旧: payload全文+command全文マッチ→report_field_set.sh引数で誤発火(cmd_2397事故)
+if [[ -n "$command" ]] && echo "$command" | grep -qE '(^|[;&|])\s*(git\s+filter-repo|git-filter-repo)'; then
+    emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
+    exit 1
 fi
 
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===

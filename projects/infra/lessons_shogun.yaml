@@ -78,7 +78,7 @@ lessons:
     (24)初回起票でもdiagnosisは2部構成で書け(BLOCK理由: 初回起票のため前回BLOCK情報なし/対策: 2部構成形式で記載)
     (25)environment_changeのpatternは既存gate/hook/lessonを参照。cmd成果物(未存在ファイル)の指定禁止
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS024, LS026, LS027, LS028, LS030, LS031, LS032, LS033, LS036]
-  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394]
+  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac+q8_scope_expression+other_draft_exists+テストACスコープWARN+推奨混在BLOCK+q5_code_reading_only BLOCK+ac_phase_mixing BLOCK'
@@ -299,3 +299,24 @@ lessons:
 # === LS023-LS035統合完了 (2026-04-29) ===
 # 13件→LS-A04(18-25追記,9件)＋LS-A22(3-7追記,4件)に吸収完了
 # source_cmds: cmd_2339-cmd_2369
+- id: 'LS023'
+  title: '小数実験で見込み時間推定 — 大規模実行前に小数サンプルで計測し総時間を推定してから実行判断'
+  detail: 'cmd_2395でGSL2 kasoku_diff(1.15Mpat)を見込み時間不明のまま実行。結果56分超で殿の時間を奪った。正しい手順: (1)小数(100-1000pat)で実行→1patあたり秒数計測 (2)総パターン数に掛けて見込み時間算出 (3)殿に報告→実行判断。殿ルール「わからないときは小数で実験して推定する」。これはcmd起票時のq9(伏兵)に含めるべき。'
+  source_cmd: 'cmd_2395'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh q9_伏兵に見込み時間推定手順を追加(小数実験→外挿)。未記入→WARN'
+- id: 'LS024'
+  title: 'diagnosis形式+研究道具パスWARN累計昇格 — 初回起票でも2部構成必須+ACにrun_077フルパス'
+  detail: 'cmd_2397で2件BLOCK。(1)diagnosis形式不正(2部構成未記載)→初回起票でも「BLOCK理由:初回 対策:2部構成で記載」と書け。(2)研究cmd道具未記載WARN累計昇格(31回)→commandにgrid_searchパスを含む場合ACにrun_077フルパスを必ず記載。LS-A04(24)+LS-A22(3)の複合。'
+  source_cmd: 'cmd_2397'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh diagnosis形式チェック(既存)+check_research_tool_explicit(既存WARN累計BLOCK)'
+- id: 'LS025'
+  title: 'command_steps_over_ac累計昇格 — 番号ステップ→ターゲット単位記述'
+  detail: 'command欄に番号付きステップ(1. 2.)を使用→command_steps_over_ac WARN→累計9回で昇格BLOCK。LS-A04(12)の既知パターン再発。command欄はターゲットファイル単位でグループ化し番号ステップを避けよ。'
+  source_cmd: 'cmd_2401'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh check_command_steps_vs_ac(既存WARN。累計昇格でBLOCK化)'
