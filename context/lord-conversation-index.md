@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T09:18:26+09:00 -->
+<!-- generated_at: 2026-04-29T09:32:48+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T09:32:48+09:00 | terminal | response | §6-7にL675を追記。 [meta] stop_reason=tool_use
+- 2026-04-29T09:31:00+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-209)
+- 2026-04-29T09:30:59+09:00 | ntfy | outbound | CI赤: run 25084488155 Unit Tests (bats)
+- 2026-04-29T09:21:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 09:10:55|CI緑: run 25083789041 2026-04-29 09:17:47|cmd_2394
+- 2026-04-29T09:18:59+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓11件 → /lesson-sort推奨
+- 2026-04-29T09:18:56+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-208)
 - 2026-04-29T09:18:26+09:00 | terminal | response | **cmd_2394(GSL2用universe YAML) GATE CLEAR。** cmd_2395(kasoku_diff先行)の配備条件が揃った。家老がdepends_on=cmd_2394を確認して配備するはず。 陣形図ではs…
 - 2026-04-29T09:17:46+09:00 | ntfy | outbound | 【家老】cmd_2395 初回配備開始 (title=GSL2 GS先行 — kasoku_diff(最重量忍法、RSS監視), ninja=saizo) GSL2 GS先行 📋 https://gist.github.com/simok…
 - 2026-04-29T09:12:24+09:00 | terminal | response | **cmd_2394/2395 委任完了。** - **cmd_2394**: GSL2用universe YAML作成 → 即配備 - **cmd_2395**: kasoku_diff先行GS(RSS監視) → cmd_2394完了後…
 - 2026-04-29T09:10:38+09:00 | ntfy | outbound | 【家老】cmd_2394 初回配備開始 (title=整備 — GSL2用universe YAML作成(GSシン忍法21体+local_sqlite), ninja=saizo) 整備 📋 https://gist.github.com…
-- 2026-04-29T09:07:15+09:00 | terminal | inbound | ではやろう。軍師のアドバイスを守ろう。
-- 2026-04-29T09:06:22+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-29 08:54:29|cmd_2393
-- 2026-04-29T08:55:00+09:00 | terminal | response | 軍師回答を報告する。 **軍師の5点確認結果:** | # | 確認事項 | 結論 | |---|---------|------| | (1) universe YAML | **変更不要。** okugi_shin_ninpo_20.…
-- 2026-04-29T08:40:56+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
-- 2026-04-29T08:38:32+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
-- 2026-04-29T08:37:52+09:00 | terminal | inbound | 軍師にも確認せよ。前提知識も明確に伝えよ
 
 ## 未解決確認事項
 - **cmd_2394(GSL2用universe YAML) GATE CLEAR。** cmd_2395(kasoku_diff先行)の配備条件が揃った。家老がdepends_on=cmd_2394を確認して配備するはず。 陣形図ではsaizo=cmd_2394 done。次…

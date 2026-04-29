@@ -163,6 +163,8 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L359 | kasoku旧GS Top100でdiff=73件/ratio=27件。倍率制約は1位を消す | cmd_1025 |
 | L012 | GSのdrop_latest=Trueはexperiments.dbでは不要 | — |
 | L008 | GS構成四神[歴史的記述]と本番FoF構成PFの不一致 | — |
+| L667 | GS robustnessのlookback_index軸では連動メタデータ列(lookback_label等)を固定条件から外す | cmd_2357 |
+| L674 | gs_grid_robustnessのL1軸検証では従属ラベル列(lookback_label/base_label等)も可変扱いにせよ | cmd_2391 |
 
 ### パリティ検証
 

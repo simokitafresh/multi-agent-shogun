@@ -412,6 +412,9 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L639 | EqualWeight GSにpipeline import guardを混入させるな。本番pipeline lazy importは `blocks/__init__` 副作用を招く | cmd_2142 |
 | L631 | TRF insufficient_candidatesパス(len<2)でcurrent_tickers=set()するな。単独ティッカー通過不能バグ。dict.get→bisect修正と同根(cmd_1899) | cmd_1899 |
 | L635 | Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える必要あり | cmd_2021 |
+| L669 | GS monthly_returnはopen-to-open系列。本番monthly_return(close)と混同するな | cmd_2376 |
+| L670 | Oikaze GS: production first_signal_monthまで初期EqualWeightを再現する | cmd_2379 |
+| L671 | Yotsume GS: production close cumulative_return+first_signal bootstrapを使う | cmd_2382 |
 
 ### 19.3 GS-本番パリティ
 

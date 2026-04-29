@@ -95,6 +95,7 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L636: nested FoFのMonthlyReturnは生成ログでなくDB実データ確認必須（cmd_2025）
 - L357: 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全（cmd_1025）
 - L261: precomputeテーブル欠落はhealth endpointでdegradedに昇格させる（cmd_828）
+- L675: recalculate-sync POST後のstatus待機は初回idleを完了扱いにする。running=false即返しの場合あり（cmd_2392）
 
 ## §9 性能ベースライン
 
@@ -296,6 +297,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L614 | 既存スクリプトの関数を再実装するな(車輪再発明)。新スクリプト作成前に既存コードの再利用可能性を確認 | 運用 | cmd_1865 |
 | L616 | cmdの完了記録≠成果物の所在記録。多段パイプラインの進行表に物理的所在(パス/DB名/UUID)を必須記録 | 運用 | cmd_1876 |
 | L617 | gate_artifact_map.shで進行表の成果物所在チェック。完了ブロック空欄→WARN | ツール | cmd_1876 |
+| L668 | shin universe GS runnerはALM固定DB参照をpreflightで検出する | ツール | cmd_2360 |
+| L672 | cmd_2366 selector再実行時はchampion_list自動追記(append guard)を制御せよ | ツール | cmd_2386 |
+| L676 | 大容量SQLite(8GB級)移動後検証はintegrity_check前にquick_checkを使う | ツール | cmd_2393 |
 
 ## §18 研究道具APIカタログ（cmd_1823追記）
 
