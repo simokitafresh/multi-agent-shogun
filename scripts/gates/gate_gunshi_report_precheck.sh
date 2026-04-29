@@ -365,6 +365,29 @@ else
     echo "  SKIP: cmd仕様取得不可"
 fi
 
+# ─── SG-PRE18: adversarial blast_radius判定 (GP-236) ───
+echo ""
+echo "■ SG-PRE18: adversarial blast_radius判定(GP-236)"
+INFRA_DETECTED=0
+INFRA_FILES=""
+if [ -n "${FILES_MODIFIED:-}" ]; then
+    while IFS= read -r fpath; do
+        case "$fpath" in
+            *scripts/hooks/*|*scripts/gates/*|*CLAUDE.md|*instructions/*|*.claude/settings*|*config/settings.yaml)
+                INFRA_FILES="${INFRA_FILES:+$INFRA_FILES, }$fpath"
+                INFRA_DETECTED=1
+                ;;
+        esac
+    done <<< "$FILES_MODIFIED"
+fi
+if [ "$INFRA_DETECTED" -eq 1 ]; then
+    echo "  ★★★ WARN: infra対象ファイル検出: ${INFRA_FILES}"
+    echo "  → adversarial_review必須。blast_radius大(hook/gate/CLAUDE.md/instructions/settings)"
+    echo "  → Red-Team第2パス: 破壊シナリオ・rollback不能性・監視穴を確認せよ"
+else
+    echo "  PASS: infra対象ファイルなし"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
