@@ -128,3 +128,21 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK(scout_gate)"* ]]
 }
+
+@test "scout_gate PASSes karo_direct impl task with task-local scout_exempt" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_id: cmd_karo_direct_sasuke_impl
+  parent_cmd: cmd_karo_direct_missing_from_stk
+  status: assigned
+  task_type: impl
+  scout_exempt: true
+  acceptance_criteria:
+    - id: AC1
+      description: "test"
+EOF
+
+    run_scout_gate "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scout_gate: PASS: scout_exempt=true in task YAML for cmd_karo_direct_missing_from_stk"* ]]
+}
