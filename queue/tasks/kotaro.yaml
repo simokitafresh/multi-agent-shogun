@@ -1,59 +1,85 @@
 task:
-  task_id: cmd_karo_ci_fix_teardown
-  parent_cmd: cmd_karo_ci_fix_teardown
+  _ac_task_id: cmd_2410_normal
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2410
   assigned_to: kotaro
-  project: infra
-  status: idle
-  task_type: normal
-  command: "tests/unit/test_pre_edit_pi_inject.batsのteardown関数(L64付近)でrm -rfがDirectory not emptyでFAILする。rm -rf $dir || trueに修正してflaky teardownを解消せよ。bats tests/unit/test_pre_edit_pi_inject.bats で全PASSを確���。commit必須。"
-  acceptance_criteria:
-  - id: AC1
-    checks:
-    - check: "teardown内のrm -rfに|| trueが追加��れている"
-  - id: AC2
-    checks:
-    - check: "bats tests/unit/test_pre_edit_pi_inject.bats 全PASS(0 failures)"
   context_files:
-  - tests/unit/test_pre_edit_pi_inject.bats
-  related_lessons:
-  - id: 'L512'
-    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-
-  session_state:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L493: gate_yaml_status.shのawk(-v cmd_id)は'-\
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_2410
+  project: dm-signal
+  status: done
+  stop_for: []
+  task_id: cmd_2410_normal
+  task_type: normal
+  previous_failures:
     attempt: 1
-    last_block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
+    last_block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
     tried_approaches:
-    - 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
+    - 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
     approach_summary: 'teardown内のrm -rfに|| trueを追加。bats 11/11 PASS。commit: 8d0de5e6。'
     prior_attempts:
     - attempt: 1
-      block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
+      block_reason: 'ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is no…'
       approach_summary: 'teardown内のrm -rfに|| trueを追加。bats 11/11 PASS。commit: 8d0de5e6。'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'GS_MP_WORKERS=1 GS_FAST_WRITE=1 python3 scripts/analysis/grid_search/run_077_nukimi.py --universe config/portfolio_universes/gsl2_shin_ninpo_21.yaml --output-dir outputs/grid_search/20260429/L2/shin/ で実行完了。出力DBファイル存在+サイズ報告。run_077修正版+l1_alm_wf_engine相当'
+  - id: 'AC2'
+    checks:
+    - check: 'elapsed_sec/peak_rss_mbを報告'
+  ac_version: 2edf2958
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_2410.yaml
+  report_path: 
+  bloom_level: 
+  related_lessons:
+  - id: 'L636'
+    summary: 'Render fullrecalculateでは nested FoF に対して `MonthlyReturn generated` ログが出てもDB'
+    detail: 'Render fullrecalculateでは nested FoF に対して `MonthlyReturn generated` ログが出てもDB'
+  - id: 'L635'
+    summary: 'recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred'
+    detail: 'recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred'
+  - id: 'L634'
+    summary: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
+    detail: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
+  - id: 'L633'
+    summary: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
+    detail: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
+  - id: 'L632'
+    summary: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
+    detail: 'snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに'
+  - id: 'L626'
+    summary: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+    detail: '同一subset chunkに対して open gather をscore key間で共有し、NaNなし行をベクトル化metricsで一括処理すると、12体119,493行のkasoku_diff'
+  - id: 'L625'
+    summary: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+    detail: 'GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること。cmd_1877で旧ファイル混在が発生した。'
+  - id: 'L624'
+    summary: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+    detail: 'GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォルト依存を排除すること。cmd_1877で不統一が発生した。'
+  - id: 'L623'
+    summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+    detail: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuniverse_idで判定すれば旧universe出力を正しく無効化できる。cmd_1877でbunshin基準判定により13本が不要再実行された。'
+  - id: 'L622'
+    summary: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
+    detail: '''filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須。cmd_1881でGS出力CSV'
