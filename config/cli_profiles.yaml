@@ -76,3 +76,5 @@ profiles:
     # /new後に自動送信するコマンド（cmd_583: /fastモード有効化）
     # ninja_monitor.shが/new送信後にidle検知→このコマンドを送信
     post_clear_cmd: "/fast"
+    # 静的追加起動引数 (launch_cmdに追加。model_reasoning_effortはmodel_nameから自動生成)
+    launch_args: ""

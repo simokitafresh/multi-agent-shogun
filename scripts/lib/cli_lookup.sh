@@ -123,7 +123,7 @@ _cli_lookup_settings_get() {
         fi
 
         if [[ "$line" == "      ${field}: "* ]]; then
-            _cli_lookup_normalize_scalar "${line#*${field}: }"
+            _cli_lookup_normalize_scalar "${line#*"${field}": }"
             result="$REPLY"
             break
         elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
@@ -199,7 +199,7 @@ _cli_lookup_profile_get() {
         fi
 
         if [[ "$line" == "    ${key}: "* ]]; then
-            _cli_lookup_normalize_scalar "${line#*${key}: }"
+            _cli_lookup_normalize_scalar "${line#*"${key}": }"
             result="$REPLY"
             printf '%s\n' "$result"
             return 0
@@ -305,6 +305,36 @@ cli_model_display() {
 
 # cli_launch_cmd <agent_name>
 # 起動コマンド文字列を返す
+# codex型エージェントかつmodel_nameがgpt-X.X-{effort}形式なら
+# -c model_reasoning_effort={effort} を自動追加する
 cli_launch_cmd() {
-    cli_profile_get "$1" "launch_cmd"
+    local agent="$1"
+    local base_cmd
+    base_cmd=$(cli_profile_get "$agent" "launch_cmd")
+
+    # model_nameからeffortを自動抽出 (gpt-X.X-{effort} パターン)
+    local model_name
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
+    local extra_args=""
+    if [[ "$model_name" == gpt-* ]]; then
+        local effort="${model_name##*-}"
+        case "$effort" in
+            medium|low|high)
+                extra_args="-c model_reasoning_effort=${effort}"
+                ;;
+        esac
+    fi
+
+    # cli_profiles.yaml の launch_args (静的追加引数) をマージ
+    local static_args
+    static_args=$(cli_profile_get "$agent" "launch_args")
+    if [[ -n "$static_args" && "$static_args" != '""' ]]; then
+        extra_args="${static_args}${extra_args:+ $extra_args}"
+    fi
+
+    if [[ -n "$extra_args" ]]; then
+        printf '%s %s\n' "$base_cmd" "$extra_args"
+    else
+        printf '%s\n' "$base_cmd"
+    fi
 }
