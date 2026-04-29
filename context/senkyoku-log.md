@@ -781,3 +781,4 @@
 - 2026-04-29 cmd_2389: 半蔵。cmd_save.sh ac_phase_mixing FP改善(AC単位文脈判定)。6テストPASS。GATE CLEAR
 - 2026-04-29 cmd_2391: 才蔵。Phase 9.1 L1グリッドロバストネス18体完了。高リスク10/18体。加速D鉄壁peak_ratio=11.2。L674登録。GATE CLEAR
 - 2026-04-29 cmd_2392: 才蔵。GSシン忍法21体hide登録+fullrecalculate+パリティ21/21 PASS(max 8.86e-7)。L675登録。GATE CLEAR
+- 2026-04-29 cmd_2393: 才蔵。GSL1 SQLite 7本§3.1正規化リネーム完了。L676/L677登録。GATE CLEAR

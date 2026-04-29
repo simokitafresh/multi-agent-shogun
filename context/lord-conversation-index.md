@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-04-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-04-29T08:40:56+09:00 -->
+<!-- generated_at: 2026-04-29T08:55:00+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-04-29T08:55:00+09:00 | terminal | response | 軍師回答を報告する。 **軍師の5点確認結果:** | # | 確認事項 | 結論 | |---|---------|------| | (1) universe YAML | **変更不要。** okugi_shin_ninpo_20.…
 - 2026-04-29T08:40:56+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
 - 2026-04-29T08:38:32+09:00 | terminal | response | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T08:37:52+09:00 | terminal | inbound | 軍師にも確認せよ。前提知識も明確に伝えよ
@@ -13,9 +14,9 @@
 - 2026-04-29T08:32:06+09:00 | terminal | response | **cmd_2393 委任完了。** GSL1正規命名リネーム。GSL2のcmdは殿の指示まで保留。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-04-29T08:30:25+09:00 | terminal | inbound | GSL1もルールに従いリネームするべきだ。
 - 2026-04-29T08:28:39+09:00 | terminal | response | 設計書にGSL2のネーミングルールが未定義。殿に提案する。 **現状の問題:** - L1: cmd番号がディレクトリ/ファイルに入っており、パリティ修正のたびにリネーム作業が発生した(cmd_karo_gs_sqlite_rename)…
-- 2026-04-29T08:28:01+09:00 | terminal | inbound | GSL1,GSL2,将来のGSLnは統一ルールが必要だ。いつ作成したか明確でなければいけないからルールを決めていたと思ったが？設計書を確認せよ
 
 ## 未解決確認事項
+- 軍師回答を報告する。 **軍師の5点確認結果:** | # | 確認事項 | 結論 | |---|---------|------| | (1) universe YAML | **変更不要。** okugi_shin_ninpo_20.yamlベースでsource_type:…
 - 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
 - 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=end_turn
 - 軍師にも確認せよ。前提知識も明確に伝えよ
@@ -23,7 +24,6 @@
 - GSL1,GSL2,将来のGSLnは統一ルールが必要だ。いつ作成したか明確でなければいけないからルールを決めていたと思ったが？設計書を確認せよ
 - 殿、失礼した。混乱していた。整理する。 **現行L2奥義-SSS:** - cmd_1877でCSV経由で作成（`okugi_shin_ninpo_20body/`にCSVがある） - SQLiteではない。SQLite化はPhase 6以降の新しい仕組み - 構成PF = 本…
 - bunshinは`n in [2, 3, 4]`。他の忍法も確認する。 [meta] stop_reason=tool_use
-- 現在の本番L2どうやって作ったか確認しよう
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-04-29T08:40:56+09:00 | 軍師に掲示板経由でGSL2設計確認を依頼した。前提知識(GSL1実績/パターン数/OOM対策/命名ルール/5つの確認ポイント)を全て明記。 軍師の回答を待つ。殿、他に指示あれば。 [meta] stop_reason=tool_use
@@ -37,6 +37,7 @@
 
 ## 参照cmd
 - cmd_235
+- cmd_1844
 - cmd_2223
 - cmd_2226
 - cmd_2359
@@ -65,7 +66,6 @@
 - cmd_2390
 - cmd_2391
 - cmd_2392
-- cmd_2393
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

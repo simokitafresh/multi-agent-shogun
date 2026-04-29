@@ -496,3 +496,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | P(det) | `pValueToColorLabel` | G2と同一ロジック |
 
 null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` で統一。
+
+## GSL1正規パス (cmd_2393, 2026-04-29)
+- `outputs/grid_search/20260429/L1/shin/gs_{ninjutsu}.db` (7本: bunshin/oikaze/kawarimi/yotsume/nukimi/kasoku_diff/kasoku_ratio)
+- §3.1命名ルール準拠。旧cmd番号付きディレクトリは削除済み
