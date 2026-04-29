@@ -172,14 +172,8 @@ check_inbox_watchers() {
 
         log "RESTART: inbox_watcher(${agent}) not found, restarting (pane=${pane_target}, cli=${cli_type})..."
 
-        if [[ "$agent" == "shogun" ]]; then
-            nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 \
-                bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$cli_type" \
-                &>> "$SCRIPT_DIR/logs/inbox_watcher_${agent}.log" &
-        else
-            nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$cli_type" \
-                &>> "$SCRIPT_DIR/logs/inbox_watcher_${agent}.log" &
-        fi
+        nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$cli_type" \
+            &>> "$SCRIPT_DIR/logs/inbox_watcher_${agent}.log" &
         disown
 
         record_restart "inbox_watcher_${agent}"

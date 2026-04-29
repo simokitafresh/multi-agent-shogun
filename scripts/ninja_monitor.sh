@@ -2282,14 +2282,8 @@ check_inbox_watcher_health() {
 
         local log_file="$SCRIPT_DIR/logs/inbox_watcher_${agent}.log"
 
-        if [ "$agent" = "shogun" ]; then
-            nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 \
-                bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
-                &>> "$log_file" &
-        else
-            nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
-                &>> "$log_file" &
-        fi
+        nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
+            &>> "$log_file" &
         disown
         log "inbox_watcher for ${agent} restarted (PID $!, pane=${pane_target})"
     done
