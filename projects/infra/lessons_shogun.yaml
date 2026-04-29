@@ -78,7 +78,7 @@ lessons:
     (24)初回起票でもdiagnosisは2部構成で書け(BLOCK理由: 初回起票のため前回BLOCK情報なし/対策: 2部構成形式で記載)
     (25)environment_changeのpatternは既存gate/hook/lessonを参照。cmd成果物(未存在ファイル)の指定禁止
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS024, LS026, LS027, LS028, LS030, LS031, LS032, LS033, LS036]
-  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386]
+  source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac+q8_scope_expression+other_draft_exists+テストACスコープWARN+推奨混在BLOCK+q5_code_reading_only BLOCK+ac_phase_mixing BLOCK'
@@ -290,8 +290,9 @@ lessons:
     (5)q8 multiline(|)で_Q8_WW_VAL抽出失敗。単行化必須
     (6)教訓上限デッドロック: Edit全BLOCK。修正済み: Guard 6にid数比較追加(削除方向許可)。上限到達時は古いLS同士を統合(削除)でid数を減らせ
     (7)AC内§番号(§5.2等)がcheck_gunshi_reference_numeric_relaxationに数値として誤検出。§はcommand欄に移動せよ。other_draft_existsとの複合BLOCKあり(cmd_2351)
+    (8)AC_TEXTがdescription:行のみgrep→AC1:"..."形式はP1-P5検出不能。ACをdescription:形式で書けば通る。根本修正: AC_TEXT抽出をacceptance_criteria配下全行に拡張(cmd_2392で発見)
   source_ids: [LS027, LS031, LS025, LS029, LS034, LS035]
-  source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385]
+  source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'cmd_save.sh check_research_tool_explicit(L2684修正)+check_parity_ac_requirements(L2845修正)+is_gate_or_hook_addition_cmd(SCOUT除外L120)+check_gunshi_design_num_relax(カタログ除外)+pre-write-edit-combined.sh Guard 6(id数比較)'
