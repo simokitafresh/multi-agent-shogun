@@ -930,3 +930,4 @@
 | cmd_2414 | robustness-verification-catalog §0アルファ空間原則: ロバストネスの第一指標=パラメータ空間全体のCAGR正率。 cmd_2413はpeak_ratio(隣接±1比)のみ。全パターンのα-CAGR正率を未計算。 L2 SQLite 7本の全パターンについてβ調整α-CAGRを計算し、正率を忍法×モード別に報告する。 殿指摘: 「いつもは全探索でやっていなかったか？」 | dm-signal | 04-29 | L2 SQLite 7本の全パターンについてβ調整alpha |
 | cmd_2415 | 設計書§5.3の進捗表がPhase 10=★次★のまま。実態: Phase 10-12全完了+SHM修正。 進捗表を実態に合わせて更新し、次Phase(13: 本番DB登録+パリティ確認)を追記する。 | dm-signal | 04-29 | docs/design/gs-data-normalizat |
 | cmd_2417 | inbox_watcherがWSL2 NTFSのinotify検知後の処理でhangし、nudgeが送信されなくなる。 kagemaru watcher=16:03停止、hayate watcher=17:04停止(家老訂正報告 22:43)。 STALL 3連続の真因。hang検知+自動再起動を追加する。 | infra | 04-29 | inbox_watcher hang検知heartbeat+ |
+| cmd_2418 | 軍師LG014(道具を疑え)がLevel 2(ドキュメント=意志依存)のまま。 gate_ninja_workaround_rate.shにcategory集計を追加し、同一category 3件以上→WARN。 軍師レビュー前に自動表示されるため意志依存がゼロになる。 本セッションのrfs binary_checks保護バグ(cmd_2397)はこのgateがあれば事前検出できた。 | infra | 04-29 | gate_ninja_workaround_rate.sh |
