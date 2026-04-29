@@ -237,8 +237,8 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
         case "$fpath" in
             *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
                 # git diff --statで変更規模を確認
-                added=$(git log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{a+=$1}END{print a+0}')
-                deleted=$(git log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{d+=$2}END{print d+0}')
+                added=$(git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{a+=$1}END{print a+0}')
+                deleted=$(git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{d+=$2}END{print d+0}')
                 if [ "$deleted" -gt 0 ]; then
                     total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数
                     delete_ratio=$((deleted * 100 / total_before))
