@@ -1,8 +1,76 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-04-29T11:39:35'
+last_synced: '2026-04-29T18:08:11'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 676
+lesson_count: 683
 lessons:
+- id: L686
+  title: robustness実行前にSQLite月次保存形式を確認する
+  summary: L2 SQLiteはmonthlyテーブルではなくmonthly_blob/monthly_meta形式だったため、既存gs_grid_robustness.p
+  tags:
+  - dm-signal
+  - db
+  - grid_search
+  target_files:
+  - gs_grid_robustness.py
+- id: L685
+  title: 別layerへ既存selectorを流用する前に固定パスと突合分岐を確認する
+  summary: cmd_2412ではcmd_2366_l1_champion_select.pyをL2用に実行する指示だったが、実体はL1 DB名と本番シン忍法突合に固定されて
+  tags:
+  - dm-signal
+  - db
+  - deploy
+  - grid_search
+  target_files:
+  - scripts/analysis/grid_search/cmd_2366_l1_champion_select.py
+  - outputs/analysis/cmd_2412_l2_champion_report.md
+  - outputs/analysis/cmd_2412_l2_champions.yaml
+- id: L684
+  title: run_077スクリプトは--out-dirのみ定義で--output-dirエイリアスが欠落しているケースがある
+  summary: run_077_kasoku_ratio.pyはparse_known_args使用のため--output-dirは無視される。kasoku_diff/yots
+  tags:
+  - dm-signal
+  - grid_search
+  target_files:
+  - scripts/analysis/grid_search/run_077_kasoku_ratio.py
+- id: L683
+  title: ACのCLI引数名はスクリプトのargparse定義と突合して記載せよ
+  summary: AC1に--output-dirと記載されているが、run_077_nukimi.pyの実際の引数名は--out-dir。parse_known_args()使
+  tags:
+  - dm-signal
+  - grid_search
+  target_files:
+  - 実行のみ(出力DB=outputs/grid_search/20260429/L2/shin/cmd_2383_nukimi_grid_results_fast.db
+- id: L682
+  title: run_077実行前にAC記載CLI引数と実装引数の一致を確認する
+  summary: cmd_2408のACは--output-dirを指定したが、run_077_kawarimi.pyは--out-dirのみ定義しparse_known_arg
+  tags:
+  - dm-signal
+  - grid_search
+  target_files:
+  - /mnt/c/Python_app/DM-signal/outputs/grid_search/20260429/L2/shin/1795_kawarimi_grid_results_fast.db
+  - /mnt/c/Python_app/DM-signal/outputs/grid_search/20260429/L2/shin/1795_kawarimi_grid_results_fast.meta.yaml
+  - /mnt/c/Python_app/DM-signal/outputs/grid_search/20260429/L2/shin/DATA_CATALOG.md
+  - /mnt/c/tools/multi-agent-shogun/queue/tasks/saizo.yaml
+  - /mnt/c/tools/multi-agent-shogun/queue/reports/saizo_report_cmd_2408.yaml
+- id: L681
+  title: GS実行ACは実CLI引数名を事前照合する
+  summary: cmd_2407でACは--output-dir指定だったがrun_077_oikaze.pyの実引数は--out-dirで、parse_known_argsに
+  tags:
+  - dm-signal
+  - testing
+  - grid_search
+  target_files:
+  - /mnt/c/Python_app/DM-signal/outputs/grid_search/20260429/L2/shin/1795_oikaze_grid_results_fast.db
+  - /mnt/c/Python_app/DM-signal/outputs/grid_search/20260429/L2/shin/1795_oikaze_grid_results_fast.meta.yaml
+- id: L680
+  title: GS runner実行前にAC記載CLI引数が実装でparseされるか確認せよ
+  summary: cmd_2405のACは--output-dir指定だったが、run_077_bunshin.pyは--out-dirのみ定義しparse_known_args
+  tags:
+  - dm-signal
+  - grid_search
+  target_files:
+  - outputs/grid_search/20260429/L2/shin/metrics_bunshin_results_fast.db
+  - outputs/grid_search/20260429/L2/shin/metrics_bunshin_results_fast.meta.yaml
 - id: L679
   title: ベンチマーク計測は合成データで書込み時間を分離せよ
   summary: run_077はDB接続と全計算時間が混在するためSQLite書込み性能の計測に不向き。合成データ生成とwrite関数直接呼出しでWRITE時間を分離計測すれば
@@ -79,7 +147,7 @@ lessons:
   - testing
   - grid_search
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 4
   last_referenced: '2026-04-29'
   target_files:
   - outputs/robustness/
@@ -138,8 +206,8 @@ lessons:
   - dm-signal
   - db
   - deploy
-  helpful_count: 5
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
   - /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/run_077_oikaze.py
@@ -154,8 +222,8 @@ lessons:
   - db
   - deploy
   - grid_search
-  helpful_count: 8
-  harmful_count: 3
+  helpful_count: 1
+  harmful_count: 2
   last_referenced: '2026-04-29'
   target_files:
   - /mnt/c/Python_app/DM-signal
@@ -171,8 +239,11 @@ lessons:
   - db
   - pipeline
   - grid_search
-  helpful_count: 19
-  harmful_count: 5
+  deprecated: true
+  deprecated_at: '2026-04-29T22:26:45+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=5'
+  helpful_count: 1
+  harmful_count: 6
   last_referenced: '2026-04-29'
   target_files:
   - scripts/analysis/grid_search/run_077_oikaze.py
@@ -184,9 +255,9 @@ lessons:
   tags:
   - dm-signal
   - grid_search
-  helpful_count: 5
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
   target_files:
   - scripts/analysis/gs_grid_robustness.py
   - outputs/robustness/20260428/L0/
@@ -198,9 +269,6 @@ lessons:
   - api
   - testing
   - review
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - scripts/analysis/grid_search/gs_sqlite_output.py
   - tests/unit/test_gs_sqlite_output.py
@@ -212,8 +280,11 @@ lessons:
   - db
   - review
   - grid_search
-  helpful_count: 11
-  harmful_count: 5
+  deprecated: true
+  deprecated_at: '2026-04-29T18:08:23+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=7 > helpful=5'
+  helpful_count: 1
+  harmful_count: 6
   last_referenced: '2026-04-29'
   target_files:
   - scripts/analysis/grid_search/gs_sqlite_output.py
@@ -224,8 +295,11 @@ lessons:
   tags:
   - dm-signal
   - grid_search
-  helpful_count: 19
-  harmful_count: 6
+  deprecated: true
+  deprecated_at: '2026-04-29T18:08:24+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE: harmful=9 > helpful=5'
+  helpful_count: 1
+  harmful_count: 8
   last_referenced: '2026-04-29'
   target_files:
   - queue/tasks/saizo.yaml
@@ -238,6 +312,9 @@ lessons:
   - testing
   - yaml
   - wsl2
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
 - id: L662
   title: シン四神12体突合は完全一致と丸め許容を分離して報告せよ
   summary: cmd_2330で12体monthly_return突合を実施したところ、11体は全167か月が1e-6以内だが完全一致ではFAIL、シン青龍-鉄壁のみ56か月
@@ -255,7 +332,7 @@ lessons:
   - dm-signal
   - db
   - grid_search
-  helpful_count: 7
+  helpful_count: 1
   harmful_count: 2
   last_referenced: '2026-04-29'
   target_files:
@@ -271,8 +348,8 @@ lessons:
   - dm-signal
   - db
   - grid_search
-  helpful_count: 5
-  harmful_count: 3
+  helpful_count: 0
+  harmful_count: 2
   last_referenced: '2026-04-29'
   target_files:
   - outputs/grid_search/20260427/L0/shin/gs_kawarimi_DM2.db
@@ -288,7 +365,7 @@ lessons:
   - db
   - pipeline
   - tmux
-  helpful_count: 2
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -305,7 +382,7 @@ lessons:
   - communication
   - reporting
   - grid_search
-  helpful_count: 7
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -323,7 +400,7 @@ lessons:
   - communication
   - gate
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:49+09:00'
+  deprecated_at: '2026-04-29T18:25:02+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -378,9 +455,6 @@ lessons:
   - dm-signal
   - wsl2
   - tmux
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - cdp_measure.sh
 - id: L650
@@ -391,7 +465,7 @@ lessons:
   - frontend
   - process
   - security
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -524,7 +598,7 @@ lessons:
     rows
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -537,7 +611,7 @@ lessons:
   tags:
   - universal
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
   - docs/research/gunshi_phase4_improvement_plan_20260417.md
@@ -547,9 +621,9 @@ lessons:
   summary: add_cascade_delete.pyに存在しない'performance'テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 0
-  last_referenced: '2026-04-28'
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
   target_files:
   - docs/research/codd_phase4_schema_drift_analysis.md
 - id: L633
@@ -558,8 +632,8 @@ lessons:
     simulat
   tags:
   - universal
-  helpful_count: 3
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
   - scripts/analysis/grid_search/run_077_nukimi.py
@@ -837,7 +911,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:44:00+09:00'
+  deprecated_at: '2026-04-29T18:25:12+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - scripts/oneshot/cmd_1855_register_bunshin_gekko.py
@@ -847,7 +921,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:44:00+09:00'
+  deprecated_at: '2026-04-29T18:25:12+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_alm_returns.csv
@@ -861,7 +935,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:59+09:00'
+  deprecated_at: '2026-04-29T18:25:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -872,7 +946,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:59+09:00'
+  deprecated_at: '2026-04-29T18:25:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -884,7 +958,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:58+09:00'
+  deprecated_at: '2026-04-29T18:25:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -896,7 +970,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:58+09:00'
+  deprecated_at: '2026-04-29T18:25:10+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -908,7 +982,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:57+09:00'
+  deprecated_at: '2026-04-29T18:25:10+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -919,7 +993,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:57+09:00'
+  deprecated_at: '2026-04-29T18:25:10+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=28 referenced=0'
 - id: L599
   title: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致
@@ -1067,7 +1141,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:56+09:00'
+  deprecated_at: '2026-04-29T18:25:09+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=20 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -1077,7 +1151,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:56+09:00'
+  deprecated_at: '2026-04-29T18:25:09+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   retired: true
   target_files:
@@ -1092,7 +1166,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:56+09:00'
+  deprecated_at: '2026-04-29T18:25:09+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   target_files:
   - tasks/lessons.md
@@ -1106,7 +1180,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:55+09:00'
+  deprecated_at: '2026-04-29T18:25:08+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=30 referenced=0'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
@@ -1114,7 +1188,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:55+09:00'
+  deprecated_at: '2026-04-29T18:25:08+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   retired: true
   target_files:
@@ -1125,7 +1199,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:54+09:00'
+  deprecated_at: '2026-04-29T18:25:08+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1135,7 +1209,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:51+09:00'
+  deprecated_at: '2026-04-29T18:25:07+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1145,7 +1219,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:50+09:00'
+  deprecated_at: '2026-04-29T18:25:07+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1155,7 +1229,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:50+09:00'
+  deprecated_at: '2026-04-29T18:25:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1165,7 +1239,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:49+09:00'
+  deprecated_at: '2026-04-29T18:25:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1176,7 +1250,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:48+09:00'
+  deprecated_at: '2026-04-29T18:25:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
@@ -1292,7 +1366,7 @@ lessons:
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 4
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -1608,7 +1682,7 @@ lessons:
   summary: K=2-5のβ分離分析でα share(%)が単調減少(6.5%→4.2%→1.3%→1.0%)。分散(K増)はβリスクを希釈するが、同時にmomentum選出
   tags:
   - recon
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -1796,9 +1870,9 @@ lessons:
   summary: recalculate_fof.pyのLOOP-1(L590-L868)はPhase4A最適化済みだがSignal DB書込みは毎日実行。月中のmomentum
   tags:
   - db
-  helpful_count: 5
-  harmful_count: 1
-  last_referenced: '2026-04-28'
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
   target_files:
   - queue/reports/kotaro_report_cmd_1447.yaml
 - id: L501
@@ -1894,7 +1968,7 @@ lessons:
   - deploy
   - pipeline
   - testing
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -2521,7 +2595,7 @@ lessons:
   - testing
   - process
   - production_invariant
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -2543,9 +2617,6 @@ lessons:
   - pipeline
   - testing
   - production_invariant
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
@@ -2605,7 +2676,7 @@ lessons:
   summary: 今回は事故契機の一括チェックだが、pipeline_config欠落のような設定不備は保存時に混入しうる。月次or四半期で自動実行し、早期検出するのが望ましい。
   tags:
   - pipeline
-  helpful_count: 4
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
@@ -2637,9 +2708,6 @@ lessons:
   summary: DM7+ 24M lookbackをRXLU固定でCPCV検定するとMax_Run-up PBOが1.0になりやすい。24M窓は変化が極めて緩慢でCPCVの短期
   tags:
   - universal
-  helpful_count: 4
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - outputs/analysis/cmd_1078_dm7p_rxlu_selected.csv
   - outputs/analysis/cmd_1078_screening_DM7P_RXLU.csv
@@ -2759,9 +2827,6 @@ lessons:
   summary: cmd_1037 kotaro AC7統合
   tags:
   - testing
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L400
   title: 多角度偵察の価値は個別発見の合算ではなく相互作用の可視化。6角度統合で乗算的相乗効果(T3×T1, T3×T5)と設計依存(T3→T5)が明確化された
   summary: cmd_1037 kotaro AC7統合
@@ -2807,9 +2872,6 @@ lessons:
   summary: grouped順+context cacheが効く小規模(150パターン)では、simulate_pattern逐次呼出しの方がsimulate_batch(毎
   tags:
   - pipeline
-  helpful_count: 3
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - outputs/analysis/cmd_1035_batch_verification.json
   - outputs/analysis/cmd_1035_parity_verification.json
@@ -2909,7 +2971,7 @@ lessons:
   summary: cmd_1034 angle1でprofiler内0.178ms/pat vs native 0.111ms/pat。内訳比率は方向性として有用だが絶対値は膨張
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
@@ -2980,9 +3042,6 @@ lessons:
   tags:
   - yaml
   - git
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-28'
   target_files:
   - outputs/analysis/cmd_1031_before_baseline.json
   - outputs/analysis/cmd_1032_grid_dedup_parity.json
@@ -3050,9 +3109,6 @@ lessons:
   tags:
   - frontend
   - wsl2
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L371
   title: 'GS月次解像度の重複パターン: 10D/15D/20D/1M同一問題'
   summary: '月次解像度GS: 10D/15D/20D/1Mは全てmonths=1に丸められ同一結果を生む。 momentum_cube/picksの計算は既にdedup済み'
@@ -3078,9 +3134,6 @@ lessons:
   summary: 月次解像度GSでは10D/15D/20D/1Mは全てmonths=1に丸められ同一結果。momentum_cube/picksはdedup済みだがsimulat
   tags:
   - frontend
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L366
   title: 'GS最適化: pattern内loopよりsubset context前計算を先に最適化すべし'
   summary: cmd_1030で全7忍法を監査した結果、wall-clock支配はsimulate_patternの小さなfor-loopよりget_*_contextのpr
@@ -3165,8 +3218,8 @@ lessons:
   summary: 本番DB確認はPostgreSQL必須。SQLiteミラー(backend/static/data/dm_signal.db)は不完全。加速FoFが本番3体/S
   tags:
   - db
-  helpful_count: 1
-  harmful_count: 1
+  helpful_count: 0
+  harmful_count: 3
   last_referenced: '2026-04-29'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
@@ -3205,7 +3258,7 @@ lessons:
   tags:
   - recon
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 4
   last_referenced: '2026-04-29'
   target_files:
   - outputs/analysis/shin_shijin_script_catalog.md
@@ -3223,8 +3276,8 @@ lessons:
   summary: CPCV設計でlive common periodとgroup_countの割り切りを先に検証せよ。割り切れない場合はcontiguous np.array_s
   tags:
   - testing
-  helpful_count: 2
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
   - outputs/analysis/cmd_1020_cpcv_engine_validation.md
@@ -3235,9 +3288,6 @@ lessons:
   summary: outputs/grid_search/*.csvは直下のみマッチし、shin_shijin_l1/等のサブディレクトリCSVには効かない。サブディレクトリ含む
   tags:
   - git
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - .gitignore
   - outputs/grid_search/DATA_CATALOG.md
@@ -3299,9 +3349,6 @@ lessons:
   summary: experiments.db monthly_returnsテーブルのsignals JSONカラムに格納されたティッカー構成からL1ファミリー分類が可能。TM
   tags:
   - db
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-04-28'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -3514,9 +3561,6 @@ lessons:
   - api
   - deploy
   - pipeline
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -3642,9 +3686,6 @@ lessons:
   tags:
   - data
   - preprocessing
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - docs/research/knowledge-base/methods/denoising-detoning.md
   - docs/research/knowledge-base/methods/probabilistic-sharpe-ratio.md
@@ -3767,8 +3808,8 @@ lessons:
   tags:
   - grid-search
   - statistics
-  helpful_count: 9
-  harmful_count: 3
+  helpful_count: 0
+  harmful_count: 4
   last_referenced: '2026-04-29'
   target_files:
   - docs/research/knowledge-base/index.md
@@ -3782,7 +3823,7 @@ lessons:
   tags:
   - architecture
   - statistics
-  helpful_count: 5
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
@@ -3820,9 +3861,6 @@ lessons:
     bre
   tags:
   - testing
-  helpful_count: 1
-  harmful_count: 1
-  last_referenced: '2026-04-28'
 - id: L289
   title: panel化時に91PFをIID時系列として扱うな。month/pf cluster前提でSE補正
   summary: 91PF pairwise相関mean 0.610。panel OOS評価やranking系統はmonth-cluster/PF-clusterを考慮。pool
@@ -3838,7 +3876,7 @@ lessons:
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-29'
 - id: L286
@@ -3849,9 +3887,6 @@ lessons:
   - pipeline
   - testing
   - gate
-  helpful_count: 3
-  harmful_count: 1
-  last_referenced: '2026-04-28'
 - id: L285
   title: P(det)と構造変化検定を同義扱いするな。break検出と悪化方向判定は分離
   summary: P(det)はrolling recent vs longの方向付き悪化確率(生成過程変化を探索しない)。構造変化検定はbreak dateを探索し生成過程の変
@@ -3901,7 +3936,7 @@ lessons:
   - api
   - frontend
   - monitor
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-29'
 - id: L277
@@ -3924,9 +3959,6 @@ lessons:
   tags:
   - deploy
   - gate
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L274
   title: CDP reload 計測の ready 条件は static selector 固定ではなく viewer 実DOM に合わせて見直せ
   summary: IF production viewer pages を CDP reload 計測する THEN `h1` 固定の待機条件に依存せず、認証壁・封鎖ページ・ペー
@@ -3967,9 +3999,6 @@ lessons:
   tags:
   - db
   - api
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L268
   title: managed DBではpool_pre_ping=True必須。workerごと独立キャッシュはヒット率低下する
   summary: Render PostgreSQLはメンテナンス/瞬断で接続断が起きる。pool_pre_ping=Trueで生存確認を追加すべき(~1msオーバーヘッド)。u
@@ -4070,9 +4099,6 @@ lessons:
   - api
   - frontend
   - tmux
-  helpful_count: 4
-  harmful_count: 1
-  last_referenced: '2026-04-28'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -4148,7 +4174,7 @@ lessons:
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
   tags:
   - api
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 1
   last_referenced: '2026-04-29'
 - id: L245
@@ -4300,9 +4326,6 @@ lessons:
   tags:
   - api
   - testing
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L223
   title: backend/.envは全体sourceせず必要変数だけgrep抽出すべし
   summary: DM-Signalのbackend/.envにはそのままsourceすると副作用を起こす行がある。ADMIN_USER/ADMIN_PASSのような必要キーだけ
@@ -4376,9 +4399,6 @@ lessons:
   - process
   - security
   - oauth
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L214
   title: CDP性能計測の前提確認では timing より先に『正常画面か』を検査すべき
   summary: '`localhost:3000` や static export 配信先で CDP 計測を始めても、実 DOM が 「只今、城の修繕中にございます」の障害画面な'
@@ -4755,9 +4775,6 @@ lessons:
   - testing
   - review
   - git
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - docs/future-01/001.md
 - id: L169
@@ -4765,9 +4782,6 @@ lessons:
   summary: IF A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する時 THEN A/B/C/Dを先に固定し、各行に仕様書
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 1
-  last_referenced: '2026-04-28'
   target_files:
   - docs/future-01/001.md
 - id: L168
@@ -4779,6 +4793,9 @@ lessons:
   - testing
   - recon
   - process
+  deprecated: true
+  deprecated_at: '2026-04-29T18:25:03+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L167
   title: WSLでWindows venv Pythonを使う分析タスクは、端末ログ文字化けに備えてCSV実体検証を必須にすると誤判定を防げる
   summary: IF 今回、python.exe実行ログでは日本語PF名が文字化けしたが、CSV実体のfund列は正常だった時 THEN 今回、python.exe実行ログでは
@@ -4846,6 +4863,9 @@ lessons:
   - bash
   - wsl2
   - tmux
+  helpful_count: 0
+  harmful_count: 1
+  last_referenced: '2026-04-29'
   target_files:
   - backend/app/api/signals.py
   - backend/app/services/canonical_as_of.py
@@ -5007,7 +5027,7 @@ lessons:
   tags:
   - db
   - recon
-  helpful_count: 4
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
@@ -5041,9 +5061,6 @@ lessons:
   summary: git,commit,staging,verification
   tags:
   - git
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - docs/portfolio-research/000-portfolio-family-essence.md
   - docs/portfolio-research/000-portfolio-family-guidelines.md
@@ -5055,9 +5072,6 @@ lessons:
   summary: 'reviewed:falseのまま作業完了した忍者: hayate **家老査読**: 確認。hayateがrelated_lessonsのreviewed:f'
   tags:
   - review
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - frontend/app/compare-summary/page.tsx
 - id: L128
@@ -5071,6 +5085,9 @@ lessons:
   summary: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する（2026-02-14）
   tags:
   - yaml
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
 - id: L126
   title: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
   summary: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
@@ -5117,18 +5134,12 @@ lessons:
   tags:
   - db
   - deploy
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L118
   title: DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indicatorsテーブルは空。
   summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
     hay
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L117
   title: 'SPA検定でp=0.99: 15万パターンGSのチャンピオンはtop群内で統計的に有意差なし。パラメータ空間が連続分布で特定パラメータの劇的エッジなし。full-sampleチャンピオン(18M/SK3)はOOSでIS以上。短lookback(7M)ISチャンピオンはOOS壊滅(CAGR-61.6%)。'
   summary: saizo(cmd_277,subtask_277_nukimi)
@@ -5203,7 +5214,7 @@ lessons:
   - reporting
   - grid_search
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 3
   last_referenced: '2026-04-29'
   target_files:
   - deploy_task.sh
@@ -5230,8 +5241,8 @@ lessons:
   - communication
   - yaml
   - reporting
-  helpful_count: 3
-  harmful_count: 2
+  helpful_count: 2
+  harmful_count: 1
   last_referenced: '2026-04-29'
   target_files:
   - deploy_task.sh
@@ -5247,8 +5258,8 @@ lessons:
   tags:
   - frontend
   - gate
-  helpful_count: 3
-  harmful_count: 1
+  helpful_count: 1
+  harmful_count: 0
   last_referenced: '2026-04-29'
   target_files:
   - recalculate_fast.py
@@ -5270,9 +5281,6 @@ lessons:
     SVMF fall
   tags:
   - universal
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L097
   title: SVMF/MVMFのskip計算には行数ヒューリスティックではなくis_monthly_data()を使え
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
@@ -5293,6 +5301,9 @@ lessons:
   summary: IF cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative
   tags:
   - db
+  deprecated: true
+  deprecated_at: '2026-04-29T18:25:02+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: oikaze cutoff_score epsilon tolerance(1e-12)が必要
   summary: 本番MonthlyReturnMomentumFilterBlock._cumretはprod(1+monthly_return)-1、GS側cumulativ
@@ -5322,9 +5333,6 @@ lessons:
   tags:
   - deploy
   - grid_search
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L090
   title: GS monthly_return NaN vs 本番 cumulative_return データパス差異でコンポーネント選出が変わる
   summary: 'kawarimi N4_0500(10D/sel_n=2)で3月FAIL(max255bp)。GS: monthly_return dropna→reindex'
@@ -5346,9 +5354,6 @@ lessons:
   tags:
   - frontend
   - testing
-  helpful_count: 4
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L087
   title: kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する
   summary: IF 本番は504日分の日次データが揃うまでCash(≈0%リターン)時 THEN 本番は504日分の日次データが揃うまでCash(≈0%リターン)
@@ -5381,7 +5386,7 @@ lessons:
   tags:
   - db
   - recon
-  helpful_count: 3
+  helpful_count: 0
   harmful_count: 1
   last_referenced: '2026-04-29'
 - id: L082
@@ -5437,9 +5442,6 @@ lessons:
   tags:
   - process
   - monitor
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
 - id: L075
   title: 新規PFのrecalculateにはrecalculate-syncが必要
   summary: IF sync-standardは既存PFの差分更新のみ時 THEN sync-standardは既存PFの差分更新のみ sync-standardは既存PFの
@@ -5477,7 +5479,7 @@ lessons:
   tags:
   - pipeline
   - gate
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-04-29'
 - id: L069
@@ -5487,6 +5489,9 @@ lessons:
   - frontend
   - pipeline
   - grid_search
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
 - id: L068
   title: PipelineEngineはpipeline_config内のlookback_periodsを使い、別途渡されたperiods/weights/unitsは無視する
   summary: IF simulate_strategy_vectorizedにpipeline_config+db_sessionを渡すとPipelineEngineがPha
@@ -5621,6 +5626,9 @@ lessons:
   tags:
   - frontend
   - grid_search
+  helpful_count: 0
+  harmful_count: 3
+  last_referenced: '2026-04-29'
 - id: L048
   title: 'nukimi R3: precompute keyはtop_n_effを使え'
   summary: N2/N3/N4混在グリッドではsubsetサイズ<top_nが起きる。precomputed picksのキーをtop_n_eff=min(top_n,sub
@@ -5667,6 +5675,9 @@ lessons:
   tags:
   - process
   - grid_search
+  helpful_count: 0
+  harmful_count: 2
+  last_referenced: '2026-04-29'
 - id: L040
   title: nukimi C2候補はgekkou列のみ使用、close/openは同一CSVデータで暫定統一
   summary: IF 064_champion CSVは単一系列のため、load_monthly_returns_dual_from_csvのclose_fallback=op
@@ -5679,8 +5690,8 @@ lessons:
   tags:
   - frontend
   - grid_search
-  helpful_count: 3
-  harmful_count: 2
+  helpful_count: 0
+  harmful_count: 3
   last_referenced: '2026-04-29'
 - id: L038
   title: sync_lessons.shは最後の## N.以降の### L0xx:エントリを全てスキップする(in_numbered_sectionフラグ未リセット)
@@ -5783,11 +5794,8 @@ lessons:
   tags:
   - bash
   deprecated: true
-  deprecated_at: '2026-04-29T11:43:49+09:00'
+  deprecated_at: '2026-04-29T18:25:03+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-04-28'
   target_files:
   - scripts/download_all_prices.py
   - scripts/analysis/data_sync/download_all_prices.py
@@ -5953,9 +5961,6 @@ lessons:
   summary: ブロック名は BlockType enum 値で統一する（2026-02-14）
   tags:
   - gate
-  helpful_count: 6
-  harmful_count: 1
-  last_referenced: '2026-04-28'
 - id: L001
   title: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）
   summary: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）

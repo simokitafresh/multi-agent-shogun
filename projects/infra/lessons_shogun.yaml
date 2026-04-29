@@ -320,3 +320,24 @@ lessons:
   created_at: '2026-04-29'
   automated: true
   enforcement: 'cmd_save.sh check_command_steps_vs_ac(既存WARN。累計昇格でBLOCK化)'
+- id: 'LS026'
+  title: '起票と配備は別軸 — 将軍の起票速度を配備の直列制約で止めるな'
+  detail: '起票(将軍)と配備(家老)は独立した軸。GS OOM等のリソース制約で直列配備が必要でも、将軍は6cmd連続で起票→委任してよい。家老が配備順序を制御する。cmd_2406で起票を止めるgateを作ろうとした=2軸の混同。殿指摘: 起票と配備がごっちゃになっている。'
+  source_cmd: 'cmd_2406'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh other_draft_existsは起票品質の軸(1本ずつgate通す)。配備直列は家老の責務(deploy_task.sh)。将軍側に配備制約を埋め込むな'
+- id: 'LS027'
+  title: 'missing_prev_cmd_lesson累計昇格 — GS連続起票時のBLOCK教訓記録漏れ'
+  detail: 'GS連続起票(cmd_2405-2411)でcmd_save.sh WARN累計昇格BLOCK。同パターンcmdでも前cmdのBLOCK教訓記録が必要。1本ずつgate通す際に教訓記録も含めてサイクルを完結させよ。'
+  source_cmd: 'cmd_2411'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh warn_missing_prev_cmd_lesson(既存WARN累計BLOCK)'
+- id: 'LS028'
+  title: '登録cmdでもgrid_searchパスを含む場合はACにrun_077パス+パリティ基準必須'
+  detail: 'cmd_2416で2件BLOCK。(1)commandにgrid_searchパスを含む登録cmdでcheck_research_tool_explicitが発火→ACにrun_077フルパス記載で解消。(2)パリティcmdのP1/P3/P4未記載→AC追加で解消。登録cmdは研究cmdではないがgateはcommand欄をgrepするため区別できない。'
+  source_cmd: 'cmd_2416'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh check_research_tool_explicit+check_parity_ac_requirements(既存WARN累計BLOCK)'
