@@ -98,12 +98,26 @@ check_ninja_monitor() {
             notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
             return
         fi
+        # Release stale singleton lock before restart (SINGLETON-EXIT prevention)
+        local lock_file="/tmp/ninja_monitor.singleton.lock"
+        if [[ -f "$lock_file" ]] && flock -n "$lock_file" true 2>/dev/null; then
+            rm -f "$lock_file"
+            log "STALE-LOCK-REMOVED: $lock_file (no holder)"
+        fi
         log "RESTART: ninja_monitor.sh not found, restarting..."
         nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+        local new_pid=$!
         disown
-        record_restart "ninja_monitor"
-        notify "【watchdog】ninja_monitor.shを自動再起動しました"
-        RESTARTED=$((RESTARTED + 1))
+        # Verify the new process survived (SINGLETON-EXIT kills within 1-2s)
+        sleep 2
+        if ! kill -0 "$new_pid" 2>/dev/null; then
+            log "RESTART-FAILED: ninja_monitor.sh PID $new_pid died immediately (check SINGLETON-EXIT)"
+            notify "【watchdog/WARN】ninja_monitor.sh再起動失敗(即死)。次サイクルで再試行"
+        else
+            record_restart "ninja_monitor"
+            notify "【watchdog】ninja_monitor.shを自動再起動しました"
+            RESTARTED=$((RESTARTED + 1))
+        fi
     fi
     return 0
 }
