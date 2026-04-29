@@ -4158,3 +4158,12 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,bash,yaml]
 - **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_template_generation.bats]
 - _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、PyYAMLの二重引用スカラーを破壊した。YAML構造の一部を削る場合は構造化ロード後にフィールド単位で扱うか、対象操作自体を撤去するチェックを追加すべき。
+
+### L541: CI用fixtureは現行SSOTの可変IDに依存させない
+- **日付**: 2026-04-29
+- **出典**: cmd_karo_ci_fix_env_change
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
+- environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TEST_TMPDIR内に最小lesson markerを作り、grep検証仕様だけを固定して確認せよ。
