@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L689 -->
+<!-- last_synced_lesson: L691 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -201,3 +201,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L687: [自動生成] 有効教訓の記録を怠った: cmd_2422（cmd_2422）
 - L688: Payload再生成時は内部メタデータを保持して検証する（cmd_2423）
 - L689: Payload再生成時は内部メタデータを保持するテストを追加せよ（cmd_2423）
+- L690: recalculate-syncのAPI statusだけで完了判定せずDB statusを確認する（cmd_2424）
+- L691: fullrecalculate完了はrecalculation_status DB行で二重確認せよ（cmd_2424）
