@@ -4154,7 +4154,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-29
 - **出典**: cmd_2404
 - **記録者**: kagemaru
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,bash,yaml]
 - **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_template_generation.bats]
 - _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、PyYAMLの二重引用スカラーを破壊した。YAML構造の一部を削る場合は構造化ロード後にフィールド単位で扱うか、対象操作自体を撤去するチェックを追加すべき。
