@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
-<!-- last_synced_lesson: L679 -->
+<!-- last_synced_lesson: L683 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -191,3 +191,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L677: 大容量SQLite移動後検証はquick_check+MD5で十分。full integrity_checkは10分かかる（cmd_2393）
 - L678: 既コミット変更のベンチマーク測定は合成データで実施せよ（cmd_2397）
 - L679: ベンチマーク計測は合成データで書込み時間を分離せよ（cmd_2397）
+- L680: GS runner実行前にAC記載CLI引数が実装でparseされるか確認せよ（cmd_2405）
+- L681: GS実行ACは実CLI引数名を事前照合する（cmd_2407）
+- L682: run_077実行前にAC記載CLI引数と実装引数の一致を確認する（cmd_2408）
+- L683: ACのCLI引数名はスクリプトのargparse定義と突合して記載せよ（cmd_2410）
