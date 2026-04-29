@@ -394,11 +394,20 @@ echo "■ SG-PRE19: total changed_lines(adversarial review必要性判定)"
 TOTAL_ADDED=0
 TOTAL_DELETED=0
 if [ -n "${PARENT_CMD:-}" ]; then
+    # shogunリポジトリ
     while IFS=$'\t' read -r added deleted _; do
         [[ "$added" == "-" ]] && continue
         TOTAL_ADDED=$((TOTAL_ADDED + added))
         TOTAL_DELETED=$((TOTAL_DELETED + deleted))
     done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+    # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
+    if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+        while IFS=$'\t' read -r added deleted _; do
+            [[ "$added" == "-" ]] && continue
+            TOTAL_ADDED=$((TOTAL_ADDED + added))
+            TOTAL_DELETED=$((TOTAL_DELETED + deleted))
+        done < <(git -C "/mnt/c/Python_app/DM-Signal" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+    fi
     TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))
     echo "  changed_lines: +${TOTAL_ADDED}/-${TOTAL_DELETED} = ${TOTAL_CHANGED}"
     if [ "$TOTAL_CHANGED" -ge 200 ]; then
