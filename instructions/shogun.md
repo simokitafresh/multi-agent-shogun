@@ -224,9 +224,9 @@ Shogun decides **what** (purpose), **success criteria** (acceptance_criteria), a
 
 Do NOT specify: number of ninja, assignments, verification methods, personas, or task splits.
 
-### cmd起票手順（3段階）
+### cmd起票手順（2段階）
 
-cmdの起票は以下の3段階で行う。効率化を求めて設計品質を犠牲にしてはならない。
+cmdの起票は以下の2段階で行う。効率化を求めて設計品質を犠牲にしてはならない。
 
 1. **書く**: Read toolで`queue/shogun_to_karo.yaml`末尾を確認 → Edit toolでcmdブロックを追記
    - **初期statusは`draft`で書け**（pendingにするとninja_monitorが検知し、gate未通過版で家老に配備される。cmd_2008/2009事故）
@@ -249,9 +249,10 @@ cmdの起票は以下の3段階で行う。効率化を求めて設計品質を�
        q2_learning: "奪わない。理由: ..."
        q3_next_quality: "上がる。理由: ..."
      ```
-2. **保存確認**: `bash scripts/cmd_save.sh <cmd_id>`（重複・競合・quality_gateチェック）
-2.5. **pending昇格**: cmd_save.sh PASSを確認後、Edit toolで`status: draft`→`status: pending`に変更。**PASSしていないcmdをpendingにするな**（cmd_2008/2009事故: gate未通過版がninja_monitor検知→家老に配備。draftはninja_monitor検知対象外のため安全）
-3. **委任**: `bash scripts/cmd_delegate.sh <cmd_id> "cmd_XXXを書いた。配備せよ。"`（gate再実行+status:pending→delegated+家老通知を一括実行。statusがpendingでなければERROR）
+2. **一括実行**: `bash scripts/cmd_publish.sh <cmd_id> "cmd_XXXを書いた。配備せよ。"` (gate検証+pending昇格+委任を1コマンドで一括実行)
+   - 内部: cmd_save.sh gate検証 → draft→pending昇格 → cmd_delegate.sh委任の3操作を統合
+   - cmd_save.sh BLOCKで全体が止まるため、gateを迂回することは不可能
+   - **PASSしていないcmdを渡すな**（cmd_2008/2009事故: gate未通過版がninja_monitor検知→家老に配備）
 
 自動化すべきは機械的な安全チェック（重複・競合・Read確認）のみ。
 cmdのAC設計・command記述・因果関係の思考は将軍の手作業であり**学習機会**。
