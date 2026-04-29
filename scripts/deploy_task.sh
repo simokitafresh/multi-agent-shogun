@@ -4500,8 +4500,6 @@ deploy_task_apply_task_mutations() {
     check_scout_gate "$task_file"
 
     inject_task_id "$task_file" || true
-    inject_ac_version "$task_file" || true
-    verify_ac_consistency "$task_file" || true
     inject_related_lessons "$task_file" || true
 
     local clear_fields clear_tmp
@@ -4539,6 +4537,11 @@ deploy_task_apply_task_mutations() {
     inject_codd_failure_history "$task_file" || true  # GP-201
     inject_engineering_preferences "$task_file" || true
     postcondition_lesson_inject "$task_file" || true
+
+    # AC注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
+    # yaml.dumpがAC構造を破壊するため、手動YAML構築のAC_OVERWRITEが最後に正しいACを書き込む。
+    inject_ac_version "$task_file" || true
+    verify_ac_consistency "$task_file" || true
 
     local pc_file inj_project inj_ids lid
     pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
