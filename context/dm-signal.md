@@ -187,14 +187,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L639/L640は振り分け済 → core§19.2(L639:EqualWeight GSへpipeline import guard混入禁止), core§19.1(L640:DB経由CoDD比較は同一プロセス・同一データ)）
 - （L642は振り分け済 → core§19.5(GS成果物globはcmd_id直後にninjutsu名が来る命名も対象)）
 - （L651-L666は振り分け済 → frontend§12(L651/L653/L654/L655/L656), core§0(L652), ops§14(L657/L666), ops§33(L658/L659/L660/L661/L662/L664/L665), infra WSL2(L663)）
-- L667: lookback_index軸のGS robustnessでは連動メタデータ列を固定条件から外す（cmd_2357）
-- L668: shin universe GS runnerはALM固定DB参照をpreflightで検出する（cmd_2360）
-- L669: GS monthly_returnの列セマンティクスを本番monthly_returnと混同するな（cmd_2376）
-- L670: Oikaze NumPy GSはproduction first_signal_monthまで初期EqualWeightを再現する（cmd_2379）
-- L671: Yotsume local_sqlite GSもproduction close cumulative_returnとfirst_signal bootstrapを使う（cmd_2382）
-- L673: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ（cmd_2386）
-- L672: cmd_2366 selector再実行時はchampion_list自動追記を明示的に避ける（cmd_2386）
-- L674: gs_grid_robustnessのL1軸検証では従属ラベル列も可変扱いにせよ（cmd_2391）
-- L675: recalculate-sync後のstatus待機は初回idleを完了扱いにする（cmd_2392）
-- L676: 大容量SQLite移動後検証はintegrity_check前にquick_checkを使う（cmd_2393）
+- （L667-L676は振り分け済 → research§GS結果(L667:robustness連動メタ列/L674:L1従属ラベル列), core§19.2(L669:monthly_returnセマンティクス[open-to-open]/L670:Oikaze first_signal EW/L671:Yotsume close cumulative+bootstrap), ops索引(L668:ALM DB preflight/L672:champion_list追記制御/L676:SQLite quick_check), ops§6-7(L675:recalculate-sync待機)。L673はL672重複→削除）
 - L677: 大容量SQLite移動後検証はquick_check+MD5で十分。full integrity_checkは10分かかる（cmd_2393）
