@@ -203,6 +203,20 @@ END {
         }
     }
 
+    # ─── category別集計（直近last_n件、WA=true のみ）───
+    for (i = start; i <= entry_count; i++) {
+        if (entry_wa[i] && entry_cat[i] != "" && entry_cat[i] != "clean") {
+            wa_cat[entry_cat[i]]++
+        }
+    }
+    cat_warn_line = ""
+    for (wa_cat_key in wa_cat) {
+        if (wa_cat[wa_cat_key] >= 3) {
+            if (cat_warn_line != "") cat_warn_line = cat_warn_line ", "
+            cat_warn_line = cat_warn_line sprintf("%s:%d件", wa_cat_key, wa_cat[wa_cat_key])
+        }
+    }
+
     if (ninja_filter != "") {
         ninja_total = stats_total[ninja_filter] + 0
         ninja_wa = stats_wa[ninja_filter] + 0
@@ -222,6 +236,9 @@ END {
             }
         } else {
             print "  workaroundなし: clean"
+        }
+        if (cat_warn_line != "") {
+            print "  ★ WARN: category集計(直近" last_n "件中3件以上) — " cat_warn_line
         }
         exit 0
     }
@@ -272,6 +289,9 @@ END {
             }
             print "  WARN: WA率30%超 — " line
         }
+        if (cat_warn_line != "") {
+            print "  WARN: category集計(直近" last_n "件中3件以上) — " cat_warn_line
+        }
         exit 0
     }
 
@@ -294,6 +314,9 @@ END {
     }
     if (alert_detail_count == 0 && warn_detail_count == 0) {
         print "  全員clean: 閾値超過なし (サンプル2件未満の忍者は除外)"
+    }
+    if (cat_warn_line != "") {
+        printf "\nWARN: category集計(直近%d件中3件以上): %s\n", total, cat_warn_line
     }
 }
 ' "$WA_FILE" > "$_WA_TMP" 2>/dev/null || true
