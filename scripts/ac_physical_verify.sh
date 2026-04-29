@@ -49,6 +49,21 @@ print(text)
         exit 1
     fi
 
+    # Project directory detection (cmd_2426事故: shogunリポのみ検索→DM-Signalファイル不在と誤判定)
+    PROJECT_DIR=$(REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
+import yaml, os
+repo_root = os.environ['REPO_ROOT']
+cmd_id = os.environ['CMD_ID']
+with open(os.path.join(repo_root, 'queue', 'shogun_to_karo.yaml')) as f:
+    data = yaml.safe_load(f)
+cmds = data.get('commands', data)
+cmd = cmds.get(cmd_id, {})
+project = cmd.get('project', '')
+project_dirs = {'dm-signal': '/mnt/c/Python_app/DM-Signal'}
+print(project_dirs.get(project, ''))
+" 2>/dev/null || echo "")
+    export PROJECT_DIR
+
     # LG021 gate: AC数カウント (AC>4→WARN)
     AC_COUNT=$(REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
 import yaml, os
@@ -67,10 +82,11 @@ print(len(acs) if isinstance(acs, list) else 0)
 fi
 
 # Run verification
-REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
+REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" PROJECT_DIR="${PROJECT_DIR:-}" python3 -c "
 import re, os, sys
 
 repo_root = os.environ['REPO_ROOT']
+project_dir = os.environ.get('PROJECT_DIR', '')
 cmd_text = sys.stdin.read()
 
 # Extract file paths
@@ -112,6 +128,12 @@ for p in sorted(paths):
         full_path = os.path.join(repo_root, p)
 
     exists = os.path.exists(full_path)
+    # Fallback: project directory (cmd_2426事故防止)
+    if not exists and project_dir and not p.startswith('/'):
+        alt_path = os.path.join(project_dir, p)
+        if os.path.exists(alt_path):
+            full_path = alt_path
+            exists = True
     if exists:
         verified += 1
         # Get file size

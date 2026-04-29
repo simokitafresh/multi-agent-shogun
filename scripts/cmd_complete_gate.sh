@@ -415,7 +415,10 @@ set_matching_tasks_idle() {
 
         # 後方互換: 旧flat YAML taskでも idle 化を試みる。
         if grep -q '^status:' "$task_file" 2>/dev/null; then
-            sed -i "s/^status: .*/status: idle/" "$task_file"
+            (
+                flock -w 5 200 || exit 1
+                sed -i "s/^status: .*/status: idle/" "$task_file"
+            ) 200>"$(lock_path "$task_file")"
             verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
             if [ "$verify_status" = "idle" ]; then
                 echo "  ${ninja_name}: ${current_status:-unknown} → idle (flat fallback)"
