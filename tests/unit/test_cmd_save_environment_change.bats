@@ -202,7 +202,9 @@ YAML
 
 @test "AC3-2: environment_change=lesson登録→PASS" {
     create_prior_block
-    write_full_cmd "type=lesson;file=projects/infra/lessons.yaml;pattern=L053"
+    local lesson_marker="$TEST_TMPDIR/lessons.yaml"
+    printf '%s\n' 'lessons:' '- id: LTEST_ENV_CHANGE' > "$lesson_marker"
+    write_full_cmd "type=lesson;file=$lesson_marker;pattern=LTEST_ENV_CHANGE"
     run_save
     echo "$output" >&2
 
