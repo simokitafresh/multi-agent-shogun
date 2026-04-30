@@ -224,10 +224,11 @@ reset_stale_fields() {
         fi
     fi
 
-    python3 - "$task_file" <<'STALE_FIELD_RESET_PY'
+    python3 - "$task_file" "$DIRECT_MODE" <<'STALE_FIELD_RESET_PY'
 import os, sys, tempfile, yaml, re
 
 task_file = sys.argv[1]
+is_direct = len(sys.argv) > 2 and sys.argv[2] == 'true'
 # スカラー+リスト両方を確実にクリアするフィールド一覧
 STALE_FIELDS = [
     # 第1層: cmd固有メタデータ(スカラー)
@@ -236,7 +237,8 @@ STALE_FIELDS = [
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     # 第3層: 忍者書込み+per-cmdフラグ
-    'AC1', 'AC2', 'AC3', 'acceptance_criteria', 'scout_exempt', 'binary_checks',
+    # acceptance_criteriaは--directモード以外でのみクリア（LK008: direct re-deploy時AC保持）
+    'AC1', 'AC2', 'AC3', 'scout_exempt', 'binary_checks',
     # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
@@ -253,6 +255,10 @@ STALE_FIELDS = [
     # 配備前に旧値が残るとCodex忍者がSTALLする(LK092: cmd_2250 hayate STALL実証)
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
 ]
+# --directモード以外ではacceptance_criteriaもクリア
+# --directモードではAC保持（LK008: shogun_to_karo.yaml不在→resolve_cmd_to_task不発→AC空化防止）
+if not is_direct:
+    STALE_FIELDS.append('acceptance_criteria')
 
 with open(task_file, 'r', encoding='utf-8') as f:
     raw = f.read()
