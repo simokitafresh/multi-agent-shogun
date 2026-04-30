@@ -88,7 +88,7 @@ BEGIN {
         sub(/^[[:space:]]*verdict:[[:space:]]*/, "", line)
         gsub(/["'\''"]/, "", line)
         verdict = trim(line)
-    } else if ($0 ~ /^[[:space:]]*cs_checklist:[[:space:]]*$/) {
+    } else if ($0 ~ /^[[:space:]]*cs_checklist:/) {
         has_cs = 1
     } else if ($0 ~ /^[[:space:]]*causal_chain:[[:space:]]*/) {
         has_causal = 1
