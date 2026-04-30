@@ -794,3 +794,5 @@
 - 2026-05-01 cmd_2442: 影丸。combo_exhaustive_search.py共通期間バグ修正(dropna→align_series)。抜き身-激攻raw_cagr=DB完全一致(0pp差)。奥義21体+四神12体再生成+gist2本更新。GATE CLEAR
 - 2026-05-01 cmd_2443: 才蔵+疾風(偵察2名一致)。7忍法×top_n(1-4)バリデーション調査。pipeline_config内側=全28PASS(型制約なし)。Portfolio直下top_n=3/4 FAIL(le=2)。GS制約はrun_077スクリプト定数。GATE CLEAR
 - 2026-05-01 cmd_2444: 影丸+疾風(偵察2名一致)。旧register_gs_shin_okugiy.py L323がchamp[top_n]→Portfolio直下top_n代入=根因。cmd_2424修正済み(top_n:1固定)。SSS奥義はtop_n=1固定設計で問題なし。GATE CLEAR
+- 2026-05-01 cmd_2447: 才蔵。制約なしGSL2チャンピオン21体hide登録+recalculate。AC1-3 PASS、AC4 P1 FAIL(54行不一致)。P2-P4 PASS
+- 2026-05-01 cmd_2448: 影丸。P1不一致根因=NULL holding_signal混入(検証ロジックバグ)。pd.isna判定追加で修正。再検証P1/P2/P3全0行不一致。GATE CLEAR
