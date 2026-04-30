@@ -796,3 +796,4 @@
 - 2026-05-01 cmd_2444: 影丸+疾風(偵察2名一致)。旧register_gs_shin_okugiy.py L323がchamp[top_n]→Portfolio直下top_n代入=根因。cmd_2424修正済み(top_n:1固定)。SSS奥義はtop_n=1固定設計で問題なし。GATE CLEAR
 - 2026-05-01 cmd_2447: 才蔵。制約なしGSL2チャンピオン21体hide登録+recalculate。AC1-3 PASS、AC4 P1 FAIL(54行不一致)。P2-P4 PASS
 - 2026-05-01 cmd_2448: 影丸。P1不一致根因=NULL holding_signal混入(検証ロジックバグ)。pd.isna判定追加で修正。再検証P1/P2/P3全0行不一致。GATE CLEAR
+- 2026-05-01 cmd_2449: 才蔵。新奥義-GS-21体EW3網羅探索。5404行CSV+WF α4指標Top1。commit 3733eccf。GATE BLOCK(別作業未commit残存+draft_lessons)→将軍判断待ち
