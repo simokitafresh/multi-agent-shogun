@@ -86,6 +86,25 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
         echo "  SKIP: files_modified empty"
     fi
 
+    # ─── SG-PRE3b: commit hash実在検証 (バグ2対策: 忍者手動記入hash検証) ───
+    echo ""
+    echo "■ SG-PRE3b: commit hash実在検証"
+    REPORT_HASHES=$(grep -oiP '(?:commit)\s+\K[0-9a-f]{7,12}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
+    if [ -n "$REPORT_HASHES" ]; then
+        while IFS= read -r hash; do
+            [ -z "$hash" ] && continue
+            if git -C "$PROJECT_DIR" show --quiet "$hash" >/dev/null 2>&1; then
+                echo "  PASS: $hash 実在確認(${PROJECT_DIR})"
+            elif git -C "$REPO_ROOT" show --quiet "$hash" >/dev/null 2>&1; then
+                echo "  PASS: $hash 実在確認(${REPO_ROOT})"
+            else
+                echo "  ★★★ WARN: $hash が両リポジトリに不在。commit hash誤記の可能性"
+            fi
+        done <<< "$REPORT_HASHES"
+    else
+        echo "  SKIP: 報告にcommit hashなし"
+    fi
+
     # ─── SG-PRE4: backend/app/変更チェック ───
     echo ""
     echo "■ SG-PRE4: backend/app/変更チェック"
