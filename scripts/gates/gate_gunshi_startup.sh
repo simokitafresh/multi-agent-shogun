@@ -309,6 +309,18 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
+# --- Check 4.6: 教訓注入参照率（lesson_impact.tsv） ---
+li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
+if [ -f "$li_file" ] && [ "$(wc -l < "$li_file")" -gt 1 ]; then
+    echo "■ 教訓注入参照率"
+    awk -F'\t' 'NR>1 && $5=="injected" {inj++; if($7=="yes") ref++}
+    END {
+        rate=(inj>0) ? ref*100/inj : 0
+        printf "  注入%d件, 参照%d件, 参照率%.0f%%\n", inj, ref+0, rate
+        if (rate < 20) printf "  ★WARN: 参照率20%%未満。task_type設定またはフィルタ精度を確認せよ\n"
+    }' "$li_file" 2>/dev/null
+fi
+
 # --- Check 4.5: missed_sg傾向（見逃したSG観点の蓄積） ---
 echo "■ missed_sg Top3"
 if [ -f "$wa_file" ]; then
