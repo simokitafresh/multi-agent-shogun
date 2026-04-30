@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 L2最新研究索引化(GS memory/WF vs GS/vintage design)+教訓同期 -->
+<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
 <!-- last_synced_lesson: L691 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -58,6 +58,7 @@
 | 28 | 2026-03-12〜03-20 主要更新（シン四神v2/GS高速化/パリティ） | (本ファイル) |
 | 29 | 2026-03-28〜03-29 第2最適化サイクル（357.28s+crash-safety+GP-124） | (本ファイル) |
 | 30 | 2026-04-20〜04-21 主要研究更新（GS memory最適化/L2 GS vs WF/vintage設計） | (本ファイル) |
+| 31 | 2026-04-28〜04-30 運用鮮度更新（L1/L2登録+knowledge-base methods） | (本ファイル) |
 
 ## 弱体化確率推定(P_det)
 
@@ -137,6 +138,14 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 | GSメモリ+速度最適化 | 7忍法横展開を完了。`workers=2` が安全圏へ復帰し、最大RSSは `kasoku_diff 8.5GB→5.5GB`、`nukimi 978→518MB`、`kawarimi 403→278MB`。`bunshin` は直列構造ゆえ SHM/PPE 非適用が正解 | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 | L2奥義 GS固定 vs WF動的比較 | L0選出方式だけを変えた 42体×42体比較で、WF系が champion 比較 `40勝-2敗 (95.2%)`、β調整 `α6指標×4試練` でも `48勝-0敗`。L2でも WF動的土台が優位 | `docs/research/l2_gs_vs_wf_comparison_20260421.md` |
 | Vintage robustness設計 | 「現championが強いか」ではなく「L0→L1→L2の再選出機構が頑健か」を測る設計へ確定。2020/2022/2026 の3 vintageで IS-only 再選出→OOS測定、fold future contamination 禁止、`1 vintage = 1 cmd` | `docs/research/vintage_analysis_design_20260421.md` |
+
+## §31 2026-04-28〜04-30 運用鮮度更新
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| L1 GSシン忍法 | cmd_2392でGSシン忍法21体を本番hide登録。fullrecalculate成功、既存20体diff=0、GSパリティ21/21 PASS | `context/dm-signal-ops.md` §32 |
+| L2奥義 | cmd_2422で制約付きL2 champion 21体を選出し、cmd_2424で本番hide登録+fullrecalculate完了。完了判定はAPI statusだけでなくDB `recalculation_status`で二重確認 | `context/dm-signal-ops.md` §34 / `context/dm-signal-core.md` GSL2正規パス |
+| knowledge-base methods | `docs/research/knowledge-base/methods/` にM79-M84を追加: DeepUnifiedMom, VAA/BAA, Hierarchical Momentum, Factor Momentum, ADTS/CADTS, Expert Aggregation WASA | `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md` |
 
 ## 補助ポインタ
 

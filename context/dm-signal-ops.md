@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-04-20 鮮度更新(Render CLI全量情報+サービスID追加済み。3レジーム市場分析API完了) -->
+<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録完了+GS/KB更新反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -540,30 +540,30 @@ import metrics_research_engine as MRE
 | **★修正(変わり身)** | パリティ100%達成。新SQLite 28,116pat | **完了** | cmd_2381 |
 | **★修正(四つ目)** | パリティ100%達成。新SQLite 4,686pat | **完了** | cmd_2382 |
 | **★修正(抜き身)** | パリティ100%達成。新SQLite 60,918pat | **完了** | cmd_2383 |
-| **★修正(加速D)** | 横展開+パリティ検証+旧SQLite削除 | **作業中** | cmd_2384(hanzo) |
-| **★修正(加速R)** | 横展開+パリティ検証+旧SQLite削除 | **作業中** | cmd_2385(kotaro) |
-| 整理 | SQLiteディレクトリ命名統一(追い風/変わり身リネーム)+cmd_2379残骸削除 | **家老指示済み** | inbox指示 |
-| 後続B' | L1チャンピオン再選出(パリティ修正後のGSで再実行) | 待ち(全7忍法修正完了後) | — |
-| 後続C' | L1本番突合(修正後) | 待ち(B'依存) | — |
+| **★修正(加速D)** | 横展開+パリティ検証+旧SQLite削除 | **完了** | cmd_2384 |
+| **★修正(加速R)** | 横展開+パリティ検証+旧SQLite削除 | **完了** | cmd_2385 |
+| 整理 | SQLiteディレクトリ命名統一(7忍法正規パス化) | **完了** | cmd_2393 |
+| 後続B' | L1チャンピオン再選出(パリティ修正後のGSで再実行) | **完了** | cmd_2392 |
+| 後続C' | L1本番突合(修正後) | **完了** | cmd_2392 |
 | 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(C'依存) | 複数cmd |
 | 7 | neighbor: 隣接パラメータ確認 | 待ち(後続B'後) | 1cmd |
 | 道具化 | WF β調整α6計算の再利用可能道具作成(殿指示) | 待ち | 1cmd |
 
-### ★L1パリティバグ(2026-04-29 00:07発見 → 02:57修正進行中)
+### ★L1パリティバグ(2026-04-29 00:07発見 → 修正完了)
 
 - **発見**: cmd_2374(00:07)。本番config20体がGS内に全存在だが月次リターン0/20不一致
 - **根因特定**: cmd_2377(01:22)。309件全月で保有PF不一致=選択ロジックバグ
 - **根因3つ**(cmd_2378 CoDD 3 Attempt): (1)momentum計算にclose累積使用 (2)共通月切出し前に全履歴shift (3)初回signal月まで等ウェイトbootstrap
 - **追い風パリティ達成**: cmd_2378(01:56)。CoDD診断ループ3回で100%一致
-- **横展開**: cmd_2381-2385(02:12-02:17委任)。5忍法並列配備
-- **現在(02:57)**: 変わり身✅ 四つ目✅ 抜き身✅ 加速D作業中 加速R作業中。5/7完了
+- **横展開**: cmd_2381-2385で7忍法すべてパリティ100%達成
+- **確定**: cmd_2393でGSL1正規パスへ統一。cmd_2392でGSシン忍法21体hide登録完了
 
-### 進捗サマリ(2026-04-29 02:57)
+### 進捗サマリ(2026-04-30)
 
 - **基盤整備**: Phase 0-5完了。Phase 6進行中
-- **L1パリティ修正**: 5/7忍法完了(分身+追い風+変わり身+四つ目+抜き身)。残2本(加速D/R)作業中
-- **SQLite命名整理**: 家老に指示済み(追い風/変わり身リネーム+cmd_2379残骸削除)
-- **次のマイルストーン**: 全7忍法パリティ100% → チャンピオン再選出(後続B') → 正しいα6比較
+- **L1パリティ修正**: 7/7忍法完了。正規SQLiteは `outputs/grid_search/20260429/L1/shin/gs_{ninjutsu}.db`
+- **L1本番登録**: cmd_2392でGSシン忍法21体hide登録+fullrecalculate+GSパリティ完了
+- **次のマイルストーン**: L2奥義はcmd_2422-2424で本番hide登録完了。次は登録済みL1/L2のロバストネス・公開判断
 - **道具化**: WF β調整α6の標準道具が不在(殿指摘)。修正完了後に着手
 - **殿裁定追加(2026-04-28)**: CSV出力も廃止。デバッグはsqlite3/pd.read_sql/ログで代替
 
@@ -636,3 +636,13 @@ import metrics_research_engine as MRE
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
 - fullrecalculate成功。既存20体diff=0。GSパリティ21/21 PASS(max 8.86e-7)
 - L675: recalculate-sync後の初回idle=完了扱い
+
+## §34 GSシン奥義21体hide登録 (cmd_2422〜cmd_2424, 2026-04-30)
+- cmd_2422: `outputs/analysis/cmd_2422_l2_champions_constrained.yaml` で制約付きL2 champion 21体を選出
+- cmd_2423: invalid portfolio混入時にrepository/API/schemaが単一障害にならないようskip invalid対応。Payload再生成時は内部メタデータを保持する
+- cmd_2424: L2奥義21体を本番hide登録し、fullrecalculate完了。完了判定はAPI statusだけでなくDB `recalculation_status`で二重確認(L690/L691)
+
+## §35 knowledge-base methods拡張 (cmd_2429〜cmd_2434, 2026-04-30)
+- `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/` は構築済み。`index.md` M79-M84: DeepUnifiedMom, VAA/BAA, Hierarchical Momentum, Factor Momentum, ADTS/CADTS Bandit Portfolio, Expert Aggregation WASA
+- 直近追加ファイル: `deep-unified-momentum.md`, `vigilant-bold-asset-allocation.md`, `hierarchical-momentum.md`, `factor-momentum.md`, `bandit-portfolio-adts.md`, `expert-aggregation-wasa.md`
+- 一次知識層ルール: 外部論文原典の数式・前提・落とし穴・verificationをmethodsへ、DM-Signal固有解釈は`knowledge-base/dm-signal/`へ分離

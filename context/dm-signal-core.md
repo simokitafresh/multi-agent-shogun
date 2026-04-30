@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-04-22 cmd_karo_context_freshness_2224 教訓索引更新(L639/L640/L642) -->
+<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2/KB鮮度更新 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -13,6 +13,7 @@
 | L1 | 忍法 | 5忍法(分身/追い風/抜き身/変わり身/加速)×3モード(激攻/鉄壁/常勝)のGS・登録 | 完了(20体登録済み) |
 | L2 | 奥義 | 上位構造の堅牢性検証（WF優先。FoFは乗り換え戦略のため時間軸評価が本質。CPCVは補助） | 登録済み(21体) |
 
+- 2026-04-30: L2奥義21体はcmd_2424で本番hide登録+fullrecalculate完了。登録運用詳細は `context/dm-signal-ops.md` §34。
 - L652: context §0のL2体数・L3状態・四神体数が実態と乖離→更新必要（cmd_2292）
 
 **Trade-Rule教訓（cmd_766）** — LLMが間違えやすいルール:
@@ -503,3 +504,8 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 ## GSL1正規パス (cmd_2393, 2026-04-29)
 - `outputs/grid_search/20260429/L1/shin/gs_{ninjutsu}.db` (7本: bunshin/oikaze/kawarimi/yotsume/nukimi/kasoku_diff/kasoku_ratio)
 - §3.1命名ルール準拠。旧cmd番号付きディレクトリは削除済み
+
+## GSL2正規パス / L2奥義登録 (cmd_2422-2424, 2026-04-30)
+- `outputs/analysis/cmd_2422_l2_champions_constrained.yaml` = 制約付きL2 champion 21体SSOT
+- cmd_2424でGSシン奥義21体本番hide登録完了。完了判定はAPI status + DB `recalculation_status`二重確認(L690/L691)
+- knowledge-base methods SSOT: `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md`。M79-M84にDeepUnifiedMom/VAA-BAA/Hierarchical Momentum/Factor Momentum/ADTS-CADTS/WASAを追加済み
