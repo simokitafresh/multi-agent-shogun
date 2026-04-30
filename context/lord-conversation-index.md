@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-01T03:13:44+09:00 -->
+<!-- generated_at: 2026-05-01T03:40:39+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-01T03:40:38+09:00 | terminal | response | **cmd_2448 PASS。家老に委任完了。** P1不一致54行の原因特定+修正+再検証0行達成を目指す。 殿、結果が出たら報告する。 [meta] stop_reason=tool_use
+- 2026-05-01T03:38:13+09:00 | terminal | inbound | パリティがとれていないのは論外だろう
+- 2026-05-01T03:36:56+09:00 | ntfy | outbound | 【CLI再起動成功】saizo: pane_cmd=node
+- 2026-05-01T03:35:23+09:00 | terminal | response | **cmd_2447 PASS。家老に委任完了。** 制約なしGSL2チャンピオン21体(cmd_2412)をhide登録。フォルダー「GSシン奥義」、命名「奥義-GS-{忍法名}-{モード}」、top_n=1固定。 殿、結果が出たら報告…
+- 2026-05-01T03:31:42+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=446.0s, ratio=85.71x, delta=+37779.0s) WARNING:…
+- 2026-05-01T03:31:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-04-30 02:18:01|cmd_2426 2026-04-30 02:19:16|cmd_2427 2026-04-30 02:20:59|cmd_2428 2026-04-30 02:24:02|cm…
+- 2026-05-01T03:14:44+09:00 | ntfy | outbound | 【家老】cmd_2447 初回配備開始 (title=実装 — 制約なしGSL2チャンピオン21体を本番DB登録(hide), ninja=saizo) 実装 📋 https://gist.github.com/simokitafresh…
 - 2026-05-01T03:13:44+09:00 | terminal | response | P2(monthly_return完全一致)がまだ欠落。AC4に追加する。 [meta] stop_reason=tool_use
 - 2026-05-01T03:11:32+09:00 | terminal | inbound | よい。フォルダーを間違えるな。hideで登録せよ
 - 2026-05-01T03:10:45+09:00 | terminal | response | **奥義-GS- 21体 完全削除。** 残存0体確認済み。 次は制約なしチャンピオン(cmd_2412の21体)を正しく登録するcmdを起票する。殿、進めてよいか。 [meta] stop_reason=tool_use
-- 2026-05-01T03:08:30+09:00 | terminal | inbound | 順番が違うよ。まずは本番DBのGSL2を削除。将軍がやれ
-- 2026-05-01T03:08:29+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2444 CLEAR(偵察2名一致: L323バグ特定+cmd_2424修正済み) | idle:6名 | 連勝25
-- 2026-05-01T03:06:20+09:00 | terminal | response | cmd_2444偵察完了。殿の疑問に答えが出た。 **根因**: 旧`register_gs_shin_okugi.py` **L323**が`champ["top_n"]`をPortfolio直下top_nに代入していた。GSL1の登録…
-- 2026-05-01T03:05:21+09:00 | terminal | inbound | でもGSL1は問題なく本番登録できたのに、GSL2はミスったっておかしな話だな。
-- 2026-05-01T03:03:05+09:00 | ntfy | outbound | 【家老】cmd_2444 初回配備開始 (title=偵察 — L2登録スクリプトのsubset_size→top_nバグ箇所特定, ninja=kagemaru) 偵察 📋 https://gist.github.com/simokit…
-- 2026-05-01T03:02:11+09:00 | terminal | response | **cmd_2444 PASS。家老に委任完了。** 前回はstatusがdraftのまま委任されておらず、今回publishで通った。 殿、結果が出たら報告する。 [meta] stop_reason=tool_use
-- 2026-05-01T03:00:27+09:00 | terminal | inbound | どうなった？
 
 ## 未解決確認事項
 - **奥義-GS- 21体 完全削除。** 残存0体確認済み。 次は制約なしチャンピオン(cmd_2412の21体)を正しく登録するcmdを起票する。殿、進めてよいか。 [meta] stop_reason=tool_use
@@ -41,10 +41,23 @@
 - cmd_1948
 - cmd_1949
 - cmd_1950
+- cmd_2223
+- cmd_2226
+- cmd_2378
 - cmd_2392
 - cmd_2395
+- cmd_2412
 - cmd_2416
 - cmd_2424
+- cmd_2426
+- cmd_2427
+- cmd_2428
+- cmd_2429
+- cmd_2430
+- cmd_2431
+- cmd_2432
+- cmd_2433
+- cmd_2434
 - cmd_2435
 - cmd_2436
 - cmd_2437
@@ -53,10 +66,6 @@
 - cmd_2440
 - cmd_2441
 - cmd_2442
-- cmd_2443
-- cmd_2444
-- cmd_2445
-- PD-027
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
