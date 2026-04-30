@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L699 -->
+<!-- last_synced_lesson: L700 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -220,3 +220,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L698: FoF登録ではPortfolio直下top_nを構成数に使うな — 直下top_n=1固定+pipeline_config内側のみ（cmd_2444）
 - L697: [自動生成] 有効教訓の記録を怠った: cmd_2444（cmd_2444）
 - L699: holding_signalパリティ検証ではNULL行を比較対象から除外する（cmd_2448）
+- L700: holding_signalパリティ検証ではNULL行を比較対象から除外せよ（cmd_2448）
