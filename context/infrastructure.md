@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-04-17 cmd_karo_context_freshness_1993 -->
+<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_infra_v2 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -101,7 +101,7 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 
 → 完了履歴: `context/cmd-chronicle.md` 03-30 / `scripts/cmd_save.sh` / `scripts/cmd_complete_gate.sh` / `scripts/deploy_task.sh` / `scripts/karo_workaround_log.sh`
 
-## 直近改善（2026-04-16 CoDD波 / GP-198〜208）
+## 直近改善（2026-04-16〜2026-04-30 CoDD波 / GP-198〜240）
 
 | 領域 | 結論 | 参照 |
 |------|------|------|
@@ -110,6 +110,19 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
 | GP-202 成果物プレフィックス検査 | `files_modified` に `parent_cmd` プレフィックスが無い場合WARN。cmd_1948事故系の「別cmd成果物上書き」をゲートで検知 | `scripts/gates/gate_report_format.sh`, `tests/unit/test_report_template_gate_compat.bats` |
 | GP-204/208 運用耐障害 | `daemon_watchdog.sh` は `set -e` / 二重flockを外して部分失敗で全体停止しない形に修正。`bulletin_write.sh` は掲示板通知を80文字要約でなく全文inbox配信へ変更 | `scripts/daemon_watchdog.sh`, `scripts/bulletin_write.sh` |
+| f171a817 | `ninja_monitor.sh` のtask `completed_at` 更新をPython全体再出力から `yaml_field_set.sh` へ置換し、運用YAML破壊リスクを除去 | `scripts/ninja_monitor.sh` |
+| 1603b5d2 | `inbox_write.sh` のinbox初期化をflock内へ移動し、同時配信時の初期化競合を防止 | `scripts/inbox_write.sh` |
+| b7cf7fba | gate群のtask status検出をflat/nested両YAML形式対応へ拡張 | `scripts/gates/*` |
+| 6ccea588 | `cmd_complete_gate.sh` 内Python blockをflat task YAML対応に修正 | `scripts/cmd_complete_gate.sh` |
+| 2ade4e4e | stale `inotifywait` を親プロセス生存確認で除外し、旧watcherの誤nudgeを防止 | `scripts/inbox_watcher.sh` |
+| 8b7f28b3 | `deploy_task.sh` のstale archiveが稼働中peer reportを退避しないよう保護 | `scripts/deploy_task.sh` |
+| 64ec3aa5 | karo_direct cmdでもtask YAMLから `scout_exempt` を読むよう修正 | `scripts/deploy_task.sh` |
+| 6275f18b | Guard7のread_log不在をCodex互換のためBLOCKからWARNへ降格 | `scripts/hooks/*` |
+| 2043181f | 軍師SG-PRE3bで忍者手動記入commit hashの実在検証を追加 | `scripts/gunshi*` |
+| 7018b629 | 軍師cs_checklist検出を値付き行にも対応させ、チェックリスト見落としを防止 | `scripts/gunshi*` |
+| b079eb73 | `ac_physical_verify` にプロジェクトリポジトリfallback検索を追加し、外部PJ参照の実在確認を強化 | `scripts/ac_physical_verify.sh` |
+| d26d6ac6 | `inbox_write.sh` がarchive移動済み報告YAMLをfallback検索できるよう修正 | `scripts/inbox_write.sh` |
+| 7513b8da | `inbox_watcher.sh` のCodexナッジ再読指示を `task_assigned` 時のみに限定 | `scripts/inbox_watcher.sh` |
 
 ## deploy_task.sh --direct mode（cmd_1672）
 
