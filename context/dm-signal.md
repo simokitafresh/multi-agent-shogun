@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L691 -->
+<!-- last_synced_lesson: L697 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -212,3 +212,10 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L689: Payload再生成時は内部メタデータを保持するテストを追加せよ（cmd_2423）
 - L690: recalculate-syncのAPI statusだけで完了判定せずDB statusを確認する（cmd_2424）
 - L691: fullrecalculate完了はrecalculation_status DB行で二重確認せよ（cmd_2424）
+- L692: task内のmethod ID/ファイル名は実SSOTと照合して報告に明記する（cmd_karo_ctx_freshness_research）
+- L693: day lookback指定と月次return入力が混在する研究cmdでは時間解像度の写像を成果物へ明記する（cmd_2436）
+- L694: pipeline_config内側top_nとPortfolio.top_nを分離して検証せよ（cmd_2443）
+- L695: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須（cmd_2443）
+- L696: FoF登録ではPortfolio直下top_nを構成数に使うな（cmd_2444）
+- L698: FoF登録ではPortfolio直下top_nを構成数に使うな — 直下top_n=1固定+pipeline_config内側のみ（cmd_2444）
+- L697: [自動生成] 有効教訓の記録を怠った: cmd_2444（cmd_2444）

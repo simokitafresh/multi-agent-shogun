@@ -375,3 +375,37 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | M82 | Factor Momentum | 既存factor portfolioの過去1年return符号でlong/short月次rotationし、個別UMDをfactor自己相関で説明する。 | `docs/research/knowledge-base/methods/factor-momentum.md` |
 | M83 | ADTS / CADTS Bandit Portfolio | discount+sliding-window Thompson Samplingで非定常stock pickingを行い、離散weight superarmへ拡張する。 | `docs/research/knowledge-base/methods/bandit-portfolio-adts.md` |
 | M84 | Expert Aggregation WASA | awake expertだけを指数重みで集約し、specialized CRP poolから距離閾値で助言を選ぶonline portfolio手法。 | `docs/research/knowledge-base/methods/expert-aggregation-wasa.md` |
+
+## §DMS-TVP レイヤー別動的選出 研究進捗 (2026-04-30)
+
+**目的**: 各レイヤーから毎月1体を動的に選出し毎月リバランス。
+**手法**: Levy & Lopes (2021) DMS-TVP。一次知識=M31。解釈層=`dm-signal/dms-tvp-layer-selection-design.md`
+
+### lookback 5帯域(殿裁定確定)
+
+帯域制約: 超短期10-20D / 短期1-3M / 中期4-6M / 長期7-10M / 超長期11-15M
+選定値: [10D, 21D, 84D, 210D, 315D]。cmd_2435(CAGR分布分析)→殿修正→軍師追体験→確定。
+
+### バックテスト結果
+
+| cmd | 内容 | 結果 |
+|-----|------|------|
+| cmd_2436 | 各PF個別lookback選択 | 設計誤り(殿の目的と不一致) |
+| cmd_2437 | L0 12体→1体DMS(α=0.99) | EWに劣後。切替3回/110ヶ月 |
+| cmd_2438 | α感度分析(0.90/0.95/0.99) | 全6組合せEWに劣後。α=0.90が最善(CAGR45.9%) |
+| cmd_2439 | **Ave 3体選出(進行中)** | 3レイヤー×2lookbackセット。結果待ち |
+
+### Aveシリーズ(殿発案)
+
+同モードPFをファミリー/忍法間でEW均等保有。12体/21体の選択問題を3体(激攻/常勝/鉄壁)に単純化。
+
+| Ave | CAGR | MaxDD | α-CAGR | α-Calmar |
+|-----|------|-------|--------|---------|
+| Ave四神-激攻 | 47.2% | -37.9% | 27.8% | 1.484 |
+| Ave忍法-激攻 | 76.4% | -32.9% | 41.6% | 2.086 |
+| Ave奥義-激攻 | 94.3% | -23.8% | 58.9% | 3.702 |
+| Ave奥義-常勝 | 69.0% | -30.6% | 40.9% | **4.459** |
+| Ave奥義-鉄壁 | 57.0% | -12.9% | 31.8% | 1.880 |
+
+全9体α-CAGR>0。詳細→gist: https://gist.github.com/simokitafresh/97bf38e764ec09070a50f91fd250a1fa
+設計追体験→gist: https://gist.github.com/simokitafresh/732d31d0ec93a38b8398ab51cade0f6a

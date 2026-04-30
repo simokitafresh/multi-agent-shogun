@@ -783,3 +783,14 @@
 - 2026-04-29 cmd_2392: 才蔵。GSシン忍法21体hide登録+fullrecalculate+パリティ21/21 PASS(max 8.86e-7)。L675登録。GATE CLEAR
 - 2026-04-29 cmd_2393: 才蔵。GSL1 SQLite 7本§3.1正規化リネーム完了。L676/L677登録。GATE CLEAR
 - 2026-04-29 cmd_2394: 才蔵。GSL2用universe YAML(gsl2_shin_ninpo_21.yaml)作成。21体UUID+local_sqlite。GATE CLEAR
+- 2026-04-30 cmd_2435: 影丸。DMS-TVP最適lookback5帯域選定。GS SQLite L0/L1/L2全パターンから単一lookback18種CAGR分布分析→5帯域(10D/4M/8M/15M/24M)確定。GATE CLEAR
+- 2026-04-30 cmd_2436: 疾風。DMS-TVP L0四神バックテスト。Levy-Lopes忠実実装。CAGR DMS:33.0% vs 固定:32.4%。COVID IP未上昇(月次入力制約)。日次入力での再検証要。L693登録。GATE CLEAR
+- 2026-04-30 cmd_2437: 才蔵。DMS L0四神12体から毎月1体選出バックテスト。DMS CAGR 39.7% < EW 51.2%。切替3回/110ヶ月でほぼ固定保有→EW劣後。α=0.99保守的。GATE CLEAR
+- 2026-04-30 cmd_2438: 影丸。DMS L0 α感度分析(α×λ 6組合せ)。全組合せEW劣後。最良α=0.90/λ=0.95 CAGR45.9%(-5.3pt)。1体集中の構造的限界をα調整では解消不可と実証。GATE CLEAR
+- 2026-04-30 cmd_karo_fix_direct_ac_loss: 半蔵。deploy_task.sh --directモードでSTALE_RESETからAC除外(LK008)。再配備時のAC消失バグ修正。GATE CLEAR
+- 2026-04-30 cmd_2439: 疾風→軍師FAIL(lookbackセット乖離)→影丸再実行PASS。cmd仕様通り(A)K=5/31model (B)K=6/63model。L1 design_docでDMS>EW(+6.3%)。他5条件EW劣後。K=5-6でswitch22-59回(前回K=3は0回)。GATE CLEAR
+- 2026-04-30 cmd_2440: 才蔵。N体EW全組み合わせ網羅探索ツール(combo_exhaustive_search.py)新規実装+奥義-GS-21体初回実行。6244行(1540通り×4手法)×7指標+レジーム4列。サマリ28セル。再利用可能道具。GATE CLEAR
+- 2026-04-30 cmd_2441: 疾風。シン四神12体combo探索。1192行(298通り×4手法)。DB LIKEパターン分身混入→CSV source回避。GATE CLEAR
+- 2026-05-01 cmd_2442: 影丸。combo_exhaustive_search.py共通期間バグ修正(dropna→align_series)。抜き身-激攻raw_cagr=DB完全一致(0pp差)。奥義21体+四神12体再生成+gist2本更新。GATE CLEAR
+- 2026-05-01 cmd_2443: 才蔵+疾風(偵察2名一致)。7忍法×top_n(1-4)バリデーション調査。pipeline_config内側=全28PASS(型制約なし)。Portfolio直下top_n=3/4 FAIL(le=2)。GS制約はrun_077スクリプト定数。GATE CLEAR
+- 2026-05-01 cmd_2444: 影丸+疾風(偵察2名一致)。旧register_gs_shin_okugiy.py L323がchamp[top_n]→Portfolio直下top_n代入=根因。cmd_2424修正済み(top_n:1固定)。SSS奥義はtop_n=1固定設計で問題なし。GATE CLEAR

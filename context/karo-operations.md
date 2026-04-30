@@ -37,9 +37,11 @@
 ## §1 配備
 
 - **配備コマンド: `deploy_task.sh <ninja> <cmd_id>`**。cmd_id第2引数は必須。省略するとAC上書きされず旧タスクを実行する(LK061)。使えない場合は--directモード。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。
+- **karo_direct配備手順(将軍cmd不要の家老自立配備)**: (1)nested形式のtask YAMLを/tmpに作成(`task:`配下にparent_cmd/task_id/scout_exempt:true等を記載) (2)`cp /tmp/task.yaml queue/tasks/{ninja}.yaml` (3)`inbox_write.sh {ninja} "..." task_assigned karo`でnudge。deploy_task.sh --yamlはscout_gateを通るが、task YAML内のscout_exempt:trueで自動PASS(64ec3aa5)。
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
+- **karo_direct配備のtask_type設定**: --yaml/手動配備時、偵察・context更新・調査系cmdは`task_type: recon`を設定せよ。デフォルトimplだと実装用教訓が過剰注入される(20件→7件に削減可能。deploy_task.sh L2318のrecon_modeフィルタが発動)。
 - 偵察配備後の2名体制検証は `task_deploy.sh` の役割。`deploy_task.sh` と混同するな。
 - BE系タスク配備ルール: `backend/` 配下のファイルが変更対象の場合、タスクYAMLの `context_files` に `docs/rule/trade-rule.md` パスを含めよ。理由: RULE09/10/11 と 14 の誤解パターンを忍者が自動参照するため。
 - **成果のcontext還流**: cmd成果に数値・事実（ベンチマーク、設計決定等）を含む場合、cmd設計時にcontext更新を最終ACに含めることを推奨。ただし判定は§3 Context還流判定に統合。

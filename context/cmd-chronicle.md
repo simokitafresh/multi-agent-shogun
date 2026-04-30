@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-04-30 -->
+<!-- last_updated: 2026-05-01 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -46,29 +46,6 @@
 | cmd_979 | 強化 — lint違反放置禁止ルール + Stop Hook lint残留チェック | | infra | 03-16 | — |
 | cmd_1010 | 四神12体+忍法15体 — 極値プロファイル・相関構造・忍法コンビネーション分析 | | dm-signal | 03-16 | AC7横断サマリー完了。4サブタスク(Sub-A〜D)の結果 |
 | cmd_1301 | startup gate bash算術エラー修正 — grep -c || echo anti-pattern根絶 | infra | 03-23 | gate_shogun_startup.sh L101/L282の grep -c || echo anti-pattern を修正。syntax error  |
-| cmd_1612 | R29研究成果のcontext索引更新（R29f-kyu/R29g-shin/R29g-kyu/R30-shin/cmd_1610の結論還流） | dm-signal | 03-31 | R29g-shin(cmd_1608)+R29g-kyu(c |
-| cmd_1611 | 旧忍法15体の個体WF-OOSベンチマーク（R30-kyu: cmd_1604と同一手法で旧版比較データ作成） | dm-signal | 03-31 | 旧忍法15体個体WF-OOS(7窓84m)完了。全15体CA |
-| cmd_1613 | ClSel本番化偵察: 研究スクリプト→本番パイプライン移行に必要な変更箇所の特定 | dm-signal | 03-31 | ClSel(Cluster Selection)ロジック偵察 |
-| cmd_1610 | FoF管理画面にビルディングブロック可視化を実装（コンポーネントPF×ウェイト表示+Wardクラスタ表示） | dm-signal | 03-31 | — |
-| cmd_1615 | — | infra | 03-31 | inbox_write.sh内のyaml.dump2箇所(L |
-| cmd_1617 | > | infra | 03-31 | cmd_save.sh Check12のcheck_cont |
-| cmd_1619 | > | infra | 03-31 | deploy_task.shのinject_ac_versi |
-| cmd_1620 | 'gate_loop_health.shのWARNINGメッセージ「FAIL発生中だがAUTO-FIX未稼働。auto-fix対象拡大を検討せよ」が | infra | 03-31 | gate_loop_health.shのLoop Statu |
-| cmd_1621 | スキル棚卸し: writer系名称統一+memory-teire廃止 | infra | 03-31 | MEMORY.md L109のスキル参照名をweekly-r |
-| cmd_1622 | L3 FoF Per-FoF Signal query除去(signal_cache直接参照化) | dm-signal | 03-31 | — |
-| cmd_1623 | ClSel研究: MP denoising + OPTICS密度ベースクラスタリング | dm-signal | 03-31 | building_block.pyにdenoise_corr |
-| cmd_1624 | 知識辞書拡充: Gerber Statistic + Shrinkage Estimators | dm-signal | 03-31 | M14 Gerber Statistic (237行) + |
-| cmd_1625 | 知識辞書拡充: OPTICS Clustering + 共分散前処理DM-Signal解釈 | dm-signal | 03-31 | — |
-| cmd_1626 | 軍師review_log 3分離: stats/gp_tracker/log本体 | infra | 03-31 | — |
-| cmd_1627 | 偵察: standard PF前処理適用ポイント特定(AbsoluteMomentum+加速BB実装精読) | dm-signal | 03-31 | 3ブロック(MomentumFilter/AbsoluteM |
-| cmd_1628 | 研究: standard PF Gerber閾値フィルタ効果検証 | dm-signal | 03-31 | — |
-| cmd_1629 | 研究: standard PF リターン平滑化(EMA)効果検証 | dm-signal | 03-31 | — |
-| cmd_1630 | 研究: standard PF Ledoit-Wolf shrinkage効果検証 | dm-signal | 03-31 | — |
-| cmd_1631 | 研究: standard PF Fractional Differentiation効果検証 | dm-signal | 03-31 | — |
-| cmd_1632 | 研究: standard PF EMA平滑化 65PF拡張再実行 | dm-signal | 03-31 | ema_smoothing_study.pyを65PF対応に |
-| cmd_1633 | 研究: standard PF L1 Trend Filter 65PF検証 | dm-signal | 03-31 | L1 Trend Filter 65PF study完了。c |
-| cmd_1634 | 研究: standard PF Kalman Filter 65PF検証 | dm-signal | 03-31 | Kalman Filter study完了。65PF×4mo |
-| cmd_1635 | 研究: standard PF Entropy Gate (Permutation Entropy) 65PF検証 | dm-signal | 03-31 | PE gate study完了。m=5, window=[1 |
 
 ## 2026-04
 
@@ -852,3 +829,22 @@
 | cmd_2423 | PortfolioRepository.load()で1体のPydanticバリデーション失敗が全PFロード失敗を引き起こす構造的欠陥を修正。 cmd_2416事故(top_n=4→全168体API消失)の再発防止。 L1: API応答にskipped情報を含める(サイレント禁止)。L2: logger.errorでBEログ記録。Render内完結。 | dm-signal | 04-30 | PFロード時に個別PFのバリデーション失敗をskippedと |
 | cmd_2425 | workers=1固定運用(LG025 OOM防止)+gs-runbook.md結論(fork CoWで十分)により run_077の6忍法スクリプトのSHMコードは全てデッドコード。削除してコードを簡潔にする。 cmd_1037(PPE実験スクリプト)は実験記録として保存(軍師推奨)。 | dm-signal | 04-30 | run_077の6忍法からSHM専用経路を削除し、legac |
 | cmd_2424 | cmd_2422で再選出した制約内(top_n<=2)L2チャンピオンを本番DBに登録する。 cmd_2416(Phase 13)の再実行。cmd_2423(耐障害化)が本番に入った状態で安全に実行。 | dm-signal | 04-30 | cmd_2422 constrained L2 champi |
+| cmd_2426 | Wood, Roberts, Zohren (2023) "X-Trend: Few-Shot Learning for Trend Following"(arXiv:2310.10500)を 原論文精読し、金融ML知識辞書methods/エントリを作成する。 DMS-TVP(M31)の競合手法。Few-Shot+CPDでレジーム転換対応。2018-2023激動期でTSMOM比10倍リターン。 | dm-signal | 04-30 | arXiv:2310.10500v2をTeX sourceま |
+| cmd_2429 | Ong & Herremans (2024) "DeepUnifiedMom: Unified Deep Learning for Multi-Task Momentum"(arXiv:2406.08742)を 原論文精読し、金融ML知識辞書methods/エントリを作成する。 Multi-Gate Mixture of ExpertsでFast/Mid/Slowモメンタムを統合。DMS-TVPの「1モデル選択」より柔軟な混合。 | dm-signal | 04-30 | arXiv:2406.08742 DeepUnifiedMo |
+| cmd_2431 | Keller & Keuning "Vigilant Asset Allocation(VAA)" (SSRN 2017) + "Bold Asset Allocation(BAA)" (SSRN 2022)を 原論文精読し知識辞書エントリ作成。複合Momentum Score(1/3/6/12M加重)で毎月ベスト1資産に全額投資。 DM-Signalのレイヤー別Top-1選出に直接適用可能な手法。 | dm-signal | 04-30 | VAA(SSRN:3002624)+BAA(SSRN:416 |
+| cmd_2432 | Ehsani & Linnainmaa (2022) "Factor Momentum and the Momentum Factor" (J. Finance, Vol.77(3), pp.1877-1919)を原論文精読し知識辞書エントリ作成。 51ファクターのリターンに時系列autocorrelationを発見。先月リターン基準のファクターローテーション。α=32bps/月。 | dm-signal | 04-30 | NBER WP25551 / Journal of Fina |
+| cmd_2433 | "Improving Portfolio Optimization Results with Bandit Networks" (arXiv:2410.04217, 2024)を 原論文精読し知識辞書エントリ作成。Adaptive Discounted Thompson Sampling(ADTS)+Combinatorial ADTS(CADTS)。 非定常報酬分布に対応するsliding window+割引機構。regret bound証明付き。 | dm-signal | 04-30 | ADTS/CADTS原論文(arXiv:2410.04217 |
+| cmd_2434 | "Weak Aggregating Specialist Algorithm" (Computational Economics, 2023)を 原論文精読し知識辞書エントリ作成。各戦略を「エキスパート」としてweight更新。 理論的regret bound証明付き。Online Portfolio Selection分野の手法。 | dm-signal | 04-30 | WASA(Weak Aggregating Speciali |
+| cmd_2435 | DMS-TVPビルディングブロック設計の前提。本番で選択可能な14種lookback(10D-24M)から 5帯域(超短期/短期/中期/長期/超長期)の最適lookbackを計算で決定する。 L0/L1/L2 GS SQLiteの全パターンでlookback別CAGR/Sharpe分布を集計し、 5帯域に自然な境界を発見→各帯域の最適値を特定。 | dm-signal | 04-30 | GS SQLite全レイヤーから単一lookback 18種 |
+| cmd_2436 | DMS-TVP設計書(dm-signal/dms-tvp-layer-selection-design.md)のPhase 1-2。 Levy & Lopes (2021)のDMS-TVP分類器を忠実実装し、L0四神12体の月次リターンデータで 5lookback[10D,21D,84D,210D,315D]の動的選択を実行。固定lookbackとのCAGR/MaxDD比較。 | dm-signal | 04-30 | DMS-TVP L0四神12体バックテストを実装・実行し、指 |
+| cmd_2437 | cmd_2436は各PF個別にlookback選択するバックテストだったが、殿の目的は 「L0の12体の中から毎月1体を選び毎月リバランス」。設計書§2.1修正済み。 12体を「モデル」と見なし、各PFの月次リターン符号をベイズ更新で逐次学習し、 argmax πで来月保有する1体を毎月選出。固定EW(等配分12体)との比較。 | dm-signal | 04-30 | DMSでL0四神12体を12モデルとして扱い、monthly |
+| cmd_2438 | cmd_2437でα=0.99の切替が110ヶ月中3回と少なすぎ、EW等配分に劣後した。 根因: α=0.99の忘却が遅すぎて実質固定保有。αを下げて反応速度を上げる。 α={0.90,0.95,0.99}×λ={0.95,0.99}の6組合せでグリッド検証し最適αを特定。 | dm-signal | 04-30 | DMS L0 α/λ感度分析を実装・実行し、6組合せのCAG |
+| cmd_2439 | Aveシリーズ(激攻/常勝/鉄壁)3体からDMS argmaxで毎月1体選出。 K=3(7モデル)でcmd_2437/2438の12体選出(K=12)より収束が速い。 lookback候補2セットで比較: (A)設計書[10D,21D,84D,210D,315D] (B)原論文[21D,42D,84D,126D,168D,252D]。 3レイヤー(L0/L1/L2)×2セット=6条件。α=0.90,λ=0.95(cmd_2438最善)固定。 | dm-signal | 04-30 | 本番PostgreSQL monthly_return_op |
+| cmd_2440 | 設計書v1.0に基づき、任意PF群からN体EW全組み合わせを網羅探索する汎用スクリプトを実装する。 初回実行として奥義-GS-21体(2体210通り+3体1,330通り=1,540通り)を4検証手法×7指標+レジーム分析で評価。 単体より強い組み合わせを発見する。再利用可能な道具として設計(入力PF差替えで繰り返し実行可能)。 | dm-signal | 04-30 | combo_exhaustive_search.pyを新規実 |
+| cmd_2441 | cmd_2440で実装したcombo_exhaustive_search.pyを四神12体に適用。 12C2=66通り+12C3=220通り=286通りを4検証手法×7指標+レジーム分析で評価。 奥義-GS-21体の結果(α-Calmar 7.58)と比較し、レイヤー間の効果を定量化する。 | dm-signal | 04-30 | シン四神12体をDBからCSVソース化し、combo_exh |
+
+## 2026-05
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_2442 | combo_exhaustive_search.py L95のdropna(how="any")が全PFデータを最短PFの期間に切り詰めている。 単体パフォーマンスが本番DBと乖離(抜き身-激攻: 本番CAGR 100.6% vs 出力120.8%、20pp乖離)。 修正: 単体は各PFの全期間で計算、EW組み合わせは構成PF共通期間で計算。 修正後に奥義-GS-21体+四神12体を再実行し、gist記事2本を更新する。 | dm-signal | 05-01 | combo_exhaustive_search.pyの単体評 |
