@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-04-17 cmd_karo_context_freshness_1993 -->
+<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_research -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -357,3 +357,21 @@ v2全面再設計: DNA事前制約+データ駆動lookback→12体。R28 Ward Cl
 §31: ALMファミリー別研究。§32: ALM L0×忍法7種比較。§33: 6目的関数横比較。§34: 41/42 ROBUST。
 §35: ALM本番組込み設計(殿裁定2026-04-06)→L0パリティ確定→L2 2×2因子分析→L3 2体EW(α>L2)→CoDD高速化(5本完了)。
 Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
+
+## §36. 金融ML知識辞書 2026-04-30 追加9件（cmd_2426〜cmd_2434）
+
+→ 一覧SSOT: `/mnt/c/Python_app/DM-Signal/docs/research/knowledge-base/index.md`
+
+2026-04-30時点で `docs/research/knowledge-base/methods/` に追加・反映済みの9件。DM-Signal適用時は各methodのLayer/Phaseと、DM PF=L0意思決定系列・月次データ制約を照合してから採否判定する。
+
+| ID | エントリ | 結論(1行) | 参照 |
+|----|---------|-----------|------|
+| M77 | X-Trend Few-Shot Learning | GP変化点で過去レジームcontextを作り、cross-attentionで新レジーム・未見資産へ少数データ適応するL2-L3候補。 | `docs/research/knowledge-base/methods/x-trend-few-shot.md` |
+| M78 | Momentum Transformer | Decoder-Only TFTをDMN position sizingへ接続し、VSN+masked attentionで説明可能性を持つ深層momentum候補。 | `docs/research/knowledge-base/methods/momentum-transformer.md` |
+| M20 | Network Momentum | Levy area/DTWのlead-lag行列をgraph learningで疎adjacency化し、先行市場TSMOMを集約するL2拡張。 | `docs/research/knowledge-base/methods/network-momentum.md` |
+| M79 | DeepUnifiedMom | MMoE+MTLでfast/medium/slow TSMOMを同時学習し、CANで3袖配分する統一momentum portfolio。 | `docs/research/knowledge-base/methods/deep-unified-momentum.md` |
+| M80 | VAA / BAA | 13612W breadth momentum と canary universe でoffensive/defensiveを切替えるKeller系TAA。 | `docs/research/knowledge-base/methods/vigilant-bold-asset-allocation.md` |
+| M81 | Hierarchical Momentum | 相関距離クラスタごとに12M momentum最大銘柄を選び、正momentum銘柄へ等配分するロングオンリーPF構築。 | `docs/research/knowledge-base/methods/hierarchical-momentum.md` |
+| M82 | Factor Momentum | 既存factor portfolioの過去1年return符号でlong/short月次rotationし、個別UMDをfactor自己相関で説明する。 | `docs/research/knowledge-base/methods/factor-momentum.md` |
+| M83 | ADTS / CADTS Bandit Portfolio | discount+sliding-window Thompson Samplingで非定常stock pickingを行い、離散weight superarmへ拡張する。 | `docs/research/knowledge-base/methods/bandit-portfolio-adts.md` |
+| M84 | Expert Aggregation WASA | awake expertだけを指数重みで集約し、specialized CRP poolから距離閾値で助言を選ぶonline portfolio手法。 | `docs/research/knowledge-base/methods/expert-aggregation-wasa.md` |
