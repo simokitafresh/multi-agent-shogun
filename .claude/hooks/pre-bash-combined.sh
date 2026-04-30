@@ -143,8 +143,8 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
                     exit 1
                 fi
             else
-                emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。read logが存在しない"
-                exit 1
+                # read_log不在: Codex CLI or 起動直後。BLOCKではなくWARN(所見5: Codex互換)
+                echo "[Guard7] WARN: read_log不在(${read_log})。inbox_mark_read前にRead toolでinboxを読むべき" >&2
             fi
         fi
     fi
