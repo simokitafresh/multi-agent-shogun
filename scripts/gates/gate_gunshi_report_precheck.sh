@@ -437,6 +437,15 @@ else
     echo "  SKIP: PARENT_CMD未取得"
 fi
 
+# ─── GATE_PREDICTION (自動計算) ───
+echo ""
+echo "■ GATE_PREDICTION (自��計算 — SG7 gate_predictionに転記せよ)"
+echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"
+echo "  reason: ${GATE_PREDICTION_REASON:-engine未実行}"
+if [ "${GATE_PREDICTION:-}" = "WARN" ] || [ "${GATE_PREDICTION:-}" = "BLOCK" ]; then
+    echo "  ★★★ gate_prediction: ${GATE_PREDICTION} をSG7バンドルに転記必須"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="

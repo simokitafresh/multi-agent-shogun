@@ -220,6 +220,24 @@ def main():
 
     result['SAME_CMD_NINJAS'] = ' '.join(same_cmd_ninjas_parts)
 
+    # ── 4. GATE_PREDICTION自動計算 ───────────────────────────────────────
+    # SG7 gate_predictionをエンジンが自動決定。軍師の判断を介在させない(Phase 4)
+    gate_pred = 'CLEAR'
+    gate_pred_reasons = []
+    if result.get('BC_HAS_NO') == '1':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append('bc:no検出')
+    if has_lc:
+        if gate_pred != 'BLOCK':
+            gate_pred = 'WARN'
+        gate_pred_reasons.append('lesson_candidate有→draft_lessons BLOCKリスク')
+    if 'WARN' in lu_msg or 'FAIL' in lu_msg:
+        if gate_pred != 'BLOCK':
+            gate_pred = 'WARN'
+        gate_pred_reasons.append('lessons_useful形式不備')
+    result['GATE_PREDICTION'] = gate_pred
+    result['GATE_PREDICTION_REASON'] = '; '.join(gate_pred_reasons) if gate_pred_reasons else 'all checks passed'
+
     _output(result)
 
 
