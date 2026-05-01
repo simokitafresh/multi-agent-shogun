@@ -828,3 +828,4 @@
 | cmd_2452 | Standard PFの5月holding_signalは4月から変化(11/56体)しているが、 FoFの15体(GSシン系)が5月も4月と同一のholding_signal。 Phase 4.1はstandard PFのみ対象(L2442)。FoFのsignal再計算パス(sync-fof/recalculate_fof)が 5月に対して正しく動作していない根因を特定する。 | dm-signal | 05-02 | FoF L3生成パスは正常稼働。2026-05-01 01: |
 | cmd_2453 | cmd_2452偵察で判明: FoFのholding_signal(構成PF UUID列)は正常だが、 Monthly Trade画面とDashboard画面のFoF保有ポジション表示が5月分の下層ticker展開を参照していない。 両画面で5月のprecomputed display_ticker_weightsを正しく参照するよう修正する。 | dm-signal | 05-02 | FoF表示のprecomputed ticker weigh |
 | cmd_2454 | GSL1(21体)とGSL2(21体)の全42体が理論最長期間より1-26ヶ月短い。 120ヶ月=10年のハードリミットが入っている疑い。 recalculate_fof.pyまたはFoF signal生成ロジックで120ヶ月制限をかけている箇所を特定する。 | dm-signal | 05-02 | FoF期間短縮の主因候補を特定。120ヶ月は再計算ではなくM |
+| cmd_2455 | signalsテーブルのUPSERTでupdated_atが記録されず、holding_signalの変更履歴が追えない。 コード修正で過去の保有シグナルが変わったかを事後検証できない問題を解決する。 殿指示: 「いつ何から何に変わったかは追えた方がいい」(2026-05-02)。 | dm-signal | 05-02 | signals/fof_component_weights |
