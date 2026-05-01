@@ -801,3 +801,4 @@
 - 2026-05-01 cmd_2451: 影丸。Monthly Trade UUID生表示バグ修正。backend APIでpending行に事前計算ticker返却。commit 2da6c5bd
 - 2026-05-01 cmd_2452: 才蔵+影丸(偵察)。FoF 5月holding_signal同一=バグではなく設計仕様。sync-fof正常稼働。holding_signal=構成PF ID列。Monthly Trade表示側のdisplay_ticker_weights参照経路が問題
 - 2026-05-01 cmd_2453: 才蔵。FoF月初display_ticker_weights参照経路修正(critical)。Dashboard+Monthly Trade両画面でticker表示正常(UUID 0件)。Render deploy+CDP確認済み
+- 2026-05-01 cmd_2454: 疾風+影丸(偵察)。120ヶ月=表示デフォルト(非計算制限)。FoF期間短縮主因=FOF_LOOKBACK_DAYS=730(recalculate_fof.py:516-533)。設計上の意図的制限

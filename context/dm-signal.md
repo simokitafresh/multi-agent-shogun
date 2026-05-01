@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L706 -->
+<!-- last_synced_lesson: L707 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -227,3 +227,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L704: FoF Monthly Trade表示は動的展開よりSignal.momentum_dataのprecomputed weightsを優先せよ（cmd_2452）
 - L705: Monthly Trade FoF表示はsignal_dateだけでなくyear_month月初Signalを優先確認する（cmd_2453）
 - L706: FoF Monthly Trade表示はyear_month月初Signalのdisplay_ticker_weightsを優先参照せよ（cmd_2453）
+- L707: [自動生成] 有効教訓の記録を怠った: cmd_2454（cmd_2454）
