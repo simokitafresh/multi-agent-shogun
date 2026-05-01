@@ -11,15 +11,16 @@ setup() {
     # DM-Signal mock構造
     export TMP_DIR
     TMP_DIR="$(mktemp -d)"
+    export DM_SIGNAL_TEST_ROOT="$TMP_DIR/dm-signal-test"
     mkdir -p "$TMP_DIR/config"
     mkdir -p "$TMP_DIR/projects"
 
     # config/projects.yaml mock
-    cat > "$TMP_DIR/config/projects.yaml" <<'EOF'
+    cat > "$TMP_DIR/config/projects.yaml" <<EOF
 projects:
   - id: dm-signal
     name: "DM-Signal"
-    path: "/tmp/dm-signal-test"
+    path: "$DM_SIGNAL_TEST_ROOT"
     priority: high
     status: active
   - id: infra
@@ -55,13 +56,12 @@ production_invariants:
       implication: "全てのバッチ前処理に適用"
 EOF
 
-    mkdir -p "/tmp/dm-signal-test/backend/app/services"
-    mkdir -p "/tmp/dm-signal-test/frontend/components"
+    mkdir -p "$DM_SIGNAL_TEST_ROOT/backend/app/services"
+    mkdir -p "$DM_SIGNAL_TEST_ROOT/frontend/components"
 }
 
 teardown() {
     rm -rf "$TMP_DIR" || true
-    rm -rf "/tmp/dm-signal-test" || true
 }
 
 _run_hook() {
@@ -71,17 +71,23 @@ _run_hook() {
         _ "$payload" "$TMP_DIR" "$HOOK"
 }
 
+_payload() {
+    local tool_name="$1"
+    local file_path="$2"
+    printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "$tool_name" "$file_path"
+}
+
 # ─── AC1: backend/app/ Edit → PI表示 ───
 
 @test "AC1: Edit on backend/app/ shows PI-003" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test/backend/app/services/signal_calc.py"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT/backend/app/services/signal_calc.py")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'PI-003'* ]]
     [[ "$output" == *'additionalContext'* ]]
 }
 
 @test "AC1: Edit on backend/app/ shows PI-013, PI-018, PI-023, PI-025" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test/backend/app/models.py"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT/backend/app/models.py")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'PI-013'* ]]
     [[ "$output" == *'PI-018'* ]]
@@ -90,7 +96,7 @@ _run_hook() {
 }
 
 @test "AC1: Write on backend/app/ shows PI context" {
-    _run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/dm-signal-test/backend/app/new_service.py"}}'
+    _run_hook "$(_payload Write "$DM_SIGNAL_TEST_ROOT/backend/app/new_service.py")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'PI-003'* ]]
     [[ "$output" == *'backend/app'* ]]
@@ -99,7 +105,7 @@ _run_hook() {
 # ─── AC2: frontend/ Edit → FE注意事項表示 ───
 
 @test "AC2: Edit on frontend/ shows PI-021" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test/frontend/components/Chart.tsx"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT/frontend/components/Chart.tsx")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'PI-021'* ]]
     [[ "$output" == *'static export'* ]]
@@ -107,7 +113,7 @@ _run_hook() {
 }
 
 @test "AC2: Write on frontend/ shows FE context" {
-    _run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/dm-signal-test/frontend/pages/new_page.tsx"}}'
+    _run_hook "$(_payload Write "$DM_SIGNAL_TEST_ROOT/frontend/pages/new_page.tsx")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'PI-021'* ]]
     [[ "$output" == *'use client'* ]]
@@ -128,7 +134,7 @@ _run_hook() {
 }
 
 @test "AC3: DM-Signal sibling prefix path does not trigger hook" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test-old/backend/app/service.py"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT-old/backend/app/service.py")"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
@@ -148,13 +154,13 @@ _run_hook() {
 # ─── PI動的取得検証 ───
 
 @test "PI dynamic load: fact text matches YAML content" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test/backend/app/services/svc.py"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT/backend/app/services/svc.py")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'pipeline_configが必須'* ]]
 }
 
 @test "PI dynamic load: PI-021 fact text matches YAML content" {
-    _run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/dm-signal-test/frontend/contexts/AuthContext.tsx"}}'
+    _run_hook "$(_payload Edit "$DM_SIGNAL_TEST_ROOT/frontend/contexts/AuthContext.tsx")"
     [ "$status" -eq 0 ]
     [[ "$output" == *'本番既存の表示'* ]]
 }
