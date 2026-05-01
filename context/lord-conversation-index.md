@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-01T14:53:13+09:00 -->
+<!-- generated_at: 2026-05-01T15:14:49+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-01T15:14:49+09:00 | terminal | response | **cmd_2453完了。才蔵PASS。** Dashboard + Monthly Trade両画面でFoF ticker表示正常確認済み: - **ticker表示**: XLU 75% / TECL 25%（裏Ave-X 5月） -…
+- 2026-05-01T15:14:44+09:00 | ntfy | outbound | 📊 cmd_2453 critical修正完了: FoF ticker表示正常化(UUID 0件)+Render deploy済み
+- 2026-05-01T14:54:18+09:00 | ntfy | outbound | 【家老】cmd_2453 初回配備開始 (title=修正 — FoF月初display_ticker_weights参照経路の統一修正(Monthly Trade+Dashboard), ninja=saizo) 修正 📋 https:…
 - 2026-05-01T14:53:13+09:00 | terminal | response | LS-A04の(26)に追記する。 [meta] stop_reason=tool_use
 - 2026-05-01T14:51:21+09:00 | terminal | inbound | 起票せよ。dashboardページにも5月の保有ポジションがあるからこちらも修正しよう。同じ表示層の問題では？
 - 2026-05-01T14:47:14+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-218)
@@ -11,11 +14,9 @@
 - 2026-05-01T14:44:02+09:00 | terminal | response | cmd_2452偵察完了。殿に報告する。 **結論: バグではなく設計仕様+表示経路の問題。** | 層 | 状況 | |---|------| | **sync-fof** | 正常稼働(2026-05-01 01:48Z完了) | |…
 - 2026-05-01T14:35:00+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓26件 → /lesson-sort推奨
 - 2026-05-01T14:34:51+09:00 | ntfy | outbound | 【家老】cmd_2452 初回配備開始 (title=偵察 — FoF 5月holding_signalが4月と同一のバグ原因特定, ninja=kagemaru) 偵察 📋 https://gist.github.com/simokit…
-- 2026-05-01T14:33:55+09:00 | terminal | response | **cmd_2452 PASS。家老に委任完了。** FoF月初holding_signalバグの根因調査。priority: critical。 殿、結果が出たら報告する。 [meta] stop_reason=end_turn
-- 2026-05-01T14:30:54+09:00 | terminal | inbound | tickerを確認したが、FoFの5月の保有ポジションが全て4月と同じになっている。standardPFは変わっている。これは不自然な状況で以前のバグが解決していない可能性がある。
-- 2026-05-01T14:24:14+09:00 | terminal | response | **cmd_2451のデプロイがbuild_in_progress。** commit「cmd_2451: Fix monthly trade FoF ticker display」で正しいcommitがデプロイ中。 殿、ビルド完了まであ…
 
 ## 未解決確認事項
+- **cmd_2453完了。才蔵PASS。** Dashboard + Monthly Trade両画面でFoF ticker表示正常確認済み: - **ticker表示**: XLU 75% / TECL 25%（裏Ave-X 5月） - **UUID表示**: 0件 - **…
 - tickerを確認したが、FoFの5月の保有ポジションが全て4月と同じになっている。standardPFは変わっている。これは不自然な状況で以前のバグが解決していない可能性がある。
 - **cmd_2451のデプロイがbuild_in_progress。** commit「cmd_2451: Fix monthly trade FoF ticker display」で正しいcommitがデプロイ中。 殿、ビルド完了まであと数分。完了したらMonthly Tra…
 - そうだな。今の時点で表示されている5月の保有シグナルが、明日になっても表示が変わらないことを確認したい
@@ -23,7 +24,6 @@
 - **cmd_2451完了。影丸PASS。** **根因**: backend APIがpending行(Position Start=まだ確定していない最新月)で事前計算済みtickerを返却していなかった。修正でpending行もticker名を返すようにした。 commit…
 - **cmd_2451 PASS。家老に委任完了。** Monthly Trade画面のPosition Start UUID生表示バグの修正。FEコードの名前解決ロジック差異を特定→修正→表示確認まで。 殿、結果が出たら報告する。 [meta] stop_reason=end_…
 - スクリーンショットを確認した。 DM-Signal FEの**Monthly Trade**画面。「裏Ave-X」のFoF、182ヶ月。 **問題が見える**: Position Start(最新行)のholding_signalが**UUIDのまま表示**されている。 ```…
-- **削除完了。** | 削除対象 | 体数 | 関連レコード | |----------|------|-------------| | 奥義-SSS- | 21体 | — | | シン忍法 | 20体 | — | | **合計** | **41体** | **178,283件…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-01T13:33:51+09:00 | スクリーンショットを確認した。 DM-Signal FEの**Monthly Trade**画面。「裏Ave-X」のFoF、182ヶ月。 **問題が見える**: Position Start(最新行)のholding_signalが**UUIDのまま表示**されている。 ```…
@@ -36,11 +36,6 @@
 - 2026-05-01T02:19:20+09:00 | 殿、ここで止まる。 cmd起票の前に確認が必要。「各忍法の本番バリデーション上限」が何かを私は正確に理解していない。 **確認すべきこと:** 1. 本番バリデーション違反とは具体的に何か — pipeline_configのtop_n制約？subset_sizeの物理的上限？…
 
 ## 参照cmd
-- cmd_1934
-- cmd_1947
-- cmd_1948
-- cmd_1949
-- cmd_1950
 - cmd_2223
 - cmd_2226
 - cmd_2378
@@ -66,6 +61,11 @@
 - cmd_2441
 - cmd_2442
 - cmd_2443
+- cmd_2444
+- cmd_2445
+- cmd_2447
+- cmd_2448
+- cmd_2449
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
