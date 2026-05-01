@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L701 -->
+<!-- last_synced_lesson: L702 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -222,3 +222,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L699: holding_signalパリティ検証ではNULL行を比較対象から除外する（cmd_2448）
 - L700: holding_signalパリティ検証ではNULL行を比較対象から除外せよ（cmd_2448）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを必ず復元判断まで行う（cmd_2450）
+- L702: FoF表示UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
