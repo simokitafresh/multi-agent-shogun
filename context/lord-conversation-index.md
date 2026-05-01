@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-01T21:52:42+09:00 -->
+<!-- generated_at: 2026-05-01T21:58:09+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-01T21:58:09+09:00 | terminal | response | コード差分に認証系の変更はない。BE APIも正常応答。問題はFE側のtierログイン画面のUI/JS。 殿、具体的にどの画面でどんなエラーが出ているか。 - ログイン画面自体が表示されない？ - パスワード入力して送信するとエラーになる…
+- 2026-05-01T21:55:51+09:00 | terminal | inbound | tierのログインが出来なくなっている。
 - 2026-05-01T21:52:41+09:00 | terminal | response | Codexの修正内容を把握した。 **影丸(Codex)の修正:** 1. `_resolve_fof_valid_start_date()` — 新関数。FoFの計算開始日を構成PFのmonthly_returns履歴から動的に決定(L…
 - 2026-05-01T21:51:45+09:00 | terminal | inbound | 現状はどうなった？codex独自実装したはずだ
 - 2026-05-01T21:50:35+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=446.0s, ratio=85.71x, delta=+37779.0s) WARNING:…
@@ -12,8 +14,6 @@
 - 2026-05-01T20:51:32+09:00 | terminal | response | cmd_2454偵察完了。報告する。 **結論: 120ヶ月は表示層のデフォルト（Show Allで全件取得可能）。計算期間のハードリミットではない。** **FoF期間短縮の主因:** - `recalculate_fof.py` L5…
 - 2026-05-01T20:51:30+09:00 | ntfy | outbound | 📊 cmd_2454偵察完了: 120ヶ月=表示デフォルト+FOF_LOOKBACK=730日(設計上の制限)
 - 2026-05-01T20:45:25+09:00 | ntfy | outbound | 【家老】cmd_2454 初回配備開始 (title=偵察 — FoF計算期間120ヶ月制限の箇所特定, ninja=hayate) 偵察 📋 https://gist.github.com/simokitafresh/6eb495d91…
-- 2026-05-01T20:44:11+09:00 | terminal | response | **cmd_2454 PASS。家老に委任完了。** FoF計算期間120ヶ月制限の箇所特定偵察。殿、結果が出たら報告する。 [meta] stop_reason=end_turn
-- 2026-05-01T20:43:22+09:00 | terminal | inbound | やはりそうか。120カ月＝10年制限が入ってる。偵察cmdを出そう
 
 ## 未解決確認事項
 - じゃあGSL0~L3まで全てのPFは計算可能な最長期間で計算されているのかを確認して。
