@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-01 -->
+<!-- last_updated: 2026-05-02 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -51,36 +51,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_1636 | 知識辞書: 平滑化・信号抽出系4手法(M17-M20/M33) | dm-signal | 04-01 | — |
-| cmd_1637 | 知識辞書: エントロピー・ノイズ検出系4手法(M19/M21/M22/M23) | dm-signal | 04-01 | — |
-| cmd_1638 | 知識辞書: 分解・フィルタ系4手法(M24/M25/M28/M30) | dm-signal | 04-01 | methods/に4ファイル(ssa.md,vmd.md,s |
-| cmd_1639 | 知識辞書: リスク・PF関連4手法(M26/M27/M29/M34) | dm-signal | 04-01 | methods/にM17-M20の4ファイル(stochas |
-| cmd_1640 | 知識辞書: 適応的・レジーム系4手法(M31/M32/M35/M36) | dm-signal | 04-01 | methods/に4ファイル(dynamic-momentu |
-| cmd_1641 | 知識辞書: メタ知見sources/validation 5件(S02-S05/V04) | dm-signal | 04-01 | sources/4件(S02-S05: Valeyre ch |
-| cmd_1642 | 知識辞書: モメンタム正典3件(TSMOM/CS-Mom/Dual Mom) | dm-signal | 04-01 | — |
-| cmd_1643 | 知識辞書: モメンタムリスク+レジーム3件(Crash/LifeCycle/RegimeSw) | dm-signal | 04-01 | — |
-| cmd_1644 | 知識辞書: PF構築正典A 3件(MVO/Ward/RiskParity) | dm-signal | 04-01 | — |
-| cmd_1645 | 知識辞書: PF構築正典B 3件(BL/MaxDiv/Kelly) | dm-signal | 04-01 | — |
-| cmd_1646 | 知識辞書: ボラティリティ・リスク基盤3件(GARCH/CVaR/EWMA) | dm-signal | 04-01 | — |
-| cmd_1647 | 知識辞書: 統計・ML基盤3件(Bootstrap/FeatImp/SeqBoot) | dm-signal | 04-01 | — |
-| cmd_1648 | 知識辞書: モメンタムリスク+レジーム3件(M40 Crash/M41 LifeCycle/M54 RegimeSw) — cmd_1643穴埋め | dm-signal | 04-01 | methods/に3ファイル(momentum-crashe |
-| cmd_1649 | 知識辞書: 資産価格モデルA 3件(M55 CAPM/M56 FF3/M57 Carhart) | dm-signal | 04-01 | methods/に資産価格モデル3ファイル(capm.md, |
-| cmd_1650 | 知識辞書: 資産価格モデルB+時系列基盤(M58 FF5/M59 APT/M60 ARIMA) | dm-signal | 04-01 | methods/に3ファイル(fama-french-5-f |
-| cmd_1651 | 知識辞書: 診断的統計検定A 3件(V05 ADF/V06 KPSS/V07 Ljung-Box) | dm-signal | 04-01 | validation/に診断的統計検定3ファイル(adf-u |
-| cmd_1652 | 知識辞書: 診断検定B+因果検定(V08 JB/M61 Granger/M62 Cointegration) | dm-signal | 04-01 | validation/jarque-bera.md, met |
-| cmd_1653 | 知識辞書: 時系列+マイクロストラクチャー3件(M63 VAR/M64 Amihud/M65 VPIN) | dm-signal | 04-01 | methods/に3ファイル(var.md, amihud- |
-| cmd_1655 | cmd_1654リグレッション修正 — FoFのuse_raw_signal伝播がsignalテーブル不在で破綻 | dm-signal | 04-01 | fullrecalculate完了(375s)。旧忍法15F |
-| cmd_1654 | pending月の保有シグナル表示がstale — signal(新)からexpanded_tickers/holding_signal表示を構築 | dm-signal | 04-01 | pending月のexpanded_tickersがhold |
-| cmd_1657 | CI RED修正 — Unit Tests (bats) FAIL (run 23832408726) | infra | 04-01 | — |
-| cmd_1658 | ClSel研究: 共分散前処理4条件比較 (raw/MP/Gerber GS1/Ledoit-Wolf) × Ward K=3 | dm-signal | 04-01 | — |
-| cmd_1659 | 研究日誌をリポジトリに配置 + context参照修正 | dm-signal | 04-01 | Gist aa7d9a9fの内容をdocs/research |
-| cmd_1662 | deploy_task.shに配備前cmd_id衝突チェック追加(GP-132) | infra | 04-01 | 二重配備検出ロジックはdeploy_task.sh L297 |
-| cmd_1663 | gate_report_format.shにverdict-BC矛盾検出追加(GP-132/LG005) | infra | 04-01 | GP-163: gate_report_format.shに |
-| cmd_1661 | Hook最適化 — 毎ツールコールオーバーヘッド半減(修行兼務) | infra | 04-01 | hook処理時間93%削減。python3→bash+jq変 |
-| cmd_1656 | deploy_task.sh AWK id:パターン修正 — 手書きYAML形式対応(explicit check抽出 + scout_gate) | infra | 04-01 | deploy_task.sh 2箇所修正完了: (1)AC1 |
-| cmd_1667 | inbox_watcher BUSY判定タイムアウト追加 — idle_flag遅延によるnudgeフリーズ修正 | infra | 04-01 | inbox_watcher BUSY判定に@last_act |
-| cmd_1666 | 研究: Standard PF FDA Smoothing 5PFリトマス紙検証 | dm-signal | 04-01 | fda_smoothing_study.py実装。5PF×1 |
-| cmd_1670 | CI RED修正 — test_cmd_save_ac_paths.bats 3テストFAIL (CMD_BLOCK_NC未設定) | infra | 04-01 | test_cmd_save_ac_paths.batsのラッ |
 | cmd_1671 | ninja_monitor.sh 2バグ修正 — pstree永久BUSY化 + pipeline空idle通知スキップ | infra | 04-02 | ninja_monitor.sh 2バグ修正完了。AC1: |
 | cmd_1672 | deploy_task.sh direct mode追加 — 修行タスク配備パイプライン正常化(GP-138) | infra | 04-02 | deploy_task.shに--direct mode追加 |
 | cmd_1673 | 編成切替スキル /hensei 構築 — 稼働中モデル混成切替+Opus全戻し | infra | 04-02 | get_agent_model()にclaude-sonne |
@@ -848,3 +818,13 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | cmd_2442 | combo_exhaustive_search.py L95のdropna(how="any")が全PFデータを最短PFの期間に切り詰めている。 単体パフォーマンスが本番DBと乖離(抜き身-激攻: 本番CAGR 100.6% vs 出力120.8%、20pp乖離)。 修正: 単体は各PFの全期間で計算、EW組み合わせは構成PF共通期間で計算。 修正後に奥義-GS-21体+四神12体を再実行し、gist記事2本を更新する。 | dm-signal | 05-01 | combo_exhaustive_search.pyの単体評 |
+| cmd_2443 | 各忍法(7本)のpipeline_configで本番バリデーションが受け入れるtop_nの有効範囲を特定する。 FoF登録時にtop_n=1,2,3,4のどこまでvalidateが通るかを忍法毎に確認する。 | dm-signal | 05-02 | 7忍法×top_n(1,2,3,4)のpipeline_co |
+| cmd_2444 | cmd_2416事故で奥義-GS-登録時にPydantic top_n le=2違反が発生した。 SSS奥義は4コンポーネントで問題なく稼働(top_n=1)。 登録スクリプトがGSのsubset_sizeをPortfolio直下top_nに誤入力した可能性を確認する。 | dm-signal | 05-02 | subset_size/top_nがPortfolio直下t |
+| cmd_2447 | cmd_2412で選出した制約なしGSL2チャンピオン21体を本番DBに登録する。 旧奥義-GS-(一律subset_size=2)は将軍が削除済み。 cmd_2424の修正版スクリプト(top_n=1固定)で登録。hide=true。 フォルダー「GSシン奥義」を新規作成。命名: 奥義-GS-{忍法名}-{モード}。 | dm-signal | 05-02 | cmd_2412制約なしL2チャンピオン21体を本番DBへ奥 |
+| cmd_2448 | cmd_2447でAC4 P1 FAIL: holding_signal vs GS SQLite 54行不一致(変わり身51+他3)。 パリティ不一致は論外。原因特定+修正+P1再検証で不一致0行を達成する。 | dm-signal | 05-02 | cmd_2447 P1 holding_signal vs |
+| cmd_2449 | cmd_2447+2448で制約なし奥義-GS-21体の本番登録+パリティ完全一致を達成。 この新21体でEW3全1,330通りを網羅探索し、WF-β調整後の4指標Top1を秘奥義-GS-候補として選出する。 gist記事(note_gs_okugi_exhaustive)の手法を制約なし21体で再実行。 | dm-signal | 05-02 | cmd_2449: 奥義-GS 21体のEW3網羅探索を完了 |
+| cmd_2450 | cmd_2449で選出した秘奥義-GS-候補4体(WFα4指標Top1)を秘奥義フォルダーに本番登録する。 旧秘奥義6体は2026-04-25浄化で削除済み。新4体で再構築。 | dm-signal | 05-02 | 秘奥義4体(激攻/常勝/鉄壁/堅守)を本番DBへhide登録 |
+| cmd_2451 | FEのMonthly Trade画面で最新のPosition Start行がUUID生表示になっている(殿スクショ確認)。 Dashboard画面では同じPFがticker表示されており、Monthly Trade固有の名前解決ロジックに問題がある。 過去月(04/01以前)はticker表示で正常のため、最新月のみの問題。 | dm-signal | 05-02 | Monthly TradeのFoF pending行でUUI |
+| cmd_2452 | Standard PFの5月holding_signalは4月から変化(11/56体)しているが、 FoFの15体(GSシン系)が5月も4月と同一のholding_signal。 Phase 4.1はstandard PFのみ対象(L2442)。FoFのsignal再計算パス(sync-fof/recalculate_fof)が 5月に対して正しく動作していない根因を特定する。 | dm-signal | 05-02 | FoF L3生成パスは正常稼働。2026-05-01 01: |
+| cmd_2453 | cmd_2452偵察で判明: FoFのholding_signal(構成PF UUID列)は正常だが、 Monthly Trade画面とDashboard画面のFoF保有ポジション表示が5月分の下層ticker展開を参照していない。 両画面で5月のprecomputed display_ticker_weightsを正しく参照するよう修正する。 | dm-signal | 05-02 | FoF表示のprecomputed ticker weigh |
+| cmd_2454 | GSL1(21体)とGSL2(21体)の全42体が理論最長期間より1-26ヶ月短い。 120ヶ月=10年のハードリミットが入っている疑い。 recalculate_fof.pyまたはFoF signal生成ロジックで120ヶ月制限をかけている箇所を特定する。 | dm-signal | 05-02 | FoF期間短縮の主因候補を特定。120ヶ月は再計算ではなくM |
