@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-01T09:08:01+09:00 -->
+<!-- generated_at: 2026-05-01T09:13:23+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-01T09:13:23+09:00 | terminal | response | **cmd_2450 PASS。家老に委任完了。** 秘奥義4体(激攻/常勝/鉄壁/堅守)を秘奥義フォルダーにhide登録。fullrecalculate+P1-P4パリティ検証まで含む。 殿、結果が出たら報告する。 [meta] sto…
+- 2026-05-01T09:10:28+09:00 | terminal | inbound | 進めよう。秘奥義フォルダーに登録してくれ。秘奥義-激攻のようにネーミング
 - 2026-05-01T09:08:01+09:00 | terminal | response | **WF α4指標Top1 — 秘奥義-GS-候補4体の実パフォーマンス:** | | **α-CAGR（激攻）** | **α-NHF（常勝）** | **α-MaxDD（鉄壁）** | **α-平均UWP（堅守）** | |--|--…
 - 2026-05-01T09:06:57+09:00 | terminal | inbound | この4体の実パフォーマンスを見せて
 - 2026-05-01T08:54:47+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-216)
@@ -12,8 +14,6 @@
 - 2026-05-01T08:45:24+09:00 | terminal | response | **cmd_2449 PASS。家老に委任完了。** 奥義-GS-21体(制約なし新版)のEW3全1,330通り網羅探索。combo_exhaustive_search.pyで4手法×7指標算出→WFα4指標(α-CAGR/α-NHF/α…
 - 2026-05-01T08:42:11+09:00 | terminal | inbound | https://gist.github.com/simokitafresh/5a2207ab251f7aa0f3c0fb20bb2b97b7#file-note_gs_okugi_exhaustive-mdを参考にして
 - 2026-05-01T08:41:27+09:00 | terminal | response | 理解を述べる。 **GSL3の構造:** - **入力**: 奥義-GS- 21体（cmd_2447で本番登録済み） - **方式**: C(21,3) = **1,330通り**のEW3体組み合わせ - **検証**: 各1,330通り…
-- 2026-05-01T08:40:46+09:00 | terminal | inbound | 今回はGSL2の21体を構成PFとした、EW3。WF-β調整後のα-CAGR,α-NHF,α-MaxDD,α-平均UWPの4パターンを選別しよう。意味は分かるか？
-- 2026-05-01T08:39:48+09:00 | terminal | response | GSL3の構造と前提を整理した。 **GSL3 = 7忍法run_077を奥義-GS-21体に適用（§7 ASSS方式と同構造）** | 項目 | 内容 | |------|------| | **入力** | 奥義-GS- 21体（cm…
 
 ## 未解決確認事項
 - 理解を述べる。 **GSL3の構造:** - **入力**: 奥義-GS- 21体（cmd_2447で本番登録済み） - **方式**: C(21,3) = **1,330通り**のEW3体組み合わせ - **検証**: 各1,330通りに対して**WF-β調整**を実施 - …
