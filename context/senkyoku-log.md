@@ -799,3 +799,4 @@
 - 2026-05-01 cmd_2449: 才蔵。新奥義-GS-21体EW3網羅探索。5404行CSV+WF α4指標Top1。commit 3733eccf。GATE BLOCK(DM-Signal別作業未commit残存)
 - 2026-05-01 cmd_2450: 疾風。秘奥義4体(激攻/常勝/鉄壁/堅守)本番登録+recalculate+P1-P4パリティ全PASS。commit d8562787。GATE BLOCK(同根因)
 - 2026-05-01 cmd_2451: 影丸。Monthly Trade UUID生表示バグ修正。backend APIでpending行に事前計算ticker返却。commit 2da6c5bd
+- 2026-05-01 cmd_2452: 才蔵+影丸(偵察)。FoF 5月holding_signal同一=バグではなく設計仕様。sync-fof正常稼働。holding_signal=構成PF ID列。Monthly Trade表示側のdisplay_ticker_weights参照経路が問題

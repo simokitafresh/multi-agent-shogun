@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L703 -->
+<!-- last_synced_lesson: L704 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -224,3 +224,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを必ず復元判断まで行う（cmd_2450）
 - L702: FoF表示UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
 - L703: FoF holding_signal同一判定は展開後ticker×weightで行う（cmd_2452）
+- L704: FoF Monthly Trade表示は動的展開よりSignal.momentum_dataのprecomputed weightsを優先せよ（cmd_2452）
