@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-01T20:44:12+09:00 -->
+<!-- generated_at: 2026-05-01T20:51:32+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-01T20:51:32+09:00 | terminal | response | cmd_2454偵察完了。報告する。 **結論: 120ヶ月は表示層のデフォルト（Show Allで全件取得可能）。計算期間のハードリミットではない。** **FoF期間短縮の主因:** - `recalculate_fof.py` L5…
+- 2026-05-01T20:51:30+09:00 | ntfy | outbound | 📊 cmd_2454偵察完了: 120ヶ月=表示デフォルト+FOF_LOOKBACK=730日(設計上の制限)
+- 2026-05-01T20:45:25+09:00 | ntfy | outbound | 【家老】cmd_2454 初回配備開始 (title=偵察 — FoF計算期間120ヶ月制限の箇所特定, ninja=hayate) 偵察 📋 https://gist.github.com/simokitafresh/6eb495d91…
 - 2026-05-01T20:44:11+09:00 | terminal | response | **cmd_2454 PASS。家老に委任完了。** FoF計算期間120ヶ月制限の箇所特定偵察。殿、結果が出たら報告する。 [meta] stop_reason=end_turn
 - 2026-05-01T20:43:22+09:00 | terminal | inbound | やはりそうか。120カ月＝10年制限が入ってる。偵察cmdを出そう
 - 2026-05-01T20:11:18+09:00 | terminal | response | **46体中39体が最長期間で計算されていない。** | レイヤー | OK | 短い | 最大差 | |---------|-----|------|--------| | GSシン忍法(L1) | 0 | 21 | 26ヶ月 | | …
@@ -11,9 +14,6 @@
 - 2026-05-01T20:06:57+09:00 | terminal | response | 殿の質問「GSL2に期間の制限があるのか」に答える。 **GSL2に固定の期間制限はない。** 各層で構成PFの共通期間が狭まる。 | レイヤー | 期間レンジ | ボトルネック | |---------|-----------|----…
 - 2026-05-01T20:05:08+09:00 | terminal | inbound | 秘奥義はGSL0→GS01→GS02だよな？
 - 2026-05-01T20:03:34+09:00 | terminal | response | 確認した。 **10年縛りではない。** 秘奥義の開始月は構成PFの**共通期間**(最も遅い開始月)で決まっている。 | 秘奥義 | 構成PF | 構成PF最遅開始 | 秘奥義開始 | 一致 | |--------|--------|-…
-- 2026-05-01T20:02:56+09:00 | terminal | inbound | 秘奥義の計算期間が10年縛りになっているようだ。確認して
-- 2026-05-01T15:45:00+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=446.0s, ratio=85.71x, delta=+37779.0s) WARNING:…
-- 2026-05-01T15:14:49+09:00 | terminal | response | **cmd_2453完了。才蔵PASS。** Dashboard + Monthly Trade両画面でFoF ticker表示正常確認済み: - **ticker表示**: XLU 75% / TECL 25%（裏Ave-X 5月） -…
 
 ## 未解決確認事項
 - じゃあGSL0~L3まで全てのPFは計算可能な最長期間で計算されているのかを確認して。
