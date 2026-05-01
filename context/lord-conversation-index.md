@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-02T02:33:25+09:00 -->
+<!-- generated_at: 2026-05-02T02:52:48+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-02T02:52:47+09:00 | terminal | response | 家老がCI flaky test修正(cmd_karo_ci_fix_flaky_1090)をGATE CLEAR。定型CI修正のためkaro_direct案件。影丸が作業中→完了。 殿、指示あれば。 [meta] stop_reason…
+- 2026-05-02T02:39:24+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-221)
+- 2026-05-02T02:36:02+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 02:31:46|cmd_2455 2026-05-02 02:33:09|cmd_2455
+- 2026-05-02T02:34:19+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-220)
+- 2026-05-02T02:34:05+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2455 CLEAR(signals監査ログ) | CI GREEN | idle:6名 | pipeline:1件(on_hold)
 - 2026-05-02T02:33:24+09:00 | terminal | response | cmd_2455のGATE CLEAR重複通知。処理済み。殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-02T02:32:04+09:00 | terminal | response | **cmd_2455 GATE CLEAR。** 疾風が完了。 signals updated_at + signal_change_logテーブル（ticker×weightスナップショット付き）が本番に入った。これで今後のfullre…
 - 2026-05-02T02:23:21+09:00 | ntfy | outbound | 【家老】cmd_2455 初回配備開始 (title=実装 — signals updated_at追加 + holding_signal変更履歴テーブル, ninja=hayate) 実装 📋 https://gist.github.c…
 - 2026-05-02T02:21:31+09:00 | terminal | response | **cmd_2455 PASS。家老に委任完了。** signals updated_at追加 + holding_signal変更履歴テーブル（ticker×weightスナップショット付き）。殿、結果が出たら報告する。 [meta] …
 - 2026-05-02T02:20:54+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 02:05:31|cmd_2454 2026-05-02 02:19:57|CI緑: run 25224085906
-- 2026-05-02T02:16:57+09:00 | terminal | inbound | 起票しよう
-- 2026-05-02T02:16:19+09:00 | terminal | response | 追えるべきだ。理由: 金融システムで「なぜこのポジションを持っているか」の因果を遡れないのは致命的。コード変更の影響検証も、今回のように事後追跡不能になる。 **推薦: signalsテーブルにupdated_at追加 + 変化時のみ履歴…
-- 2026-05-02T02:15:55+09:00 | terminal | inbound | いつ何から何に変わったかは追えた方がいいよな。どう思う？
-- 2026-05-02T02:14:40+09:00 | terminal | response | lesson-sort依頼は確認済み。idle時に対応する。殿の指示を待つ。 [meta] stop_reason=tool_use
-- 2026-05-02T02:13:14+09:00 | terminal | inbound | DBには計算コードが月途中で変わったて保有シグナルが変わったとしたときも、いつ変わったかはわかるのか？データはどう保存されているんだ？
 
 ## 未解決確認事項
 - lesson-sort依頼は確認済み。idle時に対応する。殿の指示を待つ。 [meta] stop_reason=tool_use
@@ -26,6 +26,7 @@
 - 確認した。 **10年縛りではない。** 秘奥義の開始月は構成PFの**共通期間**(最も遅い開始月)で決まっている。 | 秘奥義 | 構成PF | 構成PF最遅開始 | 秘奥義開始 | 一致 | |--------|--------|-------------|-------…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-02T02:52:47+09:00 | 家老がCI flaky test修正(cmd_karo_ci_fix_flaky_1090)をGATE CLEAR。定型CI修正のためkaro_direct案件。影丸が作業中→完了。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-02T02:33:24+09:00 | cmd_2455のGATE CLEAR重複通知。処理済み。殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-02T02:32:04+09:00 | **cmd_2455 GATE CLEAR。** 疾風が完了。 signals updated_at + signal_change_logテーブル（ticker×weightスナップショット付き）が本番に入った。これで今後のfullrecalculateやコード修正で保有シグ…
 - 2026-05-02T02:14:40+09:00 | lesson-sort依頼は確認済み。idle時に対応する。殿の指示を待つ。 [meta] stop_reason=tool_use
@@ -33,7 +34,6 @@
 - 2026-05-01T21:52:41+09:00 | Codexの修正内容を把握した。 **影丸(Codex)の修正:** 1. `_resolve_fof_valid_start_date()` — 新関数。FoFの計算開始日を構成PFのmonthly_returns履歴から動的に決定(L210-247) 2. 旧方式(FOF_…
 - 2026-05-01T21:35:56+09:00 | 全FoFにweightsが存在している(最少123件)。「76件でweights empty」という報告は忍者の検証クエリの問題だった可能性が高い。 殿、fullrecalculate自体は正常完了(id=107)。FoF weightsも全体に存在している。 **本日のまとめ…
 - 2026-05-01T21:25:11+09:00 | 把握した。家老が殿の指示を受けてfullrecalculateをkaro_directで即配備中。 殿、FOF_LOOKBACK_DAYS=730の撤廃については別途判断いただきたい。fullrecalculateだけでは730日制限は変わらない — コード修正が先に必要。 今…
-- 2026-05-01T20:11:18+09:00 | **46体中39体が最長期間で計算されていない。** | レイヤー | OK | 短い | 最大差 | |---------|-----|------|--------| | GSシン忍法(L1) | 0 | 21 | 26ヶ月 | | 奥義-GS-(L2) | 0 | 21 …
 
 ## 参照cmd
 - cmd_2223
@@ -60,12 +60,12 @@
 - cmd_2440
 - cmd_2441
 - cmd_2442
-- cmd_2443
 - cmd_2444
 - cmd_2445
 - cmd_2447
 - cmd_2448
 - cmd_2449
+- cmd_2450
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
