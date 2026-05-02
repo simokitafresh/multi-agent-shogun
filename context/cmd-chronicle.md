@@ -863,3 +863,4 @@
 | cmd_2509 | 軍師利他提案: cmd_complete_gate.sh内でlesson_candidate(found:true)をlesson_write.sh自動呼出しで登録。 現状: 軍師LGTM→gate即時発火→家老lesson未登録→BLOCK→手動登録→再GATE(38%=5/13件)。 gate内でlesson_write.shを自動呼出しし、BLOCK→CLEAR往復を構造的に解消する。 | infra | 05-03 | cmd_complete_gateのlesson_candi |
 | cmd_2511 | cmd_2508偵察結果: stop_check_inbox.shがインパクト1位(187,739 ms/day)。 未読0件時にinotifywait(5sタイムアウト)で毎回ブロック。inbox_watcher.shが同機能を提供しており冗長。 inotifywait待機ブロックを除去し、全エージェントのStop操作を高速化する。 | infra | 05-03 | stop_check_inbox.shの未読0件inotif |
 | cmd_2514 | 家老バグ報告: ninja_monitorが/clear→CLI再起動した直後のCodex CLIは初期画面表示中。 inbox_watcherのpaste-buffer nudgeが空振りし、忍者がプロンプト待ち状態に陥る(5連発実績)。 deploy_task.shにpost-deploy re-nudge(5秒後に再送)を追加し、初期画面通過後にnudgeを確実に届ける。 | infra | 05-03 | — |
+| cmd_2515 | cmd_2508偵察結果2位(31,915 ms/day)。Pre/PostToolUse両方で発火(1958回/day)×16.3ms。 tmux set-option 2回(state+timestamp)を1回に統合し、プロセス起動コストを削減する。 | infra | 05-03 | bash_state_hookのtmux state更新がP |
