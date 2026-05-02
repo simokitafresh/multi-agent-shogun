@@ -13,6 +13,7 @@ setup() {
     # --jobs 8並列実行時の競合を回避するためキャッシュ/ログをテストごとに一意化
     export GATE_PASS_CACHE_FILE="$TMPDIR_BATS/.gate_pass_cache"
     export GATE_FIRE_LOG_FILE="$TMPDIR_BATS/gate_fire_log.yaml"
+    export SKILL_GATE_FEEDBACK_DISABLE=1
 }
 
 teardown() {
