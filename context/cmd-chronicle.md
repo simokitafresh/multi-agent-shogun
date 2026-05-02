@@ -847,3 +847,4 @@
 | cmd_2478 | 起票前確認hookを意志依存の手動追加から自動成長に変える。 cmd_save.shがWARN累計昇格BLOCKした時にcheck名をファイルに自動記録し、 次回cmd起票時にpre-write-edit-combined.shが動的に表示する。 殿「成長とは次に同じ事をしないこと」を環境に埋め込む。 | infra | 05-02 | preflight_autolearnの動的起票前確認表示を |
 | cmd_2479 | CI実行332秒(5.5分)のテストスイートから不要テストを特定する。 殿「テストは負債。3問検証(リグレッション必要性/変更頻度/維持コスト)」。 前回調査(2026-04-15)からは40日経過。スクリプト削除・変更で状況が変わっている。 | infra | 05-02 | tests/unit/*.bats 154件を対象に、対象ス |
 | cmd_2480 | CI実行332秒のうちTop 5テスト(120秒超=36%)をCoDD高速化する。 cmd_2479偵察でtimeout 2件(cmd_save_environment_change 32.9s, sync_lessons 32.2s)と 高コスト3件(cmd_save_diagnosis_quality 22.2s, deploy_task_ac_handling 18.0s, deploy_task_ac_version 15.2s)を特定。 CoDD台帳に30件の実績あり(cmd_save.sh -32%、deploy_task.sh -25%等)。同手法を適用。 | infra | 05-02 | AC1/AC3完了。timeoutしていた2本を15s以下へ |
+| cmd_2483 | 軍師分析で特定されたインフラバグ3件を修正する。 karo_workarounds 102件中9件(8.8%)がこの3パターンに起因。 放置中もWAが蓄積し家老のトークンを浪費する。idle忍者に即配備。 | infra | 05-02 | AC1: yaml_field_set.shがbinary_ |
