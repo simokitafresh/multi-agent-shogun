@@ -6,6 +6,7 @@
 #   get_cli_type(agent_id)                  → "claude" | "codex" | "copilot" | "kimi"
 #   build_cli_command(agent_id)             → 完全なコマンド文字列
 #   get_instruction_file(agent_id [,cli_type]) → 指示書パス
+#   get_startup_prompt(cli_type, role)       → 起動時に注入する短い補助prompt
 #   validate_cli_availability(cli_type)     → 0=OK, 1=NG
 #   get_agent_model(agent_id)               → "opus" | "sonnet" | "codex" | "k2.5"
 #   get_model_display_name(agent_id)        → "Opus 4.6" | "gpt-5.5-low" | ...
@@ -166,6 +167,45 @@ get_instruction_file() {
         copilot) echo ".github/copilot-instructions-${role}.md" ;;
         kimi)    echo "instructions/generated/kimi-${role}.md" ;;
         *)       echo "instructions/${role}.md" ;;
+    esac
+}
+
+# get_startup_prompt(cli_type, role)
+# CLI起動直後に注入する短い補助promptを返す。
+get_startup_prompt() {
+    local cli_type="$1"
+    local role="$2"
+
+    case "$role" in
+        shogun|karo|gunshi|ashigaru|ninja) ;;
+        sasuke|kirimaru|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
+            role="ninja"
+            ;;
+        *)
+            role="ninja"
+            ;;
+    esac
+
+    case "$cli_type" in
+        codex)
+            case "$role" in
+                shogun)
+                    echo "AGENTS.mdを正として/new Recovery (shogun)を実行し、未読inboxを処理せよ。"
+                    ;;
+                karo)
+                    echo "AGENTS.mdを正として/new Recovery (karo)を実行し、queue/karo_snapshot.txtと未読inboxを確認せよ。"
+                    ;;
+                gunshi)
+                    echo "AGENTS.mdを正として/new Recovery (gunshi)を実行し、未読inboxを確認せよ。"
+                    ;;
+                *)
+                    echo "AGENTS.mdを正として/new Recovery (ninja)を実行し、queue/tasks/{your_ninja_name}.yamlを読み直せ。"
+                    ;;
+            esac
+            ;;
+        *)
+            echo ""
+            ;;
     esac
 }
 

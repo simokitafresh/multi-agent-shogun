@@ -96,7 +96,7 @@ setup_file() {
     }
 
     # 全テスト間で関数を共有（export -f により各テストsubprocessへ継承）
-    export -f get_cli_type get_model_display_name build_cli_command get_instruction_file validate_cli_availability get_agent_model
+    export -f get_cli_type get_model_display_name build_cli_command get_instruction_file get_startup_prompt validate_cli_availability get_agent_model
     export -f cli_type cli_profile_get cli_launch_cmd cli_profile_get_for_type
     export -f _cli_lookup_settings_get _cli_adapter_read_yaml _cli_lookup_profile_get
     export -f _fixture_name _fixture_agent_type _fixture_yaml_val
@@ -404,6 +404,28 @@ load_adapter_with() {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     run get_instruction_file "unknown_agent"
     [ "$status" -eq 1 ]
+}
+
+# =============================================================================
+# get_startup_prompt テスト
+# =============================================================================
+
+@test "get_startup_prompt: codex + karo → AGENTS.md補助prompt" {
+    result=$(get_startup_prompt "codex" "karo")
+    [[ "$result" == *"AGENTS.md"* ]]
+    [[ "$result" == *"/new Recovery (karo)"* ]]
+    [[ "$result" == *"queue/karo_snapshot.txt"* ]]
+}
+
+@test "get_startup_prompt: codex + ninja名 → ninja復帰prompt" {
+    result=$(get_startup_prompt "codex" "hayate")
+    [[ "$result" == *"/new Recovery (ninja)"* ]]
+    [[ "$result" == *"queue/tasks/{your_ninja_name}.yaml"* ]]
+}
+
+@test "get_startup_prompt: claude → 空文字" {
+    result=$(get_startup_prompt "claude" "karo")
+    [ "$result" = "" ]
 }
 
 # =============================================================================
