@@ -40,12 +40,12 @@ cmd_gate_scaffold() {
         "$TEST_PROJECT/context" \
         "$TEST_PROJECT/tasks"
 
-    cp "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
-    cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
-    cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
-    cp "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
-    cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
-    cp "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
+    ln -s "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
+    ln -s "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
+    ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
+    ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
+    ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    ln -s "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
 
     # Non-blocking script stubs required by cmd_complete_gate.sh
     local stubs=(auto_draft_lesson inbox_archive lesson_impact_analysis dashboard_update gist_sync ntfy_cmd ntfy)

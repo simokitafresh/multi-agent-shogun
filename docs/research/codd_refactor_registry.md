@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-05-02 | hanzo | `tests/unit/test_cmd_complete_gate.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `9.05s → 3.44s` (`-62.0%`) | cmd_2481。(1)cp→ln-s でscaffold I/O排除。(2)setup_file()で5関数を1回sedし`$BATS_FILE_TMPDIR/gate_helpers.sh`へ集約、setup()の毎テストsed×4をsource 1回に削減。(3)tests 10-12のfull gate実行を`binary_checks_warn_reason()`直接呼出しに置換(awk+関数レベルtriage判定)。12/12テストPASS。 |
 | 2026-05-02 | saizo | `tests/unit/test_gunshi_precheck_sgpre9.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `7018ms → 572ms` (`-91.8%`) | cmd_2481。SG-PRE9単体検証を`GUNSHI_PRECHECK_ONLY=SG-PRE9`でprecheck全観点実行から分離。本番デフォルトの通常precheck経路は維持。3/3テストPASS。 |
 | 2026-05-02 | kagemaru | `tests/unit/test_cli_adapter.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `4.51s → 2.08s` (`-53.9%`, `bats --timing`) | cmd_2481。Bats 63ケースを10ケースへ統合し、同一関数・同一前提の期待値群を複合assertへ集約。既存assert内容は維持。10/10 PASS |
 | 2026-05-02 | kotaro | `tests/unit/test_build_system.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `4200ms → 2591ms` (`-38.3%`) | cmd_2482 AC1。`build_instruction_file()`を全16呼出し並列化(`&`+`wait`)、`_BUILD_OUTDIR`(tmpfs)経由で一括cp、非インタラクティブ時の`ls`省略。48/48テストPASS。commit: 44c564ad |
