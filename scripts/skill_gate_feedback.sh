@@ -52,6 +52,8 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import yaml
+
 skills_dirs, explicit_skill, gate, result, reason, executor, source, log_script = sys.argv[1:9]
 haystack = " ".join([explicit_skill, gate, result, reason, source]).lower()
 
@@ -107,6 +109,40 @@ def score_skill(name, path):
     return score
 
 
+def skill_log_file():
+    env_path = os.environ.get("SKILL_EXECUTION_LOG_FILE")
+    if env_path:
+        return Path(env_path)
+    return Path(log_script).resolve().parent.parent / "logs" / "skill_execution_log.yaml"
+
+
+def has_duplicate_failure(skill_name, gate_name, stumbling_points):
+    path = skill_log_file()
+    if not path.is_file():
+        return False
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return False
+    for entry in data.get("executions") or []:
+        if not isinstance(entry, dict):
+            continue
+        if (
+            str(entry.get("skill", "")) == skill_name
+            and str(entry.get("gate", "")) == gate_name
+            and str(entry.get("stumbling_points", "")) == stumbling_points
+        ):
+            return True
+    return False
+
+
+def has_duplicate_caution(text, gate_name, reason_text):
+    for line in text.splitlines():
+        if line.lstrip().startswith("- ") and f"gate={gate_name}" in line and f"reason={reason_text}" in line:
+            return True
+    return False
+
+
 candidates = [(score_skill(name, path), name, path) for name, path in iter_skill_files()]
 candidates = [item for item in candidates if item[0] > 0]
 if not candidates:
@@ -116,6 +152,10 @@ if not candidates:
 candidates.sort(key=lambda item: (item[0], len(item[1])), reverse=True)
 _, skill, skill_file = candidates[0]
 stumbling = reason or f"{gate} {result}"
+
+if result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
+    print(f"DUPLICATE: {skill} gate={gate}")
+    raise SystemExit(0)
 
 if os.path.isfile(log_script) and os.access(log_script, os.X_OK):
     subprocess.run(
@@ -135,7 +175,7 @@ if len(reason_one) > 180:
     reason_one = reason_one[:177] + "..."
 bullet = f"- {today}: gate={gate} result=FAIL executor={executor} reason={reason_one}"
 
-if bullet in text:
+if has_duplicate_caution(text, gate, reason_one):
     print(f"UNCHANGED: {skill_file}")
     raise SystemExit(0)
 
@@ -162,4 +202,3 @@ Path(tmp).write_text(text, encoding="utf-8")
 os.replace(tmp, skill_file)
 print(f"UPDATED: {skill_file}")
 PY
-

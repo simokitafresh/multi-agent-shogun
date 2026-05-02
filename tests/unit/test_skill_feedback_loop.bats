@@ -115,3 +115,32 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "gate FAIL duplicate does not append log or 注意ポイント twice" {
+    for attempt in 1 2; do
+        run env \
+            SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+            SKILL_FEEDBACK_SKILLS_DIRS="$TEST_SKILLS_DIR" \
+            bash "$SKILL_FEEDBACK_SCRIPT" \
+                --gate gate_report_format \
+                --result FAIL \
+                --reason "binary_checks.result empty" \
+                --executor saizo \
+                --source queue/reports/saizo_report.yaml
+        [ "$status" -eq 0 ]
+    done
+    [[ "$output" == *"DUPLICATE:"* ]]
+
+    run python3 - <<EOF
+import pathlib
+import yaml
+
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+assert len(data["executions"]) == 1
+skill_text = pathlib.Path("$TEST_TMPDIR/skills/report-bundle/SKILL.md").read_text(encoding="utf-8")
+assert skill_text.count("gate=gate_report_format") == 1
+assert skill_text.count("binary_checks.result empty") == 1
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
