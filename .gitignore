@@ -200,10 +200,8 @@ queue/ntfy_batch_queue.txt
 
 # Skills
 !skills/
-!skills/skill-creator/
-!skills/skill-creator/SKILL.md
-!skills/codd-refactor/
-!skills/codd-refactor/SKILL.md
+!skills/*/
+!skills/*/SKILL.md
 
 # Tests
 !tests/
