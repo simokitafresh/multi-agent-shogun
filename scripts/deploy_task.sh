@@ -1306,6 +1306,7 @@ generate_report_template() {
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
+        ensure_report_template_completeness "$report_file" "$task_file"
         yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
         log "report_path: set (${report_rel_path})"
         return 0
@@ -1949,6 +1950,75 @@ RECON_EOF
     yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
+}
+
+ensure_report_template_completeness() {
+    local report_file="$1"
+    local task_file="$2"
+    local modified=false
+
+    [ -f "$report_file" ] || return 0
+
+    if ! grep -Eq '^lessons_useful:' "$report_file" 2>/dev/null; then
+        local _lu_ids _lu_block _lid _lu_count=0
+        _lu_ids=$(awk '
+            /^  related_lessons:/ { in_rl=1; next }
+            in_rl && /^  [a-z]/ { exit }
+            in_rl && /^[[:space:]]+(- )?id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
+        ' "$task_file" 2>/dev/null)
+
+        if [ -z "$_lu_ids" ]; then
+            cat >> "$report_file" <<'EOF'
+lessons_useful: []  # ★教訓なし。追加教訓があればid/useful/reason形式で記入
+EOF
+        else
+            _lu_block="lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"
+            while IFS= read -r _lid; do
+                [ -z "$_lid" ] && continue
+                _lu_block="${_lu_block}
+  - id: ${_lid}
+    useful: false
+    reason: '未参照'  # 有用なら具体的理由に書換えよ"
+                _lu_count=$((_lu_count + 1))
+            done <<< "$_lu_ids"
+            printf '%s\n' "$_lu_block" >> "$report_file"
+            log "report_template: missing lessons_useful repaired (${_lu_count} entries)"
+        fi
+        modified=true
+    fi
+
+    if ! grep -Eq '^assumption_invalidation:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+        modified=true
+    fi
+
+    if ! grep -Eq '^self_gate_check:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+EOF
+        modified=true
+    fi
+
+    if ! grep -Eq '^verdict:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+verdict: ""  # 全binary_checks完了後に PASS / FAIL / PASS_NO_IMPROVEMENT を記入(status_detailではない)
+EOF
+        modified=true
+    fi
+
+    if [ "$modified" = "true" ]; then
+        python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$report_file"
+        log "report_template: required fields repaired ($(basename "$report_file"))"
+    fi
 }
 
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
