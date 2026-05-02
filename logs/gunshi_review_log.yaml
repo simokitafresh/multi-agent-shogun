@@ -407,3 +407,117 @@
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   causal_chain: "15スキル意志依存→/clear消失→自動トリガー接続→使うべきタイミングで催促→スキル利用率構造的向上。正の複利=全エージェントの手順ブレが構造的にゼロ化"
   timestamp: "2026-05-02T17:00:00"
+- cmd_id: cmd_2460
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2460_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。スキル自動発動トリガー4本接続。5AC全evidence付きPASS。bats1326全PASS"
+  observations:
+    - "3ファイル修正(cmd_complete_gate/inbox_watcher/deploy_task)+4テストファイル。commit b75c945c+0f12b0e6"
+    - "催促表示追加のみ(新状態管理なし)。skill_hintはスカラー文字列(discretion_fills適切)"
+    - "DB操作判定: dm-signal+DB/SQL/本番DB等キーワード限定(偽陽性抑制)"
+    - "bats 1326/0/0。SKIP=0"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "15スキル意志依存→自動トリガー接続→使うべきタイミングで催促→スキル利用率構造的向上→GATE CLEAR。正の複利=全cmdでスキル催促が自動化"
+  timestamp: "2026-05-02T17:15:00"
+- cmd_id: cmd_2459
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2459_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。スキル学習ループ基盤3本。best-effort設計で既存gate非破壊。bats1420全PASS"
+  observations:
+    - "skill_execution_log.sh: flock付きYAML記録。skill_gate_feedback.sh: SKILL.md推定(スコアリング)+注意ポイント追記"
+    - "gate_report_format.sh FAIL分岐からbest-effort自動還流。既存責務変更なし"
+    - "startup gate: skill_execution_logからスキル別FAIL率Top5表示"
+    - "bats 1420/0/0(vendor除外全量)。L156 useful=true"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "30スキル静的→skill_execution_log+skill_gate_feedback→Gate FAIL→SKILL.md自動追記→全スキル動的成長。正の複利=100スキルでも同基盤"
+  timestamp: "2026-05-02T17:18:00"
+- cmd_id: cmd_2461
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。CLAUDE.md→AGENTS.md自動生成。upstream参照実装完全存在。手動同期排除"
+  observations:
+    - "upstream build_instructions.sh sed変換ルール16行確認済み。我ら固有差分は実装時洗い出し(q9)"
+    - "AC3で生成AGENTS.md vs 現行比較。品質保証"
+    - "q11: build_instructions.sh未存在+AGENTS.md手動管理(grep確認)"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "CLAUDE.md↔AGENTS.md手動同期→乖離→自動生成×強制→正本1本化。正の複利=CLAUDE.md変更→全CLI自動反映"
+  timestamp: "2026-05-02T17:20:00"
+- cmd_id: cmd_2463
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。33スキルのプロジェクト内統合。q11補足: .claude/skills/は1スキル(cmd記載2→実態1)"
+  observations:
+    - "~/.claude/skills/ 33スキル、.claude/skills/ 1スキル(codd-refactor)。skill-creator不在→q11軽微不一致"
+    - "q9: symlink必要性認識。Claude Code skill参照順序確認済み"
+    - "殿指示直接対応: CodexでもClaudeでも同じレベルで利用"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "33スキル2箇所分離→手動コピー意志依存→プロジェクト内統合+git管理→1箇所で全CLI共通。正の複利=新スキル作成時コピー作業消滅"
+  timestamp: "2026-05-02T17:22:00"
+- cmd_id: cmd_2461
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2461_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。既存実装でAC充足。コード変更不要。bats40/0/0+rg残留チェック"
+  observations:
+    - "build_instructions.shは既存実装。CLAUDE.md→AGENTS.md変換+rg残留チェック全PASS"
+    - "bats tests/unit/test_build_system.bats 40/0/0。commit:no waive適切"
+    - "task YAML status_detail破損→最小補正(自身の任務管理用)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd起票→既存実装確認→AC充足→コード変更不要。正の複利=build_instructions.sh動作確認で信頼性確立"
+  timestamp: "2026-05-02T17:25:00"
+- cmd_id: cmd_2462
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。instructions 3層分離。depends_on cmd_2461(現在BLOCK)→解消後配備。upstream参照実装あり"
+  observations:
+    - "upstream: common(3)+cli_specific(4)+roles(4)→generated(16)。我ら: 4ファイル重複"
+    - "q9: 分離粒度(deepdive/追体験等の我ら固有部分)は実装時現物判断"
+    - "depends_on cmd_2461がBLOCK中→BLOCK解消後に配備必要"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "instructions重複→変更反映漏れ→3層分離+build_instructions.sh自動合成→1箇所修正で全反映。正の複利=CLI追加時cli_specific 1ファイルで全ロール自動生成"
+  timestamp: "2026-05-02T17:30:00"
+- cmd_id: cmd_2462
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2462_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。既存構成確認作業。追加実装なし。bats 1326/0/0。commit:no waive適切"
+  observations:
+    - "instructions 3層(common/cli_specific/roles)は既存構成。build_instructions.sh正常実行確認"
+    - "bats tests/unit 1326件PASS、test_build_system.bats 40件PASS。skipped=0"
+    - "PRE20(新設): related_lessons 10件+lessons_useful 10件→PASS。SG7盲点補完機能正常動作"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "instructions重複管理→3層分離で1箇所修正→全CLI×全ロール自動反映。確認作業で追加実装不要→低リスク。正の複利=今後のinstructions変更工数削減"
+  timestamp: "2026-05-02T17:40:00"
+- cmd_id: cmd_2465
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。fork元multi-CLI設計の体系的調査。gh apiアクセスverified。AC5個独立"
+  observations:
+    - "前提: gh api repos/yohey-w/multi-agent-shogun verified(前セッション実績)"
+    - "AC5個: 各AC独立調査軸(cli_adapter/roles/skills/tests/学習ポイント統合)。分割不要"
+    - "q4_depth=deep: 設計思想まで因果をたどる要求。偵察5要件準拠"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "殿指示(学ぶべきもの全取込)→fork元設計体系的調査→未対応学習ポイント全特定→後続実装cmd品質向上。正の複利=外部知見吸収で設計精度+1"
+  timestamp: "2026-05-02T17:41:00"

@@ -366,9 +366,9 @@ echo ""
 echo "■ SG-PRE17: AC ID照合(stale AC検出)"
 if [ -n "${PARENT_CMD:-}" ] && [ -n "${CMD_SPEC:-}" ]; then
     # cmdソースからAC IDを抽出
-    CMD_AC_IDS=$(echo "$CMD_SPEC" | grep -oP '(?<=id: )AC[0-9]+' | sort -u)
+    CMD_AC_IDS=$(echo "$CMD_SPEC" | grep -oP '(?<=id: )AC[0-9]+' | sort -u || true)
     # 報告binary_checksからAC IDを抽出(commitは除外)
-    REPORT_AC_IDS=$(awk '/^binary_checks:/{bc=1;next} bc && /^[^ ]/{exit} bc && /^  [A-Z]/{gsub(/:.*$/,"",$0);gsub(/^ +/,"",$0);print}' "$REPORT_PATH" 2>/dev/null | grep -v '^commit$' | sort -u)
+    REPORT_AC_IDS=$(awk '/^binary_checks:/{bc=1;next} bc && /^[^ ]/{exit} bc && /^  [A-Z]/{gsub(/:.*$/,"",$0);gsub(/^ +/,"",$0);print}' "$REPORT_PATH" 2>/dev/null | grep -v '^commit$' | sort -u || true)
     if [ -n "$CMD_AC_IDS" ] && [ -n "$REPORT_AC_IDS" ]; then
         STALE_ACS=$(comm -23 <(echo "$REPORT_AC_IDS") <(echo "$CMD_AC_IDS"))
         if [ -n "$STALE_ACS" ]; then
