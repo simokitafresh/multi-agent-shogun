@@ -5,11 +5,26 @@
 #
 # Usage:
 #   bash scripts/gates/gate_silent_fallback.sh [--diff <commit>] [--path <dir>]
+#   bash scripts/gates/gate_silent_fallback.sh --help
 #   --diff <commit>: diffモード。指定commitからの変更のみ検出
 #   --path <dir>: 検査対象ディレクトリ（デフォルト: DM-Signal backend/app）
 #   引数なし: 全量監査モード
 
 set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: bash scripts/gates/gate_silent_fallback.sh [--diff <commit>] [--path <dir>]
+       bash scripts/gates/gate_silent_fallback.sh --help
+
+Detect except Exception blocks that silently return data fallback values.
+
+Options:
+  --diff <commit>  Scan only changed backend/app Python files since commit
+  --path <dir>     Scan a specific directory (default: DM-Signal backend/app)
+  -h, --help       Show this help
+EOF
+}
 
 DM_SIGNAL_PATH="/mnt/c/Python_app/DM-signal"
 TARGET_PATH="${DM_SIGNAL_PATH}/backend/app"
@@ -18,6 +33,7 @@ MODE="audit"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        -h|--help) usage; exit 0 ;;
         --diff) DIFF_BASE="$2"; MODE="diff"; shift 2 ;;
         --path) TARGET_PATH="$2"; shift 2 ;;
         *) echo "Unknown option: $1" >&2; exit 1 ;;
