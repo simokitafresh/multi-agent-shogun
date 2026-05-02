@@ -573,7 +573,6 @@ verdict=LGTM時、inbox_writeメッセージ末尾に以下のバンドルを付
 gate_precheck:
   report_format: PASS        # gate_report_format.sh結果
   commit_verified: true       # files_modifiedの各ファイルにcmd_idのcommit存在
-  gate_prediction: CLEAR      # 上記2項からGATE通過を予測(CLEAR/WARN)
 lesson_extraction:
   has_candidate: true         # lesson_candidateが存在するか
   summary: "{教訓の1行要約}"   # has_candidate=true時のみ
@@ -588,7 +587,7 @@ karo_workaround_needed: no    # yes=家老の手動修正が必要, no=スタン
 ```
 
 バンドル各項の判定基準:
-- **gate_precheck**: SG2(commit確認)+gate_report_format.sh結果を記載。両方OKならCLEAR予測
+- **gate_precheck**: SG2(commit確認)+gate_report_format.sh結果を記載
 - **lesson_extraction**: 報告のlesson_candidateを読み、一般論でなく再利用可能な具体知見かを判定
 - **context_reflux**: 報告に数値・事実・設計決定が含まれる場合needed=true。対象contextと内容を特定
 - **dashboard_line**: `cmd_XXXX {ninja} {verdict}。{成果1行}。workaround: {yes/no}` 形式で事前ドラフト（殿向け。将軍の情報源ではない）
