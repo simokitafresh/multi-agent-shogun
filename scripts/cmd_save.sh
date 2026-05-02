@@ -24,6 +24,7 @@ QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.y
 LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
+PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -632,6 +633,37 @@ record_warn_reason() {
             done <<< "$_grep_output"
         fi
     fi
+}
+
+warn_note_check_name() {
+    local note="${1:-}"
+    local segment
+    IFS='|' read -r -a _warn_check_segments <<< "$note"
+    for segment in "${_warn_check_segments[@]:1}"; do
+        [[ "$segment" == check=* ]] || continue
+        printf '%s' "${segment#check=}"
+        return 0
+    done
+    printf '%s' "$(warn_note_key "$note")"
+}
+
+log_preflight_autolearn() {
+    local warn_note="${1:-}"
+    local prior_count="${2:-}"
+    [[ -n "$warn_note" && -n "$prior_count" ]] || return 0
+
+    local check_name warn_key timestamp tmp_dir
+    check_name="$(warn_note_check_name "$warn_note")"
+    warn_key="$(warn_note_key "$warn_note")"
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    tmp_dir="$(dirname "$PREFLIGHT_AUTOLEARN_FILE")"
+    mkdir -p "$tmp_dir" 2>/dev/null || return 0
+
+    {
+        flock -w 5 201 || exit 0
+        printf '%s check=%s count=%s warn=%s cmd=%s\n' \
+            "$timestamp" "$check_name" "$prior_count" "$warn_key" "$CMD_ID" >> "$PREFLIGHT_AUTOLEARN_FILE"
+    } 201>"${PREFLIGHT_AUTOLEARN_FILE}.lock" || true
 }
 
 abort_if_block_immediate() {
@@ -3237,6 +3269,7 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
         _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
         [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
         if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
+            log_preflight_autolearn "$_warn_r" "$_warn_prior_count"
             record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
             echo "  ★ 前回このWARNに対してenvironment_changeを書いたはず。効いていない。" >&2
             echo "  ★ 前回の環境変化の質が低い(根に到達していない)。なぜなぜ7回で深く掘り直せ。" >&2
