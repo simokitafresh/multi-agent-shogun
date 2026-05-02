@@ -37,13 +37,13 @@ case "$hook_event" in
         # printf -v builtin avoids spawning date subprocess
         _ts=""
         printf -v _ts '%(%s)T' -1
-        tmux set-option -p -t "$pane" @agent_state bash_running 2>/dev/null || true
-        tmux set-option -p -t "$pane" @bash_running_since "$_ts" 2>/dev/null || true
+        tmux set-option -p -t "$pane" @agent_state bash_running \; \
+            set-option -p -t "$pane" @bash_running_since "$_ts" 2>/dev/null || true
         ;;
     PostToolUse)
         # Restore to active
-        tmux set-option -p -t "$pane" @agent_state active 2>/dev/null || true
-        tmux set-option -p -t "$pane" @bash_running_since "" 2>/dev/null || true
+        tmux set-option -p -t "$pane" @agent_state active \; \
+            set-option -p -t "$pane" @bash_running_since "" 2>/dev/null || true
         ;;
 esac
 

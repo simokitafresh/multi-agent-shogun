@@ -4587,7 +4587,7 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "Gunshi review_feedback (GATE CLEAR):"
     if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
         echo "  gunshi review_feedback: SKIP (dedup — already in inbox)"
-    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR — /gate-sync スキルでgate結果同期せよ" gate_clear system 2>/dev/null; then
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" gate_clear system 2>/dev/null; then
         echo "  gunshi review_feedback: OK (CLEAR)"
     else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
