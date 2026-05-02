@@ -2,14 +2,14 @@
 # @source: cmd_451 (inbox未読チェックstop防止hook)
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SOURCE_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "${SOURCE_PATH%/*}/../.." && pwd)"
 readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
 readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
 readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
-readonly INOTIFY_TIMEOUT="${STOP_HOOK_INOTIFY_TIMEOUT:-5}"
 
-payload="$(cat 2>/dev/null || true)"
+payload="$(</dev/stdin)"
 if [[ -z "$payload" ]]; then
   exit 0
 fi
@@ -34,9 +34,12 @@ if [[ -z "$agent_id" ]]; then
 fi
 
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
-mkdir -p "$STATE_DIR"
+[[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
-last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
+last_assistant_message=""
+if [[ "$payload" == *'"last_assistant_message"'* ]]; then
+  last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
+fi
 
 # cmd_2076: jq -r '.stop_hook_active...' → bash文字列マッチに変更 (~5ms削減)
 stop_hook_active=false
@@ -69,10 +72,12 @@ if [[ ! -f "$inbox_file" ]]; then
   exit 0
 fi
 
-unread_count="$(awk '/^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo 0)"
-if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
-  unread_count=0
-fi
+unread_count=0
+while IFS= read -r _inbox_line; do
+  if [[ "$_inbox_line" =~ ^[[:space:]]*read:[[:space:]]*false[[:space:]]*$ ]]; then
+    ((unread_count+=1))
+  fi
+done < "$inbox_file"
 
 if (( unread_count > 0 )); then
   touch "$idle_flag"
@@ -117,21 +122,6 @@ else:
 print(json.dumps({"decision": "block", "reason": reason_text}, ensure_ascii=False))
 PY
 else
-  # inotifywait待機: 未読0件でも新メッセージ到着を短時間待つ（おしお殿知見）
-  # WSL2 /mnt/c/ でもinotifyは正常動作（実測1sで検知）。タイムアウトは安全網のみ
-  if command -v inotifywait >/dev/null 2>&1; then
-    inotifywait -qq -e close_write -e moved_to --timeout "$INOTIFY_TIMEOUT" "$inbox_file" &>/dev/null || true
-    # 待機後に再チェック
-    recheck_count="$(awk '/^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo 0)"
-    if [[ "$recheck_count" =~ ^[0-9]+$ ]] && (( recheck_count > 0 )); then
-      touch "$idle_flag"
-      reason_text="inbox未読${recheck_count}件あり(待機中に到着)"
-      # cmd_2111: python3→jqでサブプロセスコスト削減
-      jq -n --arg reason "$reason_text" '{"decision":"block","reason":$reason}'
-      exit 0
-    fi
-  fi
-
   # 家老向け: inbox未読0でもpending workがあれば次アクションを表示(Codex STALL防止)
   if [[ "$agent_id" == "karo" ]]; then
     _pending_actions=()
@@ -175,7 +165,13 @@ else
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
-      _ninja_status="$(awk '/^[[:space:]]*status:/{print $2; exit}' "$_ninja_task" 2>/dev/null || true)"
+      _ninja_status=""
+      while IFS= read -r _task_line; do
+        if [[ "$_task_line" =~ ^[[:space:]]*status:[[:space:]]*([^[:space:]]+) ]]; then
+          _ninja_status="${BASH_REMATCH[1]}"
+          break
+        fi
+      done < "$_ninja_task"
       if [[ "$_ninja_status" == "done" || "$_ninja_status" == "completed" ]]; then
         _reason="Task ${_ninja_status}. Wait for next task assignment from karo. Do NOT start new work or generate code. Read queue/tasks/${agent_id}.yaml when new task arrives."
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'

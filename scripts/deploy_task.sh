@@ -5051,6 +5051,17 @@ except Exception:
 
     maybe_notify_draft_review "$task_yaml" "$deploy_parent_cmd" "$NINJA_NAME" "$TYPE"
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+
+    # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
+    # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
+    local _pd_pane
+    _pd_pane=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},${NINJA_NAME}}" 2>/dev/null | head -1)
+    if [ -n "$_pd_pane" ]; then
+        local _pd_capture
+        _pd_capture=$(tmux capture-pane -t "$_pd_pane" -p -S -5 2>/dev/null | tail -3)
+        log "POST-DEPLOY VERIFY ${NINJA_NAME} pane:"
+        echo "  ${_pd_capture}" | head -3
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
