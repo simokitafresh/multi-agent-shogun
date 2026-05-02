@@ -128,3 +128,48 @@ YAML
     [[ "$output" == *"stub cmd_save cmd_curr"* ]]
     [[ "$output" == *"cmd_delegate.sh 委任"* ]]
 }
+
+@test "AC4: on_hold cmdはdraftに戻してからcmd_save gate検証へ進む" {
+    write_queue on_hold
+    write_lessons 1
+    : > "$TEST_QUALITY_LOG"
+    cat > "$TEST_CMD_SAVE" <<'SH'
+#!/usr/bin/env bash
+echo "stub cmd_save $1"
+grep -m1 "status:" "$TEST_QUEUE"
+exit 0
+SH
+    chmod +x "$TEST_CMD_SAVE"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: cmd_curr on_hold → draft"* ]]
+    [[ "$output" == *"status: draft"* ]]
+    [[ "$output" == *"OK: cmd_curr draft → pending"* ]]
+    [[ "$output" == *"stub cmd_delegate cmd_curr"* ]]
+    grep -q "status: pending" "$TEST_QUEUE"
+}
+
+@test "AC5: on_hold cmdのcmd_save gateがBLOCKしたらon_holdへ戻す" {
+    write_queue on_hold
+    write_lessons 1
+    : > "$TEST_QUALITY_LOG"
+    cat > "$TEST_CMD_SAVE" <<'SH'
+#!/usr/bin/env bash
+echo "stub cmd_save block $1"
+exit 1
+SH
+    chmod +x "$TEST_CMD_SAVE"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"OK: cmd_curr on_hold → draft"* ]]
+    [[ "$output" == *"ROLLBACK: cmd_curr draft → on_hold"* ]]
+    [[ "$output" == *"BLOCK: cmd_save.sh failed for cmd_curr"* ]]
+    [[ "$output" != *"stub cmd_delegate"* ]]
+    grep -q "status: on_hold" "$TEST_QUEUE"
+}

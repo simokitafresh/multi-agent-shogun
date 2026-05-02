@@ -8,9 +8,10 @@
 #   bash scripts/cmd_publish.sh cmd_2405 "cmd_2405を書いた。GSL2 bunshin。配備せよ。"
 #
 # 実行内容:
-#   1. cmd_save.sh でgate検証 → BLOCK/FAILなら停止
-#   2. status: draft → status: pending に昇格 (yaml_field_set)
-#   3. cmd_delegate.sh で委任 (status=pending検証 + inbox_write + delegated_at)
+#   1. status: on_hold なら draft に戻す (yaml_field_set)
+#   2. cmd_save.sh でgate検証 → BLOCK/FAILなら停止
+#   3. status: draft → status: pending に昇格 (yaml_field_set)
+#   4. cmd_delegate.sh で委任 (status=pending検証 + inbox_write + delegated_at)
 #
 # 設計思想:
 #   将軍の「書く」(創造的) と「通す」(機械的) を分離。
@@ -123,8 +124,31 @@ run_publish_preflight() {
 echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
 run_publish_preflight
 
+# --- Step 0.5: on_hold → draft 復帰 ---
+promoted_from_on_hold=false
+current_status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
+    echo "ERROR: $CMD_ID not found in shogun_to_karo.yaml" >&2
+    exit 1
+}
+
+if [ "$current_status" = "on_hold" ]; then
+    yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "draft" || {
+        echo "ERROR: failed to set status=draft for $CMD_ID" >&2
+        exit 1
+    }
+    echo "OK: $CMD_ID on_hold → draft"
+    promoted_from_on_hold=true
+fi
+
 echo "=== [1/3] cmd_save.sh gate検証: $CMD_ID ==="
 if ! bash "$CMD_SAVE_SCRIPT" "$CMD_ID"; then
+    if [ "$promoted_from_on_hold" = true ]; then
+        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "on_hold" || {
+            echo "ERROR: failed to rollback status=on_hold for $CMD_ID" >&2
+            exit 1
+        }
+        echo "ROLLBACK: $CMD_ID draft → on_hold"
+    fi
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
     exit 1
 fi
