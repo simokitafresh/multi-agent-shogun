@@ -352,6 +352,23 @@ _setup_git_project() {
     grep -Fq 'purpose_fit: PASS' "$report_path"
 }
 
+@test "報告テンプレートにassumption_invalidationデフォルト構造とAC連動binary_checksを注入する" {
+    local report_path monthly_report handwritten_report
+    report_path="$(fixture_report_path combo_impl)"
+    monthly_report="$(fixture_report_path monthly_description)"
+    handwritten_report="$(fixture_report_path monthly_handwritten)"
+
+    grep -Fq 'assumption_invalidation:' "$report_path"
+    grep -Fq '  found: false' "$report_path"
+    grep -Fq '  affected_cmds: []' "$report_path"
+    grep -Fq '  detail: ""' "$report_path"
+
+    grep -Fq 'binary_checks:' "$monthly_report"
+    grep -Fq 'AC1:' "$monthly_report"
+    grep -Fq 'monthly returns parityを確認する' "$monthly_report"
+    grep -Fq '月次リターン差分を確認したか' "$handwritten_report"
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════
