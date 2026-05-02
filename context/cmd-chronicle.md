@@ -861,3 +861,4 @@
 | cmd_2505 | gate_field_get.shがリグレッション(40ms→71ms、1.8x悪化)。213行。 前回(2026-04-18 saizo): 404→40ms(-90.1%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_field_get.sh R2 CoDD再改善を完 |
 | cmd_2508 | gateの最適化(cmd_2495-2507)は偵察計測値ベースで進行中。次はhooks+通常スクリプトを対象に、 頻度x実行時間=インパクトの観点で最適化ROI順位を付ける。 cmd_2493のTSVは呼出頻度あるが実行時間がbash -n(構文チェック)で正確でない。実測が必要。 | infra | 05-03 | hooks全34本をmedian 3runで実測し、Clau |
 | cmd_2509 | 軍師利他提案: cmd_complete_gate.sh内でlesson_candidate(found:true)をlesson_write.sh自動呼出しで登録。 現状: 軍師LGTM→gate即時発火→家老lesson未登録→BLOCK→手動登録→再GATE(38%=5/13件)。 gate内でlesson_write.shを自動呼出しし、BLOCK→CLEAR往復を構造的に解消する。 | infra | 05-03 | cmd_complete_gateのlesson_candi |
+| cmd_2511 | cmd_2508偵察結果: stop_check_inbox.shがインパクト1位(187,739 ms/day)。 未読0件時にinotifywait(5sタイムアウト)で毎回ブロック。inbox_watcher.shが同機能を提供しており冗長。 inotifywait待機ブロックを除去し、全エージェントのStop操作を高速化する。 | infra | 05-03 | stop_check_inbox.shの未読0件inotif |

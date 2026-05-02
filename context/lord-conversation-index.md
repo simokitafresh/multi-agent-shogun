@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-03T03:21:35+09:00 -->
+<!-- generated_at: 2026-05-03T03:27:38+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-03T03:27:38+09:00 | terminal | response | **cmd_2514 PASS、委任完了。** Codex nudge空振り修正。 本セッション起票7本全て委任完了: | cmd | 内容 | 状態 | |-----|------|------| | cmd_2509 | lesson…
+- 2026-05-03T03:24:52+09:00 | terminal | inbound | 続けて
 - 2026-05-03T03:21:35+09:00 | terminal | response | 殿、on_hold禁止guard実装完了。 **本セッション成果まとめ:** | 完了 | 内容 | |------|------| | cmd_2395除去 | UTF-8バグ原因のon_hold cmd除去(殿指示で直接実装) | |…
 - 2026-05-03T03:20:03+09:00 | terminal | inbound | on_hold迂回禁止を環境に埋め込めは将軍がやろう
 - 2026-05-03T03:19:32+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-235)
@@ -12,8 +14,6 @@
 - 2026-05-03T03:13:31+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-03 03:05:10|CI緑: run 25258126068 2026-05-03 03:10:53|cmd_2509
 - 2026-05-03T03:12:05+09:00 | ntfy | outbound | Dashboard: cmd_2509 CLEAR(lesson自動登録) | cmd_2511稼働中 | idle:5名
 - 2026-05-03T03:09:08+09:00 | terminal | response | 申し訳ない。ルール違反している。 **cmd_publish.shを2本同時に並列実行しようとした。** LS-A04(4)「1本ずつ昇格→委任→次」に反する。shogun_to_karo.yamlへの同時書き込み競合のリスク。 1本目が…
-- 2026-05-03T03:08:27+09:00 | terminal | inbound | またルール違反していないか？
-- 2026-05-03T03:06:07+09:00 | terminal | inbound | 他に並列でできることは無いか？
 
 ## 未解決確認事項
 - 掲示板を確認せよ
@@ -26,6 +26,7 @@
 - **cmd_2481 GATE CLEAR。** テスト高速化Top6-10も完了。 **本セッション最終成果 — 10 GATE CLEAR:** | cmd | 内容 | 結果 | |-----|------|------| | cmd_2486 | スキル帰属精度改善 |…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-03T03:27:38+09:00 | **cmd_2514 PASS、委任完了。** Codex nudge空振り修正。 本セッション起票7本全て委任完了: | cmd | 内容 | 状態 | |-----|------|------| | cmd_2509 | lesson_candidate自動登録 | **G…
 - 2026-05-03T03:21:35+09:00 | 殿、on_hold禁止guard実装完了。 **本セッション成果まとめ:** | 完了 | 内容 | |------|------| | cmd_2395除去 | UTF-8バグ原因のon_hold cmd除去(殿指示で直接実装) | | cmd_2509 CLEAR | le…
 - 2026-05-03T03:18:00+09:00 | **cmd_2510 PASS、委任完了。** 全5本の起票完了: | cmd | 内容 | 状態 | |-----|------|------| | cmd_2509 | lesson_candidate自動登録 | **GATE CLEAR** | | cmd_2511 |…
 - 2026-05-03T03:05:16+09:00 | **cmd_2511 PASS、家老に委任完了。** stop_check_inbox.sh inotifywait待機除去(188K ms/day削減)。 **現在の配備状況:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2…
@@ -33,7 +34,6 @@
 - 2026-05-03T02:52:52+09:00 | 殿、**cmd_2508 GATE CLEAR**。偵察が正式完了した。 掲示板の新着は家老からのcmd_2508 GATE CLEAR通知のみ。軍師提案3件は先ほど報告した通り。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-03T02:51:58+09:00 | 掲示板の要点を報告する。 **軍師からの提案3件:** 1. **registry台帳追記の家老移管** — 忍者がcodd_refactor_registry.mdを並行編集→cross-contamination(本セッション3件)。対策: 台帳追記をcmd_complet…
 - 2026-05-03T02:51:16+09:00 | 殿、復帰完了。 **殿の指示対応:** - cmd_2395(on_hold GSL2)をshogun_to_karo.yamlから除去。UTF-8バグは再現せず(locale=C.UTF-8正常)。必要時は再起票する。 **cmd_2508偵察結果(hayate done):…
-- 2026-05-03T02:51:12+09:00 | 【将軍】復帰済み。cmd_2395除去+UTF-8確認完了(殿指示対応)。cmd_2508偵察done(TOP: stop_check_inbox 188K ms/day)。
 
 ## 参照cmd
 - cmd_2

@@ -5062,6 +5062,20 @@ except Exception:
         log "POST-DEPLOY VERIFY ${NINJA_NAME} pane:"
         echo "  ${_pd_capture}" | head -3
     fi
+
+    # Codex忍者向け遅延re-nudge (cmd_karo_codex_renudge)
+    # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
+    # 対象: codexタイプ かつ CTX=0% の場合のみ。Claude Code(claude/Opus/Sonnet)は対象外
+    if [ "$ctx_pct" -le 0 ] 2>/dev/null && [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
+        log "${NINJA_NAME}: Codex+CTX=0% detected. Scheduling delayed re-nudge in 5s (background)"
+        local _renudge_script="$SCRIPT_DIR/scripts/inbox_write.sh"
+        local _renudge_name="$NINJA_NAME" _renudge_msg="$MESSAGE" _renudge_type="$TYPE" _renudge_from="$FROM"
+        (
+            sleep 5
+            bash "$_renudge_script" "$_renudge_name" "$_renudge_msg" "$_renudge_type" "$_renudge_from"
+        ) &
+        log "${NINJA_NAME}: re-nudge scheduled (pid=$!)"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
