@@ -10,11 +10,12 @@ setup_file() {
 }
 
 setup() {
-    export TMP_DIR TMP_REPORT TMP_STK
+    export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN
     TMP_DIR="$(mktemp -d)"
     mkdir -p "$TMP_DIR/queue/reports"
     TMP_REPORT="$TMP_DIR/queue/reports/hanzo_report_cmd_100.yaml"
     TMP_STK="$TMP_DIR/queue/shogun_to_karo.yaml"
+    TMP_AUTOLEARN="$TMP_DIR/preflight_autolearn.txt"
     printf 'result: ok\n' > "$TMP_REPORT"
     printf 'commands: {}\n' > "$TMP_STK"
 }
@@ -25,7 +26,7 @@ teardown() {
 
 _run_pre() {
     local payload="$1"
-    run bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$PRE_HOOK"
+    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN"
 }
 
 _run_post() {
@@ -54,6 +55,15 @@ _run_post() {
     [[ "$output" == *'対象現物を確認したか'* ]]
     [[ "$output" == *'既存代替で足りないことを確認したか'* ]]
     [[ "$output" == *'cmd_save.sh関連チェック名を確認したか'* ]]
+}
+
+@test "pre combined hook shows dynamic preflight autolearn items" {
+    printf '%s\n' '2026-05-02T00:00:00Z check=quality_gate_q8_compound_question count=3 warn=q8_複利の問い cmd=cmd_test' > "$TMP_AUTOLEARN"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'動的追加確認(preflight_autolearn)'* ]]
+    [[ "$output" == *'quality_gate_q8_compound_question'* ]]
+    [[ "$output" == *'count=3'* ]]
 }
 
 @test "pre combined hook does not show checklist for other edit targets" {

@@ -16,6 +16,7 @@ setup() {
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
     export TEST_ARCHIVE_DIR="$TEST_TMPDIR/archive"
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
+    export TEST_PREFLIGHT_AUTOLEARN="$TEST_TMPDIR/preflight_autolearn.txt"
     mkdir -p "$TEST_ARCHIVE_DIR"
 }
 
@@ -64,6 +65,7 @@ run_diag_save() {
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         bash "$SAVE_SCRIPT" cmd_diagqtest
 }
 
@@ -102,6 +104,7 @@ run_warn_save() {
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         bash "$SAVE_SCRIPT" cmd_warntest
 }
 
@@ -166,6 +169,7 @@ run_warn_save() {
     env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
 
     # 2回目実行 — 過去1件あるのでBLOCK昇格
@@ -175,6 +179,9 @@ run_warn_save() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
+    [ -f "$TEST_PREFLIGHT_AUTOLEARN" ]
+    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"check=quality_gate_q8_compound_question"* ]]
+    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"count=1"* ]]
 }
 
 @test "AC2-3: 同一WARNが3回目でBLOCK昇格" {
@@ -183,11 +190,13 @@ run_warn_save() {
     env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
     write_warn_cmd
     env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
 
     # 3回目: BLOCK昇格

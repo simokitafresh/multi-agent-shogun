@@ -23,6 +23,9 @@ emit_context() {
     printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":.}}'
 }
 
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+PREFLIGHT_AUTOLEARN_FILE="${PREFLIGHT_AUTOLEARN_FILE:-$SCRIPT_DIR/logs/preflight_autolearn.txt}"
+
 # Single jq call to extract tool_name and file_path
 _parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
 tool_name="${_parsed%%	*}"
@@ -45,12 +48,43 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         exit 1
     fi
     if [[ "$tool_name" == "Edit" ]]; then
-        emit_context "起票前確認5問:
+        _dynamic_checks=""
+        if [[ -s "$PREFLIGHT_AUTOLEARN_FILE" ]]; then
+            _dynamic_checks="$(tail -n 10 "$PREFLIGHT_AUTOLEARN_FILE" 2>/dev/null | awk '
+                NF {
+                    check = ""; count = ""; warn = ""
+                    for (i = 1; i <= NF; i++) {
+                        if ($i ~ /^check=/) { check = substr($i, 7) }
+                        else if ($i ~ /^count=/) { count = substr($i, 7) }
+                        else if ($i ~ /^warn=/) { warn = substr($i, 6) }
+                    }
+                    if (check != "") {
+                        seen[check] = check " count=" count " warn=" warn
+                    }
+                }
+                END {
+                    for (check in seen) {
+                        print "- " seen[check]
+                    }
+                }
+            ')"
+        fi
+        _checklist="起票前確認8問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
 4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？(LS023/LS027: 研究道具チェック累計昇格)
-5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？(LS026/LS028: タイトル/diagnosis偽陽性)"
+5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？(LS026/LS028: タイトル/diagnosis偽陽性)
+6. command欄のステップ数≦AC数か？各ステップの成果物がACに対応しているか？(command_steps_over_ac 10回累計BLOCK)
+7. CMD全文に目視確認/セルフレビュー/自問を含まないか？「現物確認」「grep確認」等の客観表現に置換せよ(self_reread 4回累計BLOCK)
+8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)"
+        if [[ -n "$_dynamic_checks" ]]; then
+            _checklist="${_checklist}
+
+動的追加確認(preflight_autolearn):
+${_dynamic_checks}"
+        fi
+        emit_context "$_checklist"
     fi
     exit 0
 fi
