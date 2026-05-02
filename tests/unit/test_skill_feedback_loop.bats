@@ -112,6 +112,10 @@ EOF
 }
 
 @test "gate FAIL identifies skill and appends 注意ポイント" {
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        bash "$SKILL_LOG_SCRIPT" report-bundle saizo FAIL "binary_checks.result empty" gate_report_format queue/reports/saizo_report.yaml "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
+    [ "$status" -eq 0 ]
+
     run env \
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
         SKILL_FEEDBACK_SKILLS_DIRS="$TEST_SKILLS_DIR" \
@@ -144,6 +148,10 @@ EOF
 }
 
 @test "gate FAIL duplicate does not append log or 注意ポイント twice" {
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        bash "$SKILL_LOG_SCRIPT" report-bundle saizo FAIL "binary_checks.result empty" gate_report_format queue/reports/saizo_report.yaml "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
+    [ "$status" -eq 0 ]
+
     for attempt in 1 2; do
         run env \
             SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
@@ -156,7 +164,7 @@ EOF
                 --source queue/reports/saizo_report.yaml
         [ "$status" -eq 0 ]
     done
-    [[ "$output" == *"DUPLICATE:"* ]]
+    [[ "$output" == *"UNCHANGED:"* ]]
 
     run python3 - <<EOF
 import pathlib
@@ -191,6 +199,9 @@ description: |
 ---
 # report-write
 EOF
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        bash "$SKILL_LOG_SCRIPT" report-write hayate FAIL "dashboard-update text in reason but report-write owns it" gate_report_format queue/reports/hayate_report_cmd_2473.yaml "$TEST_TMPDIR/skills/report-write/SKILL.md"
+    [ "$status" -eq 0 ]
 
     run env \
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
@@ -198,22 +209,26 @@ EOF
         bash "$SKILL_FEEDBACK_SCRIPT" \
             --gate gate_report_format \
             --result FAIL \
-            --reason "lesson_candidate: found=false but no no_lesson_reason" \
+            --reason "dashboard-update text in reason but report-write owns it" \
             --executor hayate \
-            --source queue/reports/hayate_report_cmd_2473.yaml \
-            --skill report-write
+            --source queue/reports/hayate_report_cmd_2473.yaml
     [ "$status" -eq 0 ]
 
     run python3 - <<EOF
 import yaml
 data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
-entry = data["executions"][0]
+entry = data["executions"][-1]
 assert entry["skill"] == "report-write"
 assert entry["gate"] == "gate_report_format"
 print("OK")
 EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
+
+    run grep -n "dashboard-update text in reason but report-write owns it" "$TEST_TMPDIR/skills/report-write/SKILL.md"
+    [ "$status" -eq 0 ]
+    run grep -n "dashboard-update text in reason but report-write owns it" "$TEST_TMPDIR/skills/dashboard-update/SKILL.md"
+    [ "$status" -ne 0 ]
 }
 
 @test "explicit report-write and ninja-commit routing still records requested skill" {

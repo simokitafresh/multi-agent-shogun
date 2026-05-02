@@ -45,7 +45,6 @@ skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-${SHOGUN_REPO_ROOT:-$(cd "$(dirname "
 
 python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" <<'PY'
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -55,7 +54,6 @@ from pathlib import Path
 import yaml
 
 skills_dirs, explicit_skill, gate, result, reason, executor, source, log_script = sys.argv[1:9]
-haystack = " ".join([explicit_skill, gate, result, reason, source]).lower()
 
 
 def iter_skill_files():
@@ -78,37 +76,6 @@ def iter_skill_files():
             yield child.name, skill_file
 
 
-def trigger_terms(text):
-    terms = []
-    for line in text.splitlines()[:80]:
-        if "TRIGGER:" not in line:
-            continue
-        rhs = line.split("TRIGGER:", 1)[1]
-        for part in re.split(r"[、,，/()\s]+", rhs):
-            part = part.strip("`'\"。:：")
-            if len(part) >= 3:
-                terms.append(part.lower())
-    return terms
-
-
-def score_skill(name, path):
-    if explicit_skill and name == explicit_skill:
-        return 10000
-    text = path.read_text(encoding="utf-8", errors="ignore")
-    score = 0
-    name_l = name.lower()
-    if name_l in haystack:
-        score += 500 + len(name_l)
-    for term in trigger_terms(text):
-        if term in haystack:
-            score += 100 + len(term)
-    # Gate names often omit hyphens. Let "gate_report_format" match "report-format" style names.
-    normalized_haystack = haystack.replace("_", "-")
-    if name_l in normalized_haystack:
-        score += 200 + len(name_l)
-    return score
-
-
 def skill_log_file():
     env_path = os.environ.get("SKILL_EXECUTION_LOG_FILE")
     if env_path:
@@ -116,17 +83,55 @@ def skill_log_file():
     return Path(log_script).resolve().parent.parent / "logs" / "skill_execution_log.yaml"
 
 
-def has_duplicate_failure(skill_name, gate_name, stumbling_points):
+def load_skill_log():
     path = skill_log_file()
     if not path.is_file():
-        return False
+        return []
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception:
-        return False
-    for entry in data.get("executions") or []:
-        if not isinstance(entry, dict):
+        return []
+    entries = data.get("executions") or []
+    return [entry for entry in entries if isinstance(entry, dict)]
+
+
+def latest_fail_entry():
+    matches = []
+    for entry in load_skill_log():
+        if str(entry.get("result", "")).strip().upper() != "FAIL":
             continue
+        entry_gate = str(entry.get("gate") or "").strip()
+        entry_source = str(entry.get("source") or "").strip()
+        entry_points = str(entry.get("stumbling_points") or "").strip()
+        if gate and entry_gate != gate:
+            continue
+        if source and entry_source == source:
+            matches.append((3, entry))
+            continue
+        if reason and entry_points == reason:
+            matches.append((2, entry))
+            continue
+        matches.append((1, entry))
+    if not matches:
+        return None
+    best_priority = max(priority for priority, _ in matches)
+    best = [entry for priority, entry in matches if priority == best_priority]
+    return best[-1]
+
+
+def exact_skill_file(skill_name, logged_path=""):
+    if logged_path:
+        path = Path(os.path.expanduser(str(logged_path)))
+        if path.is_file():
+            return path
+    for name, path in iter_skill_files():
+        if name == skill_name:
+            return path
+    return None
+
+
+def has_duplicate_failure(skill_name, gate_name, stumbling_points):
+    for entry in load_skill_log():
         if (
             str(entry.get("skill", "")) == skill_name
             and str(entry.get("gate", "")) == gate_name
@@ -143,21 +148,28 @@ def has_duplicate_caution(text, gate_name, reason_text):
     return False
 
 
-candidates = [(score_skill(name, path), name, path) for name, path in iter_skill_files()]
-candidates = [item for item in candidates if item[0] > 0]
-if not candidates:
+logged_entry = latest_fail_entry()
+logged_skill = ""
+logged_skill_path = ""
+if logged_entry:
+    logged_skill = str(logged_entry.get("skill") or "").strip()
+    logged_skill_path = str(logged_entry.get("skill_path") or "").strip()
+
+skill = logged_skill or explicit_skill
+skill_file = exact_skill_file(skill, logged_skill_path)
+if not skill or not skill_file:
     print("SKIP: skill not identified")
     raise SystemExit(0)
 
-candidates.sort(key=lambda item: (item[0], len(item[1])), reverse=True)
-_, skill, skill_file = candidates[0]
-stumbling = reason or f"{gate} {result}"
+stumbling = str(logged_entry.get("stumbling_points") or "").strip() if logged_entry else ""
+if not stumbling:
+    stumbling = reason or f"{gate} {result}"
 
-if result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
+if not logged_entry and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
     print(f"DUPLICATE: {skill} gate={gate}")
     raise SystemExit(0)
 
-if os.path.isfile(log_script) and os.access(log_script, os.X_OK):
+if not logged_entry and os.path.isfile(log_script) and os.access(log_script, os.X_OK):
     subprocess.run(
         ["bash", log_script, skill, executor, result, stumbling, gate, source, str(skill_file)],
         check=True,
