@@ -52,11 +52,12 @@ bashスクリプトのリファクタリングを、データ駆動で設計→�
 
 ```bash
 _fail=0
-command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。pip install codd"; _fail=1; }
+export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
+command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。/home/simokitafresh/.codd-venv/bin/python -m pip install codd-dev==1.10.0"; _fail=1; }
+codd --version | grep -q '1.10.0' || { echo "BLOCK: codd v1.10.0ではない"; _fail=1; }
 command -v bats >/dev/null 2>&1 || { echo "BLOCK: bats未インストール。npm i -g bats"; _fail=1; }
 command -v parallel >/dev/null 2>&1 || { echo "BLOCK: parallel未インストール。apt install parallel"; _fail=1; }
 [ "$_fail" -eq 1 ] && return 1
-export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
 ```
 
 ## Phase 0.5: 並列安全+残骸クリーンアップ
@@ -137,6 +138,8 @@ done
 codd validate 2>/dev/null || true
 ```
 
+v1.10.0でも`codd implement --language bash`は`No such option: --language`で失敗する。bashリファクタではCoDDを設計書・依存グラフ・伝播に使い、Phase 4の実装は手動で行う。
+
 ## Phase 4: 実装（1つずつ→テスト→次）
 
 ### 実績ベース高速化パターン
@@ -169,6 +172,17 @@ codd extract --path "$PROJECT_ROOT" --source-dirs scripts/lib --language bash --
 ```
 
 対象を改修したファイルに絞る（全量extractは重いため）。
+
+### 6.1.5 依存グラフ更新と伝播確認
+
+```bash
+codd scan --path "$PROJECT_ROOT"
+codd impact --path "$PROJECT_ROOT"
+# 下流docsの自動更新が妥当な場合のみ実行
+codd propagate --path "$PROJECT_ROOT" --update
+```
+
+`codd-skeleton-complete`の知見: after設計書を置くだけでは腐る。frontmatter依存グラフを`scan`し、変更時に`impact`と`propagate --update`で下流docsを追随させる。
 
 ### 6.2 手動after設計書（extractが不十分な場合）
 

@@ -21,9 +21,10 @@ allowed-tools:
 
 ## 前提条件
 
-- CoDD v1.7.1: `/home/simokitafresh/.codd-venv/bin/codd`
+- CoDD v1.10.0: `/home/simokitafresh/.codd-venv/bin/codd`
 - PATH設定: `export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"`
 - ai_command: codd.yamlで定義（`/home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools ""`）
+- 確認: `codd --version` が `codd, version 1.10.0` を返すこと
 
 ## 使い方
 
@@ -65,10 +66,25 @@ codd validate
 # codd.yaml のscan.excludeに除外パスを追加
 ```
 
+### 4. 依存グラフと変更伝播（v1.10.0 / skeleton-complete）
+
+```bash
+# frontmatterのcodd.node_id / depends_onから依存グラフを構築
+codd scan --path .
+
+# git diffから影響範囲をGreen/Amber/Grayに分類
+codd impact --path .
+
+# 下流docsを更新
+codd propagate --path . --update
+```
+
+記事`codd-skeleton-complete`の中核は「docsを作る」ではなく「依存グラフでdocsを腐らせない」。新規生成より、既存docsの`scan -> impact -> propagate --update`を優先して考える。
+
 ## 注意事項
 
 1. **specの質がボトルネック**: AIは書いてないことは作らない。要件を具体的に書け
-2. **codd implementはbashに非対応**: TypeScriptを生成する。bashプロジェクトではgenerateまで
+2. **`codd implement --language bash`は非対応**: v1.10.0実測で`No such option: --language`。bashプロジェクトではgenerate/propagateまで、実装は手動
 3. **Wave 4が失敗することがある**: AIの出力フォーマット不安定。リトライで解消
 4. **docs/の既存ファイル**: codd.yaml scan.excludeで除外しないとvalidateが大量エラー
 5. **codd extract --ai**: ファイル数が多いと時間がかかる。対象を絞れ
