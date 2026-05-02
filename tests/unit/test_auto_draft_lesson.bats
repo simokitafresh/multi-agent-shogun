@@ -38,6 +38,14 @@ EOF
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$@" > "$TEST_TMPDIR/lesson_write_args.txt"
+cmd_id="${6:-}"
+if [ -n "$cmd_id" ]; then
+    mkdir -p "$TEST_PROJECT/queue/gates/$cmd_id"
+    {
+        echo "timestamp: test"
+        echo "source: lesson_write"
+    } > "$TEST_PROJECT/queue/gates/$cmd_id/lesson.done"
+fi
 EOF
     chmod +x "$TEST_PROJECT/scripts/lesson_write.sh"
 }
@@ -78,5 +86,39 @@ EOF
     [ "$status" -eq 0 ]
 
     run grep -Fx -- "cmd_123" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
+
+    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+}
+
+@test "duplicate lesson candidates create lesson.done as already registered" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+---
+title: Test Lessons
+---
+### L001: draft registration
+**出典**: cmd_123
+EOF
+
+    local report="$TEST_TMPDIR/report.yaml"
+    cat > "$report" <<'EOF'
+parent_cmd: cmd_123
+worker_id: hayate
+lesson_candidate:
+  found: true
+  project: testproj
+  title: draft registration
+  detail: auto_draft should detect this duplicate lesson for review.
+EOF
+
+    run_auto_draft "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Duplicate found"* ]]
+    [ ! -f "$TEST_TMPDIR/lesson_write_args.txt" ]
+
+    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
     [ "$status" -eq 0 ]
 }

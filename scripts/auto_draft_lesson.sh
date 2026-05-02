@@ -180,6 +180,15 @@ PYEOF
     )
 
     if [[ "$dup_check" == DUP:* ]]; then
+        if [[ "$SOURCE_CMD" == cmd_* ]]; then
+            gates_dir="$SCRIPT_DIR/queue/gates/${SOURCE_CMD}"
+            mkdir -p "$gates_dir"
+            {
+                echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)"
+                echo "source: lesson_write"
+                echo "note: duplicate_existing (${dup_check#DUP:})"
+            } > "$gates_dir/lesson.done"
+        fi
         echo "[auto_draft] Duplicate found: ${dup_check#DUP:} — skipping (${REPORT_PATH})"
         exit 0
     fi
@@ -200,6 +209,6 @@ fi
 if [ -n "$BECAUSE_REASON" ]; then
     EXTRA_FLAGS+=(--because "$BECAUSE_REASON")
 fi
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status draft "${EXTRA_FLAGS[@]}"
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "$SOURCE_CMD" --status draft "${EXTRA_FLAGS[@]}"
 
 echo "[auto_draft] Draft lesson registered successfully"

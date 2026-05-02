@@ -2380,13 +2380,9 @@ preflight_gate_flags() {
             fi
         done
         if [ "$has_found_true" = true ]; then
-            # auto_draft_lesson.sh already ran (上段L276-295), which calls lesson_write.sh
-            # lesson_write.sh doesn't create lesson.done when CMD_ID is empty
-            # auto_draftが正常処理済みと判断し、不足フラグを補完する
-            echo "timestamp: $(date '+%Y-%m-%dT%H:%M:%S')" > "$gates_dir/lesson.done"
-            echo "source: lesson_write" >> "$gates_dir/lesson.done"
-            echo "note: preflight補完 (auto_draft ran without CMD_ID)" >> "$gates_dir/lesson.done"
-            echo "  lesson: preflight OK (found:true — flag for auto_draft)"
+            # auto_draft_lesson.sh already ran above and must call lesson_write.sh with CMD_ID.
+            # If lesson.done is still missing, keep the gate blocked instead of masking registration failure.
+            echo "  lesson: pending (found:true — waiting for lesson_write-generated flag)"
         else
             # found:true候補なし → lesson_check.shで「教訓なし」フラグ生成
             if bash "$SCRIPT_DIR/scripts/lesson_check.sh" "$cmd_id" "preflight: no found:true lesson_candidate" 2>&1; then
