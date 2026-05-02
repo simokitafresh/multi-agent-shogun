@@ -13,7 +13,7 @@ readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*st
 readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
 
-payload="$(</dev/stdin)"
+IFS='' read -r -d '' payload || true
 if [[ -z "$payload" ]]; then
   exit 0
 fi
