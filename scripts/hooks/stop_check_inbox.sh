@@ -3,7 +3,11 @@
 set -euo pipefail
 
 SOURCE_PATH="${BASH_SOURCE[0]}"
-SCRIPT_DIR="$(cd "${SOURCE_PATH%/*}/../.." && pwd)"
+case "$SOURCE_PATH" in
+  */scripts/hooks/*) SCRIPT_DIR="${SOURCE_PATH%/scripts/hooks/*}" ;;
+  scripts/hooks/*) SCRIPT_DIR="." ;;
+  *) SCRIPT_DIR="$(cd "${SOURCE_PATH%/*}/../.." && pwd)" ;;
+esac
 readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
 readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
 readonly SUMMARY_LIMIT=5
@@ -20,12 +24,30 @@ if [[ "$payload" != '{'* ]]; then
   exit 0
 fi
 
-agent_id=""
-if command -v tmux >/dev/null 2>&1; then
-  if [[ -n "${TMUX_PANE:-}" ]]; then
-    agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-  elif [[ -n "${TMUX:-}" ]]; then
-    agent_id="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+
+agent_id="${TMUX_AGENT_ID:-}"
+if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
+  agent_cache=""
+  if [[ -n "${TMUX:-}${TMUX_PANE:-}" ]]; then
+    cache_key="${TMUX:-no_tmux}_${TMUX_PANE:-no_pane}"
+    cache_key="${cache_key//[^A-Za-z0-9_.-]/_}"
+    agent_cache="$STATE_DIR/shogun_agent_id_${cache_key}"
+    if [[ -s "$agent_cache" ]]; then
+      IFS= read -r agent_id < "$agent_cache" || agent_id=""
+    fi
+  fi
+
+  if [[ -z "$agent_id" ]]; then
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+      agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    elif [[ -n "${TMUX:-}" ]]; then
+      agent_id="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    if [[ -n "$agent_id" && -n "$agent_cache" ]]; then
+      [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
+      printf '%s\n' "$agent_id" > "$agent_cache" 2>/dev/null || true
+    fi
   fi
 fi
 
@@ -33,7 +55,6 @@ if [[ -z "$agent_id" ]]; then
   exit 0
 fi
 
-STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
 last_assistant_message=""
