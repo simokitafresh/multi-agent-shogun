@@ -7,9 +7,20 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
+    export EXTRACTED_GATE_HELPERS="$BATS_FILE_TMPDIR/cmd_complete_gate_warning_helpers.sh"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+
+    {
+        sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^detect_task_role()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^check_how_it_works_status()/,/^}/p' "$SRC_GATE_SCRIPT"
+    } > "$EXTRACTED_GATE_HELPERS"
 }
 
 setup() {
@@ -51,13 +62,7 @@ EOF
     chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
 
     source "$SRC_FIELD_GET_SCRIPT"
-    eval "$(sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^detect_task_role()/,/^}/p' "$SRC_GATE_SCRIPT")"
-    eval "$(sed -n '/^check_how_it_works_status()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    source "$EXTRACTED_GATE_HELPERS"
 
     write_task "review"
 }

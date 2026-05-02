@@ -164,3 +164,6 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 - CoDD系リファクタリングを完了したら、この台帳に1行追加する。
 - `Phase到達` は spec only / implementation / after設計書あり など、現物で確認できる到達点を書く。
 - `Before→After` は速度・メモリ・同一性など、再発明防止に効く定量差を優先して残す。
+
+| 2026-05-02 | saizo | `tests/unit/test_cmd_complete_gate_warning_levels.bats` | Phase 5(計測+実装+検証) | `8.21s → 3.08s` (`-62.5%`, median 5run, `bats --timing`) | 関数抽出をsetup_fileで1回化し、各test setupの巨大script sed/eval反復を削減。23/23 PASS |
+| 2026-05-02 | saizo | `tests/unit/test_gate_metrics_model_labels.bats` | Phase 5(計測+実装+検証) | `9.76s → 1.57s` (`-83.9%`, median 5run, `bats --timing`) | full `cmd_complete_gate.sh` 実行をhelper単位検証へ置換し、fixture copyをsymlink化。3/3 PASS |

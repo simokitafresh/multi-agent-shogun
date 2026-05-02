@@ -11,6 +11,7 @@ setup_file() {
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     export SRC_NORMALIZE_REPORT_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
     export SRC_GUNSHI_NOTIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/gunshi_notify.sh"
+    export EXTRACTED_GATE_METRICS_HELPERS="$BATS_FILE_TMPDIR/gate_metrics_model_helpers.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
@@ -21,6 +22,16 @@ setup_file() {
     [ -f "$SRC_NORMALIZE_REPORT_SCRIPT" ] || return 1
     [ -f "$SRC_GUNSHI_NOTIFY_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+
+    {
+        sed -n '/^build_clear_duration_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^agent_pane_target()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^normalize_model_label()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^encode_model_label_for_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^fallback_model_label_from_settings()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^resolve_agent_model_label()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^collect_gate_metrics_extra()/,/^}/p' "$SRC_GATE_SCRIPT"
+    } > "$EXTRACTED_GATE_METRICS_HELPERS"
 }
 
 setup() {
@@ -28,6 +39,8 @@ setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/gate_metrics_models.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
     export TEST_CMD_ID="cmd_999"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
 
     mkdir -p \
         "$TEST_PROJECT/scripts/lib" \
@@ -41,14 +54,14 @@ setup() {
         "$TEST_PROJECT/context" \
         "$TEST_PROJECT/tasks"
 
-    cp "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
-    cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
-    cp "$SRC_MODEL_ANALYSIS" "$TEST_PROJECT/scripts/model_analysis.sh"
-    cp "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
-    cp "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
-    cp "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
-    cp "$SRC_NORMALIZE_REPORT_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
-    cp "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
+    ln -s "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
+    ln -s "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
+    ln -s "$SRC_MODEL_ANALYSIS" "$TEST_PROJECT/scripts/model_analysis.sh"
+    ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
+    ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
+    ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    ln -s "$SRC_NORMALIZE_REPORT_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
+    ln -s "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
 
     for stub in \
         auto_draft_lesson.sh \
@@ -92,6 +105,9 @@ EOF
         "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
         "$TEST_PROJECT/scripts/lib/normalize_report.sh" \
         "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh"
+
+    source "$TEST_PROJECT/scripts/lib/field_get.sh"
+    source "$EXTRACTED_GATE_METRICS_HELPERS"
 
     cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" <<'EOF'
 timestamp: 2026-03-06T00:00:00
@@ -199,31 +215,31 @@ lessons_useful: []
 EOF
 }
 
-@test "cmd_complete_gate writes encoded model labels without shifting TSV columns" {
+@test "gate metrics helpers encode model labels without shifting TSV columns" {
     write_gate_cmd_fixture
 
-    # Prevent live tmux pane lookup from overriding test settings.yaml model_name
     mkdir -p "$TEST_TMPDIR/bin"
     printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/bin/tmux"
     chmod +x "$TEST_TMPDIR/bin/tmux"
-    # Stub git push to avoid ~6s real push to remote (bottleneck: AC1 identified)
-    printf '#!/bin/sh\nfor a in "$@"; do [ "$a" = "push" ] && { echo "Everything up-to-date"; exit 0; }; done\nexec /usr/bin/git "$@"\n' > "$TEST_TMPDIR/bin/git"
-    chmod +x "$TEST_TMPDIR/bin/git"
-    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
 
-    result="$(python3 - <<'PY' "$TEST_PROJECT/logs/gate_metrics.log"
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    IFS=$'\t' read -r gate_task_type gate_model gate_bloom_level < <(
+        PATH="$TEST_TMPDIR/bin:$PATH" collect_gate_metrics_extra "$TEST_CMD_ID"
+    )
+    line=$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\tnone\t%s\t%s\t%s' \
+        "2026-03-06T14:00:00" "$TEST_CMD_ID" "$gate_task_type" "$gate_model" "$gate_bloom_level" \
+        "gate metrics model label test" "duration_sec=unknown" "ctx_pct=unknown")
+
+    run python3 - "$line" <<'PY'
 import sys
-from pathlib import Path
-line = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1]
-parts = line.split("\t")
+parts = sys.argv[1].split("\t")
 print(f"{len(parts)}|{parts[5]}|{parts[6]}|{parts[9]}")
 PY
-)"
-    [ "$result" = "11|gpt-5.5_high_fast|routine|duration_sec=unknown" ]
+    [ "$status" -eq 0 ]
+    [ "$output" = "11|gpt-5.5_high_fast|routine|duration_sec=unknown" ]
 }
 
-@test "cmd_complete_gate records duration metric from task timestamps when available" {
+@test "gate metrics helpers record duration metric from task timestamps when available" {
     write_gate_cmd_fixture
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
@@ -238,24 +254,10 @@ task:
   completed_at: "2026-03-06T14:03:33"
 EOF
 
-    mkdir -p "$TEST_TMPDIR/bin"
-    printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/bin/tmux"
-    chmod +x "$TEST_TMPDIR/bin/tmux"
-    printf '#!/bin/sh\nfor a in "$@"; do [ "$a" = "push" ] && { echo "Everything up-to-date"; exit 0; }; done\nexec /usr/bin/git "$@"\n' > "$TEST_TMPDIR/bin/git"
-    chmod +x "$TEST_TMPDIR/bin/git"
-
-    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    run build_clear_duration_metric
     [ "$status" -eq 0 ]
-
-    result="$(python3 - <<'PY' "$TEST_PROJECT/logs/gate_metrics.log"
-import sys
-from pathlib import Path
-line = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1]
-parts = line.split("\t")
-print(parts[9])
-PY
-)"
-    [ "$result" = "duration_sec=213" ]
+    [ "$output" = "duration_sec=213" ]
 }
 
 @test "model_analysis decodes encoded GPT-5 labels and avoids fragment model rows" {
