@@ -6,6 +6,7 @@ description: |
   1人目をdeploy_task.sh、2人目をkaro_direct方式で配備し、重複ガード問題を回避。
   TRIGGER: /recon-dual、偵察2名配備、recon2配備、2名偵察
   DO NOT TRIGGER: 偵察1名配備（→deploy_task.sh直接）、karo_direct単独（→/karo-direct）
+quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
 # /recon-dual — 偵察2名配備スキル

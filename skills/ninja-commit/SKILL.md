@@ -7,6 +7,7 @@ description: |
   scope外ファイル混入・uncommitted変更残存・commit漏れを防止する。
   TRIGGER: /ninja-commit、コミット、commit、作業完了コミット
   DO NOT TRIGGER: push（忍者はpush禁止）、報告YAML作成（→/report-write）、verdict判定（→/verdict-check）
+quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
 # /ninja-commit — 忍者commit手順スキル
@@ -73,5 +74,4 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
-
 

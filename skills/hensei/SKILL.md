@@ -9,6 +9,7 @@ description: |
   TRIGGER: /hensei、編成切替、モデル混成、Opus全戻し、決戦モード
   DO NOT TRIGGER: 個別忍者のモデル手動切替（inbox_write model_switch直接送信）、
   settings.yaml直接編集、ninja_monitor操作
+quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:
   - Bash
   - Read

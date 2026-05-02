@@ -7,6 +7,7 @@ description: |
   ファイル命名規則(gunshi_idle_{topic}_{date}.md)を自動適用し、ブレをゼロにする。
   TRIGGER: /idle-persist、idle分析永続化、分析結果保存、自走分析記録
   DO NOT TRIGGER: レビュー完了処理（→/review-bundle）、gate同期（→/gate-sync）
+quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
 # /idle-persist — idle分析永続化スキル

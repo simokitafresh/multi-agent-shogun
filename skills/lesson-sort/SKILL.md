@@ -11,6 +11,7 @@ description: |
   DO NOT TRIGGER: 教訓の新規登録（→lesson_write.sh）、7層横断監査（→shogun-teire）、
   MEMORY.md棚卸し（→/dream）、PD反映確認（→shogun-pd-sync）、
   教訓の非活性化・淘汰判定（→shogun-teire観点⑧）
+quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:
   - Read
   - Grep

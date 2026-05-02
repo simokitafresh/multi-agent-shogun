@@ -7,6 +7,7 @@ description: |
   inbox受信→review_log該当エントリ更新→accuracy計算の3ステップを自動化。
   TRIGGER: /gate-sync、gate結果同期、review_log更新、accuracy計算
   DO NOT TRIGGER: レビュー完了処理（→/review-bundle）、idle分析（→/idle-persist）
+quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
 # /gate-sync — gate結果同期スキル

@@ -7,6 +7,7 @@ description: |
   deploy_task.shの重複ガード回避を安全に処理する。
   TRIGGER: /karo-direct、karo_direct配備、家老自立配備、CI修正配備、recon2配備
   DO NOT TRIGGER: 将軍cmdの通常配備（→deploy_task.sh直接）、偵察1名配備（→通常配備）
+quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
 # /karo-direct — 家老自立配備スキル

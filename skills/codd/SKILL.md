@@ -7,6 +7,7 @@ description: |
   TRIGGER: /codd、設計書生成、CoDDパイプライン、リファクタリング設計
   DO NOT TRIGGER: コード実装そのもの（CoDDはbashのimplement非対応）、
   テスト実行（batsを直接使え）、デーモンの起動・停止
+quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDD手順起因のworkaroundが記録されない割合）"
 allowed-tools:
   - Bash
   - Read

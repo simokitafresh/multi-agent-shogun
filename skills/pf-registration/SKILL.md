@@ -7,6 +7,7 @@ description: |
   チェックリスト(checklist-shin-v2-registration.md / checklist-alm-registration.md)に基づく。
   TRIGGER: /pf-registration、本番登録、PF登録、シン四神登録、忍法登録、ALM登録
   DO NOT TRIGGER: GS実行（→run_077直接実行）、偵察（→偵察cmd）、fullrecalculate（→API直接実行）
+quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにPF登録順序・パリティ確認起因のworkaroundが記録されない割合）"
 ---
 
 # /pf-registration — 本番PF登録スキル

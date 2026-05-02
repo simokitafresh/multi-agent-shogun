@@ -9,6 +9,7 @@ description: |
   TRIGGER: /dream、メモリ整理、知識統合、記憶の清掃、夢
   DO NOT TRIGGER: 知識棚卸し(→shogun-teire)、教訓登録(→lesson-sort)、
   PD反映(→shogun-pd-sync)、/clear前準備(→shogun-clear-prep)、Memory MCP単発操作
+quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:
   - Read
   - Grep

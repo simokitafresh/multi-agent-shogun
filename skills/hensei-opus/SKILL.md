@@ -6,6 +6,7 @@ description: |
   全忍者をOpus統一に戻す（決戦モード）。idle安全機構付き。
   TRIGGER: /hensei-opus、Opus全戻し、決戦モード
   DO NOT TRIGGER: 混成編成（→/hensei-mixed）、個別忍者の手動切替
+quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:
   - Bash
   - Read

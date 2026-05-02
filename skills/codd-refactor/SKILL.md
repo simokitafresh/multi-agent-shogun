@@ -6,6 +6,7 @@ description: |
   TRIGGER: /codd-refactor、リファクタリング設計、速度改善、テスト高速化、batch化設計、CoDD設計書からリファクタ
   DO NOT TRIGGER: コード実装そのもの(CoDDはbash implementに非対応)、テスト実行のみ(bats直接実行)、
   新規スクリプト作成(CoDDは既存コードのリファクタ向き)、DM-Signal Python(別ワークフロー)
+quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合）"
 argument-hint: "[target_script or spec_path]"
 ---
 

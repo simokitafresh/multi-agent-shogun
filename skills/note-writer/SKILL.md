@@ -7,6 +7,7 @@ description: |
   TRIGGER: /note-article、ユーザー向け記事、note記事、機能紹介記事、投資分析記事
   DO NOT TRIGGER: 開発裏話・将軍書簡形式の記事（→sengoku-writer）、
   週報生成（→weekly-report）、X検索調査（→x-research）
+quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:
   - Read
   - Write

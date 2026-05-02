@@ -10,6 +10,7 @@ description: |
   TRIGGER: /dashboard-update、cmd完了後のダッシュボード更新、GATE CLEAR後
   DO NOT TRIGGER: DASHBOARD_AUTO_SECTIONの更新（→dashboard_auto_section.sh）、
   ダッシュボードの閲覧のみ（→Read dashboard.md）
+quality_metric: "当該スキル実行後のcmd_complete_gate.sh初回CLEAR率（dashboard/KARO_SECTION関連BLOCKの有無で集計）"
 allowed-tools:
   - Bash
   - Read
@@ -132,4 +133,3 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 - **要修正事項のCI状態は手書き禁止**。AUTO_SECTIONから自動取得（Step 1-7）。前回のKARO_SECTIONの記載を引き継ぐな — 毎回プライマリデータから再生成(LK043: cmd_1806事故。KARO_SECTIONの手書きCI赤がCI緑後も残存→前提崩壊cmdを配備)
 
 ## 注意ポイント
-

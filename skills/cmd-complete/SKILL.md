@@ -7,6 +7,7 @@ description: |
   lesson review→cmd_complete_gate→品質記録→status completed→archive→dashboard→ntfyの全ステップを順序保証で実行。
   TRIGGER: /cmd-complete、GATE CLEAR後処理、cmd完了処理
   DO NOT TRIGGER: dashboard単独更新（→/dashboard-update）、lesson-sort（→将軍スキル）、cmd起票（→将軍）
+quality_metric: "当該スキルで完了処理したcmdのcmd_complete_gate.sh初回CLEAR率（logs/gate_metrics.logでCLEAR/BLOCKを集計）"
 ---
 
 # /cmd-complete — cmd完了処理スキル
@@ -70,4 +71,3 @@ bash scripts/inbox_archive.sh karo
 - 順序を崩すな（§8ルール）
 
 ## 注意ポイント
-
