@@ -458,8 +458,15 @@ if [ "${HAS_RELATED_LESSONS_EMPTY_USEFUL:-0}" = "1" ]; then
 fi
 
 # ─── GATE_PREDICTION (自動計算) ───
+# PRE12b draft_lessons補正: engine.pyに未連携のためbash側で上書き
+if [ "${_draft_lessons_total:-0}" -gt 0 ]; then
+    if [ "${GATE_PREDICTION:-CLEAR}" = "CLEAR" ]; then
+        GATE_PREDICTION="WARN"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }draft_lessons:${_draft_lessons_total}件(tasks/lessons.md)"
+    fi
+fi
 echo ""
-echo "■ GATE_PREDICTION (自��計算 — SG7 gate_predictionに転記せよ)"
+echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"
 echo "  reason: ${GATE_PREDICTION_REASON:-engine未実行}"
 if [ "${GATE_PREDICTION:-}" = "WARN" ] || [ "${GATE_PREDICTION:-}" = "BLOCK" ]; then
