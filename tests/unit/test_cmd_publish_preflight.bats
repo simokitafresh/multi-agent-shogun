@@ -129,7 +129,7 @@ YAML
     [[ "$output" == *"cmd_delegate.sh 委任"* ]]
 }
 
-@test "AC4: on_hold cmdはdraftに戻してからcmd_save gate検証へ進む" {
+@test "AC4: on_hold cmdはstatusを更新せずにcmd_save gate検証へ進む" {
     write_queue on_hold
     write_lessons 1
     : > "$TEST_QUALITY_LOG"
@@ -145,14 +145,14 @@ SH
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK: cmd_curr on_hold → draft"* ]]
-    [[ "$output" == *"status: draft"* ]]
-    [[ "$output" == *"OK: cmd_curr draft → pending"* ]]
+    [[ "$output" == *"OK: cmd_curr on_hold保持"* ]]
+    [[ "$output" == *"status: on_hold"* ]]
+    [[ "$output" == *"OK: cmd_curr on_hold → pending"* ]]
     [[ "$output" == *"stub cmd_delegate cmd_curr"* ]]
     grep -q "status: pending" "$TEST_QUEUE"
 }
 
-@test "AC5: on_hold cmdのcmd_save gateがBLOCKしたらon_holdへ戻す" {
+@test "AC5: on_hold cmdのcmd_save gateがBLOCKしたらstatusはon_holdのまま" {
     write_queue on_hold
     write_lessons 1
     : > "$TEST_QUALITY_LOG"
@@ -167,8 +167,8 @@ SH
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
-    [[ "$output" == *"OK: cmd_curr on_hold → draft"* ]]
-    [[ "$output" == *"ROLLBACK: cmd_curr draft → on_hold"* ]]
+    [[ "$output" == *"OK: cmd_curr on_hold保持"* ]]
+    [[ "$output" == *"KEEP: cmd_curr status=on_hold"* ]]
     [[ "$output" == *"BLOCK: cmd_save.sh failed for cmd_curr"* ]]
     [[ "$output" != *"stub cmd_delegate"* ]]
     grep -q "status: on_hold" "$TEST_QUEUE"

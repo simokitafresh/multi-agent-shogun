@@ -8,9 +8,8 @@
 #   bash scripts/cmd_publish.sh cmd_2405 "cmd_2405を書いた。GSL2 bunshin。配備せよ。"
 #
 # 実行内容:
-#   1. status: on_hold なら draft に戻す (yaml_field_set)
-#   2. cmd_save.sh でgate検証 → BLOCK/FAILなら停止
-#   3. status: draft → status: pending に昇格 (yaml_field_set)
+#   1. status: on_hold は保持したまま cmd_save.sh でgate検証 → BLOCK/FAILなら停止
+#   2. status: draft/on_hold → status: pending に昇格 (yaml_field_set)
 #   4. cmd_delegate.sh で委任 (status=pending検証 + inbox_write + delegated_at)
 #
 # 設計思想:
@@ -124,7 +123,7 @@ run_publish_preflight() {
 echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
 run_publish_preflight
 
-# --- Step 0.5: on_hold → draft 復帰 ---
+# --- Step 0.5: on_hold はcmd_save成功まで保持 ---
 promoted_from_on_hold=false
 current_status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
     echo "ERROR: $CMD_ID not found in shogun_to_karo.yaml" >&2
@@ -132,23 +131,13 @@ current_status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2
 }
 
 if [ "$current_status" = "on_hold" ]; then
-    yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "draft" || {
-        echo "ERROR: failed to set status=draft for $CMD_ID" >&2
-        exit 1
-    }
-    echo "OK: $CMD_ID on_hold → draft"
+    echo "OK: $CMD_ID on_hold保持 — cmd_save成功後にpending昇格"
     promoted_from_on_hold=true
 fi
 
 echo "=== [1/3] cmd_save.sh gate検証: $CMD_ID ==="
 if ! bash "$CMD_SAVE_SCRIPT" "$CMD_ID"; then
-    if [ "$promoted_from_on_hold" = true ]; then
-        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "on_hold" || {
-            echo "ERROR: failed to rollback status=on_hold for $CMD_ID" >&2
-            exit 1
-        }
-        echo "ROLLBACK: $CMD_ID draft → on_hold"
-    fi
+    [ "$promoted_from_on_hold" = true ] && echo "KEEP: $CMD_ID status=on_hold"
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
     exit 1
 fi
@@ -163,14 +152,14 @@ current_status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2
 
 if [ "$current_status" = "pending" ] || [ "$current_status" = "delegated" ]; then
     echo "SKIP: $CMD_ID is already $current_status"
-elif [ "$current_status" = "draft" ]; then
+elif [ "$current_status" = "draft" ] || [ "$current_status" = "on_hold" ]; then
     yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "pending" || {
         echo "ERROR: failed to set status=pending for $CMD_ID" >&2
         exit 1
     }
-    echo "OK: $CMD_ID draft → pending"
+    echo "OK: $CMD_ID ${current_status} → pending"
 else
-    echo "ERROR: $CMD_ID status is '$current_status', expected 'draft'" >&2
+    echo "ERROR: $CMD_ID status is '$current_status', expected 'draft' or 'on_hold'" >&2
     exit 1
 fi
 
