@@ -169,6 +169,7 @@ deploy_task_fast() {
         fi
 
         inject_task_id "$task_file" || true
+        infer_ac_assigned_from_chunk_task_id "$task_file" || true
         inject_ac_version "$task_file" || true
         inject_related_lessons "$task_file" || true
 
@@ -238,6 +239,7 @@ deploy_task_template_only() {
         fi
 
         inject_task_id "$task_file" || true
+        infer_ac_assigned_from_chunk_task_id "$task_file" || true
         inject_ac_version "$task_file" || true
 
         local clear_fields clear_tmp
@@ -335,6 +337,7 @@ deploy_task_ac_only() {
         fi
 
         inject_task_id "$task_file" || true
+        infer_ac_assigned_from_chunk_task_id "$task_file" || true
         inject_ac_version "$task_file" || true
         normalize_simple_ac_ids "$task_file"
     )

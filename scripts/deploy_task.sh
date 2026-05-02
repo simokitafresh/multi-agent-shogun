@@ -548,6 +548,40 @@ inject_task_id() {
     log "inject_task_id: set task_id=$subtask_id"
 }
 
+infer_ac_assigned_from_chunk_task_id() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "infer_ac_assigned: task file not found: $task_file"
+        return 0
+    fi
+
+    local existing_ac existing_assigned task_id ac_id ac_value
+    existing_ac=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_assigned" "" 2>/dev/null || true)
+    existing_assigned=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_acs" "" 2>/dev/null || true)
+    if [ -n "$existing_ac" ] || [ -n "$existing_assigned" ]; then
+        log "infer_ac_assigned: existing assignment found, skipping"
+        return 0
+    fi
+
+    task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    if [ -z "$task_id" ]; then
+        task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "" 2>/dev/null || true)
+    fi
+
+    ac_id=$(printf '%s\n' "$task_id" | sed -nE 's/.*(^|[^[:alnum:]])[aA][cC]([0-9]+)([^[:alnum:]]|$).*/AC\2/p' | head -n1)
+    if [ -z "$ac_id" ]; then
+        log "infer_ac_assigned: no AC marker in task_id (${task_id:-empty}), skipping"
+        return 0
+    fi
+
+    ac_value="$ac_id"
+    yaml_field_set "$task_file" "task" "ac_assigned" "$ac_value" \
+        || { log "FATAL: yaml_field_set failed for ac_assigned"; return 1; }
+    yaml_field_set "$task_file" "task" "assigned_acs" "$ac_value" \
+        || { log "FATAL: yaml_field_set failed for assigned_acs"; return 1; }
+    log "infer_ac_assigned: task_id=${task_id} -> ac_assigned=${ac_value}"
+}
+
 # ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化, cmd_1493: 再配備AC上書き） ───
 # acceptance_criteriaの各descriptionをソート→連結→md5先頭8桁をtask.ac_versionとして保持。
 # 件数が同じでも内容が変われば異なるハッシュになる。再配備時に再計算される。
@@ -1456,6 +1490,12 @@ EOF
             out=""
             for(i=1;i<=n;i++) { gsub(/[[:space:]"'"'"']/, "", a[i]); if(a[i]!="") out=(out=="")?a[i]:(out"|"a[i]) }
             print out; exit
+        }
+        /^  ac_assigned:[[:space:]]*[^[:space:]]/ {
+            s=$0; sub(/^  ac_assigned:[[:space:]]*/, "", s)
+            gsub(/[\[\][:space:]"'"'"']/, "", s)
+            if (s != "") print s
+            exit
         }
         /^  ac_assigned:[[:space:]]*$/ { in_aa=1; next }
         in_aa && /^  - / {
@@ -4610,6 +4650,7 @@ deploy_task_apply_task_mutations() {
     check_scout_gate "$task_file"
 
     inject_task_id "$task_file" || true
+    infer_ac_assigned_from_chunk_task_id "$task_file" || true
     inject_related_lessons "$task_file" || true
 
     local clear_fields clear_tmp

@@ -1245,6 +1245,51 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "cmd_2483: chunk task_id infers ac_assigned and filters binary_checks" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "chunk inferred ac_assigned test"
+  task_type: impl
+  parent_cmd: cmd_2483
+  task_id: cmd_2483_ac3_chunk2
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+  - id: AC3
+    description: "AC3の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:[[:space:]]*"?AC3"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+    run grep -Eq '^  assigned_acs:[[:space:]]*"?AC3"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+keys = list(bc.keys())
+assert "AC3" in keys, keys
+assert "AC1" not in keys, keys
+assert "AC2" not in keys, keys
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "GP-194 AC2: ac_assigned=[AC1] with explicit checks → only AC1 checks in binary_checks" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
