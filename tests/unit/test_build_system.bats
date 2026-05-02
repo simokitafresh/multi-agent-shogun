@@ -325,3 +325,38 @@ setup() { :; }
         false
     fi
 }
+
+# =============================================================================
+# /clear→/new 変換ロジックテスト (AC3: cmd_2468)
+# build_instructions.sh generate_agents_md()の変換ロジック検証
+# =============================================================================
+
+@test "clear-conv: AGENTS.md has no raw '/clear Recovery' (converted to /new Recovery)" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    ! grep -q "/clear Recovery" "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: AGENTS.md contains '/new Recovery' after conversion" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    grep -q "/new Recovery" "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: AGENTS.md has no raw '/clear前' (converted to /new前)" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    ! grep -q "/clear前" "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: AGENTS.md has no raw backtick /clear backtick (converted)" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    ! grep -qF '`/clear`' "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: AGENTS.md has no '無条件/clear' (converted to 無条件/new)" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    ! grep -q "無条件/clear" "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: AGENTS.md has no '家老/clear' (converted to 家老/new)" {
+    [ -f "$PROJECT_ROOT/AGENTS.md" ]
+    ! grep -q "家老/clear" "$PROJECT_ROOT/AGENTS.md"
+}
