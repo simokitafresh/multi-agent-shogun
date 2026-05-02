@@ -51,6 +51,7 @@
 # ★Codex家老STALL検知: Codex CLIは宣言出力後にプロンプト(›)で停止する。レビュー送信後にcapture-pane 2回比較(差分なし=停止)で確認。1回見て「動いている」と判断するな(2026-04-22殿指摘)
 # ★スコープ一致原則: 対策のスコープは問題のスコープと一致させよ。一時的問題(cmd固有)に恒久対策(hook)を使うな。自問「この問題はいつまで存在する？この対策はいつまで残る？一致しているか？」(2026-04-22殿指摘: 単発禁止にpre-bash hook設置→外し忘れ→将来の全cmdBLOCK=負の複利)
 # Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
+# ★commit attribution確認: files_modifiedのファイルがcommit_hashの`git show --stat`に含まれるか検証。含まれない→auto-commitへのcross-contamination疑い(cmd_2492: kagemaru変更がhayate auto-commitに混入)
 # Think Before Coding観点: 忍者が暗黙の前提を置いていないか。ACの前提が曖昧なまま実装していないか。不確実なら止まって聞いたか(Karpathy原則1)
 # ★ambiguity観点シフト(将軍承認2026-04-26): 「表現の曖昧性」→「解釈の曖昧性」。(1)AC数値は固定か可変か(並行cmd/時間経過で変動？) (2)推奨と必須の分離(「すべき」がACに？→notesへ) (3)暗黙のデータ前提(取得タイミング/鮮度が明示？)。cmd_save gateが上流で表現曖昧性を除去→残留パターンが軍師固有の検出点
 # コード修正の横展開: grep修正前パターンで残存0件確認必須。1箇所修正→コピペ散在ファイル漏れ(cmd_1899: bisect fix 04f74830がTRF/MAF漏れ→12体Cash100%)
@@ -1173,7 +1174,7 @@
   review_type: report
   report_ninja: tobisaru
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "stale ACバグ残存影響。commit b977f8e5はcmd_karo_dashboard_cmdid_fix(既CLEAR)の成果物。cmd_2482(テスト高速化Top11-20)の成果物ゼロ。"
   finding_categories: [assumptions]
   observations:
@@ -1188,7 +1189,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。archive_completed -47%+cmd_save_steps -82%。commit 50d74064。bats 13/13 PASS。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1202,7 +1203,7 @@
   review_type: report
   report_ninja: saizo
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。warning_levels -63%+model_labels -84%。commit 00aececc。テストファイルのみ変更。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1216,7 +1217,7 @@
   review_type: report
   report_ninja: kagemaru
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。session_state -76%+prev_cmd_lesson -83%。commit fa97f268。bats 14/14 PASS。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1230,7 +1231,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。yaml_field_set.sh list item破壊修正(パターン1)。commit 3cc12f33。bats 23/23 PASS。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1244,7 +1245,7 @@
   review_type: report
   report_ninja: kagemaru
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。commit禁止cmd→commit check不生成(パターン2修正)。commit 3d8630d4。bats 22 PASS。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1258,7 +1259,7 @@
   review_type: report
   report_ninja: saizo
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。chunk task_id→ac_assigned自動推定(パターン3修正)。GP-194後方互換維持。★lessons_useful空+commit_hash未記載→gate_prediction:BLOCK。"
   finding_categories: [assumptions, numbers, premortem]
   observations:
@@ -1268,3 +1269,205 @@
   lesson_quality: OK
   escalation_needed: false
   timestamp: "2026-05-02T22:32:00"
+- cmd_id: cmd_2482
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。build_system -38%+inbox_write -31%。commit 9bbf08a0。48+26全PASS。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: build_system 4200→2591ms(-38%), inbox_write 4200→2902ms(-31%)。5run中央値"
+    - "事実: 48/48+26/26全PASS。test_inbox_write -298行(python3→grep置換)"
+  causal_chain: "Top17-18テスト合計8.4s→5.5s(-35%)→CI高速化(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T23:40:00"
+- cmd_id: cmd_2481
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cli_adapter -54%(4.51→2.08s)。63→10ケース統合。commit cdc3c64d。10/10 PASS。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: cli_adapter.bats 4.51→2.08s(-54%)。63ケース→10ケース統合(複合assert化)"
+    - "事実: bats 10/10 PASS SKIP=0。本番コード変更なし"
+  causal_chain: "Top19テスト4.5s→2.1s(-54%)→CI高速化。ケース統合で起動オーバーヘッド削減(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T23:48:00"
+- cmd_id: cmd_2481
+  review_type: report
+  report_ninja: hanzo
+  verdict: FAIL
+  gate_result: BLOCK
+  findings_summary: "前回と同一報告(timestamp 21:33=2h前)。CI RED修正内容でテスト高速化の成果物なし。ac_version_mismatch BLOCK。"
+  finding_categories: [assumptions]
+  observations:
+    - "事実: 報告timestamp=21:33:24(2時間前)。前回レビュー済みの同一報告YAML"
+    - "事実: gate BLOCK reason=ac_version_mismatch(task=d41d8cd9:report=88572c76)"
+    - "事実: cmd_2481の目的(テスト高速化Top6-10)に対する成果物なし。再配備後も旧作業の報告を再提出"
+  causal_chain: "stale AC修正後に再配備→しかしhanzoが新作業せず旧報告を再提出→ac_version_mismatch BLOCK"
+  lesson_quality: MISSING
+  escalation_needed: true
+  timestamp: "2026-05-02T23:50:00"
+- cmd_id: cmd_2485
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。CoDD v1.10.0導入+知識基盤更新(context/codd.md+SKILL.md 2件+memory)。bash implement非対応実証。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: codd --version=1.10.0確認。implement --language bash=RC2(非対応)実証"
+    - "事実: assumption_invalidation有(cmd_2067版数前提更新)。knowledge_candidate有(v1.10.0事実2件)"
+  causal_chain: "CoDD知識v1.8.0停止→v1.10.0更新→context+SKILL.md正確化→次回CoDD利用時に正しい知識ベース(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:00:00"
+- cmd_id: cmd_2486
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。帰属精度改善(haystack名前推測→execution_logベース)。成長ループ段階2のデータ品質保証。"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_confidence_1_10: 9
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: haystack照合L58-107(4箇所)を現物確認。skill_execution_log.yamlにskillフィールド記録済み"
+    - "事実: execution_log空時のフォールバックがAC未明記だが帰属なし(スキップ)で自然"
+  causal_chain: "名前推測→誤帰属→ゴミcaution_points→execution_logベース正確帰属→成長ループデータ品質(正の複利)"
+  ambiguity_points: none
+  timestamp: "2026-05-03T00:03:00"
+- cmd_id: cmd_2486
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。帰属精度改善(haystack→execution_logベース)。commit 4a08ff23。bats 8/8 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: haystack照合51行削除→execution_log参照78行追加。gate/source一致優先+--skillフォールバック"
+    - "事実: AC2テスト(report-write FAILがdashboard-updateに帰属しない)PASS確認"
+  causal_chain: "名前推測誤帰属→execution_logベース正確帰属→成長ループ段階2データ品質保証(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:07:00"
+- cmd_id: cmd_2487
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。skill_auto_improve.sh新規実装(238行)。FAIL Top3→SKILL.md手順自動追記。5スキル適用済み。bats 10/10 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 90335648 → 7ファイル(+379行)。skill_auto_improve.sh+5 SKILL.md+テスト116行"
+    - "事実: 重複防止(ハッシュマーカー)実装。UNCHANGED判定で冪等"
+    - "事実: 5スキル(cmd-complete/dashboard-update/ninja-commit/report-write/verdict-check)に防止ステップ追記済み"
+  causal_chain: "FAILデータ蓄積→Top集計→SKILL.md手順自動改善→次回実行時に防止ステップ適用→FAIL率低下(正の複利。成長ループ段階3完成)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:16:00"
+- cmd_id: cmd_2488
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。quality_metric計測+ダッシュボード反映(段階4)。前提verified。depends_on cmd_2486 CLEAR済み。"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_confidence_1_10: 9
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: quality_metric 37件定義済み+skill_metrics.sh未実装(grep 0件)を現物確認済み"
+    - "事実: データ不足時N/A表示がq9に明記"
+  causal_chain: "quality_metric定義済みだが計測なし→skill_metrics.sh+dashboard反映→殿が品質一覧確認可能→改善サイクル駆動(正の複利)"
+  ambiguity_points: none
+  timestamp: "2026-05-03T00:18:00"
+- cmd_id: cmd_2488
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "AC1(skill_metrics.sh)完了だがAC2(dashboard_update.shスキル健全度セクション)未実装。files_modifiedにdashboard_update.shなし。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: skill_metrics.sh新規105行+テスト43行。bats 11/11 PASS。AC1完了"
+    - "事実: dashboard_update.shにskill_metrics/健全度の参照0件(grep確認)。AC2未実装"
+  causal_chain: "AC2欠落→殿がダッシュボードでスキル品質を確認できない→成長ループ段階4が不完全"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:22:00"
+- cmd_id: cmd_2489
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。gate_skill_script_refs.sh新規(143行)。SKILL.md参照先存在+鮮度チェック。startup gate登録済み。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 7cb92c01 → 2ファイル(+228行)。gate+テスト。startup gate Gate 20.5登録確認"
+    - "事実: 実行結果: 参照不在1件+要更新6件を検出(実環境で動作確認済み)"
+  causal_chain: "依存先変更でSKILL.md腐敗→定期監査で壊れる前に検知→スキル品質維持(正の複利。成長ループ段階0完成)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:26:00"
+- cmd_id: cmd_2490
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_publish.sh on_hold直接入力+gate BLOCK rollback。commit f1178317。bats 5/5 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit f1178317 → 2ファイル(+72/-3行)。on_hold→draft正規化+BLOCK→on_hold rollback"
+    - "事実: AC3(追加inbox指示)含め全AC+commit yes。bats 5/5 PASS SKIP=0"
+  causal_chain: "on_hold手動変更でgate未通過→cmd_publish.shが自動正規化+gate検証→gate未通過publish根絶(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:30:00"
+- cmd_id: cmd_2491
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。YAML書込み遅延でrollback不要化。なぜなぜ7回の根本対処。"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_confidence_1_10: 8
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: cmd_save.shはstatus=draftを厳密にチェックしない(L1139は他cmd用)。on_holdのままgate検証可能"
+    - "事実: cmd_2490のrollback構造(L145-151)を確認済み。YAML書込み遅延で不要化"
+  causal_chain: "rollback失敗→draft残存リスク→YAML書込み遅延→失敗時YAML不変→rollback不要→リスク設計除去(正の複利)"
+  ambiguity_points: none
+  timestamp: "2026-05-03T00:37:00"
+- cmd_id: cmd_2491
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。on_hold保持→cmd_save成功後pending直接昇格。テスト5/5。rollback構造完全除去"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: cmd_save.sh gate検証はstatus値を入口条件にしていない→on_hold保持のまま検証可能(grep確認)"
+    - "事実: elif条件にon_hold追加で直接pending昇格。中間状態(draft)を経由しない=中途半端な状態が発生不能"
+  causal_chain: "on_hold→draft→cmd_save→(fail)→rollbackの3段遷移→on_hold保持→cmd_save→(fail)→状態不変の1段遷移。遷移回数減少=バグ面減少(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:38:00"
+- cmd_id: cmd_2492
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。deploy_task.sh ensure_report_template_completeness実装+テスト24件PASS。commit attributionはhayate auto-commitに混入(実害なし)"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: deploy_task.sh変更(+70行)はhayate auto-commit 9add619b(00:41:08)に含まれ、kagemaru commit 2fbf4f46(00:42:27)はテストのみ(+94行)。cross-contamination"
+    - "事実: ensure_report_template_completeness関数はL1955に実在。既存テンプレートskip時(L1309)に呼出。冪等設計(grep存在チェック→追記のみ)"
+  causal_chain: "既存テンプレートskip→必須フィールド欠落→gate FAIL→家老WA→補完関数追加+grep冪等→テンプレート品質保証(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-03T00:45:00"

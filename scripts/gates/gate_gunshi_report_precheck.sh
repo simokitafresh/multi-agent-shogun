@@ -26,10 +26,12 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
     --report "$REPORT_PATH" \
     --tasks-dir "$REPO_ROOT/queue/tasks" 2>/dev/null)"
 
-# DM-Signal project directory
+# Project directory (commit検証用)
 PROJECT_DIR=""
 if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
     PROJECT_DIR="/mnt/c/Python_app/DM-Signal"
+else
+    PROJECT_DIR="/mnt/c/tools/multi-agent-shogun"
 fi
 
 print_sg_pre9() {
