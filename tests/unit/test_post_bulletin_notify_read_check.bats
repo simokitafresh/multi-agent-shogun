@@ -11,21 +11,22 @@ setup_file() {
 
 setup() {
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/post_bulletin_notify.XXXXXX")"
+    TEST_AGENT="batsbnrc"
     mkdir -p "$TEST_ROOT/.claude/hooks" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/queue"
     cp "$SOURCE_SCRIPT" "$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
     chmod +x "$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
     export TEST_SCRIPT="$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
-    rm -f /tmp/claude_read_log_hayate.txt
+    rm -f "/tmp/claude_read_log_${TEST_AGENT}.txt"
 }
 
 teardown() {
-    rm -f /tmp/claude_read_log_hayate.txt
+    rm -f "/tmp/claude_read_log_${TEST_AGENT}.txt"
     rm -rf "$TEST_ROOT"
 }
 
 write_inbox() {
     local type="$1"
-    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<YAML
+    cat > "$TEST_ROOT/queue/inbox/${TEST_AGENT}.yaml" <<YAML
 messages:
 - id: msg_001
   from: karo
@@ -60,7 +61,7 @@ run_hook() {
     write_inbox bulletin_notify
     write_pending_bulletin
 
-    run_hook "bash scripts/inbox_mark_read.sh hayate msg_001"
+    run_hook "bash scripts/inbox_mark_read.sh ${TEST_AGENT} msg_001"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: bulletin_notify"* ]]
     [[ "$output" == *"blt_001"* ]]
@@ -69,9 +70,9 @@ run_hook() {
 @test "stays silent after bulletin_board.yaml was read first" {
     write_inbox bulletin_notify
     write_pending_bulletin
-    echo "$TEST_ROOT/queue/bulletin_board.yaml" > /tmp/claude_read_log_hayate.txt
+    echo "$TEST_ROOT/queue/bulletin_board.yaml" > /tmp/claude_read_log_${TEST_AGENT}.txt
 
-    run_hook "bash scripts/inbox_mark_read.sh hayate msg_001"
+    run_hook "bash scripts/inbox_mark_read.sh ${TEST_AGENT} msg_001"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
@@ -80,7 +81,7 @@ run_hook() {
     write_inbox task_assigned
     write_pending_bulletin
 
-    run_hook "bash scripts/inbox_mark_read.sh hayate msg_001"
+    run_hook "bash scripts/inbox_mark_read.sh ${TEST_AGENT} msg_001"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
