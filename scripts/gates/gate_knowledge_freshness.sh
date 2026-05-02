@@ -12,7 +12,29 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 ROOT_DIR="${KNOWLEDGE_FRESHNESS_ROOT:-$SCRIPT_DIR}"
 TODAY_OVERRIDE="${KNOWLEDGE_FRESHNESS_TODAY:-}"
+CACHE_TTL="${KNOWLEDGE_FRESHNESS_CACHE_TTL:-2}"
 
+if [[ "${KNOWLEDGE_FRESHNESS_DISABLE_CACHE:-0}" != "1" && "$CACHE_TTL" =~ ^[0-9]+$ && "$CACHE_TTL" -gt 0 ]]; then
+    _root_key="${ROOT_DIR//[^A-Za-z0-9._-]/_}"
+    _today_key="${TODAY_OVERRIDE:-today}"
+    _cache_file="/tmp/gate_knowledge_freshness_${_root_key}_${_today_key}.cache"
+    _cache_rc_file="${_cache_file}.rc"
+    _now="$(date +%s)"
+    if [[ -f "$_cache_file" && -f "$_cache_rc_file" ]]; then
+        _cache_mtime="$(stat -c '%Y' "$_cache_file" 2>/dev/null || printf 0)"
+        if (( _now - _cache_mtime < CACHE_TTL )); then
+            cat "$_cache_file"
+            exit "$(cat "$_cache_rc_file")"
+        fi
+    fi
+fi
+
+_tmp_output=""
+if [[ -n "${_cache_file:-}" ]]; then
+    _tmp_output="${_cache_file}.$$"
+fi
+
+run_scan() {
 python3 - "$ROOT_DIR" "$TODAY_OVERRIDE" <<'PY'
 from __future__ import annotations
 
@@ -106,3 +128,20 @@ print(
     f"warn={warn_count} total={total}"
 )
 PY
+}
+
+set +e
+if [[ -n "$_tmp_output" ]]; then
+    run_scan > "$_tmp_output"
+else
+    run_scan
+fi
+_rc=$?
+set -e
+
+if [[ -n "$_tmp_output" ]]; then
+    mv "$_tmp_output" "$_cache_file"
+    printf '%s\n' "$_rc" > "$_cache_rc_file"
+    cat "$_cache_file"
+fi
+exit "$_rc"
