@@ -23,6 +23,27 @@ CMD_ID="${1:-}"
 DRY_RUN=false
 [[ "${2:-}" == "--dry-run" ]] && DRY_RUN=true
 
+_DASHBOARD_UPDATE_LOGGED=0
+log_dashboard_update_skill_result() {
+    local rc="${1:-0}"
+    local result="PASS"
+    [ "$rc" -eq 0 ] || result="FAIL"
+    [ "$_DASHBOARD_UPDATE_LOGGED" -eq 0 ] || return 0
+    _DASHBOARD_UPDATE_LOGGED=1
+    [ "${SKILL_EXECUTION_LOG_DISABLE:-0}" != "1" ] || return 0
+    local log_script="$PROJECT_DIR/scripts/skill_execution_log.sh"
+    [ -x "$log_script" ] || return 0
+    bash "$log_script" \
+        "dashboard-update" \
+        "${AGENT_ID:-${USER:-unknown}}" \
+        "$result" \
+        "dashboard_update.sh exit=${rc} cmd=${CMD_ID:-<empty>} dry_run=${DRY_RUN}" \
+        "dashboard_update" \
+        "scripts/dashboard_update.sh ${CMD_ID:-}" \
+        "$PROJECT_DIR/skills/dashboard-update/SKILL.md" >/dev/null 2>&1 || true
+}
+trap 'rc=$?; log_dashboard_update_skill_result "$rc"; exit "$rc"' EXIT
+
 # ─── Validation ───
 if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[0-9]+$ ]]; then
     echo "ERROR: cmd_id は cmd_XXX 形式（数字のみ）で指定せよ。" >&2

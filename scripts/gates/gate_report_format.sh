@@ -107,12 +107,24 @@ else
     # Best-effort only: report gate must remain responsible for the FAIL exit.
     _SKILL_FEEDBACK="$REPO_ROOT/scripts/skill_gate_feedback.sh"
     if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
+        _target_skill=""
+        case "$REASONS" in
+            *lesson_candidate*|*lessons_useful*|*result.summary*|*files_modified*|*status:\ \"pending\"*|*assumption_invalidation*|*purpose_validation*)
+                _target_skill="report-write" ;;
+            *binary_checks*|*verdict*)
+                _target_skill="verdict-check" ;;
+            *commit*)
+                _target_skill="ninja-commit" ;;
+        esac
+        _skill_args=()
+        [ -n "$_target_skill" ] && _skill_args=(--skill "$_target_skill")
         bash "$_SKILL_FEEDBACK" \
             --gate "gate_report_format" \
             --result "FAIL" \
             --reason "$REASONS" \
             --executor "${AGENT_ID:-unknown}" \
-            --source "$REPORT_PATH" >/dev/null 2>&1 || true
+            --source "$REPORT_PATH" \
+            "${_skill_args[@]}" >/dev/null 2>&1 || true
     fi
     GATE_REASONS="$REASONS" \
     GATE_REPORT_PATH="$REPORT_PATH" \

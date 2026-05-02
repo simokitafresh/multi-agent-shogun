@@ -6,8 +6,10 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SKILL_LOG_SCRIPT="$PROJECT_ROOT/scripts/skill_execution_log.sh"
     export SKILL_FEEDBACK_SCRIPT="$PROJECT_ROOT/scripts/skill_gate_feedback.sh"
+    export DASHBOARD_UPDATE_SCRIPT="$PROJECT_ROOT/scripts/dashboard_update.sh"
     [ -x "$SKILL_LOG_SCRIPT" ] || return 1
     [ -x "$SKILL_FEEDBACK_SCRIPT" ] || return 1
+    [ -x "$DASHBOARD_UPDATE_SCRIPT" ] || return 1
 }
 
 setup() {
@@ -139,6 +141,155 @@ assert len(data["executions"]) == 1
 skill_text = pathlib.Path("$TEST_TMPDIR/skills/report-bundle/SKILL.md").read_text(encoding="utf-8")
 assert skill_text.count("gate=gate_report_format") == 1
 assert skill_text.count("binary_checks.result empty") == 1
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "gate_report_format failure is routed away from dashboard-update" {
+    mkdir -p "$TEST_TMPDIR/skills/dashboard-update" "$TEST_TMPDIR/skills/report-write"
+    cat > "$TEST_TMPDIR/skills/dashboard-update/SKILL.md" <<'EOF'
+---
+name: dashboard-update
+description: |
+  TRIGGER: /dashboard-update、cmd完了後のダッシュボード更新、GATE CLEAR後
+---
+# dashboard-update
+EOF
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  TRIGGER: /report-write、報告YAML作成、報告記入
+---
+# report-write
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate gate_report_format \
+            --result FAIL \
+            --reason "lesson_candidate: found=false but no no_lesson_reason" \
+            --executor hayate \
+            --source queue/reports/hayate_report_cmd_2473.yaml \
+            --skill report-write
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+entry = data["executions"][0]
+assert entry["skill"] == "report-write"
+assert entry["gate"] == "gate_report_format"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "explicit report-write and ninja-commit routing still records requested skill" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/ninja-commit"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  TRIGGER: /report-write、報告YAML作成、報告記入
+---
+# report-write
+EOF
+    cat > "$TEST_TMPDIR/skills/ninja-commit/SKILL.md" <<'EOF'
+---
+name: ninja-commit
+description: |
+  TRIGGER: /ninja-commit、コミット、commit
+---
+# ninja-commit
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate cmd_complete_gate \
+            --result FAIL \
+            --reason "commit missing" \
+            --executor hayate \
+            --source cmd_2473 \
+            --skill ninja-commit
+    [ "$status" -eq 0 ]
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate gate_report_format \
+            --result FAIL \
+            --reason "lesson_candidate missing" \
+            --executor hayate \
+            --source queue/reports/hayate_report_cmd_2473.yaml \
+            --skill report-write
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+skills = [entry["skill"] for entry in data["executions"]]
+assert "ninja-commit" in skills
+assert "report-write" in skills
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "dashboard_update.sh dry-run logs dashboard-update PASS with dashboard_update gate" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+# Dashboard
+<!-- KARO_SECTION_START -->
+old
+EOF
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_2473:
+    purpose: test purpose
+EOF
+    cat > "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2473
+status: completed
+result:
+  summary: dashboard update test
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --dry-run
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+entry = data["executions"][-1]
+assert entry["skill"] == "dashboard-update"
+assert entry["result"] == "PASS"
+assert entry["gate"] == "dashboard_update"
 print("OK")
 EOF
     [ "$status" -eq 0 ]
