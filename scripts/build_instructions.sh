@@ -85,7 +85,7 @@ build_instruction_file() {
     local cli_type="$1"
     local role="$2"
     local output_filename="$3"
-    local output_path="$OUTPUT_DIR/$output_filename"
+    local output_path="${_BUILD_OUTDIR:-$OUTPUT_DIR}/$output_filename"
     local original_file="$SCRIPT_DIR/instructions/${role}.md"
     local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
 
@@ -131,8 +131,9 @@ build_instruction_file() {
 # Pre-build common sections into a temp file (read once, reuse 12×)
 # ============================================================
 _BUILD_COMMON_TMP=$(mktemp)
+_BUILD_OUTDIR=$(mktemp -d)
 # shellcheck disable=SC2064
-trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
+trap "rm -f '$_BUILD_COMMON_TMP'; rm -rf '$_BUILD_OUTDIR'" EXIT INT TERM
 {
     printf '\n'
     cat "$PARTS_DIR/common/protocol.md"
@@ -148,16 +149,16 @@ trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
 ROLES="shogun karo gunshi ashigaru"
 PROFILE_TYPES=$(get_profile_types)
 
-# Default CLI — files without prefix
+# Default CLI — files without prefix (parallel: WSL2 NTFS write bottleneck bypassed via _BUILD_OUTDIR)
 for role in $ROLES; do
-    build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md"
+    build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md" &
 done
 
 # Non-default profiles — files with cli_type prefix
 for cli_type in $PROFILE_TYPES; do
     if [[ "$cli_type" != "$DEFAULT_CLI" ]]; then
         for role in $ROLES; do
-            build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
+            build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md" &
         done
     fi
 done
@@ -168,9 +169,13 @@ for cli_type in copilot kimi; do
         continue
     fi
     for role in $ROLES; do
-        build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
+        build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md" &
     done
 done
+
+# Wait for all parallel builds to finish, then copy results to OUTPUT_DIR in one batch
+wait
+cp "$_BUILD_OUTDIR"/*.md "$OUTPUT_DIR/"
 
 # ============================================================
 # Helper: Transform CLAUDE.md to CLI-specific auto-load file
@@ -320,11 +325,13 @@ echo ""
 echo "=== Build Complete ==="
 echo "Output directory: $OUTPUT_DIR"
 echo ""
-echo "Generated instruction files:"
-ls -lh "$OUTPUT_DIR"/*.md
-echo ""
-echo "CLI auto-load files:"
-[ -f "$SCRIPT_DIR/AGENTS.md" ] && ls -lh "$SCRIPT_DIR/AGENTS.md"
-[ -f "$SCRIPT_DIR/.github/copilot-instructions.md" ] && ls -lh "$SCRIPT_DIR/.github/copilot-instructions.md"
-[ -f "$SCRIPT_DIR/agents/default/system.md" ] && ls -lh "$SCRIPT_DIR/agents/default/system.md"
-[ -f "$SCRIPT_DIR/agents/default/agent.yaml" ] && ls -lh "$SCRIPT_DIR/agents/default/agent.yaml"
+if [ -t 1 ]; then
+    echo "Generated instruction files:"
+    ls -lh "$OUTPUT_DIR"/*.md
+    echo ""
+    echo "CLI auto-load files:"
+    [ -f "$SCRIPT_DIR/AGENTS.md" ] && ls -lh "$SCRIPT_DIR/AGENTS.md"
+    [ -f "$SCRIPT_DIR/.github/copilot-instructions.md" ] && ls -lh "$SCRIPT_DIR/.github/copilot-instructions.md"
+    [ -f "$SCRIPT_DIR/agents/default/system.md" ] && ls -lh "$SCRIPT_DIR/agents/default/system.md"
+    [ -f "$SCRIPT_DIR/agents/default/agent.yaml" ] && ls -lh "$SCRIPT_DIR/agents/default/agent.yaml"
+fi

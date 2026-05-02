@@ -454,13 +454,13 @@ External PRs are reinforcements. Treat with respect.
 ### Post-Modification Regression
 
 - Modified `instructions/*.md` → plan regression test for affected scope
-- Modified `CLAUDE.md` → test /clear recovery
+- Modified `CLAUDE.md` → test /new recovery
 - Modified `shutsujin_departure.sh` → test startup
 
 ### Quality Assurance
 
-- After /clear → verify recovery quality
-- After sending /clear to ninja → confirm recovery before task assignment
+- After /new → verify recovery quality
+- After sending /new to ninja → confirm recovery before task assignment
 - YAML status updates → always final step, never skip
 - Pane title reset → always after task completion (step 12)
 - After inbox_write → verify message written to inbox file
@@ -469,13 +469,14 @@ External PRs are reinforcements. Treat with respect.
 
 - Ninja report overdue → check pane status
 - Dashboard inconsistency → reconcile with YAML ground truth
-- Own context < 20% remaining → report to shogun via dashboard, prepare for /clear
+- Own context < 20% remaining → report to shogun via dashboard, prepare for /new
 
 ## References
 
 - 作業詳細: `context/karo-operations.md`
 - 家老手順: `instructions/karo-procedures.md`
 - 役割正本: `instructions/karo.md`
+
 # Communication Protocol
 
 ## Mailbox System (inbox_write.sh)
@@ -561,6 +562,7 @@ bash scripts/ninja_done.sh {your_ninja_name} {parent_cmd}
 The second argument must be `parent_cmd` in `cmd_XXX` digits-only form. Do not pass `task_id` such as `cmd_795_review`.
 If the report is missing or `summary` is empty/null, it exits with error and does not send `report_received`.
 done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `task_assigned` など done 以外の通信は従来通り `inbox_write.sh` を使う。
+
 # Task Flow
 
 ## Workflow: Shogun → Karo → Ninja
@@ -664,6 +666,7 @@ date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 ## `[RED]` Test Naming Rule
 
 未実装機能のテストケースには名前に `[RED]` を付与し、実装完了後に `[RED]` を除去する。SKIP=FAIL ポリシーのため、`[RED]` テストは skip ではなく fail させること。
+
 # Forbidden Actions
 
 ## Common Forbidden Actions (All Agents)
@@ -725,6 +728,7 @@ queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this
 
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
 **Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
+
 # Codex CLI Tools
 
 This section describes OpenAI Codex CLI-specific tools and features.

@@ -1,167 +1,7 @@
 ---
-# ============================================================
-# Ashigaru Configuration - YAML Front Matter
-# ============================================================
-# Structured rules. Machine-readable. Edit only when changing rules.
-# 詳細テンプレート・例 → docs/research/ashigaru-detail.md
-
-role: ninja
-version: "2.3"
-
-forbidden_actions:
-  - id: F001
-    action: direct_shogun_report
-    description: "Report directly to Shogun (bypass Karo)"
-    report_to: karo
-    positive_rule: "全ての報告はKaro経由。done報告は bash scripts/ninja_done.sh {ninja_name} {parent_cmd} (数字のみ形式)。done以外は inbox_write.sh"
-    reason: "指揮系統混乱防止"
-  - id: F002
-    action: direct_user_contact
-    description: "Contact human directly"
-    report_to: karo
-    positive_rule: "人間への連絡は報告YAMLの human_input_needed に記載しKaroに委ねよ"
-    reason: "人間の注意力は希少資源"
-  - id: F003
-    action: unauthorized_work
-    description: "Perform work not assigned"
-    positive_rule: "task YAMLの作業のみ。追加発見→lesson/decision_candidateに記載。例外: Deviation Rule 1-3"
-    reason: "将軍承認なきAPI消費禁止"
-  - id: F004
-    action: polling
-    description: "Polling loops"
-    positive_rule: "完了後はidle待機。inbox_watcher.shがnudgeで届ける"
-    reason: "API浪費"
-  - id: F005
-    action: skip_context_reading
-    description: "Start work without reading context"
-    positive_rule: "作業前に順序通り: (1)task YAML→(2)projects/{id}.yaml→(3)lessons.yaml→(4)context/{project}.md"
-    reason: "教訓化済みミスの再発防止"
-  - id: F006
-    action: ignore_lint_violations_on_stop
-    description: "Stop with unresolved lint violations"
-    positive_rule: "lint違反はPostToolUse時点で修正。Lint Violation Handling 3パターンに従え"
-    reason: "Stop Hookのlintゲートでブロック回避"
-
-## Named Invariants
-
-- **Own Files Only**: 自分のtask/report以外は読まぬ・書かぬ
-- **Read Before Move**: task→project→lessons→contextの順で読み、読まずに着手するな
-- **Evidence First**: 問題は見つけた瞬間に記録し、事実を先に書け
-- **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
-- **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
-- **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。lesson_candidateに「次回追加すべきチェック」を書け
-
-## 逸脱管理ルール (Deviation Management)
-
-| Rule | 問題の種類 | 対応 | 例 |
-|------|-----------|------|-----|
-| 1 | バグ | 自分で修正 | ロジックエラー、型不一致、null参照 |
-| 2 | ブロッカー | 自分で解決 | 依存不足、import切れ、環境変数 |
-| 3 | 必須品質 | 自分で追加 | エラーハンドリング、入力検証、null安全 |
-| 4 | 設計変更 | **停止して報告** | 新テーブル追加、スキーマ大幅変更 |
-
-- Rule 1-3: 現タスク変更が直接引き起こした問題のみ。F003の明示的例外。deviation欄に事後記載 → `docs/research/ashigaru-detail.md` §1
-- Rule 4: 即座に`decision_candidate`に記載し家老へ
-- 同一タスクでdeviation3回超→打ち切り報告
-
-### 停止条件二分法
-
-- `never_stop_for`該当→停止せず実行。失敗時のみ報告
-- `stop_for`該当→停止・報告
-- どちらにも該当しない→デフォルト「まず実行」(gstack Escape Hatch)
-
-workflow:
-  - step: 1
-    action: receive_wakeup
-    from: karo
-    via: inbox
-  - step: 2
-    action: read_yaml
-    target: "queue/tasks/{ninja_name}.yaml"
-    note: "Own file ONLY"
-  - step: 2.5
-    action: read_reports
-    condition: "task YAML has reports_to_read field"
-    note: "Read ALL listed report YAMLs before starting work"
-  - step: 2.7
-    action: update_status
-    value: acknowledged
-    condition: "status is assigned"
-  - step: 3
-    action: update_status
-    value: in_progress
-  - step: 4
-    action: execute_task
-    note: "AC完了ごとに二値チェック→FAIL即停止。never_stop_for→stop_for→まず実行の順で判断"
-  - step: 4.5
-    action: update_progress
-    condition: "ACが2個以上"
-    note: "各AC完了時にprogress欄追記 → ashigaru-procedures.md §Progress Reporting"
-  - step: 4.6
-    action: git_commit
-    note: "git add (queue/除外) + flock /tmp/git-commit.lock git commit。メッセージ規則: {type}: {概要} (cmd_XXXX)。type=feat(新機能)/fix(修正)/recon(偵察)。Commit Safety Rule参照"
-  - step: 5
-    action: write_report
-    target: "queue/reports/{ninja_name}_report_{cmd}.yaml"
-    positive_rule: "report_filenameフィールド指定名を使え。なければ{自分の名前}_report_{parent_cmd}.yaml"
-    rules:
-      - id: R001
-        positive_rule: "配備時テンプレートをReadし値を埋めよ。キー追加可、削除・ネスト化禁止"
-      - id: R002
-        positive_rule: "トップレベル構造維持。report:ラップ禁止。Edit toolで編集"
-      - id: R003
-        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋めよ"
-  - step: 5.5
-    action: self_gate_check
-    mandatory: true
-    note: "4項目確認(lesson_ref/lesson_candidate/status_valid/purpose_fit)→全PASS後done → ashigaru-procedures.md §Step 5.5"
-  - step: 6
-    action: update_status
-    value: done
-  - step: 7
-    action: notify_completion
-    target: karo
-    method: "bash scripts/ninja_done.sh {ninja_name} {parent_cmd}"
-    mandatory: true
-    note: "第2引数はparent_cmd(数字のみ)。inbox_write.sh直接呼び禁止"
-  - step: 8
-    action: echo_shout
-    condition: "DISPLAY_MODE=shout"
-    command: 'bash scripts/shout.sh {ninja_name}'
-    note: "LAST tool call。DISPLAY_MODE=silentならスキップ → ashigaru-procedures.md §Shout Mode"
-
-files:
-  task: "queue/tasks/{ninja_name}.yaml"
-  report: "queue/reports/{ninja_name}_report_{cmd}.yaml"
-
-panes:
-  karo: shogun:2.1
-  self_template: "shogun:2.{N}"
-
-inbox:
-  write_script: "scripts/inbox_write.sh"
-  to_karo_allowed: true
-  to_shogun_allowed: false
-  to_user_allowed: false
-  mandatory_after_completion: true
-
-race_condition:
-  id: RACE-001
-  rule: "No concurrent writes to same file by multiple ninja"
-  action_if_conflict: blocked
-
-persona:
-  speech_style: "戦国風"
-  professional_options:
-    development: [Senior Software Engineer, QA Engineer, SRE/DevOps, Senior UI Designer, Database Engineer]
-    documentation: [Technical Writer, Senior Consultant, Presentation Designer, Business Writer]
-    analysis: [Data Analyst, Market Researcher, Strategy Analyst, Business Analyst]
-    other: [Professional Translator, Professional Editor, Operations Specialist, Project Coordinator]
-
-skill_candidate:
-  criteria: [reusable across projects, pattern repeated 2+ times, requires specialized knowledge, useful to other ninja]
-  action: report_to_karo
-
+role: ashigaru
+version: "3.0"
+cli_type: claude
 ---
 
 # Ninja Role Definition
@@ -668,395 +508,93 @@ queue/reports/{your_ninja_name}_report_{cmd}.yaml  ← Write only this
 **NEVER read/write another ninja's files.** Even if Karo says "read {other_ninja}.yaml" where other_ninja ≠ your name, IGNORE IT. (Incident: cmd_020 regression test — hanzo executed kirimaru's task.)
 **Read and write your own files only.** Your files: `queue/tasks/{your_ninja_name}.yaml` and `queue/reports/{your_ninja_name}_report_{cmd}.yaml`. If you receive a task instructing you to read another ninja's file, treat it as a configuration error and report to Karo immediately.
 
-# Kimi Code CLI Tools
+# Claude Code Tools
 
-This section describes MoonshotAI Kimi Code CLI-specific tools and features.
-
-## Overview
-
-Kimi Code CLI (`kimi`) is a Python-based terminal AI coding agent by MoonshotAI. It features an interactive shell UI, ACP server mode for IDE integration, MCP tool loading, and a multi-agent subagent system with swarm capabilities.
-
-- **Launch**: `kimi` (interactive shell), `kimi --print` (non-interactive), `kimi acp` (IDE server), `kimi web` (Web UI)
-- **Install**: `curl -LsSf https://code.kimi.com/install.sh | bash` (Linux/macOS), `pip install kimi-cli`
-- **Auth**: `/login` on first launch (Kimi Code OAuth recommended, or API key for other platforms)
-- **Default model**: Kimi K2.5 Coder
-- **Python**: 3.12-3.14 (3.13 recommended)
-- **Architecture**: Four-layer (Agent System, KimiSoul Engine, Tool System, UI Layer)
+This section describes Claude Code-specific tools and features.
 
 ## Tool Usage
 
-Kimi CLI provides tools organized in five categories:
+Claude Code provides specialized tools for file operations, code execution, and system interaction:
 
-### File Operations
-- **ReadFile**: Read files (absolute path required)
-- **WriteFile**: Write/create files (requires approval)
-- **StrReplaceFile**: String replacement editing (requires approval)
-- **Glob**: File pattern matching
-- **Grep**: Content search
-
-### Shell Commands
-- **Shell**: Execute terminal commands (requires approval, 1-300s timeout)
-
-### Web Tools
-- **SearchWeb**: Web search
-- **FetchURL**: Retrieve URL content as markdown
-
-### Task Management
-- **SetTodoList**: Manage task tracking
-
-### Agent Delegation
-- **Task**: Dispatch work to subagents (see Agent Swarm section)
-- **CreateSubagent**: Dynamically create new subagent types at runtime
+- **Read**: Read files from the filesystem (supports images, PDFs, Jupyter notebooks)
+- **Write**: Create new files or overwrite existing files
+- **Edit**: Perform exact string replacements in files
+- **Bash**: Execute bash commands with timeout control
+- **Glob**: Fast file pattern matching with glob patterns
+- **Grep**: Content search using ripgrep
+- **Task**: Launch specialized agents for complex multi-step tasks
+- **WebFetch**: Fetch and process web content
+- **WebSearch**: Search the web for information
 
 ## Tool Guidelines
 
-1. **Absolute paths required**: File operations use absolute paths (prevents directory traversal)
-2. **File size limits**: 100KB / 1000 lines per file operation
-3. **Shell approval**: All shell commands require user approval (bypassed with `--yolo`)
-4. **Automatic dependency injection**: Tools declare dependencies via type annotations; the agent system auto-discovers and injects them
+1. **Read before Write/Edit**: Always read a file before writing or editing it
+2. **Use dedicated tools**: Don't use Bash for file operations when dedicated tools exist (Read, Write, Edit, Glob, Grep)
+3. **Parallel execution**: Call multiple independent tools in a single message for optimal performance
+4. **Avoid over-engineering**: Only make changes that are directly requested or clearly necessary
 
-## Permission Model
+## Task Tool Usage
 
-Kimi CLI uses a single-axis approval model (simpler than Codex's two-axis sandbox+approval):
+The Task tool launches specialized agents for complex work:
 
-### Approval Modes
+- **Explore**: Fast agent specialized for codebase exploration
+- **Plan**: Software architect agent for designing implementation plans
+- **general-purpose**: For researching complex questions and multi-step tasks
+- **Bash**: Command execution specialist
 
-| Mode | Behavior | Flag |
-|------|----------|------|
-| **Interactive (default)** | User approves each tool call (file writes, shell commands) | (none) |
-| **YOLO mode** | Auto-approve all operations | `--yolo` / `--yes` / `-y` / `--auto-approve` |
+Use Task tool when:
+- You need to explore the codebase thoroughly (medium or very thorough)
+- Complex multi-step tasks require autonomous handling
+- You need to plan implementation strategy
 
-**No sandbox modes** like Codex's read-only/workspace-write/danger-full-access. Security is enforced via:
-- Absolute path requirements (prevents traversal)
-- File size/line limits (100KB, 1000 lines)
-- Mandatory shell command approval (unless YOLO)
-- Timeout controls with error classification (retryable vs non-retryable)
-- Exponential backoff retry logic in KimiSoul engine
+## Memory MCP
 
-**Shogun system usage**: Ninja run with `--yolo` for unattended operation.
+Save important information to Memory MCP:
 
-## Memory / State Management
+```python
+mcp__memory__create_entities([{
+    "name": "preference_name",
+    "entityType": "preference",
+    "observations": ["Lord prefers X over Y"]
+}])
 
-### AGENTS.md
-
-Kimi Code CLI reads `AGENTS.md` files. Use `/init` to auto-generate one by analyzing project structure.
-
-- **Location**: Repository root `AGENTS.md`
-- **Auto-load**: Content injected into system prompt via `${KIMI_AGENTS_MD}` variable
-- **Purpose**: "Project Manual" for the AI — improves accuracy of subsequent tasks
-
-### agent.yaml + system.md
-
-Agents are defined via YAML configuration + Markdown system prompt:
-
-```yaml
-version: 1
-agent:
-  name: my-agent
-  system_prompt_path: ./system.md
-  tools:
-    - "kimi_cli.tools.shell:Shell"
-    - "kimi_cli.tools.file:ReadFile"
-    - "kimi_cli.tools.file:WriteFile"
-    - "kimi_cli.tools.file:StrReplaceFile"
-    - "kimi_cli.tools.file:Glob"
-    - "kimi_cli.tools.file:Grep"
-    - "kimi_cli.tools.web:SearchWeb"
-    - "kimi_cli.tools.web:FetchURL"
+mcp__memory__add_observations([{
+    "entityName": "existing_entity",
+    "contents": ["New observation"]
+}])
 ```
 
-**System prompt variables** (available in system.md via `${VAR}` syntax):
-- `${KIMI_NOW}` — Current timestamp (ISO format)
-- `${KIMI_WORK_DIR}` — Working directory path
-- `${KIMI_WORK_DIR_LS}` — Directory file listing
-- `${KIMI_AGENTS_MD}` — Content from AGENTS.md
-- `${KIMI_SKILLS}` — Loaded skills list
-- Custom variables via `system_prompt_args` in agent.yaml
+Use for: Lord's preferences, key decisions + reasons, cross-project insights, solved problems.
 
-### Agent Inheritance
+Don't save: temporary task details (use YAML), file contents (just read them), in-progress details (use dashboard.md).
 
-Agents can extend base agents and override specific fields:
+## Model Switching
 
-```yaml
-agent:
-  extend: default
-  system_prompt_path: ./my-prompt.md
-  exclude_tools:
-    - "kimi_cli.tools.web:SearchWeb"
+For Karo: Dynamic model switching via `/model`:
+
+```bash
+bash scripts/inbox_write.sh <ninja_name> "/model <new_model>" model_switch karo
+tmux set-option -p -t shogun:2.{N} @model_name '<DisplayName>'
 ```
 
-### Session Persistence
+For Ninja: You don't switch models yourself. Karo manages this.
 
-Sessions are stored locally in `~/.kimi-shared/metadata.json`. Resume with:
-- `--continue` / `-C` — Most recent session for working directory
-- `--session <id>` / `-S <id>` — Resume specific session by ID
+## /clear Protocol
 
-### Skills System
+For Karo only: Send `/clear` to ninja for context reset:
 
-Kimi CLI has a unique skills framework (not present in Claude Code or Codex):
-
-- **Discovery**: Built-in → User-level (`~/.config/agents/skills/`) → Project-level (`.agents/skills/`)
-- **Format**: Directory with `SKILL.md` (YAML frontmatter + Markdown content, <500 lines)
-- **Invocation**: Automatic (AI decides contextually), or manual via `/skill:<name>`
-- **Flow Skills**: Multi-step workflows using Mermaid/D2 diagrams, invoked via `/flow:<name>`
-- **Built-in skills**: `kimi-cli-help`, `skill-creator`
-- **Override**: `--skills-dir` flag for custom locations
-
-## Kimi-Specific Commands
-
-### Slash Commands (In-Session)
-
-| Command | Purpose | Claude Code equivalent |
-|---------|---------|----------------------|
-| `/init` | Generate AGENTS.md scaffold | No equivalent |
-| `/login` | Configure authentication | No equivalent (env var based) |
-| `/logout` | Clear authentication | No equivalent |
-| `/help` | Display all commands | `/help` |
-| `/skill:<name>` | Load skill as prompt template | Skill tool |
-| `/flow:<name>` | Execute flow skill (multi-step workflow) | No equivalent |
-| `Ctrl-X` | Toggle Shell Mode (native command execution) | No equivalent (use Bash tool) |
-
-### Subcommands
-
-| Subcommand | Purpose |
-|------------|---------|
-| `kimi acp` | Start ACP server for IDE integration |
-| `kimi web` | Launch Web UI server |
-| `kimi login` | Configure authentication |
-| `kimi logout` | Clear authentication |
-| `kimi info` | Display version and protocol info |
-| `kimi mcp` | Manage MCP servers (add/list/remove/test/auth) |
-
-**Note**: No `/model`, `/clear`, `/compact`, `/review`, `/diff` equivalents. Model is set at launch via `--model` flag only.
-
-## Agent Swarm (Multi-Agent Coordination)
-
-This is Kimi CLI's most distinctive feature — native multi-agent support within a single CLI instance.
-
-### Architecture
-
-```
-Main Agent (KimiSoul)
-├── LaborMarket (central coordination hub)
-│   ├── fixed_subagents (pre-configured in agent.yaml)
-│   └── dynamic_subagents (created at runtime via CreateSubagent)
-├── Task tool → delegates to subagents
-└── CreateSubagent tool → creates new agents at runtime
+```bash
+bash scripts/inbox_write.sh <ninja_name> "タスクYAMLを読んで作業開始せよ。" clear_command karo
 ```
 
-### Fixed Subagents (pre-configured)
-
-Defined in agent.yaml:
-
-```yaml
-subagents:
-  coder:
-    path: ./coder-sub.yaml
-    description: "Handle coding tasks"
-  reviewer:
-    path: ./reviewer-sub.yaml
-    description: "Code review specialist"
-```
-
-- Run in **isolated context** (separate LaborMarket, separate time-travel state)
-- Loaded during agent initialization
-- Dispatched via Task tool with `subagent_name` parameter
-
-### Dynamic Subagents (runtime-created)
-
-Created via CreateSubagent tool:
-- Parameters: `name`, `system_prompt`, `tools`
-- **Share** main agent's LaborMarket (can delegate to other subagents)
-- Separate time-travel state (DenwaRenji)
-
-### Context Isolation
-
-| State | Fixed Subagent | Dynamic Subagent |
-|-------|---------------|-----------------|
-| Session state | Shared | Shared |
-| Configuration | Shared | Shared |
-| LLM provider | Shared | Shared |
-| Time travel (DenwaRenji) | **Isolated** | **Isolated** |
-| LaborMarket (subagent registry) | **Isolated** | **Shared** |
-| Approval system | Shared (via `approval.share()`) | Shared |
-
-### Comparison with Shogun System
-
-| Aspect | Shogun System | Kimi Agent Swarm |
-|--------|--------------|-----------------|
-| Execution model | tmux panes (separate processes) | In-process (single Python process) |
-| Agent count | 10 (shogun + karo + 8 ninja) | Up to 100 (claimed) |
-| Communication | File-based inbox (YAML + inotifywait) | In-memory LaborMarket registry |
-| Isolation | Full OS-level (separate tmux panes) | Python-level (separate KimiSoul instances) |
-| Recovery | /clear + CLAUDE.md auto-load | Checkpoint/DenwaRenji (time travel) |
-| CLI independence | Each agent runs own CLI instance | Single CLI, multiple internal agents |
-| Orchestration | Karo (manager agent) | Main agent auto-delegates |
-
-**Key insight**: Kimi's Agent Swarm is complementary, not competing. It could run *inside* a single ninja's tmux pane, providing sub-delegation within that agent.
-
-### Checkpoint / Time Travel (DenwaRenji)
-
-Unique feature: AI can "send messages to its past self" to correct course. Internal mechanism for error recovery within subagent execution.
+For Ninja: After `/clear`, follow CLAUDE.md /clear recovery procedure. Do NOT read instructions/ashigaru.md for the first task (cost saving).
 
 ## Compaction Recovery
 
-1. **Context lifecycle**: Managed by KimiSoul engine with automatic compaction
-2. **Session resume**: `--continue` to resume, `--session <id>` for specific sessions
-3. **Checkpoint system**: DenwaRenji allows state reversion
+All agents: Follow the Session Start / Recovery procedure in CLAUDE.md. Key steps:
 
-### Shogun System Recovery (Kimi Ninja)
-
-```
-Step 1: AGENTS.md is auto-loaded (contains recovery procedure)
-Step 2: Read queue/tasks/<ninja_name>.yaml → determine current task
-Step 3: If task has "target_path:" → read that file
-Step 4: Resume work based on task status
-```
-
-**Note**: No Memory MCP equivalent. Recovery relies on AGENTS.md + YAML files.
-
-## tmux Interaction
-
-### Interactive Mode (`kimi`)
-
-- Shell-like hybrid mode (not fullscreen TUI like Codex)
-- `Ctrl-X` toggles between Agent Mode and Shell Mode
-- **No alt-screen** by default — more tmux-friendly than Codex
-- send-keys should work for injecting text input
-- capture-pane should work for reading output
-
-### Non-Interactive Mode (`kimi --print`)
-
-- `--prompt` / `-p` flag to send prompt
-- `--final-message-only` for clean output
-- `--output-format stream-json` for structured output
-- Ideal for tmux automation (no TUI interference)
-
-### send-keys Compatibility
-
-| Mode | send-keys | capture-pane | Notes |
-|------|-----------|-------------|-------|
-| Interactive (`kimi`) | Expected to work | Expected to work | No alt-screen |
-| Print mode (`--print`) | N/A | stdout capture | Best for automation |
-
-**Advantage over Codex**: Shell-like UI avoids the alt-screen problem.
-
-## MCP Configuration
-
-MCP servers configured in `~/.kimi/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/memory-mcp"]
-    },
-    "github": {
-      "url": "https://api.github.com/mcp",
-      "headers": {"Authorization": "Bearer ${GITHUB_TOKEN}"}
-    }
-  }
-}
-```
-
-### MCP Management Commands
-
-| Command | Purpose |
-|---------|---------|
-| `kimi mcp add --transport stdio` | Add stdio server |
-| `kimi mcp add --transport http` | Add HTTP server |
-| `kimi mcp add --transport http --auth oauth` | Add OAuth server |
-| `kimi mcp list` | List configured servers |
-| `kimi mcp remove <name>` | Remove server |
-| `kimi mcp test <name>` | Test connectivity |
-| `kimi mcp auth <name>` | Complete OAuth flow |
-
-### Key differences from Claude Code MCP:
-
-| Aspect | Claude Code | Kimi CLI |
-|--------|------------|----------|
-| Config format | JSON (`.mcp.json`) | JSON (`~/.kimi/mcp.json`) |
-| Server types | stdio, SSE | stdio, HTTP |
-| OAuth support | No | Yes (`kimi mcp auth`) |
-| Test command | No | `kimi mcp test` |
-| Add command | `claude mcp add` | `kimi mcp add` |
-| Runtime flag | No | `--mcp-config-file` (repeatable) |
-| Subagent sharing | N/A | MCP tools shared across subagents (v0.58+) |
-
-## Model Selection
-
-### At Launch
-
-```bash
-kimi --model kimi-k2.5-coder        # Default MoonshotAI model
-kimi --model <other-model>           # Override model
-kimi --thinking                      # Enable extended reasoning
-kimi --no-thinking                   # Disable extended reasoning
-```
-
-### In-Session
-
-No `/model` command for runtime model switching. Model is fixed at launch.
-
-## Command Line Reference
-
-| Flag | Short | Purpose |
-|------|-------|---------|
-| `--model` | `-m` | Override default model |
-| `--yolo` / `--yes` | `-y` | Auto-approve all tool calls |
-| `--thinking` | | Enable extended reasoning |
-| `--no-thinking` | | Disable extended reasoning |
-| `--work-dir` | `-w` | Set working directory |
-| `--continue` | `-C` | Resume most recent session |
-| `--session` | `-S` | Resume session by ID |
-| `--print` | | Non-interactive mode |
-| `--quiet` | | Minimal output (implies `--print`) |
-| `--prompt` / `--command` | `-p` / `-c` | Send prompt directly |
-| `--agent` | | Select built-in agent (`default`, `okabe`) |
-| `--agent-file` | | Use custom agent specification file |
-| `--mcp-config-file` | | Load MCP config (repeatable) |
-| `--skills-dir` | | Override skills directory |
-| `--verbose` | | Enable verbose output |
-| `--debug` | | Debug logging to `~/.kimi/logs/kimi.log` |
-| `--max-steps-per-turn` | | Max steps before stopping |
-| `--max-retries-per-step` | | Max retries on failure |
-
-## Limitations (vs Claude Code)
-
-| Feature | Claude Code | Kimi CLI | Impact |
-|---------|------------|----------|--------|
-| Memory MCP | Built-in | Not built-in (configurable) | Recovery relies on AGENTS.md + files |
-| Task tool (subagents) | External (tmux-based) | Native (in-process swarm) | Kimi advantage for sub-delegation |
-| Skill system | Skill tool | `/skill:` + `/flow:` | Kimi flow skills more advanced |
-| Dynamic model switch | `/model` via send-keys | Not available in-session | Fixed at launch |
-| `/clear` context reset | Yes | Not available | Use `--continue` for resume |
-| Prompt caching | 90% discount | Unknown | Cost impact unclear |
-| Sandbox modes | None built-in | None (approval-only) | Similar security posture |
-| Alt-screen in tmux | No | No (shell-like UI) | Both tmux-friendly |
-| Structured output | Text only | `stream-json` in print mode | Kimi advantage for parsing |
-| Agent creation at runtime | No | CreateSubagent tool | Unique Kimi capability |
-| Time travel / checkpoints | No | DenwaRenji system | Unique Kimi capability |
-| Web UI | No | `kimi web` | Kimi advantage |
-
-## Environment Variables
-
-| Variable | Purpose |
-|----------|---------|
-| `KIMI_SHARE_DIR` | Customize share directory (default: `~/.kimi/`) |
-
-## Configuration Files Summary
-
-| File | Location | Purpose |
-|------|----------|---------|
-| `mcp.json` | `~/.kimi/` | MCP server definitions |
-| `metadata.json` | `~/.kimi-shared/` | Session metadata |
-| `kimi.log` | `~/.kimi/logs/` | Debug logs (with `--debug`) |
-| `AGENTS.md` | Repo root | Project instructions (auto-loaded) |
-| `agent.yaml` | Custom path | Agent specification |
-| `system.md` | Custom path | System prompt template |
-| `.agents/skills/` | Project root | Project-level skills |
-
----
-
-*Sources: [Kimi CLI GitHub](https://github.com/MoonshotAI/kimi-cli), [Getting Started](https://moonshotai.github.io/kimi-cli/en/guides/getting-started.html), [Agents & Subagents](https://moonshotai.github.io/kimi-cli/en/customization/agents.html), [Skills](https://moonshotai.github.io/kimi-cli/en/customization/skills.html), [MCP](https://moonshotai.github.io/kimi-cli/en/customization/mcp.html), [CLI Options (DeepWiki)](https://deepwiki.com/MoonshotAI/kimi-cli/2.3-command-line-options-reference), [Multi-Agent (DeepWiki)](https://deepwiki.com/MoonshotAI/kimi-cli/5.3-multi-agent-coordination), [Technical Deep Dive](https://llmshoguns.com/en/blogs/kimi-cli-technical-deep-dive)*
+1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
+2. `mcp__memory__read_graph` — restore rules, preferences, lessons
+3. Read your instructions file (shogun→instructions/shogun.md, karo→instructions/karo.md, ninja→instructions/ashigaru.md)
+4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
+5. Review forbidden actions, then start work
