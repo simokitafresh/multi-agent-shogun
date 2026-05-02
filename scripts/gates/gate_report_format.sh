@@ -99,10 +99,12 @@ else
         REASONS="${REASONS%%$'\n'*}"
     fi
     REASONS="${REASONS//\"/\\\"}"
-    (
-        flock -w 5 200 2>/dev/null
-        printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
-    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ]; then
+        (
+            flock -w 5 200 2>/dev/null
+            printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
+        ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    fi
     # cmd_2459: Gate FAIL → relevant skill feedback loop.
     # Best-effort only: report gate must remain responsible for the FAIL exit.
     _SKILL_FEEDBACK="$REPO_ROOT/scripts/skill_gate_feedback.sh"
@@ -126,11 +128,12 @@ else
             --source "$REPORT_PATH" \
             "${_skill_args[@]}" >/dev/null 2>&1 || true
     fi
-    GATE_REASONS="$REASONS" \
-    GATE_REPORT_PATH="$REPORT_PATH" \
-    GATE_LEARNING_FILE="$LEARNING_FILE" \
-    GATE_PREFILL_THRESHOLD="$PREFILL_THRESHOLD" \
-    python3 - <<'LEARNING_PY' 2>/dev/null || true
+    if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ]; then
+        GATE_REASONS="$REASONS" \
+        GATE_REPORT_PATH="$REPORT_PATH" \
+        GATE_LEARNING_FILE="$LEARNING_FILE" \
+        GATE_PREFILL_THRESHOLD="$PREFILL_THRESHOLD" \
+        python3 - <<'LEARNING_PY' 2>/dev/null || true
 import os
 import json
 import tempfile
@@ -235,9 +238,10 @@ with open(tmp, "w", encoding="utf-8") as f:
     f.write("\n")
 os.replace(tmp, learning_file)
 LEARNING_PY
-    _DIAGNOSE_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_diagnose_check.sh"
-    if [ -f "$_DIAGNOSE_GATE" ]; then
-        bash "$_DIAGNOSE_GATE" "$REPORT_PATH" "$REASONS" || true
+        _DIAGNOSE_GATE="$(dirname "${BASH_SOURCE[0]}")/gate_diagnose_check.sh"
+        if [ -f "$_DIAGNOSE_GATE" ]; then
+            bash "$_DIAGNOSE_GATE" "$REPORT_PATH" "$REASONS" || true
+        fi
     fi
     # --- GP-198: session_state recording on gate FAIL ---
     _SS_REPORT_BASE=$(basename "$REPORT_PATH")

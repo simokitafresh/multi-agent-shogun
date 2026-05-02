@@ -167,3 +167,4 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 2026-05-02 | saizo | `tests/unit/test_cmd_complete_gate_warning_levels.bats` | Phase 5(計測+実装+検証) | `8.21s → 3.08s` (`-62.5%`, median 5run, `bats --timing`) | 関数抽出をsetup_fileで1回化し、各test setupの巨大script sed/eval反復を削減。23/23 PASS |
 | 2026-05-02 | saizo | `tests/unit/test_gate_metrics_model_labels.bats` | Phase 5(計測+実装+検証) | `9.76s → 1.57s` (`-83.9%`, median 5run, `bats --timing`) | full `cmd_complete_gate.sh` 実行をhelper単位検証へ置換し、fixture copyをsymlink化。3/3 PASS |
+| 2026-05-02 | kagemaru | `tests/unit/test_session_state.bats`, `tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats` | Phase 5(計測+実装+検証) | session_state `10.07s → 2.44s` (`-75.8%`), prev_cmd_lesson `5.15s → 0.85s` (`-83.4%`, median 5run, `bats --timing`) | session_state専用テストでgate fire log/skill feedback/learning/diagnoseを省略しsession_state記録だけ検証。cmd_save prev lesson専用fast pathで対象チェック+quality log+REMINDだけ検証。8/8 + 6/6 PASS |

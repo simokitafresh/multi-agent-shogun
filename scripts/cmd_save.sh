@@ -1048,6 +1048,36 @@ WARN_COUNT=0
 CMD_BLOCK=""
 CMD_BLOCK_NC=""
 
+if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
+    if [[ ! -f "$QUEUE_FILE" ]]; then
+        echo "WARN: $QUEUE_FILE が存在しません" >&2
+        record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
+    elif load_cmd_block; then
+        CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
+        warn_missing_prev_cmd_lesson
+    else
+        echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
+        record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
+    fi
+
+    if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
+        echo "保存確認OK: ${CMD_ID}"
+        echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
+        remind_missing_current_cmd_lesson_after_clear
+        rm -f "$CMD_SAVE_STDERR_LOG"
+        trap - EXIT
+        exit 0
+    fi
+
+    if [[ "$BLOCK_COUNT" -gt 0 && ${#BLOCK_REASONS[@]} -gt 0 ]]; then
+        log_cmd_save_block "${BLOCK_REASONS[-1]}"
+    fi
+    echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
+    rm -f "$CMD_SAVE_STDERR_LOG"
+    trap - EXIT
+    exit 1
+fi
+
 # --- Check 1: cmdブロック存在確認 ---
 if [[ ! -f "$QUEUE_FILE" ]]; then
     echo "WARN: $QUEUE_FILE が存在しません" >&2
