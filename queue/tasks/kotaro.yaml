@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_2416_normal
+  _ac_task_id: cmd_karo_direct_ac_stale_fix
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2416
   ac_version: 999de9ed
@@ -43,15 +43,15 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
-  project: dm-signal
-  status: cancelled
+  parent_cmd: cmd_karo_direct_ac_stale_fix
+  project: infra
+  status: done
   stop_for: []
-  task_id: cmd_2416_normal
+  task_id: cmd_karo_direct_ac_stale_fix
   task_type: normal
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_2416.yaml
-  report_path: 
+  report_filename: kotaro_report_cmd_karo_direct_ac_stale_fix.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_direct_ac_stale_fix.yaml
   bloom_level: 
   related_lessons:
   - id: 'L636'
@@ -87,9 +87,14 @@ task:
 
   session_state:
     attempt: 1
-    last_block_reason: 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: missing \"affected_cmds\" field'
     tried_approaches:
-    - 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: missing \"affected_cmds\" field'
+    diagnose_reason: 'lessons_usefulにfeedbackでなくreasonフィールドを使うべきだった。assumption_invalidationはstr禁止でdictが必要。test_resultsを記入し忘れた。verdictを最後に記入する順序を守れていなかった'
+    approach_summary: 'deploy_task.sh --directモード旧AC残存バグ修正完了。python heredocにCMD_ID引数追加+既存parent_cmd比較ロジック実装。parent_cmd変更時のみACをクリア(LK008は同一parent_cmd再配備時に限定保持)。新規テスト2件追加。test_deploy_task_lifecycle.bats 41件全PASS。commit: 5753ff66'
     prior_attempts:
     - attempt: 1
-      block_reason: 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: missing \"affected_cmds\" field'
+      diagnose_reason: 'lessons_usefulにfeedbackでなくreasonフィールドを使うべきだった。assumption_invalidationはstr禁止でdictが必要。test_resultsを記入し忘れた。verdictを最後に記入する順序を守れていなかった'
+      approach_summary: 'deploy_task.sh --directモード旧AC残存バグ修正完了。python heredocにCMD_ID引数追加+既存parent_cmd比較ロジック実装。parent_cmd変更時のみACをクリア(LK008は同一parent_cmd再配備時に限定保持)。新規テスト2件追加。test_deploy_task_lifecycle.bats 41件全PASS。commit: 5753ff66'
+  command: "scripts/deploy_task.sh L258-261修正。--directモードでもtask YAMLの既存parent_cmdと新parent_cmd(引数cmd_id)が異なる場合はacceptance_criteriaをSTALE_FIELDSに追加してクリアせよ。既存parent_cmd取得: クリア前のraw内parent_cmd行をパース。新parent_cmd: CMD_ID環境変数で渡す。テスト追加必須。既存テスト全PASS維持。"
