@@ -829,3 +829,4 @@
 | cmd_2453 | cmd_2452偵察で判明: FoFのholding_signal(構成PF UUID列)は正常だが、 Monthly Trade画面とDashboard画面のFoF保有ポジション表示が5月分の下層ticker展開を参照していない。 両画面で5月のprecomputed display_ticker_weightsを正しく参照するよう修正する。 | dm-signal | 05-02 | FoF表示のprecomputed ticker weigh |
 | cmd_2454 | GSL1(21体)とGSL2(21体)の全42体が理論最長期間より1-26ヶ月短い。 120ヶ月=10年のハードリミットが入っている疑い。 recalculate_fof.pyまたはFoF signal生成ロジックで120ヶ月制限をかけている箇所を特定する。 | dm-signal | 05-02 | FoF期間短縮の主因候補を特定。120ヶ月は再計算ではなくM |
 | cmd_2455 | signalsテーブルのUPSERTでupdated_atが記録されず、holding_signalの変更履歴が追えない。 コード修正で過去の保有シグナルが変わったかを事後検証できない問題を解決する。 殿指示: 「いつ何から何に変わったかは追えた方がいい」(2026-05-02)。 | dm-signal | 05-02 | signals/fof_component_weights |
+| cmd_2456 | 将軍がBLOCKされた後に教訓を記録せずに次のcmdを起票するパターンが直近50cmdで6回発生。 現行はWARN→累計昇格BLOCKだが、累計までの間に教訓なしcmdが量産される。 初回からBLOCKにして教訓サイクルの断絶を構造的に防止する。殿指示「将軍のCMD起票能力を成長させよう」(2026-05-02)。 | infra | 05-02 | 前cmd BLOCK後の教訓未記録チェックをWARNから即B |
