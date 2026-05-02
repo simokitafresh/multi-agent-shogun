@@ -551,6 +551,37 @@ else
 fi
 echo ""
 
+# --- Check 10: スキル品質サマリ ---
+echo "■ スキル品質"
+skill_summary_script="$SCRIPT_DIR/scripts/skill_execution_log.sh"
+if [ -x "$skill_summary_script" ]; then
+    skill_summary="$(
+        SKILL_EXECUTION_LOG_FILE="$SCRIPT_DIR/logs/skill_execution_log.yaml" \
+            bash "$skill_summary_script" summary 2>/dev/null || true
+    )"
+    skill_rows="$(printf '%s\n' "$skill_summary" | tail -n +2 | awk 'NF { print }')"
+    if [ -n "$skill_rows" ]; then
+        skill_quality_line="$(printf '%s\n' "$skill_rows" | awk -F' \\| ' '
+            NF >= 4 {
+                out = out (out != "" ? ", " : "") $1 " FAIL:" $2
+                count++
+                if (count >= 5) exit
+            }
+            END { print out }
+        ')"
+        echo "  スキル品質: ${skill_quality_line}"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("スキル品質: FAIL記録あり")
+        fi
+    else
+        echo "  スキル品質: 全PASS"
+    fi
+else
+    echo "  SKIP: skill_execution_log.sh が存在しないか実行権限なし"
+fi
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="

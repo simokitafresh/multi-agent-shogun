@@ -51,6 +51,38 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "skill_execution_log summary lists FAIL counts descending with top stumbling point" {
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "FAIL"
+  stumbling_points: "field empty"
+- ts: "2026-05-02T10:02:00+0900"
+  skill: "dashboard-update"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+- ts: "2026-05-02T10:03:00+0900"
+  skill: "dashboard-update"
+  executor: "kotaro"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == "skill | fail_count | last_fail | top_stumbling_point" ]]
+    [[ "${lines[1]}" == "dashboard-update | 2 | 2026-05-02T10:02:00+0900 | verdict missing" ]]
+    [[ "${lines[2]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
+}
+
 @test "gate FAIL identifies skill and appends 注意ポイント" {
     run env \
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \

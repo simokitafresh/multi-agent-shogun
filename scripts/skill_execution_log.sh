@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # skill_execution_log.sh — skill execution outcome log.
 # Usage:
+#   bash scripts/skill_execution_log.sh summary
 #   bash scripts/skill_execution_log.sh <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path]
 
 set -euo pipefail
@@ -9,7 +10,7 @@ REPO_ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 usage() {
-    echo "Usage: $0 <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path]" >&2
+    echo "Usage: $0 summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path]" >&2
 }
 
 yaml_scalar() {
@@ -22,6 +23,57 @@ PY
 }
 
 skill="${1:-}"
+if [ "$skill" = "summary" ]; then
+    if [ "${2:-}" ]; then
+        usage
+        exit 2
+    fi
+    python3 - "$LOG_FILE" <<'PY'
+import sys
+from collections import Counter, defaultdict
+
+import yaml
+
+path = sys.argv[1]
+print("skill | fail_count | last_fail | top_stumbling_point")
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except FileNotFoundError:
+    sys.exit(0)
+
+entries = data.get("executions") or []
+stats = defaultdict(lambda: {"fail_count": 0, "last_fail": "", "points": Counter()})
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    result = str(entry.get("result") or "").strip().upper()
+    if result != "FAIL":
+        continue
+    skill_name = str(entry.get("skill") or "").strip()
+    if not skill_name:
+        continue
+    item = stats[skill_name]
+    item["fail_count"] += 1
+    ts = str(entry.get("ts") or "").strip()
+    if ts and ts >= item["last_fail"]:
+        item["last_fail"] = ts
+    point = str(entry.get("stumbling_points") or "").strip()
+    if point:
+        item["points"][point] += 1
+
+rows = []
+for skill_name, item in stats.items():
+    top_point = ""
+    if item["points"]:
+        top_point = sorted(item["points"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+    rows.append((item["fail_count"], item["last_fail"], skill_name, top_point))
+
+for fail_count, last_fail, skill_name, top_point in sorted(rows, key=lambda row: (-row[0], row[2])):
+    print(f"{skill_name} | {fail_count} | {last_fail} | {top_point}")
+PY
+    exit 0
+fi
 executor="${2:-}"
 result="${3:-}"
 stumbling_points="${4:-}"
@@ -60,4 +112,3 @@ import sys, yaml
 with open(sys.argv[1], encoding="utf-8") as fh:
     yaml.safe_load(fh)
 PY
-

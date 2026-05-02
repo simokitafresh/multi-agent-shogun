@@ -20,6 +20,8 @@ setup() {
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
+    cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_TMPDIR/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_TMPDIR/scripts/skill_execution_log.sh"
 
     # --- Default fixtures: all checks pass ---
 
@@ -56,6 +58,20 @@ EOF
 - cmd_id: cmd_100
   workaround: false
   category: none
+EOF
+
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
 EOF
 
     # Check 6: mock gate_workaround_rate.sh
@@ -115,9 +131,25 @@ teardown() {
 
 # === Test 1: 全項目正常 → 総合判定OK ===
 @test "all checks pass → 総合判定: OK" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: OK"* ]]
+    [[ "$output" == *"スキル品質: 全PASS"* ]]
+}
+
+@test "skill FAIL summary is displayed at startup" {
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"スキル品質: dashboard-update FAIL:1"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
 }
 
 # === Test 2: 陣形図が30分以上古い → WARN ===
@@ -340,6 +372,14 @@ EOF
 
 # === Test 15: GP pending 0件 → 出力なし (AC2) ===
 @test "gunshi GP 0 pending → 静かに通過" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
 - cmd_id: cmd_100
   review_type: draft
