@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-02T20:34:34+09:00 -->
+<!-- generated_at: 2026-05-02T20:38:11+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-02T20:38:11+09:00 | terminal | response | 殿、2つの台帳を確認した。 **1. CoDD Refactor Registry** (`docs/research/codd_refactor_registry.md`) - 40件のリファクタリング実績を記録 - 2026-04-1…
+- 2026-05-02T20:37:43+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_bulletin_flaky 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-02T20:37:38+09:00 | terminal | inbound | codd台帳はわかるか？テストの台帳を確認して
+- 2026-05-02T20:35:49+09:00 | ntfy | outbound | 【家老】cmd_2421 初回配備開始 (title=shogun.md cmd起票手順にcmd_publish.sh追記, ninja=tobisaru) 📋 https://gist.github.com/simokitafresh/…
 - 2026-05-02T20:34:34+09:00 | terminal | response | **cmd_2478 PASS。家老に委任完了。** 起票前確認の自動成長仕組み: - cmd_save.shがWARN累計昇格BLOCKした時に`preflight_autolearn.txt`にcheck名を自動記録 - 次回cmd起…
 - 2026-05-02T20:34:07+09:00 | ntfy | outbound | 【karo】復帰済み。全忍者idle。cmd_karo_ci_fix_bulletin_flaky GATE CLEAR。cmd待ち→自走開始。
 - 2026-05-02T20:30:04+09:00 | terminal | inbound | 起票前確認が自動で成長する」仕組みを完成させよう！
 - 2026-05-02T20:04:12+09:00 | terminal | response | 殿、現物確認の結果を報告する。 **成長した点（環境に埋め込まれた変化）:** | 項目 | Before | After | 確認方法 | |------|--------|-------|---------| | 起票前確認hook …
 - 2026-05-02T20:03:32+09:00 | terminal | inbound | 成長したか確認して
 - 2026-05-02T20:03:25+09:00 | ntfy | outbound | CI赤: run 25250227558 Unit Tests (bats)
-- 2026-05-02T19:55:09+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-230)
-- 2026-05-02T19:55:09+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 19:48:03|cmd_2477
-- 2026-05-02T19:49:21+09:00 | ntfy | outbound | 【家老】cmd_2477 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-02T19:48:32+09:00 | terminal | response | **cmd_2477 GATE CLEAR。** テストデータ除外+quality_metric全37スキル導入が完了。計測→結果の因果チェーンが接続された。 殿、指示あれば。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- 殿、2つの台帳を確認した。 **1. CoDD Refactor Registry** (`docs/research/codd_refactor_registry.md`) - 40件のリファクタリング実績を記録 - 2026-04-18〜19に集中実行。全てPhase 5(…
+- codd台帳はわかるか？テストの台帳を確認して
 - **cmd_2478 PASS。家老に委任完了。** 起票前確認の自動成長仕組み: - cmd_save.shがWARN累計昇格BLOCKした時に`preflight_autolearn.txt`にcheck名を自動記録 - 次回cmd起票時にpre-write-edit-co…
 - 起票前確認が自動で成長する」仕組みを完成させよう！
 - 殿、現物確認の結果を報告する。 **成長した点（環境に埋め込まれた変化）:** | 項目 | Before | After | 確認方法 | |------|--------|-------|---------| | 起票前確認hook | 5問 | **8項目**（ラベルは7…
 - 成長したか確認して
 - 殿、報告する。 **成長（次に同じ事をしない仕組み）:** - 起票前確認hook **5問→8問**に拡張 - 項目6: command≦AC数チェック（10回累計BLOCK解消） - 項目7: self-rereadワード排除（4回累計BLOCK解消） - 項目8: q11…
 - 止まったな。起票前確認のを成長させるチャンスだ
-- 起票前確認5問: 全YES。cmd_publish.shで一括実行。 [meta] stop_reason=tool_use
-- 復帰完了。殿、報告する。 **殿の問い「品質向上にフォーカスしているか？消火ではないか」に対して現物確認した。** skill_execution_log(401行)を読んだ。軍師の消火分析は正しい。 **なぜなぜ7回（因果をたどる）:** 1. なぜスキル成長ループが消火にな…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-02T20:34:34+09:00 | **cmd_2478 PASS。家老に委任完了。** 起票前確認の自動成長仕組み: - cmd_save.shがWARN累計昇格BLOCKした時に`preflight_autolearn.txt`にcheck名を自動記録 - 次回cmd起票時にpre-write-edit-co…
@@ -40,6 +40,7 @@
 - cmd_2223
 - cmd_2226
 - cmd_2378
+- cmd_2421
 - cmd_2455
 - cmd_2456
 - cmd_2457
