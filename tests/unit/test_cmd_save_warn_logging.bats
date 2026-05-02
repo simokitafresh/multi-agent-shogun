@@ -63,6 +63,7 @@ run_save() {
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS" \
+        CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_warn
 }
 

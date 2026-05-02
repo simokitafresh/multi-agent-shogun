@@ -61,6 +61,11 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
+    # This unit suite validates local check output, not historical WARN analytics.
+    # Avoid spawning Python for every record_warn_reason() call.
+    count_same_warn_pattern() { echo 0; }
+    export -f count_same_warn_pattern
+
     # テストハーネスではQUEUE_FILEが単純なので、CMD_BLOCK読込のみpure bash化してI/O起動コストを削る
     load_cmd_block() {
         if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
@@ -102,8 +107,17 @@ echo \"OK\"
     # 共有テンポラリディレクトリ(setup_fileで1回のみ作成)
     export TEST_SHARED_TMP
     TEST_SHARED_TMP="$(mktemp -d)"
-    mkdir -p "${TEST_SHARED_TMP}/queue/archive/cmds"
+    mkdir -p "${TEST_SHARED_TMP}/queue/archive/cmds" "${TEST_SHARED_TMP}/docs/research"
+    cat > "${TEST_SHARED_TMP}/docs/research/cmd_save_test_deploy_task.md" <<'DOC'
+scripts/deploy_task.sh
+deploy_task.sh
+DOC
+    printf 'entries:\n' > "${TEST_SHARED_TMP}/cmd_design_quality.yaml"
+    printf 'lessons:\n' > "${TEST_SHARED_TMP}/lessons_shogun.yaml"
     export QUEUE_FILE="${TEST_SHARED_TMP}/queue/shogun_to_karo.yaml"
+    export PROJECT_DIR="$TEST_SHARED_TMP"
+    export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
+    export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
 }
 
 teardown_file() {
@@ -120,6 +134,8 @@ setup() {
     export CMD_BLOCK_CACHE_LOADED=0
     export CMD_SAVE_ACCUMULATE_BLOCKS=0
     export BLOCK_COUNT=0
+    export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
+    export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
     declare -ga BLOCK_REASONS=()
     declare -ga WARN_REASONS=()
     declare -gA CMD_BLOCK_CACHE=()
