@@ -1,5 +1,7 @@
 ---
 name: gate-sync
+argument-hint: "[cmd_id] [gate_result:CLEAR|BLOCK]"
+user-invocable: false
 description: |
   【軍師専用】gate CLEAR/BLOCK通知受信時にreview_logのgate_result更新+accuracy即時計算を実行。
   inbox受信→review_log該当エントリ更新→accuracy計算の3ステップを自動化。

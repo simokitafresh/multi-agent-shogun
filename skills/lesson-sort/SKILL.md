@@ -1,5 +1,6 @@
 ---
 name: lesson-sort
+argument-hint: ""
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   教訓セクションの未振り分けエントリを適切なcontextセクションに分類・移動する。

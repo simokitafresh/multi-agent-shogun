@@ -1,5 +1,6 @@
 ---
 name: verdict-check
+argument-hint: "[report_path]"
 description: |
   【忍者専用】binary_checksの結果からverdictを自動導出するスキル。
   verdict↔binary_checks矛盾（PASS判定だがbc:noあり等）を構造的に防止する。

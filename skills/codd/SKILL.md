@@ -1,5 +1,6 @@
 ---
 name: codd
+argument-hint: "[spec_path|plan_path|target]"
 description: |
   CoDD(Coherence-Driven Development)設計書パイプラインを実行する。
   spec.mdから設計書群を自動生成し、リファクタリング・新規設計の品質を担保する。

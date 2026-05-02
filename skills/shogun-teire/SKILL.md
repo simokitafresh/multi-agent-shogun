@@ -1,5 +1,6 @@
 ---
 name: shogun-teire
+argument-hint: ""
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   知識基盤の定期棚卸し（8観点監査）。Memory MCP・CLAUDE.md・

@@ -1,5 +1,6 @@
 ---
 name: karo-direct
+argument-hint: "[task_id] [ninja_name] [reason]"
 description: |
   【家老専用】将軍cmd不要の家老自立配備(karo_direct)を標準化するスキル。
   CI修正・修行・偵察recon2など、将軍cmdなしで家老が直接忍者に配備する場合に使用。

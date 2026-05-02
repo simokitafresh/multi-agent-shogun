@@ -1,5 +1,6 @@
 ---
 name: pf-registration
+argument-hint: "[pf_type] [pf_id]"
 description: |
   本番PF登録の全ステップを構造的に実行し、各ステップ後にパリティ検証を強制するスキル。
   忍者がステップ順序を飛ばせず、パリティFAIL時は即停止する。

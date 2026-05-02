@@ -1,5 +1,7 @@
 ---
 name: cmd-complete
+argument-hint: "[cmd_id]"
+user-invocable: false
 description: |
   【家老専用】cmd GATE CLEAR後の完了処理を1コマンドで実行するスキル。
   lesson review→cmd_complete_gate→品質記録→status completed→archive→dashboard→ntfyの全ステップを順序保証で実行。

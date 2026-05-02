@@ -1,5 +1,6 @@
 ---
 name: note-writer
+argument-hint: "[topic|draft_path]"
 description: |
   将軍専用。テーマを受け取りnote.com向けMarkdown記事を生成・保存する。
   バムスタイル（ですます調）でDM-signal機能解説・投資分析手法・アプリ紹介を読者目線で執筆。

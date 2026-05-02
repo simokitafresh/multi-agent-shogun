@@ -1,5 +1,6 @@
 ---
 name: dream
+argument-hint: ""
 description: |
   【将軍専用】メモリ統合・整理（5 Phase REM型）。
   MEMORY.md + memory/*.mdの健全度スキャン、タイムスタンプ統一(ISO 8601秒精度+TZ)、

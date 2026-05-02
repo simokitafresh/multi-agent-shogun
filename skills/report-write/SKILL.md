@@ -1,5 +1,6 @@
 ---
 name: report-write
+argument-hint: "[report_path]"
 description: |
   【忍者専用】報告YAML作成を標準化するスキル。report_field_set.sh経由で必須フィールドを記入し、
   Edit tool直接編集によるテンプレート破損・FILL_THIS残存・形式不備を防止する。

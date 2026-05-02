@@ -1,5 +1,6 @@
 ---
 name: monthly-report-writer
+argument-hint: "[month:YYYY-MM]"
 description: |
   DM-Signal Monthly Report を月初に発行する skill。
   DM-Signal API から signals / monthly-returns(5年) / deterioration を取得し、

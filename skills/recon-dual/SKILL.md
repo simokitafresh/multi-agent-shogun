@@ -1,5 +1,6 @@
 ---
 name: recon-dual
+argument-hint: "[cmd_id] [target_scope]"
 description: |
   【家老専用】偵察2名配備(recon Pattern 1)を標準化するスキル。
   1人目をdeploy_task.sh、2人目をkaro_direct方式で配備し、重複ガード問題を回避。

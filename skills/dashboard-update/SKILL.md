@@ -1,5 +1,7 @@
 ---
 name: dashboard-update
+argument-hint: ""
+user-invocable: false
 description: |
   【家老専用】将軍・忍者は使用禁止。
   ダッシュボードのKARO_SECTIONをプライマリYAMLデータから自動生成し、

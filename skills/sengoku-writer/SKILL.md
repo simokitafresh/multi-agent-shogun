@@ -1,5 +1,6 @@
 ---
 name: sengoku-writer
+argument-hint: "[topic]"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   戦国将軍スタイルでnote.com向け記事を生成する。

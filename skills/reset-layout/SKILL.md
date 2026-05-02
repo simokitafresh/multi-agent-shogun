@@ -1,5 +1,6 @@
 ---
 name: reset-layout
+argument-hint: "[--dry-run]"
 description: |
   agentsウィンドウ(shogun:agents)のレイアウト・ペイン配置・変数を
   初期状態に一発復元するスキル。ペイン消失・入替・CLI死亡時に使用。

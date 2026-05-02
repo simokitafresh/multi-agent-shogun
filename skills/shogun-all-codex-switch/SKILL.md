@@ -1,5 +1,6 @@
 ---
 name: shogun-all-codex-switch
+argument-hint: ""
 description: Switch multi-agent-shogun to Codex-only operation via scripts/switch_cli_mode.sh, then normalize cli.default=codex and restart inbox watchers. Use when you need every role (shogun, karo, gunshi, all ninja) on Codex immediately.
 ---
 

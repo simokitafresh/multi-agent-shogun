@@ -1,5 +1,6 @@
 ---
 name: db-check
+argument-hint: "[query_purpose|pf_id|table_name]"
 description: |
   DM-Signal本番DBへの接続・クエリ・パリティ検証を標準化するスキル。
   接続方法・テーブルスキーマ・よく使うクエリをテンプレート化し、

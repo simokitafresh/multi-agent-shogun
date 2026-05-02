@@ -1,5 +1,6 @@
 ---
 name: switch-to-opus
+argument-hint: "[--scope all|core|agent_list]"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   指定エージェント(shogun/karo/gunshi)をCodex CLIからOpus CLI(Claude Code)に戻すスキル。

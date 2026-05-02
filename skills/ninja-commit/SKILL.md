@@ -1,5 +1,6 @@
 ---
 name: ninja-commit
+argument-hint: ""
 description: |
   【忍者専用】作業完了後のcommit手順を標準化するスキル。
   scope検証+pre-commit+commit+家老報告を1コマンド化し、

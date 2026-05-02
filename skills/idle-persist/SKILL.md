@@ -1,5 +1,7 @@
 ---
 name: idle-persist
+argument-hint: "[topic] [summary]"
+user-invocable: false
 description: |
   【軍師専用】idle自走分析結果をdocs/researchに保存→掲示板投稿→review_log記録の永続化フローを1コマンドで実行。
   ファイル命名規則(gunshi_idle_{topic}_{date}.md)を自動適用し、ブレをゼロにする。

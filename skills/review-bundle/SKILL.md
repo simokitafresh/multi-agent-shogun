@@ -1,5 +1,7 @@
 ---
 name: review-bundle
+argument-hint: "[cmd_id] [verdict:APPROVE|FAIL] [fail_reason]"
+user-invocable: false
 description: |
   【軍師専用】レビュー完了後のSG7バンドル生成→review_log記録→inbox送信を1コマンドで実行。
   precheck結果→報告YAML→判定→バンドルYAML構成→review_log追記→inbox_writeの4ステップ連鎖を自動化。

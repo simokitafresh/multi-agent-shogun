@@ -1,5 +1,6 @@
 ---
 name: weekly-report-writer
+argument-hint: "[week:YYYY-Www]"
 description: |
   DM-Signal Weekly Report を一発で再現する skill。
   DM-Signal API から signals / monthly-returns / deterioration を取得し、
