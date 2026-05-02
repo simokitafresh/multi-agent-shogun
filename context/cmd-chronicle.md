@@ -857,3 +857,4 @@
 | cmd_2501 | gate_skill_script_refs.shが未最適化で408ms(偵察計測)。台帳未登録。 143行。全体がpython3ヒアドキュメントでSKILL.mdからスクリプト参照を抽出し存在確認+更新日比較。 python3起動コスト+pathlib走査がボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_script_refs.shに短TTL |
 | cmd_2502 | gate_autofix_proposal.shが未最適化で272ms(偵察計測)。台帳未登録。 178行。直近50件のgate_metrics.logからBLOCKパターンを集計し、instructions修正提案をinsights.yamlに還流する。 mktemp+tail+awk+insight_write.sh呼出しがボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_autofix_proposal.shに短TTL出 |
 | cmd_2503 | gate_wa_data_quality.shがリグレッション(52.9ms→111ms、2.1x悪化)。213行。 前回(2026-04-18 hayate): 106.6→52.9ms(-50.4%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_wa_data_quality.shの通常chec |
+| cmd_2506 | gate_skill_health.shが未最適化で139ms(偵察計測)。台帳未登録。241行。 SKILL.mdのTRIGGER/MECE/DRY検証を行うgate。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_health.shの既定skills走 |
