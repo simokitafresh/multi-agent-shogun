@@ -45,8 +45,8 @@ log_dashboard_update_skill_result() {
 trap 'rc=$?; log_dashboard_update_skill_result "$rc"; exit "$rc"' EXIT
 
 # ─── Validation ───
-if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[0-9]+$ ]]; then
-    echo "ERROR: cmd_id は cmd_XXX 形式（数字のみ）で指定せよ。" >&2
+if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[a-zA-Z0-9_]+$ ]]; then
+    echo "ERROR: cmd_id は cmd_XXX 形式（英数字・アンダースコア）で指定せよ。" >&2
     echo "  進捗メモの追記は Edit tool で dashboard.md を直接編集すること。" >&2
     exit 1
 fi
