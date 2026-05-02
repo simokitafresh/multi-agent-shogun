@@ -30,8 +30,11 @@ setup_file() {
     # python3 + PyYAML存在確認
     python3 -c "import yaml" 2>/dev/null || return 1
 
-    mkdir -p "$GIT_TEMPLATE_DIR/scripts" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
-    cp -r "$PROJECT_ROOT/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/lib"
+    mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
+    # 選択的コピー: inbox_write.shが使う4ファイルのみ (NTFS→tmpfs コスト削減)
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh; do
+        cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
+    done
 
     git -C "$GIT_TEMPLATE_DIR" init -q
     git -C "$GIT_TEMPLATE_DIR" config user.name "test"
@@ -73,8 +76,30 @@ result:
 YAML
 
     echo '#!/bin/bash' > "$GIT_TEMPLATE_DIR/src/test_file.sh"
+    # another_file.sh を事前コミット: T-017がgit add+commitをスキップできる
+    echo '#!/bin/bash' > "$GIT_TEMPLATE_DIR/src/another_file.sh"
     git -C "$GIT_TEMPLATE_DIR" add -A
     git -C "$GIT_TEMPLATE_DIR" commit -q -m "initial"
+
+    # T-008用フィクスチャ: 既読60件 (python3不要)
+    # printf -- で先頭の"-"がオプションと解釈されるのを防ぐ
+    {
+        printf 'messages:\n'
+        for _i in $(seq 0 59); do
+            printf -- "- content: '既読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_old_%03d'\n  read: true\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+    } > "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml"
+
+    # T-009用フィクスチャ: 未読20件 + 既読40件 (python3不要)
+    {
+        printf 'messages:\n'
+        for _i in $(seq 0 19); do
+            printf -- "- content: '未読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_unread_%03d'\n  read: false\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+        for _i in $(seq 0 39); do
+            printf -- "- content: '既読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_read_%03d'\n  read: true\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+    } > "$GIT_TEMPLATE_DIR/inbox_overflow_mixed.yaml"
 }
 
 teardown_file() {
@@ -135,33 +160,14 @@ setup() {
     # YAMLファイルが作成されていることを確認
     [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
 
-    # python3でYAML検証
-    python3 <<EOF
-import yaml, sys
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-# messages配列が存在し、1件あること
-assert 'messages' in data, 'messages key not found'
-assert len(data['messages']) == 1, f'Expected 1 message, got {len(data["messages"])}'
-
-msg = data['messages'][0]
-
-# 必須フィールドの存在確認
-required_fields = ['id', 'from', 'timestamp', 'type', 'content', 'read']
-for field in required_fields:
-    assert field in msg, f'Field {field} not found in message'
-
-# フィールド値の検証
-assert msg['from'] == 'shogun', f'Expected from=shogun, got {msg["from"]}'
-assert msg['type'] == 'cmd_new', f'Expected type=cmd_new, got {msg["type"]}'
-assert msg['content'] == 'テストメッセージ', f'Expected content=テストメッセージ, got {msg["content"]}'
-assert msg['read'] == False, f'Expected read=False, got {msg["read"]}'
-assert msg['id'].startswith('msg_'), f'Message ID should start with msg_, got {msg["id"]}'
-
-print('T-003: PASS')
-EOF
+    # grep検証 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
+    grep -q "^- content: 'テストメッセージ'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'shogun'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -qE "^  id: 'msg_" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'cmd_new'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  timestamp: " "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 # =============================================================================
@@ -177,21 +183,12 @@ EOF
     run bash "$TEST_INBOX_WRITE" "test_agent" "メッセージ2" "type2" "sender2"
     [ "$status" -eq 0 ]
 
-    # python3で検証
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) == 2, f'Expected 2 messages, got {len(data["messages"])}'
-
-# 順序検証（1件目が先頭）
-assert data['messages'][0]['content'] == 'メッセージ1', 'First message mismatch'
-assert data['messages'][1]['content'] == 'メッセージ2', 'Second message mismatch'
-
-print('T-004: PASS')
-EOF
+    # grep検証 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 2 ]]
+    # 順序検証: メッセージ1が先頭
+    _l1=$(grep -n "^- content: 'メッセージ1'" "$TEST_INBOX_DIR/test_agent.yaml" | cut -d: -f1)
+    _l2=$(grep -n "^- content: 'メッセージ2'" "$TEST_INBOX_DIR/test_agent.yaml" | cut -d: -f1)
+    [[ "$_l1" -lt "$_l2" ]]
 }
 
 # =============================================================================
@@ -204,22 +201,9 @@ EOF
     bash "$TEST_INBOX_WRITE" "test_agent" "メッセージA"
     bash "$TEST_INBOX_WRITE" "test_agent" "メッセージB"
 
-    # python3で検証
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) == 2, 'Expected 2 messages'
-
-id1 = data['messages'][0]['id']
-id2 = data['messages'][1]['id']
-
-assert id1 != id2, f'Message IDs should be different: {id1} == {id2}'
-
-print('T-005: PASS')
-EOF
+    # grep検証 (python3不要): IDが2つあり、ユニークであること
+    [[ "$(grep -c "^  id: " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 2 ]]
+    [[ "$(grep "^  id: " "$TEST_INBOX_DIR/test_agent.yaml" | sort -u | wc -l)" -eq 2 ]]
 }
 
 # =============================================================================
@@ -231,20 +215,9 @@ EOF
     run bash "$TEST_INBOX_WRITE" "test_agent" "デフォルトテスト"
     [ "$status" -eq 0 ]
 
-    # python3で検証
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-msg = data['messages'][0]
-
-assert msg['type'] == 'wake_up', f'Expected type=wake_up, got {msg["type"]}'
-assert msg['from'] == 'unknown', f'Expected from=unknown, got {msg["from"]}'
-
-print('T-006: PASS')
-EOF
+    # grep検証 (python3不要)
+    grep -q "^  type: 'wake_up'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'unknown'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 # =============================================================================
@@ -256,20 +229,9 @@ EOF
     run bash "$TEST_INBOX_WRITE" "test_agent" "カスタムメッセージ" "custom_type" "custom_sender"
     [ "$status" -eq 0 ]
 
-    # python3で検証
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-msg = data['messages'][0]
-
-assert msg['type'] == 'custom_type', f'Expected type=custom_type, got {msg["type"]}'
-assert msg['from'] == 'custom_sender', f'Expected from=custom_sender, got {msg["from"]}'
-
-print('T-007: PASS')
-EOF
+    # grep検証 (python3不要)
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 @test "T-007a: action argument provided → action field is persisted in YAML" {
@@ -277,20 +239,10 @@ EOF
     run bash "$TEST_INBOX_WRITE" "test_agent" "アクション付き" "custom_type" "custom_sender" "notify_karo"
     [ "$status" -eq 0 ]
 
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-msg = data['messages'][0]
-
-assert msg['action'] == 'notify_karo', f'Expected action=notify_karo, got {msg.get("action")}'
-assert msg['type'] == 'custom_type', f'Expected type=custom_type, got {msg["type"]}'
-assert msg['from'] == 'custom_sender', f'Expected from=custom_sender, got {msg["from"]}'
-
-print('T-007a: PASS')
-EOF
+    # grep検証 (python3不要)
+    grep -q "^- action: 'notify_karo'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 @test "T-007b: action omitted → backward compatible write with WARN and no action field" {
@@ -299,20 +251,10 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: action omitted"* ]]
 
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-msg = data['messages'][0]
-
-assert 'action' not in msg, f'Action field should be omitted, got {msg}'
-assert msg['type'] == 'custom_type', f'Expected type=custom_type, got {msg["type"]}'
-assert msg['from'] == 'custom_sender', f'Expected from=custom_sender, got {msg["from"]}'
-
-print('T-007b: PASS')
-EOF
+    # grep検証 (python3不要): actionフィールドが存在しないこと
+    ! grep -qE "^[-]? action: " "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 # =============================================================================
@@ -321,46 +263,17 @@ EOF
 
 @test "T-008: overflow protection at 50 messages → oldest read messages removed" {
     setup_basic_test_env
-    # 既読メッセージ60件を事前に作成
-    python3 <<EOF
-import yaml
-
-messages = []
-for i in range(60):
-    messages.append({
-        'id': f'msg_old_{i:03d}',
-        'from': 'test_sender',
-        'timestamp': f'2026-01-01T00:{i:02d}:00',
-        'type': 'test_type',
-        'content': f'既読メッセージ {i}',
-        'read': True
-    })
-
-data = {'messages': messages}
-
-with open('$TEST_INBOX_DIR/test_agent.yaml', 'w') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-EOF
+    # 既読60件フィクスチャをコピー (python3不要)
+    mkdir -p "$TEST_INBOX_DIR"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
 
     # 新規メッセージ1件書き込み
     run bash "$TEST_INBOX_WRITE" "test_agent" "新規メッセージ"
     [ "$status" -eq 0 ]
 
-    # 検証: 合計50件以下、新規メッセージは存在
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) <= 50, f'Expected <= 50 messages, got {len(data["messages"])}'
-
-# 新規メッセージが含まれていることを確認
-new_msg_found = any(msg['content'] == '新規メッセージ' for msg in data['messages'])
-assert new_msg_found, 'New message not found after overflow protection'
-
-print('T-008: PASS')
-EOF
+    # grep検証: 50件以下 + 新規メッセージ存在 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -le 50 ]]
+    grep -q "新規メッセージ" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 # =============================================================================
@@ -369,62 +282,17 @@ EOF
 
 @test "T-009: overflow preserves unread → unread messages are NOT removed even when over 50" {
     setup_basic_test_env
-    # 未読20件 + 既読40件を事前に作成
-    python3 <<EOF
-import yaml
-
-messages = []
-
-# 未読20件
-for i in range(20):
-    messages.append({
-        'id': f'msg_unread_{i:03d}',
-        'from': 'test_sender',
-        'timestamp': f'2026-01-01T00:{i:02d}:00',
-        'type': 'test_type',
-        'content': f'未読メッセージ {i}',
-        'read': False
-    })
-
-# 既読40件
-for i in range(40):
-    messages.append({
-        'id': f'msg_read_{i:03d}',
-        'from': 'test_sender',
-        'timestamp': f'2026-01-01T01:{i:02d}:00',
-        'type': 'test_type',
-        'content': f'既読メッセージ {i}',
-        'read': True
-    })
-
-data = {'messages': messages}
-
-with open('$TEST_INBOX_DIR/test_agent.yaml', 'w') as f:
-    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-EOF
+    # 未読20件+既読40件フィクスチャをコピー (python3不要)
+    mkdir -p "$TEST_INBOX_DIR"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_mixed.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
 
     # 新規メッセージ1件書き込み（未読20→21件になる）
     run bash "$TEST_INBOX_WRITE" "test_agent" "新規未読"
     [ "$status" -eq 0 ]
 
-    # 検証: 未読21件が全て保持される
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-unread_count = sum(1 for msg in data['messages'] if not msg.get('read', False))
-
-assert unread_count == 21, f'Expected 21 unread messages, got {unread_count}'
-
-# 元の未読メッセージが全て残っていることを確認
-for i in range(20):
-    found = any(msg['content'] == f'未読メッセージ {i}' for msg in data['messages'])
-    assert found, f'Unread message {i} was removed'
-
-print('T-009: PASS')
-EOF
+    # grep検証: 未読21件が保持される (python3不要)
+    # overflow保護は既読のみ削除するため、未読21件(元20+新1)が全て残る
+    [[ "$(grep -c "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml")" -eq 21 ]]
 }
 
 # =============================================================================
@@ -454,22 +322,9 @@ SCRIPT_EOF
         # 全プロセスの完了を待つ
         wait
 
-        # 検証: 8件全てが書き込まれていること
-        if python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) == 8, f'Expected 8 messages, got {len(data["messages"])}'
-
-# 全てのIDが異なることを確認
-ids = [msg['id'] for msg in data['messages']]
-assert len(ids) == len(set(ids)), 'Duplicate message IDs found'
-
-print('T-010: PASS')
-EOF
-        then
+        # grep検証: 8件 + ユニークID (python3不要)
+        if [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 8 ]] \
+           && [[ "$(grep "^  id: " "$TEST_INBOX_DIR/test_agent.yaml" | sort -u | wc -l)" -eq 8 ]]; then
             return 0
         fi
     done
@@ -534,17 +389,8 @@ EOF
     [ -d "$TEST_INBOX_DIR" ]
     [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
 
-    # 内容検証
-    python3 <<EOF
-import yaml
-
-with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) == 1, 'Expected 1 message after auto-create'
-
-print('T-012: PASS')
-EOF
+    # grep検証 (python3不要): 1件のメッセージ
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
 }
 
 # ============================================================
@@ -602,11 +448,7 @@ _wait_for_file() {
 @test "report_received: only files_modified checked, not whole repo" {
     setup_git_test_env
 
-    # Add another tracked file and commit
-    echo '#!/bin/bash' > "$TEST_TMPDIR/src/another_file.sh"
-    git -C "$TEST_TMPDIR" add -A
-    git -C "$TEST_TMPDIR" commit -q -m "add another file"
-
+    # another_file.shはテンプレートで既にコミット済み: git add+commit不要
     # Modify another_file.sh (NOT in files_modified) without committing
     echo 'echo modified' >> "$TEST_TMPDIR/src/another_file.sh"
 
@@ -625,19 +467,13 @@ _wait_for_file() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"gunshi_notify: SENT"* ]]
 
-    python3 <<EOF
-import yaml
-
-with open('$TEST_TMPDIR/queue/inbox/gunshi.yaml') as f:
-    data = yaml.safe_load(f)
-
-assert len(data['messages']) == 1
-msg = data['messages'][0]
-assert msg['type'] == 'report_review'
-assert msg['from'] == 'karo'
-assert 'cmd_test_001' in msg['content']
-assert 'testninja' in msg['content']
-EOF
+    # grep検証 (python3不要)
+    [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
+    [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]]
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "^  from: 'karo'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
     [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
@@ -678,15 +514,8 @@ case "$1" in
       count=$((count + 1))
       echo "$count" > "$TMUX_SEND_COUNT_FILE"
       if [ "$count" -ge 2 ]; then
-        python3 - "$TEST_TASK_FILE" <<'PYEOF'
-import sys, yaml
-path = sys.argv[1]
-with open(path) as f:
-    data = yaml.safe_load(f) or {}
-data.setdefault('task', {})['status'] = 'acknowledged'
-with open(path, 'w') as f:
-    yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
-PYEOF
+        # sedでstatus更新 (python3不要): task YAMLは"  status: assigned"の1フィールドのみ
+        sed -i 's/  status: assigned/  status: acknowledged/' "$TEST_TASK_FILE"
       fi
     fi
     ;;
@@ -702,12 +531,8 @@ EOF
     grep -q "set-buffer -b nudge_testninja" "$TMUX_LOG"
     [ "$(cat "$TMUX_SEND_COUNT_FILE")" -eq 2 ]
 
-    python3 <<EOF
-import yaml
-with open('$TEST_TMPDIR/queue/tasks/testninja.yaml') as f:
-    data = yaml.safe_load(f)
-assert data['task']['status'] == 'acknowledged'
-EOF
+    # grep検証 (python3不要)
+    grep -q "  status: acknowledged" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
 }
 
 @test "report_review_result: LGTM updates placeholder and starts cmd_complete_gate in background" {
@@ -769,7 +594,8 @@ EOF
 @test "review_result: forwarded to active ninjas only as task_supplement" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
-    cp -a "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    # GIT_TEMPLATE_DIR (tmpfs) から コピー: NTFS→tmpfs を回避 (~105ms削減)
+    cp -a "$GIT_TEMPLATE_DIR/scripts/lib" "$TEST_TMPDIR/scripts/lib"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
@@ -795,33 +621,22 @@ YAML
     run _run_inbox_write karo "verdict: FAIL cmd_999 要確認" review_result gunshi
     [ "$status" -eq 0 ]
 
-    python3 <<EOF
-import os
-import yaml
-
-root = "$TEST_TMPDIR/queue/inbox"
-
-with open(os.path.join(root, "karo.yaml")) as f:
-    karo = yaml.safe_load(f)
-assert karo["messages"][0]["type"] == "review_result"
-
-for ninja in ("ninja_a", "ninja_b"):
-    with open(os.path.join(root, f"{ninja}.yaml")) as f:
-        data = yaml.safe_load(f)
-    assert len(data["messages"]) == 1, f"{ninja} should have exactly one forwarded message"
-    msg = data["messages"][0]
-    assert msg["from"] == "gunshi", f"{ninja} sender mismatch"
-    assert msg["type"] == "task_supplement", f"{ninja} type mismatch"
-    assert msg["content"] == "軍師レビュー補足: verdict: FAIL cmd_999 要確認", f"{ninja} content mismatch"
-
-assert not os.path.exists(os.path.join(root, "ninja_c.yaml")), "idle ninja should not receive forwarded message"
-EOF
+    # grep検証 (python3不要)
+    grep -q "^  type: 'review_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    for _ninja in ninja_a ninja_b; do
+        [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml")" -eq 1 ]]
+        grep -q "^  from: 'gunshi'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+        grep -q "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+        grep -q "軍師レビュー補足: verdict: FAIL cmd_999 要確認" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+    done
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_c.yaml" ]
 }
 
 @test "task_supplement: not forwarded again to avoid recursive fanout" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
-    cp -a "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    # GIT_TEMPLATE_DIR (tmpfs) から コピー: NTFS→tmpfs を回避 (~105ms削減)
+    cp -a "$GIT_TEMPLATE_DIR/scripts/lib" "$TEST_TMPDIR/scripts/lib"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
@@ -837,19 +652,10 @@ YAML
     run _run_inbox_write karo "軍師レビュー補足: 既存補足" task_supplement gunshi
     [ "$status" -eq 0 ]
 
-    python3 <<EOF
-import os
-import yaml
-
-root = "$TEST_TMPDIR/queue/inbox"
-
-with open(os.path.join(root, "karo.yaml")) as f:
-    karo = yaml.safe_load(f)
-assert karo["messages"][0]["type"] == "task_supplement"
-
-assert not os.path.exists(os.path.join(root, "ninja_a.yaml")), "task_supplement should not be forwarded"
-assert not os.path.exists(os.path.join(root, "ninja_b.yaml")), "task_supplement should not be forwarded"
-EOF
+    # grep検証 (python3不要)
+    grep -q "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_a.yaml" ]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_b.yaml" ]
 }
 
 @test "report_received: report moved to archive (no symlink) → archive fallback succeeds" {
