@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L708 -->
+<!-- last_synced_lesson: L709 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -198,3 +198,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L651-L666は振り分け済 → frontend§12(L651/L653/L654/L655/L656), core§0(L652), ops§14(L657/L666), ops§33(L658/L659/L660/L661/L662/L664/L665), infra WSL2(L663)）
 - （L667-L676は振り分け済 → research§GS結果(L667:robustness連動メタ列/L674:L1従属ラベル列), core§19.2(L669:monthly_returnセマンティクス[open-to-open]/L670:Oikaze first_signal EW/L671:Yotsume close cumulative+bootstrap), ops索引(L668:ALM DB preflight/L672:champion_list追記制御/L676:SQLite quick_check), ops§6-7(L675:recalculate-sync待機)。L673はL672重複→削除）
 - （L677-L708は振り分け済 → ops索引(L677:SQLite検証/L678:合成ベンチ/L680:CLI引数照合/L684:output-dir alias/L688:Payload meta/L692:SSOT照合/L708:valid_start_date), ops§6-7(L690:sync完了判定/L701:fullrecalc復元), research§GS結果(L685:selector流用/L686:SQLite月次), research§パリティ(L699:NULL除外), research索引(L693:時間解像度), core§19.2(L694:top_n分離/L696:FoF top_n/L703:ticker×weight判定), frontend§12(L702:UUID漏れ/L704:precomputed weights/L705:月初Signal)。重複削除: L679≡L678, L681-L683≡L680, L689≡L688, L691≡L690, L695≡L694, L698≡L696, L700≡L699, L706≡L705。L687/L697/L707自動生成→削除）
+- L709: FoF weights健全性チェックはconfigではなくfof_component_weightsを正本にせよ（cmd_2458）

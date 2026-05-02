@@ -4243,7 +4243,7 @@ inject_done_redeploy_hints() {
     existing_desc=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "description" "" 2>/dev/null || true)
     if [[ "$existing_desc" != *"【再配備引継ぎ】"* ]]; then
         if [ -n "$existing_desc" ]; then
-            yaml_field_set "$task_file" "task" "description" "${note}"$'\n'"${existing_desc}" || true
+            yaml_field_set "$task_file" "task" "description" "${note} | ${existing_desc}" || true
         else
             yaml_field_set "$task_file" "task" "description" "$note" || true
         fi
