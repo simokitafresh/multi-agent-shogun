@@ -7,10 +7,12 @@ setup_file() {
     export SKILL_LOG_SCRIPT="$PROJECT_ROOT/scripts/skill_execution_log.sh"
     export SKILL_FEEDBACK_SCRIPT="$PROJECT_ROOT/scripts/skill_gate_feedback.sh"
     export SKILL_AUTO_IMPROVE_SCRIPT="$PROJECT_ROOT/scripts/skill_auto_improve.sh"
+    export SKILL_METRICS_SCRIPT="$PROJECT_ROOT/scripts/skill_metrics.sh"
     export DASHBOARD_UPDATE_SCRIPT="$PROJECT_ROOT/scripts/dashboard_update.sh"
     [ -x "$SKILL_LOG_SCRIPT" ] || return 1
     [ -x "$SKILL_FEEDBACK_SCRIPT" ] || return 1
     [ -x "$SKILL_AUTO_IMPROVE_SCRIPT" ] || return 1
+    [ -x "$SKILL_METRICS_SCRIPT" ] || return 1
     [ -x "$DASHBOARD_UPDATE_SCRIPT" ] || return 1
 }
 
@@ -22,6 +24,7 @@ setup() {
 name: report-bundle
 description: |
   TRIGGER: report, gate_report_format, 報告YAML
+quality_metric: "report gate pass rate"
 ---
 
 # report-bundle
@@ -34,6 +37,46 @@ EOF
 
 teardown() {
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+}
+
+@test "skill_metrics calculates quality scores from SKILL.md quality_metric and execution log" {
+    mkdir -p "$TEST_TMPDIR/skills/dashboard-update"
+    cat > "$TEST_TMPDIR/skills/dashboard-update/SKILL.md" <<'EOF'
+---
+name: dashboard-update
+description: dashboard updater
+quality_metric: "dashboard update clear rate"
+---
+
+# dashboard-update
+EOF
+
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "PASS"
+  stumbling_points: "ok"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "dashboard-update"
+  executor: "hanzo"
+  result: "FAIL"
+  stumbling_points: "format"
+- ts: "2026-05-02T10:02:00+0900"
+  skill: "report-bundle"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "ok"
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_METRICS_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_METRICS_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == "skill | quality_score | pass | fail | total | last_result | quality_metric" ]]
+    [[ "$output" == *"dashboard-update | 50.0% | 1 | 1 | 2 | FAIL | dashboard update clear rate"* ]]
+    [[ "$output" == *"report-bundle | 100.0% | 1 | 0 | 1 | PASS | report gate pass rate"* ]]
 }
 
 @test "skill_execution_log records skill, executor, result, and stumbling_points" {
