@@ -32,6 +32,8 @@
 # SG7 gate_prediction: lesson_candidate有→draft_lessons BLOCKリスク。gate_prediction: WARNに設定せよ(cmd_1811/1814/1909/1911/2131で5回miss)
 # ★並列配備cmd: 同一cmdの他忍者報告にlesson_candidate有→自分の報告もgate_prediction:WARNに設定(cmd_2261: kagemaru有/hayate無→hayate CLEAR予測→実際BLOCK)
 # ★precheck省略禁止。偵察報告でも必ずgate_gunshi_report_precheck.sh実行。SG-PRE12がlesson_candidate自動検出→gate_prediction誤予測の唯一の防御(cmd_2131: 省略→CLEAR→BLOCK)
+# ★既存判定はgit show HEAD限定。Read toolはuncommitted含む。忍者の成果物を「既存」と誤認する(cmd_2474: LG001違反→false positive REQUEST_CHANGES)
+# ★ゲート差替え/削除cmd → North Star Q1強制(症状抑制か根本解消か)。差替え先が品質を計測しているか問え(cmd_2473: exit 0=PASS→品質未計測の消火を承認)
 # AC commit check → (a)対象ファイルがgitignore/outputs/なら除外設計か確認 (b)cmd制約にcommit禁止→report review時にSG7 gate_prediction:WARNでGP-128 BLOCK予測を明記。一律適用=負の複利(cmd_1897 LGTM→BLOCK: T1違反)
 # verdict=FAIL報告にLGTM → gate_prediction:BLOCK必須。binary_checks result:noがあればgate機械的BLOCK。報告品質OKでも予測を付記せよ(cmd_1900: T1再発。cmd_1897と同構造)
 # ★SG-PRE9 result:no → gate_prediction:BLOCK固定。**例外: test_triage=pre_existingはWARN降格でCLEAR**(cmd_2339で実証。cmd_complete_gate.sh L1962)。waive_reasonの有無に関わらず(GP-190はテンプレート側のみ、gate側にwaive免除なし。cmd_2093で誤予測WARN→実際BLOCK)
@@ -228,6 +230,31 @@
       status: "★implemented"
       defense_level: 4
   timestamp: "2026-05-02T02:15:00"
+- cmd_id: gunshi_idle_gate_fail_rate_20260502
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "gate FAIL率16%解剖。忍者均等分布(特定忍者の問題ではない)。62%が1回で自己修正。健全な免疫応答"
+  observations:
+    - "全体FAIL率17.3%(761/4405)、直近100件16%。改善幅縮小=天井接近"
+    - "忍者別(直近200件): hayate7/kagemaru7/hanzo6/saizo4/kotaro1。均等"
+    - "FAIL理由Top5: verdict+bc矛盾3/useful形式3/YAML parse2/FILL_THIS2/MISSING2"
+    - "retry分布: 1回修正62%/2回24%/3回以上14%。FIX hintが効果的"
+  finding_categories: [numbers, premortem]
+  cs_checklist: {CS1: true, CS2: true, CS3: true, CS4: true, CS5: false, CS6: true}
+  causal_chain: "Edit tool直接編集→テンプレートフィールド巻添え消去→gate FAIL→FIX hint→忍者自己修正。FAIL率16%は免疫の証拠。追加投資ROI低い"
+  timestamp: "2026-05-02T02:30:00"
+- cmd_id: gunshi_idle_yaml_field_set_newline_20260502
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "yaml_field_set.sh改行エスケープ欠落。cmd_2435 deploy_error。呼出し側で改行回避が即効(Option A)"
+  observations:
+    - "deploy_task.sh L4246で$'\\n'含む文字列をyaml_field_set.shに渡す→YAML引用破損"
+    - "影響範囲: 改行含む呼出しは現状1箇所のみ(再配備引継ぎdescription)"
+    - "Option A(呼出し側改行回避): 即効。Option B(awk引用処理): 根本修正だがROI低い"
+  finding_categories: [assumptions, premortem]
+  cs_checklist: {CS1: true, CS2: true, CS3: true, CS4: false, CS5: false, CS6: true}
+  causal_chain: "deploy_task.sh改行含む値→yaml_field_set.shエスケープ不在→YAML破損→家老WA。1箇所のみなのでOption Aが最適。CS4(行動変換)=家老に提案済みだが実装未確認"
+  timestamp: "2026-05-02T02:45:00"
 - cmd_id: cmd_2455
   review_type: draft
   verdict: APPROVE
@@ -319,6 +346,7 @@
   report_task_id: cmd_2458_scout
   report_verdict: LGTM
   verdict: LGTM
+  gate_result: CLEAR
   findings_summary: "4観点OK。偵察5要件完全。CHECK2=L251-266不適合+正しい先例+修正方針明確"
   observations:
     - "CHECK2: post_recalculate_checks.sh L251-266がconfig静的weightsを検査→EqualWeight FoFで誤検知"
@@ -499,7 +527,7 @@
   report_task_id: cmd_2462_normal
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。既存構成確認作業。追加実装なし。bats 1326/0/0。commit:no waive適切"
   observations:
     - "instructions 3層(common/cli_specific/roles)は既存構成。build_instructions.sh正常実行確認"
@@ -521,3 +549,694 @@
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   causal_chain: "殿指示(学ぶべきもの全取込)→fork元設計体系的調査→未対応学習ポイント全特定→後続実装cmd品質向上。正の複利=外部知見吸収で設計精度+1"
   timestamp: "2026-05-02T17:41:00"
+- cmd_id: cmd_2465
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2465_recon
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。偵察。fork元設計体系的調査。P1-P3の8学習ポイント特定。件数補正(33→37)適切"
+  observations:
+    - "AC1: cli_adapter 24関数(fork元)vs6関数(現repo)+cli_lookup.sh 11関数。Bloom/display_name/startup_prompt未統合"
+    - "AC5: P1=3点(display_name/startup_prompt/clear残存テスト)、P2=3点(Bloom/agent-status/skill-creator統合)、P3=2点"
+    - "lesson_candidate: 偵察件数補正(33→37)。一般原則として既知のため正式登録は推奨しない"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "fork元multi-CLI設計調査→8学習ポイント特定(P1-P3)→後続実装cmdの設計精度向上。正の複利=外部知見吸収で未対応領域ゼロに近づく"
+  timestamp: "2026-05-02T17:50:00"
+- cmd_id: cmd_2465
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2465_recon2
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。recon2 AC3/AC4担当。frontmatter活用度・codex-clearテスト・display_nameテスト差異特定"
+  observations:
+    - "AC3: fork元7スキルは操作UI系。frontmatter(argument-hint/context:fork/model)活用度が高い"
+    - "AC4: fork元固有テスト=codex-clear変換13件+display_name13件+Thinking4件。我らに不足"
+    - "recon2分担: AC1/AC2=hayate、AC3/AC4=hanzo。AC5=両者統合。分担明確"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "recon2でAC分担→各忍者が専門観点で深く調査→統合により全ACカバー。正の複利=偵察品質向上"
+  timestamp: "2026-05-02T17:55:00"
+- cmd_id: cmd_2466
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。get_model_display_name追加+テスト+ninja_monitor置換。前提verified。P1学習ポイント実装"
+  observations:
+    - "cli_adapter.sh 6関数+get_model_display_name未実装(grep 0件)。cli_profiles.yaml display_name存在"
+    - "settings.yaml model_name(忍者ごと:opus/sonnet/gpt)からdisplay_name導出が正確な設計"
+    - "q9伏兵: ninja_monitor.sh以外の依存確認→grep必須指示あり"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "表示名ロジック分散(ninja_monitor独自)→cli_adapter集約→SSOT化→CLI追加時1箇所変更。正の複利=編成変更のたびにmonitor修正不要"
+  timestamp: "2026-05-02T17:58:00"
+- cmd_id: cmd_2467
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。get_startup_prompt追加+テスト+Codex起動統合。AGENTS.md補完限定で二重指示回避"
+  observations:
+    - "get_startup_prompt未実装(grep 0件)。Codex起動=shutsujin.sh経由。verified"
+    - "FM: prompt長制限+AGENTS.md不整合+CLI版依存の3リスク。q9で二重指示認識済み"
+    - "fork元P1学習ポイント実装。Codexスキル認知向上で+1点複利"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "Codex忍者スキル不認知→startup prompt注入→スキル存在認知→/clear後も手順想起。正の複利=CLI切替後のスキル活用率向上"
+  timestamp: "2026-05-02T18:02:00"
+- cmd_id: cmd_2468
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Codex /clear残存否定テスト追加。テストのみ。前提verified。fork元P1最後の学習ポイント"
+  observations:
+    - "/clear否定テスト0件(grep確認)。build_instructions.shに変換ロジック実装済み"
+    - "AC2: 合法語(/shogun-clear-prep等)除外テスト含む。偽陽性防止"
+    - "fork元13件のテスト観点を我らに移植。テストカバレッジ穴埋め"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "変換ロジック有+テスト無→回帰検知不能→否定テスト追加→変換品質テスト保証。正の複利=build_instructions.sh変更のたびに自動回帰検知"
+  timestamp: "2026-05-02T18:05:00"
+- cmd_id: cmd_2466
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2466_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。get_model_display_name追加+ninja_monitorフォールバック+bats60PASS。commit 58a01c71"
+  observations:
+    - "cli_adapter.sh +get_model_display_name。settings.yaml model_name→短縮表示名(Op/So/GPT)"
+    - "ninja_monitor.sh: tmux @model_name未設定時にget_model_display_nameフォールバック。既存動作保持"
+    - "bats 57→60件(+3テスト)。bash -n PASS。NINJA_MONITOR_LIB_ONLY=1経由の関数参照確認"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "表示名ロジック分散→cli_adapter集約→SSOT化。フォールバック設計で既存動作保持。正の複利=編成変更時1箇所修正"
+  timestamp: "2026-05-02T18:08:00"
+- cmd_id: cmd_2467
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2467_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。get_startup_prompt追加(Codex時のみ)+bats63PASS。AC3=半蔵担当scope_note"
+  observations:
+    - "Codex時のみAGENTS.md補助prompt返却。Claude時空文字。二重指示回避設計"
+    - "bats 60→63件(+3テスト)。bash -n PASS。rg確認済み"
+    - "AC3(起動スクリプト統合)はscope_noteで半蔵担当。hayate範囲はAC1+AC2のみ"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Codexスキル不認知→startup prompt注入(AGENTS.md補完)→スキル認知。正の複利=CLI切替後もスキル活用可能"
+  timestamp: "2026-05-02T18:12:00"
+- cmd_id: cmd_2468
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2468_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK(AC3担当分)。変換テスト6本+46PASS。AC1/AC2=疾風担当scope外。verdict:FAILは分担起因"
+  observations:
+    - "AC3: build_instructions.sh sed変換(207-218行目)検証テスト6本。/clear→/new変換正常動作"
+    - "AGENTS.mdに/clear残存0件。codex-*.mdの/clear残存はAC1対象(疾風担当)"
+    - "decision_candidate: found=true(codex-*.md /clear残存はAC1スコープ)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "変換ロジック実装済み+テスト0件→回帰検知不能→テスト6本追加→自動回帰検知。正の複利=build変更のたびに変換品質保証"
+  timestamp: "2026-05-02T18:15:00"
+- cmd_id: cmd_karo_ci_fix_skill_feedback
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_skill_feedback
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。git mode修正2ファイル。CI run success。lesson: setup_file全体の-x対象確認"
+  observations:
+    - "skill_execution_log.sh+skill_gate_feedback.sh 100644→100755。内容変更なし"
+    - "CI run 25248274784 success(Unit+Lint+Build+E2E全PASS)"
+    - "lesson_candidate: setup_file内の全-x対象を確認する(1ファイルだけ直すと次の-xで再失敗)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "新スキルスクリプト追加→git mode未設定→CI -x FAIL→mode修正→CI GREEN。教訓: setup_file全体確認"
+  timestamp: "2026-05-02T18:16:00"
+- cmd_id: cmd_2469
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。skill-creator v2。7項目チェック+frontmatter検証+skill-design-rules整合"
+  observations:
+    - "7項目: 目的/TRIGGER/DO NOT TRIGGER/入出力/エラー/テスト可能性/重複チェック"
+    - "modelフィールド非推奨警告をnotes分離(multi-CLI原則。殿裁定)"
+    - "AC3: skill-design-rules.mdとの重複排除+相互参照。fork元P2学習ポイント"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "37スキル品質ばらつき→skill-creator v2で7項目構造強制→新スキル品質自動保証。正の複利=スキル数増加しても品質均一"
+  timestamp: "2026-05-02T18:20:00"
+- cmd_id: cmd_2470
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。37スキルfrontmatter拡張。argument-hint+user-invocable一括追加。frontmatter追記のみ低リスク"
+  observations:
+    - "argument-hint 0件(grep確認)。37スキル全対象"
+    - "内部スキル(gate-sync等)=false、ユーザー呼出(db-check等)=true。具体名列挙済み"
+    - "q9: 37ファイル一括変更→batch 30制限注意。frontmatter追記のみでリスク低"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "frontmatter不足→引数ヒントなし+内部スキル表示ノイズ→一括標準化→UI情報統一。正の複利=新スキルもcmd_2469で同基準強制"
+  timestamp: "2026-05-02T18:22:00"
+- cmd_id: cmd_2469
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2469_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。skill-creator v2。7項目+frontmatter検証+skill-design-rules相互参照。commit a4b69d04"
+  observations:
+    - "Quality Checklist 7項目+Frontmatter Validation+テンプレート+Creation Process検証手順"
+    - "skill-design-rules.md §6から相互参照。重複なし"
+    - "skill-creator自身にもargument-hint/user-invocable追加(self-apply)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "スキル品質ばらつき→7項目構造強制→新スキル品質自動保証。正の複利=スキル増加しても品質均一"
+  timestamp: "2026-05-02T18:25:00"
+- cmd_id: cmd_2470
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2470_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。37スキルfrontmatter拡張。argument-hint全37件+内部5件false。commit 4011c176"
+  observations:
+    - "37スキル全件にargument-hint追加(rg確認37件)。引数なし=空文字、引数あり=角括弧表記"
+    - "内部5件(cmd-complete/dashboard-update/gate-sync/idle-persist/review-bundle)にfalse設定"
+    - "本文はHEAD版戻しでmetadata変更に限定。低リスク"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "frontmatter不足→UI情報不統一→一括標準化→全スキルUI統一。正の複利=新スキルもskill-creator v2で同基準"
+  timestamp: "2026-05-02T18:28:00"
+- cmd_id: cmd_2471
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Codex MCP接続。codex mcp add+動作確認+shutsujin警告。殿指摘直接対応"
+  observations:
+    - "Codex MCP未設定verified(codex mcp list=No MCP servers)。codex mcp addで接続"
+    - "q9: 再起動後の設定永続性確認必須"
+    - "殿指摘「codexもMCPを利用可能では？」→将軍Opus固定前提の暗黙の穴解消"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "将軍Opus固定前提→Codex切替でMCP喪失→codex mcp add接続→全CLI MCP統一。正の複利=CLI切替が完全に透過的"
+  timestamp: "2026-05-02T18:35:00"
+- cmd_id: cmd_2471
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2471_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。Codex MCP接続+shutsujin警告。config.toml永続化+ツール可視性確認"
+  observations:
+    - "codex mcp add memory→config.toml永続化。codex mcp list=memory enabled"
+    - "codex execでmcp__memory__search_nodes等ツール可視性確認(実呼び出しは承認プロンプトでcancelled)"
+    - "lesson_candidate: MCP可視性vs実呼び出しの区別。knowledge: config.toml設定パス記録"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "Codex MCP未設定→codex mcp add接続→全CLI MCP統一→CLI切替が透過的。正の複利=将軍Opus固定前提解消"
+  timestamp: "2026-05-02T18:38:00"
+- cmd_id: cmd_2472
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。FAIL TOP2(89%)の根因解消。テンプレートにassumption_invalidation+binary_checksデフォルト追加"
+  observations:
+    - "FAIL TOP2: assumption_invalidation MISSING(389回)+binary_checks MISSING(290回)=679/765=89%"
+    - "根因: テンプレート構造不在→忍者が/clear後に記入できない→FAIL"
+    - "impact最大: 89%分のFAIL率低下→WA/レビュー負荷激減"
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "テンプレート構造不在→忍者記入不能→FAIL89%→デフォルト構造追加→記入可能→FAIL率激減。正の複利=全cmdの報告品質が構造的に底上げ"
+  timestamp: "2026-05-02T18:42:00"
+- cmd_id: cmd_karo_skill_growth_counter
+  review_type: report
+  report_ninja: hayate
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。skill_execution_log summary API+家老起動gateスキル品質表示"
+  observations:
+    - "summary: skill|fail_count|last_fail|top_stumbling_point降順テーブル"
+    - "gate_karo_startup: FAILあり→上位5件表示、0件→全PASS"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "スキルFAIL不可視→summary API+gate表示→家老が起動時に品質把握。正の複利=問題スキルの早期発見"
+  timestamp: "2026-05-02T18:45:00"
+- cmd_id: cmd_karo_skill_growth_dedup
+  review_type: report
+  report_ninja: kagemaru
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。スキルFAIL重複排除(has_duplicate_failure/caution)+bats3PASS"
+  observations:
+    - "skill+gate+stumbling_points照合で既存ログ重複スキップ"
+    - "SKILL.md注意ポイントもgate+reason単位で重複防止"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "同一FAIL重複蓄積→ノイズ増大→重複排除→注意ポイントが実質的つまずきのみに。正の複利=信号対雑音比向上"
+  timestamp: "2026-05-02T18:46:00"
+- cmd_id: cmd_2463
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2463_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 5515
+  findings_summary: "4観点+adversarial OK。37スキルのプロジェクト内統合。bats 1420/0/0。SKILL.mdコピーで新ロジックなし"
+  observations:
+    - "37スキル=~/.claude/33+~/.codex/3+既存1。.gitignore変更でgit管理対象化"
+    - "bats 3段階(43→76→1420)全PASS。tests/test_helper外部依存除外は適切"
+    - "adversarial: 5515行だが全てSKILL.mdコピー。rollback=git revert。gate_skill_quality.batsが全件検証"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "5515行だが新ロジックなし(SKILL.mdコピー)。revert可能。既存gate検証済み"
+  causal_chain: "スキル分散(~/.claude/+~/.codex/)→手動コピー意志依存→プロジェクト内統合+git管理→1箇所で全CLI共通。正の複利=新スキル作成時コピー作業消滅"
+  timestamp: "2026-05-02T17:51:00"
+- cmd_id: cmd_2472
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。退行防止テスト+17行。既存テンプレート構造確認。fixtureベース。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: deploy_task.shは既にassumption_invalidation/binary_checksを生成済みだったため本体変更なしテスト追加のみ"
+    - "事実: commit 7ea22c02に+17行のテスト追加を確認"
+  causal_chain: "FAIL TOP2(assumption_invalidation/binary_checks MISSING)→テンプレート欠落→退行防止テスト追加で構造を固定→FAIL再発防止(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T18:50:00"
+- cmd_id: cmd_2474
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "既存hook(post-bulletin-notify-read-check.sh 114行)が実装済み。q11_not_already_done違反。新規作成不要。"
+  finding_categories: [assumptions, simulation, premortem]
+  finding_confidence_1_10: 10
+  fix_first: ASK
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: .claude/settings.json L66-68にpost-bulletin-notify-read-check.shが既にPostToolUse Bash hookとして登録済み"
+    - "事実: 同hookは114行のフル実装(inbox_mark_read検知→bulletin_notify型判定→bulletin_board.yaml未確認エントリ検出→WARNING出力)"
+  causal_chain: "想像(セッション中検知なし)→現物未確認→重複cmd起票。既存grepで1秒で発見可能。LG033(既存の仕組み確認必須)の再適用"
+  severity: normal
+  ambiguity_points: none
+  timestamp: "2026-05-02T18:52:00"
+- cmd_id: cmd_2473
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。dashboard_update.sh EXIT trap+gate_report_format.shルーティング分離+テスト151行。adversarial PASS。"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  observations:
+    - "事実: gate_report_format.shにcase文追加(+13行)で_target_skillをreport-write/verdict-check/ninja-commitへ明示ルーティング"
+    - "事実: dashboard_update.sh EXIT trapでskill_execution_log記録、重複防止(_DASHBOARD_UPDATE_LOGGED)+DISABLE対応"
+    - "事実: 未マッチ時は_target_skill空→--skillなし→従来動作(フォールバック安全)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "case未マッチ時フォールバック安全、1 commit revert可能、監視穴なし"
+  causal_chain: "dashboard-updateにgate_report_format誤接続→100%FAIL→スキル成長ループデータ汚染→ルーティング分離で真のFAIL原因が正確に帰属→データ品質回復(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T18:56:00"
+- cmd_id: cmd_2474
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "★誤判定: 忍者(kagemaru)が既にワーキングツリーに実装済みのファイルを「既存hook」と誤認。LG001(git show HEAD検証必須)違反。Read toolはuncommitted含むため既実装判定に不適。"
+  finding_categories: [assumptions]
+  observations:
+    - "事実: post-bulletin-notify-read-check.shはcmd_2474のcommit ab7851f6で初めてgitに入った"
+    - "事実: Read時点でkagegaruが既にワーキングツリーに作成済み→私が既存と誤認"
+    - "教訓: LG001(git show HEAD検証必須)を適用していれば防げた。Read toolでの既存判定は禁止"
+  causal_chain: "Read toolでファイル存在確認→uncommitted成果物を既存と誤認→REQUEST_CHANGES→家老が無視して通す→GATE CLEAR。根因=LG001未適用"
+  severity: normal
+  ambiguity_points: none
+  timestamp: "2026-05-02T19:00:00"
+- cmd_id: cmd_karo_scope_note_stale_fix
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。HEADに既存確認+実測クリア。コード変更なし。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: deploy_task.sh L247にscope_noteがSTALE_FIELDSに含まれていることをgrep確認"
+  causal_chain: "scope_note残留→task YAML汚染→STALE_FIELDSに追加済み確認→クリア実測→再発防止構造確認(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:02:00"
+- cmd_id: cmd_2475
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。事後BLOCK→事前防止変換。消火ではなく構造的品質向上。"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  finding_confidence_1_10: 9
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: cmd_publish.shにpre-flightチェック未実装(grep pre-flight 0件)を確認"
+    - "事実: 本セッションでmissing_prev_cmd_lessonを4回連続踏んだ実績あり"
+  causal_chain: "事後BLOCK(意志依存の修正ループ)→事前警告(自動強制)に変換。deepdive Phase 4(自動化×強制)の正しい適用。10回繰返したら全BLOCK回避=正の複利"
+  ambiguity_points: none
+  timestamp: "2026-05-02T19:03:00"
+- cmd_id: cmd_2475
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。テスト+130行。pre-flight HEADで実装確認(git show HEAD L95,L124)。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: git show HEAD:scripts/cmd_publish.sh L95にrun_publish_preflight関数、L124に呼出しを確認(LG001適用)"
+    - "事実: bats 3/3 + 6/6 PASS"
+  causal_chain: "事後BLOCK(4回連続)→事前警告に変換→BLOCK回数激減→将軍起票速度向上(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:08:00"
+- cmd_id: cmd_2476
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。殿なぜなぜ指示対���。LS036-041全6件が既存自動強制のみ(現物確認)。"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  finding_confidence_1_10: 9
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: lessons_shogun.yaml LS036-041の6件全てにenforcement=既存自動強制。新規環境変化ゼロ"
+    - "事実: lesson_write_shogun.shにenforcement品質チェックは未実装(grep 0件)"
+  causal_chain: "消火教訓量産(6件中5件が既知パターン再発記録)→enforcement品質未検証→消火BLOCK追加→教訓=防御層が保証(正の複利)"
+  ambiguity_points: none
+  timestamp: "2026-05-02T19:09:00"
+- cmd_id: cmd_2476
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。enforcement quality gate(L80-85)確認。bats 26件PASS。消火教訓BLOCK。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: lesson_write_shogun.sh L84にregex「既存自動強制|既存の?自動強制...」でBLOCK判定"
+    - "事実: bats 26件全PASS(test_lesson_write_shogun + test_lesson_write)"
+  causal_chain: "消火教訓量産(6件中5件)→enforcement品質gate追加→消火教訓BLOCK→教訓=新規防御層保証(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:12:00"
+- cmd_id: cmd_2477
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。なぜなぜ7回の根本対処(品質未定義→quality_metric全37スキル)。3名並列配備適切。"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  finding_confidence_1_10: 9
+  fix_first: n/a
+  second_opinion: NOT_NEEDED
+  observations:
+    - "事実: skill_execution_log.sh L89-93にテストフィルタ実装済み(commit 36bf2b5f, 配備後hayate実装)。起票時点では未実装(q11確認)"
+    - "事実: quality_metric既存19/37(配備後kagemaru実装中)。起票時点で0件(q11確認)"
+    - "事実: quality_metricを読むスクリプト0件(grep scripts/ .claude/ → 0件)。フィールド追加は安全"
+  causal_chain: "品質未定義(なぜなぜ7回根因)→計測がゴミを生む→quality_metric定義で計測対象明確化→改善方向が全37スキルに同時接続(正の複利)"
+  ambiguity_points: none
+  timestamp: "2026-05-02T19:45:00"
+- cmd_id: cmd_2477
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC1テストデータフィルタ実装+bats 8 PASS。scope内2ファイルのみ。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: git show 36bf2b5f → 2ファイル+32行、scope内のみ(LG004確認)"
+    - "事実: case tests/*|*/tests/* → exit 0。本番スキル実行パスに影響なし"
+  causal_chain: "テストデータ75%汚染→ログ計測が実態反映せず→source引数フィルタで除外→計測精度向上(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:48:00"
+- cmd_id: cmd_2477
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC2チャンク1 19スキルquality_metric追加。commit 2f39bf90 19ファイル。計測可能な具体指標。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 2f39bf90 → 19ファイル変更。タスクYAML一覧と完全一致"
+    - "事実: quality_metricサンプル5件確認。全て計測ソース(ログファイル名)+計測方法を明記"
+    - "事実: gate_report_format PASS。yaml.safe_load 19/19 OK(忍者報告)"
+  causal_chain: "品質未定義→計測がゴミ→quality_metric定義で各スキルに計測可能指標接続→改善方向明確化(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:52:00"
+- cmd_id: cmd_2477
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC2チャンク2 18スキルquality_metric追加。commit dce614d8 18ファイル。計測可能な具体指標。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit dce614d8 → 18ファイル変更。タスクYAML一覧と完全一致"
+    - "事実: quality_metricサンプル5件確認(report-write/review-bundle/verdict-check/x-research/shogun-teire)。全て分母+計測方法明記"
+    - "事実: 37/37スキル全てにquality_metric定義完了(grep -rl quality_metric skills/*/SKILL.md | wc -l = 37)"
+  causal_chain: "品質未定義→計測ゴミ→37スキル全定義完了→計測→結果の因果チェーン全スキル接続(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T19:55:00"
+- cmd_id: cmd_karo_ci_fix_bulletin_flaky
+  review_type: report
+  report_ninja: hanzo
+  verdict: FAIL
+  gate_result: CLEAR
+  findings_summary: "files_modified完全誤記(別cmd残骸)。commit実体と不一致。self_gate_check/test_triage/status_detail欠落。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 84523679 → 2ファイル(.claude/hooks/post-bulletin-notify-read-check.sh, tests/unit/test_post_bulletin_notify_read_check.bats)"
+    - "事実: files_modified → scripts/ninja_done.sh + docs 2件(cmd_2082の残骸。git log確認)"
+    - "事実: AC1-3の実装自体はcommitで正常(hook env var + テスト分離 + --jobs 4 PASS)"
+  causal_chain: "タスクYAMLに前cmd成果物が残留→忍者がそのままfiles_modifiedにコピー���報告とcommitが乖離→gate BLOCK必至"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T20:35:00"
+- cmd_id: cmd_karo_dashboard_cmdid_fix
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。dashboard_update.sh cmd_idバリデーション正規表現拡張。commit b977f8e5 1ファイル+2行。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: commit b977f8e5 → 1ファイル(dashboard_update.sh) +2/-2行。正規表現 ^cmd_[0-9]+$ → ^cmd_[a-zA-Z0-9_]+$"
+    - "事実: gate FAIL後の自己修正成功。diagnose_reason記入済み(テンプレート未生成→手動記入漏れ)"
+  causal_chain: "karo_direct cmd形式(cmd_karo_*)がバリデーション不通過→正規表現拡張→全cmd形式受容(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T20:42:00"
+- cmd_id: cmd_2478
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。preflight_autolearn動的表示hook追加。commit cb961b36 3ファイル+57行。bats 17 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit cb961b36 → 3ファイル(.claude/hooks/pre-write-edit-combined.sh +38行, テスト2件)。files_modified一致"
+    - "事実: AC1本体(cmd_save.sh WARN昇格ログ)はHEAD既存。AC2(hook動的表示)が今回の実装"
+    - "事実: bats 7+7+17(統合)全PASS。syntax+whitespace PASS"
+  causal_chain: "WARN累計昇格BLOCK→ログ自動記録→起票前hookで動的表示→将軍起票品質が自動成長(正の複利。deepdive Phase 7自走の環境埋込み)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T20:48:00"
+- cmd_id: cmd_2479
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。テスト棚卸し分析完了。Dead test 0件。P1再結合6件/P2高速化2件。commit bc:no→gate_prediction:BLOCK。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: 154テストファイル全件分析。Dead test(target削除済み)=0件"
+    - "事実: Top20実行時間+90日git log完備。timeout2件(cmd_save_environment_change/sync_lessons各32s)"
+    - "事実: commit bc:no(分析のみ変更なし)。waive_reason記載あるがSG-PRE9ルール上gate_prediction=BLOCK"
+  causal_chain: "CI 332s→テスト負債棚卸し→Dead test 0件確認+P1/P2候補特定→次cmdで不要テスト削減→CI高速化(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T21:05:00"
+- cmd_id: cmd_2481
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。CI RED修正(bulletin notify hook並列干渉)。commit 84523679。★parent_cmd目的(テスト高速化)とタスクYAML AC(CI RED修正)が乖離—家老配備問題。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: タスクYAML(cmd_2481_ac1_ccg)のACはbulletin notify hook修正。parent_cmd(cmd_2481)の目的はテスト高速化Top6-10"
+    - "事実: commit 84523679 = cmd_karo_ci_fix_bulletin_flakyと同一commit。hook+テスト2ファイル"
+    - "事実: 忍者はタスクYAMLのAC通りに正しく作業完了。乖離は家老の配備時のAC設定問題"
+  causal_chain: "家老がcmd_2481サブタスクにCI RED修正ACを配備→忍者は指示通り実行→親cmdとの目的乖離が発生→家老に情報提供"
+  lesson_quality: OK
+  escalation_needed: true
+  timestamp: "2026-05-02T21:38:00"
+- cmd_id: cmd_2481
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: BLOCK
+  findings_summary: "報告ほぼ未記入。status:pending、result空、binary_checks全result空、verdict空、FILL_THIS残存。テンプレート状態のまま提出。"
+  finding_categories: [assumptions]
+  observations:
+    - "事実: status: pending(completedでない)。result.summary/details空。verdict空"
+    - "事実: binary_checks AC1/AC2/commit全result空。lessons_useful全reason='未参照'(デフォルト)"
+    - "事実: lesson_candidate.no_lesson_reason=FILL_THIS(テンプレート初期値)"
+  causal_chain: "忍者が報告フィールドを未記入のまま提出→gate_report_formatでBLOCK必至→家老WA必要"
+  lesson_quality: MISSING
+  escalation_needed: false
+  timestamp: "2026-05-02T21:40:00"
+- cmd_id: cmd_2480
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。timeout2件高速化(env_change 32.9→14.9s, sync_lessons 32.2→1.2s)+CoDD台帳追記。commit 552faa69。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 552faa69 → 3ファイル(+29/-93行)。files_modified一致"
+    - "事実: cmd_save_environment_change 32.9s→14.88s(55%削減)、sync_lessons 32.2s→1.18s(96%削減)。両方15s以下"
+    - "事実: bats 12 PASS。AC2は別忍者担当(command明記)でスコープ外"
+  causal_chain: "CI timeout2件(合計65s)→fixture最小化+走査境界化→16s以下に→CI -49s削減(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T21:42:00"
+- cmd_id: cmd_2481
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: BLOCK
+  findings_summary: "重複報告+大量フィールド欠落。commit b977f8e5はcmd_karo_dashboard_cmdid_fix(既CLEAR)の成果物。verdict/lessons_useful/lesson_candidate等欠落。"
+  finding_categories: [assumptions, numbers]
+  observations:
+    - "事実: commit b977f8e5はcmd_karo_dashboard_cmdid_fix(GATE CLEAR済み)のcommit。cmd_2481の成果物ではない"
+    - "事実: gate_report_format FAIL(verdict未記入)。GP-201b WARN(直近30コミットにcmd_2481なし)"
+    - "事実: lessons_useful/lesson_candidate/self_gate_check/test_triage/status_detail全欠落"
+  causal_chain: "タスクYAMLに前cmd成果物情報が残留→忍者が前cmdのcommitを自分の成果として報告→重複報告+フィールド欠落"
+  lesson_quality: MISSING
+  escalation_needed: false
+  timestamp: "2026-05-02T21:45:00"
+- cmd_id: cmd_2480
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。AC2 Top3テスト高速化(-43%/-59%/-40%)。commit 0c219a82 5ファイル(+128/-1140行、テスト重複集約)。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: cmd_save_diagnosis_quality 30.38→17.19s(-43%), deploy_task_ac_handling 26.00→10.57s(-59%), deploy_task_ac_version 17.74→10.63s(-40%)"
+    - "事実: deploy_task_ac_handling.bats -1140行(重複テスト→専用ファイル集約)。bats PASS維持"
+    - "事実: lesson_candidate found=true(重複テスト集約知見)。gate_prediction: WARN(SG-PRE12)"
+  causal_chain: "Top3テスト合計74s→38s(-48%)→CI高速化。重複テスト集約で保守負債も同時削減(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:00:00"
+- cmd_id: cmd_karo_direct_ac_stale_fix
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。--directモードstale AC残留バグ修正。parent_cmd比較+ACクリア条件追加。テスト162件全PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: git diff → L227にCMD_ID引数追加、L270にparent_cmd変更時ACクリア条件。軍師分析と完全一致"
+    - "事実: テスト41+35+86=162全PASS。新規2件(異なるCMD_ID→ACクリア + 同一→AC保持)"
+    - "事実: LK008保持(同一parent_cmd再配備時AC保持)は維持。修正はparent_cmd変更時のみ"
+  causal_chain: "--directでAC常時保持→旧AC残留→忍者が旧cmd再実行→parent_cmd比較追加→変更時のみACクリア→旧AC残留根絶(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:05:00"
+- cmd_id: cmd_2482
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: null
+  findings_summary: "stale ACバグ残存影響。commit b977f8e5はcmd_karo_dashboard_cmdid_fix(既CLEAR)の成果物。cmd_2482(テスト高速化Top11-20)の成果物ゼロ。"
+  finding_categories: [assumptions]
+  observations:
+    - "事実: commit b977f8e5 = cmd_karo_dashboard_cmdid_fixの成果物(3回目の報告)"
+    - "事実: タスクYAMLのdescription=dashboard正規表現修正、command=codd高速化の混在(忍者自身が認識)"
+    - "事実: --direct stale AC修正(5753ff66)前に配備済みのタスクYAMLが原因。忍者のミスではない"
+  causal_chain: "--direct stale ACバグ→修正(5753ff66)前に配備→tobisaruのtask YAMLが汚染済み→旧cmd再実行→別忍者に再配備必要"
+  lesson_quality: OK
+  escalation_needed: true
+  timestamp: "2026-05-02T22:20:00"
+- cmd_id: cmd_2482
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。archive_completed -47%+cmd_save_steps -82%。commit 50d74064。bats 13/13 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: archive_completed 6.00→3.19s(-47%), cmd_save_steps 9.66→1.79s(-82%)。scripts/に早期return追加"
+    - "事実: lesson_candidate有(hunk混入検出)→gate_prediction: WARN"
+  causal_chain: "Top11-12テスト合計16s→5s(-69%)→CI高速化。本番コード変更(early return)だがテスト網羅確認(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:22:00"
+- cmd_id: cmd_2482
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。warning_levels -63%+model_labels -84%。commit 00aececc。テストファイルのみ変更。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: warning_levels 8.21→3.08s(-63%), model_labels 9.76→1.57s(-84%)。テストfixture改善のみ"
+    - "事実: 本番コード変更なし。bats PASS"
+  causal_chain: "Top13-14テスト合計18s→5s(-74%)→CI高速化。テストのみ変更で本番影響ゼロ(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:22:00"
+- cmd_id: cmd_2482
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。session_state -76%+prev_cmd_lesson -83%。commit fa97f268。bats 14/14 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: session_state 10.07→2.44s(-76%), prev_cmd_lesson 5.15→0.85s(-83%)。gate_report_format.sh+cmd_save.shにfast path追加"
+    - "事実: bats 14/14 PASS。bash -n 2本PASS"
+  causal_chain: "Top15-16テスト合計15s→3s(-80%)→CI高速化。fast path化で本番通常経路は不変(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:25:00"
+- cmd_id: cmd_2483
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。yaml_field_set.sh list item破壊修正(パターン1)。commit 3cc12f33。bats 23/23 PASS。"
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "事実: commit 3cc12f33 → 2ファイル(+96行)。yaml_field_set.shに- check: list item認識+境界判定追加"
+    - "事実: bats 23/23 PASS + python3 yaml.safe_loadパース確認。回帰なし"
+  causal_chain: "yaml_field_set list破壊(2件WA)→list item認識追加→bc構造保全→報告YAML破壊根絶(正の複利)"
+  lesson_quality: OK
+  escalation_needed: false
+  timestamp: "2026-05-02T22:30:00"

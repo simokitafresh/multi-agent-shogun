@@ -25,3 +25,10 @@
 # SG7盲点: 7件LGTM→BLOCK検出→GP-238(GATE_PREDICTION自動計算)実装(2026-05-02)
 # → docs/research/gunshi_idle_sg7_blind_spot_analysis_20260502.md
 # → docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
+#
+# ─── 本セッション成果 (2026-05-02T19:20更新) ───
+# なぜなぜ7回(殿指示): 成長ループの消火パターン3つ発見。ゲート差替え消火/ゴミデータ/テストデータ汚染
+# → docs/research/gunshi_idle_skill_growth_loop_nazenaze_20260502.md
+# 行動: SKILL.mdゴミ清掃(ad5b96f9) + テストデータ汚染防止(78e5dd3f) + ログ34件除去
+# 自己反省: cmd_2474 LG001未適用(false positive RC) + cmd_2473消火承認(North Star Q1未適用)
+# 埋込み: review_logヘッダに原理2行(既存判定=git show HEAD限定 + ゲート差替え=Q1強制)

@@ -23487,7 +23487,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -23497,10 +23497,836 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
     timestamp: "2026-05-02T07:50:00Z"
     diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
     notes: "WARN累計昇格: 「q11に既存代替の現物確認なし|check=q11_existing_alternative_verification」が15回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2460"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:11:45Z"
+  - cmd_id: "cmd_2459"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:13:17Z"
+  - cmd_id: "cmd_2462"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T08:15:49Z"
+    notes: "q8_縮小表現|check=quality_gate_q8_scope_expression"
+  - cmd_id: "cmd_2462"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:15:52Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "WARN累計昇格: 「q8_縮小表現|check=quality_gate_q8_scope_expression」が11回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2461"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:20:19Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2461"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:20:38Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2461"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:21:22Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2461"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:21:52Z"
+    notes: "hayate:binary_checks_fail"
+  - cmd_id: "cmd_2461"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:22:33Z"
+  - cmd_id: "cmd_2464"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:27:46Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "cmd_2464 は既に委任済みです。"
+  - cmd_id: "cmd_2465"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:29:26Z"
+    diagnosis: "BLOCK理由: cmd_2464はアーカイブ済みID重複(delegated_at:2026-04-29)。cmd_2465に変更 対策: 起票前にgreep cmd_idで既存確認(LS-A04)"
+    notes: "cmd_2465 は既に委任済みです。"
+  - cmd_id: "cmd_2465"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:30:27Z"
+    diagnosis: "BLOCK理由: (1)cmd_2464 ID重複(2)cmd_2465に変更後も旧cmd_2395のdelegated_atが末尾に残存しcmd_2465のフィールドとして解釈された 対策: 旧delegated_at行を除去。起票前にファイル末尾の孤立フィールドを確認(LS-A04)"
+    notes: "environment_change未実装。file=projects/infra/lessons_shogun.yaml に pattern=LS-A09(現物確認必須) が見つからない"
+  - cmd_id: "cmd_2462"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:39:58Z"
+  - cmd_id: "cmd_2462"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:41:21Z"
+  - cmd_id: "cmd_2463"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:44:07Z"
+  - cmd_id: "cmd_2465"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:44:37Z"
+  - cmd_id: "cmd_2463"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:47:25Z"
+  - cmd_id: "cmd_2465"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:47:27Z"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:51:18Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "前cmd_2465で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+  - cmd_id: "cmd_2467"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T08:53:16Z"
+    diagnosis: "BLOCK理由: cmd_2466で1回BLOCK(missing_prev_cmd_lesson)→LS036で解消済み 対策: 教訓記録を起票前に完了する運用を維持"
+    notes: "前cmd_2466で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:58:34Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T08:59:47Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:00:05Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:01:17Z"
+  - cmd_id: "cmd_2467"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:01:37Z"
+  - cmd_id: "cmd_2466"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:02:30Z"
+  - cmd_id: "cmd_2469"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T09:02:54Z"
+    notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+  - cmd_id: "cmd_2469"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:02:57Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "WARN累計昇格: 「ac_param_sufficiency|check=check_ac_param_sufficiency」が6回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2468"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:03:26Z"
+    notes: "hanzo:binary_checks_fail"
+  - cmd_id: "cmd_2467"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:03:26Z"
+  - cmd_id: "cmd_karo_ci_fix_skill_feedback"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:03:47Z"
+  - cmd_id: "cmd_2469"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:09:29Z"
+  - cmd_id: "cmd_2469"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:09:33Z"
+  - cmd_id: "cmd_2468"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:12:51Z"
+  - cmd_id: "cmd_2470"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:13:24Z"
+  - cmd_id: "cmd_2468"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:14:17Z"
+  - cmd_id: "cmd_2470"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:14:32Z"
+  - cmd_id: "cmd_2471"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:27:28Z"
+    notes: "draft_lessons:1"
+  - cmd_id: "cmd_2471"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:28:09Z"
+  - cmd_id: "cmd_2471"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:28:52Z"
+  - cmd_id: "cmd_2472"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:38:21Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "other_draft_exists"
+  - cmd_id: "cmd_2473"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:39:09Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "前cmd_2472で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+  - cmd_id: "cmd_karo_skill_growth_counter"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:42:31Z"
+  - cmd_id: "cmd_karo_skill_growth_dedup"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:42:33Z"
+  - cmd_id: "cmd_2474"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T09:43:52Z"
+    notes: "q11に既存代替の現物確認なし|check=q11_existing_alternative_verification"
+  - cmd_id: "cmd_2474"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:43:55Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "WARN累計昇格: 「q11に既存代替の現物確認なし|check=q11_existing_alternative_verification」が16回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2474"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:44:41Z"
+    diagnosis: "BLOCK理由: (1)assumptions sourceパス短縮(settings.json→settings.js検出)→フルパス記載(2)q11に既存代替Gate4.5の現物確認なし→grep結果L101-103記載+差分理由明記 対策: LS-A04(28)+LS-A09"
+    notes: "assumptions sourceのファイルパスが存在しません:"
+  - cmd_id: "cmd_2472"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:47:34Z"
+  - cmd_id: "cmd_2472"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:47:49Z"
+  - cmd_id: "cmd_2473"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:51:15Z"
+  - cmd_id: "cmd_2473"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:52:41Z"
+  - cmd_id: "cmd_2475"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T09:52:58Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+    notes: "前cmd_2474で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+  - cmd_id: "cmd_2474"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:56:57Z"
+  - cmd_id: "cmd_2474"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "REQUEST_CHANGES"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T09:58:18Z"
+  - cmd_id: "cmd_karo_scope_note_stale_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:01:04Z"
+  - cmd_id: "cmd_2475"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:05:39Z"
+  - cmd_id: "cmd_2476"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:07:42Z"
+  - cmd_id: "cmd_2475"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:08:45Z"
+  - cmd_id: "cmd_karo_scope_note_stale_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:10:37Z"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T10:23:24Z"
+    notes: "自己再読パターン|check=check_self_reread_red_flag"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T10:23:26Z"
+    notes: "command_steps_over_ac|check=check_command_steps_vs_ac"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T10:23:28Z"
+    diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載。なぜなぜ7回根因(品質未定義)から自動化ターゲット特定"
+    notes: "WARN累計昇格: 「command_steps_over_ac|check=check_command_steps_vs_ac」が10回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T10:30:14Z"
+    notes: "自己再読パターン|check=check_self_reread_red_flag"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T10:30:15Z"
+    notes: "command_steps_over_ac|check=check_command_steps_vs_ac"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T10:30:18Z"
+    diagnosis: "BLOCK理由: self_reread累計昇格(q10に目視確認→現物カウントに修正)+command_steps_over_ac累計昇格(3ステップ→2ステップに統合) 対策: 起票前確認hookに項目6,7を追加(pre-write-edit-combined.sh 5問→7問)し次回以降のcmd起票で同パターンを事前検出。根因=起票前確認が静的で成長しなかった"
+    notes: "WARN累計昇格: 「command_steps_over_ac|check=check_command_steps_vs_ac」が11回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-02T10:32:19Z"
+    notes: "q11に既存代替の現物確認なし|check=q11_existing_alternative_verification"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-02T10:32:21Z"
+    diagnosis: "BLOCK理由: self_reread累計昇格(q10のself-rereadワード→客観表現に修正)+command_steps_over_ac累計昇格(番号ステップ→単一段落に統合)+AC count FP(description分離型をcountできないLS-A22(8)) 対策: 起票前確認hookに項目6,7追加(5問→7問)で次回以降を事前検出"
+    notes: "WARN累計昇格: 「q11に既存代替の現物確認なし|check=q11_existing_alternative_verification」が17回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:48:06Z"
+  - cmd_id: "cmd_2477"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T10:48:37Z"
+  - cmd_id: "cmd_karo_ci_fix_bulletin_flaky"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "FAIL"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:33:19Z"
+  - cmd_id: "cmd_karo_ci_fix_bulletin_flaky"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "FAIL"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:37:24Z"
+  - cmd_id: "cmd_karo_dashboard_cmdid_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:40:53Z"
+  - cmd_id: "cmd_karo_dashboard_cmdid_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:41:36Z"
+  - cmd_id: "cmd_2478"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:45:22Z"
+  - cmd_id: "cmd_2478"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T11:46:14Z"
+  - cmd_id: "cmd_2479"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:03:22Z"
+    notes: "kagemaru:binary_checks_fail"
+  - cmd_id: "cmd_2479"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:04:03Z"
+  - cmd_id: "cmd_2479"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:04:46Z"
+  - cmd_id: "cmd_2481"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:39:32Z"
+    notes: "report_format:saizo_report_cmd_2481.yaml|report_format:tobisaru_report_cmd_2481.yaml|tobisaru:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503',cmd_2481_ac1_ccg]|tobisaru:ac_version_mismatch:task=HEAD:report=b977f8e5|tobisaru:lesson_candidate_missing"
+  - cmd_id: "cmd_2480"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:57:06Z"
+    notes: "draft_lessons:2"
+  - cmd_id: "cmd_2480"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:57:44Z"
+    notes: "draft_lessons:2"
+  - cmd_id: "cmd_2480"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:58:15Z"
+  - cmd_id: "cmd_karo_direct_ac_stale_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T12:59:22Z"
+  - cmd_id: "cmd_2480"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T13:03:45Z"
+  - cmd_id: "cmd_karo_direct_ac_stale_fix"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T13:03:46Z"
+  - cmd_id: "cmd_2483"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "LGTM"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-02T13:27:40Z"
+    notes: "report_format:saizo_report_cmd_2483.yaml|saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:1"

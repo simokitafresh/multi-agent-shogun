@@ -68,7 +68,7 @@ lessons:
     (14)1道具1CMD(殿裁定cmd_2316)。複数道具バンドル→other_draft_exists BLOCK
     (15)cmdブロック全文(AC+command+q11+diagnosis)がgrep対象。トリガーワード(新規作成/新規構造等)をq11/diagnosisに含めるとnew_file_structure検出マッチ
     (16)ACセクションgrepはAC配下のみ。command欄のツールパスはACチェック対象外→ACに明記必須
-    (17)q8縮小表現(一部/全体の一部)→q8_scope_expression WARN。全量保証と矛盾する印象
+    (17)q8縮小表現(一部/全体の一部/だけ/のみ)→q8_scope_expression WARN。全量保証と矛盾する印象。「だけ」→具体的手順+全量保証の文言に書換え(cmd_2462で1回BLOCK)
     (18)テストACは変更対象の関連テストにスコープ限定。全体pytest PASS要求はpre-existing failure許容条件を明示
     (19)ACはMUST(二値判定)のみ。推奨事項・実装文言(表示文言の中身等)をACに書くな(推奨混在BLOCK)。偵察ACも同様:「すべきか/推奨と根拠」→「判定されている/特定されている」に変換(cmd_2458で1回BLOCK)
     (26)パリティACはP1-P4全て必須(cmd_2447で2回BLOCK: P2欠落→P1/P3/P4のみでは不足)。new_fileフォルダーは旧版削除済みの理由をdiagnosisに明記
@@ -302,69 +302,20 @@ lessons:
 # === LS023-LS035統合完了 (2026-04-29) ===
 # 13件→LS-A04(18-25追記,9件)＋LS-A22(3-7追記,4件)に吸収完了
 # source_cmds: cmd_2339-cmd_2369
-- id: 'LS023'
-  title: '小数実験で見込み時間推定 — 大規模実行前に小数サンプルで計測し総時間を推定してから実行判断'
-  detail: 'cmd_2395でGSL2 kasoku_diff(1.15Mpat)を見込み時間不明のまま実行。結果56分超で殿の時間を奪った。正しい手順: (1)小数(100-1000pat)で実行→1patあたり秒数計測 (2)総パターン数に掛けて見込み時間算出 (3)殿に報告→実行判断。殿ルール「わからないときは小数で実験して推定する」。これはcmd起票時のq9(伏兵)に含めるべき。'
-  source_cmd: 'cmd_2395'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh q9_伏兵に見込み時間推定手順を追加(小数実験→外挿)。未記入→WARN'
-- id: 'LS024'
-  title: 'diagnosis形式+研究道具パスWARN累計昇格 — 初回起票でも2部構成必須+ACにrun_077フルパス'
-  detail: 'cmd_2397で2件BLOCK。(1)diagnosis形式不正(2部構成未記載)→初回起票でも「BLOCK理由:初回 対策:2部構成で記載」と書け。(2)研究cmd道具未記載WARN累計昇格(31回)→commandにgrid_searchパスを含む場合ACにrun_077フルパスを必ず記載。LS-A04(24)+LS-A22(3)の複合。'
-  source_cmd: 'cmd_2397'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh diagnosis形式チェック(既存)+check_research_tool_explicit(既存WARN累計BLOCK)'
-- id: 'LS025'
-  title: 'command_steps_over_ac累計昇格 — 番号ステップ→ターゲット単位記述'
-  detail: 'command欄に番号付きステップ(1. 2.)を使用→command_steps_over_ac WARN→累計9回で昇格BLOCK。LS-A04(12)の既知パターン再発。command欄はターゲットファイル単位でグループ化し番号ステップを避けよ。'
-  source_cmd: 'cmd_2401'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh check_command_steps_vs_ac(既存WARN。累計昇格でBLOCK化)'
-- id: 'LS026'
-  title: '起票と配備は別軸 — 将軍の起票速度を配備の直列制約で止めるな'
-  detail: '起票(将軍)と配備(家老)は独立した軸。GS OOM等のリソース制約で直列配備が必要でも、将軍は6cmd連続で起票→委任してよい。家老が配備順序を制御する。cmd_2406で起票を止めるgateを作ろうとした=2軸の混同。殿指摘: 起票と配備がごっちゃになっている。'
-  source_cmd: 'cmd_2406'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh other_draft_existsは起票品質の軸(1本ずつgate通す)。配備直列は家老の責務(deploy_task.sh)。将軍側に配備制約を埋め込むな'
-- id: 'LS027'
-  title: 'missing_prev_cmd_lesson累計昇格 — GS連続起票時のBLOCK教訓記録漏れ'
-  detail: 'GS連続起票(cmd_2405-2411)でcmd_save.sh WARN累計昇格BLOCK。同パターンcmdでも前cmdのBLOCK教訓記録が必要。1本ずつgate通す際に教訓記録も含めてサイクルを完結させよ。'
-  source_cmd: 'cmd_2411'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh warn_missing_prev_cmd_lesson(既存WARN累計BLOCK)'
-- id: 'LS028'
-  title: '登録cmdでもgrid_searchパスを含む場合はACにrun_077パス+パリティ基準必須'
+# LS023はLS-A10(計測)に吸収済み+cmd_save.sh q9で自動強制(2026-05-02統合)
+# LS024はLS-A04(24)+LS-A22(3)に完全吸収済み(2026-05-02統合)
+# LS025はLS-A04(12)に完全吸収済み(2026-05-02統合)
+# LS026はLS-A07(gate迂回禁止)+cmd_save.sh other_draft_existsで自動強制済み(2026-05-02統合)
+# LS027はLS037/LS038(missing_prev_cmd_lesson連鎖パターン)に吸収済み(2026-05-02統合)
+# LS028はLS-A04(27)+LS-A22(3)に吸収済み(2026-05-02統合)
   detail: 'cmd_2416で2件BLOCK。(1)commandにgrid_searchパスを含む登録cmdでcheck_research_tool_explicitが発火→ACにrun_077フルパス記載で解消。(2)パリティcmdのP1/P3/P4未記載→AC追加で解消。登録cmdは研究cmdではないがgateはcommand欄をgrepするため区別できない。'
   source_cmd: 'cmd_2416'
   created_at: '2026-04-29'
   automated: true
   enforcement: 'cmd_save.sh check_research_tool_explicit+check_parity_ac_requirements(既存WARN累計BLOCK)'
-- id: 'LS029'
-  title: 'ac_param_sufficiency — ACの数量表現には具体値列挙必須'
-  detail: 'cmd_2421でACに「旧3ステップ」→数量検出→累計昇格BLOCK。Step番号+Usage例を明記で解消。ACに数量を書く場合は必ず具体値(Step名/項目名)を列挙せよ。'
-  source_cmd: 'cmd_2421'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh check_ac_param_sufficiency(既存WARN累計BLOCK)'
-- id: 'LS030'
-  title: 'cmd_save必須項目(q5_verified_source/q8_why_what)は別フィールド — q5_verified_spaceとq8_why_what_compoundでは不足'
-  detail: 'cmd_2422で2件BLOCK。q5_verified_sourceとq8_why_whatはq5_verified_space/q8_why_what_compoundとは別フィールド。名前が似ていても別チェック。cmd_save.shのBLOCKメッセージに記載された正確なフィールド名を確認してから修正せよ。'
-  source_cmd: 'cmd_2422'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh必須項目チェック(既存自動強制)'
-- id: 'LS031'
-  title: 'parity_ac_missing累計昇格+other_draft_exists — 1本ずつ+P4必須'
-  detail: 'cmd_2424で2件BLOCK。(1)other_draft_exists: cmd_2425もdraft→1本ずつ通す(on_holdに変更で解消)。(2)parity_ac_missing累計昇格: P4(FE UI整合)がACに欠落→AC5追加で解消。パリティcmdではP1/P3/P4を常にACに含めよ。'
-  source_cmd: 'cmd_2424'
-  created_at: '2026-04-30'
-  automated: true
-  enforcement: 'cmd_save.sh parity_ac_missing+other_draft_exists(既存自動強制)'
+# LS029はLS-A04(17)+LS039に吸収済み(2026-05-02統合)
+# LS030はLS-A04(8)に吸収済み(2026-05-02統合)
+# LS031はLS-A04(4,26)+LS040に��収済み(2026-05-02統合)
 - id: 'LS032'
   title: '一次知識と解釈の混同禁止 — 原論文の手法をDM-Signal適用に読み替えて報告するな'
   detail: 'Factor Momentumを「Top-1選出に使える」と殿に報告したが、原論文は全ファクター等配分Long/Short。Top-1選出ではない。一次知識層の手法を正確に理解する前にDM-Signal適用を考えた=一次知識と解釈の混同。手順: (1)一次知識(原論文の手法)を正確に理解 (2)殿に報告する際は原論文の手法として報告 (3)DM-Signal適用は解釈層(dm-signal/)に分離。殿への報告で「〜に使える」は解釈であり一次知識ではない。'
@@ -393,3 +344,40 @@ lessons:
   created_at: '2026-04-30'
   automated: true
   enforcement: '設計書§2.1に修正経緯を記載済み。gate化は意志依存(将軍の自問に追加)'
+- id: 'LS036'
+  title: '孤立delegated_at汚染+environment_change括弧パターン'
+  detail: 'cmd_2465で2回BLOCK。(1)旧cmd_2395のdelegated_atがファイル末尾に残存し新cmdのフィールドとして解釈された(2)environment_change patternに括弧を含むとgrepが正規表現として解釈しマッチ失敗。対策:(1)cmdブロック追記後に末尾の孤立フィールドを確認(2)patternにはID文字列のみ(括弧・特殊文字禁止)'
+  source_cmd: 'cmd_2465'
+  created_at: '2026-05-02'
+  automated: true
+  enforcement: 'cmd_save.sh environment_change grep検証(既存自動強制)'
+- id: 'LS037'
+  title: 'missing_prev_cmd_lesson連鎖 — 教訓上限時は先に統合してから記録'
+  detail: 'cmd_2466で1回BLOCK(missing_prev_cmd_lesson)。cmd_2465教訓(LS036)は記録済みだったが、cmd_2466自身のBLOCKも教訓対象。教訓上限(35件)到達時に起票→BLOCK→教訓記録不能→次cmd起票→再BLOCKの連鎖が発生。対策: 教訓上限到達時は起票前に既存教訓統合(個別→クラスタ吸収)で空きを2件以上確保してから起票サイクルに入る'
+  source_cmd: 'cmd_2466'
+  created_at: '2026-05-02'
+  automated: true
+  enforcement: 'cmd_save.sh missing_prev_cmd_lesson(既存自動強制)+pre-write-edit-combined.sh Guard 6(id数比較)'
+# LS038: superseded by LS037 (同一パターン吸収 2026-05-02)
+# LS039: superseded by LS-A04 (既知パターン再発吸収 2026-05-02)
+- id: 'LS040'
+  title: 'other_draft_exists再発 — 2cmd同時起票時はon_hold待避を先にする'
+  detail: 'cmd_2472で1回BLOCK(other_draft_exists: cmd_2473もdraft)。対策: cmd_2473をon_holdに変更してからcmd_2472をpublish。LS-A04(4)の既知パターン。連続起票時は2本目以降をon_holdで書き、1本目のpublish完了後にdraftに戻す'
+  source_cmd: 'cmd_2472'
+  created_at: '2026-05-02'
+  automated: true
+  enforcement: 'cmd_save.sh other_draft_exists(既存自動強制)'
+- id: 'LS041'
+  title: 'プロジェクト外パス+q11既存代替未記載(5回目) — sourceとq11の事前確認を起票フローに組込む必要'
+  detail: 'cmd_2474で2回BLOCK。(1)assumptions sourceにプロジェクト外パス(~/.claude/)→gate検証でパス切り詰め(2)q11に既存Gate4.5の現物確認なし。本セッションで同パターン5回目。事後教訓記録では改善しない=cmd_2475(事前防止チェック)が必要な証拠'
+  source_cmd: 'cmd_2474'
+  created_at: '2026-05-02'
+  automated: true
+  enforcement: 'cmd_save.sh assumptions source存在チェック+q11_existing_alternative_verification(既存自動強制)'
+- id: 'LS042'
+  title: '起票前確認hook静的→3パターン累計昇格BLOCK(self_reread+command_steps_over_ac+q11_existing_alternative)'
+  detail: 'cmd_2477で3回BLOCK。起票前確認5問が静的でBLOCKパターンの検出項目がなかった。対策: 5問→8問に拡張(項目6:ステップ数≦AC数, 7:self-rereadワード排除, 8:q11にgrep結果)。根因=起票前確認に学習ループがなかった(スキル成長ループ不在と同構造)'
+  source_cmd: 'cmd_2477'
+  created_at: '2026-05-02'
+  automated: true
+  enforcement: 'pre-write-edit-combined.sh Guard 0に項目6,7,8を追加済み(自動強制)'

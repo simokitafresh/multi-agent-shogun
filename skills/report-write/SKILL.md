@@ -108,3 +108,18 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_2483.yaml|saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:1
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field
+
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文...
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: missing \"affected_cmds\" field
+
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:2
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")...
+
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_2481.yaml|report_format:tobisaru_report_cmd_2481.yaml|tobisaru:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L50...
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_N...
+
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: found=false but no no_lesson_reason; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; purpose_validation: MISSING; status: \"pending\" はテンプレート初期値。完了後...
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=files_modified: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING
+

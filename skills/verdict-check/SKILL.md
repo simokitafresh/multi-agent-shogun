@@ -82,4 +82,8 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 - **verdict を Edit toolで直接書くな** — report_field_set.sh経由（GP-072c5: bc:no→verdict:PASS BLOCK）
 
 ## 注意ポイント
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
+
+- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=binary_checks.commit[0].result: \"waive\" は不正。\"yes\" または \"no\" のみ
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=kagemaru:binary_checks_fail
 

@@ -4241,3 +4241,57 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: karo
 - **tags**: [infra,deploy]
 - deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys.argvで読取る手法。is_direct=sys.argv[2]=='true'で判定しacceptance_criteriaリセットを条件付き追加
+
+### L551: 偵察ACの件数表現は現物再集計で補正する
+- **日付**: 2026-05-02
+- **出典**: cmd_2465
+- **記録者**: hayate
+- **status**: rejected
+- **tags**: [infra,recon,communication,reporting]
+- **target_files**: [偵察のみ]
+- cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.md の現物は37件だった。偵察では指示文の件数を鵜呑みにせず、対象集合を一次データで再集計して差分として報告すべき。
+
+### L552: MCPツール可視性と実呼び出し成功は分けて検証する
+- **日付**: 2026-05-02
+- **出典**: cmd_2471
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra,testing]
+- **target_files**: [scripts/shutsujin_departure.sh,~/.codex/config.toml]
+- codex execではmcp__memory__search_nodes等が利用可能ツール一覧に出ても、実際のMCP tool callは承認プロンプト扱いでuser cancelledになる場合がある。ACがツール可視性なのか実呼び出し成功なのかを分けて記録し、実呼び出しまで求めるcmdでは承認挙動もACに含めるべき。
+
+### L553: [自動生成] 有効教訓の記録を怠った: cmd_2481
+- **日付**: 2026-05-02
+- **出典**: cmd_2481
+- **記録者**: gate_auto
+- **status**: confirmed
+- **tags**: [infra,communication,lesson,reporting]
+- **target_files**: [.claude/hooks/post-bulletin-notify-read-check.sh,tests/unit/test_post_bulletin_notify_read_check.bats]
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+
+### L554: 重複Batsは片側を高速化するより専用ファイルへcoverageを集約する
+- **日付**: 2026-05-02
+- **出典**: cmd_2480
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,deploy,testing]
+- **target_files**: [docs/research/codd_refactor_registry.md,scripts/sync_lessons.sh,tests/unit/test_cmd_save_environment_change.bats]
+- test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/LK021系テストが残っていた。専用ファイル側でcoverageを維持し、handling側から重複を削ると実行時間と保守面の両方が改善する。次回はTopテスト高速化時にcross-file duplicate test名をcomm/rgで先に確認する。
+
+### L555: 同一ファイルの既存hunk混入はcommit前にgit showで検出する
+- **日付**: 2026-05-02
+- **出典**: cmd_2482
+- **記録者**: hayate
+- **status**: draft
+- **tags**: [infra,git]
+- **target_files**: [scripts/archive_completed.sh,scripts/cmd_save.sh,docs/research/codd_refactor_registry.md]
+- git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、amendして自分のhunkだけに絞れた。次回はgit diff -- <file>で同一ファイル内hunkを確認し、必要ならgit add -p相当でstageする。
+
+### L556: [自動生成] 有効教訓の記録を怠った: cmd_2483
+- **日付**: 2026-05-02
+- **出典**: cmd_2483
+- **記録者**: gate_auto
+- **status**: draft
+- **tags**: [infra,communication,lesson,reporting]
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set.bats]
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
