@@ -73,7 +73,7 @@ YAML
 
 @test "SG-PRE9: binary_checks result:no → WARN検出" {
     create_report_with_bc_no
-    run bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE9 bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
     # SG-PRE9 should detect result:no and output WARN
     [[ "$output" == *"SG-PRE9"* ]]
     [[ "$output" == *"WARN"* ]]
@@ -83,7 +83,7 @@ YAML
 
 @test "SG-PRE9: binary_checks全result:yes → PASS" {
     create_report_all_yes
-    run bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE9 bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
     # SG-PRE9 should show PASS
     [[ "$output" == *"SG-PRE9"* ]]
     [[ "$output" == *"PASS: binary_checks全result:yes"* ]]
@@ -91,7 +91,7 @@ YAML
 
 @test "SG-PRE9: GP-128 BLOCK予告メッセージを含む" {
     create_report_with_bc_no
-    run bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE9 bash "$PRECHECK" "$TMPDIR_BATS/report.yaml"
     # Should include GP-128 reference and gate_prediction guidance
     [[ "$output" == *"GP-128"* ]]
     [[ "$output" == *"gate_prediction"* ]]
