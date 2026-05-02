@@ -142,7 +142,9 @@ deploy_task_fast() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -211,8 +213,8 @@ deploy_task_template_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
-        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         # shellcheck disable=SC2317
@@ -279,7 +281,9 @@ deploy_task_lessons_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -304,7 +308,9 @@ deploy_task_ac_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -406,7 +412,7 @@ inject_ac_version_only() {
     local ninja_name="$1"
     local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
     (
-        # shellcheck disable=SC2031
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
@@ -485,8 +491,11 @@ inject_skill_hint_only() {
     local ninja_name="$1"
     local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
     (
+        # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # shellcheck disable=SC2317
         log() { :; }
         inject_skill_hint "$task_file"
     )
