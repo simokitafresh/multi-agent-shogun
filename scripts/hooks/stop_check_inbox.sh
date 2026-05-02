@@ -68,7 +68,7 @@ if [[ "$payload" == *'"stop_hook_active":true'* || "$payload" == *'"stop_hook_ac
   stop_hook_active=true
 fi
 if [[ "$stop_hook_active" == "true" ]]; then
-  touch "$idle_flag"
+  : > "$idle_flag"
   exit 0
 fi
 
@@ -93,15 +93,27 @@ if [[ ! -f "$inbox_file" ]]; then
   exit 0
 fi
 
-unread_count=0
-while IFS= read -r _inbox_line; do
-  if [[ "$_inbox_line" =~ ^[[:space:]]*read:[[:space:]]*false[[:space:]]*$ ]]; then
-    ((unread_count+=1))
+fast_cache=""
+if [[ -z "$last_assistant_message" && "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
+  _ninja_task_for_cache="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
+  fast_cache="$STATE_DIR/shogun_stop_check_inbox_fast_${agent_id}"
+  if [[ -f "$_ninja_task_for_cache" && -f "$fast_cache" && ! "$inbox_file" -nt "$fast_cache" && ! "$_ninja_task_for_cache" -nt "$fast_cache" ]]; then
+    : > "$idle_flag"
+    exit 0
   fi
-done < "$inbox_file"
+fi
 
-if (( unread_count > 0 )); then
-  touch "$idle_flag"
+has_unread=false
+if grep -qE '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null; then
+  has_unread=true
+fi
+
+if [[ "$has_unread" == "true" ]]; then
+  unread_count="$(grep -cE '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null || true)"
+  if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
+    unread_count=1
+  fi
+  : > "$idle_flag"
   # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
   INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
 import os, json, yaml
@@ -186,14 +198,11 @@ else
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
-      _ninja_status=""
-      while IFS= read -r _task_line; do
-        if [[ "$_task_line" =~ ^[[:space:]]*status:[[:space:]]*([^[:space:]]+) ]]; then
-          _ninja_status="${BASH_REMATCH[1]}"
-          break
-        fi
-      done < "$_ninja_task"
-      if [[ "$_ninja_status" == "done" || "$_ninja_status" == "completed" ]]; then
+      if grep -qE '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null; then
+        _ninja_status="$(grep -m1 -E '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null)"
+        _ninja_status="${_ninja_status#*:}"
+        _ninja_status="${_ninja_status#"${_ninja_status%%[![:space:]]*}"}"
+        _ninja_status="${_ninja_status%%[[:space:]]*}"
         _reason="Task ${_ninja_status}. Wait for next task assignment from karo. Do NOT start new work or generate code. Read queue/tasks/${agent_id}.yaml when new task arrives."
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
         exit 0
@@ -201,7 +210,10 @@ else
     fi
   fi
 
-  touch "$idle_flag"
+  : > "$idle_flag"
+  if [[ -n "$fast_cache" ]]; then
+    : > "$fast_cache"
+  fi
 fi
 
 exit 0

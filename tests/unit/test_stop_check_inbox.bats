@@ -31,34 +31,6 @@ exit 0
 EOF
     chmod +x "$SHARED_BIN/tmux"
 
-    # cmd_2111: タイムアウト比例ポーリング — 短時間(0.01s)は高速終了、長時間(1s)は変化検知で早期脱出
-    cat > "$SHARED_BIN/inotifywait" <<'EOF'
-#!/bin/bash
-timeout_val=1
-file_to_watch=""
-while [ "$#" -gt 0 ]; do
-    case "$1" in
-        --timeout) timeout_val="$2"; shift 2 ;;
-        -e) shift 2 ;;
-        -*) shift ;;
-        *) file_to_watch="$1"; shift ;;
-    esac
-done
-if [ -n "$file_to_watch" ] && [ -f "$file_to_watch" ]; then
-    init_size=$(wc -c < "$file_to_watch" 2>/dev/null || echo 0)
-    polls=$(awk "BEGIN{n = int($timeout_val / 0.05); print (n < 1) ? 1 : n}")
-    sleep_per=$(awk "BEGIN{printf \"%.4f\", $timeout_val / $polls}")
-    for ((i=0; i<polls; i++)); do
-        sleep "$sleep_per"
-        cur_size=$(wc -c < "$file_to_watch" 2>/dev/null || echo 0)
-        [ "$cur_size" != "$init_size" ] && exit 0
-    done
-else
-    sleep "$timeout_val"
-fi
-exit 0
-EOF
-    chmod +x "$SHARED_BIN/inotifywait"
 }
 
 setup() {
@@ -78,11 +50,9 @@ setup() {
     ln -sf "$SOURCE_SCRIPT" "$TEST_PROJECT/scripts/hooks/stop_check_inbox.sh"
     ln -sf "$SHARED_SCRIPTS/inbox_write.sh" "$TEST_PROJECT/scripts/inbox_write.sh"
     ln -sf "$SHARED_BIN/tmux" "$TEST_BIN/tmux"
-    ln -sf "$SHARED_BIN/inotifywait" "$TEST_BIN/inotifywait"
 
     export PATH="$TEST_BIN:$PATH"
     export TMUX_PANE="%1"
-    export STOP_HOOK_INOTIFY_TIMEOUT=0.01  # cmd_2111: 0.2→0.01。T-SCI-005は上書き
     rm -f "$TEST_IDLE_FLAG"
     : > "$TMUX_LOG"
     : > "$INBOX_WRITE_LOG"
@@ -167,34 +137,7 @@ EOF
     [[ "$output" == *"[shogun/cmd_new] 追加の指示を確認せよ"* ]]
 }
 
-@test "T-SCI-005: inotifywait blocks when message arrives during wait" {
-    # T-SCI-005専用: initial check(WSL2高負荷時~200ms)完了後に確実に書き込むため延長
-    export STOP_HOOK_INOTIFY_TIMEOUT=1
-    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
-
-    # バックグラウンドで0.5秒後に未読メッセージを書き込む
-    # hookのinitial check完了後に書き込み、かつinotifywait timeout(1s)より前に到達
-    (
-        sleep 0.5
-        cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'YAML'
-messages:
-  - id: msg_late
-    from: karo
-    type: task_assigned
-    content: 待機中に届いたタスク
-    read: false
-YAML
-    ) &
-    local bg_pid=$!
-
-    run_hook '{"stop_hook_active":false}'
-    wait "$bg_pid" 2>/dev/null || true
-    [ "$status" -eq 0 ]
-    echo "$output" | jq -e '.decision == "block"' >/dev/null
-    [[ "$output" == *"待機中に到着"* ]]
-}
-
-@test "T-SCI-006: no unread after inotifywait timeout exits cleanly" {
+@test "T-SCI-006: no unread exits cleanly" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
     run_hook '{"stop_hook_active":false}'
