@@ -69,6 +69,30 @@ if [[ "$DRY_RUN" != true ]]; then
     source_optional "$SCRIPT_DIR/scripts/lib/pane_format.sh"
 fi
 
+check_codex_memory_mcp() {
+    local mcp_list
+
+    if ! command -v codex >/dev/null 2>&1; then
+        echo "[shutsujin] WARN Codex MCP: codex command not found; memory MCP cannot be verified"
+        return 0
+    fi
+
+    if ! mcp_list=$(timeout 5 codex mcp list 2>&1); then
+        echo "[shutsujin] WARN Codex MCP: codex mcp list failed; memory MCP may be unavailable"
+        echo "$mcp_list" | sed 's/^/[shutsujin] WARN Codex MCP: /'
+        return 0
+    fi
+
+    if echo "$mcp_list" | awk 'NR > 1 && $1 == "memory" && $0 ~ /enabled/ { found=1 } END { exit(found ? 0 : 1) }'; then
+        echo "[shutsujin] OK Codex MCP: memory server enabled"
+    else
+        echo "[shutsujin] WARN Codex MCP: memory server is not configured or not enabled"
+        echo "$mcp_list" | sed 's/^/[shutsujin] WARN Codex MCP: /'
+    fi
+}
+
+check_codex_memory_mcp
+
 # 互換ターゲット解決（window名優先、なければ従来index）
 resolve_window_target() {
     local named_target="$1"
