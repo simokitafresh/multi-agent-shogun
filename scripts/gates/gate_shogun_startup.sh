@@ -1279,6 +1279,28 @@ else
     echo "  SKIP: logs/skill_execution_log.yaml 不在"
 fi
 
+# --- Gate 20.5: SKILL.md script参照鮮度 (cmd_2489) ---
+# 目的: SKILL.mdが参照する scripts/* の消滅・更新漏れを起動時に検出する。
+echo "■ SKILL.md script参照"
+_skill_ref_gate="$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh"
+if [ -x "$_skill_ref_gate" ]; then
+    if _skill_ref_out=$(bash "$_skill_ref_gate" "$SCRIPT_DIR" 2>&1); then
+        printf '%s\n' "$_skill_ref_out" | grep -E '^(走査:|OK:|--- 総合判定)' | sed 's/^/  /'
+    else
+        _skill_ref_status=$?
+        printf '%s\n' "$_skill_ref_out" | grep -E '^(走査:|=== 要更新|=== 参照先|  WARN:|--- 総合判定)' | head -20 | sed 's/^/  /'
+        if [ "$_skill_ref_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("SKILL.md script参照: 要確認あり — bash scripts/gates/gate_skill_script_refs.sh")
+        else
+            overall="ALERT"
+            alerts+=("SKILL.md script参照: gate実行失敗 — bash scripts/gates/gate_skill_script_refs.sh")
+        fi
+    fi
+else
+    echo "  INFO: gate_skill_script_refs.sh 未配備"
+fi
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
