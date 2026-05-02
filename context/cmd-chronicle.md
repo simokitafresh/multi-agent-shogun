@@ -854,3 +854,6 @@
 | cmd_2495 | gate_silent_fallback.shがリグレッション(25ms→769ms、31x悪化)。 CoDD正規手順(spec→設計書→実装→計測→台帳記入)で台帳値25ms以下に復帰させる。 | infra | 05-03 | gate_silent_fallback.shの--help |
 | cmd_2498 | gate_shogun_memory.shがリグレッション(9ms→82ms、9.1x悪化)。 601行。load_memory_cache()でMEMORY.mdをawk解析+6項目チェック(行数/陳腐化/重複/MCP obs数/curation日/sync鮮度)。 CoDD正規手順で台帳値9ms以下に復帰させる。 | infra | 05-03 | gate_shogun_memory.shをline-cou |
 | cmd_2500 | gate_karo_startup.shがリグレッション(110ms→251ms、2.3x悪化)。 592行。前回3回最適化(464→225→190→110ms)。前回revert時に真因特定済み: _META_PIDS awk(deepdiveファイルon /mnt/c NTFS)が~100ms支配。WA rateキャッシュは効果なし(revert)。 CoDD正規手順で110ms以下に復帰。ボトルネックが/mnt/c I/O支配なら代替アプローチ(キャッシュ/遅延読込)をspec段階で設計。 | infra | 05-03 | gate_karo_startup.sh R4 CoDD再改 |
+| cmd_2501 | gate_skill_script_refs.shが未最適化で408ms(偵察計測)。台帳未登録。 143行。全体がpython3ヒアドキュメントでSKILL.mdからスクリプト参照を抽出し存在確認+更新日比較。 python3起動コスト+pathlib走査がボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_script_refs.shに短TTL |
+| cmd_2502 | gate_autofix_proposal.shが未最適化で272ms(偵察計測)。台帳未登録。 178行。直近50件のgate_metrics.logからBLOCKパターンを集計し、instructions修正提案をinsights.yamlに還流する。 mktemp+tail+awk+insight_write.sh呼出しがボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_autofix_proposal.shに短TTL出 |
+| cmd_2503 | gate_wa_data_quality.shがリグレッション(52.9ms→111ms、2.1x悪化)。213行。 前回(2026-04-18 hayate): 106.6→52.9ms(-50.4%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_wa_data_quality.shの通常chec |

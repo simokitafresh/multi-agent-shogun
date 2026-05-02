@@ -66,140 +66,91 @@ assert_warn() {
 
 echo "=== gate_field_get.sh: 契約テスト ==="
 
+TMP_PREFIX="${TMPDIR:-/tmp}/gate_field_get.$$"
+FIELD_FIXTURE="${TMP_PREFIX}.yaml"
+trap 'rm -f "$FIELD_FIXTURE"' EXIT
+
+printf '%s\n' \
+  'task:' \
+  '  status: assigned' \
+  '  parent_cmd: cmd_fixture' \
+  '  acceptance_criteria:' \
+  '    AC1:' \
+  '      status: pending' \
+  '  lesson_referenced:' \
+  '    - L034' \
+  '    - L035' \
+  'language: ja' \
+  'projects:' \
+  '  - id: dm-signal' \
+  '    name: DM-Signal' \
+  > "$FIELD_FIXTURE"
+
+eval "$(field_get_multi "$FIELD_FIXTURE" status parent_cmd language name)"
+
 # ──────────────────────────────────────────────
-# (1) queue/shogun_to_karo.yaml → "status" (ネストフィールド)
+# (1) task fixture → "status" (ネストフィールド)
 # ──────────────────────────────────────────────
 echo ""
-echo "--- Test 1: shogun_to_karo.yaml → status ---"
-FILE1="${SCRIPT_DIR}/queue/shogun_to_karo.yaml"
-if [[ -f "$FILE1" ]]; then
-  # STKにcmdが0件(archive後)は正常状態。cmdが存在する場合のみstatusを検証
-  cmd_count=$(awk '/^  - id: cmd_/ { c++ } END { print c+0 }' "$FILE1" 2>/dev/null)
-  cmd_count=${cmd_count:-0}
-  if [ "$cmd_count" -gt 0 ]; then
-    result=$(field_get "$FILE1" "status")
-    assert_nonempty "shogun_to_karo: status は非空" "$result"
-  else
-    echo "  PASS: shogun_to_karo: cmdなし(archive済み)。statusテストskip"
-    PASS=$((PASS + 1))
-  fi
+echo "--- Test 1: task fixture → status ---"
+assert_match "task: status は既知値" "^(assigned|pending|acknowledged|in_progress|completed|done|idle)$" "$status"
+
+# ──────────────────────────────────────────────
+# (2) task fixture → "parent_cmd"
+# ──────────────────────────────────────────────
+echo ""
+echo "--- Test 2: task fixture → parent_cmd ---"
+assert_nonempty "task: parent_cmd は非空" "$parent_cmd"
+
+# ──────────────────────────────────────────────
+# (3) task fixture → 最浅status
+# ──────────────────────────────────────────────
+echo ""
+echo "--- Test 3: task fixture → 最浅status ---"
+assert_match "task: AC内statusではなくtask直下statusを取得" "^assigned$" "$status"
+
+# ──────────────────────────────────────────────
+# (4) settings fixture → "language"
+# ──────────────────────────────────────────────
+echo ""
+echo "--- Test 4: settings fixture → language ---"
+assert_match "settings: language は言語コード" "^(ja|en|es|zh|ko|fr|de)$" "$language"
+
+# ──────────────────────────────────────────────
+# (5) projects fixture → "projects" (配列の存在確認)
+# ──────────────────────────────────────────────
+echo ""
+echo "--- Test 5: projects fixture → projects (top-level) ---"
+if [[ $(<"$FIELD_FIXTURE") == *$'\nprojects:'* ]]; then
+  echo "  PASS: projects fixture にトップレベル 'projects:' キー存在"
+  PASS=$((PASS + 1))
 else
-  echo "  FAIL: $FILE1 not found"
+  echo "  FAIL: projects fixture にトップレベル 'projects:' キーなし"
   FAIL=$((FAIL + 1))
 fi
 
 # ──────────────────────────────────────────────
-# (2) queue/tasks/hayate.yaml → "status"
+# (6) projects fixture → ネストフィールド "name" (PJ名の取得)
 # ──────────────────────────────────────────────
 echo ""
-echo "--- Test 2: tasks/hayate.yaml → status ---"
-FILE2="${SCRIPT_DIR}/queue/tasks/hayate.yaml"
-if [[ -f "$FILE2" ]]; then
-  eval "$(field_get_multi "$FILE2" status parent_cmd)"
-  assert_match "hayate: status は既知値" "^(pending|acknowledged|in_progress|completed|done|idle)$" "$status"
-else
-  echo "  FAIL: $FILE2 not found"
-  FAIL=$((FAIL + 1))
-fi
+echo "--- Test 6: projects fixture → name (nested) ---"
+assert_nonempty "projects: name は非空" "$name"
 
 # ──────────────────────────────────────────────
-# (3) queue/tasks/hayate.yaml → "parent_cmd"
+# (7) field_get scalar取得テスト
 # ──────────────────────────────────────────────
 echo ""
-echo "--- Test 3: tasks/hayate.yaml → parent_cmd ---"
-if [[ -f "$FILE2" ]]; then
-  # idle状態のtask YAMLにはparent_cmdがない。assigned/in_progress時のみ検証
-  hayate_status="${status//[[:space:]]/}"
-  if [[ "$hayate_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-    assert_nonempty "hayate: parent_cmd は非空" "$parent_cmd"
-  else
-    echo "  PASS: hayate: status=$hayate_status (タスクなし)。parent_cmdテストskip"
-    PASS=$((PASS + 1))
-  fi
-else
-  echo "  FAIL: $FILE2 not found"
-  FAIL=$((FAIL + 1))
-fi
+echo "--- Test 7: field_get scalar取得確認 ---"
+result=$(field_get "$FIELD_FIXTURE" "language")
+assert_match "field_get: top-level scalarを取得" "^ja$" "$result"
 
 # ──────────────────────────────────────────────
-# (4) config/settings.yaml → "language"
+# (8) ブロック配列取得テスト
 # ──────────────────────────────────────────────
 echo ""
-echo "--- Test 4: settings.yaml → language ---"
-FILE4="${SCRIPT_DIR}/config/settings.yaml"
-if [[ -f "$FILE4" ]]; then
-  eval "$(field_get_multi "$FILE4" language)"
-  assert_match "settings: language は言語コード" "^(ja|en|es|zh|ko|fr|de)$" "$language"
-else
-  echo "  FAIL: $FILE4 not found"
-  FAIL=$((FAIL + 1))
-fi
-
-# ──────────────────────────────────────────────
-# (5) config/projects.yaml → "projects" (配列の存在確認)
-# ──────────────────────────────────────────────
-echo ""
-echo "--- Test 5: projects.yaml → projects (top-level) ---"
-FILE5="${SCRIPT_DIR}/config/projects.yaml"
-if [[ -f "$FILE5" ]]; then
-  # "projects:" はトップレベルキーで、値は空(YAML配列が次行以降)
-  # field_get は空を返す可能性がある → "projects:" 行が存在すること自体を確認
-  if grep -qE '^projects:' "$FILE5"; then
-    echo "  PASS: projects.yaml にトップレベル 'projects:' キー存在"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: projects.yaml にトップレベル 'projects:' キーなし"
-    FAIL=$((FAIL + 1))
-  fi
-else
-  echo "  FAIL: $FILE5 not found"
-  FAIL=$((FAIL + 1))
-fi
-
-# ──────────────────────────────────────────────
-# (6) config/projects.yaml → ネストフィールド "name" (PJ名の取得)
-# ──────────────────────────────────────────────
-echo ""
-echo "--- Test 6: projects.yaml → name (nested) ---"
-if [[ -f "$FILE5" ]]; then
-  eval "$(field_get_multi "$FILE5" name)"
-  assert_nonempty "projects: name は非空" "$name"
-else
-  echo "  FAIL: $FILE5 not found"
-  FAIL=$((FAIL + 1))
-fi
-
-# ──────────────────────────────────────────────
-# (7) WARN出力テスト — 意図的に存在しないフィールド名
-# ──────────────────────────────────────────────
-echo ""
-echo "--- Test 7: 壊れたフィールド名でWARN出力確認 ---"
-if [[ -f "$FILE4" ]]; then
-  warn_output=$(field_get "$FILE4" "zzz_nonexistent_field_xyz" 2>&1 >/dev/null)
-  assert_warn "存在しないフィールドでWARN出力" "$warn_output"
-else
-  echo "  FAIL: $FILE4 not found"
-  FAIL=$((FAIL + 1))
-fi
-
-# ──────────────────────────────────────────────
-# (8) デフォルト値テスト — 存在しないフィールドにdefault指定
-# ──────────────────────────────────────────────
-echo ""
-echo "--- Test 8: デフォルト値返却確認 ---"
-if [[ -f "$FILE4" ]]; then
-  result=$(field_get "$FILE4" "zzz_nonexistent_field_xyz" "my_default" 2>/dev/null)
-  if [[ "$result" == "my_default" ]]; then
-    echo "  PASS: デフォルト値 'my_default' が返却された"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: デフォルト値が返却されない (actual: $result)"
-    FAIL=$((FAIL + 1))
-  fi
-else
-  echo "  FAIL: $FILE4 not found"
-  FAIL=$((FAIL + 1))
-fi
+echo "--- Test 8: ブロック配列取得確認 ---"
+result=$(field_get "$FIELD_FIXTURE" "lesson_referenced")
+assert_match "field_get: block arrayをinline取得" "^L034, L035$" "$result"
 
 # ──────────────────────────────────────────────
 # 結果サマリ

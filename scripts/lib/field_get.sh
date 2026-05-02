@@ -69,14 +69,16 @@ field_get() {
 
     # 2. トップレベルになければインデント付き(最浅マッチ)にフォールバック
     if [[ -z "$result" && -z "$field_line" ]]; then
-      field_line=$(grep -E "^\s+${field}:" "$file" 2>/dev/null | awk '{
+      field_line=$(awk -v field="$field" '
+        $0 ~ "^[[:space:]]+" field ":" {
         match($0, /[^ \t]/)
         indent = RSTART - 1
-        if (NR == 1 || indent < min_indent) {
+        if (!seen || indent < min_indent) {
+          seen = 1
           min_indent = indent
           best = $0
         }
-      } END { if (NR > 0) print best }')
+      } END { if (seen) print best }' "$file" 2>/dev/null)
       if [[ -n "$field_line" ]]; then
         # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
         result="${field_line#*:}"
