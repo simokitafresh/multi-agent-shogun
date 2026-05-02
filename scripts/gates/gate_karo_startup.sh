@@ -55,7 +55,9 @@ WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 _WA_RATE_CACHE="/tmp/karo_wa_rate_cache"
 _NINJA_WA_CACHE="/tmp/karo_ninja_wa_cache"
+_SKILL_SUMMARY_CACHE="/tmp/karo_skill_summary_cache"
 _WA_CACHE_TTL=300
+_SKILL_SUMMARY_CACHE_TTL=300
 
 _now_epoch=$(date +%s)
 
@@ -287,7 +289,19 @@ echo "■ 忍者ペインCTX実態"
 # task status を先にキャッシュ。active忍者のみ capture-pane 対象にする
 declare -A _NINJA_STATUS_CACHE
 for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    _NINJA_STATUS_CACHE[$ninja]=$(awk '/^[[:space:]]*status:/{print $2; exit}' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null)
+    task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    _NINJA_STATUS_CACHE[$ninja]=""
+    [[ -f "$task_file" ]] || continue
+    while IFS= read -r _task_line; do
+        case "$_task_line" in
+            *status:*)
+                _task_status=${_task_line#*:}
+                _task_status=${_task_status//[[:space:]]/}
+                _NINJA_STATUS_CACHE[$ninja]=$_task_status
+                break
+                ;;
+        esac
+    done < "$task_file"
 done
 
 # capture-pane を並列実行（R2）
@@ -555,10 +569,28 @@ echo ""
 echo "■ スキル品質"
 skill_summary_script="$SCRIPT_DIR/scripts/skill_execution_log.sh"
 if [ -x "$skill_summary_script" ]; then
-    skill_summary="$(
-        SKILL_EXECUTION_LOG_FILE="$SCRIPT_DIR/logs/skill_execution_log.yaml" \
-            bash "$skill_summary_script" summary 2>/dev/null || true
-    )"
+    _skill_cache_sig=""
+    _skill_current_sig=""
+    if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
+        _skill_current_sig="$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
+    fi
+    if [[ -f "$_SKILL_SUMMARY_CACHE" ]]; then
+        IFS= read -r _skill_cache_sig < "$_SKILL_SUMMARY_CACHE" || _skill_cache_sig=""
+    fi
+    if [[ -f "$_SKILL_SUMMARY_CACHE" ]] \
+        && [[ "$_skill_cache_sig" == "$_skill_current_sig" ]] \
+        && (( _now_epoch - $(stat -c %Y "$_SKILL_SUMMARY_CACHE" 2>/dev/null || echo 0) < _SKILL_SUMMARY_CACHE_TTL )); then
+        skill_summary="$(tail -n +2 "$_SKILL_SUMMARY_CACHE")"
+    else
+        skill_summary="$(
+            SKILL_EXECUTION_LOG_FILE="$SCRIPT_DIR/logs/skill_execution_log.yaml" \
+                bash "$skill_summary_script" summary 2>/dev/null || true
+        )"
+        {
+            printf '%s\n' "$_skill_current_sig"
+            printf '%s\n' "$skill_summary"
+        } > "$_SKILL_SUMMARY_CACHE"
+    fi
     skill_rows="$(printf '%s\n' "$skill_summary" | tail -n +2 | awk 'NF { print }')"
     if [ -n "$skill_rows" ]; then
         skill_quality_line="$(printf '%s\n' "$skill_rows" | awk -F' \\| ' '
