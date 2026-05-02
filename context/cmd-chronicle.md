@@ -851,3 +851,4 @@
 | cmd_2491 | cmd_2490のrollback失敗リスクを根本解消する。 現状: on_hold→draft(YAML書込み)→cmd_save→失敗→rollback(壊れうる)。 改善: YAML書込みをcmd_save成功後に遅延。失敗時はYAML未変更(on_holdのまま)。rollback不要。 | infra | 05-03 | cmd_publish.shのon_hold公開経路を、cm |
 | cmd_2492 | 報告YAMLテンプレートの必須フィールド欠落を配備経路に依存せず防止する。 現状: deploy_task.sh経由時のみgenerate_report_template()が走る。karo_direct/task YAML直接編集では未実行→必須4フィールド欠落(cmd_2481 hanzo r3で実証)。 改善: 忍者/clear Recovery Step 4.5でreport_pathのテンプレート検証+欠落フィールド自動補完。 | infra | 05-03 | 既存の不完全な報告テンプレートでも必須4フィールドを自動補完 |
 | cmd_2493 | 215本のスクリプト(scripts/144+gates/37+hooks/34)を計測し、最適化ボトルネックを特定する。 台帳(codd_refactor_registry.md)の約100件と突合し、未計測スクリプトと再最適化候補を洗い出す。 | infra | 05-03 | scripts/*.sh 144本を安全なbash -n解析 |
+| cmd_2495 | gate_silent_fallback.shがリグレッション(25ms→769ms、31x悪化)。 CoDD正規手順(spec→設計書→実装→計測→台帳記入)で台帳値25ms以下に復帰させる。 | infra | 05-03 | gate_silent_fallback.shの--help |
