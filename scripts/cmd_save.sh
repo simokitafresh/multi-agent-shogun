@@ -928,8 +928,7 @@ warn_missing_prev_cmd_lesson() {
     cmd_save_shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
     warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
-    echo "WARN: ${warn_msg}" >&2
-    record_warn_reason "$warn_msg" "missing_prev_cmd_lesson" "source_cmd=${prev_cmd_id}" "check=warn_missing_prev_cmd_lesson"
+    record_block_reason "$warn_msg"
 }
 
 remind_missing_current_cmd_lesson_after_clear() {

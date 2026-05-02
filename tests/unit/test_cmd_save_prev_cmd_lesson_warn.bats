@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
-# test_cmd_save_prev_cmd_lesson_warn.bats — cmd_2206: 前cmd BLOCK後の将軍教訓未記録WARN
+# test_cmd_save_prev_cmd_lesson_warn.bats — cmd_2206/cmd_2456: 前cmd BLOCK後の将軍教訓未記録BLOCK
 # AC1: 前cmd BLOCK回数>0なら lessons_shogun.yaml の source_cmd=前cmd を確認
-# AC2: 教訓未記録なら WARN を表示
+# AC2: 教訓未記録なら BLOCK する
 # AC3: 教訓記録済み / BLOCKなし では何も表示しない
 
 setup_file() {
@@ -141,7 +141,7 @@ run_save() {
         bash "$SAVE_SCRIPT" cmd_curr
 }
 
-@test "AC2: 前cmd BLOCKあり + 教訓未記録 → WARN表示" {
+@test "AC2: 前cmd BLOCKあり + 教訓未記録 → 即BLOCK" {
     write_cmd_queue
     write_quality_log_with_prev_blocks 2
     write_lessons_file "cmd_other"
@@ -150,10 +150,10 @@ run_save() {
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
-    [[ "$output" == *"WARN: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+    [[ "$output" == *"BLOCK: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"保存確認NG"* ]]
 
-    run grep -n 'notes: "missing_prev_cmd_lesson|source_cmd=cmd_prev|check=warn_missing_prev_cmd_lesson|前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"' "$TEST_QUALITY_LOG"
+    run grep -n 'notes: "前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 }
 
@@ -192,7 +192,7 @@ run_save() {
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
-    [[ "$output" == *"WARN: 前cmd_prev2で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+    [[ "$output" == *"BLOCK: 前cmd_prev2で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" != *"WARN累計昇格"* ]]
 }
 
