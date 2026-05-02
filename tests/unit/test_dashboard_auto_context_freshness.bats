@@ -111,3 +111,18 @@ EOF
     [[ "$output" == *"### Context鮮度警告"* ]]
     [[ "$output" == *$'\nなし\n'* ]]
 }
+
+@test "dashboard auto section renders skill health metrics section" {
+    cat > "$TEST_TMPDIR/skill_metrics.out" <<'EOF'
+skill | quality_score | pass | fail | total | last_result | quality_metric
+dashboard-update | 50.0% | 1 | 1 | 2 | FAIL | dashboard update clear rate
+report-write | 100.0% | 3 | 0 | 3 | PASS | report gate pass rate
+EOF
+
+    run env DASHBOARD_SKILL_METRICS_FILE="$TEST_TMPDIR/skill_metrics.out" \
+        bash "$TEST_PROJECT/scripts/dashboard_auto_section.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"### スキル健全度"* ]]
+    [[ "$output" == *"| dashboard-update | 50.0% | 1 | 1 | 2 | FAIL |"* ]]
+    [[ "$output" == *"| report-write | 100.0% | 3 | 0 | 3 | PASS |"* ]]
+}
