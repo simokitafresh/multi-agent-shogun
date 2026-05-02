@@ -117,6 +117,9 @@ EOF
     run grep -q "差分のみ再検証せよ" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
+    run grep -q "description: .* | rerun deploy" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+
     run grep -q "report_path: queue/reports/sasuke_report_cmd_9007.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 }
