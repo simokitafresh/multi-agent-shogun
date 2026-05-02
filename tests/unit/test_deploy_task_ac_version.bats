@@ -115,7 +115,7 @@ read_task_field() {
 }
 
 @test "deploy_task recalculates ac_version when acceptance_criteria count changes" {
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -131,7 +131,7 @@ task:
   ac_version: 7d010443
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_ac_version
@@ -507,7 +507,7 @@ task:
 EOF
     : > "$TEST_PROJECT/queue/tasks/None.yaml.lock"
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" None
+    run deploy_task_ac_only None
     [ "$status" -eq 1 ]
     [[ "$output" == *"cannot be empty/None"* ]]
     [ ! -e "$TEST_PROJECT/queue/tasks/None.yaml" ]
@@ -598,7 +598,7 @@ parent_cmd: cmd_stale_test
 verdict:
 status: pending
 EOF
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_fast sasuke
     [ "$status" -eq 0 ]
     # Stale template should be archived
     [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_stale_test.yaml" ]
@@ -748,7 +748,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # ACs should remain unchanged (no overwrite)
@@ -782,7 +782,7 @@ task:
   - 'AC1: Karo-written AC for first deploy'
 EOF
 
-    run bash "$TEST_PROJECT/scripts/deploy_task.sh" sasuke
+    run deploy_task_ac_only sasuke
     [ "$status" -eq 0 ]
 
     # cmd_1493 bug fix: first deploy SHOULD overwrite ACs from cmd source

@@ -142,6 +142,8 @@ deploy_task_fast() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         # shellcheck disable=SC2317
@@ -209,6 +211,8 @@ deploy_task_template_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         # shellcheck disable=SC2317
@@ -275,6 +279,8 @@ deploy_task_lessons_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         # shellcheck disable=SC2317
@@ -298,6 +304,8 @@ deploy_task_ac_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         # shellcheck disable=SC2317

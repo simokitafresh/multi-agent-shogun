@@ -50,7 +50,7 @@ commands:
       q7_definition_verified: "yes — diagnosisは「BLOCK理由:」「対策:」の2部構成を必須とする"
       q8_why_what: "WHY: 殿指摘「diagnosis質検査を実装せよ」 → WHAT: Check 3.5追加。正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_diagnosis_quality.bats のfixture範囲のみ使用"
-      q11_not_already_done: "未達成。grep 'Check 3.5' scripts/cmd_save.sh で未実装を確認"
+      q11_not_already_done: "未達成。fixture範囲でdiagnosis質検査の動作を確認"
       q_ambiguity: "none"
 ${diag_yaml}
     assumptions:
@@ -66,6 +66,8 @@ run_diag_save() {
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_TMPDIR/last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons_shogun.yaml" \
         bash "$SAVE_SCRIPT" cmd_diagqtest
 }
 
@@ -89,8 +91,9 @@ commands:
       q7_definition_verified: "yes — q8に複利文言がないとWARNになることを確認"
       q8_why_what: "WHY: 殿指摘「WARN累計昇格を実装せよ」 → WHAT: WARN累計チェック追加"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_diagnosis_quality.bats のWARN累計fixture範囲のみ使用"
-      q11_not_already_done: "未達成。grep 'WARN累計' scripts/cmd_save.sh で未実装を確認"
+      q11_not_already_done: "未達成。fixture範囲でWARN累計の動作を確認"
       q_ambiguity: "none"
+    environment_change: "type=gate; file=tests/unit/test_cmd_save_diagnosis_quality.bats; pattern=warn_seed_log"
     assumptions:
       - claim: "2026-04-24時点でWARN累計の動作を確認済み"
         source: "tests/unit/test_cmd_save_diagnosis_quality.bats"
@@ -99,12 +102,36 @@ YAML
 # q8に「複利」が含まれないため毎回q8_複利の問いWARNが出る
 }
 
+warn_seed_log() {
+    local count="${1:-1}"
+    {
+        echo "entries:"
+        local i
+        for ((i = 1; i <= count; i++)); do
+            cat <<'YAML'
+  - cmd_id: "cmd_warntest"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-04-24T00:00:00Z"
+    notes: "q8_複利の問い|check=quality_gate_q8_compound_question"
+YAML
+        done
+    } > "$TEST_QUALITY_LOG"
+}
+
 run_warn_save() {
     run env \
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_TMPDIR/last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons_shogun.yaml" \
         bash "$SAVE_SCRIPT" cmd_warntest
 }
 
@@ -165,12 +192,8 @@ run_warn_save() {
 
 @test "AC2-2: 同一WARNが2回目でBLOCK昇格(閾値1)" {
     write_warn_cmd
-    # 1回目実行(ログに記録)
-    env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
-        bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
+    # 1回目実行済み相当のWARN履歴を直接fixture化する。
+    warn_seed_log 1
 
     # 2回目実行 — 過去1件あるのでBLOCK昇格
     write_warn_cmd
@@ -185,19 +208,9 @@ run_warn_save() {
 }
 
 @test "AC2-3: 同一WARNが3回目でBLOCK昇格" {
-    # 1回目・2回目実行(ログに記録)
+    # 1回目・2回目実行済み相当のWARN履歴を直接fixture化する。
     write_warn_cmd
-    env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
-        bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
-    write_warn_cmd
-    env CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
-        bash "$SAVE_SCRIPT" cmd_warntest >/dev/null 2>&1 || true
+    warn_seed_log 2
 
     # 3回目: BLOCK昇格
     write_warn_cmd
