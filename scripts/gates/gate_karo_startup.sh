@@ -56,6 +56,7 @@ NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 _WA_RATE_CACHE="/tmp/karo_wa_rate_cache"
 _NINJA_WA_CACHE="/tmp/karo_ninja_wa_cache"
 _SKILL_SUMMARY_CACHE="/tmp/karo_skill_summary_cache"
+_AGGREGATE_CACHE="/tmp/karo_startup_aggregate_cache"
 _WA_CACHE_TTL=300
 _SKILL_SUMMARY_CACHE_TTL=300
 
@@ -100,7 +101,9 @@ _phase_guide_1_tmp=$(mktemp)
 _phase_guide_2_tmp=$(mktemp)
 _session_summary_tmp=$(mktemp)
 _bulletin_tmp=$(mktemp)
+_aggregate_tmp=$(mktemp)
 declare -a _META_PIDS=()
+declare -A _NINJA_STATUS_CACHE
 
 # phase guide 1
 _phase_guide_1=""
@@ -186,7 +189,129 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
     ) > "$_bulletin_tmp" &
     _META_PIDS+=($!)
 fi
+
+(
+_AGG_FILES=()
+for _agg_file in \
+  "$SCRIPT_DIR"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml \
+  "$SCRIPT_DIR/queue/inbox/karo.yaml" \
+  "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \
+  "$SCRIPT_DIR/queue/pending_decisions.yaml" \
+  "$SCRIPT_DIR/logs/karo_workarounds.yaml" \
+  "$SCRIPT_DIR/queue/shogun_to_karo.yaml"; do
+    [[ -f "$_agg_file" ]] && _AGG_FILES+=("$_agg_file")
+done
+_AGG_SIG="$(stat -c '%Y:%s' "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
+if [[ -f "$_AGGREGATE_CACHE" ]]; then
+    IFS= read -r _agg_cache_sig < "$_AGGREGATE_CACHE" || _agg_cache_sig=""
+    if [[ "$_agg_cache_sig" == "$_AGG_SIG" ]]; then
+        tail -n +2 "$_AGGREGATE_CACHE" > "$_aggregate_tmp"
+        exit 0
+    fi
+fi
+awk -v root="$SCRIPT_DIR" '
+    FILENAME ~ /queue\/tasks\/[^/]+\.yaml$/ {
+        if (FNR == 1) {
+            file = FILENAME
+            sub(/^.*\/queue\/tasks\//, "", file)
+            sub(/\.yaml$/, "", file)
+        }
+        if ($0 ~ /^[[:space:]]*status:/) {
+            print "STATUS|" file "|" $2
+            nextfile
+        }
+        next
+    }
+    FILENAME ~ /queue\/inbox\/karo\.yaml$/ {
+        if (/read: false/) unread++
+        next
+    }
+    FILENAME ~ /logs\/gunshi_review_log\.yaml$/ {
+        if ($0 !~ /^#/ && /status:[[:space:]]*pending[[:space:]]*$/) gp_pending++
+        next
+    }
+    FILENAME ~ /queue\/pending_decisions\.yaml$/ {
+        if (/^- id:/) pd_total++
+        if (/status: resolved/) pd_resolved++
+        next
+    }
+    FILENAME ~ /logs\/karo_workarounds\.yaml$/ {
+        if (/^- (cmd_id|cmd|timestamp):/) { n++; wa[n]=0; cat[n]="uncategorized"; rc[n]=""; next }
+        if (/^  workaround:/) { v=$2; if (v ~ /true|yes/) wa[n]=1; next }
+        if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
+        if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
+        next
+    }
+    FILENAME ~ /queue\/shogun_to_karo\.yaml$/ {
+        if (/^  [^ ][^ ]*:[[:space:]]*$/) {
+            if (cmd != "" && cmd_status == "pending" && has_da) {
+                orphan_found++
+                orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
+            }
+            cmd = $0
+            sub(/^  /, "", cmd)
+            sub(/:.*/, "", cmd)
+            cmd_status = ""
+            has_da = 0
+            next
+        }
+        if (/^    status:/) {
+            s = $0
+            sub(/.*status: */, "", s)
+            gsub(/["'"'"']/, "", s)
+            gsub(/ /, "", s)
+            cmd_status = s
+            next
+        }
+        if (/^    delegated_at:/) { has_da = 1; next }
+    }
+    END {
+        if (cmd != "" && cmd_status == "pending" && has_da) {
+            orphan_found++
+            orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
+        }
+        print "UNREAD|" unread+0
+        print "GP|" gp_pending+0
+        print "PD|" pd_total+0 "|" pd_resolved+0
+        s = (n > 5) ? n-4 : 1; total = n - s + 1
+        if (total < 0) total = 0
+        wc=0; cat_str=""; cause_str=""; max_cat=""; max_count=0
+        for (i=s; i<=n; i++) {
+            if (wa[i]) {
+                wc++
+                cats[cat[i]]++
+                if (rc[i] != "") cause_str = cause_str (cause_str != "" ? " / " : "") rc[i]
+            }
+        }
+        for (c in cats) {
+            cat_str = cat_str (cat_str != "" ? ", " : "") c ":" cats[c]
+            if (cats[c] > max_count) { max_count = cats[c]; max_cat = c }
+        }
+        if (cat_str == "") cat_str = "none"
+        if (cause_str == "") cause_str = "none"
+        if (max_cat == "") max_cat = "none"
+        print "WA|" wc "|" total "|" cat_str "|" cause_str "|" max_cat "|" max_count+0
+        print "ORPHAN|" orphan_found+0 "|" orphan_cmds
+    }
+' "${_AGG_FILES[@]}" > "$_aggregate_tmp" 2>/dev/null || true
+{
+    printf '%s\n' "$_AGG_SIG"
+    cat "$_aggregate_tmp"
+} > "$_AGGREGATE_CACHE"
+) &
+_AGG_PID=$!
 for _pid in "${_META_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
+wait "$_AGG_PID" 2>/dev/null || true
+while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
+    case "$_agg_key" in
+        STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
+        UNREAD) unread=${_agg_a:-0} ;;
+        GP) _gp_pending_count=${_agg_a:-0} ;;
+        PD) total_d=${_agg_a:-0}; resolved_d=${_agg_b:-0} ;;
+        WA) wa_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}|${_agg_f}" ;;
+        ORPHAN) orphan_result="${_agg_a}|${_agg_b}" ;;
+    esac
+done < "$_aggregate_tmp"
 if [[ -f "$_phase_guide_1_tmp" ]]; then _phase_guide_1="$(<"$_phase_guide_1_tmp")"; fi
 if [[ -f "$_phase_guide_2_tmp" ]]; then _phase_guide_2="$(<"$_phase_guide_2_tmp")"; fi
 if [[ -f "$_session_summary_tmp" ]]; then _prev_session_summary="$(<"$_session_summary_tmp")"; fi
@@ -286,24 +411,6 @@ fi
 # --- Check 2.5: 忍者ペインCTX実態（snapshot突合） ---
 echo "■ 忍者ペインCTX実態"
 
-# task status を先にキャッシュ。active忍者のみ capture-pane 対象にする
-declare -A _NINJA_STATUS_CACHE
-for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
-    task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
-    _NINJA_STATUS_CACHE[$ninja]=""
-    [[ -f "$task_file" ]] || continue
-    while IFS= read -r _task_line; do
-        case "$_task_line" in
-            *status:*)
-                _task_status=${_task_line#*:}
-                _task_status=${_task_status//[[:space:]]/}
-                _NINJA_STATUS_CACHE[$ninja]=$_task_status
-                break
-                ;;
-        esac
-    done < "$task_file"
-done
-
 # capture-pane を並列実行（R2）
 declare -A _CTX_TMPF
 declare -A _NINJA_PANE_IDX
@@ -364,9 +471,8 @@ echo ""
 
 # --- Check 3: inbox未読件数 ---
 echo "■ inbox未読"
-inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
-if [ -f "$inbox_file" ]; then
-    unread=$(awk '/read: false/ { c++ } END { print c+0 }' "$inbox_file" 2>/dev/null)
+if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
+    unread=${unread:-0}
     echo "  未読: ${unread}件"
 else
     echo "  未読: 0件 (inbox不在)"
@@ -389,7 +495,7 @@ fi
 # --- Check 3.7: 軍師GP pending検出 ---
 _gp_log="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 if [ -f "$_gp_log" ]; then
-    _gp_pending_count=$(awk '/^#/{next} /status:[[:space:]]*pending[[:space:]]*$/{c++} END{print c+0}' "$_gp_log" 2>/dev/null)
+    _gp_pending_count=${_gp_pending_count:-0}
     if [ "${_gp_pending_count:-0}" -gt 0 ]; then
         echo "■ 軍師GP pending"
         echo "  WARN: pending GP ${_gp_pending_count}件 (logs/gunshi_review_log.yaml)"
@@ -405,11 +511,8 @@ fi
 echo "■ pending_decisions"
 pd_file="$SCRIPT_DIR/queue/pending_decisions.yaml"
 if [ -f "$pd_file" ]; then
-    IFS='|' read -r total_d resolved_d <<< "$(awk '
-        /^- id:/ { total++ }
-        /status: resolved/ { resolved++ }
-        END { printf "%d|%d\n", total+0, resolved+0 }
-    ' "$pd_file" 2>/dev/null)"
+    total_d=${total_d:-0}
+    resolved_d=${resolved_d:-0}
     pending_count=$((total_d - resolved_d))
     echo "  未解決: ${pending_count}件"
     if [ "$pending_count" -gt 0 ]; then
@@ -424,44 +527,7 @@ fi
 echo "■ karo_workarounds傾向"
 wa_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$wa_file" ]; then
-    wa_result=$(awk '
-    /^- (cmd_id|cmd|timestamp):/ {
-        n++; wa[n]=0; cat[n]="uncategorized"; rc[n]=""
-    }
-    /^  workaround:/ {
-        v=$2; if (v ~ /true|yes/) wa[n]=1
-    }
-    /^  category:/ {
-        sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0
-    }
-    /^  root_cause:/ {
-        sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60)
-    }
-    END {
-        s = (n > 5) ? n-4 : 1; total = n - s + 1
-        wc=0; cat_str=""; cause_str=""; max_cat=""; max_count=0
-        for (i=s; i<=n; i++) {
-            if (wa[i]) {
-                wc++
-                cats[cat[i]]++
-                if (rc[i] != "") {
-                    cause_str = cause_str (cause_str != "" ? " / " : "") rc[i]
-                }
-            }
-        }
-        for (c in cats) {
-            cat_str = cat_str (cat_str != "" ? ", " : "") c ":" cats[c]
-            if (cats[c] > max_count) {
-                max_count = cats[c]
-                max_cat = c
-            }
-        }
-        if (cat_str == "") cat_str = "none"
-        if (cause_str == "") cause_str = "none"
-        if (max_cat == "") max_cat = "none"
-        printf "%d|%d|%s|%s|%s|%d\n", wc, total, cat_str, cause_str, max_cat, max_count
-    }
-    ' "$wa_file" 2>/dev/null || echo "0|0|error|awk error")
+    wa_result=${wa_result:-"0|0|error|awk error|none|0"}
     IFS='|' read -r WA_COUNT WA_TOTAL WA_CATS WA_CAUSES WA_MAX_CAT WA_MAX_COUNT <<< "$wa_result"
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
     if [ "$WA_COUNT" -gt 0 ]; then
@@ -485,9 +551,6 @@ cat "$_WA_RATE_TMP"
 echo "■ 忍者別workaround率"
 if [ -n "$_NINJA_WA_PID" ]; then wait "$_NINJA_WA_PID" 2>/dev/null || true; fi
 cat "$_NINJA_WA_TMP"
-
-# tmpファイル削除
-rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP"
 
 # --- Check 8: idle自走プロンプト ---
 echo ""
@@ -521,37 +584,7 @@ fi
 echo "■ cmd配備漏れチェック"
 stk_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 if [ -f "$stk_file" ]; then
-    orphan_result=$(awk '
-    /^  [^ ][^ ]*:[[:space:]]*$/ {
-        if (cmd != "" && status == "pending" && has_da) {
-            found++
-            cmds = cmds (cmds != "" ? ", " : "") cmd
-        }
-        cmd = $0
-        sub(/^  /, "", cmd)
-        sub(/:.*/, "", cmd)
-        status = ""
-        has_da = 0
-        next
-    }
-    /^    status:/ {
-        s = $0
-        sub(/.*status: */, "", s)
-        gsub(/["'"'"']/, "", s)
-        gsub(/ /, "", s)
-        status = s
-    }
-    /^    delegated_at:/ {
-        has_da = 1
-    }
-    END {
-        if (cmd != "" && status == "pending" && has_da) {
-            found++
-            cmds = cmds (cmds != "" ? ", " : "") cmd
-        }
-        printf "%d|%s\n", found + 0, cmds
-    }
-    ' "$stk_file" 2>/dev/null || echo "0|")
+    orphan_result=${orphan_result:-"0|"}
     IFS='|' read -r ORPHAN_COUNT ORPHAN_CMDS <<< "$orphan_result"
     if [ "$ORPHAN_COUNT" -gt 0 ]; then
         echo "  ALERT: ${ORPHAN_COUNT}件のcmdがpending+delegated_at残存: ${ORPHAN_CMDS}"
@@ -564,6 +597,10 @@ else
     echo "  SKIP: shogun_to_karo.yaml不在"
 fi
 echo ""
+
+# tmpファイル削除
+rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP" \
+    "$_aggregate_tmp"
 
 # --- Check 10: スキル品質サマリ ---
 echo "■ スキル品質"
