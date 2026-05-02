@@ -19,6 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SKILLS_DIR="${1:-${SKILLS_DIR:-$SCRIPT_DIR/skills}}"
 
+run_gate_skill_health_scan() {
 SKILLS_DIR_ENV="$SKILLS_DIR" python3 - <<'PYEOF'
 import os
 import re
@@ -239,3 +240,54 @@ if has_warn:
 print("--- 総合判定: PASS ---")
 sys.exit(0)
 PYEOF
+}
+
+maybe_cache_gate_skill_health() {
+    local default_skills_dir="$SCRIPT_DIR/skills"
+    [ "$SKILLS_DIR" = "$default_skills_dir" ] || return 90
+    [ "${SKILL_HEALTH_DISABLE_CACHE:-0}" != "1" ] || return 90
+
+    local cache_ttl
+    cache_ttl="${SKILL_HEALTH_CACHE_TTL_SECONDS:-5}"
+    [ "$cache_ttl" -gt 0 ] 2>/dev/null || return 90
+
+    local cache_key cache_base cache_out cache_code now cache_mtime cache_age
+    cache_key="$(printf '%s\0%s\0%s' "$SCRIPT_DIR" "$SKILLS_DIR" "$(stat -c %Y "$0" 2>/dev/null || printf 0)" | md5sum | cut -c1-16)"
+    cache_base="/tmp/shogun_gate_skill_health_${cache_key}"
+    cache_out="${cache_base}.out"
+    cache_code="${cache_base}.code"
+    printf -v now '%(%s)T' -1
+
+    if [ -f "$cache_out" ] && [ -f "$cache_code" ]; then
+        cache_mtime="$(stat -c %Y "$cache_out" 2>/dev/null || printf 0)"
+        cache_age=$((now - cache_mtime))
+        if [ "$cache_age" -ge 0 ] && [ "$cache_age" -le "$cache_ttl" ]; then
+            cat "$cache_out"
+            return "$(cat "$cache_code")"
+        fi
+    fi
+
+    local tmp_out tmp_code scan_code
+    tmp_out="$(mktemp "${cache_base}.XXXXXX")"
+    tmp_code="${cache_code}.tmp"
+    set +e
+    run_gate_skill_health_scan >"$tmp_out"
+    scan_code=$?
+    set -e
+    printf '%s\n' "$scan_code" >"$tmp_code"
+    mv "$tmp_out" "$cache_out"
+    mv "$tmp_code" "$cache_code"
+    cat "$cache_out"
+    return "$scan_code"
+}
+
+if maybe_cache_gate_skill_health; then
+    exit 0
+else
+    cache_status=$?
+    if [ "$cache_status" -ne 90 ]; then
+        exit "$cache_status"
+    fi
+fi
+
+run_gate_skill_health_scan
