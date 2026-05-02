@@ -1044,6 +1044,10 @@ _apply_binary_check_waivers() {
     local task_file="$1"
     local bc_full="$2"
 
+    if [[ "${DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS:-0}" == "1" ]]; then
+        printf '%s\n' "$bc_full"
+        return 0
+    fi
     if ! grep -qE '^[[:space:]]+(waive_ac|scope_mode|task_type|type|target_path):' "$task_file" 2>/dev/null; then
         printf '%s\n' "$bc_full"
         return 0
