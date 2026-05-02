@@ -1,7 +1,7 @@
 language: ja
 shell: bash
 skill:
-  save_path: ~/.claude/skills/
+  save_path: /mnt/c/tools/multi-agent-shogun/skills/
   local_path: /mnt/c/tools/multi-agent-shogun/skills/
 cli:
   default: claude

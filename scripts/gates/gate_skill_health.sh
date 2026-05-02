@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # gate_skill_health.sh
-# スキル健全性ゲート — ~/.claude/skills/*/SKILL.md を全走査
+# スキル健全性ゲート — プロジェクト内 skills/*/SKILL.md を全走査
 #
 # Usage:
 #   bash scripts/gates/gate_skill_health.sh [SKILLS_DIR]
@@ -16,7 +16,8 @@
 # ============================================================
 set -euo pipefail
 
-SKILLS_DIR="${1:-${SKILLS_DIR:-$HOME/.claude/skills}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SKILLS_DIR="${1:-${SKILLS_DIR:-$SCRIPT_DIR/skills}}"
 
 SKILLS_DIR_ENV="$SKILLS_DIR" python3 - <<'PYEOF'
 import os
