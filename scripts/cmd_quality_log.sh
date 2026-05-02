@@ -18,6 +18,7 @@ LOG_FILE="${CMD_QUALITY_LOG_FILE:-$REPO_ROOT/logs/cmd_design_quality.yaml}"
 LOCK_FILE="/tmp/cmd_design_quality.lock"
 SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
+FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -181,9 +182,15 @@ fetch_ac_count() {
     ' "$stk"
 }
 
-GUNSHI_VERDICT=$(fetch_gunshi_verdict)
-NINJA_BLOCKERS=$(fetch_ninja_blockers)
-AC_COUNT=$(fetch_ac_count)
+if [[ "$FAST_METADATA" == "1" ]]; then
+    GUNSHI_VERDICT="unknown"
+    NINJA_BLOCKERS=0
+    AC_COUNT=0
+else
+    GUNSHI_VERDICT=$(fetch_gunshi_verdict)
+    NINJA_BLOCKERS=$(fetch_ninja_blockers)
+    AC_COUNT=$(fetch_ac_count)
+fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- Append entry with flock ---

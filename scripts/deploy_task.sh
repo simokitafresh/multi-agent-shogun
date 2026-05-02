@@ -1685,6 +1685,7 @@ ${_commit_bc}"
     fi
 
     # cmd_1734: ninja_weak_points.gate_fail_top3 を報告テンプレートの該当フィールド直上コメントへ注入
+    if grep -q 'gate_fail_top3:' "$task_file" 2>/dev/null; then
     REPORT_FILE_ENV="$report_file" TASK_FILE_ENV="$task_file" python3 - <<'PY_GATE_WARN'
 import os
 from pathlib import Path
@@ -1745,12 +1746,15 @@ for line in lines:
 
 report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 PY_GATE_WARN
-    log "report_template: gate warning comments injected"
+        log "report_template: gate warning comments injected"
+    fi
 
     # cmd_2161: gate_report_format 学習済みパターンが閾値超なら、空欄再発しやすい項目を
     # FILL_THIS placeholder に昇格して template state を明示する。
+    local _learning_prefill_file="${GATE_REPORT_FORMAT_LEARNING_FILE:-$SCRIPT_DIR/logs/gate_report_format_learning.yaml}"
+    if [ -s "$_learning_prefill_file" ] && grep -q 'prefill_active:[[:space:]]*true' "$_learning_prefill_file" 2>/dev/null; then
     REPORT_FILE_ENV="$report_file" \
-    LEARNING_FILE_ENV="${GATE_REPORT_FORMAT_LEARNING_FILE:-$SCRIPT_DIR/logs/gate_report_format_learning.yaml}" \
+    LEARNING_FILE_ENV="$_learning_prefill_file" \
     python3 - <<'PY_LEARNED_PREFILL'
 import os
 import re
@@ -1844,7 +1848,8 @@ for line in lines:
 
 report_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 PY_LEARNED_PREFILL
-    log "report_template: learned prefills injected"
+        log "report_template: learned prefills injected"
+    fi
 
     # cmd_754: 偵察タスクにはimplementation_readiness欄を追加
     # cmd_1983: field_get_multiで一括取得済み → task_type/type/scope_mode変数を参照
