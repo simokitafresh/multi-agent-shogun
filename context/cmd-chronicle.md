@@ -847,3 +847,4 @@
 | cmd_2486 | skill_gate_feedback.shのスキル特定を名前推測(haystack keyword照合)から skill_execution_log.yamlの実行記録ベースに変更する。誤帰属によるゴミデータを根絶。 | infra | 05-03 | skill_gate_feedback.shのスキル帰属をh |
 | cmd_2487 | つまずきパターンからSKILL.mdの手順自体を構造的に更新する変換器を実装する。 caution_points=付箋貼りではなく、手順に具体的防止ステップを自動追加する。 | infra | 05-03 | skill_execution_logのFAIL集計からスキ |
 | cmd_2489 | SKILL.mdが参照するスクリプト・パスが変更された時、壊れる前に検知する監査仕組み。 段階0: つまずき記録(段階2)は事後検出。壊れる前の予防的検知が必要。 | infra | 05-03 | SKILL.md内script参照の存在・鮮度を監査するga |
+| cmd_2490 | on_holdのcmdをcmd_publish.shに直接入力できるようにする。 現状: on_hold→Edit toolで手動draft変更→cmd_publish.sh。手動変更時にgate未通過で修正機会を逃す。 改善: cmd_publish.shがon_hold入力を受け付け、内部でon_hold→draft昇格→gate検証→pending→delegateの4ステップを実行。 | infra | 05-03 | cmd_publish.shでstatus=on_holdの |
