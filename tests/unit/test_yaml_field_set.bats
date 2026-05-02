@@ -94,6 +94,60 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "binary_checks list item: check項目へresultを追加してlist構造を維持" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+binary_checks:
+  AC1:
+    - check: yaml_field_set list item insert
+      detail: before
+    - check: other check
+      result: ""
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/report.yaml" "yaml_field_set list item insert" result yes
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$TEST_TMPDIR/report.yaml").read_text())
+items = data["binary_checks"]["AC1"]
+assert isinstance(items, list)
+assert items[0]["check"] == "yaml_field_set list item insert"
+assert items[0]["result"] in ("yes", True)
+assert items[0]["detail"] == "before"
+assert items[1]["check"] == "other check"
+assert items[1]["result"] == ""
+print("PARSE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARSE_OK"* ]]
+}
+
+@test "binary_checks list item: 既存resultを同一check項目内で置換" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+binary_checks:
+  AC1:
+    - check: replace target
+      result: ""
+    - check: untouched target
+      result: ""
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/report.yaml" "replace target" result yes
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$TEST_TMPDIR/report.yaml").read_text())
+items = data["binary_checks"]["AC1"]
+assert items[0] == {"check": "replace target", "result": True} or items[0] == {"check": "replace target", "result": "yes"}
+assert items[1] == {"check": "untouched target", "result": ""}
+print("PARSE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARSE_OK"* ]]
+}
+
 # --- 3. ネストされたフィールド(task.status等)の更新 ---
 
 @test "深いネスト: task配下のstatusを更新" {

@@ -389,6 +389,19 @@ function begin_target(line,    t,key) {
     }
 
     t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*check:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*check:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) {
+            block_kind = "list"
+            block_indent = leading_spaces(line)
+            field_indent = block_indent + 2
+            return 1
+        }
+    }
+
+    t = line
     sub(/[[:space:]]+#.*$/, "", t)
     if (t ~ /^[[:space:]]*[A-Za-z0-9_.-]+:[[:space:]]*$/) {
         key = t
@@ -404,6 +417,14 @@ function begin_target(line,    t,key) {
     return 0
 }
 function is_boundary(line,    indent,t) {
+    if (block_kind == "list") {
+        if (line ~ /^[[:space:]]*-[[:space:]]*/) {
+            indent = leading_spaces(line)
+            if (indent <= block_indent) return 1
+        }
+        return 0
+    }
+
     if (block_kind == "id") {
         if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
             indent = leading_spaces(line)
@@ -588,6 +609,19 @@ function begin_target(line,    t,key) {
     }
 
     t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*check:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*check:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) {
+            block_kind = "list"
+            block_indent = leading_spaces(line)
+            field_indent = block_indent + 2
+            return 1
+        }
+    }
+
+    t = line
     sub(/[[:space:]]+#.*$/, "", t)
     if (t ~ /^[[:space:]]*[A-Za-z0-9_.-]+:[[:space:]]*$/) {
         key = t
@@ -603,6 +637,14 @@ function begin_target(line,    t,key) {
     return 0
 }
 function is_boundary(line,    indent,t) {
+    if (block_kind == "list") {
+        if (line ~ /^[[:space:]]*-[[:space:]]*/) {
+            indent = leading_spaces(line)
+            if (indent <= block_indent) return 1
+        }
+        return 0
+    }
+
     if (block_kind == "id") {
         if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
             indent = leading_spaces(line)
