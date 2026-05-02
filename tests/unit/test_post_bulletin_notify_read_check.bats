@@ -15,11 +15,12 @@ setup() {
     cp "$SOURCE_SCRIPT" "$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
     chmod +x "$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
     export TEST_SCRIPT="$TEST_ROOT/.claude/hooks/post-bulletin-notify-read-check.sh"
-    rm -f /tmp/claude_read_log_hayate.txt
+    export READ_LOG_DIR="$TEST_ROOT"
+    rm -f "$TEST_ROOT/claude_read_log_hayate.txt"
 }
 
 teardown() {
-    rm -f /tmp/claude_read_log_hayate.txt
+    rm -f "$TEST_ROOT/claude_read_log_hayate.txt"
     rm -rf "$TEST_ROOT"
 }
 
@@ -69,7 +70,7 @@ run_hook() {
 @test "stays silent after bulletin_board.yaml was read first" {
     write_inbox bulletin_notify
     write_pending_bulletin
-    echo "$TEST_ROOT/queue/bulletin_board.yaml" > /tmp/claude_read_log_hayate.txt
+    echo "$TEST_ROOT/queue/bulletin_board.yaml" > "$TEST_ROOT/claude_read_log_hayate.txt"
 
     run_hook "bash scripts/inbox_mark_read.sh hayate msg_001"
     [ "$status" -eq 0 ]

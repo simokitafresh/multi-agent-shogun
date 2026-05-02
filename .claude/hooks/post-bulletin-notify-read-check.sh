@@ -44,7 +44,7 @@ inbox="$ROOT/queue/inbox/${agent}.yaml"
 bulletin="$ROOT/queue/bulletin_board.yaml"
 [[ -f "$inbox" && -f "$bulletin" ]] || exit 0
 
-read_log="/tmp/claude_read_log_${agent}.txt"
+read_log="${READ_LOG_DIR:-/tmp}/claude_read_log_${agent}.txt"
 if [[ -f "$read_log" ]]; then
     recent_reads="$(tail -20 "$read_log" 2>/dev/null || true)"
     if [[ "$recent_reads" == *"queue/bulletin_board.yaml"* || "$recent_reads" == *"$bulletin"* ]]; then
