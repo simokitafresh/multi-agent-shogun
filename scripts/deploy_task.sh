@@ -1044,6 +1044,15 @@ _apply_binary_check_waivers() {
     local task_file="$1"
     local bc_full="$2"
 
+    if ! grep -qE '^[[:space:]]+(waive_ac|scope_mode|task_type|type|target_path):' "$task_file" 2>/dev/null; then
+        printf '%s\n' "$bc_full"
+        return 0
+    fi
+    if ! grep -qE 'waive_ac:|RESEARCH|research|docs/research|outputs' "$task_file" 2>/dev/null; then
+        printf '%s\n' "$bc_full"
+        return 0
+    fi
+
     TASK_FILE_ENV="$task_file" BC_FULL_ENV="$bc_full" python3 - <<'PY_BC_WAIVE'
 import os
 import sys
@@ -1872,7 +1881,7 @@ RECON_EOF
     fi
 
     # cmd_776 C層: テンプレ生成後にnormalize_report.shで正規化を保証
-    if bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" >/dev/null 2>&1; then
+    if [[ "${DEPLOY_TASK_SKIP_REPORT_NORMALIZE:-0}" != "1" ]] && bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" >/dev/null 2>&1; then
         log "report_template: normalized (C層 auto-fix applied)"
     fi
 
