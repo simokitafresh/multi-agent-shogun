@@ -4745,6 +4745,23 @@ else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
     fi
 
+    # ─── GATE BLOCK時スキル学習ループ還流（cmd_2459拡張） ───
+    _SKILL_FEEDBACK="$SCRIPT_DIR/scripts/skill_gate_feedback.sh"
+    if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
+        echo ""
+        echo "Skill gate feedback (GATE BLOCK):"
+        if timeout 10 bash "$_SKILL_FEEDBACK" \
+            --gate "cmd_complete_gate" \
+            --result "FAIL" \
+            --reason "$block_reason" \
+            --executor "${AGENT_ID:-unknown}" \
+            --source "${CMD_ID}" >/dev/null 2>&1; then
+            echo "  skill_gate_feedback: OK"
+        else
+            echo "  skill_gate_feedback: SKIP (non-blocking)"
+        fi
+    fi
+
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
     echo ""
     echo "Auto-draft lessons for GATE BLOCK:"
