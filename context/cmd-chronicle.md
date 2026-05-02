@@ -846,3 +846,4 @@
 | cmd_2483 | 軍師分析で特定されたインフラバグ3件を修正する。 karo_workarounds 102件中9件(8.8%)がこの3パターンに起因。 放置中もWAが蓄積し家老のトークンを浪費する。idle忍者に即配備。 | infra | 05-02 | AC1: yaml_field_set.shがbinary_ |
 | cmd_2486 | skill_gate_feedback.shのスキル特定を名前推測(haystack keyword照合)から skill_execution_log.yamlの実行記録ベースに変更する。誤帰属によるゴミデータを根絶。 | infra | 05-03 | skill_gate_feedback.shのスキル帰属をh |
 | cmd_2487 | つまずきパターンからSKILL.mdの手順自体を構造的に更新する変換器を実装する。 caution_points=付箋貼りではなく、手順に具体的防止ステップを自動追加する。 | infra | 05-03 | skill_execution_logのFAIL集計からスキ |
+| cmd_2489 | SKILL.mdが参照するスクリプト・パスが変更された時、壊れる前に検知する監査仕組み。 段階0: つまずき記録(段階2)は事後検出。壊れる前の予防的検知が必要。 | infra | 05-03 | SKILL.md内script参照の存在・鮮度を監査するga |
