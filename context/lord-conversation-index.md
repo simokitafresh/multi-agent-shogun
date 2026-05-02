@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-02T14:33:38+09:00 -->
+<!-- generated_at: 2026-05-02T14:34:56+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-02T14:34:56+09:00 | terminal | response | **cmd_2457 GATE CLEAR。3件全て完了。** | cmd | 内容 | 結果 | |-----|------|------| | cmd_2456 | missing_prev_cmd_lesson初回BLOCK化 | …
 - 2026-05-02T14:33:38+09:00 | terminal | response | **cmd_2458 GATE CLEAR。** CHECK2偵察も完了。 残り: cmd_2457 (yaml改行修正) — 疾風が作業中(CTX:34%)。 3件中2件完了。殿、指示あれば。 [meta] stop_reason=en…
 - 2026-05-02T14:33:01+09:00 | terminal | response | **cmd_2456 GATE CLEAR。** missing_prev_cmd_lesson初回BLOCK化が本番に入った。 これで将軍がBLOCKされた後に教訓を記録せずに次のcmdを起票すると、初回で即BLOCKされる。成長ループ…
 - 2026-05-02T14:22:32+09:00 | terminal | response | 軍師から第二層ループ報告。GP-238直接実装+yaml_field_set根因分析等の連携改善報告。確認済み。 [meta] stop_reason=tool_use
@@ -13,7 +14,6 @@
 - 2026-05-02T14:17:49+09:00 | terminal | inbound | 起票せよ。自立自走
 - 2026-05-02T12:50:12+09:00 | terminal | response | draft4件をconfirmedに更新完了。これでdraft_lessonsチェックが解消される。 殿、成長の方向を確認する。 分析の結果、**将軍のCMD起票能力の最大の弱点**は明確: **`missing_prev_cmd_les…
 - 2026-05-02T12:46:18+09:00 | terminal | response | 現状を把握した。分析する。 **将軍CMD起票の現状:** - 全体BLOCK率: 43% (1091/2484) - 直近10件: BLOCKなし（改善傾向） - 将軍起票時の主要BLOCK原因: `missing_prev_cmd_l…
-- 2026-05-02T12:44:56+09:00 | terminal | inbound | 将軍のCMD起票能力を成長させよう
 
 ## 未解決確認事項
 - 軍師から第二層ループ報告。GP-238直接実装+yaml_field_set根因分析等の連携改善報告。確認済み。 [meta] stop_reason=tool_use
@@ -26,6 +26,7 @@
 - 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=46件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 0件: なし [3.🚨要対応] 0件 [4.忍者] 稼働0 / …
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-02T14:34:56+09:00 | **cmd_2457 GATE CLEAR。3件全て完了。** | cmd | 内容 | 結果 | |-----|------|------| | cmd_2456 | missing_prev_cmd_lesson初回BLOCK化 | CLEAR | | cmd_2457 |…
 - 2026-05-02T14:33:38+09:00 | **cmd_2458 GATE CLEAR。** CHECK2偵察も完了。 残り: cmd_2457 (yaml改行修正) — 疾風が作業中(CTX:34%)。 3件中2件完了。殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-02T14:33:01+09:00 | **cmd_2456 GATE CLEAR。** missing_prev_cmd_lesson初回BLOCK化が本番に入った。 これで将軍がBLOCKされた後に教訓を記録せずに次のcmdを起票すると、初回で即BLOCKされる。成長ループの断絶が構造的に不可能になった。 残りの…
 - 2026-05-02T12:42:59+09:00 | バックグラウンドタスク完了通知。Phase 2d/2e/2fの結果は既にdream内で確認・処理済み。 殿、指示あれば。 [meta] stop_reason=tool_use
@@ -33,7 +34,6 @@
 - 2026-05-02T11:41:43+09:00 | Dream completed [2026-05-02T11:41:33+09:00] ``` - Phase 1: 73 files, MEMORY.md 177/200, ts_coverage=95%+, stale=2(cmd_2437/2439) - Phase 2:…
 - 2026-05-02T02:52:47+09:00 | 家老がCI flaky test修正(cmd_karo_ci_fix_flaky_1090)をGATE CLEAR。定型CI修正のためkaro_direct案件。影丸が作業中→完了。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-02T02:33:24+09:00 | cmd_2455のGATE CLEAR重複通知。処理済み。殿、指示あれば。 [meta] stop_reason=end_turn
-- 2026-05-02T02:32:04+09:00 | **cmd_2455 GATE CLEAR。** 疾風が完了。 signals updated_at + signal_change_logテーブル（ticker×weightスナップショット付き）が本番に入った。これで今後のfullrecalculateやコード修正で保有シグ…
 
 ## 参照cmd
 - cmd_2223
