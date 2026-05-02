@@ -40,6 +40,7 @@ ARCHIVE_CMD_DIR="$PROJECT_DIR/queue/archive/cmds"
 LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
+SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
@@ -116,6 +117,7 @@ TMP_PIPELINE="$_TMP_DIR/pipeline"
 TMP_RESULTS="$_TMP_DIR/results"
 TMP_TITLES="$_TMP_DIR/titles"
 TMP_RECENT="$_TMP_DIR/recent"
+TMP_SKILL_METRICS="$_TMP_DIR/skill_metrics"
 trap 'rm -rf "$_TMP_DIR"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
@@ -552,6 +554,13 @@ if [[ -n "$_PID_CTX" ]]; then
     date +%s > "$CTX_WARN_CACHE_TS" 2>/dev/null || true
 fi
 CONTEXT_WARNINGS="$(cat "$_TMP_CTX_WARN" 2>/dev/null || true)"
+
+# ─── Skill health metrics (from skill_metrics.sh) ───
+if [[ -n "${DASHBOARD_SKILL_METRICS_FILE:-}" && -f "${DASHBOARD_SKILL_METRICS_FILE:-}" ]]; then
+    cp "$DASHBOARD_SKILL_METRICS_FILE" "$TMP_SKILL_METRICS" 2>/dev/null || true
+elif [[ -x "$SKILL_METRICS_SCRIPT" ]]; then
+    bash "$SKILL_METRICS_SCRIPT" > "$TMP_SKILL_METRICS" 2>/dev/null || true
+fi
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)
 if [[ -f "$KM_JSON_CACHE" ]] && [[ -s "$KM_JSON_CACHE" ]]; then
@@ -1101,6 +1110,31 @@ fi
         printf "%s" "$KM_BOTTOM_LESSON_ROWS"
     else
         echo "| — | — | — | — | — |"
+    fi
+
+    echo ""
+
+    # ─── スキル健全度 ───
+    echo "### スキル健全度"
+    echo "| skill | quality_score | pass | fail | total | last_result |"
+    echo "|-------|---------------|------|------|-------|-------------|"
+    if [[ -s "$TMP_SKILL_METRICS" ]]; then
+        awk -F'[[:space:]]*[|][[:space:]]*' '
+            NR == 1 { next }
+            NF >= 6 {
+                skill=$1; score=$2; pass=$3; fail=$4; total=$5; last=$6
+                gsub(/^[ \t]+|[ \t]+$/, "", skill)
+                gsub(/^[ \t]+|[ \t]+$/, "", score)
+                gsub(/^[ \t]+|[ \t]+$/, "", pass)
+                gsub(/^[ \t]+|[ \t]+$/, "", fail)
+                gsub(/^[ \t]+|[ \t]+$/, "", total)
+                gsub(/^[ \t]+|[ \t]+$/, "", last)
+                if (skill != "")
+                    printf "| %s | %s | %s | %s | %s | %s |\n", skill, score, pass, fail, total, last
+            }
+        ' "$TMP_SKILL_METRICS"
+    else
+        echo "| — | — | — | — | — | — |"
     fi
 
     echo ""
