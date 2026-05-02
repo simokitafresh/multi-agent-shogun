@@ -853,3 +853,4 @@
 | cmd_2493 | 215本のスクリプト(scripts/144+gates/37+hooks/34)を計測し、最適化ボトルネックを特定する。 台帳(codd_refactor_registry.md)の約100件と突合し、未計測スクリプトと再最適化候補を洗い出す。 | infra | 05-03 | scripts/*.sh 144本を安全なbash -n解析 |
 | cmd_2495 | gate_silent_fallback.shがリグレッション(25ms→769ms、31x悪化)。 CoDD正規手順(spec→設計書→実装→計測→台帳記入)で台帳値25ms以下に復帰させる。 | infra | 05-03 | gate_silent_fallback.shの--help |
 | cmd_2498 | gate_shogun_memory.shがリグレッション(9ms→82ms、9.1x悪化)。 601行。load_memory_cache()でMEMORY.mdをawk解析+6項目チェック(行数/陳腐化/重複/MCP obs数/curation日/sync鮮度)。 CoDD正規手順で台帳値9ms以下に復帰させる。 | infra | 05-03 | gate_shogun_memory.shをline-cou |
+| cmd_2500 | gate_karo_startup.shがリグレッション(110ms→251ms、2.3x悪化)。 592行。前回3回最適化(464→225→190→110ms)。前回revert時に真因特定済み: _META_PIDS awk(deepdiveファイルon /mnt/c NTFS)が~100ms支配。WA rateキャッシュは効果なし(revert)。 CoDD正規手順で110ms以下に復帰。ボトルネックが/mnt/c I/O支配なら代替アプローチ(キャッシュ/遅延読込)をspec段階で設計。 | infra | 05-03 | gate_karo_startup.sh R4 CoDD再改 |
