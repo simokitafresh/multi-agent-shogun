@@ -111,6 +111,33 @@ EOF
     [[ "$output" == *"category: clean"* ]]
 }
 
+@test "gate_wa_data_quality: check mode detects issues without rewriting" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_1
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: workaround不要
+- cmd_id: cmd_1
+  ninja: hayate
+  workaround: false
+  category: clean
+  detail: 正規フロー完了
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ISSUES:"* ]]
+    [[ "$output" == *"FALSE_WA"* ]]
+    [[ "$output" == *"DUPLICATE"* ]]
+    [[ "$output" == *"Run with --fix"* ]]
+
+    run grep -c "cmd_id: cmd_1" "$TEST_TMPDIR/wa.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "2" ]
+}
+
 @test "gate_wa_data_quality: wrapper dict を保ったまま修復する" {
     cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
 version: 1

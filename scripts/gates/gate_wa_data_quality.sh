@@ -30,6 +30,117 @@ if [[ ! -f "$WA_FILE" ]]; then
     exit 0
 fi
 
+if [[ "$FIX_MODE" == "false" ]]; then
+    awk '
+    function trim(s) {
+        sub(/^[[:space:]]+/, "", s)
+        sub(/[[:space:]]+$/, "", s)
+        return s
+    }
+    function scalar(s) {
+        s = trim(s)
+        if ((substr(s, 1, 1) == "'"'"'" && substr(s, length(s), 1) == "'"'"'") || (substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"")) {
+            s = substr(s, 2, length(s) - 2)
+        }
+        return s
+    }
+    function set_field(line,    p, key, value) {
+        sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+        sub(/^[[:space:]]+/, "", line)
+        p = index(line, ":")
+        if (!p) {
+            return
+        }
+        key = substr(line, 1, p - 1)
+        value = scalar(substr(line, p + 1))
+        if (key == "cmd_id") {
+            cmd[n] = value
+        } else if (key == "ninja") {
+            ninja[n] = value
+        } else if (key == "workaround") {
+            workaround[n] = value
+        } else if (key == "category") {
+            category[n] = value
+        } else if (key == "detail") {
+            detail[n] = value
+        }
+    }
+    function add_issue(text) {
+        issues[++issue_count] = text
+    }
+    /^[[:space:]]*-[[:space:]]/ {
+        n++
+        set_field($0)
+        next
+    }
+    n > 0 && /^[[:space:]]+[A-Za-z_][A-Za-z0-9_]*:/ {
+        set_field($0)
+    }
+    END {
+        known["hayate"] = known["kagemaru"] = known["hanzo"] = known["saizo"] = 1
+        known["kotaro"] = known["tobisaru"] = known["unknown"] = 1
+
+        split("workaround不要|WA不要|修正なし|対処不要|修正不要|正規フロー完了|問題なし", clean_keywords, "|")
+        for (i = 1; i <= n; i++) {
+            if (workaround[i] == "true" && category[i] != "clean") {
+                for (k in clean_keywords) {
+                    if (index(detail[i], clean_keywords[k]) > 0) {
+                        add_issue(sprintf("FALSE_WA[%d]: %s — detail contains \"%s\" but workaround=true", i - 1, cmd[i], clean_keywords[k]))
+                        break
+                    }
+                }
+            }
+        }
+
+        for (i = 1; i <= n; i++) {
+            key = cmd[i] SUBSEP ninja[i]
+            if (!(key in seen)) {
+                seen[key] = i
+                continue
+            }
+
+            prev_i = seen[key]
+            prev_wa = workaround[prev_i]
+            curr_wa = workaround[i]
+            if (curr_wa != "true" && prev_wa == "true") {
+                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
+                seen[key] = i
+            } else if (curr_wa == "true" && prev_wa != "true") {
+                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], prev_i - 1))
+            } else {
+                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping latest [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
+                seen[key] = i
+            }
+        }
+
+        for (i = 1; i <= n; i++) {
+            if (workaround[i] == "true" && category[i] != "clean" && (detail[i] == "none" || detail[i] == "null" || detail[i] == "" || length(detail[i]) < 10)) {
+                add_issue(sprintf("GP049_BYPASS[%d]: %s — detail=\"%s\" (too short/placeholder)", i - 1, cmd[i], detail[i]))
+            }
+        }
+
+        for (i = 1; i <= n; i++) {
+            if (ninja[i] != "" && !(ninja[i] in known)) {
+                add_issue(sprintf("NINJA_CORRUPT[%d]: %s — ninja=\"%s\" not in known list", i - 1, cmd[i], ninja[i]))
+            }
+        }
+
+        if (!issue_count) {
+            print "PASS: no data quality issues"
+            exit 0
+        }
+        print "ISSUES: " issue_count
+        for (i = 1; i <= issue_count; i++) {
+            print "  " issues[i]
+        }
+        print ""
+        print "Run with --fix to auto-repair"
+        exit 1
+    }
+    ' "$WA_FILE"
+    exit $?
+fi
+
 python3 - "$WA_FILE" "$FIX_MODE" <<'PY'
 from __future__ import annotations
 
