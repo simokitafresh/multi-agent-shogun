@@ -77,6 +77,17 @@ if [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
     exit 1
 fi
 
+# Enforcement quality gate — "existing automation" references do not create a new
+# environmental change. A lesson with automation=true must point to a concrete new
+# gate/hook/check/file that can strengthen the next cycle.
+if [ "$ENFORCEMENT" != "未自動化" ]; then
+    if printf '%s\n' "$ENFORCEMENT" | grep -Eq '既存自動強制|既存の?自動強制|既存(の)?(gate|hook|チェック|仕組み|自動化)?のみ|^既存$|^既存[[:space:]]*$'; then
+        echo "BLOCK: enforcement が既存参照のみです。新規環境変化(新ファイルパス/新チェック名/gate/hook等)を記載せよ。" >&2
+        echo "  例: type=gate; file=scripts/gates/gate_x.sh; pattern=new_check_name" >&2
+        exit 1
+    fi
+fi
+
 # Detail quality gate — 将軍教訓は具体的事故+原因+修正を含むべし
 DETAIL_LEN=${#DETAIL}
 if [ "$DETAIL_LEN" -lt 30 ]; then
