@@ -21,6 +21,8 @@ setup_file() {
         sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$GATE_HELPERS_FILE"
 }
 
@@ -52,6 +54,7 @@ messages:
 EOF
 
     source "$SRC_FIELD_GET_SCRIPT"
+    source "$SRC_LOCK_PATH_SCRIPT"
     # shellcheck source=/dev/null
     source "$GATE_HELPERS_FILE"
 
@@ -59,6 +62,48 @@ EOF
     BLOCK_REASONS=()
 
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+}
+
+@test "CoDD registry append extracts target and before/after from report and spec" {
+    mkdir -p "$TEST_PROJECT/docs/research"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    cat > "$TEST_PROJECT/docs/research/codd_refactor_registry.md" <<'EOF'
+# CoDD Refactor Registry
+
+| 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
+|------|--------|---------------------|-----------|--------------|----------------------|
+EOF
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    title: "CoDD improvement"
+    command: "CoDDで scripts/demo_gate.sh を改善"
+EOF
+    cat > "$TEST_PROJECT/docs/research/codd_spec_demo_${TEST_CMD_ID}.md" <<'EOF'
+# CoDD spec
+
+Target: `scripts/demo_gate.sh`
+before median: 120ms
+after median: 30ms
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+status: done
+result:
+  summary: "CoDD spec docs/research/codd_spec_demo_${TEST_CMD_ID}.md に基づき before 120ms after 30ms"
+files_modified:
+  - path: scripts/demo_gate.sh
+EOF
+
+    run append_codd_registry_entry "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: appended $TEST_CMD_ID"* ]]
+    grep -q "scripts/demo_gate.sh" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+    grep -q "120ms → 30ms" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+    grep -q "$TEST_CMD_ID" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
 }
 
 teardown() {

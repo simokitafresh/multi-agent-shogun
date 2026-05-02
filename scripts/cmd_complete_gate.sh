@@ -449,6 +449,298 @@ set_matching_tasks_idle() {
     echo "  summary: updated=${updated_count} skipped=${skipped_count} warn=${warn_count}"
 }
 
+# ─── CoDD registry自動追記（cmd_2510） ───
+# 共有台帳の並行手編集を避けるため、CoDD改善cmdのCLEAR時にgate側で一元追記する。
+append_codd_registry_entry() {
+    local cmd_id="$1"
+    local registry="$SCRIPT_DIR/docs/research/codd_refactor_registry.md"
+    local registry_lock
+    local result
+
+    echo ""
+    echo "CoDD registry append (GATE CLEAR):"
+
+    if [ ! -f "$registry" ]; then
+        echo "  SKIP (registry not found)"
+        return 0
+    fi
+
+    registry_lock="$(lock_path "$registry")"
+    result=$(
+        (
+            flock -w 10 200 || { echo "WARN: registry lock timeout"; exit 0; }
+            python3 - "$cmd_id" "$YAML_FILE" "$registry" "${MATCHING_TASK_FILES[@]}" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import yaml
+
+
+cmd_id = sys.argv[1]
+cmd_yaml = Path(sys.argv[2])
+registry = Path(sys.argv[3])
+task_paths = [Path(p) for p in sys.argv[4:]]
+repo_root = registry.parents[2]
+
+
+def load_yaml(path):
+    try:
+        with path.open(encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+
+def cmd_entry():
+    data = load_yaml(cmd_yaml)
+    cmds = data.get("commands", data.get("cmds", data))
+    if isinstance(cmds, dict):
+        entry = cmds.get(cmd_id, {})
+        return entry if isinstance(entry, dict) else {}
+    if isinstance(cmds, list):
+        for item in cmds:
+            if isinstance(item, dict) and item.get("id") == cmd_id:
+                return item
+    return {}
+
+
+def unwrap_task(data):
+    if isinstance(data, dict) and isinstance(data.get("task"), dict):
+        return data["task"]
+    return data if isinstance(data, dict) else {}
+
+
+def report_path_for(task_path, task):
+    ninja = task_path.stem
+    explicit = str(task.get("report_filename") or "").strip().strip("'\"")
+    candidates = []
+    if explicit:
+        candidates.append(repo_root / "queue" / "reports" / explicit)
+    candidates.append(repo_root / "queue" / "reports" / f"{ninja}_report_{cmd_id}.yaml")
+    candidates.append(repo_root / "queue" / "reports" / f"{ninja}_report.yaml")
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0] if candidates else None
+
+
+def flatten_strings(value):
+    out = []
+    if isinstance(value, dict):
+        for k, v in value.items():
+            out.append(str(k))
+            out.extend(flatten_strings(v))
+    elif isinstance(value, list):
+        for item in value:
+            out.extend(flatten_strings(item))
+    elif value is not None:
+        out.append(str(value))
+    return out
+
+
+def rel_path(raw):
+    s = str(raw).strip().strip("'\"`")
+    if not s:
+        return ""
+    try:
+        p = Path(s)
+        if p.is_absolute():
+            try:
+                return str(p.relative_to(repo_root))
+            except ValueError:
+                return s
+    except Exception:
+        pass
+    return s
+
+
+def uniq(seq):
+    seen = set()
+    out = []
+    for item in seq:
+        if item and item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
+def extract_paths(texts, pattern):
+    found = []
+    for text in texts:
+        for match in re.finditer(pattern, text):
+            found.append(rel_path(match.group(0).rstrip(".,;)")))
+    return uniq(found)
+
+
+def first_measurement(text):
+    patterns = [
+        r"(?i)before[^0-9]{0,40}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+        r"(?i)([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)[^0-9]{0,40}before",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text)
+        if m:
+            return f"{m.group(1)}{m.group(2)}"
+    return ""
+
+
+def after_measurement(text):
+    patterns = [
+        r"(?i)after[^0-9]{0,40}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+        r"(?i)([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)[^0-9]{0,40}after",
+        r"([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text)
+        if not m:
+            continue
+        if len(m.groups()) >= 4:
+            return f"{m.group(3)}{m.group(4)}"
+        return f"{m.group(1)}{m.group(2)}"
+    return ""
+
+
+def before_after_from_text(text):
+    arrow = re.search(
+        r"([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+        text,
+    )
+    before = first_measurement(text)
+    after = after_measurement(text)
+    if arrow:
+        before = before or f"{arrow.group(1)}{arrow.group(2)}"
+        after = after or f"{arrow.group(3)}{arrow.group(4)}"
+    return before, after
+
+
+def script_from_spec(spec_path, fallback_texts):
+    candidates = []
+    for text in fallback_texts:
+        candidates.extend(extract_paths([text], r"(?:scripts|tests)/[A-Za-z0-9_./-]+\.(?:sh|py|bats)"))
+    spec_abs = repo_root / spec_path
+    if spec_path and spec_abs.exists():
+        try:
+            spec_text = spec_abs.read_text(encoding="utf-8", errors="ignore")
+            candidates.extend(extract_paths([spec_text], r"(?:scripts|tests)/[A-Za-z0-9_./-]+\.(?:sh|py|bats)"))
+        except Exception:
+            pass
+    return uniq(candidates)
+
+
+entry = cmd_entry()
+cmd_texts = flatten_strings(entry)
+task_records = []
+report_texts = []
+spec_paths = []
+target_paths = []
+before = ""
+after = ""
+
+for task_path in task_paths:
+    task = unwrap_task(load_yaml(task_path))
+    if str(task.get("parent_cmd") or "") != cmd_id:
+        continue
+    task_records.append((task_path, task))
+    task_texts = flatten_strings(task)
+    target_paths.extend(extract_paths(task_texts, r"(?:scripts|tests)/[A-Za-z0-9_./-]+\.(?:sh|py|bats)"))
+    report_path = report_path_for(task_path, task)
+    report = load_yaml(report_path) if report_path else {}
+    report_text = "\n".join(flatten_strings(report))
+    report_texts.append(report_text)
+    spec_paths.extend(extract_paths([report_text], r"docs/research/[A-Za-z0-9_./-]*codd[A-Za-z0-9_./-]*\.md"))
+    for key in ("before_ms", "before_median_ms", "before_time_ms", "before"):
+        if not before and report.get(key) is not None:
+            before = f"{report.get(key)}ms" if "ms" in key else str(report.get(key))
+    for key in ("after_ms", "after_median_ms", "after_time_ms", "after"):
+        if not after and report.get(key) is not None:
+            after = f"{report.get(key)}ms" if "ms" in key else str(report.get(key))
+    if not before or not after:
+        b, a = before_after_from_text(report_text)
+        before = before or b
+        after = after or a
+
+all_text = "\n".join(cmd_texts + report_texts)
+is_codd = bool(re.search(r"CoDD|codd_refactor|codd_refactor_registry|codd_spec", all_text, re.IGNORECASE))
+if not is_codd:
+    print("SKIP: not a CoDD cmd")
+    raise SystemExit(0)
+
+spec_paths.extend(extract_paths(cmd_texts, r"docs/research/[A-Za-z0-9_./-]*codd[A-Za-z0-9_./-]*\.md"))
+spec_paths = uniq(spec_paths)
+
+for spec in spec_paths:
+    try:
+        spec_text = (repo_root / spec).read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        continue
+    if not before or not after:
+        b, a = before_after_from_text(spec_text)
+        before = before or b
+        after = after or a
+    target_paths.extend(script_from_spec(spec, []))
+
+target_paths.extend(script_from_spec(spec_paths[0] if spec_paths else "", cmd_texts + report_texts))
+target_paths = uniq(target_paths)
+
+if not task_records:
+    print("SKIP: no matching task YAML")
+    raise SystemExit(0)
+if not target_paths:
+    print("SKIP: target script not found")
+    raise SystemExit(0)
+if not before or not after:
+    print("SKIP: before/after measurement not found")
+    raise SystemExit(0)
+
+registry_text = registry.read_text(encoding="utf-8")
+if re.search(rf"\b{re.escape(cmd_id)}\b", registry_text):
+    print(f"SKIP: already registered ({cmd_id})")
+    raise SystemExit(0)
+
+date = datetime.now().strftime("%Y-%m-%d")
+workers = uniq(str(t.get("assigned_to") or p.stem) for p, t in task_records)
+worker = "+".join(workers) if workers else "unknown"
+target = ", ".join(f"`{p}`" for p in target_paths[:3])
+if len(target_paths) > 3:
+    target += f" (+{len(target_paths) - 3})"
+spec_cell = ", ".join(f"`{p}`" for p in spec_paths[:2]) if spec_paths else f"`{cmd_id}` report-derived"
+if len(spec_paths) > 2:
+    spec_cell += f" (+{len(spec_paths) - 2})"
+phase = f"Phase 5(auto registry via cmd_complete_gate, {cmd_id})"
+row = f"| {date} | {worker} | {target} | {phase} | `{before} → {after}` | {spec_cell} |\n"
+
+lines = registry_text.splitlines(keepends=True)
+insert_at = None
+for idx, line in enumerate(lines):
+    if line.startswith("|------"):
+        insert_at = idx + 1
+        break
+if insert_at is None:
+    print("SKIP: registry table header not found")
+    raise SystemExit(0)
+
+lines.insert(insert_at, row)
+fd, tmp = tempfile.mkstemp(dir=str(registry.parent), suffix=".tmp")
+os.close(fd)
+try:
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+    os.replace(tmp, registry)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+
+print(f"OK: appended {cmd_id} target={target_paths[0]} before_after={before}->{after}")
+PY
+        ) 200>"$registry_lock"
+    )
+    echo "  ${result}"
+}
+
 # ─── changelog自動記録関数 ───
 append_changelog() {
     local cmd_id="$1"
@@ -4254,6 +4546,8 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         echo "  SKIP (lesson_update_score.sh not found — waiting for subtask_309_score)"
     fi
+
+    append_codd_registry_entry "$CMD_ID"
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
