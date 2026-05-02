@@ -395,6 +395,100 @@ _setup_git_project() {
     grep -Fq '月次リターン差分を確認したか' "$handwritten_report"
 }
 
+@test "既存の不完全な報告テンプレートはdeploy_task経路で必須フィールドを補完する" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_existing_template
+  task_id: cmd_existing_template_impl
+  project: infra
+  report_filename: sasuke_report_cmd_existing_template.yaml
+  related_lessons:
+    - id: L901
+      summary: lesson one
+      detail: lesson one detail
+  acceptance_criteria:
+    - id: AC1
+      description: "不完全テンプレートを補完する"
+YAML
+    mkdir -p "$TEST_PROJECT/queue/reports"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_existing_template.yaml" <<'YAML'
+worker_id: sasuke
+task_id: cmd_existing_template_impl
+parent_cmd: cmd_existing_template
+timestamp: ""
+status: pending
+result:
+  summary: ""
+  details: ""
+files_modified: []
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_existing_template_impl cmd_existing_template infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_existing_template.yaml"
+    grep -Fq 'lessons_useful:' "$report_path"
+    grep -Fq 'id: L901' "$report_path"
+    grep -Fq 'assumption_invalidation:' "$report_path"
+    grep -Fq 'self_gate_check:' "$report_path"
+    grep -Fq 'verdict: ""' "$report_path"
+    grep -Fq 'report_path: queue/reports/sasuke_report_cmd_existing_template.yaml' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+    _fixture_project_end
+}
+
+@test "既存の不完全な報告テンプレートはreport_filenameなしの直接配備形でも必須フィールドを補完する" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_direct_template
+  task_id: cmd_direct_template_impl
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "直接配備形のテンプレートを補完する"
+YAML
+    mkdir -p "$TEST_PROJECT/queue/reports"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_direct_template.yaml" <<'YAML'
+worker_id: sasuke
+task_id: cmd_direct_template_impl
+parent_cmd: cmd_direct_template
+timestamp: ""
+status: pending
+result:
+  summary: ""
+  details: ""
+files_modified: []
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_direct_template_impl cmd_direct_template infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_direct_template.yaml"
+    grep -Fq 'lessons_useful: []' "$report_path"
+    grep -Fq 'assumption_invalidation:' "$report_path"
+    grep -Fq 'self_gate_check:' "$report_path"
+    grep -Fq 'verdict: ""' "$report_path"
+    grep -Fq 'report_path: queue/reports/sasuke_report_cmd_direct_template.yaml' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+    _fixture_project_end
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════
