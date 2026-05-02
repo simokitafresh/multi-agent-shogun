@@ -79,3 +79,6 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 - **verdictをbinary_checksより先に書くな** — 不整合の最大原因
 - **条件付きPASSは存在しない** — bc:noが1つでもあればFAIL
 - **verdict を Edit toolで直接書くな** — report_field_set.sh経由（GP-072c5: bc:no→verdict:PASS BLOCK）
+
+## 注意ポイント
+

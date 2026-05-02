@@ -4750,13 +4750,26 @@ else
     if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
         echo ""
         echo "Skill gate feedback (GATE BLOCK):"
+        # BLOCK理由から還流先スキルを特定(自動推定はgate名でcmd-completeに誤マッチする)
+        _target_skill=""
+        case "$block_reason" in
+            *lessons_useful*|*lesson_candidate*|*draft_lessons*|*lesson_done*|*report_format*|*report_yaml_missing*)
+                _target_skill="report-write" ;;
+            *binary_checks_fail*|*purpose_validation*)
+                _target_skill="verdict-check" ;;
+            *commit*|*scope*)
+                _target_skill="ninja-commit" ;;
+        esac
+        _skill_args=()
+        [ -n "$_target_skill" ] && _skill_args=(--skill "$_target_skill")
         if timeout 10 bash "$_SKILL_FEEDBACK" \
             --gate "cmd_complete_gate" \
             --result "FAIL" \
             --reason "$block_reason" \
             --executor "${AGENT_ID:-unknown}" \
-            --source "${CMD_ID}" >/dev/null 2>&1; then
-            echo "  skill_gate_feedback: OK"
+            --source "${CMD_ID}" \
+            "${_skill_args[@]}" >/dev/null 2>&1; then
+            echo "  skill_gate_feedback: OK (skill=${_target_skill:-auto})"
         else
             echo "  skill_gate_feedback: SKIP (non-blocking)"
         fi

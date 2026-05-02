@@ -68,3 +68,6 @@ bash scripts/inbox_archive.sh karo
 ## 制約
 - archive_completed.shはGATE CLEAR時に自動実行されるため手動不要
 - 順序を崩すな（§8ルール）
+
+## 注意ポイント
+

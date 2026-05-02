@@ -71,3 +71,6 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 - **`--no-verify`** — pre-commitフックをスキップするな
 - **`git reset --hard`** — 未commit変更を全て失う。`git stash`を使え
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
+
+## 注意ポイント
+

@@ -104,3 +104,6 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | lesson_candidate | dict | {found: bool, title/detail or no_lesson_reason} |
 | skill_candidate | dict | {found: bool, ...} |
 | result.summary | string | 空文字禁止 |
+
+## 注意ポイント
+
