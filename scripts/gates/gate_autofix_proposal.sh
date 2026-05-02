@@ -10,14 +10,31 @@ LOG_FILE="$REPO_ROOT/logs/gate_metrics.log"
 INSIGHT_SCRIPT="$REPO_ROOT/scripts/insight_write.sh"
 WINDOW="${GATE_AUTOFIX_WINDOW:-50}"
 MIN_COUNT="${GATE_AUTOFIX_MIN_COUNT:-3}"
+CACHE_TTL="${GATE_AUTOFIX_CACHE_TTL:-2}"
 
 if [[ ! -f "$LOG_FILE" ]]; then
     echo "SKIP: gate_metrics.log not found"
     exit 0
 fi
 
+_cache_file=""
+if [[ "${GATE_AUTOFIX_DISABLE_CACHE:-0}" != "1" && "$CACHE_TTL" =~ ^[0-9]+$ && "$CACHE_TTL" -gt 0 ]]; then
+    _log_sig="$(stat -c '%Y:%s' "$LOG_FILE" 2>/dev/null || printf 'unknown')"
+    _root_key="${REPO_ROOT//[^A-Za-z0-9._-]/_}"
+    _cache_file="/tmp/gate_autofix_proposal_${_root_key}_${WINDOW}_${MIN_COUNT}_${_log_sig//[^A-Za-z0-9._-]/_}.cache"
+    _now="$(date +%s)"
+    if [[ -f "$_cache_file" ]]; then
+        _cache_mtime="$(stat -c '%Y' "$_cache_file" 2>/dev/null || printf 0)"
+        if (( _now - _cache_mtime < CACHE_TTL )); then
+            cat "$_cache_file"
+            exit 0
+        fi
+    fi
+fi
+
 _tmp_recent="$(mktemp)"
-trap 'rm -f "$_tmp_recent"' EXIT
+_tmp_output="$(mktemp)"
+trap 'rm -f "$_tmp_recent" "$_tmp_output"' EXIT
 
 awk -F'\t' -v limit="$WINDOW" '
     $3 == "BLOCK" {
@@ -34,7 +51,7 @@ if [[ ! -s "$_tmp_recent" ]]; then
     exit 0
 fi
 
-python3 - "$REPO_ROOT" "$INSIGHT_SCRIPT" "$MIN_COUNT" "$WINDOW" "$_tmp_recent" <<'PY'
+python3 - "$REPO_ROOT" "$INSIGHT_SCRIPT" "$MIN_COUNT" "$WINDOW" "$_tmp_recent" <<'PY' | tee "$_tmp_output"
 import os
 import subprocess
 import sys
@@ -176,3 +193,7 @@ for pattern, count in pattern_counts.most_common():
 if created == 0:
     print("  none")
 PY
+
+if [[ -n "$_cache_file" ]]; then
+    cp "$_tmp_output" "$_cache_file"
+fi
