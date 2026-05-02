@@ -114,14 +114,55 @@ def marker_for(skill_name, reason):
     return f"<!-- skill-auto-improve:{digest} -->"
 
 
+def concrete_prevention_steps(reason):
+    lower = reason.lower()
+    checks = []
+    fixes = []
+
+    if "fill_this" in lower:
+        checks.append("提出前に対象YAML/本文へ `rg -n 'FILL_THIS'` を実行する")
+        fixes.append("残存箇所を実値または具体的な no_* reason に置換する")
+    if "verdict" in lower:
+        checks.append("verdict が空/None/不正値でないこと、かつ binary_checks 記入後に決めていることを確認する")
+        fixes.append("`/verdict-check` または `report_field_set.sh ... verdict PASS|FAIL` で再導出する")
+    if "binary_checks" in lower or "bc:" in lower or "bc_" in lower:
+        checks.append("全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する")
+        fixes.append("各ACの result を yes/no に直し、1つでも no なら verdict を FAIL にする")
+    if "lesson_candidate" in lower:
+        checks.append("lesson_candidate が dict で、found=false なら no_lesson_reason が具体文になっていることを確認する")
+        fixes.append("found/no_lesson_reason または title/detail を report_field_set.sh 経由で記入する")
+    if "lessons_useful" in lower or "draft_lessons" in lower:
+        checks.append("関連教訓ごとに lessons_useful の id/useful/reason が埋まっていることを確認する")
+        fixes.append("UNKNOWN/null/FILL_THISを使わず、各教訓の有用性と理由を記入する")
+    if "assumption_invalidation" in lower:
+        checks.append("assumption_invalidation に detail と affected_cmds があることを確認する")
+        fixes.append("影響なしでも `detail` と `affected_cmds` を明示する")
+    if "files_modified" in lower:
+        checks.append("files_modified が空/欠落/FILL_THISでないことを確認する")
+        fixes.append("変更した実ファイルパスを列挙し、変更なしなら理由を明記する")
+    if "missing" in lower or "欠落" in reason:
+        checks.append("FAIL理由に出たフィールド名を報告YAML上で実際に検索し、欠落していないか確認する")
+        fixes.append("欠落フィールドを report_field_set.sh 経由で追加する")
+    if not checks:
+        checks.append(f"FAIL理由 `{shorten(reason, 120)}` と同じ条件をゲート直前に再現確認する")
+    if not fixes:
+        fixes.append("同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する")
+
+    # Keep generated lines readable and deterministic.
+    checks = list(dict.fromkeys(checks))[:2]
+    fixes = list(dict.fromkeys(fixes))[:2]
+    return " / ".join(checks), " / ".join(fixes)
+
+
 def prevention_line(skill_name, reason, gate, count, last_fail):
     marker = marker_for(skill_name, reason)
     compact_reason = shorten(reason)
     gate_text = gate or "unknown_gate"
+    check_text, fix_text = concrete_prevention_steps(reason)
     return (
         f"- {marker} 自動防止: gate={gate_text} のTop FAIL理由「{compact_reason}」"
-        f"(count={count}, last={last_fail or 'unknown'})を避けるため、該当Step完了直後に同条件を確認し、"
-        "FAILなら次へ進まず修正する。"
+        f"(count={count}, last={last_fail or 'unknown'})を避ける。確認: {check_text}。"
+        f"修正: {fix_text}。"
     )
 
 

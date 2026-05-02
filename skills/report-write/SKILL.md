@@ -27,6 +27,10 @@ description: |
 - <!-- skill-auto-improve:4915d84e940c --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field」(count=1, last=2026-05-02T22:27:16+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:47a7cd7f4343 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-02T23:59:28+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:8b0229f09993 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:2」(count=1, last=2026-05-02T21:57:04+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
+
+### 必須事前検査
+- verdict空文字防止: verdictを書き込む直前に `binary_checks` 全resultが `yes` または `no` で埋まっていることを確認する。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば verdict を書かず、該当ACを `report_field_set.sh` で修正する。
+- FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
 ### Step 1: 報告パスを確認
 ```bash
 # タスクYAMLから報告パスを取得

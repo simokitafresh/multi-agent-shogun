@@ -488,6 +488,10 @@ text = Path("$TEST_TMPDIR/skills/report-write/SKILL.md").read_text(encoding="utf
 assert "## 報告YAML記入手順" in text
 assert "### 自動防止ステップ" in text
 assert "Top FAIL理由「verdict missing」" in text
+assert "確認:" in text
+assert "修正:" in text
+assert "verdict が空/None/不正値でないこと" in text
+assert "report_field_set.sh" in text
 assert text.count("skill-auto-improve:") == 1
 assert text.index("### 自動防止ステップ") < text.index("### Step 1: path")
 print("OK")
