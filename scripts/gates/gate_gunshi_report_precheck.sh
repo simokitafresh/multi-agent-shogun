@@ -32,6 +32,29 @@ if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
     PROJECT_DIR="/mnt/c/Python_app/DM-Signal"
 fi
 
+print_sg_pre9() {
+    echo ""
+    echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
+    if [ "${BC_HAS_NO:-0}" = "1" ]; then
+        echo "  ★★★ WARN: binary_checks result:no検出: ${BC_NO_ITEMS}"
+        if [ "${TEST_TRIAGE:-}" = "pre_existing" ]; then
+            echo "  → test_triage=pre_existing: gate WARN降格でCLEAR見込み(cmd_2339実証)"
+            echo "  → gate_prediction: WARN(BLOCK→降格)"
+        else
+            echo "  → gate_prediction: BLOCK固定(waive_reasonがあっても免除なし)"
+        fi
+        echo "  → GP-128: verdict PASS + result:no → gate機械的BLOCK"
+        echo "  → 見落とし実績: cmd_1897, cmd_1900, cmd_2093 (T1違反3回)"
+    else
+        echo "  PASS: binary_checks全result:yes (or検出対象なし)"
+    fi
+}
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE9" ]; then
+    print_sg_pre9
+    exit 0
+fi
+
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""
 echo "■ SG-PRE1: gate_report_format.sh"
@@ -190,21 +213,7 @@ else
 fi
 
 # ─── SG-PRE9: binary_checks result:no → gate_prediction BLOCK予告 (GP-193) ───
-echo ""
-echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
-if [ "${BC_HAS_NO:-0}" = "1" ]; then
-    echo "  ★★★ WARN: binary_checks result:no検出: ${BC_NO_ITEMS}"
-    if [ "${TEST_TRIAGE:-}" = "pre_existing" ]; then
-        echo "  → test_triage=pre_existing: gate WARN降格でCLEAR見込み(cmd_2339実証)"
-        echo "  → gate_prediction: WARN(BLOCK→降格)"
-    else
-        echo "  → gate_prediction: BLOCK固定(waive_reasonがあっても免除なし)"
-    fi
-    echo "  → GP-128: verdict PASS + result:no → gate機械的BLOCK"
-    echo "  → 見落とし実績: cmd_1897, cmd_1900, cmd_2093 (T1違反3回)"
-else
-    echo "  PASS: binary_checks全result:yes (or検出対象なし)"
-fi
+print_sg_pre9
 
 # ─── SG-PRE10: ac_version照合 ───
 echo ""
