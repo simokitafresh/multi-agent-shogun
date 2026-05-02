@@ -852,3 +852,4 @@
 | cmd_2492 | 報告YAMLテンプレートの必須フィールド欠落を配備経路に依存せず防止する。 現状: deploy_task.sh経由時のみgenerate_report_template()が走る。karo_direct/task YAML直接編集では未実行→必須4フィールド欠落(cmd_2481 hanzo r3で実証)。 改善: 忍者/clear Recovery Step 4.5でreport_pathのテンプレート検証+欠落フィールド自動補完。 | infra | 05-03 | 既存の不完全な報告テンプレートでも必須4フィールドを自動補完 |
 | cmd_2493 | 215本のスクリプト(scripts/144+gates/37+hooks/34)を計測し、最適化ボトルネックを特定する。 台帳(codd_refactor_registry.md)の約100件と突合し、未計測スクリプトと再最適化候補を洗い出す。 | infra | 05-03 | scripts/*.sh 144本を安全なbash -n解析 |
 | cmd_2495 | gate_silent_fallback.shがリグレッション(25ms→769ms、31x悪化)。 CoDD正規手順(spec→設計書→実装→計測→台帳記入)で台帳値25ms以下に復帰させる。 | infra | 05-03 | gate_silent_fallback.shの--help |
+| cmd_2498 | gate_shogun_memory.shがリグレッション(9ms→82ms、9.1x悪化)。 601行。load_memory_cache()でMEMORY.mdをawk解析+6項目チェック(行数/陳腐化/重複/MCP obs数/curation日/sync鮮度)。 CoDD正規手順で台帳値9ms以下に復帰させる。 | infra | 05-03 | gate_shogun_memory.shをline-cou |
