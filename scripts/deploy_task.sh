@@ -4721,7 +4721,8 @@ deploy_task_apply_task_mutations() {
 
     inject_task_id "$task_file" || true
     infer_ac_assigned_from_chunk_task_id "$task_file" || true
-    inject_related_lessons "$task_file" || true
+    # inject_related_lessonsはinject_task_modifiers(yaml.dump使用)の後に実行する。
+    # yaml.dumpがrelated_lessons+descriptionの_sv書式を破壊するため(inject_ac_versionと同じ理由)。
 
     local clear_fields clear_tmp
     clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
@@ -4760,8 +4761,9 @@ deploy_task_apply_task_mutations() {
     inject_skill_hint "$task_file" || true
     postcondition_lesson_inject "$task_file" || true
 
-    # AC注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
-    # yaml.dumpがAC構造を破壊するため、手動YAML構築のAC_OVERWRITEが最後に正しいACを書き込む。
+    # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
+    # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
+    inject_related_lessons "$task_file" || true
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 
