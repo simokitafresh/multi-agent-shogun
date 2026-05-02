@@ -51,6 +51,9 @@ _fixture_yaml_val() {
     case "$fixture:$key_path" in
         settings_with_models.yaml:cli.agents.sasuke.model) echo "haiku" ;;
         settings_with_models.yaml:cli.agents.hanzo.model) echo "gpt-5" ;;
+        settings_with_models.yaml:cli.agents.shogun.model_name) echo "claude-opus-4-6" ;;
+        settings_with_models.yaml:cli.agents.kagemaru.model_name) echo "gpt-5.5-low" ;;
+        settings_with_models.yaml:cli.agents.kotaro.model_name) echo "claude-sonnet-4-6" ;;
         settings_with_models.yaml:models.karo) echo "opus" ;;
         settings_kimi.yaml:cli.agents.hayate.model) echo "k2.5" ;;
         settings_kimi.yaml:cli.agents.kagemaru.model) echo "" ;;
@@ -93,7 +96,7 @@ setup_file() {
     }
 
     # 全テスト間で関数を共有（export -f により各テストsubprocessへ継承）
-    export -f get_cli_type build_cli_command get_instruction_file validate_cli_availability get_agent_model
+    export -f get_cli_type get_model_display_name build_cli_command get_instruction_file validate_cli_availability get_agent_model
     export -f cli_type cli_profile_get cli_launch_cmd cli_profile_get_for_type
     export -f _cli_lookup_settings_get _cli_adapter_read_yaml _cli_lookup_profile_get
     export -f _fixture_name _fixture_agent_type _fixture_yaml_val
@@ -258,6 +261,24 @@ load_adapter_with() {
 # =============================================================================
 # build_cli_command テスト
 # =============================================================================
+
+@test "get_model_display_name: opus model_name → Opus 4.6" {
+    load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
+    result=$(get_model_display_name "shogun")
+    [ "$result" = "Opus 4.6" ]
+}
+
+@test "get_model_display_name: codex model_name → gpt-5.5-low" {
+    load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
+    result=$(get_model_display_name "kagemaru")
+    [ "$result" = "gpt-5.5-low" ]
+}
+
+@test "get_model_display_name: sonnet model_name → Sonnet 4.6" {
+    load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
+    result=$(get_model_display_name "kotaro")
+    [ "$result" = "Sonnet 4.6" ]
+}
 
 @test "build_cli_command: claude + opus → --modelなし (素claude=1Mコンテキスト)" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"

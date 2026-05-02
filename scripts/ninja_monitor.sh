@@ -2350,10 +2350,13 @@ write_karo_snapshot() {
                             _ctx="${_ctx_num}%"
                         fi
                     fi
-                    # モデル短縮名を取得（@model_nameペイン変数から変換）
+                    # モデル短縮名を取得（@model_name未設定時はsettings.yamlのmodel_nameへフォールバック）
                     local _model_name="" _model_short="?"
                     if [ -n "$_pane_target" ]; then
                         _model_name=$(tmux show-options -p -t "$_pane_target" -v @model_name 2>/dev/null || echo "")
+                    fi
+                    if [ -z "$_model_name" ]; then
+                        _model_name=$(get_model_display_name "$name" 2>/dev/null || echo "")
                     fi
                     case "$_model_name" in
                         *[Oo]pus*)   _model_short="Op" ;;

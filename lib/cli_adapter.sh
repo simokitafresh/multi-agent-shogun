@@ -8,6 +8,7 @@
 #   get_instruction_file(agent_id [,cli_type]) → 指示書パス
 #   validate_cli_availability(cli_type)     → 0=OK, 1=NG
 #   get_agent_model(agent_id)               → "opus" | "sonnet" | "codex" | "k2.5"
+#   get_model_display_name(agent_id)        → "Opus 4.6" | "gpt-5.5-low" | ...
 
 # プロジェクトルートを基準にsettings.yamlのパスを解決
 CLI_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -59,6 +60,43 @@ except Exception:
 get_cli_type() {
     local agent_id="$1"
     cli_type "${agent_id:-}"
+}
+
+# get_model_display_name(agent_id)
+# settings.yamlのcli.agents.{id}.model_nameを表示用名に変換する
+get_model_display_name() {
+    local agent_id="$1"
+    local model_name
+    model_name=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.model_name" "")
+
+    if [[ -n "$model_name" ]]; then
+        case "$model_name" in
+            claude-opus-4-6*)    echo "Opus 4.6" ;;
+            claude-opus-4*)      echo "Opus 4" ;;
+            claude-sonnet-4-6*)  echo "Sonnet 4.6" ;;
+            claude-sonnet-4*)    echo "Sonnet 4" ;;
+            claude-haiku-4-5*)   echo "Haiku 4.5" ;;
+            claude-haiku-4*)     echo "Haiku 4" ;;
+            *)                   echo "$model_name" ;;
+        esac
+        return 0
+    fi
+
+    local display_name
+    display_name=$(cli_profile_get "$agent_id" "display_name" 2>/dev/null) || display_name=""
+    if [[ -n "$display_name" ]]; then
+        echo "$display_name"
+        return 0
+    fi
+
+    local cli_type
+    cli_type=$(get_cli_type "$agent_id" 2>/dev/null) || cli_type="claude"
+    case "$cli_type" in
+        codex)   echo "Codex" ;;
+        copilot) echo "Copilot" ;;
+        kimi)    echo "Kimi" ;;
+        *)       echo "Claude" ;;
+    esac
 }
 
 # build_cli_command(agent_id)
