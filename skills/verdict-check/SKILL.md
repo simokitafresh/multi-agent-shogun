@@ -82,3 +82,4 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 
 ## 注意ポイント
 
+

@@ -133,4 +133,3 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 
 ## 注意ポイント
 
-- 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: found=false but no no_lesson_reason; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; purpose_validation: MISSING; status: \"pending\" はテンプレート初期値。完了後...
