@@ -52,6 +52,32 @@ select_profile_type() {
     printf '%s\n' "$profile_types" | grep -vx "$DEFAULT_CLI" | head -1
 }
 
+# Codex uses /new instead of /clear for session reset.
+# Keep clear_command and /shogun-clear-prep intact; those are protocol/skill names,
+# not CLI commands for Codex to run.
+normalize_codex_reset_references() {
+    local target_file="$1"
+
+    # shellcheck disable=SC2016
+    sed -i \
+        -e 's|/clear Recovery|/new Recovery|g' \
+        -e 's|/clear recovery|/new recovery|g' \
+        -e 's|/clear前|/new前|g' \
+        -e 's|/clear後|/new後|g' \
+        -e 's|after /clear|after /new|g' \
+        -e 's|After /clear|After /new|g' \
+        -e 's|pre-/clear|pre-/new|g' \
+        -e 's|無条件/clear|無条件/new|g' \
+        -e 's|家老/clear|家老/new|g' \
+        -e 's|test /clear recovery|test /new recovery|g' \
+        -e 's|sending /clear|sending /new|g' \
+        -e 's|prepare for /clear|prepare for /new|g' \
+        -e 's|/clearされた|/newされた|g' \
+        -e 's|`/clear` する|`/new` する|g' \
+        -e 's|sends `/clear` + Enter|sends `/new` + Enter|g' \
+        "$target_file"
+}
+
 # ============================================================
 # Helper function: Build a complete instruction file
 # ============================================================
@@ -93,6 +119,10 @@ build_instruction_file() {
             echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
         fi
     } > "$output_path"
+
+    if [[ "$cli_type" == "codex" ]]; then
+        normalize_codex_reset_references "$output_path"
+    fi
 
     echo "  ✅ Created: $output_filename"
 }
@@ -204,18 +234,7 @@ generate_agents_md() {
         ".${cli_type}/config.toml" "config.toml (mcp_servers section)" \
         "$cli_display" "$claude_md" "$output_path"
 
-    # Codex uses /new instead of /clear for session reset.
-    # Replace /clear references with /new, preserving /shogun-clear-prep and clear_command.
-    # shellcheck disable=SC2016
-    sed -i \
-        -e 's|/clear Recovery|/new Recovery|g' \
-        -e 's|/clear前|/new前|g' \
-        -e 's|after /clear|after /new|g' \
-        -e 's|pre-/clear|pre-/new|g' \
-        -e 's|無条件/clear|無条件/new|g' \
-        -e 's|家老/clear|家老/new|g' \
-        -e 's|`/clear`|`/new`|g' \
-        "$output_path"
+    normalize_codex_reset_references "$output_path"
 
     echo "  ✅ Created: AGENTS.md"
 }

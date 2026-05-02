@@ -111,6 +111,12 @@ teardown_file() {
 # cmd_2116: setup()のサブシェル削除 (PROJECT_ROOT/BUILD_SCRIPT/OUTPUT_DIRはsetup_file()でexport済み)
 setup() { :; }
 
+find_forbidden_codex_clear_refs() {
+    local file="$1"
+    grep -nE '(/clear Recovery|/clear recovery|/clear前|/clear後|after /clear|After /clear|pre-/clear|無条件/clear|家老/clear|test /clear recovery|sending /clear|prepare for /clear|/clearされた|`/clear`)' "$file" 2>/dev/null \
+        | grep -Ev 'clear_command|/shogun-clear-prep|`/clear` \(closest\)|`/clear` context reset|instead of `/clear`' || true
+}
+
 # =============================================================================
 # ビルド実行テスト
 # =============================================================================
@@ -359,4 +365,47 @@ setup() { :; }
 @test "clear-conv: AGENTS.md has no '家老/clear' (converted to 家老/new)" {
     [ -f "$PROJECT_ROOT/AGENTS.md" ]
     ! grep -q "家老/clear" "$PROJECT_ROOT/AGENTS.md"
+}
+
+@test "clear-conv: Codex generated files have no forbidden raw /clear reset references" {
+    local file hits out
+    local files=(
+        "$PROJECT_ROOT/AGENTS.md"
+        "$OUTPUT_DIR/codex-shogun.md"
+        "$OUTPUT_DIR/codex-karo.md"
+        "$OUTPUT_DIR/codex-gunshi.md"
+        "$OUTPUT_DIR/codex-ashigaru.md"
+    )
+
+    hits=""
+    for file in "${files[@]}"; do
+        [ -f "$file" ]
+        out="$(find_forbidden_codex_clear_refs "$file")"
+        if [ -n "$out" ]; then
+            hits+="${file}:${out}"$'\n'
+        fi
+    done
+
+    if [ -n "$hits" ]; then
+        printf '%s\n' "$hits" >&2
+        false
+    fi
+}
+
+@test "clear-conv: legal clear words are not treated as forbidden raw /clear reset references" {
+    local fixture
+    fixture="$BATS_TEST_TMPDIR/legal_clear_terms.md"
+    cat > "$fixture" <<'EOF'
+`/shogun-clear-prep` remains a valid skill name.
+`clear_command` remains a valid inbox message type.
+- `type: clear_command` → sends the configured session reset command (`/clear` for Claude, `/new` for Codex)
+| `/new` | Start fresh conversation within current session | `/clear` (closest) |
+| `/clear` context reset | Yes | `/new` (TUI only) |
+**Key difference from Claude Code**: Codex uses `/new` instead of /clear for context reset.
+**Key difference from Claude Code**: Codex uses `/new` instead of `/clear` for context reset.
+EOF
+
+    run find_forbidden_codex_clear_refs "$fixture"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }

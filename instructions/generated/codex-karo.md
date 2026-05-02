@@ -454,13 +454,13 @@ External PRs are reinforcements. Treat with respect.
 ### Post-Modification Regression
 
 - Modified `instructions/*.md` → plan regression test for affected scope
-- Modified `CLAUDE.md` → test /clear recovery
+- Modified `CLAUDE.md` → test /new recovery
 - Modified `shutsujin_departure.sh` → test startup
 
 ### Quality Assurance
 
-- After /clear → verify recovery quality
-- After sending /clear to ninja → confirm recovery before task assignment
+- After /new → verify recovery quality
+- After sending /new to ninja → confirm recovery before task assignment
 - YAML status updates → always final step, never skip
 - Pane title reset → always after task completion (step 12)
 - After inbox_write → verify message written to inbox file
@@ -469,7 +469,7 @@ External PRs are reinforcements. Treat with respect.
 
 - Ninja report overdue → check pane status
 - Dashboard inconsistency → reconcile with YAML ground truth
-- Own context < 20% remaining → report to shogun via dashboard, prepare for /clear
+- Own context < 20% remaining → report to shogun via dashboard, prepare for /new
 
 ## References
 
