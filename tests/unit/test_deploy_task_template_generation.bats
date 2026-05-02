@@ -228,6 +228,23 @@ task:
 EOF
     _build_report_fixture non_gitignore
     _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "commit forbidden constraint test"
+  task_type: impl
+  parent_cmd: cmd_commit_forbidden
+  task_id: cmd_commit_forbidden_impl
+  project: infra
+  command: "AC2担当: deploy_task.sh修正。commit禁止。将軍がpushする。"
+  target_path: "scripts/deploy_task.sh"
+  acceptance_criteria:
+    - id: AC1
+      description: "commit禁止制約ではcommit binary_checkを生成しない"
+EOF
+    _build_report_fixture commit_forbidden
+    _fixture_project_end
 }
 
 # ─── Helper: gitignore テスト用 git 環境セットアップ ───
@@ -269,6 +286,15 @@ _setup_git_project() {
     commit_block="$(report_block "$report_path" "commit")"
     [[ "$commit_block" == *"result: 'no'"* ]]
     [[ "$commit_block" == *"waive_reason: '研究cmd: commit不要'"* ]]
+}
+
+@test "commit禁止制約のcmdではcommit checkを生成しない" {
+    local report_path
+    report_path="$(fixture_report_path commit_forbidden)"
+
+    local commit_block
+    commit_block="$(report_block "$report_path" "commit")"
+    [ -z "$commit_block" ]
 }
 
 # ═══════════════════════════════════════════════════════════

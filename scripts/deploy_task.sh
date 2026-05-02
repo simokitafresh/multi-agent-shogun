@@ -1170,11 +1170,12 @@ generate_report_template() {
     # task_id・parent_cmd はパラメータと同名のため上書き前にコピー
     local _p_task_id="$task_id" _p_parent_cmd="$parent_cmd"
     local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd \
-          ac_version title task_type target_path scout_exempt type scope_mode
+          ac_version title task_type target_path scout_exempt type scope_mode \
+          command constraints not_in_scope
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd ac_version title task_type target_path scout_exempt \
-        type scope_mode 2>/dev/null)" || true
+        type scope_mode command constraints not_in_scope 2>/dev/null)" || true
 
     # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
     if [ -n "$report_filename" ]; then
@@ -1587,17 +1588,20 @@ EOF
         fi
     fi
 
-    # GP-190: cmd制約(commit禁止)検出 → commit checkにwaive_reason付きno設定
-    # 根因: bc設計に「正当なno」の概念がなかった。waive_reasonで事実を歪めずgate通過可能にする
+    # GP-190改: cmd制約(commit禁止)検出 → commit check自体を生成しない
+    # 根因: commit禁止cmdにcommit binary_checkを残すと、忍者が実行不能な項目でBLOCKされる。
     if [ -n "$_commit_bc" ]; then
-        local _cmd_command=""
-        _cmd_command=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$CMD_ID" "command" 2>/dev/null || true)
-        if echo "$_cmd_command" | grep -qiE 'commit.*禁止|commit一切禁止|登録.*のみ.*commit'; then
-            _commit_bc='  commit:
-  - check: "git commitが完了したか(untracked/modified=0)"
-    result: "no"
-    waive_reason: "cmd制約: commit禁止"'
-            log "binary_checks: commit check waived (cmd constraint: commit禁止)"
+        local _cmd_text="${command} ${constraints} ${not_in_scope}"
+        if [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ] && [ -n "$_p_parent_cmd" ]; then
+            local _cmd_queue_text
+            _cmd_queue_text=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$_p_parent_cmd" "command" 2>/dev/null || true)
+            _cmd_queue_text="${_cmd_queue_text} $(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$_p_parent_cmd" "constraints" 2>/dev/null || true)"
+            _cmd_queue_text="${_cmd_queue_text} $(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$_p_parent_cmd" "not_in_scope" 2>/dev/null || true)"
+            _cmd_text="${_cmd_text} ${_cmd_queue_text}"
+        fi
+        if echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
+            _commit_bc=""
+            log "binary_checks: commit check skipped (cmd constraint: commit禁止)"
         fi
     fi
 
@@ -1697,9 +1701,15 @@ ${_commit_bc}"
         if [ -n "$_bc_block" ]; then
             local _bc_ac_count
             _bc_ac_count=$(echo "$_bc_block" | grep -c '^\s\s[A-Z]')
-            log "binary_checks template: ${_bc_ac_count} ACs + commit check injected"
-        else
+            if [ -n "$_commit_bc" ]; then
+                log "binary_checks template: ${_bc_ac_count} ACs + commit check injected"
+            else
+                log "binary_checks template: ${_bc_ac_count} ACs injected"
+            fi
+        elif [ -n "$_commit_bc" ]; then
             log "binary_checks template: standard commit check injected"
+        else
+            log "binary_checks template: no checks injected"
         fi
         log "report_template: binary_checks template injected"
     fi
