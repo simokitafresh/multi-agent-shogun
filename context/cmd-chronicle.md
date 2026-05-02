@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-02 -->
+<!-- last_updated: 2026-05-03 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -51,10 +51,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_1671 | ninja_monitor.sh 2バグ修正 — pstree永久BUSY化 + pipeline空idle通知スキップ | infra | 04-02 | ninja_monitor.sh 2バグ修正完了。AC1: |
-| cmd_1672 | deploy_task.sh direct mode追加 — 修行タスク配備パイプライン正常化(GP-138) | infra | 04-02 | deploy_task.shに--direct mode追加 |
-| cmd_1673 | 編成切替スキル /hensei 構築 — 稼働中モデル混成切替+Opus全戻し | infra | 04-02 | get_agent_model()にclaude-sonne |
-| cmd_1676 | gate_report_format.sh stale_reportチェック修正 — task_id/cmd_idサフィックス不一致(PD-005) | infra | 04-02 | gate_report_format.sh L367のsta |
 | cmd_1678 | commit 353f59eでscripts/api_usage.shの出力形式が変更されたが、 tests/unit/test_api_usage.batsのテスト12-13のアサーションが旧形式のまま。 9時間以上CI REDが継続中。テストを現行スクリプト出力に合わせて修正する。 | infra | 04-03 | test_api_usage.batsテスト12-13を修正 |
 | cmd_1680 | 月初にリバランスが確定しているにもかかわらず、Dashboard上で最大24時間「Pending」+生signal表示が続くバグを修正。 ユーザーから4/1 23:00と4/2 13:00でシグナルが異なるとの報告あり。 根因: holding_signalの確定が「当月の市場データ到着→signal行作成」に依存。 4月の保有は3月31日のパイプライン出力で既に決定済みだが、4月1日のsignal行がないとPendingになる。 | dm-signal | 04-03 | Phase 4.1月初signal行自動作成ロジックを実装。 |
 | cmd_1681 | DM6(lookback=15D)は全前処理手法で劣化した(研究日誌Phase 8)。 殿の洞察: lookbackを中期に変更すればDNAが全く変わる別物として前処理が効く領域に入る。 DM3(126D)でEMA+112%/L1+383%の改善が出た中期域でDM6構成を検証する。 | dm-signal | 04-03 | DM6構成6仮想PF×4条件=24件のwalkforward |
@@ -848,3 +844,4 @@
 | cmd_2479 | CI実行332秒(5.5分)のテストスイートから不要テストを特定する。 殿「テストは負債。3問検証(リグレッション必要性/変更頻度/維持コスト)」。 前回調査(2026-04-15)からは40日経過。スクリプト削除・変更で状況が変わっている。 | infra | 05-02 | tests/unit/*.bats 154件を対象に、対象ス |
 | cmd_2480 | CI実行332秒のうちTop 5テスト(120秒超=36%)をCoDD高速化する。 cmd_2479偵察でtimeout 2件(cmd_save_environment_change 32.9s, sync_lessons 32.2s)と 高コスト3件(cmd_save_diagnosis_quality 22.2s, deploy_task_ac_handling 18.0s, deploy_task_ac_version 15.2s)を特定。 CoDD台帳に30件の実績あり(cmd_save.sh -32%、deploy_task.sh -25%等)。同手法を適用。 | infra | 05-02 | AC1/AC3完了。timeoutしていた2本を15s以下へ |
 | cmd_2483 | 軍師分析で特定されたインフラバグ3件を修正する。 karo_workarounds 102件中9件(8.8%)がこの3パターンに起因。 放置中もWAが蓄積し家老のトークンを浪費する。idle忍者に即配備。 | infra | 05-02 | AC1: yaml_field_set.shがbinary_ |
+| cmd_2486 | skill_gate_feedback.shのスキル特定を名前推測(haystack keyword照合)から skill_execution_log.yamlの実行記録ベースに変更する。誤帰属によるゴミデータを根絶。 | infra | 05-03 | skill_gate_feedback.shのスキル帰属をh |
