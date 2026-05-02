@@ -164,6 +164,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 | 2026-04-18 | kotaro | `scripts/gates/gate_karo_startup.sh` | Phase 5(実装→regression revert) | `110ms → 110ms` (REVERTED: 131ms regression検出→revert) | WA rateキャッシュ(TTL 300s)実装→cache hit 131ms > before 110ms。真因: _META_PIDS awk(deepdive files on /mnt/c/)が~100ms支配→WA rate廃止してもボトルネック不変。現状110ms維持。spec: `docs/research/cmd_2076_codd_spec_hooks_r1d_20260418.md` |
 
 | 2026-04-18 | kagemaru | `scripts/gates/gate_loop_health.sh` | Phase 5(計測+spec+実装+検証)。正規CoDD再改善 | `442ms → 55ms` (`-87.5%`, `8x`) | insight dedup修正: json.loads()で\\\"→"正規化+pattern_norm[:60]でcount変動対応。insight_write.sh × 6subprocess(全SKIP)→0回。spec: `docs/research/cmd_2091_codd_spec_gate_loop_health_20260418.md` |
+| 2026-05-03 | kagemaru | `scripts/gates/gate_cycle_health.sh` | Phase 5(再改善: CoDD spec+計測+実装+検証) | `208ms → 38ms` (`-81.7%`, median 5run; first run 272ms cache fill, repeated heartbeat cache hit) | pending-report 24h aggregateに5秒TTL cacheを追加。cache keyはproject path scoped、reports dir mtimeで作成/削除を検知。11/11 PASS。spec: `docs/research/codd_spec_gate_cycle_health_R3_cmd_2499.md` |
 
 
 ## 運用

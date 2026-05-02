@@ -46,21 +46,40 @@ fi
 PENDING_REPORTS=0
 NOW=$(date +%s)
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
+CACHE_KEY="${SCRIPT_DIR//[^A-Za-z0-9_.-]/_}"
+PENDING_REPORTS_CACHE="/tmp/gate_cycle_health_pending_reports_${CACHE_KEY}.cache"
+PENDING_REPORTS_CACHE_TTL="${GATE_CYCLE_HEALTH_CACHE_TTL_SEC:-5}"
+REPORT_DIR_MTIME=0
+if [ -d queue/reports ]; then
+    REPORT_DIR_MTIME=$(stat -c '%Y' queue/reports 2>/dev/null || echo 0)
+fi
+PENDING_REPORTS_CACHE_HIT=0
+if [ -f "$PENDING_REPORTS_CACHE" ]; then
+    read -r _CACHE_MTIME _CACHE_TS _CACHE_VALUE < "$PENDING_REPORTS_CACHE" || true
+    if [ "${_CACHE_MTIME:-}" = "$REPORT_DIR_MTIME" ] \
+        && [ -n "${_CACHE_TS:-}" ] \
+        && [ -n "${_CACHE_VALUE:-}" ] \
+        && [ $((NOW - _CACHE_TS)) -lt "$PENDING_REPORTS_CACHE_TTL" ] 2>/dev/null; then
+        PENDING_REPORTS="$_CACHE_VALUE"
+        PENDING_REPORTS_CACHE_HIT=1
+    fi
+fi
 # Optimized: glob+stat一括+awk単一パス(getline) (cmd_1982)
 # find(10ms)+xargs stat 25files(28ms)+xargs grep-l(25ms) → glob stat(8ms)+awk+getline(5ms)
-_CUTOFF=$((NOW - 86400))
-_CLEARED_IDS=""
-if [ -f "$GATE_LOG" ]; then
-    # B2: grep+grep-oE+sort 1パイプライン (echo subshell廃止)
-    _CLEARED_IDS=$(grep $'\tCLEAR' "$GATE_LOG" 2>/dev/null | grep -oE 'cmd_[a-zA-Z0-9_]+' | sort -u || true)
-fi
-# B1: bash glob + stat一括 + awk単一パス(cleared/cutoff/status check with getline)
-shopt -s nullglob
-_REPORT_FILES=( queue/reports/*_report_*.yaml )
-shopt -u nullglob
-if [ ${#_REPORT_FILES[@]} -gt 0 ]; then
-    PENDING_REPORTS=$(stat -c '%Y %n' "${_REPORT_FILES[@]}" 2>/dev/null \
-        | awk -v cids="$_CLEARED_IDS" -v cutoff="$_CUTOFF" '
+if [ "$PENDING_REPORTS_CACHE_HIT" -eq 0 ]; then
+    _CUTOFF=$((NOW - 86400))
+    _CLEARED_IDS=""
+    if [ -f "$GATE_LOG" ]; then
+        # B2: grep+grep-oE+sort 1パイプライン (echo subshell廃止)
+        _CLEARED_IDS=$(grep $'\tCLEAR' "$GATE_LOG" 2>/dev/null | grep -oE 'cmd_[a-zA-Z0-9_]+' | sort -u || true)
+    fi
+    # B1: bash glob + stat一括 + awk単一パス(cleared/cutoff/status check with getline)
+    shopt -s nullglob
+    _REPORT_FILES=( queue/reports/*_report_*.yaml )
+    shopt -u nullglob
+    if [ ${#_REPORT_FILES[@]} -gt 0 ]; then
+        PENDING_REPORTS=$(stat -c '%Y %n' "${_REPORT_FILES[@]}" 2>/dev/null \
+            | awk -v cids="$_CLEARED_IDS" -v cutoff="$_CUTOFF" '
             BEGIN{n=split(cids,c,"\n");for(i=1;i<=n;i++)clr[c[i]]=1}
             {
                 mtime=$1; path=$2
@@ -75,6 +94,9 @@ if [ ${#_REPORT_FILES[@]} -gt 0 ]; then
             }
             END{print count+0}
         ')
+    fi
+    printf '%s %s %s\n' "$REPORT_DIR_MTIME" "$NOW" "$PENDING_REPORTS" > "${PENDING_REPORTS_CACHE}.tmp"
+    mv "${PENDING_REPORTS_CACHE}.tmp" "$PENDING_REPORTS_CACHE"
 fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then
     ALERTS+=("GATE未処理報告: ${PENDING_REPORTS}件(24h以内)。成果が還流されていない")
