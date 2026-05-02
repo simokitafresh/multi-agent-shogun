@@ -779,6 +779,46 @@ EOF
     rm -rf "$direct_root"
 }
 
+@test "--directモード + 異なるCMD_ID: acceptance_criteriaをクリアする（旧AC残存バグ修正）" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct_newcmd.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local file="$direct_root/queue/tasks/tobisaru.yaml"
+
+    SCRIPT_DIR="$direct_root"
+    DIRECT_MODE=true
+    CMD_ID="cmd_NEW_DIFFERENT"  # 既存parent_cmd(cmd_8888)と異なる
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    # acceptance_criteriaがクリアされているか確認
+    assert_missing_fields "$file" acceptance_criteria
+
+    rm -rf "$direct_root"
+}
+
+@test "--directモード + 同一CMD_ID: acceptance_criteriaを保持する（LK008）" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct_samecmd.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local file="$direct_root/queue/tasks/tobisaru.yaml"
+
+    SCRIPT_DIR="$direct_root"
+    DIRECT_MODE=true
+    CMD_ID="cmd_8888"  # 既存parent_cmdと同じ → LK008によりAC保持
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    # acceptance_criteriaが保持されているか確認
+    grep -q "acceptance_criteria" "$file"
+
+    rm -rf "$direct_root"
+}
+
 # ═══════════════════════════════════════════════════════════
 # stale_report_verdict テスト (11)
 # ═══════════════════════════════════════════════════════════

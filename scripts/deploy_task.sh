@@ -224,11 +224,20 @@ reset_stale_fields() {
         fi
     fi
 
-    python3 - "$task_file" "$DIRECT_MODE" <<'STALE_FIELD_RESET_PY'
+    python3 - "$task_file" "$DIRECT_MODE" "$CMD_ID" <<'STALE_FIELD_RESET_PY'
 import os, sys, tempfile, yaml, re
 
 task_file = sys.argv[1]
 is_direct = len(sys.argv) > 2 and sys.argv[2] == 'true'
+new_parent_cmd = sys.argv[3].strip() if len(sys.argv) > 3 else ''
+
+with open(task_file, 'r', encoding='utf-8') as f:
+    raw = f.read()
+
+# 既存parent_cmdをパース（directモードのAC保持判定に使用）
+_pc_m = re.search(r'^  parent_cmd:\s*([\w-]+)', raw, re.MULTILINE)
+existing_parent_cmd = _pc_m.group(1) if _pc_m else ''
+
 # スカラー+リスト両方を確実にクリアするフィールド一覧
 STALE_FIELDS = [
     # 第1層: cmd固有メタデータ(スカラー)
@@ -256,12 +265,10 @@ STALE_FIELDS = [
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
 ]
 # --directモード以外ではacceptance_criteriaもクリア
-# --directモードではAC保持（LK008: shogun_to_karo.yaml不在→resolve_cmd_to_task不発→AC空化防止）
-if not is_direct:
+# --directモードでもparent_cmdが変わった場合はACをクリア（旧AC残存バグ修正）
+# LK008の意図: re-deploy時AC保持はparent_cmd一致時(同じcmdへの再配備)のみ適用
+if not is_direct or (new_parent_cmd and existing_parent_cmd != new_parent_cmd):
     STALE_FIELDS.append('acceptance_criteria')
-
-with open(task_file, 'r', encoding='utf-8') as f:
-    raw = f.read()
 
 # 行ベースのインデント追跡でstaleフィールドを除去（正規表現の誤マッチ防止）
 # 正規表現はダブルクォート内エスケープ/ネスト構造/リスト項目で誤動作する
