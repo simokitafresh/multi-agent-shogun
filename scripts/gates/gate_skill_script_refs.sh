@@ -15,6 +15,7 @@ set -euo pipefail
 
 REPO_ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
+run_check() {
 SKILL_REF_REPO_ROOT="$REPO_ROOT" python3 - <<'PY'
 from __future__ import annotations
 
@@ -141,3 +142,38 @@ if missing or stale:
 
 print("--- 総合判定: PASS ---")
 PY
+}
+
+CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-2}"
+RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
+SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
+
+if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
+    CACHE_KEY="$(printf '%s\0%s\0%s' "$REPO_ROOT" "$RAW_ROOTS" "$SCRIPT_MTIME" | md5sum | cut -c1-16)"
+    CACHE_BASE="/tmp/shogun_gate_skill_script_refs_${CACHE_KEY}"
+    CACHE_OUT="${CACHE_BASE}.out"
+    CACHE_CODE="${CACHE_BASE}.code"
+    NOW="$(date +%s)"
+
+    if [ -f "$CACHE_OUT" ] && [ -f "$CACHE_CODE" ]; then
+        CACHE_MTIME="$(stat -c %Y "$CACHE_OUT" 2>/dev/null || printf '0')"
+        CACHE_AGE=$((NOW - CACHE_MTIME))
+        if [ "$CACHE_AGE" -ge 0 ] && [ "$CACHE_AGE" -le "$CACHE_TTL_SECONDS" ]; then
+            cat "$CACHE_OUT"
+            exit "$(cat "$CACHE_CODE")"
+        fi
+    fi
+
+    TMP_OUT="$(mktemp "${CACHE_BASE}.XXXXXX")"
+    set +e
+    run_check >"$TMP_OUT"
+    CHECK_CODE=$?
+    set -e
+    printf '%s\n' "$CHECK_CODE" >"${CACHE_CODE}.tmp"
+    mv "$TMP_OUT" "$CACHE_OUT"
+    mv "${CACHE_CODE}.tmp" "$CACHE_CODE"
+    cat "$CACHE_OUT"
+    exit "$CHECK_CODE"
+fi
+
+run_check
