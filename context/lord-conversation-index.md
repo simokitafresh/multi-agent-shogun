@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-02T02:52:48+09:00 -->
+<!-- generated_at: 2026-05-02T11:22:53+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-02T11:22:53+09:00 | terminal | response | 【/lesson-sort 実行結果】 移動完了: 19件 重複削除: 10件（L679, L681, L682, L683, L689, L691, L695, L698, L700, L706） 自動生成削除: 3件（L687, L6…
+- 2026-05-02T09:59:30+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=446.0s, ratio=85.71x, delta=+37779.0s) WARNING:…
+- 2026-05-02T08:06:51+09:00 | ntfy | outbound | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓32件 → /lesson-sort推奨
+- 2026-05-02T03:55:09+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2223 (duration=38225s, median=446.0s, ratio=85.71x, delta=+37779.0s) WARNING:…
+- 2026-05-02T03:07:05+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 02:52:26|cmd_karo_ci_fix_flaky_1090 2026-05-02 02:58:16|CI緑: run 25225468928
 - 2026-05-02T02:52:47+09:00 | terminal | response | 家老がCI flaky test修正(cmd_karo_ci_fix_flaky_1090)をGATE CLEAR。定型CI修正のためkaro_direct案件。影丸が作業中→完了。 殿、指示あれば。 [meta] stop_reason…
 - 2026-05-02T02:39:24+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-221)
 - 2026-05-02T02:36:02+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 02:31:46|cmd_2455 2026-05-02 02:33:09|cmd_2455
 - 2026-05-02T02:34:19+09:00 | ntfy | outbound | 【改善トリガー】lesson_health ALERT (GA-220)
 - 2026-05-02T02:34:05+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2455 CLEAR(signals監査ログ) | CI GREEN | idle:6名 | pipeline:1件(on_hold)
-- 2026-05-02T02:33:24+09:00 | terminal | response | cmd_2455のGATE CLEAR重複通知。処理済み。殿、指示あれば。 [meta] stop_reason=end_turn
-- 2026-05-02T02:32:04+09:00 | terminal | response | **cmd_2455 GATE CLEAR。** 疾風が完了。 signals updated_at + signal_change_logテーブル（ticker×weightスナップショット付き）が本番に入った。これで今後のfullre…
-- 2026-05-02T02:23:21+09:00 | ntfy | outbound | 【家老】cmd_2455 初回配備開始 (title=実装 — signals updated_at追加 + holding_signal変更履歴テーブル, ninja=hayate) 実装 📋 https://gist.github.c…
-- 2026-05-02T02:21:31+09:00 | terminal | response | **cmd_2455 PASS。家老に委任完了。** signals updated_at追加 + holding_signal変更履歴テーブル（ticker×weightスナップショット付き）。殿、結果が出たら報告する。 [meta] …
-- 2026-05-02T02:20:54+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-02 02:05:31|cmd_2454 2026-05-02 02:19:57|CI緑: run 25224085906
 
 ## 未解決確認事項
 - lesson-sort依頼は確認済み。idle時に対応する。殿の指示を待つ。 [meta] stop_reason=tool_use
@@ -39,33 +39,15 @@
 - cmd_2223
 - cmd_2226
 - cmd_2378
-- cmd_2392
-- cmd_2412
-- cmd_2416
-- cmd_2424
-- cmd_2426
-- cmd_2427
-- cmd_2428
-- cmd_2429
-- cmd_2430
-- cmd_2431
-- cmd_2432
-- cmd_2433
-- cmd_2434
-- cmd_2435
-- cmd_2436
-- cmd_2437
-- cmd_2438
-- cmd_2439
-- cmd_2440
-- cmd_2441
-- cmd_2442
-- cmd_2444
-- cmd_2445
 - cmd_2447
 - cmd_2448
 - cmd_2449
 - cmd_2450
+- cmd_2451
+- cmd_2452
+- cmd_2453
+- cmd_2454
+- cmd_2455
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

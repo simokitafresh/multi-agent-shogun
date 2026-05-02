@@ -26,6 +26,9 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 | **排他制御** | pg_advisory_lock。409=排他中(30秒待って再実行) | 同時実行不可 |
 
 ローカルでやること: DB接続(psycopg2)でPFレコード作成/読取 + GS CSV 1列読取 + 数値比較。メモリ数MB。
+
+- L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
+- L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
 ### Render CLI (v2.12.0)
@@ -248,6 +251,13 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L099 | LIKE '%ReversalFilter%'→TrendReversal誤検知。jsonb_path_existsで解決 | DB | — |
 | L085 | テストPF削除は16テーブルFK依存順(4テーブルでは不足) | DB | cmd_215 |
 | L084 | recalculate-status is_running=None≠完了。DB行数カウントで判定 | 再計算 | cmd_215 |
+| L677 | SQLite移動後検証はquick_check+MD5で十分。full integrity_checkは10分 | ツール | cmd_2393 |
+| L678 | ベンチマーク計測は合成データで書込み時間を分離せよ | ツール | cmd_2397 |
+| L680 | GS runner実行前にAC記載CLI引数が実装argparseと一致するか確認せよ | GS | cmd_2405 |
+| L684 | run_077は--out-dirのみ定義で--output-dirエイリアス欠落があるケースに注意 | ツール | cmd_2411 |
+| L688 | Payload再生成時は内部メタデータを保持して検証する | ツール | cmd_2423 |
+| L692 | method ID/ファイル名は実SSOTと照合して報告に明記する | 運用 | cmd_karo_ctx |
+| L708 | FoF履歴不足調査はvalid_start_date計算を突合せよ | 運用 | cmd_2454 |
 | L104 | subtask間依存で.gitignoreが後続コミット計画をブロックしうる | 運用プロセス | cmd_259 |
 | L082 | `monthly_returns.portfolio_id(varchar)` と `portfolios.id(uuid)` は比較前に `id::text` で型統一 | DB | cmd_214 |
 | L081 | recalculate Phase0では`monthly_returns`が一時的に空になる前提で検証順序を組む | 再計算 | cmd_214 |

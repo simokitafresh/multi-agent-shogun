@@ -129,6 +129,9 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L299 | GS shared metricsとrunner CSV metricsが別系統だとdrift | cmd_861 |
 | L572 | GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search [deprecated] | cmd_alm_ninpo_recon |
 | L581 | gs_data_loader unit_naming format変数はdisplay/pattern/kのみ。{family}は不可 | cmd_1795 |
+| L685 | 別layerへ既存selectorを流用する前に固定パスと突合分岐を確認する | cmd_2412 |
+| L686 | robustness実行前にSQLite月次保存形式を確認する | cmd_2413 |
+| L693 | day lookback指定と月次return入力が混在する研究cmdでは時間解像度の写像を成果物へ明記 | cmd_2436 |
 | L102 | MultiView skip_months=[0,1,2,3]はクラス変数固定、config変更不可 | cmd_253 |
 | L100 | MultiView base_period_months≥4必須(skip=3で0ヶ月問題) | cmd_253 |
 | L101 | MultiView Phase3 momentum_cache事前計算はFoF専用でskip | cmd_253 |
@@ -217,6 +220,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L487 | PI強制化時は波及先関数の未更新チェック必須（GS側simulate等） | cmd_1349 |
 | L488 | 非市場ティッカー(^VIX/DTB3)は全コードパスで統一除外必須（PI-010同根） | cmd_1353 |
 | L586 | ゴールデンデータ比較ACは当月DB更新を考慮して設計せよ（進行中月差異は正常） | cmd_1817 |
+| L699 | holding_signalパリティ検証ではNULL行を比較対象から除外する | cmd_2448 |
 
 ### SPA/過剰最適化
 

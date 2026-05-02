@@ -217,6 +217,9 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L654: FE設計書§2計測セクションはcmd更新時に陳腐化。diff確認をAC化すべき（cmd_2297）
 - L655: FE設計書§2陳腐化(L654と同根)（cmd_2297）
 - L656: 計測スクリプトの固定待機排除はDOMポーリングで行う（cmd_2310）
+- L702: FoF UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
+- L704: FoF Monthly Trade表示は動的展開よりprecomputed weightsを優先せよ（cmd_2452）
+- L705: Monthly Trade FoF表示はyear_month月初Signalのdisplay_ticker_weightsを優先参照（cmd_2453）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

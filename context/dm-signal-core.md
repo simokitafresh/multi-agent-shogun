@@ -415,6 +415,9 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L635 | Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える必要あり | cmd_2021 |
 | L669 | GS monthly_returnはopen-to-open系列。本番monthly_return(close)と混同するな | cmd_2376 |
 | L670 | Oikaze GS: production first_signal_monthまで初期EqualWeightを再現する | cmd_2379 |
+| L694 | pipeline_config内側top_nとPortfolio直下top_nは別経路。分離検証必須 | cmd_2443 |
+| L696 | FoF登録ではPortfolio直下top_nを構成数に使うな(直下top_n=1固定+pipeline_config内側のみ) | cmd_2444 |
+| L703 | FoF holding_signal同一判定は展開後ticker×weightで行う | cmd_2452 |
 | L671 | Yotsume GS: production close cumulative_return+first_signal bootstrapを使う | cmd_2382 |
 
 ### 19.3 GS-本番パリティ
