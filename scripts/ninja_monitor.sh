@@ -114,12 +114,49 @@ log() {
 }
 
 acquire_singleton_lock() {
-    local lock_file="${STATE_DIR}/ninja_monitor.singleton.lock"
-    exec 9>"$lock_file"
-    if ! flock -n 9; then
-        log "SINGLETON-EXIT: another ninja_monitor instance already holds ${lock_file}"
+    local pid_file="${STATE_DIR}/ninja_monitor.pid"
+    local existing_pid=""
+
+    mkdir -p "$(dirname "$pid_file")"
+
+    if [ -f "$pid_file" ]; then
+        existing_pid=$(cat "$pid_file" 2>/dev/null || true)
+        if [ "$existing_pid" = "$$" ]; then
+            printf '%s\n' "$$" > "$pid_file"
+            return 0
+        fi
+        if _ninja_monitor_pid_is_live "$existing_pid"; then
+            log "SINGLETON-EXIT: another ninja_monitor instance is live (pid=${existing_pid}, pid_file=${pid_file})"
+            exit 0
+        fi
+        log "STALE-PID-REMOVED: ${pid_file} contained ${existing_pid:-empty}"
+        rm -f "$pid_file"
+    fi
+
+    if ( set -o noclobber; printf '%s\n' "$$" > "$pid_file" ) 2>/dev/null; then
+        trap 'if [ "$(cat "'"$pid_file"'" 2>/dev/null || true)" = "$$" ]; then rm -f "'"$pid_file"'"; fi' EXIT
+        return 0
+    fi
+
+    existing_pid=$(cat "$pid_file" 2>/dev/null || true)
+    if _ninja_monitor_pid_is_live "$existing_pid"; then
+        log "SINGLETON-EXIT: another ninja_monitor instance won pid-file race (pid=${existing_pid}, pid_file=${pid_file})"
         exit 0
     fi
+
+    log "STALE-PID-RACE-RECOVERY: replacing ${pid_file} after non-live pid ${existing_pid:-empty}"
+    printf '%s\n' "$$" > "$pid_file"
+    trap 'if [ "$(cat "'"$pid_file"'" 2>/dev/null || true)" = "$$" ]; then rm -f "'"$pid_file"'"; fi' EXIT
+}
+
+_ninja_monitor_pid_is_live() {
+    local pid="${1:-}"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    kill -0 "$pid" 2>/dev/null || return 1
+
+    local cmdline=""
+    cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
+    [[ "$cmdline" == *"ninja_monitor.sh"* ]]
 }
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then

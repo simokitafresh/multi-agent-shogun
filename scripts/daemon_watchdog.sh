@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # daemon_watchdog.sh — デーモン死活監視+自動再起動
-# cronから毎分実行。flockで多重起動防止。
+# cronから毎分実行。PIDベースの生存確認でデーモンを再起動する。
 #
 # 監視対象:
 #   - ninja_monitor.sh   (単一インスタンス)
@@ -10,7 +10,7 @@
 #
 # Usage:
 #   bash scripts/daemon_watchdog.sh          # 手動実行
-#   * * * * * flock -n /tmp/daemon_watchdog.lock bash /path/to/scripts/daemon_watchdog.sh
+#   * * * * * bash /path/to/scripts/daemon_watchdog.sh
 # =============================================================================
 set -uo pipefail
 # NOTE: set -e を外した(2026-04-16 GP-204)。個別チェック関数の失敗で全体が死ぬと
@@ -20,9 +20,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/daemon_watchdog.log"
 HEARTBEAT_FILE="/tmp/daemon_watchdog_heartbeat"
 
-# 多重起動防止: crontabのflock -n で制御済み。
-# スクリプト内部での二重flockは同一ファイルで競合するため削除(GP-204)。
-# 手動実行時はflock不要（短時間で完了するため）。
+# 多重起動防止: 手動実行時も短時間で完了するため内部lockは持たない。
+# 各デーモンの重複防止はPIDファイル/プロセス生存確認に寄せる。
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -48,10 +47,50 @@ notify() {
 }
 
 RESTARTED=0
-RESTART_STATE_DIR="/tmp/daemon_watchdog_state"
+RESTART_STATE_DIR="${RESTART_STATE_DIR:-/tmp/daemon_watchdog_state}"
 RESTART_THROTTLE_WINDOW=600  # 10 minutes
 RESTART_THROTTLE_MAX=3       # max restarts within window
 mkdir -p "$RESTART_STATE_DIR"
+
+pid_is_live() {
+    local pid="${1:-}"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    kill -0 "$pid" 2>/dev/null
+}
+
+pid_cmdline_matches() {
+    local pid="${1:-}"
+    local needle="$2"
+    pid_is_live "$pid" || return 1
+
+    local cmdline=""
+    cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
+    [[ "$cmdline" == *"$needle"* ]]
+}
+
+find_live_daemon_pid() {
+    local pgrep_pattern="$1"
+    local cmdline_needle="$2"
+    local pid
+
+    while IFS= read -r pid; do
+        if pid_cmdline_matches "$pid" "$cmdline_needle"; then
+            printf '%s\n' "$pid"
+            return 0
+        fi
+    done < <(pgrep -f "$pgrep_pattern" 2>/dev/null || true)
+    return 1
+}
+
+pid_file_has_live_daemon() {
+    local pid_file="$1"
+    local cmdline_needle="$2"
+    local pid=""
+
+    [[ -f "$pid_file" ]] || return 1
+    pid=$(cat "$pid_file" 2>/dev/null || true)
+    pid_cmdline_matches "$pid" "$cmdline_needle"
+}
 
 # 再起動ストーム防止: 直近N分間でM回以上再起動された場合はスロットル
 # Returns 0 if restart is allowed, 1 if throttled
@@ -92,26 +131,40 @@ record_restart() {
 # ninja_monitor.sh — 忍者idle検知デーモン
 # =============================================================================
 check_ninja_monitor() {
-    if ! pgrep -f "[n]inja_monitor\.sh" > /dev/null 2>&1; then
+    local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
+    local live_pid=""
+
+    if pid_file_has_live_daemon "$pid_file" "ninja_monitor.sh"; then
+        return 0
+    fi
+
+    if [[ -f "$pid_file" ]]; then
+        log "STALE-PID-REMOVED: ${pid_file} contained $(cat "$pid_file" 2>/dev/null || true)"
+        rm -f "$pid_file"
+    fi
+
+    live_pid=$(find_live_daemon_pid "[n]inja_monitor\.sh" "ninja_monitor.sh" || true)
+    if [[ -n "$live_pid" ]]; then
+        printf '%s\n' "$live_pid" > "$pid_file"
+        return 0
+    fi
+
+    if [[ -z "$live_pid" ]]; then
         if ! check_restart_throttle "ninja_monitor"; then
             log "THROTTLED: ninja_monitor.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
             notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
             return
         fi
-        # Release stale singleton lock before restart (SINGLETON-EXIT prevention)
-        local lock_file="/tmp/ninja_monitor.singleton.lock"
-        if [[ -f "$lock_file" ]] && flock -n "$lock_file" true 2>/dev/null; then
-            rm -f "$lock_file"
-            log "STALE-LOCK-REMOVED: $lock_file (no holder)"
-        fi
         log "RESTART: ninja_monitor.sh not found, restarting..."
         nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
         local new_pid=$!
         disown
-        # Verify the new process survived (SINGLETON-EXIT kills within 1-2s)
+        printf '%s\n' "$new_pid" > "$pid_file"
+        # Verify the new process survived startup.
         sleep 2
-        if ! kill -0 "$new_pid" 2>/dev/null; then
-            log "RESTART-FAILED: ninja_monitor.sh PID $new_pid died immediately (check SINGLETON-EXIT)"
+        if ! pid_cmdline_matches "$new_pid" "ninja_monitor.sh"; then
+            rm -f "$pid_file"
+            log "RESTART-FAILED: ninja_monitor.sh PID $new_pid died immediately"
             notify "【watchdog/WARN】ninja_monitor.sh再起動失敗(即死)。次サイクルで再試行"
         else
             record_restart "ninja_monitor"
@@ -126,7 +179,7 @@ check_ninja_monitor() {
 # ntfy_listener.sh — ntfy入力リスナー
 # =============================================================================
 check_ntfy_listener() {
-    if ! pgrep -f "[n]tfy_listener\.sh" > /dev/null 2>&1; then
+    if ! find_live_daemon_pid "[n]tfy_listener\.sh" "ntfy_listener.sh" >/dev/null; then
         if ! check_restart_throttle "ntfy_listener"; then
             log "THROTTLED: ntfy_listener.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
             notify "【watchdog/CRITICAL】ntfy_listener.shが再起動ストーム。手動確認必要"
@@ -205,7 +258,7 @@ check_inbox_watchers() {
 
     for agent in "${agents[@]}"; do
         # pgrep -f でエージェント名を含むinbox_watcherプロセスを検索
-        if pgrep -f "[i]nbox_watcher\.sh.*${agent}" > /dev/null 2>&1; then
+        if find_live_daemon_pid "[i]nbox_watcher\.sh.*${agent}" "inbox_watcher.sh" >/dev/null; then
             # プロセス生存中でもhangしていないか確認
             _check_inbox_watcher_hang "$agent" || true
             continue
@@ -248,10 +301,41 @@ check_inbox_watchers() {
     done
 }
 
+check_crontab_registration() {
+    local cron_text=""
+    local marker="daemon_watchdog.sh"
+    local state_file="$RESTART_STATE_DIR/crontab_registration.last_warn"
+    local now
+    now=$(date +%s)
+
+    cron_text=$(crontab -l 2>/dev/null || true)
+    if ! grep -q "$marker" <<< "$cron_text"; then
+        if [[ ! -f "$state_file" ]] || (( now - $(cat "$state_file" 2>/dev/null || echo 0) > 3600 )); then
+            log "CRONTAB-MISSING: daemon_watchdog.sh is not registered in crontab"
+            notify "【watchdog/WARN】daemon_watchdog.shのcrontab登録が見つかりません"
+            printf '%s\n' "$now" > "$state_file"
+        fi
+        return 1
+    fi
+
+    if grep "$marker" <<< "$cron_text" | grep -q "flock"; then
+        if [[ ! -f "$state_file" ]] || (( now - $(cat "$state_file" 2>/dev/null || echo 0) > 3600 )); then
+            log "CRONTAB-FLOCK-WARN: daemon_watchdog.sh crontab still uses flock"
+            notify "【watchdog/WARN】daemon_watchdog.shのcrontabが旧flock形式です"
+            printf '%s\n' "$now" > "$state_file"
+        fi
+        return 1
+    fi
+
+    return 0
+}
+
 # =============================================================================
 # Main
 # =============================================================================
+if [[ "${DAEMON_WATCHDOG_LIB_ONLY:-0}" != "1" ]]; then
 rotate_log
+check_crontab_registration || true
 check_ninja_monitor
 check_ntfy_listener
 check_inbox_watchers
@@ -267,4 +351,5 @@ else
     if (( minute % 10 == 0 )); then
         log "OK: All daemons running"
     fi
+fi
 fi
