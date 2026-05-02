@@ -200,6 +200,44 @@ def main():
         lu_msg = '  PASS: lesson_candidate/lessons_useful共になし'
     result['LESSONS_USEFUL_MSG'] = lu_msg
 
+    # ── 2e. related_lessons有り+lessons_useful空検出 → SG7盲点補完 ──────
+    rl_msg = '  SKIP'
+    has_rl = False
+    if task_file and os.path.exists(task_file):
+        try:
+            related_lessons = task.get('related_lessons') or []
+            if isinstance(related_lessons, list) and related_lessons:
+                has_rl = True
+                lu = report.get('lessons_useful')
+                lu_empty = not lu or (isinstance(lu, list) and len(lu) == 0)
+                if lu_empty:
+                    rl_ids = ', '.join(
+                        str(rl.get('id', '?')) if isinstance(rl, dict) else str(rl)
+                        for rl in related_lessons[:5]
+                    )
+                    rl_msg = (
+                        f'  ★ WARN: related_lessons注入済み[{rl_ids}]だが'
+                        f'lessons_useful空 → cmd_complete_gate BLOCK確実'
+                        f'(empty_lessons_useful)'
+                    )
+                else:
+                    rl_msg = (
+                        f'  PASS: related_lessons {len(related_lessons)}件,'
+                        f' lessons_useful {len(lu)}件'
+                    )
+            else:
+                rl_msg = '  PASS: related_lessonsなし(useful検証不要)'
+        except Exception:
+            rl_msg = '  SKIP: related_lessons解析エラー'
+    result['RELATED_LESSONS_MSG'] = rl_msg
+    result['HAS_RELATED_LESSONS_EMPTY_USEFUL'] = (
+        '1' if (has_rl and (
+            not report.get('lessons_useful')
+            or (isinstance(report.get('lessons_useful'), list)
+                and len(report.get('lessons_useful')) == 0)
+        )) else '0'
+    )
+
     # ── 3. 全task YAMLを1度ずつ読込 → 二重配備検出 ────────────────────────
     same_cmd_ninjas_parts = []
     if parent_cmd and worker_id and args.tasks_dir:
@@ -235,6 +273,9 @@ def main():
         if gate_pred != 'BLOCK':
             gate_pred = 'WARN'
         gate_pred_reasons.append('lessons_useful形式不備')
+    if result.get('HAS_RELATED_LESSONS_EMPTY_USEFUL') == '1':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append('related_lessons有+useful空→empty_lessons_useful BLOCK')
     result['GATE_PREDICTION'] = gate_pred
     result['GATE_PREDICTION_REASON'] = '; '.join(gate_pred_reasons) if gate_pred_reasons else 'all checks passed'
 

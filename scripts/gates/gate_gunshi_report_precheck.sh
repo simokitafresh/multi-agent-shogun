@@ -437,6 +437,15 @@ else
     echo "  SKIP: PARENT_CMD未取得"
 fi
 
+# ─── SG-PRE20: related_lessons+lessons_useful空検出 (SG7盲点補完) ───
+echo ""
+echo "■ SG-PRE20: related_lessons+lessons_useful整合"
+echo "${RELATED_LESSONS_MSG:-  SKIP}"
+if [ "${HAS_RELATED_LESSONS_EMPTY_USEFUL:-0}" = "1" ]; then
+    echo "  → cmd_complete_gate BLOCK確実。忍者にuseful回答を促せ"
+    ERRORS=$((ERRORS + 1))
+fi
+
 # ─── GATE_PREDICTION (自動計算) ───
 echo ""
 echo "■ GATE_PREDICTION (自��計算 — SG7 gate_predictionに転記せよ)"
