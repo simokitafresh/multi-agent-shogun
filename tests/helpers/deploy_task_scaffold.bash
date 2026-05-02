@@ -472,3 +472,14 @@ inject_engineering_preferences_only() {
     INJECT_TASK_MODIFIERS_ONLY="engineering_preferences" \
         python3 "$TEST_PROJECT/scripts/lib/inject_task_modifiers.py"
 }
+
+inject_skill_hint_only() {
+    local ninja_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_skill_hint "$task_file"
+    )
+}

@@ -18,6 +18,7 @@
 # 詳細エントリ: 20260418b_to_20260419a(cmd_2065〜cmd_2092) → logs/archive/gunshi_review_log_20260418b_to_20260419a.yaml
 # 詳細エントリ: 20260419b_to_20260420a(cmd_2093〜cmd_2178) → logs/archive/gunshi_review_log_20260419b_to_20260420a.yaml
 # 詳細エントリ: 20260420b_to_20260430a(cmd_2286〜cmd_karo_infra_recon_gates) → logs/archive/gunshi_review_log_20260420b_to_20260430a.yaml
+# 詳細エントリ: 20260430b_to_20260501a(cmd_2426〜cmd_2451 draft) → logs/archive/gunshi_review_log_20260430b_to_20260501a.yaml
 # ─── ★全レビュー最重要原理(毎回読め) ───
 # ★★★ レビュー依頼=最優先。自走・分析・高速化より先にinbox処理。他者の仕事をブロックするな(2026-04-15殿指摘)
 # このcmdの各実装選択を10回繰り返したら正の複利か負の複利か？
@@ -76,291 +77,333 @@
 # 詳細エントリ: 20260420b_to_20260425a(cmd_2231〜GP-221) → logs/archive/gunshi_review_log_20260420b_to_20260425a.yaml
 # 詳細エントリ: 20260425b_to_20260426a(GP-222〜cmd_2283) → logs/archive/gunshi_review_log_20260420b_to_20260426a.yaml
 # ─────────────────────────
-- cmd_id: cmd_2426
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。X-Trend原論文精読+知識辞書エントリ。参照ファイル全てDM-Signalリポジトリに実在確認済み"
-  observations:
-    - "★誤判定撤回: 当初RC(knowledge-base不在)→将軍反論→DM-Signalリポジトリ確認→全ファイル実在"
-    - "guide.md(9KB,Apr23), _template.md(686B,Apr23), dynamic-momentum-learning.md(12KB,Apr30) 現物確認OK"
-    - "誤りの根因: project=dm-signalなのにshogunリポジトリ内のみ検索。対象リポジトリ未確認"
-  ambiguity_points: none
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  causal_chain: "軍師が検索先リポジトリを間違えた→偽の前提崩壊を報告→将軍反論で修正。教訓: project指定cmdは対象リポジトリで現物確認"
-  timestamp: "2026-04-30T02:25:00"
-- cmd_id: cmd_2427
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。Momentum Transformer原論文精読+知識辞書エントリ。cmd_2426と同じ基盤でDM-Signalリポジトリに実在確認済み"
-  observations:
-    - "★誤判定撤回: cmd_2426と同一誤り→DM-Signalリポジトリ確認→実在"
-  ambiguity_points: none
-  finding_categories: [assumptions]
-  causal_chain: "cmd_2426と同一修正。対象リポジトリ確認で解消"
-  timestamp: "2026-04-30T02:30:00"
-- cmd_id: cmd_2428
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  findings_summary: "6観点OK。Network Momentum原論文精読+知識辞書エントリ。DM-Signalリポジトリに基盤ファイル実在確認済み"
-  observations:
-    - "★誤判定撤回: cmd_2426と同一誤り→DM-Signalリポジトリ確認→実在"
-  ambiguity_points: none
-  finding_categories: [assumptions]
-  causal_chain: "cmd_2426と同一修正。対象リポジトリ確認で解消"
-  timestamp: "2026-04-30T02:30:00"
-- cmd_id: cmd_2426
+- cmd_id: cmd_2451
   review_type: report
   report_ninja: kagemaru
-  report_task_id: cmd_2426_normal
+  report_task_id: cmd_2451_normal
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。X-Trend知識辞書エントリ。commit 91ef4231(DM-Signal)確認。3ファイル変更"
+  gate_result: BLOCK
+  findings_summary: "4観点OK。Monthly Trade UUID修正(BE+FE)。pending行display_ticker_weights fallback追加+UUID混入キャッシュ防御"
   observations:
-    - "commit 91ef4231: x-trend-few-shot.md(369行)+index.md+M31更新。DM-Signalリポ確認OK"
-    - "M78差分混入→reset対処。適切"
+    - "根因: Monthly Trade APIにdisplay_ticker_weights fallbackなし→pending行UUID素通し"
+    - "BE monthly_trade.py+FE 3ファイル+テスト2件。commit 2da6c5bd"
+    - "Ave-X 2026-05 pending行=TECL/TQQQ/XLU表示確認。04/01以前ticker維持(AC3)"
+    - "lesson_candidate: FoF UUID漏れはAPI display fallbackも検証(register推奨)"
   finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "原論文精読→知識辞書エントリ追加→手法比較基盤蓄積=正の複利"
-  timestamp: "2026-04-30T02:35:00"
-- cmd_id: cmd_2427
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2427_normal
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Momentum Transformer知識辞書。commit hash誤記(2bc6149b→実際047bd13d)注記"
-  observations:
-    - "報告commit=2bc6149b不在。実際は047bd13d(momentum-transformer.md 252行追加)"
-    - "index.md更新は047bd13dに未含。cmd_2428のcommitで結果的にカバー"
-  finding_categories: [assumptions, numbers]
-  causal_chain: "成果物実在→commit hash誤記は注記のみ→知識辞書蓄積=正の複利"
-  timestamp: "2026-04-30T02:36:00"
-- cmd_id: cmd_2429
+  causal_chain: "Dashboard display_ticker_weights→Monthly Trade API未実装→pending行UUID素通し→BE fallback追加+FE防御→全画面UUID漏れ根絶。正の複利=同パターンの他API画面にも適用可能"
+  timestamp: "2026-05-01T13:55:00"
+- cmd_id: cmd_2452
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。DeepUnifiedMom原論文精読+知識辞書エントリ。DM-Signalリポ参照先確認済み(前回教訓適用)"
+  findings_summary: "6観点OK。critical偵察。FoF 15体5月holding_signal=4月同一。Phase4.1 standard限定→FoF再計算パス調査"
   observations:
-    - "guide.md/_template.md/index.md全てDM-Signalリポに実在(前回誤判定の教訓でリポ確認)"
-  ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ4本目。手法比較基盤蓄積=正の複利"
-  timestamp: "2026-04-30T02:40:00"
-- cmd_id: cmd_2428
+    - "FoF 15体SAME vs Standard 11/56体変化。FoF signal再計算が月初に反映されていない"
+    - "Phase 4.1(L2442)はstandard_portfolios限定。FoF処理はsync-fof(01:40 UTC)が担当"
+    - "q9: sync-fof未実行の可能性(cron/Render cold start)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "Standard PF 5月変化→FoF不変→Phase4.1がstandard限定→FoF再計算パスの問題→根因特定→修正でFoF月初表示正確化。正の複利=全FoFの月初信号正確性保証"
+  timestamp: "2026-05-01T14:38:00"
+- cmd_id: cmd_2452
   review_type: report
   report_ninja: saizo
-  report_task_id: cmd_2428_normal
+  report_task_id: cmd_2452_recon2
   report_verdict: LGTM
   verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。Network Momentum知識辞書更新。commit 03f7744b(DM-Signal)確認。4ファイル一致"
+  findings_summary: "4観点OK。★根因はバグでなく設計仕様。FoF holding_signal=構成PF ID列。sync-fof正常。assumption_invalidation"
   observations:
-    - "commit 03f7744b: network-momentum.md全面更新(Levy/DTW方式)+index.md+M31+X-Trend。DM-Signalリポ確認OK"
-    - "既存エントリの更新(新規作成ではない)。原論文ベースの品質向上"
+    - "FoF holding_signal=選択構成PF ID列→下層standard変化は文字列比較に出ない(設計仕様)"
+    - "15体全て2026-05-01 signals行あり→sync-fof正常実行済み"
+    - "SAME 15体中4体は直下構成FoF変化あり、13体は下層standard変化あり。親の選択構成PFは不変"
+    - "assumption_invalidation: 「FoF再計算パス未動作」→覆された。lesson_candidate: ticker×weight比較"
   finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "原論文精読→既存エントリ全面更新→一次知識層純度向上=正の複利"
-  timestamp: "2026-04-30T02:40:00"
-- cmd_id: cmd_2429
+  causal_chain: "holding_signal文字列比較→FoF同一→バグ疑い→偵察→設計仕様確認(構成PF ID列保存)→不変判定方法の誤りが真因→ticker×weight比較に修正。正の複利=FoF分析の根本的前提修正"
+  timestamp: "2026-05-01T14:45:00"
+- cmd_id: cmd_2452
   review_type: report
   report_ninja: kagemaru
-  report_task_id: cmd_2429_normal
+  report_task_id: cmd_2452_scout
+  report_verdict: FAIL
+  verdict: FAIL
+  gate_result: N/A
+  fail_reasons:
+    - "報告テンプレート未記入。status=pending/result空/bc空/verdict空。初期状態のまま提出"
+  findings_summary: "テンプレート未記入でFAIL。全必須フィールド未記入"
+  observations:
+    - "status=pending、result.summary/details空、binary_checks全result空、verdict空、timestamp空"
+    - "才蔵(recon2)は同cmdで詳細な偵察結果+assumption_invalidationを報告済み"
+  finding_categories: [assumptions]
+  causal_chain: "テンプレート未記入→gate BLOCK必至→FAIL判定。根因=影丸がreport_field_set.shで記入完了前に提出"
+  timestamp: "2026-05-01T14:48:00"
+- cmd_id: cmd_2453
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。critical修正。FoF display_ticker_weights参照経路を5月signalベースに修正。MT+Dashboard+全FoF+Standard非破壊"
+  observations:
+    - "cmd_2452偵察: sync-fof正常だがdisplay_ticker_weightsが4/30値を返す→表示経路の問題"
+    - "cmd_2451(pending行ticker修正)との競合可能性をq9で認識。同API経路なら統合修正"
+    - "AC4本: Monthly Trade/Dashboard/全FoF UUID 0件/Standard非破壊の4面確認"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "cmd_2452偵察(設計仕様確認)→cmd_2453(表示経路修正)→全画面FoF ticker展開正確化。正の複利=毎月初の表示正確性保証+月次リバランス確認の信頼性向上"
+  timestamp: "2026-05-01T14:58:00"
+- cmd_id: cmd_2453
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2453_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "4観点OK。FoF display_ticker_weights参照順修正。CDP確認: Dashboard+MT両画面ticker正常。UUID0件"
+  observations:
+    - "根因: signal_date=4月末→display_ticker_weightsが4月構成を返す。修正: year_month月初Signal優先"
+    - "CDP: Dashboard XLU75%/TECL25%/UUID0件。MT 5月CHANGED(4月と異なる構成)/UUID0件"
+    - "Viewer権限DOM→***マスク。API値で分離検証(適切な対処)"
+    - "L702/L701 useful=true。cmd_2451/2450の教訓が実践で活用"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "signal_date=4月末→4月構成表示→year_month月初Signal優先参照に修正→全画面5月ticker正常化→UUID0件。正の複利=毎月初のFoF表示参照順序が確定+教訓連鎖(cmd_2451→2452→2453)"
+  timestamp: "2026-05-01T15:18:00"
+- cmd_id: cmd_2454
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。42体全て理論最長より短い→120ヶ月制限箇所特定+意図判定"
+  observations:
+    - "42体(GSシン忍法21+奥義-GS-21)全て理論最長より1-26ヶ月短い。L0四神は正常"
+    - "120ヶ月=10年ハードリミットの疑い。FoF固有の制限"
+    - "q9: config(DB)側にある場合コード検索で見つからない→pipeline_config確認含む"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "42体全体の期間短縮→120ヶ月制限疑い→箇所特定→除去→全FoF計算期間最大化→combo/WFα検証信頼性向上。正の複利=秘奥義分析期間最大25ヶ月延長"
+  timestamp: "2026-05-01T20:48:00"
+- cmd_id: cmd_2454
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2454_scout
   report_verdict: LGTM
   verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。DeepUnifiedMom知識辞書。commit 7813ec56(DM-Signal)確認。6ファイル一致"
+  findings_summary: "4観点OK。120ヶ月=表示デフォルト(非計算制限)。FOF_LOOKBACK=730日(別制限)。2系統分離報告"
   observations:
-    - "commit 7813ec56: deep-unified-momentum.md(228行新規)+index.md+相互参照5件更新。DM-Signalリポ確認OK"
+    - "120ヶ月: Monthly Returns表示/API初期取得デフォルト。Show Allで全件取得可能。回帰テスト存在(意図的UX設計)"
+    - "730日(2年): FOF_LOOKBACK_DAYS。component performance cache/external symbol load用。FoF MonthlyReturn生成件数制限ではない"
+    - "将軍の「計算期間ハードリミット」疑いは表示層とDB層の混同の可能性→偵察で分離確認"
+    - "decision_candidate: 120ヶ月UX維持判断+730日lookback設計判断の2件"
   finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "原論文精読→知識辞書エントリ追加→手法比較基盤完成(4論文シリーズ最終)=正の複利"
-  timestamp: "2026-04-30T02:45:00"
-- cmd_id: self_study_S231
-  review_type: self_study
-  verdict: null
-  findings_summary: "cmd_2426-2428誤判定の根因gate化。ac_physical_verify.shにproject directory fallback追加"
+  causal_chain: "42体期間短縮→120ヶ月疑い→偵察→表示デフォルト(非計算制限)と判明+FOF_LOOKBACK 730日は別系統→真因は他にある可能性。正の複利=表示/計算の制限を正確に分離した知見"
+  timestamp: "2026-05-01T20:52:00"
+- cmd_id: cmd_2454
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2454_recon2
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。真因特定: recalculate_fof.py:516-533 valid_start_date計算。DB config lookback→*1.5+10近似が過剰保守"
   observations:
-    - "根因: ac_physical_verify.shがshogunリポ固定検索→project=dm-signalのdocs/は検出不能"
-    - "修正: projectフィールド→PJディレクトリ取得→相対パスfallback検索。3 FM全て安全確認"
-  finding_categories: [assumptions]
-  causal_chain: "意志依存(次は対象リポ確認)→環境埋込み(ac_physical_verify自動fallback)=Phase 4実践=正の複利"
-  cs_checklist: "CS1:OK(cmd仕様+DM-Signalリポ現物確認) CS2:OK(ac_physical_verify.shコードで検索先固定を確認) CS3:OK(修正前後コード比較) CS4:OK(GP-238実装+家老APPROVE) CS5:他PJ追加は未着手(現在dm-signalのみactive) CS6:OK(因果鎖記録済み)"
+    - "120ヶ月固定なし(DB 76件config走査で確認)。期間短縮はvalid_start_dateフィルタ由来"
+    - "代表: 奥義-GS-加速D-鉄壁 denominator_period.days=504→504*1.5+10=766cd→2016-06開始=120ヶ月"
+    - "trading→calendar近似(*1.5+10)が月次データに対して過剰保守→~1ヶ月遅延"
+    - "2人独立で同一結論(120ヶ月固定なし)+影丸が根因コード行(L516-533)を特定"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "120ヶ月疑い→DB config走査で棄却→valid_start_date計算(構成PF開始+lookback*1.5+10)が真因→近似精度改善で全FoF期間延長可能。正の複利=根因の正確な特定で修正cmdが最小コスト"
+  timestamp: "2026-05-01T20:55:00"
+- cmd_id: gunshi_idle_sg7_blind_spot_20260502
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "SG7 gate_prediction盲点: 直近7件LGTM→BLOCK。precheck WARN→gate_prediction未降格。GATE_PREDICTION自動計算追加(D0実装)"
+  observations:
+    - "cmd_2443-2453の7件でLGTM→BLOCK。karo WA全件clean(実害なし)"
+    - "gate_fire_log: gate_report_formatはほぼ全PASS。BLOCKはcmd_complete_gateの追加検査由来"
+    - "根因: SG7がgate_report_formatのみ予測し、lessons_useful/lesson_done_source等を未カバー"
+    - "precheck engine既存検出力は十分(L194-198)。問題は軍師がWARNを見てもgate_predictionを降格しなかった行動"
+    - "修正: engine.pyにGATE_PREDICTION自動計算追加。手動判断を排除(Phase 4)"
+  finding_categories: [assumptions, numbers, premortem]
+  cs_checklist: {CS1: true, CS2: true, CS3: true, CS4: true, CS5: false, CS6: true}
+  causal_chain: "precheck WARN表示→軍師が手動判断でCLEAR維持→cmd_complete_gateでBLOCK→LGTM→BLOCK蓄積。GATE_PREDICTION自動計算で手動判断排除→正の複利=全future report reviewでgate_prediction精度向上"
   proposals:
     - id: GP-238
-      description: "ac_physical_verify: project directory fallback検索。shogunリポ→PJリポの二段階検索"
-      status: completed
-      defense_level: 5
-  timestamp: "2026-04-30T02:50:00"
-- cmd_id: cmd_2430
+      description: "GATE_PREDICTION自動計算をprecheck engineに追加"
+      status: "★implemented"
+      defense_level: 4
+  timestamp: "2026-05-02T02:15:00"
+- cmd_id: cmd_2455
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Hierarchical Momentum知識辞書。GP-238 fallbackでguide.md/_template.md正常検出"
+  findings_summary: "6観点OK。signals updated_at+signal_change_logテーブル。全前提verified。殿指示直接対応"
   observations:
-    - "ac_physical_verify: guide.md(190行)+_template.md(36行)をDM-Signalリポから検出(GP-238動作確認)"
+    - "models.py L87-98: Signalにupdated_atなし/created_atのみ。fof_component_weightsにもupdated_atなし"
+    - "signal_flush.py L51-58: UPSERT SET句にupdated_at含まず。前提verified"
+    - "signal_detail_history L695-724: L0用スキーマ(momentum/threshold/safe_haven)。old/new差分+ticker_weights記録に不適合→専用テーブル妥当"
+    - "premortem: AC3変更検知のSilent Fallback(except→pass)リスク。q9 fullrecalculate大量INSERTは忍者計測可能"
   ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ5本目。3層FoFに最も近い先行研究=正の複利"
-  timestamp: "2026-04-30T02:55:00"
-- cmd_id: cmd_karo_fix_flat_complete_gate
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "UPSERT上書きで変更痕跡消失→殿指示(変更追跡)→updated_at+signal_change_log→全PF変更監査証跡構築。正の複利=コード修正影響の事後検証が全期間可能に+fullrecalculate前後diff即時確認"
+  timestamp: "2026-05-02T02:30:00"
+- cmd_id: cmd_2455
   review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_karo_fix_flat_complete_gate_impl
+  report_ninja: hayate
+  report_task_id: cmd_2455_normal
   report_verdict: LGTM
   verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。cmd_complete_gate flat task YAML対応。commit 6ccea588。bash -n+ミニ検証+bats 3/3 PASS"
+  findings_summary: "4観点OK。updated_at+signal_change_log実装。Silent Fallback防止確認済み。1427tests全PASS"
   observations:
-    - "commit 6ccea588: data.get('task',data)で3箇所修正。flat/nested両対応"
-    - "影丸偵察所見2(cmd_karo_infra_recon_gates)の修正完了"
+    - "5ファイル全てcommit c7e91634に含まれる(PRE3 PASS)。5AC全result:yes"
+    - "Silent Fallback防止: details明記(SQLAlchemyError rollback)。PI-018準拠"
+    - "ticker×weight snapshot: momentum_data内display_ticker_weights優先→holding_signal等ウェイトfallback(discretion_fills記載)"
+    - "テスト: 対象24passed/0skipped, 全体1427passed/0failed/0skipped。SKIP=FAILルール準拠"
   finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "flat task YAML未対応→related_lessons/status取得不可→偵察→修正→全形式対応=正の複利"
-  timestamp: "2026-04-30T03:00:00"
-- cmd_id: cmd_2431
+  causal_chain: "UPSERT上書き→変更痕跡消失→updated_at+signal_change_log実装→全PF変更監査証跡構築→GATE CLEAR。正の複利=コード修正影響の事後検証が全期間可能+Silent Fallback防止を初実装で確認"
+  timestamp: "2026-05-02T02:35:00"
+- cmd_id: cmd_karo_ci_fix_flaky_1090
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_flaky_1090_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。CI flaky /tmp固定パス→TMP_DIR統一。bats12/12PASS+CI GREEN。テストファイルのみ変更"
+  observations:
+    - "固定/tmp/dm-signal-test→TMP_DIR配下に変数化。grep 0件確認済み。既知パターン(L477/L488/L499)"
+    - "bats 12/12 PASS(ローカル+pre-push)。CI run 25225468928全job success。SKIP=0"
+    - "files_modified 1ファイル(test_pre_edit_pi_inject.bats)。hook本体/本番変更なし。blast radius最小"
+    - "GATE_PREDICTION=CLEAR(GP-238初実運用。engine自動計算一致)"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CI並列実行で/tmp固定パス衝突→flaky failure→TMP_DIR変数化→衝突除去→CI GREEN復帰。正の複利=CI並列安定性向上+同型パターン(L477/L488/L499)の横展開確認"
+  timestamp: "2026-05-02T02:55:00"
+- cmd_id: cmd_2456
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Keller VAA/BAA知識辞書。DM-Signalリポ参照先確認済み"
+  findings_summary: "6観点OK。1行変更(WARN→BLOCK昇格)。将軍成長ループ強制。殿指示直接対応"
   observations:
-    - "VAA+BAA 2論文を1エントリに統合。q9_ambushで明示"
+    - "cmd_save.sh L932: record_warn_reason→record_block_reason。1行置換のみ"
+    - "直近50cmdで6回missing_prev_cmd_lesson WARN→累計昇格BLOCK。初回化で断絶防止"
+    - "AC4本(≤4)。saizo配備。1行変更で並列/分割不要"
   ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ。月次Top-1選出の理論基盤=正の複利"
-  timestamp: "2026-04-30T03:00:00"
-- cmd_id: cmd_2432
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "教訓未記録→WARN素通り→累計昇格まで6cmd品質低下→初回BLOCK化→教訓サイクル即時強制。正の複利=全cmdに教訓が伴い後続品質が指数関数的向上"
+  timestamp: "2026-05-02T14:25:00"
+- cmd_id: cmd_2457
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Factor Momentum知識辞書。DM-Signalリポ参照先確認済み"
+  findings_summary: "6観点OK。1行変更(改行→パイプ区切り)。自分のidle分析がcmd化。WA根因修正"
   observations:
-    - "NBER WP版PDF。q9_ambushでWiley有料→NBER版使用を明示"
+    - "deploy_task.sh L4246: $'\\n'→' | '。yaml_field_set.shのawk改行破損を回避"
+    - "改行含みyaml_field_set呼出しは現状この1箇所のみ(軍師grep確認済み)"
+    - "cmd_2435 WA(deploy_error)の根因修正。第二層ループ: 軍師分析→家老cmd化→忍者実装"
   ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ。ファクターローテーションの学術的根拠=正の複利"
-  timestamp: "2026-04-30T03:05:00"
-- cmd_id: cmd_2431
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "cmd_2435 WA→軍師idle分析→根因特定(yaml_field_set改行)→cmd_2457(Option A)→WA消滅。正の複利=再配備引継ぎの信頼性+第二層ループ実証"
+  timestamp: "2026-05-02T14:28:00"
+- cmd_id: cmd_2458
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。偵察cmd。CHECK2 FoF weights検査ロジック是正。対象2ファイル実在確認"
+  observations:
+    - "post_recalculate_checks.sh + recalculate_fof.py実在確認。偵察5要件AC準拠"
+    - "q9: CHECK2以外の静的config前提検査も合わせて確認するスコープ"
+    - "家老分析(CHECK2=config静的weights検査→EqualWeight FoFはconfigに持たない)が偵察の出発点"
+  ambiguity_points: none
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  causal_chain: "CHECK2がconfig静的weights検査→EqualWeight FoFはconfigに持たない→偽陽性FAIL→偵察で正しい検査対象確定→修正cmd。正の複利=fullrecalculate後の検証信頼性回復"
+  timestamp: "2026-05-02T14:30:00"
+- cmd_id: cmd_2458
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2458_scout
+  report_verdict: LGTM
+  verdict: LGTM
+  findings_summary: "4観点OK。偵察5要件完全。CHECK2=L251-266不適合+正しい先例+修正方針明確"
+  observations:
+    - "CHECK2: post_recalculate_checks.sh L251-266がconfig静的weightsを検査→EqualWeight FoFで誤検知"
+    - "正本: fof_component_weightsテーブル(recalculate_fof.py L1093-1104→fof_flush.py L95-169)"
+    - "先例: gate_recalculate_completeness.sh L155-162がfof_component_weights EXISTS確認"
+    - "lesson_candidate: 具体的+再利用可能。register推奨"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CHECK2がconfig静的weights検査→EqualWeight FoFで誤検知→偵察で不適合+正しい先例特定→修正cmd入力完備。正の複利=fullrecalculate検証の信頼性回復+正しい先例を横展開基盤に"
+  timestamp: "2026-05-02T14:32:00"
+- cmd_id: cmd_2456
   review_type: report
   report_ninja: saizo
-  report_task_id: cmd_2431_normal
+  report_task_id: cmd_2456_normal
   report_verdict: LGTM
   verdict: LGTM
   gate_result: CLEAR
-  findings_summary: "4観点OK。VAA/BAA知識辞書。commit 28353a67(DM-Signal)。3ファイル一致"
+  findings_summary: "4観点OK。WARN→BLOCK昇格。1行置換+bats期待値更新。1319tests全PASS"
   observations:
-    - "commit 28353a67: vigilant-bold-asset-allocation.md(276行新規)+index.md+dual-momentum.md相互参照"
+    - "cmd_save.sh warn_missing_prev_cmd_lesson: record_warn_reason→record_block_reason。commit 6c39dfb6"
+    - "専用bats 6/6 PASS + 全unit 1319/0/0 PASS。SKIP=0"
+    - "L507 useful=true(テスト条件差の確認に活用)"
   finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "VAA+BAA原論文→知識辞書統合エントリ→月次Top-1選出の理論基盤=正の複利"
-  timestamp: "2026-04-30T03:10:00"
-- cmd_id: cmd_2433
+  causal_chain: "教訓未記録WARN→累計昇格まで6cmd漏れ→初回BLOCK化→即時停止強制→教訓サイクル断絶防止。正の複利=将軍の全cmdに教訓が伴う"
+  timestamp: "2026-05-02T14:35:00"
+- cmd_id: cmd_2458
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2458_recon2
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。★EW FoFはfof_component_weightsにも行なし(weights=None)。修正方針2択+decision_candidate"
+  observations:
+    - "影丸(scout): fof_component_weights EXISTS確認推奨。半蔵(recon2): EWはそもそも行不在→EXISTS確認だけでは不十分"
+    - "76件全FoFがCHECK2 FAIL(config weightsが全て空)。構造的不具合"
+    - "Option A: DBクエリ化(Kalman/Ward限定)。Option B: CHECK2廃止(CHECK1(1d)で代替可)"
+    - "edge case: FoFタイプ識別キーがconfigに不在→option_a実装が複雑化する可能性"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "CHECK2=config静的weights→全FoF未格納→76件全FAIL。EW=fof_component_weightsも行なし。2人独立偵察で根因+修正方針確定→修正cmdの入力完備。正の複利=2人の独立知見統合でoption選択の精度向上"
+  timestamp: "2026-05-02T14:38:00"
+- cmd_id: cmd_2457
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2457_normal
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。本体既修正済み→regression test追加。AC3:no=pre-existing(無関係)"
+  observations:
+    - "deploy_task.sh L4246は現HEADで既にパイプ区切り→本体差分不要。regression test追加で再発防止固定"
+    - "AC3 pre-existing failure: test_cmd_save_environment_change.bats(cmd_2456関連の可能性)。cmd_2457差分外"
+    - "commit d0a9743e。yaml_field_setでtask YAML description正規化も実施(追加対応)"
+    - "第二層ループ完結: 軍師WA分析→cmd_2457→疾風実装→regression test追加→WA根因修正+再発防止"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2435 WA→軍師分析→cmd_2457→本体既修正確認+regression test追加→改行YAML破損の再発構造的防止。正の複利=第二層ループの完全な1周(分析→cmd→実装→テスト→防止)"
+  timestamp: "2026-05-02T14:42:00"
+- cmd_id: cmd_2459
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Bandit ADTS知識辞書。DM-Signalリポ参照先確認済み"
+  findings_summary: "6観点+adversarial OK。スキル学習ループ基盤。30スキル確認。TRIGGERマッチ+自動追記+startup gate表示"
   observations:
-    - "regret bound付きPF選択。理論的保証のある手法=知識辞書の多様性拡大"
+    - "30スキル(ls確認)。skill_execution_log/skill_feedback.sh/skill_log.sh新規+startup gate修正"
+    - "adversarial: SKILL.md自動追記はgit revert可能。gate_fire_logは内部生成のみ(外部入力なし)"
+    - "q9: TRIGGERキーワードマッチ精度。複数マッチ→最長マッチ優先+初期手動改善"
+    - "q11: skill_candidate実績0件+gate_fire_logスキル紐付けなし+skill_execution_log未存在(grep確認)"
   ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ。理論保証付き動的選択手法=正の複利"
-  timestamp: "2026-04-30T03:15:00"
-- cmd_id: cmd_2430
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2430_normal
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Hierarchical Momentum知識辞書。commit 8cee6911(DM-Signal)。5ファイル一致"
-  observations:
-    - "commit 8cee6911: hierarchical-momentum.md(218行新規)+index.md+相互参照3件(cross-sectional/tsmom/ward)"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "3層FoFに最も近い先行研究→知識辞書化→設計判断基盤=正の複利"
-  timestamp: "2026-04-30T03:20:00"
-- cmd_id: cmd_2432
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_2432_normal
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Factor Momentum知識辞書。commit 036d2da8(DM-Signal)。6ファイル一致"
-  observations:
-    - "commit 036d2da8: factor-momentum.md(260行新規)+index.md+相互参照4件(cross-sectional/tsmom/carhart/crashes)"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "ファクターローテーション学術根拠→知識辞書化=正の複利"
-  timestamp: "2026-04-30T03:25:00"
-- cmd_id: cmd_2434
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "deep+新規3スクリプト。SKILL.md自動追記はrevert可能+内部データのみ。TRIGGERマッチ偽陽性はq9で認識"
+  causal_chain: "30スキル静的→Gateデータ→スキル自動還流基盤→全スキル動的成長。正の複利=100スキルでも同基盤(各論パッチゼロ)。殿指示: Gate=データ収集→環境整備のサイクル接続"
+  timestamp: "2026-05-02T16:58:00"
+- cmd_id: cmd_2460
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
-  findings_summary: "6観点OK。Expert Aggregation WASA知識辞書。DM-Signalリポ参照先確認済み"
+  findings_summary: "6観点OK。スキル自動発動トリガー。5スキル催促を既存hook/gate/watcherに接続。Phase 4実践"
   observations:
-    - "Springer有料可能性をq9_ambushで明示。abstract+補足資料からの抽出方針"
+    - "AC5本は全て同パターン(既存ファイルに催促追加)。分割不要"
+    - "q9: 5スキル絞込+表示のみ(強制なし)でノイズ抑制。段階的拡大可能"
+    - "cmd_2459(学習基盤)と並列可能。skill_execution_logは独立"
+    - "q11: grep確認3件全て0件(催促未存在)。skill_candidateとskill_hintは別用途"
   ambiguity_points: none
-  finding_categories: [assumptions, north_star]
-  causal_chain: "知識辞書シリーズ。regret bound付きOnline PF選択=正の複利"
-  timestamp: "2026-04-30T03:25:00"
-- cmd_id: cmd_2433
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_2433_normal
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。Bandit ADTS知識辞書。commit 4720d463(DM-Signal)。4ファイル一致。regret bound不在を正確指摘"
-  observations:
-    - "commit 4720d463: bandit-portfolio-adts.md(345行新規)+index.md+M31+MVO相互参照"
-    - "★才蔵がcmd purpose「bound証明付き」と実際(先行研究bound紹介+実験regret)の乖離を正確に指摘"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "一次情報からの事実確認→cmd前提の誤りを忍者が修正→知識辞書精度向上=正の複利"
-  timestamp: "2026-04-30T03:30:00"
-- cmd_id: cmd_2434
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2434_normal
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: CLEAR
-  findings_summary: "4観点OK。WASA知識辞書。commit 4a553d99(DM-Signal)。3ファイル一致。Springer有料制約→WAA基礎文献照合"
-  observations:
-    - "commit 4a553d99: expert-aggregation-wasa.md(206行新規)+index.md+factor-momentum.md相互参照"
-    - "WITH_CONCERNS: 全文取得不可→推測回避で一次知識層純度維持。適切な判断"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "有料制約下でも一次情報照合→知識辞書品質維持=正の複利"
-  timestamp: "2026-04-30T03:35:00"
-- cmd_id: cmd_karo_fix_deploy_stale_report
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_karo_fix_deploy_stale_report_impl
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: null
-  findings_summary: "4観点OK。deploy_task active peer report保護。commit 8b7f28b3。bats 37/37 PASS"
-  observations:
-    - "field_getでtask status確認→active忍者report保護。偵察所見4修正完了"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "並行担当時のライブreport退避→active status照合で保護→構造的安全=正の複利"
-  timestamp: "2026-04-30T03:40:00"
-- cmd_id: cmd_karo_fix_watcher_stale_inotify
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_karo_fix_watcher_stale_inotify_impl
-  report_verdict: LGTM
-  verdict: LGTM
-  gate_result: null
-  findings_summary: "4観点OK。inbox_watcher stale inotifywait除外。commit 2ade4e4e。bats 13 PASS+回帰テスト追加"
-  observations:
-    - "_pid_has_live_parent追加。PPID=1(孤児化)→stale判定。偵察所見2修正完了"
-  finding_categories: [assumptions, numbers, premortem]
-  causal_chain: "stale inotifywait→誤self-watch判定→nudgeスキップ→_pid_has_live_parent追加で構造的解消=正の複利"
-  timestamp: "2026-04-30T03:40:00"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  causal_chain: "15スキル意志依存→/clear消失→自動トリガー接続→使うべきタイミングで催促→スキル利用率構造的向上。正の複利=全エージェントの手順ブレが構造的にゼロ化"
+  timestamp: "2026-05-02T17:00:00"

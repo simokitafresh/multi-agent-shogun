@@ -4163,7 +4163,81 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-04-29
 - **出典**: cmd_karo_ci_fix_env_change
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,deploy,testing,yaml]
 - **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
 - environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TEST_TMPDIR内に最小lesson markerを作り、grep検証仕様だけを固定して確認せよ。
+
+### L542: CI用fixtureはSSOT可変IDに依存させるな
+- **日付**: 2026-04-29
+- **出典**: cmd_karo_ci_fix_env_change
+- **記録者**: karo
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
+- environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TEST_TMPDIR内に最小fixtureを作り、grep検証仕様だけを固定して確認せよ。
+
+### L543: bats fixtureで運用YAMLの可変IDに依存するな
+- **日付**: 2026-04-29
+- **出典**: cmd_karo_ci_fix_env_change
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra,testing,process,yaml]
+- **target_files**: [tests/unit/test_cmd_save_environment_change.bats]
+- CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlのような同期でIDが入れ替わる運用ファイルの特定IDに依存させず、TEST_TMPDIRに最小fixtureを作って検証する。
+
+### L544: 運用YAML writerのyaml.dump残存を偵察ゲートで検出せよ
+- **日付**: 2026-04-30
+- **出典**: cmd_karo_infra_recon_core
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,recon,process,yaml]
+- **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
+- queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.dump|yaml.safe_dump' と書込先確認を必須チェックにする。
+
+### L545: gate/hookはflat/nested両task YAML形式をfixtureで固定せよ
+- **日付**: 2026-04-30
+- **出典**: cmd_karo_infra_recon_gates
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,testing,gate,yaml]
+- **target_files**: [偵察のみ（コード変更なし）]
+- queue/tasksはflat形式とnested task形式が混在している。awk '^  status:' や data.get('task', {}) 固定の検査は片方を静かに読み落とすため、gate/hook変更時は両形式fixtureで検証する。
+
+### L546: --directモードでPython heredocに引数渡しでDIRECT_MODEを伝達する手法
+- **日付**: 2026-04-30
+- **出典**: cmd_karo_fix_direct_ac_loss
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [infra,deploy]
+- **target_files**: [scripts/deploy_task.sh]
+- deploy_task.shのreset_stale_fields()はPython heredocをsingle-quote(<<'...')で定義しているため変数展開が効かないが、python3の引数として$DIRECT_MODEを渡すことでPython側でsys.argvから読み取り可能。is_direct = len(sys.argv) > 2 and sys.argv[2] == 'true'で判定し、if not is_direct: STALE_FIELDS.append('acceptance_criteria')で条件付き追加。LK008対応。
+
+### L547: CI fixture運用YAMLのID依存禁止
+- **日付**: 2026-05-02
+- **出典**: cmd_karo_ci_fix_env_change
+- **記録者**: gate: test_cmd_save_environment_change.bats fixture化済み
+- **tags**: [infra,testing,process,yaml]
+- CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依存させず、TEST_TMPDIRに最小fixtureを作って検証する
+
+### L548: 運用YAML yaml.dump残存を偵察で検出せよ
+- **日付**: 2026-05-02
+- **出典**: cmd_karo_infra_recon_core
+- **記録者**: karo
+- **tags**: [infra,recon,process,yaml]
+- **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
+- queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|yaml.safe_dumpと書込先確認を必須チェックにする
+
+### L549: gate/hookはflat/nested両task YAML形式をfixtureで検証
+- **日付**: 2026-05-02
+- **出典**: cmd_karo_infra_recon_gates
+- **記録者**: karo
+- **tags**: [infra,testing,gate,yaml]
+- **target_files**: [偵察のみ（コード変更なし）]
+- queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形式fixtureで検証する
+
+### L550: deploy_task.sh Python heredocへの引数渡しでDIRECT_MODE伝達
+- **日付**: 2026-05-02
+- **出典**: cmd_karo_fix_direct_ac_loss
+- **記録者**: karo
+- **tags**: [infra,deploy]
+- deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys.argvで読取る手法。is_direct=sys.argv[2]=='true'で判定しacceptance_criteriaリセットを条件付き追加

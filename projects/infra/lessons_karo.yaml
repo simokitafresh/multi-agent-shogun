@@ -244,11 +244,15 @@ lessons:
   detail: '忍者がrun_in_backgroundでbashを起動すると、タスク完了後もシェルプロセスが残存する。ninja_monitorのPSTREE-OVERRIDEがbash subprocessを検出しBUSY扱いにするため、idle+タスクなし→/clearの条件を満たさない。結果: CTX消費継続+予期せぬ復帰時に旧タスク残骸で動くリスク。飛猿cmd_karo_ci_fix_skipで実証(23:51-23:56の5回連続PSTREE-OVERRIDE)。'
   source_cmd: 'cmd_karo_ci_fix_skip'
   created_at: '2026-04-25'
+  automated: false
+  enforcement: 未対策。ninja_monitorのPSTREE-OVERRIDEロジック改善が必要
 - id: 'LK002'
   title: 'deploy_task.shがYAMLマルチライン(|記法)をawkでパースできずresolve失敗'
   detail: 'cmd_2330でpurpose/context/command/claimが|記法→awk抽出失敗→deploy ERROR。手動で単行化して回避。根因: resolve_cmd_to_taskのawk L362-393が|マルチラインを非対応。対策: awk内で|検出時にマルチライン読み飛ばし、またはcmd_save.sh側で|記法をブロック'
   source_cmd: 'cmd_2330'
   created_at: '2026-04-27'
+  automated: true
+  enforcement: deploy_task.sh L381-384 skip_ml実装済み(|/>記法の継続行スキップ)
 - id: 'LK003'
   title: 'gunshi_notify.shのstatus条件が厳しすぎてreport_review自動送信が不発'
   detail: 'report_status!=completed&&!=done→return0がhayate(cmd_2317 index.lock STALL後)でnotify不発。statusがfailed/cancelled以外なら発火に修正。3回手動送信の根因'
@@ -274,6 +278,8 @@ lessons:
   detail: 'cmd_2339 AC4「既存テスト全PASS(0 failures, 0 skips)」がpre-existing failure(numba/lookback/fof)で達成不可能。忍者は正しくFAIL報告→家老waive→殿指摘。根因: cmd設計時に既存テスト赤を確認せず全体PASSerを書いた。対策: DM-Signal impl cmdのテストACは変更対象の関連テストにスコープ限定。全体pytestを要求するならpre-existing許容条件を明示。enforcement: cmd_save.shのq11で既存テスト赤確認を促すか、将軍教訓に昇華'
   source_cmd: 'cmd_2339'
   created_at: '2026-04-28'
+  automated: false
+  enforcement: 将軍cmd設計側の問題。cmd_save.sh q11改善候補
 - id: 'LK007'
   title: 'テンプレートデフォルト値はgate通過値にせよ — 空文字→BLOCK→FILL_THIS→再BLOCKの二重サイクル'
   detail: 'lessons_usefulのreason: ''''がgate lu_reason_emptyでBLOCK→pre-fillがFILL_THISに変換→fill_this_remainingで再BLOCK。265件発生。修正: reason ''''→''未参照''(dc218f52)。原理: テンプレートのデフォルト値はYAML有効値かつgate通過値でなければならない。enforcement: dc218f52で修正済み。今後のテンプレート追加時にも適用'
@@ -285,21 +291,29 @@ lessons:
   detail: 'archive済みcmdをdeploy_task.sh --directで再配備すると、STALE_FIELDS resetがacceptance_criteriaを含む全フィールドをクリアし、cmd_resolveも不発(shogun_to_karo.yaml不在)でACが復元されない。対策: (1)--directモードでSTALE_RESETからacceptance_criteriaを除外 or (2)archive前にcmd定義をfrozen/に保存し再利用可能にする'
   source_cmd: 'cmd_2340'
   created_at: '2026-04-28'
+  automated: true
+  enforcement: deploy_task.sh cc6004a1 --directモード時acceptance_criteriaをSTALE_FIELDSから除外
 - id: 'LK009'
   title: 'CLI再起動時にペイン@agent_id変数が他ペインを汚染する'
   detail: 'saizo CLI再起動時に将軍pane(%0)の@agent_idがsaizoに上書きされ、saizoのnudgeが将軍ターミナルに流入。根因: inbox_write.shのsend-keysがpane lookup(@agent_id)で解決→汚染された@agent_id→誤ペインに配信。対策: CLI再起動後に@agent_idの正常性を確認するか、再起動スクリプトで@agent_idを再設定する仕組みが必要。'
   source_cmd: 'cmd_2347'
   created_at: '2026-04-28'
+  automated: false
+  enforcement: 未対策。CLI再起動後の@agent_id検証仕組みが必要
 - id: 'LK010'
   title: '殿の指摘→まず自分が間違っていると仮定→確認'
   detail: '殿が2回「将軍にsaizo宛inbox送信」指摘→家老はshogun inbox確認→見当たらずと回答。根因: 自分が正しい前提で確認した。正しい手順: (1)自分が間違っていると仮定 (2)殿が見ている現象を再現する方法を探す (3)pane変数/tmux経路等の全経路を確認。deepdive Phase 2再発。'
   source_cmd: 'cmd_2347'
   created_at: '2026-04-28'
+  automated: false
+  enforcement: §0.1問い0+deepdive Phase 2追体験で原則化済み。gate化対象外(原則系)
 - id: 'LK011'
   title: 'Codex nudgeのtask YAMLパスは絶対パス必須'
   detail: 'send_codex_task_nudge(inbox_write.sh L368)が相対パス(queue/tasks/)でnudgeを送信→Codex忍者がfindで探す事態発生。根因: CodexのCWDがSCRIPT_DIRとは限らない。修正: SCRIPT_DIR付き絶対パスに変更。inbox_writeメッセージ本文(deploy_task.sh L141)は既に絶対パスだったがnudge側が漏れていた'
   source_cmd: 'cmd_2352'
   created_at: '2026-04-28'
+  automated: true
+  enforcement: inbox_write.sh L368 SCRIPT_DIR付き絶対パスに修正済み
 - id: 'LK012'
   title: 'Codex忍者のpane CWDがDM-Signal側に残りtask YAMLが見つからない'
   detail: 'hayateのtmux pane CWDが/mnt/c/Python_app/DM-signalのまま→Codex起動→相対パスqueue/tasks/でtask YAML未到達→find全探索で5分浪費。saizoはCWD=/mnt/c/tools/multi-agent-shogunで即到達。根因: ninja_monitorの/clear時またはCLI再起動時にpane CWDをSHOGUN_ROOTにリセットする仕組みがない。対策: (1)inbox_write.sh L368の絶対パス化(LK011で修正済み) (2)ninja_monitorのclear送信前にcd SHOGUN_ROOTをsend-keys'

@@ -11,6 +11,16 @@ run_awk() {
     ' "$1" 2>/dev/null || echo 0
 }
 
+run_gate_clear_awk() {
+    awk '
+        /^- /{read_state=""; type_state=""}
+        /read:[[:space:]]*false/{read_state="unread"}
+        /type:.*gate_clear/{type_state="gate_clear"}
+        read_state=="unread" && type_state=="gate_clear"{print 1; exit}
+        END{if(!NR) print 0}
+    ' "$1" 2>/dev/null || echo 0
+}
+
 @test "T-KN-001: 未読cmd_newを検出する" {
     local tmp
     tmp="$(mktemp)"
@@ -92,4 +102,21 @@ YAML
     result=$(run_awk "$tmp")
     rm -f "$tmp"
     [ "$result" != "1" ]
+}
+
+@test "T-GS-001: 軍師向け未読gate_clearを検出する" {
+    local tmp
+    tmp="$(mktemp)"
+    cat > "$tmp" <<'YAML'
+messages:
+- content: 'cmd_2460 gate_result: CLEAR — /gate-sync スキルでgate結果同期せよ'
+  from: 'system'
+  id: 'msg_001'
+  read: false
+  timestamp: '2026-05-02T17:00:00'
+  type: 'gate_clear'
+YAML
+    result=$(run_gate_clear_awk "$tmp")
+    rm -f "$tmp"
+    [ "$result" = "1" ]
 }

@@ -1,58 +1,48 @@
 task:
-  _ac_task_id: cmd_karo_ci_fix_env_change
+  _ac_task_id: cmd_2457_normal
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2413
-  ac_version: 2edf2958
-  assigned_to: hayate
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  description: "CI RED修正。テスト379 AC3-2: environment_change=lesson登録→PASS が失敗。tests/unit/該当batsファイルを特定し修正せよ。bats全件PASSを確認。"
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2457
+  ac_version: 88572c76
+  completed_at: '2026-05-02T02:30:53'
+  context: 'cmd_2416事故: 奥義-GS-登録時にPydantic top_n le=2違反。SSS奥義は4コンポーネントでtop_n=1で問題なし。登録スクリプトがsubset_sizeをPortfolio直下top_nに誤入力した可能性'
+  description: "【注入教訓】 必ず確認してから作業開始せよ | L507: archive_completed.sh gate_scan cache lesson injected; details are in related_lessons."
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_ci_fix_env_change
+  parent_cmd: cmd_2457
   project: infra
-  status: done
-  status_detail: 'completed: L2 champions=21, report=outputs/analysis/cmd_2412_l2_champion_report.md,
+  status: idle
   stop_for: []
-  target_path_warning: '⚠ target_pathが存在しない: outputs/grid_search/20260429/L2/shin/'
-  task_id: cmd_karo_ci_fix_env_change
+  target_path_warning: '⚠ target_pathが存在しない: backend/app/jobs/'
+  task_id: cmd_2457_normal
   task_type: normal
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'gs_grid_robustness.pyをL2 SQLite 6本(bunshin除く)で実行し、18体のLB×α6グリッドJSON+ヒートマップPNG+peak_ratioを生成。出力ディレクトリ: outputs/robustness/L2/。run_077修正版+l1_alm_wf_engine相当'
+    - check: 'deploy_task.sh L4246の改行($''\n'')が区切り文字('' | '')に変更されている'
   - id: 'AC2'
     checks:
-    - check: '18体のpeak_ratio一覧を報告。統合スコア(幾何平均)も報告'
+    - check: '再配備引継ぎ時にtask YAMLのdescriptionフィールドが破損しない'
+  - id: 'AC3'
+    checks:
+    - check: '既存テスト(bats)がPASS'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_ci_fix_env_change.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_env_change.yaml
+  report_filename: hayate_report_cmd_2457.yaml
+  report_path: queue/reports/hayate_report_cmd_2457.yaml
   bloom_level: 
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -84,3 +74,5 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  deployed_at: "2026-05-02T14:21:05"
+  status_detail: "completed: commit=d0a9743e, related deploy_task bats PASS, top-level bats PASS, unit full has pre-existing cmd_save failure"

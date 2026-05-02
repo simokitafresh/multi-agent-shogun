@@ -70,8 +70,11 @@ lessons:
     (16)ACセクションgrepはAC配下のみ。command欄のツールパスはACチェック対象外→ACに明記必須
     (17)q8縮小表現(一部/全体の一部)→q8_scope_expression WARN。全量保証と矛盾する印象
     (18)テストACは変更対象の関連テストにスコープ限定。全体pytest PASS要求はpre-existing failure許容条件を明示
-    (19)ACはMUST(二値判定)のみ。推奨事項・実装文言(表示文言の中身等)をACに書くな(推奨混在BLOCK)
+    (19)ACはMUST(二値判定)のみ。推奨事項・実装文言(表示文言の中身等)をACに書くな(推奨混在BLOCK)。偵察ACも同様:「すべきか/推奨と根拠」→「判定されている/特定されている」に変換(cmd_2458で1回BLOCK)
+    (26)パリティACはP1-P4全て必須(cmd_2447で2回BLOCK: P2欠落→P1/P3/P4のみでは不足)。new_fileフォルダーは旧版削除済みの理由をdiagnosisに明記
+    (27)AC/command欄の.pyファイル参照はディレクトリ+ファイル名分離で書け(例:backend/app/jobs/ 配下)。スラッシュ区切り(a.py/b.py)→パスとして検出→ac_missing_parent_path BLOCK(cmd_2452で2回BLOCK)
     (20)q5はstructure_verified以上を使え。code_readingのみはBLOCK
+    (28)gate/hook追加cmdのq11は既存代替の現物確認(grep結果)を記載必須。「未実装」だけでは不足→既存の類似仕組みを列挙し差分理由を書け(cmd_2459で1回BLOCK、累計15回WARN)
     (21)ACはimpl phaseのみ。commit/deploy/pushをACに書くな(ac_phase_mixing BLOCK)
     (22)shogun_to_karo.yamlへの書き込みは辞書形式(cmd_XXXX:)。リスト形式(- id:)でcmd_block_missing
     (23)AC内出力パスはrelative記述+親ディレクトリ確認。assumptions sourceはフルパス記載(例: scripts/analysis/gs_db_utils.py)
@@ -285,7 +288,7 @@ lessons:
   detail: |
     (1)is_gate_or_hook_addition_cmd(): SCOUT除外実装済み(cmd_2279 L120)
     (2)check_gunshi_reference_numeric_relaxation: カタログ閾値除外実装済み(cmd_2279)
-    (3)check_research_tool_explicit FP: commandのgrid_search/walk_forwardパスでGSツール検出マッチ。偵察/道具作成cmdは実行しない。暫定: ACにrun_077またはl1_alm_wf_engineを含めて回避(cmd_2343/2355/2358/2366/2367/2368で繰返しBLOCK)。修正(cmd_2332): L2684にshin_shijin_l1_gs追加。根本修正はgate側除外リスト拡張が必要
+    (3)check_research_tool_explicit FP: commandのgrid_search/walk_forwardパスでGSツール検出マッチ。偵察/道具作成cmdは実行しない。暫定: ACにrun_077またはl1_alm_wf_engineを含めて回避(cmd_2343/2355/2358/2366/2367/2368で繰返しBLOCK)。修正(cmd_2332): L2684にshin_shijin_l1_gs追加。偵察cmdでもcommandにpipeline/selection等の研究キーワード→同FP発火(cmd_2443)。ACに道具パスを予防的記載で解消。根本修正はgate側除外リスト拡張が必要
     (4)check_parity_ac_requirements FP: parity語でトリガー。修正済み(cmd_2332): title+purposeのみに限定
     (5)q8 multiline(|)で_Q8_WW_VAL抽出失敗。単行化必須
     (6)教訓上限デッドロック: Edit全BLOCK。修正済み: Guard 6にid数比較追加(削除方向許可)。上限到達時は古いLS同士を統合(削除)でid数を減らせ
@@ -348,3 +351,45 @@ lessons:
   created_at: '2026-04-29'
   automated: true
   enforcement: 'cmd_save.sh check_ac_param_sufficiency(既存WARN累計BLOCK)'
+- id: 'LS030'
+  title: 'cmd_save必須項目(q5_verified_source/q8_why_what)は別フィールド — q5_verified_spaceとq8_why_what_compoundでは不足'
+  detail: 'cmd_2422で2件BLOCK。q5_verified_sourceとq8_why_whatはq5_verified_space/q8_why_what_compoundとは別フィールド。名前が似ていても別チェック。cmd_save.shのBLOCKメッセージに記載された正確なフィールド名を確認してから修正せよ。'
+  source_cmd: 'cmd_2422'
+  created_at: '2026-04-29'
+  automated: true
+  enforcement: 'cmd_save.sh必須項目チェック(既存自動強制)'
+- id: 'LS031'
+  title: 'parity_ac_missing累計昇格+other_draft_exists — 1本ずつ+P4必須'
+  detail: 'cmd_2424で2件BLOCK。(1)other_draft_exists: cmd_2425もdraft→1本ずつ通す(on_holdに変更で解消)。(2)parity_ac_missing累計昇格: P4(FE UI整合)がACに欠落→AC5追加で解消。パリティcmdではP1/P3/P4を常にACに含めよ。'
+  source_cmd: 'cmd_2424'
+  created_at: '2026-04-30'
+  automated: true
+  enforcement: 'cmd_save.sh parity_ac_missing+other_draft_exists(既存自動強制)'
+- id: 'LS032'
+  title: '一次知識と解釈の混同禁止 — 原論文の手法をDM-Signal適用に読み替えて報告するな'
+  detail: 'Factor Momentumを「Top-1選出に使える」と殿に報告したが、原論文は全ファクター等配分Long/Short。Top-1選出ではない。一次知識層の手法を正確に理解する前にDM-Signal適用を考えた=一次知識と解釈の混同。手順: (1)一次知識(原論文の手法)を正確に理解 (2)殿に報告する際は原論文の手法として報告 (3)DM-Signal適用は解釈層(dm-signal/)に分離。殿への報告で「〜に使える」は解釈であり一次知識ではない。'
+  source_cmd: 'cmd_2432'
+  created_at: '2026-04-30'
+  automated: true
+  enforcement: '知識辞書guide.md 2層構造ルール(既存。意志依存→将軍の自問に追加)'
+- id: 'LS033'
+  title: '設計書数値緩和FP — 異次元数値(PF体数vs lookback日数)の偽陽性はq8に両方の数値を含めて解消'
+  detail: 'cmd_2436で設計書数値緩和WARN累計昇格BLOCK。q8最大値=12(PF体数)とAC最大値=315(lookback日数)で次元が異なる偽陽性。解消方法: q8_why_whatにAC内の全数値(lookback候補315D等)を含めて、gateが比較する際にq8>=ACとなるようにする。LS-A22(7)の§番号偽陽性と同パターン。'
+  source_cmd: 'cmd_2436'
+  created_at: '2026-04-30'
+  automated: true
+  enforcement: 'cmd_save.sh check_gunshi_reference_numeric_relaxation(既存WARN。q8に全数値含めて解消)'
+- id: 'LS034'
+  title: 'assumptions sourceは忍者作成スクリプトではなく出力YAMLを参照'
+  detail: 'cmd_2438でassumptions source不在BLOCK。忍者が作成したスクリプトはworktreeにありmulti-agent-shogunリポには存在しない。assumptions sourceにはスクリプトパスではなく、cmd成果物(出力YAML等)の確認済みパスを書け。'
+  source_cmd: 'cmd_2438'
+  created_at: '2026-04-30'
+  automated: true
+  enforcement: 'cmd_save.sh assumptions source存在チェック(既存自動強制)'
+- id: 'LS035'
+  title: '殿の目的を正確に理解してからcmd設計 — 原論文忠実実装≠殿の目的'
+  detail: 'cmd_2436で原論文のlookback選択を忠実実装したが、殿の目的はPF間選出だった。原論文の構造(何を選択するか)と殿の目的(何を選択したいか)は別。cmd設計前に「殿はこのcmdで何を得たいか」を確認し、原論文との差異を設計書に明記してから起票せよ。'
+  source_cmd: 'cmd_2436'
+  created_at: '2026-04-30'
+  automated: true
+  enforcement: '設計書§2.1に修正経緯を記載済み。gate化は意志依存(将軍の自問に追加)'

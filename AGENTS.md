@@ -487,6 +487,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5
 - /shogun-teire|知識の棚卸し(8観点監査)|`~/.codex/skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`~/.codex/skills/reset-layout/SKILL.md`
+- /pf-registration|本番PF登録(即パリティ強制)|`~/.codex/skills/pf-registration/SKILL.md`
 
 ## Knowledge Maintenance
 

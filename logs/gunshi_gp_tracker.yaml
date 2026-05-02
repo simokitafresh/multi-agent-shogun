@@ -137,7 +137,8 @@
 # | 214 | SG-PRE9 BLOCK固定    | ★implemented      | S170 | result:no→BLOCK固定(waive有無に関わらず)。cmd_2093誤予測対策。review_logヘッダ+gate文言修正 |
 # | 219 | archive→active優先   | ★implemented      | S233 | deploy_task.sh教訓注入をlessons.yaml優先に変更。archive-only教訓NOT_USEFUL量産修正。bats15/15。D0直接実装 |
 # | 236 | adversarial blast判定 | ★implemented      | 自走 | review_logヘッダにblast_radius対象(hook/gate/CLAUDE.md/instructions/settings)→adversarial_review.required:true義務化1行追加。gate L163-165が既に検出。D0直接実装(2026-04-26)
-# 集計: ★implemented:113(+GP-236) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計142GP (2026-04-26T11:40更新)
+# | 238 | GATE_PREDICTION自動計算 | ★implemented     | 自走 | precheck engineにGATE_PREDICTION自動計算追加。SG7盲点修正(7件LGTM→BLOCK根因)。bats3/3。D0直接実装+家老LGTM(2026-05-02)
+# 集計: ★implemented:114(+GP-238) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計143GP (2026-05-02T03:00更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ

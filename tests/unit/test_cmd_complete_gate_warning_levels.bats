@@ -28,6 +28,7 @@ setup() {
     mkdir -p \
         "$TEST_BIN" \
         "$TEST_PROJECT/scripts" \
+        "$TEST_PROJECT/queue/inbox" \
         "$TEST_PROJECT/queue/tasks" \
         "$TEST_PROJECT/queue/reports"
 
@@ -52,6 +53,7 @@ EOF
     source "$SRC_FIELD_GET_SCRIPT"
     eval "$(sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    eval "$(sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT")"
     eval "$(sed -n '/^detect_task_role()/,/^}/p' "$SRC_GATE_SCRIPT")"
@@ -577,6 +579,13 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"shogun inbox: SKIP (state=active)"* ]]
     [ ! -f "$INBOX_WRITE_LOG" ] || [ ! -s "$INBOX_WRITE_LOG" ]
+}
+
+@test "notify_karo_cmd_complete_skill_hint writes cmd-complete prompt to karo inbox" {
+    run notify_karo_cmd_complete_skill_hint "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo /cmd-complete hint: OK"* ]]
+    grep -q "^karo|GATE CLEAR — $TEST_CMD_ID 完了。/cmd-complete スキルで完了処理を実行せよ。|skill_hint|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
 @test "cmd_complete_gate invokes shogun idle notify in both emergency and normal GATE CLEAR sections" {

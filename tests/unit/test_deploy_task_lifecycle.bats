@@ -263,6 +263,13 @@ read_task_engineering_preferences() {
     ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
+read_task_skill_hint() {
+    awk '
+        /^task:/ { in_task=1; next }
+        in_task && /^  skill_hint:/ { sub(/^  skill_hint:[[:space:]]*/, ""); print; exit }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
 # ─── gate_blocks ヘルパー関数 ───
 
 read_gate_blocks() {
@@ -1054,6 +1061,40 @@ EOF
     run read_task_engineering_preferences
     [ "$status" -eq 0 ]
     [ "$output" = "prefer parity over speed" ]
+}
+
+@test "deploy_task injects db-check skill_hint for dm-signal DB operation" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "DB parity test"
+  task_type: impl
+  project: dm-signal
+  purpose: "本番DBのholding_signalを確認してパリティ検証する"
+EOF
+
+    run inject_skill_hint_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_skill_hint
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"/db-check"* ]]
+}
+
+@test "deploy_task injects pf-registration skill_hint for registration type" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "PF registration test"
+  task_type: registration
+  project: dm-signal
+  purpose: "PFを登録する"
+EOF
+
+    run inject_skill_hint_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_skill_hint
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"/pf-registration"* ]]
 }
 
 # ═══════════════════════════════════════════════════════════

@@ -186,6 +186,28 @@ teardown() {
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "skill fail rate is displayed from skill execution log" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2099-01-01T00:00:00+0900"
+  skill: "report-bundle"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "binary_checks empty"
+- ts: "2099-01-01T00:01:00+0900"
+  skill: "report-bundle"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "fixed"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ スキル別FAIL率"* ]]
+    [[ "$output" == *"report-bundle: FAIL率=50% (1/2)"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
 @test "Memory ALERT → 総合判定: ALERT" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
