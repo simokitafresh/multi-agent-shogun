@@ -30,13 +30,101 @@ fi
 
 CMD_ID="$1"
 MESSAGE="$2"
-SHOGUN_TO_KARO="$PROJECT_DIR/queue/shogun_to_karo.yaml"
+SHOGUN_TO_KARO="${CMD_PUBLISH_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
+QUALITY_LOG_FILE="${CMD_PUBLISH_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
+LAST_CMD_FILE="${CMD_PUBLISH_LAST_CMD_FILE:-$PROJECT_DIR/queue/cmd_save_last_cmd.txt}"
+SHOGUN_LESSONS_FILE="${CMD_PUBLISH_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
+SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"
+CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh}"
+CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
 
+count_active_shogun_lessons() {
+    [[ -f "$SHOGUN_LESSONS_FILE" ]] || {
+        echo 0
+        return 0
+    }
+    grep -c '^- id:' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
+}
+
+count_cmd_save_blocks_for_cmd() {
+    local target_cmd_id="${1:-}"
+    [[ -n "$target_cmd_id" && -f "$QUALITY_LOG_FILE" ]] || {
+        echo 0
+        return 0
+    }
+
+    CMD_PUBLISH_TARGET_CMD_ID="$target_cmd_id" \
+    CMD_PUBLISH_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    python3 - <<'PY'
+import os
+import yaml
+
+cmd_id = os.environ.get("CMD_PUBLISH_TARGET_CMD_ID", "")
+log_path = os.environ.get("CMD_PUBLISH_QUALITY_LOG", "")
+if not cmd_id or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+with open(log_path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
+print(sum(
+    1
+    for entry in entries
+    if isinstance(entry, dict)
+    and entry.get("cmd_id") == cmd_id
+    and entry.get("gate_result") == "BLOCK"
+    and entry.get("source") == "cmd_save"
+))
+PY
+}
+
+shogun_lesson_exists_for_cmd() {
+    local source_cmd_id="${1:-}"
+    [[ -n "$source_cmd_id" && -f "$SHOGUN_LESSONS_FILE" ]] || return 1
+
+    if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        return 0
+    fi
+    grep -qF "$source_cmd_id" "$SHOGUN_LESSONS_FILE" 2>/dev/null
+}
+
+run_publish_preflight() {
+    local lesson_count lesson_threshold prev_cmd_id prev_block_count
+
+    lesson_count="$(count_active_shogun_lessons)"
+    [[ "$lesson_count" =~ ^[0-9]+$ ]] || lesson_count=0
+    lesson_threshold=$((SHOGUN_LESSON_LIMIT - 2))
+    if (( lesson_count >= lesson_threshold )); then
+        echo "BLOCK: lessons_shogun.yaml が ${lesson_count}件。cmd_publish前に空きを2件以上確保せよ(上限${SHOGUN_LESSON_LIMIT}件)。" >&2
+        echo "  解消: 既存LSを統合し、件数を${lesson_threshold}件未満にしてから再実行。" >&2
+        echo "  参考: bash scripts/lesson_write_shogun.sh --supersedes LS旧 LS新 \"統合理由\"" >&2
+        return 1
+    fi
+
+    [[ -f "$LAST_CMD_FILE" ]] || return 0
+    prev_cmd_id="$(tr -d '[:space:]' < "$LAST_CMD_FILE" 2>/dev/null || true)"
+    [[ -n "$prev_cmd_id" && "$prev_cmd_id" != "$CMD_ID" ]] || return 0
+
+    prev_block_count="$(count_cmd_save_blocks_for_cmd "$prev_cmd_id")"
+    [[ "$prev_block_count" =~ ^[0-9]+$ ]] || prev_block_count=0
+    (( prev_block_count > 0 )) || return 0
+    shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
+
+    echo "BLOCK: 前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。cmd_publish前にlesson_write_shogun.shで記録せよ。" >&2
+    echo "  例: bash scripts/lesson_write_shogun.sh \"${prev_cmd_id}のBLOCK教訓\" \"BLOCK理由: ... 原因: ... 修正: ...\" ${prev_cmd_id} \"gate/hook等の強制策\"" >&2
+    return 1
+}
+
 # --- Step 1: cmd_save.sh gate検証 ---
+echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
+run_publish_preflight
+
 echo "=== [1/3] cmd_save.sh gate検証: $CMD_ID ==="
-if ! bash "$PROJECT_DIR/scripts/cmd_save.sh" "$CMD_ID"; then
+if ! bash "$CMD_SAVE_SCRIPT" "$CMD_ID"; then
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
     exit 1
 fi
@@ -64,4 +152,4 @@ fi
 
 # --- Step 3: cmd_delegate.sh 委任 ---
 echo "=== [3/3] cmd_delegate.sh 委任: $CMD_ID ==="
-bash "$PROJECT_DIR/scripts/cmd_delegate.sh" "$CMD_ID" "$MESSAGE"
+bash "$CMD_DELEGATE_SCRIPT" "$CMD_ID" "$MESSAGE"
