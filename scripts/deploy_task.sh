@@ -1532,9 +1532,9 @@ EOF
     local _deploy_task_type="${task_type}"
     local _commit_bc=""
     if [ "$_deploy_task_type" != "scout" ] && [ "$_deploy_task_type" != "recon" ]; then
-        _commit_bc='  commit:
-  - check: "git commitが完了したか(untracked/modified=0)"
-    result: ""  # yes or no'
+        _commit_bc="  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: ''  # yes or no"
     fi
 
     # cmd_1838: gitignore対象ファイルのみ変更するcmdのcommit checkを自動でno設定
