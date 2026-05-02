@@ -1,6 +1,7 @@
 ---
 name: verdict-check
 argument-hint: "[report_path]"
+quality_metric: "忍者系: verdict-check使用後のverdict不整合WA不発生率(対象報告のうちverdict_override/binary_checks矛盾なしの割合)"
 description: |
   【忍者専用】binary_checksの結果からverdictを自動導出するスキル。
   verdict↔binary_checks矛盾（PASS判定だがbc:noあり等）を構造的に防止する。
@@ -81,5 +82,4 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 - **verdict を Edit toolで直接書くな** — report_field_set.sh経由（GP-072c5: bc:no→verdict:PASS BLOCK）
 
 ## 注意ポイント
-
 

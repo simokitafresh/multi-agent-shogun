@@ -1,6 +1,7 @@
 ---
 name: reset-layout
 argument-hint: "[--dry-run]"
+quality_metric: "家老系: reset-layout実行後のstartup/layout関連gate通過率(対象実行のうちpane構成・watcher確認gateがPASSした割合)"
 description: |
   agentsウィンドウ(shogun:agents)のレイアウト・ペイン配置・変数を
   初期状態に一発復元するスキル。ペイン消失・入替・CLI死亡時に使用。

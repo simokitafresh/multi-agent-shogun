@@ -1,6 +1,7 @@
 ---
 name: switch-project
 argument-hint: "[project_id]"
+quality_metric: "将軍系: project切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   プロジェクトフォーカスを切り替えるスキル。

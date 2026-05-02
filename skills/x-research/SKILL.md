@@ -1,5 +1,6 @@
 ---
 name: x-research
+quality_metric: "将軍系: X調査cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   xAI Grok APIのx_search機能でXリアルタイム検索し、トレンドクラスター・代表ポスト・
   一次情報URLを含むContext Pack Markdownを生成。将軍がトピック調査時に使用。

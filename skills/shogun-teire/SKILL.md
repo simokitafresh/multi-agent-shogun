@@ -1,6 +1,7 @@
 ---
 name: shogun-teire
 argument-hint: ""
+quality_metric: "将軍系: 棚卸しcmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   知識基盤の定期棚卸し（8観点監査）。Memory MCP・CLAUDE.md・

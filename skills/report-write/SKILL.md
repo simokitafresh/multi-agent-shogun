@@ -1,6 +1,7 @@
 ---
 name: report-write
 argument-hint: "[report_path]"
+quality_metric: "忍者系: report-write使用後の報告YAML関連WA不発生率(対象報告のうちreport_yaml_format/report_field欠陥なしの割合)"
 description: |
   【忍者専用】報告YAML作成を標準化するスキル。report_field_set.sh経由で必須フィールドを記入し、
   Edit tool直接編集によるテンプレート破損・FILL_THIS残存・形式不備を防止する。
@@ -106,5 +107,4 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
-
 

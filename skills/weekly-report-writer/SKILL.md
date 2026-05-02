@@ -1,6 +1,7 @@
 ---
 name: weekly-report-writer
 argument-hint: "[week:YYYY-Www]"
+quality_metric: "将軍系: 週報生成cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   DM-Signal Weekly Report を一発で再現する skill。
   DM-Signal API から signals / monthly-returns / deterioration を取得し、
