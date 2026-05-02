@@ -76,6 +76,16 @@ else
     echo "  SKIP: worker_id not found"
 fi
 
+# ─── Batch git data (WSL2最適化: N*2 per-file git log → 2 batch calls) ───
+_PRE_CMD_FILES=""
+_PRE_RECENT_DATA=""
+if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
+    # PRE3用: cmd固有commitが触れたファイル一覧 (1 call)
+    _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
+    # PRE14用: 直近20 commitとファイル (1 call)
+    _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && git log --oneline -20 --name-only 2>/dev/null) || true
+fi
+
 # ─── SG-PRE3: commit検証 ───
 echo ""
 echo "■ SG-PRE3: commit検証"
@@ -84,23 +94,17 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     if [ -n "${FILES_MODIFIED:-}" ]; then
         COMMIT_FOUND=0
         while IFS= read -r fpath; do
-            COMMIT_LINE=$(cd "$PROJECT_DIR" && git log --oneline -1 -- "$fpath" 2>/dev/null || echo "")
-            if [ -n "$COMMIT_LINE" ]; then
-                if echo "$COMMIT_LINE" | grep -qi "${PARENT_CMD:-}" 2>/dev/null; then
-                    echo "  PASS: $fpath → $COMMIT_LINE"
-                    COMMIT_FOUND=1
-                else
-                    echo "  WARN: $fpath → $COMMIT_LINE (cmd_id不一致)"
-                fi
+            # batch dataから判定 (per-file git log不要)
+            if echo "$_PRE_CMD_FILES" | grep -qF "$fpath" 2>/dev/null; then
+                echo "  PASS: $fpath → cmd commit found"
+                COMMIT_FOUND=1
+            elif [ -f "$PROJECT_DIR/$fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
+                echo "  WARN: $fpath → commit not found"
+                echo "    → FILE EXISTS (untracked/uncommitted)"
             else
                 echo "  WARN: $fpath → commit not found"
-                # GP-202補完: commit不在時にファイル実在を代替確認(RESEARCH cmd対応)
-                if [ -f "$PROJECT_DIR/$fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
-                    echo "    → FILE EXISTS (untracked/uncommitted)"
-                else
-                    echo "    → FILE NOT FOUND — 成果物不在の可能性"
-                    ERRORS=$((ERRORS + 1))
-                fi
+                echo "    → FILE NOT FOUND — 成果物不在の可能性"
+                ERRORS=$((ERRORS + 1))
             fi
         done <<< "${FILES_MODIFIED:-}"
 
@@ -296,8 +300,8 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         fpath=$(echo "$line" | sed 's/.*path: *//' | tr -d "'\"")
         [ -z "$fpath" ] && continue
         [[ "$fpath" == -* ]] && continue
-        # files_modifiedの各ファイルについて直近5 commitにrevertが含まれるか
-        if git -C "$REPO_ROOT" log --oneline -5 -- "$fpath" 2>/dev/null | grep -qi 'revert'; then
+        # batch dataから判定 (per-file git log不要。_PRE_RECENT_DATAで事前取得済み)
+        if echo "$_PRE_RECENT_DATA" | grep -B1 -F "$fpath" 2>/dev/null | grep -qi 'revert'; then
             echo "  ★★★ WARN: $fpath に直近revert commitあり。before/after数値がrevert前の可能性。再計測を確認せよ"
             REVERT_FOUND=1
         fi
