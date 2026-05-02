@@ -797,7 +797,7 @@ import sys
 
 path = sys.argv[1]
 try:
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8", errors="replace") as fh:
         lines = fh.readlines()
 except FileNotFoundError:
     print("")
@@ -2982,7 +2982,7 @@ if true; then
         if [[ -n "${_ASSUMP_PROJECT_WD:-}" ]]; then
             _ASSUMP_VERIFIED_PATHS=$(echo "$CMD_BLOCK_NC" | python3 -c "
 import sys, re
-content = sys.stdin.read()
+content = sys.stdin.buffer.read().decode('utf-8', errors='replace')
 lines = content.split('\n')
 in_assumptions = False
 assumptions_indent = -1

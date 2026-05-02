@@ -858,3 +858,4 @@
 | cmd_2502 | gate_autofix_proposal.shが未最適化で272ms(偵察計測)。台帳未登録。 178行。直近50件のgate_metrics.logからBLOCKパターンを集計し、instructions修正提案をinsights.yamlに還流する。 mktemp+tail+awk+insight_write.sh呼出しがボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_autofix_proposal.shに短TTL出 |
 | cmd_2503 | gate_wa_data_quality.shがリグレッション(52.9ms→111ms、2.1x悪化)。213行。 前回(2026-04-18 hayate): 106.6→52.9ms(-50.4%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_wa_data_quality.shの通常chec |
 | cmd_2506 | gate_skill_health.shが未最適化で139ms(偵察計測)。台帳未登録。241行。 SKILL.mdのTRIGGER/MECE/DRY検証を行うgate。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_health.shの既定skills走 |
+| cmd_2505 | gate_field_get.shがリグレッション(40ms→71ms、1.8x悪化)。213行。 前回(2026-04-18 saizo): 404→40ms(-90.1%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_field_get.sh R2 CoDD再改善を完 |
