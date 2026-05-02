@@ -507,6 +507,14 @@ sync_stk_status_from_archive() {
     # STK yaml.safe_load を2回→1回に削減 (Python起動コスト×1回 + yaml.safe_load×1回 削減)
     [ -f "$QUEUE_FILE" ] || return 0
 
+    # list形式のshogun_to_karo.yamlはarchive_cmds側の対象。
+    # dict形式STKエントリが無い場合はPython/yaml.safe_loadを起動しない。
+    if ! grep -qE '^[[:space:]]{2}cmd_[0-9A-Za-z_]+:' "$QUEUE_FILE" 2>/dev/null; then
+        echo "[stk-sync] skipped: no dict-form STK entries"
+        echo "[stk-trim] skipped: no dict-form STK entries"
+        return 0
+    fi
+
     local result
     result=$(
         (

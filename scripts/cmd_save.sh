@@ -820,6 +820,7 @@ log_cmd_save_block() {
     CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
     CMD_QUALITY_SOURCE="cmd_save" \
     CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
+    CMD_QUALITY_FAST_METADATA=1 \
     bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 || true
 }
 
@@ -830,6 +831,7 @@ log_cmd_save_warns() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save_warn" \
         CMD_QUALITY_DIAGNOSIS="" \
+        CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 || true
     done
 }
