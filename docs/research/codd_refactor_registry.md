@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-05-02 | kagemaru | `tests/unit/test_cli_adapter.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `4.51s → 2.08s` (`-53.9%`, `bats --timing`) | cmd_2481。Bats 63ケースを10ケースへ統合し、同一関数・同一前提の期待値群を複合assertへ集約。既存assert内容は維持。10/10 PASS |
 | 2026-05-02 | kotaro | `tests/unit/test_build_system.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `4200ms → 2591ms` (`-38.3%`) | cmd_2482 AC1。`build_instruction_file()`を全16呼出し並列化(`&`+`wait`)、`_BUILD_OUTDIR`(tmpfs)経由で一括cp、非インタラクティブ時の`ls`省略。48/48テストPASS。commit: 44c564ad |
 | 2026-05-02 | kotaro | `tests/unit/test_inbox_write.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `4200ms → 2902ms` (`-30.9%`) | cmd_2482 AC1。`setup_file()`で4ファイル選択コピー(11MBフルコピー回避)+T-008/009静的fixture事前生成。python3 yaml→grep置換(T-003〜T-023)。26/26テストPASS。commit: 9bbf08a0 |
 | 2026-05-02 | hayate | `tests/unit/test_archive_completed.bats`, `tests/unit/test_cmd_save_command_steps_vs_ac.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | median 5run: `6.00s → 3.19s` (`-46.8%`), `9.66s → 1.79s` (`-81.5%`) | cmd_2482 AC1。list形式キューではdict形式STK同期Pythonをスキップ。cmd_save由来の品質ログ追記は既存`CMD_QUALITY_FAST_METADATA=1`を使い、重いgunshi/reports/AC metadata scanを除外。対象2本 PASS |
