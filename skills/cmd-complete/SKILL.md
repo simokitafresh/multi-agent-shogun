@@ -20,6 +20,9 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 
 ## 実行フロー（順序厳守）
 
+
+### 自動防止ステップ
+- <!-- skill-auto-improve:894b86aa27a7 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76」(count=1, last=2026-05-02T23:46:44+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 ### Step 1: lesson review
 ```bash
 bash scripts/lesson_review.sh
@@ -71,3 +74,5 @@ bash scripts/inbox_archive.sh karo
 - 順序を崩すな（§8ルール）
 
 ## 注意ポイント
+
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76

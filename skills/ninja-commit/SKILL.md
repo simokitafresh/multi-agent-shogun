@@ -22,6 +22,9 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 
 ## commit手順
 
+
+### 自動防止ステップ
+- <!-- skill-auto-improve:686ae6519090 --> 自動防止: gate=gate_report_format のTop FAIL理由「lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文...」(count=1, last=2026-05-02T18:41:00+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 ### Step 1: scope確認
 ```bash
 # タスクYAMLのtarget_path/files_modifiedからscope内ファイルを特定
@@ -74,4 +77,3 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
-

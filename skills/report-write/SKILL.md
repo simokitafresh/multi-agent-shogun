@@ -22,6 +22,11 @@ description: |
 
 ## 報告YAML記入手順
 
+
+### 自動防止ステップ
+- <!-- skill-auto-improve:4915d84e940c --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field」(count=1, last=2026-05-02T22:27:16+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
+- <!-- skill-auto-improve:47a7cd7f4343 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-02T23:59:28+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
+- <!-- skill-auto-improve:8b0229f09993 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:2」(count=1, last=2026-05-02T21:57:04+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 ### Step 1: 報告パスを確認
 ```bash
 # タスクYAMLから報告パスを取得
@@ -107,6 +112,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:1
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:2
 
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_2483.yaml|saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:1
@@ -123,4 +130,3 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: found=false but no no_lesson_reason; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; purpose_validation: MISSING; status: \"pending\" はテンプレート初期値。完了後...
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=files_modified: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING
-

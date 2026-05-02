@@ -6,9 +6,11 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SKILL_LOG_SCRIPT="$PROJECT_ROOT/scripts/skill_execution_log.sh"
     export SKILL_FEEDBACK_SCRIPT="$PROJECT_ROOT/scripts/skill_gate_feedback.sh"
+    export SKILL_AUTO_IMPROVE_SCRIPT="$PROJECT_ROOT/scripts/skill_auto_improve.sh"
     export DASHBOARD_UPDATE_SCRIPT="$PROJECT_ROOT/scripts/dashboard_update.sh"
     [ -x "$SKILL_LOG_SCRIPT" ] || return 1
     [ -x "$SKILL_FEEDBACK_SCRIPT" ] || return 1
+    [ -x "$SKILL_AUTO_IMPROVE_SCRIPT" ] || return 1
     [ -x "$DASHBOARD_UPDATE_SCRIPT" ] || return 1
 }
 
@@ -331,6 +333,120 @@ entry = data["executions"][-1]
 assert entry["skill"] == "dashboard-update"
 assert entry["result"] == "PASS"
 assert entry["gate"] == "dashboard_update"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "skill_auto_improve outputs per-skill Top3 FAIL reasons" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/cmd-complete"
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:02:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "lessons_useful missing"
+  gate: "cmd_complete_gate"
+- ts: "2026-05-02T10:03:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "binary_checks empty"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:04:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "fourth reason omitted"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:05:00+0900"
+  skill: "cmd-complete"
+  executor: "karo"
+  result: "FAIL"
+  stumbling_points: "ac_version mismatch"
+  gate: "cmd_complete_gate"
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3
+    [ "$status" -eq 0 ]
+
+    [[ "${lines[0]}" == "skill | rank | fail_count | last_fail | gate | top_fail_reason" ]]
+    [[ "$output" == *"report-write | 1 | 2 | 2026-05-02T10:01:00+0900 | gate_report_format | verdict missing"* ]]
+    [[ "$output" == *"report-write | 2 | 1"* ]]
+    [[ "$output" == *"report-write | 3 | 1"* ]]
+    [[ "$output" != *"report-write | 4"* ]]
+    [[ "$output" == *"cmd-complete | 1 | 1 | 2026-05-02T10:05:00+0900 | cmd_complete_gate | ac_version mismatch"* ]]
+}
+
+@test "skill_auto_improve applies Top FAIL reasons to SKILL.md procedure section without duplicates" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+---
+
+# report-write
+
+## 報告YAML記入手順
+
+### Step 1: path
+既存手順。
+
+## 注意ポイント
+
+- 既存注意。
+EOF
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+
+    for attempt in 1 2; do
+        run env \
+            SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+            SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+            bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3 --apply
+        [ "$status" -eq 0 ]
+    done
+
+    run python3 - <<EOF
+from pathlib import Path
+text = Path("$TEST_TMPDIR/skills/report-write/SKILL.md").read_text(encoding="utf-8")
+assert "## 報告YAML記入手順" in text
+assert "### 自動防止ステップ" in text
+assert "Top FAIL理由「verdict missing」" in text
+assert text.count("skill-auto-improve:") == 1
+assert text.index("### 自動防止ステップ") < text.index("### Step 1: path")
 print("OK")
 EOF
     [ "$status" -eq 0 ]
