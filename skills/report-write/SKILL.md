@@ -107,6 +107,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:2
 
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_2483.yaml|saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:1
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field
