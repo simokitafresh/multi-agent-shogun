@@ -5,40 +5,70 @@
 #         New/different failure = block stop, prompt fix.
 set -euo pipefail
 
-# --- Skip for non-tmux or shogun/karo ---
-if [ -z "${TMUX_PANE:-}" ]; then
-    exit 0
-fi
-AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-[ -z "$AGENT_ID" ] && AGENT_ID="${MOCK_AGENT_ID:-}"
-if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] || [ "$AGENT_ID" = "gunshi" ]; then
-    exit 0
-fi
-
 _stop_lint_self="${BASH_SOURCE[0]}"
 [[ "$_stop_lint_self" != /* ]] && _stop_lint_self="$PWD/$_stop_lint_self"
 SHOGUN_ROOT="${_stop_lint_self%/.claude/hooks/stop-lint-gate.sh}"
 unset _stop_lint_self
 
-# --- Collect changed files (staged files only) ---
+# --- Collect lint-target changed files (staged files only) ---
 # cmd_2076: git ls-files -m (unstaged scan) を廃止。staged-only に変更。
 # 理由: git ls-files -m は /mnt/c/ 上で全tracked fileのmtime照合のため870ms-1.5s費やす。
 #       staged files = コミット直前でlint違反を最重要チェックするタイミング。
 #       unstaged違反はpre-commit hookでも検出される。
 # 前回(cmd_2053)との差分: shebangではなくgit操作アルゴリズム変更。
 collect_changed_files() {
+    local cache_key="${SHOGUN_ROOT//[!A-Za-z0-9_]/_}"
+    local cache_file="${STOP_LINT_CACHE_FILE:-/tmp/stop_lint_gate_staged_${cache_key}}"
+    local index_file="$SHOGUN_ROOT/.git/index"
+    local index_sig=""
+    local cache_header=""
+    local cached_file
+    local expected_header=""
     local staged_files
-    staged_files="$(git -C "$SHOGUN_ROOT" diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
 
-    if [ -z "$staged_files" ]; then
-        return 0
+    if [ -f "$index_file" ]; then
+        index_sig="$(stat -c '%Y:%s' "$index_file" 2>/dev/null || true)"
+        expected_header="${SHOGUN_ROOT}|${index_sig}"
+        if [ -n "$index_sig" ] && [ -f "$cache_file" ]; then
+            IFS= read -r cache_header < "$cache_file" || true
+            if [ "$cache_header" = "$expected_header" ]; then
+                {
+                    IFS= read -r _ || true
+                    while IFS= read -r cached_file; do
+                        printf '%s\n' "$cached_file"
+                    done
+                } < "$cache_file"
+                return 0
+            fi
+        fi
     fi
 
-    printf '%s\n' "$staged_files" | awk 'NF && !seen[$0]++'
+    staged_files="$(git -C "$SHOGUN_ROOT" diff-index --cached --name-only --diff-filter=ACMRTUXB HEAD -- 2>/dev/null || true)"
+
+    staged_files="$(printf '%s\n' "$staged_files" | awk 'NF && /\.(sh|bash|py|ts|tsx|js|jsx)$/ && !seen[$0]++')"
+
+    if [ -n "$index_sig" ]; then
+        {
+            printf '%s\n' "$expected_header"
+            [ -z "$staged_files" ] || printf '%s\n' "$staged_files"
+        } > "${cache_file}.$$" 2>/dev/null && mv "${cache_file}.$$" "$cache_file" 2>/dev/null || rm -f "${cache_file}.$$" 2>/dev/null
+    fi
+
+    [ -z "$staged_files" ] || printf '%s\n' "$staged_files"
 }
 
 mapfile -t changed_files < <(collect_changed_files)
 if [ "${#changed_files[@]}" -eq 0 ]; then
+    exit 0
+fi
+
+# --- Skip for non-tmux or shogun/karo/gunshi ---
+if [ -z "${TMUX_PANE:-}" ]; then
+    exit 0
+fi
+AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+[ -z "$AGENT_ID" ] && AGENT_ID="${MOCK_AGENT_ID:-}"
+if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] || [ "$AGENT_ID" = "gunshi" ]; then
     exit 0
 fi
 
