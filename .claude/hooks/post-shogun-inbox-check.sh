@@ -45,10 +45,20 @@ UNREAD=$(awk '/read: false/{n++}END{print n+0}' "$INBOX")
 LORD_CONV="${SHOGUN_LORD_CONV_PATH:-/mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl}"
 LORD_LAST=""
 if [ -f "$LORD_CONV" ]; then
-    LORD_LAST=$(tail -50 "$LORD_CONV" 2>/dev/null | awk '/"direction"[[:space:]]*:[[:space:]]*"inbound"/{
-        match($0, /"ts"[[:space:]]*:[[:space:]]*"([^"]*)"/, t)
-        match($0, /"summary"[[:space:]]*:[[:space:]]*"([^"]*)"/, a)
-        if(a[1]) { ts=substr(t[1],12,5); lines[++n] = ts " " substr(a[1],1,70) }
+    LORD_LAST=$(tail -50 "$LORD_CONV" 2>/dev/null | awk '
+    function json_value(line, key,    s, prefix) {
+        s = line
+        prefix = "\"" key "\"[[:space:]]*:[[:space:]]*\""
+        if (match(s, prefix)) {
+            s = substr(s, RSTART + RLENGTH)
+            if (match(s, /"/)) return substr(s, 1, RSTART - 1)
+        }
+        return ""
+    }
+    /"direction"[[:space:]]*:[[:space:]]*"inbound"/{
+        ts_raw = json_value($0, "ts")
+        summary = json_value($0, "summary")
+        if(summary) { ts=substr(ts_raw,12,5); lines[++n] = ts " " substr(summary,1,70) }
     }END{
         start = (n > 5) ? n - 4 : 1
         for(i=start; i<=n; i++) printf "%s | ", lines[i]
