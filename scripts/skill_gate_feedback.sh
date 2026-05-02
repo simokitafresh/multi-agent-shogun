@@ -41,7 +41,7 @@ if [ -z "$gate" ] || [ -z "$result" ]; then
     exit 2
 fi
 
-skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-$HOME/.codex/skills:$HOME/.claude/skills}"
+skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/skills:$HOME/.codex/skills:$HOME/.claude/skills}"
 
 python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" <<'PY'
 import os
