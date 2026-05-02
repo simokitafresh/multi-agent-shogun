@@ -103,6 +103,17 @@ else
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    # cmd_2459: Gate FAIL → relevant skill feedback loop.
+    # Best-effort only: report gate must remain responsible for the FAIL exit.
+    _SKILL_FEEDBACK="$REPO_ROOT/scripts/skill_gate_feedback.sh"
+    if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
+        bash "$_SKILL_FEEDBACK" \
+            --gate "gate_report_format" \
+            --result "FAIL" \
+            --reason "$REASONS" \
+            --executor "${AGENT_ID:-unknown}" \
+            --source "$REPORT_PATH" >/dev/null 2>&1 || true
+    fi
     GATE_REASONS="$REASONS" \
     GATE_REPORT_PATH="$REPORT_PATH" \
     GATE_LEARNING_FILE="$LEARNING_FILE" \

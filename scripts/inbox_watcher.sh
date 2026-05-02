@@ -459,6 +459,21 @@ send_wakeup() {
         nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
     fi
 
+    # 軍師向け: gate_clear受信時はgate-syncスキルの使用タイミングをnudgeに載せる。
+    if [[ "$AGENT_ID" == "gunshi" ]]; then
+        local _has_gate_clear=0
+        _has_gate_clear=$(awk '
+            /^- /{read_state=""; type_state=""}
+            /read:[[:space:]]*false/{read_state="unread"}
+            /type:.*gate_clear/{type_state="gate_clear"}
+            read_state=="unread" && type_state=="gate_clear"{print 1; exit}
+            END{if(!NR) print 0}
+        ' "${SCRIPT_DIR}/queue/inbox/gunshi.yaml" 2>/dev/null || echo 0)
+        if [[ "$_has_gate_clear" == "1" ]]; then
+            nudge="${nudge} — /gate-sync スキルでgate結果同期せよ"
+        fi
+    fi
+
     # 家老向け: cmd_new未処理があればnudgeに配備指示を付与（STALL防止）
     if [[ "$AGENT_ID" == "karo" ]]; then
         local _has_cmd_new=0

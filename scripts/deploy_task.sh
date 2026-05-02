@@ -2783,6 +2783,53 @@ PY
 # cmd_1393: inject_task_modifiers.py に統合済み（stub）
 inject_engineering_preferences() { log "inject_engineering_preferences: merged into inject_task_modifiers (no-op)"; }
 
+# ─── Skill hint自動注入（cmd_2460: スキル発動タイミングの意志依存排除） ───
+inject_skill_hint() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local project task_type title purpose parent_cmd command_text haystack hints
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+
+    if [ -n "$parent_cmd" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ]; then
+        command_text="${command_text}
+$(awk -v cmd="$parent_cmd" '
+    /^  [a-zA-Z0-9_-]+:/ {
+        cur=$0
+        sub(/^[[:space:]]*/, "", cur)
+        sub(/:.*$/, "", cur)
+    }
+    cur == cmd && /^(    title:|    type:|    purpose:|    command:|        )/ { print }
+' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)"
+    fi
+
+    haystack="${title}
+${purpose}
+${command_text}"
+    hints=""
+
+    if [ "$project" = "dm-signal" ] && printf '%s\n' "$haystack" | grep -Eqi '(^|[^A-Za-z])(DB|database|SQL|PostgreSQL|SQLite)([^A-Za-z]|$)|本番DB|holding_signal|monthly_returns|portfolio_rankings|PF検索|パリティ検証'; then
+        hints="/db-check"
+    fi
+
+    if [ "$task_type" = "registration" ] || printf '%s\n' "$haystack" | grep -Eq '本番登録'; then
+        if [ -n "$hints" ]; then
+            hints="${hints}, /pf-registration"
+        else
+            hints="/pf-registration"
+        fi
+    fi
+
+    [ -n "$hints" ] || return 0
+    yaml_field_set "$task_file" "task" "skill_hint" "$hints" \
+        && log "skill_hint: injected (${hints})"
+}
+
 
 # ─── 偵察報告自動注入 ───
 # cmd_1393: inject_task_modifiers.py に統合済み（stub）
@@ -4531,7 +4578,7 @@ deploy_task_apply_task_mutations() {
     inject_related_lessons "$task_file" || true
 
     local clear_fields clear_tmp
-    clear_fields="engineering_preferences|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+    clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
     clear_tmp=$(mktemp)
     if awk -v fields="$clear_fields" '
         BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
@@ -4564,6 +4611,7 @@ deploy_task_apply_task_mutations() {
     inject_session_state_hints "$task_file" || true  # GP-198
     inject_codd_failure_history "$task_file" || true  # GP-201
     inject_engineering_preferences "$task_file" || true
+    inject_skill_hint "$task_file" || true
     postcondition_lesson_inject "$task_file" || true
 
     # AC注入はinject_task_modifiers(yaml.dump使用)の後に実行する。

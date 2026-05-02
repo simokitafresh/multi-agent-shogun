@@ -228,6 +228,19 @@ notify_idle_shogun_gate_clear() {
     fi
 }
 
+notify_karo_cmd_complete_skill_hint() {
+    local cmd_id="$1"
+    local message="GATE CLEAR — ${cmd_id} 完了。/cmd-complete スキルで完了処理を実行せよ。"
+
+    if grep -q "${cmd_id} 完了。/cmd-complete スキル" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+        echo "  karo /cmd-complete hint: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" skill_hint cmd_complete_gate 2>/dev/null; then
+        echo "  karo /cmd-complete hint: OK"
+    else
+        echo "  [INFO] karo /cmd-complete hint: WARN (non-blocking)"
+    fi
+}
+
 # ─── GATE CLEAR時 task duration記録（cmd_2129） ───
 # 上位指示: CTX%ではなく実時間を正本指標とする。
 # acknowledged_at/done_at を優先し、既存運用データの deployed_at/completed_at にフォールバックする。
@@ -2692,6 +2705,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
     notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
+    notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
@@ -4264,6 +4278,7 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
     notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
+    notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
@@ -4282,7 +4297,7 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "Gunshi review_feedback (GATE CLEAR):"
     if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
         echo "  gunshi review_feedback: SKIP (dedup — already in inbox)"
-    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" review_feedback system 2>/dev/null; then
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR — /gate-sync スキルでgate結果同期せよ" gate_clear system 2>/dev/null; then
         echo "  gunshi review_feedback: OK (CLEAR)"
     else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"

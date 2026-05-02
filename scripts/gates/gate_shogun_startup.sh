@@ -1222,6 +1222,63 @@ else
 fi
 fi
 
+# --- Gate 20: スキル別FAIL率 (cmd_2459) ---
+# 目的: スキル実行ログから改善対象スキルを起動時に提示し、失敗をSKILL.md改善に還流する。
+echo "■ スキル別FAIL率"
+_skill_exec_log="$SCRIPT_DIR/logs/skill_execution_log.yaml"
+if [ -f "$_skill_exec_log" ]; then
+    _skill_stats=$(python3 - "$_skill_exec_log" <<'PY' 2>/dev/null || true
+import sys
+from collections import defaultdict
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+entries = data.get("executions") or []
+stats = defaultdict(lambda: {"total": 0, "fail": 0, "last": ""})
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    skill = str(entry.get("skill") or "").strip()
+    if not skill:
+        continue
+    result = str(entry.get("result") or "").upper()
+    stats[skill]["total"] += 1
+    if result == "FAIL":
+        stats[skill]["fail"] += 1
+    if entry.get("ts"):
+        stats[skill]["last"] = str(entry.get("ts"))
+rows = []
+for skill, item in stats.items():
+    total = item["total"]
+    fail = item["fail"]
+    pct = int(round((fail / total) * 100)) if total else 0
+    rows.append((pct, fail, total, skill, item["last"]))
+rows.sort(key=lambda row: (row[0], row[1], row[3]), reverse=True)
+for pct, fail, total, skill, last in rows[:5]:
+    print(f"{skill}\t{pct}\t{fail}\t{total}\t{last}")
+PY
+)
+    if [ -n "$_skill_stats" ]; then
+        _skill_warn=0
+        while IFS=$'\t' read -r _sk _pct _fail _total _last; do
+            [ -n "$_sk" ] || continue
+            echo "  ${_sk}: FAIL率=${_pct}% (${_fail}/${_total}) last=${_last}"
+            if [ "${_fail:-0}" -gt 0 ]; then
+                _skill_warn=1
+            fi
+        done <<< "$_skill_stats"
+        if [ "$_skill_warn" -eq 1 ] && [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("スキル別FAIL率: 改善対象あり")
+        fi
+    else
+        echo "  OK: 実行ログあり、集計対象0件"
+    fi
+else
+    echo "  SKIP: logs/skill_execution_log.yaml 不在"
+fi
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
