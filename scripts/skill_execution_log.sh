@@ -86,6 +86,12 @@ if [ -z "$skill" ] || [ -z "$executor" ] || [ -z "$result" ]; then
     exit 2
 fi
 
+case "$source" in
+    tests/*|*/tests/*)
+        exit 0
+        ;;
+esac
+
 mkdir -p "$(dirname "$LOG_FILE")"
 lock_file="${LOG_FILE}.lock"
 ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"

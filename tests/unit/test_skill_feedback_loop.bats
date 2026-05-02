@@ -85,6 +85,32 @@ EOF
     [[ "${lines[2]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
 }
 
+@test "skill_execution_log skips entries whose source is under tests path" {
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        bash "$SKILL_LOG_SCRIPT" report-write hayate FAIL "fixture failure" gate_report_format tests/unit/fixture_report.yaml "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
+    [ "$status" -eq 0 ]
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        bash "$SKILL_LOG_SCRIPT" report-write hayate FAIL "fixture failure" gate_report_format "$PROJECT_ROOT/tests/unit/fixture_report.yaml" "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import pathlib
+import yaml
+
+path = pathlib.Path("$TEST_SKILL_LOG")
+if path.exists():
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    entries = data.get("executions") or []
+else:
+    entries = []
+assert not [entry for entry in entries if "tests/" in str(entry.get("source", ""))]
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "gate FAIL identifies skill and appends 注意ポイント" {
     run env \
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
