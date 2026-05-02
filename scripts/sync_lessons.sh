@@ -50,7 +50,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
 (
     flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-    export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID
+    export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID PROJECT_PATH
     python3 << 'PYEOF'
 import csv
 import re, yaml, os, sys, tempfile
@@ -98,7 +98,14 @@ current_category = "未分類"
 _tf_path_pat = re.compile(r'(?:scripts|tests|context|backend|frontend|config|queue|docs|app)/[\w/.-]+\.(?:sh|py|bats|yaml|md|json|ts|tsx|js)')
 _tf_file_pat = re.compile(r'[a-zA-Z_][\w-]*\.(?:sh|py|bats|yaml|md|json)')
 _tf_file_cache = set()
-for _tf_search_base in [os.environ.get('SCRIPT_DIR', ''), '/mnt/c/Python_app/DM-signal']:
+_tf_search_bases = []
+for _tf_candidate in (os.environ.get('SCRIPT_DIR', ''), os.environ.get('PROJECT_PATH', '')):
+    if _tf_candidate and _tf_candidate not in _tf_search_bases:
+        _tf_search_bases.append(_tf_candidate)
+if project_id == 'dm-signal' and '/mnt/c/Python_app/DM-signal' not in _tf_search_bases:
+    _tf_search_bases.append('/mnt/c/Python_app/DM-signal')
+
+for _tf_search_base in _tf_search_bases:
     if not _tf_search_base or not os.path.isdir(_tf_search_base):
         continue
     for _tf_sd in ('scripts', 'tests', 'context', 'config', 'backend', 'frontend', 'docs'):

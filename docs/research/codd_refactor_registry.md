@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-05-02 | hayate | `tests/unit/test_cmd_save_environment_change.bats`, `scripts/sync_lessons.sh` | Phase 5(テストCoDD高速化: 計測+実装+検証) | timeout `>30s → max 14.88s` / `>30s → max 1.18s` (5run, AC1 PASS) | cmd_2480。`cmd_save`事前BLOCKを最小quality_log fixture化し重複フル起動を削減。`sync_lessons`のtarget_files走査をproject境界化し非dm-signalでDM-Signal全体を走査しない。 |
 | 2026-04-19 | hayate | `scripts/cmd_complete_gate.sh` | Phase 5(計測+設計+実装+検証) | live median `31.956s → 4.993s` (`-84.4%`, `cmd_2112 --force`) | `docs/research/cmd_2118_cmd_complete_gate_speedup_20260419.md`。`MATCHING_TASK_FILES`再利用、HEAD contiguous commit lookup、diff-scoped scan、`rg`化、no-op push skip、WARN-only後処理のasync化。41/41 tests PASS |
 | 2026-04-19 | hanzo | `tests/unit/test_deploy_task_ac_version.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `32.2s → <16s` (`>50%削減`, AC3 PASS) | cmd_2107。setup最適化+fixture共有。31テスト維持全PASS |
 | 2026-04-19 | kotaro | `tests/unit/test_gate_shogun_startup.bats` | Phase 5(テストCoDD高速化: 計測+実装+検証) | `7387ms → 3072ms` (`-58.4%`) | cmd_2109。python3 fast-path追加+--jobs 6並列化。18テスト維持全PASS |
