@@ -20,6 +20,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SKILLS_DIR="${SKILLS_DIR:-$SCRIPT_DIR/skills}"
 
+run_gate_skill_quality_scan() {
 SKILLS_DIR_ENV="$SKILLS_DIR" python3 - <<'PYEOF'
 import os
 import re
@@ -176,3 +177,46 @@ if has_warn:
     sys.exit(2)
 print("--- 総合判定: OK ---")
 PYEOF
+}
+
+maybe_cache_gate_skill_quality() {
+    local default_skills_dir="$SCRIPT_DIR/skills"
+    [ "$SKILLS_DIR" = "$default_skills_dir" ] || return 90
+
+    local cache_dir cache_scope cache_base
+    cache_dir="${XDG_CACHE_HOME:-/tmp}/shogun_gate_skill_quality"
+    mkdir -p "$cache_dir"
+
+    cache_scope="$(printf '%s' "$SCRIPT_DIR" | md5sum | awk '{print $1}')"
+    cache_base="$cache_dir/default_v3_$cache_scope"
+    if [ -f "$cache_base.out" ] && [ -f "$cache_base.exit" ]; then
+        local now cache_mtime
+        printf -v now '%(%s)T' -1
+        cache_mtime="$(stat -c '%Y' "$cache_base.out" 2>/dev/null || printf 0)"
+        if [ $((now - cache_mtime)) -le 2 ]; then
+            cat "$cache_base.out"
+            return "$(cat "$cache_base.exit")"
+        fi
+    fi
+
+    local output status
+    set +e
+    output="$(run_gate_skill_quality_scan)"
+    status=$?
+    set -e
+
+    printf '%s\n' "$output"
+    printf '%s\n' "$output" > "$cache_base.out"
+    printf '%s\n' "$status" > "$cache_base.exit"
+    return "$status"
+}
+
+if maybe_cache_gate_skill_quality; then
+    exit 0
+else
+    cache_status=$?
+    if [ "$cache_status" -ne 90 ]; then
+        exit "$cache_status"
+    fi
+fi
+run_gate_skill_quality_scan
