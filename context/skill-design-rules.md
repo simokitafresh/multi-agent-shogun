@@ -121,9 +121,14 @@ agent: general-purpose   # fork時のエージェント種別（Explore/Plan/gen
 
 ## §6 品質チェックリスト（新規スキル作成時）
 
+作成・更新時の実行チェックリストは `skills/skill-creator/SKILL.md` の `Quality Checklist` を使う。ここでは設計原則のみを保持し、個別作業のチェック項目は重複させない。
+
 - [ ] description 1024文字以内
 - [ ] What + When + NOT When の3要素あり
+- [ ] TRIGGER / DO NOT TRIGGER が明示されている
 - [ ] フロントマターに `< >` なし
+- [ ] argument-hint が必要なスキルで記入されている
+- [ ] user-invocable が明示され、disable-model-invocationとの矛盾がない
 - [ ] SKILL.md 5,000語以内
 - [ ] allowed-tools は最小権限（必要なものだけ）
 - [ ] 既存スキルとの誤発火リスク確認済み

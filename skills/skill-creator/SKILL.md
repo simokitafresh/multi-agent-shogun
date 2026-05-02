@@ -1,6 +1,8 @@
 ---
 name: skill-creator
 description: 汎用的な作業パターンを発見した際に、再利用可能なClaude Codeスキルを自動生成する。繰り返し使えるワークフロー、ベストプラクティス、ドメイン知識をスキル化する時に使用。
+argument-hint: "[skill-name]"
+user-invocable: true
 ---
 
 # Skill Creator - スキル自動生成
@@ -30,12 +32,39 @@ skill-name/
 └── resources/        # オプション（参照ファイル）
 ```
 
+詳細な設計原則は `context/skill-design-rules.md` を正本として参照する。このスキルでは作成時に使う実行チェックだけを持ち、description長・動的機能・アンチパターンの詳細は重複記載しない。
+
+## Quality Checklist
+
+作成・更新前に以下7項目をすべて確認する：
+
+1. **目的**: 何を可能にするスキルかが1文で説明でき、手順代替ではなく能力拡張になっている。
+2. **TRIGGER**: descriptionに発火キーワード、対象作業、使用条件が具体的に書かれている。
+3. **DO NOT TRIGGER**: 類似スキル、別手順、対象外ケースが明記され、誤発火を避けられる。
+4. **入出力定義**: 入力、参照ファイル、生成・更新する出力が明確で、成功時の成果物を検証できる。
+5. **エラーハンドリング**: 必須ファイル欠落、既存スキル衝突、検証失敗時の停止・報告方法が明記されている。
+6. **テスト可能性**: Triggering / Functional / Performance の最低1つ以上を実行可能な確認方法として書いている。
+7. **既存重複チェック**: 既存スキル名・description・守備範囲を確認し、重複なら新規作成せず更新または統合を提案している。
+
+## Frontmatter Validation
+
+生成するSKILL.mdのfrontmatterは、最低限以下を検証する：
+
+- `name`: kebab-case。既存スキルと重複しない。
+- `description`: What / When / DO NOT TRIGGERを含み、`context/skill-design-rules.md` §1の1024文字以内を満たす。
+- `argument-hint`: ユーザーが引数を渡すスキルでは必須。引数不要の場合は理由を本文に書く。
+- `user-invocable`: `true` または `false` を明示。`disable-model-invocation: true` と同時に `false` にしない。
+
+`model`など任意フィールドは必須にしない。使う場合は目的と副作用を本文に残す。
+
 ## SKILL.md Template
 
 ```markdown
 ---
 name: {skill-name}
-description: {いつこのスキルを使うか、具体的なユースケースを明記}
+description: {What / When / DO NOT TRIGGERを含め、いつこのスキルを使うかを具体化}
+argument-hint: "[target]"
+user-invocable: true
 ---
 
 # {Skill Name}
@@ -61,6 +90,7 @@ description: {いつこのスキルを使うか、具体的なユースケース
 1. パターンの特定
    - 何が汎用的か
    - どこで再利用できるか
+   - 既存スキルと守備範囲が重複しないか
 
 2. スキル名の決定
    - kebab-case を使用（例: api-error-handler）
@@ -69,15 +99,26 @@ description: {いつこのスキルを使うか、具体的なユースケース
 3. description の記述（最重要）
    - Claude がいつこのスキルを使うか判断する材料
    - 具体的なユースケース、ファイルタイプ、アクション動詞を含める
+   - TRIGGER と DO NOT TRIGGER を入れて誤発火を抑える
    - 悪い例: "ドキュメント処理スキル"
    - 良い例: "PDFからテーブルを抽出しCSVに変換する。データ分析ワークフローで使用。"
 
-4. Instructions の記述
+4. frontmatter の検証
+   - `argument-hint` が必要なスキルで欠落していないか
+   - `user-invocable` が明示されているか
+   - `disable-model-invocation: true` と `user-invocable: false` が同時指定されていないか
+
+5. Instructions の記述
    - 明確な手順
    - 判断基準
    - エッジケースの対処
+   - 入力、出力、失敗時の扱いを明記
 
-5. 保存
+6. テスト
+   - 発火する文言と誤発火しない文言を確認
+   - 生成物または更新内容をgrepや実行結果で確認
+
+7. 保存
    - パス: ~/.claude/skills/shogun-{skill-name}/
    - 既存スキルと名前が被らないか確認
 
