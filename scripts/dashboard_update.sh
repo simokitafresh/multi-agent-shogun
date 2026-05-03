@@ -73,33 +73,10 @@ TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
 export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE
 export ARCHIVE_REPORTS_DIR
 
-prepare_skill_health_metrics() {
-    local metrics_script="$SCRIPT_DIR/skill_metrics.sh"
-    local metrics_file
-    metrics_file=$(mktemp)
-
-    if [[ -x "$metrics_script" ]]; then
-        if bash "$metrics_script" > "$metrics_file"; then
-            export DASHBOARD_SKILL_METRICS_FILE="$metrics_file"
-            return 0
-        fi
-    fi
-
-    {
-        echo "skill | quality_score | pass | fail | total | last_result | quality_metric"
-        echo "ERROR | N/A | 0 | 0 | 0 | FAIL | skill_metrics.sh実行失敗"
-    } > "$metrics_file"
-    export DASHBOARD_SKILL_METRICS_FILE="$metrics_file"
-    return 0
-}
-
 # ─── Main processing (flock for concurrency safety) ───
 LOCK_FILE="${DASHBOARD}.lock"
 (
     flock -w 10 200 || { echo "ERROR: flock取得失敗" >&2; exit 1; }
-
-    prepare_skill_health_metrics
-    trap 'rm -f "${DASHBOARD_SKILL_METRICS_FILE:-}"' EXIT
 
     python3 << 'PYEOF'
 import yaml, glob, os, sys, re
@@ -656,4 +633,6 @@ VALIDATE_MODEL_PYEOF
 
 # ─── Run validation ───
 SETTINGS_FILE="$PROJECT_DIR/config/settings.yaml"
-validate_dashboard "$DASHBOARD" "$SETTINGS_FILE"
+if [[ "$DRY_RUN" != true ]]; then
+    validate_dashboard "$DASHBOARD" "$SETTINGS_FILE"
+fi
