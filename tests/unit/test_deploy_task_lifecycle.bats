@@ -950,6 +950,33 @@ EOF
     [ "$output" = "cmd_2539_normal" ]
 }
 
+@test "record_deployed_at overwrites existing deployed_at and logs old/new values" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_OLD
+  task_id: cmd_OLD_impl
+  status: assigned
+  deployed_at: "2026-05-04T01:00:00"
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        LOG="$project/logs/deploy_task_record_deployed_at.log"
+        record_deployed_at "$project/queue/tasks/sasuke.yaml" "2026-05-04T08:55:00"
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "deployed_at" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "2026-05-04T08:55:00" ]
+
+    run grep -F "[DEPLOYED_AT] Updated: old=2026-05-04T01:00:00, new=2026-05-04T08:55:00" "$TEST_PROJECT/logs/deploy_task_record_deployed_at.log"
+    [ "$status" -eq 0 ]
+}
+
 # ═══════════════════════════════════════════════════════════
 # stale_report_verdict テスト (11)
 # ═══════════════════════════════════════════════════════════

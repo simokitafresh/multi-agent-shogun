@@ -3987,7 +3987,7 @@ EOF
 
 # ─── deployed_at自動記録（cmd_387: 配備タイムスタンプ） ───
 # cmd_1393: Python→bash変換（field_get+yaml_field_set）
-# 既にdeployed_atが存在する場合は上書きしない（再配備時の元タイムスタンプ保持）
+# 再配備時もdeployed_atを最新化する（duration計測の起点を実作業時間に合わせる）
 record_deployed_at() {
     local task_file="$1"
     local timestamp="$2"
@@ -3998,13 +3998,12 @@ record_deployed_at() {
 
     local existing
     existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "deployed_at" "")
-    if [ -n "$existing" ]; then
-        log "[DEPLOYED_AT] Already exists (${existing}), skipping"
-        return 0
-    fi
-
     yaml_field_set "$task_file" "task" "deployed_at" "$timestamp"
-    log "[DEPLOYED_AT] Recorded: ${timestamp}"
+    if [ -n "$existing" ]; then
+        log "[DEPLOYED_AT] Updated: old=${existing}, new=${timestamp}"
+    else
+        log "[DEPLOYED_AT] Recorded: ${timestamp}"
+    fi
 }
 
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
