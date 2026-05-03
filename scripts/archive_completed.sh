@@ -401,7 +401,8 @@ archive_pending_decisions_for_cmd() {
     [ -f "$PENDING_DECISIONS_FILE" ] || return 0
     mkdir -p "$(dirname "$PENDING_DECISIONS_ARCHIVE")"
 
-    local archived_count
+    local archived_count archive_rc
+    set +e
     archived_count=$(
         (
             flock -w 10 200 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions" >&2; exit 1; }
@@ -466,6 +467,13 @@ print(len(matched))
 PY
         ) 200>"/tmp/mas-pending-decisions.lock" 201>"/tmp/mas-pending-decisions-archive.lock"
     )
+    archive_rc=$?
+    set -e
+
+    if [ "$archive_rc" -ne 0 ] || [ -z "$archived_count" ]; then
+        echo "[pending_decisions] WARN: archive failed cmd=$cmd_id rc=$archive_rc archived_count_empty=$([ -z "$archived_count" ] && echo yes || echo no)" >&2
+        return 1
+    fi
 
     if [ "${archived_count:-0}" -gt 0 ]; then
         echo "[pending_decisions] archived=$archived_count cmd=$cmd_id"
