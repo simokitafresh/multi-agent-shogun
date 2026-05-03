@@ -262,7 +262,31 @@ inbox_write_records() {
             printf '%s' "$_record" >> "$tmp_file"
         done
     fi
-    mv "$tmp_file" "$inbox_file"
+    inbox_replace_file_with_retry "$tmp_file" "$inbox_file"
+}
+
+inbox_replace_file_with_retry() {
+    local tmp_file="$1"
+    local inbox_file="$2"
+    local max_attempts="${INBOX_WRITE_MV_RETRIES:-3}"
+    local sleep_sec="${INBOX_WRITE_MV_RETRY_SLEEP:-0.1}"
+    local attempt=1
+
+    while [ "$attempt" -le "$max_attempts" ]; do
+        if mv "$tmp_file" "$inbox_file"; then
+            return 0
+        fi
+
+        if [ "$attempt" -lt "$max_attempts" ]; then
+            echo "[inbox_write] WARN: mv failed for ${inbox_file} (attempt ${attempt}/${max_attempts}), retrying; tmp=${tmp_file}" >&2
+            sleep "$sleep_sec"
+        else
+            echo "[inbox_write] ERROR: mv failed for ${inbox_file} after ${max_attempts} attempts; tmp preserved at ${tmp_file}" >&2
+            return 1
+        fi
+
+        attempt=$((attempt + 1))
+    done
 }
 
 inbox_is_empty_file() {

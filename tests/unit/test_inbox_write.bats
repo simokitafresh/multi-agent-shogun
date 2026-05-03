@@ -295,6 +295,34 @@ setup() {
     [[ "$(grep -c "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml")" -eq 21 ]]
 }
 
+@test "mv failure during overflow rewrite is retried and preserves message" {
+    setup_basic_test_env
+    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/bin"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
+
+    cat > "$TEST_TMPDIR/bin/mv" <<'SCRIPT_EOF'
+#!/bin/bash
+dest="${@: -1}"
+if [[ "$dest" == *"/queue/inbox/test_agent.yaml" && ! -f "${FAKE_MV_STATE}" ]]; then
+    touch "${FAKE_MV_STATE}"
+    exit 1
+fi
+exec /usr/bin/mv "$@"
+SCRIPT_EOF
+    chmod +x "$TEST_TMPDIR/bin/mv"
+
+    export FAKE_MV_STATE="$TEST_TMPDIR/mv_failed_once"
+    export PATH="$TEST_TMPDIR/bin:$PATH"
+    export INBOX_WRITE_MV_RETRIES=2
+    export INBOX_WRITE_MV_RETRY_SLEEP=0.01
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "mv retry message"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: mv failed"* ]]
+    grep -q "mv retry message" "$TEST_INBOX_DIR/test_agent.yaml"
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 31 ]]
+}
+
 # =============================================================================
 # T-010: flock競合時のリトライ（並行書き込みテスト）
 # =============================================================================
