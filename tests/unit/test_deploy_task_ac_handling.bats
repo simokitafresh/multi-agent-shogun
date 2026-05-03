@@ -15,6 +15,8 @@ setup() {
     deploy_task_scaffold "deploy_acv"
     # shellcheck disable=SC1090
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
+    export DEPLOY_TASK_REUSE_SOURCED=1
+    deploy_task_source
 
     # Default task for ac_version tests
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -651,7 +653,7 @@ task:
         count: 2
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -735,7 +737,7 @@ task:
     warning: "⚠ report_field_set.sh必ず使用"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -786,7 +788,7 @@ task:
       detail: "dummy"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -1109,7 +1111,7 @@ task:
     description: "AC3の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     # ac_assigned フィールドがタスクYAMLに存在することを確認（inline/multi-line 両形式対応）
@@ -1135,7 +1137,7 @@ task:
     description: "AC3の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -1178,7 +1180,7 @@ task:
     description: "AC3の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -1220,7 +1222,7 @@ task:
     description: "AC3の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
@@ -1262,7 +1264,7 @@ task:
     description: "AC3の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run grep -Eq '^  ac_assigned:[[:space:]]*"?AC3"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -1311,7 +1313,7 @@ task:
       - check: "AC3専用の確認"
 EOF
 
-    run deploy_task_template_only sasuke
+    run deploy_task_report_only sasuke
     [ "$status" -eq 0 ]
 
     run read_task_report_path
