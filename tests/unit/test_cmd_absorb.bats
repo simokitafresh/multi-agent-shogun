@@ -238,3 +238,24 @@ ninja|hayate|cmd_100_hayate|done|infra"
 
     ! grep -q "自動停止" "$INBOX_WRITE_LOG"
 }
+
+@test "cmd_absorb logs INFO when stale lesson grep returns empty" {
+    mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_TMPDIR/infra_ssot/tasks"
+    cat > "$TEST_PROJECT/projects/infra.yaml" <<EOF
+project:
+  path: "$TEST_TMPDIR/infra_ssot"
+EOF
+    cat > "$TEST_TMPDIR/infra_ssot/tasks/lessons.md" <<'EOF'
+---
+title: Infra Lessons
+---
+### L001: other lesson
+**出典**: cmd_999
+EOF
+    cp "$SRC_ABSORB_SCRIPT" "$TEST_PROJECT/scripts/cmd_absorb.sh"
+    chmod +x "$TEST_PROJECT/scripts/cmd_absorb.sh"
+
+    run bash "$TEST_PROJECT/scripts/cmd_absorb.sh" cmd_100 none "不要"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: cmd_100由来の教訓残存なし (project=infra)"* ]]
+}

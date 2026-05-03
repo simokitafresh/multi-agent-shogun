@@ -88,9 +88,10 @@ EOF
     run grep -Fx -- "cmd_123" "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
 
-    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
-    run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    run sed -n '6p' "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+    [ ! -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
 }
 
 @test "duplicate lesson candidates create lesson.done as already registered" {
