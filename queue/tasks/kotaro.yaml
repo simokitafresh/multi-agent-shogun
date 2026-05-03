@@ -45,7 +45,7 @@ task:
   parallel_ok: []
   parent_cmd: cmd_2482
   project: infra
-  status: acknowledged
+  status: idle
   stop_for: []
   task_id: cmd_2482_kotaro
   task_type: normal
