@@ -1159,40 +1159,29 @@ PY
     # _gate_status[cmd]: "missing"=gate不在, "placeholder"=deploy_preflight, "ok"=レビュー完了
     # cmd_2529: gate_statusはarchive sweep自身が補完するため、永続キャッシュ再利用は禁止。
     declare -A _gate_status=()
+    classify_review_gate_status() {
+        local _crg_path="$1"
+        if grep -q "source: deploy_preflight" "$_crg_path" 2>/dev/null; then
+            printf 'placeholder'
+            return 0
+        fi
+        case "$?" in
+            1) printf 'ok' ;;       # readable, but not a deploy_preflight placeholder
+            *) printf 'missing' ;;  # missing/unreadable, including TOCTOU deletion
+        esac
+    }
     if [ -f "$_REPORT_CACHE" ]; then
-        declare -a _gc_gate_files=()
-        declare -A _gc_file_to_cmd=()
         while IFS='|' read -r _rc_fname _rc_status _rc_parent; do
             [ -z "$_rc_parent" ] && continue
             [ "${_gate_status[$_rc_parent]+x}" = "x" ] && continue  # 重複スキップ
             local _gc_g="$PROJECT_DIR/queue/gates/${_rc_parent}/review_gate.done"
-            if [ -f "$_gc_g" ]; then
-                _gate_status["$_rc_parent"]="ok"
-                _gc_gate_files+=("$_gc_g")
-                _gc_file_to_cmd["$_gc_g"]="$_rc_parent"
-            else
-                _gate_status["$_rc_parent"]="missing"
-            fi
+            _gate_status["$_rc_parent"]="$(classify_review_gate_status "$_gc_g")"
         done < "$_REPORT_CACHE"
-        # 単一grep -l でplaceholderを一括検出(N×grep-q → 1×grep-l)
-        if [ "${#_gc_gate_files[@]}" -gt 0 ]; then
-            while IFS= read -r _gpath; do
-                local _gcmd="${_gc_file_to_cmd[$_gpath]:-}"
-                [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="placeholder"
-            done < <(grep -l "source: deploy_preflight" "${_gc_gate_files[@]}" 2>/dev/null)
-        fi
     fi
     # CMD_ID指定時: _gate_statusに追加(REPORT_CACHEにない場合あり)
     if [ -n "$CMD_ID" ] && [ "${_gate_status[$CMD_ID]+x}" != "x" ]; then
         local _gc_g="$PROJECT_DIR/queue/gates/${CMD_ID}/review_gate.done"
-        if [ -f "$_gc_g" ]; then
-            _gate_status["$CMD_ID"]="ok"
-            if grep -q "source: deploy_preflight" "$_gc_g" 2>/dev/null; then
-                _gate_status["$CMD_ID"]="placeholder"
-            fi
-        else
-            _gate_status["$CMD_ID"]="missing"
-        fi
+        _gate_status["$CMD_ID"]="$(classify_review_gate_status "$_gc_g")"
     fi
 
     for report_file in "${report_files[@]}"; do

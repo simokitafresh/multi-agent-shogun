@@ -75,7 +75,7 @@ function regex_escape(str,    out,i,c) {
     }
     return out
 }
-function yaml_safe(v,    out,i,c,needs_quote) {
+function yaml_safe(v,    out,i,c,needs_quote,sq) {
     needs_quote = 0
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
@@ -83,15 +83,17 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     if (index(v, "]") > 0) needs_quote = 1
     if (index(v, "{") > 0) needs_quote = 1
     if (index(v, "}") > 0) needs_quote = 1
+    if (index(v, "|") > 0) needs_quote = 1
+    if (index(v, ">") > 0) needs_quote = 1
     if (needs_quote) {
+        sq = sprintf("%c", 39)
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == "\\") { out = out "\\\\" }
-            else if (c == "\"") { out = out "\\" c }
+            if (c == sq) { out = out sq sq }
             else { out = out c }
         }
-        return "\"" out "\""
+        return sq out sq
     }
     return v
 }
@@ -895,7 +897,7 @@ function is_inline_scalar_field(line,    rhs) {
     if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
     return 1
 }
-function yaml_safe(v,    out,i,c,nq) {
+function yaml_safe(v,    out,i,c,nq,sq) {
     nq = 0
     if (index(v, ":") > 0) nq = 1
     if (index(v, "#") > 0) nq = 1
@@ -906,13 +908,14 @@ function yaml_safe(v,    out,i,c,nq) {
 	    if (index(v, "|") > 0) nq = 1
 	    if (index(v, ">") > 0) nq = 1
     if (nq) {
+        sq = sprintf("%c", 39)
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == "\"") out = out "\\" c
+            if (c == sq) out = out sq sq
             else out = out c
         }
-        return "\"" out "\""
+        return sq out sq
     }
     return v
 }
