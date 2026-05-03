@@ -34,7 +34,22 @@ esac
 # by the shared gawk pass (zero extra I/O). Standalone calls fall back to Python scan.
 _ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-/tmp/dashboard_arch_cfc_cache.txt}"
 
-python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" <<'PY'
+_CACHE_TTL="${CFC_OUTPUT_CACHE_TTL:-2}"
+_ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
+_MODE_KEY="$(printf '%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
+_CACHE_FILE="/tmp/context_freshness_check_${_ROOT_KEY}_${_MODE_KEY}.cache"
+
+if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACHE_FILE" ]]; then
+    _NOW="$(date +%s)"
+    _MTIME="$(stat -c %Y "$_CACHE_FILE" 2>/dev/null || echo 0)"
+    if [[ $((_NOW - _MTIME)) -lt "$_CACHE_TTL" ]]; then
+        cat "$_CACHE_FILE"
+        exit 0
+    fi
+fi
+
+_TMP_CACHE="${_CACHE_FILE}.$$"
+python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" > "$_TMP_CACHE" <<'PY'
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -43,8 +58,6 @@ import os
 import re
 import sys
 
-import yaml
-
 root = sys.argv[1]
 mode = sys.argv[2]
 cmd_id = sys.argv[3]
@@ -52,15 +65,6 @@ threshold_days = int(sys.argv[4])
 archive_cache_path = sys.argv[5] if len(sys.argv) > 5 else ""
 cutoff_date = date.today() - timedelta(days=threshold_days)
 FINAL_STATUSES = {"completed", "done", "complete", "success"}
-
-
-def load_yaml(path: str) -> dict:
-    try:
-        with open(path, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}
 
 
 def normalize_rel(path: str) -> str:
@@ -105,15 +109,61 @@ def normalize_scalar(value: str) -> str:
 
 
 def load_projects():
-    data = load_yaml(os.path.join(root, "config", "projects.yaml"))
-    projects = data.get("projects", []) if isinstance(data, dict) else []
-
     active_ids: list[str] = []
     explicit_context_map: dict[str, str] = {}
+    current: dict[str, object] | None = None
+    projects: list[dict[str, object]] = []
+    in_context_files = False
+
+    def flush_current() -> None:
+        if current:
+            projects.append(current)
+
+    path = os.path.join(root, "config", "projects.yaml")
+    try:
+        with open(path, encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.split("#", 1)[0].rstrip()
+                stripped = line.strip()
+                if not stripped:
+                    continue
+
+                if line.startswith("  - "):
+                    flush_current()
+                    current = {}
+                    in_context_files = False
+                    remainder = stripped[2:].strip()
+                    if ":" in remainder:
+                        key, value = remainder.split(":", 1)
+                        current[key.strip()] = normalize_scalar(value)
+                    continue
+
+                if current is None:
+                    continue
+
+                if line.startswith("    ") and not line.startswith("      "):
+                    if ":" not in stripped:
+                        continue
+                    key, value = stripped.split(":", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    in_context_files = key == "context_files"
+                    if value:
+                        current[key] = normalize_scalar(value)
+                    continue
+
+                if in_context_files and line.startswith("      - "):
+                    item = stripped[2:].strip()
+                    if item.startswith("file:"):
+                        rel = normalize_scalar(item.split(":", 1)[1])
+                        if rel:
+                            current.setdefault("context_files", []).append(rel)
+    except Exception:
+        projects = []
+    else:
+        flush_current()
 
     for project in projects:
-        if not isinstance(project, dict):
-            continue
         if str(project.get("status", "active")).strip() != "active":
             continue
 
@@ -129,12 +179,9 @@ def load_projects():
 
         context_files = project.get("context_files", [])
         if isinstance(context_files, list):
-            for item in context_files:
-                if not isinstance(item, dict):
-                    continue
-                rel = str(item.get("file", "")).strip()
+            for rel in context_files:
                 if rel:
-                    explicit_context_map[rel] = project_id
+                    explicit_context_map[str(rel)] = project_id
 
     return active_ids, explicit_context_map
 
@@ -498,3 +545,11 @@ elif mode == "--cmd-warnings":
 for line in sorted(dict.fromkeys(warnings)):
     print(line)
 PY
+_PY_STATUS=$?
+if [[ "$_PY_STATUS" -eq 0 ]]; then
+    mv "$_TMP_CACHE" "$_CACHE_FILE"
+    cat "$_CACHE_FILE"
+else
+    rm -f "$_TMP_CACHE"
+fi
+exit "$_PY_STATUS"
