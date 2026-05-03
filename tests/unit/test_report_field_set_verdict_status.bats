@@ -61,6 +61,25 @@ PY
     [ "$output" = "completed" ]
 }
 
+@test "verdict status自動完了は再帰呼び出しではなく同一処理内で行う" {
+    run grep -F 'bash "$0" "$REPORT_PATH" status completed' "$RFS"
+    [ "$status" -ne 0 ]
+
+    run bash "$RFS" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[report_field_set] verdict = PASS"* ]]
+    [[ "$output" == *"[report_field_set] status = completed (auto after verdict)"* ]]
+
+    run python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f) or {}
+print(f"{data.get('verdict')} {data.get('status')}")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS completed" ]
+}
+
 @test "verdict FAIL書込み成功後にstatus completedへ自動設定される" {
     run bash "$RFS" "$TEST_REPORT" verdict FAIL
     [ "$status" -eq 0 ]
