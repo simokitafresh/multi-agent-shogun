@@ -570,6 +570,8 @@ YAML
 commands: []
 YAML
     for i in $(seq 1 12); do
+        mkdir -p "$TEST_PROJECT/queue/gates/cmd_2529cap_${i}"
+        touch "$TEST_PROJECT/queue/gates/cmd_2529cap_${i}/archive.done"
         cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_${i}.yaml" <<YAML
 parent_cmd: cmd_2529cap_${i}
 status: completed
@@ -590,6 +592,62 @@ YAML
     [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 10 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_pending.yaml" ]
     [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*cmd_2529cap_[0-9]*.yaml' | wc -l)" -eq 9 ]
+}
+
+@test "cmd_2545: overflow cap excludes pending active parent and gate-incomplete reports with log counts" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands: []
+YAML
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/saizo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_2545_active
+  status: in_progress
+YAML
+
+    for i in $(seq 1 11); do
+        mkdir -p "$TEST_PROJECT/queue/gates/cmd_2545_ok_${i}"
+        touch "$TEST_PROJECT/queue/gates/cmd_2545_ok_${i}/archive.done"
+        cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_ok_${i}.yaml" <<YAML
+parent_cmd: cmd_2545_ok_${i}
+status: completed
+result:
+  summary: "eligible ${i}"
+YAML
+        touch -d "$((30 - i)) minutes ago" "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_ok_${i}.yaml"
+    done
+
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_2545_active"
+    touch "$TEST_PROJECT/queue/gates/cmd_2545_active/archive.done"
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_active.yaml" <<'YAML'
+parent_cmd: cmd_2545_active
+status: completed
+result:
+  summary: "active parent"
+YAML
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_gate_wait.yaml" <<'YAML'
+parent_cmd: cmd_2545_gate_wait
+status: completed
+result:
+  summary: "gate wait"
+YAML
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_pending.yaml" <<'YAML'
+parent_cmd: cmd_2545_pending
+status: pending
+result:
+  summary: "pending"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 10 ]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_active.yaml" ]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_gate_wait.yaml" ]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_pending.yaml" ]
+    [[ "$output" == *"eligible=11"* ]]
+    [[ "$output" == *"skipped_pending=1"* ]]
+    [[ "$output" == *"skipped_active_parent=1"* ]]
+    [[ "$output" == *"skipped_gate_incomplete=1"* ]]
 }
 
 @test "GP-133: report archive proceeds when review_gate.done is gunshi_review" {
