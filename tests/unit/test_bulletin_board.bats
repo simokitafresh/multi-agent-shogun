@@ -30,6 +30,11 @@ EOF
 printf '%s\n' "${BULLETIN_TEST_AGENT_ID:-hayate}"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/bin/tmux"
+    cat > "$TEST_TMPDIR/scripts/bin/pgrep" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/bin/pgrep"
     export PATH="$TEST_TMPDIR/scripts/bin:$PATH"
     export TMUX_PANE="%999"
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
@@ -77,6 +82,14 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"shogun|掲示板新規投稿("* ]]
     [[ "$output" == *"gunshi|掲示板新規投稿("* ]]
+}
+
+@test "bulletin_write prints entry id before watcher warning when watcher is absent" {
+    export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "watcher不在"
+    [ "$status" -eq 0 ]
+    [[ "$output" == blt_* ]]
+    [[ "$output" == *"[bulletin_write] WARN: inbox_watcher not running for shogun"* ]]
 }
 
 @test "bulletin_write rejects unknown requires_confirmation agents" {
