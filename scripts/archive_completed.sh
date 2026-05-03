@@ -889,6 +889,122 @@ archive_reports() {
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
 
+    gate_metrics_has_clear() {
+        local _cmd="$1"
+        local _gate_metrics_log="$PROJECT_DIR/logs/gate_metrics.log"
+        [ -f "$_gate_metrics_log" ] || return 1
+        awk -F'\t' -v cmd="$_cmd" '
+            ($2 == cmd && $3 == "CLEAR") || ($2 == "CLEAR" && $3 == cmd) { found=1; exit }
+            END { exit !found }
+        ' "$_gate_metrics_log" 2>/dev/null
+    }
+
+    write_review_gate_from_metrics() {
+        local _cmd="$1"
+        local _gate_dir="$PROJECT_DIR/queue/gates/${_cmd}"
+        mkdir -p "$_gate_dir"
+        cat > "$_gate_dir/review_gate.done" <<EOF
+timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
+source: gate_metrics_backfill
+result: CLEAR
+note: archive_completed.sh補完。gate_metrics.logのCLEAR記録を正本としてreview_gate.doneを復元。
+EOF
+    }
+
+    write_archive_done_from_metrics() {
+        local _cmd="$1"
+        local _gate_dir="$PROJECT_DIR/queue/gates/${_cmd}"
+        mkdir -p "$_gate_dir"
+        touch "$_gate_dir/archive.done"
+    }
+
+    report_is_stale_gate_incomplete() {
+        local _report_file="$1"
+        [ -n "$(find "$_report_file" -daystart -maxdepth 0 -type f -mtime +13 -print -quit 2>/dev/null)" ]
+    }
+
+    archive_overflow_reports_to_cap() {
+        [ -z "$CMD_ID" ] || return 0
+
+        local cap=10
+        local remaining
+        remaining=$(find "$REPORTS_DIR" -maxdepth 1 -type f -name '*.yaml' | wc -l)
+        [ "$remaining" -le "$cap" ] && return 0
+
+        local overflow_list="$TMP/report_overflow_candidates.tsv"
+        python3 - "$PROJECT_DIR" "$REPORTS_DIR" <<'PY' > "$overflow_list"
+import glob
+import os
+import sys
+import yaml
+
+project_dir, reports_dir = sys.argv[1:3]
+
+active_parents = set()
+for task_path in glob.glob(os.path.join(project_dir, "queue", "tasks", "*.yaml")):
+    try:
+        with open(task_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    task = data.get("task") if isinstance(data.get("task"), dict) else data
+    if not isinstance(task, dict):
+        continue
+    status = str(task.get("status") or "").strip()
+    parent = str(task.get("parent_cmd") or "").strip()
+    if parent and status not in {"", "done", "completed", "complete", "success", "failed"}:
+        active_parents.add(parent)
+
+eligible_statuses = {"done", "completed", "complete", "success", "failed", "pass", "fail", "blocked", "waived", "stop_for"}
+candidates = []
+for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
+    if os.path.islink(report_path) or not os.path.isfile(report_path):
+        continue
+    try:
+        with open(report_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    status = str(data.get("status") or "").strip().lower()
+    parent = str(data.get("parent_cmd") or "").strip()
+    if status not in eligible_statuses:
+        continue
+    if parent in active_parents:
+        continue
+    candidates.append((os.path.getmtime(report_path), report_path))
+
+for _mtime, path in sorted(candidates):
+    print(path)
+PY
+
+        local overflow_archived=0
+        local overflow_path overflow_base overflow_dest
+        while IFS= read -r overflow_path; do
+            [ "$remaining" -le "$cap" ] && break
+            [ -f "$overflow_path" ] || continue
+            [ -L "$overflow_path" ] && continue
+            overflow_base="${overflow_path##*/}"
+            overflow_dest="$ARCHIVE_REPORT_DIR/${overflow_base%.yaml}_${date_stamp}.yaml"
+            if [ -e "$overflow_dest" ]; then
+                overflow_dest="$ARCHIVE_REPORT_DIR/${overflow_base%.yaml}_$(date '+%H%M%S').yaml"
+            fi
+            mv "$overflow_path" "$overflow_dest" || { echo "[archive] WARN: overflow mv failed: $overflow_path → $overflow_dest" >&2; continue; }
+            ln -sf "$overflow_dest" "$overflow_path" 2>/dev/null || true
+            overflow_archived=$((overflow_archived + 1))
+            archived=$((archived + 1))
+            remaining=$((remaining - 1))
+            echo "[archive] OVERFLOW: archived completed report beyond cap=${cap}: $overflow_base"
+        done < "$overflow_list"
+
+        if [ "$overflow_archived" -gt 0 ]; then
+            kept=$((kept - overflow_archived))
+            [ "$kept" -lt 0 ] && kept=0
+            echo "[archive] overflow-cap: archived=${overflow_archived} remaining=${remaining} cap=${cap}"
+        fi
+    }
+
     # --- GP-230 symlink cleanup (archive移動後の残置symlinkを削除) ---
     for f in "$REPORTS_DIR"/*; do [ -L "$f" ] && rm -f "$f"; done 2>/dev/null || true
 
@@ -923,33 +1039,22 @@ archive_reports() {
     fi
 
     # task files キャッシュ (L667-669のfield_get置換)
-    # GP-2085-B: task_files gawk キャッシュ化 (ファイル数不変時はgawk実行をスキップ)
+    # cmd_2529: 永続キャッシュはstatus変化をファイル数だけで判定できず、古いactive child判定で報告が残存する。
+    # /tmp内の当該実行キャッシュに限定し、毎回現在のtask YAMLから生成する。
     declare -A _task_parent _task_status
     declare -A _queue_cmd_status _parent_has_active_child
     local _task_glob=("$PROJECT_DIR/queue/tasks"/*.yaml)
     if [ -f "${_task_glob[0]}" ]; then
-        local _TASK_CACHE="/tmp/shogun_task_cache_${_RPT_HASH}.tsv"
-        local _TASK_CACHE_COUNT="/tmp/shogun_task_count_${_RPT_HASH}"
-        local _task_count="${#_task_glob[@]}"
-        local _cached_task_count
-        _cached_task_count=$(cat "$_TASK_CACHE_COUNT" 2>/dev/null || echo "-1")
-        local _task_tsv
-        if [[ "$_task_count" == "$_cached_task_count" ]] && [[ -f "$_TASK_CACHE" ]]; then
-            _task_tsv="$_TASK_CACHE"
-        else
-            gawk '
-                BEGINFILE {
-                    fname = FILENAME; sub(/.*\//, "", fname)
-                    st = ""; pc = ""
-                }
-                /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", st) }
-                /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'"'"'"'"'"'"'\t ]/, "", pc) }
-                ENDFILE { print fname "|" st "|" pc }
-            ' "${_task_glob[@]}" 2>/dev/null > "$TMP/task_fields.tsv"
-            _task_tsv="$TMP/task_fields.tsv"
-            cp "$_task_tsv" "$_TASK_CACHE" 2>/dev/null || true
-            printf '%s\n' "$_task_count" > "$_TASK_CACHE_COUNT" 2>/dev/null || true
-        fi
+        local _task_tsv="$TMP/task_fields.tsv"
+        gawk '
+            BEGINFILE {
+                fname = FILENAME; sub(/.*\//, "", fname)
+                st = ""; pc = ""
+            }
+            /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+            /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+            ENDFILE { print fname "|" st "|" pc }
+        ' "${_task_glob[@]}" 2>/dev/null > "$_task_tsv"
         while IFS='|' read -r _tf _ts _tp; do
             _task_status["$_tf"]="$_ts"
             _task_parent["$_tf"]="$_tp"
@@ -1002,22 +1107,10 @@ archive_reports() {
         ' "$QUEUE_FILE" 2>/dev/null)
     fi
 
-    # GP-2085-A: gate_status キャッシュ化 (report_cacheサイズ不変時に[ -f ]×N回をスキップ)
     # _gate_status[cmd]: "missing"=gate不在, "placeholder"=deploy_preflight, "ok"=レビュー完了
-    # 効果: キャッシュヒット時 whileループ+[ -f ]×82件(400〜600ms) → TSVロード(5ms)
+    # cmd_2529: gate_statusはarchive sweep自身が補完するため、永続キャッシュ再利用は禁止。
     declare -A _gate_status=()
-    local _GATE_CACHE="/tmp/shogun_gate_status_${_RPT_HASH}.tsv"
-    local _GATE_CACHE_SIZE="/tmp/shogun_gate_cache_size_${_RPT_HASH}"
-    local _cur_rpt_size _cached_gate_size _gate_cache_hit=false
-    _cur_rpt_size=$(wc -l < "$_REPORT_CACHE" 2>/dev/null || echo "0")
-    _cached_gate_size=$(cat "$_GATE_CACHE_SIZE" 2>/dev/null || echo "-1")
-    if [[ "$_cur_rpt_size" == "$_cached_gate_size" ]] && [[ -f "$_GATE_CACHE" ]]; then
-        while IFS='|' read -r _gcmd _gstatus; do
-            [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="$_gstatus"
-        done < "$_GATE_CACHE"
-        _gate_cache_hit=true
-    fi
-    if [ "$_gate_cache_hit" = "false" ] && [ -f "$_REPORT_CACHE" ]; then
+    if [ -f "$_REPORT_CACHE" ]; then
         declare -a _gc_gate_files=()
         declare -A _gc_file_to_cmd=()
         while IFS='|' read -r _rc_fname _rc_status _rc_parent; do
@@ -1039,13 +1132,6 @@ archive_reports() {
                 [ -n "$_gcmd" ] && _gate_status["$_gcmd"]="placeholder"
             done < <(grep -l "source: deploy_preflight" "${_gc_gate_files[@]}" 2>/dev/null)
         fi
-        # キャッシュ保存 (CMD_IDなしのentryのみ。CMD_IDは毎回変わるためキャッシュから除外)
-        {
-            for k in "${!_gate_status[@]}"; do
-                printf '%s|%s\n' "$k" "${_gate_status[$k]}"
-            done
-        } > "$_GATE_CACHE" 2>/dev/null || true
-        printf '%s\n' "$_cur_rpt_size" > "$_GATE_CACHE_SIZE" 2>/dev/null || true
     fi
     # CMD_ID指定時: _gate_statusに追加(REPORT_CACHEにない場合あり)
     if [ -n "$CMD_ID" ] && [ "${_gate_status[$CMD_ID]+x}" != "x" ]; then
@@ -1098,21 +1184,32 @@ archive_reports() {
                 # GP-XXX2: O(1) lookup via pre-scanned _gate_status (per-file [ -f ] + grep -q を排除)
                 case "${_gate_status[$check_cmd_for_review]:-missing}" in
                     missing)
-                        # review_gate.done 不在でも gate_metrics.log に CLEAR 記録があればアーカイブを許可
-                        local _gate_metrics_log="$PROJECT_DIR/logs/gate_metrics.log"
-                        if [ -f "$_gate_metrics_log" ] && awk -F'\t' -v cmd="$check_cmd_for_review" \
-                                '$2==cmd && $3=="CLEAR" {found=1; exit} END{exit !found}' \
-                                "$_gate_metrics_log" 2>/dev/null; then
-                            echo "[archive] FALLBACK: review_gate.done missing but gate_metrics CLEAR found for ${check_cmd_for_review}: $_bname"
+                        if gate_metrics_has_clear "$check_cmd_for_review"; then
+                            write_review_gate_from_metrics "$check_cmd_for_review"
+                            _gate_status["$check_cmd_for_review"]="ok"
+                            echo "[archive] BACKFILL: review_gate.done missing but gate_metrics CLEAR found for ${check_cmd_for_review}: $_bname"
+                        elif report_is_stale_gate_incomplete "$report_file"; then
+                            echo "[archive] STALE: review_gate.done missing and no CLEAR for ${check_cmd_for_review}; archiving 14d+ report as gate-incomplete: $_bname"
                         else
                             echo "[archive] SKIP: review_gate.done not found for ${check_cmd_for_review}: $_bname"
                             kept=$((kept + 1)); continue
                         fi
                         ;;
                     placeholder)
-                        # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
-                        echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $_bname"
-                        kept=$((kept + 1)); continue ;;
+                        if gate_metrics_has_clear "$check_cmd_for_review"; then
+                            write_review_gate_from_metrics "$check_cmd_for_review"
+                            _gate_status["$check_cmd_for_review"]="ok"
+                            echo "[archive] BACKFILL: review_gate.done placeholder replaced from gate_metrics CLEAR for ${check_cmd_for_review}: $_bname"
+                        else
+                            # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
+                            if report_is_stale_gate_incomplete "$report_file"; then
+                                echo "[archive] STALE: review_gate.done placeholder and no CLEAR for ${check_cmd_for_review}; archiving 14d+ report as gate-incomplete: $_bname"
+                            else
+                                echo "[archive] SKIP: review_gate.done is placeholder (deploy_preflight) for ${check_cmd_for_review}: $_bname"
+                                kept=$((kept + 1)); continue
+                            fi
+                        fi
+                        ;;
                 esac
             fi
         fi
@@ -1167,9 +1264,16 @@ archive_reports() {
                 if [ "$skip_archive_done" = "false" ]; then
                     local archive_done_flag="$PROJECT_DIR/queue/gates/${parent_cmd}/archive.done"
                     if [ ! -f "$archive_done_flag" ]; then
-                        echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $_bname"
-                        kept=$((kept + 1))
-                        continue
+                        if gate_metrics_has_clear "$parent_cmd"; then
+                            write_archive_done_from_metrics "$parent_cmd"
+                            echo "[archive] BACKFILL: archive.done missing but gate_metrics CLEAR found for ${parent_cmd}: $_bname"
+                        elif report_is_stale_gate_incomplete "$report_file"; then
+                            echo "[archive] STALE(sweep): archive.done missing and no CLEAR for ${parent_cmd}; archiving 14d+ report as gate-incomplete: $_bname"
+                        else
+                            echo "[archive] SKIP(sweep): archive.done not found for ${parent_cmd}: $_bname"
+                            kept=$((kept + 1))
+                            continue
+                        fi
                     fi
                 fi
             fi
@@ -1192,6 +1296,8 @@ archive_reports() {
         ln -sf "$dest_path" "$report_file" 2>/dev/null || true  # GP-230: 忍者BLOCK修正中のファイル参照を保護
         archived=$((archived + 1))
     done
+
+    archive_overflow_reports_to_cap
 
     echo "[archive] reports: archived=$archived kept=$kept skipped=$skipped junk=$junk"
 }
@@ -1465,35 +1571,23 @@ trim_stk_old_entries() {
 # ============================================================
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 
-# GP-080: 報告ファイルのstatus/parent_cmdを一括抽出 (共有キャッシュ)
+# GP-080: 報告ファイルのstatus/parent_cmdを一括抽出 (実行内共有キャッシュ)
 # sync_stk Source 2 + archive_reports L582-583 の両方が消費
-# WSL2 NTFS最適化: /tmp/に永続キャッシュ。reportファイル数未変更ならNTFS走査スキップ(1074ms→5ms)
+# cmd_2529: /tmp永続キャッシュはsymlink残置や内容変更をファイル数だけで検知できず、古いreport状態を再利用する。
 _REPORT_CACHE="$TMP/report_fields_cache.tsv"
-# WSL2 NTFS最適化: REPORTS_DIRパスごとに別キャッシュ(テスト環境と本番を分離)
-_RPT_HASH=$(printf '%s' "$REPORTS_DIR" | md5sum | cut -c1-8)
-_PERSISTENT_RPT_CACHE="/tmp/shogun_rpt_cache_${_RPT_HASH}.tsv"
-_PERSISTENT_RPT_COUNT="/tmp/shogun_rpt_count_${_RPT_HASH}"
 if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
     shopt -s nullglob
     _rpt_files=("$REPORTS_DIR"/*.yaml)
     shopt -u nullglob
-    _rpt_count=${#_rpt_files[@]}
-    _cached_rpt_count=$(cat "$_PERSISTENT_RPT_COUNT" 2>/dev/null || echo "0")
-    if [[ "$_rpt_count" == "$_cached_rpt_count" ]] && [[ -f "$_PERSISTENT_RPT_CACHE" ]]; then
-        cp "$_PERSISTENT_RPT_CACHE" "$_REPORT_CACHE"
-    else
-        gawk '
-            BEGINFILE {
-                fname = FILENAME; sub(/.*\//, "", fname)
-                st = ""; pc = ""
-            }
-            /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
-            /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
-            ENDFILE { print fname "|" st "|" pc }
-        ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
-        cp "$_REPORT_CACHE" "$_PERSISTENT_RPT_CACHE" 2>/dev/null || true
-        echo "$_rpt_count" > "$_PERSISTENT_RPT_COUNT" 2>/dev/null || true
-    fi
+    gawk '
+        BEGINFILE {
+            fname = FILENAME; sub(/.*\//, "", fname)
+            st = ""; pc = ""
+        }
+        /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+        /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+        ENDFILE { print fname "|" st "|" pc }
+    ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
 fi
 
 archive_cmds
