@@ -978,6 +978,18 @@ for task_path in glob.glob(os.path.join(project_dir, "queue", "tasks", "*.yaml")
 
 eligible_statuses = {"done", "completed", "complete", "success", "failed", "pass", "fail", "blocked", "waived", "stop_for"}
 candidates = []
+skipped_pending = 0
+skipped_ineligible = 0
+skipped_active_parent = 0
+skipped_gate_incomplete = 0
+
+def gate_complete(parent):
+    if not parent:
+        return True
+    if parent.startswith(("cmd_training_", "cmd_cycle_", "cmd_selfimprovement_")):
+        return True
+    return os.path.isfile(os.path.join(project_dir, "queue", "gates", parent, "archive.done"))
+
 for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     if os.path.islink(report_path) or not os.path.isfile(report_path):
         continue
@@ -990,11 +1002,27 @@ for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
         data = {}
     status = str(data.get("status") or "").strip().lower()
     parent = str(data.get("parent_cmd") or "").strip()
+    if status == "pending":
+        skipped_pending += 1
+        continue
     if status not in eligible_statuses:
+        skipped_ineligible += 1
         continue
     if parent in active_parents:
+        skipped_active_parent += 1
+        continue
+    if not gate_complete(parent):
+        skipped_gate_incomplete += 1
         continue
     candidates.append((os.path.getmtime(report_path), report_path))
+
+print(
+    "[archive] overflow candidates: "
+    f"eligible={len(candidates)} skipped_pending={skipped_pending} "
+    f"skipped_ineligible={skipped_ineligible} skipped_active_parent={skipped_active_parent} "
+    f"skipped_gate_incomplete={skipped_gate_incomplete}",
+    file=sys.stderr,
+)
 
 for _mtime, path in sorted(candidates):
     print(path)
