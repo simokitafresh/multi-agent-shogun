@@ -82,13 +82,12 @@ build_instruction_file() {
     local output_path="$OUTPUT_DIR/$output_filename"
     local original_file="$SCRIPT_DIR/instructions/${role}.md"
     local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
-    local tmp_file
-    tmp_file=$(mktemp)
 
     echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
-    # Write to tmpfs first (fast), then cp to NTFS once per file.
-    # This avoids WSL2 NTFS write contention for parallel builds.
+    # Write entire file in a single pass to reduce WSL2 filesystem overhead.
+    # Multiple >> appends each open/close the output file; a single {} > file
+    # opens it once and streams all content through one file descriptor.
     {
         # Extract YAML front matter from original file
         if [ -f "$original_file" ]; then
@@ -113,14 +112,12 @@ build_instruction_file() {
         else
             echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
         fi
-    } > "$tmp_file"
+    } > "$output_path"
 
     if [[ "$cli_type" == "codex" ]]; then
-        normalize_codex_reset_references "$tmp_file"  # fast: on tmpfs
+        normalize_codex_reset_references "$output_path"
     fi
 
-    cp "$tmp_file" "$output_path"
-    rm -f "$tmp_file"
     echo "  ✅ Created: $output_filename"
 }
 
@@ -145,7 +142,7 @@ trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
 ROLES="shogun karo gunshi ashigaru"
 PROFILE_TYPES=$(get_profile_types)
 
-# Default CLI — files without prefix (parallel: WSL2 NTFS write bottleneck bypassed via _BUILD_OUTDIR)
+# Default CLI — files without prefix (parallel builds: WSL2 NTFS write bottleneck bypassed)
 for role in $ROLES; do
     build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md" &
 done
@@ -169,9 +166,8 @@ for cli_type in copilot kimi; do
     done
 done
 
-# Wait for all parallel builds to finish, then copy results to OUTPUT_DIR in one batch
+# Wait for all parallel instruction builds to finish
 wait
-cp "$_BUILD_OUTDIR"/*.md "$OUTPUT_DIR/"
 
 # ============================================================
 # Helper: Transform CLAUDE.md to CLI-specific auto-load file
@@ -230,16 +226,12 @@ generate_agents_md() {
         return 1
     fi
 
-    local tmp_file
-    tmp_file=$(mktemp)
     transform_claude_md "$cli_type" \
         "AGENTS.md" "AGENTS.override.md" \
         ".${cli_type}/config.toml" "config.toml (mcp_servers section)" \
-        "$cli_display" "$claude_md" "$tmp_file"
+        "$cli_display" "$claude_md" "$output_path"
 
-    normalize_codex_reset_references "$tmp_file"  # fast: on tmpfs
-    cp "$tmp_file" "$output_path"
-    rm -f "$tmp_file"
+    normalize_codex_reset_references "$output_path"
 
     echo "  ✅ Created: AGENTS.md"
 }
@@ -316,10 +308,11 @@ EOFYAML
     echo "  ✅ Created: agents/default/agent.yaml"
 }
 
-# Generate CLI auto-load files
-generate_agents_md
-generate_copilot_instructions
-generate_kimi_instructions
+# Generate CLI auto-load files in parallel (each writes to a separate NTFS path)
+generate_agents_md &
+generate_copilot_instructions &
+generate_kimi_instructions &
+wait
 
 echo ""
 echo "=== Build Complete ==="
