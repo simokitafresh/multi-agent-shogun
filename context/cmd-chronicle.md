@@ -859,3 +859,4 @@
 | cmd_2537 | L2848のglob展開でMATCHING_TASK_FILESを構築→後続ループ中にdeploy_task.shがタスクYAML追加/archive_completed.shが移動→処理漏れ/不整合。glob結果をスナップショットとして固定し、ループ中の変更に耐性を持たせる | infra | 05-03 | MATCHING_TASK_FILES参照ループへ消失ファイ |
 | cmd_2538 | deploy_task.sh L5008-5009でparent_cmd+statusは設定するがtask_idが漏れている。旧cmdのtask_idが残存→cmd_complete_gate.shが旧cmdのreportを参照→交差汚染。1行追加で解消 | infra | 05-03 | direct_mode配備でtask_idが新cmdへ更新さ |
 | cmd_2543 | report_field_set.shのverdict書込みとstatus=completed更新を1回のflock内でatomicに実行するようbatch化 | infra | 05-04 | report_field_set.shのverdict確定時 |
+| cmd_2545 | archive_overflow_reports_to_capでGATE CLEAR待ち(status=pending)reportがcap超え時に強制archiveされないよう除外チェックを追加 | infra | 05-04 | archive_overflow_reports_to_ca |
