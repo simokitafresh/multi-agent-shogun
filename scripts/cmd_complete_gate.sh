@@ -151,6 +151,9 @@ PY
             flock_timeout)
                 echo "[gate] WARN: report YAML unwrap flock timeout: ${report_file}" >&2
                 ;;
+            *)
+                echo "[gate] WARN: report YAML unwrap returned unknown status '${unwrap_result:-<empty>}': ${report_file}" >&2
+                ;;
         esac
     }
 

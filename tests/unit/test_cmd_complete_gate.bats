@@ -18,6 +18,8 @@ setup_file() {
         printf '\n'
         sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^resolve_report_file()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^append_lesson_tracking()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -64,6 +66,42 @@ EOF
     BLOCK_REASONS=()
 
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+}
+
+@test "resolve_report_file warns when auto unwrap returns empty status after flock timeout" {
+    local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
+    local lock_file="${report_file}.lock"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+
+    cat > "$TASKS_DIR/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: hayate_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$report_file" <<'EOF'
+report:
+  worker_id: hayate
+  status: completed
+EOF
+
+    (
+        exec 200>"$lock_file"
+        flock 200
+        sleep 7
+    ) &
+    local lock_holder=$!
+    sleep 0.2
+
+    run resolve_report_file hayate "$TEST_CMD_ID"
+    kill "$lock_holder" 2>/dev/null || true
+    wait "$lock_holder" 2>/dev/null || true
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[auto_unwrap] WARN: flock timeout on report YAML, skipping unwrap"* ]]
+    [[ "$output" == *"[gate] WARN: report YAML unwrap returned unknown status '<empty>': $report_file"* ]]
+    [[ "$output" == *"$report_file"* ]]
 }
 
 @test "CoDD registry append extracts target and before/after from report and spec" {
