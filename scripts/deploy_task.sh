@@ -2001,6 +2001,66 @@ ensure_report_template_completeness() {
 
     [ -f "$report_file" ] || return 0
 
+    local _ninja_name _worker_id _task_id _parent_cmd _ac_version
+    _ninja_name="$(basename "$task_file" .yaml)"
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        assigned_to task_id subtask_id parent_cmd ac_version 2>/dev/null)" || true
+    _worker_id="${assigned_to:-$_ninja_name}"
+    _task_id="${subtask_id:-$task_id}"
+    _parent_cmd="${parent_cmd:-}"
+    _ac_version="${ac_version:-}"
+
+    if ! grep -Eq '^worker_id:' "$report_file" 2>/dev/null; then
+        printf 'worker_id: %s\n' "$_worker_id" >> "$report_file"
+        modified=true
+    fi
+
+    if ! grep -Eq '^task_id:' "$report_file" 2>/dev/null; then
+        printf 'task_id: %s\n' "$_task_id" >> "$report_file"
+        modified=true
+    fi
+
+    if ! grep -Eq '^parent_cmd:' "$report_file" 2>/dev/null; then
+        printf 'parent_cmd: %s\n' "$_parent_cmd" >> "$report_file"
+        modified=true
+    fi
+
+    if ! grep -Eq '^ac_version_read:' "$report_file" 2>/dev/null; then
+        printf 'ac_version_read: %s\n' "$_ac_version" >> "$report_file"
+        modified=true
+    fi
+
+    if ! awk '
+        /^result:/ { in_result=1; next }
+        in_result && /^[A-Za-z_][A-Za-z0-9_]*:/ { exit }
+        in_result && /^  summary:/ { found=1 }
+        END { exit(found ? 0 : 1) }
+    ' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+result:
+  summary: FILL_THIS
+  details: ""
+EOF
+        modified=true
+    fi
+
+    if ! grep -Eq '^purpose_validation:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+purpose_validation:
+  cmd_purpose: ""
+  fit: true
+  purpose_gap: ""
+EOF
+        modified=true
+    fi
+
+    if ! grep -Eq '^files_modified:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+files_modified: []
+EOF
+        modified=true
+    fi
+
     if ! grep -Eq '^lessons_useful:' "$report_file" 2>/dev/null; then
         local _lu_ids _lu_block _lid _lu_count=0
         _lu_ids=$(awk '
@@ -2026,6 +2086,13 @@ EOF
             printf '%s\n' "$_lu_block" >> "$report_file"
             log "report_template: missing lessons_useful repaired (${_lu_count} entries)"
         fi
+        modified=true
+    fi
+
+    if ! grep -Eq '^binary_checks:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+binary_checks: {}
+EOF
         modified=true
     fi
 

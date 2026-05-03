@@ -489,6 +489,61 @@ YAML
     _fixture_project_end
 }
 
+@test "既存テンプレート補完は報告gate必須9項目のMISSINGを残さない" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_missing_nine_defaults
+  task_id: cmd_missing_nine_defaults_impl
+  project: infra
+  ac_version: abcdef12
+  report_filename: sasuke_report_cmd_missing_nine_defaults.yaml
+  acceptance_criteria:
+    - id: AC1
+      description: "既存テンプレート補完でMISSINGを残さない"
+YAML
+    mkdir -p "$TEST_PROJECT/queue/reports"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_missing_nine_defaults.yaml" <<'YAML'
+timestamp: ""
+status: pending
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_missing_nine_defaults_impl cmd_missing_nine_defaults infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_missing_nine_defaults.yaml"
+    grep -Fq 'worker_id: sasuke' "$report_path"
+    grep -Fq 'parent_cmd: cmd_missing_nine_defaults' "$report_path"
+    grep -Fq 'ac_version_read: abcdef12' "$report_path"
+    grep -Fq 'result:' "$report_path"
+    grep -Fq '  summary: FILL_THIS' "$report_path"
+    grep -Fq 'purpose_validation:' "$report_path"
+    grep -Fq 'files_modified: []' "$report_path"
+    grep -Fq 'lessons_useful: []' "$report_path"
+    grep -Fq 'binary_checks: {}' "$report_path"
+    grep -Fq 'assumption_invalidation:' "$report_path"
+
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
+    [[ "$output" != *"worker_id: MISSING"* ]]
+    [[ "$output" != *"parent_cmd: MISSING"* ]]
+    [[ "$output" != *"ac_version_read: MISSING"* ]]
+    [[ "$output" != *"result.summary: MISSING"* ]]
+    [[ "$output" != *"purpose_validation: MISSING"* ]]
+    [[ "$output" != *"files_modified: MISSING"* ]]
+    [[ "$output" != *"lessons_useful: MISSING"* ]]
+    [[ "$output" != *"binary_checks: MISSING"* ]]
+    [[ "$output" != *"assumption_invalidation: MISSING"* ]]
+
+    _fixture_project_end
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════
