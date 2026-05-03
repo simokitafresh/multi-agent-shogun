@@ -396,7 +396,9 @@ elif isinstance(data, list):
     data = fix_items(data)
 if changed:
     print('[autofix] binary_checks result正規化(true/PASS→yes, false/FAIL→no)', file=sys.stderr)
+import re
 out = yaml.dump(data, default_flow_style=False, allow_unicode=True)
+out = re.sub(r'(result: )[' + chr(39) + chr(34) + r']?(yes|no)[' + chr(39) + chr(34) + r']?', r'\1\2', out)
 print(out, end='')
 " <<< "$val")
                 echo "$fixed"
@@ -854,6 +856,14 @@ fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
 try:
     with os.fdopen(fd, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # Fix yaml.dump quoting yes/no in binary_checks result fields
+    import re as _re
+    with open(tmp_path, 'r') as f:
+        _content = f.read()
+    _fixed = _re.sub(r'(    result: )[\\x27\\x22]?(yes|no)[\\x27\\x22]?', r'\\1\\2', _content)
+    if _fixed != _content:
+        with open(tmp_path, 'w') as f:
+            f.write(_fixed)
     # Round-trip validation: reload and verify key fields survive yaml.dump
     with open(tmp_path, 'r') as f:
         reloaded = yaml.safe_load(f)
