@@ -202,6 +202,8 @@ if [[ "$WRITE_RESULT" == DEDUP:* ]]; then
     exit 0
 fi
 
+printf '%s\n' "$WRITE_RESULT"
+
 # --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
 if [[ -f "$INBOX_WRITE" ]]; then
@@ -225,5 +227,3 @@ if [[ -f "$INBOX_WRITE" ]]; then
         fi
     done
 fi
-
-printf '%s\n' "$WRITE_RESULT"
