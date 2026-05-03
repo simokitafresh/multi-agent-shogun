@@ -819,6 +819,105 @@ EOF
     rm -rf "$direct_root"
 }
 
+@test "--directモード: parent_cmd/status更新時にtask_idも新CMDへ更新する" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_OLD
+  task_id: cmd_OLD_impl
+  task_type: exact
+  status: done
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        sleep() { :; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        capture_done_redeploy_context() { :; }
+        reset_stale_fields() { _STALE_RESET_DONE=1; }
+        check_firefighting_title() { :; }
+        warn_task_clarity() { :; }
+        warn_recent_noncmd_commit_targets() { :; }
+        deploy_task_apply_task_mutations() { :; }
+        notify_initial_deploy_ntfy_once() { :; }
+        record_deployed_at() { :; }
+        preflight_gate_artifacts() { :; }
+        maybe_notify_draft_review() { :; }
+        deploy_task_send_direct_renudge() { :; }
+        tmux() { return 0; }
+        bash() {
+            if [[ "${1:-}" == */inbox_write.sh ]]; then
+                return 0
+            fi
+            command bash "$@"
+        }
+        deploy_task_main --direct sasuke cmd_2538
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "parent_cmd" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_2538" ]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "status" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "assigned" ]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "task_id" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_2538_exact" ]
+
+    bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_type impl
+    bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_id cmd_OLD_impl
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        sleep() { :; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        capture_done_redeploy_context() { :; }
+        reset_stale_fields() { _STALE_RESET_DONE=1; }
+        check_firefighting_title() { :; }
+        warn_task_clarity() { :; }
+        warn_recent_noncmd_commit_targets() { :; }
+        deploy_task_apply_task_mutations() { :; }
+        notify_initial_deploy_ntfy_once() { :; }
+        record_deployed_at() { :; }
+        preflight_gate_artifacts() { :; }
+        maybe_notify_draft_review() { :; }
+        deploy_task_send_direct_renudge() { :; }
+        tmux() { return 0; }
+        bash() {
+            if [[ "${1:-}" == */inbox_write.sh ]]; then
+                return 0
+            fi
+            command bash "$@"
+        }
+        deploy_task_main --direct sasuke cmd_2539
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "task_id" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_2539_normal" ]
+}
+
 # ═══════════════════════════════════════════════════════════
 # stale_report_verdict テスト (11)
 # ═══════════════════════════════════════════════════════════
