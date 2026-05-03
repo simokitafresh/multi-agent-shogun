@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # ── Fast-path: no-args before SCRIPT_DIR/source ──────────────────────────────
-if [[ $# -lt 1 ]]; then
+if [[ $# -lt 1 || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
     exit 1
 fi

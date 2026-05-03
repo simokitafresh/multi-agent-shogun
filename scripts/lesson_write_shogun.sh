@@ -7,6 +7,16 @@
 
 set -e
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        ""|-h|--help)
+            echo "Usage: lesson_write_shogun.sh \"タイトル\" \"詳細\" cmd_XXX [\"enforcement記述\"]" >&2
+            echo "       lesson_write_shogun.sh --supersedes LS005 LS029 \"新しい検証で覆された\"" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
 LOCKFILE="${LESSONS_FILE}.lock"

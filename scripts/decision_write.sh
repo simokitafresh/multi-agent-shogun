@@ -5,6 +5,15 @@
 
 set -e
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        ""|-h|--help)
+            echo "Usage: decision_write.sh <project_id> <cmd_id> <title> <decision> <rationale> <alternatives>" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \

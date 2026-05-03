@@ -8,6 +8,21 @@
 # type: lord_decision | skill_candidate | escalation | action_required
 # Atomic write with flock + python3 + tempfile + os.replace (same as inbox_write.sh)
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        ""|-h|--help)
+            echo "Usage: pending_decision_write.sh <create|resolve|list|recalc> [args...]" >&2
+            echo "" >&2
+            echo "Subcommands:" >&2
+            echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
+            echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
+            echo "  list    [--status pending|resolved|all]" >&2
+            echo "  recalc  (no args) recalculate summary from actual decisions" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 LOCKFILE="${DATA_FILE}.lock"

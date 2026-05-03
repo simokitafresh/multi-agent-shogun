@@ -13,6 +13,18 @@
 #   5. tmux set-option -p で @model_name を設定（変更時のみログ出力）
 
 set -e
+
+case "${1:-}" in
+    -h|--help)
+        cat <<'USAGE'
+Usage: bash scripts/sync_pane_vars.sh
+
+Synchronize tmux @model_name and @agent_cli pane variables from settings and live panes.
+USAGE
+        exit 0
+        ;;
+esac
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # cli_lookup.sh を使って SSOT から値を取得

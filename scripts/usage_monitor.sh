@@ -12,7 +12,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/lib/mcas_common.sh"
+MCAS_COMMON_LOADED=false
+
+load_mcas_common() {
+    if [[ "$MCAS_COMMON_LOADED" == "true" ]]; then
+        return 0
+    fi
+    # shellcheck source=/dev/null
+    source "${SCRIPT_DIR}/lib/mcas_common.sh"
+    MCAS_COMMON_LOADED=true
+}
 
 # Defaults (env var > hardcoded)
 MCAS_PRIMARY_DIR="${MCAS_PRIMARY_DIR:-${HOME}/.claude}"
@@ -215,17 +224,17 @@ monitor_status_codex() {
         return
     fi
 
-    local now h5_ago d7_ago h5_tokens d7_tokens
+    local now h5_ago d7_ago usage_row h5_tokens d7_tokens
     now=$(date +%s)
     h5_ago=$((now - 5 * 3600))
     d7_ago=$((now - 7 * 86400))
 
-    h5_tokens=$(sqlite3 "$CODEX_DB" \
-        "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $h5_ago;" \
-        2>/dev/null) || h5_tokens=0
-    d7_tokens=$(sqlite3 "$CODEX_DB" \
-        "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" \
-        2>/dev/null) || d7_tokens=0
+    usage_row=$(sqlite3 "$CODEX_DB" \
+        "SELECT COALESCE(SUM(CASE WHEN updated_at > $h5_ago THEN tokens_used ELSE 0 END),0) || char(9) || COALESCE(SUM(CASE WHEN updated_at > $d7_ago THEN tokens_used ELSE 0 END),0) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" \
+        2>/dev/null) || usage_row=$'0\t0'
+    IFS=$'\t' read -r h5_tokens d7_tokens <<< "$usage_row"
+    h5_tokens="${h5_tokens:-0}"
+    d7_tokens="${d7_tokens:-0}"
 
     local h5_used_pct d7_used_pct h5_left d7_left
     if (( CODEX_BUDGET_5H > 0 )); then
@@ -254,6 +263,7 @@ monitor_status_codex() {
 monitor_once() {
     local token="" json="" pct
 
+    load_mcas_common
     token=$(mcas_get_token "$MCAS_PRIMARY_DIR" 2>/dev/null) || true
 
     if [[ -n "$token" ]]; then
@@ -277,6 +287,7 @@ monitor_status() {
 
     local token="" json=""
 
+    load_mcas_common
     token=$(mcas_get_token "$MCAS_PRIMARY_DIR" 2>/dev/null) || true
 
     if [[ -n "$token" ]]; then

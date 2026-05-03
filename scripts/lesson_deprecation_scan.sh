@@ -6,6 +6,13 @@
 
 set -euo pipefail
 
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all]"
+        exit 0
+        ;;
+esac
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
 TRACKING_TSV="$SCRIPT_DIR/logs/lesson_tracking.tsv"
