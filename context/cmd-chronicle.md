@@ -876,3 +876,4 @@
 | cmd_2529 | archive_completed.shが3パターン(archive.done不在/placeholder/review_gate.done不在)で報告YAMLをSKIPし永久残存させている。169件蓄積=交差汚染(バグ2)の増幅源。負の複利を解消する | infra | 05-03 | archive_completed.shの報告sweepを修 |
 | cmd_2533 | サブシェル内のreturn 1は親に伝播しない→flock timeout後もecho synced が無条件実行→chronicle更新失敗が成功として記録される。3箇所(L137,L219,L1437)を修正 | infra | 05-03 | archive_completed.shのchronicle |
 | cmd_2532 | auto_unwrap_report_yamlでflock timeout→exit 1→サブシェル内のためunwrap_resultが空文字→case文のどのパターンにもマッチせず完全沈黙。デフォルトパターン追加で空文字をキャッチする | infra | 05-03 | auto_unwrap_report_yamlの空文字/未知 |
+| cmd_2537 | L2848のglob展開でMATCHING_TASK_FILESを構築→後続ループ中にdeploy_task.shがタスクYAML追加/archive_completed.shが移動→処理漏れ/不整合。glob結果をスナップショットとして固定し、ループ中の変更に耐性を持たせる | infra | 05-03 | MATCHING_TASK_FILES参照ループへ消失ファイ |

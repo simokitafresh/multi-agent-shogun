@@ -254,6 +254,12 @@ build_clear_duration_metric() {
     local resolved=0
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         [ -f "$task_file" ] || continue
         duration_sec=$(TASK_FILE_ENV="$task_file" python3 - <<'PY'
 import os
@@ -323,6 +329,12 @@ build_clear_ctx_metric() {
     local task_file ninja_name pane_target ctx_val ctx_num
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         [ -f "$task_file" ] || continue
         ninja_name=$(basename "$task_file" .yaml)
         pane_target=$(agent_pane_target "$ninja_name" 2>/dev/null || true)
@@ -407,6 +419,12 @@ set_matching_tasks_idle() {
     fi
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         [ -f "$task_file" ] || continue
         ninja_name=$(basename "$task_file" .yaml)
         current_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
@@ -1605,6 +1623,12 @@ check_scope_drift() {
     local sd_checked=false
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         local ninja_name report_file
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -1735,6 +1759,12 @@ check_partial_completion() {
     local pc_checked=false
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         local ninja_name report_file
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -1838,6 +1868,12 @@ check_wtf_likelihood() {
     local wtf_checked=false
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         local ninja_name report_file
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -2694,6 +2730,12 @@ preflight_gate_flags() {
         local has_found_true=false
         local pf_task_file
         for pf_task_file in "${MATCHING_TASK_FILES[@]}"; do
+            if [ ! -f "$pf_task_file" ]; then
+                echo "  [WARN] matching task file disappeared, skipping: $pf_task_file"
+                MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+                continue
+            fi
+            MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -2720,6 +2762,12 @@ preflight_gate_flags() {
         local has_found_true=false
         local pf_task_file
         for pf_task_file in "${MATCHING_TASK_FILES[@]}"; do
+            if [ ! -f "$pf_task_file" ]; then
+                echo "  [WARN] matching task file disappeared, skipping: $pf_task_file"
+                MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+                continue
+            fi
+            MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
             local pf_report_file pf_lc_found pf_ninja_name
             pf_ninja_name=$(basename "$pf_task_file" .yaml)
             pf_report_file=$(resolve_report_file "$pf_ninja_name")
@@ -2765,6 +2813,12 @@ preflight_gate_flags() {
     local tp_warn_count=0
     local tp_task_file
     for tp_task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$tp_task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $tp_task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         local tp_info
         # task.project と task.target_path を取得
         local _tp_project_id _tp_target_raw _tp_project_path
@@ -2852,6 +2906,14 @@ for _cache_tf in "$TASKS_DIR"/*.yaml; do
         MATCHING_TASK_FILES+=("$_cache_tf")
     fi
 done
+MATCHING_TASK_FILES_INITIAL_COUNT=${#MATCHING_TASK_FILES[@]}
+MATCHING_TASK_FILES_PROCESSED_COUNT=0
+MATCHING_TASK_FILES_SKIPPED_COUNT=0
+echo "Matching task files snapshot: ${MATCHING_TASK_FILES_INITIAL_COUNT}"
+
+print_matching_task_files_summary() {
+    echo "Matching task files summary: snapshot=${MATCHING_TASK_FILES_INITIAL_COUNT} processed_refs=${MATCHING_TASK_FILES_PROCESSED_COUNT} skipped_missing=${MATCHING_TASK_FILES_SKIPPED_COUNT}"
+}
 # O(1) lookup: is_cmd_task "$task_file" → 0 if matching, 1 otherwise
 is_cmd_task() { [[ "${_CMD_TASK_MAP["$1"]+_}" ]]; }
 
@@ -2914,6 +2976,12 @@ CMD_CHANGED_FILES="$(get_cmd_changed_files "$CMD_ID" || true)"
 NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
 echo "Normalize report candidates (B層):"
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -2942,6 +3010,12 @@ if [[ "$_prev_block_reason" == draft_lessons* ]]; then
     echo "  SKIP: 前回BLOCK理由=draft_lessons。循環防止のため自動draft生成をスキップ"
 else
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -3124,6 +3198,12 @@ REPORT_FOUND_COUNT=0
 REPORT_MISSING_FILES=()
 REPORT_WAIT_NINJAS=()
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     REPORT_TASK_COUNT=$((REPORT_TASK_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
@@ -3225,6 +3305,12 @@ validate_report_format_file() {
 }
 
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3245,6 +3331,12 @@ fi
 level_heading "[L1]" "Related lessons injection check:"
 RL_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     RL_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -3271,6 +3363,12 @@ fi
 level_heading "[L2]" "Lessons useful check:"
 LESSON_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     # related_lessonsの有無をチェック（空リスト[]やnullは除外）
     rl_count=$(awk '/related_lessons:/,/^[^ ]/{if(/^\s*- /)c++} END{print c+0}' "$task_file" 2>/dev/null)
@@ -3372,6 +3470,12 @@ level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_5
 level_heading "[L3]" "AC version check:"
 AC_VERSION_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     AC_VERSION_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
@@ -3436,6 +3540,12 @@ fi
 level_heading "[L1]" "Lesson candidate check:"
 LC_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3587,6 +3697,12 @@ BC_CHECKED=false
 # Pre-scan: verdict=PASSの忍者を収集(二重配備時の降格判定用)
 _bc_pass_ninjas=""
 for _bc_tf in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$_bc_tf" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $_bc_tf"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
     _bc_nn=$(basename "$_bc_tf" .yaml)
     _bc_rf=$(resolve_report_file "$_bc_nn")
     [ -f "$_bc_rf" ] || continue
@@ -3596,6 +3712,12 @@ done
 [ -n "$_bc_pass_ninjas" ] && echo "  (verdict=PASS忍者: ${_bc_pass_ninjas% })"
 
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3683,6 +3805,12 @@ fi
 level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3729,6 +3857,12 @@ if [ "$HAS_RECON" = true ] && [ "$HAS_IMPLEMENT" = false ]; then
 else
     DC_DUP_CHECKED=false
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
@@ -3767,6 +3901,12 @@ fi
 level_heading "[L2]" "Deviation count check:"
 DEVIATION_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3827,6 +3967,12 @@ fi
 level_heading "[L2]" "Analysis paralysis check:"
 ANALYSIS_PARALYSIS_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3875,6 +4021,12 @@ fi
 level_heading "[L1]" "Skill candidate check:"
 SC_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3920,6 +4072,12 @@ fi
 level_heading "[L1]" "Decision candidate check:"
 DC_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -3965,6 +4123,12 @@ fi
 level_heading "[L2]" "Implementation walkthrough check:"
 HOW_IT_WORKS_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     task_role=$(detect_task_role "$task_file")
     [ "$task_role" = "implement" ] || continue
@@ -4339,6 +4503,12 @@ fi
 level_heading "[L2]" "Test skip count check:"
 TEST_SKIP_CHECKED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
@@ -4434,6 +4604,12 @@ fi
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
@@ -4535,6 +4711,12 @@ if [ "$ALL_CLEAR" = true ]; then
     if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
         SCORE_UPDATED=0
         for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            if [ ! -f "$task_file" ]; then
+                echo "  [WARN] matching task file disappeared, skipping: $task_file"
+                MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+                continue
+            fi
+            MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
             ninja_name=$(basename "$task_file" .yaml)
             report_file=$(resolve_report_file "$ninja_name")
             if [ -f "$report_file" ]; then
@@ -4798,6 +4980,12 @@ END_GV_PY
     trap 'rm -f "$INSIGHT_TMP"' EXIT
     INSIGHT_COUNT=0
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
@@ -4860,6 +5048,12 @@ END_GV_PY
     echo "Lesson candidate registration check (GATE CLEAR):"
     LC_WARN_COUNT=0
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
@@ -5033,6 +5227,7 @@ END_VERDICT_PY
     echo "Async completion wait (pre-exit):"
     wait || true
     echo "  async jobs: drained"
+    print_matching_task_files_summary
 
     exit 0
 else
@@ -5233,5 +5428,6 @@ else
         echo "  SKIP (project not found or lesson_deprecate.sh missing)"
     fi
 
+    print_matching_task_files_summary
     exit 1
 fi

@@ -5005,9 +5005,17 @@ except Exception:
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
             # cmd_2481事故修正: --directでもparent_cmd/task_id/statusを更新する
             # resolve_cmd_to_taskスキップ時に旧cmd文脈で後続inject処理が動作するバグを防止
+            local direct_task_type direct_task_id_suffix
+            direct_task_type=$(field_get "$task_yaml" "task_type" "normal")
+            if [ "$direct_task_type" = "exact" ]; then
+                direct_task_id_suffix="exact"
+            else
+                direct_task_id_suffix="normal"
+            fi
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
-            log "direct_mode: parent_cmd=${CMD_ID}, status=assigned set"
+            yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
+            log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
         elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
             # parent_cmd/task_idを直接設定。解決失敗でもabortしない。
