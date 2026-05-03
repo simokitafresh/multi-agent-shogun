@@ -2305,14 +2305,27 @@ check_inbox_watcher_health() {
     fi
 
     log "WARNING: inbox_watcher dead/stale for: ${dead[*]}. Restarting..."
-    # staleプロセスをkillしてからrestart
+    # staleプロセスを停止確認してからrestart
+    local restart_blocked=()
     for agent in "${stale[@]}"; do
         local stale_pid
         stale_pid=$(pgrep -f "inbox_watcher\\.sh ${agent} " 2>/dev/null | head -1)
-        [ -n "$stale_pid" ] && kill "$stale_pid" 2>/dev/null && log "Killed stale watcher for ${agent} (PID ${stale_pid})"
+        if [ -n "$stale_pid" ]; then
+            if ! stop_stale_inbox_watcher "$agent" "$stale_pid"; then
+                restart_blocked+=("$agent")
+            fi
+        fi
     done
 
     for agent in "${dead[@]}"; do
+        local blocked_agent=""
+        for blocked_agent in "${restart_blocked[@]}"; do
+            if [ "$agent" = "$blocked_agent" ]; then
+                log "WARNING: skipping watcher restart for ${agent}; stale process did not stop"
+                continue 2
+            fi
+        done
+
         local pane_target=""
         if [ "$agent" = "shogun" ]; then
             pane_target="shogun:main"
@@ -2338,6 +2351,42 @@ check_inbox_watcher_health() {
     done
 
     LAST_WATCHER_RESTART=$EPOCHSECONDS
+}
+
+stop_stale_inbox_watcher() {
+    local agent="$1"
+    local pid="$2"
+    local grace_sec="${INBOX_WATCHER_STOP_GRACE_SEC:-2}"
+
+    if ! kill -0 "$pid" 2>/dev/null; then
+        log "stale watcher for ${agent} already stopped (PID ${pid})"
+        return 0
+    fi
+
+    kill "$pid" 2>/dev/null || true
+    log "SIGTERM sent to stale watcher for ${agent} (PID ${pid})"
+
+    local elapsed=0
+    while [ "$elapsed" -lt "$grace_sec" ]; do
+        sleep 1
+        if ! kill -0 "$pid" 2>/dev/null; then
+            log "stale watcher for ${agent} stopped after SIGTERM (PID ${pid})"
+            return 0
+        fi
+        elapsed=$((elapsed + 1))
+    done
+
+    kill -KILL "$pid" 2>/dev/null || true
+    log "SIGKILL sent to stale watcher for ${agent} (PID ${pid})"
+
+    sleep 1
+    if kill -0 "$pid" 2>/dev/null; then
+        log "WARNING: stale watcher for ${agent} still alive after SIGKILL (PID ${pid}); skipping old-process confirmation"
+        return 1
+    fi
+
+    log "stale watcher for ${agent} stopped after SIGKILL (PID ${pid})"
+    return 0
 }
 
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───

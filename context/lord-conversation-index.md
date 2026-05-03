@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-03T22:58:23+09:00 -->
+<!-- generated_at: 2026-05-03T23:04:55+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-03T23:04:55+09:00 | terminal | response | **cmd_2536 一発PASS、委任完了。** Tier 2進捗: | cmd | バグ | 対象 | 状態 | |-----|------|------|------| | cmd_2534 | H1: mktemp未検証 | de…
+- 2026-05-03T23:04:01+09:00 | ntfy | outbound | 【家老】cmd_2535 初回配備開始 (title=修正 — inbox_write.sh mv失敗時のメッセージ消失(H4: tmp残存+inbox未更新), ninja=hayate) 修正 📋 https://gist.githu…
+- 2026-05-03T23:03:23+09:00 | ntfy | outbound | 【家老】cmd_2532 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-03T23:03:22+09:00 | ntfy | outbound | 【家老】cmd_2533 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-03T22:59:46+09:00 | ntfy | outbound | CI赤: run 25281039443 Unit Tests (bats)
+- 2026-05-03T22:58:55+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-243)
+- 2026-05-03T22:58:38+09:00 | terminal | inbound | ではやろう
 - 2026-05-03T22:58:22+09:00 | terminal | response | ない。負の複利しかない。 気づいたバグを放置する = 自動消火と同じ構造。問題を知っていて動かないのは、知らずに通り過ぎるより悪い。 **軍師の23件全て修正する。** Tier 2(H1-H5)とTier 3(M1-M8)も順次起票する…
 - 2026-05-03T22:58:07+09:00 | terminal | inbound | バグは全て直さないとな。気づいているバグを修正しないメリットは？
 - 2026-05-03T22:57:17+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-03 22:45:56|cmd_2530 2026-05-03 22:53:30|cmd_2529 2026-05-03 22:54:54|cmd_2531
-- 2026-05-03T22:56:23+09:00 | ntfy | outbound | 【家老】cmd_2533 初回配備開始 (title=修正 — archive_completed.sh サブシェルreturn偽装成功(U5: flock timeout→synced偽出力), ninja=saizo) 修正 📋 ht…
-- 2026-05-03T22:56:09+09:00 | terminal | response | **urgentバグ5件の全体状況:** | cmd | バグ | 状態 | |-----|------|------| | cmd_2529 | U1+U2: stale report 169件 | **CLEAR** | | cmd_…
-- 2026-05-03T22:55:24+09:00 | ntfy | outbound | 【家老】cmd_2531 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-03T22:54:53+09:00 | ntfy | outbound | 【家老】cmd_2529 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-03T22:54:34+09:00 | ntfy | outbound | 【家老】cmd_2532 初回配備開始 (title=修正 — cmd_complete_gate.sh unwrap_result空文字沈黙(U3: flock timeout→case不一致), ninja=hayate) 修正 📋 …
-- 2026-05-03T22:50:25+09:00 | ntfy | outbound | 📊 Dashboard: cmd_2530 CLEAR | idle:4名 | pipeline:2件(cmd_2529,cmd_2531)
-- 2026-05-03T22:49:59+09:00 | terminal | response | 31件。空き4件確保。再publish。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - 穴2つ。 **穴1: インデックス陳腐化**。23件のうちcmd_2529/2530で修正されるバグがある。修正後もインデックスに「未解決」のまま残る → 忍者が修正済みバグを探す無駄が発生。解消マークの仕組みがない。 **穴2: 更新が意志依存**。軍師idle自走に依存 =…
@@ -41,11 +41,7 @@
 - cmd_2226
 - cmd_2378
 - cmd_2395
-- cmd_2490
-- cmd_2495
 - cmd_2503
-- cmd_2505
-- cmd_2506
 - cmd_2507
 - cmd_2508
 - cmd_2509
@@ -66,6 +62,10 @@
 - cmd_2524
 - cmd_2525
 - cmd_2526
+- cmd_2527
+- cmd_2528
+- cmd_2529
+- cmd_2530
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

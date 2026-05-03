@@ -875,3 +875,4 @@
 | cmd_2530 | cmd_complete_gate.sh L1975-1990のfallback globがstale reportを無差別に拾い偽BLOCK。加えてreview_gate.done作成後のgate_metrics CLEAR書込みが保証されていない。再配備時の偽BLOCK根絶+統計精度向上 | infra | 05-03 | cmd_complete_gate lesson track |
 | cmd_2529 | archive_completed.shが3パターン(archive.done不在/placeholder/review_gate.done不在)で報告YAMLをSKIPし永久残存させている。169件蓄積=交差汚染(バグ2)の増幅源。負の複利を解消する | infra | 05-03 | archive_completed.shの報告sweepを修 |
 | cmd_2533 | サブシェル内のreturn 1は親に伝播しない→flock timeout後もecho synced が無条件実行→chronicle更新失敗が成功として記録される。3箇所(L137,L219,L1437)を修正 | infra | 05-03 | archive_completed.shのchronicle |
+| cmd_2532 | auto_unwrap_report_yamlでflock timeout→exit 1→サブシェル内のためunwrap_resultが空文字→case文のどのパターンにもマッチせず完全沈黙。デフォルトパターン追加で空文字をキャッチする | infra | 05-03 | auto_unwrap_report_yamlの空文字/未知 |

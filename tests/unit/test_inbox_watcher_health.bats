@@ -146,3 +146,80 @@ echo "COOLDOWN_RESPECTED=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"COOLDOWN_RESPECTED=yes"* ]]
 }
+
+@test "T-IWH-004: stale watcher gets SIGKILL if SIGTERM does not stop it" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts"
+touch "$SCRIPT_DIR/scripts/inbox_watcher.sh"
+
+TEST_LOG="$(mktemp)"
+log() { echo "$1" >> "$TEST_LOG"; }
+
+pgrep() {
+    if [[ "$*" == *"inbox_watcher\\.sh hayate "* ]]; then
+        echo 12345
+        return 0
+    fi
+    return 0
+}
+
+stat() {
+    case "$*" in
+        *"/proc/12345"*) echo 100 ;;
+        *"inbox_watcher.sh"*) echo 200 ;;
+        *) command stat "$@" ;;
+    esac
+}
+
+kill_state="alive"
+kill() {
+    case "$1" in
+        -0)
+            [[ "$kill_state" == "alive" ]]
+            ;;
+        -KILL)
+            echo "KILL_SIGKILL $2" >> "$TEST_LOG"
+            kill_state="dead"
+            return 0
+            ;;
+        *)
+            echo "KILL_SIGTERM $1" >> "$TEST_LOG"
+            return 0
+            ;;
+    esac
+}
+
+tmux() {
+    case "$1" in
+        list-panes) echo "shogun:agents.3" ;;
+        show-options) echo "claude" ;;
+    esac
+}
+nohup() { echo "NOHUP: $*" >> "$TEST_LOG"; }
+disown() { :; }
+sleep() { :; }
+
+NINJA_NAMES=(hayate)
+LAST_WATCHER_RESTART=0
+WATCHER_RESTART_COOLDOWN_MIN=3
+INBOX_WATCHER_STOP_GRACE_SEC=2
+
+check_inbox_watcher_health
+
+grep -q "SIGTERM sent to stale watcher for hayate" "$TEST_LOG"
+grep -q "SIGKILL sent to stale watcher for hayate" "$TEST_LOG"
+grep -q "stale watcher for hayate stopped after SIGKILL" "$TEST_LOG"
+echo "SIGKILL_FALLBACK=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SIGKILL_FALLBACK=yes"* ]]
+}

@@ -685,7 +685,10 @@ _overwrite_ac_from_cmd() {
     [ -z "$parent_cmd" ] && return 1
 
     local py_output
-    py_output=$(mktemp)
+    py_output=$(mktemp) || {
+        log "_overwrite_ac_from_cmd: mktemp failed"
+        return 1
+    }
     if python3 - "$task_file" "$parent_cmd" "$SCRIPT_DIR" <<'OVERWRITE_AC_PY' > "$py_output" 2>&1; then
 import glob
 import os
@@ -980,8 +983,11 @@ verify_ac_consistency() {
     [ -z "$parent_cmd" ] && return 0
 
     local py_output
-    py_output=$(mktemp)
-    python3 - "$task_file" "$parent_cmd" "$SCRIPT_DIR" <<'VERIFY_AC_PY' > "$py_output" 2>&1 || true
+    py_output=$(mktemp) || {
+        log "verify_ac_consistency: mktemp failed"
+        return 1
+    }
+    if python3 - "$task_file" "$parent_cmd" "$SCRIPT_DIR" <<'VERIFY_AC_PY' > "$py_output" 2>&1; then
 import glob
 import os
 import sys
@@ -1091,9 +1097,14 @@ if task_count == cmd_count:
 else:
     print(f'[AC_VERIFY] WARNING: AC ids — task={task_ids} cmd_source={cmd_ids} (parent_cmd={parent_cmd})', file=sys.stderr)
 VERIFY_AC_PY
-    log "$(cat "$py_output")"
-    rm -f "$py_output"
-    return 0
+        log "$(cat "$py_output")"
+        rm -f "$py_output"
+        return 0
+    else
+        log "verify_ac_consistency: python3 failed: $(cat "$py_output")"
+        rm -f "$py_output"
+        return 1
+    fi
 }
 
 # ─── 報告YAML雛形生成（cmd_138: lesson_candidate欠落防止） ───
