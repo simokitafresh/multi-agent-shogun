@@ -870,3 +870,4 @@
 | cmd_2518 | CI時間削減の第二段階。deploy_task系slowテスト4ファイル(32.8s)の fixture共有+統合で50%以上短縮する。偵察cmd_2494で特定済みの統合候補: test_deploy_task_ac_handling(26tests/15.4s), test_deploy_task_codd_failure_history(9tests/2.5s), test_deploy_task_lifecycle(41tests/12.0s), test_deploy_task_template_generation(24tests/3.0s)。 cmd_2517(cmd_save系)と並列実施。 | infra | 05-03 | deploy_task系4本の軽量化を試行したが、AC1の5 |
 | cmd_2521 | dashboard_update.shはcmd完了ごとに実行(呼出頻度18)で未最適化。 CoDDリファクタリングパイプラインで計測→設計→実装→検証を実施し高速化する。 プロファイリング結果に基づきbash -n 16msから実行時パスのボトルネックを特定する。 | infra | 05-03 | dashboard_update.sh --dry-runを |
 | cmd_2522 | context_freshness_check.shはgate内部で頻繁呼出し(呼出頻度44)で未最適化。 gate_context_freshness.shは台帳済み(156ms→62ms)だが、その内部で呼ぶ context_freshness_check.sh自体は未最適化。CoDDで計測→高速化。 | infra | 05-03 | context_freshness_check.shを短TT |
+| cmd_2523 | ninja_monitor.shは常駐デーモンで呼出頻度最大(118)、未最適化。 全忍者の状態監視・idle検知・/clear判定・snapshot生成を担う。 CoDDで計測→ボトルネック特定→高速化。 | infra | 05-03 | ninja_monitor.shのループ相当処理を23.84 |

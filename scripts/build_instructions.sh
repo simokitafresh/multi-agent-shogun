@@ -27,14 +27,8 @@ echo "Building instruction files..."
 # Helper: Get all CLI profile types from cli_profiles.yaml
 # ============================================================
 get_profile_types() {
-    CLI_PROFILES_PATH="${_CLI_LOOKUP_PROFILES}" python3 -c "
-import yaml, os
-with open(os.environ['CLI_PROFILES_PATH']) as f:
-    cfg = yaml.safe_load(f) or {}
-profiles = cfg.get('profiles', {})
-for p in profiles:
-    print(p)
-" 2>/dev/null
+    # Use awk instead of python3 to avoid ~80ms interpreter startup overhead (L509: cold measurement)
+    awk '/^profiles:/{p=1;next} p && /^  [[:alpha:]][[:alnum:]_-]*:/{key=$0; gsub(/^  |:.*$/, "", key); print key} p && /^[^ \t]/{p=0}' "${_CLI_LOOKUP_PROFILES}" 2>/dev/null
 }
 
 # ============================================================
@@ -85,15 +79,16 @@ build_instruction_file() {
     local cli_type="$1"
     local role="$2"
     local output_filename="$3"
-    local output_path="${_BUILD_OUTDIR:-$OUTPUT_DIR}/$output_filename"
+    local output_path="$OUTPUT_DIR/$output_filename"
     local original_file="$SCRIPT_DIR/instructions/${role}.md"
     local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
+    local tmp_file
+    tmp_file=$(mktemp)
 
     echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
-    # Write entire file in a single pass to reduce WSL2 filesystem overhead.
-    # Multiple >> appends each open/close the output file; a single {} > file
-    # opens it once and streams all content through one file descriptor.
+    # Write to tmpfs first (fast), then cp to NTFS once per file.
+    # This avoids WSL2 NTFS write contention for parallel builds.
     {
         # Extract YAML front matter from original file
         if [ -f "$original_file" ]; then
@@ -118,12 +113,14 @@ build_instruction_file() {
         else
             echo "  ⚠️  No CLI tools file for: $cli_type (${tools_file})"
         fi
-    } > "$output_path"
+    } > "$tmp_file"
 
     if [[ "$cli_type" == "codex" ]]; then
-        normalize_codex_reset_references "$output_path"
+        normalize_codex_reset_references "$tmp_file"  # fast: on tmpfs
     fi
 
+    cp "$tmp_file" "$output_path"
+    rm -f "$tmp_file"
     echo "  ✅ Created: $output_filename"
 }
 
@@ -131,9 +128,8 @@ build_instruction_file() {
 # Pre-build common sections into a temp file (read once, reuse 12×)
 # ============================================================
 _BUILD_COMMON_TMP=$(mktemp)
-_BUILD_OUTDIR=$(mktemp -d)
 # shellcheck disable=SC2064
-trap "rm -f '$_BUILD_COMMON_TMP'; rm -rf '$_BUILD_OUTDIR'" EXIT INT TERM
+trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
 {
     printf '\n'
     cat "$PARTS_DIR/common/protocol.md"
@@ -234,12 +230,16 @@ generate_agents_md() {
         return 1
     fi
 
+    local tmp_file
+    tmp_file=$(mktemp)
     transform_claude_md "$cli_type" \
         "AGENTS.md" "AGENTS.override.md" \
         ".${cli_type}/config.toml" "config.toml (mcp_servers section)" \
-        "$cli_display" "$claude_md" "$output_path"
+        "$cli_display" "$claude_md" "$tmp_file"
 
-    normalize_codex_reset_references "$output_path"
+    normalize_codex_reset_references "$tmp_file"  # fast: on tmpfs
+    cp "$tmp_file" "$output_path"
+    rm -f "$tmp_file"
 
     echo "  ✅ Created: AGENTS.md"
 }
