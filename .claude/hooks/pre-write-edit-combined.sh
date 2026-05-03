@@ -47,6 +47,11 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmdを参照せよ(LS-A04(13))"
         exit 1
     fi
+    # Guard 0b: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序は家老が判断する(殿裁定2026-05-03)
+    if printf '%s' "$_stk_content" | grep -qE 'status:\s*on_hold'; then
+        emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回(殿裁定2026-05-03)"
+        exit 1
+    fi
     if [[ "$tool_name" == "Edit" ]]; then
         _dynamic_checks=""
         if [[ -s "$PREFLIGHT_AUTOLEARN_FILE" ]]; then
