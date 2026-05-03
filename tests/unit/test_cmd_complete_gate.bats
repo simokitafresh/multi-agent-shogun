@@ -20,6 +20,8 @@ setup_file() {
         printf '\n'
         sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^append_lesson_tracking()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -104,6 +106,51 @@ EOF
     grep -q "scripts/demo_gate.sh" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
     grep -q "120ms → 30ms" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
     grep -q "$TEST_CMD_ID" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+}
+
+@test "append_lesson_tracking filters fallback reports to current worker_id" {
+    rm -f "$TEST_PROJECT/queue/tasks/"*.yaml
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: ${TEST_CMD_ID}_exact
+  worker_id: hayate
+  related_lessons:
+    - id: L001
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hayate
+task_id: ${TEST_CMD_ID}_exact
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L001
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hanzo
+task_id: ${TEST_CMD_ID}_stale
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L999
+EOF
+
+    run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thayate\tCLEAR\tL001\tL001\tunknown$'
+}
+
+@test "append_lesson_tracking fallback ignores stale reports with mismatched parent_cmd" {
+    rm -f "$TEST_PROJECT/queue/tasks/"*.yaml
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hayate
+task_id: ${TEST_CMD_ID}_exact
+parent_cmd: cmd_other
+lessons_useful:
+  - id: L999
+EOF
+
+    run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\tnone\tCLEAR\tnone\tnone\tunknown$'
 }
 
 teardown() {

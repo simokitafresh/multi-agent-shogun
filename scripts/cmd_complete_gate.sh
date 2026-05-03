@@ -1913,6 +1913,7 @@ ninjas = []
 injected = []
 referenced = []
 task_types = []
+current_assignees = []
 
 def add_unique(target, value):
     if value is None:
@@ -1953,12 +1954,16 @@ for filename in sorted(os.listdir(tasks_dir)):
     if str(task.get("parent_cmd", "")).strip() != cmd_id:
         continue
 
+    task_worker = task.get("worker_id") or task.get("_ac_worker_id")
     assigned_to = task.get("assigned_to")
     if isinstance(assigned_to, list):
         for ninja in assigned_to:
+            add_unique(current_assignees, ninja)
             add_unique(ninjas, ninja)
     else:
+        add_unique(current_assignees, assigned_to)
         add_unique(ninjas, assigned_to)
+    add_unique(current_assignees, task_worker)
 
     task_id_val = task.get("task_id", "")
     if task_id_val:
@@ -1972,6 +1977,30 @@ for filename in sorted(os.listdir(tasks_dir)):
             else:
                 add_unique(injected, lesson)
 
+def parse_report(rpath):
+    try:
+        with open(rpath, encoding="utf-8") as rf:
+            rdata = yaml.safe_load(rf) or {}
+        return rdata if isinstance(rdata, dict) else {}
+    except Exception:
+        return {}
+
+def fallback_report_allowed(rpath, report_ninja):
+    rdata = parse_report(rpath)
+    report_parent = str(rdata.get("parent_cmd", "")).strip()
+    report_worker = str(rdata.get("worker_id", "")).strip()
+
+    if current_assignees:
+        if report_ninja not in current_assignees and report_worker not in current_assignees:
+            return False, rdata
+        if report_parent and report_parent != cmd_id:
+            return False, rdata
+        return True, rdata
+
+    # No current assignee/worker_id in task YAML: avoid stale glob matches by
+    # requiring the report's own parent_cmd to match the cmd being tracked.
+    return report_parent == cmd_id, rdata
+
 # Fallback: when task files are already idle/reassigned, extract from report filenames
 if not ninjas:
     for search_dir in [reports_dir, archive_reports_dir]:
@@ -1982,18 +2011,17 @@ if not ninjas:
             if bname.endswith(".lock"):
                 continue
             idx = bname.find(f"_report_{cmd_id}")
-            if idx > 0:
-                add_unique(ninjas, bname[:idx])
+            if idx <= 0:
+                continue
+            report_ninja = bname[:idx]
+            allowed, rdata = fallback_report_allowed(rpath, report_ninja)
+            if not allowed:
+                continue
+            add_unique(ninjas, report_ninja)
             if not task_types:
-                try:
-                    with open(rpath, encoding="utf-8") as rf:
-                        rdata = yaml.safe_load(rf) or {}
-                    if isinstance(rdata, dict):
-                        rtid = rdata.get("task_id", "")
-                        if rtid:
-                            add_unique(task_types, detect_task_type(rtid))
-                except Exception:
-                    pass
+                rtid = rdata.get("task_id", "")
+                if rtid:
+                    add_unique(task_types, detect_task_type(rtid))
 
 def find_report(ninja_name):
     """Find report file in reports_dir or archive, return path or None."""
