@@ -862,3 +862,4 @@
 | cmd_2545 | archive_overflow_reports_to_capでGATE CLEAR待ち(status=pending)reportがcap超え時に強制archiveされないよう除外チェックを追加 | infra | 05-04 | archive_overflow_reports_to_ca |
 | cmd_2547 | L221のinbox_write成功後にwatcher存在チェックがない→watcher未起動時にnudgeが喪失しても沈黙。pgrep確認+WARN出力を追加する | infra | 05-04 | bulletin_write.sh L221(inbox_w |
 | cmd_2544 | auto_draft_lesson.sh L215のSOURCE_CMD二重渡し引数修正 + cmd_absorb.sh L243のgrep空変数ガード追加 | infra | 05-04 | auto_draft_lessonの6番目引数空文字仕様とc |
+| cmd_2548 | deploy_task.shの2バグ修正。(1)purposeに二重パイプ演算子を含むcmd配備時にyaml_field_set_batch内で値がシェル展開され切り詰まる。(2)count_task_acceptance_criteria失敗時にac_count=0となりdraft_reviewが常にSKIPされ軍師レビューが届かない | infra | 05-04 | cmd_2548のdeploy_task回帰検証を追加。pu |
