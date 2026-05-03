@@ -68,6 +68,7 @@ run_diag_save() {
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         CMD_SAVE_LAST_CMD_FILE="$TEST_TMPDIR/last_cmd.txt" \
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons_shogun.yaml" \
+        CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_diagqtest
 }
 
@@ -132,6 +133,7 @@ run_warn_save() {
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         CMD_SAVE_LAST_CMD_FILE="$TEST_TMPDIR/last_cmd.txt" \
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons_shogun.yaml" \
+        CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_warntest
 }
 

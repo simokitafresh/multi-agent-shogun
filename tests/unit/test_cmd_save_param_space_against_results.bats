@@ -89,7 +89,7 @@ _set_cmd_block() {
     [[ "$output" != *"BLOCK"* ]]
 }
 
-@test "missing results: 前段results.yaml不在 → SKIP" {
+@test "missing results: 前段results.yaml不在 → PASS(BLOCKしない)" {
     _set_cmd_block $'    project: dm-signal\n    command: |\n      cmd_1999を参照し、lookbacks=[1,3,6] で再検証する'
     run check_param_space_against_results
     echo "$output" >&2
