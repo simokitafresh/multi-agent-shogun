@@ -153,6 +153,19 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # L4: ベース名部分一致フォールバック (test_foo*.bats for scripts/foo*.sh)
+    if [ "$matched" -eq 0 ]; then
+        script_stem=$(basename "$changed" .sh | sed 's/_[a-z]*$//')  # karo_workaround_log → karo_workaround
+        if [ -n "$script_stem" ]; then
+            for tf in "$TEST_DIR"/test_"${script_stem}"*.bats; do
+                if [ -f "$tf" ]; then
+                    AFFECTED_TESTS["$tf"]=1
+                    matched=1
+                fi
+            done
+        fi
+    fi
+
     # マッチなし → WARN対象
     if [ "$matched" -eq 0 ]; then
         UNMATCHED+=("$changed")
