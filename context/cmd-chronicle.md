@@ -860,3 +860,5 @@
 | cmd_2538 | deploy_task.sh L5008-5009でparent_cmd+statusは設定するがtask_idが漏れている。旧cmdのtask_idが残存→cmd_complete_gate.shが旧cmdのreportを参照→交差汚染。1行追加で解消 | infra | 05-03 | direct_mode配備でtask_idが新cmdへ更新さ |
 | cmd_2543 | report_field_set.shのverdict書込みとstatus=completed更新を1回のflock内でatomicに実行するようbatch化 | infra | 05-04 | report_field_set.shのverdict確定時 |
 | cmd_2545 | archive_overflow_reports_to_capでGATE CLEAR待ち(status=pending)reportがcap超え時に強制archiveされないよう除外チェックを追加 | infra | 05-04 | archive_overflow_reports_to_ca |
+| cmd_2547 | L221のinbox_write成功後にwatcher存在チェックがない→watcher未起動時にnudgeが喪失しても沈黙。pgrep確認+WARN出力を追加する | infra | 05-04 | bulletin_write.sh L221(inbox_w |
+| cmd_2544 | auto_draft_lesson.sh L215のSOURCE_CMD二重渡し引数修正 + cmd_absorb.sh L243のgrep空変数ガード追加 | infra | 05-04 | auto_draft_lessonの6番目引数空文字仕様とc |
