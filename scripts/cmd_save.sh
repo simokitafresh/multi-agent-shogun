@@ -1943,6 +1943,46 @@ check_ac_file_paths() {
 
 check_ac_file_paths
 
+# --- Check 10.5: cmd text pipe danger warning ---
+# Purpose: shell/YAML-special pipe characters in command/purpose can be lost or
+# interpreted by downstream task deployment if a batch write path regresses.
+check_cmd_text_pipe_danger() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local CMD_TEXT
+    CMD_TEXT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*purpose:[[:space:]]*/ {
+            line = $0
+            sub(/^[[:space:]]*purpose:[[:space:]]*/, "", line)
+            print line
+            next
+        }
+        /^[[:space:]]*command:[[:space:]]*[|>][+-]?([[:space:]]*#.*)?$/ {
+            in_command = 1
+            next
+        }
+        /^[[:space:]]*command:[[:space:]]*/ {
+            line = $0
+            sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
+            print line
+            next
+        }
+        in_command && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]*/ {
+            in_command = 0
+            next
+        }
+        in_command { print }
+    ' || true)
+
+    [[ -n "${CMD_TEXT:-}" ]] || return 0
+    if [[ "$CMD_TEXT" == *"|"* ]]; then
+        echo "WARNING: cmdテキスト内にパイプ文字(|)を検出。deploy_task.sh/yaml_field_set_batch経路で切り詰め・シェル解釈されないよう、必要なら引用または別表現へ修正せよ" >&2
+        record_warn_reason "cmd_text_pipe_danger" "check=check_cmd_text_pipe_danger"
+    fi
+}
+
+check_cmd_text_pipe_danger
+
 # --- Check 11: impl cmd post-deploy verification AC検出（informational — WARN_COUNTに加算しない） ---
 # 目的: project=dm-signal + type=impl のcmdのacceptance_criteria内にデプロイ後検証ACがない場合に警告
 # 起源: cmd_1491でpush漏れ→cmd_1492で後追い発生

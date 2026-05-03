@@ -812,16 +812,20 @@ yaml_field_set_batch() {
         return 1
     fi
 
-    # Build fields/values arrays as pipe-delimited strings for awk
+    # Build fields/values arrays using a non-printable delimiter so field values
+    # may contain shell/YAML punctuation such as pipe characters.
+    local _sep
+    _sep=$'\034'
     local _fields="" _values="" _count=0
     local _arg _f _v
     for _arg in "$@"; do
         _f="${_arg%%=*}"
         _v="${_arg#*=}"
         if [ -z "$_f" ]; then continue; fi
+        _v="${_v//\\/\\\\}"
         if [ "$_count" -gt 0 ]; then
-            _fields="${_fields}|${_f}"
-            _values="${_values}|${_v}"
+            _fields="${_fields}${_sep}${_f}"
+            _values="${_values}${_sep}${_v}"
         else
             _fields="$_f"
             _values="$_v"
@@ -848,6 +852,7 @@ yaml_field_set_batch() {
 
         awk \
             -v block_id="$block_id" \
+            -v sep="$_sep" \
             -v fields_str="$_fields" \
             -v values_str="$_values" '
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
@@ -986,8 +991,8 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
 }
 BEGIN {
     in_block = 0; block_found = 0; block_done = 0; block_len = 0
-    nf = split(fields_str, farr, "|")
-    split(values_str, varr, "|")
+    nf = split(fields_str, farr, sep)
+    split(values_str, varr, sep)
     for (i = 1; i <= nf; i++) replaced[i] = 0
 }
 {
