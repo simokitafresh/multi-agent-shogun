@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-03T23:04:55+09:00 -->
+<!-- generated_at: 2026-05-03T23:09:53+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-03T23:09:53+09:00 | terminal | response | 前セッション裁定はon_hold禁止関連 → 既にCLAUDE.md+Guard 0bに反映済み(前セッションで完了)。projects/*.yamlに追加反映が必要な裁定は残っていない。 **やり残し全て解消。** 殿、H3(cmd_c…
+- 2026-05-03T23:08:55+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-03 23:08:12|cmd_2535
+- 2026-05-03T23:08:27+09:00 | ntfy | outbound | 【家老】cmd_2535 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-03T23:07:56+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-03 23:01:55|cmd_2533 2026-05-03 23:02:59|cmd_2532
+- 2026-05-03T23:06:54+09:00 | terminal | inbound | CMD起票まえにやり残したことは？
+- 2026-05-03T23:05:25+09:00 | ntfy | outbound | 【家老】cmd_2536 初回配備開始 (title=修正 — ninja_monitor.sh inbox_watcher kill後のゾンビ残存(H5: SIGTERM無視→新旧共存), ninja=saizo) 修正 📋 https…
 - 2026-05-03T23:04:55+09:00 | terminal | response | **cmd_2536 一発PASS、委任完了。** Tier 2進捗: | cmd | バグ | 対象 | 状態 | |-----|------|------|------| | cmd_2534 | H1: mktemp未検証 | de…
 - 2026-05-03T23:04:01+09:00 | ntfy | outbound | 【家老】cmd_2535 初回配備開始 (title=修正 — inbox_write.sh mv失敗時のメッセージ消失(H4: tmp残存+inbox未更新), ninja=hayate) 修正 📋 https://gist.githu…
 - 2026-05-03T23:03:23+09:00 | ntfy | outbound | 【家老】cmd_2532 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 - 2026-05-03T23:03:22+09:00 | ntfy | outbound | 【家老】cmd_2533 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-03T22:59:46+09:00 | ntfy | outbound | CI赤: run 25281039443 Unit Tests (bats)
-- 2026-05-03T22:58:55+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-243)
-- 2026-05-03T22:58:38+09:00 | terminal | inbound | ではやろう
-- 2026-05-03T22:58:22+09:00 | terminal | response | ない。負の複利しかない。 気づいたバグを放置する = 自動消火と同じ構造。問題を知っていて動かないのは、知らずに通り過ぎるより悪い。 **軍師の23件全て修正する。** Tier 2(H1-H5)とTier 3(M1-M8)も順次起票する…
-- 2026-05-03T22:58:07+09:00 | terminal | inbound | バグは全て直さないとな。気づいているバグを修正しないメリットは？
-- 2026-05-03T22:57:17+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-03 22:45:56|cmd_2530 2026-05-03 22:53:30|cmd_2529 2026-05-03 22:54:54|cmd_2531
 
 ## 未解決確認事項
 - 穴2つ。 **穴1: インデックス陳腐化**。23件のうちcmd_2529/2530で修正されるバグがある。修正後もインデックスに「未解決」のまま残る → 忍者が修正済みバグを探す無駄が発生。解消マークの仕組みがない。 **穴2: 更新が意志依存**。軍師idle自走に依存 =…
@@ -26,6 +26,7 @@
 - 三層ループallertが出ていないか？確認せよ
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-03T23:09:53+09:00 | 前セッション裁定はon_hold禁止関連 → 既にCLAUDE.md+Guard 0bに反映済み(前セッションで完了)。projects/*.yamlに追加反映が必要な裁定は残っていない。 **やり残し全て解消。** 殿、H3(cmd_complete_gate.sh glob…
 - 2026-05-03T22:56:09+09:00 | **urgentバグ5件の全体状況:** | cmd | バグ | 状態 | |-----|------|------| | cmd_2529 | U1+U2: stale report 169件 | **CLEAR** | | cmd_2530 | バグ2+3: glob交差…
 - 2026-05-03T22:42:23+09:00 | 軍師に設計書作成を指示した。CTX:21%で余裕あり。 **現在の全体状況:** | 作業 | 担当 | 状態 | |------|------|------| | cmd_2529 stale report解消 | saizo | in_progress CTX:45% | …
 - 2026-05-03T22:37:13+09:00 | **cmd_2530 一発PASS、委任完了。** バグ3件対応cmd: | cmd | 対象バグ | スクリプト | 状態 | |-----|---------|-----------|------| | cmd_2529 | バグ1: stale report 169件蓄積…
@@ -33,15 +34,12 @@
 - 2026-05-03T22:27:06+09:00 | 2件登録、1件既存SKIP(context健全度は前回dreamで既出)。 ## Dream完了サマリ ``` Dream completed 2026-05-03T22:26:30+09:00 - Phase 1: files=73, total_lines=2665, ME…
 - 2026-05-03T20:25:52+09:00 | はっ、殿の入力を待つ。idle自走に入る。 startup gateのALERT材料を確認する。draft_lessons 41回が最大のBLOCK提案(INS-20260503-202109169-36e8)。因果をたどる: - draft_lessons = 報告YAMLに…
 - 2026-05-03T20:25:34+09:00 | 復帰完了。 **現状:** - 全忍者6名idle、CTX:0%、cmdキュー空 - 前セッション13cmd全完了(11 CLEAR + 1 cmd_2526 CLEAR確認済み + 1 revert) - CI GREEN、push完了、軍師バグ修正2件反映済み **前セッシ…
-- 2026-05-03T20:06:20+09:00 | 軍師の報告: - **バグ1 修正済み**: bulletin_write.sh $2=--helpチェック追加。8/8テストPASS - **バグ2 修正済み**: draft_lessonsが無関係cmd全BLOCKする問題。cmd固有draftのみBLOCK、無関係はWA…
 
 ## 参照cmd
 - cmd_2
 - cmd_2223
 - cmd_2226
 - cmd_2378
-- cmd_2395
-- cmd_2503
 - cmd_2507
 - cmd_2508
 - cmd_2509
@@ -66,6 +64,8 @@
 - cmd_2528
 - cmd_2529
 - cmd_2530
+- cmd_2531
+- cmd_2532
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
