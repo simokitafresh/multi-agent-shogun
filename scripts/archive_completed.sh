@@ -396,19 +396,13 @@ PY
     echo "[chronicle] batch synced"
 }
 
-archive_pending_decisions_for_cmd() {
+archive_pending_decisions_for_cmd_locked() {
     local cmd_id="$1"
-    [ -f "$PENDING_DECISIONS_FILE" ] || return 0
-    mkdir -p "$(dirname "$PENDING_DECISIONS_ARCHIVE")"
+    (
+        flock -w 10 200 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions" >&2; exit 1; }
+        flock -w 10 201 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions_archive" >&2; exit 1; }
 
-    local archived_count archive_rc
-    set +e
-    archived_count=$(
-        (
-            flock -w 10 200 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions" >&2; exit 1; }
-            flock -w 10 201 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions_archive" >&2; exit 1; }
-
-            python3 - "$PENDING_DECISIONS_FILE" "$PENDING_DECISIONS_ARCHIVE" "$cmd_id" <<'PY'
+        python3 - "$PENDING_DECISIONS_FILE" "$PENDING_DECISIONS_ARCHIVE" "$cmd_id" <<'PY'
 import os
 import sys
 import tempfile
@@ -465,8 +459,17 @@ write_yaml(pending_path, build_doc(kept))
 write_yaml(archive_path, build_doc(archive_decisions))
 print(len(matched))
 PY
-        ) 200>"/tmp/mas-pending-decisions.lock" 201>"/tmp/mas-pending-decisions-archive.lock"
-    )
+    ) 200>"/tmp/mas-pending-decisions.lock" 201>"/tmp/mas-pending-decisions-archive.lock"
+}
+
+archive_pending_decisions_for_cmd() {
+    local cmd_id="$1"
+    [ -f "$PENDING_DECISIONS_FILE" ] || return 0
+    mkdir -p "$(dirname "$PENDING_DECISIONS_ARCHIVE")"
+
+    local archived_count archive_rc
+    set +e
+    archived_count="$(archive_pending_decisions_for_cmd_locked "$cmd_id")"
     archive_rc=$?
     set -e
 
@@ -1615,7 +1618,7 @@ fi
 
 archive_cmds
 sync_stk_status_from_archive
-trim_cmd_chronicle
+trim_cmd_chronicle || true
 trim_stk_old_entries
 archive_reports
 archive_karo_section

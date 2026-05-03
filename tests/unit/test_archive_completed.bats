@@ -307,9 +307,25 @@ EOF
 MD
 
     run env PATH="$TEST_PROJECT/bin:$PATH" bash "$TEST_PROJECT/scripts/archive_completed.sh"
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
     [[ "$output" == *"[chronicle-trim] WARN: flock timeout"* ]]
     [[ "$output" != *"[chronicle-trim] done"* ]]
+    [[ "$output" == *"[archive_completed] done"* ]]
+}
+
+@test "pending decisions archive: set +e scope only wraps helper return capture" {
+    run bash -c '
+        section=$(sed -n "/^archive_pending_decisions_for_cmd()/,/^}/p" "$1")
+        [[ "$section" == *"set +e"* ]]
+        [[ "$section" == *"archived_count=\"\$(archive_pending_decisions_for_cmd_locked \"\$cmd_id\")\""* ]]
+        [[ "$section" == *"archive_rc=\$?"* ]]
+        [[ "$section" == *"set -e"* ]]
+        set_plus_line=$(grep -nF "set +e" <<< "$section" | head -1 | cut -d: -f1)
+        set_e_line=$(grep -nF "set -e" <<< "$section" | head -1 | cut -d: -f1)
+        [[ -n "$set_plus_line" && -n "$set_e_line" ]]
+        [[ $((set_e_line - set_plus_line)) -le 3 ]]
+    ' _ "$SRC_ARCHIVE_SCRIPT"
+    [ "$status" -eq 0 ]
 }
 
 @test "chronicle: single-entry sync propagates flock timeout before synced log" {
