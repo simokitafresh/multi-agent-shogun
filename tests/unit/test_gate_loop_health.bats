@@ -47,3 +47,55 @@ EOF
     [[ "$output" == *"=== Task Duration Outlier Check ==="* ]]
     [[ "$output" == *"WARNING: task duration異常値 cmd_5 (duration=3600s, median=180.0s, ratio=20.00x, delta=+3420.0s)"* ]]
 }
+
+@test "gate_loop_health fail rate warning uses recent 20 entries not lifetime totals" {
+    {
+        for i in $(seq 1 30); do
+            printf -- '- ts: "2026-04-19T13:%02d:00" file: "queue/reports/old_report_%02d.yaml" result: FAIL reasons: "old_pattern MISSING" fixes: ""\n' "$i" "$i"
+        done
+        for i in $(seq 1 20); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_report_%02d.yaml" result: PASS reasons: "" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: FAIL率20%超"* ]]
+    [[ "$output" == *"OK: 直近のFAILパターンなし"* ]]
+}
+
+@test "gate_loop_health INVESTIGATE recommendations use recent 20 reason counts" {
+    {
+        for i in $(seq 1 12); do
+            printf -- '- ts: "2026-04-19T13:%02d:00" file: "queue/reports/old_report_%02d.yaml" result: FAIL reasons: "legacy_field MISSING" fixes: ""\n' "$i" "$i"
+        done
+        for i in $(seq 1 20); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_report_%02d.yaml" result: PASS reasons: "" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'INVESTIGATE: "legacy_field MISSING"'* ]]
+    [[ "$output" == *"現時点で成熟提案なし"* ]]
+}
+
+@test "gate_loop_health fail rate warning threshold is above 30 percent" {
+    {
+        for i in $(seq 1 5); do
+            printf -- '- ts: "2026-04-19T13:%02d:00" file: "queue/reports/old_report_%02d.yaml" result: FAIL reasons: "old_pattern MISSING" fixes: ""\n' "$i" "$i"
+        done
+        printf -- '- ts: "2026-04-19T13:30:00" file: "queue/reports/autofixed_report.yaml" result: AUTO-FIXED reasons: "" fixes: "fixed"\n'
+        for i in $(seq 1 7); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "recent_quality_issue" fixes: ""\n' "$i" "$i"
+        done
+        for i in $(seq 1 13); do
+            printf -- '- ts: "2026-04-19T15:%02d:00" file: "queue/reports/recent_pass_%02d.yaml" result: PASS reasons: "" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARNING: FAIL率30%超"* ]]
+    [[ "$output" != *"WARNING: FAIL率20%超"* ]]
+}
