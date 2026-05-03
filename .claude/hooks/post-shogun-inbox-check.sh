@@ -3,6 +3,16 @@
 _NON_SHOGUN_CACHE="/tmp/shogun_not_shogun_${TMUX_PANE}"
 [ -e "$_NON_SHOGUN_CACHE" ] && exit 0
 
+is_file_older_than_minutes() {
+    _path="$1"
+    _minutes="$2"
+    [ -f "$_path" ] || return 1
+
+    _mtime=$(stat -c %Y "$_path" 2>/dev/null) || return 1
+    _now=$(date +%s 2>/dev/null) || return 1
+    [ $((_now - _mtime)) -gt $((_minutes * 60)) ]
+}
+
 # PostToolUse hook: 将軍のinbox未読件数を表示
 # 将軍ペインでのみ発火。未読>0の時だけJSON stdout出力。
 # 目的: 殿との対話中にinbox通知が埋もれる盲点の解消(軍師分析 2026-04-16)
@@ -14,7 +24,7 @@ _AID_CACHE="/tmp/shogun_aid_${TMUX_PANE}"
 if [ -r "$_AID_CACHE" ]; then
     { IFS= read -r AGENT_ID; } < "$_AID_CACHE"
 fi
-if [ "${AGENT_ID:-}" != "shogun" ] || [ -n "$(find "$_AID_CACHE" -mmin +30 2>/dev/null)" ]; then
+if [ "${AGENT_ID:-}" != "shogun" ] || is_file_older_than_minutes "$_AID_CACHE" 30; then
     AGENT_ID=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null)
     if [ "$AGENT_ID" = "shogun" ]; then
         rm -f "$_NON_SHOGUN_CACHE" 2>/dev/null
@@ -34,7 +44,7 @@ RECOVERY_MARKER="${SHOGUN_RECOVERY_MARKER:-/tmp/shogun_recovery_complete}"
 RECOVERY_STALE=""
 if [ ! -f "$RECOVERY_MARKER" ]; then
     RECOVERY_STALE=1
-elif [ -n "$(find "$RECOVERY_MARKER" -mmin +90 2>/dev/null)" ]; then
+elif is_file_older_than_minutes "$RECOVERY_MARKER" 90; then
     RECOVERY_STALE=1
 fi
 
