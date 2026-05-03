@@ -12,6 +12,7 @@ deploy_task_setup_file() {
     export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
     export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
     export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
+    export SRC_TMUX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/tmux_utils.sh"
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
@@ -24,6 +25,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
     [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
+    [ -f "$SRC_TMUX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
@@ -51,6 +53,7 @@ deploy_task_setup_file() {
     cp "$SRC_AGENT_STATE_LIB" "$DEPLOY_TASK_TEMPLATE_DIR/lib/agent_state.sh"
     cp "$SRC_CTX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/ctx_utils.sh"
     cp "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"
+    cp "$SRC_TMUX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/tmux_utils.sh"
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"

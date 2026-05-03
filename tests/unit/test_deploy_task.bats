@@ -83,3 +83,31 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"[DEPLOY] WARN:"* ]]
 }
+
+@test "Codex delayed re-nudge sends inboxN directly without inbox_write" {
+    mkdir -p "$TEST_PROJECT/queue/inbox"
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
+messages:
+- id: msg_1
+  read: false
+- id: msg_2
+  read: true
+- id: msg_3
+  read: false
+EOF
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        pane_lookup() { echo "shogun:agents.2"; }
+        safe_send_keys_atomic() {
+            printf '%s|%s|%s\n' "$1" "$2" "$3" > "$TEST_PROJECT/logs/direct_renudge.log"
+        }
+        deploy_task_send_direct_renudge sasuke
+    )
+
+    run cat "$TEST_PROJECT/logs/direct_renudge.log"
+    [ "$status" -eq 0 ]
+    [ "$output" = "shogun:agents.2|inbox2|0.3" ]
+}
