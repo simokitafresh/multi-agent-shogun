@@ -877,3 +877,4 @@
 | cmd_2533 | サブシェル内のreturn 1は親に伝播しない→flock timeout後もecho synced が無条件実行→chronicle更新失敗が成功として記録される。3箇所(L137,L219,L1437)を修正 | infra | 05-03 | archive_completed.shのchronicle |
 | cmd_2532 | auto_unwrap_report_yamlでflock timeout→exit 1→サブシェル内のためunwrap_resultが空文字→case文のどのパターンにもマッチせず完全沈黙。デフォルトパターン追加で空文字をキャッチする | infra | 05-03 | auto_unwrap_report_yamlの空文字/未知 |
 | cmd_2537 | L2848のglob展開でMATCHING_TASK_FILESを構築→後続ループ中にdeploy_task.shがタスクYAML追加/archive_completed.shが移動→処理漏れ/不整合。glob結果をスナップショットとして固定し、ループ中の変更に耐性を持たせる | infra | 05-03 | MATCHING_TASK_FILES参照ループへ消失ファイ |
+| cmd_2538 | deploy_task.sh L5008-5009でparent_cmd+statusは設定するがtask_idが漏れている。旧cmdのtask_idが残存→cmd_complete_gate.shが旧cmdのreportを参照→交差汚染。1行追加で解消 | infra | 05-03 | direct_mode配備でtask_idが新cmdへ更新さ |
