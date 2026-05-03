@@ -91,6 +91,17 @@ for changed in "${CHANGED_FILES[@]}"; do
         fi
     done
 
+    # .claude/hooks/ 変更→hookベース名でテスト検索
+    if [[ "$changed" == .claude/hooks/* ]]; then
+        hook_base=$(basename "$changed" .sh | sed 's/^pre-/pre_/;s/^post-/post_/;s/-/_/g')
+        for tf in "$TEST_DIR"/test_"${hook_base}"*.bats "$TEST_DIR"/test_pre_bash*.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # L3: scripts/gates/ 変更→gate関連テスト全体
     if [[ "$changed" == scripts/gates/* ]]; then
         gate_base=$(basename "$changed" .sh)
