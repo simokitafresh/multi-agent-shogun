@@ -30,6 +30,7 @@ source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/firefighting_keywords.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
@@ -60,6 +61,50 @@ log_output_file() {
             log "$line"
         done < "$output_file"
         rm -f "$output_file"
+    fi
+}
+
+deploy_task_unread_count() {
+    local agent_name="$1"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${agent_name}.yaml"
+
+    if [ ! -f "$inbox_file" ]; then
+        echo 1
+        return 0
+    fi
+
+    python3 - "$inbox_file" <<'PY' 2>/dev/null || echo 1
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages") or []
+count = sum(1 for msg in messages if isinstance(msg, dict) and not msg.get("read", False))
+print(count if count > 0 else 1)
+PY
+}
+
+deploy_task_send_direct_renudge() {
+    local agent_name="$1"
+    local pane_target unread_count
+
+    pane_target="$(pane_lookup "$agent_name" 2>/dev/null || true)"
+    if [ -z "$pane_target" ]; then
+        log "${agent_name}: delayed re-nudge skipped (pane not found)"
+        return 0
+    fi
+
+    unread_count="$(deploy_task_unread_count "$agent_name")"
+    case "$unread_count" in
+        ''|*[!0-9]*) unread_count=1 ;;
+    esac
+    [ "$unread_count" -gt 0 ] 2>/dev/null || unread_count=1
+
+    if safe_send_keys_atomic "$pane_target" "inbox${unread_count}" 0.3; then
+        log "${agent_name}: delayed direct re-nudge sent (inbox${unread_count})"
+    else
+        log "${agent_name}: WARN delayed direct re-nudge failed (inbox${unread_count})"
     fi
 }
 
@@ -5068,11 +5113,10 @@ except Exception:
     # 対象: codexタイプ かつ CTX=0% の場合のみ。Claude Code(claude/Opus/Sonnet)は対象外
     if [ "$ctx_pct" -le 0 ] 2>/dev/null && [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
         log "${NINJA_NAME}: Codex+CTX=0% detected. Scheduling delayed re-nudge in 5s (background)"
-        local _renudge_script="$SCRIPT_DIR/scripts/inbox_write.sh"
-        local _renudge_name="$NINJA_NAME" _renudge_msg="$MESSAGE" _renudge_type="$TYPE" _renudge_from="$FROM"
+        local _renudge_name="$NINJA_NAME"
         (
             sleep 5
-            bash "$_renudge_script" "$_renudge_name" "$_renudge_msg" "$_renudge_type" "$_renudge_from"
+            deploy_task_send_direct_renudge "$_renudge_name"
         ) &
         log "${NINJA_NAME}: re-nudge scheduled (pid=$!)"
     fi

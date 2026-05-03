@@ -95,6 +95,11 @@ fi
 # IMPORTANT: Empty fields use placeholder '-' to prevent bash IFS='\t' read
 # from merging consecutive tabs (tab is IFS-whitespace → adjacent tabs collapse)
 get_unread_info() {
+    # Fast path: skip Python3 startup (~40ms) when no unread messages exist
+    if ! grep -qF 'read: false' "$INBOX" 2>/dev/null; then
+        printf '0\tfalse\t-\t-\tfalse\n'
+        return
+    fi
     INBOX_PATH="$INBOX" python3 -c "
 import sys, os, base64, ast
 

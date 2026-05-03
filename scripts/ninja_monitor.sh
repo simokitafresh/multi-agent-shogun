@@ -2191,6 +2191,8 @@ write_state_file() {
 
 # ─── ntfy_listenerヘルスチェック (cmd_635) ───
 # heartbeatファイル(ext4)→ログ(NTFS)の順で生存判定。NTFS mtime遅延による偽stale防止
+LAST_NTFY_HEALTH_CHECK=${LAST_NTFY_HEALTH_CHECK:-$EPOCHSECONDS}
+NTFY_HEALTH_CHECK_INTERVAL=${NTFY_HEALTH_CHECK_INTERVAL:-300}
 check_ntfy_listener_health() {
     local now
     now=$EPOCHSECONDS
