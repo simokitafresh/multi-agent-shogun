@@ -993,6 +993,17 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
     sleep 0.5
 done
 
+# --- cmd_2531: verdict確定時のreport status自動完了 ---
+# verdictが有効値として書き込まれた時点で、報告は完了状態にできる。
+# 空/未設定のverdictでは何もしないため、作業途中テンプレートはpendingのまま残る。
+if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
+    if ! bash "$0" "$REPORT_PATH" status completed >/dev/null; then
+        echo "[report_field_set] FATAL: verdict written but status auto-complete failed for $REPORT_PATH" >&2
+        exit 1
+    fi
+    echo "[report_field_set] status = completed (auto after verdict)"
+fi
+
 # --- GP-072c2: Post-write dict→list auto-conversion ---
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
 if [[ "$DOT_KEY" == lessons_useful.* ]] || [[ "$DOT_KEY" == binary_checks.*.* ]]; then

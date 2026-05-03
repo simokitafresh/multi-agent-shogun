@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-03T22:42:23+09:00 -->
+<!-- generated_at: 2026-05-03T22:46:03+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-03T22:46:03+09:00 | terminal | response | **現在の全体状況:** | 作業 | 担当 | 状態 | |------|------|------| | cmd_2529 stale report解消 | saizo | in_progress | | cmd_2530 glob交…
+- 2026-05-03T22:43:14+09:00 | terminal | inbound | その間にインフラバグを一つづつ修正しよう
 - 2026-05-03T22:42:23+09:00 | terminal | response | 軍師に設計書作成を指示した。CTX:21%で余裕あり。 **現在の全体状況:** | 作業 | 担当 | 状態 | |------|------|------| | cmd_2529 stale report解消 | saizo | in…
 - 2026-05-03T22:42:03+09:00 | terminal | inbound | いいな。軍師に設計書を作らせよう。
 - 2026-05-03T22:41:38+09:00 | terminal | response | 穴2つ。 **穴1: インデックス陳腐化**。23件のうちcmd_2529/2530で修正されるバグがある。修正後もインデックスに「未解決」のまま残る → 忍者が修正済みバグを探す無駄が発生。解消マークの仕組みがない。 **穴2: 更新が…
@@ -12,8 +14,6 @@
 - 2026-05-03T22:39:57+09:00 | terminal | inbound | セマンティック探索: 4エージェント並列は非常に有効だった。それをインデックスにして全員が有効に活用する案はどう思う
 - 2026-05-03T22:37:43+09:00 | ntfy | outbound | 【家老】cmd_2530 初回配備開始 (title=修正 — cmd_complete_gate.sh fallback glob交差汚染+gate_metrics CLEAR保証, ninja=hayate) 修正 📋 https:/…
 - 2026-05-03T22:37:13+09:00 | terminal | response | **cmd_2530 一発PASS、委任完了。** バグ3件対応cmd: | cmd | 対象バグ | スクリプト | 状態 | |-----|---------|-----------|------| | cmd_2529 | バグ1:…
-- 2026-05-03T22:35:55+09:00 | ntfy | outbound | 【家老】cmd_2529 初回配備開始 (title=修正 — archive_completed.sh stale report 3パターンSKIP解消, ninja=saizo) 修正 📋 https://gist.github.co…
-- 2026-05-03T22:28:26+09:00 | terminal | inbound | バグは三つ友解決しよう。まずは詳細分析を読もう
 
 ## 未解決確認事項
 - 穴2つ。 **穴1: インデックス陳腐化**。23件のうちcmd_2529/2530で修正されるバグがある。修正後もインデックスに「未解決」のまま残る → 忍者が修正済みバグを探す無駄が発生。解消マークの仕組みがない。 **穴2: 更新が意志依存**。軍師idle自走に依存 =…
@@ -47,11 +47,7 @@
 - cmd_2487
 - cmd_2490
 - cmd_2495
-- cmd_2500
-- cmd_2501
-- cmd_2502
 - cmd_2503
-- cmd_2504
 - cmd_2505
 - cmd_2506
 - cmd_2507
@@ -66,6 +62,10 @@
 - cmd_2516
 - cmd_2517
 - cmd_2518
+- cmd_2519
+- cmd_2520
+- cmd_2521
+- cmd_2522
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
