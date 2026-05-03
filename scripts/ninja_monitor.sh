@@ -838,7 +838,9 @@ can_send_clear_with_report_gate() {
         verdict=$(yaml_field_get "$report_path" "verdict")
         if [ -z "$verdict" ]; then
             log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger})"
-            bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。" verdict_empty ninja_monitor >> "$LOG" 2>&1 &
+            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
+                log "WARN: inbox_write verdict_empty failed for $name"
+            fi
             return 1
         fi
         return 0
@@ -878,7 +880,9 @@ can_send_clear_with_report_gate() {
         search_pattern="${base_name}*.yaml"
     fi
     log "REPORT-MISSING-BLOCK: $name done but no report matching ${search_pattern} in reports/ or archive/reports/ (${trigger})"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}がdone状態だが報告未作成。/clear保留中。" report_missing ninja_monitor >> "$LOG" 2>&1 &
+    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}がdone状態だが報告未作成。/clear保留中。" report_missing ninja_monitor >> "$LOG" 2>&1; then
+        log "WARN: inbox_write report_missing failed for $name"
+    fi
     return 1
 }
 
