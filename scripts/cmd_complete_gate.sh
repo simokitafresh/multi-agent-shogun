@@ -1965,7 +1965,11 @@ def add_unique(target, value):
 
 def detect_task_type(task_id_str):
     tid = str(task_id_str)
-    if "_scout" in tid:
+    if tid.endswith("_exact"):
+        return "exact"
+    elif tid.endswith("_normal"):
+        return "normal"
+    elif "_scout" in tid:
         return "scout"
     elif "_impl" in tid:
         return "impl"
@@ -2029,16 +2033,15 @@ def fallback_report_allowed(rpath, report_ninja):
     report_parent = str(rdata.get("parent_cmd", "")).strip()
     report_worker = str(rdata.get("worker_id", "")).strip()
 
+    if report_parent:
+        return report_parent == cmd_id, rdata
+
     if current_assignees:
-        if report_ninja not in current_assignees and report_worker not in current_assignees:
-            return False, rdata
-        if report_parent and report_parent != cmd_id:
-            return False, rdata
-        return True, rdata
+        return (report_ninja in current_assignees or report_worker in current_assignees), rdata
 
     # No current assignee/worker_id in task YAML: avoid stale glob matches by
     # requiring the report's own parent_cmd to match the cmd being tracked.
-    return report_parent == cmd_id, rdata
+    return False, rdata
 
 # Fallback: when task files are already idle/reassigned, extract from report filenames
 if not ninjas:

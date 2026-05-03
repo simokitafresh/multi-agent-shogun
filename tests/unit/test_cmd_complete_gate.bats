@@ -166,14 +166,65 @@ EOF
     cat > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" <<EOF
 worker_id: hanzo
 task_id: ${TEST_CMD_ID}_stale
-parent_cmd: $TEST_CMD_ID
 lessons_useful:
   - id: L999
 EOF
 
     run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
     [ "$status" -eq 0 ]
-    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thayate\tCLEAR\tL001\tL001\tunknown$'
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thayate\tCLEAR\tL001\tL001\texact$'
+}
+
+@test "append_lesson_tracking detects exact and normal task_id suffixes" {
+    rm -f "$TEST_PROJECT/queue/tasks/"*.yaml
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hayate
+task_id: ${TEST_CMD_ID}_exact
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L001
+EOF
+
+    run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thayate\tCLEAR\tnone\tL001\texact$'
+
+    : > "$TEST_PROJECT/logs/lesson_tracking.tsv"
+    rm -f "$TEST_PROJECT/queue/reports/"*.yaml
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hayate
+task_id: ${TEST_CMD_ID}_normal
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L002
+EOF
+
+    run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thayate\tCLEAR\tnone\tL002\tnormal$'
+}
+
+@test "append_lesson_tracking allows parent_cmd match even when current assignee differs" {
+    rm -f "$TEST_PROJECT/queue/tasks/"*.yaml
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: ${TEST_CMD_ID}_exact
+  worker_id: hayate
+  related_lessons:
+    - id: L001
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hanzo
+task_id: ${TEST_CMD_ID}_normal
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L002
+EOF
+
+    run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\thanzo\tCLEAR\tL001\tL002\texact$'
 }
 
 @test "append_lesson_tracking fallback ignores stale reports with mismatched parent_cmd" {
