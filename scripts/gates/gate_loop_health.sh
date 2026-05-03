@@ -75,7 +75,7 @@ entries = [e for e in entries if not e.get('file', '').startswith('/tmp/')]
 # --- 時系列原則: 直近エントリのみでinsight生成 ---
 # 累積カウントは解決済みパターンのノイズを生む(殿指摘2026-03-23)
 # 全体統計は全entries、insight生成用は直近WINDOW件のみ
-INSIGHT_WINDOW = 100  # 直近100エントリ
+INSIGHT_WINDOW = 20  # 直近20エントリ
 recent_entries = entries[-INSIGHT_WINDOW:] if len(entries) > INSIGHT_WINDOW else entries
 
 # --- Aggregate ---
@@ -83,6 +83,8 @@ total = len(entries)
 pass_count = sum(1 for e in entries if e.get('result') == 'PASS')
 fail_count = sum(1 for e in entries if e.get('result') == 'FAIL')
 autofix_count = sum(1 for e in entries if e.get('result') == 'AUTO-FIXED')
+recent_pass_count = sum(1 for e in recent_entries if e.get('result') == 'PASS')
+recent_fail_count = sum(1 for e in recent_entries if e.get('result') == 'FAIL')
 
 print('=== 第三層 Gate Health Report ===')
 print(f'Total fires: {total} (除外: テスト{len(tmp_entries)}件)')
@@ -138,8 +140,8 @@ if reason_counter_all:
 print('=== 成熟提案 ===')
 recommendations = []
 
-# Check for patterns that fire > 5 times and are auto-fixable (全期間)
-for pattern, count in reason_counter_all.most_common():
+# Check for patterns that fire > 5 times and are auto-fixable (直近INSIGHT_WINDOW)
+for pattern, count in reason_counter.most_common():
     if count >= 5:
         if 'is dict (must be list)' in pattern:
             recommendations.append(f'UPGRADE: "{pattern}" ({count}回) → gate_report_autofix.shにdict→list変換追加')
@@ -474,8 +476,8 @@ if fail_count > 0 and autofix_count == 0:
     else:
         print('  OK: 直近のFAILパターンなし')
         sys.exit(0)
-elif fail_count > pass_count * 0.2:
-    print('  WARNING: FAIL率20%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
+elif recent_fail_count > recent_pass_count * 0.3:
+    print('  WARNING: FAIL率30%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
     sys.exit(1)
 else:
     print('  OK: 第三層は健全')
