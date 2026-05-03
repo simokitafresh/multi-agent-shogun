@@ -740,6 +740,17 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | CI修正 / ゲート改修 | 対象テストファイル + smoke test | 最小限で確認 |
 | 本番リリース前 / cmd_complete_gate実行時 | 全テスト必須 | SKIP=FAILルール適用 |
 
+### CI固有FAIL切り分け手順(ローカル未再現時)
+1. `gh run list --limit 5` で最後のGREEN commit特定
+2. `git log --oneline <GREEN>..<RED>` で間のcommit列挙
+3. 各commitの`--stat`で変更ファイル確認→テストファイル変更があるcommitが最有力
+4. `git ls-files -s <file>` で権限確認(100644=実行権限なし→CIでPermission denied)
+5. revertで二分探索(1commitずつ)。ローカルPASSでもCI FAILする原因: git mode/bats並列/fixture共有
+
+### WSL2固有の注意点
+- `git ls-files -s` の100644/100755: WSL2 NTFSでは全ファイル755に見えるがgit indexは実権限を保持。CIはindex通りにcheckoutする
+- `bash scripts/test_select.sh <file>` で間接依存テストを確認。マッピング漏れ=CI FAILの盲点
+
 ### 変更ファイルに関連するテスト特定方法
 ```bash
 # 変更ファイルのテストを特定
