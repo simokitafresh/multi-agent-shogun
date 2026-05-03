@@ -56,7 +56,7 @@ fi
 
 # API呼出し
 response=$(curl -s -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
-    --max-time 45 \
+    --max-time 15 \
     "${API_BASE}/api/p-average" 2>/dev/null) || {
     echo "ALERT: p̄鮮度: API呼出し失敗"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API応答なし"
