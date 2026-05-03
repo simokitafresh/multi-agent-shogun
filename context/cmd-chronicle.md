@@ -871,3 +871,4 @@
 | cmd_2521 | dashboard_update.shはcmd完了ごとに実行(呼出頻度18)で未最適化。 CoDDリファクタリングパイプラインで計測→設計→実装→検証を実施し高速化する。 プロファイリング結果に基づきbash -n 16msから実行時パスのボトルネックを特定する。 | infra | 05-03 | dashboard_update.sh --dry-runを |
 | cmd_2522 | context_freshness_check.shはgate内部で頻繁呼出し(呼出頻度44)で未最適化。 gate_context_freshness.shは台帳済み(156ms→62ms)だが、その内部で呼ぶ context_freshness_check.sh自体は未最適化。CoDDで計測→高速化。 | infra | 05-03 | context_freshness_check.shを短TT |
 | cmd_2523 | ninja_monitor.shは常駐デーモンで呼出頻度最大(118)、未最適化。 全忍者の状態監視・idle検知・/clear判定・snapshot生成を担う。 CoDDで計測→ボトルネック特定→高速化。 | infra | 05-03 | ninja_monitor.shのループ相当処理を23.84 |
+| cmd_2527 | report_field_set.sh L400のyaml.dumpが文字列'yes'/'no'を裸のYAML boolean(true/false) として出力する。autofix_main.py L250-252が毎回bool→str変換で消火中。 根本修正: yaml.dump出力で引用符付き文字列化+消火コード除去。 report-write/verdict-check FAIL率100%の根因(軍師現物確認済み)。 | infra | 05-03 | report_field_setのyes文字列保持とauto |

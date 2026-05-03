@@ -3986,11 +3986,25 @@ if [ -n "$CMD_PROJECT" ]; then
         if [ -f "$DRAFT_LESSONS_FILE" ]; then
             draft_count=$(grep -c '^\- \*\*status\*\*: draft' "$DRAFT_LESSONS_FILE" 2>/dev/null || true)
             draft_count=${draft_count:-0}
+            # cmd固有のdraft教訓のみカウント(無関係cmdのdraftで全cmdをBLOCKしない)
+            own_draft_count=0
             if [ "$draft_count" -gt 0 ]; then
-                echo "  [CRITICAL] NG ← ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり"
+                own_draft_count=$(awk -v cmd="${CMD_ID}" '
+                    /^\#\#\# L[0-9]+:/ { if (in_lesson && is_draft && is_own) count++; in_lesson=1; is_draft=0; is_own=0; next }
+                    in_lesson && /^\- \*\*status\*\*: draft/ { is_draft=1 }
+                    in_lesson && /^\- \*\*出典\*\*:/ && index($0, cmd) { is_own=1 }
+                    in_lesson && /^$/ { if (is_draft && is_own) count++; in_lesson=0 }
+                    END { if (in_lesson && is_draft && is_own) count++; print count+0 }
+                ' "$DRAFT_LESSONS_FILE" 2>/dev/null)
+                own_draft_count=${own_draft_count:-0}
+            fi
+            if [ "$own_draft_count" -gt 0 ]; then
+                echo "  [CRITICAL] NG ← ${CMD_ID}由来のdraft未査読教訓${own_draft_count}件あり"
                 echo "  ★ この問題は忍者では解消できない。家老に報告して待機せよ。リトライは無駄(GP-203)"
-                record_block_reason "draft_lessons:${draft_count}"
+                record_block_reason "draft_lessons:${own_draft_count}"
                 ALL_CLEAR=false
+            elif [ "$draft_count" -gt 0 ]; then
+                echo "  WARN: ${CMD_PROJECT}に${draft_count}件のdraft未査読教訓あり(${CMD_ID}由来以外。BLOCK対象外)"
             else
                 echo "  OK (no draft lessons in ${CMD_PROJECT})"
             fi
