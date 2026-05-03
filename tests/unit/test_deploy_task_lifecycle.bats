@@ -736,6 +736,38 @@ EOF
     [[ "$root_field_name" == task:* ]]
 }
 
+@test "resolve_cmd_to_task preserves pipe chars in purpose through yaml_field_set_batch" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_pipe_purpose.XXXXXX")"
+    prepare_source_fixture "$root"
+    cat > "$root/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_9999:
+    id: cmd_9999
+    title: 'テスト用pipe cmd'
+    project: infra
+    type: impl
+    purpose: 'alpha | beta || gamma \| delta'
+    acceptance_criteria:
+    - 'AC1: テスト'
+    timestamp: '2026-05-04T00:00:00+09:00'
+    status: pending
+EOF
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$root/queue/tasks/tobisaru.yaml").read_text())
+assert data["task"]["purpose"] == r"alpha | beta || gamma \| delta"
+print("DEPLOY_PIPE_OK")
+PY
+    rm -rf "$root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEPLOY_PIPE_OK"* ]]
+}
+
 @test "reset_stale_fields removes stale gunshi notify flag on redeploy" {
     local direct_root
     direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_notify.XXXXXX")"

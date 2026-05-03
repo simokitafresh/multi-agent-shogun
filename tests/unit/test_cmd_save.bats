@@ -53,13 +53,14 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -201,6 +202,29 @@ YAML
     # GP-031がcmd_1001(delegated)と重複 → WARN
     [[ "$output" == *"GP-031"* ]]
     [[ "$output" == *"cmd_1001"* ]]
+}
+
+@test "Check10.5: command/purpose内のpipe文字でWARN出力" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_pipe:
+    title: "infra — pipe warning"
+    purpose: "deploy_task.shで alpha | beta を保持する"
+    command: |
+      scripts/deploy_task.sh --direct saizo cmd_pipe || echo failed
+    status: pending
+    assumptions:
+      - claim: "テスト用前提確認済み"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_pipe"; export CMD_ID
+    load_cmd_block
+    run check_cmd_text_pipe_danger
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: cmdテキスト内にパイプ文字"* ]]
 }
 
 @test "Check6: GP番号なしcmdはスキップ" {

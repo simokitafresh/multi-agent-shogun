@@ -434,3 +434,26 @@ PY
     run grep -n "2026-04-22T20:00:00" "$yaml"
     [ "$status" -eq 1 ]
 }
+
+@test "yaml_field_set_batch: pipeを含む値を切り詰めずに保存する" {
+    local yaml="$TEST_TMPDIR/batch_pipe_value.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  purpose: old
+  status: assigned
+YAML
+
+    run bash -lc "source \"$YFS\" && yaml_field_set_batch \"$yaml\" task \"purpose=cmd text with alpha | beta || gamma \\| delta\" \"status=acknowledged\""
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$yaml").read_text())
+assert data["task"]["purpose"] == r"cmd text with alpha | beta || gamma \| delta"
+assert data["task"]["status"] == "acknowledged"
+print("PIPE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PIPE_OK"* ]]
+}
