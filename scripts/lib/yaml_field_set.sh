@@ -87,7 +87,8 @@ function yaml_safe(v,    out,i,c,needs_quote) {
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == "\"") { out = out "\\" c }
+            if (c == "\\") { out = out "\\\\" }
+            else if (c == "\"") { out = out "\\" c }
             else { out = out c }
         }
         return "\"" out "\""
@@ -187,12 +188,13 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     if (index(v, "{") > 0) needs_quote = 1
     if (index(v, "}") > 0) needs_quote = 1
     if (needs_quote) {
-        out = ""
-        for (i = 1; i <= length(v); i++) {
-            c = substr(v, i, 1)
-            if (c == "\"") out = out "\\" c
-            else out = out c
-        }
+	        out = ""
+	        for (i = 1; i <= length(v); i++) {
+	            c = substr(v, i, 1)
+	            if (c == "\\") out = out "\\\\"
+	            else if (c == "\"") out = out "\\" c
+	            else out = out c
+	        }
         return "\"" out "\""
     }
     return v
@@ -897,10 +899,12 @@ function yaml_safe(v,    out,i,c,nq) {
     nq = 0
     if (index(v, ":") > 0) nq = 1
     if (index(v, "#") > 0) nq = 1
-    if (index(v, "[") > 0) nq = 1
-    if (index(v, "]") > 0) nq = 1
-    if (index(v, "{") > 0) nq = 1
-    if (index(v, "}") > 0) nq = 1
+	    if (index(v, "[") > 0) nq = 1
+	    if (index(v, "]") > 0) nq = 1
+	    if (index(v, "{") > 0) nq = 1
+	    if (index(v, "}") > 0) nq = 1
+	    if (index(v, "|") > 0) nq = 1
+	    if (index(v, ">") > 0) nq = 1
     if (nq) {
         out = ""
         for (i = 1; i <= length(v); i++) {

@@ -4472,9 +4472,12 @@ maybe_notify_draft_review() {
         return 0
     fi
 
-    ac_count=$(count_task_acceptance_criteria "$task_file" "$cmd_id")
-    if ! [[ "$ac_count" =~ ^[0-9]+$ ]]; then
-        ac_count=0
+    if ! ac_count=$(count_task_acceptance_criteria "$task_file" "$cmd_id"); then
+        log "draft_review: WARN (ac_count unavailable; sending review)"
+        ac_count=2
+    elif ! [[ "$ac_count" =~ ^[0-9]+$ ]]; then
+        log "draft_review: WARN (ac_count invalid: ${ac_count:-empty}; sending review)"
+        ac_count=2
     fi
     if [ "$ac_count" -le 1 ]; then
         log "draft_review: SKIP (ac_count<=1: ${ac_count})"
