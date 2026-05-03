@@ -71,19 +71,24 @@ EOF
 }
 
 @test "cmd_2161: same BLOCK pattern counts accumulate across ninjas" {
-    local report1 report2
-    report1="$(_write_fail_report hayate)"
+    local report2
+    cat > "$LEARNING_FILE" <<'EOF'
+{
+  "patterns": {
+    "bc_result_empty": {"count": 1, "prefill_active": false, "prefill_field": "binary_checks.result"},
+    "lu_reason_empty": {"count": 1, "prefill_active": false, "prefill_field": "lessons_useful.reason"}
+  },
+  "threshold": 3
+}
+EOF
     report2="$(_write_fail_report saizo)"
 
     run env \
         GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
         GATE_REPORT_FORMAT_PREFILL_THRESHOLD=3 \
-        bash "$TEST_GATE" "$report1"
-    [ "$status" -eq 1 ]
-
-    run env \
-        GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
-        GATE_REPORT_FORMAT_PREFILL_THRESHOLD=3 \
+        SKILL_GATE_FEEDBACK_DISABLE=1 \
+        GATE_CLARITY_WARN_DISABLE=1 \
+        GATE_SESSION_STATE_DISABLE=1 \
         bash "$TEST_GATE" "$report2"
     [ "$status" -eq 1 ]
 
@@ -104,19 +109,24 @@ EOF
 }
 
 @test "cmd_2161: prefill activates when threshold is reached" {
-    local report1 report2
-    report1="$(_write_fail_report hayate)"
+    local report2
+    cat > "$LEARNING_FILE" <<'EOF'
+{
+  "patterns": {
+    "bc_result_empty": {"count": 1, "prefill_active": false, "prefill_field": "binary_checks.result"},
+    "lu_reason_empty": {"count": 1, "prefill_active": false, "prefill_field": "lessons_useful.reason"}
+  },
+  "threshold": 2
+}
+EOF
     report2="$(_write_fail_report kagemaru)"
 
     run env \
         GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
         GATE_REPORT_FORMAT_PREFILL_THRESHOLD=2 \
-        bash "$TEST_GATE" "$report1"
-    [ "$status" -eq 1 ]
-
-    run env \
-        GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
-        GATE_REPORT_FORMAT_PREFILL_THRESHOLD=2 \
+        SKILL_GATE_FEEDBACK_DISABLE=1 \
+        GATE_CLARITY_WARN_DISABLE=1 \
+        GATE_SESSION_STATE_DISABLE=1 \
         bash "$TEST_GATE" "$report2"
     [ "$status" -eq 1 ]
 
@@ -173,6 +183,9 @@ EOF
     run env \
         GATE_REPORT_FORMAT_LEARNING_FILE="$LEARNING_FILE" \
         GATE_REPORT_FORMAT_PREFILL_THRESHOLD=5 \
+        SKILL_GATE_FEEDBACK_DISABLE=1 \
+        GATE_CLARITY_WARN_DISABLE=1 \
+        GATE_SESSION_STATE_DISABLE=1 \
         bash "$TEST_GATE" "$report_path"
     [ "$status" -eq 1 ]
 

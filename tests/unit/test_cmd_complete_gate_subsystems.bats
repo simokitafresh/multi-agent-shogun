@@ -17,6 +17,20 @@ setup_file() {
     [ -f "$SRC_FIELD_GET" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+
+    export SUBSYSTEM_HELPERS="$BATS_FILE_TMPDIR/cmd_complete_gate_subsystems_helpers.bash"
+    {
+        extract_function record_block_reason
+        extract_function level_heading
+        extract_function detect_task_role
+        extract_function cmd_task_matches
+        extract_function evaluate_review_report_status
+        extract_function find_overlapping_workers
+        extract_function run_review_quality_check
+        extract_function run_todo_fixme_residual_check
+        sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT"
+    } > "$SUBSYSTEM_HELPERS"
 }
 
 extract_function() {
@@ -29,6 +43,12 @@ extract_function() {
         END { if (!found) print NR }
     ' "$SRC_GATE_SCRIPT")
     sed -n "${start},${end}p" "$SRC_GATE_SCRIPT"
+}
+
+setup() {
+    source "$SRC_FIELD_GET"
+    source "$SRC_YAML_FIELD_SET"
+    source "$SUBSYSTEM_HELPERS"
 }
 
 teardown() {
@@ -50,21 +70,10 @@ _setup_review_quality() {
 
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/lib"
 
-    source "$SRC_FIELD_GET"
-
     resolve_report_file() {
         local ninja="$1"
         echo "$SCRIPT_DIR/queue/reports/${ninja}_report_${CMD_ID}.yaml"
     }
-
-    eval "$(extract_function record_block_reason)"
-    eval "$(extract_function level_heading)"
-    eval "$(extract_function detect_task_role)"
-    eval "$(extract_function cmd_task_matches)"
-    eval "$(extract_function evaluate_review_report_status)"
-    eval "$(extract_function find_overlapping_workers)"
-    eval "$(extract_function run_review_quality_check)"
-    eval "$(extract_function run_todo_fixme_residual_check)"
 }
 
 _write_task() {
@@ -228,8 +237,6 @@ projects:
     path: $TEST_PROJECT
 EOF
 
-    eval "$(sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT")"
-
     level_heading() { echo "=== $2 ==="; }
     is_cmd_task() { grep -q "parent_cmd: ${TEST_CMD_ID}" "$1" 2>/dev/null; }
     resolve_report_file() {
@@ -338,8 +345,6 @@ _setup_stk_status() {
 
     mkdir -p "$TEST_TMPDIR/queue" "$TEST_TMPDIR/scripts/lib"
 
-    source "$SRC_YAML_FIELD_SET"
-    eval "$(sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT")"
 }
 
 @test "GATE CLEAR sets STK status to done (mapping format)" {

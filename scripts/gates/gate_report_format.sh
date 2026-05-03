@@ -40,6 +40,7 @@ RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1
 echo "$RESULT"
 
 # cmd_2130: task_clarity_score WARN (non-blocking)
+if [ "${GATE_CLARITY_WARN_DISABLE:-0}" != "1" ]; then
 python3 - "$REPORT_PATH" <<'CLARITY_WARN_PY' 2>/dev/null || true
 import yaml, sys
 try:
@@ -52,6 +53,7 @@ try:
 except Exception:
     pass
 CLARITY_WARN_PY
+fi
 
 RESULT_IS_PASS=0
 if printf '%s\n' "$RESULT" | grep -qxE 'PASS|PASS_NO_IMPROVEMENT'; then
@@ -247,6 +249,9 @@ LEARNING_PY
     _SS_REPORT_BASE=$(basename "$REPORT_PATH")
     _SS_NINJA="${_SS_REPORT_BASE%%_report_*}"
     _SS_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
+    if [ "${GATE_SESSION_STATE_DISABLE:-0}" = "1" ]; then
+        [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
+    fi
     _SS_TASK_YAML="$_SS_TASK_DIR/${_SS_NINJA}.yaml"
     _SS_VALID=false
     for _nn in kagemaru hanzo hayate tobisaru saizo kotaro sasuke kirimaru; do

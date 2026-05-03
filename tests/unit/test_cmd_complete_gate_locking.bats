@@ -22,13 +22,18 @@ teardown() {
     source "$TEST_PROJECT/scripts/lib/lock_path.sh"
     lock_file="$(lock_path "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/cmd_complete_gate.lock")"
 
+    local ready_file="$TEST_TMPDIR/lock.ready"
     bash -c '
         exec 9>"$1"
         flock -n 9 || exit 1
-        sleep 2
-    ' _ "$lock_file" &
+        touch "$2"
+        sleep 0.12
+    ' _ "$lock_file" "$ready_file" &
     locker_pid=$!
-    sleep 0.2
+    for _ in 1 2 3 4 5; do
+        [ -f "$ready_file" ] && break
+        sleep 0.02
+    done
 
     run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
 

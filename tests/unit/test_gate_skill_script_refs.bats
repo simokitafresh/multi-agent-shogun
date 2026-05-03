@@ -25,7 +25,6 @@ teardown() {
 #!/usr/bin/env bash
 echo demo
 EOF
-    sleep 1
     cat > "$TEST_TMPDIR/skills/demo-skill/SKILL.md" <<'EOF'
 ---
 description: "Demo skill"
@@ -35,6 +34,8 @@ description: "Demo skill"
 
 Run `bash scripts/tools/run_demo.sh`.
 EOF
+    touch -d '2026-01-01 00:00:00' "$TEST_TMPDIR/scripts/tools/run_demo.sh"
+    touch -d '2026-01-01 00:00:03' "$TEST_TMPDIR/skills/demo-skill/SKILL.md"
 
     run bash "$TEST_GATE" "$TEST_TMPDIR"
     [ "$status" -eq 0 ]
@@ -71,11 +72,12 @@ description: "Demo skill"
 
 Run `bash scripts/tools/run_demo.sh`.
 EOF
-    sleep 1
     cat > "$TEST_TMPDIR/scripts/tools/run_demo.sh" <<'EOF'
 #!/usr/bin/env bash
 echo changed
 EOF
+    touch -d '2026-01-01 00:00:00' "$TEST_TMPDIR/skills/demo-skill/SKILL.md"
+    touch -d '2026-01-01 00:00:03' "$TEST_TMPDIR/scripts/tools/run_demo.sh"
 
     run bash "$TEST_GATE" "$TEST_TMPDIR"
     [ "$status" -eq 2 ]

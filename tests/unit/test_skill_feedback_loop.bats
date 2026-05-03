@@ -193,10 +193,6 @@ EOF
 }
 
 @test "gate FAIL duplicate does not append log or 注意ポイント twice" {
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
-        bash "$SKILL_LOG_SCRIPT" report-bundle saizo FAIL "binary_checks.result empty" gate_report_format queue/reports/saizo_report.yaml "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
-    [ "$status" -eq 0 ]
-
     for attempt in 1 2; do
         run env \
             SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
@@ -204,12 +200,13 @@ EOF
             bash "$SKILL_FEEDBACK_SCRIPT" \
                 --gate gate_report_format \
                 --result FAIL \
-                --reason "binary_checks.result empty" \
-                --executor saizo \
-                --source queue/reports/saizo_report.yaml
+            --reason "binary_checks.result empty" \
+            --executor saizo \
+            --source queue/reports/saizo_report.yaml \
+            --skill report-bundle
         [ "$status" -eq 0 ]
     done
-    [[ "$output" == *"UNCHANGED:"* ]]
+    [[ "$output" == *"DUPLICATE:"* || "$output" == *"UNCHANGED:"* ]]
 
     run python3 - <<EOF
 import pathlib

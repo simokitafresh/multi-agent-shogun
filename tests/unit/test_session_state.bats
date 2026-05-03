@@ -13,9 +13,13 @@ setup_file() {
     export SRC_DEPLOY_SCRIPT="$PROJECT_ROOT/scripts/deploy_task.sh"
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+
+    export SESSION_STATE_HELPERS="$BATS_FILE_TMPDIR/session_state_helpers.bash"
+    sed -n '/^inject_session_state_hints()/,/^}/p' "$SRC_DEPLOY_SCRIPT" > "$SESSION_STATE_HELPERS"
 }
 
 setup() {
+    source "$SESSION_STATE_HELPERS"
     # /tmp/回避: gate_report_format.shの/tmp/早期exitガードを避けるためtests/配下に作成
     REPO_TMPDIR="$(mktemp -d "tests/.tmp_session_state.XXXXXX")"
     TASK_TMPDIR="$(mktemp -d "tests/.tmp_session_state_task.XXXXXX")"
@@ -24,12 +28,13 @@ setup() {
     export GATE_SESSION_STATE_TASK_DIR="$TASK_TMPDIR"
     export GATE_SESSION_STATE_TEST=1
     export SKILL_GATE_FEEDBACK_DISABLE=1
+    export GATE_CLARITY_WARN_DISABLE=1
 }
 
 teardown() {
     rm -rf "$REPO_TMPDIR" "$TASK_TMPDIR"
     unset GATE_PASS_CACHE_FILE GATE_FIRE_LOG_FILE GATE_SESSION_STATE_TASK_DIR
-    unset GATE_SESSION_STATE_TEST SKILL_GATE_FEEDBACK_DISABLE
+    unset GATE_SESSION_STATE_TEST SKILL_GATE_FEEDBACK_DISABLE GATE_CLARITY_WARN_DISABLE
     unset _DEPLOY_PREV_SESSION_STATE
 }
 
@@ -207,9 +212,7 @@ YAML
 # ─── AC2: deploy時にsession_stateからprevious_failuresを注入 ───
 
 @test "T-SS-004: inject_session_state_hints がprevious_failuresを注入する" {
-    local task_yaml
-    task_yaml="$(mktemp "tests/.tmp_session_state_task.XXXXXX/task.yaml")" 2>/dev/null \
-        || task_yaml="$TASK_TMPDIR/sasuke.yaml"
+    local task_yaml="$TASK_TMPDIR/sasuke.yaml"
 
     # 簡単なtask YAMLを作成
     cat > "$task_yaml" << 'YAML'
@@ -222,10 +225,7 @@ YAML
 
     # _DEPLOY_PREV_SESSION_STATEをセットしてinject_session_state_hintsを呼ぶ
     (
-        export DEPLOY_TASK_LIB_ONLY=1
         export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL", "tried_approaches": ["binary_checks FAIL"], "diagnose_reason": "diag text", "approach_summary": "summary text", "prior_attempts": [{"attempt": 1, "block_reason": "older fail", "diagnose_reason": "older diag", "approach_summary": "older summary"}, {"attempt": 2, "block_reason": "binary_checks FAIL", "diagnose_reason": "diag text", "approach_summary": "summary text"}]}'
-        # shellcheck disable=SC1090
-        source "$PROJECT_ROOT/scripts/deploy_task.sh"
         inject_session_state_hints "$task_yaml"
     )
 
@@ -260,10 +260,7 @@ task:
 YAML
 
     (
-        export DEPLOY_TASK_LIB_ONLY=1
         export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL\nsame failure", "tried_approaches": ["binary_checks FAIL\nsame failure"], "diagnose_reason": "diag line1\nline2", "approach_summary": "summary line1\nline2", "prior_attempts": [{"attempt": 1, "block_reason": "older fail\nagain", "diagnose_reason": "older diag\nmore", "approach_summary": "older summary\nmore"}]}'
-        # shellcheck disable=SC1090
-        source "$PROJECT_ROOT/scripts/deploy_task.sh"
         inject_session_state_hints "$task_yaml"
     )
 
@@ -294,10 +291,7 @@ task:
 YAML
 
     (
-        export DEPLOY_TASK_LIB_ONLY=1
         export _DEPLOY_PREV_SESSION_STATE=""
-        # shellcheck disable=SC1090
-        source "$PROJECT_ROOT/scripts/deploy_task.sh"
         inject_session_state_hints "$task_yaml"
     )
 

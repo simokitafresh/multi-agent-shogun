@@ -148,14 +148,14 @@ def has_duplicate_caution(text, gate_name, reason_text):
     return False
 
 
-logged_entry = latest_fail_entry()
+logged_entry = None if explicit_skill else latest_fail_entry()
 logged_skill = ""
 logged_skill_path = ""
 if logged_entry:
     logged_skill = str(logged_entry.get("skill") or "").strip()
     logged_skill_path = str(logged_entry.get("skill_path") or "").strip()
 
-skill = logged_skill or explicit_skill
+skill = explicit_skill or logged_skill
 skill_file = exact_skill_file(skill, logged_skill_path)
 if not skill or not skill_file:
     print("SKIP: skill not identified")
