@@ -254,6 +254,77 @@ YAML
     [ "$status" -eq 1 ]
 }
 
+@test "chronicle: flock timeout suppresses batch synced success log" {
+    mkdir -p "$TEST_PROJECT/bin"
+    cat > "$TEST_PROJECT/bin/flock" <<'EOF'
+#!/usr/bin/env bash
+fd="${@: -1}"
+if [ "$fd" = "200" ] && [ "$(readlink "/proc/$$/fd/200" 2>/dev/null)" = "/tmp/mas-chronicle.lock" ]; then
+    exit 1
+fi
+exec /usr/bin/flock "$@"
+EOF
+    chmod +x "$TEST_PROJECT/bin/flock"
+
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_555
+    status: completed
+    purpose: "chronicle flock timeout"
+    project: infra
+YAML
+
+    run env PATH="$TEST_PROJECT/bin:$PATH" bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[chronicle] WARN: flock timeout on chronicle"* ]]
+    [[ "$output" != *"[chronicle] batch synced"* ]]
+}
+
+@test "chronicle: flock timeout suppresses trim done success log" {
+    mkdir -p "$TEST_PROJECT/bin" "$TEST_PROJECT/archive/cmd-chronicle"
+    cat > "$TEST_PROJECT/bin/flock" <<'EOF'
+#!/usr/bin/env bash
+fd="${@: -1}"
+if [ "$fd" = "200" ] && [ "$(readlink "/proc/$$/fd/200" 2>/dev/null)" = "/tmp/mas-chronicle.lock" ]; then
+    exit 1
+fi
+exec /usr/bin/flock "$@"
+EOF
+    chmod +x "$TEST_PROJECT/bin/flock"
+
+    local old_ym old_date
+    old_ym="$(date -d '60 days ago' '+%Y-%m')"
+    old_date="$(date -d '60 days ago' '+%m-%d')"
+    cat > "$TEST_PROJECT/context/cmd-chronicle.md" <<MD
+# CMD年代記
+<!-- last_updated: $(date '+%Y-%m-%d') -->
+
+## ${old_ym}
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_100 | old test | infra | ${old_date} | — |
+MD
+
+    run env PATH="$TEST_PROJECT/bin:$PATH" bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"[chronicle-trim] WARN: flock timeout"* ]]
+    [[ "$output" != *"[chronicle-trim] done"* ]]
+}
+
+@test "chronicle: single-entry sync propagates flock timeout before synced log" {
+    run bash -c '
+        section=$(sed -n "/^sync_chronicle_entry()/,/^}/p" "$1")
+        [[ "$section" == *"local chronicle_rc"* ]]
+        [[ "$section" == *"chronicle_rc=\$?"* ]]
+        [[ "$section" == *"return \"\$chronicle_rc\""* ]]
+        capture_line=$(grep -nF "chronicle_rc=\$?" <<< "$section" | head -1 | cut -d: -f1)
+        echo_line=$(grep -nF "echo \"[chronicle] synced:" <<< "$section" | head -1 | cut -d: -f1)
+        [[ -n "$capture_line" && -n "$echo_line" && "$capture_line" -lt "$echo_line" ]]
+    ' _ "$SRC_ARCHIVE_SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # training/cycle/selfimprovement cmd exemption tests (cmd_1522)
 # ============================================================

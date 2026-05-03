@@ -133,6 +133,7 @@ sync_chronicle_entry() {
     date_mm_dd="$(date '+%m-%d')"
     year_month="$(date '+%Y-%m')"
 
+    local chronicle_rc
     (
         flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
 
@@ -207,6 +208,10 @@ with open(chronicle_path, "w", encoding="utf-8") as f:
 print(action)
 PY
     ) 200>"/tmp/mas-chronicle.lock"
+    chronicle_rc=$?
+    if [ "$chronicle_rc" -ne 0 ]; then
+        return "$chronicle_rc"
+    fi
 
     echo "[chronicle] synced: $cmd_id"
 }
@@ -215,6 +220,7 @@ sync_chronicle_entries_batch() {
     local batch_file="$1"
     [ -s "$batch_file" ] || return 0
 
+    local chronicle_rc
     (
         flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
 
@@ -382,6 +388,10 @@ with open(chronicle_path, "w", encoding="utf-8") as f:
 print(f"synced:{len(synced_ids)}")
 PY
     ) 200>"/tmp/mas-chronicle.lock"
+    chronicle_rc=$?
+    if [ "$chronicle_rc" -ne 0 ]; then
+        return "$chronicle_rc"
+    fi
 
     echo "[chronicle] batch synced"
 }
@@ -1433,6 +1443,7 @@ trim_cmd_chronicle() {
         return 0
     fi
 
+    local chronicle_rc
     (
         flock -w 10 200 || { echo "[chronicle-trim] WARN: flock timeout" >&2; return 1; }
 
@@ -1552,6 +1563,10 @@ with open(chronicle_path, "w", encoding="utf-8") as f:
 print(f"trimmed: archived={total_archived}")
 PY
     ) 200>"/tmp/mas-chronicle.lock"
+    chronicle_rc=$?
+    if [ "$chronicle_rc" -ne 0 ]; then
+        return "$chronicle_rc"
+    fi
 
     echo "[chronicle-trim] done"
 }
