@@ -874,3 +874,4 @@
 | cmd_2527 | report_field_set.sh L400のyaml.dumpが文字列'yes'/'no'を裸のYAML boolean(true/false) として出力する。autofix_main.py L250-252が毎回bool→str変換で消火中。 根本修正: yaml.dump出力で引用符付き文字列化+消火コード除去。 report-write/verdict-check FAIL率100%の根因(軍師現物確認済み)。 | infra | 05-03 | report_field_setのyes文字列保持とauto |
 | cmd_2530 | cmd_complete_gate.sh L1975-1990のfallback globがstale reportを無差別に拾い偽BLOCK。加えてreview_gate.done作成後のgate_metrics CLEAR書込みが保証されていない。再配備時の偽BLOCK根絶+統計精度向上 | infra | 05-03 | cmd_complete_gate lesson track |
 | cmd_2529 | archive_completed.shが3パターン(archive.done不在/placeholder/review_gate.done不在)で報告YAMLをSKIPし永久残存させている。169件蓄積=交差汚染(バグ2)の増幅源。負の複利を解消する | infra | 05-03 | archive_completed.shの報告sweepを修 |
+| cmd_2533 | サブシェル内のreturn 1は親に伝播しない→flock timeout後もecho synced が無条件実行→chronicle更新失敗が成功として記録される。3箇所(L137,L219,L1437)を修正 | infra | 05-03 | archive_completed.shのchronicle |
