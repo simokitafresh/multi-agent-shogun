@@ -1161,11 +1161,14 @@ PY
     declare -A _gate_status=()
     classify_review_gate_status() {
         local _crg_path="$1"
+        local _crg_status
         if grep -q "source: deploy_preflight" "$_crg_path" 2>/dev/null; then
             printf 'placeholder'
             return 0
+        else
+            _crg_status=$?
         fi
-        case "$?" in
+        case "$_crg_status" in
             1) printf 'ok' ;;       # readable, but not a deploy_preflight placeholder
             *) printf 'missing' ;;  # missing/unreadable, including TOCTOU deletion
         esac

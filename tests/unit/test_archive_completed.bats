@@ -428,6 +428,50 @@ GATE
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1623.yaml" ]
 }
 
+@test "cmd_2549: report archive skips when review_gate.done disappears before read" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2549race
+    status: completed
+    purpose: "review gate race test"
+    project: infra
+YAML
+
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2549race.yaml" <<'YAML'
+parent_cmd: cmd_2549race
+status: completed
+result:
+  summary: "race report"
+YAML
+
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_2549race" "$TEST_PROJECT/bin"
+    cat > "$TEST_PROJECT/queue/gates/cmd_2549race/review_gate.done" <<'GATE'
+timestamp: 2026-05-04T00:00:00
+source: gunshi_review
+result: LGTM
+GATE
+    touch "$TEST_PROJECT/queue/gates/cmd_2549race/archive.done"
+
+    cat > "$TEST_PROJECT/bin/grep" <<'EOF'
+#!/usr/bin/env bash
+for arg in "$@"; do
+    case "$arg" in
+        */queue/gates/cmd_2549race/review_gate.done)
+            rm -f "$arg"
+            break
+            ;;
+    esac
+done
+exec /usr/bin/grep "$@"
+EOF
+    chmod +x "$TEST_PROJECT/bin/grep"
+
+    PATH="$TEST_PROJECT/bin:$PATH" run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"review_gate.done not found for cmd_2549race"* ]]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2549race.yaml" ]
+}
+
 @test "cmd_2529: sweep backfills missing archive.done when gate_metrics has CLEAR" {
     mkdir -p "$TEST_PROJECT/logs" "$TEST_PROJECT/queue/gates/cmd_2529a"
     cat > "$TEST_PROJECT/logs/gate_metrics.log" <<'EOF'
