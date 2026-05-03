@@ -230,6 +230,7 @@ cmdの起票は以下の2段階で行う。効率化を求めて設計品質を�
 
 1. **書く**: Read toolで`queue/shogun_to_karo.yaml`末尾を確認 → Edit toolでcmdブロックを追記
    - **初期statusは`draft`で書け**（pendingにするとninja_monitorが検知し、gate未通過版で家老に配備される。cmd_2008/2009事故）
+   - **`status: on_hold`禁止**（殿裁定2026-05-03）。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。Guard 0bで自動BLOCK
    - `cat >>`やBash直接追記は禁止（Read before Write違反の温床）
    - cmdの内容は将軍が考えて手で書く（**学習機会**。テンプレ自動生成は品質低下の原因）
    - AC設計・command記述・因果関係の思考は将軍の手作業であり学習機会
