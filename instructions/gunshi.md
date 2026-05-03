@@ -344,6 +344,13 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 「このcmdは失敗した」と仮定し失敗原因を3つ。各原因に検知・回復手段があるか確認。
 実例: cmd_1166でYAML修正cmdだが二系統残存→根本未対処→cmd_1167追加が必要に。消火vs品質向上の判定に有効。
 
+**修正cmdの副作用チェック(必須)**: バグ修正cmdの場合、以下5パターンの副作用を事前検死に含めよ(修正12件中42%に副作用実証 2026-05-04):
+1. **return 1波及**: set -euo pipefail環境で修正のreturn 1が想定外の呼出元に伝播しないか
+2. **set +eスコープ過大**: エラー無視区間が意図より広くないか
+3. **フィルタ強化の偽陰性**: 追加した条件が正当なケース(マルチワーカー等)を除外しないか
+4. **上限値の状態除外漏れ**: cap/threshold追加時にpending/GATE待ち状態を除外しているか
+5. **非atomic 2ステップ更新**: 複数yaml_field_setの間に中間状態が見えないか
+
 ### Step 5: Confidence Label（確信度を宣言せよ）
 全ステップの結果を踏まえ、レビュー全体の確信度をHIGH/MEDIUM/LOWでラベル付けする。
 「自分が見落としている可能性」を率直に評価する。
@@ -936,6 +943,18 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 | 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
 | 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
 | 6 | **proposed GP即実行** | `logs/gunshi_gp_tracker.yaml` | proposed/pending GPを走査。**提案前に既存実装をgrep確認(LG033)→既存で解決済みならobsolete。** 自力実行可能→即実装+テスト+完了。不可→家老送信。**提案は行動ではない。実装して初めて行動。** |
+| 7 | **セマンティック監査** | scripts/*.sh (全224本) | grepで検出不能なバグを5カテゴリで探索。修正CLEAR後は**修正副作用スキャン必須**(42%に副作用実証)。設計書→`docs/research/gunshi_semantic_audit_catalog_design_20260503.md` |
+
+**Step 7 セマンティック監査の実行手順**:
+1. `git diff --name-only $(last_scan_hash)..HEAD | grep '^scripts/'` で変更スクリプト特定
+2. 5カテゴリ並列エージェント起動(修正済み箇所を除外リストに指定):
+   - **silent_failure**: エラー握りつぶし・戻り値無視・tmpfile消失・サブシェルreturn偽装
+   - **state_transition**: 状態遷移欠落・dead state・遷移ロジック不在
+   - **race_condition**: TOCTOU・並行書込み・glob展開レース・非atomic更新
+   - **implicit_assumption**: スクリプト間暗黙前提崩壊・配備経路分岐・ローテーション後参照消失
+   - **side_effect**: 修正が導入した新バグ(return 1波及/set+eスコープ/フィルタ偽陰性/cap除外漏れ/非atomic更新)
+3. 検出→優先度判定(P0即時/P1高/P2中/P3低)→掲示板投稿→docs/research/に永続化
+4. **修正CLEAR後**: side_effectカテゴリで修正副作用スキャンを必ず実行(42%検出率実証) |
 
 **サイクルの鉄則**:
 - 1つ完了したら次へ。報告して止まるな
