@@ -66,6 +66,30 @@ _run_post() {
     [[ "$output" == *'count=3'* ]]
 }
 
+@test "pre combined hook blocks autolearned pipe danger in purpose" {
+    printf '%s\n' '2026-05-03T15:32:46Z check=check_cmd_text_pipe_danger count=1 warn=cmd_text_pipe_danger cmd=cmd_2548' > "$TMP_AUTOLEARN"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: grep foo | wc -l\n    command: echo ok\n"}}'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'check_cmd_text_pipe_dangerはpreflight_autolearnで昇格済み'* ]]
+}
+
+@test "pre combined hook blocks autolearned pipe danger in command block" {
+    printf '%s\n' '2026-05-03T15:32:46Z check=check_cmd_text_pipe_danger count=1 warn=cmd_text_pipe_danger cmd=cmd_2548' > "$TMP_AUTOLEARN"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: safe\n    command: |\n      rg foo | wc -l\n    project: infra\n"}}'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'purpose/commandにパイプ文字(|)を検出'* ]]
+}
+
+@test "pre combined hook allows pipe content when pipe danger is not autolearned" {
+    printf '%s\n' '2026-05-02T00:00:00Z check=quality_gate_q8_compound_question count=3 warn=q8_複利の問い cmd=cmd_test' > "$TMP_AUTOLEARN"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: grep foo | wc -l\n    command: echo ok\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'動的追加確認(preflight_autolearn)'* ]]
+    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+}
+
 @test "pre combined hook does not show checklist for other edit targets" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/combined_other_file.txt"}}'
     [ "$status" -eq 0 ]

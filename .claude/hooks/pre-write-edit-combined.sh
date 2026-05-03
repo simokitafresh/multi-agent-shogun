@@ -52,6 +52,37 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回(殿裁定2026-05-03)"
         exit 1
     fi
+    # Guard 0c: preflight_autolearnで昇格済みのcmd本文パイプ警告をpre-writeでBLOCK。
+    # cmd_save.shのcheck_cmd_text_pipe_dangerと同じ対象(purpose/command)だけを見る。
+    if [[ -s "$PREFLIGHT_AUTOLEARN_FILE" ]] && grep -q 'check=check_cmd_text_pipe_danger' "$PREFLIGHT_AUTOLEARN_FILE" 2>/dev/null; then
+        _cmd_text_for_pipe_check="$(printf '%s\n' "$_stk_content" | awk '
+            /^[[:space:]]*purpose:[[:space:]]*/ {
+                line = $0
+                sub(/^[[:space:]]*purpose:[[:space:]]*/, "", line)
+                print line
+                next
+            }
+            /^[[:space:]]*command:[[:space:]]*[|>][+-]?([[:space:]]*#.*)?$/ {
+                in_command = 1
+                next
+            }
+            /^[[:space:]]*command:[[:space:]]*/ {
+                line = $0
+                sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
+                print line
+                next
+            }
+            in_command && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]*/ {
+                in_command = 0
+                next
+            }
+            in_command { print }
+        ' || true)"
+        if [[ "$_cmd_text_for_pipe_check" == *"|"* ]]; then
+            emit_deny "BLOCK: cmd本文のpurpose/commandにパイプ文字(|)を検出。check_cmd_text_pipe_dangerはpreflight_autolearnで昇格済み。引用・別表現・手順分割でシェル/YAML解釈リスクを除去せよ。"
+            exit 1
+        fi
+    fi
     if [[ "$tool_name" == "Edit" ]]; then
         _dynamic_checks=""
         if [[ -s "$PREFLIGHT_AUTOLEARN_FILE" ]]; then
