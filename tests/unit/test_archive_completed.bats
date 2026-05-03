@@ -341,6 +341,170 @@ GATE
     [ -f "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1623.yaml" ]
 }
 
+@test "cmd_2529: sweep backfills missing archive.done when gate_metrics has CLEAR" {
+    mkdir -p "$TEST_PROJECT/logs" "$TEST_PROJECT/queue/gates/cmd_2529a"
+    cat > "$TEST_PROJECT/logs/gate_metrics.log" <<'EOF'
+2026-05-03T00:00:00	cmd_2529a	CLEAR	-	impl	model	routine	none	title
+EOF
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2529a
+    status: completed
+    purpose: "archive.done backfill test"
+    project: infra
+YAML
+    cat > "$TEST_PROJECT/queue/gates/cmd_2529a/review_gate.done" <<'GATE'
+timestamp: 2026-05-03T00:00:00
+source: gunshi_review
+result: LGTM
+GATE
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529a.yaml" <<'YAML'
+parent_cmd: cmd_2529a
+status: completed
+result:
+  summary: "archive done backfill"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_PROJECT/queue/gates/cmd_2529a/archive.done" ]
+    [ -L "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529a.yaml" ]
+}
+
+@test "cmd_2529: sweep replaces deploy_preflight placeholder when gate_metrics has CLEAR" {
+    mkdir -p "$TEST_PROJECT/logs" "$TEST_PROJECT/queue/gates/cmd_2529b"
+    cat > "$TEST_PROJECT/logs/gate_metrics.log" <<'EOF'
+2026-05-03T00:00:00	cmd_2529b	CLEAR	-	impl	model	routine	none	title
+EOF
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2529b
+    status: completed
+    purpose: "placeholder backfill test"
+    project: infra
+YAML
+    cat > "$TEST_PROJECT/queue/gates/cmd_2529b/review_gate.done" <<'GATE'
+timestamp: 2026-05-03T00:00:00
+source: deploy_preflight
+note: placeholder
+GATE
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529b.yaml" <<'YAML'
+parent_cmd: cmd_2529b
+status: completed
+result:
+  summary: "placeholder backfill"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    grep -q '^source: gate_metrics_backfill$' "$TEST_PROJECT/queue/gates/cmd_2529b/review_gate.done"
+    [ -f "$TEST_PROJECT/queue/gates/cmd_2529b/archive.done" ]
+    [ -L "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529b.yaml" ]
+}
+
+@test "cmd_2529: sweep backfills missing review_gate.done when gate_metrics has CLEAR" {
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/logs/gate_metrics.log" <<'EOF'
+2026-05-03T00:00:00	cmd_2529c	CLEAR	-	impl	model	routine	none	title
+EOF
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2529c
+    status: completed
+    purpose: "missing review gate backfill test"
+    project: infra
+YAML
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529c.yaml" <<'YAML'
+parent_cmd: cmd_2529c
+status: completed
+result:
+  summary: "missing review gate backfill"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    grep -q '^source: gate_metrics_backfill$' "$TEST_PROJECT/queue/gates/cmd_2529c/review_gate.done"
+    [ -f "$TEST_PROJECT/queue/gates/cmd_2529c/archive.done" ]
+    [ -L "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529c.yaml" ]
+}
+
+@test "cmd_2529: sweep archives 14d stale gate-incomplete report without CLEAR" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2529d
+    status: completed
+    purpose: "stale gate incomplete archive test"
+    project: infra
+YAML
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529d.yaml" <<'YAML'
+parent_cmd: cmd_2529d
+status: completed
+result:
+  summary: "stale gate incomplete"
+YAML
+    touch -d '15 days ago' "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529d.yaml"
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [ ! -e "$TEST_PROJECT/queue/gates/cmd_2529d/review_gate.done" ]
+    [ -L "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529d.yaml" ]
+}
+
+@test "cmd_2529: sweep archives 14d stale deploy_preflight placeholder without CLEAR" {
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_2529e"
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  - id: cmd_2529e
+    status: completed
+    purpose: "stale placeholder archive test"
+    project: infra
+YAML
+    cat > "$TEST_PROJECT/queue/gates/cmd_2529e/review_gate.done" <<'GATE'
+timestamp: 2026-05-03T00:00:00
+source: deploy_preflight
+note: placeholder
+GATE
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529e.yaml" <<'YAML'
+parent_cmd: cmd_2529e
+status: completed
+result:
+  summary: "stale placeholder"
+YAML
+    touch -d '15 days ago' "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529e.yaml"
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    grep -q '^source: deploy_preflight$' "$TEST_PROJECT/queue/gates/cmd_2529e/review_gate.done"
+    [ -L "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529e.yaml" ]
+}
+
+@test "cmd_2529: sweep caps completed report backlog at 10 while preserving pending" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands: []
+YAML
+    for i in $(seq 1 12); do
+        cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_${i}.yaml" <<YAML
+parent_cmd: cmd_2529cap_${i}
+status: completed
+result:
+  summary: "overflow ${i}"
+YAML
+        touch -d "$((20 - i)) minutes ago" "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_${i}.yaml"
+    done
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_pending.yaml" <<'YAML'
+parent_cmd: cmd_2529cap_pending
+status: pending
+result:
+  summary: "pending"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 10 ]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_pending.yaml" ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*cmd_2529cap_[0-9]*.yaml' | wc -l)" -eq 9 ]
+}
+
 @test "GP-133: report archive proceeds when review_gate.done is gunshi_review" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:
