@@ -132,6 +132,16 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # report_field_set.sh変更→deploy_task+gate_report_formatテスト(間接依存)
+    if [[ "$changed" == *report_field_set* ]]; then
+        for tf in "$TEST_DIR"/test_deploy_task*.bats "$TEST_DIR"/test_gate_report_format*.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # マッチなし → WARN対象
     if [ "$matched" -eq 0 ]; then
         UNMATCHED+=("$changed")
