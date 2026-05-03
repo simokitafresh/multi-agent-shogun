@@ -21,6 +21,7 @@ def main() -> int:
         with open(report_path, encoding="utf-8") as f:
             raw = f.read()
         data = yaml.load(raw, Loader=SafeLoader)
+        base_data = yaml.load(raw, Loader=yaml.BaseLoader) or {}
     except Exception as exc:
         print(f"UNFIXABLE: YAML parse error: {exc}")
         return 1
@@ -172,7 +173,6 @@ def main() -> int:
     if isinstance(bc, dict):
         bc_dict_fixed = False
         bc15_fixed = False
-        bc_bool_fixed = False
         bc_quote_fixed = False
         bc19_fixed = False
 
@@ -246,11 +246,6 @@ def main() -> int:
                         }
                         bc15_fixed = True
                 if isinstance(item, dict):
-                    result = item.get("result")
-                    if isinstance(result, bool):
-                        item["result"] = "yes" if result else "no"
-                        bc_bool_fixed = True
-
                     norm = item.get("result")
                     if isinstance(norm, str):
                         stripped = norm.strip().strip("'\"")
@@ -274,8 +269,6 @@ def main() -> int:
             fixes.append("binary_checks dict→list wrap")
         if bc15_fixed:
             fixes.append("binary_checks {name:val}→{check:name,result:val}正規化")
-        if bc_bool_fixed:
-            fixes.append("binary_checks result boolean→string変換")
         if bc_quote_fixed:
             fixes.append("binary_checks result quote除去('yes'→yes)")
         if bc19_fixed:
@@ -322,6 +315,19 @@ def main() -> int:
     # self_gate_check値正規化(ok→PASS等)は消火→撤去。gate_report_format.shがBLOCK
 
     if fixes:
+        base_bc = base_data.get("binary_checks") if isinstance(base_data, dict) else {}
+        data_bc = data.get("binary_checks")
+        if isinstance(base_bc, dict) and isinstance(data_bc, dict):
+            for ac_key, ac_val in data_bc.items():
+                base_ac_val = base_bc.get(ac_key)
+                if not isinstance(ac_val, list) or not isinstance(base_ac_val, list):
+                    continue
+                for idx, item in enumerate(ac_val):
+                    if idx >= len(base_ac_val) or not isinstance(item, dict) or not isinstance(base_ac_val[idx], dict):
+                        continue
+                    base_rs = str(base_ac_val[idx].get("result", "")).strip().lower()
+                    if base_rs in ("yes", "no"):
+                        item["result"] = base_rs
         data["autofix_applied"] = fixes
         # Write to temp file first, then validate round-trip
         import tempfile

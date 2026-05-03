@@ -1410,7 +1410,7 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
-  summary: ""
+  summary: FILL_THIS
   details: ""
 purpose_validation:
   cmd_purpose: ""
@@ -1564,6 +1564,15 @@ EOF
             for (i = 1; i <= n; i++) if (arr[i] == id) return 1
             return 0
         }
+        function emit_cur(    id, i) {
+            if (cc <= 0) return
+            id = cur_id
+            if (id == "") id = "AC" (++auto_ac_id)
+            if (in_filter(id)) {
+                printf "  %s:\n", id
+                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
+            }
+        }
         function normalize_check_text(text, ac_desc, out) {
             out = text
             if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
@@ -1577,10 +1586,7 @@ EOF
         /^  acceptance_criteria:/ { in_ac=1; next }
         in_ac && /^  [a-z]/ { exit }
         in_ac && /^  - / {
-            if (cur_id != "" && cc > 0 && in_filter(cur_id)) {
-                printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
-            }
+            emit_cur()
             cur_id=""; cur_desc=""; cc=0
             if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
             if (/description:/) {
@@ -1607,10 +1613,7 @@ EOF
             chk[cc]=$0
         }
         END {
-            if (cur_id != "" && cc > 0 && in_filter(cur_id)) {
-                printf "  %s:\n", cur_id
-                for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
-            }
+            emit_cur()
         }
     ' "$task_file" 2>/dev/null)
 
@@ -1707,6 +1710,22 @@ ${_commit_bc}"
                 for (i = 1; i <= n; i++) if (arr[i] == id) return 1
                 return 0
             }
+            function emit_cur(    id, n, i) {
+                if (cur_id == "" && desc == "") return
+                id = cur_id
+                if (id == "") id = "AC" (++auto_ac_id)
+                if (!in_filter(id)) return
+                printf "  %s:\n", id
+                if (desc != "") {
+                    n = split(desc, parts, "。")
+                    for (i=1; i<=n; i++) {
+                        gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
+                        if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
+                    }
+                } else {
+                    printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", id
+                }
+            }
             function normalize_check_text(text, ac_desc, out) {
                 out = text
                 if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
@@ -1720,18 +1739,7 @@ ${_commit_bc}"
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
             in_ac && /^  - / {
-                if (cur_id != "" && in_filter(cur_id)) {
-                    printf "  %s:\n", cur_id
-                    if (desc != "") {
-                        n = split(desc, parts, "。")
-                        for (i=1; i<=n; i++) {
-                            gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
-                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
-                        }
-                    } else {
-                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
-                    }
-                }
+                emit_cur()
                 cur_id=""; desc=""
                 if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
                 if (/description:/) {
@@ -1753,18 +1761,7 @@ ${_commit_bc}"
                 next
             }
             END {
-                if (cur_id != "" && in_filter(cur_id)) {
-                    printf "  %s:\n", cur_id
-                    if (desc != "") {
-                        n = split(desc, parts, "。")
-                        for (i=1; i<=n; i++) {
-                            gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
-                            if (parts[i] != "") printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(parts[i], desc)
-                        }
-                    } else {
-                        printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", cur_id
-                    }
-                }
+                emit_cur()
             }
         ' "$task_file" 2>/dev/null)
         if [ -n "$_ac_stubs" ]; then

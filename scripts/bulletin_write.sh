@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+# ── Fast-path: no-args before SCRIPT_DIR/source ──────────────────────────────
+if [[ $# -lt 1 ]]; then
+    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+    exit 1
+fi
+
 SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
