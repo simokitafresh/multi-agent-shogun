@@ -106,6 +106,17 @@ setup() {
 @test "per-AC: 正しい形式(result yes)でexit 0" {
     run bash "$RFS" "$TEST_TMPDIR/report.yaml" binary_checks.AC1 - <<< '[{check: test, result: yes}]'
     [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml
+with open('$TEST_TMPDIR/report.yaml') as f:
+    data = yaml.safe_load(f)
+value = data['binary_checks']['AC1'][0]['result']
+assert value == 'yes', f'expected string yes, got {value!r}'
+assert isinstance(value, str), type(value).__name__
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
 }
 
 @test "full-field: result空文字はexit 0(テンプレート状態許容)" {

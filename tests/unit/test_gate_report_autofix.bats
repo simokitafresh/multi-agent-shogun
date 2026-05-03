@@ -249,8 +249,8 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 7: binary_checks boolean result → string変換 ===
-@test "binary_checks boolean result is converted to yes/no string" {
+# === Test 7: binary_checks boolean result → 自動変換しない ===
+@test "binary_checks boolean result is not converted by autofix" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -265,15 +265,14 @@ binary_checks:
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"boolean→string"* ]]
+    [[ "$output" == *"NO-FIX-NEEDED"* ]]
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
 bc = d['binary_checks']['AC1']
-assert bc[0]['result'] == 'yes', f'Expected yes, got {bc[0][\"result\"]}'
-assert bc[1]['result'] == 'no', f'Expected no, got {bc[1][\"result\"]}'
+assert bc[0]['result'] is True, f'Expected True, got {bc[0][\"result\"]}'
+assert bc[1]['result'] is False, f'Expected False, got {bc[1][\"result\"]}'
 print('OK')
 "
     [ "$status" -eq 0 ]
@@ -507,9 +506,9 @@ with open('$rpath') as f:
 assert d['verdict'] == 'CONDITIONAL_PASS', f'Expected CONDITIONAL_PASS, got {d[\"verdict\"]}'
 bc1 = d['binary_checks']['AC1']
 bc2 = d['binary_checks']['AC2']
-assert bc1[0] == {'check': 'committed', 'result': 'yes'}, bc1[0]
+assert bc1[0] == {'check': 'committed', 'result': True}, bc1[0]
 assert bc1[1] == {'check': 'lint', 'result': 'PASS'}, bc1[1]
-assert bc2[0] == {'check': 'tests', 'result': 'no'}, bc2[0]
+assert bc2[0] == {'check': 'tests', 'result': False}, bc2[0]
 assert bc2[1] == {'check': 'format', 'result': 'ng'}, bc2[1]
 print('OK')
 "
