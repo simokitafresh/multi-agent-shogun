@@ -219,6 +219,9 @@ if [[ -f "$INBOX_WRITE" ]]; then
     for target in "${NOTIFY_TARGETS[@]}"; do
         if [[ "$target" != "$POSTED_BY" ]]; then
             bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null || true
+            if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
+                echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
+            fi
         fi
     done
 fi
