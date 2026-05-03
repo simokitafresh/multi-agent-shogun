@@ -103,6 +103,70 @@ YAML
     [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
 }
 
+@test "invalid AC count output warns and still sends draft review" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { printf "%s\n" "$1"; }
+        count_task_acceptance_criteria() { printf "not-a-number\n"; }
+        maybe_notify_draft_review "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_normal sasuke task_assigned
+    '
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: WARN (ac_count invalid: not-a-number; sending review)"* ]]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+}
+
+@test "failed AC count command warns and still sends draft review" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { printf "%s\n" "$1"; }
+        count_task_acceptance_criteria() { return 1; }
+        maybe_notify_draft_review "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_normal sasuke task_assigned
+    '
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: WARN (ac_count unavailable; sending review)"* ]]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+}
+
+@test "resolve_cmd preserves purpose containing shell pipe operators" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_2548_pipe:
+    title: "pipe purpose"
+    project: infra
+    scope_mode: exact
+    purpose: "trim_cmd_chronicle || true を保持し、後続文も切り詰めない"
+    acceptance_criteria:
+      - description: "purpose is preserved"
+      - description: "draft review is sent"
+YAML
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  status: idle
+YAML
+
+    run deploy_task_template_only sasuke cmd_2548_pipe
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$TEST_PROJECT/queue/tasks/sasuke.yaml").read_text(encoding="utf-8"))
+purpose = data["task"]["purpose"]
+assert purpose == "trim_cmd_chronicle || true を保持し、後続文も切り詰めない", purpose
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "draft review is sent only once per cmd" {
     run_draft_review "cmd_normal"
     [ "$status" -eq 0 ]
