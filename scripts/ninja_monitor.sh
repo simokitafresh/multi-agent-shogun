@@ -82,6 +82,8 @@ WATCHED_DEPS=(
 )
 DEPS_HASH="$(compute_deps_hash)"
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
+LAST_NTFY_HEALTH_CHECK=$EPOCHSECONDS  # ntfy_listener health check最終実行時刻（epoch秒）
+NTFY_HEALTH_CHECK_INTERVAL=300        # ntfy_listener health check間隔（秒）
 LAST_WATCHER_RESTART=0  # inbox_watcher最終再起動時刻（epoch秒）
 WATCHER_RESTART_COOLDOWN_MIN=3  # inbox_watcher連続再起動防止クールダウン（分）
 LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
@@ -2190,6 +2192,14 @@ write_state_file() {
 # ─── ntfy_listenerヘルスチェック (cmd_635) ───
 # heartbeatファイル(ext4)→ログ(NTFS)の順で生存判定。NTFS mtime遅延による偽stale防止
 check_ntfy_listener_health() {
+    local now
+    now=$EPOCHSECONDS
+    local elapsed=$((now - LAST_NTFY_HEALTH_CHECK))
+    if [ "$elapsed" -lt "$NTFY_HEALTH_CHECK_INTERVAL" ]; then
+        return 0
+    fi
+    LAST_NTFY_HEALTH_CHECK=$now
+
     local log_file="$SCRIPT_DIR/logs/ntfy_listener.log"
     local heartbeat_file="/tmp/ntfy_listener.heartbeat"
     local log_epoch=""
@@ -2229,8 +2239,6 @@ check_ntfy_listener_health() {
         fi
     fi
 
-    local now
-    now=$EPOCHSECONDS
     local age_min=$(( (now - log_epoch) / 60 ))
 
     # しきい値以内なら正常 — 何もしない
@@ -2787,21 +2795,21 @@ update_inbox_counts() {
 
 # ─── lesson health定期チェック (cmd_279 Gate3) ───
 # gate_lesson_health.shを呼び出し、ALERTなら家老に通知
-LAST_LESSON_CHECK=0
+LAST_LESSON_CHECK=$EPOCHSECONDS
 LESSON_CHECK_INTERVAL=600  # 10分間隔(秒)
 LESSON_ALERT_DEBOUNCE=21600 # 同一ALERT再通知抑制(6時間)
 LAST_LESSON_ALERT=0
 
 # ─── workaround pattern定期チェック (cmd_1153 AC3) ───
-LAST_WORKAROUND_PATTERN_CHECK=0
+LAST_WORKAROUND_PATTERN_CHECK=$EPOCHSECONDS
 WORKAROUND_PATTERN_CHECK_INTERVAL=600  # 10分間隔(秒)
 
 # ─── gate_improvement定期チェック (cmd_1114) ───
-LAST_GATE_IMPROVEMENT=0
+LAST_GATE_IMPROVEMENT=$EPOCHSECONDS
 GATE_IMPROVEMENT_INTERVAL=300  # 5分間隔(秒)
 
 # ─── 第三層loop health定期チェック (三層学習ループ自己監視) ───
-LAST_LOOP_HEALTH_CHECK=0
+LAST_LOOP_HEALTH_CHECK=$EPOCHSECONDS
 LOOP_HEALTH_CHECK_INTERVAL=1800  # 30分間隔(秒)
 LOOP_HEALTH_ALERT_DEBOUNCE=21600  # 同一ALERT再通知抑制(6時間)
 LAST_LOOP_HEALTH_ALERT=0
