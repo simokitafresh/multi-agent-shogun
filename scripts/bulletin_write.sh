@@ -63,11 +63,6 @@ normalize_csv_agents() {
     printf '%s\n' "$(printf '%s\n' "${normalized[@]}" | awk '!seen[$0]++' | paste -sd ',' -)"
 }
 
-if [[ $# -lt 1 ]]; then
-    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
-    exit 1
-fi
-
 POSTED_BY=""
 if [[ -n "${TMUX_PANE:-}" ]]; then
     POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"

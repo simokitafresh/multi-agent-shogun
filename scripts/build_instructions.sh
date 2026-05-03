@@ -169,9 +169,8 @@ for cli_type in copilot kimi; do
     done
 done
 
-# Wait for all parallel builds to finish, then copy results to OUTPUT_DIR in one batch
+# Wait for all instruction builds to finish
 wait
-cp "$_BUILD_OUTDIR"/*.md "$OUTPUT_DIR/"
 
 # ============================================================
 # Helper: Transform CLAUDE.md to CLI-specific auto-load file
@@ -263,10 +262,14 @@ generate_copilot_instructions() {
 
     mkdir -p "$github_dir"
 
+    local tmp_file
+    tmp_file=$(mktemp)
     transform_claude_md "copilot" \
         "copilot-instructions.md" "copilot-instructions.local.md" \
         ".copilot/config.json" ".copilot/mcp-config.json" \
-        "GitHub Copilot CLI" "$claude_md" "$output_path"
+        "GitHub Copilot CLI" "$claude_md" "$tmp_file"
+    cp "$tmp_file" "$output_path"
+    rm -f "$tmp_file"
 
     echo "  ✅ Created: .github/copilot-instructions.md"
 }
@@ -291,10 +294,14 @@ generate_kimi_instructions() {
 
     mkdir -p "$agents_dir"
 
+    local tmp_file
+    tmp_file=$(mktemp)
     transform_claude_md "kimi" \
         "agents/default/system.md" "agents/default/system.local.md" \
         ".kimi/config.json" ".kimi/mcp.json" \
-        "Kimi K2 CLI" "$claude_md" "$system_md_path"
+        "Kimi K2 CLI" "$claude_md" "$tmp_file"
+    cp "$tmp_file" "$system_md_path"
+    rm -f "$tmp_file"
 
     echo "  ✅ Created: agents/default/system.md"
 
@@ -316,10 +323,11 @@ EOFYAML
     echo "  ✅ Created: agents/default/agent.yaml"
 }
 
-# Generate CLI auto-load files
-generate_agents_md
-generate_copilot_instructions
-generate_kimi_instructions
+# Generate CLI auto-load files in parallel (functions defined above)
+generate_agents_md &
+generate_copilot_instructions &
+generate_kimi_instructions &
+wait  # Wait for all generators to finish
 
 echo ""
 echo "=== Build Complete ==="
