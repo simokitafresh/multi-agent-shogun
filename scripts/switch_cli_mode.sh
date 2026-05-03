@@ -8,6 +8,28 @@
 
 set -euo pipefail
 
+# ── Fast-path: --help/-h/no-args before source calls ──────────────────────────
+case "${1:-}" in
+    ""|"-h"|"--help")
+        cat <<'USAGE'
+switch_cli_mode.sh — CLI failover switch
+
+Usage:
+  bash scripts/switch_cli_mode.sh <claude|codex> [options]
+
+Options:
+  --scope <core|all|csv>  Target agents.
+                          core = shogun,karo (default)
+                          all  = shogun,karo + 8 ninjas
+                          csv  = e.g. shogun,karo,saizo
+  --dry-run               Show planned changes only.
+  --no-relaunch           Update settings only (do not restart pane CLIs).
+  -h, --help              Show this help.
+USAGE
+        exit 0
+        ;;
+esac
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS_FILE="${SCRIPT_DIR}/config/settings.yaml"
 
