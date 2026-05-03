@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-03 -->
+<!-- last_updated: 2026-05-04 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 

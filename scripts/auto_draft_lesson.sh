@@ -209,6 +209,6 @@ fi
 if [ -n "$BECAUSE_REASON" ]; then
     EXTRA_FLAGS+=(--because "$BECAUSE_REASON")
 fi
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "$SOURCE_CMD" --status draft "${EXTRA_FLAGS[@]}"
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status draft "${EXTRA_FLAGS[@]}"
 
 echo "[auto_draft] Draft lesson registered successfully"

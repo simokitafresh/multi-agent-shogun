@@ -554,6 +554,10 @@ fi
 # Parse dot notation
 IFS='.' read -ra KEYS <<< "$DOT_KEY"
 NUM_KEYS=${#KEYS[@]}
+AUTO_COMPLETE_STATUS=0
+if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
+    AUTO_COMPLETE_STATUS=1
+fi
 
 # Create file if not exists
 [ -f "$REPORT_PATH" ] || touch "$REPORT_PATH"
@@ -959,6 +963,19 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             exit 1
         fi
 
+        # cmd_2543: verdict確定とstatus完了を同じflock内・同じatomic replaceで反映する。
+        # 旧実装はverdict書込み後に別プロセスでstatusを書き、短時間だけ中間状態が見え得た。
+        if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
+            status_tmp="${REPORT_PATH}.tmp.$$.$attempt.status"
+            rm -f "$status_tmp"
+            if ! _report_field_set_fast_scalar "$tmp_file" "$status_tmp" "status" "completed" 1 "status"; then
+                rm -f "$tmp_file" "$status_tmp"
+                echo "FATAL: report_field_set: failed to auto-complete status for $REPORT_PATH" >&2
+                exit 1
+            fi
+            mv "$status_tmp" "$tmp_file"
+        fi
+
         if ! mv "$tmp_file" "$REPORT_PATH"; then
             rm -f "$tmp_file"
             echo "FATAL: report_field_set: atomic replace failed" >&2
@@ -983,6 +1000,9 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         fi
 
         echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
+        if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
+            echo "[report_field_set] status = completed (auto after verdict)"
+        fi
 
     ) 200>"$LOCKFILE" && break
 
@@ -992,17 +1012,6 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
     fi
     sleep 0.5
 done
-
-# --- cmd_2531: verdict確定時のreport status自動完了 ---
-# verdictが有効値として書き込まれた時点で、報告は完了状態にできる。
-# 空/未設定のverdictでは何もしないため、作業途中テンプレートはpendingのまま残る。
-if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
-    if ! bash "$0" "$REPORT_PATH" status completed >/dev/null; then
-        echo "[report_field_set] FATAL: verdict written but status auto-complete failed for $REPORT_PATH" >&2
-        exit 1
-    fi
-    echo "[report_field_set] status = completed (auto after verdict)"
-fi
 
 # --- GP-072c2: Post-write dict→list auto-conversion ---
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換

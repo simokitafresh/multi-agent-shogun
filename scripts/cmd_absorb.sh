@@ -246,6 +246,8 @@ check_stale_lessons() {
             echo "$matches" | while IFS= read -r line; do
                 echo "  $line"
             done
+        else
+            echo "INFO: ${cmd_id}由来の教訓残存なし (project=${project_id})"
         fi
     done
 }
