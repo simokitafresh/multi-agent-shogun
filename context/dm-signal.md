@@ -13,6 +13,8 @@
 |---------|------|------------|
 | `context/dm-signal-core.md` | DB構造、四神定義、忍法BB、API、ディレクトリ構成、恒久ルール | 実装・DB操作・パイプライン変更 |
 | `context/dm-signal-ops.md` | recalculate Phase、OPT-E、性能、GS手順、ドキュメントインデックス、ステータス | 運用・GS実行・デプロイ・保守 |
+| `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md` | DM-Signal用語辞書terminology index。曖昧語27系統のcanonical name一覧 | cmd起票・レビュー・実装でDM-Signal用語の意味が曖昧な時 |
+| `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md` | DM-Signal用語辞書disambiguation SSOT。scope pattern別の意味・canonical定義 | 用語の正本確認・辞書更新・曖昧語解消設計 |
 | `context/gunshi-silent-fallback-analysis.md` | cmd_1483偵察結果: 残9HIGH優先順位(4グループ)。SF-001/003修正済 | silent fallback修正cmd起票時 |
 
 ## DB操作ランブック（必読）
