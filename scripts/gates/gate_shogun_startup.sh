@@ -74,6 +74,28 @@ if echo "$result2_5" | grep -q "ALERT\|WARN"; then
     fi
 fi
 
+# --- Gate 3.5: セマンティクスインデックス鮮度 (cmd_2563) ---
+echo "■ セマンティクスインデックス鮮度"
+semantic_index="$SCRIPT_DIR/docs/semantic-index/index.md"
+if [ -f "$semantic_index" ]; then
+    last_mod=$(stat -c %Y "$semantic_index")
+    now=$(date +%s)
+    age_days=$(( (now - last_mod) / 86400 ))
+    if [ "$age_days" -ge 14 ]; then
+        echo "  ALERT: セマンティクスインデックスが${age_days}日間未更新"
+        overall="ALERT"
+        alerts+=("セマンティクスインデックス鮮度: ALERT (${age_days}日)")
+    else
+        echo "  OK: ${age_days}日前に更新"
+    fi
+else
+    echo "  WARN: docs/semantic-index/index.md 不在"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+    fi
+    alerts+=("セマンティクスインデックス鮮度: index不在")
+fi
+
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ cmd委任状態"
 result3=$("$GATE_DIR/gate_cmd_state.sh" 2>&1 | tail -1)

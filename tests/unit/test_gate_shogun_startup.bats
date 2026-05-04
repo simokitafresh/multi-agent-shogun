@@ -23,6 +23,7 @@ setup_file() {
              "$SHARED_BASE/memory" \
              "$SHARED_BASE/logs" \
              "$SHARED_BASE/context" \
+             "$SHARED_BASE/docs/semantic-index" \
              "$SHARED_BASE/config" \
              "$SHARED_BASE/instructions" \
              "$SHARED_BASE/bin" \
@@ -48,6 +49,23 @@ MOCK
 echo "知識鮮度: OK — fresh=8 stale=0 warn=0 total=8"
 MOCK
     chmod +x "$SHARED_BASE/scripts/gates/gate_knowledge_freshness.sh"
+
+    # Gate 3.5: semantic index freshness (fresh by default)
+    cat > "$SHARED_BASE/docs/semantic-index/index.md" <<'EOF'
+# セマンティクスインデックス SSOT
+
+## recalculate_pipeline — 再計算パイプライン
+
+| 属性 | 値 |
+|------|---|
+| id | recalculate_pipeline |
+| label | 再計算パイプライン |
+| aliases | fullrecalculate, recalc |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/dm-signal-core.md` |
+EOF
 
     # Gate 3 mock: gate_cmd_state.sh → OK
     cat > "$SHARED_BASE/scripts/gates/gate_cmd_state.sh" <<'MOCK'
@@ -419,6 +437,17 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"知識辞書鮮度"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "semantic index stale 14+ days → 総合判定: ALERT" {
+    touch -d '15 days ago' "$TEST_TMPDIR/docs/semantic-index/index.md"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"セマンティクスインデックス鮮度"* ]]
+    [[ "$output" == *"ALERT: セマンティクスインデックスが"* ]]
+    [[ "$output" == *"日間未更新"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
