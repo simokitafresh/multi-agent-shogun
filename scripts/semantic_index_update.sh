@@ -176,13 +176,7 @@ def append_row_to_block(block, row):
     if row in block:
         return block, False
     lines = block.rstrip("\n").splitlines()
-    insert_at = len(lines)
-    # Resource table starts at the second "| 種別 |" header. Insert before trailing blanks/next content.
-    for i, line in enumerate(lines):
-        if re.match(r"^\|\s*種別\s*\|", line):
-            insert_at = len(lines)
-            break
-    lines.insert(insert_at, row)
+    lines.append(row)
     return "\n".join(lines) + "\n\n", True
 
 text = index_path.read_text(encoding="utf-8")
