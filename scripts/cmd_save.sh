@@ -2023,6 +2023,53 @@ check_impl_push_ac() {
 
 check_impl_push_ac
 
+# --- Check 11.1: dm-signal raw layer notation warning ---
+# 目的: dm-signal cmdで文脈なし生L0-L4を使うと、PF階層と計算階層が混線するためcanonical名を促す
+check_dm_signal_bare_layer_reference() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local PROJECT_ID
+    if declare -F cmd_block_get_field >/dev/null 2>&1; then
+        PROJECT_ID="$(cmd_block_get_field "project")"
+    else
+        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+            /^[[:space:]]*project:[[:space:]]*/ {
+                sub(/^[[:space:]]*project:[[:space:]]*/, "")
+                gsub(/^["'\''"]|["'\''"]$/, "")
+                print
+                exit
+            }
+        ')
+    fi
+    [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+
+    local raw_hits=""
+    local line trimmed
+    while IFS= read -r line; do
+        trimmed="${line#"${line%%[![:space:]]*}"}"
+        [[ -z "$trimmed" ]] && continue
+
+        # Exclusions: code spans, file paths, canonical names, and mathematical contexts.
+        [[ "$trimmed" == *'`'* ]] && continue
+        [[ "$trimmed" =~ (/|[[:alnum:]_-]+\.(md|py|sh|yaml|yml|csv|json|txt|db|sqlite)) ]] && continue
+        [[ "$trimmed" =~ (pf_L[0-4]|calc_L[0-4]|ctx_L[0-4]|doc_L[0-4]|sg_L[0-4]) ]] && continue
+        [[ "$trimmed" =~ (正則化|ノルム|norm|regularization|regression|loss|lambda|λ|距離|行列|ベクトル|vector|matrix) ]] && continue
+
+        if [[ "$trimmed" =~ (^|[^A-Za-z0-9_])L[0-4]([^A-Za-z0-9_]|$) ]]; then
+            raw_hits+="${trimmed}"$'\n'
+        fi
+    done <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}"
+
+    [[ -z "$raw_hits" ]] && return 0
+
+    echo "WARNING: dm-signal cmdに文脈なし生L0-L4表記を検出。pf_L0/pf_L1/pf_L2 または calc_L1/calc_L2/calc_L3 などcanonical名で曖昧性を潰せ" >&2
+    echo "  該当行: $(printf '%s' "$raw_hits" | head -3 | tr '\n' ' ')" >&2
+    echo "  除外: バッククォート/ファイルパス/canonical名接頭辞/数学キーワード同一行" >&2
+    record_warn_reason "dm-signal文脈なし生L0-L4表記" "check=check_dm_signal_bare_layer_reference"
+}
+
+check_dm_signal_bare_layer_reference
+
 # --- Check 11.3: AC推奨/必須混在検出（informational — WARN_COUNTに加算しない） ---
 # 起源: GP-173。verdict_override 2件(cmd_karo_fix_flock_silent)。ACに推奨事項混入→忍者正FAIL→家老override
 # 目的: ACテキストに推奨キーワードが含まれる場合にWARNし、notesへの分離を促す

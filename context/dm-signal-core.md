@@ -9,9 +9,9 @@
 
 | Layer | 名前 | 内容 | 状態 |
 |-------|------|------|------|
-| L0 | 四神 | 個別DM戦略（青龍/朱雀/白虎/玄武）のパラメータGS・検証 | 完了(12体登録済み) |
-| L1 | 忍法 | 5忍法(分身/追い風/抜き身/変わり身/加速)×3モード(激攻/鉄壁/常勝)のGS・登録 | 完了(20体登録済み) |
-| L2 | 奥義 | 上位構造の堅牢性検証（WF優先。FoFは乗り換え戦略のため時間軸評価が本質。CPCVは補助） | 登録済み(21体) |
+| L0 | 四神 (`pf_L0`) | 個別DM戦略（青龍/朱雀/白虎/玄武）のパラメータGS・検証 | 完了(12体登録済み) |
+| L1 | 忍法 (`pf_L1`) | 5忍法(分身/追い風/抜き身/変わり身/加速)×3モード(激攻/鉄壁/常勝)のGS・登録 | 完了(20体登録済み) |
+| L2 | 奥義 (`pf_L2`) | 上位構造の堅牢性検証（WF優先。FoFは乗り換え戦略のため時間軸評価が本質。CPCVは補助） | 登録済み(21体) |
 
 - 2026-04-30: L2奥義21体はcmd_2424で本番hide登録+fullrecalculate完了。登録運用詳細は `context/dm-signal-ops.md` §34。
 - L652: context §0のL2体数・L3状態・四神体数が実態と乖離→更新必要（cmd_2292）
@@ -73,10 +73,10 @@ Phase構成全量 → `docs/research/fullrecalculate-architecture-2026-03-28.md`
 |-------|------|------|---------|
 | L0(データ) | Price table | 全ての原点。営業日=Priceレコード存在日 | — |
 | L0(ルール) | trade-rule.md | 理論上の理想形(11絶対ルール定義) | `docs/rule/trade-rule.md` |
-| L1a | calculate_monthly_return() | 月次リターンのSSOT関数 | `backend/app/services/return_calculator.py` |
-| L1b | calculate_trade_period_return() | Trade期間リターンのSSOT関数（月次複利合成方式 cmd_768） | `backend/app/services/return_calculator.py` |
-| L2 | MonthlyReturn table | L1aの事前計算キャッシュ。`recalculate_fast.py`で生成 | — |
-| L3 | UI表示層 | L1/L2を使用する派生実装 | — |
+| L1a (`calc_L1`) | calculate_monthly_return() | 月次リターンのSSOT関数 | `backend/app/services/return_calculator.py` |
+| L1b (`calc_L1`) | calculate_trade_period_return() | Trade期間リターンのSSOT関数（月次複利合成方式 cmd_768） | `backend/app/services/return_calculator.py` |
+| L2 (`calc_L2`) | MonthlyReturn table | L1aの事前計算キャッシュ。`recalculate_fast.py`で生成 | — |
+| L3 (`calc_L3`) | UI表示層 | L1/L2を使用する派生実装 | — |
 
 → `projects/dm-signal.yaml` ssot_hierarchy
 UUID不一致: DM7+以外は2DB間でUUID異なる（§3参照）
