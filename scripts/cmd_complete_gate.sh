@@ -5334,7 +5334,9 @@ else
         # BLOCK理由から還流先スキルを特定(自動推定はgate名でcmd-completeに誤マッチする)
         _target_skill=""
         case "$block_reason" in
-            *lessons_useful*|*lesson_candidate*|*draft_lessons*|*lesson_done*|*report_format*|*report_yaml_missing*)
+            *missing_gate*|*lesson_done_missing*|*draft_lessons*)
+                _target_skill="cmd-complete" ;;
+            *lessons_useful*|*lesson_candidate*|*report_format*|*report_yaml_missing*)
                 _target_skill="report-write" ;;
             *binary_checks_fail*|*purpose_validation*)
                 _target_skill="verdict-check" ;;

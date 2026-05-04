@@ -273,6 +273,35 @@ EOF
     [ "$status" -ne 0 ]
 }
 
+@test "cmd_complete_gate routes workflow failures to cmd-complete and report content failures to report-write" {
+    run python3 - <<'PY'
+import os
+from pathlib import Path
+
+text = (Path(os.environ["PROJECT_ROOT"]) / "scripts/cmd_complete_gate.sh").read_text(encoding="utf-8")
+start = text.index('case "$block_reason" in')
+end = text.index('        esac', start)
+case_block = text[start:end]
+case_lines = case_block.splitlines()
+
+workflow_idx = next(i for i, line in enumerate(case_lines) if "cmd-complete" in line)
+report_idx = next(i for i, line in enumerate(case_lines) if "report-write" in line)
+workflow_line = case_lines[workflow_idx - 1]
+report_line = case_lines[report_idx - 1]
+
+for pattern in ("missing_gate", "lesson_done_missing", "draft_lessons"):
+    assert pattern in workflow_line, f"{pattern} must route to cmd-complete"
+    assert pattern not in report_line, f"{pattern} must not route to report-write"
+
+for pattern in ("lessons_useful", "lesson_candidate", "report_format", "report_yaml_missing"):
+    assert pattern in report_line, f"{pattern} must route to report-write"
+
+print("OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "explicit report-write and ninja-commit routing still records requested skill" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/ninja-commit"
     cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
