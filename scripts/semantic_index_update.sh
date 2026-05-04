@@ -246,11 +246,11 @@ PY
     )"
     printf '%s\n' "$changed_flag" | grep -v '^__SEMANTIC_INDEX_CHANGED__$' || true
     if printf '%s\n' "$changed_flag" | grep -qx '__SEMANTIC_INDEX_CHANGED__'; then
-        if [ -x "$map_generate" ]; then
+        if [ -f "$map_generate" ]; then
             bash "$map_generate" >/dev/null
             echo "semantic-map regenerated"
         else
-            echo "WARN: semantic map generator not executable: $map_generate" >&2
+            echo "WARN: semantic map generator not found: $map_generate" >&2
         fi
     fi
 ) 200>"$lock_path"
