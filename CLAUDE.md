@@ -123,6 +123,7 @@ Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
         → context/{project}.md（要約のみ）→ context/cmd-chronicle.md
+        → context/semantic-map.md（概念索引。用語が曖昧な時の逆引き入口）
         → context/gunshi-*.md → dialogue_preprocessing_research末尾(最新Phase)
         + gunshi-nazenaze-synthesis.md
         研究日誌の読み方: 通常=末尾のみ。殿が「読め」→全文を最初から省略せず読む
@@ -434,6 +435,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - Claude version pin/rollback|2.1.87固定。auto-updateは`~/.local/bin/claude`を上書きするが`~/bin/claude`は不変|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
+- セマンティクスインデックス|概念索引=`context/semantic-map.md`、概念検索=`bash scripts/semantic_search.sh "<query>"`|用語が曖昧な時は起動時索引+CLI検索で関連ファイルへ到達|→ `docs/research/semantic_index_design.md`
 
 ## Cross-Project Context
 - `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
