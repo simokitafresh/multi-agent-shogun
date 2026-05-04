@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L710 -->
+<!-- last_synced_lesson: L711 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -200,3 +200,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L677-L708は振り分け済 → ops索引(L677:SQLite検証/L678:合成ベンチ/L680:CLI引数照合/L684:output-dir alias/L688:Payload meta/L692:SSOT照合/L708:valid_start_date), ops§6-7(L690:sync完了判定/L701:fullrecalc復元), research§GS結果(L685:selector流用/L686:SQLite月次), research§パリティ(L699:NULL除外), research索引(L693:時間解像度), core§19.2(L694:top_n分離/L696:FoF top_n/L703:ticker×weight判定), frontend§12(L702:UUID漏れ/L704:precomputed weights/L705:月初Signal)。重複削除: L679≡L678, L681-L683≡L680, L689≡L688, L691≡L690, L695≡L694, L698≡L696, L700≡L699, L706≡L705。L687/L697/L707自動生成→削除）
 - L709: FoF weights健全性チェックはconfigではなくfof_component_weightsを正本にせよ（cmd_2458）
 - L710: L0-L4語彙は新cmdでprefix必須にすべき（cmd_2553）
+- L711: [自動生成] 有効教訓の記録を怠った: cmd_2558（cmd_2558）
