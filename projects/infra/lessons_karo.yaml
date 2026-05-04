@@ -17,7 +17,8 @@ lessons:
     LK065で17件を原理統合済み。信号は事実ではない。ダッシュボードは過去。pane末尾は残像。
     capture-pane/grep/gh run viewで一次データを確認してから行動。
     CI赤/STALL/idle通知全てに適用。pane tail -3で判断するな(8回見逃し実証)。
-  source_ids: [LK006, LK009, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085]
+    追加吸収: LK005(全リポジトリ網羅確認), LK010(殿指摘は自分の誤り仮説から確認)。
+  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2'
@@ -30,7 +31,8 @@ lessons:
     (2)再配備前はtask YAMLを全フィールドリセット(3点クリアでは旧ACが残存)
     (3)parent_cmd手動設定ではACが上書きされない
     (4)Codex忍者はCLAUDE.md未読→nudgeにtask YAMLパス付き具体指示を送信
-  source_ids: [LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092]
+    追加吸収: LK002(YAMLマルチラインresolve), LK008(--direct stale reset), LK011(Codex nudge絶対パス)。
+  source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh STALE_FIELDS全フィールドクリア+重複ガード(GP-042)+Codex config.toml instruction設定'
@@ -41,7 +43,7 @@ lessons:
     STALL通知は信号であり事実ではない。検証3点:
     (i)task YAML progressに進捗あるか (ii)同一cmd_idが他忍者に配備済みでないか (iii)uncommitted changesがあるか
     Stage 1ガード(assigned/pending/acknowledged/in_progress保護)で構造防御。
-  source_ids: [LK001, LK003, LK019, LK032]
+  source_ids: [LK019, LK032]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh Stage 1ガード+deploy_task.sh重複ガード+karo.md STALL手順'
@@ -55,7 +57,7 @@ lessons:
     (3)忍者別cmd_idで配備(重複ガード回避)
     (4)修行と実バグ修正の一体化。忍者の目がコードベースを巡回する効果
     (5)pane直接観察→gate_fire_logでは見えない摩擦の発見
-  source_ids: [LK013, LK014, LK015, LK016, LK026, LK027, LK033, LK034]
+  source_ids: [LK014, LK015, LK016, LK026, LK027, LK033, LK034]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'context/training-cycle.md+deploy_task.sh テンプレート自動生成+gate_fire_log計測'
@@ -68,7 +70,7 @@ lessons:
     3段階: (1)パターン集計→3件同一で構造的解決cmd起票 (2)gate作成 (3)発火率100%確認。
     代筆禁止: gate BLOCKされた報告は忍者に差し戻せ(免疫応答を妨げるな)。
     教訓L2/L3不在: 記録だけでは行動は変わらない。automated/enforcementフィールド必須。
-  source_ids: [LK007, LK010, LK011, LK064]
+  source_ids: [LK064]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'gate_report_format.sh+gate_karo_startup.sh+karo_workaround_log.sh ALERT→PD自動起票(LK049)'
@@ -94,7 +96,8 @@ lessons:
     cmdが曖昧→タスクYAMLが曖昧→忍者が迷う→報告不完全→教訓が浅い。
     配備品質が忍者の作業品質を決める。効率は品質の結果であり目的ではない(殿厳命)。
     仕組み変更時は3層同時修正必須(テンプレート/忍者ルール/家老ルール)。
-  source_ids: [LK004, LK017, LK038]
+    追加吸収: LK007(テンプレートデフォルト値はgate通過値にする)。
+  source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh テンプレート品質+karo-operations.md §1配備+§3レビュー'
@@ -128,7 +131,7 @@ lessons:
     (2)ACに出力ファイル名プレフィックス(cmd_XXXX_*)を明記
     (3)研究cmd完了時のcontext還流が仕組み化されていない→gate_freshness WARNは遅い
     (4)DC前に既存裁定との重複チェック必須
-  source_ids: [LK005, LK058, LK069, LK071, LK072]
+  source_ids: [LK058, LK069, LK071, LK072]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'gate_gunshi_report_precheck.sh PRE3(ファイル実在)+SG7 context_reflux'
@@ -139,7 +142,8 @@ lessons:
     gitignore対象ファイルへのcommit ACは達成不可能。推奨事項を必須binary_checkに混入。
     verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。
     CI完了待ちで忍者を止めるな(報告を先に書かせろ)。
-  source_ids: [LK042, LK020, LK078]
+    追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。
+  source_ids: [LK006, LK042, LK020, LK078]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh commit check gitignore確認+karo-operations.md §2分解パターン'
@@ -151,7 +155,8 @@ lessons:
     bats OOM(個別テスト指定)。idle通知standbyモード。idle_cycle on/off設定。
     clear_command post-verification(送信=停止ではない)。@agent_state Codex残留。
     karo_workaroundsテストデータ混入。auto-commit instructions→build_instructions.sh。
-  source_ids: [LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080]
+    追加吸収: LK001(background shell残存で/clear不発), LK009(@agent_id汚染), LK012(pane CWD残留)。
+  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh各修正+inbox_watcher.sh各修正+cmd_complete_gate.sh lifecycle自動化'
@@ -162,7 +167,8 @@ lessons:
     scout_exempt→commit check消去バグ修正(2fb539d)。self_gate_checkテンプレート追加。
     Codex部分記入報告→RFS競合。karo_direct起票手順。git log --grep choreコミット除外。
     bashテストでbash -lc→bash -c(MOCK_BIN無効化防止)。hookでcat→$(</dev/stdin)禁止。
-  source_ids: [LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090]
+    追加吸収: LK002(YAMLマルチラインresolve), LK003(gunshi_notify status条件), LK004(delegated archive保護), LK008(--direct stale reset), LK011(Codex nudge絶対パス), LK013(task_done通知)。
+  source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh各修正+gate各修正+hook各修正(個別commit参照)'
@@ -239,90 +245,3 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §1配備時のdepends_on分析手順'
-- id: 'LK001'
-  title: 'バックグラウンドshell残存でninja_monitorの/clearが発動しない'
-  detail: '忍者がrun_in_backgroundでbashを起動すると、タスク完了後もシェルプロセスが残存する。ninja_monitorのPSTREE-OVERRIDEがbash subprocessを検出しBUSY扱いにするため、idle+タスクなし→/clearの条件を満たさない。結果: CTX消費継続+予期せぬ復帰時に旧タスク残骸で動くリスク。飛猿cmd_karo_ci_fix_skipで実証(23:51-23:56の5回連続PSTREE-OVERRIDE)。'
-  source_cmd: 'cmd_karo_ci_fix_skip'
-  created_at: '2026-04-25'
-  automated: false
-  enforcement: 未対策。ninja_monitorのPSTREE-OVERRIDEロジック改善が必要
-- id: 'LK002'
-  title: 'deploy_task.shがYAMLマルチライン(|記法)をawkでパースできずresolve失敗'
-  detail: 'cmd_2330でpurpose/context/command/claimが|記法→awk抽出失敗→deploy ERROR。手動で単行化して回避。根因: resolve_cmd_to_taskのawk L362-393が|マルチラインを非対応。対策: awk内で|検出時にマルチライン読み飛ばし、またはcmd_save.sh側で|記法をブロック'
-  source_cmd: 'cmd_2330'
-  created_at: '2026-04-27'
-  automated: true
-  enforcement: deploy_task.sh L381-384 skip_ml実装済み(|/>記法の継続行スキップ)
-- id: 'LK003'
-  title: 'gunshi_notify.shのstatus条件が厳しすぎてreport_review自動送信が不発'
-  detail: 'report_status!=completed&&!=done→return0がhayate(cmd_2317 index.lock STALL後)でnotify不発。statusがfailed/cancelled以外なら発火に修正。3回手動送信の根因'
-  source_cmd: 'cmd_2317'
-  created_at: '2026-04-27'
-  automated: true
-  enforcement: gunshi_notify.sh L34修正済み(failed/cancelled以外で発火)
-- id: 'LK004'
-  title: 'archive_completed.shがdelegated未完了cmdを消失させる'
-  detail: 'SAFE_STATUSESにdelegatedが不在→delegated&&!completed_ids→keep_after_syncにもDONE_STATUSESにも入らず消失。cmd_2320消失→再起票cmd_2321の根因。修正: delegated&&!completed_ids→keepを追加'
-  source_cmd: 'cmd_2320'
-  created_at: '2026-04-27'
-  automated: true
-  enforcement: archive_completed.sh L591-596 delegated保護追加
-- id: 'LK005'
-  title: 'コード検索は全リポジトリ網羅 — ディレクトリ限定は漏れの温床'
-  detail: 'cmd_2335でchampion_selector.py(outputs/scripts/)のみ確認→cmd_1125_v2_champion_select.py(scripts/analysis/)見落とし→SQLite未対応と誤報告。検索時はfind/grep全体検索が基本。特定ディレクトリ限定は結果を予断する(LG003前提崩壊パターンと同根)。enforcement: instructions/gunshi.md報告前検証義務に1行追加済み(Level 2)'
-  source_cmd: 'cmd_2335'
-  created_at: '2026-04-28'
-  automated: true
-- id: 'LK006'
-  title: 'テストACは変更スコープに限定せよ — 全体pytestは達成不可能ACになりうる'
-  detail: 'cmd_2339 AC4「既存テスト全PASS(0 failures, 0 skips)」がpre-existing failure(numba/lookback/fof)で達成不可能。忍者は正しくFAIL報告→家老waive→殿指摘。根因: cmd設計時に既存テスト赤を確認せず全体PASSerを書いた。対策: DM-Signal impl cmdのテストACは変更対象の関連テストにスコープ限定。全体pytestを要求するならpre-existing許容条件を明示。enforcement: cmd_save.shのq11で既存テスト赤確認を促すか、将軍教訓に昇華'
-  source_cmd: 'cmd_2339'
-  created_at: '2026-04-28'
-  automated: false
-  enforcement: 将軍cmd設計側の問題。cmd_save.sh q11改善候補
-- id: 'LK007'
-  title: 'テンプレートデフォルト値はgate通過値にせよ — 空文字→BLOCK→FILL_THIS→再BLOCKの二重サイクル'
-  detail: 'lessons_usefulのreason: ''''がgate lu_reason_emptyでBLOCK→pre-fillがFILL_THISに変換→fill_this_remainingで再BLOCK。265件発生。修正: reason ''''→''未参照''(dc218f52)。原理: テンプレートのデフォルト値はYAML有効値かつgate通過値でなければならない。enforcement: dc218f52で修正済み。今後のテンプレート追加時にも適用'
-  source_cmd: 'cmd_2338'
-  created_at: '2026-04-28'
-  automated: true
-- id: 'LK008'
-  title: 'deploy_task.sh --direct stale resetでacceptance_criteria消失'
-  detail: 'archive済みcmdをdeploy_task.sh --directで再配備すると、STALE_FIELDS resetがacceptance_criteriaを含む全フィールドをクリアし、cmd_resolveも不発(shogun_to_karo.yaml不在)でACが復元されない。対策: (1)--directモードでSTALE_RESETからacceptance_criteriaを除外 or (2)archive前にcmd定義をfrozen/に保存し再利用可能にする'
-  source_cmd: 'cmd_2340'
-  created_at: '2026-04-28'
-  automated: true
-  enforcement: deploy_task.sh cc6004a1 --directモード時acceptance_criteriaをSTALE_FIELDSから除外
-- id: 'LK009'
-  title: 'CLI再起動時にペイン@agent_id変数が他ペインを汚染する'
-  detail: 'saizo CLI再起動時に将軍pane(%0)の@agent_idがsaizoに上書きされ、saizoのnudgeが将軍ターミナルに流入。根因: inbox_write.shのsend-keysがpane lookup(@agent_id)で解決→汚染された@agent_id→誤ペインに配信。対策: CLI再起動後に@agent_idの正常性を確認するか、再起動スクリプトで@agent_idを再設定する仕組みが必要。'
-  source_cmd: 'cmd_2347'
-  created_at: '2026-04-28'
-  automated: false
-  enforcement: 未対策。CLI再起動後の@agent_id検証仕組みが必要
-- id: 'LK010'
-  title: '殿の指摘→まず自分が間違っていると仮定→確認'
-  detail: '殿が2回「将軍にsaizo宛inbox送信」指摘→家老はshogun inbox確認→見当たらずと回答。根因: 自分が正しい前提で確認した。正しい手順: (1)自分が間違っていると仮定 (2)殿が見ている現象を再現する方法を探す (3)pane変数/tmux経路等の全経路を確認。deepdive Phase 2再発。'
-  source_cmd: 'cmd_2347'
-  created_at: '2026-04-28'
-  automated: false
-  enforcement: §0.1問い0+deepdive Phase 2追体験で原則化済み。gate化対象外(原則系)
-- id: 'LK011'
-  title: 'Codex nudgeのtask YAMLパスは絶対パス必須'
-  detail: 'send_codex_task_nudge(inbox_write.sh L368)が相対パス(queue/tasks/)でnudgeを送信→Codex忍者がfindで探す事態発生。根因: CodexのCWDがSCRIPT_DIRとは限らない。修正: SCRIPT_DIR付き絶対パスに変更。inbox_writeメッセージ本文(deploy_task.sh L141)は既に絶対パスだったがnudge側が漏れていた'
-  source_cmd: 'cmd_2352'
-  created_at: '2026-04-28'
-  automated: true
-  enforcement: inbox_write.sh L368 SCRIPT_DIR付き絶対パスに修正済み
-- id: 'LK012'
-  title: 'Codex忍者のpane CWDがDM-Signal側に残りtask YAMLが見つからない'
-  detail: 'hayateのtmux pane CWDが/mnt/c/Python_app/DM-signalのまま→Codex起動→相対パスqueue/tasks/でtask YAML未到達→find全探索で5分浪費。saizoはCWD=/mnt/c/tools/multi-agent-shogunで即到達。根因: ninja_monitorの/clear時またはCLI再起動時にpane CWDをSHOGUN_ROOTにリセットする仕組みがない。対策: (1)inbox_write.sh L368の絶対パス化(LK011で修正済み) (2)ninja_monitorのclear送信前にcd SHOGUN_ROOTをsend-keys'
-  source_cmd: 'cmd_2354'
-  created_at: '2026-04-28'
-  automated: true
-  enforcement: ninja_monitor.sh safe_send_clear()内でcd SCRIPT_DIRをsend-keys(L528-530)
-- id: 'LK013'
-  title: 'Codex忍者がtype=task_doneで報告→gunshi_notify不発'
-  detail: 'Codex(GPT)忍者がreport_receivedではなくtask_done typeでinboxに報告を送信→inbox_write.shのreport_received条件分岐を通らず→gunshi_notify.sh不発→軍師に報告レビューが届かない。cmd_2354で発生(hayate/Codex)。修正: inbox_write.sh L985とL1192の条件にtask_doneを追加。LK003(status条件)と同根(type条件)。'
-  source_cmd: 'cmd_2354'
-  created_at: '2026-04-28'
