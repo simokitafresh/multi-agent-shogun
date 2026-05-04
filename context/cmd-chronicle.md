@@ -865,3 +865,4 @@
 | cmd_2548 | deploy_task.shの2バグ修正。(1)purposeに二重パイプ演算子を含むcmd配備時にyaml_field_set_batch内で値がシェル展開され切り詰まる。(2)count_task_acceptance_criteria失敗時にac_count=0となりdraft_reviewが常にSKIPされ軍師レビューが届かない | infra | 05-04 | cmd_2548のdeploy_task回帰検証を追加。pu |
 | cmd_2553 | DM-Signal関連の全知識ファイル(multi-agent-shogun側context/projects + DM-signal側docs/rule/backend)を横断し、同一用語が複数の意味で使われている箇所を全数洗い出す。MECE定義辞書を設計し、1語1意味の構造に向けた改名計画を策定する | dm-signal | 05-04 | DM-Signal多義語全数調査完了。9用語を対象に多層調査 |
 | cmd_2554 | cmd_2553第1波(grep中心)で13群の多義衝突を検出したが、同義語や暗黙的参照はgrepで拾えない。第2波はセマンティック検索(LLMがファイルを読み概念単位で分類)を中心に、第1波未カバー領域を網羅する。3名並列で独立調査し結果を突合統合する | dm-signal | 05-04 | MECE辞書第2波調査完了。knowledge-base/r |
+| cmd_2556 | CoDD v1.10.0のpropagate機能が「ソースコード変更→設計書追随」方向に設計されているが、我々の用途は「辞書yaml変更→context md追随」方向。frontmatterのmodules指定やカスタム設定で逆方向が可能か、実際にコマンドを試行して確認する | infra | 05-04 | CoDD v1.10.0は辞書YAML→context MD |
