@@ -846,6 +846,29 @@ detect_task_types() {
     echo "${has_recon} ${has_implement}"
 }
 
+is_lessons_useful_empty_warn_task_type() {
+    local task_type
+    task_type=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]"'"'"'')
+    case "$task_type" in
+        scout|verify) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+handle_empty_lessons_useful_check() {
+    local ninja_name="$1"
+    local task_type="$2"
+    local rl_ids="$3"
+
+    if is_lessons_useful_empty_warn_task_type "$task_type"; then
+        echo "  [WARN] ${ninja_name}: lessons_useful空。task_type=${task_type:-unknown} のためBLOCK対象外。related_lessons [${rl_ids}]"
+    else
+        echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
+        record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
+        ALL_CLEAR=false
+    fi
+}
+
 # ─── gate_metrics model label helpers ───
 agent_pane_target() {
     local agent_name="$1"
@@ -3380,6 +3403,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     if [ "$has_lessons" = "yes" ]; then
         LESSON_CHECKED=true
         ninja_name=$(basename "$task_file" .yaml)
+        task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
         report_file=$(resolve_report_file "$ninja_name")
 
         if [ -f "$report_file" ]; then
@@ -3451,9 +3475,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
                 # related_lessonsからlesson IDを抽出してメッセージに表示
                 rl_ids=$(awk '/related_lessons:/,/^[^ ]/{if(/id:/){val=$0; sub(/.*id:\s*/, "", val); gsub(/[" \t]/, "", val); if(c++) printf ","; printf "%s", val}}' "$task_file" 2>/dev/null)
                 [ -z "$rl_ids" ] && rl_ids="(parse_error)"
-                echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
-                record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
-                ALL_CLEAR=false
+                handle_empty_lessons_useful_check "$ninja_name" "$task_type" "$rl_ids"
             fi
         else
             echo "  ${ninja_name}: SKIP (report not found)"
