@@ -1,9 +1,12 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-04 auto-generated -->
+<!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-04T23:58:59+09:00 -->
+<!-- generated_at: 2026-05-05T00:05:43+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T00:05:43+09:00 | terminal | response | **cmd_2562 GATE CLEAR。** セマンティクスインデックス段階1(SSOT 10概念+索引層)完了。 殿、段階2(startup gate+検索スクリプト第一層)に進めるか、それとも本日はここまでか。idle忍者5名。 …
+- 2026-05-05T00:01:38+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-248)
+- 2026-05-04T23:59:28+09:00 | ntfy | outbound | 【家老】cmd_2562 初回配備開始 (title=実装(段階1) — セマンティクスインデックスSSOT初期版(10概念)+索引層生成, ninja=kagemaru) 実装(段階1) 📋 https://gist.github.co…
 - 2026-05-04T23:58:59+09:00 | terminal | response | cmd_2562 家老に委任完了。教訓LS047記録済み。 **本セッション成果:** | 項目 | 結果 | |------|------| | 用語辞書テスト | 3層全OK(ファイル存在+導線+gate 4テストPASS) | | …
 - 2026-05-04T23:52:43+09:00 | terminal | inbound | よい
 - 2026-05-04T23:52:12+09:00 | terminal | response | 設計書更新完了。反映した変更: | 変更 | 内容 | |------|------| | §8 | 2層検索設計を追加(第一層aliases照合+第二層LLM意味照合フォールバック) | | §8 | semantic_search.s…
@@ -11,9 +14,6 @@
 - 2026-05-04T23:47:51+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 23:35:47|CI緑: run 25324330006
 - 2026-05-04T23:42:12+09:00 | terminal | response | 設計書の最大のリスクに当てる。 **なぜなぜ7回 — aliases照合は本当にセマンティック検索か？** **1. なぜaliases照合方式を選んだか？** → bashで実装可能。既存インフラ(grep/awk)で動く。新しいインフ…
 - 2026-05-04T23:41:01+09:00 | terminal | inbound | なぜなぜ7回
-- 2026-05-04T23:32:39+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 23:19:09|cmd_karo_direct_semantic_index_review
-- 2026-05-04T23:23:02+09:00 | terminal | response | 設計書更新完了。全4件反映: | 修正 | 内容 | |------|------| | §11 | lord-conversation-index.mdとの関係追記(時系列索引 vs 概念逆引き、重複なし) | | §7 フック先 | …
-- 2026-05-04T23:20:04+09:00 | terminal | inbound | 未決定や未調査は全て確認しよう
 
 ## 未解決確認事項
 - 未決定や未調査は全て確認しよう
@@ -43,9 +43,6 @@
 - cmd_2529
 - cmd_2538
 - cmd_2548
-- cmd_2549
-- cmd_2550
-- cmd_2551
 - cmd_2552
 - cmd_2553
 - cmd_2554
