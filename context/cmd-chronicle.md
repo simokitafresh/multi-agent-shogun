@@ -869,3 +869,4 @@
 | cmd_2557 | 設計書(docs/research/cmd_2555_disambiguation_design.md)の段階0を実装する。P0の4群(L0-L4, signal, monthly_return, date)のdisambiguation.md(SSOT正本+CoDD frontmatter)とdm-signal-terminology.md(エージェント向け索引、80行以内)を作成し、CLAUDE.mdのcontext_filesに追記して起動時自動ロード対象にする | dm-signal | 05-04 | P0 4群の用語曖昧性解消辞書と80行以内の起動時索引を作成 |
 | cmd_2560 | cmd_2557-2559で完成した用語辞書(disambiguation.md 全27群+terminology.md索引+context注釈+gate)の整合性をCodexで横断確認する。辞書定義とcontext/BE/FEコードの実際の用語使用が矛盾していないか、辞書に漏れがないか、gate除外条件が適切かをセマンティック検索で検証 | dm-signal | 05-04 | 辞書27ファミリーとterminology索引、contex |
 | cmd_2561 | DM-Signal用語辞書(disambiguation.md+terminology.md)がDM-Signalリポに配置されたが、multi-agent-shogun側のCLAUDE.mdとcontext/dm-signal.mdに辞書パスへの参照がなく、将軍/家老/軍師がcmd起票時に辞書の存在を知れない。導線を環境に埋め込む | infra | 05-04 | DM-Signal用語辞書2ファイルへの導線をCLAUDE. |
+| cmd_2555 | cmd_2553/2554偵察で特定した27群の多義衝突に対し、(1)用語曖昧性解消辞書(disambiguation dictionary)と(2)生L*検出gate強制の2層設計書を作成する。コードは変更しない。エージェントの知識基盤として埋め込みgate強制で参照を保証する | dm-signal | 05-04 | — |

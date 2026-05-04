@@ -240,6 +240,7 @@ REQUEST_CHANGES修正完了後の再検証。severity判定→verify_request→�
 
 - 本番DB操作は直列配備。コード修正や文書編集だけを並列化する。
 - idle忍者が2名以上いて独立タスクがあるなら並列化は義務。
+- **偵察並列分割**: 同一cmdを複数忍者に配備する場合、deploy_task.shの重複ガードが発動する。1名目配備後にtask_idを`cmd_XXXX_scout_1`に変更し、2名目以降は手動yaml_field_setで`task_id/parent_cmd/status/purpose/scope_mode`を設定+inbox_write。GATEは全員完了後に統合実行。
 - レポート走査は起動時ごとに全 `queue/reports/*_report_cmd_*.yaml` を見る。
 → `docs/research/karo-operations-detail.md` §10-12
 
