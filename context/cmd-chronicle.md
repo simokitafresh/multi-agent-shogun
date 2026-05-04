@@ -811,3 +811,4 @@
 | cmd_2562 | セマンティクスインデックス設計書(docs/research/semantic_index_design.md)の段階1を実装する。/clear後に概念で情報を逆引きできる仕組みの基盤。10概念のSSOT(index.md)と索引層(semantic-map.md)を作成する | infra | 05-05 | セマンティクスインデックス段階1としてSSOT 10概念とa |
 | cmd_2563 | セマンティクスインデックス設計書§8/§7の段階2を実装。aliases照合による第一層検索スクリプト(semantic_search.sh)と、startup gateへのインデックス鮮度チェック追加 | infra | 05-05 | セマンティクスインデックス第一層検索CLIと将軍startu |
 | cmd_2564 | セマンティクスインデックス設計書§7の段階3を実装。cmd完了/lesson追加/殿の発言記録時にaliases照合で既存概念にリソースを自動追記するフック。confidence閾値分岐(HIGH→自動/LOW→候補キュー/NONE→新概念候補)を含む | infra | 05-05 | semantic_index_update.shを追加し、c |
+| cmd_2566 | セマンティクスインデックス設計書§6/§7の最終段階を実装。index.md変更時のCoDD propagateでsemantic-map.md自動再生成+軍師idleにdrift/gap/candidateスキャンを組込み。段階1-4の全成果物を統合し完成させる | infra | 05-05 | semantic-map deterministic gen |
