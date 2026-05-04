@@ -1,0 +1,22 @@
+project:
+  name: multi-agent-shogun-semantic-index
+  language: markdown
+
+scan:
+  source_dirs:
+    - docs
+  doc_dirs:
+    - context
+  exclude:
+    - docs/research/**
+    - docs/archive/**
+    - docs/test/**
+
+graph:
+  path: codd/scan
+
+propagation:
+  max_depth: 10
+
+ai_commands:
+  propagate: "bash scripts/semantic_map_generate.sh --body-only"

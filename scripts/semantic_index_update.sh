@@ -38,6 +38,7 @@ esac
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
+map_generate="${SEMANTIC_MAP_GENERATE:-$script_dir/scripts/semantic_map_generate.sh}"
 insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
 lock_path="${SEMANTIC_INDEX_LOCK:-${index_path}.lock}"
 
@@ -48,6 +49,7 @@ fi
 
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
+    changed_flag="$(
     python3 - "$source_type" "$payload_json" "$index_path" "$insight_write" <<'PY'
 import json
 import os
@@ -210,6 +212,7 @@ if confidence == "HIGH":
         updated = text[: best["start"]] + new_block + text[best["end"] :]
         index_path.write_text(updated, encoding="utf-8")
         print(f"HIGH: {best['id']} updated from {source_type}:{payload_label} matched={matched}")
+        print("__SEMANTIC_INDEX_CHANGED__")
     else:
         print(f"HIGH: {best['id']} already contains {source_type}:{payload_label} matched={matched}")
     sys.exit(0)
@@ -246,4 +249,14 @@ else:
 
 print(f"{confidence}: insight queued for {source_type}:{payload_label}")
 PY
+    )"
+    printf '%s\n' "$changed_flag" | grep -v '^__SEMANTIC_INDEX_CHANGED__$' || true
+    if printf '%s\n' "$changed_flag" | grep -qx '__SEMANTIC_INDEX_CHANGED__'; then
+        if [ -x "$map_generate" ]; then
+            bash "$map_generate" >/dev/null
+            echo "semantic-map regenerated"
+        else
+            echo "WARN: semantic map generator not executable: $map_generate" >&2
+        fi
+    fi
 ) 200>"$lock_path"

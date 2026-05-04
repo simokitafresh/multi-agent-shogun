@@ -37,6 +37,7 @@ codd:
 |------|----------|
 | file | `docs/research/semantic_index_design.md` |
 | file | `context/lord-conversation-index.md` |
+| file | `scripts/semantic_map_generate.sh` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T20:10 セマンティック辞書と単語定義辞書 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T23:42 aliases照合+LLM照合 |
 

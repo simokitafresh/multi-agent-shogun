@@ -14,6 +14,7 @@ SNAPSHOT="$REPO_ROOT/queue/karo_snapshot.txt"
 # gate_fire_log path for P6 self-study reference
 _FIRE_LOG="$REPO_ROOT/logs/gate_fire_log.yaml"
 INSIGHTS="$REPO_ROOT/queue/insights.yaml"
+SEMANTIC_INDEX="$REPO_ROOT/docs/semantic-index/index.md"
 
 echo "=== 軍師サイクル推薦 $(date +%H:%M:%S) ==="
 echo ""
@@ -183,6 +184,74 @@ else
 fi
 
 fi  # CTX_HIGH
+
+# --- Priority 7: セマンティックインデックス監査 (cmd_2566) ---
+if [[ -f "$SEMANTIC_INDEX" ]]; then
+    echo "■ P7: セマンティック監査"
+
+    semantic_index_drift=$(
+        python3 - "$REPO_ROOT" "$SEMANTIC_INDEX" <<'PY' 2>/dev/null || true
+import re
+import sys
+from pathlib import Path
+
+repo = Path(sys.argv[1])
+index = Path(sys.argv[2])
+missing = []
+for line in index.read_text(encoding="utf-8").splitlines():
+    m = re.match(r"^\|\s*file\s*\|\s*`?([^`|]+?)`?\s*\|$", line.strip())
+    if not m:
+        continue
+    raw = m.group(1).strip()
+    path = raw.split(" §", 1)[0].strip()
+    p = Path(path)
+    if not p.is_absolute():
+        p = repo / path
+    if not p.exists():
+        missing.append(path)
+print(len(missing))
+for item in missing[:5]:
+    print(item)
+PY
+    )
+    drift_count=$(printf '%s\n' "$semantic_index_drift" | head -1)
+    if [[ "${drift_count:-0}" =~ ^[0-9]+$ ]] && (( drift_count > 0 )); then
+        echo "    semantic_index_drift: 参照切れ ${drift_count}件"
+        printf '%s\n' "$semantic_index_drift" | tail -n +2 | sed 's/^/      - /'
+    else
+        echo "    semantic_index_drift: OK"
+    fi
+
+    changed_files=$(git -C "$REPO_ROOT" diff --name-only HEAD -- 2>/dev/null || true)
+    semantic_index_gap=0
+    if [[ -n "$changed_files" ]]; then
+        while IFS= read -r changed; do
+            [[ -z "$changed" ]] && continue
+            [[ "$changed" == docs/semantic-index/index.md || "$changed" == context/semantic-map.md ]] && continue
+            if ! grep -Fq "$changed" "$SEMANTIC_INDEX"; then
+                semantic_index_gap=$((semantic_index_gap + 1))
+            fi
+        done <<< "$changed_files"
+    fi
+    if (( semantic_index_gap > 0 )); then
+        echo "    semantic_index_gap: 未インデックス変更ファイル ${semantic_index_gap}件"
+        echo "      → 新概念候補または既存概念resources追記を検討せよ"
+    else
+        echo "    semantic_index_gap: OK"
+    fi
+
+    semantic_index_candidate=0
+    if [[ -f "$INSIGHTS" ]]; then
+        semantic_index_candidate=$(grep -E 'semantic_index_update(新概念候補|候補)' "$INSIGHTS" 2>/dev/null | wc -l | awk '{print $1}')
+    fi
+    if (( semantic_index_candidate > 0 )); then
+        echo "    semantic_index_candidate: pending候補 ${semantic_index_candidate}件"
+        echo "      → 概念定義・aliases・resources案に集約せよ"
+    else
+        echo "    semantic_index_candidate: OK"
+    fi
+    echo ""
+fi
 
 # --- サイクルの心得 ---
 echo "─────────────────────────────"
