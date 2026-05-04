@@ -809,3 +809,4 @@
 | cmd_2561 | DM-Signal用語辞書(disambiguation.md+terminology.md)がDM-Signalリポに配置されたが、multi-agent-shogun側のCLAUDE.mdとcontext/dm-signal.mdに辞書パスへの参照がなく、将軍/家老/軍師がcmd起票時に辞書の存在を知れない。導線を環境に埋め込む | infra | 05-04 | DM-Signal用語辞書2ファイルへの導線をCLAUDE. |
 | cmd_2555 | cmd_2553/2554偵察で特定した27群の多義衝突に対し、(1)用語曖昧性解消辞書(disambiguation dictionary)と(2)生L*検出gate強制の2層設計書を作成する。コードは変更しない。エージェントの知識基盤として埋め込みgate強制で参照を保証する | dm-signal | 05-04 | — |
 | cmd_2562 | セマンティクスインデックス設計書(docs/research/semantic_index_design.md)の段階1を実装する。/clear後に概念で情報を逆引きできる仕組みの基盤。10概念のSSOT(index.md)と索引層(semantic-map.md)を作成する | infra | 05-05 | セマンティクスインデックス段階1としてSSOT 10概念とa |
+| cmd_2563 | セマンティクスインデックス設計書§8/§7の段階2を実装。aliases照合による第一層検索スクリプト(semantic_search.sh)と、startup gateへのインデックス鮮度チェック追加 | infra | 05-05 | セマンティクスインデックス第一層検索CLIと将軍startu |
