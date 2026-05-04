@@ -26,6 +26,10 @@ setup_file() {
         printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^is_lessons_useful_empty_warn_task_type()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$GATE_HELPERS_FILE"
 }
@@ -240,6 +244,32 @@ EOF
     run append_lesson_tracking "$TEST_CMD_ID" "CLEAR"
     [ "$status" -eq 0 ]
     tail -1 "$TEST_PROJECT/logs/lesson_tracking.tsv" | grep -q $'\tnone\tCLEAR\tnone\tnone\tunknown$'
+}
+
+@test "lessons_useful empty is WARN for scout and verify task types" {
+    reset_gate_state
+
+    handle_empty_lessons_useful_check "sasuke" "scout" "L001" > "$TEST_TMPDIR/lessons_useful_output.txt"
+    output="$(cat "$TEST_TMPDIR/lessons_useful_output.txt")"
+    [[ "$output" == *"[WARN] sasuke: lessons_useful空。task_type=scout のためBLOCK対象外"* ]]
+    [ "$ALL_CLEAR" = true ]
+    [ "${#BLOCK_REASONS[@]}" -eq 0 ]
+
+    handle_empty_lessons_useful_check "sasuke" "verify" "L002" > "$TEST_TMPDIR/lessons_useful_output.txt"
+    output="$(cat "$TEST_TMPDIR/lessons_useful_output.txt")"
+    [[ "$output" == *"[WARN] sasuke: lessons_useful空。task_type=verify のためBLOCK対象外"* ]]
+    [ "$ALL_CLEAR" = true ]
+    [ "${#BLOCK_REASONS[@]}" -eq 0 ]
+}
+
+@test "lessons_useful empty remains BLOCK for exact task type" {
+    reset_gate_state
+
+    handle_empty_lessons_useful_check "sasuke" "exact" "L001,L002" > "$TEST_TMPDIR/lessons_useful_output.txt"
+    output="$(cat "$TEST_TMPDIR/lessons_useful_output.txt")"
+    [[ "$output" == *"[CRITICAL] sasuke: NG ← lessons_useful空"* ]]
+    [ "$ALL_CLEAR" = false ]
+    [ "${BLOCK_REASONS[0]}" = "sasuke:empty_lessons_useful:related=[L001,L002]" ]
 }
 
 teardown() {
