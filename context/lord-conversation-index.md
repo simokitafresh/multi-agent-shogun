@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-04 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-04T19:45:31+09:00 -->
+<!-- generated_at: 2026-05-04T20:10:49+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-04T20:10:49+09:00 | terminal | response | はっ。勘違いが起きなくなる**条件**を考える。 **起きなくなるケース**: エージェントが「L2」を見た時に辞書を引き、「今自分はetl_trigger.pyにいるからsync体系のL2=Standard PF再計算」と一意に解決でき…
+- 2026-05-04T20:10:31+09:00 | terminal | inbound | なによりも守るべきはBEだな。セマンティック辞書と単語定義辞書が完成したら勘違いは起きなくなるか？
+- 2026-05-04T20:08:51+09:00 | terminal | response | はっ。全く違う。 | 記号 | BE (etl_trigger.py) | FE (admin/page.tsx) | FE (visibility/) | |------|---------------------|----------…
+- 2026-05-04T20:08:35+09:00 | terminal | inbound | BEとFEのL0-L4は違うものだよな？
 - 2026-05-04T19:45:30+09:00 | terminal | response | 殿、コード内の実態: **BE(etl_trigger.py)**: `L0/L1/L2/L3`がsync layer(再計算の依存階層)として**ハードコード**。辞書キー・ロック名・API応答に使用。約40箇所。 **FE(admin…
 - 2026-05-04T19:43:43+09:00 | terminal | inbound | 一つずつやろう。まずはL0~について考えよう。コード内を弄るとエラーがでるかもしれない。コード内はどうなっている？
 - 2026-05-04T19:42:10+09:00 | terminal | response | はっ。用語辞書を進める。 **現状**: 第1波+第2波で27群の多義衝突を特定。hayateが統合ambiguity_map(14行テーブル)を作成済み。改名案もある。 **次のステップの提案**: 殿に決めていただきたいのは**命名体…
 - 2026-05-04T19:41:51+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 19:27:32|CI緑: run 25313499554
 - 2026-05-04T19:41:43+09:00 | terminal | inbound | 用語辞書について進めていこう
 - 2026-05-04T19:41:43+09:00 | terminal | inbound | 用語辞書について進めていこう
-- 2026-05-04T19:38:30+09:00 | terminal | response | Gist index更新完了。新しいMECE辞書gistがindexに反映された。 https://gist.github.com/simokitafresh/83a17157247174e9faefc3962968fe1b 殿、指示あれ…
-- 2026-05-04T19:38:03+09:00 | terminal | inbound | gist indexも更新して
-- 2026-05-04T19:26:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 19:18:36|cmd_karo_ci_fix_shogun_inbox
-- 2026-05-04T19:19:03+09:00 | terminal | response | 家老CI修正(cmd_karo_ci_fix_shogun_inbox) GATE CLEAR。inbox処理完了。全件既読。 殿、指示あれば。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - cmd_2554 GATE CLEAR。第2波偵察も完了。 成果物を確認する。 [meta] stop_reason=tool_use
