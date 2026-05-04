@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L711 -->
+<!-- last_synced_lesson: L712 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -201,3 +201,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L709: FoF weights健全性チェックはconfigではなくfof_component_weightsを正本にせよ（cmd_2458）
 - L710: L0-L4語彙は新cmdでprefix必須にすべき（cmd_2553）
 - L711: [自動生成] 有効教訓の記録を怠った: cmd_2558（cmd_2558）
+- L712: [自動生成] 有効教訓の記録を怠った: cmd_2560（cmd_2560）

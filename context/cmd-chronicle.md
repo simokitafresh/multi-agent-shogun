@@ -867,3 +867,4 @@
 | cmd_2554 | cmd_2553第1波(grep中心)で13群の多義衝突を検出したが、同義語や暗黙的参照はgrepで拾えない。第2波はセマンティック検索(LLMがファイルを読み概念単位で分類)を中心に、第1波未カバー領域を網羅する。3名並列で独立調査し結果を突合統合する | dm-signal | 05-04 | MECE辞書第2波調査完了。knowledge-base/r |
 | cmd_2556 | CoDD v1.10.0のpropagate機能が「ソースコード変更→設計書追随」方向に設計されているが、我々の用途は「辞書yaml変更→context md追随」方向。frontmatterのmodules指定やカスタム設定で逆方向が可能か、実際にコマンドを試行して確認する | infra | 05-04 | CoDD v1.10.0は辞書YAML→context MD |
 | cmd_2557 | 設計書(docs/research/cmd_2555_disambiguation_design.md)の段階0を実装する。P0の4群(L0-L4, signal, monthly_return, date)のdisambiguation.md(SSOT正本+CoDD frontmatter)とdm-signal-terminology.md(エージェント向け索引、80行以内)を作成し、CLAUDE.mdのcontext_filesに追記して起動時自動ロード対象にする | dm-signal | 05-04 | P0 4群の用語曖昧性解消辞書と80行以内の起動時索引を作成 |
+| cmd_2560 | cmd_2557-2559で完成した用語辞書(disambiguation.md 全27群+terminology.md索引+context注釈+gate)の整合性をCodexで横断確認する。辞書定義とcontext/BE/FEコードの実際の用語使用が矛盾していないか、辞書に漏れがないか、gate除外条件が適切かをセマンティック検索で検証 | dm-signal | 05-04 | 辞書27ファミリーとterminology索引、contex |
