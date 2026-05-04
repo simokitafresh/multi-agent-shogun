@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-04 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-04T19:38:31+09:00 -->
+<!-- generated_at: 2026-05-04T19:42:10+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-04T19:42:10+09:00 | terminal | response | はっ。用語辞書を進める。 **現状**: 第1波+第2波で27群の多義衝突を特定。hayateが統合ambiguity_map(14行テーブル)を作成済み。改名案もある。 **次のステップの提案**: 殿に決めていただきたいのは**命名体…
+- 2026-05-04T19:41:51+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 19:27:32|CI緑: run 25313499554
+- 2026-05-04T19:41:43+09:00 | terminal | inbound | 用語辞書について進めていこう
+- 2026-05-04T19:41:43+09:00 | terminal | inbound | 用語辞書について進めていこう
 - 2026-05-04T19:38:30+09:00 | terminal | response | Gist index更新完了。新しいMECE辞書gistがindexに反映された。 https://gist.github.com/simokitafresh/83a17157247174e9faefc3962968fe1b 殿、指示あれ…
 - 2026-05-04T19:38:03+09:00 | terminal | inbound | gist indexも更新して
 - 2026-05-04T19:26:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 19:18:36|cmd_karo_ci_fix_shogun_inbox
 - 2026-05-04T19:19:03+09:00 | terminal | response | 家老CI修正(cmd_karo_ci_fix_shogun_inbox) GATE CLEAR。inbox処理完了。全件既読。 殿、指示あれば。 [meta] stop_reason=end_turn
 - 2026-05-04T19:18:42+09:00 | terminal | response | 共有完了。 https://gist.github.com/simokitafresh/57f9894d6b33d7a1779e556441c2d281 5ファイル全て含む: - 第1波: hayate(13群MECE辞書) + saiz…
 - 2026-05-04T19:18:17+09:00 | terminal | inbound | gistに共有してくれ
-- 2026-05-04T19:15:31+09:00 | ntfy | outbound | CI赤: run 25313024906 Unit Tests (bats)
-- 2026-05-04T19:13:25+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_shogun_inbox 初回配備開始 (title=(untitled), ninja=hayate) 📋 https://gist.github.com/simokitafresh/6eb495…
-- 2026-05-04T19:12:21+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-247)
-- 2026-05-04T19:11:30+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-04 19:04:37|cmd_2554
 
 ## 未解決確認事項
 - cmd_2554 GATE CLEAR。第2波偵察も完了。 成果物を確認する。 [meta] stop_reason=tool_use
