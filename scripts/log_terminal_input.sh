@@ -27,3 +27,19 @@ export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 append_lord_conversation "$INPUT" "inbound" "lord" "terminal"
+
+# セマンティクスインデックス候補化。会話記録そのものは上で完了済みのため、失敗しても入力処理は止めない。
+if [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
+    if _semantic_payload=$(INPUT_ENV="$INPUT" TS_ENV="$(date -Iseconds)" python3 - <<'PY' 2>/dev/null
+import json
+import os
+
+print(json.dumps({
+    "timestamp": os.environ.get("TS_ENV", ""),
+    "summary": os.environ.get("INPUT_ENV", ""),
+}, ensure_ascii=False))
+PY
+    ); then
+        bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" discussion "$_semantic_payload" >/dev/null 2>&1 || true
+    fi
+fi

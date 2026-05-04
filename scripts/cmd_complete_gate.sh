@@ -4709,6 +4709,32 @@ if [ "$ALL_CLEAR" = true ]; then
     echo "  lesson_impact follow-up: queued (async)"
 
     echo ""
+    echo "Semantic index update (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
+        if _semantic_payload=$(CMD_ID_ENV="$CMD_ID" CMD_TITLE_ENV="${CMD_TITLE:-}" CMD_PURPOSE_ENV="${CMD_PURPOSE:-}" CMD_CHANGED_FILES_ENV="${CMD_CHANGED_FILES:-}" python3 - <<'PY' 2>/dev/null
+import json
+import os
+
+files_raw = os.environ.get("CMD_CHANGED_FILES_ENV", "")
+files = [p.strip() for p in files_raw.replace(",", "\n").splitlines() if p.strip()]
+print(json.dumps({
+    "id": os.environ.get("CMD_ID_ENV", ""),
+    "title": os.environ.get("CMD_TITLE_ENV", ""),
+    "purpose": os.environ.get("CMD_PURPOSE_ENV", ""),
+    "files": files,
+}, ensure_ascii=False))
+PY
+        ); then
+            (bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" cmd_complete "$_semantic_payload" >/dev/null 2>&1 || true) &
+            echo "  queued (async)"
+        else
+            echo "  [WARN] payload build failed (skip)"
+        fi
+    else
+        echo "  [INFO] semantic_index_update.sh not found (skip)"
+    fi
+
+    echo ""
     echo "Context freshness nudge (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
         (bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" >/dev/null 2>&1 || true) &
