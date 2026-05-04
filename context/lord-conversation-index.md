@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-05T08:19:52+09:00 -->
+<!-- generated_at: 2026-05-05T08:24:22+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T08:24:22+09:00 | terminal | response | 殿、cmd_2569(Compare chart全画面Loading修正) **GATE CLEAR**。PF選択時のUI全消失が解消された。 設計書の件、殿の返答を待つ。先ほどの設計案で進めてよいか。 [meta] stop_reaso…
 - 2026-05-05T08:19:52+09:00 | terminal | response | 承知つかまつった。UWP三指標追加の設計を殿と詰める。 先ほどの調査結果をもとに設計案を提示する。 --- ## UWP三指標追加 設計案 ### 1. 指標定義 | 指標 | FE表示名 | 内部変数 | 計算方法 | 単位 | |--…
 - 2026-05-05T08:19:13+09:00 | terminal | inbound | 設計書を作成しよう
 - 2026-05-05T08:16:14+09:00 | terminal | response | 殿の入力を待つ。 [meta] stop_reason=end_turn
@@ -13,7 +14,6 @@
 - 2026-05-05T08:11:24+09:00 | terminal | response | 総UWP期間（ドローダウンが発生していた累計期間）の一般的な略語: | 略語 | 正式名 | 意味 | |------|--------|------| | **TUD** | Total Underwater Duration | 全ド…
 - 2026-05-05T08:11:05+09:00 | terminal | inbound | では総UWP期間はなんという？
 - 2026-05-05T08:10:14+09:00 | terminal | response | 学術文献・実務で最も一般的な略語は **ADD** (Average Drawdown Duration) 。 | 略語 | 正式名 | 使用例 | |------|--------|--------| | **ADD** | Avera…
-- 2026-05-05T08:09:26+09:00 | terminal | inbound | 現在metricsページとCompare summryページにUWP＝under water periodがあるがMAXDD時のUWPのみの表示で直感的ではない。平均UWPを追加表示したい。平均UWPは一般的にはどのような略語で扱われる？
 
 ## 未解決確認事項
 - cmd_2568(スキル帰属分離)を家老に委任完了。教訓LS045も記録済み。 殿、スキル成長ループの診断と修正cmdの発令を完了した。 **実行したこと:** 1. スキル別FAIL率の現物計測 → dashboard-update治癒、report-write/verdic…

@@ -814,3 +814,4 @@
 | cmd_2566 | セマンティクスインデックス設計書§6/§7の最終段階を実装。index.md変更時のCoDD propagateでsemantic-map.md自動再生成+軍師idleにdrift/gap/candidateスキャンを組込み。段階1-4の全成果物を統合し完成させる | infra | 05-05 | semantic-map deterministic gen |
 | cmd_2567 | /clear後の将軍がセマンティクスインデックスの存在を知り使える状態にする。CLAUDE.mdのinfraセクションにsemantic-map.md/semantic_search.shへの参照を追加し、startup手順にsemantic-map.md読込を組込む。用語辞書のcmd_2561(導線埋込み)と同パターン | infra | 05-05 | CLAUDE.mdにsemantic-map.md読込とse |
 | cmd_2568 | スキル自動成長ループのFAIL帰属精度が64%誤帰属(21/33件)。cmd_complete_gate.sh L5336-5343のcase文でworkflow系FAIL(missing_gate, lesson_done_missing, draft_lessons)がreport-writeに帰属されている。report-write FAIL率100%の根因。帰属を分離しスキル成長ループの診断精度を回復する | infra | 05-05 | cmd_complete_gateのGATE BLOCK時ス |
+| cmd_2569 | Compare chart画面でPF選択するとperfLoading/benchmarkLoadingが全画面Loadingを発火し、UIが全消失して再読み込みされたように見える。殿報告の使いづらさの根因。全画面Loadingは初回signals取得(loading)で発火する設計に変更し、perfLoading/benchmarkLoadingはチャートセクション内のインライン表示に移設する | dm-signal | 05-05 | Compare chartの全画面Loading条件をsig |
