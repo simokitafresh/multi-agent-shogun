@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L713 -->
+<!-- last_synced_lesson: L715 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -205,3 +205,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L711: [自動生成] 有効教訓の記録を怠った: cmd_2558（cmd_2558）
 - L712: [自動生成] 有効教訓の記録を怠った: cmd_2560（cmd_2560）
 - L713: metrics偵察はadd_metric行だけでなく前段DataFrame変換を必ず母集団に含める（cmd_2570）
+- L714: recalculate-sync acceptedでは完了判定にしない（cmd_2574）
+- L715: recalculate-sync acceptedは完了ではない。DB recalculation_statusのcompleted確認が必須（cmd_2574）
