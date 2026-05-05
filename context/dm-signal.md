@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L718 -->
+<!-- last_synced_lesson: L720 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -210,3 +210,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L716: metrics APIのNHF表示名はNew High Frequency（cmd_2577）
 - L717: 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ（cmd_2578）
 - L718: [自動生成] 有効教訓の記録を怠った: cmd_2581（cmd_2581）
+- L719: FEがBEメトリクス表示名変更を消費するときは旧cache名fallbackを同時実装する（cmd_karo_direct_fe_ptu_fix）
+- L720: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ（cmd_karo_direct_fe_ptu_fix）
