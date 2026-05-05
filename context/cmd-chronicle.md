@@ -819,3 +819,4 @@
 | cmd_2572 | UWP三指標(UWP MaxDD/Avg UWP/Total UWP)追加に伴い、既存UWPの意味が曖昧になる。disambiguation.mdに3エントリ追加+terminology.md索引追加で1語1意味を維持する。設計書§6に準拠 | dm-signal | 05-05 | UWP三指標の用語曖昧性を解消するため、disambigua |
 | cmd_2573 | Avg/Total UWP計算に全DDが必要。drawdowns.py limit=10をNoneに変更し全DD格納。signal_flush.py IN句修正(5c8a9cf2)済みのためfullrecalculateは安全に通る。パリティ検証でsignals/monthly_returnsが不変であることを実証する | dm-signal | 05-05 | drawdowns.py limit=10→None変更(全 |
 | cmd_2574 | cmd_2573でDrawdownPeriod全DD格納が完了。metrics_calculator.pyのget_drawdown_stats_from_dbを拡張し、全rankからAvg/Total UWPを集計してmetrics APIレスポンスに2行追加する。既存UWP(rank=1)と同じデータソース+同じ構造で一貫性を維持 | dm-signal | 05-05 | Avg/Total Underwater Periodをme |
+| cmd_2575 | cmd_2574でmetrics APIがAvg/Total Underwater Periodを返す状態になった。FEのMetrics/Compare Summary/Termsページに表示を追加し、既存UWPラベルをUWP (MaxDD)に変更してユーザーが3指標を区別できるようにする | dm-signal | 05-05 | FE Metrics/Compare Summary/Ter |
