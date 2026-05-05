@@ -58,9 +58,9 @@ write_lessons() {
 write_quality_log_for_prev_block() {
     cat > "$TEST_QUALITY_LOG" <<'YAML'
 entries:
-  - cmd_id: cmd_prev
-    gate_result: BLOCK
-    source: cmd_save
+  - cmd_id: "cmd_prev"
+    gate_result: "BLOCK"
+    source: "cmd_save"
     notes: missing_q11
 YAML
 }
@@ -124,6 +124,20 @@ YAML
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"cmd_publish pre-flight"* ]]
+    [[ "$output" == *"cmd_save.sh gate検証"* ]]
+    [[ "$output" == *"stub cmd_save cmd_curr"* ]]
+    [[ "$output" == *"cmd_delegate.sh 委任"* ]]
+}
+
+@test "AC3b: 教訓0件でもcount出力が単一整数になりpre-flight PASSする" {
+    write_queue draft
+    echo "lessons:" > "$TEST_LESSONS"
+    : > "$TEST_QUALITY_LOG"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
     [[ "$output" == *"cmd_save.sh gate検証"* ]]
     [[ "$output" == *"stub cmd_save cmd_curr"* ]]
     [[ "$output" == *"cmd_delegate.sh 委任"* ]]
