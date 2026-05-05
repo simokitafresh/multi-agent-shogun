@@ -5,7 +5,8 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     HOOK="$PROJECT_ROOT/.claude/hooks/post-shogun-inbox-check.sh"
     TMP_DIR="$(mktemp -d)"
-    PANE="%post_shogun_inbox_check_test"
+    # Use TMP_DIR-derived unique suffix to avoid stale /tmp cache files from prior CI runs
+    PANE="%psi_$(basename "$TMP_DIR")"
     CACHE="/tmp/shogun_aid_${PANE}"
     NON_SHOGUN_CACHE="/tmp/shogun_not_shogun_${PANE}"
     INBOX="$TMP_DIR/shogun.yaml"
