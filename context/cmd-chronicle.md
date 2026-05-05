@@ -821,3 +821,5 @@
 | cmd_2581 | Total UWPは絶対月数でバックテスト期間に依存し異なる開始日のPF間で比較不能。total_uwp/全期間月数で比率化(PTU: Percentage Time Underwater, 0-100%)しPF間の公平比較を可能にする(殿指示2026-05-05) | dm-signal | 05-05 | PTU(%)をtotal_uwp/monthly_retur |
 | cmd_2582 | cmd_2581でPTU計算ロジックをデプロイ済みだがportfolio_metricsキャッシュが旧フォーマット(Total Underwater Period: 110 months)のまま。Compare Summaryは キャッシュ参照のためPTU(%)メトリクスが見つからず空白表示。fullrecalculateでキャッシュ再計算し全PFのPTUを反映する | dm-signal | 05-06 | fullrecalculate(mode=full)を本番で |
 | cmd_2584 | test_select.sh(191行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | test_select.shのCoDD計測・設計書・afte |
+| cmd_2585 | cmd_publish.sh(168行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_publish.sh CoDD refactorを計 |
+| cmd_2590 | skill_auto_improve.sh(279行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_auto_improve.sh(279→312行 |

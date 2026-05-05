@@ -34,24 +34,31 @@ yaml_escape_double_quoted() {
     printf '%s' "$value"
 }
 
-get_cmd_field() {
-    local key="$1"
-    awk -v id="  - id: ${ABSORBED_CMD}" -v key="$key" '
+get_cmd_fields_multi() {
+    # Single awk pass to extract purpose and project from CMD_FILE
+    awk -v id="  - id: ${ABSORBED_CMD}" '
         $0 == id { found=1; next }
         found && /^  - id:/ { exit }
-        found && $0 ~ ("^    " key ":") {
+        found && /^    purpose:/ {
             line = $0
-            sub("^    " key ": *\"?", "", line)
+            sub(/^    purpose: *"?/, "", line)
             sub(/"$/, "", line)
-            print line
-            exit
+            purpose = line
         }
+        found && /^    project:/ {
+            line = $0
+            sub(/^    project: *"?/, "", line)
+            sub(/"$/, "", line)
+            project = line
+        }
+        END { print purpose; print project }
     ' "$CMD_FILE"
 }
 
+# R2: REASONエスケープをスクリプト先頭で1回だけ計算（各関数で再利用）
+REASON_ESCAPED="$(yaml_escape_double_quoted "$REASON")"
+
 update_cmd_yaml() {
-    local reason_escaped
-    reason_escaped="$(yaml_escape_double_quoted "$REASON")"
     local tmp_file
     tmp_file="$(mktemp "${CMD_FILE}.tmp.XXXXXX")"
 
@@ -64,7 +71,7 @@ update_cmd_yaml() {
             exit 1
         fi
 
-        if ! awk -v target="$ABSORBED_CMD" -v mode="$MODE" -v by="$ABSORBING_CMD" -v reason="$reason_escaped" '
+        if ! awk -v target="$ABSORBED_CMD" -v mode="$MODE" -v by="$ABSORBING_CMD" -v reason="$REASON_ESCAPED" '
             function emit_extra_fields() {
                 if (mode == "absorbed") {
                     print "    absorbed_by: " by
