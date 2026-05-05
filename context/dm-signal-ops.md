@@ -63,6 +63,30 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - credentials: backend/.envのADMIN_USER/ADMIN_PASS(FE Admin認証とBE Admin認証は同じcredentials)
 - 参照: cdp_measure.sh L80-120, auto-ops/cdp/README.md, memory/cdp-browser-automation.md
 
+**ポート体系:**
+- `9222`: legacy daemon
+- `9223`: 拡張
+- `9400`: auto-ops daemon
+- `cdp_cli.sh`: daemon版CLI
+- `cdp_helper.py`: auto-ops版
+
+**FE詳細操作:**
+- メニュー: サイドバーのPF一覧 / Compare Summary / Signals / Terms
+- PF選択: URLパス直指定(`/portfolio/{id}`)
+- 保有シグナル確認: `/signals`
+
+## §36 API認証
+
+- admin系API: Basic Auth(`ADMIN_API_KEY`)
+- viewer系API: Bearer Token(`VIEWER_TOKEN`)
+- データ確認はAPI経由よりDB直接クエリが確実。
+
+## §37 ETL
+
+- ETL cronはL0-L3の4本体制。
+- L0-L3各sync cronで全期間再計算が完結する。
+- `daily_etl.py`は冗長であり廃止予定。
+
 ### Render CLI (v2.12.0)
 
 `/home/simokitafresh/.local/bin/render`。認証済み(simokitafresh@gmail.com)。ワークスペース=My Workspace。
