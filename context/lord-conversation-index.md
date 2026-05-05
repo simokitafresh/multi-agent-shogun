@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-05T19:36:25+09:00 -->
+<!-- generated_at: 2026-05-05T19:54:04+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T19:54:04+09:00 | terminal | response | cmd_2576(UWP Ongoing表示修正) **GATE PASS、家老に委任完了。** 殿の次の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-05-05T19:51:36+09:00 | terminal | inbound | Ongoingの方が良い。未計算なのかエラーなのかわからない
+- 2026-05-05T19:42:50+09:00 | ntfy | outbound | 【monitor】将軍CTX:58%。/compactをご検討ください
 - 2026-05-05T19:36:25+09:00 | terminal | response | 殿、3PFのUWP(MaxDD)が「—」表示になっている。 | PF名 | 原因 | |------|------| | DM4 | rank=1のMaxDDが未回復(recovery_date=NULL) | | L0-M_TMV_4M…
 - 2026-05-05T19:35:49+09:00 | terminal | inbound | UWP（MaxDD）の列に、—の表示があるのはなぜだ？
 - 2026-05-05T19:35:47+09:00 | terminal | response | 殿、UWP三指標の本番表示確認が完了した。 今日の全セッションをまとめる。 **本日の成果:** | # | cmd | 内容 | 状態 | |---|-----|------|------| | 1 | cmd_2568 | スキル帰属…
@@ -11,9 +14,6 @@
 - 2026-05-05T19:35:13+09:00 | terminal | response | 殿、**自分の目で確認した。** ヘッダー行右側: ...Calmar, **UWP (MaxDD)**, **Avg UWP**, **Total UWP**, Q1, Q2, P, S... **3列全て表示されている。** - **…
 - 2026-05-05T19:32:31+09:00 | terminal | inbound | <task-notification> <task-id>b22kqu2w0</task-id> <tool-use-id>toolu_017wKKN8rx8BBiKwzYPjhQYL</tool-use-id> <output-file…
 - 2026-05-05T19:32:27+09:00 | terminal | response | fullrecalculate手順の直後にCDP確認手順を追記する。 [meta] stop_reason=tool_use
-- 2026-05-05T19:31:17+09:00 | terminal | inbound | 今のうちに正しいCDPのやり方を知識に取り込むべきだ。全員が間違っていたか知識不足だったよな？
-- 2026-05-05T19:28:49+09:00 | terminal | response | 3分後にpush確認+デプロイ待ち+CDPスクショをバックグラウンドで実行中。結果を待つ。 [meta] stop_reason=end_turn
-- 2026-05-05T19:28:03+09:00 | terminal | inbound | <task-notification> <task-id>bch3q086p</task-id> <tool-use-id>toolu_01JYYMqLFx3kuGxSUj3HEQSU</tool-use-id> <output-file…
 
 ## 未解決確認事項
 - 殿、UWP三指標の本番表示確認が完了した。 今日の全セッションをまとめる。 **本日の成果:** | # | cmd | 内容 | 状態 | |---|-----|------|------| | 1 | cmd_2568 | スキル帰属分離 | GATE CLEAR | | …
@@ -26,6 +26,7 @@
 - 殿、正直に報告する。 CDPでの認証がAdmin credentialsで通らない。FEのAdmin認証がBEの`ADMIN_USER/ADMIN_PASS`とは別の仕組みの可能性がある。これ以上試行錯誤すると殿の時間を奪う。 **事実:** - DBキャッシュにAvg UWP…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-05T19:54:04+09:00 | cmd_2576(UWP Ongoing表示修正) **GATE PASS、家老に委任完了。** 殿の次の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-05-05T19:35:47+09:00 | 殿、UWP三指標の本番表示確認が完了した。 今日の全セッションをまとめる。 **本日の成果:** | # | cmd | 内容 | 状態 | |---|-----|------|------| | 1 | cmd_2568 | スキル帰属分離 | GATE CLEAR | | …
 - 2026-05-05T19:28:01+09:00 | 殿、Compare SummaryにAvg UWP/Total UWPが表示されていない原因が判明した。 **cmd_2575のcommit(a455b4eb)がpushされていなかった。** FE変更が本番に届いていない。家老にpush指示を出した。push→Renderデプ…
 - 2026-05-05T18:43:16+09:00 | 殿、**cmd_2575(FE表示追加) GATE CLEAR。** **UWP三指標プロジェクト全完了。** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2573 | drawdowns limit撤廃(全DD格納) | **G…
@@ -33,7 +34,6 @@
 - 2026-05-05T16:54:37+09:00 | 殿、家老にcmd_2574のpush+パリティ検証指示を送信済み。 **cmd_2574状況:** - 実装+テスト完了(commit e6464b55) - metrics_calculator.pyに全rankからAvg/Total UWP集計追加済み - 残: push→…
 - 2026-05-05T16:35:26+09:00 | 殿、家老にcmd_2574のpush+パリティ検証指示を送信済み。 **cmd_2574状況:** - 実装+テスト完了(commit e6464b55) - metrics_calculator.pyに全rankからAvg/Total UWP集計追加済み - 残: push→…
 - 2026-05-05T16:10:49+09:00 | 殿、cmd_2574(metrics集計追加)配備完了。 **UWP三指標の残り:** - ~~cmd_A(limit撤廃)~~ → cmd_2573 GATE CLEAR - ~~cmd_B(metrics集計)~~ → cmd_2574 配備中 - cmd_C(FE表示追加…
-- 2026-05-05T15:34:38+09:00 | 殿、cmd_2573(drawdowns limit撤廃+パリティ検証)を家老に委任完了。 今回はIN句修正済み(5c8a9cf2)が本番稼働中のため、fullrecalculateは安全に通る。ACにAPI経由実行を明記した。 cmd_B(metrics集計追加)はcmd_2…
 
 ## 参照cmd
 - cmd_2226
@@ -53,6 +53,7 @@
 - cmd_2573
 - cmd_2574
 - cmd_2575
+- cmd_2576
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
