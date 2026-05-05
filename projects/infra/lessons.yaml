@@ -137,9 +137,9 @@ lessons:
   - communication
   - gate
   - git
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
   target_files:
   - scripts/ninja_monitor.sh
 - id: L557
@@ -251,7 +251,7 @@ lessons:
   - process
   - yaml
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
@@ -509,7 +509,7 @@ lessons:
   - infra
   - yaml
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
@@ -632,7 +632,7 @@ lessons:
   tags:
   - universal
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-05-03'
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
@@ -683,9 +683,9 @@ lessons:
     aw
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
-  last_referenced: '2026-05-03'
+  last_referenced: '2026-05-06'
   target_files:
   - gate_vercel_phase.sh
 - id: L501
@@ -1207,7 +1207,7 @@ lessons:
   - bash
   - yaml
   helpful_count: 6
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-05-05'
   target_files:
   - archive_completed.sh
@@ -1276,7 +1276,7 @@ lessons:
   - bash
   - yaml
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - cmd_friction_log.sh
@@ -1554,9 +1554,9 @@ lessons:
   tags:
   - yaml
   - reporting
-  helpful_count: 2
-  harmful_count: 1
-  last_referenced: '2026-05-04'
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-06'
   target_files:
   - report_field_set.sh
 - id: L383
@@ -1798,7 +1798,7 @@ lessons:
   - yaml
   - lesson
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-05'
   target_files:
   - lesson_auto_tag.sh
@@ -1947,7 +1947,7 @@ lessons:
   - bash
   - yaml
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - cmd_quality_log.sh
@@ -1982,9 +1982,9 @@ lessons:
   tags:
   - yaml
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-04'
+  last_referenced: '2026-05-06'
   target_files:
   - report_field_set.sh
 - id: L335
@@ -1998,9 +1998,9 @@ lessons:
   tags:
   - yaml
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
   target_files:
   - shout.sh
 - id: L333
@@ -2395,9 +2395,9 @@ lessons:
   summary: resolve_expected_report_file()はreport_filename/parent_cmdからファイル名を解決する既存関数。新規ガード追
   tags:
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L290
   title: karo_workarounds.yamlの混在フォーマット対応
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
@@ -2432,7 +2432,7 @@ lessons:
   - gate
   - yaml
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - gate_shogun_startup.sh
@@ -3667,9 +3667,9 @@ lessons:
   - deploy
   - gate
   - lesson
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L135
   title: build_instructions.sh は --help 指定でも生成処理を実行する
   summary: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
@@ -3743,6 +3743,9 @@ lessons:
   tags:
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-06'
 - id: L126
   title: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
@@ -3790,9 +3793,9 @@ lessons:
   - communication
   - gate
   - reporting
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L119
   title: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
   summary: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
@@ -4086,9 +4089,9 @@ lessons:
   - gate
   - lesson
   - deploy
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
   target_files:
   - auto_draft_lesson.sh
   - lesson_write.sh

@@ -1750,9 +1750,9 @@ lessons:
   summary: cmd_1749参考ファイルが存在せず、target_pathも誤りだったが、研究スクリプト(cmd_1736_alm_research.py)とテストからAL
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
   target_files:
   - tasks/lessons.md
   - docs/research/cmd_1750_alm_design.md
@@ -1845,7 +1845,7 @@ lessons:
   tags:
   - universal
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
@@ -2057,7 +2057,7 @@ lessons:
   tags:
   - recon
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - outputs/analysis/nested_fof/r28_k_beta_decomposition.yaml
@@ -2193,7 +2193,7 @@ lessons:
   tags:
   - yaml
   helpful_count: 0
-  harmful_count: 2
+  harmful_count: 1
   last_referenced: '2026-05-03'
   target_files:
   - tasks/lessons.md
@@ -2256,9 +2256,9 @@ lessons:
   summary: recalculate_fof.pyのLOOP-1(L590-L868)はPhase4A最適化済みだがSignal DB書込みは毎日実行。月中のmomentum
   tags:
   - db
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 1
-  last_referenced: '2026-05-03'
+  last_referenced: '2026-05-06'
   target_files:
   - queue/reports/kotaro_report_cmd_1447.yaml
 - id: L501
@@ -2988,7 +2988,7 @@ lessons:
   - process
   - production_invariant
   helpful_count: 6
-  harmful_count: 3
+  harmful_count: 2
   last_referenced: '2026-05-05'
   target_files:
   - outputs/analysis/cmd_1106_parity_analysis.csv
@@ -3072,7 +3072,7 @@ lessons:
   tags:
   - pipeline
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - outputs/analysis/cmd_1091_pf_health.csv
@@ -3381,9 +3381,9 @@ lessons:
   summary: cmd_1034 angle1でprofiler内0.178ms/pat vs native 0.111ms/pat。内訳比率は方向性として有用だが絶対値は膨張
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 1
-  last_referenced: '2026-05-04'
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-06'
   target_files:
   - outputs/analysis/cmd_1034_angle6_ppe_overhead.json
   - scripts/analysis/cmd_1034_angle6_ppe_overhead.py
@@ -3656,7 +3656,7 @@ lessons:
   tags:
   - db
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-05'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
@@ -3813,7 +3813,7 @@ lessons:
   - db
   - api
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
   target_files:
   - frontend/lib/__tests__/api-client-etag.test.ts
@@ -3851,9 +3851,9 @@ lessons:
   summary: cmd_1008 4ファミリー横断比較
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-04'
+  last_referenced: '2026-05-06'
   target_files:
   - scripts/analysis/p_bar_family_backtest.py
 - id: L335
@@ -3869,9 +3869,9 @@ lessons:
     BECAUSE
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L333
   title: FoF UUID 生値を含む /api/signals cache は壊れた payload とみなし fresh 再取得へ倒す
   summary: 多段 FoF では DB signal/holding_signal が portfolio UUID を保持するのが正常で、表示時だけ ticker
@@ -4346,9 +4346,9 @@ lessons:
     0.610 / m
   tags:
   - tmux
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L290
   title: 悪化確率指標と構造変化検定を同義扱いするな
   summary: P(det) は rolling recent vs long の方向付き悪化確率であり、未知の break date を探索する structural
@@ -4377,7 +4377,7 @@ lessons:
   tags:
   - universal
   helpful_count: 1
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-04'
 - id: L286
   title: ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置
@@ -5629,9 +5629,9 @@ lessons:
   tags:
   - db
   - recon
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
   target_files:
   - backend-deep-dive.md
 - id: L135
@@ -5693,6 +5693,9 @@ lessons:
   summary: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する（2026-02-14）
   tags:
   - yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-06'
 - id: L126
   title: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
   summary: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
@@ -5739,9 +5742,9 @@ lessons:
     s
   tags:
   - recon
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L119
   title: DATA_CATALOG.mdの86銘柄は本番PostgreSQL側の情報。experiments.db(SQLite)のdaily_pricesは実際14銘柄のみ(ETF12+DTB3+VIX)。カタログと実データの乖離に注意。
   summary: hayate(cmd_282,subtask_282_integ)
@@ -6004,9 +6007,9 @@ lessons:
   - testing
   - gate
   - grid_search
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-05'
+  last_referenced: '2026-05-06'
 - id: L085
   title: テストPF削除のFK依存は16テーブル
   summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow
