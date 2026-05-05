@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-05 -->
+<!-- last_updated: 2026-05-06 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,11 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1743 | 研究 — 既存124PF有限時間4指標一括計測 + L0/L1層別分布 | dm-signal | 04-05 | research_engine.pyに有限時間4指標(cal |
-| cmd_karo_fix_1743 | 修正 — cmd_1743層別分類の修正(L0=standard全65体/L1=FoF全59体) | dm-signal | 04-05 | classify_layer関数をportfolio_typ |
-| cmd_1744 | 研究 — ALM L0材料×既存L1パターンでFoF構築+既存ベースライン比較 | dm-signal | 04-05 | cmd_1744完了。ALM L0 4系列CSV・L1パター |
-| cmd_1746 | 強化 — shutsujin_departure.shに--dry-runオプション追加 | infra | 04-05 | shutsujin_departure.sh に --dry |
-| cmd_1747 | 研究 — 6目的関数ALM L0材料×忍法7本。Max Run-up以外の尖りでも効くか検証 | dm-signal | 04-05 | cmd_1747完了。6目的関数×4ファミリーのALM be |
 | cmd_karo_score_wide | 研究 — ALMスクリプトscore_wide高速化(score_fn→numpy一括) | dm-signal | 04-06 | cmd_1735/1736 を score_fn から sc |
 | cmd_1748 | 研究 — ALM L1 OOS検証。6目的関数×忍法7種=42パターンWF-OOS | dm-signal | 04-06 | 41/42 ROBUST。tail_contribution×加速RのみOVERFIT |
 | cmd_1749 | 偵察 — ALM本番組込み。BEパイプライン+Admin CDP+ALMフック候補 | dm-signal | 04-06 | L0フロー全容把握。Hook A(fof)+FE UI分析+CDPスクショ |
