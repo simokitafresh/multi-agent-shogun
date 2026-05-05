@@ -36,6 +36,7 @@ done
 
 python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" <<'PY'
 import hashlib
+import json
 import os
 import re
 import sys
@@ -58,14 +59,39 @@ if top_n < 1:
 apply_changes = apply_raw.lower() == "true"
 
 
+def _cache_path(log_path):
+    digest = hashlib.sha1(str(log_path).encode()).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / f"skill_auto_improve_cache_{digest}.json"
+
+
 def load_entries(path):
+    try:
+        stat = Path(path).stat()
+        cache_key = (stat.st_mtime_ns, stat.st_size)
+    except FileNotFoundError:
+        return []
+    cache_file = _cache_path(path)
+    if cache_file.is_file():
+        try:
+            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            if tuple(cached.get("key", [])) == cache_key:
+                return cached["entries"]
+        except (json.JSONDecodeError, KeyError):
+            pass
     try:
         with open(path, encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
     except FileNotFoundError:
         return []
-    entries = data.get("executions") or []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    entries = [entry for entry in (data.get("executions") or []) if isinstance(entry, dict)]
+    try:
+        cache_file.write_text(
+            json.dumps({"key": list(cache_key), "entries": entries}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    return entries
 
 
 def iter_skill_files():
@@ -88,15 +114,22 @@ def iter_skill_files():
             yield child.name, skill_file
 
 
+_skill_index = None
+
+
+def _get_skill_index():
+    global _skill_index
+    if _skill_index is None:
+        _skill_index = {name: path for name, path in iter_skill_files()}
+    return _skill_index
+
+
 def skill_file_for(skill_name, logged_path):
     if logged_path:
         path = Path(os.path.expanduser(str(logged_path)))
         if path.is_file():
             return path
-    for name, path in iter_skill_files():
-        if name == skill_name:
-            return path
-    return None
+    return _get_skill_index().get(skill_name)
 
 
 def normalize_reason(value):
