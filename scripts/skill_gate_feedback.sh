@@ -100,6 +100,8 @@ def latest_fail_entry():
     for entry in load_skill_log():
         if str(entry.get("result", "")).strip().upper() != "FAIL":
             continue
+        if str(entry.get("used", True)).strip().lower() == "false":
+            continue
         entry_gate = str(entry.get("gate") or "").strip()
         entry_source = str(entry.get("source") or "").strip()
         entry_points = str(entry.get("stumbling_points") or "").strip()
@@ -171,7 +173,7 @@ if not logged_entry and result.upper() == "FAIL" and has_duplicate_failure(skill
 
 if not logged_entry and os.path.isfile(log_script) and os.access(log_script, os.X_OK):
     subprocess.run(
-        ["bash", log_script, skill, executor, result, stumbling, gate, source, str(skill_file)],
+        ["bash", log_script, skill, executor, result, stumbling, gate, source, str(skill_file), "false"],
         check=True,
     )
 

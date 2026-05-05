@@ -2,7 +2,7 @@
 # skill_execution_log.sh — skill execution outcome log.
 # Usage:
 #   bash scripts/skill_execution_log.sh summary
-#   bash scripts/skill_execution_log.sh <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path]
+#   bash scripts/skill_execution_log.sh <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ REPO_ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 usage() {
-    echo "Usage: $0 summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path]" >&2
+    echo "Usage: $0 summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
 }
 
 yaml_scalar() {
@@ -50,6 +50,8 @@ for entry in entries:
     result = str(entry.get("result") or "").strip().upper()
     if result != "FAIL":
         continue
+    if str(entry.get("used", True)).strip().lower() == "false":
+        continue
     skill_name = str(entry.get("skill") or "").strip()
     if not skill_name:
         continue
@@ -80,6 +82,7 @@ stumbling_points="${4:-}"
 gate="${5:-}"
 source="${6:-}"
 skill_path="${7:-}"
+used="${8:-true}"
 
 if [ -z "$skill" ] || [ -z "$executor" ] || [ -z "$result" ]; then
     usage
@@ -106,6 +109,7 @@ ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
         printf '  skill: %s\n' "$(yaml_scalar "$skill")"
         printf '  executor: %s\n' "$(yaml_scalar "$executor")"
         printf '  result: %s\n' "$(yaml_scalar "$result")"
+        printf '  used: %s\n' "$(yaml_scalar "$used")"
         printf '  stumbling_points: %s\n' "$(yaml_scalar "$stumbling_points")"
         [ -n "$gate" ] && printf '  gate: %s\n' "$(yaml_scalar "$gate")"
         [ -n "$source" ] && printf '  source: %s\n' "$(yaml_scalar "$source")"

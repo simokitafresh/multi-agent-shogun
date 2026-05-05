@@ -91,6 +91,7 @@ entry = data["executions"][0]
 assert entry["skill"] == "report-bundle"
 assert entry["executor"] == "saizo"
 assert entry["result"] == "PASS"
+assert entry["used"] == "true"
 assert entry["stumbling_points"] == "迷いなし"
 print("OK")
 EOF
@@ -128,6 +129,69 @@ EOF
     [[ "${lines[0]}" == "skill | fail_count | last_fail | top_stumbling_point" ]]
     [[ "${lines[1]}" == "dashboard-update | 2 | 2026-05-02T10:02:00+0900 | verdict missing" ]]
     [[ "${lines[2]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
+}
+
+@test "skill aggregation excludes used false FAIL entries" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/dashboard-update"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+quality_metric: "report gate pass rate"
+---
+# report-write
+EOF
+    cat > "$TEST_TMPDIR/skills/dashboard-update/SKILL.md" <<'EOF'
+---
+name: dashboard-update
+quality_metric: "dashboard update clear rate"
+---
+# dashboard-update
+EOF
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "hayate"
+  result: "FAIL"
+  used: "false"
+  stumbling_points: "inferred but unused"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hayate"
+  result: "FAIL"
+  used: "true"
+  stumbling_points: "actual failure"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:02:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "FAIL"
+  used: "false"
+  stumbling_points: "unused dashboard failure"
+  gate: "gate_report_format"
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" summary
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report-write | 1 | 2026-05-02T10:01:00+0900 | actual failure"* ]]
+    [[ "$output" != *"dashboard-update |"* ]]
+    [[ "$output" != *"inferred but unused"* ]]
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_METRICS_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_METRICS_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report-write | 0.0% | 0 | 1 | 1 | FAIL | report gate pass rate"* ]]
+    [[ "$output" == *"dashboard-update | N/A | 0 | 0 | 0 | N/A | dashboard update clear rate"* ]]
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report-write | 1 | 1 | 2026-05-02T10:01:00+0900 | gate_report_format | actual failure"* ]]
+    [[ "$output" != *"dashboard-update |"* ]]
+    [[ "$output" != *"unused dashboard failure"* ]]
 }
 
 @test "skill_execution_log skips entries whose source is under tests path" {
@@ -351,6 +415,7 @@ data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
 skills = [entry["skill"] for entry in data["executions"]]
 assert "ninja-commit" in skills
 assert "report-write" in skills
+assert all(entry["used"] == "false" for entry in data["executions"])
 print("OK")
 EOF
     [ "$status" -eq 0 ]

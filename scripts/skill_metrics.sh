@@ -85,6 +85,8 @@ for entry in load_entries(log_file):
     if not skill:
         continue
     result = str(entry.get("result") or "").strip().upper()
+    if result == "FAIL" and str(entry.get("used", True)).strip().lower() == "false":
+        continue
     bucket = result if result in {"PASS", "FAIL"} else "OTHER"
     counts[skill][bucket] += 1
     ts = str(entry.get("ts") or "").strip()
