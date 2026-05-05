@@ -44,8 +44,9 @@ fi
 skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/skills:$HOME/.codex/skills:$HOME/.claude/skills}"
 
 python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" <<'PY'
+import fcntl
 import os
-import subprocess
+import re
 import sys
 import tempfile
 from datetime import datetime
@@ -54,6 +55,9 @@ from pathlib import Path
 import yaml
 
 skills_dirs, explicit_skill, gate, result, reason, executor, source, log_script = sys.argv[1:9]
+
+_SKILL_LOG_CACHE = None
+_TESTS_PATH_RE = re.compile(r'(?:^|/)tests/')
 
 
 def iter_skill_files():
@@ -84,15 +88,57 @@ def skill_log_file():
 
 
 def load_skill_log():
+    global _SKILL_LOG_CACHE
+    if _SKILL_LOG_CACHE is not None:
+        return _SKILL_LOG_CACHE
     path = skill_log_file()
     if not path.is_file():
-        return []
+        _SKILL_LOG_CACHE = []
+        return _SKILL_LOG_CACHE
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception:
-        return []
+        _SKILL_LOG_CACHE = []
+        return _SKILL_LOG_CACHE
     entries = data.get("executions") or []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    _SKILL_LOG_CACHE = [entry for entry in entries if isinstance(entry, dict)]
+    return _SKILL_LOG_CACHE
+
+
+def _yaml_str(v):
+    v = str(v).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    return f'"{v}"'
+
+
+def _write_skill_log(skill_name, executor_name, result_str, stumbling, gate_name, source_path, skill_path_str):
+    if _TESTS_PATH_RE.search(source_path):
+        return
+    log_path = skill_log_file()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = log_path.parent / (log_path.name + ".lock")
+    ts = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+    lines = [
+        f'- ts: {_yaml_str(ts)}\n',
+        f'  skill: {_yaml_str(skill_name)}\n',
+        f'  executor: {_yaml_str(executor_name)}\n',
+        f'  result: {_yaml_str(result_str)}\n',
+        f'  stumbling_points: {_yaml_str(stumbling)}\n',
+    ]
+    if gate_name:
+        lines.append(f'  gate: {_yaml_str(gate_name)}\n')
+    if source_path:
+        lines.append(f'  source: {_yaml_str(source_path)}\n')
+    if skill_path_str:
+        lines.append(f'  skill_path: {_yaml_str(skill_path_str)}\n')
+    with open(str(lock_path), "a", encoding="utf-8") as lock_fh:
+        fcntl.flock(lock_fh, fcntl.LOCK_EX)
+        try:
+            if not log_path.exists() or log_path.stat().st_size == 0:
+                log_path.write_text("executions:\n", encoding="utf-8")
+            with open(str(log_path), "a", encoding="utf-8") as fh:
+                fh.writelines(lines)
+        finally:
+            fcntl.flock(lock_fh, fcntl.LOCK_UN)
 
 
 def latest_fail_entry():
