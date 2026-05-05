@@ -258,6 +258,8 @@ stats = defaultdict(lambda: {"counter": Counter(), "last": {}, "gate": {}, "path
 for entry in load_entries(log_file):
     if str(entry.get("result", "")).strip().upper() != "FAIL":
         continue
+    if str(entry.get("used", True)).strip().lower() == "false":
+        continue
     skill = str(entry.get("skill") or "").strip()
     if not skill:
         continue
