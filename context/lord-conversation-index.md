@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-05T11:21:47+09:00 -->
+<!-- generated_at: 2026-05-05T11:33:55+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T11:33:54+09:00 | terminal | response | 殿、cmd_2571の状況報告。 **hayate(疾風)が実装+commit完了**(ab5eac9d)。drawdowns.py limit撤廃のコード変更は完了。 **残っているのは本番パリティ検証AC(AC3-6,8)**: - …
+- 2026-05-05T11:22:24+09:00 | ntfy | outbound | 【家老】cmd_2572 初回配備開始 (title=修正 — UWP三指標の用語辞書登録(disambiguation.md+terminology.md), ninja=kagemaru) 修正 📋 https://gist.gith…
 - 2026-05-05T11:21:47+09:00 | terminal | response | 殿、2本並列で配備完了。 **稼働状況:** - **cmd_2571**(drawdowns limit撤廃+パリティ検証) → hayateに配備済み - **cmd_2572**(UWP用語辞書登録) → 家老が忍者に配備中 **残…
 - 2026-05-05T11:17:57+09:00 | ntfy | outbound | 【家老】cmd_2571 初回配備開始 (title=修正 — drawdowns.py limit撤廃(全DD格納)+本番DD件数確認+パリティ検証, ninja=hayate) 修正 📋 https://gist.github.com…
 - 2026-05-05T11:17:30+09:00 | terminal | inbound | CMD-dは先に進めよう
@@ -12,10 +14,9 @@
 - 2026-05-05T11:10:35+09:00 | terminal | response | 軍師にrev4レビュー依頼済み。CTX:15%。結果を待つ。 殿、軍師のレビュー結果が来たら報告する。 [meta] stop_reason=tool_use
 - 2026-05-05T11:08:08+09:00 | terminal | response | 軍師にrev4レビュー依頼済み。CTX:15%。結果を待つ。 殿、軍師のレビュー結果が来たら報告する。 [meta] stop_reason=end_turn
 - 2026-05-05T11:07:31+09:00 | terminal | inbound | 依頼しよう
-- 2026-05-05T10:56:17+09:00 | terminal | response | 設計書rev4に§11(本番パリティ検証)を追加完了。 **§11の要点:** - BE変更を含む全cmd(A/B/E/F/G)で、**signals.holding_signal + monthly_returns.monthly_re…
-- 2026-05-05T10:54:24+09:00 | terminal | inbound | 本番の全期間の保有シグナルと全期間のmonthly returnがコード変更前後で変わらないことを担保必須にしよう
 
 ## 未解決確認事項
+- 殿、cmd_2571の状況報告。 **hayate(疾風)が実装+commit完了**(ab5eac9d)。drawdowns.py limit撤廃のコード変更は完了。 **残っているのは本番パリティ検証AC(AC3-6,8)**: - AC3: signals.holding…
 - 【家老】cmd_2571 初回配備開始 (title=修正 — drawdowns.py limit撤廃(全DD格納)+本番DD件数確認+パリティ検証, ninja=hayate) 修正 📋 https://gist.github.com/simokitafresh/6eb49…
 - 確認できた。殿の懸念は正しく、かつ安全側。 **現物確認の結果:** | パス | metrics_calculator使用 | signal/holding影響 | |------|----------------------|-------------------| | *…
 - 殿、本セッションの進捗まとめ。 **完了:** - cmd_2568: スキル帰属分離 → GATE CLEAR - cmd_2569: Compare chart全画面Loading修正 → GATE CLEAR - UWP三指標設計書 rev3 → 軍師APPROVE(re…
@@ -23,7 +24,6 @@
 - 殿、軍師レビュー完了。**APPROVE / HIGH confidence**。指摘事項なし。 現物確認4点: 1. `get_drawdown_stats_from_db()` L578のrank=1限定を確認 2. drawdown_periods全rank格納をgene…
 - cmd_2568(スキル帰属分離)を家老に委任完了。教訓LS045も記録済み。 殿、スキル成長ループの診断と修正cmdの発令を完了した。 **実行したこと:** 1. スキル別FAIL率の現物計測 → dashboard-update治癒、report-write/verdic…
 - 確認しよう
-- 殿、将軍復帰つかまつった。 **現況:** - **cmd_2567**(セマンティクスインデックス導線埋込み) — GATE CLEAR。push保留(CI RED中) - **hayate** — CI RED修正中(semantic_map重複エントリ修正)、CTX:42…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-05T11:21:47+09:00 | 殿、2本並列で配備完了。 **稼働状況:** - **cmd_2571**(drawdowns limit撤廃+パリティ検証) → hayateに配備済み - **cmd_2572**(UWP用語辞書登録) → 家老が忍者に配備中 **残りcmd:** - cmd_B(metr…
@@ -36,16 +36,13 @@
 - 2026-05-05T01:11:46+09:00 | 軍師idle分析受領。YAMLパース脆弱性（quality_gate内のパイプ文字→全cmdパース失敗）は重要な発見。cmd_2565のWA根因でblast radius大。 殿、軍師がidle分析でshogun_to_karo.yamlのYAMLパース脆弱性を発見した。cmd…
 
 ## 参照cmd
-- cmd_2223
 - cmd_2226
 - cmd_2378
 - cmd_2486
 - cmd_2527
 - cmd_2529
-- cmd_2538
 - cmd_2543
 - cmd_2548
-- cmd_2552
 - cmd_2553
 - cmd_2554
 - cmd_2555
@@ -66,6 +63,7 @@
 - cmd_2570
 - cmd_2571
 - cmd_2572
+- PD-034
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
