@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L716 -->
+<!-- last_synced_lesson: L717 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -208,3 +208,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L714: recalculate-sync acceptedでは完了判定にしない（cmd_2574）
 - L715: recalculate-sync acceptedは完了ではない。DB recalculation_statusのcompleted確認が必須（cmd_2574）
 - L716: metrics APIのNHF表示名はNew High Frequency（cmd_2577）
+- L717: 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ（cmd_2578）
