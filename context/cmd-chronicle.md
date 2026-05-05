@@ -821,3 +821,4 @@
 | cmd_2574 | cmd_2573でDrawdownPeriod全DD格納が完了。metrics_calculator.pyのget_drawdown_stats_from_dbを拡張し、全rankからAvg/Total UWPを集計してmetrics APIレスポンスに2行追加する。既存UWP(rank=1)と同じデータソース+同じ構造で一貫性を維持 | dm-signal | 05-05 | Avg/Total Underwater Periodをme |
 | cmd_2575 | cmd_2574でmetrics APIがAvg/Total Underwater Periodを返す状態になった。FEのMetrics/Compare Summary/Termsページに表示を追加し、既存UWPラベルをUWP (MaxDD)に変更してユーザーが3指標を区別できるようにする | dm-signal | 05-05 | FE Metrics/Compare Summary/Ter |
 | cmd_2576 | UWP(MaxDD)がNULL(未回復DD)の場合にCompare Summaryで—表示される。未計算/エラー/未回復の区別がつかない(殿指摘)。NULLの場合にOngoing表示にする。既存Metricsページでは既にOngoing表示されておりCompare Summaryだけ不整合 | dm-signal | 05-05 | Compare SummaryのUWP(MaxDD)で未回復 |
+| cmd_2578 | Compare SummaryにSPYとTQQQの両方をベンチマーク行として常時表示する(殿指示)。現在はPFのbenchmark_tickerから自動収集(SPYのみ)。TQQQを追加ベンチマークとしてハードコード追加し、SPYと並んで常時表示する。TQQQ株価データは本番pricesテーブルに存在(2010-2026) | dm-signal | 05-05 | Compare Summaryの追加ベンチマークとしてTQQ |
