@@ -817,3 +817,4 @@
 | cmd_2569 | Compare chart画面でPF選択するとperfLoading/benchmarkLoadingが全画面Loadingを発火し、UIが全消失して再読み込みされたように見える。殿報告の使いづらさの根因。全画面Loadingは初回signals取得(loading)で発火する設計に変更し、perfLoading/benchmarkLoadingはチャートセクション内のインライン表示に移設する | dm-signal | 05-05 | Compare chartの全画面Loading条件をsig |
 | cmd_2570 | DrawdownPeriodのlimit=10問題(UWP設計レビューで殿が発見)と同様に、metrics計算で使われるデータにlimit/サンプリング/切り捨て/丸め等の制限があり実測値と乖離するメトリクスがないか全数調査する。metrics_calculator.py+drawdowns_calculator.py+関連generator全体を対象とする | dm-signal | 05-05 | metrics_calculator.pyのadd_metr |
 | cmd_2572 | UWP三指標(UWP MaxDD/Avg UWP/Total UWP)追加に伴い、既存UWPの意味が曖昧になる。disambiguation.mdに3エントリ追加+terminology.md索引追加で1語1意味を維持する。設計書§6に準拠 | dm-signal | 05-05 | UWP三指標の用語曖昧性を解消するため、disambigua |
+| cmd_2573 | Avg/Total UWP計算に全DDが必要。drawdowns.py limit=10をNoneに変更し全DD格納。signal_flush.py IN句修正(5c8a9cf2)済みのためfullrecalculateは安全に通る。パリティ検証でsignals/monthly_returnsが不変であることを実証する | dm-signal | 05-05 | drawdowns.py limit=10→None変更(全 |
