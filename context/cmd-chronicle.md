@@ -823,3 +823,4 @@
 | cmd_2584 | test_select.sh(191行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | test_select.shのCoDD計測・設計書・afte |
 | cmd_2585 | cmd_publish.sh(168行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_publish.sh CoDD refactorを計 |
 | cmd_2590 | skill_auto_improve.sh(279行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_auto_improve.sh(279→312行 |
+| cmd_2588 | cmd_absorb.sh(257行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_absorb.sh(257行)をCoDD refac |
