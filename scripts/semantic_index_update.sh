@@ -108,12 +108,15 @@ def parse_concepts(text):
             if left in {"id", "label", "aliases"}:
                 attrs[left] = right
         aliases = [a.strip() for a in attrs.get("aliases", "").split(",") if a.strip()]
+        cid = attrs.get("id") or concept_id
+        if any(c["id"] == cid for c in concepts):
+            continue  # skip duplicate concept IDs
         concepts.append(
             {
                 "start": start,
                 "end": end,
                 "block": block,
-                "id": attrs.get("id") or concept_id,
+                "id": cid,
                 "label": attrs.get("label") or heading,
                 "aliases": aliases,
             }
@@ -165,6 +168,9 @@ def resource_row(source_type, payload):
         return f"| lesson | {ref} |"
     timestamp = str(payload.get("timestamp") or payload.get("ts") or "").strip()
     summary = str(payload.get("summary") or payload.get("detail") or "").strip()
+    summary = re.sub(r"<[^>]+>", "", summary)  # strip XML/HTML tags
+    summary = re.sub(r"\s+", " ", summary).strip()  # collapse whitespace
+    summary = summary[:120]  # cap at 120 chars
     ref = "`queue/lord_conversation.jsonl`"
     if timestamp:
         ref += f" {timestamp}"
