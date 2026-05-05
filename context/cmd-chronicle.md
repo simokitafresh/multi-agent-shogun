@@ -825,3 +825,4 @@
 | cmd_2590 | skill_auto_improve.sh(279行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_auto_improve.sh(279→312行 |
 | cmd_2588 | cmd_absorb.sh(257行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_absorb.sh(257行)をCoDD refac |
 | cmd_2589 | skill_gate_feedback.sh(216行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_gate_feedback.sh CoDD re |
+| cmd_2592 | skills/cdp-browse/SKILL.mdのgate FAIL(フロントマター<>検出)修正、allowed-tools追加、note.com下書き保存実績の反映、能動的CDP使用の指針追加 | infra | 05-06 | skills/cdp-browse/SKILL.mdのフロン |
