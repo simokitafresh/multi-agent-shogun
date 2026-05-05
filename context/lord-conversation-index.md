@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-05T12:55:08+09:00 -->
+<!-- generated_at: 2026-05-05T13:11:22+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T13:11:22+09:00 | terminal | response | 殿、状況が変わった。**revert後もStatementTooComplex再発(3回連続)**。 **重要な事実の変化:** - コードはrevert済み(limit=10に戻った) - だが**DBのdrawdown_periods…
 - 2026-05-05T12:55:08+09:00 | terminal | response | revert指示送信完了。教訓を記録する。 [meta] stop_reason=tool_use
 - 2026-05-05T12:53:11+09:00 | terminal | inbound | その判断でよい。まずはrevartしよう。ニンジャが失敗したのは調査とCMDに不足があったからだな
 - 2026-05-05T12:52:20+09:00 | terminal | response | 殿、**StatementTooComplex再発**。2回連続。ネットワーク不安定ではなくコード起因と判断すべき。 **根因の仮説:** limit撤廃でdrawdown_periodsが10→avg29.4件に増加。fullrecal…
@@ -13,7 +14,6 @@
 - 2026-05-05T12:38:39+09:00 | terminal | inbound | 再実行しよう
 - 2026-05-05T12:36:49+09:00 | terminal | response | 殿、状況は**才蔵の報告より良好**。 **本番DB確認結果:** | テーブル | 行数 | 状態 | |---------|------|------| | signals | 473,368 | **正常**(不変) | | mon…
 - 2026-05-05T12:32:17+09:00 | terminal | inbound | まずは確認しよう
-- 2026-05-05T12:30:48+09:00 | terminal | response | 殿、確認結果を報告する。 **エラーの正体**: `psycopg2.errors.StatementTooComplex: stack depth` — これはPostgreSQLの`max_stack_depth`制限。ネットワーク不…
 
 ## 未解決確認事項
 - 殿、状況は**才蔵の報告より良好**。 **本番DB確認結果:** | テーブル | 行数 | 状態 | |---------|------|------| | signals | 473,368 | **正常**(不変) | | monthly_returns | 22,78…
