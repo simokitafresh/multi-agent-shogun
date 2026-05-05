@@ -34,6 +34,13 @@ fi
 
 # --- テストマッピング構築 (3層マッチング) ---
 declare -A TEST_MAP  # script_path → test_file(s)
+declare -A SCRIPT_PATHS_BY_BASENAME
+
+while IFS= read -r script_path; do
+    script_base=$(basename "$script_path")
+    rel_path="${script_path#"$REPO_ROOT"/}"
+    SCRIPT_PATHS_BY_BASENAME["$script_base"]+="$rel_path "
+done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name '*.sh' 2>/dev/null)
 
 # L1: 命名規則マッチ (test_foo.bats → scripts/foo.sh)
 for test_file in "$TEST_DIR"/test_*.bats; do
@@ -57,10 +64,10 @@ for test_file in "$TEST_DIR"/test_*.bats; do
     while IFS= read -r script_ref; do
         script_base=$(echo "$script_ref" | sed 's|.*[/]||' | sed 's/["\x27]//g')
         [ -z "$script_base" ] && continue
-        while IFS= read -r found; do
-            rel_path="${found#"$REPO_ROOT"/}"
+        for rel_path in ${SCRIPT_PATHS_BY_BASENAME[$script_base]:-}; do
+            [ -n "$rel_path" ] || continue
             TEST_MAP["$rel_path"]+="$test_file "
-        done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name "$script_base" 2>/dev/null)
+        done
     done < <(grep -ohE '(source|bash|\.) +[^ ]+\.sh' "$test_file" 2>/dev/null | sed 's/^[^ ]* //')
 done
 
