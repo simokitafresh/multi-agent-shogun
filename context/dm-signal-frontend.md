@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-04-25 cmd_2264設計書反映: セマフォ4/prefetch budget=2/signals TTL 60min/hard navigation構造/ボトルネック分析追記 -->
+<!-- last_updated: 2026-05-06 cmd_karo_direct_context_refresh: Compare Summary UWP/PTU/TQQQ+loading改善+4/26 FE性能変更索引追記 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -54,6 +54,15 @@ UIライブラリなし（全13コンポーネント手製）。
 → 詳細資料: `docs/research/frontend-components.md` §2
 - L162: App Routerのルートディスコンは『ページ差し替え+private folder退避』が復活コスト最小（cmd_527）
 - L164: ディスコン復元性はファイル存在確認だけでなく内容ハッシュ一致で検証すると誤判定を防げる（cmd_535）
+
+## 2.5 直近FE変更索引（2026-05-06）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| Compare Summary UWP | UWP系表示はAvg UWP / PTU(%) / MaxDD UWPの三指標。Total UWPはPTU(%)へ変換、MaxDD UWP未確定値はOngoing表示。 | cmd_2573-2576, cmd_2581; `frontend/app/compare-summary/page.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts` |
+| Compare Summary benchmark | Compare SummaryにTQQQをSPYと並列の追加ベンチマークとして表示。型はmetrics側にも追加。 | cmd_2578; `frontend/app/compare-summary/page.tsx`, `frontend/lib/types/metrics.ts` |
+| Compare loading | `/compare` はchart data loading中もPF選択などの比較コントロールを保持。 | cmd_2569; `frontend/app/compare/page.tsx` |
+| Drawdowns | all drawdowns表示変更(cmd_2571)は同日revert済み。現行Drawdowns/API/FAQはrevert後挙動を正とする。 | ab5eac9d → 1aa09525; `frontend/app/drawdowns/page.tsx`, `frontend/lib/api-client.ts`, `frontend/lib/faq-content.ts` |
 
 ## 3. 状態管理
 
@@ -129,6 +138,9 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 **バンドル最適化**: katex CSS→docsのみ(cmd_741, -27KB) / signal-pie-chart dynamic import(cmd_742, recharts~280KB排除) / date-fns除去+lucide optimizePackageImports+MtdChart/MtdDailyTable dynamic import(cmd_786, -12~20kB gzip)。
 **request storm分析(cmd_783)**: prefetchは10N+3本(N=PF数)でO(N)スケーリング。route gate+request budget導入が次の課題。
 **Next.js高速化知見**: バンドル分析+dynamic import(完了) → optimizePackageImports(完了) → Next.js 16アップグレード(React 19必須, 未着手)
+**signals handoff/cache実装(cmd_2283)**: SignalsContextにhandoff cacheを追加。PF切替/ページ遷移時の初期表示データ引き継ぎを担う。→ `frontend/contexts/signals-context.tsx`, `frontend/lib/__tests__/constants.test.ts`
+**next-portfolio predictive prefetch(cmd_2300)**: usePrefetchで次PF予測prefetchを計測・実装。SignalsContext/usePrefetchのテストを拡張。→ `frontend/hooks/usePrefetch.ts`, `frontend/contexts/signals-context.tsx`
+**idle fetch defer(cmd_2308)**: dashboard/monthly-returns/annual-returnsのfull fetchをidle schedulerへ遅延。初期表示優先のため`frontend/lib/idle-scheduler.ts`を追加。→ `frontend/app/dashboard/page.tsx`, `frontend/app/monthly-returns/page.tsx`, `frontend/app/annual-returns/page.tsx`
 
 **本番ベースライン計測(cmd_719+720)**: /dashboard First Load JS 238kB(最重量)。最遅API=monthly-returns 1721.5ms/62.7KB。キャッシュヒット率85-90%。偵察時に記載された「Renderコールドスタート15s+」は、backend が `plan: pro` のため本件では誤認。
 完了済み施策: SignalsContext useMemo化(cmd_740) / katex CSS→docs移動(cmd_741) / signal-pie-chart dynamic import(cmd_742) / prefetch縮退83→3本(cmd_733) / uvicorn workers 2→revert→再投入(cmd_743/751/763) / SWR化(cmd_765) / date-fns除去+lucide optimize+MtdChart dynamic import(cmd_786) / ETag FE対応(cmd_760) / 401連鎖崩壊修正(cmd_758) / Phase2a共通化4件(cmd_784-787)。
