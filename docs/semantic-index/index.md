@@ -24,6 +24,8 @@ codd:
 | file | `context/dm-signal-core.md` §19.2 |
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 fullrecalculate 3566s→480s |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-05T14:29:03+09:00 正しいfullrecalculateの仕方は知識もない？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-05T15:02 fullrecalculate deploy後トリガー+完了確認 |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -70,6 +72,7 @@ codd:
 | file | `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md` |
 | file | `docs/research/cmd_2555_disambiguation_design.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T19:41 用語辞書について進めていこう |
+| cmd | `cmd_2572` 修正 — UWP三指標の用語辞書登録(disambiguation.md+terminology.md) |
 
 ## production_parity — 本番パリティ
 
