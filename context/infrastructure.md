@@ -701,6 +701,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | PD-037 | inbox_write.sh HIGH-1(Python直接展開インジェクション)+HIGH-2(パストラバーサル)修正。殿裁定2026-02-25 | L043修正済み。`scripts/inbox_write.sh` |
 | PD-038 | ashigaru.md否定指示→案C(ハイブリッド)採用。forbidden_actions構造維持+positive_rule+reason追加。ACE準拠 | `instructions/ashigaru.md` cmd_324実装済み |
 
+## skill_gate_feedback.sh 最適化パターン（cmd_2589, 2026-05-06）
+
+subprocess.run → Python インライン + load_skill_log キャッシュで 220ms→50ms (-77%) 達成。
+→ `docs/research/cmd_2589_skill_gate_feedback_after_20260506.md`（最適化パターン+禁止パターン+計測ベースライン）
+
 ## SKILL.md品質基準（7項目チェックリスト）
 
 スキル作成・更新時に必ず確認。発火精度はdescription品質で決まる。
