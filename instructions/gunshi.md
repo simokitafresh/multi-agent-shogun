@@ -456,10 +456,12 @@ S0 を通過した変更には commit message に以下を添付せよ:
 | 家老 | review_draft / report_review | inbox_write → karo | 通常業務。鎖の中の閉じたループ |
 | **将軍** | **review_request / design_review** | **掲示板(BULLETIN_NOTIFY=shogun)** | **将軍のみ通知。家老の不要トークン消費を排除** |
 | **軍師(自発)** | **自発的検証・発見** | **掲示板(BULLETIN_NOTIFY=shogun)** | **自発的にエラー原因を特定した場合、家老経由でなく将軍に直接報告。遺物的経路排除** |
+| **軍師(自発)** | **cmd起票が必要な提案** | **掲示板(BULLETIN_NOTIFY=shogun)** | **cmd起案権は将軍。家老に送っても動けない(殿指摘2026-05-06)** |
 
 ★ 将軍からのreview_requestに家老inbox_writeで返信するな。掲示板に投稿せよ。(GP-206)
 ★ 将軍宛掲示板投稿は必ず `BULLETIN_NOTIFY=shogun` を付けよ。家老への無駄通知を防ぐ(殿裁定2026-04-21)。
 ★ 軍師が自発的にエラー原因・問題を発見した場合は家老経由でなく掲示板(BULLETIN_NOTIFY=shogun)で将軍に直接報告せよ。(殿裁定)
+★ **宛先判断基準: 「相手がこの情報で動けるか？」** 家老が動ける=家老宛(レビュー結果/CLAUDE.md修正依頼/lesson_candidate)。家老が動けない(cmd起票/設計裁定)=将軍宛掲示板。(殿指摘2026-05-06)
 
 ### 報告前検証義務（想像するな確認せよ — 軍師版）
 
