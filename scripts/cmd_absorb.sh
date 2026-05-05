@@ -118,13 +118,16 @@ update_cmd_yaml() {
 }
 
 append_changelog() {
-    local completed_at purpose project purpose_escaped reason_escaped
+    local completed_at purpose project purpose_escaped
     completed_at="$(date '+%Y-%m-%dT%H:%M:%S')"
-    purpose="$(get_cmd_field purpose)"
-    project="$(get_cmd_field project)"
+    # R1: purpose + project を1回のawkパスで取得
+    local fields
+    fields="$(get_cmd_fields_multi)"
+    purpose="$(echo "$fields" | sed -n '1p')"
+    project="$(echo "$fields" | sed -n '2p')"
     [ -z "$project" ] && project="unknown"
     purpose_escaped="$(yaml_escape_double_quoted "$purpose")"
-    reason_escaped="$(yaml_escape_double_quoted "$REASON")"
+    # R2: REASON_ESCAPEDはグローバル変数を再利用
 
     (
         flock -w 10 200 || { echo "ERROR: flock取得失敗: $CHANGELOG_FILE" >&2; exit 1; }
@@ -141,9 +144,9 @@ append_changelog() {
             echo "    status: ${MODE}"
             if [ "$MODE" = "absorbed" ]; then
                 echo "    absorbed_by: ${ABSORBING_CMD}"
-                echo "    absorbed_reason: \"${reason_escaped}\""
+                echo "    absorbed_reason: \"${REASON_ESCAPED}\""
             else
-                echo "    cancelled_reason: \"${reason_escaped}\""
+                echo "    cancelled_reason: \"${REASON_ESCAPED}\""
             fi
         } >> "$CHANGELOG_FILE"
     ) 200>"$CHANGELOG_LOCK"
