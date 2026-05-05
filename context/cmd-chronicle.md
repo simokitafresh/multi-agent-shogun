@@ -820,3 +820,4 @@
 | cmd_2573 | Avg/Total UWP計算に全DDが必要。drawdowns.py limit=10をNoneに変更し全DD格納。signal_flush.py IN句修正(5c8a9cf2)済みのためfullrecalculateは安全に通る。パリティ検証でsignals/monthly_returnsが不変であることを実証する | dm-signal | 05-05 | drawdowns.py limit=10→None変更(全 |
 | cmd_2574 | cmd_2573でDrawdownPeriod全DD格納が完了。metrics_calculator.pyのget_drawdown_stats_from_dbを拡張し、全rankからAvg/Total UWPを集計してmetrics APIレスポンスに2行追加する。既存UWP(rank=1)と同じデータソース+同じ構造で一貫性を維持 | dm-signal | 05-05 | Avg/Total Underwater Periodをme |
 | cmd_2575 | cmd_2574でmetrics APIがAvg/Total Underwater Periodを返す状態になった。FEのMetrics/Compare Summary/Termsページに表示を追加し、既存UWPラベルをUWP (MaxDD)に変更してユーザーが3指標を区別できるようにする | dm-signal | 05-05 | FE Metrics/Compare Summary/Ter |
+| cmd_2576 | UWP(MaxDD)がNULL(未回復DD)の場合にCompare Summaryで—表示される。未計算/エラー/未回復の区別がつかない(殿指摘)。NULLの場合にOngoing表示にする。既存Metricsページでは既にOngoing表示されておりCompare Summaryだけ不整合 | dm-signal | 05-05 | Compare SummaryのUWP(MaxDD)で未回復 |
