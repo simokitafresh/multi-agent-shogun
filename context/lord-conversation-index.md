@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-05T09:16:19+09:00 -->
+<!-- generated_at: 2026-05-05T10:21:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-05T10:21:52+09:00 | terminal | response | 殿、偵察結果を報告する。 ## metrics全数調査結果 (cmd_2570) add_metric全42件を全数調査。**HIGH 3件 + MEDIUM 2件 + LOW 2件**を検出。 ### HIGH（実測乖離大） | # |…
+- 2026-05-05T09:16:29+09:00 | ntfy | outbound | 【家老】cmd_2570 初回配備開始 (title=偵察 — metrics計算のlimit/制限/切り捨てによる実測乖離リスク全数調査, ninja=saizo) 偵察 📋 https://gist.github.com/simoki…
 - 2026-05-05T09:16:19+09:00 | terminal | response | 殿、本セッションの進捗まとめ。 **完了:** - cmd_2568: スキル帰属分離 → GATE CLEAR - cmd_2569: Compare chart全画面Loading修正 → GATE CLEAR - UWP三指標設計書…
 - 2026-05-05T09:11:49+09:00 | terminal | inbound | その他のmetricsもlimitや制限で実測と乖離するものが無いか調査して
 - 2026-05-05T09:11:15+09:00 | terminal | response | 軍師に再レビュー依頼済み。CTX:12%で余裕あり。結果を待つ。 [meta] stop_reason=end_turn
@@ -12,8 +14,6 @@
 - 2026-05-05T09:07:27+09:00 | terminal | inbound | 2
 - 2026-05-05T09:05:58+09:00 | terminal | response | 設計書を再検証する。軍師APPROVEだが殿の問いに応える。 一つ気になる点がある。DrawdownPeriodモデルのdocstringに**「Worst N Drawdown Period」**と書いてある。Nはいくつか？全DDが格納…
 - 2026-05-05T09:05:09+09:00 | terminal | inbound | 穴はないか？
-- 2026-05-05T08:41:59+09:00 | terminal | response | 殿、軍師レビュー完了。**APPROVE / HIGH confidence**。指摘事項なし。 現物確認4点: 1. `get_drawdown_stats_from_db()` L578のrank=1限定を確認 2. drawdown…
-- 2026-05-05T08:41:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-05 08:39:42|CI緑: run 25349040577
 
 ## 未解決確認事項
 - 殿、本セッションの進捗まとめ。 **完了:** - cmd_2568: スキル帰属分離 → GATE CLEAR - cmd_2569: Compare chart全画面Loading修正 → GATE CLEAR - UWP三指標設計書 rev3 → 軍師APPROVE(re…
