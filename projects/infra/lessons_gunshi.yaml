@@ -106,7 +106,7 @@ lessons:
     karo_workarounds.yamlで同一categoryが3件以上あれば道具を疑え。
   source_cmd: gunshi_deepdive_20260406
   created_at: '2026-04-06'
-  automated: false
+  automated: true
   enforcement_level: 2
   enforcement: gunshi_review_log ヘッダ2行目に原理として埋込済み。毎レビュー時に読む
 - id: LG015
@@ -152,7 +152,7 @@ lessons:
   detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: false
+  automated: true
   enforcement_level: 2
   enforcement: gunshi.md idle Step 6 + gate_gunshi_startup.sh Check 9
 - id: LG019

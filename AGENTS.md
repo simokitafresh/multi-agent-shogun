@@ -123,6 +123,7 @@ Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
         → context/{project}.md（要約のみ）→ context/cmd-chronicle.md
+        → context/semantic-map.md（概念索引。用語が曖昧な時の逆引き入口）
         → context/gunshi-*.md → dialogue_preprocessing_research末尾(最新Phase)
         + gunshi-nazenaze-synthesis.md
         研究日誌の読み方: 通常=末尾のみ。殿が「読め」→全文を最初から省略せず読む
@@ -434,6 +435,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - Claude version pin/rollback|2.1.87固定。auto-updateは`~/.local/bin/claude`を上書きするが`~/bin/claude`は不変|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
+- セマンティクスインデックス|概念索引=`context/semantic-map.md`、概念検索=`bash scripts/semantic_search.sh "<query>"`|用語が曖昧な時は起動時索引+CLI検索で関連ファイルへ到達|→ `docs/research/semantic_index_design.md`
 
 ## Cross-Project Context
 - `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
@@ -464,7 +466,12 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 
 reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5/lookback=6/PBO=5組合せ/MaxDD=1点)し殿の時間を奪った(2026-04-04)
 
+## 簡略版コード禁止（全エージェント必読）
+
+**「とりあえず動く簡略版」は作るな。完璧版のみ。** 一度簡略版が存在すると正しい実装の動機が消えコードベースが汚染される(殿厳命2026-03-17)。特にアルゴリズム実装は学術論文の定義に完全準拠を要求。
+
 ## Deployment Rules
+- **忍者に記憶の連続性はない**|忍者は毎回/clearで全記憶消失。知識は報告YAML+タスクYAML注入で引き継ぐ。cmd設計で担当者を指名するな。配備は家老の判断に委ねよ
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
 - 進捗報告|忍者はAC完了ごとにtask YAMLのprogress欄を更新|ashigaru.md Step 4.5参照
 - 偵察デフォルト品質5要件|偵察は現象特定で止めるな|(1)変更対象ファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース・副作用 (5)依存関係・順序制約(flush順序・キャッシュ共有・ネスト読み書き等)|テンプレート+ゲートWARNで自動化×強制
@@ -472,7 +479,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 ## Current Project
 
 - id: dm-signal | path: `/mnt/c/Python_app/DM-signal`
-- context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md`
+- context: `context/dm-signal.md` | sub: `context/dm-signal-core.md` `context/dm-signal-frontend.md` `context/dm-signal-ops.md` `context/dm-signal-research.md` | 用語辞書: `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md` `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md`
 - 知見: `context/gs-speedup-knowledge.md` `context/gstack-knowledge.md` `context/l3-robustness.md` `context/database.md` `context/gunshi-opt12-analysis.md` `context/gunshi-fullrecalc-speed-analysis.md` `context/gunshi-fullrecalc-resilience-analysis.md` `context/gunshi-codd-analysis.md` `context/gunshi-silent-fallback-analysis.md` `context/gunshi-infra-perf-audit.md` `context/gunshi-4metrics-design.md` `context/gunshi-flair-deepdive.md` `context/gunshi-fof-deterioration-analysis.md` `context/gunshi-gs-landscape-analysis.md` `context/gunshi-gs-speed-optimization-design.md` `context/gunshi-interpretation-layer-design.md` `context/gunshi-metrics-engine-design.md` `context/gunshi-alm-38metrics-design.md` `context/robustness-verification-catalog.md`
 - チェックリスト: `context/checklist-shin-v2-registration.md` `context/checklist-ward-fof-production.md` `context/checklist-alm-registration.md`
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)

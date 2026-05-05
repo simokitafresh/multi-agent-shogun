@@ -74,5 +74,12 @@ bash scripts/inbox_archive.sh karo
 - 順序を崩すな（§8ルール）
 
 ## 注意ポイント
+- 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|tobisaru:lesson_done_missing|draft_lessons:1
+
+- 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kagemaru:lesson_done_missing
+- 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hayate:lesson_done_missing|draft_lessons:1
+
+- 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hanzo:lesson_done_missing
+- 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:1
 
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76

@@ -4282,7 +4282,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-02
 - **出典**: cmd_2482
 - **記録者**: hayate
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,git]
 - **target_files**: [scripts/archive_completed.sh,scripts/cmd_save.sh,docs/research/codd_refactor_registry.md]
 - git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、amendして自分のhunkだけに絞れた。次回はgit diff -- <file>で同一ファイル内hunkを確認し、必要ならgit add -p相当でstageする。
@@ -4291,7 +4291,123 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-02
 - **出典**: cmd_2483
 - **記録者**: gate_auto
-- **status**: draft
+- **status**: confirmed
 - **tags**: [infra,communication,lesson,reporting]
 - **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set.bats]
 - lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+
+### L557: 永続キャッシュの無効化キーをファイル数だけにするな
+- **日付**: 2026-05-03
+- **出典**: cmd_2529
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra,process,communication,gate]
+- **target_files**: [scripts/archive_completed.sh,tests/unit/test_archive_completed.bats,queue/reports/,queue/reports/saizo_report_cmd_2529.yaml]
+- archive_completed.shの/tmp永続キャッシュがreport/task/gate状態をファイル数だけで再利用し、symlink化・status変化・gate補完後も古いactive/gate判定を握って報告を残存させた。状態YAMLやgate flagを読む運用sweepでは、永続キャッシュを使うならmtime/hash等を含めるか、実行内キャッシュに限定する。
+
+### L558: ninja_monitor.sh内のinbox_write&バックグラウンド呼出しはL841/L881のみスコープだが、L1022/L1028に同パターンが残存
+- **日付**: 2026-05-03
+- **出典**: cmd_2540
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [infra,communication,gate,git]
+- **target_files**: [scripts/ninja_monitor.sh]
+- L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクがある。次のcmdで修正を検討
+
+### L559: 修正cmd副作用5パターンチェック — premortem時必須
+- **日付**: 2026-05-04
+- **出典**: gunshi_semantic_rescan
+- **記録者**: karo
+- **tags**: [infra,lesson]
+- 修正副作用率42パーセント(12件中5件)。修正cmdのpremortem時に5パターン副作用チェック: (1)return 1波及(set -e環境) (2)set+eスコープ過大 (3)フィルタ偽陰性 (4)上限値の状態除外漏れ (5)非atomic 2ステップ更新。修正タスク配備時にrelated_lessonsとして注入推奨
+
+### L560: bashのif条件失敗後は終了コードを即時保存する
+- **日付**: 2026-05-04
+- **出典**: cmd_2549
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra,bash]
+- **target_files**: [scripts/archive_completed.sh,tests/unit/test_archive_completed.bats]
+- grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了コードを分類に使う場合はelse内の先頭でlocal rc=$?として保存してから分岐せよ。
+
+### L561: MECE辞書cmdは旧AC/report_path混入を検出したらpurpose+inboxを正本化し報告に明記する
+- **日付**: 2026-05-04
+- **出典**: cmd_2554
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [dm-signal,communication,gate,yaml]
+- cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inboxはcmd_2554だったため、旧reportを上書きせずcmd_2554 reportを作成した。次回はtask YAML生成時にparent_cmd/task_id/report_filename/target_path/ACのcmd番号一致をgate化すると迷いを防げる。
+
+### L562: CoDD propagate設計時は入口ファイル種別を実装で確認する
+- **日付**: 2026-05-04
+- **出典**: cmd_2556
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,gate,yaml]
+- **target_files**: [tmp/cmd_2556_codd_probe/codd/codd.yaml,tmp/cmd_2556_codd_probe/config/term_dictionary.yaml,tmp/cmd_2556_codd_probe/docs/upstream.md,tmp/cmd_2556_codd_probe/docs/context.md,tmp/cmd_2556_codd_probe/src/app/service.py]
+- CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイルをSSOTにする設計では、frontmatter案を書く前に対象拡張子と変更検出入口を実試行で確認すべき。
+
+### L563: 設計書レビューではSSOT自動更新と下流propagateを分離して検証せよ
+- **日付**: 2026-05-04
+- **出典**: cmd_karo_direct_semantic_index_review
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,testing,review,gate]
+- **target_files**: [docs/research/semantic_index_design.md,docs/research/cmd_2555_disambiguation_design.md,scripts/cmd_complete_gate.sh,scripts/lesson_write.sh,lib/lord_conversation.sh]
+- §4/§7のようにhookがSSOTを直接更新する設計は、CoDDの下流propagateと責務が混ざりやすい。レビュー時は(1)SSOT更新経路 (2)重複排除/lock (3)下流再生成 (4)失敗時のgate扱いを別々に確認するチェックを追加すべき。
+
+### L564: CI上の実行ビット差はgit indexで確認し、bash起動するスクリプトは-x依存にしない
+- **日付**: 2026-05-05
+- **出典**: cmd_karo_ci_fix_semantic_map_regen
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,bash,git,wsl2]
+- **target_files**: [scripts/semantic_index_update.sh,tests/unit/test_semantic_index_update.bats]
+- WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動する生成器は実行ビットではなく通常ファイル存在で判定し、chmod 0644のテストを追加する。
+
+### L565: 新規スクリプトは実装直後にdead code/no-op loop検出を行え
+- **日付**: 2026-05-05
+- **出典**: cmd_2564
+- **記録者**: karo
+- **tags**: [infra,gate]
+- semantic_index_update.sh append_row_to_blockでfor loopがno-op(初期値と同値を再設定してbreak)。新規コードは実装直後のセマンティック監査でdead code/no-op loopを検出すべき。ae077a28で修正。
+
+### L566: セマンティック監査偽陽性判別3基準
+- **日付**: 2026-05-05
+- **出典**: gunshi_idle_semantic_audit_20260505
+- **記録者**: gunshi
+- **tags**: [infra,testing]
+- スキャナー結果を鵜呑みにせず3基準で検証: (1)||true=オプショナル機能なら設計意図的で格下げ (2)再帰=出口条件を現物確認、最大1回停止なら偽陽性 (3)async &=flock使用なら数ms完了で理論的競合のみ
+
+### L567: batsテストのPANEはTMP_DIR派生ユニーク値を使え
+- **日付**: 2026-05-05
+- **出典**: cmd_karo_ci_fix_post_shogun_inbox
+- **記録者**: hanzo
+- **tags**: [infra,tmux]
+- **target_files**: [tests/unit/test_post_shogun_inbox_check.bats]
+- CIランナーで/tmp固定PANEのキャッシュファイルが残存し、テスト間で干渉する。sticky bitでrm -f失敗→exit 0→MSG空→テストFAIL。mktemp -d派生のユニーク値で構造的に衝突を根絶
+
+### L568: deploy権限境界パターン: bc:noがdeploy後ACでpush_allowed=falseなら構造的no→LGTM判定が正しい
+- **日付**: 2026-05-05
+- **出典**: cmd_2573-2577
+- **記録者**: gunshi
+- **tags**: [infra,deploy,testing,gate]
+- 忍者にpush_allowed=falseの場合、パリティ検証ACはbc:noになるが忍者作業範囲は完了。家老が別忍者でparity配備→GATE CLEAR。cmd_2574/2577で4回実証
+
+### L569: CoDD generateが利用上限で途中停止したら生成済みWaveを保存し手動after設計で補完する
+- **日付**: 2026-05-06
+- **出典**: cmd_2587
+- **記録者**: hayate
+- **status**: confirmed
+- **tags**: [infra,communication,reporting]
+- **target_files**: [scripts/semantic_index_update.sh,docs/research/semantic_index_update_refactor_spec_20260506.md,docs/research/semantic_index_update_codd_design_20260506.md,docs/research/semantic_index_update_codd_adr_20260506.md,docs/research/semantic_index_update_after_20260506.md]
+- CoDD refactor中にWave 4で `You've hit your org's monthly usage limit` が発生した。全破棄せず、Wave 1-3で生成された設計書/ADRをdocs/researchへ保存し、足りないPhase 6 after設計書を手動で補完すればAC2/AC5を満たせる。次回はCoDD停止時に「生成済みartifact保存→不足設計の手動補完→停止理由を報告」の順で処理する。
+
+### L570: CoDD generate AIリミット時はPhase 3 init+planのみ完了し手動実装で代替
+- **日付**: 2026-05-06
+- **出典**: cmd_2590
+- **記録者**: tobisaru
+- **status**: confirmed
+- **tags**: [infra,api,bash]
+- **target_files**: [scripts/skill_auto_improve.sh,docs/research/cmd_2590_skill_auto_improve_refactor_spec.md,docs/research/cmd_2590_skill_auto_improve_after_20260506.md]
+- codd generate --wave NはAI APIを使うため、org月次利用制限でERROR。bash実装はSKILL.md記載通り手動が正。AIリミット時でもinit+planは成功→wave構造・依存グラフは設計書として活用可能。

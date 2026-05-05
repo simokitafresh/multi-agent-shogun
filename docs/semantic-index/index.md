@@ -26,6 +26,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 fullrecalculate 3566s→480s |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T14:29:03+09:00 正しいfullrecalculateの仕方は知識もない？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T15:02 fullrecalculate deploy後トリガー+完了確認 |
+| cmd | `cmd_2573` 修正 — drawdowns.py limit撤廃(全DD格納)+fullrecalculate+パリティ検証 |
+| lesson | `L714` recalculate-sync acceptedでは完了判定にしない |
+| lesson | `L715` recalculate-sync acceptedは完了ではない。DB recalculation_status confirmed必須 |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -42,6 +45,11 @@ codd:
 | file | `scripts/semantic_map_generate.sh` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T20:10 セマンティック辞書と単語定義辞書 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T23:42 aliases照合+LLM照合 |
+| cmd | `cmd_2563` セマンティック検索+鮮度gate実装 |
+| cmd | `cmd_2564` セマンティックインデックス更新hook実装 |
+| cmd | `cmd_2565` セマンティック検索LLMフォールバック実装 |
+| cmd | `cmd_2566` セマンティックインデックス伝搬(CoDD propagate)実装 |
+| cmd | `cmd_2567` セマンティックインデックス鮮度gate+導線埋込み |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -54,7 +62,7 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | file | `scripts/cmd_delegate.sh` |
-| file | `scripts/pre-bash-combined.sh` |
+| file | `.claude/hooks/pre-bash-combined.sh` |
 | deepdive | `memory/deepdive_causal_tracing_20260415.md` Phase 6 |
 | lesson | `docs/research/lessons_shogun_v1_archive.md` LS049-LS052 |
 
@@ -133,6 +141,7 @@ codd:
 | file | `context/gunshi-alm-38metrics-design.md` |
 | file | `context/robustness-verification-catalog.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 ALM再構築 |
+| lesson | `L566` ALM吸収はシン吸収と異なりメトリクスが変わる(helpful_count:3) |
 
 ## shin_shijin_design — 四神設計
 
@@ -148,6 +157,8 @@ codd:
 | file | `context/checklist-shin-v2-registration.md` |
 | file | `context/l3-robustness.md` §WF四神 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T16:46 L0は12体でシン四神 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:49:01+09:00 Average UWPとPTUについてnote記事を書きたい。SPY、TQQQ、Ave-X,劇薬DMオリジナル、とシン四神から特徴的な2体、シン忍法から特徴的な2体を選んで比較した記事を書きたい。まずは構成だけ考えよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:55:13+09:00 シン忍法とシン四神からはPTU最強から1体、Average UWP最強から1体選ばないか？ |
 
 ## agent_formation_management — 編成管理
 
@@ -163,3 +174,36 @@ codd:
 | file | `context/infrastructure.md` CLIモデル指定とコンテキスト |
 | file | `skills/shogun-all-codex-switch/SKILL.md` |
 | file | `skills/shogun-peacetime-rollback/SKILL.md` |
+
+## cdp_browser_capability — CDP(ブラウザ操作能力)
+
+| 属性 | 値 |
+|------|---|
+| id | cdp_browser_capability |
+| label | CDP(ブラウザ操作能力) |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `MEMORY.md` §Technical Knowledge → CDP Browser Automation |
+| file | `scripts/cdp/cdp_cli.sh` |
+| file | `scripts/cdp/cdp_server.py` |
+| file | `scripts/cdp/cdp_helper.py` |
+| file | `/mnt/c/Python_app/auto-ops/cdp/cdp_helper.py` |
+| file | `context/dm-signal-ops.md` §DM-Signal本番FE CDP確認手順 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-05T21:25 CDPの本質=LLMが人間同様にWebブラウザを使える能力 |
+| lesson | `memory/deepdive_why_chain_20260321.md` Phase 4 想像するな確認せよ |
+
+### 原理(殿定義 2026-05-05)
+
+**CDPの本質 = LLMが人間と同じようにWebブラウザを使えること。**
+
+1. ブラウザが閉じていれば開く(preflight_cdp_flow: 隔離プロファイル自動起動)
+2. ログインが必要なサイトにはログインする(ui_login/cookie注入)
+3. スクショを撮って目で見て状況を確認する(screenshot+画像認識)
+
+人間がブラウザで確認するのと同じ行為をLLMが行う。APIレスポンスやコード確認ではなく、**ユーザーが実際に見る画面**を確認する。
+
+**各論ではなく原理:** FE変更確認はこの能力の一応用例。任意のWebサイトの状態確認、ログイン、操作に汎用的に使える。PJ固有の認証方法はPJのcontextに書く。
+| cmd | `cmd_2579` 実装 — CDP汎用ブラウザ操作スキル(ブラウザ起動+ログイン+スクショで状況確認) (`skills/cdp-browse/SKILL.md`) |
+

@@ -138,5 +138,6 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 - **要修正事項のCI状態は手書き禁止**。AUTO_SECTIONから自動取得（Step 1-7）。前回のKARO_SECTIONの記載を引き継ぐな — 毎回プライマリデータから再生成(LK043: cmd_1806事故。KARO_SECTIONの手書きCI赤がCI緑後も残存→前提崩壊cmdを配備)
 
 ## 注意ポイント
+- 2026-05-04: gate=gate_report_format result=FAIL executor=unknown reason=self_gate_check: is str (must be dict)
 
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=knowledge_candidate: is str (must be dict)

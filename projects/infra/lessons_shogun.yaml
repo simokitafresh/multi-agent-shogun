@@ -360,20 +360,8 @@ lessons:
   enforcement: 'cmd_save.sh missing_prev_cmd_lesson(既存自動強制)+pre-write-edit-combined.sh Guard 6(id数比較)'
 # LS038: superseded by LS037 (同一パターン吸収 2026-05-02)
 # LS039: superseded by LS-A04 (既知パターン再発吸収 2026-05-02)
-- id: 'LS040'
-  title: 'other_draft_exists再発 — 2cmd同時起票時はon_hold待避を先にする'
-  detail: 'cmd_2472で1回BLOCK(other_draft_exists: cmd_2473もdraft)。対策: cmd_2473をon_holdに変更してからcmd_2472をpublish。LS-A04(4)の既知パターン。連続起票時は2本目以降をon_holdで書き、1本目のpublish完了後にdraftに戻す'
-  source_cmd: 'cmd_2472'
-  created_at: '2026-05-02'
-  automated: true
-  enforcement: 'cmd_save.sh other_draft_exists(既存自動強制)'
-- id: 'LS041'
-  title: 'プロジェクト外パス+q11既存代替未記載(5回目) — sourceとq11の事前確認を起票フローに組込む必要'
-  detail: 'cmd_2474で2回BLOCK。(1)assumptions sourceにプロジェクト外パス(~/.claude/)→gate検証でパス切り詰め(2)q11に既存Gate4.5の現物確認なし。本セッションで同パターン5回目。事後教訓記録では改善しない=cmd_2475(事前防止チェック)が必要な証拠'
-  source_cmd: 'cmd_2474'
-  created_at: '2026-05-02'
-  automated: true
-  enforcement: 'cmd_save.sh assumptions source存在チェック+q11_existing_alternative_verification(既存自動強制)'
+# LS040: superseded by LS-A04 (other_draft_exists再発+on_hold禁止陳腐化, cmd_2472, 2026-05-02)
+# LS041: superseded by LS-A04 (プロジェクト外パス+q11未記載5回目, cmd_2474, 2026-05-02。LS-A04(23)再発)
 - id: 'LS042'
   title: '起票前確認hook静的→3パターン累計昇格BLOCK(self_reread+command_steps_over_ac+q11_existing_alternative)'
   detail: 'cmd_2477で3回BLOCK。起票前確認5問が静的でBLOCKパターンの検出項目がなかった。対策: 5問→8問に拡張(項目6:ステップ数≦AC数, 7:self-rereadワード排除, 8:q11にgrep結果)。根因=起票前確認に学習ループがなかった(スキル成長ループ不在と同構造)'
@@ -381,3 +369,45 @@ lessons:
   created_at: '2026-05-02'
   automated: true
   enforcement: 'pre-write-edit-combined.sh Guard 0に項目6,7,8を追加済み(自動強制)'
+# LS043: superseded by LS-A04 (environment_change 3パターンBLOCK再発, cmd_2529, 2026-05-03)
+# LS044: superseded by LS-A04 (assumptions sourceフルパス不足, cmd_2531, 2026-05-03)
+# LS043: superseded by LS-A05 (REMIND無視→教訓先送り3回目再発, cmd_2532/2545, 2026-05-03)
+# LS044: superseded by LS-A04 (裸パス再発5回目, cmd_2540/2544, 2026-05-03。全フィールドgrepで排除)
+# LS044: superseded by LS-A04 (裸パス再発5回目。LS-A04(23)に吸収。cmd_2544, 2026-05-04)
+# LS045: superseded by LS-A04 (cmd_text_pipe_danger=cmd全文grep対象パターン。LS-A04(15)再発。cmd_2548, 2026-05-04)
+# LS046: superseded by LS-A04 (q11_existing_alternative=sourceファイル名がgate判定トリガー。cmd_2555, 2026-05-04)
+# LS047: superseded by LS-A05 (missing_prev_cmd_lesson再発3回目。cmd_2556, 2026-05-04)
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A05'
+# LS045: superseded by LS-A22 (prev_block内トリガーワード再発火。LS-A22(gate FPパターン)に吸収。cmd_2557, 2026-05-04)
+# LS046: superseded by LS-A04 (q11_existing_alternative再発。LS-A04に吸収。cmd_2558, 2026-05-04)
+# LS047: superseded by LS-A22 (L3340 grep -vフィルタ未対象。LS045と同パターン。LS-A22に吸収。cmd_2562, 2026-05-04)
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS045'
+# LS043: superseded by LS-A22 (q8 grep -vフィルタすり抜け。LS-A22(7)に吸収。cmd_2565, 2026-05-05)
+# LS044: superseded by LS-A04 (q11累計昇格grep形式。LS-A04(28)再発。cmd_2566, 2026-05-05)
+# LS045: superseded by LS-A04 (environment_change YAML list形式非対応。LS-A04に吸収。cmd_2568, 2026-05-05)
+# LS046: superseded by LS-A22 (tsx→ts regex切り詰めバグ。LS-A22(8)に吸収。cmd_2569, 2026-05-05)
+# LS045: superseded by LS-A04 (diagnosis初回テンプレ形式不正。LS-A04(24)再発。cmd_2570, 2026-05-05)
+# LS046: superseded by LS-A04 (parity AC P3-P5欠落。LS-A04(26)再発。cmd_2571, 2026-05-05)
+# LS047: superseded by LS-A04 (DB構造変更偵察不足+cmd_2578 BLOCK。cmd_2571, 2026-05-05)
+# LS048: superseded by LS-A05 (missing_prev_cmd_lesson supersede消失。cmd_2572, 2026-05-05)
+# LS049: superseded by LS-A04 (diagnosis初回テンプレ再発。cmd_2575, 2026-05-05)
+# LS050: superseded by LS-A04 (ac_param_sufficiency全文展開。cmd_2577, 2026-05-05)
+# LS043: superseded by LS-A04 (ac_phase_mixing再発7回。LS-A04(21)に吸収。cmd_2579, 2026-05-05)
+# LS044: superseded by LS-A04 (project=dm-signal sourceパス解決。LS-A04(23)に吸収。cmd_2580, 2026-05-05)
+# LS045: superseded by LS-A22 (.tsx切り詰め+command_steps_over_ac。LS-A22(8)+LS-A04(12)に吸収。cmd_2581, 2026-05-06)
+# LS046: superseded by LS-A05 (missing_prev_cmd_lesson再発。cmd_2582, 2026-05-06)
+- id: 'LS043'
+  title: 'missing_prev_cmd_lesson+other_draft_exists — 7cmd一括draft禁止'
+  detail: 'cmd_2583教訓未記録+cmd_2584-2590を一括draftで起票→other_draft_exists BLOCK。対策: (1)教訓は各cmd publish直後に即記録 (2)複数cmdは1本publish→delegate→次のdraftの順で直列処理。一括起票はother_draft_exists検出で全BLOCK。'
+  source_cmd: 'cmd_2583'
+  created_at: '2026-05-06'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'
+- id: 'LS044'
+  title: 'q11_existing_alternative再発 — CoDD最適化cmdでもrg結果+代替なし明記が必要'
+  detail: 'cmd_2585で1回BLOCK。q11にls結果のみでrg -l結果+git log+代替仕組みなし明記が不足。CoDD最適化はスクリプト変更cmdのためgate/hook追加と判定される。LS-A04(28)の再発。対策: q11テンプレートにrg -l+ls+代替なし明記の3点セットを標準化'
+  source_cmd: 'cmd_2585'
+  created_at: '2026-05-06'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'

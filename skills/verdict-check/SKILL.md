@@ -92,6 +92,9 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 
 ## 注意ポイント
 
+- 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=hayate:binary_checks_fail
+- 2026-05-04: gate=gate_report_format result=FAIL executor=unknown reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\...
+
 - 2026-05-03: gate=gate_report_format result=FAIL executor=unknown reason=verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 

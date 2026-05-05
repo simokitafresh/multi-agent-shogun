@@ -61,6 +61,19 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+@test "HIGH: map regeneration works when generator is readable but not executable" {
+    cp "$PROJECT_ROOT/scripts/semantic_map_generate.sh" "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
+    chmod 0644 "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
+    export SEMANTIC_MAP_GENERATE="$TEST_TMPDIR/scripts/semantic_map_generate.sh"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2565","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
+    [[ "$output" == *"semantic-map regenerated"* ]]
+
+    grep -q 'セマンティック辞書構想' "$SEMANTIC_MAP_PATH"
+}
+
 @test "HIGH: two partial aliases append lesson resource" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L999","title":"学習ループで二値計測を強制する","detail":"test"}'
     [ "$status" -eq 0 ]

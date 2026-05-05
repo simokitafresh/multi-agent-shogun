@@ -592,6 +592,56 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "cmd_2528: deploy_task pre-fills idless ACs as AC1.. and avoids MISSING diagnostics" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "cmd_2528 template completeness"
+  task_type: impl
+  parent_cmd: cmd_2528
+  task_id: cmd_2528_normal
+  project: infra
+  ac_version: 7d010443
+  acceptance_criteria:
+    - description: "deploy_task.sh generate_report_template()が生成するYAMLに9項目のデフォルト値が含まれる"
+    - description: "gate_report_formatで9項目のMISSING検出が0になる"
+    - description: "deploy_task関連テスト+gate_report_format関連テストがbats実行でPASS(SKIP=0)"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+for key in [
+    "assumption_invalidation",
+    "binary_checks",
+    "ac_version_read",
+    "purpose_validation",
+    "files_modified",
+    "lessons_useful",
+    "worker_id",
+    "parent_cmd",
+]:
+    assert key in data, key
+assert isinstance(data["result"], dict) and data["result"].get("summary") == "FILL_THIS"
+assert list(data["binary_checks"].keys()) == ["AC1", "AC2", "AC3", "commit"], data["binary_checks"].keys()
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"MISSING"* ]]
+}
+
 @test "deploy_task rewrites generic full-test AC to affected_tests workflow in report template" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

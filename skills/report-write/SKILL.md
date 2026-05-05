@@ -117,6 +117,24 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-05-06: gate=gate_report_format result=FAIL executor=unknown reason=ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; result.summary: MISSI...
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|missing_gate:report_merge|hayate:lesson_done_missing
+
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=hayate:empty_lessons_useful:related=['L636','L635','L634','L633','L632','L626','L625','L624','L623','L622']
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hayate:lesson_done_missing|draft_lessons:1
+
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=hayate:empty_lessons_useful:related=['L636','L635','L634','L633','L632','L626','L625','L624','L623','L622',AC1]
+- 2026-05-04: gate=gate_report_format result=FAIL executor=unknown reason=verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING
+
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|report_format:hayate_report_cmd_2554.yaml|saizo:lesson_done_missing
+- 2026-05-04: gate=gate_report_format result=FAIL executor=unknown reason=lessons_useful: MISSING
+
+- 2026-05-04: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|saizo:lesson_done_missing
+- 2026-05-03: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|report_format:tobisaru_report_cmd_2526.yaml|draft_lessons:2
+
+- 2026-05-03: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_2528.yaml|draft_lessons:2
+- 2026-05-03: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verif...
+
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:1
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=saizo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|draft_lessons:2
 

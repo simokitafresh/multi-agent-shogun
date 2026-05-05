@@ -31,3 +31,4 @@
 | PI-023 | 本番DB変更後は即パリティ確認必須。「後でまとめて確認」禁止。新PF登録時はhide_portfolio=trueで登録 | 中間状態はリアルタイムでユーザーに影響する (殿指摘2026-04-07) |
 | PI-024 | 株価データはsplit・データプロバイダ修正で過去全期間が遡及的に変わりうる。再計算は常に全期間(full history)で実行 | 差分再計算では修正を見逃して本番DBが静かに劣化する (殿厳命2026-04-22) |
 | PI-025 | upfront cleanup(Phase 0先消し)後にRender worker restartすると、再生成前のMonthlyReturn 0件が永続化する | replace系precomputeはbegin_nested(savepoint)でrollback範囲を限定必須 |
+| PI-026 | 本番(PipelineEngine+DB)が正(ground truth)。GSパリティ不一致時は本番を疑わずGS側を改善。本番バグ仮説を立てるな | GS不一致=GS側の再現性不足。本番は稼働中・ユーザー参照中であり正と見做す (殿裁定) |

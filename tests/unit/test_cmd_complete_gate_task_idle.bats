@@ -70,6 +70,31 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "set_matching_tasks_idle skips disappeared snapshot task YAML with WARN" {
+    write_nested_task "hayate" "done"
+    MATCHING_TASK_FILES=(
+        "$TEST_PROJECT/queue/tasks/hayate.yaml"
+        "$TEST_PROJECT/queue/tasks/missing.yaml"
+    )
+    MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    MATCHING_TASK_FILES_SKIPPED_COUNT=0
+
+    run set_matching_tasks_idle
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: done → idle"* ]]
+    [[ "$output" == *"[WARN] matching task file disappeared, skipping: $TEST_PROJECT/queue/tasks/missing.yaml"* ]]
+    [[ "$output" == *"summary: updated=1 skipped=0 warn=0"* ]]
+}
+
+@test "cmd_complete_gate logs matching task snapshot and final processing summary" {
+    run grep -n "Matching task files snapshot:" "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    run grep -n "Matching task files summary: snapshot=" "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    run grep -n "skipped_missing=" "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_complete_gate wires task idle transition only in GATE CLEAR branch" {
     run python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
