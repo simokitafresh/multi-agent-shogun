@@ -823,3 +823,4 @@
 | cmd_2576 | UWP(MaxDD)がNULL(未回復DD)の場合にCompare Summaryで—表示される。未計算/エラー/未回復の区別がつかない(殿指摘)。NULLの場合にOngoing表示にする。既存Metricsページでは既にOngoing表示されておりCompare Summaryだけ不整合 | dm-signal | 05-05 | Compare SummaryのUWP(MaxDD)で未回復 |
 | cmd_2578 | Compare SummaryにSPYとTQQQの両方をベンチマーク行として常時表示する(殿指示)。現在はPFのbenchmark_tickerから自動収集(SPYのみ)。TQQQを追加ベンチマークとしてハードコード追加し、SPYと並んで常時表示する。TQQQ株価データは本番pricesテーブルに存在(2010-2026) | dm-signal | 05-05 | Compare Summaryの追加ベンチマークとしてTQQ |
 | cmd_2579 | CDPの本質はLLMが人間と同じようにWebブラウザを使えること(殿定義2026-05-05)。ブラウザ起動→ログイン→スクショ→状況確認の一連フローを1コマンドで実行するスキルを作成し全エージェントの基礎能力にする。DM-Signal本番確認、Render Dashboard確認、任意Webサイトの状態確認に汎用的に使える | infra | 05-05 | skills/cdp-browse/SKILL.mdを新規作 |
+| cmd_2581 | Total UWPは絶対月数でバックテスト期間に依存し異なる開始日のPF間で比較不能。total_uwp/全期間月数で比率化(PTU: Percentage Time Underwater, 0-100%)しPF間の公平比較を可能にする(殿指示2026-05-05) | dm-signal | 05-05 | PTU(%)をtotal_uwp/monthly_retur |
