@@ -62,108 +62,23 @@ if [ ! -f "$index_path" ]; then
     exit 1
 fi
 
-first_layer_search() {
-    local no_match_mode="${1:-print}"
-    python3 - "$index_path" "$query" "$no_match_mode" <<'PY'
+semantic_index_python() {
+    local mode="$1"
+    local mode_arg="${2:-}"
+    python3 - "$index_path" "$query" "$mode" "$mode_arg" <<'PY'
 import re
 import sys
 from pathlib import Path
 
 index_path = Path(sys.argv[1])
 query = sys.argv[2].strip()
-no_match_mode = sys.argv[3]
+mode = sys.argv[3]
+mode_arg = sys.argv[4] if len(sys.argv) > 4 else ""
 
-if not query:
+if mode == "first-layer" and not query:
     print("ERROR: query is empty", file=sys.stderr)
     sys.exit(2)
 
-text = index_path.read_text(encoding="utf-8")
-sections = re.split(r"(?m)^##\s+", text)
-concepts = []
-
-for raw in sections[1:]:
-    lines = raw.splitlines()
-    if not lines:
-        continue
-    heading = lines[0].strip()
-    if " — " in heading:
-        concept_id, heading_label = heading.split(" — ", 1)
-    else:
-        concept_id, heading_label = heading, ""
-
-    attrs = {}
-    resources = []
-    for line in lines[1:]:
-        stripped = line.strip()
-        m = re.match(r"^\|\s*([^|]+?)\s*\|\s*(.*?)\s*\|$", stripped)
-        if not m:
-            continue
-        left = m.group(1).strip()
-        right = m.group(2).strip()
-        if left in {"属性", "------", "種別"} or right in {"値", "----------"}:
-            continue
-        if left in {"id", "label", "aliases"}:
-            attrs[left] = right
-        elif right:
-            resources.append((left, right))
-
-    label = attrs.get("label") or heading_label
-    aliases = [
-        item.strip()
-        for item in attrs.get("aliases", "").split(",")
-        if item.strip()
-    ]
-    concepts.append(
-        {
-            "id": attrs.get("id") or concept_id.strip(),
-            "label": label,
-            "aliases": aliases,
-            "resources": resources,
-        }
-    )
-
-query_fold = query.casefold()
-matches = []
-for concept in concepts:
-    terms = [concept["label"], *concept["aliases"]]
-    matched_terms = []
-    for term in terms:
-        term_fold = term.casefold()
-        if query_fold in term_fold or term_fold in query_fold:
-            matched_terms.append(term)
-    if matched_terms:
-        matches.append((concept, matched_terms))
-
-if not matches:
-    if no_match_mode != "silent":
-        print(f"NO_MATCH: {query}")
-    sys.exit(1)
-
-for idx, (concept, matched_terms) in enumerate(matches, 1):
-    if idx > 1:
-        print("")
-    print(f"## {concept['id']} — {concept['label']}")
-    print(f"matched: {', '.join(matched_terms)}")
-    print(f"aliases: {', '.join(concept['aliases'])}")
-    print("resources:")
-    if concept["resources"]:
-        for resource_type, ref in concept["resources"]:
-            print(f"- {resource_type}: {ref}")
-    else:
-        print("- none")
-PY
-}
-
-render_llm_resources() {
-    local llm_output_file="$1"
-    python3 - "$index_path" "$llm_output_file" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-index_path = Path(sys.argv[1])
-llm_output_path = Path(sys.argv[2])
-raw_output = llm_output_path.read_text(encoding="utf-8", errors="replace")
 text = index_path.read_text(encoding="utf-8")
 sections = re.split(r"(?m)^##\s+", text)
 concepts = []
@@ -207,29 +122,75 @@ for raw in sections[1:]:
         }
     )
 
-matched = []
-for concept in concepts:
-    concept_id = concept["id"]
-    if re.search(rf"(?<![A-Za-z0-9_.-]){re.escape(concept_id)}(?![A-Za-z0-9_.-])", raw_output):
-        matched.append(concept)
-
-if not matched:
-    print("resources: LLM output did not contain known concept ids")
-    sys.exit(0)
-
-print("resolved resources:")
-for idx, concept in enumerate(matched[:3], 1):
-    if idx > 1:
-        print("")
-    print(f"## {concept['id']} — {concept['label']}")
-    print(f"aliases: {', '.join(concept['aliases'])}")
+def print_resources(concept):
     print("resources:")
     if concept["resources"]:
         for resource_type, ref in concept["resources"]:
             print(f"- {resource_type}: {ref}")
     else:
         print("- none")
+
+
+if mode == "first-layer":
+    no_match_mode = mode_arg
+    query_fold = query.casefold()
+    matches = []
+    for concept in concepts:
+        terms = [concept["label"], *concept["aliases"]]
+        matched_terms = []
+        for term in terms:
+            term_fold = term.casefold()
+            if query_fold in term_fold or term_fold in query_fold:
+                matched_terms.append(term)
+        if matched_terms:
+            matches.append((concept, matched_terms))
+
+    if not matches:
+        if no_match_mode != "silent":
+            print(f"NO_MATCH: {query}")
+        sys.exit(1)
+
+    for idx, (concept, matched_terms) in enumerate(matches, 1):
+        if idx > 1:
+            print("")
+        print(f"## {concept['id']} — {concept['label']}")
+        print(f"matched: {', '.join(matched_terms)}")
+        print(f"aliases: {', '.join(concept['aliases'])}")
+        print_resources(concept)
+elif mode == "render-llm-resources":
+    llm_output_path = Path(mode_arg)
+    raw_output = llm_output_path.read_text(encoding="utf-8", errors="replace")
+    matched = []
+    for concept in concepts:
+        concept_id = concept["id"]
+        if re.search(rf"(?<![A-Za-z0-9_.-]){re.escape(concept_id)}(?![A-Za-z0-9_.-])", raw_output):
+            matched.append(concept)
+
+    if not matched:
+        print("resources: LLM output did not contain known concept ids")
+        sys.exit(0)
+
+    print("resolved resources:")
+    for idx, concept in enumerate(matched[:3], 1):
+        if idx > 1:
+            print("")
+        print(f"## {concept['id']} — {concept['label']}")
+        print(f"aliases: {', '.join(concept['aliases'])}")
+        print_resources(concept)
+else:
+    print(f"ERROR: unknown semantic index mode: {mode}", file=sys.stderr)
+    sys.exit(2)
 PY
+}
+
+first_layer_search() {
+    local no_match_mode="${1:-print}"
+    semantic_index_python first-layer "$no_match_mode"
+}
+
+render_llm_resources() {
+    local llm_output_file="$1"
+    semantic_index_python render-llm-resources "$llm_output_file"
 }
 
 llm_search() {
