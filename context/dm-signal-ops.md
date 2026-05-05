@@ -31,6 +31,38 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
+### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）
+
+**殿のChromeを使わない。隔離プロファイルEdgeを自動起動する。**
+
+```python
+# 前提: PYTHONPATH=/mnt/c/Python_app/auto-ops
+from cdp import cdp_helper
+import time
+
+# Step 1: 隔離プロファイルEdge自動起動(user-data-dir=$TEMP/cdp-edge-9222)
+result = cdp_helper.preflight_cdp_flow(port=9222, browser="auto", launch_timeout=30)
+port = result.get("cdp_port", 9222)
+
+# Step 2: DM-Signal FEにAdmin認証(backend/.envのADMIN_USER/ADMIN_PASS)
+tab_id = cdp_helper.create_tab(url="https://dm-signal-frontend.onrender.com/admin", port=port, timeout=30)
+time.sleep(4)
+cdp_helper.ui_login(tab_id, "simokitafresh", "703", port=port)
+time.sleep(5)
+
+# Step 3: 確認したいページに遷移+スクショ
+cdp_helper.navigate(tab_id, "https://dm-signal-frontend.onrender.com/compare-summary", port=port)
+time.sleep(8)
+cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.png")
+```
+
+**注意事項:**
+- D009: headless禁止。必ず隔離プロファイル(user-data-dir)指定必須
+- cdp_helper.ui_loginはReactのinputにイベント発火する正しい方法。JS直接value代入は不可(state更新されない)
+- Daemon版(cdp_server.py+cdp_cli.sh port 9400)も使える。snapshot→click_ref @e8→screenshot
+- credentials: backend/.envのADMIN_USER/ADMIN_PASS(FE Admin認証とBE Admin認証は同じcredentials)
+- 参照: cdp_measure.sh L80-120, auto-ops/cdp/README.md, memory/cdp-browser-automation.md
+
 ### Render CLI (v2.12.0)
 
 `/home/simokitafresh/.local/bin/render`。認証済み(simokitafresh@gmail.com)。ワークスペース=My Workspace。
