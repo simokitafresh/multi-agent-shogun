@@ -15,6 +15,16 @@ CDPの本質は、LLMが人間と同じようにWebブラウザを使えるこ�
 
 ## 基本フロー
 
+### Chrome未起動時の復旧
+
+CDPポート未応答だけで止まらない。まず `preflight_cdp_flow` に自動起動させる。手動復旧が必要な場合は、Windows側Chrome/Edgeを隔離プロファイルかつ `--remote-allow-origins=*` 付きで起動する。
+
+```powershell
+Start-Process chrome.exe --remote-debugging-port=9222 --remote-allow-origins=* --user-data-dir=$TEMP/cdp-edge-9222 --no-first-run
+```
+
+`--remote-allow-origins=*` がないとCDP WebSocket接続が403になることがある。`--user-data-dir` は殿の通常Chromeセッションを汚さないため必須。
+
 1. `preflight_cdp_flow` でCDPブラウザを確認する。CDPポート未応答で止まらず、隔離プロファイルのブラウザ自動起動に任せる。
 2. 認証が必要なサイトなら、対象PJの `projects/{project}.yaml` と `context/{project}.md` から認証方式と認証情報の参照先を確認する。
 3. UIログインが正本のサイトでは `ui_login` を使い、フォーム入力、送信、ログイン後URLまたは画面要素まで確認する。
@@ -52,6 +62,63 @@ result = cdp_helper.preflight_cdp_flow(port=9222, browser="auto", launch_timeout
 port = result.get("cdp_port", 9222)
 tab_id = cdp_helper.create_tab(url="https://example.com/login", port=port, timeout=30)
 cdp_helper.ui_login(tab_id, user, password, port=port)
+```
+
+### Cookie注入失敗時のフォームログイン
+
+`Network.setCookie` や `cdp_cli.sh auth` でCookieを注入しても認証ダイアログが解消しない場合は、UIフォームログインへ切り替える。React管理のinputはJSの直接 `value = ...` ではstateが更新されないため、`nativeInputValueSetter` で値を入れて `input` eventを発火する。
+
+```javascript
+const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+const setInput = (selector, value) => {
+  const el = document.querySelector(selector);
+  setValue.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
+setInput('input[name="username"], input[type="text"]', user);
+setInput('input[name="password"], input[type="password"]', password);
+document.querySelector('button[type="submit"], button').click();
+```
+
+## ポート使い分け
+
+| port | 用途 | profile |
+|------|------|---------|
+| 9222 | 汎用。DM-Signalなどの本番FE確認 | `$TEMP/cdp-edge-9222` |
+| 9234 | note.com下書き保存 | `$TEMP/cdp-edge-9234` |
+| 9400 | `auto-ops` CDP daemon / `cdp_cli.sh` 操作口 | daemon管理 |
+
+同時に複数サイトを扱う場合はポートと `--user-data-dir` を分ける。ログイン状態やCookieを混ぜない。
+
+## cdp_cli.sh不可時の直接WS操作
+
+`cdp_cli.sh` やdaemonが使えない場合は、Chromeの `/json` からWebSocket URLを取得してCDPを直接送る。最小パターンは `Page.navigate` と `Page.captureScreenshot`。
+
+```python
+import base64
+import json
+import urllib.request
+from websocket import create_connection
+
+port = 9222
+tabs = json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/json"))
+ws = create_connection(tabs[0]["webSocketDebuggerUrl"], timeout=10)
+seq = 0
+
+def send_cmd(method, params=None):
+    global seq
+    seq += 1
+    ws.send(json.dumps({"id": seq, "method": method, "params": params or {}}))
+    while True:
+        msg = json.loads(ws.recv())
+        if msg.get("id") == seq:
+            return msg
+
+send_cmd("Page.enable")
+send_cmd("Page.navigate", {"url": "https://example.com"})
+shot = send_cmd("Page.captureScreenshot", {"format": "png", "fromSurface": True})
+open("/tmp/cdp-direct.png", "wb").write(base64.b64decode(shot["result"]["data"]))
 ```
 
 ## DM-Signal 本番FE

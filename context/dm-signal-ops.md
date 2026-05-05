@@ -59,6 +59,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 **注意事項:**
 - D009: headless禁止。必ず隔離プロファイル(user-data-dir)指定必須
 - cdp_helper.ui_loginはReactのinputにイベント発火する正しい方法。JS直接value代入は不可(state更新されない)
+- `cdp_cli.sh auth` やCookie注入でログイン状態にならない場合は、Admin UIフォームログインへ切り替える。手順: (1) Adminタブを開く (2) `nativeInputValueSetter` でUsername/Passwordを入力 (3) Loginクリック (4) 8秒待機 (5) `navigate` でCompare Summaryなど確認対象へ遷移。React inputは `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set` + `input` eventで更新する
 - Daemon版(cdp_server.py+cdp_cli.sh port 9400)も使える。snapshot→click_ref @e8→screenshot
 - credentials: backend/.envのADMIN_USER/ADMIN_PASS(FE Admin認証とBE Admin認証は同じcredentials)
 - 参照: cdp_measure.sh L80-120, auto-ops/cdp/README.md, memory/cdp-browser-automation.md
