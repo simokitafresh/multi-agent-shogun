@@ -122,6 +122,7 @@ def _write_skill_log(skill_name, executor_name, result_str, stumbling, gate_name
         f'  skill: {_yaml_str(skill_name)}\n',
         f'  executor: {_yaml_str(executor_name)}\n',
         f'  result: {_yaml_str(result_str)}\n',
+        f'  used: "false"\n',
         f'  stumbling_points: {_yaml_str(stumbling)}\n',
     ]
     if gate_name:
@@ -217,11 +218,8 @@ if not logged_entry and result.upper() == "FAIL" and has_duplicate_failure(skill
     print(f"DUPLICATE: {skill} gate={gate}")
     raise SystemExit(0)
 
-if not logged_entry and os.path.isfile(log_script) and os.access(log_script, os.X_OK):
-    subprocess.run(
-        ["bash", log_script, skill, executor, result, stumbling, gate, source, str(skill_file), "false"],
-        check=True,
-    )
+if not logged_entry:
+    _write_skill_log(skill, executor, result, stumbling, gate, source, str(skill_file))
 
 if result.upper() != "FAIL":
     print(f"LOGGED: {skill} {result}")
