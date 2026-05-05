@@ -1,12 +1,17 @@
 ---
 name: cdp-browse
-argument-hint: "<url> [screenshot_path]"
+argument-hint: "[url] [screenshot_path]"
 description: |
   CDPでWebブラウザを人間と同じように使うための基礎スキル。
   ブラウザ起動、ログイン、ページ遷移、スクリーンショット、画面状況確認を1つの標準フローで実行する。
   TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認、ログインしてスクショ、Render画面確認、DM-Signal本番FE確認
   DO NOT TRIGGER: DB確認（→/db-check）、静的コード確認だけで足りる調査、E2E全体試験
 quality_metric: "CDP確認タスクで、認証失敗・スクショ未取得・CDPポート不通によるやり直しが発生しない割合"
+allowed-tools:
+  - Bash
+  - Read
+  - Glob
+  - Grep
 ---
 
 # /cdp-browse
@@ -91,6 +96,8 @@ document.querySelector('button[type="submit"], button').click();
 
 同時に複数サイトを扱う場合はポートと `--user-data-dir` を分ける。ログイン状態やCookieを混ぜない。
 
+note.com下書き保存では、既存実績として `CDP_PORT=9234 bash scripts/note_draft.sh <記事.md>` を使う。9234はnote.com専用の隔離プロファイルとして扱い、9222の汎用確認や9400のdaemon操作口と混ぜない。
+
 ## cdp_cli.sh不可時の直接WS操作
 
 `cdp_cli.sh` やdaemonが使えない場合は、Chromeの `/json` からWebSocket URLを取得してCDPを直接送る。最小パターンは `Page.navigate` と `Page.captureScreenshot`。
@@ -131,6 +138,15 @@ scripts/cdp/cdp_cli.sh auth --env .env.dm-signal --port 9400
 scripts/cdp/cdp_cli.sh navigate "https://dm-signal-frontend.onrender.com/admin"
 scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 ```
+
+## 能動的な画面確認
+
+ブラウザ状態を推測で埋めない。次のどれかに当たる場合は、遷移直後または操作直後にスクリーンショットかAX snapshotを取得してから判断する。
+
+- ログイン、認証ダイアログ、bot検知、user_verificationの有無を確認する時
+- UI変更、FE修正、本番FE、Render画面など、画面の見た目や表示状態が結論になる時
+- ボタン押下、フォーム入力、下書き保存、ファイル出力など、操作成功をブラウザ上で確認すべき時
+- CDPコマンドは成功したが、URL、DOM、画面表示のどれかが期待状態か不明な時
 
 ## 判定基準
 
