@@ -64,27 +64,30 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - 参照: cdp_measure.sh L80-120, auto-ops/cdp/README.md, memory/cdp-browser-automation.md
 
 **ポート体系:**
-- `9222`: legacy daemon
-- `9223`: 拡張
-- `9400`: auto-ops daemon
+- `9222`: legacy daemon / FE実操作の既定ポート。preflight_cdp_flowが隔離Edgeを自動起動する
+- `9223`: 拡張・並行確認用ポート。9222競合時の退避先
+- `9400`: auto-ops daemon。`cdp_cli.sh` のsnapshot/click_ref/screenshot操作口
 - `cdp_cli.sh`: daemon版CLI
 - `cdp_helper.py`: auto-ops版
 
 **FE詳細操作:**
-- メニュー: サイドバーのPF一覧 / Compare Summary / Signals / Terms
-- PF選択: URLパス直指定(`/portfolio/{id}`)
+- ハンバーガーメニュー: モバイル幅では左上メニューを開いてからPF一覧 / Compare Summary / Signals / Termsへ移動
+- メニュー: デスクトップ幅ではサイドバーのPF一覧 / Compare Summary / Signals / Terms
+- PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 
 ## §36 API認証
 
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
 - viewer系API: Bearer Token(`VIEWER_TOKEN`)
+- FE Admin認証とBE admin系API認証は区別する。画面ログインは`ADMIN_USER`/`ADMIN_PASS`、APIはBasic Auth。
 - データ確認はAPI経由よりDB直接クエリが確実。
 
 ## §37 ETL
 
-- ETL cronはL0-L3の4本体制。
-- L0-L3各sync cronで全期間再計算が完結する。
+- ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、上位レイヤーは下位レイヤー完了後の本番DBを読む。
+- L0-L3各sync cronで全期間再計算が完結する。途中レイヤーだけの手動補正で完了扱いにしない。
+- L0: base/standard系、L1: 忍法・四神派生、L2: 奥義・合成standard、L3: FoF/入れ子FoFの同期境界として扱う。
 - `daily_etl.py`は冗長であり廃止予定。
 
 ### Render CLI (v2.12.0)
