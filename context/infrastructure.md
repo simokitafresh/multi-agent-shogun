@@ -105,6 +105,7 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 
 | 領域 | 結論 | 参照 |
 |------|------|------|
+| cmd_publish pre-flight | `cmd_publish.sh` のPython YAML parseをawk block scanへ置換し、`grep -c || echo 0` の0件二重出力を防止。CoDD生成物はwave1-3まで保存、最終計測はafter設計書を正とする | `docs/research/cmd_2585_cmd_publish_after_20260506.md`, `docs/research/codd_refactor_registry.md` |
 | CoDD改善32本 | cmd_1951の全量プロファイリングを起点にhot path 32本を改善。代表値: `cmd_save.sh 4.02s→1.06s (-73.6%)`, `deploy_task.sh 2639ms→32ms`, `gate_karo_startup.sh 464ms→190ms` | `docs/research/codd_refactor_registry.md`, `context/cmd-chronicle.md` 04-16 |
 | GP-198/201 Session State | gate FAIL時の失敗履歴をtask再配備へ注入し、`cmd_save.sh` 側でもDiagnose MANDATORY+Session Stateを強制。/newや再配備を跨いでL3診断を保持 | `context/codd.md` §4, `context/cmd-chronicle.md` `cmd_karo_gp198`/`cmd_1939` |
 | GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |

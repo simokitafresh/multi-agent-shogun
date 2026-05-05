@@ -45,7 +45,7 @@ count_active_shogun_lessons() {
         echo 0
         return 0
     }
-    grep -c '^- id:' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
+    awk 'BEGIN { count = 0 } /^- id:/ { count++ } END { print count }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
 }
 
 count_cmd_save_blocks_for_cmd() {
@@ -55,31 +55,58 @@ count_cmd_save_blocks_for_cmd() {
         return 0
     }
 
-    CMD_PUBLISH_TARGET_CMD_ID="$target_cmd_id" \
-    CMD_PUBLISH_QUALITY_LOG="$QUALITY_LOG_FILE" \
-    python3 - <<'PY'
-import os
-import yaml
-
-cmd_id = os.environ.get("CMD_PUBLISH_TARGET_CMD_ID", "")
-log_path = os.environ.get("CMD_PUBLISH_QUALITY_LOG", "")
-if not cmd_id or not log_path or not os.path.exists(log_path):
-    print(0)
-    raise SystemExit(0)
-
-with open(log_path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-
-entries = (data.get("entries") or []) if isinstance(data, dict) else []
-print(sum(
-    1
-    for entry in entries
-    if isinstance(entry, dict)
-    and entry.get("cmd_id") == cmd_id
-    and entry.get("gate_result") == "BLOCK"
-    and entry.get("source") == "cmd_save"
-))
-PY
+    awk -v target="$target_cmd_id" '
+        function strip(value) {
+            sub(/^[[:space:]]+/, "", value)
+            sub(/[[:space:]]+$/, "", value)
+            sub(/^["'\'']/, "", value)
+            sub(/["'\'']$/, "", value)
+            return value
+        }
+        function flush_entry() {
+            if (cmd_id == target && gate_result == "BLOCK" && source == "cmd_save") {
+                count++
+            }
+            cmd_id = ""
+            gate_result = ""
+            source = ""
+        }
+        BEGIN {
+            count = 0
+            in_entry = 0
+            cmd_id = ""
+            gate_result = ""
+            source = ""
+        }
+        /^[[:space:]]*-[[:space:]]+cmd_id:[[:space:]]*/ {
+            if (in_entry) {
+                flush_entry()
+            }
+            in_entry = 1
+            value = $0
+            sub(/^[[:space:]]*-[[:space:]]+cmd_id:[[:space:]]*/, "", value)
+            cmd_id = strip(value)
+            next
+        }
+        in_entry && /^[[:space:]]+gate_result:[[:space:]]*/ {
+            value = $0
+            sub(/^[[:space:]]+gate_result:[[:space:]]*/, "", value)
+            gate_result = strip(value)
+            next
+        }
+        in_entry && /^[[:space:]]+source:[[:space:]]*/ {
+            value = $0
+            sub(/^[[:space:]]+source:[[:space:]]*/, "", value)
+            source = strip(value)
+            next
+        }
+        END {
+            if (in_entry) {
+                flush_entry()
+            }
+            print count
+        }
+    ' "$QUALITY_LOG_FILE" 2>/dev/null || echo 0
 }
 
 shogun_lesson_exists_for_cmd() {

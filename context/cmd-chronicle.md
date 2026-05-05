@@ -820,3 +820,4 @@
 | cmd_2579 | CDPの本質はLLMが人間と同じようにWebブラウザを使えること(殿定義2026-05-05)。ブラウザ起動→ログイン→スクショ→状況確認の一連フローを1コマンドで実行するスキルを作成し全エージェントの基礎能力にする。DM-Signal本番確認、Render Dashboard確認、任意Webサイトの状態確認に汎用的に使える | infra | 05-05 | skills/cdp-browse/SKILL.mdを新規作 |
 | cmd_2581 | Total UWPは絶対月数でバックテスト期間に依存し異なる開始日のPF間で比較不能。total_uwp/全期間月数で比率化(PTU: Percentage Time Underwater, 0-100%)しPF間の公平比較を可能にする(殿指示2026-05-05) | dm-signal | 05-05 | PTU(%)をtotal_uwp/monthly_retur |
 | cmd_2582 | cmd_2581でPTU計算ロジックをデプロイ済みだがportfolio_metricsキャッシュが旧フォーマット(Total Underwater Period: 110 months)のまま。Compare Summaryは キャッシュ参照のためPTU(%)メトリクスが見つからず空白表示。fullrecalculateでキャッシュ再計算し全PFのPTUを反映する | dm-signal | 05-06 | fullrecalculate(mode=full)を本番で |
+| cmd_2584 | test_select.sh(191行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | test_select.shのCoDD計測・設計書・afte |
