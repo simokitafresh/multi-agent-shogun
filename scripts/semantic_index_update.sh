@@ -250,8 +250,15 @@ else:
 print(f"{confidence}: insight queued for {source_type}:{payload_label}")
 PY
     )"
-    printf '%s\n' "$changed_flag" | grep -v '^__SEMANTIC_INDEX_CHANGED__$' || true
-    if printf '%s\n' "$changed_flag" | grep -qx '__SEMANTIC_INDEX_CHANGED__'; then
+    index_changed=false
+    while IFS= read -r line; do
+        if [ "$line" = "__SEMANTIC_INDEX_CHANGED__" ]; then
+            index_changed=true
+        else
+            printf '%s\n' "$line"
+        fi
+    done <<< "$changed_flag"
+    if [ "$index_changed" = true ]; then
         if [ -f "$map_generate" ]; then
             bash "$map_generate" >/dev/null
             echo "semantic-map regenerated"
