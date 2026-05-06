@@ -318,7 +318,12 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L688 | Payload再生成時は内部メタデータを保持して検証する | ツール | cmd_2423 |
 | L692 | method ID/ファイル名は実SSOTと照合して報告に明記する | 運用 | cmd_karo_ctx |
 | L708 | FoF履歴不足調査はvalid_start_date計算を突合せよ | 運用 | cmd_2454 |
+| L710 | L0-L4語彙は新cmdでprefix必須にすべき | 運用 | cmd_2553 |
+| L713 | metrics偵察はadd_metric行だけでなく前段DataFrame変換も母集団に含める | ツール | cmd_2570 |
+| L716 | metrics APIのNHF表示名はNew High Frequency | ツール | cmd_2577 |
+| L717 | 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ | ツール | cmd_2578 |
 | L104 | subtask間依存で.gitignoreが後続コミット計画をブロックしうる | 運用プロセス | cmd_259 |
+| L714 | recalculate-sync acceptedは完了ではない。DB recalculation_statusのcompleted確認が必須 | 再計算 | cmd_2574 |
 | L082 | `monthly_returns.portfolio_id(varchar)` と `portfolios.id(uuid)` は比較前に `id::text` で型統一 | DB | cmd_214 |
 | L081 | recalculate Phase0では`monthly_returns`が一時的に空になる前提で検証順序を組む | 再計算 | cmd_214 |
 | L080 | save APIの`success=False`でもDB登録済みケースあり。削除確認はDB直接参照が確実 | API/DB | cmd_207 |

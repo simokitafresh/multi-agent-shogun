@@ -232,6 +232,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L702: FoF UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
 - L704: FoF Monthly Trade表示は動的展開よりprecomputed weightsを優先せよ（cmd_2452）
 - L705: Monthly Trade FoF表示はyear_month月初Signalのdisplay_ticker_weightsを優先参照（cmd_2453）
+- L719: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ（cmd_karo_direct_fe_ptu_fix）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

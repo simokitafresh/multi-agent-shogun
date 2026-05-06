@@ -446,6 +446,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 | L431 | 既存PF更新時はUUID維持でFoF参照を保護 | cmd_1126 |
 | L478 | 吸収(absorption)はGS概念。DB物理では独立PFとして全体が登録される | cmd_1259 |
 | L481 | standard PF登録時のmomentum_methodデフォルトはprice_ratio。明示指定必須 | cmd_1272 |
+| L709 | FoF weights健全性チェックはconfigではなくfof_component_weightsを正本にせよ [PI] | cmd_2458 |
 
 ### 19.5 GS運用・config
 
