@@ -33,7 +33,7 @@ tag_rules:
   - tag: git
     patterns: ['(?i)git|commit|branch|merge|push']
   - tag: wsl2
-    patterns: ['(?i)wsl|WSL|Windows|mnt']
+    patterns: ['(?i)WSL[2\b上環]|/mnt/c|Windows.*(venv|font|encoding|環境|YAML)']
   - tag: security
     patterns: ['(?i)security|injection|脆弱|認証']
   - tag: monitor
