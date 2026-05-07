@@ -1,53 +1,56 @@
 # lesson_tags.yaml — 教訓タグ辞書
 # deploy_task.sh L300-312の既存11タグ + 追加11タグ
 # 使用元: scripts/lesson_auto_tag.sh, scripts/deploy_task.sh
+# 設計原則: パターンはドメイン固有語のみ。一般英語(test/report/process等)の
+#   単体マッチは多義語誤タグの根因(2026-05-07分析: 28件中15件誤タグ)。
+#   単語境界(\b)・複合語・日本語専門語でフィルタ精度を確保する。
 tag_rules:
-  # --- 既存11タグ (deploy_task.sh L300-312由来) ---
+  # --- 既存11タグ (deploy_task.sh L300-312由来、多義語排除版) ---
   - tag: db
-    patterns: ['(?i)db|database|SQL|PostgreSQL']
+    patterns: ['(?i)\bDB\b|\bdatabase\b|\bSQL\b|PostgreSQL|テーブル.*カラム']
   - tag: api
-    patterns: ['(?i)api|endpoint|request|response|Render']
+    patterns: ['(?i)\bAPI\b|\bendpoint\b|REST.*API|GraphQL']
   - tag: frontend
-    patterns: ['(?i)frontend|ui|css|react|component']
+    patterns: ['(?i)\bfrontend\b|\bui\b|\bcss\b|\breact\b|\bcomponent\b|Next\.js']
   - tag: deploy
-    patterns: ['(?i)deploy|本番|render']
+    patterns: ['(?i)\bdeploy\b|本番.*デプロイ|本番.*投入|Render.*service|Render.*deploy']
   - tag: pipeline
-    patterns: ['(?i)pipeline|batch|cron|scheduler']
+    patterns: ['(?i)\bpipeline\b|\bbatch\b|\bcron\b|\bscheduler\b|PipelineEngine']
   - tag: testing
-    patterns: ['(?i)test|検証|parity|backtest']
+    patterns: ['(?i)\btests?\b|\btesting\b|検証|parity|backtest|\bbats\b|pytest']
   - tag: review
-    patterns: ['(?i)review|査読|レビュー']
+    patterns: ['(?i)\breview\b|査読|レビュー']
   - tag: recon
-    patterns: ['(?i)recon|偵察|調査|分析']
+    patterns: ['(?i)\brecon\b|偵察|調査']
   - tag: process
-    patterns: ['(?i)process|手順|運用|workflow']
+    patterns: ['(?i)手順|運用|workflow']
   - tag: communication
-    patterns: ['(?i)通信|報告|inbox|notification']
+    patterns: ['(?i)通信|notification']
   - tag: gate
-    patterns: ['(?i)gate|門番|block|clear']
-  # --- 追加11タグ ---
+    patterns: ['(?i)\bgate\b|門番|\bBLOCK\b|\bCLEAR\b|gate_.*\.sh']
+  # --- 追加11タグ (多義語排除版) ---
   - tag: bash
-    patterns: ['(?i)bash|shell|script|シェル']
+    patterns: ['(?i)\bbash\b|\bshell\b|シェル|\.sh\b']
   - tag: yaml
-    patterns: ['(?i)yaml|YAML|yml']
+    patterns: ['(?i)\byaml\b|\byml\b']
   - tag: git
-    patterns: ['(?i)git|commit|branch|merge|push']
+    patterns: ['(?i)\bgit\b|\bcommit\b|\bbranch\b|\bmerge\b']
   - tag: wsl2
     patterns: ['(?i)WSL[2\b上環]|/mnt/c|Windows.*(venv|font|encoding|環境|YAML)']
   - tag: security
-    patterns: ['(?i)security|injection|脆弱|認証']
+    patterns: ['(?i)\bsecurity\b|\binjection\b|脆弱']
   - tag: monitor
-    patterns: ['(?i)monitor|監視|idle|stall|ninja_monitor']
+    patterns: ['(?i)\bmonitor\b|監視|\bstall\b|ninja_monitor']
   - tag: inbox
-    patterns: ['(?i)inbox|メッセージ|通信|watcher']
+    patterns: ['(?i)\binbox\b|メッセージ|\bwatcher\b']
   - tag: tmux
     patterns: ['(?i)\btmux\b|\bpane\b|tmux.?window|tmux.?session']
   - tag: oauth
-    patterns: ['(?i)oauth|token|認証|API[._]key']
+    patterns: ['(?i)\boauth\b|認証|API[._]key']
   - tag: lesson
-    patterns: ['(?i)lesson|knowledge']
+    patterns: ['(?i)\blesson\b|教訓']
   - tag: reporting
-    patterns: ['(?i)report|報告|dashboard|YAML[._]report']
+    patterns: ['(?i)報告|\bdashboard\b|YAML.*report']
   # --- GS/研究タグ (忍者成長速度改善: GS実行タスクの教訓マッチング) ---
   - tag: grid_search
     patterns: ['(?i)grid.?search|GS\b|gs_|忍法|champion|WF\b|wf_|run_077|results_fast|\.npy|cache.*npy|l1_alm']
