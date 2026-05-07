@@ -598,8 +598,8 @@ import metrics_research_engine as MRE
 | 3B | gs_data_loader UUID一元化(L1_PORTFOLIO_MAPハードコード廃止) | **完了** | cmd_2340 |
 | 4 | 旧GS入力CSV 9件削除(outputs/analysis配下。偵察+削除) | **完了** | cmd_2343,2345 |
 | 5 | 消費者改修: run_077全7本のdefaultをokugi_shin_ninpo_20.yaml(db)に統一 | **完了** | cmd_2344 |
-| 6A | GS結果SQLite出力共通モジュール作成(CSV出力廃止。殿裁定) | **配備中** | cmd_2346 |
-| 6B | run_077全7本のCSV出力をSQLite共通モジュールに切替 | **待ち**(6A依存) | cmd_2347 |
+| 6A | GS結果SQLite出力共通モジュール作成(CSV出力廃止。殿裁定) | **完了** | cmd_2346 |
+| 6B | run_077全7本のCSV出力をSQLite共通モジュールに切替 | **完了** | cmd_2347 |
 
 #### 本番検証(後続A-D) — チャンピオン再選出+検証
 
