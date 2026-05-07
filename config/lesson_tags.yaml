@@ -41,7 +41,7 @@ tag_rules:
   - tag: inbox
     patterns: ['(?i)inbox|メッセージ|通信|watcher']
   - tag: tmux
-    patterns: ['(?i)tmux|pane|window|session']
+    patterns: ['(?i)\btmux\b|\bpane\b|tmux.?window|tmux.?session']
   - tag: oauth
     patterns: ['(?i)oauth|token|認証|API[._]key']
   - tag: lesson

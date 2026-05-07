@@ -808,3 +808,5 @@
 | cmd_2589 | skill_gate_feedback.sh(216行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_gate_feedback.sh CoDD re |
 | cmd_2592 | skills/cdp-browse/SKILL.mdのgate FAIL(フロントマター<>検出)修正、allowed-tools追加、note.com下書き保存実績の反映、能動的CDP使用の指針追加 | infra | 05-06 | skills/cdp-browse/SKILL.mdのフロン |
 | cmd_2593 | auto_draft_lesson.shのskip分岐でlesson.doneを生成しない→cmd_complete_gateがlesson_done_missing BLOCKする循環を解消 | infra | 05-07 | auto_draft_lesson.shのskip時にles |
+| cmd_2594 | 忍者がknowledge_candidateを文字列で記入→gate_report_formatがBLOCKするパターンをautofix層で自動変換し、BLOCKを事前解消 | infra | 05-07 | knowledge_candidate文字列をtitle/d |
+| cmd_2595 | 家老がcmd-completeスキル実行時にdraft教訓レビューを飛ばす→後続cmdでdraft_lessons BLOCK。スキル手順でlesson_review強制実行し意志依存を排除 | infra | 05-07 | cmd-complete Step 1にlesson_rev |
