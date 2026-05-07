@@ -7,53 +7,63 @@
 tag_rules:
   # --- 既存11タグ (deploy_task.sh L300-312由来、多義語排除版) ---
   - tag: db
-    patterns: ['(?i)\bDB\b|\bdatabase\b|\bSQL\b|PostgreSQL|テーブル.*カラム']
+    patterns: ['(?i)DB|database|SQL|PostgreSQL|テーブル|カラム']
   - tag: api
-    patterns: ['(?i)\bAPI\b|\bendpoint\b|REST.*API|GraphQL']
+    patterns: ['(?i)API|endpoint|REST|GraphQL']
   - tag: frontend
-    patterns: ['(?i)\bfrontend\b|\bui\b|\bcss\b|\breact\b|\bcomponent\b|Next\.js']
+    patterns: ['(?i)frontend|css|react|component|Next\.js|SPA']
   - tag: deploy
-    patterns: ['(?i)\bdeploy\b|本番.*デプロイ|本番.*投入|Render.*service|Render.*deploy']
+    patterns: ['(?i)deploy|本番|Render.*service']
   - tag: pipeline
-    patterns: ['(?i)\bpipeline\b|\bbatch\b|\bcron\b|\bscheduler\b|PipelineEngine']
+    patterns: ['(?i)pipeline|PipelineEngine|cron|scheduler|recalculate']
   - tag: testing
-    patterns: ['(?i)\btests?\b|\btesting\b|検証|parity|backtest|\bbats\b|pytest']
+    patterns: ['(?i)(?<![a-zA-Z])test(?![a-zA-Z])|検証|parity|backtest|bats|pytest']
   - tag: review
-    patterns: ['(?i)\breview\b|査読|レビュー']
+    patterns: ['(?i)(?<![a-zA-Z])review(?![a-zA-Z])|査読|レビュー']
   - tag: recon
-    patterns: ['(?i)\brecon\b|偵察|調査']
+    patterns: ['(?i)recon|偵察|調査']
   - tag: process
     patterns: ['(?i)手順|運用|workflow']
   - tag: communication
     patterns: ['(?i)通信|notification']
   - tag: gate
-    patterns: ['(?i)\bgate\b|門番|\bBLOCK\b|\bCLEAR\b|gate_.*\.sh']
+    patterns: ['(?i)(?<![a-zA-Z])gate(?![a-zA-Z])|門番|BLOCK|CLEAR|gate_.*\.sh']
   # --- 追加11タグ (多義語排除版) ---
   - tag: bash
-    patterns: ['(?i)\bbash\b|\bshell\b|シェル|\.sh\b']
+    patterns: ['(?i)bash|shell|シェル|\.sh(?![a-zA-Z])']
   - tag: yaml
-    patterns: ['(?i)\byaml\b|\byml\b']
+    patterns: ['(?i)yaml|yml']
   - tag: git
-    patterns: ['(?i)\bgit\b|\bcommit\b|\bbranch\b|\bmerge\b']
+    patterns: ['(?i)(?<![a-zA-Z])git(?![a-zA-Z])|commit|branch|merge']
   - tag: wsl2
     patterns: ['(?i)WSL[2\b上環]|/mnt/c|Windows.*(venv|font|encoding|環境|YAML)']
   - tag: security
-    patterns: ['(?i)\bsecurity\b|\binjection\b|脆弱']
+    patterns: ['(?i)security|injection|脆弱']
   - tag: monitor
-    patterns: ['(?i)\bmonitor\b|監視|\bstall\b|ninja_monitor']
+    patterns: ['(?i)monitor|監視|stall|ninja_monitor']
   - tag: inbox
-    patterns: ['(?i)\binbox\b|メッセージ|\bwatcher\b']
+    patterns: ['(?i)inbox|メッセージ|watcher']
   - tag: tmux
     patterns: ['(?i)\btmux\b|\bpane\b|tmux.?window|tmux.?session']
   - tag: oauth
-    patterns: ['(?i)\boauth\b|認証|API[._]key']
+    patterns: ['(?i)oauth|認証|API[._]key']
   - tag: lesson
-    patterns: ['(?i)\blesson\b|教訓']
+    patterns: ['(?i)(?<![a-zA-Z])lesson(?![a-zA-Z])|教訓']
   - tag: reporting
-    patterns: ['(?i)報告|\bdashboard\b|YAML.*report']
-  # --- GS/研究タグ (忍者成長速度改善: GS実行タスクの教訓マッチング) ---
+    patterns: ['(?i)報告|dashboard|YAML.*report']
+  # --- DM-Signalドメインタグ ---
   - tag: grid_search
     patterns: ['(?i)grid.?search|GS\b|gs_|忍法|champion|WF\b|wf_|run_077|results_fast|\.npy|cache.*npy|l1_alm']
+  - tag: fof
+    patterns: ['(?i)FoF|nested|四神|奥義|忍法']
+  - tag: fullrecalculate
+    patterns: ['(?i)recalculate|fullrecalc|sync.*fof|Signal.*DELETE|snapshot.*比較']
+  - tag: cdp
+    patterns: ['(?i)CDP|Chrome.*DevTools|screenshot|スクショ|headless']
+  - tag: research
+    patterns: ['(?i)momentum|lookback|expanding.*window|OOS|walk.?forward|beta.*adjust|calmar|sortino']
+  - tag: cache
+    patterns: ['(?i)cache|キャッシュ|precompute|preload']
   # --- 不変量検出タグ (2026-03-17追加) ---
   - tag: production_invariant
     patterns: ['(?i)本番.*解像度|本番.*日次|production.*daily|production.*resolution|本番.*挙動|本番コード.*確認|パリティ.*破壊|パリティ.*不一致']
