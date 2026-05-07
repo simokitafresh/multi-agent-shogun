@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-07 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-07T16:27:00+09:00 -->
+<!-- generated_at: 2026-05-07T16:29:29+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-07T16:29:29+09:00 | terminal | response | **根因発見。** viewer_tokens = **100件（MAX上限ちょうど）**。 L114-119のロジック: ```python count = db.query(ViewerToken).count() if count …
+- 2026-05-07T16:27:59+09:00 | terminal | inbound | 待てよ、standardも強制的にログアウトされるな
 - 2026-05-07T16:27:00+09:00 | terminal | response | 殿の仮説に同意する。問題を整理する。 **NewStandard tierの問題:** 1. **password_env_key=VIEWER_PASS_NEWSTANDARD** — ローカル.envに存在しない。Render本番にも…
 - 2026-05-07T16:25:54+09:00 | terminal | inbound | New standardはページを移動するとログインが不定期に切れる。強制ログアウトされる。
 - 2026-05-07T16:25:32+09:00 | terminal | response | 殿の仮説が当たっている可能性が高い。 **DM-safeはメンバーシップフォルダ所属**。NewStandardではメンバーシップフォルダ自体がhidden=true。 しかし殿がDM-safeをvisibility settingsに追…
@@ -12,8 +14,6 @@
 - 2026-05-07T16:21:01+09:00 | terminal | inbound | キャッシュクリアでは変化なかった
 - 2026-05-07T16:18:16+09:00 | terminal | response | 殿の仮説確認。メンバーシップフォルダはNewStandardでhidden=true + 中のPF全てhide_portfolio=true。 **殿の仮説**: ユーザーが最初にメンバーシップフォルダのPFを選んだ状態でtierを切替え…
 - 2026-05-07T16:17:35+09:00 | terminal | inbound | たぶんNewstandardはメンバーシップフォルダーにあるPFが1つも見えないのが原因なのかもな
-- 2026-05-07T16:17:05+09:00 | terminal | response | 状況が明確になった。 **Compare Summaryページ**: PFデータは見える(シン白虎-激攻, GSシン分身等 15PF)。しかし**フォルダ分類のチップ(タブ)が消えている**。 **Dashboardページ**: 「No …
-- 2026-05-07T16:15:34+09:00 | terminal | inbound | 【殿ntfy】You received a file: tempFileForShare_20260507-161524.pnginbox1
 
 ## 未解決確認事項
 - 殿の仮説確認。メンバーシップフォルダはNewStandardでhidden=true + 中のPF全てhide_portfolio=true。 **殿の仮説**: ユーザーが最初にメンバーシップフォルダのPFを選んだ状態でtierを切替え→新tierではそのPFが見えない→si…
