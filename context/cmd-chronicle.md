@@ -810,3 +810,4 @@
 | cmd_2593 | auto_draft_lesson.shのskip分岐でlesson.doneを生成しない→cmd_complete_gateがlesson_done_missing BLOCKする循環を解消 | infra | 05-07 | auto_draft_lesson.shのskip時にles |
 | cmd_2594 | 忍者がknowledge_candidateを文字列で記入→gate_report_formatがBLOCKするパターンをautofix層で自動変換し、BLOCKを事前解消 | infra | 05-07 | knowledge_candidate文字列をtitle/d |
 | cmd_2595 | 家老がcmd-completeスキル実行時にdraft教訓レビューを飛ばす→後続cmdでdraft_lessons BLOCK。スキル手順でlesson_review強制実行し意志依存を排除 | infra | 05-07 | cmd-complete Step 1にlesson_rev |
+| cmd_2596 | 全13ページ×vis_L2/vis_L3/vis_L4の3レイヤーでBE/FE各々が何をマスクしているかを現物確認し、MECEマトリクスとして文書化する。FoFのsignal展開(構成ticker分解表示)のマスク挙動も含む | dm-signal | 05-07 | cmd_2596 visibility matrixを作成。 |
