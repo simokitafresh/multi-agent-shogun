@@ -76,6 +76,8 @@ bash scripts/inbox_archive.sh karo
 - 順序を崩すな（§8ルール）
 
 ## 注意ポイント
+
+- 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kotaro:lesson_done_missing|draft_lessons:1
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|tobisaru:lesson_done_missing|draft_lessons:1
 
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kagemaru:lesson_done_missing
