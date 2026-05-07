@@ -30,25 +30,39 @@ UIライブラリなし（全13コンポーネント手製）。
 - L189: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい（cmd_564）
 - L216: frontend設定参照は next.config.js ではなく next.config.mjs を使え（cmd_719）
 
-## 2. ページ一覧
+## 2. ページ一覧 (2026-05-07 コード確認)
+
+### 稼働ページ(データ表示あり: 12ページ)
 
 | ページ | ルート | データAPI |
 |--------|--------|----------|
-| Home | `/` | Performance, History |
 | Dashboard | `/dashboard` | Performance, MTD |
 | Summary | `/summary` | Metrics |
-| Metrics | `/metrics` | Metrics, UpDownMarket |
-| Trades | `/trades` | Trades |
 | Compare | `/compare` | Performance (各PF) |
 | Compare Summary | `/compare-summary` | MetricsSummary |
-| Monthly Returns | `/monthly-returns` | MonthlyReturns |
+| Metrics | `/metrics` | Metrics, UpDownMarket |
 | Annual Returns | `/annual-returns` | AnnualReturns |
+| Monthly Returns | `/monthly-returns` | MonthlyReturns |
 | Monthly Trade | `/monthly-trade` | MonthlyTrade |
-| Drawdowns | `/drawdowns` | Drawdowns |
 | Rolling Returns | `/rolling-returns` | RollingReturns |
-| Docs/FAQ | `/docs`, `/faq` | 静的 |
+| Drawdowns | `/drawdowns` | Drawdowns |
+| Deterioration | `/deterioration` | Deterioration |
+| Docs/FAQ | `/docs`, `/faq` | 静的(API参照なし) |
+
+### 封鎖ページ(プレースホルダーのみ: ユーザーにデータ表示なし)
+
+| ページ | ルート | 状態 |
+|--------|--------|------|
+| Home | `/` | 封鎖中(2026-03-04 e5d7c773)。dashboardへのリンクのみ |
+| Trades | `/trades` | 封鎖中(2026-03-04 e5d7c773 discontinue trades page)。signalsページへのリンクのみ。既知: `docs/future-01/004.md` L194, `docs/research/fe-speed-improvement-design.md` L14 |
+| Signals | `/signals` | ルート不在(ディレクトリなし) |
+
+### Admin(認証必須)
+
+| ページ | ルート | データAPI |
+|--------|--------|----------|
 | Admin | `/admin` | Portfolios, DB status |
-| Admin FoF | `/admin/fof` | Portfolios — **WeightBreakdown実装済み**(cmd_1573: debug API→`/api/portfolios/{id}/fof-weights`正式化。WeightBreakdown.tsx新規。Wardクラスタ別色分け表示) |
+| Admin FoF | `/admin/fof` | Portfolios — **WeightBreakdown実装済み**(cmd_1573) |
 | Admin Visibility | `/admin/visibility` | Tiers, Visibility |
 
 → 詳細資料: `docs/research/frontend-components.md` §2
