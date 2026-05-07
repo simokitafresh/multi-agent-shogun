@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-06 -->
+<!-- last_updated: 2026-05-07 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,25 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_karo_score_wide | 研究 — ALMスクリプトscore_wide高速化(score_fn→numpy一括) | dm-signal | 04-06 | cmd_1735/1736 を score_fn から sc |
-| cmd_1748 | 研究 — ALM L1 OOS検証。6目的関数×忍法7種=42パターンWF-OOS | dm-signal | 04-06 | 41/42 ROBUST。tail_contribution×加速RのみOVERFIT |
-| cmd_1749 | 偵察 — ALM本番組込み。BEパイプライン+Admin CDP+ALMフック候補 | dm-signal | 04-06 | L0フロー全容把握。Hook A(fof)+FE UI分析+CDPスクショ |
-| cmd_1750 | 偵察 — ALM Phase 3.7/4/4.5改修設計。recalculate_fast.py精読 | dm-signal | 04-06 | 2パス方式推奨。事前計算+月次選出+fullrecalc設計確定 |
-| cmd_1751 | 偵察 — ALM盲点6件。保存バリデーション+cron+FoF連携+CDP実地 | dm-signal | 04-06 | FoF透過的OK。daily cron=mode=PORTFOLIO。fullrecalc自動cronなし |
-| cmd_1752 | ALM impl cmd発令前に残る4つの未検証事項を埋める。 cmd_1750設計書の実現可能性を実コードで最終確認する。 | dm-signal | 04-06 | cmd_1752書込み競合偵察を完了。Pass2→Phase |
-| cmd_1753 | なぜなぜ7回転で発見した4盲点を現物確認。全て5-10分のコード精読で済む。 | dm-signal | 04-06 | MTDはMonthlyReturnテーブルに混入する（意図的 |
-| cmd_1754 | ALM設計知識が10ファイルに散在。/clear後に全エージェントが即使えるよう 1統合設計書にまとめ、projects/dm-signal.yaml+context §35にポインタを置く。殿直接指示。 | dm-signal | 04-06 | cmd_1754を完了。ALM統合設計書を新規作成し、§1- |
-| cmd_1755 | 大元リポ(yohey-w/multi-agent-shogun)の最新アップデートから 我が軍にない3点の有用性を現物比較で判定する。 なぜなぜ7回転で絞り込んだ3点。 | infra | 04-06 | PR#113 guard.sh(6 hooks)と我が軍pr |
-| cmd_1756 | 大元リポ(yohey-w) commit c87ca64のratelimit表示改善+SSH key改善を 我が軍のAndroidアプリ(v5.7)+ratelimit_check.shと比較し、取り込み価値を判定する。 | infra | 04-06 | cmd_1756偵察を完了。upstream c87ca64 |
-| cmd_1757 | cmd_1754で作成された統合設計書(docs/research/alm-integration-design.md)に なぜなぜ追加回転で発見した6件の修正事項を反映する。 誤った数字(30分)と誤った前提(2パス=manual限定)を正す。 | dm-signal | 04-06 | alm-integration-design.md に指定6 |
-| cmd_1758 | 大元リポ(yohey-w)のPR#113+skill-creator v2.0から 我が軍に不足する7件を取り込む。cmd_1755偵察で特定済み。 | infra | 04-06 | guard強化3件完了。G1:test_hooks.sh(7 |
-| cmd_1760 | ALM目的関数の鉄壁方向が手薄（LTJ_invのみ）。 calmar/sortino/UWP/MDDの4つを新規ALM目的として検証し、 L0性能+L1忍法7種性能+既存シン忍法比較まで一気に出す。 殿直接指示。 | dm-signal | 04-06 | cmd_1760 sortino_ratio ALM L0+ |
-| cmd_1761 | ALM忍法19体とシン忍法20体の全メトリクスを38指標で統一計算し、 忍法別比較表の空欄を全て埋める。 cmd_1760のcalmar/sortino目的でMaxDD/MRU/TC/NHF等が欠落していた問題を解消。 | dm-signal | 04-06 | 分身+追い風の旧/シン/ALM3世代・11体38メトリクス算 |
-| cmd_1762 | ALM(Adaptive Lookback Momentum)本番組込みの第一弾。 スキーマにAlmConfig追加 + recalculate_fast.pyのPhase 3.7で ALM PFの全候補lookbackのmomentum cache + vectorized signalsを事前計算する。 設計書: docs/research/cmd_1750_alm_design.md (AC1+AC3前半) | dm-signal | 04-06 | ALM本番組込み第一弾(cmd_1762)を完了。AC1/A |
-| cmd_1737_v2 | ALM OOS検証v2: 全50組合せPBO | dm-signal | 04-06 | — |
-| cmd_1740 | ファミリー別Max Run-up ALM+ローリング相関 | dm-signal | 04-06 | — |
-| cmd_1763 | ALM忍法の3目的関数（現行: MRU/calmar/UWP）が最適か検証する。 L2（Ward FoF等）はシン忍法20体+ALM忍法を材料に使う。 L2材料プール全体の多様性を最大化する3目的関数の組合せを、 6目的関数の既存データからデータドリブンで選定する。 | dm-signal | 04-06 | AC1: cmd_1761_full_metrics.yam |
-| cmd_1764 | cmd_1763(6目的C(6,3)=20通り)の不完全分析を完全版に拡張。 cmd_1760データ(calmar/MaxDD/sortino/UWP)を追加し10目的関数でC(10,3)=120通り。 L2材料プール(シン20体+ALM)の多様性を最大化する3目的関数をデータドリブンで確定。 | dm-signal | 04-06 | AC1-4完了。90体×11メトリクス行列/120通りランキ |
 | cmd_1765 | L1 ALM WFエンジン骨格。CSV読込+WF fold生成+ベクトル化メトリクス計算。DM2(119,493パターン)先行 | dm-signal | 04-07 | AC1-3完了。L1 ALM WFエンジン骨格実装。CSV読 |
 | cmd_1773 | URGENT — ALM四神12体を本番で非表示にする | dm-signal | 04-07 | global_visibility_settings(id= |
 | cmd_1777 | 道具磨き — 月次リターン計算pure function化 + ALMパリティ完全達成 | dm-signal | 04-07 | 月次リターン pure function を新設し、既存 c |
@@ -826,3 +807,4 @@
 | cmd_2588 | cmd_absorb.sh(257行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_absorb.sh(257行)をCoDD refac |
 | cmd_2589 | skill_gate_feedback.sh(216行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_gate_feedback.sh CoDD re |
 | cmd_2592 | skills/cdp-browse/SKILL.mdのgate FAIL(フロントマター<>検出)修正、allowed-tools追加、note.com下書き保存実績の反映、能動的CDP使用の指針追加 | infra | 05-06 | skills/cdp-browse/SKILL.mdのフロン |
+| cmd_2593 | auto_draft_lesson.shのskip分岐でlesson.doneを生成しない→cmd_complete_gateがlesson_done_missing BLOCKする循環を解消 | infra | 05-07 | auto_draft_lesson.shのskip時にles |
