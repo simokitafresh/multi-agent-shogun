@@ -27,7 +27,9 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 ```bash
 bash scripts/lesson_review.sh
 ```
-draft教訓があればconfirm/edit/delete。なければスキップ。
+draft教訓レビューを必ず実行する。draft=0ならスキップしてStep 2へ進む。
+draft>0なら全件confirm/edit/deleteで完了させるまでStep 2以降へ進むな。
+lesson_review完了前にcmd_complete_gateを実行することは禁止。
 
 ### Step 2: workaroundログ（該当時のみ）
 cmd処理中にworkaround（忍者報告の手動修正等）があった場合:
