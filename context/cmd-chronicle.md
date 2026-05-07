@@ -811,3 +811,4 @@
 | cmd_2594 | 忍者がknowledge_candidateを文字列で記入→gate_report_formatがBLOCKするパターンをautofix層で自動変換し、BLOCKを事前解消 | infra | 05-07 | knowledge_candidate文字列をtitle/d |
 | cmd_2595 | 家老がcmd-completeスキル実行時にdraft教訓レビューを飛ばす→後続cmdでdraft_lessons BLOCK。スキル手順でlesson_review強制実行し意志依存を排除 | infra | 05-07 | cmd-complete Step 1にlesson_rev |
 | cmd_2596 | 全13ページ×vis_L2/vis_L3/vis_L4の3レイヤーでBE/FE各々が何をマスクしているかを現物確認し、MECEマトリクスとして文書化する。FoFのsignal展開(構成ticker分解表示)のマスク挙動も含む | dm-signal | 05-07 | cmd_2596 visibility matrixを作成。 |
+| cmd_2597 | 本番FEの全ページをCDPでスクショ取得し、各ページのUI表示要素を網羅的に記録する。コードgrepではなくユーザーが実際に見る画面を真実とし、vis_L3/L4でマスクすべき要素を特定する基礎資料を作成 | dm-signal | 05-07 | 本番FE 14ページをCDPでstandard(DM2)/F |

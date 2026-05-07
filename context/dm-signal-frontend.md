@@ -238,6 +238,11 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 全13API×vis_L2/L3/L4マスク対象のMECE一覧+FoF signal展開マスク+FE追加マスク+未実装5API特定。
 → `docs/research/cmd_2596_visibility_matrix.md`
 
+## 11.7 Visibility UI監査 — CDP全ページスクショ+要素判定 (cmd_2597)
+
+本番FE 14ページ×(standard+FoF)=28スクショ+UI要素signal/component二値判定。
+→ `docs/research/cmd_2597_visibility_ui_audit.md` / CDPスクショ: `outputs/cdp/cmd_2597/`
+
 ## 12. Frontend関連教訓
 
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
