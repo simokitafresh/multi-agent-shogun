@@ -25,4 +25,5 @@ codd:
 | 四神設計 | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体 | `context/dm-signal-core.md` §PFレイヤー, `context/checklist-shin-v2-registration.md`, `context/l3-robustness.md` §WF四神 | なし |
 | 編成管理 | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml | `config/settings.yaml`, `context/infrastructure.md` CLIモデル指定とコンテキスト, `skills/shogun-all-codex-switch/SKILL.md` | なし |
 | Visibility Tier制マスク | visibility, Visibility Settings, vis_L2, vis_L3, vis_L4, hide_signal, hide_components, hide_portfolio, Tier, 料金プラン, マスク | `backend/app/services/masking_service.py`, `backend/app/services/visibility_helpers.py`, `backend/app/services/page_visibility.py` | なし |
+| 将軍Androidアプリ | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ | `android/`, `android/app/build.gradle.kts`, `android/app/src/main/java/com/shogun/android/` | なし |
 | CDP(ブラウザ操作能力) | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper | `MEMORY.md` §Technical Knowledge → CDP Browser Automation, `scripts/cdp/cdp_cli.sh`, `scripts/cdp/cdp_server.py` | `memory/deepdive_why_chain_20260321.md` Phase 4 想像するな確認せよ |

@@ -436,6 +436,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
 - セマンティクスインデックス|概念索引=`context/semantic-map.md`、概念検索=`bash scripts/semantic_search.sh "<query>"`|用語が曖昧な時は起動時索引+CLI検索で関連ファイルへ到達|→ `docs/research/semantic_index_design.md`
+- Androidアプリ|v6.4 Kotlin+Compose|SSH経由tmux操作+Dashboard+音声入力|→ `context/infrastructure.md` §Android App
 
 ## Cross-Project Context
 - `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`

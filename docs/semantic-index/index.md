@@ -206,6 +206,23 @@ codd:
 | vis_L3 | 保有シグナルを隠す | バックテスト(餌)は見せて上位Tier誘導 |
 | vis_L4 | 構成ticker(レシピ)を隠す | シグナルは公開、戦略の知的財産を保護 |
 
+## shogun_android_app — 将軍Androidアプリ
+
+| 属性 | 値 |
+|------|---|
+| id | shogun_android_app |
+| label | 将軍Androidアプリ |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `android/` |
+| file | `android/app/build.gradle.kts` |
+| file | `android/app/src/main/java/com/shogun/android/` |
+| file | `context/infrastructure.md` §Android App |
+| cmd | `cmd_2602` 環境埋込み — Android/アプリ/モバイルから将軍Androidアプリへ到達可能化 |
+| cmd | `cmd_1809-1816,1924,1943,1945,2104` Androidアプリ改修・調査履歴 |
+
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
 | 属性 | 値 |

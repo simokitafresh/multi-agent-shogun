@@ -379,6 +379,22 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将軍システムは既にkeep-or-revert(gate)・永続メモリ(lessons/deepdive)・メタ改善(cmd_save.sh自己改善)・マルチエージェント調整(鎖/inbox)を実装済み。将軍独自の強み: revertではなく「修正→再実行」(学習を伴う)、追体験(deepdive)。未実装: 自動メタ改善(GEPA的instructions自動修正提案)、水平知識共有(忍者間ゴシップ)、安価ランタイム自動蒸留。注目: GEPA(ICLR 2026 Oral, 自然言語反射)、CORAL(共有永続メモリ+SOTA)、AI-Researcher(NeurIPS 2025, 仙人構想の参考)。
 → `docs/research/autoresearch-ecosystem-analysis.md`
 
+## Android App
+
+将軍Androidアプリは `android/` 配下の Kotlin + Jetpack Compose 製コンパニオン。package/applicationId=`com.shogun.android`、v6.4(versionCode 15)、SSH経由でtmuxを操作し、Dashboard/Agents/ShogunScreen/Settings/GistIndex/Usage を提供する。
+
+| 項目 | 正本 |
+|------|------|
+| パス | `android/` |
+| ビルド | `android/app/build.gradle.kts`（Gradle + AGP、Kotlin、Compose、Min SDK 26 / Target 34） |
+| パッケージ | `com.shogun.android` |
+| 主要画面 | Dashboard / Agents / ShogunScreen(将軍CLI) / Settings / GistIndex / Usage |
+| SSH | `android/app/src/main/java/com/shogun/android/ssh/SshManager.kt`（JSch） |
+| 音声入力 | `android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt`（90+プリセット） |
+| README | `android/README_ja.md` / `android/README.md` |
+| APK | `android/release/` |
+| cmd履歴 | `context/cmd-chronicle.md` cmd_1809-1816, cmd_1924, cmd_1943, cmd_1945, cmd_2104 |
+
 ## Infra教訓索引
 <!-- last_synced_lesson: L572 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
