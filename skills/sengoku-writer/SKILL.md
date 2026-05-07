@@ -220,6 +220,14 @@ allowed-tools:
 CDP経由でnote.comに下書き保存する。手順は共通リファレンス参照:
 → `memory/reference_cdp_note_com.md`
 
+実行は共通ヘルパーに委譲する:
+
+```bash
+CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
+```
+
+未ログイン時は`.env.note`の`NOTE_EMAIL`/`NOTE_PASSWORD`で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは`/tmp/note_recaptcha_challenge.png`を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+
 Markdown→note.com変換ルール（詳細は共通リファレンス§4-3参照）:
 - `## 見出し` / `###` → h3見出し（noteはh4以下非対応なのでh3統一）
 - `---` → 区切り線（`insertHorizontalRule`）

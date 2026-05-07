@@ -422,6 +422,17 @@ rg -n "買い|売り|目標株価|エントリー推奨|おすすめ" "$OUT_FILE
 - raw signal / ticker / weight が記事本文に出ていないか
 - 出力先が `marketing-director/content/weekly_report/YYYY-MM-DD_weekly.md` になっているか
 
+### Step 8: note.comに下書き保存
+
+CDP経由でnote.comに下書き保存する。手順は共通リファレンス参照:
+→ `memory/reference_cdp_note_com.md`
+
+```bash
+CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
+```
+
+未ログイン時は`.env.note`の`NOTE_EMAIL`/`NOTE_PASSWORD`で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは`/tmp/note_recaptcha_challenge.png`を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+
 ## トラブル時
 
 - `401 Invalid authentication credentials`
