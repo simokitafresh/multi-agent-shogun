@@ -96,6 +96,7 @@ codd:
 | file | `context/checklist-shin-v2-registration.md` |
 | file | `docs/research/dmsignal_parity_verification_audit.md` |
 | lesson | `context/dm-signal-core.md` L088-L129 |
+| lesson | `L717` 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ |
 
 ## deepdive_principles — deepdive原理
 
@@ -175,6 +176,36 @@ codd:
 | file | `skills/shogun-all-codex-switch/SKILL.md` |
 | file | `skills/shogun-peacetime-rollback/SKILL.md` |
 
+## visibility_tier_masking — Visibility Tier制マスク
+
+| 属性 | 値 |
+|------|---|
+| id | visibility_tier_masking |
+| label | Visibility Tier制マスク |
+| aliases | visibility, Visibility Settings, vis_L2, vis_L3, vis_L4, hide_signal, hide_components, hide_portfolio, Tier, 料金プラン, マスク |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `backend/app/services/masking_service.py` |
+| file | `backend/app/services/visibility_helpers.py` |
+| file | `backend/app/services/page_visibility.py` |
+| file | `frontend/app/admin/visibility/page.tsx` |
+| file | `docs/research/cmd_2596_visibility_matrix.md` |
+| file | `projects/dm-signal.yaml` visibility_philosophy |
+| terminology | `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md` vis_L1-L4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-07T14:05 Tier=料金プラン、シグナル=最も価値ある情報 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-07T14:09 L4=構成ticker(レシピ)を隠し知的財産保護 |
+
+### ビジネス意図(殿定義 2026-05-07)
+
+**DM-Signal = 保有シグナル＆バックテストビューワー。** Tier = 料金プラン。上位Tierほど多くのPF/シグナルにアクセス。
+
+| Layer | 目的 | ビジネス意図 |
+|-------|------|------------|
+| vis_L2 | PF存在自体を隠す | このTierでは見せないPFを丸ごと非表示 |
+| vis_L3 | 保有シグナルを隠す | バックテスト(餌)は見せて上位Tier誘導 |
+| vis_L4 | 構成ticker(レシピ)を隠す | シグナルは公開、戦略の知的財産を保護 |
+
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
 | 属性 | 値 |
@@ -192,6 +223,9 @@ codd:
 | file | `/mnt/c/Python_app/auto-ops/cdp/cdp_helper.py` |
 | file | `context/dm-signal-ops.md` §DM-Signal本番FE CDP確認手順 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T21:25 CDPの本質=LLMが人間同様にWebブラウザを使える能力 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-06T00:10 CDPスキル磨き指示(前セッション対話全文読め) |
+| cmd | `cmd_2583` CDPスキルSKILL.mdに6つの罠(remote-allow-origins/nativeInputValueSetter/port9234等)追記 |
+| cmd | `cmd_2592` cdp-browseスキル磨き(gate FAIL修正+allowed-tools+note実績+能動指針) |
 | lesson | `memory/deepdive_why_chain_20260321.md` Phase 4 想像するな確認せよ |
 
 ### 原理(殿定義 2026-05-05)

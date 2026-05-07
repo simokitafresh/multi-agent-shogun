@@ -26,12 +26,14 @@
 # → docs/research/gunshi_idle_sg7_blind_spot_analysis_20260502.md
 # → docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
 #
-# ─── 本セッション成果 (2026-05-06T00:30更新) ───
-# draft review 10件: cmd_2573-2582 全APPROVE
-# report review 13件: 全LGTM→CLEAR(lesson BLOCK 2件は家老修正後CLEAR)
-# ★見落とし1件: cmd_2581 lessons_useful空リスト→LGTM→GATE BLOCK。PRE11は形式PASSだが空リスト=内容欠落を見逃す
-# D0直接実装 1件: index.md drift修正+L715/L566追加(セマンティックインデックス保守)
-# 知識埋没監査: auto-memory 68ファイル全量スキャン→16件埋没→8件転記完了(cmd_2580+karo_direct)
-# セマンティック監査: drift 1件修正+候補5件処理(insights 27→22件)
-# CDP設計回答→掲示板。cmd_2579 CDPスキル化APPROVE→CLEAR
-# accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 1件(lessons_useful空リスト見落とし)
+# ─── 本セッション成果 (2026-05-07T14:00更新) ───
+# draft review 4件: cmd_2593-2596 全APPROVE(DREAM-GATE 3件+偵察1件)
+# report review 3件: cmd_2593-2595 全LGTM→CLEAR
+# D0直接実装 3件: lesson_tags.yaml tmux+wsl2+全面修正(家老承認3件)
+# セマンティック監査: 4スクリプト5カテゴリ→P0偽陽性確認/P1=3件低リスク。副作用スキャンcmd_2593-2595全件0件
+# insights: 56→0→5→0(全件処理完了)
+# retag: 31件(universal8+tmux23)+残3件は家老対応
+# セマンティックインデックス: 4resource追加(production_parity+cdp×3)、drift 0件
+# なぜなぜ7回: 「低ROI=作業量縮小の隠語」→全面修正。パラメータ空間縮小禁止と同根
+# cmd品質傾向: CLEAR率93%、ac_phase_mixing累計32回が構造的課題
+# accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 0件。見落とし0件
