@@ -814,3 +814,4 @@
 | cmd_2597 | 本番FEの全ページをCDPでスクショ取得し、各ページのUI表示要素を網羅的に記録する。コードgrepではなくユーザーが実際に見る画面を真実とし、vis_L3/L4でマスクすべき要素を特定する基礎資料を作成 | dm-signal | 05-07 | 本番FE 14ページをCDPでstandard(DM2)/F |
 | cmd_2598 | AddOn tier(L3=OFF/L4=ON)でMonthly Trade position列がticker名でなく***100.0%になるバグを修正。resolveDisplayTextがL4マスク済みexpanded_tickersを参照するのが根因 | dm-signal | 05-07 | L4 component mask時のMonthly Tra |
 | cmd_2599 | viewer_tokens 100件上限で新規ログインが他ユーザーのtoken削除→強制ログアウト。MAX上限if分岐を削除し期限切れ削除のみに変更 | dm-signal | 05-07 | viewer/admin token生成時のMAX_TOKE |
+| cmd_2601 | note_draft.shが未ログイン時にエラー終了する。reCAPTCHA画像チャレンジを含む自動ログインフローを追加し、全スキル(weekly-report/note-article/sengoku-writer)から完全自動で下書き保存可能にする。併せてタイトル抽出バグ(#h1を無視し最初の##h2を使用)を修正する | infra | 05-07 | note_draft.shに未ログイン時の自動ログイン+re |
