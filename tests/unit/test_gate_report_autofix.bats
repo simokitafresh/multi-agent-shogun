@@ -135,6 +135,43 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
+@test "knowledge_candidate string is converted to title/detail dict" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_999
+verdict: PASS
+knowledge_candidate: "API endpoint is /v1/report"
+files_modified:
+  - path: scripts/foo.sh
+    change: modified
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: helpful
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIXED"* ]]
+    [[ "$output" == *"knowledge_candidate string→dict変換"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+kc = d['knowledge_candidate']
+assert isinstance(kc, dict), f'Expected dict, got {type(kc)}'
+assert kc['title'] == 'API endpoint is /v1/report', kc
+assert kc['detail'] == 'API endpoint is /v1/report', kc
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # === Test 4: binary_checks dict値 → 消火撤去(GP-107)。gate_report_format.shがBLOCK ===
 @test "binary_checks single dict value is NOT wrapped (消火撤去: gate blocks)" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"

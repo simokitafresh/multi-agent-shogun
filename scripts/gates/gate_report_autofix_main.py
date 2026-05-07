@@ -117,6 +117,15 @@ def main() -> int:
             data["files_modified"] = new_fm
             fixes.append("files_modified string→dict変換")
 
+    kc = data.get("knowledge_candidate")
+    if isinstance(kc, str) and kc.strip():
+        kc_text = kc.strip()
+        data["knowledge_candidate"] = {
+            "title": kc_text,
+            "detail": kc_text,
+        }
+        fixes.append("knowledge_candidate string→dict変換")
+
     # UNKNOWN id仮付番は消火(gate_report_format.shがmissing "id"をBLOCK)→撤去
 
     bc = data.get("binary_checks")

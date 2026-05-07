@@ -61,6 +61,8 @@ fast_no_fix_needed() {
                 if ($0 !~ /^binary_checks:[[:space:]]*$/) need_python = 1
             } else if (key == "lesson_candidate") {
                 if ($0 ~ /^lesson_candidate:[[:space:]]*\[/) need_python = 1
+            } else if (key == "knowledge_candidate") {
+                if ($0 !~ /^knowledge_candidate:[[:space:]]*$/) need_python = 1
             } else if (key == "verdict") {
                 if ($0 !~ /^verdict:[[:space:]]*(PASS|FAIL|PASS_NO_IMPROVEMENT)[[:space:]]*$/ && $0 !~ /^verdict:[[:space:]]*$/) {
                     need_python = 1
