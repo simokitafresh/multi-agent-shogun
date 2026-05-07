@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-07 auto-generated -->
+<!-- last_updated: 2026-05-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-07T23:50:11+09:00 -->
+<!-- generated_at: 2026-05-08T00:01:41+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-08T00:01:41+09:00 | terminal | response | 家老からGA-256報告: context鮮度WARN。dm-signal系4件+infraが8日前更新。緊急ではない。殿の判断で後回し可能。 [meta] stop_reason=tool_use
+- 2026-05-08T00:00:51+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-256)
+- 2026-05-07T23:58:27+09:00 | terminal | response | 現状の音声入力コードを読んで、最小変更の改善点を探る。 [meta] stop_reason=tool_use
+- 2026-05-07T23:57:36+09:00 | terminal | inbound | 音声入力をあまりコードを変えずに改良できないかな。
 - 2026-05-07T23:50:11+09:00 | terminal | response | **cmd_2602 GATE CLEAR。** Androidアプリ知識がセマンティクスインデックス+context+CLAUDE.mdに埋め込まれた。 [meta] stop_reason=tool_use
 - 2026-05-07T23:50:01+09:00 | ntfy | outbound | 【家老】cmd_2602 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 - 2026-05-07T23:37:13+09:00 | ntfy | outbound | 【家老】cmd_2602 初回配備開始 (title=強化 — Androidアプリ知識の環境埋込み(セマンティクス+context+CLAUDE.md), ninja=hayate) 強化 📋 https://gist.github.c…
 - 2026-05-07T23:36:54+09:00 | terminal | response | cmd_2602 GATE PASS → 家老に委任完了。 Androidアプリ知識が環境に埋め込まれれば、次のcmd（音声入力のWhisper API改修）で忍者がアプリの構造を即座に把握できる。 殿、知識埋込みが完了次第、音声入力改修…
 - 2026-05-07T23:36:46+09:00 | terminal | inbound | <task-notification> <task-id>bfrxv1573</task-id> <tool-use-id>toolu_018MbxB9mpijYsgFBpXjeMkx</tool-use-id> <output-file…
 - 2026-05-07T23:36:45+09:00 | terminal | response | 起票前確認通過。publishする。 [meta] stop_reason=tool_use
-- 2026-05-07T23:36:45+09:00 | terminal | inbound | <task-notification> <task-id>be627yxgj</task-id> <tool-use-id>toolu_01Me966FtX5A3iLuAhQfRUkc</tool-use-id> <output-file…
-- 2026-05-07T23:36:45+09:00 | terminal | inbound | <task-notification> <task-id>buvt4bs7b</task-id> <tool-use-id>toolu_01Qxv61UgjxQyq2UMWUYq8LF</tool-use-id> <output-file…
-- 2026-05-07T23:35:55+09:00 | ntfy | outbound | 【SessionEnd 報告】/clear前確認 agent=shogun 殿の言葉 inbound=80件 clear_prep_check=OK [1.PD未決] 0件: なし [2.cmd pending] 0件: なし [3.🚨要…
-- 2026-05-07T23:35:48+09:00 | terminal | response | ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────…
 
 ## 未解決確認事項
 - 起票前確認通過。publishする。 [meta] stop_reason=tool_use
@@ -36,7 +36,6 @@
 - 2026-05-07T23:25:10+09:00 | 将軍システムのAndroidアプリか。殿がスマホから将軍に指示を出す、あるいは状態を見る道具でござるな。 今の殿のモバイル接続手段はntfy（通知受信）+音声入力（指示送信）。Androidアプリにすることで何を実現したいか — 殿の構想を聞かせてほしい。 例えば: - das…
 
 ## 参照cmd
-- cmd_2346
 - cmd_2378
 - cmd_2451
 - cmd_2562
