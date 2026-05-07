@@ -219,6 +219,11 @@ SEO: グローバルmetadataのみ。OG/robots.txt/sitemap未実装。
 cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックしていた不具合。
 修正: 全TierのTierVisibilitySettings.portfolio_settingsを空dict化(DB操作)。_safe_json_field防御も同時追加。
 
+## 11.6 Visibility vis_L2/L3/L4 MECEマトリクス (cmd_2596)
+
+全13API×vis_L2/L3/L4マスク対象のMECE一覧+FoF signal展開マスク+FE追加マスク+未実装5API特定。
+→ `docs/research/cmd_2596_visibility_matrix.md`
+
 ## 12. Frontend関連教訓
 
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
