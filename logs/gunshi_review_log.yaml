@@ -33,6 +33,7 @@
 # gate_prediction廃止(殿裁定2026-05-03): SG7バンドルからgate_prediction削除。家老の行動を変えていなかった。precheckのGATE_PREDICTION表示はレビュー自己参照用に残す
 # ★冷え観点自問(2026-05-05): draftレビューでambiguity/adversarialが0件でも「チェックして0件」か「チェック自体を省いた」か区別せよ。チェック済みなら finding_categories に含めよ
 # ★ac_phase_mixing(2026-05-07): 将軍のcmdでimpl+testをACに混在させるパターンが累計32回WARN→BLOCK。draftレビューStep3(simulation)でAC分離を確認すべき観点
+# ★LG034(殿指摘2026-05-07): 「低ROI/対応不要」は作業量縮小の隠語。優先順位=実行順であり全部やる。一部対処→穴→手戻り増。idle自走でStep完了時に「残件を低ROIで放置していないか」自問
 # gate_sync手動廃止(殿裁定2026-05-03): BLOCK/CLEAR通知のreview_log手動更新を廃止。startup gate自動syncに委ねる。APPROVE→FAILの品質分析のみ手動対応
 # ★既存判定はgit show HEAD限定。Read toolはuncommitted含む。忍者の成果物を「既存」と誤認する(cmd_2474: LG001違反→false positive REQUEST_CHANGES)
 # ★ゲート差替え/削除cmd → North Star Q1強制(症状抑制か根本解消か)。差替え先が品質を計測しているか問え(cmd_2473: exit 0=PASS→品質未計測の消火を承認)
