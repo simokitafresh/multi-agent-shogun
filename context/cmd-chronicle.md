@@ -813,3 +813,4 @@
 | cmd_2596 | 全13ページ×vis_L2/vis_L3/vis_L4の3レイヤーでBE/FE各々が何をマスクしているかを現物確認し、MECEマトリクスとして文書化する。FoFのsignal展開(構成ticker分解表示)のマスク挙動も含む | dm-signal | 05-07 | cmd_2596 visibility matrixを作成。 |
 | cmd_2597 | 本番FEの全ページをCDPでスクショ取得し、各ページのUI表示要素を網羅的に記録する。コードgrepではなくユーザーが実際に見る画面を真実とし、vis_L3/L4でマスクすべき要素を特定する基礎資料を作成 | dm-signal | 05-07 | 本番FE 14ページをCDPでstandard(DM2)/F |
 | cmd_2598 | AddOn tier(L3=OFF/L4=ON)でMonthly Trade position列がticker名でなく***100.0%になるバグを修正。resolveDisplayTextがL4マスク済みexpanded_tickersを参照するのが根因 | dm-signal | 05-07 | L4 component mask時のMonthly Tra |
+| cmd_2599 | viewer_tokens 100件上限で新規ログインが他ユーザーのtoken削除→強制ログアウト。MAX上限if分岐を削除し期限切れ削除のみに変更 | dm-signal | 05-07 | viewer/admin token生成時のMAX_TOKE |
