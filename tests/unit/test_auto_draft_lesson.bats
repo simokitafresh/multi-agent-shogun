@@ -94,6 +94,52 @@ EOF
     [ ! -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
 }
 
+@test "not_found skip creates lesson.done with auto_draft_skip reason" {
+    local report="$TEST_TMPDIR/report.yaml"
+    cat > "$report" <<'EOF'
+parent_cmd: cmd_123
+worker_id: hayate
+lesson_candidate:
+  found: false
+  no_lesson_reason: existing lesson covered this task.
+EOF
+
+    run_auto_draft "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Skipped: not_found"* ]]
+    [ ! -f "$TEST_TMPDIR/lesson_write_args.txt" ]
+
+    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    run grep -Fx -- "source: auto_draft_skip" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "reason: not_found" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+}
+
+@test "validation skip creates lesson.done with extracted skip reason" {
+    local report="$TEST_TMPDIR/report.yaml"
+    cat > "$report" <<'EOF'
+parent_cmd: cmd_123
+worker_id: hayate
+lesson_candidate:
+  found: true
+  project: testproj
+  title: missing detail
+  detail: ""
+EOF
+
+    run_auto_draft "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Skipped: no_title_or_detail"* ]]
+    [ ! -f "$TEST_TMPDIR/lesson_write_args.txt" ]
+
+    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    run grep -Fx -- "source: auto_draft_skip" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "reason: no_title_or_detail" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+}
+
 @test "duplicate lesson candidates create lesson.done as already registered" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ---

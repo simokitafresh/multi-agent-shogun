@@ -2,7 +2,7 @@
 # auto_draft_lesson.sh — 報告YAMLのlesson_candidateからdraft教訓を自動登録
 # Usage: bash scripts/auto_draft_lesson.sh <report_yaml_path>
 # - found: true → lesson_write.sh --status draft で登録
-# - found: false → 何もしない (exit 0)
+# - found: false / validation skip → lesson.done に skip 理由を記録して exit 0
 # - 重複チェック: 同一title+source_cmdが既存ならスキップ (L006対応)
 
 set -e
@@ -15,9 +15,39 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+write_skip_lesson_done() {
+    local reason="$1"
+    local cmd_id gates_dir
+
+    cmd_id=$(awk -F: '
+        /^[[:space:]]*#/ { next }
+        /^[^[:space:]][^:]*:/ {
+            key=$1
+            val=$0
+            sub(/^[^:]+:[[:space:]]*/, "", val)
+            gsub(/["\047]/, "", val)
+            gsub(/[[:space:]]+$/, "", val)
+            if (key == "parent_cmd" && val != "") { print val; exit }
+            if (key == "task_id" && fallback == "" && val != "") { fallback = val }
+        }
+        END { if (fallback != "") print fallback }
+    ' "$REPORT_PATH")
+
+    if [[ "$cmd_id" == cmd_* ]]; then
+        gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+        mkdir -p "$gates_dir"
+        {
+            echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)"
+            echo "source: auto_draft_skip"
+            echo "reason: ${reason}"
+        } > "$gates_dir/lesson.done"
+    fi
+}
+
 # draft_lessons起因のBLOCK循環防止
 # GATE_BLOCK_REASON=draft_lessons* が設定されている場合はdraft生成をスキップ
 if [[ "${GATE_BLOCK_REASON:-}" == draft_lessons* ]]; then
+    write_skip_lesson_done "draft_lessons_block"
     echo "[auto_draft] SKIP: draft_lessons起因のBLOCKによる循環防止 (${REPORT_PATH})"
     exit 0
 fi
@@ -33,6 +63,7 @@ _found_val=$(awk '
     }
 ' "$REPORT_PATH")
 if [ "$_found_val" != "true" ]; then
+    write_skip_lesson_done "not_found"
     echo "[auto_draft] Skipped: not_found (${REPORT_PATH})"
     exit 0
 fi
@@ -101,6 +132,7 @@ action=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(s
 
 if [ "$action" = "skip" ]; then
     reason=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))")
+    write_skip_lesson_done "$reason"
     echo "[auto_draft] Skipped: ${reason} (${REPORT_PATH})"
     exit 0
 fi
