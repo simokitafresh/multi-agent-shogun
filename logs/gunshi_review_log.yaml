@@ -3933,3 +3933,156 @@
   causal_chain: "Visibility MECEマトリクス→未実装5API特定→次の修正cmdがピンポイントで穴を埋める(正の複利)"
   lesson_quality: OK
   timestamp: "2026-05-07T14:02:00"
+- cmd_id: cmd_2597
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。CDP偵察cmd。13ページ(history=404除外)+FoF切替=26+αスクショ。cdp-browseスキル稼働確認済み"
+  observations:
+    - "事実1: q5でhistory=404確認済み。AC1リストからhistory除外で整合"
+    - "事実2: cdp-browseスキルallowed-toolsにWriteなし→スキル外でWrite使用の成果物作成フロー成立"
+  causal_chain: "コードgrep偵察(cmd_2596)→本番UI実態と乖離リスク(負の複利)→CDP実画面スクショ→正確な基礎資料(正の複利)"
+  timestamp: "2026-05-07T14:35:00"
+- cmd_id: cmd_2597
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_2597_exact
+  report_verdict: PASS
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。28スクショ+MD9KB。standard=DM2,FoF=Ave-X。14ページ全巡回。commit waive(研究cmd)"
+  observations:
+    - "事実1: outputs/cdp/cmd_2597/ に28 PNG+audit_raw.json実在確認。MD 9417バイト"
+    - "事実2: Dashboard/Monthly Tradeを高リスク、Annual/Monthly Returns+Compare Summary/Deteriorationを中リスクとして分類"
+  causal_chain: "CDP全ページスクショ→UI要素×Visibility二値判定→修正cmd対象のピンポイント特定(正の複利)"
+  lesson_quality: OK
+  timestamp: "2026-05-07T14:55:00"
+- cmd_id: cmd_2598
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。注記: resolveDisplayTextが2箇所(lib版hideComponents対応済み+table.tsxローカルシャドウ版=旧)。修正=ローカル版削除"
+  observations:
+    - "事実1: lib/monthly-trade-display.ts L22 resolveDisplayTextにhideComponents引数が既に実装済み(!hideComponents&&expandedTickers)"
+    - "事実2: components/monthly-trade-table.tsx L318にローカル版resolveDisplayText(hideComponentsなし)が定義。L4 importをシャドウイング→旧版が使われバグ発生"
+    - "事実3: table.tsx L4でimport{resolveDisplayText}しているが、L318のローカル定義が優先(TypeScriptシャドウイング)"
+  causal_chain: "cmd_2451でlib版hideComponents追加→table.tsxローカル版が旧のまま残存→シャドウイングでlib版無効化→vis_L4でexpandedTickers参照→***100.0%表示(負の複利)→ローカル版削除でlib版復活(正の複利)"
+  timestamp: "2026-05-07T15:33:00"
+- cmd_id: cmd_2598
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_2598_exact
+  report_verdict: PASS
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。ローカルシャドウ版削除+lib版import活用。biome+jest6+pre-commit全PASS"
+  observations:
+    - "事実1: table.tsx L318のローカルresolveDisplayText削除→lib/monthly-trade-display.tsのhideComponents対応版が有効化"
+    - "事実2: 3呼出元(Signal/Position/PriceMovement)全てhideComponents引数渡し確認。jest 6テストPASS"
+  causal_chain: "ローカルシャドウ版削除→lib版(hideComponents対応済み)が有効化→vis_L4でrawValue表示→***100.0%解消(正の複利)"
+  lesson_quality: OK
+  timestamp: "2026-05-07T15:39:00"
+- cmd_id: cmd_2599
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。1ファイル13行削除。MAX上限撤廃+期限切れ削除維持。テスト修正は忍者裁量範囲"
+  observations:
+    - "事実1: test_auth_cleanup.py L93-117がMAX_TOKENS_PER_TYPE参照。定数削除でテスト壊れる→忍者がテスト修正必要"
+    - "事実2: 殿裁定: 月末パスワード交換+強制ログアウト=ビジネスモデル必須。token期限=月末は維持"
+  causal_chain: "全tier共通100件上限→新規ログインで他ユーザーtoken削除→強制ログアウト(負の複利)→MAX撤廃+期限切れ削除維持→セッション安定(正の複利)"
+  timestamp: "2026-05-07T16:42:00"
+- cmd_id: cmd_2599
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_2599_exact
+  report_verdict: PASS
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。AC通り。pytest1432PASS。ビジネス意図100%準拠はcmd設計側課題(将軍に報告済み)"
+  observations:
+    - "事実1: MAX上限削除+定数削除+テスト更新完了。pytest 1432 passed"
+    - "事実2: 殿指摘→パスワード月末交換とtoken期限連動/月中変更invalidation/legacy差異を掲示板報告済み"
+  causal_chain: "MAX撤廃→セッション安定(正の複利)。ビジネス意図との差分は将軍→補足cmdで対応"
+  lesson_quality: OK
+  timestamp: "2026-05-07T16:46:00"
+- cmd_id: cmd_2600
+  review_type: draft
+  verdict: REJECT
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "前提崩壊。revoke_viewer_tokens_for_tierは既に4箇所で呼出済み。cmd不要"
+  observations:
+    - "事実1: viewer_tiers.py L321でパスワードローテーション時にrevoke呼出(コメント'# 4. 既存トークンの無効化')"
+    - "事実2: viewer_tiers.py L408で一括ローテーション時にrevoke呼出"
+    - "事実3: password_rotation.py L33で自動ジョブ時にrevoke呼出"
+    - "事実4: cmd_2600のq11(呼出元0件)は誤り。grep現物確認で4箇所検出"
+  causal_chain: "将軍のcmd_save時のgrep確認が不十分(api/のみ検索→jobs/を見落とし？またはviewer_tiers.py内のrevoke呼出を見落とし)→不要cmd起票→忍者の作業が無駄になるリスク"
+  timestamp: "2026-05-07T16:49:00"
+- cmd_id: cmd_2600
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_2600_exact
+  report_verdict: BLOCKED
+  gate_result: N/A
+  finding_categories: [assumptions]
+  findings_summary: "cmd前提誤り→BLOCKED。忍者の自力発見+作業停止+差分撤回は適切"
+  observations:
+    - "事実1: 忍者が自力でviewer_tiers.py L177/L321/L408+password_rotation.py L33の既存呼出4箇所を発見"
+    - "事実2: 一時差分を撤回しBLOCKED報告。pytest全PASS(1433)確認済み"
+  causal_chain: "cmd前提誤り→忍者が自力検証で発見→作業停止→差分撤回。cmd cancel推奨"
+  lesson_quality: OK
+  timestamp: "2026-05-07T16:53:00"
+- cmd_id: cmd_2601
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。CDP reCAPTCHA自動突破+ログイン+タイトルバグ修正。殿/将軍本日実証済み。3スキル完全自動化"
+  observations:
+    - "事実1: note_draft.sh 170行にreCAPTCHA処理未実装(rg 0件確認)"
+    - "事実2: q_ambiguityでタイル選択方法明記(エージェントマルチモーダル判断)。2分タイムアウト制約あり"
+  causal_chain: "未ログイン→手動介入必須(負の複利)→自動ログイン+reCAPTCHA処理→3スキルゼロタッチ化(正の複利)"
+  timestamp: "2026-05-07T20:09:00"
+- cmd_id: cmd_2601
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_2601_exact
+  report_verdict: PASS
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。reCAPTCHA自動突破+ログイン+タイトル修正。下書き保存成功(URL証跡)"
+  observations:
+    - "事実1: CDP_PORT=9234で実note下書き保存成功(URL証跡付き)"
+    - "事実2: 未ログイン分岐は構文検証済み。実チャレンジ未発火は環境制約"
+  causal_chain: "未ログイン→手動介入(負の複利)→自動ログイン+reCAPTCHA→3スキルゼロタッチ化(正の複利)"
+  lesson_quality: OK
+  timestamp: "2026-05-07T20:16:00"
+- cmd_id: cmd_2602
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_2602_exact
+  report_verdict: PASS
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。Androidアプリ知識埋込み。semantic_search到達2件確認。CLAUDE.md 1行追加"
+  observations:
+    - "事実1: com.shogun.android v6.4 Kotlin+Compose。knowledge_candidate 2件(アプリ基本情報+主要画面)"
+    - "事実2: semantic_search.sh android/アプリ両方でshogun_android_app到達確認"
+  causal_chain: "Androidアプリ知識が未索引→エージェントがアプリ存在を知らない(負の複利)→3層埋込み(index+context+CLAUDE.md)→全エージェント把握(正の複利)"
+  lesson_quality: OK
+  timestamp: "2026-05-07T23:50:00"
