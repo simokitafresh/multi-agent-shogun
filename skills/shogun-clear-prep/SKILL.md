@@ -4,7 +4,7 @@ argument-hint: ""
 quality_metric: "将軍系: /clear前準備cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
-  将軍専用の/clear前準備スキル。clear_prep_check.shで7項目チェックし、
+  将軍専用の/clear前準備スキル。clear_prep_check.shで9項目チェックし、
   殿に報告+会話要約記録+ntfy送信。
   TRIGGER: /shogun-clear-prep、将軍の/clear前、セッション終了前の状態確認
   DO NOT TRIGGER: 知識棚卸し（→shogun-teire / dream）、
@@ -15,7 +15,7 @@ allowed-tools:
 
 # /shogun-clear-prep — 将軍の/clear前準備
 
-/clearで消える情報がないか7項目チェックし、殿に報告する。
+/clearで消える情報がないか確認し、セッション学びの埋込み状況をチェックする（9項目）。
 
 ## 手順（3ステップ）
 
@@ -25,7 +25,7 @@ allowed-tools:
 bash scripts/clear_prep_check.sh
 ```
 
-7項目を確認:
+9項目を確認:
 1. PD未決
 2. cmd pending
 3. 🚨要対応
@@ -33,6 +33,8 @@ bash scripts/clear_prep_check.sh
 5. 会話記録の健全度（殿のinbound件数）
 6. 未commit変更（scripts/context/instructions配下はWARN）
 7. 成果物マッピング健全度（gate_artifact_map.sh連携）
+8. セッション学び埋込み状況（lesson登録数/semantic-index更新/insights未処理件数）
+9. 強くてニューゲームリマインダ（「今クリアされても次の将軍はこのセッションの学びを持っているか？」）
 
 出力を殿にそのまま報告する。ALERT項目があれば殿に確認を取る。
 

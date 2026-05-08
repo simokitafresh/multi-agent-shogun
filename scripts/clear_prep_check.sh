@@ -232,7 +232,7 @@ fi
 # ─── Check 7: 成果物マッピング健全度 ───
 artifact_status="SKIP"
 if [ -f "$PROGRESS_FILE" ] && [ -f "$ROOT_DIR/scripts/gates/gate_artifact_map.sh" ]; then
-  artifact_output=$(bash "$ROOT_DIR/scripts/gates/gate_artifact_map.sh" "$PROGRESS_FILE" 2>&1)
+  artifact_output=$(bash "$ROOT_DIR/scripts/gates/gate_artifact_map.sh" "$PROGRESS_FILE" 2>&1 || true)
   # gate出力の詳細行は "  WARN: [block]" (先頭スペースあり)。集計行は "WARN: N" (先頭スペースなし)
   artifact_warn=$(echo "$artifact_output" | grep '^  WARN:' | grep -c '' || true)
   artifact_blocks=$(echo "$artifact_output" | grep '総ブロック' | grep -oP '[0-9]+' | head -1 || echo "0")
