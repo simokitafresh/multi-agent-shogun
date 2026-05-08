@@ -109,8 +109,10 @@ status_from_output() {
         echo "REGRESSION"
     elif grep -q 'overall=WARN\|regression=WARN\| status=.*WARN' "$output_file"; then
         echo "WARN"
-    else
+    elif grep -q 'overall=PASS\|regression=PASS\| status=.*PASS' "$output_file"; then
         echo "PASS"
+    else
+        echo "UNKNOWN"
     fi
 }
 
@@ -146,7 +148,7 @@ run_target() {
             local status
             status="$(status_from_output "$output_file")"
             echo "RESULT target=${name} run=${run_no} status=${status}"
-            if [[ "$status" == "REGRESSION" || "$status" == "WARN" ]]; then
+            if [[ "$status" == "REGRESSION" || "$status" == "WARN" || "$status" == "UNKNOWN" ]]; then
                 streak=$((streak + 1))
             else
                 streak=0
