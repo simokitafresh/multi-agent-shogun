@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-07 -->
+<!-- last_updated: 2026-05-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,37 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1765 | L1 ALM WFエンジン骨格。CSV読込+WF fold生成+ベクトル化メトリクス計算。DM2(119,493パターン)先行 | dm-signal | 04-07 | AC1-3完了。L1 ALM WFエンジン骨格実装。CSV読 |
-| cmd_1773 | URGENT — ALM四神12体を本番で非表示にする | dm-signal | 04-07 | global_visibility_settings(id= |
-| cmd_1777 | 道具磨き — 月次リターン計算pure function化 + ALMパリティ完全達成 | dm-signal | 04-07 | 月次リターン pure function を新設し、既存 c |
-| cmd_1780 | 起動ゲートstale GP検知修正 + 孤立context統合 + 未commit push | infra | 04-07 | Gate11 dashboard完了GP除外+GP-137 |
-| cmd_1781 | ALM 67窓速度最適化 — compute_metrics_np全量呼出し廃止 | dm-signal | 04-07 | cmd_1781_impl は将軍指示で中止。作業到達点とし |
-| cmd_1783 | ハーネス — cmd起票時WHY→WHAT因果強制 + 範囲縮小検知 | infra | 04-07 | cmd_save.shにq8_why_what BLOCK+ |
-| cmd_1774 | ALM四神L0パリティ検証 — 研究スクリプト vs 本番DB(12体) + momentum_data修正 | dm-signal | 04-07 | ALM L0パリティ検証PASS。momentum_data |
-| cmd_1784 | ALM 67窓速度 — Pool並列+batch最適化で7忍法31秒以内 | dm-signal | 04-07 | — |
-| cmd_1787 | URGENT修正 — FoF 23体Cash化バグ修正 + fullrecalculate + 本番復旧 | dm-signal | 04-07 | 3ブロックの月次FoF momentum cache loo |
-| cmd_1788 | ALM四神リネーム — DM番号→四神名に統一 | dm-signal | 04-07 | ALM四神12体の portfolios.name を DM |
-| cmd_1790 | ALM L1 38メトリクス — Phase A commit + Phase B vectorized系7メトリクス | dm-signal | 04-07 | Phase A を commit 1ff11495 で固定し |
-| cmd_1786 | URGENT偵察 — FoF Cash化バグ根因特定。4/7 fullrecalculateで23FoFがCash化 | dm-signal | 04-07 | Level3 FoF(23体)が常時Cashを出す根本原因を |
-| cmd_1791 | ALM L1 38メトリクス Phase C — MINIMIZE更新+select_champions整合+7忍法67窓全量実行 | dm-signal | 04-07 | select_champions_multi_is は 6 |
-| cmd_1789 | ALM L1 38メトリクス拡張Phase A — PrefixMomentCache+prefix系14メトリクス | dm-signal | 04-07 | PrefixMomentCacheに4配列を追加し、down |
-| cmd_1792 | ALM四神フォルダ作成 — 12体をALM四神フォルダに移動 | dm-signal | 04-07 | 本番Admin APIで ALM四神 フォルダを新規作成し、 |
-| cmd_1776 | ALM L0パリティ修正 — 研究スクリプトのmonthly_return計算を本番と完全一致させる | dm-signal | 04-07 | 研究側の monthly_return 期待値計算を本番Op |
-| cmd_1782 | ALM 67窓 — 34メトリクス全量prefix/vectorized化 + 7忍法5分以内 | dm-signal | 04-07 | 34メトリクス window fast path 化により |
-| cmd_1785 | 軍師設計依頼 — compute_metrics_npを38メトリクス対応に拡張する設計 | dm-signal | 04-07 | — |
-| cmd_1793 | ALM L1 WF分析 — 7忍法selection_timelineから忍法別ALM適性+モードラベル付与 | dm-signal | 04-07 | cmd_1791で生成した7忍法selection_time |
-| cmd_1794 | 知識鮮度回復 — ALMチェックリスト+context+dashboard+CLAUDE.md実物同期 | dm-signal | 04-08 | checklist-alm-registration.md( |
-| cmd_karo_fix_precommit_comment | pre-commit hookコメント行偽陽性修正 | infra | 04-08 | git-pre-commit.sh L49にコメント行除外g |
-| cmd_1795 | ALM忍法Step 3準備 — 12体universe+結合CSV+全7本ALM対応+bunshin動作検証 | dm-signal | 04-08 | AC1: alm_l0_12.yaml+alm_l0_12_ |
-| cmd_1796 | ALM忍法Step 3実行 — 残り6忍法を6忍者並列実行 | dm-signal | 04-08 | 6忍法(oikaze/nukimi/kawarimi/kas |
-| cmd_karo_fix_neverstop_hang | never_stop_forにプロセスhang独立検証を追加 | infra | 04-08 | NEVER_STOP_DEFAULTS に 4 項目目として |
-| cmd_karo_fix_gate_split_loop | GATE構造バグ2件修正 — 分割配備ACスコープ+auto_draft循環防止 | infra | 04-08 | cmd_complete_gate.shのassigned_ |
-| cmd_1797 | チェックリスト改訂 — Step 3をIS窓動的選出フローに書き換え+GS完了記録 | dm-signal | 04-08 | checklist-alm-registration.md |
-| cmd_1798 | ALM忍法Step 3b — WFエンジンをALM GSデータで実行し21体候補のselection_timeline生成 | dm-signal | 04-08 | WFエンジンALM 7忍法実行は完了。CSV_FILESを6 |
-| cmd_1799 | ALM忍法Step 3b再実行 — WFエンジン67窓(--multi-is)で7忍法全量実行 | dm-signal | 04-08 | 7忍法全量--multi-is(IS=6-72M, 67窓) |
-| cmd_karo_ci_fix | CI赤修正 — テスト失敗3グループ修正(setup_file/q8_why_what/proposal出力) | infra | 04-08 | CI失敗テスト4件修正。全811件PASS達成 |
-| cmd_1800 | infra — lord_conversation loggerに殿のinput(inbound)を記録する | infra | 04-08 | AC1: log_terminal_input.shのdir |
-| cmd_1801 | infra — cmd_save.sh消火判定gate(q9)追加 — 消火cmdの入口で真因記入を強制 | infra | 04-08 | cmd_save.shに消火cmd向けq9_firefigh |
 | cmd_1804 | fix — cmd_save.sh q9磨き上げ — キーワード追加+意志依存prevention WARN | infra | 04-09 | cmd_save.shのq9判定語彙にバグ/bug/不具合/ |
 | cmd_1805 | fix — q9意志依存パターンを語幹マッチに強化（活用形抜け修正） | infra | 04-09 | q9意志依存パターンを語幹マッチに変更。活用形(気をつけて/ |
 | cmd_1807 | fix — deploy_task.shに消火判定gate追加（家老自発cmd経路のq9カバー） | infra | 04-09 | deploy_task.shにcheck_firefight |
