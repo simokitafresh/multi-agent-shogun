@@ -23,6 +23,38 @@ mkdir -p "$OUTPUT_DIR"
 echo "=== Instruction File Build System ==="
 echo "Building instruction files..."
 
+_BUILD_PIDS=()
+_BUILD_LABELS=()
+
+start_build_job() {
+    local label="$1"
+    shift
+
+    "$@" &
+    _BUILD_PIDS+=("$!")
+    _BUILD_LABELS+=("$label")
+}
+
+wait_build_jobs() {
+    local failed=0
+    local i
+    local pid
+    local label
+
+    for i in "${!_BUILD_PIDS[@]}"; do
+        pid="${_BUILD_PIDS[$i]}"
+        label="${_BUILD_LABELS[$i]}"
+        if ! wait "$pid"; then
+            echo "  ❌ Failed: $label" >&2
+            failed=1
+        fi
+    done
+
+    _BUILD_PIDS=()
+    _BUILD_LABELS=()
+    return "$failed"
+}
+
 # ============================================================
 # Helper: Get all CLI profile types from cli_profiles.yaml
 # ============================================================
@@ -144,14 +176,16 @@ PROFILE_TYPES=$(get_profile_types)
 
 # Default CLI — files without prefix (parallel builds: WSL2 NTFS write bottleneck bypassed)
 for role in $ROLES; do
-    build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md" &
+    start_build_job "instruction ${DEFAULT_CLI}/${role}" \
+        build_instruction_file "$DEFAULT_CLI" "$role" "${role}.md"
 done
 
 # Non-default profiles — files with cli_type prefix
 for cli_type in $PROFILE_TYPES; do
     if [[ "$cli_type" != "$DEFAULT_CLI" ]]; then
         for role in $ROLES; do
-            build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md" &
+            start_build_job "instruction ${cli_type}/${role}" \
+                build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
         done
     fi
 done
@@ -162,12 +196,13 @@ for cli_type in copilot kimi; do
         continue
     fi
     for role in $ROLES; do
-        build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md" &
+        start_build_job "instruction ${cli_type}/${role}" \
+            build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
     done
 done
 
 # Wait for all parallel instruction builds to finish
-wait
+wait_build_jobs
 
 # ============================================================
 # Helper: Transform CLAUDE.md to CLI-specific auto-load file
@@ -309,10 +344,10 @@ EOFYAML
 }
 
 # Generate CLI auto-load files in parallel (each writes to a separate NTFS path)
-generate_agents_md &
-generate_copilot_instructions &
-generate_kimi_instructions &
-wait
+start_build_job "AGENTS.md" generate_agents_md
+start_build_job ".github/copilot-instructions.md" generate_copilot_instructions
+start_build_job "agents/default/system.md + agent.yaml" generate_kimi_instructions
+wait_build_jobs
 
 echo ""
 echo "=== Build Complete ==="

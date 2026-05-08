@@ -135,6 +135,59 @@ find_forbidden_codex_clear_refs() {
     [ "$count" -ge 8 ]
 }
 
+@test "build: parallel child failure makes build fail" {
+    local tmpdir role
+    tmpdir="$(mktemp -d)"
+    mkdir -p \
+        "$tmpdir/scripts/lib" \
+        "$tmpdir/config" \
+        "$tmpdir/instructions/roles" \
+        "$tmpdir/instructions/common" \
+        "$tmpdir/instructions/cli_specific"
+    cp "$PROJECT_ROOT/scripts/build_instructions.sh" "$tmpdir/scripts/build_instructions.sh"
+    cp "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$tmpdir/scripts/lib/cli_lookup.sh"
+    cat > "$tmpdir/CLAUDE.md" <<'EOF'
+---
+role: root
+---
+Claude Code root.
+EOF
+    cat > "$tmpdir/config/settings.yaml" <<'EOF'
+cli:
+  default: claude
+EOF
+    cat > "$tmpdir/config/cli_profiles.yaml" <<'EOF'
+profiles:
+  claude:
+    display_name: "Claude"
+  codex:
+    display_name: "Codex"
+EOF
+    for role in shogun karo gunshi ashigaru; do
+        cat > "$tmpdir/instructions/${role}.md" <<EOF
+---
+role: ${role}
+---
+EOF
+        if [ "$role" != "karo" ]; then
+            printf '%s role\n' "$role" > "$tmpdir/instructions/roles/${role}_role.md"
+        fi
+    done
+    printf 'protocol\n' > "$tmpdir/instructions/common/protocol.md"
+    printf 'task flow\n' > "$tmpdir/instructions/common/task_flow.md"
+    printf 'forbidden\n' > "$tmpdir/instructions/common/forbidden_actions.md"
+    printf 'claude tools\n' > "$tmpdir/instructions/cli_specific/claude_tools.md"
+    printf 'codex tools\n' > "$tmpdir/instructions/cli_specific/codex_tools.md"
+    printf 'copilot tools\n' > "$tmpdir/instructions/cli_specific/copilot_tools.md"
+    printf 'kimi tools\n' > "$tmpdir/instructions/cli_specific/kimi_tools.md"
+
+    run bash "$tmpdir/scripts/build_instructions.sh"
+    rm -rf "$tmpdir"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Failed: instruction claude/karo"* ]]
+}
+
 # =============================================================================
 # ファイル生成テスト — Claude
 # =============================================================================
