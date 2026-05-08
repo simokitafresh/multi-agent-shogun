@@ -26,14 +26,14 @@
 # → docs/research/gunshi_idle_sg7_blind_spot_analysis_20260502.md
 # → docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
 #
-# ─── 本セッション成果 (2026-05-07T14:00更新) ───
-# draft review 4件: cmd_2593-2596 全APPROVE(DREAM-GATE 3件+偵察1件)
-# report review 3件: cmd_2593-2595 全LGTM→CLEAR
+# ─── 本セッション成果 (2026-05-09T00:10更新) ───
+# draft review 8件: cmd_2593-2601 (APPROVE7件+REJECT1件=cmd_2600前提誤り)
+# report review 9件: cmd_2593-2602 (LGTM7件+FAIL1件=cmd_2600+LGTM1件=cmd_2602)
+# 自発検証2件: Monthly Trade L4 resolveDisplayTextシャドウイングバグ因果確定 + viewer token MAX検証(revoke既実装発見→cmd_2600 REJECT)
 # D0直接実装 3件: lesson_tags.yaml tmux+wsl2+全面修正(家老承認3件)
-# セマンティック監査: 4スクリプト5カテゴリ→P0偽陽性確認/P1=3件低リスク。副作用スキャンcmd_2593-2595全件0件
-# insights: 56→0→5→0(全件処理完了)
+# insights: 56→0→5→0→8→0(全件処理完了)
 # retag: 31件(universal8+tmux23)+残3件は家老対応
-# セマンティックインデックス: 4resource追加(production_parity+cdp×3)、drift 0件
-# なぜなぜ7回: 「低ROI=作業量縮小の隠語」→全面修正。パラメータ空間縮小禁止と同根
-# cmd品質傾向: CLEAR率93%、ac_phase_mixing累計32回が構造的課題
+# accuracy: APPROVE→FAIL 0件。REJECT 1件(cmd_2600前提誤りを正しく検出)
+# LG034登録: 「低ROI=作業量縮小の隠語」(なぜなぜ7回→lessons_gunshi.yaml正式登録)
+# 殿直接指摘: 「一部対処は穴を残す」「ビジネス100%一致必須」→全面対応
 # accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 0件。見落とし0件
