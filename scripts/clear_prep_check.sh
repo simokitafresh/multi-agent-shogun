@@ -249,6 +249,73 @@ else
 fi
 echo "[7.成果物] ${artifact_status}"
 
+# ─── Check 8: セッション中の新知識埋込み確認 ───
+embed_issues=0
+embed_details=()
+
+# (a) lesson_write_shogun.sh実行有無 — 最新session_summaryのts以降にlessonが追加されたか
+LESSONS_SHOGUN="$ROOT_DIR/projects/infra/lessons_shogun.yaml"
+session_start_date=""
+lesson_count_session=0
+if [ -f "$LORD_CONV" ]; then
+  # 最新session_summaryのts日付(セッション開始時刻の近似)
+  session_start_date=$(grep '"session_summary"' "$LORD_CONV" | tail -1 | \
+    grep -oP '"ts":\s*"\K[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || echo "")
+fi
+if [ -z "$session_start_date" ]; then
+  session_start_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+fi
+
+if [ -f "$LESSONS_SHOGUN" ]; then
+  lesson_count_session=$(awk -v date="$session_start_date" '
+    /created_at:/ {
+      val=$2; gsub(/'"'"'/, "", val); gsub(/"/, "", val)
+      if (val >= date) count++
+    }
+    END { print count+0 }
+  ' "$LESSONS_SHOGUN" 2>/dev/null || echo 0)
+fi
+
+if [ "${lesson_count_session:-0}" -eq 0 ]; then
+  embed_details+=("(a)lesson登録: 0件(${session_start_date}以降) ⚠ lesson_write_shogun.sh未実行?")
+  embed_issues=$((embed_issues + 1))
+else
+  embed_details+=("(a)lesson登録: ${lesson_count_session}件(${session_start_date}以降) OK")
+fi
+
+# (b) セマンティクスインデックス更新有無
+SEMANTIC_INDEX="$ROOT_DIR/docs/semantic-index/index.md"
+if [ -f "$SEMANTIC_INDEX" ]; then
+  semantic_date=$(stat -c '%y' "$SEMANTIC_INDEX" 2>/dev/null | cut -d' ' -f1 || echo "1970-01-01")
+  if [[ "$semantic_date" > "$session_start_date" || "$semantic_date" == "$session_start_date" ]]; then
+    embed_details+=("(b)semantic-index: OK(更新: ${semantic_date})")
+  else
+    embed_details+=("(b)semantic-index: WARN(最終更新: ${semantic_date} — セッション前から未更新)")
+  fi
+else
+  embed_details+=("(b)semantic-index: SKIP(ファイル不在)")
+fi
+
+# (c) insights未処理件数
+INSIGHTS_FILE="$ROOT_DIR/queue/insights.yaml"
+pending_insights=0
+if [ -f "$INSIGHTS_FILE" ]; then
+  pending_insights=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null || echo 0)
+fi
+embed_details+=("(c)insights未処理: ${pending_insights}件")
+
+echo "[8.知識埋込み] lesson:${lesson_count_session}件(${session_start_date}以降)"
+for d in "${embed_details[@]}"; do
+  echo "  ${d}"
+done
+if [ "$embed_issues" -gt 0 ]; then
+  issues=$((issues + 1))
+  issue_reasons+=("知識埋込み未確認")
+fi
+
+# ─── Check 9: 強くてニューゲームリマインダ ───
+echo "[9.強くてニューゲーム] 今クリアされても次の将軍はこのセッションの学びを持っているか？"
+
 # ─── 総合判定 ───
 echo ""
 if [ "$issues" -gt 0 ]; then
