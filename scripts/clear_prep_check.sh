@@ -185,15 +185,54 @@ fi
 conv_status="OK"
 conv_detail=""
 if [ -f "$LORD_CONV" ]; then
-  inbound_today=$(grep -c '"inbound"' "$LORD_CONV" 2>/dev/null | head -1 || true)
-  inbound_today="${inbound_today:-0}"
-  # 直近のinboundのタイムスタンプ
-  last_inbound_ts=$(grep '"inbound"' "$LORD_CONV" 2>/dev/null | tail -1 | grep -oP '"ts":\s*"[^"]*"' | head -1 | sed 's/"ts":[[:space:]]*"//;s/"//' || echo "none")
-  conv_detail="殿の発言 inbound=${inbound_today}件(全期間), 直近=${last_inbound_ts}"
-  if [ "${inbound_today:-0}" -eq 0 ]; then
+  conv_result="$(python3 - "$LORD_CONV" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+entries = []
+bad_lines = 0
+with open(path, encoding="utf-8") as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            bad_lines += 1
+
+session_start = ""
+for entry in entries:
+    if entry.get("direction") == "session_summary" and entry.get("ts"):
+        session_start = entry["ts"]
+
+inbound = [
+    entry for entry in entries
+    if entry.get("direction") == "inbound"
+    and (not session_start or entry.get("ts", "") >= session_start)
+]
+last_inbound = inbound[-1].get("ts", "none") if inbound else "none"
+print(f"{len(inbound)}|{last_inbound}|{session_start or 'none'}|{bad_lines}")
+PY
+)"
+  inbound_session="${conv_result%%|*}"
+  conv_rest="${conv_result#*|}"
+  last_inbound_ts="${conv_rest%%|*}"
+  conv_rest="${conv_rest#*|}"
+  session_start_ts="${conv_rest%%|*}"
+  bad_json_lines="${conv_rest#*|}"
+  conv_detail="殿の発言 inbound=${inbound_session}件(現セッション), 直近=${last_inbound_ts}, session_start=${session_start_ts}"
+  if [ "${bad_json_lines:-0}" -gt 0 ]; then
+    conv_detail="${conv_detail}, JSON不正行=${bad_json_lines}"
     conv_status="WARN"
     issues=$((issues + 1))
-    issue_reasons+=("会話記録inbound=0")
+    issue_reasons+=("会話記録JSON不正${bad_json_lines}")
+  fi
+  if [ "${inbound_session:-0}" -eq 0 ]; then
+    conv_status="WARN"
+    issues=$((issues + 1))
+    issue_reasons+=("会話記録現セッションinbound=0")
   fi
 else
   conv_status="WARN"
