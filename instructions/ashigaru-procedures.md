@@ -44,6 +44,15 @@ bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task progress "AC1: �
 報告YAMLの作成・編集は全て `report_field_set.sh` 経由で行うこと。
 Write/Edit toolによる `queue/reports/*.yaml` への直接書き込みはhookでブロックされる。
 
+提出前に不足・誤記を見つけた場合も、必ず `report_field_set.sh` を再実行して修正すること。
+報告YAMLを直接編集して直すな。修正後、statusをdoneにする前に必ず以下を実行し、全PASSを確認せよ。
+
+```bash
+bash scripts/gates/gate_report_format.sh <report_path>
+```
+
+このgateは報告YAMLの形式・必須フィールド確認である。Step 5.5は内容面の自己確認であり、両方を通してから提出する。
+
 ### コマンド書式
 
 ```bash
@@ -215,7 +224,7 @@ Missing fields = incomplete report.
 
 ## Step 5.5: 提出前自己ゲート (MANDATORY)
 
-**positive_rule**: report作成後、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILを修正してから再確認。
+**positive_rule**: report作成後、`gate_report_format.sh` が全PASSであることを確認した上で、statusをdoneにする前に以下の4項目を全て確認し、report.result.self_gate_checkに記載せよ。全PASSでなければstatusをdoneにするな。FAILは `report_field_set.sh` で修正してから再確認。
 
 | 項目 | 確認内容 | FAILの対処 |
 |------|---------|------------|
