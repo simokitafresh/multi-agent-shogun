@@ -33,23 +33,30 @@ stale_count=0
 stale_details=""
 
 # shogun_to_karo.yamlからcmd一覧を取得（id + status）
-cmd_entries=$(python3 -c "
-import yaml, sys
-try:
-    with open('$YAML_FILE', encoding='utf-8') as f:
-        data = yaml.safe_load(f)
-    if not data or 'commands' not in data:
-        sys.exit(0)
-    for cmd in data['commands']:
-        cid = cmd.get('id', '')
-        status = cmd.get('status', '')
-        print(f'{cid}|{status}')
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-" 2>&1)
+cmd_entries=""
+if ! cmd_entries=$(YAML_FILE="$YAML_FILE" python3 - <<'PY' 2>&1
+import os
+import sys
 
-if echo "$cmd_entries" | grep -q '^ERROR:'; then
+import yaml
+
+try:
+    with open(os.environ["YAML_FILE"], encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    commands = data.get("commands") or []
+    if not isinstance(commands, list):
+        raise TypeError("commands must be a list")
+    for cmd in commands:
+        if not isinstance(cmd, dict):
+            continue
+        cid = cmd.get("id", "")
+        status = cmd.get("status", "")
+        print(f"{cid}|{status}")
+except Exception as e:
+    print(f"ERROR: {e}", file=sys.stderr)
+    sys.exit(1)
+PY
+); then
     echo "  YAML parse error: $cmd_entries"
     echo ""
 else
@@ -85,7 +92,7 @@ else
                 ttype=$(grep 'task_type:' "$task_file" 2>/dev/null | head -1 | sed 's/.*task_type: *//' | tr -d '[:space:]')
                 case "$ttype" in
                     recon) has_recon=true ;;
-                    implement) has_implement=true ;;
+                    implement|impl) has_implement=true ;;
                     review) ;; # 既知の種別
                     *) echo "[WARN] Unknown task_type: '$ttype' in $task_file" >&2 ;;
                 esac
@@ -140,23 +147,30 @@ if [ ! -f "$PD_FILE" ]; then
     echo "  pending_decisions.yaml not found"
 else
     # resolved PDでcontext_syncedフィールドがないものを検出
-    untracked_pds=$(python3 -c "
-import yaml, sys
+    untracked_pds=""
+    if ! untracked_pds=$(PD_FILE="$PD_FILE" python3 - <<'PY' 2>&1
+import os
+import sys
+
+import yaml
+
 try:
-    with open('$PD_FILE', encoding='utf-8') as f:
-        data = yaml.safe_load(f)
-    if not data or 'decisions' not in data:
-        sys.exit(0)
-    for d in data['decisions']:
-        if d.get('status') == 'resolved' and 'context_synced' not in d:
-            pd_id = d.get('id', '???')
+    with open(os.environ["PD_FILE"], encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    decisions = data.get("decisions") or []
+    if not isinstance(decisions, list):
+        raise TypeError("decisions must be a list")
+    for d in decisions:
+        if not isinstance(d, dict):
+            continue
+        if d.get("status") == "resolved" and "context_synced" not in d:
+            pd_id = d.get("id", "???")
             print(pd_id)
 except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
+    print(f"ERROR: {e}", file=sys.stderr)
     sys.exit(1)
-" 2>&1)
-
-    if echo "$untracked_pds" | grep -q '^ERROR:'; then
+PY
+); then
         echo "  YAML parse error: $untracked_pds"
     elif [ -n "$untracked_pds" ]; then
         while IFS= read -r pd_id; do
