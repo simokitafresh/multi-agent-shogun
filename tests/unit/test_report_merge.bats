@@ -94,3 +94,19 @@ EOF
     run grep -F "result: SKIP" "$TEST_ROOT/queue/gates/cmd_test/report_merge.done"
     [ "$status" -eq 0 ]
 }
+
+@test "relative script path resolves project root from current working directory" {
+    write_task "sasuke" "done"
+    write_report "sasuke"
+
+    (
+        cd "$TEST_ROOT"
+        run bash scripts/report_merge.sh cmd_test
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"sasuke: done"* ]]
+        [[ "$output" == *"READY: 並行偵察1件完了。統合分析(Step 1.5)を実施せよ"* ]]
+    )
+
+    [ -f "$TEST_ROOT/queue/gates/cmd_test_report_merge.pass" ]
+    [ -f "$TEST_ROOT/queue/gates/cmd_test/report_merge.done" ]
+}

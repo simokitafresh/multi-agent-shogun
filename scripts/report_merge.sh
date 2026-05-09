@@ -12,10 +12,19 @@
 
 set -e
 
-# GP-XXX3: SCRIPT_DIR をサブシェル不要のbash文字列操作で取得 (cd+pwd+dirname排除)
-_s="${BASH_SOURCE[0]%/*}"
-SCRIPT_DIR="${_s%/*}"
-unset _s
+# Resolve project root from the script path. This must handle both
+# /abs/path/scripts/report_merge.sh and bash scripts/report_merge.sh.
+_script_path="${BASH_SOURCE[0]}"
+_script_dir="${_script_path%/*}"
+if [ "$_script_dir" = "$_script_path" ]; then
+    _script_dir="."
+fi
+case "$_script_dir" in
+    /*) ;;
+    *) _script_dir="$PWD/$_script_dir" ;;
+esac
+SCRIPT_DIR="${_script_dir%/*}"
+unset _script_path _script_dir
 CMD_ID="$1"
 
 write_gate_flag() {
@@ -74,6 +83,7 @@ done < <(
     shopt -s nullglob
     files=("$TASKS_DIR"/*.yaml)
     [ "${#files[@]}" -eq 0 ] && exit 0
+    # shellcheck disable=SC2016 # awk program, not shell interpolation
     "$AWK_BIN" -v cmd_id="$CMD_ID" '
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
     function unquote(s,   c1, cl) {
