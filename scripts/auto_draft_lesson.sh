@@ -127,25 +127,13 @@ print(json.dumps({
 PYEOF
 )
 
-# Parse JSON result (action + reason in 1 python3 spawn instead of 2, -1 spawn on skip path)
+# Parse action/reason + all fields in one python3 spawn (-1 spawn vs prior 2-spawn approach)
 action=skip reason=
 eval "$(echo "$extract_result" | python3 -c "
 import json, sys, shlex
 d = json.load(sys.stdin)
 print(f'action={shlex.quote(d.get(\"action\", \"skip\"))}')
 print(f'reason={shlex.quote(d.get(\"reason\", \"\"))}')
-")"
-
-if [ "$action" = "skip" ]; then
-    write_skip_lesson_done "$reason"
-    echo "[auto_draft] Skipped: ${reason} (${REPORT_PATH})"
-    exit 0
-fi
-
-# Extract all fields in a single python3 call (9→1 process spawn)
-eval "$(echo "$extract_result" | python3 -c "
-import json, sys, shlex
-d = json.load(sys.stdin)
 for name, key, default in [
     ('PROJECT', 'project', 'unknown'),
     ('TITLE', 'title', 'unknown'),
@@ -160,19 +148,22 @@ for name, key, default in [
     print(f'{name}={shlex.quote(str(d.get(key, default)))}')
 ")"
 
+if [ "$action" = "skip" ]; then
+    write_skip_lesson_done "$reason"
+    echo "[auto_draft] Skipped: ${reason} (${REPORT_PATH})"
+    exit 0
+fi
+
 # Duplicate check: same title + source_cmd in SSOT (L006対応)
-export SCRIPT_DIR PROJECT
-PROJECT_PATH=$(python3 -c "
-import yaml, os
-script_dir = os.environ['SCRIPT_DIR']
-project = os.environ['PROJECT']
-with open(os.path.join(script_dir, 'config', 'projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == project:
-        print(p['path'])
-        break
-")
+# PROJECT_PATH via awk (replaces python3+yaml spawn for simple id→path lookup)
+PROJECT_PATH=$(awk -v proj="$PROJECT" '
+    /^  - id:/ { cur_id = $NF; next }
+    cur_id == proj && /^    path:/ {
+        sub(/^    path:[[:space:]]*/, "")
+        gsub(/"/, "")
+        print; exit
+    }
+' "$SCRIPT_DIR/config/projects.yaml")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "[auto_draft] ERROR: Project '$PROJECT' not found in config/projects.yaml" >&2
