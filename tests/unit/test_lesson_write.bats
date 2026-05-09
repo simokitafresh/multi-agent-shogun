@@ -267,6 +267,21 @@ EOF
     [[ "$output" == *"api"* ]]
 }
 
+@test "--subdomain writes normalized subdomain field" {
+    run_lesson_write testproj "サブドメイン教訓" "サブドメイン指定が正しく記録されるかの確認テストです" "cmd_701" "karo" "" --subdomain frontend
+    [ "$status" -eq 0 ]
+
+    run grep "subdomain" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**subdomain**: fe"* ]]
+}
+
+@test "--help mentions subdomain option" {
+    run bash "$SHARED_DIR/scripts/lesson_write.sh" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"--subdomain fe|be|gs|infra"* ]]
+}
+
 @test "draft status is written when --status draft specified" {
     run_lesson_write testproj "ドラフトテスト" "ステータスがdraftで記録されるかの確認テストです" "cmd_800" "karo" "" --status "draft"
     [ "$status" -eq 0 ]
