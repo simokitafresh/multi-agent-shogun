@@ -289,6 +289,76 @@ for entry in entries:
 PY
 }
 
+collect_negative_claims_missing_grep_evidence() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+
+    [[ -n "$block_text" ]] || return 0
+
+    ASSUMPTION_BLOCK_TEXT="$block_text" python3 - <<'PY'
+import os
+import re
+
+content = os.environ.get("ASSUMPTION_BLOCK_TEXT", "")
+lines = content.splitlines()
+
+negative_pat = re.compile(r'(未実装|存在しない|仕組みがない|未対応)')
+evidence_pat = re.compile(
+    r'\b(?:grep|rg)\b[\s\S]*(?:[0-9]+\s*件|[0-9]+\s*hits?|0\s*matches?|no\s+matches?|ヒットなし|該当なし)',
+    re.I,
+)
+
+in_assumptions = False
+assumptions_indent = -1
+current = {}
+entries = []
+
+for line in lines:
+    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
+    if m_aline and not in_assumptions:
+        in_assumptions = True
+        assumptions_indent = len(m_aline.group(1))
+        continue
+
+    if in_assumptions:
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= assumptions_indent:
+                in_assumptions = False
+                if current:
+                    entries.append(dict(current))
+                current = {}
+                continue
+        if re.match(r'\s*-\s', line):
+            if current:
+                entries.append(dict(current))
+            current = {}
+        m = re.match(r'^\s*-\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+            continue
+        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+        continue
+
+if current:
+    entries.append(current)
+
+if not negative_pat.search(content):
+    raise SystemExit(0)
+
+for entry in entries:
+    claim = entry.get("claim", "").strip()
+    if claim and evidence_pat.search(claim):
+        raise SystemExit(0)
+
+for entry in entries:
+    claim = entry.get("claim", "").strip()
+    if claim:
+        print(claim)
+PY
+}
+
 load_cmd_block() {
     if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -3191,6 +3261,18 @@ if [[ "${_CHECK19_SCOPE}" != "SCOUT" && "${_CHECK19_SCOPE}" != "VERIFY" ]] && ec
         for m in "${PARITY_MISSING[@]}"; do
             echo "  ✗ $m"
         done
+        # Level5: 不足ACテンプレートを自動提案(コピペで追加可能)
+        echo "  ─── 追加AC候補(コピペ用) ───"
+        for m in "${PARITY_MISSING[@]}"; do
+            case "$m" in
+                P1*) echo "  - \"holding_signal全PF完全一致を実API diffで検証\"" ;;
+                P2*) echo "  - \"monthly_returns全PF全期間の差分が1e-6以内をAPI diffで検証\"" ;;
+                P3*) echo "  - \"既存PFのゴールデンデータ不変を確認(変更対象外PFに影響なし)\"" ;;
+                P4*) echo "  - \"FE Dashboard/各ページで表示が正常であることをCDP確認\"" ;;
+                P5*) echo "  - \"hide-first原則: 新PFはis_visible=falseで登録し確認後に公開\"" ;;
+            esac
+        done
+        echo "  ─────────────────────────"
         record_warn_reason "parity_ac_missing" "check=check_parity_ac_requirements"
     fi
 fi
@@ -3288,6 +3370,17 @@ for e in entries:
                 echo "  - $_assump_claim" >&2
             done <<< "$_ASSUMP_CLAIMS_MISSING_DATES"
             record_warn_reason "assumptions claimに日付なし" "check=assumptions_claim_date"
+        fi
+        _ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP="$(collect_negative_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
+        if [[ -n "${_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
+            echo "WARNING: 否定的前提キーワードを検出しました。assumptions claimにgrep/rg反証結果を記載してください" >&2
+            echo "  対象キーワード: 未実装 / 存在しない / 仕組みがない / 未対応" >&2
+            echo "  例: claim: \"2026-05-10時点で grep -rn 'pattern' scripts/ → 0件\"" >&2
+            while IFS= read -r _assump_claim; do
+                [[ -z "$_assump_claim" ]] && continue
+                echo "  - $_assump_claim" >&2
+            done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
+            record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
         fi
     fi
 fi
@@ -3494,6 +3587,20 @@ check_new_file_structure_warning() {
     echo "WARN: new_file/new_structure要求を検出。既存活用できるファイル・構造がないか確認せよ" >&2
     echo "$hits" | head -n 5 >&2
     echo "  既存活用を優先し、新規作成が必要なら理由と既存代替の現物確認をcmdに明記せよ" >&2
+    # Level5: 新規ファイル名から既存類似ファイルを自動検索して提案
+    local _new_names
+    _new_names=$(printf '%s\n' "$hits" | grep -oE '[a-zA-Z_][a-zA-Z0-9_-]*\.(sh|py|yaml|md|tsx?)' | sort -u | head -3)
+    if [[ -n "$_new_names" ]]; then
+        echo "  ─── 既存類似ファイル候補 ───" >&2
+        while IFS= read -r _nf; do
+            local _stem="${_nf%.*}" _ext="${_nf##*.}"
+            _stem=$(echo "$_stem" | tr '_-' '*')
+            local _found
+            _found=$(find "$SCRIPT_DIR" -maxdepth 3 -name "*${_stem}*" -o -name "*${_ext}" 2>/dev/null | head -3)
+            [[ -n "$_found" ]] && printf '  %s → 類似: %s\n' "$_nf" "$(echo "$_found" | xargs -I{} basename {} | tr '\n' ', ')" >&2
+        done <<< "$_new_names"
+        echo "  ─────────────────────────" >&2
+    fi
     record_warn_reason "new_file_or_structure_requested" "check=check_new_file_structure_warning"
 }
 

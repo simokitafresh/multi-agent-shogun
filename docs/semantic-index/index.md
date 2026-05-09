@@ -36,7 +36,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -51,6 +51,8 @@ codd:
 | cmd | `cmd_2566` セマンティックインデックス伝搬(CoDD propagate)実装 |
 | cmd | `cmd_2567` セマンティックインデックス鮮度gate+導線埋込み |
 | cmd | `cmd_2609` セマンティクスインデックス候補除外精度 |
+| cmd | `cmd_2609` 修正 — セマンティクスインデックス成長ループ構築(ノイズ除外+aliases自動拡張+参照切れ修正) (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_2620` 強化 — セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_semantic_index.bats`) |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -188,10 +190,10 @@ codd:
 
 | 種別 | パス/参照 |
 |------|----------|
-| file | `backend/app/services/masking_service.py` |
-| file | `backend/app/services/visibility_helpers.py` |
-| file | `backend/app/services/page_visibility.py` |
-| file | `frontend/app/admin/visibility/page.tsx` |
+| file | `/mnt/c/Python_app/DM-signal/backend/app/services/masking_service.py` |
+| file | `/mnt/c/Python_app/DM-signal/backend/app/services/visibility_helpers.py` |
+| file | `/mnt/c/Python_app/DM-signal/backend/app/services/page_visibility.py` |
+| file | `/mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/page.tsx` |
 | file | `docs/research/cmd_2597_visibility_ui_audit.md` |
 | file | `projects/dm-signal.yaml` visibility_philosophy |
 | terminology | `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md` vis_L1-L4 |
@@ -239,7 +241,7 @@ codd:
 
 | 種別 | パス/参照 |
 |------|----------|
-| file | `MEMORY.md` §Technical Knowledge → CDP Browser Automation |
+| file | `context/cdp-philosophy.md` |
 | file | `scripts/cdp/cdp_cli.sh` |
 | file | `scripts/cdp/cdp_server.py` |
 | file | `scripts/cdp/cdp_helper.py` |
@@ -263,3 +265,39 @@ codd:
 
 **各論ではなく原理:** FE変更確認はこの能力の一応用例。任意のWebサイトの状態確認、ログイン、操作に汎用的に使える。PJ固有の認証方法はPJのcontextに書く。
 | cmd | `cmd_2579` 実装 — CDP汎用ブラウザ操作スキル(ブラウザ起動+ログイン+スクショで状況確認) (`skills/cdp-browse/SKILL.md`) |
+
+## defense_hierarchy — 防御階層原則
+
+| 属性 | 値 |
+|------|---|
+| id | defense_hierarchy |
+| label | 防御階層原則(Level 1-5) |
+| aliases | 防御階層, defense_level, Level5, Level 5, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, LG010, research tool explicit偽陽性修正 ACパス自動提案 Level5化, 放置タスク滞留検出 BLOCK昇格をstartup gateに追加 Level5化 |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/growth-loop.md` §11 |
+| file | `projects/infra/lessons_gunshi.yaml` LG010 |
+| file | `instructions/gunshi.md` §Review Criteria 5.5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-09 殿「BLOCKされないように成長する=主軸。ゲートを通すのは枝葉」 |
+| cmd | `cmd_2616` q11 WARN→BLOCK昇格(Level 4) |
+| cmd | `cmd_2617` preflight q11自動grep(Level 5) |
+| cmd | `cmd_2618` 未自動化教訓18件Level 5化計画(偵察) |
+| cmd | `cmd_2619` research_tool_explicit FP修正+ACパス自動提案(Level 5) |
+
+### 5段階定義(殿定義 2026-05-09)
+
+| Level | 名称 | 本質 |
+|-------|------|------|
+| 1 | 事後検出 | 間違えた後にgateが検出 |
+| 2 | 事前予防(doc) | ドキュメントに「こうせよ」と記載 |
+| 3 | 事前強制(auto-gen) | テンプレート自動生成で正しい構造を強制 |
+| 4 | フロー内BLOCK | 間違ったら即停止 |
+| 5 | 事前コンテキスト提供 | 正しい入力を自動生成して渡す。間違える余地がない |
+
+**Level 1-4 = 間違えてから止める。Level 5 = 間違える前に正しい答えを渡す。**
+**ゲートの成功 = 未熟さの証拠。発火しないシステムが完成系。**
+計測指標: Level 4:Level 5比率。2026-05-09時点 = 28:3。
+| cmd | `cmd_2619` 強化 — research_tool_explicit偽陽性修正+ACパス自動提案(Level5化) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_research_tool_explicit.bats`) |
+| cmd | `cmd_2621` 強化 — 放置タスク滞留検出+BLOCK昇格をstartup gateに追加(Level5化) (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
+
