@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-09 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-09T22:48:09+09:00 -->
+<!-- generated_at: 2026-05-09T22:57:47+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-05-09T22:48:09+09:00 | terminal | response | Step 11: 禁則F001-F008確認済み。復帰手順完了。 --- 殿、将軍復帰つかまつった。 **現状把握:** - CI: GREEN（最新run成功） - 全6忍者idle、パイプライン空 - 前セッション: 10cmd全CL…
-- 2026-05-09T22:43:56+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=26件 clear_prep_check=ALERT [1.…
-- 2026-05-09T22:43:39+09:00 | terminal | response | 既知の成果物欠落(ALM研究CSV、filter-repoで除去済み)。新規問題ではない。 会話要約を記録してntfy送信する。 [meta] stop_reason=tool_use
-- 2026-05-09T22:43:30+09:00 | ntfy | outbound | 【SessionEnd 報告】10cmd全CLEAR(cmd_2603-2612) WA:0。穴塞ぎ: 個別6領域+メタ穴防止gate。軍師自走3穴発見。CI: in_progress。/clear可能。
-- 2026-05-09T22:41:46+09:00 | terminal | inbound | 今 クリアされても 今より強くてニューゲーム できるようにしよう
-- 2026-05-09T22:40:52+09:00 | ntfy | outbound | CI赤: run 25602347719 Unit Tests (bats)
-- 2026-05-09T22:38:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-09 22:30:26|cmd_2612
-- 2026-05-09T22:38:27+09:00 | ntfy | outbound | 【改善トリガー】ci_red ALERT (GA-266)
-- 2026-05-09T22:32:00+09:00 | terminal | response | 家老の最終報告。本セッション10cmd全CLEAR、WA率0%、L580登録済み。 [meta] stop_reason=tool_use
-- 2026-05-09T22:31:22+09:00 | ntfy | outbound | 【家老】cmd_2612 GATE CLEAR。メタ穴防止gate。影丸完遂。WA:0 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-09T22:57:47+09:00 | terminal | response | cmd_publish実行。 [meta] stop_reason=tool_use
+- 2026-05-09T22:54:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-09 22:52:25|CI緑: run 25602548041
+- 2026-05-09T22:53:43+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_tobisaru 初回配備開始 (title=修行L4 r10 tobisaru, ninja=tobisaru) 修行L4 r10 tobisaru 📋 https://gist.gith…
+- 2026-05-09T22:53:21+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_kotaro 初回配備開始 (title=修行L4 r10 kotaro, ninja=kotaro) 修行L4 r10 kotaro 📋 https://gist.github.com/s…
+- 2026-05-09T22:53:01+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_hanzo 初回配備開始 (title=修行L4 r10 hanzo, ninja=hanzo) 修行L4 r10 hanzo 📋 https://gist.github.com/simok…
+- 2026-05-09T22:52:37+09:00 | ntfy | outbound | 【家老】復帰済み。全忍者idle。修行L4 r10配備(GPT3名)。CI GREEN。WA率0%。自走中。
+- 2026-05-09T22:50:54+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_saizo 初回配備開始 (title=修行L4 r10 saizo, ninja=saizo) 修行L4 r10 saizo 📋 https://gist.github.com/simok…
+- 2026-05-09T22:50:34+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_kagemaru 初回配備開始 (title=修行L4 r10 kagemaru, ninja=kagemaru) 修行L4 r10 kagemaru 📋 https://gist.gith…
+- 2026-05-09T22:50:18+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r10_hayate 初回配備開始 (title=修行L4 r10 hayate, ninja=hayate) 修行L4 r10 hayate 📋 https://gist.github.com/s…
+- 2026-05-09T22:49:18+09:00 | ntfy | outbound | 【gunshi】復帰済み。inbox未読0件。idle自走開始。
 
 ## 未解決確認事項
 - Step 11: 禁則F001-F008確認済み。復帰手順完了。 --- 殿、将軍復帰つかまつった。 **現状把握:** - CI: GREEN（最新run成功） - 全6忍者idle、パイプライン空 - 前セッション: 10cmd全CLEAR(cmd_2603-2612)、W…

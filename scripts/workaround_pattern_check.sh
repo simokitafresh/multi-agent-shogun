@@ -35,39 +35,38 @@ fi
     flock -w 10 200 || { echo "[workaround_pattern_check] Failed to acquire lock" >&2; exit 1; }
 
     # issue別の出現回数を集計
-    # karo_workarounds.yaml の issue: "..." 行を抽出してカウント
+    # awk 1パスで抽出・集計（bash while+regex の代替: 大幅高速化）
     declare -A issue_counts
     declare -A category_counts
 
-    while IFS= read -r _wpc_line; do
-        # issue行を抽出（double-quoted → single-quoted → unquoted の順で試行）
-        _wpc_issue=""
-        if [[ "$_wpc_line" =~ issue:\ +\"([^\"]+)\" ]]; then
-            _wpc_issue="${BASH_REMATCH[1]}"
-        elif [[ "$_wpc_line" =~ issue:\ +\'([^\']+)\' ]]; then
-            _wpc_issue="${BASH_REMATCH[1]}"
-        elif [[ "$_wpc_line" =~ issue:\ +([^[:space:]\'\"]+) ]]; then
-            _wpc_issue="${BASH_REMATCH[1]}"
-        fi
-        if [[ -n "$_wpc_issue" ]]; then
-            issue_counts["$_wpc_issue"]=$(( ${issue_counts["$_wpc_issue"]:-0} + 1 ))
-        fi
-        # category行を抽出（double-quoted → single-quoted → unquoted の順で試行）
-        _wpc_cat=""
-        if [[ "$_wpc_line" =~ category:\ +\"([^\"]+)\" ]]; then
-            _wpc_cat="${BASH_REMATCH[1]}"
-        elif [[ "$_wpc_line" =~ category:\ +\'([^\']+)\' ]]; then
-            _wpc_cat="${BASH_REMATCH[1]}"
-        elif [[ "$_wpc_line" =~ category:\ +([^[:space:]\'\"]+) ]]; then
-            _wpc_cat="${BASH_REMATCH[1]}"
-        fi
-        if [[ -n "$_wpc_cat" ]]; then
-            category_counts["$_wpc_cat"]=$(( ${category_counts["$_wpc_cat"]:-0} + 1 ))
-        fi
-    done < "$LOG_FILE"
+    while IFS=$'\t' read -r _wpc_type _wpc_key _wpc_cnt; do
+        case "$_wpc_type" in
+            i) issue_counts["$_wpc_key"]=$_wpc_cnt ;;
+            c) category_counts["$_wpc_key"]=$_wpc_cnt ;;
+        esac
+    done < <(awk '
+        {
+            for (i=1; i<=NF; i++) {
+                if ($i == "issue:") {
+                    v = $(i+1); gsub(/["'"'"']/, "", v)
+                    if (v != "") issue[v]++
+                }
+                if ($i == "category:") {
+                    v = $(i+1); gsub(/["'"'"']/, "", v)
+                    if (v != "") cat[v]++
+                }
+            }
+        }
+        END {
+            for (k in issue) print "i\t" k "\t" issue[k]
+            for (k in cat)   print "c\t" k "\t" cat[k]
+        }
+    ' "$LOG_FILE")
 
     detected=0
     now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    # notified_fileをキャッシュ（grep subprocess排除）
+    _wpc_notified_cache="$(cat "$NOTIFIED_FILE" 2>/dev/null || echo "")"
 
     # --- record_pattern: パターンをworkaround_patterns.yamlに記録 ---
     record_pattern() {
@@ -149,7 +148,7 @@ YAML_EOF
         if [[ $count -ge $THRESHOLD ]]; then
             # 通知済みチェック（issue:のキーで管理）
             pattern_key="issue:${_wpc_issue}"
-            if grep -qF "$pattern_key" "$NOTIFIED_FILE" 2>/dev/null; then
+            if [[ "$_wpc_notified_cache" == *"$pattern_key"* ]]; then
                 # 既に通知済み→countだけ更新（追跡用）
                 record_pattern "$pattern_key" "$_wpc_issue" "$count"
                 continue
@@ -170,7 +169,7 @@ YAML_EOF
         count=${category_counts["$_wpc_cat"]}
         if [[ $count -ge $THRESHOLD ]]; then
             pattern_key="category:${_wpc_cat}"
-            if grep -qF "$pattern_key" "$NOTIFIED_FILE" 2>/dev/null; then
+            if [[ "$_wpc_notified_cache" == *"$pattern_key"* ]]; then
                 # 既に通知済み→countだけ更新（追跡用）
                 record_pattern "$pattern_key" "$_wpc_cat" "$count"
                 continue
