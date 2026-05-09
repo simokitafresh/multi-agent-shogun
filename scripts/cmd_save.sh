@@ -151,7 +151,7 @@ is_gate_or_hook_addition_cmd() {
 
     q11_value="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
     if q11_has_existing_alternative_verification "$q11_value" && \
-       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|接続|統合|組込|組み込|既存.*改善|既存.*修正|既存.*精度|代替.*なし|同等機能なし|未実装|未存在'; then
+       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|既存.*統合|既存.*組込|既存.*組み込|既存.*改善|既存.*修正|既存.*精度'; then
         return 1
     fi
 
