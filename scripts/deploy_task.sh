@@ -1421,7 +1421,7 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
-  summary: FILL_THIS
+  summary: ""  # 要約を記入
   details: ""
 purpose_validation:
   cmd_purpose: ""
@@ -1451,7 +1451,7 @@ lesson_candidate:
   # \$RFS lesson_candidate.found "false"
   # \$RFS lesson_candidate.no_lesson_reason "既知のL084と同じパターン"
   found: false
-  no_lesson_reason: FILL_THIS  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
+  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
   title: ""
   detail: ""
   project: ${project}
@@ -1874,7 +1874,7 @@ PY_GATE_WARN
     fi
 
     # cmd_2161: gate_report_format 学習済みパターンが閾値超なら、空欄再発しやすい項目を
-    # FILL_THIS placeholder に昇格して template state を明示する。
+    # コメント付き空値にして、記入対象の template state を明示する。
     local _learning_prefill_file="${GATE_REPORT_FORMAT_LEARNING_FILE:-$SCRIPT_DIR/logs/gate_report_format_learning.yaml}"
     if [ -s "$_learning_prefill_file" ] && grep -q 'prefill_active:[[:space:]]*true' "$_learning_prefill_file" 2>/dev/null; then
     REPORT_FILE_ENV="$report_file" \
@@ -1917,10 +1917,10 @@ new_lines: list[str] = []
 in_lessons = False
 in_binary_checks = False
 in_result = False
-lu_note = "# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ"
-bc_note = "# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ"
-summary_note = "# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ"
-files_note = "# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ"
+lu_note = "# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。具体理由を記入せよ"
+bc_note = "# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。yes/noを記入せよ"
+summary_note = "# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。要約を記入せよ"
+files_note = "# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。変更ファイル一覧を記入せよ"
 
 for line in lines:
     if re.match(r"^[A-Za-z_][A-Za-z0-9_]*:", line):
@@ -1954,19 +1954,19 @@ for line in lines:
             new_lines.append(files_note)
             if re.match(r"^files_modified:\s*\[\]\s*(?:#.*)?$", line):
                 new_lines.append("files_modified:")
-                new_lines.append("  - FILL_THIS")
+                new_lines.append('  - ""  # 変更ファイルパスを記入')
                 continue
         new_lines.append(line)
         continue
 
-    if in_lessons and "lessons_useful.reason" in active_fields and "FILL_THIS" not in line:
-        line = re.sub(r"^(\s+reason:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+    if in_lessons and "lessons_useful.reason" in active_fields:
+        line = re.sub(r"^(\s+reason:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r'\1 ""  # 具体理由を記入', line)
 
-    if in_binary_checks and "binary_checks.result" in active_fields and "FILL_THIS" not in line:
-        line = re.sub(r"^(\s+result:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+    if in_binary_checks and "binary_checks.result" in active_fields:
+        line = re.sub(r"^(\s+result:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r'\1 ""  # yes or no', line)
 
-    if in_result and "result.summary" in active_fields and "FILL_THIS" not in line:
-        line = re.sub(r"^(\s+summary:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r"\1 FILL_THIS\2", line)
+    if in_result and "result.summary" in active_fields:
+        line = re.sub(r"^(\s+summary:)\s*(?:''|\"\")(\s*(?:#.*)?)$", r'\1 ""  # 要約を記入', line)
 
     new_lines.append(line)
 
@@ -2049,7 +2049,7 @@ ensure_report_template_completeness() {
     ' "$report_file" 2>/dev/null; then
         cat >> "$report_file" <<'EOF'
 result:
-  summary: FILL_THIS
+  summary: ""  # 要約を記入
   details: ""
 EOF
         modified=true
