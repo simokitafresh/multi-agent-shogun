@@ -194,10 +194,13 @@ teardown() {
     [ "$status" -ne 0 ]
 }
 
-@test "AC3: --wa modeでenvironment_change未記入ならWARN" {
+@test "AC3: --wa modeでenvironment_change未記入ならBLOCK" {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     [[ "$output" == *"environment_change未記入"* ]]
+    [[ "$output" == *"BLOCK"* ]]
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
 }
 
 @test "AC4: --wa modeでstructured environment_changeを検証してYAML記録" {
@@ -209,12 +212,15 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
-@test "AC4: --wa modeでstructured environment_change不一致ならWARN表示" {
+@test "AC4: --wa modeでstructured environment_change不一致ならBLOCK" {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
         "type=gate; file=scripts/sample_gate.sh; pattern=DOES_NOT_EXIST_2185"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     [[ "$output" == *"environment_change未実装"* ]]
+    [[ "$output" == *"BLOCK"* ]]
     [[ "$output" == *"DOES_NOT_EXIST_2185"* ]]
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
 }
 
 @test "legacy key order: category-first entryも件数集計に含めて3件目でALERT" {
