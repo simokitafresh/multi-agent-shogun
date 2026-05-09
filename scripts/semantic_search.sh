@@ -14,6 +14,8 @@ skip the alias layer and run semantic matching directly.
 Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
+  SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
+  SEMANTIC_NO_CACHE    Set to 1 to disable LLM cache lookup and writes
 EOF
 }
 
@@ -70,122 +72,7 @@ fi
 semantic_index_python() {
     local mode="$1"
     local mode_arg="${2:-}"
-    python3 - "$index_path" "$query" "$mode" "$mode_arg" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-index_path = Path(sys.argv[1])
-query = sys.argv[2].strip()
-mode = sys.argv[3]
-mode_arg = sys.argv[4] if len(sys.argv) > 4 else ""
-
-if mode == "first-layer" and not query:
-    print("ERROR: query is empty", file=sys.stderr)
-    sys.exit(2)
-
-text = index_path.read_text(encoding="utf-8")
-sections = re.split(r"(?m)^##\s+", text)
-concepts = []
-
-for raw in sections[1:]:
-    lines = raw.splitlines()
-    if not lines:
-        continue
-    heading = lines[0].strip()
-    if " — " in heading:
-        concept_id, heading_label = heading.split(" — ", 1)
-    else:
-        concept_id, heading_label = heading, ""
-
-    attrs = {}
-    resources = []
-    for line in lines[1:]:
-        stripped = line.strip()
-        m = re.match(r"^\|\s*([^|]+?)\s*\|\s*(.*?)\s*\|$", stripped)
-        if not m:
-            continue
-        left = m.group(1).strip()
-        right = m.group(2).strip()
-        if left in {"属性", "------", "種別"} or right in {"値", "----------"}:
-            continue
-        if left in {"id", "label", "aliases"}:
-            attrs[left] = right
-        elif right:
-            resources.append((left, right))
-
-    concepts.append(
-        {
-            "id": attrs.get("id") or concept_id.strip(),
-            "label": attrs.get("label") or heading_label,
-            "aliases": [
-                item.strip()
-                for item in attrs.get("aliases", "").split(",")
-                if item.strip()
-            ],
-            "resources": resources,
-        }
-    )
-
-def print_resources(concept):
-    print("resources:")
-    if concept["resources"]:
-        for resource_type, ref in concept["resources"]:
-            print(f"- {resource_type}: {ref}")
-    else:
-        print("- none")
-
-
-if mode == "first-layer":
-    no_match_mode = mode_arg
-    query_fold = query.casefold()
-    matches = []
-    for concept in concepts:
-        terms = [concept["label"], *concept["aliases"]]
-        matched_terms = []
-        for term in terms:
-            term_fold = term.casefold()
-            if query_fold in term_fold or term_fold in query_fold:
-                matched_terms.append(term)
-        if matched_terms:
-            matches.append((concept, matched_terms))
-
-    if not matches:
-        if no_match_mode != "silent":
-            print(f"NO_MATCH: {query}")
-        sys.exit(1)
-
-    for idx, (concept, matched_terms) in enumerate(matches, 1):
-        if idx > 1:
-            print("")
-        print(f"## {concept['id']} — {concept['label']}")
-        print(f"matched: {', '.join(matched_terms)}")
-        print(f"aliases: {', '.join(concept['aliases'])}")
-        print_resources(concept)
-elif mode == "render-llm-resources":
-    llm_output_path = Path(mode_arg)
-    raw_output = llm_output_path.read_text(encoding="utf-8", errors="replace")
-    matched = []
-    for concept in concepts:
-        concept_id = concept["id"]
-        if re.search(rf"(?<![A-Za-z0-9_.-]){re.escape(concept_id)}(?![A-Za-z0-9_.-])", raw_output):
-            matched.append(concept)
-
-    if not matched:
-        print("resources: LLM output did not contain known concept ids")
-        sys.exit(0)
-
-    print("resolved resources:")
-    for idx, concept in enumerate(matched[:3], 1):
-        if idx > 1:
-            print("")
-        print(f"## {concept['id']} — {concept['label']}")
-        print(f"aliases: {', '.join(concept['aliases'])}")
-        print_resources(concept)
-else:
-    print(f"ERROR: unknown semantic index mode: {mode}", file=sys.stderr)
-    sys.exit(2)
-PY
+    python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" "$mode" "$mode_arg"
 }
 
 first_layer_search() {
@@ -198,13 +85,36 @@ render_llm_resources() {
     semantic_index_python render-llm-resources "$llm_output_file"
 }
 
+llm_cache_key() {
+    local llm_cmd="$1"
+    {
+        printf 'q=%s\n' "$query"
+        printf 'cmd=%s\n' "$llm_cmd"
+        cat "$index_path"
+    } | sha256sum | awk '{print $1}'
+}
+
 llm_search() {
     local llm_cmd="${SEMANTIC_LLM_CMD:-claude --print}"
-    local prompt_file
-    local output_file
+    local cache_dir="${SEMANTIC_CACHE_DIR:-$script_dir/tmp/semantic_search_cache}"
+    local no_cache="${SEMANTIC_NO_CACHE:-0}"
+    local cache_file=""
+
+    if [ "$no_cache" != "1" ]; then
+        local key
+        key="$(llm_cache_key "$llm_cmd")"
+        cache_file="$cache_dir/$key"
+        if [ -f "$cache_file" ]; then
+            cat "$cache_file"
+            return 0
+        fi
+    fi
+
+    local prompt_file output_file final_output
     prompt_file="$(mktemp)"
     output_file="$(mktemp)"
-    trap 'rm -f "$prompt_file" "$output_file"' RETURN
+    final_output="$(mktemp)"
+    trap 'rm -f "$prompt_file" "$output_file" "$final_output"' RETURN
 
     {
         cat <<EOF
@@ -234,11 +144,23 @@ EOF
         return "$rc"
     fi
 
-    echo "LLM_MATCH: $query"
-    echo ""
-    cat "$output_file"
-    echo ""
-    render_llm_resources "$output_file"
+    {
+        echo "LLM_MATCH: $query"
+        echo ""
+        cat "$output_file"
+        echo ""
+        render_llm_resources "$output_file"
+    } > "$final_output"
+
+    cat "$final_output"
+
+    if [ "$no_cache" != "1" ] && [ -n "$cache_file" ]; then
+        mkdir -p "$cache_dir"
+        local tmp_cache="${cache_file}.tmp.$$"
+        if cp "$final_output" "$tmp_cache" 2>/dev/null; then
+            mv "$tmp_cache" "$cache_file" 2>/dev/null || rm -f "$tmp_cache"
+        fi
+    fi
 }
 
 if [ "$force_llm" = false ]; then
