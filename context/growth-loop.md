@@ -105,10 +105,14 @@ FAIL時だけでなくPASS時も記録することで、スキル全体のパフ
 - GP提案時: `defense_level`フィールドにLevelを明記。Level 4以下なら「Level 5化できないか？」を自問
 - **BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め
 
-**計測指標**: Level 4:Level 5の比率。2026-05-09時点 = 28:3。Level 5比率の向上が成長の指標。
+**計測指標**: Level 4:Level 5の比率。2026-05-10時点 = Level5:7件(44%)。Level 5比率の向上が成長の指標。
 
-**実績(2026-05-09)**:
+**実績(2026-05-09〜10)**:
 - cmd_2616: q11 WARN→BLOCK昇格(Level 4)
 - cmd_2617: q11 preflight自動grep(Level 5)。同じ問題にLevel 4→5の進化を1セッションで実現
 - cmd_2618: 未自動化教訓18件のLevel 5化計画策定(偵察)
 - cmd_2619: research_tool_explicit FP修正+ACパス自動提案(Level 5化)
+- cmd_2620: セマンティクスインデックスaliases受動表示(Level 5化)
+- D0: gate_vercel_phase broken ref候補自動提案(Level 5化)
+
+**詳細監査データ**: `docs/research/gunshi_defense_hierarchy_audit_20260510.md`(全16仕組み+全4PJ横断+cmd_save WARN TOP5+なぜなぜ7回)
