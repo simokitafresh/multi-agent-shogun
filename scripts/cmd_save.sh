@@ -111,6 +111,7 @@ PY
 is_gate_or_hook_addition_cmd() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     local q11_context=""
+    local q11_value=""
     local scope_mode=""
     local scout_exempt=""
 
@@ -147,6 +148,13 @@ is_gate_or_hook_addition_cmd() {
             return 1
         fi
     fi
+
+    q11_value="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
+    if q11_has_existing_alternative_verification "$q11_value" && \
+       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|接続|統合|組込|組み込|既存.*改善|既存.*修正|既存.*精度|代替.*なし|同等機能なし|未実装|未存在'; then
+        return 1
+    fi
+
     printf '%s\n' "$q11_context" | grep -qiE 'gate|hook|ゲート|フック' || return 1
     printf '%s\n' "$q11_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
     return 0
@@ -3199,7 +3207,7 @@ extract_acceptance_criteria_block() {
 
     printf '%s\n' "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ { in_ac=1; next }
-        in_ac && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / && !/^[[:space:]]*(id|check|ac|description):/ { exit }
+        in_ac && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
         in_ac { print }
     '
 }
@@ -3213,7 +3221,8 @@ count_acceptance_criteria_items() {
     }
 
     printf '%s\n' "$ac_block" | awk '
-        /^[[:space:]]*-[[:space:]]/ { c++ }
+        /^[[:space:]]*-[[:space:]]/ { c++; next }
+        /^[[:space:]]*(AC|ac)?[0-9]+:/ { c++; next }
         END { print c+0 }
     '
 }
@@ -3313,10 +3322,10 @@ check_ac_test_scope
 # CoDD固有でなく全cmdに適用。手順が増えれば自動検出(100億パターン対応)
 if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     _CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
-        /^\s*command:\s*\|/ { found=1; next }
-        /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
-        found && /^\s{4,}/ { print; next }
-        found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+        /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ { found=1; sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
+        found && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+        found && /^[[:space:]]{4,}/ { print; next }
     ')
     _STEP_COUNT=$(printf '%s\n' "$_CMD_SECTION" | awk '
         /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ { c++ }
