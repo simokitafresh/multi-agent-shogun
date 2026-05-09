@@ -378,6 +378,83 @@ PY
     [[ "$output" == *"OK"* ]]
 }
 
+@test "skill_gate_feedback excludes karo_direct and training cmd-complete failures" {
+    mkdir -p "$TEST_TMPDIR/skills/cmd-complete"
+    cat > "$TEST_TMPDIR/skills/cmd-complete/SKILL.md" <<'EOF'
+---
+name: cmd-complete
+---
+# cmd-complete
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate cmd_complete_gate \
+            --result FAIL \
+            --reason missing_gate \
+            --executor karo \
+            --source cmd_karo_direct_skill_metric_fix \
+            --skill cmd-complete
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP: cmd-complete feedback excluded for cmd_karo_direct_skill_metric_fix"* ]]
+    [ ! -f "$TEST_SKILL_LOG" ]
+    ! grep -q "注意ポイント" "$TEST_TMPDIR/skills/cmd-complete/SKILL.md"
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate cmd_complete_gate \
+            --result FAIL \
+            --reason missing_gate \
+            --executor karo \
+            --source cmd_training_001 \
+            --skill cmd-complete
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP: cmd-complete feedback excluded for cmd_training_001"* ]]
+    [ ! -f "$TEST_SKILL_LOG" ]
+    ! grep -q "注意ポイント" "$TEST_TMPDIR/skills/cmd-complete/SKILL.md"
+}
+
+@test "skill_gate_feedback keeps normal cmd-complete failures" {
+    mkdir -p "$TEST_TMPDIR/skills/cmd-complete"
+    cat > "$TEST_TMPDIR/skills/cmd-complete/SKILL.md" <<'EOF'
+---
+name: cmd-complete
+---
+# cmd-complete
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_FEEDBACK_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_FEEDBACK_SCRIPT" \
+            --gate cmd_complete_gate \
+            --result FAIL \
+            --reason missing_gate \
+            --executor karo \
+            --source cmd_2615 \
+            --skill cmd-complete
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPDATED: $TEST_TMPDIR/skills/cmd-complete/SKILL.md"* ]]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+entry = data["executions"][0]
+assert entry["skill"] == "cmd-complete"
+assert entry["result"] == "FAIL"
+assert entry["gate"] == "cmd_complete_gate"
+assert entry["source"] == "cmd_2615"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    grep -q "gate=cmd_complete_gate result=FAIL executor=karo reason=missing_gate" "$TEST_TMPDIR/skills/cmd-complete/SKILL.md"
+}
+
 @test "explicit report-write and ninja-commit routing still records requested skill" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/ninja-commit"
     cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
