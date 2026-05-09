@@ -467,6 +467,78 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "stale pending insights older than threshold → ALERT" {
+    export SHOGUN_STARTUP_LIGHTWEIGHT=0
+    export INSIGHT_STALE_DAYS=7
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-OLD
+  ts: "2026-01-01T00:00:00+09:00"
+  insight: "old pending insight"
+  status: pending
+- id: INS-FRESH
+  ts: "2099-01-01T00:00:00+09:00"
+  insight: "fresh pending insight"
+  status: pending
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: 未消化insights 1件が7日超過"* ]]
+    [[ "$output" == *"INS-OLD"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "karo_sent GP proposal older than threshold → ALERT" {
+    export SHOGUN_STARTUP_LIGHTWEIGHT=0
+    export GP_STALE_DAYS=14
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_gp_old
+  review_type: self_study
+  timestamp: "2026-01-01T00:00:00+09:00"
+  proposals:
+    - id: GP-OLD
+      description: "old proposal"
+      status: karo_sent
+      sent_at: "2026-01-01T00:00:00+09:00"
+- cmd_id: cmd_gp_done
+  review_type: self_study
+  timestamp: "2026-01-01T00:00:00+09:00"
+  proposals:
+    - id: GP-DONE
+      description: "done proposal"
+      status: implemented
+      sent_at: "2026-01-01T00:00:00+09:00"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ GP proposal滞留"* ]]
+    [[ "$output" == *"ALERT: karo_sent GP 1件が14日超過"* ]]
+    [[ "$output" == *"GP-OLD"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "same startup alert for 3 consecutive sessions → BLOCK" {
+    export STARTUP_WARN_STREAK_THRESHOLD=3
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+messages:
+- content: msg1
+  read: false
+  id: msg_1
+EOF
+    cat > "$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv" <<'EOF'
+run1	inbox未読: 1件
+run2	inbox未読: 1件
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ startup WARN/ALERT連続出現"* ]]
+    [[ "$output" == *"BLOCK: inbox未読: 1件 が3セッション連続"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
 # Test 15 (--brief + ALERT) は 2026-04-12 殿裁定で削除。Test 11と同じ理由。
 
 # === Test 16: AC注入一致 → WARNING無し (cmd_1668) ===

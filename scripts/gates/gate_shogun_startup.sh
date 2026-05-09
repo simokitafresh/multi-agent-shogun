@@ -429,14 +429,16 @@ for item in items:
     if dt and dt <= cutoff:
         age = (datetime.now(timezone.utc) - dt).days
         rows.append((age, str(item.get("id", "?"))))
-for age, iid in sorted(rows, reverse=True)[:5]:
-    print(f"{iid}:{age}日")
+if rows:
+    print(f"__TOTAL__\t{len(rows)}")
+    for age, iid in sorted(rows, reverse=True)[:5]:
+        print(f"{iid}:{age}日")
 PY
 )
     if [ -n "$stale_insights" ]; then
-        stale_count=$(printf '%s\n' "$stale_insights" | grep -c .)
+        stale_count=$(printf '%s\n' "$stale_insights" | awk -F'\t' '$1=="__TOTAL__"{print $2; found=1} END{if(!found) print 0}')
         echo "  ALERT: 未消化insights ${stale_count}件が${insight_stale_days}日超過"
-        printf '%s\n' "$stale_insights" | sed 's/^/    /'
+        printf '%s\n' "$stale_insights" | grep -v '^__TOTAL__' | sed 's/^/    /'
         overall="ALERT"
         alerts+=("未消化insights滞留: ${stale_count}件/${insight_stale_days}日超")
     fi
@@ -727,15 +729,17 @@ for entry in iter_entries(data):
         if dt and dt <= cutoff:
             age = (datetime.now(timezone.utc) - dt).days
             rows.append((age, str(proposal.get("id", "?"))))
-for age, gid in sorted(rows, reverse=True)[:5]:
-    print(f"{gid}:{age}日")
+if rows:
+    print(f"__TOTAL__\t{len(rows)}")
+    for age, gid in sorted(rows, reverse=True)[:5]:
+        print(f"{gid}:{age}日")
 PY
 )
     if [ -n "$stale_gp" ]; then
-        stale_gp_count=$(printf '%s\n' "$stale_gp" | grep -c .)
+        stale_gp_count=$(printf '%s\n' "$stale_gp" | awk -F'\t' '$1=="__TOTAL__"{print $2; found=1} END{if(!found) print 0}')
         echo "■ GP proposal滞留"
         echo "  ALERT: karo_sent GP ${stale_gp_count}件が${gp_stale_days}日超過"
-        printf '%s\n' "$stale_gp" | sed 's/^/    /'
+        printf '%s\n' "$stale_gp" | grep -v '^__TOTAL__' | sed 's/^/    /'
         overall="ALERT"
         alerts+=("GP proposal滞留: ${stale_gp_count}件/${gp_stale_days}日超")
     fi
@@ -1455,7 +1459,10 @@ import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-threshold = int(sys.argv[2])
+try:
+    threshold = int(sys.argv[2])
+except ValueError:
+    threshold = 3
 current = [a.strip() for a in sys.argv[3:] if a.strip()]
 if not current or threshold <= 1:
     sys.exit(0)
