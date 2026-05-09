@@ -62,7 +62,7 @@ run_auto_draft() {
     run bash "$patched" "$@"
 }
 
-@test "registers found lesson candidates as draft for later review" {
+@test "registers found lesson candidates as confirmed and writes lesson.done" {
     local report="$TEST_TMPDIR/report.yaml"
     cat > "$report" <<'EOF'
 parent_cmd: cmd_123
@@ -76,13 +76,13 @@ EOF
 
     run_auto_draft "$report"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Registering draft lesson"* ]]
-    [[ "$output" == *"Draft lesson registered successfully"* ]]
+    [[ "$output" == *"Registering confirmed lesson"* ]]
+    [[ "$output" == *"Confirmed lesson registered successfully"* ]]
 
     run grep -Fx -- "--status" "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
 
-    run grep -Fx -- "draft" "$TEST_TMPDIR/lesson_write_args.txt"
+    run grep -Fx -- "confirmed" "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
 
     run grep -Fx -- "cmd_123" "$TEST_TMPDIR/lesson_write_args.txt"
@@ -90,8 +90,10 @@ EOF
 
     run sed -n '6p' "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
-    [ "$output" = "" ]
-    [ ! -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    [ "$output" = "cmd_123" ]
+    [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
+    run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
 }
 
 @test "not_found skip creates lesson.done with auto_draft_skip reason" {
