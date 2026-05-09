@@ -79,6 +79,20 @@ teardown() {
     [[ "$output" != *"有効なエージェント名ではない"* ]]
 }
 
+@test "LOG override: KARO_WORKAROUND_LOG_FILE isolates writes" {
+    alt_log="$TEST_DIR/logs/alternate_workarounds.yaml"
+    alt_lock="$TEST_DIR/logs/alternate_workarounds.lock"
+
+    run env KARO_WORKAROUND_LOG_FILE="$alt_log" KARO_WORKAROUND_LOCK_FILE="$alt_lock" \
+        bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test fix description"
+    [ "$status" -eq 0 ]
+
+    run grep -n "cmd_id: cmd_test" "$alt_log"
+    [ "$status" -eq 0 ]
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}
+
 @test "AC1: valid ninja_id (karo) — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test karo "test issue" "test fix description"
     [[ "$output" != *"有効なエージェント名ではない"* ]]
@@ -246,6 +260,33 @@ YAML
     run bash "$TEST_SCRIPT" cmd_test_3 kotaro "third issue" "third root cause" report_yaml_format
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件"* ]]
+}
+
+@test "alert side effects can be disabled for isolated measurement" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_modern_1
+  timestamp: '2026-04-25T00:00:00Z'
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: 'modern'
+  root_cause: 'modern root cause'
+  resolved_by_cmd: ''
+- cmd_id: cmd_modern_2
+  timestamp: '2026-04-25T00:01:00Z'
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  detail: 'modern'
+  root_cause: 'modern root cause'
+  resolved_by_cmd: ''
+YAML
+
+    run env KARO_WORKAROUND_DISABLE_ALERTS=true \
+        bash "$TEST_SCRIPT" cmd_test_3 kotaro "third issue" "third root cause" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件"* ]]
+    [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
 }
 
 @test "legacy key order: --reclassify updates category-first entry" {
