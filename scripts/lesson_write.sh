@@ -93,6 +93,38 @@ resolve_project_path() {
     resolve_project_field "$1" "path"
 }
 
+resolve_lesson_context_route() {
+    local proj_id="$1"
+    local subdomain="${2:-}"
+    local first_subdomain="${subdomain%%,*}"
+
+    CONTEXT_ROUTE_FILE="$PROJECT_META_CONTEXT_FILE"
+    CONTEXT_ROUTE_ANCHOR=""
+
+    case "$proj_id:$first_subdomain" in
+        dm-signal:fe)
+            CONTEXT_ROUTE_FILE="context/dm-signal-frontend.md"
+            CONTEXT_ROUTE_ANCHOR='^## 12\. Frontend関連教訓'
+            ;;
+        dm-signal:be)
+            CONTEXT_ROUTE_FILE="context/dm-signal-ops.md"
+            CONTEXT_ROUTE_ANCHOR='^## §6-7 '
+            ;;
+        dm-signal:gs)
+            CONTEXT_ROUTE_FILE="context/dm-signal-ops.md"
+            CONTEXT_ROUTE_ANCHOR='^## §33 '
+            ;;
+        dm-signal:infra|infra:infra)
+            CONTEXT_ROUTE_FILE="context/infrastructure.md"
+            CONTEXT_ROUTE_ANCHOR='^## Infra教訓索引'
+            ;;
+        infra:*)
+            CONTEXT_ROUTE_FILE="context/infrastructure.md"
+            CONTEXT_ROUTE_ANCHOR='^## Infra教訓索引'
+            ;;
+    esac
+}
+
 resolve_cmd_project() {
     local cmd_id="$1"
     [ -z "$cmd_id" ] && return 0
@@ -749,7 +781,8 @@ print(','.join(tags[:3]))
         fi
         # Context索引自動追記 (cmd_300)
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE="$PROJECT_META_CONTEXT_FILE"
+            resolve_lesson_context_route "$PROJECT_ID" "${SUBDOMAIN:-}"
+            CONTEXT_FILE="$CONTEXT_ROUTE_FILE"
             if [ -n "$CONTEXT_FILE" ]; then
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then
@@ -757,7 +790,7 @@ print(','.join(tags[:3]))
                     if ! grep -qF -- "- ${NEW_LESSON_ID}:" "$CONTEXT_FULL_PATH"; then
                         (
                             flock -w 10 201 || { echo "WARN: context lock timeout, skipping context update" >&2; exit 1; }
-                            export CONTEXT_FULL_PATH NEW_LESSON_ID TITLE SOURCE_CMD
+                            export CONTEXT_FULL_PATH NEW_LESSON_ID TITLE SOURCE_CMD CONTEXT_ROUTE_ANCHOR
                             python3 << 'CTXEOF'
 import re, os
 
@@ -765,6 +798,7 @@ ctx_path = os.environ["CONTEXT_FULL_PATH"]
 lesson_id = os.environ["NEW_LESSON_ID"]
 title = os.environ["TITLE"]
 source_cmd = os.environ.get("SOURCE_CMD", "")
+route_anchor = os.environ.get("CONTEXT_ROUTE_ANCHOR", "")
 
 with open(ctx_path, encoding='utf-8') as f:
     content = f.read()
@@ -773,20 +807,23 @@ entry = f"- {lesson_id}: {title}"
 if source_cmd:
     entry += f"\uFF08{source_cmd}\uFF09"
 
-# Find the last lessons section
+def insert_under_heading(text, heading_match, lesson_entry):
+    after_section = text[heading_match.end():]
+    next_heading = re.search(r'^## ', after_section, re.MULTILINE)
+    if next_heading:
+        insert_pos = heading_match.end() + next_heading.start()
+        return text[:insert_pos].rstrip('\n') + '\n' + lesson_entry + '\n\n' + text[insert_pos:]
+    return text.rstrip('\n') + '\n' + lesson_entry + '\n'
+
 # Patterns: "## ...教訓..." or "## ...Lesson..."
 section_pattern = re.compile(r'^(##\s+.*(?:教訓|[Ll]esson).*)', re.MULTILINE)
 matches = list(section_pattern.finditer(content))
 
-if matches:
-    last_match = matches[-1]
-    after_section = content[last_match.end():]
-    next_heading = re.search(r'^## ', after_section, re.MULTILINE)
-    if next_heading:
-        insert_pos = last_match.end() + next_heading.start()
-        new_content = content[:insert_pos].rstrip('\n') + '\n' + entry + '\n\n' + content[insert_pos:]
-    else:
-        new_content = content.rstrip('\n') + '\n' + entry + '\n'
+route_match = re.search(route_anchor, content, re.MULTILINE) if route_anchor else None
+if route_match:
+    new_content = insert_under_heading(content, route_match, entry)
+elif matches:
+    new_content = insert_under_heading(content, matches[-1], entry)
 else:
     new_content = content.rstrip('\n') + '\n\n## 教訓索引（自動追記）\n\n' + entry + '\n'
 
@@ -800,8 +837,10 @@ if marker_pattern.search(new_content):
 else:
     # AC2: Marker absent — add after last lesson entry in the section
     # Insert before the next heading or at EOF
-    if matches:
-        last_match_recheck = matches[-1]
+    route_match_recheck = re.search(route_anchor, new_content, re.MULTILINE) if route_anchor else None
+    matches_recheck = list(section_pattern.finditer(new_content))
+    if route_match_recheck or matches_recheck:
+        last_match_recheck = route_match_recheck or matches_recheck[-1]
         after_recheck = new_content[last_match_recheck.end():]
         next_h = re.search(r'^## ', after_recheck, re.MULTILINE)
         if next_h:
