@@ -54,6 +54,11 @@ if [ "${#query_parts[@]}" -lt 1 ]; then
 fi
 
 query="${query_parts[*]}"
+if [[ -z "${query//[[:space:]]/}" ]]; then
+    echo "ERROR: query is empty or whitespace only" >&2
+    usage >&2
+    exit 2
+fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
 

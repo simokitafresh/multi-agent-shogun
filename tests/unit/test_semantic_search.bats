@@ -103,3 +103,14 @@ EOF
     [ "$status" -eq 7 ]
     [[ "$output" == *"ERROR: LLM semantic search failed with exit code 7"* ]]
 }
+
+@test "rejects whitespace-only query before invoking python or LLM" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "   "
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ERROR: query is empty or whitespace only"* ]]
+    [[ "$output" == *"Usage: bash"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
