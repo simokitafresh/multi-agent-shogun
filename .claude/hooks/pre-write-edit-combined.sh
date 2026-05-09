@@ -25,6 +25,45 @@ emit_context() {
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 PREFLIGHT_AUTOLEARN_FILE="${PREFLIGHT_AUTOLEARN_FILE:-$SCRIPT_DIR/logs/preflight_autolearn.txt}"
+CMD_DESIGN_QUALITY_FILE="${CMD_DESIGN_QUALITY_FILE:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
+
+cmd_save_block_top3() {
+    [[ -s "$CMD_DESIGN_QUALITY_FILE" ]] || return 0
+    CMD_DESIGN_QUALITY_FILE="$CMD_DESIGN_QUALITY_FILE" python3 - <<'PY' 2>/dev/null || true
+import collections
+import os
+import re
+import yaml
+
+path = os.environ.get("CMD_DESIGN_QUALITY_FILE", "")
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except Exception:
+    raise SystemExit(0)
+
+entries = data.get("entries") or []
+blocks = [
+    entry for entry in entries
+    if isinstance(entry, dict)
+    and entry.get("source") == "cmd_save"
+    and entry.get("gate_result") == "BLOCK"
+][-50:]
+
+def normalize(note):
+    note = str(note or "").strip()
+    if not note:
+        return "notesなし"
+    match = re.search(r"WARN累計昇格:\s*「([^」]+)」", note)
+    if match:
+        return "WARN累計昇格: " + match.group(1).strip()
+    return note.split("|", 1)[0].strip()
+
+counter = collections.Counter(normalize(entry.get("notes", "")) for entry in blocks)
+for index, (pattern, count) in enumerate(counter.most_common(3), 1):
+    print(f"{index}. {pattern} ({count}件)")
+PY
+}
 
 # Single jq call to extract tool_name and file_path
 _parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
@@ -119,6 +158,13 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
 
 動的追加確認(preflight_autolearn):
 ${_dynamic_checks}"
+        fi
+        _cmd_save_block_top3="$(cmd_save_block_top3)"
+        if [[ -n "$_cmd_save_block_top3" ]]; then
+            _checklist="${_checklist}
+
+直近cmd_save BLOCK TOP3(cmd_design_quality.yaml直近50件):
+${_cmd_save_block_top3}"
         fi
         emit_context "$_checklist"
     fi

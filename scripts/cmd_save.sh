@@ -836,6 +836,38 @@ log_cmd_save_warns() {
     done
 }
 
+log_cmd_save_pass() {
+    local timestamp
+    [[ -n "$CMD_ID" ]] || return 0
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+    (
+        flock -w 10 200 || exit 0
+
+        if [[ ! -f "$QUALITY_LOG_FILE" ]] || [[ ! -s "$QUALITY_LOG_FILE" ]]; then
+            printf 'entries:\n' > "$QUALITY_LOG_FILE"
+        else
+            local first_line
+            IFS= read -r first_line < "$QUALITY_LOG_FILE" || first_line=""
+            if [[ "$first_line" == "entries: []" ]]; then
+                sed -i '1s/^entries: \[\]$/entries:/' "$QUALITY_LOG_FILE"
+            fi
+        fi
+
+        cat >> "$QUALITY_LOG_FILE" <<EOF
+  - cmd_id: "$CMD_ID"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "$timestamp"
+EOF
+    ) 200>/tmp/cmd_design_quality.lock
+}
+
 count_same_warn_pattern() {
     local warn_pattern="${1:-}"
     [[ -n "$warn_pattern" && -f "$QUALITY_LOG_FILE" ]] || {
@@ -3400,6 +3432,7 @@ fi
 # --- 結果出力 ---
 if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
+    log_cmd_save_pass
     # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
     _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
     if [[ -z "$_EXISTING_STATUS" ]]; then
