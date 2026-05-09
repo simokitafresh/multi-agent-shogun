@@ -523,7 +523,7 @@ YAML
     grep -Fq 'parent_cmd: cmd_missing_nine_defaults' "$report_path"
     grep -Fq 'ac_version_read: abcdef12' "$report_path"
     grep -Fq 'result:' "$report_path"
-    grep -Fq '  summary: FILL_THIS' "$report_path"
+    grep -Fq '  summary: ""' "$report_path"
     grep -Fq 'purpose_validation:' "$report_path"
     grep -Fq 'files_modified: []' "$report_path"
     grep -Fq 'lessons_useful: []' "$report_path"
@@ -534,7 +534,7 @@ YAML
     [[ "$output" != *"worker_id: MISSING"* ]]
     [[ "$output" != *"parent_cmd: MISSING"* ]]
     [[ "$output" != *"ac_version_read: MISSING"* ]]
-    [[ "$output" != *"result.summary: MISSING"* ]]
+    [[ "$output" == *"result.summary: MISSING or empty"* ]]
     [[ "$output" != *"purpose_validation: MISSING"* ]]
     [[ "$output" != *"files_modified: MISSING"* ]]
     [[ "$output" != *"lessons_useful: MISSING"* ]]

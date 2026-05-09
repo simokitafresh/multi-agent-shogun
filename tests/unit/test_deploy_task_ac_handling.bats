@@ -630,7 +630,7 @@ for key in [
     "parent_cmd",
 ]:
     assert key in data, key
-assert isinstance(data["result"], dict) and data["result"].get("summary") == "FILL_THIS"
+assert isinstance(data["result"], dict) and data["result"].get("summary") == ""
 assert list(data["binary_checks"].keys()) == ["AC1", "AC2", "AC3", "commit"], data["binary_checks"].keys()
 print("OK")
 EOF
@@ -639,7 +639,15 @@ EOF
 
     run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
     [ "$status" -eq 1 ]
-    [[ "$output" != *"MISSING"* ]]
+    [[ "$output" != *"worker_id: MISSING"* ]]
+    [[ "$output" != *"parent_cmd: MISSING"* ]]
+    [[ "$output" != *"ac_version_read: MISSING"* ]]
+    [[ "$output" != *"purpose_validation: MISSING"* ]]
+    [[ "$output" != *"files_modified: MISSING"* ]]
+    [[ "$output" != *"lessons_useful: MISSING"* ]]
+    [[ "$output" != *"binary_checks: MISSING"* ]]
+    [[ "$output" != *"assumption_invalidation: MISSING"* ]]
+    [[ "$output" == *"result.summary: MISSING or empty"* ]]
 }
 
 @test "deploy_task rewrites generic full-test AC to affected_tests workflow in report template" {
@@ -796,7 +804,7 @@ EOF
     [ "$status" -ne 0 ]
 }
 
-@test "cmd_2164: learned prefills replace targeted placeholders and keep gate blocking on FILL_THIS" {
+@test "cmd_2164: learned prefills annotate targeted placeholders and keep gate blocking on empty values" {
     cat > "$TEST_PROJECT/logs/gate_report_format_learning.yaml" <<'EOF'
 threshold: 10
 patterns:
@@ -843,32 +851,24 @@ EOF
     [ "$status" -eq 0 ]
     local report_path="$TEST_PROJECT/$output"
 
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。FILL_THISを具体理由へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — reason空欄再発防止。具体理由を記入せよ' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。FILL_THISをyes/noへ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result空欄再発防止。yes/noを記入せよ' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。FILL_THISを要約へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — result.summary空欄再発防止。要約を記入せよ' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。FILL_THISを変更ファイル一覧へ置換せよ' "$report_path"
+    run grep -F '# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。変更ファイル一覧を記入せよ' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F 'reason: FILL_THIS' "$report_path"
-    [ "$status" -eq 0 ]
-    run grep -F 'result: FILL_THIS' "$report_path"
-    [ "$status" -eq 0 ]
-    run grep -F 'summary: FILL_THIS' "$report_path"
-    [ "$status" -eq 0 ]
-    run grep -F '  - FILL_THIS' "$report_path"
-    [ "$status" -eq 0 ]
+    run grep -F 'FILL_THIS' "$report_path"
+    [ "$status" -ne 0 ]
 
     run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
     [ "$status" -eq 1 ]
-    [[ "$output" != *"reason is empty"* ]]
-    [[ "$output" != *"result: 空文字"* ]]
-    [[ "$output" != *"result.summary: MISSING or empty"* ]]
+    [[ "$output" == *"found=false but no no_lesson_reason"* ]]
     [[ "$output" != *"files_modified: MISSING"* ]]
-    [[ "$output" == *"result.summary: FILL_THIS placeholder remaining"* ]]
-    [[ "$output" == *"files_modified: FILL_THIS placeholder remaining"* ]]
-    [[ "$output" == *"FILL_THIS"* ]]
+    [[ "$output" == *"binary_checks.AC1[0].result: 空文字"* ]]
+    [[ "$output" == *"result.summary: MISSING or empty"* ]]
+    [[ "$output" != *"FILL_THIS"* ]]
 }
 
 # Duplicate ac_version/modifier/report-path tests are covered by test_deploy_task_ac_version.bats.
