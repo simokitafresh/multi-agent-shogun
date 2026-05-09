@@ -106,7 +106,18 @@ check_ref_record() {
             return 0
         fi
         BROKEN_REFS=$((BROKEN_REFS + 1))
-        BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
+        # Level5: broken ref検出時に類似ファイル候補を自動提案
+        local _ref_base _candidates=""
+        _ref_base=$(basename "$ref" | sed 's/\.[^.]*$//' | tr '_-' '.*')
+        for _rb in "${RESOLVE_BASES[@]}"; do
+            [ -d "${_rb}/docs/research" ] || continue
+            _candidates+=$(find "${_rb}/docs/research" -maxdepth 1 -type f -name "*${_ref_base}*" 2>/dev/null | head -3)
+        done
+        if [ -n "$_candidates" ]; then
+            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND] 候補: $(echo "$_candidates" | xargs -I{} basename {} | tr '\n' ', ')")
+        else
+            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
+        fi
     fi
 }
 

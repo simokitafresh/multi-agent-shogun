@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-10 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-10T00:15:41+09:00 -->
+<!-- generated_at: 2026-05-10T00:20:12+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-10T00:20:12+09:00 | terminal | response | 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft…
+- 2026-05-10T00:18:54+09:00 | terminal | inbound | すでに効果はでているか？
+- 2026-05-10T00:16:17+09:00 | ntfy | outbound | 【家老】cmd_2620 初回配備開始 (title=強化 — セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化), ninja=hayate) 強化 📋 https://gist.github.com…
 - 2026-05-10T00:15:38+09:00 | terminal | response | cmd_2620委任完了。教訓LS044記録済み。 殿、復帰+自走報告。 **本セッション実績:** - cmd_2620起票→家老委任完了: セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化)。14概…
 - 2026-05-10T00:13:16+09:00 | terminal | inbound | 続けて
 - 2026-05-10T00:11:58+09:00 | terminal | response | 修正完了。再publish。 [meta] stop_reason=tool_use
@@ -11,11 +14,9 @@
 - 2026-05-10T00:09:34+09:00 | terminal | response | 起票前確認8問チェック: 全問OK。cmd_publish.sh実行。 [meta] stop_reason=tool_use
 - 2026-05-10T00:06:52+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_tobisaru 初回配備開始 (title=修行L4 r11 tobisaru, ninja=tobisaru) 修行L4 r11 tobisaru 📋 https://gist.gith…
 - 2026-05-10T00:06:16+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_kotaro 初回配備開始 (title=修行L4 r11 kotaro, ninja=kotaro) 修行L4 r11 kotaro 📋 https://gist.github.com/s…
-- 2026-05-10T00:05:43+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_hanzo 初回配備開始 (title=修行L4 r11 hanzo, ninja=hanzo) 修行L4 r11 hanzo 📋 https://gist.github.com/simok…
-- 2026-05-10T00:05:19+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_saizo 初回配備開始 (title=修行L4 r11 saizo, ninja=saizo) 修行L4 r11 saizo 📋 https://gist.github.com/simok…
-- 2026-05-10T00:05:02+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-267)
 
 ## 未解決確認事項
+- 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft_lessons | 直近50件中27回…
 - 起票前確認8問チェック: 全問OK。cmd_publish.sh実行。 [meta] stop_reason=tool_use
 - 【将軍】復帰済み。全忍者idle。前セッション8cmd全CLEAR把握。軍師Level5化提案(セマンティクスインデックスcmd_save.sh接続)確認済み。idle自走に入る。
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=41件 clear_prep_check=ALERT [1.PD未決] 0件: なし [2.cmd …
@@ -23,7 +24,6 @@
 - 掲示板を確認せよ
 - 掲示板を確認しよう
 - 掲示板から3つの報告を確認。 **1. 軍師(blt_232728)**: ゲート=消火の高度版で止まっている構造を指摘。 - 「BLOCKする→修正してCLEAR→同じBLOCK=成長ゼロ」 - 提案: 出口(gate)でなく**入口(テンプレート/事前生成)に成長を埋め込め…
-- **数字で語る。** ## 本セッション成果 ### cmd_2613: draft_lessons根治 - draft_lessons BLOCK: **287件 → 以降0件**（完全消滅） - missing_gate:lesson BLOCK: **27件 → 以降0件…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-09T23:54:57+09:00 | cmd_2619 GATE CLEAR。 **本セッション全8件完了。** | cmd | 状態 | |-----|------| | 2613 draft→confirmed根治 | **CLEAR** | | 2614 scout_exempt LK011根治 | **CL…
@@ -57,6 +57,7 @@
 - cmd_2617
 - cmd_2618
 - cmd_2619
+- cmd_2620
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
