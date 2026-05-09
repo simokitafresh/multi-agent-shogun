@@ -82,13 +82,11 @@ teardown() {
     grep -q '| lesson | `L999` 学習ループで二値計測を強制する |' "$SEMANTIC_INDEX_PATH"
 }
 
-@test "LOW: one partial alias queues insight without editing index" {
+@test "LOW: one partial alias triggers alias expansion and update" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-05T00:00:00+09:00","summary":"意味検索の話"}'
     [ "$status" -eq 0 ]
-    [[ "$output" == *"LOW: insight queued"* ]]
-
-    grep -q 'semantic_index_update候補' "$TEST_TMPDIR/queue/insights.log"
-    ! grep -q '2026-05-05T00:00:00' "$SEMANTIC_INDEX_PATH"
+    [[ "$output" == *"updated"* ]]
+    [[ "$output" == *"aliases_added"* ]]
 }
 
 @test "NONE: unmatched payload queues new concept candidate" {

@@ -8,12 +8,12 @@ setup() {
     cp "$PROJECT_ROOT/scripts/usage_status.sh" "$TEST_DIR/usage_status.sh"
     chmod +x "$TEST_DIR/usage_status.sh"
     export MCAS_STATUS_INTERVAL=0
-    rm -f /tmp/mcas_usage_status_cache_claude /tmp/mcas_usage_status_cache_codex
+    export MCAS_CACHE_DIR="$TEST_DIR"
+    rm -f "$TEST_DIR/mcas_usage_status_cache_claude" "$TEST_DIR/mcas_usage_status_cache_codex"
 }
 
 teardown() {
     rm -rf "$TEST_DIR"
-    rm -f /tmp/mcas_usage_status_cache_claude /tmp/mcas_usage_status_cache_codex
 }
 
 write_monitor() {
@@ -26,14 +26,14 @@ EOF
 }
 
 @test "malformed non-empty status does not overwrite valid cache" {
-    echo "5H:██░░░ 40% 10am 7D:█░░░░ 20% Fri" > /tmp/mcas_usage_status_cache_claude
+    echo "5H:██░░░ 40% 10am 7D:█░░░░ 20% Fri" > $TEST_DIR/mcas_usage_status_cache_claude
     write_monitor 'printf "oops\n"'
 
     run bash "$TEST_DIR/usage_status.sh" claude
 
     [ "$status" -eq 0 ]
     [ "$output" = "5H:██░░░ 40% 10am 7D:█░░░░ 20% Fri" ]
-    [ "$(cat /tmp/mcas_usage_status_cache_claude)" = "5H:██░░░ 40% 10am 7D:█░░░░ 20% Fri" ]
+    [ "$(cat $TEST_DIR/mcas_usage_status_cache_claude)" = "5H:██░░░ 40% 10am 7D:█░░░░ 20% Fri" ]
 }
 
 @test "malformed status without cache returns provider-specific fallback" {
@@ -43,7 +43,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [ "$output" = "5H:----- --% left -- 7D:----- --% left --" ]
-    [ ! -f /tmp/mcas_usage_status_cache_codex ]
+    [ ! -f $TEST_DIR/mcas_usage_status_cache_codex ]
 }
 
 @test "valid status writes formatted cache" {
@@ -53,5 +53,5 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == "5H:"*" 12% 10am 7D:"*" 34% Fri" ]]
-    [ "$(cat /tmp/mcas_usage_status_cache_claude)" = "$output" ]
+    [ "$(cat $TEST_DIR/mcas_usage_status_cache_claude)" = "$output" ]
 }

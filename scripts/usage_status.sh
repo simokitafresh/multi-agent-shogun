@@ -187,7 +187,7 @@ case "$PROVIDER" in
     claude|codex) ;;
     *) PROVIDER="claude" ;;
 esac
-CACHE_FILE="/tmp/mcas_usage_status_cache_${PROVIDER}"
+CACHE_FILE="${MCAS_CACHE_DIR:-/tmp}/mcas_usage_status_cache_${PROVIDER}"
 
 if [[ -f "$CACHE_FILE" ]]; then
     cache_mtime=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo "0")
