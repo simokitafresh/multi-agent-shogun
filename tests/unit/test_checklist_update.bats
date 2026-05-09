@@ -54,3 +54,26 @@ EOF
     [ "$status" -eq 2 ]
     [[ "$output" == "FATAL: checklist_update: item_number must be an integer: abc" ]]
 }
+
+@test "unrelated numeric tables do not affect checklist progress" {
+    cat > "$TEST_DIR/checklist.md" <<'EOF'
+# progress placeholder
+# 進捗: 0/2 (0%)
+
+| # | Name | A | B | Status | Result | Owner | Actual |
+|---|------|---|---|--------|--------|-------|--------|
+| 1 | unrelated | x | y | done | old | old | old |
+
+| # | 対象 | 複雑度 | 見積 | 状態 | 結果 | 担当 | 実績 |
+|----|------|--------|------|------|------|------|------|
+| 1 | alpha | S | 1m | pending |  |  | |
+| 2 | beta | S | 1m | pending |  |  | |
+EOF
+
+    run bash "$TEST_DIR/scripts/checklist_update.sh" "$TEST_DIR/checklist.md" 1 done ok saizo
+
+    [ "$status" -eq 0 ]
+    grep -q '^| 1 | unrelated | x | y | done | old | old | old |$' "$TEST_DIR/checklist.md"
+    grep -q '^| 1 | alpha | S | 1m | done | ok | saizo | |$' "$TEST_DIR/checklist.md"
+    grep -q '^# 進捗: 1/2 (50%)$' "$TEST_DIR/checklist.md"
+}

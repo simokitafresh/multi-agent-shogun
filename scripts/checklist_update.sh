@@ -82,21 +82,54 @@ def split_markdown_row(line):
 def markdown_cell(value):
     return str(value).replace('\\r', ' ').replace('\\n', ' ').replace('|', '\\\\|')
 
+def row_cells(line):
+    cells = split_markdown_row(line)
+    if cells and cells[0].strip() == '':
+        cells = cells[1:]
+    if cells and cells[-1].strip() == '':
+        cells = cells[:-1]
+    return [cell.strip().lower() for cell in cells]
+
+def is_checklist_header(line):
+    cells = row_cells(line)
+    if len(cells) < 8:
+        return False
+    return (
+        cells[0] in ('#', 'no')
+        and cells[1] in ('target', '対象')
+        and cells[4] in ('status', '状態')
+        and cells[5] in ('result', '結果')
+        and cells[6] in ('owner', '担当')
+        and cells[7] in ('actual', '実績')
+    )
+
+def is_table_separator(line):
+    return bool(re.match(r'^\|\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$', line.strip()))
+
 with open(checklist_path, 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 # Parse and update the table
 updated = False
+checklist_header_seen = any(is_checklist_header(line.strip()) for line in lines)
 done_count = 0
 total_count = 0
 
 # First pass: find and update the target row
 new_lines = []
+in_checklist_table = False
 for line in lines:
     stripped = line.strip()
+    if is_checklist_header(stripped):
+        in_checklist_table = True
+        new_lines.append(line)
+        continue
+    if in_checklist_table and not stripped.startswith('|'):
+        in_checklist_table = False
+    should_process_row = (in_checklist_table or not checklist_header_seen) and not is_table_separator(stripped)
     # Match table data rows: | N | ... |
     m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
-    if m:
+    if should_process_row and m:
         row_num = int(m.group(1))
         # Split into cells
         cells = split_markdown_row(stripped)
@@ -120,10 +153,17 @@ if not updated:
 # Second pass: count done items and recalculate progress
 done_count = 0
 total_count = 0
+in_checklist_table = False
 for line in new_lines:
     stripped = line.strip()
+    if is_checklist_header(stripped):
+        in_checklist_table = True
+        continue
+    if in_checklist_table and not stripped.startswith('|'):
+        in_checklist_table = False
+    should_count_row = (in_checklist_table or not checklist_header_seen) and not is_table_separator(stripped)
     m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
-    if m:
+    if should_count_row and m:
         cells = split_markdown_row(stripped)
         if len(cells) >= 9:
             total_count += 1
