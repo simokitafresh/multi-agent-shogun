@@ -28,3 +28,5 @@ codd:
 | 将軍Androidアプリ | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ | `android/`, `android/app/build.gradle.kts`, `android/app/src/main/java/com/shogun/android/` | なし |
 | CDP(ブラウザ操作能力) | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper | `MEMORY.md` §Technical Knowledge → CDP Browser Automation, `scripts/cdp/cdp_cli.sh`, `scripts/cdp/cdp_server.py` | `memory/deepdive_why_chain_20260321.md` Phase 4 想像するな確認せよ |
 | 防御階層原則(Level 1-5) | 防御階層, defense_level, Level5, Level 5, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, LG010, research tool explicit偽陽性修正 ACパス自動提案 Level5化 | `context/growth-loop.md` §11, `projects/infra/lessons_gunshi.yaml` LG010, `instructions/gunshi.md` §Review Criteria 5.5 | なし |
+| Auto-Ops | auto-ops, CDP認証, .env.service, 自動入力, daemon | `context/auto-ops.md` | なし |
+| L2奥義進行表 | 奥義, L2, okugi, 56ブロック, 奥義進行 | `context/l2-okugi-progress.md` | なし |
