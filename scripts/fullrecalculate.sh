@@ -226,8 +226,16 @@ try:
         pf_changes = 0
         pf_signal_changes = []
         cumret_deltas = []
+        new_portfolios = []
+        baseline_portfolios = baseline.get("portfolios", {})
 
-        for pf_id, prev_data in baseline.get("portfolios", {}).items():
+        cur.execute("SELECT id::text, name, type, is_active FROM portfolios ORDER BY name")
+        current_portfolios = {
+            pf_id: {"name": name, "type": pf_type, "is_active": is_active}
+            for pf_id, name, pf_type, is_active in cur.fetchall()
+        }
+
+        for pf_id, prev_data in baseline_portfolios.items():
             pf_name = prev_data["name"]
             pf_diffs = []
 
@@ -310,6 +318,40 @@ try:
             if pf_diffs:
                 pf_changes += 1
 
+        for pf_id, cur_data in current_portfolios.items():
+            if pf_id in baseline_portfolios:
+                continue
+
+            cur.execute(
+                "SELECT COUNT(*), MAX(date) FROM signals WHERE portfolio_id = %s",
+                (pf_id,),
+            )
+            sig_count, sig_latest = cur.fetchone()
+            cur.execute(
+                "SELECT COUNT(*), MAX(year_month) FROM monthly_returns WHERE portfolio_id = %s",
+                (pf_id,),
+            )
+            mr_count, mr_latest = cur.fetchone()
+            cur.execute(
+                "SELECT COUNT(*) FROM trade_performance WHERE portfolio_id = %s",
+                (pf_id,),
+            )
+            tp_count = cur.fetchone()[0]
+            pf_changes += 1
+            new_portfolios.append(
+                "  {name} ({pf_type}, active={active}): signals={signals}, latest_signal={latest_signal}, "
+                "monthly_returns={monthly_returns}, latest_month={latest_month}, trade_performance={trade_performance}".format(
+                    name=cur_data["name"],
+                    pf_type=cur_data["type"],
+                    active=cur_data["is_active"],
+                    signals=sig_count,
+                    latest_signal=sig_latest.isoformat() if sig_latest else None,
+                    monthly_returns=mr_count,
+                    latest_month=mr_latest,
+                    trade_performance=tp_count,
+                )
+            )
+
     # Output summary
     print("=" * 60)
     print("DIFF SUMMARY")
@@ -323,8 +365,14 @@ try:
         print(line)
     print()
 
-    total_pf = len(baseline.get("portfolios", {}))
+    total_pf = len(set(baseline_portfolios) | set(current_portfolios))
     print(f"--- Portfolio Changes: {pf_changes}/{total_pf} portfolios changed ---")
+
+    if new_portfolios:
+        print()
+        print("--- New Portfolios ---")
+        for line in new_portfolios:
+            print(line)
 
     if pf_signal_changes:
         print()
