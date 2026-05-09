@@ -53,10 +53,34 @@ while [ $attempt -lt $max_attempts ]; do
 import os, sys, tempfile, re
 
 checklist_path = os.environ['CHECKLIST_PATH']
-item_number = int(os.environ['ITEM_NUMBER'])
+try:
+    item_number = int(os.environ['ITEM_NUMBER'])
+except ValueError:
+    print(f'FATAL: checklist_update: item_number must be an integer: {os.environ[\"ITEM_NUMBER\"]}', file=sys.stderr)
+    sys.exit(2)
 status = os.environ['STATUS']
 result = os.environ['RESULT']
 ninja_name = os.environ['NINJA_NAME']
+
+def split_markdown_row(line):
+    cells = []
+    current = []
+    escaped = False
+    for char in line.strip():
+        if char == '|' and not escaped:
+            cells.append(''.join(current))
+            current = []
+            escaped = False
+            continue
+        current.append(char)
+        escaped = (char == '\\\\' and not escaped)
+        if char != '\\\\':
+            escaped = False
+    cells.append(''.join(current))
+    return cells
+
+def markdown_cell(value):
+    return str(value).replace('\\r', ' ').replace('\\n', ' ').replace('|', '\\\\|')
 
 with open(checklist_path, 'r', encoding='utf-8') as f:
     lines = f.readlines()
@@ -75,12 +99,12 @@ for line in lines:
     if m:
         row_num = int(m.group(1))
         # Split into cells
-        cells = stripped.split('|')
+        cells = split_markdown_row(stripped)
         # cells[0]='' cells[1]=N cells[2]=対象 ... cells[5]=状態 cells[6]=結果 cells[7]=担当 cells[8]=実績
         if len(cells) >= 9 and row_num == item_number:
-            cells[5] = f' {status} '
-            cells[6] = f' {result} '
-            cells[7] = f' {ninja_name} '
+            cells[5] = f' {markdown_cell(status)} '
+            cells[6] = f' {markdown_cell(result)} '
+            cells[7] = f' {markdown_cell(ninja_name)} '
             new_line = '|'.join(cells)
             if not new_line.endswith('\n'):
                 new_line += '\n'
@@ -100,7 +124,7 @@ for line in new_lines:
     stripped = line.strip()
     m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
     if m:
-        cells = stripped.split('|')
+        cells = split_markdown_row(stripped)
         if len(cells) >= 9:
             total_count += 1
             cell_status = cells[5].strip()
