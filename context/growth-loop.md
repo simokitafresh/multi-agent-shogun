@@ -65,3 +65,20 @@ environment_changeに書く前に「なぜ」を深掘りしないと浅い対�
 
 gate_shogun_startup.sh Gate 13.8: WARN typeごとの偽陽性率を30日窓で計測。
 FP率60%以上 → ALERT。gate精度劣化の早期発見 → gate改善も成長の一部。
+
+## §10 スキル自動成長ループ(4段階)
+
+スキル実行の品質を計測→還流し、SKILL.md自体を育てる仕組み。
+
+| 段階 | 動作 | 記録先 |
+|------|------|--------|
+| (1) 実行 | スキル実行後、結果をログ記録 | skill_execution_log |
+| (2) つまずき | FAIL発生 → stumbling_points欄に記録 | skill_execution_log |
+| (3) 改善案集計 | skill_auto_improve.sh がFAILパターンを集計 | 改善候補リスト |
+| (4) 品質向上 | `--apply` でSKILL.mdの注意ポイント自動書込み + ninja_monitor週1自走 | SKILL.md |
+
+**帰属精度(cmd_2604)**: GATE_SKILL_MAP固定マッピングでgateとスキルを1対1対応。
+スキル別GATE結果の帰属を正確に計測し、改善対象スキルを特定する。
+
+**PASS記録統一(cmd_2605)**: gate_report_format.sh PASS分岐からも統一記録。
+FAIL時だけでなくPASS時も記録することで、スキル全体のパフォーマンス分布を把握する。
