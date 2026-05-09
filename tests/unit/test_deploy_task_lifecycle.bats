@@ -707,7 +707,7 @@ EOF
     local nested_file="$NESTED_RESOLVED_FIXTURE_ROOT/queue/tasks/tobisaru.yaml"
     local output nested_after root_fields root_field_name
 
-    output="$(get_task_values "$file" parent_cmd task_id task_type project status purpose _ac_task_id _ac_worker_id)"
+    output="$(get_task_values "$file" parent_cmd task_id task_type project status purpose scout_exempt _ac_task_id _ac_worker_id)"
 
     [[ "$output" == *"parent_cmd=cmd_9999"* ]]
     [[ "$output" == *"task_id=cmd_9999_impl"* ]]
@@ -715,6 +715,7 @@ EOF
     [[ "$output" == *"project=infra"* ]]
     [[ "$output" == *"status=assigned"* ]]
     [[ "$output" == *"purpose=新しいpurpose"* ]]
+    [[ "$output" == *"scout_exempt=true"* ]]
     [[ "$output" == *$'_ac_task_id='* ]]
     [[ "$output" == *$'_ac_worker_id='* ]]
 
@@ -722,7 +723,7 @@ EOF
         "$file" \
         target_path progress description deployed_at \
         constraints engineering_preferences context_files stop_for never_stop_for parallel_ok \
-        AC1 AC2 AC3 acceptance_criteria scout_exempt ac_priority ac_checkpoint \
+        AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp
 
@@ -804,9 +805,11 @@ PY
         "$file" \
         target_path progress description deployed_at \
         constraints engineering_preferences context_files stop_for never_stop_for parallel_ok \
-        AC1 AC2 AC3 acceptance_criteria scout_exempt ac_priority ac_checkpoint \
+        AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp
+
+    grep -q "scout_exempt: true" "$file"
 
     rm -rf "$direct_root"
 }

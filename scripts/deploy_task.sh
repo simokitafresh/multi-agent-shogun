@@ -292,7 +292,7 @@ STALE_FIELDS = [
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
     # 第3層: 忍者書込み+per-cmdフラグ
     # acceptance_criteriaは--directモード以外でのみクリア（LK008: direct re-deploy時AC保持）
-    'AC1', 'AC2', 'AC3', 'scout_exempt', 'binary_checks',
+    'AC1', 'AC2', 'AC3', 'binary_checks',
     # 第4層: 旧版由来の残留フィールド(現在の配備パイプラインでは設定されないが使い回しで残る)
     'command', 'reports_to_read', 'credential_warning', 'context_update',
     # 第5層: task_typeと重複するレガシーフィールド(修行001 hayate発見)
@@ -501,7 +501,7 @@ resolve_cmd_to_task() {
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
     [ -n "$_target_path" ] && _batch_args+=("target_path=$_target_path")
-    # scout_exempt: STKからtask YAMLに転記（reset_stale_fieldsでクリアされるため復元が必要）
+    # scout_exempt: STKからtask YAMLに転記。task-local preseedはreset_stale_fieldsで保持する。
     [ "$_scout_exempt_stk" = "true" ] && _batch_args+=("scout_exempt=true")
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
         || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
