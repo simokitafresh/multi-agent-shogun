@@ -56,10 +56,9 @@ echo "ENV_CHANGE_MARKER"
 SH
     chmod +x "$TEST_DIR/scripts/sample_gate.sh"
 
-    # Copy the actual script, replacing REPO_ROOT discovery
-    sed "s|REPO_ROOT=.*|REPO_ROOT=\"$TEST_DIR\"|" "$SCRIPT" > "$TEST_DIR/scripts/karo_workaround_log.sh"
-    # Also fix SCRIPT_DIR to point to test scripts dir
-    sed -i "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$TEST_DIR/scripts\"|" "$TEST_DIR/scripts/karo_workaround_log.sh"
+    # Copy under the fixture repo so the script's own SCRIPT_DIR/REPO_ROOT discovery
+    # resolves to TEST_DIR without per-test sed rewrites on /mnt/c.
+    cp "$SCRIPT" "$TEST_DIR/scripts/karo_workaround_log.sh"
     chmod +x "$TEST_DIR/scripts/karo_workaround_log.sh"
 
     TEST_SCRIPT="$TEST_DIR/scripts/karo_workaround_log.sh"
