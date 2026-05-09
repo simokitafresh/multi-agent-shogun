@@ -123,16 +123,21 @@ GATE_SKILL_MAP = {
 def _get_skill_index():
     global _skill_index
     if _skill_index is None:
-        _skill_index = {name: path for name, path in iter_skill_files()}
+        _skill_index = {}
+        for name, path in iter_skill_files():
+            _skill_index.setdefault(name, path)
     return _skill_index
 
 
 def skill_file_for(skill_name, logged_path):
+    indexed = _get_skill_index().get(skill_name)
+    if indexed:
+        return indexed
     if logged_path:
         path = Path(os.path.expanduser(str(logged_path)))
         if path.is_file():
             return path
-    return _get_skill_index().get(skill_name)
+    return None
 
 
 def normalize_reason(value):

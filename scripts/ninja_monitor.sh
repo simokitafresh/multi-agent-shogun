@@ -94,6 +94,8 @@ LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
 LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
 BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
+SKILL_AUTO_IMPROVE_INTERVAL=604800  # skill_auto_improve週次実行間隔（秒）— 7日
+SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
@@ -2985,6 +2987,33 @@ check_gate_improvement() {
     bash "$gate_script" >> "$SCRIPT_DIR/logs/gate_improvement.log" 2>&1 || true
 }
 
+check_skill_auto_improve() {
+    local now last elapsed script
+    now=$EPOCHSECONDS
+    last=0
+    if [ -f "$SKILL_AUTO_IMPROVE_STATE_FILE" ]; then
+        read -r last < "$SKILL_AUTO_IMPROVE_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$SKILL_AUTO_IMPROVE_INTERVAL" ] && return
+
+    script="$SCRIPT_DIR/scripts/skill_auto_improve.sh"
+    if [ ! -x "$script" ]; then
+        log "SKILL-AUTO-IMPROVE: skill_auto_improve.sh not executable, skip"
+        printf '%s\n' "$now" > "$SKILL_AUTO_IMPROVE_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    log "SKILL-AUTO-IMPROVE: weekly apply start"
+    if bash "$script" --apply >> "$SCRIPT_DIR/logs/skill_auto_improve.log" 2>&1; then
+        log "SKILL-AUTO-IMPROVE: weekly apply done"
+    else
+        log "SKILL-AUTO-IMPROVE: weekly apply failed (non-blocking)"
+    fi
+    printf '%s\n' "$now" > "$SKILL_AUTO_IMPROVE_STATE_FILE" 2>/dev/null || true
+}
+
 check_ntfy_batch_flush() {
     local now
     now=$EPOCHSECONDS
@@ -3439,6 +3468,9 @@ while true; do
 
     # ═══ gate_improvement定期チェック（5分間隔 cmd_1114） ═══
     check_gate_improvement
+
+    # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
+    check_skill_auto_improve
 
     # ═══ INFOバッチ通知フラッシュ（15分間隔 cmd_960 AC2） ═══
     check_ntfy_batch_flush

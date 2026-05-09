@@ -84,6 +84,18 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
+    _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
+    if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
+        bash "$_SKILL_LOG" \
+            "report-write" \
+            "${AGENT_ID:-unknown}" \
+            "PASS" \
+            "gate_report_format PASS" \
+            "gate_report_format" \
+            "$REPORT_PATH" \
+            "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
+    fi
     # Update PASS cache (GP-073) — flock for concurrent gate runs
     if [ -n "$_MTIME" ]; then
         (
