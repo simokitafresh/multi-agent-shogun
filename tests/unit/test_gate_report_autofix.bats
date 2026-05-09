@@ -164,8 +164,9 @@ with open('$rpath') as f:
     d = yaml.safe_load(f)
 kc = d['knowledge_candidate']
 assert isinstance(kc, dict), f'Expected dict, got {type(kc)}'
-assert kc['title'] == 'API endpoint is /v1/report', kc
-assert kc['detail'] == 'API endpoint is /v1/report', kc
+assert kc.get('found') == True, f'Expected found=True, got {kc}'
+assert isinstance(kc.get('items'), list), f'Expected items list, got {kc}'
+assert kc['items'][0]['fact'] == 'API endpoint is /v1/report', kc
 print('OK')
 "
     [ "$status" -eq 0 ]
