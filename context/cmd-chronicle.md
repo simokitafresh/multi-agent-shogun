@@ -797,3 +797,4 @@
 | cmd_2615 | 軍師startup gateが冷え観点(ambiguity 10件連続0等)を検出し表示するが、レビュー時の使用を強制しない(意志依存)。gate_gunshi_cs_checklist.shに冷え観点チェックを追加し、startup gateが検出した冷え候補がfinding_categoriesに含まれなければWARNする。cmd_2612(メタ穴防止gate)と同構造の穴を塞ぐ | infra | 05-09 | 軍師CS checklist gateに冷え観点findin |
 | cmd_2616 | cmd_save.sh L1679-1682でgate/hook追加cmdのq11にgrep結果がない場合WARNするが、将軍が毎回消火(q11追記→PASS)してリセットし26回同じWARNを繰り返す。WARN→直接BLOCKに昇格して即停止させる | infra | 05-09 | cmd_save.shのq11既存代替確認なし分岐をWARN |
 | cmd_2618 | lessons_gunshi.yaml 15件+lessons_shogun.yaml 3件=合計18件のautomated:false教訓を洗い出し、各教訓に最適なenforcement方式(gate/hook/テンプレート/入口生成)を設計する。軍師指摘(blt_232728): Level4(止める):Level5(生成)=28:3。入口生成を増やす計画を立てる | infra | 05-09 | automated:false 18件を全件確認。Level |
+| cmd_2619 | check_research_tool_explicit(Check 18)が62回WARN。偵察や本番検証cmdでcommandにoutputs/grid_searchデータ参照を含む場合も発火する偽陽性と、ACに書くべきスクリプトパスを将軍が手動で探す必要がある入口不在が根因。偽陽性除外+ACパス候補の自動提案(Level5化)で62回WARNを構造的に削減する | infra | 05-09 | Check 18のoutputs/grid_search偵察 |
