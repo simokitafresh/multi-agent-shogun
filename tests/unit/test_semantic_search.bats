@@ -6,6 +6,7 @@ setup() {
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/semantic_search.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/docs/semantic-index"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
+    export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -102,6 +103,52 @@ EOF
 
     [ "$status" -eq 7 ]
     [[ "$output" == *"ERROR: LLM semantic search failed with exit code 7"* ]]
+}
+
+@test "second LLM call with same query hits cache and skips LLM" {
+    counter_file="$TEST_TMPDIR/llm_calls"
+    : > "$counter_file"
+    mock_llm="$TEST_TMPDIR/mock_llm.sh"
+    cat > "$mock_llm" <<EOF
+#!/usr/bin/env bash
+cat >/dev/null
+echo call >> "$counter_file"
+echo "MATCH: growth_loop"
+echo "reason: cache test."
+EOF
+    chmod +x "$mock_llm"
+    export SEMANTIC_LLM_CMD="$mock_llm"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "キャッシュ確認"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"## growth_loop"* ]]
+    [ "$(wc -l < "$counter_file")" -eq 1 ]
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "キャッシュ確認"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"## growth_loop"* ]]
+    [ "$(wc -l < "$counter_file")" -eq 1 ]
+}
+
+@test "SEMANTIC_NO_CACHE=1 bypasses cache and re-invokes LLM" {
+    counter_file="$TEST_TMPDIR/llm_calls"
+    : > "$counter_file"
+    mock_llm="$TEST_TMPDIR/mock_llm.sh"
+    cat > "$mock_llm" <<EOF
+#!/usr/bin/env bash
+cat >/dev/null
+echo call >> "$counter_file"
+echo "MATCH: growth_loop"
+echo "reason: no-cache test."
+EOF
+    chmod +x "$mock_llm"
+    export SEMANTIC_LLM_CMD="$mock_llm"
+
+    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "再呼出し確認"
+    [ "$status" -eq 0 ]
+    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "再呼出し確認"
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$counter_file")" -eq 2 ]
 }
 
 @test "rejects whitespace-only query before invoking python or LLM" {
