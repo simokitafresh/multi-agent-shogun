@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-10 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-10T00:29:52+09:00 -->
+<!-- generated_at: 2026-05-10T00:34:15+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-10T00:34:15+09:00 | terminal | response | cmd_2622 一発PASS→delegated完了。 **本セッション実績(4cmd)**: | cmd | なぜなぜ根因 | Level5対策 | 状態 | |-----|-------------|-----------|----…
+- 2026-05-10T00:31:52+09:00 | terminal | inbound | 2から対処しよう。なぜなぜ7回
+- 2026-05-10T00:31:47+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-269)
 - 2026-05-10T00:29:52+09:00 | terminal | response | 殿、報告。 **cmd_2621委任完了**: 放置タスク滞留検出+BLOCK昇格をstartup gateに追加(Level5化)。なぜなぜ7回の根因「低優先=やらない」を自動化×強制で環境に埋め込む。 **本セッション実績(3cmd)…
 - 2026-05-10T00:29:45+09:00 | ntfy | outbound | 【家老】cmd_2621 初回配備開始 (title=強化 — 放置タスク滞留検出+BLOCK昇格をstartup gateに追加(Level5化), ninja=kagemaru) 強化 📋 https://gist.github.co…
 - 2026-05-10T00:26:32+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-268)
@@ -11,11 +14,9 @@
 - 2026-05-10T00:26:11+09:00 | ntfy | outbound | 【家老】cmd_2620 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 - 2026-05-10T00:22:09+09:00 | terminal | inbound | デメリットないことは、どんどんやろうか。なぜなぜ7回
 - 2026-05-10T00:20:12+09:00 | terminal | response | 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft…
-- 2026-05-10T00:18:54+09:00 | terminal | inbound | すでに効果はでているか？
-- 2026-05-10T00:16:17+09:00 | ntfy | outbound | 【家老】cmd_2620 初回配備開始 (title=強化 — セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化), ninja=hayate) 強化 📋 https://gist.github.com…
-- 2026-05-10T00:15:38+09:00 | terminal | response | cmd_2620委任完了。教訓LS044記録済み。 殿、復帰+自走報告。 **本セッション実績:** - cmd_2620起票→家老委任完了: セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化)。14概…
 
 ## 未解決確認事項
+- cmd_2622 一発PASS→delegated完了。 **本セッション実績(4cmd)**: | cmd | なぜなぜ根因 | Level5対策 | 状態 | |-----|-------------|-----------|------| | cmd_2620 | 辞書が…
 - 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft_lessons | 直近50件中27回…
 - 起票前確認8問チェック: 全問OK。cmd_publish.sh実行。 [meta] stop_reason=tool_use
 - 【将軍】復帰済み。全忍者idle。前セッション8cmd全CLEAR把握。軍師Level5化提案(セマンティクスインデックスcmd_save.sh接続)確認済み。idle自走に入る。
@@ -23,7 +24,6 @@
 - 掲示板確認完了。 **最新状態:** - cmd_2617 GATE CLEAR(入口側q11自動grep) - cmd_2618 GATE CLEAR(未自動化教訓18件gate化計画) - cmd_2619 配備中(research_tool FP修正+Level5化) *…
 - 掲示板を確認せよ
 - 掲示板を確認しよう
-- 掲示板から3つの報告を確認。 **1. 軍師(blt_232728)**: ゲート=消火の高度版で止まっている構造を指摘。 - 「BLOCKする→修正してCLEAR→同じBLOCK=成長ゼロ」 - 提案: 出口(gate)でなく**入口(テンプレート/事前生成)に成長を埋め込め…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-09T23:54:57+09:00 | cmd_2619 GATE CLEAR。 **本セッション全8件完了。** | cmd | 状態 | |-----|------| | 2613 draft→confirmed根治 | **CLEAR** | | 2614 scout_exempt LK011根治 | **CL…
@@ -59,6 +59,7 @@
 - cmd_2619
 - cmd_2620
 - cmd_2621
+- cmd_2622
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
