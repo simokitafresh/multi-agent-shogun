@@ -504,7 +504,7 @@ YAML
     [[ "$output" != *"INFO: 関連する既存成果物を検出:"* ]]
 }
 
-@test "Check1-5: gate追加cmdでq11に既存代替の現物確認なしならWARNING" {
+@test "Check1-5: gate追加cmdでq11に既存代替の現物確認なしならBLOCK" {
     create_queue_file << 'YAML'
 commands:
   cmd_9994:
@@ -530,11 +530,12 @@ YAML
     CMD_ID="cmd_9994"; export CMD_ID
     run check_quality_gate
     echo "$output" >&2
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     [[ "$output" == *"q11_existing_alternative_verification"* ]]
+    [[ "$output" == *"BLOCK:"* ]]
 }
 
-@test "Check1-5: gate追加cmdでもq11に既存代替の現物確認があればWARNINGなし" {
+@test "Check1-5: gate追加cmdでもq11に既存代替の現物確認があればBLOCKなし" {
     create_queue_file << 'YAML'
 commands:
   cmd_9993:

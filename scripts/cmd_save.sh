@@ -1677,9 +1677,9 @@ QG_TEMPLATE
 
     _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
     if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "$_Q11_VAL"; then
-        echo "WARNING: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
+        echo "BLOCK: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
         echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
-        record_warn_reason "q11に既存代替の現物確認なし" "check=q11_existing_alternative_verification"
+        record_block_reason "q11に既存代替の現物確認なし"
     fi
     check_gate_hook_action_conversion "$CMD_BLOCK_NC"
 
