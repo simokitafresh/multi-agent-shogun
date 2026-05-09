@@ -18,7 +18,7 @@ setup_file() {
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/skill_feedback.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/skills/report-bundle"
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/skills/report-bundle" "$TEST_TMPDIR/skills/report-write"
     cat > "$TEST_TMPDIR/skills/report-bundle/SKILL.md" <<'EOF'
 ---
 name: report-bundle
@@ -28,6 +28,18 @@ quality_metric: "report gate pass rate"
 ---
 
 # report-bundle
+
+既存本文。
+EOF
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  TRIGGER: 報告YAML作成, report_field_set, FILL_THIS修正
+quality_metric: "report gate pass rate"
+---
+
+# report-write
 
 既存本文。
 EOF
@@ -237,7 +249,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"UPDATED:"* ]]
 
-    run grep -n "## 注意ポイント\\|gate=gate_report_format\\|binary_checks.result empty" "$TEST_TMPDIR/skills/report-bundle/SKILL.md"
+    run grep -n "## 注意ポイント\\|gate=gate_report_format\\|binary_checks.result empty" "$TEST_TMPDIR/skills/report-write/SKILL.md"
     [ "$status" -eq 0 ]
     [[ "$output" == *"## 注意ポイント"* ]]
     [[ "$output" == *"gate=gate_report_format"* ]]
