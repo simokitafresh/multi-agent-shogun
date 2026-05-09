@@ -10,14 +10,17 @@ setup_file() {
 }
 
 setup() {
-    export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN
+    export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN TMP_CMD_QUALITY
     TMP_DIR="$(mktemp -d)"
     mkdir -p "$TMP_DIR/queue/reports"
     TMP_REPORT="$TMP_DIR/queue/reports/hanzo_report_cmd_100.yaml"
     TMP_STK="$TMP_DIR/queue/shogun_to_karo.yaml"
     TMP_AUTOLEARN="$TMP_DIR/preflight_autolearn.txt"
+    TMP_CMD_QUALITY="$TMP_DIR/cmd_design_quality.yaml"
     printf 'result: ok\n' > "$TMP_REPORT"
     printf 'commands: {}\n' > "$TMP_STK"
+    # 0-byte: cmd_save_block_top3()の[[ -s ]]チェックをfalseにしてPython yaml load(859KB,~1.5s)をスキップ
+    touch "$TMP_CMD_QUALITY"
 }
 
 teardown() {
@@ -26,7 +29,7 @@ teardown() {
 
 _run_pre() {
     local payload="$1"
-    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN"
+    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY"
 }
 
 _run_post() {
