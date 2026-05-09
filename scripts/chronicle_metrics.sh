@@ -4,13 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CHRONICLE_FILE="${ROOT_DIR}/context/cmd-chronicle.md"
+CHRONICLE_ARCHIVE_DIR="${ROOT_DIR}/archive/cmd-chronicle"
 
 if [[ ! -f "${CHRONICLE_FILE}" ]]; then
   echo "ERROR: chronicle file not found: ${CHRONICLE_FILE}" >&2
   exit 1
 fi
 
-python3 - "${CHRONICLE_FILE}" <<'PY'
+python3 - "${CHRONICLE_FILE}" "${CHRONICLE_ARCHIVE_DIR}" <<'PY'
 from __future__ import annotations
 
 import re
@@ -21,6 +22,7 @@ from pathlib import Path
 
 
 MONTH_RE = re.compile(r"^##\s+(\d{4})-(\d{2})\s*$")
+YEAR_RE = re.compile(r"(\d{4})")
 
 
 def blankish(value: str) -> bool:
@@ -94,45 +96,62 @@ def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | No
 
 
 chronicle_path = Path(sys.argv[1])
+archive_dir = Path(sys.argv[2])
 records: list[dict[str, object]] = []
-current_year: int | None = None
 
-for lineno, raw_line in enumerate(chronicle_path.read_text(encoding="utf-8").splitlines(), start=1):
-    month_match = MONTH_RE.match(raw_line)
-    if month_match:
-        current_year = int(month_match.group(1))
-        continue
 
-    if not raw_line.startswith("| cmd_"):
-        continue
+def infer_year_from_path(path: Path) -> int | None:
+    match = YEAR_RE.search(path.name)
+    return int(match.group(1)) if match else None
 
-    if current_year is None:
-        print(f"ERROR: row encountered before month heading at line {lineno}", file=sys.stderr)
-        sys.exit(1)
 
-    parsed = parse_row(raw_line, lineno)
-    if parsed is None:
-        continue
+def collect_chronicle_paths() -> list[Path]:
+    archive_paths = sorted(archive_dir.glob("*.md")) if archive_dir.is_dir() else []
+    return [*archive_paths, chronicle_path]
 
-    cmd_id, title, project, mm_dd, key_result = parsed
 
-    month, day = (int(piece) for piece in mm_dd.split("-", 1))
-    try:
-        record_date = date(current_year, month, day)
-    except ValueError as exc:
-        print(f"WARNING: skipping invalid date at line {lineno}: {mm_dd} ({exc})", file=sys.stderr)
-        continue
+def parse_chronicle(path: Path) -> None:
+    current_year = infer_year_from_path(path)
+    for lineno, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        month_match = MONTH_RE.match(raw_line)
+        if month_match:
+            current_year = int(month_match.group(1))
+            continue
 
-    records.append(
-        {
-            "cmd_id": cmd_id,
-            "title": title,
-            "project": normalize_project(project),
-            "date": record_date,
-            "key_result": "" if blankish(key_result) else key_result,
-            "type": infer_type(title, key_result),
-        }
-    )
+        if not raw_line.startswith("| cmd_"):
+            continue
+
+        if current_year is None:
+            print(f"ERROR: row encountered before year context at {path}:{lineno}", file=sys.stderr)
+            sys.exit(1)
+
+        parsed = parse_row(raw_line, lineno)
+        if parsed is None:
+            continue
+
+        cmd_id, title, project, mm_dd, key_result = parsed
+
+        month, day = (int(piece) for piece in mm_dd.split("-", 1))
+        try:
+            record_date = date(current_year, month, day)
+        except ValueError as exc:
+            print(f"WARNING: skipping invalid date at {path}:{lineno}: {mm_dd} ({exc})", file=sys.stderr)
+            continue
+
+        records.append(
+            {
+                "cmd_id": cmd_id,
+                "title": title,
+                "project": normalize_project(project),
+                "date": record_date,
+                "key_result": "" if blankish(key_result) else key_result,
+                "type": infer_type(title, key_result),
+            }
+        )
+
+
+for path in collect_chronicle_paths():
+    parse_chronicle(path)
 
 
 today = date.today()
