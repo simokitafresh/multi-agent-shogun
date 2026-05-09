@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--if "condition"] [--then "action"] [--because "reason"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -244,9 +244,31 @@ BECAUSE_REASON=""
 RETIRE_ID=""
 RETAG_ID=""
 RETAG_TAGS=""
+SUBDOMAIN=""
+
+show_usage() {
+    cat <<'EOF'
+Usage: lesson_write.sh <project_id> <title> <detail> [source_cmd] [author] [cmd_id] [options]
+
+Options:
+  --force                 重複タイトルチェックをバイパス
+  --strategic             pending_decisionにMCP昇格候補を登録
+  --status draft|confirmed
+  --tags "db,api"         教訓タグを明示指定
+  --subdomain fe|be|gs|infra
+                          教訓の対象サブドメインを明示指定
+  --if "condition" --then "action" --because "reason"
+  --retire <lesson_id>
+  --retag <lesson_id> --new-tags "tag1,tag2"
+EOF
+}
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        --help|-h)
+            show_usage
+            exit 0
+            ;;
         --force)
             FORCE=1
             shift
@@ -261,6 +283,10 @@ while [ $# -gt 0 ]; do
             ;;
         --tags)
             TAGS="${2:-}"
+            shift 2
+            ;;
+        --subdomain)
+            SUBDOMAIN="${2:-}"
             shift 2
             ;;
         --if)
@@ -296,6 +322,34 @@ done
 if [ "$STATUS" != "draft" ] && [ "$STATUS" != "confirmed" ]; then
     echo "ERROR: --status must be 'draft' or 'confirmed' (got: $STATUS)" >&2
     exit 1
+fi
+
+if [ -n "$SUBDOMAIN" ]; then
+    _lw_subdomain_csv=""
+    IFS=',' read -r -a _lw_subdomain_array <<< "$SUBDOMAIN"
+    for _lw_sd in "${_lw_subdomain_array[@]}"; do
+        _lw_sd="${_lw_sd#"${_lw_sd%%[![:space:]]*}"}"
+        _lw_sd="${_lw_sd%"${_lw_sd##*[![:space:]]}"}"
+        case "$_lw_sd" in
+            frontend|front|ui) _lw_sd="fe" ;;
+            backend|back|api) _lw_sd="be" ;;
+            grid_search|grid-search|gridsearch) _lw_sd="gs" ;;
+            platform) _lw_sd="infra" ;;
+        esac
+        case "$_lw_sd" in
+            fe|be|gs|infra) ;;
+            *)
+                echo "ERROR: --subdomain must be one of fe,be,gs,infra (got: $SUBDOMAIN)" >&2
+                exit 1
+                ;;
+        esac
+        if [ -z "$_lw_subdomain_csv" ]; then
+            _lw_subdomain_csv="$_lw_sd"
+        elif [[ ",$_lw_subdomain_csv," != *",$_lw_sd,"* ]]; then
+            _lw_subdomain_csv="${_lw_subdomain_csv},$_lw_sd"
+        fi
+    done
+    SUBDOMAIN="$_lw_subdomain_csv"
 fi
 
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
@@ -672,6 +726,7 @@ print(','.join(tags[:3]))
             printf -- '- **記録者**: %s\n' "${AUTHOR:-karo}"
             [ "${STATUS:-confirmed}" = "draft" ] && printf -- '- **status**: draft\n'
             printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
+            [ -n "${SUBDOMAIN:-}" ] && printf -- '- **subdomain**: %s\n' "$SUBDOMAIN"
             [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"
             [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"
             [ -n "${THEN_ACTION:-}" ] && printf -- '- **then**: %s\n' "$THEN_ACTION"

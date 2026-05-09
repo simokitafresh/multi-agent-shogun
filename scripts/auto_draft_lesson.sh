@@ -127,11 +127,16 @@ print(json.dumps({
 PYEOF
 )
 
-# Parse JSON result
-action=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('action','skip'))")
+# Parse JSON result (action + reason in 1 python3 spawn instead of 2, -1 spawn on skip path)
+action=skip reason=
+eval "$(echo "$extract_result" | python3 -c "
+import json, sys, shlex
+d = json.load(sys.stdin)
+print(f'action={shlex.quote(d.get(\"action\", \"skip\"))}')
+print(f'reason={shlex.quote(d.get(\"reason\", \"\"))}')
+")"
 
 if [ "$action" = "skip" ]; then
-    reason=$(echo "$extract_result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))")
     write_skip_lesson_done "$reason"
     echo "[auto_draft] Skipped: ${reason} (${REPORT_PATH})"
     exit 0

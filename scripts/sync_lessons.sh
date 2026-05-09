@@ -132,6 +132,7 @@ while i < len(lines):
     retired = None
     retired_at = None
     target_files = None
+    subdomain = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -241,6 +242,17 @@ while i < len(lines):
             m_ftags = re.match(r'- \*\*tags\*\*:\s*\[(.+)\]', sline)
             if m_ftags:
                 tags = [t.strip() for t in m_ftags.group(1).split(',')]
+        # Extract subdomain from **subdomain** field
+        if subdomain is None:
+            m_fsubdomain = re.match(r'- \*\*subdomain\*\*:\s*(.+)', sline)
+            if m_fsubdomain:
+                raw_subdomain = m_fsubdomain.group(1).strip()
+                if raw_subdomain.startswith('[') and raw_subdomain.endswith(']'):
+                    subdomain = [t.strip() for t in raw_subdomain[1:-1].split(',') if t.strip()]
+                elif ',' in raw_subdomain:
+                    subdomain = [t.strip() for t in raw_subdomain.split(',') if t.strip()]
+                else:
+                    subdomain = raw_subdomain
         # Extract if/then/because fields (IF-THEN形式教訓)
         if if_cond is None:
             m_fif = re.match(r'- \*\*if\*\*:\s*(.+)', sline)
@@ -275,7 +287,7 @@ while i < len(lines):
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|target_files|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -297,6 +309,8 @@ while i < len(lines):
         entry['merged_from'] = merged_from
     if tags:
         entry['tags'] = tags
+    if subdomain:
+        entry['subdomain'] = subdomain
     if retired:
         entry['retired'] = True
     if retired_at:
@@ -387,6 +401,7 @@ for _score_src in [archive_file, index_file]:
                     'reference_count': to_int(old_lesson.get('reference_count', 0)),
                     'last_referenced': old_lesson.get('last_referenced'),
                     'tags': old_lesson.get('tags'),
+                    'subdomain': old_lesson.get('subdomain'),
                 }
             else:
                 # Merge: take max of each count (scores only go up)
@@ -421,6 +436,8 @@ for lesson in lessons:
         # Tags priority: SSOT > cache
         if 'tags' not in lesson and score_data[lid].get('tags'):
             lesson['tags'] = score_data[lid]['tags']
+        if 'subdomain' not in lesson and score_data[lid].get('subdomain'):
+            lesson['subdomain'] = score_data[lid]['subdomain']
     else:
         lesson['helpful_count'] = 0
         lesson['harmful_count'] = 0
@@ -485,6 +502,8 @@ for l in active_lessons:
         'summary': (l.get('summary') or l.get('title', ''))[:80],
         'tags': FlowList(l.get('tags', ['universal'])),
     })
+    if l.get('subdomain'):
+        entry['subdomain'] = l['subdomain']
     if l.get('target_files'):
         entry['target_files'] = FlowList(l['target_files'])
     if l.get('retired'):

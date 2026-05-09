@@ -2509,6 +2509,77 @@ try:
     expanded = [part for w in words for part in _boundary.split(w) if part]
     keywords = list(set(w.lower() for w in expanded if len(w) > 3 or (len(w) >= 2 and w.isupper() and w.isascii())))
 
+    # cmd_2606: target_path由来のサブドメインで教訓を絞る。
+    # subdomain未設定の既存教訓は後方互換のため全サブドメインにマッチさせる。
+    SUBDOMAIN_ALIASES = {
+        'frontend': 'fe',
+        'front': 'fe',
+        'ui': 'fe',
+        'fe': 'fe',
+        'backend': 'be',
+        'back': 'be',
+        'api': 'be',
+        'be': 'be',
+        'grid_search': 'gs',
+        'grid-search': 'gs',
+        'gridsearch': 'gs',
+        'gs': 'gs',
+        'infra': 'infra',
+        'platform': 'infra',
+    }
+
+    def _as_str_list(value):
+        if isinstance(value, list):
+            return [str(v) for v in value if v]
+        if isinstance(value, str) and value:
+            return [value]
+        return []
+
+    def _normalize_subdomains(value):
+        if value is None or value == '':
+            return set()
+        if isinstance(value, str):
+            raw_items = re.split(r'[, ]+', value)
+        elif isinstance(value, list):
+            raw_items = value
+        else:
+            raw_items = [value]
+        normalized = set()
+        for item in raw_items:
+            key = str(item).lower().strip()
+            if not key:
+                continue
+            normalized.add(SUBDOMAIN_ALIASES.get(key, key))
+        return normalized
+
+    def _infer_subdomains_from_paths(paths):
+        inferred = set()
+        for raw_path in paths:
+            path = str(raw_path).replace('\\', '/').lower().strip()
+            if not path:
+                continue
+            basename = os.path.basename(path)
+            if '/frontend/' in path or path.startswith('frontend/'):
+                inferred.add('fe')
+            if '/backend/' in path or path.startswith('backend/') or '/app/api/' in path:
+                inferred.add('be')
+            if (
+                '/grid_search/' in path
+                or '/outputs/grid_search/' in path
+                or 'grid_search' in path
+                or basename.startswith('run_077')
+                or basename.startswith('gs_')
+            ):
+                inferred.add('gs')
+            if (
+                path.startswith(('scripts/', 'queue/', 'context/', 'instructions/', 'projects/', 'config/', 'tests/'))
+                and not inferred
+            ):
+                inferred.add('infra')
+        return inferred
+
+    task_subdomains = _infer_subdomains_from_paths(_as_str_list(task.get('target_path', '')))
+
     # ═══ タグマッチ: タスクタグの決定 ═══
     # (1) タスクYAMLにtagsフィールドがあればそれを使用
     task_tags = task.get('tags', [])
@@ -2585,6 +2656,22 @@ try:
             filtered_draft += 1
             continue
         confirmed_lessons.append(lesson)
+
+    if task_subdomains:
+        _pre_subdomain_count = len(confirmed_lessons)
+        _subdomain_filtered = []
+        for lesson in confirmed_lessons:
+            lesson_subdomains = _normalize_subdomains(lesson.get('subdomain'))
+            if not lesson_subdomains or (lesson_subdomains & task_subdomains):
+                _subdomain_filtered.append(lesson)
+        confirmed_lessons = _subdomain_filtered
+        _removed_subdomain_count = _pre_subdomain_count - len(confirmed_lessons)
+        if _removed_subdomain_count > 0:
+            print(
+                f'[INJECT] subdomain filter: removed {_removed_subdomain_count} lessons '
+                f'(task_subdomains={sorted(task_subdomains)})',
+                file=sys.stderr,
+            )
 
     # ═══ 偵察モード: 固定リストの教訓のみ通過 (cmd_1340) ═══
     if recon_mode:
