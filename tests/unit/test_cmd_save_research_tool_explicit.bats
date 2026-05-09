@@ -20,6 +20,7 @@ CMD_BLOCK_CACHE_LOADED=0
 declare -A CMD_BLOCK_CACHE=()
 WARN_COUNT=0
 declare -a WARN_REASONS=()
+SEMANTIC_INDEX_PATH=/dev/null
 WRAPPER
 
     sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
@@ -30,6 +31,7 @@ WRAPPER
     sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^show_semantic_index_matches()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^check_research_tool_explicit()/,/^}/p' "$SRC_SAVE_SCRIPT" >> "$TEST_TMPDIR/test_func.sh"
     cat >> "$TEST_TMPDIR/test_func.sh" <<'CALL'
 check_research_tool_explicit 2>&1
