@@ -469,8 +469,8 @@ check_self_reread_red_flag() {
         "$(cmd_block_get_field "purpose")" \
         "$CMD_BLOCK_NC")
 
-    if echo "$combined" | grep -qiE '(自己(再読|申告|確認|評価)|自分で(読み|読|確認|評価)|読み直|読み返|目視確認|セルフレビュー|自問)'; then
-        if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguous|clarity|明瞭|レビュー|判定|確認)'; then
+    if echo "$combined" | grep -qiE '(自己(再読|申告)|自分で(読み直|読み返)|読み直[しせす]|読み返[しせす]|目視確認.*(品質|判定)|セルフレビュー)'; then
+        if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguous|clarity|明瞭)'; then
             echo "WARNING: 自己再読パターンを検出。書き手自身の目視確認/自己申告は mizchi Red flag『自分で読み直せば同じ効果』になりうる。別役割の評価者へ分離せよ" >&2
             record_warn_reason "自己再読パターン" "check=check_self_reread_red_flag"
         fi
