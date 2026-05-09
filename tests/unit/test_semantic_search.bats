@@ -1,8 +1,12 @@
 #!/usr/bin/env bats
 # test_semantic_search.bats — semantic_search.sh unit tests
 
+setup_file() {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export PROJECT_ROOT
+}
+
 setup() {
-    export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/semantic_search.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/docs/semantic-index"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
