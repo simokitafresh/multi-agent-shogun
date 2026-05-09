@@ -90,6 +90,41 @@ def flatten_text(value):
 def norm(value):
     return re.sub(r"\s+", " ", str(value).casefold()).strip()
 
+NOISE_RE = re.compile(
+    r"(?ix)"
+    r"\b\d{4}-\d{2}-\d{2}(?:[t\s]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:z|[+-]\d{2}:?\d{2})?)?\b"
+    r"|\bcmd_[a-z0-9_]+\b"
+    r"|\bmsg_[a-z0-9_]+\b"
+    r"|\bblt_[a-z0-9_]+\b"
+    r"|\bLS?\d+\b"
+)
+
+def strip_noise(value):
+    text = NOISE_RE.sub(" ", str(value))
+    text = re.sub(r"`[^`]*`", " ", text)
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"[/._:,+#|()\[\]{}<>\"'=-]+", " ", text)
+    text = re.sub(r"\b\d+\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+def is_noise_only_candidate(payload_id, fields):
+    signals = []
+    for field in fields:
+        cleaned = strip_noise(field)
+        if cleaned:
+            signals.append(cleaned)
+    if not signals:
+        return True
+    combined = norm(" ".join(signals))
+    payload_id_clean = norm(strip_noise(payload_id))
+    if payload_id_clean and combined == payload_id_clean:
+        return True
+    # A payload that only contains generic source words after ID stripping still
+    # has no concept signal worth sending to the insight backlog.
+    generic = {"cmd", "complete", "lesson", "discussion", "payload"}
+    tokens = [t for t in re.split(r"\s+", combined) if t and t not in generic]
+    return not tokens
+
 def parse_concepts(text):
     matches = list(re.finditer(r"(?m)^##\s+(.+)$", text))
     concepts = []
@@ -185,6 +220,58 @@ def append_row_to_block(block, row):
     lines.append(row)
     return "\n".join(lines) + "\n\n", True
 
+def candidate_aliases(source_type, payload, existing_aliases):
+    existing_norm = {norm(alias) for alias in existing_aliases}
+    preferred_keys = {
+        "cmd_complete": ["title", "purpose", "summary"],
+        "lesson": ["title", "enforcement", "summary", "detail"],
+        "discussion": ["summary", "detail"],
+    }.get(source_type, [])
+    aliases = []
+    for key in preferred_keys:
+        raw = payload.get(key)
+        if not isinstance(raw, str):
+            continue
+        cleaned = strip_noise(raw)
+        cleaned = re.sub(r"^(修正|実装|改善|追加|強化)\s*[—:-]\s*", "", cleaned).strip()
+        cleaned = cleaned.strip(" ・、。:：-")
+        if not cleaned:
+            continue
+        # Keep aliases compact enough to stay useful in the index table.
+        for part in re.split(r"[。．.!?\n]|[、,]\s*", cleaned):
+            part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
+            if len(part) < 2 or norm(part) in existing_norm:
+                continue
+            aliases.append(part[:60])
+            existing_norm.add(norm(part))
+            break
+        if aliases:
+            break
+    return aliases
+
+def append_aliases_to_block(block, aliases):
+    if not aliases:
+        return block, False
+    lines = block.rstrip("\n").splitlines()
+    changed = False
+    for i, line in enumerate(lines):
+        m = re.match(r"^(\|\s*aliases\s*\|\s*)(.*?)(\s*\|)$", line)
+        if not m:
+            continue
+        current = [a.strip() for a in m.group(2).split(",") if a.strip()]
+        current_norm = {norm(a) for a in current}
+        for alias in aliases:
+            if norm(alias) not in current_norm:
+                current.append(alias)
+                current_norm.add(norm(alias))
+                changed = True
+        if changed:
+            lines[i] = f"{m.group(1)}{', '.join(current)}{m.group(3)}"
+        break
+    if not changed:
+        return block, False
+    return "\n".join(lines) + "\n\n", True
+
 text = index_path.read_text(encoding="utf-8")
 concepts = parse_concepts(text)
 if not concepts:
@@ -218,12 +305,23 @@ if confidence == "HIGH":
     sys.exit(0)
 
 if confidence == "LOW":
-    message = (
-        f"semantic_index_update候補: {source_type}:{payload_label} は "
-        f"{best['id']} にLOW一致(matched={matched})。index.md追記可否を確認せよ"
-    )
-    priority = "medium"
+    aliases_to_add = candidate_aliases(source_type, payload, best["aliases"])
+    row = resource_row(source_type, payload)
+    alias_block, alias_changed = append_aliases_to_block(best["block"], aliases_to_add)
+    new_block, row_changed = append_row_to_block(alias_block, row)
+    if alias_changed or row_changed:
+        updated = text[: best["start"]] + new_block + text[best["end"] :]
+        index_path.write_text(updated, encoding="utf-8")
+        added = ", ".join(aliases_to_add) if alias_changed else "none"
+        print(f"LOW: {best['id']} updated from {source_type}:{payload_label} matched={matched} aliases_added={added}")
+        print("__SEMANTIC_INDEX_CHANGED__")
+    else:
+        print(f"LOW: {best['id']} already contains {source_type}:{payload_label} matched={matched}")
+    sys.exit(0)
 else:
+    if is_noise_only_candidate(payload_id, fields):
+        print(f"NONE: skipped noise-only candidate for {source_type}:{payload_label}")
+        sys.exit(0)
     message = (
         f"semantic_index_update新概念候補: {source_type}:{payload_label} は "
         f"既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
