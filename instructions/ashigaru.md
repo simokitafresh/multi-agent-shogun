@@ -49,7 +49,9 @@ forbidden_actions:
 - **Evidence First**: 問題は見つけた瞬間に記録し、事実を先に書け
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
-- **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。lesson_candidateに「次回追加すべきチェック」を書け
+- **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
+  記入例: `check: "AC1の実装が完了しているか"` `result: "yes"` / `result: "no"`。
+  提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 
 ## 逸脱管理ルール (Deviation Management)
 
