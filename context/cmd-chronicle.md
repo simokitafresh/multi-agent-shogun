@@ -785,3 +785,4 @@
 | cmd_2599 | viewer_tokens 100件上限で新規ログインが他ユーザーのtoken削除→強制ログアウト。MAX上限if分岐を削除し期限切れ削除のみに変更 | dm-signal | 05-07 | viewer/admin token生成時のMAX_TOKE |
 | cmd_2601 | note_draft.shが未ログイン時にエラー終了する。reCAPTCHA画像チャレンジを含む自動ログインフローを追加し、全スキル(weekly-report/note-article/sengoku-writer)から完全自動で下書き保存可能にする。併せてタイトル抽出バグ(#h1を無視し最初の##h2を使用)を修正する | infra | 05-07 | note_draft.shに未ログイン時の自動ログイン+re |
 | cmd_2604 | スキル自動成長ループの段階3(自動改善)・段階4(品質向上)が未実装。根本原因はskill_execution_logの帰属精度。dashboard-updateがgate_report_formatのFAILを被っている(8/11件)。報告YAML品質はreport-writeスキルの責任であり、dashboard-updateの責任ではない。帰属がずれている限り、stumbling_points→SKILL.md反映は誤った対象に注意ポイントを追加し続ける | infra | 05-09 | gate_report_format FAILのskill帰 |
+| cmd_2605 | スキル成長ループの段階3-4を完結させる。現状PASS記録がgate_report_format.sh経由のスキル(report-write等)で欠落しており成長が計測不能。PASS記録を統一し、注意ポイントを適用し、定期自走化で永続的にループを回す | infra | 05-09 | gate_report_format PASSをreport |
