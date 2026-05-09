@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-10 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-10T00:20:12+09:00 -->
+<!-- generated_at: 2026-05-10T00:29:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-10T00:29:52+09:00 | terminal | response | 殿、報告。 **cmd_2621委任完了**: 放置タスク滞留検出+BLOCK昇格をstartup gateに追加(Level5化)。なぜなぜ7回の根因「低優先=やらない」を自動化×強制で環境に埋め込む。 **本セッション実績(3cmd)…
+- 2026-05-10T00:29:45+09:00 | ntfy | outbound | 【家老】cmd_2621 初回配備開始 (title=強化 — 放置タスク滞留検出+BLOCK昇格をstartup gateに追加(Level5化), ninja=kagemaru) 強化 📋 https://gist.github.co…
+- 2026-05-10T00:26:32+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-268)
+- 2026-05-10T00:26:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-10 00:24:30|cmd_2620
+- 2026-05-10T00:26:11+09:00 | ntfy | outbound | 【家老】cmd_2620 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
+- 2026-05-10T00:22:09+09:00 | terminal | inbound | デメリットないことは、どんどんやろうか。なぜなぜ7回
 - 2026-05-10T00:20:12+09:00 | terminal | response | 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft…
 - 2026-05-10T00:18:54+09:00 | terminal | inbound | すでに効果はでているか？
 - 2026-05-10T00:16:17+09:00 | ntfy | outbound | 【家老】cmd_2620 初回配備開始 (title=強化 — セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化), ninja=hayate) 強化 📋 https://gist.github.com…
 - 2026-05-10T00:15:38+09:00 | terminal | response | cmd_2620委任完了。教訓LS044記録済み。 殿、復帰+自走報告。 **本セッション実績:** - cmd_2620起票→家老委任完了: セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化)。14概…
-- 2026-05-10T00:13:16+09:00 | terminal | inbound | 続けて
-- 2026-05-10T00:11:58+09:00 | terminal | response | 修正完了。再publish。 [meta] stop_reason=tool_use
-- 2026-05-10T00:11:10+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-10 00:03:10|CI緑: run 25604058440
-- 2026-05-10T00:09:34+09:00 | terminal | response | 起票前確認8問チェック: 全問OK。cmd_publish.sh実行。 [meta] stop_reason=tool_use
-- 2026-05-10T00:06:52+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_tobisaru 初回配備開始 (title=修行L4 r11 tobisaru, ninja=tobisaru) 修行L4 r11 tobisaru 📋 https://gist.gith…
-- 2026-05-10T00:06:16+09:00 | ntfy | outbound | 【家老】cmd_training_L4_r11_kotaro 初回配備開始 (title=修行L4 r11 kotaro, ninja=kotaro) 修行L4 r11 kotaro 📋 https://gist.github.com/s…
 
 ## 未解決確認事項
 - 現物確認した結果を報告する。 **効果が出ている:** | 修正cmd | 対象 | 修正前 | 修正後(実証) | |---------|------|--------|-------------| | cmd_2613 | draft_lessons | 直近50件中27回…
@@ -58,6 +58,7 @@
 - cmd_2618
 - cmd_2619
 - cmd_2620
+- cmd_2621
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

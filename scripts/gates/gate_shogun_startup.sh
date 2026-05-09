@@ -389,6 +389,57 @@ if [ -f "$INSIGHTS_FILE" ]; then
     else
         echo "  未処理: 0件"
     fi
+    insight_stale_days="${INSIGHT_STALE_DAYS:-7}"
+    stale_insights=$(python3 - "$INSIGHTS_FILE" "$insight_stale_days" <<'PY' 2>/dev/null || true
+import sys, yaml
+from datetime import datetime, timezone, timedelta
+
+path, days_s = sys.argv[1], sys.argv[2]
+try:
+    days = int(days_s)
+except ValueError:
+    days = 7
+cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+def parse_ts(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        text = str(value).strip().strip('"').replace("Z", "+00:00")
+        try:
+            dt = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+items = data.get("insights") or []
+rows = []
+for item in items:
+    if not isinstance(item, dict):
+        continue
+    if str(item.get("status", "")).strip() != "pending":
+        continue
+    dt = parse_ts(item.get("ts") or item.get("timestamp"))
+    if dt and dt <= cutoff:
+        age = (datetime.now(timezone.utc) - dt).days
+        rows.append((age, str(item.get("id", "?"))))
+for age, iid in sorted(rows, reverse=True)[:5]:
+    print(f"{iid}:{age}日")
+PY
+)
+    if [ -n "$stale_insights" ]; then
+        stale_count=$(printf '%s\n' "$stale_insights" | grep -c .)
+        echo "  ALERT: 未消化insights ${stale_count}件が${insight_stale_days}日超過"
+        printf '%s\n' "$stale_insights" | sed 's/^/    /'
+        overall="ALERT"
+        alerts+=("未消化insights滞留: ${stale_count}件/${insight_stale_days}日超")
+    fi
 else
     echo "  キューなし"
 fi
@@ -616,6 +667,77 @@ if [ "$proposal_total" -gt 0 ]; then
     if [ "$overall" != "ALERT" ]; then
         overall="WARN"
         alerts+=("軍師未処理提案: ${proposal_total}件${gp_list_suffix}")
+    fi
+fi
+
+# --- Gate 11.5: GP proposal滞留検出 (cmd_2621) ---
+# 目的: karo_sent のまま長期滞留するGPを起動時ALERT化し、「低優先=やらない」を防ぐ。
+gp_stale_days="${GP_STALE_DAYS:-14}"
+if [ -f "$REVIEW_LOG" ]; then
+    stale_gp=$(python3 - "$REVIEW_LOG" "$gp_stale_days" <<'PY' 2>/dev/null || true
+import sys, yaml
+from datetime import datetime, timezone, timedelta
+
+path, days_s = sys.argv[1], sys.argv[2]
+try:
+    days = int(days_s)
+except ValueError:
+    days = 14
+cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+def parse_ts(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        text = str(value).strip().strip('"').replace("Z", "+00:00")
+        try:
+            dt = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+def iter_entries(data):
+    if isinstance(data, list):
+        yield from data
+    elif isinstance(data, dict):
+        entries = data.get("entries")
+        if isinstance(entries, list):
+            yield from entries
+
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or []
+rows = []
+for entry in iter_entries(data):
+    if not isinstance(entry, dict):
+        continue
+    entry_ts = parse_ts(entry.get("timestamp") or entry.get("ts"))
+    proposals = entry.get("proposals") or []
+    if not isinstance(proposals, list):
+        continue
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            continue
+        if str(proposal.get("status", "")).strip() != "karo_sent":
+            continue
+        dt = parse_ts(proposal.get("sent_at") or proposal.get("timestamp") or entry_ts)
+        if dt and dt <= cutoff:
+            age = (datetime.now(timezone.utc) - dt).days
+            rows.append((age, str(proposal.get("id", "?"))))
+for age, gid in sorted(rows, reverse=True)[:5]:
+    print(f"{gid}:{age}日")
+PY
+)
+    if [ -n "$stale_gp" ]; then
+        stale_gp_count=$(printf '%s\n' "$stale_gp" | grep -c .)
+        echo "■ GP proposal滞留"
+        echo "  ALERT: karo_sent GP ${stale_gp_count}件が${gp_stale_days}日超過"
+        printf '%s\n' "$stale_gp" | sed 's/^/    /'
+        overall="ALERT"
+        alerts+=("GP proposal滞留: ${stale_gp_count}件/${gp_stale_days}日超")
     fi
 fi
 
@@ -1324,6 +1446,57 @@ else
 fi
 
 # --- 総合判定 ---
+STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
+STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+if [ "${#alerts[@]}" -gt 0 ]; then
+    mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
+    _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${alerts[@]}" <<'PY' 2>/dev/null || true
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+threshold = int(sys.argv[2])
+current = [a.strip() for a in sys.argv[3:] if a.strip()]
+if not current or threshold <= 1:
+    sys.exit(0)
+
+runs = []
+if path.exists():
+    current_run = None
+    current_keys = set()
+    for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        parts = raw.split("\t", 1)
+        if len(parts) != 2:
+            continue
+        run_id, key = parts
+        if current_run is None:
+            current_run = run_id
+        if run_id != current_run:
+            runs.append(current_keys)
+            current_run = run_id
+            current_keys = set()
+        if key != "__OK__":
+            current_keys.add(key)
+    if current_run is not None:
+        runs.append(current_keys)
+
+previous = runs[-(threshold - 1):]
+for key in current:
+    if len(previous) == threshold - 1 and all(key in run for run in previous):
+        print(key)
+PY
+)
+    if [ -n "$_streak_result" ]; then
+        echo "■ startup WARN/ALERT連続出現"
+        while IFS= read -r _streak_key; do
+            [ -n "$_streak_key" ] || continue
+            echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
+            alerts+=("startup連続出現BLOCK: ${_streak_key}")
+        done <<< "$_streak_result"
+        overall="BLOCK"
+    fi
+fi
+
 echo ""
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
@@ -1343,8 +1516,18 @@ echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 
+mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
+_startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+if [ ${#alerts[@]} -gt 0 ]; then
+    for a in "${alerts[@]}"; do
+        printf '%s\t%s\n' "$_startup_run_id" "$a" >> "$STARTUP_ALERT_HISTORY"
+    done
+else
+    printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
+fi
+
 # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
-if [ "$overall" = "ALERT" ] && [ ${#alerts[@]} -gt 0 ]; then
+if { [ "$overall" = "ALERT" ] || [ "$overall" = "BLOCK" ]; } && [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
         # 教訓健全度ALERTなど既知パターンのみ自動保存（ノイズ防止）
         case "$a" in
