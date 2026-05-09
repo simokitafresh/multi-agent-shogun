@@ -36,7 +36,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -50,6 +50,7 @@ codd:
 | cmd | `cmd_2565` セマンティック検索LLMフォールバック実装 |
 | cmd | `cmd_2566` セマンティックインデックス伝搬(CoDD propagate)実装 |
 | cmd | `cmd_2567` セマンティックインデックス鮮度gate+導線埋込み |
+| cmd | `cmd_2609` セマンティクスインデックス候補除外精度 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -160,6 +161,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T16:46 L0は12体でシン四神 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:49:01+09:00 Average UWPとPTUについてnote記事を書きたい。SPY、TQQQ、Ave-X,劇薬DMオリジナル、とシン四神から特徴的な2体、シン忍法から特徴的な2体を選んで比較した記事を書きたい。まずは構成だけ考えよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:55:13+09:00 シン忍法とシン四神からはPTU最強から1体、Average UWP最強から1体選ばないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-07T17:18:08+09:00 では記事を書いて。ベーシックはお試しプラン。standardは募集停止となったお得なプラン、アドオンもすでに募集停止となったスタンダードプランのアドオン。新しいスタンダードプランはシン四神を中心としたもの。プレミアムは特別な非公開プラン。限 |
 
 ## agent_formation_management — 編成管理
 
@@ -190,7 +192,7 @@ codd:
 | file | `backend/app/services/visibility_helpers.py` |
 | file | `backend/app/services/page_visibility.py` |
 | file | `frontend/app/admin/visibility/page.tsx` |
-| file | `docs/research/cmd_2596_visibility_matrix.md` |
+| file | `docs/research/cmd_2597_visibility_ui_audit.md` |
 | file | `projects/dm-signal.yaml` visibility_philosophy |
 | terminology | `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md` vis_L1-L4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-07T14:05 Tier=料金プラン、シグナル=最も価値ある情報 |
@@ -205,6 +207,9 @@ codd:
 | vis_L2 | PF存在自体を隠す | このTierでは見せないPFを丸ごと非表示 |
 | vis_L3 | 保有シグナルを隠す | バックテスト(餌)は見せて上位Tier誘導 |
 | vis_L4 | 構成ticker(レシピ)を隠す | シグナルは公開、戦略の知的財産を保護 |
+| cmd | `cmd_2598` 修正 — Monthly Trade vis_L4マスク時position表示バグ(cmd_2451リグレッション) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-07T23:35:09+09:00 You are matching a user query to a semantic index. Query: android Instructions: - Choose up to 3 most related concepts f |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-07T23:35:38+09:00 You are matching a user query to a semantic index. Query: アプリ Instructions: - Choose up to 3 most related concepts from  |
 
 ## shogun_android_app — 将軍Androidアプリ
 
@@ -222,6 +227,7 @@ codd:
 | file | `context/infrastructure.md` §Android App |
 | cmd | `cmd_2602` 環境埋込み — Android/アプリ/モバイルから将軍Androidアプリへ到達可能化 |
 | cmd | `cmd_1809-1816,1924,1943,1945,2104` Androidアプリ改修・調査履歴 |
+| cmd | `cmd_2602` 強化 — Androidアプリ知識の環境埋込み(セマンティクス+context+CLAUDE.md) (`AGENTS.md`, `CLAUDE.md`, `context/infrastructure.md`) |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -257,4 +263,3 @@ codd:
 
 **各論ではなく原理:** FE変更確認はこの能力の一応用例。任意のWebサイトの状態確認、ログイン、操作に汎用的に使える。PJ固有の認証方法はPJのcontextに書く。
 | cmd | `cmd_2579` 実装 — CDP汎用ブラウザ操作スキル(ブラウザ起動+ログイン+スクショで状況確認) (`skills/cdp-browse/SKILL.md`) |
-
