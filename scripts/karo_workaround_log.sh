@@ -12,8 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "${0%/*}" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOG_FILE="$REPO_ROOT/logs/karo_workarounds.yaml"
-LOCK_FILE="/tmp/karo_workarounds.lock"
+LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
+LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
 
 # --- Reclassify mode: update category of existing entries ---
 if [[ "${1:-}" == "--reclassify" ]]; then
