@@ -68,3 +68,42 @@ setup() {
         "yes — grep 'FP率.*一括' context/cmd-chronicle.md→0件(2026-04-25確認) 既存gateの偽陽性修正(精度改善)であり初回"
     [ "$status" -eq 0 ]
 }
+
+@test "Q11-FP-005: 既存道具の接続cmdはgate追加語があっても追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — スキル成長ループ完結(PASS記録統一+注意ポイント適用+定期自走化)"
+    scope_mode: EXACT
+    purpose: "PASS記録を統一し、注意ポイントを適用し、定期自走化で永続的にループを回す"
+    command: "gate_report_format.shのPASS分岐にskill_execution_log.sh呼出しを追加。ninja_monitor.shのメインループに週1でskill_auto_improve.sh --apply を実行する条件分岐を追加"
+    quality_gate:
+      q11_not_already_done: "未達成。既存代替の現物確認結果: grep -c skill_execution_log scripts/gates/gate_report_format.sh → 0件。grep -rn skill_auto_improve scripts/ → skill_auto_improve.sh自身のみ。既存道具の接続であり新規gate追加ではない。代替なし"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
+@test "Q11-TP-001: q11根拠なしの真のgate新設cmdは追加cmd扱いを維持する" {
+    CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
+    scope_mode: EXACT
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: "scripts/cmd_save.shに新規gateを追加する"
+    quality_gate:
+      q11_not_already_done: "未記入"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 0 ]
+}
+
+@test "Q11-TP-002: grepで未存在確認済みの真の新規gateは追加cmd扱いを維持する" {
+    CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
+    scope_mode: EXACT
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: "scripts/cmd_save.shに新規gateを追加する"
+    quality_gate:
+      q11_not_already_done: "未達成。grep -rn missing_required_field scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 0 ]
+}

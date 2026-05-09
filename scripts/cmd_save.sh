@@ -130,6 +130,7 @@ is_gate_or_hook_addition_cmd() {
             command_seen=1
             next
         }
+        in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
         in_command && /^[[:space:]]{4,}/ {
             line = $0
             sub(/^[[:space:]]+/, "", line)
@@ -139,7 +140,6 @@ is_gate_or_hook_addition_cmd() {
             }
             next
         }
-        in_command && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0 }
     ')
 
     [[ -n "${q11_context:-}" ]] || return 1

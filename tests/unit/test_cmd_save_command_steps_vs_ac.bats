@@ -111,3 +111,43 @@ run_save() {
     run grep -n 'command_steps_over_ac' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
 }
+
+@test "AC4: AC1形式3個+番号付きcommand3項目ならcommand_steps_over_ac WARNは出ない" {
+    write_cmd_queue \
+"    acceptance_criteria:
+      AC1:
+        description: \"step1を実装する\"
+      AC2:
+        description: \"step2を検証する\"
+      AC3:
+        description: \"step3を報告する\"" \
+"      1. step1
+      2. step2
+      3. step3"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"command欄に3ステップあるがACは0個"* ]]
+    [[ "$output" != *"command_steps_over_ac"* ]]
+}
+
+@test "AC5: command本文後のacceptance_criteria内番号をcommandステップに混入しない" {
+    write_cmd_queue \
+"    acceptance_criteria:
+      AC1:
+        description: \"確認1: 実装結果が存在する\"
+      AC2:
+        description: \"確認2: 関連テストがPASSする\"" \
+"      1. implementation
+      2. verification"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"command_steps_over_ac"* ]]
+}
