@@ -3543,6 +3543,15 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
+        # Level5: commandステップからAC候補を自動生成
+        echo "  ─── AC候補(commandステップから自動生成) ───" >&2
+        printf '%s\n' "$_CMD_SECTION" | awk '
+            /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ {
+                sub(/^\s*\(?[0-9]+[\.\)]\s*/, "")
+                printf "  - \"%s。binary_check: yes/no\"\n", $0
+            }
+        ' >&2
+        echo "  ─────────────────────────" >&2
         record_warn_reason "command_steps_over_ac" "check=check_command_steps_vs_ac"
     fi
 fi
