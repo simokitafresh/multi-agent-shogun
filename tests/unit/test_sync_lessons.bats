@@ -82,12 +82,13 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
-@test "sync_lessons propagates explicit target_files from markdown to index" {
+@test "sync_lessons propagates explicit target_files and subdomain from markdown to index" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: deploy_task.shのtarget_filesマッチング不備
 - **日付**: 2026-04-21
 - **出典**: cmd_2200
 - **tags**: [dm-signal]
+- **subdomain**: infra
 - **target_files**: [scripts/deploy_task.sh, scripts/lesson_write.sh]
 - deploy_task.shのtarget_filesマッチングが教訓にtarget_filesがないため不活性だった
 EOF
@@ -111,6 +112,7 @@ assert len(lessons) == 1, f'expected 1 lesson, got {len(lessons)}'
 tf = lessons[0].get('target_files', [])
 assert 'scripts/deploy_task.sh' in tf, f'target_files missing deploy_task.sh: {tf}'
 assert 'scripts/lesson_write.sh' in tf, f'target_files missing lesson_write.sh: {tf}'
+assert lessons[0].get('subdomain') == 'infra', lessons[0]
 print('ok')
 "
     [ "$status" -eq 0 ]
