@@ -193,8 +193,9 @@ verify_environment_change() {
     local env_structured="" env_type="" env_file="" env_pattern="" env_file_resolved=""
 
     if [[ -z "$env_change" ]]; then
-        echo "[karo_workaround_log] WARN: environment_change未記入。--wa時は何を環境に埋め込んだか記録せよ" >&2
-        return 0
+        echo "[karo_workaround_log] BLOCK: environment_change未記入。--wa時は何を環境に埋め込んだか記録せよ" >&2
+        echo '  形式: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列' >&2
+        return 1
     fi
 
     if env_structured="$(parse_structured_environment_change "$env_change" 2>/dev/null)"; then
@@ -204,8 +205,15 @@ verify_environment_change() {
         if grep -qE -- "$env_pattern" "$env_file_resolved" 2>/dev/null; then
             echo "[karo_workaround_log] INFO: environment_change検証OK: type=${env_type} file=${env_file} pattern=${env_pattern}" >&2
         else
-            echo "[karo_workaround_log] WARN: environment_change未実装。file=${env_file} に pattern=${env_pattern} が見つからない" >&2
+            echo "[karo_workaround_log] BLOCK: environment_change未実装。file=${env_file} に pattern=${env_pattern} が見つからない" >&2
+            echo "  実装してからkaro_workaround_log.sh --waを再実行せよ" >&2
+            return 1
         fi
+    else
+        echo "[karo_workaround_log] BLOCK: environment_changeが非構造化。構造化形式で記録せよ" >&2
+        echo '  形式: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列' >&2
+        echo '  例: type=gate; file=scripts/karo_workaround_log.sh; pattern=verify_environment_change' >&2
+        return 1
     fi
 }
 
