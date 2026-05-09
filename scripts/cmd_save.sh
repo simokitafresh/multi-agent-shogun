@@ -2864,6 +2864,62 @@ if [ "$_AC_COUNT" -gt 0 ] && [ "$_VERIFY_AC_COUNT" -eq 0 ]; then
     echo "  各ACに「やった後どう確認するか」を含めよ。確認なき行動は想像と同じ" >&2
 fi
 
+show_semantic_index_matches() {
+    local SEARCH_TEXT="$1"
+    local INDEX_PATH="${SEMANTIC_INDEX_PATH:-$PROJECT_DIR/docs/semantic-index/index.md}"
+    [[ -z "$SEARCH_TEXT" || ! -f "$INDEX_PATH" ]] && return 0
+
+    local _semantic_rows _semantic_label _semantic_aliases _semantic_files
+    local _semantic_alias _semantic_alias_re
+    _semantic_rows=$(awk '
+        function flush() {
+            if (label != "" && aliases != "") print label "\t" aliases "\t" files
+            label=""; aliases=""; files=""
+        }
+        /^## / { flush(); next }
+        /^\| label \|/ {
+            line=$0
+            sub(/^\| label \|[[:space:]]*/, "", line)
+            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
+            label=line
+            next
+        }
+        /^\| aliases \|/ {
+            line=$0
+            sub(/^\| aliases \|[[:space:]]*/, "", line)
+            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
+            aliases=line
+            next
+        }
+        /^\| file \|/ {
+            line=$0
+            sub(/^\| file \|[[:space:]]*/, "", line)
+            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
+            if (files == "") files=line; else files=files ", " line
+            next
+        }
+        END { flush() }
+    ' "$INDEX_PATH" 2>/dev/null || true)
+    [[ -z "$_semantic_rows" ]] && return 0
+
+    while IFS=$'\t' read -r _semantic_label _semantic_aliases _semantic_files; do
+        [[ -z "$_semantic_label" || -z "$_semantic_aliases" ]] && continue
+        IFS=',' read -r -a _semantic_alias_array <<< "$_semantic_aliases"
+        for _semantic_alias in "${_semantic_alias_array[@]}"; do
+            _semantic_alias="$(printf '%s' "$_semantic_alias" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
+            [[ -z "$_semantic_alias" ]] && continue
+            _semantic_alias_re="$(printf '%s' "$_semantic_alias" | sed -E 's/[][(){}.^$*+?|\\/]/\\&/g')"
+            if printf '%s\n' "$SEARCH_TEXT" | grep -Eqi "(^|[^[:alnum:]_])${_semantic_alias_re}([^[:alnum:]_]|$)"; then
+                echo "INFO: [SEMANTIC] ${_semantic_label} matched alias '${_semantic_alias}'" >&2
+                if [[ -n "$_semantic_files" ]]; then
+                    echo "  主要ファイル: ${_semantic_files}" >&2
+                fi
+                break
+            fi
+        done
+    done <<< "$_semantic_rows"
+}
+
 # --- Check 18: 研究cmd道具明示チェック（dm-signal研究cmd対象 — WARNING） ---
 # 起源: cmd_1822事故 — 将軍がACに研究エンジンのCLI引数を書かず忍者がhang
 # 目的: dm-signal研究cmdでAC内にスクリプトパスが未記載の場合WARNING表示（WARN_COUNTに加算しない）
@@ -2887,6 +2943,8 @@ check_research_tool_explicit() {
     TITLE_LINE=$(echo "$CMD_BLOCK_NC" | grep '^\s*title:' | head -1)
     SEARCH_TEXT="${TITLE_LINE}
 ${FULL_CMD}"
+
+    show_semantic_index_matches "$SEARCH_TEXT"
 
     local HIT_GS=false HIT_WF=false
     local GS_PATH_CANDIDATE WF_PATH_CANDIDATE
