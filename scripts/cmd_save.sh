@@ -2889,6 +2889,9 @@ check_research_tool_explicit() {
 ${FULL_CMD}"
 
     local HIT_GS=false HIT_WF=false
+    local GS_PATH_CANDIDATE WF_PATH_CANDIDATE
+    GS_PATH_CANDIDATE=$(printf '%s\n' "$SEARCH_TEXT" | grep -oE 'scripts/analysis/grid_search/run_077_[A-Za-z0-9_]+\.py' | head -1 || true)
+    WF_PATH_CANDIDATE=$(printf '%s\n' "$SEARCH_TEXT" | grep -oE 'outputs/scripts/l1_alm_wf_engine\.py|[^[:space:]"]+wf_engine[^[:space:]"]*\.py' | head -1 || true)
     # cmd_2172: WF四神/WF選別はWF engine実行ではなく分類ラベル。説明文だけでの誤検出を避ける。
     WF_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | sed -E 's/WF(四神|選別)//g')
 
@@ -2896,9 +2899,14 @@ ${FULL_CMD}"
     # 研究スクリプト参照または明示的なGS文言に限定する。
     # "GS CSV" = データファイル参照であり研究スクリプト実行ではないため除外(cmd_2227 FP修正)
     local GS_SEARCH_TEXT
-    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | sed -E 's/GS[[:space:]]*CSV//g')
+    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -v 'outputs/grid_search' | sed -E 's/GS[[:space:]]*CSV//g' || true)
     if echo "$GS_SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
         HIT_GS=true
+    fi
+    if [[ "$HIT_GS" == true ]] && [[ -z "$GS_PATH_CANDIDATE" ]] \
+        && printf '%s\n' "$SEARCH_TEXT" | grep -q 'outputs/grid_search' \
+        && printf '%s\n' "$SEARCH_TEXT" | grep -q '偵察'; then
+        HIT_GS=false
     fi
 
     # WF検出: l1_alm_wf_engine / walk.forward / WF(大文字) / ウォークフォワード
@@ -2929,6 +2937,9 @@ ${FULL_CMD}"
                 HIT=true
             fi
             echo "  GS道具: scripts/analysis/grid_search/run_077_{忍法}.py をACに明記せよ" >&2
+            if [[ -n "$GS_PATH_CANDIDATE" ]]; then
+                echo "  ACパス候補: ${GS_PATH_CANDIDATE}" >&2
+            fi
             echo '  例: "run_077_oikaze.py --universe config/portfolio_universes/XXX.yaml を実行"' >&2
         fi
     fi
@@ -2941,6 +2952,9 @@ ${FULL_CMD}"
                 HIT=true
             fi
             echo "  WF道具: outputs/scripts/l1_alm_wf_engine.py をACに明記せよ" >&2
+            if [[ -n "$WF_PATH_CANDIDATE" ]]; then
+                echo "  ACパス候補: ${WF_PATH_CANDIDATE}" >&2
+            fi
             echo '  例: "l1_alm_wf_engine.py --batch-csvs <paths> --multi-is --cmd-id XXX を実行"' >&2
         fi
     fi

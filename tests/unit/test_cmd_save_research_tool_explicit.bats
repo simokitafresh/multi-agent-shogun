@@ -73,6 +73,24 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"GS道具"* ]]
     [[ "$output" == *"run_077_oikaze.py"* ]]
+    [[ "$output" == *"ACパス候補: scripts/analysis/grid_search/run_077_oikaze.py"* ]]
+}
+
+@test "RTE-T002b: outputs/grid_searchを参照する偵察cmdはGS警告しない" {
+    local CMD_BLOCK='    project: dm-signal
+    title: "偵察 — グリッドサーチ成果物の差分確認"
+    command: |
+      outputs/grid_search/okugi/cmd_2103_okugi_grid_monthly.csv を確認して差分分析する
+    acceptance_criteria:
+      - id: AC1
+        description: "CSV差分を確認する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GS道具"* ]]
+    [[ "$output" != *"Check 18"* ]]
 }
 
 @test "RTE-T003: WF四神とWF選別の説明文だけではWF警告しない" {
@@ -107,4 +125,5 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"WF道具"* ]]
     [[ "$output" == *"l1_alm_wf_engine.py"* ]]
+    [[ "$output" == *"ACパス候補: outputs/scripts/l1_alm_wf_engine.py"* ]]
 }
