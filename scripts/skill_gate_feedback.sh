@@ -3,7 +3,7 @@
 #
 # Usage:
 #   bash scripts/skill_gate_feedback.sh --gate <gate> --result FAIL --reason <reason> \
-#       [--executor <agent>] [--source <path>] [--skill <name>]
+#       [--executor <agent>] [--source <path>] [--skill <name>] [--dry-run]
 
 set -euo pipefail
 
@@ -16,6 +16,7 @@ reason=""
 executor="${AGENT_ID:-${USER:-unknown}}"
 source=""
 explicit_skill=""
+dry_run=false
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -25,6 +26,7 @@ while [ "$#" -gt 0 ]; do
         --executor) executor="${2:-}"; shift 2 ;;
         --source) source="${2:-}"; shift 2 ;;
         --skill) explicit_skill="${2:-}"; shift 2 ;;
+        --dry-run) dry_run=true; shift ;;
         -h|--help)
             sed -n '1,12p' "$0"
             exit 0
@@ -43,7 +45,7 @@ fi
 
 skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/skills:$HOME/.codex/skills:$HOME/.claude/skills}"
 
-python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" <<'PY'
+python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" "$dry_run" <<'PY'
 import fcntl
 import os
 import re
@@ -54,10 +56,14 @@ from pathlib import Path
 
 import yaml
 
-skills_dirs, explicit_skill, gate, result, reason, executor, source, log_script = sys.argv[1:9]
+skills_dirs, explicit_skill, gate, result, reason, executor, source, log_script, dry_run_raw = sys.argv[1:10]
+dry_run = dry_run_raw.lower() == "true"
 
 _SKILL_LOG_CACHE = None
 _TESTS_PATH_RE = re.compile(r'(?:^|/)tests/')
+GATE_SKILL_MAP = {
+    "gate_report_format": "report-write",
+}
 
 
 def iter_skill_files():
@@ -179,6 +185,10 @@ def exact_skill_file(skill_name, logged_path=""):
     return None
 
 
+def mapped_skill_for_gate(gate_name):
+    return GATE_SKILL_MAP.get(str(gate_name or "").strip(), "")
+
+
 def has_duplicate_failure(skill_name, gate_name, stumbling_points):
     for entry in load_skill_log():
         if (
@@ -204,8 +214,9 @@ if logged_entry:
     logged_skill = str(logged_entry.get("skill") or "").strip()
     logged_skill_path = str(logged_entry.get("skill_path") or "").strip()
 
-skill = explicit_skill or logged_skill
-skill_file = exact_skill_file(skill, logged_skill_path)
+mapped_skill = mapped_skill_for_gate(gate)
+skill = explicit_skill or mapped_skill or logged_skill
+skill_file = exact_skill_file(skill, "" if mapped_skill and not explicit_skill else logged_skill_path)
 if not skill or not skill_file:
     print("SKIP: skill not identified")
     raise SystemExit(0)
@@ -216,6 +227,10 @@ if not stumbling:
 
 if not logged_entry and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
     print(f"DUPLICATE: {skill} gate={gate}")
+    raise SystemExit(0)
+
+if dry_run:
+    print(f"DRY_RUN: skill={skill} gate={gate} result={result} skill_path={skill_file}")
     raise SystemExit(0)
 
 if not logged_entry:

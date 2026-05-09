@@ -115,6 +115,9 @@ def iter_skill_files():
 
 
 _skill_index = None
+GATE_SKILL_MAP = {
+    "gate_report_format": "report-write",
+}
 
 
 def _get_skill_index():
@@ -260,7 +263,8 @@ for entry in load_entries(log_file):
         continue
     if str(entry.get("used", True)).strip().lower() == "false":
         continue
-    skill = str(entry.get("skill") or "").strip()
+    gate_name = str(entry.get("gate") or "").strip()
+    skill = GATE_SKILL_MAP.get(gate_name) or str(entry.get("skill") or "").strip()
     if not skill:
         continue
     if skill_filter and skill != skill_filter:
@@ -272,9 +276,13 @@ for entry in load_entries(log_file):
     ts = str(entry.get("ts") or "").strip()
     if ts >= stats[skill]["last"].get(reason, ""):
         stats[skill]["last"][reason] = ts
-        stats[skill]["gate"][reason] = str(entry.get("gate") or "").strip()
+        stats[skill]["gate"][reason] = gate_name
     logged_path = str(entry.get("skill_path") or "").strip()
-    if logged_path:
+    if GATE_SKILL_MAP.get(gate_name):
+        mapped_path = skill_file_for(skill, "")
+        if mapped_path:
+            stats[skill]["path"] = str(mapped_path)
+    elif logged_path:
         stats[skill]["path"] = logged_path
 
 print("skill | rank | fail_count | last_fail | gate | top_fail_reason")
