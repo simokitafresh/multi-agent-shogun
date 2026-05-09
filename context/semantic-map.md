@@ -15,7 +15,7 @@ codd:
 | 概念 | 別名 | 主要ファイル | 教訓 |
 |------|------|------------|------|
 | 再計算パイプライン | fullrecalculate, recalc, 再計算フロー, recalculate_fast | `/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py`, `context/dm-signal-core.md` §19.2, `docs/research/fullrecalculate-architecture-2026-03-28.md` | `L714` recalculate-sync acceptedでは完了判定にしない, `L715` recalculate-sync acceptedは完了ではない。DB recalculation_status confirmed必須 |
-| セマンティック辞書構想 | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正 | `docs/research/semantic_index_design.md`, `context/lord-conversation-index.md`, `scripts/semantic_map_generate.sh` | なし |
+| セマンティック辞書構想 | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化 | `docs/research/semantic_index_design.md`, `context/lord-conversation-index.md`, `scripts/semantic_map_generate.sh` | なし |
 | gate迂回防止 | gate迂回, 滑り坂, 正規フロー, cmd_delegate | `scripts/cmd_delegate.sh`, `.claude/hooks/pre-bash-combined.sh` | `memory/deepdive_causal_tracing_20260415.md` Phase 6, `docs/research/lessons_shogun_v1_archive.md` LS049-LS052 |
 | 用語辞書 | disambiguation, terminology, 曖昧性解消, 1語1意味, MECE定義辞書 | `/mnt/c/Python_app/DM-signal/docs/knowledge-base/terminology/disambiguation.md`, `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md`, `docs/research/cmd_2555_disambiguation_design.md` | なし |
 | 本番パリティ | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data | `context/dm-signal-core.md` §19.3, `context/checklist-shin-v2-registration.md`, `docs/research/dmsignal_parity_verification_audit.md` | `context/dm-signal-core.md` L088-L129, `L717` 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ |
@@ -28,5 +28,3 @@ codd:
 | 将軍Androidアプリ | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ | `android/`, `android/app/build.gradle.kts`, `android/app/src/main/java/com/shogun/android/` | なし |
 | CDP(ブラウザ操作能力) | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper | `MEMORY.md` §Technical Knowledge → CDP Browser Automation, `scripts/cdp/cdp_cli.sh`, `scripts/cdp/cdp_server.py` | `memory/deepdive_why_chain_20260321.md` Phase 4 想像するな確認せよ |
 | 防御階層原則(Level 1-5) | 防御階層, defense_level, Level5, Level 5, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, LG010, research tool explicit偽陽性修正 ACパス自動提案 Level5化 | `context/growth-loop.md` §11, `projects/infra/lessons_gunshi.yaml` LG010, `instructions/gunshi.md` §Review Criteria 5.5 | なし |
-| Auto-Ops | auto-ops, CDP認証, .env.service, 自動入力, daemon | `context/auto-ops.md` | なし |
-| L2奥義進行表 | 奥義, L2, okugi, 56ブロック, 奥義進行 | `context/l2-okugi-progress.md` | なし |

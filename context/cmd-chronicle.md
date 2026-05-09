@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-09 -->
+<!-- last_updated: 2026-05-10 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,23 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1804 | fix — cmd_save.sh q9磨き上げ — キーワード追加+意志依存prevention WARN | infra | 04-09 | cmd_save.shのq9判定語彙にバグ/bug/不具合/ |
-| cmd_1805 | fix — q9意志依存パターンを語幹マッチに強化（活用形抜け修正） | infra | 04-09 | q9意志依存パターンを語幹マッチに変更。活用形(気をつけて/ |
-| cmd_1807 | fix — deploy_task.shに消火判定gate追加（家老自発cmd経路のq9カバー） | infra | 04-09 | deploy_task.shにcheck_firefight |
-| cmd_karo_fix_wa_yaml_dump | fix — gate_wa_data_quality.sh --fixモードのyaml.dump除去 | infra | 04-09 | gate_wa_data_quality.sh --fixモ |
-| cmd_karo_gp177_keyword_lib | enhance — 消火キーワードリストをscripts/lib/に共通化（GP-177） | infra | 04-09 | scripts/lib/firefighting_keywo |
-| cmd_1808 | fix — /clear前チェックhookをSessionEndに移設+ntfy通知化 | infra | 04-09 | SessionEnd clear check hookを追加 |
-| cmd_1809 | fix — Androidアプリ エージェントpane全画面表示の初期スクロール位置を最下部にする | infra | 04-09 | PaneFullScreen初回表示時のスクロール位置を最下 |
-| cmd_1810 | enhance — Androidアプリ エージェントpane入力UI改善（展開ボタン+特殊コマンド常時表示） | infra | 04-09 | PaneFullScreen入力バー改善3点を実装。AC1: |
-| cmd_1811 | enhance — Androidアプリ メモ画面にGistファイル一覧表示を追加 | infra | 04-09 | GistファイルAPI連携+メモ画面UI追加をassembl |
-| cmd_1812 | enhance — GATE CLEAR時に将軍idle検知→inbox通知で将軍が自動で完了に気づく | infra | 04-09 | cmd_complete_gate.sh の通常・emerg |
-| cmd_1814 | fix — 将軍画面のSpecialKeysRowも常時表示にする | infra | 04-09 | ShogunScreen.ktのSpecialKeysRow |
-| cmd_1815 | recon — Androidアプリ入力欄キーボード問題の根本原因特定（おしお殿コード全比較+Android公式調査） | infra | 04-09 | Android EdgeToEdge+keyboard ha |
-| cmd_1816 | fix — Android keyboard問題根本修正 — NavigationBar.imePadding削除+Column.imePadding追加 | infra | 04-09 | NavigationBarのimePadding()をSho |
-| cmd_1817 | ゴールデンデータ全量アップデート — 全136PFのmonthly_returns+holding_signal取得(タイムスタンプ付き) | dm-signal | 04-09 | AC2完了: 全active PF 136体(standar |
-| cmd_1819 | ALM忍法 殿定義6目的 67窓L1 WF全量実行 — METRIC_NAMES変更+7忍法再実行 | dm-signal | 04-09 | METRIC_NAMESをcagr/nhf/maximum_ |
-| cmd_1821 | 奥義-シン忍法 — シン忍法20体を材料にL2忍法GS+67窓WF実行 | dm-signal | 04-09 | AC1-AC4の技術作業は完了。シン忍法20体の本番DB月次 |
-| cmd_1823 | 研究道具カタログ永続化 + cmd_save.sh道具明示チェック追加 | infra | 04-09 | AC1: dm-signal-ops.md §18に研究道具 |
 | cmd_1826 | 偵察 — l1_alm_wf_engine.py メモリプロファイリング（468MB CSV→13GB膨張の根因特定） | dm-signal | 04-10 | l1_alm_wf_engine.py メモリ消費分析完了。 |
 | cmd_karo_premise_check | fix — inbox_write.sh pre-send captureに★前提問い追加 | infra | 04-10 | inbox_write.sh L785の★10回問いecho |
 | cmd_1827 | fix — l1_alm_wf_engine.py メモリ削減（PrefixMomentCache fold毎構築+float32化） | dm-signal | 04-10 | cmd_1827_impl再完了。deepdive第3弾の5 |
