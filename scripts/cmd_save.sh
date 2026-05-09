@@ -301,6 +301,27 @@ import re
 content = os.environ.get("ASSUMPTION_BLOCK_TEXT", "")
 lines = content.splitlines()
 
+scan_lines = []
+skip_q11 = False
+q11_indent = -1
+for line in lines:
+    m_q11 = re.match(r'^(\s*)q11_not_already_done\s*:', line)
+    if m_q11:
+        skip_q11 = True
+        q11_indent = len(m_q11.group(1))
+        continue
+    if skip_q11:
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= q11_indent:
+                skip_q11 = False
+            else:
+                continue
+        else:
+            continue
+    scan_lines.append(line)
+scan_content = "\n".join(scan_lines)
+
 negative_pat = re.compile(r'(未実装|存在しない|仕組みがない|未対応)')
 evidence_pat = re.compile(
     r'\b(?:grep|rg)\b[\s\S]*(?:[0-9]+\s*件|[0-9]+\s*hits?|0\s*matches?|no\s+matches?|ヒットなし|該当なし)',
@@ -344,7 +365,7 @@ for line in lines:
 if current:
     entries.append(current)
 
-if not negative_pat.search(content):
+if not negative_pat.search(scan_content):
     raise SystemExit(0)
 
 for entry in entries:

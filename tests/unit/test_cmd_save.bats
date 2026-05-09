@@ -52,6 +52,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -61,7 +62,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -1598,5 +1599,84 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" != *"assumptions claimに日付がありません"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.7: 否定的前提キーワードあり+grep証跡あり→PASS" {
+    CMD_BLOCK='project: infra
+purpose: "未実装の入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-10時点で grep -rn '\''premise.*evidence'\'' scripts/cmd_save.sh scripts/gates/ → 0件"
+    source: "code_reading"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.8: 否定的前提キーワードあり+grep証跡なし→WARNING" {
+    CMD_BLOCK='purpose: "未対応の入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-10時点で既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.9: 否定的前提キーワードなし→スキップ" {
+    CMD_BLOCK='purpose: "入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-10時点で既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.10: q11_not_already_done内の否定キーワードは検出対象外" {
+    CMD_BLOCK='purpose: "入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+quality_gate:
+  q11_not_already_done: "未達成。既存代替は存在しないが、この欄は不在確認なので正常"
+assumptions:
+  - claim: "2026-05-10時点で既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"否定的前提キーワードを検出"* ]]
     [ "$status" -eq 0 ]
 }
