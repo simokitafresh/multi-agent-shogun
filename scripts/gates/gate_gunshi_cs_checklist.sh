@@ -187,6 +187,7 @@ ambiguity_missing=""
 single_scenario=""
 convergence_once=""
 adversarial_missing=""
+cold_category_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -221,6 +222,93 @@ while IFS= read -r line; do
     esac
 done <<< "$RESULT"
 
+cold_category_missing=$(python3 - "$LOG_FILE" <<'PY' 2>/dev/null || true
+import re
+import sys
+
+path = sys.argv[1]
+catalog = [
+    ("assumptions", 10, [r"assumption", r"前提"]),
+    ("numbers", 10, [r"number", r"数値", r"再計算", r"分母", r"分子"]),
+    ("simulation", 10, [r"simulation", r"時系列", r"依存", r"並列", r"衝突"]),
+    ("premortem", 10, [r"premortem", r"失敗", r"failure", r"リスク", r"silent fallback"]),
+    ("north_star", 10, [r"north.?star", r"複利", r"品質向上", r"消火"]),
+    ("ambiguity", 10, [r"ambiguity", r"曖昧", r"不明瞭"]),
+    ("adversarial", 10, [r"adversarial", r"red.?team", r"chaos", r"攻撃"]),
+]
+
+entries = []
+current = None
+capture_categories = False
+
+def clean(value):
+    return value.strip().strip("\"'")
+
+def flush():
+    global current
+    if current:
+        entries.append(current)
+    current = None
+
+with open(path, encoding="utf-8") as fh:
+    for raw in fh:
+        line = raw.rstrip("\n")
+        if re.match(r"^- (cmd_id|id):", line):
+            flush()
+            current = {"id": "?", "review_type": "", "finding_categories": [], "text": []}
+            value = re.sub(r"^- (cmd_id|id):\s*", "", line)
+            current["id"] = clean(value) or "?"
+            capture_categories = False
+        if current is None:
+            continue
+        current["text"].append(line)
+        if re.match(r"^\s{2}review_type:\s*", line):
+            current["review_type"] = clean(re.sub(r"^\s{2}review_type:\s*", "", line))
+            capture_categories = False
+            continue
+        if re.match(r"^\s{2}finding_categories:\s*\[", line):
+            values = re.sub(r"^\s{2}finding_categories:\s*\[|\]\s*$", "", line).strip()
+            if values:
+                current["finding_categories"].extend(clean(v) for v in values.split(",") if clean(v))
+            capture_categories = False
+            continue
+        if re.match(r"^\s{2}finding_categories:\s*$", line):
+            capture_categories = True
+            continue
+        if capture_categories:
+            if re.match(r"^\s{4}-\s*", line):
+                current["finding_categories"].append(clean(re.sub(r"^\s{4}-\s*", "", line)))
+                continue
+            capture_categories = False
+
+flush()
+reviews = [e for e in entries if e["review_type"] in ("draft", "report")]
+start = max(0, len(reviews) - 20)
+warnings = []
+for idx in range(start, len(reviews)):
+    entry = reviews[idx]
+    entry_categories = {c.lower() for c in entry["finding_categories"]}
+    previous = reviews[max(0, idx - 10):idx]
+    if len(previous) < 10:
+        continue
+    missing = []
+    for name, threshold, patterns in catalog:
+        cold = True
+        for prev in previous[-threshold:]:
+            categories = {c.lower() for c in prev["finding_categories"]}
+            haystack = "\n".join(prev["text"]).lower()
+            if name in categories or any(re.search(pattern, haystack) for pattern in patterns):
+                cold = False
+                break
+        if cold and name not in entry_categories:
+            missing.append(name)
+    if missing:
+        warnings.append(f"{entry['id']}:{','.join(missing)}")
+
+print("\n".join(warnings))
+PY
+)
+
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
 fi
@@ -247,7 +335,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -287,6 +375,14 @@ if [ -n "$adversarial_missing" ]; then
     echo "WARN: ${adversarial_count}件のdraftエントリでAdversarial review欠落:"
     printf '%s\n' "$adversarial_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: changed_lines>=200 なのに adversarial_review 記録なし"
+    done
+    warn=1
+fi
+if [ -n "$cold_category_missing" ]; then
+    cold_count=$(printf '%s\n' "$cold_category_missing" | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${cold_count}件のdraft/reportで冷え観点がfinding_categoriesに未反映:"
+    printf '%s\n' "$cold_category_missing" | while IFS=: read -r id categories; do
+        [ -n "$id" ] && echo "  - $id: cold_categories=${categories}"
     done
     warn=1
 fi

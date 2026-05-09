@@ -445,15 +445,19 @@ fi
 echo "■ CS観点チェックリスト"
 cs_gate="$SCRIPT_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
 if [ -f "$cs_gate" ]; then
-    cs_result=$(bash "$cs_gate" 2>/dev/null) || true
+    set +e
+    cs_result=$(bash "$cs_gate" 2>/dev/null)
     cs_exit=$?
-    echo "  $cs_result" | head -1
+    set -e
+    cs_summary=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(WARN|ALERT):' || true)
+    [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | head -1)
+    echo "  $cs_summary"
     if [ "$cs_exit" -ne 0 ]; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
         fi
-        alerts+=("CS観点チェックリスト欠落あり")
-        echo "  → consultation/self_studyエントリにcs_checklistを追記せよ"
+        alerts+=("CS観点チェックリスト/冷え観点WARNあり")
+        echo "  → consultation/self_study品質または冷え観点のfinding_categories反映を確認せよ"
     fi
 else
     echo "  SKIP: gate_gunshi_cs_checklist.sh不在"

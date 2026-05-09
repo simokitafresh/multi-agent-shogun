@@ -15,7 +15,9 @@ setup() {
         "$TEST_DIR/docs/research"
 
     cp scripts/gates/gate_gunshi_startup.sh "$TEST_DIR/scripts/gates/gate_gunshi_startup.sh"
+    cp scripts/gates/gate_gunshi_cs_checklist.sh "$TEST_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
     chmod +x "$TEST_DIR/scripts/gates/gate_gunshi_startup.sh"
+    chmod +x "$TEST_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
     TEST_SCRIPT="$TEST_DIR/scripts/gates/gate_gunshi_startup.sh"
 
     cat > "$TEST_DIR/memory/deepdive_why_chain_20260321.md" <<'EOF'
@@ -120,4 +122,103 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: missed_sg SG7 が3件蓄積"* ]]
     [[ "$output" == *"=== 総合判定: ALERT ==="* ]]
+}
+
+@test "CS checklistの冷え観点WARNをstartup総合判定へ反映する" {
+    cat > "$TEST_DIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_5001
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5002
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5003
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5004
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5005
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5006
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5007
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5008
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5009
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5010
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_5011
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+EOF
+
+    run bash "$TEST_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 1件のdraft/reportで冷え観点がfinding_categoriesに未反映:"* ]]
+    [[ "$output" == *"CS観点チェックリスト/冷え観点WARNあり"* ]]
+    [[ "$output" == *"=== 総合判定: WARN ==="* ]]
 }

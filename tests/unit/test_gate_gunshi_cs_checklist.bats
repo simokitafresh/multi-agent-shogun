@@ -117,3 +117,198 @@ YAML
     [[ "$output" == *"INFO: ambiguity_points=0 が1回だけのdraftを検出"* ]]
     [[ "$output" == *"cmd_3002"* ]]
 }
+
+@test "cold category from previous 10 reviews must be included in next finding_categories" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_4001
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4002
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4003
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4004
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4005
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4006
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4007
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4008
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4009
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4010
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4011
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"冷え観点がfinding_categoriesに未反映"* ]]
+    [[ "$output" == *"cmd_4011: cold_categories=adversarial"* ]]
+}
+
+@test "cold category is satisfied when next finding_categories includes it" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_4101
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4102
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4103
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4104
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4105
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4106
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4107
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4108
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4109
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4110
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4111
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
+}
