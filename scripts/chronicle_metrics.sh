@@ -73,7 +73,7 @@ def print_table(title: str, headers: list[str], rows: list[list[str]]) -> None:
     print()
 
 
-def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | None:
+def parse_row(path: Path, raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | None:
     normalized = raw_line if raw_line.rstrip().endswith("|") else f"{raw_line} |"
     cells = [cell.strip() for cell in normalized.split("|")[1:-1]]
 
@@ -84,7 +84,7 @@ def parse_row(raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | No
             break
 
     if date_idx is None or date_idx < 2:
-        print(f"WARNING: skipping malformed chronicle row at line {lineno}: {raw_line}", file=sys.stderr)
+        print(f"WARNING: skipping malformed chronicle row at {path}:{lineno}: {raw_line}", file=sys.stderr)
         return None
 
     cmd_id = cells[0]
@@ -125,7 +125,7 @@ def parse_chronicle(path: Path) -> None:
             print(f"ERROR: row encountered before year context at {path}:{lineno}", file=sys.stderr)
             sys.exit(1)
 
-        parsed = parse_row(raw_line, lineno)
+        parsed = parse_row(path, raw_line, lineno)
         if parsed is None:
             continue
 

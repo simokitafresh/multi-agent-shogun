@@ -47,3 +47,19 @@ MD
     [[ "$output" == *"| impl  | 1     |"* ]]
     [[ "$output" == *"| recon | 1     |"* ]]
 }
+
+@test "malformed row warning includes source path" {
+    cat > "$TEST_TMPDIR/context/cmd-chronicle.md" <<'MD'
+# CMD年代記
+
+## 2026-05
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_bad | missing date | infra | — |
+MD
+
+    run bash "$TEST_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: skipping malformed chronicle row at $TEST_TMPDIR/context/cmd-chronicle.md:"* ]]
+}
