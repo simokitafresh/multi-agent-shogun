@@ -65,6 +65,9 @@ PY
 cache_valid() {
     local content="$1"
     local provider="${2:-claude}"
+    if [[ "$content" == *$'\n'* || "$content" == *$'\r'* ]]; then
+        return 1
+    fi
     if [[ "$content" != 5H:*7D:* ]]; then
         return 1
     fi
@@ -73,6 +76,46 @@ cache_valid() {
         return 1
     fi
     return 0
+}
+
+# =============================================================================
+# Status validation helpers
+# =============================================================================
+status_pct_valid() {
+    local pct="$1"
+    [[ "$pct" == "ERR" || "$pct" == "--" || "$pct" =~ ^[0-9]+$ ]]
+}
+
+raw_status_valid() {
+    local d_pct="$1" d_reset="$2" w_pct="$3" w_reset="$4"
+    status_pct_valid "$d_pct" || return 1
+    status_pct_valid "$w_pct" || return 1
+    [[ -n "$d_reset" && -n "$w_reset" ]] || return 1
+    [[ "$d_reset" != *$'\n'* && "$w_reset" != *$'\n'* ]] || return 1
+    [[ "$d_reset" != *$'\t'* && "$w_reset" != *$'\t'* ]] || return 1
+    return 0
+}
+
+fallback_line() {
+    local provider="${1:-claude}"
+    if [[ "$provider" == "codex" ]]; then
+        echo "5H:----- --% left -- 7D:----- --% left --"
+    else
+        echo "5H:----- --% -- 7D:----- --% --"
+    fi
+}
+
+cached_or_fallback() {
+    local provider="${1:-claude}"
+    if [[ -f "$CACHE_FILE" ]]; then
+        local cached
+        cached=$(cat "$CACHE_FILE")
+        if cache_valid "$cached" "$provider"; then
+            echo "$cached"
+            return 0
+        fi
+    fi
+    fallback_line "$provider"
 }
 
 # =============================================================================
@@ -140,6 +183,10 @@ if [[ -n "${1:-}" ]]; then
 else
     PROVIDER="$(detect_shogun_provider)"
 fi
+case "$PROVIDER" in
+    claude|codex) ;;
+    *) PROVIDER="claude" ;;
+esac
 CACHE_FILE="/tmp/mcas_usage_status_cache_${PROVIDER}"
 
 if [[ -f "$CACHE_FILE" ]]; then
@@ -167,21 +214,16 @@ raw=$(PROVIDER="$PROVIDER" "${SCRIPT_DIR}/usage_monitor.sh" --status 2>/dev/null
 
 # L007: fetch failure → don't overwrite cache
 if [[ -z "$raw" ]]; then
-    if [[ -f "$CACHE_FILE" ]]; then
-        cached=$(cat "$CACHE_FILE")
-        if cache_valid "$cached" "$PROVIDER"; then
-            echo "$cached"
-        else
-            echo "5H:----- --% -- 7D:----- --% --"
-        fi
-    else
-        echo "5H:----- --% -- 7D:----- --% --"
-    fi
+    cached_or_fallback "$PROVIDER"
     exit 0
 fi
 
 # Parse tab-separated 4 fields
 IFS=$'\t' read -r d_pct d_reset w_pct w_reset <<< "$raw"
+if ! raw_status_valid "$d_pct" "$d_reset" "$w_pct" "$w_reset"; then
+    cached_or_fallback "$PROVIDER"
+    exit 0
+fi
 
 # Build formatted output
 result=$(format_line "$d_pct" "$d_reset" "$w_pct" "$w_reset" "$PROVIDER")
