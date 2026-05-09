@@ -38,6 +38,7 @@ commands:
     id: cmd_diagqtest
     title: "infra — diagnosis質検査テスト"
     project: infra
+    depends_on: none
     command: "テスト用cmd"
     status: pending
     quality_gate:
@@ -80,6 +81,7 @@ commands:
     id: cmd_warntest
     title: "infra — WARN累計テスト"
     project: infra
+    depends_on: none
     command: "テスト用cmd"
     status: pending
     quality_gate:

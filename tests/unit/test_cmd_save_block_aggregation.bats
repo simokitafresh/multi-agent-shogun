@@ -93,6 +93,7 @@ commands:
     title: "verify — cmd_save pass output"
     purpose: "cmd_save PASS時の出力静粛性を検証する"
     project: infra
+    depends_on: none
     task_type: impl
     command: |
       1. scripts/cmd_save.sh の出力条件を確認する

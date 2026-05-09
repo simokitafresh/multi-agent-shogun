@@ -34,6 +34,7 @@ commands:
     title: "infra — command step vs AC regression"
     purpose: "command欄ステップ数警告が acceptance_criteria の実項目数だけを比較することを確認する"
     project: infra
+    depends_on: none
     task_type: impl
     command: |
 ${command_block}

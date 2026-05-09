@@ -23,6 +23,7 @@ commands:
     title: "infra — q8 WHY検出緩和テスト"
     purpose: "WHYが明示されていれば引用記号なしでも不要WARNを出さない"
     project: infra
+    depends_on: none
     task_type: impl
     command: "q8_why_what の回帰確認"
     acceptance_criteria:

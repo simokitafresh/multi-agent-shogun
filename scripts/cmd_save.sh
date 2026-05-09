@@ -483,6 +483,26 @@ cmd_block_get_field() {
     fi
 }
 
+check_depends_on_field() {
+    load_cmd_block || return 0
+    load_cmd_block_cache || return 0
+
+    local depends_on_value
+    depends_on_value="$(cmd_block_get_field "depends_on")"
+
+    if [[ -z "${depends_on_value:-}" ]]; then
+        echo "WARNING: depends_on未記入。依存cmdがある場合は depends_on: cmd_XXXX、依存なしなら depends_on: none を記入せよ" >&2
+        record_warn_reason "depends_on未記入" "check=depends_on_field"
+        return 0
+    fi
+
+    if [[ "$depends_on_value" != "none" && ! "$depends_on_value" =~ ^cmd_[0-9]+$ ]]; then
+        echo "WARNING: depends_on形式不正。depends_on: cmd_XXXX または depends_on: none のどちらかで記入せよ" >&2
+        echo "  現在値: ${depends_on_value}" >&2
+        record_warn_reason "depends_on形式不正" "check=depends_on_field"
+    fi
+}
+
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -1461,6 +1481,9 @@ QG_TEMPLATE
         echo "  ---" >&2
         abort_if_block_immediate || exit 1
     fi
+
+    # depends_on: cmd間依存の暗黙化を入口で可視化（WARN導入 cmd_2627）
+    check_depends_on_field
 
     # q4_depth: WARN_COUNTに加算（段階的導入→本格化 2026-04-21殿裁定）
     if ! cmd_block_has_field "quality_gate.q4_depth"; then

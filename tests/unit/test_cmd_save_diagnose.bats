@@ -31,6 +31,7 @@ commands:
     id: cmd_diagtest
     title: "infra — 診断テスト"
     project: infra
+    depends_on: none
     command: "診断挙動のテスト"
     status: pending
     quality_gate:

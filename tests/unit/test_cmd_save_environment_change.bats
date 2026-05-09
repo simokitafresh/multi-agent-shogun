@@ -39,6 +39,7 @@ commands:
     id: cmd_envtest
     title: "infra — environment_change必須テスト"
     project: infra
+    depends_on: none
     command: "テスト用cmd"
     status: pending
     quality_gate:
