@@ -3477,6 +3477,11 @@ check_ac_phase_mixing() {
     if [[ -n "$delivery_hits" ]]; then
         echo "  commit/deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
     fi
+    # Level5: フェーズ分割テンプレート提案
+    echo "  ─── 分割案(コピペ用) ───" >&2
+    echo "  AC-impl: 「{実装内容}。batsテストPASS。commit」" >&2
+    echo "  AC-verify: 「{計測/CDP確認/deploy}。結果を報告」" >&2
+    echo "  ─────────────────────────" >&2
     record_warn_reason "ac_phase_mixing" "check=check_ac_phase_mixing"
 }
 
