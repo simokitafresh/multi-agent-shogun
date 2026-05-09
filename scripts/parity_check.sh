@@ -95,10 +95,7 @@ run_parity_check() {
     export DM_SIGNAL_PATH
     export EXPERIMENTS_DB
 
-    local args=("$@")
-    export PARITY_ARGS="${args[*]}"
-
-    python3 -u - <<'PYTHON_EOF'
+    python3 -u - "$@" <<'PYTHON_EOF'
 import json
 import os
 import sqlite3
@@ -108,7 +105,7 @@ import psycopg2
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 EXPERIMENTS_DB = os.environ["EXPERIMENTS_DB"]
-PARITY_ARGS = os.environ["PARITY_ARGS"].split()
+PARITY_ARGS = sys.argv[1:]
 
 TOLERANCE = 1e-10  # 浮動小数点許容誤差
 
