@@ -189,6 +189,17 @@ def mapped_skill_for_gate(gate_name):
     return GATE_SKILL_MAP.get(str(gate_name or "").strip(), "")
 
 
+def is_excluded_cmd_complete_feedback(skill_name):
+    if str(gate or "").strip() != "cmd_complete_gate":
+        return False
+    if str(result or "").strip().upper() != "FAIL":
+        return False
+    if str(skill_name or "").strip() != "cmd-complete":
+        return False
+    parent_cmd = str(source or "").strip()
+    return parent_cmd.startswith(("cmd_karo_direct", "cmd_training"))
+
+
 def has_duplicate_failure(skill_name, gate_name, stumbling_points):
     for entry in load_skill_log():
         if (
@@ -219,6 +230,10 @@ skill = explicit_skill or mapped_skill or logged_skill
 skill_file = exact_skill_file(skill, "" if mapped_skill and not explicit_skill else logged_skill_path)
 if not skill or not skill_file:
     print("SKIP: skill not identified")
+    raise SystemExit(0)
+
+if is_excluded_cmd_complete_feedback(skill):
+    print(f"SKIP: cmd-complete feedback excluded for {source}")
     raise SystemExit(0)
 
 stumbling = str(logged_entry.get("stumbling_points") or "").strip() if logged_entry else ""
