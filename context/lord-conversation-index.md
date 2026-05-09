@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-10 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-10T01:42:37+09:00 -->
+<!-- generated_at: 2026-05-10T01:49:53+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-10T01:49:53+09:00 | terminal | response | **cmd_2627 GATE CLEAR。** 疾風完遂。本セッション将軍cmd **4件全CLEAR**。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2624 | LG033: 否定的…
+- 2026-05-10T01:43:20+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-10 01:33:47|cmd_2624 2026-05-10 01:33:56|cmd_karo_level5_report_format 2026-05-10 01:34:07|cmd_karo_l…
+- 2026-05-10T01:43:18+09:00 | ntfy | outbound | 【家老】cmd_2627 初回配備開始 (title=強化 — cmd間依存の明示強制(LS-A14 Level5化), ninja=hayate) 強化 📋 https://gist.github.com/simokitafresh/6…
 - 2026-05-10T01:42:37+09:00 | terminal | response | cmd_2627 GATE PASS一発通過、家老に委任完了。LS-A14 Level5化(cmd間依存の明示強制)。 完了を待つ。殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-05-10T01:40:10+09:00 | terminal | inbound | レベル5化を進めよう
 - 2026-05-10T01:39:35+09:00 | terminal | response | **cmd_2626 GATE CLEAR。** 疾風完遂。本セッション将軍cmd **3件全CLEAR**。 **本セッション全成果:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_26…
@@ -11,9 +14,6 @@
 - 2026-05-10T01:35:33+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-272)
 - 2026-05-10T01:35:21+09:00 | terminal | response | **cmd_2625 GATE CLEAR。** 半蔵完遂。教訓件数WARN閾値35→31引き下げ完了。 cmd_2626(q11偽陽性除外)は家老が次に配備する。本セッション将軍cmdは3件中2件CLEAR、1件配備待ち。殿の指示を待つ…
 - 2026-05-10T01:34:33+09:00 | terminal | response | karo_level5_bc_failもGATE CLEAR。軍師自走Level5化が全件完了。 **本セッション全軍成果:** | cmd | 状態 | |-----|------| | cmd_2624 LG033反証grep強制 |…
-- 2026-05-10T01:34:08+09:00 | terminal | response | **cmd_2624 GATE CLEAR。** 疾風完遂。LG033 Level5化(否定的前提反証grep強制)が本番稼働。 加えて軍師自走のkaro_level5_report_formatもGATE CLEAR。cmd_2625(…
-- 2026-05-10T01:32:34+09:00 | terminal | response | cmd_2626 GATE PASS、家老に委任完了。教訓LS047はcmd_2625のBLOCK時に記録済み。 軍師からLevel5化最終報告: **本セッションで4件追加実装(parity_ac/new_file/ac_phase/c…
-- 2026-05-10T01:29:40+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-271)
 
 ## 未解決確認事項
 - cmd_2624 GATE PASS、家老に委任完了。 **LG033 Level5化 — 否定的前提主張の反証grep強制。** cmd_2622前提崩壊(FILL_THIS 0件を未確認)のなぜなぜ7回から到達した入口防止。 完了を待ち、効果検証してから次の1件に進む。殿の…
@@ -37,10 +37,7 @@
 
 ## 参照cmd
 - cmd_2
-- cmd_2378
-- cmd_2589
 - cmd_2596
-- cmd_2602
 - cmd_2603
 - cmd_2606
 - cmd_2607
