@@ -50,6 +50,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -60,7 +61,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion collect_assumption_claims_missing_dates check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -561,6 +562,76 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"q11_existing_alternative_verification"* ]]
+}
+
+@test "cmd_2612: gate追加cmdで行動変換キーワードがないならWARNING" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2612_warn:
+    id: cmd_2612_warn
+    title: "強化 — 新規gate追加"
+    purpose: "cmd_save.shへ新規gateを追加してWARN止まりの設計を検出する"
+    command: |
+      scripts/cmd_save.shに新規gateを追加する
+      WARNメッセージを表示する
+    acceptance_criteria:
+      - "AC1: WARN表示のみのgate追加cmdを起票すると新チェックがWARN"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 行動変換WARNの局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh code_reading + tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: WARN止まりのgate追加は行動を変えない → WHAT: 行動変換語なしをWARN"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -rn gate_hook_action_conversion scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"
+    assumptions:
+      - claim: "2026-05-09時点でfixtureはcmd_save.shのquality_gate抽出範囲内"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2612_warn"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
+    [[ "$output" == *"BLOCK / exit 1"* ]]
+}
+
+@test "cmd_2612: gate追加cmdでもACにBLOCK/exit 1があれば行動変換WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2612_pass:
+    id: cmd_2612_pass
+    title: "強化 — 新規gate追加"
+    purpose: "cmd_save.shへ新規gateを追加してWARN止まりの設計を検出する"
+    command: |
+      scripts/cmd_save.shに新規gateを追加する
+    acceptance_criteria:
+      - "AC1: 行動変換不足時はBLOCK(exit 1)候補を明示する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 行動変換WARN抑止の局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh code_reading + tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 行動変換まで設計済みのgate追加はWARN不要 → WHAT: BLOCK/exit 1入りACで抑止"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -rn gate_hook_action_conversion scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"
+    assumptions:
+      - claim: "2026-05-09時点でfixtureはcmd_save.shのquality_gate抽出範囲内"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2612_pass"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
 }
 
 @test "Check1-5: quality_gate未記入でBLOCK" {

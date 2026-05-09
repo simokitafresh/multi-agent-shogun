@@ -176,6 +176,45 @@ q11_has_existing_alternative_verification() {
     return 0
 }
 
+check_gate_hook_action_conversion() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local action_text=""
+
+    [[ -n "$block_text" ]] || return 0
+    is_gate_or_hook_addition_cmd "$block_text" || return 0
+
+    action_text="$(printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]{4}command:[[:space:]]*\|/ { in_command=1; print; next }
+        /^[[:space:]]{4}command:[[:space:]]*[^|]/ {
+            sub(/^[[:space:]]{4}command:[[:space:]]*/, "")
+            print
+            next
+        }
+        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*$/ { in_ac=1; print; next }
+        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*\[/ {
+            sub(/^[[:space:]]{4}acceptance_criteria:[[:space:]]*/, "")
+            print
+            next
+        }
+        (in_command || in_ac) && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ {
+            in_command=0
+            in_ac=0
+            next
+        }
+        in_command && /^[[:space:]]{4,}/ { print; next }
+        in_ac && /^[[:space:]]{6,}-/ { print; next }
+    ')"
+
+    [[ -n "${action_text:-}" ]] || return 0
+    if printf '%s\n' "$action_text" | grep -qiE 'BLOCK|exit[[:space:]]+1|強制|自動実行|自動化'; then
+        return 0
+    fi
+
+    echo "WARNING: gate/hook追加cmdに行動変換キーワードがありません。WARN止まりの新規gate/hookは運用を変えません" >&2
+    echo "  推奨アクション: acceptance_criteria または command に BLOCK / exit 1 / 強制 / 自動実行 / 自動化 のいずれかを明記し、検知から行動変換まで設計せよ" >&2
+    record_warn_reason "gate/hook追加cmdに行動変換キーワードなし" "check=gate_hook_action_conversion"
+}
+
 collect_assumption_claims_missing_dates() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
 
@@ -1642,6 +1681,7 @@ QG_TEMPLATE
         echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
         record_warn_reason "q11に既存代替の現物確認なし" "check=q11_existing_alternative_verification"
     fi
+    check_gate_hook_action_conversion "$CMD_BLOCK_NC"
 
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
