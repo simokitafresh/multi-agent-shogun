@@ -2871,30 +2871,23 @@ show_semantic_index_matches() {
 
     local _semantic_rows _semantic_label _semantic_aliases _semantic_files
     local _semantic_alias _semantic_alias_re
-    _semantic_rows=$(awk '
+    _semantic_rows=$(awk -F'|' '
+        function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
         function flush() {
             if (label != "" && aliases != "") print label "\t" aliases "\t" files
             label=""; aliases=""; files=""
         }
         /^## / { flush(); next }
-        /^\| label \|/ {
-            line=$0
-            sub(/^\| label \|[[:space:]]*/, "", line)
-            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
-            label=line
+        trim($2) == "label" {
+            label=trim($3)
             next
         }
-        /^\| aliases \|/ {
-            line=$0
-            sub(/^\| aliases \|[[:space:]]*/, "", line)
-            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
-            aliases=line
+        trim($2) == "aliases" {
+            aliases=trim($3)
             next
         }
-        /^\| file \|/ {
-            line=$0
-            sub(/^\| file \|[[:space:]]*/, "", line)
-            sub(/[[:space:]]*\|[[:space:]]*$/, "", line)
+        trim($2) == "file" {
+            line=trim($3)
             if (files == "") files=line; else files=files ", " line
             next
         }
@@ -2909,7 +2902,12 @@ show_semantic_index_matches() {
             _semantic_alias="$(printf '%s' "$_semantic_alias" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
             [[ -z "$_semantic_alias" ]] && continue
             _semantic_alias_re="$(printf '%s' "$_semantic_alias" | sed -E 's/[][(){}.^$*+?|\\/]/\\&/g')"
-            if printf '%s\n' "$SEARCH_TEXT" | grep -Eqi "(^|[^[:alnum:]_])${_semantic_alias_re}([^[:alnum:]_]|$)"; then
+            if printf '%s' "$_semantic_alias" | LC_ALL=C grep -qE '^[A-Za-z0-9_ -]+$'; then
+                _semantic_match_cmd=(grep -Eqi "(^|[^[:alnum:]_])${_semantic_alias_re}([^[:alnum:]_]|$)")
+            else
+                _semantic_match_cmd=(grep -Fqi -- "$_semantic_alias")
+            fi
+            if printf '%s\n' "$SEARCH_TEXT" | "${_semantic_match_cmd[@]}"; then
                 echo "INFO: [SEMANTIC] ${_semantic_label} matched alias '${_semantic_alias}'" >&2
                 if [[ -n "$_semantic_files" ]]; then
                     echo "  主要ファイル: ${_semantic_files}" >&2
