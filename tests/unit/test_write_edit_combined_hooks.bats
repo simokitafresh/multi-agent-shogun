@@ -66,6 +66,21 @@ _run_post() {
     [[ "$output" == *'count=3'* ]]
 }
 
+@test "pre combined hook auto shows q11 grep results for gate hook script paths" {
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: gate追加\n    command: bash scripts/gates/gate_report_format.sh queue/reports/x.yaml\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'自動grep結果(q11コピー用)'* ]]
+    [[ "$output" == *'scripts/gates/gate_report_format.sh'* ]]
+    [[ "$output" == *'command: rg -nF'*'scripts/gates/gate_report_format.sh'* ]]
+    [[ "$output" == *'count:'* ]]
+}
+
+@test "pre combined hook does not show q11 grep results without gate hook script paths" {
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: 通常cmd\n    command: echo ok\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'自動grep結果(q11コピー用)'* ]]
+}
+
 @test "pre combined hook blocks autolearned pipe danger in purpose" {
     printf '%s\n' '2026-05-03T15:32:46Z check=check_cmd_text_pipe_danger count=1 warn=cmd_text_pipe_danger cmd=cmd_2548' > "$TMP_AUTOLEARN"
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: grep foo | wc -l\n    command: echo ok\n"}}'

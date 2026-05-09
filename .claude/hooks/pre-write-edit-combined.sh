@@ -65,6 +65,41 @@ for index, (pattern, count) in enumerate(counter.most_common(3), 1):
 PY
 }
 
+auto_q11_script_grep_results() {
+    local cmd_text="$1"
+    local script_paths
+
+    script_paths="$(printf '%s\n' "$cmd_text" \
+        | grep -oE '(\.claude/hooks|scripts/(gates|hooks))/[A-Za-z0-9_.-]+\.sh' \
+        | sort -u || true)"
+    [[ -n "$script_paths" ]] || return 0
+
+    printf '自動grep結果(q11コピー用):\n'
+    while IFS= read -r script_path; do
+        [[ -n "$script_path" ]] || continue
+        local count hits
+        count="$(timeout 2s rg -nF "$script_path" "$SCRIPT_DIR" \
+            --glob '!queue/**' \
+            --glob '!logs/**' \
+            --glob '!tests/test_helper/**' \
+            2>/dev/null | wc -l | tr -d '[:space:]')"
+        hits="$(timeout 2s rg -nF "$script_path" "$SCRIPT_DIR" \
+            --glob '!queue/**' \
+            --glob '!logs/**' \
+            --glob '!tests/test_helper/**' \
+            2>/dev/null | head -5 || true)"
+        printf -- '- %s\n' "$script_path"
+        printf '  command: rg -nF "%s" . --glob '"'"'!queue/**'"'"' --glob '"'"'!logs/**'"'"' --glob '"'"'!tests/test_helper/**'"'"'\n' "$script_path"
+        printf '  count: %s\n' "${count:-0}"
+        if [[ -n "$hits" ]]; then
+            printf '  hits:\n'
+            printf '%s\n' "$hits" | sed "s#^$SCRIPT_DIR/##" | sed 's/^/    /'
+        else
+            printf '  hits: none\n'
+        fi
+    done <<< "$script_paths"
+}
+
 # Single jq call to extract tool_name and file_path
 _parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
 tool_name="${_parsed%%	*}"
@@ -165,6 +200,12 @@ ${_dynamic_checks}"
 
 直近cmd_save BLOCK TOP3(cmd_design_quality.yaml直近50件):
 ${_cmd_save_block_top3}"
+        fi
+        _auto_q11_grep_results="$(auto_q11_script_grep_results "$_stk_content")"
+        if [[ -n "$_auto_q11_grep_results" ]]; then
+            _checklist="${_checklist}
+
+${_auto_q11_grep_results}"
         fi
         emit_context "$_checklist"
     fi
