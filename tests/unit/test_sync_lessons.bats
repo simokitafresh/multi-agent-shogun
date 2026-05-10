@@ -119,6 +119,38 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons propagates when and how from markdown to index" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: when how propagation
+- **日付**: 2026-05-10
+- **tags**: [infra]
+- **when**: gateが同種の欠落を検知した時
+- **how**: テンプレートへ必須フィールドを追加し既存欠落を補完する
+- sample summary text
+EOF
+
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-05-10T00:00:00'
+lessons: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+lesson = data['lessons'][0]
+assert lesson.get('when') == 'gateが同種の欠落を検知した時', lesson
+assert lesson.get('how') == 'テンプレートへ必須フィールドを追加し既存欠落を補完する', lesson
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
 @test "sync_lessons auto-extracts target_files from lesson text when no explicit field" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: run_077_kawarimi.pyのbatch vs sequential不一致

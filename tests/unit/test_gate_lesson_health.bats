@@ -73,6 +73,33 @@ teardown() {
     [[ "$output" == *"OK: infraのlesson統合状況は健全"* ]]
 }
 
+@test "gate_lesson_health warns and reports fill rate when lessons miss when/how" {
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: infra when/how充足率: when=0/1(0.0%) how=0/1(0.0%)"* ]]
+    [[ "$output" == *"WARN: infra when/how欠落教訓あり(when欠落:1, how欠落:1, total:1)"* ]]
+}
+
+@test "gate_lesson_health reports full when/how coverage" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+last_synced: '2026-04-24T00:00:00'
+archive_path: $TEST_TMPDIR/projects/infra/lessons_archive.yaml
+lesson_count: 1
+lessons:
+- id: L001
+  title: sample
+  summary: sample
+  when: 同種条件
+  how: 実行手順
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: infra when/how充足率: when=1/1(100.0%) how=1/1(100.0%)"* ]]
+    [[ "$output" != *"when/how欠落教訓あり"* ]]
+}
+
 @test "gate_lesson_health alerts when SSOT contains git conflict markers" {
     cat > "$TEST_TMPDIR/tasks/lessons.md" <<'EOF'
 # lessons

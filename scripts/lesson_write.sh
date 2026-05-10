@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--if "condition"] [--then "action"] [--because "reason"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -273,6 +273,8 @@ TAGS=""
 IF_COND=""
 THEN_ACTION=""
 BECAUSE_REASON=""
+WHEN_COND=""
+HOW_ACTION=""
 RETIRE_ID=""
 RETAG_ID=""
 RETAG_TAGS=""
@@ -289,6 +291,8 @@ Options:
   --tags "db,api"         教訓タグを明示指定
   --subdomain fe|be|gs|infra
                           教訓の対象サブドメインを明示指定
+  --when "trigger"        発動条件を明示指定
+  --how "steps"           実行手順を明示指定
   --if "condition" --then "action" --because "reason"
   --retire <lesson_id>
   --retag <lesson_id> --new-tags "tag1,tag2"
@@ -331,6 +335,14 @@ while [ $# -gt 0 ]; do
             ;;
         --because)
             BECAUSE_REASON="${2:-}"
+            shift 2
+            ;;
+        --when)
+            WHEN_COND="${2:-}"
+            shift 2
+            ;;
+        --how)
+            HOW_ACTION="${2:-}"
             shift 2
             ;;
         --retire)
@@ -750,6 +762,9 @@ print(','.join(tags[:3]))
             fi
         fi
 
+        _lw_when="${WHEN_COND:-${IF_COND:-未設定}}"
+        _lw_how="${HOW_ACTION:-${THEN_ACTION:-未設定}}"
+
         # Build and append new entry
         {
             printf '\n### %s: %s\n' "$_lw_new_id_str" "$TITLE"
@@ -760,6 +775,8 @@ print(','.join(tags[:3]))
             printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
             [ -n "${SUBDOMAIN:-}" ] && printf -- '- **subdomain**: %s\n' "$SUBDOMAIN"
             [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"
+            printf -- '- **when**: %s\n' "$_lw_when"
+            printf -- '- **how**: %s\n' "$_lw_how"
             [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"
             [ -n "${THEN_ACTION:-}" ] && printf -- '- **then**: %s\n' "$THEN_ACTION"
             [ -n "${BECAUSE_REASON:-}" ] && printf -- '- **because**: %s\n' "$BECAUSE_REASON"

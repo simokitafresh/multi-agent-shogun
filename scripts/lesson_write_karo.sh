@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write_karo.sh — 家老専用教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX
+# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"]
 # → projects/infra/lessons_karo.yaml に追記
 
 set -e
@@ -9,6 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TITLE="${1:-}"
 DETAIL="${2:-}"
 SOURCE_CMD="${3:-}"
+WHEN_COND="${4:-同種の状況が再発した時}"
+HOW_ACTION="${5:-$DETAIL}"
 
 # Validate arguments
 if [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
@@ -53,6 +55,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 1
 
         export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD
+        export WHEN_COND HOW_ACTION
         python3 << 'PYEOF'
 import yaml, os, sys
 from difflib import SequenceMatcher
@@ -62,6 +65,8 @@ timestamp = os.environ["TIMESTAMP"]
 title = os.environ["TITLE"]
 detail = os.environ["DETAIL"]
 source_cmd = os.environ.get("SOURCE_CMD", "")
+when_cond = os.environ.get("WHEN_COND", "")
+how_action = os.environ.get("HOW_ACTION", "")
 
 with open(lessons_file, encoding='utf-8') as f:
     data = yaml.safe_load(f)
@@ -116,6 +121,8 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
     f.write(f'  title: {_sv(title)}\n')
     f.write(f'  detail: {_sv(detail)}\n')
     f.write(f'  source_cmd: {_sv(source_cmd)}\n')
+    f.write(f'  when: {_sv(when_cond)}\n')
+    f.write(f'  how: {_sv(how_action)}\n')
     f.write(f'  created_at: {_sv(timestamp)}\n')
 
 print(f'{new_id_str} added to {lessons_file}')

@@ -88,7 +88,7 @@ check_ssot_conflict_markers() {
 }
 
 # ─── 高速化: lessons.yaml を1回だけ読んで全統計を計算 ───
-# 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint
+# 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint|when_count|how_count
 # 追加行: PROBLEM:L番号: injection=N, helpful=0 [pid]
 _compute_lesson_stats() {
     local file="$1"
@@ -106,6 +106,8 @@ _compute_lesson_stats() {
             dep++
         } else {
             active_nc++
+            if (has_when) when_count++
+            if (has_how) how_count++
             if (n > max_id) max_id = n
             if (n > synced + 0) unsynced++
             if (n > chk + 0) new_since++
@@ -117,10 +119,12 @@ _compute_lesson_stats() {
     /^- id: L/ {
         flush_current()
         current_id = $3; sub(/^L/, "", current_id)
-        is_deprecated = 0; ic = 0; hc = 0
+        is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0
     }
     /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
     /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
+    /^[[:space:]]+when:[[:space:]]*[^[:space:]]/ { has_when = 1 }
+    /^[[:space:]]+how:[[:space:]]*[^[:space:]]/ { has_how = 1 }
     /[[:space:]]+injection_count:[[:space:]]/ {
         gsub(/.*injection_count:[[:space:]]*/,""); ic = $1 + 0
     }
@@ -129,7 +133,7 @@ _compute_lesson_stats() {
     }
     END {
         flush_current()
-        printf "%d|%d|%d|%d|%d\n", active_nc+0, max_id+0, dep+0, unsynced+0, new_since+0
+        printf "%d|%d|%d|%d|%d|%d|%d\n", active_nc+0, max_id+0, dep+0, unsynced+0, new_since+0, when_count+0, how_count+0
         for (i in problems) printf "PROBLEM:%s\n", problems[i]
     }
     ' "$file"
@@ -402,7 +406,7 @@ for _pid in "${_target_pids[@]}"; do
         "$INJECTION_WARN_THRESHOLD" "$_pid")
 
     _stats_line="${_stats_output%%$'\n'*}"
-    IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count <<< "$_stats_line"
+    IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count _when_count _how_count <<< "$_stats_line"
     _injection_problems=$(printf '%s\n' "$_stats_output" | grep '^PROBLEM:' | sed 's/^PROBLEM://' || true)
 
     # ─── check_project 相当 ───
@@ -416,6 +420,17 @@ for _pid in "${_target_pids[@]}"; do
     fi
 
     [ "${_deprecated_count:-0}" -gt 0 ] && echo "INFO: ${_pid} deprecated除外: ${_deprecated_count}件"
+
+    _when_missing=$((_total_lessons - ${_when_count:-0}))
+    _how_missing=$((_total_lessons - ${_how_count:-0}))
+    _when_rate=$(awk -v ok="${_when_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
+    _how_rate=$(awk -v ok="${_how_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
+    echo "INFO: ${_pid} when/how充足率: when=${_when_count:-0}/${_total_lessons}(${_when_rate}%) how=${_how_count:-0}/${_total_lessons}(${_how_rate}%)"
+    if [ "$_when_missing" -gt 0 ] || [ "$_how_missing" -gt 0 ]; then
+        emit_actionable \
+            "WARN: ${_pid} when/how欠落教訓あり(when欠落:${_when_missing}, how欠落:${_how_missing}, total:${_total_lessons})" \
+            "lesson_write.sh の新テンプレートに沿って既存教訓へ when/how を補完せよ。"
+    fi
 
     if [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ]; then
         emit_actionable \

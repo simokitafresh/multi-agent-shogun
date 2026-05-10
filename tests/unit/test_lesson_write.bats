@@ -306,6 +306,24 @@ EOF
     [[ "$output" == *"**because**: 理由C"* ]]
 }
 
+@test "when and how fields are always written to lesson entry" {
+    run_lesson_write testproj "発動条件と手順の教訓" "when/howテンプレートが常時出力されることを確認するテスト" "cmd_1001" "karo" "" --when "条件A" --how "手順B"
+    [ "$status" -eq 0 ]
+
+    run cat "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"**when**: 条件A"* ]]
+    [[ "$output" == *"**how**: 手順B"* ]]
+}
+
+@test "when and how default from if and then when explicit values omitted" {
+    run_lesson_write testproj "発動条件の既定値教訓" "if/thenからwhen/how既定値を作る確認テスト" "cmd_1002" "karo" "" --if "条件X" --then "手順Y"
+    [ "$status" -eq 0 ]
+
+    run cat "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"**when**: 条件X"* ]]
+    [[ "$output" == *"**how**: 手順Y"* ]]
+}
+
 # ============================================================
 # 7. Retire mode
 # ============================================================

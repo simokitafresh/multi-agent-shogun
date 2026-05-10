@@ -129,6 +129,8 @@ while i < len(lines):
     if_cond = None
     then_action = None
     because_reason = None
+    when_cond = None
+    how_action = None
     retired = None
     retired_at = None
     target_files = None
@@ -266,6 +268,15 @@ while i < len(lines):
             m_fbecause = re.match(r'- \*\*because\*\*:\s*(.+)', sline)
             if m_fbecause:
                 because_reason = m_fbecause.group(1).strip()
+        # Extract when/how fields (activation trigger + execution steps)
+        if when_cond is None:
+            m_fwhen = re.match(r'- \*\*when\*\*:\s*(.+)', sline)
+            if m_fwhen:
+                when_cond = m_fwhen.group(1).strip()
+        if how_action is None:
+            m_fhow = re.match(r'- \*\*how\*\*:\s*(.+)', sline)
+            if m_fhow:
+                how_action = m_fhow.group(1).strip()
         # Extract retired field
         if retired is None:
             m_fretired = re.match(r'- \*\*retired\*\*:\s*(.+)', sline)
@@ -287,7 +298,7 @@ while i < len(lines):
             summary_parts.append(text)
         elif sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -309,6 +320,10 @@ while i < len(lines):
         entry['merged_from'] = merged_from
     if tags:
         entry['tags'] = tags
+    if when_cond:
+        entry['when'] = when_cond
+    if how_action:
+        entry['how'] = how_action
     if subdomain:
         entry['subdomain'] = subdomain
     if retired:
@@ -504,6 +519,10 @@ for l in active_lessons:
     })
     if l.get('subdomain'):
         entry['subdomain'] = l['subdomain']
+    if l.get('when'):
+        entry['when'] = l['when']
+    if l.get('how'):
+        entry['how'] = l['how']
     if l.get('target_files'):
         entry['target_files'] = FlowList(l['target_files'])
     if l.get('retired'):
