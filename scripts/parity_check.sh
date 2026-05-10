@@ -127,6 +127,9 @@ def get_experiments_connection():
     except sqlite3.OperationalError as e:
         print(f"FAIL: experiments.db接続失敗 — {e}")
         sys.exit(1)
+    except Exception as e:
+        print(f"FAIL: DB接続エラー(experiments) — {e}")
+        sys.exit(1)
 
 
 def resolve_portfolios(pg_conn, args):
