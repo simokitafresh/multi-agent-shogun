@@ -41,6 +41,9 @@ bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task progress "AC1: �
 
 ## 報告YAML作成・編集手順
 
+**固定手順（冒頭確認）**: 報告YAMLは必ず `report_field_set.sh` 経由で作成・編集し、提出前に必ず `bash scripts/gates/gate_report_format.sh <report_path>` を実行してPASSを確認すること。
+このgateは `lessons_useful`、`binary_checks.*.result`、必須フィールド、`FILL_THIS` 残存を検証する。BLOCK時は直接編集せず `report_field_set.sh` で修正して再実行せよ。
+
 報告YAMLの作成・編集は全て `report_field_set.sh` 経由で行うこと。
 Write/Edit toolによる `queue/reports/*.yaml` への直接書き込みはhookでブロックされる。
 

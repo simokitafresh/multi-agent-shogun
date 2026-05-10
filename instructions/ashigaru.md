@@ -50,7 +50,7 @@ forbidden_actions:
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 - **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
-  記入例: `check: "AC1の実装が完了しているか"` `result: "yes"` / `result: "no"`。
+  記入例: `AC1: {check: "AC1の実装が完了しているか", result: "yes"}` / `AC2: {check: "AC2の検証が失敗していないか", result: "no"}`。
   提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 
 ## 逸脱管理ルール (Deviation Management)
@@ -110,9 +110,9 @@ workflow:
       - id: R001
         positive_rule: "配備時テンプレートをReadし値を埋めよ。キー追加可、削除・ネスト化禁止"
       - id: R002
-        positive_rule: "トップレベル構造維持。report:ラップ禁止。Edit toolで編集"
+        positive_rule: "トップレベル構造維持。report:ラップ禁止。report_field_set.sh経由で編集し、提出前にgate_report_format.shをPASSさせる"
       - id: R003
-        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋めよ"
+        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋め、binary_checks.*.resultはyes/noで埋め、FILL_THISを残すな"
   - step: 5.5
     action: self_gate_check
     mandatory: true

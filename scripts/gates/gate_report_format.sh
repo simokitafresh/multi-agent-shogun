@@ -126,7 +126,24 @@ else
         REASONS="Traceback: ${_LAST_ERR}"
     fi
     REASONS="${REASONS//\"/\\\"}"
-    if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ]; then
+    # 中間状態チェック: verdict空/None + binary_checks AC欄0件 → FAILログ記録スキップ
+    # 忍者の自己修正後に再度gateが走りPASS記録される（偽陽性FAIL根絶）
+    _GATE_FIRE_LOG_SKIP=0
+    if python3 -c "
+import sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+    v = str(data.get('verdict', '') or '').strip().lower()
+    bc = data.get('binary_checks') or {}
+    ac_count = sum(1 for k in (bc if isinstance(bc, dict) else {}) if str(k).upper().startswith('AC'))
+    sys.exit(0 if (v in ('', 'none') and ac_count == 0) else 1)
+except Exception:
+    sys.exit(1)
+" "$REPORT_PATH" 2>/dev/null; then
+        _GATE_FIRE_LOG_SKIP=1
+        echo "WARN: 中間状態(verdict未設定+AC欄なし) — gate_fire_logへのFAIL記録スキップ" >&2
+    fi
+    if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ] && [ "$_GATE_FIRE_LOG_SKIP" = "0" ]; then
         (
             flock -w 5 200 2>/dev/null
             printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"

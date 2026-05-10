@@ -50,7 +50,7 @@ forbidden_actions:
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 - **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
-  記入例: `check: "AC1の実装が完了しているか"` `result: "yes"` / `result: "no"`。
+  記入例: `AC1: {check: "AC1の実装が完了しているか", result: "yes"}` / `AC2: {check: "AC2の検証が失敗していないか", result: "no"}`。
   提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 
 ## 逸脱管理ルール (Deviation Management)
@@ -110,9 +110,9 @@ workflow:
       - id: R001
         positive_rule: "配備時テンプレートをReadし値を埋めよ。キー追加可、削除・ネスト化禁止"
       - id: R002
-        positive_rule: "トップレベル構造維持。report:ラップ禁止。Edit toolで編集"
+        positive_rule: "トップレベル構造維持。report:ラップ禁止。report_field_set.sh経由で編集し、提出前にgate_report_format.shをPASSさせる"
       - id: R003
-        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋めよ"
+        positive_rule: "lessons_useful雛形があれば各IDのuseful+reasonを埋め、binary_checks.*.resultはyes/noで埋め、FILL_THISを残すな"
   - step: 5.5
     action: self_gate_check
     mandatory: true
@@ -181,9 +181,9 @@ Check `config/settings.yaml` → `language`:
 
 ## Report Editing Rule
 
-報告を書く時は、まず task YAML の `report_path` を読め。
-そのパスにある既存の報告 YAML を **Edit tool で編集** し、各フィールドを埋めよ。
-`reports/` ディレクトリに自分で新規ファイルを作成するな。
+報告を書く時は、まず task YAML の `report_path` または `report_filename` を確認せよ。
+報告YAMLの作成・編集は必ず `bash scripts/report_field_set.sh <report_path> <key> <value>` 経由で行い、Edit/Write toolで直接編集するな。
+提出前に必ず `bash scripts/gates/gate_report_format.sh <report_path>` を実行し、`lessons_useful`、`binary_checks.*.result`、必須フィールド、`FILL_THIS` 残存がPASSであることを確認せよ。
 
 ## Report Format
 
@@ -209,6 +209,18 @@ skill_candidate:
   name: null        # e.g., "readme-improver"
   description: null # e.g., "Improve README for beginners"
   reason: null      # e.g., "Same pattern executed 3 times"
+lesson_candidate:
+  found: false
+  no_lesson_reason: "定型的なファイル修正のみ"
+decision_candidate:
+  found: false
+binary_checks:
+  AC1:
+    check: "AC1の実装が完了しているか"
+    result: "yes"
+  AC2:
+    check: "AC2の検証が失敗していないか"
+    result: "no"
 lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
   # 参照なしなら lessons_useful: []
   # 後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い
@@ -217,7 +229,7 @@ lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓
   #   BLOCKされる。実際に役立った教訓のIDを記載せよ(例: [L121, L122])
 ```
 
-**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lessons_useful.
+**Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, binary_checks, lessons_useful.
 Missing fields = incomplete report.
 
 ### 報告フィールド漏れ防止
@@ -382,7 +394,7 @@ Act without waiting for Karo's instruction:
 **On task completion** (in this order):
 1. Self-review deliverables (re-read your output)
 2. **Purpose validation**: Read `parent_cmd` in `queue/shogun_to_karo.yaml` and verify your deliverable actually achieves the cmd's stated purpose. If there's a gap between the cmd purpose and your output, note it in the report under `purpose_gap:`.
-3. Read `report_path` from task YAML, then edit that existing report YAML with the Edit tool
+3. Update the report YAML with `report_field_set.sh`, then run `gate_report_format.sh <report_path>` and fix any BLOCK via `report_field_set.sh`
 4. Notify Karo via inbox_write
 5. (No delivery verification needed — inbox_write guarantees persistence)
 

@@ -307,3 +307,74 @@ YAML
     [ "$status" -ne 0 ]
     [[ "$output" == *"lessons_useful"* ]]
 }
+
+# --- T-INTERMEDIATE-1: 中間状態(verdict空+AC欄なし)でgate_fire_logにFAIL記録されないこと ---
+@test "T-INTERMEDIATE-1: intermediate state (empty verdict + no AC) does not write FAIL to fire_log" {
+    local report="$REPO_TMPDIR_BATS/intermediate_report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+status: completed
+binary_checks: {}
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+purpose_validation:
+  cmd_purpose: "テスト用途の確認タスク"
+  fit: true
+  purpose_gap: ""
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+result:
+  summary: "テスト結果のサマリ"
+verdict: ""
+YAML
+    run bash "$GATE" "$report"
+    # Gate should still FAIL (exit 1) — verdict未設定は本当にFAIL
+    [ "$status" -eq 1 ]
+    # fire_log should NOT contain FAIL entry for this report（中間状態=偽陽性）
+    if [ -f "$GATE_FIRE_LOG_FILE" ]; then
+        run grep "$report" "$GATE_FIRE_LOG_FILE"
+        [ "$status" -ne 0 ]
+    fi
+}
+
+# --- T-INTERMEDIATE-2: verdict記入済み+AC欄なし → 通常FAIL記録（本物の品質問題）---
+@test "T-INTERMEDIATE-2: non-intermediate FAIL (verdict=FAIL + no AC) writes FAIL to fire_log" {
+    local report="$REPO_TMPDIR_BATS/real_fail_report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+status: completed
+binary_checks: {}
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+purpose_validation:
+  cmd_purpose: "テスト用途の確認タスク"
+  fit: true
+  purpose_gap: ""
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+result:
+  summary: "テスト結果のサマリ"
+verdict: FAIL
+YAML
+    run bash "$GATE" "$report"
+    # Gate should FAIL（verdict=FAILかつAC欄なしは本物の品質問題）
+    [ "$status" -eq 1 ]
+    # fire_log SHOULD contain FAIL entry（中間状態ではない）
+    [ -f "$GATE_FIRE_LOG_FILE" ]
+    run grep "$report" "$GATE_FIRE_LOG_FILE"
+    [ "$status" -eq 0 ]
+}
