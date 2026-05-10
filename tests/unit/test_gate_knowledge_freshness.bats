@@ -86,3 +86,23 @@ EOF
     [[ "$output" == *"STALE: docs/research/systems-knowledge-base/systems/ace.md (31 days old"* ]]
     [[ "$output" == *"知識鮮度: ALERT — fresh=7 stale=1 warn=0 total=8"* ]]
 }
+
+@test "multiple stale files → TOP3 update candidates sorted by age desc" {
+    _write_table "systems/ace.md" "2026-03-19"
+    _write_table "systems/gsd.md" "2026-02-01"
+    _write_table "systems/gstack.md" "2026-01-15"
+    _write_list "sources/gyakusegawa.md" "2025-12-31"
+
+    run env \
+        KNOWLEDGE_FRESHNESS_ROOT="$TEST_TMPDIR" \
+        KNOWLEDGE_FRESHNESS_TODAY="$TODAY" \
+        bash "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"■ STALE更新候補 TOP3 (経過日数降順)"* ]]
+    [[ "$output" == *"1. docs/research/systems-knowledge-base/sources/gyakusegawa.md (109 days old; verified_at=2025-12-31)"* ]]
+    [[ "$output" == *"2. docs/research/systems-knowledge-base/systems/gstack.md (94 days old; verified_at=2026-01-15)"* ]]
+    [[ "$output" == *"3. docs/research/systems-knowledge-base/systems/gsd.md (77 days old; verified_at=2026-02-01)"* ]]
+    [[ "$output" == *"python3 scripts/update_verified_at.py docs/research/systems-knowledge-base/sources/gyakusegawa.md 2026-04-19"* ]]
+    [[ "$output" != *"4. docs/research/systems-knowledge-base/systems/ace.md"* ]]
+}

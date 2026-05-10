@@ -541,7 +541,7 @@ MOCK
 echo "知識鮮度: ALERT — fresh=7 stale=1 warn=0 total=8"
 echo "■ STALE更新候補 TOP3 (経過日数降順)"
 echo "  1. docs/research/systems-knowledge-base/systems/ace.md (31 days old; verified_at=2026-03-19)"
-echo "     command: python3 scripts/tools/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"
+echo "     command: python3 scripts/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"
 echo "  action: 上記 STALE ファイルの verified_at を更新し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ"
 exit 1
 MOCK
@@ -552,7 +552,7 @@ MOCK
     [[ "$output" == *"知識辞書鮮度"* ]]
     [[ "$output" == *"STALE更新候補 TOP3"* ]]
     [[ "$output" == *"docs/research/systems-knowledge-base/systems/ace.md (31 days old"* ]]
-    [[ "$output" == *"python3 scripts/tools/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"* ]]
+    [[ "$output" == *"python3 scripts/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 

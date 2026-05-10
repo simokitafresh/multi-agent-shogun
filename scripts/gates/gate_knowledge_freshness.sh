@@ -39,6 +39,7 @@ python3 - "$ROOT_DIR" "$TODAY_OVERRIDE" <<'PY'
 from __future__ import annotations
 
 import re
+import shlex
 import sys
 from datetime import date
 from pathlib import Path
@@ -68,6 +69,7 @@ date_pattern = re.compile(r"(\d{4}-\d{2}-\d{2})")
 fresh_count = 0
 stale_count = 0
 warn_count = 0
+stale_entries = []
 
 for path in targets:
     rel_path = path.relative_to(root).as_posix()
@@ -103,6 +105,7 @@ for path in targets:
     if age_days > 30:
         print(f"STALE: {rel_path} ({age_days} days old; verified_at={raw_value})")
         print(f"  action: {rel_path} を開き verified_at を {today} に更新せよ")
+        stale_entries.append((age_days, rel_path, raw_value))
         stale_count += 1
     elif age_days < 0:
         print(f"WARN: {rel_path} (verified_at in future: {raw_value})")
@@ -118,6 +121,16 @@ if stale_count:
         f"知識鮮度: ALERT — fresh={fresh_count} stale={stale_count} "
         f"warn={warn_count} total={total}"
     )
+    print("■ STALE更新候補 TOP3 (経過日数降順)")
+    for idx, (age_days, rel_path, raw_value) in enumerate(
+        sorted(stale_entries, key=lambda item: (-item[0], item[1]))[:3],
+        start=1,
+    ):
+        print(f"  {idx}. {rel_path} ({age_days} days old; verified_at={raw_value})")
+        print(
+            "     command: "
+            f"python3 scripts/update_verified_at.py {shlex.quote(rel_path)} {today}"
+        )
     print("  action: 上記 STALE ファイルの verified_at を更新し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ")
     raise SystemExit(1)
 
