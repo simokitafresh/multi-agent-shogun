@@ -1,139 +1,68 @@
 task:
-  _ac_task_id: cmd_2644_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2644
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_2644
+  parent_cmd: cmd_training_L4_r14_kotaro
+  task_id: cmd_training_L4_r14_kotaro_impl
+  command: "parity_check.shを精査し改善点3つ特定、最高インパクト1件を実装、報告YAMLを完全に記入せよ"
+  type: impl
   project: infra
-  purpose: cmd ACにchecklist参照がある場合、該当Stepの隣接Step(前後)の制約条件がタスクYAMLに強制的に自動注入されていない。cmd_1397事故(再計算禁止ステップ未転写)の再発防止。deploy_task.shでAC内のchecklist参照を検出→隣接Step制約を自動注入する
-  push_allowed: false
-  scope_mode: EXACT
   scout_exempt: true
-  status: done
-  stop_for: []
-  task_id: cmd_2644_exact
-  task_type: exact
-  previous_failures:
-    attempt: 4
-    last_block_reason: 'lesson_candidate: found=false but no no_lesson_reason; binary_checks.description[0].check: \"|-\" が短すぎる(確認内容を具体的に書け); binary_checks.description[0].result: 空文字。\"yes\" または \"no\" を…'
-    tried_approaches:
-    - 'lesson_candidate: MISSING; lessons_useful: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
-    - 'verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'lesson_candidate: found=false but no no_lesson_reason; binary_checks.description[0].check: \"|-\" が短すぎる(確認内容を具体的に書け); binary_checks.description[0].result: 空文字。\"yes\" または \"no\" を…'
-    prior_attempts:
-    - attempt: 2
-      block_reason: 'verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'lesson_health_report.shの全量scan問題を特定。改善点3件特定、最高インパクト(末尾読み+early break)を実装しcommit済み。出力一致・正常動作確認。'
-    - attempt: 3
-      block_reason: 'lesson_candidate: found=false but no no_lesson_reason; binary_checks.description[0].check: \"|-\" が短すぎる(確認内容を具体的に書け); binary_checks.description[0].result: 空文字。\"yes\" または \"no\" を…'
-    - attempt: 4
-      block_reason: 'lesson_candidate: found=false but no no_lesson_reason; binary_checks.description[0].check: \"|-\" が短すぎる(確認内容を具体的に書け); binary_checks.description[0].result: 空文字。\"yes\" または \"no\" を…'
-  related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-  - id: 'L287'
-    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L070'
-    summary: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-    detail: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-  - id: 'L369'
-    summary: '[^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X'
-    detail: '[^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X'
-  - id: 'L305'
-    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-  - id: 'L152'
-    summary: 'IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条'
-    detail: 'IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条'
-  - id: 'L146'
-    summary: 'IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実'
-    detail: 'IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実'
-  - id: 'L417'
-    summary: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-    detail: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-  - id: 'L340'
-    summary: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-    detail: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
-      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L070: L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_36
-      - L369: [^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X
-      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
-      - L152: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条
-      - L146: IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実
-      - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY
-      - L340: cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo 
-    ────────────────────────────────────────
-    
-    
   acceptance_criteria:
-  - id: 'description'
-    checks:
-    - check: |-
-    AC1: deploy_task.shがACにchecklist参照を検出した場合、該当Stepの隣接制約がタスクYAMLに強制的に注入される
-    AC2: 既存テスト(tests/配下の関連bats)がPASS(SKIP=0)
-    
-  ac_version: b99834bc
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_2644.yaml
-  report_path: 
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 11
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件), wrong_task_execution(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 31
-    - pattern: 'field_missing'
-      count: 24
-    - pattern: 'lu_structure_error'
-      count: 23
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 3
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 2
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'fill_this_remaining'
-      count: 1
-      hint: 'FILL_THISが残存。全テンプレート値を実際の値に置換せよ'
-    - reason: 'lesson_done_missing'
-      count: 1
-      hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks: AC self-verification missing (0/1 ACs). 全ACの二値チェックを記入せよ'
-    tried_approaches:
-    - 'binary_checks: AC self-verification missing (0/1 ACs). 全ACの二値チェックを記入せよ'
-    approach_summary: 'deploy_task.sh に inject_checklist_constraints() を実装。AC/command内の checklist-*.md Step N 参照を検出し前後ステップの制約条件をタスクYAMLへ強制注入。既存テスト全PASS(SKIP=0)。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks: AC self-verification missing (0/1 ACs). 全ACの二値チェックを記入せよ'
-      approach_summary: 'deploy_task.sh に inject_checklist_constraints() を実装。AC/command内の checklist-*.md Step N 参照を検出し前後ステップの制約条件をタスクYAMLへ強制注入。既存テスト全PASS(SKIP=0)。'
+    - id: AC1
+      description: "scripts/parity_check.shを読み、改善点を3つ特定し、各改善点にimpact評価(high/medium/low)を付けて報告せよ"
+      binary_checks:
+        - check: 改善点を3つ以上特定したか
+          result: FILL_YES_OR_NO
+        - check: 各改善点にimpact評価を付けたか
+          result: FILL_YES_OR_NO
+    - id: AC2
+      description: "最もインパクトの高い改善点1件を実装し、git commitせよ。コミットメッセージにcmd_training_L4_r14_kotaroを含めること"
+      binary_checks:
+        - check: 実装をcommitしたか
+          result: FILL_YES_OR_NO
+        - check: コミットメッセージにcmd IDを含めたか
+          result: FILL_YES_OR_NO
+    - id: AC3
+      description: "lesson_candidate found=trueで教訓を1つ記入し、全ACのbinary_checksを記入し、verdictをPASS/FAILで記入せよ"
+      binary_checks:
+        - check: lesson_candidate found=trueで記入したか
+          result: FILL_YES_OR_NO
+        - check: 全ACのbinary_checksを記入したか
+          result: FILL_YES_OR_NO
+        - check: verdictをPASS/FAILで記入したか
+          result: FILL_YES_OR_NO
+  stop_for:
+    - 本番DB操作エラー
+  never_stop_for:
+    - gate BLOCK(自力修正してリトライ)
+    - テストエラー
+  related_lessons:
+  - id: 'L512'
+    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+  - id: 'L511'
+    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  status: done
