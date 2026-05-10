@@ -99,6 +99,20 @@ _compute_lesson_stats() {
 
     awk -v synced="$synced_num" -v chk="$checkpoint" \
         -v thr="$inject_thr" -v pid="$pid" '
+    function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+    function inline_value(line, field,    pat,m,v) {
+        pat = field ":[[:space:]]*([^,}]+)"
+        if (match(line, pat, m)) {
+            v = trim(m[1])
+            gsub(/^['\''"]|['\''"]$/, "", v)
+            return trim(v)
+        }
+        return ""
+    }
+    function is_set_value(v) {
+        v = trim(v)
+        return (v != "" && v != "未設定")
+    }
     function flush_current(    n) {
         if (current_id == "") return
         n = current_id + 0
@@ -116,15 +130,27 @@ _compute_lesson_stats() {
             }
         }
     }
-    /^- id: L/ {
+    /^- / && /id:[[:space:]]*['\''"]?L[0-9]+/ {
         flush_current()
-        current_id = $3; sub(/^L/, "", current_id)
+        current_id = $0
+        sub(/^.*id:[[:space:]]*['\''"]?L/, "", current_id)
+        sub(/[^0-9].*$/, "", current_id)
         is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0
+        if (is_set_value(inline_value($0, "when"))) has_when = 1
+        if (is_set_value(inline_value($0, "how"))) has_how = 1
     }
     /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
     /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
-    /^[[:space:]]+when:[[:space:]]*[^[:space:]]/ { has_when = 1 }
-    /^[[:space:]]+how:[[:space:]]*[^[:space:]]/ { has_how = 1 }
+    /^[[:space:]]+when:[[:space:]]*[^[:space:]]/ {
+        v = $0
+        sub(/^[[:space:]]+when:[[:space:]]*/, "", v)
+        if (is_set_value(v)) has_when = 1
+    }
+    /^[[:space:]]+how:[[:space:]]*[^[:space:]]/ {
+        v = $0
+        sub(/^[[:space:]]+how:[[:space:]]*/, "", v)
+        if (is_set_value(v)) has_how = 1
+    }
     /[[:space:]]+injection_count:[[:space:]]/ {
         gsub(/.*injection_count:[[:space:]]*/,""); ic = $1 + 0
     }
