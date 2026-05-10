@@ -50,7 +50,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 5 200 || exit 1
 
         # Fast early exit: no unread messages in file
-        if ! grep -q "read: false" "$INBOX" 2>/dev/null; then
+        if ! grep -q "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null; then
             if [ -n "$MSG_ID" ]; then
                 echo "[inbox_mark_read] msg_id=$MSG_ID not found or already read"
             else

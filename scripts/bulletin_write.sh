@@ -220,7 +220,10 @@ if [[ -f "$INBOX_WRITE" ]]; then
     # その中に全文があれば、別途掲示板を読みに行く必要がない。
     for target in "${NOTIFY_TARGETS[@]}"; do
         if [[ "$target" != "$POSTED_BY" ]]; then
-            bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null || true
+            if ! bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
+                echo "[bulletin_write] WARN: inbox_write failed for ${target} — bulletin notification not delivered" >&2
+                continue
+            fi
             if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
                 echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
             fi

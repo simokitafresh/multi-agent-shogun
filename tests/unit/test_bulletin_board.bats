@@ -113,6 +113,20 @@ teardown() {
     [[ "$output" == "2 $INBOX_WRITE_LOG" ]]
 }
 
+@test "bulletin_write warns when inbox_write fails" {
+    cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 42
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/inbox_write.sh"
+
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "通知失敗"
+    [ "$status" -eq 0 ]
+    [[ "$output" == blt_* ]]
+    [[ "$output" == *"WARN: inbox_write failed for shogun"* ]]
+    [[ "$output" != *"inbox_watcher not running for shogun"* ]]
+}
+
 @test "bulletin_confirm adds agent to confirmed_by" {
     entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "確認対象")"
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/bulletin_confirm.sh" saizo "$entry_id"
