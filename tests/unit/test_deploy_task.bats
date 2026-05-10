@@ -111,3 +111,56 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "shogun:agents.2|inbox2|0.3" ]
 }
+
+@test "safe_inbox_write continues when message persisted before delivery failure" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
+messages: []
+EOF
+cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+script_dir="${BASH_SOURCE[0]%/scripts/inbox_write.sh}"
+inbox="$script_dir/queue/inbox/$1.yaml"
+{
+  printf 'messages:\n'
+  printf -- "- content: '%s'\n" "$2"
+  printf "  read: false\n"
+} > "$inbox"
+echo "[inbox_write] WARN: codex delivery remained unverified" >&2
+exit 9
+EOF
+    chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/safe_inbox_write.log"; }
+        safe_inbox_write sasuke "task assigned" task_assigned karo
+    '
+
+    [ "$status" -eq 0 ]
+    grep -q "post-write delivery/verification failed" "$TEST_PROJECT/logs/safe_inbox_write.log"
+}
+
+@test "safe_inbox_write blocks when message was not persisted" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
+messages: []
+EOF
+    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "[inbox_write] Failed to acquire lock" >&2
+exit 9
+EOF
+    chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/safe_inbox_write.log"; }
+        safe_inbox_write sasuke "task assigned" task_assigned karo
+    '
+
+    [ "$status" -eq 9 ]
+    grep -q "failed before persistence" "$TEST_PROJECT/logs/safe_inbox_write.log"
+}
