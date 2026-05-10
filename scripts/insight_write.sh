@@ -194,7 +194,7 @@ with open(insights_file, 'a', encoding='utf-8') as f:
 
 print(entry_id)
 PYEOF
-)
+) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
   echo "$result"
 
