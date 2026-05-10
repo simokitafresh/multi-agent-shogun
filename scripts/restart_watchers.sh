@@ -84,8 +84,10 @@ echo "[3/3] 起動確認..."
 sleep 1
 failed_agents=()
 for i in "${!LAUNCHED_AGENTS[@]}"; do
-    if ! kill -0 "${LAUNCHED_PIDS[$i]}" 2>/dev/null; then
-        failed_agents+=("${LAUNCHED_AGENTS[$i]}")
+    agent="${LAUNCHED_AGENTS[$i]}"
+    # pgrep で実際の inbox_watcher.sh プロセスを確認（kill -0 はnohup bashが終了すると偽陽性になる）
+    if ! pgrep -f "inbox_watcher\.sh.*${agent}" > /dev/null 2>&1; then
+        failed_agents+=("${agent}")
     fi
 done
 
