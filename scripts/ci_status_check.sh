@@ -34,7 +34,7 @@ if ! command -v gh &>/dev/null; then
 fi
 
 # Get latest run on main branch
-run_json=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch main --limit 1 --json status,conclusion,databaseId 2>/dev/null || true)
+run_json=$(timeout 15 gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch main --limit 1 --json status,conclusion,databaseId 2>/dev/null || true)
 
 if [[ -z "$run_json" ]] || [[ "$run_json" == "[]" ]]; then
     $STATUS_MODE && echo "UNKNOWN"
@@ -51,7 +51,7 @@ fi
 
 failed_jobs=""
 if [[ "$conclusion" == "failure" && -n "$run_id" ]]; then
-    failed_jobs=$(gh run view "$run_id" --repo "$REPO" --json jobs 2>/dev/null \
+    failed_jobs=$(timeout 15 gh run view "$run_id" --repo "$REPO" --json jobs 2>/dev/null \
         | jq -r '[.jobs[] | select(.conclusion == "failure") | .name] | if length == 0 then "unknown" else join(", ") end' \
         2>/dev/null || echo "unknown")
 fi
