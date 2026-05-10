@@ -100,8 +100,9 @@ if [ "$PENDING_REPORTS_CACHE_HIT" -eq 0 ]; then
             END{print count+0}
         ')
     fi
-    printf '%s %s %s %s\n' "$REPORT_DIR_MTIME" "$GATE_LOG_MTIME" "$NOW" "$PENDING_REPORTS" > "${PENDING_REPORTS_CACHE}.tmp"
-    mv "${PENDING_REPORTS_CACHE}.tmp" "$PENDING_REPORTS_CACHE"
+    PENDING_REPORTS_CACHE_TMP="${PENDING_REPORTS_CACHE}.$$"
+    printf '%s %s %s %s\n' "$REPORT_DIR_MTIME" "$GATE_LOG_MTIME" "$NOW" "$PENDING_REPORTS" > "$PENDING_REPORTS_CACHE_TMP"
+    mv "$PENDING_REPORTS_CACHE_TMP" "$PENDING_REPORTS_CACHE"
 fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then
     ALERTS+=("GATE未処理報告: ${PENDING_REPORTS}件(24h以内)。成果が還流されていない")
