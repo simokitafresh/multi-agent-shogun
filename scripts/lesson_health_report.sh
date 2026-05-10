@@ -63,52 +63,79 @@ def is_deprecated(lesson):
     return False
 
 
+def iter_reversed_lines(filepath, chunk_size=8192):
+    """ファイルを末尾から行単位でイテレート（WSL2 NTFS大ファイル対応）"""
+    with open(filepath, "rb") as f:
+        f.seek(0, 2)
+        remaining = f.tell()
+        buf = b""
+        while remaining > 0:
+            to_read = min(chunk_size, remaining)
+            remaining -= to_read
+            f.seek(remaining)
+            chunk = f.read(to_read)
+            buf = chunk + buf
+            lines = buf.split(b"\n")
+            buf = lines[0]  # 先頭は不完全な行かもしれない
+            for line in reversed(lines[1:]):
+                if line:
+                    yield line.decode("utf-8", errors="replace")
+        if buf:
+            yield buf.decode("utf-8", errors="replace")
+
+
 def parse_gate_metrics():
-    """gate_metrics.logをパースし、cmd_idごとの最終結果をdedupして返す"""
+    """gate_metrics.logをパースし、cmd_idごとの最終結果をdedupして返す
+    末尾から読み50 cmd_id収集でbreakする（全量scan回避: L511準拠）"""
     if not os.path.exists(GATE_METRICS_LOG):
         return []
-    # cmd_idごとに最終結果のみ残す(dedup: L087教訓準拠)
-    # 中間リスト不要 — 直接dictに投入(1パス)
+    MAX_CMD_IDS = 50
     last_by_cmd = {}
-    with open(GATE_METRICS_LOG, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            parts = line.split("\t")
-            if len(parts) < 3:
-                continue
-            entry = {
+    for line in iter_reversed_lines(GATE_METRICS_LOG):
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split("\t")
+        if len(parts) < 3:
+            continue
+        cmd_id = parts[1]
+        if cmd_id not in last_by_cmd:
+            last_by_cmd[cmd_id] = {
                 "timestamp": parts[0],
-                "cmd_id": parts[1],
+                "cmd_id": cmd_id,
                 "result": parts[2],
             }
-            last_by_cmd[entry["cmd_id"]] = entry
+            if len(last_by_cmd) >= MAX_CMD_IDS:
+                break
     return sorted(last_by_cmd.values(), key=lambda x: x["timestamp"])
 
 
-def parse_lesson_tracking():
-    """lesson_tracking.tsvをパースし、cmd_idごとの注入数を返す"""
+def parse_lesson_tracking(target_cmd_ids=None):
+    """lesson_tracking.tsvをパースし、cmd_idごとの注入数を返す
+    target_cmd_idsが指定された場合、全て揃い次第breakする（全量scan回避: L511準拠）"""
     if not os.path.exists(LESSON_TRACKING_TSV):
         return {}
     cmd_inject_counts = {}
-    with open(LESSON_TRACKING_TSV, encoding="utf-8") as f:
-        header = f.readline()  # skip header
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            parts = line.split("\t")
-            if len(parts) < 6:
-                continue
-            cmd_id = parts[1]
+    needed = set(target_cmd_ids) if target_cmd_ids else None
+    for line in iter_reversed_lines(LESSON_TRACKING_TSV):
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split("\t")
+        if len(parts) < 5:
+            continue
+        if parts[0] == "timestamp":  # headerに達したらbreak
+            break
+        cmd_id = parts[1]
+        if needed is not None and cmd_id not in needed:
+            continue
+        if cmd_id not in cmd_inject_counts:
             injected = parts[4]
-            if injected == "none" or not injected:
-                count = 0
-            else:
-                count = len(injected.split(","))
-            # cmd_idごとに最終行の注入数を採用(dedup)
+            count = 0 if (injected == "none" or not injected) else len(injected.split(","))
+            # cmd_idごとに末尾側(=最終行)の注入数を採用(dedup)
             cmd_inject_counts[cmd_id] = count
+            if needed is not None and needed.issubset(cmd_inject_counts.keys()):
+                break
     return cmd_inject_counts
 
 
@@ -170,10 +197,11 @@ def main():
 
     # === gate_metrics解析 ===
     gate_entries = parse_gate_metrics()
-    inject_map = parse_lesson_tracking()
+    target_cmd_ids = {e["cmd_id"] for e in gate_entries}
+    inject_map = parse_lesson_tracking(target_cmd_ids=target_cmd_ids)
 
-    # 直近50件の算出
-    last_50 = gate_entries[-50:] if len(gate_entries) >= 50 else gate_entries
+    # 直近50件の算出（parse_gate_metricsが最大50件返すので冗長条件不要）
+    last_50 = gate_entries[-50:]
     clear_rate_last50 = calc_clear_rate(last_50)
     avg_inject_last50 = calc_avg_inject(last_50, inject_map)
 
