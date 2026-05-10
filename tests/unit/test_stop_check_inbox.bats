@@ -236,7 +236,7 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [[ "$output" != *"次アクションあり"* ]]
 }
 
-@test "T-SCI-012: ninja with status=done sees wait instruction" {
+@test "T-SCI-012: ninja with status=done exits cleanly without block" {
     export TMUX_AGENT_ID="hayate"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
     mkdir -p "$TEST_PROJECT/queue/tasks"
@@ -248,8 +248,8 @@ YAML
 
     run_hook '{"stop_hook_active":false}'
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Wait for next task"* ]]
-    [[ "$output" == *"Do NOT start new work"* ]]
+    # Codex互換: blockせずidle flag設定のみで正常終了(b95db54c)
+    [[ "$output" != *"BLOCK"* ]]
 }
 
 @test "T-SCI-013: ninja with status=in_progress sees no wait instruction" {

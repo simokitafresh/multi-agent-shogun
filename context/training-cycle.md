@@ -486,6 +486,9 @@ L2 R1→R2のフッター追加と同構造。bc/verdict空値の原因は「提
 | L3 | R2 | 100% | +sgc inline hint | +33% |
 | L4 | R1 | 67% | L3環境+3AC | -33%(レベルアップ) |
 | L4 | R2 | **67%** | +FILL_YES_OR_NO+■■■STOP■■■ | **±0%(初の非回復)** |
+| L4 | R13 | 75% (3/4) | Sonnet3/3=100%,GPT影丸sgc str→dict FAIL | Sonnet安定 |
+| L4 | R14 | **100%** (4/4) | 全員first-pass PASS | 法則再確立 |
+| L4 | R15 | 75% (3/4) | 飛猿YAML parse error(手動Edit構文崩壊) | 若干回帰 |
 
 ### gate_report_format.sh偽陽性問題
 

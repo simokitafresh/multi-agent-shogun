@@ -822,3 +822,4 @@
 - **gate品質基盤強化6連発**: draft review SKIP根治→ac_test_scope FP改善→忍者instructions Level5→テスト隔離→Check16 multiline対応→lesson prefill根治
 - **連勝40→47**: 全cmd初回CLEAR。WA率0%維持
 - cmd_2667: auto_failure_lesson.sh draft→confirmed統一。24回(48%)のdraft_lessons BLOCK根治。才蔵1名impl。WA:0 (2026-05-10)
+- session_20260510-11: 家老自走セッション。cmd_2667(draft→confirmed BLOCK根治)GATE CLEAR。karo_direct自走: LK004根因(safe_inbox_write)+test_select SKILL.md修正+CI RED修正2件+教訓登録(Guard9)+教訓noise修正(target_files)+修行FP率根因調査(sgcキー集合+RFS YAML検証)。修行R13-R15(75→100→75%)。WA率0%維持。全件GATE CLEAR。環境埋込: gate_report_format_main.pyにsgc4キー検証、report_field_set.shにYAML事前検証+復元、deploy_task.shにsafe_inbox_write。教訓LK011-013登録。
