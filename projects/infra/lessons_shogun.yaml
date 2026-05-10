@@ -203,9 +203,9 @@ lessons:
   detail: 殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
   source_ids: [LS034]
   created_at: '2026-04-24'
-  automated: false
-  enforcement_level: 2
-  enforcement: '将軍の自問に依存(意志依存。gate/hookなし)。次の自動化ターゲット: cmd起票時にdepends_on未記入→WARN'
+  automated: true
+  enforcement_level: 4
+  enforcement: 'clear_prep_check.sh Check 10(裁定のprojects反映): lord_conversation.jsonlのinbound裁定キーワード最新時刻とprojects/*.yaml最新mtimeを比較し、裁定後にprojects未更新ならALERT'
 
 - id: LS-A15
   title: 研究道具制約 — 研究≠本番、GS OOM防止は1忍法1CMD

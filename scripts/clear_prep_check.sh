@@ -355,6 +355,98 @@ fi
 # ─── Check 9: 強くてニューゲームリマインダ ───
 echo "[9.強くてニューゲーム] 今クリアされても次の将軍はこのセッションの学びを持っているか？"
 
+# ─── Check 10: 裁定のprojects反映 ───
+decision_status="OK"
+decision_detail="裁定キーワードinbound=0件"
+if [ -f "$LORD_CONV" ]; then
+  decision_result="$(python3 - "$LORD_CONV" "$ROOT_DIR/projects" <<'PY'
+import datetime as dt
+import glob
+import json
+import os
+import sys
+
+conv_path = sys.argv[1]
+projects_dir = sys.argv[2]
+keywords = ("裁定", "決裁", "決定", "方針", "承認", "却下")
+
+decision_count = 0
+latest_decision_ts = ""
+bad_lines = 0
+with open(conv_path, encoding="utf-8") as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            bad_lines += 1
+            continue
+        if entry.get("direction") != "inbound":
+            continue
+        text = " ".join(str(entry.get(k, "")) for k in ("detail", "content", "message", "text"))
+        if not any(keyword in text for keyword in keywords):
+            continue
+        decision_count += 1
+        ts = str(entry.get("ts", ""))
+        if ts and ts > latest_decision_ts:
+            latest_decision_ts = ts
+
+project_files = glob.glob(os.path.join(projects_dir, "*.yaml"))
+latest_project_mtime = 0.0
+latest_project_path = "none"
+for path in project_files:
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        continue
+    if mtime > latest_project_mtime:
+        latest_project_mtime = mtime
+        latest_project_path = os.path.basename(path)
+
+def parse_ts(value):
+    if not value:
+        return 0.0
+    normalized = value.replace("Z", "+00:00")
+    try:
+        return dt.datetime.fromisoformat(normalized).timestamp()
+    except ValueError:
+        return 0.0
+
+latest_decision_epoch = parse_ts(latest_decision_ts)
+latest_project_iso = "none"
+if latest_project_mtime:
+    latest_project_iso = dt.datetime.fromtimestamp(latest_project_mtime, dt.timezone.utc).astimezone().isoformat(timespec="seconds")
+
+needs_update = decision_count > 0 and (not latest_project_mtime or latest_project_mtime < latest_decision_epoch)
+print(f"{decision_count}|{latest_decision_ts or 'none'}|{latest_project_iso}|{latest_project_path}|{1 if needs_update else 0}|{bad_lines}")
+PY
+)"
+  decision_count="${decision_result%%|*}"
+  decision_rest="${decision_result#*|}"
+  latest_decision_ts="${decision_rest%%|*}"
+  decision_rest="${decision_rest#*|}"
+  latest_project_ts="${decision_rest%%|*}"
+  decision_rest="${decision_rest#*|}"
+  latest_project_file="${decision_rest%%|*}"
+  decision_rest="${decision_rest#*|}"
+  decision_needs_update="${decision_rest%%|*}"
+  decision_bad_lines="${decision_rest#*|}"
+  decision_detail="裁定キーワードinbound=${decision_count}件, 最新裁定=${latest_decision_ts}, projects最新=${latest_project_ts}(${latest_project_file})"
+  if [ "${decision_bad_lines:-0}" -gt 0 ]; then
+    decision_detail="${decision_detail}, JSON不正行=${decision_bad_lines}"
+  fi
+  if [ "${decision_needs_update:-0}" -eq 1 ]; then
+    decision_status="ALERT"
+    issues=$((issues + 1))
+    issue_reasons+=("裁定projects未反映")
+  fi
+else
+  decision_detail="lord_conversation.jsonl不在"
+fi
+echo "[10.裁定反映] ${decision_status}: ${decision_detail}"
+
 # ─── 総合判定 ───
 echo ""
 if [ "$issues" -gt 0 ]; then
