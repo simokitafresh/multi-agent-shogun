@@ -128,13 +128,29 @@ L6は間違いを許す。間違いから最大の学びを引き出し、学習
 
 5W1HはL6の**最小構造**。gate検証(cmd_save.sh q8)で自動チェック。
 
-**L6の具体的仕組み**:
-- 5W1H q8検証 — cmd設計の完全性を自動チェック→不完全なcmdが通過しない
-- BLOCK時FIX hint表示 — 間違い→即フィードバック→学習加速
-- ninja_weak_points注入 — 過去の弱点→次回配備時に事前警告→同じ間違いの回避
-- previous_failures注入 — 前回BLOCK理由+試行済みアプローチ→同じ失敗の回避
-- lesson_impact.tsv — 教訓の有効性計測→低有効教訓を減衰→教訓品質の向上
-- 修行サイクル — idle忍者にダミータスク→gate BLOCK→学習→成長の自走
+**L6化済み仕組み完全リスト(2026-05-11時点・10件)**:
+
+| 対象 | 名称 | 実装箇所 | 機能 |
+|------|------|----------|------|
+| 忍者 | `ninja_weak_points` | `scripts/deploy_task.sh` L3904-L4074 | `karo_workarounds.yaml`から忍者別workaround傾向を集計し、次回task YAMLへ弱点・警告を自動注入する |
+| 忍者 | `gate_fail_top3` | `scripts/deploy_task.sh` L4075-L4140 | `logs/gate_fire_log.yaml`から忍者別FAIL理由TOP3を抽出し、報告作成前に頻出ミスと修正観点を渡す |
+| 忍者 | `gate_blocks` BLOCK pattern | `scripts/deploy_task.sh` L4141-L4200 | `logs/gate_metrics.log`から忍者別BLOCK分類とhintを注入し、過去の詰まり方を次taskの入力へ変える |
+| 忍者 | `previous_failures` | `scripts/deploy_task.sh` L4321-L4420, L5631-L5655 | 再配備前の`session_state`を保存し、再配備時に前回BLOCK理由・試行済みアプローチをtask YAMLへ引き継ぐ |
+| 将軍 | Session State WARN/BLOCK履歴表示 | `scripts/cmd_save.sh` L877-L908, L1463-L1480 | 同一cmd/同一WARNの過去発火回数と検出ロジック行を保存時に表示し、消火ではなく根本修正のROIを見せる |
+| 将軍 | `preflight_autolearn` | `scripts/cmd_save.sh` L929-L940, L4299-L4306; `pre-bash-combined.sh` | 繰り返しWARNをpreflight学習リストへ昇格し、次回以降の入力段階で動的チェックとして強制する |
+| 将軍 | `q8_why_what` 5W1H検査 | `scripts/cmd_save.sh` L1692-L1720 | WHY/WHATだけでなくWHEN/WHERE/WHO/HOWをcmd保存時に検査し、ループが回らないcmd設計を早期可視化する |
+| 将軍 | 遡及学習 | `scripts/gates/gate_shogun_startup.sh` L812-L910 | 起動時にWARN/BLOCK頻度TOP5、再発率、有効率を自動表示し、次に根本修正すべき防御を可視化する |
+| 全体 | `lesson_impact.tsv` | `scripts/cmd_complete_gate.sh` L2410-L2580, L5027-L5033, L5636-L5641; `scripts/deploy_task.sh` L2764-L3673 | 教訓注入・参照・有効性を計測し、低有効教訓の減衰と次回注入品質の改善に使う |
+| 全体 | 修行サイクル | `context/training-cycle.md` §2-§3, §13, §21, §27 | idle時間に訓練taskを配備し、gate BLOCK→自力修正→一発PASS率計測で本番前に失敗パターンを学習させる |
+
+**L6未化仕組み(2026-05-11時点・4件)**:
+
+| 名称 | 現Level | 不足内容 | L6化方向 |
+|------|---------|----------|----------|
+| `gate_context_freshness.sh` | Level 1 | stale/WARN検出のみ。更新候補・修正cmd・担当への入力注入がない | cmd完了時または起動時に stale context の更新候補と該当§を自動提示し、次cmd設計の入力へ接続する |
+| `gate_enforcement_audit.sh` | Level 1 | 意志依存スクリプト検出のみ。検出結果がcmd保存・GP提案・配備判断に自動接続されない | `cmd_save.sh`/GP trackerへ防御Level判定を注入し、Level不足を次の改善候補として自動提示する |
+| `gate_knowledge_freshness.sh` | Level 1 | STALE検出のみ。task配備時の知識鮮度注記や更新手順が自動で渡らない | `deploy_task.sh`が対象projectのSTALE knowledgeをtask YAMLへ注入し、忍者/家老が鮮度前提を見落とせないようにする |
+| `gate_wa_data_quality.sh` | Level 1 | workaround入力品質の検証のみ。欠落フィールドの補完支援や記録時の構造化強制が弱い | `karo_workaround_log.sh`で必須フィールド補完・候補提示・カテゴリ正規化を行い、低品質WAを記録前に学習データへ変換する |
 
 **全ロール共通の設計指針**:
 - 新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな
