@@ -155,6 +155,64 @@ echo "ALERT_COUNT=$(grep -c "|stall_alert|" "$TEST_MESSAGES" || true)"
     [[ "$output" == *"ALERT_COUNT=1"* ]]
 }
 
+@test "check_stall: deployed_at within 5 minutes bypasses stall detection" {
+    DEPLOYED_AT=$(date -d "2 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DEPLOYED_AT="'"$DEPLOYED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: assigned
+  subtask_id: subtask_2640_startup_grace
+  deployed_at: "$DEPLOYED_AT"
+EOF
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+yaml_field_get() {
+    case "$2" in
+        status) echo "assigned" ;;
+        subtask_id) echo "subtask_2640_startup_grace" ;;
+        task_id) echo "" ;;
+        _ac_task_id) echo "" ;;
+        deployed_at) echo "$DEPLOYED_AT" ;;
+        progress_updated_at) echo "" ;;
+        *) echo "${3:-}" ;;
+    esac
+}
+cli_profile_get() { echo ""; }
+
+PANE_TARGETS[kagemaru]="shogun:2.5"
+now=$(date +%s)
+STALL_FIRST_SEEN[kagemaru]=$((now - 16 * 60))
+check_stall kagemaru
+
+echo "ALERT_COUNT=$(grep -c "|stall_alert|" "$TEST_MESSAGES" || true)"
+echo "FIRST_SEEN=${STALL_FIRST_SEEN[kagemaru]:-missing}"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT_COUNT=0"* ]]
+    [[ "$output" == *"FIRST_SEEN=missing"* ]]
+    [[ "$output" == *"STALL-DEPLOY-GRACE: kagemaru deployed"* ]]
+    [[ "$output" == *"within grace period"* ]]
+}
+
 @test "check_stall: in_progress stall sends task_assigned recovery and log" {
     run bash -lc '
 set -euo pipefail

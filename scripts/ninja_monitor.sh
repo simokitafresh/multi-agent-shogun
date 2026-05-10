@@ -1635,6 +1635,23 @@ check_stall() {
         return
     fi
 
+    local deployed_at_val
+    deployed_at_val=$(yaml_field_get "$task_file" "deployed_at" "")
+    if [ -n "$deployed_at_val" ]; then
+        local deployed_epoch
+        deployed_epoch=$(date -d "$deployed_at_val" +%s 2>/dev/null || echo "")
+        if [ -n "$deployed_epoch" ]; then
+            local now_epoch
+            now_epoch=$EPOCHSECONDS
+            local deployed_age=$(( now_epoch - deployed_epoch ))
+            if [ "$deployed_age" -ge 0 ] && [ "$deployed_age" -lt 300 ]; then
+                unset "STALL_FIRST_SEEN[$name]"
+                log "STALL-DEPLOY-GRACE: $name deployed ${deployed_age}s ago, within grace period"
+                return
+            fi
+        fi
+    fi
+
     case "$status" in
         assigned|acknowledged)
             ;;
