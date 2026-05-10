@@ -64,7 +64,7 @@ commands:
       q3_next_quality: "上がる"
       q4_depth: "medium"
       q5_verified_source: "code_reading"
-      q8_why_what: "WHY: 「集約表示を壊すな」 → WHAT: 意図的にBLOCKを4種類混在させる。正の複利"
+      q8_why_what: "WHY: 「集約表示を壊すな」 → WHAT: 意図的にBLOCKを4種類混在させる → WHEN: cmd_saveのBLOCK集約回帰を検証する時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: 複数BLOCK理由を1回の出力で検証する。複利: 正の複利"
       q_ambiguity: "none"
     assumptions:
       - source: "nonexistent/path.sh code_reading"
@@ -111,7 +111,7 @@ commands:
       q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats structure_verified"
       q6_not_hiding: "no — BLOCK専用ナッジの出し分け確認であり、根因を隠す変更ではない"
       q7_definition_verified: "yes — PASS=exit 0かつ保存確認OK出力を本テストで固定する"
-      q8_why_what: "WHY: PASS経路に余計なノイズを混ぜない → WHAT: BLOCK専用ナッジの非表示を確認し、この選択を10回繰り返しても正の複利になる形に固定する"
+      q8_why_what: "WHY: PASS経路に余計なノイズを混ぜない → WHAT: BLOCK専用ナッジの非表示を確認する → WHEN: cmd_saveのPASS経路を検証する時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: exit 0と保存確認OKを固定し、この選択を10回繰り返しても正の複利になる形にする"
       q10_knowledge_boundary: "空間内。根拠: cmd_save.sh の既存出力経路と本Batsのみを使う"
       q11_not_already_done: "未達成。これからPASS経路の出力を確認する"
       q_ambiguity: "none"

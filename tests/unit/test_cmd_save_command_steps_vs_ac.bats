@@ -48,7 +48,7 @@ ${acceptance_criteria_block}
       q5_verified_source: "code_reading + isolated_test"
       q6_not_hiding: "no — command欄とAC件数の対応確認であり表面的対処ではない"
       q7_definition_verified: "yes — AC件数はacceptance_criteria実項目数のみを数える"
-      q8_why_what: "WHY: 殿指摘「AC数を正しく数えよ」 → WHAT: command欄5手順とAC件数の比較回帰を固定する。正の複利"
+      q8_why_what: "WHY: 殿指摘「AC数を正しく数えよ」 → WHAT: command欄5手順とAC件数の比較回帰を固定する → WHEN: command手順数とAC件数の警告を検証する時 → WHERE: tests/unit/test_cmd_save_command_steps_vs_ac.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: acceptance_criteria実項目数を基準に比較する回帰テストで固定する。複利: 正の複利"
       q_ambiguity: "none"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_command_steps_vs_ac.bats の検証範囲のみ使用"
       q11_not_already_done: "未達成。rg 'command_steps_over_ac' tests/unit/ で既存テストを確認し、string-list回帰テストは未追加と確認"
