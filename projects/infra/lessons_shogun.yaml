@@ -32,7 +32,8 @@ lessons:
     (3)怒り=時間泥棒の3パターン: 想像/浅い思考/各論パッチ
     (4)同じ指摘2回=上位構造を抽出し教訓化
     (5)殿の問いには症状でなく構造を見よ
-  source_ids: [LS021, LS022, LS023, LS024, LS026]
+    (6)掲示板未確認などの運用事故も、殿が何を失ったか(報告の鎖/時間/確認機会)を先に理解してから設計せよ
+  source_ids: [LS021, LS022, LS030]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処'
@@ -43,7 +44,7 @@ lessons:
     殿が方向転換したらサンクコストを捨てよ。新検証結果は古い前提を覆す。
     PJ切替時はcontext再ロード。対話中の暗黙的PJ切替に注意。
     assumptions timestampで古い前提の使用を検出。
-  source_ids: [LS025, LS028, LS029]
+  source_ids: []
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh assumptions(AC>=3でBLOCK)+trust:unverified検出。/switch-projectスキルでPJ切替時context再ロード'
@@ -80,7 +81,8 @@ lessons:
     (23)AC内出力パスはrelative記述+親ディレクトリ確認。assumptions sourceはフルパス記載(例: scripts/analysis/gs_db_utils.py)
     (24)初回起票でもdiagnosisは2部構成で書け(BLOCK理由: 初回起票のため前回BLOCK情報なし/対策: 2部構成形式で記載)
     (25)environment_changeのpatternは既存gate/hook/lessonを参照。cmd成果物(未存在ファイル)の指定禁止
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS023, LS024, LS026, LS027, LS028, LS030, LS031, LS032, LS033, LS036]
+    (29)AC数量表現、AC内deployキーワード、env_change既知3パターン、q11既存フロー差分不足は既存テンプレートルールの再発。ACは抽象化し、env_changeは既存パターンを参照し、q11は代替grep結果+差分理由を書く。
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
@@ -93,7 +95,7 @@ lessons:
     連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
     緊急対応モードでもgate形式フィールドを省略するな(cmd_2259事故)。
     これは成長ループの正しい動作。教訓記録先送りが問題。
-  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092, LS029]
+  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092]
   source_cmds_v3: [cmd_2329]
   created_at: '2026-04-25'
   automated: true
@@ -146,7 +148,8 @@ lessons:
     (5)パイプライン系cmdは全レイヤーの入出力を現物確認
     (6)金融データは遡及的に変わる。過去データ不変の暗黙前提禁止
     (7)技術的可能≠ビジネス制約クリア。PI全量照合して禁止制約確認してからcmd起票(cmd_2258 PI-024事故)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS028]
+    (8)grepの存在確認は内容理解ではない。0件なら別キーワード、N件なら各行の意味を精読してから判断せよ
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)'
@@ -170,7 +173,7 @@ lessons:
     CDP 403=auto-ops launch_browser(非headless)。inbox盲点=PostToolUse hook。
     watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
     復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
-  source_ids: [LS032, LS033, LS037, LS074, LS084, LS086, LS087]
+  source_ids: [LS033, LS037, LS074, LS084, LS086, LS087]
   created_at: '2026-04-24'
   automated: true
   enforcement: '各enforcement箇所(settings.json hook, bulletin_write.sh, gate_shogun_startup.sh)で個別に自動強制済み'
@@ -226,7 +229,7 @@ lessons:
     verify FAILしたらバグ修正が先。--skip-verifyは禁じ手。
     precompute rollback巻き添え→savepoint(begin_nested)で範囲限定(cmd_2254)。
     本番確認は3レイヤー貫通: DB(データ存在)+API(BEが返すか)+FE(ユーザーに届くか)(cmd_2255)。
-  source_ids: [LS010, LS016, LS063, LS024, LS025]
+  source_ids: [LS010, LS016, LS063]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'checklist-shin-v2-registration.md+checklist-alm-registration.md+PI-007+PI-025(begin_nested)+health_check.py'
@@ -237,7 +240,9 @@ lessons:
     CoDD #5の3層(L1事前/L2事後/L3診断推論)を直接適用→Session State。
     外部知見の取込パターン: 記事→対応探す→ギャップ→なぜなぜ→cmd化。
     忍者の成長=間違える余地がない構造(report_field_set.sh GP-072c5)。
-  source_ids: [LS030, LS031, LS060]
+    スキル使用も成長ループの一部。適したスキルを無視できる状態は構造的バグであり、Guard/スキル強制へ埋め込む。
+    idle時に殿入力待ちで止まるな。入力・確認・還流の鎖が切れている箇所を自走で塞げ。
+  source_ids: [LS027, LS028, LS060]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md'
@@ -272,17 +277,6 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh q8_why_what(BLOCK)+gunshi review因果推論ルール(causal_chain必須)+gate_gunshi_cs_checklist.sh CS6'
 
-- id: LS-A21
-  title: 純リアクティブ罠 — 殿の入力がないと止まるな
-  detail: |
-    殿の入力=仕事の開始トリガーという受動的姿勢を脱せ。
-    idle時はdashboard/karo_workarounds/cmd_design_qualityを読み問いを見つけてcmd起票。
-    idle=最大の無駄。
-  source_ids: [LS027]
-  created_at: '2026-04-24'
-  automated: true
-  enforcement: 'gate_shogun_startup.sh「自走チェック」+instructions/shogun.md §14 idle自己分析'
-
 - id: LS-A22
   title: gate FPパターン — SCOUT偽陽性+研究道具FP+parity FP+教訓上限デッドロック
   detail: |
@@ -294,7 +288,8 @@ lessons:
     (6)教訓上限デッドロック: Edit全BLOCK。修正済み: Guard 6にid数比較追加(削除方向許可)。上限到達時は古いLS同士を統合(削除)でid数を減らせ
     (7)AC内§番号(§5.2等)がcheck_gunshi_reference_numeric_relaxationに数値として誤検出。§はcommand欄に移動せよ。other_draft_existsとの複合BLOCKあり(cmd_2351)
     (8)AC_TEXTがdescription:行のみgrep→AC1:"..."形式はP1-P5検出不能。ACをdescription:形式で書けば通る。根本修正: AC_TEXT抽出をacceptance_criteria配下全行に拡張(cmd_2392で発見)
-  source_ids: [LS027, LS031, LS025, LS029, LS034, LS035]
+    (9)gate修正cmdのACではトリガーフレーズを直接引用せず抽象表現に変換する。cmd全文grepの既知FPパターン。
+  source_ids: [LS023, LS034, LS035]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
   automated: true
@@ -302,73 +297,26 @@ lessons:
 # === LS023-LS035統合完了 (2026-04-29) ===
 # 13件→LS-A04(18-25追記,9件)＋LS-A22(3-7追記,4件)に吸収完了
 # source_cmds: cmd_2339-cmd_2369
-# LS023はLS-A10(計測)に吸収済み+cmd_save.sh q9で自動強制(2026-05-02統合)
-# LS024はLS-A04(24)+LS-A22(3)に完全吸収済み(2026-05-02統合)
-# LS025はLS-A04(12)に完全吸収済み(2026-05-02統合)
-# LS026はLS-A07(gate迂回禁止)+cmd_save.sh other_draft_existsで自動強制済み(2026-05-02統合)
-# LS027はLS037/LS038(missing_prev_cmd_lesson連鎖パターン)に吸収済み(2026-05-02統合)
-# LS028はLS-A04(27)+LS-A22(3)に吸収済み(2026-05-02統合)
-  detail: 'cmd_2416で2件BLOCK。(1)commandにgrid_searchパスを含む登録cmdでcheck_research_tool_explicitが発火→ACにrun_077フルパス記載で解消。(2)パリティcmdのP1/P3/P4未記載→AC追加で解消。登録cmdは研究cmdではないがgateはcommand欄をgrepするため区別できない。'
-  source_cmd: 'cmd_2416'
-  created_at: '2026-04-29'
-  automated: true
-  enforcement: 'cmd_save.sh check_research_tool_explicit+check_parity_ac_requirements(既存WARN累計BLOCK)'
-# LS029はLS-A04(17)+LS039に吸収済み(2026-05-02統合)
-# LS030はLS-A04(8)に吸収済み(2026-05-02統合)
-# LS031はLS-A04(4,26)+LS040に��収済み(2026-05-02統合)
-- id: 'LS032'
-  title: '一次知識と解釈の混同禁止 — 原論文の手法をDM-Signal適用に読み替えて報告するな'
-  detail: 'Factor Momentumを「Top-1選出に使える」と殿に報告したが、原論文は全ファクター等配分Long/Short。Top-1選出ではない。一次知識層の手法を正確に理解する前にDM-Signal適用を考えた=一次知識と解釈の混同。手順: (1)一次知識(原論文の手法)を正確に理解 (2)殿に報告する際は原論文の手法として報告 (3)DM-Signal適用は解釈層(dm-signal/)に分離。殿への報告で「〜に使える」は解釈であり一次知識ではない。'
-  source_cmd: 'cmd_2432'
-  created_at: '2026-04-30'
-  automated: true
-  enforcement: '知識辞書guide.md 2層構造ルール(既存。意志依存→将軍の自問に追加)'
-- id: 'LS033'
-  title: '設計書数値緩和FP — 異次元数値(PF体数vs lookback日数)の偽陽性はq8に両方の数値を含めて解消'
-  detail: 'cmd_2436で設計書数値緩和WARN累計昇格BLOCK。q8最大値=12(PF体数)とAC最大値=315(lookback日数)で次元が異なる偽陽性。解消方法: q8_why_whatにAC内の全数値(lookback候補315D等)を含めて、gateが比較する際にq8>=ACとなるようにする。LS-A22(7)の§番号偽陽性と同パターン。'
-  source_cmd: 'cmd_2436'
-  created_at: '2026-04-30'
-  automated: true
-  enforcement: 'cmd_save.sh check_gunshi_reference_numeric_relaxation(既存WARN。q8に全数値含めて解消)'
-- id: 'LS034'
-  title: 'assumptions sourceは忍者作成スクリプトではなく出力YAMLを参照'
-  detail: 'cmd_2438でassumptions source不在BLOCK。忍者が作成したスクリプトはworktreeにありmulti-agent-shogunリポには存在しない。assumptions sourceにはスクリプトパスではなく、cmd成果物(出力YAML等)の確認済みパスを書け。'
-  source_cmd: 'cmd_2438'
-  created_at: '2026-04-30'
-  automated: true
-  enforcement: 'cmd_save.sh assumptions source存在チェック(既存自動強制)'
-- id: 'LS035'
-  title: '殿の目的を正確に理解してからcmd設計 — 原論文忠実実装≠殿の目的'
-  detail: 'cmd_2436で原論文のlookback選択を忠実実装したが、殿の目的はPF間選出だった。原論文の構造(何を選択するか)と殿の目的(何を選択したいか)は別。cmd設計前に「殿はこのcmdで何を得たいか」を確認し、原論文との差異を設計書に明記してから起票せよ。'
-  source_cmd: 'cmd_2436'
-  created_at: '2026-04-30'
-  automated: true
-  enforcement: '設計書§2.1に修正経緯を記載済み。gate化は意志依存(将軍の自問に追加)'
-- id: 'LS036'
-  title: '孤立delegated_at汚染+environment_change括弧パターン'
-  detail: 'cmd_2465で2回BLOCK。(1)旧cmd_2395のdelegated_atがファイル末尾に残存し新cmdのフィールドとして解釈された(2)environment_change patternに括弧を含むとgrepが正規表現として解釈しマッチ失敗。対策:(1)cmdブロック追記後に末尾の孤立フィールドを確認(2)patternにはID文字列のみ(括弧・特殊文字禁止)'
-  source_cmd: 'cmd_2465'
-  created_at: '2026-05-02'
-  automated: true
-  enforcement: 'cmd_save.sh environment_change grep検証(既存自動強制)'
-- id: 'LS037'
-  title: 'missing_prev_cmd_lesson連鎖 — 教訓上限時は先に統合してから記録'
-  detail: 'cmd_2466で1回BLOCK(missing_prev_cmd_lesson)。cmd_2465教訓(LS036)は記録済みだったが、cmd_2466自身のBLOCKも教訓対象。教訓上限(35件)到達時に起票→BLOCK→教訓記録不能→次cmd起票→再BLOCKの連鎖が発生。対策: 教訓上限到達時は起票前に既存教訓統合(個別→クラスタ吸収)で空きを2件以上確保してから起票サイクルに入る'
-  source_cmd: 'cmd_2466'
-  created_at: '2026-05-02'
-  automated: true
-  enforcement: 'cmd_save.sh missing_prev_cmd_lesson(既存自動強制)+pre-write-edit-combined.sh Guard 6(id数比較)'
+# LS023: superseded by LS-A22 (gate FP修正cmdのメタ循環。cmd全文grepの既知問題。cmd_2661, 2026-05-11統合)
+# LS024: superseded by LS-A04 (AC数量表現がac_param_sufficiency累計昇格。cmd_2662, 2026-05-11統合)
+# LS025: superseded by LS-A04 (AC内deployキーワードがac_phase_mixing累計昇格。cmd_2665, 2026-05-11統合)
+# LS026: superseded by LS-A04 (env_change 3パターンBLOCK再発。cmd_2667, 2026-05-11統合)
+# LS027: superseded by LS-A17 (スキルTRIGGER条件合致時はSkill tool必須。cmd_karo_skill_usage_lesson, 2026-05-11統合)
+# LS028: superseded by LS-A17 (スキル不使用=構造的バグ。cmd_session_20260510, 2026-05-11統合)
+# LS029: remains individual (画像認識精度+reCAPTCHA教訓。gate/hookなしの訓練対象)
+# LS030: superseded by LS-A02 (掲示板未確認=殿との対話/報告鎖の断絶。cmd_session_20260510, 2026-05-11統合)
+# LS031: superseded by LS-A04 (env_change cmd成果物指定+q11既存フロー差分理由不足。cmd_2668, 2026-05-11統合)
+# LS032: superseded by LS-A09 (一次知識と解釈の混同=現物確認の知識版。原論文の手法を正確に理解する前に適用を考えた。cmd_2432, 2026-05-10統合)
+# LS033: superseded by LS-A22 (設計書数値緩和FP。LS-A22(7)と同パターン。cmd_2436, 2026-04-30)
+# LS034: superseded by LS-A04 (assumptions source出力YAML参照。LS-A04(23)再発。cmd_2438, 2026-04-30)
+# LS035: superseded by LS-A02 (殿の目的理解=対話パターン。原論文忠実実装≠殿の目的。cmd_2436, 2026-05-10統合)
+# LS036: superseded by LS-A04 (孤立delegated_at汚染+env_change括弧パターン。cmd_2465, 2026-05-10統合)
+# LS037: superseded by LS-A05 (教訓上限連鎖=遡及学習。上限到達時は統合してから起票。cmd_2466, 2026-05-10統合)
 # LS038: superseded by LS037 (同一パターン吸収 2026-05-02)
 # LS039: superseded by LS-A04 (既知パターン再発吸収 2026-05-02)
 # LS040: superseded by LS-A04 (other_draft_exists再発+on_hold禁止陳腐化, cmd_2472, 2026-05-02)
 # LS041: superseded by LS-A04 (プロジェクト外パス+q11未記載5回目, cmd_2474, 2026-05-02。LS-A04(23)再発)
-- id: 'LS042'
-  title: '起票前確認hook静的→3パターン累計昇格BLOCK(self_reread+command_steps_over_ac+q11_existing_alternative)'
-  detail: 'cmd_2477で3回BLOCK。起票前確認5問が静的でBLOCKパターンの検出項目がなかった。対策: 5問→8問に拡張(項目6:ステップ数≦AC数, 7:self-rereadワード排除, 8:q11にgrep結果)。根因=起票前確認に学習ループがなかった(スキル成長ループ不在と同構造)'
-  source_cmd: 'cmd_2477'
-  created_at: '2026-05-02'
-  automated: true
-  enforcement: 'pre-write-edit-combined.sh Guard 0に項目6,7,8を追加済み(自動強制)'
+# LS042: superseded by LS-A06 (起票前確認hook静的→8問拡張=BLOCK→成長。cmd_2477, 2026-05-10統合)
 # LS043: superseded by LS-A04 (environment_change 3パターンBLOCK再発, cmd_2529, 2026-05-03)
 # LS044: superseded by LS-A04 (assumptions sourceフルパス不足, cmd_2531, 2026-05-03)
 # LS043: superseded by LS-A05 (REMIND無視→教訓先送り3回目再発, cmd_2532/2545, 2026-05-03)
@@ -377,12 +325,9 @@ lessons:
 # LS045: superseded by LS-A04 (cmd_text_pipe_danger=cmd全文grep対象パターン。LS-A04(15)再発。cmd_2548, 2026-05-04)
 # LS046: superseded by LS-A04 (q11_existing_alternative=sourceファイル名がgate判定トリガー。cmd_2555, 2026-05-04)
 # LS047: superseded by LS-A05 (missing_prev_cmd_lesson再発3回目。cmd_2556, 2026-05-04)
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A05'
 # LS045: superseded by LS-A22 (prev_block内トリガーワード再発火。LS-A22(gate FPパターン)に吸収。cmd_2557, 2026-05-04)
 # LS046: superseded by LS-A04 (q11_existing_alternative再発。LS-A04に吸収。cmd_2558, 2026-05-04)
 # LS047: superseded by LS-A22 (L3340 grep -vフィルタ未対象。LS045と同パターン。LS-A22に吸収。cmd_2562, 2026-05-04)
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS045'
 # LS043: superseded by LS-A22 (q8 grep -vフィルタすり抜け。LS-A22(7)に吸収。cmd_2565, 2026-05-05)
 # LS044: superseded by LS-A04 (q11累計昇格grep形式。LS-A04(28)再発。cmd_2566, 2026-05-05)
 # LS045: superseded by LS-A04 (environment_change YAML list形式非対応。LS-A04に吸収。cmd_2568, 2026-05-05)
@@ -397,24 +342,45 @@ lessons:
 # LS044: superseded by LS-A04 (project=dm-signal sourceパス解決。LS-A04(23)に吸収。cmd_2580, 2026-05-05)
 # LS045: superseded by LS-A22 (.tsx切り詰め+command_steps_over_ac。LS-A22(8)+LS-A04(12)に吸収。cmd_2581, 2026-05-06)
 # LS046: superseded by LS-A05 (missing_prev_cmd_lesson再発。cmd_2582, 2026-05-06)
-- id: 'LS043'
-  title: 'missing_prev_cmd_lesson+other_draft_exists — 7cmd一括draft禁止'
-  detail: 'cmd_2583教訓未記録+cmd_2584-2590を一括draftで起票→other_draft_exists BLOCK。対策: (1)教訓は各cmd publish直後に即記録 (2)複数cmdは1本publish→delegate→次のdraftの順で直列処理。一括起票はother_draft_exists検出で全BLOCK。'
-  source_cmd: 'cmd_2583'
-  created_at: '2026-05-06'
+# LS043: superseded by LS-A04 (other_draft_exists+missing_prev_cmd_lesson再発。cmd_2583, 2026-05-06)
+# LS044: superseded by LS-A04 (q11_existing_alternative再発。cmd_2585, 2026-05-06)
+# LS045: superseded by LS-A04 (ac_phase_mixing CDP計測キーワード再発。cmd_2592, 2026-05-06)
+# LS046: superseded by LS-A04 (environment_change pattern未存在ファイル再発。cmd_2593, 2026-05-07)
+# LS043: superseded by LS-A09 (最初に最大コスト+正確性極限投資。cmd_2597, 2026-05-07)
+# LS044: superseded by LS-A09 (LS043の上位原則。2026-05-07)
+# LS045: superseded by LS-A04 (vis_L接頭辞+ac_phase_mixing再発。cmd_2598, 2026-05-07)
+# LS046: superseded by LS-A04 (q8縮小表現「のみ」再発。cmd_2599, 2026-05-07)
+# LS043: superseded by LS-A22 (gate FPパターンの再発。diagnosisにgateトリガーワード含有→再発火はLS-A22(7)と同構造。cmd_2603, 2026-05-09)
+# LS044: superseded by LS-A04 (q5/q11未記入+env_change YAML list形式はLS-A04(25)の既知ルール再発。cmd_2604, 2026-05-09)
+# LS045: superseded by LS-A04 (q11累計昇格はLS-A04(28)の既知ルール再発。cmd_2605, 2026-05-09)
+# LS046: superseded by LS-A04 (env_change patternは既存文字列指定はLS-A04(25)の既知ルール再発。cmd_2612, 2026-05-09)
+# LS043: superseded by LS-A04 (other_draft_exists+env_change dict形式再発。cmd_2614, 2026-05-09)
+# LS044: superseded by LS-A04 (q11既存キーワード欠落再発。cmd_2616, 2026-05-09)
+# LS045: superseded by LS-A04 (q8縮小表現5箇所+sourceパス再発。cmd_2617, 2026-05-09)
+# LS046: superseded by LS-A04 (q8複利の問い形式再発。cmd_2618, 2026-05-09)
+# LS043: superseded by LS-A22 (parity_ac_missing偽陽性=FPパターン。purposeにトリガーワード混入。cmd_2619, 2026-05-10統合)
+# LS044: superseded by LS-A04 (拡張フィールド漏れ+AC description形式=テンプレートルール。cmd_2620, 2026-05-10統合)
+# LS045: superseded by LS-A04 (q11フルパスgrep形式必須=テンプレートルール。cmd_2621, 2026-05-10統合)
+# LS046: superseded by LS-A22 (diagnosis+同時draft偽陽性。cmd全文grepパターン。cmd_2623, 2026-05-10)
+# LS047: superseded by LS-A22 (negative_claim q11偽陽性。cmd全文grepパターン。cmd_2625, 2026-05-10)
+# LS048: superseded by LS-A22 (ac_phase_mixing偽陽性: ACテキスト内キーワード引用→cmd全文grepで発火。ACからキーワード排除し抽象表現で解消。cmd_2630, 2026-05-10)
+# LS049: superseded by LS-A22 (ac_phase_mixing偽陽性: measurement+実装キーワード共起。ACテキスト排除で解消。cmd_2634, 2026-05-10)
+# LS046: superseded by LS-A22 (gate_hook_action_conversion偽陽性=FPパターン。description形式ACはaction_text抽出対象外。cmd_2636, 2026-05-10統合)
+# LS047: superseded by LS-A04 (q11既存代替grep。既存フローへの接続である旨を明記。LS-A04(8)再発。cmd_2641, 2026-05-10)
+# LS047: superseded by LS-A22 (ac_phase_mixing偽陽性: CDP/ブラウザ/スクショ=計測キーワード。ACから排除し抽象表現で記述。cmd_2642, 2026-05-10)
+# LS047: superseded by LS-A05 (missing_prev_cmd_lesson再発。教訓上限+吸収+再起票の連鎖。cmd_2643, 2026-05-10)
+# LS047: superseded by LS-A04 (other_draft_exists再発。同時draft禁止。cmd_2644, 2026-05-10)
+# LS047: superseded by LS-A04 (q11既存代替grep4回目再発。startup gate接続は既存フロー横展開と明記。cmd_2646, 2026-05-10)
+# LS047: superseded by LS-A09 (assumptions_negative_claim再発。claimにgrep反証結果必須。cmd_2647, 2026-05-10)
+# LS047: superseded by LS-A04 (dm-signal source相対パス+push除去+measurement_env。cmd_2652, 2026-05-10)
+# LS047: superseded by LS-A05 (missing_prev_cmd_lesson cascade再発。cmd_2652教訓未記録→cmd_2653 BLOCK。cmd_2653, 2026-05-10)
+# LS047: superseded by LS-A04 (env_change dict形式+.github隠しディレクトリパス解決不可+ac_test_scope累計昇格。cmd_2654, 2026-05-10)
+# LS047: superseded by LS-A04 (source絶対パス不在判定+env_change cmd成果物指定=LS-A04(25)再発。cmd_2655, 2026-05-10)
+# LS047: superseded by LS-A04 (source pathのproject解決: project=dm-signalだとDM-Signal配下で解決。教訓ファイルはinfra管理→project=infra。cmd_2657, 2026-05-10)
+- id: 'LS029'
+  title: '画像認識精度+reCAPTCHA教訓: MECEに全ブロック判断し殿に確認を取れ'
+  detail: 'reCAPTCHAチャレンジで画像認識精度が極端に低い(バス/自転車/信号機/橋で連続失敗)。根因: (1)低解像度スクリーンショットでの判断 (2)色や形の短絡判断(柱=信号機、交差点=信号機あり) (3)左下タイルを軽視する傾向 (4)失敗時に学習せず同じ基準で次を判断 (5)スクショ→分析→クリックの3ターンが遅くタイムアウト。殿の教え: MECEに全ブロックを判断するのは正しい方法。クリックしてから殿に確認→答え合わせで学習。ずるをせずに愚直にトレーニングが最短。'
+  source_cmd: 'cmd_session_20260510'
+  created_at: '2026-05-11'
   automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'
-- id: 'LS044'
-  title: 'q11_existing_alternative再発 — CoDD最適化cmdでもrg結果+代替なし明記が必要'
-  detail: 'cmd_2585で1回BLOCK。q11にls結果のみでrg -l結果+git log+代替仕組みなし明記が不足。CoDD最適化はスクリプト変更cmdのためgate/hook追加と判定される。LS-A04(28)の再発。対策: q11テンプレートにrg -l+ls+代替なし明記の3点セットを標準化'
-  source_cmd: 'cmd_2585'
-  created_at: '2026-05-06'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'
-- id: 'LS027'
-  title: 'スキルTRIGGER条件合致時はSkill tool必須'
-  detail: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。スキルTRIGGER条件合致時にSkill toolを使わなければ成長ループが回らず、手動操作が温存される。'
-  source_cmd: 'cmd_karo_skill_usage_lesson'
-  created_at: '2026-05-10'
-  automated: true
-  enforcement: 'type=hook; file=scripts/hooks/pre-bash-combined.sh; pattern=Guard 9 skill usage required'
+  enforcement: '意志依存(gate/hookなし)。今後のCDP画像判定タスクで精度向上が必要'
