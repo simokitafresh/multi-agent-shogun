@@ -27,3 +27,10 @@ setup_file() {
     [[ "$output" == *"WARN: no test mapping for 'README.md'"* ]]
     [[ "$output" == *"WARN: all changed files have no test mapping"* ]]
 }
+
+@test "test_select explicitly skips skill markdown files without warnings" {
+    run bash "$TEST_SELECT" skills/dream/SKILL.md
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN"* ]]
+    [[ "$output" != *"tests/unit/"* ]]
+}

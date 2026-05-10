@@ -88,6 +88,13 @@ for changed in "${CHANGED_FILES[@]}"; do
         continue
     fi
 
+    # skills/*/SKILL.md は実行コードではなくCodex/Claudeの手順文書。
+    # 個別テストが存在しないため、既知のテスト不要対象としてWARNなしでスキップする。
+    if [[ "$changed" == skills/*/SKILL.md ]]; then
+        matched=1
+        continue
+    fi
+
     # L1+L2: マップから検索
     for key in "${!TEST_MAP[@]}"; do
         if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$(basename "$changed")"* ]]; then
