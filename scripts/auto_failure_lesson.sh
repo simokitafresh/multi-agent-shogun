@@ -1,7 +1,7 @@
 #!/bin/bash
-# auto_failure_lesson.sh — 失敗タスクの報告YAMLから自動でdraft教訓を生成
+# auto_failure_lesson.sh — 失敗タスクの報告YAMLから自動でconfirmed教訓を生成
 # Usage: bash scripts/auto_failure_lesson.sh <report_yaml_path>
-# - status: failed → lesson_write.sh --status draft で登録
+# - status: failed → lesson_write.sh --status confirmed で登録
 # - status: done/その他 → 何もしない (exit 0)
 # - failure_analysis.root_cause があれば抽出、なければ result.summary から要約
 # - タイトルに「[自動生成]」プレフィックスを付与
@@ -147,8 +147,8 @@ if [ "$action" = "skip" ]; then
     exit 0
 fi
 
-# Call lesson_write.sh with --status draft
-echo "[auto_failure] Registering draft lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
-bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status draft
+# Call lesson_write.sh with --status confirmed
+echo "[auto_failure] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
+bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
 
-echo "[auto_failure] Draft lesson registered successfully"
+echo "[auto_failure] Confirmed lesson registered successfully"
