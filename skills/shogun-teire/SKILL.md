@@ -135,8 +135,10 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
 
 1. **合流状態チェック** — `bash scripts/gates/gate_lesson_health.sh`（引数なし=全project走査）
    - OK: lesson→context合流は健全（未合流N件）
-   - ALERT: 未合流10件超 → context未反映の教訓が蓄積（/lesson-sort推奨）
+   - ALERT: 未合流5件超 → context未反映の教訓が蓄積（context反映 + last_synced_lesson更新）
    - 未振り分け教訓数もチェック（UNSORTED_THRESHOLD=10超でALERT）
+   - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
+   - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出
@@ -420,6 +422,10 @@ for lesson in data['lessons']:
 | チェック | スクリプト | 結果 | 判定 |
 | 合流状態 | gate_lesson_health.sh | 未合流{N}件 / total:{N} | OK/ALERT |
 | 未振り分け | gate_lesson_health.sh | 未振り分け{N}件 | OK/ALERT |
+| SSOT整合 | gate_lesson_health.sh | conflict marker / ssot_path | OK/WARN/ALERT |
+| when/how充足 | gate_lesson_health.sh | when:{N}/{M} how:{N}/{M} | OK/WARN |
+| 教訓効果率 | gate_lesson_health.sh | referenced/injected, useful/feedback | OK/WARN/ALERT |
+| 注入過多 | gate_lesson_health.sh | injection>=10 and helpful=0 | OK/WARN |
 | YAML整合性 | gate_yaml_status.sh --dry-run | {status} | OK/要更新 |
 | PD反映 | gate_pd_sync.sh | {SYNCED/NOT_SYNCED} | OK/WARNING |
 | ゲート通過率 | count_gate_metrics.sh | CLEAR:{N} BLOCK:{N} ({%}) | 健全/要改善 |

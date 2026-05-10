@@ -81,7 +81,11 @@ bash scripts/gates/gate_lesson_health.sh
 ```
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
-- lesson effectiveness rate の変化を検出
+- lesson health の4系統を検出:
+  - SSOT lessons.md の conflict marker / ssot_path 不備
+  - lesson→context 未合流数（ALERT_THRESHOLD=5超でALERT）と未振り分け教訓数（UNSORTED_THRESHOLD=10超でALERT）
+  - when/how 欠落、注入10回以上かつ helpful_count=0 の教訓
+  - lesson effectiveness / useful率（WARN=50%未満、ALERT=30%未満）
 
 ### 2b. セッションJSONL（二次ソース — grepで絞る）
 ```bash
