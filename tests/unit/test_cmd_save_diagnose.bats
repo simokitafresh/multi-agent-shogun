@@ -42,7 +42,7 @@ commands:
       q5_verified_source: "code_reading + isolated_test"
       q6_not_hiding: "no — diagnose挙動確認であり問題の隠蔽ではない"
       q7_definition_verified: "yes — テスト用定義を確認"
-      q8_why_what: "WHY: 「診断強制を入れよ」 → WHAT: 同一cmd 1件をBLOCKさせる。正の複利"
+      q8_why_what: "WHY: 「診断強制を入れよ」 → WHAT: 同一cmd 1件をBLOCKさせる → WHEN: cmd_saveの診断表示を検証する時 → WHERE: tests/unit/test_cmd_save_diagnose.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: BLOCK再実行とDIVERGENT表示をfixtureで固定する。複利: 正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_diagnose.bats のfixture範囲のみ使用"
       q_ambiguity: "none"
 ${extra_quality_gate}

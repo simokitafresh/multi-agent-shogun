@@ -50,7 +50,7 @@ commands:
       q5_verified_source: "code_reading + isolated_test"
       q6_not_hiding: "no — environment_change検証であり問題を隠していない"
       q7_definition_verified: "yes — environment_changeは構造化形式(type/file/pattern)で検証する"
-      q8_why_what: "WHY: 殿指摘「environment_change必須化」 → WHAT: Check 3.6追加。正の複利"
+      q8_why_what: "WHY: 殿指摘「environment_change必須化」 → WHAT: Check 3.6追加 → WHEN: environment_change必須チェックを検証する時 → WHERE: tests/unit/test_cmd_save_environment_change.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: 初回PASSと再挑戦BLOCKをfixtureで固定する。複利: 正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_environment_change.bats のfixture範囲のみ使用"
       q11_not_already_done: "未達成。grep 'Check 3.6' scripts/cmd_save.sh で確認"
       q_ambiguity: "none"

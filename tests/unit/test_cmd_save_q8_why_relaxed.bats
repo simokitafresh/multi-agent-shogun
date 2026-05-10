@@ -37,7 +37,7 @@ commands:
       q5_verified_source: "code_reading + isolated_test"
       q6_not_hiding: "no — q8の偽陽性除去であり問題の隠蔽ではない"
       q7_definition_verified: "yes — q8はWHY/WHATの明示だけを要件とする"
-      q8_why_what: "WHY: 学習ループを強化する必要がある → WHAT: q8の引用依存を外して正の複利にする"
+      q8_why_what: "WHY: 学習ループを強化する必要がある → WHAT: q8の引用依存を外す → WHEN: 引用記号なしWHYの回帰を検証する時 → WHERE: tests/unit/test_cmd_save_q8_why_relaxed.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: q8 WHY引用WARNを出さず保存確認OKまで通す。複利: 正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save_q8_why_relaxed.bats のfixture範囲のみ使用"
       q11_not_already_done: "未達成。q8 WHY引用WARNが残っていないことを未確認"
       q_ambiguity: "none"
