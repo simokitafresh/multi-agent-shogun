@@ -99,6 +99,20 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/bulletin_board.yaml" ]
 }
 
+@test "bulletin_write rejects unknown single requires_confirmation agent" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "確認先不正" "unknown_agent"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"unknown requires_confirmation agent"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/bulletin_board.yaml" ]
+}
+
+@test "bulletin_write rejects misspelled explicit posted_by instead of writing malformed entry" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=hayate TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizoo "名義指定"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"unknown requires_confirmation agent"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/bulletin_board.yaml" ]
+}
+
 @test "bulletin_write duplicate post does not notify again" {
     export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun,gunshi" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "重複禁止"

@@ -63,6 +63,19 @@ normalize_csv_agents() {
     printf '%s\n' "$(printf '%s\n' "${normalized[@]}" | awk '!seen[$0]++' | paste -sd ',' -)"
 }
 
+normalize_confirmation_arg() {
+    local raw="$1"
+    local lowered="${raw,,}"
+    case "$lowered" in
+        ""|1|true|yes|y|0|false|no|n)
+            printf '%s\n' "$raw"
+            ;;
+        *)
+            normalize_csv_agents "$raw" "requires_confirmation"
+            ;;
+    esac
+}
+
 POSTED_BY=""
 if [[ -n "${TMUX_PANE:-}" ]]; then
     POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
@@ -102,9 +115,7 @@ if is_known_agent "$CONTENT"; then
     exit 1
 fi
 
-if [[ "$REQUIRES_CONFIRMATION" == *,* ]]; then
-    REQUIRES_CONFIRMATION="$(normalize_csv_agents "$REQUIRES_CONFIRMATION" "requires_confirmation")"
-fi
+REQUIRES_CONFIRMATION="$(normalize_confirmation_arg "$REQUIRES_CONFIRMATION")"
 
 if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
     BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"
