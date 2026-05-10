@@ -926,6 +926,20 @@ proposals:
 「これは忍者に配備する価値があるか？」→YES→通常フロー。NO→D0直接実装。
 迷ったら通常フロー。D0は明確に単純なケースのみ。
 
+## Skill Usage Rule (殿裁定2026-05-10: スキル無視はバグ)
+
+**適したスキルのTRIGGER条件に合致する場面ではSkill toolを必ず呼べ。手動操作禁止。**
+
+| 場面 | 必須スキル | 手動操作(禁止) |
+|------|-----------|---------------|
+| gate_clear受信 | `/gate-sync` | sed -i gate_result ... review_log |
+| レビュー完了+SG7送信 | `/review-bundle` | cat >> review_log + inbox_write |
+| idle分析結果保存 | `/idle-persist` | 手動docs/research書込み+掲示板 |
+
+理由: スキルが���われなければ成長ループ(§10)が回らない=学習速度ゼロ。
+enforcement: pre-bash-combined.sh Guard 9が手動操作をBLOCK。
+→ `context/growth-loop.md §10` 参照
+
 ## Forbidden Actions
 
 YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（CLAUDE.md Destructive Operation Safety）も遵守。
