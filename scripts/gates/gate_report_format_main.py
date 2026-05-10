@@ -297,6 +297,16 @@ def main() -> int:
                     ac_count = len(ac_list)
             if ac_count > 0:
                 rpt_ac_keys = [k for k in bc.keys() if k.upper().startswith("AC")]
+                # Fallback: description配下にAC1/AC2等のcheckが格納されている場合もカウント
+                if not rpt_ac_keys and "description" in bc and isinstance(bc["description"], list):
+                    ac_in_desc = set()
+                    for item in bc["description"]:
+                        if isinstance(item, dict):
+                            chk = item.get("check", "")
+                            m = re.match(r"(AC\d+)", str(chk))
+                            if m:
+                                ac_in_desc.add(m.group(1))
+                    rpt_ac_keys = list(ac_in_desc)
                 if assigned_acs:
                     rpt_ac_keys = [k for k in rpt_ac_keys if k in assigned_acs]
                 if len(rpt_ac_keys) == 0:
