@@ -314,3 +314,12 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: GP提案前に既存実装grep確認をgunshi.md SGプロトコルに追加
+- id: LG035
+  title: 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須
+  detail: 'スキルが使われなければ成長ループ(§10)が回らない=学習速度ゼロ。手動操作をhook/gateでBLOCK(Guard 9)し、スキル以外の道を塞ぐ。enforcement: pre-bash-combined.sh Guard 9'
+  source_cmd: cmd_karo_skill_usage_lesson
+  created_at: '2026-05-10'
+  automated: true
+  enforcement: pre-bash-combined.sh Guard 9
+  when: タスク内容が利用可能スキルのTRIGGER条件に合致した時
+  how: Skill toolを必ず使う。手動操作で進めようとしたらGuard 9でBLOCKし、スキル以外の経路を塞ぐ

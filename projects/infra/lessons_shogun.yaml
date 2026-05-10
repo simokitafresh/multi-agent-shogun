@@ -411,3 +411,10 @@ lessons:
   created_at: '2026-05-06'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS-A04'
+- id: 'LS027'
+  title: 'スキルTRIGGER条件合致時はSkill tool必須'
+  detail: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。スキルTRIGGER条件合致時にSkill toolを使わなければ成長ループが回らず、手動操作が温存される。'
+  source_cmd: 'cmd_karo_skill_usage_lesson'
+  created_at: '2026-05-10'
+  automated: true
+  enforcement: 'type=hook; file=scripts/hooks/pre-bash-combined.sh; pattern=Guard 9 skill usage required'

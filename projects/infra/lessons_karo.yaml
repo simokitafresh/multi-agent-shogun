@@ -332,3 +332,10 @@ lessons:
   created_at: '2026-05-10'
   when: dashboard.mdに文字化け/NUL文字を検出した時
   how: sed -iでNUL文字除去+dashboard_auto_section.sh出力をhexdump確認で根因特定
+- id: 'LK006'
+  title: 'スキルTRIGGER条件合致時はSkill tool必須'
+  detail: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。'
+  source_cmd: 'cmd_karo_skill_usage_lesson'
+  when: '同種の状況が再発した時'
+  how: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。'
+  created_at: '2026-05-10'
