@@ -270,6 +270,16 @@ read_task_skill_hint() {
     ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
+read_task_context_hints() {
+    awk '
+        /^task:/ { in_task=1; next }
+        in_task && /^  context_hints:/ { in_hints=1; next }
+        in_hints && /^  - / { line=$0; sub(/^  - /,"",line); gsub(/^"|"$/,"",line); print line; next }
+        in_hints && /^  [a-zA-Z_]/ { in_hints=0 }
+        in_hints && /^[^ ]/ { in_hints=0; in_task=0 }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
 # ─── gate_blocks ヘルパー関数 ───
 
 read_gate_blocks() {
@@ -1296,6 +1306,50 @@ EOF
     run read_task_skill_hint
     [ "$status" -eq 0 ]
     [[ "$output" == *"/pf-registration"* ]]
+}
+
+@test "cmd_2650: inject_context_hints exists in deploy_task.sh" {
+    run grep -q '^inject_context_hints()' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2650: explicit purpose filenames inject all four context hints" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "context hint exact test"
+  task_type: exact
+  project: infra
+  purpose: "robustness-verification-catalog.md、gs-speedup-knowledge.md、dm-signal-terminology.md、training-cycle.mdをLevel5化する"
+EOF
+
+    run inject_context_hints_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_context_hints
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/robustness-verification-catalog.md"* ]]
+    [[ "$output" == *"context/gs-speedup-knowledge.md"* ]]
+    [[ "$output" == *"/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"* ]]
+    [[ "$output" == *"context/training-cycle.md"* ]]
+}
+
+@test "cmd_2650: dm-signal project injects domain context hints" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "dm signal context hint test"
+  task_type: impl
+  project: dm-signal
+  purpose: "PF計算の検証を行う"
+EOF
+
+    run inject_context_hints_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_context_hints
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/robustness-verification-catalog.md"* ]]
+    [[ "$output" == *"context/gs-speedup-knowledge.md"* ]]
+    [[ "$output" == *"/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"* ]]
 }
 
 # ═══════════════════════════════════════════════════════════

@@ -2195,6 +2195,75 @@ inject_semantic_concepts() {
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 }
 
+# ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
+# R2残件: 重要contextをタスクYAMLに強制注入し、忍者の能動検索依存をなくす。
+inject_context_hints() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local project task_type title purpose command_text haystack
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+
+    haystack="${project}
+${task_type}
+${title}
+${purpose}
+${command_text}"
+
+    local -a hints=()
+    local is_dm_signal=false
+    [ "$project" = "dm-signal" ] && is_dm_signal=true
+
+    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'robustness|ロバスト|PBO|MaxDD|robustness-verification-catalog|検証カタログ'; then
+        hints+=("context/robustness-verification-catalog.md")
+    fi
+    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'GS|grid[ -]?search|グリッド|高速化|fullrecalculate|gs-speedup-knowledge'; then
+        hints+=("context/gs-speedup-knowledge.md")
+    fi
+    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'terminology|用語|dm-signal-terminology|disambiguation|解釈|Flair|ALM|FOF|PF'; then
+        hints+=("/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md")
+    fi
+    if [ "$project" = "infra" ] || [ "$task_type" = "training" ] || printf '%s\n' "$haystack" | grep -Eqi 'training-cycle|修行|L[1-4]|訓練|idle'; then
+        hints+=("context/training-cycle.md")
+    fi
+
+    [ ${#hints[@]} -gt 0 ] || return 0
+
+    local tmp_file inject_block indent="  "
+    tmp_file=$(mktemp)
+    awk '
+        {
+            if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+            if (skip) {
+                if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                else { next }
+            }
+            if (indent == 2 && $0 ~ /^  context_hints:/) { skip = 1; next }
+            print
+        }
+    ' "$task_file" > "$tmp_file"
+
+    inject_block="${indent}context_hints:"
+    local hint
+    for hint in "${hints[@]}"; do
+        inject_block="${inject_block}"$'\n'"${indent}- \"${hint}\""
+    done
+
+    if grep -q "^  description:" "$tmp_file"; then
+        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
+    else
+        printf '%s\n' "$inject_block" >> "$tmp_file"
+    fi
+
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_context_hints: ${#hints[@]} hints injected"
+}
+
 # ─── 本番不変量注入（task YAMLにproduction_invariantsを挿入） ───
 # Level5: 忍者が本番ルールを意志依存ゼロで知る。PI違反=本番事故。
 inject_production_invariants() {
@@ -5219,7 +5288,7 @@ deploy_task_apply_task_mutations() {
     # yaml.dumpがrelated_lessons+descriptionの_sv書式を破壊するため(inject_ac_versionと同じ理由)。
 
     local clear_fields clear_tmp
-    clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+    clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
     clear_tmp=$(mktemp)
     if awk -v fields="$clear_fields" '
         BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
@@ -5259,6 +5328,7 @@ deploy_task_apply_task_mutations() {
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
     inject_related_lessons "$task_file" || true
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
+    inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
     inject_ac_version "$task_file" || true
