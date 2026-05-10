@@ -20,7 +20,7 @@ argument-hint: "before|after [--ninjutsu kasoku_diff|kasoku_ratio|nukimi|oikaze|
 ## 概要
 
 GS共通コード（gs_shared*.py, pipeline/blocks/*.py, engine.py, gs_data_loader.py,
-gs_numba_kernels.py, gs_benchmark.py）を変更する際に、パフォーマンス回帰を自動検出する。
+gs_numba_kernels.py, /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py）を変更する際に、パフォーマンス回帰を自動検出する。
 コード変更の前後でベンチマークを実行し、ms/patの悪化率で判定する。
 
 ## 共通ファイルリスト（変更検出対象）
@@ -33,7 +33,7 @@ scripts/analysis/grid_search/pipeline/blocks/*.py
 scripts/analysis/grid_search/engine.py
 scripts/analysis/grid_search/gs_data_loader.py
 scripts/analysis/grid_search/gs_numba_kernels.py
-scripts/analysis/grid_search/gs_benchmark.py
+/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py
 ```
 
 ## Phase before（ベースライン計測）
@@ -63,7 +63,7 @@ scripts/analysis/grid_search/gs_benchmark.py
 
    ```bash
    cd /mnt/c/Python_app/DM-signal
-   python scripts/analysis/grid_search/gs_benchmark.py \
+   python /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py \
      --ninjutsu {name} \
      --patterns {N:default 150} \
      --skip-ppe \
@@ -110,7 +110,7 @@ scripts/analysis/grid_search/gs_benchmark.py
 
    ```bash
    cd /mnt/c/Python_app/DM-signal
-   python scripts/analysis/grid_search/gs_benchmark.py \
+   python /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py \
      --ninjutsu {name} \
      --patterns {N:default 150} \
      --skip-ppe \
