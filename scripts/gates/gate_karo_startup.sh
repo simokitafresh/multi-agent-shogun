@@ -51,8 +51,10 @@ phase_guide_cached() {
 
 _WA_RATE_TMP=$(mktemp)
 _NINJA_WA_TMP=$(mktemp)
+_WA_DQ_TMP=$(mktemp)
 WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
+WA_DQ_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_wa_data_quality.sh"
 _WA_RATE_CACHE="/tmp/karo_wa_rate_cache"
 _NINJA_WA_CACHE="/tmp/karo_ninja_wa_cache"
 _SKILL_SUMMARY_CACHE="/tmp/karo_skill_summary_cache"
@@ -85,6 +87,15 @@ elif [ -x "$NINJA_WA_SCRIPT" ]; then
 else
     echo "  SKIP: gate_ninja_workaround_rate.sh が存在しないか実行権限なし" > "$_NINJA_WA_TMP"
     _NINJA_WA_PID=""
+fi
+
+# WA data quality (always displayed; non-zero means issues found, not startup abort)
+if [ -x "$WA_DQ_SCRIPT" ]; then
+    ( bash "$WA_DQ_SCRIPT" > "$_WA_DQ_TMP" 2>&1 || true ) &
+    _WA_DQ_PID=$!
+else
+    echo "SKIP: gate_wa_data_quality.sh が存在しないか実行権限なし" > "$_WA_DQ_TMP"
+    _WA_DQ_PID=""
 fi
 
 # (B) tmux list-panes を1回だけ呼び出してキャッシュ
@@ -620,6 +631,15 @@ else
     echo "  karo_workarounds.yaml不在"
 fi
 
+# --- Check 5.5: WAデータ品質（False WA TOP3強制表示） ---
+echo "■ WAデータ品質"
+if [ -n "${_WA_DQ_PID:-}" ]; then wait "$_WA_DQ_PID" 2>/dev/null || true; fi
+cat "$_WA_DQ_TMP"
+if grep -q "^ISSUES:" "$_WA_DQ_TMP" 2>/dev/null; then
+    overall="ALERT"
+    alerts+=("WAデータ品質問題: gate_wa_data_quality.sh")
+fi
+
 # --- Check 6: 全体workaround率（バックグラウンド結果を回収） ---
 if [ -n "$_WA_RATE_PID" ]; then wait "$_WA_RATE_PID" 2>/dev/null || true; fi
 cat "$_WA_RATE_TMP"
@@ -676,7 +696,7 @@ fi
 echo ""
 
 # tmpファイル削除
-rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP" \
+rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
     "$_aggregate_tmp"
 
 # --- Check 10: スキル品質サマリ ---

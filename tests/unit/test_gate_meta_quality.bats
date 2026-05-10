@@ -134,6 +134,10 @@ EOF
     [[ "$output" == *"ISSUES:"* ]]
     [[ "$output" == *"FALSE_WA"* ]]
     [[ "$output" == *"DUPLICATE"* ]]
+    [[ "$output" == *"False WAパターン TOP3:"* ]]
+    [[ "$output" == *"category=DUPLICATE count=1"* ]]
+    [[ "$output" == *"category=FALSE_WA count=1"* ]]
+    [[ "$output" == *"command: bash scripts/gates/gate_wa_data_quality.sh --fix"* ]]
     [[ "$output" == *"action: bash scripts/gates/gate_wa_data_quality.sh --fix を実行して自動修復せよ"* ]]
 
     run grep -c "cmd_id: cmd_1" "$TEST_TMPDIR/wa.yaml"

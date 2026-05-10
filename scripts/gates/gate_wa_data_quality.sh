@@ -68,6 +68,25 @@ if [[ "$FIX_MODE" == "false" ]]; then
     function add_issue(text) {
         issues[++issue_count] = text
     }
+    function add_issue_pattern(pattern, text) {
+        pattern_counts[pattern]++
+        add_issue(text)
+    }
+    function fix_command(pattern) {
+        if (pattern == "FALSE_WA") {
+            return "bash scripts/gates/gate_wa_data_quality.sh --fix  # cleanキーワード含有WAをclean化"
+        }
+        if (pattern == "DUPLICATE") {
+            return "bash scripts/gates/gate_wa_data_quality.sh --fix  # 重複cmd/ninjaをclean優先で整理"
+        }
+        if (pattern == "GP049_BYPASS") {
+            return "bash scripts/karo_workaround_log.sh <cmd_id> <ninja> \"<10文字以上のdetail>\" \"<root_cause>\" <category>"
+        }
+        if (pattern == "NINJA_CORRUPT") {
+            return "bash scripts/karo_workaround_log.sh <cmd_id> <known_ninja> \"<detail>\" \"<root_cause>\" <category>"
+        }
+        return "bash scripts/gates/gate_wa_data_quality.sh --fix"
+    }
     /^[[:space:]]*-[[:space:]]/ {
         n++
         set_field($0)
@@ -85,7 +104,7 @@ if [[ "$FIX_MODE" == "false" ]]; then
             if (workaround[i] == "true" && category[i] != "clean") {
                 for (k in clean_keywords) {
                     if (index(detail[i], clean_keywords[k]) > 0) {
-                        add_issue(sprintf("FALSE_WA[%d]: %s — detail contains \"%s\" but workaround=true", i - 1, cmd[i], clean_keywords[k]))
+                        add_issue_pattern("FALSE_WA", sprintf("FALSE_WA[%d]: %s — detail contains \"%s\" but workaround=true", i - 1, cmd[i], clean_keywords[k]))
                         break
                     }
                 }
@@ -103,25 +122,25 @@ if [[ "$FIX_MODE" == "false" ]]; then
             prev_wa = workaround[prev_i]
             curr_wa = workaround[i]
             if (curr_wa != "true" && prev_wa == "true") {
-                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
+                add_issue_pattern("DUPLICATE", sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
                 seen[key] = i
             } else if (curr_wa == "true" && prev_wa != "true") {
-                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], prev_i - 1))
+                add_issue_pattern("DUPLICATE", sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], prev_i - 1))
             } else {
-                add_issue(sprintf("DUPLICATE[%d,%d]: %s/%s — keeping latest [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
+                add_issue_pattern("DUPLICATE", sprintf("DUPLICATE[%d,%d]: %s/%s — keeping latest [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], i - 1))
                 seen[key] = i
             }
         }
 
         for (i = 1; i <= n; i++) {
             if (workaround[i] == "true" && category[i] != "clean" && (detail[i] == "none" || detail[i] == "null" || detail[i] == "" || length(detail[i]) < 10)) {
-                add_issue(sprintf("GP049_BYPASS[%d]: %s — detail=\"%s\" (too short/placeholder)", i - 1, cmd[i], detail[i]))
+                add_issue_pattern("GP049_BYPASS", sprintf("GP049_BYPASS[%d]: %s — detail=\"%s\" (too short/placeholder)", i - 1, cmd[i], detail[i]))
             }
         }
 
         for (i = 1; i <= n; i++) {
             if (ninja[i] != "" && !(ninja[i] in known)) {
-                add_issue(sprintf("NINJA_CORRUPT[%d]: %s — ninja=\"%s\" not in known list", i - 1, cmd[i], ninja[i]))
+                add_issue_pattern("NINJA_CORRUPT", sprintf("NINJA_CORRUPT[%d]: %s — ninja=\"%s\" not in known list", i - 1, cmd[i], ninja[i]))
             }
         }
 
@@ -132,6 +151,27 @@ if [[ "$FIX_MODE" == "false" ]]; then
         print "ISSUES: " issue_count
         for (i = 1; i <= issue_count; i++) {
             print "  " issues[i]
+        }
+        print ""
+        print "False WAパターン TOP3:"
+        for (rank = 1; rank <= 3; rank++) {
+            best = ""
+            best_count = 0
+            for (pattern in pattern_counts) {
+                if (pattern in emitted) {
+                    continue
+                }
+                if (pattern_counts[pattern] > best_count || (pattern_counts[pattern] == best_count && (best == "" || pattern < best))) {
+                    best = pattern
+                    best_count = pattern_counts[pattern]
+                }
+            }
+            if (best == "") {
+                break
+            }
+            emitted[best] = 1
+            printf "  %d. category=%s count=%d\n", rank, best, best_count
+            printf "     command: %s\n", fix_command(best)
         }
         print ""
         print "action: bash scripts/gates/gate_wa_data_quality.sh --fix を実行して自動修復せよ"
@@ -183,6 +223,22 @@ if not isinstance(entries, list):
 
 issues: list[str] = []
 fixes: list[str] = []
+pattern_counts: dict[str, int] = {}
+
+def add_issue(pattern: str, message: str) -> None:
+    pattern_counts[pattern] = pattern_counts.get(pattern, 0) + 1
+    issues.append(message)
+
+def fix_command(pattern: str) -> str:
+    if pattern == "FALSE_WA":
+        return "bash scripts/gates/gate_wa_data_quality.sh --fix  # cleanキーワード含有WAをclean化"
+    if pattern == "DUPLICATE":
+        return "bash scripts/gates/gate_wa_data_quality.sh --fix  # 重複cmd/ninjaをclean優先で整理"
+    if pattern == "GP049_BYPASS":
+        return 'bash scripts/karo_workaround_log.sh <cmd_id> <ninja> "<10文字以上のdetail>" "<root_cause>" <category>'
+    if pattern == "NINJA_CORRUPT":
+        return 'bash scripts/karo_workaround_log.sh <cmd_id> <known_ninja> "<detail>" "<root_cause>" <category>'
+    return "bash scripts/gates/gate_wa_data_quality.sh --fix"
 
 known_ninjas = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru", "unknown"}
 clean_keywords = ["workaround不要", "WA不要", "修正なし", "対処不要", "修正不要", "正規フロー完了", "問題なし"]
@@ -197,7 +253,7 @@ for i, entry in enumerate(entries):
     if workaround and category != "clean":
         for keyword in clean_keywords:
             if keyword in detail:
-                issues.append(f'FALSE_WA[{i}]: {cmd_id} — detail contains "{keyword}" but workaround=true')
+                add_issue("FALSE_WA", f'FALSE_WA[{i}]: {cmd_id} — detail contains "{keyword}" but workaround=true')
                 if fix_mode:
                     entry["workaround"] = False
                     entry["category"] = "clean"
@@ -222,14 +278,14 @@ for i, entry in enumerate(entries):
     curr_wa = entry.get("workaround", False)
 
     if not curr_wa and prev_wa:
-        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{i}]")
+        add_issue("DUPLICATE", f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{i}]")
         dup_indices.append(prev_i)
         seen[key] = i
     elif curr_wa and not prev_wa:
-        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{prev_i}]")
+        add_issue("DUPLICATE", f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{prev_i}]")
         dup_indices.append(i)
     else:
-        issues.append(f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping latest [{i}]")
+        add_issue("DUPLICATE", f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping latest [{i}]")
         dup_indices.append(prev_i)
         seen[key] = i
 
@@ -246,7 +302,7 @@ for i, entry in enumerate(entries):
     cmd_id = str(entry.get("cmd_id", ""))
     if workaround and entry.get("category") != "clean":
         if detail in ("none", "null", "") or (0 < len(detail) < 10):
-            issues.append(f'GP049_BYPASS[{i}]: {cmd_id} — detail="{detail}" (too short/placeholder)')
+            add_issue("GP049_BYPASS", f'GP049_BYPASS[{i}]: {cmd_id} — detail="{detail}" (too short/placeholder)')
 
 for i, entry in enumerate(entries):
     if not isinstance(entry, dict):
@@ -254,7 +310,7 @@ for i, entry in enumerate(entries):
     ninja = str(entry.get("ninja", ""))
     cmd_id = str(entry.get("cmd_id", ""))
     if ninja and ninja not in known_ninjas:
-        issues.append(f'NINJA_CORRUPT[{i}]: {cmd_id} — ninja="{ninja}" not in known list')
+        add_issue("NINJA_CORRUPT", f'NINJA_CORRUPT[{i}]: {cmd_id} — ninja="{ninja}" not in known list')
 
 if not issues:
     print("PASS: no data quality issues")
@@ -263,6 +319,14 @@ if not issues:
 print(f"ISSUES: {len(issues)}")
 for issue in issues:
     print(f"  {issue}")
+
+print("\nFalse WAパターン TOP3:")
+for rank, (pattern, count) in enumerate(
+    sorted(pattern_counts.items(), key=lambda item: (-item[1], item[0]))[:3],
+    start=1,
+):
+    print(f"  {rank}. category={pattern} count={count}")
+    print(f"     command: {fix_command(pattern)}")
 
 def yaml_scalar(value: object) -> str:
     if isinstance(value, bool):

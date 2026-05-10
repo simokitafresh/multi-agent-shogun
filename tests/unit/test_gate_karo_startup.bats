@@ -21,6 +21,8 @@ setup() {
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_TMPDIR/scripts/skill_execution_log.sh"
     chmod +x "$TEST_TMPDIR/scripts/skill_execution_log.sh"
 
@@ -336,6 +338,29 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"workaround=2件"* ]]
     [[ "$output" == *"report_yaml_format"* ]]
+}
+
+@test "WA data quality issues → startup gate shows False WA TOP3" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_400
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: workaround不要
+- cmd_id: cmd_400
+  ninja: hayate
+  workaround: false
+  category: clean
+  detail: 正規フロー完了
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ WAデータ品質"* ]]
+    [[ "$output" == *"False WAパターン TOP3:"* ]]
+    [[ "$output" == *"category=DUPLICATE count=1"* ]]
+    [[ "$output" == *"category=FALSE_WA count=1"* ]]
+    [[ "$output" == *"WAデータ品質問題: gate_wa_data_quality.sh"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === Test 11: 同カテゴリ3件以上 → ALERT ===
