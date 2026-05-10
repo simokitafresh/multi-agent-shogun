@@ -113,6 +113,7 @@ PY
 
 is_gate_or_hook_addition_cmd() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local gate_hook_pattern='(^|[^A-Za-z0-9_])(gate|hook)([^A-Za-z0-9_]|$)|ゲート|フック'
     local q11_context=""
     local q11_value=""
     local scope_mode=""
@@ -147,7 +148,7 @@ is_gate_or_hook_addition_cmd() {
 
     [[ -n "${q11_context:-}" ]] || return 1
     if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和'; then
-        if ! printf '%s\n' "$q11_context" | grep -qiE '(新規|新設).*(gate|hook|ゲート|フック)|(gate|hook|ゲート|フック).*(新規|新設)'; then
+        if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
             return 1
         fi
     fi
@@ -158,7 +159,7 @@ is_gate_or_hook_addition_cmd() {
         return 1
     fi
 
-    printf '%s\n' "$q11_context" | grep -qiE 'gate|hook|ゲート|フック' || return 1
+    printf '%s\n' "$q11_context" | grep -qiE "$gate_hook_pattern" || return 1
     printf '%s\n' "$q11_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
     return 0
 }

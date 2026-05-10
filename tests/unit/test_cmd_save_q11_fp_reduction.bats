@@ -82,6 +82,32 @@ setup() {
     [ "$status" -eq 1 ]
 }
 
+@test "Q11-FP-006: gate_fire_log等のファイル名内gateは追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — セマンティクスインデックス更新"
+    scope_mode: EXACT
+    purpose: "セマンティクスインデックスを更新してgate_fire_log解析の参照先を追加する"
+    command: "context/semantic-map.mdにgate_fire_log解析ドキュメントへの参照を追加する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg gate_fire_log context/semantic-map.mdで既存参照なしを確認"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
+@test "Q11-FP-007: gate_result/gate_clear等の変数名内gateは追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — 結果ログの用語索引更新"
+    scope_mode: EXACT
+    purpose: "gate_resultとgate_clearの用語説明をセマンティクスインデックスへ追加する"
+    command: "context/semantic-map.mdにgate_result/gate_clearの説明を追加する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg gate_result context/semantic-map.mdで既存参照なしを確認"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
 @test "Q11-TP-001: q11根拠なしの真のgate新設cmdは追加cmd扱いを維持する" {
     CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
     scope_mode: EXACT
