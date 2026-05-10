@@ -1562,48 +1562,65 @@ if stats:
 else:
     print("  SKIP: gate_fire_log直近30日データなし")
 
-sources = [
-    repo / "logs" / "gunshi_review_log.yaml",
-    repo / "logs" / "gunshi_gp_tracker.yaml",
-    repo / "logs" / "archive" / "gunshi_review_log_20260430b_to_20260501a.yaml",
-    repo / "logs" / "archive" / "gunshi_review_log_cmd_2179_to_cmd_2231.yaml",
-]
-level_re = re.compile(r"defense_level:\s*['\"]?([0-9]+)")
-id_re = re.compile(r"^\s*-\s+(?:cmd_id|id|gp_id):\s*['\"]?([^'\"\s]+)", re.M)
-summary_re = re.compile(r"^\s*(?:description|reason|findings_summary|causal_chain):\s*[\"']?(.*)", re.M)
-mechanisms = []
-
 def compact(value):
     value = re.sub(r"\s+", " ", value).strip().strip("\"'")
     return value[:120] if value else "summary不明"
 
-def iter_blocks(text):
-    current = []
-    for line in text.splitlines():
-        if re.match(r"^\s*-\s+(?:cmd_id|id|gp_id):", line) and current:
-            yield "\n".join(current)
-            current = [line]
-        else:
-            current.append(line)
-    if current:
-        yield "\n".join(current)
+l6_source = repo / "context" / "growth-loop.md"
+mechanisms = []
 
-for source in sources:
-    if not source.exists():
-        continue
-    text = source.read_text(encoding="utf-8", errors="ignore")
-    for block in iter_blocks(text):
-        lm = level_re.search(block)
-        if not lm:
+def section_11(text):
+    match = re.search(r"^## §11\b.*?(?=^## |\Z)", text, re.M | re.S)
+    return match.group(0) if match else ""
+
+def table_after(section, marker):
+    marker_pos = section.find(marker)
+    if marker_pos < 0:
+        return []
+    lines = section[marker_pos:].splitlines()
+    rows = []
+    in_table = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("|") and stripped.endswith("|"):
+            in_table = True
+            rows.append(stripped)
             continue
-        level = int(lm.group(1))
-        im = id_re.search(block)
-        sm = summary_re.search(block)
+        if in_table:
+            break
+    return rows
+
+def parse_table(rows):
+    parsed = []
+    for row in rows:
+        cells = [cell.strip() for cell in row.strip("|").split("|")]
+        if not cells or cells[0] in {"対象", "名称"}:
+            continue
+        if all(re.fullmatch(r"-+", cell) for cell in cells):
+            continue
+        parsed.append(cells)
+    return parsed
+
+if l6_source.exists():
+    section = section_11(l6_source.read_text(encoding="utf-8", errors="ignore"))
+    for cells in parse_table(table_after(section, "L6化済み仕組み完全リスト")):
+        if len(cells) < 4:
+            continue
         mechanisms.append({
-            "level": level,
-            "id": im.group(1) if im else source.name,
-            "summary": compact(sm.group(1) if sm else ""),
-            "source": source.relative_to(repo).as_posix(),
+            "level": 6,
+            "id": compact(cells[1]),
+            "summary": compact(cells[3]),
+            "source": "context/growth-loop.md §11",
+        })
+    for cells in parse_table(table_after(section, "L6未化仕組み")):
+        if len(cells) < 4:
+            continue
+        lm = re.search(r"Level\s*([0-9]+)", cells[1])
+        mechanisms.append({
+            "level": int(lm.group(1)) if lm else 0,
+            "id": compact(cells[0]),
+            "summary": compact(cells[2]),
+            "source": "context/growth-loop.md §11",
         })
 
 total = len(mechanisms)

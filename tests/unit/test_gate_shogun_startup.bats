@@ -258,30 +258,39 @@ EOF
     [[ "$output" != *"test fixture excluded"* ]]
 }
 
-@test "L6 learning speed shows L6 rate and non-L6 top3" {
-    cat > "$TEST_TMPDIR/logs/gunshi_gp_tracker.yaml" <<'EOF'
-- gp_id: GP-L2
-  description: "Level2 documentation only"
-  defense_level: 2
-- gp_id: GP-L6
-  description: "Level6 learning speed feedback"
-  defense_level: 6
-- gp_id: GP-L4
-  description: "Level4 flow block"
-  defense_level: 4
-- gp_id: GP-L3
-  description: "Level3 template forcing"
-  defense_level: 3
+@test "L6 learning speed shows L6 rate from growth-loop section 11 lists" {
+    cat > "$TEST_TMPDIR/context/growth-loop.md" <<'EOF'
+# Growth Loop
+
+## §11 防御階層原則
+
+**L6化済み仕組み完全リスト(テスト)**:
+
+| 対象 | 名称 | 実装箇所 | 機能 |
+|------|------|----------|------|
+| 忍者 | `ninja_weak_points` | `scripts/deploy_task.sh` | 弱点を注入する |
+| 将軍 | `preflight_autolearn` | `scripts/cmd_save.sh` | WARNを学習する |
+| 全体 | `lesson_impact.tsv` | `scripts/cmd_complete_gate.sh` | 教訓効果を計測する |
+
+**L6未化仕組み(テスト)**:
+
+| 名称 | 現Level | 不足内容 | L6化方向 |
+|------|---------|----------|----------|
+| `gate_context_freshness.sh` | Level 1 | stale検出のみ | 更新候補を注入する |
+| `gate_enforcement_audit.sh` | Level 2 | 監査のみ | 改善候補へ接続する |
+| `gate_knowledge_freshness.sh` | Level 4 | BLOCKのみ | 配備入力へ接続する |
+
+## §12 Other
 EOF
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
-    [[ "$output" == *"L6化率: 25% (1/4)"* ]]
+    [[ "$output" == *"L6化率: 50% (3/6)"* ]]
     [[ "$output" == *"L6未到達仕組みTOP3:"* ]]
-    [[ "$output" == *"L2 GP-L2: Level2 documentation only"* ]]
-    [[ "$output" == *"L3 GP-L3: Level3 template forcing"* ]]
-    [[ "$output" == *"L4 GP-L4: Level4 flow block"* ]]
-    [[ "$output" != *"GP-L6: Level6 learning speed feedback"* ]]
+    [[ "$output" == *"L1 \`gate_context_freshness.sh\`: stale検出のみ"* ]]
+    [[ "$output" == *"L2 \`gate_enforcement_audit.sh\`: 監査のみ"* ]]
+    [[ "$output" == *"L4 \`gate_knowledge_freshness.sh\`: BLOCKのみ"* ]]
+    [[ "$output" != *"\`preflight_autolearn\`: WARNを学習する"* ]]
 }
 
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
