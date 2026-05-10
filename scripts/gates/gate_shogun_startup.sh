@@ -313,6 +313,33 @@ fi
 echo "  ⚠ lord_conversationの「未完了」「未実装」は当時の事実。現在も未完了かはls/grepで現物確認せよ(LS080)"
 fi
 
+# --- Gate 7.5: 戦局日誌 直近5エントリ ---
+# 目的: cmd完了ごとの意図・結果・因果を将軍起動時に自動想起させる(cmd_2648)
+echo "■ 戦局日誌 直近5エントリ"
+SENKYOKU_LOG="$SCRIPT_DIR/context/senkyoku-log.md"
+if [ -f "$SENKYOKU_LOG" ]; then
+    _senkyoku_recent=$(awk '
+/^- / {
+    rows[++n] = $0
+}
+END {
+    start = (n > 5) ? n - 4 : 1
+    for (i = start; i <= n; i++) {
+        if (rows[i] != "") print rows[i]
+    }
+}
+' "$SENKYOKU_LOG")
+    if [ -n "$_senkyoku_recent" ]; then
+        while IFS= read -r _senkyoku_line; do
+            echo "  $_senkyoku_line"
+        done <<< "$_senkyoku_recent"
+    else
+        echo "  INFO: エントリなし"
+    fi
+else
+    echo "  INFO: context/senkyoku-log.md 不在"
+fi
+
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"

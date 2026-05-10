@@ -153,6 +153,18 @@ EOF
     # Gate 14: no gunshi context files (pass)
     # (no gunshi-*.md in context/)
 
+    cat > "$SHARED_BASE/context/senkyoku-log.md" <<'EOF'
+# 戦局日誌
+
+## 2099-01-01
+- 2099-01-01 cmd_001: old entry
+- 2099-01-01 cmd_002: recent entry 2
+- 2099-01-01 cmd_003: recent entry 3
+- 2099-01-01 cmd_004: recent entry 4
+- 2099-01-01 cmd_005: recent entry 5
+- 2099-01-01 cmd_006: recent entry 6
+EOF
+
     # Gate 15: minimal knowledge map files for progress detection
     echo "# CLAUDE.md" > "$SHARED_BASE/CLAUDE.md"
     echo "# instructions" > "$SHARED_BASE/instructions/shogun.md"
@@ -326,6 +338,18 @@ EOF
     [[ "$output" == *"掲示板未確認"* ]]
     [[ "$output" == *"WARN: 未確認掲示板 1件"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "senkyoku-log recent 5 entries are displayed at startup" {
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ 戦局日誌 直近5エントリ"* ]]
+    [[ "$output" != *"cmd_001: old entry"* ]]
+    [[ "$output" == *"cmd_002: recent entry 2"* ]]
+    [[ "$output" == *"cmd_003: recent entry 3"* ]]
+    [[ "$output" == *"cmd_004: recent entry 4"* ]]
+    [[ "$output" == *"cmd_005: recent entry 5"* ]]
+    [[ "$output" == *"cmd_006: recent entry 6"* ]]
 }
 
 # === Test 7: 陣形図不在 → WARN ===
