@@ -91,6 +91,41 @@ for m in data.get('messages', []):
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
+@test "does not alter read:false text inside message content" {
+    cat > "$TEST_ROOT/queue/inbox/testagent.yaml" << 'YAML'
+messages:
+- id: msg_001
+  from: karo
+  timestamp: '2026-03-25T10:00:00'
+  type: task_assigned
+  content: |
+    literal payload:
+    read: false
+  read: false
+- id: msg_002
+  from: karo
+  timestamp: '2026-03-25T10:01:00'
+  type: wake_up
+  content: |
+    another literal:
+    read: false
+  read: false
+YAML
+
+    run bash "$TEST_SCRIPT" testagent msg_001
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status testagent msg_001)" = "true" ]
+    [ "$(_get_read_status testagent msg_002)" = "false" ]
+    [ "$(grep -c '^    read: false$' "$TEST_ROOT/queue/inbox/testagent.yaml")" -eq 2 ]
+
+    run bash "$TEST_SCRIPT" testagent
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status testagent msg_002)" = "true" ]
+    [ "$(grep -c '^    read: false$' "$TEST_ROOT/queue/inbox/testagent.yaml")" -eq 2 ]
+}
+
 @test "nonexistent msg_id returns success with informational message" {
     _create_inbox testagent
 

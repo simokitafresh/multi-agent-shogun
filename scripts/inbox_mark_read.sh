@@ -64,9 +64,9 @@ while [ $attempt -lt $max_attempts ]; do
         _tmp=$(mktemp "${_inbox_dir}/.imr_XXXXXX.tmp")
 
         if [ -z "$MSG_ID" ]; then
-            # Mark all: grep count + sed replace (no python3, no awk)
-            _changed=$(grep -c "read: false" "$INBOX" 2>/dev/null || echo 0)
-            sed 's/^\([[:space:]]*read:[[:space:]]*\)false/\1true/' "$INBOX" > "$_tmp" \
+            # Mark all: only message-level read fields, not literal content lines.
+            _changed=$(grep -c "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null || echo 0)
+            sed 's/^\(  read:[[:space:]]*\)false[[:space:]]*$/\1true/' "$INBOX" > "$_tmp" \
                 || { rm -f "$_tmp"; exit 1; }
         else
             # Mark specific msg_id: stateful awk pass (no python3)
@@ -92,9 +92,9 @@ while [ $attempt -lt $max_attempts ]; do
                         sub(/^id:[[:space:]]*/,"",current_id)
                         gsub(/^[ \t'"'"'"]*/,"",current_id)
                         gsub(/[ \t'"'"'"]*$/,"",current_id)
-                    } else if (stripped ~ /^read:/ && current_id!="" && $0 ~ /read: false/) {
+                    } else if ($0 ~ /^  read:[[:space:]]*false[[:space:]]*$/ && current_id!="") {
                         if (msg_id=="" || current_id==msg_id) {
-                            sub(/read: false/,"read: true")
+                            sub(/read:[[:space:]]*false[[:space:]]*$/,"read: true")
                             changed++
                         }
                     }
