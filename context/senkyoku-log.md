@@ -802,3 +802,5 @@
 - 2026-05-01 cmd_2452: 才蔵+影丸(偵察)。FoF 5月holding_signal同一=バグではなく設計仕様。sync-fof正常稼働。holding_signal=構成PF ID列。Monthly Trade表示側のdisplay_ticker_weights参照経路が問題
 - 2026-05-01 cmd_2453: 才蔵。FoF月初display_ticker_weights参照経路修正(critical)。Dashboard+Monthly Trade両画面でticker表示正常(UUID 0件)。Render deploy+CDP確認済み
 - 2026-05-01 cmd_2454: 疾風+影丸(偵察)。120ヶ月=表示デフォルト(非計算制限)。FoF期間短縮主因=FOF_LOOKBACK_DAYS=730(recalculate_fof.py:516-533)。設計上の意図的制限
+- 2026-05-10 cmd_2640-2658: 19件全GATE CLEAR WA0%。Level5化一括+DM-Signal CI追加+L6定義確定(5W1H+横展開scan)
+- 2026-05-10 cmd_2654-2660: CI GREEN化3段(PyYAML→dotenv+sklearn→PostgreSQL)。q8 WHEN/HOW gate追加(殿原則)。教訓統合31→22件。教訓when/how TOP20補完。L6スキャン日本語対応。draft review SKIP根治(ACソース不在fallback)。殿裁定: 5W1H=L6最小構造(WHERE/WHO追加)。4連続初回GATE PASS(学習効果)
