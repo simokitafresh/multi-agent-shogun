@@ -124,12 +124,7 @@ fi
 echo "■ 掲示板未確認"
 bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
 if [ -f "$bulletin_file" ]; then
-    # fast-path: requires_confirmation エントリがなければ python3 スキップ (cmd_2109最適化)
-    _blt_has_rc=$(grep -c 'requires_confirmation:' "$bulletin_file" 2>/dev/null) || _blt_has_rc=0
-    if [ "${_blt_has_rc:-0}" -eq 0 ]; then
-        echo "  未確認: 0件"
-    else
-        bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
+    bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
 import sys, yaml
 path, agent = sys.argv[1:3]
 with open(path, encoding="utf-8") as fh:
@@ -139,36 +134,48 @@ pending = []
 for entry in entries:
     if not isinstance(entry, dict):
         continue
-    rc = entry.get("requires_confirmation", False)
-    if not rc:
+    # 自分の投稿はスキップ
+    if entry.get("posted_by") == agent:
         continue
-    if isinstance(rc, list) and agent not in rc:
-        continue
+    # closed はスキップ
     if str(entry.get("status", "")).lower() == "closed":
         continue
+    # 既に確認済みならスキップ
     confirmed = entry.get("confirmed_by") or []
     if agent in confirmed:
+        continue
+    # 将軍宛: requires_confirmation に含まれる OR posted_by が他者(将軍宛報告チャネル)
+    rc = entry.get("requires_confirmation", False)
+    is_for_agent = False
+    if rc:
+        if isinstance(rc, list):
+            is_for_agent = agent in rc
+        else:
+            is_for_agent = True  # requires_confirmation: true = 全員対象
+    else:
+        # requires_confirmation未設定でも、他者からのopen投稿は将軍の確認対象
+        is_for_agent = True
+    if not is_for_agent:
         continue
     text = str(entry.get("content", "")).splitlines()
     head = text[0] if text else ""
     pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
 print(len(pending))
-for item in pending[:3]:
+for item in pending[:5]:
     print(item)
 PY
 )
-        bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
-        if [ "${bulletin_count:-0}" -gt 0 ]; then
-            echo "  WARN: 未確認掲示板 ${bulletin_count}件"
-            echo "  ★ 提案=未実装と断定するな。現���確認(grep/ls)してから判断せよ(LS079)"
-            printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
-            if [ "$overall" != "ALERT" ]; then
-                overall="WARN"
-                alerts+=("掲示板未確認: ${bulletin_count}件")
-            fi
-        else
-            echo "  未確認: 0件"
+    bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
+    if [ "${bulletin_count:-0}" -gt 0 ]; then
+        echo "  WARN: 未確認掲示板 ${bulletin_count}件"
+        echo "  ★ 未確認投稿を確認処理せよ。掲示板=将軍宛報告チャネル(殿裁定)"
+        printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("掲示板未確認: ${bulletin_count}件")
         fi
+    else
+        echo "  未確認: 0件"
     fi
 else
     echo "  掲示板なし"
