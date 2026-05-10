@@ -27,6 +27,7 @@ fi
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+    exit 2  # exit 2 = intentional block (Codex CLI continues). exit 1 = hook error (Codex CLI crashes)
 }
 
 # === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
@@ -34,7 +35,6 @@ emit_deny() {
 # 旧: payload全文+command全文マッチ→report_field_set.sh引数で誤発火(cmd_2397事故)
 if [[ -n "$command" ]] && echo "$command" | grep -qE '(^|[;&|])\s*(git\s+filter-repo|git-filter-repo)'; then
     emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
-    exit 1
 fi
 
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
@@ -45,17 +45,14 @@ if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
         # --no-verify on any git command (push/merge/rebase/cherry-pick, not just commit)
         if [[ "$command" =~ git[[:space:]] && "$command" == *'--no-verify'* ]]; then
             emit_deny "BLOCKED: --no-verify is forbidden on git commands. Fix hooks, do not bypass them."
-            exit 1
         fi
         # git commit -n (short alias for --no-verify, commit only — -n means different things for other subcommands)
         if [[ "$command" =~ git[[:space:]]+commit[[:space:]] && "$command" =~ [[:space:]]-n([[:space:]]|$) ]]; then
             emit_deny "BLOCKED: git commit -n (--no-verify) is forbidden. Fix hooks, do not bypass them."
-            exit 1
         fi
         # Hook bypass via environment variables
         if [[ "$command" == *'HUSKY=0'* ]]; then
             emit_deny "BLOCKED: HUSKY=0 (hook bypass) is forbidden. Fix hooks, do not bypass them."
-            exit 1
         fi
     fi
 fi
@@ -67,7 +64,6 @@ if [[ "$payload" == *'yaml.dump'* || "$payload" == *'yaml.safe_dump'* ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
                 if [[ "$command" == *"$pattern"* ]]; then
                     emit_deny "BLOCKED: yaml.dump on operational YAML is forbidden (data loss risk). Use: bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>"
-                    exit 1
                 fi
             done
         fi
@@ -82,11 +78,9 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
         python3_pattern='python3.*open.*queue/reports/.*\.yaml'
         if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
             emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
-            exit 1
         fi
         if [[ "$command" =~ $python3_pattern ]]; then
             emit_deny "報告YAMLへのpython3 open()直接書込みは禁止。report_field_set.sh経由で書き込みせよ。"
-            exit 1
         fi
     fi
 fi
@@ -99,7 +93,6 @@ if [[ -n "${command:-}" ]]; then
     if [[ "$command" == *'shogun_to_karo'* ]]; then
         if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *"\.replace("* || "$command" == *'awk '* ]]; then
             emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。(cmd_2134事故: gate迂回防止)"
-            exit 1
         fi
     fi
 fi
@@ -109,7 +102,6 @@ if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
     if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
        [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
         emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
-        exit 1
     fi
 fi
 
@@ -119,7 +111,6 @@ if [[ "$payload" == *'capture-pane'* ]]; then
         lines="${BASH_REMATCH[1]}"
         if (( lines < 30 )); then
             emit_deny "BLOCK: capture-pane -S -${lines} は不十分。-S -30 以上を使え（末尾${lines}行では忍者の作業状態を見落とす）"
-            exit 1
         fi
     fi
 fi
@@ -140,7 +131,6 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
                 recent_reads="$(tail -5 "$read_log" 2>/dev/null || true)"
                 if [[ "$recent_reads" != *"$inbox_pattern"* ]]; then
                     emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する(2026-04-07実証)"
-                    exit 1
                 fi
             else
                 # read_log不在: Codex CLI or 起動直後。BLOCKではなくWARN(所見5: Codex互換)
@@ -155,7 +145,6 @@ fi
 if [[ "$payload" == *'wf_runner.py'* ]]; then
     if [[ -n "${command:-}" && "$command" =~ python[23]?[[:space:]].*wf_runner\.py ]]; then
         emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止(LG025)。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
-        exit 1
     fi
 fi
 
@@ -168,14 +157,12 @@ if [[ "$command" =~ (cat|echo|printf)[[:space:]].*\>\>[[:space:]]*.*gunshi_revie
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: review_log直接追記禁止。/review-bundle スキルを使え (殿裁定: スキル無視はバグ)"
-        exit 1
     fi
 fi
 if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "$command" =~ sed[[:space:]]+-i.*gunshi_review_log\.yaml.*gate_result ]]; then
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: gate_result手動sed禁止。/gate-sync スキルを使え (殿裁定: スキル無視はバグ)"
-        exit 1
     fi
 fi
 

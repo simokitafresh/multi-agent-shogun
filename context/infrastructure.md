@@ -150,8 +150,21 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 **修正(b3f55d9)**: `build_cli_command()`でopus時は`--model`スキップ → デフォルト1M起動。sonnet/haikuのみ`--model`指定。
 **殿裁定**: high effortで十分(Max=3-10xコスト、レートリミットリスク)。
 **モデル切替はrespawn方式**(殿裁定): `/model`コマンドではなくCLI再起動(respawn)が正しい手順。理由: (1)/model opusは200Kになる (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される。/henseiスキルもrespawn方式に再設計要。
-**codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.5(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort=high`。
+**codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.5(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort=medium`。
 → `lib/cli_adapter.sh` L88 | 詳細: `docs/research/gunshi-cli-model-context.md`（respawn手順/セレクタの罠/effort優先順位/codex config設定方法）
+
+### Codex multi-CLI統合(2026-05-11確立)
+
+| 項目 | 設定 | 正本 |
+|------|------|------|
+| config | `~/.codex/config.toml` | `project_doc_max_bytes=131072`(87KB超対応)。`[features] hooks=true`必須(`codex_hooks`は非推奨) |
+| hooks | `.codex/hooks.json`(プロジェクトレベル) | Claude Codeの`.claude/hooks/`スクリプトを共有。Guard 9含む4 hook(PreToolUse×2+PostToolUse×1+Stop×1) |
+| hook BLOCK | `emit_deny()`内で**exit 2** | exit 1=hookエラー(CLIクラッシュ)。exit 2=意図的BLOCK(CLI続行)。Claude Codeはexit 1でも続行するがCodexは死ぬ |
+| hook承認 | 初回のみ`/hooks`でtrust操作 | 承認は永続化(respawn後も再承認不要)。pane高さ15行だとStop行が画面外 — 一時拡大(`tmux resize-pane -y 30`)で承認 |
+| skills | `~/.codex/skills/` → プロジェクト正本symlink | 独立コピー禁止。`ln -s /mnt/c/tools/multi-agent-shogun/skills/{name}`でsymlink。skill_auto_improve.shの改善が即反映 |
+| Skill tool | Codex CLIは`/skills`コマンドでスキル一覧表示・実行可能 | Claude CodeのSkill toolと同等機能 |
+| doc読込制限 | `project_doc_max_bytes` | AGENTS.md+CLAUDE.md合計が制限超→切り捨て。128KB以上を推奨 |
+| セッションリセット | `/new`(セッション新規) | config.toml変更反映にはCLI再起動(respawn-pane)が必要。`/new`ではconfig再読込されない |
 
 ## Claude Code バージョン固定と復帰
 
