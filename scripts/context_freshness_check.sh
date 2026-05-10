@@ -220,6 +220,12 @@ def infer_project_id(rel_path: str) -> str | None:
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
             return project_id
 
+    # Fallback: context/ files with no explicit project match belong to 'infra'.
+    # Covers gunshi-*.md, karo-operations.md, growth-loop.md etc. that are
+    # infra-scoped but not listed in config/projects.yaml context_files.
+    if rel_path.startswith("context/") and "infra" in ACTIVE_PROJECT_IDS:
+        return "infra"
+
     return None
 
 
