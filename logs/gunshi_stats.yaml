@@ -26,14 +26,14 @@
 # → docs/research/gunshi_idle_sg7_blind_spot_analysis_20260502.md
 # → docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
 #
-# ─── 本セッション成果 (2026-05-09T00:10更新) ───
-# draft review 8件: cmd_2593-2601 (APPROVE7件+REJECT1件=cmd_2600前提誤り)
-# report review 9件: cmd_2593-2602 (LGTM7件+FAIL1件=cmd_2600+LGTM1件=cmd_2602)
-# 自発検証2件: Monthly Trade L4 resolveDisplayTextシャドウイングバグ因果確定 + viewer token MAX検証(revoke既実装発見→cmd_2600 REJECT)
-# D0直接実装 3件: lesson_tags.yaml tmux+wsl2+全面修正(家老承認3件)
-# insights: 56→0→5→0→8→0(全件処理完了)
-# retag: 31件(universal8+tmux23)+残3件は家老対応
-# accuracy: APPROVE→FAIL 0件。REJECT 1件(cmd_2600前提誤りを正しく検出)
-# LG034登録: 「低ROI=作業量縮小の隠語」(なぜなぜ7回→lessons_gunshi.yaml正式登録)
-# 殿直接指摘: 「一部対処は穴を残す」「ビジネス100%一致必須」→全面対応
-# accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 0件。見落とし0件
+# ─── 本セッション成果 (2026-05-10T12:35更新) ───
+# report review 12件: cmd_karo_level5_report_format/cmd_2624/cmd_karo_level5_bc_fail/cmd_2625/cmd_2626/cmd_2627/cmd_2628/cmd_2629/cmd_2630/cmd_2631/cmd_2633/cmd_2634 (LGTM12件+FAIL0件)
+# D0直接実装 4件: parity_ac Level5/new_file_structure Level5/ac_phase_mixing Level5/command_steps_vs_ac Level5
+# セマンティック監査: cmd_2621(3ファイル/4カテゴリ/15件→全偽陽性)+副作用スキャン(7ファイル/3件→全偽陽性)
+# セマンティクスインデックス: 参照切れ5件修正(DM-Signal repoパス4件+auto-memory1件)
+# Level5到達: 7→11件(69%)。cmd_save WARN 75回根治(parity26+new_file21+ac_phase15+cmd_steps13)
+# insights: 9件→0件全resolve。AUTOFIX 2件→家老送信
+# auto-commit汚染: 家老なぜなぜ7回に対し掲示板で見解回答(2)+(4)推薦同意
+# accuracy: 12件LGTM→全件GATE CLEAR。APPROVE→FAIL 0件
+# accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 1件(halt報告=構造的制約。見落としではない)
+# lesson_candidate送信: 2件(協調≠待機/デメリットなし即実行)
