@@ -856,9 +856,10 @@ purpose = os.environ.get("L6_CMD_PURPOSE", "")
 changed_files = os.environ.get("L6_CMD_CHANGED_FILES", "")
 signal_text = f"{title}\n{purpose}\n{changed_files}"
 
-# Only Level5/growth-loop success patterns should trigger horizontal expansion.
-if not re.search(r"Level\s*5|Level5|自動(?:提案|注入|検索|表示|生成)|入口|事前コンテキスト|候補", signal_text, re.I):
-    sys.exit(0)
+# L6: 全CLEARで横展開候補を探す（殿定義2026-05-10: 学習速度の最大化）
+# シグナルワードフィルタ撤廃。トークンマッチングの品質で自然に絞る。
+# changed_files/titleからトークンを抽出し、defense_level<5の同種候補をスキャン。
+# マッチ0件なら自然にno-op。
 
 stopwords = {
     "cmd", "level", "level5", "scripts", "tests", "unit", "bats", "sh",
