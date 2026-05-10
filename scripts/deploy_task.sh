@@ -2487,6 +2487,159 @@ INJECT_CL_PY
     rm -f "$py_output"
 }
 
+# ─── 成長ループ防御階層注入（cmd_2649 Level5化） ───
+# gate/hook関連cmdの忍者タスクYAMLにgrowth-loop.md §11を強制注入。
+# 忍者がgate BLOCK後に「同じBLOCKが二度と起きない仕組み」を考える材料を提供。
+# 事前コンテキスト提供（Level5）: 間違える余地がない環境を作る。
+inject_growth_loop_defense() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'INJECT_GLD_PY'; then
+import os, re, sys, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+try:
+    import yaml
+    with open(task_file, encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+except Exception:
+    sys.exit(0)
+
+task = data.get('task', data) if isinstance(data, dict) else {}
+
+# テキスト収集: purpose + acceptance_criteria + description
+texts = []
+for key in ('purpose', 'description', 'command'):
+    v = task.get(key)
+    if v:
+        texts.append(str(v))
+ac = task.get('acceptance_criteria', {})
+if isinstance(ac, dict):
+    texts.append(str(ac.get('description', '')))
+elif isinstance(ac, list):
+    texts.extend(str(x) for x in ac)
+
+full_text = ' '.join(texts)
+
+# gate/hook関連キーワード検出
+GATE_KEYWORDS = [
+    'gate', 'hook', 'BLOCK', 'growth.loop', 'growth-loop',
+    '防御階層', 'Level5', 'gate_fire', 'gate_report', '成長ループ',
+    'defense', 'defense_level', 'フロー内',
+]
+if not any(kw.lower() in full_text.lower() for kw in GATE_KEYWORDS):
+    sys.exit(0)
+
+# growth-loop.md §11 を読み込む
+growth_loop_path = os.path.join(script_dir, 'context', 'growth-loop.md')
+if not os.path.exists(growth_loop_path):
+    print('[INJECT_GLD] WARN: growth-loop.md not found', file=sys.stderr)
+    sys.exit(0)
+
+with open(growth_loop_path, encoding='utf-8') as f:
+    lines = f.readlines()
+
+# §11 セクションを抽出
+section_start = None
+section_end = None
+for i, line in enumerate(lines):
+    if re.match(r'^## §11', line):
+        section_start = i
+    elif section_start is not None and re.match(r'^## ', line):
+        section_end = i
+        break
+if section_start is None:
+    print('[INJECT_GLD] WARN: §11 not found in growth-loop.md', file=sys.stderr)
+    sys.exit(0)
+if section_end is None:
+    section_end = len(lines)
+
+section_lines = lines[section_start:section_end]
+
+# キーラインを抽出
+key_lines = []
+for line in section_lines:
+    stripped = line.rstrip()
+    # ゲートの成功（太字除去）
+    if 'ゲートの成功' in stripped:
+        cleaned = re.sub(r'\*\*', '', stripped).strip()
+        if cleaned:
+            key_lines.append(cleaned)
+    # Level行（テーブル行）: | 1 | 名称 | 仕組み | ...
+    elif re.match(r'^\| \d ', stripped):
+        parts = [p.strip() for p in stripped.split('|') if p.strip()]
+        if len(parts) >= 3:
+            key_lines.append(f'Level{parts[0]}({parts[1]}): {parts[2]}')
+    # BLOCKされたら行
+    elif 'BLOCKされたら' in stripped and '環境に埋め込め' in stripped:
+        cleaned = re.sub(r'^[-\*\s]+', '', stripped).strip()
+        if cleaned:
+            key_lines.append(cleaned)
+    # Level5を目指せ行
+    elif 'Level 5を目指せ' in stripped:
+        cleaned = re.sub(r'^[-\*\s]+', '', stripped).strip()
+        if cleaned:
+            key_lines.append(cleaned)
+
+if not key_lines:
+    print('[INJECT_GLD] WARN: no key lines extracted from §11', file=sys.stderr)
+    sys.exit(0)
+
+# 既存の growth_loop_defense を除去
+with open(task_file, encoding='utf-8') as f:
+    raw = f.read()
+
+raw_lines = raw.split('\n')
+new_lines = []
+skip = False
+for line in raw_lines:
+    if line.startswith('  growth_loop_defense:'):
+        skip = True
+        continue
+    if skip:
+        if re.match(r'  - "', line):
+            continue
+        else:
+            skip = False
+    if not skip:
+        new_lines.append(line)
+
+inject_lines = ['  growth_loop_defense:']
+for kl in key_lines:
+    kl_safe = kl.replace('"', "'")
+    inject_lines.append(f'  - "{kl_safe}"')
+inject_text = '\n'.join(inject_lines)
+
+result_text = '\n'.join(new_lines)
+if '\n  description:' in result_text:
+    result_text = result_text.replace('\n  description:', '\n' + inject_text + '\n  description:', 1)
+elif result_text.startswith('  description:'):
+    result_text = inject_text + '\n' + result_text
+else:
+    result_text = result_text.rstrip('\n') + '\n' + inject_text + '\n'
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(result_text)
+    os.replace(tmp_path, task_file)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
+
+print(f'[INJECT_GLD] Injected {len(key_lines)} defense levels', file=sys.stderr)
+INJECT_GLD_PY
+        log "inject_growth_loop_defense: python error (non-fatal)"
+    fi
+    rm -f "$py_output"
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -5331,6 +5484,7 @@ deploy_task_apply_task_mutations() {
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
+    inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 
