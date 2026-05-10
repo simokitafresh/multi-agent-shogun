@@ -378,3 +378,48 @@ YAML
     run grep "$report" "$GATE_FIRE_LOG_FILE"
     [ "$status" -eq 0 ]
 }
+
+# --- T-SGC-1: self_gate_check 必須4キーが揃ったdict → PASS ---
+@test "T-SGC-1: self_gate_check with required keys passes" {
+    local report=$(create_valid_report)
+    cat >> "$report" << 'YAML'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+YAML
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+# --- T-SGC-2: self_gate_check 必須キー欠落 → FAIL ---
+@test "T-SGC-2: self_gate_check missing required key fails with specific message" {
+    local report=$(create_valid_report)
+    cat >> "$report" << 'YAML'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  purpose_fit: PASS
+YAML
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'self_gate_check: missing required key "status_valid" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit)'* ]]
+}
+
+# --- T-SGC-3: 旧キー名dict → FAIL ---
+@test "T-SGC-3: self_gate_check legacy key names fail required key validation" {
+    local report=$(create_valid_report)
+    cat >> "$report" << 'YAML'
+self_gate_check:
+  lesson_ref: PASS
+  format_compliance: PASS
+  binary_checks: PASS
+  purpose_fit: PASS
+YAML
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'self_gate_check: missing required key "lesson_candidate" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit)'* ]]
+    [[ "$output" == *'self_gate_check: missing required key "status_valid" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit)'* ]]
+}

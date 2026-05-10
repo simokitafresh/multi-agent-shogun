@@ -492,9 +492,25 @@ def main() -> int:
     if sgc is not None:
         if not isinstance(sgc, dict):
             errors.append(f"self_gate_check: is {type(sgc).__name__} (must be dict)")
-            hints.append('FIX (self_gate_check): dict形式で記入せよ:\n  self_gate_check:\n    lesson_ref: PASS\n    format_compliance: PASS\n  各項目はPASS/FAILの二値')
+            hints.append('FIX (self_gate_check): dict形式で記入せよ:\n  self_gate_check:\n    lesson_ref: PASS\n    lesson_candidate: PASS\n    status_valid: PASS\n    purpose_fit: PASS\n  各項目はPASS/FAILの二値')
         else:
+            required_sgc_keys = ("lesson_ref", "lesson_candidate", "status_valid", "purpose_fit")
             valid_sgc_values = {"PASS", "FAIL"}
+            required_sgc_key_text = ", ".join(required_sgc_keys)
+            for required_sgc_key in required_sgc_keys:
+                if required_sgc_key not in sgc:
+                    errors.append(
+                        f'self_gate_check: missing required key "{required_sgc_key}" '
+                        f"(required: {required_sgc_key_text})"
+                    )
+                    hints.append(
+                        "FIX (self_gate_check): 必須4キーを全て記入せよ:\n"
+                        "  self_gate_check:\n"
+                        "    lesson_ref: PASS\n"
+                        "    lesson_candidate: PASS\n"
+                        "    status_valid: PASS\n"
+                        "    purpose_fit: PASS"
+                    )
             for sgc_key, sgc_val in sgc.items():
                 sgc_str = str(sgc_val).strip() if sgc_val is not None else ""
                 if sgc_str == "":
