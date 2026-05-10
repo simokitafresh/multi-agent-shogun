@@ -793,3 +793,7 @@
 | cmd_2662 | gate_report_format.shで直近50cmdにreport_format BLOCK 9回+binary_checks_fail 3回。既存instructions記載済みだがBLOCK継続。配置・強調・記入例の改善でLevel5化し忍者の吸収率を上げる | infra | 05-10 | 忍者instructions Level5化(report_field_set必須+bc例) |
 | cmd_2667 | auto_failure_lesson.shが--status draftで教訓を書くため、cmd_complete_gateが自cmd由来draftを検出→BLOCK→家老がconfirmed昇格→再gate→CLEARの2回gate実行が24回発生。auto_draft_lesson.shは既にconfirmedで書いておりBLOCKしない。同じ構造に統一する | infra | 05-10 | auto_failure_lesson.shをconfirm |
 | cmd_2668 | L6学習速度の自動追跡をstartup gateに組込む。FAIL→PASS遷移率+L6化率を自動算出・表示し、L6化候補を強制提案する | infra | 05-11 | gate_shogun_startup.shにL6学習速度セ |
+| cmd_2669 | LS-A14(進行中計画は即永続化)をL2→L4化。clear_prep_check.shに裁定未反映検出を追加し、未反映裁定がある状態での/clearをBLOCKする | infra | 05-11 | clear_prep_check.shに裁定反映Check1 |
+| cmd_2670 | growth-loop.md §11にL6化済み/未化の完全リストを追記し、L6化の正確な全体像を受動的知識として永続化する | infra | 05-11 | context/growth-loop.md §11にL6化 |
+| cmd_2671 | startup gateのL6化率算出ロジックを修正。母数をGP提案(56件)→防御仕組み(16件)に変更し、L6済み仕組みをgrowth-loop.md §11から読み取る | infra | 05-11 | Gate 21のL6化率をgrowth-loop.md §1 |
+| cmd_2672 | 将軍教訓32件→22件に統合。LS023-LS032の10件を既存クラスタ(LS-A04/A09/A02/A22/A17)に吸収し、上限31件超過を解消する | infra | 05-11 | projects/infra/lessons_shogun. |

@@ -15,6 +15,12 @@
 | (将軍直接) | note記事3本執筆(プレミアム/スタンダード/ベーシック) | 完了+note下書き保存 | 殿指示: プラン毎に推奨PF+SPY/TQQQ比較記事。Sortino推奨(Sharpe→Sortino)。α6指標UWP→Avg UWP変更(殿裁定) |
 | (殿裁定) | スキル不使用=構造的バグ+掲示板未確認=鎖の断絶 | 軍師がGuard9+Gate4.5実装 | CDP操作で/cdp-browseスキルを無視→殿激怒。掲示板確認率0%→殿激怒。両方とも環境埋込みで根治。教訓LS028-030 |
 | (殿裁定) | ALMディスコン | forbidden_topics記録 | 殿が明示的に言わない限り話題禁止 |
+| cmd_2668 | L6学習速度追跡をstartup gateに組込み | GATE CLEAR | 殿指示「L6化していないものはあるか」→なぜなぜ7回→根因「L6自体がL6化されていない」→FAIL→PASS遷移率+L6化率+未到達TOP3自動表示 |
+| cmd_2669 | LS-A14 L2→L4化(裁定未反映BLOCK) | GATE CLEAR | 軍師RC: Check10既存→Option B(ALERT→BLOCK昇格)で対応 |
+| cmd_2670 | growth-loop.md §11にL6化済み/未化リスト永続化 | GATE CLEAR | 2連続ミス(既存実装見落とし)の根因=L6化全体像が暗黙知。受動的知識に永続化 |
+| cmd_2671 | L6化率母数修正(GP56件→防御仕組み) | 配備中 | cmd_2668のL6化率0/56の原因=GP提案のdefense_level集計でL6は別概念 |
+| cmd_2672 | 将軍教訓統合(32→22件) | 配備中 | 上限31件超過で3セッション連続BLOCK。LS023-032を既存クラスタに吸収 |
+| LS032 | 教訓: grep存在確認≠内容理解 | 記録済み | cmd_2669+gate_fail_top3で2連続既存実装見落とし。grepの出力内容を精読せよ |
 
 ## 2026-04-24
 
@@ -824,3 +830,8 @@
 - cmd_2667: auto_failure_lesson.sh draft→confirmed統一。24回(48%)のdraft_lessons BLOCK根治。才蔵1名impl。WA:0 (2026-05-10)
 - session_20260510-11: 家老自走セッション。cmd_2667(draft→confirmed BLOCK根治)GATE CLEAR。karo_direct自走: LK004根因(safe_inbox_write)+test_select SKILL.md修正+CI RED修正2件+教訓登録(Guard9)+教訓noise修正(target_files)+修行FP率根因調査(sgcキー集合+RFS YAML検証)。修行R13-R15(75→100→75%)。WA率0%維持。全件GATE CLEAR。環境埋込: gate_report_format_main.pyにsgc4キー検証、report_field_set.shにYAML事前検証+復元、deploy_task.shにsafe_inbox_write。教訓LK011-013登録。
 - cmd_2668: gate_shogun_startup.shにL6学習速度追跡セクション追加。遷移率+L6化率+未到達TOP3自動表示。才蔵impl。WA:0 (2026-05-11)
+- cmd_2669: clear_prep_check.shに裁定反映Check10追加+LS-A14 L2→L4化。才蔵impl。WA:0 (2026-05-11)
+- cmd_2670: growth-loop.md §11にL6化済み10件+未化4件リスト追記。才蔵impl。WA:0 (2026-05-11)
+- cmd_2671: startup gate L6化率ロジック修正(0/56→10/14)。疾風impl。WA:0 (2026-05-11)
+- cmd_2672: 将軍教訓32→22件統合。影丸impl。WA:0 (2026-05-11)
+- cmd_2673: gate_context_freshness L1→L5化(stale TOP3自動提案)。才蔵impl。WA:0 (2026-05-11)
