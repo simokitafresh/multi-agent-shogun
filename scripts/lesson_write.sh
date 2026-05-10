@@ -959,7 +959,7 @@ PY
 
                 # (2) Runbook check: docs/rule/*.md
                 if [ -d "$SCRIPT_DIR/docs/rule" ]; then
-                    if grep -rlE "$REFLUX_KEYWORDS" "$SCRIPT_DIR/docs/rule/"*.md >/dev/null 2>&1; then
+                    if find "$SCRIPT_DIR/docs/rule" -name "*.md" -print0 2>/dev/null | xargs -0 -r grep -lqE "$REFLUX_KEYWORDS" 2>/dev/null; then
                         REFLUX_RUNBOOK="FOUND"
                     fi
                 fi
@@ -968,6 +968,11 @@ PY
                 if grep -rlE "$REFLUX_KEYWORDS" "$SCRIPT_DIR/instructions/"*.md >/dev/null 2>&1; then
                     REFLUX_INSTRUCTIONS="FOUND"
                 fi
+            else
+                # REFLUX_KEYWORDSが空（日本語のみのテキスト等）— チェック不可のためSKIPPED
+                REFLUX_PI="SKIPPED"
+                REFLUX_RUNBOOK="SKIPPED"
+                REFLUX_INSTRUCTIONS="SKIPPED"
             fi
 
             echo "REFLUX_CHECK: (1)PI=$REFLUX_PI (2)RUNBOOK=$REFLUX_RUNBOOK (3)INSTRUCTIONS=$REFLUX_INSTRUCTIONS"
