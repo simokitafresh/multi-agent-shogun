@@ -155,38 +155,39 @@ else
 fi
 
 # --- Structured environment_change parsing (cmd_karo_env_change_gate) ---
+# Pure-bash implementation: avoids Python3 subprocess fork cost on WSL2 (L511)
 parse_structured_environment_change() {
     local env_change="${1:-}"
     [[ -n "$env_change" ]] || return 1
 
-    ENV_CHANGE_TEXT="$env_change" python3 - <<'PY'
-import os
-import re
-import sys
+    local _key _val etype="" efile="" epattern=""
 
-text = os.environ.get("ENV_CHANGE_TEXT", "")
-if not text:
-    raise SystemExit(1)
+    _extract_field() {
+        local text="$1" key="$2" val=""
+        # Match: (^|;) optional_space key optional_space = optional_space capture_to_semicolon
+        if [[ "$text" =~ (^|;)[[:space:]]*${key}[[:space:]]*=[[:space:]]*([^;]+) ]]; then
+            val="${BASH_REMATCH[2]}"
+            # Trim trailing whitespace
+            val="${val%"${val##*[! ]}"}"
+            # Trim leading whitespace
+            val="${val#"${val%%[! ]*}"}"
+            # Remove surrounding single or double quotes
+            if [[ ${#val} -ge 2 && "${val:0:1}" == "${val: -1}" && \
+                  ( "${val:0:1}" == "'" || "${val:0:1}" == '"' ) ]]; then
+                val="${val:1:${#val}-2}"
+                val="${val%"${val##*[! ]}"}"
+                val="${val#"${val%%[! ]*}"}"
+            fi
+            printf '%s' "$val"
+        fi
+    }
 
-def extract(key: str) -> str:
-    pattern = rf'(?:^|;)\s*{key}\s*=\s*([^;]+)'
-    match = re.search(pattern, text)
-    if not match:
-        return ""
-    value = match.group(1).strip()
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
-        value = value[1:-1]
-    return value.strip()
+    etype="$(_extract_field "$env_change" "type")"
+    efile="$(_extract_field "$env_change" "file")"
+    epattern="$(_extract_field "$env_change" "pattern")"
 
-etype = extract("type")
-efile = extract("file")
-epattern = extract("pattern")
-
-if not (etype and efile and epattern):
-    raise SystemExit(1)
-
-print(f"{etype}\t{efile}\t{epattern}")
-PY
+    [[ -n "$etype" && -n "$efile" && -n "$epattern" ]] || return 1
+    printf '%s\t%s\t%s\n' "$etype" "$efile" "$epattern"
 }
 
 verify_environment_change() {
