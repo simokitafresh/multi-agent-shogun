@@ -53,10 +53,15 @@ REPORT_DIR_MTIME=0
 if [ -d queue/reports ]; then
     REPORT_DIR_MTIME=$(stat -c '%Y' queue/reports 2>/dev/null || echo 0)
 fi
+GATE_LOG_MTIME=0
+if [ -f "$GATE_LOG" ]; then
+    GATE_LOG_MTIME=$(stat -c '%Y' "$GATE_LOG" 2>/dev/null || echo 0)
+fi
 PENDING_REPORTS_CACHE_HIT=0
 if [ -f "$PENDING_REPORTS_CACHE" ]; then
-    read -r _CACHE_MTIME _CACHE_TS _CACHE_VALUE < "$PENDING_REPORTS_CACHE" || true
-    if [ "${_CACHE_MTIME:-}" = "$REPORT_DIR_MTIME" ] \
+    read -r _CACHE_REPORT_MTIME _CACHE_GATE_LOG_MTIME _CACHE_TS _CACHE_VALUE < "$PENDING_REPORTS_CACHE" || true
+    if [ "${_CACHE_REPORT_MTIME:-}" = "$REPORT_DIR_MTIME" ] \
+        && [ "${_CACHE_GATE_LOG_MTIME:-}" = "$GATE_LOG_MTIME" ] \
         && [ -n "${_CACHE_TS:-}" ] \
         && [ -n "${_CACHE_VALUE:-}" ] \
         && [ $((NOW - _CACHE_TS)) -lt "$PENDING_REPORTS_CACHE_TTL" ] 2>/dev/null; then
@@ -95,7 +100,7 @@ if [ "$PENDING_REPORTS_CACHE_HIT" -eq 0 ]; then
             END{print count+0}
         ')
     fi
-    printf '%s %s %s\n' "$REPORT_DIR_MTIME" "$NOW" "$PENDING_REPORTS" > "${PENDING_REPORTS_CACHE}.tmp"
+    printf '%s %s %s %s\n' "$REPORT_DIR_MTIME" "$GATE_LOG_MTIME" "$NOW" "$PENDING_REPORTS" > "${PENDING_REPORTS_CACHE}.tmp"
     mv "${PENDING_REPORTS_CACHE}.tmp" "$PENDING_REPORTS_CACHE"
 fi
 if [ "$PENDING_REPORTS" -gt 3 ]; then

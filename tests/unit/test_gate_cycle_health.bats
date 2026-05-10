@@ -247,6 +247,29 @@ EOF
     [[ "$output" == *"GATE未処理報告: 1件"* ]]
 }
 
+@test "pending report cache invalidates when gate log changes" {
+    export GATE_CYCLE_HEALTH_CACHE_TTL_SEC=60
+
+    local rpath="$TEST_TMPDIR/queue/reports/ninja1_report_cmd_711.yaml"
+    cat > "$rpath" <<'EOF'
+status: completed
+worker_id: ninja1
+parent_cmd: cmd_711
+EOF
+    echo "" > "$TEST_TMPDIR/logs/gate_metrics.log"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"GATE未処理報告: 1件"* ]]
+
+    sleep 1
+    printf "2026-03-30T05:00:00\tCLEAR\tcmd_711\tninja1\n" >> "$TEST_TMPDIR/logs/gate_metrics.log"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GATE未処理報告: 1件"* ]]
+}
+
 # ============================================================
 # insight_resolve.sh tests (merged from tests/test_gate_cycle_health.bats)
 # ============================================================
