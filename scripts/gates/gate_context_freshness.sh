@@ -31,12 +31,80 @@ CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-2}"
 HAS_ALERT=0
 HAS_WARN=0
 ALERT_LIST=()
+STALE_TEMPLATE_ROWS=()
 
 emit_actionable() {
     local message="$1"
     local action="$2"
     echo "$message"
     echo "  action: $action"
+}
+
+sanitize_cmd_slug() {
+    local value="$1"
+    value="${value#context/}"
+    value="${value%.md}"
+    value="${value//\//_}"
+    value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_]+/_/g; s/_+/_/g; s/^_//; s/_$//')"
+    if [[ -z "$value" ]]; then
+        value="context"
+    fi
+    printf '%s' "$value"
+}
+
+record_stale_template_candidate() {
+    local rel_path="$1"
+    local days_ago="$2"
+    local last_updated="$3"
+    local sort_days
+    if [[ "$days_ago" =~ ^[0-9]+$ ]]; then
+        sort_days="$days_ago"
+    else
+        sort_days=99999
+    fi
+    STALE_TEMPLATE_ROWS+=("${sort_days}"$'\t'"${rel_path}"$'\t'"${days_ago}"$'\t'"${last_updated}")
+}
+
+emit_update_cmd_templates() {
+    [[ "${#STALE_TEMPLATE_ROWS[@]}" -gt 0 ]] || return 0
+
+    local today cmd_date
+    if [[ -n "$TODAY_OVERRIDE" ]]; then
+        today="$TODAY_OVERRIDE"
+    else
+        today="$(date +%F)"
+    fi
+    cmd_date="${today//-/}"
+
+    echo "--- 更新cmdテンプレート TOP3 ---"
+    printf '%s\n' "${STALE_TEMPLATE_ROWS[@]}" \
+        | sort -t $'\t' -k1,1nr \
+        | head -3 \
+        | while IFS=$'\t' read -r _sort_days rel_path days_ago last_updated; do
+            local slug project_id last_note
+            slug="$(sanitize_cmd_slug "$rel_path")"
+            project_id="infra"
+            if [[ "$rel_path" == context/dm-signal* ]]; then
+                project_id="dm-signal"
+            fi
+            if [[ -n "$last_updated" ]]; then
+                last_note="last_updated=${last_updated}, ${days_ago}日前"
+            else
+                last_note="last_updated未記載"
+            fi
+            cat <<EOF
+- id: cmd_ctx_${slug}_${cmd_date}
+  purpose: "${rel_path} の鮮度ALERTを解消し、一次データで内容とlast_updatedを更新する"
+  project: ${project_id}
+  acceptance_criteria:
+    - "AC1: ${rel_path} を一次データと照合し、古い記述を更新または不要なら根拠付きで維持判断する"
+    - "AC2: ${rel_path} 先頭の last_updated を ${today} cmd_XXXX 形式へ更新する"
+    - "AC3: bash scripts/gates/gate_context_freshness.sh 実行時に ${rel_path} がALERT対象から外れる"
+  not_in_scope: "対象ファイル以外の知識整理・設計変更"
+  unresolved_decisions: "none"
+  command: "${rel_path} の知識鮮度更新。現状: ${last_note}"
+EOF
+        done
 }
 
 if [[ -n "$TODAY_OVERRIDE" ]]; then
@@ -152,6 +220,7 @@ for rel_path in "${target_rel_paths[@]}"; do
     }
 
     days_ago=$(( (TODAY_EPOCH - file_epoch) / 86400 ))
+    record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
     if [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
@@ -175,6 +244,7 @@ if [[ "$HAS_ALERT" -gt 0 && "${#ALERT_LIST[@]}" -gt 0 && -f "$NTFY_SCRIPT" ]]; t
 fi
 
 if [[ "$HAS_ALERT" -gt 0 ]]; then
+    emit_update_cmd_templates
     echo "--- 総合判定: ALERT ---"
     exit 1
 elif [[ "$HAS_WARN" -gt 0 ]]; then
