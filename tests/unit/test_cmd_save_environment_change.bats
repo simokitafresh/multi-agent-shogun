@@ -17,6 +17,12 @@ setup() {
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
     export TEST_ARCHIVE_DIR="$TEST_TMPDIR/archive"
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
+    export TEST_LOCK="$TEST_TMPDIR/shogun_to_karo.lock"
+    export TEST_LAST_CMD="$TEST_TMPDIR/cmd_save_last_cmd.txt"
+    export TEST_SHOGUN_LESSONS="$TEST_TMPDIR/lessons_shogun.yaml"
+    export TEST_PREFLIGHT_AUTOLEARN="$TEST_TMPDIR/preflight_autolearn.txt"
+    export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
+    export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
     mkdir -p "$TEST_ARCHIVE_DIR"
 }
 
@@ -67,7 +73,12 @@ run_save() {
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_LOCK_FILE="$TEST_TMPDIR/shogun_to_karo.lock" \
+        CMD_SAVE_LOCK_FILE="$TEST_LOCK" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_ACCUMULATE_BLOCKS=0 \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_envtest
