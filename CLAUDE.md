@@ -434,6 +434,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/karo.md` §CI RED中の他作業
 - CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
+- **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(Claude Code hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
 - Claude version pin/rollback|2.1.87固定。auto-updateは`~/.local/bin/claude`を上書きするが`~/bin/claude`は不変|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
 - gws|Google Workspace CLI(Sheets/Drive/Gmail)|デフォルト=simokitafresh@gmail.com|シート名「シート1」注意|→ `context/infrastructure.md` §gws
