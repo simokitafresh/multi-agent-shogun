@@ -88,6 +88,12 @@ fi
 msg="${1:?Usage: insight_write.sh \"message\" [priority] [source]}"
 priority="${2:-medium}"
 source_info="${3:-manual}"
+
+# Validate priority
+if [[ ! "$priority" =~ ^(high|medium|low)$ ]]; then
+  echo "ERROR: priority must be high/medium/low, got: '$priority'" >&2
+  exit 1
+fi
 ts="$(date -Iseconds)"
 
 # Skip synthetic test fixtures. They are useful in tests, but must not pollute the real queue.

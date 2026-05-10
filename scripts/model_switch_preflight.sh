@@ -117,10 +117,17 @@ import yaml, sys
 
 settings_path, profiles_path = sys.argv[1], sys.argv[2]
 
-with open(settings_path) as f:
-    settings = yaml.safe_load(f) or {}
-with open(profiles_path) as f:
-    profiles_cfg = yaml.safe_load(f) or {}
+try:
+    with open(settings_path) as f:
+        settings = yaml.safe_load(f) or {}
+    with open(profiles_path) as f:
+        profiles_cfg = yaml.safe_load(f) or {}
+except yaml.YAMLError as e:
+    print(f'ERROR:YAMLパースエラー: {e}')
+    sys.exit(0)
+except Exception as e:
+    print(f'ERROR:ファイル読込エラー: {e}')
+    sys.exit(0)
 
 cli = settings.get('cli', {})
 agents = cli.get('agents', {}) if isinstance(cli, dict) else {}

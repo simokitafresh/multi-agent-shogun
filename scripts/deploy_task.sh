@@ -85,6 +85,58 @@ print(count if count > 0 else 1)
 PY
 }
 
+deploy_task_inbox_message_count() {
+    local agent_name="$1"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${agent_name}.yaml"
+
+    if [ ! -f "$inbox_file" ]; then
+        echo 0
+        return 0
+    fi
+
+    grep -c '^- ' "$inbox_file" 2>/dev/null || echo 0
+}
+
+safe_inbox_write() {
+    local target="$1"
+    local message="$2"
+    local msg_type="$3"
+    local from="$4"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
+    local before_count after_count output status
+
+    before_count="$(deploy_task_inbox_message_count "$target")"
+    case "$before_count" in
+        ''|*[!0-9]*) before_count=0 ;;
+    esac
+
+    status=0
+    output="$(bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" 2>&1)" || status=$?
+    if [ -n "$output" ]; then
+        while IFS= read -r line; do
+            log "inbox_write: $line"
+        done <<< "$output"
+    fi
+
+    if [ "$status" -eq 0 ]; then
+        log "${target}: inbox_write success (type=${msg_type})"
+        return 0
+    fi
+
+    after_count="$(deploy_task_inbox_message_count "$target")"
+    case "$after_count" in
+        ''|*[!0-9]*) after_count=0 ;;
+    esac
+
+    if [ -f "$inbox_file" ] && [ "$after_count" -gt "$before_count" ] 2>/dev/null; then
+        log "WARN: ${target}: inbox persisted but post-write delivery/verification failed (status=${status}, type=${msg_type}); continuing"
+        return 0
+    fi
+
+    log "ERROR: ${target}: inbox_write failed before persistence (status=${status}, type=${msg_type})"
+    return "$status"
+}
+
 deploy_task_send_direct_renudge() {
     local agent_name="$1"
     local pane_target unread_count
@@ -5761,13 +5813,13 @@ except Exception:
 
     if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
         log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
     elif [ "$is_idle" = "true" ]; then
         log "${NINJA_NAME}: CTX=${ctx_pct}%, idle. Sending inbox_write (normal nudge)"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
     else
         log "${NINJA_NAME}: CTX=${ctx_pct}%, busy. Sending inbox_write (queued, watcher will nudge later)"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
     fi
 
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
