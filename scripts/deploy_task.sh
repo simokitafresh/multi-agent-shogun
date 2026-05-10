@@ -4956,8 +4956,12 @@ count = 0
 import re
 
 def count_acs_from_value(acs):
-    """Count ACs: list→len, dict with description→count AC patterns, dict→len(keys), str→count AC patterns"""
+    """Count ACs: list→len (with AC-key drill-down), dict with description→count AC patterns, dict→len(keys), str→count AC patterns"""
     if isinstance(acs, list):
+        if len(acs) == 1 and isinstance(acs[0], dict):
+            ac_keys = [k for k in acs[0] if re.match(r'^AC\d+$', k)]
+            if ac_keys:
+                return len(ac_keys)
         return len(acs)
     if isinstance(acs, dict):
         desc = acs.get('description', '')
