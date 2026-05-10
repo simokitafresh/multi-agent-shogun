@@ -2953,6 +2953,113 @@ check_content_duplicate
 # --- Check 13: ACパラメータ充足度チェック（WARN — WARN_COUNTに加算） ---
 # 起源: cmd_1681事故 — ACに「前処理4条件」とだけ書き具体値未記載→忍者が独自判断でKalman_auto使用→条件不一致
 # 目的: ACに「N条件」「N項目」等の数量指定があり具体値列挙がない場合にWARN
+emit_ac_param_candidate_hints() {
+    local ac_line="${1:-}"
+    [[ -n "$ac_line" ]] || return 0
+
+    CMD_SAVE_AC_LINE="$ac_line" \
+    CMD_SAVE_CMD_BLOCK="${CMD_BLOCK_NC:-}" \
+    CMD_SAVE_PROJECT_DIR="$PROJECT_DIR" \
+    CMD_SAVE_PROJECT_ID="$(cmd_block_get_field "project" "")" \
+    python3 - <<'PY' >&2 || true
+import os
+import re
+from pathlib import Path
+
+root = Path(os.environ.get("CMD_SAVE_PROJECT_DIR", ".")).resolve()
+cmd_block = os.environ.get("CMD_SAVE_CMD_BLOCK", "")
+ac_line = os.environ.get("CMD_SAVE_AC_LINE", "")
+project_id = os.environ.get("CMD_SAVE_PROJECT_ID", "").strip()
+
+paths: list[Path] = []
+
+def add_path(raw: str) -> None:
+    raw = raw.strip().strip("`'\"")
+    if not raw:
+        return
+    path = Path(raw)
+    if not path.is_absolute():
+        path = root / path
+    try:
+        path = path.resolve()
+    except OSError:
+        return
+    if path.is_file() and path not in paths:
+        paths.append(path)
+
+for match in re.findall(r'(?:(?:/[^\s`"\']+/)?(?:context|projects)/[^\s`"\':,()]+?\.(?:md|ya?ml))', cmd_block):
+    add_path(match)
+
+if project_id:
+    add_path(f"projects/{project_id}.yaml")
+    add_path(f"context/{project_id}.md")
+    if project_id == "infra":
+        add_path("context/infrastructure.md")
+
+for extra in os.environ.get("CMD_SAVE_AC_HINT_EXTRA_FILES", "").split(":"):
+    add_path(extra)
+
+generic = {
+    "AC", "以下", "満たす", "こと", "これ", "それ", "ため", "する", "される",
+    "条件", "項目", "手法", "種類", "パラメータ", "要件", "ステップ", "設定", "フィールド",
+}
+quantity_match = re.search(r'([0-9]+)(条件|項目|手法|種類|パラメータ|要件|ステップ|設定|フィールド|種)', ac_line)
+quantity_word = quantity_match.group(2) if quantity_match else ""
+tokens = [
+    t for t in re.findall(r'[A-Za-z0-9_./-]{3,}|[一-龥ぁ-んァ-ン]{2,}', ac_line)
+    if t not in generic and not re.fullmatch(r'AC[0-9]+|[0-9]+', t)
+]
+
+hits: list[tuple[int, str, int, str]] = []
+for path in paths[:12]:
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        continue
+    for idx, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if not stripped or len(stripped) > 220:
+            continue
+        score = 0
+        if quantity_word and quantity_word in stripped:
+            score += 3
+        for token in tokens:
+            if token and token in stripped:
+                score += 2
+        if re.search(r'(^[-*]|\||:|: |：|/|・|,)', stripped):
+            score += 1
+        if score >= 3:
+            rel = str(path)
+            try:
+                rel = str(path.relative_to(root))
+            except ValueError:
+                pass
+            hits.append((score, rel, idx, stripped))
+
+print("  候補値ヒント（関連context/projectsから自動抽出）:")
+if not hits:
+    searched = ", ".join(
+        str(p.relative_to(root)) if str(p).startswith(str(root)) else str(p)
+        for p in paths[:6]
+    )
+    if not searched:
+        searched = "関連ファイル未検出"
+    print(f"    - 候補なし: {searched}")
+else:
+    seen: set[tuple[str, str]] = set()
+    count = 0
+    for _score, rel, idx, text in sorted(hits, key=lambda item: (-item[0], item[1], item[2])):
+        key = (rel, text)
+        if key in seen:
+            continue
+        seen.add(key)
+        print(f"    - {rel}:{idx}: {text[:160]}")
+        count += 1
+        if count >= 5:
+            break
+PY
+}
+
 check_ac_param_sufficiency() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
@@ -2981,6 +3088,7 @@ check_ac_param_sufficiency() {
                 HIT=true
             fi
             echo "  → $(echo "$line" | sed 's/^[[:space:]]*//' | cut -c1-80)" >&2
+            emit_ac_param_candidate_hints "$line"
         fi
     done <<< "$QUANT_LINES"
 

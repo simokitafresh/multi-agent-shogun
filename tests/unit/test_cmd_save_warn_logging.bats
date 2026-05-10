@@ -56,6 +56,45 @@ commands:
 YAML
 }
 
+write_warn_cmd_queue_with_candidate_context() {
+    mkdir -p "$TEST_TMPDIR/context"
+    cat > "$TEST_TMPDIR/context/ac-candidates.md" <<'MD'
+# AC候補値
+- WARN候補抽出の3項目: context候補 / projects候補 / semantic候補
+MD
+
+    cat > "$TEST_QUEUE" <<YAML
+commands:
+  cmd_warn:
+    id: cmd_warn
+    title: "infra — AC数量指定候補値表示テスト"
+    purpose: "AC数量指定WARN時に関連contextから候補値を表示する"
+    project: infra
+    task_type: impl
+    command: |
+      関連資料: $TEST_TMPDIR/context/ac-candidates.md
+    acceptance_criteria:
+      - 'AC1: WARN候補抽出の3項目を満たすこと'
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "WARN時に候補値を自動表示する"
+      q3_next_quality: "忍者がN項目を独自補完しない"
+      q4_depth: "shallow"
+      q5_verified_source: "isolated_test"
+      q6_not_hiding: "no — 候補表示の追加であり問題を隠さない"
+      q7_definition_verified: "yes — context候補表示をstderrで確認する"
+      q8_why_what: "WHY: N項目未列挙は独自補完を誘発 → WHAT: 関連contextから候補値を提示"
+      q10_knowledge_boundary: "$TEST_TMPDIR/context/ac-candidates.md のみ"
+      q11_not_already_done: "未達成。候補値表示テストがない"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "候補値は関連contextから抽出できる"
+        source: "$TEST_TMPDIR/context/ac-candidates.md"
+        trust: "verified"
+YAML
+}
+
 run_save() {
     run env \
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
@@ -115,4 +154,17 @@ YAML
     [[ "$output" == *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
     [[ "$output" == *"★ Session State: 検出ロジック該当行"* ]]
     [[ "$output" == *"check=check_ac_param_sufficiency"* ]]
+}
+
+@test "AC4: AC数量指定WARN時に関連contextから候補値が表示される" {
+    write_warn_cmd_queue_with_candidate_context
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARN: ACに数量指定があるが具体値が列挙されていません"* ]]
+    [[ "$output" == *"候補値ヒント（関連context/projectsから自動抽出）"* ]]
+    [[ "$output" == *"ac-candidates.md"* ]]
+    [[ "$output" == *"context候補 / projects候補 / semantic候補"* ]]
 }
