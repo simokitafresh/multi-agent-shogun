@@ -238,6 +238,52 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "L6 learning speed shows per-gate FAIL to PASS transition rates" {
+    export L6_LEARNING_NOW="2099-01-31T00:00:00+09:00"
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+- ts: "2099-01-02T00:00:00+09:00", file: "/tmp/test/report.yaml", gate: "gate_report_format", result: FAIL, reasons: "test fixture excluded"
+- ts: "2099-01-10T00:00:00+09:00", file: "queue/reports/a.yaml", gate: "gate_report_format", result: FAIL, reasons: "binary_checks empty"
+- ts: "2099-01-10T00:01:00+09:00", file: "queue/reports/a.yaml", gate: "gate_report_format", result: FAIL, reasons: "binary_checks empty"
+- ts: "2099-01-10T00:02:00+09:00", file: "queue/reports/a.yaml", gate: "gate_report_format", result: PASS
+- ts: "2099-01-11T00:00:00+09:00", file: "queue/reports/b.yaml", gate: "gate_report_format", result: FAIL, reasons: "verdict empty"
+- ts: "2099-01-12T00:00:00+09:00", file: "queue/reports/c.yaml", gate: "gate_yaml_status", result: FAIL, reasons: "status bad"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ L6学習速度"* ]]
+    [[ "$output" == *"FAIL→PASS遷移率(直近30日):"* ]]
+    [[ "$output" == *"gate_report_format: 67% (2/3 FAIL回復, 未回復=1, PASS=1)"* ]]
+    [[ "$output" == *"gate_yaml_status: 0% (0/1 FAIL回復, 未回復=1, PASS=0)"* ]]
+    [[ "$output" != *"test fixture excluded"* ]]
+}
+
+@test "L6 learning speed shows L6 rate and non-L6 top3" {
+    cat > "$TEST_TMPDIR/logs/gunshi_gp_tracker.yaml" <<'EOF'
+- gp_id: GP-L2
+  description: "Level2 documentation only"
+  defense_level: 2
+- gp_id: GP-L6
+  description: "Level6 learning speed feedback"
+  defense_level: 6
+- gp_id: GP-L4
+  description: "Level4 flow block"
+  defense_level: 4
+- gp_id: GP-L3
+  description: "Level3 template forcing"
+  defense_level: 3
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L6化率: 25% (1/4)"* ]]
+    [[ "$output" == *"L6未到達仕組みTOP3:"* ]]
+    [[ "$output" == *"L2 GP-L2: Level2 documentation only"* ]]
+    [[ "$output" == *"L3 GP-L3: Level3 template forcing"* ]]
+    [[ "$output" == *"L4 GP-L4: Level4 flow block"* ]]
+    [[ "$output" != *"GP-L6: Level6 learning speed feedback"* ]]
+}
+
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
 @test "Memory ALERT → 総合判定: ALERT" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'

@@ -1239,7 +1239,7 @@ fi
 if [ ${#_KMAP_MISSING[@]} -gt 0 ]; then
     echo "  INFO: 知識マップ参照元欠落: $(printf '%s, ' "${_KMAP_MISSING[@]}" | sed 's/, $//')"
 fi
-if [ "$_evo_count" -gt 0 ]; then
+	if [ "${_evo_count:-0}" -gt 0 ]; then
     echo -e "$_evo_orphans"
     echo "  → ${_evo_count}件: 知識マップ(CLAUDE.md/MEMORY.md/instructions/config)に未参照。進化シグナルか確認し統合せよ"
     if [ "$_evo_count" -ge 3 ]; then
@@ -1481,6 +1481,151 @@ if [ -x "$_skill_ref_gate" ]; then
     fi
 else
     echo "  INFO: gate_skill_script_refs.sh 未配備"
+fi
+
+# --- Gate 21: L6学習速度 (cmd_2668) ---
+# 目的: gate_fire_logのFAIL→PASS回復速度と防御仕組みのL6化率を起動時に可視化する。
+echo "■ L6学習速度"
+_l6_out=$(L6_REPO_ROOT="$SCRIPT_DIR" \
+    L6_NOW="${L6_LEARNING_NOW:-}" \
+    python3 <<'PY' 2>/dev/null || true
+import os
+import re
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+repo = Path(os.environ["L6_REPO_ROOT"])
+now_raw = os.environ.get("L6_NOW", "").strip()
+if now_raw:
+    now = datetime.fromisoformat(now_raw.replace("Z", "+00:00"))
+else:
+    now = datetime.now(timezone.utc)
+if now.tzinfo is None:
+    now = now.replace(tzinfo=timezone.utc)
+cutoff = now - timedelta(days=30)
+
+fire_log = repo / "logs" / "gate_fire_log.yaml"
+re_ts = re.compile(r'ts:\s*"([^"]+)"')
+re_file = re.compile(r'file:\s*"([^"]*)"')
+re_gate = re.compile(r'gate:\s*"?(.*?)"?(?:,|\s+result:)')
+re_result = re.compile(r'result:\s*([A-Z][A-Z-]*)')
+
+entries = []
+if fire_log.exists():
+    for raw in fire_log.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = raw.strip()
+        if not line.startswith("- "):
+            continue
+        tm = re_ts.search(line)
+        gm = re_gate.search(line)
+        rm = re_result.search(line)
+        if not (tm and gm and rm):
+            continue
+        fm = re_file.search(line)
+        file_value = fm.group(1) if fm else ""
+        if file_value.startswith("/tmp/"):
+            continue
+        try:
+            ts = datetime.fromisoformat(tm.group(1).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts < cutoff or ts > now + timedelta(minutes=5):
+            continue
+        entries.append((ts, gm.group(1).strip(), rm.group(1).strip()))
+
+entries.sort(key=lambda item: item[0])
+stats = defaultdict(lambda: {"fail": 0, "recovered": 0, "open": 0, "pass": 0})
+for _ts, gate, result in entries:
+    if result == "FAIL":
+        stats[gate]["fail"] += 1
+        stats[gate]["open"] += 1
+    elif result == "PASS":
+        stats[gate]["pass"] += 1
+        if stats[gate]["open"] > 0:
+            stats[gate]["recovered"] += stats[gate]["open"]
+            stats[gate]["open"] = 0
+
+print("FAIL→PASS遷移率(直近30日):")
+if stats:
+    rows = []
+    for gate, item in stats.items():
+        fail = item["fail"]
+        recovered = item["recovered"]
+        rate = round((recovered / fail) * 100) if fail else 100
+        rows.append((fail, recovered, rate, gate, item["open"], item["pass"]))
+    rows.sort(key=lambda row: (-row[0], row[3]))
+    for fail, recovered, rate, gate, open_count, pass_count in rows[:5]:
+        print(f"  {gate}: {rate}% ({recovered}/{fail} FAIL回復, 未回復={open_count}, PASS={pass_count})")
+else:
+    print("  SKIP: gate_fire_log直近30日データなし")
+
+sources = [
+    repo / "logs" / "gunshi_review_log.yaml",
+    repo / "logs" / "gunshi_gp_tracker.yaml",
+    repo / "logs" / "archive" / "gunshi_review_log_20260430b_to_20260501a.yaml",
+    repo / "logs" / "archive" / "gunshi_review_log_cmd_2179_to_cmd_2231.yaml",
+]
+level_re = re.compile(r"defense_level:\s*['\"]?([0-9]+)")
+id_re = re.compile(r"^\s*-\s+(?:cmd_id|id|gp_id):\s*['\"]?([^'\"\s]+)", re.M)
+summary_re = re.compile(r"^\s*(?:description|reason|findings_summary|causal_chain):\s*[\"']?(.*)", re.M)
+mechanisms = []
+
+def compact(value):
+    value = re.sub(r"\s+", " ", value).strip().strip("\"'")
+    return value[:120] if value else "summary不明"
+
+def iter_blocks(text):
+    current = []
+    for line in text.splitlines():
+        if re.match(r"^\s*-\s+(?:cmd_id|id|gp_id):", line) and current:
+            yield "\n".join(current)
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        yield "\n".join(current)
+
+for source in sources:
+    if not source.exists():
+        continue
+    text = source.read_text(encoding="utf-8", errors="ignore")
+    for block in iter_blocks(text):
+        lm = level_re.search(block)
+        if not lm:
+            continue
+        level = int(lm.group(1))
+        im = id_re.search(block)
+        sm = summary_re.search(block)
+        mechanisms.append({
+            "level": level,
+            "id": im.group(1) if im else source.name,
+            "summary": compact(sm.group(1) if sm else ""),
+            "source": source.relative_to(repo).as_posix(),
+        })
+
+total = len(mechanisms)
+l6_count = sum(1 for item in mechanisms if item["level"] >= 6)
+rate = round((l6_count / total) * 100) if total else 0
+print(f"L6化率: {rate}% ({l6_count}/{total})")
+not_l6 = [item for item in mechanisms if item["level"] < 6]
+not_l6.sort(key=lambda item: (item["level"], item["source"], item["id"]))
+if not_l6:
+    print("L6未到達仕組みTOP3:")
+    for item in not_l6[:3]:
+        print(f"  L{item['level']} {item['id']}: {item['summary']} ({item['source']})")
+elif total:
+    print("L6未到達仕組みTOP3: なし")
+else:
+    print("L6未到達仕組みTOP3: SKIP(defense_levelデータなし)")
+PY
+)
+if [ -n "$_l6_out" ]; then
+    printf '%s\n' "$_l6_out" | sed 's/^/  /'
+else
+    echo "  SKIP: L6学習速度集計失敗"
 fi
 
 # --- 総合判定 ---
