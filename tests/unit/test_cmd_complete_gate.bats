@@ -232,6 +232,36 @@ EOF
     grep -q "cmd_complete_gate:l6_horizontal:$TEST_CMD_ID" "$insight_log"
 }
 
+@test "write_l6_horizontal_level5_insights matches Japanese command tokens" {
+    local insight_log="$TEST_TMPDIR/insights.log"
+    cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "\$1" "\$2" "\$3" >> "$insight_log"
+echo INSIGHT_TEST
+EOF
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    cat > "$TEST_PROJECT/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_2602
+  findings_summary: "横展開スキャンで日本語トークン抽出が弱く候補検出できない"
+  proposal:
+    defense_level: 4
+  causal_chain: "日本語トークン分割不足"
+EOF
+
+    export CMD_TITLE="L6横展開候補検出の日本語トークン分割改善"
+    export CMD_PURPOSE="長文フレーズを分割し日本語cmdでも候補検出を機能させる"
+    export CMD_CHANGED_FILES="scripts/cmd_complete_gate.sh"
+
+    run write_l6_horizontal_level5_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L6 horizontal Level5 candidate scan"* ]]
+    [[ "$output" == *"saved: 1 horizontal candidate(s)"* ]]
+    grep -q "matched=.*日本語" "$insight_log"
+    grep -q "candidate_level=4" "$insight_log"
+    grep -q "cmd_complete_gate:l6_horizontal:$TEST_CMD_ID" "$insight_log"
+}
+
 @test "write_l6_horizontal_level5_insights skips commands without Level5 signal" {
     local insight_log="$TEST_TMPDIR/insights.log"
     cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF

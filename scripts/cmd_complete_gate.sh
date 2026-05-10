@@ -868,11 +868,39 @@ stopwords = {
 }
 
 tokens = []
-for part in re.findall(r"[A-Za-z][A-Za-z0-9_]{3,}|[一-龥ぁ-んァ-ンー]{3,}", signal_text):
-    token = part.strip("_").lower()
+
+def add_token(value):
+    token = value.strip("_").lower()
     if not token or token in stopwords or token.startswith("cmd_"):
-        continue
+        return
+    if re.fullmatch(r"[ぁ-んー]+", token):
+        return
+    if re.fullmatch(r"[一-龥ぁ-んァ-ンー]+", token) and len(token) < 2:
+        return
+    if re.fullmatch(r"[A-Za-z0-9_]+", token) and len(token) < 4:
+        return
     tokens.append(token)
+
+def add_japanese_tokens(value):
+    # Japanese regex ranges otherwise turn whole clauses into one token
+    # (e.g. "日本語トークン抽出が長文..." never matches shorter log phrases).
+    chunks = re.findall(r"[一-龥]+|[ァ-ンー]+|[ぁ-ん]+", value)
+    for chunk in chunks:
+        if re.fullmatch(r"[ぁ-んー]+", chunk):
+            continue
+        add_token(chunk)
+        if re.fullmatch(r"[一-龥]{3,}", chunk):
+            for size in (2, 3, 4):
+                if len(chunk) <= size:
+                    continue
+                for idx in range(0, len(chunk) - size + 1):
+                    add_token(chunk[idx:idx + size])
+
+for part in re.findall(r"[A-Za-z][A-Za-z0-9_]{3,}|[一-龥ぁ-んァ-ンー]+", signal_text):
+    if re.search(r"[一-龥ぁ-んァ-ンー]", part):
+        add_japanese_tokens(part)
+    else:
+        add_token(part)
 
 for rel in changed_files.replace(",", "\n").splitlines():
     rel = rel.strip()
