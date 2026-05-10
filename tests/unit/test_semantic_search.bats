@@ -11,6 +11,7 @@ setup() {
     mkdir -p "$TEST_TMPDIR/docs/semantic-index"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
+    export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -164,4 +165,14 @@ EOF
     [[ "$output" == *"ERROR: query is empty or whitespace only"* ]]
     [[ "$output" == *"Usage: bash"* ]]
     [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "parsed index cache stays in SEMANTIC_INDEX_CACHE_DIR" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
+
+    [ "$status" -eq 0 ]
+    [ ! -e "${SEMANTIC_INDEX_PATH}.cache.json" ]
+    [ "$(find "$SEMANTIC_INDEX_CACHE_DIR" -type f -name '*.json' | wc -l)" -eq 1 ]
 }

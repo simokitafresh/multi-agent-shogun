@@ -86,7 +86,9 @@ def load_concepts(index_path: Path) -> list:
     try:
         if cache_root is not None:
             cache_root.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(concepts, ensure_ascii=False), encoding="utf-8")
+        tmp_path = cache_path.with_name(f".{cache_path.name}.{os.getpid()}.tmp")
+        tmp_path.write_text(json.dumps(concepts, ensure_ascii=False), encoding="utf-8")
+        tmp_path.replace(cache_path)
     except OSError:
         pass  # Cache write failure is non-fatal
     return concepts
