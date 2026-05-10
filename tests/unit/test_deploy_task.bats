@@ -47,6 +47,16 @@ make_script_commit() {
         git -C "$TEST_GIT_ROOT" commit --quiet -m "cmd_test update script"
 }
 
+use_private_scripts_fixture() {
+    local shared_scripts
+
+    if [ -L "$TEST_PROJECT/scripts" ]; then
+        shared_scripts="$(readlink -f "$TEST_PROJECT/scripts")"
+        rm "$TEST_PROJECT/scripts"
+        cp -R "$shared_scripts" "$TEST_PROJECT/scripts"
+    fi
+}
+
 @test "スクリプトがYAML作成後にcommitされていた場合WARNが出力される" {
     local recent_date
     recent_date="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -114,6 +124,7 @@ EOF
 
 @test "safe_inbox_write continues when message persisted before delivery failure" {
     mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    use_private_scripts_fixture
     cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
 messages: []
 EOF
@@ -144,6 +155,7 @@ EOF
 
 @test "safe_inbox_write blocks when message was not persisted" {
     mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    use_private_scripts_fixture
     cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
 messages: []
 EOF
