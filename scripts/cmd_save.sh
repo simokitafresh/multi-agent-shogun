@@ -25,6 +25,7 @@ LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
+LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -2472,6 +2473,120 @@ check_research_tool_growth_ac() {
 }
 
 check_research_tool_growth_ac
+
+# --- Check 11.9: 殿発言強制検索（informational — WARN_COUNTに加算しない） ---
+# 目的: cmdのtitle/purposeから過去の殿裁定・方針・指摘を自動検索し、
+#       起票時に関連発言を見落とさない入口を作る。
+show_lord_conversation_matches() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+    [[ ! -f "$LORD_CONVERSATION_FILE" ]] && {
+        echo "INFO: [LORD] 殿発言検索: lord_conversation.jsonl不在のため0件" >&2
+        return 0
+    }
+
+    CMD_BLOCK_FOR_LORD="$CMD_BLOCK_NC" python3 - "$LORD_CONVERSATION_FILE" >&2 <<'PY'
+import json
+import os
+import re
+import sys
+
+conversation_path = sys.argv[1]
+
+def tokenize(text):
+    if not text:
+        return set()
+    tokens = set()
+    for token in re.findall(r'[a-zA-Z][a-zA-Z0-9_.-]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}', text.lower()):
+        tokens.add(token)
+    jp_chars = re.sub(r'[\x00-\x7f\s]', '', text)
+    for i in range(len(jp_chars) - 1):
+        tokens.add(jp_chars[i:i + 2])
+    return tokens
+
+def similarity(left, right):
+    if not left or not right:
+        return 0.0
+    union = left | right
+    return len(left & right) / len(union) * 100 if union else 0.0
+
+def strip_scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value
+
+cmd_text = os.environ.get("CMD_BLOCK_FOR_LORD", "")
+fields = {"title": "", "purpose": ""}
+current = None
+block_indent = 0
+for raw_line in cmd_text.splitlines():
+    line = raw_line.rstrip("\n")
+    if current is not None:
+        indent = len(line) - len(line.lstrip(" "))
+        if not line.strip():
+            fields[current] += "\n"
+            continue
+        if indent > block_indent:
+            fields[current] += line[block_indent:].rstrip() + "\n"
+            continue
+        current = None
+
+    match = re.match(r'^\s*(title|purpose):\s*(.*)$', line)
+    if not match:
+        continue
+    key, value = match.group(1), match.group(2)
+    if value in {"|", ">"} or value == "":
+        fields[key] = ""
+        current = key
+        block_indent = 6
+    else:
+        fields[key] = strip_scalar(value)
+
+query = " ".join(value.strip() for value in fields.values() if value.strip())
+query_words = tokenize(query)
+if not query_words:
+    print("INFO: [LORD] 殿発言検索: title/purpose空のため0件")
+    raise SystemExit(0)
+
+entries = []
+total_inbound = 0
+try:
+    with open(conversation_path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("direction") != "inbound":
+                continue
+            total_inbound += 1
+            text = " ".join(
+                str(entry.get(key, "") or "")
+                for key in ("summary", "detail")
+            )
+            words = tokenize(text)
+            score = similarity(query_words, words)
+            if score <= 0:
+                continue
+            overlap = sorted(query_words & words)
+            entries.append((score, entry.get("ts", ""), str(entry.get("summary", "") or "")[:120], overlap[:5]))
+except OSError:
+    print("INFO: [LORD] 殿発言検索: lord_conversation.jsonl読込失敗のため0件")
+    raise SystemExit(0)
+
+entries.sort(key=lambda item: (-item[0], item[1]))
+hits = entries[:3]
+print(f"INFO: [LORD] 殿発言検索: inbound {total_inbound}件から関連{len(entries)}件")
+for score, ts, summary, overlap in hits:
+    terms = ",".join(overlap)
+    print(f"  - {ts} 類似度{score:.0f}% terms={terms}: {summary}")
+PY
+}
+
+show_lord_conversation_matches
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
