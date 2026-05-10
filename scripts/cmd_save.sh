@@ -458,6 +458,46 @@ for entry in entries:
 PY
 }
 
+check_measurement_env_info() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    if printf '%s\n' "$CMD_BLOCK_NC" | grep -qE '^[[:space:]]*measurement_env[[:space:]]*:'; then
+        return 0
+    fi
+
+    local search_text first_hit
+    search_text="$(
+        printf '%s\n' "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*(quality_gate|assumptions|measurement_env):[[:space:]]*/ {
+                skip=1
+                skip_indent=match($0, /[^ ]/) - 1
+                next
+            }
+            skip {
+                if ($0 !~ /^[[:space:]]*$/) {
+                    cur_indent=match($0, /[^ ]/) - 1
+                    if (cur_indent <= skip_indent) {
+                        skip=0
+                    } else {
+                        next
+                    }
+                } else {
+                    next
+                }
+            }
+            !skip { print }
+        '
+    )"
+
+    first_hit="$(printf '%s\n' "$search_text" | grep -iE 'ローカル|local|本番|production|prod|Render|staging|環境差異|環境差|env差|DB差|database差' | head -1 || true)"
+    [[ -n "${first_hit:-}" ]] || return 0
+
+    echo "INFO: ローカル/本番などの環境差異キーワードを検出しました。measurement_envフィールドの記入を検討してください" >&2
+    echo "  検出行: ${first_hit}" >&2
+    echo "  例: measurement_env: \"local=WSL2 repo / production=Render+prod DB。差異の影響: なし（理由）\"" >&2
+    record_warn_reason "measurement_env記入提案" "info" "check=measurement_env_info"
+}
+
 load_cmd_block() {
     if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -3505,6 +3545,7 @@ for e in entries:
             done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
             record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
         fi
+        check_measurement_env_info
     fi
 fi
 

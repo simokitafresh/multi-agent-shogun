@@ -54,6 +54,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^check_lord_instruction_ac_alignment_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_numeric_derivation_source_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -68,7 +69,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence extract_acceptance_criteria_block extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -1861,6 +1862,70 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.11: 環境差異キーワードあり+measurement_envなし→INFO" {
+    CMD_BLOCK='purpose: "ローカル検証と本番Renderの差異見落としを防ぐ"
+command: |
+  localで再現した結果をproductionへ適用する
+acceptance_criteria:
+  description: |
+    AC1: 環境差異の確認を促す
+assumptions:
+  - claim: "2026-05-10時点で本テストfixtureはmeasurement_envなしケース"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"measurement_envフィールドの記入を検討してください"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.12: 環境差異キーワードあり+measurement_envあり→INFOなし" {
+    CMD_BLOCK='purpose: "ローカル検証と本番Renderの差異見落としを防ぐ"
+measurement_env: "local=WSL2 / production=Render。差異の影響なし"
+command: |
+  localで再現した結果をproductionへ適用する
+acceptance_criteria:
+  description: |
+    AC1: 環境差異の確認を促す
+assumptions:
+  - claim: "2026-05-10時点で本テストfixtureはmeasurement_envありケース"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"measurement_envフィールドの記入を検討してください"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.13: 環境差異キーワードなし→measurement_env INFOなし" {
+    CMD_BLOCK='purpose: "説明文のtypoを修正する"
+command: |
+  docsの表記を直す
+acceptance_criteria:
+  description: |
+    AC1: 表記が修正されている
+assumptions:
+  - claim: "2026-05-10時点で本テストfixtureは環境差異キーワードなしケース"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"measurement_envフィールドの記入を検討してください"* ]]
     [ "$status" -eq 0 ]
 }
 
