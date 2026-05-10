@@ -533,7 +533,9 @@ fi
 
 _gate_signature="missing"
 if [[ -f "$GATE_LOG" ]]; then
-    _gate_signature=$(cksum "$GATE_LOG" | awk '{print $1 ":" $2}')
+    # L4-R14: cksum(全ファイル読込)→stat(mtime:size メタデータのみ)に最適化
+    # cksum は MB級ファイルを全読みするが stat はinode1回で完了。キャッシュ無効化の精度は同等
+    _gate_signature=$(stat -c '%Y:%s' "$GATE_LOG" 2>/dev/null || echo "missing")
 fi
 _cached_signature=""
 [[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
