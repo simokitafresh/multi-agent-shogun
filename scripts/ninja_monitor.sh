@@ -688,18 +688,16 @@ safe_send_clear() {
     safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
     log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
 
-    # Codex CLI: respawn-pane方式で再起動（Ctrl-C方式はpane dead問題あり）
-    # 根因: respawn-pane直起動ではcodex=PID 1。Ctrl-C→codex終了→pane dead→relaunch届かない
+    # Codex CLI: /newはtask in progress中に無視される → respawn-pane -k で強制リセット
+    # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
         local _launch_cmd
         _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
         if [ -n "$_launch_cmd" ]; then
-            log "CODEX-RESPAWN: $agent_name tmux respawn-pane (pane dead防止)"
-            tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
-                log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed, trying Ctrl-C+relaunch"
-                safe_send_keys "$pane" C-c || true
-                sleep 1
-                safe_send_keys_atomic "$pane" "$_launch_cmd" 0.5 || true
+            local _node_dir="${_launch_cmd%/bin/codex*}/bin"
+            log "CODEX-RESPAWN: $agent_name respawn-pane (task in progress workaround)"
+            tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+                log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
@@ -2661,15 +2659,23 @@ check_ninja_cli_dead() {
         local pane_target="${PANE_TARGETS[$name]:-}"
         [ -z "$pane_target" ] && continue
 
-        # pane_current_commandを取得
-        local pane_cmd
-        pane_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
+        # pane_dead判定を先に実施（Codex dead時はpane_current_command=nodeでスキップされる問題を修正）
+        local _early_pane_dead
+        _early_pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
+        if [ "$_early_pane_dead" = "1" ]; then
+            # pane自体が死んでいる → CLI死亡確定
+            :
+        else
+            # pane生存時: pane_current_commandでCLI死亡を判定
+            local pane_cmd
+            pane_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
 
-        # bash/zsh/sh以外はCLI稼働中 → スキップ
-        case "$pane_cmd" in
-            bash|zsh|sh) ;;
-            *) continue ;;
-        esac
+            # bash/zsh/sh以外はCLI稼働中 → スキップ
+            case "$pane_cmd" in
+                bash|zsh|sh) ;;
+                *) continue ;;
+            esac
+        fi
 
         log "CLI-DEAD: ${name}@${pane_target} pane_current_command=${pane_cmd} → CLI死亡検知"
 
@@ -2724,7 +2730,9 @@ check_ninja_cli_dead() {
             if [ "$_pane_dead_bg" = "1" ]; then
                 # pane_dead=1: send-keysは無効。respawn-paneでペインプロセスを再生成
                 log "CLI-DEAD: ${_name_bg} pane_dead=1 → respawn-pane使用"
-                tmux respawn-pane -k -t "$_pane_target_bg" "cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
+                # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
+                local _node_path="/home/simokitafresh/.nvm/versions/node/v20.20.0/bin"
+                tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
             else
                 # pane_dead=0: シェルは生きているがCLIが終了した状態。send-keysで再起動
                 tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
