@@ -23,7 +23,9 @@ lessons:
     - GATE CLEAR後にpush状態を確認せよ(LK003/LK004: 2回再発。cmd_complete後にgit log origin/main..mainで未push確認)
     - 教訓ID確認時はファイルパス+タイトルの2点確認(LK006: L123混同事故。grep -rnで出力にファイルパスを含める)
     - push前にテスト未commitを確認せよ(LK013: CI RED 3連続。git diff --name-onlyでテストファイル確認)
-  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013]
+    v4吸収(2026-05-11):
+    - karo_direct配備後はtask YAML idle化を即確認(LK011: yaml_field_set後もflock競合/mtime遅延で反映確認が必要)
+  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2'
@@ -88,7 +90,9 @@ lessons:
     3段階: (1)パターン集計→3件同一で構造的解決cmd起票 (2)gate作成 (3)発火率100%確認。
     代筆禁止: gate BLOCKされた報告は忍者に差し戻せ(免疫応答を妨げるな)。
     教訓L2/L3不在: 記録だけでは行動は変わらない。automated/enforcementフィールド必須。
-  source_ids: [LK064]
+    v4吸収(2026-05-11):
+    - 偵察前に家老がなぜなぜ7回で仮説を立て、偵察結果で更新せよ(LK013: 仮説なしの偵察は焦点が散る)
+  source_ids: [LK064, LK013]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'gate_report_format.sh+gate_karo_startup.sh+karo_workaround_log.sh ALERT→PD自動起票(LK049)'
@@ -147,7 +151,9 @@ lessons:
     cmd_2207で自動化初稼働、GATE CLEARまで手動ゼロ完走。
     v3吸収(2026-05-10):
     - GATE処理前に軍師report reviewを待て(LK010b: karo_direct配備ではhook未発火の場合あり。手動でreview依頼→結果受領→GATE処理の順)
-  source_ids: [LK056, LK081, LK088, LK089, LK091, LK010b]
+    v4吸収(2026-05-11):
+    - karo_direct配備はreport_received hook未発火の場合があるため、忍者完了後に軍師review依頼を手動送信せよ(LK012)
+  source_ids: [LK056, LK081, LK088, LK089, LK091, LK010b, LK012]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh自動draft review送信+inbox_write.sh report_review自動GATE実行'
@@ -210,7 +216,12 @@ lessons:
     - draft教訓二重管理(LK001b: lessons.yaml confirm後にtasks/lessons.mdも更新。3回GATE BLOCK。根因=2ファイルに正本分散)
     - scout_exemptがresolve_cmdで上書き(LK011b: cmd_2614で根治。STALE_FIELDSからscout_exempt除外)
     - karo_direct配備で報告テンプレート未生成(LK012b: LK011b根治で連鎖解消。正規フロー完走→テンプレート生成に到達)
-  source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b]
+    v4吸収(2026-05-11):
+    - multi-CLI互換性: hook BLOCKはCodex CLIでクラッシュしないexit 2必須(LK007)
+    - Codex hook承認は初回のみ。/hooksでtrustすれば永続化される(LK008)
+    - SKILL.md正本はプロジェクト内skills/に置き、CLI側はsymlinkにする(LK009)
+    - Codex project_doc_max_bytesは131072以上必須。AGENTS.md+CLAUDE.mdの切り詰めを防ぐ(LK010)
+  source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh各修正+gate各修正+hook各修正(個別commit参照)'
@@ -308,6 +319,8 @@ lessons:
 # v3統合(2026-05-10): LK001-LK013の13件を既存パターンに吸収完了
 # LK001→LK-A13, LK002/003/004/006/013→LK-A01, LK005/008→LK-A02
 # LK007→LK-A04, LK009→LK-A12, LK010→LK-A09, LK011/012→LK-A13
+# v4統合(2026-05-11): LK007-LK013の7件を既存パターンに吸収
+# LK007-LK010→LK-A13, LK011→LK-A01, LK012→LK-A09, LK013→LK-A05
 # v1全文アーカイブ: docs/research/lessons_karo_v1_archive.md
   when: depends_on付きcmdの配備計画時
   how: AC単位で依存分析。cmd全体の依存を鵜呑みにせず並列可能部分を先に配備。idle=最大の無駄
@@ -353,52 +366,3 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。'
   created_at: '2026-05-10'
-- id: 'LK007'
-  title: 'hook BLOCKはexit 2必須。exit 1=Codex CLIクラッシュ'
-  detail: 'emit_deny()内にexit 2を埋め込みcaller側のexit 1を全削除。Claude Codeは両方許容するがCodexは厳密。'
-  source_cmd: 'cmd_karo_multi_cli_hook_lesson'
-  when: 'multi-CLI hookでdeny/BLOCKを返す時'
-  how: 'emit_deny()内にexit 2を埋め込み、caller側のexit 1を全削除する。Codex CLIではexit 1がCLIクラッシュ扱いになるためexit 2でBLOCKを表現する。'
-  created_at: '2026-05-11'
-- id: 'LK008'
-  title: 'Codex hook承認は初回のみ'
-  detail: '/hooks→tでtrust。永続化される。'
-  source_cmd: 'cmd_karo_multi_cli_hook_lesson'
-  when: 'Codex CLIでhook実行承認が必要になった時'
-  how: '/hooks を開き t でtrustする。承認は永続化されるため、同一hookで毎回承認する必要はない。'
-  created_at: '2026-05-11'
-- id: 'LK009'
-  title: 'SKILL.md正本はプロジェクト内skills/'
-  detail: 'CLI側は必ずsymlink。独立コピーはskill_auto_improve.shの改善が届かない。'
-  source_cmd: 'cmd_karo_multi_cli_hook_lesson'
-  when: 'スキルをClaude/Codex両CLIへ配置・同期する時'
-  how: '正本をプロジェクト内 skills/ に置き、CLI側は必ずsymlinkにする。独立コピーを作らない。'
-  created_at: '2026-05-11'
-- id: 'LK010'
-  title: 'config.toml project_doc_max_bytes=131072必須'
-  detail: 'AGENTS.md+CLAUDE.md合計87KB超で切り詰められる。'
-  source_cmd: 'cmd_karo_multi_cli_hook_lesson'
-  when: 'Codex CLIでAGENTS.md/CLAUDE.md等のproject docを読ませる時'
-  how: 'config.toml の project_doc_max_bytes を 131072 以上に設定し、AGENTS.md+CLAUDE.md合計87KB超でも切り詰められないようにする。'
-  created_at: '2026-05-11'
-- id: 'LK011'
-  title: 'karo_direct配備後はtask YAML idle化を即確認せよ'
-  detail: 'yaml_field_set.shでstatus idle設定後にgrep statusで確認。本セッションで4回stop hookに再指摘された。根因: yaml_field_set.shの書込みが即時反映されないケース(flock競合/mtime遅延)。idle化後に必ず確認1行を入れよ。'
-  source_cmd: 'cmd_karo_session_20260510'
-  when: 'stop_check_inbox.sh status=done検知'
-  how: 'yaml_field_set.shでstatus idle設定後にgrep statusで確認。本セッションで4回stop hookに再指摘された。根因: yaml_field_set.shの書込みが即時反映されないケース(flock競合/mtime遅延)。idle化後に必ず確認1行を入れよ。'
-  created_at: '2026-05-11'
-- id: 'LK012'
-  title: 'karo_direct配備はreport_received hook未発火 — 軍師review依頼を手動送信せよ'
-  detail: 'deploy_task.sh経由はhookが自動発火するが、karo_direct(cp+inbox_write)ではreport_received hookが発火しない場合がある(LK-A09)。忍者完了報告受信後に必ず手動でgunshiにreport_review inbox_writeを送信。本セッションで3回漏れ→stop hookで検知。'
-  source_cmd: 'cmd_karo_session_20260510'
-  when: 'LK-A09 karo_direct手動review依頼'
-  how: 'deploy_task.sh経由はhookが自動発火するが、karo_direct(cp+inbox_write)ではreport_received hookが発火しない場合がある(LK-A09)。忍者完了報告受信後に必ず手動でgunshiにreport_review inbox_writeを送信。本セッションで3回漏れ→stop hookで検知。'
-  created_at: '2026-05-11'
-- id: 'LK013'
-  title: 'なぜなぜ7回は偵察前に家老が回し、偵察結果で更新せよ'
-  detail: '偵察配備前に家老がなぜなぜ7回を回して仮説を立て、偵察結果で現物検証して更新する。本セッションの修行FP率調査で実践: 仮説(str形式)→偵察結果(dictだがキー名不一致)で更新→正確な修正cmd起票。仮説なしの偵察は焦点が散る。'
-  source_cmd: 'cmd_karo_session_20260510'
-  when: 'deepdive Phase3(考えて進む)+Phase6(行動→観察→修正)'
-  how: '偵察配備前に家老がなぜなぜ7回を回して仮説を立て、偵察結果で現物検証して更新する。本セッションの修行FP率調査で実践: 仮説(str形式)→偵察結果(dictだがキー名不一致)で更新→正確な修正cmd起票。仮説なしの偵察は焦点が散る。'
-  created_at: '2026-05-11'
