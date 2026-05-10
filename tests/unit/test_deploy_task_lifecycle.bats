@@ -864,6 +864,26 @@ PY
     rm -rf "$direct_root"
 }
 
+@test "通常配備 + 同一CMD_ID: cmdソース不在fallback用にacceptance_criteriaを保持する" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_normal_samecmd.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local file="$direct_root/queue/tasks/tobisaru.yaml"
+
+    SCRIPT_DIR="$direct_root"
+    DIRECT_MODE=false
+    CMD_ID="cmd_8888"
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    grep -q "acceptance_criteria" "$file"
+    assert_missing_fields "$file" target_path progress description deployed_at command reports_to_read
+
+    rm -rf "$direct_root"
+}
+
 @test "--directモード: parent_cmd/status更新時にtask_idも新CMDへ更新する" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
