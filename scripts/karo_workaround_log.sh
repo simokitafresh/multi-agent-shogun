@@ -218,6 +218,15 @@ verify_environment_change() {
     fi
 }
 
+# --- Argument order auto-swap (cmd_id/ninja reversal detection) ---
+# 家老がcmd_idとninja_nameを逆順で渡すバグを自動検出+修正(4件データ汚染で発見 2026-04-28)
+if [[ ! "$CMD_ID" =~ ^cmd_ && "$NINJA_NAME" =~ ^cmd_ ]]; then
+    echo "[karo_workaround_log] WARN: cmd_id='$CMD_ID' がcmd_パターンに不一致、ninja='$NINJA_NAME'がcmd_パターン。引数が逆順。自動スワップ実行" >&2
+    SWAP_TMP="$CMD_ID"
+    CMD_ID="$NINJA_NAME"
+    NINJA_NAME="$SWAP_TMP"
+fi
+
 # --- AC1(cmd_1542): ninja_id validation ---
 # cmd_1967高速化: task dirループ(basename subprocess×10=45ms)廃止。
 # settings.yamlが全エージェントの権威リスト。task filesはephemeral state。
@@ -241,15 +250,6 @@ validate_ninja_id() {
 
 if ! validate_ninja_id "$NINJA_NAME"; then
     echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' は有効なエージェント名ではない。config/settings.yaml・queue/tasks/を確認せよ" >&2
-fi
-
-# --- Argument order auto-swap (cmd_id/ninja reversal detection) ---
-# 家老がcmd_idとninja_nameを逆順で渡すバグを自動検出+修正(4件データ汚染で発見 2026-04-28)
-if [[ ! "$CMD_ID" =~ ^cmd_ && "$NINJA_NAME" =~ ^cmd_ ]]; then
-    echo "[karo_workaround_log] WARN: cmd_id='$CMD_ID' がcmd_パターンに不一致、ninja='$NINJA_NAME'がcmd_パターン。引数が逆順。自動スワップ実行" >&2
-    SWAP_TMP="$CMD_ID"
-    CMD_ID="$NINJA_NAME"
-    NINJA_NAME="$SWAP_TMP"
 fi
 
 # --- YAML single-quote escaping (cmd_cycle_L4_026: injection防止) ---

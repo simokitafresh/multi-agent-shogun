@@ -107,6 +107,17 @@ teardown() {
     [[ "$output" == *"有効なエージェント名ではない"* ]]
 }
 
+@test "argument auto-swap: validates ninja_id after cmd/ninja reversal is corrected" {
+    run bash "$TEST_SCRIPT" hayate cmd_test "test issue" "test fix description"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"引数が逆順。自動スワップ実行"* ]]
+    [[ "$output" != *"有効なエージェント名ではない"* ]]
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    run grep -n "ninja: hayate" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "AC1: valid ninja_id from tasks dir (kotaro) — no WARN" {
     run bash "$TEST_SCRIPT" cmd_test kotaro "test issue" "test fix description"
     [[ "$output" != *"有効なエージェント名ではない"* ]]
