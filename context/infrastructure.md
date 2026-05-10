@@ -716,7 +716,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L594: deploy_taskからinbox_writeをset -e直下で直接呼ぶと送信失敗が配備後処理全体を中断する（cmd_karo_lk004_inbox_root_cause）
 - L595: test_selectはテスト不要の既知ドキュメント対象をWARNなしで明示スキップする（cmd_karo_skillmd_test_mapping）
 - L596: inbox_write呼出しの後続処理保護は永続化成否で分岐せよ（cmd_karo_lk004_inbox_fix）
-- L597: 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須（cmd_karo_skill_usage_lesson）
+- L597: lesson_write.sh REFLUX_CHECK: 日本語テキストでREFLUX_KEYWORDSが空の場合はSKIPPEDにし偽WARNを抑制せよ（cmd_training_L4_r14_hanzo）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

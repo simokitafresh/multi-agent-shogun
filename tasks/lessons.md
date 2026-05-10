@@ -4411,3 +4411,247 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,api,bash]
 - **target_files**: [scripts/skill_auto_improve.sh,docs/research/cmd_2590_skill_auto_improve_refactor_spec.md,docs/research/cmd_2590_skill_auto_improve_after_20260506.md]
 - codd generate --wave NはAI APIを使うため、org月次利用制限でERROR。bash実装はSKILL.md記載通り手動が正。AIリミット時でもinit+planは成功→wave構造・依存グラフは設計書として活用可能。
+
+### L571: テスト追加/変更に起因するused:falseフィールド要件の動作確認による発見
+- **日付**: 2026-05-06
+- **出典**: cmd_2589
+- **記録者**: kotaro
+- **status**: confirmed
+- **tags**: [infra]
+- **target_files**: [scripts/skill_gate_feedback.sh,context/infrastructure.md,docs/research/cmd_2589_skill_gate_feedback_refactor_spec.md,docs/research/cmd_2589_codd_system_design.md,docs/research/cmd_2589_codd_implementation_plan.md]
+- リファクタ中に別忍者が並列でテストファイルを更新し12→13件に増加。used:falseフィールドの書込み要件が追加されていたため、手動テスト実行で発見。推論ではなく実行→確認が唯一の検出手段
+
+### L572: 低ROI/対応不要はスコープ縮小の隠語 — パラメータ空間縮小禁止と同根
+- **日付**: 2026-05-07
+- **出典**: cmd_2596
+- **記録者**: CLAUDE.md パラメータ空間縮小禁止セクション+lesson_tags全修正時の軍師自走で発見
+- **tags**: [dm-signal]
+- **target_files**: [docs/research/cmd_2596_visibility_matrix.md]
+- 「低ROI」「対応不要」は作業量を理由にスコープを縮小する隠語。パラメータ空間縮小禁止(CLAUDE.md)と同根。優先順位=実行順であり全部やる。一部対処は穴を残し最終的に手戻りが増える(殿指摘2026-05-07)
+
+### L573: set -euo pipefailスクリプトでgate非zero終了→後続チェック全スキップの罠
+- **日付**: 2026-05-09
+- **出典**: cmd_2603
+- **記録者**: hanzo
+- **status**: confirmed
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/clear_prep_check.sh,skills/shogun-clear-prep/SKILL.md]
+- clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pipefailのためコマンド置換$()の非零終了でスクリプトが即終了し、後続のCheck 8/9が到達不可になっていた。対策: artifact_output=$(bash gate.sh ... || true)でgate非zeroをtrueで吸収。gate呼出し時はset -eスクリプト内では|| trueか2>/dev/null方式が必須。
+
+### L574: gate起点のFAILは実行コンテキストではなく責務表で帰属させる
+- **日付**: 2026-05-09
+- **出典**: cmd_2604
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,gate,reporting]
+- **target_files**: [scripts/skill_gate_feedback.sh,scripts/skill_auto_improve.sh,logs/skill_execution_log.yaml,queue/reports/kagemaru_report_cmd_2604.yaml]
+- gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。gate→skillの固定マッピングを先に適用し、skill_auto_improveも同じ表を使うことで、stumbling_pointsが正しいSKILL.mdへ還流する。
+
+### L575: skill_auto_improveはログ由来skill_pathより設定skills_dirsを優先する
+- **日付**: 2026-05-09
+- **出典**: cmd_2605
+- **記録者**: karo
+- **tags**: [infra]
+- **target_files**: [scripts/gates/gate_report_format.sh,scripts/skill_auto_improve.sh,scripts/ninja_monitor.sh,skills/report-write/SKILL.md,tests/test_gate_report_format.bats]
+- 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定skills_dirsを優先しログ由来pathはフォールバックとする
+
+### L576: lesson subdomain推定はAC例IDでspot checkせよ
+- **日付**: 2026-05-09
+- **出典**: cmd_2606
+- **記録者**: karo
+- **tags**: [infra,testing,lesson]
+- **target_files**: [scripts/deploy_task.sh,scripts/lesson_write.sh,scripts/sync_lessons.sh,projects/dm-signal/lessons.yaml,tests/unit/test_deploy_task_target_files.bats]
+- サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象targetに注入されないことまで検証する
+
+### L577: 新しいgate_result値を追加する時は中央loggerのenum制約を先に確認する
+- **日付**: 2026-05-09
+- **出典**: cmd_2607
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/cmd_save.sh,.claude/hooks/pre-write-edit-combined.sh]
+- cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通loggerへ通せない。新しい結果値を追加するcmdでは、共通loggerのenum拡張をscopeに含めるか、今回のようにscope内で同形式追記を実装するかを事前確認すべき。
+
+### L578: content変更後の正規表現match位置は再計算する
+- **日付**: 2026-05-09
+- **出典**: cmd_2611
+- **記録者**: saizo
+- **status**: confirmed
+- **tags**: [infra,testing,bash,lesson]
+- **target_files**: [scripts/lesson_write.sh,skills/lesson-sort/SKILL.md]
+- lesson_write.shのfixture検証で、entry挿入後に挿入前contentのmatch offsetを使うとlast_synced_lesson markerが意図しない位置へ入ることを確認した。contentを変更した後に同じファイル内へ追加挿入する場合は、new_content上でmatchを再計算してから位置を決めるべき。
+
+### L579: [自動生成] 有効教訓の記録を怠った: cmd_2611
+- **日付**: 2026-05-09
+- **出典**: cmd_2611
+- **記録者**: gate_auto
+- **status**: deprecated
+- **tags**: [infra,lesson,reporting]
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+
+### L580: gate追加cmdは検知語だけでなく行動変換語をAC/commandで要求する
+- **日付**: 2026-05-09
+- **出典**: cmd_2612
+- **記録者**: kagemaru
+- **status**: confirmed
+- **tags**: [infra,process,gate]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats]
+- 新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/自動化などの行動変換語がACまたはcommandにあるかを確認すると、WARN止まりのメタ穴を入口で検出できる。
+
+### L581: 二重配備時は先着完了の報告YAMLのみ残し後着の不完全報告を即削除せよ
+- **日付**: 2026-05-09
+- **出典**: cmd_2611
+- **記録者**: karo
+- **tags**: [infra,gate,yaml,reporting]
+- cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完全報告YAMLがgate_report_format BLOCKの原因に。先着完了確認後、後着忍者のtask idle化+report YAML削除が必須
+
+### L582: preseed保持cmdではfalseデフォルト上書きが根治を壊す
+- **日付**: 2026-05-09
+- **出典**: cmd_2614
+- **記録者**: kagemaru
+- **tags**: [infra,review,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lifecycle.bats]
+- STALE_FIELDSから除外したフィールドに対してresolve_cmd側で未設定時falseを明示すると、STKにscout_exemptが無いcmdで家老がtask YAMLへ事前設定したtrueを再び消してしまう。補足レビューの残留リスクとpreseed保持要求が衝突する場合は、テストでどちらの不変量を守るか明示する。
+
+### L583: startup子gateの終了コードを || true で潰すと強制化が無効化される
+- **日付**: 2026-05-09
+- **出典**: cmd_2615
+- **記録者**: saizo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gates/gate_gunshi_startup.sh,tests/unit/test_gate_gunshi_cs_checklist.bats,tests/unit/test_gate_gunshi_startup_missed_sg.bats]
+- gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gateがWARNしても総合判定に反映されない。set +eで実行→終了コード保存→set -e復帰の形にする。
+
+### L584: heredocのfi/}はheredoc終端マーカーの後に置け
+- **日付**: 2026-05-10
+- **出典**: cmd_2644
+- **記録者**: kotaro
+- **tags**: [infra,bash]
+- **target_files**: [scripts/deploy_task.sh]
+- run_python_logged ... <<'MARKER'; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc内に書くとShellCheckエラー。正しくはMARKERの後にthenブランチ+fi+}を配置する(inject_related_lessonsパターン参照)
+
+### L585: gate_lesson_healthはsync_lessons出力のflow-style lessons.yamlも統計対象にする
+- **日付**: 2026-05-10
+- **出典**: cmd_2657
+- **記録者**: hayate
+- **tags**: [infra,gate,bash,yaml]
+- **target_files**: [/mnt/c/Python_app/DM-signal/tasks/lessons.md,projects/dm-signal/lessons.yaml,scripts/gates/gate_lesson_health.sh,queue/reports/hayate_report_cmd_2657.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの「- id: L」だけを読むgate統計は全件0件扱いになりwhen/how充足率を測れない。gateはflow-style id/when/howを読み、未設定を充足扱いしないチェックを持つべき。
+
+### L586: 分析報告で止まるな — D0実装可能か即判定せよ(LG018構造的再発防止)
+- **日付**: 2026-05-10
+- **出典**: gunshi_session_20260510
+- **記録者**: gunshi
+- **tags**: [infra,reporting]
+- **when**: idle分析で気づきを得た直後。掲示板投稿しようとした瞬間
+- **how**: D0適用条件(1ファイル20行以下/scripts対象)を即判定→YES→即実装+S0→家老通知。NO→掲示板で将軍に提案
+- LG018(提案は行動ではない)が本セッションで3回再発。根因: 掲示板投稿=トークン出力=仕事した感覚(Phase2)。対策: 気づき→掲示板の前にD0適用条件を判定し可能なら即実装。掲示板は実装後の報告に使え。
+
+### L587: report_review受信時にkaro_direct配備か通常配備かを確認せよ
+- **日付**: 2026-05-10
+- **出典**: gunshi_session_20260510
+- **記録者**: gunshi
+- **tags**: [infra,review,yaml,reporting]
+- **when**: report_reviewをinboxで受信し報告YAMLが不在だった時
+- **how**: タスクYAMLのtask_type/parent_cmdでkaro_direct配備か確認。karo_direct→レビュー不要を家老に返信。通常配備→FAIL判定
+- karo_direct配備では報告YAML不在が正当。通常フローの前提(報告YAML存在)で即FAIL判定すると誤FAIL。who分析で家老手動送信が判明。配備方式を確認してからFAIL判定せよ。
+
+### L588: 因果分析は5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)で漏れなく — WHOで送信者特定
+- **日付**: 2026-05-10
+- **出典**: gunshi_session_20260510
+- **記録者**: gunshi
+- **tags**: [infra,lesson]
+- **when**: 問題の因果分析・なぜなぜ7回を実施する時
+- **how**: WHY/WHAT/WHEN/HOWで止めずWHERE(どのファイル/フロー/環境)とWHO(誰が実行/送信/影響)も必ず埋める。6項目全て埋まるまで分析を終えない
+- cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro_directフロー)、whoで送信者(家老が手動送信)を特定して初めて構造的問題が見えた。殿指摘2026-05-10。
+
+### L589: 生成元修正後のcommitは既存stage混入をgit diff --cachedで検出せよ
+- **日付**: 2026-05-10
+- **出典**: cmd_2662
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate,bash]
+- **target_files**: [instructions/ashigaru-procedures.md,instructions/ashigaru.md,instructions/roles/ashigaru_role.md,instructions/generated/ashigaru.md,instructions/generated/codex-ashigaru.md]
+- **when**: 未設定
+- **how**: 未設定
+- build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.shとtests/test_gate_report_format.batsが同一commitに混入した。commit前にgit diff --cached --name-statusでscope外stageを確認し、必要ならcommit --onlyではなく事前にindex状態を家老へ報告する。
+
+### L590: CI RED fixture修正は同一gate条件の全fixtureを横断確認する
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_ci_red_q8_fixture
+- **記録者**: saizo
+- **tags**: [infra,gate]
+- **target_files**: [tests/unit/test_cmd_save_block_aggregation.bats,tests/unit/test_cmd_save_command_steps_vs_ac.bats,tests/unit/test_cmd_save_diagnose.bats,tests/unit/test_cmd_save_diagnosis_quality.bats,tests/unit/test_cmd_save_environment_change.bats]
+- **when**: 未設定
+- **how**: 未設定
+- 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一fieldを横断し、意図的WARN以外を全て更新する。
+
+### L591: gate条件追加時は同一fieldの全fixtureをrg横断確認せよ
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_ci_red_q8_fixture
+- **記録者**: karo
+- **tags**: [infra,testing,gate]
+- **target_files**: [tests/unit/test_cmd_save_block_aggregation.bats,tests/unit/test_cmd_save_command_steps_vs_ac.bats,tests/unit/test_cmd_save_diagnose.bats,tests/unit/test_cmd_save_diagnosis_quality.bats,tests/unit/test_cmd_save_environment_change.bats]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれらが不足→CI RED。gate条件追加時は対象fieldを含む全テストfixtureをrg -l grep横断確認し更新せよ。
+
+### L592: 自動生成→手動処理の連鎖はdedup checkで根絶せよ
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_gate_false_positive_fix
+- **記録者**: karo
+- **tags**: [infra,bash]
+- **target_files**: [scripts/gates/gate_report_format.sh,tests/test_gate_report_format.bats]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_index_update.shがinsights重複生成→毎セッション10+件手動resolve。根因=重複チェック不在。dedup追加(02c57247)で根絶。自動生成フローには必ず既存pending照合を入れよ。
+
+### L593: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_gate_false_positive_fix
+- **記録者**: karo
+- **tags**: [infra,gate,inbox]
+- **target_files**: [scripts/gates/gate_report_format.sh,tests/test_gate_report_format.bats]
+- **when**: 未設定
+- **how**: 未設定
+- gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行を含めよ。
+
+### L594: deploy_taskからinbox_writeをset -e直下で直接呼ぶと送信失敗が配備後処理全体を中断する
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_lk004_inbox_root_cause
+- **記録者**: saizo
+- **tags**: [infra,deploy,testing,bash]
+- **target_files**: [queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml,queue/tasks/saizo.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1347のflock失敗exit 1や検証処理の異常がdeploy_task全体へ伝播する。送信は永続化・通知・後続post-deploy確認を分離し、失敗時もログ+明示WARNで後続確認へ進めるチェックを追加すべき。
+
+### L595: test_selectはテスト不要の既知ドキュメント対象をWARNなしで明示スキップする
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_skillmd_test_mapping
+- **記録者**: hayate
+- **tags**: [infra,testing,bash]
+- **target_files**: [scripts/test_select.sh,tests/unit/test_test_select.bats,queue/tasks/hayate.yaml,queue/reports/hayate_report_cmd_karo_skillmd_test_mapping.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- pre-pushのtest_select.shでテスト対象外ドキュメントを未知ファイル扱いにすると、意図的にテスト不要な変更までWARN化する。skills/*/SKILL.mdのように実行コードでない既知対象は明示スキップ分岐と回帰テストで固定する。
+
+### L596: inbox_write呼出しの後続処理保護は永続化成否で分岐せよ
+- **日付**: 2026-05-10
+- **出典**: cmd_karo_lk004_inbox_fix
+- **記録者**: saizo
+- **tags**: [infra,gate,inbox]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task.bats]
+- **when**: 未設定
+- **how**: 未設定
+- set -e下で通知スクリプトを呼ぶ場合、終了コードだけをWARN化すると永続化失敗まで隠す。呼出し前後の永続化状態を確認し、追記済みならpost-write配送失敗としてWARN継続、未追記ならBLOCKにするチェックを追加すべき。
+
+### L597: lesson_write.sh REFLUX_CHECK: 日本語テキストでREFLUX_KEYWORDSが空の場合はSKIPPEDにし偽WARNを抑制せよ
+- **日付**: 2026-05-10
+- **出典**: cmd_training_L4_r14_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,bash,lesson]
+- **subdomain**: infra
+- **when**: lesson_write.shで日本語のみのtitle/detailを渡す場合
+- **how**: REFLUX_KEYWORDS空チェック後にelse節でPI/RUNBOOK/INSTRUCTIONSをSKIPPEDに設定
+- lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓ではREFLUX_KEYWORDSが空になり全3チェックがMISSINGになる。else節でSKIPPEDを設定することでアラート疲労を防止できる
