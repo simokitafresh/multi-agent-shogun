@@ -249,8 +249,6 @@ check_cli_lookup_usage() {
             continue
         fi
 
-        echo -e "  ${GREEN}OK${NC}: ${script} — cli_lookup.sh を source 済み"
-
         # 旧式のインライン関数定義が残っていないか
         local inline_funcs
         inline_funcs=$(grep -n 'is_codex\s*()' "$full_path" 2>/dev/null || true)
@@ -258,11 +256,13 @@ check_cli_lookup_usage() {
             result_fail "${script}: インライン is_codex() 関数定義が残存"
             echo "    $inline_funcs"
             all_ok=false
+        else
+            result_pass "${script} — cli_lookup.sh 経由・インライン定義なし"
         fi
     done
 
     if $all_ok; then
-        result_pass "全依存スクリプト(${#dependent_scripts[@]}件)が cli_lookup.sh 経由"
+        echo -e "  全依存スクリプト(${#dependent_scripts[@]}件)チェック完了"
     fi
 }
 
