@@ -822,6 +822,164 @@ run_codd_propagate_update() {
     return 0
 }
 
+# ─── L6横展開候補自動保存（cmd_2653） ───
+# Level5化に成功したcmdの語彙から、同種でLevel5未満の仕組みを探し、
+# 次の改善候補としてinsightに保存する。CLEAR後のみ実行し、失敗は非ブロッキング。
+write_l6_horizontal_level5_insights() {
+    local cmd_id="${1:?cmd_id required}"
+    local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
+
+    echo ""
+    echo "L6 horizontal Level5 candidate scan (GATE CLEAR):"
+
+    if [ ! -x "$insight_script" ]; then
+        echo "  SKIP (insight_write.sh not executable)"
+        return 0
+    fi
+
+    local scan_output
+    scan_output=$(L6_CMD_ID="$cmd_id" \
+        L6_CMD_TITLE="${CMD_TITLE:-}" \
+        L6_CMD_PURPOSE="${CMD_PURPOSE:-}" \
+        L6_CMD_CHANGED_FILES="${CMD_CHANGED_FILES:-}" \
+        L6_REPO_ROOT="$SCRIPT_DIR" \
+        python3 <<'PY' 2>/dev/null
+import os
+import re
+import sys
+from pathlib import Path
+
+repo = Path(os.environ["L6_REPO_ROOT"])
+cmd_id = os.environ.get("L6_CMD_ID", "")
+title = os.environ.get("L6_CMD_TITLE", "")
+purpose = os.environ.get("L6_CMD_PURPOSE", "")
+changed_files = os.environ.get("L6_CMD_CHANGED_FILES", "")
+signal_text = f"{title}\n{purpose}\n{changed_files}"
+
+# Only Level5/growth-loop success patterns should trigger horizontal expansion.
+if not re.search(r"Level\s*5|Level5|自動(?:提案|注入|検索|表示|生成)|入口|事前コンテキスト|候補", signal_text, re.I):
+    sys.exit(0)
+
+stopwords = {
+    "cmd", "level", "level5", "scripts", "tests", "unit", "bats", "sh",
+    "gate", "hook", "自動", "候補", "強化", "実装", "追加", "修正", "確認",
+    "cmd_save", "cmd_complete_gate",
+}
+
+tokens = []
+for part in re.findall(r"[A-Za-z][A-Za-z0-9_]{3,}|[一-龥ぁ-んァ-ンー]{3,}", signal_text):
+    token = part.strip("_").lower()
+    if not token or token in stopwords or token.startswith("cmd_"):
+        continue
+    tokens.append(token)
+
+for rel in changed_files.replace(",", "\n").splitlines():
+    rel = rel.strip()
+    if not rel:
+        continue
+    stem = Path(rel).stem.lower()
+    if len(stem) >= 4 and stem not in stopwords:
+        tokens.append(stem)
+
+ordered_tokens = []
+seen = set()
+for token in tokens:
+    if token in seen:
+        continue
+    seen.add(token)
+    ordered_tokens.append(token)
+
+if not ordered_tokens:
+    sys.exit(0)
+
+sources = [
+    repo / "logs" / "gunshi_review_log.yaml",
+    repo / "logs" / "gunshi_gp_tracker.yaml",
+    repo / "logs" / "archive" / "gunshi_review_log_20260430b_to_20260501a.yaml",
+    repo / "logs" / "archive" / "gunshi_review_log_cmd_2179_to_cmd_2231.yaml",
+]
+
+block_start = re.compile(r"^\s*-\s+(?:cmd_id|id|gp_id):")
+level_re = re.compile(r"defense_level:\s*['\"]?([0-9]+)")
+results = []
+seen_keys = set()
+
+def iter_blocks(text):
+    current = []
+    for line in text.splitlines():
+        if block_start.match(line) and current:
+            yield "\n".join(current)
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        yield "\n".join(current)
+
+def compact(s):
+    s = re.sub(r"\s+", " ", s).strip()
+    return s[:180]
+
+for source in sources:
+    if not source.exists():
+        continue
+    try:
+        text = source.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        continue
+    for block in iter_blocks(text):
+        if cmd_id and cmd_id in block:
+            continue
+        lm = level_re.search(block)
+        if not lm:
+            continue
+        level = int(lm.group(1))
+        if level >= 5:
+            continue
+        block_l = block.lower()
+        matched = [t for t in ordered_tokens if t in block_l]
+        if not matched:
+            continue
+        summary = ""
+        for key in ("findings_summary", "reason", "causal_chain", "description"):
+            m = re.search(rf"{key}:\s*[\"']?(.*)", block)
+            if m:
+                summary = compact(m.group(1).strip("\"'"))
+                break
+        if not summary:
+            summary = compact(block)
+        match_key = (level, summary[:90])
+        if match_key in seen_keys:
+            continue
+        seen_keys.add(match_key)
+        results.append((len(matched), level, ",".join(matched[:4]), summary, source.name))
+
+results.sort(key=lambda r: (-r[0], r[1], r[3]))
+for _score, level, matched, summary, source_name in results[:3]:
+    print(f"同パターンLevel5未満候補: source_cmd={cmd_id}; matched={matched}; current_pattern={compact(title or purpose)}; candidate_level={level}; candidate={summary}; source={source_name}")
+PY
+    ) || {
+        echo "  [WARN] scan failed (non-blocking)"
+        return 0
+    }
+
+    if [ -z "$scan_output" ]; then
+        echo "  OK: no Level5-under horizontal candidates"
+        return 0
+    fi
+
+    local saved_count=0
+    while IFS= read -r insight_msg; do
+        [ -z "$insight_msg" ] && continue
+        if bash "$insight_script" "$insight_msg" "medium" "cmd_complete_gate:l6_horizontal:${cmd_id}" >/dev/null 2>&1; then
+            saved_count=$((saved_count + 1))
+        else
+            echo "  [WARN] insight_write failed for candidate $((saved_count + 1))"
+        fi
+    done <<< "$scan_output"
+    echo "  saved: ${saved_count} horizontal candidate(s)"
+    return 0
+}
+
 # ─── changelog自動記録関数 ───
 append_changelog() {
     local cmd_id="$1"
@@ -3219,6 +3377,8 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [GATE] lesson_merge: SKIP (script not found)"
     fi
 
+    write_l6_horizontal_level5_insights "$CMD_ID"
+
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
     echo "Auto-notification (GATE CLEAR - emergency override):"
@@ -4956,6 +5116,7 @@ PY
 
     append_codd_registry_entry "$CMD_ID"
     run_codd_propagate_update
+    write_l6_horizontal_level5_insights "$CMD_ID"
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""

@@ -39,6 +39,16 @@ setup_file() {
         sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^run_codd_propagate_update()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
+import os
+from pathlib import Path
+
+text = Path(os.environ["SRC_GATE_SCRIPT"]).read_text(encoding="utf-8")
+start = text.index("write_l6_horizontal_level5_insights()")
+end = text.index("\n# ─── changelog自動記録関数", start)
+print(text[start:end])
+PY
     } > "$GATE_HELPERS_FILE"
 }
 
@@ -186,6 +196,65 @@ EOF
     run run_codd_propagate_update
     [ "$status" -eq 0 ]
     [[ "$output" == *"[WARN] codd executable not found (skip)"* ]]
+}
+
+@test "write_l6_horizontal_level5_insights saves matching defense_level_under_5 candidate" {
+    local insight_log="$TEST_TMPDIR/insights.log"
+    cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "\$1" "\$2" "\$3" >> "$insight_log"
+echo INSIGHT_TEST
+EOF
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    cat > "$TEST_PROJECT/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_2600
+  findings_summary: "ac_param_sufficiency WARNをBLOCKで止めているが、候補値自動提案は未実装"
+  proposal:
+    defense_level: 4
+  causal_chain: "ac_param_sufficiency 手動確認"
+- cmd_id: cmd_2601
+  findings_summary: "unrelated Level4"
+  proposal:
+    defense_level: 4
+EOF
+
+    export CMD_TITLE="強化 — ac_param_sufficiency候補値自動提案(Level5化)"
+    export CMD_PURPOSE="ac_param_sufficiency WARN時にcontextから候補値を自動表示する"
+    export CMD_CHANGED_FILES="scripts/cmd_save.sh"
+
+    run write_l6_horizontal_level5_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L6 horizontal Level5 candidate scan"* ]]
+    [[ "$output" == *"saved: 1 horizontal candidate(s)"* ]]
+    grep -q "同パターンLevel5未満候補: source_cmd=$TEST_CMD_ID" "$insight_log"
+    grep -q "candidate_level=4" "$insight_log"
+    grep -q "cmd_complete_gate:l6_horizontal:$TEST_CMD_ID" "$insight_log"
+}
+
+@test "write_l6_horizontal_level5_insights skips commands without Level5 signal" {
+    local insight_log="$TEST_TMPDIR/insights.log"
+    cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$1" >> "$insight_log"
+EOF
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    cat > "$TEST_PROJECT/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_2600
+  findings_summary: "ordinary candidate"
+  proposal:
+    defense_level: 4
+EOF
+
+    export CMD_TITLE="通常修正"
+    export CMD_PURPOSE="typoを直す"
+    export CMD_CHANGED_FILES="scripts/cmd_save.sh"
+
+    run write_l6_horizontal_level5_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: no Level5-under horizontal candidates"* ]]
+    [ ! -f "$insight_log" ]
 }
 
 @test "append_lesson_tracking filters fallback reports to current worker_id" {
