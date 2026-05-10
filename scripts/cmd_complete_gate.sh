@@ -250,13 +250,19 @@ log_skill_execution_pass() {
     local source_id="$3"
     local skill_path="$SCRIPT_DIR/skills/${skill_name}/SKILL.md"
     local log_script="$SCRIPT_DIR/scripts/skill_execution_log.sh"
+    # executor帰属: タスクYAMLファイル名からninja名抽出(CLI非依存)
+    local _pass_executor="${AGENT_ID:-}"
+    if [ -z "$_pass_executor" ] && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        _pass_executor=$(basename "${MATCHING_TASK_FILES[0]}" .yaml)
+    fi
+    _pass_executor="${_pass_executor:-unknown}"
 
     [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] || return 0
     [ -x "$log_script" ] || return 0
 
     timeout 10 bash "$log_script" \
         "$skill_name" \
-        "${AGENT_ID:-unknown}" \
+        "$_pass_executor" \
         "PASS" \
         "${gate_name} PASS" \
         "$gate_name" \
@@ -5647,6 +5653,12 @@ else
     fi
 
     # ─── GATE BLOCK時スキル学習ループ還流（cmd_2459拡張） ───
+    # executor帰属: タスクYAMLファイル名からninja名抽出(CLI非依存)
+    _BLOCK_EXECUTOR="${AGENT_ID:-}"
+    if [ -z "$_BLOCK_EXECUTOR" ] && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
+        _BLOCK_EXECUTOR=$(basename "${MATCHING_TASK_FILES[0]}" .yaml)
+    fi
+    _BLOCK_EXECUTOR="${_BLOCK_EXECUTOR:-unknown}"
     _SKILL_FEEDBACK="$SCRIPT_DIR/scripts/skill_gate_feedback.sh"
     if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
         echo ""
@@ -5669,7 +5681,7 @@ else
             --gate "cmd_complete_gate" \
             --result "FAIL" \
             --reason "$block_reason" \
-            --executor "${AGENT_ID:-unknown}" \
+            --executor "$_BLOCK_EXECUTOR" \
             --source "${CMD_ID}" \
             "${_skill_args[@]}" >/dev/null 2>&1; then
             echo "  skill_gate_feedback: OK (skill=${_target_skill:-auto})"

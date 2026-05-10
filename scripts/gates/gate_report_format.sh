@@ -14,6 +14,13 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+# executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
+_REPORT_EXECUTOR="${AGENT_ID:-}"
+if [ -z "$_REPORT_EXECUTOR" ]; then
+    _REPORT_EXECUTOR=$(grep '^worker_id:' "$REPORT_PATH" 2>/dev/null | awk '{print $2}' | tr -d "'" || true)
+fi
+_REPORT_EXECUTOR="${_REPORT_EXECUTOR:-unknown}"
+
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
@@ -89,7 +96,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
         bash "$_SKILL_LOG" \
             "report-write" \
-            "${AGENT_ID:-unknown}" \
+            "$_REPORT_EXECUTOR" \
             "PASS" \
             "gate_report_format PASS" \
             "gate_report_format" \
@@ -97,7 +104,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
             "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
         bash "$_SKILL_LOG" \
             "verdict-check" \
-            "${AGENT_ID:-unknown}" \
+            "$_REPORT_EXECUTOR" \
             "PASS" \
             "gate_report_format verdict/binary_checks PASS" \
             "gate_report_format" \
@@ -168,7 +175,7 @@ except Exception:
             --gate "gate_report_format" \
             --result "FAIL" \
             --reason "$REASONS" \
-            --executor "${AGENT_ID:-unknown}" \
+            --executor "$_REPORT_EXECUTOR" \
             --source "$REPORT_PATH" \
             "${_skill_args[@]}" >/dev/null 2>&1 || true
     fi
