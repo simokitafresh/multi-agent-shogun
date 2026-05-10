@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -115,6 +116,27 @@ print("対処:")
 print("  (A) hook 登録: settings.json の SessionStart / PreToolUse / PostToolUse 等に登録")
 print("  (B) 他スクリプトから自動呼出: session_start_inject.sh のような既存 hook スクリプト内で bash 呼出")
 print(f"  (C) 手動実行が正当: {allowlist_file} に basename を追記して許容")
+print("")
+print("■ hooks登録コマンド候補(settings.json追記例)")
+print("# 既定例: missing script を .claude/settings.json の SessionStart hooks に追記")
+print(f"mkdir -p {shlex.quote(str((claude_md.parent / '.claude').as_posix()))}")
+print(f"python3 - {shlex.quote(str((claude_md.parent / '.claude/settings.json').as_posix()))} <<'PY'")
+print("import json, sys")
+print("from pathlib import Path")
+print("settings = Path(sys.argv[1])")
+print("commands = [")
+for ref in missing:
+    print(f"      {str('bash ' + ref)!r},")
+print("]")
+print("data = json.loads(settings.read_text(encoding='utf-8')) if settings.exists() else {}")
+print("hooks = data.setdefault('hooks', {})")
+print("entries = hooks.setdefault('SessionStart', [])")
+print("existing = {h.get('command') for e in entries if isinstance(e, dict) for h in e.get('hooks', []) if isinstance(h, dict)}")
+print("for command in commands:")
+print("    if command not in existing:")
+print("        entries.append({'hooks': [{'type': 'command', 'command': command}]})")
+print("settings.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\\n', encoding='utf-8')")
+print("PY")
 print("")
 print("=== 総合判定: ALERT (要対処) ===")
 sys.exit(1)

@@ -74,6 +74,9 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"scripts/hooks/manual_b.sh"* ]]
+    [[ "$output" == *"hooks登録コマンド候補(settings.json追記例)"* ]]
+    [[ "$output" == *"python3 - $TEST_TMPDIR/.claude/settings.json <<'PY'"* ]]
+    [[ "$output" == *"'bash scripts/hooks/manual_b.sh',"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 

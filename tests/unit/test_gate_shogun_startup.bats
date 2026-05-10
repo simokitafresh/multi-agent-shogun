@@ -216,6 +216,36 @@ teardown() {
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "強制度監査 ALERT shows hook registration proposal" {
+    unset SHOGUN_STARTUP_LIGHTWEIGHT
+    cat > "$TEST_TMPDIR/scripts/gates/gate_enforcement_audit.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "=== 強制度監査 gate 2099-01-01T00:00:00+00:00 ==="
+echo "■ CLAUDE.md 参照 script: 2 本"
+echo "■ settings(*.json) 登録 hook script: 1 本"
+echo ""
+echo "■ ⚠️ 意志依存 script 検出: 1 本"
+echo "  - scripts/hooks/manual_b.sh"
+echo ""
+echo "■ hooks登録コマンド候補(settings.json追記例)"
+echo "  # 既定例: missing script を .claude/settings.json の SessionStart hooks に追記"
+echo "  python3 - /tmp/example/.claude/settings.json <<'PY'"
+echo "      'bash scripts/hooks/manual_b.sh',"
+echo "  PY"
+echo ""
+echo "=== 総合判定: ALERT (要対処) ==="
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_enforcement_audit.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: 意志依存 script 1 本"* ]]
+    [[ "$output" == *"hooks登録コマンド候補(settings.json追記例)"* ]]
+    [[ "$output" == *"'bash scripts/hooks/manual_b.sh',"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
 @test "skill fail rate is displayed from skill execution log" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
@@ -509,6 +539,10 @@ MOCK
     cat > "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "知識鮮度: ALERT — fresh=7 stale=1 warn=0 total=8"
+echo "■ STALE更新候補 TOP3 (経過日数降順)"
+echo "  1. docs/research/systems-knowledge-base/systems/ace.md (31 days old; verified_at=2026-03-19)"
+echo "     command: python3 scripts/tools/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"
+echo "  action: 上記 STALE ファイルの verified_at を更新し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ"
 exit 1
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh"
@@ -516,6 +550,9 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"知識辞書鮮度"* ]]
+    [[ "$output" == *"STALE更新候補 TOP3"* ]]
+    [[ "$output" == *"docs/research/systems-knowledge-base/systems/ace.md (31 days old"* ]]
+    [[ "$output" == *"python3 scripts/tools/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 

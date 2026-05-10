@@ -62,8 +62,15 @@ fi
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ 知識辞書鮮度"
 wait $_PID_G25 || true
-result2_5=$(tail -1 "$_TMP_G25")
+result2_5=$(grep '^知識鮮度:' "$_TMP_G25" | tail -1)
+if [ -z "$result2_5" ]; then
+    result2_5=$(tail -1 "$_TMP_G25")
+fi
 echo "  $result2_5"
+knowledge_top3=$(awk '/^■ STALE更新候補 TOP3/{flag=1} flag{print} /^  action:/{flag=0}' "$_TMP_G25")
+if [ -n "$knowledge_top3" ]; then
+    printf '%s\n' "$knowledge_top3" | sed 's/^/  /'
+fi
 if echo "$result2_5" | grep -q "ALERT\|WARN"; then
     if echo "$result2_5" | grep -q "ALERT"; then
         overall="ALERT"
@@ -1398,6 +1405,10 @@ if [ -x "$_ENFORCE_AUDIT" ]; then
         alerts+=("強制度監査: 意志依存 script ${_ea_count}本 — bash scripts/gates/gate_enforcement_audit.sh")
         echo "  ALERT: 意志依存 script ${_ea_count} 本 — CLAUDE.md参照のみでhooks未登録"
         printf '%s\n' "$_ea_out" | grep -E '^  - ' | head -10
+        _ea_proposal=$(printf '%s\n' "$_ea_out" | awk '/^■ hooks登録コマンド候補/{flag=1} flag{print} /^=== 総合判定: ALERT/{flag=0}')
+        if [ -n "$_ea_proposal" ]; then
+            printf '%s\n' "$_ea_proposal" | sed 's/^/  /'
+        fi
     fi
 else
     echo "  INFO: gate_enforcement_audit.sh 未配備"
