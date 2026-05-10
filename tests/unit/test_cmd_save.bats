@@ -56,6 +56,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_action_immediate_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_numeric_derivation_source_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^numeric_derivation_source_evidence_exists()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -69,7 +70,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -1723,6 +1724,49 @@ notes: "なし"'
     echo "$output" >&2
     [[ "$output" == *"推奨事項が混在"* ]]
     [ "$status" -eq 1 ]
+}
+
+# --- Check 16: 行動→即確認原則 ---
+
+@test "Check16: multiline block AC本文の確認キーワードでWARNしない" {
+    CMD_BLOCK_NC='acceptance_criteria:
+      description: |
+        AC1: Check16の対象行を修正する
+        AC2: multiline block形式のACでWARN非発火を確認する
+quality_gate:
+  q1_firefighting: "no"'
+    export CMD_BLOCK_NC
+    run check_action_immediate_verification
+    echo "$output" >&2
+    [[ "$output" != *"全ACが行動のみ"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check16: multiline block AC本文に確認キーワードなしならWARNする" {
+    CMD_BLOCK_NC='acceptance_criteria:
+      description: |
+        AC1: Check16の対象行を修正する
+        AC2: テストを追加する
+quality_gate:
+  q1_firefighting: "no"'
+    export CMD_BLOCK_NC
+    run check_action_immediate_verification
+    echo "$output" >&2
+    [[ "$output" == *"全ACが行動のみ"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check16: flat list AC本文のverifyキーワードでWARNしない" {
+    CMD_BLOCK_NC='acceptance_criteria:
+    - "AC1: implement fix"
+    - "AC2: verify regression test passes"
+quality_gate:
+  q1_firefighting: "no"'
+    export CMD_BLOCK_NC
+    run check_action_immediate_verification
+    echo "$output" >&2
+    [[ "$output" != *"全ACが行動のみ"* ]]
+    [ "$status" -eq 0 ]
 }
 
 # --- Check 20: assumptionsフィールド検査 ---

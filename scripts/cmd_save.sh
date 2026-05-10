@@ -3441,14 +3441,20 @@ check_gunshi_design_num_relax
 # 真因: 全ての問題の根源は「行動した後に結果を確認しない」。
 # 本番変更かどうかのキーワード判定は各論。全cmdの全ACに確認を問う。
 # reason: リアルワールドに事前通告はない(2026-04-07殿指摘)
-_AC_COUNT=$(echo "$CMD_BLOCK" | grep -c "description:" 2>/dev/null || true)
-_AC_COUNT=$(( ${_AC_COUNT:-0} + 0 ))
-_VERIFY_AC_COUNT=$(echo "$CMD_BLOCK" | grep -i "description:" | grep -ciE "確認|verify|パリティ|parity|検証|validate|assert|比較|突合|PASS" 2>/dev/null || true)
-_VERIFY_AC_COUNT=$(( ${_VERIFY_AC_COUNT:-0} + 0 ))
-if [ "$_AC_COUNT" -gt 0 ] && [ "$_VERIFY_AC_COUNT" -eq 0 ]; then
-    echo "WARNING: 全ACが行動のみで確認を含みません。行動→即確認(PI-023)。" >&2
-    echo "  各ACに「やった後どう確認するか」を含めよ。確認なき行動は想像と同じ" >&2
-fi
+check_action_immediate_verification() {
+    local ac_block verify_ac_count
+    ac_block="$(extract_acceptance_criteria_block || true)"
+    [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
+
+    verify_ac_count=$(printf '%s\n' "$ac_block" | grep -ciE "確認|verify|パリティ|parity|検証|validate|assert|比較|突合|PASS" 2>/dev/null || true)
+    verify_ac_count=$(( ${verify_ac_count:-0} + 0 ))
+    if [ "$verify_ac_count" -eq 0 ]; then
+        echo "WARNING: 全ACが行動のみで確認を含みません。行動→即確認(PI-023)。" >&2
+        echo "  各ACに「やった後どう確認するか」を含めよ。確認なき行動は想像と同じ" >&2
+    fi
+}
+
+check_action_immediate_verification
 
 show_semantic_index_matches() {
     local SEARCH_TEXT="$1"
