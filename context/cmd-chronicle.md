@@ -792,3 +792,4 @@
 | cmd_2659 | draft reviewが18件連続SKIP。根因: STALE_FIELDSがacceptance_criteriaを削除→_overwrite_ac_from_cmdがcmdソースからAC再注入を試みるがアーカイブ済みで不在→task YAMLにACなし。cmdソース不在時のfallbackを実装 | infra | 05-10 | deploy_task.shのAC overwrite失敗時fallback |
 | cmd_2662 | gate_report_format.shで直近50cmdにreport_format BLOCK 9回+binary_checks_fail 3回。既存instructions記載済みだがBLOCK継続。配置・強調・記入例の改善でLevel5化し忍者の吸収率を上げる | infra | 05-10 | 忍者instructions Level5化(report_field_set必須+bc例) |
 | cmd_2667 | auto_failure_lesson.shが--status draftで教訓を書くため、cmd_complete_gateが自cmd由来draftを検出→BLOCK→家老がconfirmed昇格→再gate→CLEARの2回gate実行が24回発生。auto_draft_lesson.shは既にconfirmedで書いておりBLOCKしない。同じ構造に統一する | infra | 05-10 | auto_failure_lesson.shをconfirm |
+| cmd_2668 | L6学習速度の自動追跡をstartup gateに組込む。FAIL→PASS遷移率+L6化率を自動算出・表示し、L6化候補を強制提案する | infra | 05-11 | gate_shogun_startup.shにL6学習速度セ |
