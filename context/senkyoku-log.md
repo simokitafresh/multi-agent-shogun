@@ -804,3 +804,10 @@
 - 2026-05-01 cmd_2454: 疾風+影丸(偵察)。120ヶ月=表示デフォルト(非計算制限)。FoF期間短縮主因=FOF_LOOKBACK_DAYS=730(recalculate_fof.py:516-533)。設計上の意図的制限
 - 2026-05-10 cmd_2640-2658: 19件全GATE CLEAR WA0%。Level5化一括+DM-Signal CI追加+L6定義確定(5W1H+横展開scan)
 - 2026-05-10 cmd_2654-2660: CI GREEN化3段(PyYAML→dotenv+sklearn→PostgreSQL)。q8 WHEN/HOW gate追加(殿原則)。教訓統合31→22件。教訓when/how TOP20補完。L6スキャン日本語対応。draft review SKIP根治(ACソース不在fallback)。殿裁定: 5W1H=L6最小構造(WHERE/WHO追加)。4連続初回GATE PASS(学習効果)
+- 2026-05-10 cmd_2661-2666: 自走6件全CLEAR WA0%。gate FP修正(ac_test_scope 66%→解消)+Check16 AC確認検出バグ修正+忍者報告品質Level5化+テスト状態汚染修正(CI安定化)+lesson関連BLOCK43回根治(テンプレートprefill)+SKILL.md陳腐化解消。家老自走2件(gate偽陽性+CI RED)もCLEAR。殿指示「放置穴を塞げ」→なぜなぜ7回→最大放置穴(lesson43回)特定→cmd起票。教訓LS023-025記録。/dream完了(MEMORY.md 181→180)
+## 2026-05-10 (後半: cmd_2659-2666)
+
+- **なぜなぜ7回→gate偽陽性根治**: gate_fire_logのFAIL28.5%が中間状態偽陽性。verdict空+AC欠落=記録スキップで根絶(4f47f4b4)
+- **CI GREEN化完走**: DM-Signal PostgreSQL追加→1433テストPASS。infra側テスト状態汚染修正→並列bats安定化
+- **gate品質基盤強化6連発**: draft review SKIP根治→ac_test_scope FP改善→忍者instructions Level5→テスト隔離→Check16 multiline対応→lesson prefill根治
+- **連勝40→47**: 全cmd初回CLEAR。WA率0%維持
