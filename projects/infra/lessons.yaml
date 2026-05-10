@@ -963,6 +963,7 @@ lessons:
   - 'universal'
   target_files:
   - 'cli_profiles.yaml'
+  - 'cli_lookup.sh'
 - id: 'L504'
   title: 'WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある'
   summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53'
