@@ -16,6 +16,7 @@ setup_file() {
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^log_skill_execution_pass()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^detect_task_role()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -597,6 +598,27 @@ EOF
     run bash -lc "grep -c 'notify_idle_shogun_gate_clear \"\\\$CMD_ID\" \"GATE CLEAR — \\\${CMD_ID} 完了\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
+}
+
+@test "cmd_complete_gate records cmd-complete PASS in both GATE CLEAR sections" {
+    run bash -lc "grep -c 'log_skill_execution_pass \"cmd-complete\" \"cmd_complete_gate\" \"\\\$CMD_ID\"' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
+@test "log_skill_execution_pass writes PASS to skill_execution_log" {
+    mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/skills/cmd-complete"
+    cat > "$SCRIPT_DIR/scripts/skill_execution_log.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$7" >> "$SKILL_EXECUTION_LOG_FILE"
+EOF
+    chmod +x "$SCRIPT_DIR/scripts/skill_execution_log.sh"
+    export SKILL_EXECUTION_LOG_FILE="$TEST_TMPDIR/skill_execution_log.txt"
+    export AGENT_ID="karo"
+
+    run log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    grep -q "^cmd-complete|karo|PASS|cmd_complete_gate PASS|cmd_complete_gate|$TEST_CMD_ID|$SCRIPT_DIR/skills/cmd-complete/SKILL.md$" "$SKILL_EXECUTION_LOG_FILE"
 }
 
 @test "cmd_complete_gate waits before both GATE CLEAR exits" {

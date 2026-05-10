@@ -244,6 +244,26 @@ notify_karo_cmd_complete_skill_hint() {
     fi
 }
 
+log_skill_execution_pass() {
+    local skill_name="$1"
+    local gate_name="$2"
+    local source_id="$3"
+    local skill_path="$SCRIPT_DIR/skills/${skill_name}/SKILL.md"
+    local log_script="$SCRIPT_DIR/scripts/skill_execution_log.sh"
+
+    [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] || return 0
+    [ -x "$log_script" ] || return 0
+
+    timeout 10 bash "$log_script" \
+        "$skill_name" \
+        "${AGENT_ID:-unknown}" \
+        "PASS" \
+        "${gate_name} PASS" \
+        "$gate_name" \
+        "$source_id" \
+        "$skill_path" >/dev/null 2>&1 || true
+}
+
 # ─── GATE CLEAR時 task duration記録（cmd_2129） ───
 # 上位指示: CTX%ではなく実時間を正本指標とする。
 # acknowledged_at/done_at を優先し、既存運用データの deployed_at/completed_at にフォールバックする。
@@ -3063,6 +3083,7 @@ preflight_gate_flags "$CMD_ID"
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
     echo "GATE CLEAR (緊急override): ${CMD_ID}の全ゲートをバイパス"
+    log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     for gate in "${ALL_GATES[@]}"; do
         echo "  ${gate}: OVERRIDE"
     done
@@ -4683,6 +4704,7 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
+    log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
     (bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" >/dev/null 2>&1 || true) &

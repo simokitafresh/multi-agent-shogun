@@ -95,6 +95,14 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
             "gate_report_format" \
             "$REPORT_PATH" \
             "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
+        bash "$_SKILL_LOG" \
+            "verdict-check" \
+            "${AGENT_ID:-unknown}" \
+            "PASS" \
+            "gate_report_format verdict/binary_checks PASS" \
+            "gate_report_format" \
+            "$REPORT_PATH" \
+            "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 || true
     fi
     # Update PASS cache (GP-073) — flock for concurrent gate runs
     if [ -n "$_MTIME" ]; then
