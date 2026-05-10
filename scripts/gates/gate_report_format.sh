@@ -120,6 +120,11 @@ else
         REASONS="${REASONS#FAIL: }"
         REASONS="${REASONS%%$'\n'*}"
     fi
+    # Traceback: append the actual error line (last non-empty line) for diagnosis
+    if [[ "$REASONS" == "Traceback (most recent call last):"* ]]; then
+        _LAST_ERR="$(printf '%s\n' "$RESULT" | awk 'NF{line=$0} END{print line}')"
+        REASONS="Traceback: ${_LAST_ERR}"
+    fi
     REASONS="${REASONS//\"/\\\"}"
     if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ]; then
         (
