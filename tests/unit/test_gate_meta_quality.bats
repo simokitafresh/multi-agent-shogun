@@ -131,7 +131,7 @@ EOF
     [[ "$output" == *"ISSUES:"* ]]
     [[ "$output" == *"FALSE_WA"* ]]
     [[ "$output" == *"DUPLICATE"* ]]
-    [[ "$output" == *"Run with --fix"* ]]
+    [[ "$output" == *"action: bash scripts/gates/gate_wa_data_quality.sh --fix を実行して自動修復せよ"* ]]
 
     run grep -c "cmd_id: cmd_1" "$TEST_TMPDIR/wa.yaml"
     [ "$status" -eq 0 ]
