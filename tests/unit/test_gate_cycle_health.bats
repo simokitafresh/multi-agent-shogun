@@ -250,6 +250,7 @@ EOF
 @test "pending report cache invalidates when gate log changes" {
     export GATE_CYCLE_HEALTH_CACHE_TTL_SEC=60
 
+    # cmd_training_L4_r15_kagemaru: CLEAR log updates are an input to pending count.
     local rpath="$TEST_TMPDIR/queue/reports/ninja1_report_cmd_711.yaml"
     cat > "$rpath" <<'EOF'
 status: completed
