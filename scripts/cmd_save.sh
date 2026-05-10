@@ -222,6 +222,67 @@ check_gate_hook_action_conversion() {
     record_warn_reason "gate/hook追加cmdに行動変換キーワードなし" "check=gate_hook_action_conversion"
 }
 
+check_lord_instruction_ac_alignment_info() {
+    local q8_value="${1:-}"
+    local ac_block="${2:-}"
+    local result status keywords quote
+
+    [[ -n "${q8_value//[[:space:]]/}" ]] || return 0
+    [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
+    printf '%s\n' "$q8_value" | grep -q '「' || return 0
+    printf '%s\n' "$q8_value" | grep -q '」' || return 0
+
+    result="$(
+        Q8_VALUE="$q8_value" AC_BLOCK="$ac_block" python3 - <<'PY'
+import os
+import re
+
+q8 = os.environ.get("Q8_VALUE", "")
+ac = os.environ.get("AC_BLOCK", "")
+quotes = [q.strip() for q in re.findall(r"「([^」]+)」", q8) if q.strip()]
+if not quotes:
+    print("SKIP\t\t")
+    raise SystemExit
+
+stopwords = set((
+    "する", "して", "した", "いる", "ある", "こと", "これ", "それ", "ため",
+    "なら", "では", "ない", "やれ", "探せ", "見ろ", "確認", "指示", "殿",
+    "全部", "全て", "必ず", "まず", "から", "まで", "よう", "その", "この",
+))
+keywords = []
+for quote in quotes:
+    normalized = re.sub(r"([A-Za-z])([一-龥ぁ-んァ-ン])", r"\1 \2", quote)
+    normalized = re.sub(r"([一-龥ぁ-んァ-ン])([A-Za-z])", r"\1 \2", normalized)
+    for token in re.findall(r"[A-Za-z0-9_][A-Za-z0-9_.-]*|[一-龥ぁ-んァ-ン]{2,}", normalized):
+        token = token.strip("._-")
+        if not token or token in stopwords:
+            continue
+        if re.fullmatch(r"[A-Za-z0-9_.-]+", token) and len(token) < 2:
+            continue
+        if token not in keywords:
+            keywords.append(token)
+
+if not keywords:
+    print("SKIP\t\t")
+    raise SystemExit
+
+matched = [kw for kw in keywords if kw.lower() in ac.lower()]
+if matched:
+    print("PASS\t" + ",".join(matched[:8]) + "\t" + quotes[0][:120])
+else:
+    print("INFO\t" + ",".join(keywords[:8]) + "\t" + quotes[0][:120])
+PY
+    )"
+
+    IFS=$'\t' read -r status keywords quote <<< "$result"
+    [[ "$status" == "INFO" ]] || return 0
+
+    echo "INFO: q8_why_whatの殿指示引用とACキーワードの整合を確認してください" >&2
+    echo "  指示引用: 「${quote}」" >&2
+    echo "  抽出キーワード: ${keywords}" >&2
+    echo "  AC内に引用キーワードが見当たりません。殿の指示範囲外の作業をAC化していないか確認せよ(LS-A08)" >&2
+}
+
 collect_assumption_claims_missing_dates() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
 
@@ -1587,6 +1648,7 @@ QG_TEMPLATE
             echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
             record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
         fi
+        check_lord_instruction_ac_alignment_info "$_Q8_WW_VAL" "$(extract_acceptance_criteria_block)"
         # q8 WHY引用検査はcmd_2248で廃止。
         # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
     fi
@@ -3436,6 +3498,57 @@ for e in entries:
     fi
 fi
 
+# --- Check 20.5: 計測/研究cmdのタイムボックス欄要求（WARN） ---
+# 起源: LG019 — 研究/計測cmdの実行時間見積がなく、CTX圧迫やOOMを入口で防げない
+# 目的: 時間コスト関連cmdに timeout_minutes を明示させ、無制限の計測・探索を防ぐ
+check_timebox_minutes_required() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    local SEARCH_TEXT COMMAND_TEXT TIMEOUT_MINUTES FIRST_HIT
+    COMMAND_TEXT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
+        in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
+        in_command { print }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            line=$0
+            sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
+            print line
+        }
+    ')
+    SEARCH_TEXT="$(cmd_block_get_field "purpose")
+${COMMAND_TEXT}
+${AC_TEXT:-}"
+
+    FIRST_HIT=$(printf '%s\n' "$SEARCH_TEXT" | grep -iE 'benchmark|計測|研究|grid[_-]?search|探索|見積|見込み|profil' | head -1 || true)
+    [[ -n "${FIRST_HIT:-}" ]] || return 0
+
+    TIMEOUT_MINUTES="$(cmd_block_get_field "timeout_minutes")"
+    if [[ -z "${TIMEOUT_MINUTES//[[:space:]]/}" ]]; then
+        TIMEOUT_MINUTES="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*timeout_minutes:[[:space:]]*/ {
+                line=$0
+                sub(/^[[:space:]]*timeout_minutes:[[:space:]]*/, "", line)
+                print line
+                exit
+            }
+        ')"
+    fi
+    local TIMEOUT_MINUTES_CLEAN
+    TIMEOUT_MINUTES_CLEAN="${TIMEOUT_MINUTES//[[:space:]\"]/}"
+    TIMEOUT_MINUTES_CLEAN="${TIMEOUT_MINUTES_CLEAN//\'/}"
+    if [[ -n "$TIMEOUT_MINUTES_CLEAN" ]]; then
+        return 0
+    fi
+
+    echo "WARNING: 計測/研究/見積cmdにtimeout_minutes未記入(LG019)" >&2
+    echo "  → timeout_minutes: <想定実行時間上限(分)> をcmdに記入してください" >&2
+    echo "  → 検出行: $(printf '%s' "$FIRST_HIT" | sed -E 's/^[[:space:]-]*(description|check|purpose|command):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
+    echo "  check=check_timebox_minutes_required" >&2
+    record_warn_reason "計測研究cmd timeout_minutes未記入" "check=check_timebox_minutes_required"
+}
+
+check_timebox_minutes_required
+
 # --- Check 21: ACの数値絶対値WARN検出（informational — WARN_COUNTに加算しない） ---
 # 起源: cmd_1910事故 — ACに「テスト数=118」のような固定値を記載し、並行cmdで即陳腐化
 # 目的: AC description内の絶対値パターンを検出し、相対条件への書換えを促す
@@ -3454,6 +3567,73 @@ check_ac_absolute_literals() {
         [[ -z "$line" ]] && continue
         echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*description:[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
     done <<< "$ABSOLUTE_HITS"
+}
+
+extract_command_text_block() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
+        in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
+        in_command { print }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            line=$0
+            sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
+            print line
+        }
+    '
+}
+
+collect_numeric_derivation_source_evidence() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*quality_gate:/ { in_qg=1; next }
+        in_qg && /^[[:space:]]+q5_verified_source:/ {
+            if ($0 ~ /^[[:space:]]*q5_verified_source:/) print
+        }
+        /^[[:space:]]*assumptions:/ {
+            in_assumptions=1
+            match($0, /^[ ]*/)
+            assumptions_indent=RLENGTH
+            next
+        }
+        in_assumptions {
+            match($0, /^[ ]*/)
+            cur_indent=RLENGTH
+            if ($0 !~ /^[[:space:]]*$/ && cur_indent <= assumptions_indent) {
+                in_assumptions=0
+            } else {
+                print
+            }
+        }
+    '
+}
+
+numeric_derivation_source_evidence_exists() {
+    local evidence_text
+    evidence_text="$(collect_numeric_derivation_source_evidence)"
+    [[ -n "${evidence_text//[[:space:]]/}" ]] || return 1
+
+    if ! printf '%s\n' "$evidence_text" | grep -qiE 'grep|rg|wc|awk|sed|find|python|bash|計測|測定|実測|benchmark|ベンチ'; then
+        return 1
+    fi
+    printf '%s\n' "$evidence_text" | grep -qE '→|->|=>|[0-9]+[[:space:]]*(件|行|個|本|箇所|matches?|lines?)|0件|0[[:space:]]+lines?'
+}
+
+check_numeric_literal_derivation_source_info() {
+    local search_text numeric_hits first_hit
+    search_text="$(extract_acceptance_criteria_block; extract_command_text_block)"
+    [[ -n "${search_text//[[:space:]]/}" ]] || return 0
+
+    numeric_hits="$(printf '%s\n' "$search_text" | grep -E '(^|[^[:alnum:]_])([0-9]{3,}|L[0-9]+)([^[:alnum:]_]|$)' || true)"
+    [[ -n "$numeric_hits" ]] || return 0
+    numeric_derivation_source_evidence_exists && return 0
+
+    first_hit="$(printf '%s\n' "$numeric_hits" | head -n 1 | sed -E 's/^[[:space:]-]*(description|check|id|command):[[:space:]]*//; s/^"//; s/"$//' | cut -c1-100)"
+    echo "INFO: AC/command内に数値リテラルを検出。算出元コマンド+結果の記載を推奨(LG020)" >&2
+    echo "  → assumptions claim または q5_verified_source に grep/rg/wc等の算出元と結果を記載してください" >&2
+    echo "  → ${first_hit}" >&2
 }
 
 extract_acceptance_criteria_block() {
@@ -3563,6 +3743,11 @@ check_ac_test_scope() {
 }
 
 check_ac_absolute_literals
+
+# --- Check 21.1: AC/command数値リテラルの算出元記載提案（INFO） ---
+# 起源: LG020 — 数値の算出元未確認により、grep結果の対象を誤認した
+# 目的: 3桁以上整数またはL行番号参照を検出し、算出元コマンド+結果の明記を促す
+check_numeric_literal_derivation_source_info
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL

@@ -51,8 +51,14 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_lord_instruction_ac_alignment_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_numeric_derivation_source_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^numeric_derivation_source_evidence_exists()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_numeric_literal_derivation_source_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -62,7 +68,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence extract_acceptance_criteria_block extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -707,6 +713,110 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"既存強制フロー候補"* ]]
+}
+
+@test "cmd_2631: q8指示引用あり+ACに引用キーワード含むならINFOを表示しない" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2631_match:
+    id: cmd_2631_match
+    title: "強化 — 指示範囲整合"
+    purpose: "殿の指示範囲とACの整合を確認する"
+    command: |
+      scripts/cmd_save.shに指示範囲整合INFOを追加する
+    acceptance_criteria:
+      - "AC1: WF選別のL0-L2パイプラインを確認する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 指示引用とAC一致の局所確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 殿指示「WF選別のL0-L2パイプラインをやれ」 → WHAT: AC整合を確認。複利: 先走り減少"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "現物確認済み。既存チェックなし"
+    assumptions:
+      - claim: "2026-05-10時点で本fixtureは引用キーワード一致ケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2631_match"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q8_why_whatの殿指示引用とACキーワード"* ]]
+}
+
+@test "cmd_2631: q8指示引用あり+ACに引用キーワードがなければINFOを表示する" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2631_mismatch:
+    id: cmd_2631_mismatch
+    title: "強化 — 指示範囲整合"
+    purpose: "殿の指示範囲とACの整合を確認する"
+    command: |
+      scripts/cmd_save.shに指示範囲整合INFOを追加する
+    acceptance_criteria:
+      - "AC1: dashboard表示文言を調整する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 指示引用とAC不一致の局所確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 殿指示「WF選別のL0-L2パイプラインをやれ」 → WHAT: AC整合を確認。複利: 先走り減少"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "現物確認済み。既存チェックなし"
+    assumptions:
+      - claim: "2026-05-10時点で本fixtureは引用キーワード不一致ケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2631_mismatch"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: q8_why_whatの殿指示引用とACキーワードの整合を確認してください"* ]]
+    [[ "$output" == *"WF選別"* ]]
+    [[ "$output" == *"LS-A08"* ]]
+}
+
+@test "cmd_2631: q8指示引用なしならスキップする" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2631_no_quote:
+    id: cmd_2631_no_quote
+    title: "強化 — 指示範囲整合"
+    purpose: "殿の指示範囲とACの整合を確認する"
+    command: |
+      scripts/cmd_save.shに指示範囲整合INFOを追加する
+    acceptance_criteria:
+      - "AC1: dashboard表示文言を調整する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 引用なしスキップの局所確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 指示範囲とAC整合を確認する → WHAT: 引用なしではスキップ。複利: 偽陽性なし"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "現物確認済み。既存チェックなし"
+    assumptions:
+      - claim: "2026-05-10時点で本fixtureは引用なしケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2631_no_quote"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q8_why_whatの殿指示引用とACキーワード"* ]]
 }
 
 @test "Check1-5: quality_gate未記入でBLOCK" {
@@ -1751,5 +1861,136 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.5-TB1: 計測キーワードあり+timeout_minutesあり→WARNINGなし" {
+    CMD_BLOCK='    purpose: "GS計測の再実行時間を確認する"
+    timeout_minutes: 30
+    command: |
+      grid_search のbenchmarkを実行する
+    acceptance_criteria:
+      description: |
+        AC1: 計測結果を報告する
+    assumptions:
+      - claim: "2026-05-10時点で本テストfixtureはtimeout_minutesありケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"timeout_minutes未記入"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.5-TB2: 計測キーワードあり+timeout_minutesなし→WARNING" {
+    CMD_BLOCK='    purpose: "GS計測の再実行時間を確認する"
+    command: |
+      grid_search のbenchmarkを実行する
+    acceptance_criteria:
+      description: |
+        AC1: 計測結果を報告する
+    assumptions:
+      - claim: "2026-05-10時点で本テストfixtureはtimeout_minutesなしケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"timeout_minutes未記入"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.5-TB3: 対象キーワードなし→タイムボックスチェックはスキップ" {
+    CMD_BLOCK='    purpose: "説明文のtypoを修正する"
+    command: |
+      docsの表記を直す
+    acceptance_criteria:
+      description: |
+        AC1: 表記が修正されている
+    assumptions:
+      - claim: "2026-05-10時点で本テストfixtureは対象キーワードなしケース"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"timeout_minutes未記入"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check21.1: 数値あり+算出元あり→INFOなし" {
+    CMD_BLOCK_NC='purpose: "数値算出元の提案を追加"
+command: |
+  scripts/cmd_save.sh の L3450 近傍へ追加
+acceptance_criteria:
+  description: |
+    AC1: 118件の入力を確認する
+quality_gate:
+  q5_verified_source: "structure_verified — rg -n '\''Check 21'\'' scripts/cmd_save.sh → 1件(2026-05-10)"
+assumptions:
+  - claim: "2026-05-10時点で rg -n '\''Check 21'\'' scripts/cmd_save.sh → 1件"
+    source: "scripts/cmd_save.sh"
+    trust: "verified"'
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_LOADED
+    run check_numeric_literal_derivation_source_info
+    echo "$output" >&2
+    [[ "$output" != *"数値リテラル"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check21.1: 数値あり+算出元なし→INFO" {
+    CMD_BLOCK_NC='purpose: "数値算出元の提案を追加"
+command: |
+  scripts/cmd_save.sh の L3450 近傍へ追加
+acceptance_criteria:
+  description: |
+    AC1: 118件の入力を確認する
+quality_gate:
+  q5_verified_source: "structure_verified — scripts/cmd_save.shを確認"
+assumptions:
+  - claim: "2026-05-10時点で既存構造を確認した"
+    source: "scripts/cmd_save.sh"
+    trust: "verified"'
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_LOADED
+    run check_numeric_literal_derivation_source_info
+    echo "$output" >&2
+    [[ "$output" == *"INFO: AC/command内に数値リテラルを検出"* ]]
+    [[ "$output" == *"算出元コマンド+結果"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check21.1: 数値なし→スキップ" {
+    CMD_BLOCK_NC='purpose: "相対条件で確認する"
+command: |
+  scripts/cmd_save.sh の関連箇所へ追加
+acceptance_criteria:
+  description: |
+    AC1: 関連入力を確認する
+quality_gate:
+  q5_verified_source: "structure_verified — scripts/cmd_save.shを確認"
+assumptions:
+  - claim: "2026-05-10時点で既存構造を確認した"
+    source: "scripts/cmd_save.sh"
+    trust: "verified"'
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_LOADED
+    run check_numeric_literal_derivation_source_info
+    echo "$output" >&2
+    [ -z "$output" ]
     [ "$status" -eq 0 ]
 }
