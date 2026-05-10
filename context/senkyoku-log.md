@@ -811,3 +811,4 @@
 - **CI GREEN化完走**: DM-Signal PostgreSQL追加→1433テストPASS。infra側テスト状態汚染修正→並列bats安定化
 - **gate品質基盤強化6連発**: draft review SKIP根治→ac_test_scope FP改善→忍者instructions Level5→テスト隔離→Check16 multiline対応→lesson prefill根治
 - **連勝40→47**: 全cmd初回CLEAR。WA率0%維持
+- cmd_2667: auto_failure_lesson.sh draft→confirmed統一。24回(48%)のdraft_lessons BLOCK根治。才蔵1名impl。WA:0 (2026-05-10)
