@@ -59,8 +59,10 @@ ALM四神/ALM忍法  → context/checklist-alm-registration.md
 GSの計算結果が本番DBと完全一致するか検証。
 
 ```bash
-# 検証スクリプト実行(チェックリスト記載のコマンド)
-# holding_signal + monthly_return の完全一致を確認
+# パリティ検証ツールで自動突合(PF名 or UUID指定)
+bash scripts/parity_check.sh <PF名 or UUID>
+# 全PF一括の場合:
+bash scripts/parity_check.sh --all
 ```
 
 **検証基準**: holding_signal完全一致 AND monthly_return完全一致

@@ -2195,6 +2195,62 @@ inject_semantic_concepts() {
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 }
 
+# ─── 本番不変量注入（task YAMLにproduction_invariantsを挿入） ───
+# Level5: 忍者が本番ルールを意志依存ゼロで知る。PI違反=本番事故。
+inject_production_invariants() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    # タスクのproject取得
+    local project
+    project=$(awk '/^  project:/{print $2; exit}' "$task_file" 2>/dev/null)
+    [ -n "$project" ] || return 0
+
+    local pj_yaml="$SCRIPT_DIR/projects/${project}.yaml"
+    [ -f "$pj_yaml" ] || return 0
+
+    # PIエントリ抽出(上位5件)
+    local pi_lines
+    pi_lines=$(awk '
+        /production_invariants:/ { found=1; next }
+        found && /entries:/ { in_entries=1; next }
+        in_entries && /- \{id: PI-/ {
+            sub(/.*id: /, ""); sub(/,.*fact: /, ": ");
+            sub(/"\}.*/, ""); sub(/"/, "");
+            print; count++
+            if (count >= 5) exit
+        }
+        found && /^[a-z]/ && !/entries:/ { exit }
+    ' "$pj_yaml" 2>/dev/null)
+    [ -n "$pi_lines" ] || return 0
+
+    # 既存のproduction_invariantsを除去してから追加
+    local tmp_file inject_block indent="  "
+    inject_block="${indent}production_invariants:"
+    while IFS= read -r line; do
+        inject_block="${inject_block}"$'\n'"${indent}- \"${line}\""
+    done <<< "$pi_lines"
+
+    tmp_file=$(mktemp)
+    awk '
+        /^  production_invariants:/ { skip=1; next }
+        skip && /^  - "/ { next }
+        skip && /^  [a-z]/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    if grep -q "^  description:" "$tmp_file"; then
+        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
+    else
+        echo "$inject_block" >> "$tmp_file"
+    fi
+
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_production_invariants: project=$project $(echo "$pi_lines" | wc -l) PIs injected"
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -5036,6 +5092,7 @@ deploy_task_apply_task_mutations() {
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
     inject_related_lessons "$task_file" || true
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
+    inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 

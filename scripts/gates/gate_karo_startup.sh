@@ -672,6 +672,23 @@ else
 fi
 echo ""
 
+# --- 教訓効果計測(lesson_impact TOP5) ---
+echo "■ 教訓効果計測"
+_li_script="$SCRIPT_DIR/scripts/lesson_impact_analysis.sh"
+_li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
+if [ -x "$_li_script" ] && [ -f "$_li_file" ] && [ "$(wc -l < "$_li_file")" -gt 10 ]; then
+    _li_output=$(timeout 10 bash "$_li_script" 2>/dev/null || true)
+    _li_noise=$(echo "$_li_output" | awk '/^Low Reference Rate/,/^$/' | grep -c "ref_rate:  0%")
+    _li_harm=$(echo "$_li_output" | awk '/^High BLOCK Rate/,/^$/' | grep -c "BLOCK:100%")
+    echo "  noise候補(参照率0%): ${_li_noise}件, harm候補(BLOCK率100%): ${_li_harm}件"
+    if [ "$_li_harm" -gt 3 ]; then
+        echo "  ★ harm候補${_li_harm}件: 教訓改善/廃止を検討せよ"
+    fi
+else
+    echo "  SKIP: lesson_impact.tsv不足"
+fi
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
