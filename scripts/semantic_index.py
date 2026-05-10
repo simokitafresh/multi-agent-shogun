@@ -6,6 +6,8 @@ Python bytecode caching and JSON index caching.
 """
 
 import json
+import hashlib
+import os
 import re
 import sys
 from pathlib import Path
@@ -62,7 +64,15 @@ def parse_index(index_path: Path) -> list:
 
 def load_concepts(index_path: Path) -> list:
     """Load concepts from JSON cache if fresh, otherwise parse and rebuild cache."""
-    cache_path = Path(str(index_path) + ".cache.json")
+    cache_dir = os.environ.get("SEMANTIC_INDEX_CACHE_DIR")
+    if cache_dir:
+        cache_root = Path(cache_dir)
+        cache_key = hashlib.sha256(str(index_path.resolve()).encode("utf-8")).hexdigest()
+        cache_path = cache_root / f"{cache_key}.json"
+    else:
+        cache_root = None
+        cache_path = Path(str(index_path) + ".cache.json")
+
     try:
         if (
             cache_path.exists()
@@ -74,6 +84,8 @@ def load_concepts(index_path: Path) -> list:
 
     concepts = parse_index(index_path)
     try:
+        if cache_root is not None:
+            cache_root.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(concepts, ensure_ascii=False), encoding="utf-8")
     except OSError:
         pass  # Cache write failure is non-fatal

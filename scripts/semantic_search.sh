@@ -15,6 +15,8 @@ Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
+  SEMANTIC_INDEX_CACHE_DIR
+                       Parsed index JSON cache dir (default: tmp/semantic_index_cache)
   SEMANTIC_NO_CACHE    Set to 1 to disable LLM cache lookup and writes
 EOF
 }
@@ -72,7 +74,8 @@ fi
 semantic_index_python() {
     local mode="$1"
     local mode_arg="${2:-}"
-    python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" "$mode" "$mode_arg"
+    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$script_dir/tmp/semantic_index_cache}" \
+        python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" "$mode" "$mode_arg"
 }
 
 first_layer_search() {

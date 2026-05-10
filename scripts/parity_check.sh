@@ -111,11 +111,22 @@ TOLERANCE = 1e-10  # 浮動小数点許容誤差
 
 
 def get_prod_connection():
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        return psycopg2.connect(DATABASE_URL)
+    except psycopg2.OperationalError as e:
+        print(f"FAIL: 本番DB接続失敗 — {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"FAIL: DB接続エラー(本番) — {e}")
+        sys.exit(1)
 
 
 def get_experiments_connection():
-    return sqlite3.connect(EXPERIMENTS_DB)
+    try:
+        return sqlite3.connect(EXPERIMENTS_DB)
+    except sqlite3.OperationalError as e:
+        print(f"FAIL: experiments.db接続失敗 — {e}")
+        sys.exit(1)
 
 
 def resolve_portfolios(pg_conn, args):
