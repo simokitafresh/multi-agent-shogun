@@ -194,17 +194,15 @@ else
   fi
 
   # 忍者向け: task完了後にCodexが勝手な作業を始めるのを防止
-  # status=done/completed + inbox未読0 → 「待機せよ」を表示
+  # status=done/completed + inbox未読0 → idleフラグのみ（blockしない）
+  # 根因: Codexでは{"decision":"block"}が「reason文をプロンプトとして再実行」=無限ループ
+  # Claude Codeでは忍者がinbox読込→既読化でblock条件を抜けるが、Codexでは脱出不能
+  # 修正: blockせずidle状態にして正常停止。ninja_monitorが次タスクを配備する
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
       if grep -qE '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null; then
-        _ninja_status="$(grep -m1 -E '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null)"
-        _ninja_status="${_ninja_status#*:}"
-        _ninja_status="${_ninja_status#"${_ninja_status%%[![:space:]]*}"}"
-        _ninja_status="${_ninja_status%%[[:space:]]*}"
-        _reason="Task ${_ninja_status}. Wait for next task assignment from karo. Do NOT start new work or generate code. Read queue/tasks/${agent_id}.yaml when new task arrives."
-        jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
+        : > "$idle_flag"
         exit 0
       fi
     fi

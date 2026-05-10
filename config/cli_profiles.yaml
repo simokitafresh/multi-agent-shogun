@@ -42,7 +42,7 @@ profiles:
     # 表示名 (sync_pane_vars.sh → tmux @model_name) — CLI type単位のフォールバック用
     display_name: "Codex"
     # 起動コマンド (lib/cli_adapter.sh L142)
-    launch_cmd: "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+    launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     # CTXパース正規表現 (ninja_monitor.sh get_context_pct)
     ctx_pattern: 'Context [0-9]+%'
     # CTX解釈モード: usage=使用率(Codex "Context 4% used" テキスト形式。旧バー形式は廃止)
