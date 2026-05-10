@@ -296,7 +296,7 @@ Round 2でOpus 4名全員がWF+DSR+パーミュテーションに収束。これ
 
 各組み合わせについて92列の安定性指標を計測:
 - **4検証手法**: IS(In-Sample) / OOS(Out-of-Sample) / Expanding Window / WF(Walk-Forward)
-- **各手法×6指標α**: CAGR / NHF / MaxDD / MRU / Calmar / UWP
+- **各手法×6指標α**: CAGR / NHF / MaxDD / MRU / Calmar / Avg UWP
 - **レジーム分析**: Bull / Bear / Sideways 各α + 全レジーム正判定
 
 **Step 2: 全プール合算からWF α Top1選出** (cmd_2024)
