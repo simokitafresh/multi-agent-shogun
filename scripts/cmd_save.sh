@@ -1389,6 +1389,12 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     exit 1
 fi
 
+# --- Check 0.9: YAML構文検証 ---
+if [[ -f "$QUEUE_FILE" ]] && ! python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$QUEUE_FILE" 2>/dev/null; then
+    echo "BLOCK: $QUEUE_FILE にYAML構文エラーがあります。ダブルクォート内の特殊文字(|等)をエスケープするか、ブロックスカラー(|)を使用してください" >&2
+    BLOCK_REASONS+=("yaml_syntax_error")
+fi
+
 # --- Check 1: cmdブロック存在確認 ---
 if [[ ! -f "$QUEUE_FILE" ]]; then
     echo "WARN: $QUEUE_FILE が存在しません" >&2
