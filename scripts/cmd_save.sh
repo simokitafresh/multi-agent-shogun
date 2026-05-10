@@ -4117,9 +4117,9 @@ check_ac_test_scope() {
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
 
     # スコープ未指定のテスト全件条件を検出
-    # FP除外: 変更対象/関連テスト/ファイル名/.bats/pre-existing を含む行はスコープ済みとみなし除外
+    # FP除外: 変更対象/関連テスト/ファイル名/.bats/pre-existing/限定テスト群を含む行はスコープ済みとみなし除外
     scope_hits="$(printf '%s\n' "$ac_block" | \
-        grep -v -iE '(変更対象|対象の関連|関連テスト|pre[_\-]?existing|\.bats|scripts/)' | \
+        grep -v -iE '(変更対象|対象の関連|関連テスト|pre[_\-]?existing|\.bats|scripts/|DB依存テスト|CI固有テスト|退行確認)' | \
         grep -inE \
         '全[[:space:]]*(テスト|test)[[:space:]]*(PASS|通過|成功|pass|green)|テスト[[:space:]]*全[[:space:]]*(PASS|通過|成功|pass|green)|0[[:space:]]*(failures?|errors?|skips?|失敗|エラー|スキップ)|all[[:space:]]*(tests?|テスト)[[:space:]]*(pass|green|通過)|no[[:space:]]*(failures?|errors?|skips?)' \
         || true)"

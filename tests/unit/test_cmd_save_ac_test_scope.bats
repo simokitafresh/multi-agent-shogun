@@ -124,6 +124,42 @@ _run_check() {
     [[ "$output" == *"WARN_COUNT=0"* ]]
 }
 
+@test "「DB依存テスト11件がPASS」はスコープ済みなのでWARNしない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      description: 'DB依存テスト11件(test_admin_tiers, test_password_expiry等)がPASSすること'
+    - id: AC2
+      description: 'PostgreSQLサービスが設定されること'"
+    _run_check
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACにスコープ未指定のテスト全件条件を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "「CI固有テストがPASS」はスコープ済みなのでWARNしない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      description: 'CI固有テストがPASSすること'
+    - id: AC2
+      description: 'workflow設定が完了していること'"
+    _run_check
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACにスコープ未指定のテスト全件条件を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "「退行確認テストがPASS」はスコープ済みなのでWARNしない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      description: '退行確認テストがPASSすること'
+    - id: AC2
+      description: '既存動作が維持されること'"
+    _run_check
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACにスコープ未指定のテスト全件条件を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
 @test "テスト条件を含まないACはWARNしない" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
