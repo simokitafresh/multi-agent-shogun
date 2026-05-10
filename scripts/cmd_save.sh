@@ -11,6 +11,7 @@
 #   2. archive/cmds/配下の完了済みcmd_idとの重複チェック
 #   3. quality_gateフィールド検査（q1_firefighting, q2_learning, q3_next_quality, q4_depth[WARNING]）
 #   4. flock競合検出（家老との同時書き込み防止）
+#   11.10. cmd-chronicle.md強制検索（title/purposeから類似過去cmdをINFO表示）
 #   12. 内容重複チェック（キュー直近20件+archive直近20ファイルのtitle+purposeとの類似度比較）
 # ============================================================
 set -euo pipefail
@@ -26,6 +27,7 @@ CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_las
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
+CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -2587,6 +2589,116 @@ PY
 }
 
 show_lord_conversation_matches
+
+# --- Check 11.10: cmd-chronicle.md強制検索（informational — WARN_COUNTに加算しない） ---
+# 目的: cmdのtitle/purposeから完了済みcmd履歴を自動検索し、
+#       類似過去cmdの見落としを起票時に減らす。
+show_cmd_chronicle_matches() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+    [[ ! -f "$CMD_CHRONICLE_FILE" ]] && {
+        echo "INFO: [CHRONICLE] cmd履歴検索: cmd-chronicle.md不在のため0件" >&2
+        return 0
+    }
+
+    CMD_BLOCK_FOR_CHRONICLE="$CMD_BLOCK_NC" python3 - "$CMD_CHRONICLE_FILE" >&2 <<'PY'
+import os
+import re
+import sys
+
+chronicle_path = sys.argv[1]
+
+def tokenize(text):
+    if not text:
+        return set()
+    tokens = set()
+    for token in re.findall(r'[a-zA-Z][a-zA-Z0-9_.-]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}', text.lower()):
+        tokens.add(token)
+    jp_chars = re.sub(r'[\x00-\x7f\s]', '', text)
+    for i in range(len(jp_chars) - 1):
+        tokens.add(jp_chars[i:i + 2])
+    return tokens
+
+def similarity(left, right):
+    if not left or not right:
+        return 0.0
+    union = left | right
+    return len(left & right) / len(union) * 100 if union else 0.0
+
+def strip_scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value
+
+def extract_title_purpose(cmd_text):
+    fields = {"title": "", "purpose": ""}
+    current = None
+    block_indent = 0
+    for raw_line in cmd_text.splitlines():
+        line = raw_line.rstrip("\n")
+        if current is not None:
+            indent = len(line) - len(line.lstrip(" "))
+            if not line.strip():
+                fields[current] += "\n"
+                continue
+            if indent > block_indent:
+                fields[current] += line[block_indent:].rstrip() + "\n"
+                continue
+            current = None
+
+        match = re.match(r'^\s*(title|purpose):\s*(.*)$', line)
+        if not match:
+            continue
+        key, value = match.group(1), match.group(2)
+        if value in {"|", ">"} or value == "":
+            fields[key] = ""
+            current = key
+            block_indent = 6
+        else:
+            fields[key] = strip_scalar(value)
+    return " ".join(value.strip() for value in fields.values() if value.strip())
+
+query = extract_title_purpose(os.environ.get("CMD_BLOCK_FOR_CHRONICLE", ""))
+query_words = tokenize(query)
+if not query_words:
+    print("INFO: [CHRONICLE] cmd履歴検索: title/purpose空のため0件")
+    raise SystemExit(0)
+
+entries = []
+total_cmds = 0
+try:
+    with open(chronicle_path, encoding="utf-8") as fh:
+        for raw_line in fh:
+            line = raw_line.strip()
+            if not line.startswith("| cmd_"):
+                continue
+            parts = [part.strip() for part in line.strip("|").split("|")]
+            if len(parts) < 2:
+                continue
+            cmd_id = parts[0]
+            title = parts[1]
+            rest = " ".join(parts[2:])
+            total_cmds += 1
+            words = tokenize(f"{title} {rest}")
+            score = similarity(query_words, words)
+            if score <= 0:
+                continue
+            overlap = sorted(query_words & words)
+            entries.append((score, cmd_id, title[:100], overlap[:5]))
+except OSError:
+    print("INFO: [CHRONICLE] cmd履歴検索: cmd-chronicle.md読込失敗のため0件")
+    raise SystemExit(0)
+
+entries.sort(key=lambda item: (-item[0], item[1]))
+hits = entries[:5]
+print(f"INFO: [CHRONICLE] cmd履歴検索: completed {total_cmds}件から関連{len(entries)}件")
+for score, cmd_id, title, overlap in hits:
+    terms = ",".join(overlap)
+    print(f"  - {cmd_id} 類似度{score:.0f}% terms={terms}: {title}")
+PY
+}
+
+show_cmd_chronicle_matches
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
