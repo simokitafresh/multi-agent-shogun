@@ -14,6 +14,8 @@ setup_file() {
 setup() {
     TEST_TMPDIR="$(mktemp -d)"
     export TEST_TMPDIR
+    TEST_CMD_ID="cmd_envtest_${BATS_TEST_NUMBER:-0}_$$"
+    export TEST_CMD_ID
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
     export TEST_ARCHIVE_DIR="$TEST_TMPDIR/archive"
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
@@ -41,8 +43,8 @@ write_full_cmd() {
     fi
     cat > "$TEST_QUEUE" <<YAML
 commands:
-  cmd_envtest:
-    id: cmd_envtest
+  ${TEST_CMD_ID}:
+    id: ${TEST_CMD_ID}
     title: "infra — environment_change必須テスト"
     project: infra
     depends_on: none
@@ -81,16 +83,16 @@ run_save() {
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_ACCUMULATE_BLOCKS=0 \
         CMD_QUALITY_FAST_METADATA=1 \
-        bash "$SAVE_SCRIPT" cmd_envtest
+        bash "$SAVE_SCRIPT" "$TEST_CMD_ID"
 }
 
 # 1回目のBLOCKを作成(quality_logにBLOCK記録を残す)
 create_prior_block() {
     # show_prior_attempts() が読む最小fixtureだけを置く。
     # ここで cmd_save.sh をもう1回起動すると、各テストが重い全チェックを二重実行してtimeoutする。
-    cat > "$TEST_QUALITY_LOG" <<'YAML'
+    cat > "$TEST_QUALITY_LOG" <<YAML
 entries:
-  - cmd_id: cmd_envtest
+  - cmd_id: ${TEST_CMD_ID}
     gate_result: BLOCK
     source: cmd_save
     notes: "q11_not_already_done未記入"
