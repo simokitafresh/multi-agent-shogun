@@ -100,6 +100,23 @@ run_gate() {
     [[ "$output" == *"broken_file.md [NOT FOUND]"* ]]
 }
 
+@test "壊れ参照検出時: 類似する修正候補パスが表示される" {
+    FAKE_EXT="$TEST_TMPDIR/fake_external"
+    mkdir -p "$FAKE_EXT/docs/research"
+    echo "data" > "$TEST_TMPDIR/docs/research/gate-vercel-phase-design.md"
+    echo "data" > "$FAKE_EXT/docs/research/gate-vercel-phase-notes.md"
+
+    make_projects_yaml "  - id: external-pj
+    path: \"$FAKE_EXT\""
+    make_context_file "test.md" "link: \`docs/research/gate-vercel-phase-missing.md\`"
+
+    run_gate "$TEST_TMPDIR/context/test.md"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"candidates:"* ]]
+    [[ "$output" == *"docs/research/gate-vercel-phase-design.md"* ]]
+    [[ "$output" == *"fake_external/docs/research/gate-vercel-phase-notes.md"* ]]
+}
+
 @test "複数contextファイル引数: 両方チェックされる" {
     make_projects_yaml ""
     echo "data" > "$TEST_TMPDIR/docs/research/file1.md"

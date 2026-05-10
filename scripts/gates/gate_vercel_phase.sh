@@ -70,6 +70,49 @@ ref_exists_in_base() {
     fi
 }
 
+candidate_display_path() {
+    local path="$1"
+    local base_dir
+    if [[ "$path" == "$SCRIPT_DIR/"* ]]; then
+        printf '%s\n' "${path#"$SCRIPT_DIR"/}"
+        return 0
+    fi
+    for base_dir in "${EXTERNAL_REPO_PATHS[@]}"; do
+        if [[ "$path" == "$base_dir/"* ]]; then
+            printf '%s:%s\n' "$(basename "$base_dir")" "${path#"$base_dir"/}"
+            return 0
+        fi
+    done
+    printf '%s\n' "$path"
+}
+
+suggest_ref_candidates() {
+    local ref="$1"
+    local ref_base ref_stem ref_stem_lc tokens
+    ref_base="$(basename "$ref")"
+    ref_stem="${ref_base%.*}"
+    ref_stem_lc="$(printf '%s\n' "$ref_stem" | tr '[:upper:]' '[:lower:]')"
+    tokens="$(printf '%s\n' "$ref_stem_lc" | tr -cs '[:alnum:]' '\n' | awk 'length($0) >= 3')"
+
+    local path cand_base cand_stem_lc score token
+    for path in "${!FILE_CACHE[@]}"; do
+        [ -f "$path" ] || continue
+        cand_base="$(basename "$path")"
+        cand_stem_lc="$(printf '%s\n' "${cand_base%.*}" | tr '[:upper:]' '[:lower:]')"
+        score=0
+        if [[ -n "$ref_stem_lc" && "$cand_stem_lc" == *"$ref_stem_lc"* ]]; then
+            score=$((score + 100))
+        fi
+        while IFS= read -r token; do
+            [ -n "$token" ] || continue
+            [[ "$cand_stem_lc" == *"$token"* ]] && score=$((score + 1))
+        done <<< "$tokens"
+        if [ "$score" -gt 0 ]; then
+            printf '%03d\t%s\n' "$score" "$(candidate_display_path "$path")"
+        fi
+    done | sort -rn | awk -F'\t' '!seen[$2]++ {print $2; if (++n >= 5) exit}'
+}
+
 check_ref_record() {
     local context_file="$1"
     local line_no="$2"
@@ -106,15 +149,10 @@ check_ref_record() {
             return 0
         fi
         BROKEN_REFS=$((BROKEN_REFS + 1))
-        # Level5: broken ref検出時に類似ファイル候補を自動提案
-        local _ref_base _candidates=""
-        _ref_base=$(basename "$ref" | sed 's/\.[^.]*$//' | tr '_-' '.*')
-        for _rb in "${RESOLVE_BASES[@]}"; do
-            [ -d "${_rb}/docs/research" ] || continue
-            _candidates+=$(find "${_rb}/docs/research" -maxdepth 1 -type f -name "*${_ref_base}*" 2>/dev/null | head -3)
-        done
+        local _candidates=""
+        _candidates="$(suggest_ref_candidates "$ref")"
         if [ -n "$_candidates" ]; then
-            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND] 候補: $(echo "$_candidates" | xargs -I{} basename {} | tr '\n' ', ')")
+            BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND] candidates: $(printf '%s\n' "$_candidates" | awk 'NR == 1 { out = $0; next } { out = out ", " $0 } END { print out }')")
         else
             BROKEN_DETAILS+=("  ${file_display}:${line_no} → ${ref} [NOT FOUND]")
         fi
