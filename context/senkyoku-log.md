@@ -835,3 +835,13 @@
 - cmd_2671: startup gate L6化率ロジック修正(0/56→10/14)。疾風impl。WA:0 (2026-05-11)
 - cmd_2672: 将軍教訓32→22件統合。影丸impl。WA:0 (2026-05-11)
 - cmd_2673: gate_context_freshness L1→L5化(stale TOP3自動提案)。才蔵impl。WA:0 (2026-05-11)
+- cmd_2674: gate_enforcement_audit L1→L5化(hooks登録cmd自動提案)。才蔵impl。WA:0 (2026-05-11)
+- cmd_2676: gate_wa_data_quality L1→L5化(False WA TOP3自動提案)。影丸impl。WA:0 (2026-05-11)
+- cmd_2675: gate_knowledge_freshness L1→L5化(STALE TOP3+verified_at更新cmd例)。疾風impl。WA:0 (2026-05-11)
+- session_20260511_final: L5化4連続(cmd_2673-2676)全GATE CLEAR。L1→L5: context_freshness/enforcement_audit/knowledge_freshness/wa_data_quality。cmd_2668(L6追跡)+cmd_2669(裁定反映L4化)+cmd_2670(L6リスト永続化)+cmd_2671(L6化率修正)+cmd_2672(教訓統合)。本セッション合計将軍cmd9件(2667-2676)全CLEAR+karo_direct自走8件。WA率0%維持。
+| cmd_2674 | gate_enforcement_audit L1→L5化(hooks登録コマンド自動提案) | GATE CLEAR | L6未化4件のL5化推進 |
+| cmd_2675 | gate_knowledge_freshness L1→L5化(STALE TOP3+更新コマンド提案) | GATE CLEAR | L6未化4件のL5化推進 |
+| cmd_2676 | gate_wa_data_quality L1→L5化(False WAパターンTOP3通知) | GATE CLEAR | L6未化4件のL5化推進 |
+| cmd_2678 | cmd_save.sh gate_hook偽陽性修正(gate_fire_log誤判定) | 配備中 | 殿指示: 偽陽性はバグ。L161正規表現修正 |
+| (将軍自走) | Dream完了+Memory ALERT解消+掲示板36件確認+教訓統合 | 完了 | startup gate 3セッション連続BLOCK全解消 |
+| (殿指摘) | grep≠理解(LS032)+教訓先送り連鎖+L6化全体像把握不足 | 教訓記録+知識永続化 | 2連続既存実装見落とし→growth-loop.md §11にL6化済み/未化リスト永続化 |

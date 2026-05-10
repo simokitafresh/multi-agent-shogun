@@ -143,14 +143,15 @@ L6は間違いを許す。間違いから最大の学びを引き出し、学習
 | 全体 | `lesson_impact.tsv` | `scripts/cmd_complete_gate.sh` L2410-L2580, L5027-L5033, L5636-L5641; `scripts/deploy_task.sh` L2764-L3673 | 教訓注入・参照・有効性を計測し、低有効教訓の減衰と次回注入品質の改善に使う |
 | 全体 | 修行サイクル | `context/training-cycle.md` §2-§3, §13, §21, §27 | idle時間に訓練taskを配備し、gate BLOCK→自力修正→一発PASS率計測で本番前に失敗パターンを学習させる |
 
-**L6未化仕組み(2026-05-11時点・4件)**:
+**L6未化仕組み(2026-05-11時点・0件 ★全L5到達)**:
 
-| 名称 | 現Level | 不足内容 | L6化方向 |
-|------|---------|----------|----------|
-| `gate_context_freshness.sh` | Level 1 | stale/WARN検出のみ。更新候補・修正cmd・担当への入力注入がない | cmd完了時または起動時に stale context の更新候補と該当§を自動提示し、次cmd設計の入力へ接続する |
-| `gate_enforcement_audit.sh` | Level 1 | 意志依存スクリプト検出のみ。検出結果がcmd保存・GP提案・配備判断に自動接続されない | `cmd_save.sh`/GP trackerへ防御Level判定を注入し、Level不足を次の改善候補として自動提示する |
-| `gate_knowledge_freshness.sh` | Level 1 | STALE検出のみ。task配備時の知識鮮度注記や更新手順が自動で渡らない | `deploy_task.sh`が対象projectのSTALE knowledgeをtask YAMLへ注入し、忍者/家老が鮮度前提を見落とせないようにする |
-| `gate_wa_data_quality.sh` | Level 1 | workaround入力品質の検証のみ。欠落フィールドの補完支援や記録時の構造化強制が弱い | `karo_workaround_log.sh`で必須フィールド補完・候補提示・カテゴリ正規化を行い、低品質WAを記録前に学習データへ変換する |
+cmd_2673-2676で4件全てL5化完了(2026-05-11):
+- `gate_context_freshness.sh` Level 1→5 (stale TOP3+cmdテンプレート自動提案)
+- `gate_enforcement_audit.sh` Level 1→5 (hooks登録cmd自動提案)
+- `gate_knowledge_freshness.sh` Level 1→5 (STALE TOP3+verified_at更新cmd例)
+- `gate_wa_data_quality.sh` Level 1→5 (False WAパターンTOP3+--fix cmd例)
+
+次のL6化対象: L5到達済み仕組みの中から「BLOCKされた時の学び」を最大化する仕組みを追加する段階。
 
 **全ロール共通の設計指針**:
 - 新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな

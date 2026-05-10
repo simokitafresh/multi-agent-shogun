@@ -797,3 +797,7 @@
 | cmd_2670 | growth-loop.md §11にL6化済み/未化の完全リストを追記し、L6化の正確な全体像を受動的知識として永続化する | infra | 05-11 | context/growth-loop.md §11にL6化 |
 | cmd_2671 | startup gateのL6化率算出ロジックを修正。母数をGP提案(56件)→防御仕組み(16件)に変更し、L6済み仕組みをgrowth-loop.md §11から読み取る | infra | 05-11 | Gate 21のL6化率をgrowth-loop.md §1 |
 | cmd_2672 | 将軍教訓32件→22件に統合。LS023-LS032の10件を既存クラスタ(LS-A04/A09/A02/A22/A17)に吸収し、上限31件超過を解消する | infra | 05-11 | projects/infra/lessons_shogun. |
+| cmd_2674 | gate_enforcement_audit.shをL1→L5化。意志依存スクリプト検出時にhooks登録コマンドを自動提案し、修正アクションを即実行可能にする | infra | 05-11 | gate_enforcement_auditのALERT時に |
+| cmd_2676 | gate_wa_data_quality.shをL1→L5化。False WAパターンTOP3を家老に自動通知し、WA計測精度の改善アクションを即座に提示する | infra | 05-11 | gate_wa_data_quality.shにFalse |
+| cmd_2678 | cmd_save.sh is_gate_or_hook_addition_cmd L161の偽陽性修正。gate_fire_log等のファイル名内gateをgate/hook追加と誤判定するバグを修正する | infra | 05-11 | cmd_save.shのgate/hook追加判定をASCI |
+| cmd_2679 | セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する | infra | 05-11 | セマンティクスインデックスのdefense_hierarch |
