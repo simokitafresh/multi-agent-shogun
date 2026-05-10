@@ -41,7 +41,7 @@ if [[ -z "$run_json" ]] || [[ "$run_json" == "[]" ]]; then
     exit 1
 fi
 
-read -r conclusion run_id <<< "$(echo "$run_json" | python3 -c "import json,sys; d=json.load(sys.stdin)[0]; print(d.get('conclusion') or '', d.get('databaseId') or '')" 2>/dev/null || true)"
+read -r conclusion run_id <<< "$(echo "$run_json" | jq -r '.[0] | "\(.conclusion // "") \(.databaseId // "")"' 2>/dev/null || true)"
 
 if [[ -z "$conclusion" ]] || [[ "$conclusion" == "None" ]]; then
     # Still in progress
@@ -52,15 +52,8 @@ fi
 failed_jobs=""
 if [[ "$conclusion" == "failure" && -n "$run_id" ]]; then
     failed_jobs=$(gh run view "$run_id" --repo "$REPO" --json jobs 2>/dev/null \
-        | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    failed = [j['name'] for j in data.get('jobs', []) if j.get('conclusion') == 'failure']
-    print(', '.join(failed) if failed else 'unknown')
-except Exception:
-    print('unknown')
-" 2>/dev/null || echo "unknown")
+        | jq -r '[.jobs[] | select(.conclusion == "failure") | .name] | if length == 0 then "unknown" else join(", ") end' \
+        2>/dev/null || echo "unknown")
 fi
 
 if $STATUS_MODE; then
