@@ -309,10 +309,10 @@ STALE_FIELDS = [
     # 配備前に旧値が残るとCodex忍者がSTALLする(LK092: cmd_2250 hayate STALL実証)
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
 ]
-# --directモード以外ではacceptance_criteriaもクリア
-# --directモードでもparent_cmdが変わった場合はACをクリア（旧AC残存バグ修正）
-# LK008の意図: re-deploy時AC保持はparent_cmd一致時(同じcmdへの再配備)のみ適用
-if not is_direct or (new_parent_cmd and existing_parent_cmd != new_parent_cmd):
+# parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
+# 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
+# CMD_ID未指定の単体resetでは従来通りクリアし、旧AC残存を防ぐ。
+if not new_parent_cmd or existing_parent_cmd != new_parent_cmd:
     STALE_FIELDS.append('acceptance_criteria')
 
 # 行ベースのインデント追跡でstaleフィールドを除去（正規表現の誤マッチ防止）

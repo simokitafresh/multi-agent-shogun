@@ -173,6 +173,7 @@ ninja_monitor.shがassigned/acknowledged状態で10分以上idle化した忍者�
    - task YAMLのprogress欄に進捗があるか
    - 同一cmd_idが他忍者に既に配備されていないか（二重配備防止）
 2. **クリア**: STALL忍者のtask YAMLをstatus:idleにクリアせよ（旧タスク残存→二重配備の根本原因）
+2.3. **parent_cmdクリア**: `yaml_field_set.sh queue/tasks/{STALL忍者}.yaml task parent_cmd ""`でparent_cmdも空にせよ（残存→GATEがSTALL忍者の報告を探して待機する原因。cmd_2640で飛猿parent_cmd残存→GATE 3回リトライ待ち発生）
 2.5. **空報告削除**: `rm queue/reports/{STALL忍者}_report_{cmd}.yaml`で空テンプレートを削除せよ（残存→GATE BLOCKの原因。cmd_2637で3回STALL→空報告2件がGATE BLOCK。LK002）
 3. **再配備**: 別のidle忍者にround-robin再配備（deploy_task.sh経由）
 4. STALL忍者はninja_monitorがDEPLOY-STALL-CLEARで自動/clear実行済み
