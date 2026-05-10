@@ -214,6 +214,90 @@ append_pane_excerpt() {
     fi
 }
 
+auto_commit_last_file() {
+    printf '%s/.last_auto_commit\n' "${STATE_DIR:-/tmp}"
+}
+
+context_batch_commit_last_file() {
+    printf '%s/.last_context_batch_commit\n' "${STATE_DIR:-/tmp}"
+}
+
+auto_commit_now_epoch() {
+    printf '%s\n' "${NINJA_MONITOR_NOW:-${EPOCHSECONDS:-$(date +%s)}}"
+}
+
+auto_commit_timestamp_recent() {
+    local stamp_file="$1"
+    local interval_seconds="$2"
+    local now last
+
+    [ -f "$stamp_file" ] || return 1
+    now="$(auto_commit_now_epoch)"
+    last="$(cat "$stamp_file" 2>/dev/null || true)"
+    [[ "$last" =~ ^[0-9]+$ ]] || return 1
+    [ $((now - last)) -lt "$interval_seconds" ]
+}
+
+write_auto_commit_timestamp() {
+    local stamp_file="$1"
+    mkdir -p "$(dirname "$stamp_file")"
+    auto_commit_now_epoch > "$stamp_file"
+}
+
+auto_commit_paths_from_status() {
+    sed 's/^...//'
+}
+
+filter_regular_auto_commit_paths() {
+    auto_commit_paths_from_status | grep -v -E '^context/[^/]*\.md$' || true
+}
+
+filter_context_batch_commit_paths() {
+    auto_commit_paths_from_status | grep -E '^context/[^/]*\.md$' || true
+}
+
+auto_commit_before_clear() {
+    local agent_name="$1"
+    local uncommitted="$2"
+    local regular_paths context_paths last_file context_last_file
+
+    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths)"
+    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths)"
+    last_file="$(auto_commit_last_file)"
+    context_last_file="$(context_batch_commit_last_file)"
+
+    (
+        cd "$SCRIPT_DIR" || exit
+
+        if [ -n "${regular_paths//[[:space:]]/}" ]; then
+            if auto_commit_timestamp_recent "$last_file" 1800; then
+                log "AUTO-COMMIT-SKIP: $agent_name last auto-commit within 30min"
+            else
+                printf '%s\n' "$regular_paths" | xargs -d '\n' git add -- 2>/dev/null || true
+                # CI RED防止: instructions/変更時はgenerated filesを再生成(GA-085/089/090の真因)
+                if git diff --cached --name-only | grep -q '^instructions/'; then
+                    bash scripts/build_instructions.sh 2>/dev/null || true
+                    git add instructions/generated/ 2>/dev/null || true
+                fi
+                if git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null; then
+                    write_auto_commit_timestamp "$last_file"
+                fi
+            fi
+        fi
+
+        if [ -n "${context_paths//[[:space:]]/}" ]; then
+            if auto_commit_timestamp_recent "$context_last_file" 3600; then
+                log "CONTEXT-BATCH-COMMIT-SKIP: $agent_name last context batch commit within 1h"
+            else
+                printf '%s\n' "$context_paths" | xargs -d '\n' git add -- 2>/dev/null || true
+                if git commit -m "chore: batch context auto-commit before /clear ($agent_name)" 2>/dev/null; then
+                    write_auto_commit_timestamp "$context_last_file"
+                fi
+            fi
+        fi
+    )
+}
+
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
     log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
     log "Poll interval: ${POLL_INTERVAL}s, Confirm wait: ${CONFIRM_WAIT}s"
@@ -588,18 +672,7 @@ safe_send_clear() {
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
         log "AUTO-COMMIT-BEFORE-CLEAR: $agent_name uncommitted files: $_file_list"
-        # 忍者を起こさず自動commit（運用ファイルのみ）
-        # NOTE: xargs -d '\n'で各ファイルを個別引数として渡す（"$_file_list"は単一引数になりgit addが失敗するため）
-        (
-            cd "$SCRIPT_DIR" || exit
-            echo "$_uncommitted" | sed 's/^...//' | xargs -d '\n' git add -- 2>/dev/null || true
-            # CI RED防止: instructions/変更時はgenerated filesを再生成(GA-085/089/090の真因)
-            if git diff --cached --name-only | grep -q '^instructions/'; then
-                bash scripts/build_instructions.sh 2>/dev/null || true
-                git add instructions/generated/ 2>/dev/null || true
-            fi
-            git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null || true
-        )
+        auto_commit_before_clear "$agent_name" "$_uncommitted"
     fi
 
     # /clear前にinboxを既読化（/clear後のnudge再起動を防止）
