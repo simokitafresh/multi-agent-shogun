@@ -103,7 +103,9 @@ assert '{dict}' in data['insights'][0]['insight']
 }
 
 @test "T-006: YAML metacharacters in priority and source fields" {
-    run bash "$TEST_TMPDIR/scripts/insight_write.sh" "normal msg" "high: {inject}" "source: [evil]"
+    # priority is now validated (high/medium/low only), so use valid priority
+    # and test YAML metacharacter sanitization in source field
+    run bash "$TEST_TMPDIR/scripts/insight_write.sh" "normal msg" "high" "source: [evil] {inject}"
     [ "$status" -eq 0 ]
     [[ "$output" == INS-* ]]
 
@@ -112,8 +114,8 @@ import yaml
 with open('$TEST_TMPDIR/queue/insights.yaml') as f:
     data = yaml.safe_load(f)
 assert len(data['insights']) == 1
-assert data['insights'][0]['priority'] == 'high: {inject}'
-assert data['insights'][0]['source'] == 'source: [evil]'
+assert data['insights'][0]['priority'] == 'high'
+assert data['insights'][0]['source'] == 'source: [evil] {inject}'
 "
 }
 
