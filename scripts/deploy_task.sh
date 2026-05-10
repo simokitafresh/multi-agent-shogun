@@ -4454,17 +4454,30 @@ cmd_id = sys.argv[2].strip()
 script_dir = Path(sys.argv[3])
 count = 0
 
+import re
+
+def count_acs_from_value(acs):
+    """Count ACs: list→len, dict with description→count AC patterns, dict→len(keys), str→count AC patterns"""
+    if isinstance(acs, list):
+        return len(acs)
+    if isinstance(acs, dict):
+        desc = acs.get('description', '')
+        if isinstance(desc, str) and desc.strip():
+            ac_matches = re.findall(r'\bAC\d+\b', desc)
+            if ac_matches:
+                return len(set(ac_matches))
+        return max(len(acs), 1)
+    if isinstance(acs, str) and acs.strip():
+        ac_matches = re.findall(r'\bAC\d+\b', acs)
+        return len(set(ac_matches)) if ac_matches else 1
+    return 0
+
 try:
     with open(task_file, encoding='utf-8') as f:
         data = yaml.safe_load(f) or {}
     task = data.get('task') or {}
     acs = task.get('acceptance_criteria')
-    if isinstance(acs, list):
-        count = len(acs)
-    elif isinstance(acs, dict):
-        count = len(acs)
-    elif acs:
-        count = 1
+    count = count_acs_from_value(acs)
 except Exception:
     count = 0
 
@@ -4492,12 +4505,7 @@ if count <= 0 and cmd_id:
             cmd = {}
 
         acs = cmd.get("acceptance_criteria")
-        if isinstance(acs, list):
-            count = len(acs)
-        elif isinstance(acs, dict):
-            count = len(acs)
-        elif acs:
-            count = 1
+        count = count_acs_from_value(acs)
 
         if count > 0:
             break
