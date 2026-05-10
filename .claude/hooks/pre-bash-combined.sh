@@ -162,14 +162,16 @@ fi
 
 # === Guard 9: Skill bypass detection (殿裁定2026-05-10: スキル無視はバグ) ===
 # 手動操作をBLOCKし、対応スキル使用を強制する (Level 4)
-if [[ "$command" == *"gunshi_review_log.yaml"* && "$command" == *">>"* ]]; then
+# Note: $command内のcommit message等のテキスト言及を除外するため、
+# 実際のファイル操作パターン(cat/echo >> FILE, sed -i FILE)のみ検出
+if [[ "$command" =~ (cat|echo|printf)[[:space:]].*\>\>[[:space:]]*.*gunshi_review_log\.yaml ]]; then
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: review_log直接追記禁止。/review-bundle スキルを使え (殿裁定: スキル無視はバグ)"
         exit 1
     fi
 fi
-if [[ "$command" == *"gunshi_review_log.yaml"* && "$command" == *"sed"* && "$command" == *"gate_result"* ]]; then
+if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "$command" =~ sed[[:space:]]+-i.*gunshi_review_log\.yaml.*gate_result ]]; then
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: gate_result手動sed禁止。/gate-sync スキルを使え (殿裁定: スキル無視はバグ)"
