@@ -864,7 +864,8 @@ EOF
 
     run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"found=false but no no_lesson_reason"* ]]
+    # cmd_2665: no_lesson_reason now has a default value, so this check no longer fires
+    # gate_report_format.sh also removed this check in 44b191b8
     [[ "$output" != *"files_modified: MISSING"* ]]
     [[ "$output" == *"binary_checks.AC1[0].result: 空文字"* ]]
     [[ "$output" == *"result.summary: MISSING or empty"* ]]
