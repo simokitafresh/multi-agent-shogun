@@ -583,6 +583,8 @@ R2 tobisaru、R3 kotaroで同一パターン。L225が「FILL_THIS予防」を�
 | L4 | R4 | 100% | L3環境維持 | 安定 |
 | L4 | R5-R9 | 100% | 環境変更なし | 安定(5ラウンド連続100%) |
 | L4 | R10 | **100%** | 環境変更なし | **安定(6ラウンド連続100%)** |
+| L4 | R11 | 100% | 環境変更なし | 安定(7ラウンド連続100%) |
+| L4 | R12 | **100%** (5/5) | 環境変更なし | **安定(8ラウンド連続100%)。対象: bulletin_write.sh/karo_workaround_log.sh/inbox_mark_read.sh/semantic_search.sh/lesson_health_report.sh。実バグ発見: bulletin_write.sh通知失敗無音化** |
 
 ### L4完了判定
 
