@@ -222,6 +222,16 @@ check_gate_hook_action_conversion() {
     record_warn_reason "gate/hook追加cmdに行動変換キーワードなし" "check=gate_hook_action_conversion"
 }
 
+extract_acceptance_criteria_block() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*acceptance_criteria:/ { in_ac=1; next }
+        in_ac && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
+        in_ac { print }
+    '
+}
+
 check_lord_instruction_ac_alignment_info() {
     local q8_value="${1:-}"
     local ac_block="${2:-}"
@@ -3634,16 +3644,6 @@ check_numeric_literal_derivation_source_info() {
     echo "INFO: AC/command内に数値リテラルを検出。算出元コマンド+結果の記載を推奨(LG020)" >&2
     echo "  → assumptions claim または q5_verified_source に grep/rg/wc等の算出元と結果を記載してください" >&2
     echo "  → ${first_hit}" >&2
-}
-
-extract_acceptance_criteria_block() {
-    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
-
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
-        /^[[:space:]]*acceptance_criteria:/ { in_ac=1; next }
-        in_ac && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
-        in_ac { print }
-    '
 }
 
 count_acceptance_criteria_items() {
