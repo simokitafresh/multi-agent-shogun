@@ -782,6 +782,46 @@ PY
     echo "  ${result}"
 }
 
+# ─── CoDD propagate自動実行（cmd_2641） ───
+# スクリプト変更後の設計書/SKILL.md陳腐化を防ぐため、GATE CLEAR後に
+# CoDD依存グラフの下流更新を必ず1回実行する。失敗はCLEAR後処理を止めずWARN化。
+run_codd_propagate_update() {
+    local codd_bin="${CODD_BIN:-}"
+    local codd_path="${CODD_PROPAGATE_PATH:-$SCRIPT_DIR}"
+    local timeout_sec="${CODD_PROPAGATE_TIMEOUT:-120}"
+    local output
+    local rc
+
+    echo ""
+    echo "CoDD propagate update (GATE CLEAR):"
+
+    if [ -z "$codd_bin" ]; then
+        if [ -x "/home/simokitafresh/.codd-venv/bin/codd" ]; then
+            codd_bin="/home/simokitafresh/.codd-venv/bin/codd"
+        elif command -v codd >/dev/null 2>&1; then
+            codd_bin="$(command -v codd)"
+        fi
+    fi
+
+    if [ -z "$codd_bin" ] || [ ! -x "$codd_bin" ]; then
+        echo "  [WARN] codd executable not found (skip)"
+        return 0
+    fi
+
+    output=$(PATH="/home/simokitafresh/.codd-venv/bin:$PATH" timeout "$timeout_sec" "$codd_bin" propagate --path "$codd_path" --update 2>&1)
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        echo "  OK: codd propagate --path ${codd_path} --update"
+    else
+        echo "  [WARN] codd propagate failed (rc=${rc}, non-blocking)"
+    fi
+
+    if [ -n "$output" ]; then
+        printf '%s\n' "$output" | sed 's/^/  /'
+    fi
+    return 0
+}
+
 # ─── changelog自動記録関数 ───
 append_changelog() {
     local cmd_id="$1"
@@ -4848,6 +4888,7 @@ PY
     fi
 
     append_codd_registry_entry "$CMD_ID"
+    run_codd_propagate_update
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""

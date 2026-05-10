@@ -31,6 +31,8 @@ setup_file() {
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^run_codd_propagate_update()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$GATE_HELPERS_FILE"
 }
 
@@ -148,6 +150,36 @@ EOF
     grep -q "scripts/demo_gate.sh" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
     grep -q "120ms → 30ms" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
     grep -q "$TEST_CMD_ID" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+}
+
+@test "run_codd_propagate_update executes codd propagate update after gate clear" {
+    local codd_log="$TEST_TMPDIR/codd_args.log"
+    local stub_codd="$TEST_TMPDIR/codd"
+    cat > "$stub_codd" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" > "$TEST_CODD_LOG"
+echo "propagate done"
+EOF
+    chmod +x "$stub_codd"
+
+    export CODD_BIN="$stub_codd"
+    export CODD_PROPAGATE_PATH="$TEST_PROJECT"
+    export TEST_CODD_LOG="$codd_log"
+
+    run run_codd_propagate_update
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CoDD propagate update (GATE CLEAR):"* ]]
+    [[ "$output" == *"OK: codd propagate --path $TEST_PROJECT --update"* ]]
+    [[ "$output" == *"propagate done"* ]]
+    [ "$(cat "$codd_log")" = "propagate --path $TEST_PROJECT --update" ]
+}
+
+@test "run_codd_propagate_update warns but does not block when codd is missing" {
+    export CODD_BIN="$TEST_TMPDIR/missing-codd"
+
+    run run_codd_propagate_update
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[WARN] codd executable not found (skip)"* ]]
 }
 
 @test "append_lesson_tracking filters fallback reports to current worker_id" {
