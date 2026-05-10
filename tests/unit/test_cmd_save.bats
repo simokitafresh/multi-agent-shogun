@@ -636,6 +636,79 @@ YAML
     [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
 }
 
+@test "cmd_2628: gate/hook追加cmdなら既存強制フロー候補INFOを表示する" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2628_info:
+    id: cmd_2628_info
+    title: "強化 — 新規gate追加"
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: |
+      scripts/cmd_save.shに新規gateを追加する
+    acceptance_criteria:
+      - "AC1: 行動変換不足時はBLOCK(exit 1)候補を明示する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 既存強制フロー候補INFOの局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh code_reading + tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 新規gate/hook作成前に既存フロー接続を促す → WHAT: INFOで候補を表示"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -rn gate_hook_action_conversion scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"
+    assumptions:
+      - claim: "2026-05-10時点でfixtureはcmd_save.shのquality_gate抽出範囲内"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2628_info"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: gate/hook追加cmdです。既存強制フロー候補を先に検討してください"* ]]
+    [[ "$output" == *"cmd_save.sh"* ]]
+    [[ "$output" == *"startup gate"* ]]
+    [[ "$output" == *"deploy_task.sh"* ]]
+    [[ "$output" == *"inbox_write.sh"* ]]
+    [[ "$output" == *"gate_report_format.sh"* ]]
+}
+
+@test "cmd_2628: 非gate/hook cmdなら既存強制フロー候補INFOを表示しない" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2628_no_info:
+    id: cmd_2628_no_info
+    title: "改善 — dashboard表示文言の調整"
+    purpose: "dashboard.mdの表示文言を調整する"
+    command: |
+      dashboard生成スクリプトの表示文言を調整する
+    acceptance_criteria:
+      - "AC1: 表示文言が更新されている"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — 非対象cmdのINFO非表示確認のみ"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: gate/hook追加以外で騒がしくしない → WHAT: 非対象cmdではINFO非表示"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "現物確認済み。既存表示文言をgrepで確認した"
+    assumptions:
+      - claim: "2026-05-10時点でfixtureはcmd_save.shのquality_gate抽出範囲内"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2628_no_info"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"既存強制フロー候補"* ]]
+}
+
 @test "Check1-5: quality_gate未記入でBLOCK" {
     create_queue_file << 'YAML'
 commands:

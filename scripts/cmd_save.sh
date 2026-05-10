@@ -183,6 +183,13 @@ check_gate_hook_action_conversion() {
     [[ -n "$block_text" ]] || return 0
     is_gate_or_hook_addition_cmd "$block_text" || return 0
 
+    echo "INFO: gate/hook追加cmdです。既存強制フロー候補を先に検討してください:" >&2
+    echo "  - cmd_save.sh: 将軍起票時の品質gateへ接続する" >&2
+    echo "  - startup gate: 起動時チェックへ接続する" >&2
+    echo "  - deploy_task.sh: 忍者配備時の注入/検査へ接続する" >&2
+    echo "  - inbox_write.sh: 通信時の強制・遮断へ接続する" >&2
+    echo "  - gate_report_format.sh: 報告提出時の構造検査へ接続する" >&2
+
     action_text="$(printf '%s\n' "$block_text" | awk '
         /^[[:space:]]{4}command:[[:space:]]*\|/ { in_command=1; print; next }
         /^[[:space:]]{4}command:[[:space:]]*[^|]/ {
