@@ -2251,6 +2251,173 @@ inject_production_invariants() {
     log "inject_production_invariants: project=$project $(echo "$pi_lines" | wc -l) PIs injected"
 }
 
+# ─── チェックリスト隣接Step制約自動注入（cmd_2644 Level5化） ───
+# AC/command内のchecklist-*.md + Step番号を検出し、
+# 前後Stepの制約条件（🛑/前提条件/⚠/🔴）をタスクYAMLへ強制注入。
+# cmd_1397事故(再計算禁止ステップ未転写)の構造的再発防止。
+# Pythonがtask_fileに直接書き込む（inject_related_lessonsと同パターン）。
+inject_checklist_constraints() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local py_output
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'INJECT_CL_PY'; then
+import os, re, sys, tempfile
+
+task_file = os.environ['TASK_FILE_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+
+try:
+    import yaml
+    with open(task_file, encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+except Exception:
+    sys.exit(0)
+
+task = data.get('task', data) if isinstance(data, dict) else {}
+
+texts = []
+ac = task.get('acceptance_criteria', {})
+if isinstance(ac, dict):
+    texts.append(str(ac.get('description', '')))
+elif isinstance(ac, list):
+    texts.extend(str(x) for x in ac)
+for key in ('command', 'purpose'):
+    v = task.get(key)
+    if v:
+        texts.append(str(v))
+
+full_text = ' '.join(texts)
+
+pattern = re.compile(r'(checklist-[\w-]+\.md)\s+(?:Step\s+)?(\d+)', re.IGNORECASE)
+refs = {}
+for m in pattern.finditer(full_text):
+    fname = m.group(1)
+    step = int(m.group(2))
+    if fname not in refs:
+        refs[fname] = set()
+    refs[fname].add(step)
+
+if not refs:
+    sys.exit(0)
+
+
+def find_step_positions(lines):
+    positions = {}
+    for i, line in enumerate(lines):
+        m = re.match(r'^## (?:Step )?(\d+)[.: ]', line)
+        if m:
+            positions[int(m.group(1))] = i
+    return positions
+
+
+CONSTRAINT_KEYWORDS = ['🛑', '必ずここで止まれ', '前提条件', '⚠', '🔴', '禁止', '入るな', '確認後']
+
+
+def is_constraint(line):
+    return any(kw in line for kw in CONSTRAINT_KEYWORDS)
+
+
+def clean_markdown(line):
+    line = re.sub(r'^\s*>?\s*\**\s*', '', line)
+    line = re.sub(r'\**\s*$', '', line)
+    line = line.replace('"', "'")
+    return line.strip()
+
+
+def extract_adjacent_constraints(lines, step_positions, step_num):
+    constraints = []
+    prev = step_num - 1
+    if prev in step_positions and step_num in step_positions:
+        s, e = step_positions[prev], step_positions[step_num]
+        for line in lines[s:e]:
+            if is_constraint(line):
+                clean = clean_markdown(line)
+                if clean and len(clean) > 5:
+                    constraints.append(f'[Step{prev}末尾] {clean}')
+    nxt = step_num + 1
+    if nxt in step_positions:
+        s = step_positions[nxt]
+        e = step_positions.get(nxt + 1, len(lines))
+        e = min(s + 20, e)
+        for line in lines[s:e]:
+            if is_constraint(line):
+                clean = clean_markdown(line)
+                if clean and len(clean) > 5:
+                    constraints.append(f'[Step{nxt}前提] {clean}')
+    return constraints
+
+
+all_constraints = []
+for fname, steps in refs.items():
+    cl_path = os.path.join(script_dir, 'context', fname)
+    if not os.path.exists(cl_path):
+        print(f'[INJECT_CL] WARN: {fname} not found', file=sys.stderr)
+        continue
+    with open(cl_path, encoding='utf-8') as f:
+        lines = f.read().split('\n')
+    step_positions = find_step_positions(lines)
+    if not step_positions:
+        continue
+    for step_num in sorted(steps):
+        if step_num not in step_positions:
+            print(f'[INJECT_CL] WARN: Step {step_num} not found in {fname}', file=sys.stderr)
+            continue
+        c = extract_adjacent_constraints(lines, step_positions, step_num)
+        all_constraints.extend(c)
+
+if not all_constraints:
+    sys.exit(0)
+
+with open(task_file, encoding='utf-8') as f:
+    raw = f.read()
+
+raw_lines = raw.split('\n')
+new_lines = []
+skip = False
+for line in raw_lines:
+    if line.startswith('  checklist_constraints:'):
+        skip = True
+        continue
+    if skip:
+        if re.match(r'  - "', line):
+            continue
+        else:
+            skip = False
+    if not skip:
+        new_lines.append(line)
+
+inject_lines = ['  checklist_constraints:']
+for c in all_constraints:
+    inject_lines.append(f'  - "{c}"')
+inject_text = '\n'.join(inject_lines)
+
+result_text = '\n'.join(new_lines)
+if '\n  description:' in result_text:
+    result_text = result_text.replace('\n  description:', '\n' + inject_text + '\n  description:', 1)
+elif result_text.startswith('  description:'):
+    result_text = inject_text + '\n' + result_text
+else:
+    result_text = result_text.rstrip('\n') + '\n' + inject_text + '\n'
+
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+try:
+    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+        f.write(result_text)
+    os.replace(tmp_path, task_file)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
+
+print(f'[INJECT_CL] Injected {len(all_constraints)} checklist constraints', file=sys.stderr)
+INJECT_CL_PY
+        log "inject_checklist_constraints: python error (non-fatal)"
+    fi
+    rm -f "$py_output"
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -5093,6 +5260,7 @@ deploy_task_apply_task_mutations() {
     inject_related_lessons "$task_file" || true
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
+    inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 
