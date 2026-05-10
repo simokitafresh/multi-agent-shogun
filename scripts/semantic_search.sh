@@ -80,60 +80,6 @@ first_layer_search() {
     semantic_index_python first-layer "$no_match_mode"
 }
 
-render_llm_resources() {
-    local llm_output_file="$1"
-
-    # Collect all concept IDs from the index without invoking Python
-    local -a all_ids=()
-    while IFS= read -r line; do
-        if [[ "$line" == "## "* ]]; then
-            local rest="${line#\#\# }"
-            [[ "$rest" == *" — "* ]] && all_ids+=("${rest%% — *}")
-        fi
-    done < "$index_path"
-
-    # Match concept IDs found in the LLM output (word-boundary aware, max 3)
-    local -a matched_ids=()
-    for cid in "${all_ids[@]}"; do
-        if grep -qP "(?<![A-Za-z0-9_.-])${cid}(?![A-Za-z0-9_.-])" \
-                "$llm_output_file" 2>/dev/null; then
-            matched_ids+=("$cid")
-            [[ "${#matched_ids[@]}" -ge 3 ]] && break
-        fi
-    done
-
-    if [[ "${#matched_ids[@]}" -eq 0 ]]; then
-        echo "resources: LLM output did not contain known concept ids"
-        return 0
-    fi
-
-    echo "resolved resources:"
-    local count=0
-    for cid in "${matched_ids[@]}"; do
-        [[ "$count" -gt 0 ]] && echo ""
-        awk -v cid="$cid" '
-            /^## /                    { in_sec = 0 }
-            $0 ~ ("^## " cid " — ")  { in_sec = 1; print; next }
-            !in_sec                   { next }
-            /^\| aliases \|/ {
-                sub(/^\| aliases \| */, "")
-                sub(/ *\|$/, "")
-                print "aliases: " $0
-                next
-            }
-            /^\| [^|[:space:]][^|]* \| `[^`]+` \|/ {
-                if (!pr) { print "resources:"; pr = 1 }
-                n = split($0, p, "|")
-                t = p[2]; gsub(/^ +| +$/, "", t)
-                r = p[3]; gsub(/^ +| +$/, "", r)
-                print "- " t ": " r
-                next
-            }
-        ' "$index_path"
-        count=$((count + 1))
-    done
-}
-
 llm_cache_key() {
     local llm_cmd="$1"
     {
@@ -198,7 +144,7 @@ EOF
         echo ""
         cat "$output_file"
         echo ""
-        render_llm_resources "$output_file"
+        semantic_index_python "render-llm-resources" "$output_file"
     } > "$final_output"
 
     cat "$final_output"
