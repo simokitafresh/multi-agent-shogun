@@ -820,6 +820,78 @@ YAML
     [[ "$output" != *"q8_why_whatの殿指示引用とACキーワード"* ]]
 }
 
+@test "cmd_2655: q8がWHY/WHATのみならWHEN/HOW不足WARNを表示する" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2655_missing_when_how:
+    id: cmd_2655_missing_when_how
+    title: "強化 — q8 WHEN/HOW検査"
+    purpose: "q8_why_whatにWHEN/HOWがないcmdを検出する"
+    command: |
+      scripts/cmd_save.shにq8 WHEN/HOW不足WARNを追加する
+    acceptance_criteria:
+      - "AC1: WHY+WHATのみならWHEN/HOW不足WARNを表示する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "WHEN/HOW欠落をcmd保存時に検出する"
+      q3_next_quality: "cmd設計の発動条件と機能方法が明確になる"
+      q4_depth: "shallow — q8 WHEN/HOW不足の局所確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q6_not_hiding: "no — 設計欠落を可視化するgate追加"
+      q7_definition_verified: "yes — q8ラベルの有無を文字列検査する"
+      q8_why_what: "WHY: 殿原則を環境に埋め込む → WHAT: q8検査にWHEN/HOW不足WARNを追加する。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -n quality_gate_q8_when_how scripts/cmd_save.sh で未実装を確認"
+    assumptions:
+      - claim: "2026-05-10時点でq8値はcmd_block_get_fieldで1行文字列として取得できる"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2655_missing_when_how"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: q8_why_whatにWHEN/HOWが不足しています"* ]]
+}
+
+@test "cmd_2655: q8にWHY/WHAT/WHEN/HOWが揃えばWHEN/HOW不足WARNを表示しない" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2655_full_when_how:
+    id: cmd_2655_full_when_how
+    title: "強化 — q8 WHEN/HOW検査"
+    purpose: "q8_why_whatにWHEN/HOWがあるcmdはWARNしない"
+    command: |
+      scripts/cmd_save.shにq8 WHEN/HOW不足WARNを追加する
+    acceptance_criteria:
+      - "AC1: WHY+WHAT+WHEN+HOWならWHEN/HOW不足WARNを表示しない"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "WHEN/HOW欠落をcmd保存時に検出する"
+      q3_next_quality: "cmd設計の発動条件と機能方法が明確になる"
+      q4_depth: "shallow — q8 WHEN/HOW充足の局所確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q6_not_hiding: "no — 設計欠落を可視化するgate追加"
+      q7_definition_verified: "yes — q8ラベルの有無を文字列検査する"
+      q8_why_what: "WHY: 殿原則を環境に埋め込む → WHAT: q8検査にWHEN/HOW不足WARNを追加する → WHEN: cmd保存時にq8を読む時 → HOW: WHENとHOWのラベルを文字列検査して不足時だけWARNする。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -n quality_gate_q8_when_how scripts/cmd_save.sh で未実装を確認"
+    assumptions:
+      - claim: "2026-05-10時点でq8値はcmd_block_get_fieldで1行文字列として取得できる"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2655_full_when_how"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: q8_why_whatにWHEN/HOWが不足しています"* ]]
+}
+
 @test "Check1-5: quality_gate未記入でBLOCK" {
     create_queue_file << 'YAML'
 commands:

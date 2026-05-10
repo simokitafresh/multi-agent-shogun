@@ -1701,6 +1701,12 @@ QG_TEMPLATE
             echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
             record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
         fi
+        # WHY/WHATだけではループが回らない。WHEN(いつ発動)とHOW(どう機能)も明示させる。
+        if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHEN[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])HOW[[:space:]]*[：:]'; then
+            echo "WARN: q8_why_whatにWHEN/HOWが不足しています。WHY/WHAT/WHEN/HOWを最低限そろえよ" >&2
+            echo '  例: q8_why_what: "WHY: 殿原則「...」 → WHAT: ... → WHEN: ... → HOW: ...。複利: 正の複利"' >&2
+            record_warn_reason "q8_WHEN/HOW不足" "check=quality_gate_q8_when_how"
+        fi
         check_lord_instruction_ac_alignment_info "$_Q8_WW_VAL" "$(extract_acceptance_criteria_block)"
         # q8 WHY引用検査はcmd_2248で廃止。
         # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
