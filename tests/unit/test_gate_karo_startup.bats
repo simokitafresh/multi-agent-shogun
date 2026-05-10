@@ -57,6 +57,14 @@ EOF
   status: resolved
 EOF
 
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-001
+  insight: "resolved insight"
+  priority: "low"
+  status: resolved
+EOF
+
     # Check 5: workarounds (no workaround)
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_100
@@ -207,6 +215,41 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"未解決: 2件"* ]]
     [[ "$output" == *"未解決裁定あり"* ]]
+}
+
+@test "pending insights → displays count and latest 3" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-001
+  insight: "old pending insight"
+  priority: "low"
+  status: pending
+- id: INS-002
+  insight: "first recent insight"
+  priority: "medium"
+  status: pending
+- id: INS-003
+  insight: "second recent insight"
+  priority: "high"
+  status: pending
+- id: INS-004
+  insight: "third recent insight"
+  priority: "medium"
+  status: pending
+- id: INS-005
+  insight: "done insight"
+  priority: "low"
+  status: resolved
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ insights未処理"* ]]
+    [[ "$output" == *"pending: 4件"* ]]
+    [[ "$output" == *"直近3件:"* ]]
+    [[ "$output" != *"INS-001"* ]]
+    [[ "$output" == *"INS-002 [medium] first recent insight"* ]]
+    [[ "$output" == *"INS-003 [high] second recent insight"* ]]
+    [[ "$output" == *"INS-004 [medium] third recent insight"* ]]
 }
 
 # === Test 5: 複合ALERT — deepdive不在 + 陣形図古い ===

@@ -195,6 +195,7 @@ _AGG_FILES=()
 for _agg_file in \
   "$SCRIPT_DIR"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml \
   "$SCRIPT_DIR/queue/inbox/karo.yaml" \
+  "$SCRIPT_DIR/queue/insights.yaml" \
   "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \
   "$SCRIPT_DIR/queue/pending_decisions.yaml" \
   "$SCRIPT_DIR/logs/karo_workarounds.yaml" \
@@ -224,6 +225,46 @@ awk -v root="$SCRIPT_DIR" '
     }
     FILENAME ~ /queue\/inbox\/karo\.yaml$/ {
         if (/read: false/) unread++
+        next
+    }
+    FILENAME ~ /queue\/insights\.yaml$/ {
+        if (/^- id:/) {
+            if (ins_id != "" && ins_status == "pending") {
+                pending_insights++
+                pending_insight_id[pending_insights] = ins_id
+                pending_insight_priority[pending_insights] = ins_priority
+                pending_insight_text[pending_insights] = ins_text
+            }
+            ins_id = $0
+            sub(/^- id:[[:space:]]*/, "", ins_id)
+            gsub(/["'"'"']/, "", ins_id)
+            ins_status = ""
+            ins_priority = ""
+            ins_text = ""
+            next
+        }
+        if (ins_id != "" && /^  status:/) {
+            ins_status = $0
+            sub(/^  status:[[:space:]]*/, "", ins_status)
+            gsub(/["'"'"']/, "", ins_status)
+            gsub(/[[:space:]]+$/, "", ins_status)
+            next
+        }
+        if (ins_id != "" && /^  priority:/) {
+            ins_priority = $0
+            sub(/^  priority:[[:space:]]*/, "", ins_priority)
+            gsub(/["'"'"']/, "", ins_priority)
+            gsub(/[[:space:]]+$/, "", ins_priority)
+            next
+        }
+        if (ins_id != "" && /^  insight:/) {
+            ins_text = $0
+            sub(/^  insight:[[:space:]]*/, "", ins_text)
+            gsub(/^["'"'"']|["'"'"']$/, "", ins_text)
+            gsub(/\|/, "/", ins_text)
+            if (length(ins_text) > 90) ins_text = substr(ins_text, 1, 90) "..."
+            next
+        }
         next
     }
     FILENAME ~ /logs\/gunshi_review_log\.yaml$/ {
@@ -266,11 +307,27 @@ awk -v root="$SCRIPT_DIR" '
         if (/^    delegated_at:/) { has_da = 1; next }
     }
     END {
+        if (ins_id != "" && ins_status == "pending") {
+            pending_insights++
+            pending_insight_id[pending_insights] = ins_id
+            pending_insight_priority[pending_insights] = ins_priority
+            pending_insight_text[pending_insights] = ins_text
+        }
         if (cmd != "" && cmd_status == "pending" && has_da) {
             orphan_found++
             orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
         }
         print "UNREAD|" unread+0
+        print "INSIGHTS|" pending_insights+0
+        insight_start = pending_insights - 2
+        if (insight_start < 1) insight_start = 1
+        for (i=insight_start; i<=pending_insights; i++) {
+            priority = pending_insight_priority[i]
+            if (priority == "") priority = "medium"
+            text = pending_insight_text[i]
+            if (text == "") text = "(no insight text)"
+            print "INSIGHT_ITEM|" pending_insight_id[i] "|" priority "|" text
+        }
         print "GP|" gp_pending+0
         print "PD|" pd_total+0 "|" pd_resolved+0
         s = (n > 5) ? n-4 : 1; total = n - s + 1
@@ -306,6 +363,8 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
     case "$_agg_key" in
         STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
         UNREAD) unread=${_agg_a:-0} ;;
+        INSIGHTS) _insight_pending_count=${_agg_a:-0} ;;
+        INSIGHT_ITEM) _insight_recent_items="${_insight_recent_items}    ${_agg_a} [${_agg_b:-medium}] ${_agg_c}"$'\n' ;;
         GP) _gp_pending_count=${_agg_a:-0} ;;
         PD) total_d=${_agg_a:-0}; resolved_d=${_agg_b:-0} ;;
         WA) wa_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}|${_agg_f}" ;;
@@ -521,6 +580,24 @@ if [ -f "$pd_file" ]; then
 else
     echo "  pending_decisions.yaml不在"
     pending_count=0
+fi
+
+# --- Check 4.5: insights未処理件数 + 直近3件 ---
+echo "■ insights未処理"
+insights_file="$SCRIPT_DIR/queue/insights.yaml"
+if [ -f "$insights_file" ]; then
+    _insight_pending_count=${_insight_pending_count:-0}
+    echo "  pending: ${_insight_pending_count}件"
+    if [ "${_insight_pending_count:-0}" -gt 0 ]; then
+        echo "  直近3件:"
+        if [ -n "${_insight_recent_items:-}" ]; then
+            printf "%s" "$_insight_recent_items"
+        else
+            echo "    (項目取得不可)"
+        fi
+    fi
+else
+    echo "  pending: 0件 (insights.yaml不在)"
 fi
 
 # --- Check 5: karo_workarounds直近5件の傾向サマリ ---
