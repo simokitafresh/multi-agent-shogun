@@ -273,13 +273,16 @@ auto_commit_before_clear() {
             if auto_commit_timestamp_recent "$last_file" 1800; then
                 log "AUTO-COMMIT-SKIP: $agent_name last auto-commit within 30min"
             else
+                local regular_commit_paths
+                regular_commit_paths="$regular_paths"
                 printf '%s\n' "$regular_paths" | xargs -d '\n' git add -- 2>/dev/null || true
                 # CI RED防止: instructions/変更時はgenerated filesを再生成(GA-085/089/090の真因)
                 if git diff --cached --name-only | grep -q '^instructions/'; then
                     bash scripts/build_instructions.sh 2>/dev/null || true
                     git add instructions/generated/ 2>/dev/null || true
+                    regular_commit_paths="${regular_commit_paths}"$'\n''instructions/generated/'
                 fi
-                if git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" 2>/dev/null; then
+                if printf '%s\n' "$regular_commit_paths" | xargs -d '\n' git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" -- 2>/dev/null; then
                     write_auto_commit_timestamp "$last_file"
                 fi
             fi
@@ -290,7 +293,7 @@ auto_commit_before_clear() {
                 log "CONTEXT-BATCH-COMMIT-SKIP: $agent_name last context batch commit within 1h"
             else
                 printf '%s\n' "$context_paths" | xargs -d '\n' git add -- 2>/dev/null || true
-                if git commit -m "chore: batch context auto-commit before /clear ($agent_name)" 2>/dev/null; then
+                if printf '%s\n' "$context_paths" | xargs -d '\n' git commit -m "chore: batch context auto-commit before /clear ($agent_name)" -- 2>/dev/null; then
                     write_auto_commit_timestamp "$context_last_file"
                 fi
             fi

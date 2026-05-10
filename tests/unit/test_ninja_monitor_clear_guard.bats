@@ -6,6 +6,171 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "auto_commit: regular commit excludes context markdown and batches context separately" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/context" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > context/foo.md
+git add scripts/a.sh context/foo.md
+git commit -qm initial
+
+printf "change\n" >> scripts/a.sh
+printf "change\n" >> context/foo.md
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/ context/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+regular_files=$(git show --name-only --format= HEAD~1 | sed "/^$/d" | sort | tr "\n" " ")
+context_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+echo "regular=$regular_files"
+echo "context=$context_files"
+test "$regular_files" = "scripts/a.sh "
+test "$context_files" = "context/foo.md "
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"regular=scripts/a.sh"* ]]
+    [[ "$output" == *"context=context/foo.md"* ]]
+}
+
+@test "auto_commit: regular auto-commit skips within 30 minutes" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+git add scripts/a.sh
+git commit -qm initial
+
+printf "9900\n" > "$STATE_DIR/.last_auto_commit"
+printf "change\n" >> scripts/a.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+count=$(git rev-list --count HEAD)
+echo "count=$count"
+cat "$LOG"
+test "$count" = "1"
+grep -q "AUTO-COMMIT-SKIP: hayate last auto-commit within 30min" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"count=1"* ]]
+    [[ "$output" == *"AUTO-COMMIT-SKIP"* ]]
+}
+
+@test "auto_commit: commit pathspec does not include pre-staged unrelated files" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/config" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > config/other.yaml
+git add scripts/a.sh config/other.yaml
+git commit -qm initial
+
+printf "staged\n" >> config/other.yaml
+git add config/other.yaml
+printf "change\n" >> scripts/a.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+staged_files=$(git diff --cached --name-only | sort | tr "\n" " ")
+echo "committed=$committed_files"
+echo "staged=$staged_files"
+test "$committed_files" = "scripts/a.sh "
+test "$staged_files" = "config/other.yaml "
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"committed=scripts/a.sh"* ]]
+    [[ "$output" == *"staged=config/other.yaml"* ]]
+}
+
+@test "auto_commit: context batch skips within one hour" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/context" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > context/foo.md
+git add context/foo.md
+git commit -qm initial
+
+printf "7000\n" > "$STATE_DIR/.last_context_batch_commit"
+printf "change\n" >> context/foo.md
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- context/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+count=$(git rev-list --count HEAD)
+echo "count=$count"
+cat "$LOG"
+test "$count" = "1"
+grep -q "CONTEXT-BATCH-COMMIT-SKIP: hayate last context batch commit within 1h" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"count=1"* ]]
+    [[ "$output" == *"CONTEXT-BATCH-COMMIT-SKIP"* ]]
+}
+
 # Stage 1: acknowledged → maybe_idleに入らない（Phase 1で弾かれる）
 @test "stage1: acknowledged task is filtered out before maybe_idle" {
     run bash -lc '
