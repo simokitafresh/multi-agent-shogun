@@ -113,6 +113,8 @@ PY
 
 is_gate_or_hook_addition_cmd() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    # Treat underscores as identifier characters so gate_fire_log/gate_result
+    # remain data names, not gate/hook addition keywords.
     local gate_hook_pattern='(^|[^A-Za-z0-9_])(gate|hook)([^A-Za-z0-9_]|$)|ゲート|フック'
     local q11_context=""
     local q11_value=""
