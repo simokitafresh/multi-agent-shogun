@@ -322,6 +322,19 @@ else:
     if is_noise_only_candidate(payload_id, fields):
         print(f"NONE: skipped noise-only candidate for {source_type}:{payload_label}")
         sys.exit(0)
+    # Dedup: skip if same payload_label already pending in insights
+    _project_root = index_path.parent.parent
+    insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(_project_root / "queue" / "insights.yaml")))
+    if insights_path.exists():
+        try:
+            import yaml as _y
+            _ins = _y.safe_load(insights_path.read_text(encoding="utf-8")) or {}
+            _pending_labels = [e.get("insight","") for e in _ins.get("insights",[]) if e.get("status")=="pending"]
+            if any(payload_label in lbl for lbl in _pending_labels):
+                print(f"NONE: dedup — {source_type}:{payload_label} already pending in insights")
+                sys.exit(0)
+        except Exception:
+            pass
     message = (
         f"semantic_index_update新概念候補: {source_type}:{payload_label} は "
         f"既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
