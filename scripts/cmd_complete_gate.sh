@@ -3036,6 +3036,68 @@ get_cmd_changed_files() {
     done | awk 'NF && !seen[$0]++'
 }
 
+collect_report_modified_files() {
+    local task_file ninja_name report_file
+
+    if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        return 0
+    fi
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+        awk '
+            /^files_modified:/ { in_files=1; next }
+            in_files && /^[^[:space:]-]/ { in_files=0 }
+            in_files && /path:/ {
+                v=$0
+                sub(/.*path:[[:space:]]*/, "", v)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                if (v != "") print v
+            }
+        ' "$report_file" 2>/dev/null || true
+    done | awk 'NF && !seen[$0]++'
+}
+
+cmd_requires_cdp_production_check() {
+    [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
+
+    {
+        printf '%s\n' "${CMD_CHANGED_FILES:-}"
+        collect_report_modified_files
+    } | awk '
+        /^frontend\// || /\/frontend\// { found=1 }
+        END { exit found ? 0 : 1 }
+    '
+}
+
+run_cdp_production_check() {
+    echo ""
+    echo "CDP production check (FE post-gate):"
+
+    if ! cmd_requires_cdp_production_check; then
+        echo "  SKIP (project=${CMD_PROJECT:-unknown}, frontend changes not detected)"
+        return 0
+    fi
+
+    local cdp_script="$SCRIPT_DIR/scripts/cdp/cdp_measure.sh"
+    if [ ! -x "$cdp_script" ]; then
+        echo "  [CRITICAL] cdp_measure.sh not executable: $cdp_script"
+        return 1
+    fi
+
+    echo "  REQUIRED: dm-signal frontend change detected"
+    if timeout 900 bash "$cdp_script" "$CMD_ID"; then
+        echo "  CDP production check: OK"
+        return 0
+    fi
+
+    echo "  [CRITICAL] CDP production check failed"
+    return 1
+}
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -4742,6 +4804,11 @@ echo ""
 if [ "$ALL_CLEAR" = true ]; then
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
+    if ! run_cdp_production_check; then
+        echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
+        echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tcdp_production_check_failed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
+        exit 1
+    fi
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"

@@ -30,6 +30,12 @@ setup_file() {
         printf '\n'
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_report_modified_files()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^run_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^run_codd_propagate_update()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -302,6 +308,62 @@ EOF
     [[ "$output" == *"[CRITICAL] sasuke: NG ← lessons_useful空"* ]]
     [ "$ALL_CLEAR" = false ]
     [ "${BLOCK_REASONS[0]}" = "sasuke:empty_lessons_useful:related=[L001,L002]" ]
+}
+
+@test "CDP production check is required for dm-signal frontend changed files" {
+    export CMD_PROJECT="dm-signal"
+    export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'
+    mkdir -p "$TEST_PROJECT/scripts/cdp"
+    cat > "$TEST_PROJECT/scripts/cdp/cdp_measure.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "CDP_MEASURE:$1"
+exit 0
+EOF
+    chmod +x "$TEST_PROJECT/scripts/cdp/cdp_measure.sh"
+
+    run run_cdp_production_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REQUIRED: dm-signal frontend change detected"* ]]
+    [[ "$output" == *"CDP_MEASURE:$TEST_CMD_ID"* ]]
+    [[ "$output" == *"CDP production check: OK"* ]]
+}
+
+@test "CDP production check skips non-frontend dm-signal changes" {
+    export CMD_PROJECT="dm-signal"
+    export CMD_CHANGED_FILES=$'backend/app.py\nscripts/tool.sh'
+
+    run run_cdp_production_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (project=dm-signal, frontend changes not detected)"* ]]
+}
+
+@test "CDP production check detects frontend paths from report files_modified" {
+    export CMD_PROJECT="dm-signal"
+    export CMD_CHANGED_FILES=""
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+files_modified:
+  - path: frontend/components/Widget.tsx
+EOF
+    mkdir -p "$TEST_PROJECT/scripts/cdp"
+    cat > "$TEST_PROJECT/scripts/cdp/cdp_measure.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "REPORT_CDP:$1"
+exit 0
+EOF
+    chmod +x "$TEST_PROJECT/scripts/cdp/cdp_measure.sh"
+
+    run run_cdp_production_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REQUIRED: dm-signal frontend change detected"* ]]
+    [[ "$output" == *"REPORT_CDP:$TEST_CMD_ID"* ]]
 }
 
 teardown() {
