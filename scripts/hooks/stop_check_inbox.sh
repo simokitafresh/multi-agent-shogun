@@ -55,6 +55,14 @@ if [[ -z "$agent_id" ]]; then
   exit 0
 fi
 
+# Codex CLI判定: Codexでは{"decision":"block"}が無限ループを引き起こすため全経路でblock禁止
+# 根因: Codex block=reason文をプロンプトとして再実行→hook再発火→∞→CLI死亡(status 127)
+_is_codex=false
+source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" 2>/dev/null || true
+if [[ "$(cli_type "$agent_id" 2>/dev/null)" == "codex" ]]; then
+  _is_codex=true
+fi
+
 [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
 last_assistant_message=""
@@ -114,6 +122,10 @@ if [[ "$has_unread" == "true" ]]; then
     unread_count=1
   fi
   : > "$idle_flag"
+  # Codex: blockは無限ループを引き起こすため出力しない。exit 0で正常停止しninja_monitorに委ねる
+  if [[ "$_is_codex" == "true" ]]; then
+    exit 0
+  fi
   # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
   INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
 import os, json, yaml
