@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-05-10〜11
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2667 | 修正 — auto_failure_lesson.shのdraft→confirmed化でdraft_lessons BLOCK根治 | GATE CLEAR | draft_lessons 24回BLOCKの根因=auto_failure_lesson.shが--status draftで書いていた。auto_draft_lesson.shと同じconfirmedに統一 |
+| (将軍直接) | ビジネスプラン知識体系構築 | 完了 | 殿指示: tier=料金プラン対応の知識化。CDP+DB+note.com確認→6プラン↔5 DB tier対応表確定→context/dm-signal.md §32追加→セマンティクスインデックス2概念追加 |
+| (将軍直接) | note記事3本執筆(プレミアム/スタンダード/ベーシック) | 完了+note下書き保存 | 殿指示: プラン毎に推奨PF+SPY/TQQQ比較記事。Sortino推奨(Sharpe→Sortino)。α6指標UWP→Avg UWP変更(殿裁定) |
+| (殿裁定) | スキル不使用=構造的バグ+掲示板未確認=鎖の断絶 | 軍師がGuard9+Gate4.5実装 | CDP操作で/cdp-browseスキルを無視→殿激怒。掲示板確認率0%→殿激怒。両方とも環境埋込みで根治。教訓LS028-030 |
+| (殿裁定) | ALMディスコン | forbidden_topics記録 | 殿が明示的に言わない限り話題禁止 |
+
 ## 2026-04-24
 
 | cmd | 意図 | 結果 | 因果 |

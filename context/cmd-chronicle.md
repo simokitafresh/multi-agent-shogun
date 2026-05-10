@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-10 -->
+<!-- last_updated: 2026-05-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,22 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1826 | 偵察 — l1_alm_wf_engine.py メモリプロファイリング（468MB CSV→13GB膨張の根因特定） | dm-signal | 04-10 | l1_alm_wf_engine.py メモリ消費分析完了。 |
-| cmd_karo_premise_check | fix — inbox_write.sh pre-send captureに★前提問い追加 | infra | 04-10 | inbox_write.sh L785の★10回問いecho |
-| cmd_1827 | fix — l1_alm_wf_engine.py メモリ削減（PrefixMomentCache fold毎構築+float32化） | dm-signal | 04-10 | cmd_1827_impl再完了。deepdive第3弾の5 |
-| cmd_1829 | fix — nukimi simulate_batch L3キャッシュ最適化（BATCH_CHUNK分割） | dm-signal | 04-10 | run_077_nukimi.py に BATCH_CHUN |
-| cmd_1831 | new — GS並列ランナー(gs_runner.py)構築 | dm-signal | 04-10 | gs_runner.py新規実装完了(147行)。--uni |
-| cmd_1835 | recon — kawarimi batch vs sequential md5不一致の根因調査 | dm-signal | 04-10 | TrendReversalFilterBlock.execu |
-| cmd_1834 | recon — CSV I/Oボトルネック調査(GS書出し91%占有) | dm-signal | 04-10 | CSV書出し実装箇所特定・計測完了。kasoku_ratio |
-| cmd_1832 | perf — pipeline関連heavy import lazy化(全7忍法) | dm-signal | 04-10 | 7忍法 run_077_*.py のpipeline関連mo |
-| cmd_1838 | fix — deploy_task.sh commit check gitignore自動除外 | infra | 04-10 | deploy_task.shにgit check-ignor |
-| cmd_1836 | perf — GS CSV書出しnumpy savetxt置換(pandas 270s→4.6s) | dm-signal | 04-10 | 7忍法のrun_077_*.pyの月次CSV書出しをnump |
-| cmd_1837 | fix — kawarimi PYTHONHASHSEED非決定性修正(L78 sorted()) | dm-signal | 04-10 | TrendReversalFilterBlock L78をs |
-| cmd_1842 | fix — GS run_077_*.py CSV出力時に.npyキャッシュ同時生成（キャッシュ不在ゼロ化） | dm-signal | 04-10 | 7忍法run_077_*.pyのwrite_monthly_ |
-| cmd_1841 | fix — l1_alm_wf_engine.py load_data() numpy直読み化（pd.read_csv OOM根絶） | dm-signal | 04-10 | l1_alm_wf_engine.pyのcache-miss |
-| cmd_1840 | fix — 奥義-シン忍法 大CSVキャッシュ生成+WF完走+チャンピオン選出 | dm-signal | 04-10 | AC1 PASS: nukimi/kasoku_ratio |
-| cmd_1844 | 奥義-シン忍法 GS事後チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-10 | GS CSV 7本全量確認完了。全パターン(合計195805 |
-| cmd_1845 | 奥義-シン忍法 6メトリクス比較表 — GS事後 vs ALM方式 vs シン忍法(材料) | dm-signal | 04-10 | AC1 PASS: シン忍法20体全UUID存在確認(20/ |
 | cmd_1846 | 奥義-シン忍法 忍法×忍法 組み合わせ有効性分析 — selection_timeline全21チャンピオン | dm-signal | 04-11 | 21体パラメータ一覧(AC1)、21本selection_t |
 | cmd_1848 | 奥義-シン忍法 過適合検証2 — 期間分割OOS | dm-signal | 04-11 | cmd_1848完了。IS/OOS分割(前半75M/後半75 |
 | cmd_1847 | 奥義-シン忍法 過適合検証1 — 近傍パラメータ安定性 | dm-signal | 04-11 | AC1 PASS: 21チャンピオンpattern_idから |

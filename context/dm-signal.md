@@ -61,6 +61,43 @@
 | 29 | 2026-03-28〜03-29 第2最適化サイクル（357.28s+crash-safety+GP-124） | (本ファイル) |
 | 30 | 2026-04-20〜04-21 主要研究更新（GS memory最適化/L2 GS vs WF/vintage設計） | (本ファイル) |
 | 31 | 2026-04-28〜04-30 運用鮮度更新（L1/L2登録+knowledge-base methods） | (本ファイル) |
+| 32 | ビジネスプラン(Tier-プラン対応・推奨PF・記事) | (本ファイル) |
+
+## §32 ビジネスプラン (殿裁定2026-05-10)
+
+note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳細 → `projects/dm-signal.yaml` tier_plan_mapping
+
+### プラン階層(価値順)
+
+- ベーシック(¥1,000/月 初月無料) → DB: Basic — 入門。3体シグナル可能
+- スタンダード 古参スペシャル(¥4,000/月 募集停止) → DB: Standard — 四神12体+メンバーシップ2体
+- 新スタンダード(¥8,000/月) ≒ 古参+アドオン → DB: NewStandard — 四神12+忍法3+2体。全17体シグナル可能
+- スタンダード+アドオン(¥6,000/月 募集停止) → DB: Standard+AddOn — 四神12+忍法3+メンバーシップ3。18体シグナル可能。古参優遇
+- ドクタープレミアム 完全招待制(¥20,000/月 初月無料) → DB: premium — 四神12+忍法6+メンバーシップ6。24体シグナル可能
+
+劇薬DMシリーズ(¥30,000/月)はDB tier対応なし。
+
+### 推奨PF(プラン別)
+
+- ベーシック: basicデュアルモメンタム(入門)
+- スタンダード(古参): シン白虎-鉄壁(四神中Sharpe最高・守備重視)
+- 新スタンダード: GSシン分身-鉄壁(忍法アクセスが差別化・MaxDD-23%)
+- ドクタープレミアム: 劇薬DMオリジナル(プレミアム限定の付加価値)
+
+### 記事
+
+- ベーシック向け: `marketing-director/content/articles/note-basic-dual-momentum.md`
+- スタンダード向け: `marketing-director/content/articles/note-standard-bunshin-avex.md`
+- プレミアム向け: `marketing-director/content/articles/note-premium-yotsume-gekiyaku.md`
+- プラン別PF一覧: `marketing-director/content/articles/note-tier-portfolio-guide.md`
+
+### 殿の指針
+
+- 上位プランほど多角的に優れている必要がある
+- 保有シグナル確認可能なPFから推奨を選ぶ(パフォーマンスのみは不可)
+- Sortino Ratio推奨(Sharpeは上方ボラを罰するため好まない)
+- α6指標: CAGR / NHF / MaxDD / MRU / Calmar / Avg UWP
+- ALMはディスコン。殿が明示的に言わない限り話題禁止
 
 ## 弱体化確率推定(P_det)
 
