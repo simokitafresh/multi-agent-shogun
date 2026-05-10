@@ -2141,6 +2141,60 @@ EOF
     fi
 }
 
+# ─── セマンティクスインデックス概念注入（task YAMLにsemantic_conceptsを挿入） ───
+# Level5: 忍者が関連ファイルを自動で知る。意志依存ゼロ。
+inject_semantic_concepts() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local index_path="$SCRIPT_DIR/docs/semantic-index/index.md"
+    [ -f "$index_path" ] || return 0
+
+    # purpose から検索テキストを取得
+    local purpose
+    purpose=$(awk '/^  purpose:/{sub(/^  purpose: /,""); p=$0; next} p && /^  [a-z]/{exit} p{p=p " " $0} END{print p}' "$task_file" 2>/dev/null)
+    [ -z "$purpose" ] && return 0
+
+    # semantic_search.sh でマッチする概念+ファイルを取得
+    local matches
+    matches=$(timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+        /^## /{label=$0; sub(/^## /,"",label); next}
+        /^- file:/{gsub(/`/,"",$0); sub(/^- file: /,""); files=files " " $0; next}
+        /^$/{if(label!="" && files!="") print label ": " files; label=""; files=""}
+        END{if(label!="" && files!="") print label ": " files}
+    ' | head -5)
+    [ -z "$matches" ] && return 0
+
+    # task YAMLに semantic_concepts フィールドとして注入
+    local indent="  "
+    local inject_block="${indent}semantic_concepts:"
+    while IFS= read -r line; do
+        inject_block="${inject_block}"$'\n'"${indent}- \"${line}\""
+    done <<< "$matches"
+
+    # 既存のsemantic_conceptsを除去してから追加
+    local tmp_file
+    tmp_file=$(mktemp)
+    awk '
+        /^  semantic_concepts:/ { skip=1; next }
+        skip && /^  - "/ { next }
+        skip && /^  [a-z]/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    # description の直前に挿入（description は最後のフィールド）
+    if grep -q "^  description:" "$tmp_file"; then
+        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
+    else
+        echo "$inject_block" >> "$tmp_file"
+    fi
+
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -4981,6 +5035,7 @@ deploy_task_apply_task_mutations() {
     # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
     inject_related_lessons "$task_file" || true
+    inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 

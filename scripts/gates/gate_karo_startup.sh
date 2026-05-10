@@ -651,6 +651,27 @@ else
 fi
 echo ""
 
+# --- セマンティクスインデックス鮮度 ---
+echo "■ セマンティクスインデックス鮮度"
+_si_index="$SCRIPT_DIR/docs/semantic-index/index.md"
+if [ -f "$_si_index" ]; then
+    _si_last_mod=$(stat -c %Y "$_si_index")
+    _si_now=$(date +%s)
+    _si_age_days=$(( (_si_now - _si_last_mod) / 86400 ))
+    if [ "$_si_age_days" -ge 14 ]; then
+        echo "  WARN: セマンティクスインデックスが${_si_age_days}日間未更新"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("セマンティクスインデックス鮮度: ${_si_age_days}日未更新")
+    else
+        echo "  OK: ${_si_age_days}日前に更新"
+    fi
+else
+    echo "  WARN: docs/semantic-index/index.md 不在"
+    if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+    alerts+=("セマンティクスインデックス: index不在")
+fi
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="

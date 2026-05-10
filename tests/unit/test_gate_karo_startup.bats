@@ -15,7 +15,8 @@ setup() {
              "$TEST_TMPDIR/queue/inbox" \
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/memory" \
-             "$TEST_TMPDIR/logs"
+             "$TEST_TMPDIR/logs" \
+             "$TEST_TMPDIR/docs/semantic-index"
 
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
@@ -26,6 +27,9 @@ setup() {
     # --- Default fixtures: all checks pass ---
 
     # Check 1: deepdive files exist (両ファイル必須: gate_karo_startup.sh REQUIRED_READ1+REQUIRED_READ2)
+    # Semantic index dummy (freshness check)
+    echo "# semantic index" > "$TEST_TMPDIR/docs/semantic-index/index.md"
+
     echo "# deepdive content" > "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
     echo "# deepdive content" > "$TEST_TMPDIR/memory/deepdive_karo_verification_20260405.md"
 
