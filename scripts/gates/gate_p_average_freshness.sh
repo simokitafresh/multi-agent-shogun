@@ -35,6 +35,7 @@ fi
 # 認証情報を取得
 if [ ! -f "$ENV_FILE" ]; then
     echo "ALERT: p̄鮮度: backend/.env が見つかりません"
+    echo "  action: /mnt/c/Python_app/DM-signal/backend/.env を配置し ADMIN_USER および ADMIN_PASS を設定せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — backend/.env不在"
     exit 1
 fi
@@ -50,6 +51,7 @@ done < <(grep -E '^ADMIN_(USER|PASS)=' "$ENV_FILE" | tr -d '\r')
 
 if [ -z "$ADMIN_USER" ] || [ -z "$ADMIN_PASS" ]; then
     echo "ALERT: p̄鮮度: ADMIN認証情報が取得できません"
+    echo "  action: backend/.env に ADMIN_USER=<user> および ADMIN_PASS=<pass> を設定し再実行せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — ADMIN認証情報不在"
     exit 1
 fi
@@ -59,6 +61,7 @@ response=$(curl -s -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
     --max-time 15 \
     "${API_BASE}/api/p-average" 2>/dev/null) || {
     echo "ALERT: p̄鮮度: API呼出し失敗"
+    echo "  action: Render バックエンド (${API_BASE}) が起動中か確認せよ。curl -u \$ADMIN_USER:\$ADMIN_PASS ${API_BASE}/api/p-average で手動確認"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API応答なし"
     exit 1
 }
@@ -73,6 +76,7 @@ print(cat if cat else 'null')
 
 if [ "$calculated_at" = "null" ] || [ -z "$calculated_at" ]; then
     echo "ALERT: p̄ never calculated (calculated_at=null)"
+    echo "  action: p̄バッチが未実行。DM-Signal の p̄計算エンドポイントを呼び出し calculated_at を設定せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄未計算(calculated_at=null)"
     exit 1
 fi
@@ -80,6 +84,7 @@ fi
 # 日数計算
 calc_epoch=$(date -d "${calculated_at}" +%s 2>/dev/null) || {
     echo "ALERT: p̄鮮度: calculated_at パース失敗(${calculated_at})"
+    echo "  action: DM-Signal バックエンドの p̄計算ロジックを確認し、calculated_at を ISO 8601 形式(YYYY-MM-DDTHH:MM:SSZ)で出力するよう修正せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — 日付パース不可"
     exit 1
 }
@@ -89,12 +94,14 @@ days_ago=$(( (now_epoch - calc_epoch) / 86400 ))
 if [ "$days_ago" -gt 35 ]; then
     msg="ALERT: p̄ stale (${days_ago}d)"
     echo "$msg" | tee "$CACHE_FILE"
+    echo "  action: 月次p̄バッチが${days_ago}日間未実行。DM-Signal の p̄計算を手動トリガーし calculated_at を更新せよ"
     echo "exit_code=1" >> "$CACHE_FILE"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄計算が${days_ago}日前"
     exit 1
 elif [ "$days_ago" -gt 30 ]; then
     msg="WARN: p̄ calculated_at ${days_ago}d ago"
     echo "$msg" | tee "$CACHE_FILE"
+    echo "  action: p̄計算から${days_ago}日経過。月次バッチのスケジュールを確認し、必要に応じて手動実行せよ"
     echo "exit_code=2" >> "$CACHE_FILE"
     exit 2
 else

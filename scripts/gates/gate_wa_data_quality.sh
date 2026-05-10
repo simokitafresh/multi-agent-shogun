@@ -134,7 +134,7 @@ if [[ "$FIX_MODE" == "false" ]]; then
             print "  " issues[i]
         }
         print ""
-        print "Run with --fix to auto-repair"
+        print "action: bash scripts/gates/gate_wa_data_quality.sh --fix を実行して自動修復せよ"
         exit 1
     }
     ' "$WA_FILE"
@@ -318,7 +318,7 @@ if fix_mode and fixes:
         print(f"  {fix}")
 
 if not fix_mode:
-    print("\nRun with --fix to auto-repair")
+    print("\naction: bash scripts/gates/gate_wa_data_quality.sh --fix を実行して自動修復せよ")
 
 sys.exit(1)
 PY

@@ -80,17 +80,20 @@ for path in targets:
 
     if raw_value is None:
         print(f"WARN: {rel_path} (verified_at missing)")
+        print(f"  action: {rel_path} に verified_at フィールドを追記せよ (例: | verified_at | {today} |)")
         warn_count += 1
         continue
 
     if raw_value.lower() == "unverified":
         print(f"WARN: {rel_path} (verified_at=unverified)")
+        print(f"  action: {rel_path} の verified_at を実際の検証日 (YYYY-MM-DD) に更新せよ")
         warn_count += 1
         continue
 
     match = date_pattern.search(raw_value)
     if not match:
         print(f"WARN: {rel_path} (verified_at parse failed: {raw_value})")
+        print(f"  action: {rel_path} の verified_at を YYYY-MM-DD 形式に修正せよ")
         warn_count += 1
         continue
 
@@ -99,6 +102,7 @@ for path in targets:
 
     if age_days > 30:
         print(f"STALE: {rel_path} ({age_days} days old; verified_at={raw_value})")
+        print(f"  action: {rel_path} を開き verified_at を {today} に更新せよ")
         stale_count += 1
     elif age_days < 0:
         print(f"WARN: {rel_path} (verified_at in future: {raw_value})")
@@ -114,6 +118,7 @@ if stale_count:
         f"知識鮮度: ALERT — fresh={fresh_count} stale={stale_count} "
         f"warn={warn_count} total={total}"
     )
+    print("  action: 上記 STALE ファイルの verified_at を更新し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ")
     raise SystemExit(1)
 
 if warn_count:
@@ -121,6 +126,7 @@ if warn_count:
         f"知識鮮度: WARN — fresh={fresh_count} stale={stale_count} "
         f"warn={warn_count} total={total}"
     )
+    print("  action: 上記 WARN ファイルの verified_at フィールドを追記/修正し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ")
     raise SystemExit(2)
 
 print(

@@ -199,6 +199,10 @@ if [[ $VIOLATIONS -gt 0 ]]; then
     echo "Each suspect should be reviewed:"
     echo "  - Is the data value hiding an error? → PI-018 violation (fix)"
     echo "  - Is it a legitimate default? → Add comment explaining why"
+    echo ""
+    echo "action: 上記 SUSPECT 箇所を修正せよ。"
+    echo "  修正例1(エラー隠蔽): except Exception as e: raise RuntimeError(f'operation failed: {e}') from e"
+    echo "  修正例2(正当なデフォルト): except Exception:  # PI-018: legitimate default — <理由>  return []"
     exit 1  # BLOCK: silent fallbackは消火(PI-018)。忍者に修正させよ
 else
     echo "STATUS: OK — No suspect patterns found"
