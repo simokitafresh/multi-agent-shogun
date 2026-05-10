@@ -882,30 +882,61 @@ print(f'[report_field_set] {dot_key} = {value}')
 " "$rp" "$dk" "$val" "$sv"
 }
 
+_report_field_set_prepare_backup() {
+    if [ -e "$REPORT_PATH" ]; then
+        cp "$REPORT_PATH" "${REPORT_PATH}.bak"
+    else
+        : > "${REPORT_PATH}.bak"
+    fi
+}
+
+_report_field_set_validate_or_restore() {
+    local parse_output
+    if parse_output=$(python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$REPORT_PATH" 2>&1); then
+        return 0
+    fi
+
+    echo "YAML parse error after field set — reverting" >&2
+    if [ -n "$parse_output" ]; then
+        echo "$parse_output" >&2
+    fi
+    if [ -f "${REPORT_PATH}.bak" ]; then
+        cp "${REPORT_PATH}.bak" "$REPORT_PATH"
+    fi
+    return 1
+}
+
 # --- Main write logic with flock + retries ---
 MAX_RETRIES=3
 for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
     (
         flock -w 5 200 || { echo "[report_field_set] flock failed (attempt $attempt)" >&2; exit 1; }
+        _report_field_set_prepare_backup
 
         # Multi-line stdin text → Python fallback
         if [ "$USE_PYTHON" -eq 1 ]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$STDIN_VALUE"
-            exit $?
+            rc=$?
+            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
+            exit "$rc"
         fi
 
         # Array index key (e.g., files_modified[0]) → Python fallback
         # awk経路はリテラルキーとして扱うため配列インデックスを正しく処理できない
         if [[ "$DOT_KEY" == *'['* ]]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" "$STDIN_VALUE"
-            exit $?
+            rc=$?
+            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
+            exit "$rc"
         fi
 
         # JSON/YAML structure value (starts with [ or {) → Python fallback (GP-038)
         # awk経路は構造体をリテラル文字列として書くためYAML破壊の原因になる
         if [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$VALUE"
-            exit $?
+            rc=$?
+            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
+            exit "$rc"
         fi
 
         tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
@@ -953,7 +984,9 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                 # Block not found → Python fallback for new structure creation
                 rm -f "$tmp_file"
                 _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" ""
-                exit $?
+                rc=$?
+                [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
+                exit "$rc"
             fi
         fi
 
@@ -1003,6 +1036,7 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
             echo "[report_field_set] status = completed (auto after verdict)"
         fi
+        _report_field_set_validate_or_restore
 
     ) 200>"$LOCKFILE" && break
 
@@ -1052,6 +1086,7 @@ if changed:
     os.replace(tmp, rp)
     print(f'[report_field_set] dict→list auto-conversion applied for {dk}', file=sys.stderr)
 " "$REPORT_PATH" "$DOT_KEY" 2>&1 || true
+    _report_field_set_validate_or_restore
 fi
 
 # --- GP-053: binary_checks書込み直後のsemantic check ---

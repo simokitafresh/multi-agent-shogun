@@ -99,3 +99,27 @@ print('Single line OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"Single line OK"* ]]
 }
+
+@test "書込み後YAML検証: 正常書込みはPASSして構文を維持する" {
+    run bash "$SCRIPT" "$TEST_REPORT" result.summary "正常な単一行"
+    [ "$status" -eq 0 ]
+
+    run python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('parse ok')" "$TEST_REPORT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"parse ok"* ]]
+}
+
+@test "書込み後YAML検証: 構文崩壊値は復元して非0終了する" {
+    cp "$TEST_REPORT" "$TEST_REPORT.before"
+
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' result.summary 'bad: \\\\q' 2>&1"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"YAML parse error after field set — reverting"* ]]
+
+    run cmp -s "$TEST_REPORT.before" "$TEST_REPORT"
+    [ "$status" -eq 0 ]
+
+    run python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('restored parse ok')" "$TEST_REPORT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"restored parse ok"* ]]
+}
