@@ -544,6 +544,56 @@ YAML
     _fixture_project_end
 }
 
+@test "cmd_2665 lesson defaults are gate-compatible without manual lesson edits" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_2665_fixture
+  task_id: cmd_2665_fixture_exact
+  project: infra
+  ac_version: b99834bc
+  report_filename: sasuke_report_cmd_2665_fixture.yaml
+  acceptance_criteria:
+    - id: AC1
+      description: "lesson default values pass report gate"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_2665_fixture_exact cmd_2665_fixture infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_2665_fixture.yaml"
+    grep -Fq 'no_lesson_reason: "このタスクでは新規教訓候補なし"' "$report_path"
+    grep -Fq 'lessons_useful: []' "$report_path"
+    ! grep -Fq 'lessons_useful: null' "$report_path"
+
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" timestamp "2026-05-10T00:00:00"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" status completed
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.summary "テンプレート初期値のgate互換性を確認"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.details "lesson_candidate.no_lesson_reasonとlessons_usefulは初期値のまま"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" purpose_validation.cmd_purpose "lesson default compatibility"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" files_modified "scripts/deploy_task.sh"
+    printf '[{check: "lesson default values pass report gate", result: "yes"}]\n' \
+        | bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" binary_checks.AC1 -
+    printf '[{check: "git commit check waived in template compatibility test", result: "yes"}]\n' \
+        | bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" binary_checks.commit -
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" verdict PASS
+
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"no_lesson_reason"* ]]
+    [[ "$output" != *"lessons_useful: null"* ]]
+
+    _fixture_project_end
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════

@@ -1451,11 +1451,11 @@ lesson_candidate:
   # \$RFS lesson_candidate.found "false"
   # \$RFS lesson_candidate.no_lesson_reason "既知のL084と同じパターン"
   found: false
-  no_lesson_reason: ""  # found:false時に必須。理由を1文で書け。理由なきfalseは家老差し戻し(L247)
+  no_lesson_reason: "このタスクでは新規教訓候補なし"  # found:false時に必須。必要なら具体理由に書換えよ
   title: ""
   detail: ""
   project: ${project}
-lessons_useful: null
+lessons_useful: []  # ★教訓なし。追加教訓があればid/useful/reason形式で記入
 skill_candidate:
   found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
   # found: true の場合は以下も記入:
@@ -1507,10 +1507,10 @@ EOF
     ' "$task_file" 2>/dev/null)
 
     if [ -z "$_lu_ids" ]; then
-        # GP-088: related_lessonsなし or id抽出不能 → null→[]に変換
-        if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
-            sed -i 's/lessons_useful: null/lessons_useful: []  # ★教訓なし。追加教訓があればid\/useful\/reason形式で記入/' "$report_file"
-            log "report_template: lessons_useful null→[] fallback"
+        # GP-088/cmd_2665: related_lessonsなし or id抽出不能 → 空リストを維持
+        if grep -Eq '^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$' "$report_file" 2>/dev/null; then
+            sed -Ei 's/^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/lessons_useful: []  # ★教訓なし。追加教訓があればid\/useful\/reason形式で記入/' "$report_file"
+            log "report_template: lessons_useful empty-list fallback"
         fi
     else
         # IDリストからlessons_useful雛形を生成
@@ -1525,10 +1525,10 @@ EOF
             _lu_count=$((_lu_count + 1))
         done <<< "$_lu_ids"
 
-        # report内のlessons_useful: nullを差し替え
-        if grep -q 'lessons_useful: null' "$report_file" 2>/dev/null; then
+        # report内のlessons_useful空値を差し替え
+        if grep -Eq '^lessons_useful:[[:space:]]*(null|~|\[\])' "$report_file" 2>/dev/null; then
             awk -v repl="$_lu_block" '
-                /lessons_useful: null/ { print repl; next }
+                /^lessons_useful:[[:space:]]*(null|~|\[\])/ { print repl; next }
                 { print }
             ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
             log "lessons_useful template: ${_lu_count} entries injected"
