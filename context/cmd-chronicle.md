@@ -801,3 +801,4 @@
 | cmd_2676 | gate_wa_data_quality.shをL1→L5化。False WAパターンTOP3を家老に自動通知し、WA計測精度の改善アクションを即座に提示する | infra | 05-11 | gate_wa_data_quality.shにFalse |
 | cmd_2678 | cmd_save.sh is_gate_or_hook_addition_cmd L161の偽陽性修正。gate_fire_log等のファイル名内gateをgate/hook追加と誤判定するバグを修正する | infra | 05-11 | cmd_save.shのgate/hook追加判定をASCI |
 | cmd_2679 | セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する | infra | 05-11 | セマンティクスインデックスのdefense_hierarch |
+| cmd_2680 | daemon_watchdog.shのcrontab登録を旧flock形式から新形式に更新し、1時間毎のntfy WARN通知を停止する | infra | 05-11 | crontabのdaemon_watchdog.sh登録から |
