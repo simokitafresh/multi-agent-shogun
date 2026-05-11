@@ -70,13 +70,14 @@ fi
 
 echo "=== gunshi_gate_sync: ${#GATE_MAP[@]}件のgate_result情報収集済み ==="
 
-# review_logのnullエントリを更新
+# review_logのnull/不在エントリを更新
 update_log() {
     local target_file="$1"
     [[ -f "$target_file" ]] || return 0
 
+    # Phase 1: gate_result: null → 置換
     local null_cmds
-    null_cmds=$(grep -B10 'gate_result: null' "$target_file" | grep 'cmd_id:' | awk '{print $NF}')
+    null_cmds=$(grep -B10 'gate_result: null' "$target_file" 2>/dev/null | grep 'cmd_id:' | awk '{print $NF}' || true)
 
     for cmd_id in $null_cmds; do
         local result="${GATE_MAP[$cmd_id]:-}"
@@ -84,8 +85,6 @@ update_log() {
             if $DRY_RUN; then
                 echo "  [dry-run] $cmd_id: null → $result"
             else
-                # cmd_id行の後の最初のgate_result: nullを置換
-                # awkでcmd_idマッチ後フラグON→gate_result: null発見で置換→フラグOFF
                 awk -v cid="$cmd_id" -v res="$result" '
                     /cmd_id:/ && $0 ~ cid { found=1 }
                     found && /gate_result: null/ {
@@ -93,6 +92,40 @@ update_log() {
                         found=0
                     }
                     { print }
+                ' "$target_file" > "${target_file}.tmp" && mv "${target_file}.tmp" "$target_file"
+            fi
+            ((updated++)) || true
+        else
+            ((skipped++)) || true
+        fi
+    done
+
+    # Phase 2: gate_resultフィールド不在のdraft/reportエントリ → 挿入
+    local missing_cmds
+    missing_cmds=$(awk '
+        /^- cmd_id:/ {
+            if (n>0 && !has_gate && (rt=="draft"||rt=="report")) print prev_cmd
+            n++; has_gate=0; rt=""; prev_cmd=$3
+        }
+        /^  gate_result:/ { has_gate=1 }
+        /^  review_type:/ { v=$2; gsub(/["'"'"']/, "", v); if (v=="draft"||v=="report") rt=v }
+        END { if (n>0 && !has_gate && (rt=="draft"||rt=="report")) print prev_cmd }
+    ' "$target_file")
+
+    for cmd_id in $missing_cmds; do
+        local result="${GATE_MAP[$cmd_id]:-}"
+        if [[ -n "$result" ]]; then
+            if $DRY_RUN; then
+                echo "  [dry-run] $cmd_id: (missing) → $result"
+            else
+                # review_type行の直後にgate_resultを挿入
+                awk -v cid="$cmd_id" -v res="$result" '
+                    /cmd_id:/ && $0 ~ cid { found=1 }
+                    { print }
+                    found && /review_type:/ {
+                        print "  gate_result: " res
+                        found=0
+                    }
                 ' "$target_file" > "${target_file}.tmp" && mv "${target_file}.tmp" "$target_file"
             fi
             ((updated++)) || true
