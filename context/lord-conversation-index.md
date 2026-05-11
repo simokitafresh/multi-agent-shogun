@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-12 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-12T00:00:56+09:00 -->
+<!-- generated_at: 2026-05-12T00:06:38+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-12T00:06:38+09:00 | terminal | response | 復帰完了。殿、将軍でござる。 **前セッションの状況:** - 記事（戦国AIマルチエージェント設計書）→ テックブログ構成に修正してgist更新済み https://gist.github.com/simokitafresh/de289…
+- 2026-05-12T00:06:36+09:00 | ntfy | outbound | 【将軍】復帰済み。
+- 2026-05-12T00:01:35+09:00 | terminal | inbound | y
 - 2026-05-12T00:00:56+09:00 | terminal | response | 承知。何をすべきか？ [meta] stop_reason=end_turn
 - 2026-05-12T00:00:38+09:00 | terminal | inbound | y
 - 2026-05-12T00:00:11+09:00 | ntfy | outbound | 【watchdog】ntfy_listener.shを自動再起動しました
@@ -11,9 +14,6 @@
 - 2026-05-11T21:54:50+09:00 | terminal | response | gist更新完了。 https://gist.github.com/simokitafresh/de289c2be57e943a7dac43367268c7ff **変更点:** - 前段・後段: 将軍の書簡スタイル（そのまま） - 第1…
 - 2026-05-11T21:50:42+09:00 | terminal | inbound | 真ん中はテックブログにしよう。せっかく最初にいい構成案を出したのに全く違うの書いたから直そう
 - 2026-05-11T21:49:44+09:00 | terminal | response | gist公開完了。 https://gist.github.com/simokitafresh/de289c2be57e943a7dac43367268c7ff gistインデックスも更新済み。 [meta] stop_reason=en…
-- 2026-05-11T21:49:19+09:00 | terminal | inbound | gistに共有して
-- 2026-05-11T21:36:08+09:00 | terminal | response | 書き上げた。殿にお見せする。 保存先: `shogun/sengoku-21-full-blueprint.md` **第二十一話 城の全設計図を開く** 全体の構成: 1. **城の見取り図** — tmux 9ペイン、一本の鎖 2. …
-- 2026-05-11T21:29:34+09:00 | terminal | inbound | まあ無理せず将軍のあんでいこうか
 
 ## 未解決確認事項
 - 書き上げた。殿にお見せする。 保存先: `shogun/sengoku-21-full-blueprint.md` **第二十一話 城の全設計図を開く** 全体の構成: 1. **城の見取り図** — tmux 9ペイン、一本の鎖 2. **九人の流派** — Opus/Son…
