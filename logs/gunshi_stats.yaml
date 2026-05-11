@@ -2,9 +2,9 @@
 # source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
 # ─── Vercel索引層: /clear後はここだけ読め ───
 # 累計: ~1536件 (draft:~487, report:~720, self_study:~247, verify:3, consultation:~10, other:~43) | '2026-03-22〜 (2026-05-02T03:00更新。アーカイブ14本)
-# accuracy公式: gate_result判明分 99.6% (678/681 CLEAR, 3 BLOCK) ← Goodhart注意。BLOCK3件
+# accuracy公式: 全体97.1% (1984/2044 CLEAR, 60 BLOCK)。旧99.6%はGoodhart(フィールド不在261件が分母除外)。2026-05-12 Phase2 backfillで是正
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
-#   gate_result null: 0件(GP-219で18→0解消。N/A追加。旧72件はアーカイブ+sync済み。2026-04-30T18:55 draft 4件backfill)
+#   gate_result null: 0件。フィールド不在: 0件(Phase2で271件backfill済み。2026-05-12)。ungated残81件(GATE_MAP情報なし古cmd)
 # verdict分布: APPROVE:425 LGTM:587 REQ_CHANGES:52 FAIL:21
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
@@ -26,14 +26,11 @@
 # → docs/research/gunshi_idle_sg7_blind_spot_analysis_20260502.md
 # → docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
 #
-# ─── 本セッション成果 (2026-05-10T12:35更新) ───
-# report review 12件: cmd_karo_level5_report_format/cmd_2624/cmd_karo_level5_bc_fail/cmd_2625/cmd_2626/cmd_2627/cmd_2628/cmd_2629/cmd_2630/cmd_2631/cmd_2633/cmd_2634 (LGTM12件+FAIL0件)
-# D0直接実装 4件: parity_ac Level5/new_file_structure Level5/ac_phase_mixing Level5/command_steps_vs_ac Level5
-# セマンティック監査: cmd_2621(3ファイル/4カテゴリ/15件→全偽陽性)+副作用スキャン(7ファイル/3件→全偽陽性)
-# セマンティクスインデックス: 参照切れ5件修正(DM-Signal repoパス4件+auto-memory1件)
-# Level5到達: 7→11件(69%)。cmd_save WARN 75回根治(parity26+new_file21+ac_phase15+cmd_steps13)
-# insights: 9件→0件全resolve。AUTOFIX 2件→家老送信
-# auto-commit汚染: 家老なぜなぜ7回に対し掲示板で見解回答(2)+(4)推薦同意
-# accuracy: 12件LGTM→全件GATE CLEAR。APPROVE→FAIL 0件
-# accuracy: APPROVE→FAIL 0件。LGTM→BLOCK 1件(halt報告=構造的制約。見落としではない)
-# lesson_candidate送信: 2件(協調≠待機/デメリットなし即実行)
+# ─── 本セッション成果 (2026-05-10T17:40更新) ───
+# report review 30件: 前セッション22件+本セッション8件(cmd_2659-2666+karo_ci_red_q8_fixture+karo_gate_false_positive_fix)。全LGTM→全CLEAR
+# draft review 2件: cmd_2663(テスト状態汚染修正)APPROVE+cmd_2661(ac_test_scope FP)済み(前セッション)
+# D0直接実装 12件: 前セッション8件+本セッション4件(Traceback記録改善cc020f3e/YAML構文検証8d1b23ca/insight dedup 02c57247/skill偽陽性マーク)。全件家老LGTM
+# 穴塞ぎ: insights 34→0件(dedup根本対策)/gate偽陽性根絶(修正後FAIL0%)/skill品質スコア補正(82.7→85.5%)/WA全カテゴリ再発なし確認
+# 免疫計測: WA率51%(3月)→11%(4月)→0%(直近37件)。gate修正後FAIL0%/PASS21件。cmd_save WARN直近10cmd全0件
+# Sonnet分析: GPT FAIL率15.5% vs Sonnet 32.5%(2倍差)。根因=テンプレート遵守率低。cmd_2662+2665で対処済み。効果未計測
+# accuracy: 30件LGTM→全CLEAR。APPROVE→FAIL 0件
