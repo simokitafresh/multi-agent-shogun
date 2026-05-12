@@ -13,7 +13,7 @@ setup_file() {
 
 setup() {
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/session_hooks.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/hooks" "$TEST_TMPDIR/queue/inbox" "$TEST_TMPDIR/queue/compact_state"
+    mkdir -p "$TEST_TMPDIR/scripts/hooks" "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/queue/inbox" "$TEST_TMPDIR/queue/compact_state"
 
     ln -s "$SESSION_START_SCRIPT" "$TEST_TMPDIR/scripts/hooks/session_start_inject.sh"
     ln -s "$PROMPT_STATE_SCRIPT" "$TEST_TMPDIR/scripts/hooks/prompt_state_inject.sh"
@@ -82,6 +82,54 @@ PY
     [ "${result[1]}" = "True" ]
     [ "${result[2]}" = "True" ]
     [ "${result[3]}" = "True" ]
+}
+
+@test "SSH-001b: session_start_inject runs karo startup gate and injects output" {
+    export MOCK_AGENT_ID="karo"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "=== 家老起動チェック fake ==="
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("startup_gate: gate_karo_startup.sh" in ctx)
+print("=== 家老起動チェック fake ===" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+}
+
+@test "SSH-001c: session_start_inject runs gunshi startup gate and injects output" {
+    export MOCK_AGENT_ID="gunshi"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_gunshi_startup.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "=== 軍師起動チェック fake ==="
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_gunshi_startup.sh"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("startup_gate: gate_gunshi_startup.sh" in ctx)
+print("=== 軍師起動チェック fake ===" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
 }
 
 @test "SSH-002: prompt_state_inject returns nothing for non-shogun" {

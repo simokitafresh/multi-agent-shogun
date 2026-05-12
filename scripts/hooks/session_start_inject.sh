@@ -165,11 +165,35 @@ ${raw_state}"
   fi
 fi
 
-# --- startup gate セクション削除(2026-04-12殿裁定) ---
-# 理由: /clear直後にgate自動実行=無駄なcontext消費。
-# 正解: 殿の入力受領時にエージェントがCLAUDE.md recovery手順で手動実行し、
-#       その後入力対応する。今まで通りの流れ。
-# gate_*_startup.sh は手動実行専用として維持（--brief/通常の2モード）
+# --- Role startup gate ---
+# cmd_2683: 起動手順スキップを防ぐため、SessionStart時に役職別startup gateを
+# 自動実行し、その結果をadditionalContextへ注入する。
+startup_gate_output="none"
+startup_gate_name="none"
+case "$agent_id" in
+  shogun)
+    startup_gate_name="gate_shogun_startup.sh"
+    ;;
+  karo)
+    startup_gate_name="gate_karo_startup.sh"
+    ;;
+  gunshi)
+    startup_gate_name="gate_gunshi_startup.sh"
+    ;;
+esac
+
+if [[ "$startup_gate_name" != "none" ]]; then
+  startup_gate_path="$SCRIPT_DIR/scripts/gates/$startup_gate_name"
+  if [[ -x "$startup_gate_path" || -f "$startup_gate_path" ]]; then
+    if command -v timeout >/dev/null 2>&1; then
+      startup_gate_output="$(timeout 50s bash "$startup_gate_path" 2>&1 || printf 'startup_gate_exit=%s\n' "$?")"
+    else
+      startup_gate_output="$(bash "$startup_gate_path" 2>&1 || printf 'startup_gate_exit=%s\n' "$?")"
+    fi
+  else
+    startup_gate_output="missing: $startup_gate_path"
+  fi
+fi
 
 # --- Build additionalContext ---
 header="=== Session Context (auto-injected) ==="
@@ -178,27 +202,36 @@ source: ${source_type}
 timestamp: ${timestamp}
 agent: ${agent_id}
 inbox_unread: ${unread_count}
+startup_gate: ${startup_gate_name}
 --- karo_snapshot ---
 "
 compact_section="
 --- compact_state ---
 ${compact_state}"
+startup_gate_section="
+--- startup_gate_output ---
+${startup_gate_output}"
 
-# karo_snapshotは budget で切り詰め
-fixed_len=${#fixed_part}
-compact_len=${#compact_section}
-max_total=500
-snapshot_budget=$((max_total - fixed_len - compact_len))
-
-if (( snapshot_budget < 0 )); then
-  snapshot_budget=0
-fi
+# 大きいセクションは役割ごとに上限を設ける。startup gateは手順強制の正本なので
+# snapshot/compactより優先して広めに残す。
+snapshot_budget=500
+compact_budget=1000
+startup_gate_budget=20000
 
 if (( ${#karo_snapshot} > snapshot_budget )); then
-  karo_snapshot="${karo_snapshot:0:$snapshot_budget}"
+  karo_snapshot="${karo_snapshot:0:$snapshot_budget}
+(truncated)"
+fi
+if (( ${#compact_section} > compact_budget )); then
+  compact_section="${compact_section:0:$compact_budget}
+(truncated)"
+fi
+if (( ${#startup_gate_section} > startup_gate_budget )); then
+  startup_gate_section="${startup_gate_section:0:$startup_gate_budget}
+(truncated)"
 fi
 
-additional_context="${fixed_part}${karo_snapshot}${compact_section}"
+additional_context="${fixed_part}${karo_snapshot}${compact_section}${startup_gate_section}"
 
 # --- Output JSON ---
 _session_start_emit_output "SessionStart" "$additional_context"
