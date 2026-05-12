@@ -176,3 +176,34 @@ EOF
     [ "$status" -eq 9 ]
     grep -q "failed before persistence" "$TEST_PROJECT/logs/safe_inbox_write.log"
 }
+
+@test "deploy_task --direct cmd_training injects L4 purpose and three ACs" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: normal
+  project: infra
+EOF
+
+    run deploy_task_fast --direct sasuke cmd_training_L4_test
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert task["parent_cmd"] == "cmd_training_L4_test"
+assert task["task_id"] == "cmd_training_L4_test_normal"
+assert task["status"] == "assigned"
+assert "L4修行" in task["purpose"]
+acs = task["acceptance_criteria"]
+assert list(acs.keys()) == ["AC1", "AC2", "AC3"]
+assert "改善点を3つ" in acs["AC1"]["description"]
+assert "最高インパクト1件" in acs["AC2"]["description"]
+assert "lesson_candidate found=true" in acs["AC3"]["description"]
+for ac_id in ("AC1", "AC2", "AC3"):
+    assert acs[ac_id]["binary_checks"], ac_id
+PY
+}

@@ -165,6 +165,17 @@ deploy_task_fast() {
         if [ -n "$CMD_ID" ]; then
             if [ "$DIRECT_MODE" = true ]; then
                 log "direct_mode(test): skipping resolve_cmd_to_task for ${CMD_ID}"
+                local direct_task_type direct_task_id_suffix
+                direct_task_type=$(field_get "$task_file" "task_type" "normal")
+                if [ "$direct_task_type" = "exact" ]; then
+                    direct_task_id_suffix="exact"
+                else
+                    direct_task_id_suffix="normal"
+                fi
+                yaml_field_set "$task_file" "task" "parent_cmd" "$CMD_ID"
+                yaml_field_set "$task_file" "task" "status" "assigned"
+                yaml_field_set "$task_file" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}"
+                inject_direct_training_template "$task_file" "$CMD_ID" || true
             elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
                 echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
                 return 1

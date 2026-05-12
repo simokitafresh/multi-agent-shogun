@@ -5842,6 +5842,7 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
+            inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
         elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
