@@ -103,6 +103,36 @@ YAML
     [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
 }
 
+@test "karo_direct task without local ACs counts ACs from malformed archived cmd source" {
+    mkdir -p "$TEST_PROJECT/queue/archive/cmds"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_karo_archive
+  task_id: cmd_karo_archive_exact
+  task_type: exact
+YAML
+    cat > "$TEST_PROJECT/queue/archive/cmds/cmd_karo_archive_completed_20260512.yaml" <<'YAML'
+commands:
+  cmd_karo_archive:
+    title: "archive cmd"
+    acceptance_criteria:
+      - description: "first AC"
+      - description: "second AC"
+      - description: "third AC"
+    quality_gate:
+      q11_not_already_done: "grep -n 'MIN_SAMPLES.*inject\|初回.*保証' scripts/deploy_task.sh"
+YAML
+
+    run_draft_review "cmd_karo_archive"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+    run cat "$TEST_PROJECT/logs/inbox_write_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gunshi draft cmd_karo_archive レビュー依頼。"* ]]
+    [[ "$output" == *"ninja=sasuke。 review_draft karo"* ]]
+}
+
 @test "invalid AC count output warns and still sends draft review" {
     run bash -lc '
         set -euo pipefail
