@@ -170,6 +170,27 @@ STKYAML
     [[ "$output" == *"日前"* ]]
 }
 
+@test "--dashboard-warnings excludes low-frequency context files" {
+    _create_context "context/README.md" "$STALE_DATE"
+    _create_context "context/cdp-philosophy.md" "$STALE_DATE"
+    _create_context "context/cdp-severity.md" "$STALE_DATE"
+    _create_context "context/checklist-alm-registration.md" "$STALE_DATE"
+    _create_context "context/checklist-shin-v2-registration.md" "$STALE_DATE"
+    _create_context "context/checklist-ward-fof-production.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "infra" "completed" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/infrastructure.md"* ]]
+    [[ "$output" != *"README.md"* ]]
+    [[ "$output" != *"cdp-philosophy.md"* ]]
+    [[ "$output" != *"cdp-severity.md"* ]]
+    [[ "$output" != *"checklist-alm-registration.md"* ]]
+    [[ "$output" != *"checklist-shin-v2-registration.md"* ]]
+    [[ "$output" != *"checklist-ward-fof-production.md"* ]]
+}
+
 # === Test 6: --dashboard-warnings last_updated未記載 → WARN "未記載" ===
 @test "--dashboard-warnings with missing last_updated → WARN 未記載" {
     _create_context "context/dm-signal.md"
@@ -192,6 +213,27 @@ STKYAML
     [[ "$output" == *"context/dm-signal.md"* ]]
     # infra context should NOT appear (different project)
     [[ "$output" != *"infrastructure.md"* ]]
+}
+
+@test "--cmd-warnings excludes low-frequency context files" {
+    _create_context "context/README.md" "$STALE_DATE"
+    _create_context "context/cdp-philosophy.md" "$STALE_DATE"
+    _create_context "context/cdp-severity.md" "$STALE_DATE"
+    _create_context "context/checklist-alm-registration.md" "$STALE_DATE"
+    _create_context "context/checklist-shin-v2-registration.md" "$STALE_DATE"
+    _create_context "context/checklist-ward-fof-production.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_503" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_503
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/infrastructure.md"* ]]
+    [[ "$output" != *"README.md"* ]]
+    [[ "$output" != *"cdp-philosophy.md"* ]]
+    [[ "$output" != *"cdp-severity.md"* ]]
+    [[ "$output" != *"checklist-alm-registration.md"* ]]
+    [[ "$output" != *"checklist-shin-v2-registration.md"* ]]
+    [[ "$output" != *"checklist-ward-fof-production.md"* ]]
 }
 
 @test "--cmd-warnings reads shogun_to_karo mapping command format" {
