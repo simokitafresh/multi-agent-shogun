@@ -76,13 +76,17 @@ acceptance_criteria:
   AC2: {description: "修正対象ファイル・行番号・波及先を明記"}
 ```
 
-### training
-```yaml
-purpose: "修行 — <修行テーマ>"
-# 修行サイクルのACはcontext/training-cycle.md参照
+### training（必ず deploy_task.sh --direct を使え）
+```bash
+# ★ training だけは /tmp 手動YAML禁止。deploy_task.sh --direct が修行テンプレート(purpose/AC)を自動注入する。
+# cmd_id は cmd_training_L4_r<round>_<ninja_name> 形式
+bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninja_name>
+# inbox_write は deploy_task.sh 内部で自動送信されるため不要
 ```
+手動でpurpose/ACを書いてはならない。inject_direct_training_template が自動注入する。
 
 ## 制約
-- deploy_task.shを直接使うと重複ガードで拒否される場合がある→/tmp経由が正解
-- cmd_idは `cmd_karo_<task_type>_<簡潔な説明>` 形式
+- training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
+- ci_fix/recon2/hotfix タイプは /tmp 経由が正解（重複ガード回避のため）
+- cmd_idは `cmd_karo_<task_type>_<簡潔な説明>` 形式（training 除く）
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）

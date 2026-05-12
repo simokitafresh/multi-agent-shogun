@@ -207,3 +207,35 @@ for ac_id in ("AC1", "AC2", "AC3"):
     assert acs[ac_id]["binary_checks"], ac_id
 PY
 }
+
+@test "deploy_task --direct cmd_training overwrites pre-existing purpose and ACs with L4 template" {
+    # karo_direct手動YAML作成方式では目的/AC未注入が発生する（cmd_training_L4_r16事故）
+    # deploy_task.sh --directを使えば既存purpose/ACを上書きして修行テンプレートを注入する
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: normal
+  project: infra
+  purpose: "既存の目的 — 上書きされるべき"
+  acceptance_criteria:
+    AC1:
+      description: "既存AC — 上書きされるべき"
+EOF
+
+    run deploy_task_fast --direct sasuke cmd_training_L4_overwrite_test
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert "L4修行" in task["purpose"], f"purpose not overwritten to L4 template: {task.get('purpose')}"
+acs = task["acceptance_criteria"]
+assert list(acs.keys()) == ["AC1", "AC2", "AC3"], f"ACs not overwritten to 3-AC template: {list(acs.keys())}"
+assert "改善点を3つ" in acs["AC1"]["description"]
+assert "最高インパクト1件" in acs["AC2"]["description"]
+assert "lesson_candidate found=true" in acs["AC3"]["description"]
+PY
+}
