@@ -159,6 +159,82 @@ report_yaml_is_template() {
     echo "no"
 }
 
+find_active_peer_deployments() {
+    local target="$1"
+    local tasks_dir="$SCRIPT_DIR/queue/tasks"
+
+    [ -d "$tasks_dir" ] || return 0
+
+    python3 - "$tasks_dir" "$target" <<'PY' 2>/dev/null || true
+import glob
+import os
+import sys
+
+import yaml
+
+tasks_dir = sys.argv[1]
+target = sys.argv[2]
+active_statuses = {"assigned", "acknowledged", "in_progress"}
+
+
+def task_payload(path):
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    task = data.get("task")
+    if isinstance(task, dict):
+        return task
+    return data if isinstance(data, dict) else {}
+
+
+target_path = os.path.join(tasks_dir, f"{target}.yaml")
+if not os.path.exists(target_path):
+    raise SystemExit(0)
+
+try:
+    target_task = task_payload(target_path)
+except Exception:
+    raise SystemExit(0)
+
+parent_cmd = str(target_task.get("parent_cmd") or "").strip()
+if not parent_cmd:
+    raise SystemExit(0)
+
+for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
+    ninja = os.path.splitext(os.path.basename(path))[0]
+    if ninja == target:
+        continue
+    try:
+        task = task_payload(path)
+    except Exception:
+        continue
+    if str(task.get("parent_cmd") or "").strip() != parent_cmd:
+        continue
+    status = str(task.get("status") or "").strip()
+    if status in active_statuses:
+        print(f"{ninja}\t{status}")
+PY
+}
+
+notify_karo_duplicate_deploy_block() {
+    local target="$1"
+    local parent_cmd="$2"
+    local duplicates="$3"
+    local duplicate_summary=""
+
+    [ "${INBOX_WRITE_DUP_BLOCK_NOTIFY:-1}" = "1" ] || return 0
+
+    duplicate_summary=$(printf '%s\n' "$duplicates" | awk -F '\t' 'NF >= 2 { printf "%s(status=%s) ", $1, $2 }')
+    duplicate_summary="${duplicate_summary%" "}"
+    [ -n "$duplicate_summary" ] || duplicate_summary="$duplicates"
+
+    INBOX_WRITE_DUP_BLOCK_NOTIFY=0 \
+        bash "$SELF_SCRIPT_PATH" \
+            karo \
+            "[duplicate_deploy_gate] BLOCKED: parent_cmd=${parent_cmd} target=${target} duplicates=${duplicate_summary}" \
+            deploy_blocked \
+            inbox_write >/dev/null 2>&1 || true
+}
+
 inbox_yaml_strip_quotes() {
     local value="$1"
     value="${value#"${value%%[![:space:]]*}"}"
@@ -918,6 +994,31 @@ printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
 printf -v _msg_rand '%04x%04x' "$RANDOM" "$RANDOM"
 MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"
 printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
+
+# Duplicate deploy gate: every task_assigned delivery path must converge here.
+# If another ninja already owns the same parent_cmd in an active state, block
+# before persisting the new assignment notification.
+if [ "$TYPE" = "task_assigned" ]; then
+    NINJA_TASK="$SCRIPT_DIR/queue/tasks/${TARGET}.yaml"
+    if [ -f "$NINJA_TASK" ]; then
+        _target_parent_cmd=$(inbox_yaml_field_get "$NINJA_TASK" "parent_cmd" "")
+        _active_duplicates=$(find_active_peer_deployments "$TARGET")
+        if [ -n "$_target_parent_cmd" ] && [ -n "$_active_duplicates" ]; then
+            echo "" >&2
+            echo "==============================" >&2
+            echo "[duplicate_deploy_gate] BLOCKED: same parent_cmd already active" >&2
+            echo "[duplicate_deploy_gate] parent_cmd=${_target_parent_cmd} target=${TARGET}" >&2
+            while IFS=$'\t' read -r _dup_ninja _dup_status; do
+                [ -n "$_dup_ninja" ] || continue
+                echo "[duplicate_deploy_gate] duplicate=${_dup_ninja} status=${_dup_status}" >&2
+            done <<< "$_active_duplicates"
+            echo "[duplicate_deploy_gate] Resolve/complete the active deployment before assigning another ninja to the same parent_cmd." >&2
+            echo "==============================" >&2
+            notify_karo_duplicate_deploy_block "$TARGET" "$_target_parent_cmd" "$_active_duplicates"
+            exit 1
+        fi
+    fi
+fi
 
 # Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
 # 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）

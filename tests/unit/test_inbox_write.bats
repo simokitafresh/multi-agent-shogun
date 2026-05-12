@@ -421,6 +421,54 @@ EOF
     [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
 }
 
+@test "task_assigned: duplicate active parent_cmd in peer ninja → BLOCKED and notifies karo" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_dup_001
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/otherninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_dup_001
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"duplicate_deploy_gate"* ]]
+    [[ "$output" == *"parent_cmd=cmd_dup_001 target=testninja"* ]]
+    [[ "$output" == *"duplicate=otherninja status=in_progress"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "^  type: 'deploy_blocked'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "duplicates=otherninja(status=in_progress)" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+}
+
+@test "task_assigned: completed peer parent_cmd does not block" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_dup_002
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/otherninja.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_dup_002
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+    grep -q "^  type: 'task_assigned'" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+}
+
 # ============================================================
 # Git uncommitted check tests (merged from tests/unit/ cmd_cycle_001)
 # ============================================================
