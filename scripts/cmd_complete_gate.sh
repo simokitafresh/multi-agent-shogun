@@ -244,6 +244,20 @@ notify_karo_cmd_complete_skill_hint() {
     fi
 }
 
+notify_karo_lesson_registration_reminder() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local message="lesson_candidate found:trueだがlesson.done未生成: ${cmd_id}/${ninja_name}。lesson_write.shで教訓登録を完了せよ。"
+
+    if grep -q "lesson.done未生成: ${cmd_id}/${ninja_name}" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+        echo "  karo lesson reminder: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" lesson_registration_reminder cmd_complete_gate 2>/dev/null; then
+        echo "  karo lesson reminder: OK"
+    else
+        echo "  [INFO] karo lesson reminder: WARN (non-blocking)"
+    fi
+}
+
 log_skill_execution_pass() {
     local skill_name="$1"
     local gate_name="$2"
@@ -3980,9 +3994,8 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
                     ALL_CLEAR=false
                 fi
             else
-                echo "  [CRITICAL] ${ninja_name}: NG ← lesson_candidate found:true but lesson.done not found"
-                record_block_reason "${ninja_name}:lesson_done_missing"
-                ALL_CLEAR=false
+                echo "  WARN: ${ninja_name}: lesson_candidate found:true but lesson.done not found — lesson_write.sh登録待ち"
+                notify_karo_lesson_registration_reminder "$CMD_ID" "$ninja_name"
             fi
             ;;
         missing)

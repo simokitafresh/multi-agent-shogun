@@ -2760,7 +2760,7 @@ task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
 
 DEDUP_THRESHOLD = 0.25
-USEFUL_RATE_THRESHOLD = 0.30  # useful_rate below this → score decay (0.15→0.30: 忍者成長速度改善3)
+USEFUL_RATE_THRESHOLD = 0.40  # useful_rate below this → score decay (0.30→0.40: NOT_USEFUL退場加速)
 USEFUL_RATE_DECAY = 0.3       # multiplier for low useful_rate lessons (0.5→0.3: より積極的に低有効教訓を退場)
 
 def tech_terms(text):

@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -279,6 +279,7 @@ RETIRE_ID=""
 RETAG_ID=""
 RETAG_TAGS=""
 SUBDOMAIN=""
+TARGET_FILES=""
 
 show_usage() {
     cat <<'EOF'
@@ -291,6 +292,8 @@ Options:
   --tags "db,api"         教訓タグを明示指定
   --subdomain fe|be|gs|infra
                           教訓の対象サブドメインを明示指定
+  --target-files "pattern1,pattern2"
+                          教訓の対象ファイルパターンを明示指定
   --when "trigger"        発動条件を明示指定
   --how "steps"           実行手順を明示指定
   --if "condition" --then "action" --because "reason"
@@ -323,6 +326,10 @@ while [ $# -gt 0 ]; do
             ;;
         --subdomain)
             SUBDOMAIN="${2:-}"
+            shift 2
+            ;;
+        --target-files)
+            TARGET_FILES="${2:-}"
             shift 2
             ;;
         --if)
@@ -394,6 +401,25 @@ if [ -n "$SUBDOMAIN" ]; then
         fi
     done
     SUBDOMAIN="$_lw_subdomain_csv"
+fi
+
+normalize_target_files_csv() {
+    local raw="$1"
+    printf '%s\n' "$raw" | tr ',' '\n' | awk '
+        {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            gsub(/^["'\''"]|["'\''"]$/, "")
+            if ($0 != "" && !seen[$0]++ && count < 5) {
+                out = out (out ? "," : "") $0
+                count++
+            }
+        }
+        END { print out }
+    '
+}
+
+if [ -n "$TARGET_FILES" ]; then
+    TARGET_FILES="$(normalize_target_files_csv "$TARGET_FILES")"
 fi
 
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
@@ -629,7 +655,9 @@ TIMESTAMP=$(date "+%Y-%m-%d")
 
 # 忍者成長速度改善2: source_cmdのtarget_pathを教訓のtarget_filesに自動設定
 _LW_TARGET_FILES=""
-if [ -n "${SOURCE_CMD:-}" ]; then
+if [ -n "${TARGET_FILES:-}" ]; then
+    _LW_TARGET_FILES="$TARGET_FILES"
+elif [ -n "${SOURCE_CMD:-}" ]; then
     # shogun_to_karo.yaml + archive からtarget_pathを取得
     _lw_tp=""
     for _lw_yaml in "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/queue/archive"/shogun_to_karo_*.yaml; do

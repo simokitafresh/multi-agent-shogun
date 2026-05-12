@@ -237,6 +237,48 @@ fi
 if [ -n "$BECAUSE_REASON" ]; then
     EXTRA_FLAGS+=(--because "$BECAUSE_REASON")
 fi
+TARGET_FILES=$(
+    python3 - "$REPORT_PATH" <<'PY'
+import sys
+import yaml
+
+report_path = sys.argv[1]
+try:
+    with open(report_path, encoding='utf-8') as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    print("")
+    raise SystemExit(0)
+
+files = report.get("files_modified") or []
+paths = []
+if isinstance(files, str):
+    paths = [files]
+elif isinstance(files, list):
+    for item in files:
+        if isinstance(item, dict):
+            path = item.get("path") or item.get("file") or item.get("name")
+        else:
+            path = item
+        if path:
+            paths.append(str(path))
+
+seen = set()
+out = []
+for path in paths:
+    path = path.strip()
+    if not path or path in seen:
+        continue
+    seen.add(path)
+    out.append(path)
+    if len(out) >= 5:
+        break
+print(",".join(out))
+PY
+)
+if [ -n "$TARGET_FILES" ]; then
+    EXTRA_FLAGS+=(--target-files "$TARGET_FILES")
+fi
 bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "$SOURCE_CMD" --status confirmed "${EXTRA_FLAGS[@]}"
 
 echo "[auto_draft] Confirmed lesson registered successfully"
