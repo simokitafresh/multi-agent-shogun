@@ -1024,6 +1024,69 @@ EOF
     [[ "$output" != *"L_LOW"* ]]
 }
 
+@test "deploy_task excludes mature low-effectiveness feedback lessons from related_lessons" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_GOOD
+    title: deploy filter good lesson
+    summary: deploy filter good lesson
+    status: confirmed
+    helpful_count: 1
+    tags: [deploy]
+  - id: L_BAD
+    title: deploy filter bad lesson
+    summary: deploy filter bad lesson
+    status: confirmed
+    helpful_count: 100
+    tags: [deploy]
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-05-12T00:00:00	cmd_a	sasuke	L_GOOD	feedback	USEFUL	yes	testproj	impl	None
+2026-05-12T00:00:00	cmd_b	sasuke	L_GOOD	feedback	USEFUL	yes	testproj	impl	None
+2026-05-12T00:00:00	cmd_c	sasuke	L_GOOD	feedback	USEFUL	yes	testproj	impl	None
+2026-05-12T00:00:00	cmd_d	sasuke	L_GOOD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_e	sasuke	L_GOOD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_a	sasuke	L_BAD	feedback	USEFUL	yes	testproj	impl	None
+2026-05-12T00:00:00	cmd_b	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_c	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_d	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_e	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy filter"
+  description: "deploy filter effectiveness"
+  task_id: cmd_effectiveness_filter
+  assigned_to: sasuke
+  task_type: impl
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+ids = [entry.get('id') for entry in (data.get('task') or {}).get('related_lessons') or []]
+assert 'L_GOOD' in ids, ids
+assert 'L_BAD' not in ids, ids
+print(','.join(ids))
+"
+    [ "$status" -eq 0 ]
+
+    run awk -F'\t' '$5=="withheld"{print $4}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L_BAD"* ]]
+}
+
 @test "deploy_task tag fallback injects all tag-matched lessons below MAX_INJECT=10" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'

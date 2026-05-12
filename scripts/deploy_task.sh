@@ -2880,8 +2880,8 @@ task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
 
 DEDUP_THRESHOLD = 0.25
-USEFUL_RATE_THRESHOLD = 0.40  # useful_rate below this → score decay (0.30→0.40: NOT_USEFUL退場加速)
-USEFUL_RATE_DECAY = 0.3       # multiplier for low useful_rate lessons (0.5→0.3: より積極的に低有効教訓を退場)
+USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
+USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
 
 def tech_terms(text):
     '''技術用語のみ抽出（日本語テキスト対応）'''
@@ -2919,13 +2919,12 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
 
-USEFUL_RATE_MIN_SAMPLES = 5  # feedback件数がこの値未満の教訓にはdecayを適用しない
+USEFUL_RATE_MIN_SAMPLES = 5  # feedback件数がこの値未満の教訓にはeffectiveness除外を適用しない
 
 def compute_useful_rates(script_dir):
-    """lesson_impact.tsvのfeedback行からlesson別useful_rateを算出。
-    feedback行(action='feedback')がある教訓はそちらで計算（忍者の実フィードバック）。
-    feedback行がない教訓はrateを返さない（decayなし=安全側）。
-    MIN_SAMPLES未満の教訓もdecay対象外（サンプル不足でのペナルティ防止）。"""
+    """lesson_impact.tsvのfeedback行からlesson別effectiveness_scoreを算出。
+    score = USEFUL / (USEFUL + NOT_USEFUL)。feedback以外や未確定値は分母に入れない。
+    MIN_SAMPLES未満の教訓は除外対象外（サンプル不足でのペナルティ防止）。"""
     impact_path = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
     if not os.path.exists(impact_path):
         return {}, {}
@@ -2938,15 +2937,17 @@ def compute_useful_rates(script_dir):
                 action = (row.get('action') or '').strip().lower()
                 if not lid or action != 'feedback':
                     continue
+                result = (row.get('result') or '').strip().upper()
+                if result not in ('USEFUL', 'NOT_USEFUL'):
+                    continue
                 if lid not in feedback_counts:
                     feedback_counts[lid] = [0, 0]
                 feedback_counts[lid][1] += 1
-                result = (row.get('result') or '').strip().upper()
                 if result == 'USEFUL':
                     feedback_counts[lid][0] += 1
     except Exception:
         return {}, {}
-    # MIN_SAMPLES以上のfeedbackがある教訓のみrateを返す
+    # MIN_SAMPLES以上のfeedbackがある教訓のみscoreを返す
     useful_rates = {
         lid: vals[0] / vals[1] if vals[1] > 0 else 0.0
         for lid, vals in feedback_counts.items()
@@ -3548,9 +3549,11 @@ try:
         if scored:
             print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} tag-matched lessons by helpful_count', file=sys.stderr)
 
-    # cmd_1564+karo_idle_fix: useful_rate decay — 活用率が低い教訓のスコアを減衰
+    # cmd_1564+karo_idle_fix: useful_rate feedback基盤
+    # cmd_2700: mature feedback effectiveness_scoreが低い教訓は注入候補から除外
     # フィードバックデータ(record_lesson_feedback.sh)から実有用率を算出
     useful_rates, feedback_totals = compute_useful_rates(script_dir)
+    effectiveness_excluded = []
 
     def needs_initial_feedback(lid):
         return feedback_totals.get(lid, 0) < USEFUL_RATE_MIN_SAMPLES
@@ -3565,32 +3568,27 @@ try:
             rate = useful_rates.get(lid)
             if rate is not None and rate < USEFUL_RATE_THRESHOLD:
                 demoted.append(lesson)
+                effectiveness_excluded.append({'id': lid, 'summary': lesson.get('summary', '') or lesson.get('title', '')})
             else:
                 kept.append(lesson)
         if demoted:
             demoted_ids = [l.get('id', '?') for l in demoted]
-            print(f'[INJECT] universal demotion: {len(demoted)} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% useful_rate → scored candidates: {demoted_ids}', file=sys.stderr)
-            tag_candidates.extend(demoted)
+            print(f'[INJECT] universal effectiveness exclusion: {len(demoted)} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% effectiveness_score: {demoted_ids}', file=sys.stderr)
             universal_lessons = kept
 
     if useful_rates:
         new_scored = []
-        decayed_count = 0
-        excluded_zero_ids = []
+        excluded_ids = []
         for score, lid, summary in scored:
             rate = useful_rates.get(lid)
-            if rate is not None and rate == 0.0:
-                excluded_zero_ids.append(lid)
-            elif rate is not None and rate < USEFUL_RATE_THRESHOLD:
-                new_scored.append((score * USEFUL_RATE_DECAY, lid, summary))
-                decayed_count += 1
+            if rate is not None and rate < USEFUL_RATE_THRESHOLD:
+                excluded_ids.append(lid)
+                effectiveness_excluded.append({'id': lid, 'summary': summary})
             else:
                 new_scored.append((score, lid, summary))
         scored = new_scored
-        if excluded_zero_ids:
-            print(f'[INJECT] useful_rate=0% exclusion: {len(excluded_zero_ids)} lessons excluded: {excluded_zero_ids}', file=sys.stderr)
-        if decayed_count > 0:
-            print(f'[INJECT] useful_rate decay: {decayed_count} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% threshold (score *= {USEFUL_RATE_DECAY})', file=sys.stderr)
+        if excluded_ids:
+            print(f'[INJECT] effectiveness exclusion: {len(excluded_ids)} lessons below {USEFUL_RATE_THRESHOLD*100:.0f}% threshold: {excluded_ids}', file=sys.stderr)
 
     # Sort by score descending, take top 7 (AC5: task-specific max 7)
     scored.sort(key=lambda x: -x[0])
@@ -3622,7 +3620,7 @@ try:
     # universal: 先頭に配置、最大MAX_UNIVERSAL(2)枠
     # task-specific: 残り枠（最低 MAX_INJECT - MAX_UNIVERSAL = 1枠確保）
     related = []
-    withheld = []
+    withheld = list(effectiveness_excluded)
     universal_added = 0
     seen_ids_final = set()
 
