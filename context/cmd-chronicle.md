@@ -801,3 +801,4 @@
 | cmd_2688 | 教訓注入useful率改善の補完。noise4件(L175/L170/L097/L136 参照率0%)とharm4件(L333/L326/L297/L263 BLOCK率100%)がfeedback不足でcmd_2685のdecay対象外。手動でdeprecate/tag限定し注入プールから排除 | infra | 05-12 | projects/infra/lessons.yaml のn |
 | cmd_2689 | gate_skill_quality FAIL(3/38)。shogun-all-codex-switch/shogun-peacetime-rollback/weekly-report-writerのdescription不備(What/When/NOT When欠落)。startup WARN連続の一因 | infra | 05-12 | gate_skill_qualityのFAIL対象3スキルの |
 | cmd_2690 | 軍師検出: semantic-index file参照12件がMISSING(DM-Signal外部リポジトリのパス移動/削除が未反映)。インデックス正確性を回復する | infra | 05-12 | semantic-indexのDM-Signal外部file |
+| cmd_2691 | karo_direct方式の修行配備でdeploy_task.shの修行テンプレ注入をバイパスし、AC/descriptionが空のまま配備。deploy_error 5件蓄積の根因。karo_directでも修行テンプレ注入を実行する | infra | 05-12 | karo_directスキルのtrainingセクションをd |
