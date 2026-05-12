@@ -2123,3 +2123,147 @@
     CS5_unchecked_angle: OK
     CS6_causal_reasoning: OK
   timestamp: "2026-05-12T00:13:00"
+- cmd_id: cmd_2681
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。二重配備ガードにflock排他+完了報告検知追加。AC3件分割不要。前提3件全verified。ambiguity検討済み(flock path明確)"
+  observations:
+    - "事実1: grep DEPLOY-STALL inbox/karo.yaml→0件。ninja_monitorの再配備ではない確認"
+    - "事実2: deploy_task.sh L5770-5790の重複ガードにflock未実装(grep flock deploy_task.sh→0件)確認"
+    - "事実3: cmd_2682(事後回収)と合わせて2層防御設計。意図的並列配備はcmd_2682でparallel_ok対応"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  causal_chain: "二重配備(レース条件)→先行完了→後発空報告3連続→トークン浪費。flock排他+完了報告検知→二重配備BLOCK→空報告ゼロ(正の複利:全cmdに効く)"
+  timestamp: "2026-05-12T11:10:00"
+- cmd_id: cmd_2683
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "前提崩壊: 2026-04-12殿裁定で同機能が削除済み(L168-172)。SessionStart hookは既に実在(session_start_inject.sh)。claim 'grep SessionStart→0件'は事実と異なる。新旧裁定の整合性確認が必要"
+  observations:
+    - "事実1: git show HEAD:session_start_inject.sh L168-172に削除コメント「startup gateセクション削除(2026-04-12殿裁定)」実在"
+    - "事実2: grep SessionStart settings.json→1件(session_start_inject.sh登録済み)。claimの0件は誤り"
+    - "事実3: Read toolで読んだ内容にcmd_2683コードがあるがHEADにはない=kagemaruの未commit変更(LG001適用)"
+  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
+  causal_chain: "2026-04-12殿裁定(gate自動実行=context浪費)→startup gateセクション削除→今回再実装(殿新指摘)→新旧裁定矛盾。過去裁定との整合性未確認が根因"
+  timestamp: "2026-05-12T11:20:00"
+- cmd_id: cmd_2681
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "precheck PASS(GATE_PREDICTION:CLEAR)。4観点OK+adversarial PASS(302行)。flock排他+完了報告検知。テスト345件PASS"
+  observations:
+    - "事実1: PRE3 commit検証: deploy_task.sh+batsファイル両方にcmd_2681 commit(969d2c42)確認"
+    - "事実2: flock対象=CMD_ID単位(queue/locks/deploy_<cmd_id>.lock)。BLOCK時FD解放helper追加"
+    - "事実3: 完了報告検知=parent_cmd完全一致+status completed/verdict PASS系のpeer報告存在→BLOCK"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  changed_lines: 302
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "flock排他範囲=CMD_ID単位で適切。BLOCK時rollback可。意図的並列はcmd_2682で対応(現運用で未使用)"
+  causal_chain: "二重配備レース条件→flock排他+完了報告検知→構造的BLOCK→空報告ゼロ(正の複利)"
+  timestamp: "2026-05-12T11:25:00"
+- cmd_id: cmd_2682
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。ninja_monitor先行完了検知+auto-void。cmd_2681の事後回収レイヤー。2層防御設計"
+  observations:
+    - "事実1: git show HEAD:ninja_monitor.sh grep void→1件(avoidの中)。auto-void未実装確認"
+    - "事実2: depends_on cmd_2681。事前阻止(flock)+事後回収(auto-void)の2層防御"
+    - "事実3: q9 parallel_ok設定でvoidスキップ。意図的並列配備への対応明記"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  causal_chain: "cmd_2681すり抜けケース→ninja_monitor巡回で完了報告検知→後発忍者auto-void→空報告防止(2層目)"
+  timestamp: "2026-05-12T11:30:00"
+- cmd_id: cmd_2683
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "precheck PASS(PRE18 infra→adversarial必須)。4観点OK+adversarial PASS。SessionStart hook復活+decision_candidate記録"
+  observations:
+    - "事実1: session_start_inject.sh過去削除コメント→kagemaru復活実装+decision_candidate記録(正しい忍者行動)"
+    - "事実2: hookタイムアウト50s。gate実行1.4s(実測)。余裕十分"
+  finding_categories: [assumptions, premortem, adversarial, north_star]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象。exit 0固定。git revertで復帰可能"
+  causal_chain: "起動手順スキップ(L2意志依存)→SessionStart hook復活(L4強制)→全ロールgate自動注入→スキップ不可能に"
+  timestamp: "2026-05-12T11:35:00"
+- cmd_id: cmd_2682
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 209
+  findings_summary: "precheck PASS(209行→adversarial必須)。4観点OK+adversarial PASS。auto-void=Stage 1直後。テスト27件PASS"
+  observations:
+    - "事実1: find_completed_parent_cmd_report_for_other_ninja関数で他忍者完了報告検出→auto-void"
+    - "事実2: 自報告誤void防止=worker名チェック+テスト確認済み"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "誤void=自報告除外+parent_cmd完全一致。競合=単一プロセス。rollback=git revert可"
+  causal_chain: "cmd_2681すり抜け→ninja_monitor完了報告検知→auto-void→空報告ゼロ(2層目安全網)"
+  timestamp: "2026-05-12T11:37:00"
+- cmd_id: cmd_2684
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。inbox_write.sh task_assigned時の全経路二重配備ガード。cmd_2681+2682+2684の3層防御完成"
+  observations:
+    - "事実1: karo-operations.md L40でkaro_direct経路=cp+inbox_write(deploy_task.sh迂回)確認"
+    - "事実2: git show HEAD:inbox_write.sh grep parent_cmd BLOCK→0件。二重配備チェック未実装確認"
+    - "事実3: 3層防御=deploy_task.sh内(L1)+ninja_monitor事後(L2)+inbox_write全経路(L3)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  causal_chain: "karo_direct経路=deploy_task.sh迂回→二重配備ガード不在→inbox_write.shに統一ガード追加→全経路カバー(正の複利)"
+  timestamp: "2026-05-12T11:40:00"
+- cmd_id: cmd_2684
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "precheck全PASS(GATE_PREDICTION:CLEAR)。4観点OK。duplicate_deploy_gate+テスト29件PASS。3層防御完成"
+  observations:
+    - "事実1: flat/nested YAML混在考慮(L545活用)。再帰通知環境変数抑止で無限ループ防止"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "全配備経路→inbox_write task_assigned収束→送信前ゲート→二重配備BLOCK→3層防御完成"
+  timestamp: "2026-05-12T11:45:00"
+- cmd_id: cmd_karo_ci_fix_e2e_parallel
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: BLOCK
+  findings_summary: "precheck PASS(GATE_PREDICTION:WARN=lesson_candidate有)。4観点OK。E2E fixture parent_cmd分離1行。テスト31件PASS"
+  observations:
+    - "事実1: kirimaru fixtureのparent_cmdをcmd_test_002に分離→duplicate_deploy_gateと共存"
+    - "事実2: lesson_candidate有。並列E2E fixtureは同一parent_cmd再利用しない。register推奨"
+  finding_categories: [assumptions, numbers, premortem]
+  causal_chain: "cmd_2684 duplicate_deploy_gate導入→E2E同一parent_cmd BLOCK→fixture分離で共存→ガード維持+CI GREEN"
+  timestamp: "2026-05-12T11:50:00"
+- cmd_id: idle_altruism_proposals_20260512
+  review_type: self_study
+  verdict: PASS
+  gate_result: N/A
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "利他2提案。(1)lesson_done_missing BLOCK時系列問題→家老無駄サイクル削減。(2)教訓注入useful率23%→topic_mismatch 61%→注入精度改善"
+  observations:
+    - "事実1: LGTM→BLOCK(e2e_parallel)のGATE_PREDICTIONはWARN。WARNを行動に変換していなかった"
+    - "事実2: lessons_useful直近20報告: 32/139=23% useful。107件falseの61%がtopic_mismatch"
+  causal_chain: "LGTM→BLOCK→利他視点→家老/忍者の負担分析→lesson登録時系列+注入精度の2件→掲示板提案+永続化"
+  cs_checklist:
+    CS1_source_coverage: OK
+    CS2_own_system_data: OK
+    CS3_real_code_compare: OK
+    CS4_action_conversion: OK
+    CS5_unchecked_angle: OK
+    CS6_causal_reasoning: OK
+  timestamp: "2026-05-12T11:55:00"

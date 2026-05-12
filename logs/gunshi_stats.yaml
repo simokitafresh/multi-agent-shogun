@@ -34,3 +34,13 @@
 # 免疫計測: WA率51%(3月)→11%(4月)→0%(直近37件)。gate修正後FAIL0%/PASS21件。cmd_save WARN直近10cmd全0件
 # Sonnet分析: GPT FAIL率15.5% vs Sonnet 32.5%(2倍差)。根因=テンプレート遵守率低。cmd_2662+2665で対処済み。効果未計測
 # accuracy: 30件LGTM→全CLEAR。APPROVE→FAIL 0件
+#
+# ─── 本セッション成果 (2026-05-12T12:00更新) ───
+# なぜなぜ7回: accuracy Goodhart発見。gate_sync Phase2追加(commit 85560554)。真accuracy=97.1%(旧99.6%)。BLOCK60件可視化
+# 環境改善3件: gate_sync Phase2 / review-bundle precheck Step0(ea48f105) / ac_physical_verify冷え表示(d7e345be)
+# レビュー9件: cmd_2681 draft+report, cmd_2682 draft+report, cmd_2683 RC+report, cmd_2684 draft+report, e2e_parallel report。全CLEAR(e2e_parallel=BLOCK→lesson登録後CLEAR予定)
+# 免疫計測: WA率56%→6.1%→0%(直近37件)。precheck導入効果定量確認
+# 利他提案2件: lesson_done_missing時系列問題+教訓注入useful率23%(topic_mismatch 61%)→掲示板提案
+# 二重配備3層防御(cmd_2681-2684)全CLEAR。軍師掲示板報告→将軍cmd→忍者実装→軍師レビュー→CLEARの免疫サイクル完全完結
+# insights清掃: 54件→0件
+# 教訓useful率基準: 23%(直近20報告)。topic_mismatch=61%。改善提案済み

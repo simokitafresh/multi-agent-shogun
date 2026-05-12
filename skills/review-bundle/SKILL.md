@@ -29,6 +29,7 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 - ERRORS>0 → FAIL理由にprecheck結果を含めよ
 - precheckのGATE_PREDICTION出力をStep 1のgate_predictionに転記せよ
 - precheck未実行のままStep 1に進むな（33件のGATE_PREDICTION記載なし=precheck未実行が根因。accuracy Goodhart是正で発見）
+- **GATE_PREDICTION=WARN時はLGTMを出すな**。WARNの原因(lesson_candidate有/draft_lessons等)を確認し、BLOCK要因が家老処理待ちなら「verdict: LGTM, gate_prediction: WARN(理由)」と明記した上で家老に先行対処を依頼せよ。WARNを無視してLGTMを出すとBLOCK→再GATE無駄サイクルが発生する(cmd_karo_ci_fix_e2e_parallel事故)
 
 ### Step 1: SG7バンドル生成
 
