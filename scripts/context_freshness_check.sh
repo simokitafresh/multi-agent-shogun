@@ -5,6 +5,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-}"
 ARG="${2:-}"
 STALE_DAYS="${CONTEXT_STALE_DAYS:-7}"
+EXCLUDE_FILES=(
+    "README.md"
+    "cdp-philosophy.md"
+    "cdp-severity.md"
+    "checklist-alm-registration.md"
+    "checklist-shin-v2-registration.md"
+    "checklist-ward-fof-production.md"
+)
+EXCLUDE_FILES_CSV="$(IFS=,; printf '%s' "${EXCLUDE_FILES[*]}")"
 
 usage() {
     cat <<'EOF'
@@ -36,7 +45,7 @@ _ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-/tmp/dashboard_arch_cfc_cache.txt}"
 
 _CACHE_TTL="${CFC_OUTPUT_CACHE_TTL:-2}"
 _ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
-_MODE_KEY="$(printf '%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
+_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_FILES_CSV" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
 _CACHE_FILE="/tmp/context_freshness_check_${_ROOT_KEY}_${_MODE_KEY}.cache"
 
 if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACHE_FILE" ]]; then
@@ -49,7 +58,7 @@ if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACH
 fi
 
 _TMP_CACHE="${_CACHE_FILE}.$$"
-python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" > "$_TMP_CACHE" <<'PY'
+python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_FILES_CSV" > "$_TMP_CACHE" <<'PY'
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -63,6 +72,11 @@ mode = sys.argv[2]
 cmd_id = sys.argv[3]
 threshold_days = int(sys.argv[4])
 archive_cache_path = sys.argv[5] if len(sys.argv) > 5 else ""
+exclude_files = {
+    item.strip()
+    for item in (sys.argv[6] if len(sys.argv) > 6 else "").split(",")
+    if item.strip()
+}
 cutoff_date = date.today() - timedelta(days=threshold_days)
 FINAL_STATUSES = {"completed", "done", "complete", "success"}
 
@@ -525,11 +539,17 @@ def build_warning(rel_path: str, days_old: int | None) -> str:
     return f"WARN: {rel_path} last_updated {days_old}日前。更新要否を確認せよ"
 
 
+def is_excluded_context_file(rel_path: str) -> bool:
+    return os.path.basename(rel_path) in exclude_files
+
+
 warnings: list[str] = []
 
 if mode == "--dashboard-warnings":
     recent_project_cache: dict[str, bool] = {}
     for project_id, rel_path, abs_path in iter_context_files():
+        if is_excluded_context_file(rel_path):
+            continue
         if project_id not in recent_project_cache:
             recent_project_cache[project_id] = project_has_recent_completed_cmd(project_id)
         if not recent_project_cache[project_id]:
@@ -543,6 +563,8 @@ elif mode == "--cmd-warnings":
     if project_id:
         for current_project, rel_path, abs_path in iter_context_files():
             if current_project != project_id:
+                continue
+            if is_excluded_context_file(rel_path):
                 continue
             days_old = last_updated_days(abs_path)
             if days_old is None or days_old >= threshold_days:
