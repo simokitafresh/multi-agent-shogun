@@ -21,7 +21,7 @@ import json
 import os
 import sys
 
-USEFUL_RATE_THRESHOLD = 0.30  # deploy_task.shと同期: 忍者成長速度改善3
+USEFUL_RATE_THRESHOLD = 0.40  # deploy_task.shと同期: NOT_USEFUL退場加速
 USEFUL_RATE_DECAY = 0.3       # deploy_task.shと同期: 忍者成長速度改善3
 
 def compute_useful_rates(script_dir):
@@ -68,8 +68,8 @@ for score, lid, summary in scored:
 PY
 }
 
-@test "useful_rate >= 30% lessons keep original score" {
-    # L001: 20 injections, 7 referenced = 35% useful_rate (above 30% threshold)
+@test "useful_rate >= 40% lessons keep original score" {
+    # L001: 20 injections, 8 referenced = 40% useful_rate (at 40% threshold)
     cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'TSV'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
 2026-03-01T00:00:00	cmd_001	hanzo	L001	injected	CLEAR	yes	infra	impl	None
@@ -79,7 +79,7 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-03-01T00:00:00	cmd_005	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_006	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_007	hanzo	L001	injected	CLEAR	yes	infra	impl	None
-2026-03-01T00:00:00	cmd_008	hanzo	L001	injected	CLEAR	no	infra	impl	None
+2026-03-01T00:00:00	cmd_008	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_009	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_010	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_011	hanzo	L001	injected	CLEAR	no	infra	impl	None
@@ -96,11 +96,11 @@ TSV
 
     run run_decay_test "$TEST_TMPDIR/logs/lesson_impact.tsv" '[[6, "L001", "test lesson"]]'
     [ "$status" -eq 0 ]
-    # 35% useful_rate (7/20) >= 30% threshold → score unchanged (6)
+    # 40% useful_rate (8/20) >= 40% threshold → score unchanged (6)
     [[ "${lines[0]}" == 6*L001* ]]
 }
 
-@test "useful_rate < 30% lessons get score decayed" {
+@test "useful_rate < 40% lessons get score decayed" {
     # L002: 20 injections, 2 referenced = 10% useful_rate (below threshold)
     cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'TSV'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
@@ -128,12 +128,12 @@ TSV
 
     run run_decay_test "$TEST_TMPDIR/logs/lesson_impact.tsv" '[[6, "L002", "test lesson"]]'
     [ "$status" -eq 0 ]
-    # 10% useful_rate < 30% threshold → score decayed (6 * 0.3 = 1.8)
+    # 10% useful_rate < 40% threshold → score decayed (6 * 0.3 = 1.8)
     [[ "${lines[0]}" == 1.7*L002* ]]
 }
 
 @test "mixed: high useful_rate unchanged, low useful_rate decayed" {
-    # L001: 10 injections, 3 referenced = 30% (above threshold)
+    # L001: 10 injections, 4 referenced = 40% (at threshold)
     # L002: 10 injections, 1 referenced = 10% (below threshold)
     # L003: no data in TSV (new lesson, no decay)
     cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'TSV'
@@ -141,7 +141,7 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-03-01T00:00:00	cmd_001	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_002	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_003	hanzo	L001	injected	CLEAR	yes	infra	impl	None
-2026-03-01T00:00:00	cmd_004	hanzo	L001	injected	CLEAR	no	infra	impl	None
+2026-03-01T00:00:00	cmd_004	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_005	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_006	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_007	hanzo	L001	injected	CLEAR	no	infra	impl	None
@@ -162,7 +162,7 @@ TSV
 
     run run_decay_test "$TEST_TMPDIR/logs/lesson_impact.tsv" '[[6, "L001", "high rate"], [6, "L002", "low rate"], [6, "L003", "new lesson"]]'
     [ "$status" -eq 0 ]
-    # L001: 30% >= 30% → unchanged (6)
+    # L001: 40% >= 40% → unchanged (6)
     [[ "${lines[0]}" == 6*L001* ]]
     # L002: 10% < 30% → decayed (6 * 0.3 = 1.8)
     [[ "${lines[1]}" == 1.7*L002* ]]
@@ -183,7 +183,7 @@ TSV
 
     run run_decay_test "$TEST_TMPDIR/logs/lesson_impact.tsv" '[[6, "L001", "test"]]'
     [ "$status" -eq 0 ]
-    # 50% useful_rate >= 15% → unchanged (6)
+    # 50% useful_rate >= 40% → unchanged (6)
     [[ "${lines[0]}" == 6*L001* ]]
 }
 
@@ -196,8 +196,8 @@ TSV
     [[ "${lines[0]}" == 6*L001* ]]
 }
 
-@test "exactly 30% useful_rate is NOT decayed (boundary)" {
-    # L001: 20 injections, 6 referenced = 30% (exactly at threshold, NOT below)
+@test "exactly 40% useful_rate is NOT decayed (boundary)" {
+    # L001: 20 injections, 8 referenced = 40% (exactly at threshold, NOT below)
     cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'TSV'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
 2026-03-01T00:00:00	cmd_001	hanzo	L001	injected	CLEAR	yes	infra	impl	None
@@ -206,8 +206,8 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-03-01T00:00:00	cmd_004	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_005	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_006	hanzo	L001	injected	CLEAR	yes	infra	impl	None
-2026-03-01T00:00:00	cmd_007	hanzo	L001	injected	CLEAR	no	infra	impl	None
-2026-03-01T00:00:00	cmd_008	hanzo	L001	injected	CLEAR	no	infra	impl	None
+2026-03-01T00:00:00	cmd_007	hanzo	L001	injected	CLEAR	yes	infra	impl	None
+2026-03-01T00:00:00	cmd_008	hanzo	L001	injected	CLEAR	yes	infra	impl	None
 2026-03-01T00:00:00	cmd_009	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_010	hanzo	L001	injected	CLEAR	no	infra	impl	None
 2026-03-01T00:00:00	cmd_011	hanzo	L001	injected	CLEAR	no	infra	impl	None
@@ -224,6 +224,6 @@ TSV
 
     run run_decay_test "$TEST_TMPDIR/logs/lesson_impact.tsv" '[[6, "L001", "test"]]'
     [ "$status" -eq 0 ]
-    # 30% useful_rate (6/20) == threshold → NOT decayed (score stays 6)
+    # 40% useful_rate (8/20) == threshold → NOT decayed (score stays 6)
     [[ "${lines[0]}" == 6*L001* ]]
 }

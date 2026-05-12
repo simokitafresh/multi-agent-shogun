@@ -72,6 +72,9 @@ lesson_candidate:
   project: testproj
   title: draft registration
   detail: auto_draft should enqueue this as a draft lesson for review.
+files_modified:
+  - path: scripts/foo.sh
+  - path: tests/foo.bats
 EOF
 
     run_auto_draft "$report"
@@ -91,6 +94,10 @@ EOF
     run sed -n '6p' "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
     [ "$output" = "cmd_123" ]
+    run grep -Fx -- "--target-files" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "scripts/foo.sh,tests/foo.bats" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
     [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
     run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
     [ "$status" -eq 0 ]

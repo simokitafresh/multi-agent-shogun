@@ -276,10 +276,20 @@ EOF
     [[ "$output" == *"**subdomain**: fe"* ]]
 }
 
+@test "--target-files writes target_files field" {
+    run_lesson_write testproj "対象ファイル教訓" "target_files指定が正しく記録されるかの確認テストです" "cmd_702" "karo" "" --target-files "scripts/foo.sh, tests/foo.bats"
+    [ "$status" -eq 0 ]
+
+    run grep "target_files" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**target_files**: [scripts/foo.sh,tests/foo.bats]"* ]]
+}
+
 @test "--help mentions subdomain option" {
     run bash "$SHARED_DIR/scripts/lesson_write.sh" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"--subdomain fe|be|gs|infra"* ]]
+    [[ "$output" == *"--target-files"* ]]
 }
 
 @test "draft status is written when --status draft specified" {
