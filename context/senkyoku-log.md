@@ -15,6 +15,22 @@
 | cmd_2683 | 強化 — SessionStart hookで全ロール起動gate強制 | GATE CLEAR | 家老起動手順スキップ事故。旧裁定(2026-04-12)は前提変更により解除(殿裁定2026-05-12) |
 | cmd_2684 | 強化 — inbox_write.sh task_assigned時の二重配備統一ガード | GATE CLEAR | なぜなぜ7回2周目で穴発見: karo_direct経路がcmd_2681のガードを迂回。inbox_write.shは全経路の統一チェックポイント |
 | (殿裁定) | 旧裁定(2026-04-12 /clear後gate自動実行禁止)解除 | 記録済み | 前提変更: /clear誤発火頻度が改善(debounce+report_gate+safe_send_clear)。SessionStart hook許可 |
+| cmd_2685 | 強化 — 教訓注入useful率改善(threshold0.40+target_files自動付与) | GATE CLEAR | 軍師利他提案→useful率28.4→30.4%(+2pp)。注入プール浄化の入口改善 |
+| cmd_2686 | 強化 — lesson_done_missing WARN化+auto催促 | GATE CLEAR | 軍師RC(L3544特定)→hayate修正→lesson欠落のみWARN。lesson_done_missing 23件BLOCKの構造的根絶 |
+| cmd_2687 | 強化 — bulletin_confirm自動連動 | GATE CLEAR | 掲示板確認意志依存→inbox_mark_readにbulletin_confirm連動。LG032(既存強制に乗せよ)実践 |
+| cmd_2688 | 強化 — noise/harm教訓8件deprecated | GATE CLEAR | noise4件(参照率0%)+harm4件(BLOCK率100%)をdeprecate。注入プール浄化 |
+| cmd_2689 | 修正 — スキル品質FAIL3件description修正 | GATE CLEAR | gate_skill_quality FAIL→0件。What/When/NOT When追記 |
+| cmd_2690 | 修正 — semantic-index drift検証 | GATE CLEAR | 軍師検出12件MISSING→忍者確認でmissing=0(偽陽性)。根因=絶対パス二重結合 |
+| cmd_2691 | 修正 — karo_direct修行AC未注入修正 | GATE CLEAR | deploy_error 5件。training→deploy_task.sh --direct強制。構造的根絶 |
+| cmd_2692 | 強化 — resolved_by_cmd自動backfill | GATE CLEAR | WA台帳88件偽陽性解消。GATE CLEAR時に自動記入 |
+| cmd_2693 | 修正 — karo_direct stale_report根因修正 | GATE CLEAR | cp直接→deploy_task.sh --yaml経由。忍者がLevel4解法を自力発見 |
+| cmd_2694 | 修正 — ASW_DISABLE_ESCALATION継承汚染遮断 | GATE CLEAR | watcher起動前にunset。環境変数継承パス遮断 |
+| cmd_2695 | 強化 — withheld悪循環解消(初回注入保証) | GATE CLEAR | 成長ループ最大阻害(withheld86%)修正。MIN_SAMPLES未満教訓の注入候補復帰 |
+| cmd_2696 | 強化 — 修行L4教訓参照AC追加 | GATE CLEAR | 修行参照率0%→AC4追加で強制参照。feedback収集自動化 |
+| cmd_2697 | 強化 — auto lesson_write(register_recommended自動登録) | 配備中 | lesson登録手動依存→cmd_complete_gate CLEARで自動実行。Phase4排除 |
+| cmd_2698 | 強化 — skill_auto_improve FIXヒントDB参照 | 配備中 | なぜなぜ7回根因。gate→スキル知識伝播経路確立。一発CLEAR率71.6%→向上予測 |
+| (軍師D0) | skill_auto_improve.sh concrete_prevention_steps強化+interval1日化 | 家老承認 | 6パターン追加+7日→1日。スキル自動成長サイクル加速 |
+| (軍師分析) | 成長ループ7段階全量追跡 | 阻害3箇所特定 | withheld86%/修行参照0%/lesson登録手動。全て修正cmd化→CLEAR |
 
 ## 2026-05-10〜11
 
