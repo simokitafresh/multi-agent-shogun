@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-05-12
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2681 | 強化 — deploy_task.sh二重配備ガード(flock排他+完了報告検知) | GATE CLEAR | 二重配備3連続(cmd_2678-2680)の根因=重複ガードにレース条件+完了スキップ。L4事前阻止 |
+| cmd_2682 | 強化 — ninja_monitor先行完了→後発auto-void | GATE CLEAR | cmd_2681補完のL1事後回収。経路非依存で有効 |
+| cmd_2683 | 強化 — SessionStart hookで全ロール起動gate強制 | GATE CLEAR | 家老起動手順スキップ事故。旧裁定(2026-04-12)は前提変更により解除(殿裁定2026-05-12) |
+| cmd_2684 | 強化 — inbox_write.sh task_assigned時の二重配備統一ガード | GATE CLEAR | なぜなぜ7回2周目で穴発見: karo_direct経路がcmd_2681のガードを迂回。inbox_write.shは全経路の統一チェックポイント |
+| (殿裁定) | 旧裁定(2026-04-12 /clear後gate自動実行禁止)解除 | 記録済み | 前提変更: /clear誤発火頻度が改善(debounce+report_gate+safe_send_clear)。SessionStart hook許可 |
+
 ## 2026-05-10〜11
 
 | cmd/action | 意図 | 結果 | 因果 |
@@ -845,3 +855,14 @@
 | cmd_2678 | cmd_save.sh gate_hook偽陽性修正(gate_fire_log誤判定) | 配備中 | 殿指示: 偽陽性はバグ。L161正規表現修正 |
 | (将軍自走) | Dream完了+Memory ALERT解消+掲示板36件確認+教訓統合 | 完了 | startup gate 3セッション連続BLOCK全解消 |
 | (殿指摘) | grep≠理解(LS032)+教訓先送り連鎖+L6化全体像把握不足 | 教訓記録+知識永続化 | 2連続既存実装見落とし→growth-loop.md §11にL6化済み/未化リスト永続化 |
+
+### 2026-05-12 セッション: 二重配備3層防御+起動手順強制化
+| cmd/事象 | 内容 | 結果 | 因果 |
+|----------|------|------|------|
+| (殿指摘) | 家老が起動手順スキップで即応答 | バグ発覚 | 手順がLevel 2止まり=意志依存(Phase 4構造) |
+| cmd_2681 | deploy_task.sh二重配備ガードflock排他+完了報告検知 | GATE CLEAR | cmd_2678-2680で3連続空報告→事前阻止(L1) |
+| cmd_2682 | ninja_monitor先行完了検知auto-void | GATE CLEAR | L1すり抜け時の事後回収(L2) |
+| cmd_2683 | SessionStart hookでstartup gate自動実行復活 | GATE CLEAR | 旧裁定(04-12)→殿新裁定(05-12)で解除。前提変更: /clear誤発火改善済み |
+| cmd_2684 | inbox_write.sh二重配備全経路ガード | GATE CLEAR | karo_direct経路のガード不在を統一ガードで解消(L3) |
+| CI RED修正 | E2E fixture parent_cmd分離 | CI GREEN | cmd_2684の新ガードがE2E並列テストをBLOCK→fixture側修正(ガード緩めず) |
+| session成果 | 4cmd全CLEAR+CI修正1件。WA率0%維持。連勝78。教訓6件登録(LK007-LK011)。殿裁定1件反映 | 環境蓄積完了 | 次の家老: 起動手順自動実行+二重配備3層防御+CI GREEN |

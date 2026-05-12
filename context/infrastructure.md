@@ -242,6 +242,22 @@ helpful/harmful手動評価に依存しない。注入回数と参照率を代�
 - L247: found:falseは教訓を探さなかった証拠。全タスクに学びがある。no_lesson_reason必須化+家老差し戻しルール追加（cmd_1104）
 - L249: 教訓還流の仕組み変更は3層同時修正必須: ashigaru.md+deploy_task.sh+karo.md（cmd_1104）
 
+## SessionStart hook — startup gate自動実行（cmd_2683）
+
+session_start_inject.shが全ロールのstartup gateをセッション開始時に自動実行し、結果をadditionalContextに注入。
+旧裁定(2026-04-12: /clear後gate自動実行禁止)は殿裁定(2026-05-12)で解除。前提変更: debounce 300-600秒+report_gate+safe_send_clearで/clear誤発火が改善済み。
+対象: shogun→gate_shogun_startup.sh, karo→gate_karo_startup.sh, gunshi→gate_gunshi_startup.sh。exit 0固定(BLOCKしない設計)。
+
+## 二重配備防止3層防御（cmd_2681/2682/2684）
+
+| 層 | スクリプト | 防御ポイント | 方式 |
+|----|-----------|-------------|------|
+| L1 | deploy_task.sh | 配備時(事前阻止) | flock排他+完了報告YAML検知→BLOCK |
+| L2 | ninja_monitor.sh | 巡回時(事後回収) | 先行完了検知→後発auto-void(idle化+/clear) |
+| L3 | inbox_write.sh | 全配備経路(統一ガード) | task_assigned時に同一parent_cmd検査→BLOCK |
+
+根因: cmd_2678-2680で同一cmdに2名配備→先行完了→後発空報告→レビュー+クリーンでトークン浪費(3連続)。
+
 ## ninja_monitor.sh
 
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-11 -->
+<!-- last_updated: 2026-05-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,16 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1846 | 奥義-シン忍法 忍法×忍法 組み合わせ有効性分析 — selection_timeline全21チャンピオン | dm-signal | 04-11 | 21体パラメータ一覧(AC1)、21本selection_t |
-| cmd_1848 | 奥義-シン忍法 過適合検証2 — 期間分割OOS | dm-signal | 04-11 | cmd_1848完了。IS/OOS分割(前半75M/後半75 |
-| cmd_1847 | 奥義-シン忍法 過適合検証1 — 近傍パラメータ安定性 | dm-signal | 04-11 | AC1 PASS: 21チャンピオンpattern_idから |
-| cmd_1850 | 奥義-シン忍法 CPCV全方位分析 — L0/L1/L2の3層PBO+IS-OOS相関+分散+MinBTL | dm-signal | 04-11 | AC1: L0(四神12体)/L2(奥義シン忍法20体×7忍 |
-| cmd_1851 | fix — ninja_monitor.sh CLI死活判定+自動再起動（OOM死亡2h放置防止） | infra | 04-11 | ninja_monitor.shにCLI死活判定+自動再起動 |
-| cmd_1852 | 奥義-シン忍法 β調整α分析 — L0/L1/L2の3層でSPY/TQQQ/TECLベンチマーク比較 | dm-signal | 04-11 | AC1: SPY 195ヶ月/TQQQ 194ヶ月/TECL |
-| cmd_1854 | ゴールデンデータ更新 — 本番DB全PF monthly_returns再取得 | dm-signal | 04-11 | 本番DB全PF monthly_returnsを取得しゴール |
-| cmd_1856 | 奥義-シン忍法 残り20体 本番DB一括登録（登録のみ） | dm-signal | 04-11 | 20体の奥義FoFレコードを本番DBに正常登録(hide=t |
-| cmd_1857 | fix — insight§14自走トリガー廃止+report templateデフォルト値追加 | infra | 04-11 | cmd_1857: §14自走トリガー廃止(AC1)+dep |
-| cmd_1858 | fix — gate_shogun_startup.sh ALERT精度改良3件（false ALERT削減+actionable化） | infra | 04-11 | AC2(Gate17 oneshot除外)+AC3(Gate |
 | cmd_1859 | perf — Gate15 orphan検知 git logバッチ化（GP-170） | infra | 04-12 | Gate15 orphanループ内のgit log個別呼出し |
 | cmd_1862 | fix — archive_completed.sh TOCTOU競合修正 shogun_to_karo.yaml読込flock内移動（GP-182） | infra | 04-12 | archive_cmds()のQUEUE_FILE読込(ma |
 | cmd_1861 | fix — deploy_task.sh STALE_RESET全パス実行+実行済みフラグ確認（GP-180+GP-181） | infra | 04-12 | reset_stale_fields()をresolve_c |
@@ -802,3 +792,7 @@
 | cmd_2678 | cmd_save.sh is_gate_or_hook_addition_cmd L161の偽陽性修正。gate_fire_log等のファイル名内gateをgate/hook追加と誤判定するバグを修正する | infra | 05-11 | cmd_save.shのgate/hook追加判定をASCI |
 | cmd_2679 | セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する | infra | 05-11 | セマンティクスインデックスのdefense_hierarch |
 | cmd_2680 | daemon_watchdog.shのcrontab登録を旧flock形式から新形式に更新し、1時間毎のntfy WARN通知を停止する | infra | 05-11 | crontabのdaemon_watchdog.sh登録から |
+| cmd_2681 | 同一cmdに2名配備される二重配備パターン(cmd_2678-2680で3連続発生)を構造的に防止する | infra | 05-12 | cmd_2681: deploy_task.shの同一cmd |
+| cmd_2682 | 同一cmdで先行忍者が完了済みの場合、後発忍者を自動的にvoid(task reset+/clear)して空報告を防止する | infra | 05-12 | ninja_monitorに同一parent_cmd完了済み |
+| cmd_2683 | 起動手順スキップ(家老がinstructions/karo.md未読で即応答した事故)を構造的に防止する。全ロールのstartup gateをSessionStart hookで自動実行し意志依存をゼロにする | infra | 05-12 | SessionStart hookをsettings.jso |
+| cmd_2684 | deploy_task.sh経由でもkaro_direct経由でも最終的にinbox_write.sh type=task_assignedを通るため、ここで同一parent_cmdの他忍者配備を検査しBLOCKすることで全配備経路の二重配備を防止する | infra | 05-12 | inbox_write.shにtask_assigned全経 |
