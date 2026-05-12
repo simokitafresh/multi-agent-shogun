@@ -1008,6 +1008,121 @@ OVERWRITE_AC_PY
     fi
 }
 
+inject_direct_training_template() {
+    local task_file="$1"
+    local cmd_id="$2"
+
+    if [[ ! "$cmd_id" =~ ^cmd_training_ ]]; then
+        return 0
+    fi
+    if [ ! -f "$task_file" ]; then
+        log "inject_direct_training_template: task file not found: $task_file"
+        return 1
+    fi
+
+    TASK_FILE_ENV="$task_file" python3 - <<'TRAINING_TEMPLATE_PY'
+import os
+import re
+import tempfile
+
+task_file = os.environ["TASK_FILE_ENV"]
+
+purpose = "L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+
+ac_lines = [
+    "  acceptance_criteria:",
+    "    AC1:",
+    "      description: \"指定スクリプトの改善点を3つ特定し、根拠付きで報告する\"",
+    "      binary_checks:",
+    "        - \"改善点を3つ特定したか: yes/no\"",
+    "        - \"各改善点に対象ファイル・根拠を添えたか: yes/no\"",
+    "    AC2:",
+    "      description: \"改善点のうち最高インパクト1件を実装し、必要な検証を実行する\"",
+    "      binary_checks:",
+    "        - \"最高インパクト1件を実装したか: yes/no\"",
+    "        - \"関連テストまたは明示的な検証を実行したか: yes/no\"",
+    "    AC3:",
+    "      description: \"lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる\"",
+    "      binary_checks:",
+    "        - \"lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no\"",
+    "        - \"AC1/AC2/AC3のbinary_checksを全てyes/noで記入したか: yes/no\"",
+    "        - \"verdictがbinary_checksと矛盾していないか: yes/no\"",
+]
+
+with open(task_file, encoding="utf-8") as f:
+    raw = f.read()
+
+lines = raw.splitlines()
+result = []
+skip_indent = None
+inserted_purpose = False
+inserted_ac = False
+
+for line in lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+    if skip_indent is not None:
+        if stripped == "" or indent > skip_indent:
+            continue
+        skip_indent = None
+
+    if indent == 2 and stripped.startswith("purpose:"):
+        result.append("  purpose: " + repr(purpose))
+        inserted_purpose = True
+        if re.match(r"^purpose:\s*$", stripped):
+            skip_indent = 2
+        continue
+
+    if indent == 2 and stripped.startswith("acceptance_criteria:"):
+        result.extend(ac_lines)
+        inserted_ac = True
+        skip_indent = 2
+        continue
+
+    result.append(line)
+
+insert_at = None
+for idx, line in enumerate(result):
+    if line.startswith("task:"):
+        insert_at = idx + 1
+        break
+
+if insert_at is not None:
+    additions = []
+    if not inserted_purpose:
+        additions.append("  purpose: " + repr(purpose))
+    if not inserted_ac:
+        additions.extend(ac_lines)
+    if additions:
+        result[insert_at:insert_at] = additions
+else:
+    additions = ["task:"]
+    additions.append("  purpose: " + repr(purpose))
+    additions.extend(ac_lines)
+    result = additions + result
+
+new_raw = "\n".join(result).rstrip("\n") + "\n"
+fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(new_raw)
+    os.replace(tmp_path, task_file)
+except Exception:
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
+TRAINING_TEMPLATE_PY
+    local rc=$?
+    if [ "$rc" -ne 0 ]; then
+        log "FATAL: inject_direct_training_template failed for ${cmd_id}"
+        return "$rc"
+    fi
+
+    log "direct_mode: training L4 template injected for ${cmd_id}"
+}
+
 inject_ac_version() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
