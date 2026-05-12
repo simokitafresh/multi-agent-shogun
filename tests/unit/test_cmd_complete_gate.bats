@@ -90,6 +90,44 @@ EOF
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
 }
 
+@test "lesson_done_missing is WARN and does not force ALL_CLEAR false" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+needle = "lesson_candidate found:true but lesson.done not found"
+idx = text.index(needle)
+branch_start = text.rfind("else", 0, idx)
+branch_end = text.index("\n            fi", idx)
+branch = text[branch_start:branch_end]
+
+assert "WARN:" in branch, branch
+assert "notify_karo_lesson_registration_reminder" in branch, branch
+assert "record_block_reason" not in branch, branch
+assert "ALL_CLEAR=false" not in branch, branch
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "lesson_done_missing WARN sends karo reminder via inbox_write" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("notify_karo_lesson_registration_reminder()")
+end = text.index("\n}\n", start) + 3
+func = text[start:end]
+
+assert 'inbox_write.sh" karo' in func, func
+assert "lesson_registration_reminder" in func, func
+assert "lesson.done未生成" in func, func
+assert "dedup" in func, func
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "resolve_report_file warns when auto unwrap returns empty status after flock timeout" {
     local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
     local lock_file="${report_file}.lock"
