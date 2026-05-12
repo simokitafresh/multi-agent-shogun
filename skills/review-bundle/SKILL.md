@@ -20,6 +20,16 @@ description: |
 
 ## 実行フロー
 
+### Step 0: precheck実行（report review時のみ）
+
+review_typeがreportの場合、レビュー判定の前提としてprecheckを実行せよ:
+```bash
+bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
+```
+- ERRORS>0 → FAIL理由にprecheck結果を含めよ
+- precheckのGATE_PREDICTION出力をStep 1のgate_predictionに転記せよ
+- precheck未実行のままStep 1に進むな（33件のGATE_PREDICTION記載なし=precheck未実行が根因。accuracy Goodhart是正で発見）
+
 ### Step 1: SG7バンドル生成
 
 レビュー結果をバンドルYAML形式で構成:
