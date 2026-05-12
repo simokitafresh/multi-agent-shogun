@@ -964,6 +964,101 @@ can_send_clear_with_report_gate() {
     return 1
 }
 
+find_completed_parent_cmd_report_for_other_ninja() {
+    local name="$1"
+    local parent_cmd="$2"
+    local dir report_file report_parent_cmd report_status report_worker base
+
+    [ -n "$parent_cmd" ] || return 1
+
+    for dir in "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports"; do
+        [ -d "$dir" ] || continue
+        while IFS= read -r report_file; do
+            [ -f "$report_file" ] || continue
+            base=$(basename "$report_file")
+            case "$base" in
+                "${name}_report_"*.yaml|"${name}_report.yaml") continue ;;
+            esac
+
+            report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
+            [ "$report_parent_cmd" = "$parent_cmd" ] || continue
+
+            report_status=$(yaml_field_get "$report_file" "status")
+            case "$report_status" in
+                done|completed|success) ;;
+                *) continue ;;
+            esac
+
+            report_worker=$(yaml_field_get "$report_file" "worker_id")
+            [ "$report_worker" = "$name" ] && continue
+
+            echo "$report_file"
+            return 0
+        done < <(find "$dir" -maxdepth 1 -name '*_report_*.yaml' -o -name '*_report.yaml' 2>/dev/null | sort)
+    done
+
+    return 1
+}
+
+auto_void_if_parent_cmd_completed() {
+    local name="$1"
+    local target="$2"
+    local trigger="${3:-AUTO-VOID}"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+
+    [ -f "$task_file" ] || return 1
+
+    local task_status parent_cmd task_id completed_report completed_base
+    task_status=$(yaml_field_get "$task_file" "status")
+    case "$task_status" in
+        assigned|acknowledged|in_progress|pending) ;;
+        *) return 1 ;;
+    esac
+
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    [ -n "$parent_cmd" ] || return 1
+
+    completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || return 1
+    completed_base=$(basename "$completed_report")
+    task_id=$(yaml_field_get "$task_file" "task_id")
+    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
+
+    local lock_file="/tmp/task_${name}.lock"
+    local voided_at
+    printf -v voided_at '%(%Y-%m-%dT%H:%M:%S)T' -1
+    (
+        flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name auto-void"; exit 1; }
+
+        local current_status current_parent_cmd still_completed_report
+        current_status=$(yaml_field_get "$task_file" "status")
+        case "$current_status" in
+            assigned|acknowledged|in_progress|pending) ;;
+            *) log "AUTO-VOID-SKIP: $name status changed to ${current_status:-empty}"; exit 1 ;;
+        esac
+        current_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+        [ "$current_parent_cmd" = "$parent_cmd" ] || { log "AUTO-VOID-SKIP: $name parent_cmd changed to ${current_parent_cmd:-empty}"; exit 1; }
+        still_completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd"; exit 1; }
+
+        if ! yaml_field_set "$task_file" "task" "status" "idle"; then
+            log "ERROR: yaml_field_set failed for ${name} auto-void status update"
+            exit 1
+        fi
+        yaml_field_set "$task_file" "task" "report_path" "" 2>/dev/null || true
+        yaml_field_set "$task_file" "task" "report_filename" "" 2>/dev/null || true
+        yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
+        yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
+    ) 200>"$lock_file" || return 1
+
+    [ -n "$target" ] && tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
+    if [ -n "$target" ]; then
+        safe_send_clear "$target" "$name" "AUTO-VOID(${trigger})" || log "AUTO-VOID-CLEAR-FAILED: $name parent_cmd=$parent_cmd"
+    fi
+
+    send_inbox_message karo "【AUTO-VOID】${name}の後発task ${task_id:-unknown} をvoid。parent_cmd=${parent_cmd} は ${completed_base} で完了済み。taskをidle化し/clear送信。" auto_void
+    log "AUTO-VOID: $name task=${task_id:-unknown} parent_cmd=$parent_cmd completed_report=$completed_base"
+    return 0
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -3401,6 +3496,10 @@ while true; do
             if [ -f "$_s1_task_file" ]; then
                 _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
                 if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
+                    if auto_void_if_parent_cmd_completed "$name" "$target" "STAGE1"; then
+                        PREV_STATE[$name]="idle"
+                        continue
+                    fi
                     # cmd_1156 AC2: STAGE1-SKIP timeout safety valve
                     _s1_task_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
                     _s1_now=$EPOCHSECONDS

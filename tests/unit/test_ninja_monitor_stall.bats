@@ -586,6 +586,116 @@ echo "CALLED=$CALLED"
     [[ "$output" == *"CALLED=1"* ]]
 }
 
+@test "auto_void_if_parent_cmd_completed: other ninja completed same parent_cmd resets task and notifies karo" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs"
+
+declare -A PANE_TARGETS
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+LOG="$TEST_LOG"
+PANE_TARGETS[saizo]="shogun:2.6"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: assigned
+  task_id: cmd_2682_exact
+  parent_cmd: cmd_2682
+  report_path: queue/reports/saizo_report_cmd_2682.yaml
+  report_filename: saizo_report_cmd_2682.yaml
+EOF
+
+cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_2682.yaml" <<'"'"'EOF'"'"'
+worker_id: hayate
+task_id: cmd_2682_first
+parent_cmd: cmd_2682
+status: completed
+verdict: PASS
+EOF
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
+safe_send_clear() { echo "CLEAR:$2:$3" >> "$TEST_LOG"; return 0; }
+tmux() { return 0; }
+
+auto_void_if_parent_cmd_completed saizo "${PANE_TARGETS[saizo]}" "TEST"
+
+echo "STATUS=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" status)"
+echo "REPORT_PATH=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" report_path)"
+echo "REPORT_FILENAME=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" report_filename)"
+cat "$TEST_MESSAGES"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STATUS=idle"* ]]
+    [[ "$output" == *"REPORT_PATH="* ]]
+    [[ "$output" == *"REPORT_FILENAME="* ]]
+    [[ "$output" == *"karo|auto_void|"* ]]
+    [[ "$output" == *"hayate_report_cmd_2682.yaml"* ]]
+    [[ "$output" == *"CLEAR:saizo:AUTO-VOID(TEST)"* ]]
+}
+
+@test "auto_void_if_parent_cmd_completed: own completed report does not void current task" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs"
+
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+LOG="$TEST_LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: assigned
+  task_id: cmd_2682_exact
+  parent_cmd: cmd_2682
+EOF
+
+cat > "$SCRIPT_DIR/queue/reports/saizo_report_cmd_2682.yaml" <<'"'"'EOF'"'"'
+worker_id: saizo
+task_id: cmd_2682_exact
+parent_cmd: cmd_2682
+status: completed
+verdict: PASS
+EOF
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
+safe_send_clear() { echo "CLEAR:$2:$3" >> "$TEST_LOG"; return 0; }
+
+if auto_void_if_parent_cmd_completed saizo "shogun:2.6" "TEST"; then
+    echo "VOIDED=1"
+else
+    echo "VOIDED=0"
+fi
+echo "STATUS=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" status)"
+cat "$TEST_MESSAGES"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"VOIDED=0"* ]]
+    [[ "$output" == *"STATUS=assigned"* ]]
+    [[ "$output" != *"auto_void"* ]]
+    [[ "$output" != *"CLEAR:"* ]]
+}
+
 # =============================================================================
 # snapshot_idle tests (merged from test_ninja_monitor_snapshot_idle.bats)
 # =============================================================================
