@@ -5186,6 +5186,9 @@ def count_acs_from_value(acs):
                 return len(ac_keys)
         return len(acs)
     if isinstance(acs, dict):
+        ac_keys = [k for k in acs if re.match(r'^AC\d+$', str(k))]
+        if ac_keys:
+            return len(ac_keys)
         desc = acs.get('description', '')
         if isinstance(desc, str) and desc.strip():
             ac_matches = re.findall(r'\bAC\d+\b', desc)
@@ -5197,14 +5200,76 @@ def count_acs_from_value(acs):
         return len(set(ac_matches)) if ac_matches else 1
     return 0
 
+def count_acs_from_text(text, cmd_id=""):
+    """Count only the acceptance_criteria block when full YAML parsing fails."""
+    lines = text.splitlines()
+    scopes = [(0, len(lines))]
+    if cmd_id:
+        cmd_pattern = re.compile(rf'^(\s*){re.escape(cmd_id)}:\s*(?:#.*)?$')
+        for idx, line in enumerate(lines):
+            match = cmd_pattern.match(line)
+            if not match:
+                continue
+            cmd_indent = len(match.group(1))
+            end = len(lines)
+            for j in range(idx + 1, len(lines)):
+                if lines[j].strip() and len(lines[j]) - len(lines[j].lstrip()) <= cmd_indent:
+                    end = j
+                    break
+            scopes = [(idx + 1, end)]
+            break
+
+    for start, end in scopes:
+        ac_start = None
+        ac_indent = 0
+        for idx in range(start, end):
+            match = re.match(r'^(\s*)acceptance_criteria:\s*(?:#.*)?$', lines[idx])
+            if match:
+                ac_start = idx + 1
+                ac_indent = len(match.group(1))
+                break
+        if ac_start is None:
+            continue
+
+        block = []
+        for line in lines[ac_start:end]:
+            if line.strip() and len(line) - len(line.lstrip()) <= ac_indent:
+                break
+            block.append(line)
+
+        list_items = [
+            line for line in block
+            if re.match(r'^\s*-\s+(?:id:|description:|\S+)', line)
+        ]
+        if list_items:
+            return len(list_items)
+
+        ac_keys = set()
+        for line in block:
+            match = re.match(r'^\s*(AC\d+):\s*', line)
+            if match:
+                ac_keys.add(match.group(1))
+        if ac_keys:
+            return len(ac_keys)
+
+        ac_matches = re.findall(r'\bAC\d+\b', "\n".join(block))
+        if ac_matches:
+            return len(set(ac_matches))
+    return 0
+
 try:
     with open(task_file, encoding='utf-8') as f:
-        data = yaml.safe_load(f) or {}
+        task_text = f.read()
+    data = yaml.safe_load(task_text) or {}
     task = data.get('task') or {}
     acs = task.get('acceptance_criteria')
     count = count_acs_from_value(acs)
 except Exception:
-    count = 0
+    try:
+        with open(task_file, encoding='utf-8') as f:
+            count = count_acs_from_text(f.read())
+    except Exception:
+        count = 0
 
 if count <= 0 and cmd_id:
     search_files = [
@@ -5216,9 +5281,15 @@ if count <= 0 and cmd_id:
 
     for path in search_files:
         try:
-            with open(path, encoding='utf-8') as f:
-                data = yaml.safe_load(f) or {}
+            text = path.read_text(encoding='utf-8')
+            data = yaml.safe_load(text) or {}
         except Exception:
+            try:
+                count = count_acs_from_text(text, cmd_id)
+            except Exception:
+                count = 0
+            if count > 0:
+                break
             continue
 
         commands = data.get("commands") or {}
