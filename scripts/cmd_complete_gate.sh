@@ -3539,10 +3539,15 @@ for gate in "${ALL_GATES[@]}"; do
             echo "  ${gate}: DONE"
         fi
     else
-        echo "  [CRITICAL] ${gate}: MISSING ← 未完了"
-        MISSING_GATES+=("$gate")
-        record_block_reason "missing_gate:${gate}"
-        ALL_CLEAR=false
+        if [ "$gate" = "lesson" ]; then
+            echo "  WARN: ${gate}: MISSING ← lesson_write.sh登録待ち"
+            notify_karo_lesson_registration_reminder "$CMD_ID" "gate_check"
+        else
+            echo "  [CRITICAL] ${gate}: MISSING ← 未完了"
+            MISSING_GATES+=("$gate")
+            record_block_reason "missing_gate:${gate}"
+            ALL_CLEAR=false
+        fi
     fi
 done
 
