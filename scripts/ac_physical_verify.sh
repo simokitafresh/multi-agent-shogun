@@ -262,3 +262,27 @@ else:
     print(f'\nRESULT: ALL PATHS VERIFIED')
     sys.exit(0)
 " <<< "$CMD_TEXT"
+
+# --- Adaptive Gating冷え観点サマリ (draft review時の盲点提示) ---
+REVIEW_LOG="${REPO_ROOT}/logs/gunshi_review_log.yaml"
+if [ -f "$REVIEW_LOG" ]; then
+    _cold=$(awk '
+        /finding_categories:/ {
+            line=$0; gsub(/.*finding_categories: *\[?/, "", line); gsub(/\].*/, "", line)
+            gsub(/ /, "", line); split(line,a,",")
+            for(i in a) if(a[i]!="") cats[a[i]]++
+            n++
+        }
+        END {
+            if (n<10) exit
+            split("assumptions,numbers,simulation,premortem,north_star,ambiguity,adversarial",all,",")
+            for (i in all) if (!(all[i] in cats)) printf "%s ", all[i]
+        }
+    ' <(tail -200 "$REVIEW_LOG") 2>/dev/null)
+    if [ -n "$_cold" ]; then
+        echo ""
+        echo "--- Adaptive Gating: 冷え観点 ---"
+        echo "  直近レビューで未使用: ${_cold}"
+        echo "  → これらの観点を意識的に検討し、finding_categoriesに記録せよ"
+    fi
+fi
