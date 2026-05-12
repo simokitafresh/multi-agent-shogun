@@ -177,17 +177,26 @@ def concrete_prevention_steps(reason):
         fixes.append("UNKNOWN/null/FILL_THISを使わず、各教訓の有用性と理由を記入する")
     if "assumption_invalidation" in lower:
         checks.append("assumption_invalidation に detail と affected_cmds があることを確認する")
-        fixes.append("影響なしでも `detail` と `affected_cmds` を明示する")
+        fixes.append("`report_field_set.sh <report> assumption_invalidation found false` で dict 形式を保証する")
     if "files_modified" in lower:
         checks.append("files_modified が空/欠落/FILL_THISでないことを確認する")
-        fixes.append("変更した実ファイルパスを列挙し、変更なしなら理由を明記する")
+        fixes.append("`report_field_set.sh <report> files_modified <path>` で変更ファイルを記入する")
+    if "ac_version" in lower:
+        checks.append("ac_version_read がHEADの短縮ハッシュと一致するか `git rev-parse --short HEAD` で確認する")
+        fixes.append("`report_field_set.sh <report> ac_version_read $(git rev-parse --short HEAD)` で記入する")
+    if "purpose_validation" in lower:
+        checks.append("purpose_validation.fit が true/false で、purpose_gap が記入済みか確認する")
+        fixes.append("`report_field_set.sh <report> purpose_validation fit true` で記入する")
+    if "worker_id" in lower or "parent_cmd" in lower:
+        checks.append("worker_id と parent_cmd がテンプレート生成値と一致するか確認する")
+        fixes.append("`report_field_set.sh <report> worker_id <name>` / `report_field_set.sh <report> parent_cmd <cmd_id>` で記入する")
     if "missing" in lower or "欠落" in reason:
-        checks.append("FAIL理由に出たフィールド名を報告YAML上で実際に検索し、欠落していないか確認する")
-        fixes.append("欠落フィールドを report_field_set.sh 経由で追加する")
+        checks.append("FAIL理由に出たフィールド名を報告YAML上で `rg -n '<field>' <report>` で検索する")
+        fixes.append("欠落フィールドを `report_field_set.sh` 経由で追加する")
     if not checks:
-        checks.append(f"FAIL理由 `{shorten(reason, 120)}` と同じ条件をゲート直前に再現確認する")
+        checks.append("`bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する")
     if not fixes:
-        fixes.append("同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する")
+        fixes.append("gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する")
 
     # Keep generated lines readable and deterministic.
     checks = list(dict.fromkeys(checks))[:2]
