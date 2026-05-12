@@ -36,7 +36,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -55,6 +55,8 @@ codd:
 | cmd | `cmd_2620` 強化 — セマンティクスインデックスaliases照合をcmd品質ゲートに接続(Level5化) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_semantic_index.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T00:06:00+09:00 今回の知識は、クリア後も利用できるようにしよう。セマンティック辞書も更新してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T02:40:15+09:00 セマンティック辞書やインデックスに追加すべき内容を確認せよ |
+| cmd | `cmd_2679` セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_2690` 修正 — semantic-index file参照12件のDM-Signal外部パスを現行パスとして検証し、semantic_map_generate.shで再生成 (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -143,6 +145,7 @@ codd:
 | file | `scripts/karo_workaround_log.sh` WA記録(成績表フィードバック) |
 | file | `scripts/ci_status_check.sh` CI状態チェック(品質フィードバック) |
 | cmd | `cmd_2672` 教訓統合 — lessons_shogun v3統合 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-11T21:24:08+09:00 われらの軍のシステムをまとめるとどうなるのかな？三層学習ループ、セマンティックインデックス、レベル6、deepdiveなどかなり特徴があるよな。 |
 
 ## alm_research — ALM研究
 
@@ -185,7 +188,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -208,6 +211,11 @@ codd:
 | docs | `docs/research/gunshi_idle_codex_hook_analysis_20260511.md` Codex Stop hook撤去分析 |
 | cmd | `cmd_karo_lk004_inbox_fix` (`tests/unit/test_deploy_task.bats`) |
 | cmd | `cmd_karo_ci_fix_safe_inbox_test` (`tests/unit/test_deploy_task.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-12T01:05:43+09:00 二重配備はstallの判断ミスだろうな。家老の能力を上げるべきか仕組みを考えるべきか。なぜなぜ7回 |
+| cmd | `cmd_2681` 強化 — deploy_task.sh二重配備ガードのレース条件修正+完了報告検知 (`queue/tasks/hayate.yaml`, `scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| cmd | `cmd_2682` 強化 — ninja_monitor先行完了検知で後発忍者をauto-void (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| cmd | `cmd_2684` 強化 — inbox_write.sh task_assigned時の二重配備自動検査 (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-12T11:39:01+09:00 確かidle判定やstall判定が未熟で、すぐにninjyamonitorが/clearを送信→作業中にstartup再実行で無駄な重複が多かったからだった記憶がある |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -355,6 +363,7 @@ codd:
 | cmd | `cmd_2643` 強化 — Level1止まりgate6件に修正候補自動提案を追加(Level5化一括) (`scripts/gates/gate_knowledge_freshness.sh`, `scripts/gates/gate_p_average_freshness.sh`, `scripts/gates/gate_silent_fallback.sh`) |
 | cmd | `cmd_2651` 強化 — ac_param_sufficiency WARN時にcontext/projects.yamlから候補値を自動提案(Level5化) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_warn_logging.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T02:40:48+09:00 You are matching a user query to a semantic index. Query: L6 学習速度 Instructions: - Choose up to 3 most related concepts f |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-12T12:55:59+09:00 You are matching a user query to a semantic index. Query: drift Instructions: - Choose up to 3 most related concepts fro |
 
 ## tier_plan_mapping — Tier-プラン対応
 
