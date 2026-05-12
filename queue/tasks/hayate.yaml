@@ -1,8 +1,4 @@
 task:
-  _ac_task_id: cmd_2681_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2681
-  ac_version: c020b725
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,62 +7,36 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2681
+  parent_cmd: cmd_training_L4_r16_hayate
   project: infra
-  purpose: 同一cmdに2名配備される二重配備パターン(cmd_2678-2680で3連続発生)を構造的に防止する
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - pushするな(commitまで)
+    - スコープ外改善は禁止
+    notes:
+    - TODO/FIXMEが残っていないことを確認せよ
+    - '後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い'
+    required_fields:
+    - ac_version_read
+    - files_modified
+    - lesson_candidate
+    - lessons_useful
   scout_exempt: true
-  status: done
+  status: failed
   stop_for: []
-  target_path: scripts/deploy_task.sh
-  target_path_warning: '⚠ target_pathが存在しない: crontab'
-  task_id: cmd_2681_exact
-  task_type: exact
+  task_id: cmd_training_L4_r16_hayate_normal
+  task_type: implement
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
     detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
-  - id: 'L070'
-    summary: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-    detail: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-  - id: 'L204'
-    summary: '30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン'
-    detail: '30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン'
-  - id: 'L079'
-    summary: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
-    detail: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
-  - id: 'L305'
-    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-  - id: 'L295'
-    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-  - id: 'L417'
-    summary: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-    detail: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-  - id: 'L340'
-    summary: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-    detail: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L393'
-    summary: 'mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。'
-    detail: 'mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。'
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -80,35 +50,22 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L512: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
-      - L070: L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_36
-      - L204: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
-      - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed
-      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
-      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
-      - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY
-      - L340: cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo 
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L393: mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    description: 'deploy_task.shの重複配備チェック区間がflockで排他制御されている'
-  - id: 'AC2'
-    description: '同一parent_cmdの完了済み報告YAMLが他忍者に存在する場合、新規配備がBLOCKされる'
-  - id: 'AC3'
-    description: '既存の重複ガードテスト+新規テストがPASS'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_training_L4_r16_hayate_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2681.yaml
-  report_path: queue/reports/hayate_report_cmd_2681.yaml
+  report_filename: hayate_report_cmd_training_L4_r16_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L4_r16_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 30
-    top_pattern: 'report_yaml_format(5件)'
-    breakdown: 'report_yaml_format(5件), verdict_override(4件), stale_report(3件), commit_missing(3件), task_redeploy(2件), recording_error(2件), ci_gate_mismatch(2件), deploy_error(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    total_workarounds: 27
+    top_pattern: 'verdict_override(4件)'
+    breakdown: 'verdict_override(4件), report_yaml_format(3件), stale_report(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), deploy_error(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
+    warning: '⚠ 過去27件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 324
@@ -119,7 +76,7 @@ task:
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'
     gate_blocks:
     - reason: 'lesson_done_missing'
-      count: 11
+      count: 12
       hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
     - reason: 'empty_lessons_useful'
       count: 10
@@ -136,4 +93,4 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 2
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-12T11:05:45"
+  deployed_at: "2026-05-12T12:00:01"
