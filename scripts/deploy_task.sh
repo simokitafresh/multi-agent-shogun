@@ -1045,8 +1045,13 @@ ac_lines = [
     "      description: \"lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる\"",
     "      binary_checks:",
     "        - \"lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no\"",
-    "        - \"AC1/AC2/AC3のbinary_checksを全てyes/noで記入したか: yes/no\"",
+    "        - \"AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no\"",
     "        - \"verdictがbinary_checksと矛盾していないか: yes/no\"",
+    "    AC4:",
+    "      description: \"注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する\"",
+    "      binary_checks:",
+    "        - \"task.related_lessonsの注入教訓を1件以上参照したか: yes/no\"",
+    "        - \"参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no\"",
 ]
 
 with open(task_file, encoding="utf-8") as f:
