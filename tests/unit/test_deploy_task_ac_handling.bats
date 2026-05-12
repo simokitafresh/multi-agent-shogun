@@ -924,6 +924,106 @@ print(len(related))
     [ "$output" = "4" ]
 }
 
+@test "deploy_task does not mark MIN_SAMPLES-below lessons as withheld" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L001
+    title: deploy alpha orbit maple quartz
+    summary: deploy alpha orbit maple quartz
+    status: confirmed
+    helpful_count: 20
+  - id: L002
+    title: deploy beta cobalt harbor prism
+    summary: deploy beta cobalt harbor prism
+    status: confirmed
+    helpful_count: 19
+  - id: L003
+    title: deploy gamma ember satellite lattice
+    summary: deploy gamma ember satellite lattice
+    status: confirmed
+    helpful_count: 18
+  - id: L004
+    title: deploy delta fable orchard copper
+    summary: deploy delta fable orchard copper
+    status: confirmed
+    helpful_count: 17
+  - id: L005
+    title: deploy epsilon granite meadow syntax
+    summary: deploy epsilon granite meadow syntax
+    status: confirmed
+    helpful_count: 16
+  - id: L006
+    title: deploy zeta horizon velvet engine
+    summary: deploy zeta horizon velvet engine
+    status: confirmed
+    helpful_count: 15
+  - id: L007
+    title: deploy eta ivory lagoon vector
+    summary: deploy eta ivory lagoon vector
+    status: confirmed
+    helpful_count: 14
+  - id: L008
+    title: deploy theta jade canyon signal
+    summary: deploy theta jade canyon signal
+    status: confirmed
+    helpful_count: 13
+  - id: L009
+    title: deploy iota kernel citadel packet
+    summary: deploy iota kernel citadel packet
+    status: confirmed
+    helpful_count: 12
+  - id: L010
+    title: deploy kappa lunar bridge token
+    summary: deploy kappa lunar bridge token
+    status: confirmed
+    helpful_count: 11
+  - id: L_LOW
+    title: deploy low sample nova metric
+    summary: deploy low sample nova metric
+    status: confirmed
+    helpful_count: 1
+  - id: L_BAD
+    title: deploy mature bad omega parser
+    summary: deploy mature bad omega parser
+    status: confirmed
+    helpful_count: 0
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-05-12T00:00:00	cmd_a	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_b	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_c	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_d	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_a	sasuke	L_BAD	feedback	USEFUL	yes	testproj	impl	None
+2026-05-12T00:00:00	cmd_b	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_c	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_d	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+2026-05-12T00:00:00	cmd_e	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy rollout"
+  description: "deploy injection cap"
+  task_id: cmd_min_samples_exact
+  assigned_to: sasuke
+  task_type: impl
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run awk -F'\t' '$5=="withheld"{print $4}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L_BAD"* ]]
+    [[ "$output" != *"L_LOW"* ]]
+}
+
 @test "deploy_task tag fallback injects all tag-matched lessons below MAX_INJECT=10" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'

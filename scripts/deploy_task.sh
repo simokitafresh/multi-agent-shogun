@@ -2928,7 +2928,7 @@ def compute_useful_rates(script_dir):
     MIN_SAMPLES未満の教訓もdecay対象外（サンプル不足でのペナルティ防止）。"""
     impact_path = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
     if not os.path.exists(impact_path):
-        return {}
+        return {}, {}
     feedback_counts = {}  # lesson_id -> [useful_count, total_feedback_count]
     try:
         with open(impact_path, 'r', encoding='utf-8', newline='') as f:
@@ -2945,13 +2945,15 @@ def compute_useful_rates(script_dir):
                 if result == 'USEFUL':
                     feedback_counts[lid][0] += 1
     except Exception:
-        return {}
+        return {}, {}
     # MIN_SAMPLES以上のfeedbackがある教訓のみrateを返す
-    return {
+    useful_rates = {
         lid: vals[0] / vals[1] if vals[1] > 0 else 0.0
         for lid, vals in feedback_counts.items()
         if vals[1] >= USEFUL_RATE_MIN_SAMPLES
     }
+    feedback_totals = {lid: vals[1] for lid, vals in feedback_counts.items()}
+    return useful_rates, feedback_totals
 
 def build_lesson_detail(lesson):
     if_then = lesson.get('if_then')
@@ -3548,7 +3550,10 @@ try:
 
     # cmd_1564+karo_idle_fix: useful_rate decay — 活用率が低い教訓のスコアを減衰
     # フィードバックデータ(record_lesson_feedback.sh)から実有用率を算出
-    useful_rates = compute_useful_rates(script_dir)
+    useful_rates, feedback_totals = compute_useful_rates(script_dir)
+
+    def needs_initial_feedback(lid):
+        return feedback_totals.get(lid, 0) < USEFUL_RATE_MIN_SAMPLES
 
     # universal教訓にもuseful_rateフィルタを適用
     # 有用率が閾値未満のuniversal教訓はtag_candidatesに降格（スコアリング対象に移動）
@@ -3658,9 +3663,13 @@ try:
     for ul in universal_lessons:
         ul_id = ul.get('id', '')
         if ul_id not in seen_ids_final:
+            if needs_initial_feedback(ul_id):
+                continue
             withheld.append({'id': ul_id, 'summary': ul.get('summary', '') or ul.get('title', '')})
     for _, lid, summary in scored:
         if lid not in seen_ids_final:
+            if needs_initial_feedback(lid):
+                continue
             withheld.append({'id': lid, 'summary': summary})
 
     task['related_lessons'] = related
