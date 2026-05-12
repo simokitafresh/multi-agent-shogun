@@ -40,6 +40,10 @@ setup_file() {
         printf '\n'
         sed -n '/^run_codd_propagate_update()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^normalize_block_reason_to_workaround_categories()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^update_karo_workaround_resolutions()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
 import os
 from pathlib import Path
@@ -272,6 +276,75 @@ EOF
     run run_codd_propagate_update
     [ "$status" -eq 0 ]
     [[ "$output" == *"[WARN] codd executable not found (skip)"* ]]
+}
+
+@test "normalize_block_reason_to_workaround_categories maps gate BLOCK reasons to WA categories" {
+    run normalize_block_reason_to_workaround_categories "report_format:hayate.yaml|hayate:binary_checks_fail|missing_gate:review_gate|commit_missing"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report_yaml_format"* ]]
+    [[ "$output" == *"gate_missing"* ]]
+    [[ "$output" == *"commit_missing"* ]]
+}
+
+@test "update_karo_workaround_resolutions fills unresolved matching categories only" {
+    export GATE_METRICS_LOG="$TEST_PROJECT/logs/gate_metrics.log"
+    export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"
+    export KARO_WORKAROUNDS_LOCK_FILE="$TEST_PROJECT/logs/karo_workarounds.lock"
+    mkdir -p "$TEST_PROJECT/logs"
+
+    cat > "$GATE_METRICS_LOG" <<EOF
+2026-05-12T00:00:00	$TEST_CMD_ID	BLOCK	report_format:hayate_report.yaml	exact	unknown	unknown	none
+2026-05-12T00:01:00	$TEST_CMD_ID	BLOCK	missing_gate:review_gate	exact	unknown	unknown	none
+EOF
+    cat > "$KARO_WORKAROUNDS_FILE" <<'EOF'
+- cmd_id: cmd_old_report
+  timestamp: '2026-05-12T00:00:00Z'
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: 'report format workaround'
+  root_cause: 'format gate failure'
+  resolved_by_cmd: ''
+- cmd_id: cmd_old_gate
+  timestamp: '2026-05-12T00:00:00Z'
+  ninja: kagemaru
+  workaround: true
+  category: gate_missing
+  detail: 'review gate missing'
+  root_cause: 'review gate not done'
+  resolved_by_cmd: ''
+- cmd_id: cmd_old_commit
+  timestamp: '2026-05-12T00:00:00Z'
+  ninja: saizo
+  workaround: true
+  category: commit_missing
+  detail: 'commit missing'
+  root_cause: 'commit not created'
+  resolved_by_cmd: ''
+- cmd_id: cmd_clean
+  timestamp: '2026-05-12T00:00:00Z'
+  ninja: kotaro
+  workaround: false
+  category: report_yaml_format
+  detail: ''
+  root_cause: ''
+  resolved_by_cmd: ''
+EOF
+
+    run update_karo_workaround_resolutions "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Karo workaround resolution update (GATE CLEAR):"* ]]
+    [[ "$output" == *"updated=2"* ]]
+    grep -A7 "cmd_id: cmd_old_report" "$KARO_WORKAROUNDS_FILE" | grep -q "resolved_by_cmd: '$TEST_CMD_ID'"
+    grep -A7 "cmd_id: cmd_old_gate" "$KARO_WORKAROUNDS_FILE" | grep -q "resolved_by_cmd: '$TEST_CMD_ID'"
+    grep -A7 "cmd_id: cmd_old_commit" "$KARO_WORKAROUNDS_FILE" | grep -q "resolved_by_cmd: ''"
+    grep -A7 "cmd_id: cmd_clean" "$KARO_WORKAROUNDS_FILE" | grep -q "resolved_by_cmd: ''"
+}
+
+@test "cmd_complete_gate wires workaround resolution update in normal and emergency CLEAR sections" {
+    run bash -lc "grep -c 'update_karo_workaround_resolutions \"\\\$CMD_ID\"' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -ge 2 ]
 }
 
 @test "write_l6_horizontal_level5_insights saves matching defense_level_under_5 candidate" {

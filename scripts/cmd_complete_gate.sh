@@ -842,6 +842,182 @@ run_codd_propagate_update() {
     return 0
 }
 
+# ─── karo_workarounds resolved_by_cmd 自動補完（cmd_2692） ───
+# GATE CLEAR時、同一cmdの過去BLOCK理由からworkaroundカテゴリを推定し、
+# resolved_by_cmd未記入の同カテゴリエントリを現在cmdで埋める。
+# 失敗はCLEAR後処理を止めずWARN化する。
+normalize_block_reason_to_workaround_categories() {
+    local block_reasons="${1:-}"
+
+    printf '%s\n' "$block_reasons" | tr '|' '\n' | awk '
+        function emit(cat) {
+            if (cat != "" && !seen[cat]++) print cat
+        }
+        {
+            token = tolower($0)
+            if (token ~ /report_format|lessons_useful|lesson_candidate|binary_checks|verdict|purpose_validation/) {
+                emit("report_yaml_format")
+            }
+            if (token ~ /commit_missing|uncommitted|commit/) {
+                emit("commit_missing")
+            }
+            if (token ~ /ac_version/) {
+                emit("ac_version_mismatch")
+            }
+            if (token ~ /stale_report/) {
+                emit("stale_report")
+            }
+            if (token ~ /deploy/) {
+                emit("deploy_error")
+            }
+            if (token ~ /scope/) {
+                emit("scope_mismatch")
+            }
+            if (token ~ /ci_/) {
+                emit("ci_fix")
+            }
+            if (token ~ /missing_gate|lesson_done_missing|draft_lessons|review_gate|archive/) {
+                emit("gate_missing")
+            }
+        }
+    '
+}
+
+update_karo_workaround_resolutions() {
+    local cmd_id="$1"
+    local wa_file="${KARO_WORKAROUNDS_FILE:-$LOG_DIR/karo_workarounds.yaml}"
+    local wa_lock="${KARO_WORKAROUNDS_LOCK_FILE:-$(lock_path "$wa_file")}"
+    local block_reasons
+    local categories
+    local result
+
+    echo ""
+    echo "Karo workaround resolution update (GATE CLEAR):"
+
+    if [ ! -f "$wa_file" ]; then
+        echo "  SKIP (karo_workarounds.yaml not found)"
+        return 0
+    fi
+    if [ ! -f "$GATE_METRICS_LOG" ]; then
+        echo "  SKIP (gate_metrics.log not found)"
+        return 0
+    fi
+
+    block_reasons=$(awk -F '\t' -v cmd="$cmd_id" '$2 == cmd && $3 == "BLOCK" && $4 != "" { print $4 }' "$GATE_METRICS_LOG" 2>/dev/null | paste -sd '|' -)
+    if [ -z "$block_reasons" ]; then
+        echo "  SKIP (no prior BLOCK category for ${cmd_id})"
+        return 0
+    fi
+
+    categories=$(normalize_block_reason_to_workaround_categories "$block_reasons" | paste -sd ',' -)
+    if [ -z "$categories" ]; then
+        echo "  SKIP (no matching workaround category for BLOCK reasons: ${block_reasons})"
+        return 0
+    fi
+
+    result=$(
+        (
+            flock -w 10 200 || { echo "WARN: lock timeout"; exit 0; }
+            python3 - "$wa_file" "$cmd_id" "$categories" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+wa_file = Path(sys.argv[1])
+cmd_id = sys.argv[2]
+categories = {c for c in sys.argv[3].split(",") if c}
+
+try:
+    lines = wa_file.read_text(encoding="utf-8").splitlines(keepends=True)
+except Exception as exc:
+    print(f"WARN: read failed: {exc}")
+    raise SystemExit(0)
+
+entry_start_re = re.compile(r"^\s*-\s+[A-Za-z0-9_]+:")
+field_re = re.compile(r"^(\s*)([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)(\r?\n?)$")
+
+
+def scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1]
+    return value
+
+
+def yaml_sq(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+entries = []
+start = None
+for idx, line in enumerate(lines):
+    if entry_start_re.match(line):
+        if start is not None:
+            entries.append((start, idx))
+        start = idx
+if start is not None:
+    entries.append((start, len(lines)))
+
+updated = 0
+new_lines = list(lines)
+for start, end in entries:
+    fields = {}
+    field_line = {}
+    for idx in range(start, end):
+        text = new_lines[idx]
+        if idx == start:
+            first = re.sub(r"^\s*-\s*", "  ", text, count=1)
+            m = field_re.match(first)
+        else:
+            m = field_re.match(text)
+        if not m:
+            continue
+        key = m.group(2)
+        fields[key] = scalar(m.group(3))
+        field_line[key] = idx
+
+    if fields.get("workaround") != "true":
+        continue
+    if fields.get("category") not in categories:
+        continue
+    if fields.get("resolved_by_cmd"):
+        continue
+    if "resolved_by_cmd" not in field_line:
+        continue
+
+    idx = field_line["resolved_by_cmd"]
+    m = field_re.match(new_lines[idx])
+    indent = m.group(1) if m else "  "
+    newline = m.group(4) if m else "\n"
+    new_lines[idx] = f"{indent}resolved_by_cmd: {yaml_sq(cmd_id)}{newline}"
+    updated += 1
+
+if updated:
+    fd, tmp = tempfile.mkstemp(dir=str(wa_file.parent), suffix=".tmp")
+    os.close(fd)
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        os.replace(tmp, wa_file)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+print(f"updated={updated} categories={','.join(sorted(categories))}")
+PY
+        ) 200>"$wa_lock"
+    ) || result="WARN: update failed"
+
+    if [[ "$result" == WARN:* ]]; then
+        echo "  [WARN] ${result#WARN: } (non-blocking)"
+    else
+        echo "  ${result}"
+    fi
+    return 0
+}
+
 # ─── L6横展開候補自動保存（cmd_2653） ───
 # Level5化に成功したcmdの語彙から、同種でLevel5未満の仕組みを探し、
 # 次の改善候補としてinsightに保存する。CLEAR後のみ実行し、失敗は非ブロッキング。
@@ -3406,6 +3582,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
@@ -5024,6 +5201,7 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     echo "GATE CLEAR: cmd完了許可"
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
+    update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     # gate_yaml_status: YAML status更新（WARNING only）
