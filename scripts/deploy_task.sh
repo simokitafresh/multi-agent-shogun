@@ -54,6 +54,47 @@ log() {
     echo "[DEPLOY] $1" >&2
 }
 
+deploy_task_lock_path() {
+    local lock_key="$1"
+    mkdir -p "$SCRIPT_DIR/queue/locks"
+    printf '%s/queue/locks/deploy_%s.lock\n' "$SCRIPT_DIR" "${lock_key//[^A-Za-z0-9_.-]/_}"
+}
+
+deploy_task_release_lock() {
+    local lock_fd="$1"
+    local lock_file="$2"
+
+    [ -n "$lock_fd" ] || return 0
+    flock -u "$lock_fd" || true
+    eval "exec ${lock_fd}>&-"
+    log "deploy_lock: released ${lock_file}"
+}
+
+deploy_task_has_completed_peer_report() {
+    local parent_cmd="$1"
+    local ninja_name="$2"
+    local report_file report_base report_ninja report_status report_verdict
+
+    [ -n "$parent_cmd" ] || return 1
+
+    for report_file in "$SCRIPT_DIR/queue/reports/"*"_report_${parent_cmd}.yaml"; do
+        [ -f "$report_file" ] || continue
+        report_base=$(basename "$report_file")
+        report_ninja="${report_base%%_report_*}"
+        [ "$report_ninja" = "$ninja_name" ] && continue
+
+        report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
+        report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        if [ "$report_status" = "completed" ] || [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
+            log "BLOCK: ${parent_cmd} already has completed peer report ${report_base} (status=${report_status:-empty}, verdict=${report_verdict:-empty})"
+            echo "BLOCK: ${parent_cmd} already has completed report from ${report_ninja}: ${report_base}" >&2
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 log_output_file() {
     local output_file="$1"
     if [ -f "$output_file" ]; then
@@ -5614,15 +5655,28 @@ deploy_task_main() {
 
     local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
     local deploy_parent_cmd deploy_task_id dd_task dd_ninja dd_pcmd dd_tid dd_status
+    local deploy_lock_fd="" deploy_lock_file=""
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
     normalize_task_yaml "$task_yaml" || true
+
+    if [ -n "$CMD_ID" ]; then
+        deploy_lock_file="$(deploy_task_lock_path "$CMD_ID")"
+        exec {deploy_lock_fd}>"$deploy_lock_file"
+        if ! flock -w 10 "$deploy_lock_fd"; then
+            log "BLOCK: could not acquire deploy lock for ${CMD_ID}: ${deploy_lock_file}"
+            echo "BLOCK: ${CMD_ID} deploy lock busy. Retry after current deployment finishes." >&2
+            return 1
+        fi
+        log "deploy_lock: acquired ${deploy_lock_file}"
+    fi
 
     pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
     if [ "$pre_resolve_status" = "in_progress" ] && [ -n "$CMD_ID" ]; then
         pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${pre_resolve_cmd:-unknown}. 前タスク完了を待て。"
         echo "BLOCK: ${NINJA_NAME} は ${pre_resolve_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
 
@@ -5653,6 +5707,7 @@ except Exception:
                 if [ ! -f "$YAML_FILE" ]; then
                     log "ERROR: --yaml file not found: $YAML_FILE"
                     echo "ERROR: --yaml ファイルが見つからない: $YAML_FILE" >&2
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 fi
                 cp "$YAML_FILE" "$task_yaml"
@@ -5698,6 +5753,7 @@ except Exception:
         else
             log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
             echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
             return 1
         fi
     fi
@@ -5714,6 +5770,7 @@ except Exception:
         fi
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
         log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 0
     fi
 
@@ -5722,6 +5779,7 @@ except Exception:
             current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
             log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
             echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
             return 1
         fi
         yaml_field_set "$task_yaml" "task" "status" "in_progress"
@@ -5736,6 +5794,7 @@ except Exception:
         current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
         echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
 
@@ -5753,6 +5812,17 @@ except Exception:
     fi
 
     if [ -n "$deploy_parent_cmd" ]; then
+        if deploy_task_has_completed_peer_report "$deploy_parent_cmd" "$NINJA_NAME"; then
+            yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
+            log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after completed peer report BLOCK"
+            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+            return 1
+        fi
+
         for dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
             [ -f "$dd_task" ] || continue
             dd_ninja=$(basename "$dd_task" .yaml)
@@ -5786,6 +5856,7 @@ except Exception:
                     log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
                     echo "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status})" >&2
                     echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${dd_ninja}.yaml task status idle" >&2
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                     ;;
             esac
@@ -5806,10 +5877,16 @@ except Exception:
     if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
         log "BLOCK(AC3): _STALE_RESET_DONE not set — reset_stale_fields が未実行。配備を中止。"
         echo "BLOCK: stale field reset (reset_stale_fields) が未実行。配備を中止。deploy_task.shのreset_stale_fields呼出し経路を確認せよ。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
 
     deploy_task_apply_task_mutations "$NINJA_NAME"
+
+    if [ -n "$deploy_lock_fd" ]; then
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        deploy_lock_fd=""
+    fi
 
     if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
         log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
