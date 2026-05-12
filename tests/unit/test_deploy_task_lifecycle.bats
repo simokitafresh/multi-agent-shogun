@@ -945,6 +945,19 @@ PY
     rm -rf "$direct_root"
 }
 
+@test "karo-direct SKILL uses deploy_task --yaml instead of direct task cp" {
+    local skill_file="$PROJECT_ROOT/skills/karo-direct/SKILL.md"
+
+    run grep -F "bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>" "$skill_file"
+    [ "$status" -eq 0 ]
+
+    run grep -F "直接 \`cp\` 禁止" "$skill_file"
+    [ "$status" -eq 0 ]
+
+    run grep -F "cp /tmp/karo_direct_task.yaml queue/tasks/<ninja_name>.yaml" "$skill_file"
+    [ "$status" -ne 0 ]
+}
+
 @test "--directモード: parent_cmd/status更新時にtask_idも新CMDへ更新する" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

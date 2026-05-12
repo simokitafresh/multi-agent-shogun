@@ -48,11 +48,11 @@ YAML
 
 ### Step 3: タスク配備
 ```bash
-# /tmp から正式パスにコピー
-cp /tmp/karo_direct_task.yaml queue/tasks/<ninja_name>.yaml
+# /tmp から deploy_task.sh --yaml 経由で配備する
+# deploy_task.sh が cp 前に reset_stale_fields を実行し、旧task YAMLの残留フィールドを清掃する。
+bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 
-# inbox_writeで忍者に通知
-bash scripts/inbox_write.sh <ninja_name> "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+# inbox_write は deploy_task.sh 内部で自動送信されるため不要
 ```
 
 ### Step 4: 陣形図更新
@@ -87,6 +87,6 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 
 ## 制約
 - training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
-- ci_fix/recon2/hotfix タイプは /tmp 経由が正解（重複ガード回避のため）
+- ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field resetを迂回するため）
 - cmd_idは `cmd_karo_<task_type>_<簡潔な説明>` 形式（training 除く）
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）
