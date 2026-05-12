@@ -2,7 +2,7 @@
 name: shogun-all-codex-switch
 argument-hint: ""
 quality_metric: "将軍系: all-codex切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
-description: Switch multi-agent-shogun to Codex-only operation via scripts/switch_cli_mode.sh, then normalize cli.default=codex and restart inbox watchers. Use when you need every role (shogun, karo, gunshi, all ninja) on Codex immediately.
+description: "What: Switch multi-agent-shogun to Codex-only operation via scripts/switch_cli_mode.sh, normalize cli.default=codex, and restart inbox watchers. When: Use when every role needs to run on Codex immediately during emergency or planned CLI migration. NOT When: Do not use for a single-agent CLI switch or peacetime rollback."
 ---
 
 # Shogun All Codex Switch
