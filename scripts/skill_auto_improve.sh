@@ -34,7 +34,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" <<'PY'
+python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" <<'PY'
 import hashlib
 import json
 import os
@@ -47,7 +47,22 @@ from pathlib import Path
 
 import yaml
 
-log_file, skills_dirs, top_n_raw, apply_raw, skill_filter = sys.argv[1:6]
+log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root = sys.argv[1:7]
+
+# --- Gate FIX hint lookup (skill_auto_improve) ---
+# Import lookup_fix_hints from gate_report_format_main to generate
+# specific prevention steps instead of generic keyword-matching templates.
+_gate_dir = os.path.join(repo_root, "scripts", "gates")
+if _gate_dir not in sys.path and os.path.isdir(_gate_dir):
+    sys.path.insert(0, _gate_dir)
+_grfm = None
+try:
+    import gate_report_format_main as _grfm  # type: ignore
+    if not hasattr(_grfm, "lookup_fix_hints"):
+        _grfm = None
+except Exception:
+    pass
+
 try:
     top_n = int(top_n_raw)
 except ValueError:
@@ -156,6 +171,25 @@ def marker_for(skill_name, reason):
 
 
 def concrete_prevention_steps(reason):
+    # Phase 1: gate-specific FIX hints from gate_report_format_main.lookup_fix_hints()
+    # This replaces generic keyword templates with concrete, actionable steps.
+    if _grfm is not None:
+        try:
+            gate_hints = _grfm.lookup_fix_hints(reason)
+        except Exception:
+            gate_hints = []
+        if gate_hints:
+            first = gate_hints[0]
+            field_m = re.match(r"FIX \(([^)]+)\):", first)
+            check_text = (
+                f"`{field_m.group(1)}` フィールドを gate FIXヒントに従って確認"
+                if field_m
+                else "gate_report_format FIXヒントを確認する"
+            )
+            fix_parts = list(dict.fromkeys(shorten(h, 150) for h in gate_hints[:3]))
+            return check_text, " / ".join(fix_parts[:2])
+
+    # Phase 2: keyword-based fallback (for non-gate-report-format gates or unmatched reasons)
     lower = reason.lower()
     checks = []
     fixes = []

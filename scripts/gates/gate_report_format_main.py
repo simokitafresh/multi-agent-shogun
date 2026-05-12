@@ -588,5 +588,171 @@ def main() -> int:
     return 0
 
 
+# ─── FIX hint lookup API (used by skill_auto_improve.sh) ─────────────────────
+# Maps FAIL reason substrings → specific FIX hint text from this gate.
+# skill_auto_improve.sh imports lookup_fix_hints() to replace generic
+# keyword-matching templates with concrete, actionable prevention steps.
+
+_HINT_DB: "list[tuple[re.Pattern, str]]" = []
+
+
+def _h(pattern: str, hint: str) -> None:
+    _HINT_DB.append((re.compile(pattern), hint))
+
+
+# binary_checks
+_h(r'binary_checks\..+\.result: 空文字',
+   'FIX (binary_checks.result): result欄に yes または no を記入。'
+   '引用符なしで書け（result: yes が正式。result: \'yes\' はNG）。'
+   '  bash scripts/report_field_set.sh <report> binary_checks.AC1 -'
+   ' <<<\'[{check: "確認内容", result: yes}]\'')
+_h(r'binary_checks\..+\.result: ".+" は不正',
+   'FIX (binary_checks.result): "yes" または "no" のみ。自由記述は acceptance_criteria.detail に書け。'
+   '引用符なし: result: yes（result: \'yes\' はNG）')
+_h(r'binary_checks\..+\.check: ".+" は確認項目ではない',
+   'FIX (binary_checks.check): check に「何を確認したか」を書け。result に yes/no を書け。'
+   '  例: {check: "変数が除去されたか", result: yes}')
+_h(r'binary_checks: null',
+   'FIX (binary_checks): null ではなく dict 形式で記入:\n'
+   '  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: yes')
+_h(r'binary_checks: is string',
+   'FIX (binary_checks): dict 形式で再記入:\n'
+   '  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: yes')
+_h(r'binary_checks: empty dict',
+   'FIX (binary_checks): AC完了ごとに二値チェックを記入:\n'
+   '  binary_checks:\n    AC1:\n      - check: "確認内容を具体的に"\n        result: yes')
+_h(r'binary_checks\..+: is \w+ \(must be list',
+   'FIX (binary_checks.AC*): list 形式で記入:\n'
+   '  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: yes')
+_h(r'binary_checks\..+: nested list detected',
+   'FIX (binary_checks): "- - check:" を "- check:" に修正（余分な"-"を削除）')
+_h(r'binary_checks: AC self-verification missing',
+   'FIX (binary_checks): task YAML の acceptance_criteria を確認し AC1/AC2... セクションを追加。'
+   '  echo \'[{check: "AC完了確認", result: yes}]\' | bash scripts/report_field_set.sh <report> binary_checks.AC1 -')
+_h(r'binary_checks: item count \d+/\d+ \(<50%',
+   'FIX (binary_checks): task YAML の全 binary_checks 項目に result を記入せよ。'
+   'テンプレートより少ない確認項目は認められない')
+
+# verdict
+_h(r'verdict: ".*" is not valid',
+   'FIX (verdict): bash scripts/report_field_set.sh <report> verdict PASS\n'
+   '  verdict は PASS/FAIL/PASS_NO_IMPROVEMENT の三値。binary_checks 全 yes → PASS、1 つでも no → FAIL')
+_h(r'verdict: PASS but binary_checks contain "no" results',
+   'FIX (verdict): bash scripts/report_field_set.sh <report> verdict FAIL\n'
+   '  binary_checks に no/fail/ng がある場合は verdict: FAIL にせよ')
+_h(r'verdict: PASS but binary_checks contain empty result',
+   'FIX (verdict-BC矛盾): binary_checks の全 result 欄を yes/no で埋めてから verdict を設定せよ')
+
+# lessons_useful
+_h(r'lessons_useful: null',
+   'FIX (lessons_useful): null で上書きするな。テンプレートの list 形式を維持し useful/reason を記入せよ')
+_h(r'lessons_useful: is dict',
+   'FIX (lessons_useful): numbered dict を YAML list に変換して再記入。'
+   'report_field_set.sh でテンプレート注入済みの list 形式を維持すること')
+_h(r'lessons_useful: empty list',
+   'FIX (lessons_useful): report_field_set.sh 経由で useful/reason を各教訓に記入せよ。'
+   '空リスト [] で上書きするな')
+_h(r'lessons_useful\[.+\]: missing "id" field',
+   'FIX (lessons_useful.id): id フィールド必須。テンプレート注入済みの教訓 ID を確認:\n'
+   '  - id: L074\n    useful: true\n    reason: "理由"')
+_h(r'lessons_useful\[.+\]: id=".+" is invalid',
+   'FIX (lessons_useful.id): id は L+数字形式のみ（例: L074）。テンプレート注入済みの教訓 ID を確認')
+_h(r'lessons_useful\[.+\]: missing "useful" field',
+   'FIX (lessons_useful.useful): useful: true または useful: false を記入せよ')
+_h(r'lessons_useful\[.+\]: useful=.+ is .+ \(must be true or false\)',
+   'FIX (lessons_useful.useful): useful: true または useful: false を指定（文字列や null は不可）')
+_h(r'lessons_useful\[.+\]: missing "reason" field',
+   'FIX (lessons_useful.reason): reason フィールド必須。教訓が有用/無用な理由を具体的に記入')
+_h(r'lessons_useful\[.+\]: reason is empty',
+   'FIX (lessons_useful.reason): reason: "L246 の return 1 罠と一致し有用" / '
+   '"今回の変更では未使用。対象箇所と無関係" など具体的に記述')
+
+# result / files_modified
+_h(r'result\.summary: MISSING or empty',
+   'FIX (result.summary): bash scripts/report_field_set.sh <report> result.summary "実施内容の要約"')
+_h(r'result\.summary: FILL_THIS placeholder',
+   'FIX (result.summary): FILL_THIS を実際の要約に書き換え:\n'
+   '  bash scripts/report_field_set.sh <report> result.summary "実施内容の要約"')
+_h(r'files_modified: MISSING',
+   'FIX (files_modified): bash scripts/report_field_set.sh <report> files_modified <path>\n'
+   '  偵察のみなら: bash scripts/report_field_set.sh <report> files_modified "偵察のみ"')
+_h(r'files_modified: null',
+   'FIX (files_modified): null ではなく変更ファイルパスを記入:\n'
+   '  files_modified:\n    - path/to/file.py')
+_h(r'files_modified: is dict',
+   'FIX (files_modified): dict ではなく string/list 形式:\n'
+   '  files_modified:\n    - path/to/file1.py\n    - path/to/file2.py')
+_h(r'files_modified: FILL_THIS',
+   'FIX (files_modified): FILL_THIS を実際のパスに書き換えよ')
+
+# lesson_candidate
+_h(r'lesson_candidate: found=false but no no_lesson_reason',
+   'FIX (lesson_candidate): bash scripts/report_field_set.sh <report> lesson_candidate.found false\n'
+   '  bash scripts/report_field_set.sh <report> lesson_candidate.no_lesson_reason "既知パターン L084 と同じ"')
+_h(r'lesson_candidate: no_lesson_reason too short',
+   'FIX (lesson_candidate): no_lesson_reason に具体的な理由（4 文字以上）を記入:\n'
+   '  例: "既知の L084 と同じパターン"')
+_h(r'lesson_candidate: no_lesson_reason=".+" is placeholder',
+   'FIX (lesson_candidate): プレースホルダ禁止。なぜ教訓がないのか具体的に書け')
+_h(r'lesson_candidate: found=true but no title',
+   'FIX (lesson_candidate): bash scripts/report_field_set.sh <report> lesson_candidate.title "教訓タイトル"')
+
+# status / purpose / ac_version / worker / parent_cmd
+_h(r'status: "pending"',
+   'FIX (status): bash scripts/report_field_set.sh <report> status completed')
+_h(r'purpose_validation: MISSING',
+   'FIX (purpose_validation): bash scripts/report_field_set.sh <report> purpose_validation.fit true\n'
+   '  bash scripts/report_field_set.sh <report> purpose_validation.cmd_purpose "cmd の目的"')
+_h(r'purpose_validation: null',
+   'FIX (purpose_validation): null ではなく dict 形式:\n'
+   '  purpose_validation:\n    cmd_purpose: "cmd の目的"\n    fit: true\n    purpose_gap: ""')
+_h(r'ac_version_read: MISSING',
+   'FIX (ac_version_read): task YAML の ac_version ハッシュをコピー:\n'
+   '  bash scripts/report_field_set.sh <report> ac_version_read '
+   '$(grep "^  ac_version:" queue/tasks/<ninja>.yaml | awk \'{print $2}\')')
+_h(r'worker_id: MISSING',
+   'FIX (worker_id): bash scripts/report_field_set.sh <report> worker_id <your_ninja_name>')
+_h(r'parent_cmd: MISSING',
+   'FIX (parent_cmd): bash scripts/report_field_set.sh <report> parent_cmd <cmd_id>')
+
+# assumption_invalidation / self_gate_check / knowledge_candidate
+_h(r'assumption_invalidation: is \w+',
+   'FIX (assumption_invalidation): dict 形式で記入:\n'
+   '  assumption_invalidation:\n    found: false\n    affected_cmds: []\n    detail: ""')
+_h(r'assumption_invalidation: MISSING',
+   'FIX (assumption_invalidation): テンプレートに生成済み。上書きで消すな:\n'
+   '  bash scripts/report_field_set.sh <report> assumption_invalidation.found false')
+_h(r'assumption_invalidation: null',
+   'FIX (assumption_invalidation): null ではなく dict 形式:\n'
+   '  assumption_invalidation:\n    found: false\n    affected_cmds: []\n    detail: ""')
+_h(r'assumption_invalidation: found=true but affected_cmds is empty',
+   'FIX (assumption_invalidation): found: true の場合 affected_cmds に影響 cmd を列挙せよ')
+_h(r'self_gate_check:',
+   'FIX (self_gate_check): 必須 4 キー（lesson_ref/lesson_candidate/status_valid/purpose_fit）を'
+   '全て PASS/FAIL で記入')
+_h(r'knowledge_candidate: found=true but items is empty',
+   'FIX (knowledge_candidate): found: true 時は items に事実データを列挙:\n'
+   '  knowledge_candidate:\n    found: true\n    items:\n      - fact: "発見した事実"\n        source: "確認元"')
+
+
+def lookup_fix_hints(reason: str) -> "list[str]":
+    """Return specific FIX hints for a FAIL reason string from gate_report_format.
+
+    Used by skill_auto_improve.sh to replace generic keyword-matching templates
+    with concrete, actionable prevention steps from the gate FIX hint DB.
+
+    Args:
+        reason: The semicolon-joined FAIL reason string from gate output.
+
+    Returns:
+        List of matching FIX hint strings (may be empty if no pattern matches).
+    """
+    results = []
+    for pat, hint in _HINT_DB:
+        if pat.search(reason):
+            results.append(hint)
+    return results
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
