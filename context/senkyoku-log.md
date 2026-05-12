@@ -866,3 +866,11 @@
 | cmd_2684 | inbox_write.sh二重配備全経路ガード | GATE CLEAR | karo_direct経路のガード不在を統一ガードで解消(L3) |
 | CI RED修正 | E2E fixture parent_cmd分離 | CI GREEN | cmd_2684の新ガードがE2E並列テストをBLOCK→fixture側修正(ガード緩めず) |
 | session成果 | 4cmd全CLEAR+CI修正1件。WA率0%維持。連勝78。教訓6件登録(LK007-LK011)。殿裁定1件反映 | 環境蓄積完了 | 次の家老: 起動手順自動実行+二重配備3層防御+CI GREEN |
+
+### 2026-05-12 セッション2: 教訓品質改善+race condition解消
+| cmd/事象 | 内容 | 結果 | 因果 |
+|----------|------|------|------|
+| cmd_2685 | 教訓注入useful率改善(threshold0.30→0.40+target_files自動付与) | GATE CLEAR | useful率29.3% ALERT→入口精度改善+退場加速の2軸 |
+| cmd_2686 | lesson_done_missing race condition解消(WARN化+auto催促) | GATE CLEAR | 軍師lesson_candidate→将軍cmd化。missing_gate:lessonのみWARN、非lessonはBLOCK維持 |
+| 修行L4 r16 | 全6忍者gate_report_format.sh一発PASS | 全員PASS | karo_direct配備でAC未注入→FAIL→LK013登録→再配備でPASS |
+| idle自走 | noise教訓4件+harm教訓4件特定→将軍に修正CMD候補3案提案 | 掲示板報告 | なぜなぜ7回で「分析→報告で止まる」構造を特定→具体的修正提案まで回す |

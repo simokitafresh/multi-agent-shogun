@@ -184,10 +184,11 @@ lessons:
     第1版=exit code判定→出力多様で不安定。第2版=status判定→正規フローもBLOCK。
     第3版=cmd_delegate.sh内でstatus変更順序入替→bypass廃止→迂回路ゼロ。
     教訓: (a)guardはデータ状態で判定 (b)bypass許可=迂回路 (c)テストに攻撃パターン含めよ
-  source_ids: [LS040]
+    (d)ガード設計時は全経路を列挙し統一チェックポイントを選べ。片側ガード(deploy_task.sh)ではkaro_direct経路が迂回する(cmd_2684)
+  source_ids: [LS040, LS039]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序'
+  enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序+inbox_write.sh task_assigned統一ガード(cmd_2684)'
 
 - id: LS-A13
   title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
@@ -384,3 +385,20 @@ lessons:
   created_at: '2026-05-11'
   automated: true
   enforcement: '意志依存(gate/hookなし)。今後のCDP画像判定タスクで精度向上が必要'
+# LS030-LS039: 2026-05-12 /lesson-sortで吸収済み削除(32→22件)
+# LS030→LS-A04, LS031→LS-A04, LS032→LS-A05, LS033→LS-A05, LS034→LS-A04
+# LS035→LS-A05+LS-A04, LS036→LS-A04, LS037→LS-A04+LS-A09, LS038→LS-A22, LS039→LS-A12
+- id: 'LS030'
+  title: 'cmd_2685 6件BLOCK: other_draft+q5_verified_source+depends_on累計+否定的claim累計+ac_phase_mixing累計+env_change非構造化。全てLS-A04既知パターン'
+  detail: '同時draft禁止+q5_verified_source必須+depends_on=none明示+claimにgrep結果記載+AC文言からphaseキーワード排除+env_changeをtype/file/pattern構造化。6件全てLS-A04の既知ルール。'
+  source_cmd: 'cmd_2685'
+  created_at: '2026-05-12'
+  automated: true
+  enforcement: 'LS-A04に吸収済み。cmd_save.sh各チェックで自動強制'
+- id: 'LS031'
+  title: 'cmd_2686 q11_existing_alternative: gate/hook追加cmd判定時は既存代替のgrep結果+差分理由+接続先フロー記載が必須'
+  detail: 'q11にgrep 0件結果だけでは不足。既存代替(cmd_1919等)との差分理由+どの既存フローに接続するかを記載。LS-A04(28)の既知パターン。'
+  source_cmd: 'cmd_2686'
+  created_at: '2026-05-12'
+  automated: true
+  enforcement: 'LS-A04に吸収済み。cmd_save.sh q11_existing_alternative_verificationで自動強制'

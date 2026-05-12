@@ -10,6 +10,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: review_logヘッダL26「既実装判定→git show HEAD~1」+gunshi.md §1前提検証に明記
+  when: draft/report reviewで既実装判定する時。Read toolはuncommitted含むため不十分
+  how: "git show HEAD:ファイルで確定済みコードのみ確認。git log --oneline -1 -- 対象ファイルで直近commitのcmd_idも照合"
 - id: LG002
   title: 並行配備衝突チェック — 事前検死で同一ファイル変更衝突を確認
   detail: 並行cmdが同一ファイルを変更するケースをレビュー時に検出する。cmd_1173で検出された。事前検死で並行配備中のcmdとの変更対象ファイル重複を必ず確認せよ。
@@ -17,6 +19,8 @@ lessons:
   created_at: '2026-03-21'
   automated: true
   enforcement: GP-042 deploy_task.sh L2859-2872 他忍者同cmd配備→BLOCK
+  when: 並行cmdが同一ファイルを変更するレビュー時。deploy_task.shが同cmd配備をBLOCK
+  how: 事前検死(Step 4)で並行配備中cmdの変更対象ファイル重複を確認。deploy_task.sh L2859-2872が自動BLOCK
 - id: LG003
   title: 前提崩壊パターン — 未実装/未対応主張はコード現物で再検証
   detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
@@ -25,6 +29,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: review_logヘッダL28「全称判定→反証を探せ」+gunshi.md §1前提検証で「未実装」主張の現物再検証が義務化
+  when: 偵察報告やlesson_candidateで未実装/未対応と主張されている時
+  how: grep/git showでコード現物を再検証。全称判定には反証を探す
 - id: LG004
   title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
   detail: 忍者のcommitにタスクscope外のコード変更が混入することがある。事前検死で変更ファイル一覧とscope定義を照合し、scope外変更を検出せよ。cmd_1187で検出。
@@ -32,6 +38,8 @@ lessons:
   created_at: '2026-03-21'
   automated: true
   enforcement: report review SG3(scope)+gate_report_format.sh files_modified×task scope照合
+  when: report review時。gate_report_format.sh+SG3(scope照合)が自動検出
+  how: files_modified×task scope照合で逸脱検出。scope外変更あり→FAIL
 - id: LG005
   title: AC pending矛盾 — status:done報告にAC pending項目があればFAIL
   detail: 忍者がstatus:doneで報告しつつAC pending項目が残存する矛盾パターン。cmd_1199影丸で発見。done報告にpending ACがあれば即FAIL判定し、差し戻すこと。
@@ -39,6 +47,8 @@ lessons:
   created_at: '2026-03-21'
   automated: true
   enforcement: gate_report_format.sh GP-128(verdict↔bc整合性)+status↔pending AC矛盾検出
+  when: "report reviewでstatus:done+AC pending同時検出時。gate_report_format.sh GP-128が自動検出"
+  how: done報告にpending ACあり→FAIL判定。status↔pending AC矛盾を許容しない
 - id: LG006
   title: GATEフォーマット不備=報告FAIL必須 — LGTM+注記は消火構造
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
@@ -47,6 +57,8 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: gate_gunshi_report_precheck.sh SG-PRE1(gate_report_format.sh自動実行)+SG-PRE9(result:no→BLOCK予測)。review_log T1で毎レビュー適用
+  when: 報告レビューでgate_report_format.sh FAIL項目を検出した時。precheck SG-PRE1/SG-PRE9で自動発火
+  how: LGTM+注記で流さずFAIL判定を出す。gate通過保証レベルでLGTMの信頼性を維持
 - id: LG007
   title: capture-pane=残像、ファイルタイムスタンプ=現在 — 状態確認の優先順位
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
@@ -55,6 +67,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: SG6(軍師レビューログに外部化済み)+review_logヘッダL14に状態確認順序1行追加(2026-04-09)
+  when: エージェント状態を確認する時。capture-pane出力を見た時
+  how: dashboard→inbox→capture-paneの順。capture-pane=過去の残像。ファイルmtime=現在の状態
 - id: LG010
   title: 防御階層原則 — GP設計はLevel4(フロー内埋込BLOCK)を目指せ
   detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK) < Level5(事前コンテキスト提供)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
@@ -63,6 +77,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: gunshi.md GP提案テンプレートにdefense_level必須フィールド追加(2026-04-09)
+  when: GP提案を設計する時。defense_levelフィールド記入時
+  how: Level4(フロー内BLOCK)以上を目指す。Level1-2で止めない。GP提案テンプレートにdefense_level必須
 - id: LG011
   title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
   detail: 'cmdのACで参照されるファイルパス・行番号・セクション(§)が実在するか自動検証するスクリプト(ac_physical_verify.sh)を実装。draft review時にbash scripts/ac_physical_verify.sh <cmd_id>で忍者ナビゲーションシートを自動生成。cmd_1360のWA=0に事前調査が貢献した実績に基づく。防御階層Level 5(事前コンテキスト提供)の概念化。gunshi.mdのdraft reviewプロトコルにstep 0追加を推奨。'
@@ -70,14 +86,18 @@ lessons:
   created_at: '2026-03-24'
   automated: true
   enforcement: gunshi.md draft review Step 0.5に統合済み。bash scripts/ac_physical_verify.sh <cmd_id>で自動実行
+  when: draft review Step 0.5。ac_physical_verify.sh自動実行
+  how: bash scripts/ac_physical_verify.sh <cmd_id>でACファイルパス・行番号・§の実在確認。不在→REQUEST_CHANGES
 - id: LG012
   title: チェックリスト参照cmdの隣接Step制約転写確認
   detail: 'cmdがチェックリストの特定Stepを実行する場合、隣接Step(特に直後Step)の禁則がcmd AC/制約に転写されているか確認せよ。cmd_1397でStep6実行時にStep7禁則(再計算禁止=殿が実行)が転写されず影丸が再計算を実行。draft review時にチェックリスト参照先の前後Stepを確認し、禁則の欠落をREQUEST_CHANGESで指摘すること。'
   source_cmd: cmd_1397
   created_at: '2026-03-25'
-  automated: false
-  enforcement_level: 2
-  enforcement: gunshi_review_logヘッダL13に原理1行として埋込済み。毎レビュー時に読む
+  automated: true
+  enforcement_level: 4
+  enforcement: cmd_save.sh L1937-1939 チェックリスト参照検出+隣接Step制約転写WARN。Level4
+  when: チェックリスト参照cmdのdraft review時。cmd_save.sh L1937-1939が自動WARN
+  how: 隣接Step(特に直後)の禁則がAC/制約に転写されているか確認。欠落→REQUEST_CHANGES
 - id: LG013
   title: consultation/self_studyにプロトコル不在 — 148件が品質保証なしで通過
   detail: |
@@ -96,6 +116,8 @@ lessons:
   created_at: '2026-03-29'
   automated: true
   enforcement: gate_gunshi_cs_checklist.sh(直近10件チェック)+gate_gunshi_startup.sh Check 7に統合済み
+  when: self_study/consultationエントリをreview_logに追記する時。gate_gunshi_cs_checklist.shが起動時に未記入を検知
+  how: CS1-CS6の6観点を各1行でチェックしcs_checklistフィールドに記録。未記入ならstartup gateがWARN
 - id: LG014
   title: 忍者/家老ミスに見える問題はインフラ真因を疑え — 道具が壊れている可能性
   detail: |
@@ -109,6 +131,8 @@ lessons:
   automated: true
   enforcement_level: 2
   enforcement: gunshi_review_log ヘッダ2行目に原理として埋込済み。毎レビュー時に読む
+  when: karo_workarounds.yamlで同一category 3件以上検出時。忍者ミスに見えるがインフラ真因を疑え
+  how: 同一category≧3→道具のバグ仮説を検証(grep/Read)→根因がインフラならインフラ修正cmdを提案
 - id: LG015
   title: HEAD~1はauto-commitを指す — cmd固有diffには git log --grep=CMD_ID を使え
   detail: |
@@ -121,6 +145,8 @@ lessons:
   created_at: '2026-04-06'
   automated: true
   enforcement: cmd_complete_gate.sh L3384に修正適用済み
+  when: cmd_complete_gate.shでcontext変更を検出する時。auto-commitとの混同を避ける
+  how: git log --grep=CMD_IDでcmd固有commitのみからcontext変更を検出。HEAD~1は使わない
 - id: LG016
   title: inbox_write.shをデーモンから呼ぶ時はtimeout必須 — WSL2 NTFS flockがhangする
   detail: |
@@ -135,6 +161,8 @@ lessons:
   created_at: '2026-04-06'
   automated: true
   enforcement: ntfy_listener.sh L349,L424に`timeout 15`適用済み。heartbeat判定をninja_monitor.sh check_ntfy_listener_health()に組込済み
+  when: デーモン(ntfy_listener等)から外部スクリプトを呼ぶ時。WSL2 NTFSのflock/writeがhangしうる
+  how: timeout 15 bash script.shで包む。ext4上のheartbeatで偽stale検知を回避
 - id: LG017
   title: lock_path.shのlockファイルは永続蓄積する — 定期cleanupが必要
   detail: |
@@ -147,6 +175,8 @@ lessons:
   created_at: '2026-04-06'
   automated: true
   enforcement: ninja_monitor.sh run_lock_cleanup()がメインループ毎サイクル実行
+  when: ninja_monitor.shメインループ毎サイクル。/tmp/shogun_lock_*.lockが蓄積する
+  how: run_lock_cleanup()が1h周期で60min超lockを削除。機能障害はないがinode消費抑制
 - id: LG018
   title: 提案は行動ではない — proposed GPは自力実行判定→即実行
   detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
@@ -155,14 +185,18 @@ lessons:
   automated: true
   enforcement_level: 2
   enforcement: gunshi.md idle Step 6 + gate_gunshi_startup.sh Check 9
+  when: idle Step 6でproposed/pending GPを走査する時。gate_gunshi_startup.sh Check 9が未実行GPを検知
+  how: 自力実行可能→即実装+テスト+完了。不可→家老にinbox_write送信。GPを走査→分類→行動
 - id: LG019
   title: タイムボックス原則 — 見込み不明タスクにtimeout 60先行
   detail: 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
   source_cmd: gunshi_session_20260406
   created_at: '2026-04-06'
-  automated: false
+  automated: true
   enforcement_level: 2
-  enforcement: gunshi.md セルフレビュー3点+gate Check 9.5
+  enforcement: cmd_save.sh Check 20.5(timeout_minutes未記入WARN)。cmd_2630でLevel5化済み
+  when: 見込み不明タスク開始時。cmd_save.sh Check 20.5がtimeout_minutes未記入でWARN
+  how: timeout 60を先行設定。タイムアウト=計測完了として扱い次の判断材料にする
 - id: LG020
   title: 数値は実測 — 設計書中の数値を入力データから再計算して検証
   detail: 設計書やcmd文面の数値を鵜呑みにせず入力データから再計算。セルフレビュー3点に埋込み済み
@@ -171,6 +205,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: gunshi.md セルフレビュー3点
+  when: 設計書/cmd文面の数値を読んだ時。セルフレビュー3点の一つ
+  how: 入力データからwc -l/head実測で再計算。推定値は未実測と明記
 - id: LG021
   title: cmd分割3基準 — 任意忍者実行可能/短完了/依存並列考慮
   detail: cmdを分割する際の3基準。(1)任意忍者で実行可能(2)各ステップ短く完了明確(3)依存と並列を考慮
@@ -179,6 +215,8 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: ac_physical_verify.sh AC数カウント(AC>4→WARN)。draft review Step 0.5で自動実行。2026-04-27 gate化
+  when: draft reviewのStep 3(時系列シミュレーション)でAC数を確認する時。ac_physical_verify.shがAC>4でWARN
+  how: AC数>4 or 1ACが実質2機能→REQUEST_CHANGES(cmd分割促進)。WHATの粒度のみ、HOWは書くな
 - id: LG022
   title: baseline必須 — 改善主張の研究cmdに比較対象を含める
   detail: 改善を主張する研究cmdには必ず比較対象(baseline)を含める。改善幅の定量評価に必須
@@ -187,6 +225,8 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: cmd_save.sh LG022 gate(type=research系+baseline/比較対象無し→WARN+record_warn_reason)。2026-04-27 gate化
+  when: 研究系cmdの保存時。cmd_save.shがtype=research+baseline未記載でWARN+record_warn_reason
+  how: 改善主張のcmdにbaseline/比較対象を含める。WARN発火→環境変更(baseline追記)で解消
 - id: LG023
   title: 原理1行>各論パッチ — シンプルな原則をプロセスに膨らませるな
   detail: 既存の1行原理で解決できることに各論パッチ(30行hook等)を作るな。deepdive Phase4-5の家老版実践
@@ -195,6 +235,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: gunshi.md §因果推論ルール L207に原理1行埋込み済み+review_logヘッダ(複利の問い)で毎レビュー時強制読込
+  when: 改善提案やGP設計時。新しいgate/Step/観点を作ろうとした時
+  how: 既存の1行原理で解決できないか先に確認。原理を1箇所に埋め込めば未来の全類似問題に対応
 - id: LG024
   title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
   detail: |
@@ -208,6 +250,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: gunshi.md F-G05例外条項として文書化済み(Level 2)。家老は軍師direct_fixをinbox受領後にレビュー
+  when: レビュー中に軽微な事実誤りを発見した時。D0適用条件(1ファイル20行以下)を満たす時
+  how: 軍師が直接修正→S0セルフレビュー→家老レビュー。鎖(軍師→家老)維持
 - id: LG025
   title: WF並列実行禁止 — 直列1本ずつが正解。OOM事故実証済み
   detail: |
@@ -221,6 +265,8 @@ lessons:
   created_at: '2026-04-10'
   automated: true
   enforcement: pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)。Level 4。4テストPASS。設計書=docs/research/gunshi_wf_oom_prevention_design_20260410.md
+  when: GS/WF実行コマンド検出時。pre-bash-combined.sh Guard 8がwf_runner.pyをBLOCK
+  how: l1_alm_wf_engine.py --csvで1本ずつfor文実行。wf_runner.py使用禁止。OOMリスク激減
 - id: LG026
   title: 軍師自己コード変更時にも6観点を通せ — 検証を殿に丸投げするな
   detail: |
@@ -234,6 +280,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: Level 2(ドキュメント化+フロー組込)。設計書=docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md §S0セクション追加済み(2026-04-13)
+  when: 軍師が高リスクファイル(hooks/gates/CLAUDE.md/instructions等)を直接編集する時
+  how: S0プロトコル6項目(前提/数値/シミュレーション/検死/検証/NorthStar)を実行しcommitメッセージに記録
 - id: LG027
   title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
   detail: |
@@ -246,6 +294,8 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: gate_lesson_health.sh L273-274でuseful率もALERT/WARN判定に組込済み(commit 6c60b0fc)。referenced率+useful率の二重閾値チェック
+  when: gate健全性やレビュー精度を計測する時。referenced率(回答率)だけでなくuseful率(有効率)も見よ
+  how: gate_lesson_health.shがuseful率もALERT/WARN判定に組込済み。二重閾値チェック
 - id: LG028
   title: スケーラビリティ推定で内部ループ回数を計上せよ — per_combo固定は過小評価
   detail: |
@@ -260,6 +310,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: review_logヘッダ+掲示板(blt_20260416_140131)に記録。次回のスケーラビリティ検証時に内部ループ回数を明記
+  when: 研究cmdのスケーラビリティを推定する時。計算量が多いcmdのレビュー時
+  how: 外側ループ×内側ループ×単位時間で推定。外側のみで推定しない。関数内部まで追跡
 - id: LG029
   title: 手段の免除≠目的の免除 — waive時に代替検証を埋め込め
   detail: |
@@ -272,6 +324,8 @@ lessons:
   created_at: '2026-04-16'
   automated: true
   enforcement: PRE3(ファイル実在チェック)+GP-202(プレフィックス不一致WARN)+review_logヘッダ
+  when: waive_ac導入時。手段免除しても目的は免除されない
+  how: PRE3ファイル実在チェック+GP-202プレフィックス不一致WARN。代替検証を同時に埋め込む
 - id: LG030
   title: 行動完了≠還流完了 — 実装しても他者のlessonsに届かなければ利他にならない
   detail: |
@@ -284,6 +338,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: instructions/gunshi.md サイクルの鉄則に「行動完了≠還流完了」1行埋込み済み。毎サイクル自動読込
+  when: 実装+検証+掲示板投稿で完了と思った時。利他の完了確認
+  how: lesson_candidate送信→他者のlessons更新まで回す。自分の環境埋込み(自立)と他者の環境埋込み(利他)は別ステップ
 - id: LG031
   title: hook/gate大規模削減をレビューで見落とすな — files_modifiedにhook/gate含む場合はgit diff --statで変更規模確認
   detail: |
@@ -294,6 +350,8 @@ lessons:
   created_at: '2026-04-17'
   automated: true
   enforcement: GP-205実装済み→gate_gunshi_report_precheck.sh SG-PRE13に組込み(2026-04-17)
+  when: report reviewのSG-PRE13で自動検出。files_modifiedにhook/gate含むcmdのreview時
+  how: git diff --statで変更規模確認。50%以上削減→テスト結果+CI状態を重点チェック
 - id: LG032
   title: 新しい強制の仕組みを作るな — 既に強制されている行動に乗せよ
   detail: |
@@ -304,6 +362,8 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: gunshi.md idle Step 6のGP設計時に自問追加
+  when: GP設計で新しい強制の仕組みを作ろうとした時
+  how: 既存の強制された行動(startup gate/stop hook/inbox)に乗せられないか自問。新仕組み不要のケースが多い
 - id: LG033
   title: 既存の仕組みを確認せず「仕組みがない」と結論するな — grep/Readで現物確認必須
   detail: |
@@ -314,6 +374,20 @@ lessons:
   automated: false
   enforcement_level: 2
   enforcement: GP提案前に既存実装grep確認をgunshi.md SGプロトコルに追加
+  when: GP提案やエラー報告で仕組みがないと結論しようとした時
+  how: grep/Readで既存実装を現物確認してから結論。確認前の不在断定禁止
+- id: LG034
+  title: 低ROI/対応不要は作業量縮小の隠語 — 全件対応が前提、順番を付けて全部やる
+  detail: |
+    パラメータ空間縮小禁止(CLAUDE.md)と同根。tmux/wsl2のみ修正し他を低ROIで放置→殿指摘「一部対処は穴を残す」。
+    作業量を理由にスコープを縮小する構造的弱点。なぜなぜ7回で根因特定(2026-05-07)。
+  source_cmd: gunshi_nazenaze_20260507
+  created_at: '2026-05-07'
+  automated: false
+  enforcement_level: 2
+  enforcement: review_logヘッダ+idle自走Step全件完了判定時に「残件を低ROIで放置していないか」自問追加
+  when: 分析結果を低ROI/対応不要と分類しようとした時
+  how: 全件に順番を付けて全部やる。やらないなら不要理由を明示して削除。保留禁止
 - id: LG035
   title: 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須
   detail: 'スキルが使われなければ成長ループ(§10)が回らない=学習速度ゼロ。手動操作をhook/gateでBLOCK(Guard 9)し、スキル以外の道を塞ぐ。enforcement: pre-bash-combined.sh Guard 9'

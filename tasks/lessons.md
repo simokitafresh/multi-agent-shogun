@@ -4655,3 +4655,53 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: lesson_write.shで日本語のみのtitle/detailを渡す場合
 - **how**: REFLUX_KEYWORDS空チェック後にelse節でPI/RUNBOOK/INSTRUCTIONSをSKIPPEDに設定
 - lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓ではREFLUX_KEYWORDSが空になり全3チェックがMISSINGになる。else節でSKIPPEDを設定することでアラート疲労を防止できる
+
+### L598: gate種別ごとにmissingの失敗意味を分ける
+- **日付**: 2026-05-12
+- **出典**: cmd_2686
+- **記録者**: hayate
+- **tags**: [infra,review,gate,git]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats,queue/tasks/hayate.yaml,queue/reports/hayate_report_cmd_2686.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/review/report_mergeなどは完了処理の前提欠落である。missing_gateを修正するときはgate名ごとに「待てば進む欠落」か「止めるべき欠落」かを分け、後者のBLOCKを巻き添えで緩めない。
+
+### L599: gate種別ごとにmissing失敗意味を分離(待てば進む vs 止めるべき)
+- **日付**: 2026-05-12
+- **出典**: cmd_2686
+- **記録者**: karo
+- **tags**: [infra,review,gate,lesson]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats,queue/tasks/hayate.yaml,queue/reports/hayate_report_cmd_2686.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし。lesson欠落のみWARN+auto催促、非lesson欠落はBLOCK維持。cmd_2686で実装
+
+### L600: 外部パスdrift修正cmdは検出根拠の個別パスをタスクYAMLへ注入せよ
+- **日付**: 2026-05-12
+- **出典**: cmd_2690
+- **記録者**: saizo
+- **tags**: [infra,review,yaml]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **when**: 未設定
+- **how**: 未設定
+- 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=0だったため、掲示板とgunshi_review_logを追加で追跡する必要があった。次回はdrift検出時に旧パス・検出行・候補新パスをtask YAMLへ注入すべき。
+
+### L601: drift検出cmdは個別パスをtask YAMLに注入せよ
+- **日付**: 2026-05-12
+- **出典**: cmd_2690
+- **記録者**: karo
+- **tags**: [infra,recon,yaml]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **when**: 未設定
+- **how**: 未設定
+- semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690で実証。ACに対象パス列挙が有効
+
+### L602: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
+- **日付**: 2026-05-12
+- **出典**: cmd_2691
+- **記録者**: hanzo
+- **tags**: [infra,deploy,bash,yaml]
+- **target_files**: [skills/karo-direct/SKILL.md,tests/unit/test_deploy_task.bats]
+- **when**: 未設定
+- **how**: 未設定
+- karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_templateが呼ばれずpurpose/ACが空のまま配備された(cmd_training_L4_r16事故)。deploy_task.sh --directはinject_direct_training_templateを呼ぶため、trainingタイプのkaro_direct配備は必ずdeploy_task.sh --directを使え

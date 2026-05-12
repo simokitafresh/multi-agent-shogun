@@ -53,6 +53,23 @@ gunshi_gate_sync.sh update_log()にPhase 2追加:
 大部分(draft_lessons)は軍師レビューの盲点ではなく家老プロセスの問題。
 report_format/ac_version系はprecheck(SG-PRE)で捕捉すべき項目。
 
+## BLOCK原因全体像(gate_metrics.log 314件)
+
+| 原因 | 件数 | 軍師範囲 | 備考 |
+|------|------|---------|------|
+| draft_lessons | 154 | 範囲外 | 家老の教訓登録プロセス |
+| missing_gate | 47 | 範囲外 | gate設計(report_merge等) |
+| report_format | 42 | precheck | 5月35件中kagemaruの空報告が大半 |
+| empty_lessons_useful | 22 | precheck | SG-PRE9対応済み |
+| lesson_done_missing | 20 | 範囲外 | hayate11/kagemaru4/saizo3/hanzo2 |
+| binary_checks_fail | 14 | レビュー | hayate10/kagemaru2/saizo2 |
+| ac_version_mismatch | 5 | precheck | SG-PRE対応済み |
+| lesson_candidate_missing | 4 | precheck | SG-PRE対応済み |
+| その他 | 6 | 混合 | purpose_validation等 |
+
+月別推移(precheck対象): 4月=12件 → 5月=57件(急増)。
+5月急増の主因=kagemaru空報告(二重配備構造問題)+hanzoフィールド欠落。
+
 ## 教訓
 
 - **Goodhart効果の実例**: 計測対象(gate_result判明分)を最適化→計測対象外(フィールド不在)が見えなくなる

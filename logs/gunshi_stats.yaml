@@ -43,4 +43,12 @@
 # 利他提案2件: lesson_done_missing時系列問題+教訓注入useful率23%(topic_mismatch 61%)→掲示板提案
 # 二重配備3層防御(cmd_2681-2684)全CLEAR。軍師掲示板報告→将軍cmd→忍者実装→軍師レビュー→CLEARの免疫サイクル完全完結
 # insights清掃: 54件→0件
-# 教訓useful率基準: 23%(直近20報告)。topic_mismatch=61%。改善提案済み
+# 教訓useful率基準: 28.4%(gate_lesson_health)→cmd_2685 CLEAR(threshold0.40+target_files)。baseline確立済み
+#
+# ─── 本セッション成果 (2026-05-12T13:00更新) ───
+# レビュー5件: cmd_training_L4_r16_kotaro draft APPROVE, cmd_2685 draft APPROVE+report LGTM→CLEAR, cmd_2686 draft RC+report LGTM→CLEAR
+# 利他提案→完結: cmd_2685(useful率)+cmd_2686(lesson_done_missing)両方CLEAR。軍師提案→将軍cmd→忍者実装→軍師レビュー(RC反映)→CLEAR
+# D0修正: review_log ambiguity_pointsフォーマート追加(CS観点WARN根因修正)
+# idle自走: BLOCK全量分析216件(docs/research永続化)+セマンティック監査P0 2件真(低リスク)+semantic-index drift 12件MISSING+useful率baseline確立
+# insights清掃: 3件→0件。deploy_error根因(karo_direct resolve_cmd未発動)掲示板報告
+# 設計書: 5件永続化(accuracy_goodhart/altruism_proposals/immune_effectiveness/semantic_audit/block_pattern+useful_baseline)

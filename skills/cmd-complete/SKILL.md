@@ -23,6 +23,8 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 
 ### 自動防止ステップ
 - <!-- skill-auto-improve:894b86aa27a7 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76」(count=1, last=2026-05-02T23:46:44+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
+- <!-- skill-auto-improve:407f5d0b9905 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-05T09:25:12+0900)を避ける。確認: 関連教訓ごとに lessons_useful の id/useful/reason が埋まっていることを確認する。修正: UNKNOWN/null/FILL_THISを使わず、各教訓の有用性と理由を記入する。
+- <!-- skill-auto-improve:bf42976b4e85 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|hanzo:lesson_done_missing」(count=1, last=2026-05-05T16:39:29+0900)を避ける。確認: FAIL理由に出たフィールド名を報告YAML上で実際に検索し、欠落していないか確認する。修正: 欠落フィールドを report_field_set.sh 経由で追加する。
 ### Step 1: lesson review
 ```bash
 bash scripts/lesson_review.sh
@@ -76,6 +78,16 @@ bash scripts/inbox_archive.sh karo
 - 順序を崩すな（§8ルール）
 
 ## 注意ポイント
+- 2026-05-11: gate=cmd_complete_gate result=FAIL executor=hayate reason=missing_gate:review_gate
+
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503',MISSING;parent_cmd:MISSING;ac_...
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|hanzo:lesson_candidate_no_rea...
+
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|hanzo:les...
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:report_merge
+
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kagemaru:lesson_done_missing|draft_lessons:1
+- 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hanzo:lesson_done_missing|draft_lessons:1
 
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kotaro:lesson_done_missing|draft_lessons:1
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|tobisaru:lesson_done_missing|draft_lessons:1

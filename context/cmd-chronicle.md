@@ -796,3 +796,8 @@
 | cmd_2682 | 同一cmdで先行忍者が完了済みの場合、後発忍者を自動的にvoid(task reset+/clear)して空報告を防止する | infra | 05-12 | ninja_monitorに同一parent_cmd完了済み |
 | cmd_2683 | 起動手順スキップ(家老がinstructions/karo.md未読で即応答した事故)を構造的に防止する。全ロールのstartup gateをSessionStart hookで自動実行し意志依存をゼロにする | infra | 05-12 | SessionStart hookをsettings.jso |
 | cmd_2684 | deploy_task.sh経由でもkaro_direct経由でも最終的にinbox_write.sh type=task_assignedを通るため、ここで同一parent_cmdの他忍者配備を検査しBLOCKすることで全配備経路の二重配備を防止する | infra | 05-12 | inbox_write.shにtask_assigned全経 |
+| cmd_2685 | 教訓注入useful率29.3%(ALERT)。NOT_USEFUL 106件の根因=既存target_filesフィルタは存在するが教訓側メタデータ未設定で素通り。入口精度改善+退場加速の2軸 | infra | 05-12 | 教訓注入の入口精度改善としてtarget_files付与経路 |
+| cmd_2687 | 掲示板確認が意志依存。inbox bulletin_notifyを読んでも confirmed_byに記録されず次回起動時に未確認WARNが再発。inbox_mark_read.shにbulletin_confirm連動を追加し意志依存ゼロにする | infra | 05-12 | inbox_mark_read.shでbulletin_no |
+| cmd_2688 | 教訓注入useful率改善の補完。noise4件(L175/L170/L097/L136 参照率0%)とharm4件(L333/L326/L297/L263 BLOCK率100%)がfeedback不足でcmd_2685のdecay対象外。手動でdeprecate/tag限定し注入プールから排除 | infra | 05-12 | projects/infra/lessons.yaml のn |
+| cmd_2689 | gate_skill_quality FAIL(3/38)。shogun-all-codex-switch/shogun-peacetime-rollback/weekly-report-writerのdescription不備(What/When/NOT When欠落)。startup WARN連続の一因 | infra | 05-12 | gate_skill_qualityのFAIL対象3スキルの |
+| cmd_2690 | 軍師検出: semantic-index file参照12件がMISSING(DM-Signal外部リポジトリのパス移動/削除が未反映)。インデックス正確性を回復する | infra | 05-12 | semantic-indexのDM-Signal外部file |

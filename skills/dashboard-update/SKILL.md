@@ -33,6 +33,8 @@ dashboard.mdの `<!-- KARO_SECTION_START -->` 〜 末尾を、プライマリYAM
 - <!-- skill-auto-improve:128a16e75f3b --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_karo_test dry_run=true」(count=3, last=2026-05-02T22:12:29+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:9d0870339f22 --> 自動防止: gate=gate_report_format のTop FAIL理由「verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")」(count=3, last=2026-05-02T18:11:25+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:3f94d27af048 --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: is str (must be dict)」(count=1, last=2026-05-02T18:38:56+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
+- <!-- skill-auto-improve:76e50054331e --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_2514 dry_run=false」(count=1, last=2026-05-03T03:37:31+0900)を避ける。確認: FAIL理由 `dashboard_update.sh exit=1 cmd=cmd_2514 dry_run=false` と同じ条件をゲート直前に再現確認する。修正: 同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する。
+- <!-- skill-auto-improve:175323aca05b --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_karo_ci_fix_bulletin_flaky dry_run=false」(count=1, last=2026-05-02T20:33:17+0900)を避ける。確認: FAIL理由 `dashboard_update.sh exit=1 cmd=cmd_karo_ci_fix_bulletin_flaky dry_run=false` と同じ条件をゲート直前に再現確認する。修正: 同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する。
 ### Step 1: データ収集
 
 以下のデータソースを読み、変数を収集する:
