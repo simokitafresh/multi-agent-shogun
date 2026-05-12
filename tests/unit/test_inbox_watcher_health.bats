@@ -223,3 +223,74 @@ echo "SIGKILL_FALLBACK=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"SIGKILL_FALLBACK=yes"* ]]
 }
+
+@test "T-IWH-005: watcher restarts do not inherit ASW_DISABLE_ESCALATION" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts"
+touch "$SCRIPT_DIR/scripts/inbox_watcher.sh"
+
+TEST_LOG="$(mktemp)"
+log() { echo "$1" >> "$TEST_LOG"; }
+
+pgrep() { return 1; }
+tmux() {
+    case "$1" in
+        list-panes) echo "shogun:agents.3" ;;
+        show-options) echo "claude" ;;
+    esac
+}
+nohup() {
+    echo "ASW=${ASW_DISABLE_ESCALATION-unset}" >> "$TEST_LOG"
+    echo "NOHUP: $*" >> "$TEST_LOG"
+}
+disown() { :; }
+
+export ASW_DISABLE_ESCALATION=1
+NINJA_NAMES=(hayate)
+LAST_WATCHER_RESTART=0
+WATCHER_RESTART_COOLDOWN_MIN=3
+
+check_inbox_watcher_health
+
+grep -q "ASW=unset" "$TEST_LOG"
+echo "ASW_UNSET=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ASW_UNSET=yes"* ]]
+}
+
+@test "T-IWH-006: restart_watchers unsets ASW_DISABLE_ESCALATION before inbox_watcher launches" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+awk "
+    /unset ASW_DISABLE_ESCALATION/ { saw_unset=1; next }
+    /nohup bash .*inbox_watcher.sh/ {
+        if (!saw_unset) {
+            print \"missing unset before line \" NR
+            exit 1
+        }
+        launches++
+        saw_unset=0
+    }
+    END {
+        if (launches < 3) {
+            print \"expected at least 3 watcher launches, got \" launches
+            exit 1
+        }
+    }
+" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+echo "RESTART_WATCHERS_UNSET=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RESTART_WATCHERS_UNSET=yes"* ]]
+}

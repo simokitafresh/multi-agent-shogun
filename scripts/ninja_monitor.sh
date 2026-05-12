@@ -2538,6 +2538,7 @@ check_inbox_watcher_health() {
 
         local log_file="$SCRIPT_DIR/logs/inbox_watcher_${agent}.log"
 
+        unset ASW_DISABLE_ESCALATION
         nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane_target" "$_cli" \
             &>> "$log_file" &
         disown
