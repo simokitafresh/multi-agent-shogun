@@ -94,7 +94,7 @@ LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
 LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
 BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
-SKILL_AUTO_IMPROVE_INTERVAL=604800  # skill_auto_improve週次実行間隔（秒）— 7日
+SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
@@ -1049,7 +1049,9 @@ auto_void_if_parent_cmd_completed() {
         yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
     ) 200>"$lock_file" || return 1
 
-    [ -n "$target" ] && tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
+    if [ -n "$target" ]; then
+        tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
+    fi
     if [ -n "$target" ]; then
         safe_send_clear "$target" "$name" "AUTO-VOID(${trigger})" || log "AUTO-VOID-CLEAR-FAILED: $name parent_cmd=$parent_cmd"
     fi

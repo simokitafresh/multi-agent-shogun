@@ -802,3 +802,7 @@
 | cmd_2689 | gate_skill_quality FAIL(3/38)。shogun-all-codex-switch/shogun-peacetime-rollback/weekly-report-writerのdescription不備(What/When/NOT When欠落)。startup WARN連続の一因 | infra | 05-12 | gate_skill_qualityのFAIL対象3スキルの |
 | cmd_2690 | 軍師検出: semantic-index file参照12件がMISSING(DM-Signal外部リポジトリのパス移動/削除が未反映)。インデックス正確性を回復する | infra | 05-12 | semantic-indexのDM-Signal外部file |
 | cmd_2691 | karo_direct方式の修行配備でdeploy_task.shの修行テンプレ注入をバイパスし、AC/descriptionが空のまま配備。deploy_error 5件蓄積の根因。karo_directでも修行テンプレ注入を実行する | infra | 05-12 | karo_directスキルのtrainingセクションをd |
+| cmd_2692 | karo_workarounds.yaml 88件のresolved_by_cmdが空(解決率16.2%偽陽性)。根因=記入が意志依存。cmd_complete_gate CLEAR時にWAカテゴリを検索しresolved_by_cmdを自動backfillする | infra | 05-12 | cmd_complete_gate GATE CLEAR時に |
+| cmd_2693 | karo_direct配備(ci_fix/recon2/hotfix)で旧task YAMLのフィールドがリセットされずstale_report 5件蓄積。根因=deploy_task.shのreset_stale_fieldsに相当する処理がkaro_directのcp前にない。cp前にstatusリセットを追加する | infra | 05-12 | karo-directのci_fix/recon2/hotf |
+| cmd_2694 | restart_watchers.sh/ninja_monitor.shのwatcher起動が親プロセスからASW_DISABLE_ESCALATION=1を継承し将軍nudge無効化が再発(cmd_2403修正後も再発)。起動直前にunsetで継承を構造的に遮断する | infra | 05-12 | watcher起動直前にASW_DISABLE_ESCALA |
+| cmd_2696 | 修行cmdの教訓参照率0%(89件feedback中useful=0)。根因=修行ACに教訓活用ステップがなくgate精読+報告作成で完結。テンプレートにAC(注入教訓から1件以上referenceせよ)を追加し教訓参照を構造的に強制 | infra | 05-12 | 修行cmd L4テンプレートに、注入教訓を1件以上参照してl |
