@@ -31,10 +31,101 @@ if [[ ! "$AGENT_ID" =~ ^[a-z_]+$ ]]; then
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
+CONFIRM_SCRIPT="$SCRIPT_DIR/scripts/bulletin_confirm.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
     || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
 LOCKFILE="$(lock_path "$INBOX")"
+CONFIRM_LIST_FILE=""
+
+extract_bulletin_confirms() {
+    local inbox_file="$1"
+    local msg_filter="${2:-}"
+    awk -v msg_filter="$msg_filter" '
+        function trim(v) {
+            gsub(/^[ \t'\''"]+/, "", v)
+            gsub(/[ \t'\''"]+$/, "", v)
+            return v
+        }
+        function reset_msg() {
+            current_id=""
+            current_type=""
+            current_content=""
+            current_read=""
+        }
+        function maybe_emit() {
+            if (current_id == "" || current_type != "bulletin_notify" || current_read != "false") {
+                return
+            }
+            if (msg_filter != "" && current_id != msg_filter) {
+                return
+            }
+            content = current_content
+            if (match(content, /掲示板新規投稿\([^)]+\)/)) {
+                entry_id = substr(content, RSTART + length("掲示板新規投稿("), RLENGTH - length("掲示板新規投稿(") - 1)
+                if (entry_id != "") {
+                    print entry_id
+                }
+            }
+        }
+        BEGIN { reset_msg() }
+        /^[[:space:]]*-[[:space:]]*/ {
+            maybe_emit()
+            reset_msg()
+            line=$0
+            sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+            key=line
+            sub(/:.*/, "", key)
+            val=line
+            sub(/^[^:]*:[[:space:]]*/, "", val)
+            key=trim(key)
+            val=trim(val)
+            if (key == "id") current_id=val
+            else if (key == "type") current_type=val
+            else if (key == "content") current_content=val
+            else if (key == "read") current_read=val
+            next
+        }
+        {
+            line=$0
+            sub(/^[[:space:]]+/, "", line)
+            key=line
+            sub(/:.*/, "", key)
+            val=line
+            sub(/^[^:]*:[[:space:]]*/, "", val)
+            key=trim(key)
+            val=trim(val)
+            if (key == "id") current_id=val
+            else if (key == "type") current_type=val
+            else if (key == "content") current_content=val
+            else if (key == "read") current_read=val
+        }
+        END { maybe_emit() }
+    ' "$inbox_file" 2>/dev/null || true
+}
+
+confirm_bulletin_reads() {
+    local entry_id
+    local confirm_output
+    local confirm_rc
+
+    for entry_id in "$@"; do
+        [ -n "$entry_id" ] || continue
+        if [ ! -x "$CONFIRM_SCRIPT" ] && [ ! -f "$CONFIRM_SCRIPT" ]; then
+            echo "[inbox_mark_read] WARN: bulletin_confirm.sh not found; skipped bulletin_confirm for $entry_id" >&2
+            continue
+        fi
+        set +e
+        confirm_output=$(bash "$CONFIRM_SCRIPT" "$AGENT_ID" "$entry_id" 2>&1)
+        confirm_rc=$?
+        set -e
+        if [ "$confirm_rc" -ne 0 ]; then
+            echo "[inbox_mark_read] WARN: bulletin_confirm failed for $entry_id: $confirm_output" >&2
+        else
+            echo "[inbox_mark_read] bulletin_confirmed $entry_id"
+        fi
+    done
+}
 
 if [ ! -f "$INBOX" ]; then
     echo "[inbox_mark_read] No inbox file for $AGENT_ID" >&2
@@ -46,6 +137,7 @@ attempt=0
 max_attempts=3
 
 while [ $attempt -lt $max_attempts ]; do
+    CONFIRM_LIST_FILE=$(mktemp /tmp/.imr_bulletin_XXXXXX)
     if (
         flock -w 5 200 || exit 1
 
@@ -62,6 +154,8 @@ while [ $attempt -lt $max_attempts ]; do
         # Atomic write: mktemp in same dir + mv (same as original python3 os.replace)
         _inbox_dir="${INBOX%/*}"
         _tmp=$(mktemp "${_inbox_dir}/.imr_XXXXXX.tmp")
+
+        extract_bulletin_confirms "$INBOX" "$MSG_ID" > "$CONFIRM_LIST_FILE"
 
         if [ -z "$MSG_ID" ]; then
             # Mark all: only message-level read fields, not literal content lines.
@@ -120,8 +214,14 @@ while [ $attempt -lt $max_attempts ]; do
         echo "[inbox_mark_read] Marked ${_changed} message(s) as read for $AGENT_ID"
 
     ) 200>"$LOCKFILE"; then
+        if [ -s "$CONFIRM_LIST_FILE" ]; then
+            mapfile -t _bulletin_entries < "$CONFIRM_LIST_FILE"
+            confirm_bulletin_reads "${_bulletin_entries[@]}"
+        fi
+        rm -f "$CONFIRM_LIST_FILE"
         exit 0
     else
+        rm -f "$CONFIRM_LIST_FILE"
         attempt=$((attempt + 1))
         if [ $attempt -lt $max_attempts ]; then
             echo "[inbox_mark_read] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2

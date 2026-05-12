@@ -5,17 +5,26 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SOURCE_SCRIPT="$PROJECT_ROOT/scripts/inbox_mark_read.sh"
+    export SOURCE_CONFIRM_SCRIPT="$PROJECT_ROOT/scripts/bulletin_confirm.sh"
     [ -f "$SOURCE_SCRIPT" ] || return 1
+    [ -f "$SOURCE_CONFIRM_SCRIPT" ] || return 1
     python3 -c "import yaml" >/dev/null 2>&1 || return 1
 }
 
 setup() {
     export TEST_ROOT
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/inbox_mark_read.XXXXXX")"
-    mkdir -p "$TEST_ROOT/scripts" "$TEST_ROOT/queue/inbox"
+    mkdir -p "$TEST_ROOT/scripts/lib" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/queue"
 
     cp "$SOURCE_SCRIPT" "$TEST_ROOT/scripts/inbox_mark_read.sh"
+    cp "$SOURCE_CONFIRM_SCRIPT" "$TEST_ROOT/scripts/bulletin_confirm.sh"
     chmod +x "$TEST_ROOT/scripts/inbox_mark_read.sh"
+    chmod +x "$TEST_ROOT/scripts/bulletin_confirm.sh"
+    cat > "$TEST_ROOT/scripts/lib/agent_config.sh" <<'SH'
+get_all_agents() {
+    echo "karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru"
+}
+SH
 
     export TEST_SCRIPT="$TEST_ROOT/scripts/inbox_mark_read.sh"
 }
@@ -60,6 +69,19 @@ with open(os.environ['INBOX']) as f:
 for m in data.get('messages', []):
     if m.get('id') == os.environ['MSG_ID']:
         print('true' if m.get('read') else 'false')
+        break
+"
+}
+
+_get_confirmed_by() {
+    local entry_id="$1"
+    BULLETIN="$TEST_ROOT/queue/bulletin_board.yaml" ENTRY_ID="$entry_id" python3 -c "
+import os, yaml
+with open(os.environ['BULLETIN']) as f:
+    data = yaml.safe_load(f)
+for entry in data.get('entries', []):
+    if entry.get('id') == os.environ['ENTRY_ID']:
+        print(','.join(entry.get('confirmed_by') or []))
         break
 "
 }
@@ -171,4 +193,63 @@ YAML
     run bash "$TEST_SCRIPT" testagent
     [ "$status" -eq 0 ]
     [[ "$output" == *"No messages"* ]] || [[ "$output" == *"No unread"* ]]
+}
+
+@test "bulletin_notify mark-read auto-confirms referenced bulletin entry" {
+    cat > "$TEST_ROOT/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+- id: msg_blt
+  from: karo
+  timestamp: '2026-05-12T12:00:00'
+  type: bulletin_notify
+  content: '掲示板新規投稿(blt_test_001): 確認せよ'
+  read: false
+YAML
+    cat > "$TEST_ROOT/queue/bulletin_board.yaml" <<'YAML'
+entries:
+- id: 'blt_test_001'
+  content: |-
+    確認せよ
+  posted_by: 'karo'
+  posted_at: '2026-05-12T12:00:00'
+  requires_confirmation: false
+  confirmed_by: []
+  status: 'open'
+YAML
+
+    run bash "$TEST_SCRIPT" saizo msg_blt
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"bulletin_confirmed blt_test_001"* ]]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status saizo msg_blt)" = "true" ]
+    [[ "$(_get_confirmed_by blt_test_001)" == *"saizo"* ]]
+}
+
+@test "bulletin_confirm failure warns but mark-read still succeeds" {
+    cat > "$TEST_ROOT/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+- id: msg_blt
+  from: karo
+  timestamp: '2026-05-12T12:00:00'
+  type: bulletin_notify
+  content: '掲示板新規投稿(blt_missing): 確認せよ'
+  read: false
+YAML
+    cat > "$TEST_ROOT/queue/bulletin_board.yaml" <<'YAML'
+entries:
+- id: 'blt_other'
+  content: |-
+    別エントリ
+  posted_by: 'karo'
+  posted_at: '2026-05-12T12:00:00'
+  requires_confirmation: false
+  confirmed_by: []
+  status: 'open'
+YAML
+
+    run bash "$TEST_SCRIPT" saizo msg_blt
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: bulletin_confirm failed for blt_missing"* ]]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status saizo msg_blt)" = "true" ]
 }
