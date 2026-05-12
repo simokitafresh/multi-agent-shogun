@@ -5616,10 +5616,11 @@ END_GV_PY
     fi
     rm -f "$INSIGHT_TMP"
 
-    # ─── lesson_candidate未登録 WARN（cmd_1256: GATE CLEAR時、情報提供のみ） ───
+    # ─── lesson_candidate未登録 WARN + register_recommended自動登録（cmd_1256, cmd_2697） ───
     echo ""
     echo "Lesson candidate registration check (GATE CLEAR):"
     LC_WARN_COUNT=0
+    LC_AUTO_REG_COUNT=0
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         if [ ! -f "$task_file" ]; then
             echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -5631,20 +5632,57 @@ END_GV_PY
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
 
-        lc_warn=$(awk '
-            /lesson_candidate:/ { sec=1; next }
-            sec && /^[^ ]/ { exit }
-            sec && /found: true/ { found=1 }
-            sec && /title:/ && !title { t=$0; sub(/.*title:[[:space:]]*/, "", t); gsub(/^["'"'"']+|["'"'"']+$/, "", t); title=t }
-            END { if (found && title) print substr(title, 1, 80) }
-        ' "$report_file" 2>/dev/null)
+        # Extract lesson_candidate fields including register_recommended (1 python3 spawn)
+        _lc_action=skip _lc_title="" _lc_reg=false _lc_project="" _lc_detail="" _lc_source="" _lc_author=auto_gate
+        if _lc_raw=$(REPORT_PATH="$report_file" python3 - 2>/dev/null <<'PYEOF'
+import yaml, os, sys, shlex
+report_path = os.environ["REPORT_PATH"]
+try:
+    with open(report_path, encoding='utf-8') as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(0)
+lc = data.get("lesson_candidate", {})
+if not isinstance(lc, dict) or not lc.get("found"):
+    sys.exit(0)
+title = str(lc.get("title", "") or "").strip()
+detail = str(lc.get("detail", "") or "").strip()
+project = str(lc.get("project", "") or "").strip()
+reg = bool(lc.get("register_recommended"))
+source_cmd = str(data.get("parent_cmd", "") or data.get("task_id", "") or "").strip()
+worker_id = str(data.get("worker_id", "") or "auto_gate").strip()
+if not title:
+    sys.exit(0)
+print(f"_lc_action=check")
+print(f"_lc_title={shlex.quote(title[:80])}")
+print(f"_lc_reg={'true' if reg else 'false'}")
+print(f"_lc_project={shlex.quote(project)}")
+print(f"_lc_detail={shlex.quote(detail)}")
+print(f"_lc_source={shlex.quote(source_cmd)}")
+print(f"_lc_author={shlex.quote(worker_id or 'auto_gate')}")
+PYEOF
+); then
+            eval "$_lc_raw"
+        fi
 
-        if [ -n "$lc_warn" ]; then
-            LC_WARN_COUNT=$((LC_WARN_COUNT + 1))
-            echo "  WARN: lesson_candidate未登録 — ${ninja_name}: ${lc_warn} — lesson_write.shで登録せよ"
+        if [ "$_lc_action" = "check" ]; then
+            if [ "$_lc_reg" = "true" ] && [ -n "$_lc_project" ] && [ -n "$_lc_source" ]; then
+                # register_recommended:true → auto lesson_write (cmd_2697)
+                echo "  AUTO-REGISTER: ${ninja_name}: ${_lc_title} (register_recommended:true)"
+                if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$_lc_project" "$_lc_title" "$_lc_detail" "$_lc_source" "$_lc_author" "$_lc_source" 2>&1; then
+                    echo "  [OK] lesson_write: registered (${ninja_name})"
+                    LC_AUTO_REG_COUNT=$((LC_AUTO_REG_COUNT + 1))
+                else
+                    echo "  [WARN] lesson_write: failed for ${ninja_name} (non-blocking)"
+                    LC_WARN_COUNT=$((LC_WARN_COUNT + 1))
+                fi
+            elif [ -n "$_lc_title" ]; then
+                LC_WARN_COUNT=$((LC_WARN_COUNT + 1))
+                echo "  WARN: lesson_candidate未登録 — ${ninja_name}: ${_lc_title} — lesson_write.shで登録せよ"
+            fi
         fi
     done
-    if [ "$LC_WARN_COUNT" -eq 0 ]; then
+    if [ "$LC_WARN_COUNT" -eq 0 ] && [ "$LC_AUTO_REG_COUNT" -eq 0 ]; then
         echo "  OK: no pending lesson_candidates"
     fi
 
