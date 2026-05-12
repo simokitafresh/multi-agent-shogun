@@ -890,3 +890,17 @@
 | cmd_2686 | lesson_done_missing race condition解消(WARN化+auto催促) | GATE CLEAR | 軍師lesson_candidate→将軍cmd化。missing_gate:lessonのみWARN、非lessonはBLOCK維持 |
 | 修行L4 r16 | 全6忍者gate_report_format.sh一発PASS | 全員PASS | karo_direct配備でAC未注入→FAIL→LK013登録→再配備でPASS |
 | idle自走 | noise教訓4件+harm教訓4件特定→将軍に修正CMD候補3案提案 | 掲示板報告 | なぜなぜ7回で「分析→報告で止まる」構造を特定→具体的修正提案まで回す |
+| cmd_2687 | bulletin確認自動化(inbox_mark_read→bulletin_confirm連動) | GATE CLEAR | 掲示板確認が意志依存→自動化×強制(Phase4) |
+| cmd_2688 | 問題教訓8件deprecated(noise4+harm4) | GATE CLEAR | 注入プール浄化。useful率改善の補完 |
+| cmd_2689 | スキル品質FAIL3件description修正 | GATE CLEAR | gate_skill_quality全PASS化 |
+| cmd_2690 | semantic-index drift 12件パス更新 | GATE CLEAR | 軍師idle自走検出。外部リポパス移動の未反映 |
+| cmd_2691 | karo-directスキル修行配備修正 | GATE CLEAR | deploy_task.sh --direct使用に変更。手動YAML禁止 |
+| cmd_2692 | resolved_by_cmd自動backfill | GATE CLEAR | WA台帳解決率偽陽性(16.2%)解消。GATE CLEAR時に自動更新 |
+| cmd_2693 | karo_direct staleリセット追加 | GATE CLEAR | cp前にreset_stale_fields相当。stale_report 5件根絶 |
+| cmd_2694 | ASW_DISABLE_ESCALATION継承汚染遮断 | GATE CLEAR | watcher起動時unsetで構造的再発防止 |
+| (殿指摘) | 成長ループ構造的阻害3箇所特定 | データ検証 | withheld86%/修行参照0%/lesson登録手動依存 |
+| cmd_2695 | withheld悪循環解消(MIN_SAMPLES未満初回注入保証) | GATE CLEAR | 阻害1: feedback不足→withheld→届かない→永久withheldの悪循環を断つ |
+| cmd_2696 | 修行L4テンプレートに教訓参照AC追加 | GATE CLEAR | 阻害2: 修行で教訓参照率0%→AC強制で学習ループ開通 |
+| cmd_2697 | auto lesson_write(register_recommended→自動登録) | GATE CLEAR | 阻害3: 教訓登録の手動依存→Phase4完遂 |
+| cmd_2698 | skill_auto_improve FIXヒントDB参照追加 | GATE CLEAR | 汎用テンプレート→具体的防止ステップ。一発CLEAR率向上 |
+| session成果 | 14cmd全CLEAR+CI修正1件+修行L4r16全6PASS。WA率0%。成長ループ阻害3箇所全修正。教訓7件登録(LK013,L599,L601,L603,L605,L607) | 環境蓄積完了 | 次の家老: 成長ループ3阻害修正済み+bulletin自動確認+WA台帳自動backfill+karo_direct全経路正規化 |

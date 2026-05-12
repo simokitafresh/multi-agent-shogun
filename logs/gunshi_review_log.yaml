@@ -61,6 +61,8 @@
 # ★GP提案前に既存実装grep確認必須(LG033強制)。「自力不可→家老送信」の前に「そもそも必要か？」を現物で確認。未確認→不要提案→家老CTX消費=負の複利(GP-216事故: deploy_task.sh L2261-2278に既存filter→obsolete)
 # ★Codex家老STALL検知: Codex CLIは宣言出力後にプロンプト(›)で停止する。レビュー送信後にcapture-pane 2回比較(差分なし=停止)で確認。1回見て「動いている」と判断するな(2026-04-22殿指摘)
 # ★スコープ一致原則: 対策のスコープは問題のスコープと一致させよ。一時的問題(cmd固有)に恒久対策(hook)を使うな。自問「この問題はいつまで存在する？この対策はいつまで残る？一致しているか？」(2026-04-22殿指摘: 単発禁止にpre-bash hook設置→外し忘れ→将来の全cmdBLOCK=負の複利)
+# ★drift検出で外部リポ絶対パスにプロジェクトルートを前置するな(2026-05-12偽陽性12件)。[ -f "/mnt/c/tools/.../$外部パス" ]は二重結合。絶対パスはそのまま[ -f "$path" ]
+# ★成長ループ全量追跡7段階: Stage1注入率13%/Stage2参照率80%/Stage3 useful率33%/Stage4防止21件/Stage5実行901回/Stage6修行参照0%/Stage7自動登録0件。阻害はStage1(withheld86%)+Stage6+Stage7
 # Simplicity観点: 既存の仕組みを磨くだけで済むなら新規フラグ/分岐/ファイル/手順を増やすな。複雑さを増やす場合は必要性を明文化せよ
 # ★commit attribution確認: files_modifiedのファイルがcommit_hashの`git show --stat`に含まれるか検証。含まれない→auto-commitへのcross-contamination疑い(cmd_2492: kagemaru変更がhayate auto-commitに混入)
 # Think Before Coding観点: 忍者が暗黙の前提を置いていないか。ACの前提が曖昧なまま実装していないか。不確実なら止まって聞いたか(Karpathy原則1)
@@ -2478,7 +2480,7 @@
 - cmd_id: cmd_2691
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   ambiguity_points: none
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
@@ -2526,7 +2528,7 @@
   review_type: report
   report_ninja: hanzo
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "precheck PASS(WARN=lesson有)。karo_direct training→deploy_task.sh --direct変更。deploy_error根絶。lesson有(register推奨)"
   observations:
@@ -2534,3 +2536,106 @@
     - "事実2: batsテスト追加(既存purpose/ACがある場合のL4テンプレート上書き確認)"
   causal_chain: "karo_direct手動YAML→AC未注入→deploy_error 5件→SKILL.md修正+テスト→構造的根絶(正の複利)"
   timestamp: "2026-05-12T13:25:00"
+- cmd_id: cmd_2692
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "resolved_by_cmd自動backfill。BLOCK理由→WAカテゴリ明示マッピング。通常/override両CLEAR配線"
+  observations:
+    - "事実1: normalize_block_reason_to_workaround_categoriesで明示マッピング実装"
+  causal_chain: "WA台帳88件偽陽性→自動backfill→台帳精度自動維持(正の複利)"
+  timestamp: "2026-05-12T13:35:00"
+- cmd_id: cmd_2693
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "karo_direct stale_report根因修正。cp直接→deploy_task.sh --yaml経由(Level4)"
+  observations:
+    - "事実1: 忍者がcp前reset_stale_fieldsではなくdeploy_task.sh --yaml経由に寄せた(想定以上のLevel4解法)"
+  causal_chain: "stale_report 5件→deploy_task.sh --yaml経由強制→reset_stale_fields自動適用→根絶(正の複利)"
+  timestamp: "2026-05-12T13:35:00"
+- cmd_id: cmd_2694
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "ASW_DISABLE_ESCALATION継承汚染遮断。2ファイルにunset追加"
+  observations:
+    - "事実1: restart_watchers.sh+ninja_monitor.shのwatcher起動前にunset。環境変数継承パス遮断"
+  causal_chain: "親プロセスASW=1継承→nudge SKIP→unset追加→継承汚染構造的遮断(正の複利)"
+  timestamp: "2026-05-12T14:00:00"
+- cmd_id: cmd_2695
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "withheld悪循環解消。MIN_SAMPLES未満教訓の初回注入保証。成長ループ最大阻害修正"
+  observations:
+    - "事実1: withheld 86%(1565/1821)。MIN_SAMPLES到達6件(7.1%)。93%が永久凍結"
+  causal_chain: "feedback不足→withheld→届かない→feedback取れない→永久凍結(悪循環)→初回注入保証→悪循環断絶(正の複利)"
+  timestamp: "2026-05-12T14:08:00"
+- cmd_id: cmd_2695
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "MIN_SAMPLES未満教訓withheld除外。悪循環断絶"
+  observations:
+    - "事実1: withheldログから除外しinjection候補に復帰させるロジック追加"
+  causal_chain: "withheld 86%→初回注入保証→feedback蓄積→useful_rate正確化→成長ループ開通(正の複利)"
+  timestamp: "2026-05-12T14:15:00"
+- cmd_id: cmd_2696
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "修行L4教訓参照AC追加。参照率0%→強制参照"
+  observations:
+    - "事実1: training参照率0%(0/10)。exact91.6%/implement72.1%との格差"
+  causal_chain: "修行ACに教訓参照なし→参照率0%→AC追加→feedback収集自動化(正の複利)"
+  timestamp: "2026-05-12T14:10:00"
+- cmd_id: cmd_2696
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "修行L4にAC4(教訓参照)追加。参照率0%→強制参照"
+  observations:
+    - "事実1: training-cycle.md+deploy_task.shテンプレート生成に教訓参照AC反映"
+  causal_chain: "修行教訓参照0%→AC4追加→強制参照→feedback蓄積(正の複利)"
+  timestamp: "2026-05-12T14:15:00"
+- cmd_id: cmd_2697
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "auto lesson_write。lesson登録手動依存→自動化。cmd_2686(WARN化=緩和)→cmd_2697(自動=根治)"
+  observations:
+    - "事実1: grep register_recommended cmd_complete_gate.sh → 0件。auto_draft_lesson.sh L3377に既存パターン"
+  causal_chain: "lesson登録手動依存→lesson_done_missing BLOCK→auto lesson_write→登録自動化(正の複利)"
+  timestamp: "2026-05-12T14:12:00"
+- cmd_id: cmd_2698
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "FIXヒントDB参照。なぜなぜ7回根因の完全対処。gate→スキル知識伝播経路確立"
+  observations:
+    - "事実1: grep fix_hint skill_auto_improve.sh → 0件。gate FIXヒント75件が防止ステップに未転写"
+  causal_chain: "FIXヒント75件未参照→汎用テンプレート→一発CLEAR率71.6%→FIXヒントDB参照→具体的防止ステップ→CLEAR率向上(正の複利)"
+  timestamp: "2026-05-12T14:14:00"

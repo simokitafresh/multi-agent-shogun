@@ -32214,7 +32214,7 @@ entries:
     ac_count: 0
     gate_result: "PASS"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -32223,7 +32223,7 @@ entries:
     ac_count: 0
     gate_result: "PASS"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -32291,3 +32291,343 @@ entries:
     supplementary_cmds: 0
     source: "cmd_complete_gate"
     timestamp: "2026-05-12T04:08:40Z"
+  - cmd_id: "cmd_2691"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:13:18Z"
+  - cmd_id: "cmd_2691"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:14:22Z"
+  - cmd_id: "cmd_2692"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:14:57Z"
+  - cmd_id: "cmd_2692"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:15:00Z"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-12T04:15:53Z"
+    notes: "否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:15:55Z"
+    notes: "WARN累計昇格: 「否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence」が7回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:16:44Z"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:16:50Z"
+  - cmd_id: "cmd_2692"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:21:42Z"
+  - cmd_id: "cmd_2692"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:21:46Z"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:24:38Z"
+  - cmd_id: "cmd_2693"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:24:45Z"
+  - cmd_id: "cmd_2694"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:54:41Z"
+  - cmd_id: "cmd_2694"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T04:54:44Z"
+  - cmd_id: "cmd_2694"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:59:11Z"
+  - cmd_id: "cmd_2694"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T04:59:28Z"
+  - cmd_id: "cmd_2695"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:06:09Z"
+  - cmd_id: "cmd_2695"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:06:13Z"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-12T05:07:13Z"
+    notes: "gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:07:15Z"
+    notes: "WARN累計昇格: 「gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion」が11回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:07:48Z"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:07:53Z"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:08:50Z"
+    notes: "前cmd_2696で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:09:13Z"
+    notes: "environment_change未実装。file=scripts/cmd_complete_gate.sh に pattern=register_recommended が見つからない"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:09:40Z"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:09:47Z"
+  - cmd_id: "cmd_2698"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:11:01Z"
+    notes: "q11に既存代替の現物確認なし"
+  - cmd_id: "cmd_2698"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:11:27Z"
+  - cmd_id: "cmd_2698"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-12T05:11:33Z"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:14:52Z"
+  - cmd_id: "cmd_2695"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:14:55Z"
+  - cmd_id: "cmd_2696"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:14:56Z"
+  - cmd_id: "cmd_2695"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:15:00Z"
+  - cmd_id: "cmd_2698"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:25:32Z"
+  - cmd_id: "cmd_2698"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:26:04Z"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:26:18Z"
+  - cmd_id: "cmd_2697"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-12T05:26:54Z"

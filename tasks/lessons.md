@@ -4725,3 +4725,33 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自動参照できる。gateの知識は1箇所(gate_main.py)に集約されるため、パターン追加→全スキルに自動波及する正のスパイラルが生まれる。
+
+### L605: gate FIXヒント→スキル防止ステップ自動転写の知識伝播パターン
+- **日付**: 2026-05-12
+- **出典**: cmd_2698
+- **記録者**: karo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/gates/gate_report_format_main.py,scripts/skill_auto_improve.sh]
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_prevention_stepsで自動参照。Phase1(直接マッチ)+Phase2(カテゴリ推定)の二層構造。cmd_2698で実装
+
+### L606: cmd_complete_gate.shのpython3 heredocはevalと組み合わせてshlex.quote済み変数をbash変数化できる
+- **日付**: 2026-05-12
+- **出典**: cmd_2697
+- **記録者**: hanzo
+- **tags**: [infra,frontend,gate,bash]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_auto_lesson_write.bats]
+- **when**: 未設定
+- **how**: 未設定
+- if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval "$_lc_raw"; fi パターンで1python3 spawnで複数フィールドを安全にbash変数化できる。PYEOF区切り文字は列0必須。auto_draft_lesson.shの既存パターンとの整合性が高い。
+
+### L607: auto lesson_writeパターン(register_recommended→自動登録)
+- **日付**: 2026-05-12
+- **出典**: cmd_2697
+- **記録者**: karo
+- **tags**: [infra,gate,bash,lesson]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_auto_lesson_write.bats]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手動依存(Phase4未完)を根治。cmd_2697で実装

@@ -260,15 +260,20 @@ lessons:
   when: idle自走Step 0(配備最優先)で忍者全員配備済みの時
   how: 即Step 1(思考)へ進む。配備=手段、思考=目的。配備ループに閉じ込められるな
 - id: LK-A17
-  title: 将軍への報告は掲示板経由必須
-  detail: inbox_writeだけで将軍に送るな。bulletin_write.shで掲示板(永続記録)+inbox全文通知(即時配信)を両方行う。
+  title: 将軍への報告は掲示板経由+CMD起票要請まで回せ
+  detail: |
+    inbox_writeだけで将軍に送るな。bulletin_write.shで掲示板(永続記録)+inbox全文通知(即時配信)を両方行う。
+    v5吸収(2026-05-12):
+    - 分析→報告で止まるな。報告→具体的修正提案→CMD起票要請の3段目まで回せ(殿指摘2026-05-12)
+    - 根因=報告=行動完了と思った(Phase7「教訓を書いても行動は変わらない」再現)
+    - idle自走の最終ステップ: 「将軍CMDが必要な事を放置していないか？」を自問
   source_ids: [LK075]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'bulletin_write.sh(GP-207 content空BLOCK)+CLAUDE.md Communication Protocol'
+  enforcement: 'bulletin_write.sh(GP-207 content空BLOCK)+CLAUDE.md Communication Protocol+idle自走Step5でCMD起票要請チェック'
 
-  when: 将軍への報告・意見が必要な時
-  how: bulletin_write.shで掲示板投稿。inbox_writeだけで送るな。掲示板=永続記録+全文通知
+  when: 将軍への報告・意見が必要な時。idle自走の最終ステップ
+  how: 掲示板投稿+CMD起票要請まで回す。情報報告だけで止まるな。「将軍CMDが必要な事を放置していないか？」自問
 - id: LK-A18
   title: revert前に変更元エージェントに通知 + revert後は再計測強制
   detail: revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。

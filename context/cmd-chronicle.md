@@ -806,3 +806,4 @@
 | cmd_2693 | karo_direct配備(ci_fix/recon2/hotfix)で旧task YAMLのフィールドがリセットされずstale_report 5件蓄積。根因=deploy_task.shのreset_stale_fieldsに相当する処理がkaro_directのcp前にない。cp前にstatusリセットを追加する | infra | 05-12 | karo-directのci_fix/recon2/hotf |
 | cmd_2694 | restart_watchers.sh/ninja_monitor.shのwatcher起動が親プロセスからASW_DISABLE_ESCALATION=1を継承し将軍nudge無効化が再発(cmd_2403修正後も再発)。起動直前にunsetで継承を構造的に遮断する | infra | 05-12 | watcher起動直前にASW_DISABLE_ESCALA |
 | cmd_2696 | 修行cmdの教訓参照率0%(89件feedback中useful=0)。根因=修行ACに教訓活用ステップがなくgate精読+報告作成で完結。テンプレートにAC(注入教訓から1件以上referenceせよ)を追加し教訓参照を構造的に強制 | infra | 05-12 | 修行cmd L4テンプレートに、注入教訓を1件以上参照してl |
+| cmd_2698 | skill_auto_improve.shがgate FIXヒント75件を読まずBLOCK理由文字列のパターンマッチで防止ステップを生成→汎用テンプレート3件が具体性不足→一発CLEAR率71.6%止まり。FIXヒントDBを自動参照し具体的な防止ステップを生成する | infra | 05-12 | gate_report_format_main.pyにloo |
