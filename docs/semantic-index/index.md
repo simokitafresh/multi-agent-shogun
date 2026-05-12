@@ -129,7 +129,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？ |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -146,6 +146,7 @@ codd:
 | file | `scripts/ci_status_check.sh` CI状態チェック(品質フィードバック) |
 | cmd | `cmd_2672` 教訓統合 — lessons_shogun v3統合 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T21:24:08+09:00 われらの軍のシステムをまとめるとどうなるのかな？三層学習ループ、セマンティックインデックス、レベル6、deepdiveなどかなり特徴があるよな。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-12T13:58:42+09:00 自動成長ループが構造的に阻害されている場所はないか？ |
 
 ## alm_research — ALM研究
 
@@ -216,6 +217,13 @@ codd:
 | cmd | `cmd_2682` 強化 — ninja_monitor先行完了検知で後発忍者をauto-void (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | cmd | `cmd_2684` 強化 — inbox_write.sh task_assigned時の二重配備自動検査 (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-12T11:39:01+09:00 確かidle判定やstall判定が未熟で、すぐにninjyamonitorが/clearを送信→作業中にstartup再実行で無駄な重複が多かったからだった記憶がある |
+| lesson | `L602` karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす |
+| cmd | `cmd_2691` 修正 — karo_direct修行配備でAC/description未注入の修正 (`skills/karo-direct/SKILL.md`, `tests/unit/test_deploy_task.bats`) |
+| lesson | `L603` karo_directのtraining配備はdeploy_task.sh --directを使え(手動YAML禁止) |
+| cmd | `cmd_2693` 修正 — karo_direct配備のstale_report根因修正(reset_stale_fields相当追加) (`skills/karo-direct/SKILL.md`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| cmd | `cmd_2694` 修正 — watcher起動時のASW_DISABLE_ESCALATION継承汚染を構造的に遮断 (`scripts/ninja_monitor.sh`, `scripts/restart_watchers.sh`, `tests/unit/test_inbox_watcher_health.bats`) |
+| cmd | `cmd_2696` 強化 — 修行L4テンプレートに教訓参照ACを追加(参照率0%解消) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task.bats`) |
+| cmd | `cmd_2695` 強化 — withheld悪循環の解消(MIN_SAMPLES未満教訓の初回注入保証) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 

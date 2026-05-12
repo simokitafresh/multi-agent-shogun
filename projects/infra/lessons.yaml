@@ -1,8 +1,38 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-05-12T13:12:57'
+last_synced: '2026-05-12T14:25:11'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 597
+lesson_count: 599
 lessons:
+- id: L604
+  title: gate_report_format_main.pyをlookup APIとして活用するパターン
+  summary: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh
+    がゲートの知識を自
+  tags:
+  - infra
+  - api
+  - gate
+  - bash
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/gates/gate_report_format_main.py
+  - scripts/skill_auto_improve.sh
+- id: L603
+  title: karo_directのtraining配備はdeploy_task.sh --directを使え(手動YAML禁止)
+  summary: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
+  tags:
+  - infra
+  - deploy
+  - bash
+  - yaml
+  when: 未設定
+  how: 未設定
+  target_files:
+  - skills/karo-direct/SKILL.md
+  - tests/unit/test_deploy_task.bats
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -139,6 +169,9 @@ lessons:
   target_files:
   - scripts/gates/gate_report_format.sh
   - tests/test_gate_report_format.bats
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L592
   title: 自動生成→手動処理の連鎖はdedup checkで根絶せよ
   summary: semantic_index_update.shがinsights重複生成→毎セッション10+件手動resolve。根因=重複チェック不在。dedup追加(02
@@ -165,6 +198,9 @@ lessons:
   - tests/unit/test_cmd_save_diagnose.bats
   - tests/unit/test_cmd_save_diagnosis_quality.bats
   - tests/unit/test_cmd_save_environment_change.bats
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L590
   title: CI RED fixture修正は同一gate条件の全fixtureを横断確認する
   summary: 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一
@@ -179,6 +215,9 @@ lessons:
   - tests/unit/test_cmd_save_diagnose.bats
   - tests/unit/test_cmd_save_diagnosis_quality.bats
   - tests/unit/test_cmd_save_environment_change.bats
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L589
   title: 生成元修正後のcommitは既存stage混入をgit diff --cachedで検出せよ
   summary: build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh
@@ -259,7 +298,7 @@ lessons:
   - scripts/gates/gate_gunshi_startup.sh
   - tests/unit/test_gate_gunshi_cs_checklist.bats
   - tests/unit/test_gate_gunshi_startup_missed_sg.bats
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L582
@@ -290,7 +329,7 @@ lessons:
   target_files:
   - scripts/cmd_save.sh
   - tests/unit/test_cmd_save.bats
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L578
@@ -353,7 +392,7 @@ lessons:
   - scripts/skill_auto_improve.sh
   - logs/skill_execution_log.yaml
   - queue/reports/kagemaru_report_cmd_2604.yaml
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L573
@@ -452,7 +491,7 @@ lessons:
   target_files:
   - scripts/semantic_index_update.sh
   - tests/unit/test_semantic_index_update.bats
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L563
@@ -565,6 +604,9 @@ lessons:
   - docs/research/codd_refactor_registry.md
   - scripts/sync_lessons.sh
   - tests/unit/test_cmd_save_environment_change.bats
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L553
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2481'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -604,6 +646,9 @@ lessons:
   - deploy
   target_files:
   - deploy_task.sh
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L549
   title: gate/hookはflat/nested両task YAML形式をfixtureで検証
   summary: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
@@ -614,7 +659,7 @@ lessons:
   - yaml
   target_files:
   - 偵察のみ（コード変更なし）
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L548
@@ -628,7 +673,7 @@ lessons:
   target_files:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
   - queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L547
@@ -799,7 +844,7 @@ lessons:
   - infra
   - gate
   - lesson
-  helpful_count: 1
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L530
@@ -871,7 +916,7 @@ lessons:
   target_files:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
   - queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L523
@@ -963,7 +1008,7 @@ lessons:
   summary: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 7
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L510
@@ -982,6 +1027,9 @@ lessons:
   summary: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
   tags:
   - universal
+  helpful_count: 6
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
@@ -1498,7 +1546,7 @@ lessons:
   - yaml
   target_files:
   - scripts/lib/yaml_safe_write.py
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L427
@@ -1606,7 +1654,7 @@ lessons:
   - reporting
   target_files:
   - auto_draft_lesson.sh
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L414
@@ -1767,7 +1815,7 @@ lessons:
   - lesson
   target_files:
   - mcp_sync_lesson.sh
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L392
@@ -1896,7 +1944,7 @@ lessons:
   - lesson
   target_files:
   - lesson_deprecate.sh
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L376
@@ -1976,7 +2024,7 @@ lessons:
   summary: bashスクリプトから同一JSONに対しpython3を複数回起動するパターンは、shlex.quote()でシェル安全にエスケープしeval代入する1回呼出し
   tags:
   - bash
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L365
@@ -2161,7 +2209,7 @@ lessons:
   - reporting
   target_files:
   - lesson_effectiveness.sh
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L342
@@ -2170,7 +2218,7 @@ lessons:
   tags:
   - bash
   - git
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L341
@@ -2265,9 +2313,9 @@ lessons:
   - inbox
   target_files:
   - restart_watchers.sh
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 4
-  last_referenced: '2026-05-11'
+  last_referenced: '2026-05-12'
 - id: L329
   title: IFS=| read -ra分割+read -rトリムでawk forkを削減
   summary: パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f
@@ -2313,7 +2361,7 @@ lessons:
   - reporting
   target_files:
   - dashboard_auto_section.sh
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L323
@@ -2374,7 +2422,7 @@ lessons:
   - lesson
   target_files:
   - deploy_task.sh
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L316
@@ -2400,6 +2448,9 @@ lessons:
   - lesson
   target_files:
   - cmd_complete_gate.sh
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L313
   title: 'GP ID重複問題: 同一IDに異なる提案が混在するとトリアージが困難'
   summary: GP-125がFoFログ詳細化とWAバリデーション強化の完全別提案を同一IDで共有。GP-113/GP-114/GP-126も進化・派生で複数エントリ。GP採番
@@ -2416,6 +2467,9 @@ lessons:
   - reporting
   target_files:
   - deploy_task.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L311
   title: 'WA率60.8%の3構造問題: autofix不網羅+uncategorized分類漏れ+事前防止hook欠如'
   summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
@@ -2468,7 +2522,7 @@ lessons:
   - yaml
   target_files:
   - deploy_task.sh
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L304
@@ -2496,9 +2550,9 @@ lessons:
   summary: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
   tags:
   - bash
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 4
-  last_referenced: '2026-05-11'
+  last_referenced: '2026-05-12'
 - id: L300
   title: binary_checks GATE検証はACグループ化+yes/true値をサポートすべし
   summary: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
@@ -2507,6 +2561,9 @@ lessons:
   - gate
   target_files:
   - cmd_complete_gate.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L299
   title: git_uncommitted_gateはプロジェクトリポジトリを解決すべし
   summary: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit
@@ -2592,6 +2649,9 @@ lessons:
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
   tags:
   - yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L289
   title: inbox_write 1行メッセージにYAML構造を埋め込むとシェル引数破壊リスクがある
   summary: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別
@@ -2619,7 +2679,7 @@ lessons:
   - yaml
   target_files:
   - gate_shogun_startup.sh
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L286
@@ -2661,7 +2721,7 @@ lessons:
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
   tags:
   - gate
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L281
@@ -2719,7 +2779,7 @@ lessons:
   - inbox
   target_files:
   - inbox_write.sh
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L275
@@ -2820,7 +2880,7 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L261
@@ -2846,6 +2906,9 @@ lessons:
   - yaml
   - monitor
   - tmux
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L258
   title: ログローテーション世代数不足+task_idログ欠損
   summary: ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック
@@ -2860,6 +2923,9 @@ lessons:
   - lesson
   target_files:
   - deploy_task.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L256
   title: deploy_task.sh lessons_by_id dictのID衝突でPJ間教訓が上書きされる
   summary: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
@@ -3419,7 +3485,7 @@ lessons:
   - testing
   - review
   - bash
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L182
@@ -3762,6 +3828,9 @@ lessons:
   tags:
   - bash
   - monitor
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L133
   title: injection_countがlessons.yamlで全件0(未同期)
   summary: IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
@@ -3856,6 +3925,9 @@ lessons:
   - communication
   - gate
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L119
   title: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
   summary: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
@@ -3885,6 +3957,9 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   - deploy_task.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L116
   title: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
   summary: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
@@ -3907,7 +3982,7 @@ lessons:
   tags:
   - gate
   - monitor
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L113
@@ -4010,7 +4085,7 @@ lessons:
   - yaml
   target_files:
   - queue/gate_metrics.yaml
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L100
@@ -4110,7 +4185,7 @@ lessons:
   target_files:
   - deploy_task.sh
   - lesson_tags.yaml
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L087
@@ -4121,7 +4196,7 @@ lessons:
   - lesson
   target_files:
   - knowledge_metrics.sh
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L086
@@ -4196,7 +4271,7 @@ lessons:
   - lesson
   target_files:
   - scripts/deploy_task.sh
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L078
@@ -4205,7 +4280,7 @@ lessons:
   tags:
   - review
   - gate
-  helpful_count: 1
+  helpful_count: 4
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L077
@@ -4268,7 +4343,7 @@ lessons:
   target_files:
   - deploy_task.sh
   - archive_completed.sh
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L069

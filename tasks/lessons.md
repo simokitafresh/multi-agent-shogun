@@ -4705,3 +4705,23 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_templateが呼ばれずpurpose/ACが空のまま配備された(cmd_training_L4_r16事故)。deploy_task.sh --directはinject_direct_training_templateを呼ぶため、trainingタイプのkaro_direct配備は必ずdeploy_task.sh --directを使え
+
+### L603: karo_directのtraining配備はdeploy_task.sh --directを使え(手動YAML禁止)
+- **日付**: 2026-05-12
+- **出典**: cmd_2691
+- **記録者**: karo
+- **tags**: [infra,deploy,bash,yaml]
+- **target_files**: [skills/karo-direct/SKILL.md,tests/unit/test_deploy_task.bats]
+- **when**: 未設定
+- **how**: 未設定
+- karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テンプレート自動注入をサポート(cmd_karo_ci_fix_direct_trainingで実装)。手動YAML禁止
+
+### L604: gate_report_format_main.pyをlookup APIとして活用するパターン
+- **日付**: 2026-05-12
+- **出典**: cmd_2698
+- **記録者**: kotaro
+- **tags**: [infra,api,gate,bash]
+- **target_files**: [scripts/gates/gate_report_format_main.py,scripts/skill_auto_improve.sh]
+- **when**: 未設定
+- **how**: 未設定
+- gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自動参照できる。gateの知識は1箇所(gate_main.py)に集約されるため、パターン追加→全スキルに自動波及する正のスパイラルが生まれる。

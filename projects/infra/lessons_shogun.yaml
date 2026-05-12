@@ -402,3 +402,24 @@ lessons:
   created_at: '2026-05-12'
   automated: true
   enforcement: 'LS-A04に吸収済み。cmd_save.sh q11_existing_alternative_verificationで自動強制'
+- id: 'LS032'
+  title: 'cmd_2693 env_change patternは変更先ではなく既存実装元を参照+否定的claimにgrep -n結果必須'
+  detail: 'env_changeのpatternは未実装ファイルではなく既存参照元を指す。否定的claimは全て grep -n コマンド+件数を記載。LS-A04+LS-A09の既知パターン。'
+  source_cmd: 'cmd_2693'
+  created_at: '2026-05-12'
+  automated: true
+  enforcement: 'LS-A04+LS-A09に吸収済み。cmd_save.shで自動強制'
+- id: 'LS033'
+  title: 'cmd_2696 gate_hook_action_conversion累計昇格: command欄にBLOCK/強制/自動実行キーワード必須'
+  detail: 'gate/hook追加cmd判定時はcommand欄に行動変換キーワード(BLOCK/強制/自動実行等)を含める。LS-A04の既知パターン。'
+  source_cmd: 'cmd_2696'
+  created_at: '2026-05-12'
+  automated: true
+  enforcement: 'LS-A04に吸収済み。cmd_save.sh gate_hook_action_conversionで自動強制'
+- id: 'LS034'
+  title: 'cmd_2697 env_change patternは未実装機能ではなく既存参照元を指す(3回目再発)'
+  detail: 'env_changeのpatternにcmd成果物(未存在)を指定するとBLOCK。既存実装元パターンを指す。cmd_2693/2697で同じ間違い。LS-A04の既知パターン。'
+  source_cmd: 'cmd_2697'
+  created_at: '2026-05-12'
+  automated: true
+  enforcement: 'LS-A04に吸収済み。cmd_save.sh env_change検証で自動強制'
