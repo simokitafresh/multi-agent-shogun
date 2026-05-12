@@ -2,6 +2,7 @@ task:
   _ac_task_id: cmd_2686_exact
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2686
+  ac_version: d41d8cd9
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -10,6 +11,15 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -18,42 +28,14 @@ task:
   parallel_ok: []
   parent_cmd: cmd_2686
   project: infra
-  purpose: cmd_complete_gateのlesson_done_missingがrace conditionでBLOCK。根因=review_gate.done→gate自動起動→lesson_write前にチェック実行の循環依存。WARN化+家老auto催促でデッドロック解消
   status: done
   stop_for: []
   task_id: cmd_2686_exact
   task_type: exact
   related_lessons:
-  - id: 'L512'
-    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
-    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
-  - id: 'L086'
-    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-  - id: 'L136'
-    summary: 'IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ'
-    detail: 'IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ'
-  - id: 'L585'
-    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L079'
-    summary: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
-    detail: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
-  - id: 'L038'
-    summary: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
-    detail: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
-  - id: 'L097'
-    summary: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
-    detail: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
-  - id: 'L597'
-    summary: 'lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で'
-    detail: 'lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で'
-  - id: 'L247'
-    summary: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
-    detail: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+  - id: 'L511'
+    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
+    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -66,24 +48,10 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L512: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
-      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
-      - L136: IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ
-      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed
-      - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
-      - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現
-      - L597: lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で
-      - L247: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
+      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - description: 'cmd_complete_gate.sh lesson_done_missing判定がWARN出力になっている(ALL_CLEAR=falseを設定しない)'
-  - description: 'lesson_done_missing WARN時に家老への教訓登録催促がinbox_write.shで自動送信される'
-  - description: '関連batsテストがPASS'
-  ac_version: 7d010443
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   report_filename: hayate_report_cmd_2686.yaml
   report_path: queue/reports/hayate_report_cmd_2686.yaml
@@ -121,4 +89,4 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 2
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-12T12:13:16"
+  deployed_at: "2026-05-12T12:23:01"
