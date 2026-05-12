@@ -2,7 +2,7 @@
 # Pre-assigned task for E2E testing (parallel/blocked_by scenarios)
 task:
   task_id: subtask_test_002a
-  parent_cmd: cmd_test_001
+  parent_cmd: cmd_test_002
   type: implementation
   description: |
     E2E test task for kirimaru: simulate file creation.
