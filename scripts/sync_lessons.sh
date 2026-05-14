@@ -201,7 +201,7 @@ while i < len(lines):
     summary_parts = []
     source = ''
     j = i + 1
-    while j < len(lines) and len(summary_parts) < 2:
+    while j < len(lines):
         sline = lines[j].strip()
         # Stop at next heading
         if sline.startswith('## ') or sline.startswith('### '):
@@ -293,10 +293,10 @@ while i < len(lines):
             if m_fretired_at:
                 retired_at = m_fretired_at.group(1).strip()
         # Get summary from **発生**/**問題**/**課題** fields or plain content
-        if sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:'):
+        if len(summary_parts) < 2 and (sline.startswith('- **発生**:') or sline.startswith('- **問題**:') or sline.startswith('- **課題**:')):
             text = re.sub(r'^- \*\*[^*]+\*\*:\s*', '', sline)
             summary_parts.append(text)
-        elif sline and not sline.startswith('```') and not sline.startswith('|'):
+        elif len(summary_parts) < 2 and sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
             if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):

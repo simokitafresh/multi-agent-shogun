@@ -151,6 +151,37 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons propagates late when and how after summary lines" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: late metadata propagation
+- first summary line
+- second summary line
+- **when**: 後方メタデータを読む時
+- **how**: summary上限後もメタデータ走査を継続する
+EOF
+
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-05-15T00:00:00'
+lessons: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+lesson = data['lessons'][0]
+assert lesson.get('when') == '後方メタデータを読む時', lesson
+assert lesson.get('how') == 'summary上限後もメタデータ走査を継続する', lesson
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
 @test "sync_lessons auto-extracts target_files from lesson text when no explicit field" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: run_077_kawarimi.pyのbatch vs sequential不一致
