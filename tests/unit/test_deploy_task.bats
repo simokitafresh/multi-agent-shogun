@@ -230,6 +230,33 @@ assert task["recommended_skills"] == ["cdp-browse", "db-check"]
 PY
 }
 
+@test "inject_standard_skills injects default always-on skill list" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "報告とcommitまで完了する"
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_standard_skills "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert task["standard_skills"] == ["report-write", "verdict-check", "ninja-commit"]
+assert task["description"] == "末尾説明"
+PY
+}
+
 @test "deploy_task --direct cmd_training injects L4 purpose and four ACs" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -250,6 +277,7 @@ with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
 assert task["parent_cmd"] == "cmd_training_L4_test"
 assert task["task_id"] == "cmd_training_L4_test_normal"
 assert task["status"] == "assigned"
+assert task["standard_skills"] == ["report-write", "verdict-check", "ninja-commit"]
 assert "L4修行" in task["purpose"]
 acs = task["acceptance_criteria"]
 assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4"]

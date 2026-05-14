@@ -212,6 +212,7 @@ deploy_task_fast() {
         fi
 
         inject_task_modifiers "$task_file" || true
+        inject_standard_skills "$task_file" || true
         yaml_field_set "$task_file" "task" "report_filename" ""
         yaml_field_set "$task_file" "task" "report_path" ""
         inject_report_filename "$task_file" || true

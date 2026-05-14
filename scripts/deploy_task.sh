@@ -2444,6 +2444,51 @@ inject_semantic_concepts() {
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 }
 
+# ─── 標準スキル注入（全task YAMLに常時使用スキルを明示） ───
+# Level5: 忍者が報告/commit時に必要なスキルを自動で知る。意志依存ゼロ。
+inject_standard_skills() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local inject_block
+    inject_block="  standard_skills:"$'\n'
+    inject_block="${inject_block}  - \"report-write\""$'\n'
+    inject_block="${inject_block}  - \"verdict-check\""$'\n'
+    inject_block="${inject_block}  - \"ninja-commit\""
+
+    local tmp_file
+    tmp_file=$(mktemp)
+    awk '
+        /^  standard_skills:/ { skip=1; next }
+        skip && /^  - / { next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    if grep -q "^  description:" "$tmp_file"; then
+        local insert_file
+        insert_file=$(mktemp)
+        printf '%s\n' "$inject_block" > "$insert_file"
+        awk -v insert_file="$insert_file" '
+            /^  description:/ && !inserted {
+                while ((getline line < insert_file) > 0) print line
+                close(insert_file)
+                inserted=1
+            }
+            { print }
+        ' "$tmp_file" > "${tmp_file}.inserted"
+        mv "${tmp_file}.inserted" "$tmp_file"
+        rm -f "$insert_file"
+    else
+        printf '%s\n' "$inject_block" >> "$tmp_file"
+    fi
+
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_standard_skills: standard skills injected"
+}
+
 # ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
 # R2残件: 重要contextをタスクYAMLに強制注入し、忍者の能動検索依存をなくす。
 inject_context_hints() {
@@ -5811,6 +5856,7 @@ deploy_task_apply_task_mutations() {
     # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
     inject_related_lessons "$task_file" || true
+    inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供

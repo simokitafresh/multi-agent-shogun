@@ -701,6 +701,11 @@ rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
 
 # --- Check 10: スキル品質サマリ ---
 echo "■ スキル品質"
+echo "  フェーズ別スキル一覧:"
+echo "    cmd完了処理: /cmd-complete"
+echo "    家老自立配備(CI修正/hotfix/recon2単独): /karo-direct"
+echo "    偵察2名配備: /recon-dual"
+echo "    ダッシュボード更新: /dashboard-update"
 skill_summary_script="$SCRIPT_DIR/scripts/skill_execution_log.sh"
 if [ -x "$skill_summary_script" ]; then
     _skill_cache_sig=""

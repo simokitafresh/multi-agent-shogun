@@ -162,6 +162,10 @@ EOF
 @test "skill FAIL summary is displayed at startup" {
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
+    [[ "$output" == *"フェーズ別スキル一覧:"* ]]
+    [[ "$output" == *"cmd完了処理: /cmd-complete"* ]]
+    [[ "$output" == *"家老自立配備(CI修正/hotfix/recon2単独): /karo-direct"* ]]
+    [[ "$output" == *"偵察2名配備: /recon-dual"* ]]
     [[ "$output" == *"スキル品質: dashboard-update FAIL:1"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
