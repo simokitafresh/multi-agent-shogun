@@ -14,7 +14,7 @@ setup_file() {
 
     {
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^notify_idle_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^log_skill_execution_pass()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -572,19 +572,19 @@ EOF
     ! grep -q "ntfy_cmd:" "$notify_log"
 }
 
-@test "notify_idle_shogun_gate_clear writes to shogun inbox when @agent_state=idle" {
-    run notify_idle_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+@test "notify_shogun_gate_clear writes to shogun inbox when @agent_state=idle" {
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"shogun inbox: OK (idle notify)"* ]]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
     grep -q "^shogun|GATE CLEAR — $TEST_CMD_ID 完了|gate_clear|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
-@test "notify_idle_shogun_gate_clear skips shogun inbox when @agent_state=active" {
+@test "notify_shogun_gate_clear writes to shogun inbox when @agent_state=active" {
     export TMUX_STATE="active"
-    run notify_idle_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"shogun inbox: SKIP (state=active)"* ]]
-    [ ! -f "$INBOX_WRITE_LOG" ] || [ ! -s "$INBOX_WRITE_LOG" ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+    grep -q "^shogun|GATE CLEAR — $TEST_CMD_ID 完了|gate_clear|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
 @test "notify_karo_cmd_complete_skill_hint writes cmd-complete prompt to karo inbox" {
@@ -594,8 +594,8 @@ EOF
     grep -q "^karo|GATE CLEAR — $TEST_CMD_ID 完了。/cmd-complete スキルで完了処理を実行せよ。|skill_hint|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
-@test "cmd_complete_gate invokes shogun idle notify in both emergency and normal GATE CLEAR sections" {
-    run bash -lc "grep -c 'notify_idle_shogun_gate_clear \"\\\$CMD_ID\" \"GATE CLEAR — \\\${CMD_ID} 完了\"' '$SRC_GATE_SCRIPT'"
+@test "cmd_complete_gate invokes shogun gate clear notify in both emergency and normal GATE CLEAR sections" {
+    run bash -lc "grep -c 'notify_shogun_gate_clear \"\\\$CMD_ID\" \"GATE CLEAR — \\\${CMD_ID} 完了\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
 }
