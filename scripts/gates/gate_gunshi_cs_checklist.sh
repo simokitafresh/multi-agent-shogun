@@ -515,4 +515,35 @@ if [ -n "$skill_usage_missing" ]; then
     warn=1
 fi
 
+# --- LG034: 低ROI/対応不要の言語検出 ---
+_lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$REVIEW_LOG" 2>/dev/null | grep -v '^#' | head -5)
+if [ -n "$_lg034_hits" ]; then
+    echo "WARN(LG034): 「低ROI/対応不要」表現検出。全件対応が前提、順番を付けて全部やれ:"
+    printf '%s\n' "$_lg034_hits" | head -3
+    warn=1
+fi
+
+# --- LG010: GP提案のdefense_level < 4 検出 ---
+_lg010_weak=$(grep -B2 'defense_level: [123]$' "$REVIEW_LOG" 2>/dev/null | grep 'id: GP-' | head -5)
+if [ -n "$_lg010_weak" ]; then
+    echo "WARN(LG010): defense_level<4のGP提案あり。Level4(フロー内BLOCK)以上を目指せ:"
+    printf '%s\n' "$_lg010_weak" | sed 's/.*id: /  /' | head -3
+    warn=1
+fi
+
+# --- LG033: GP提案前の既存実装grep確認 ---
+# proposalsにGP-xxxがあるのに、同エントリのobservationsにgrep/git show/find等の確認証跡がないケースを検出
+_lg033_gp_entries=$(grep -n 'id: GP-' "$REVIEW_LOG" 2>/dev/null | grep -v '^#' | tail -5)
+if [ -n "$_lg033_gp_entries" ]; then
+    while IFS=: read -r _line_no _rest; do
+        _gp_id=$(echo "$_rest" | sed 's/.*GP-/GP-/;s/[^0-9a-zA-Z_-].*//')
+        # 前後20行内にgrep/git show/findの証跡があるか
+        _evidence=$(sed -n "$((_line_no-10)),$((_line_no+10))p" "$REVIEW_LOG" 2>/dev/null | grep -ic 'grep\|git show\|find.*-name\|既存.*確認\|existing.*check' || true)
+        if [ "${_evidence:-0}" -eq 0 ]; then
+            echo "WARN(LG033): ${_gp_id}に既存実装の確認証跡なし。grep/git showで既存を確認してからGP提案せよ"
+            warn=1
+        fi
+    done <<< "$_lg033_gp_entries"
+fi
+
 exit $warn
