@@ -23,7 +23,11 @@ lesson_candidate:
 skill_candidate:
   found: false
 decision_candidate:
-  found: false
+  found: true
+  items:
+  - decision: 'inbox_write.shのgit_uncommitted_gate: scout_exempt:true時もtarget_path(directory)をcheck_pathsに追加してrebalancer全uncommittedをBLOCK判定する。scout偵察タスクはコード変更なしのため本来exemptされるべき。修正案:
+      inbox_extract_task_paths内でscout_exempt:trueを確認後target_pathを除外する'
+    reason: 偵察タスク(scout_exempt:true)の完了報告がgit_uncommitted_gateでBLOCKされ、通常のinbox_write経路で家老に届かない。bulletin_write経由で報告済み
 assumption_invalidation:
   found: false
   affected_cmds: []

@@ -60,3 +60,4 @@ task:
     - attempt: 1
       block_reason: 'files_modified: MISSING; lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field'
       approach_summary: '4名(hayate/kagemaru/saizo/hanzo)の偵察報告を全て読み、重複排除+優先度付き統合改良候補リストをdocs/research/cmd_2702_rebalancer_recon_summary.mdとして作成。P0:3件/P1:8件/P2:13件、計24件。偵察デフォルト品質5要件準拠。'
+  report_path: queue/reports/kotaro_report_cmd_2702_kotaro.yaml
