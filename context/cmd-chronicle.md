@@ -795,3 +795,5 @@
 | cmd_2736 | 将軍はスキルの存在を知っているがセッション中にTRIGGER条件と結びつかず手動作業に流れる(CDP未使用等、殿指摘)。prompt_state_inject.shにスキルTRIGGERキーワード照合を追加し、合致スキルを強制表示する | infra | 05-15 | prompt_state_inject.shに将軍向けスキル |
 | cmd_2738 | DB-checkをrebalancerで呼ぶ等のスキル誤使用が繰返し発生(殿指摘)。SKILL.mdのDO NOT TRIGGER条件とcurrent_projectを照合し、制約違反時にexit 2でBLOCKするPreToolUse hookを追加する | infra | 05-15 | PreToolUse Skill guard hookを実装 |
 | cmd_2742 | 現在ダークモード固定でライトモードがない(殿指摘)。Tailwind darkMode class方式で切替トグルを追加し、ユーザーがダーク/ライトを選択可能にする | rebalancer | 05-15 | Tailwind class dark方式のテーマ切替を追加 |
+| cmd_2743 | cmd_complete_gate.sh L222がshogun_state!=idleでinbox_writeをスキップし、将軍がactive時(殿と対話中)にGATE CLEAR通知が届かない。殿がntfyで先に知り将軍に聞くが将軍が知らない事態が発生(殿指摘)。stateチェックを撤去し常時通知にする | infra | 05-15 | cmd_complete_gate.shの将軍GATE CL |
+| cmd_2744 | 将軍がGATE CLEARを受けても殿の入力を待って動かない。F004(polling禁止)を過剰解釈し自走を抑制していた(殿指摘:自分で出したcmdの結果確認は鎖の中)。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿への報告)を将軍の正当な自走としてshogun.mdに明文化する | infra | 05-15 | GATE CLEAR受信後の将軍自走フローをshogun.m |
