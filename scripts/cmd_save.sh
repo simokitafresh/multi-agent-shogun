@@ -25,6 +25,7 @@ QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.y
 LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
+CMD_SAVE_SHOGUN_LESSON_ACK_FILE="${CMD_SAVE_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue/shogun_lesson_ack.yaml}"
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
@@ -1254,7 +1255,13 @@ PY
 
 cmd_save_shogun_lesson_exists_for_cmd() {
     local source_cmd_id="${1:-}"
-    [[ -n "$source_cmd_id" && -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || return 1
+    [[ -n "$source_cmd_id" ]] || return 1
+
+    if [[ -f "$CMD_SAVE_SHOGUN_LESSON_ACK_FILE" ]] && grep -qE "^[[:space:]]*-[[:space:]]+cmd_id:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$CMD_SAVE_SHOGUN_LESSON_ACK_FILE" 2>/dev/null; then
+        return 0
+    fi
+
+    [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || return 1
 
     # v1形式: source_cmd: cmd_XXXX
     if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
@@ -1281,7 +1288,7 @@ warn_missing_prev_cmd_lesson() {
 
     cmd_save_shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
-    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} LS-A05"
     record_block_reason "$warn_msg"
 }
 
@@ -1293,7 +1300,7 @@ remind_missing_current_cmd_lesson_after_clear() {
 
     cmd_save_shogun_lesson_exists_for_cmd "$CMD_ID" && return 0
 
-    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"
+    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} LS-A05"
     echo "REMIND: ${remind_msg}" >&2
 }
 

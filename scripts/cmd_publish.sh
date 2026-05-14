@@ -34,6 +34,7 @@ SHOGUN_TO_KARO="${CMD_PUBLISH_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml
 QUALITY_LOG_FILE="${CMD_PUBLISH_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 LAST_CMD_FILE="${CMD_PUBLISH_LAST_CMD_FILE:-$PROJECT_DIR/queue/cmd_save_last_cmd.txt}"
 SHOGUN_LESSONS_FILE="${CMD_PUBLISH_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
+SHOGUN_LESSON_ACK_FILE="${CMD_PUBLISH_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue/shogun_lesson_ack.yaml}"
 SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"
 CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh}"
 CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
@@ -111,7 +112,13 @@ count_cmd_save_blocks_for_cmd() {
 
 shogun_lesson_exists_for_cmd() {
     local source_cmd_id="${1:-}"
-    [[ -n "$source_cmd_id" && -f "$SHOGUN_LESSONS_FILE" ]] || return 1
+    [[ -n "$source_cmd_id" ]] || return 1
+
+    if [[ -f "$SHOGUN_LESSON_ACK_FILE" ]] && grep -qE "^[[:space:]]*-[[:space:]]+cmd_id:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$SHOGUN_LESSON_ACK_FILE" 2>/dev/null; then
+        return 0
+    fi
+
+    [[ -f "$SHOGUN_LESSONS_FILE" ]] || return 1
 
     if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$SHOGUN_LESSONS_FILE" 2>/dev/null; then
         return 0
@@ -143,6 +150,7 @@ run_publish_preflight() {
 
     echo "BLOCK: 前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。cmd_publish前にlesson_write_shogun.shで記録せよ。" >&2
     echo "  例: bash scripts/lesson_write_shogun.sh \"${prev_cmd_id}のBLOCK教訓\" \"BLOCK理由: ... 原因: ... 修正: ...\" ${prev_cmd_id} \"gate/hook等の強制策\"" >&2
+    echo "  既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} LS-A05" >&2
     return 1
 }
 
