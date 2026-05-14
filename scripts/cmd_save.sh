@@ -1202,6 +1202,7 @@ count = sum(
     and (
         lambda note: (
             (note.split("|", 1)[0].strip() == warn_pattern or warn_pattern in note)
+            and "[resolved:" not in note
             and not (
                 note.split("|", 1)[0].strip() == "missing_prev_cmd_lesson"
                 and any(
