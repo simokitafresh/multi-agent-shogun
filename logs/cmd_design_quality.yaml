@@ -13161,6 +13161,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-21T11:04:07Z'
   notes: ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2215
   ac_count: 0
   gate_result: CLEAR
@@ -14646,6 +14647,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-22T09:28:52Z'
   notes: ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2233
   ac_count: 0
   gate_result: WARN
@@ -14656,6 +14658,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-22T09:30:28Z'
   notes: ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2233
   ac_count: 0
   gate_result: BLOCK
@@ -15559,6 +15562,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-24T00:16:24Z'
   notes: ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2248
   ac_count: 0
   gate_result: WARN
@@ -16698,6 +16702,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-24T13:27:06Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2261
   ac_count: 0
   gate_result: WARN
@@ -16708,6 +16713,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-24T13:27:40Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2261
   ac_count: 0
   gate_result: BLOCK
@@ -18414,6 +18420,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-26T06:55:59Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2300
   ac_count: 0
   gate_result: BLOCK
@@ -18656,6 +18663,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-26T09:52:15Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2309
   ac_count: 0
   gate_result: CLEAR
@@ -18713,6 +18721,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-26T11:04:32Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2312
   ac_count: 0
   gate_result: BLOCK
@@ -20219,6 +20228,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-27T19:10:24Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2345
   ac_count: 0
   gate_result: BLOCK
@@ -22374,6 +22384,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-29T14:13:43Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2421
   ac_count: 0
   gate_result: BLOCK
@@ -22967,6 +22978,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-30T12:32:00Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2440
   ac_count: 0
   gate_result: CLEAR
@@ -23167,6 +23179,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-04-30T23:44:39Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2449
   ac_count: 0
   gate_result: BLOCK
@@ -23768,6 +23781,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-02T09:02:54Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2469
   ac_count: 0
   gate_result: BLOCK
@@ -26298,6 +26312,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T11:26:16Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2577
   ac_count: 0
   gate_result: BLOCK
@@ -26319,6 +26334,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T11:27:06Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2577
   ac_count: 0
   gate_result: BLOCK
@@ -26340,6 +26356,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T11:27:36Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2577
   ac_count: 0
   gate_result: BLOCK
@@ -26361,6 +26378,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T11:28:13Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2577
   ac_count: 0
   gate_result: BLOCK
@@ -26427,6 +26445,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:07:38Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2578
   ac_count: 0
   gate_result: BLOCK
@@ -26448,6 +26467,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:08:05Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2578
   ac_count: 0
   gate_result: BLOCK
@@ -26489,6 +26509,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:30:03Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26530,6 +26551,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:30:44Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26551,6 +26573,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:32:22Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26572,6 +26595,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:32:47Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26593,6 +26617,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:33:57Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26624,6 +26649,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:35:26Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -26655,6 +26681,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T12:36:19Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2579
   ac_count: 0
   gate_result: BLOCK
@@ -27145,6 +27172,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T21:38:21Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2592
   ac_count: 0
   gate_result: BLOCK
@@ -27165,6 +27193,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-05T21:38:59Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2592
   ac_count: 0
   gate_result: BLOCK
@@ -27363,6 +27392,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-07T06:29:01Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2598
   ac_count: 0
   gate_result: BLOCK
@@ -27485,6 +27515,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-08T15:09:31Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2603
   ac_count: 0
   gate_result: BLOCK
@@ -28961,6 +28992,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:08:25Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2630
   ac_count: 0
   gate_result: BLOCK
@@ -28981,6 +29013,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:08:47Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2630
   ac_count: 0
   gate_result: BLOCK
@@ -29067,6 +29100,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:13:27Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2632
   ac_count: 0
   gate_result: BLOCK
@@ -29097,6 +29131,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:13:56Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2632
   ac_count: 0
   gate_result: BLOCK
@@ -29117,6 +29152,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:14:31Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2632
   ac_count: 0
   gate_result: BLOCK
@@ -29201,6 +29237,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:26:36Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2634
   ac_count: 0
   gate_result: BLOCK
@@ -29221,6 +29258,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:27:07Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2634
   ac_count: 0
   gate_result: BLOCK
@@ -29259,6 +29297,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T03:30:27Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2635
   ac_count: 0
   gate_result: BLOCK
@@ -29614,6 +29653,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T04:49:15Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2642
   ac_count: 0
   gate_result: BLOCK
@@ -29644,6 +29684,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T04:50:11Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2642
   ac_count: 0
   gate_result: BLOCK
@@ -30520,6 +30561,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T07:55:11Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2662
   ac_count: 0
   gate_result: BLOCK
@@ -30684,6 +30726,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T08:20:00Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2665
   ac_count: 0
   gate_result: BLOCK
@@ -31031,6 +31074,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-10T16:10:16Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2668
   ac_count: 0
   gate_result: BLOCK
@@ -32027,6 +32071,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-12T03:07:41Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2685
   ac_count: 0
   gate_result: BLOCK
@@ -32743,6 +32788,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-14T03:48:22Z'
   notes: ac_phase_mixing|check=check_ac_phase_mixing [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2701
   ac_count: 0
   gate_result: BLOCK
@@ -32799,6 +32845,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-14T03:58:15Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2702
   ac_count: 0
   gate_result: BLOCK
@@ -32819,6 +32866,7 @@ entries:
   source: cmd_save_warn
   timestamp: '2026-05-14T03:58:47Z'
   notes: ac_param_sufficiency|check=check_ac_param_sufficiency [resolved:cmd_2703]
+  resolved_by: cmd_2703
 - cmd_id: cmd_2702
   ac_count: 0
   gate_result: BLOCK
@@ -34226,3 +34274,60 @@ entries:
   supplementary_cmds: 0
   source: cmd_complete_gate
   timestamp: '2026-05-14T09:47:18Z'
+
+- cmd_id: "cmd_2723"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:10:40Z"
+  notes: "cmd_2723 は既に委任済みです。"
+- cmd_id: "cmd_2723"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:11:12Z"
+  notes: "environment_change未実装。file=projects/rebalancer.yaml に pattern=supabase_auth が見つからない"
+- cmd_id: "cmd_2723"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:12:50Z"
+- cmd_id: "cmd_2723"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:12:59Z"
+- cmd_id: "cmd_2724"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:19:46Z"
+- cmd_id: "cmd_2724"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-14T12:19:54Z"
