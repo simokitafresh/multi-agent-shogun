@@ -59,11 +59,39 @@ Source of truthは `backend/app/config.py`。
 
 ## §6 既知の注意点
 
-- Documentation drift: 対応銘柄数(17/18)とfrontend URLが文書間でズレている。
 - `OPEN_EXCHANGE_RATES_APP_ID` はoptional。未設定時はExchangeRate-API fallback。
 - Background updaterはFastAPI lifespan task。Render worker再起動時は初期取得から再開。
+- npm audit moderate 3件(postcss内蔵)はNo fix available。CI audit-level調整が必要（cmd_2715 decision_candidate）。
+- rebalancer repo全体に大量の未commit変更が残存（前開発者の遺産）。各cmd scope内ファイルのみcommitし残りは残置。
+
+## §7 2026-05-14 改善成果（cmd_2704〜cmd_2722、19cmd全CLEAR）
+
+万全偵察(cmd_2702)でP0:3/P1:8/P2:13=24件の改良候補を特定し、P0〜P2-7の18件を1セッションで完了。
+
+| 区分 | cmd | 内容 | 成果 |
+|------|-----|------|------|
+| P0-1 | cmd_2705 | Render永続disk+cache公開停止 | CACHE_DIR環境変数+/static除外。再起動後cache保持+セキュリティ |
+| P0-2 | cmd_2706 | asyncテスト12件FAIL修正 | pytest-asyncio pin+asyncio_mode=auto。39→53テストPASS |
+| P0-3 | cmd_2707 | Next.js脆弱性(RCE+auth bypass) | 15.0.3→15.5.18。critical/high=0。Serwist互換確認 |
+| P1-1 | cmd_2711 | FEビルドゲート復元 | ignore=false。lint/型エラーがbuild時に遮断される |
+| P1-2 | cmd_2715 | GitHub Actions CI構築 | BE pytest+FE lint/build/audit。全pushで品質自動検証 |
+| P1-3+P1-5 | cmd_2709 | 入力検証+重複ticker拒否 | Pydanticバリデータ。unsupported/重複/負数/NaN→400 |
+| P1-4 | cmd_2712 | 並列価格取得 | Semaphore(4)+cache hitスキップ。18銘柄逐次17s→並列 |
+| P1-6 | cmd_2710 | DiskCache atomic化 | tmp→flush/fsync→os.replace。並行読み書き安全 |
+| P1-7 | cmd_2708 | Toast onClose修正 | ×ボタンでerrorステートクリア。同一エラー再表示可能 |
+| P1-8+P2-1 | cmd_2713 | SW precache+URL統一 | Linux再生成でバックスラッシュ解消+dm-rebalancer-frontend統一 |
+| P2-2 | cmd_2718 | BE/FE依存pin | 46パッケージ全pin+npm minor/patch更新 |
+| P2-3 | cmd_2714 | FE a11y改善 | button+aria-expanded/controls/label+flex-wrap |
+| P2-4 | cmd_2716 | i18n完成 | BUY/SELL/HOLD+通貨フォーマット+APIエラー日本語化 |
+| P2-5 | cmd_2719 | FEユニットテスト導入 | Vitest+Testing Library。4テストPASS |
+| P2-6 | cmd_2721 | E2Eテスト導入 | Playwright。銘柄入力→計算→結果表示フロー検証 |
+| P2-7 | cmd_2717 | BEテスト品質改善 | SPY/QQQ銘柄修正+エラーケース4種追加。53テストPASS |
+| UI | cmd_2722 | UIデザイン刷新 | カード廃止→テーブル1銘柄1行+PC2カラム+WCAG AA準拠 |
+| infra | cmd_2704 | scout_exempt修正 | inbox_write.sh git_uncommitted_gateがscout_exemptスキップ |
+| infra | cmd_2720 | 遡及学習ack機構 | 既知BLOCKパターンの軽量確認記録。CTX浪費削減 |
 
 ## 教訓索引（自動追記）
 
-- （現在0件。初回登録のみ）
-<!-- last_synced_lesson: none -->
+- L608: npm audit fix --omit=devはdevDependencies削除する(cmd_2707)
+- L609: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置(cmd_2719)
+<!-- last_synced_lesson: L609 -->
