@@ -794,3 +794,5 @@
 | cmd_2722 | 過剰なカード化(glass-card内にrow card)で画面を有効活用できず、スマホでもPCでも一覧性が低い。カード廃止→テーブル直書き+PC2カラム化+ui-design-guide準拠(コントラスト、タッチターゲット、階層)でデータ密度と可読性を両立する | rebalancer | 05-14 | カード内row cardを廃止し、PortfolioForm |
 | cmd_2724 | cmd_2703で偽陽性修正済みのac_phase_mixing(29件)とac_param_sufficiency(19件)のWARNカウントがquality logに残存し、正当発火時に即BLOCK(post-5/12 BLOCKの48%が遺産起因)。加えてcmd_quality_log.shとcmd_save.sh log_cmd_save_pass()のヒアドキュメントが2スペース余分でYAML破損を引き起こしていた(cmd_2723起票中に発見、直接修正済み)。残存WARN遺産の解消とcount_same_warn_patternのresolved除外とインデント修正のテスト追加で恒久対策する | infra | 05-14 | cmd_2703で解消済みのac_phase_mixing/ |
 | cmd_2726 | 4行のうち3行使用時にtarget_weight未記入行がバリデーションエラーになる。shares未記入も0入力が必要で面倒。ticker未記入行を除外、target_weight未記入を0%扱い、shares未記入を0扱いにする | rebalancer | 05-14 | 未入力ticker行を計算対象から除外し、未入力target |
+| cmd_2727 | PF入力をやり直したい時に1行ずつ削除するのが面倒。全消去ボタンで空行4行にリセットし、前回復元ボタンでSupabaseから保存済みPFを再ロードする操作を追加する | rebalancer | 05-14 | PortfolioFormに全消去/前回復元操作を追加し、S |
+| cmd_2728 | Blue-Purpleグラデーション+glassmorphismの2023年AIテンプレ感を排除し、Wealthfront調のTeal(#14b8a6)基調+ソリッドカード+装飾最小限の金融プロフェッショナルデザインに刷新する。同時にガイドページの配色も統一する | rebalancer | 05-14 | Blue-Purple/glassmorphism系UIをT |
