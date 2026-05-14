@@ -262,6 +262,26 @@ north_star_aligned: OK/NG
 strategic_contribution: "{このcmdが戦略にどう寄与するか1行}"
 ```
 
+### 6.5 スキル使用適切性 (Skill Usage Fit)
+タスクYAMLに `recommended_skills` が存在する場合、報告レビューで実使用スキルと突合せよ。推奨スキルが未使用なら `REQUEST_CHANGES` とし、「使わなかった理由」ではなく実行証跡の不足として扱う。
+
+チェックポイント:
+- `queue/tasks/{ninja}.yaml` の `recommended_skills` を一次情報として読む
+- 報告YAML由来の `logs/skill_execution_log.yaml` エントリ、または報告YAML内の `used_skills` / `skills_used` / `skill_usage` を確認する
+- 推奨スキルが用途不一致に見えても、使用実績がなければNG。用途不一致の裁定は家老へ返す
+
+判定基準:
+- OK: `recommended_skills` が空、または全推奨スキルの使用実績が残っている
+- NG: `recommended_skills` が存在するのに、対応する使用実績がない
+
+出力形式:
+```yaml
+skill_usage_fit: OK/NG
+recommended_skills: [skill-name]
+used_skills: [skill-name]
+missing_skills: [skill-name]
+```
+
 ### 因果推論ルール (Causal Reasoning) [cmd_1501]
 
 レビュー・self_study・consultationの全出力で因果鎖(cause→effect chain)を必須とする。

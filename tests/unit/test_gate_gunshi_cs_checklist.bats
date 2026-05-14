@@ -312,3 +312,78 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
 }
+
+@test "report with recommended_skills but no matching skill execution is warned" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+reviews:
+- cmd_id: cmd_5001
+  review_type: report
+  report_ninja: sasuke
+  report_task_id: cmd_5001_impl
+  verdict: LGTM
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  task_id: cmd_5001_impl
+  report_path: queue/reports/sasuke_report_cmd_5001.yaml
+  recommended_skills:
+    - db-check
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/sasuke_report_cmd_5001.yaml" <<'YAML'
+worker_id: sasuke
+task_id: cmd_5001_impl
+verdict: PASS
+YAML
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'YAML'
+executions: []
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"recommended_skills未使用"* ]]
+    [[ "$output" == *"cmd_5001: missing_skills=db-check"* ]]
+}
+
+@test "report with recommended_skills and matching skill execution passes" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+reviews:
+- cmd_id: cmd_5002
+  review_type: report
+  report_ninja: sasuke
+  report_task_id: cmd_5002_impl
+  verdict: LGTM
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  task_id: cmd_5002_impl
+  report_path: queue/reports/sasuke_report_cmd_5002.yaml
+  recommended_skills:
+    - db-check
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/sasuke_report_cmd_5002.yaml" <<'YAML'
+worker_id: sasuke
+task_id: cmd_5002_impl
+verdict: PASS
+YAML
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'YAML'
+executions:
+- ts: "2026-05-15T00:00:00+0900"
+  skill: "db-check"
+  executor: "sasuke"
+  result: "PASS"
+  used: "true"
+  source: "queue/reports/sasuke_report_cmd_5002.yaml"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"recommended_skills未使用"* ]]
+}

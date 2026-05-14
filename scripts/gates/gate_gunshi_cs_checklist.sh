@@ -188,6 +188,7 @@ single_scenario=""
 convergence_once=""
 adversarial_missing=""
 cold_category_missing=""
+skill_usage_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -309,6 +310,125 @@ print("\n".join(warnings))
 PY
 )
 
+skill_usage_missing=$(python3 - "$REPO_ROOT" "$LOG_FILE" <<'PY' 2>/dev/null || true
+import os
+import sys
+
+import yaml
+
+root = sys.argv[1]
+review_log_path = sys.argv[2]
+
+def load_yaml(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except FileNotFoundError:
+        return {}
+    except yaml.YAMLError:
+        return {}
+
+def as_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip().lstrip("/") for item in value if str(item).strip()]
+    if isinstance(value, dict):
+        return [str(item).strip().lstrip("/") for item in value.values() if str(item).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    if "," in text:
+        return [part.strip().lstrip("/") for part in text.split(",") if part.strip()]
+    return [text.lstrip("/")]
+
+def normalize_path(path):
+    if not path:
+        return ""
+    if os.path.isabs(path):
+        return os.path.normpath(path)
+    return os.path.normpath(os.path.join(root, path))
+
+def source_matches(source, report_path):
+    if not source or not report_path:
+        return False
+    source_text = str(source).strip()
+    report_abs = normalize_path(report_path)
+    source_abs = normalize_path(source_text)
+    return (
+        source_text == report_path
+        or source_abs == report_abs
+        or os.path.basename(source_text) == os.path.basename(report_path)
+    )
+
+review_data = load_yaml(review_log_path)
+if isinstance(review_data, dict):
+    reviews = review_data.get("reviews") or []
+elif isinstance(review_data, list):
+    reviews = review_data
+else:
+    reviews = []
+
+skill_log = load_yaml(os.path.join(root, "logs", "skill_execution_log.yaml"))
+if isinstance(skill_log, dict):
+    skill_entries = skill_log.get("executions") or []
+elif isinstance(skill_log, list):
+    skill_entries = skill_log
+else:
+    skill_entries = []
+
+warnings = []
+for entry in [item for item in reviews if isinstance(item, dict) and item.get("review_type") == "report"][-20:]:
+    ninja = str(entry.get("report_ninja") or "").strip()
+    report_task_id = str(entry.get("report_task_id") or "").strip()
+    if not ninja or not report_task_id:
+        continue
+
+    task_path = os.path.join(root, "queue", "tasks", f"{ninja}.yaml")
+    task_data = load_yaml(task_path)
+    task = task_data.get("task") if isinstance(task_data, dict) else None
+    if not isinstance(task, dict):
+        continue
+    if str(task.get("task_id") or "").strip() != report_task_id:
+        continue
+
+    recommended = set(as_list(task.get("recommended_skills")))
+    if not recommended:
+        continue
+
+    report_path = str(task.get("report_path") or "").strip()
+    if not report_path:
+        report_path = os.path.join("queue", "reports", f"{ninja}_report_{entry.get('cmd_id')}.yaml")
+
+    used = set()
+    report_data = load_yaml(normalize_path(report_path))
+    if isinstance(report_data, dict):
+        for key in ("used_skills", "skills_used", "skill_usage"):
+            value = report_data.get(key)
+            if isinstance(value, dict):
+                used.update(as_list(value.get("used") or value.get("skills") or value))
+            else:
+                used.update(as_list(value))
+
+    for skill_entry in skill_entries:
+        if not isinstance(skill_entry, dict):
+            continue
+        if str(skill_entry.get("used", "true")).strip().lower() == "false":
+            continue
+        if not source_matches(skill_entry.get("source"), report_path):
+            continue
+        skill_name = str(skill_entry.get("skill") or "").strip().lstrip("/")
+        if skill_name:
+            used.add(skill_name)
+
+    missing = sorted(recommended - used)
+    if missing:
+        warnings.append(f"{entry.get('cmd_id', '?')}:{','.join(missing)}")
+
+print("\n".join(warnings))
+PY
+)
+
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
 fi
@@ -335,7 +455,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -383,6 +503,14 @@ if [ -n "$cold_category_missing" ]; then
     echo "WARN: ${cold_count}件のdraft/reportで冷え観点がfinding_categoriesに未反映:"
     printf '%s\n' "$cold_category_missing" | while IFS=: read -r id categories; do
         [ -n "$id" ] && echo "  - $id: cold_categories=${categories}"
+    done
+    warn=1
+fi
+if [ -n "$skill_usage_missing" ]; then
+    skill_usage_count=$(printf '%s\n' "$skill_usage_missing" | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${skill_usage_count}件のreportでrecommended_skills未使用:"
+    printf '%s\n' "$skill_usage_missing" | while IFS=: read -r id skills; do
+        [ -n "$id" ] && echo "  - $id: missing_skills=${skills}。REQ_CHANGESを検討せよ"
     done
     warn=1
 fi
