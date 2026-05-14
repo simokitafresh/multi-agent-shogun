@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-14 -->
+<!-- last_updated: 2026-05-15 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,16 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1894 | L3奥義EW全量β調整 — 79万組み合わせでL2αを超えるL3があるか | dm-signal | 04-14 | — |
-| cmd_karo_gs_vectorized | GS高速化 — gs_vectorized_subset.py本実装(3最適化+チャンク+verify) | dm-signal | 04-14 | gs_vectorized_subset.py に3最適化+ |
-| cmd_1896 | L3 EW β調整 — 84体C(84,2)=3486通りのβ/α分離+L2α比較 | dm-signal | 04-14 | 3486ペアのL3 2体EW β調整を完了。L3最良α=13 |
-| cmd_1897 | 奥義ALMシン 21体 本番DB登録 — ⑤(ALM-BB×シン忍法×GS固定)をhide=trueで登録 | dm-signal | 04-14 | okugi_alm_shin champions.json |
-| cmd_karo_gp192 | GP-192 — パリティcmdテンプレートにtarget_date標準文言追加 | infra | 04-14 | inject_task_modifiers.pyにinjec |
-| cmd_karo_gp191 | GP-191 — dict.get(target_date)禁止 pre-commit hook | dm-signal | 04-14 | scripts/run_precommit_checks.s |
-| cmd_1899 | fix — FoF選択ブロック日付ミスマッチ修正(TRF dict.get→bisect)+潜在バグ2箇所+fullrecalculate+パリティ | dm-signal | 04-14 | dict.get(target_date)→get_mome |
-| cmd_karo_ci_fix_1900 | CI赤修正 — test_cmd_save_ac_paths.bats T-002/T-004/T-005 unbound WARN_COUNT + stderr capture | infra | 04-14 | test_cmd_save_ac_paths.bats修正。 |
-| cmd_1900 | fix — パリティスクリプト target_date修正 + 奥義ALMシン21体全量パリティ再検証 | dm-signal | 04-14 | cmd_1898 parity script の targe |
-| cmd_1902 | L3 β調整 6指標拡張 — cmd_1896既存3486ペアにα版NHF/MaxDD/MRU/Calmar/UWP追加 | dm-signal | 04-14 | cmd_1902完了。cmd_1896互換の3486ペアCS |
 | cmd_karo_gp190 | GP-190 commit check waive — scout_exempt/研究cmdのbinary_checksからcommit check除外 | infra | 04-15 | GP-190: scout_exempt=trueのcomm |
 | cmd_1898 | 奥義ALMシン 21体 パリティチェック — holding_signal+monthly_return突合 | dm-signal | 04-15 | cmd_1898 parity実測完了。21体のうち hol |
 | cmd_1903 | 将軍のcmd起票品質を構造的に引き上げる。Phase 31-32で11過ちが全てgateを通過した根因=「無知の知」がcmd起票に強制されていない。q10で検証済み空間の明示を強制し、q7を昇格し、研究cmd手順を追加する | infra | 04-15 | AC1(q10 WARNING), AC2(q7 dm-si |
@@ -796,3 +786,10 @@
 | cmd_2726 | 4行のうち3行使用時にtarget_weight未記入行がバリデーションエラーになる。shares未記入も0入力が必要で面倒。ticker未記入行を除外、target_weight未記入を0%扱い、shares未記入を0扱いにする | rebalancer | 05-14 | 未入力ticker行を計算対象から除外し、未入力target |
 | cmd_2727 | PF入力をやり直したい時に1行ずつ削除するのが面倒。全消去ボタンで空行4行にリセットし、前回復元ボタンでSupabaseから保存済みPFを再ロードする操作を追加する | rebalancer | 05-14 | PortfolioFormに全消去/前回復元操作を追加し、S |
 | cmd_2728 | Blue-Purpleグラデーション+glassmorphismの2023年AIテンプレ感を排除し、Wealthfront調のTeal(#14b8a6)基調+ソリッドカード+装飾最小限の金融プロフェッショナルデザインに刷新する。同時にガイドページの配色も統一する | rebalancer | 05-14 | Blue-Purple/glassmorphism系UIをT |
+| cmd_2729 | モバイル(375px)でヘッダーが2行に折れ、サポート銘柄18件が横溢し、テーブル列が窮屈で入力しづらい。CDPモバイルビューポートで5箇所の崩れを確認済み。レスポンシブ対応を修正する | rebalancer | 05-14 | Rebalancer mobile responsive l |
+| cmd_2731 | ガイドページに「データを保存しません」「サーバーに保存されません」と記載されているが、cmd_2723でSupabase保存機能が実装済み。cmd_2725(保存ボタン)、cmd_2726(バリデーション緩和)、cmd_2727(全消去+復元)の内容もガイドに未反映。ガイドと実装の整合性を修復する | rebalancer | 05-14 | frontend/app/guide/page.tsx のJ |
+| cmd_2730 | ルート.gitignoreにpycache/pyc/cacheファイルが未登録で、backend側に.gitignoreが存在しない。445件のdirty filesが蓄積しworking treeが汚れている。.gitignore整備+git rm --cachedでtracked不要ファイルを除去する | rebalancer | 05-14 | ルート.gitignoreを追加し、pycache/back |
+| cmd_2732 | Gate 20(スキル別FAIL率)が全期間累積fail>0で判定しているため、改善済みFAILが永久にWARN発火する。直近50件FAIL率は全スキル0%だが3セッション連続BLOCK。直近50件ベース+10%閾値に変更し実態を反映した判定にする | infra | 05-14 | Gate 20のスキル別FAIL率を全期間累積から各スキル直 |
+| cmd_2734 | 概念→スキルの対応がインフラに存在せず、スキル使用が意志依存(CDP未使用トラブル、DB-check誤使用が繰返し発生)。semantic indexにskills列を追加し、deploy_task.shでタスクYAMLにrecommended_skillsとして自動注入する | infra | 05-15 | semantic indexのskills列をタスク配備時の |
+| cmd_2735 | 忍者がrecommended_skillsを無視してもレビューで検出されない。軍師の6観点にスキル使用適切性チェックを追加し、recommended_skillsが存在するのに未使用の場合にREQ_CHANGESを出す | infra | 05-15 | 軍師レビューにrecommended_skills使用突合を |
+| cmd_2736 | 将軍はスキルの存在を知っているがセッション中にTRIGGER条件と結びつかず手動作業に流れる(CDP未使用等、殿指摘)。prompt_state_inject.shにスキルTRIGGERキーワード照合を追加し、合致スキルを強制表示する | infra | 05-15 | prompt_state_inject.shに将軍向けスキル |
