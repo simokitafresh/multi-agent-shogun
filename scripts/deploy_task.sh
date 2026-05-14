@@ -2422,7 +2422,19 @@ inject_semantic_concepts() {
 
     # description の直前に挿入（description は最後のフィールド）
     if grep -q "^  description:" "$tmp_file"; then
-        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
+        local insert_file
+        insert_file=$(mktemp)
+        printf '%s\n' "$inject_block" > "$insert_file"
+        awk -v insert_file="$insert_file" '
+            /^  description:/ && !inserted {
+                while ((getline line < insert_file) > 0) print line
+                close(insert_file)
+                inserted=1
+            }
+            { print }
+        ' "$tmp_file" > "${tmp_file}.inserted"
+        mv "${tmp_file}.inserted" "$tmp_file"
+        rm -f "$insert_file"
     else
         echo "$inject_block" >> "$tmp_file"
     fi

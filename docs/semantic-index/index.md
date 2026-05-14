@@ -17,6 +17,7 @@ codd:
 | id | recalculate_pipeline |
 | label | 再計算パイプライン |
 | aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast |
+| skills | db-check |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -36,7 +37,8 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ |
+| skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -57,6 +59,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T02:40:15+09:00 セマンティック辞書やインデックスに追加すべき内容を確認せよ |
 | cmd | `cmd_2679` セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_2690` 修正 — semantic-index file参照12件のDM-Signal外部パスを現行パスとして検証し、semantic_map_generate.shで再生成 (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:45:43+09:00 ではrebalancerの概要を教えてくれ。セマンティック辞書にも登録しよう |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -65,6 +68,7 @@ codd:
 | id | gate_bypass_prevention |
 | label | gate迂回防止 |
 | aliases | gate迂回, 滑り坂, 正規フロー, cmd_delegate |
+| skills | report-write, verdict-check |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -83,6 +87,7 @@ codd:
 | id | terminology_dictionary |
 | label | 用語辞書 |
 | aliases | disambiguation, terminology, 曖昧性解消, 1語1意味, MECE定義辞書 |
+| skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -99,6 +104,7 @@ codd:
 | id | production_parity |
 | label | 本番パリティ |
 | aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data |
+| skills | db-check, pf-registration |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -115,6 +121,7 @@ codd:
 | id | deepdive_principles |
 | label | deepdive原理 |
 | aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制 |
+| skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -130,6 +137,7 @@ codd:
 | id | growth_loop |
 | label | 学習ループ |
 | aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？ |
+| skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -155,6 +163,7 @@ codd:
 | id | alm_research |
 | label | ALM研究 |
 | aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り |
+| skills | pf-registration, db-check |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -171,7 +180,8 @@ codd:
 |------|---|
 | id | shin_shijin_design |
 | label | 四神設計 |
-| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体 |
+| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した |
+| skills | pf-registration, db-check |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -182,6 +192,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:49:01+09:00 Average UWPとPTUについてnote記事を書きたい。SPY、TQQQ、Ave-X,劇薬DMオリジナル、とシン四神から特徴的な2体、シン忍法から特徴的な2体を選んで比較した記事を書きたい。まずは構成だけ考えよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:55:13+09:00 シン忍法とシン四神からはPTU最強から1体、Average UWP最強から1体選ばないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-07T17:18:08+09:00 では記事を書いて。ベーシックはお試しプラン。standardは募集停止となったお得なプラン、アドオンもすでに募集停止となったスタンダードプランのアドオン。新しいスタンダードプランはシン四神を中心としたもの。プレミアムは特別な非公開プラン。限 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:55:37+09:00 step2のクライアントIDは取得した。1020628824992-30qnh5airgml0vhqljh6nkrflo0dvcuk.apps.googleusercontent.com |
 
 ## agent_formation_management — 編成管理
 
@@ -189,7 +200,8 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool |
+| skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -226,6 +238,8 @@ codd:
 | cmd | `cmd_2695` 強化 — withheld悪循環の解消(MIN_SAMPLES未満教訓の初回注入保証) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 | cmd | `cmd_2699` 修正 — draft_review SKIP: karo_direct配備時のac_countカウント修正 (`tests/unit/test_deploy_task_draft_review.bats`) |
 | cmd | `cmd_2700` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:41:57+09:00 brdydjwk3 toolu_01YSsdUNnkY3gBfM9r47hmEH /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:43:04+09:00 b1fseli4u toolu_01TFhAEeMFFB8R8Hk6KbNrMW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -234,6 +248,7 @@ codd:
 | id | visibility_tier_masking |
 | label | Visibility Tier制マスク |
 | aliases | visibility, Visibility Settings, vis_L2, vis_L3, vis_L4, hide_signal, hide_components, hide_portfolio, Tier, 料金プラン, マスク, tierが課金プランに紐付いているのは理解しているか？, 料金プランとの対応は知識となっているか？, 前にどのtierがどのPFを閲覧できるかまとめたのは覚えているか？, プラン毎に1つ推奨PFを決めてあげると |
+| skills | cdp-browse |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -270,7 +285,8 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト |
+| skills | cdp-browse |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -281,6 +297,8 @@ codd:
 | cmd | `cmd_2602` 環境埋込み — Android/アプリ/モバイルから将軍Androidアプリへ到達可能化 |
 | cmd | `cmd_1809-1816,1924,1943,1945,2104` Androidアプリ改修・調査履歴 |
 | cmd | `cmd_2602` 強化 — Androidアプリ知識の環境埋込み(セマンティクス+context+CLAUDE.md) (`AGENTS.md`, `CLAUDE.md`, `context/infrastructure.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:56:42+09:00 このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？ |
+| cmd | `cmd_2729` 修正 — モバイルレスポンシブ崩れ修正(ヘッダー+テーブル+銘柄リスト) |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -288,7 +306,8 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある |
+| skills | cdp-browse |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -318,6 +337,13 @@ codd:
 | cmd | `cmd_2579` 実装 — CDP汎用ブラウザ操作スキル(ブラウザ起動+ログイン+スクショで状況確認) (`skills/cdp-browse/SKILL.md`) |
 | cmd | `cmd_2642` 強化 — CDP本番確認をcmd完了フローに自動接続(FE変更時スクショ確認) (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T18:09:07+09:00 CDPでこのページを確認すると知識を得られるはずだ。https://note.com/membership/settings/manage |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T18:30:26+09:00 完了したらCDPで確認しておいて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T19:48:59+09:00 続けて。CDPはスキルあるからスキル使うように。デプロイ済みか確認した？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:02:55+09:00 b0syhe3ag toolu_01LJWS89qVgHTT174GX6zi7S /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:36:18+09:00 baa9kjrve toolu_01U5nU664haAHLzy196ras4u /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:17:06+09:00 bayxsdn2u toolu_016qWPcnUxCj4Ym1yCHar8q7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:46:50+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T00:03:29+09:00 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある。DB-checkなどのスキルを実行しようとすることもあるな |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -326,6 +352,7 @@ codd:
 | id | defense_hierarchy |
 | label | 防御階層原則(Level 1-6) |
 | aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, research tool explicit偽陽性修正 ACパス自動提案 Level5化, 放置タスク滞留検出 BLOCK昇格をstartup gateに追加 Level5化, 否定的前提主張の反証grep強制 LG033 Level5化, 教訓件数WARN閾値を31件に引き下げ Level5化, cmd間依存の明示強制 LS A14 Level5化, gate hook追加cmd検出時に既存強制フロー候補を自動表示 LG032 Level5化, 計測 見積cmdにタイムボックス欄を自動要求 LG019 Level5化, AC command内の数値リテラルに再計算元表示を自動提案 LG020 Level5化, AC外作業検出INFO提案 LS A08 Level5化, 時間コスト関連cmdに環境差異欄を自動要求 LS A10 Level5化, gate vercel phase壊れ参照検出時に修正候補を自動提案 Level5化, Level1止まりgate6件に修正候補自動提案を追加 Level5化一括, ac param sufficiency WARN時にcontext projects yamlから候補値を自動提案 L |
+| skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -382,6 +409,7 @@ codd:
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
 | aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな |
+| skills | note-writer, cdp-browse |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -400,6 +428,7 @@ codd:
 | id | alpha_6_metrics |
 | label | α6指標 |
 | aliases | α6指標, alpha 6, 6指標α, alpha metrics, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino |
+| skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -408,3 +437,33 @@ codd:
 | file | `context/robustness-verification-catalog.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 UWP→Avg UWP変更(殿裁定) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 Sharpe→Sortino(殿: 上方ボラを罰するSharpeは好まない) |
+
+## rebalancer_app — Rebalancerアプリ
+
+| 属性 | 値 |
+|------|---|
+| id | rebalancer_app |
+| label | Rebalancerアプリ |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ |
+| skills | cdp-browse |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/rebalancer.yaml` |
+| file | `config/projects.yaml` rebalancer項目 |
+| file | `/mnt/c/Python_app/rebalancer/backend/app/main.py` FastAPI entrypoint |
+| file | `/mnt/c/Python_app/rebalancer/backend/app/config.py` 追跡銘柄18種定義 |
+| file | `/mnt/c/Python_app/rebalancer/frontend/` Next.js 15 static export |
+| file | `/mnt/c/Python_app/rebalancer/render.yaml` Render blueprint(Singapore) |
+| file | `/mnt/c/Python_app/rebalancer/docs/research/cmd_2702_rebalancer_recon_summary.md` 万全偵察結果24件 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T12:45:20+09:00 このプロジェクトの改良に取り掛かる予定 |
+| cmd | `cmd_2701` PJ登録(rebalancer) |
+| cmd | `cmd_2702` 万全偵察(P0:3/P1:8/P2:13=24件) |
+| cmd | `cmd_2705`-`cmd_2721` P0全3+P1全8+P2全6=改良21cmd |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:59:34+09:00 なるほど。それはリバランサー用のデザイン.mdだな。我らの軍に基本的なデザインルールがあるはずだ。確認してくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:06:52+09:00 アイデア出しをしよう。ログイン機能をつけたいな。前回の保有PFが保存できればリバランスが容易になる。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:23:15+09:00 Project URL と anon keyは.envで保存しておかなくていいのか？rebalancer内においておけば便利では？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:37:45+09:00 C:\Python_app\rebalancer\frontend\.env.local |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:53:24+09:00 https://dm-rebalancer-frontend.onrender.com/guideは最新のコードと整合性が取れているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:56:47+09:00 リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ。確認して |
+| cmd | `cmd_karo_ci_fix_rebalancer_audit` |

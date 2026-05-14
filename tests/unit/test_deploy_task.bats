@@ -177,6 +177,59 @@ EOF
     grep -q "failed before persistence" "$TEST_PROJECT/logs/safe_inbox_write.log"
 }
 
+@test "inject_semantic_concepts injects recommended_skills from semantic search skills rows" {
+    use_private_scripts_fixture
+    cat > "$TEST_PROJECT/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+## cdp_browser_capability — CDP(ブラウザ操作能力)
+matched: CDP
+aliases: CDP
+resources:
+- skills: cdp-browse, db-check
+- file: `context/cdp-philosophy.md`
+
+## semantic_dictionary_design — セマンティック辞書構想
+matched: セマンティック辞書
+aliases: セマンティック辞書
+resources:
+- skills: なし
+- file: `docs/research/semantic_index_design.md`
+OUT
+EOF
+    chmod +x "$TEST_PROJECT/scripts/semantic_search.sh"
+    mkdir -p "$TEST_PROJECT/docs/semantic-index"
+    touch "$TEST_PROJECT/docs/semantic-index/index.md"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "CDPで本番画面を確認する"
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_semantic_concepts "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert task["semantic_concepts"] == [
+    "cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md",
+    "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md",
+]
+assert task["recommended_skills"] == ["cdp-browse", "db-check"]
+PY
+}
+
 @test "deploy_task --direct cmd_training injects L4 purpose and four ACs" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
