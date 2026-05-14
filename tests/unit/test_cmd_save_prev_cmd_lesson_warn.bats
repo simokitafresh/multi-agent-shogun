@@ -19,6 +19,7 @@ setup() {
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
     export TEST_LAST_CMD="$TEST_TMPDIR/cmd_save_last_cmd.txt"
     export TEST_LESSONS="$TEST_TMPDIR/lessons_shogun.yaml"
+    export TEST_ACK="$TEST_TMPDIR/shogun_lesson_ack.yaml"
     mkdir -p "$TEST_ARCHIVE_DIR"
 }
 
@@ -137,6 +138,7 @@ run_save() {
         CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS" \
+        CMD_SAVE_SHOGUN_LESSON_ACK_FILE="$TEST_ACK" \
         CMD_SAVE_LOCK_FILE="$TEST_TMPDIR/shogun_to_karo.lock" \
         CMD_SAVE_PREV_LESSON_FAST=1 \
         bash "$SAVE_SCRIPT" cmd_curr
@@ -152,6 +154,7 @@ run_save() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+    [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A05"* ]]
     [[ "$output" == *"保存確認NG"* ]]
 
     run grep -n 'notes: "前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ' "$TEST_QUALITY_LOG"
@@ -162,6 +165,26 @@ run_save() {
     write_cmd_queue
     write_quality_log_with_prev_blocks 3
     write_lessons_file "cmd_prev"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"教訓未記録"* ]]
+}
+
+@test "AC3-1b: 前cmd BLOCKあり + ack記録済み → WARNなし" {
+    write_cmd_queue
+    write_quality_log_with_prev_blocks 2
+    write_lessons_file "cmd_other"
+    cat > "$TEST_ACK" <<'YAML'
+acks:
+- cmd_id: "cmd_prev"
+  lesson_id: "LS-A05"
+  block_count: 2
+  timestamp: "2026-05-14T00:00:00Z"
+YAML
 
     run_save
     echo "$output" >&2
@@ -209,6 +232,7 @@ run_save() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_curr"* ]]
     [[ "$output" == *"REMIND: cmd_currで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
+    [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_curr LS-A05"* ]]
 }
 
 @test "AC2: CLEAR時に現cmd BLOCK履歴あり + 教訓記録済み → REMINDなし" {

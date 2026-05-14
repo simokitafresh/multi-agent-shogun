@@ -15,6 +15,7 @@ setup() {
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
     export TEST_LAST_CMD="$TEST_TMPDIR/cmd_save_last_cmd.txt"
     export TEST_LESSONS="$TEST_TMPDIR/lessons_shogun.yaml"
+    export TEST_ACK="$TEST_TMPDIR/shogun_lesson_ack.yaml"
     export TEST_CMD_SAVE="$TEST_TMPDIR/cmd_save_stub.sh"
     export TEST_CMD_DELEGATE="$TEST_TMPDIR/cmd_delegate_stub.sh"
     cat > "$TEST_CMD_SAVE" <<'SH'
@@ -71,6 +72,7 @@ run_publish() {
         CMD_PUBLISH_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
         CMD_PUBLISH_LAST_CMD_FILE="$TEST_LAST_CMD" \
         CMD_PUBLISH_SHOGUN_LESSONS_FILE="$TEST_LESSONS" \
+        CMD_PUBLISH_SHOGUN_LESSON_ACK_FILE="$TEST_ACK" \
         CMD_PUBLISH_SHOGUN_LESSON_LIMIT=35 \
         CMD_PUBLISH_CMD_SAVE_SCRIPT="$TEST_CMD_SAVE" \
         CMD_PUBLISH_CMD_DELEGATE_SCRIPT="$TEST_CMD_DELEGATE" \
@@ -104,6 +106,7 @@ run_publish() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK: 前cmd_prevで1回BLOCKされたが教訓未記録"* ]]
     [[ "$output" == *'bash scripts/lesson_write_shogun.sh "cmd_prevのBLOCK教訓"'* ]]
+    [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A05"* ]]
     [[ "$output" != *"stub cmd_save"* ]]
 }
 
@@ -127,6 +130,28 @@ YAML
     [[ "$output" == *"cmd_save.sh gate検証"* ]]
     [[ "$output" == *"stub cmd_save cmd_curr"* ]]
     [[ "$output" == *"cmd_delegate.sh 委任"* ]]
+}
+
+@test "AC3c: ack記録済みなら前cmd BLOCK履歴があってもpre-flight PASSする" {
+    write_queue draft
+    write_lessons 1
+    write_quality_log_for_prev_block
+    printf '%s\n' cmd_prev > "$TEST_LAST_CMD"
+    cat > "$TEST_ACK" <<'YAML'
+acks:
+- cmd_id: "cmd_prev"
+  lesson_id: "LS-A05"
+  block_count: 1
+  timestamp: "2026-05-14T00:00:00Z"
+YAML
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_save.sh gate検証"* ]]
+    [[ "$output" == *"stub cmd_save cmd_curr"* ]]
+    [[ "$output" != *"教訓未記録"* ]]
 }
 
 @test "AC3b: 教訓0件でもcount出力が単一整数になりpre-flight PASSする" {
