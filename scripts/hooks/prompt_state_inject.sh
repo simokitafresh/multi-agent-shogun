@@ -151,6 +151,115 @@ record_shogun_growth_metrics() {
   } 9>"${metrics_file}.lock"
 }
 
+detect_skill_triggers() {
+  local skills_dir="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
+  [[ -d "$skills_dir" ]] || {
+    return 0
+  }
+
+  PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" python3 - <<'PY'
+import os
+import re
+import sys
+
+prompt = os.environ.get("PROMPT_TEXT", "")
+skills_dir = os.environ.get("SKILLS_DIR", "")
+prompt_lower = prompt.lower()
+top_key_re = re.compile(r"^[A-Za-z_-]+:")
+
+
+def extract_frontmatter(text):
+    lines = text.replace("\r", "").splitlines()
+    if not lines or lines[0] != "---":
+        return ""
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
+        return ""
+    return "\n".join(lines[1:end])
+
+
+def extract_description(frontmatter):
+    if not frontmatter:
+        return ""
+    lines = frontmatter.splitlines()
+    for idx, line in enumerate(lines):
+        if not line.startswith("description:"):
+            continue
+        tail = line.split(":", 1)[1].strip()
+        if tail in ("|", ">"):
+            chunks = []
+            for follow in lines[idx + 1:]:
+                if top_key_re.match(follow):
+                    break
+                if follow[:1].isspace():
+                    chunks.append(follow.lstrip())
+                else:
+                    break
+            return "\n".join(chunks).strip()
+        return tail.strip("\"'")
+    return ""
+
+
+def extract_triggers(description):
+    triggers = []
+    for line in description.splitlines():
+        if re.match(r"^\s*TRIGGER\s*:", line, re.IGNORECASE):
+            content = line.split(":", 1)[1]
+            for part in re.split(r"[、,]", content):
+                part = part.strip()
+                if part:
+                    triggers.append(part)
+    return triggers
+
+
+def trigger_terms(trigger):
+    terms = [trigger]
+    for token in re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]{1,}", trigger):
+        # Uppercase acronyms such as CDP/DB are intentional routing keys.
+        if token.isupper() or trigger.startswith("/"):
+            terms.append(token)
+    return terms
+
+
+matches = []
+try:
+    entries = sorted(os.scandir(skills_dir), key=lambda item: item.name)
+except OSError:
+    entries = []
+
+for entry in entries:
+    if not entry.is_dir():
+        continue
+    skill_file = os.path.join(entry.path, "SKILL.md")
+    if not os.path.isfile(skill_file):
+        continue
+    try:
+        with open(skill_file, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        continue
+
+    desc = extract_description(extract_frontmatter(text))
+    for trigger in extract_triggers(desc):
+        for term in trigger_terms(trigger):
+            if term and term.lower() in prompt_lower:
+                matches.append((entry.name, trigger))
+                break
+        if matches and matches[-1][0] == entry.name:
+            break
+
+if not matches:
+    sys.exit(0)
+
+print("⚠ SKILL TRIGGER HIT: 作業開始前に該当SKILL.mdを読め。")
+for name, trigger in matches[:5]:
+    print(f"- /{name} (matched: {trigger})")
+if len(matches) > 5:
+    print(f"- ... and {len(matches) - 5} more")
+PY
+}
+
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
@@ -231,12 +340,19 @@ if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知
 ⚠ 質問検知。回答前にprojects/${current_project}.yaml + context/${current_project}.mdを確認してから答えよ。"
 fi
 
+# --- Skill trigger detection: prompt keywords → mandatory skill reminder ---
+skill_trigger_warning="$(detect_skill_triggers 2>/dev/null || true)"
+if [[ -n "$skill_trigger_warning" ]]; then
+  skill_trigger_warning="
+${skill_trigger_warning}"
+fi
+
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${inbox_warning}${question_warning}
+inbox_unread: ${unread_count}${inbox_warning}${question_warning}${skill_trigger_warning}
 --- karo_snapshot ---
 "
 
