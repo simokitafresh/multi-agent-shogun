@@ -54,117 +54,375 @@
 # ★idle自走でバグ発見→D0で即修正。分析→記録で止めるな。修正→検証→commitまで回せ(2026-05-03: 3件検出→3件修正→家老LGTM)
 # ★draft_lessonsチェックはcmd固有スコープ。プロジェクト全体のdraftで全cmdをBLOCKするのは過剰(2026-05-03修正: cmd_complete_gate.sh WARN降格)
 # 全称判定(ゼロ/全て/なし/壊れない)→反証を探せ。反証が見つからなかったらOK。反証を探す前にOKを出すな。著者の物語に乗るな(cmd_1884 kawarimi見落とし: 7段なぜなぜ到達点)
-- cmd_id: cmd_2699
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
-  findings_summary: "karo_direct ac_countカウント修正。成長ループ第二層断絶の修正。全前提verified、FM3件全mitigation有。ambiguity冷え観点を意識的にチェック(問題なし)"
-  observations:
-    - "事実1: cmd_design_quality.yaml確認→cmd_2695-2698全件ac_count:0。karo_direct _exact suffixが原因でshogun_to_karo fallbackが不一致"
-    - "事実2: count_acs_from_value() L5180-5198のlist/dict/str 3パターン分岐を確認。task YAML側にACが未注入の場合ac_count=0は正しい挙動(バグはAC注入パス)"
-  causal_chain: "karo_direct→task YAML AC未注入→ac_count=0→draft_review SKIP→軍師レビュー未到達→第二層断絶。修正→全パスAC正確→レビュー到達率100%(正の複利×全cmd)"
-  timestamp: "2026-05-12T15:05:00"
-- cmd_id: cmd_2700
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "教訓effectiveness_score導入。利他原則の直接実装。purpose記載ノイズ数は過小(18→35件)だが実装は動的計算で影響なし。FM3件全mitigation有"
-  observations:
-    - "事実1: 独立再計算でfb>=2時NOT_USEFUL>50%=35件(purpose記載18件の約2倍)。100%NOT_USEFUL=25件(purpose記載8件の約3倍)。ノイズ問題は記載より大きい"
-    - "事実2: git show HEAD:deploy_task.sh L2883 USEFUL_RATE_THRESHOLD=0.40は既存(decay用)。コメントが現在ディスク版と異なる→忍者未配備段階なのでHEADが正"
-    - "事実3: compute_useful_rates()はcmd_2695でMIN_SAMPLES対応済み。effectiveness_scoreはこの基盤上に構築=ゼロ除算リスクなし"
-  causal_chain: "教訓33%ノイズ(実際は35/51=69%がNOT_USEFUL>50%)→忍者CTX圧迫→effectiveness_scoreフィルタ→ノイズ排除→CTX品質改善(正の複利×毎配備×6忍者)"
-  timestamp: "2026-05-12T15:12:00"
-- cmd_id: cmd_2699
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_2699_impl
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。既存修正をregression testで固定。10/10+7/7 PASS SKIP=0。テストのみ30行追加でリスク極小"
-  observations:
-    - "事実1: 忍者は実装既存を正しく判定(task_clarity unclear_points記載)。不要な再実装を避けregression test追加に専念"
-    - "事実2: direct count: cmd_2695-2698=3, cmd_2699=4。全てac_count>=2でAC1充足。karo_direct fallbackが機能"
-  causal_chain: "karo_direct ac_count修正(既存)→regression testで固定→draft_review SKIP再発防止→第二層学習ループ維持(正の複利)"
-  timestamp: "2026-05-12T15:15:00"
-- cmd_id: cmd_2700
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_2700_impl
+# 詳細エントリ: 20260514a(cmd_2699〜cmd_2722+万全偵察〜UI刷新) → logs/archive/gunshi_review_log_20260514a.yaml
+# 詳細エントリ: 20260515a(cmd_2729〜cmd_2742+スキル5層+CI修正+rebalancer UI) → logs/archive/gunshi_review_log_20260515a.yaml
+# ★rebalancerリポ側commitはprecheck「commit not found」が想定内。git -C /mnt/c/Python_app/rebalancer log --oneline -1 -- <file>で確認(cmd_2729-2742で6件確認済み)
+# ★スキル使用構造的強制5層(cmd_2734-2738): L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK。詳細→docs/research/gunshi_idle_skill_enforcement_5layer_20260515.md
+# ★allowed_projects照合(cmd_2738): DO NOT TRIGGERの自然言語パースではなくSKILL.mdにallowed_projectsフィールド追加→機械的照合。忍者の設計判断として正しい(より堅牢)
+  report_task_id: cmd_2729_impl
   verdict: LGTM
   gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。effectiveness_score導入。decay→完全除外。保守的閾値(0.40)。75テスト全PASS"
+  findings_summary: "4観点OK。モバイルレスポンシブ修正(Header/PortfolioForm/FundingSection)。AC1-5全PASS。build+test PASS。commit bd429dd"
   observations:
-    - "事実1: compute_useful_ratesがUSEFUL/NOT_USEFUL以外をfilter(分母精度向上)。discretion_fills通り"
-    - "事実2: universal demote→完全除外。withheld=list(effectiveness_excluded)で追跡維持"
-    - "事実3: kagemaru自身のlessons_useful 10件中2 useful(20%)=ノイズ問題を実証"
-  causal_chain: "教訓ノイズ33%→effectiveness_score→閾値未満除外→忍者CTX品質改善(正の複利)"
-  timestamp: "2026-05-12T15:20:00"
-- cmd_id: idle_effectiveness_baseline_post2700_20260512
-  review_type: self_study
-  verdict: PASS
-  gate_result: N/A
-  finding_categories: [numbers, north_star]
-  findings_summary: "cmd_2700 CLEAR後の即時効果計測。11教訓除外(1650-2200tok削減)。feedback率79.3%。サンプル不足79/94件は自然解消。LG001ヘッダ追加(D0 S0 PASS)"
-  observations:
-    - "事実1: MIN_SAMPLES≥5で15教訓のみ評価可能。除外11+保持4。79件はサンプル不足で除外対象外"
-    - "事実2: feedback率79.3%(294注入中233feedback)。0feedbackは11教訓(L426,L577等)。注入頻度の問題で自然解消"
-    - "事実3: review_logヘッダにLG001注記追加(D0直接実装、S0全6項PASS)。Level2→2.5(毎レビュー自動読込)"
-  causal_chain: "cmd_2700 CLEAR→即時計測→11除外確認→baseline記録→次回5-10配備後に再計測予定(正の複利)"
-  cs_checklist:
-    CS1_source_full: OK - lesson_impact.tsv全件パース
-    CS2_own_data: OK - 自システムデータで定量計測
-    CS3_real_code: OK - deploy_task.sh USEFUL_RATE_THRESHOLD=0.40/MIN_SAMPLES=5を現物確認
-    CS4_action: OK - baseline記録(docs/research)+掲示板投稿(blt_20260512_175822)+LG001ヘッダ追加
-    CS5_unverified: OK - サンプル不足79件は構造的に自然解消(注入回数蓄積)
-    CS6_causal: OK - 導入→計測→baseline→再計測の因果鎖
-  timestamp: "2026-05-12T15:25:00"
-- cmd_id: cmd_2701
-  review_type: draft
-  verdict: APPROVE
+    - "事実1: 4ファイル変更(Header/LanguageToggle/PortfolioForm/FundingSection)。commit bd429ddで確認"
+    - "事実2: lesson_candidate有(sr-onlyでテスト互換+アクセシビリティ両立)。実用的知見"
+  causal_chain: "375px幅でヘッダー/テーブル/銘柄崩壊→flex-nowrap+badge+card+grid修正→モバイルUX正常化(正の複利:全モバイルユーザーに恒久的効果)"
+  timestamp: "2026-05-14T23:00:00"
+- cmd_id: cmd_2731
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2731_impl
+  verdict: LGTM
   gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "rebalancer PJ登録。整備cmd。前提verified(grep 0件+README存在)。3ファイル作成、FM3件全LOW-MEDIUM"
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。ガイドページ文言更新(FAQ保存+プライバシーRLS+操作説明追加)。AC1-4全PASS。build成功。commit d0ae473"
   observations:
-    - "事実1: grep -c rebalancer config/projects.yaml → 0件。未登録confirmed"
-    - "事実2: /mnt/c/Python_app/rebalancer/README.md存在。v4.0 Next.js15+FastAPI+yfinance+PWA"
-  causal_chain: "rebalancer未登録→cmd配備・教訓・context管理不可→PJ登録→全今後のcmdがPJ知識参照可能(正の複利)"
-  timestamp: "2026-05-14T12:55:00"
-- cmd_id: cmd_2701
+    - "事実1: commit d0ae473がrebalancerリポに存在確認(git log)。guide/page.tsx 1ファイルのみ変更"
+    - "事実2: 前セッションで変更済み→今セッションでbuild+commitのみ。scope外混入をgit resetで整理(報告に明記)"
+    - "事実3: L609(実体パス確認)を活用。lessons_useful 7件=related_lessons 7件一致"
+  causal_chain: "ガイド記載(保存しません)と実装(Supabase保存)の乖離→ユーザー混乱。文言更新で整合性修復(正の複利:全新規ユーザーが正確な情報を得る)"
+  timestamp: "2026-05-14T23:45:00"
+- cmd_id: cmd_2730
   review_type: report
   report_ninja: saizo
-  report_task_id: cmd_2701_impl
+  report_task_id: cmd_2730_impl
   verdict: LGTM
   gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。rebalancer PJ登録3ファイル。銘柄数差分(17/18)を発見。Vercelスタイル準拠"
+  findings_summary: "4観点OK。.gitignore整備+tracked cache除去。AC1-4全PASS。build+pytest53 PASS。commit ec685da"
   observations:
-    - "事実1: config/projects.yaml rebalancerエントリ全フィールド正常"
-    - "事実2: context/rebalancer.md §1-§6テーブル構造。API8/銘柄18/Render2サービス"
-    - "事実3: knowledge_candidate: README17 vs config.py18銘柄差分+Render URL不一致"
-  causal_chain: "PJ登録→config+projects+context整備→偵察・教訓・cmd配備が回る(正の複利)"
-  timestamp: "2026-05-14T12:58:00"
-- cmd_id: cmd_2702
+    - "事実1: commit ec685daがrebalancerリポに存在(git log確認)。.gitignore+6種index removal"
+    - "事実2: node_modulesも追跡解除(裁量判断)。既存scope外dirtyは残置(報告に明記)"
+    - "事実3: L220(scope外混入防止)L180(gitignore事前確認)L388(追跡対象確認)L253(ファイル単位指定)の4教訓活用"
+  causal_chain: "pycache/cache/node_modulesが追跡対象→445件dirty→git status汚染+commit混入リスク。gitignore+rm --cachedで構造的解消(正の複利:全忍者の今後のcommitがclean)"
+  timestamp: "2026-05-14T23:48:00"
+- cmd_id: cmd_2732
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  ambiguity_points: none
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "万全偵察(水平4+垂直4)。実証済みパターン。rebalancer登録済み前提OK。8調査定義明確"
+  findings_summary: "6観点OK。Gate 20スキルFAIL率を直近50件+10%閾値に改修。既存recent50パターン(L866)の横展開。1ファイル3AC"
   observations:
-    - "事実1: grep rebalancer config/projects.yaml → 4行。cmd_2701 CLEAR依存充足"
-    - "事実2: q8にWHO=6名分担と記載あるがinboxではninja=hayate。家老が分割配備判断(recon_dualパターン)"
-  causal_chain: "PJ登録完了→全方位偵察→改良候補網羅→後続cmd精度向上(正の複利)"
-  timestamp: "2026-05-14T13:03:00"
+    - "事実1: L1460 fail>0の絶対数判定を現物確認。改善済みFAILが永久にWARN発火する構造"
+    - "事実2: L866-868のrecent50パターンが既存。同一設計パターンの横展開で新規リスク低"
+    - "事実3: Python entries[-50:]は50件未満でも安全(Python仕様)。境界条件問題なし"
+  causal_chain: "全期間累積fail>0判定→改善済みFAILが永久WARN→3セッション連続BLOCK→startup時間浪費(負の複利)。直近50件+10%閾値→実態反映判定→真の劣化のみ検出(正の複利:全gateの時間窓化標準パターン)"
+  timestamp: "2026-05-14T23:52:00"
+- cmd_id: cmd_2733
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。SKILL.md mtime不整合9件解消。touch or 内容更新。2AC。ドキュメント同期のみで実行影響なし"
+  observations:
+    - "事実1: 9スキル全てのSKILL.md+scriptがac_physical_verifyで存在確認済み(7スクリプト全OK)"
+    - "事実2: cmd_2666で同種修正(dream/shogun-teire)実績あり。同一パターンの横展開"
+    - "事実3: q7にインターフェース変更vs内部変更の定義が明確(引数・出力形式変更=IF変更)"
+  causal_chain: "script変更→SKILL.md未同期→mtime不整合→gate WARN→3セッション連続BLOCK→将軍startup阻害(負の複利)。同期で解消+パターン確立(正の複利:今後のscript変更時に同期が標準化)"
+  timestamp: "2026-05-14T23:55:00"
+- cmd_id: cmd_2732
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2732_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。Gate 20直近50件+10%閾値改修。+16/-9行。commit b1b134d5。by_skill→recent50→率判定。全スキル0%でOK表示確認"
+  observations:
+    - "事実1: commit b1b134d5でdiff確認。by_skill辞書→skill_entries[-50:]→stats集計。設計通りの実装"
+    - "事実2: bash判定_pct -gt 10(率ベース)。elif追加でOK表示。3分岐(WARN/OK/0件)正しい"
+    - "事実3: 合成データ12%→WARN確認。本番データ全0%→OK確認。境界条件(50件未満)もPython仕様で安全"
+  causal_chain: "全期間累積fail>0→改善済みFAIL永久WARN→BLOCK(負の複利)。直近50件+10%閾値→実態反映→真の劣化のみ検出(正の複利)"
+  timestamp: "2026-05-14T23:58:00"
+- cmd_id: cmd_2733
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2733_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。SKILL.md mtime同期9件。全件内部変更→touch。gate PASS確認。内容変更なし"
+  observations:
+    - "事実1: 9スキル全てのscript直近diffを確認しインターフェース変更なし→touchのみで最小解決"
+    - "事実2: gate_skill_script_refs.sh PASS。git diff空(内容無変更)。SKILL.md動作影響なし"
+    - "事実3: L421(SKILL.md編集は必要時のみ)を適切に適用。不要な内容編集を回避"
+  causal_chain: "script内部変更→SKILL.md mtime古→gate WARN→3セッション連続BLOCK。touch同期で即解消(正の複利:以降のstartupでBLOCK消滅)"
+  timestamp: "2026-05-15T00:00:00"
+- cmd_id: cmd_karo_ci_fix_gate20_test
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_gate20_test
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。CI RED修正。Gate 20テスト期待値を新出力形式に更新。+1/-1行。bats 1/1 PASS"
+  observations:
+    - "事実1: cmd_2732でGate 20出力形式変更(FAIL率→直近50件FAIL率+last)→テスト期待値旧形式でCI RED"
+    - "事実2: +1/-1行の最小修正。テスト期待値1行のみ更新。本番コード変更なし"
+  causal_chain: "cmd_2732 Gate 20出力形式変更→テスト期待値不一致→CI RED。期待値更新で即解消(正の複利:CI GREEN復帰)"
+  timestamp: "2026-05-15T00:03:00"
+- cmd_id: cmd_karo_ci_fix_rebalancer_audit
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_rebalancer_audit
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。rebalancer CI RED修正。npm audit --audit-level=high。push+CI成功。commit 032780c"
+  observations:
+    - "事実1: commit 032780cがrebalancerリポに存在。.github/workflows/ci.yml 1ファイルのみ変更"
+    - "事実2: postcss moderate脆弱性はno fix available→audit-level=high緩和は合理的対処"
+    - "事実3: push成功。cmd_2729/2730/2731も含む4commit push。CI run 25867485372成功"
+  causal_chain: "postcss moderate脆弱性(no fix)→npm audit nonzero→CI RED。audit-level=high→moderate無視→CI GREEN(正の複利:CI安定化)"
+  timestamp: "2026-05-15T00:07:00"
+- cmd_id: cmd_2734
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。セマンティクスインデックスにskills列追加+deploy_task.shでrecommended_skills自動注入。3AC4ファイル。既存inject_semantic_conceptsの拡張"
+  observations:
+    - "事実1: grep -c skills semantic-map.md=0、grep -n recommended_skills deploy_task.sh=0。未実装確認済み"
+    - "事実2: inject_semantic_concepts(L2357-2408)の既存パースロジックに乗る拡張。新規リスク低"
+    - "事実3: Phase 4(自動化×強制)の直接適用。スキル使用を意志依存→構造的推奨に変換"
+  causal_chain: "スキル使用意志依存→CDP未使用/DB-check誤使用繰返し(負の複利)。概念→スキル自動推奨→忍者が適切なスキルを発見(正の複利:全タスク×全忍者に恒久的効果)"
+  timestamp: "2026-05-15T00:10:00"
+- cmd_id: cmd_2734
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2734_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。semantic index skills列+deploy_task.sh recommended_skills注入。4ファイル+174行。commit 7068eb9。テスト追加"
+  observations:
+    - "事実1: PRE3で4ファイル全commit確認済み。index.md/semantic-map.md/deploy_task.sh/test_deploy_task.bats"
+    - "事実2: awk方式への修正でYAML注入の信頼性向上。test_deploy_task.batsでスタブテスト追加(cmd仕様外の加点)"
+    - "事実3: skills=なし概念の誤注入防止を裁量判断で実装。defensive coding"
+  causal_chain: "スキル使用意志依存→繰返し未使用/誤使用(負の複利)。概念→スキル自動推奨+テスト追加→構造的にスキル発見(正の複利)"
+  timestamp: "2026-05-15T00:17:00"
+- cmd_id: cmd_2735
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。軍師SG観点にスキル使用適切性チェック追加+gate自動検出。2AC2ファイル。depends_on cmd_2734 CLEAR済み"
+  observations:
+    - "事実1: gunshi.md Review Criteriaにskill_usage/recommended_skills関連観点0件確認(grep)"
+    - "事実2: depends_on cmd_2734 CLEAR→recommended_skillsがタスクYAMLに注入される前提成立"
+    - "事実3: 報告YAMLのスキル使用データソースは忍者裁量(skill_execution_log等)。shallow depthで許容範囲"
+  causal_chain: "recommended_skills無視がレビューで未検出→スキル未使用放置(負の複利)。SG観点+gate自動チェック→未使用を構造検出(正の複利:全レビューで検証)"
+  timestamp: "2026-05-15T00:19:00"
+- cmd_id: cmd_2736
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。将軍prompt hookにスキルTRIGGER照合+強制表示。2AC1ファイル。depends_on cmd_2734 CLEAR済み"
+  observations:
+    - "事実1: prompt_state_inject.sh L100にshogun分岐存在。skill関連処理0件(grep確認)"
+    - "事実2: ~30 SKILL.mdファイルのTRIGGER grep。レイテンシ<1秒で性能影響なし"
+    - "事実3: adversarial: 表示のみで破壊操作なし。rollback=git revert可。false positive表示は害なし"
+  causal_chain: "将軍がスキルTRIGGER条件と殿入力を結びつけられない→手動作業に流れる(負の複利)。TRIGGER照合+強制表示→意志依存排除(正の複利)"
+  timestamp: "2026-05-15T00:22:00"
+- cmd_id: cmd_2737
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。家老startup gateスキル推奨+忍者タスクテンプレートstandard_skills欄。2AC2ファイル"
+  observations:
+    - "事実1: gate_karo_startup.sh L702にスキル品質セクション存在。deploy_task.shにstandard_skills 0件"
+    - "事実2: standard_skills=3スキル(ninja-commit/report-write/verdict-check)。テンプレート追加のみで既存非互換なし"
+    - "事実3: adversarial: BLOCK追加なし(表示のみ)。テンプレート追加は既存タスクYAMLと互換。rollback安全"
+  causal_chain: "忍者は/clear後にスキル存在を知らない→手動操作に流れる(負の複利)。standard_skills標準記載→全タスクでスキル発見(正の複利)"
+  timestamp: "2026-05-15T00:22:00"
+- cmd_id: cmd_2738
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。PreToolUse Skill guardでDO NOT TRIGGER条件照合+exit 2 BLOCK。2AC。新規hook+settings.json登録"
+  observations:
+    - "事実1: scripts/hooks/にDO NOT TRIGGER処理0件、settings.jsonにSkill hook 0件(grep確認)"
+    - "事実2: exit 2=hook BLOCK。false positive時はsettings.json登録解除で即無効化可能"
+    - "事実3: 既存PreToolUseフック3件と同列追加。DO NOT TRIGGER行は全SKILL.mdで統一形式"
+  causal_chain: "DB-checkをrebalancerで呼ぶ等のスキル誤使用→データ汚染/時間浪費(負の複利)。DO NOT TRIGGER強制BLOCK→誤使用が構造的に不可能(正の複利)"
+  timestamp: "2026-05-15T00:25:00"
+- cmd_id: cmd_2736
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2736_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。prompt_state_inject.sh TRIGGER照合+強制表示。+163行。commit 8ce27d08。テスト追加"
+  observations:
+    - "事実1: PRE3で2ファイル全commit確認。additionalContext経路再利用=既存パターン"
+    - "事実2: PROMPT_STATE_SKILLS_DIRでテスト用差替え可能。テスタビリティ高い設計"
+    - "事実3: adversarial: hook出力は表示のみ。rollback=git revert可。破壊操作なし"
+  causal_chain: "将軍がスキルTRIGGERを結びつけない→手動に流れる(負の複利)。TRIGGER照合+強制表示→意志依存排除(正の複利)"
+  timestamp: "2026-05-15T00:28:00"
+- cmd_id: cmd_2735
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2735_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 225
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。軍師SG観点+gate_gunshi_cs_checklist.sh recommended_skills突合。+224行。commit 3939ff1d。bats 9件PASS"
+  observations:
+    - "事実1: PRE3で3ファイル全commit確認。skill_execution_log+used_fieldsの二重判定で堅牢"
+    - "事実2: gunshi.mdスキル使用適切性観点追加。WARN発火のみ(BLOCKではない)→false positive影響小"
+    - "事実3: adversarial: WARN止まりで作業中断なし。gate変更はreport review時の自動チェック追加のみ。rollback安全"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "changed_lines=225>=200。WARN発火のみ(BLOCK非)。rollback=git revert可。false positive=「検討を促す」に留まり実害なし"
+  causal_chain: "recommended_skills無視がレビューで未検出(負の複利)。SG観点+gate自動突合→未使用を構造検出(正の複利)"
+  timestamp: "2026-05-15T00:28:00"
+- cmd_id: cmd_2737
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2737_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。家老gateフェーズ別スキル+deploy_task standard_skills注入。5ファイル+84行。commit a24d6cc"
+  observations:
+    - "事実1: PRE3で5ファイル全commit確認。standard_skills=report-write/verdict-check/ninja-commit"
+    - "事実2: inject_standard_skills関数追加。既存deploy_task注入チェーンへの小さな拡張"
+    - "事実3: adversarial: BLOCK追加なし(表示+テンプレート追加のみ)。rollback=git revert可"
+  causal_chain: "忍者/clear後にスキル存在不知→手動操作(負の複利)。standard_skills自動注入→全タスクでスキル発見(正の複利)"
+  timestamp: "2026-05-15T00:30:00"
+- cmd_id: cmd_2738
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2738_impl
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。PreToolUse Skill guard(allowed_projects照合+exit 2 BLOCK)。8ファイル+84行。新規hook"
+  observations:
+    - "事実1: pre-skill-project-guard.sh 69行。set -eu。allowed_projects未設定=全許可(exit 0)で安全"
+    - "事実2: cmd仕様はDO NOT TRIGGERパースだが実装はallowed_projectsフィールド照合。より堅牢な設計判断"
+    - "事実3: 6スキルにallowed_projects:[dm-signal]追加。動作確認済み(rebalancer+db-check→BLOCK, dm-signal→PASS)"
+  causal_chain: "スキル誤使用(db-checkをrebalancerで呼ぶ等)→データ汚染(負の複利)。allowed_projects+exit 2→構造的BLOCK(正の複利)"
+  timestamp: "2026-05-15T02:13:00"
+- cmd_id: cmd_2739
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。detect_skill_triggersにproject文脈追加+全SKILL.md TRIGGER棚卸し。2AC。cmd_2736の精度改善版"
+  observations:
+    - "事実1: cdp-browseのTRIGGERに本番画面/スクショなし確認。hookテストで偽陰性実証済み"
+    - "事実2: project制約はcmd_2738(PreToolUse BLOCK)と目的が異なる(BLOCK vs 推奨表示)。二重実装だが矛盾なし"
+    - "事実3: current_project取得失敗→フィルタなし(全スキル表示)=fail-open安全設計"
+  causal_chain: "汎用語(本番画面等)がDM-Signal固有スキルのみマッチ→他PJで偽陽性/偽陰性(負の複利)。project文脈+TRIGGER棚卸し→PJ横断精度維持(正の複利)"
+  timestamp: "2026-05-15T02:18:00"
+- cmd_id: cmd_2739
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2739_impl
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。detect_skill_triggers project対応+38スキルTRIGGER棚卸し。16ファイル+148行。テスト17件PASS"
+  observations:
+    - "事実1: PRE3で16ファイル全commit確認。gate_skill_health.sh PASS(38スキルTRIGGER定義/衝突なし)"
+    - "事実2: rebalancerでdb-check除外+dm-signalでdb-check hit=偽陽性/偽陰性両方テスト済み"
+    - "事実3: adversarial: hook表示のみ。fail-open(project取得失敗→フィルタなし)。rollback安全"
+  causal_chain: "汎用語が固有スキルのみマッチ→偽陽性/偽陰性(負の複利)。project文脈+棚卸し→PJ横断精度(正の複利)"
+  timestamp: "2026-05-15T02:23:00"
+- cmd_id: cmd_2740
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。モバイルPortfolioFormを横並び1行/銘柄に再設計。4AC1ファイル。UIデザインガイド準拠"
+  observations:
+    - "事実1: cmd_2729カード型がモバイル画面60%占有(殿スクショ実証)。デザインガイド5項目違反"
+    - "事実2: PC表示(sm以上)変更なし=regression範囲限定。タッチターゲット48pt維持をAC文面に明記"
+    - "事実3: 375px幅6銘柄一覧=定量的完了条件。q7に定義明確"
+  causal_chain: "カード型1銘柄=画面60%→10銘柄で10スクロール→UX崩壊(負の複利)。横並び1行→6銘柄一覧→モバイルUX正常化(正の複利)"
+  timestamp: "2026-05-15T02:26:00"
+- cmd_id: cmd_2742
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。ライトモード対応。Tailwind darkMode class方式+切替トグル。3AC複数ファイル"
+  observations:
+    - "事実1: darkMode設定0件確認(grep)。ダーク色ハードコード=ライトモード未対応"
+    - "事実2: Tailwind公式パターン(darkMode class方式)の標準実装。新規リスク低"
+    - "事実3: 全コンポーネントのdark:プレフィックス変更が必要→見落とし可能性あるがbuild+vitestで回帰検出"
+  causal_chain: "ダーク固定→屋外視認性悪(負の複利)。darkMode class+トグル→テーマ基盤確立(正の複利:追加テーマも容易)"
+  timestamp: "2026-05-15T02:33:00"
+- cmd_id: cmd_2740
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2740_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。モバイルPortfolioForm横並び1行化。Playwright実測6行目656px<=667px。commit 7700369。build+vitest PASS"
+  observations:
+    - "事実1: commit 7700369がrebalancerリポに存在。PortfolioForm.tsx 1ファイルのみ変更"
+    - "事実2: AC3をPlaywrightで定量実測(6行目bottom=656px<=viewport667px)。スクショも取得"
+    - "事実3: sm以上はtable維持=PC表示regression限定。カード枠+個別ラベル撤去完了"
+  causal_chain: "カード型1銘柄=画面60%→UX崩壊(負の複利)。横並びグリッド→6銘柄一覧→モバイルUX正常化(正の複利)"
+  timestamp: "2026-05-15T02:37:00"
+- cmd_id: cmd_2741
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。ティッカーinputをselectドロップダウン化+選択済み除外+銘柄リスト折りたたみ。4AC1ファイル"
+  observations:
+    - "事実1: select/dropdown 0件確認(grep)。18銘柄固定で自由入力は設計ミス(殿指摘)"
+    - "事実2: 選択済みフィルタでsupportedTickersから除外→重複入力を構造的に防止"
+    - "事実3: details/summaryタグはモダンブラウザ全対応。ドロップダウンが一覧を兼ねるため銘柄リスト折りたたみは合理的"
+  causal_chain: "自由入力→バリデーション依存→入力ミス/重複(負の複利)。select化+除外→入力ミスゼロ+重複防止(正の複利)"
+  timestamp: "2026-05-15T02:39:00"
+- cmd_id: cmd_2742
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2742_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。Tailwind darkMode class+ThemeToggle+localStorage永続化。5ファイル。commit 662c4fa。lint+build+vitest PASS"
+  observations:
+    - "事実1: commit 662c4faがrebalancerリポに存在。5ファイル変更(css/layout/Header/ThemeToggle/sw.js)"
+    - "事実2: localStorage永続化+OS prefers-color-scheme初期値。裁量判断として合理的"
+    - "事実3: knowledge_candidate有(Tailwind v4 alpha @custom-variant darkがbuild通過)"
+  causal_chain: "ダーク固定→屋外視認性悪(負の複利)。darkMode class+トグル+永続化→テーマ基盤確立(正の複利)"
+  timestamp: "2026-05-15T02:40:00"
+- cmd_id: cmd_2741
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2741_impl
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。ティッカーselectドロップダウン化+選択済み除外+折りたたみ。2ファイル。commit 1c4105c。テスト8件PASS"
+  observations:
+    - "事実1: commit 1c4105cがrebalancerリポに存在。PortfolioForm.tsx+test 2ファイル変更"
+    - "事実2: API失敗時18銘柄fallback保持(defensive)。全銘柄選択時に追加ボタン無効化(エッジケース対処)"
+    - "事実3: PortfolioFormテスト5件更新/維持+全体8件PASS。lint+build PASS"
+  causal_chain: "自由入力→入力ミス/重複(負の複利)。select+除外+折りたたみ→入力ミスゼロ+重複防止(正の複利)"
+  timestamp: "2026-05-15T02:44:00"

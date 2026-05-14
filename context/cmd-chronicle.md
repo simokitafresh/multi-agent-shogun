@@ -793,3 +793,5 @@
 | cmd_2734 | 概念→スキルの対応がインフラに存在せず、スキル使用が意志依存(CDP未使用トラブル、DB-check誤使用が繰返し発生)。semantic indexにskills列を追加し、deploy_task.shでタスクYAMLにrecommended_skillsとして自動注入する | infra | 05-15 | semantic indexのskills列をタスク配備時の |
 | cmd_2735 | 忍者がrecommended_skillsを無視してもレビューで検出されない。軍師の6観点にスキル使用適切性チェックを追加し、recommended_skillsが存在するのに未使用の場合にREQ_CHANGESを出す | infra | 05-15 | 軍師レビューにrecommended_skills使用突合を |
 | cmd_2736 | 将軍はスキルの存在を知っているがセッション中にTRIGGER条件と結びつかず手動作業に流れる(CDP未使用等、殿指摘)。prompt_state_inject.shにスキルTRIGGERキーワード照合を追加し、合致スキルを強制表示する | infra | 05-15 | prompt_state_inject.shに将軍向けスキル |
+| cmd_2738 | DB-checkをrebalancerで呼ぶ等のスキル誤使用が繰返し発生(殿指摘)。SKILL.mdのDO NOT TRIGGER条件とcurrent_projectを照合し、制約違反時にexit 2でBLOCKするPreToolUse hookを追加する | infra | 05-15 | PreToolUse Skill guard hookを実装 |
+| cmd_2742 | 現在ダークモード固定でライトモードがない(殿指摘)。Tailwind darkMode class方式で切替トグルを追加し、ユーザーがダーク/ライトを選択可能にする | rebalancer | 05-15 | Tailwind class dark方式のテーマ切替を追加 |

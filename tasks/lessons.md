@@ -4755,3 +4755,33 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手動依存(Phase4未完)を根治。cmd_2697で実装
+
+### L608: npm audit fix --omit=devはdevDependencies削除する
+- **日付**: 2026-05-14
+- **出典**: cmd_2707
+- **記録者**: karo
+- **tags**: [rebalancer,frontend,monitor]
+- **target_files**: [frontend/package.json,frontend/package-lock.json,frontend/public/sw.js]
+- **when**: 未設定
+- **how**: 未設定
+- npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_modulesから削除されbuildが失敗する。正しい順序: npm audit fix(--omit=devなし)→npm install(全依存再インストール)。rebalancer cmd_2707で実証
+
+### L609: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置
+- **日付**: 2026-05-14
+- **出典**: cmd_2719
+- **記録者**: karo
+- **tags**: [rebalancer,frontend]
+- **target_files**: [frontend/package.json,frontend/package-lock.json,frontend/vitest.config.ts,frontend/vitest.setup.ts,frontend/components/PortfolioForm.test.tsx]
+- **when**: 未設定
+- **how**: 未設定
+- ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/components構成に合わせて主要コンポーネントテストを配置する。rebalancer cmd_2719で実証
+
+### L610: SKILL.mdにallowed_projectsフィールドを追加することでPreToolUseフックがproject制約を機械的に照合できる
+- **日付**: 2026-05-15
+- **出典**: cmd_2738
+- **記録者**: hanzo
+- **tags**: [infra,gate]
+- **target_files**: [.claude/hooks/pre-skill-project-guard.sh,.claude/settings.json,skills/db-check/SKILL.md,skills/pf-registration/SKILL.md,skills/gs-bench-gate/SKILL.md]
+- **when**: 未設定
+- **how**: 未設定
+- SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがproject照合+BLOCKを自動実行する。新規状態管理不要。フックはallowed_projectsがないスキルはスキップするのでスコープ外スキルへの影響ゼロ

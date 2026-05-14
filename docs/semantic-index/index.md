@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -60,6 +60,7 @@ codd:
 | cmd | `cmd_2679` セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_2690` 修正 — semantic-index file参照12件のDM-Signal外部パスを現行パスとして検証し、semantic_map_generate.shで再生成 (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:45:43+09:00 ではrebalancerの概要を教えてくれ。セマンティック辞書にも登録しよう |
+| cmd | `cmd_2739` 改善 — スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し (`scripts/hooks/prompt_state_inject.sh`, `skills/cdp-browse/SKILL.md`, `skills/codd/SKILL.md`) |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -240,6 +241,8 @@ codd:
 | cmd | `cmd_2700` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:41:57+09:00 brdydjwk3 toolu_01YSsdUNnkY3gBfM9r47hmEH /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:43:04+09:00 b1fseli4u toolu_01TFhAEeMFFB8R8Hk6KbNrMW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
+| cmd | `cmd_2734` 強化 — セマンティクスインデックスにスキル推奨列を追加し忍者タスクに自動注入 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `scripts/deploy_task.sh`) |
+| cmd | `cmd_2737` (`scripts/deploy_task.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/helpers/deploy_task_scaffold.bash`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -285,7 +288,7 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, モバイルポートフォリオ入力をコンパクト横並び1行 銘柄に再設計 |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -299,6 +302,7 @@ codd:
 | cmd | `cmd_2602` 強化 — Androidアプリ知識の環境埋込み(セマンティクス+context+CLAUDE.md) (`AGENTS.md`, `CLAUDE.md`, `context/infrastructure.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:56:42+09:00 このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？ |
 | cmd | `cmd_2729` 修正 — モバイルレスポンシブ崩れ修正(ヘッダー+テーブル+銘柄リスト) |
+| cmd | `cmd_2740` 修正 — モバイルポートフォリオ入力をコンパクト横並び1行/銘柄に再設計 |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -444,7 +448,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -467,3 +471,5 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:53:24+09:00 https://dm-rebalancer-frontend.onrender.com/guideは最新のコードと整合性が取れているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:56:47+09:00 リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ。確認して |
 | cmd | `cmd_karo_ci_fix_rebalancer_audit` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T02:18:51+09:00 リバランサーのスマホ画面だが、縦に長くカードが邪魔で一覧性を著しく損なっているな。デザインのUXが極端に悪い。まずは考えよう |
+

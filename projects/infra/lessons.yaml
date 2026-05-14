@@ -1,8 +1,55 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-05-12T14:26:37'
+last_synced: '2026-05-15T02:11:55'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 602
+lesson_count: 605
 lessons:
+- id: L610
+  title: SKILL.mdにallowed_projectsフィールドを追加することでPreToolUseフックがproject制約を機械的に照合できる
+  summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
+  tags:
+  - infra
+  - gate
+  how: 未設定
+  target_files:
+  - .claude/hooks/pre-skill-project-guard.sh
+  - .claude/settings.json
+  - skills/db-check/SKILL.md
+  - skills/pf-registration/SKILL.md
+  - skills/gs-bench-gate/SKILL.md
+  when: 未設定
+- id: L609
+  title: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置
+  summary: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
+  tags:
+  - rebalancer
+  - frontend
+  helpful_count: 9
+  harmful_count: 0
+  last_referenced: '2026-05-14'
+  how: 未設定
+  target_files:
+  - frontend/package.json
+  - frontend/package-lock.json
+  - frontend/vitest.config.ts
+  - frontend/vitest.setup.ts
+  - frontend/components/PortfolioForm.test.tsx
+  when: 未設定
+- id: L608
+  title: npm audit fix --omit=devはdevDependencies削除する
+  summary: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module
+  tags:
+  - rebalancer
+  - frontend
+  - monitor
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
+  how: 未設定
+  target_files:
+  - frontend/package.json
+  - frontend/package-lock.json
+  - frontend/public/sw.js
+  when: 未設定
 - id: L607
   title: auto lesson_writeパターン(register_recommended→自動登録)
   summary: cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手
@@ -11,6 +58,9 @@ lessons:
   - gate
   - bash
   - lesson
+  deprecated: true
+  deprecated_at: '2026-05-15T02:12:28+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   how: 未設定
   target_files:
   - scripts/cmd_complete_gate.sh
@@ -25,6 +75,9 @@ lessons:
   - frontend
   - gate
   - bash
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   how: 未設定
   target_files:
   - scripts/cmd_complete_gate.sh
@@ -37,6 +90,9 @@ lessons:
   - infra
   - gate
   - bash
+  deprecated: true
+  deprecated_at: '2026-05-15T02:12:28+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   how: 未設定
   target_files:
   - scripts/gates/gate_report_format_main.py
@@ -51,6 +107,9 @@ lessons:
   - api
   - gate
   - bash
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   how: 未設定
   target_files:
   - scripts/gates/gate_report_format_main.py
@@ -64,9 +123,9 @@ lessons:
   - deploy
   - bash
   - yaml
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   how: 未設定
   target_files:
   - skills/karo-direct/SKILL.md
@@ -80,6 +139,9 @@ lessons:
   - deploy
   - bash
   - yaml
+  deprecated: true
+  deprecated_at: '2026-05-15T02:12:27+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   how: 未設定
   target_files:
   - skills/karo-direct/SKILL.md
@@ -92,6 +154,9 @@ lessons:
   - infra
   - recon
   - yaml
+  deprecated: true
+  deprecated_at: '2026-05-15T02:12:27+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
   how: 未設定
   target_files:
   - docs/semantic-index/index.md
@@ -104,6 +169,9 @@ lessons:
   - infra
   - review
   - yaml
+  deprecated: true
+  deprecated_at: '2026-05-15T02:12:27+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=28 referenced=0'
   how: 未設定
   target_files:
   - docs/semantic-index/index.md
@@ -170,9 +238,6 @@ lessons:
   - infra
   - testing
   - bash
-  helpful_count: 0
-  harmful_count: 2
-  last_referenced: '2026-05-11'
   how: 未設定
   target_files:
   - scripts/test_select.sh
@@ -188,9 +253,9 @@ lessons:
   - deploy
   - testing
   - bash
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   how: 未設定
   target_files:
   - queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml
@@ -203,9 +268,9 @@ lessons:
   - infra
   - gate
   - inbox
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   how: 未設定
   target_files:
   - scripts/gates/gate_report_format.sh
@@ -265,6 +330,9 @@ lessons:
   - testing
   - gate
   - bash
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   how: 未設定
   target_files:
   - instructions/ashigaru-procedures.md
@@ -307,9 +375,9 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   how: 未設定
   target_files:
   - /mnt/c/Python_app/DM-signal/tasks/lessons.md
@@ -325,6 +393,9 @@ lessons:
   - bash
   target_files:
   - scripts/deploy_task.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L583
   title: startup子gateの終了コードを || true で潰すと強制化が無効化される
   summary: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
@@ -332,9 +403,9 @@ lessons:
   - infra
   - gate
   - bash
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - scripts/gates/gate_gunshi_cs_checklist.sh
   - scripts/gates/gate_gunshi_startup.sh
@@ -348,7 +419,7 @@ lessons:
   - review
   - yaml
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:16+09:00'
+  deprecated_at: '2026-05-15T02:12:26+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   target_files:
   - scripts/deploy_task.sh
@@ -362,7 +433,7 @@ lessons:
   - yaml
   - reporting
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:16+09:00'
+  deprecated_at: '2026-05-15T02:12:26+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
 - id: L580
   title: gate追加cmdは検知語だけでなく行動変換語をAC/commandで要求する
@@ -373,7 +444,7 @@ lessons:
   - gate
   helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - scripts/cmd_save.sh
   - tests/unit/test_cmd_save.bats
@@ -386,7 +457,7 @@ lessons:
   - bash
   - lesson
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:16+09:00'
+  deprecated_at: '2026-05-15T02:12:26+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   target_files:
   - scripts/lesson_write.sh
@@ -398,9 +469,6 @@ lessons:
   - infra
   - gate
   - bash
-  helpful_count: 0
-  harmful_count: 4
-  last_referenced: '2026-05-11'
   target_files:
   - scripts/cmd_save.sh
   - .claude/hooks/pre-write-edit-combined.sh
@@ -412,7 +480,7 @@ lessons:
   - testing
   - lesson
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:15+09:00'
+  deprecated_at: '2026-05-15T02:12:26+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - scripts/deploy_task.sh
@@ -426,7 +494,7 @@ lessons:
   tags:
   - infra
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:15+09:00'
+  deprecated_at: '2026-05-15T02:12:25+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   target_files:
   - scripts/gates/gate_report_format.sh
@@ -441,9 +509,9 @@ lessons:
   - infra
   - gate
   - reporting
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - scripts/skill_gate_feedback.sh
   - scripts/skill_auto_improve.sh
@@ -458,7 +526,7 @@ lessons:
   - gate
   - bash
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:15+09:00'
+  deprecated_at: '2026-05-15T02:12:25+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   target_files:
   - scripts/clear_prep_check.sh
@@ -488,6 +556,9 @@ lessons:
   - infra
   - api
   - bash
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - scripts/skill_auto_improve.sh
   - docs/research/cmd_2590_skill_auto_improve_refactor_spec.md
@@ -546,7 +617,7 @@ lessons:
   - git
   - wsl2
   helpful_count: 3
-  harmful_count: 4
+  harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
   - scripts/semantic_index_update.sh
@@ -587,9 +658,9 @@ lessons:
   - communication
   - gate
   - yaml
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L560
   title: bashのif条件失敗後は終了コードを即時保存する
   summary: grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了
@@ -657,9 +728,9 @@ lessons:
   - infra
   - deploy
   - testing
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - docs/research/codd_refactor_registry.md
   - scripts/sync_lessons.sh
@@ -715,8 +786,8 @@ lessons:
   - gate
   - yaml
   helpful_count: 2
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - 偵察のみ（コード変更なし）
 - id: L548
@@ -727,9 +798,9 @@ lessons:
   - recon
   - process
   - yaml
-  helpful_count: 5
+  helpful_count: 8
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   target_files:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
   - queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml
@@ -741,6 +812,9 @@ lessons:
   - testing
   - process
   - yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L546
   title: --directモードでPython heredocに引数渡しでDIRECT_MODEを伝達する手法
   summary: deploy_task.shのreset_stale_fields()はPython heredocをsingle-quote(<<'...')で定義しているた
@@ -758,9 +832,6 @@ lessons:
   - testing
   - gate
   - yaml
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-12'
   target_files:
   - 偵察のみ（コード変更なし）
 - id: L544
@@ -824,6 +895,9 @@ lessons:
   tags:
   - infra
   - testing
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - scripts/cmd_save.sh
   - tests/unit/test_cmd_save_check19_fp.bats
@@ -851,9 +925,9 @@ lessons:
   - infra
   - testing
   - lesson
-  helpful_count: 1
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - tests/unit/test_cmd_save_environment_change.bats
 - id: L535
@@ -864,7 +938,7 @@ lessons:
   - infra
   - testing
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:14+09:00'
+  deprecated_at: '2026-05-15T02:12:25+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   target_files:
   - tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats
@@ -884,6 +958,9 @@ lessons:
   - testing
   - bash
   - wsl2
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - scripts/cdp/cdp_measure.sh
   - tests/unit/test_cdp_measure.bats
@@ -894,9 +971,9 @@ lessons:
   - infra
   - gate
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L531
   title: warn_missing_prev_cmd_lesson()はCLEAR直後リマインドにならない。CLEARパス内(L3096直後)への別挿入が必要
   summary: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン
@@ -915,7 +992,7 @@ lessons:
   - infra
   - git
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:14+09:00'
+  deprecated_at: '2026-05-15T02:12:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L529
   title: 共有workspaceで並列忍者がcommitする際はgit commit --onlyで担当pathのみcommit treeに固定せよ
@@ -924,7 +1001,7 @@ lessons:
   - infra
   - git
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:14+09:00'
+  deprecated_at: '2026-05-15T02:12:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   target_files:
   - scripts/cdp_canary.sh
@@ -948,7 +1025,7 @@ lessons:
   tags:
   - infra
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:13+09:00'
+  deprecated_at: '2026-05-15T02:12:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
   target_files:
   - scripts/deploy_task.sh
@@ -971,7 +1048,7 @@ lessons:
   - process
   - gate
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:13+09:00'
+  deprecated_at: '2026-05-15T02:12:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   target_files:
   - tests/unit/test_cmd_save.bats
@@ -999,6 +1076,9 @@ lessons:
   - api
   - deploy
   - pipeline
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L522
   title: Pythonパーサーのassumptions終了検出はインデント幅で判定せよ
   summary: cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environme
@@ -1006,7 +1086,7 @@ lessons:
   - infra
   - gate
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:12+09:00'
+  deprecated_at: '2026-05-15T02:12:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   target_files:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
@@ -1073,9 +1153,9 @@ lessons:
   summary: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
   tags:
   - universal
-  helpful_count: 4
-  harmful_count: 2
-  last_referenced: '2026-05-12'
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - gate_loop_health.sh
 - id: L511
@@ -1083,7 +1163,7 @@ lessons:
   summary: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
   tags:
   - universal
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L510
@@ -1092,9 +1172,9 @@ lessons:
     Check '
   tags:
   - universal
-  helpful_count: 2
-  harmful_count: 5
-  last_referenced: '2026-05-12'
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - gate_gunshi_startup.sh
 - id: L509
@@ -1112,7 +1192,7 @@ lessons:
     GIL
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-14'
 - id: L507
@@ -1120,6 +1200,9 @@ lessons:
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
   tags:
   - universal
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - archive_completed.sh
 - id: L506
@@ -1128,6 +1211,9 @@ lessons:
     走査では、
   tags:
   - universal
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - report_merge.sh
 - id: L505
@@ -1136,6 +1222,9 @@ lessons:
     で次 se
   tags:
   - universal
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - cli_profiles.yaml
 - id: L504
@@ -1143,11 +1232,17 @@ lessons:
   summary: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
   tags:
   - universal
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L503
   title: 'dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る'
   summary: 'CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninj'
   tags:
   - universal
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - dashboard_auto_section.sh
   - knowledge_metrics.sh
@@ -1157,9 +1252,6 @@ lessons:
     aw
   tags:
   - universal
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-05-11'
   target_files:
   - gate_vercel_phase.sh
 - id: L501
@@ -1384,7 +1476,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:12+09:00'
+  deprecated_at: '2026-05-15T02:12:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
   target_files:
   - gate_report_format.sh
@@ -1464,7 +1556,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:12+09:00'
+  deprecated_at: '2026-05-15T02:12:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
@@ -1472,7 +1564,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:11+09:00'
+  deprecated_at: '2026-05-15T02:12:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
 - id: L452
   title: SCOUT/exempt系テスト関数にもq8_why_whatが必要
@@ -1480,7 +1572,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:11+09:00'
+  deprecated_at: '2026-05-15T02:12:22+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L451
   title: STALE_FIELD_RESET_PYはcmd解決分岐より前に配置すべき
@@ -1495,7 +1587,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:11+09:00'
+  deprecated_at: '2026-05-15T02:12:22+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
 - id: L449
   title: 分割配備のbinary_checks誤BLOCKはassigned_acsをawk変数で渡してグループスキップで解決
@@ -1503,7 +1595,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:10+09:00'
+  deprecated_at: '2026-05-15T02:12:22+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
   target_files:
   - cmd_complete_gate.sh
@@ -1513,7 +1605,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:10+09:00'
+  deprecated_at: '2026-05-15T02:12:21+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
 - id: L447
   title: 外部リポのmain pushはG2ゲートで禁止→PRワークフローが必須
@@ -1521,7 +1613,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:10+09:00'
+  deprecated_at: '2026-05-15T02:12:21+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
 - id: L446
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
@@ -1536,7 +1628,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:09+09:00'
+  deprecated_at: '2026-05-15T02:12:21+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
@@ -1557,7 +1649,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:09+09:00'
+  deprecated_at: '2026-05-15T02:12:21+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
 - id: L441
   title: hookが自己のコミットメッセージ/報告テキスト内のトリガー文字列に反応する
@@ -1615,6 +1707,9 @@ lessons:
     eff
   tags:
   - frontend
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L431
   title: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり
   summary: テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推
@@ -1624,6 +1719,9 @@ lessons:
   - communication
   - yaml
   - inbox
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - settings.yaml
 - id: L430
@@ -1654,7 +1752,7 @@ lessons:
   - yaml
   helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - scripts/lib/yaml_safe_write.py
 - id: L427
@@ -1671,9 +1769,9 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 0
-  harmful_count: 4
-  last_referenced: '2026-05-11'
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - archive_completed.sh
 - id: L425
@@ -1710,9 +1808,9 @@ lessons:
   tags:
   - gate
   - bash
-  helpful_count: 1
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
 - id: L420
   title: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
   summary: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
@@ -1740,9 +1838,9 @@ lessons:
   - process
   - bash
   - yaml
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   target_files:
   - cmd_friction_log.sh
 - id: L416
@@ -1760,9 +1858,9 @@ lessons:
   - security
   - lesson
   - reporting
-  helpful_count: 3
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - auto_draft_lesson.sh
 - id: L414
@@ -1782,7 +1880,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:09+09:00'
+  deprecated_at: '2026-05-15T02:12:20+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L412
   title: inbox_prune.shもyaml.dump禁止規則の対象漏れ
@@ -1792,6 +1890,9 @@ lessons:
   - bash
   - yaml
   - inbox
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - inbox_prune.sh
   - inbox_write.sh
@@ -1809,7 +1910,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:08+09:00'
+  deprecated_at: '2026-05-15T02:12:20+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
 - id: L409
   title: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
@@ -1826,7 +1927,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:08+09:00'
+  deprecated_at: '2026-05-15T02:12:20+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   target_files:
   - switch_project.sh
@@ -1930,9 +2031,9 @@ lessons:
   - yaml
   - git
   - lesson
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - mcp_sync_lesson.sh
 - id: L392
@@ -1951,7 +2052,7 @@ lessons:
   - yaml
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - review_gate.sh
 - id: L390
@@ -1976,6 +2077,9 @@ lessons:
   summary: 修行サイクルの対象ファイルがgitignoreホワイトリスト(デフォルト全除外)に未登録の場合、改善を実装してもgit commitできない。対象ファイルのco
   tags:
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L387
   title: python3 -cへの変数注入パターンはcmd_absorb.shにも存在した
   summary: lesson_delete.shで修正済み(6f37bcb)の同一パターンがcmd_absorb.shのcheck_stale_lessons()にも残存。py
@@ -2030,7 +2134,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:08+09:00'
+  deprecated_at: '2026-05-15T02:12:20+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L380
   title: daemon_watchdog.shのログ出力先にローテーション不在で肥大化リスク
@@ -2065,9 +2169,9 @@ lessons:
   - bash
   - yaml
   - lesson
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - lesson_deprecate.sh
 - id: L376
@@ -2125,6 +2229,9 @@ lessons:
   tags:
   - api
   - yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - ac_physical_verify.sh
 - id: L368
@@ -2148,7 +2255,7 @@ lessons:
   tags:
   - bash
   helpful_count: 2
-  harmful_count: 4
+  harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L365
   title: lock_path()未適用スクリプトがまだ残存する(NTFS flock不安定パターン)
@@ -2184,6 +2291,9 @@ lessons:
   summary: O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35
   tags:
   - frontend
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L361
   title: idle|noneのsentinel値はawk split+空文字チェックを素通りする
   summary: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
@@ -2214,7 +2324,7 @@ lessons:
   tags:
   - universal
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:07+09:00'
+  deprecated_at: '2026-05-15T02:12:19+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
 - id: L357
   title: yaml.dumpを使用する自動タグ付けスクリプトはCLAUDE.md安全規則に違反
@@ -2223,6 +2333,9 @@ lessons:
   - process
   - yaml
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - lesson_auto_tag.sh
 - id: L356
@@ -2245,6 +2358,9 @@ lessons:
   tags:
   - communication
   - inbox
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - inbox_archive.sh
   - inbox_write.sh
@@ -2255,6 +2371,9 @@ lessons:
   - bash
   - yaml
   - security
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - karo_workaround_log.sh
 - id: L352
@@ -2301,7 +2420,7 @@ lessons:
   - monitor
   - inbox
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:06+09:00'
+  deprecated_at: '2026-05-15T02:12:19+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
   target_files:
   - scripts/xxx.sh
@@ -2347,9 +2466,9 @@ lessons:
   tags:
   - bash
   - git
-  helpful_count: 3
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -2363,9 +2482,9 @@ lessons:
   tags:
   - bash
   - yaml
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   target_files:
   - cmd_quality_log.sh
 - id: L339
@@ -2416,9 +2535,6 @@ lessons:
   summary: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
   tags:
   - bash
-  helpful_count: 0
-  harmful_count: 4
-  last_referenced: '2026-05-11'
 - id: L332
   title: Markdownテーブルのパイプ区切りパースはセル数固定でなく日付等の不変パターンをアンカーにすべき
   summary: chronicle_metrics.shのparse_rowが5/6セル固定分岐で39行クラッシュ。タイトル/key_result内のパイプ文字(||)がセル数
@@ -2441,7 +2557,7 @@ lessons:
   - bash
   - inbox
   helpful_count: 1
-  harmful_count: 4
+  harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
   - restart_watchers.sh
@@ -2489,7 +2605,7 @@ lessons:
   - bash
   - reporting
   helpful_count: 3
-  harmful_count: 4
+  harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
   - dashboard_auto_section.sh
@@ -2521,6 +2637,9 @@ lessons:
   - git
   - inbox
   - reporting
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L320
   title: infraテストは全件必要と判定（後半27テスト）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -2549,7 +2668,7 @@ lessons:
   - deploy
   - recon
   - lesson
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
@@ -2575,9 +2694,9 @@ lessons:
   tags:
   - gate
   - lesson
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - cmd_complete_gate.sh
 - id: L313
@@ -2614,6 +2733,9 @@ lessons:
   tags:
   - deploy
   - reporting
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - deploy_task.sh
   - inject_task_modifiers.py
@@ -2630,9 +2752,9 @@ lessons:
     -2
   tags:
   - testing
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L307
   title: WSL2 /mnt/cでは並列I/Oが逆効果になる
   summary: WSL2 DrvFs/9Pでは並行ファイルI/Oがカーネル直列化で逆効果。Gate14/15先行計算(Gate13 wait中にI/O実行)は5.5sに悪化(3
@@ -2652,9 +2774,9 @@ lessons:
   tags:
   - deploy
   - yaml
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - deploy_task.sh
 - id: L304
@@ -2682,18 +2804,18 @@ lessons:
   summary: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
   tags:
   - bash
-  helpful_count: 1
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L300
   title: binary_checks GATE検証はACグループ化+yes/true値をサポートすべし
   summary: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
   tags:
   - testing
   - gate
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - cmd_complete_gate.sh
 - id: L299
@@ -2707,6 +2829,9 @@ lessons:
   - yaml
   - git
   - inbox
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - inbox_write.sh
 - id: L298
@@ -2744,9 +2869,6 @@ lessons:
   - yaml
   - inbox
   - reporting
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-05-12'
   target_files:
   - yaml_field_set.sh
 - id: L294
@@ -2758,6 +2880,9 @@ lessons:
   - testing
   - security
   - oauth
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L293
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
   summary: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
@@ -2781,9 +2906,9 @@ lessons:
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
   tags:
   - yaml
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
 - id: L289
   title: inbox_write 1行メッセージにYAML構造を埋め込むとシェル引数破壊リスクがある
   summary: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別
@@ -2799,9 +2924,9 @@ lessons:
   - yaml
   - git
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L287
   title: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須
   summary: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
@@ -2809,7 +2934,7 @@ lessons:
   - process
   - gate
   - yaml
-  helpful_count: 5
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
@@ -2819,11 +2944,11 @@ lessons:
   summary: context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions
   tags:
   - yaml
-  target_files:
-  - context/dm-signal-core.mdがprojects/dm-signal.yaml
   helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-14'
+  target_files:
+  - context/dm-signal-core.mdがprojects/dm-signal.yaml
 - id: L285
   title: lesson_update_score.shの書込先がindex(lessons.yaml)のままでblock-style書き戻しが発生する
   summary: sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s
@@ -2831,6 +2956,9 @@ lessons:
   - gate
   - yaml
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - lesson_update_score.sh
   - sync_lessons.sh
@@ -2856,15 +2984,18 @@ lessons:
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
   tags:
   - gate
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
 - id: L281
   title: bats mock環境でsource先stub追加漏れ
   summary: ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so
   tags:
   - testing
   - bash
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - ntfy_listener.sh
   - script_update.sh
@@ -2896,9 +3027,9 @@ lessons:
   - monitor
   - inbox
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L277
   title: git diff一時リポジトリにはgit config user.email/name設定必須
   summary: git diffテスト用一時リポジトリにはgit config user.email/name設定必須。未設定だとcommit失敗しテスト前提が崩れる
@@ -2912,9 +3043,9 @@ lessons:
   - communication
   - gate
   - inbox
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - inbox_write.sh
 - id: L275
@@ -2924,6 +3055,9 @@ lessons:
   - review
   - yaml
   - oauth
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L274
   title: Gate拡張時はalerts配列+overall更新パターンを踏襲
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
@@ -3015,9 +3149,9 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
   summary: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ
@@ -3068,6 +3202,9 @@ lessons:
   - frontend
   - deploy
   - lesson
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - deploy_task.sh
 - id: L255
@@ -3076,9 +3213,9 @@ lessons:
   tags:
   - yaml
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - cmd-chronicle.md
 - id: L254
@@ -3098,6 +3235,9 @@ lessons:
   summary: projects/ディレクトリ全体のホワイトリスト化はシークレット含有リスクあり。ファイル単位指定が必須。新規ファイル作成cmdでは.gitignoreホワイト
   tags:
   - git
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L252
   title: Stage 1ガード追加は上流(maybe_idle前)に配置すべし
   summary: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
@@ -3105,9 +3245,6 @@ lessons:
   - deploy
   - gate
   - monitor
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-12'
   target_files:
   - ninja_monitor.sh
 - id: L251
@@ -3141,9 +3278,6 @@ lessons:
   - gate
   - yaml
   - monitor
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-12'
 - id: L247
   title: found:falseは教訓を探さなかった証拠
   summary: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
@@ -3160,6 +3294,9 @@ lessons:
   tags:
   - bash
   - git
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L244
   title: bare except:がSystemExitを捕捉しPython埋込判定を無効化する
   summary: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except
@@ -3188,21 +3325,21 @@ lessons:
   - process
   - gate
   - git
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-12'
   target_files:
   - block_destructive.sh
   - shutsujin_departure.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L240
   title: test_result_guard.sh正規表現がbats TAP出力のテスト番号+テスト名を誤マッチ
   summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
     "ok 293
   tags:
   - testing
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - test_result_guard.sh
 - id: L239
@@ -3236,12 +3373,18 @@ lessons:
   - frontend
   - testing
   - wsl2
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L234
   title: Android local unit test で org.json.JSONObject.put を直接使うと not mocked で落ちる
   summary: IF Android の local unit test (`testDebugUnitTest`) で `org.json.JSONObject.put(..
   tags:
   - frontend
   - testing
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L233
   title: review task の `git diff --check` AC は対象commitスコープか clean-tree 前提を明示すべし
   summary: review/push task で `git diff --check` を repo 全体に対して要求すると、対象 commit が clean
@@ -3285,6 +3428,9 @@ lessons:
     specify a '
   tags:
   - frontend
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L227
   title: WSL2のWrite toolはCRLF改行を生成する
   summary: Write toolで作成した.shファイルがCRLF改行になり、bash実行時にset -euが失敗する。WSL2(/mnt/c/)でスクリプト作成後はsed
@@ -3336,6 +3482,9 @@ lessons:
   tags:
   - process
   - git
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - context/lord-conversation-index.md
 - id: L219
@@ -3368,8 +3517,8 @@ lessons:
   - gate
   - yaml
   - tmux
-  helpful_count: 1
-  harmful_count: 4
+  helpful_count: 2
+  harmful_count: 0
   last_referenced: '2026-05-14'
   target_files:
   - settings.yaml
@@ -3380,7 +3529,7 @@ lessons:
   - gate
   - yaml
   - tmux
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-14'
   target_files:
@@ -3455,13 +3604,16 @@ lessons:
   - yaml
   helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L206
   title: CC BY 4.0はOSS利用で最も柔軟なライセンスの一つ
   summary: NDL OCR-LiteのCC BY 4.0は帰属表示のみで商用利用・改変・再配布すべて可能。ShareAlike制約なし。依存ライブラリも全て商用利用可(MI
   tags:
   - api
   - frontend
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L205
   title: Codex pane の @agent_state=idle を busy 判定の truth source にしてはならぬ
   summary: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working
@@ -3481,14 +3633,14 @@ lessons:
   - yaml
   - wsl2
   - monitor
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-12'
 - id: L203
   title: xAI x_searchはResponses API+grok-4ファミリー限定
   summary: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
   tags:
   - api
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L202
   title: Compose で固定テーマ定数が広く直参照されている時は Material colorScheme 追加だけでは多テーマ化できない
   summary: 今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig
@@ -3512,6 +3664,9 @@ lessons:
   summary: '明確な視覚ヒエラルキー(Squint Test: 目を細めても構造がわかるか)。一貫性を保つ(アイコンスタイル統一/2ptストローク/角丸)。見た目が似ている要'
   tags:
   - ui-design
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L198
   title: UIボタン・インタラクション基準
   summary: 'プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4'
@@ -3547,6 +3702,9 @@ lessons:
   - testing
   - yaml
   - git
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L192
   title: review配備前にcommit完了とgenerated派生物差分を分離確認せよ
   summary: 並列implのreviewではgit diff origin/main..HEADだけでなくgit diff --name-statusも確認し、対象差分が全て
@@ -3570,6 +3728,9 @@ lessons:
   tags:
   - review
   - git
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L189
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ
   summary: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
@@ -3624,7 +3785,7 @@ lessons:
   - review
   - bash
   helpful_count: 2
-  harmful_count: 4
+  harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L182
   title: 設定UIで保存した値が実行経路で読まれているか別経路まで確認せよ
@@ -3643,6 +3804,9 @@ lessons:
   tags:
   - bash
   - git
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L179
   title: 忍者がcommit未実施でdone報告するケース
   summary: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
@@ -3691,6 +3855,9 @@ lessons:
   - frontend
   - git
   - reporting
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - build_instructions.sh
 - id: L172
@@ -3706,6 +3873,9 @@ lessons:
   tags:
   - deploy
   - bash
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   target_files:
   - deploy_task.sh
 - id: L170
@@ -3734,7 +3904,7 @@ lessons:
   tags:
   - lesson
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:07+09:00'
+  deprecated_at: '2026-05-15T02:12:19+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   target_files:
   - auto_draft_lesson.sh
@@ -3759,9 +3929,9 @@ lessons:
   summary: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
   tags:
   - bash
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
 - id: L163
   title: MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要
   summary: IF MAX_ENTRIES等の定数変更時 THEN impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
@@ -3786,6 +3956,9 @@ lessons:
   - security
   - inbox
   - oauth
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L159
   title: 大規模偵察タスクの並列Agent活用パターン
   summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
@@ -3827,6 +4000,9 @@ lessons:
   - yaml
   - lesson
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - dashboard_auto_section.sh
 - id: L151
@@ -3841,6 +4017,9 @@ lessons:
   tags:
   - testing
   - git
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L149
   title: shellスクリプトでrgを使うな、grepを使え
   summary: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
@@ -3860,9 +4039,9 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 1
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
 - id: L146
   title: AC6系レビューは実配備YAML確認だけでなく一時環境での再現実行を必須にすべき
   summary: IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実
@@ -3879,6 +4058,9 @@ lessons:
   tags:
   - frontend
   - yaml
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - build_instructions.sh
 - id: L144
@@ -3888,9 +4070,6 @@ lessons:
   - recon
   - gate
   - git
-  helpful_count: 0
-  harmful_count: 4
-  last_referenced: '2026-05-11'
 - id: L143
   title: gitignoreエラーはgateログに記録されず暗数化する — 15日間で最低11件、モデル非依存
   summary: IF gitignoreエラー時 THEN 対策は(1)ashigaru.md明文化(即効)→(2)pre-commitフック(根治)の段階実施が有効
@@ -3930,6 +4109,9 @@ lessons:
   - review
   - gate
   - git
+  helpful_count: 3
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L138
   title: レビューcmdは要求範囲外差分をBLOCK対象として明示判定すべき
   summary: taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が
@@ -3948,6 +4130,9 @@ lessons:
   target_files:
   - deploy_task.sh
   - cmd_complete_gate.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L136
   title: preflight_gate_flags upgradeのhas_found_trueスコープ不整合でlesson_done_source BLOCKが頻発
   summary: IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ
@@ -3955,12 +4140,18 @@ lessons:
   - deploy
   - gate
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L135
   title: build_instructions.sh は --help 指定でも生成処理を実行する
   summary: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
   tags:
   - frontend
   - process
+  helpful_count: 5
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - build_instructions.sh
 - id: L134
@@ -4022,6 +4213,9 @@ lessons:
   tags:
   - git
   - reporting
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L126
   title: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
@@ -4125,7 +4319,7 @@ lessons:
   - monitor
   helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L113
   title: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない
   summary: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
@@ -4143,7 +4337,7 @@ lessons:
   - monitor
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L111
   title: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
   summary: IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
@@ -4187,7 +4381,7 @@ lessons:
   - bash
   - tmux
   helpful_count: 1
-  harmful_count: 2
+  harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L104
   title: 本家参照時のパス揺れ — tree確認後に取得を標準化
@@ -4204,9 +4398,9 @@ lessons:
   - pipeline
   - gate
   - wsl2
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
@@ -4215,7 +4409,7 @@ lessons:
   - yaml
   - lesson
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:07+09:00'
+  deprecated_at: '2026-05-15T02:12:19+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   helpful_count: 1
   harmful_count: 0
@@ -4231,8 +4425,8 @@ lessons:
   - gate
   - yaml
   helpful_count: 3
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - queue/gate_metrics.yaml
 - id: L100
@@ -4263,9 +4457,9 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - cmd_complete_gate.sh
 - id: L096
@@ -4282,7 +4476,7 @@ lessons:
   - gate
   - reporting
   deprecated: true
-  deprecated_at: '2026-05-12T15:12:06+09:00'
+  deprecated_at: '2026-05-15T02:12:18+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
 - id: L094
   title: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
@@ -4317,6 +4511,9 @@ lessons:
   - testing
   - review
   - git
+  helpful_count: 4
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - build_instructions.sh
 - id: L089
@@ -4332,9 +4529,9 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - deploy_task.sh
   - lesson_tags.yaml
@@ -4346,7 +4543,7 @@ lessons:
   - lesson
   helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - knowledge_metrics.sh
 - id: L086
@@ -4356,9 +4553,9 @@ lessons:
   - gate
   - lesson
   - deploy
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - auto_draft_lesson.sh
   - lesson_write.sh
@@ -4378,6 +4575,9 @@ lessons:
   tags:
   - frontend
   - lesson
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
   target_files:
   - build_instructions.sh
 - id: L083
@@ -4388,6 +4588,9 @@ lessons:
   - yaml
   target_files:
   - cli_profiles.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code
@@ -4419,9 +4622,9 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 5
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - scripts/deploy_task.sh
 - id: L078
@@ -4430,9 +4633,9 @@ lessons:
   tags:
   - review
   - gate
-  helpful_count: 4
-  harmful_count: 4
-  last_referenced: '2026-05-12'
+  helpful_count: 7
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L077
   title: Vercel構造分離では全セクション移動先マッピングを事前作成せよ
   summary: karo.md→operations.md分離でgenin/jonin詳細表、Status Transitions、停滞タイムアウト値等が除去されたがopera
@@ -4490,9 +4693,9 @@ lessons:
   - yaml-key-mismatch
   - silent-fail
   - deploy
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   target_files:
   - deploy_task.sh
   - archive_completed.sh
@@ -4528,7 +4731,7 @@ lessons:
   summary: integration,yaml-key-mismatch,dry-run-limitation
   tags:
   - api
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-14'
   target_files:
@@ -4705,6 +4908,9 @@ lessons:
   tags:
   - wsl2
   - api
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L038
   title: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
   summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
@@ -4860,6 +5066,9 @@ lessons:
   summary: IF OAuthリフレッシュトークンを複数セッションで共有する時 THEN CLAUDE_CODE_OAUTH_TOKENで直接トークンを指定してリフレッシュ競
   tags:
   - security
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L015
   title: CLAUDE_CONFIG_DIR環境変数で~/.claudeディレクトリを丸ごと切替可能。CLAUDE_CODE_OAUTH_TOKENで認証のみの切替も可能
   summary: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
@@ -4952,7 +5161,7 @@ lessons:
   tags:
   - communication
   - scripting
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-14'
   target_files:

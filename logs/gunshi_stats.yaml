@@ -1,11 +1,11 @@
 # gunshi_stats.yaml — 軍師レビュー統計
 # source: gunshi_review_log.yamlヘッダーから分離 (cmd_1626)
 # ─── Vercel索引層: /clear後はここだけ読め ───
-# 累計: ~1536件 (draft:~487, report:~720, self_study:~247, verify:3, consultation:~10, other:~43) | '2026-03-22〜 (2026-05-02T03:00更新。アーカイブ14本)
+# 累計: ~1568件 (draft:~505, report:~734, self_study:~247, verify:3, consultation:~10, other:~43) | '2026-03-22〜 (2026-05-14T18:50更新。アーカイブ15本)
 # accuracy公式: 全体97.1% (1984/2044 CLEAR, 60 BLOCK)。旧99.6%はGoodhart(フィールド不在261件が分母除外)。2026-05-12 Phase2 backfillで是正
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   gate_result null: 0件。フィールド不在: 0件(Phase2で271件backfill済み。2026-05-12)。ungated残81件(GATE_MAP情報なし古cmd)
-# verdict分布: APPROVE:425 LGTM:587 REQ_CHANGES:52 FAIL:21
+# verdict分布: APPROVE:443 LGTM:601 REQ_CHANGES:52 FAIL:21
 # 教訓: LG001-007登録済み(LG006=GATEフォーマット不備=FAIL必須, LG007=capture-pane残像原則)
 # 見落としパターン: 「注記のみ」→LG006で根絶済み。post-LG006でworkaround 0件(N=2)
 # workaround率推移: 100%→64%→33%→post-LG006:0%(N=5, LGTM3件全てworkaround-free)
@@ -66,3 +66,26 @@
 # D0直接実装1件: review_logヘッダにLG001(git show HEAD必須)追加。S0全6項PASS
 # セマンティック監査: cmd_2694-2700全件safe。cmd_2700副作用スキャン=設計意図通り
 # docs/research永続化: 9件(+altruism_cost_analysis+effectiveness_score_baseline)
+#
+# ─── 本セッション成果 (2026-05-14T13:05更新) ───
+# レビュー新規4件: cmd_2701 draft APPROVE+report LGTM→CLEAR, cmd_2702 draft APPROVE。全CLEAR(cmd_2702報告待ち)
+# rebalancer PJ始動: 登録(cmd_2701)→万全偵察(cmd_2702)→改良着手へ
+# 利他サイクル成果確定: effectiveness_score 11教訓除外=1650-2200tok/タスク削減。feedback率79.3%→サンプル不足79件は時間で自然解消
+# 累計accuracy: APPROVE/LGTM→CLEAR 全件。APPROVE→FAIL 0件(本セッション)
+# ★強くてニューゲーム確認: docs/research 9件永続化+LG001ヘッダ+stats更新+掲示板2件+review_log archive済み
+#
+# ─── 本セッション成果 (2026-05-14T18:50更新) ───
+# レビュー新規32件: draft APPROVE 18件(cmd_2705-2722) + report LGTM 14件(cmd_2705-2722)。全件GATE CLEAR
+# rebalancer改良一巡: P0修正3件(cache永続+asyncテスト+Next.js脆弱性) → P1修正7件(Toast/入力検証/並列化/ビルドゲート/SW/a11y/CI) → P2整備5件(依存pin/i18n/テスト品質/Vitest/E2E/UIデザイン) → infra1件(ack機構)
+# 依存チェーン検証パターン: cmd_2705(CACHE_DIR)→cmd_2710(atomic)→cmd_2712(並列化)の3段積みを順序検証。cmd_2711(ビルドゲート)→cmd_2715(CI)→cmd_2719(Vitest)→cmd_2721(Playwright)→cmd_2722(UI刷新)の5段を順序検証
+# accuracy: 32件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件
+# review_logアーカイブ: 693行→57行(20260514a.yamlに637行退避)
+# ★強くてニューゲーム: stats更新+review_logアーカイブ+全件gate_result同期済み
+#
+# ─── 本セッション成果 (2026-05-15T02:15更新) ───
+# レビュー新規18件: draft APPROVE 7件(cmd_2732-2738) + report LGTM 11件(cmd_2729-2738+CI修正2件)。全件GATE CLEAR
+# スキル使用構造的強制5層: cmd_2734(semantic skills列+recommended_skills注入)→cmd_2735(軍師SG観点+gate突合)→cmd_2736(将軍prompt TRIGGER照合)→cmd_2737(家老gate+standard_skills)→cmd_2738(PreToolUse allowed_projects BLOCK)
+# rebalancer完結: cmd_2729(モバイル修正)+cmd_2730(.gitignore)+cmd_2731(ガイド更新)+CI修正2件(gate20_test+rebalancer_audit)
+# infra改善: cmd_2732(Gate 20直近50件化)+cmd_2733(SKILL.md mtime同期9件)
+# セマンティック監査: +414行/6ファイル監査。構造的バグなし。deploy_task.sh tmpfile軽微のみ
+# accuracy: 18件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件

@@ -120,6 +120,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-14: gate=gate_report_format result=FAIL executor=kotaro reason=files_modified: MISSING; lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field
 
 - 2026-05-12: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_v...
 - 2026-05-11: gate=cmd_complete_gate result=FAIL executor=hayate reason=report_format:kagemaru_report_cmd_2680.yaml
