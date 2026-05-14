@@ -1,5 +1,6 @@
 # 利他提案2件 — 家老BLOCK時系列 + 教訓注入精度
 <!-- generated: 2026-05-12T11:46:00+09:00 by gunshi idle analysis -->
+<!-- SUPERSEDED: 提案1→cmd_2697 CLEAR(auto lesson_write)、提案2→cmd_2685+cmd_2700 CLEAR(threshold+effectiveness_score)。統合先→gunshi_idle_altruism_cost_analysis_20260512.md -->
 
 ## 提案1: lesson_done_missing BLOCK時系列問題
 

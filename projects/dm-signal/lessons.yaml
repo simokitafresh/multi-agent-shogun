@@ -1377,7 +1377,7 @@ lessons:
   target_files:
   - tasks/lessons.md
   - outputs/scripts/cmd_1826_memory_analysis.py
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L592
@@ -1506,7 +1506,7 @@ lessons:
   summary: select_champions_multi_isの目的関数(6本)はそのまま維持し、選出後のchampion行に38メトリクスを_compute_metric
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
   how: select_champions_multi_isの目的関数は増やさず、選出後champion行へ_compute_metric_values_for_pattern()で後計算添付する
@@ -1781,7 +1781,7 @@ lessons:
   - outputs/analysis/alm_research/cmd_1735_strategy_comparison.csv
   - outputs/analysis/alm_research/cmd_1736_results.yaml
   - outputs/analysis/cmd_1035_parity_verification.json
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L553
@@ -2179,9 +2179,9 @@ lessons:
   - yaml
   - inbox
   - reporting
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 5
-  last_referenced: '2026-05-11'
+  last_referenced: '2026-05-12'
   how: 同一lockfileを再取得する入れ子呼び出しを避け、lock保持区間を分離するかlock済みコンテキスト用の内部更新関数を使う
   target_files:
   - tasks/lessons.md
@@ -3328,7 +3328,7 @@ lessons:
   - docs/research/ops-procedures.md
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-10'
+  last_referenced: '2026-05-12'
 - id: L388
   title: PPE result pickleがoverhead最大要因。月次リターンndarrayのserializeが支配
   summary: IF PPE結果をmain processにreturnする THEN result pickleがオーバーヘッド最大要因になる。 50Kパターンで877ms（
@@ -4090,7 +4090,7 @@ lessons:
   - process
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-10'
+  last_referenced: '2026-05-12'
   target_files:
   - docs/research/knowledge-base/dm-signal/meta-structure.md
   - docs/research/knowledge-base/dm-signal/methods-a-interpretations.md
@@ -4205,7 +4205,7 @@ lessons:
   - docs/research/knowledge-base/methods/structural-break-tests.md
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L299
@@ -4741,7 +4741,7 @@ lessons:
   - trade-rule
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-10'
+  last_referenced: '2026-05-12'
 - id: L239
   title: '誤解13 IF-THEN: Open-to-Openは異なる日のOpen同士を結ぶ'
   summary: Open-to-Open計算を修正する時は、T日Open→T+N日Openという異なる日のOpen同士を結ぶ定義を守る。T日Open→T日CloseはOpen-
@@ -5819,6 +5819,9 @@ lessons:
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
   tags:
   - pipeline
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-12'
 - id: L101
   title: MultiViewのPhase3 momentum_cache事前計算はFoF専用のためskipされる
   summary: recalculate_fast.py Phase3(OPT-A)ではMultiView/SingleView/TrendReversalはFoF専用としてmo
@@ -5993,7 +5996,7 @@ lessons:
   tags:
   - api
   - deploy
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-12'
   how: ウォームアップGET後にPF間でリトライと30秒待機を入れ、409は前回sync完了待ちとして扱う

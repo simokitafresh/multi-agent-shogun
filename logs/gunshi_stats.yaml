@@ -53,13 +53,16 @@
 # insights清掃: 3件→0件。deploy_error根因(karo_direct resolve_cmd未発動)掲示板報告
 # 設計書: 5件永続化(accuracy_goodhart/altruism_proposals/immune_effectiveness/semantic_audit/block_pattern+useful_baseline)
 #
-# ─── 本セッション最終成果 (2026-05-12T14:15更新) ───
-# レビュー計28件: draft14(APPROVE13+RC1)+report14(LGTM14)。全CLEAR(cmd_2697/2698待ち)。APPROVE→FAIL 0件
-# cmd_2685-2698: 14件全て軍師発の気づき→将軍cmd→忍者実装→軍師レビュー→CLEAR(12件CLEAR+2件配備中)
-# 成長ループ阻害修正: (1)withheld悪循環解消cmd_2695 CLEAR (2)修行参照率0%→AC追加cmd_2696 CLEAR (3)auto lesson_write cmd_2697配備中 (4)FIXヒントDB参照cmd_2698配備中
-# 構造的バグ修正: deploy_error→cmd_2691 CLEAR / stale_report→cmd_2693 CLEAR / ASW継承汚染→cmd_2694 CLEAR / resolved_by_cmd偽陽性→cmd_2692 CLEAR
-# D0直接実装3件: skill_auto_improve.sh FIXヒントパターン6追加+interval7日→1日+SC2015修正。家老承認済み
-# なぜなぜ7回: スキル自動成長根因=FIXヒント75件未参照。免疫系は機能(最終CLEAR率94.7%)
-# 効果計測: useful率28.4→30.4%(+2pp) / FAIL→0件(スキル品質) / deploy_error構造的根絶 / WA率0%継続
-# 掲示板整理: 31件→2件(28件アーカイブ)
-# docs/research永続化: 7件(accuracy_goodhart/altruism/immune/semantic_audit/block_pattern/useful_baseline/skill_nazenaze)
+# ─── 本セッション成果 (2026-05-12T14:15更新) ───
+# レビュー計28件: draft14(APPROVE13+RC1)+report14(LGTM14)。全CLEAR(cmd_2697/2698待ち)
+# cmd_2685-2698: 14件全て軍師発の気づき→将軍cmd→忍者実装→軍師レビュー→CLEAR
+# 成長ループ阻害修正4件+構造的バグ修正4件。D0直接実装3件。掲示板31→2件
+#
+# ─── 本セッション成果 (2026-05-12T15:30更新) ───
+# レビュー新規6件: cmd_2699 draft APPROVE+report LGTM→CLEAR, cmd_2700 draft APPROVE+report LGTM→CLEAR。全CLEAR
+# 利他サイクル完走: 掲示板提案(教訓ノイズ33%)→cmd_2700起票→kagemaru実装→軍師LGTM→GATE CLEAR。effectiveness_score導入完了
+# 効果計測: 11教訓除外(score<0.40,fb≥5)。推定CTX削減1650-2200tok/タスク。feedback率79.3%
+# 冷え再活性化: adversarial spot check(cmd_2697)+ambiguity意識チェック(cmd_2699)。CS WARN 2件解消
+# D0直接実装1件: review_logヘッダにLG001(git show HEAD必須)追加。S0全6項PASS
+# セマンティック監査: cmd_2694-2700全件safe。cmd_2700副作用スキャン=設計意図通り
+# docs/research永続化: 9件(+altruism_cost_analysis+effectiveness_score_baseline)

@@ -224,6 +224,8 @@ codd:
 | cmd | `cmd_2694` 修正 — watcher起動時のASW_DISABLE_ESCALATION継承汚染を構造的に遮断 (`scripts/ninja_monitor.sh`, `scripts/restart_watchers.sh`, `tests/unit/test_inbox_watcher_health.bats`) |
 | cmd | `cmd_2696` 強化 — 修行L4テンプレートに教訓参照ACを追加(参照率0%解消) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task.bats`) |
 | cmd | `cmd_2695` 強化 — withheld悪循環の解消(MIN_SAMPLES未満教訓の初回注入保証) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
+| cmd | `cmd_2699` 修正 — draft_review SKIP: karo_direct配備時のac_countカウント修正 (`tests/unit/test_deploy_task_draft_review.bats`) |
+| cmd | `cmd_2700` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
