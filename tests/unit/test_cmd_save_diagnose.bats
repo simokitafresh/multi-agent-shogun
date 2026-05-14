@@ -133,3 +133,31 @@ PY
     [ "$status" -eq 1 ]
     [[ "$output" == *"★ DIVERGENT: 同じチェック(必須項目 "* ]]
 }
+
+@test "cmd_quality_log: indented entries listへ追記してもYAMLを壊さない" {
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: cmd_existing
+    gate_result: BLOCK
+YAML
+
+    run env \
+        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$QUALITY_LOG_SCRIPT" cmd_diagtest BLOCK no 0 "test note"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    run python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TEST_QUALITY_LOG"], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = data.get("entries", [])
+assert [e.get("cmd_id") for e in entries] == ["cmd_existing", "cmd_diagtest"], entries
+assert entries[-1].get("notes") == "test note", entries[-1]
+PY
+    [ "$status" -eq 0 ]
+}

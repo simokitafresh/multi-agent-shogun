@@ -1143,16 +1143,27 @@ log_cmd_save_pass() {
             fi
         fi
 
+        local entry_indent field_indent
+        entry_indent="$(awk '
+            /^entries:[[:space:]]*$/ { in_entries=1; next }
+            in_entries && /^[[:space:]]*-/ {
+                match($0, /^[[:space:]]*/)
+                print substr($0, RSTART, RLENGTH)
+                exit
+            }
+        ' "$QUALITY_LOG_FILE")"
+        field_indent="${entry_indent}  "
+
         cat >> "$QUALITY_LOG_FILE" <<EOF
-- cmd_id: "$CMD_ID"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "$timestamp"
+${entry_indent}- cmd_id: "$CMD_ID"
+${field_indent}ac_count: 0
+${field_indent}gate_result: "PASS"
+${field_indent}karo_rework: "no"
+${field_indent}gunshi_verdict: "unknown"
+${field_indent}ninja_blockers: 0
+${field_indent}supplementary_cmds: 0
+${field_indent}source: "cmd_save"
+${field_indent}timestamp: "$timestamp"
 EOF
     ) 200>/tmp/cmd_design_quality.lock
 }
