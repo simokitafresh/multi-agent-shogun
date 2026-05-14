@@ -502,6 +502,36 @@ else
 fi
 echo ""
 
+# --- 教訓/clear耐久率 ---
+echo "■ 教訓/clear耐久率"
+_lg_file="$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml"
+if [ -f "$_lg_file" ]; then
+    _lg_total=$(grep -c 'automated:' "$_lg_file" 2>/dev/null || echo 0)
+    _lg_auto=$(grep -c 'automated: true' "$_lg_file" 2>/dev/null || echo 0)
+    _lg_manual=$(( _lg_total - _lg_auto ))
+    if [ "$_lg_total" -gt 0 ]; then
+        _lg_rate=$(( _lg_auto * 100 / _lg_total ))
+    else
+        _lg_rate=0
+    fi
+    echo "  自動化: ${_lg_auto}/${_lg_total}件 (${_lg_rate}%)"
+    if [ "$_lg_manual" -gt 0 ]; then
+        echo "  ★ Level 2(意志依存)${_lg_manual}件 — /clear後に消える教訓:"
+        # 非自動化教訓のIDとタイトルを表示
+        awk '/^- id:/{id=$3} /automated: false/{print "    " id}' "$_lg_file" 2>/dev/null | head -13
+        if [ "$_lg_rate" -lt 70 ]; then
+            echo "  WARN: 耐久率${_lg_rate}% < 70%。idle自走Step 3でgate化を進めよ"
+            if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+            alerts+=("教訓耐久率: ${_lg_rate}%(${_lg_manual}件が意志依存)")
+        fi
+    else
+        echo "  OK: 全教訓が自動化済み"
+    fi
+else
+    echo "  SKIP: lessons_gunshi.yaml不在"
+fi
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
