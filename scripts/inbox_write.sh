@@ -1242,14 +1242,24 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
             # Git uncommitted check: 報告YAMLのfiles_modified + task YAMLのtarget_pathを確認
             # cmd_1296教訓: 全repoではなく忍者が申告したファイルのみチェック（運用ファイル誤検知防止）
             # サイクル2: WARNING→BLOCK昇格。commit漏れは忍者ペインで止める（局所免疫）
-            GIT_CHECK_PATHS=$(
-                (
-                    inbox_extract_report_paths "$FULL_REPORT"
-                    inbox_extract_task_paths "$TASK_YAML"
-                ) | awk '!seen[$0]++'
-            )
+            # cmd_2704: scout_exempt=true の偵察免除タスクはコード変更なし前提のため、このgateをスキップする。
+            TASK_SCOUT_EXEMPT=""
+            if [ -n "$TASK_YAML" ] && [ -f "$TASK_YAML" ]; then
+                TASK_SCOUT_EXEMPT=$(inbox_yaml_field_get "$TASK_YAML" "scout_exempt" "" 2>/dev/null || true)
+            fi
 
-            if [ -n "$GIT_CHECK_PATHS" ]; then
+            if [ "$TASK_SCOUT_EXEMPT" = "true" ]; then
+                echo "[git_uncommitted_gate] SKIP: scout_exempt=true (ninja: ${FROM})" >&2
+            else
+                GIT_CHECK_PATHS=$(
+                    (
+                        inbox_extract_report_paths "$FULL_REPORT"
+                        inbox_extract_task_paths "$TASK_YAML"
+                    ) | awk '!seen[$0]++'
+                )
+            fi
+
+            if [ "$TASK_SCOUT_EXEMPT" != "true" ] && [ -n "$GIT_CHECK_PATHS" ]; then
                 mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
                 # プロジェクトリポジトリの解決: task YAMLのproject:からprojects/{project}.yamlのpath:を参照
                 # cmd_1412教訓: SCRIPT_DIR(multi-agent-shogun)でDM-signalファイルをチェックしても検出不能

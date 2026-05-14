@@ -510,6 +510,18 @@ _wait_for_file() {
     [[ "$output" == *"BLOCKED"* ]]
 }
 
+@test "report_received: scout_exempt true skips git_uncommitted_gate" {
+    setup_git_test_env
+
+    sed -i '/parent_cmd:/a\  scout_exempt: true' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    echo 'echo "modified"' >> "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git_uncommitted_gate"* ]]
+    [[ "$output" == *"SKIP: scout_exempt=true"* ]]
+}
+
 @test "report_received: all files committed → no BLOCK" {
     setup_git_test_env
 
