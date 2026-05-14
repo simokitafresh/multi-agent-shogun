@@ -3,9 +3,9 @@ name: karo-direct
 argument-hint: "[task_id] [ninja_name] [reason]"
 description: |
   【家老専用】将軍cmd不要の家老自立配備(karo_direct)を標準化するスキル。
-  CI修正・修行・偵察recon2など、将軍cmdなしで家老が直接忍者に配備する場合に使用。
+  CI修正・修行・偵察2人目など、将軍cmdなしで家老が直接忍者に配備する場合に使用。
   deploy_task.shの重複ガード回避を安全に処理する。
-  TRIGGER: /karo-direct、karo_direct配備、家老自立配備、CI修正配備、recon2配備
+  TRIGGER: /karo-direct、karo_direct配備、家老自立配備、CI修正配備
   DO NOT TRIGGER: 将軍cmdの通常配備（→deploy_task.sh直接）、偵察1名配備（→通常配備）
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---

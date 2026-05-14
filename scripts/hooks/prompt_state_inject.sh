@@ -153,17 +153,23 @@ record_shogun_growth_metrics() {
 
 detect_skill_triggers() {
   local skills_dir="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
+  local projects_yaml="${PROMPT_STATE_PROJECTS_YAML:-$SCRIPT_DIR/config/projects.yaml}"
+  local current_project="${PROMPT_STATE_CURRENT_PROJECT:-}"
   [[ -d "$skills_dir" ]] || {
     return 0
   }
+  if [[ -z "$current_project" && -f "$projects_yaml" ]]; then
+    current_project="$(awk '/^current_project:[[:space:]]*/{print $2; exit}' "$projects_yaml" | tr -d '"'\''')"
+  fi
 
-  PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" python3 - <<'PY'
+  PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" python3 - <<'PY'
 import os
 import re
 import sys
 
 prompt = os.environ.get("PROMPT_TEXT", "")
 skills_dir = os.environ.get("SKILLS_DIR", "")
+current_project = os.environ.get("CURRENT_PROJECT", "").strip()
 prompt_lower = prompt.lower()
 top_key_re = re.compile(r"^[A-Za-z_-]+:")
 
@@ -201,6 +207,17 @@ def extract_description(frontmatter):
     return ""
 
 
+def extract_allowed_projects(frontmatter):
+    match = re.search(r"(?m)^allowed_projects:\s*\[([^\]]*)\]\s*$", frontmatter)
+    if not match:
+        return []
+    return [
+        item.strip().strip("\"'")
+        for item in match.group(1).split(",")
+        if item.strip()
+    ]
+
+
 def extract_triggers(description):
     triggers = []
     for line in description.splitlines():
@@ -211,6 +228,31 @@ def extract_triggers(description):
                 if part:
                     triggers.append(part)
     return triggers
+
+
+def split_project_constraint(trigger):
+    projects = []
+    patterns = [
+        r"\[\s*project(?:s)?\s*[:=]\s*([^\]]+)\]",
+        r"\(\s*project(?:s)?\s*[:=]\s*([^)]+)\)",
+        r"project(?:s)?\s*[:=]\s*([A-Za-z0-9_-]+(?:\s*[|/]\s*[A-Za-z0-9_-]+)*)",
+    ]
+    cleaned = trigger
+    for pattern in patterns:
+        for match in re.finditer(pattern, trigger, flags=re.IGNORECASE):
+            raw = match.group(1)
+            for part in re.split(r"[,|/、\s]+", raw):
+                part = part.strip().strip("\"'")
+                if part:
+                    projects.append(part)
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
+    return cleaned.strip(" -:;、"), projects
+
+
+def project_allowed(projects):
+    if not projects:
+        return True
+    return bool(current_project) and current_project in projects
 
 
 def trigger_terms(trigger):
@@ -240,11 +282,18 @@ for entry in entries:
     except OSError:
         continue
 
-    desc = extract_description(extract_frontmatter(text))
+    frontmatter = extract_frontmatter(text)
+    if not project_allowed(extract_allowed_projects(frontmatter)):
+        continue
+
+    desc = extract_description(frontmatter)
     for trigger in extract_triggers(desc):
-        for term in trigger_terms(trigger):
+        clean_trigger, trigger_projects = split_project_constraint(trigger)
+        if not project_allowed(trigger_projects):
+            continue
+        for term in trigger_terms(clean_trigger):
             if term and term.lower() in prompt_lower:
-                matches.append((entry.name, trigger))
+                matches.append((entry.name, clean_trigger))
                 break
         if matches and matches[-1][0] == entry.name:
             break

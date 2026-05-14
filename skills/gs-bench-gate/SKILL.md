@@ -4,7 +4,7 @@ description: |
   GS共通コード変更時のパフォーマンス回帰検出ゲート。
   Phase before(ベースライン計測)とPhase after(変更後計測+比較+判定)の2段階。
   REGRESSIONならrevert→家老報告→作業停止。
-  TRIGGER: /gs-bench-gate、GS共通コード変更前後のベンチマーク、パフォーマンス回帰チェック、gs_benchmark実行
+  TRIGGER: /gs-bench-gate、GS共通コード変更前後のベンチマーク project:dm-signal、パフォーマンス回帰チェック project:dm-signal、gs_benchmark実行 project:dm-signal
   DO NOT TRIGGER: ベンチマーク結果の閲覧・分析（→outputs/analysis/直接参照）、
   忍法個別のデバッグ（→run_077_*.py直接実行）、グリッドサーチ実行（→run_077_*.py）、
   パラメータ過適合判定（→shogun-param-neighbor-check）

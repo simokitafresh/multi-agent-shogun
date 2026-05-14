@@ -7,17 +7,36 @@ setup() {
   export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
   export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
   export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
+  export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
+  unset PROMPT_STATE_CURRENT_PROJECT
+  cat > "$PROMPT_STATE_PROJECTS_YAML" <<'EOF'
+projects: []
+current_project: dm-signal
+EOF
   mkdir -p "$PROMPT_STATE_SKILLS_DIR/cdp-browse"
   cat > "$PROMPT_STATE_SKILLS_DIR/cdp-browse/SKILL.md" <<'EOF'
 ---
 name: cdp-browse
 description: |
   Browser operation skill.
-  TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認
+  TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認、本番画面をスクショ、rebalancer本番画面確認 project:rebalancer
   DO NOT TRIGGER: DB確認（→/db-check）
 ---
 
 # cdp-browse
+EOF
+  mkdir -p "$PROMPT_STATE_SKILLS_DIR/db-check"
+  cat > "$PROMPT_STATE_SKILLS_DIR/db-check/SKILL.md" <<'EOF'
+---
+name: db-check
+description: |
+  DM-Signal DB skill.
+  TRIGGER: /db-check、DB確認 project:dm-signal、本番DB project:dm-signal
+  DO NOT TRIGGER: DM-Signal以外の画面確認
+allowed_projects: [dm-signal]
+---
+
+# db-check
 EOF
 }
 
@@ -43,4 +62,31 @@ teardown() {
 
   [ "$status" -eq 0 ]
   [ "$output" = "" ]
+}
+
+@test "project constrained skill triggers only for matching current_project" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  export PROMPT_STATE_CURRENT_PROJECT="dm-signal"
+
+  run bash "$HOOK" <<< '{"prompt":"本番DBを確認して"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/db-check"* ]]
+
+  export PROMPT_STATE_CURRENT_PROJECT="rebalancer"
+  run bash "$HOOK" <<< '{"prompt":"本番DBを確認して"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"/db-check"* ]]
+}
+
+@test "project annotated trigger routes screen check without DM-Signal DB false positive" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  export PROMPT_STATE_CURRENT_PROJECT="rebalancer"
+
+  run bash "$HOOK" <<< '{"prompt":"rebalancer本番画面をスクショして"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/cdp-browse"* ]]
+  [[ "$output" != *"/db-check"* ]]
 }

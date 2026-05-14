@@ -6,7 +6,7 @@ description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   グリッドサーチのチャンピオンに対して隣接パラメータ性能を比較し、
   過適合リスクを定量評価するスキル。
-  TRIGGER: /shogun-param-neighbor-check、チャンピオン近傍分析、隣接パラメータ比較、過適合判定
+  TRIGGER: /shogun-param-neighbor-check、チャンピオン近傍分析 project:dm-signal、隣接パラメータ比較 project:dm-signal、過適合判定 project:dm-signal
   DO NOT TRIGGER: グリッドサーチ実行そのもの、知識棚卸し（→shogun-teire）、
   統計分析全般（本スキルはGSチャンピオンの近傍特化）
 allowed_projects: [dm-signal]

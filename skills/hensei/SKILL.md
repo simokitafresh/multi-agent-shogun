@@ -6,7 +6,7 @@ description: |
   忍者のモデル編成をプリセットで一括切替するスキル。
   opus-all: 全忍者をOpus統一（決戦モード）。mixed: GPT+Sonnet+Opus混成。
   idle安全機構付き（in_progress忍者のCLI操作をスキップ）。
-  TRIGGER: /hensei、編成切替、モデル混成、Opus全戻し、決戦モード
+  TRIGGER: /hensei、編成切替、忍者モデル編成、一括モデル切替
   DO NOT TRIGGER: 個別忍者のモデル手動切替（inbox_write model_switch直接送信）、
   settings.yaml直接編集、ninja_monitor操作
 quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"

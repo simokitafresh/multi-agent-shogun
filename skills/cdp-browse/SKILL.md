@@ -4,7 +4,7 @@ argument-hint: "[url] [screenshot_path]"
 description: |
   CDPでWebブラウザを人間と同じように使うための基礎スキル。
   ブラウザ起動、ログイン、ページ遷移、スクリーンショット、画面状況確認を1つの標準フローで実行する。
-  TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認、ログインしてスクショ、Render画面確認、DM-Signal本番FE確認
+  TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認、ログインしてスクショ、本番画面をスクショ、スクショして、画面確認、Render画面確認、DM-Signal本番FE確認 project:dm-signal、rebalancer本番画面確認 project:rebalancer
   DO NOT TRIGGER: DB確認（→/db-check）、静的コード確認だけで足りる調査、E2E全体試験
 quality_metric: "CDP確認タスクで、認証失敗・スクショ未取得・CDPポート不通によるやり直しが発生しない割合"
 allowed-tools:

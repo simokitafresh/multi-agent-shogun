@@ -1,7 +1,10 @@
 ---
 name: skill-creator
 quality_metric: "将軍系: skill作成cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
-description: 汎用的な作業パターンを発見した際に、再利用可能なClaude Codeスキルを自動生成する。繰り返し使えるワークフロー、ベストプラクティス、ドメイン知識をスキル化する時に使用。
+description: |
+  汎用的な作業パターンを発見した際に、再利用可能なClaude Codeスキルを自動生成する。繰り返し使えるワークフロー、ベストプラクティス、ドメイン知識をスキル化する時に使用。
+  TRIGGER: /skill-creator、スキル作成、スキル化、再利用可能な手順を作成
+  DO NOT TRIGGER: 既存スキルの実行、単発タスクの実装
 argument-hint: "[skill-name]"
 user-invocable: true
 ---

@@ -7,7 +7,7 @@ description: |
   xAI Grok x_search で先月の月間ニュースを補完して、
   `/mnt/c/Python_app/DM-signal/marketing-director/content/monthly_report/YYYY-MM_monthly.md`
   に月報Markdownを生成する。先月振り返り+当月見込み+長期(5年)推移の3層構成。
-  TRIGGER: /monthly-report、月報、マンスリーレポート、月次レポート
+  TRIGGER: /monthly-report、月報 project:dm-signal、マンスリーレポート project:dm-signal、月次レポート project:dm-signal、DM-Signal月報 project:dm-signal
   DO NOT TRIGGER: 週報（→weekly-report）、X検索のみ（→x-research）、
   note記事（→note-writer / sengoku-writer）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlに月報生成手順起因のworkaroundが記録されない割合）"

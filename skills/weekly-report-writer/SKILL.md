@@ -4,6 +4,7 @@ argument-hint: "[week:YYYY-Www]"
 quality_metric: "将軍系: 週報生成cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   What: DM-Signal Weekly Report を再現生成するスキル。DM-Signal API から signals / monthly-returns / deterioration を取得し、xAI Grok x_search でXの最新情報を補完して週報Markdownを書く。
+  TRIGGER: /weekly-report、週報 project:dm-signal、ウィークリーレポート project:dm-signal、DM-Signal週報 project:dm-signal
   When: `/mnt/c/Python_app/DM-signal/marketing-director/content/weekly_report/YYYY-MM-DD_weekly.md` に週報Markdownを生成する時に使う。
   NOT When: 月報、note記事、X単体調査、またはDM-Signal以外のレポート生成では使わない。
 allowed_projects: [dm-signal]

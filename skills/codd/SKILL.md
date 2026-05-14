@@ -4,7 +4,7 @@ argument-hint: "[spec_path|plan_path|target]"
 description: |
   CoDD(Coherence-Driven Development)設計書パイプラインを実行する。
   spec.mdから設計書群を自動生成し、リファクタリング・新規設計の品質を担保する。
-  TRIGGER: /codd、設計書生成、CoDDパイプライン、リファクタリング設計
+  TRIGGER: /codd、設計書生成、CoDDパイプライン、CoDD設計
   DO NOT TRIGGER: コード実装そのもの（CoDDはbashのimplement非対応）、
   テスト実行（batsを直接使え）、デーモンの起動・停止
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDD手順起因のworkaroundが記録されない割合）"
