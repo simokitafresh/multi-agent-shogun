@@ -774,3 +774,7 @@
 | cmd_2698 | skill_auto_improve.shがgate FIXヒント75件を読まずBLOCK理由文字列のパターンマッチで防止ステップを生成→汎用テンプレート3件が具体性不足→一発CLEAR率71.6%止まり。FIXヒントDBを自動参照し具体的な防止ステップを生成する | infra | 05-12 | gate_report_format_main.pyにloo |
 | cmd_2699 | karo_direct配備(cmd_2695-2698の4件連続)でac_count=0→draft_review SKIPが発生し、軍師レビューの成長ループ第二層が断絶している。全配備パスでac_countが正しく返るよう修正する | infra | 05-12 | karo_direct由来でtask側ACが空でも、壊れたa |
 | cmd_2701 | rebalancerを将軍システムの管理対象に登録する。config/projects.yaml+projects/rebalancer.yaml+context/rebalancer.mdを作成し、偵察・cmd配備・教訓蓄積の基盤を整える | infra | 05-14 | rebalancerを管理対象として登録し、config索引 |
+| cmd_2703 | cmd_save.shの3ゲート(q11_existing_alternative FP率52%、command_steps_over_ac FP率50%、ac_param_sufficiency FP率40%)が偽陽性を量産し、将軍のcmd起票に負の複利を生んでいる。検出精度を改善する | infra | 05-14 | cmd_save.shの3ゲートFP削減を実装。既存gate |
+| cmd_2704 | 偵察タスク(scout_exempt:true)はコード変更を伴わないため未commitファイルが存在しない前提だが、git_uncommitted_gateはscout_exemptを考慮せずBLOCKする。偵察タスクではgit_uncommitted_gateをスキップする | infra | 05-14 | scout_exempt:trueタスクではreport_r |
+| cmd_2705 | Renderは/var/lib/dataに永続diskをmountするが、アプリは相対パスstatic/data/cacheに読み書きし永続disk未使用。加えて/staticマウントでcache JSONが外部閲覧可能。CACHE_DIR環境変数対応+/static公開制限で修正する | rebalancer | 05-14 | Render永続diskにcacheを書き込むようCACHE |
+| cmd_2706 | pytest-asyncioのasyncio_mode設定欠如により12件のasyncテストがFAIL。pytest設定追加+非推奨asyncio.get_event_loop().run_until_complete()をasyncio.run()に修正する | rebalancer | 05-14 | pytest-asyncioを0.24.0にpinし、bac |
