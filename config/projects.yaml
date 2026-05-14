@@ -33,6 +33,15 @@ projects:
     status: active
     note: "殿の株式データベース。Supabase+Render構成。DM-Signalとは独立"
 
+  - id: rebalancer
+    name: "Portfolio Rebalance App"
+    path: "/mnt/c/Python_app/rebalancer"
+    repo: "https://github.com/simokitafresh/rebalancer"
+    context_file: "context/rebalancer.md"
+    priority: medium
+    status: active
+    note: "ポートフォリオリバランス計算アプリ v4.0。Next.js static export + FastAPI + Render構成"
+
   - id: milk
     name: "M!LK"
     path: "/mnt/c/Python_app/milk"
