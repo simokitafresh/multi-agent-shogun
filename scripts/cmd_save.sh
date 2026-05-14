@@ -1144,15 +1144,15 @@ log_cmd_save_pass() {
         fi
 
         cat >> "$QUALITY_LOG_FILE" <<EOF
-  - cmd_id: "$CMD_ID"
-    ac_count: 0
-    gate_result: "PASS"
-    karo_rework: "no"
-    gunshi_verdict: "unknown"
-    ninja_blockers: 0
-    supplementary_cmds: 0
-    source: "cmd_save"
-    timestamp: "$timestamp"
+- cmd_id: "$CMD_ID"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "$timestamp"
 EOF
     ) 200>/tmp/cmd_design_quality.lock
 }

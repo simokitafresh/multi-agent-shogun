@@ -208,23 +208,23 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         fi
     fi
 
-    # Append entry
+    # Append entry (0-indent for list item, 2-indent for fields — matches existing format)
     cat >> "$LOG_FILE" <<EOF
-  - cmd_id: "$CMD_ID"
-    ac_count: $AC_COUNT
-    gate_result: "$GATE_RESULT"
-    karo_rework: "$KARO_REWORK"
-    gunshi_verdict: "$GUNSHI_VERDICT"
-    ninja_blockers: $NINJA_BLOCKERS
-    supplementary_cmds: $SUPPLEMENTARY_CMDS
-    source: "$SOURCE_STAGE"
-    timestamp: "$TIMESTAMP"
+- cmd_id: "$CMD_ID"
+  ac_count: $AC_COUNT
+  gate_result: "$GATE_RESULT"
+  karo_rework: "$KARO_REWORK"
+  gunshi_verdict: "$GUNSHI_VERDICT"
+  ninja_blockers: $NINJA_BLOCKERS
+  supplementary_cmds: $SUPPLEMENTARY_CMDS
+  source: "$SOURCE_STAGE"
+  timestamp: "$TIMESTAMP"
 EOF
 
     if [[ -n "$DIAGNOSIS_TEXT" ]]; then
         escaped_diagnosis="${DIAGNOSIS_TEXT//\\/\\\\}"
         escaped_diagnosis="${escaped_diagnosis//\"/\\\"}"
-        echo "    diagnosis: \"$escaped_diagnosis\"" >> "$LOG_FILE"
+        echo "  diagnosis: \"$escaped_diagnosis\"" >> "$LOG_FILE"
     fi
 
     # Append notes field only when provided (optional 5th argument)
@@ -232,7 +232,7 @@ EOF
         # Escape backslashes first, then double quotes to prevent YAML corruption
         escaped_notes="${NOTES//\\/\\\\}"
         escaped_notes="${escaped_notes//\"/\\\"}"
-        echo "    notes: \"$escaped_notes\"" >> "$LOG_FILE"
+        echo "  notes: \"$escaped_notes\"" >> "$LOG_FILE"
     fi
 
     echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS | source:$SOURCE_STAGE${DIAGNOSIS_TEXT:+ | diagnosis:$DIAGNOSIS_TEXT}${NOTES:+ | notes:$NOTES}"
