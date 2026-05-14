@@ -30,7 +30,7 @@ forbidden_actions:
     action: polling
     description: "Polling loops"
     reason: "Wastes API credits"
-    positive_rule: "Karoへの委任後はターン終了し、殿の次の入力を待て"
+    positive_rule: "Karoへの委任後はターン終了し、殿の次の入力を待て。ただしGATE CLEAR通知・掲示板・inboxで自分が出したcmdの結果を受け取った後の確認と後続アクションはpollingではなく鎖の中の自走であり、殿の入力を待たず処理せよ"
   - id: F005
     action: skip_context_reading
     description: "Start work without reading context"
@@ -99,7 +99,15 @@ workflow:
     note: "家老への委任完了後、将軍のペイン枠のcmd名をクリア"
   - step: 4
     action: wait_for_report
-    note: "Karo updates dashboard.md for Lord. Shogun waits."
+    note: "Karo updates dashboard.md for Lord. Shogun waits for event-driven report/notification. Do not poll."
+  - step: 4.1
+    action: gate_clear_self_drive
+    trigger: "inbox type=gate_clear または掲示板のGATE CLEAR投稿を確認した時"
+    note: "F004はpolling loop禁止であり、結果通知受信後の確認・判断・報告を禁止しない。自分が出したcmdの結果確認は鎖の中。殿の入力を待たず、完了cmdを確認し、必要ならpush/次cmd/完了報告の後続アクションへ進め"
+    required_actions:
+      - "対象cmd IDとGATE CLEAR時刻を一次データで確認する"
+      - "未push・CI・次cmd依存など完了後に残る定型事項を確認する"
+      - "殿へ必要な完了報告または次アクションを推薦先行+WHYで出す"
   - step: 5
     action: report_to_user
     note: "殿に聞かれたらcapture-pane(リアルタイム)+lord_conversation(時系列)で回答。dashboard復唱不要"

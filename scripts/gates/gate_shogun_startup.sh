@@ -127,6 +127,51 @@ else
     echo "  未読: 0件"
 fi
 
+# --- Gate 4.1: 未確認GATE CLEAR ---
+echo "■ 未確認GATE CLEAR"
+if [ -f "$inbox_file" ]; then
+    gate_clear_result=$(python3 - "$inbox_file" <<'PY'
+import re
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages") or []
+pending = []
+for msg in messages:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("read") is not False:
+        continue
+    if str(msg.get("type", "")).strip() != "gate_clear":
+        continue
+    content = str(msg.get("content", ""))
+    cmd_match = re.search(r"\bcmd_[A-Za-z0-9_-]+\b", content)
+    cmd_id = cmd_match.group(0) if cmd_match else "cmd不明"
+    pending.append((cmd_id, str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:80]))
+print(len(pending))
+for cmd_id, msg_id, ts, head in pending[:10]:
+    print(f"{cmd_id}\t{msg_id}\t{ts}\t{head}")
+PY
+)
+    gate_clear_count=$(printf '%s\n' "$gate_clear_result" | head -1)
+    if [ "${gate_clear_count:-0}" -gt 0 ]; then
+        echo "  WARN: 未確認GATE CLEAR ${gate_clear_count}件"
+        echo "  ★ GATE CLEAR後の結果確認・push/次cmd/殿報告はF004 pollingではない。殿の入力を待たず処理せよ。"
+        printf '%s\n' "$gate_clear_result" | tail -n +2 | awk -F'\t' '{printf "    %s %s (%s) — %s\n", $1, $2, $3, $4}'
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("未確認GATE CLEAR: ${gate_clear_count}件")
+        fi
+    else
+        echo "  未確認: 0件"
+    fi
+else
+    echo "  未確認: 0件"
+fi
+
 # --- Gate 4.5: 掲示板未確認 ---
 echo "■ 掲示板未確認"
 bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
