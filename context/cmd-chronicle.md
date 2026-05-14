@@ -791,3 +791,4 @@
 | cmd_2720 | 連続起票時に既知BLOCKパターンの教訓記録でlesson作成→supersede→物理削除のCTX浪費ループが発生(前セッション2026-05-14で20cmd連続起票時に毎回発生)。既知パターンを既存lessonクラスタにack(確認記録)する軽量メカニズムで解消する | infra | 05-14 | 既知BLOCKパターンを既存将軍教訓へack記録するヘルパー |
 | cmd_2719 | frontend/src/配下にユーザー作成テストが0件(find確認済み)。Vitest+Testing Libraryを導入し、主要コンポーネントのユニットテストを追加する | rebalancer | 05-14 | Vitest+Testing Library+jsdomをf |
 | cmd_2721 | Playwright/CypressなどのE2Eテストフレームワークが未導入(grep確認済み)。銘柄入力→計算→結果表示の主要ユーザーフローをE2Eで検証できるようにする | rebalancer | 05-14 | Playwrightをfrontendへ導入し、銘柄入力から |
+| cmd_2722 | 過剰なカード化(glass-card内にrow card)で画面を有効活用できず、スマホでもPCでも一覧性が低い。カード廃止→テーブル直書き+PC2カラム化+ui-design-guide準拠(コントラスト、タッチターゲット、階層)でデータ密度と可読性を両立する | rebalancer | 05-14 | カード内row cardを廃止し、PortfolioForm |
