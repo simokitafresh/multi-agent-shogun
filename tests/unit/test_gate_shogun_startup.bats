@@ -264,7 +264,7 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ スキル別FAIL率"* ]]
-    [[ "$output" == *"report-bundle: FAIL率=50% (1/2)"* ]]
+    [[ "$output" == *"report-bundle: 直近50件FAIL率=50% (1/2) last=2099-01-01T00:01:00+0900"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
