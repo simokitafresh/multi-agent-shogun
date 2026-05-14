@@ -55,6 +55,15 @@
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-edit-pi-inject.sh"
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-skill-project-guard.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

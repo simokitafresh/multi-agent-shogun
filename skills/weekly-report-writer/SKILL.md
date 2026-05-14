@@ -6,6 +6,7 @@ description: |
   What: DM-Signal Weekly Report を再現生成するスキル。DM-Signal API から signals / monthly-returns / deterioration を取得し、xAI Grok x_search でXの最新情報を補完して週報Markdownを書く。
   When: `/mnt/c/Python_app/DM-signal/marketing-director/content/weekly_report/YYYY-MM-DD_weekly.md` に週報Markdownを生成する時に使う。
   NOT When: 月報、note記事、X単体調査、またはDM-Signal以外のレポート生成では使わない。
+allowed_projects: [dm-signal]
 allowed-tools:
   - Bash
   - Read

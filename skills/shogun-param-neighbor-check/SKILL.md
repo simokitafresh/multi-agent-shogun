@@ -9,6 +9,7 @@ description: |
   TRIGGER: /shogun-param-neighbor-check、チャンピオン近傍分析、隣接パラメータ比較、過適合判定
   DO NOT TRIGGER: グリッドサーチ実行そのもの、知識棚卸し（→shogun-teire）、
   統計分析全般（本スキルはGSチャンピオンの近傍特化）
+allowed_projects: [dm-signal]
 allowed-tools:
   - Read
   - Grep

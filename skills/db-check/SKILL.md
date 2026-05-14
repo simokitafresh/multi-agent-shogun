@@ -8,6 +8,7 @@ description: |
   TRIGGER: /db-check、DB確認、本番DB、holding_signal確認、monthly_returns確認、PF検索、パリティ検証
   DO NOT TRIGGER: DB設計変更（→実装cmd）、GS実行（→run_077）、fullrecalculate（→API直接）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにDB確認・パリティ手順起因のworkaroundが記録されない割合）"
+allowed_projects: [dm-signal]
 ---
 
 # /db-check — DM-Signal DB確認スキル

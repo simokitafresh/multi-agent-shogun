@@ -11,6 +11,7 @@ description: |
   DO NOT TRIGGER: 週報（→weekly-report）、X検索のみ（→x-research）、
   note記事（→note-writer / sengoku-writer）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlに月報生成手順起因のworkaroundが記録されない割合）"
+allowed_projects: [dm-signal]
 allowed-tools:
   - Bash
   - Read

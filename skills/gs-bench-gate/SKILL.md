@@ -9,6 +9,7 @@ description: |
   忍法個別のデバッグ（→run_077_*.py直接実行）、グリッドサーチ実行（→run_077_*.py）、
   パラメータ過適合判定（→shogun-param-neighbor-check）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにGSベンチ判定手順起因のworkaroundが記録されない割合）"
+allowed_projects: [dm-signal]
 allowed-tools:
   - Bash
   - Read
