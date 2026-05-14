@@ -82,10 +82,13 @@
 # review_logアーカイブ: 693行→57行(20260514a.yamlに637行退避)
 # ★強くてニューゲーム: stats更新+review_logアーカイブ+全件gate_result同期済み
 #
-# ─── 本セッション成果 (2026-05-15T02:15更新) ───
-# レビュー新規18件: draft APPROVE 7件(cmd_2732-2738) + report LGTM 11件(cmd_2729-2738+CI修正2件)。全件GATE CLEAR
-# スキル使用構造的強制5層: cmd_2734(semantic skills列+recommended_skills注入)→cmd_2735(軍師SG観点+gate突合)→cmd_2736(将軍prompt TRIGGER照合)→cmd_2737(家老gate+standard_skills)→cmd_2738(PreToolUse allowed_projects BLOCK)
-# rebalancer完結: cmd_2729(モバイル修正)+cmd_2730(.gitignore)+cmd_2731(ガイド更新)+CI修正2件(gate20_test+rebalancer_audit)
+# ─── 本セッション成果 (2026-05-15T02:50更新・最終) ───
+# レビュー計28件: draft APPROVE 12件(cmd_2732-2742) + report LGTM 16件(cmd_2729-2742+CI修正2件)。全件GATE CLEAR
+# スキル使用構造的強制5+1層: cmd_2734(semantic skills列+recommended_skills注入)→cmd_2735(軍師SG観点+gate突合)→cmd_2736(将軍prompt TRIGGER照合)→cmd_2737(家老gate+standard_skills)→cmd_2738(PreToolUse allowed_projects BLOCK)→cmd_2739(TRIGGER project文脈+38スキル棚卸し)
+# rebalancer UI改善: cmd_2729(モバイル修正)+cmd_2730(.gitignore)+cmd_2731(ガイド更新)+cmd_2740(横並び1行化)+cmd_2741(ティッカーselect化)+cmd_2742(ライトモード)+CI修正2件
 # infra改善: cmd_2732(Gate 20直近50件化)+cmd_2733(SKILL.md mtime同期9件)
-# セマンティック監査: +414行/6ファイル監査。構造的バグなし。deploy_task.sh tmpfile軽微のみ
-# accuracy: 18件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# セマンティック監査: +414行/6ファイル。2エージェント並列(silent_failure+side_effect)。構造的バグなし
+# idle自走: スキル5層分析永続化(docs/research)+掲示板報告+BLOCK品質監査+WARN遺産分析
+# accuracy: 28件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# review_logアーカイブ: 428行→61行(20260515a.yamlに371行退避)
+# ★強くてニューゲーム: stats最終+review_logアーカイブ+ヘッダ知見3件追記+docs/research 3件永続化+全gate_result同期済み

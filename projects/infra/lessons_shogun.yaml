@@ -400,3 +400,17 @@ lessons:
 # LS034(cmd_2714)→LS-A04+A05+A09, LS035(cmd_2715)→LS-A04(27) — 物理削除済み
 # LS030(cmd_2716)→LS-A05, LS031(cmd_2717)→LS-A05 — 物理削除済み(2026-05-14)
 # LS030(cmd_2718)→LS-A05 — 物理削除済み
+- id: 'LS030'
+  title: 'スキル使用は意志依存ではなく構造的強制'
+  detail: '殿指摘: CDP未使用/DB-check誤使用が繰返し発生。根因=概念→スキルの対応がインフラに存在しない。cmd_2734-2739で5層カバー(L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK)。cmd_2739でproject文脈対応。本番=DM-Signalではない(殿指摘)。セマンティック辞書の精度が上流'
+  source_cmd: 'cmd_2734'
+  created_at: '2026-05-15'
+  automated: true
+  enforcement: 'type=5layer; file=scripts/hooks/prompt_state_inject.sh+scripts/deploy_task.sh+instructions/gunshi.md+scripts/gates/gate_karo_startup.sh; pattern=detect_skill_triggers+inject_semantic_concepts+Review Criteria+スキル品質'
+- id: 'LS031'
+  title: '将軍の自走=鎖の中。F004過剰解釈の修正'
+  detail: '殿指摘: 自分で出したcmdの結果確認は鎖の中。F004(polling禁止)を過剰解釈し殿の入力なしに動けなかった。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿報告)はpolling loopではない。殿を必要とする時点で仕組みとして崩壊(殿指摘)。cmd_2743で通知常時送信+cmd_2744でshogun.md/startup gateに自走フロー明文化'
+  source_cmd: 'cmd_2744'
+  created_at: '2026-05-15'
+  automated: true
+  enforcement: 'type=documentation+gate; file=instructions/shogun.md+scripts/gates/gate_shogun_startup.sh; pattern=workflow+GATE CLEAR'

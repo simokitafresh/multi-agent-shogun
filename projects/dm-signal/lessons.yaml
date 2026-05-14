@@ -1224,9 +1224,9 @@ lessons:
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異
   tags:
   - universal
-  helpful_count: 5
+  helpful_count: 6
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   target_files:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_alm_returns.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_baseline_comparison.csv
@@ -1456,7 +1456,7 @@ lessons:
   summary: 119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: Linux filesystemへ一時出力してから移動するか、分割・圧縮出力を設計に入れ、flush完了と終了コードを別途確認する
@@ -1542,9 +1542,9 @@ lessons:
   summary: MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   target_files:
   - queue/tasks/kotaro.yaml
 - id: L573
@@ -1597,6 +1597,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1764_objective_heatmap.png
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.csv
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.yaml
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L567
   title: tail_contributionは多様性低下要因。nhfとcagrは多様性貢献度最高
   summary: C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む
@@ -1956,9 +1959,9 @@ lessons:
   tags:
   - db
   - frontend
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-15'
   how: signal_cacheはholding_signal or signalの変換済み値として扱い、生のholding_signal NULL判定が必要ならholding_signal_raw等の別キャッシュを作る
   target_files:
   - tasks/lessons.md
@@ -2242,9 +2245,9 @@ lessons:
   summary: recalculate_fof.pyのLOOP-1(L590-L868)はPhase4A最適化済みだがSignal DB書込みは毎日実行。月中のmomentum
   tags:
   - db
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-05-11'
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-15'
   how: 月中のmomentum_data保存範囲を最小化し、fof_signalsなど既存最適化後のdead code候補を併せて確認する
   target_files:
   - queue/reports/kotaro_report_cmd_1447.yaml
@@ -3594,6 +3597,9 @@ lessons:
   - outputs/analysis/cmd_1027_shin_ninpou_benchmark.json
   - outputs/analysis/cmd_1027_shin_ninpou_benchmark.md
   - scripts/analysis/cmd_1027_shin_ninpou_benchmark.py
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L360
   title: 大規模GS(100万超)はチャンク分割+中間CSV保存+忍者並列実行(2026-03-17)
   summary: 大規模GS(100万パターン超)はチャンク分割(≤5分/チャンク)+中間CSV保存+忍者並列実行。一括実行はエラー時に全結果消失リスク。READ-onlyのため
@@ -4178,7 +4184,7 @@ lessons:
   tags:
   - grid-search
   - architecture
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-15'
   target_files:
@@ -4971,6 +4977,9 @@ lessons:
   summary: cmd_645(Content-Type書き換え)とcmd_646(API SWRキャッシュ)は同じsw.jsへの変更。統合実装で1回のSW更新により「SPA遷
   tags:
   - api
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -5674,9 +5683,9 @@ lessons:
   summary: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   how: best base modelを基準にOOF確率の相関とメタ学習後precisionを比較し、改善しなければ単体モデルを採用する
   when: DM3などで複数の高相関モデル出力をスタッキングしてprecision改善を狙う時
 - id: L113
@@ -5783,9 +5792,9 @@ lessons:
   tags:
   - frontend
   - gate
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-15'
   how: Phase3のmomentum_cache事前計算に頼らず、FoF再計算ループ内のComponentPriceBlock出力またはGS側cumulative_return直接計算に合わせる
   target_files:
   - recalculate_fast.py
@@ -5813,7 +5822,7 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 行数ヒューリスティックではなくis_monthly_data()で頻度判定し、月次168-192行を日次扱いしないようにする
@@ -5967,7 +5976,7 @@ lessons:
   summary: IF benchmark_ticker=空文字等のバリデーションエラーが1つでもあるとPortfolioRepository.load()がNoneを返しrec
   tags:
   - universal
-  helpful_count: 7
+  helpful_count: 9
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 問題PFのバリデーションを分離し、FoF recalcは必要に応じて_recalculate_fof_history()直接呼出しで単一障害点を回避する
@@ -6236,6 +6245,9 @@ lessons:
   - lesson
   target_files:
   - sync_lessons.sh
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L037
   title: standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック
   summary: IF Portfolio(type=standard)はschema上pipeline_config optionalのため、登録スクリプトで未付与でも保存され
@@ -6253,6 +6265,9 @@ lessons:
   - api
   - frontend
   - pipeline
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-15'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
   summary: タスクYAML(queue/tasks/)・inbox(queue/inbox/)・報告YAML(queue/reports/)等を書く前に必ず対象ファイルをR

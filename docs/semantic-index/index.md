@@ -448,7 +448,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？ |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -472,4 +472,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:56:47+09:00 リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ。確認して |
 | cmd | `cmd_karo_ci_fix_rebalancer_audit` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T02:18:51+09:00 リバランサーのスマホ画面だが、縦に長くカードが邪魔で一覧性を著しく損なっているな。デザインのUXが極端に悪い。まずは考えよう |
+| cmd | `cmd_karo_rebalancer_push` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T03:15:53+09:00 リバランサーのGoogleOauthはもう誰でも利用できる？ |
+| cmd | `cmd_karo_rebalancer_push_2` |
 

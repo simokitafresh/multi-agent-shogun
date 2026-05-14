@@ -39,7 +39,7 @@ task:
   - 'cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md scripts/cdp/cdp_cli.sh
     scripts/cdp/cdp_server.py scripts/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py
     context/dm-signal-ops.md §DM-Signal本番FE CDP確認手順'
-  status: done
+  status: idle
   stop_for: []
   task_id: cmd_2743_impl
   task_type: impl
