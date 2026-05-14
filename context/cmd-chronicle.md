@@ -792,3 +792,5 @@
 | cmd_2719 | frontend/src/配下にユーザー作成テストが0件(find確認済み)。Vitest+Testing Libraryを導入し、主要コンポーネントのユニットテストを追加する | rebalancer | 05-14 | Vitest+Testing Library+jsdomをf |
 | cmd_2721 | Playwright/CypressなどのE2Eテストフレームワークが未導入(grep確認済み)。銘柄入力→計算→結果表示の主要ユーザーフローをE2Eで検証できるようにする | rebalancer | 05-14 | Playwrightをfrontendへ導入し、銘柄入力から |
 | cmd_2722 | 過剰なカード化(glass-card内にrow card)で画面を有効活用できず、スマホでもPCでも一覧性が低い。カード廃止→テーブル直書き+PC2カラム化+ui-design-guide準拠(コントラスト、タッチターゲット、階層)でデータ密度と可読性を両立する | rebalancer | 05-14 | カード内row cardを廃止し、PortfolioForm |
+| cmd_2724 | cmd_2703で偽陽性修正済みのac_phase_mixing(29件)とac_param_sufficiency(19件)のWARNカウントがquality logに残存し、正当発火時に即BLOCK(post-5/12 BLOCKの48%が遺産起因)。加えてcmd_quality_log.shとcmd_save.sh log_cmd_save_pass()のヒアドキュメントが2スペース余分でYAML破損を引き起こしていた(cmd_2723起票中に発見、直接修正済み)。残存WARN遺産の解消とcount_same_warn_patternのresolved除外とインデント修正のテスト追加で恒久対策する | infra | 05-14 | cmd_2703で解消済みのac_phase_mixing/ |
+| cmd_2726 | 4行のうち3行使用時にtarget_weight未記入行がバリデーションエラーになる。shares未記入も0入力が必要で面倒。ticker未記入行を除外、target_weight未記入を0%扱い、shares未記入を0扱いにする | rebalancer | 05-14 | 未入力ticker行を計算対象から除外し、未入力target |
