@@ -212,22 +212,14 @@ send_info_cmd_notification() {
     fi
 }
 
-notify_idle_shogun_gate_clear() {
+notify_shogun_gate_clear() {
     local cmd_id="$1"
     local message="${2:-GATE CLEAR — ${cmd_id} 完了}"
-    local shogun_pane="shogun:main"
-    local shogun_state=""
-
-    shogun_state=$(tmux show-options -p -t "$shogun_pane" -v @agent_state 2>/dev/null || true)
-    if [ "$shogun_state" != "idle" ]; then
-        echo "  shogun inbox: SKIP (state=${shogun_state:-unknown})"
-        return 0
-    fi
 
     if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$message" gate_clear cmd_complete_gate 2>/dev/null; then
-        echo "  shogun inbox: OK (idle notify)"
+        echo "  shogun inbox: OK (gate clear notify)"
     else
-        echo "  [INFO] shogun inbox: WARN (idle notify failed, non-blocking)"
+        echo "  [INFO] shogun inbox: WARN (gate clear notify failed, non-blocking)"
     fi
 }
 
@@ -3632,7 +3624,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     else
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
-    notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
+    notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
     notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
@@ -5367,7 +5359,7 @@ PY
     else
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
-    notify_idle_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
+    notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
     notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
