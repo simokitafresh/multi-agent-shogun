@@ -32727,7 +32727,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -32737,7 +32737,7 @@ entries:
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save_warn"
@@ -32747,7 +32747,7 @@ entries:
     ac_count: 0
     gate_result: "BLOCK"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -32757,7 +32757,7 @@ entries:
     ac_count: 0
     gate_result: "PASS"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
@@ -32766,8 +32766,102 @@ entries:
     ac_count: 0
     gate_result: "PASS"
     karo_rework: "no"
-    gunshi_verdict: "unknown"
+    gunshi_verdict: "APPROVE"
     ninja_blockers: 0
     supplementary_cmds: 0
     source: "cmd_save"
     timestamp: "2026-05-14T03:49:34Z"
+  - cmd_id: "cmd_2701"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-14T03:57:08Z"
+  - cmd_id: "cmd_2701"
+    ac_count: 0
+    gate_result: "CLEAR"
+    karo_rework: "no"
+    gunshi_verdict: "APPROVE"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_complete_gate"
+    timestamp: "2026-05-14T03:57:35Z"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-14T03:58:15Z"
+    notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T03:58:17Z"
+    notes: "WARN累計昇格: 「ac_param_sufficiency|check=check_ac_param_sufficiency」が13回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-14T03:58:47Z"
+    notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "BLOCK"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T03:58:48Z"
+    notes: "WARN累計昇格: 「ac_param_sufficiency|check=check_ac_param_sufficiency」が14回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T03:59:28Z"
+  - cmd_id: "cmd_2702"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T03:59:31Z"
+  - cmd_id: "cmd_2703"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T04:04:18Z"
+  - cmd_id: "cmd_2703"
+    ac_count: 0
+    gate_result: "PASS"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    supplementary_cmds: 0
+    source: "cmd_save"
+    timestamp: "2026-05-14T04:04:26Z"

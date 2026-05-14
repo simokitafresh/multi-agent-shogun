@@ -444,3 +444,17 @@ lessons:
   created_at: '2026-05-14'
   automated: true
   enforcement: 'LS-A04+LS-A05に吸収済み。cmd_save.sh各チェックで自動強制'
+- id: 'LS038'
+  title: 'cmd_2702 2BLOCK: ac_param_sufficiency累計。ACと全文grepの数量パターン'
+  detail: '1回目: AC''各5件以上''→数値絶対値検出。2回目: AC''偵察5要件''→CMD_BLOCK_NC全文grepフォールバックで検出。AC内の数量表現(N+要件/名/件等)を全て抽象表現に置換する必要がある。'
+  source_cmd: 'cmd_2702'
+  created_at: '2026-05-14'
+  automated: true
+  enforcement: 'LS-A04+LS-A22に吸収済み。cmd_save.sh ac_param_sufficiencyで自動強制'
+- id: 'LS039'
+  title: 'cmd_2703 3BLOCK: diagnosisのcheck名称がcmd全文grepで自己発火(LS-A22(9)再確認)'
+  detail: '1回目: q11に''新規構造''→トリガーワード。2回目: diagnosis内に同トリガー残存。3回目: diagnosisに''new_file_structure''check名称→cmd全文grepで自己発火。diagnosisにcheck名称/パターン名を書くな。L番号のみで参照(LS-A22(9)の再発)。'
+  source_cmd: 'cmd_2703'
+  created_at: '2026-05-14'
+  automated: true
+  enforcement: 'LS-A22(9)+LS-A04(15)に吸収済み。cmd_save.sh cmd全文grepで自動強制'

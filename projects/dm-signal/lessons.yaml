@@ -1274,7 +1274,7 @@ lessons:
   - tasks/lessons.md
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L602
@@ -1366,7 +1366,7 @@ lessons:
   - backend/app/services/pipeline/blocks/trend_reversal_filter.py
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L593
@@ -1781,7 +1781,7 @@ lessons:
   - outputs/analysis/alm_research/cmd_1735_strategy_comparison.csv
   - outputs/analysis/alm_research/cmd_1736_results.yaml
   - outputs/analysis/cmd_1035_parity_verification.json
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L553
@@ -1816,7 +1816,7 @@ lessons:
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
 - id: L549
@@ -1835,9 +1835,9 @@ lessons:
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
   summary: '計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:
@@ -1933,9 +1933,9 @@ lessons:
   summary: 'ninja_monitorのauto-commit(chore: auto-commit before /clear)に自分のcommitが巻き込まれるケース。'
   tags:
   - universal
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 4
-  last_referenced: '2026-05-11'
+  last_referenced: '2026-05-12'
 - id: L535
   title: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及
   summary: cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テ
@@ -2051,9 +2051,9 @@ lessons:
   summary: K=2-5のβ分離分析でα share(%)が単調減少(6.5%→4.2%→1.3%→1.0%)。分散(K増)はβリスクを希釈するが、同時にmomentum選出
   tags:
   - recon
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   target_files:
   - outputs/analysis/nested_fof/r28_k_beta_decomposition.yaml
   - scripts/analysis/nested_fof/r28_k_beta_decomposition.py
@@ -2179,7 +2179,7 @@ lessons:
   - yaml
   - inbox
   - reporting
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 5
   last_referenced: '2026-05-12'
   how: 同一lockfileを再取得する入れ子呼び出しを避け、lock保持区間を分離するかlock済みコンテキスト用の内部更新関数を使う
@@ -2209,6 +2209,9 @@ lessons:
   - error-handling
   target_files:
   - tasks/lessons.md
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -3069,9 +3072,9 @@ lessons:
   summary: 今回は事故契機の一括チェックだが、pipeline_config欠落のような設定不備は保存時に混入しうる。月次or四半期で自動実行し、早期検出するのが望ましい。
   tags:
   - pipeline
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   how: 全PF健全性スイープを月次または四半期の定期実行候補にし、保存時混入を早期検出する
   target_files:
   - outputs/analysis/cmd_1091_pf_health.csv
@@ -3767,7 +3770,7 @@ lessons:
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 4
   last_referenced: '2026-05-12'
 - id: L341
@@ -3785,9 +3788,9 @@ lessons:
   tags:
   - db
   - api
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
   how: 非同期get()ではなくapiCache.has(key)でメモリTTLとIndexedDB manifestを確認し、ETag送信前のガードに使う
   target_files:
   - frontend/lib/__tests__/api-client-etag.test.ts
@@ -4004,7 +4007,7 @@ lessons:
     High F
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-12'
   target_files:
@@ -4129,7 +4132,7 @@ lessons:
   tags:
   - data
   - preprocessing
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-12'
   how: tick/日次前提のSADF/GSADF/VPIN/Kyle等を除外し、CUSUM・Amihud月次集計・Binary Entropyなど月次で成立する特徴量だけ検証する
@@ -4355,9 +4358,9 @@ lessons:
   - pipeline
   - testing
   - gate
-  helpful_count: 0
-  harmful_count: 1
-  last_referenced: '2026-05-10'
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-14'
 - id: L285
   title: P(det)と構造変化検定を同義扱いするな。break検出と悪化方向判定は分離
   summary: P(det)はrolling recent vs longの方向付き悪化確率(生成過程変化を探索しない)。構造変化検定はbreak dateを探索し生成過程の変
@@ -4910,9 +4913,9 @@ lessons:
   - wsl2
   target_files:
   - app/DM-signal/frontend/next.config.js
-  helpful_count: 0
+  helpful_count: 1
   harmful_count: 4
-  last_referenced: '2026-05-11'
+  last_referenced: '2026-05-14'
 - id: L215
   title: 本番viewer認証の自動化ではrepo内.envよりRender live envを優先せよ
   summary: DM-signalのviewer passwordはRender側で月次更新され、repo内backend/.envはstaleになり得る。CDP自動認証でlo
@@ -4922,9 +4925,9 @@ lessons:
   - process
   - security
   - oauth
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L214
   title: CDP性能計測の前提確認では timing より先に『正常画面か』を検査すべき
   summary: '`localhost:3000` や static export 配信先で CDP 計測を始めても、実 DOM が 「只今、城の修繕中にございます」の障害画面な'
@@ -5996,7 +5999,7 @@ lessons:
   tags:
   - api
   - deploy
-  helpful_count: 4
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-12'
   how: ウォームアップGET後にPF間でリトライと30秒待機を入れ、409は前回sync完了待ちとして扱う
@@ -6095,9 +6098,9 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L065
   title: 本番コードパス統一原則 — 数学的等価でも本番と同一コードパスを使え
   summary: IF MomentumCache≡PipelineEngineでも本番がPipelineならGSもPipeline使用時 THEN MomentumCache≡
@@ -6542,9 +6545,9 @@ lessons:
   summary: ブロック名は BlockType enum 値で統一する（2026-02-14）
   tags:
   - gate
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
-  last_referenced: '2026-05-12'
+  last_referenced: '2026-05-14'
 - id: L001
   title: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）
   summary: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）

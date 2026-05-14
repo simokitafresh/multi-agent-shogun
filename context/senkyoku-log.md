@@ -903,4 +903,9 @@
 | cmd_2696 | 修行L4テンプレートに教訓参照AC追加 | GATE CLEAR | 阻害2: 修行で教訓参照率0%→AC強制で学習ループ開通 |
 | cmd_2697 | auto lesson_write(register_recommended→自動登録) | GATE CLEAR | 阻害3: 教訓登録の手動依存→Phase4完遂 |
 | cmd_2698 | skill_auto_improve FIXヒントDB参照追加 | GATE CLEAR | 汎用テンプレート→具体的防止ステップ。一発CLEAR率向上 |
-| session成果 | 14cmd全CLEAR+CI修正1件+修行L4r16全6PASS。WA率0%。成長ループ阻害3箇所全修正。教訓7件登録(LK013,L599,L601,L603,L605,L607) | 環境蓄積完了 | 次の家老: 成長ループ3阻害修正済み+bulletin自動確認+WA台帳自動backfill+karo_direct全経路正規化 |
+| cmd_2699 | draft_review SKIP ac_countカウント修正 | GATE CLEAR | karo_direct配備でac_count=0→軍師レビュー断絶の根因修正 |
+| cmd_2700 | effectiveness_scoreフィルタ導入(ノイズ教訓除外) | GATE CLEAR | NOT_USEFUL>50%教訓を自動除外。注入品質改善 |
+| cmd_2701 | rebalancerプロジェクト登録 | GATE CLEAR | config+projects+context 3ファイル。偵察基盤整備 |
+| cmd_2702 | 万全偵察rebalancer(水平4+垂直4) | 作業中 | 4名配備済み。parent_cmd忍者別分離でGP-042回避 |
+| CI修正 | context_freshness除外リスト+karo_direct修行テンプレート | commit済み | 連日ALERT根絶+deploy_task.sh --direct正規化 |
+| session成果 | 17cmd CLEAR(cmd_2685-2701)+CI修正2件+修行L4r16全6PASS+rebalancer偵察中。WA率0%。成長ループ阻害3箇所全修正+effectiveness_score導入+draft_review SKIP修正 | 環境蓄積完了 | 次の家老: 成長ループ全開通+bulletin自動確認+WA台帳自動backfill+karo_direct全経路正規化+万全偵察parent_cmd分離パターン(LK-A06 v5) |

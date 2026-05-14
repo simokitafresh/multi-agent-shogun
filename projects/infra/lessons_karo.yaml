@@ -101,20 +101,24 @@ lessons:
   when: workaround記録時。同一category 3件以上の時
   how: パターン集計→構造的解決cmd起票→gate作成→発火率確認。代筆禁止(忍者に差し戻す)
 - id: LK-A06
-  title: 並列配備の排他ルール — DB/gate系/ビルドは直列必須
+  title: 並列配備の排他ルール — DB/gate系/ビルドは直列必須+万全偵察はparent_cmd分離
   detail: |
     (1)DB操作は直列配備(タイムアウト実証済み)
     (2)gate系(autofix/format/テスト)変更は直列配備(依存関係で衝突)
     (3)Androidビルド(gradlew)は排他(build dir競合実証)
     (4)異なるcmd間のファイル変更競合は家老が手動確認
     (5)R000(Codex→Sonnet→Opus)は優先順位であり排他ではない。idle忍者は即配備
-  source_ids: [LK022, LK046, LK050, LK051, LK066, LK067, LK068, LK079]
+    v5吸収(2026-05-14):
+    - 万全偵察(同一cmdを複数忍者に配備)はparent_cmdを忍者別に分離せよ(cmd_2702_{ninja}形式)
+    - 根因=duplicate_deploy_gate(GP-042/cmd_2684)が同一parent_cmdの二重配備をBLOCK
+    - LK010(並列E2Eテストfixture)と同パターン。ガードを緩めず配備側で分離が正解
+  source_ids: [LK022, LK046, LK050, LK051, LK066, LK067, LK068, LK079, LK010]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh重複ガード(GP-042)+karo.md §10 DB排他+karo-operations.md並列配備ルール'
 
 # === cmd設計/品質の鎖 ===
-  when: 複数忍者への同時配備計画時。DB操作/gate系/ビルド含むcmd
+  when: 複数忍者への同時配備計画時。DB操作/gate系/ビルド含むcmd。万全偵察はparent_cmd分離
   how: DB=直列。gate系=直列。Androidビルド=排他。R000は優先順位であり排他ではない
 - id: LK-A07
   title: 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す

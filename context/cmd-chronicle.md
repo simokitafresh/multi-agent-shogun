@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-12 -->
+<!-- last_updated: 2026-05-14 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,41 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1859 | perf — Gate15 orphan検知 git logバッチ化（GP-170） | infra | 04-12 | Gate15 orphanループ内のgit log個別呼出し |
-| cmd_1862 | fix — archive_completed.sh TOCTOU競合修正 shogun_to_karo.yaml読込flock内移動（GP-182） | infra | 04-12 | archive_cmds()のQUEUE_FILE読込(ma |
-| cmd_1861 | fix — deploy_task.sh STALE_RESET全パス実行+実行済みフラグ確認（GP-180+GP-181） | infra | 04-12 | reset_stale_fields()をresolve_c |
-| cmd_1863 | ALM WF再実行 — MaxDD方向バグ修正後の全量再計算(バグデータ削除+再生成) | dm-signal | 04-12 | AC1完了(127件削除/87件指定範囲+40件スコープ外を |
-| cmd_1864 | FE Compare SummaryにCalmar RatioとUWP(Underwater Period)を追加 | dm-signal | 04-12 | Compare SummaryページにCalmar列(高→低 |
-| cmd_1865 | ALM忍法CPCV検証 — 7忍法×4ファミリー選択バイアス定量評価 | dm-signal | 04-12 | 既存の --alm-dm 24セルに加え、constrain |
-| cmd_1866 | ALM忍法 全方位検証(7手法) — WF-OOS劣化率+β調整+超越条件+IS感度+指標感度+構成体数+SPA | dm-signal | 04-12 | cmd_1866 ALM忍法全方位検証7手法完了。8手法中5 |
-| cmd_1868 | ALM×シン — ALM四神BBのGS CSVからchampion_selector固定選出(2×2因子分析) | dm-signal | 04-12 | ALM四神BB 7忍法×3目的=21チャンピオン選出完了。c |
-| cmd_1867 | シン×ALM — シン四神BBのGS CSVをWFエンジンで動的選出(2×2因子分析) | dm-signal | 04-12 | l1_alm_wf_engine.py --batch-cs |
-| cmd_1869 | 2×2因子分析 同一期間統一再計算(2015-03~2026-01, 130ヶ月) | dm-signal | 04-12 | cmd_1869 2×2因子分析完了。7忍法×6メトリクス× |
-| cmd_1870 | 2×2因子分析 β調整版 — 同一期間4セルのα/β分離+β調整後CAGR比較 | dm-signal | 04-12 | 4セル×7忍法=28データポイントのβ/α/β調整後CAGR |
-| cmd_1871 | L2奥義8パターン生成 Step1 — universe CSV作成+GS実行+②WF | dm-signal | 04-12 | — |
-| cmd_1872 | L2奥義8パターン生成 Step2 — ③〜⑧選出+L2 2×2因子分析(β調整) | dm-signal | 04-12 | — |
-| cmd_1873 | fix — SessionEnd hookのALERT判定を修正（cmd_pending/ninja_activeはINFO化） | infra | 04-12 | clear_prep_check.shのcmd_pendin |
-| cmd_1874 | gate — MCP書込み時の殿帰属キーワード照合hook追加（研究出力→殿定義混同防止） | infra | 04-12 | cmd_1874: pre-mcp-lord-attribu |
-| cmd_1875 | gate — MCP書込み時の設計情報/好み仕分けhook（設計パラメータはprojects/*.yamlへ誘導） | infra | 04-12 | pre-mcp-lord-attribution-guard |
-| cmd_1877 | L2奥義 49ブロック完全直列 — 1忍者1忍法OOM防止 | dm-signal | 04-13 | ③3-5 kawarimi GS完了。270900パターン処 |
-| cmd_1879 | WF出力上書きバグ修正後の3忍法WF再実行 — 並列配備 | dm-signal | 04-13 | ④4-1 bunshin WF再実行を完了。5成果物生成と忍 |
-| cmd_1878 | L2奥義 8パターン全比較 — チャンピオン21体確認+2×2因子分析+傾向分析 | dm-signal | 04-13 | AC1+AC2を完了。8パターン全てで21体を確認し、168 |
-| cmd_1880 | L2奥義168体 β調整検証 — 市場リスク分離+α算出 | dm-signal | 04-13 | AC1-AC4完了。168体をSPY共通期間(88-161ヶ |
-| cmd_1881 | DM-Signal push修復 — git履歴から大ファイル除去+push | dm-signal | 04-13 | AC1完了(8ファイル履歴除去済み)。AC2でG2ゲートブロ |
-| cmd_1882 | UWP定義修正 — 比較表+β調整表再生成+スプレッドシート更新 | dm-signal | 04-13 | AC1-AC4完了。UWPを本番定義(最大DDのpeak→r |
-| cmd_1883 | GS再実行 — filter-repo消失3忍法×2パターン復旧 | dm-signal | 04-13 | cmd_1883の欠損GS成果物6本を確認し、未存在だったk |
-| cmd_1884 | GS出力CSV命名統一 — _grid_results_fast/_grid_monthly_fast形式に統一 | dm-signal | 04-13 | cmd_1884対象4dirのGS出力CSVを_grid_* |
-| cmd_karo_gp183_184 | GP-183/184実装 — commit check研究cmd免除+進行中月除外AC文言 | infra | 04-13 | deploy_task.sh の binary_checks |
-| cmd_1885 | 偵察+修正 — 三層学習ループFAIL率分析+gate強化 | infra | 04-13 | gate_fire_log.yaml の22件中9件FAIL |
-| cmd_1887 | 修正 — gate_shogun_startup.sh 2件の誤検知修正（inboundアーカイブ+AC段階配備） | infra | 04-13 | gate_shogun_startup.sh 誤検知2件修正 |
-| cmd_1889 | 整備 — context鮮度WARN解消（dm-signal 3件+infrastructure 1件） | infra | 04-13 | AC1/AC2達成。context/infrastructu |
-| cmd_karo_shouka2_wid | 消火撤去第2弾 — worker_id/parent_cmdファイル名推定を撤去 | infra | 04-13 | gate_report_autofix_main.pyからw |
-| cmd_1888 | 消火撤去 — lessons_useful MISSING autofixをBLOCK化（消火→免疫転換） | infra | 04-13 | gate_report_autofix_main.pyのle |
-| cmd_1890 | 消火撤去 — binary_checks result文字列正規化(PASS/ok→yes)を撤去しBLOCKに転換 | infra | 04-13 | autofix から PASS/ok/FAIL/ng の r |
-| cmd_1891 | GP-186 — infra系shallow cmdのscout_exempt自動判定（cmd_save.sh改修） | infra | 04-13 | cmd_save.sh の q5 判定に infra+q4_ |
-| cmd_1892 | GP-189 — lesson_write.shにtitle Jaccard類似度WARN追加（教訓重複検出） | infra | 04-13 | lesson_write.sh に title Jaccar |
-| cmd_karo_gp110_deploy_warn | GP-110 — deploy_task.shに配備前重複チェック(自走commit検知WARN) | infra | 04-13 | deploy_task.sh に target_path の |
-| cmd_1893 | L2奥義168体 パターン間相関分析 — ①(登録済み)vs②〜⑧の月次リターン相関構造 | dm-signal | 04-13 | AC1-AC3完了。168体を共通87ヶ月で揃えた相関分析を |
 | cmd_1894 | L3奥義EW全量β調整 — 79万組み合わせでL2αを超えるL3があるか | dm-signal | 04-14 | — |
 | cmd_karo_gs_vectorized | GS高速化 — gs_vectorized_subset.py本実装(3最適化+チャンク+verify) | dm-signal | 04-14 | gs_vectorized_subset.py に3最適化+ |
 | cmd_1896 | L3 EW β調整 — 84体C(84,2)=3486通りのβ/α分離+L2α比較 | dm-signal | 04-14 | 3486ペアのL3 2体EW β調整を完了。L3最良α=13 |
@@ -808,3 +773,4 @@
 | cmd_2696 | 修行cmdの教訓参照率0%(89件feedback中useful=0)。根因=修行ACに教訓活用ステップがなくgate精読+報告作成で完結。テンプレートにAC(注入教訓から1件以上referenceせよ)を追加し教訓参照を構造的に強制 | infra | 05-12 | 修行cmd L4テンプレートに、注入教訓を1件以上参照してl |
 | cmd_2698 | skill_auto_improve.shがgate FIXヒント75件を読まずBLOCK理由文字列のパターンマッチで防止ステップを生成→汎用テンプレート3件が具体性不足→一発CLEAR率71.6%止まり。FIXヒントDBを自動参照し具体的な防止ステップを生成する | infra | 05-12 | gate_report_format_main.pyにloo |
 | cmd_2699 | karo_direct配備(cmd_2695-2698の4件連続)でac_count=0→draft_review SKIPが発生し、軍師レビューの成長ループ第二層が断絶している。全配備パスでac_countが正しく返るよう修正する | infra | 05-12 | karo_direct由来でtask側ACが空でも、壊れたa |
+| cmd_2701 | rebalancerを将軍システムの管理対象に登録する。config/projects.yaml+projects/rebalancer.yaml+context/rebalancer.mdを作成し、偵察・cmd配備・教訓蓄積の基盤を整える | infra | 05-14 | rebalancerを管理対象として登録し、config索引 |
