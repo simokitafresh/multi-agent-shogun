@@ -1429,18 +1429,23 @@ with open(sys.argv[1], encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 entries = data.get("executions") or []
 stats = defaultdict(lambda: {"total": 0, "fail": 0, "last": ""})
+by_skill = defaultdict(list)
 for entry in entries:
     if not isinstance(entry, dict):
         continue
     skill = str(entry.get("skill") or "").strip()
     if not skill:
         continue
-    result = str(entry.get("result") or "").upper()
-    stats[skill]["total"] += 1
-    if result == "FAIL":
-        stats[skill]["fail"] += 1
-    if entry.get("ts"):
-        stats[skill]["last"] = str(entry.get("ts"))
+    by_skill[skill].append(entry)
+for skill, skill_entries in by_skill.items():
+    recent_entries = skill_entries[-50:]
+    stats[skill]["total"] = len(recent_entries)
+    if recent_entries:
+        stats[skill]["last"] = str(recent_entries[-1].get("ts") or "")
+    for entry in recent_entries:
+        result = str(entry.get("result") or "").upper()
+        if result == "FAIL":
+            stats[skill]["fail"] += 1
 rows = []
 for skill, item in stats.items():
     total = item["total"]
@@ -1456,14 +1461,16 @@ PY
         _skill_warn=0
         while IFS=$'\t' read -r _sk _pct _fail _total _last; do
             [ -n "$_sk" ] || continue
-            echo "  ${_sk}: FAIL率=${_pct}% (${_fail}/${_total}) last=${_last}"
-            if [ "${_fail:-0}" -gt 0 ]; then
+            echo "  ${_sk}: 直近50件FAIL率=${_pct}% (${_fail}/${_total}) last=${_last}"
+            if [ "${_pct:-0}" -gt 10 ]; then
                 _skill_warn=1
             fi
         done <<< "$_skill_stats"
         if [ "$_skill_warn" -eq 1 ] && [ "$overall" != "ALERT" ]; then
             overall="WARN"
-            alerts+=("スキル別FAIL率: 改善対象あり")
+            alerts+=("スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり")
+        elif [ "$_skill_warn" -eq 0 ]; then
+            echo "  OK: 直近50件FAIL率10%超スキルなし"
         fi
     else
         echo "  OK: 実行ログあり、集計対象0件"
