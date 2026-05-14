@@ -778,3 +778,13 @@
 | cmd_2704 | 偵察タスク(scout_exempt:true)はコード変更を伴わないため未commitファイルが存在しない前提だが、git_uncommitted_gateはscout_exemptを考慮せずBLOCKする。偵察タスクではgit_uncommitted_gateをスキップする | infra | 05-14 | scout_exempt:trueタスクではreport_r |
 | cmd_2705 | Renderは/var/lib/dataに永続diskをmountするが、アプリは相対パスstatic/data/cacheに読み書きし永続disk未使用。加えて/staticマウントでcache JSONが外部閲覧可能。CACHE_DIR環境変数対応+/static公開制限で修正する | rebalancer | 05-14 | Render永続diskにcacheを書き込むようCACHE |
 | cmd_2706 | pytest-asyncioのasyncio_mode設定欠如により12件のasyncテストがFAIL。pytest設定追加+非推奨asyncio.get_event_loop().run_until_complete()をasyncio.run()に修正する | rebalancer | 05-14 | pytest-asyncioを0.24.0にpinし、bac |
+| cmd_2708 | Toast.tsx ×ボタン押下時にsetIsVisible(false)のみでonClose()が呼ばれない。errorステートが残存し、同一エラー再発時にToastが再表示されない | rebalancer | 05-14 | Toastの×ボタン押下時もexit animation後に |
+| cmd_2707 | Next.js 15.0.3にcritical(RCE GHSA-9qr9)+high(auth bypass GHSA-f82v)含む脆弱性4件。15.5.18へupgradeし、Serwist互換性とbuild/lint/auditを検証する | rebalancer | 05-14 | Next.js 15.0.3→15.5.18アップグレード完 |
+| cmd_2710 | updaterとユーザーAPIが同じJSONを同時読み書きすると部分書込みでJSONDecodeError→Noneフォールバック→不要な外部API fetchが発生。atomic rename+lockで並行安全性を確保する | rebalancer | 05-14 | DiskCache.setをtmp書込み後のatomic r |
+| cmd_2709 | Backend ModelはList[str]のみでregex・件数上限・supported ticker強制なし。重複tickerは後勝ち上書きで整合崩壊。入力検証を追加し、重複tickerを400エラーにする | rebalancer | 05-14 | Backend API入力検証を追加し、unsupporte |
+| cmd_2712 | get_pricesが各tickerを逐次awaitし毎回1秒sleep。18銘柄で最低17秒以上。semaphore bounded concurrencyで並列化し、cache hit時はsleepスキップでレスポンス時間を大幅短縮する | rebalancer | 05-14 | get_pricesをSemaphore付き並列fetchに |
+| cmd_2713 | sw.jsのprecache URLにバックスラッシュが混入しPWAアイコンcache失敗。加えてguide内URLがrender.yaml正本と不一致。Linux再生成+URL統一で修正する | rebalancer | 05-14 | Linux上のnpm run buildでSerwist s |
+| cmd_2714 | FundingSection折りたたみがキーボード未対応、icon-onlyボタンにaria-labelなし、モバイルで横溢する。a11y標準に準拠しUX品質を改善する | rebalancer | 05-14 | FundingSectionの折りたたみをbutton+ar |
+| cmd_2715 | CIが存在せず、Render前に品質ゲートが走らない。GitHub Actionsでbackend pytest+frontend lint/build/auditを自動実行し、品質を構造的に保証する | rebalancer | 05-14 | GitHub Actions CI workflowを新規作 |
+| cmd_2716 | BUY/SELL/HOLDが英語ハードコード、formatCurrencyがen-US固定、APIエラーが英語のまま。日本語モードで全UI要素がi18n対応するよう修正する | rebalancer | 05-14 | 日本語モードでリバランス結果の売買ラベル、通貨表示、APIエ |
+| cmd_2718 | Python requirementsがversion pinなしで再現性ゼロ。npm outdatedで主要パッケージに更新あり。requirements pinとnpm依存更新で再現性とセキュリティを確保する | rebalancer | 05-14 | backend/requirements.txtをpip f |
