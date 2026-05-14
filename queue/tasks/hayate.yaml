@@ -1,8 +1,9 @@
 task:
-  _ac_task_id: cmd_2686_exact
+  _ac_task_id: cmd_2743_impl
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2686
-  ac_version: d41d8cd9
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2743
+  ac_version: b99834bc
+  done_at: "2026-05-15T02:56:33+09:00"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -26,16 +27,57 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2686
+  parent_cmd: cmd_2743
   project: infra
+  purpose: cmd_complete_gate.sh L222がshogun_state!=idleでinbox_writeをスキップし、将軍がactive時(殿と対話中)にGATE
+  recommended_skills:
+  - cdp-browse
+  scout_exempt: true
+  semantic_concepts:
+  - 'shogun_android_app — 将軍Androidアプリ:  android/ android/app/build.gradle.kts android/app/src/main/java/com/shogun/android/
+    context/infrastructure.md §Android App'
+  - 'cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md scripts/cdp/cdp_cli.sh
+    scripts/cdp/cdp_server.py scripts/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py
+    context/dm-signal-ops.md §DM-Signal本番FE CDP確認手順'
   status: done
   stop_for: []
-  task_id: cmd_2686_exact
-  task_type: exact
+  task_id: cmd_2743_impl
+  task_type: impl
   related_lessons:
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
+  - id: 'L502'
+    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
+    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L097'
+    summary: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
+    detail: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
+  - id: 'L361'
+    summary: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+    detail: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+  - id: 'L035'
+    summary: 'cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま'
+    detail: 'cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま'
+  - id: 'L078'
+    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+  - id: 'L205'
+    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+  - id: 'L531'
+    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+  - id: 'L038'
+    summary: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
+    detail: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
+  - id: 'L606'
+    summary: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval '
+    detail: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval '
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -48,20 +90,32 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
+      - L502: gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw
+      - L114: cmd_464_hotfix
+      - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現
+      - L361: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
+      - L035: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま
+      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
+      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
+      - L531: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン
+      - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
+      - L606: if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval 
     ────────────────────────────────────────
     
     
+  acceptance_criteria:
+  - description: 'cmd_complete_gate.sh notify_idle_shogun_gate_clear関数のshogun_stateチェック(L222)が撤去され、常にinbox_writeが実行される'
+  - description: '関数名がnotify_shogun_gate_clearに変更されている(idleは不正確になるため)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2686.yaml
-  report_path: queue/reports/hayate_report_cmd_2686.yaml
+  report_filename: hayate_report_cmd_2743.yaml
+  report_path: queue/reports/hayate_report_cmd_2743.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 28
+    total_workarounds: 27
     top_pattern: 'verdict_override(4件)'
-    breakdown: 'verdict_override(4件), report_yaml_format(3件), stale_report(3件), commit_missing(3件), deploy_error(3件), task_redeploy(2件), ci_gate_mismatch(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
-    warning: '⚠ 過去28件のworkaround発生。品質に注意'
+    breakdown: 'verdict_override(4件), report_yaml_format(3件), stale_report(3件), commit_missing(3件), task_redeploy(2件), ci_gate_mismatch(2件), deploy_error(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), recording_error(1件), report_missing(1件), Phase A work absorbed by saizo''s cmd_1791 commit 1ff11495(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
+    warning: '⚠ 過去27件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 324
@@ -89,4 +143,4 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 2
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-12T12:23:01"
+  deployed_at: "2026-05-15T02:53:10"
