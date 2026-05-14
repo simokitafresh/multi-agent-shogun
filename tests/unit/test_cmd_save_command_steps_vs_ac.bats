@@ -160,3 +160,22 @@ run_save() {
     [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"command_steps_over_ac"* ]]
 }
+
+@test "AC6: command内の下位番号付き箇条書きはトップレベルステップに混入しない" {
+    write_cmd_queue \
+"    acceptance_criteria:
+      - 'AC1: 偵察結果が報告されている'
+      - 'AC2: 関連テストがPASSする'" \
+"      1. 偵察する
+        1. BE観点を確認
+        2. FE観点を確認
+        3. インフラ観点を確認
+      2. 報告する"
+
+    run_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"command_steps_over_ac"* ]]
+}

@@ -133,3 +133,16 @@ setup() {
     run is_gate_or_hook_addition_cmd
     [ "$status" -eq 0 ]
 }
+
+@test "Q11-FP-008: 既存gateへの条件追加は新規gate追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — cmd_save.sh q11既存gate修正"
+    scope_mode: EXACT
+    purpose: "既存gateの誤判定率を下げる"
+    command: "scripts/cmd_save.shの既存gateに条件追加し、既存判定ロジックを修正する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg -n is_gate_or_hook_addition_cmd scripts/cmd_save.sh → 既存gateあり。新規gateではなく既存チェックへの条件追加で精度改善する"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}

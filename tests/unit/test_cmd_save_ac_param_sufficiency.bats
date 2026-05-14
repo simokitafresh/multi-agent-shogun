@@ -12,9 +12,11 @@ setup_file() {
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     # check_ac_param_sufficiency: Check 13 — 関数をそのまま抽出
     eval "$(sed -n '/^check_ac_param_sufficiency()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f build_warn_note warn_note_key warn_note_message record_warn_reason check_ac_param_sufficiency
+    export -f build_warn_note warn_note_key warn_note_message record_warn_reason \
+        extract_acceptance_criteria_block check_ac_param_sufficiency
 }
 
 setup() {
@@ -148,4 +150,34 @@ _set_cmd_block_nc() {
     '
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "正常系: acceptance_criteria空リストではcommand内数量へフォールバックしない" {
+    _set_cmd_block_nc "    command: |
+      4項目を調査して報告する
+    acceptance_criteria: []"
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" != *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "異常系: inline list ACの数量指定は検出される" {
+    _set_cmd_block_nc '    acceptance_criteria: ["4項目を実装する"]'
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" == *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=1"* ]]
 }

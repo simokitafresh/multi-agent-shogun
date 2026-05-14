@@ -157,7 +157,7 @@ is_gate_or_hook_addition_cmd() {
 
     q11_value="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
     if q11_has_existing_alternative_verification "$q11_value" && \
-       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|既存.*統合|既存.*組込|既存.*組み込|既存.*改善|既存.*修正|既存.*精度'; then
+       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|既存.*統合|既存.*組込|既存.*組み込|既存.*改善|既存.*修正|既存.*精度|既存.*(gate|hook|チェック|ゲート|フック).*(条件追加|修正|改善|精度)|既存.*判定ロジック'; then
         return 1
     fi
 
@@ -232,7 +232,13 @@ extract_acceptance_criteria_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
     printf '%s\n' "$CMD_BLOCK_NC" | awk '
-        /^[[:space:]]*acceptance_criteria:/ { in_ac=1; next }
+        /^[[:space:]]*acceptance_criteria:/ {
+            line = $0
+            sub(/^[[:space:]]*acceptance_criteria:[[:space:]]*/, "", line)
+            if (line != "") print line
+            in_ac=1
+            next
+        }
         in_ac && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
         in_ac { print }
     '
@@ -3084,15 +3090,13 @@ PY
 check_ac_param_sufficiency() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
-    # acceptance_criteria セクションを抽出（なければCMD_BLOCK_NC全体をフォールバック）
+    # acceptance_criteria セクションを抽出。キー自体がない旧形式のみCMD全文へフォールバック。
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
-        /acceptance_criteria:/ { found=1; next }
-        found && /^    - / { print; next }
-        found && /^      / { print; next }
-        found { exit }
-    ')
-    [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
+    AC_SECTION="$(extract_acceptance_criteria_block)"
+    if [[ -z "${AC_SECTION//[[:space:]]/}" ]]; then
+        printf '%s\n' "$CMD_BLOCK_NC" | grep -qE '^[[:space:]]*acceptance_criteria[[:space:]]*:' && return 0
+        AC_SECTION="$CMD_BLOCK_NC"
+    fi
 
     # 数量指定パターン検出: 「N条件」「N項目」「N手法」「N種類」「N種」「Nパラメータ」等
     local QUANT_LINES
@@ -4175,8 +4179,17 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
         found && /^[[:space:]]{4,}/ { print; next }
     ')
     _STEP_COUNT=$(printf '%s\n' "$_CMD_SECTION" | awk '
-        /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ { c++ }
-        END { print c+0 }
+        function indent_len(s,    t) { t=s; sub(/[^ ].*$/, "", t); return length(t) }
+        /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ {
+            ind = indent_len($0)
+            if (min == "" || ind < min) min = ind
+            lines[++n] = $0
+            indents[n] = ind
+        }
+        END {
+            for (i = 1; i <= n; i++) if (indents[i] == min) c++
+            print c+0
+        }
     ')
     _AC_COUNT="$(count_acceptance_criteria_items)"
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
@@ -4185,9 +4198,20 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
         # Level5: commandステップからAC候補を自動生成
         echo "  ─── AC候補(commandステップから自動生成) ───" >&2
         printf '%s\n' "$_CMD_SECTION" | awk '
+            function indent_len(s,    t) { t=s; sub(/[^ ].*$/, "", t); return length(t) }
             /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ {
-                sub(/^\s*\(?[0-9]+[\.\)]\s*/, "")
-                printf "  - \"%s。binary_check: yes/no\"\n", $0
+                ind = indent_len($0)
+                if (min == "" || ind < min) min = ind
+                lines[++n] = $0
+                indents[n] = ind
+            }
+            END {
+                for (i = 1; i <= n; i++) {
+                    if (indents[i] != min) continue
+                    line = lines[i]
+                    sub(/^\s*\(?[0-9]+[\.\)]\s*/, "", line)
+                    printf "  - \"%s。binary_check: yes/no\"\n", line
+                }
             }
         ' >&2
         echo "  ─────────────────────────" >&2
