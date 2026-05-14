@@ -788,3 +788,5 @@
 | cmd_2715 | CIが存在せず、Render前に品質ゲートが走らない。GitHub Actionsでbackend pytest+frontend lint/build/auditを自動実行し、品質を構造的に保証する | rebalancer | 05-14 | GitHub Actions CI workflowを新規作 |
 | cmd_2716 | BUY/SELL/HOLDが英語ハードコード、formatCurrencyがen-US固定、APIエラーが英語のまま。日本語モードで全UI要素がi18n対応するよう修正する | rebalancer | 05-14 | 日本語モードでリバランス結果の売買ラベル、通貨表示、APIエ |
 | cmd_2718 | Python requirementsがversion pinなしで再現性ゼロ。npm outdatedで主要パッケージに更新あり。requirements pinとnpm依存更新で再現性とセキュリティを確保する | rebalancer | 05-14 | backend/requirements.txtをpip f |
+| cmd_2720 | 連続起票時に既知BLOCKパターンの教訓記録でlesson作成→supersede→物理削除のCTX浪費ループが発生(前セッション2026-05-14で20cmd連続起票時に毎回発生)。既知パターンを既存lessonクラスタにack(確認記録)する軽量メカニズムで解消する | infra | 05-14 | 既知BLOCKパターンを既存将軍教訓へack記録するヘルパー |
+| cmd_2719 | frontend/src/配下にユーザー作成テストが0件(find確認済み)。Vitest+Testing Libraryを導入し、主要コンポーネントのユニットテストを追加する | rebalancer | 05-14 | Vitest+Testing Library+jsdomをf |
