@@ -797,3 +797,6 @@
 | cmd_2742 | 現在ダークモード固定でライトモードがない(殿指摘)。Tailwind darkMode class方式で切替トグルを追加し、ユーザーがダーク/ライトを選択可能にする | rebalancer | 05-15 | Tailwind class dark方式のテーマ切替を追加 |
 | cmd_2743 | cmd_complete_gate.sh L222がshogun_state!=idleでinbox_writeをスキップし、将軍がactive時(殿と対話中)にGATE CLEAR通知が届かない。殿がntfyで先に知り将軍に聞くが将軍が知らない事態が発生(殿指摘)。stateチェックを撤去し常時通知にする | infra | 05-15 | cmd_complete_gate.shの将軍GATE CL |
 | cmd_2744 | 将軍がGATE CLEARを受けても殿の入力を待って動かない。F004(polling禁止)を過剰解釈し自走を抑制していた(殿指摘:自分で出したcmdの結果確認は鎖の中)。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿への報告)を将軍の正当な自走としてshogun.mdに明文化する | infra | 05-15 | GATE CLEAR受信後の将軍自走フローをshogun.m |
+| cmd_2746 | cmd_2662-2666で5回頻発したdeploy_task.sh配備後のinbox未配信事象の根因を特定し、再発防止策を提案する | infra | 05-15 | cmd_2662-2666のinbox未配信は、2026-0 |
+| cmd_2747 | karo_workarounds.yamlの歴史的データ汚染(detail空・category不正)82件を正しいcategory/detailに修復し、WA分析の精度を回復する | infra | 05-15 | karo_workarounds.yamlのWAデータ品質汚 |
+| cmd_2748 | dm-signal教訓698件+infra教訓583件の旧形式教訓にwhen/howフィールドを段階的に補完するスクリプトを作成し、教訓注入の精度を向上させる | infra | 05-15 | 旧形式教訓のwhen/how補完スクリプトを追加し、dm-s |

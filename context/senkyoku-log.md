@@ -909,3 +909,13 @@
 | cmd_2702 | 万全偵察rebalancer(水平4+垂直4) | 作業中 | 4名配備済み。parent_cmd忍者別分離でGP-042回避 |
 | CI修正 | context_freshness除外リスト+karo_direct修行テンプレート | commit済み | 連日ALERT根絶+deploy_task.sh --direct正規化 |
 | session成果 | 17cmd CLEAR(cmd_2685-2701)+CI修正2件+修行L4r16全6PASS+rebalancer偵察中。WA率0%。成長ループ阻害3箇所全修正+effectiveness_score導入+draft_review SKIP修正 | 環境蓄積完了 | 次の家老: 成長ループ全開通+bulletin自動確認+WA台帳自動backfill+karo_direct全経路正規化+万全偵察parent_cmd分離パターン(LK-A06 v5) |
+| cmd_2732 | Gate20スキルFAIL率を直近50件ベースに改修 | GATE CLEAR | 全期間累積→直近50件窓。3セッション連続BLOCK解消 |
+| cmd_2733 | SKILL.md script参照mtime不整合9件解消 | GATE CLEAR | startup BLOCK 2件目解消 |
+| cmd_2734-2739 | スキル穴塞ぎ6本(5層+TRIGGER精度) | 全GATE CLEAR | L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK/L6 project文脈対応 |
+| cmd_2740 | モバイル1行/銘柄コンパクト横並び | GATE CLEAR+本番反映 | カード型撤去。UIデザインガイド準拠 |
+| cmd_2741 | ティッカードロップダウン化+銘柄リスト折りたたみ | GATE CLEAR+本番反映 | 自由入力→固定選択。入力ミスゼロ+重複防止 |
+| cmd_2742 | ダーク/ライト切替トグル | GATE CLEAR+本番反映 | Tailwind darkMode class方式 |
+| cmd_2743 | GATE CLEAR通知を将軍stateに関係なく常時送信 | GATE CLEAR | notify_idle→notify_shogun。active時SKIP撤去 |
+| cmd_2744 | 将軍自走フロー明文化+startup gate強制 | GATE CLEAR | F004過剰解釈修正。自分で出したcmdの結果確認=鎖の中(殿裁定) |
+| cmd_2745 | ライトモードコントラスト修正+design.mdデュアルテーマ化 | GATE CLEAR+本番反映 | UIデザインガイド§1-§7完全準拠。WCAG AA(4.5:1/3:1/48pt/1.5+) |
+| session_20260515 | 15cmd全CLEAR+rebalancer4本本番反映+スキル5層カバー+将軍自走フロー確立+教訓3件(LS030-032) | 環境蓄積完了 | 殿の学び: スキル使用=構造的強制/F004自走=鎖の中/本番≠DM-Signal/セマンティック辞書精度=上流/殿を必要とする=崩壊 |
