@@ -53,7 +53,7 @@ def parse_concepts(text):
             left, right = row.group(1).strip(), row.group(2).strip()
             if left in {"属性", "------", "種別"}:
                 continue
-            if left in {"id", "label", "aliases"}:
+            if left in {"id", "label", "aliases", "skills"}:
                 attrs[left] = right
             elif left and right and left != "------":
                 resources.append((left, right))
@@ -67,6 +67,7 @@ def parse_concepts(text):
         concepts.append({
             "label": label,
             "aliases": aliases,
+            "skills": attrs.get("skills", "").strip(),
             "files": files,
             "lessons": lessons,
         })
@@ -84,13 +85,13 @@ lines = [
     "<!-- auto-generated from docs/semantic-index/index.md -->",
     "<!-- do not edit directly; update docs/semantic-index/index.md and run codd propagate --update -->",
     "",
-    "| 概念 | 別名 | 主要ファイル | 教訓 |",
-    "|------|------|------------|------|",
+    "| 概念 | 別名 | 主要ファイル | 教訓 | skills |",
+    "|------|------|------------|------|--------|",
 ]
 for concept in concepts:
     lines.append(
         f"| {concept['label']} | {cell(concept['aliases'])} | "
-        f"{cell(concept['files'])} | {cell(concept['lessons'])} |"
+        f"{cell(concept['files'])} | {cell(concept['lessons'])} | {cell(concept['skills'])} |"
     )
 
 body = "\n".join(lines) + "\n"

@@ -42,7 +42,7 @@ def parse_index(index_path: Path) -> list:
             right = "|".join(parts[2:-1]).strip()
             if left in {"属性", "------", "種別"} or right in {"値", "----------"}:
                 continue
-            if left in {"id", "label", "aliases"}:
+            if left in {"id", "label", "aliases", "skills"}:
                 attrs[left] = right
             elif right:
                 resources.append((left, right))
@@ -54,6 +54,11 @@ def parse_index(index_path: Path) -> list:
                 "aliases": [
                     item.strip()
                     for item in attrs.get("aliases", "").split(",")
+                    if item.strip()
+                ],
+                "skills": [
+                    item.strip()
+                    for item in attrs.get("skills", "").split(",")
                     if item.strip()
                 ],
                 "resources": resources,
@@ -96,10 +101,12 @@ def load_concepts(index_path: Path) -> list:
 
 def print_resources(concept: dict) -> None:
     print("resources:")
+    if concept.get("skills"):
+        print(f"- skills: {', '.join(concept['skills'])}")
     if concept["resources"]:
         for resource_type, ref in concept["resources"]:
             print(f"- {resource_type}: {ref}")
-    else:
+    elif not concept.get("skills"):
         print("- none")
 
 

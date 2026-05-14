@@ -2368,15 +2368,30 @@ inject_semantic_concepts() {
     purpose=$(awk '/^  purpose:/{sub(/^  purpose: /,""); p=$0; next} p && /^  [a-z]/{exit} p{p=p " " $0} END{print p}' "$task_file" 2>/dev/null)
     [ -z "$purpose" ] && return 0
 
-    # semantic_search.sh でマッチする概念+ファイルを取得
+    # semantic_search.sh でマッチする概念+ファイル+スキルを取得
     local matches
     matches=$(timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
         /^## /{label=$0; sub(/^## /,"",label); next}
+        /^- skills:/{sub(/^- skills: /,""); if($0!="なし") skills=skills " " $0; next}
         /^- file:/{gsub(/`/,"",$0); sub(/^- file: /,""); files=files " " $0; next}
         /^$/{if(label!="" && files!="") print label ": " files; label=""; files=""}
         END{if(label!="" && files!="") print label ": " files}
     ' | head -5)
     [ -z "$matches" ] && return 0
+
+    local recommended_skills
+    recommended_skills=$(timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+        /^- skills:/ {
+            sub(/^- skills: /,"")
+            if ($0 == "" || $0 == "なし") next
+            n=split($0, parts, ",")
+            for (i=1; i<=n; i++) {
+                skill=parts[i]
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", skill)
+                if (skill != "") print skill
+            }
+        }
+    ' | awk '!seen[$0]++' | head -10)
 
     # task YAMLに semantic_concepts フィールドとして注入
     local indent="  "
@@ -2385,11 +2400,20 @@ inject_semantic_concepts() {
         inject_block="${inject_block}"$'\n'"${indent}- \"${line}\""
     done <<< "$matches"
 
-    # 既存のsemantic_conceptsを除去してから追加
+    if [ -n "$recommended_skills" ]; then
+        inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
+        while IFS= read -r skill; do
+            [ -z "$skill" ] && continue
+            inject_block="${inject_block}"$'\n'"${indent}- \"${skill}\""
+        done <<< "$recommended_skills"
+    fi
+
+    # 既存のsemantic_concepts/recommended_skillsを除去してから追加
     local tmp_file
     tmp_file=$(mktemp)
     awk '
         /^  semantic_concepts:/ { skip=1; next }
+        /^  recommended_skills:/ { skip=1; next }
         skip && /^  - "/ { next }
         skip && /^  [a-z]/ { skip=0 }
         skip && /^[^ ]/ { skip=0 }
