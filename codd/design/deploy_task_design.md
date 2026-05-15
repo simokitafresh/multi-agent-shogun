@@ -34,10 +34,13 @@ The script initializes shared helpers, parses deployment arguments, validates th
 
 Inputs are `queue/shogun_to_karo.yaml`, target task YAML, project/context files, and shared lessons. Outputs are the target task YAML, report YAML, deployment logs, optional stale archives, and inbox messages.
 
+## Report Template Contract
+
+`generate_report_template` must keep `report_filename`, `report_path`, and `parent_cmd` mutually consistent. Downstream `inbox_write.sh` report gates can locate reports through either explicit `report_path` or the legacy `report_filename`/`parent_cmd` fallback, so deploy-time template generation must write all three fields before notifying the ninja.
+
 ## Brownfield Evidence
 
 - `scripts/deploy_task.sh` defines deployment argument parsing near `parse_deploy_task_args`.
 - `scripts/deploy_task.sh` generates report templates in `generate_report_template`.
 - `scripts/deploy_task.sh` centralizes final enrichment in `inject_task_modifiers`.
 - `codd/brownfield/deploy_task_brownfield.md` records the CoDD brownfield run for this target.
-
