@@ -1,8 +1,7 @@
 task:
-  _ac_task_id: null
+  _ac_task_id: cmd_2775_exact
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2775
-    (deployed 2026-05-15T14:08:03). Read from the beginning.
   cmd_id: cmd_training_L4_codd_202605151403_tobisaru
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -22,7 +21,97 @@ task:
   project: infra
   purpose: scripts/配下の全bashスクリプトの関数を列挙し、context/*.mdへの記載有無を突合。contextから参照できない仕組みを特定し、可視化優先度を判定する
   scout_exempt: true
-  status: assigned
+  status: done
   stop_for: []
   task_id: cmd_2775_exact
   task_type: exact
+  related_lessons:
+  - id: 'L500'
+    summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
+    detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L333'
+    summary: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
+    detail: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
+  - id: 'L183'
+    summary: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
+    detail: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+  - id: 'L415'
+    summary: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
+    detail: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
+  - id: 'L134'
+    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+  - id: 'L301'
+    summary: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
+    detail: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
+  - id: 'L564'
+    summary: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
+    detail: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
+  - id: 'L526'
+    summary: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+    detail: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L333: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
+      - L183: Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+      - L415: auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され
+      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
+      - L301: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
+      - L564: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す
+      - L526: validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配
+    ────────────────────────────────────────
+    
+    
+  acceptance_criteria:
+  - description: '4スクリプトの全関数が列挙されている。grep -c 関数名 で件数を確認'
+  - description: '各関数のcontext記載有無が判定されている。context記載0件の関数リストが報告に含まれる'
+  - description: 'context記載0件の関数について可視化優先度(高/中/低)が判定されている。判定基準: 他エージェントが知る必要があるか'
+  ac_version: 7d010443
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: tobisaru_report_cmd_2775.yaml
+  report_path: queue/reports/tobisaru_report_cmd_2775.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 8
+    top_pattern: 'stale_report(2件)'
+    breakdown: 'stale_report(2件), task_redeploy(1件), gate_config(1件), binary_checks_fail(1件), stale_ac_contamination(1件), report_yaml_format(1件), split_deploy_ac_scope(1件)'
+    warning: '⚠ 過去8件のworkaround発生。品質に注意'
+    gate_fail_top3:
+    - pattern: 'field_missing'
+      count: 883
+    - pattern: 'verdict_invalid'
+      count: 201
+    - pattern: 'no_lesson_reason'
+      count: 174
+    gate_warning: '⚠ gate頻出FAIL: 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lesson_candidate.found=false時はno_lesson_reasonに理由記入'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 8
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 1
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'ac_version_mismatch'
+      count: 1
+      hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
+    - reason: 'lesson_candidate_missing'
+      count: 1
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+    - reason: 'lesson_done_missing'
+      count: 1
+      hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
+  deployed_at: "2026-05-15T14:08:35"
