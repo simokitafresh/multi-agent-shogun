@@ -5878,6 +5878,35 @@ else
         echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
     fi
 
+    # ─── GATE FAIL時 自動confirmed教訓生成（ベストエフォート） ───
+    echo ""
+    echo "Auto-failure lessons for GATE FAIL:"
+    if [ -x "$SCRIPT_DIR/scripts/auto_failure_lesson.sh" ]; then
+        _AUTO_FAILURE_COUNT=0
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            if [ ! -f "$task_file" ]; then
+                echo "  [WARN] matching task file disappeared, skipping: $task_file"
+                MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+                continue
+            fi
+            MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name")
+            if [ -f "$report_file" ]; then
+                if bash "$SCRIPT_DIR/scripts/auto_failure_lesson.sh" "$report_file" 2>&1; then
+                    _AUTO_FAILURE_COUNT=$((_AUTO_FAILURE_COUNT + 1))
+                else
+                    echo "  [INFO] auto_failure_lesson.sh failed for ${ninja_name} (non-blocking)"
+                fi
+            else
+                echo "  ${ninja_name}: no report file"
+            fi
+        done
+        echo "  Processed: ${_AUTO_FAILURE_COUNT} report(s)"
+    else
+        echo "  SKIP (auto_failure_lesson.sh not found)"
+    fi
+
     # ─── GATE BLOCK時スキル学習ループ還流（cmd_2459拡張） ───
     # executor帰属: タスクYAMLファイル名からninja名抽出(CLI非依存)
     _BLOCK_EXECUTOR="${AGENT_ID:-}"
