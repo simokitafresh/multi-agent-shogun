@@ -38,6 +38,18 @@ allowed_projects: [dm-signal]
 
 # db-check
 EOF
+  mkdir -p "$PROMPT_STATE_SKILLS_DIR/codd-fix"
+  cat > "$PROMPT_STATE_SKILLS_DIR/codd-fix/SKILL.md" <<'EOF'
+---
+name: codd-fix
+description: |
+  CoDD fix PHENOMENON skill.
+  TRIGGER: /codd-fix、codd fix、事象修正、現象修正、PHENOMENON修正
+  DO NOT TRIGGER: 設計書の新規生成のみ
+---
+
+# codd-fix
+EOF
 }
 
 teardown() {
@@ -89,4 +101,14 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"/cdp-browse"* ]]
   [[ "$output" != *"/db-check"* ]]
+}
+
+@test "codd fix phenomenon prompt injects codd-fix skill reminder" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+
+  run bash "$HOOK" <<< '{"prompt":"codd fixで現象修正したい"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SKILL TRIGGER HIT"* ]]
+  [[ "$output" == *"/codd-fix"* ]]
 }

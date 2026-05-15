@@ -298,6 +298,14 @@ for entry in entries:
         if matches and matches[-1][0] == entry.name:
             break
 
+for name, trigger in (
+    ("codd-fix", "codd fix"),
+    ("codd-fix", "事象修正"),
+    ("codd-fix", "現象修正"),
+):
+    if trigger.lower() in prompt_lower and not any(item[0] == name for item in matches):
+        matches.append((name, trigger))
+
 if not matches:
     sys.exit(0)
 
