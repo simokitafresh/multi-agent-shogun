@@ -204,3 +204,123 @@ Task: `cmd_training_codd_g3_saizo`
 | AC1 | `codd spec` was executed and the local CLI failure plus spec-equivalent requirements were inserted into this existing file near the top. | yes |
 | AC2 | `codd validate` was rerun after the spec completion section was added, and this result was appended to this file. | yes |
 | AC3 | `codd measure` was rerun after validation, and `health_score=95` is recorded here. | yes |
+
+## CoDD Extract / Generate Results
+
+実行者: kagemaru
+日付: 2026-05-16
+task_id: `cmd_training_codd_loop3_kagemaru`
+対象: `scripts/reset_layout.sh`
+
+### AC1: extract
+
+コマンド:
+
+```bash
+timeout 1200 codd extract --path .
+```
+
+結果:
+
+```text
+Extracted: 0 modules from 0 files (0 lines)
+Output: .codd/extract/
+  system-context.md
+  architecture-overview.md
+
+Next steps:
+  1. Review generated docs in .codd/extract/
+  2. Promote confirmed docs: mv .codd/extract/*.md docs/design/
+  3. Run: codd scan  (to build the dependency graph)
+```
+
+観察: extractは正常終了したが、`scripts/reset_layout.sh`専用moduleは抽出されず、0 modules / 0 filesだった。`.codd/extract/`配下に汎用の`system-context.md`と`architecture-overview.md`が生成されたが、task ACは既存md末尾への追記であり、promoteは実施していない。
+
+### AC2: generate
+
+コマンド:
+
+```bash
+timeout 1200 codd generate --wave 1 --force --path .
+```
+
+結果:
+
+```text
+Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)
+Wave 1: 2 generated, 0 skipped
+```
+
+観察: generateは成功し、2件生成・0件skipだった。ただし生成された2件は既存requirements/wave_config由来の汎用CoDD文書であり、`scripts/reset_layout.sh`専用の追加設計ではなかった。task ACの「別ファイル禁止」に従い、生成物は副作用として記録し、最終成果物には含めない。
+
+### AC3: validate
+
+コマンド:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+結果:
+
+```text
+ERROR: 658 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+```
+
+主な失敗:
+
+| 種別 | 例 |
+|---|---|
+| duplicate node_id | `codd/design/*` と `docs/design/cmd_2762_*` の重複 |
+| missing frontmatter | `docs/research/*.md`、`docs/future/*.md` など広範 |
+| undefined node | `docs/governance/adr_batch_yaml_io.md` の `design:system-architecture` など |
+| wave_config mismatch | `docs/plan/implementation_plan.md`、`docs/research/cmd_2589_codd_acceptance_criteria.md` |
+| circular dependency | `docs/research/cmd_1991_codd_extract/modules/*` |
+
+判定: FAIL。現行`codd/codd.yaml`が`docs/`全体をdoc_dirsに含めているため、`reset_layout.sh`単体のvalidateではなく、既存Markdown群全体のCoDD整合性不備を検出している。
+
+### AC4: measure
+
+コマンド:
+
+```bash
+timeout 1200 codd measure --path . --json
+```
+
+結果:
+
+```json
+{
+  "health_score": 0,
+  "graph": {
+    "total_nodes": 16,
+    "total_edges": 12,
+    "orphan_nodes": 4,
+    "max_depth": 1,
+    "avg_out_degree": 0.75,
+    "connectivity": 0.05
+  },
+  "coverage": {
+    "tracked_files": 0,
+    "source_files": 0,
+    "design_documents": 628,
+    "coverage_ratio": 0.0
+  },
+  "quality": {
+    "validation_errors": 651,
+    "validation_warnings": 386,
+    "policy_critical": 0,
+    "policy_warnings": 0,
+    "documents_checked": 628,
+    "files_policy_checked": 0,
+    "rules_applied": 0
+  }
+}
+```
+
+health_score: 0
+
+### 追完結論
+
+`codd extract --path .`は正常終了したが、`reset_layout.sh`専用moduleは抽出されず、0 modules / 0 filesだった。`codd generate --wave 1 --force`も正常終了し、2件生成・0件skipだったが、生成結果は`reset_layout.sh`専用追補ではなく汎用CoDD文書生成だった。validate/measureは`docs/`全体scanによりFAIL/health_score 0であり、次にやるべきことは`reset_layout.sh`専用requirement nodeとwave_configの接続、またはextract/generate対象を限定するCoDD設定を作ることである。
