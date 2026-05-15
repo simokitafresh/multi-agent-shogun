@@ -248,6 +248,7 @@ yaml_field_get() {
         *) echo "${3:-}" ;;
     esac
 }
+
 cli_profile_get() {
     case "$2" in
         in_progress_stall_min) echo "1" ;;
@@ -267,6 +268,61 @@ cat "$TEST_LOG"
     [[ "$output" == *"karo|stall_alert|"* ]]
     [[ "$output" == *"kagemaru|task_assigned|"* ]]
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
+}
+
+@test "check_lesson_deprecation_candidates posts shogun bulletin and logs metrics" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+export SCRIPT_DIR
+LOG="$TMP_ROOT/monitor.log"
+STATE_DIR="$TMP_ROOT/state"
+TEST_BULLETIN="$TMP_ROOT/bulletin.log"
+export TEST_BULLETIN
+LESSON_DEPRECATION_STATE_FILE="$STATE_DIR/lesson_deprecation.last"
+LESSON_DEPRECATION_LOG="$TMP_ROOT/logs/lesson_deprecation_candidates.log"
+LESSON_DEPRECATION_INTERVAL=86400
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "METRICS: total_lessons=12 active_lessons=9 deprecated_lessons=3\n\n"
+printf "=== 有効率0%% 確定candidate (注入N≥5) ===\n"
+printf "  [infra] L001: stale lesson (injected=10, helpful=0)\n"
+printf "\n=== 自動退役実行 ===\n"
+printf "  SKIP: candidates-only mode (approval required before lesson_write.sh --retire)\n"
+printf "  合計: 0件 自動退役\n"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh"
+
+cat > "$SCRIPT_DIR/scripts/bulletin_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "notify=%s posted_by=%s action=%s\n" "${BULLETIN_NOTIFY:-}" "$1" "${4:-}" >> "$TEST_BULLETIN"
+printf "%s\n" "$2" >> "$TEST_BULLETIN"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/bulletin_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+
+check_lesson_deprecation_candidates
+
+cat "$LOG"
+cat "$TEST_BULLETIN"
+cat "$LESSON_DEPRECATION_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LESSON-DEPRECATION-METRICS: total_lessons=12 active_lessons=9 deprecated_lessons=3"* ]]
+    [[ "$output" == *"LESSON-DEPRECATION: posted 1 candidates to shogun bulletin"* ]]
+    [[ "$output" == *"notify=shogun posted_by=ninja_monitor action=action_required"* ]]
+    [[ "$output" == *"lesson_write.sh <project> --retire <lesson_id>"* ]]
+    [[ "$output" == *"METRICS: total_lessons=12 active_lessons=9 deprecated_lessons=3"* ]]
 }
 
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {

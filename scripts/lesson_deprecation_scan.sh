@@ -1,14 +1,14 @@
 #!/bin/bash
 # lesson_deprecation_scan.sh - deprecation候補を自動検出+自動退役する
 # cmd_531: ファイル消滅教訓・有効率10%未満×注入10回以上の教訓を自動deprecated化
-# Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all]
+# Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all] [--candidates-only]
 # Default: --project all
 
 set -euo pipefail
 
 case "${1:-}" in
     -h|--help)
-        echo "Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all]"
+        echo "Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all] [--candidates-only]"
         exit 0
         ;;
 esac
@@ -20,6 +20,7 @@ IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
 
 # --- Argument Parsing ---
 PROJECT_FILTER="all"
+CANDIDATES_ONLY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project)
@@ -30,14 +31,18 @@ while [[ $# -gt 0 ]]; do
       PROJECT_FILTER="$2"
       shift 2
       ;;
+    --candidates-only)
+      CANDIDATES_ONLY=1
+      shift
+      ;;
     *)
-      echo "Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all]" >&2
+      echo "Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all] [--candidates-only]" >&2
       exit 1
       ;;
   esac
 done
 
-export SCRIPT_DIR CONFIG_FILE TRACKING_TSV IMPACT_TSV PROJECT_FILTER
+export SCRIPT_DIR CONFIG_FILE TRACKING_TSV IMPACT_TSV PROJECT_FILTER CANDIDATES_ONLY
 
 python3 << 'PYEOF'
 import os
@@ -52,6 +57,7 @@ CONFIG_FILE = Path(os.environ["CONFIG_FILE"])
 TRACKING_TSV = Path(os.environ["TRACKING_TSV"])
 IMPACT_TSV = Path(os.environ["IMPACT_TSV"])
 PROJECT_FILTER = os.environ["PROJECT_FILTER"]
+CANDIDATES_ONLY = os.environ.get("CANDIDATES_ONLY", "0") == "1"
 
 # --- Load projects ---
 with open(CONFIG_FILE, encoding="utf-8") as f:
@@ -383,6 +389,33 @@ for project in projects:
                 eff_review.append((project_id, lesson_id, title_snip, inj_count, hlp_count, rate))
 
 # --- Output ---
+total_lessons = 0
+active_lessons = 0
+deprecated_lessons = 0
+
+for project in projects:
+    project_id = project["id"]
+    lessons_file = SCRIPT_DIR / "projects" / project_id / "lessons.yaml"
+    if not lessons_file.exists():
+        continue
+    with open(lessons_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    if not isinstance(data, dict):
+        continue
+    lessons = data.get("lessons", [])
+    if not isinstance(lessons, list):
+        continue
+    for lesson in lessons:
+        if not isinstance(lesson, dict):
+            continue
+        total_lessons += 1
+        if is_deprecated(lesson):
+            deprecated_lessons += 1
+        else:
+            active_lessons += 1
+
+print(f"METRICS: total_lessons={total_lessons} active_lessons={active_lessons} deprecated_lessons={deprecated_lessons}")
+print()
 print("=== 確定candidate（自動） ===")
 if confirmed:
     for proj, lid, reason in confirmed:
@@ -424,49 +457,54 @@ auto_deprecated_count = 0
 print()
 print("=== 自動退役実行 ===")
 
-# AC5: ファイル消滅教訓の自動退役
-for proj, lid, reason in confirmed:
-    if "ファイル消滅" in reason:
-        safe_reason = sanitize_reason(f"AUTO-DEPRECATE(file_missing): {reason}")
-        result = subprocess.run(
-            ["bash", deprecate_script, proj, lid, safe_reason],
-            capture_output=True, text=True
-        )
-        if result.returncode == 0:
-            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} ({reason})")
-            auto_deprecated_count += 1
-        else:
-            print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+if CANDIDATES_ONLY:
+    print("  SKIP: candidates-only mode (approval required before lesson_write.sh --retire)")
+    auto_deprecated_count = 0
+else:
 
-# AC4: 有効率10%未満 × 注入10回以上の自動退役
-for proj, lid, title_snip, inj, hlp in eff_confirmed:
-    if inj >= 10:
+    # AC5: ファイル消滅教訓の自動退役
+    for proj, lid, reason in confirmed:
+        if "ファイル消滅" in reason:
+            safe_reason = sanitize_reason(f"AUTO-DEPRECATE(file_missing): {reason}")
+            result = subprocess.run(
+                ["bash", deprecate_script, proj, lid, safe_reason],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                print(f"  [AUTO] DEPRECATED: [{proj}] {lid} ({reason})")
+                auto_deprecated_count += 1
+            else:
+                print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+
+    # AC4: 有効率10%未満 × 注入10回以上の自動退役
+    for proj, lid, title_snip, inj, hlp in eff_confirmed:
+        if inj >= 10:
+            safe_reason = sanitize_reason(
+                f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"
+            )
+            result = subprocess.run(
+                ["bash", deprecate_script, proj, lid, safe_reason],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate=0%, injected={inj})")
+                auto_deprecated_count += 1
+            else:
+                print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+
+    for proj, lid, title_snip, inj, hlp, rate in eff_review:
         safe_reason = sanitize_reason(
-            f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"
+            f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"
         )
         result = subprocess.run(
             ["bash", deprecate_script, proj, lid, safe_reason],
             capture_output=True, text=True
         )
         if result.returncode == 0:
-            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate=0%, injected={inj})")
+            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate={rate:.0f}%, injected={inj})")
             auto_deprecated_count += 1
         else:
             print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
-
-for proj, lid, title_snip, inj, hlp, rate in eff_review:
-    safe_reason = sanitize_reason(
-        f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"
-    )
-    result = subprocess.run(
-        ["bash", deprecate_script, proj, lid, safe_reason],
-        capture_output=True, text=True
-    )
-    if result.returncode == 0:
-        print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate={rate:.0f}%, injected={inj})")
-        auto_deprecated_count += 1
-    else:
-        print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
 
 print(f"  合計: {auto_deprecated_count}件 自動退役")
 

@@ -168,3 +168,13 @@ EOF
     [[ "$output" == *"合計: 0件 自動退役"* ]]
     [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
 }
+
+@test "lesson_deprecation_scan candidates-only reports metrics and does not deprecate" {
+    run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra --candidates-only
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"METRICS: total_lessons=1 active_lessons=1 deprecated_lessons=0"* ]]
+    [[ "$output" == *"[infra] L001"* ]]
+    [[ "$output" == *"SKIP: candidates-only mode"* ]]
+    [[ "$output" == *"合計: 0件 自動退役"* ]]
+    [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
+}

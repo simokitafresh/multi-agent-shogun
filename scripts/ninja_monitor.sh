@@ -96,6 +96,9 @@ BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
+LESSON_DEPRECATION_INTERVAL=86400  # effectiveness低下教訓のdeprecate候補抽出間隔（秒）— 1日
+LESSON_DEPRECATION_STATE_FILE="$STATE_DIR/shogun_lesson_deprecation_candidates.last"
+LESSON_DEPRECATION_LOG="$SCRIPT_DIR/logs/lesson_deprecation_candidates.log"
 GATE_FAIL_PASS_TRANSITION_INTERVAL=86400  # gate_fire_log FAIL→PASS遷移率の日次記録間隔（秒）
 GATE_FAIL_PASS_TRANSITION_STATE_FILE="$STATE_DIR/shogun_gate_fail_pass_transition.last"
 GATE_FAIL_PASS_TRANSITION_LOG="$SCRIPT_DIR/logs/gate_fail_pass_transition.log"
@@ -3365,6 +3368,66 @@ check_skill_auto_improve() {
     printf '%s\n' "$now" > "$SKILL_AUTO_IMPROVE_STATE_FILE" 2>/dev/null || true
 }
 
+check_lesson_deprecation_candidates() {
+    local now last elapsed script output metrics candidate_count bulletin_content
+    now=$EPOCHSECONDS
+    last=0
+    if [ -f "$LESSON_DEPRECATION_STATE_FILE" ]; then
+        read -r last < "$LESSON_DEPRECATION_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$LESSON_DEPRECATION_INTERVAL" ] && return
+
+    script="$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh"
+    if [ ! -x "$script" ]; then
+        log "LESSON-DEPRECATION: lesson_deprecation_scan.sh not executable, skip"
+        printf '%s\n' "$now" > "$LESSON_DEPRECATION_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    mkdir -p "$(dirname "$LESSON_DEPRECATION_LOG")"
+    log "LESSON-DEPRECATION: daily candidate scan start"
+    output=$(bash "$script" --project all --candidates-only 2>&1) || {
+        {
+            printf '[%s] scan failed\n' "$(date -Is)"
+            printf '%s\n\n' "$output"
+        } >> "$LESSON_DEPRECATION_LOG"
+        log "LESSON-DEPRECATION: daily candidate scan failed (non-blocking)"
+        printf '%s\n' "$now" > "$LESSON_DEPRECATION_STATE_FILE" 2>/dev/null || true
+        return
+    }
+
+    {
+        printf '[%s] scan completed\n' "$(date -Is)"
+        printf '%s\n\n' "$output"
+    } >> "$LESSON_DEPRECATION_LOG"
+
+    metrics=$(printf '%s\n' "$output" | awk '/^METRICS:/ {print; exit}')
+    if [ -n "$metrics" ]; then
+        log "LESSON-DEPRECATION-METRICS: ${metrics#METRICS: }"
+    fi
+
+    candidate_count=$(printf '%s\n' "$output" | awk '/^[[:space:]]+\[[^]]+\] L[0-9]+:/ {count++} END {print count+0}')
+    if [ "$candidate_count" -gt 0 ] 2>/dev/null; then
+        bulletin_content=$(
+            {
+                printf 'lesson_deprecation_candidates: effectiveness閾値未満の教訓候補 %s件。承認後は lesson_write.sh <project> --retire <lesson_id> で状態更新されたし。log=%s\n' "$candidate_count" "$LESSON_DEPRECATION_LOG"
+                printf '%s\n' "$output" | awk 'NR <= 80 {print}'
+            }
+        )
+        if BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" ninja_monitor "$bulletin_content" false action_required >> "$LOG" 2>&1; then
+            log "LESSON-DEPRECATION: posted ${candidate_count} candidates to shogun bulletin"
+        else
+            log "LESSON-DEPRECATION: bulletin_write failed (non-blocking)"
+        fi
+    else
+        log "LESSON-DEPRECATION: no candidates"
+    fi
+
+    printf '%s\n' "$now" > "$LESSON_DEPRECATION_STATE_FILE" 2>/dev/null || true
+}
+
 check_gate_fail_pass_transition() {
     local now last elapsed
     now=$EPOCHSECONDS
@@ -3937,6 +4000,9 @@ while true; do
 
     # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
     check_skill_auto_improve
+
+    # ═══ effectiveness低下教訓deprecate候補の日次抽出（cmd_2757） ═══
+    check_lesson_deprecation_candidates
 
     # ═══ gate_fire_log FAIL→PASS遷移率の日次記録（cmd_2755） ═══
     check_gate_fail_pass_transition
