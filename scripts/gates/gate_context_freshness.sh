@@ -27,6 +27,8 @@ CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshn
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
 TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-2}"
+ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-3600}"
+ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshness_alerts}"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -105,6 +107,39 @@ emit_update_cmd_templates() {
   command: "${rel_path} の知識鮮度更新。現状: ${last_note}"
 EOF
         done
+}
+
+notify_context_alert() {
+    local alert_summary="$1"
+    local now
+    now="${CONTEXT_FRESHNESS_ALERT_NOW:-$(date +%s)}"
+
+    if ! [[ "$ALERT_DEBOUNCE_SECONDS" =~ ^[0-9]+$ ]]; then
+        ALERT_DEBOUNCE_SECONDS=3600
+    fi
+
+    local alert_hash state_file last_epoch elapsed
+    alert_hash="$(printf '%s' "$alert_summary" | sha256sum | awk '{print $1}')"
+    mkdir -p "$ALERT_STATE_DIR" 2>/dev/null || true
+    state_file="$ALERT_STATE_DIR/${alert_hash}.last"
+
+    if [[ -f "$state_file" ]]; then
+        last_epoch="$(head -n 1 "$state_file" 2>/dev/null || true)"
+        if [[ "$last_epoch" =~ ^[0-9]+$ ]]; then
+            elapsed=$((now - last_epoch))
+            if (( elapsed >= 0 && elapsed < ALERT_DEBOUNCE_SECONDS )); then
+                echo "[gate_context_freshness] ntfy skip: same ALERT sent ${elapsed}s ago (<${ALERT_DEBOUNCE_SECONDS}s): ${alert_summary}" >&2
+                return 0
+            fi
+        fi
+    fi
+
+    if bash "$NTFY_SCRIPT" "【将軍】context鮮度ALERT: ${alert_summary}" >/dev/null 2>&1; then
+        printf '%s\n' "$now" > "$state_file" 2>/dev/null || true
+        echo "[gate_context_freshness] ntfy sent: ${alert_summary}" >&2
+    else
+        echo "[gate_context_freshness] ntfy failed: ${alert_summary}" >&2
+    fi
 }
 
 if [[ -n "$TODAY_OVERRIDE" ]]; then
@@ -240,7 +275,7 @@ done
 
 if [[ "$HAS_ALERT" -gt 0 && "${#ALERT_LIST[@]}" -gt 0 && -f "$NTFY_SCRIPT" ]]; then
     alert_summary=$(IFS=', '; echo "${ALERT_LIST[*]}")
-    bash "$NTFY_SCRIPT" "【将軍】context鮮度ALERT: ${alert_summary}" >/dev/null 2>&1 || true
+    notify_context_alert "$alert_summary"
 fi
 
 if [[ "$HAS_ALERT" -gt 0 ]]; then
