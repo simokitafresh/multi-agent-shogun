@@ -20,6 +20,7 @@ setup() {
     export TEST_PREFLIGHT_AUTOLEARN="$TEST_TMPDIR/preflight_autolearn.txt"
     export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
+    export TEST_BULLETIN="$TEST_TMPDIR/bulletin_board.yaml"
     mkdir -p "$TEST_ARCHIVE_DIR"
 }
 
@@ -38,6 +39,7 @@ run_cmd_save() {
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_multi_block
 }
@@ -53,6 +55,7 @@ run_cmd_save_pass() {
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_pass
 }
@@ -144,4 +147,63 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_pass"* ]]
     [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
+}
+
+@test "AC3: PASS時に参照されたaction_required掲示板へactioned_byを自動記録する" {
+    cat > "$TEST_BULLETIN" <<'YAML'
+entries:
+- id: 'blt_action_trace'
+  content: |-
+    CMD起票要請: actioned_by更新テスト
+  posted_by: 'karo'
+  posted_at: '2026-05-15T11:00:00'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+YAML
+
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_pass:
+    id: cmd_pass
+    title: "verify — bulletin actioned_by"
+    purpose: "blt_action_trace に対応するcmd保存時にactioned_byが自動更新される"
+    project: infra
+    depends_on: none
+    task_type: impl
+    command: |
+      blt_action_trace に対応するcmdを起票し、cmd_save PASS時に掲示板のactioned_byを更新する
+    acceptance_criteria:
+      - id: AC1
+        description: "blt_action_trace に対応するcmdを起票する"
+      - id: AC2
+        description: "blt_action_trace のactioned_byがcmd_passになる"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "通知からcmd起票までを追跡可能にする"
+      q3_next_quality: "action_required掲示板の未対応を自動で閉じる"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test"
+      q6_not_hiding: "no — 対応cmdを記録するだけで未対応を隠さない"
+      q7_definition_verified: "yes — actioned_byは対応cmd_id"
+      q8_why_what: "WHY: blt_action_trace のような昇格通知がfire-and-forgetになる → WHAT: cmd_save PASS時にactioned_byを更新する → WHEN: 対応cmdが起票される時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: cmd本文のblt IDを掲示板へ照合する。複利: 対応追跡が自動で閉じる"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save_block_aggregation.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。actioned_by自動更新は本テストで初確認"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "2026-05-15 rg 'blt_action_trace' tests/unit/test_cmd_save_block_aggregation.bats → 1件"
+        source: "tests/unit/test_cmd_save_block_aggregation.bats"
+        trust: "verified"
+        verified_at: "2026-05-15"
+YAML
+
+    run_cmd_save_pass
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"bulletin actioned_by更新: blt_action_trace → cmd_pass"* ]]
+    run grep -n "actioned_by: 'cmd_pass'" "$TEST_BULLETIN"
+    [ "$status" -eq 0 ]
 }

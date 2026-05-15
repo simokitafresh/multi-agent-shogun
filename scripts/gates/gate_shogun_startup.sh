@@ -233,6 +233,49 @@ else
     echo "  掲示板なし"
 fi
 
+# --- Gate 4.6: 掲示板 action_required 未対応 ---
+echo "■ 掲示板action_required未対応"
+if [ -f "$bulletin_file" ]; then
+    bulletin_action_result=$(python3 - "$bulletin_file" <<'PY'
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+entries = data.get("entries") or []
+pending = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    if str(entry.get("status", "")).lower() == "closed":
+        continue
+    if str(entry.get("action_type", "info")).strip() != "action_required":
+        continue
+    if str(entry.get("actioned_by", "")).strip():
+        continue
+    text = str(entry.get("content", "")).splitlines()
+    head = text[0] if text else ""
+    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+print(len(pending))
+for item in pending[:5]:
+    print(item)
+PY
+)
+    bulletin_action_count=$(printf '%s\n' "$bulletin_action_result" | head -1)
+    if [ "${bulletin_action_count:-0}" -gt 0 ]; then
+        echo "  ALERT: 未対応action_required掲示板 ${bulletin_action_count}件"
+        echo "  ★ action_required投稿に対応するcmdを起票し、actioned_byを埋めよ。"
+        printf '%s\n' "$bulletin_action_result" | tail -n +2 | sed 's/^/    /'
+        overall="ALERT"
+        alerts+=("掲示板action_required未対応: ${bulletin_action_count}件")
+    else
+        echo "  未対応: 0件"
+    fi
+else
+    echo "  掲示板なし"
+fi
+
 # --- Gate 5: 陣形図鮮度 ---
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
@@ -1743,7 +1786,7 @@ if [ -n "$_l6_out" ]; then
         alerts+=("L6学習速度: ${_l6_gate} 未回復FAIL ${_l6_age}日 (${_l6_count}件)")
         _l6_bulletin="L6学習速度ALERT: ${_l6_gate} の未回復FAILが${_l6_age}日継続(FAIL=${_l6_count}件)。将軍は原因修正cmdを起票されたし。"
         if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
-            BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_l6_bulletin" shogun >/dev/null 2>&1 || true
+            BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_l6_bulletin" shogun action_required >/dev/null 2>&1 || true
         fi
     done <<< "$_l6_out"
 else

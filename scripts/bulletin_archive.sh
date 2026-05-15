@@ -171,6 +171,11 @@ def write_entries(fh, entries_list):
             fh.write('  requires_confirmation: true\n')
         else:
             fh.write('  requires_confirmation: false\n')
+        at = entry.get('action_type', 'info')
+        if at not in {'info', 'action_required'}:
+            at = 'info'
+        fh.write(f"  action_type: '{sq(at)}'\n")
+        fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
         confirmed = entry.get('confirmed_by') or []
         if confirmed:
             fh.write('  confirmed_by:\n')

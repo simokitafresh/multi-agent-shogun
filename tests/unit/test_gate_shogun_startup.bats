@@ -450,6 +450,53 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "bulletin action_required without actioned_by → 総合判定: ALERT" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_action_required'
+  content: |-
+    CMD起票要請: 未対応の昇格通知
+  posted_by: 'karo'
+  posted_at: '2026-05-15T11:00:00'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板action_required未対応"* ]]
+    [[ "$output" == *"ALERT: 未対応action_required掲示板 1件"* ]]
+    [[ "$output" == *"blt_action_required by karo"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "bulletin action_required with actioned_by is not alerted" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_action_done'
+  content: |-
+    CMD起票要請: 対応済み
+  posted_by: 'karo'
+  posted_at: '2026-05-15T11:00:00'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'cmd_9999'
+  confirmed_by:
+    - 'shogun'
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板action_required未対応"* ]]
+    [[ "$output" == *"未対応: 0件"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "senkyoku-log recent 5 entries are displayed at startup" {
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]

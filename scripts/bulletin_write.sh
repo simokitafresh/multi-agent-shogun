@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # bulletin_write.sh — 全エージェント共有掲示板への書込み
-# Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]
-#    or: bash scripts/bulletin_write.sh <content> [requires_confirmation]
+# Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]
+#    or: bash scripts/bulletin_write.sh <content> [requires_confirmation] [action_type]
 
 set -euo pipefail
 
 # ── Fast-path: no-args before SCRIPT_DIR/source ──────────────────────────────
 if [[ $# -lt 1 || "${1:-}" == "-h" || "${1:-}" == "--help" || "${2:-}" == "-h" || "${2:-}" == "--help" ]]; then
-    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
     exit 1
 fi
 
@@ -76,6 +76,23 @@ normalize_confirmation_arg() {
     esac
 }
 
+normalize_action_type() {
+    local raw="${1:-info}"
+    local lowered="${raw,,}"
+    case "$lowered" in
+        ""|info)
+            printf '%s\n' "info"
+            ;;
+        action_required)
+            printf '%s\n' "action_required"
+            ;;
+        *)
+            echo "ERROR: invalid action_type: $raw (expected info or action_required)" >&2
+            return 1
+            ;;
+    esac
+}
+
 POSTED_BY=""
 if [[ -n "${TMUX_PANE:-}" ]]; then
     POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
@@ -87,14 +104,15 @@ if [[ -z "$POSTED_BY" ]]; then
     POSTED_BY=""
 fi
 
-# Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]
+# Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]
 # posted_by is $1 (explicit), content is $2, requires_confirmation is $3
 # posted_byはtmuxからも取得するが、引数で明示されたものを優先(互換性)
 if [[ $# -ge 2 ]]; then
-    # 新形式: bulletin_write.sh <posted_by> <content> [requires_confirmation]
+    # 新形式: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]
     POSTED_BY_ARG="$1"
     CONTENT="$2"
     REQUIRES_CONFIRMATION="${3:-false}"
+    ACTION_TYPE="${4:-info}"
     # posted_byが既知エージェント名なら引数を信頼
     if is_known_agent "$POSTED_BY_ARG"; then
         POSTED_BY="$POSTED_BY_ARG"
@@ -106,6 +124,7 @@ if [[ $# -ge 2 ]]; then
         # 第1引数がエージェント名でない→旧形式(content, requires_confirmation)
         CONTENT="$1"
         REQUIRES_CONFIRMATION="${2:-false}"
+        ACTION_TYPE="${3:-info}"
     fi
 else
     if [[ -z "$POSTED_BY" ]]; then
@@ -114,15 +133,17 @@ else
     fi
     CONTENT="$1"
     REQUIRES_CONFIRMATION="false"
+    ACTION_TYPE="info"
 fi
 
 # GP-207: contentがエージェント名のみの場合はBLOCK(引数順序ミス検出)
 if is_known_agent "$CONTENT"; then
-    echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]" >&2
+    echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
     exit 1
 fi
 
 REQUIRES_CONFIRMATION="$(normalize_confirmation_arg "$REQUIRES_CONFIRMATION")"
+ACTION_TYPE="$(normalize_action_type "$ACTION_TYPE")"
 
 if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
     BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"
@@ -136,12 +157,12 @@ mkdir -p "$(dirname "$BULLETIN_FILE")"
 
 WRITE_RESULT="$({
     flock -x 200
-    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$CONTENT" "$POSTED_BY" "$POSTED_AT" "$REQUIRES_CONFIRMATION" <<'PY'
+    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$CONTENT" "$POSTED_BY" "$POSTED_AT" "$REQUIRES_CONFIRMATION" "$ACTION_TYPE" <<'PY'
 import os
 import sys
 import yaml
 
-bulletin_file, entry_id, content, posted_by, posted_at, requires_confirmation = sys.argv[1:7]
+bulletin_file, entry_id, content, posted_by, posted_at, requires_confirmation, action_type = sys.argv[1:8]
 
 if os.path.exists(bulletin_file):
     with open(bulletin_file, encoding="utf-8") as fh:
@@ -174,6 +195,8 @@ entries.insert(0, {
     "posted_by": posted_by,
     "posted_at": posted_at,
     "requires_confirmation": req,
+    "action_type": action_type,
+    "actioned_by": "",
     "confirmed_by": [],
     "status": "open",
 })
@@ -202,6 +225,11 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
             fh.write("  requires_confirmation: true\n")
         else:
             fh.write("  requires_confirmation: false\n")
+        at = entry.get("action_type", "info")
+        if at not in {"info", "action_required"}:
+            at = "info"
+        fh.write(f"  action_type: '{sq(at)}'\n")
+        fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
         confirmed = entry.get("confirmed_by") or []
         if confirmed:
             fh.write("  confirmed_by:\n")

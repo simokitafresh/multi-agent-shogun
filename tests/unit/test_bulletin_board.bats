@@ -62,7 +62,18 @@ teardown() {
     [[ "$output" == *"content: |-"* ]]
     [[ "$output" == *"共有連絡"* ]]
     [[ "$output" == *"posted_by: 'saizo'"* ]]
+    [[ "$output" == *"action_type: 'info'"* ]]
+    [[ "$output" == *"actioned_by: ''"* ]]
     [[ "$output" == *"confirmed_by: []"* ]]
+}
+
+@test "bulletin_write records action_required with empty actioned_by" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "対応要請" false action_required
+    [ "$status" -eq 0 ]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"action_type: 'action_required'"* ]]
+    [[ "$output" == *"actioned_by: ''"* ]]
 }
 
 @test "bulletin_write accepts explicit posted_by from shared agent config" {
@@ -158,6 +169,8 @@ EOF
     run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"- 'saizo'"* ]]
+    [[ "$output" == *"action_type: 'info'"* ]]
+    [[ "$output" == *"actioned_by: ''"* ]]
     [[ "$output" == *"status: 'open'"* ]]
 }
 
@@ -183,5 +196,7 @@ EOF
     [ "$output" = "$entry_id" ]
     run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
     [ "$status" -eq 0 ]
+    [[ "$output" == *"action_type: 'info'"* ]]
+    [[ "$output" == *"actioned_by: ''"* ]]
     [[ "$output" == *"status: 'closed'"* ]]
 }

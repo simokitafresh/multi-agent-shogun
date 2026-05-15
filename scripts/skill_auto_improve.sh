@@ -250,7 +250,7 @@ def request_code_fix(row, unchanged_streak, state_entry):
     env.setdefault("BULLETIN_NOTIFY", "shogun")
     try:
         proc = subprocess.run(
-            ["bash", bulletin_script, bulletin_posted_by, content, "false"],
+            ["bash", bulletin_script, bulletin_posted_by, content, "false", "action_required"],
             cwd=repo_root,
             env=env,
             text=True,

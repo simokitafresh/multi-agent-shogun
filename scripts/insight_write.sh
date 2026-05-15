@@ -250,6 +250,7 @@ PYEOF
     if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
       BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
         "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
+        false action_required \
         >/dev/null || echo "WARN: insight repeat bulletin failed for source=$source_info" >&2
     fi
   fi

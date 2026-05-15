@@ -78,6 +78,94 @@ trim_inline_yaml_scalar() {
     printf '%s' "$value"
 }
 
+update_bulletin_actioned_by_for_cmd() {
+    local bulletin_file="${CMD_SAVE_BULLETIN_FILE:-$PROJECT_DIR/queue/bulletin_board.yaml}"
+    [[ -f "$bulletin_file" ]] || return 0
+    [[ -n "${CMD_ID:-}" ]] || return 0
+
+    local lock_file="${bulletin_file}.lock"
+    (
+        flock -x 200
+        CMD_BLOCK_TEXT="${CMD_BLOCK_NC:-${CMD_BLOCK:-}}" python3 - "$bulletin_file" "$CMD_ID" <<'PY'
+import os
+import re
+import sys
+import yaml
+
+bulletin_file, cmd_id = sys.argv[1:3]
+block_text = os.environ.get("CMD_BLOCK_TEXT", "")
+referenced_ids = set(re.findall(r"\bblt_[0-9A-Za-z_]+\b", block_text))
+
+if not referenced_ids:
+    raise SystemExit(0)
+
+with open(bulletin_file, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+entries = data.get("entries")
+if not isinstance(entries, list):
+    raise SystemExit(0)
+
+updated = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    if str(entry.get("id", "")) not in referenced_ids:
+        continue
+    if str(entry.get("action_type", "info")) != "action_required":
+        continue
+    if str(entry.get("actioned_by", "")).strip():
+        continue
+    entry["actioned_by"] = cmd_id
+    updated.append(str(entry.get("id", "")))
+
+if not updated:
+    raise SystemExit(0)
+
+def sq(value):
+    return str(value).replace("'", "''")
+
+tmp_file = f"{bulletin_file}.tmp"
+with open(tmp_file, "w", encoding="utf-8") as fh:
+    fh.write("entries:\n")
+    for entry in entries:
+        fh.write(f"- id: '{sq(entry.get('id', ''))}'\n")
+        fh.write("  content: |-\n")
+        text = str(entry.get("content", ""))
+        lines = text.splitlines() or [""]
+        for line in lines:
+            fh.write(f"    {line}\n")
+        fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
+        fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
+        rc = entry.get("requires_confirmation")
+        if isinstance(rc, list):
+            fh.write("  requires_confirmation:\n")
+            for agent_name in rc:
+                fh.write(f"    - '{sq(agent_name)}'\n")
+        elif rc:
+            fh.write("  requires_confirmation: true\n")
+        else:
+            fh.write("  requires_confirmation: false\n")
+        at = entry.get("action_type", "info")
+        if at not in {"info", "action_required"}:
+            at = "info"
+        fh.write(f"  action_type: '{sq(at)}'\n")
+        fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
+        confirmed = entry.get("confirmed_by") or []
+        if confirmed:
+            fh.write("  confirmed_by:\n")
+            for agent in confirmed:
+                fh.write(f"    - '{sq(agent)}'\n")
+        else:
+            fh.write("  confirmed_by: []\n")
+        fh.write(f"  status: '{sq(entry.get('status', 'open'))}'\n")
+
+os.replace(tmp_file, bulletin_file)
+print(",".join(updated))
+PY
+    ) 200>"$lock_file"
+}
+
 parse_structured_environment_change() {
     local env_change="${1:-}"
     [[ -n "$env_change" ]] || return 1
@@ -4356,6 +4444,10 @@ fi
 if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
     log_cmd_save_pass
+    _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
+    if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then
+        echo "  bulletin actioned_by更新: ${_BULLETIN_ACTIONED_UPDATED} → ${CMD_ID}"
+    fi
     # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
     _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
     if [[ -z "$_EXISTING_STATUS" ]]; then
