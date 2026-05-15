@@ -60,6 +60,28 @@ _run_post() {
     [[ "$output" == *'cmd_save.sh関連チェック名を確認したか'* ]]
 }
 
+@test "pre combined hook shows quality_gate template with q8 5W1H labels" {
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'quality_gate template (cmd_save.sh必須フィールド)'* ]]
+    for field in \
+        q1_firefighting q2_learning q3_next_quality q4_depth \
+        q5_verified_source q6_not_hiding q6_related_lessons \
+        q7_definition_check q7_definition_verified q8_why_what \
+        q9_deployment_risk q10_pi_check q10_knowledge_boundary \
+        q11_not_already_done q_ambiguity
+    do
+        [[ "$output" == *"$field"* ]]
+    done
+    [[ "$output" == *'WHY:'* ]]
+    [[ "$output" == *'WHAT:'* ]]
+    [[ "$output" == *'WHEN:'* ]]
+    [[ "$output" == *'WHERE:'* ]]
+    [[ "$output" == *'WHO:'* ]]
+    [[ "$output" == *'HOW:'* ]]
+    [[ "$output" == *'複利:'* ]]
+}
+
 @test "pre combined hook shows dynamic preflight autolearn items" {
     printf '%s\n' '2026-05-02T00:00:00Z check=quality_gate_q8_compound_question count=3 warn=q8_複利の問い cmd=cmd_test' > "$TMP_AUTOLEARN"
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
