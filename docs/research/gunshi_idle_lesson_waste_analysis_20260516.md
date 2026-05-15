@@ -51,3 +51,26 @@ L3724: if useful_rates and universal_lessons:
 ## 因果鎖
 
 universal教訓のみ除外→タグ付き教訓は常に注入→useful=0でも止まらない→忍者CTX浪費→利他改善で解消可能
+
+## ★ 後続検証(cmd_2794/2795)による前提修正 — 2026-05-16T08:30
+
+### 根因分析の訂正
+
+上記「根因」セクションは**不正確**だった。
+
+- cmd_2794(fallbackパス除外拡張)を起票→**軍師レビューで前提否定**。L3705のfallbackはscoredに入り、L3740のeffectiveness除外を通る構造
+- cmd_2795(偵察)で才蔵がstderrログ分析→**still-injected 10件は現行では大半が既に除外済み**
+
+### 真因: 分析時点差
+
+本分析(00:30)時点のlesson_impact.tsvスナップショットと、現行(07:15以降)のstderrログで状態が異なる:
+- L502/L501/L511: 現行ではuniversal effectiveness exclusionで除外済み
+- L087/L577/L324/L171/L415/L114: 現行ではtask_specific effectiveness exclusionで除外済み
+- L171/L415/L114: TSV上feedback total=4(MIN_SAMPLES未満)→時間経過でフィードバック蓄積により解消予定
+- L112: 過去注入7件の蓄積だが、feedback 5件到達後は除外済み
+
+### 教訓: 動的データの静的スナップショットに有効期限を付けよ
+
+feedback蓄積で状態が変わるデータを一時点で分析し、その結果を固定的にcmd前提とした。
+殿の「過去データ不変の暗黙前提禁止」と同根。分析結果には計測時点を明記し、
+動的データ(feedback/useful_rate)に依存する結論には有効期限の概念を持て。

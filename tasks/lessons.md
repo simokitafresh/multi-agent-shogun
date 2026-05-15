@@ -6028,3 +6028,13 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from_stk()で補完。yaml_field_setはlist値([AC1,AC2])を拒否するためawk直接書込みが必要。
+
+### L614: script名抽出regexはハイフン付きファイル名を含める
+- **日付**: 2026-05-16
+- **出典**: cmd_2793
+- **記録者**: hayate
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/gates/gate_lesson_health.sh,skills/dream/SKILL.md,skills/karo-direct/SKILL.md,skills/shogun-teire/SKILL.md]
+- **when**: 未設定
+- **how**: 未設定
+- PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combined.sh を combined.sh として切り出す問題でも発生した。script参照抽出では[A-Za-z0-9_-]+.sh等でハイフンを含め、実gateで反証確認する。

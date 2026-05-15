@@ -797,3 +797,8 @@
 | cmd_2791 | auto-ops/gc/db等の教訓にwhen/howフィールドが欠落している69件を補完する。when/howがないと教訓注入時のタスク特性マッチングが効かず、注入精度が低下する | infra | 05-15 | — |
 | cmd_2792 | dashboard_auto_section.shのCI取得ロジックがcheck failedと表示するが、gh run list直近5件は全てsuccess。表示と実態の乖離原因を特定する | infra | 05-15 | dashboardのCI check failed表示は、l |
 | cmd_2790 | deploy_task.shが全ACにbinary_checksスタブを注入するため、担当外ACにもbc:noが入りverdictがFAILになる(WA 10回)。task YAMLにac_assigned追加→担当ACのみスタブ生成に限定する | infra | 05-16 | inject_ac_assigned_from_stk()を |
+| cmd_2793 | gate_lesson_health.shのawkがdetailフィールド内のenforcement:テキストを誤抽出しPHANTOM偽陽性4件を生んでいる。修正後、同スクリプトを参照するSKILL.md 3件を最新動作に追従更新し、3セッション連続BLOCK(gate_skill_script_refs.sh)を解消する | infra | 05-16 | gate_lesson_health.shのPHANTOM抽 |
+| cmd_2794 | deploy_task.sh L3705のtag fallbackパスがeffectiveness除外(L3740)より前に実行されるため、useful率0%の教訓10件が除外されずに注入され続けている。fallbackパスにもeffectiveness除外を適用し、忍者CTX約295tok/タスク削減する | infra | 05-16 | 停止指示によりFAIL報告。cmd前提のfallback e |
+| cmd_2795 | useful率0%の教訓10件がeffectiveness除外を通過して注入され続けている。cmd_2794でfallbackパスの除外漏れと推定したが、家老の現物確認でfallbackパスには除外が実装済みと判明。真因を特定するためdeploy_task.shのstderrログを分析し、10件がどの経路で注入されているかを特定する | infra | 05-16 | stderrログ確認で、still-injected 10件 |
+| cmd_2796 | codd.yamlのsource_dirs(src/)が存在せず、doc_dirs(docs/)が研究ノート613件を設計書として取り込みhealth_score=0(662 errors)。source_dirsをscripts/に、doc_dirsをcodd/配下のみに修正し、codd measureのhealth_scoreを正常化する | infra | 05-16 | codd/codd.yamlのscan対象をscripts/ |
+| cmd_2797 | gate_context_freshness.shがALERT時に毎回ntfy送信するが、ninja_monitorが5分間隔で実行するためcontextが古いまま5分ごとに同じALERTが殿に送信されrate limitに到達した。同一ALERTの重複送信を抑止する | infra | 05-16 | gate_context_freshness.shの同一AL |

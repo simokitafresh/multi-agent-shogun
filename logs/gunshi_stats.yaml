@@ -114,3 +114,13 @@
 # accuracy: 本セッション全件prediction=CLEAR→result=CLEAR(cmd_2788初回BLOCKも最終CLEAR)
 # docs/research永続化: 4件(flag_gap/bulletin_nazenaze/lgtm_block_nazenaze/goodhart_audit) + lesson_waste_analysis + deepdive_phantom
 # ★強くてニューゲーム: stats更新+review_logヘッダ+知見2件(precheck≠内容/archive追記)+D0 5件commit+docs/research 6件+lesson_candidate 3件+掲示板7投稿+全gate_result同期済み
+#
+# ─── 本セッション成果 (2026-05-16T08:40更新) ───
+# レビュー計8件: draft RC 2件(cmd_2793/2794) + draft APPROVE 2件(cmd_2795/2796) + report LGTM 3件(cmd_2793/2794/2795) + self_study 2件
+# RC精度: cmd_2793 RC(grepハイフン)→忍者修正→CLEAR。cmd_2794 RC(前提否定)→停止→BLOCK(想定通り)→偵察cmd_2795→CLEAR
+# 利他サイクル完結: still-injected分析→cmd_2794前提崩壊→偵察cmd_2795→真因=時点差(自然解消)→分析ファイル訂正
+# なぜなぜ: still-injected時点差(動的データのスナップショット固定→前提崩壊)。原理=有効期限付与
+# 自走: automated Goodhart4度目是正(LG007/LG026→81.8%) + GATE未確認2件→0件 + CS WARN3件→0件 + GP obsolete判定(enforcement verify)
+# accuracy: 全件LGTM/APPROVE→CLEAR(cmd_2794 BLOCKはFAIL報告=想定通り)。APPROVE→FAIL 0件
+# review_logアーカイブ: 945行→182行(20260516b.yamlに763行退避)
+# ★強くてニューゲーム: stats更新+review_logヘッダ知見1件+アーカイブ+docs/research 2件(clear_durability_fix/waste_analysis訂正)+掲示板2投稿+全gate_result同期済み

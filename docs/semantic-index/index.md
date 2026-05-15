@@ -69,7 +69,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -84,6 +84,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:31:24+09:00 by90fvbya toolu_01AsvZsDxzg3e4Xth1fevzM1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | cmd | `cmd_2780` 強化 — Simple-OCRリポジトリ全体のCoDD brownfield設計書逆生成 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T03:24:18+09:00 なぜなぜ7回。CoDDできちんとやろう。品質は下げない。現在の出力は合格点だ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T07:27:25+09:00 掲示板にCoDDの修行の話はなかったか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T07:29:14+09:00 CoDDのdoc_dirs設定整理が必要について、なぜなぜ7回。改善しよう |
+| cmd | `cmd_2796` codd.yaml scan設定をリポジトリ構造に一致させhealth_score 0を解消 (`codd/codd.yaml`, `codd/scan/edges.jsonl`) |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -270,7 +273,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消） |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新 |
 | skills | skill-creator, skill-installer |
 
 | 種別 | パス/参照 |
@@ -286,6 +289,7 @@ codd:
 | cmd | `cmd_2739` スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し |
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
 | cmd | `cmd_2785` 強化 — SKILL.md 3件をscript変更に追従更新（3セッション連続WARN解消） (`skills/dream/SKILL.md`, `skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`) |
+| cmd | `cmd_2793` gate_lesson_health.sh PHANTOM検出awk偽陽性修正 + SKILL.md 3件追従更新 (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/shogun-teire/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 

@@ -959,3 +959,15 @@
 | cmd_2772 | quality_gateテンプレートをhook contextに自動注入 | GATE CLEAR | 殿指摘「インフラバグ避けるな」→Level5化 |
 | cmd_2773 | bulletin由来前提のgrep検証WARN追加 | delegated | 3件連続assumption崩壊→構造防止 |
 | session_20260515b | 9cmd起票(2765-2773)。7CLEAR+2不要化。掲示板なぜなぜ全穴対応+インフラバグ2本(テンプレート注入+bulletin検証) | 殿教訓: BLOCKをcmd修正で通すな→インフラ改善で根絶せよ | 殿「インフラバグ避けるな」+軍師「assumption崩壊3連」→自動化ターゲット2本 |
+
+## 2026-05-16
+
+| cmd/event | 意図・内容 | 結果 | 因果 |
+|-----------|-----------|------|------|
+| cmd_2793 | PHANTOM awk偽陽性修正+SKILL.md 3件追従。startup gate 3セッション連続BLOCK解消 | GATE CLEAR | 軍師RC: grepパターンも修正(ハイフン非対応)。awk+grep両方修正で偽陽性根絶 |
+| cmd_2794 | 教訓注入effectiveness除外をtag fallbackに拡張 | cancelled | 前提崩壊(LS033): fallback内除外は実装済み。L3713-3726を読み飛ばした。軍師分析鵜呑み |
+| cmd_2795 | still-injected 10件の真因特定偵察 | GATE CLEAR | 10件は既にeffectiveness除外済み。軍師分析と現在のdeploy_task.sh動作に時点差。修正cmd不要 |
+| cmd_2796 | codd.yaml scan設定修正(source_dirs=scripts/, doc_dirsからdocs/除外) | GATE CLEAR | health_score=0の根因=cmd_2761 codd initがdocs/613件を設計書扱い |
+| cmd_2797 | ntfy重複送信抑止(context鮮度ALERT 5分間隔連発→rate limit) | GATE CLEAR | 安全網。同一ALERT 60分間スキップ |
+| cmd_2798 | context鮮度 安定context除外リスト導入(殿指摘の真因修正) | 委任中 | 死因=更新不要な安定contextにも14日ルール一律適用で20件不要ALERT |
+| session_20260516 | 6cmd起票(2793-2798)。5 CLEAR+1 cancelled(前提否定LS033)。startup gate BLOCK全解消+ntfy rate limit修正+codd設定修正+教訓注入偵察。掲示板全件確認+insights消化 | 自走 | 殿指摘「更新不要な古いcontextがずっとALERT」→真因特定→除外リスト。cmd_2794前提崩壊→LS033(コード精読不足) |

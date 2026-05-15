@@ -64,9 +64,9 @@ lessons:
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
   source_cmd: gunshi_S5_cycle2
   created_at: '2026-03-22'
-  automated: false
-  enforcement_level: 2
-  enforcement: SG6(軍師レビューログに外部化済み)+review_logヘッダL14に状態確認順序1行追加(2026-04-09)
+  automated: true
+  enforcement_level: 4
+  enforcement: pre-bash-combined.sh Guard 6 INFO(LG007)リマインダー(capture-pane実行時に自動表示)+review_logヘッダL14状態確認順序
   when: エージェント状態を確認する時。capture-pane出力を見た時
   how: dashboard→inbox→capture-paneの順。capture-pane=過去の残像。ファイルmtime=現在の状態
 - id: LG010
@@ -277,9 +277,9 @@ lessons:
     対象=hook/gate/CLAUDE.md/instructions/settings系に限定。
   source_cmd: gunshi_session_20260412
   created_at: '2026-04-12'
-  automated: false
-  enforcement_level: 2
-  enforcement: Level 2(ドキュメント化+フロー組込)。設計書=docs/research/gunshi_sg_s0_self_code_change_20260412.md。instructions/gunshi.md §S0セクション追加済み(2026-04-13)
+  automated: true
+  enforcement_level: 4
+  enforcement: pre-write-edit-combined.sh Guard 9 INFO(LG026)リマインダー(高リスクファイルEdit時に自動S0リマインド)+gunshi.md §S0セクション
   when: 軍師が高リスクファイル(hooks/gates/CLAUDE.md/instructions等)を直接編集する時
   how: S0プロトコル6項目(前提/数値/シミュレーション/検死/検証/NorthStar)を実行しcommitメッセージに記録
 - id: LG027
