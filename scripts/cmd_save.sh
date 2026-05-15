@@ -251,7 +251,11 @@ is_gate_or_hook_addition_cmd() {
     fi
 
     printf '%s\n' "$q11_context" | grep -qiE "$gate_hook_pattern" || return 1
-    printf '%s\n' "$q11_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
+    # Filter out past-tense/passive forms (追加された/追加済み etc.) before checking
+    # to avoid FP on cmds that describe past changes, not current additions (cmd_2786)
+    local active_context
+    active_context="$(printf '%s\n' "$q11_context" | sed -E 's/(追加|新設|導入|実装|作成)(された|済み|されている|されていた|した)[^ ]*/___/g')"
+    printf '%s\n' "$active_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
     return 0
 }
 
