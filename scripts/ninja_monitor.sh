@@ -202,22 +202,34 @@ yaml_field_get() {
 
 build_pane_head_tail_excerpt() {
     local pane_target="$1"
-    local capture
-    capture=$(tmux capture-pane -t "$pane_target" -p -J 2>/dev/null || true)
-    capture=$(printf '%s\n' "$capture" | sed '/^[[:space:]]*$/d')
-    [ -n "$capture" ] || return 1
+    local capture line
+    local -a first_lines=()
+    local -a tail_lines=()
+    local line_count=0
 
-    local line_count
-    line_count=$(printf '%s\n' "$capture" | wc -l | tr -d ' ')
+    capture=$(tmux capture-pane -t "$pane_target" -p -J 2>/dev/null || true)
+    while IFS= read -r line || [ -n "$line" ]; do
+        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+        line_count=$((line_count + 1))
+        if [ "$line_count" -le 5 ]; then
+            first_lines+=("$line")
+        fi
+        tail_lines+=("$line")
+        if [ "${#tail_lines[@]}" -gt 5 ]; then
+            tail_lines=("${tail_lines[@]:1}")
+        fi
+    done <<< "$capture"
+
+    [ "$line_count" -gt 0 ] || return 1
     if [ "$line_count" -le 10 ] 2>/dev/null; then
-        printf '%s' "$capture"
+        printf '%s\n' "${tail_lines[@]}"
         return 0
     fi
 
-    local head_block tail_block
-    head_block=$(printf '%s\n' "$capture" | head -5)
-    tail_block=$(printf '%s\n' "$capture" | tail -5)
-    printf '[pane head 5]\n%s\n...\n[pane tail 5]\n%s' "$head_block" "$tail_block"
+    printf '[pane head 5]\n'
+    printf '%s\n' "${first_lines[@]}"
+    printf '...\n[pane tail 5]\n'
+    printf '%s\n' "${tail_lines[@]}"
 }
 
 append_pane_excerpt() {
@@ -2982,9 +2994,15 @@ write_karo_snapshot() {
                     local report_file=""
                     report_file=$(get_latest_report_file "$name" || true)
                     if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+                        # awk単一パスでtask_id/statusを一括取得（従来yaml_field_get×2=2サブシェル→awk×1）
+                        # 6忍者×毎cycle=12サブシェル/cycle→6サブシェル/cycle削減（L511:WSL2プロセス起動コスト対策）
                         local report_task report_status
-                        report_task=$(yaml_field_get "$report_file" "task_id")
-                        report_status=$(yaml_field_get "$report_file" "status")
+                        IFS='|' read -r report_task report_status < <(awk '
+                            BEGIN { t=""; s="" }
+                            /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                            /^[ \t]*status:/ && s=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+                            END { print t "|" s }
+                        ' "$report_file" 2>/dev/null)
                         [ -n "$report_task" ] && echo "report|${name}|${report_task}|${report_status:-unknown}"
                     fi
                 done
