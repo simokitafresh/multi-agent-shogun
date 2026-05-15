@@ -238,8 +238,11 @@ check_lesson_effectiveness() {
             if (cmd ~ /^cmd_test/) next
             if (project != "" && proj != project) next
             if (!(cmd in seen)) {
-                seen[cmd] = 1; print cmd; n++
-                if (n >= limit) exit
+                seen[cmd] = 1
+                if (n < limit) {
+                    print cmd
+                    n++
+                }
             }
         }
     ' > "$cmd_file"
@@ -509,9 +512,25 @@ _phantom_count=0
 _phantom_tmp="/tmp/_glh_phantom_$$"
 for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
     [ -f "$_lf" ] || continue
-    awk '/^- id:/{id=$3;a=""} /automated: true/{a="true"} /enforcement:/{if(a=="true"){gsub(/^  enforcement: /,"");print id"|"$0}}' "$_lf" > "$_phantom_tmp" 2>/dev/null || true
+    awk '
+        /^- id:/ {
+            id = $3
+            automated = 0
+            next
+        }
+        /^  automated:[[:space:]]*true[[:space:]]*$/ {
+            automated = 1
+            next
+        }
+        /^  enforcement:[[:space:]]*/ {
+            if (automated == 1) {
+                sub(/^  enforcement:[[:space:]]*/, "", $0)
+                print id "|" $0
+            }
+        }
+    ' "$_lf" > "$_phantom_tmp" 2>/dev/null || true
     while IFS='|' read -r _lid _enf; do
-        _scripts=$(echo "$_enf" | grep -oE '[a-z_]+\.sh' | sort -u) || true
+        _scripts=$(echo "$_enf" | grep -oE '[A-Za-z0-9_-]+\.sh' | sort -u) || true
         [ -z "$_scripts" ] && continue
         _all_found=true
         for _s in $_scripts; do
