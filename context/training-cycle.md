@@ -903,3 +903,39 @@ R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大�
 
 `gate_loop_health.sh` が `logs/gate_fire_log.yaml` から自動集計し、毎回の起動時に出力する。
 → `scripts/gates/gate_loop_health.sh` の `=== Hold-out vs Training ===` セクション参照
+
+## §25 CoDD修行実績(2026-05-15〜16)
+
+### 完走20本(全5ステップ: extract/elicit/generate/validate/measure確認済み)
+
+| # | script | 行数 | 初回担当 | 追完 |
+|---|--------|------|---------|------|
+| 1 | dashboard_auto_section | 638 | hanzo | — |
+| 2 | restart_watchers | 600 | kotaro | saizo追完 |
+| 3 | reset_layout | — | hayate | kagemaru追完 |
+| 4 | model_switch_preflight | — | kagemaru | — |
+| 5 | ci_status_check | 583 | hayate | kagemaru追完 |
+| 6 | bulletin_write | — | kagemaru | kagemaru追完 |
+| 7 | archive_completed | — | hayate | kagemaru追完 |
+| 8 | inbox_write | — | kagemaru | hayate追完 |
+| 9 | auto_deploy_next | — | hayate | hayate追完 |
+| 10 | cmd_delegate | — | kagemaru | kagemaru追完 |
+| 11 | ac_physical_verify | — | hayate | saizo追完 |
+| 12 | chronicle_metrics | — | kagemaru | saizo追完 |
+| 13 | clear_prep_check | — | hayate | saizo追完 |
+| 14 | checklist_progress | — | kagemaru | hayate追完 |
+| 15 | cmd_complete_gate | 6240 | hayate | saizo追完 |
+| 16 | report_field_set | 1159 | kagemaru | kagemaru追完 |
+| 17 | lesson_write | 1027 | saizo | saizo追完 |
+| 18 | inbox_watcher | 825 | hayate | kagemaru追完 |
+| 19 | pending_decision_write | 655 | kagemaru | hayate追完 |
+| 20 | karo_workaround_log | 437 | saizo | saizo追完 |
+
+### 教訓(LK002/LK003)
+- CoDD修行は5AC(各コマンド個別明記)+timeout 1200+--wave 1 --force必須
+- `codd spec`は存在しない。正しくはextract/require
+- 初回配備から強くナッジせよ(殿指摘)。完了待ちは手戻りの原因
+
+### 成果物
+- 全20本のCoDD設計書: `docs/research/{ninja}_codd_*.md`
+- extract出力: `docs/research/*_extract_*/`

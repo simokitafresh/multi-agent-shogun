@@ -362,14 +362,24 @@ lessons:
   created_at: '2026-05-15'
 - id: 'LK002'
   title: 'CoDD修行ACは各コマンド個別明記(5AC)で配備せよ'
-  detail: '3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。5AC(spec/elicit/generate/validate/measure各1AC)で個別強制。さらに配備時の初回ナッジでも全5ステップ実行を明示。殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。'
+  detail: |
+    3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。
+    5AC(extract/elicit/generate/validate/measure各1AC)で個別強制。
+    ★codd specコマンドは存在しない。正しくはcodd extract(既存コードから事実抽出)またはcodd require(要件推定)。
+    ★codd generate --wave 1 --force必須。wave未指定だと0 generated/skippedで成果物なし。
+    ★timeout 1200(20分)で実行。600秒でも足りない場合がある(殿指摘)。
+    配備時の初回ナッジでも全5ステップ+正確なコマンド名+timeout+--wave 1 --forceを明示。
+    殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。
   source_cmd: 'cmd_training_codd'
   when: 'karo-operations.md §修行配備テンプレート'
   how: '3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。5AC(spec/elicit/generate/validate/measure各1AC)で個別強制。さらに配備時の初回ナッジでも全5ステップ実行を明示。殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。'
   created_at: '2026-05-16'
 - id: 'LK003'
   title: 'CoDD修行ACにtimeout 600必須 — AI呼び出しがデフォルト2分でタイムアウトする'
-  detail: 'codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。全CoDD修行ACにtimeout 600(10分)+run_in_background:trueを明記。殿指摘: 何回やっても未完になっている。'
+  detail: |
+    codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。
+    Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。
+    全CoDD修行ACにtimeout 1200(20分)+run_in_background:trueを明記。殿指摘: 600秒でも足りなければ1200秒まで伸ばせ。
   source_cmd: 'cmd_training_codd'
   when: 'task YAML AC記載+補足ナッジ'
   how: 'codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。全CoDD修行ACにtimeout 600(10分)+run_in_background:trueを明記。殿指摘: 何回やっても未完になっている。'
