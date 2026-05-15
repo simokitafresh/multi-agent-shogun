@@ -679,3 +679,70 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "skill_auto_improve escalates repeated UNCHANGED failures to code-fix bulletin" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+---
+
+# report-write
+
+## 報告YAML記入手順
+既存手順。
+EOF
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+
+    BULLETIN_CAPTURE="$TEST_TMPDIR/bulletin_args.log"
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+
+    for attempt in 1 2 3; do
+        run env \
+            SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+            SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+            SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+            SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT="$TEST_TMPDIR/scripts/bulletin_write.sh" \
+            SKILL_AUTO_IMPROVE_POSTED_BY="hayate" \
+            BULLETIN_CAPTURE="$BULLETIN_CAPTURE" \
+            bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 2
+        [ "$status" -eq 0 ]
+    done
+
+    run python3 - <<EOF
+import json
+from pathlib import Path
+state = json.loads(Path("$STATE_JSON").read_text(encoding="utf-8"))
+entry = next(iter(state["patterns"].values()))
+assert entry["unchanged_streak"] == 2
+assert entry["classification"] == "code_fix_required"
+capture = Path("$BULLETIN_CAPTURE").read_text(encoding="utf-8")
+assert "hayate skill_auto_improve escalation:" in capture
+assert "コード修正cmd起票を要請" in capture
+assert "unchanged_streak=2" in capture
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}

@@ -74,6 +74,15 @@ teardown() {
     [[ "$output" == *"名義指定"* ]]
 }
 
+@test "bulletin_write accepts explicit posted_by without tmux agent_id" {
+    run env -u TMUX_PANE BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" PATH="/usr/bin:/bin" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "tmuxなし名義指定"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"posted_by: 'saizo'"* ]]
+    [[ "$output" == *"tmuxなし名義指定"* ]]
+}
+
 @test "bulletin_write trims BULLETIN_NOTIFY targets before notifying" {
     export INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log"
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun, gunshi" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$INBOX_WRITE_LOG" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "通知確認"

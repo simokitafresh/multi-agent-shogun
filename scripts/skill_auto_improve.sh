@@ -12,6 +12,10 @@ SKILLS_DIRS="${SKILL_AUTO_IMPROVE_SKILLS_DIRS:-$REPO_ROOT/skills:$HOME/.codex/sk
 top_n=3
 apply=false
 skill_filter=""
+unchanged_threshold="${SKILL_AUTO_IMPROVE_UNCHANGED_THRESHOLD:-3}"
+escalation_state="${SKILL_AUTO_IMPROVE_STATE_JSON:-$REPO_ROOT/logs/skill_auto_improve_state.json}"
+bulletin_script="${SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT:-$REPO_ROOT/scripts/bulletin_write.sh}"
+bulletin_posted_by="${SKILL_AUTO_IMPROVE_POSTED_BY:-karo}"
 
 usage() {
     sed -n '1,7p' "$0" >&2
@@ -23,6 +27,8 @@ while [ "$#" -gt 0 ]; do
         --skills-dirs) SKILLS_DIRS="${2:-}"; shift 2 ;;
         --top) top_n="${2:-}"; shift 2 ;;
         --skill) skill_filter="${2:-}"; shift 2 ;;
+        --unchanged-threshold) unchanged_threshold="${2:-}"; shift 2 ;;
+        --escalation-state) escalation_state="${2:-}"; shift 2 ;;
         --apply) apply=true; shift ;;
         --dry-run) apply=false; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -34,11 +40,12 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" <<'PY'
+python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" "$unchanged_threshold" "$escalation_state" "$bulletin_script" "$bulletin_posted_by" <<'PY'
 import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict
@@ -47,7 +54,7 @@ from pathlib import Path
 
 import yaml
 
-log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root = sys.argv[1:7]
+log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by = sys.argv[1:11]
 
 # --- Gate FIX hint lookup (skill_auto_improve) ---
 # Import lookup_fix_hints from gate_report_format_main to generate
@@ -71,7 +78,16 @@ except ValueError:
 if top_n < 1:
     print("--top must be >= 1", file=sys.stderr)
     raise SystemExit(2)
+try:
+    unchanged_threshold = int(unchanged_threshold_raw)
+except ValueError:
+    print("--unchanged-threshold must be an integer", file=sys.stderr)
+    raise SystemExit(2)
+if unchanged_threshold < 1:
+    print("--unchanged-threshold must be >= 1", file=sys.stderr)
+    raise SystemExit(2)
 apply_changes = apply_raw.lower() == "true"
+escalation_state_path = Path(escalation_state_raw)
 
 
 def _cache_path(log_path):
@@ -168,6 +184,91 @@ def shorten(value, limit=180):
 def marker_for(skill_name, reason):
     digest = hashlib.sha1(f"{skill_name}\0{reason}".encode("utf-8")).hexdigest()[:12]
     return f"<!-- skill-auto-improve:{digest} -->"
+
+
+def escalation_key(row):
+    raw = f"{row['skill']}\0{row.get('gate', '')}\0{row['reason']}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def load_escalation_state(path):
+    if not path.is_file():
+        return {"patterns": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {"patterns": {}}
+    if not isinstance(data, dict) or not isinstance(data.get("patterns"), dict):
+        return {"patterns": {}}
+    return data
+
+
+def save_escalation_state(path, state):
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+        os.close(fd)
+        Path(tmp).write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        os.replace(tmp, path)
+    except OSError as exc:
+        print(f"WARN: escalation state write failed: {exc}", file=sys.stderr)
+
+
+def classify_fail_cause(row, skill_changed, unchanged_streak):
+    reason = row["reason"].lower()
+    code_markers = [
+        "traceback",
+        "syntax error",
+        "command not found",
+        "permission denied",
+        "no such file",
+        "exit code",
+        "script",
+        "exception",
+    ]
+    if any(marker in reason for marker in code_markers):
+        return "code_fix_required", "FAIL reason indicates script/runtime failure"
+    if not skill_changed and unchanged_streak >= unchanged_threshold:
+        return "code_fix_required", f"SKILL.md unchanged {unchanged_streak} consecutive runs"
+    return "skill_doc_improvable", "SKILL.md prevention step can still change or has not exhausted threshold"
+
+
+def request_code_fix(row, unchanged_streak, state_entry):
+    if state_entry.get("notified_streak", 0) >= unchanged_streak:
+        print(f"ESCALATION_SKIPPED_ALREADY_NOTIFIED: {row['skill']} streak={unchanged_streak}")
+        return False
+    if not Path(bulletin_script).is_file():
+        print(f"ESCALATION_SKIPPED_NO_BULLETIN: {bulletin_script}")
+        return False
+    content = (
+        f"skill_auto_improve escalation: {row['skill']} のFAILがSKILL.md改善で閉じていないため、"
+        f"コード修正cmd起票を要請。gate={row.get('gate') or 'unknown_gate'} "
+        f"reason={shorten(row['reason'], 180)} unchanged_streak={unchanged_streak} "
+        f"threshold={unchanged_threshold} last_fail={row.get('last_fail') or 'unknown'}"
+    )
+    env = os.environ.copy()
+    env.setdefault("BULLETIN_NOTIFY", "shogun")
+    try:
+        proc = subprocess.run(
+            ["bash", bulletin_script, bulletin_posted_by, content, "false"],
+            cwd=repo_root,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+    except Exception as exc:
+        print(f"ESCALATION_FAILED: {row['skill']} {exc}")
+        return False
+    if proc.returncode != 0:
+        stderr = " ".join(proc.stderr.split())
+        print(f"ESCALATION_FAILED: {row['skill']} exit={proc.returncode} {shorten(stderr, 180)}")
+        return False
+    print(f"ESCALATED_CODE_FIX: {row['skill']} streak={unchanged_streak} gate={row.get('gate') or 'unknown_gate'}")
+    state_entry["notified_streak"] = unchanged_streak
+    return True
 
 
 def concrete_prevention_steps(reason):
@@ -279,13 +380,15 @@ def procedure_insertion_index(lines):
 def apply_prevention_steps(skill_path, rows):
     text = skill_path.read_text(encoding="utf-8", errors="ignore")
     additions = []
+    added_markers = set()
     for row in rows:
         marker = marker_for(row["skill"], row["reason"])
         if marker in text:
             continue
         additions.append(prevention_line(row["skill"], row["reason"], row["gate"], row["count"], row["last_fail"]))
+        added_markers.add(marker)
     if not additions:
-        return False
+        return set()
 
     lines = text.splitlines()
     auto_idx = existing_auto_section_insert_index(lines)
@@ -302,7 +405,7 @@ def apply_prevention_steps(skill_path, rows):
     os.close(fd)
     Path(tmp).write_text(new_text, encoding="utf-8")
     os.replace(tmp, skill_path)
-    return True
+    return added_markers
 
 
 stats = defaultdict(lambda: {"counter": Counter(), "last": {}, "gate": {}, "path": ""})
@@ -355,16 +458,42 @@ if not apply_changes:
     raise SystemExit(0)
 
 updated = 0
+escalation_state = load_escalation_state(escalation_state_path)
 for skill, rows in apply_plan.items():
     path = skill_file_for(skill, stats[skill]["path"])
     if not path:
         print(f"SKIP: {skill} SKILL.md not found")
         continue
-    if apply_prevention_steps(path, rows):
+    changed_markers = apply_prevention_steps(path, rows)
+    if changed_markers:
         updated += 1
         print(f"UPDATED: {path}")
     else:
         print(f"UNCHANGED: {path}")
+    for row in rows:
+        key = escalation_key(row)
+        entry = escalation_state["patterns"].setdefault(key, {})
+        entry.update({
+            "skill": row["skill"],
+            "gate": row.get("gate") or "",
+            "reason": row["reason"],
+            "last_fail": row.get("last_fail") or "",
+        })
+        row_changed = marker_for(row["skill"], row["reason"]) in changed_markers
+        if row_changed:
+            entry["unchanged_streak"] = 0
+        else:
+            entry["unchanged_streak"] = int(entry.get("unchanged_streak", 0)) + 1
+        cause, cause_reason = classify_fail_cause(row, row_changed, int(entry["unchanged_streak"]))
+        entry["classification"] = cause
+        entry["classification_reason"] = cause_reason
+        print(
+            f"CLASSIFIED: {row['skill']} rank={row['rank']} classification={cause} "
+            f"unchanged_streak={entry['unchanged_streak']} reason={cause_reason}"
+        )
+        if cause == "code_fix_required":
+            request_code_fix(row, int(entry["unchanged_streak"]), entry)
 
+save_escalation_state(escalation_state_path, escalation_state)
 print(f"updated_skills={updated} generated_at={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
 PY

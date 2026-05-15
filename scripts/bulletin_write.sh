@@ -84,8 +84,7 @@ if [[ -z "$POSTED_BY" ]]; then
     POSTED_BY="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
 fi
 if [[ -z "$POSTED_BY" ]]; then
-    echo "ERROR: agent_id unavailable from tmux" >&2
-    exit 1
+    POSTED_BY=""
 fi
 
 # Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation]
@@ -100,11 +99,19 @@ if [[ $# -ge 2 ]]; then
     if is_known_agent "$POSTED_BY_ARG"; then
         POSTED_BY="$POSTED_BY_ARG"
     else
+        if [[ -z "$POSTED_BY" ]]; then
+            echo "ERROR: agent_id unavailable from tmux; use explicit posted_by argument" >&2
+            exit 1
+        fi
         # 第1引数がエージェント名でない→旧形式(content, requires_confirmation)
         CONTENT="$1"
         REQUIRES_CONFIRMATION="${2:-false}"
     fi
 else
+    if [[ -z "$POSTED_BY" ]]; then
+        echo "ERROR: agent_id unavailable from tmux; use explicit posted_by argument" >&2
+        exit 1
+    fi
     CONTENT="$1"
     REQUIRES_CONFIRMATION="false"
 fi
