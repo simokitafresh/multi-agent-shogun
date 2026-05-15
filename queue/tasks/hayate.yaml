@@ -1,19 +1,19 @@
 task:
-  parent_cmd: cmd_training_codd_fix3_hayate
-  task_id: cmd_training_codd_fix3_hayate
+  parent_cmd: cmd_training_codd_g3_hayate
+  task_id: cmd_training_codd_g3_hayate
   type: training
   project: infra
   scout_exempt: true
-  purpose: "CoDD追完 — auto_deploy_next.shの既存成果物(docs/research/hayate_codd_L4_auto_deploy_next_20260516.md)を入力として、不足のcodd generate→validate→measureを実行せよ"
+  purpose: "CoDD追完 — model_switch_preflight.shに対してcodd specを実行し、結果を既存成果物(docs/research/kagemaru_codd_L4_model_switch_preflight_20260516.md)の先頭に追記。spec不足を補完"
   acceptance_criteria:
     AC1:
-      description: "既存成果物を読み、codd generate を実行して設計書を生成"
+      description: "codd spec を実行し、結果をdocs/research/kagemaru_codd_L4_model_switch_preflight_20260516.mdの先頭に追記(別ファイルに書くな)"
     AC2:
-      description: "codd validate を実行し、設計書DAGと実装の整合性を検証。結果を報告"
+      description: "追記後にcodd validate を再実行し、結果を同ファイル末尾に追記"
     AC3:
-      description: "codd measure を実行し、設計書品質スコアを報告。改善点を3つ以上特定"
+      description: "codd measure を再実行し、health_scoreを報告"
   status: done
-  report_path: queue/reports/hayate_report_cmd_training_codd_fix3_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_codd_g3_hayate.yaml
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'

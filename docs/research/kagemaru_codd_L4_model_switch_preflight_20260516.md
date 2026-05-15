@@ -1,3 +1,52 @@
+# Hayate G3 Spec補完追記
+
+cmd: cmd_training_codd_g3_hayate
+date: 2026-05-16
+author: hayate
+target: `scripts/model_switch_preflight.sh`
+source_artifact: `docs/research/kagemaru_codd_L4_model_switch_preflight_20260516.md`
+
+## codd spec 実行結果
+
+Command:
+
+```bash
+/home/simokitafresh/.codd-venv/bin/codd spec scripts/model_switch_preflight.sh --path .
+```
+
+Result: FAIL, because the installed CoDD CLI does not provide a `spec` subcommand.
+
+```text
+Usage: codd [OPTIONS] COMMAND [ARGS]...
+Try 'codd --help' for help.
+
+Error: No such command 'spec'.
+```
+
+Available adjacent CoDD commands confirmed by `codd --help`: `extract`, `require`, `elicit`, `generate`, `validate`, `measure`, `dag`, `brownfield`, `review`, `audit`, and related pipeline commands. Therefore this追完 records the missing `spec` command explicitly and completes the spec gap by adding the concrete requirements below rather than creating a separate file.
+
+## Spec Gap補完
+
+| Gap ID | Missing Spec | Required Contract |
+|--------|--------------|-------------------|
+| SG-1 | CLI command availability was assumed but not verified | CoDD training tasks that require a named subcommand must first record `codd --help` evidence. If the subcommand is absent, the artifact must report the absence as a command result instead of substituting a different command silently. |
+| SG-2 | Unknown target handling was identified only as an improvement candidate | `scripts/model_switch_preflight.sh <target>` should validate `<target>` against the configured agent set before reading `queue/tasks/<target>.yaml`; unknown targets should be FAIL, not idle-equivalent. |
+| SG-3 | Hardcode scan scope was under-specified | Runtime shell/YAML paths should be blocking scope; docs/research/context paths should be WARN scope unless they are generated operational instructions. |
+| SG-4 | CLI profile contract was narrower than model-switch safety requires | Schema validation should cover profile existence, `launch_cmd`, `supports_model_switch`, Codex absolute path, allowed model/effort fields, and deprecated model aliases. |
+| SG-5 | CoDD coverage did not include the target script | The artifact score must distinguish project DAG health from target-specific spec quality when `scripts/model_switch_preflight.sh` is outside `scan.source_dirs`. |
+
+## Traceability補完
+
+| Requirement | Existing Evidence | Gap Closure |
+|-------------|-------------------|-------------|
+| Dynamic hardcode detection | FR-1 in the original artifact | Add scan-scope split so documentation hits do not become false blocking failures. |
+| Agent schema validation | FR-2 in the original artifact | Extend validation from `type` lookup to CLI profile contract validation. |
+| Target task-state safety | FR-3 in the original artifact | Add target membership validation before status lookup. |
+| CLI lookup migration | FR-4 in the original artifact | Keep inline `is_codex()` detection as blocking for scripts sourcing `cli_lookup.sh`. |
+| Exit code semantics | FR-5 in the original artifact | Preserve FAIL-only nonzero exit, with WARN remaining explicit but non-blocking. |
+
+---
+
 # model_switch_preflight.sh CoDD L4 Spec
 
 cmd: cmd_training_L4_codd_202605160001_kagemaru
@@ -134,3 +183,17 @@ Score rationale:
 | AC2 elicit/lexicon gaps identified | yes | G1-G6 above |
 | AC3 validate/measure executed and design improvements >= 3 identified | yes | CoDD command results + six improvement candidates |
 
+---
+
+## Hayate G3 Post-Append Validation
+
+date: 2026-05-16 02:50:06 JST
+
+| Command | Result | Evidence |
+|---------|--------|----------|
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS | `OK: validated 16 Markdown files under configured doc_dirs` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS | `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `orphan_nodes=4` |
+
+Measured graph summary: `total_nodes=16`, `total_edges=12`, `max_depth=1`, `avg_out_degree=0.75`, `connectivity=0.05`.
+
+Conclusion: the spec補完追記 did not break the configured CoDD validation set. The project-level CoDD health remains 95, while the target-specific caveat remains that `scripts/model_switch_preflight.sh` is outside the configured scan source coverage.
