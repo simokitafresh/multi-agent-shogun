@@ -113,3 +113,28 @@ Rationale:
 | AC1 | `chronicle_metrics.sh` を読み、spec相当の目的・制約・対象範囲を本ファイルに記録した | yes |
 | AC2 | elicit/lexicon観点で要件穴とcoverage軸を洗い出した | yes |
 | AC3 | validate/measureを実行し、設計書品質採点と改善点3件以上を記録した | yes |
+
+## Saizo Follow-up G4: Generate / Validate / Measure
+
+Task: `cmd_training_codd_g4_saizo`
+
+| Command | Result |
+|---------|--------|
+| `timeout 120 /home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .` | Preliminary run: TIMEOUT after 120s. Karo later clarified CoDD commands require a 600s timeout, so this was not treated as the final generate result. |
+| `timeout 600 /home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .` | FAIL after AI response: `Error auto-generating wave_config: AI command returned invalid wave_config YAML: mapping values are not allowed here` at line 3, column 11 (`現在の状況を整理する:`). No target-specific chronicle_metrics document was produced. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: `OK: validated 16 Markdown files under configured doc_dirs` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0` |
+
+### G4 Follow-up Notes
+
+1. `codd generate` still derives from the repository's generic requirements and failed before producing a target-specific `scripts/chronicle_metrics.sh` design.
+2. No `codd/codd.yaml` diff was present after the 600s generate failure in this run, so validate/measure were run against the existing configured doc scope.
+3. The recommended next structural fix remains a target-specific `chronicle_metrics` requirements/design node before rerunning generation.
+
+### G4 Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | `codd generate` was executed with the clarified 600s timeout and the invalid wave_config YAML failure was appended to this existing file. | yes |
+| AC2 | `codd validate` was executed after generate and the result was appended to this file. | yes |
+| AC3 | `codd measure` was executed and `health_score=95` is recorded here. | yes |
