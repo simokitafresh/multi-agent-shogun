@@ -96,6 +96,12 @@ BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
+TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD=${TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD:-600}   # 修行自動配備: idle継続しきい値（秒）— context/training-cycle.md §2
+TRAINING_AUTO_DEPLOY_COOLDOWN=${TRAINING_AUTO_DEPLOY_COOLDOWN:-86400}             # 修行自動配備: 忍者別クールダウン（秒）
+TRAINING_AUTO_DEPLOY_FAIL_RATE=${TRAINING_AUTO_DEPLOY_FAIL_RATE:-20}             # 直近gate FAIL率しきい値（%）
+TRAINING_AUTO_DEPLOY_MIN_GATES=${TRAINING_AUTO_DEPLOY_MIN_GATES:-5}              # 直近gateサンプル不足時は修行条件成立
+TRAINING_AUTO_DEPLOY_RECENT=${TRAINING_AUTO_DEPLOY_RECENT:-50}                   # 忍者別直近gate参照件数
+TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
@@ -329,6 +335,7 @@ declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
+declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
 declare -A CLI_DEAD_LOOP_LAST_NTFY   # CLI-DEAD-LOOP ntfy最終送信時刻 — key: ninja_name, value: epoch秒 (ntfy flood防止)
@@ -1611,6 +1618,144 @@ _handle_auto_clear() {
     fi
 }
 
+_training_pipeline_has_work() {
+    grep -qE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
+}
+
+_training_auto_state_file() {
+    local name="$1"
+    printf '%s_%s.last\n' "$TRAINING_AUTO_DEPLOY_STATE_PREFIX" "$name"
+}
+
+_training_recent_gate_stats() {
+    local name="$1"
+    local log_file="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+    [ -f "$log_file" ] || { printf '0 0 0\n'; return 0; }
+
+    awk -v name="$name" -v limit="$TRAINING_AUTO_DEPLOY_RECENT" '
+        $0 ~ ("queue/reports/" name "_report_") || $0 ~ ("/queue/reports/" name "_report_") || $0 ~ ("/queue/archive/reports/" name "_report_") {
+            lines[++n] = $0
+        }
+        END {
+            start = n - limit + 1
+            if (start < 1) start = 1
+            for (i = start; i <= n; i++) {
+                if (lines[i] == "") continue
+                total++
+                if (lines[i] ~ /result:[[:space:]]*FAIL/) fail++
+            }
+            pct = (total > 0 ? int((fail * 100 + total - 1) / total) : 0)
+            printf "%d %d %d\n", total + 0, fail + 0, pct + 0
+        }
+    ' "$log_file"
+}
+
+_training_condition_met() {
+    local name="$1"
+    local total fail pct
+    read -r total fail pct < <(_training_recent_gate_stats "$name")
+
+    if [ "${total:-0}" -lt "$TRAINING_AUTO_DEPLOY_MIN_GATES" ]; then
+        log "TRAINING-AUTO-CHECK: $name eligible (gate samples ${total:-0} < ${TRAINING_AUTO_DEPLOY_MIN_GATES})"
+        return 0
+    fi
+
+    if [ "${pct:-0}" -ge "$TRAINING_AUTO_DEPLOY_FAIL_RATE" ]; then
+        log "TRAINING-AUTO-CHECK: $name eligible (recent FAIL rate ${pct}%=${fail}/${total}, threshold=${TRAINING_AUTO_DEPLOY_FAIL_RATE}%)"
+        return 0
+    fi
+
+    log "TRAINING-AUTO-SKIP: $name recent FAIL rate ${pct}%=${fail}/${total} below threshold ${TRAINING_AUTO_DEPLOY_FAIL_RATE}%"
+    return 1
+}
+
+_handle_training_auto_deploy() {
+    local name="$1"
+    local now="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status last_file last elapsed idle_elapsed cmd_id deploy_script tmp_task
+
+    [ -n "$name" ] || return 1
+
+    if _training_pipeline_has_work; then
+        unset "TRAINING_IDLE_FIRST_SEEN[$name]"
+        log "TRAINING-AUTO-SKIP: $name production pipeline has pending work"
+        return 1
+    fi
+
+    if [ -f "$task_file" ]; then
+        task_status=$(yaml_field_get "$task_file" "status")
+        case "$task_status" in
+            assigned|acknowledged|in_progress|pending|failed)
+                unset "TRAINING_IDLE_FIRST_SEEN[$name]"
+                log "TRAINING-AUTO-SKIP: $name task status=${task_status}"
+                return 1
+                ;;
+        esac
+    fi
+
+    if [ -z "${TRAINING_IDLE_FIRST_SEEN[$name]:-}" ]; then
+        TRAINING_IDLE_FIRST_SEEN[$name]=$now
+        log "TRAINING-AUTO-WATCH: $name idle tracking started"
+        return 1
+    fi
+
+    idle_elapsed=$((now - TRAINING_IDLE_FIRST_SEEN[$name]))
+    if [ "$idle_elapsed" -lt "$TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD" ]; then
+        log "TRAINING-AUTO-WAIT: $name idle ${idle_elapsed}s < ${TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD}s"
+        return 1
+    fi
+
+    last_file=$(_training_auto_state_file "$name")
+    last=0
+    if [ -f "$last_file" ]; then
+        read -r last < "$last_file" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    if [ "$elapsed" -lt "$TRAINING_AUTO_DEPLOY_COOLDOWN" ]; then
+        log "TRAINING-AUTO-COOLDOWN: $name ${elapsed}s < ${TRAINING_AUTO_DEPLOY_COOLDOWN}s"
+        return 1
+    fi
+
+    if ! _training_condition_met "$name"; then
+        return 1
+    fi
+
+    deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
+    if [ ! -x "$deploy_script" ]; then
+        log "TRAINING-AUTO-SKIP: deploy_task.sh not executable"
+        return 1
+    fi
+
+    cmd_id="cmd_training_L4_auto_$(date '+%Y%m%d%H%M')_${name}"
+    tmp_task=$(mktemp "${STATE_DIR}/training_auto_${name}.XXXXXX.yaml")
+    cat > "$tmp_task" <<EOF
+task:
+  parent_cmd: ${cmd_id}
+  task_id: ${cmd_id}_training
+  task_type: training
+  project: infra
+  target_path: scripts/ninja_monitor.sh
+  scout_exempt: true
+  status: assigned
+  purpose: "L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+EOF
+
+    log "TRAINING-AUTO-DEPLOY: $name cmd=${cmd_id} via deploy_task.sh --direct --yaml"
+    if bash "$deploy_script" --direct --yaml "$tmp_task" "$name" "$cmd_id" >> "$SCRIPT_DIR/logs/deploy_training_auto.log" 2>&1; then
+        rm -f "$tmp_task"
+        printf '%s\n' "$now" > "$last_file" 2>/dev/null || true
+        unset "TRAINING_IDLE_FIRST_SEEN[$name]"
+        log "TRAINING-AUTO-DEPLOY-DONE: $name cmd=${cmd_id}"
+        return 0
+    fi
+
+    rm -f "$tmp_task"
+    log "TRAINING-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} (non-blocking)"
+    return 1
+}
+
 # ─── idle→通知の処理（状態遷移+デバウンス） ───
 # 4サブ関数に分割: _handle_post_clear_pending / _handle_deploy_stall /
 #                   _handle_idle_notify / _handle_auto_clear
@@ -1624,6 +1769,7 @@ handle_confirmed_idle() {
     now=$EPOCHSECONDS
     _clear_stall_tracking_for_completed_idle "$name"
     _handle_idle_notify "$name" "$now"
+    if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
 
     PREV_STATE[$name]="idle"
@@ -1638,6 +1784,7 @@ handle_busy() {
     fi
     PREV_STATE[$name]="busy"
     unset "IDLE_NOTIFY_SENT[$name]"  # 状態変化: busy復帰→次idle時に再通知許可
+    unset "TRAINING_IDLE_FIRST_SEEN[$name]"
     # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
     unset "STALL_FIRST_SEEN[$name]"
     unset "STALL_FIRST_SEEN[deploy_stall_${name}]"
