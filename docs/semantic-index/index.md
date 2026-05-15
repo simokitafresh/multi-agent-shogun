@@ -68,7 +68,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？ |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -217,13 +217,119 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-07T17:18:08+09:00 では記事を書いて。ベーシックはお試しプラン。standardは募集停止となったお得なプラン、アドオンもすでに募集停止となったスタンダードプランのアドオン。新しいスタンダードプランはシン四神を中心としたもの。プレミアムは特別な非公開プラン。限 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:55:37+09:00 step2のクライアントIDは取得した。1020628824992-30qnh5airgml0vhqljh6nkrflo0dvcuk.apps.googleusercontent.com |
 
+## gs_ninpo_research — GS忍法研究
+
+| 属性 | 値 |
+|------|---|
+| id | gs_ninpo_research |
+| label | GS忍法研究 |
+| aliases | 忍法GS, GS忍法, グリッドサーチ忍法, run_077, 奥義GS, 忍法研究, GS高速化, パリティ完全一致, gs_engine, bunshin, oikaze, nukimi, kawarimi, kasoku, yotsume |
+| skills | gs-bench-gate |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/gs-speedup-knowledge.md` |
+| file | `context/gunshi-gs-speed-optimization-design.md` |
+| file | `context/gunshi-gs-landscape-analysis.md` |
+| file | `docs/research/gs-speedup-details.md` |
+| file | `docs/research/gs-results-by-ninjutsu.md` |
+| file | `docs/research/gunshi_nazenaze7_gs_speedup_20260414.md` |
+| file | `scripts/oneshot/wf_profile.py` |
+| file | `scripts/gates/gate_artifact_map.sh` |
+| cmd | `cmd_2776` セマンティック辞書5概念追加 |
+
+## silent_fallback_quality — Silent Fallback品質
+
+| 属性 | 値 |
+|------|---|
+| id | silent_fallback_quality |
+| label | Silent Fallback品質 |
+| aliases | silent fallback, Silent Fallback, サイレントフォールバック, 無言フォールバック, Cash fallback, SPY fallback, fail-open, fail-closed, PI-018, gate_silent_fallback, データ偽装, fallback品質 |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/gunshi-silent-fallback-analysis.md` |
+| file | `scripts/gates/gate_silent_fallback.sh` |
+| file | `scripts/gates/gate_gunshi_cs_checklist.sh` |
+| file | `scripts/gates/gate_gunshi_report_precheck.sh` |
+| file | `scripts/gates/gate_gunshi_report_precheck_engine.py` |
+| file | `context/dm-signal-core.md` |
+| file | `context/dm-signal-ops.md` |
+| cmd | `cmd_2776` セマンティック辞書5概念追加 |
+
+## skill_design_rules — Skill設計ルール
+
+| 属性 | 値 |
+|------|---|
+| id | skill_design_rules |
+| label | Skill設計ルール |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER |
+| skills | skill-creator, skill-installer |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/skill-design-rules.md` |
+| file | `docs/research/dream-skill-design.md` |
+| file | `context/codd.md` |
+| file | `skills/codd/SKILL.md` |
+| file | `skills/codd-refactor/SKILL.md` |
+| file | `skills/reset-layout/SKILL.md` |
+| file | `skills/pf-registration/SKILL.md` |
+| file | `docs/research/gstack-gbrain-skillify-2026-04.md` |
+| cmd | `cmd_2739` スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し |
+| cmd | `cmd_2776` セマンティック辞書5概念追加 |
+
+## dmsignal_operations — DM-Signal運用
+
+| 属性 | 値 |
+|------|---|
+| id | dmsignal_operations |
+| label | DM-Signal運用 |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, Render CLI |
+| skills | db-check, pf-registration, cdp-browse |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/dm-signal.md` |
+| file | `context/dm-signal-ops.md` |
+| file | `context/dm-signal-core.md` |
+| file | `context/dm-signal-frontend.md` |
+| file | `context/dm-signal-research.md` |
+| file | `context/checklist-shin-v2-registration.md` |
+| file | `context/checklist-alm-registration.md` |
+| file | `docs/research/ops-procedures.md` |
+| file | `docs/research/ops-db-rules.md` |
+| file | `docs/operations/daemon_runbook.md` |
+| file | `docs/operations/profiling_runbook.md` |
+| cmd | `cmd_2776` セマンティック辞書5概念追加 |
+
+## google_classroom — Google Classroom Dashboard
+
+| 属性 | 値 |
+|------|---|
+| id | google_classroom |
+| label | Google Classroom Dashboard |
+| aliases | Google Classroom, google classroom, Classroom, Classroom Dashboard, グーグルクラスルーム, classroom scraper, Classroomスクレイピング, auto_login, scrape_classroom |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/google-classroom.md` |
+| file | `config/projects.yaml` google-classroom |
+| file | `/mnt/c/Python_app/google_classroom` |
+| file | `/mnt/c/Python_app/google_classroom/scripts/auto_login.py` |
+| file | `/mnt/c/Python_app/google_classroom/scripts/scrape_classroom.py` |
+| file | `/mnt/c/Python_app/google_classroom/server.py` |
+| cmd | `cmd_2776` セマンティック辞書5概念追加 |
+
 ## agent_formation_management — 編成管理
 
 | 属性 | 値 |
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加 |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
