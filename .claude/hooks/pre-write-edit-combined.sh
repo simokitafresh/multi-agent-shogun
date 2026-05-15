@@ -337,4 +337,12 @@ if [[ "$file_path" == *'lessons_gunshi.yaml' ]]; then
     fi
 fi
 
+# === Guard 9: LG026 S0セルフレビュー リマインダー (高リスクファイル編集時) ===
+if [[ "$file_path" =~ (hooks/|gates/gate_.*_startup|gates/gate_gunshi_|CLAUDE\.md|instructions/|\.claude/settings|config/settings\.yaml|gunshi_review_log\.yaml) ]]; then
+    _agent_id=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
+    if [[ "$_agent_id" == "gunshi" ]]; then
+        echo "INFO(LG026): 高リスクファイル編集検出。S0セルフレビュー6項目を実施せよ(前提/数値/シミュレーション/検死/検証/NorthStar)。commit messageにS0記録必須。" >&2
+    fi
+fi
+
 exit 0
