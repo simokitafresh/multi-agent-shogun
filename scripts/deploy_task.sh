@@ -5256,8 +5256,21 @@ count = 0
 
 import re
 
+def count_description_value(desc):
+    if isinstance(desc, list):
+        return len(desc)
+    if isinstance(desc, dict):
+        ac_keys = [k for k in desc if re.match(r'^AC\d+$', str(k))]
+        if ac_keys:
+            return len(ac_keys)
+        return len(desc)
+    if isinstance(desc, str) and desc.strip():
+        ac_matches = re.findall(r'\bAC\d+\b', desc)
+        return len(set(ac_matches)) if ac_matches else 1
+    return 0
+
 def count_acs_from_value(acs):
-    """Count ACs: list→len (with AC-key drill-down), dict with description→count AC patterns, dict→len(keys), str→count AC patterns"""
+    """Count ACs: list→len, dict AC keys, description wrapper, str AC patterns."""
     if isinstance(acs, list):
         if len(acs) == 1 and isinstance(acs[0], dict):
             ac_keys = [k for k in acs[0] if re.match(r'^AC\d+$', k)]
@@ -5268,11 +5281,9 @@ def count_acs_from_value(acs):
         ac_keys = [k for k in acs if re.match(r'^AC\d+$', str(k))]
         if ac_keys:
             return len(ac_keys)
-        desc = acs.get('description', '')
-        if isinstance(desc, str) and desc.strip():
-            ac_matches = re.findall(r'\bAC\d+\b', desc)
-            if ac_matches:
-                return len(set(ac_matches))
+        desc_count = count_description_value(acs.get('description', ''))
+        if desc_count:
+            return desc_count if len(acs) == 1 else max(desc_count, 1)
         return max(len(acs), 1)
     if isinstance(acs, str) and acs.strip():
         ac_matches = re.findall(r'\bAC\d+\b', acs)

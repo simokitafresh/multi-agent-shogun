@@ -343,6 +343,65 @@ if [ -f "$INSIGHTS_FILE" ]; then
 fi
 embed_details+=("(c)insights未処理: ${pending_insights}件")
 
+# (d) 完了cmdのproject別にprojects/*.yamlの更新有無を確認
+# セッション中にcmd完了したprojectのprojects/{id}.yamlがセッション後に更新されているか
+CHRONICLE="$ROOT_DIR/context/cmd-chronicle.md"
+if [ -f "$CHRONICLE" ] && [ -n "$session_start_date" ]; then
+  # cmd-chronicleからセッション日以降の完了cmdのprojectを抽出
+  session_projects=$(awk -v date="$session_start_date" '
+    /^- cmd_[0-9]+:/ { cmd=$0 }
+    /\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)/ {
+      match($0, /\(([0-9]{4}-[0-9]{2}-[0-9]{2})\)/, m)
+      if (m[1] >= date) {
+        # projectを推定: shogun_to_karo.yamlから取得は重いので、chronicleのキーワードから推定
+        if ($0 ~ /Simple-OCR|simple-ocr/) print "simple-ocr"
+        else if ($0 ~ /DM-Signal|dm-signal/) print "dm-signal"
+        else if ($0 ~ /google-classroom/) print "google-classroom"
+        else if ($0 ~ /kj-partshift/) print "kj-partshift"
+      }
+    }
+  ' "$CHRONICLE" 2>/dev/null | sort -u)
+
+  # shogun_to_karo.yamlから直接project取得（より正確）
+  if [ -f "$CMD_FILE" ]; then
+    yaml_projects=$(awk '
+      /^  cmd_[0-9]+:/ { cmd=1 }
+      cmd && /project:/ {
+        val=$2; gsub(/"/, "", val); gsub(/\047/, "", val)
+        if (val != "infra" && val != "") projects[val]=1
+        cmd=0
+      }
+      END { for (p in projects) print p }
+    ' "$CMD_FILE" 2>/dev/null)
+    if [ -n "$yaml_projects" ]; then
+      session_projects="$yaml_projects"
+    fi
+  fi
+
+  stale_projects=()
+  for proj in $session_projects; do
+    proj_yaml="$ROOT_DIR/projects/${proj}.yaml"
+    if [ -f "$proj_yaml" ]; then
+      proj_mtime=$(stat -c '%Y' "$proj_yaml" 2>/dev/null || echo 0)
+      session_epoch=$(date -d "${session_start_date}T00:00:00" '+%s' 2>/dev/null || echo 0)
+      if [ "$proj_mtime" -lt "$session_epoch" ]; then
+        stale_projects+=("$proj")
+      fi
+    fi
+  done
+
+  if [ ${#stale_projects[@]} -gt 0 ]; then
+    embed_details+=("(d)PJ知識未更新: ${stale_projects[*]} ⚠ projects/*.yamlにセッション中の設計知識が反映されていない可能性")
+    embed_issues=$((embed_issues + 1))
+  else
+    if [ -n "$session_projects" ]; then
+      embed_details+=("(d)PJ知識更新: OK(対象PJ全て更新済み)")
+    else
+      embed_details+=("(d)PJ知識更新: SKIP(infra以外のcmdなし)")
+    fi
+  fi
+fi
+
 echo "[8.知識埋込み] lesson:${lesson_count_session}件(${session_start_date}以降)"
 for d in "${embed_details[@]}"; do
   echo "  ${d}"
