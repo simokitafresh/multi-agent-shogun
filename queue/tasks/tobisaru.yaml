@@ -17,11 +17,11 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2775
+  parent_cmd: 
   project: infra
   purpose: scripts/配下の全bashスクリプトの関数を列挙し、context/*.mdへの記載有無を突合。contextから参照できない仕組みを特定し、可視化優先度を判定する
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   task_id: cmd_2775_exact
   task_type: exact

@@ -191,7 +191,9 @@ lessons:
     verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。
     CI完了待ちで忍者を止めるな(報告を先に書かせろ)。
     追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。
-  source_ids: [LK006, LK042, LK020, LK078]
+    v5吸収(2026-05-15):
+    - 外部リポ(Simple-OCR等)のpush ACは忍者push禁止規則と構造的に衝突。push ACは家老実施前提で設計せよ(cmd_2782/2783/karo_ci_fix_simple_ocr_rebase実証)
+  source_ids: [LK006, LK042, LK020, LK078, LK014]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh commit check gitignore確認+karo-operations.md §2分解パターン'
@@ -344,94 +346,17 @@ lessons:
 # v1全文アーカイブ: docs/research/lessons_karo_v1_archive.md
   when: depends_on付きcmdの配備計画時
   how: AC単位で依存分析。cmd全体の依存を鵜呑みにせず並列可能部分を先に配備。idle=最大の無駄
+# v5統合(2026-05-15): LK001-LK013の13件をA系列に完全吸収し削除
+# LK001→LK-A13(AC数カウント修正), LK002→LK-A03(STALL空報告削除)
+# LK003/LK005→LK-A12(dashboard NUL/マーカー), LK004→LK-A02(inbox未配信)
+# LK006→LK-A13(LG035同根), LK007/LK008/LK012→削除(軍師教訓の家老記録=LG正本参照)
+# LK009/LK011→LK-A01(確認系+startup hook), LK010→LK-A06(並列E2E fixture)
+# LK013→LK-A04(karo_direct修行AC手動設定)
+# 全詳細はdocs/research/lessons_karo_v1_archive.mdに保存済み
 - id: 'LK001'
-  title: 'draft_review AC数誤判定: dictのdescriptionキー内ACパターンをカウントせよ'
-  detail: 'count_task_acceptance_criteriaがdict型ACのキー数(常に1)を返し、全cmdでdraft_review SKIPされていた。修正: description内のAC1/AC2パターンをregexカウント。殿指摘で発覚。根因=ACの構造が2種(list/dict with description)あることをカウント関数が未対応。enforcement: 修正済み(commit 45b84e8d)。次回ACフォーマット変更時は同関数のテスト追加必須'
-  source_cmd: 'cmd_2624'
-  created_at: '2026-05-10'
-  when: deploy_task.shでAC数カウントする時。draft_review送信判定時
-  how: dict型ACのdescriptionキー内AC1/AC2パターンをregexカウント。list len()だけでは不十分
-- id: 'LK002'
-  title: 'STALL再配備時に旧忍者の空報告テンプレートを削除せよ'
-  detail: 'cmd_2637で小太郎→飛猿→影丸に3回再配備。旧忍者(小太郎/飛猿)のreport_cmd_2637.yamlが空テンプレートのまま残存→GATE BLOCKで全件FAIL(verdict空/bc空/status pending)。再配備時にrm queue/reports/{旧忍者}_report_{cmd}.yamlで空報告を削除すべき。deploy_task.shのSTALE_FIELDSにreport_path消去はあるがreportファイル自体の削除はない'
-  source_cmd: 'cmd_2637'
-  created_at: '2026-05-10'
-  when: STALL再配備で別忍者に切替える時
-  how: "旧忍者の空報告テンプレートをrm queue/reports/{旧忍者}_report_{cmd}.yamlで削除"
-- id: 'LK003'
-  title: 'dashboard NUL文字混入はdashboard_auto_section.sh出力のバイナリゴミが根因'
-  detail: 'dashboard.md 3行目に大量のNUL文字(0x00)が混入し殿に文字化け指摘。sed -i ''s/\x00//g''で除去したが根因はdashboard_auto_section.shの出力。次回発生時はsed除去+auto_section.shの出力をhexdump確認せよ'
-  source_cmd: 'cmd_2639'
-  created_at: '2026-05-10'
-  when: dashboard.mdに文字化け/NUL文字を検出した時
-  how: sed -iでNUL文字除去+dashboard_auto_section.sh出力をhexdump確認で根因特定
-- id: 'LK004'
-  title: 'deploy_task.sh配備後にinbox未配信が頻発 — grep確認+手動nudge'
-  detail: 'deploy_task.shが正常完了してもinbox_write送信が未到達(出力途切れ)するケースが頻発(cmd_2662-2666で5回)。配備後に grep -c ''read: false'' queue/inbox/{ninja}.yaml で0件なら手動nudge: inbox_write.sh {ninja} task_assigned karo。根因未特定(deploy_task.sh出力バッファ?)。次セッションで根因調査配備を検討。'
-  source_cmd: 'cmd_2666'
-  when: 'deploy_task.sh配備後確認手順に手動nudge追加'
-  how: 'deploy_task.shが正常完了してもinbox_write送信が未到達(出力途切れ)するケースが頻発(cmd_2662-2666で5回)。配備後に grep -c ''read: false'' queue/inbox/{ninja}.yaml で0件なら手動nudge: inbox_write.sh {ninja} task_assigned karo。根因未特定(deploy_task.sh出力バッファ?)。次セッションで根因調査配備を検討。'
-  created_at: '2026-05-10'
-- id: 'LK005'
-  title: 'dashboard AUTO域マーカー欠落時は空マーカー挿入→dashboard_auto_section.sh実行で復元'
-  detail: '/dashboard-updateスキルがKARO_SECTION全体を上書きする際にDASHBOARD_AUTO_START/ENDマーカーを消すケースがある。復元手順: (1)KARO_SECTION_STARTの直前に空のAUTO_START〜AUTO_ENDを挿入 (2)bash scripts/dashboard_auto_section.sh実行 (3)KARO_SECTION_ENDマーカーも確認。'
-  source_cmd: 'cmd_2659'
-  when: 'dashboard復元手順をkaro.md/operations参照に追加'
-  how: '/dashboard-updateスキルがKARO_SECTION全体を上書きする際にDASHBOARD_AUTO_START/ENDマーカーを消すケースがある。復元手順: (1)KARO_SECTION_STARTの直前に空のAUTO_START〜AUTO_ENDを挿入 (2)bash scripts/dashboard_auto_section.sh実行 (3)KARO_SECTION_ENDマーカーも確認。'
-  created_at: '2026-05-10'
-- id: 'LK006'
-  title: 'スキルTRIGGER条件合致時はSkill tool必須'
-  detail: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。'
-  source_cmd: 'cmd_karo_skill_usage_lesson'
+  title: 'CI表示乖離: in_progress runをcheck failedと表示するな'
+  detail: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
+  source_cmd: 'cmd_2792'
   when: '同種の状況が再発した時'
-  how: 'Guard 9でスキル以外の道を塞ぐ。手動操作BLOCK。'
-  created_at: '2026-05-10'
-- id: 'LK007'
-  title: 'LG027吸収: gate_sync.sh検出範囲盲点(accuracy Goodhart効果)'
-  detail: 'LG027に吸収。gunshi_gate_sync.shがnull検索のみでフィールド不在を未検出→accuracy 99.6%→97.1%。Phase2追加+271件backfillで修正。計測ツール自体の検出範囲を定期監査する一般原則のもう一つの実例。'
-  source_cmd: 'cmd_gunshi_idle_accuracy'
-  when: '同種の状況が再発した時'
-  how: 'LG027に吸収。gunshi_gate_sync.shがnull検索のみでフィールド不在を未検出→accuracy 99.6%→97.1%。Phase2追加+271件backfillで修正。計測ツール自体の検出範囲を定期監査する一般原則のもう一つの実例。'
-  created_at: '2026-05-12'
-- id: 'LK008'
-  title: 'LG軍師環境改善3件(Level5化)'
-  detail: '軍師idle自走成果。(1)gate_sync Phase2(LG027吸収済みLK007) (2)review-bundle Step0にprecheck必須化(33件GATE_PREDICTION不在の根因修正) (3)ac_physical_verify冷え観点自動表示。全件Level5化。commit: 85560554/ea48f105/d7e345be'
-  source_cmd: 'cmd_gunshi_idle_env'
-  when: '同種の状況が再発した時'
-  how: '軍師idle自走成果。(1)gate_sync Phase2(LG027吸収済みLK007) (2)review-bundle Step0にprecheck必須化(33件GATE_PREDICTION不在の根因修正) (3)ac_physical_verify冷え観点自動表示。全件Level5化。commit: 85560554/ea48f105/d7e345be'
-  created_at: '2026-05-12'
-- id: 'LK009'
-  title: '殿の過去裁定との矛盾検出'
-  detail: 'cmd起票時/配備時にgit show HEAD:対象ファイルで削除コメント・裁定日を確認し、過去の殿裁定との矛盾を検出せよ。cmd_2683でstartup gate自動実行を再実装→2026-04-12殿裁定で削除済みと判明。LG001(git show HEAD検証)の家老適用。'
-  source_cmd: 'cmd_2683'
-  when: '同種の状況が再発した時'
-  how: 'cmd起票時/配備時にgit show HEAD:対象ファイルで削除コメント・裁定日を確認し、過去の殿裁定との矛盾を検出せよ。cmd_2683でstartup gate自動実行を再実装→2026-04-12殿裁定で削除済みと判明。LG001(git show HEAD検証)の家老適用。'
-  created_at: '2026-05-12'
-- id: 'LK010'
-  title: '並列E2Eテストfixtureは同一parent_cmd禁止'
-  detail: 'duplicate_deploy_gate導入後、同一parent_cmdのfixtureは二重配備としてBLOCKされる。並列E2Eは独立タスクを表すためfixture側でparent_cmdを分離。ガードを緩めない。cmd_karo_ci_fix_e2e_parallelで実証。'
-  source_cmd: 'cmd_karo_ci_fix_e2e_parallel'
-  when: '同種の状況が再発した時'
-  how: 'duplicate_deploy_gate導入後、同一parent_cmdのfixtureは二重配備としてBLOCKされる。並列E2Eは独立タスクを表すためfixture側でparent_cmdを分離。ガードを緩めない。cmd_karo_ci_fix_e2e_parallelで実証。'
-  created_at: '2026-05-12'
-- id: 'LK011'
-  title: '起動手順スキップ=Phase 4構造(理解≠行動変容)'
-  detail: '殿の入力に即応答し起動手順をスキップした。根因: 手順がLevel 2(ドキュメント)止まりで意志依存。deepdive Phase 4『LLMに生存本能はない。自動化×強制』の再現。cmd_2683でSessionStart hookに環境埋込み済み。次の家老は手順スキップが物理的に不可能。'
-  source_cmd: 'cmd_2683'
-  when: '同種の状況が再発した時'
-  how: '殿の入力に即応答し起動手順をスキップした。根因: 手順がLevel 2(ドキュメント)止まりで意志依存。deepdive Phase 4『LLMに生存本能はない。自動化×強制』の再現。cmd_2683でSessionStart hookに環境埋込み済み。次の家老は手順スキップが物理的に不可能。'
-  created_at: '2026-05-12'
-- id: 'LK012'
-  title: 'LG軍師ラルフループ埋込み3件(GATE_PREDICTION WARN行動変換+裁定矛盾検出+手動data消火禁止)'
-  detail: '軍師idle自走成果。(1)GATE_PREDICTION WARNを行動変換(review-bundle Step0埋込) (2)殿過去裁定矛盾検出パターン(gunshi.mdサイクル鉄則埋込) (3)手動data埋め=消火→根因修正=品質向上(同上埋込)。全件軍師自力完了。'
-  source_cmd: 'cmd_gunshi_ralph_loop'
-  when: '同種の状況が再発した時'
-  how: '軍師idle自走成果。(1)GATE_PREDICTION WARNを行動変換(review-bundle Step0埋込) (2)殿過去裁定矛盾検出パターン(gunshi.mdサイクル鉄則埋込) (3)手動data埋め=消火→根因修正=品質向上(同上埋込)。全件軍師自力完了。'
-  created_at: '2026-05-12'
-- id: 'LK013'
-  title: 'karo_direct修行配備は手動AC設定必須'
-  detail: 'deploy_task.sh --directではresolve_cmd未発動のためAC/purpose注入なし。karo_directスキルで/tmp経由task YAML作成→コピー→inbox_writeの手順が必須。cmd_training_L4_r16_hayateで疾風FAIL→再配備で実証'
-  source_cmd: 'cmd_training_L4_r16_hayate'
-  when: 'LK-A04吸収候補。karo_direct修行配備手順にAC手動設定を明記'
-  how: 'deploy_task.sh --directではresolve_cmd未発動のためAC/purpose注入なし。karo_directスキルで/tmp経由task YAML作成→コピー→inbox_writeの手順が必須。cmd_training_L4_r16_hayateで疾風FAIL→再配備で実証'
-  created_at: '2026-05-12'
+  how: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
+  created_at: '2026-05-15'

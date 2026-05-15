@@ -414,3 +414,10 @@ lessons:
   created_at: '2026-05-15'
   automated: true
   enforcement: 'type=documentation+gate; file=instructions/shogun.md+scripts/gates/gate_shogun_startup.sh; pattern=workflow+GATE CLEAR'
+- id: 'LS032'
+  title: 'ハルシネーションに基づくforce push事故: capture-paneのテキストを殿の裁定と誤認'
+  detail: 'capture-paneに見えたテキストを殿の承認と断定しforce pushで26commits消失(2026-05-15)。根因: (1)capture-paneは時刻・発言者情報なし。殿の裁定はlord_conversation inboundでのみ確認可能 (2)自分の記憶・認識も確認対象。見えた気がする≠見えた (3)破壊的操作の前に殿の明示承認がなかった (4)時系列で因果を確認していれば防げた。殿指摘: 事実を確認する前に反省するのは逃げ。ハルシネーションに基づいた反省はナンセンス'
+  source_cmd: 'cmd_2783'
+  created_at: '2026-05-15'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/pre-bash-combined.sh; pattern=Guard(cmd_2784で実装予定)'

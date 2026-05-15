@@ -1,5 +1,5 @@
 task:
-  parent_cmd: cmd_training_L4_codd_202605152312_kotaro
+  parent_cmd: 
   task_id: cmd_training_L4_codd_202605152312_kotaro
   type: training
   project: infra
@@ -12,7 +12,7 @@ task:
       description: "codd elicit/lexicon観点で要件穴・coverage軸を洗い出し記録"
     AC3:
       description: "codd validate/measureで設計書品質を採点し、改善点を3つ以上特定して報告"
-  status: acknowledged
+  status: idle
   report_path: queue/reports/kotaro_report_cmd_training_L4_codd_202605152312_kotaro.yaml
   related_lessons:
   - id: 'L512'

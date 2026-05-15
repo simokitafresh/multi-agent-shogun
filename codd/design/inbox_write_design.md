@@ -38,4 +38,3 @@ Inputs are CLI arguments, `queue/tasks/`, `queue/inbox/`, report YAMLs, agent co
 - `scripts/inbox_write.sh` validates target and sender routing before persistence.
 - `scripts/inbox_write.sh` blocks duplicate task assignment before writing the message.
 - `codd/brownfield/inbox_write_brownfield.md` records the CoDD brownfield run for this target.
-

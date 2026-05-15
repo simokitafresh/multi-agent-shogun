@@ -60,6 +60,23 @@ bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" gate_p
 bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" reviewed_at "<timestamp>"
 ```
 
+### Step 2.5: 初遭遇パターン検出（/clear耐久性）
+
+review_log追記後、今回のレビューで使った判断パターンがreview_logヘッダに記載済みか照合せよ。
+
+手順:
+1. 今回のreview_logエントリのobservationsを読む
+2. review_logヘッダ(#行)のキーワード群と照合する
+3. **ヘッダに未記載の判断パターンがobservationsにあれば**、以下を表示:
+   ```
+   ★新パターン候補: {observationsの該当箇所}
+   → review_logヘッダに1行追記して/clear耐久性を確保せよ
+   ```
+4. 該当なしなら無言で次へ
+
+目的: レビュー中の判断パターンを/clear後も残す。「初遭遇パターンが頭の中だけに残り/clearで消失」を構造的に防止。
+根拠: なぜなぜ7回(2026-05-15殿指示)で根因特定。5件/セッションの判断パターンが未埋込みだった。
+
 ### Step 3: 家老inbox送信
 ```bash
 bash scripts/inbox_write.sh karo "cmd_<cmd_id>レビュー完了。verdict=<verdict>。" review_feedback gunshi

@@ -5997,3 +5997,34 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 未設定
 - SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがproject照合+BLOCKを自動実行する。新規状態管理不要。フックはallowed_projectsがないスキルはスキップするのでスコープ外スキルへの影響ゼロ
+
+### L611: [自動生成] 有効教訓の記録を怠った: cmd_2788
+- **日付**: 2026-05-15
+- **出典**: cmd_2788
+- **記録者**: gate_auto
+- **status**: confirmed
+- **tags**: [infra,lesson,reporting]
+- **target_files**: [scripts/record_lesson_feedback.sh]
+- **when**: 未設定
+- **how**: 未設定
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+
+### L612: 進行中CIをcheck failedと表示するな
+- **日付**: 2026-05-15
+- **出典**: cmd_2792
+- **記録者**: kagemaru
+- **tags**: [infra,recon,reporting]
+- **target_files**: [偵察のみ: コード変更なし]
+- **when**: 未設定
+- **how**: 未設定
+- CI表示の偵察ではlatest runとlatest completed runを分けて確認せよ。latest runがin_progressでconclusion空の場合、UNKNOWNをcheck failedに変換すると完了済みsuccessと矛盾して見える。dashboard表示はPENDING/UNKNOWN/REDを分離する。
+
+### L613: deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要
+- **日付**: 2026-05-16
+- **出典**: cmd_2790
+- **記録者**: hanzo
+- **tags**: [infra,deploy,bash,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/helpers/deploy_task_scaffold.bash,tests/unit/test_deploy_task_ac_handling.bats]
+- **when**: 未設定
+- **how**: 未設定
+- resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from_stk()で補完。yaml_field_setはlist値([AC1,AC2])を拒否するためawk直接書込みが必要。

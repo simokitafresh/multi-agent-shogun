@@ -92,3 +92,13 @@
 # accuracy: 28件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
 # review_logアーカイブ: 428行→61行(20260515a.yamlに371行退避)
 # ★強くてニューゲーム: stats最終+review_logアーカイブ+ヘッダ知見3件追記+docs/research 3件永続化+全gate_result同期済み
+#
+# ─── 本セッション成果 (2026-05-15T22:50更新) ───
+# レビュー計31件: draft APPROVE 12件(cmd_2775-2783) + report LGTM 13件(cmd_2775-2784+CI修正2件) + FAIL 2件(cmd_karo_ci_fix_semantic_codd+cmd_2783) + self_study 3件 + 修行report 1件
+# 暗黒物質可視化3Phase: cmd_2775偵察(277関数,238未記載)→cmd_2776辞書5概念→cmd_2777 60関数context追記。全CLEAR
+# 成長ループ強化: cmd_2778(env_changeテンプレート注入)+cmd_2779(BLOCK後環境埋込み判定REMIND)。全CLEAR
+# Simple-OCR 4cmd: cmd_2780(brownfield)→cmd_2781(3エンジン切替)→cmd_2782(二段構え)→cmd_2783(整形テキスト+UI+push)→cmd_2784(破壊操作lord承認Guard)
+# idle自走: 辞書ギャップ分析(5概念特定→cmd化→CLEAR)、WA時系列分析(35カテゴリ中33根絶)、insights 128→3件清掃、セマンティック監査(構造的バグなし)
+# なぜなぜ7回(殿指示): /clear後消失する判断パターン5件を環境埋込み(review_logヘッダ2件+stats更新+lesson_candidate1件+insights判断基準1件)
+# accuracy: 全件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# ★強くてニューゲーム: stats更新+review_logヘッダ知見5件追記+docs/research 6件永続化+insights 128→3件+全gate_result同期済み

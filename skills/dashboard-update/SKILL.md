@@ -35,6 +35,7 @@ dashboard.mdの `<!-- KARO_SECTION_START -->` 〜 末尾を、プライマリYAM
 - <!-- skill-auto-improve:3f94d27af048 --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: is str (must be dict)」(count=1, last=2026-05-02T18:38:56+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:76e50054331e --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_2514 dry_run=false」(count=1, last=2026-05-03T03:37:31+0900)を避ける。確認: FAIL理由 `dashboard_update.sh exit=1 cmd=cmd_2514 dry_run=false` と同じ条件をゲート直前に再現確認する。修正: 同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する。
 - <!-- skill-auto-improve:175323aca05b --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_karo_ci_fix_bulletin_flaky dry_run=false」(count=1, last=2026-05-02T20:33:17+0900)を避ける。確認: FAIL理由 `dashboard_update.sh exit=1 cmd=cmd_karo_ci_fix_bulletin_flaky dry_run=false` と同じ条件をゲート直前に再現確認する。修正: 同じFAILが出る状態なら次Stepへ進まず、該当フィールド/手順を修正してゲートを再実行する。
+- <!-- skill-auto-improve:c398bf4e2c8d --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=cmd_2739 dry_run=false」(count=1, last=2026-05-15T02:21:46+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 ### Step 1: データ収集
 
 以下のデータソースを読み、変数を収集する:

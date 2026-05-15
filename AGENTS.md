@@ -493,7 +493,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - 設計ルール|`context/skill-design-rules.md`|description1024字制限+What/When/NOT When必須+5000語制限+最小権限
 - /codd|CoDD設計書パイプライン(spec→plan→generate→validate)|`skills/codd/SKILL.md`
 - /codd-refactor|CoDDで計測→設計→実装→再計測まで回す|`skills/codd-refactor/SKILL.md`
-- codd fix|v1.8.0修正フロー。診断推論+Session Stateで失敗理由を持ち越して直す|`context/codd.md` §2-§5
+- codd fix|v2.16.0+ fix [PHENOMENON]対応。自然言語で事象記述→設計書+コード+テスト一括更新。旧fix(テスト/CI失敗自動修復)も維持|`context/codd.md` §2
 - codd propagate|`scan→impact→propagate --update` で変更波及先を更新する|`context/codd.md` §2, §5
 - codd review|`review --feedback` / `verify` / `policy` / `audit` で品質確認を層で回す|`context/codd.md` §2, §5
 - codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5

@@ -1,153 +1,47 @@
 task:
-  _ac_task_id: cmd_2789_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2789
-  ac_version: b99834bc
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_2789
+  parent_cmd: 
+  task_id: cmd_training_codd_r4_hayate
+  type: training
   project: infra
-  purpose: deploy_task.shのcount_task_acceptance_criteriaがdict型AC(description:形式)をカウントできず、ac_count<=1と判定されdraft_reviewが4回SKIPされている。dict型ACの正確なカウントに修正する
   scout_exempt: true
-  status: done
-  stop_for: []
-  task_id: cmd_2789_exact
-  task_type: exact
-  related_lessons:
-  - id: 'L500'
-    summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-    detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L256'
-    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
-    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
-  - id: 'L116'
-    summary: 'scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的'
-    detail: 'scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的'
-  - id: 'L273'
-    summary: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
-    detail: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
-  - id: 'L603'
-    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-  - id: 'L305'
-    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-  - id: 'L554'
-    summary: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-    detail: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-  - id: 'L257'
-    summary: 'deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。'
-    detail: 'deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。'
-  - id: 'L428'
-    summary: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
-    detail: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
-  - id: 'L153'
-    summary: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
-    detail: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  recommended_skills:
-  - "hensei"
-  - "hensei-mixed"
-  - "hensei-opus"
-  - "karo-direct"
-  - "recon-dual"
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  - "switch-to-codex"
-  - "switch-to-opus"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
-      - L116: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
-      - L273: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI
-      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
-      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
-      - L554: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
-      - L257: deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。
-      - L428: _sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho
-      - L153: IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認
-    ────────────────────────────────────────
-    
-    
+  purpose: "CoDD修行L4 — skill_gate_feedback.shにCoDDパイプライン(spec→elicit→generate→validate→measure)を実行し、設計書品質と改善点を報告せよ"
   acceptance_criteria:
-  - description: 'count_task_acceptance_criteriaがdict型AC(description:キー)を正確にカウントする'
-  - description: 'list型AC(- 形式)のカウントも引き続き正常に動作する'
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2789.yaml
-  report_path: queue/reports/hayate_report_cmd_2789.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 27
-    top_pattern: 'verdict_override(4件)'
-    breakdown: 'verdict_override(4件), report_yaml_format(3件), stale_report(3件), commit_missing(3件), task_redeploy(2件), recording_error(2件), ci_gate_mismatch(2件), deploy_error(2件), ac_injection_failure(1件), spec_mismatch_redeploy(1件), report_missing(1件), gitignore_untracked(1件), report_yaml_corrupt(1件), ci_green_waive(1件)'
-    warning: '⚠ 過去27件のworkaround発生。品質に注意'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 324
-    - pattern: 'verdict_invalid'
-      count: 92
-    - pattern: 'bc_result_invalid'
-      count: 91
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'
-    gate_blocks:
-    - reason: 'lesson_done_missing'
-      count: 12
-      hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-    - reason: 'empty_lessons_useful'
-      count: 10
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'binary_checks_fail'
-      count: 10
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'report_format'
-      count: 8
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'invalid_lessons_useful_format'
-      count: 3
-      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
-    - reason: 'purpose_validation_fit_false'
-      count: 2
-      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-15T23:39:56"
-  acknowledged_at: "2026-05-15T23:40:50"
-  started_at: "2026-05-15T23:41:32"
-  done_at: "2026-05-15T23:44:59"
+    AC1:
+      description: "skill_gate_feedback.shを読み、codd spec相当の目的・制約・対象範囲をdocs/research/に記録"
+    AC2:
+      description: "codd elicit/lexicon観点で要件穴・coverage軸を洗い出し記録"
+    AC3:
+      description: "codd validate/measureで設計書品質を採点し、改善点を3つ以上特定して報告"
+  status: idle
+  report_path: queue/reports/hayate_report_cmd_training_codd_r4_hayate.yaml
+  related_lessons:
+  - id: 'L512'
+    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
+  - id: 'L511'
+    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'

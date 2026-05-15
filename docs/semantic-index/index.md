@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ） |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -61,6 +61,7 @@ codd:
 | cmd | `cmd_2690` 修正 — semantic-index file参照12件のDM-Signal外部パスを現行パスとして検証し、semantic_map_generate.shで再生成 (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:45:43+09:00 ではrebalancerの概要を教えてくれ。セマンティック辞書にも登録しよう |
 | cmd | `cmd_2739` 改善 — スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し (`scripts/hooks/prompt_state_inject.sh`, `skills/cdp-browse/SKILL.md`, `skills/codd/SKILL.md`) |
+| cmd | `cmd_2776` 強化 — セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase 1） (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -80,6 +81,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T11:57:14+09:00 CoDD v2.18.0 アップデート完了 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T12:02:18+09:00 CoDDを有効活用するための準備はできているか？ |
 | cmd | `cmd_2760` CoDD v1.10.0時点の知識体系をv2.18.0に更新 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:31:24+09:00 by90fvbya toolu_01AsvZsDxzg3e4Xth1fevzM1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
+| cmd | `cmd_2780` 強化 — Simple-OCRリポジトリ全体のCoDD brownfield設計書逆生成 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -156,7 +159,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで, 今回のBLOCKで何を学習して, BLOCK後に環境埋込み判定を強制（自動成長ループ完結） |
 | skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 
 | 種別 | パス/参照 |
@@ -178,6 +181,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:10:02+09:00 スキルの自動成長ループは順調か？構造的な問題はないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:35:51+09:00 同様のコード修正までが一気通貫していないせいで、自動成長ループが構造的に阻害されているものがないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:50:13+09:00 三層学習ループに同様の構造的な阻害がないか確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T15:13:59+09:00 今回のBLOCKで何を学習して、クリアされても次回BLOCKされないために実際にどう自動成長した？自動成長できていないのならインフラバグか自動成長ループの仕組を修正するべきだ。 |
+| cmd | `cmd_2779` 強化 — BLOCK後に環境埋込み判定を強制（自動成長ループ完結） (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats`) |
 
 ## alm_research — ALM研究
 
@@ -264,7 +269,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消） |
 | skills | skill-creator, skill-installer |
 
 | 種別 | パス/参照 |
@@ -279,6 +284,7 @@ codd:
 | file | `docs/research/gstack-gbrain-skillify-2026-04.md` |
 | cmd | `cmd_2739` スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し |
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
+| cmd | `cmd_2785` 強化 — SKILL.md 3件をscript変更に追従更新（3セッション連続WARN解消） (`skills/dream/SKILL.md`, `skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -375,6 +381,9 @@ codd:
 | cmd | `cmd_2754` 強化 — ninja_monitorに修行サイクル自動トリガーを追加 (`scripts/ninja_monitor.sh`) |
 | cmd | `cmd_2755` 強化 — FAIL→PASS遷移率の定期計測をninja_monitorに追加 (`scripts/ninja_monitor.sh`) |
 | cmd | `cmd_2757` 強化 — 教訓定期棄却の自動トリガーをninja_monitorに追加 (`scripts/lesson_deprecation_scan.sh`, `scripts/ninja_monitor.sh`, `tests/unit/test_lesson_deprecation_scan.bats`) |
+| cmd | `cmd_2789` (`queue/tasks/hayate.yaml`, `tests/unit/test_deploy_task_draft_review.bats`) |
+| lesson | `L613` deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要 |
+| cmd | `cmd_2790` 強化 — deploy_task.sh ac_assigned導入でbc注入範囲を担当ACに限定 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -420,7 +429,7 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, モバイルポートフォリオ入力をコンパクト横並び1行 銘柄に再設計 |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, モバイルポートフォリオ入力をコンパクト横並び1行 銘柄に再設計, このアプリは原則的にお薬手帳用に開発した |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -435,6 +444,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:56:42+09:00 このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？ |
 | cmd | `cmd_2729` 修正 — モバイルレスポンシブ崩れ修正(ヘッダー+テーブル+銘柄リスト) |
 | cmd | `cmd_2740` 修正 — モバイルポートフォリオ入力をコンパクト横並び1行/銘柄に再設計 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:25:57+09:00 このアプリは原則的にお薬手帳用に開発した。inbox2 |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -480,6 +490,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:17:06+09:00 bayxsdn2u toolu_016qWPcnUxCj4Ym1yCHar8q7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:46:50+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T00:03:29+09:00 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある。DB-checkなどのスキルを実行しようとすることもあるな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T22:56:22+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:06:43+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -607,3 +619,75 @@ codd:
 | cmd | `cmd_karo_rebalancer_push` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T03:15:53+09:00 リバランサーのGoogleOauthはもう誰でも利用できる？ |
 | cmd | `cmd_karo_rebalancer_push_2` |
+
+## simple_ocr — Simple OCR（画像OCR Webアプリ）
+
+| 属性 | 値 |
+|------|---|
+| id | simple_ocr |
+| label | Simple OCR（画像OCR Webアプリ） |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, 先にローカルで3エンジンの実際のOCR精度を試す, すくなくとも圧倒的にgoogle vision APIが優秀だな, task notification task id bqq5mjmxs task id tool use id tool, ほかのAPIも使ってみたいな, よい, exclusion managerのskipは意図的にやっただろ？知識がすべて抜けているな, 番号欠落は1の方針でよい, schedulだな |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/simple-ocr.yaml` |
+| file | `/mnt/c/Python_app/Simple-OCR/app.py` Flask+SocketIOエントリーポイント(700行) |
+| file | `/mnt/c/Python_app/Simple-OCR/exclusion_manager.py` OCR結果除外パターン管理 |
+| file | `/mnt/c/Python_app/Simple-OCR/admin/routes.py` 管理画面ルーティング |
+| file | `/mnt/c/Python_app/Simple-OCR/docs/ocr-engine-switching-design.md` OCRエンジン切替設計書 |
+| file | `/mnt/c/Python_app/Simple-OCR/docs/api-setup-guide.md` API取得ガイド |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:00:56+09:00 Simple-OCRを確認して。新しいプロジェクトだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:06:43+09:00 お薬手帳のOCR精度が悪い。なにかいいアイデアはあるか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:08:16+09:00 Claude VisionのコストとGPTを比較したい |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:11:38+09:00 切り替え可能にできるか？設計書作りが必要だ |
+| cmd | `cmd_2780` Simple-OCR CoDD brownfield設計書逆生成 |
+| cmd | `cmd_2781` 実装 — Simple-OCR OCRエンジン切替Phase 1-3（抽象化+3エンジン実装） |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:23:13+09:00 先にローカルで3エンジンの実際のOCR精度を試す |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:35:19+09:00 すくなくとも圧倒的にgoogle vision APIが優秀だな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:41:51+09:00 https://github.com/ndl-lab/ndlocr-liteに役に立つ情報はないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:49:18+09:00 bqq5mjmxs toolu_01JLqHJC32Bq2EtNXo6VfzbB /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:51:53+09:00 ほかのAPIも使ってみたいな。google visionAPiににたAPIはないのか？ |
+| cmd | `cmd_2782` 実装 — Simple-OCR 座標付き二段構えOCRパイプライン（Google DOCUMENT_TEXT_DETECTION + Claude Haiku構造化） |
+| cmd | `cmd_karo_ci_fix_simple_ocr_rebase` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:12:17+09:00 ではsimple-OCRにもどろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:17:51+09:00 よい。お薬手帳特有の整形は別レイヤーでやろう。もとのシステムでは別レイヤーでやっていた |
+| cmd | `cmd_2787` 修正 — two-stage OCRプロンプトをレイアウト忠実復元に限定（お薬手帳解釈を分離） |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:29:40+09:00 exclusion_managerのskipは意図的にやっただろ？知識がすべて抜けているな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T01:03:11+09:00 番号欠落は1の方針でよい。続けよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T01:19:04+09:00 schedulだな。日本のお薬手帳の特徴は、グループの一番下に用法容量などが記載されている。これがグループ分けのヒントになると思う |
+
+## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
+
+| 属性 | 値 |
+|------|---|
+| id | kj_partshift |
+| label | KJ Partshift Checker（シフト見える化MVP） |
+| aliases | kj-partshift, partshift, シフト見える化, シフト管理, パートシフト, 休診日, HTMX, 楽観ロック, メンバーマージ |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/kj-partshift.yaml` |
+| file | `/mnt/c/Python_app/kj-partshift-checker/app/` FastAPI+Jinja2+HTMX |
+| file | `/mnt/c/Python_app/kj-partshift-checker/architecture.md` アーキテクチャ設計書 |
+| file | `/mnt/c/Python_app/kj-partshift-checker/future-001.md` 将来の修正候補リスト(F014-F042) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T18:40:17+09:00 kj-partshift-checkerを読み込んで |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T18:43:28+09:00 このプロジェクトを登録して |
+
+## destructive_operations — 破壊的操作安全機構
+
+| 属性 | 値 |
+|------|---|
+| id | destructive_operations |
+| label | 破壊的操作安全機構 |
+| aliases | 破壊的操作, D001-D009, lord_approval, force push, reset --hard, git clean, Tier1, Tier2 |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/hooks/pre_bash_combined_guard.sh` 殿承認確認Guard(D010) |
+| file | `tests/test_pre_bash_destructive_approval.bats` 破壊的操作テスト |
+| file | `CLAUDE.md` Destructive Operation Safety (Tier1/Tier2/Tier3) |
+| cmd | `cmd_2784` 破壊的操作の前に殿の明示的承認確認をpre-bash hookに追加 |
+| lesson | `LK-A01 v6` 破壊的操作はremote現状確認+lord_conversation確認必須 |
