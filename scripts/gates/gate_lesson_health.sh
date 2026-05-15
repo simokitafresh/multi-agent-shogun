@@ -504,6 +504,35 @@ if [ "$_global_max_id" -gt 0 ]; then
     fi
 fi
 
+# ─── enforcement phantom検出 (deepdive 2026-05-16: 自己申告vs他覚的検証) ───
+_phantom_count=0
+_phantom_tmp="/tmp/_glh_phantom_$$"
+for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
+    [ -f "$_lf" ] || continue
+    awk '/^- id:/{id=$3;a=""} /automated: true/{a="true"} /enforcement:/{if(a=="true"){gsub(/^  enforcement: /,"");print id"|"$0}}' "$_lf" > "$_phantom_tmp" 2>/dev/null || true
+    while IFS='|' read -r _lid _enf; do
+        _scripts=$(echo "$_enf" | grep -oE '[a-z_]+\.sh' | sort -u) || true
+        [ -z "$_scripts" ] && continue
+        _all_found=true
+        for _s in $_scripts; do
+            if ! find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "$_s" -print -quit 2>/dev/null | grep -q .; then
+                _all_found=false
+            fi
+        done
+        if ! $_all_found; then
+            echo "WARN: PHANTOM教訓 $_lid — enforcement参照スクリプト不在: $_scripts"
+            _phantom_count=$((_phantom_count + 1))
+        fi
+    done < "$_phantom_tmp"
+done
+rm -f "$_phantom_tmp"
+if [ "$_phantom_count" -gt 0 ]; then
+    echo "WARN: PHANTOM教訓${_phantom_count}件。enforcement参照スクリプトが存在しない。enforcementフィールドを更新せよ"
+    EXIT_CODE=1
+else
+    echo "OK: enforcement phantom検出: 0件"
+fi
+
 # ─── check_lesson_effectiveness ───
 if [ $# -ge 1 ]; then
     check_lesson_effectiveness "$1"
