@@ -655,6 +655,17 @@ EOF
     [ "$output" -eq 2 ]
 }
 
+@test "cmd_complete_gate keeps existing harmful threshold auto-deprecate path" {
+    run bash -lc "grep -c 'harmful >= 5 && harmful > helpful' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
+@test "cmd_complete_gate adds useful rate threshold auto-deprecate path" {
+    run bash -lc "grep -q 'Auto-deprecate check (useful rate threshold)' '$SRC_GATE_SCRIPT' && grep -q 'helpful \\* 5 <= total' '$SRC_GATE_SCRIPT' && grep -q 'total >= 10' '$SRC_GATE_SCRIPT' && grep -q 'AUTO-DEPRECATE(useful-rate)' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+}
+
 # GP-221: 二重配備時のbc_fail降格テスト
 @test "GP-221: binary_checks pre-scan finds verdict=PASS ninjas" {
     # pre-scanロジックが存在するか確認
