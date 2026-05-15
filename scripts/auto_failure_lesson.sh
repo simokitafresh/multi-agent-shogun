@@ -4,6 +4,7 @@
 # - status: failed → lesson_write.sh --status confirmed で登録
 # - status: done/その他 → 何もしない (exit 0)
 # - failure_analysis.root_cause があれば抽出、なければ result.summary から要約
+# - gate_fire_logのFAIL原因がスクリプトバグ系なら将軍へ修正cmd起票を要請
 # - タイトルに「[自動生成]」プレフィックスを付与
 # - projectは report YAMLの parent_cmd → shogun_to_karo.yaml から取得
 
@@ -11,6 +12,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_PATH="${1:-}"
+BULLETIN_SCRIPT="${AUTO_FAILURE_BULLETIN_SCRIPT:-$SCRIPT_DIR/scripts/bulletin_write.sh}"
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     echo "[auto_failure] Usage: auto_failure_lesson.sh <report_yaml_path>" >&2
@@ -47,6 +49,76 @@ notes = result.get("notes", "").strip()
 failure_analysis = data.get("failure_analysis", {}) or {}
 root_cause = failure_analysis.get("root_cause", "").strip()
 what_would_prevent = failure_analysis.get("what_would_prevent", "").strip()
+
+def _extract_field(line, field):
+    marker = f'{field}: "'
+    start = line.find(marker)
+    if start >= 0:
+        start += len(marker)
+        end = line.find('"', start)
+        return line[start:] if end < 0 else line[start:end]
+    marker = f"{field}: "
+    start = line.find(marker)
+    if start < 0:
+        return ""
+    start += len(marker)
+    end = line.find(",", start)
+    value = line[start:] if end < 0 else line[start:end]
+    return value.strip().strip('"')
+
+def _norm_path(value):
+    if not value:
+        return ""
+    value = os.path.abspath(value) if value.startswith("/") else os.path.normpath(value)
+    return value
+
+def _gate_fail_context(report_path):
+    log_path = os.path.join(script_dir, "logs", "gate_fire_log.yaml")
+    if not os.path.exists(log_path):
+        return {"reason": "", "line": "", "classification": "unknown"}
+
+    abs_report = os.path.abspath(report_path)
+    rel_report = os.path.relpath(abs_report, script_dir)
+    candidates = {abs_report, rel_report, os.path.normpath(report_path)}
+    latest = ""
+    try:
+        with open(log_path, encoding="utf-8") as f:
+            for line in f:
+                if "result: FAIL" not in line:
+                    continue
+                file_value = _extract_field(line, "file")
+                if not file_value:
+                    continue
+                normalized = _norm_path(file_value)
+                if file_value in candidates or normalized in candidates or os.path.abspath(file_value) == abs_report:
+                    latest = line.strip()
+    except OSError:
+        return {"reason": "", "line": "", "classification": "unknown"}
+
+    if not latest:
+        return {"reason": "", "line": "", "classification": "none"}
+
+    reason = _extract_field(latest, "reasons")
+    text = f"{reason} {latest}".lower()
+    usage_markers = [
+        "field_missing", "fill_this", "binary_checks", "lesson_candidate",
+        "lessons_useful", "verdict", "status_valid", "purpose_validation",
+        "assumption_invalidation", "self_gate_check", "report yaml",
+        "missing", "must be dict", "must be list", "empty_lessons_useful",
+    ]
+    script_markers = [
+        "script_error", "script error", "スクリプトエラー", "exit=1", "exit 1",
+        "exit code 1", "traceback", "exception", "command not found",
+        "syntax error", "unbound variable", "permission denied", "no such file",
+        "python error", "runtime error",
+    ]
+    if any(marker in text for marker in script_markers) and not any(marker in text for marker in usage_markers):
+        classification = "script_bug"
+    else:
+        classification = "usage_error"
+    return {"reason": reason, "line": latest, "classification": classification}
+
+gate_fail = _gate_fail_context(report_path)
 
 # Get project from parent_cmd → shogun_to_karo.yaml
 project = ""
@@ -106,7 +178,10 @@ print(json.dumps({
     "detail": detail,
     "source_cmd": parent_cmd,
     "author": worker_id,
-    "task_id": task_id
+    "task_id": task_id,
+    "gate_fail_classification": gate_fail["classification"],
+    "gate_fail_reason": gate_fail["reason"],
+    "gate_fail_line": gate_fail["line"],
 }))
 PYEOF
 )
@@ -119,6 +194,7 @@ fi
 
 # Parse all JSON fields in a single python3 call (was 6 separate invocations)
 action="" reason="" PROJECT="" TITLE="" DETAIL="" SOURCE_CMD="" AUTHOR=""
+GATE_FAIL_CLASSIFICATION="" GATE_FAIL_REASON=""
 eval "$(echo "$extract_result" | python3 -c "
 import json, sys, shlex
 d = json.load(sys.stdin)
@@ -130,6 +206,8 @@ mapping = [
     ('detail', 'DETAIL', ''),
     ('source_cmd', 'SOURCE_CMD', 'unknown'),
     ('author', 'AUTHOR', 'unknown'),
+    ('gate_fail_classification', 'GATE_FAIL_CLASSIFICATION', ''),
+    ('gate_fail_reason', 'GATE_FAIL_REASON', ''),
 ]
 for json_key, var_name, default in mapping:
     v = d.get(json_key, default)
@@ -150,5 +228,14 @@ fi
 # Call lesson_write.sh with --status confirmed
 echo "[auto_failure] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
 bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
+
+if [ "$GATE_FAIL_CLASSIFICATION" = "script_bug" ] && [ -x "$BULLETIN_SCRIPT" ]; then
+    bulletin_content="auto_failure_lesson: ${SOURCE_CMD}/${AUTHOR} の失敗はスクリプトバグ疑い。将軍はコード修正cmdを起票されたし。gate_reason=${GATE_FAIL_REASON:-unknown}"
+    if BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" karo "$bulletin_content" false >/dev/null 2>&1; then
+        echo "[auto_failure] Script-bug bulletin requested: source=$SOURCE_CMD"
+    else
+        echo "[auto_failure] WARN: script-bug bulletin failed (non-blocking)" >&2
+    fi
+fi
 
 echo "[auto_failure] Confirmed lesson registered successfully"
