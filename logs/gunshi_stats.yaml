@@ -102,3 +102,15 @@
 # なぜなぜ7回(殿指示): /clear後消失する判断パターン5件を環境埋込み(review_logヘッダ2件+stats更新+lesson_candidate1件+insights判断基準1件)
 # accuracy: 全件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
 # ★強くてニューゲーム: stats更新+review_logヘッダ知見5件追記+docs/research 6件永続化+insights 128→3件+全gate_result同期済み
+#
+# ─── 本セッション成果 (2026-05-16T00:35更新) ───
+# レビュー計12件: draft APPROVE 6件(cmd_2785/2787/2788/2789/2790/2792) + report LGTM 6件(同)。全GATE CLEAR
+# LGTM→BLOCK 1件: cmd_2788(lessons_useful空リスト見落とし→忍者修正→再CLEAR)。PRE20実装+review_logヘッダで免疫獲得
+# D0直接実装5件: Guard 9(LG026 S0リマインダー) + Guard 10(LG020数値実測) + Guard 6拡張(LG007 capture-pane残像) + SG-PRE20(lessons_useful照合) + enforcement phantom検出gate
+# なぜなぜ7回 3回: (1)掲示板3件(教訓注入30%+when/how69件+CI乖離) (2)LGTM→BLOCK(precheck PASS→内容PASS混同=Goodhart) (3)設計=実装幻想(automated自己申告)
+# Goodhart原理発見: 代理指標が最適化されるほど本来目標から乖離。3度再現(accuracy/automated/precheck)。全指標監査完了
+# 利他: 教訓注入CTX浪費18,000tok分析→10件still-injected特定→effectiveness除外をtag_candidatesに拡張提案
+# 前セッション設計書虚偽訂正: 100%→実態75.8%。Guard 9-12が未実装だった
+# accuracy: 本セッション全件prediction=CLEAR→result=CLEAR(cmd_2788初回BLOCKも最終CLEAR)
+# docs/research永続化: 4件(flag_gap/bulletin_nazenaze/lgtm_block_nazenaze/goodhart_audit) + lesson_waste_analysis + deepdive_phantom
+# ★強くてニューゲーム: stats更新+review_logヘッダ+知見2件(precheck≠内容/archive追記)+D0 5件commit+docs/research 6件+lesson_candidate 3件+掲示板7投稿+全gate_result同期済み

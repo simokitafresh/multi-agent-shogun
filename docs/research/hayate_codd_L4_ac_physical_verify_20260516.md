@@ -6,6 +6,43 @@ target: "scripts/ac_physical_verify.sh"
 worker: "hayate"
 ---
 
+## Saizo Follow-up G1: Spec Completion
+
+Task: `cmd_training_codd_g1_saizo`
+
+`/home/simokitafresh/.codd-venv/bin/codd spec --path . scripts/ac_physical_verify.sh` was executed on 2026-05-16 02:43 JST. Local CoDD v2.18.0 has no `spec` subcommand, returning `Error: No such command 'spec'.` This section therefore records the missing target-specific spec as the durable spec-equivalent artifact for `scripts/ac_physical_verify.sh`.
+
+### Target-Specific Functional Requirements
+
+| ID | Requirement | Evidence / Current implementation |
+|----|-------------|-----------------------------------|
+| FR-G1-1 | Accept either a command id from `queue/shogun_to_karo.yaml` or `-` for stdin text, and fail fast when no input can be resolved. | `scripts/ac_physical_verify.sh` argument and queue loading path |
+| FR-G1-2 | Extract physical file references from command/AC text and verify existence in the shogun repo before implementation or review. | Path regex extraction and `[OK]` / `[MISSING]` summary |
+| FR-G1-3 | Resolve known external project paths when a command belongs to a registered project outside this repo. | Current hard-coded `dm-signal` fallback |
+| FR-G1-4 | Bind line (`L123`) and section (`§N`) references to verifiable file content so reviewers can inspect concrete evidence, not inferred locations. | Current global line/section scan |
+| FR-G1-5 | Detect gitignored paths when a command includes commit/push expectations, because such ACs can become impossible to satisfy. | `git check-ignore` warning block |
+| FR-G1-6 | Emit a human-scannable navigation sheet grouped by AC block for ninja and reviewer use. | `=== Navigation Sheet ===` output |
+| FR-G1-7 | Surface review-risk context from recent cold review categories without mutating operational YAML. | Adaptive gating summary from `logs/gunshi_review_log.yaml` |
+
+### Required CoDD Graph Nodes
+
+| Node | Purpose |
+|------|---------|
+| `codd/requirements/ac_physical_verify_requirements.md` | Canonical requirements for input modes, path verification, project fallback, line/section binding, gitignore risk, and navigation output. |
+| `codd/design/ac_physical_verify_design.md` | Design contract for extraction, binding, fallback resolution, failure signaling, and read-only behavior. |
+| coverage axis: `physical_path_verification` | Path references are real files in either repo root or the relevant project root. |
+| coverage axis: `reference_binding` | Line and section references are associated with the nearest relevant path/AC block instead of every extracted path. |
+| coverage axis: `commit_feasibility` | Commit/push ACs are checked against gitignore status. |
+| coverage axis: `review_navigation` | Output remains compact and directly usable by ninja/reviewer workflows. |
+
+### Spec Gaps To Close Before Future Generate
+
+1. Replace the hard-coded project fallback table with `projects/{project}.yaml` path lookup.
+2. Expand path tokenization to include `.json`, `.bats`, `.txt`, `.toml`, `.mdx`, extensionless executable paths, and quoted paths with spaces.
+3. Bind `L123` and `§N` to the nearest path within each AC block to avoid unrelated line evidence.
+4. Convert adaptive review-category parsing from line regex to bounded YAML parsing, or document the accepted one-line schema and test it.
+5. Add dedicated Bats fixtures for stdin mode, queue mode, missing paths, external project fallback, gitignored commit ACs, AC-count warning, and adaptive category output.
+
 # CoDD L4: ac_physical_verify.sh
 
 ## AC1: Spec Equivalent
@@ -128,3 +165,20 @@ Task: `cmd_training_codd_fix1_saizo`
 | AC1 | Existing artifact read and generate command executed | yes |
 | AC2 | Validate executed and result separated before/after generate cleanup | yes |
 | AC3 | Measure executed and at least three improvements identified | yes |
+
+## Saizo Follow-up G1: Validate / Measure After Spec Completion
+
+Task: `cmd_training_codd_g1_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: `OK: validated 16 Markdown files under configured doc_dirs` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0` |
+
+### G1 Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | `codd spec` was executed and the local CLI failure plus spec-equivalent requirements were inserted into this existing file near the top, immediately after frontmatter. | yes |
+| AC2 | `codd validate` was rerun after the spec completion section was added, and this result was appended to this file. | yes |
+| AC3 | `codd measure` was rerun after validation, and `health_score=95` is recorded here. | yes |

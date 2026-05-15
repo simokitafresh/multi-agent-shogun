@@ -62,6 +62,7 @@
 # ★スキル使用構造的強制5層(cmd_2734-2738): L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK。詳細→docs/research/gunshi_idle_skill_enforcement_5layer_20260515.md
 # ★allowed_projects照合(cmd_2738): DO NOT TRIGGERの自然言語パースではなくSKILL.mdにallowed_projectsフィールド追加→機械的照合。忍者の設計判断として正しい(より堅牢)
 # ★precheck PASS≠内容OK(cmd_2788 LGTM→BLOCK教訓): 形式チェックは内容チェックの代替ではない。PRE11「形式OK」を見たらlessons_usefulの中身(空リスト+related_lessons照合)を自分の目で確認せよ。gateの出力を信頼しすぎて現物確認をスキップするな(deepdive Phase 1-2と同構造)
+# ★Goodhart原理(3度実証): 代理指標が良い数字を出したとき安心するな。本来の目標を直接確認せよ。accuracy/automatedフラグ/precheck PASSの3件で乖離実証。「この数字は何の代理か？本来の目標は何か？gateは何を見ていないか？」を毎レビュー自問。→docs/research/gunshi_idle_goodhart_audit_20260516.md
 # 詳細エントリ: 20260516a(cmd_2785〜cmd_2792+D0x5+deepdive) → logs/archive/gunshi_review_log_20260516a.yaml
 - cmd_id: cmd_2743
   review_type: draft

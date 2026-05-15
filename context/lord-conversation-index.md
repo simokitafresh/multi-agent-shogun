@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-16T03:00:38+09:00 -->
+<!-- generated_at: 2026-05-16T03:01:39+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-16T03:01:38+09:00 | terminal | response | **Simple-OCRリポジトリ状態：クリーン。** - 未コミット変更: なし - 未push: なし（origin/mainと同期済み） - untracked: `__pycache__/`等のビルド成果物 + `docs/api…
+- 2026-05-16T03:01:22+09:00 | terminal | inbound | リポジトリに未コミットや未プッシュがないか調査せよ
 - 2026-05-16T03:00:37+09:00 | terminal | response | 殿、Stage 3実装完了。全パイプラインが動作している。commit+pushの準備ができた。殿の指示を。 [meta] stop_reason=tool_use
 - 2026-05-16T02:59:54+09:00 | terminal | inbound | ではデプロイまで進めよう。
 - 2026-05-16T02:59:36+09:00 | terminal | response | 殿、Stage 3実装完了。全パイプラインが動作している。commit+pushの準備ができた。殿の指示を。 [meta] stop_reason=tool_use
@@ -12,10 +14,9 @@
 - 2026-05-16T02:57:03+09:00 | terminal | inbound | 次はどうする？
 - 2026-05-16T02:53:55+09:00 | terminal | response | **6サンプル × 3回 = 18回全PASS。ACHIEVED。** 縦向き3枚 + 横向き3枚、小児科・内科・耳鼻咽喉科の処方箋を安定してグルーピング。 殿、記録して次に進める。 [meta] stop_reason=end_turn
 - 2026-05-16T02:51:24+09:00 | terminal | inbound | １－６まで3回連続成功を確認しよう
-- 2026-05-16T02:51:00+09:00 | terminal | response | **5問題中4つ修正完了:** - ✅ FIX1: dosageの「42日分」混入 → 解消 - ✅ FIX2: 薬名欠落 → 「デキストロメトルファン臭化水素酸塩錠15mg「トーワ」」正しく結合 - ✅ FIX3: noteの保管指導混…
-- 2026-05-16T02:48:26+09:00 | terminal | inbound | 問題点を先に修正しよう
 
 ## 未解決確認事項
+- **Simple-OCRリポジトリ状態：クリーン。** - 未コミット変更: なし - 未push: なし（origin/mainと同期済み） - untracked: `__pycache__/`等のビルド成果物 + `docs/api-setup-guide.md`（.gi…
 - １－６まで3回連続成功を確認しよう
 - **5問題中4つ修正完了:** - ✅ FIX1: dosageの「42日分」混入 → 解消 - ✅ FIX2: 薬名欠落 → 「デキストロメトルファン臭化水素酸塩錠15mg「トーワ」」正しく結合 - ✅ FIX3: noteの保管指導混入 → 解消 - ✅ FIX5: dru…
 - 殿、新サンプル2枚の結果。 **sample3 (20250523): 横山優羽 — 烏山耳鼻咽喉科** | group | 薬 | schedule | |-------|---|----------| | 0 | 1.ルパフィン錠10mg + 2.モンテルカスト錠10mg …
@@ -23,7 +24,6 @@
 - 環境に埋め込んだ: 1. **`docs/two_stage_prompt_v3.txt`** — 最終版プロンプト文字列（14回試行の成果） 2. **`tests/test_two_stage_prompt.py`** — 3回連続正解テスト（期待値+duration検証付…
 - はっ。途中経過を報告する。 **改善点（前回→今回）:** - ✓ 一般名行の除外 — group[3]ロラタジン、group[4]カルボ+ブランルカストが各1行に - ✓ ハッカ油②復活 — group[0]に入った - ✓ 日付加工なし、corporation分離、note…
 - 記憶したら実行してみてくれ。確認する
-- 画像を再度見て全テキスト要素をスキーマと突合する。 **sample1 全テキスト要素 vs スキーマ:** | 画像上のテキスト | スキーマフィールド | 状態 | |---|---|---| | 永井 咲茉 様 | patient_name | ✓ | | ■25/04/…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-16T03:00:37+09:00 | 殿、Stage 3実装完了。全パイプラインが動作している。commit+pushの準備ができた。殿の指示を。 [meta] stop_reason=tool_use

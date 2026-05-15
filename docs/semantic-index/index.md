@@ -626,7 +626,7 @@ codd:
 |------|---|
 | id | simple_ocr |
 | label | Simple OCR（画像OCR Webアプリ） |
-| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, 先にローカルで3エンジンの実際のOCR精度を試す, すくなくとも圧倒的にgoogle vision APIが優秀だな, task notification task id bqq5mjmxs task id tool use id tool, ほかのAPIも使ってみたいな, よい, exclusion managerのskipは意図的にやっただろ？知識がすべて抜けているな, 番号欠落は1の方針でよい, schedulだな |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, 先にローカルで3エンジンの実際のOCR精度を試す, すくなくとも圧倒的にgoogle vision APIが優秀だな, task notification task id bqq5mjmxs task id tool use id tool, ほかのAPIも使ってみたいな, よい, exclusion managerのskipは意図的にやっただろ？知識がすべて抜けているな, 番号欠落は1の方針でよい, schedulだな, サンプルを増やしてみよう, mnt c Users simok OneDrive 画像 スクリーンショット お薬手帳サンプル jpg mnt c U |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -656,6 +656,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:29:40+09:00 exclusion_managerのskipは意図的にやっただろ？知識がすべて抜けているな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T01:03:11+09:00 番号欠落は1の方針でよい。続けよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T01:19:04+09:00 schedulだな。日本のお薬手帳の特徴は、グループの一番下に用法容量などが記載されている。これがグループ分けのヒントになると思う |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:33:10+09:00 サンプルを増やしてみよう。'/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サンプル/20250523_141641.jpg' '/mnt/c/Users/simok/OneDrive/画像/スクリ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:35:50+09:00 まず自分で丁寧に読み込んでみよう。C:\Python_app\Simple-OCR\testsに画像をコピーすることから始めたらどうだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:42:37+09:00 '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サンプル/20250524_141003.jpg' '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サン |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 

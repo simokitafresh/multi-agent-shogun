@@ -120,6 +120,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=assumption_invalidation: MISSING; self_gate_check: is str (must be dict)
 - 2026-05-15: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']
 
 - 2026-05-15: gate=gate_report_format result=FAIL executor=kotaro reason=files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list o...
