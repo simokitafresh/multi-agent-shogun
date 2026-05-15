@@ -1,7 +1,8 @@
 task:
-  _ac_task_id: cmd_2770_exact
+  _ac_task_id: cmd_2764_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2770
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2764
+  ac_version: 7d010443
   cmd_id: cmd_training_L4_auto_202605151258_tobisaru_normal
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -11,55 +12,69 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2770
+  parent_cmd: cmd_2764
   project: infra
-  purpose: karo_workarounds.yamlのNINJA_CORRUPT 74件+GP049_BYPASS 8件の歴史的汚染データを正しい形式に修復し、WA分析精度を向上させる
+  purpose: GitHub Actions CI workflowにcodd dag verify --allステップを追加し、設計書とコードの整合性が崩れたPRをCI段階でBLOCKする
   scout_exempt: true
-  status: acknowledged
+  status: done
   stop_for: []
-  task_id: cmd_2770_exact
+  task_id: cmd_2764_exact
   task_type: exact
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L290'
-    summary: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-    detail: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-  - id: 'L287'
-    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L524'
-    summary: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-    detail: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-  - id: 'L305'
-    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-  - id: 'L112'
-    summary: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
-    detail: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
-  - id: 'L353'
-    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-  - id: 'L101'
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    detail: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
+  - id: 'L262'
+    summary: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
+    detail: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
+  - id: 'L241'
+    summary: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
+    detail: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
+  - id: 'L610'
+    summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
+    detail: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
+  - id: 'L282'
+    summary: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
+    detail: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
+  - id: 'L087'
+    summary: 'knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の'
+    detail: 'knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の'
+  - id: 'L612'
+    summary: 'before(cmd_design_quality.yaml訓練BLOCK率)とafter(gate_fire_log.yaml直近FAIL率)は異なるメトリク'
+    detail: 'before(cmd_design_quality.yaml訓練BLOCK率)とafter(gate_fire_log.yaml直近FAIL率)は異なるメトリク'
+  - id: 'L141'
+    summary: 'IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)'
+    detail: 'IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)'
+  - id: 'L136'
+    summary: 'IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ'
+    detail: 'IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ'
+  - id: 'L562'
+    summary: 'CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル'
+    detail: 'CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
+  recommended_skills:
+  - "codd"
+  - "codd-refactor"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -73,26 +88,25 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L290: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
-      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L524: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す
-      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
-      - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT
-      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
-      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+      - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに'non-blo
+      - L241: D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti
+      - L610: SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro
+      - L282: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
+      - L087: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の
+      - L612: before(cmd_design_quality.yaml訓練BLOCK率)とafter(gate_fire_log.yaml直近FAIL率)は異なるメトリク
+      - L141: IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)
+      - L136: IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ
+      - L562: CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル
     ────────────────────────────────────────
     
     
   acceptance_criteria:
-  - description: 'NINJA_CORRUPT 74件が正しいworkaround形式に修復されている。grep -c NINJA_CORRUPT logs/karo_workarounds.yaml → 0件を確認'
-  - description: 'GP049_BYPASS 8件が正しい形式に修復されている。grep -c GP049_BYPASS logs/karo_workarounds.yaml → 0件を確認'
-  - description: '修復後のkaro_workarounds.yamlがYAML構文エラーなしで読込可能である。python3 -c ''import yaml; yaml.safe_load(open(...))''で確認'
-  ac_version: 7d010443
+  - description: 'CI workflowにcodd dag verify --all --format jsonステップが追加され、違反時にexit 1でCIがfailしPRマージがBLOCKされる'
+  - description: '既存のbatsテストステップは変更されず、codd verifyが追加ステップとして強制実行されている'
+  - description: 'codd-dev pipインストールステップが追加され、CI環境でcoddが利用可能になっている'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_2770.yaml
-  report_path: queue/reports/tobisaru_report_cmd_2770.yaml
+  report_filename: tobisaru_report_cmd_2764.yaml
+  report_path: queue/reports/tobisaru_report_cmd_2764.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -124,4 +138,21 @@ task:
     - reason: 'lesson_done_missing'
       count: 1
       hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-  deployed_at: "2026-05-15T13:07:49"
+  deployed_at: "2026-05-15T13:21:25"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
+    tried_approaches:
+    - 'assumption_invalidation: is str (must be dict); self_gate_check: missing required key \"lesson_ref\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"lesson_candidate\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"status_valid\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"purpose_fit\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit)'
+    - 'assumption_invalidation: missing \"affected_cmds\" field'
+    diagnose_reason: 'self_gate_checkの必須キー(lesson_ref/lesson_candidate/status_valid/purpose_fit)を把握せず旧形式で記入した。assumption_invalidationをdict型でなくstr型で設定した。'
+    approach_summary: '.github/workflows/test.yml にcodd-verifyジョブ追加。pip install codd-dev + codd dag verify --all --format json + exit 1。既存batsステップ変更なし。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'assumption_invalidation: is str (must be dict); self_gate_check: missing required key \"lesson_ref\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"lesson_candidate\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"status_valid\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"purpose_fit\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit)'
+      approach_summary: '.github/workflows/test.yml にcodd-verifyジョブ追加。pip install codd-dev + codd dag verify --all --format json + exit 1。既存batsステップ変更なし。'
+    - attempt: 2
+      block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
+      diagnose_reason: 'self_gate_checkの必須キー(lesson_ref/lesson_candidate/status_valid/purpose_fit)を把握せず旧形式で記入した。assumption_invalidationをdict型でなくstr型で設定した。'
+      approach_summary: '.github/workflows/test.yml にcodd-verifyジョブ追加。pip install codd-dev + codd dag verify --all --format json + exit 1。既存batsステップ変更なし。'
