@@ -1,23 +1,19 @@
 task:
-  parent_cmd: cmd_training_codd_s4_hayate
-  task_id: cmd_training_codd_s4_hayate
+  parent_cmd: cmd_training_codd_fix2_hayate
+  task_id: cmd_training_codd_fix2_hayate
   type: training
   project: infra
   scout_exempt: true
-  purpose: "CoDD修行L4 — lesson_harvest.shにCoDDパイプライン全5ステップを省略なく実行し、設計書を作成せよ"
+  purpose: "CoDD追完 — archive_completed.shの既存成果物(docs/research/hayate_codd_L4_archive_completed_20260516.md)を入力として、不足のcodd generate→validate→measureを実行せよ"
   acceptance_criteria:
     AC1:
-      description: "codd spec を実行し、lesson_harvest.shの目的・制約・対象範囲の設計書をdocs/research/に生成"
+      description: "既存成果物を読み、codd generate を実行して設計書を生成"
     AC2:
-      description: "codd elicit を実行し、要件穴・coverage軸の洗い出し結果を設計書に追記"
-    AC3:
-      description: "codd generate を実行し、設計書を生成。失敗時はエラー内容を報告"
-    AC4:
       description: "codd validate を実行し、設計書DAGと実装の整合性を検証。結果を報告"
-    AC5:
+    AC3:
       description: "codd measure を実行し、設計書品質スコアを報告。改善点を3つ以上特定"
   status: done
-  report_path: queue/reports/hayate_report_cmd_training_codd_s4_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_codd_fix2_hayate.yaml
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
