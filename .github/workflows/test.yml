@@ -179,6 +179,25 @@ jobs:
           done
           cat /tmp/e2e_inbox_watcher_*.log 2>/dev/null || true
 
+  codd-verify:
+    name: CoDD Design Consistency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install codd-dev
+        run: |
+          pip install codd-dev
+
+      - name: Run codd dag verify
+        run: |
+          codd dag verify --all --format json || {
+            echo "::error::CoDD design consistency violations detected. Run 'codd dag verify --all' locally to inspect."
+            exit 1
+          }
+
   integration-tests:
     name: Integration Tests (Claude only)
     runs-on: ubuntu-latest
