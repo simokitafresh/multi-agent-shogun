@@ -158,3 +158,85 @@
 ## 結論
 
 `auto_deploy_next.sh` は自動配備の中核として、cmd lock、blocked_by、auto_deploy flag、CTX閾値、round-robinを備えている。一方で専用テストが見当たらず、報告整合がWARN止まりで、解析結果のTAB契約も脆い。次改善は専用Batsとreport verificationのblocking条件整理が最優先である。
+
+## 追完ループ結果: cmd_training_codd_final_hayate
+
+実行日時: 2026-05-16 03:58 JST
+
+### AC1: generate
+
+Command:
+
+```bash
+timeout 1200 codd generate --wave 1 --force --path .
+```
+
+Result:
+
+```text
+Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)
+Wave 1: 2 generated, 0 skipped
+EXIT_CODE=0
+```
+
+Binary check: PASS (exit code 0)
+
+### AC2: validate
+
+Command:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+Result summary:
+
+```text
+ERROR: 657 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+[ERROR] codd/design/cmd_save_design.md: node_id 'design:script:cmd-save' is already defined in docs/design/cmd_2762_cmd_save_design.md
+[ERROR] codd/design/deploy_task_design.md: node_id 'design:script:deploy-task' is already defined in docs/design/cmd_2762_deploy_task_design.md
+[ERROR] codd/design/inbox_write_design.md: node_id 'design:script:inbox-write' is already defined in docs/design/cmd_2762_inbox_write_design.md
+[ERROR] codd/design/ninja_monitor_design.md: node_id 'design:script:ninja-monitor' is already defined in docs/design/cmd_2762_ninja_monitor_design.md
+[ERROR] codd/requirements/cmd_save_requirements.md: node_id 'req:script:cmd-save' is already defined in docs/requirements/cmd_2762_cmd_save_requirements.md
+[ERROR] docs/archive/mcas.md: missing CoDD YAML frontmatter
+[ERROR] docs/governance/adr_batch_yaml_io.md: depended_by references undefined node 'design:system-architecture'
+[ERROR] docs/plan/implementation_plan.md: wave_config mismatch for 'plan:implementation-plan'
+[ERROR] docs/research/cmd_1991_codd_extract/modules/cmd-1826-memory-analysis.md: circular dependency detected
+EXIT_CODE=1
+```
+
+Binary check: FAIL (exit code 1; repository-wide CoDD validation currently has pre-existing global errors)
+
+### AC3: measure
+
+Command:
+
+```bash
+timeout 1200 codd measure --path .
+```
+
+Result:
+
+```text
+CoDD Project Metrics - Health Score: 0/100
+
+Graph:   16 nodes, 12 edges, 4 orphans, max depth 1
+         avg out-degree 0.75, connectivity 0.050
+Coverage: 0/0 source files tracked (N/A), 628 design docs
+Quality: 628 docs validated (655 errors, 386 warnings)
+         0 files policy-checked (0 critical, 0 warnings), 0 rules
+EXIT_CODE=0
+```
+
+health_score: 0
+
+Binary check: PASS (exit code 0)
+
+## Binary Checks
+
+| AC | Check | Result |
+|---|---|---|
+| AC1 | `timeout 1200 codd generate --wave 1 --force --path .` を実行し、結果を本ファイル末尾に追記した | yes |
+| AC2 | `timeout 1200 codd validate --path .` を実行し、exit code 1とエラー概要を本ファイル末尾に追記した | yes |
+| AC3 | `timeout 1200 codd measure --path .` を実行し、health_score=0を本ファイル末尾に追記した | yes |

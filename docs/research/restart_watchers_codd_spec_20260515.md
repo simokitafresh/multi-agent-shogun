@@ -91,3 +91,55 @@ author: kotaro
   gunshiのペインが存在しない場合のスキップ条件が `pane_lookup` の返り値に依存
 - **質問**: gunshiがidleの場合は `pane_lookup` は空を返すか？karo同様に明示的なハードコード起動が必要か？
 - **severity**: low
+
+## 追完ループ3: codd extract/generate/validate/measure (2026-05-16)
+
+### AC1: extract
+
+| コマンド | Exit | 結果 |
+|---|---:|---|
+| `timeout 1200 /home/simokitafresh/.codd-venv/bin/codd extract --path .` | 0 | `Extracted: 0 modules from 0 files (0 lines)`; `Output: .codd/extract/`; generated `system-context.md` and `architecture-overview.md` |
+
+Extract output:
+
+- `.codd/extract/system-context.md`
+- `.codd/extract/architecture-overview.md`
+
+### AC2: generate wave 1
+
+| コマンド | Exit | 結果 |
+|---|---:|---|
+| `timeout 1200 /home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --force --path .` | 0 | `Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)`; `Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)`; `Wave 1: 2 generated, 0 skipped` |
+
+Generated files:
+
+- `docs/test/acceptance_criteria.md`
+- `docs/governance/adr_yaml_batch_operations.md`
+
+### AC3: validate
+
+| コマンド | Exit | 結果 |
+|---|---:|---|
+| `timeout 1200 /home/simokitafresh/.codd-venv/bin/codd validate --path .` | 1 | `ERROR: 661 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked` |
+
+代表的な検出内容:
+
+- node_id重複: `codd/design/cmd_save_design.md` と `docs/design/cmd_2762_cmd_save_design.md` などで `design:script:*` / `req:script:*` が重複。
+- 既存/生成governance文書の未定義参照: `docs/governance/adr_batch_yaml_io.md` が `design:system-architecture` / `detailed:yaml-io-library` を参照。
+- 既存docs/research群のCoDD YAML frontmatter欠落が多数。
+- 既存extract群に circular dependency と reciprocal reference warning が多数。
+
+### AC4: measure
+
+| コマンド | Exit | health_score | 結果 |
+|---|---:|---:|---|
+| `timeout 1200 /home/simokitafresh/.codd-venv/bin/codd measure --path .` | 0 | 0/100 | `Graph: 16 nodes, 12 edges, 4 orphans, max depth 1`; `Coverage: 0/0 source files tracked (N/A), 628 design docs`; `Quality: 628 docs validated (663 errors, 386 warnings)` |
+
+Binary checks:
+
+| AC | Check | Result |
+|---|---|---|
+| AC1 | `timeout 1200 codd extract --path .` を実行し、結果を本ファイル末尾に追記した | yes |
+| AC2 | `timeout 1200 codd generate --wave 1 --force --path .` を実行し、結果を本ファイル末尾に追記した | yes |
+| AC3 | `timeout 1200 codd validate --path .` を実行し、結果を本ファイル末尾に追記した | yes |
+| AC4 | `timeout 1200 codd measure --path .` を実行し、health_score=0/100を本ファイル末尾に追記した | yes |
