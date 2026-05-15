@@ -42,6 +42,7 @@ cmd_gate_scaffold() {
 
     ln -s "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
     ln -s "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
+    ln -s "$PROJECT_ROOT/config/context_freshness_excludes.txt" "$TEST_PROJECT/config/context_freshness_excludes.txt"
     ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
     ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
     ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
