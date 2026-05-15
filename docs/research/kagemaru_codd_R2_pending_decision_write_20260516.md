@@ -145,3 +145,100 @@ Rationale:
 | AC1 | `pending_decision_write.sh` was read and a spec-like purpose, constraints, and scope were recorded in this file | yes |
 | AC2 | Elicit/lexicon-style requirement holes and coverage axes were listed despite the current lexicon command failure | yes |
 | AC3 | `validate`, `measure`, unit tests, and related CoDD checks were run; design quality was scored and at least three improvements were identified | yes |
+
+## 8. 追完ループ3結果: cmd_training_codd_loop3_hayate
+
+### AC1: extract
+
+Command:
+
+```bash
+timeout 1200 codd extract --path .
+```
+
+Result:
+
+```text
+Extracted: 0 modules from 0 files (0 lines)
+Output: .codd/extract/
+  system-context.md
+  architecture-overview.md
+
+Next steps:
+  1. Review generated docs in .codd/extract/
+  2. Promote confirmed docs: mv .codd/extract/*.md docs/design/
+  3. Run: codd scan  (to build the dependency graph)
+EXIT_CODE=0
+```
+
+Binary check: PASS (exit code 0)
+
+### AC2: generate
+
+Command:
+
+```bash
+timeout 1200 codd generate --wave 1 --force --path .
+```
+
+Result:
+
+```text
+Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)
+Wave 1: 2 generated, 0 skipped
+EXIT_CODE=0
+```
+
+Binary check: PASS (exit code 0)
+
+### AC3: validate
+
+Command:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+Result summary:
+
+```text
+ERROR: 651 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+[ERROR] codd/design/cmd_save_design.md: node_id 'design:script:cmd-save' is already defined in docs/design/cmd_2762_cmd_save_design.md
+[ERROR] codd/design/deploy_task_design.md: node_id 'design:script:deploy-task' is already defined in docs/design/cmd_2762_deploy_task_design.md
+[ERROR] codd/design/inbox_write_design.md: node_id 'design:script:inbox-write' is already defined in docs/design/cmd_2762_inbox_write_design.md
+[ERROR] codd/design/ninja_monitor_design.md: node_id 'design:script:ninja-monitor' is already defined in docs/design/cmd_2762_ninja_monitor_design.md
+[ERROR] docs/archive/mcas.md: missing CoDD YAML frontmatter
+[ERROR] docs/governance/adr_batch_yaml_io.md: depended_by references undefined node 'design:system-architecture'
+[ERROR] docs/plan/implementation_plan.md: wave_config mismatch for 'plan:implementation-plan'
+[ERROR] docs/research/cmd_1991_codd_extract/modules/cmd-1826-memory-analysis.md: circular dependency detected
+[WARNING] docs/test/test_strategy.md: conventions references undefined node 'module:health_checks'
+EXIT_CODE=1
+```
+
+Binary check: PASS for execution/logging (repo-wide validation failure recorded)
+
+### AC4: measure
+
+Command:
+
+```bash
+timeout 1200 codd measure --path .
+```
+
+Result:
+
+```text
+CoDD Project Metrics — Health Score: 0/100
+
+Graph:   16 nodes, 12 edges, 4 orphans, max depth 1
+         avg out-degree 0.75, connectivity 0.050
+Coverage: 0/0 source files tracked (N/A), 628 design docs
+Quality: 628 docs validated (651 errors, 386 warnings)
+         0 files policy-checked (0 critical, 0 warnings), 0 rules
+EXIT_CODE=0
+```
+
+health_score: 0
+
+Binary check: PASS (exit code 0)
