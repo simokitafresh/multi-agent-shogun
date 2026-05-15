@@ -193,8 +193,8 @@ jobs:
 
       - name: Run codd dag verify
         run: |
-          codd dag verify --all --format json || {
-            echo "::error::CoDD design consistency violations detected. Run 'codd dag verify --all' locally to inspect."
+          codd dag verify --path . --format json || {
+            echo "::error::CoDD design consistency violations detected. Run 'codd dag verify --path . --format json' locally to inspect."
             exit 1
           }
 
