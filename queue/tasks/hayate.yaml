@@ -1,9 +1,8 @@
 task:
-  _ac_task_id: cmd_2752_exact
+  _ac_task_id: cmd_2789_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2752
-  ac_version: 7d010443
-  done_at: '2026-05-15T02:56:33+09:00'
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2789
+  ac_version: b99834bc
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -21,73 +20,68 @@ task:
   - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
   - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
   - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  hypothesis_count: 3
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2752
+  parent_cmd: cmd_2789
   project: infra
-  purpose: gate_fire_logのFAIL→PASS遷移分析で未回復期間が閾値(設定可能)を超えたFAILを検出し、bulletin_write.shで将軍にコード修正cmd起票を要請する
-  recommended_skills:
-  - hensei
-  - hensei-mixed
-  - hensei-opus
-  - karo-direct
-  - recon-dual
-  - reset-layout
-  - shogun-all-codex-switch
-  - shogun-peacetime-rollback
-  - switch-to-codex
-  - switch-to-opus
+  purpose: deploy_task.shのcount_task_acceptance_criteriaがdict型AC(description:形式)をカウントできず、ac_count<=1と判定されdraft_reviewが4回SKIPされている。dict型ACの正確なカウントに修正する
   scout_exempt: true
-  semantic_concepts:
-  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md
-    CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md
-    skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop
-    hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
   status: done
   stop_for: []
-  task_id: cmd_2752_exact
+  task_id: cmd_2789_exact
   task_type: exact
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L274'
-    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L574'
-    summary: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-    detail: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-  - id: 'L583'
-    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-  - id: 'L577'
-    summary: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-    detail: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-  - id: 'L299'
-    summary: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
-    detail: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
-  - id: 'L580'
-    summary: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-    detail: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-  - id: 'L300'
-    summary: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-    detail: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-  - id: 'L164'
-    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
+  - id: 'L256'
+    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+  - id: 'L116'
+    summary: 'scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的'
+    detail: 'scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的'
+  - id: 'L273'
+    summary: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
+    detail: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
+  - id: 'L603'
+    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+  - id: 'L305'
+    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
+    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
+  - id: 'L554'
+    summary: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
+    detail: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
+  - id: 'L257'
+    summary: 'deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。'
+    detail: 'deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。'
+  - id: 'L428'
+    summary: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
+    detail: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
+  - id: 'L153'
+    summary: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
+    detail: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
+  recommended_skills:
+  - "hensei"
+  - "hensei-mixed"
+  - "hensei-opus"
+  - "karo-direct"
+  - "recon-dual"
+  - "reset-layout"
+  - "shogun-all-codex-switch"
+  - "shogun-peacetime-rollback"
+  - "switch-to-codex"
+  - "switch-to-opus"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -101,25 +95,24 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L574: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g
-      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
-      - L577: cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通
-      - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行
-      - L580: 新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/
-      - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
-      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
+      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
+      - L116: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
+      - L273: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI
+      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
+      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
+      - L554: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
+      - L257: deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。
+      - L428: _sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho
+      - L153: IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認
     ────────────────────────────────────────
     
     
   acceptance_criteria:
-  - description: 'gate_shogun_startup.shのL6学習速度セクションで、未回復FAILの経過日数が閾値(デフォルト30日)を超えた場合にALERTが表示されている'
-  - description: '閾値超過時にbulletin_write.shで将軍に未回復gate名+経過日数+FAIL件数を含む修正cmd起票要請が送信される'
-  - description: '既存のFAIL→PASS遷移率表示は維持され、未回復FAIL通知が追加される形で拡張されている'
+  - description: 'count_task_acceptance_criteriaがdict型AC(description:キー)を正確にカウントする'
+  - description: 'list型AC(- 形式)のカウントも引き続き正常に動作する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2752.yaml
-  report_path: queue/reports/hayate_report_cmd_2752.yaml
+  report_filename: hayate_report_cmd_2789.yaml
+  report_path: queue/reports/hayate_report_cmd_2789.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -131,7 +124,7 @@ task:
     - pattern: 'bc_result_empty'
       count: 324
     - pattern: 'verdict_invalid'
-      count: 91
+      count: 92
     - pattern: 'bc_result_invalid'
       count: 91
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'
@@ -154,4 +147,7 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 2
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-15T09:55:31"
+  deployed_at: "2026-05-15T23:39:56"
+  acknowledged_at: "2026-05-15T23:40:50"
+  started_at: "2026-05-15T23:41:32"
+  done_at: "2026-05-15T23:44:59"
