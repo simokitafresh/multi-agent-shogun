@@ -113,3 +113,53 @@ Rationale:
 | AC1 | `inbox_write.sh` と既存CoDD文書を読み、spec相当の目的・制約・対象範囲を本ファイルに記録した | yes |
 | AC2 | elicit/lexicon観点で要件穴とcoverage軸を洗い出した | yes |
 | AC3 | validate/measureを実行し、設計書品質採点と改善点3件以上を記録した | yes |
+
+---
+
+## Hayate G4 Generate補完
+
+cmd: cmd_training_codd_g4_hayate
+date: 2026-05-16
+target: `scripts/inbox_write.sh`
+
+### codd generate
+
+Command:
+
+```bash
+/home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .
+```
+
+Result:
+
+```text
+wave_config not found. Auto-generating from requirements...
+wave_config generated from 11 requirement(s)
+Skipped: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Skipped: docs/governance/adr_batch_yaml_io.md (governance:adr-batch-yaml-io)
+Wave 1: 0 generated, 2 skipped
+```
+
+Interpretation: generate completed, but produced no target-specific new artifact for `scripts/inbox_write.sh`. It also rewrote `codd/codd.yaml` with a broad `docs/` scan and generated `wave_config`, so the immediate validation values below reflect that generated config side effect rather than inbox_write-specific design quality.
+
+### Immediate validate / measure after generate
+
+| Command | Result | Evidence |
+|---------|--------|----------|
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | FAIL | `654 error(s), 7 blocked issue(s), 382 warning(s), 627 Markdown files checked` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | FAIL score | `health_score=0`, `validation_errors=654`, `validation_warnings=382`, `documents_checked=627` |
+
+Primary failure cause: generated `codd/codd.yaml` expanded `scan.doc_dirs` to include `docs/`, which pulled historical research/archive Markdown into the active validation set. Examples included duplicate node ids under `codd/design` vs `docs/design`, missing frontmatter in historical docs, and stale undefined references.
+
+### Restored validate / measure after codd.yaml cleanup
+
+`codd/codd.yaml` was restored to the pre-generate tracked configuration before final validation, because the generated broad scan was a tool side effect unrelated to this追完 target.
+
+| Command | Result | Evidence |
+|---------|--------|----------|
+| `timeout 600 /home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS | `OK: validated 16 Markdown files under configured doc_dirs` |
+| `timeout 600 /home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS | `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16` |
+
+Final graph summary after cleanup: `total_nodes=16`, `total_edges=12`, `orphan_nodes=4`, `max_depth=1`, `avg_out_degree=0.75`, `connectivity=0.05`.
+
+Conclusion: the missing generate step was executed and recorded. It yielded `0 generated, 2 skipped`; after removing the generated config side effect, the configured CoDD project health remains 95.
