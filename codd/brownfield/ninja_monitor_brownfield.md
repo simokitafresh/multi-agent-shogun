@@ -1,3 +1,14 @@
+---
+codd:
+  node_id: doc:script:ninja-monitor-brownfield
+  type: brownfield_report
+  status: approved
+  confidence: 0.9
+  source: brownfield
+  implementation:
+  - scripts/ninja_monitor.sh
+---
+
 # Brownfield Report
 
 ## Summary
