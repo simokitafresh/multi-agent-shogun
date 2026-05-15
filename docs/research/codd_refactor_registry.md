@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-05-15 | hayate | `scripts/ninja_monitor.sh` stall detection design quality | Phase 4(measure+scan+dag verify+設計書契約追記, cmd_training_L4_codd_202605151352_hayate) | `health_score 52 → 70`; `dag verify` PASS(現CLIは`--all`非対応のため `--path . --format json`); stall detection threshold contract added | `codd/brownfield/ninja_monitor_brownfield.md`, `codd/design/ninja_monitor_design.md` |
 | 2026-05-06 | kotaro | `scripts/skill_gate_feedback.sh`, `tests/unit/test_skill_feedback_loop.bats`, `scripts/skill_execution_log.sh` (+12) | Phase 5(auto registry via cmd_complete_gate, cmd_2589) | `220ms → 220ms` | `docs/research/cmd_2589_codd_system_design.md`, `docs/research/cmd_2589_codd_implementation_plan.md` (+2) |
 | 2026-05-06 | tobisaru | `scripts/ntfy_listener.sh`, `scripts/log_terminal_response.sh`, `scripts/skill_auto_improve.sh` | Phase 5(auto registry via cmd_complete_gate, cmd_2590) | `117ms → 58ms` | `cmd_2590` report-derived |
 | 2026-05-06 | kagemaru | `scripts/cmd_publish.sh` | Phase 6(spec+CoDD生成物wave1-3+実装+after設計書, cmd_2585) | 5-test avg `0.677s`; after 6-test avg `0.826s` (`0.138s/test`, 追加regression test込み)。Python YAML parse除去 + `grep -c` 0件二重出力防止。 | `docs/research/cmd_2585_cmd_publish_refactor_spec.md`, `docs/research/cmd_2585_codd_generated_system_design.md`, `docs/research/cmd_2585_cmd_publish_after_20260506.md` |

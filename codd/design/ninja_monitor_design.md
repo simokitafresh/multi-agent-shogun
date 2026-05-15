@@ -29,6 +29,14 @@ The daemon loads shared libraries, acquires a singleton pid file, discovers pane
 - `write_karo_snapshot`: writes a compact formation snapshot for karo recovery.
 - Health functions: monitor ntfy, inbox watcher, lesson health, loop health, workaround trends, skill improvement, and training auto-deploy.
 
+## Stall Detection Contract
+
+`check_stall` only evaluates task statuses `assigned`, `acknowledged`, and `in_progress`, and ignores entries with no task id to avoid ghost deployment alerts. Newly deployed tasks receive a 300 second grace period from `deployed_at`.
+
+Stall tracking starts only when `check_idle` confirms the target pane is idle. `assigned` uses `STALL_THRESHOLD_MIN`, `acknowledged` uses 10 minutes, and `in_progress` uses `cli_profiles.yaml` `in_progress_stall_min` with a 20 minute fallback. Recent `progress_updated_at` activity within 1200 seconds suppresses `in_progress` stall detection.
+
+Notifications are debounced per `ninja:task` by `STALL_RENOTIFY_DEBOUNCE` and escalate after `STALL_ESCALATE_THRESHOLD` notifications. For `in_progress` stalls, the monitor also sends the ninja a `task_assigned` recovery message so the task YAML is re-read.
+
 ## Data Boundaries
 
 Inputs are tmux pane metadata/captures, `queue/tasks/`, `queue/reports/`, `queue/shogun_to_karo.yaml`, logs, and settings. Outputs are `queue/karo_snapshot.txt`, inbox notifications, ntfy messages, state files under `/tmp`, and monitor logs.
@@ -39,4 +47,3 @@ Inputs are tmux pane metadata/captures, `queue/tasks/`, `queue/reports/`, `queue
 - `scripts/ninja_monitor.sh` implements hook-first idle logic in `check_idle`.
 - `scripts/ninja_monitor.sh` writes the formation snapshot in `write_karo_snapshot`.
 - `codd/brownfield/ninja_monitor_brownfield.md` records the CoDD brownfield run for this target.
-
