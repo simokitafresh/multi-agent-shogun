@@ -28,10 +28,13 @@ lessons:
     v5吸収(2026-05-15):
     - 掲示板投稿前に既存実装をgrep確認せよ(append_codd_registry_entry L542が既存なのに未実装と投稿。4件連続前提崩壊cmd_2768/2770/2771/2774と同根)
     - §0.1問い2の適用範囲: 配備前だけでなく掲示板投稿・将軍報告の前にも現物grep確認必須
-  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014]
+    v6吸収(2026-05-15):
+    - 破壊的操作(force push/reset/clean)は将軍指示でも必ずremote現状確認(git log origin/main --oneline -5)+lord_conversation.jsonlで殿発言現物確認(LK015: Simple-OCR force push事故で26commits消失。将軍の「殿裁定」をlord_conversation未確認のまま実行。CLAUDE.md Tier1/Tier2は将軍含む誰にもoverride不可)
+    - cmd_2784でpre-bash hookにlord_conversation承認確認Guard追加済み(hook側防御)。本教訓は家老判断側の防御層
+  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2'
+  enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2+cmd_2784 pre-bash lord_conversation承認確認Guard'
 
 # === 配備技術 ===
   when: 行動する前、状態確認が必要な全場面。CI赤/STALL/idle通知受信時
