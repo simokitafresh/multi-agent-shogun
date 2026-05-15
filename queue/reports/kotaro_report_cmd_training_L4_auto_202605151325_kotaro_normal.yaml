@@ -105,3 +105,4 @@ hook_failures:
   count: 0
   details: なし
 verdict: PASS
+commit_hash: 60c3c77a
