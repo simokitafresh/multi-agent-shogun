@@ -32,136 +32,137 @@ codd:
 
 ## 1. Overview
 
-本ADRは、`module:yaml_helpers`（`scripts/lib/yaml_field_set.sh`, `scripts/lib/field_get.sh`）および `module:deploy_task`（`scripts/deploy_task.sh`）に対するYAMLバッチ操作の設計判断を記録する。
+本ADRは、`deploy_task.sh`（3607行）内の`resolve_cmd_to_task()`および`inject_ac_version()`が抱えるYAML I/Oボトルネックを解消するためのバッチ操作設計を記録する。
 
-### 背景
+### 問題の構造
 
-`deploy_task.sh`（3607行）の `resolve_cmd_to_task()` と `inject_ac_version()` がテスト1件あたり2.6秒を消費している。根因は同一ファイルに対する `yaml_field_set` / `field_get` の逐次呼び出しであり、毎回 flock 取得 + awk 全量 rewrite が発生する。48テスト（ac_handling）で合計34秒に達する。
+`deploy_task.sh`はタスクYAMLの変更に`yaml_field_set`（`scripts/lib/yaml_field_set.sh`）と`field_get`（`scripts/lib/field_get.sh`）を逐次呼び出す。各呼び出しが独立した`flock`取得＋`awk`全量rewrite＋`mv`アトミック置換＋post-write verificationを実行するため、1テストあたり2.6秒（全体の93%）をI/Oに消費する。
 
-| 関数 | 現状時間 | field_get回数 | yaml_field_set回数 | 根因 |
-|------|----------|---------------|-------------------|------|
-| `resolve_cmd_to_task` | 627ms | 0 | 7 | 7回 flock + 7回 awk 全量 rewrite |
-| `inject_ac_version` | 541ms | 6–7 | 3 | 6回 grep + 3回 flock + 3回 awk 全量 rewrite |
-| `source deploy_task.sh` | 137ms | — | — | 3607行読込 |
-| **合計** | **1305ms** | | | テスト1件の93% |
+| 関数 | field_get回数 | yaml_field_set回数 | 合計時間 | 根因 |
+|------|-------------|-------------------|---------|------|
+| `resolve_cmd_to_task` | 0 | 7 | 627ms | 7回flock＋7回awk全量rewrite |
+| `inject_ac_version` | 6–7 | 3 | 541ms | 6回grep＋3回flock＋3回awk全量rewrite |
 
-単体コスト内訳: `yaml_field_set` 1回あたり mktemp → flock -w 10 → awk 全量 rewrite → mv atomic replacement → post-write verification で 20–50ms。`field_get` 1回あたり grep/sed YAML解析 + optional flock/date/log で 2–15ms。
+48テスト（`ac_handling`スイート）で合計34秒。目標は-85%の約5秒。
 
 ### 決定の要旨
 
-2つのバッチユーティリティ関数を導入し、既存API契約を完全保持したまま I/O 回数を削減する。
+2つのバッチユーティリティ関数を導入する:
 
-1. **`yaml_field_set_batch`**（`scripts/lib/yaml_field_set.sh` に追加）: 複数フィールドを **単一の flock + 単一の awk pass** で同時更新する。
-2. **`field_get_multi`**（`scripts/lib/field_get.sh` に追加）: 複数フィールドを **単一の awk pass** で一括抽出する。
+1. **`yaml_field_set_batch`**（`module:yaml_helpers`）— 複数フィールドを1回のflock＋1回のawk passで同時書込み
+2. **`field_get_multi`**（`module:deploy_task`経由で`module:yaml_helpers`を利用）— 複数フィールドを1回のawk passで一括抽出
 
-### リリースブロッキング制約への準拠
+両関数は既存の`yaml_field_set`/`field_get`のAPI契約を破壊しない。既存関数は残存し、単一フィールド操作の呼び出し元は変更不要。
 
-**制約: `yaml_field_set_batch` は単一 flock + 単一 awk pass を使用すること。`field_get_multi` は単一 awk pass を使用すること。既存API契約を保持すること。違反は全 queue mutation をシステム全体で破壊する。**
+### 非交渉制約への適合
 
-本ADRはこの制約を以下のように遵守する:
+**制約**: `yaml_field_set_batch`は単一flock＋単一awk passを使用しなければならない。`field_get_multi`は単一awk passを使用しなければならない。既存API契約は保全必須であり、違反はキュー変更系全体を破壊する。
 
-- `yaml_field_set_batch` の内部実装は `flock -w 10` を1回だけ取得し、その中で1回の awk 実行により全フィールドを同時に更新/追加する。mktemp → flock → awk(全フィールド一括) → mv atomic replacement → post-write verification(1回)の順序を厳守する。
-- `field_get_multi` の内部実装は flock を取得せず（読取専用）、1回の awk 実行で指定全フィールドを走査・抽出する。
-- 既存の `yaml_field_set <file> <block_id> <field> <value>` および `field_get <file> <field>` のシグネチャ・挙動・戻り値は一切変更しない。バッチ関数は追加APIであり、既存関数の置換ではない。`deploy_task.sh` 以外の全呼び出し元は既存APIをそのまま使用し続ける。
-- `deploy_task.sh` は FR-5（cmd→タスクメタデータ解決）および SR-1（共有YAMLヘルパー使用の義務）に準拠したまま、内部の逐次呼び出しをバッチ呼び出しに置換する。
+本ADRはこの制約を以下のように満たす:
 
-### 期待効果
+- `yaml_field_set_batch`は`flock -w 10`を1回だけ取得し、その中で単一の`awk`プログラムが全`field=value`ペアを同時に処理する。`mktemp`→`awk`→`mv`アトミック置換→post-write verification（1回）の順序を1パスで完結させる。
+- `field_get_multi`は`flock`を取得せず（読取専用）、単一の`awk`プログラムが指定された全フィールドを1回のファイル走査で抽出し、`field=value`改行区切りで出力する。
+- 既存の`yaml_field_set <file> <block_id> <field> <value>`シグネチャと`field_get <file> <field>`シグネチャはそのまま残り、他の全呼び出し元（`inbox_write.sh`、`inbox_mark_read.sh`、`lesson_write.sh`等）は変更不要。
 
-| 関数 | Before | After | 短縮率 |
-|------|--------|-------|--------|
-| `resolve_cmd_to_task` | 627ms | ~100ms | -84% |
-| `inject_ac_version` | 541ms | ~80ms | -85% |
-| **1テスト合計** | 2639ms | ~400ms | **-85%** |
-| **48テスト (ac_handling)** | 34s | ~5s | **-85%** |
+### 安全要件との対応
+
+`deploy_task.sh`のBrownfield Requirements（`req:script:deploy-task`）との整合:
+
+| 要件 | 本ADRでの対応 |
+|------|-------------|
+| SR-1: 共有YAMLヘルパーでキュー/タスク変更 | バッチ関数は`yaml_field_set.sh`内に追加。自由形式YAML書込みを増やさない |
+| SR-2: 重複配備ブロック | バッチ化は書込み内容を変えない。ロック粒度はファイル単位flockで同一 |
+| SR-3: inbox経路の通信維持 | 本ADRはinbox経路に変更を加えない |
+| FR-5: cmd→タスクメタデータ解決 | `resolve_cmd_to_task`のバッチ化は7フィールド同時書込みで機能等価 |
+| FR-7: inbox_write.sh経由配信 | バッチ化対象外。既存フロー維持 |
 
 ## 2. Decision Log
 
-### ADR-001: バッチ関数を既存ファイルに追加（新ファイル作成せず）
+### ADR-001: バッチ書込みの粒度 — ファイル単位flock維持
 
-**決定**: `yaml_field_set_batch` は `scripts/lib/yaml_field_set.sh` に、`field_get_multi` は `scripts/lib/field_get.sh` に追加する。
+**状況**: `yaml_field_set`は呼び出し毎にファイル全体をflockする。バッチ化で粒度を変更するか。
 
-**理由**: deploy_task.sh は既に両ファイルを source している（FR-5, SR-1）。新ファイルを作ると source パスの追加が必要になり、全 queue mutation スクリプトへの波及リスクが生じる。同一ファイル内に追加すれば既存の source 行がそのまま機能する。
+**決定**: ファイル単位flockを維持する。バッチ関数は1回のflockの中で全フィールドを処理する。
 
-**影響範囲**: `module:yaml_helpers` のみ。他スクリプトの source 行は変更不要。
+**根拠**: 現行の並行安全性モデル（`flock -w 10` + アトミック`mv`）を変更すると、`inbox_write.sh`等の他のflock利用者との整合性が崩れる。粒度変更は本リファクタリングのスコープ外。
 
-### ADR-002: yaml_field_set_batch のインターフェース設計
+### ADR-002: `yaml_field_set_batch`のインターフェース設計
 
-**決定**: 以下のシグネチャを採用する。
+**状況**: バッチ書込み関数のシグネチャをどうするか。
 
+**決定**:
 ```bash
 yaml_field_set_batch <file> <block_id> <field1>=<value1> [<field2>=<value2> ...]
 ```
 
-**理由**: 既存 `yaml_field_set <file> <block_id> <field> <value>` との一貫性を維持しつつ、可変長引数で複数フィールドを受け取る。`=` 区切りにすることで引数のパース曖昧性を排除する（値にスペースを含む場合もクォートで対応可能）。
+**根拠**: 既存`yaml_field_set <file> <block_id> <field> <value>`と同じ先頭2引数を維持し、3引数目以降を`key=value`ペアとして可変長で受け取る。これにより:
+- 呼び出し元の移行が機械的（7行→1行）
+- `=`区切りにより引数の対応関係が明示的
+- 値に空白を含む場合はシェルクォートで対応（既存`yaml_field_set`と同じ制約）
 
-**内部処理フロー**:
-1. 引数から field=value ペア配列を構築
-2. `mktemp` で一時ファイル作成
-3. `flock -w 10` で排他ロック取得（1回のみ）
-4. 1回の awk で対象 block_id 内の全フィールドを走査し、既存フィールドは値を置換、未存在フィールドはブロック末尾に追加
-5. `mv` でアトミック置換
-6. post-write verification（1回のみ: 全フィールドが正しく書き込まれたことを確認）
-7. flock 解放
+### ADR-003: `field_get_multi`のインターフェースと出力形式
 
-**制約準拠**: flock 1回 + awk 1 pass を厳守。resolve_cmd_to_task の7回 flock + 7回 awk を1回ずつに削減。
+**状況**: バッチ読取関数の出力形式をどうするか。
 
-### ADR-003: field_get_multi のインターフェース設計
-
-**決定**: 以下のシグネチャを採用する。
-
+**決定**:
 ```bash
-field_get_multi <file> <field1> [<field2> ...] → stdout: "field1=value1\nfield2=value2\n..."
+field_get_multi <file> <field1> [<field2> ...]
+# 出力: field1=value1\nfield2=value2\n...
 ```
 
-**理由**: 出力形式を `field=value` の改行区切りにすることで、呼び出し元で `eval` または `while IFS='=' read` で変数に展開できる。既存 `field_get` は単一値を stdout に返すため、複数値版は行区切りが自然。
+呼び出し元はeval互換の出力をそのまま変数に展開できる:
+```bash
+eval "$(field_get_multi "$task_file" ac_version task_id worker_id)"
+```
 
-**内部処理フロー**:
-1. 引数からフィールド名配列を構築
-2. 1回の awk でファイル全体を走査し、指定フィールドに一致する行から値を抽出
-3. `field=value` 形式で stdout に出力
+**根拠**: eval可能な`key=value`改行区切りは、既存の`field_get`呼び出しパターン（`local var; var=$(field_get ...)`）からの移行コストが最小。1回のawk passで全フィールドを抽出するため、ファイル走査は1回で済む。
 
-**制約準拠**: awk 1 pass を厳守。inject_ac_version の6–7回 grep を1回の awk に削減。flock は不要（読取専用操作）。
+### ADR-004: 既存関数の残存方針
 
-### ADR-004: 実施順序の決定
+**状況**: バッチ関数導入後、既存の`yaml_field_set`と`field_get`を廃止するか。
 
-**決定**: 以下の順序で実施する。
+**決定**: 残存させる。廃止しない。
 
-| Phase | 対象 | 内容 | 依存 |
-|-------|------|------|------|
-| 1 | R3: `yaml_field_set_batch` | 新ユーティリティ関数 + 単体テスト | なし |
-| 2 | R4: `field_get_multi` | 新ユーティリティ関数 + 単体テスト | なし |
-| 3 | R1: `resolve_cmd_to_task` 書替え | R3 利用。既存テスト全 PASS 確認 | Phase 1 |
-| 4 | R2: `inject_ac_version` 書替え | R3 + R4 利用。既存テスト全 PASS 確認 | Phase 1, 2 |
-| 5 | 全量テスト + プロファイル再計測 | before/after 比較で -85% を検証 | Phase 3, 4 |
+**根拠**: `yaml_field_set`は`deploy_task.sh`以外にも`inbox_write.sh`、`inbox_mark_read.sh`、`lesson_write.sh`、`bulletin_write.sh`等の20以上のスクリプトから呼ばれている。単一フィールド操作のユースケースは残り続けるため、既存APIを維持し、バッチ関数は「複数フィールドを同一ブロックに同時書込み/読取する」ユースケース専用とする。
 
-**理由**: ユーティリティ関数を先に作成・テストすることで、deploy_task.sh の書替え時にリグレッションリスクを最小化する。Phase 1 と Phase 2 は相互依存がないため並列実施可能。
+### ADR-005: 実施順序 — ユーティリティ先行、呼び出し元後行
 
-### ADR-005: 既存API互換の保証方針
+**状況**: R1–R4の実施順序をどうするか。
 
-**決定**: 既存の `yaml_field_set` と `field_get` は一切変更しない。バッチ関数は純粋な追加であり、既存関数のラッパーや置換ではない。
+**決定**: R3→R4→R1→R2→全量テスト＋プロファイル再計測の順序。
 
-**理由**: `yaml_field_set` は `deploy_task.sh` 以外にも `queue/`, `tasks/`, `inbox/`, `reports/`, `shogun_to_karo`, `karo_snapshot` の mutation で広く使用されている（SR-1）。既存関数のシグネチャや内部挙動を変更すると全 queue mutation がシステム全体で破壊される。
+| Phase | 対象 | 内容 | 検証基準 |
+|-------|------|------|---------|
+| Phase 1 | R3: `yaml_field_set_batch` | `lib/yaml_field_set.sh`にバッチ関数追加＋単体テスト | 新テスト全PASS。既存`yaml_field_set`テスト全PASS（リグレッションなし） |
+| Phase 2 | R4: `field_get_multi` | `lib/field_get.sh`にバッチ読取関数追加＋単体テスト | 新テスト全PASS。既存`field_get`テスト全PASS |
+| Phase 3 | R1: `resolve_cmd_to_task` | 7回`yaml_field_set`→1回`yaml_field_set_batch`に書替え | 既存48テスト全PASS。SKIP=0 |
+| Phase 4 | R2: `inject_ac_version` | 6回`field_get`→1回`field_get_multi`、3回`yaml_field_set`→1回`yaml_field_set_batch` | 既存48テスト全PASS。SKIP=0 |
+| Phase 5 | 全量テスト＋計測 | before/after比較。`time`計測で各関数の実行時間を記録 | 1テスト合計≤500ms（目標400ms）。48テスト合計≤8s（目標5s） |
 
-**検証方法**: Phase 3–4 完了後に既存テスト全PASS（48テスト ac_handling + deploy_task.sh の全テストスイート）を確認する。SKIP = FAIL として扱う。
+**根拠**: ユーティリティ関数を先に作りテストすることで、呼び出し元の書替え時にバッチ関数の正しさが保証済みとなる。呼び出し元の変更は機能等価の書替えのみとなり、リグレッションリスクが局所化される。
 
-### ADR-006: flock 排他の正確性維持
+### ADR-006: post-write verificationのバッチ対応
 
-**決定**: `yaml_field_set_batch` は既存 `yaml_field_set` と同一の flock ファイル（対象YAMLファイル自体）を使用する。
+**状況**: 既存`yaml_field_set`はwrite後に再読込で値を検証する。バッチ関数でも全フィールドを検証するか。
 
-**理由**: 異なるロックファイルを使うと、`yaml_field_set`（単一フィールド）と `yaml_field_set_batch`（複数フィールド）が同一ファイルに対して並行書込みした場合にデータ破壊が発生する。同一ロックファイルにすることで排他が保証される。deploy_task.sh の FR-4（stale fields リセット）や FR-7（inbox_write 経由の配信）との並行安全性を維持する。
+**決定**: バッチ関数では書込み完了後に1回のawk passで全フィールドの値を検証する。フィールド毎の個別検証は行わない。
 
-### ADR-007: deploy_task.sh の配備モード互換維持
+**根拠**: N回の検証をN回のgrep/awkで行うと、バッチ化の効果が半減する。1回のawkで全フィールドを読み取り、期待値と突合する。1つでも不一致があればエラーを返す。
 
-**決定**: `--direct`, `--yaml`, `--cmd` の全配備モード（FR-1）でバッチ関数を使用する。モードごとの分岐ロジックは変更しない。
+### ADR-007: awkプログラムの設計方針
 
-**理由**: バッチ化は I/O 最適化であり、ビジネスロジックの変更ではない。resolve_cmd_to_task() 内の7回の yaml_field_set を1回の yaml_field_set_batch に置換するのみ。inject_ac_version() 内の field_get 6–7回を field_get_multi 1回に、yaml_field_set 3回を yaml_field_set_batch 1回に置換するのみ。FR-2（対象バリデーション）、FR-3（idle/busy判定）、FR-6（レポートテンプレート生成）、SR-2（重複配備ブロック）、SR-3（inbox パス通信）には影響しない。
+**状況**: バッチawkプログラムの複雑性をどう管理するか。
+
+**決定**: 既存`yaml_field_set`内部のawkロジック（ブロックID検出→フィールド検索→値置換/追加）を拡張し、複数フィールドを連想配列で管理する。新規awkプログラムを別途作成せず、既存パターンを踏襲する。
+
+**根拠**: 既存awkロジックは`block_id`行の検出→インデント内のフィールド走査→値置換という構造で、これを連想配列（`fields_to_set["field_name"] = "value"`）に拡張するだけで複数フィールド対応が可能。独自パーサーの新規作成はメンテナンスコストが増大する。
 
 ## 3. Follow-ups
 
-| ID | 内容 | トリガー | 対象ファイル |
-|----|------|---------|------------|
-| FU-001 | Phase 5 プロファイル再計測で -85% 未達の場合、awk スクリプト内のボトルネックを特定し追加最適化を検討する | Phase 5 完了時 | `scripts/lib/yaml_field_set.sh` |
-| FU-002 | `yaml_field_set_batch` の導入後、deploy_task.sh 以外の逐次呼び出しホットスポット（ninja_monitor.sh, inbox_write.sh 等）でもバッチ化の適用を検討する | Phase 5 完了後 | `scripts/lib/yaml_field_set.sh` 呼び出し元全体 |
-| FU-003 | `field_get_multi` の出力形式が eval 安全であることを確認するテスト（値に `=`, スペース, 改行, シングルクォートを含むケース）を Phase 2 のテストスイートに含める | Phase 2 実施時 | `scripts/lib/field_get.sh` テスト |
-| FU-004 | バッチ関数追加後、`pre-bash-yaml-dump-guard.sh` hook がバッチ関数を誤ブロックしないことを確認する（バッチ関数は yaml.dump ではなく awk ベースのため対象外のはずだが、hook パターンマッチの偽陽性を排除する） | Phase 1 実施時 | `.claude/hooks/pre-bash-yaml-dump-guard.sh` |
-| FU-005 | CoDD propagate で本ADRの変更が `module:yaml_helpers` および `module:deploy_task` の設計書・テスト設計書に波及することを確認し、必要に応じて更新する | Phase 1 開始前 | `codd/designs/`, `codd/tests/` |
+| ID | 内容 | 条件 | 優先度 |
+|----|------|------|--------|
+| FU-001 | `deploy_task.sh`の`source`コスト（137ms）の削減。3607行の関数定義ファイルの分割または遅延読込み | Phase 5計測でsource時間が全体の20%以上を占める場合 | 低 |
+| FU-002 | `yaml_field_set`の他の高頻度呼び出し元（`inbox_write.sh`等）でのバッチ化適用検討 | Phase 5完了後、プロファイルデータに基づき判断 | 中 |
+| FU-003 | `field_get_multi`のeval出力における値のエスケープ強化。値に`=`や改行を含むケースへの対応 | 現行の運用YAMLで該当ケースが発見された場合 | 中 |
+| FU-004 | バッチ関数のbatsテストで並行書込み競合シナリオ（複数プロセスが同一ファイルに同時バッチ書込み）のストレステスト追加 | Phase 1–2のテスト作成時に基本ケースは含める。ストレステストはPhase 5後 | 低 |
+| FU-005 | Phase 5の計測結果が目標（1テスト≤500ms）未達の場合、`flock`のタイムアウト値（現行10秒）の短縮、またはtmpfsへの一時ファイル配置を検討 | Phase 5計測結果に基づく | 条件付き |

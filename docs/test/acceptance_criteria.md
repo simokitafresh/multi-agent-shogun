@@ -65,415 +65,815 @@ codd:
 
 本ドキュメントは、multi-agent-shogun インフラストラクチャの中核スクリプト群に対する受入基準を定義する。対象モジュールは以下の7つ:
 
-| モジュール | スクリプト | 責務 |
-|-----------|-----------|------|
-| cmd_save | `scripts/cmd_save.sh` | 将軍コマンドの品質ゲート（BLOCK/WARN/PASS判定） |
-| deploy_task | `scripts/deploy_task.sh` | 忍者へのタスクYAML配備＋inbox通知 |
-| inbox_write | `scripts/inbox_write.sh` | エージェント間メールボックスの原子的書込み＋wake-up |
-| ninja_monitor | `scripts/ninja_monitor.sh` | tmux陣形監視デーモン（idle/stall/pane loss検知） |
-| dashboard_auto_section | `scripts/dashboard_auto_section.sh` | dashboard.md自動セクション生成 |
-| restart_watchers | `scripts/restart_watchers.sh` | inbox_watcherデーモンの一括再起動＋検証 |
-| yaml_helpers | `scripts/lib/yaml_field_set.sh`, `scripts/lib/field_get.sh` | YAML原子操作ユーティリティ（batch含む） |
+| モジュール | node_id | 責務 |
+|-----------|---------|------|
+| `scripts/cmd_save.sh` | `req:script:cmd-save` | 将軍コマンドの品質ゲート。低品質・重複・陳腐化・安全でないコマンドの家老キュー流入を阻止 |
+| `scripts/deploy_task.sh` | `req:script:deploy-task` | 忍者へのタスクYAML配備と inbox 経由の起床通知 |
+| `scripts/inbox_write.sh` | `req:script:inbox-write` | エージェント間通信のアトミック・メールボックス書込みと起床ブリッジ |
+| `scripts/ninja_monitor.sh` | `req:script:ninja-monitor` | tmux陣形の常時監視、idle/stall検知、インフラ健全性維持 |
+| `scripts/dashboard_auto_section.sh` | `req:script:dashboard-auto-section` | `dashboard.md` の機械管理セクション自動生成 |
+| `scripts/restart_watchers.sh` | `req:script:restart-watchers` | inbox_watcher デーモン群のアトミック再起動と生存確認 |
+| `scripts/lib/yaml_field_set.sh` + `scripts/lib/field_get.sh` | `req:deploy-task-refactor-requirements` | YAML バッチ読み書きユーティリティ（`yaml_field_set_batch`, `field_get_multi`） |
 
-**リリースブロッキング制約（Non-negotiable Conventions）:**
+### リリースブロック制約（Non-negotiable Conventions）
 
-| ID | 制約 | 対象モジュール | 検証方法 |
-|----|------|---------------|---------|
-| NNC-1 | flock-based atomic YAML writes — 全キューファイル操作はflock排他ロックを使用 | inbox_write, cmd_save, deploy_task, yaml_helpers | 並行書込みテストでデータ消失ゼロを確認 |
-| NNC-2 | inbox-path-only communication — エージェント間通信はinbox_write.sh経由のみ | inbox_write, deploy_task, ninja_monitor | direct tmux send-keys によるメッセージ送信がないことを確認 |
-| NNC-3 | ninja-to-shogun direct messaging prohibition — 忍者からshogunへの直接メッセージはBLOCK | inbox_write | 忍者senderでshogunターゲット指定時にエラー終了を確認 |
-| NNC-4 | yaml_field_set / field_get API backward compatibility — 既存シグネチャの完全互換維持 | yaml_helpers, deploy_task | 既存テスト全PASS＋新batch関数追加後も旧API動作不変 |
-| NNC-5 | zero test regressions — リファクタリング前後でテスト結果が同一 | deploy_task, yaml_helpers | 48テスト(ac_handling)全PASS、SKIP=0 |
+以下の3制約はリリースゲートであり、全テストシナリオで違反検出時は即FAILとする。
 
-### Traceability Matrix
+| ID | 制約 | 対象モジュール | 準拠方法 |
+|----|------|--------------|---------|
+| NNC-1 | flock ベースのアトミック YAML 書込みと inbox パス限定通信 | `inbox_write`, `cmd_save`, `deploy_task`, `yaml_helpers` | 全YAML変更操作が `flock` を経由することをテストで検証。直接 `echo >>` や `yaml.dump` による書込みがないことを grep で確認。通信は `inbox_write.sh` 経由のみ |
+| NNC-2 | `yaml_field_set` / `field_get` の API 後方互換性とテストリグレッションゼロ | `yaml_helpers`, `deploy_task` | バッチ関数追加後、既存の単一フィールド呼び出しが同一出力を返すことを差分比較。既存テストスイート全 PASS |
+| NNC-3 | 忍者→将軍の直接メッセージ送信禁止 | `inbox_write` | sender=ninja, target=shogun の組合せで `inbox_write.sh` がエラー終了（exit ≠ 0）し、メッセージが書き込まれないことを検証 |
 
-以下に全依存ドキュメントから抽出した検証可能動作とテストシナリオの対応を示す。
-
-| ID | 検証可能動作 | 出典 | テストシナリオ |
-|----|-------------|------|--------------|
-| VB-CS-01 | cmd_*形式/数値形式のID正規化＋shogun_to_karo.yamlからのブロック読込 | cmd_save FR-1 | AC-CS-01 |
-| VB-CS-02 | YAML構文エラー検出 | cmd_save FR-2 | AC-CS-02a |
-| VB-CS-03 | 存在しないcmd IDの拒否 | cmd_save FR-2 | AC-CS-02b |
-| VB-CS-04 | delegated状態のcmdへの変更拒否（不変性） | cmd_save FR-2, SR-2 | AC-CS-02c |
-| VB-CS-05 | pending状態の既存cmdが存在する場合の検出 | cmd_save FR-2 | AC-CS-02d |
-| VB-CS-06 | アーカイブ重複検出 | cmd_save FR-2 | AC-CS-02e |
-| VB-CS-07 | 同時ドラフト競合検出 | cmd_save FR-2 | AC-CS-02f |
-| VB-CS-08 | quality_gateフィールド検証（BLOCK/WARN履歴あり時のdiagnosis/environment-change要求） | cmd_save FR-3 | AC-CS-03 |
-| VB-CS-09 | BLOCK/WARN/PASSの品質ログ記録 | cmd_save FR-4 | AC-CS-04 |
-| VB-CS-10 | セッション状態ファイル更新 | cmd_save FR-4 | AC-CS-04 |
-| VB-CS-11 | ロック競合警告 | cmd_save FR-5 | AC-CS-05a |
-| VB-CS-12 | 未コミット実装変更警告 | cmd_save FR-5 | AC-CS-05b |
-| VB-CS-13 | 重複GP番号警告 | cmd_save FR-5 | AC-CS-05c |
-| VB-CS-14 | 偵察/recon重複の軍師分析検出 | cmd_save FR-5 | AC-CS-05d |
-| VB-CS-15 | bulletin action追跡更新 | cmd_save FR-6 | AC-CS-06 |
-| VB-CS-16 | ゲートpending/blocked時の委任拒否 | cmd_save SR-1 | AC-CS-07 |
-| VB-CS-17 | flock+構造化チェックによる共有キューファイル保護 | cmd_save SR-3 | AC-CS-08 |
-| VB-DT-01 | 通常/--direct/--yaml/--cmdモード解析 | deploy_task FR-1 | AC-DT-01 |
-| VB-DT-02 | デフォルトメッセージによるstaleコンテキスト無効化 | deploy_task FR-1 | AC-DT-01 |
-| VB-DT-03 | 第1位置引数の忍者名バリデーション（空/None/cmd_*拒否） | deploy_task FR-2 | AC-DT-02 |
-| VB-DT-04 | tmux/CLIヘルパーによるターゲットペイン解決＋idle/busy判定 | deploy_task FR-3 | AC-DT-03 |
-| VB-DT-05 | staleタスクフィールド/通知フラグ/ghost None.yamlリセット | deploy_task FR-4 | AC-DT-04 |
-| VB-DT-06 | 親cmdからタスクメタデータ（AC/ACバージョン/教訓/意味概念/工学設定/実行制御）解決 | deploy_task FR-5 | AC-DT-05 |
-| VB-DT-07 | queue/reports/下のレポートテンプレート生成（既存完了レポート上書き禁止） | deploy_task FR-6 | AC-DT-06 |
-| VB-DT-08 | inbox_write.sh経由のタスク通知配信 | deploy_task FR-7 | AC-DT-07 |
-| VB-DT-09 | 同一親cmdの完了済みピアレポート存在時の重複配備BLOCK | deploy_task SR-2 | AC-DT-08 |
-| VB-DT-10 | YAML helpers使用（free-form YAML dump禁止） | deploy_task SR-1 | AC-DT-09 |
-| VB-IW-01 | target/content/type/sender/actionフィールド受理＋不正ターゲット拒否 | inbox_write FR-1 | AC-IW-01 |
-| VB-IW-02 | ターゲットエージェント検証＋sender routing（ninja→shogun禁止） | inbox_write FR-2, SR-2 | AC-IW-02 |
-| VB-IW-03 | queue/inbox/{agent}.yamlへのメッセージシリアライズ（timestamp/id/type/sender/content/read/action） | inbox_write FR-3 | AC-IW-03 |
-| VB-IW-04 | WSL2 /mnt/*パス対応ロックファイルによる並行書込み保護 | inbox_write FR-4, SR-3 | AC-IW-04 |
-| VB-IW-05 | 同一親cmdの重複task_assigned配備BLOCK | inbox_write FR-5 | AC-IW-05 |
-| VB-IW-06 | deploy未注入時の教訓注入セーフティネット | inbox_write FR-6 | AC-IW-06 |
-| VB-IW-07 | レポート通知時のフォーマットチェック＋下流レビュー/完了トリガー | inbox_write FR-7 | AC-IW-07 |
-| VB-IW-08 | メッセージ永続化後のペイン解決＋CLI nudge送信 | inbox_write FR-8, SR-1 | AC-IW-08 |
-| VB-NM-01 | シングルトンデーモン起動＋tmuxメタデータからのペイン再発見 | ninja_monitor FR-1 | AC-NM-01 |
-| VB-NM-02 | @agent_state/タイムスタンプ/CLI prompt/busy pattern/subprocess相互検証によるidle/busy判定 | ninja_monitor FR-2 | AC-NM-02 |
-| VB-NM-03 | idle確認＋report-gateチェック後のclear/respawn | ninja_monitor FR-3, SR-2 | AC-NM-03 |
-| VB-NM-04 | pane loss/stale deployment/未配備cmd/karo pending/CLI death/inbox unread/report-task mismatch検知 | ninja_monitor FR-4 | AC-NM-04 |
-| VB-NM-05 | karo_snapshot.txt生成（cmd/忍者/model/context/report state） | ninja_monitor FR-5 | AC-NM-05 |
-| VB-NM-06 | inbox watcher/ntfy listener/CI status/training auto-deploy/lesson health/loop health/workaround trends/script size trends監視 | ninja_monitor FR-6 | AC-NM-06 |
-| VB-NM-07 | hook state優先＋busyエビデンスなしのidle判定禁止 | ninja_monitor SR-1 | AC-NM-07 |
-| VB-NM-08 | inbox_write.sh経由の通信（ad hocパス禁止） | ninja_monitor SR-3 | AC-NM-08 |
-| VB-DA-01 | 6データソース読込（karo_snapshot/shogun_to_karo/gate_metrics/tasks/*.yaml/settings/cli_profiles/gate_fire_log/lesson_impact/lesson_effectiveness_status） | dashboard FR-1 | AC-DA-01 |
-| VB-DA-02 | 5外部スクリプトサブプロセス呼出し（knowledge_metrics/model_analysis/context_freshness/ci_status/skill_metrics） | dashboard FR-2 | AC-DA-02 |
-| VB-DA-03 | 10出力セクション生成 | dashboard FR-3 | AC-DA-03 |
-| VB-DA-04 | --dry-runモード（stdout出力＋dashboard.md不変） | dashboard FR-4 | AC-DA-04 |
-| VB-DA-05 | auto-sectionマーカー外コンテンツ保全 | dashboard FR-5 | AC-DA-05 |
-| VB-DA-06 | CLEAR数増加時のみntfy通知（重複排除） | dashboard FR-6 | AC-DA-06 |
-| VB-DA-07 | 将軍宛報告セクションの取消線エントリ除去 | dashboard FR-7 | AC-DA-07 |
-| VB-DA-08 | CI status(60s)/context freshness(120s)/git rev-list(60s)キャッシュTTL | dashboard PR-1 | AC-DA-08 |
-| VB-DA-09 | mtime keyed awkキャッシュ | dashboard PR-2 | AC-DA-09 |
-| VB-DA-10 | background process並行起動 | dashboard PR-3 | AC-DA-10 |
-| VB-DA-11 | project-scoped cacheパス（cksum $PROJECT_DIR） | dashboard PR-4 | AC-DA-11 |
-| VB-DA-12 | temp file + mv による原子的書込み | dashboard SR-1 | AC-DA-12 |
-| VB-DA-13 | データソース欠損時の—プレースホルダー退避 | dashboard SR-2 | AC-DA-13 |
-| VB-DA-14 | マーカー不在時のdashboard非変更 | dashboard SR-4 | AC-DA-14 |
-| VB-RW-01 | /tmp/restart_watchers.lockによるシングルトンロック（flock -n） | restart_watchers FR-1 | AC-RW-01 |
-| VB-RW-02 | 既存inbox_watcher全プロセスSIGTERM→1秒待ち→SIGKILL | restart_watchers FR-2 | AC-RW-02 |
-| VB-RW-03 | shogun:mainペインからの@agent_cli解決＋shogun watcher起動 | restart_watchers FR-3 | AC-RW-03 |
-| VB-RW-04 | shogun:agents.1ペインからのkaro watcher起動 | restart_watchers FR-4 | AC-RW-04 |
-| VB-RW-05 | agent_config.sh::get_all_agents()による残忍者列挙＋karo skip＋ペイン空skip | restart_watchers FR-5 | AC-RW-05 |
-| VB-RW-06 | pgrep -fによるwatcher存在確認＋失敗収集＋exit 1 | restart_watchers FR-6 | AC-RW-06 |
-| VB-RW-07 | 2秒後のinotifywaitプロセス数一致確認＋不一致警告 | restart_watchers FR-7 | AC-RW-07 |
-| VB-RW-08 | sync_pane_vars.sh実行 | restart_watchers FR-8 | AC-RW-08 |
-| VB-RW-09 | 二段階停止（SIGTERM→SIGKILL）各段階で残存プロセス確認 | restart_watchers SR-1 | AC-RW-02 |
-| VB-RW-10 | ペイン解決失敗時のsilent skip | restart_watchers SR-2 | AC-RW-09 |
-| VB-YH-01 | yaml_field_set_batch: 1回のflock+1回のawk passで複数フィールド同時更新 | refactor R3 | AC-YH-01 |
-| VB-YH-02 | field_get_multi: 1回のawk passで複数フィールド一括抽出 | refactor R4 | AC-YH-02 |
-| VB-YH-03 | resolve_cmd_to_task: 7回→1回batch化（627ms→~100ms） | refactor R1 | AC-YH-03 |
-| VB-YH-04 | inject_ac_version: field_get 6回→1回awk＋field_set 3回→1回batch化（541ms→~80ms） | refactor R2 | AC-YH-04 |
-| VB-YH-05 | 既存yaml_field_set単体APIの完全互換維持 | refactor制約 | AC-YH-05 |
-| VB-YH-06 | 既存field_get単体APIの完全互換維持 | refactor制約 | AC-YH-06 |
-| VB-YH-07 | 48テスト(ac_handling)全PASS＋SKIP=0 | refactor制約 | AC-YH-07 |
-| VB-YH-08 | flock排他正確性維持（並行書込み安全） | refactor制約 | AC-YH-08 |
-
-**カバレッジギャップ: なし** — 全検証可能動作に対応テストシナリオが割当済み。
+---
 
 ## 2. Acceptance Criteria
 
+### 2.0 Verifiable Behavior Traceability Matrix
+
+全依存設計書から抽出した検証可能な振る舞いと、対応するテストシナリオの対応表。
+
+#### cmd_save.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-CS-01 | 数値ID・`cmd_*` ID を正規化し `shogun_to_karo.yaml` から該当ブロックをロード | AC-CS-01 | FR-1 |
+| VB-CS-02 | YAML構文不正を検出しBLOCK | AC-CS-02a | FR-2 |
+| VB-CS-03 | 存在しないコマンドIDを拒否 | AC-CS-02b | FR-2 |
+| VB-CS-04 | delegated 済みコマンドの変更を拒否 | AC-CS-02c | FR-2, SR-2 |
+| VB-CS-05 | 前回 pending/blocked 状態のコマンドを委任しない | AC-CS-02d | FR-2, SR-1 |
+| VB-CS-06 | アーカイブ済み重複を検出 | AC-CS-02e | FR-2 |
+| VB-CS-07 | 同時ドラフト競合を検出 | AC-CS-02f | FR-2 |
+| VB-CS-08 | quality_gate フィールド未設定時にBLOCK | AC-CS-03a | FR-3 |
+| VB-CS-09 | 過去BLOCK/WARN歴ありで diagnosis/environment-change 未記載時にBLOCK | AC-CS-03b | FR-3 |
+| VB-CS-10 | BLOCK 結果をログとセッション状態ファイルに記録 | AC-CS-04a | FR-4 |
+| VB-CS-11 | WARN 結果をログとセッション状態ファイルに記録 | AC-CS-04b | FR-4 |
+| VB-CS-12 | PASS 結果をログとセッション状態ファイルに記録 | AC-CS-04c | FR-4 |
+| VB-CS-13 | ロック競合時に警告出力 | AC-CS-05a | FR-5 |
+| VB-CS-14 | 未コミット実装変更時に警告出力 | AC-CS-05b | FR-5 |
+| VB-CS-15 | 重複 GP 番号を検出し警告 | AC-CS-05c | FR-5 |
+| VB-CS-16 | 既存軍師分析と重複する偵察/recon コマンドを検出し警告 | AC-CS-05d | FR-5 |
+| VB-CS-17 | アクション付き掲示板IDを参照するコマンドで掲示板追跡を更新 | AC-CS-06 | FR-6 |
+| VB-CS-18 | 共有キューファイルの操作が flock 経由 | AC-CS-07 | SR-3, NNC-1 |
+
+#### deploy_task.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-DT-01 | 通常モードでタスクYAMLを配備 | AC-DT-01a | FR-1 |
+| VB-DT-02 | `--direct` モードで配備 | AC-DT-01b | FR-1 |
+| VB-DT-03 | `--yaml` モードで配備 | AC-DT-01c | FR-1 |
+| VB-DT-04 | `--cmd` モードで配備 | AC-DT-01d | FR-1 |
+| VB-DT-05 | デフォルトメッセージが古いタスクコンテキストを無効化 | AC-DT-01e | FR-1 |
+| VB-DT-06 | ターゲットが空の場合に拒否 | AC-DT-02a | FR-2 |
+| VB-DT-07 | ターゲットが `None` の場合に拒否 | AC-DT-02b | FR-2 |
+| VB-DT-08 | ターゲットが `cmd_*` IDの場合に拒否 | AC-DT-02c | FR-2 |
+| VB-DT-09 | ターゲットが有効な忍者名の場合にのみ受理 | AC-DT-02d | FR-2 |
+| VB-DT-10 | tmux/CLI ヘルパー経由でターゲットペイン解決・idle/busy 判定 | AC-DT-03 | FR-3 |
+| VB-DT-11 | 古いタスクフィールド・通知フラグ・ghost `None.yaml` をリセット | AC-DT-04 | FR-4 |
+| VB-DT-12 | 親cmdからタスクメタデータ（task_id, task_type, project, purpose）を解決 | AC-DT-05a | FR-5 |
+| VB-DT-13 | 親cmdから AC, ACバージョン, related_lessons, semantic_concepts, execution_controls を解決 | AC-DT-05b | FR-5 |
+| VB-DT-14 | `queue/reports/` に報告テンプレートを生成（完了済み報告を上書きしない） | AC-DT-06 | FR-6 |
+| VB-DT-15 | `inbox_write.sh` 経由でタスク通知を配信 | AC-DT-07 | FR-7, NNC-1 |
+| VB-DT-16 | YAML操作が共有YAMLヘルパー経由（free-form dump禁止） | AC-DT-08 | SR-1, NNC-1 |
+| VB-DT-17 | 完了済みピア報告が存在する場合、同一親cmdの重複配備をブロック | AC-DT-09 | SR-2 |
+| VB-DT-18 | 通信は inbox パス経由。tmux 直接送信は re-nudge フォールバックに限定 | AC-DT-10 | SR-3, NNC-1 |
+
+#### inbox_write.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-IW-01 | target, content, type, sender, action を受理 | AC-IW-01a | FR-1 |
+| VB-IW-02 | ターゲット欠落・不正値で拒否（exit ≠ 0） | AC-IW-01b | FR-1 |
+| VB-IW-03 | 有効なターゲットエージェント名のバリデーション | AC-IW-02a | FR-2 |
+| VB-IW-04 | 忍者→将軍の直接送信を拒否 | AC-IW-02b | FR-2, SR-2, NNC-3 |
+| VB-IW-05 | `queue/inbox/{agent}.yaml` にタイムスタンプ・ID・type・sender・content・read状態・action を書込み | AC-IW-03 | FR-3 |
+| VB-IW-06 | WSL2 `/mnt/*` パスに対応したロックファイルの使用 | AC-IW-04 | FR-4, NNC-1 |
+| VB-IW-07 | 同一親cmdの重複 `task_assigned` をブロック | AC-IW-05 | FR-5 |
+| VB-IW-08 | task_assigned でデプロイヘルパー未注入時のレッスン注入セーフティネット | AC-IW-06 | FR-6 |
+| VB-IW-09 | 報告通知時にフォーマットチェック実行 | AC-IW-07a | FR-7 |
+| VB-IW-10 | 報告通知時に下流のレビュー/完了処理をトリガー | AC-IW-07b | FR-7 |
+| VB-IW-11 | メッセージ永続化の後にのみペイン解決・CLI固有nudge送信 | AC-IW-08 | FR-8, SR-1 |
+| VB-IW-12 | 全メールボックス更新が flock/アトミック書込みセマンティクスを保持 | AC-IW-09 | SR-3, NNC-1 |
+
+#### ninja_monitor.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-NM-01 | シングルトンデーモンとして起動（多重起動防止） | AC-NM-01 | FR-1 |
+| VB-NM-02 | tmux メタデータから忍者ペインを再発見 | AC-NM-02 | FR-1 |
+| VB-NM-03 | `@agent_state`・タイムスタンプ・CLI パターン・サブプロセスで idle/busy 判定 | AC-NM-03 | FR-2 |
+| VB-NM-04 | idle 確認と報告ゲートチェック後にのみ clear/respawn 実行 | AC-NM-04 | FR-3, SR-2 |
+| VB-NM-05 | ペイン消失を検知 | AC-NM-05a | FR-4 |
+| VB-NM-06 | stale デプロイメントを検知 | AC-NM-05b | FR-4 |
+| VB-NM-07 | 未デプロイコマンドを検知 | AC-NM-05c | FR-4 |
+| VB-NM-08 | 家老 pending ワークを検知 | AC-NM-05d | FR-4 |
+| VB-NM-09 | CLI 死亡を検知 | AC-NM-05e | FR-4 |
+| VB-NM-10 | inbox 未読カウントを検知 | AC-NM-05f | FR-4 |
+| VB-NM-11 | 報告/タスクミスマッチを検知 | AC-NM-05g | FR-4 |
+| VB-NM-12 | `queue/karo_snapshot.txt` をcmd・忍者・モデル・コンテキスト・報告状態で生成 | AC-NM-06 | FR-5 |
+| VB-NM-13 | inbox watcher, ntfy listener, CI status, training auto-deploy, lesson health, loop health, workaround trends, script size trends を監視 | AC-NM-07 | FR-6 |
+| VB-NM-14 | hook state と明示的 busy 証拠をプロンプト単独 idle 検知より優先 | AC-NM-08 | SR-1 |
+| VB-NM-15 | エージェント通信は `inbox_write.sh` 経由 | AC-NM-09 | SR-3, NNC-1 |
+
+#### dashboard_auto_section.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-DA-01 | 9つのデータソースを読み込み | AC-DA-01 | FR-1 |
+| VB-DA-02 | 5つの外部スクリプトをサブプロセスとして実行 | AC-DA-02 | FR-2 |
+| VB-DA-03 | 10個の出力セクション（忍者配備/CI Status/Unpushed Commits WARN/パイプライン/戦況メトリクス/モデル別スコアボード/知識サイクル健全度/スキル健全度/Context鮮度警告/戦果）を生成 | AC-DA-03 | FR-3 |
+| VB-DA-04 | `--dry-run` で stdout 出力のみ、`dashboard.md` 無変更 | AC-DA-04 | FR-4 |
+| VB-DA-05 | `<!-- DASHBOARD_AUTO_START -->` / `<!-- DASHBOARD_AUTO_END -->` マーカー外のコンテンツを保持 | AC-DA-05 | FR-5 |
+| VB-DA-06 | CLEAR 件数増加時のみ ntfy 通知（`/tmp/mas-dashboard-ntfy-last-clear.txt` で重複排除） | AC-DA-06 | FR-6 |
+| VB-DA-07 | 将軍宛報告セクションの取消線エントリを削除 | AC-DA-07 | FR-7 |
+| VB-DA-08 | CI status (60s), context freshness (120s), git rev-list (60s) のTTLキャッシュ | AC-DA-08 | PR-1 |
+| VB-DA-09 | awk計算のmtimeキー付きキャッシュ | AC-DA-09 | PR-2 |
+| VB-DA-10 | `context_freshness_check.sh` と `ci_status_check.sh` のバックグラウンド並列実行 | AC-DA-10 | PR-3 |
+| VB-DA-11 | `cksum` ベースのプロジェクトスコープ別キャッシュパス | AC-DA-11 | PR-4 |
+| VB-DA-12 | temp file + mv によるアトミック書込み | AC-DA-12 | SR-1 |
+| VB-DA-13 | データソース欠落・サブプロセス失敗時に `—` プレースホルダーで graceful degradation | AC-DA-13 | SR-2 |
+| VB-DA-14 | 成功時 exit 0、失敗時 exit 1 | AC-DA-14 | SR-3 |
+| VB-DA-15 | マーカー不在時は dashboard を変更しない | AC-DA-15 | SR-4 |
+
+#### restart_watchers.sh
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-RW-01 | `/tmp/restart_watchers.lock` で `flock -n` によるシングルトンロック | AC-RW-01 | FR-1 |
+| VB-RW-02 | 既存 `inbox_watcher.sh` を SIGTERM → 1秒待機 → SIGKILL の二段階停止 | AC-RW-02 | FR-2, SR-1 |
+| VB-RW-03 | shogun watcher を `shogun:main` ペインの `@agent_cli` から nohup 起動、ログ出力先 `logs/inbox_watcher_shogun.log` | AC-RW-03 | FR-3 |
+| VB-RW-04 | karo watcher を `shogun:agents.1` ペインから同パターンで起動 | AC-RW-04 | FR-4 |
+| VB-RW-05 | `agent_config.sh::get_all_agents()` で列挙、karo スキップ、ペイン解決、空ペインスキップ | AC-RW-05 | FR-5, SR-2 |
+| VB-RW-06 | `pgrep -f "inbox_watcher\.sh.*{agent}"` で各 watcher の生存確認 | AC-RW-06 | FR-6 |
+| VB-RW-07 | 2秒後に inotifywait プロセス数 = watcher 数を確認（不一致時に警告） | AC-RW-07 | FR-7 |
+| VB-RW-08 | `scripts/sync_pane_vars.sh` を実行 | AC-RW-08 | FR-8 |
+| VB-RW-09 | watcher 起動失敗時に exit 1 | AC-RW-09 | FR-6 |
+
+#### yaml_helpers（バッチユーティリティ）
+
+| 振る舞いID | 振る舞い | テストシナリオ | 要件元 |
+|-----------|---------|--------------|--------|
+| VB-YH-01 | `yaml_field_set_batch` が 1回の flock + 1回の awk pass で複数フィールドを同時更新 | AC-YH-01 | R3 |
+| VB-YH-02 | `yaml_field_set_batch` が既存フィールドの更新と新規フィールドの追加を同時処理 | AC-YH-02 | R3 |
+| VB-YH-03 | `yaml_field_set_batch` の出力結果が個別 `yaml_field_set` を順次実行した結果と完全一致 | AC-YH-03 | R3, NNC-2 |
+| VB-YH-04 | `field_get_multi` が 1回の awk pass で複数フィールドを一括抽出 | AC-YH-04 | R4 |
+| VB-YH-05 | `field_get_multi` の出力形式が `field=value\n` の eval 可能形式 | AC-YH-05 | R4 |
+| VB-YH-06 | `field_get_multi` の各フィールド結果が個別 `field_get` 結果と完全一致 | AC-YH-06 | R4, NNC-2 |
+| VB-YH-07 | `resolve_cmd_to_task` がバッチ化後も同一出力（yaml_field_set 7回→1回） | AC-YH-07 | R1, NNC-2 |
+| VB-YH-08 | `inject_ac_version` がバッチ化後も同一出力（field_get 6→1, field_set 3→1） | AC-YH-08 | R2, NNC-2 |
+| VB-YH-09 | バッチ化後の `resolve_cmd_to_task` が 100ms 以下で完了 | AC-YH-09 | R1 |
+| VB-YH-10 | バッチ化後の `inject_ac_version` が 80ms 以下で完了 | AC-YH-10 | R2 |
+| VB-YH-11 | バッチ化後の flock 排他正確性が維持される（並行書込み安全） | AC-YH-11 | R3, NNC-1 |
+| VB-YH-12 | 既存 `yaml_field_set` 単一フィールド API が互換維持 | AC-YH-12 | NNC-2 |
+| VB-YH-13 | 既存 `field_get` 単一フィールド API が互換維持 | AC-YH-13 | NNC-2 |
+
+**カバレッジ未到達の振る舞い**: なし。全VBに対応するACが存在する。
+
+---
+
 ### 2.1 cmd_save.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-CS-01 | `cmd_123`、`123`、`cmd_0123` いずれの形式でも正規化し、shogun_to_karo.yamlから該当ブロックを読込む | 各形式でスクリプト実行し、正しいブロックが処理されることを確認 | 3形式全てで同一ブロックを処理。存在しないIDはexit code非0 |
-| AC-CS-02a | YAML構文エラーのあるcmdをBLOCK | 不正YAML（閉じ忘れ引用符、不正インデント）を含むcmdで実行 | exit code非0＋BLOCKログ記録＋エラーメッセージにYAML構文を明示 |
-| AC-CS-02b | 存在しないcmd IDをBLOCK | shogun_to_karo.yamlに存在しないIDで実行 | exit code非0＋「コマンドが見つからない」旨のメッセージ |
-| AC-CS-02c | delegated状態のcmdへの変更をBLOCK | status: delegatedのcmdに対して実行 | exit code非0＋不変性違反メッセージ＋cmdファイル無変更 |
-| AC-CS-02d | pending状態の既存cmdがある場合に警告 | 別のcmdがpending状態の時に新cmdを保存 | WARN記録＋pending cmd IDの明示 |
-| AC-CS-02e | アーカイブ済み重複検出 | アーカイブに同一IDが存在する状態で実行 | WARN or BLOCK＋重複IDの明示 |
-| AC-CS-02f | 同時ドラフト競合検出 | 2プロセスが同時に同一cmdを処理 | 後発プロセスが競合を検出し適切にハンドリング |
-| AC-CS-03 | BLOCK/WARN履歴ありの場合、diagnosis＋environment-changeフィールドを要求 | 過去にBLOCKされたcmd IDで、diagnosis未記入のcmdを保存 | BLOCK＋「diagnosis必須」メッセージ。environment-change記入済みの場合はPASS可能 |
-| AC-CS-04 | BLOCK/WARN/PASS結果を品質ログ＋セッション状態ファイルに記録 | 各判定結果でスクリプト実行 | logs/gate_metrics.logに判定エントリ追記。セッション状態ファイルに最新状態反映 |
-| AC-CS-05a | ロック競合時に警告出力 | flockタイムアウト発生を模擬 | stderrに警告メッセージ＋処理は中断しない |
-| AC-CS-05b | 未コミット実装変更時に警告 | git statusでuncommitted changesがある状態で実行 | WARNログ記録＋変更ファイル一覧の明示 |
-| AC-CS-05c | 重複GP番号を警告 | 既存cmdと同一GP番号を持つcmdを保存 | WARN＋重複GP番号と該当cmd IDsの明示 |
-| AC-CS-05d | 偵察cmdが既存軍師分析と重複する場合に警告 | 軍師分析contextが存在するテーマの偵察cmdを保存 | WARN＋既存分析ファイルパスの明示 |
-| AC-CS-06 | action-required bulletin IDを参照するcmdでbulletin追跡を更新 | bulletin action IDを含むcmdを保存 | bulletin_board.yamlの該当エントリにcmd参照が追記 |
-| AC-CS-07 | ゲート状態がpending/blockedのcmdは委任されない | gate_state: pendingのcmdをdelegateしようとする | exit code非0＋委任拒否メッセージ |
-| AC-CS-08 | 並行実行時のflock排他によるデータ整合性 | 10並行プロセスで同一キューファイルに書込み | 全エントリが欠損なく書込まれる。部分書込みなし |
+#### AC-CS-01: ID正規化とブロックロード
+
+- 入力 `42` → `cmd_42` として `shogun_to_karo.yaml` からブロックをロード → exit 0
+- 入力 `cmd_42` → 同上
+- 入力 `cmd_99999`（存在しないID）→ エラーメッセージ出力 → exit ≠ 0
+
+#### AC-CS-02a: YAML構文検証
+
+- `shogun_to_karo.yaml` にインデント不正のブロックを含む場合 → BLOCK 判定、エラー内容を出力
+
+#### AC-CS-02b: コマンド存在検証
+
+- 存在しない cmd ID → BLOCK 判定、「コマンドが見つかりません」相当のメッセージ出力
+
+#### AC-CS-02c: delegated 状態の不変性
+
+- `status: delegated` のコマンドに対して実行 → BLOCK 判定、「delegated 済みコマンドは変更不可」相当のメッセージ出力
+
+#### AC-CS-02d: pending/blocked ゲート状態の委任拒否
+
+- 前回 BLOCK で gate_state が pending のコマンド → BLOCK 判定
+- 前回 BLOCK で gate_state が blocked のコマンド → BLOCK 判定
+
+#### AC-CS-02e: アーカイブ重複検出
+
+- アーカイブ済みの同一コマンドID → BLOCK 判定、重複を報告
+
+#### AC-CS-02f: 同時ドラフト競合
+
+- 同一 cmd ID に対して並行実行 → 後発がBLOCKまたは警告
+
+#### AC-CS-03a: quality_gate フィールド強制
+
+- `quality_gate` セクション未設定のコマンド → BLOCK 判定
+
+#### AC-CS-03b: BLOCK/WARN歴時の diagnosis/environment-change 強制
+
+- 過去に BLOCK 歴あり + `diagnosis` 未記載 → BLOCK 判定
+- 過去に WARN 歴あり + `environment_change` 未記載 → BLOCK 判定
+- 過去に BLOCK 歴あり + `diagnosis` + `environment_change` 記載あり → PASS可能
+
+#### AC-CS-04a/04b/04c: 結果記録
+
+- BLOCK 判定時 → `logs/` 配下の品質ログに BLOCK エントリが追記される + セッション状態ファイルに BLOCK 状態を記録
+- WARN 判定時 → 同上（WARN エントリ）
+- PASS 判定時 → 同上（PASS エントリ）
+
+#### AC-CS-05a: ロック競合警告
+
+- 別プロセスが `shogun_to_karo.yaml` を flock 中に実行 → 警告メッセージを出力（BLOCKではない）
+
+#### AC-CS-05b: 未コミット変更警告
+
+- 実装ファイルに未コミット変更がある状態で実行 → WARN 出力
+
+#### AC-CS-05c: 重複GP番号警告
+
+- 既存コマンドと同じ GP 番号を持つコマンド → WARN 出力
+
+#### AC-CS-05d: 偵察/recon と軍師分析の重複警告
+
+- 既存の gunshi 分析と重複するスコープを持つ偵察 cmd → WARN 出力
+
+#### AC-CS-06: 掲示板アクション追跡更新
+
+- コマンドが `bulletin_ids` に action-required な ID を参照 → 掲示板追跡ファイルの該当エントリが更新される
+
+#### AC-CS-07: flock 経由の共有ファイル操作
+
+- `shogun_to_karo.yaml` への全書込み操作が flock を経由することを `strace` またはテストモックで確認
+- `yaml.dump` / `yaml.safe_dump` による直接書込みが存在しないことをソースコード grep で確認
+
+---
 
 ### 2.2 deploy_task.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-DT-01 | 通常/--direct/--yaml/--cmdの4モード解析＋staleコンテキスト無効化メッセージ | 各モードで実行 | 各モード固有のパス処理。デフォルトメッセージに「前回タスクは無効」旨の記述を含む |
-| AC-DT-02 | 第1引数が空/None/cmd_*の場合にエラー終了 | 不正値（空文字列、"None"、"cmd_123"）で実行 | 各ケースでexit code非0＋具体的エラーメッセージ |
-| AC-DT-03 | tmuxペイン解決＋idle/busy状態判定 | idle忍者とbusy忍者それぞれに配備 | idle: 配備続行。busy: 警告出力（配備は続行するが状態を通知） |
-| AC-DT-04 | staleタスクフィールド/通知フラグ/ghost None.yamlをリセット | 前回タスクの残留フィールドがある状態で配備 | 新配備後にstaleフィールドが消去。queue/tasks/None.yamlが存在しない |
-| AC-DT-05 | 親cmdからタスクメタデータ完全解決 | cmdにAC/教訓/意味概念/工学設定が設定された状態で配備 | task YAMLにparent_cmd/task_id/task_type/project/status/purpose/_ac_task_id/ac_version/related_lessons/semantic_concepts/engineering_preferencesが全て反映 |
-| AC-DT-06 | queue/reports/にレポートテンプレート生成。既存完了レポートは上書きしない | 完了済みレポートが存在する忍者に再配備 | 新テンプレート生成されず、既存完了レポートが保全される |
-| AC-DT-07 | inbox_write.sh経由でタスク通知を配信 | 配備実行後のinbox/{ninja}.yamlを確認 | type: task_assignedのエントリが追記。direct tmux send-keysによるメッセージ送信なし |
-| AC-DT-08 | 同一親cmdの完了済みピアレポートが存在する場合に重複配備をBLOCK | 完了レポートが存在するcmdの同一タスクを別忍者に配備 | exit code非0＋重複配備拒否メッセージ |
-| AC-DT-09 | YAML操作はyaml_field_set/yaml_field_set_batch経由のみ | ソースコード静的解析 | free-form echo/printf/catによるYAML直接書込みがないこと |
+#### AC-DT-01a/01b/01c/01d: 4つのデプロイモード
+
+- 通常モード: `deploy_task.sh hayate` → `queue/tasks/hayate.yaml` が更新される
+- `--direct` モード: `deploy_task.sh --direct hayate "直接メッセージ"` → タスク YAML 作成 + inbox 送信
+- `--yaml` モード: `deploy_task.sh --yaml hayate /path/to/task.yaml` → 指定YAMLをベースに配備
+- `--cmd` モード: `deploy_task.sh --cmd cmd_100 hayate` → cmd_100 からタスクメタデータを解決して配備
+
+#### AC-DT-01e: デフォルトメッセージによる古いコンテキスト無効化
+
+- 配備メッセージに前回タスクのコンテキストを無効化する文言が含まれることを確認
+
+#### AC-DT-02a/02b/02c/02d: ターゲットバリデーション
+
+- ターゲット空文字 → exit ≠ 0, エラーメッセージ出力
+- ターゲット `None` → exit ≠ 0, エラーメッセージ出力
+- ターゲット `cmd_100` → exit ≠ 0, 「cmd_* はターゲットに指定できません」相当のメッセージ
+- ターゲット `hayate`（有効な忍者名）→ 処理続行
+
+#### AC-DT-03: ペイン解決と idle/busy 判定
+
+- tmux/CLI ヘルパーライブラリ経由でターゲットの tmux ペインを解決
+- 解決結果に基づき idle/busy 状態を判定（busy 時は警告出力して続行または待機）
+
+#### AC-DT-04: stale 状態リセット
+
+- 配備前に `queue/tasks/{ninja}.yaml` の stale フィールド（古い status, progress 等）がリセットされる
+- stale 通知フラグがクリアされる
+- `queue/tasks/None.yaml` が存在する場合に削除される
+
+#### AC-DT-05a/05b: 親cmd からのメタデータ解決
+
+- `--cmd cmd_100` 指定時、タスク YAML に以下が設定される:
+  - `parent_cmd: cmd_100`
+  - `task_id`: 生成された一意のID
+  - `task_type`: cmd から継承
+  - `project`: cmd から継承
+  - `status: assigned`（初期値）
+  - `purpose`: cmd から継承
+- AC バージョン, `related_lessons`, `semantic_concepts`, `engineering_preferences`, `execution_controls` が cmd から注入される
+
+#### AC-DT-06: 報告テンプレート生成
+
+- `queue/reports/{task_id}.yaml` にテンプレートが生成される
+- 既に `status: completed` の報告が存在する場合は上書きされない
+
+#### AC-DT-07: inbox 経由タスク通知
+
+- `scripts/inbox_write.sh` が `type: task_assigned` で呼び出される
+- inbox ファイルにメッセージが永続化されていることを確認
+
+#### AC-DT-08: YAML ヘルパー経由の操作
+
+- ソースコード内に `yaml.dump`, `yaml.safe_dump`, `echo >>` による直接YAML書込みがないことを grep で確認
+- 全 YAML 変更が `yaml_field_set` または `yaml_field_set_batch` 経由
+
+#### AC-DT-09: 重複配備ブロック
+
+- cmd_100 に対する完了済み報告が `queue/reports/` に存在する状態で再配備 → BLOCK、エラーメッセージ出力
+
+#### AC-DT-10: 通信パス限定
+
+- タスク通知が `inbox_write.sh` 経由であることをテストログで確認
+- tmux `send-keys` 直接呼び出しは re-nudge フォールバック時のみ発生
+
+---
 
 ### 2.3 inbox_write.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-IW-01 | target/content必須。type/sender/actionはオプショナル。不正ターゲットはエラー | 不正ターゲット（空、未定義名）で実行 | exit code非0＋「invalid target」メッセージ |
-| AC-IW-02 | **忍者senderからshogunターゲットへの直接メッセージをBLOCK** | sender=hayate, target=shogunで実行 | exit code非0＋「ninja-to-shogun direct messaging prohibited」メッセージ。**NNC-3準拠** |
-| AC-IW-03 | queue/inbox/{agent}.yamlにtimestamp/id/type/sender/content/read: false/actionを含むエントリ追記 | 正常パラメータで実行後ファイル解析 | 全フィールド存在。read: false。timestampはISO 8601。idはユニーク |
-| AC-IW-04 | WSL2 /mnt/*パス対応のflockによる並行書込み保護 | 10並行プロセスで同一inboxファイルに書込み | 全10メッセージが欠損なく存在。部分書込み・データ混在なし。**NNC-1準拠** |
-| AC-IW-05 | 同一親cmdの重複task_assigned配備をBLOCK | 同一parent_cmdで2回task_assigned送信 | 2回目がexit code非0＋重複メッセージ |
-| AC-IW-06 | deploy_task未注入時の教訓注入セーフティネット | related_lessonsなしでtask_assigned送信 | 教訓注入が補完される（またはセーフティネット動作がログ記録される） |
-| AC-IW-07 | type: report_received時にレポートフォーマットチェック＋下流トリガー | 不正フォーマットのレポート通知を送信 | フォーマットエラーの検出＋適切な下流処理（レビュー依頼or完了トリガー） |
-| AC-IW-08 | メッセージ永続化完了後にのみCLI nudge送信 | 正常書込み実行 | inboxファイルへの書込み完了→ペイン解決→nudge送信の順序。永続化失敗時はnudge送信なし |
+#### AC-IW-01a: 引数受理
+
+- `inbox_write.sh karo "メッセージ" report_received hanzo` → 正常終了、メッセージ永続化
+- `inbox_write.sh karo "メッセージ"` → type/sender 省略時もデフォルト値で正常終了
+
+#### AC-IW-01b: ターゲット不正で拒否
+
+- `inbox_write.sh "" "msg"` → exit ≠ 0
+- `inbox_write.sh invalid_agent "msg"` → exit ≠ 0
+
+#### AC-IW-02a: エージェント名バリデーション
+
+- 有効なエージェント名（shogun, karo, gunshi, hayate, kagemaru, hanzo, saizo, kotaro, tobisaru）→ 受理
+- 無効な名前 → exit ≠ 0
+
+#### AC-IW-02b: 忍者→将軍の直接送信禁止（NNC-3）
+
+- `inbox_write.sh shogun "msg" report hanzo` → exit ≠ 0, メッセージが `queue/inbox/shogun.yaml` に書き込まれていないことを確認
+- `inbox_write.sh shogun "msg" report karo` → 家老は許可、正常終了
+
+#### AC-IW-03: メッセージレコードのシリアライズ
+
+- 書込み後の `queue/inbox/{agent}.yaml` に以下のフィールドが含まれる:
+  - `timestamp`: ISO 8601 形式
+  - `id`: 一意の識別子
+  - `type`: 指定されたメッセージタイプ
+  - `sender`: 送信元エージェント名
+  - `content`: メッセージ本文
+  - `read: false`（初期値）
+  - `action`（指定された場合）
+
+#### AC-IW-04: WSL2 対応ロックファイル
+
+- `/mnt/c/` 配下のプロジェクトで実行した場合も flock が正常に機能する
+- 並行 `inbox_write.sh` 実行（10回同時）でメッセージ消失が発生しないことを確認
+
+#### AC-IW-05: 重複 task_assigned ブロック
+
+- cmd_100 に対する active な `task_assigned` が既に存在する状態で再送信 → ブロックまたは警告
+
+#### AC-IW-06: レッスン注入セーフティネット
+
+- `type: task_assigned` でデプロイヘルパーがレッスンを注入していない場合 → inbox_write がフォールバックでレッスン注入を実行
+
+#### AC-IW-07a: 報告フォーマットチェック
+
+- `type: report_received` で報告 YAML が不正な場合 → フォーマットエラーを出力
+
+#### AC-IW-07b: 報告通知の下流処理トリガー
+
+- `type: report_received` 送信後、下流のレビュー/完了ワークフローがトリガーされることを確認
+
+#### AC-IW-08: 永続化→nudge の順序保証
+
+- メッセージが `queue/inbox/{agent}.yaml` に書き込まれた後にのみ、CLI 固有の nudge が送信される
+- nudge 失敗時もメッセージは永続化されていることを確認
+
+#### AC-IW-09: flock/アトミック書込み（NNC-1）
+
+- 全書込み操作が flock 排他ロック下で実行される
+- 部分書込み（書込み途中のクラッシュ）で inbox ファイルが破損しないことを確認
+
+---
 
 ### 2.4 ninja_monitor.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-NM-01 | シングルトンデーモンとして起動。多重起動を防止 | 2インスタンス同時起動 | 後発インスタンスが即座に終了 |
-| AC-NM-02 | @agent_state/タイムスタンプ/CLI prompt/busy pattern/subprocess相互検証でidle/busy判定 | 各状態の忍者ペインを用意 | idle忍者: idle判定。busy忍者（subprocess活動中）: busy判定。hook stateがbusy証拠なしのidle判定を上書き（SR-1） |
-| AC-NM-03 | idle確認＋report-gate通過後のみclear/respawn実行 | idle＋レポート未提出の忍者に対するclear試行 | report-gate未通過: clear実行されない。idle＋gate通過: clear実行 |
-| AC-NM-04 | 6種異常検知（pane loss/stale deployment/未配備cmd/karo pending/CLI death/inbox unread/report-task mismatch） | 各異常状態を再現 | 各異常がkaro_snapshot.txtまたはinbox通知に反映 |
-| AC-NM-05 | karo_snapshot.txt生成（cmd/忍者/model/context/report state列） | 正常稼働中に生成確認 | 全忍者＋cmd状態＋モデル＋CTX%＋レポート状態を含むフォーマット |
-| AC-NM-06 | インフラ健全性監視（inbox watcher/ntfy listener/CI status/training/lesson/loop/workaround/script size） | 各サブシステムの正常/異常状態で実行 | 異常検知時に適切な通知。正常時は無出力 |
-| AC-NM-07 | prompt-onlyのidle判定を禁止（hook state＋busy evidence優先） | @agent_state=busyだがpromptが表示されている状態 | busy判定（hook stateが優先） |
-| AC-NM-08 | 全エージェント通信はinbox_write.sh経由 | ソースコード静的解析 | ad hoc tmux send-keysによるメッセージ送信がないこと（re-nudge fallbackを除く） |
+#### AC-NM-01: シングルトンデーモン起動
+
+- 2つ目のインスタンスを起動 → 既存インスタンスを検知して起動中止
+
+#### AC-NM-02: tmux ペイン再発見
+
+- tmux ペイン構成が変更された後もメタデータから忍者ペインを正しく再発見
+
+#### AC-NM-03: idle/busy 判定
+
+- `@agent_state` が idle → idle 判定
+- CLI プロンプトパターンが表示されている → idle 判定の補助情報
+- サブプロセスが実行中 → busy 判定（hook state 優先: VB-NM-14）
+
+#### AC-NM-04: safe clear/respawn
+
+- idle 確認済み + 報告ゲート通過 → clear 実行可能
+- idle 確認済み + 報告未提出 → clear 実行不可（SR-2）
+- busy 状態 → clear 実行不可
+
+#### AC-NM-05a〜05g: 異常状態検知
+
+- ペイン消失 → `karo_snapshot.txt` に LOST 相当の状態を記録 + inbox_write で家老に通知
+- stale デプロイメント（配備から一定時間経過、進捗なし）→ 検知して通知
+- 未デプロイコマンド（`shogun_to_karo.yaml` に delegated だが配備なし）→ 検知して通知
+- 家老 pending ワーク → 検知して通知
+- CLI 死亡（ペインは存在するが CLI プロセスなし）→ 検知して通知
+- inbox 未読カウント > 0 → 検知して通知
+- 報告/タスクミスマッチ（報告 YAML と タスク YAML の状態不整合）→ 検知して通知
+
+#### AC-NM-06: karo_snapshot.txt 生成
+
+- 出力に以下が含まれる: 各忍者の cmd・ステータス・モデル・コンテキスト使用率・報告状態
+- フォーマットがパイプ区切り（`ninja|{name}|{cmd}|{status}|{project}|CTX:{pct}%|M:{model}`）
+
+#### AC-NM-07: インフラ健全性監視
+
+- inbox watcher プロセスの生存を確認
+- ntfy listener の生存を確認
+- CI ステータスを `gh` コマンド経由で確認
+- training auto-deploy 条件を監視
+- lesson health（教訓ファイルの整合性）を監視
+- loop health（学習ループの稼働状態）を監視
+- workaround trends（`logs/karo_workarounds.yaml` の傾向）を監視
+- script size trends（スクリプトの行数増加傾向）を監視
+
+#### AC-NM-08: hook state 優先
+
+- `@agent_state: busy`（hook設定）の場合、プロンプトが表示されていても busy と判定
+
+#### AC-NM-09: 通信は inbox_write 経由
+
+- 家老への通知が全て `inbox_write.sh` 経由であることをテストログで確認
+
+---
 
 ### 2.5 dashboard_auto_section.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-DA-01 | 指定10データソースの読込み | 全ソース存在時＋一部欠損時に実行 | 存在時: 正常読込。欠損時: —プレースホルダー表示（SR-2） |
-| AC-DA-02 | 5外部スクリプト呼出し | 各スクリプトの正常/異常終了を模擬 | 正常: 出力を統合。異常: —プレースホルダー退避 |
-| AC-DA-03 | 10出力セクション（忍者配備/CI Status/Unpushed/パイプライン/戦況メトリクス/モデル別スコアボード/知識サイクル健全度/スキル健全度/Context鮮度警告/戦果）生成 | 正常実行後のdashboard.md解析 | 全10セクションのヘッダーとコンテンツが存在 |
-| AC-DA-04 | --dry-runモード | --dry-runで実行 | stdoutに生成内容出力。dashboard.mdのmtime不変 |
-| AC-DA-05 | auto-sectionマーカー外コンテンツ保全 | マーカー外にカスタムコンテンツを含むdashboard.mdで実行 | カスタムコンテンツがバイト単位で不変 |
-| AC-DA-06 | CLEAR数増加時のみntfy通知（/tmp/mas-dashboard-ntfy-last-clear.txtによる重複排除） | CLEAR数不変/増加の2パターンで実行 | 不変: ntfy呼出しなし。増加: ntfy呼出し1回。last-clear.txt更新 |
-| AC-DA-07 | 将軍宛報告セクションの取消線エントリ（~~text~~）除去 | 取消線エントリを含むdashboard.mdで実行 | auto-section更新後、取消線エントリが除去 |
-| AC-DA-08 | CI status/context freshness/git rev-listのキャッシュTTL | TTL内/外で2回連続実行 | TTL内: サブプロセス再実行なし（キャッシュヒット）。TTL外: サブプロセス再実行 |
-| AC-DA-09 | gate_fire_log/gate_metrics/lesson_impact/lesson_effectiveness_statusのmtime keyedキャッシュ | ファイル変更なし/ありで2回実行 | mtime不変: awk再計算なし。mtime変更: awk再計算 |
-| AC-DA-10 | context_freshness_check.sh/ci_status_check.shのbackground並行起動 | 実行時間計測 | 2スクリプトの実行時間がmax(A,B)≈合計。逐次実行時間(A+B)より短い |
-| AC-DA-11 | cksum $PROJECT_DIRによるproject-scopedキャッシュパス | 異なるPROJECT_DIRで実行 | キャッシュパスが異なる。cross-project干渉なし |
-| AC-DA-12 | temp file + mvによる原子的書込み | 書込み中にdashboard.mdを読む別プロセスを同時実行 | 部分書込み状態のdashboard.mdが読まれない |
-| AC-DA-13 | 全データソース欠損時の—プレースホルダー退避 | 全データソースを削除して実行 | クラッシュせず、全セクションに—が表示。exit 0 |
-| AC-DA-14 | DASHBOARD_AUTO_START/ENDマーカー不在時のdashboard非変更 | マーカーなしdashboard.mdで実行 | dashboard.md不変。exit 1 |
+#### AC-DA-01: データソース読み込み
+
+- 以下の9ファイルからデータを取得:
+  - `queue/karo_snapshot.txt`, `queue/shogun_to_karo.yaml`, `logs/gate_metrics.log`
+  - `queue/tasks/*.yaml`, `config/settings.yaml`, `config/cli_profiles.yaml`
+  - `logs/gate_fire_log.yaml`, `logs/lesson_impact.tsv`, `queue/lesson_effectiveness_status.txt`
+
+#### AC-DA-02: 外部スクリプト実行
+
+- 以下の5スクリプトをサブプロセスとして呼び出し:
+  - `knowledge_metrics.sh`, `model_analysis.sh`, `context_freshness_check.sh`, `ci_status_check.sh`, `skill_metrics.sh`
+
+#### AC-DA-03: 10セクション生成
+
+- 出力に以下の10セクションが全て含まれる: 忍者配備, CI Status, Unpushed Commits WARN, パイプライン, 戦況メトリクス, モデル別スコアボード, 知識サイクル健全度, スキル健全度, Context鮮度警告, 戦果
+
+#### AC-DA-04: --dry-run モード
+
+- `--dry-run` 指定時: 生成内容が stdout に出力される + `dashboard.md` の mtime が変更されない
+
+#### AC-DA-05: マーカー外コンテンツ保持
+
+- `<!-- DASHBOARD_AUTO_START -->` 前と `<!-- DASHBOARD_AUTO_END -->` 後のコンテンツが実行前後で完全一致
+
+#### AC-DA-06: ntfy 通知重複排除
+
+- CLEAR 件数が前回と同じ → ntfy 通知なし
+- CLEAR 件数が増加 → ntfy 通知あり
+- `/tmp/mas-dashboard-ntfy-last-clear.txt` に最新 CLEAR 件数が記録される
+
+#### AC-DA-07: 取消線エントリ削除
+
+- 将軍宛報告セクションに `~~取消済み~~` エントリがある → 自動セクション更新後に削除されている
+
+#### AC-DA-08/09/10/11: パフォーマンスキャッシュ
+
+- CI status 結果が 60 秒以内の再実行でキャッシュヒット
+- context freshness 結果が 120 秒以内の再実行でキャッシュヒット
+- git rev-list 結果が 60 秒以内の再実行でキャッシュヒット
+- `gate_fire_log.yaml` の mtime 未変化時に awk 再計算をスキップ
+- `context_freshness_check.sh` と `ci_status_check.sh` がバックグラウンドで並列起動される
+- 異なるプロジェクトディレクトリから実行 → キャッシュパスが異なる（`cksum` ベース）
+
+#### AC-DA-12: アトミック書込み
+
+- 書込み中に SIGTERM → `dashboard.md` が破損していないことを確認（temp file + mv）
+
+#### AC-DA-13: graceful degradation
+
+- `queue/karo_snapshot.txt` が存在しない → 該当セクションに `—` を表示して正常終了
+- サブプロセスが exit ≠ 0 → 該当セクションに `—` を表示して正常終了
+
+#### AC-DA-14: 終了コード
+
+- 全データソース存在 + マーカー存在 → exit 0
+- `dashboard.md` 不在 → exit 1
+- マーカー不在 → exit 1
+
+#### AC-DA-15: マーカー不在時の安全性
+
+- `<!-- DASHBOARD_AUTO_START -->` / `<!-- DASHBOARD_AUTO_END -->` が存在しない → `dashboard.md` は一切変更されない
+
+---
 
 ### 2.6 restart_watchers.sh
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-RW-01 | flock -nによるシングルトンロック | 2インスタンス同時起動 | 後発がexit code非0で即終了 |
-| AC-RW-02 | SIGTERM→1秒待ち→SIGKILL二段階停止 | inbox_watcherプロセスが存在する状態で実行 | SIGTERM後に残存確認。残存あり: SIGKILL発行。全プロセス停止後に再起動 |
-| AC-RW-03 | shogun:mainペインの@agent_cliからshogun watcher起動 | tmux環境で実行 | nohup + logs/inbox_watcher_shogun.logへのリダイレクト＋pgrep確認 |
-| AC-RW-04 | shogun:agents.1ペインからkaro watcher起動 | tmux環境で実行 | nohup + logs/inbox_watcher_karo.logへのリダイレクト＋pgrep確認 |
-| AC-RW-05 | get_all_agents()列挙＋karo skip＋空ペインskip | 一部ペインが空の陣形で実行 | karo未起動。空ペインのエージェントはskip。残りは正常起動 |
-| AC-RW-06 | pgrep -fによる全watcher存在確認＋失敗時exit 1 | 1つのwatcherが起動失敗する状態を模擬 | 失敗watchers一覧出力＋exit 1 |
-| AC-RW-07 | 2秒後のinotifywaitプロセス数一致確認 | 正常/不一致の2パターン | 一致: 正常完了。不一致: 警告メッセージ出力 |
-| AC-RW-08 | sync_pane_vars.sh実行 | 実行ログ確認 | restart_watchers完了時にsync_pane_vars.shが呼出される |
-| AC-RW-09 | ペイン解決失敗時のsilent skip | 存在しないペインを指すエージェントを含む陣形で実行 | エラー出力なし＋該当エージェントskip＋他エージェントは正常起動 |
+#### AC-RW-01: シングルトンロック
 
-### 2.7 yaml_helpers（リファクタリング）
+- 同時に2つ実行 → 後発が `/tmp/restart_watchers.lock` の `flock -n` で即座に exit ≠ 0
 
-| ID | 基準 | 検証方法 | 合格条件 |
-|----|------|---------|---------|
-| AC-YH-01 | `yaml_field_set_batch <file> <block_id> field1=val1 field2=val2 ...` で1回のflock+1回のawk passで全フィールド同時更新 | 7フィールドのbatch更新を実行＋strace/ltraceでflock呼出し回数確認 | 全フィールドが正確に更新。flock呼出し1回。awk実行1回 |
-| AC-YH-02 | `field_get_multi <file> field1 field2 ...` で1回のawk passで複数フィールド一括抽出。出力: `field1=value1\nfield2=value2\n...` | 6フィールドの一括取得を実行 | eval可能な出力形式。全フィールドの値が正確。awk実行1回 |
-| AC-YH-03 | resolve_cmd_to_task()がyaml_field_set_batch使用で627ms→100ms以下 | batsテスト内でtime計測（10回平均） | 平均実行時間100ms以下。出力結果はリファクタリング前と同一 |
-| AC-YH-04 | inject_ac_version()がfield_get_multi+yaml_field_set_batch使用で541ms→80ms以下 | batsテスト内でtime計測（10回平均） | 平均実行時間80ms以下。AC version hash計算結果がリファクタリング前と同一 |
-| AC-YH-05 | 既存 `yaml_field_set <file> <block_id> <field> <value>` の単体呼出しがAPIシグネチャ・動作ともに不変 | 既存テストスイート全実行 | 全テストPASS。出力差分ゼロ。**NNC-4準拠** |
-| AC-YH-06 | 既存 `field_get <file> <field>` の単体呼出しがAPIシグネチャ・動作ともに不変 | 既存テストスイート全実行 | 全テストPASS。出力差分ゼロ。**NNC-4準拠** |
-| AC-YH-07 | 48テスト(ac_handling)全PASS、SKIP=0 | `bats tests/ac_handling/` 全実行 | PASS=48, FAIL=0, SKIP=0。**NNC-5準拠** |
-| AC-YH-08 | batch操作でもflock排他によるデータ整合性を維持 | 10並行プロセスでyaml_field_set_batch同時実行 | 全フィールドが正確に反映。データ消失・混在なし。**NNC-1準拠** |
+#### AC-RW-02: 二段階停止
+
+- 既存 watcher に SIGTERM 送信 → 1秒待機 → 生存プロセスに SIGKILL
+- SIGTERM で停止した場合は SIGKILL にエスカレーションしない
+
+#### AC-RW-03/04: shogun/karo watcher 起動
+
+- shogun watcher: `shogun:main` ペインから `@agent_cli` を解決し `nohup inbox_watcher.sh shogun` で起動
+- ログが `logs/inbox_watcher_shogun.log` に追記される
+- karo watcher: `shogun:agents.1` ペインから同様に起動
+
+#### AC-RW-05: 他エージェント watcher 起動
+
+- `get_all_agents()` で列挙された全エージェントのうち karo 以外に対して watcher を起動
+- ペイン解決失敗 → 当該エージェントをスキップ（エラーではなく警告）
+- 空ペイン → スキップ
+
+#### AC-RW-06: 生存確認
+
+- 起動後に `pgrep -f "inbox_watcher\.sh.*{agent}"` で各 watcher を確認
+- 1つでも起動失敗 → exit 1（失敗リスト出力）
+
+#### AC-RW-07: inotifywait プロセス数確認
+
+- 起動2秒後に inotifywait プロセス数 = 起動成功 watcher 数
+- 不一致時 → 警告メッセージ出力（exit コードは変更しない）
+
+#### AC-RW-08: sync_pane_vars 実行
+
+- `scripts/sync_pane_vars.sh` が restart_watchers の完了前に実行されることを確認
+
+#### AC-RW-09: watcher 起動失敗時の終了コード
+
+- 1つ以上の watcher が起動失敗 → exit 1
+- 全 watcher 起動成功 → exit 0
+
+---
+
+### 2.7 yaml_helpers（バッチユーティリティ）
+
+#### AC-YH-01: yaml_field_set_batch 基本動作
+
+```bash
+yaml_field_set_batch task.yaml hayate \
+  parent_cmd=cmd_100 \
+  task_id=task_001 \
+  status=assigned
+```
+- 1回の flock 取得 + 1回の awk pass で3フィールドを同時更新
+- 結果が以下と完全一致:
+  ```bash
+  yaml_field_set task.yaml hayate parent_cmd cmd_100
+  yaml_field_set task.yaml hayate task_id task_001
+  yaml_field_set task.yaml hayate status assigned
+  ```
+
+#### AC-YH-02: 既存+新規フィールド混在
+
+- 既存フィールド `status` + 新規フィールド `new_field` を同時に処理
+- 既存は値更新、新規は追加
+
+#### AC-YH-03: API 互換性（NNC-2）
+
+- `yaml_field_set` 単一フィールド API のシグネチャ・出力が変更されていない
+- バッチ関数追加前の全テストケースが PASS
+
+#### AC-YH-04: field_get_multi 基本動作
+
+```bash
+field_get_multi task.yaml ac_version task_id worker_id
+```
+- 出力: `ac_version=v3\ntask_id=task_001\nworker_id=hayate\n`
+- 1回の awk pass で処理
+
+#### AC-YH-05: eval 可能な出力形式
+
+- `field_get_multi` の出力を `eval` に渡した後、各変数がシェル変数として利用可能
+
+#### AC-YH-06: field_get 互換性（NNC-2）
+
+- `field_get` 単一フィールド API のシグネチャ・出力が変更されていない
+- 各フィールドの `field_get_multi` 結果 = 個別 `field_get` 結果
+
+#### AC-YH-07/08: リファクタリング後の出力一致
+
+- `resolve_cmd_to_task` のバッチ化前後で同一入力に対する `queue/tasks/{ninja}.yaml` の内容が差分ゼロ
+- `inject_ac_version` のバッチ化前後で同一入力に対する AC バージョン・タスクID・ワーカーIDの値が完全一致
+- 既存テストスイート48件が全 PASS（SKIP ゼロ）
+
+#### AC-YH-09/10: パフォーマンス目標
+
+- `resolve_cmd_to_task`: before 627ms → after ≤ 100ms
+- `inject_ac_version`: before 541ms → after ≤ 80ms
+- 計測方法: `time` コマンドの real 値、10回平均
+
+#### AC-YH-11: 並行書込み安全
+
+- 10プロセス同時で `yaml_field_set_batch` を同一ファイルに実行 → 全フィールドが正しく反映、データ消失なし
+
+#### AC-YH-12/13: 既存API後方互換
+
+- `yaml_field_set <file> <block_id> <field> <value>` が引き続き動作
+- `field_get <file> <field>` が引き続き動作
+- 既存の呼び出し元（`deploy_task.sh`, `cmd_save.sh`, `inbox_write.sh` 等）に変更不要
+
+---
 
 ## 3. Failure Criteria
 
-以下の条件が1つでも該当した場合、リリースをブロックする。
+以下のいずれかに該当する場合、テストは **FAIL** とする。
 
-### 3.1 テスト品質ゲート
+### 3.1 グローバル Failure Criteria
 
-| ID | 失敗条件 | 根拠 |
-|----|---------|------|
-| FC-01 | テスト実行結果にSKIPが1件以上存在 | SKIP=FAIL規則（CLAUDE.md Test Rules §1） |
-| FC-02 | テスト実行結果にFAILが1件以上存在 | リグレッション禁止（refactor制約） |
-| FC-03 | 前提条件（tmux環境/flock対応/bats実行環境）が不足した状態でテスト実行 | Preflight check義務（Test Rules §2） |
+| ID | 条件 | 根拠 |
+|----|------|------|
+| FC-G-01 | テスト結果に SKIP が 1件以上存在する | SKIP = FAIL（プロジェクトルール） |
+| FC-G-02 | flock を経由しない YAML 書込みが検出される | NNC-1 違反 |
+| FC-G-03 | `yaml.dump` / `yaml.safe_dump` による運用YAML上書きが検出される | CLAUDE.md YAML書込み安全規則違反 |
+| FC-G-04 | 忍者→将軍の直接 inbox 送信が成功する | NNC-3 違反 |
+| FC-G-05 | バッチ関数追加後に既存テストがリグレッションする | NNC-2 違反 |
+| FC-G-06 | inbox パス以外（tmux send-keys 直接）でタスク配備が主経路として実行される | NNC-1 通信パス制約違反 |
 
-### 3.2 安全性ゲート
+### 3.2 cmd_save.sh Failure Criteria
 
-| ID | 失敗条件 | 根拠 |
-|----|---------|------|
-| FC-04 | inbox_write.shが忍者senderからshogunターゲットへのメッセージを通過させた | NNC-3: ninja-to-shogun prohibition |
-| FC-05 | 並行書込みテストでメッセージ欠損またはデータ混在が発生 | NNC-1: flock-based atomic writes |
-| FC-06 | deploy_task.shがfree-form YAML dump（yaml.dump/echo/printf直接書込み）を使用 | NNC-1 + yaml.dump禁止規則（CLAUDE.md） |
-| FC-07 | yaml_field_setまたはfield_getの既存APIシグネチャが変更された | NNC-4: backward compatibility |
-| FC-08 | ninja_monitorがactive task stateのペインをreport-gate未通過でclear | SR-2: active task protection |
-| FC-09 | dashboard_auto_section.shがauto-sectionマーカー外のコンテンツを変更 | dashboard FR-5: marker isolation |
-| FC-10 | restart_watchers.shがSIGTERMなしにSIGKILLを発行 | SR-1: two-stage termination |
+| ID | 条件 |
+|----|------|
+| FC-CS-01 | gate_state が pending/blocked のコマンドが委任（delegated）される |
+| FC-CS-02 | delegated 済みコマンドの内容が変更される |
+| FC-CS-03 | quality_gate 未設定のコマンドが PASS する |
+| FC-CS-04 | BLOCK/WARN 歴あり + diagnosis/environment_change 未記載で PASS する |
+| FC-CS-05 | BLOCK/WARN/PASS 結果がログに記録されない |
 
-### 3.3 パフォーマンスゲート
+### 3.3 deploy_task.sh Failure Criteria
 
-| ID | 失敗条件 | 根拠 |
-|----|---------|------|
-| FC-11 | リファクタリング後のresolve_cmd_to_task平均実行時間が200msを超過 | refactor R1目標: ~100ms（200msは安全マージン2倍） |
-| FC-12 | リファクタリング後のinject_ac_version平均実行時間が160msを超過 | refactor R2目標: ~80ms（160msは安全マージン2倍） |
-| FC-13 | リファクタリング後の48テスト合計実行時間が10sを超過 | refactor目標: ~5s（10sは安全マージン2倍） |
+| ID | 条件 |
+|----|------|
+| FC-DT-01 | ターゲットが空文字・`None`・`cmd_*` の場合に処理が続行される |
+| FC-DT-02 | 完了済みピア報告が存在する cmd に対して重複配備される |
+| FC-DT-03 | 完了済み報告 YAML が上書きされる |
+| FC-DT-04 | free-form YAML 書込み（`yaml_field_set` 以外の直接操作）が検出される |
+| FC-DT-05 | 親 cmd からのメタデータ解決で必須フィールド（parent_cmd, task_id, status）が欠落する |
 
-### 3.4 データ整合性ゲート
+### 3.4 inbox_write.sh Failure Criteria
 
-| ID | 失敗条件 | 根拠 |
-|----|---------|------|
-| FC-14 | yaml_field_set_batchの出力がyaml_field_set逐次呼出しの出力と一致しない | batch=逐次等価原則 |
-| FC-15 | field_get_multiの出力がfield_get逐次呼出しの出力と一致しない | batch=逐次等価原則 |
-| FC-16 | dashboard_auto_section.shがtemp fileなしにdashboard.mdを直接書換え | SR-1: atomic writes |
+| ID | 条件 |
+|----|------|
+| FC-IW-01 | 不正なターゲットでメッセージが書き込まれる |
+| FC-IW-02 | 忍者 sender → shogun target でメッセージが永続化される |
+| FC-IW-03 | メッセージ永続化前に nudge が送信される |
+| FC-IW-04 | 並行書込み（10同時）でメッセージ消失が発生する |
+| FC-IW-05 | メッセージレコードに timestamp, id, type, sender, content, read のいずれかが欠落する |
+
+### 3.5 ninja_monitor.sh Failure Criteria
+
+| ID | 条件 |
+|----|------|
+| FC-NM-01 | 多重インスタンスが同時稼働する |
+| FC-NM-02 | busy 状態のペインが clear される |
+| FC-NM-03 | 報告未提出の忍者が clear される |
+| FC-NM-04 | 家老への通知が inbox_write 以外の経路で送信される |
+| FC-NM-05 | `karo_snapshot.txt` が必須フィールド（cmd, ninja名, status, model, CTX%）を欠落する |
+
+### 3.6 dashboard_auto_section.sh Failure Criteria
+
+| ID | 条件 |
+|----|------|
+| FC-DA-01 | マーカー外のコンテンツが変更される |
+| FC-DA-02 | `--dry-run` で `dashboard.md` が変更される |
+| FC-DA-03 | 10セクション中いずれかが出力されない（データソース欠落時の `—` 代替は許容） |
+| FC-DA-04 | マーカー不在時に `dashboard.md` が変更される |
+| FC-DA-05 | データソース欠落でクラッシュ（exit ≠ 0 で中断、graceful degradation 未実行） |
+
+### 3.7 restart_watchers.sh Failure Criteria
+
+| ID | 条件 |
+|----|------|
+| FC-RW-01 | 多重インスタンスが同時実行される |
+| FC-RW-02 | SIGTERM なしで SIGKILL に直接エスカレーションする |
+| FC-RW-03 | watcher 起動失敗が exit 0 で返される |
+| FC-RW-04 | ペイン解決失敗がスクリプト全体を中断する（silent skip であるべき） |
+
+### 3.8 yaml_helpers Failure Criteria
+
+| ID | 条件 |
+|----|------|
+| FC-YH-01 | `yaml_field_set_batch` の結果が個別 `yaml_field_set` 順次実行の結果と異なる |
+| FC-YH-02 | `field_get_multi` の各フィールド値が個別 `field_get` 結果と異なる |
+| FC-YH-03 | 既存テストスイート48件中 1件でも FAIL または SKIP |
+| FC-YH-04 | バッチ化後の `resolve_cmd_to_task` が 100ms を超過（10回平均） |
+| FC-YH-05 | バッチ化後の `inject_ac_version` が 80ms を超過（10回平均） |
+| FC-YH-06 | 10並行 `yaml_field_set_batch` 実行でデータ消失が発生 |
+
+---
 
 ## 4. E2E Test Generation Meta-Prompt
 
-以下はCoDD `propagate` が本ドキュメントからE2Eテストを自動生成するための機械可読指示である。
-
 ### 4.1 テストレベル分離
 
-本プロジェクトはシェルスクリプトインフラのため、テストを以下の2レベルに分離する:
+E2Eテストは以下の2レベルに厳密に分離する。混在禁止。
 
-| レベル | 説明 | 実行方法 | ファイル命名 |
-|--------|------|---------|-------------|
-| **Script Integration** | 各スクリプトを実際のシェル環境で実行し、exit code/stdout/stderr/ファイル出力を検証 | bats (Bash Automated Testing System) | `tests/e2e/<domain>.spec.bats` |
-| **Concurrency Stress** | flock排他・並行書込み・シングルトンロックを複数プロセスで検証 | bats + GNU parallel / background processes | `tests/e2e/<domain>.stress.spec.bats` |
+| レベル | ツール | 検証対象 | ファイル命名規則 |
+|--------|--------|---------|---------------|
+| **シェルスクリプト統合テスト** | bats-core + bash | スクリプトの入出力・終了コード・ファイル副作用 | `tests/e2e/<domain>.spec.bats` |
+| **tmux 統合テスト** | bats-core + tmux API | ペイン操作・watcher生存・daemon動作 | `tests/e2e/<domain>.tmux.spec.bats` |
 
-### 4.2 MECEドメイン分解
+本プロジェクトは Web アプリケーションではなくシェルスクリプト基盤のマルチエージェントシステムであるため、ブラウザテストの代わりに tmux 統合テストを採用する。
 
-| ドメイン | 責務 | 出力ファイルパス |
-|---------|------|-----------------|
-| cmd-save | cmd_save.shのBLOCK/WARN/PASS判定・品質ログ・不変性保護 | `tests/e2e/cmd-save.spec.bats` |
-| deploy-task | deploy_task.shの4モード配備・メタデータ解決・レポート生成 | `tests/e2e/deploy-task.spec.bats` |
-| inbox-write | inbox_write.shの原子的書込み・routing制約・教訓注入 | `tests/e2e/inbox-write.spec.bats` |
-| ninja-monitor | ninja_monitor.shのidle検知・異常検知・snapshot生成 | `tests/e2e/ninja-monitor.spec.bats` |
-| dashboard | dashboard_auto_section.shのセクション生成・キャッシュ・原子的書込み | `tests/e2e/dashboard.spec.bats` |
-| restart-watchers | restart_watchers.shのシングルトン・二段階停止・watcher検証 | `tests/e2e/restart-watchers.spec.bats` |
-| yaml-helpers | yaml_field_set_batch/field_get_multi/既存API互換・パフォーマンス | `tests/e2e/yaml-helpers.spec.bats` |
-| concurrency | 全モジュール横断のflock排他・並行書込みストレス | `tests/e2e/concurrency.stress.spec.bats` |
+### 4.2 MECE ドメイン分割
 
-### 4.3 シナリオ導出規則
+| ドメイン | 所有スコープ | 出力ファイル |
+|---------|------------|------------|
+| `cmd-save` | cmd_save.sh の品質ゲート全機能 | `tests/e2e/cmd-save.spec.bats` |
+| `deploy-task` | deploy_task.sh の配備モード・バリデーション・メタデータ解決 | `tests/e2e/deploy-task.spec.bats` |
+| `inbox-write` | inbox_write.sh のメッセージ永続化・ルーティング・排他制御 | `tests/e2e/inbox-write.spec.bats` |
+| `inbox-routing` | 忍者→将軍禁止・sender validation 専用 | `tests/e2e/inbox-routing.spec.bats` |
+| `ninja-monitor` | ninja_monitor.sh のデーモン・検知・snapshot生成 | `tests/e2e/ninja-monitor.tmux.spec.bats` |
+| `dashboard` | dashboard_auto_section.sh のセクション生成・キャッシュ・安全性 | `tests/e2e/dashboard.spec.bats` |
+| `watchers` | restart_watchers.sh の停止・起動・生存確認 | `tests/e2e/watchers.tmux.spec.bats` |
+| `yaml-helpers` | yaml_field_set_batch / field_get_multi のバッチ操作・互換性 | `tests/e2e/yaml-helpers.spec.bats` |
+| `yaml-helpers-perf` | バッチ関数のパフォーマンス計測 | `tests/e2e/yaml-helpers-perf.spec.bats` |
+| `concurrency` | 並行書込み安全・flock 排他の横断テスト | `tests/e2e/concurrency.spec.bats` |
 
-1. **正常系**: 各ACの合格条件をそのままassertionに変換。1 ACにつき最低1テストケース
-2. **異常系**: 各FCの失敗条件を反転し、「この条件が発生しないこと」をassert。FC-04～FC-16の各項目に対応テスト必須
-3. **境界値**: 空文字列/None/cmd_*形式/最大長文字列/特殊文字(日本語/改行/引用符)を入力パラメータに含める
-4. **並行テスト**: AC-CS-08/AC-IW-04/AC-YH-08は10並行プロセスで実行し、全メッセージ/フィールドの完全性を検証
+### 4.3 シナリオ導出ルール
 
-### 4.4 テスト実行環境
+1. **Acceptance Criteria → 正常系テスト**: 各 AC-XX-NN に対して少なくとも1つの `@test` ケースを生成
+2. **Failure Criteria → 異常系テスト**: 各 FC-XX-NN を反転してアサーションに変換（例: FC-IW-02「忍者→将軍でメッセージが永続化される」→ テスト「忍者→将軍で `queue/inbox/shogun.yaml` にエントリが追加されないこと」）
+3. **NNC 制約 → ガードテスト**: NNC-1/2/3 の各制約に対して専用の `@test` ケースを生成
+4. **境界値**: ID正規化（`0`, `1`, `99999`, `cmd_`, `cmd_0`）、並行数（1, 10）、空ファイル、巨大ファイル
 
-#### 前提条件（Preflight）
+### 4.4 アーキテクチャ適応ルール
 
-```bash
-# bats-core + bats-assert + bats-support 必須
-command -v bats >/dev/null 2>&1 || { echo "bats-core required"; exit 1; }
+- テスト生成時に `scripts/` ディレクトリの実際のスクリプト構造をスキャンし、存在しないスクリプトへの参照を `# @fixme: script not found` でマークする
+- 内部関数テストは `source` で対象スクリプトをロードし、関数を直接呼び出す
+- tmux ペイン操作を伴うテストは `tmux.spec.bats` ファイルに分離し、CI で tmux セッションが利用不可の場合は `# @requires: tmux` アノテーションで条件付きスキップ（ただし SKIP はローカル開発限定。CI では tmux セッションを起動するか該当テストを除外構成する）
 
-# tmux セッション存在確認（ninja-monitor/restart-watchers テストに必須）
-tmux has-session -t shogun 2>/dev/null || { echo "tmux session 'shogun' required"; exit 1; }
-
-# flock 対応確認（WSL2 /mnt/* パスでの動作）
-flock --version >/dev/null 2>&1 || { echo "flock required"; exit 1; }
-
-# GNU parallel（concurrency stress テストに必須）
-command -v parallel >/dev/null 2>&1 || { echo "GNU parallel required for stress tests"; exit 1; }
-```
-
-#### テスト実行順序
+### 4.5 ランタイム環境
 
 ```bash
-# 1. ユーティリティ層（依存なし）
-bats tests/e2e/yaml-helpers.spec.bats
+# テスト前提条件
+# 1. bats-core インストール済み
+# 2. テスト用一時ディレクトリ: $BATS_TMPDIR (bats 自動設定)
+# 3. tmux テスト: tmux new-session -d -s test_session でセッション起動
+# 4. 共有ヘルパーのロード: load 'helpers/setup'
 
-# 2. 通信層（yaml-helpersに依存）
-bats tests/e2e/inbox-write.spec.bats
+# テスト実行
+bats tests/e2e/          # 全ドメイン
+bats tests/e2e/inbox-write.spec.bats  # 単一ドメイン
 
-# 3. 配備層（inbox-write + yaml-helpersに依存）
-bats tests/e2e/deploy-task.spec.bats
-bats tests/e2e/cmd-save.spec.bats
-
-# 4. 監視層（全下位層に依存）
-bats tests/e2e/ninja-monitor.spec.bats
-bats tests/e2e/dashboard.spec.bats
-bats tests/e2e/restart-watchers.spec.bats
-
-# 5. ストレステスト（全モジュール横断）
-bats tests/e2e/concurrency.stress.spec.bats
+# CI 環境
+# tmux テストは CI ジョブ内で tmux セッションを起動してから実行:
+tmux new-session -d -s ci_test
+bats tests/e2e/
+tmux kill-session -t ci_test
 ```
 
-#### CI環境
-
-```bash
-# GitHub Actions / CI での実行
-# tmux セッションを仮想的に作成
-tmux new-session -d -s shogun -x 200 -y 50
-tmux new-window -t shogun -n agents
-
-# テスト用ペインを作成（ninja-monitor/restart-watchers テスト用）
-for i in $(seq 1 8); do
-  tmux split-window -t shogun:agents -h 2>/dev/null || true
-done
-tmux select-layout -t shogun:agents tiled
-
-# ペイン変数設定
-tmux set-option -t shogun:agents.1 @agent_id karo
-tmux set-option -t shogun:agents.1 @agent_cli claude
-# ... 以下各エージェント分
-
-# 全テスト実行
-bats tests/e2e/*.spec.bats tests/e2e/*.stress.spec.bats
-```
-
-### 4.5 共有ヘルパー
-
-`tests/e2e/helpers/` ディレクトリに以下のヘルパーを配置し、全specファイルから共有する:
-
-| ファイル | 責務 |
-|---------|------|
-| `tests/e2e/helpers/setup.bash` | テスト用一時ディレクトリ作成、queue/inbox/logs/config構造のスキャフォールド、環境変数設定（PROJECT_DIR等） |
-| `tests/e2e/helpers/teardown.bash` | 一時ディレクトリ削除、プロセスクリーンアップ（テストで起動したwatcher/monitor停止） |
-| `tests/e2e/helpers/fixtures.bash` | テスト用YAML生成関数（valid cmd/invalid cmd/task YAML/inbox entry/dashboard.md テンプレート） |
-| `tests/e2e/helpers/assertions.bash` | YAML フィールド値assertion、ファイル内容不変assertion、プロセス存在assertion、実行時間assertion |
-| `tests/e2e/helpers/concurrency.bash` | N並行実行ヘルパー（GNU parallel wrapper）、結果集計、データ完全性チェック |
-| `tests/e2e/helpers/tmux_mock.bash` | tmux環境モック（tmux非依存テスト用）、ペイン変数スタブ |
-
-### 4.6 アーキテクチャ適応規則
-
-1. テスト生成前に `scripts/` 配下の実際のスクリプト一覧を走査し、requirements/designドキュメントに記載されたスクリプトとの差分を検出すること
-2. 未実装のスクリプトや関数に対するテストケースには `bats test.fixme` マーカー（`skip "FIXME: not yet implemented"`）を付与し、SKIPではなく明示的にFIXMEとして可視化すること
-3. `scripts/lib/` 配下のヘルパー関数は `source` で読込み可能であることを前提とし、関数単体テストを生成すること
-
-### 4.7 品質ゲート
+### 4.6 品質ゲート
 
 | 基準 | 閾値 |
 |------|------|
-| テスト結果 | 全PASS（FAIL=0） |
-| SKIP数 | 0（SKIP=FAIL規則） |
-| AC カバレッジ | 全AC-*に対応テストが存在 |
-| FC カバレッジ | 全FC-*に対応テストが存在（反転assertion） |
-| NNC カバレッジ | 全NNC-*制約に対応テストが存在 |
-| パフォーマンス | resolve_cmd_to_task ≤200ms, inject_ac_version ≤160ms, 48テスト合計 ≤10s |
-| 並行安全性 | 10並行書込みでデータ欠損ゼロ |
+| 全テスト PASS | 100%（SKIP ゼロ、FC-G-01） |
+| Acceptance Criteria カバレッジ | 全 AC-XX-NN に対応する `@test` が存在 |
+| Failure Criteria カバレッジ | 全 FC-XX-NN に対応する `@test` が存在 |
+| NNC カバレッジ | NNC-1, NNC-2, NNC-3 に対応する専用 `@test` が存在 |
+| 並行安全テスト | `concurrency.spec.bats` 内で flock 排他・メッセージ消失ゼロを検証 |
+| パフォーマンス回帰 | `yaml-helpers-perf.spec.bats` で閾値（100ms/80ms）を超過しない |
+
+### 4.7 共有ヘルパー
+
+`tests/e2e/helpers/` ディレクトリに以下を配置:
+
+| ファイル | 責務 |
+|---------|------|
+| `setup.bash` | 一時ディレクトリ作成、テスト用 `queue/inbox/`・`queue/tasks/`・`queue/reports/` の初期化、環境変数設定 |
+| `teardown.bash` | 一時ファイル削除、テスト用 tmux セッション破棄 |
+| `yaml_fixtures.bash` | テスト用 YAML ファイル生成（`shogun_to_karo.yaml`, タスク YAML, 報告 YAML のテンプレート） |
+| `assertions.bash` | YAML フィールド値アサーション、ファイル存在アサーション、flock 検証アサーション |
+| `concurrency.bash` | 並行実行ヘルパー（N プロセス同時起動 + 結果収集 + 消失チェック） |
+| `tmux_helpers.bash` | tmux セッション起動/破棄、ペイン変数設定、agent_state シミュレーション |
 
 ### 4.8 生成マーカー
 
-全生成ファイルに以下のヘッダーを含める:
+全生成ファイルに以下のヘッダーを付与:
 
 ```bash
-#!/usr/bin/env bats
-# @generated-from: codd/tests/acceptance-criteria.md
+# @generated-from: docs/test/acceptance_criteria.md
 # @generated-by: codd propagate
-# @generated-at: <ISO 8601 timestamp>
 ```
 
-手動で追加されたテスト（`# @manual` マーカー付き）は再生成時に保全すること:
+`# @manual` マーカーが付与されたテストケースは再生成時に保持し、上書きしない。
 
-```bash
-# @manual — 手動追加テスト。codd propagate再生成時に削除禁止
-@test "manual: edge case for WSL2 path with spaces" {
-  ...
-}
-```
+### 4.9 ファイルマッピング
 
-### 4.9 出力ファイルマッピング
-
-| ドメイン | 出力パス | テストレベル |
+| ドメイン | 出力パス | AC カバレッジ |
 |---------|---------|-------------|
-| cmd-save | `tests/e2e/cmd-save.spec.bats` | Script Integration |
-| deploy-task | `tests/e2e/deploy-task.spec.bats` | Script Integration |
-| inbox-write | `tests/e2e/inbox-write.spec.bats` | Script Integration |
-| ninja-monitor | `tests/e2e/ninja-monitor.spec.bats` | Script Integration |
-| dashboard | `tests/e2e/dashboard.spec.bats` | Script Integration |
-| restart-watchers | `tests/e2e/restart-watchers.spec.bats` | Script Integration |
-| yaml-helpers | `tests/e2e/yaml-helpers.spec.bats` | Script Integration |
-| concurrency | `tests/e2e/concurrency.stress.spec.bats` | Concurrency Stress |
+| cmd-save | `tests/e2e/cmd-save.spec.bats` | AC-CS-01〜AC-CS-07 |
+| deploy-task | `tests/e2e/deploy-task.spec.bats` | AC-DT-01a〜AC-DT-10 |
+| inbox-write | `tests/e2e/inbox-write.spec.bats` | AC-IW-01a〜AC-IW-09 |
+| inbox-routing | `tests/e2e/inbox-routing.spec.bats` | AC-IW-02b (NNC-3 専用) |
+| ninja-monitor | `tests/e2e/ninja-monitor.tmux.spec.bats` | AC-NM-01〜AC-NM-09 |
+| dashboard | `tests/e2e/dashboard.spec.bats` | AC-DA-01〜AC-DA-15 |
+| watchers | `tests/e2e/watchers.tmux.spec.bats` | AC-RW-01〜AC-RW-09 |
+| yaml-helpers | `tests/e2e/yaml-helpers.spec.bats` | AC-YH-01〜AC-YH-08, AC-YH-11〜AC-YH-13 |
+| yaml-helpers-perf | `tests/e2e/yaml-helpers-perf.spec.bats` | AC-YH-09, AC-YH-10 |
+| concurrency | `tests/e2e/concurrency.spec.bats` | AC-IW-04, AC-YH-11, FC-IW-04, FC-YH-06 |
+| helpers | `tests/e2e/helpers/*.bash` | （テストインフラ） |
