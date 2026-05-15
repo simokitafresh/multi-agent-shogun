@@ -1607,20 +1607,34 @@ _handle_auto_clear() {
 
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
     # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
+    # ただしrespawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
     local ctx_now _ac_cli_type
     ctx_now=$(get_context_pct "$target" "$name")
     _ac_cli_type=$(cli_type "$name" 2>/dev/null || echo "claude")
-    if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null && [ "$_ac_cli_type" != "codex" ]; then
-        # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
-        CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
-        local skip_count=${CLEAR_SKIP_COUNT[$name]}
-        if [ "$skip_count" -le 10 ]; then
-            log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (${skip_count}/10)"
-        elif [ $(( skip_count % 15 )) -eq 0 ]; then
-            # 15サイクル=300秒(5分)ごとにログ出力
-            log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
+    if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
+        if [ "$_ac_cli_type" = "codex" ]; then
+            # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
+            # respawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
+            local _codex_last_clear="${LAST_CLEARED[$name]:-0}"
+            local _codex_elapsed=$(( now - _codex_last_clear ))
+            if [ "$_codex_elapsed" -lt 60 ]; then
+                log "CODEX-CTX0-SKIP: $name CTX=0% but respawned ${_codex_elapsed}s ago (< 60s), skipping"
+                return
+            fi
+            # 60s経過後はGP-222通り処理継続（CTX=0でもrespawn試行）
+        else
+            # Non-Codex: CTX=0% → already clean → skip
+            # AC3: CLEAR-SKIPカウンタ — 連続10回超で5分間隔ログ
+            CLEAR_SKIP_COUNT[$name]=$(( ${CLEAR_SKIP_COUNT[$name]:-0} + 1 ))
+            local skip_count=${CLEAR_SKIP_COUNT[$name]}
+            if [ "$skip_count" -le 10 ]; then
+                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (${skip_count}/10)"
+            elif [ $(( skip_count % 15 )) -eq 0 ]; then
+                # 15サイクル=300秒(5分)ごとにログ出力
+                log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
+            fi
+            return
         fi
-        return
     fi
 
     # CTX>0%に変化 → カウンタリセット
