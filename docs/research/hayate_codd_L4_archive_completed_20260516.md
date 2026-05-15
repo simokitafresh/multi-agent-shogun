@@ -151,3 +151,94 @@
 ## 結論
 
 `archive_completed.sh` は過去CoDD改善と専用Batsにより、防御・性能・回帰テストは厚い。一方で、1,686行の単一スクリプトに「archiveしてよい条件」が分散しており、次の品質改善は実装最適化よりも決定表の正本化が最優先である。
+
+## CoDD Generate Results
+
+- 実施者: kagemaru
+- 実施日: 2026-05-16
+- task_id: `cmd_training_codd_h1_kagemaru`
+- 対象: `scripts/archive_completed.sh`
+- 実行補足: 追加指示どおり、validate/measureは `timeout 600` 付きで実行した。
+
+### codd generate
+
+実行コマンド:
+
+```bash
+codd generate --wave 1 --path .
+```
+
+結果:
+
+```text
+wave_config not found. Auto-generating from requirements...
+wave_config generated from 11 requirement(s)
+Skipped: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Skipped: docs/governance/adr_batch_yaml_io.md (governance:adr-batch-yaml-io)
+Wave 1: 0 generated, 2 skipped
+```
+
+解釈: 既存の `docs/research/hayate_codd_L4_archive_completed_20260516.md` は `codd generate` の入力requirements/wave_configに接続されていないため、`archive_completed.sh` 固有の新規生成物は出なかった。`generate` は既存repo requirementsからwave_configを自動生成し、2件を既存出力としてskipした。
+
+### codd validate
+
+`generate` 直後の `codd/codd.yaml` はCoDD側で広域docs走査設定へ書き換わり、`timeout 600 codd validate --path .` は以下で失敗した。
+
+```text
+ERROR: 652 error(s), 11 blocked issue(s), 382 warning(s), 627 Markdown files checked
+```
+
+これは `archive_completed.sh` の設計品質ではなく、`generate` が `scan.doc_dirs` を `docs/` へ拡張した副作用である。さらに同時実行した `measure` では一時的に `codd/codd.yaml` が削除状態となり、`CoDD config dir not found` で失敗したため、この値は正式計測として採用しない。
+
+`codd/codd.yaml` を追完前の設定へ戻した後、再実行した正式結果:
+
+```bash
+timeout 600 codd validate --path .
+```
+
+```text
+OK: validated 16 Markdown files under configured doc_dirs
+```
+
+### codd measure
+
+復元後の正式結果:
+
+```bash
+timeout 600 codd measure --path . --json
+```
+
+```json
+{
+  "health_score": 95,
+  "graph": {
+    "total_nodes": 16,
+    "total_edges": 12,
+    "orphan_nodes": 4,
+    "max_depth": 1,
+    "avg_out_degree": 0.75,
+    "connectivity": 0.05
+  },
+  "coverage": {
+    "tracked_files": 0,
+    "source_files": 0,
+    "design_documents": 627,
+    "coverage_ratio": 0.0
+  },
+  "quality": {
+    "validation_errors": 0,
+    "validation_warnings": 0,
+    "policy_critical": 0,
+    "policy_warnings": 0,
+    "documents_checked": 16,
+    "files_policy_checked": 0,
+    "rules_applied": 0
+  }
+}
+```
+
+health_score: `95`
+
+### 追完結論
+
+`codd generate` は実行済みだが、既存研究メモはCoDD requirements/wave_configへ接続されていないため、`archive_completed.sh` 固有の設計書生成には至らなかった。`validate` と `measure` は、`generate` 副作用の設定変更を戻した状態でPASSし、正式なhealth_scoreは `95` である。
