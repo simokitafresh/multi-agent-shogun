@@ -1468,6 +1468,7 @@ remind_missing_current_cmd_lesson_after_clear() {
 
     remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} LS-A05"
     echo "REMIND: ${remind_msg}" >&2
+    echo "REMIND: 環境埋込み判定: 同じBLOCKを既存hookテンプレート注入で防止可能か、gate修正が必要かを判定せよ。" >&2
 }
 
 handle_cmd_save_exit() {

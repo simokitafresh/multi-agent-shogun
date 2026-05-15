@@ -233,6 +233,7 @@ YAML
     [[ "$output" == *"保存確認OK: cmd_curr"* ]]
     [[ "$output" == *"REMIND: cmd_currで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_curr LS-A05"* ]]
+    [[ "$output" == *"REMIND: 環境埋込み判定: 同じBLOCKを既存hookテンプレート注入で防止可能か、gate修正が必要かを判定せよ。"* ]]
 }
 
 @test "AC2: CLEAR時に現cmd BLOCK履歴あり + 教訓記録済み → REMINDなし" {
