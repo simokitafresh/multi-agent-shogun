@@ -60,9 +60,17 @@ config/projects.yaml を Read
 
 ```
 殿に確認: 「{project-id} は未登録です。新規登録しますか？」
-→ Yes → AC4 オンボーディングフロー実行 → 完了後 Step 2 へ
+→ Yes → AC4 オンボーディングフロー実行 → 完了後に CoDD 前提チェックを実行して Step 2 へ
 → No → 「中止しました」で終了
 ```
+
+オンボーディング完了時の必須チェック:
+
+```bash
+bash scripts/check_project_codd_ready.sh --path {new-project-path} {project-id}
+```
+
+`ALERT: codd ...` が出た場合は、`codd init --suggest-lexicons --llm-enhanced --dest {new-project-path}` と `codd lexicon install --path {new-project-path} shogun_core` を完了するまでPJ切替を続行しない。
 
 ### Step 2: 切替前チェック
 
@@ -76,6 +84,9 @@ config/projects.yaml を Read
 4. PJパスが実在するか確認:
    projects/{new-id}.yaml から path を取得 → ls で存在確認
    → 不在なら「PJパス {path} が存在しません」でエラー終了
+5. CoDD前提チェック:
+   `bash scripts/check_project_codd_ready.sh {new-id}`
+   → `ALERT: codd ...` が出たら、codd未設定またはlexicon未導入として切替前に修復する
 ```
 
 ### Step 3: current_project 更新
@@ -138,6 +149,7 @@ PJフォーカスを {old-name} → {new-name} に切り替えました。
 |------|------|
 | 未登録PJ | オンボーディングフロー提示（Step 1b） |
 | PJパス不在 | エラー表示 + 原因（パスが正しいか確認を促す） |
+| CoDD未設定 | `scripts/check_project_codd_ready.sh` のALERTを表示し、`codd init --suggest-lexicons --llm-enhanced` とlexicon導入を先に完了 |
 | 同一PJへの切替 | 「既に{id}がフォーカスです」で終了（無操作） |
 | claude_section.md 不在 | 雛形から自動生成して続行 |
 | CLAUDE.md内にPJ固有セクション不在 | Skills見出しの直前に新セクションを挿入 |
