@@ -136,3 +136,99 @@ Rationale:
 | AC1 | `report_field_set.sh` was read and a spec-like purpose, constraints, and scope were recorded in this file | yes |
 | AC2 | Elicit/lexicon-style requirement holes and coverage axes were listed despite the current lexicon command failure | yes |
 | AC3 | `validate`, `measure`, and related CoDD checks were run; design quality was scored and at least three improvements were identified | yes |
+
+## 8. CoDD Generate Results
+
+実行者: kagemaru
+日付: 2026-05-16
+task_id: `cmd_training_codd_loop2_kagemaru`
+対象: `scripts/report_field_set.sh`
+
+### AC1: generate
+
+コマンド:
+
+```bash
+timeout 1200 codd generate --wave 1 --force --path .
+```
+
+結果:
+
+```text
+Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)
+Wave 1: 2 generated, 0 skipped
+```
+
+観察: generateは成功し、2件生成・0件skipだった。ただし生成された2件はいずれも既存requirements/wave_config由来の汎用CoDD文書であり、`scripts/report_field_set.sh`専用の追加設計ではなかった。task ACは「既存md末尾に結果追記、別ファイル禁止」なので、生成物は副作用として記録し、最終成果物には含めない。
+
+### AC2: validate
+
+コマンド:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+結果:
+
+```text
+ERROR: 658 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+```
+
+主な失敗:
+
+| 種別 | 例 |
+|---|---|
+| duplicate node_id | `codd/design/*` と `docs/design/cmd_2762_*` の重複 |
+| missing frontmatter | `docs/research/*.md`、`docs/future/*.md` など広範 |
+| undefined node | `docs/governance/adr_batch_yaml_io.md` の `design:system-architecture` など |
+| wave_config mismatch | `docs/plan/implementation_plan.md`、`docs/research/cmd_2589_codd_acceptance_criteria.md` |
+| circular dependency | `docs/research/cmd_1991_codd_extract/modules/*` |
+
+判定: FAIL。現行`codd/codd.yaml`が`docs/`全体をdoc_dirsに含めているため、`report_field_set.sh`単体のvalidateではなく、既存Markdown群全体のCoDD整合性不備を検出している。
+
+### AC3: measure
+
+コマンド:
+
+```bash
+timeout 1200 codd measure --path . --json
+```
+
+結果:
+
+```json
+{
+  "health_score": 0,
+  "graph": {
+    "total_nodes": 16,
+    "total_edges": 12,
+    "orphan_nodes": 4,
+    "max_depth": 1,
+    "avg_out_degree": 0.75,
+    "connectivity": 0.05
+  },
+  "coverage": {
+    "tracked_files": 0,
+    "source_files": 0,
+    "design_documents": 628,
+    "coverage_ratio": 0.0
+  },
+  "quality": {
+    "validation_errors": 663,
+    "validation_warnings": 386,
+    "policy_critical": 0,
+    "policy_warnings": 0,
+    "documents_checked": 628,
+    "files_policy_checked": 0,
+    "rules_applied": 0
+  }
+}
+```
+
+health_score: 0
+
+### 追完結論
+
+`codd generate --wave 1 --force`は正常終了し、2件生成・0件skipだった。一方で、このR1 report_field_set成果物はCoDD requirements/wave_configに接続されておらず、生成結果は`report_field_set.sh`専用の追補ではなく汎用CoDD文書生成になった。validate/measureは`docs/`全体scanによりFAIL/health_score 0であり、次にやるべきことは`report_field_set.sh`専用requirement nodeとwave_configを作る、または追完訓練用のdoc_dirsを対象成果物に絞ることである。
