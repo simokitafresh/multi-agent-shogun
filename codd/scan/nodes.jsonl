@@ -1,8 +1,10 @@
 {"id": "design:script:cmd-save", "type": "design", "path": "codd/design/cmd_save_design.md", "name": "design:script:cmd-save"}
-{"id": "design:script:deploy-task", "type": "design", "path": "codd/design/deploy_task_design.md", "name": "design:script:deploy-task"}
+{"id": "design:script:deploy-task", "type": "design", "name": "design:script:deploy-task", "path": "codd/design/deploy_task_design.md"}
 {"id": "design:script:inbox-write", "type": "design", "path": "codd/design/inbox_write_design.md", "name": "design:script:inbox-write"}
 {"id": "design:script:ninja-monitor", "type": "design", "path": "codd/design/ninja_monitor_design.md", "name": "design:script:ninja-monitor"}
+{"id": "doc:script:cmd-save-brownfield", "type": "brownfield_report", "path": "codd/brownfield/cmd_save_brownfield.md", "name": "doc:script:cmd-save-brownfield"}
 {"id": "doc:script:deploy-task-brownfield", "type": "brownfield_report", "path": "codd/brownfield/deploy_task_brownfield.md", "name": "doc:script:deploy-task-brownfield"}
+{"id": "doc:script:inbox-write-brownfield", "type": "brownfield_report", "path": "codd/brownfield/inbox_write_brownfield.md", "name": "doc:script:inbox-write-brownfield"}
 {"id": "req:script:cmd-save", "type": "requirement", "path": "codd/requirements/cmd_save_requirements.md", "name": "req:script:cmd-save"}
 {"id": "req:script:deploy-task", "type": "requirement", "path": "codd/requirements/deploy_task_requirements.md", "name": "req:script:deploy-task"}
 {"id": "req:script:inbox-write", "type": "requirement", "path": "codd/requirements/inbox_write_requirements.md", "name": "req:script:inbox-write"}
