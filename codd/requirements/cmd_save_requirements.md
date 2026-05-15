@@ -5,6 +5,10 @@ codd:
   status: approved
   confidence: 0.9
   source: brownfield
+  depended_by:
+  - id: design:script:cmd-save
+    relation: satisfies
+    semantic: governance
   implementation:
   - scripts/cmd_save.sh
 ---
@@ -29,4 +33,3 @@ codd:
 - SR-1: Do not delegate a cmd while its gate state remains pending or blocked.
 - SR-2: Treat delegated commands as immutable; further design changes require a new cmd or explicit stop/reissue flow.
 - SR-3: Use flock and structured checks around shared queue files.
-
