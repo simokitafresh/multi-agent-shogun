@@ -386,6 +386,42 @@ cat "$SCRIPT_SIZE_TREND_LOG"
     [[ "$output" == *"timestamp"$'\t'"file"$'\t'"lines"$'\t'"functions"* ]]
 }
 
+@test "run_lock_cleanup deletes stale shogun locks with one configurable scan" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+LOG="$TMP_ROOT/monitor.log"
+LOCK_CLEANUP_DIR="$TMP_ROOT/locks"
+LOCK_CLEANUP_INTERVAL=3600
+LAST_LOCK_CLEANUP=0
+mkdir -p "$LOCK_CLEANUP_DIR"
+
+touch "$LOCK_CLEANUP_DIR/shogun_lock_old.lock"
+touch "$LOCK_CLEANUP_DIR/auto_deploy_old.lock"
+touch "$LOCK_CLEANUP_DIR/shogun_lock_new.lock"
+touch "$LOCK_CLEANUP_DIR/unrelated.lock"
+touch -d "2 hours ago" "$LOCK_CLEANUP_DIR/shogun_lock_old.lock" "$LOCK_CLEANUP_DIR/auto_deploy_old.lock"
+
+log() { echo "$1" >> "$LOG"; }
+
+run_lock_cleanup
+
+test ! -e "$LOCK_CLEANUP_DIR/shogun_lock_old.lock"
+test ! -e "$LOCK_CLEANUP_DIR/auto_deploy_old.lock"
+test -e "$LOCK_CLEANUP_DIR/shogun_lock_new.lock"
+test -e "$LOCK_CLEANUP_DIR/unrelated.lock"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LOCK-CLEANUP: Removed 2 stale lock files"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail

@@ -2223,12 +2223,13 @@ PYEOF
 # check_stale_cmds/check_undeployed_cmds/check_karo_pending_cmd が同一サイクル内で
 # 別々にpython3を起動するのを防ぐ。cycleが変わった時だけlist_pending_cmdsを再実行。
 list_pending_cmds_cached() {
-    if [ "$cycle" -eq "$_PENDING_CMDS_CACHE_CYCLE" ]; then
+    local current_cycle="${cycle:-0}"
+    if [ "$current_cycle" -eq "$_PENDING_CMDS_CACHE_CYCLE" ]; then
         [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
         return
     fi
     _PENDING_CMDS_CACHE=$(list_pending_cmds)
-    _PENDING_CMDS_CACHE_CYCLE=$cycle
+    _PENDING_CMDS_CACHE_CYCLE=$current_cycle
     [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
 }
 
@@ -3878,13 +3879,16 @@ run_lock_cleanup() {
     if [ "$elapsed" -lt "$LOCK_CLEANUP_INTERVAL" ]; then
         return 0
     fi
-    local count
-    count=$(find /tmp -maxdepth 1 -name "shogun_lock_*.lock" -mmin +60 2>/dev/null | wc -l)
-    count=$((count + $(find /tmp -maxdepth 1 -name "auto_deploy_*.lock" -mmin +60 2>/dev/null | wc -l)))
+    local cleanup_dir="${LOCK_CLEANUP_DIR:-/tmp}"
+    local deleted_paths count
+    deleted_paths=$(
+        find "$cleanup_dir" -maxdepth 1 -type f \
+            \( -name "shogun_lock_*.lock" -o -name "auto_deploy_*.lock" \) \
+            -mmin +60 -print -delete 2>/dev/null || true
+    )
+    count=$(printf '%s\n' "$deleted_paths" | awk 'NF {c++} END {print c+0}')
     if [ "$count" -gt 0 ]; then
-        find /tmp -maxdepth 1 -name "shogun_lock_*.lock" -mmin +60 -delete 2>/dev/null || true
-        find /tmp -maxdepth 1 -name "auto_deploy_*.lock" -mmin +60 -delete 2>/dev/null || true
-        log "LOCK-CLEANUP: Removed $count stale lock files from /tmp"
+        log "LOCK-CLEANUP: Removed $count stale lock files from $cleanup_dir"
     fi
     LAST_LOCK_CLEANUP=$now
 }
