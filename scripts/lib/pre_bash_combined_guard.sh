@@ -223,6 +223,104 @@ for segment in split_segments(command):
 PY
 }
 
+pre_bash_combined_destructive_approval_reason() {
+    local command="$1"
+    local project_root="$2"
+    local conversation_file="${PRE_BASH_LORD_CONVERSATION_FILE:-${project_root}/queue/lord_conversation.jsonl}"
+
+    COMMAND="$command" LORD_CONVERSATION_FILE="$conversation_file" python3 - <<'PY'
+import json
+import os
+import re
+import shlex
+
+command = os.environ.get("COMMAND", "")
+conversation_file = os.environ.get("LORD_CONVERSATION_FILE", "")
+
+
+def split_segments(cmd: str):
+    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+
+
+def destructive_families(cmd: str) -> list[str]:
+    families: list[str] = []
+    for segment in split_segments(cmd):
+        try:
+            tokens = shlex.split(segment, posix=True)
+        except ValueError:
+            continue
+        if len(tokens) < 2 or os.path.basename(tokens[0]) != "git":
+            continue
+        sub = tokens[1]
+        args = tokens[2:]
+        if sub == "push" and "--force-with-lease" in args:
+            families.append("force-with-lease")
+        if sub == "reset" and "--hard" in args:
+            families.append("reset-hard")
+        if sub == "clean":
+            for tok in args:
+                if tok == "--force" or (tok.startswith("-") and "f" in tok[1:] and tok != "-n"):
+                    families.append("git-clean-force")
+                    break
+    return families
+
+
+families = destructive_families(command)
+if not families:
+    raise SystemExit(0)
+
+approval_keywords = (
+    "承認", "許可", "実行してよい", "実行して良い", "やってよい", "やって良い",
+    "してよい", "して良い", "OK", "ok", "approved", "approve", "allowed",
+)
+family_keywords = {
+    "force-with-lease": ("force-with-lease", "force with lease", "force push", "強制push", "強制プッシュ", "push", "プッシュ"),
+    "reset-hard": ("reset --hard", "reset hard", "reset", "リセット"),
+    "git-clean-force": ("git clean", "clean -f", "clean --force", "clean", "クリーン"),
+}
+
+
+def entry_text(entry: dict) -> str:
+    return " ".join(
+        str(entry.get(key, ""))
+        for key in ("detail", "summary", "content", "message", "text")
+    )
+
+
+approved = False
+if conversation_file and os.path.exists(conversation_file):
+    try:
+        with open(conversation_file, encoding="utf-8") as fh:
+            for raw in fh:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    entry = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("direction") != "inbound":
+                    continue
+                text = entry_text(entry)
+                if not any(keyword in text for keyword in approval_keywords):
+                    continue
+                for family in families:
+                    if any(keyword in text for keyword in family_keywords[family]) or "破壊的" in text or "destructive" in text.lower():
+                        approved = True
+                        break
+                if approved:
+                    break
+    except OSError:
+        approved = False
+
+if not approved:
+    print(
+        "D010: destructive git operation requires explicit inbound Lord approval "
+        "in queue/lord_conversation.jsonl"
+    )
+PY
+}
+
 pre_bash_combined_eval_command() {
     local command="${1:-}"
     local project_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
@@ -231,6 +329,7 @@ pre_bash_combined_eval_command() {
     local recent_reads=""
     local lines=""
     local reason=""
+    local approval_reason=""
     local redirect_pattern tee_pattern python3_pattern mark_agent
 
     if [[ "$command" == *'filter-repo'* && "$command" != *'echo'* && "$command" != *'grep'* && "$command" != *'commit'* ]]; then
@@ -321,6 +420,12 @@ pre_bash_combined_eval_command() {
           "$command" != *'chmod'* && "$command" != *'chown'* && \
           "$command" != *'tmux kill'* ]]; then
         return 0
+    fi
+
+    approval_reason="$(pre_bash_combined_destructive_approval_reason "$command" "$project_root")"
+    if [[ -n "$approval_reason" ]]; then
+        pre_bash_combined_emit_deny "$approval_reason"
+        return 1
     fi
 
     reason="$(pre_bash_combined_destructive_reason "$command" "$project_root")"

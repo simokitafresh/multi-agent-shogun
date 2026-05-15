@@ -30,6 +30,106 @@ emit_deny() {
     exit 2  # exit 2 = intentional block (Codex CLI continues). exit 1 = hook error (Codex CLI crashes)
 }
 
+_pre_bash_self="${BASH_SOURCE[0]}"
+[[ "$_pre_bash_self" != /* ]] && _pre_bash_self="$PWD/$_pre_bash_self"
+SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
+unset _pre_bash_self
+
+destructive_approval_reason() {
+    local conversation_file="${PRE_BASH_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+    COMMAND="$command" LORD_CONVERSATION_FILE="$conversation_file" python3 - <<'PY'
+import json
+import os
+import re
+import shlex
+
+command = os.environ.get("COMMAND", "")
+conversation_file = os.environ.get("LORD_CONVERSATION_FILE", "")
+
+
+def split_segments(cmd: str):
+    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+
+
+def destructive_families(cmd: str) -> list[str]:
+    families: list[str] = []
+    for segment in split_segments(cmd):
+        try:
+            tokens = shlex.split(segment, posix=True)
+        except ValueError:
+            continue
+        if len(tokens) < 2 or os.path.basename(tokens[0]) != "git":
+            continue
+        sub = tokens[1]
+        args = tokens[2:]
+        if sub == "push" and "--force-with-lease" in args:
+            families.append("force-with-lease")
+        if sub == "reset" and "--hard" in args:
+            families.append("reset-hard")
+        if sub == "clean":
+            for tok in args:
+                if tok == "--force" or (tok.startswith("-") and "f" in tok[1:] and tok != "-n"):
+                    families.append("git-clean-force")
+                    break
+    return families
+
+
+families = destructive_families(command)
+if not families:
+    raise SystemExit(0)
+
+approval_keywords = (
+    "承認", "許可", "実行してよい", "実行して良い", "やってよい", "やって良い",
+    "してよい", "して良い", "OK", "ok", "approved", "approve", "allowed",
+)
+family_keywords = {
+    "force-with-lease": ("force-with-lease", "force with lease", "force push", "強制push", "強制プッシュ", "push", "プッシュ"),
+    "reset-hard": ("reset --hard", "reset hard", "reset", "リセット"),
+    "git-clean-force": ("git clean", "clean -f", "clean --force", "clean", "クリーン"),
+}
+
+
+def entry_text(entry: dict) -> str:
+    return " ".join(
+        str(entry.get(key, ""))
+        for key in ("detail", "summary", "content", "message", "text")
+    )
+
+
+approved = False
+if conversation_file and os.path.exists(conversation_file):
+    try:
+        with open(conversation_file, encoding="utf-8") as fh:
+            for raw in fh:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    entry = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("direction") != "inbound":
+                    continue
+                text = entry_text(entry)
+                if not any(keyword in text for keyword in approval_keywords):
+                    continue
+                for family in families:
+                    if any(keyword in text for keyword in family_keywords[family]) or "破壊的" in text or "destructive" in text.lower():
+                        approved = True
+                        break
+                if approved:
+                    break
+    except OSError:
+        approved = False
+
+if not approved:
+    print(
+        "D010: destructive git operation requires explicit inbound Lord approval "
+        "in queue/lord_conversation.jsonl"
+    )
+PY
+}
+
 # === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
 # コマンド呼出し位置(行頭 or ;|&&||| の後)のみマッチ。引数内の文字列は無視。
 # 旧: payload全文+command全文マッチ→report_field_set.sh引数で誤発火(cmd_2397事故)
@@ -179,10 +279,10 @@ fi
 # Dangerous keyword detected — extract command and run python3 checker
 [[ -z "${command:-}" ]] && exit 0
 
-_pre_bash_self="${BASH_SOURCE[0]}"
-[[ "$_pre_bash_self" != /* ]] && _pre_bash_self="$PWD/$_pre_bash_self"
-SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
-unset _pre_bash_self
+approval_reason="$(destructive_approval_reason)"
+if [[ -n "$approval_reason" ]]; then
+    emit_deny "$approval_reason"
+fi
 
 reason="$(
     COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'

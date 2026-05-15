@@ -9,9 +9,21 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/scripts/lib/pre_bash_combined_guard.sh"
 
+APPROVAL_FILE="$(mktemp)"
+export PRE_BASH_LORD_CONVERSATION_FILE="$APPROVAL_FILE"
+trap 'rm -f "$APPROVAL_FILE"' EXIT
+
 PASS=0
 FAIL=0
 TOTAL=0
+
+clear_lord_approval() {
+    : > "$APPROVAL_FILE"
+}
+
+write_lord_approval() {
+    printf '%s\n' '{"direction":"inbound","detail":"git push --force-with-lease を承認。実行してよい。"}' > "$APPROVAL_FILE"
+}
 
 # Test that command is ALLOWED (exit 0 AND no deny in output)
 expect_allow() {
@@ -92,7 +104,10 @@ expect_block "D002: rm -rf /tmp"            "rm -rf /tmp/something"
 # D003: git push --force
 expect_block "D003: git push --force"       "git push --force origin main"
 expect_block "D003: git push -f"            "git push -f origin main"
-expect_allow "D003: --force-with-lease OK"  "git push --force-with-lease origin feature"
+clear_lord_approval
+expect_block "D010: --force-with-lease without Lord approval" "git push --force-with-lease origin feature"
+write_lord_approval
+expect_allow "D010: --force-with-lease with Lord approval"    "git push --force-with-lease origin feature"
 
 # D004: git reset/checkout/restore/clean
 expect_block "D004: git reset --hard"       "git reset --hard HEAD"
