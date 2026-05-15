@@ -5,6 +5,10 @@ codd:
   status: approved
   confidence: 0.9
   source: brownfield
+  depended_by:
+  - id: design:script:ninja-monitor
+    relation: satisfies
+    semantic: governance
   implementation:
   - scripts/ninja_monitor.sh
 ---
