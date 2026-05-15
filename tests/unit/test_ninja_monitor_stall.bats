@@ -422,6 +422,37 @@ cat "$LOG"
     [[ "$output" == *"LOCK-CLEANUP: Removed 2 stale lock files"* ]]
 }
 
+@test "build_pane_head_tail_excerpt filters blanks and keeps head tail in one pass" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+TEST_BIN="$TMP_ROOT/bin"
+mkdir -p "$TEST_BIN"
+export PATH="$TEST_BIN:$PATH"
+cat > "$TEST_BIN/tmux" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+if [ "$1" = "capture-pane" ]; then
+  printf "\nline01\nline02\nline03\nline04\nline05\nline06\nline07\nline08\nline09\nline10\nline11\nline12\n\n"
+fi
+EOF
+chmod +x "$TEST_BIN/tmux"
+
+build_pane_head_tail_excerpt "dummy"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[pane head 5]"* ]]
+    [[ "$output" == *"line01"$'\n'"line02"$'\n'"line03"$'\n'"line04"$'\n'"line05"* ]]
+    [[ "$output" == *"[pane tail 5]"* ]]
+    [[ "$output" == *"line08"$'\n'"line09"$'\n'"line10"$'\n'"line11"$'\n'"line12"* ]]
+    [[ "$output" != *"line06"$'\n'"line07"* ]]
+}
+
 @test "check_karo_idle_cycle counts snapshot and pipeline with numeric awk results" {
     run bash -lc '
 set -euo pipefail
