@@ -348,8 +348,8 @@ try:
     tt = str(t.get('task_type', ''))
     if 'backend' in tp and tt in ('impl', 'fix'):
         print('be_impl')
-except: pass
-" 2>/dev/null || true)
+except OSError: pass
+" || true)
     fi
     if [ "$TASK_TYPE" = "be_impl" ]; then
         # 報告のdetails/summaryにgolden/snapshot/ゴールデン/パリティの記述があるか

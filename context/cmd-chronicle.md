@@ -803,3 +803,5 @@
 | cmd_2796 | codd.yamlのsource_dirs(src/)が存在せず、doc_dirs(docs/)が研究ノート613件を設計書として取り込みhealth_score=0(662 errors)。source_dirsをscripts/に、doc_dirsをcodd/配下のみに修正し、codd measureのhealth_scoreを正常化する | infra | 05-16 | codd/codd.yamlのscan対象をscripts/ |
 | cmd_2797 | gate_context_freshness.shがALERT時に毎回ntfy送信するが、ninja_monitorが5分間隔で実行するためcontextが古いまま5分ごとに同じALERTが殿に送信されrate limitに到達した。同一ALERTの重複送信を抑止する | infra | 05-16 | gate_context_freshness.shの同一AL |
 | cmd_2798 | gate_context_freshness.shが安定context(軍師分析索引/設計ガイド/完成済み知見等)に14日ルールを一律適用し20件以上のALERTを出し続ける。安定contextを除外リストで管理し鮮度チェック対象から外す。cmd_2797(重複抑止)は安全網として維持 | infra | 05-16 | context鮮度チェックに除外リストファイルを導入し、安定 |
+| cmd_2800 | report_field_set.shがself_gate_checkにPASS/FAILをトップレベルscalarで書くとdict構造がscalarに上書きされgate FAILを引き起こす。全忍者で22件発生(kagemaru25/hayate16/saizo15)。dot notation必須化でdict構造を保護する | infra | 05-16 | self_gate_checkのトップレベルscalar書込 |
+| cmd_2799 | deploy_task.shが更新されたがskills/karo-direct/SKILL.mdが追従していない。gate_skill_script_refs.shが3セッション連続WARNでstartup BLOCK昇格。SKILL.mdの記述をdeploy_task.shの現在の動作に合わせて更新する | infra | 05-16 | skills/karo-direct/SKILL.mdをde |

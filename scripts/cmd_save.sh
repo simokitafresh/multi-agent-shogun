@@ -308,7 +308,7 @@ check_gate_hook_action_conversion() {
             next
         }
         in_command && /^[[:space:]]{4,}/ { print; next }
-        in_ac && /^[[:space:]]{6,}-/ { print; next }
+        in_ac && /^[[:space:]]{6,}/ { print; next }
     ')"
 
     [[ -n "${action_text:-}" ]] || return 0

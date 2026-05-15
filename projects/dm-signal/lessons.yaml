@@ -1594,7 +1594,7 @@ lessons:
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   when: 同種の作業・判断・検証を行う時
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
 - id: L594
@@ -1716,9 +1716,9 @@ lessons:
   summary: cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_sear
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: AC作成時に出力先パスの確認が必要
   target_files:
   - tasks/lessons.md
@@ -1740,9 +1740,9 @@ lessons:
   summary: 119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: Linux filesystemへ一時出力してから移動するか、分割・圧縮出力を設計に入れ、flush完了と終了コードを別途確認する
   target_files:
   - tasks/lessons.md
@@ -1843,7 +1843,7 @@ lessons:
   - universal
   helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '修正: pd.Series保存+get_momentum_value_at_date(bisect)に統一'
   target_files:
   - queue/tasks/kotaro.yaml
@@ -1956,6 +1956,9 @@ lessons:
   - scripts/analysis/alm_research/cmd_1763_objective_ranking.py
   - outputs/analysis/alm_research/cmd_1761_full_metrics.yaml
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L564
   title: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更できる
   summary: cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matri
@@ -2134,7 +2137,7 @@ lessons:
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: '2026-04-04'
@@ -2155,7 +2158,7 @@ lessons:
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
   tags:
   - universal
-  helpful_count: 8
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: bulk metrics用prepared frameのRFは各PFの実date軸に対して個別解決せよ
@@ -2681,7 +2684,7 @@ lessons:
   summary: 'commit d49a9174がis_kalman_metaガードを除去した際、prev_ward_weightsが全FoFで更新される副作用が発生。Ward '
   tags:
   - git
-  helpful_count: 4
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: ガード条件変更時はそのガードが保護していた全変数のスコープを確認すべき
@@ -2695,7 +2698,7 @@ lessons:
     BECAUSE c
   tags:
   - universal
-  helpful_count: 29
+  helpful_count: 35
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: そのガードが保護していた全変数のスコープと副作用を確認せよ
@@ -3660,7 +3663,7 @@ lessons:
   summary: 今回は事故契機の一括チェックだが、pipeline_config欠落のような設定不備は保存時に混入しうる。月次or四半期で自動実行し、早期検出するのが望ましい。
   tags:
   - pipeline
-  helpful_count: 5
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 全PF健全性スイープを月次または四半期の定期実行候補にし、保存時混入を早期検出する
@@ -4308,7 +4311,7 @@ lessons:
   summary: snapshot未固定のhistorical CSV比較ではnear-match帯(差分0.01以下)を設け、同一snapshot pinned時だけ完全一致を
   tags:
   - db
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-17'
@@ -4346,7 +4349,7 @@ lessons:
   summary: 本番DB確認はPostgreSQL必須。SQLiteミラー(backend/static/data/dm_signal.db)は不完全。加速FoFが本番3体/S
   tags:
   - db
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 本番DB確認はPostgreSQL必須
@@ -4449,6 +4452,9 @@ lessons:
   - git
   how: GSで大規模パターン数のmonthly returns CSVを出力する場合、push前にファイルサイズ確認+Git LFS or 圧縮対策が必要
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L348
   title: 長lookbackを含むL1 GSは nominal period ではなく live common period を先に固定せよ
   summary: IF 24M 等の長lookbackを含む family GS を full run する THEN 設計書の概算期間を鵜呑みにせず、代表最長patternを実
@@ -4521,7 +4527,7 @@ lessons:
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
   tags:
   - testing
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_output)を変えるため、Stage2パラメータ変動より遥かに大きなSharpe変動を引き起こす
@@ -4544,7 +4550,7 @@ lessons:
   tags:
   - db
   - api
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 非同期get()ではなくapiCache.has(key)でメモリTTLとIndexedDB manifestを確認し、ETag送信前のガードに使う
@@ -4620,9 +4626,9 @@ lessons:
   - db
   - api
   - frontend
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: browser cache に UUID 生値の FoF /api/signals payload が残っていたら、その cache 自体を信用せず
     fresh fetch へ倒す防御が必要
   when: DB・データ取得・永続化に関わる作業を行う時
@@ -4681,6 +4687,9 @@ lessons:
   - scripts/analysis/p_bar_window_backtest.py
   - backend/app/api/p_average.py
   when: n_splits=5でmpf=1にすると各foldが1サンプルとなりttest_1sampの統計量がNaN→_calc_chunk_p_value()で1.0扱いになる
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L327
   title: 短窓BT reportは実効保有数を条件欄に明示せよ
   summary: IF p̄ tie cutoffでselected_count > top_nが起こりうるBT reportを作る THEN 条件欄の固定文言(top_n=2,
@@ -4827,9 +4836,9 @@ lessons:
   tags:
   - api
   - bash
-  helpful_count: 2
+  helpful_count: 6
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: ETagはカスタムヘッダのためexpose_headers設定が必須
   when: frontend/UIの表示・状態管理を変更する時
 - id: L313
@@ -5038,7 +5047,7 @@ lessons:
   tags:
   - grid-search
   - architecture
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-12'
@@ -5157,7 +5166,7 @@ lessons:
     bre
   tags:
   - testing
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: レジーム検出を追加する場合は『break 検出』と『break 後の悪化方向判定』を分離しないと、改善方向の regime shift まで deterioration
@@ -5185,7 +5194,7 @@ lessons:
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 確率値だけでなく頻度リフレーミングと百分位ランクを併記し、過信を誘発しない表現にする
@@ -5235,7 +5244,7 @@ lessons:
   tags:
   - recon
   - gate
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '2026-03-12'
@@ -5296,7 +5305,7 @@ lessons:
   summary: Chrome/Edgeが通常起動中でもremote-debugging-portは未開通のことがある。CDP preflightはprocess検知後も/jso
   tags:
   - process
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: CDP preflightはprocess検知後も/json/versionを確認し、port deadならuser-data-dir分離で自動起動を再試行する方が計測安定性が高い
@@ -5318,7 +5327,7 @@ lessons:
   tags:
   - security
   - oauth
-  helpful_count: 5
+  helpful_count: 9
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
@@ -5426,9 +5435,9 @@ lessons:
   tags:
   - api
   - frontend
-  helpful_count: 1
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: route層でpreloaded mapを作って注入する設計が必要
   target_files:
   - frontend/src/
@@ -5814,6 +5823,9 @@ lessons:
   - universal
   how: ADMIN_USER/ADMIN_PASSのような必要キーだけ grep '^KEY=' | cut -d= -f2- で抜く方式が安全
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L222
   title: summarize_runs()のfloat出力をshell整数比較に渡す時はint変換必須
   summary: statistics.median/meanはfloatを返すため、JSON経由でshellに渡す際にint()変換が必要。 bash [ "$var"
@@ -6005,9 +6017,9 @@ lessons:
   tags:
   - deploy
   - testing
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: cmd_668でusePrefetch.tsへyears=0を追加しても、本番PF切替9.3-9.7秒、ページ遷移9.3-9.5秒
   when: タスク配備やデプロイ手順を変更・実行する時
 - id: L206
@@ -6024,7 +6036,7 @@ lessons:
   summary: cmd_645(Content-Type書き換え)とcmd_646(API SWRキャッシュ)は同じsw.jsへの変更。統合実装で1回のSW更新により「SPA遷
   tags:
   - api
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: 個別に実装すると2回のSW更新(CACHE_NAME 2回インクリメント)が必要で非効率
@@ -6379,7 +6391,7 @@ lessons:
   tags:
   - db
   - git
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: PostgreSQL固有のINSERT ON CONFLICTより、SQLAlchemyのdb.merge()がORM UPSERTとして簡潔で保守性が高い
@@ -6454,7 +6466,7 @@ lessons:
   tags:
   - testing
   - process
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 今回、_deprecated移動後の復元容易性(AC7)は差分ゼロ主張だけでは弱い
@@ -6688,7 +6700,7 @@ lessons:
   tags:
   - frontend
   - gate
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: block_registryのshared.py一元化(2026-01-05)後、troubleshooting.mdの
@@ -6743,6 +6755,9 @@ lessons:
   target_files:
   - backend-deep-dive.md
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L135
   title: L010
   summary: IF L010を実装・検証する時 THEN deprecated deprecated
@@ -6929,7 +6944,7 @@ lessons:
   summary: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: best base modelを基準にOOF確率の相関とメタ学習後precisionを比較し、改善しなければ単体モデルを採用する
@@ -7047,7 +7062,7 @@ lessons:
   - deploy_task.sh
   - archive_completed.sh
   when: 報告YAMLやレビュー結果を作成・検証する時
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
 - id: L102
@@ -7063,7 +7078,7 @@ lessons:
   tags:
   - frontend
   - gate
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: Phase3のmomentum_cache事前計算に頼らず、FoF再計算ループ内のComponentPriceBlock出力またはGS側cumulative_return直接計算に合わせる
@@ -7099,7 +7114,7 @@ lessons:
   summary: L124-131の行数ベース判定(len<base*5)は月次データ168-192行を日次と誤判定する。同一ファイルL144に既存のis_monthly_dat
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 行数ヒューリスティックではなくis_monthly_data()で頻度判定し、月次168-192行を日次扱いしないようにする
@@ -7200,9 +7215,9 @@ lessons:
   tags:
   - deploy
   - grid_search
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 本番は504日分の日次データが揃うまでCash(≈0%リターン)
   when: 本番は504日分の日次データが揃うまでCash(≈0%リターン)時
 - id: L086
@@ -7280,7 +7295,7 @@ lessons:
   tags:
   - api
   - deploy
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: ウォームアップGET後にPF間でリトライと30秒待機を入れ、409は前回sync完了待ちとして扱う
@@ -7292,7 +7307,7 @@ lessons:
   - universal
   helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 問題PFのバリデーションを分離し、FoF recalcは必要に応じて_recalculate_fof_history()直接呼出しで単一障害点を回避する
   when: PortfolioRepository.load()がNoneを返す、または1PFのvalidation errorで全PF再計算が停止する時
 - id: L077
@@ -7401,7 +7416,7 @@ lessons:
   - deploy
   - yaml
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '将軍が揺れた論点(殿が決定した事項)は必ず3箇所に恒久化する: (1)MCP Memory(将軍教訓として) (2)projects/*.yaml(PJ核心知識として)
@@ -7643,7 +7658,7 @@ lessons:
   summary: IF sync_lessons.shを実施する時 THEN cmd_137 cmd_137
   tags:
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: cmd_137
@@ -7671,7 +7686,7 @@ lessons:
   - api
   - frontend
   - pipeline
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: UPDATE方式(既存PFにpipeline_config付与+/api/portfolios/saveで一括保存)でUUID維持しつつ設定変更が安全かつ確実

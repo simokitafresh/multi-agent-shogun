@@ -836,9 +836,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L598: gate種別ごとにmissingの失敗意味を分ける（cmd_2686）
 - L599: gate種別ごとにmissing失敗意味を分離(待てば進む vs 止めるべき)（cmd_2686）
 - L600: 外部パスdrift修正cmdは検出根拠の個別パスをタスクYAMLへ注入せよ（cmd_2690）
-- L601: drift検出cmdは個別パスをtask YAMLに注入せよ（cmd_2690）
 - L602: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす（cmd_2691）
-- L603: karo_directのtraining配備はdeploy_task.sh --directを使え(手動YAML禁止)（cmd_2691）
 - L604: gate_report_format_main.pyをlookup APIとして活用するパターン（cmd_2698）
 - L605: gate FIXヒント→スキル防止ステップ自動転写の知識伝播パターン（cmd_2698）
 - L606: cmd_complete_gate.shのpython3 heredocはevalと組み合わせてshlex.quote済み変数をbash変数化できる（cmd_2697）

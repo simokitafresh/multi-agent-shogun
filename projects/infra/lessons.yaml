@@ -293,7 +293,7 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_karo_skillmd_test_mapping.yaml
   when: テスト設計・実行・結果判定を行う時
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
 - id: L594
@@ -425,9 +425,9 @@ lessons:
   - gate
   - bash
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: gateはflow-style id/when/howを読み、未設定を充足扱いしないチェックを持つべき
   target_files:
   - /mnt/c/Python_app/DM-signal/tasks/lessons.md
@@ -455,9 +455,9 @@ lessons:
   - infra
   - gate
   - bash
-  helpful_count: 2
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: set +eで実行→終了コード保存→set -e復帰の形にする
   target_files:
   - scripts/gates/gate_gunshi_cs_checklist.sh
@@ -584,7 +584,7 @@ lessons:
   - reporting
   helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する
   target_files:
   - scripts/skill_gate_feedback.sh
@@ -707,6 +707,9 @@ lessons:
   target_files:
   - semantic_index_update.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L564
   title: CI上の実行ビット差はgit indexで確認し、bash起動するスクリプトは-x依存にしない
   summary: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script"
@@ -900,7 +903,7 @@ lessons:
   tags:
   - infra
   - deploy
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: is_direct=sys.argv[2]=='true'で判定しacceptance_criteriaリセットを条件付き追加
@@ -930,7 +933,7 @@ lessons:
   - recon
   - process
   - yaml
-  helpful_count: 8
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する
@@ -1472,7 +1475,7 @@ lessons:
     on
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-04-18'
@@ -1484,7 +1487,7 @@ lessons:
   summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
   tags:
   - universal
-  helpful_count: 29
+  helpful_count: 35
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: '''# skip''パターンを明示的に追加する必要がある'
@@ -2230,7 +2233,7 @@ lessons:
   - process
   - bash
   - yaml
-  helpful_count: 5
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: bash parameter expansion(${var//pattern/replacement})で書込み前にエスケープせよ
@@ -2806,7 +2809,7 @@ lessons:
   - gate
   - monitor
   - reporting
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-31'
@@ -2848,7 +2851,7 @@ lessons:
   - process
   - yaml
   - lesson
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: CLAUDE.md明記のyaml.dump禁止規則に抵触
@@ -2938,6 +2941,9 @@ lessons:
   target_files:
   - ci_status_check.sh
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L348
   title: --strategicフラグ検出は位置引数ではなくスキャン方式にすべき
   summary: lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)は
@@ -3017,7 +3023,7 @@ lessons:
   tags:
   - bash
   - git
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
@@ -3037,7 +3043,7 @@ lessons:
   tags:
   - bash
   - yaml
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '2026-03-31'
@@ -3107,9 +3113,9 @@ lessons:
   summary: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
   tags:
   - bash
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-03-31'
   when: 同種の作業・判断・検証を行う時
 - id: L332
@@ -3157,6 +3163,9 @@ lessons:
   - tmux
   how: '2026-03-31'
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L327
   title: ハードコード値は動的取得済みデータの活用漏れを疑え
   summary: dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動
@@ -3310,9 +3319,9 @@ lessons:
   tags:
   - gate
   - lesson
-  helpful_count: 2
+  helpful_count: 6
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のfallback
   target_files:
   - cmd_complete_gate.sh
@@ -3477,7 +3486,7 @@ lessons:
   - yaml
   - git
   - inbox
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行し、外部プロジェクト(DM-signal等)のファイル変更を検出できなかった
@@ -3572,7 +3581,7 @@ lessons:
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
   tags:
   - yaml
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: yaml.safe_loadは成功するがninja名はdetail/root_causeテキストから日本語名romajiマッピングで抽出必要
@@ -3606,7 +3615,7 @@ lessons:
   - process
   - gate
   - yaml
-  helpful_count: 6
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: gate_shogun_startup.shと同様のfallback regex parserが必須
@@ -3660,7 +3669,7 @@ lessons:
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
   tags:
   - gate
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: PostToolUseは事後実行のためpermissionDecision:denyが効かない
@@ -3735,7 +3744,7 @@ lessons:
   target_files:
   - inbox_write.sh
   when: gateやhookの検知・補正ロジックを変更する時
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
 - id: L275
@@ -3755,7 +3764,7 @@ lessons:
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
   tags:
   - gate
-  helpful_count: 5
+  helpful_count: 9
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること
@@ -3871,9 +3880,9 @@ lessons:
   - gate
   - bash
   - git
-  helpful_count: 1
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-03-20'
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L261
@@ -4261,6 +4270,9 @@ lessons:
   - inbox
   how: 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STOP)。長手順は短名原則にパック化(Named Invariants)
   when: gate/スクリプトのエラー出力を設計する
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L222
   title: 'deploy_task.sh既定値補完: empty sentinelテスト必須'
   summary: IF deploy_task.shが未設定/空文字/空リストを既定値へ補完する仕様を持つ THEN テストはmissing/Noneだけでなく空文字と空リストの
@@ -4436,9 +4448,9 @@ lessons:
   tags:
   - gate
   - yaml
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 空判定にはこのリテラル値のcase文マッチが必要
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L206
@@ -4457,7 +4469,7 @@ lessons:
   - bash
   - monitor
   - tmux
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: idle state は必ず capture-pane または pstree 等の第二証跡と突合せるべし
@@ -4780,7 +4792,7 @@ lessons:
   tags:
   - deploy
   - bash
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-06'
@@ -4853,7 +4865,7 @@ lessons:
   summary: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
   tags:
   - bash
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: set -euのみ使用しpipefailは使うな
@@ -5065,7 +5077,7 @@ lessons:
   - process
   - gate
   - lesson
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: revert対象を明示し、scope内差分を保持した最小修正で再提出させよ
@@ -5121,6 +5133,9 @@ lessons:
   - lesson
   how: has_found_true変数のスコープがif/else両ブロックで有効か確認せよ
   when: preflight_gate_flagsのupgradeロジックを修正する時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L135
   title: build_instructions.sh は --help 指定でも生成処理を実行する
   summary: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
@@ -5337,7 +5352,7 @@ lessons:
   tags:
   - gate
   - monitor
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-01'
@@ -5443,7 +5458,7 @@ lessons:
   - pipeline
   - gate
   - wsl2
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: DM-signal側2スキルがskill.md小文字で配置
@@ -5470,7 +5485,7 @@ lessons:
   tags:
   - gate
   - yaml
-  helpful_count: 3
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 実装前にファイル形式を確認せよ
@@ -5511,7 +5526,7 @@ lessons:
   - bash
   - yaml
   - reporting
-  helpful_count: 3
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-02-27'
@@ -5616,9 +5631,9 @@ lessons:
   tags:
   - gate
   - lesson
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-02-27'
   target_files:
   - knowledge_metrics.sh
@@ -5710,7 +5725,7 @@ lessons:
   - gate
   - bash
   - lesson
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない
@@ -5725,7 +5740,7 @@ lessons:
   - gate
   helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 65%(214件)がmissing_gate(archive/lesson/review_gate)=家老の処理順序とゲート実行タイミングの不一致
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L077
@@ -5845,7 +5860,7 @@ lessons:
   summary: integration,yaml-key-mismatch,dry-run-limitation
   tags:
   - api
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-02-26'
@@ -6092,7 +6107,7 @@ lessons:
   - testing
   - knowledge
   - gate
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた
@@ -6125,7 +6140,7 @@ lessons:
   tags:
   - testing
   - gate
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 検証時は運用データに副作用を与え得るため、隔離データまたは明示dry-run設計が望ましい

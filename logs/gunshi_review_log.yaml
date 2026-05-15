@@ -252,3 +252,107 @@
   lesson_quality: OK
   causal_chain: "除外リスト導入→安定context ALERT 39件→0件。非除外は従来通り。根本対処完了=正の複利"
   timestamp: "2026-05-16T09:05:00"
+- cmd_id: idle_nazenaze_self_gate_check_str_20260516
+  review_type: self_study
+  findings_summary: "なぜなぜ7回: self_gate_check str型バグ。report_field_set.shがself_gate_checkトップレベルscalar受付→dict消失→gate FAIL 22件。修正案=トップレベルBLOCK+dot notation必須"
+  observations:
+    - "再現確認: report_field_set.sh <report> self_gate_check PASS → dict→str上書き。gate FAIL"
+    - "22件FAIL、全忍者(kagemaru25/hayate16/saizo15/kotaro2/hanzo2)。training 11件+non-training 11件"
+    - "21件は忍者自力修正(8-17秒)で回復。無駄サイクルだが本番影響なし"
+  cs_checklist: "CS1:全量(gate_fire_log 934件走査+22件特定) CS2:自データ(再現テスト実行) CS3:コード比較(report_field_set.sh L191-196+yaml_field_set.sh+gate_report_format_main.py L491-494) CS4:行動変換(永続化+掲示板+cmd起票要請) CS5:次(修正cmd) CS6:因果(scalar受付→dict消失→FAIL→手動修正→無駄。BLOCK→dict保持=正の複利)"
+  causal_chain: "忍者がself_gate_check PASS→report_field_set受付→yaml_field_setがdict→scalar→gate FAIL→手動修正8-17秒。トップレベルBLOCK→22件/月根絶=正の複利"
+  timestamp: "2026-05-16T09:20:00"
+- cmd_id: cmd_karo_ci_fix_freshness_test
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_freshness_test_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions]
+  findings_summary: "4観点OK。exclude list symlinkをfixtureに追加。bats filter1件+全36件PASS skip0"
+  observations:
+    - "cmd_2798(除外リスト導入)後にテスト28がexclude list不在でFAIL→fixture修正"
+    - "tests/helpers/cmd_gate_scaffold.bashにsymlink追加のみ。最小変更"
+  lesson_quality: OK
+  causal_chain: "cmd_2798除外リスト導入→テストfixtureにリスト不在→FAIL→symlink追加→36件PASS"
+  timestamp: "2026-05-16T09:30:00"
+- cmd_id: idle_nazenaze_deploy_yaml_parse_20260516
+  review_type: self_study
+  findings_summary: "なぜなぜ7回: deploy_task.sh YAML parse error。_sv()マルチラインインデント固定2sp→ネスト3+でYAML崩壊→教訓注入/AC検証/NINJA_WP全スキップ(silent failure)。3回発生。修正案=インデント連動+失敗通知"
+  observations:
+    - "deploy_task.log 3回parse error(05-15 23:01/23:39/23:46)。全てkagemaru.yaml。エラー行が毎回異なる(31/24/45)"
+    - "_safe_section_replace(L3915)テキストベースYAML置換。_sv(L3867)マルチライン='  '+ln固定→ネスト深度無視"
+    - "silent failure: except→continue→教訓注入スキップ→忍者に通知なし。deploy_task.logを読まない限り発見不可能"
+  cs_checklist: "CS1:全量(deploy_task.log 14 ERROR全件読了) CS2:自データ(3回parse error+現行kagemaru.yaml) CS3:コード比較(deploy_task.sh L3856-3935精読) CS4:行動変換(永続化+掲示板+cmd起票要請) CS5:次(修正cmd+silent failure通知) CS6:因果(_sv固定indent→YAML崩壊→silent skip→品質低下)"
+  causal_chain: "_sv()2sp固定→ネスト3+でYAML崩壊→except catch→silent continue→教訓注入/AC検証スキップ→忍者品質低下(unseen)。インデント連動+失敗通知→silent failure根絶=正の複利"
+  timestamp: "2026-05-16T09:50:00"
+- cmd_id: cmd_2799
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "6観点OK。karo-direct/SKILL.md追従更新。gate_skill_script_refs.sh WARN解消。ドキュメントのみ"
+  observations:
+    - "cmd_2793でSKILL.md 3件更新→cmd_2794配備でdeploy_task.sh mtime更新→karo-direct再乖離"
+    - "AC2個、ドキュメント更新のみ。実行影響なし"
+  ambiguity_points: none
+  causal_chain: "deploy_task.sh更新→mtime新→SKILL.md乖離→WARN→追従更新→WARN解消=正の複利"
+  timestamp: "2026-05-16T10:05:00"
+- cmd_id: cmd_2800
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。self_gate_checkトップレベルBLOCK化。22件FAIL根絶。dot notation維持"
+  observations:
+    - "軍師なぜなぜ発見(self_gate_check str型バグ)の修正cmd。再現手順確認済み"
+    - "不正パスのみBLOCK。既存dot notation書込みは動作変更なし"
+  ambiguity_points: none
+  causal_chain: "scalar受付→dict消失→22件FAIL→BLOCK化→dict構造保護=正の複利"
+  timestamp: "2026-05-16T10:10:00"
+- cmd_id: cmd_2801
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。_sv()インデント連動修正+ERROR時通知。3回parse error(silent failure)根絶。risk:medium適切"
+  observations:
+    - "軍師なぜなぜ発見(deploy_task.sh YAML parse error)の修正cmd。L3867の2sp固定が根因"
+    - "AC2: ERROR時inbox通知追加でsilent failure可視化。ネスト2以下は動作変更なし"
+  ambiguity_points: none
+  causal_chain: "_sv()2sp固定→ネスト3+崩壊→silent skip。インデント連動+通知→silent failure根絶=正の複利"
+  timestamp: "2026-05-16T10:10:00"
+- cmd_id: cmd_2800
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2800_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。トップレベルBLOCK+dot notation保持。batsテスト追加。22件FAIL根絶"
+  observations:
+    - "report_field_set.sh self_gate_check分岐にトップレベルkey判定追加。最小変更"
+    - "batsにscalar拒否+dot notation dict保持の2テスト追加。commit 63cc7781"
+  lesson_quality: OK
+  causal_chain: "軍師なぜなぜ→scalar受付バグ発見→将軍cmd→忍者BLOCK実装→22件FAIL根絶=利他サイクル完走"
+  timestamp: "2026-05-16T10:20:00"
+- cmd_id: cmd_2801
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2801_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。_sv()ネスト深度連動+失敗通知ハンドラ。bats回帰テスト新設。silent failure根絶"
+  observations:
+    - "_sv()にmultiline_indent追加、_yaml_lines/_list_item 3箇所修正。通知ハンドラはset -e非停止設計"
+    - "bats test_deploy_task_yaml_injection.bats新設。ネスト3+parse error消滅確認"
+  lesson_quality: OK
+  causal_chain: "軍師なぜなぜ→_sv()バグ発見→将軍cmd→忍者修正→parse error根絶+silent failure可視化=利他サイクル完走"
+  timestamp: "2026-05-16T10:25:00"
