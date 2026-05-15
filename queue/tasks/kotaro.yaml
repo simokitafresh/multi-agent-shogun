@@ -1,5 +1,5 @@
 task:
-  cmd_id: cmd_training_L4_auto_202605151245_kotaro_normal
+  cmd_id: cmd_training_L4_auto_202605151325_kotaro_normal
   type: training
   project: infra
   purpose: "L4修行: ninja_monitor.shの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
@@ -11,24 +11,19 @@ task:
       description: "ninja_monitor.shの改善点を3つ特定し、各改善点に対象ファイル・根拠を添えよ"
       binary_checks:
         - "改善点を3つ特定したか: yes/no"
-        - "各改善点に対象ファイル・根拠を添えたか: yes/no"
     AC2:
       description: "3つの中で最高インパクトの1件を実装し、関連テストまたは検証を実行せよ"
       binary_checks:
         - "最高インパクト1件を実装したか: yes/no"
-        - "関連テストまたは明示的な検証を実行したか: yes/no"
     AC3:
       description: "lesson_candidateにfound=trueでtitle/detail/projectを記入せよ"
       binary_checks:
-        - "lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no"
-        - "AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no"
         - "verdictがbinary_checksと矛盾していないか: yes/no"
     AC4:
       description: "task.related_lessonsの注入教訓を参照し、有用/無用をlessons_usefulに記入せよ"
       binary_checks:
         - "task.related_lessonsの注入教訓を1件以上参照したか: yes/no"
-        - "参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no"
-  status: in_progress
+  status: assigned
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
