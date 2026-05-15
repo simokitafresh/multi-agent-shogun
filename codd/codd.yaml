@@ -43,6 +43,7 @@ bands:
 propagation:
   max_depth: 10
   stop_at_contract_boundary: true
+  command: "bash scripts/semantic_map_generate.sh --body-only"
 
 typecheck:
   enabled: false
