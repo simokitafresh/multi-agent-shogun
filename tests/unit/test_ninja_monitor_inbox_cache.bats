@@ -15,27 +15,25 @@ unset NINJA_MONITOR_LIB_ONLY
 
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
-CALLS_FILE="$TMP_ROOT/calls"
-printf "0\n" > "$CALLS_FILE"
-export CALLS_FILE
-
-count_unread_messages() {
-    local calls
-    calls=$(cat "$CALLS_FILE")
-    calls=$((calls + 1))
-    printf "%s\n" "$calls" > "$CALLS_FILE"
-    echo "$calls"
-}
+INBOX_FILE="$TMP_ROOT/hayate.yaml"
+cat > "$INBOX_FILE" <<EOF
+messages:
+- id: msg_1
+  read: false
+EOF
 
 cycle=41
-count_unread_messages_cached "$PROJECT_ROOT/queue/inbox/hayate.yaml" first
-count_unread_messages_cached "$PROJECT_ROOT/queue/inbox/hayate.yaml" second
+count_unread_messages_cached "$INBOX_FILE" first
+cat >> "$INBOX_FILE" <<EOF
+- id: msg_2
+  read: false
+EOF
+count_unread_messages_cached "$INBOX_FILE" second
 cycle=42
-count_unread_messages_cached "$PROJECT_ROOT/queue/inbox/hayate.yaml" third
-calls=$(cat "$CALLS_FILE")
+count_unread_messages_cached "$INBOX_FILE" third
 
-printf "%s,%s,%s,calls=%s\n" "$first" "$second" "$third" "$calls"
+printf "%s,%s,%s\n" "$first" "$second" "$third"
 '
     [ "$status" -eq 0 ]
-    [ "$output" = "1,1,2,calls=2" ]
+    [ "$output" = "1,1,2" ]
 }

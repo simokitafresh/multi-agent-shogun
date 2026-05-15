@@ -772,7 +772,11 @@ get_context_pct() {
 
     # Source 1: tmux pane variable (@context_pct)
     ctx_val=$(tmux show-options -p -t "$pane_target" -v @context_pct 2>/dev/null)
-    ctx_num=$(echo "$ctx_val" | grep -oE '[0-9]+' | tail -1)
+    if [[ "$ctx_val" =~ ([0-9]+) ]]; then
+        ctx_num="${BASH_REMATCH[1]}"
+    else
+        ctx_num=""
+    fi
     if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
         echo "$ctx_num"
         return 0
@@ -2598,24 +2602,22 @@ check_inbox_renudge() {
             # 家老専用: inbox未読0でもpending work(忍者done/delegated未配備)があればnudge
             if [ "$name" = "karo" ]; then
                 local _karo_pending=false
-                for _ktf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
-                    [ -f "$_ktf" ] || continue
-                    local _kts _kpcmd
-                    IFS='|' read -r _kts _kpcmd < <(awk '
-                        BEGIN { s=""; pc="" }
-                        /^[[:space:]]*status:/ && s=="" { v=$0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["'\''[:space:]]/, "", v); s=v }
-                        /^[[:space:]]*parent_cmd:/ && pc=="" { v=$0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["'\''[:space:]]/, "", v); pc=v }
-                        END { print s "|" pc }
-                    ' "$_ktf" 2>/dev/null || echo "|")
-                    if [ "$_kts" = "done" ]; then
-                        # GATE CLEAR済みならpending workではない
-                        if [ -n "$_kpcmd" ] && ls "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* >/dev/null 2>&1; then
-                            continue  # archived=GATE CLEAR済み
-                        fi
-                        _karo_pending=true
-                        break
+                # L4最適化: for+awk×N(最大6プロセス) → awk×1の全ファイル一括スキャン(WSL2プロセス起動コスト削減 L511)
+                # FNR==1で新ファイル開始を検出し前ファイルの結果を出力。ls→compgen -Gに変更(エラー出力防止)
+                while IFS='|' read -r _kts _kpcmd; do
+                    [ "$_kts" = "done" ] || continue
+                    # GATE CLEAR済みならpending workではない
+                    if [ -n "$_kpcmd" ] && compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
+                        continue  # archived=GATE CLEAR済み
                     fi
-                done
+                    _karo_pending=true
+                    break
+                done < <(awk '
+                    FNR == 1 { if (NR > 1) print s "|" p; s=""; p="" }
+                    /^[[:space:]]*status:/ && s=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); s=v }
+                    /^[[:space:]]*parent_cmd:/ && p=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); p=v }
+                    END { print s "|" p }
+                ' "$SCRIPT_DIR"/queue/tasks/*.yaml 2>/dev/null)
                 if [ "$_karo_pending" = true ]; then
                     local _karo_target="$KARO_PANE"
                     if [ -n "$_karo_target" ] && check_idle "$_karo_target" "karo"; then
