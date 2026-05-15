@@ -951,3 +951,11 @@
 | cmd_2762 | 主要4スクリプトにcodd brownfield設計書逆生成 | 稼働中(hayate) | depends_on完了後にcmd_2763/2764配備 |
 | karo自走 | なぜなぜ7回×3本: (1)idle自走で止まるパターン(2)学習ループ構造的穴5件(3)全運用フロー穴5件 | LK-A17 v6吸収+掲示板CMD起票要請 | 殿指摘「将軍にCMD起票依頼したか」→Phase4再現(分析=行動と思った) |
 | 軍師自走 | 教訓耐久率60%→100%(33/33)。Guard 9-12実装。なぜなぜ7回→成長ループ断裂検出 | 全件LGTM | LG003/LG007/LG023/LG028/LG032 hook化 |
+| cmd_2765 | GATE BLOCK/FAIL時の家老自動通知追加。パイプライン接続修正 | GATE CLEAR | 穴1+5: CLEAR側だけ自動→両側自動 |
+| cmd_2766 | insight自動トリアージ。191件pending蓄積解消 | GATE CLEAR | 穴3: 手動消費→自動done化 |
+| cmd_2767 | 修行効果の定量計測をninja_monitorに追加 | GATE CLEAR | 穴2: before/after FAIL率比較 |
+| cmd_2769 | inbox未配信根因偵察(cmd_2662-2666) | GATE CLEAR | idle分析1: 根因特定 |
+| cmd_2762 | 主要4スクリプトにcodd brownfield設計書逆生成 | GATE CLEAR | DAG 41ノード23エッジ。設計書ゼロ→構造可視化 |
+| cmd_2772 | quality_gateテンプレートをhook contextに自動注入 | GATE CLEAR | 殿指摘「インフラバグ避けるな」→Level5化 |
+| cmd_2773 | bulletin由来前提のgrep検証WARN追加 | delegated | 3件連続assumption崩壊→構造防止 |
+| session_20260515b | 9cmd起票(2765-2773)。7CLEAR+2不要化。掲示板なぜなぜ全穴対応+インフラバグ2本(テンプレート注入+bulletin検証) | 殿教訓: BLOCKをcmd修正で通すな→インフラ改善で根絶せよ | 殿「インフラバグ避けるな」+軍師「assumption崩壊3連」→自動化ターゲット2本 |

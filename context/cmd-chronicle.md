@@ -807,3 +807,12 @@
 | cmd_2753 | auto_failure_lesson.shがどこからも呼ばれていない断裂を修正し、gate FAILした忍者タスクから自動的に教訓が生成されるパイプラインを接続する | infra | 05-15 | cmd_complete_gate.shのGATE BLOC |
 | cmd_2754 | ninja_monitorにidle忍者への修行自動配備トリガーを追加し、修行サイクルが家老の手動判断に依存する断裂を解消する | infra | 05-15 | ninja_monitor.shにidle継続+直近gate |
 | cmd_2756 | bulletin_write.shにaction_typeフィールドを追加し、昇格通知が対応されたか追跡可能にする。startup gateで未対応ALERTを表示し、cmd_save.shでactioned_by自動更新する | infra | 05-15 | bulletin action_type/actioned_ |
+| cmd_2755 | gate_fire_logのFAIL→PASS遷移率計測を将軍の/clear間隔依存から解放し、ninja_monitorで定期的に計測・記録する | infra | 05-15 | ninja_monitor.shにgate_fire_log |
+| cmd_2758 | Gate 13.8のFP率閾値超過時にbulletin_write.shで将軍にgate条件緩和cmdの起票を要請し、FP増大による速度低下を防止する | infra | 05-15 | Gate 13.8の高FP率時bulletin緩和要請実装を |
+| cmd_2757 | effectiveness低い教訓の定期棄却をninja_monitorで自動実行し、教訓注入ノイズの単調増加を防止する | infra | 05-15 | ninja_monitorに教訓deprecate候補の日次 |
+| cmd_2760 | CoDD v1.10.0時点の知識体系をv2.18.0に更新する。context/codd.md+セマンティックインデックス+スキルSKILL.md+reference_codd_oshio_articles.mdを最新の記事・GitHub情報で刷新する | infra | 05-15 | CoDD知識体系をv2.18.0へ更新し、context/s |
+| cmd_2761 | 全8PJでcodd init --suggest-lexicons --llm-enhancedを実行しlexiconを設定。codd.yamlをv2.x形式に刷新。新PJ作成時にcodd initが自動実行される仕組みを追加する | infra | 05-15 | 全8PJへCoDD v2系設定とshogun_core le |
+| cmd_2766 | CLEAR済みcmd関連insightとsemantic_index_update由来insightを自動done化し、191件pending永久蓄積を解消する | infra | 05-15 | cmd_complete_gate CLEAR後にcmd関連 |
+| cmd_2768 | harmful閾値に加えuseful率(helpful/参照回数)が低い教訓も自動deprecateし、効果の薄い教訓が永続する穴を解消する | infra | 05-15 | — |
+| cmd_2769 | deploy_task.sh配備後にinbox未配信が5回頻発した根因を特定し、再発防止策を設計する | infra | 05-15 | cmd_2662-2666の未配信疑いは、5件ともinbox |
+| cmd_2762 | 設計書ゼロの主要スクリプト4本(deploy_task.sh/cmd_save.sh/ninja_monitor.sh/inbox_write.sh)にcodd brownfieldを実行し、DAG構築+設計書逆生成でリファクタとcodd fix/verifyの土台を作る | infra | 05-15 | 主要4スクリプトのCoDD brownfield成果物(re |
