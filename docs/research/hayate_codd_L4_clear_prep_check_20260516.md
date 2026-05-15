@@ -103,3 +103,32 @@ worker: "hayate"
 | AC1 | Read target and recorded purpose, constraints, scope in docs/research | yes |
 | AC2 | Identified elicit/lexicon/coverage holes | yes |
 | AC3 | Ran validate/measure and identified at least 3 improvements | yes |
+
+## Saizo Follow-up: Generate / Validate / Measure
+
+Task: `cmd_training_codd_fix2_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .` | TIMEOUT after 120s. Output reached `wave_config not found. Auto-generating from requirements...`; no target-specific design document was produced. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` immediately after generate timeout | FAIL: generate mutated `codd/codd.yaml` scan scope to include broad `docs/`, producing 658 errors and 382 warnings across 627 Markdown files. |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` immediately after generate timeout | PASS command execution but invalid score state: `health_score=0`, `validation_errors=655`, `validation_warnings=382`, `documents_checked=627`. |
+| `git checkout -- codd/codd.yaml` | Cleanup of generate side effect only; restored configured CoDD scan scope before final validation. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` after cleanup | PASS: `OK: validated 16 Markdown files under configured doc_dirs`. |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` after cleanup | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0`. |
+
+### Follow-up Improvements
+
+1. Add a `clear_prep_check.sh`-specific CoDD requirement/design node before rerunning `generate`; current generation derives from generic repo requirements and never reaches the target script within 120s.
+2. Isolate `codd generate` config writes or add a post-generate guard for `scan.doc_dirs`; broad `docs/` expansion changes validate from 16 configured docs to 627 legacy docs.
+3. Add machine-readable output modes for `clear_prep_check.sh` subchecks so CoDD can validate unresolved decisions, command queue, dashboard alerts, agent state, conversation continuity, git persistence, artifact persistence, knowledge embedding, and decision propagation as separate axes.
+4. Split the ten clear-prep checks into functions returning stable `status`, `reason`, and `evidence` fields, keeping current bracketed output as a renderer.
+5. Add fixture tests for the known ALERT paths recorded in the original artifact: pending decisions, pending commands, stale snapshot, blocked ninja, conversation JSON error, important uncommitted files, artifact WARN, knowledge embedding WARN, and decision propagation ALERT.
+
+### Follow-up Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | Existing artifact read and generate command executed | yes |
+| AC2 | Validate executed and result separated before/after generate cleanup | yes |
+| AC3 | Measure executed and at least three improvements identified | yes |
