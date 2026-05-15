@@ -109,7 +109,7 @@ context_acquisition:
     min_confidence: 0.6
 wave_config:
   '1':
-  - node_id: governance:acceptance-criteria
+  - node_id: test:acceptance-criteria
     output: docs/test/acceptance_criteria.md
     title: Acceptance Criteria
     depends_on:
@@ -139,23 +139,19 @@ wave_config:
       - module:inbox_write
       - module:cmd_save
       - module:deploy_task
-      - module:yaml_field_set
-      reason: All shared YAML mutations must use flock-based locking with WSL2 /mnt/*
-        compatibility; concurrent write loss is release-blocking.
+      - module:yaml_helpers
+      reason: flock-based atomic YAML writes and inbox-path-only communication are
+        release-blocking safety constraints across all agent-facing scripts (SR-3
+        inbox_write, SR-1 deploy_task, SR-3 cmd_save).
+    - targets:
+      - module:yaml_helpers
+      - module:deploy_task
+      reason: API backward compatibility for yaml_field_set and field_get and zero
+        test regressions are release-blocking for the batch refactor (refactor constraints).
     - targets:
       - module:inbox_write
-      reason: Ninja-to-shogun direct messaging is prohibited; chain-of-command violation
-        is release-blocking.
-    - targets:
-      - module:cmd_save
-      reason: Delegated command immutability is release-blocking; mutation after delegation
-        causes deployment conflicts.
-    - targets:
-      - module:deploy_task
-      - module:yaml_field_set
-      - module:field_get
-      reason: All existing tests must pass after refactor with zero regressions; test
-        failure is release-blocking.
+      reason: Ninja-to-shogun direct messaging prohibition is a release-blocking routing
+        constraint (SR-2 inbox_write).
     modules:
     - cmd_save
     - deploy_task
@@ -163,11 +159,10 @@ wave_config:
     - ninja_monitor
     - dashboard_auto_section
     - restart_watchers
-    - yaml_field_set
-    - field_get
-  - node_id: governance:adr-batch-yaml-io
-    output: docs/governance/adr_batch_yaml_io.md
-    title: 'ADR: Batch YAML I/O for deploy_task Performance'
+    - yaml_helpers
+  - node_id: governance:adr-yaml-batch-operations
+    output: docs/governance/adr_yaml_batch_operations.md
+    title: 'ADR: YAML Batch Operations Design'
     depends_on:
     - id: req:deploy-task-refactor-requirements
       relation: derives_from
@@ -177,49 +172,45 @@ wave_config:
       semantic: governance
     conventions:
     - targets:
-      - module:yaml_field_set
-      - module:field_get
-      reason: Existing yaml_field_set and field_get function signatures must remain
-        backward-compatible; API breakage is release-blocking.
+      - module:yaml_helpers
+      - module:deploy_task
+      reason: yaml_field_set_batch must use single flock+awk pass; field_get_multi
+        must use single awk pass. Existing API contracts must be preserved; violation
+        breaks all queue mutations system-wide.
     modules:
-    - yaml_field_set
-    - field_get
+    - yaml_helpers
     - deploy_task
   '2':
-  - node_id: design:system-architecture
-    output: docs/design/system_architecture.md
-    title: System Architecture
+  - node_id: design:system-overview
+    output: docs/design/system_overview.md
+    title: System Overview
     depends_on:
-    - id: governance:acceptance-criteria
+    - id: test:acceptance-criteria
       relation: constrained_by
       semantic: governance
-    - id: governance:adr-batch-yaml-io
+    - id: governance:adr-yaml-batch-operations
       relation: constrained_by
       semantic: governance
     conventions:
     - targets:
       - module:inbox_write
       - module:deploy_task
-      - module:ninja_monitor
-      - module:restart_watchers
-      reason: inbox_write.sh is the sole agent-to-agent communication channel; bypassing
-        it for message delivery is release-blocking.
-    - targets:
       - module:cmd_save
-      - module:deploy_task
-      - module:inbox_write
       - module:ninja_monitor
-      reason: yaml.dump/yaml.safe_dump is prohibited for operational YAML; all mutations
-        must use yaml_field_set helpers.
+      reason: Inbox-path-only communication, flock-based YAML safety, delegated-command
+        immutability (SR-2 cmd_save), and ninja-to-shogun prohibition (SR-2 inbox_write)
+        are system-wide release-blocking constraints.
     - targets:
       - module:ninja_monitor
       - module:restart_watchers
-      reason: Daemon processes must enforce singleton execution via flock; duplicate
-        instances corrupt shared state.
+      reason: Singleton daemon pattern (FR-1 ninja_monitor, FR-1 restart_watchers)
+        and two-stage process termination SIGTERM→SIGKILL (SR-1 restart_watchers)
+        are release-blocking for process lifecycle safety.
     - targets:
-      - module:dashboard_auto_section
-      reason: Atomic file writes (temp + mv) required for dashboard; partial writes
-        corrupt the Lord's view.
+      - module:inbox_write
+      - module:deploy_task
+      reason: WSL2 /mnt/* lock file compatibility is release-blocking; standard flock
+        may not work on Windows-mounted paths (FR-4 inbox_write).
     modules:
     - cmd_save
     - deploy_task
@@ -227,245 +218,168 @@ wave_config:
     - ninja_monitor
     - dashboard_auto_section
     - restart_watchers
-    - yaml_field_set
-    - field_get
+    - yaml_helpers
   '3':
-  - node_id: design:shared-yaml-library
-    output: docs/design/shared_yaml_library.md
-    title: Shared YAML Library Design
+  - node_id: design:communication-protocol
+    output: docs/design/communication_protocol.md
+    title: Communication Protocol Design
     depends_on:
-    - id: design:system-architecture
+    - id: design:system-overview
       relation: depends_on
       semantic: technical
-    - id: governance:adr-batch-yaml-io
+    conventions:
+    - targets:
+      - module:inbox_write
+      - module:deploy_task
+      - module:ninja_monitor
+      reason: All agent communication must transit inbox_write.sh with flock-atomic
+        persistence; wake-up nudges are secondary to durable inbox writes (SR-1 inbox_write).
+        WSL2 /mnt/* lock compatibility required (FR-4 inbox_write).
+    - targets:
+      - module:inbox_write
+      reason: Ninja-to-shogun direct messaging prohibition (SR-2 inbox_write) and
+        duplicate task_assigned blocking for same parent cmd (FR-5 inbox_write) are
+        release-blocking routing constraints.
+    modules:
+    - inbox_write
+    - deploy_task
+    - ninja_monitor
+  - node_id: design:queue-state-management
+    output: docs/design/queue_state_management.md
+    title: Queue & State Management Design
+    depends_on:
+    - id: design:system-overview
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:cmd_save
+      - module:deploy_task
+      - module:yaml_helpers
+      reason: No yaml.dump; all YAML mutations via structured helpers with flock (SR-1
+        deploy_task). Delegated-command immutability (SR-2 cmd_save) and gate-state
+        blocking (SR-1 cmd_save) are release-blocking.
+    - targets:
+      - module:deploy_task
+      reason: Report template generation must not overwrite completed reports (FR-6
+        deploy_task). Duplicate active deployment blocking when completed peer report
+        exists (SR-2 deploy_task).
+    modules:
+    - cmd_save
+    - deploy_task
+    - yaml_helpers
+  - node_id: design:monitoring-daemons
+    output: docs/design/monitoring_daemons.md
+    title: Monitoring & Daemon Services Design
+    depends_on:
+    - id: design:system-overview
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:ninja_monitor
+      - module:restart_watchers
+      reason: Singleton lock (FR-1 ninja_monitor, FR-1 restart_watchers), two-stage
+        termination SIGTERM→SIGKILL (SR-1 restart_watchers), and never-clear-active-pane
+        unless report+idle gates pass (SR-2 ninja_monitor) are release-blocking daemon
+        safety constraints.
+    - targets:
+      - module:dashboard_auto_section
+      reason: Atomic temp+mv writes (SR-1 dashboard), graceful degradation to dash
+        placeholders on missing sources (SR-2 dashboard), and marker-absent exit-1
+        (SR-3/SR-4 dashboard) are release-blocking for dashboard integrity.
+    - targets:
+      - module:dashboard_auto_section
+      reason: Cache TTLs (CI 60s, context freshness 120s, git rev-list 60s) and project-scoped
+        cache paths via cksum are release-blocking performance constraints (PR-1 through
+        PR-4 dashboard).
+    modules:
+    - ninja_monitor
+    - restart_watchers
+    - dashboard_auto_section
+  '4':
+  - node_id: detailed:yaml-library
+    output: docs/detailed_design/yaml_library.md
+    title: YAML Helper Library Detailed Design
+    depends_on:
+    - id: design:queue-state-management
+      relation: depends_on
+      semantic: technical
+    - id: governance:adr-yaml-batch-operations
       relation: constrained_by
       semantic: governance
     conventions:
     - targets:
-      - module:yaml_field_set
-      - module:field_get
-      reason: Single flock acquisition + single awk pass for batch operations is release-blocking
-        for concurrency safety and performance targets.
-    - targets:
-      - module:yaml_field_set
-      - module:field_get
-      reason: Existing single-field API must remain functional and backward-compatible
-        after batch function addition.
+      - module:yaml_helpers
+      reason: 'yaml_field_set_batch must perform single flock acquisition + single
+        awk pass + single atomic mv; field_get_multi must perform single awk pass.
+        Existing yaml_field_set and field_get caller signatures must remain unchanged.
+        Performance target: resolve_cmd_to_task 627ms→100ms, inject_ac_version 541ms→80ms.'
     modules:
-    - yaml_field_set
-    - field_get
-  - node_id: design:inbox-write
-    output: docs/design/inbox_write.md
-    title: inbox_write.sh Design
+    - yaml_helpers
+  - node_id: detailed:message-flow
+    output: docs/detailed_design/message_flow.md
+    title: Message Flow Sequence Diagrams
     depends_on:
-    - id: design:system-architecture
+    - id: design:communication-protocol
+      relation: depends_on
+      semantic: technical
+    - id: design:queue-state-management
       relation: depends_on
       semantic: technical
     conventions:
     - targets:
       - module:inbox_write
-      reason: WSL2 /mnt/* lock file compatibility required; standard flock behavior
-        on NTFS-mounted paths must be validated.
-    - targets:
-      - module:inbox_write
-      reason: Ninja-to-shogun sender routing prohibition is release-blocking chain-of-command
-        enforcement.
-    - targets:
-      - module:inbox_write
-      reason: Inbox file persistence is the durable source of truth; nudge failure
-        must never cause message loss.
+      - module:deploy_task
+      - module:cmd_save
+      reason: Message persistence must precede wake-up nudges (SR-1 inbox_write).
+        Duplicate task_assigned blocking (FR-5 inbox_write), lesson-injection safety
+        net (FR-6 inbox_write), and report format check triggering (FR-7 inbox_write)
+        are release-blocking sequencing constraints.
     modules:
     - inbox_write
-  - node_id: design:cmd-save
-    output: docs/design/cmd_save.md
-    title: cmd_save.sh Design
-    depends_on:
-    - id: design:system-architecture
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:cmd_save
-      reason: Delegated command immutability must be enforced at gate level; mutation
-        of delegated cmds is release-blocking.
-    - targets:
-      - module:cmd_save
-      reason: BLOCK/WARN/PASS gate outcomes must be durably recorded to quality logs;
-        silent pass-through is release-blocking.
-    - targets:
-      - module:cmd_save
-      reason: flock-based concurrency around shared queue files required for draft
-        conflict detection.
-    modules:
-    - cmd_save
-  - node_id: design:ninja-monitor
-    output: docs/design/ninja_monitor.md
-    title: ninja_monitor.sh Design
-    depends_on:
-    - id: design:system-architecture
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:ninja_monitor
-      reason: Singleton daemon enforcement via flock is release-blocking; duplicate
-        monitors cause conflicting clear/respawn actions.
-    - targets:
-      - module:ninja_monitor
-      reason: Pane clear requires idle confirmation AND report-gate pass; premature
-        clear loses in-progress work.
-    - targets:
-      - module:ninja_monitor
-      reason: All agent communication must use inbox_write.sh; ad-hoc tmux send-keys
-        messaging is release-blocking.
-    modules:
-    - ninja_monitor
-  - node_id: design:dashboard-auto-section
-    output: docs/design/dashboard_auto_section.md
-    title: dashboard_auto_section.sh Design
-    depends_on:
-    - id: design:system-architecture
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:dashboard_auto_section
-      reason: Content outside auto-section markers must be preserved; overwriting
-        manual sections is release-blocking.
-    - targets:
-      - module:dashboard_auto_section
-      reason: Graceful degradation to placeholder values on missing data sources required;
-        dashboard crash leaving stale data is release-blocking.
-    - targets:
-      - module:dashboard_auto_section
-      reason: Subprocess result caching with TTL is required for performance; unbounded
-        subprocess invocations cause timeout and staleness.
-    modules:
-    - dashboard_auto_section
-  - node_id: design:restart-watchers
-    output: docs/design/restart_watchers.md
-    title: restart_watchers.sh Design
-    depends_on:
-    - id: design:system-architecture
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:restart_watchers
-      reason: Singleton lock via flock -n is release-blocking; concurrent restart
-        attempts cause watcher duplication.
-    - targets:
-      - module:restart_watchers
-      reason: Two-stage termination (SIGTERM then SIGKILL) is release-blocking; orphaned
-        watchers cause duplicate nudges.
-    - targets:
-      - module:restart_watchers
-      reason: Pane resolution failures must silently skip to support partial formation
-        recovery; hard failure on missing pane is release-blocking.
-    modules:
-    - restart_watchers
-    - agent_config
-    - pane_lookup
-  '4':
-  - node_id: design:deploy-task
-    output: docs/design/deploy_task.md
-    title: deploy_task.sh Design
-    depends_on:
-    - id: design:system-architecture
-      relation: depends_on
-      semantic: technical
-    - id: design:shared-yaml-library
-      relation: depends_on
-      semantic: technical
-    - id: design:inbox-write
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:deploy_task
-      reason: Shared YAML helpers (including batch ops) must be used for all queue/task
-        mutation; free-form YAML dumping is release-blocking.
-    - targets:
-      - module:deploy_task
-      reason: Duplicate active deployment blocking when completed peer report exists
-        is release-blocking.
-    - targets:
-      - module:deploy_task
-      reason: Task notification must use inbox_write.sh path; direct tmux nudges limited
-        to re-nudge fallback only.
-    modules:
     - deploy_task
-  '5':
-  - node_id: detailed_design:command-lifecycle-flow
-    output: docs/detailed_design/command_lifecycle_flow.md
-    title: Command Lifecycle & Deployment Flow
-    depends_on:
-    - id: design:cmd-save
-      relation: depends_on
-      semantic: technical
-    - id: design:deploy-task
-      relation: depends_on
-      semantic: technical
-    - id: design:inbox-write
-      relation: depends_on
-      semantic: technical
-    conventions:
-    - targets:
-      - module:cmd_save
-      - module:deploy_task
-      - module:inbox_write
-      reason: Command immutability after delegation and duplicate deployment blocking
-        must hold at every lifecycle stage; gap in any stage is release-blocking.
-    modules:
     - cmd_save
-    - deploy_task
-    - inbox_write
-  - node_id: detailed_design:agent-state-supervision
-    output: docs/detailed_design/agent_state_supervision.md
-    title: Agent State Machine & Supervision Model
+  - node_id: detailed:process-lifecycle
+    output: docs/detailed_design/process_lifecycle.md
+    title: Process Lifecycle State Machines
     depends_on:
-    - id: design:ninja-monitor
-      relation: depends_on
-      semantic: technical
-    - id: design:restart-watchers
-      relation: depends_on
-      semantic: technical
-    - id: design:inbox-write
+    - id: design:monitoring-daemons
       relation: depends_on
       semantic: technical
     conventions:
     - targets:
       - module:ninja_monitor
-      reason: Idle detection must combine hook state, timestamps, CLI patterns, and
-        subprocess checks; prompt-only detection causes false idle and premature clear.
+      reason: Idle detection must prefer hook state (@agent_state) and explicit busy
+        evidence over prompt-only patterns (SR-1 ninja_monitor). Pane clear requires
+        both idle confirmation and report-gate pass (SR-2 ninja_monitor). karo_snapshot
+        generation must include cmd, ninja, model, context, and report state (FR-5
+        ninja_monitor).
     - targets:
-      - module:ninja_monitor
       - module:restart_watchers
-      reason: Watcher liveness must be verified after restart; unverified watcher
-        state breaks the inbox delivery guarantee.
+      reason: Singleton flock -n at /tmp/restart_watchers.lock (FR-1), two-stage kill
+        with survivor check (SR-1), inotifywait count verification against started
+        watcher count (FR-7), and pane resolution failure as silent skip not error
+        (SR-2) are release-blocking.
     modules:
     - ninja_monitor
     - restart_watchers
-    - inbox_write
-  - node_id: detailed_design:component-dependency-map
+  - node_id: detailed:component-dependency-map
     output: docs/detailed_design/component_dependency_map.md
-    title: Component Dependency & Ownership Map
+    title: Component Dependency Map
     depends_on:
-    - id: design:system-architecture
+    - id: design:system-overview
       relation: depends_on
       semantic: technical
-    - id: design:shared-yaml-library
+    - id: design:communication-protocol
       relation: depends_on
       semantic: technical
-    - id: design:deploy-task
+    - id: design:queue-state-management
       relation: depends_on
       semantic: technical
-    conventions:
-    - targets:
-      - module:yaml_field_set
-      - module:field_get
-      reason: Shared library ownership boundaries must be explicit; breaking changes
-        to shared libs cascade to all consumers and are release-blocking.
+    - id: design:monitoring-daemons
+      relation: depends_on
+      semantic: technical
     modules:
     - cmd_save
     - deploy_task
@@ -473,64 +387,31 @@ wave_config:
     - ninja_monitor
     - dashboard_auto_section
     - restart_watchers
-    - yaml_field_set
-    - field_get
-    - agent_config
-    - pane_lookup
-  '6':
+    - yaml_helpers
+  '5':
   - node_id: plan:implementation-plan
     output: docs/plan/implementation_plan.md
     title: Implementation Plan
     depends_on:
-    - id: detailed_design:command-lifecycle-flow
+    - id: detailed:yaml-library
       relation: depends_on
       semantic: technical
-    - id: detailed_design:agent-state-supervision
+    - id: detailed:message-flow
       relation: depends_on
       semantic: technical
-    - id: detailed_design:component-dependency-map
+    - id: detailed:process-lifecycle
       relation: depends_on
       semantic: technical
-    - id: governance:adr-batch-yaml-io
-      relation: constrained_by
-      semantic: governance
-    conventions:
-    - targets:
-      - module:yaml_field_set
-      - module:field_get
-      - module:deploy_task
-      reason: Batch utilities (R3/R4) must be completed and tested before deploy_task
-        refactoring (R1/R2); dependency inversion is release-blocking.
-    modules:
-    - yaml_field_set
-    - field_get
-    - deploy_task
-  - node_id: test:test-strategy
-    output: docs/test/test_strategy.md
-    title: Test Strategy
-    depends_on:
-    - id: governance:acceptance-criteria
-      relation: constrained_by
-      semantic: governance
-    - id: detailed_design:command-lifecycle-flow
-      relation: depends_on
-      semantic: technical
-    - id: detailed_design:agent-state-supervision
+    - id: detailed:component-dependency-map
       relation: depends_on
       semantic: technical
     conventions:
     - targets:
+      - module:yaml_helpers
       - module:deploy_task
-      - module:yaml_field_set
-      - module:field_get
-      reason: Zero regression tolerance after refactor; all 48+ existing tests must
-        pass. Test failure is release-blocking.
-    - targets:
-      - module:inbox_write
-      - module:cmd_save
-      - module:deploy_task
-      reason: Concurrent write safety under flock contention must be verified; untested
-        concurrency paths are release-blocking.
+      reason: Implementation sequence must follow R3→R4→R1→R2→full-test order from
+        refactor requirements; out-of-order implementation risks regression in 48
+        ac_handling tests.
     modules:
     - cmd_save
     - deploy_task
@@ -538,5 +419,57 @@ wave_config:
     - ninja_monitor
     - dashboard_auto_section
     - restart_watchers
-    - yaml_field_set
-    - field_get
+    - yaml_helpers
+  - node_id: test:test-strategy
+    output: docs/test/test_strategy.md
+    title: Test Strategy
+    depends_on:
+    - id: test:acceptance-criteria
+      relation: depends_on
+      semantic: governance
+    - id: detailed:yaml-library
+      relation: depends_on
+      semantic: technical
+    - id: detailed:message-flow
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:deploy_task
+      - module:yaml_helpers
+      reason: All 48 existing ac_handling tests must pass post-refactor with before/after
+        profiling verification; zero regressions is release-blocking.
+    - targets:
+      - module:inbox_write
+      - module:cmd_save
+      reason: Concurrent flock write safety must be verified under contention; untested
+        concurrency paths are release-blocking gaps.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+    - ninja_monitor
+    - dashboard_auto_section
+    - restart_watchers
+    - yaml_helpers
+  - node_id: operations:runbook
+    output: docs/operations/runbook.md
+    title: Operations Runbook
+    depends_on:
+    - id: detailed:process-lifecycle
+      relation: depends_on
+      semantic: technical
+    - id: design:monitoring-daemons
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:ninja_monitor
+      - module:restart_watchers
+      - module:dashboard_auto_section
+      reason: Documented recovery procedures for daemon failures, watcher desync,
+        and dashboard marker corruption are release-blocking for operational readiness.
+    modules:
+    - ninja_monitor
+    - restart_watchers
+    - dashboard_auto_section
