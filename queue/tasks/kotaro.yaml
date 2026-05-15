@@ -23,7 +23,7 @@ task:
       description: "task.related_lessonsの注入教訓を参照し、有用/無用をlessons_usefulに記入せよ"
       binary_checks:
         - "task.related_lessonsの注入教訓を1件以上参照したか: yes/no"
-  status: assigned
+  status: acknowledged
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
