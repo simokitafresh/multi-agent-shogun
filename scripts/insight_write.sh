@@ -12,6 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
+BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
+SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
 # --resolve mode: mark insight as done
 if [ "${1:-}" = "--resolve" ]; then
@@ -92,6 +94,10 @@ source_info="${3:-manual}"
 # Validate priority
 if [[ ! "$priority" =~ ^(high|medium|low)$ ]]; then
   echo "ERROR: priority must be high/medium/low, got: '$priority'" >&2
+  exit 1
+fi
+if [[ ! "$SOURCE_REPEAT_THRESHOLD" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: INSIGHT_SOURCE_REPEAT_THRESHOLD must be a non-negative integer, got: '$SOURCE_REPEAT_THRESHOLD'" >&2
   exit 1
 fi
 ts="$(date -Iseconds)"
@@ -197,5 +203,55 @@ PYEOF
 ) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
   echo "$result"
+
+  # Escalate repeated pending insights from the same source so important patterns
+  # do not remain buried in queue/insights.yaml. Keep this out of the write path:
+  # bulletin failures must not break normal insight recording.
+  if [[ "$result" == INS-* && "$SOURCE_REPEAT_THRESHOLD" -gt 0 ]]; then
+    repeat_count=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" SOURCE_INFO_ENV="$source_info" \
+                   python3 - <<'PYEOF'
+import json
+import os
+
+insights_file = os.environ['INSIGHTS_FILE_ENV']
+source_info = os.environ['SOURCE_INFO_ENV']
+
+def parse_scalar(raw):
+    value = raw.strip()
+    if value.startswith('"'):
+        return json.loads(value)
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+count = 0
+current_source = None
+current_status = None
+
+with open(insights_file, 'r', encoding='utf-8') as f:
+    for line in f:
+        if line.startswith('- id: '):
+            if current_source == source_info and current_status == 'pending':
+                count += 1
+            current_source = None
+            current_status = None
+            continue
+        if line.startswith('  source:'):
+            current_source = parse_scalar(line.split(':', 1)[1])
+        elif line.startswith('  status:'):
+            current_status = parse_scalar(line.split(':', 1)[1])
+
+if current_source == source_info and current_status == 'pending':
+    count += 1
+
+print(count)
+PYEOF
+)
+    if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
+      BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
+        "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
+        >/dev/null || echo "WARN: insight repeat bulletin failed for source=$source_info" >&2
+    fi
+  fi
 
 ) 200>"$INSIGHTS_FILE.lock"

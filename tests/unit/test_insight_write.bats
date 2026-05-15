@@ -207,3 +207,25 @@ print('TEST FIXTURE SKIPPED')
     [ "$status" -eq 0 ]
     [[ "$output" == *"TEST FIXTURE SKIPPED"* ]]
 }
+
+@test "同一source繰返し: 閾値到達で将軍へbulletin通知する" {
+    cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'notify=%s\nposted_by=%s\ncontent=%s\n' "${BULLETIN_NOTIFY:-}" "$1" "$2" >> "$TEST_TMP/bulletin.log"
+EOF
+    chmod +x "${TEST_TMP}/scripts/bulletin_write.sh"
+
+    run env TEST_TMP="$TEST_TMP" INSIGHT_SOURCE_REPEAT_THRESHOLD=2 bash "${TEST_TMP}/scripts/insight_write.sh" "同一source一件目" "high" "repeat_source"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+    [ ! -f "$TEST_TMP/bulletin.log" ]
+
+    run env TEST_TMP="$TEST_TMP" INSIGHT_SOURCE_REPEAT_THRESHOLD=2 bash "${TEST_TMP}/scripts/insight_write.sh" "同一source二件目" "high" "repeat_source"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run grep -F "notify=shogun" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+    run grep -F "source=repeat_source pending_count=2 threshold=2" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+}
