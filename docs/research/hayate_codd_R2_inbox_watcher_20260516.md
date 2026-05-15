@@ -137,3 +137,105 @@ Executed command results:
 | `codd plan --path .` | FAIL/tooling gap: `codd.yaml` lacks `wave_config`; direct `codd generate` would mutate project generation state, so this document is the generated design artifact for the task. |
 
 This document is the generated spec/design artifact for AC1-AC3. Full CoDD measure/coverage/elicit results are recorded after command execution in the task report.
+
+## CoDD Extract Results
+
+実行者: kagemaru
+日付: 2026-05-16
+task_id: `cmd_training_codd_loop4_kagemaru`
+対象: `scripts/inbox_watcher.sh`
+
+### AC1: extract
+
+コマンド:
+
+```bash
+timeout 1200 codd extract --path .
+```
+
+結果:
+
+```text
+Extracted: 0 modules from 0 files (0 lines)
+Output: .codd/extract/
+  system-context.md
+  architecture-overview.md
+
+Next steps:
+  1. Review generated docs in .codd/extract/
+  2. Promote confirmed docs: mv .codd/extract/*.md docs/design/
+  3. Run: codd scan  (to build the dependency graph)
+```
+
+観察: extractは正常終了したが、`scripts/inbox_watcher.sh`専用moduleは抽出されず、0 modules / 0 filesだった。`.codd/extract/`配下に汎用の`system-context.md`と`architecture-overview.md`が生成されたが、task ACは既存md末尾への追記であり、promoteは実施していない。
+
+### AC2: validate
+
+コマンド:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+結果:
+
+```text
+ERROR: 655 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+```
+
+主な失敗:
+
+| 種別 | 例 |
+|---|---|
+| duplicate node_id | `codd/design/*` と `docs/design/cmd_2762_*` の重複 |
+| missing frontmatter | `docs/research/*.md`、`docs/future/*.md` など広範 |
+| undefined node | `docs/governance/adr_batch_yaml_io.md` の `design:system-architecture` など |
+| wave_config mismatch | `docs/plan/implementation_plan.md`、`docs/research/cmd_2589_codd_acceptance_criteria.md` |
+| circular dependency | `docs/research/cmd_1991_codd_extract/modules/*` |
+
+判定: FAIL。現行`codd/codd.yaml`が`docs/`全体をdoc_dirsに含めているため、`inbox_watcher.sh`単体のvalidateではなく、既存Markdown群全体のCoDD整合性不備を検出している。
+
+### AC3: measure
+
+コマンド:
+
+```bash
+timeout 1200 codd measure --path . --json
+```
+
+結果:
+
+```json
+{
+  "health_score": 0,
+  "graph": {
+    "total_nodes": 16,
+    "total_edges": 12,
+    "orphan_nodes": 4,
+    "max_depth": 1,
+    "avg_out_degree": 0.75,
+    "connectivity": 0.05
+  },
+  "coverage": {
+    "tracked_files": 0,
+    "source_files": 0,
+    "design_documents": 628,
+    "coverage_ratio": 0.0
+  },
+  "quality": {
+    "validation_errors": 661,
+    "validation_warnings": 386,
+    "policy_critical": 0,
+    "policy_warnings": 0,
+    "documents_checked": 628,
+    "files_policy_checked": 0,
+    "rules_applied": 0
+  }
+}
+```
+
+health_score: 0
+
+### 追完結論
+
+`codd extract --path .`は正常終了したが、`inbox_watcher.sh`専用moduleは抽出されず、0 modules / 0 filesだった。validate/measureは`docs/`全体scanによりFAIL/health_score 0であり、次にやるべきことは`inbox_watcher.sh`専用のextract対象設定またはCoDD source/doc graph接続を作ることである。
