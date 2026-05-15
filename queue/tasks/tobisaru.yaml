@@ -1,23 +1,29 @@
 task:
-  cmd_id: cmd_karo_ci_fix_test1458
-  type: ci_fix
+  cmd_id: cmd_training_L4_codd_202605151403_tobisaru
+  type: training
   project: infra
-  purpose: "CI RED修正 — テスト1458(semantic map auto-resolve insights)がFAIL。修行commitが原因"
+  purpose: "CoDD修行: deploy_task.shの設計書品質を検証・改善。codd measure→codd dag verify→改善1件実装→報告YAML一発PASS"
   scout_exempt: true
   task_type: recon
+  target_path: scripts/deploy_task.sh
+  context_files:
+    - codd/brownfield/deploy_task_brownfield.md
+    - codd/design/deploy_task_design.md
+    - docs/research/codd_refactor_registry.md
   acceptance_criteria:
     AC1:
-      description: "テスト1458の失敗原因を特定し修正せよ。bats tests/unit/test_semantic_index_update.bats --filter 'auto-resolves' でPASS確認"
+      description: "codd measureでdeploy_task.shの設計書品質スコアを計測し結果を報告せよ"
       binary_checks:
-        - "テスト1458がPASSか: yes/no"
+        - "codd measureを実行したか: yes/no"
     AC2:
-      description: "他の既存テストにリグレッションなし。bats tests/unit/test_semantic_index_update.bats 全体PASS確認"
+      description: "codd dag verify --allで整合性検証し、違反があれば1件修正せよ"
       binary_checks:
-        - "test_semantic_index_update.bats全体PASSか: yes/no"
-  context_files:
-    - tests/unit/test_semantic_index_update.bats
-    - scripts/semantic_map_generate.sh
-  status: acknowledged
+        - "codd dag verifyを実行したか: yes/no"
+    AC3:
+      description: "lesson_candidateにCoDD操作で得た知見をfound=trueで記入せよ"
+      binary_checks:
+        - "verdictがbinary_checksと矛盾していないか: yes/no"
+  status: assigned
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
