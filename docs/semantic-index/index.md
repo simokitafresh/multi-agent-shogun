@@ -69,7 +69,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？ |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -83,6 +83,7 @@ codd:
 | cmd | `cmd_2760` CoDD v1.10.0時点の知識体系をv2.18.0に更新 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:31:24+09:00 by90fvbya toolu_01AsvZsDxzg3e4Xth1fevzM1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | cmd | `cmd_2780` 強化 — Simple-OCRリポジトリ全体のCoDD brownfield設計書逆生成 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T03:24:18+09:00 なぜなぜ7回。CoDDできちんとやろう。品質は下げない。現在の出力は合格点だ |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -626,17 +627,19 @@ codd:
 |------|---|
 | id | simple_ocr |
 | label | Simple OCR（画像OCR Webアプリ） |
-| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, 先にローカルで3エンジンの実際のOCR精度を試す, すくなくとも圧倒的にgoogle vision APIが優秀だな, task notification task id bqq5mjmxs task id tool use id tool, ほかのAPIも使ってみたいな, よい, exclusion managerのskipは意図的にやっただろ？知識がすべて抜けているな, 番号欠落は1の方針でよい, schedulだな, サンプルを増やしてみよう, mnt c Users simok OneDrive 画像 スクリーンショット お薬手帳サンプル jpg mnt c U |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager |
 | skills | なし |
 
 | 種別 | パス/参照 |
 |------|----------|
 | file | `projects/simple-ocr.yaml` |
-| file | `/mnt/c/Python_app/Simple-OCR/app.py` Flask+SocketIOエントリーポイント(700行) |
+| file | `projects/simple-ocr.yaml` |
+| file | `/mnt/c/Python_app/Simple-OCR/ocr_engines.py` 5エンジン+Stage 1.5+Stage 3(650行) |
+| file | `/mnt/c/Python_app/Simple-OCR/docs/two_stage_prompt_v3.txt` Stage 2プロンプト(スキーマ+ルール) |
+| file | `/mnt/c/Python_app/Simple-OCR/tests/test_two_stage_prompt.py` 6サンプル×3回安定性テスト |
+| file | `/mnt/c/Python_app/Simple-OCR/app.py` Flask+SocketIOエントリーポイント(デフォルト=two_stage) |
 | file | `/mnt/c/Python_app/Simple-OCR/exclusion_manager.py` OCR結果除外パターン管理 |
-| file | `/mnt/c/Python_app/Simple-OCR/admin/routes.py` 管理画面ルーティング |
-| file | `/mnt/c/Python_app/Simple-OCR/docs/ocr-engine-switching-design.md` OCRエンジン切替設計書 |
-| file | `/mnt/c/Python_app/Simple-OCR/docs/api-setup-guide.md` API取得ガイド |
+| file | `/mnt/c/Python_app/Simple-OCR/docs/ocr-engine-switching-design.md` 設計書(コスト実測+全パイプライン) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:00:56+09:00 Simple-OCRを確認して。新しいプロジェクトだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:06:43+09:00 お薬手帳のOCR精度が悪い。なにかいいアイデアはあるか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:08:16+09:00 Claude VisionのコストとGPTを比較したい |
@@ -659,6 +662,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:33:10+09:00 サンプルを増やしてみよう。'/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サンプル/20250523_141641.jpg' '/mnt/c/Users/simok/OneDrive/画像/スクリ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:35:50+09:00 まず自分で丁寧に読み込んでみよう。C:\Python_app\Simple-OCR\testsに画像をコピーすることから始めたらどうだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:42:37+09:00 '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サンプル/20250524_141003.jpg' '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サン |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T03:11:43+09:00 simple-OCRに問題を見つけた。用法が「分3」などを理解せずに「3」だけが残っている。平山トミ 令和7年1月11日 塩島内科医院 Dr.塩島俊也 アジスロマイシン錠500mg「トーワ」 1 朝食後服用 3日分 ツムラ麦門冬湯エキス顆粒 |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
