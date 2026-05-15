@@ -800,3 +800,7 @@
 | cmd_2746 | cmd_2662-2666で5回頻発したdeploy_task.sh配備後のinbox未配信事象の根因を特定し、再発防止策を提案する | infra | 05-15 | cmd_2662-2666のinbox未配信は、2026-0 |
 | cmd_2747 | karo_workarounds.yamlの歴史的データ汚染(detail空・category不正)82件を正しいcategory/detailに修復し、WA分析の精度を回復する | infra | 05-15 | karo_workarounds.yamlのWAデータ品質汚 |
 | cmd_2748 | dm-signal教訓698件+infra教訓583件の旧形式教訓にwhen/howフィールドを段階的に補完するスクリプトを作成し、教訓注入の精度を向上させる | infra | 05-15 | 旧形式教訓のwhen/how補完スクリプトを追加し、dm-s |
+| cmd_2749 | skill_auto_improveがSKILL.md改善で閉じないFAIL(スクリプトバグ起因)を検出し、コード修正cmdの起票を将軍に掲示板経由で要請する仕組みを追加する | infra | 05-15 | skill_auto_improveにFAIL分類、UNCH |
+| cmd_2750 | auto_failure_lesson.shがgate_fire_logのFAIL原因を参照し、スクリプトバグ起因のFAILを検出した場合にbulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | auto_failure_lesson.shにgate_fi |
+| cmd_2751 | insight_write.shに同一パターン繰返し検出と優先度判定を追加し、高優先度insightが蓄積のまま埋もれる問題を解消する | infra | 05-15 | insight_write.shにsource一致のpend |
+| cmd_2752 | gate_fire_logのFAIL→PASS遷移分析で未回復期間が閾値(設定可能)を超えたFAILを検出し、bulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | gate_shogun_startup.shのL6学習速度に |
