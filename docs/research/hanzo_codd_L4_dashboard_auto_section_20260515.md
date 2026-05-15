@@ -200,3 +200,34 @@ codd scan --path . → Documents: 15, Graph: 16 nodes, 10 edges
 codd validate --path . → validation_errors=0 (my docs), pre-existing: 2 (inbox_write warning + restart_watchers error)
 codd measure --path . --json → health_score: 92 → 93
 ```
+
+---
+
+## Saizo Follow-up: Generate / Validate / Measure
+
+Task: `cmd_training_codd_fix3_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .` | TIMEOUT after 120s. Output reached `wave_config not found. Auto-generating from requirements...`; no target-specific design document was produced. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` immediately after generate timeout | FAIL: generate mutated `codd/codd.yaml` scan scope to include broad `docs/`, producing 650 errors and 382 warnings across 627 Markdown files. |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` immediately after generate timeout | PASS command execution but invalid score state: `health_score=0`, `validation_errors=652`, `validation_warnings=382`, `documents_checked=627`. |
+| `git checkout -- codd/codd.yaml` | Cleanup of generate side effect only; restored configured CoDD scan scope before final validation. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` after cleanup | PASS: `OK: validated 16 Markdown files under configured doc_dirs`. |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` after cleanup | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0`. |
+
+### Follow-up Improvements
+
+1. Add a `dashboard_auto_section.sh`-specific CoDD requirement/design node before rerunning `generate`; current generation derives from generic repo requirements and does not reach the target script within 120s.
+2. Isolate `codd generate` config writes or add a post-generate guard for `scan.doc_dirs`; broad `docs/` expansion changes validate from 16 configured docs to 627 legacy docs.
+3. Add stable machine-readable contracts for the five subprocess inputs already identified in the original artifact: `knowledge_metrics.sh`, `ci_status_check.sh`, `model_analysis.sh`, skill health, and context freshness.
+4. Add a fixture that runs `dashboard_auto_section.sh --dry-run` against a dashboard with reversed markers, then asserts a deterministic error rather than relying on awk replacement behavior.
+5. Represent dashboard concurrency requirements as CoDD coverage axes: marker-bounded write, atomic temp+mv, lock ownership, ntfy dedup scope, graceful degradation visibility, and generated-section contract.
+
+### Follow-up Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | Existing artifact read and generate command executed | yes |
+| AC2 | Validate executed and result separated before/after generate cleanup | yes |
+| AC3 | Measure executed and at least three improvements identified | yes |
