@@ -113,6 +113,7 @@ TRAINING_AUTO_DEPLOY_COOLDOWN=${TRAINING_AUTO_DEPLOY_COOLDOWN:-86400}           
 TRAINING_AUTO_DEPLOY_FAIL_RATE=${TRAINING_AUTO_DEPLOY_FAIL_RATE:-20}             # 直近gate FAIL率しきい値（%）
 TRAINING_AUTO_DEPLOY_MIN_GATES=${TRAINING_AUTO_DEPLOY_MIN_GATES:-5}              # 直近gateサンプル不足時は修行条件成立
 TRAINING_AUTO_DEPLOY_RECENT=${TRAINING_AUTO_DEPLOY_RECENT:-50}                   # 忍者別直近gate参照件数
+TRAINING_AUTO_DEPLOY_VARIANT=${TRAINING_AUTO_DEPLOY_VARIANT:-script}             # script / codd — L4修行テンプレート種別
 TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
@@ -1726,6 +1727,7 @@ _handle_training_auto_deploy() {
     local now="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local task_status last_file last elapsed idle_elapsed cmd_id deploy_script tmp_task
+    local training_variant training_target training_purpose
 
     [ -n "$name" ] || return 1
 
@@ -1782,16 +1784,27 @@ _handle_training_auto_deploy() {
 
     cmd_id="cmd_training_L4_auto_$(date '+%Y%m%d%H%M')_${name}"
     tmp_task=$(mktemp "${STATE_DIR}/training_auto_${name}.XXXXXX.yaml")
+    training_variant="${TRAINING_AUTO_DEPLOY_VARIANT:-script}"
+    case "$training_variant" in
+        codd)
+            training_target="context/training-cycle.md"
+            training_purpose="L4修行: coddパイプライン5ステージを設計・実装・検証し、設計書品質向上を報告YAML一発PASSで完了させる"
+            ;;
+        *)
+            training_target="scripts/ninja_monitor.sh"
+            training_purpose="L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+            ;;
+    esac
     cat > "$tmp_task" <<EOF
 task:
   parent_cmd: ${cmd_id}
   task_id: ${cmd_id}_training
   task_type: training
   project: infra
-  target_path: scripts/ninja_monitor.sh
+  target_path: ${training_target}
   scout_exempt: true
   status: assigned
-  purpose: "L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+  purpose: "${training_purpose}"
 EOF
 
     log "TRAINING-AUTO-DEPLOY: $name cmd=${cmd_id} via deploy_task.sh --direct --yaml"

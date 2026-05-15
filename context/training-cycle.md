@@ -332,6 +332,13 @@ L1-L3は各スキルを個別に修行。L4は**全スキルを同時に要求�
 - AC2: 改善点の1つを実装しgit commit（実装系）
 - AC3: lesson_candidate found=true + 他2ACのbinary_checks全記入 + verdict（総合系）
 
+**CoDDパイプライン修行パターン（設計書品質型）**:
+- Stage 1: `codd spec` 相当の目的・制約・対象範囲を `docs/research/` に記録する
+- Stage 2: `codd elicit` / lexicon観点で要件穴・coverage軸を洗い出す
+- Stage 3: `codd generate` / `codd implement run` を試行し、AI制限時は手動実装へfallbackする
+- Stage 4: `codd dag verify` / `codd validate` で設計書DAGと実装整合性を検証する
+- Stage 5: `codd measure` / registry追記で設計書品質と再利用可能な知見を残す
+
 ### L4の罠要素（FILL_THIS + 構造崩壊誘因）
 
 1. テンプレートに`FILL_THIS`を3箇所仕込む（purpose_validation.cmd_purpose, result.details, lesson_candidate.detail）
