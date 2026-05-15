@@ -1631,7 +1631,7 @@ _handle_auto_clear() {
 }
 
 _training_pipeline_has_work() {
-    grep -qE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
+    grep -qE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
 }
 
 _training_auto_state_file() {
@@ -1887,8 +1887,10 @@ check_stall() {
     fi
 
     # status判定: assigned/acknowledged/in_progressのみ対象
+    # GP-233パターン: grep直接でWSL2 NTFS遅延対策（yaml_field_get回避）
     local status task_id
-    status=$(yaml_field_get "$task_file" "status")
+    status=$(grep -m1 -E '^\s*status:\s*' "$task_file" 2>/dev/null \
+        | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
 
     # Early exit: idle/done/等はSTALL対象外（task_id読込も不要）
     case "$status" in
@@ -1899,9 +1901,18 @@ check_stall() {
             ;;
     esac
 
-    task_id=$(yaml_field_get "$task_file" "subtask_id")
-    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "task_id")
-    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
+    # awk単一パスで残りフィールドを一括取得（従来: yaml_field_get×5=最大5サブシェル → awk×1）
+    # L4-R24最適化パターン（write_karo_snapshot/write_state_fileと同方式）
+    local deployed_at_val last_progress
+    IFS='|' read -r task_id deployed_at_val last_progress < <(awk '
+        BEGIN { t=""; da=""; pa="" }
+        /^[ \t]*subtask_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+        /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+        /^[ \t]*deployed_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); da=v }
+        /^[ \t]*progress_updated_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pa=v }
+        END { print t "|" da "|" pa }
+    ' "$task_file")
 
     # Ghost Filter: task_id空のSTALL誤検知を排除(cmd_1150)
     if [ -z "$task_id" ]; then
@@ -1909,8 +1920,6 @@ check_stall() {
         return
     fi
 
-    local deployed_at_val
-    deployed_at_val=$(yaml_field_get "$task_file" "deployed_at" "")
     if [ -n "$deployed_at_val" ]; then
         local deployed_epoch
         deployed_epoch=$(date -d "$deployed_at_val" +%s 2>/dev/null || echo "")
@@ -1930,9 +1939,7 @@ check_stall() {
         assigned|acknowledged)
             ;;
         in_progress)
-            # progress_updated_atが最近更新されていれば作業中と判断
-            local last_progress
-            last_progress=$(yaml_field_get "$task_file" "progress_updated_at" "")
+            # progress_updated_atが最近更新されていれば作業中と判断（last_progressはawk取得済み）
             if [ -n "$last_progress" ]; then
                 local progress_epoch
                 progress_epoch=$(date -d "$last_progress" +%s 2>/dev/null || echo "0")

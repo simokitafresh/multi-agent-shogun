@@ -538,3 +538,33 @@ fi
     [[ "$output" == *"PASS: task.status=assigned + bash subprocess → BUSY"* ]]
     [[ "$output" == *"PASS: PSTREE-OVERRIDE logged"* ]]
 }
+
+@test "training auto deploy: delegated pipeline work blocks training deployment" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue"
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<INNEREOF
+- id: cmd_delegated_test
+  status: delegated
+  purpose: active delegated work
+INNEREOF
+
+if _training_pipeline_has_work; then
+    echo "PASS: delegated pipeline work detected"
+else
+    echo "FAIL: delegated pipeline work was ignored"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: delegated pipeline work detected"* ]]
+}
