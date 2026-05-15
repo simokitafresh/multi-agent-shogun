@@ -831,7 +831,8 @@ get_latest_report_file() {
     local legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
     local latest_cmd_report=""
 
-    latest_cmd_report=$(find "$SCRIPT_DIR/queue/reports/" -maxdepth 1 -name "${name}_report_cmd*.yaml" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
+    # shellcheck disable=SC2012  # find遅延回避(L504: WSL2 NTFS stat変動63-1942ms)。ファイル名に空白なし
+    latest_cmd_report=$(ls -t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null | head -1 || true)
     if [ -n "$latest_cmd_report" ]; then
         echo "$latest_cmd_report"
         return 0
@@ -2263,32 +2264,21 @@ check_destructive_commands() {
 
     local now
     now=$EPOCHSECONDS
-    local patterns=()
 
-    # Pattern 1: rm -rf + PJ外パス（/mnt/c/Windows, /mnt/c/Users, /home, /, ~ 等）
-    if echo "$output" | grep -qE 'rm\s+-rf\s+(/mnt/c/(Windows|Users|Program)|/home|/\s|/\.|~)'; then
-        patterns+=("rm-rf-outside-project")
-    fi
-
-    # Pattern 2: git push --force（ただし--force-with-leaseを除外）
-    if echo "$output" | grep -E 'git\s+push.*--force' 2>/dev/null | grep -qv 'force-with-lease'; then
-        patterns+=("git-push-force")
-    fi
-
-    # Pattern 3: sudo コマンド
-    if echo "$output" | grep -qE '(^|[[:space:]])sudo[[:space:]]'; then
-        patterns+=("sudo")
-    fi
-
-    # Pattern 4: kill / killall / pkill コマンド
-    if echo "$output" | grep -qE '(^|[[:space:]])(kill|killall|pkill)[[:space:]]'; then
-        patterns+=("kill-command")
-    fi
-
-    # Pattern 5: pipe-to-shell（curl|bash, wget|sh）
-    if echo "$output" | grep -qE 'curl.*\|.*bash|wget.*\|.*sh'; then
-        patterns+=("pipe-to-shell")
-    fi
+    # 5パターンをawk 1パスで検出（WSL2プロセス起動コスト削減: echo|grep×10→awk×1）
+    local -a patterns=()
+    local detected
+    detected=$(printf '%s\n' "$output" | awk '
+        /rm[[:space:]]+-rf[[:space:]]+(\/mnt\/c\/(Windows|Users|Program)|\/home|\/[[:space:]]|\/\.|~)/ { print "rm-rf-outside-project" }
+        /git[[:space:]]+push.*--force/ && !/force-with-lease/ { print "git-push-force" }
+        /(^|[[:space:]])sudo[[:space:]]/ { print "sudo" }
+        /(^|[[:space:]])(kill|killall|pkill)[[:space:]]/ { print "kill-command" }
+        /curl.*\|.*bash|wget.*\|.*sh/ { print "pipe-to-shell" }
+    ' | sort -u)
+    while IFS= read -r _dp; do
+        [ -z "$_dp" ] && continue
+        patterns+=("$_dp")
+    done <<< "$detected"
 
     # 検知パターンごとにデバウンスチェック+通知
     for pattern in "${patterns[@]}"; do
