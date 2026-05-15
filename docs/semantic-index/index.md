@@ -62,6 +62,25 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:45:43+09:00 ではrebalancerの概要を教えてくれ。セマンティック辞書にも登録しよう |
 | cmd | `cmd_2739` 改善 — スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し (`scripts/hooks/prompt_state_inject.sh`, `skills/cdp-browse/SKILL.md`, `skills/codd/SKILL.md`) |
 
+## codd_methodology — CoDD整合性駆動開発
+
+| 属性 | 値 |
+|------|---|
+| id | codd_methodology |
+| label | CoDD整合性駆動開発 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0 |
+| skills | codd, codd-refactor |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/codd.md` |
+| file | `memory/reference_codd_oshio_articles.md` |
+| file | `skills/codd/SKILL.md` |
+| file | `skills/codd-refactor/SKILL.md` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T11:57:14+09:00 CoDD v2.18.0 アップデート完了 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T12:02:18+09:00 CoDDを有効活用するための準備はできているか？ |
+| cmd | `cmd_2760` CoDD v1.10.0時点の知識体系をv2.18.0に更新 |
+
 ## gate_bypass_prevention — gate迂回防止
 
 | 属性 | 値 |
@@ -137,7 +156,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？ |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで |
 | skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 
 | 種別 | パス/参照 |
@@ -156,6 +175,9 @@ codd:
 | cmd | `cmd_2672` 教訓統合 — lessons_shogun v3統合 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T21:24:08+09:00 われらの軍のシステムをまとめるとどうなるのかな？三層学習ループ、セマンティックインデックス、レベル6、deepdiveなどかなり特徴があるよな。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-12T13:58:42+09:00 自動成長ループが構造的に阻害されている場所はないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:10:02+09:00 スキルの自動成長ループは順調か？構造的な問題はないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:35:51+09:00 同様のコード修正までが一気通貫していないせいで、自動成長ループが構造的に阻害されているものがないか確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:50:13+09:00 三層学習ループに同様の構造的な阻害がないか確認しよう |
 
 ## alm_research — ALM研究
 
@@ -243,6 +265,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:43:04+09:00 b1fseli4u toolu_01TFhAEeMFFB8R8Hk6KbNrMW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 | cmd | `cmd_2734` 強化 — セマンティクスインデックスにスキル推奨列を追加し忍者タスクに自動注入 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `scripts/deploy_task.sh`) |
 | cmd | `cmd_2737` (`scripts/deploy_task.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/helpers/deploy_task_scaffold.bash`) |
+| cmd | `cmd_2746` 偵察 — deploy_task.sh配備後inbox未配信の根因調査 |
+| cmd | `cmd_2754` 強化 — ninja_monitorに修行サイクル自動トリガーを追加 (`scripts/ninja_monitor.sh`) |
+| cmd | `cmd_2755` 強化 — FAIL→PASS遷移率の定期計測をninja_monitorに追加 (`scripts/ninja_monitor.sh`) |
+| cmd | `cmd_2757` 強化 — 教訓定期棄却の自動トリガーをninja_monitorに追加 (`scripts/lesson_deprecation_scan.sh`, `scripts/ninja_monitor.sh`, `tests/unit/test_lesson_deprecation_scan.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -475,4 +501,3 @@ codd:
 | cmd | `cmd_karo_rebalancer_push` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T03:15:53+09:00 リバランサーのGoogleOauthはもう誰でも利用できる？ |
 | cmd | `cmd_karo_rebalancer_push_2` |
-

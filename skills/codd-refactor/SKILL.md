@@ -4,7 +4,7 @@ description: |
   CoDDパイプラインでbashスクリプトの設計書を生成し、リファクタリング+速度改善を実行するスキル。
   プロファイリング→ボトルネック特定→CoDD spec作成→設計書生成→実装→before/after計測の全工程。
   TRIGGER: /codd-refactor、リファクタリング設計、速度改善、テスト高速化、batch化設計、CoDD設計書からリファクタ
-  DO NOT TRIGGER: コード実装そのもの(CoDDはbash implementに非対応)、テスト実行のみ(bats直接実行)、
+  DO NOT TRIGGER: テスト実行のみ(bats直接実行)、
   新規スクリプト作成(CoDDは既存コードのリファクタ向き)、DM-Signal Python(別ワークフロー)
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合）"
 argument-hint: "[target_script or spec_path]"
@@ -53,8 +53,8 @@ bashスクリプトのリファクタリングを、データ駆動で設計→�
 ```bash
 _fail=0
 export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
-command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。/home/simokitafresh/.codd-venv/bin/python -m pip install codd-dev==1.10.0"; _fail=1; }
-codd --version | grep -q '1.10.0' || { echo "BLOCK: codd v1.10.0ではない"; _fail=1; }
+command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。export PATH=/home/simokitafresh/.codd-venv/bin:$PATH"; _fail=1; }
+codd --version | grep -qE '^codd, version 2\.18\.' || { echo "BLOCK: codd v2.18.xが必要。pip install --upgrade codd-dev"; _fail=1; }
 command -v bats >/dev/null 2>&1 || { echo "BLOCK: bats未インストール。npm i -g bats"; _fail=1; }
 command -v parallel >/dev/null 2>&1 || { echo "BLOCK: parallel未インストール。apt install parallel"; _fail=1; }
 [ "$_fail" -eq 1 ] && return 1
@@ -138,7 +138,7 @@ done
 codd validate 2>/dev/null || true
 ```
 
-v1.10.0でも`codd implement --language bash`は`No such option: --language`で失敗する。bashリファクタではCoDDを設計書・依存グラフ・伝播に使い、Phase 4の実装は手動で行う。
+v2.18.0で`codd implement run --language`オプションをローカル確認済み。bashリファクタでも`codd implement run --language bash --enable-typecheck-loop`で実装生成を試みよ。失敗時はCoDDを設計書・依存グラフ・伝播に使い、Phase 4の実装は手動で行う。
 
 ## Phase 4: 実装（1つずつ→テスト→次）
 
