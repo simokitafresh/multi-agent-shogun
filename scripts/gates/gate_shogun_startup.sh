@@ -1182,15 +1182,43 @@ for wtype, total in sorted(warn_type_total.items(), key=lambda x: -x[1]):
 if high_fp:
     for line in high_fp:
         print(line)
+    block_patterns = defaultdict(int)
+    for e in entries:
+        if e.get('gate_result') != 'BLOCK':
+            continue
+        note = e.get('notes', 'unknown').strip() or 'unknown'
+        if '|check=' in note:
+            note = note.split('|check=', 1)[0].strip()
+        if 'WARN累計昇格' in note:
+            note = 'WARN累計昇格'
+        block_patterns[note] += 1
+    if block_patterns:
+        pattern_summary = ', '.join(
+            f'{name}:{count}件'
+            for name, count in sorted(block_patterns.items(), key=lambda x: (-x[1], x[0]))[:3]
+        )
+    else:
+        pattern_summary = '直近BLOCKなし'
+    for line in high_fp:
+        payload = line.strip()
+        print(f"__FP_RELAXATION_REQUEST__\t{payload}\t{pattern_summary}")
 else:
     print("  高FP率のWARN typeなし")
 PY
 )
-    echo "$_fp_report"
+    _fp_visible="$(printf '%s\n' "$_fp_report" | grep -v '^__FP_RELAXATION_REQUEST__' || true)"
+    echo "$_fp_visible"
     if echo "$_fp_report" | grep -q "ALERT"; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
             alerts+=("gate偽陽性: 高FP率のWARN type検出。精度改善を検討せよ")
+        fi
+        if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
+            while IFS=$'\t' read -r _fp_marker _fp_alert _fp_patterns; do
+                [ "$_fp_marker" = "__FP_RELAXATION_REQUEST__" ] || continue
+                _fp_bulletin="Gate 13.8 高FP率検出: ${_fp_alert}。直近BLOCK修正パターン分類: ${_fp_patterns}。将軍はgate条件緩和cmdを起票されたし。"
+                BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_fp_bulletin" shogun action_required >/dev/null 2>&1 || true
+            done <<< "$_fp_report"
         fi
     fi
 else
