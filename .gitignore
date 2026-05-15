@@ -11,6 +11,8 @@
 
 # Local runtime / sandbox artifacts
 .codex-tmp/
+.codex_tmp/
+tmp/
 .venv/
 .claude/worktrees/
 
