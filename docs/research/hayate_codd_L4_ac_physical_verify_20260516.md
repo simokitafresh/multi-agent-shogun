@@ -100,3 +100,31 @@ worker: "hayate"
 | AC1 | Read target and recorded purpose, constraints, scope in docs/research | yes |
 | AC2 | Identified elicit/lexicon/coverage holes | yes |
 | AC3 | Ran validate/measure and identified at least 3 improvements | yes |
+
+## Saizo Follow-up: Generate / Validate / Measure
+
+Task: `cmd_training_codd_fix1_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd generate --wave 1 --path .` | TIMEOUT after 120s. Output reached `wave_config not found. Auto-generating from requirements...`; no target-specific design document was produced. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` immediately after generate timeout | FAIL: generate mutated `codd/codd.yaml` scan scope to include broad `docs/`, producing 655 errors and 382 warnings across 627 Markdown files. |
+| `git checkout -- codd/codd.yaml` | Cleanup of generate side effect only; restored configured CoDD scan scope before final validation. |
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` after cleanup | PASS: `OK: validated 16 Markdown files under configured doc_dirs`. |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` after cleanup | PASS command execution, but project score is currently `health_score=0`, with `validation_errors=651`, `validation_warnings=382`, `documents_checked=627`, `coverage_ratio=0.0`. |
+
+### Follow-up Improvements
+
+1. Add an `ac_physical_verify.sh`-specific CoDD requirement/design node before rerunning `generate`; current generation derives from generic repo requirements and never reaches the target script within 120s.
+2. Prevent `codd generate` from rewriting `scan.doc_dirs` to broad `docs/`, or run generation in an isolated config path so validation scope does not explode after a failed generation.
+3. Align `codd measure` with `codd validate` scan scope; `validate` checks 16 configured docs while `measure` still inspects 627 docs and reports hundreds of legacy frontmatter errors.
+4. Fix duplicate node IDs between `codd/design/*` and `docs/design/cmd_2762_*` before relying on project-wide measure as a design quality score.
+5. Add CoDD coverage axes for `ac_physical_verify.sh`: physical path verification, line/section binding, project fallback, gitignore commit risk, and parallel work warning.
+
+### Follow-up Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | Existing artifact read and generate command executed | yes |
+| AC2 | Validate executed and result separated before/after generate cleanup | yes |
+| AC3 | Measure executed and at least three improvements identified | yes |
