@@ -1,32 +1,23 @@
 task:
-  cmd_id: cmd_training_L4_codd_202605151351_tobisaru
-  type: training
+  cmd_id: cmd_karo_ci_fix_test1458
+  type: ci_fix
   project: infra
-  purpose: "CoDD修行: inbox_write.shの設計書品質を検証・改善。codd measure→codd scan→codd dag verify→改善1件実装→報告YAML一発PASS"
+  purpose: "CI RED修正 — テスト1458(semantic map auto-resolve insights)がFAIL。修行commitが原因"
   scout_exempt: true
   task_type: recon
-  target_path: scripts/inbox_write.sh
-  context_files:
-    - codd/brownfield/inbox_write_brownfield.md
-    - codd/design/inbox_write_design.md
-    - context/training-cycle.md
   acceptance_criteria:
     AC1:
-      description: "codd measureでinbox_write.shの設計書品質スコアを計測し結果を報告せよ"
+      description: "テスト1458の失敗原因を特定し修正せよ。bats tests/unit/test_semantic_index_update.bats --filter 'auto-resolves' でPASS確認"
       binary_checks:
-        - "codd measureを実行したか: yes/no"
-        - "スコアを報告に記載したか: yes/no"
+        - "テスト1458がPASSか: yes/no"
     AC2:
-      description: "codd dag verify --allで設計書DAGの整合性を検証し、違反があれば1件修正せよ"
+      description: "他の既存テストにリグレッションなし。bats tests/unit/test_semantic_index_update.bats 全体PASS確認"
       binary_checks:
-        - "codd dag verifyを実行したか: yes/no"
-        - "違反があれば1件修正したか(違反なしならyes): yes/no"
-    AC3:
-      description: "lesson_candidateにCoDD操作で得た知見をfound=trueで記入せよ"
-      binary_checks:
-        - "lesson_candidate found=trueで記入したか: yes/no"
-        - "verdictがbinary_checksと矛盾していないか: yes/no"
-  status: in_progress
+        - "test_semantic_index_update.bats全体PASSか: yes/no"
+  context_files:
+    - tests/unit/test_semantic_index_update.bats
+    - scripts/semantic_map_generate.sh
+  status: assigned
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -58,4 +49,3 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  parent_cmd: cmd_training_L4_auto_202605151330_tobisaru_normal
