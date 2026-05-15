@@ -14,12 +14,11 @@ ai_commands:
 coding_principles: null
 scan:
   source_dirs:
-  - src/
+  - scripts/
   - codd/brownfield_targets/
   test_dirs:
   - tests/
   doc_dirs:
-  - docs/
   - codd/requirements/
   - codd/design/
   - codd/brownfield/
