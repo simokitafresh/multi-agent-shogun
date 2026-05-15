@@ -34,6 +34,7 @@ pipeline: spec -> elicit/lexicon -> validate -> measure
 | Evidence | Result |
 | --- | --- |
 | `bash -n scripts/cmd_delegate.sh` | PASS |
+| `/home/simokitafresh/.codd-venv/bin/codd generate --path . --wave 1` | PASS: wave_config generated from 11 requirements; 0 generated; `docs/governance/adr_batch_yaml_io.md` and `docs/test/acceptance_criteria.md` skipped |
 | `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: 16 Markdown files |
 | `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | health_score=95, validation_errors=0, validation_warnings=0, total_nodes=16, total_edges=12, orphan_nodes=4 |
 | `/home/simokitafresh/.codd-venv/bin/codd dag verify --path . --format json` | PASS。`depends_on_consistency` は propagation output未生成でskip警告 |
@@ -68,6 +69,10 @@ Recommended lexicon axes for this script:
 - `ops_yaml_two_field_atomicity`: shared queueで複数field更新するときの中間状態と復旧方法を設計する。
 
 ## 3. Validate / Measure Score
+
+### Generate Result
+
+追完F2で `codd generate --path . --wave 1` を実行した。結果は `wave_config generated from 11 requirement(s)`、`Wave 1: 0 generated, 2 skipped`。既存の `docs/governance/adr_batch_yaml_io.md` と `docs/test/acceptance_criteria.md` がskipされ、`cmd_delegate.sh` 固有の設計書は生成されなかった。原因は §2 GAP-1 の通り、`cmd_delegate.sh` 専用 requirement/design node が未登録であること。
 
 ### CoDD Tool Score
 
