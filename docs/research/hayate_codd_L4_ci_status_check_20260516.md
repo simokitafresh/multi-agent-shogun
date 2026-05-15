@@ -140,3 +140,76 @@
 ## 結論
 
 `ci_status_check.sh` は小さく、用途・基本出力は明確である。一方で、CI監視という運用重要度に対して「依存preflight」「通知状態のスコープ/排他」「UNKNOWN原因分類」「failed_jobsの下流契約」が設計書化されていない。最優先改善は `jq`/`timeout` preflight と通知状態ファイルのスコープ化である。
+
+## 追完ループ結果: cmd_training_codd_loop_hayate
+
+### AC1: generate
+
+Command:
+
+```bash
+timeout 1200 codd generate --wave 1 --force --path .
+```
+
+Result:
+
+```text
+wave_config not found. Auto-generating from requirements...
+wave_config generated from 11 requirement(s)
+Generated: docs/test/acceptance_criteria.md (test:acceptance-criteria)
+Generated: docs/governance/adr_yaml_batch_operations.md (governance:adr-yaml-batch-operations)
+Wave 1: 2 generated, 0 skipped
+EXIT_CODE=0
+```
+
+Binary check: PASS (exit code 0)
+
+### AC2: validate
+
+Command:
+
+```bash
+timeout 1200 codd validate --path .
+```
+
+Result summary:
+
+```text
+ERROR: 655 error(s), 11 blocked issue(s), 386 warning(s), 628 Markdown files checked
+[ERROR] codd/design/cmd_save_design.md: node_id 'design:script:cmd-save' is already defined in docs/design/cmd_2762_cmd_save_design.md
+[ERROR] codd/design/deploy_task_design.md: node_id 'design:script:deploy-task' is already defined in docs/design/cmd_2762_deploy_task_design.md
+[ERROR] codd/design/inbox_write_design.md: node_id 'design:script:inbox-write' is already defined in docs/design/cmd_2762_inbox_write_design.md
+[ERROR] codd/design/ninja_monitor_design.md: node_id 'design:script:ninja-monitor' is already defined in docs/design/cmd_2762_ninja_monitor_design.md
+[ERROR] docs/archive/mcas.md: missing CoDD YAML frontmatter
+[ERROR] docs/governance/adr_batch_yaml_io.md: depended_by references undefined node 'design:system-architecture'
+[ERROR] docs/plan/implementation_plan.md: wave_config mismatch for 'plan:implementation-plan'
+[ERROR] docs/research/cmd_1991_codd_extract/modules/cmd-1826-memory-analysis.md: circular dependency detected
+EXIT_CODE=1
+```
+
+Binary check: FAIL (exit code 1; repository-wide CoDD validation currently has pre-existing global errors)
+
+### AC3: measure
+
+Command:
+
+```bash
+timeout 1200 codd measure --path .
+```
+
+Result:
+
+```text
+CoDD Project Metrics — Health Score: 0/100
+
+Graph:   16 nodes, 12 edges, 4 orphans, max depth 1
+         avg out-degree 0.75, connectivity 0.050
+Coverage: 0/0 source files tracked (N/A), 628 design docs
+Quality: 628 docs validated (653 errors, 386 warnings)
+         0 files policy-checked (0 critical, 0 warnings), 0 rules
+EXIT_CODE=0
+```
+
+health_score: 0
+
+Binary check: PASS (exit code 0)

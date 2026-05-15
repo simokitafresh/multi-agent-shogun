@@ -12,7 +12,7 @@ task:
       description: "timeout 1200 codd validate --path . を実行。結果を同ファイル末尾に追記"
     AC3:
       description: "timeout 1200 codd measure --path . を実行。health_scoreを同ファイル末尾に追記し報告"
-  status: in_progress
+  status: failed
   report_path: queue/reports/hayate_report_cmd_training_codd_loop_hayate.yaml
   related_lessons:
   - id: 'L512'
