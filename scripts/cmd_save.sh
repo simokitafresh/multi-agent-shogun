@@ -559,6 +559,71 @@ for entry in entries:
 PY
 }
 
+collect_bulletin_count_claims_missing_grep_evidence() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+
+    [[ -n "$block_text" ]] || return 0
+
+    ASSUMPTION_BLOCK_TEXT="$block_text" python3 - <<'PY'
+import os
+import re
+
+content = os.environ.get("ASSUMPTION_BLOCK_TEXT", "")
+lines = content.splitlines()
+
+in_assumptions = False
+assumptions_indent = -1
+current = {}
+entries = []
+
+for line in lines:
+    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
+    if m_aline and not in_assumptions:
+        in_assumptions = True
+        assumptions_indent = len(m_aline.group(1))
+        continue
+
+    if in_assumptions:
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= assumptions_indent:
+                in_assumptions = False
+                if current:
+                    entries.append(dict(current))
+                current = {}
+                continue
+        if re.match(r'\s*-\s', line):
+            if current:
+                entries.append(dict(current))
+            current = {}
+        m = re.match(r'^\s*-\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+            continue
+        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+        continue
+
+if current:
+    entries.append(current)
+
+bulletin_pat = re.compile(r'(掲示板|bulletin|blt_[0-9A-Za-z_]+)', re.I)
+count_pat = re.compile(r'\d+\s*(?:件|entries?|items?|records?)', re.I)
+grep_evidence_pat = re.compile(
+    r'\b(?:grep|rg)\b[\s\S]*(?:[0-9]+\s*件|[0-9]+\s*hits?|0\s*matches?|no\s+matches?|ヒットなし|該当なし)',
+    re.I,
+)
+
+for entry in entries:
+    claim = entry.get("claim", "").strip()
+    if not claim:
+        continue
+    if bulletin_pat.search(claim) and count_pat.search(claim) and not grep_evidence_pat.search(claim):
+        print(claim)
+PY
+}
+
 check_measurement_env_info() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -4018,6 +4083,16 @@ for e in entries:
                 echo "  - $_assump_claim" >&2
             done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
             record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
+        fi
+        _ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP="$(collect_bulletin_count_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
+        if [[ -n "${_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
+            echo "WARNING: bulletin由来の件数claimを検出しました。assumptions claimにgrep/rg検証結果を記載してください" >&2
+            echo "  例: claim: \"2026-05-15時点で grep -n 'blt_...' queue/bulletin_board.yaml → 1件\"" >&2
+            while IFS= read -r _assump_claim; do
+                [[ -z "$_assump_claim" ]] && continue
+                echo "  - $_assump_claim" >&2
+            done <<< "$_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP"
+            record_warn_reason "bulletin由来件数claimにgrep検証結果なし" "check=assumptions_bulletin_count_grep_evidence"
         fi
         check_measurement_env_info
     fi

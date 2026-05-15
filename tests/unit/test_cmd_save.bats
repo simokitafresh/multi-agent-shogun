@@ -54,6 +54,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^check_lord_instruction_ac_alignment_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_bulletin_count_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_action_immediate_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -70,7 +71,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -2042,6 +2043,66 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" != *"measurement_envフィールドの記入を検討してください"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.14: bulletin由来の件数claimにgrep検証結果なし→WARNING" {
+    CMD_BLOCK='project: infra
+purpose: "掲示板報告をもとにcmdを起票する"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-15時点で掲示板報告由来の未処理が4件ある"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"bulletin由来の件数claimを検出しました"* ]]
+    [[ "$output" == *"grep/rg検証結果"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.15: bulletin由来の件数claimにgrep検証結果あり→WARNINGなし" {
+    CMD_BLOCK='project: infra
+purpose: "掲示板報告をもとにcmdを起票する"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-15時点で grep -n '\''blt_target'\'' queue/bulletin_board.yaml → 4件。掲示板報告由来の未処理が4件ある"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"bulletin由来の件数claimを検出しました"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.16: bulletin由来でない件数claim→WARNINGなし" {
+    CMD_BLOCK='purpose: "通常ログの件数を確認する"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-15時点で通常ログの未処理が4件ある"
+    source: "logs/example.log"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"bulletin由来の件数claimを検出しました"* ]]
     [ "$status" -eq 0 ]
 }
 
