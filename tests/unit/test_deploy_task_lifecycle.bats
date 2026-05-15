@@ -158,13 +158,22 @@ run_double_deploy_guard() {
 
     log() { echo "$*" >> "$log_file"; }
 
-    local DEPLOY_PARENT_CMD="" DEPLOY_TASK_ID="" _line
+    local DEPLOY_PARENT_CMD="" DEPLOY_TASK_ID="" DEPLOY_SCOPE_MODE="" _line
     while IFS= read -r _line; do
         [[ -z "$DEPLOY_PARENT_CMD" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && {
             DEPLOY_PARENT_CMD="${BASH_REMATCH[1]//\'/}"; DEPLOY_PARENT_CMD="${DEPLOY_PARENT_CMD//\"/}"
         }
+        [[ -z "$DEPLOY_TASK_ID" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && {
+            DEPLOY_TASK_ID="${BASH_REMATCH[1]//\'/}"; DEPLOY_TASK_ID="${DEPLOY_TASK_ID//\"/}"
+        }
         [[ -z "$DEPLOY_TASK_ID" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && {
             DEPLOY_TASK_ID="${BASH_REMATCH[1]//\'/}"; DEPLOY_TASK_ID="${DEPLOY_TASK_ID//\"/}"
+        }
+        [[ -z "$DEPLOY_SCOPE_MODE" && "$_line" =~ ^[[:space:]]*task_type:[[:space:]]+(.*) ]] && {
+            DEPLOY_SCOPE_MODE="${BASH_REMATCH[1]//\'/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE//\"/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE,,}"
+        }
+        [[ -z "$DEPLOY_SCOPE_MODE" && "$_line" =~ ^[[:space:]]*scope_mode:[[:space:]]+(.*) ]] && {
+            DEPLOY_SCOPE_MODE="${BASH_REMATCH[1]//\'/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE//\"/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE,,}"
         }
     done < "$_TASK_YAML"
 
@@ -176,11 +185,12 @@ run_double_deploy_guard() {
             local _dd_pcmd="" _dd_tid="" _dd_status=""
             while IFS= read -r _line; do
                 [[ -z "$_dd_pcmd" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && { _dd_pcmd="${BASH_REMATCH[1]//\'/}"; _dd_pcmd="${_dd_pcmd//\"/}"; }
+                [[ -z "$_dd_tid" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && { _dd_tid="${BASH_REMATCH[1]//\'/}"; _dd_tid="${_dd_tid//\"/}"; }
                 [[ -z "$_dd_tid" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && { _dd_tid="${BASH_REMATCH[1]//\'/}"; _dd_tid="${_dd_tid//\"/}"; }
                 [[ -z "$_dd_status" && "$_line" =~ ^[[:space:]]*status:[[:space:]]+(.*) ]] && { _dd_status="${BASH_REMATCH[1]//\'/}"; _dd_status="${_dd_status//\"/}"; }
             done < "$_dd_task"
             [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
-            if [ -n "$DEPLOY_TASK_ID" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
+            if [ -n "$DEPLOY_TASK_ID" ] && [ "$DEPLOY_SCOPE_MODE" != "exact" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
                 log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
                 continue
             fi
@@ -666,6 +676,53 @@ task:
 EOF
 
     run run_double_deploy_guard sasuke
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2804: exact scope with empty _ac_task_id is not treated as split deploy" {
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2804
+  task_id: cmd_2804_impl
+  status: assigned
+EOF
+
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2804
+  task_id: cmd_2804_exact
+  task_type: exact
+  _ac_task_id: ""
+  status: pending
+EOF
+
+    run run_double_deploy_guard sasuke
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "cmd_2804: non-exact split deploy still allows different _ac_task_id" {
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2804
+  _ac_task_id: cmd_2804_ac1
+  status: assigned
+EOF
+
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2804
+  task_type: impl
+  _ac_task_id: cmd_2804_ac2
+  status: pending
+EOF
+
+    run run_double_deploy_guard sasuke
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2804: exact scope guards _ac_task_id empty warning in deploy_task.sh" {
+    run grep -F '[ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]' "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
 }
 

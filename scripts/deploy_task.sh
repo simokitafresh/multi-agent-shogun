@@ -6054,7 +6054,7 @@ deploy_task_main() {
     check_idle "$pane_target" && is_idle=true
 
     local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
-    local deploy_parent_cmd deploy_task_id dd_task dd_ninja dd_pcmd dd_tid dd_status
+    local deploy_parent_cmd deploy_task_id deploy_scope_mode dd_task dd_ninja dd_pcmd dd_tid dd_status
     local deploy_lock_fd="" deploy_lock_file=""
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
@@ -6201,13 +6201,17 @@ except Exception:
 
     deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
     deploy_task_id=$(field_get "$task_yaml" "_ac_task_id" "")
+    deploy_scope_mode=$(field_get "$task_yaml" "task_type" "")
+    [ -z "$deploy_scope_mode" ] && deploy_scope_mode=$(field_get "$task_yaml" "scope_mode" "")
+    [ -z "$deploy_scope_mode" ] && deploy_scope_mode=$(field_get "$task_yaml" "type" "")
+    deploy_scope_mode="${deploy_scope_mode,,}"
 
     if [ -n "$deploy_parent_cmd" ]; then
         warn_same_ninja_redeploy "$task_yaml" "$NINJA_NAME" "$deploy_parent_cmd"
     fi
 
-    # _ac_task_id必須チェック: 分割配備の判定に必要。未設定だとparent_cmdクリア事故(cmd_1751/1752)
-    if [ -z "$deploy_task_id" ]; then
+    # _ac_task_id必須チェック: 分割配備の判定に必要。scope_mode=exactはAC分割しないため対象外。
+    if [ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then
         log "WARN: _ac_task_id is empty — split deploy detection may misfire"
         echo "WARN: _ac_task_id が未設定。分割配備時に二重配備と誤判定する可能性あり。task YAMLに _ac_task_id を設定せよ。" >&2
     fi
@@ -6234,7 +6238,7 @@ except Exception:
             # 二重配備判定: deploy_task_idが空(reset_stale_fields後)の場合は
             # parent_cmd一致+相手がactive=二重配備とみなす。
             # deploy_task_idが存在する場合は task_id同一チェックで分割配備を許可。
-            if [ -n "$deploy_task_id" ]; then
+            if [ -n "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then
                 # 両方にtask_idがある場合: 同一task_idのみBLOCK(分割配備はtask_id異なるため許可)
                 if [ -z "$dd_tid" ] || [ "$deploy_task_id" != "$dd_tid" ]; then
                     log "split_deploy: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
