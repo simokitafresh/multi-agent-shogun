@@ -1641,9 +1641,27 @@ _training_auto_state_file() {
 _training_recent_gate_stats() {
     local name="$1"
     local log_file="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+    local recent_limit="${TRAINING_AUTO_DEPLOY_RECENT:-50}"
     [ -f "$log_file" ] || { printf '0 0 0\n'; return 0; }
+    [[ "$recent_limit" =~ ^[0-9]+$ ]] || recent_limit=50
+    [ "$recent_limit" -gt 0 ] 2>/dev/null || recent_limit=50
 
-    awk -v name="$name" -v limit="$TRAINING_AUTO_DEPLOY_RECENT" '
+    if command -v tac >/dev/null 2>&1; then
+        tac "$log_file" 2>/dev/null | awk -v name="$name" -v limit="$recent_limit" '
+            $0 ~ ("queue/reports/" name "_report_") || $0 ~ ("/queue/reports/" name "_report_") || $0 ~ ("/queue/archive/reports/" name "_report_") {
+                total++
+                if ($0 ~ /result:[[:space:]]*FAIL/) fail++
+                if (total >= limit) exit
+            }
+            END {
+                pct = (total > 0 ? int((fail * 100 + total - 1) / total) : 0)
+                printf "%d %d %d\n", total + 0, fail + 0, pct + 0
+            }
+        '
+        return 0
+    fi
+
+    awk -v name="$name" -v limit="$recent_limit" '
         $0 ~ ("queue/reports/" name "_report_") || $0 ~ ("/queue/reports/" name "_report_") || $0 ~ ("/queue/archive/reports/" name "_report_") {
             lines[++n] = $0
         }
