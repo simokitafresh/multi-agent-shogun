@@ -4043,7 +4043,16 @@ check_bulletin_archive() {
 check_karo_idle_cycle() {
     # 自走プロトコルoff時は通知しない
     local idle_cycle_flag
-    idle_cycle_flag=$(grep -m1 '^\s*idle_cycle:' "$SCRIPT_DIR/config/settings.yaml" 2>/dev/null | sed 's/.*idle_cycle:[[:space:]]*//' | sed 's/[[:space:]]*#.*//' | tr -d "'" | tr -d '"')
+    idle_cycle_flag=$(awk '
+        /^[[:space:]]*idle_cycle:[[:space:]]*/ {
+            v=$0
+            sub(/^[^:]*:[[:space:]]*/, "", v)
+            sub(/[[:space:]]*#.*/, "", v)
+            gsub(/["'\''[:space:]]/, "", v)
+            print v
+            exit
+        }
+    ' "$SCRIPT_DIR/config/settings.yaml" 2>/dev/null || true)
     if [ "$idle_cycle_flag" = "off" ]; then
         return
     fi
@@ -4052,12 +4061,17 @@ check_karo_idle_cycle() {
     [ ! -f "$snapshot_file" ] && return
 
     # 条件1: 全忍者がidle/completed/doneか確認
-    local ninja_total
-    ninja_total=$(awk '/^ninja\|/ {c++} END {print c+0}' "$snapshot_file" 2>/dev/null || echo 0)
+    local ninja_total active_count snapshot_counts
+    snapshot_counts=$(awk -F'|' '
+        /^ninja\|/ {
+            total++
+            if ($4 !~ /^(idle|completed|done)$/) active++
+        }
+        END { print total+0 "|" active+0 }
+    ' "$snapshot_file" 2>/dev/null || echo "0|0")
+    IFS='|' read -r ninja_total active_count <<< "$snapshot_counts"
     [ "${ninja_total:-0}" -eq 0 ] && return
 
-    local active_count
-    active_count=$(awk -F'|' '/^ninja\|/ && $4 !~ /^(idle|completed|done)$/ {c++} END {print c+0}' "$snapshot_file" 2>/dev/null || echo 0)
     if [ "${active_count:-0}" -gt 0 ]; then
         return
     fi
