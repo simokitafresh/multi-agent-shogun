@@ -34,6 +34,7 @@ pipeline: spec -> elicit/lexicon -> validate -> measure
 | `bash scripts/bulletin_write.sh --help` | usageを出してrc=1。no-args/help fast pathは投稿副作用なし |
 | `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: 16 Markdown files |
 | `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | health_score=95, validation_errors=0, validation_warnings=0, total_nodes=16, total_edges=12, orphan_nodes=4 |
+| `/home/simokitafresh/.codd-venv/bin/codd generate --path . --wave 1` | PASS: wave_config generated from 11 requirements; 0 generated; `docs/test/acceptance_criteria.md` and `docs/governance/adr_batch_yaml_io.md` skipped |
 | `/home/simokitafresh/.codd-venv/bin/codd dag verify --path . --format json` | PASS。`depends_on_consistency` は propagation output未生成でskip警告 |
 | `/home/simokitafresh/.codd-venv/bin/codd coverage report --path . --format md` | 0 axes / 0 covered signals。lexicon coverage未設定 |
 | `/home/simokitafresh/.codd-venv/bin/codd elicit --format md --path .` | FAIL: installed `shogun_core` lexicon manifest lacks required `prompt_extension` |
@@ -59,6 +60,10 @@ Recommended lexicon axes for this script:
 - `derived_notification_full_content`: 正本を読みに行かせず、通知本文に掲示板全文を含める。
 
 ## 3. Validate / Measure Score
+
+### Generate Result
+
+追完F1で `codd generate --path . --wave 1` を実行した。結果は `wave_config generated from 11 requirement(s)`、`Wave 1: 0 generated, 2 skipped`。既存の `docs/test/acceptance_criteria.md` と `docs/governance/adr_batch_yaml_io.md` がskipされ、`bulletin_write.sh` 固有の設計書は生成されなかった。原因は §2 GAP-1 の通り、`bulletin_write` 専用 requirement/design node が未登録であること。
 
 ### CoDD Tool Score
 
