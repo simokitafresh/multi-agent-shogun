@@ -54,6 +54,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 
 # inbox_write は deploy_task.sh 内部で自動送信されるため不要
 ```
+Script refs verified: 2026-05-16 cmd_2793.
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。

@@ -79,6 +79,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
+Script refs verified: 2026-05-16 cmd_2793 (PHANTOM extraction and pipefail-safe effect scan included).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:

@@ -139,6 +139,7 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
    - 未振り分け教訓数もチェック（UNSORTED_THRESHOLD=10超でALERT）
    - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
    - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
+   - Script refs verified: 2026-05-16 cmd_2793 (PHANTOM extraction and pipefail-safe effect scan included).
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出
