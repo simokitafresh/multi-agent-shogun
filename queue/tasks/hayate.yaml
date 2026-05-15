@@ -1,19 +1,23 @@
 task:
   parent_cmd: 
-  task_id: cmd_training_codd_r4_hayate
+  task_id: cmd_training_codd_s3_hayate
   type: training
   project: infra
   scout_exempt: true
-  purpose: "CoDD修行L4 — skill_gate_feedback.shにCoDDパイプライン(spec→elicit→generate→validate→measure)を実行し、設計書品質と改善点を報告せよ"
+  purpose: "CoDD修行L4 — lesson_deprecation_scan.shにCoDDパイプライン全5ステップを省略なく実行し、設計書を作成せよ"
   acceptance_criteria:
     AC1:
-      description: "skill_gate_feedback.shを読み、codd spec相当の目的・制約・対象範囲をdocs/research/に記録"
+      description: "codd spec を実行し、lesson_deprecation_scan.shの目的・制約・対象範囲の設計書をdocs/research/に生成"
     AC2:
-      description: "codd elicit/lexicon観点で要件穴・coverage軸を洗い出し記録"
+      description: "codd elicit を実行し、要件穴・coverage軸の洗い出し結果を設計書に追記"
     AC3:
-      description: "codd validate/measureで設計書品質を採点し、改善点を3つ以上特定して報告"
+      description: "codd generate を実行し、設計書を生成。失敗時はエラー内容を報告"
+    AC4:
+      description: "codd validate を実行し、設計書DAGと実装の整合性を検証。結果を報告"
+    AC5:
+      description: "codd measure を実行し、設計書品質スコアを報告。改善点を3つ以上特定"
   status: idle
-  report_path: queue/reports/hayate_report_cmd_training_codd_r4_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_training_codd_s3_hayate.yaml
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
