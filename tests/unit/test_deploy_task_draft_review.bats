@@ -103,6 +103,22 @@ YAML
     [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
 }
 
+@test "description wrapper dict AC count sends draft review" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_normal
+  acceptance_criteria:
+    description:
+      - "dict wrapper first AC"
+      - "dict wrapper second AC"
+YAML
+
+    run_draft_review "cmd_normal"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+}
+
 @test "karo_direct task without local ACs counts ACs from malformed archived cmd source" {
     mkdir -p "$TEST_PROJECT/queue/archive/cmds"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
