@@ -1349,7 +1349,7 @@ notify_idle_batch() {
 
     # cmd_1671: pipeline空でもidle通知を送る（頻度制限は維持）
     local pipeline_count
-    pipeline_count=$(grep -cE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    pipeline_count=$(awk '/^[[:space:]]+status:[[:space:]]+(pending|new)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
     local pipeline_info=""
     if [ "${pipeline_count:-0}" -eq 0 ]; then
         pipeline_info="(pipeline空)"
@@ -1535,7 +1535,7 @@ _handle_idle_notify() {
     # モード切替: 既に通知済みの場合、パイプライン状態で判断
     if [ -n "${IDLE_NOTIFY_SENT[$name]:-}" ]; then
         local pipeline_count
-        pipeline_count=$(grep -cE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+        pipeline_count=$(awk '/^[[:space:]]+status:[[:space:]]+(pending|new|delegated)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
         if [ "${pipeline_count:-0}" -eq 0 ]; then
             # standby mode: パイプライン空 → 再通知しない（状態変化まで待機）
             log "IDLE-STANDBY: $name already notified, pipeline empty, skipping"

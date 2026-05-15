@@ -422,6 +422,51 @@ cat "$LOG"
     [[ "$output" == *"LOCK-CLEANUP: Removed 2 stale lock files"* ]]
 }
 
+@test "check_karo_idle_cycle counts snapshot and pipeline with numeric awk results" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+LAST_KARO_IDLE_NUDGE=0
+KARO_IDLE_COOLDOWN=0
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/config" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/config/settings.yaml" <<'"'"'EOF'"'"'
+idle_cycle: on
+EOF
+cat > "$SCRIPT_DIR/queue/karo_snapshot.txt" <<'"'"'EOF'"'"'
+ninja|hayate|cmd_a|idle
+ninja|kagemaru|cmd_b|done
+EOF
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'"'"'EOF'"'"'
+commands:
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_idle_cycle
+
+cat "$LOG"
+cat "$SCRIPT_DIR/inbox.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-IDLE-CYCLE: All 2 ninjas idle/completed/done + pipeline empty"* ]]
+    [[ "$output" == *"karo|karo_idle_cycle|全忍者idle+パイプライン空。改善サイクルを回せ。"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail
