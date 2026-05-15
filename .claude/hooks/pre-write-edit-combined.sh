@@ -345,4 +345,12 @@ if [[ "$file_path" =~ (hooks/|gates/gate_.*_startup|gates/gate_gunshi_|CLAUDE\.m
     fi
 fi
 
+# === Guard 10: LG020 数値実測リマインダー (軍師設計書保存時) ===
+if [[ "$file_path" == *'docs/research/gunshi_'* ]]; then
+    _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"
+    if [[ "$_agent_id" == "gunshi" ]]; then
+        echo "INFO(LG020): 設計書保存検出。数値は全て入力データからwc -l/head実測で再計算せよ。推定値は未実測と明記。" >&2
+    fi
+fi
+
 exit 0
