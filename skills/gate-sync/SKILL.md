@@ -47,8 +47,14 @@ print(f'Recent 10: {rc}/{len(recent)} ({rc*100//len(recent) if recent else 0}%)'
 ### Step 3: 掲示板投稿（精度低下時のみ）
 直近10件のaccuracyが70%未満の場合:
 ```bash
-BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度低下: <accuracy>%。要因分析必要"
+BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度低下: <accuracy>%。要因分析必要" false action_required
 ```
+`bulletin_write.sh` の現在仕様:
+- 推奨形式は `bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`。
+- `requires_confirmation` は `true|false` または確認必須エージェントのCSV。`BULLETIN_NOTIFY` もCSV指定可能。
+- `action_type` は `info` または `action_required`。将軍に対応を求める通知は `action_required` を指定する。
+- 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
+- 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 
 ## 制約
 - review_logのEdit直接編集禁止（yaml_field_set.sh経由）

@@ -37,8 +37,14 @@ docs/research/gunshi_idle_<topic>_<YYYYMMDD>.md
 
 ### Step 3: 掲示板投稿
 ```bash
-BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/research/gunshi_idle_<topic>_<date>.md"
+BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/research/gunshi_idle_<topic>_<date>.md" false info
 ```
+`bulletin_write.sh` の現在仕様:
+- 推奨形式は `bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`。
+- `requires_confirmation` は `true|false` または確認必須エージェントのCSV。`BULLETIN_NOTIFY` もCSV指定可能。
+- `action_type` は `info` または `action_required`。idle分析の永続化報告は通常 `info`。
+- 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
+- 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 
 ### Step 4: review_log記録
 ```bash

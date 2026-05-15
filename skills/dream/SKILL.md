@@ -306,6 +306,14 @@ bash scripts/insight_write.sh "DREAM-GATE: {suggestion}" dream
 bash scripts/insight_write.sh "DREAM-LESSON: {suggestion}" dream
 ```
 
+`insight_write.sh` の現在仕様:
+- 引数は `message [priority] [source]`。`priority` は `high|medium|low` のみ、既定は `medium`。`source` 既定は `manual`。
+- `--resolve <id>` で既存insightを `status: done` にし、`resolved_at` を追記する。
+- queue/insights.yaml は全体YAML再書込みではなく、flock下で制御済み形状を行単位編集/追記する。`yaml.dump` は使わない。
+- pending中の同一insight、または先頭50文字一致のinsightは重複登録せず `SKIP:<id>` を返す。
+- `修正済み` / `解消` / `登録済み` / `対処済み` を含むmessageは登録時点で `done` 扱いにする。
+- 同一 `source` のpending insightが `INSIGHT_SOURCE_REPEAT_THRESHOLD`（既定3）以上になると、`bulletin_write.sh` 経由で将軍へ `action_required` 掲示板通知する。掲示板失敗はinsight保存自体を失敗させない。
+
 ---
 
 ## 出力サマリ
