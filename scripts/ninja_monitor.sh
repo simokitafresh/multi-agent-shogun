@@ -1047,19 +1047,22 @@ auto_void_if_parent_cmd_completed() {
     [ -f "$task_file" ] || return 1
 
     local task_status parent_cmd task_id completed_report completed_base
-    task_status=$(yaml_field_get "$task_file" "status")
+    IFS='|' read -r task_status parent_cmd task_id < <(awk '
+        BEGIN { s=""; pc=""; ti=""; ai="" }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
+        /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+        /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+        END { print s "|" pc "|" (ti!=""?ti:ai) }
+    ' "$task_file")
     case "$task_status" in
         assigned|acknowledged|in_progress|pending) ;;
         *) return 1 ;;
     esac
-
-    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     [ -n "$parent_cmd" ] || return 1
 
     completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || return 1
     completed_base=$(basename "$completed_report")
-    task_id=$(yaml_field_get "$task_file" "task_id")
-    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
 
     local lock_file="/tmp/task_${name}.lock"
     local voided_at
