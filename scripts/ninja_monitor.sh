@@ -3402,8 +3402,8 @@ check_lesson_health() {
     local output
     output=$(bash "$gate_script" 2>/dev/null) || true
 
-    # ALERTがあるか確認
-    if echo "$output" | grep -q "^ALERT:"; then
+    # ALERTがあるか確認（herestring: echo不要でサブシェル1個削減）
+    if grep -q "^ALERT:" <<< "$output"; then
         # デバウンスチェック
         local alert_elapsed=$((now - LAST_LESSON_ALERT))
         if [ $alert_elapsed -lt $LESSON_ALERT_DEBOUNCE ]; then
@@ -3412,7 +3412,7 @@ check_lesson_health() {
         fi
 
         local alerts
-        alerts=$(echo "$output" | grep "^ALERT:" | tr '\n' ' ')
+        alerts=$(grep "^ALERT:" <<< "$output" | tr '\n' ' ')
         log "LESSON-HEALTH: $alerts"
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "lesson健全性ALERT: ${alerts}" lesson_health ninja_monitor >> "$LOG" 2>&1
         bash "$SCRIPT_DIR/scripts/ntfy.sh" "【教訓ALERT】${alerts}" >> "$LOG" 2>&1
@@ -3441,8 +3441,8 @@ check_loop_health() {
     local output
     output=$(bash "$gate_script" 2>/dev/null) || true
 
-    # WARNING検出 → ntfy通知(デバウンス付き)
-    if echo "$output" | grep -q "WARNING:"; then
+    # WARNING検出 → ntfy通知(デバウンス付き)（herestring: echo不要でサブシェル1個削減）
+    if grep -q "WARNING:" <<< "$output"; then
         local alert_elapsed=$((now - LAST_LOOP_HEALTH_ALERT))
         if [ $alert_elapsed -lt $LOOP_HEALTH_ALERT_DEBOUNCE ]; then
             log "LOOP-HEALTH-DEBOUNCE: WARNING detected but ${alert_elapsed}s < ${LOOP_HEALTH_ALERT_DEBOUNCE}s"
@@ -3450,7 +3450,7 @@ check_loop_health() {
         fi
 
         local warnings
-        warnings=$(echo "$output" | grep "WARNING:" | tr '\n' ' ')
+        warnings=$(grep "WARNING:" <<< "$output" | tr '\n' ' ')
         log "LOOP-HEALTH: $warnings"
         bash "$SCRIPT_DIR/scripts/ntfy.sh" "【三層ループALERT】${warnings}" >> "$LOG" 2>&1
         LAST_LOOP_HEALTH_ALERT=$now
