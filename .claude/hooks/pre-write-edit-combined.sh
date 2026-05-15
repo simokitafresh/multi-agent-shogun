@@ -204,7 +204,14 @@ quality_gate template (cmd_save.sh必須フィールド):
   q10_pi_check: \"\"
   q10_knowledge_boundary: \"\"
   q11_not_already_done: \"\"
-  q_ambiguity: \"\""
+  q_ambiguity: \"\"
+
+environment_change template (cmd_save.sh構造化形式):
+  environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"
+  注意:
+  - 1行テキスト形式必須。block scalar(|)や複数行にしない
+  - patternは実装済みの既存文字列のみ。予定・説明文・未実装文字列を書かない
+  - patternにバックスラッシュ・パイプ禁止。grep検証で誤解釈される文字を避ける"
         if [[ -n "$_dynamic_checks" ]]; then
             _checklist="${_checklist}
 

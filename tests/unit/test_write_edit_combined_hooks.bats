@@ -82,6 +82,16 @@ _run_post() {
     [[ "$output" == *'複利:'* ]]
 }
 
+@test "pre combined hook shows environment_change structured template and cautions" {
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'environment_change template (cmd_save.sh構造化形式)'* ]]
+    [[ "$output" == *'environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"'* ]]
+    [[ "$output" == *'1行テキスト形式必須'* ]]
+    [[ "$output" == *'patternは実装済みの既存文字列のみ'* ]]
+    [[ "$output" == *'バックスラッシュ・パイプ禁止'* ]]
+}
+
 @test "pre combined hook shows dynamic preflight autolearn items" {
     printf '%s\n' '2026-05-02T00:00:00Z check=quality_gate_q8_compound_question count=3 warn=q8_複利の問い cmd=cmd_test' > "$TMP_AUTOLEARN"
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
