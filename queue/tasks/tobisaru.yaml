@@ -1,29 +1,32 @@
 task:
-  cmd_id: cmd_training_L4_auto_202605151330_tobisaru_normal
+  cmd_id: cmd_training_L4_codd_202605151351_tobisaru
   type: training
   project: infra
-  purpose: "L4修行: ninja_monitor.shの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+  purpose: "CoDD修行: inbox_write.shの設計書品質を検証・改善。codd measure→codd scan→codd dag verify→改善1件実装→報告YAML一発PASS"
   scout_exempt: true
   task_type: recon
-  target_path: scripts/ninja_monitor.sh
+  target_path: scripts/inbox_write.sh
+  context_files:
+    - codd/brownfield/inbox_write_brownfield.md
+    - codd/design/inbox_write_design.md
+    - context/training-cycle.md
   acceptance_criteria:
     AC1:
-      description: "ninja_monitor.shの改善点を3つ特定し、各改善点に対象ファイル・根拠を添えよ"
+      description: "codd measureでinbox_write.shの設計書品質スコアを計測し結果を報告せよ"
       binary_checks:
-        - "改善点を3つ特定したか: yes/no"
+        - "codd measureを実行したか: yes/no"
+        - "スコアを報告に記載したか: yes/no"
     AC2:
-      description: "3つの中で最高インパクトの1件を実装し、関連テストまたは検証を実行せよ"
+      description: "codd dag verify --allで設計書DAGの整合性を検証し、違反があれば1件修正せよ"
       binary_checks:
-        - "最高インパクト1件を実装したか: yes/no"
+        - "codd dag verifyを実行したか: yes/no"
+        - "違反があれば1件修正したか(違反なしならyes): yes/no"
     AC3:
-      description: "lesson_candidateにfound=trueでtitle/detail/projectを記入せよ"
+      description: "lesson_candidateにCoDD操作で得た知見をfound=trueで記入せよ"
       binary_checks:
+        - "lesson_candidate found=trueで記入したか: yes/no"
         - "verdictがbinary_checksと矛盾していないか: yes/no"
-    AC4:
-      description: "task.related_lessonsの注入教訓を参照し、有用/無用をlessons_usefulに記入せよ"
-      binary_checks:
-        - "task.related_lessonsの注入教訓を1件以上参照したか: yes/no"
-  status: done
+  status: in_progress
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -55,3 +58,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  parent_cmd: cmd_training_L4_auto_202605151330_tobisaru_normal

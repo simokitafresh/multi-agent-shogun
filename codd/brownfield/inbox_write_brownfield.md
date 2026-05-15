@@ -1,3 +1,14 @@
+---
+codd:
+  node_id: doc:script:inbox-write-brownfield
+  type: brownfield_report
+  status: approved
+  confidence: 0.9
+  source: brownfield
+  implementation:
+  - scripts/inbox_write.sh
+---
+
 # Brownfield Report
 
 ## Summary
