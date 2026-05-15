@@ -16,6 +16,8 @@ setup_file() {
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^notify_karo_gate_block()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^notify_karo_cmd_fail()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^log_skill_execution_pass()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -594,10 +596,36 @@ EOF
     grep -q "^karo|GATE CLEAR — $TEST_CMD_ID 完了。/cmd-complete スキルで完了処理を実行せよ。|skill_hint|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
+@test "notify_karo_gate_block writes BLOCK reason and redeploy proposal to karo inbox" {
+    run notify_karo_gate_block "$TEST_CMD_ID" "missing_gates:review_gate" "review_gate"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: OK"* ]]
+    grep -q "^karo|$TEST_CMD_ID gate_result: BLOCK reason=missing_gates:review_gate missing=\\[review_gate\\]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。|gate_block|cmd_complete_gate$" "$INBOX_WRITE_LOG"
+}
+
+@test "notify_karo_cmd_fail writes FAIL report and redeploy proposal to karo inbox" {
+    run notify_karo_cmd_fail "$TEST_CMD_ID" "sasuke" "$REPORT_FILE" "binary_checks_fail:AC1"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo cmd_fail notify: OK"* ]]
+    grep -q "^karo|$TEST_CMD_ID gate_result: FAIL ninja=sasuke report=$(basename "$REPORT_FILE") reason=binary_checks_fail:AC1。再配備提案: FAIL報告を確認し、修正タスクを再配備せよ。|gate_fail|cmd_complete_gate$" "$INBOX_WRITE_LOG"
+}
+
 @test "cmd_complete_gate invokes shogun gate clear notify in both emergency and normal GATE CLEAR sections" {
     run bash -lc "grep -c 'notify_shogun_gate_clear \"\\\$CMD_ID\" \"GATE CLEAR — \\\${CMD_ID} 完了\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
+}
+
+@test "cmd_complete_gate invokes karo gate block notify in GATE BLOCK section" {
+    run bash -lc "grep -c 'notify_karo_gate_block \"\\\$CMD_ID\" \"\\\$block_reason\" \"\\\$missing_list\"' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
+
+@test "cmd_complete_gate invokes karo cmd fail notify from FAIL verdict path" {
+    run bash -lc "grep -c 'notify_karo_cmd_fail \"\\\$CMD_ID\" \"\\\$ninja_name\" \"\\\$report_file\" \"binary_checks_fail:' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
 }
 
 @test "cmd_complete_gate records cmd-complete PASS in both GATE CLEAR sections" {

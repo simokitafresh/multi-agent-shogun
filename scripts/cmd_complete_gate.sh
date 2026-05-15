@@ -250,6 +250,41 @@ notify_karo_lesson_registration_reminder() {
     fi
 }
 
+notify_karo_gate_block() {
+    local cmd_id="$1"
+    local block_reason="$2"
+    local missing_list="${3:-}"
+    local dedup_key="${cmd_id} gate_result: BLOCK reason=${block_reason}"
+    local message="${dedup_key} missing=[${missing_list}]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。"
+
+    if grep -Fq "$dedup_key" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+        echo "  karo gate_block notify: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_block cmd_complete_gate 2>/dev/null; then
+        echo "  karo gate_block notify: OK"
+    else
+        echo "  [INFO] karo gate_block notify: WARN (non-blocking)"
+    fi
+}
+
+notify_karo_cmd_fail() {
+    local cmd_id="$1"
+    local ninja_name="$2"
+    local report_file="$3"
+    local fail_reason="$4"
+    local report_name
+    report_name=$(basename "$report_file" 2>/dev/null || printf '%s' "$report_file")
+    local dedup_key="${cmd_id} gate_result: FAIL ninja=${ninja_name}"
+    local message="${dedup_key} report=${report_name} reason=${fail_reason}。再配備提案: FAIL報告を確認し、修正タスクを再配備せよ。"
+
+    if grep -Fq "$dedup_key" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+        echo "  karo cmd_fail notify: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_fail cmd_complete_gate 2>/dev/null; then
+        echo "  karo cmd_fail notify: OK"
+    else
+        echo "  [INFO] karo cmd_fail notify: WARN (non-blocking)"
+    fi
+}
+
 log_skill_execution_pass() {
     local skill_name="$1"
     local gate_name="$2"
@@ -4316,6 +4351,10 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             else
                 echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"
                 record_block_reason "${ninja_name}:binary_checks_fail"
+                _fail_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
+                if [ "$_fail_verdict" = "FAIL" ]; then
+                    notify_karo_cmd_fail "$CMD_ID" "$ninja_name" "$report_file" "binary_checks_fail:${failed_checks}"
+                fi
                 ALL_CLEAR=false
             fi
             ;;
@@ -5854,6 +5893,9 @@ else
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
+    echo ""
+    echo "Karo gate_block notification (GATE BLOCK):"
+    notify_karo_gate_block "$CMD_ID" "$block_reason" "$missing_list"
     if append_lesson_tracking "$CMD_ID" "BLOCK" 2>&1; then
         true
     else
