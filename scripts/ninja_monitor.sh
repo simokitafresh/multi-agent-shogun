@@ -334,6 +334,8 @@ declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:t
 declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
 declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
+_PENDING_CMDS_CACHE_CYCLE=-1   # サイクル内pending cmdsキャッシュ — 同一cycle内のpython3再起動を省略
+_PENDING_CMDS_CACHE=""         # list_pending_cmdsのキャッシュ結果（同サイクル内で共有）
 declare -A CLEAR_SKIP_COUNT   # CLEAR-SKIPカウンタ — 忍者ごとの連続回数（AC3: ログ抑制用）
 declare -A DESTRUCTIVE_WARN_LAST  # 破壊コマンド検知 — key: "ninja:pattern_id", value: epoch秒
 declare -A RENUDGE_COUNT          # 未読再nudgeカウンター — key: agent_name, value: 連続再nudge回数
@@ -2114,6 +2116,19 @@ for cmd_id, info in entries:
 PYEOF
 }
 
+# ─── list_pending_cmds サイクル内キャッシュ ───
+# check_stale_cmds/check_undeployed_cmds/check_karo_pending_cmd が同一サイクル内で
+# 別々にpython3を起動するのを防ぐ。cycleが変わった時だけlist_pending_cmdsを再実行。
+list_pending_cmds_cached() {
+    if [ "$cycle" -eq "$_PENDING_CMDS_CACHE_CYCLE" ]; then
+        [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
+        return
+    fi
+    _PENDING_CMDS_CACHE=$(list_pending_cmds)
+    _PENDING_CMDS_CACHE_CYCLE=$cycle
+    [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
+}
+
 check_stale_cmds() {
     local now
     now=$EPOCHSECONDS
@@ -2156,7 +2171,7 @@ check_stale_cmds() {
         else
             log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
         fi
-    done < <(list_pending_cmds)
+    done < <(list_pending_cmds_cached)
 }
 
 check_undeployed_cmds() {
@@ -2197,7 +2212,7 @@ check_undeployed_cmds() {
         else
             log "ERROR: Failed to send ntfy for undeployed cmd ${cmd_id}"
         fi
-    done < <(list_pending_cmds)
+    done < <(list_pending_cmds_cached)
 
     local notified_cmd
     for notified_cmd in "${!UNDEPLOYED_CMD_NOTIFIED[@]}"; do
@@ -2233,7 +2248,7 @@ check_karo_pending_cmd() {
         # 新規pending cmd → 1回通知
         log "PENDING-CMD-NEW: ${cmd_id} -> karo (new pending detected)"
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "cmd_pending ${cmd_id} 新規pending検知。shogun_to_karo.yamlを確認し着手せよ。" cmd_pending ninja_monitor >> "$LOG" 2>&1
-    done < <(list_pending_cmds)
+    done < <(list_pending_cmds_cached)
 
     # PREV_PENDING_SETを現在の集合に同期
     # 消えたcmdを除去

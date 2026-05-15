@@ -1,23 +1,34 @@
 task:
-  parent_cmd: cmd_2702_kotaro
-  task_id: cmd_2702_merge_kotaro
-  task_type: scout
-  project: rebalancer
-  purpose: "万全偵察4名の結果を突合し、重複排除+優先度付き改良候補リストを作成せよ"
-  target_path: /mnt/c/Python_app/rebalancer
+  cmd_id: cmd_training_L4_auto_202605151245_kotaro_normal
+  type: training
+  project: infra
+  purpose: "L4修行: ninja_monitor.shの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+  scout_exempt: true
+  task_type: recon
+  target_path: scripts/ninja_monitor.sh
   acceptance_criteria:
     AC1:
-      description: "4名の偵察報告(hayate/kagemaru/saizo/hanzo)を全て読み、改良候補を統合・重複排除せよ"
+      description: "ninja_monitor.shの改善点を3つ特定し、各改善点に対象ファイル・根拠を添えよ"
       binary_checks:
-        - "4名の報告YAMLを全て読んだか: yes/no"
-        - "重複候補を排除したか: yes/no"
+        - "改善点を3つ特定したか: yes/no"
+        - "各改善点に対象ファイル・根拠を添えたか: yes/no"
     AC2:
-      description: "優先度(P0/P1/P2)付きの統合リストをdocs/research/cmd_2702_rebalancer_recon_summary.mdとして作成せよ。各候補に変更対象ファイル・行番号・波及先・関連テスト有無・エッジケースを記載(偵察デフォルト品質準拠)"
+      description: "3つの中で最高インパクトの1件を実装し、関連テストまたは検証を実行せよ"
       binary_checks:
-        - "統合リストに優先度が付いているか: yes/no"
-        - "各候補にファイル・行番号が記載されているか: yes/no"
-  scout_exempt: true
-  status: completed
+        - "最高インパクト1件を実装したか: yes/no"
+        - "関連テストまたは明示的な検証を実行したか: yes/no"
+    AC3:
+      description: "lesson_candidateにfound=trueでtitle/detail/projectを記入せよ"
+      binary_checks:
+        - "lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no"
+        - "AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no"
+        - "verdictがbinary_checksと矛盾していないか: yes/no"
+    AC4:
+      description: "task.related_lessonsの注入教訓を参照し、有用/無用をlessons_usefulに記入せよ"
+      binary_checks:
+        - "task.related_lessonsの注入教訓を1件以上参照したか: yes/no"
+        - "参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no"
+  status: in_progress
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -49,15 +60,3 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'files_modified: MISSING; lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field'
-    tried_approaches:
-    - 'files_modified: MISSING; lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field'
-    approach_summary: '4名(hayate/kagemaru/saizo/hanzo)の偵察報告を全て読み、重複排除+優先度付き統合改良候補リストをdocs/research/cmd_2702_rebalancer_recon_summary.mdとして作成。P0:3件/P1:8件/P2:13件、計24件。偵察デフォルト品質5要件準拠。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'files_modified: MISSING; lessons_useful: MISSING; assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field'
-      approach_summary: '4名(hayate/kagemaru/saizo/hanzo)の偵察報告を全て読み、重複排除+優先度付き統合改良候補リストをdocs/research/cmd_2702_rebalancer_recon_summary.mdとして作成。P0:3件/P1:8件/P2:13件、計24件。偵察デフォルト品質5要件準拠。'
-  report_path: queue/reports/kotaro_report_cmd_2702_kotaro.yaml

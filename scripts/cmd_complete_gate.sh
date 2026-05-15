@@ -1232,6 +1232,76 @@ PY
     return 0
 }
 
+auto_resolve_cmd_related_insights() {
+    local cmd_id="$1"
+    local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
+    local insights_file="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
+
+    [ -n "$cmd_id" ] || return 0
+    [ -x "$insight_script" ] || return 0
+    [ -s "$insights_file" ] || return 0
+
+    local ids
+    ids=$(INSIGHTS_FILE_ENV="$insights_file" CMD_ID_ENV="$cmd_id" python3 - <<'PY' 2>/dev/null || true
+import json
+import os
+
+path = os.environ["INSIGHTS_FILE_ENV"]
+cmd_id = os.environ["CMD_ID_ENV"]
+
+def parse_scalar(raw):
+    value = raw.strip()
+    if value.startswith('"'):
+        try:
+            return json.loads(value)
+        except Exception:
+            return value.strip('"')
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+entries = []
+current = None
+with open(path, encoding="utf-8") as f:
+    for line in f:
+        if line.startswith("- id: "):
+            if current:
+                entries.append(current)
+            current = {"id": line[len("- id: "):].strip()}
+            continue
+        if current is None or not line.startswith("  ") or ":" not in line:
+            continue
+        key, raw = line.strip().split(":", 1)
+        current[key] = parse_scalar(raw)
+if current:
+    entries.append(current)
+
+for entry in entries:
+    if entry.get("status") != "pending":
+        continue
+    haystack = "\n".join(str(entry.get(k, "")) for k in ("source", "source_cmd", "insight"))
+    if cmd_id in haystack:
+        print(entry["id"])
+PY
+    )
+
+    local count=0 id
+    while IFS= read -r id; do
+        [ -n "$id" ] || continue
+        if bash "$insight_script" --resolve "$id" >/dev/null 2>&1; then
+            count=$((count + 1))
+        else
+            echo "  [WARN] insight auto-resolve failed: $id"
+        fi
+    done <<< "$ids"
+
+    if [ "$count" -gt 0 ]; then
+        echo "  resolved: ${count} cmd-related insight(s)"
+    else
+        echo "  resolved: 0 cmd-related insight(s)"
+    fi
+}
+
 # ─── changelog自動記録関数 ───
 append_changelog() {
     local cmd_id="$1"
@@ -3631,6 +3701,9 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
 
     write_l6_horizontal_level5_insights "$CMD_ID"
+    echo ""
+    echo "Insight auto-triage (cmd-related):"
+    auto_resolve_cmd_related_insights "$CMD_ID" || echo "  [INFO] cmd-related insight auto-resolve failed (non-blocking)"
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
@@ -5379,6 +5452,9 @@ PY
     append_codd_registry_entry "$CMD_ID"
     run_codd_propagate_update
     write_l6_horizontal_level5_insights "$CMD_ID"
+    echo ""
+    echo "Insight auto-triage (cmd-related):"
+    auto_resolve_cmd_related_insights "$CMD_ID" || echo "  [INFO] cmd-related insight auto-resolve failed (non-blocking)"
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
@@ -6105,6 +6181,55 @@ else
             echo "  Auto-deprecated: ${DEPRECATE_COUNT} lesson(s)"
         else
             echo "  SKIP (lessons file not found: ${DEPRECATE_LESSONS_FILE})"
+        fi
+    else
+        echo "  SKIP (project not found or lesson_deprecate.sh missing)"
+    fi
+
+    # ─── GATE BLOCK時 useful率低下による教訓自動deprecate ───
+    echo ""
+    echo "Auto-deprecate check (useful rate threshold):"
+    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
+        USEFUL_DEPRECATE_COUNT=0
+        USEFUL_DEPRECATE_LESSONS_FILE="$SCRIPT_DIR/projects/${CMD_PROJECT}/lessons.yaml"
+        if [ -f "$USEFUL_DEPRECATE_LESSONS_FILE" ]; then
+            # useful率 = helpful_count / (helpful_count + harmful_count)
+            # 閾値: useful率20%以下 かつ 参照10回以上（既存deprecatedは除外）
+            useful_deprecate_targets=$(awk '
+                function emit_if_target() {
+                    total = helpful + harmful
+                    if (lid != "" && !deprecated && total >= 10 && helpful * 5 <= total)
+                        printf "%s\t%d\t%d\t%d\n", lid, helpful, harmful, total
+                }
+                /^[[:space:]]*- id:/ {
+                    emit_if_target()
+                    lid = $0; sub(/.*- id:[[:space:]]*/, "", lid); gsub(/[" \t]/, "", lid)
+                    harmful = 0; helpful = 0; deprecated = 0
+                    next
+                }
+                /^[[:space:]]+harmful_count:/ { v=$0; sub(/.*harmful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); harmful = v + 0 }
+                /^[[:space:]]+helpful_count:/ { v=$0; sub(/.*helpful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); helpful = v + 0 }
+                /^[[:space:]]+deprecated: true/ { deprecated = 1 }
+                /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
+                /^[[:space:]]+deprecated_by:/ { v=$0; sub(/.*deprecated_by:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); if (v != "") deprecated = 1 }
+                END { emit_if_target() }
+            ' "$USEFUL_DEPRECATE_LESSONS_FILE" 2>/dev/null)
+
+            if [ -n "$useful_deprecate_targets" ]; then
+                while IFS=$'\t' read -r lid helpful harmful total; do
+                    [ -z "$lid" ] && continue
+                    useful_pct=$(( helpful * 100 / total ))
+                    if bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$CMD_PROJECT" "$lid" "AUTO-DEPRECATE(useful-rate): helpful=${helpful}/total=${total} (${useful_pct}%) <= 20%" 2>&1; then
+                        echo "  [gate] AUTO-DEPRECATE(useful-rate): ${lid} (helpful=${helpful}/total=${total}, harmful=${harmful}, useful_rate=${useful_pct}%)"
+                        USEFUL_DEPRECATE_COUNT=$((USEFUL_DEPRECATE_COUNT + 1))
+                    else
+                        echo "  [INFO] ${lid}: useful-rate auto-deprecate failed (non-blocking)"
+                    fi
+                done <<< "$useful_deprecate_targets"
+            fi
+            echo "  Useful-rate auto-deprecated: ${USEFUL_DEPRECATE_COUNT} lesson(s)"
+        else
+            echo "  SKIP (lessons file not found: ${USEFUL_DEPRECATE_LESSONS_FILE})"
         fi
     else
         echo "  SKIP (project not found or lesson_deprecate.sh missing)"

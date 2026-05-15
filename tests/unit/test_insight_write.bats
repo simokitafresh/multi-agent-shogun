@@ -144,6 +144,27 @@ print('RESOLVE OK')
     [[ "$output" == *"RESOLVE OK"* ]]
 }
 
+@test "resolve: INSIGHTS_FILE環境変数で対象ファイルを切り替えられる" {
+    local custom_file="${TEST_TMP}/queue/custom_insights.yaml"
+    local ins_id
+    ins_id="$(INSIGHTS_FILE="$custom_file" bash "${TEST_TMP}/scripts/insight_write.sh" "custom resolve target")"
+
+    run env INSIGHTS_FILE="$custom_file" bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RESOLVED: $ins_id"* ]]
+
+    run python3 -c "
+import yaml
+with open('${custom_file}') as f:
+    data = yaml.safe_load(f)
+entry = data['insights'][0]
+assert entry['status'] == 'done'
+print('CUSTOM RESOLVE OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CUSTOM RESOLVE OK"* ]]
+}
+
 # --- 8. --resolve 存在しないID ---
 
 @test "resolve: 存在しないIDでエラー終了する" {

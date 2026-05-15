@@ -56,6 +56,39 @@ PY
     } > "$GATE_HELPERS_FILE"
 }
 
+@test "auto_resolve_cmd_related_insights resolves pending insights that mention cmd_id" {
+    export INSIGHTS_FILE="$TEST_PROJECT/queue/insights.yaml"
+    cat > "$INSIGHTS_FILE" <<EOF
+insights:
+- id: INS-CMD-MATCH
+  ts: "2026-05-15T00:00:00+09:00"
+  insight: "source_cmd=$TEST_CMD_ID のLevel5候補"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:$TEST_CMD_ID"
+  status: pending
+- id: INS-OTHER
+  ts: "2026-05-15T00:00:01+09:00"
+  insight: "別cmd"
+  priority: "medium"
+  source: "manual"
+  status: pending
+EOF
+    cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"resolved: 1 cmd-related insight(s)"* ]]
+
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$INSIGHTS_FILE"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-CMD-MATCH"]["status"] == "done"
+assert rows["INS-OTHER"]["status"] == "pending"
+PY
+}
+
 setup() {
     cmd_gate_scaffold "cmd_gate_ctx"
     export SCRIPT_DIR="$TEST_PROJECT"

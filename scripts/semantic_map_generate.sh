@@ -112,3 +112,70 @@ codd:
     map_path.write_text(frontmatter + body, encoding="utf-8")
     print(f"generated: {map_path}")
 PY
+
+auto_resolve_semantic_index_insights() {
+    local insight_script="$repo_root/scripts/insight_write.sh"
+    local insights_file="${SEMANTIC_INSIGHTS_PATH:-$repo_root/queue/insights.yaml}"
+    local default_map="$repo_root/context/semantic-map.md"
+
+    [ "$body_only" = false ] || return 0
+    if [ "${SEMANTIC_INSIGHT_AUTO_RESOLVE:-0}" != "1" ] && [ "$map_path" != "$default_map" ]; then
+        return 0
+    fi
+    [ -x "$insight_script" ] || return 0
+    [ -s "$insights_file" ] || return 0
+
+    local ids
+    ids=$(INSIGHTS_FILE_ENV="$insights_file" python3 - <<'PY' 2>/dev/null || true
+import json
+import os
+
+path = os.environ["INSIGHTS_FILE_ENV"]
+
+def parse_scalar(raw):
+    value = raw.strip()
+    if value.startswith('"'):
+        try:
+            return json.loads(value)
+        except Exception:
+            return value.strip('"')
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+entries = []
+current = None
+with open(path, encoding="utf-8") as f:
+    for line in f:
+        if line.startswith("- id: "):
+            if current:
+                entries.append(current)
+            current = {"id": line[len("- id: "):].strip()}
+            continue
+        if current is None or not line.startswith("  ") or ":" not in line:
+            continue
+        key, raw = line.strip().split(":", 1)
+        current[key] = parse_scalar(raw)
+if current:
+    entries.append(current)
+
+for entry in entries:
+    if entry.get("status") == "pending" and entry.get("source") == "semantic_index_update":
+        print(entry["id"])
+PY
+    )
+
+    local count=0 id
+    while IFS= read -r id; do
+        [ -n "$id" ] || continue
+        if bash "$insight_script" --resolve "$id" >/dev/null 2>&1; then
+            count=$((count + 1))
+        else
+            echo "WARN: semantic insight auto-resolve failed: $id" >&2
+        fi
+    done <<< "$ids"
+
+    [ "$count" -eq 0 ] || echo "semantic insights auto-resolved: $count"
+}
+
+auto_resolve_semantic_index_insights || true

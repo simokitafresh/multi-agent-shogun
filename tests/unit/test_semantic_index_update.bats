@@ -112,6 +112,37 @@ teardown() {
     grep -q 'セマンティック辞書構想' "$SEMANTIC_MAP_PATH"
 }
 
+@test "semantic map generator auto-resolves semantic_index_update insights when enabled" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-SEMANTIC
+  ts: "2026-05-15T00:00:00+09:00"
+  insight: "semantic_index_update新概念候補"
+  priority: "low"
+  source: "semantic_index_update"
+  status: pending
+- id: INS-MANUAL
+  ts: "2026-05-15T00:00:01+09:00"
+  insight: "manual pending"
+  priority: "medium"
+  source: "manual"
+  status: pending
+EOF
+
+    run env INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH" SEMANTIC_INSIGHT_AUTO_RESOLVE=1 bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic insights auto-resolved: 1"* ]]
+
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-SEMANTIC"]["status"] == "done"
+assert rows["INS-MANUAL"]["status"] == "pending"
+PY
+}
+
 @test "CoDD and gunshi idle wiring mention semantic index propagation checks" {
     grep -q 'semantic_map_generate.sh --body-only' "$PROJECT_ROOT/codd/codd.yaml"
     grep -q 'semantic_index_drift' "$PROJECT_ROOT/instructions/gunshi.md"
