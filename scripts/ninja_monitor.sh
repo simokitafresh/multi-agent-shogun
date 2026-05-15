@@ -365,6 +365,7 @@ declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始�
 declare -A TRAINING_EFFECT_RECORDED     # 修行効果記録済みフラグ — key: "ninja:task_id", value: "1" (cmd_2767)
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 declare -A _INBOX_COUNT_CACHE     # サイクル内inbox未読数キャッシュ — key: agent_name, value: count
+declare -A _INBOX_FP_CACHE        # サイクル内inbox未読fingerprintキャッシュ — key: agent_name, value: md5 hash
 _INBOX_COUNT_CACHE_CYCLE=-1       # キャッシュが有効なサイクル番号（cycleと一致する間は有効）
 declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
 declare -A CLI_DEAD_LOOP_LAST_NTFY   # CLI-DEAD-LOOP ntfy最終送信時刻 — key: ninja_name, value: epoch秒 (ntfy flood防止)
@@ -2441,25 +2442,72 @@ check_destructive_commands() {
     done
 }
 
-# ─── 未読メッセージのfingerprint算出 (cmd_255) ───
-# unread msg IDのsort後hash。countではなくID集合をキー化(L029)。
+# ─── 未読メッセージのcount/fingerprint算出 (cmd_255) ───
+# unread msg ID集合をキー化(L029)。サイクル内ではcount/fingerprintを同時キャッシュする。
+_get_unread_summary_cached() {
+    local inbox_file="$1"
+    local count_var="${2:-}"
+    local fp_var="${3:-}"
+    local _ius_agent_name _ius_current_cycle _ius_summary _ius_count _ius_ids _ius_fp
+
+    _ius_agent_name="${inbox_file##*/}"
+    _ius_agent_name="${_ius_agent_name%.yaml}"
+    _ius_current_cycle="${cycle:-0}"
+
+    if [ "$_ius_current_cycle" != "${_INBOX_COUNT_CACHE_CYCLE:-}" ]; then
+        _INBOX_COUNT_CACHE=()
+        _INBOX_FP_CACHE=()
+        _INBOX_COUNT_CACHE_CYCLE=$_ius_current_cycle
+    fi
+
+    if [ ! -f "$inbox_file" ]; then
+        [ -n "$count_var" ] && printf -v "$count_var" '%s' "0"
+        [ -n "$fp_var" ] && printf -v "$fp_var" '%s' ""
+        return
+    fi
+
+    if [ "${_INBOX_COUNT_CACHE[$_ius_agent_name]+set}" = "set" ] && [ "${_INBOX_FP_CACHE[$_ius_agent_name]+set}" = "set" ]; then
+        [ -n "$count_var" ] && printf -v "$count_var" '%s' "${_INBOX_COUNT_CACHE[$_ius_agent_name]}"
+        [ -n "$fp_var" ] && printf -v "$fp_var" '%s' "${_INBOX_FP_CACHE[$_ius_agent_name]}"
+        return
+    fi
+
+    _ius_summary=$(awk '
+        /^[[:space:]]*id:/ {
+            current_id = $0
+            sub(/^[^:]*:[[:space:]]*/, "", current_id)
+            gsub(/["'\''[:space:]]/, "", current_id)
+            next
+        }
+        /read:[[:space:]]*false/ {
+            count++
+            if (current_id != "") ids = ids current_id "|"
+        }
+        END { printf "%d\t%s\n", count + 0, ids }
+    ' "$inbox_file" 2>/dev/null || printf '0\t\n')
+
+    _ius_count="${_ius_summary%%$'\t'*}"
+    _ius_ids="${_ius_summary#*$'\t'}"
+    [[ "$_ius_count" =~ ^[0-9]+$ ]] || _ius_count=0
+    _ius_fp=""
+    if [ "$_ius_count" -gt 0 ] 2>/dev/null && [ -n "$_ius_ids" ]; then
+        _ius_fp=$(printf '%s' "$_ius_ids" | md5sum | cut -d' ' -f1)
+    fi
+
+    _INBOX_COUNT_CACHE[$_ius_agent_name]=$_ius_count
+    _INBOX_FP_CACHE[$_ius_agent_name]=$_ius_fp
+    [ -n "$count_var" ] && printf -v "$count_var" '%s' "$_ius_count"
+    [ -n "$fp_var" ] && printf -v "$fp_var" '%s' "$_ius_fp"
+}
+
 # $1: inbox_file path
 # 出力: md5 hash文字列（未読0件なら空文字）
 get_unread_fingerprint() {
     local inbox_file="$1"
-    [ ! -f "$inbox_file" ] && echo "" && return
+    local _count fp
+    _get_unread_summary_cached "$inbox_file" _count fp
 
-    local ids
-    ids=$(awk '
-        /^[[:space:]]*id:/ { current_id = $2 }
-        /read:[[:space:]]*false/ { if (current_id != "") print current_id }
-    ' "$inbox_file" 2>/dev/null | sort | tr '\n' '|')
-
-    if [ -z "$ids" ]; then
-        echo ""
-        return
-    fi
-    echo "$ids" | md5sum | cut -d' ' -f1
+    echo "$fp"
 }
 
 # ─── 未読放置検知+再nudge (cmd_188→cmd_255状態遷移化) ───
@@ -2480,6 +2528,23 @@ count_unread_messages() {
     echo "$count"
 }
 
+# ─── count_unread_messages サイクル内キャッシュ ───
+# check_inbox_renudge/update_inbox_counts が同一サイクル内で
+# 別々にawk+NTFSアクセスするのを防ぐ。cycleが変わった時だけ再読込。
+# WSL2 NTFS I/Oコスト(L508)削減: 17回→9回/cycle（karo+gunshi+6忍者+shogun）
+count_unread_messages_cached() {
+    local inbox_file="$1"
+    local out_var="${2:-}"
+    local count _fp
+
+    _get_unread_summary_cached "$inbox_file" count _fp
+    if [ -n "$out_var" ]; then
+        printf -v "$out_var" '%s' "$count"
+    else
+        echo "$count"
+    fi
+}
+
 check_inbox_renudge() {
     local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
     local now
@@ -2495,9 +2560,9 @@ check_inbox_renudge() {
             continue
         fi
 
-        # 未読メッセージ数をカウント
+        # 未読メッセージ数をカウント（サイクル内キャッシュ使用）
         local unread_count
-        unread_count=$(count_unread_messages "$inbox_file")
+        count_unread_messages_cached "$inbox_file" unread_count
         # 防御: 非数値は0に強制変換
         [[ ! "$unread_count" =~ ^[0-9]+$ ]] && unread_count=0
 
@@ -3338,7 +3403,7 @@ update_inbox_counts() {
 
         local count=0
         if [ -f "$inbox_file" ]; then
-            count=$(count_unread_messages "$inbox_file")
+            count_unread_messages_cached "$inbox_file" count
         fi
 
         if [ "$count" -gt 0 ] 2>/dev/null; then
@@ -3352,7 +3417,7 @@ update_inbox_counts() {
     local shogun_inbox="${inbox_dir}/shogun.yaml"
     local shogun_count=0
     if [ -f "$shogun_inbox" ]; then
-        shogun_count=$(count_unread_messages "$shogun_inbox")
+        count_unread_messages_cached "$shogun_inbox" shogun_count
     fi
 
     if [ "$shogun_count" -gt 0 ] 2>/dev/null; then
