@@ -348,6 +348,60 @@ MOCK
     grep -q "gate_report_format の未回復FAILが45日継続(FAIL=2件)" "$TEST_TMPDIR/logs/bulletin_calls.log"
 }
 
+@test "Gate 13.8 high FP rate requests relaxation cmd bulletin with block pattern classification" {
+    unset SHOGUN_STARTUP_LIGHTWEIGHT
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+  - cmd_id: "cmd_fp_1"
+    gate_result: "WARN"
+    source: "cmd_save_warn"
+    timestamp: "2099-01-01T00:00:00Z"
+    notes: "ac_phase_mixing|check=check_ac_phase_mixing"
+  - cmd_id: "cmd_fp_1"
+    gate_result: "CLEAR"
+    source: "cmd_complete_gate"
+    timestamp: "2099-01-01T00:10:00Z"
+  - cmd_id: "cmd_fp_2"
+    gate_result: "WARN"
+    source: "cmd_save_warn"
+    timestamp: "2099-01-02T00:00:00Z"
+    notes: "ac_phase_mixing|check=check_ac_phase_mixing"
+  - cmd_id: "cmd_fp_2"
+    gate_result: "CLEAR"
+    source: "cmd_complete_gate"
+    timestamp: "2099-01-02T00:10:00Z"
+  - cmd_id: "cmd_fp_3"
+    gate_result: "WARN"
+    source: "cmd_save_warn"
+    timestamp: "2099-01-03T00:00:00Z"
+    notes: "ac_phase_mixing|check=check_ac_phase_mixing"
+  - cmd_id: "cmd_fp_3"
+    gate_result: "CLEAR"
+    source: "cmd_complete_gate"
+    timestamp: "2099-01-03T00:10:00Z"
+  - cmd_id: "cmd_block_1"
+    gate_result: "BLOCK"
+    source: "cmd_save_block"
+    timestamp: "2099-01-04T00:00:00Z"
+    notes: "WARN累計昇格: ac_phase_mixing"
+EOF
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf 'notify=%s args=%s\n' "${BULLETIN_NOTIFY:-}" "$*" >> "$SHOGUN_STARTUP_ROOT/logs/bulletin_calls.log"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: \"ac_phase_mixing|check=check_ac_phase_mixing\" FP率=100% (3/3)"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" != *"__FP_RELAXATION_REQUEST__"* ]]
+    grep -q "notify=shogun" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "Gate 13.8 高FP率検出" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "gate条件緩和cmd" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "直近BLOCK修正パターン分類: WARN累計昇格:1件" "$TEST_TMPDIR/logs/bulletin_calls.log"
+}
+
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
 @test "Memory ALERT → 総合判定: ALERT" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
