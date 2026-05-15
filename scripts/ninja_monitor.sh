@@ -1352,7 +1352,7 @@ notify_idle_batch() {
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
         # pane最終3行を添付（家老がidle判断の直接証拠として使う）
         local pane_tail
-        pane_tail=$(tmux capture-pane -t "$target" -p 2>/dev/null | grep -v '^$' | tail -3 | tr '\n' '|' | sed 's/|$//')
+        pane_tail=$(tmux capture-pane -t "$target" -p 2>/dev/null | awk 'NF { lines[++n] = $0 } END { start = n - 2; if (start < 1) start = 1; for (i = start; i <= n; i++) { printf "%s%s", sep, lines[i]; sep = "|" } }')
         if [ -n "$pane_tail" ]; then
             pane_evidence="${pane_evidence}[pane:${name}] ${pane_tail} "
         fi

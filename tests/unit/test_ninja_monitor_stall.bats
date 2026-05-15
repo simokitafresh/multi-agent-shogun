@@ -498,6 +498,57 @@ cat "$SCRIPT_DIR/inbox.log"
     [[ "$output" == *"karo|karo_idle_cycle|全忍者idle+パイプライン空。改善サイクルを回せ。"* ]]
 }
 
+@test "notify_idle_batch compacts pane evidence with one awk pass" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: cmd_123_exact
+EOF
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'"'"'EOF'"'"'
+commands: {}
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+declare -A PANE_TARGETS LAST_NOTIFIED
+PANE_TARGETS[kagemaru]="shogun:2.4"
+
+get_context_pct() { echo 42; }
+tmux() {
+    case "$1" in
+        capture-pane)
+            printf "\nline one\n\nline two\nline three\nline four\n"
+            ;;
+        *) return 1 ;;
+    esac
+}
+log() { echo "$1" >> "$LOG"; }
+
+notify_idle_batch kagemaru
+
+cat "$SCRIPT_DIR/inbox.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"kagemaru(CTX:42%,last:cmd_123_exact)"* ]]
+    [[ "$output" == *"pane証拠: [pane:kagemaru] line two|line three|line four"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail
