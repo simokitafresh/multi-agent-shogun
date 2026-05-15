@@ -178,6 +178,19 @@ safe_inbox_write() {
     return "$status"
 }
 
+handle_yaml_injection_failure() {
+    local injector_name="$1"
+    local task_file="$2"
+    local ninja_name="${3:-${NINJA_NAME:-unknown}}"
+    local message
+
+    message="YAML注入失敗: ${injector_name} task_file=${task_file} ninja=${ninja_name}。deploy_task.logを確認されたし。"
+    log "ERROR: ${injector_name} failed for ${task_file} (ninja=${ninja_name})"
+    safe_inbox_write "karo" "$message" "deploy_error" "deploy_task" || \
+        log "ERROR: ${injector_name} failure notification to karo failed"
+    return 0
+}
+
 deploy_task_send_direct_renudge() {
     local agent_name="$1"
     local pane_target unread_count
@@ -977,19 +990,19 @@ with open(task_file, 'r', encoding='utf-8') as f:
     raw = f.read()
 
 # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-def _sv(v):
+def _sv(v, multiline_indent=2):
     if v is None: return 'null'
     if isinstance(v, bool): return str(v).lower()
     if isinstance(v, (int, float)): return str(v)
     s = str(v)
     if '\n' in s:
-        return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+        return '|-\n' + '\n'.join(' ' * multiline_indent + ln for ln in s.split('\n'))
     sq = chr(39)
     return sq + s.replace(sq, sq + sq) + sq
 def _yaml_lines(key, val, ind=0):
     p = ' ' * ind
     if not isinstance(val, (dict, list)):
-        s = _sv(val)
+        s = _sv(val, ind + 2)
         if '\n' in s:
             parts = s.split('\n')
             return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
@@ -1007,7 +1020,7 @@ def _yaml_lines(key, val, ind=0):
 def _list_item(item, ind):
     p = ' ' * ind
     if not isinstance(item, (dict, list)):
-        s = _sv(item)
+        s = _sv(item, ind + 2)
         if '\n' in s:
             parts = s.split('\n')
             return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
@@ -1027,8 +1040,13 @@ def _list_item(item, ind):
                     for dk, dv in v.items():
                         lines.extend(_yaml_lines(dk, dv, ind + 4))
             else:
-                sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
-                lines.append(p + tag + k + ': ' + sv)
+                sv = _sv(v, ind + 4) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                if '\n' in sv:
+                    parts = sv.split('\n')
+                    lines.append(p + tag + k + ': ' + parts[0])
+                    lines.extend(parts[1:])
+                else:
+                    lines.append(p + tag + k + ': ' + sv)
         return lines
     return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
 frag = '\n'.join(_yaml_lines('acceptance_criteria', cmd_acs))
@@ -3858,19 +3876,19 @@ try:
         raw = f.read()
 
     # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-    def _sv(v):
+    def _sv(v, multiline_indent=2):
         if v is None: return 'null'
         if isinstance(v, bool): return str(v).lower()
         if isinstance(v, (int, float)): return str(v)
         s = str(v)
         if '\n' in s:
-            return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+            return '|-\n' + '\n'.join(' ' * multiline_indent + ln for ln in s.split('\n'))
         sq = chr(39)
         return sq + s.replace(sq, sq + sq) + sq
     def _yaml_lines(key, val, ind=0):
         p = ' ' * ind
         if not isinstance(val, (dict, list)):
-            s = _sv(val)
+            s = _sv(val, ind + 2)
             if '\n' in s:
                 parts = s.split('\n')
                 return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
@@ -3888,7 +3906,7 @@ try:
     def _list_item(item, ind):
         p = ' ' * ind
         if not isinstance(item, (dict, list)):
-            s = _sv(item)
+            s = _sv(item, ind + 2)
             if '\n' in s:
                 parts = s.split('\n')
                 return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
@@ -3908,8 +3926,13 @@ try:
                         for dk, dv in v.items():
                             lines.extend(_yaml_lines(dk, dv, ind + 4))
                 else:
-                    sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
-                    lines.append(p + tag + k + ': ' + sv)
+                    sv = _sv(v, ind + 4) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                    if '\n' in sv:
+                        parts = sv.split('\n')
+                        lines.append(p + tag + k + ': ' + parts[0])
+                        lines.extend(parts[1:])
+                    else:
+                        lines.append(p + tag + k + ': ' + sv)
             return lines
         return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
     def _safe_section_replace(text, section_name, new_value):
@@ -4537,19 +4560,19 @@ try:
         raw = f.read()
 
     # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-    def _sv(v):
+    def _sv(v, multiline_indent=2):
         if v is None: return 'null'
         if isinstance(v, bool): return str(v).lower()
         if isinstance(v, (int, float)): return str(v)
         s = str(v)
         if '\n' in s:
-            return '|-\n' + '\n'.join('  ' + ln for ln in s.split('\n'))
+            return '|-\n' + '\n'.join(' ' * multiline_indent + ln for ln in s.split('\n'))
         sq = chr(39)
         return sq + s.replace(sq, sq + sq) + sq
     def _yaml_lines(key, val, ind=0):
         p = ' ' * ind
         if not isinstance(val, (dict, list)):
-            s = _sv(val)
+            s = _sv(val, ind + 2)
             if '\n' in s:
                 parts = s.split('\n')
                 return [p + key + ': ' + parts[0]] + [p + x for x in parts[1:]]
@@ -4567,7 +4590,7 @@ try:
     def _list_item(item, ind):
         p = ' ' * ind
         if not isinstance(item, (dict, list)):
-            s = _sv(item)
+            s = _sv(item, ind + 2)
             if '\n' in s:
                 parts = s.split('\n')
                 return [p + '- ' + parts[0]] + [p + '  ' + x for x in parts[1:]]
@@ -4587,8 +4610,13 @@ try:
                         for dk, dv in v.items():
                             lines.extend(_yaml_lines(dk, dv, ind + 4))
                 else:
-                    sv = _sv(v) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
-                    lines.append(p + tag + k + ': ' + sv)
+                    sv = _sv(v, ind + 4) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')
+                    if '\n' in sv:
+                        parts = sv.split('\n')
+                        lines.append(p + tag + k + ': ' + parts[0])
+                        lines.extend(parts[1:])
+                    else:
+                        lines.append(p + tag + k + ': ' + sv)
             return lines
         return [p + '- ' + ('[]' if isinstance(item, list) else '{}')]
     def _safe_section_replace(text, section_name, new_value):
@@ -5947,7 +5975,7 @@ deploy_task_apply_task_mutations() {
 
     # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
-    inject_related_lessons "$task_file" || true
+    inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
     inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
@@ -5991,7 +6019,7 @@ deploy_task_apply_task_mutations() {
     inject_report_filename "$task_file" || true
     inject_bloom_level "$task_file" || true
     inject_execution_controls "$task_file" || true
-    inject_ninja_weak_points "$task_file" "$ninja_name" || true
+    inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
     check_context_freshness "$task_file" || true
 
     local task_id parent_cmd project
