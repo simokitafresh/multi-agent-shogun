@@ -823,3 +823,9 @@
 | cmd_2781 | 設計書(docs/ocr-engine-switching-design.md)のPhase 1-3を実装。OCREngine抽象クラス+Google/Claude/GPTの3エンジンを切替可能にする | infra | 05-15 | OCRエンジン抽象化を追加し、Google/Claude/G |
 | cmd_2782 | Google Vision DOCUMENT_TEXT_DETECTIONのブロック座標情報をClaude Haikuに渡し、お薬手帳の列構造を正確に復元する二段構えパイプラインをSimple-OCRに組み込む | infra | 05-15 | Google DOCUMENT_TEXT_DETECTION |
 | cmd_2784 | force-with-lease/reset/clean等の破壊的コマンド実行前に、lord_conversation.jsonlのinboundに殿の承認発言があるか自動検証するhookを追加し、ハルシネーションに基づく破壊的操作を構造的に防止する | infra | 05-15 | pre-bash-combinedにD010 Guardを追 |
+| cmd_2785 | skills/dream・gate-sync・idle-persistのSKILL.mdが参照scriptより古く、startup gateが3セッション連続WARNしている。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.shのWARNを解消する | infra | 05-15 | skills/dream・gate-sync・idle-pe |
+| cmd_2786 | cmd_save.sh L254のadditionキーワード判定が過去形・受身形(追加された/追加済み等)にもマッチし、gate参照cmdをgate追加cmdと誤判定する。15回累計でBLOCK昇格している偽陽性を修正する | infra | 05-15 | — |
+| cmd_2787 | _build_two_stage_promptがお薬手帳の処方行解釈をハードコードしており、情報の追加(処方日補完)や構造強制(1行まとめ)が発生する。プロンプトを座標ベースのレイアウト忠実復元に限定し、情報量を不変にする | simple-ocr | 05-15 | _build_two_stage_promptを座標ベースの |
+| cmd_2788 | record_lesson_feedback.sh L91の${task_type:-impl}がexact/recon/trainingを全てimplにフォールバックし、deploy_task.shのeffectiveness_score計算でexactタスクの有効率が歪む(有効率30%)。task YAMLからtask_type取得のフォールバックを追加する | infra | 05-15 | record_lesson_feedback.shにtask |
+| cmd_2791 | auto-ops/gc/db等の教訓にwhen/howフィールドが欠落している69件を補完する。when/howがないと教訓注入時のタスク特性マッチングが効かず、注入精度が低下する | infra | 05-15 | — |
+| cmd_2792 | dashboard_auto_section.shのCI取得ロジックがcheck failedと表示するが、gh run list直近5件は全てsuccess。表示と実態の乖離原因を特定する | infra | 05-15 | dashboardのCI check failed表示は、l |
