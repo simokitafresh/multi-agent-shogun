@@ -4,8 +4,8 @@ codd_required_version: null
 codd_required_version_strict: false
 
 project:
-  name: "multi-agent-shogun-semantic-index"
-  language: "python"
+  name: "multi-agent-shogun-script-brownfield"
+  language: "bash"
   frameworks: []
 
 ai_command: "/home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools \"\""
@@ -13,13 +13,13 @@ coding_principles: null
 
 scan:
   source_dirs:
-    - "scripts/"
-    - "lib/"
-    - "docs/"
+    - "codd/brownfield_targets/"
   test_dirs:
     - "tests/"
   doc_dirs:
-    - "context/"
+    - "codd/requirements/"
+    - "codd/design/"
+    - "codd/brownfield/"
   config_files: []
   exclude:
     - "**/node_modules/**"

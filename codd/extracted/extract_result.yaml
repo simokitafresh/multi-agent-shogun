@@ -1,0 +1,168 @@
+```yaml
+meta:
+  generated_at: "2026-05-06T00:00:00Z"
+  project: "multi-agent-shogun"
+  description: >
+    ファイルベースのマルチエージェントCLIオーケストレーションシステム。
+    忍者をモチーフにした複数のAIエージェント（hanzo, hayate, kagemaru, kirimaru,
+    kotaro, saizo, sasuke, tobisaru）をシェルスクリプトで統括し、
+    YAMLインボックス/レポートによるエージェント間通信を行う。
+    Androidアプリ（Shogun）によるモバイルUIを提供。
+  tech_stack:
+    languages: ["Bash", "Kotlin", "Python", "YAML"]
+    frameworks: ["Android SDK", "Gradle"]
+    testing: ["bats-core", "bats-support", "bats-assert"]
+    ci_cd: ["GitHub Actions"]
+    tools: ["tmux", "shellcheck", "lefthook", "gitleaks", "ripgrep"]
+  total_files: 481
+
+layers:
+  L1:
+    name: "Data Models"
+    artifact_count: 384
+    summary: >
+      データベースを持たないファイルベースアーキテクチャ。エージェント定義（agent.yaml）、
+      YAMLインボックスメッセージ（325件）、レポートデータ（44件）、
+      ダッシュボード・コマンド履歴等の構造化データで構成。
+    subcategories:
+      agent_definitions:
+        count: 1
+        files: ["agents/default/agent.yaml"]
+      inbox_messages:
+        count: 325
+        path: "archive/inbox/"
+        agents: ["gunshi(5)", "hanzo(28)", "hayate(44)", "kagemaru(37)", "karo(74)", "kirimaru(20)", "kotaro(32)", "saizo(33)", "sasuke(23)", "shogun(1)", "tobisaru(28)"]
+      archived_reports:
+        count: 25
+        path: "archive/reports/"
+        agents: ["hanzo(7)", "hayate(12)", "kagemaru(6)"]
+      active_reports:
+        count: 19
+        path: "/"
+        agents: ["hanzo(1)", "hayate(3)", "kagemaru(4)", "kirimaru(3)", "kotaro(4)", "saizo(2)", "sasuke(1)", "tobisaru(1)"]
+      frozen_data:
+        count: 2
+        files: ["archive/frozen/gunshi_inbox.yaml", "archive/frozen/gunshi_to_karo.yaml"]
+      command_chronicles:
+        count: 3
+        path: "archive/cmd-chronicle/"
+      dashboard_snapshots:
+        count: 3
+        path: "archive/dashboard/"
+      operational_data:
+        count: 6
+        files: ["$R", "$report", "dashboard.md", "dashboard.md.bak", "download.csv", "download.html"]
+
+  L2:
+    name: "API Endpoints"
+    artifact_count: 0
+    summary: >
+      APIエンドポイントファイルは提供されたコンテキストに存在しない。
+      requirements.txtでwebsocket-client（CDP用）が参照されるが、
+      対応するサーバー実装ファイルはスキャン範囲外。
+
+  L3:
+    name: "UI Pages"
+    artifact_count: 12
+    summary: >
+      Androidアプリ「Shogun」のUIレイヤー。AndroidManifest.xmlで画面定義、
+      6つのAPKビルド成果物、5つのスクリーンショットでUI構成を文書化。
+    subcategories:
+      screen_definitions:
+        count: 1
+        files: ["android/app/src/main/AndroidManifest.xml"]
+      app_binaries:
+        count: 6
+        files:
+          - "shogun-v5.5.apk"
+          - "shogun-v5.6.apk"
+          - "android/release/multi-agent-shogun.apk"
+          - "android/release/shogun-v5.8-debug.apk"
+          - "android/release/shogun-v5.9-debug.apk"
+          - "android/release/shogun-v6.2-debug.apk"
+      screenshots:
+        count: 5
+        files:
+          - "android/screenshots/01_shogun_terminal.png"
+          - "android/screenshots/02_agents_grid.png"
+          - "android/screenshots/03_dashboard.png"
+          - "android/screenshots/04_settings.png"
+          - "android/screenshots/05_ratelimit.png"
+
+  L4:
+    name: "Business Logic"
+    artifact_count: 17
+    summary: >
+      マルチエージェントオーケストレーションのコアロジック。
+      8つのエージェントCLIスクリプト、メイン出陣スクリプト（74KB）、
+      初期セットアップ、およびエージェントシステムプロンプトで構成。
+    subcategories:
+      agent_cli_scripts:
+        count: 8
+        files: ["hanzo", "hayate", "kagemaru", "kirimaru", "kotaro", "saizo", "sasuke", "tobisaru"]
+      orchestration_scripts:
+        count: 6
+        files: ["shutsujin_departure.sh", "first_setup.sh", "setup.sh", "initialize", "Makefile", "set"]
+      agent_domain_docs:
+        count: 3
+        files: ["agents/default/system.md", "AGENTS.md", "archive/frozen/gunshi.md"]
+
+  L5:
+    name: "Infrastructure / Config"
+    artifact_count: 68
+    summary: >
+      CI/CD（GitHub Actions）、Androidビルドシステム（Gradle）、
+      git hooks（lefthook）、シークレットスキャン（gitleaks）、
+      32のロックファイル、およびプロジェクトドキュメント。
+    subcategories:
+      lock_files:
+        count: 32
+      ci_cd:
+        count: 1
+        files: [".github/workflows/test.yml"]
+      git_config:
+        count: 3
+        files: [".gitattributes", ".gitignore", ".gitleaks.toml"]
+      project_config:
+        count: 8
+        files: [".codd_version", ".shellcheckrc", "lefthook-local.yml", "lefthook.yml", "requirements.txt", "install.bat", "CLAUDE.md", "CLAUDE.md.bak.jp.20260421"]
+      project_docs:
+        count: 5
+        files: ["LICENSE", "CONTRIBUTING.md", "README.md", "README_ja.md", "SECURITY.md"]
+      android_build:
+        count: 13
+        files:
+          - "android/.gitignore"
+          - "android/build.gradle.kts"
+          - "android/gradle.properties"
+          - "android/gradlew"
+          - "android/local.properties"
+          - "android/settings.gradle.kts"
+          - "android/app/build.gradle.kts"
+          - "android/app/proguard-rules.pro"
+          - "android/gradle/libs.versions.toml"
+          - "android/gradle/wrapper/gradle-wrapper.jar"
+          - "android/gradle/wrapper/gradle-wrapper.properties"
+          - "android/README.md"
+          - "android/README_ja.md"
+      runtime_artifacts:
+        count: 5
+        files: ["nohup.out", "=1.6.0", "[]", "main", "None"]
+      logs:
+        count: 1
+        files: ["archive/frozen/inbox_watcher_gunshi.log"]
+
+  L6:
+    name: "Tests"
+    artifact_count: 0
+    summary: >
+      CI設定（.github/workflows/test.yml）でbatsテスト（unit, e2e, integration）の
+      実行パイプラインが定義されているが、tests/ディレクトリおよびscripts/ディレクトリの
+      ファイルは提供されたスキャン範囲に含まれていない。
+      android/app/src/test/java/ディレクトリも空。
+    notes:
+      - "CI references: tests/*.bats, tests/unit/*.bats, tests/e2e/*.bats, tests/integration/*.bats"
+      - "CI references: scripts/count_bats_skips.sh"
+      - "SKIP=FAIL policy (FR-054) enforced in CI"
+      - "Test framework: bats-core with bats-support and bats-assert helpers"
+```

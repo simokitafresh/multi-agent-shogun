@@ -1,0 +1,1585 @@
+{
+  "version": "1",
+  "built_at": "2026-05-15T04:12:31.618163+00:00",
+  "project_root": "/mnt/c/tools/multi-agent-shogun",
+  "nodes": [
+    {
+      "id": "codd/brownfield/cmd_save_brownfield.md",
+      "kind": "design_doc",
+      "path": "codd/brownfield/cmd_save_brownfield.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/brownfield/deploy_task_brownfield.md",
+      "kind": "design_doc",
+      "path": "codd/brownfield/deploy_task_brownfield.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/brownfield/inbox_write_brownfield.md",
+      "kind": "design_doc",
+      "path": "codd/brownfield/inbox_write_brownfield.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/brownfield/ninja_monitor_brownfield.md",
+      "kind": "design_doc",
+      "path": "codd/brownfield/ninja_monitor_brownfield.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/design/cmd_save_design.md",
+      "kind": "design_doc",
+      "path": "codd/design/cmd_save_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:cmd-save",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:cmd-save",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/cmd_save.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:cmd-save",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:cmd-save",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/design/deploy_task_design.md",
+      "kind": "design_doc",
+      "path": "codd/design/deploy_task_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:deploy-task",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:deploy-task",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/deploy_task.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:deploy-task",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:deploy-task",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/design/inbox_write_design.md",
+      "kind": "design_doc",
+      "path": "codd/design/inbox_write_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:inbox-write",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:inbox-write",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/inbox_write.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:inbox-write",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:inbox-write",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/design/ninja_monitor_design.md",
+      "kind": "design_doc",
+      "path": "codd/design/ninja_monitor_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:ninja-monitor",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:ninja-monitor",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/ninja_monitor.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:ninja-monitor",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:ninja-monitor",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/requirements/cmd_save_requirements.md",
+      "kind": "design_doc",
+      "path": "codd/requirements/cmd_save_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:cmd-save",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/cmd_save.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:cmd-save",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/requirements/deploy_task_requirements.md",
+      "kind": "design_doc",
+      "path": "codd/requirements/deploy_task_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:deploy-task",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/deploy_task.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:deploy-task",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/requirements/inbox_write_requirements.md",
+      "kind": "design_doc",
+      "path": "codd/requirements/inbox_write_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:inbox-write",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/inbox_write.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:inbox-write",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "codd/requirements/ninja_monitor_requirements.md",
+      "kind": "design_doc",
+      "path": "codd/requirements/ninja_monitor_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:ninja-monitor",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/ninja_monitor.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:ninja-monitor",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/design/cmd_2762_cmd_save_design.md",
+      "kind": "design_doc",
+      "path": "docs/design/cmd_2762_cmd_save_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:cmd-save",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:cmd-save",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/cmd_save.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:cmd-save",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:cmd-save",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/design/cmd_2762_deploy_task_design.md",
+      "kind": "design_doc",
+      "path": "docs/design/cmd_2762_deploy_task_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:deploy-task",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:deploy-task",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/deploy_task.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:deploy-task",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:deploy-task",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/design/cmd_2762_inbox_write_design.md",
+      "kind": "design_doc",
+      "path": "docs/design/cmd_2762_inbox_write_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:inbox-write",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:inbox-write",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/inbox_write.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:inbox-write",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:inbox-write",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/design/cmd_2762_ninja_monitor_design.md",
+      "kind": "design_doc",
+      "path": "docs/design/cmd_2762_ninja_monitor_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:script:ninja-monitor",
+            "type": "design",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "depends_on": [
+              {
+                "id": "req:script:ninja-monitor",
+                "relation": "satisfies",
+                "semantic": "governance"
+              }
+            ],
+            "implementation": [
+              "scripts/ninja_monitor.sh"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:script:ninja-monitor",
+            "relation": "satisfies",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:script:ninja-monitor",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/design/system_design.md",
+      "kind": "design_doc",
+      "path": "docs/design/system_design.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "design:system-design",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "test:acceptance-criteria",
+                "relation": "constrained_by",
+                "semantic": "governance"
+              },
+              {
+                "id": "governance:adr-modular-refactoring",
+                "relation": "constrained_by",
+                "semantic": "governance"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "detailed_design:module-ownership",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed_design:shared-state-model",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "operations:daemon-runbook",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:ninja_monitor",
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "NFR-1: Modules must be sourced after external libraries (scripts/lib/*.sh). Source order violation causes undefined function errors at runtime."
+              },
+              {
+                "targets": [
+                  "module:ninja_monitor"
+                ],
+                "reason": "FR-2: Main loop dispatcher must remain in ninja_monitor.sh. Target ~500 lines (globals + main loop + source statements)."
+              },
+              {
+                "targets": [
+                  "module:ninja_monitor"
+                ],
+                "reason": "Constraint: Auto-restart hash detection must cover all module files under scripts/lib/monitor/, not just ninja_monitor.sh."
+              }
+            ],
+            "modules": [
+              "ninja_monitor",
+              "idle_management",
+              "stall_detection",
+              "health_checks",
+              "karo_monitor",
+              "pane_management",
+              "report_utils",
+              "state_io"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "test:acceptance-criteria",
+            "relation": "constrained_by",
+            "semantic": "governance"
+          },
+          {
+            "id": "governance:adr-modular-refactoring",
+            "relation": "constrained_by",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "design:system-design",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/batch_read_flow.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/batch_read_flow.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed:batch-read-flow",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "design:system-design",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:field_get"
+                ],
+                "reason": "出力形式はeval可能な field=value の改行区切り。フィールド未存在時は空文字列を返し、エラー終了しないこと（既存field_getと同一のnull挙動維持）。"
+              }
+            ],
+            "modules": [
+              "field_get"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "design:system-design",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed:batch-read-flow",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/batch_write_flow.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/batch_write_flow.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed:batch-write-flow",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "design:system-design",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:yaml_field_set"
+                ],
+                "reason": "flock -w 10による排他ロック→単一awk pass→mv atomic replacement→verify_after_write。この順序は不変。awk内で既存フィールド更新と新規フィールド追加の両方を1 passで処理すること。"
+              },
+              {
+                "targets": [
+                  "module:yaml_field_set"
+                ],
+                "reason": "引数形式 field=value のパース時、value内の=文字をエスケープ処理すること（YAMLフィールド値に=を含むケースへの対応）。"
+              }
+            ],
+            "modules": [
+              "yaml_field_set"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "design:system-design",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed:batch-write-flow",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/dispatch_flow.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/dispatch_flow.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed_design:dispatch-flow",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "detailed_design:module-ownership",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed_design:shared-state-model",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:ninja_monitor"
+                ],
+                "reason": "FR-2/FR-4: 20-second poll cycle dispatch order and function call sequence must be preserved exactly. Any reordering is a behavior change and release-blocking."
+              }
+            ],
+            "modules": [
+              "ninja_monitor"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "detailed_design:module-ownership",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "detailed_design:shared-state-model",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed_design:dispatch-flow",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/module_ownership.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/module_ownership.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed_design:module-ownership",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "design:system-design",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "test:test-strategy",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "operations:daemon-runbook",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "FR-1: Each module must contain exactly the functions listed in requirements. No function may appear in multiple modules (MECE). No function may be lost during extraction."
+              },
+              {
+                "targets": [
+                  "module:ninja_monitor",
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "FR-4: Function signatures, return codes, and side effects must be identical pre- and post-refactoring. Zero behavior change."
+              }
+            ],
+            "modules": [
+              "idle_management",
+              "stall_detection",
+              "health_checks",
+              "karo_monitor",
+              "pane_management",
+              "report_utils",
+              "state_io"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "design:system-design",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed_design:module-ownership",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/refactor_sequence.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/refactor_sequence.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed:refactor-sequence",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "detailed:batch-write-flow",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed:batch-read-flow",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "test:test-strategy",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:deploy_task"
+                ],
+                "reason": "resolve_cmd_to_task: 既存のawk STK変数抽出ロジックは変更禁止。その後のyaml_field_set 7連→yaml_field_set_batch 1回への置換のみ。"
+              },
+              {
+                "targets": [
+                  "module:deploy_task"
+                ],
+                "reason": "inject_ac_version: _compute_ac_hashロジックは変更禁止。field_get群→field_get_multi、yaml_field_set群→yaml_field_set_batchへの置換のみ。"
+              }
+            ],
+            "modules": [
+              "deploy_task"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "detailed:batch-write-flow",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "detailed:batch-read-flow",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed:refactor-sequence",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/detailed_design/shared_state_model.md",
+      "kind": "design_doc",
+      "path": "docs/detailed_design/shared_state_model.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "detailed_design:shared-state-model",
+            "type": "design",
+            "depends_on": [
+              {
+                "id": "design:system-design",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "plan:implementation-plan",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "FR-3: All modules share global variables (NINJA_NAMES[], PANE_TARGETS[], STATE_DIR, etc.) and associative arrays (STALL_FIRST_SEEN[], etc.). No module may declare its own copy or shadow shared state."
+              }
+            ],
+            "modules": [
+              "ninja_monitor",
+              "idle_management",
+              "stall_detection",
+              "health_checks",
+              "karo_monitor",
+              "pane_management",
+              "report_utils",
+              "state_io"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "design:system-design",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "detailed_design:shared-state-model",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/future/cmd119-lesson-injection-investigation.md",
+      "kind": "design_doc",
+      "path": "docs/future/cmd119-lesson-injection-investigation.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/future/design-lesson-auto-injection.md",
+      "kind": "design_doc",
+      "path": "docs/future/design-lesson-auto-injection.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/governance/adr_batch_utility.md",
+      "kind": "design_doc",
+      "path": "docs/governance/adr_batch_utility.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "governance:adr-batch-utility",
+            "type": "governance",
+            "depends_on": [
+              {
+                "id": "req:deploy-task-refactor-requirements",
+                "relation": "derives_from",
+                "semantic": "governance"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "design:system-design",
+                "relation": "constrained_by",
+                "semantic": "governance"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:yaml_field_set",
+                  "module:field_get"
+                ],
+                "reason": "既存API互換維持が必須。バッチ関数は新規追加であり既存関数の署名・挙動を変更してはならない。"
+              }
+            ],
+            "modules": [
+              "yaml_field_set",
+              "field_get"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:deploy-task-refactor-requirements",
+            "relation": "derives_from",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "governance:adr-batch-utility",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/governance/adr_modular_refactoring.md",
+      "kind": "design_doc",
+      "path": "docs/governance/adr_modular_refactoring.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "governance:adr-modular-refactoring",
+            "type": "governance",
+            "depends_on": [
+              {
+                "id": "req:shogun-monitor-refactor-requirements",
+                "relation": "derives_from",
+                "semantic": "governance"
+              }
+            ],
+            "depended_by": [
+              {
+                "id": "design:system-design",
+                "relation": "constrained_by",
+                "semantic": "governance"
+              }
+            ],
+            "conventions": [
+              {
+                "targets": [
+                  "module:ninja_monitor",
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "NFR-2/Constraint: Bash 5.x only. No Python, Node.js, or new external packages. Pure bash source-splitting."
+              },
+              {
+                "targets": [
+                  "module:state_io",
+                  "module:health_checks",
+                  "module:pane_management"
+                ],
+                "reason": "Constraint: Must work on WSL2 with NTFS-mounted /mnt/c paths (no inotify, stat-based polling)."
+              }
+            ],
+            "modules": [
+              "ninja_monitor"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "req:shogun-monitor-refactor-requirements",
+            "relation": "derives_from",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "governance:adr-modular-refactoring",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/investigation-skill-nesting-cache.md",
+      "kind": "design_doc",
+      "path": "docs/investigation-skill-nesting-cache.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/model-switch-checklist.md",
+      "kind": "design_doc",
+      "path": "docs/model-switch-checklist.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/operations/daemon_runbook.md",
+      "kind": "design_doc",
+      "path": "docs/operations/daemon_runbook.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "operations:daemon-runbook",
+            "type": "operations",
+            "depends_on": [
+              {
+                "id": "design:system-design",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed_design:module-ownership",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [],
+            "conventions": [
+              {
+                "targets": [
+                  "module:ninja_monitor"
+                ],
+                "reason": "Constraint: Auto-restart script-hash detection must include all module files under scripts/lib/monitor/. Missing a file means silent stale code running in production daemon."
+              },
+              {
+                "targets": [
+                  "module:state_io",
+                  "module:health_checks"
+                ],
+                "reason": "Constraint: WSL2 NTFS /mnt/c path compatibility. File I/O must handle NTFS limitations (stat-based polling, no inotify on cross-filesystem mounts)."
+              }
+            ],
+            "modules": [
+              "ninja_monitor",
+              "state_io",
+              "health_checks"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "design:system-design",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "detailed_design:module-ownership",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "operations:daemon-runbook",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/operations/profiling_runbook.md",
+      "kind": "design_doc",
+      "path": "docs/operations/profiling_runbook.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "operations:profiling-runbook",
+            "type": "operations",
+            "depends_on": [
+              {
+                "id": "test:test-strategy",
+                "relation": "depends_on",
+                "semantic": "technical"
+              }
+            ],
+            "depended_by": [],
+            "conventions": [
+              {
+                "targets": [
+                  "module:deploy_task"
+                ],
+                "reason": "プロファイル計測は要件定義の計測条件（同一環境・同一テストケース）で実施すること。計測結果はCI artifactとして保存。"
+              }
+            ],
+            "modules": [
+              "deploy_task"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "test:test-strategy",
+            "relation": "depends_on",
+            "semantic": "technical"
+          }
+        ],
+        "node_id": "operations:profiling-runbook",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/philosophy.md",
+      "kind": "design_doc",
+      "path": "docs/philosophy.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/plan/implementation_plan.md",
+      "kind": "design_doc",
+      "path": "docs/plan/implementation_plan.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "plan:implementation-plan",
+            "type": "plan",
+            "depends_on": [
+              {
+                "id": "detailed_design:module-ownership",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed_design:shared-state-model",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "detailed_design:dispatch-flow",
+                "relation": "depends_on",
+                "semantic": "technical"
+              },
+              {
+                "id": "test:test-strategy",
+                "relation": "constrained_by",
+                "semantic": "governance"
+              }
+            ],
+            "depended_by": [],
+            "conventions": [
+              {
+                "targets": [
+                  "module:ninja_monitor"
+                ],
+                "reason": "FR-4: Each module extraction step must be followed by full bats test suite run (854 tests, zero SKIP). No batch extraction without intermediate verification."
+              },
+              {
+                "targets": [
+                  "module:ninja_monitor",
+                  "module:idle_management",
+                  "module:stall_detection",
+                  "module:health_checks",
+                  "module:karo_monitor",
+                  "module:pane_management",
+                  "module:report_utils",
+                  "module:state_io"
+                ],
+                "reason": "NFR-2: No new external dependencies may be introduced at any extraction step."
+              }
+            ],
+            "modules": [
+              "ninja_monitor",
+              "idle_management",
+              "stall_detection",
+              "health_checks",
+              "karo_monitor",
+              "pane_management",
+              "report_utils",
+              "state_io"
+            ]
+          }
+        },
+        "depends_on": [
+          {
+            "id": "detailed_design:module-ownership",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "detailed_design:shared-state-model",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "detailed_design:dispatch-flow",
+            "relation": "depends_on",
+            "semantic": "technical"
+          },
+          {
+            "id": "test:test-strategy",
+            "relation": "constrained_by",
+            "semantic": "governance"
+          }
+        ],
+        "node_id": "plan:implementation-plan",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/requirements/cmd_2762_cmd_save_requirements.md",
+      "kind": "design_doc",
+      "path": "docs/requirements/cmd_2762_cmd_save_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:cmd-save",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/cmd_save.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:cmd-save",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/requirements/cmd_2762_deploy_task_requirements.md",
+      "kind": "design_doc",
+      "path": "docs/requirements/cmd_2762_deploy_task_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:deploy-task",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/deploy_task.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:deploy-task",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/requirements/cmd_2762_inbox_write_requirements.md",
+      "kind": "design_doc",
+      "path": "docs/requirements/cmd_2762_inbox_write_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:inbox-write",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/inbox_write.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:inbox-write",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/requirements/cmd_2762_ninja_monitor_requirements.md",
+      "kind": "design_doc",
+      "path": "docs/requirements/cmd_2762_ninja_monitor_requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:script:ninja-monitor",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.9,
+            "source": "brownfield",
+            "implementation": [
+              "scripts/ninja_monitor.sh"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:script:ninja-monitor",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/requirements/requirements.md",
+      "kind": "design_doc",
+      "path": "docs/requirements/requirements.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "node_id": "req:deploy-task-refactor-requirements",
+            "type": "requirement",
+            "status": "approved",
+            "confidence": 0.95
+          }
+        },
+        "depends_on": [],
+        "node_id": "req:deploy-task-refactor-requirements",
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/rule/bash-conventions.md",
+      "kind": "design_doc",
+      "path": "docs/rule/bash-conventions.md",
+      "attributes": {
+        "frontmatter": {},
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "docs/semantic-index/index.md",
+      "kind": "design_doc",
+      "path": "docs/semantic-index/index.md",
+      "attributes": {
+        "frontmatter": {
+          "codd": {
+            "type": "semantic-index",
+            "propagates_to": [
+              "context/semantic-map.md"
+            ]
+          }
+        },
+        "depends_on": [],
+        "node_id": null,
+        "runtime_constraints": [],
+        "user_journeys": [],
+        "coverage_axes": []
+      }
+    },
+    {
+      "id": "runtime:db_seed:users",
+      "kind": "runtime_state",
+      "path": null,
+      "attributes": {
+        "identifier": "runtime:db_seed:users",
+        "kind": "db_seed",
+        "target": "users",
+        "expected_value": {
+          "rows": ">=1"
+        },
+        "actual_check_command": "seed users table",
+        "capabilities_provided": []
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_id": "codd/design/cmd_save_design.md",
+      "to_id": "docs/requirements/cmd_2762_cmd_save_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "codd/design/deploy_task_design.md",
+      "to_id": "docs/requirements/cmd_2762_deploy_task_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "codd/design/inbox_write_design.md",
+      "to_id": "docs/requirements/cmd_2762_inbox_write_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "codd/design/ninja_monitor_design.md",
+      "to_id": "docs/requirements/cmd_2762_ninja_monitor_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/design/cmd_2762_cmd_save_design.md",
+      "to_id": "docs/requirements/cmd_2762_cmd_save_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/design/cmd_2762_deploy_task_design.md",
+      "to_id": "docs/requirements/cmd_2762_deploy_task_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/design/cmd_2762_inbox_write_design.md",
+      "to_id": "docs/requirements/cmd_2762_inbox_write_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/design/cmd_2762_ninja_monitor_design.md",
+      "to_id": "docs/requirements/cmd_2762_ninja_monitor_requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/design/system_design.md",
+      "to_id": "docs/governance/adr_modular_refactoring.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/batch_read_flow.md",
+      "to_id": "docs/design/system_design.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/batch_write_flow.md",
+      "to_id": "docs/design/system_design.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/dispatch_flow.md",
+      "to_id": "docs/detailed_design/module_ownership.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/dispatch_flow.md",
+      "to_id": "docs/detailed_design/shared_state_model.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/module_ownership.md",
+      "to_id": "docs/design/system_design.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/refactor_sequence.md",
+      "to_id": "docs/detailed_design/batch_read_flow.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/refactor_sequence.md",
+      "to_id": "docs/detailed_design/batch_write_flow.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/detailed_design/shared_state_model.md",
+      "to_id": "docs/design/system_design.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/governance/adr_batch_utility.md",
+      "to_id": "docs/requirements/requirements.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/operations/daemon_runbook.md",
+      "to_id": "docs/design/system_design.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/operations/daemon_runbook.md",
+      "to_id": "docs/detailed_design/module_ownership.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/plan/implementation_plan.md",
+      "to_id": "docs/detailed_design/dispatch_flow.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/plan/implementation_plan.md",
+      "to_id": "docs/detailed_design/module_ownership.md",
+      "kind": "depends_on"
+    },
+    {
+      "from_id": "docs/plan/implementation_plan.md",
+      "to_id": "docs/detailed_design/shared_state_model.md",
+      "kind": "depends_on"
+    }
+  ],
+  "cycles": []
+}
