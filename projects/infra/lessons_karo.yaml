@@ -271,13 +271,18 @@ lessons:
     - 分析→報告で止まるな。報告→具体的修正提案→CMD起票要請の3段目まで回せ(殿指摘2026-05-12)
     - 根因=報告=行動完了と思った(Phase7「教訓を書いても行動は変わらない」再現)
     - idle自走の最終ステップ: 「将軍CMDが必要な事を放置していないか？」を自問
+    v6吸収(2026-05-15):
+    - idle自走Step5で3件発見(LK004/WAデータ/教訓補完)→「優先度低」「cmd待ち」で止まった(殿指摘)
+    - なぜなぜ7回: 「自問」=意志依存→Phase4再現(追体験しても行動は変わらない)
+    - 根因=idle自走Step5完了時に掲示板投稿が強制されない。分析→結論「気づき枯渇」→待機で閉じる
+    - LG034「低ROI=隠語。順番付けて全部やる」を読んでいたのに行動しなかった
   source_ids: [LK075]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'bulletin_write.sh(GP-207 content空BLOCK)+CLAUDE.md Communication Protocol+idle自走Step5でCMD起票要請チェック'
+  enforcement: 'bulletin_write.sh(GP-207 content空BLOCK)+CLAUDE.md Communication Protocol+idle自走Step5でCMD起票要請チェック。★Step5完了時に行動候補があるなら掲示板投稿必須(意志依存の自問では発動しない実証済み)'
 
-  when: 将軍への報告・意見が必要な時。idle自走の最終ステップ
-  how: 掲示板投稿+CMD起票要請まで回す。情報報告だけで止まるな。「将軍CMDが必要な事を放置していないか？」自問
+  when: 将軍への報告・意見が必要な時。idle自走の最終ステップ。Step5で「優先度低」「cmd待ち」で止まりそうな時
+  how: 掲示板投稿+CMD起票要請まで回す。「優先度低」は隠語(LG034)。順番付けて全部やる。分析結果があるなら必ず掲示板投稿
 - id: LK-A18
   title: revert前に変更元エージェントに通知 + revert後は再計測強制
   detail: revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。

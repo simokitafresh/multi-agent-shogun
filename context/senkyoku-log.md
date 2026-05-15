@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-05-15
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2746-2748 | 家老要請3本(偵察/WA修復/教訓補完) | 全CLEAR | WA品質PASS化+教訓when/how 3%→99% |
+| cmd_2749-2752 | 自動成長ループ昇格パス4本 | 全CLEAR | なぜなぜ7回×3: ドキュメント→コード修正の一気通貫 |
+| cmd_2753-2756 | 断裂修正+追跡4本 | 全CLEAR | 軍師/家老なぜなぜ7回: FAIL接続/修行/遷移率/掲示板追跡 |
+| cmd_2757-2759 | 摩擦解消3本 | 全CLEAR | 教訓ノイズ/FP増大/肥大化の3逆複利防止 |
+| cmd_2760-2764 | CoDD v2.18.0基盤5本 | 2760 CLEAR, 残4配備中 | 知識更新+全PJ lexicon+brownfield+fixスキル+CI gate |
+| (週報) | DM-Signal Weekly 2026-05-15 | 完了 | WTI+7%/S&P500 7週連続/鉄壁-青龍+27.84% |
+| (直接) | CoDD v1.10.0→v2.18.0+PATH+SKILL.md | 完了 | 全エージェントCoDD即利用可能 |
+| session | 19cmd+週報。自動成長ループ構造改革+CoDD全面展開 | 14 CLEAR | 三者がなぜなぜ7回を独立に回し全阻害パスを修正 |
+
 ## 2026-05-12
 
 | cmd/action | 意図 | 結果 | 因果 |
@@ -919,3 +932,22 @@
 | cmd_2744 | 将軍自走フロー明文化+startup gate強制 | GATE CLEAR | F004過剰解釈修正。自分で出したcmdの結果確認=鎖の中(殿裁定) |
 | cmd_2745 | ライトモードコントラスト修正+design.mdデュアルテーマ化 | GATE CLEAR+本番反映 | UIデザインガイド§1-§7完全準拠。WCAG AA(4.5:1/3:1/48pt/1.5+) |
 | session_20260515 | 15cmd全CLEAR+rebalancer4本本番反映+スキル5層カバー+将軍自走フロー確立+教訓3件(LS030-032) | 環境蓄積完了 | 殿の学び: スキル使用=構造的強制/F004自走=鎖の中/本番≠DM-Signal/セマンティック辞書精度=上流/殿を必要とする=崩壊 |
+| cmd_2746 | inbox未配信根因調査→既にsafe_inbox_writeで修正済み確認 | GATE CLEAR | LK004の前提が古かった(assumption_invalidation) |
+| cmd_2747 | WAデータ品質85件修復(NINJA_CORRUPT+GP049_BYPASS) | GATE CLEAR | gate_wa_data_quality.sh PASS達成 |
+| cmd_2748 | 教訓when/how 1331件補完→missing=0 | GATE CLEAR | dm-signal+infra全教訓のwhen/how充足 |
+| cmd_2749 | skill_auto_improveにコード修正昇格パス追加 | GATE CLEAR | FAIL分類+streak追跡+bulletin昇格 |
+| cmd_2750 | auto_failure_lessonにスクリプトバグFAIL検出+昇格通知 | GATE CLEAR | gate_fire_log参照→分類→bulletin要請 |
+| cmd_2751 | insightキュー同一パターン自動昇格通知 | GATE CLEAR | source一致検出+閾値bulletin |
+| cmd_2752 | L6未回復FAIL長期放置の自動検出+将軍通知 | GATE CLEAR | 閾値30日超過ALERT+bulletin要請 |
+| cmd_2753 | auto_failure_lesson→cmd_complete_gate FAILパス接続 | GATE CLEAR | パイプライン断裂修正 |
+| cmd_2754 | ninja_monitor修行サイクル自動トリガー | GATE CLEAR | idle+FAIL率+クールダウン条件 |
+| cmd_2755 | ninja_monitor FAIL→PASS遷移率定期計測 | GATE CLEAR | 日次算出+ログ記録 |
+| cmd_2756 | 掲示板にアクション追跡(action_type+actioned_by) | GATE CLEAR | fire-and-forget問題解消 |
+| cmd_2757 | 教訓定期棄却の自動トリガー | GATE CLEAR | effectiveness閾値+承認制 |
+| cmd_2758 | gate FP率閾値超過時の緩和要請 | GATE CLEAR | Gate 13.8拡張 |
+| cmd_2759 | スクリプト肥大化検出+リファクタcmd起票要請 | GATE CLEAR | 日次行数計測+閾値ALERT |
+| cmd_2760 | CoDD知識体系v2.18.0更新 | GATE CLEAR | context+セマンティック+記事ポインタ |
+| cmd_2761 | 全8PJ CoDD lexiconセットアップ | GATE CLEAR | codd.yaml刷新+readyチェック |
+| cmd_2762 | 主要4スクリプトにcodd brownfield設計書逆生成 | 稼働中(hayate) | depends_on完了後にcmd_2763/2764配備 |
+| karo自走 | なぜなぜ7回×3本: (1)idle自走で止まるパターン(2)学習ループ構造的穴5件(3)全運用フロー穴5件 | LK-A17 v6吸収+掲示板CMD起票要請 | 殿指摘「将軍にCMD起票依頼したか」→Phase4再現(分析=行動と思った) |
+| 軍師自走 | 教訓耐久率60%→100%(33/33)。Guard 9-12実装。なぜなぜ7回→成長ループ断裂検出 | 全件LGTM | LG003/LG007/LG023/LG028/LG032 hook化 |
