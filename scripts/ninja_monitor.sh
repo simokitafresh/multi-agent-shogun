@@ -29,6 +29,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+TRAINING_EFFECT_LOG="$SCRIPT_DIR/logs/training_effect.log"  # 修行before/after FAIL率比較ログ (cmd_2767)
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
@@ -349,6 +350,7 @@ declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
+declare -A TRAINING_EFFECT_RECORDED     # 修行効果記録済みフラグ — key: "ninja:task_id", value: "1" (cmd_2767)
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
 declare -A CLI_DEAD_LOOP_LAST_NTFY   # CLI-DEAD-LOOP ntfy最終送信時刻 — key: ninja_name, value: epoch秒 (ntfy flood防止)
@@ -1788,6 +1790,106 @@ EOF
     return 1
 }
 
+# ─── 修行効果: before FAIL率算出 (cmd_design_quality.yaml) (cmd_2767) ───
+# cmd_design_quality.yamlから対象忍者の過去修行cmd BLOCK率を算出
+# 出力: "total fail pct" のスペース区切り3値
+_training_before_fail_pct() {
+    local name="$1"
+    local log_file="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+    [ -f "$log_file" ] || { printf '0 0 0\n'; return 0; }
+
+    awk -v name="$name" '
+        BEGIN { total=0; fail=0; cmd=""; gate=""; has_ninja=0 }
+        /^- cmd_id:/ {
+            if (cmd != "" && has_ninja) {
+                total++
+                if (gate == "BLOCK") fail++
+            }
+            cmd = $NF; gsub(/["'"'"']/, "", cmd)
+            gate = ""
+            has_ninja = (cmd ~ /training/ && cmd ~ name) ? 1 : 0
+        }
+        /^  notes:/ { if ($0 ~ name) has_ninja = 1 }
+        /^  gate_result:/ { gate = $2; gsub(/["'"'"']/, "", gate) }
+        END {
+            if (cmd != "" && has_ninja) {
+                total++
+                if (gate == "BLOCK") fail++
+            }
+            pct = (total > 0 ? int(fail * 100 / total) : 0)
+            printf "%d %d %d\n", total+0, fail+0, pct+0
+        }
+    ' "$log_file"
+}
+
+# ─── 修行効果記録 (cmd_2767) ───
+# 修行task完了時(task_type=training/task_id=*training*)にbefore/after FAIL率を比較してlogs/training_effect.logに記録
+_record_training_effect() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+
+    [ -f "$task_file" ] || return 0
+
+    local task_type task_id task_status
+    IFS='|' read -r task_type task_id task_status < <(awk '
+        BEGIN { tt=""; ti=""; ts="" }
+        /^[ \t]*task_type:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); tt=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ts=v }
+        END { print tt "|" ti "|" ts }
+    ' "$task_file")
+
+    # training taskの検出: task_type=training または task_idがtrainingパターン
+    local is_training=0
+    [[ "$task_type" = "training" ]] && is_training=1
+    [[ "$task_id" = *training* ]] && is_training=1
+    [ "$is_training" = "1" ] || return 0
+
+    # done/completed状態のみ対象
+    case "$task_status" in
+        done|completed) ;;
+        *) return 0 ;;
+    esac
+
+    [ -n "$task_id" ] || return 0
+
+    # 二重記録防止（連想配列）
+    local key="${name}:${task_id}"
+    [ "${TRAINING_EFFECT_RECORDED[$key]:-}" = "1" ] && return 0
+
+    # before FAIL率: cmd_design_quality.yamlの過去修行BLOCK率
+    local before_total before_fail before_pct
+    read -r before_total before_fail before_pct < <(_training_before_fail_pct "$name")
+    before_total=${before_total:-0}; before_fail=${before_fail:-0}; before_pct=${before_pct:-0}
+
+    # after FAIL率: gate_fire_log.yamlの直近FAIL率
+    local after_total after_fail after_pct
+    read -r after_total after_fail after_pct < <(_training_recent_gate_stats "$name")
+    after_total=${after_total:-0}; after_fail=${after_fail:-0}; after_pct=${after_pct:-0}
+
+    local delta=$(( after_pct - before_pct ))
+    local delta_str
+    if [ "$delta" -lt 0 ]; then
+        delta_str="${delta}%"
+    elif [ "$delta" -gt 0 ]; then
+        delta_str="+${delta}%"
+    else
+        delta_str="±0%"
+    fi
+
+    local timestamp
+    printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+    printf '[%s] TRAINING-EFFECT: ninja=%s task=%s before_block_pct=%d%%(%d/%d) after_fail_pct=%d%%(%d/%d) delta=%s\n' \
+        "$timestamp" "$name" "$task_id" \
+        "$before_pct" "$before_fail" "$before_total" \
+        "$after_pct" "$after_fail" "$after_total" \
+        "$delta_str" >> "$TRAINING_EFFECT_LOG"
+    log "TRAINING-EFFECT: $name task=$task_id before=${before_pct}% after=${after_pct}% delta=${delta_str}"
+
+    TRAINING_EFFECT_RECORDED[$key]="1"
+}
+
 # ─── idle→通知の処理（状態遷移+デバウンス） ───
 # 4サブ関数に分割: _handle_post_clear_pending / _handle_deploy_stall /
 #                   _handle_idle_notify / _handle_auto_clear
@@ -1801,6 +1903,7 @@ handle_confirmed_idle() {
     now=$EPOCHSECONDS
     _clear_stall_tracking_for_completed_idle "$name"
     _handle_idle_notify "$name" "$now"
+    _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
     if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
 
