@@ -323,6 +323,31 @@ EOF
     [[ "$output" != *"\`preflight_autolearn\`: WARNを学習する"* ]]
 }
 
+@test "L6 learning speed alerts and requests bulletin for stale unrecovered FAIL" {
+    export L6_LEARNING_NOW="2099-02-15T00:00:00+09:00"
+    export L6_UNRECOVERED_FAIL_ALERT_DAYS=30
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+- ts: "2099-01-01T00:00:00+09:00", file: "queue/reports/old.yaml", gate: "gate_report_format", result: FAIL, reasons: "old unrecovered"
+- ts: "2099-01-02T00:00:00+09:00", file: "queue/reports/old2.yaml", gate: "gate_report_format", result: FAIL, reasons: "old unrecovered again"
+- ts: "2099-01-20T00:00:00+09:00", file: "queue/reports/recovered.yaml", gate: "gate_yaml_status", result: FAIL, reasons: "temporary"
+- ts: "2099-01-21T00:00:00+09:00", file: "queue/reports/recovered.yaml", gate: "gate_yaml_status", result: PASS
+EOF
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$SHOGUN_STARTUP_ROOT/logs/bulletin_calls.log"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未回復FAIL ALERT(閾値30日):"* ]]
+    [[ "$output" == *"ALERT: gate_report_format 未回復45日 FAIL=2件"* ]]
+    [[ "$output" == *"L6学習速度: gate_report_format 未回復FAIL 45日 (2件)"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" != *"__L6_UNRECOVERED_ALERT__"* ]]
+    grep -q "gate_report_format の未回復FAILが45日継続(FAIL=2件)" "$TEST_TMPDIR/logs/bulletin_calls.log"
+}
+
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
 @test "Memory ALERT → 総合判定: ALERT" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'

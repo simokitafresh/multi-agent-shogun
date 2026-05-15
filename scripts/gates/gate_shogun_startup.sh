@@ -1551,6 +1551,7 @@ fi
 echo "■ L6学習速度"
 _l6_out=$(L6_REPO_ROOT="$SCRIPT_DIR" \
     L6_NOW="${L6_LEARNING_NOW:-}" \
+    L6_UNRECOVERED_FAIL_ALERT_DAYS="${L6_UNRECOVERED_FAIL_ALERT_DAYS:-30}" \
     python3 <<'PY' 2>/dev/null || true
 import os
 import re
@@ -1567,6 +1568,10 @@ else:
 if now.tzinfo is None:
     now = now.replace(tzinfo=timezone.utc)
 cutoff = now - timedelta(days=30)
+try:
+    unresolved_threshold_days = int(os.environ.get("L6_UNRECOVERED_FAIL_ALERT_DAYS", "30"))
+except ValueError:
+    unresolved_threshold_days = 30
 
 fire_log = repo / "logs" / "gate_fire_log.yaml"
 re_ts = re.compile(r'ts:\s*"([^"]+)"')
@@ -1575,6 +1580,7 @@ re_gate = re.compile(r'gate:\s*"?(.*?)"?(?:,|\s+result:)')
 re_result = re.compile(r'result:\s*([A-Z][A-Z-]*)')
 
 entries = []
+all_entries = []
 if fire_log.exists():
     for raw in fire_log.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = raw.strip()
@@ -1595,9 +1601,13 @@ if fire_log.exists():
             continue
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
-        if ts < cutoff or ts > now + timedelta(minutes=5):
+        if ts > now + timedelta(minutes=5):
             continue
-        entries.append((ts, gm.group(1).strip(), rm.group(1).strip()))
+        entry = (ts, gm.group(1).strip(), rm.group(1).strip())
+        all_entries.append(entry)
+        if ts < cutoff:
+            continue
+        entries.append(entry)
 
 entries.sort(key=lambda item: item[0])
 stats = defaultdict(lambda: {"fail": 0, "recovered": 0, "open": 0, "pass": 0})
@@ -1624,6 +1634,29 @@ if stats:
         print(f"  {gate}: {rate}% ({recovered}/{fail} FAIL回復, 未回復={open_count}, PASS={pass_count})")
 else:
     print("  SKIP: gate_fire_log直近30日データなし")
+
+open_failures = defaultdict(list)
+for ts, gate, result in sorted(all_entries, key=lambda item: item[0]):
+    if result == "FAIL":
+        open_failures[gate].append(ts)
+    elif result == "PASS":
+        open_failures[gate].clear()
+
+stale_open = []
+for gate, failures in open_failures.items():
+    if not failures:
+        continue
+    oldest = min(failures)
+    age_days = (now - oldest).days
+    if age_days >= unresolved_threshold_days:
+        stale_open.append((age_days, gate, len(failures)))
+
+if stale_open:
+    stale_open.sort(key=lambda row: (-row[0], row[1]))
+    print(f"未回復FAIL ALERT(閾値{unresolved_threshold_days}日):")
+    for age_days, gate, fail_count in stale_open[:5]:
+        print(f"  ALERT: {gate} 未回復{age_days}日 FAIL={fail_count}件")
+        print(f"__L6_UNRECOVERED_ALERT__\t{gate}\t{age_days}\t{fail_count}")
 
 def compact(value):
     value = re.sub(r"\s+", " ", value).strip().strip("\"'")
@@ -1703,7 +1736,16 @@ else:
 PY
 )
 if [ -n "$_l6_out" ]; then
-    printf '%s\n' "$_l6_out" | sed 's/^/  /'
+    printf '%s\n' "$_l6_out" | grep -v '^__L6_UNRECOVERED_ALERT__' | sed 's/^/  /'
+    while IFS=$'\t' read -r _l6_marker _l6_gate _l6_age _l6_count; do
+        [ "$_l6_marker" = "__L6_UNRECOVERED_ALERT__" ] || continue
+        overall="ALERT"
+        alerts+=("L6学習速度: ${_l6_gate} 未回復FAIL ${_l6_age}日 (${_l6_count}件)")
+        _l6_bulletin="L6学習速度ALERT: ${_l6_gate} の未回復FAILが${_l6_age}日継続(FAIL=${_l6_count}件)。将軍は原因修正cmdを起票されたし。"
+        if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
+            BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_l6_bulletin" shogun >/dev/null 2>&1 || true
+        fi
+    done <<< "$_l6_out"
 else
     echo "  SKIP: L6学習速度集計失敗"
 fi
