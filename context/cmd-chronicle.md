@@ -819,3 +819,4 @@
 | cmd_2776 | セマンティック辞書に未マッピングの5概念カテゴリを追加し30ファイルの辞書到達性を確保。前提崩壊の構造的防止 | infra | 05-15 | セマンティック辞書SSOTに5概念を追加し、semantic |
 | cmd_2777 | cmd_2775偵察で特定した高優先度60関数をcontext/infrastructure.mdにカテゴリ別で追記し、全エージェントが起動時に自動ロードできる受動的知識に昇格させる | infra | 05-15 | context/infrastructure.mdにcmd_ |
 | cmd_2779 | cmd_save.sh BLOCK後のREMINDに教訓記録だけでなく環境埋込み判定を強制追加し、BLOCKのたびにインフラ改善cmdの要否を自動判定させる | infra | 05-15 | cmd_save.shのCLEAR時REMINDに環境埋込み |
+| cmd_2780 | Simple-OCRリポジトリ全体にcodd extract --ai を実行し、6層MECE設計書を逆生成する。OCRエンジン切替実装の土台とする | infra | 05-15 | Simple-OCRでCoDD brownfield ext |
