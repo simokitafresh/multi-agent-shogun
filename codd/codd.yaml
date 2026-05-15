@@ -1,78 +1,542 @@
-# CoDD プロジェクト設定
-version: "0.1.0"
+version: 0.1.0
 codd_required_version: null
 codd_required_version_strict: false
-
 project:
-  name: "multi-agent-shogun-script-brownfield"
-  language: "bash"
   frameworks: []
-
-ai_command: "/home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools \"\""
+  name: multi-agent-shogun-script-brownfield
+  language: bash
+ai_command: /home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools
+  ""
+ai_commands:
+  plan_derive: null
+  design_doc_extract: null
+  criteria_expand: null
 coding_principles: null
-
 scan:
   source_dirs:
-    - "codd/brownfield_targets/"
+  - src/
+  - codd/brownfield_targets/
   test_dirs:
-    - "tests/"
+  - tests/
   doc_dirs:
-    - "codd/requirements/"
-    - "codd/design/"
-    - "codd/brownfield/"
+  - docs/
+  - codd/requirements/
+  - codd/design/
+  - codd/brownfield/
   config_files: []
   exclude:
-    - "**/node_modules/**"
-    - "**/__pycache__/**"
-    - "**/dist/**"
-    - "docs/research/**"
-    - "docs/archive/**"
-    - "docs/test/**"
-
+  - '**/node_modules/**'
+  - '**/__pycache__/**'
+  - '**/dist/**'
+  - docs/research/**
+  - docs/archive/**
+  - docs/test/**
 graph:
-  store: "jsonl"
-  path: "codd/scan"
-
+  store: jsonl
+  path: codd/scan
 bands:
   green:
-    min_confidence: 0.90
+    min_confidence: 0.9
     min_evidence_count: 2
   amber:
-    min_confidence: 0.50
-
+    min_confidence: 0.5
 propagation:
   max_depth: 10
   stop_at_contract_boundary: true
-  command: "bash scripts/semantic_map_generate.sh --body-only"
-
+  command: bash scripts/semantic_map_generate.sh --body-only
+coherence:
+  capability_patterns: {}
+  path_prefix_tolerant:
+  - src/
+  - lib/
+  - app/
+hitl:
+  mode: cooperative
+requirement_completeness:
+  project_type: null
+  channels:
+  - askuserquestion
+  - ntfy
+  - lexicon
+  ntfy_topic: ''
+  questions: []
+  ai_missing_items: false
+  semantic_check: false
+  ai_generate_options: false
+  ai_timeout_seconds: 30
+fix:
+  test_command: null
+  max_attempts: 3
+verify:
+  typecheck_command: null
+  test_command: null
+  report_output: docs/test/verify_report.md
+  e2e_setup_command: null
+  e2e_command: null
+  e2e_deploy_command: null
+  e2e_ci_command: null
 typecheck:
   enabled: false
   command: null
   max_repair_attempts: 3
-
+conventions: []
+extraction:
+  frontmatter_alias: {}
 ci:
   provider: github_actions
   workflow_glob: .github/workflows/*.yml
   required_triggers:
-    - push
-    - pull_request
+  - push
+  - pull_request
   runtime_check: false
   staleness_days: 14
   default_branch: main
-
 context_acquisition:
   enabled: true
   strategy: web_search_first
   sources:
-    - type: official_docs
-      priority: high
-    - type: github_search
-      priority: medium
-    - type: web_search
-      priority: medium
+  - type: official_docs
+    priority: high
+  - type: github_search
+    priority: medium
+  - type: web_search
+    priority: medium
   cache_ttl_days: 30
   freshness_check_on_startup: false
   fact_check:
     enabled: true
     min_sources: 2
     min_confidence: 0.6
+wave_config:
+  '1':
+  - node_id: governance:acceptance-criteria
+    output: docs/test/acceptance_criteria.md
+    title: Acceptance Criteria
+    depends_on:
+    - id: req:script:cmd-save
+      relation: derives_from
+      semantic: governance
+    - id: req:script:deploy-task
+      relation: derives_from
+      semantic: governance
+    - id: req:script:inbox-write
+      relation: derives_from
+      semantic: governance
+    - id: req:script:ninja-monitor
+      relation: derives_from
+      semantic: governance
+    - id: req:script:dashboard-auto-section
+      relation: derives_from
+      semantic: governance
+    - id: req:script:restart-watchers
+      relation: derives_from
+      semantic: governance
+    - id: req:deploy-task-refactor-requirements
+      relation: derives_from
+      semantic: governance
+    conventions:
+    - targets:
+      - module:inbox_write
+      - module:cmd_save
+      - module:deploy_task
+      - module:yaml_field_set
+      reason: All shared YAML mutations must use flock-based locking with WSL2 /mnt/*
+        compatibility; concurrent write loss is release-blocking.
+    - targets:
+      - module:inbox_write
+      reason: Ninja-to-shogun direct messaging is prohibited; chain-of-command violation
+        is release-blocking.
+    - targets:
+      - module:cmd_save
+      reason: Delegated command immutability is release-blocking; mutation after delegation
+        causes deployment conflicts.
+    - targets:
+      - module:deploy_task
+      - module:yaml_field_set
+      - module:field_get
+      reason: All existing tests must pass after refactor with zero regressions; test
+        failure is release-blocking.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+    - ninja_monitor
+    - dashboard_auto_section
+    - restart_watchers
+    - yaml_field_set
+    - field_get
+  - node_id: governance:adr-batch-yaml-io
+    output: docs/governance/adr_batch_yaml_io.md
+    title: 'ADR: Batch YAML I/O for deploy_task Performance'
+    depends_on:
+    - id: req:deploy-task-refactor-requirements
+      relation: derives_from
+      semantic: governance
+    - id: req:script:deploy-task
+      relation: derives_from
+      semantic: governance
+    conventions:
+    - targets:
+      - module:yaml_field_set
+      - module:field_get
+      reason: Existing yaml_field_set and field_get function signatures must remain
+        backward-compatible; API breakage is release-blocking.
+    modules:
+    - yaml_field_set
+    - field_get
+    - deploy_task
+  '2':
+  - node_id: design:system-architecture
+    output: docs/design/system_architecture.md
+    title: System Architecture
+    depends_on:
+    - id: governance:acceptance-criteria
+      relation: constrained_by
+      semantic: governance
+    - id: governance:adr-batch-yaml-io
+      relation: constrained_by
+      semantic: governance
+    conventions:
+    - targets:
+      - module:inbox_write
+      - module:deploy_task
+      - module:ninja_monitor
+      - module:restart_watchers
+      reason: inbox_write.sh is the sole agent-to-agent communication channel; bypassing
+        it for message delivery is release-blocking.
+    - targets:
+      - module:cmd_save
+      - module:deploy_task
+      - module:inbox_write
+      - module:ninja_monitor
+      reason: yaml.dump/yaml.safe_dump is prohibited for operational YAML; all mutations
+        must use yaml_field_set helpers.
+    - targets:
+      - module:ninja_monitor
+      - module:restart_watchers
+      reason: Daemon processes must enforce singleton execution via flock; duplicate
+        instances corrupt shared state.
+    - targets:
+      - module:dashboard_auto_section
+      reason: Atomic file writes (temp + mv) required for dashboard; partial writes
+        corrupt the Lord's view.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+    - ninja_monitor
+    - dashboard_auto_section
+    - restart_watchers
+    - yaml_field_set
+    - field_get
+  '3':
+  - node_id: design:shared-yaml-library
+    output: docs/design/shared_yaml_library.md
+    title: Shared YAML Library Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    - id: governance:adr-batch-yaml-io
+      relation: constrained_by
+      semantic: governance
+    conventions:
+    - targets:
+      - module:yaml_field_set
+      - module:field_get
+      reason: Single flock acquisition + single awk pass for batch operations is release-blocking
+        for concurrency safety and performance targets.
+    - targets:
+      - module:yaml_field_set
+      - module:field_get
+      reason: Existing single-field API must remain functional and backward-compatible
+        after batch function addition.
+    modules:
+    - yaml_field_set
+    - field_get
+  - node_id: design:inbox-write
+    output: docs/design/inbox_write.md
+    title: inbox_write.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:inbox_write
+      reason: WSL2 /mnt/* lock file compatibility required; standard flock behavior
+        on NTFS-mounted paths must be validated.
+    - targets:
+      - module:inbox_write
+      reason: Ninja-to-shogun sender routing prohibition is release-blocking chain-of-command
+        enforcement.
+    - targets:
+      - module:inbox_write
+      reason: Inbox file persistence is the durable source of truth; nudge failure
+        must never cause message loss.
+    modules:
+    - inbox_write
+  - node_id: design:cmd-save
+    output: docs/design/cmd_save.md
+    title: cmd_save.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:cmd_save
+      reason: Delegated command immutability must be enforced at gate level; mutation
+        of delegated cmds is release-blocking.
+    - targets:
+      - module:cmd_save
+      reason: BLOCK/WARN/PASS gate outcomes must be durably recorded to quality logs;
+        silent pass-through is release-blocking.
+    - targets:
+      - module:cmd_save
+      reason: flock-based concurrency around shared queue files required for draft
+        conflict detection.
+    modules:
+    - cmd_save
+  - node_id: design:ninja-monitor
+    output: docs/design/ninja_monitor.md
+    title: ninja_monitor.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:ninja_monitor
+      reason: Singleton daemon enforcement via flock is release-blocking; duplicate
+        monitors cause conflicting clear/respawn actions.
+    - targets:
+      - module:ninja_monitor
+      reason: Pane clear requires idle confirmation AND report-gate pass; premature
+        clear loses in-progress work.
+    - targets:
+      - module:ninja_monitor
+      reason: All agent communication must use inbox_write.sh; ad-hoc tmux send-keys
+        messaging is release-blocking.
+    modules:
+    - ninja_monitor
+  - node_id: design:dashboard-auto-section
+    output: docs/design/dashboard_auto_section.md
+    title: dashboard_auto_section.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:dashboard_auto_section
+      reason: Content outside auto-section markers must be preserved; overwriting
+        manual sections is release-blocking.
+    - targets:
+      - module:dashboard_auto_section
+      reason: Graceful degradation to placeholder values on missing data sources required;
+        dashboard crash leaving stale data is release-blocking.
+    - targets:
+      - module:dashboard_auto_section
+      reason: Subprocess result caching with TTL is required for performance; unbounded
+        subprocess invocations cause timeout and staleness.
+    modules:
+    - dashboard_auto_section
+  - node_id: design:restart-watchers
+    output: docs/design/restart_watchers.md
+    title: restart_watchers.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:restart_watchers
+      reason: Singleton lock via flock -n is release-blocking; concurrent restart
+        attempts cause watcher duplication.
+    - targets:
+      - module:restart_watchers
+      reason: Two-stage termination (SIGTERM then SIGKILL) is release-blocking; orphaned
+        watchers cause duplicate nudges.
+    - targets:
+      - module:restart_watchers
+      reason: Pane resolution failures must silently skip to support partial formation
+        recovery; hard failure on missing pane is release-blocking.
+    modules:
+    - restart_watchers
+    - agent_config
+    - pane_lookup
+  '4':
+  - node_id: design:deploy-task
+    output: docs/design/deploy_task.md
+    title: deploy_task.sh Design
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    - id: design:shared-yaml-library
+      relation: depends_on
+      semantic: technical
+    - id: design:inbox-write
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:deploy_task
+      reason: Shared YAML helpers (including batch ops) must be used for all queue/task
+        mutation; free-form YAML dumping is release-blocking.
+    - targets:
+      - module:deploy_task
+      reason: Duplicate active deployment blocking when completed peer report exists
+        is release-blocking.
+    - targets:
+      - module:deploy_task
+      reason: Task notification must use inbox_write.sh path; direct tmux nudges limited
+        to re-nudge fallback only.
+    modules:
+    - deploy_task
+  '5':
+  - node_id: detailed_design:command-lifecycle-flow
+    output: docs/detailed_design/command_lifecycle_flow.md
+    title: Command Lifecycle & Deployment Flow
+    depends_on:
+    - id: design:cmd-save
+      relation: depends_on
+      semantic: technical
+    - id: design:deploy-task
+      relation: depends_on
+      semantic: technical
+    - id: design:inbox-write
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:cmd_save
+      - module:deploy_task
+      - module:inbox_write
+      reason: Command immutability after delegation and duplicate deployment blocking
+        must hold at every lifecycle stage; gap in any stage is release-blocking.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+  - node_id: detailed_design:agent-state-supervision
+    output: docs/detailed_design/agent_state_supervision.md
+    title: Agent State Machine & Supervision Model
+    depends_on:
+    - id: design:ninja-monitor
+      relation: depends_on
+      semantic: technical
+    - id: design:restart-watchers
+      relation: depends_on
+      semantic: technical
+    - id: design:inbox-write
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:ninja_monitor
+      reason: Idle detection must combine hook state, timestamps, CLI patterns, and
+        subprocess checks; prompt-only detection causes false idle and premature clear.
+    - targets:
+      - module:ninja_monitor
+      - module:restart_watchers
+      reason: Watcher liveness must be verified after restart; unverified watcher
+        state breaks the inbox delivery guarantee.
+    modules:
+    - ninja_monitor
+    - restart_watchers
+    - inbox_write
+  - node_id: detailed_design:component-dependency-map
+    output: docs/detailed_design/component_dependency_map.md
+    title: Component Dependency & Ownership Map
+    depends_on:
+    - id: design:system-architecture
+      relation: depends_on
+      semantic: technical
+    - id: design:shared-yaml-library
+      relation: depends_on
+      semantic: technical
+    - id: design:deploy-task
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:yaml_field_set
+      - module:field_get
+      reason: Shared library ownership boundaries must be explicit; breaking changes
+        to shared libs cascade to all consumers and are release-blocking.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+    - ninja_monitor
+    - dashboard_auto_section
+    - restart_watchers
+    - yaml_field_set
+    - field_get
+    - agent_config
+    - pane_lookup
+  '6':
+  - node_id: plan:implementation-plan
+    output: docs/plan/implementation_plan.md
+    title: Implementation Plan
+    depends_on:
+    - id: detailed_design:command-lifecycle-flow
+      relation: depends_on
+      semantic: technical
+    - id: detailed_design:agent-state-supervision
+      relation: depends_on
+      semantic: technical
+    - id: detailed_design:component-dependency-map
+      relation: depends_on
+      semantic: technical
+    - id: governance:adr-batch-yaml-io
+      relation: constrained_by
+      semantic: governance
+    conventions:
+    - targets:
+      - module:yaml_field_set
+      - module:field_get
+      - module:deploy_task
+      reason: Batch utilities (R3/R4) must be completed and tested before deploy_task
+        refactoring (R1/R2); dependency inversion is release-blocking.
+    modules:
+    - yaml_field_set
+    - field_get
+    - deploy_task
+  - node_id: test:test-strategy
+    output: docs/test/test_strategy.md
+    title: Test Strategy
+    depends_on:
+    - id: governance:acceptance-criteria
+      relation: constrained_by
+      semantic: governance
+    - id: detailed_design:command-lifecycle-flow
+      relation: depends_on
+      semantic: technical
+    - id: detailed_design:agent-state-supervision
+      relation: depends_on
+      semantic: technical
+    conventions:
+    - targets:
+      - module:deploy_task
+      - module:yaml_field_set
+      - module:field_get
+      reason: Zero regression tolerance after refactor; all 48+ existing tests must
+        pass. Test failure is release-blocking.
+    - targets:
+      - module:inbox_write
+      - module:cmd_save
+      - module:deploy_task
+      reason: Concurrent write safety under flock contention must be verified; untested
+        concurrency paths are release-blocking.
+    modules:
+    - cmd_save
+    - deploy_task
+    - inbox_write
+    - ninja_monitor
+    - dashboard_auto_section
+    - restart_watchers
+    - yaml_field_set
+    - field_get
