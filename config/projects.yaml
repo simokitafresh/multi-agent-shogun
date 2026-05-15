@@ -73,6 +73,14 @@ projects:
     priority: low
     status: archived
 
+  - id: simple-ocr
+    name: "Simple OCR"
+    path: "/mnt/c/Python_app/Simple-OCR"
+    repo: "https://github.com/simokitafresh/Simple-OCR"
+    priority: medium
+    status: active
+    note: "画像OCR Webアプリ。Flask+SocketIO+Google Vision API。スマホ撮影→PCリアルタイム受信。医療現場(お薬手帳)向け"
+
   - id: kj-partshift
     name: "KJ Partshift Checker"
     path: "/mnt/c/Python_app/kj-partshift-checker"
