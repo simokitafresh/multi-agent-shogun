@@ -2411,11 +2411,7 @@ check_inbox_renudge() {
             ctx_pct=$(get_context_pct "$target" "$name")
             local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
             local task_status
-            task_status=$(python3 -c "
-import yaml
-with open('$task_file') as f: d=yaml.safe_load(f) or {}
-print(d.get('status','idle'))
-" 2>/dev/null || echo "idle")
+            task_status=$(yaml_field_get "$task_file" "status" "idle")
             if [ "${ctx_pct:-0}" -le 0 ] 2>/dev/null && { [ "$task_status" = "idle" ] || [ "$task_status" = "done" ]; }; then
                 continue
             fi
@@ -2505,40 +2501,40 @@ write_state_file() {
         if ! flock -x -w 5 200; then
             log "ERROR: write_state_file flock failed"
         else
-            # YAML生成
-            echo "updated_at: \"$timestamp\"" > "$state_file"
-            echo "agents:" >> "$state_file"
-
-            # 家老
+            # YAML生成: 単一ブロックリダイレクトでI/O削減（複数echo >> から変更）
             local karo_status="unknown"
             check_idle "$KARO_PANE" "karo" && karo_status="idle" || karo_status="busy"
             local karo_ctx
             karo_ctx=$(get_context_pct "$KARO_PANE" "karo")
-            echo "  karo:" >> "$state_file"
-            echo "    pane: \"$KARO_PANE\"" >> "$state_file"
-            echo "    status: $karo_status" >> "$state_file"
-            echo "    ctx_pct: $karo_ctx" >> "$state_file"
-            echo "    last_task: \"\"" >> "$state_file"
 
-            # 忍者
-            for name in "${NINJA_NAMES[@]}"; do
-                local target="${PANE_TARGETS[$name]}"
-                if [ -z "$target" ]; then continue; fi
+            {
+                printf 'updated_at: "%s"\nagents:\n' "$timestamp"
+                printf '  karo:\n    pane: "%s"\n    status: %s\n    ctx_pct: %s\n    last_task: ""\n' \
+                    "$KARO_PANE" "$karo_status" "$karo_ctx"
 
-                local status="${PREV_STATE[$name]:-unknown}"
-                local ctx
-                ctx=$(get_context_pct "$target" "$name")
-                local last_task
-                last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
-                [ -z "$last_task" ] && last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "_ac_task_id")
-                [ -z "$last_task" ] && last_task=""
+                # 忍者
+                for name in "${NINJA_NAMES[@]}"; do
+                    local target="${PANE_TARGETS[$name]}"
+                    if [ -z "$target" ]; then continue; fi
 
-                echo "  ${name}:" >> "$state_file"
-                echo "    pane: \"$target\"" >> "$state_file"
-                echo "    status: $status" >> "$state_file"
-                echo "    ctx_pct: $ctx" >> "$state_file"
-                echo "    last_task: \"$last_task\"" >> "$state_file"
-            done
+                    local status="${PREV_STATE[$name]:-unknown}"
+                    local ctx
+                    ctx=$(get_context_pct "$target" "$name")
+                    # task_id取得: awkで単一パス（yaml_field_get二重呼出し排除）
+                    local last_task=""
+                    local _task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+                    if [ -f "$_task_file" ]; then
+                        last_task=$(awk '
+                            /^[ \t]*task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                            /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                            END { print t }
+                        ' "$_task_file")
+                    fi
+
+                    printf '  %s:\n    pane: "%s"\n    status: %s\n    ctx_pct: %s\n    last_task: "%s"\n' \
+                        "$name" "$target" "$status" "$ctx" "$last_task"
+                done
+            } > "$state_file"
         fi
     } 200>"$lock_file"
 }
@@ -3456,7 +3452,7 @@ check_script_size_thresholds() {
             | sort \
             | while IFS= read -r script_path; do
                 [ -f "$script_path" ] || continue
-                awk -v file="${script_path#$SCRIPT_DIR/}" '
+                awk -v file="${script_path#"$SCRIPT_DIR"/}" '
                     { lines++ }
                     /^[[:space:]]*#/ { next }
                     {
@@ -3864,7 +3860,6 @@ prev_idle=""
 prev_gate_lines=0
 
 while true; do
-    sleep "$POLL_INTERVAL"
     cycle=$((cycle + 1))
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
@@ -4167,4 +4162,6 @@ while true; do
 
     # ═══ Self-restart check ═══
     check_script_update
+
+    sleep "$POLL_INTERVAL"
 done
