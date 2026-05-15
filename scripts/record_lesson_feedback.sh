@@ -33,8 +33,14 @@ if [[ -z "$project" && -n "$ninja" ]]; then
     fi
 fi
 
-# task_typeフィールド
+# task_typeフィールド: 報告YAML → task YAMLフォールバック
 task_type=$(grep -m1 "^task_type:" "$report_file" | sed 's/task_type:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
+if [[ -z "$task_type" && -n "$ninja" ]]; then
+    task_yaml="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    if [[ -f "$task_yaml" ]]; then
+        task_type=$(grep -m1 "task_type:" "$task_yaml" | sed 's/.*task_type:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
+    fi
+fi
 
 # cmd_idフォールバック: task_idからparent_cmd推定
 if [[ -z "$cmd_id" && -n "$task_id" ]]; then
