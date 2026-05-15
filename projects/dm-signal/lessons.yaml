@@ -1879,9 +1879,9 @@ lessons:
   summary: 119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/in
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-04-07'
   when: 同種の作業・判断・検証を行う時
 - id: L569
@@ -2043,6 +2043,9 @@ lessons:
   - tasks/lessons.md
   - docs/research/cmd_1750_alm_design.md
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L557
   title: WF-OOS負の劣化率は過適合否定の十分条件ではない
   summary: OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認
@@ -2692,7 +2695,7 @@ lessons:
     BECAUSE c
   tags:
   - universal
-  helpful_count: 27
+  helpful_count: 29
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: そのガードが保護していた全変数のスコープと副作用を確認せよ
@@ -4217,9 +4220,9 @@ lessons:
   summary: 5忍法のcontext build共有で削減できるのは約48s/83,482s(0.058%)。性能改善はsimulate_pattern最適化に集中すべき。共
   tags:
   - frontend
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 共有化の主な価値は保守性向上(バグ修正一元化・新忍法追加容易化)であり性能ではない
   when: frontend/UIの表示・状態管理を変更する時
 - id: L367
@@ -4480,6 +4483,9 @@ lessons:
   target_files:
   - grid_search_metrics_v2.py
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L345
   title: run_077グリッド数を変えたらDATA_CATALOG/analysis_runs/docsを同時更新しないと偵察が誤誘導される
   summary: cmd_190系のmonthly固定・subset展開後もoutputs/grid_search/DATA_CATALOG.md:181-186とanalysi
@@ -5105,7 +5111,7 @@ lessons:
   tags:
   - architecture
   - statistics
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-12'
@@ -5249,9 +5255,9 @@ lessons:
   summary: 投資UIの語彙は行動に直結。recommend→candidateの語彙選択がwhipsaw抑制の生命線。遅行指標ベースのアクション提案は単月閾値ではなく連続月
   tags:
   - frontend
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-03-12'
   when: frontend/UIの表示・状態管理を変更する時
 - id: L279
@@ -5312,9 +5318,9 @@ lessons:
   tags:
   - security
   - oauth
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
 - id: L273
@@ -6401,6 +6407,9 @@ lessons:
   target_files:
   - docs/future-01/001.md
   when: A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L168
   title: 未使用判定は import探索と呼び出し探索を分離すると誤検知が減る
   summary: 今回、module参照の有無（importベース）とメソッド呼び出し有無（api.<method>ベース）を分けて集計したことで、 `testAuth`
@@ -6749,9 +6758,9 @@ lessons:
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
   tags:
   - universal
-  helpful_count: 5
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: deprecated
   when: L025を実装・検証する時
 - id: L133
@@ -6895,6 +6904,9 @@ lessons:
   - universal
   how: '2026-02-23'
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L116
   title: PF間の相関構造特徴量はエッジ崩壊予測に寄与しない
   summary: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.

@@ -802,3 +802,4 @@
 | cmd_2795 | useful率0%の教訓10件がeffectiveness除外を通過して注入され続けている。cmd_2794でfallbackパスの除外漏れと推定したが、家老の現物確認でfallbackパスには除外が実装済みと判明。真因を特定するためdeploy_task.shのstderrログを分析し、10件がどの経路で注入されているかを特定する | infra | 05-16 | stderrログ確認で、still-injected 10件 |
 | cmd_2796 | codd.yamlのsource_dirs(src/)が存在せず、doc_dirs(docs/)が研究ノート613件を設計書として取り込みhealth_score=0(662 errors)。source_dirsをscripts/に、doc_dirsをcodd/配下のみに修正し、codd measureのhealth_scoreを正常化する | infra | 05-16 | codd/codd.yamlのscan対象をscripts/ |
 | cmd_2797 | gate_context_freshness.shがALERT時に毎回ntfy送信するが、ninja_monitorが5分間隔で実行するためcontextが古いまま5分ごとに同じALERTが殿に送信されrate limitに到達した。同一ALERTの重複送信を抑止する | infra | 05-16 | gate_context_freshness.shの同一AL |
+| cmd_2798 | gate_context_freshness.shが安定context(軍師分析索引/設計ガイド/完成済み知見等)に14日ルールを一律適用し20件以上のALERTを出し続ける。安定contextを除外リストで管理し鮮度チェック対象から外す。cmd_2797(重複抑止)は安全網として維持 | infra | 05-16 | context鮮度チェックに除外リストファイルを導入し、安定 |

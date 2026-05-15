@@ -223,3 +223,32 @@
   lesson_quality: OK
   causal_chain: "ntfy毎回送信→rate limit→デバウンス実装→rate limit回避+初回通知保証=正の複利"
   timestamp: "2026-05-16T08:55:00"
+- cmd_id: cmd_2798
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。安定context除外リストで不要ALERT根絶。ALERT 39件実測。cmd_2797(デバウンス)との共存=除外=根本対処、デバウンス=安全網"
+  observations:
+    - "ALERT 39件実測(cmd記載20件以上と整合)。除外仕組み未実装(grep=0件)"
+    - "除外リスト不在=全件チェック(安全側フェイル)。ファイル管理で追加/削除容易"
+    - "cmd_2797(症状抑制)+cmd_2798(根本対処)の段階的改善。North Star整合"
+  ambiguity_points: none
+  causal_chain: "14日一律→安定context ALERT多発→rate limit。除外リスト→安定context除外→ALERT精度向上=正の複利(殿通知品質)"
+  timestamp: "2026-05-16T09:00:00"
+- cmd_id: cmd_2798
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2798_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。除外リスト導入。bats 2本PASS。安定context ALERT消滅+非除外は従来通り。除外リスト不在=ERROR(安全側)"
+  observations:
+    - "config/context_freshness_excludes.txt新設。context_freshness_check.sh修正(gate_context_freshness.shが呼出す構造)"
+    - "除外リスト不在=ERROR終了(安全側フェイル)。過剰除外はファイル編集で即修正可能"
+  lesson_quality: OK
+  causal_chain: "除外リスト導入→安定context ALERT 39件→0件。非除外は従来通り。根本対処完了=正の複利"
+  timestamp: "2026-05-16T09:05:00"

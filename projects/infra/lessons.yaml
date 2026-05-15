@@ -637,9 +637,9 @@ lessons:
   - infra
   - api
   - bash
-  helpful_count: 2
+  helpful_count: 4
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: '2026-05-06'
   target_files:
   - scripts/skill_auto_improve.sh
@@ -798,6 +798,9 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L557
   title: 永続キャッシュの無効化キーをファイル数だけにするな
   summary: archive_completed.shの/tmp永続キャッシュがreport/task/gate状態をファイル数だけで再利用し、symlink化・status
@@ -1481,7 +1484,7 @@ lessons:
   summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
   tags:
   - universal
-  helpful_count: 27
+  helpful_count: 29
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: '''# skip''パターンを明示的に追加する必要がある'
@@ -2723,9 +2726,9 @@ lessons:
   summary: usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった。値を計算したら全消費箇所で使われ
   tags:
   - monitor
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった
   target_files:
   - usage_monitor.sh
@@ -2969,6 +2972,9 @@ lessons:
   - inbox
   how: '2026-03-31'
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L345
   title: 環境変数経由のPython連携では手動エスケープは不要かつ有害
   summary: bash変数展開でクォート文字をエスケープしてから環境変数でPythonに渡すと二重エスケープになる。環境変数はバイナリセーフであり、os.environで取得
@@ -3532,7 +3538,7 @@ lessons:
   - testing
   - security
   - oauth
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: DB操作cmdでは(1)データファイル間の参照関係(2)API必須フィールド(3)認証方式(4)必要なエンドポイントの存在を現物確認してからACを書け
@@ -3676,9 +3682,9 @@ lessons:
     -A
   tags:
   - monitor
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: ninja_monitor.shはset -uを使わないがテストはset -euoで実行される
   target_files:
   - ninja_monitor.sh
@@ -3749,9 +3755,9 @@ lessons:
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
   tags:
   - gate
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること
   when: Gate拡張時は
 - id: L273
@@ -3930,7 +3936,7 @@ lessons:
   - frontend
   - deploy
   - lesson
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: PJスコープ付き辞書に修正すべき
@@ -4805,6 +4811,9 @@ lessons:
   target_files:
   - scripts/ntfy_listener.sh
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L168
   title: auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる
   summary: IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS
@@ -5128,9 +5137,9 @@ lessons:
   tags:
   - bash
   - monitor
-  helpful_count: 5
+  helpful_count: 7
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 'LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメインループを実行せず関数定義のみロードせよ'
   when: bashスクリプトの関数をbatsでユニットテストする時
 - id: L133
@@ -5296,6 +5305,9 @@ lessons:
   - cmd_complete_gate.sh
   - deploy_task.sh
   when: lesson_referenced→lessons_usefulリネーム時に
+  helpful_count: 2
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L116
   title: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
   summary: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
