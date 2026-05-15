@@ -122,7 +122,7 @@ auto_resolve_semantic_index_insights() {
     if [ "${SEMANTIC_INSIGHT_AUTO_RESOLVE:-0}" != "1" ] && [ "$map_path" != "$default_map" ]; then
         return 0
     fi
-    [ -x "$insight_script" ] || return 0
+    [ -f "$insight_script" ] || return 0
     [ -s "$insights_file" ] || return 0
 
     local ids
