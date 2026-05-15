@@ -400,7 +400,7 @@ CI RED修正は1名が担当し、残りは通常作業を継続。
 
 | Step | 行動 | 対象 | 目的 |
 |------|------|------|------|
-| 0 | **修行配備** | `context/training-cycle.md` | idle忍者がいれば修行を配備。**配備したら即Step 1へ進め。忍者完了を待つな。待ち時間=思考時間。** |
+| 0 | **修行配備** | `context/training-cycle.md` | idle忍者がいれば修行を配備(CoDD修行優先。殿指示2026-05-15)。**配備したら即Step 1へ進め。忍者完了を待つな。待ち時間=思考時間。** 修行1サイクル完了ごとに殿に結果サマリ(忍者/対象/成果/verdict)を報告せよ |
 | 0.5 | **§0.1判断4問チェック** | `context/karo-operations.md` §0.1 | **修行結果・分析・報告の前に必ず4問を通せ。配備だけで満足するな。** |
 | 1 | **workaroundパターン分析** | `logs/karo_workarounds.yaml` 直近10件 | 繰り返す手動修正→template/gate改善の種。同じroot_cause 3回以上=gate化対象 |
 | 2 | **忍者品質プロファイル** | `gate_ninja_workaround_rate.sh --ninja X` | 個別忍者のWA率推移→弱点特定→教訓注入精度向上 |

@@ -25,7 +25,10 @@ lessons:
     - push前にテスト未commitを確認せよ(LK013: CI RED 3連続。git diff --name-onlyでテストファイル確認)
     v4吸収(2026-05-11):
     - karo_direct配備後はtask YAML idle化を即確認(LK011: yaml_field_set後もflock競合/mtime遅延で反映確認が必要)
-  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011]
+    v5吸収(2026-05-15):
+    - 掲示板投稿前に既存実装をgrep確認せよ(append_codd_registry_entry L542が既存なのに未実装と投稿。4件連続前提崩壊cmd_2768/2770/2771/2774と同根)
+    - §0.1問い2の適用範囲: 配備前だけでなく掲示板投稿・将軍報告の前にも現物grep確認必須
+  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2'
