@@ -1,3 +1,14 @@
+---
+codd:
+  node_id: doc:script:deploy-task-brownfield
+  type: brownfield_report
+  status: approved
+  confidence: 0.9
+  source: brownfield
+  implementation:
+  - scripts/deploy_task.sh
+---
+
 # Brownfield Report
 
 ## Summary
