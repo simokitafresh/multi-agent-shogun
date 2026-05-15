@@ -3851,18 +3851,21 @@ check_yaml_size() {
     local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
     [ ! -f "$cmd_file" ] && return
 
-    # (1) 行数チェック
-    local line_count
-    line_count=$(wc -l < "$cmd_file")
+    # (1) 行数 + completed/done/cancelled/absorbed cmd数チェック
+    # L019教訓: grep -cは0件でexit 1するのでawkで安全にカウント
+    # L034教訓: インデント柔軟マッチ(固定space非依存)
+    local counts line_count completed_count
+    counts=$(awk '
+        { lines++ }
+        /^[[:space:]]*status:[[:space:]]*(completed|done|cancelled|absorbed)([[:space:]]|$)/ { completed++ }
+        END { print lines+0 "|" completed+0 }
+    ' "$cmd_file" 2>/dev/null || echo "0|0")
+    IFS='|' read -r line_count completed_count <<< "$counts"
+
     if [ "$line_count" -gt "$YAML_SIZE_WARN_THRESHOLD" ]; then
         log "[monitor] WARN: shogun_to_karo.yaml is ${line_count} lines (threshold: ${YAML_SIZE_WARN_THRESHOLD})"
     fi
 
-    # (2) completed/done/cancelled/absorbed cmd数チェック
-    # L019教訓: grep -cは0件でexit 1するのでawkで安全にカウント
-    # L034教訓: インデント柔軟マッチ(固定space非依存)
-    local completed_count
-    completed_count=$(awk '/^[[:space:]]*status:[[:space:]]*(completed|done|cancelled|absorbed)/ {c++} END {print c+0}' "$cmd_file")
     if [ "$completed_count" -gt "$YAML_COMPLETED_ALERT_THRESHOLD" ]; then
         log "[monitor] ALERT: ${completed_count} completed cmds in shogun_to_karo.yaml — archive may be failing"
     fi

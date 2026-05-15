@@ -498,6 +498,55 @@ cat "$SCRIPT_DIR/inbox.log"
     [[ "$output" == *"karo|karo_idle_cycle|全忍者idle+パイプライン空。改善サイクルを回せ。"* ]]
 }
 
+@test "check_yaml_size counts lines and completed statuses with one awk pass" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/queue" "$TMP_ROOT/bin"
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'"'"'EOF'"'"'
+commands:
+  cmd_a:
+    status: completed
+  cmd_b:
+    status: done
+  cmd_c:
+    status: pending
+EOF
+
+cat > "$TMP_ROOT/bin/awk" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "awk\n" >> "$AWK_CALLS_FILE"
+exec /usr/bin/awk "$@"
+EOF
+chmod +x "$TMP_ROOT/bin/awk"
+export AWK_CALLS_FILE="$TMP_ROOT/awk_calls"
+PATH="$TMP_ROOT/bin:$PATH"
+
+YAML_SIZE_WARN_THRESHOLD=3
+YAML_COMPLETED_ALERT_THRESHOLD=1
+log() { echo "$1" >> "$LOG"; }
+
+check_yaml_size
+
+cat "$LOG"
+printf "AWK_CALLS=%s\n" "$(wc -l < "$AWK_CALLS_FILE")"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun_to_karo.yaml is 7 lines"* ]]
+    [[ "$output" == *"ALERT: 2 completed cmds"* ]]
+    [[ "$output" == *"AWK_CALLS=1"* ]]
+}
+
 @test "notify_idle_batch compacts pane evidence with one awk pass" {
     run bash -lc '
 set -euo pipefail
