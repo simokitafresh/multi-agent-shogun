@@ -804,3 +804,6 @@
 | cmd_2750 | auto_failure_lesson.shがgate_fire_logのFAIL原因を参照し、スクリプトバグ起因のFAILを検出した場合にbulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | auto_failure_lesson.shにgate_fi |
 | cmd_2751 | insight_write.shに同一パターン繰返し検出と優先度判定を追加し、高優先度insightが蓄積のまま埋もれる問題を解消する | infra | 05-15 | insight_write.shにsource一致のpend |
 | cmd_2752 | gate_fire_logのFAIL→PASS遷移分析で未回復期間が閾値(設定可能)を超えたFAILを検出し、bulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | gate_shogun_startup.shのL6学習速度に |
+| cmd_2753 | auto_failure_lesson.shがどこからも呼ばれていない断裂を修正し、gate FAILした忍者タスクから自動的に教訓が生成されるパイプラインを接続する | infra | 05-15 | cmd_complete_gate.shのGATE BLOC |
+| cmd_2754 | ninja_monitorにidle忍者への修行自動配備トリガーを追加し、修行サイクルが家老の手動判断に依存する断裂を解消する | infra | 05-15 | ninja_monitor.shにidle継続+直近gate |
+| cmd_2756 | bulletin_write.shにaction_typeフィールドを追加し、昇格通知が対応されたか追跡可能にする。startup gateで未対応ALERTを表示し、cmd_save.shでactioned_by自動更新する | infra | 05-15 | bulletin action_type/actioned_ |
