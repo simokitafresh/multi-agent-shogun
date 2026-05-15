@@ -5,6 +5,10 @@ codd:
   status: approved
   confidence: 0.9
   source: brownfield
+  depended_by:
+  - id: design:script:inbox-write
+    relation: satisfies
+    semantic: governance
   implementation:
   - scripts/inbox_write.sh
 ---

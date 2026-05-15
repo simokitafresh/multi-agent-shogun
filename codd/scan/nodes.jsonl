@@ -1,12 +1,16 @@
 {"id": "design:script:cmd-save", "type": "design", "name": "design:script:cmd-save", "path": "codd/design/cmd_save_design.md"}
+{"id": "design:script:dashboard-auto-section", "type": "design", "name": "design:script:dashboard-auto-section", "path": "codd/design/dashboard_auto_section_design.md"}
 {"id": "design:script:deploy-task", "type": "design", "name": "design:script:deploy-task", "path": "codd/design/deploy_task_design.md"}
-{"id": "design:script:inbox-write", "type": "design", "path": "codd/design/inbox_write_design.md", "name": "design:script:inbox-write"}
+{"id": "design:script:inbox-write", "type": "design", "name": "design:script:inbox-write", "path": "codd/design/inbox_write_design.md"}
 {"id": "design:script:ninja-monitor", "type": "design", "name": "design:script:ninja-monitor", "path": "codd/design/ninja_monitor_design.md"}
+{"id": "design:script:restart-watchers", "type": "design", "name": "design:script:restart-watchers", "path": "codd/design/restart_watchers_design.md"}
 {"id": "doc:script:cmd-save-brownfield", "type": "brownfield_report", "path": "codd/brownfield/cmd_save_brownfield.md", "name": "doc:script:cmd-save-brownfield"}
 {"id": "doc:script:deploy-task-brownfield", "type": "brownfield_report", "path": "codd/brownfield/deploy_task_brownfield.md", "name": "doc:script:deploy-task-brownfield"}
 {"id": "doc:script:inbox-write-brownfield", "type": "brownfield_report", "path": "codd/brownfield/inbox_write_brownfield.md", "name": "doc:script:inbox-write-brownfield"}
 {"id": "doc:script:ninja-monitor-brownfield", "type": "brownfield_report", "path": "codd/brownfield/ninja_monitor_brownfield.md", "name": "doc:script:ninja-monitor-brownfield"}
 {"id": "req:script:cmd-save", "type": "requirement", "path": "codd/requirements/cmd_save_requirements.md", "name": "req:script:cmd-save"}
+{"id": "req:script:dashboard-auto-section", "type": "requirement", "path": "codd/requirements/dashboard_auto_section_requirements.md", "name": "req:script:dashboard-auto-section"}
 {"id": "req:script:deploy-task", "type": "requirement", "path": "codd/requirements/deploy_task_requirements.md", "name": "req:script:deploy-task"}
 {"id": "req:script:inbox-write", "type": "requirement", "path": "codd/requirements/inbox_write_requirements.md", "name": "req:script:inbox-write"}
 {"id": "req:script:ninja-monitor", "type": "requirement", "path": "codd/requirements/ninja_monitor_requirements.md", "name": "req:script:ninja-monitor"}
+{"id": "req:script:restart-watchers", "type": "requirement", "path": "codd/requirements/restart_watchers_requirements.md", "name": "req:script:restart-watchers"}

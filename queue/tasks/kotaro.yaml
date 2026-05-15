@@ -1,29 +1,19 @@
 task:
-  cmd_id: cmd_training_L4_codd_202605151403_kotaro
+  parent_cmd: cmd_training_L4_codd_202605152312_kotaro
+  task_id: cmd_training_L4_codd_202605152312_kotaro
   type: training
   project: infra
-  purpose: "CoDD修行: ninja_monitor.shの設計書品質を検証・改善。codd measure→codd dag verify→改善1件実装→報告YAML一発PASS"
   scout_exempt: true
-  task_type: recon
-  target_path: scripts/ninja_monitor.sh
-  context_files:
-    - codd/brownfield/ninja_monitor_brownfield.md
-    - codd/design/ninja_monitor_design.md
-    - docs/research/codd_refactor_registry.md
+  purpose: "CoDD修行L4 — restart_watchers.shにCoDDパイプライン(spec→elicit→generate→validate→measure)を実行し、設計書品質と改善点を報告せよ"
   acceptance_criteria:
     AC1:
-      description: "codd measureでninja_monitor.shの設計書品質スコアを計測し結果を報告せよ"
-      binary_checks:
-        - "codd measureを実行したか: yes/no"
+      description: "restart_watchers.shを読み、codd spec相当の目的・制約・対象範囲をdocs/research/に記録"
     AC2:
-      description: "codd dag verify --allで整合性検証し、違反があれば1件修正せよ"
-      binary_checks:
-        - "codd dag verifyを実行したか: yes/no"
+      description: "codd elicit/lexicon観点で要件穴・coverage軸を洗い出し記録"
     AC3:
-      description: "lesson_candidateにCoDD操作で得た知見をfound=trueで記入せよ"
-      binary_checks:
-        - "verdictがbinary_checksと矛盾していないか: yes/no"
-  status: done
+      description: "codd validate/measureで設計書品質を採点し、改善点を3つ以上特定して報告"
+  status: acknowledged
+  report_path: queue/reports/kotaro_report_cmd_training_L4_codd_202605152312_kotaro.yaml
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
@@ -55,3 +45,18 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
+    tried_approaches:
+    - 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); binary_checks.AC3: is dict (must be list of check items); binary_checks.commit: is dict (must be list of check items); verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
+    - 'assumption_invalidation: missing \"affected_cmds\" field'
+    approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); binary_checks.AC3: is dict (must be list of check items); binary_checks.commit: is dict (must be list of check items); verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
+      approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
+    - attempt: 2
+      block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
+      approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
