@@ -821,3 +821,5 @@
 | cmd_2779 | cmd_save.sh BLOCK後のREMINDに教訓記録だけでなく環境埋込み判定を強制追加し、BLOCKのたびにインフラ改善cmdの要否を自動判定させる | infra | 05-15 | cmd_save.shのCLEAR時REMINDに環境埋込み |
 | cmd_2780 | Simple-OCRリポジトリ全体にcodd extract --ai を実行し、6層MECE設計書を逆生成する。OCRエンジン切替実装の土台とする | infra | 05-15 | Simple-OCRでCoDD brownfield ext |
 | cmd_2781 | 設計書(docs/ocr-engine-switching-design.md)のPhase 1-3を実装。OCREngine抽象クラス+Google/Claude/GPTの3エンジンを切替可能にする | infra | 05-15 | OCRエンジン抽象化を追加し、Google/Claude/G |
+| cmd_2782 | Google Vision DOCUMENT_TEXT_DETECTIONのブロック座標情報をClaude Haikuに渡し、お薬手帳の列構造を正確に復元する二段構えパイプラインをSimple-OCRに組み込む | infra | 05-15 | Google DOCUMENT_TEXT_DETECTION |
+| cmd_2784 | force-with-lease/reset/clean等の破壊的コマンド実行前に、lord_conversation.jsonlのinboundに殿の承認発言があるか自動検証するhookを追加し、ハルシネーションに基づく破壊的操作を構造的に防止する | infra | 05-15 | pre-bash-combinedにD010 Guardを追 |
