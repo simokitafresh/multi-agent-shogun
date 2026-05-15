@@ -568,3 +568,122 @@ fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: delegated pipeline work detected"* ]]
 }
+
+# AC1: Codex CTX=0% + respawn < 60s → CODEX-CTX0-SKIP (respawnしない)
+@test "codex respawn loop AC1: CTX=0% within 60s of last respawn → CODEX-CTX0-SKIP" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks"
+touch "$LOG"
+
+declare -A LAST_CLEARED PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+
+# respawn 30秒前
+LAST_CLEARED[hayate]=9970
+PANE_TARGETS[hayate]="shogun:2.3"
+
+log() { echo "$@" >> "$LOG"; }
+get_context_pct() { echo "0"; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_debounce) echo "600" ;;
+        *) echo "" ;;
+    esac
+}
+can_send_clear_with_report_gate() { return 0; }
+RESPAWN_CALLED=0
+safe_send_clear() { RESPAWN_CALLED=1; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+_handle_auto_clear "hayate" 10000
+
+if grep -q "CODEX-CTX0-SKIP" "$LOG"; then
+    echo "PASS: CODEX-CTX0-SKIP logged"
+else
+    echo "FAIL: CODEX-CTX0-SKIP not logged"
+    cat "$LOG"
+    exit 1
+fi
+
+if [ "$RESPAWN_CALLED" -eq 0 ]; then
+    echo "PASS: no respawn triggered"
+else
+    echo "FAIL: safe_send_clear was called unexpectedly"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: CODEX-CTX0-SKIP logged"* ]]
+    [[ "$output" == *"PASS: no respawn triggered"* ]]
+}
+
+# AC2: Codex CTX=0% + respawn >= 60s → respawn発動
+@test "codex respawn loop AC2: CTX=0% after 60s of last respawn → respawn triggered" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks"
+touch "$LOG"
+
+declare -A LAST_CLEARED PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+
+# respawn 1000秒前 (60s以上経過)
+LAST_CLEARED[hayate]=9000
+PANE_TARGETS[hayate]="shogun:2.3"
+
+log() { echo "$@" >> "$LOG"; }
+get_context_pct() { echo "0"; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_debounce) echo "600" ;;
+        *) echo "" ;;
+    esac
+}
+can_send_clear_with_report_gate() { return 0; }
+RESPAWN_CALLED=0
+safe_send_clear() { RESPAWN_CALLED=1; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+_handle_auto_clear "hayate" 10000
+
+if ! grep -q "CODEX-CTX0-SKIP" "$LOG"; then
+    echo "PASS: CODEX-CTX0-SKIP not logged (elapsed >= 60s)"
+else
+    echo "FAIL: CODEX-CTX0-SKIP was logged unexpectedly"
+    cat "$LOG"
+    exit 1
+fi
+
+if [ "$RESPAWN_CALLED" -eq 1 ]; then
+    echo "PASS: respawn triggered"
+else
+    echo "FAIL: safe_send_clear was not called"
+    cat "$LOG"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: CODEX-CTX0-SKIP not logged"* ]]
+    [[ "$output" == *"PASS: respawn triggered"* ]]
+}

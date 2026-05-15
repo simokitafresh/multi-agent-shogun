@@ -1,62 +1,125 @@
 task:
-  parent_cmd: 
-  task_id: cmd_training_L4_codd_202605152312_kotaro
-  type: training
-  project: infra
-  scout_exempt: true
-  purpose: "CoDD修行L4 — restart_watchers.shにCoDDパイプライン(spec→elicit→generate→validate→measure)を実行し、設計書品質と改善点を報告せよ"
+  _ac_task_id: cmd_2806_exact
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2806
+  ac_version: 2edf2958
   acceptance_criteria:
-    AC1:
-      description: "restart_watchers.shを読み、codd spec相当の目的・制約・対象範囲をdocs/research/に記録"
-    AC2:
-      description: "codd elicit/lexicon観点で要件穴・coverage軸を洗い出し記録"
-    AC3:
-      description: "codd validate/measureで設計書品質を採点し、改善点を3つ以上特定して報告"
-  status: idle
-  report_path: queue/reports/kotaro_report_cmd_training_L4_codd_202605152312_kotaro.yaml
+  - id: 'AC1'
+    checks:
+    - check: 'ninja_monitorがrespawn直後(前回clear 60s以内)のCTX=0%忍者に対してrespawnを発動しない'
+  - id: 'AC2'
+    checks:
+    - check: 'respawn直後でないCTX=0%忍者に対しては従来通りrespawnが発動する'
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_2806
+  project: infra
+  purpose: GP-222がCodex忍者のCTX=0%を異常と判定しrespawnするが、respawn直後は正常にCTX=0%。結果10分ごとにrespawn→idle→respawn→∞の無限ループ(本日99回)。respawn直後(前回clear
+  scout_exempt: true
+  status: acknowledged
+  stop_for: []
+  task_id: cmd_2806_exact
+  task_type: exact
   related_lessons:
-  - id: 'L512'
-    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-
-  session_state:
-    attempt: 2
-    last_block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
-    tried_approaches:
-    - 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); binary_checks.AC3: is dict (must be list of check items); binary_checks.commit: is dict (must be list of check items); verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
-    - 'assumption_invalidation: missing \"affected_cmds\" field'
-    approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); binary_checks.AC3: is dict (must be list of check items); binary_checks.commit: is dict (must be list of check items); verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); assumption_invalidation: MISSING'
-      approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
-    - attempt: 2
-      block_reason: 'assumption_invalidation: missing \"affected_cmds\" field'
-      approach_summary: 'CoDD修行L4: restart_watchers.shにCoDDパイプライン実行。health_score 92→95、warnings 1→0、nodes 12→16、edges 7→12。設計書2本(requirements+design)新規作成。inbox_write_requirements.md depended_by欠如も修正。'
+  - id: 'L500'
+    summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
+    detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L531'
+    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+  - id: 'L205'
+    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+  - id: 'L252'
+    summary: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+    detail: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+  - id: 'L248'
+    summary: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
+    detail: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
+  - id: 'L226'
+    summary: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
+    detail: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L361'
+    summary: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+    detail: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+  - id: 'L134'
+    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
+  recommended_skills:
+  - "hensei"
+  - "hensei-mixed"
+  - "hensei-opus"
+  - "karo-direct"
+  - "recon-dual"
+  - "reset-layout"
+  - "shogun-all-codex-switch"
+  - "shogun-peacetime-rollback"
+  - "switch-to-codex"
+  - "switch-to-opus"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
+      - L114: cmd_464_hotfix
+      - L531: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン
+      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
+      - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
+      - L248: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止
+      - L226: ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L361: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
+      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
+    ────────────────────────────────────────
+    
+    
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_2806.yaml
+  report_path: queue/reports/kotaro_report_cmd_2806.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 12
+    top_pattern: 'report_yaml_format(3件)'
+    breakdown: 'report_yaml_format(3件), recording_error(1件), stale_ac_contamination(1件), archive_race(1件), spec_mismatch_redeploy(1件), task_redeploy(1件), ci_gate_mismatch(1件), empty_lessons_useful(1件), premature_shelve(1件), wrong_task_execution(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 31
+    - pattern: 'field_missing'
+      count: 30
+    - pattern: 'lu_structure_error'
+      count: 27
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 2
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'lesson_done_missing'
+      count: 1
+      hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
+  deployed_at: "2026-05-16T08:25:56"
