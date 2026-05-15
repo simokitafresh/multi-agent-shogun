@@ -877,10 +877,14 @@ find_matching_report_file() {
     local preferred_report legacy_report
     local -a candidates=()
 
-    task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    IFS='|' read -r task_parent_cmd task_id < <(awk '
+        BEGIN { pc=""; ti=""; ai="" }
+        /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
+        END { print pc "|" (ti!=""?ti:ai) }
+    ' "$task_file")
     [ -z "$task_parent_cmd" ] && return 1
-    task_id=$(yaml_field_get "$task_file" "task_id")
-    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
 
     preferred_report="$SCRIPT_DIR/queue/reports/${name}_report_${task_parent_cmd}.yaml"
     legacy_report="$SCRIPT_DIR/queue/reports/${name}_report.yaml"
@@ -897,11 +901,15 @@ find_matching_report_file() {
     for report_file in "${candidates[@]}"; do
         [ -f "$report_file" ] || continue
 
-        report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
+        IFS='|' read -r report_parent_cmd report_task_id < <(awk '
+            BEGIN { pc=""; ti="" }
+            /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+            /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+            END { print pc "|" ti }
+        ' "$report_file")
         [ -z "$report_parent_cmd" ] && continue
         [ "$report_parent_cmd" != "$task_parent_cmd" ] && continue
 
-        report_task_id=$(yaml_field_get "$report_file" "task_id")
         if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ]; then
             continue
         fi
@@ -4393,7 +4401,13 @@ while true; do
         CI_STATUS_CHECK_LAST=$_ci_check_now
     fi
     current_ci_status="$CI_STATUS_CACHE"
-    current_unpushed_count=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+    # unpushed count: 2分間隔キャッシュ（git rev-list毎サイクル実行→WSL2 git起動コスト削減）
+    _unpushed_now=$EPOCHSECONDS
+    if (( _unpushed_now - UNPUSHED_COUNT_CHECK_LAST >= UNPUSHED_COUNT_CHECK_INTERVAL )); then
+        UNPUSHED_COUNT_CACHE=$(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo 0)
+        UNPUSHED_COUNT_CHECK_LAST=$_unpushed_now
+    fi
+    current_unpushed_count="$UNPUSHED_COUNT_CACHE"
     if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" || "$current_unpushed_count" != "$prev_unpushed_count" ]]; then
         bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" 2>/dev/null || true
         prev_idle="$current_idle"
