@@ -455,10 +455,17 @@ fi
 # ─── SG-PRE20: related_lessons+lessons_useful空検出 (SG7盲点補完) ───
 echo ""
 echo "■ SG-PRE20: related_lessons+lessons_useful整合"
-echo "${RELATED_LESSONS_MSG:-  SKIP}"
-if [ "${HAS_RELATED_LESSONS_EMPTY_USEFUL:-0}" = "1" ]; then
-    echo "  → cmd_complete_gate BLOCK確実。忍者にuseful回答を促せ"
-    ERRORS=$((ERRORS + 1))
+if [ -f "${TASK_FILE:-}" ]; then
+    _rl_count=$(grep -c '^\s*- id:' <(sed -n '/^  related_lessons:/,/^  [^ ]/p' "$TASK_FILE") 2>/dev/null || echo 0)
+    _lu_count=$(grep -c '^\s*- id:' <(sed -n '/^lessons_useful:/,/^[^ ]/p' "$REPORT_PATH") 2>/dev/null || echo 0)
+    if [ "${_rl_count:-0}" -gt 0 ] && [ "${_lu_count:-0}" -eq 0 ]; then
+        echo "  WARN: related_lessons ${_rl_count}件注入済みだがlessons_useful空リスト → BLOCK確実"
+        ERRORS=$((ERRORS + 1))
+    else
+        echo "  PASS: related_lessons=${_rl_count} lessons_useful=${_lu_count}"
+    fi
+else
+    echo "  SKIP: task YAML未取得"
 fi
 
 # ─── GATE_PREDICTION (自動計算) ───
