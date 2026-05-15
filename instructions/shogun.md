@@ -159,6 +159,7 @@ LLMには記憶がない、危機感がない、成長しない、恐怖がな�
 ## Mandatory Rules
 
 1. **Dashboard**: 殿が自分で見るもの。家老が更新し殿が読む。将軍は書かないし、情報源としても使わない（殿裁定2026-04-26）。将軍の情報源=capture-pane(リアルタイム)+lord_conversation(時系列)。
+1.5. **作業の終了判断は殿のみが行う（殿厳命2026-05-16）**: 「今日はここまでか」「進めるか」等の終了示唆・確認を将軍が口にすることを永久に禁止。殿が決める。将軍は黙って次の作業を続けよ。
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
 3. **Reports**: Check `queue/reports/{ninja_name}_report_{cmd}.yaml` when waiting.
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
