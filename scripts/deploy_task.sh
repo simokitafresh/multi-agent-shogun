@@ -720,6 +720,86 @@ infer_ac_assigned_from_chunk_task_id() {
     log "infer_ac_assigned: task_id=${task_id} -> ac_assigned=${ac_value}"
 }
 
+# ─── inject_ac_assigned_from_stk: STKのcmd定義からac_assignedをtask YAMLに転記（cmd_2790） ───
+# infer_ac_assigned_from_chunk_task_idがtask_id命名から推論するのに対し、
+# こちらはshogun_to_karo.yamlのcmd定義に明示されたac_assignedをそのまま転記する。
+# 分割配備時にcmd定義側でac_assignedを指定→各忍者のtask YAMLに自動転記。
+# スカラー(AC1)/インラインリスト([AC1, AC2])両形式対応。
+inject_ac_assigned_from_stk() {
+    local task_file="$1"
+    if [ ! -f "$task_file" ]; then
+        log "inject_ac_assigned_from_stk: task file not found: $task_file"
+        return 0
+    fi
+
+    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ ! -f "$stk" ] && return 0
+
+    # 既にac_assignedが設定済みならスキップ（infer_ac_assigned_from_chunk_task_idと同じガード）
+    local existing
+    existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_assigned" "" 2>/dev/null || true)
+    if [ -n "$existing" ]; then
+        log "inject_ac_assigned_from_stk: already set (${existing}), skipping"
+        return 0
+    fi
+
+    # parent_cmdをtask YAMLから取得してSTKを検索
+    local cmd_id
+    cmd_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -z "$cmd_id" ] && return 0
+
+    # STKからcmd定義のac_assignedを読む（inline scalar/list形式対応）
+    local ac_val
+    ac_val=$(awk -v cmd="$cmd_id" '
+        /^  [a-zA-Z]/ {
+            key = $0; sub(/^  /, "", key); sub(/:.*/, "", key)
+            in_cmd = (key == cmd)
+        }
+        in_cmd && /^    ac_assigned:[[:space:]]*/ {
+            s = $0
+            sub(/^    ac_assigned:[[:space:]]*/, "", s)
+            sub(/[[:space:]]*$/, "", s)
+            if (length(s) >= 2) {
+                fc = substr(s,1,1); lc = substr(s,length(s),1)
+                if ((fc == "\"" && lc == "\"") || (fc == "'" "'" && lc == "'" "'")) s = substr(s, 2, length(s)-2)
+            }
+            if (s != "") print s
+            exit
+        }
+    ' "$stk" 2>/dev/null || true)
+
+    [ -z "$ac_val" ] && return 0
+
+    # task YAMLにac_assignedを書込む
+    # スカラー値(AC1等): yaml_field_set使用
+    # リスト値([AC1, AC2]): yaml_field_setがlist非対応のため直接awk書込み
+    if [[ "$ac_val" != '['* ]]; then
+        yaml_field_set "$task_file" "task" "ac_assigned" "$ac_val" \
+            || { log "WARN: inject_ac_assigned_from_stk: yaml_field_set failed for ${cmd_id}"; return 0; }
+    else
+        # リスト形式: taskブロックの先頭フィールド前に挿入
+        local tmp
+        tmp=$(mktemp "${task_file}.tmp.XXXXXX") || return 0
+        if awk -v ac_val="$ac_val" '
+            BEGIN { done = 0 }
+            /^task:[[:space:]]*$/ { print; next }
+            !done && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ {
+                print "  ac_assigned: " ac_val
+                done = 1
+            }
+            { print }
+        ' "$task_file" > "$tmp"; then
+            mv "$tmp" "$task_file"
+        else
+            rm -f "$tmp"
+            log "WARN: inject_ac_assigned_from_stk: awk write failed for ${cmd_id}"
+            return 0
+        fi
+    fi
+
+    log "inject_ac_assigned_from_stk: cmd=${cmd_id} -> ac_assigned=${ac_val}"
+}
+
 # ─── ac_version自動注入（cmd_530: stale作業検知, cmd_1053: ハッシュ化, cmd_1493: 再配備AC上書き） ───
 # acceptance_criteriaの各descriptionをソート→連結→md5先頭8桁をtask.ac_versionとして保持。
 # 件数が同じでも内容が変われば異なるハッシュになる。再配備時に再計算される。
@@ -5824,6 +5904,7 @@ deploy_task_apply_task_mutations() {
 
     inject_task_id "$task_file" || true
     infer_ac_assigned_from_chunk_task_id "$task_file" || true
+    inject_ac_assigned_from_stk "$task_file" || true  # cmd_2790: STK cmd定義からac_assigned転記
     # inject_related_lessonsはinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpがrelated_lessons+descriptionの_sv書式を破壊するため(inject_ac_versionと同じ理由)。
 

@@ -1550,3 +1550,122 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "cmd_2790 AC1: inject_ac_assigned_from_stk reads ac_assigned from STK scalar and sets in task YAML" {
+    # STKにac_assigned: AC1を定義
+    mkdir -p "$TEST_PROJECT/queue"
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_stk_ac_test:
+    title: "ac_assigned STK inject test"
+    project: infra
+    scope_mode: exact
+    ac_assigned: AC1
+    acceptance_criteria:
+      - description: "AC1の確認"
+      - description: "AC2の確認"
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "STK ac_assigned injection test"
+  task_type: impl
+  parent_cmd: cmd_stk_ac_test
+  task_id: cmd_stk_ac_test_exact
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    # task YAMLにac_assignedが追加されている(AC1)
+    run grep -Eq '^  ac_assigned:[[:space:]]*"?AC1"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    # binary_checksにAC1のみ存在し、AC2は除外されている(AC2)
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+
+keys = list(bc.keys())
+assert "AC1" in keys, f"AC1 missing: {keys}"
+assert "AC2" not in keys, f"AC2 should be filtered out: {keys}"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "cmd_2790 AC1: inject_ac_assigned_from_stk reads inline list [AC1, AC2] from STK" {
+    mkdir -p "$TEST_PROJECT/queue"
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_stk_list_test:
+    title: "ac_assigned list inject test"
+    project: infra
+    scope_mode: exact
+    ac_assigned: [AC1, AC2]
+    acceptance_criteria:
+      - description: "AC1の確認"
+      - description: "AC2の確認"
+      - description: "AC3の確認"
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "STK ac_assigned list test"
+  task_type: impl
+  parent_cmd: cmd_stk_list_test
+  task_id: cmd_stk_list_test_exact
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+  - id: AC3
+    description: "AC3の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    # task YAMLにac_assigned: [AC1, AC2]が追加されている
+    run grep -q "ac_assigned" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    # binary_checksにAC1/AC2のみ、AC3は除外
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+report = Path("$report_path")
+data = yaml.safe_load(report.read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+
+keys = list(bc.keys())
+assert "AC1" in keys, f"AC1 missing: {keys}"
+assert "AC2" in keys, f"AC2 missing: {keys}"
+assert "AC3" not in keys, f"AC3 should be filtered out: {keys}"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
