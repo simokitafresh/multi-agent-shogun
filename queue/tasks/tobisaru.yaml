@@ -17,7 +17,7 @@ task:
   context_files:
     - tests/unit/test_semantic_index_update.bats
     - scripts/semantic_map_generate.sh
-  status: assigned
+  status: acknowledged
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'

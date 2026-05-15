@@ -1,5 +1,5 @@
 task:
-  cmd_id: cmd_training_L4_auto_202605151325_kotaro_normal
+  cmd_id: cmd_training_L4_auto_202605151346_kotaro_normal
   type: training
   project: infra
   purpose: "L4修行: ninja_monitor.shの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
