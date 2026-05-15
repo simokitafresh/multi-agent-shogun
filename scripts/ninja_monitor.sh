@@ -96,6 +96,9 @@ BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
+GATE_FAIL_PASS_TRANSITION_INTERVAL=86400  # gate_fire_log FAIL→PASS遷移率の日次記録間隔（秒）
+GATE_FAIL_PASS_TRANSITION_STATE_FILE="$STATE_DIR/shogun_gate_fail_pass_transition.last"
+GATE_FAIL_PASS_TRANSITION_LOG="$SCRIPT_DIR/logs/gate_fail_pass_transition.log"
 TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD=${TRAINING_AUTO_DEPLOY_IDLE_THRESHOLD:-600}   # 修行自動配備: idle継続しきい値（秒）— context/training-cycle.md §2
 TRAINING_AUTO_DEPLOY_COOLDOWN=${TRAINING_AUTO_DEPLOY_COOLDOWN:-86400}             # 修行自動配備: 忍者別クールダウン（秒）
 TRAINING_AUTO_DEPLOY_FAIL_RATE=${TRAINING_AUTO_DEPLOY_FAIL_RATE:-20}             # 直近gate FAIL率しきい値（%）
@@ -3362,6 +3365,117 @@ check_skill_auto_improve() {
     printf '%s\n' "$now" > "$SKILL_AUTO_IMPROVE_STATE_FILE" 2>/dev/null || true
 }
 
+check_gate_fail_pass_transition() {
+    local now last elapsed
+    now=$EPOCHSECONDS
+    last=0
+    if [ -f "$GATE_FAIL_PASS_TRANSITION_STATE_FILE" ]; then
+        read -r last < "$GATE_FAIL_PASS_TRANSITION_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$GATE_FAIL_PASS_TRANSITION_INTERVAL" ] && return
+
+    if [ ! -f "$SCRIPT_DIR/logs/gate_fire_log.yaml" ]; then
+        log "GATE-FAIL-PASS-TRANSITION: gate_fire_log.yaml not found, skip"
+        printf '%s\n' "$now" > "$GATE_FAIL_PASS_TRANSITION_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    if GATE_FAIL_PASS_REPO_ROOT="$SCRIPT_DIR" \
+        GATE_FAIL_PASS_OUTPUT="$GATE_FAIL_PASS_TRANSITION_LOG" \
+        GATE_FAIL_PASS_NOW="${GATE_FAIL_PASS_NOW:-}" \
+        python3 <<'PY' >> "$LOG" 2>&1
+import os
+import re
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+repo = Path(os.environ["GATE_FAIL_PASS_REPO_ROOT"])
+output = Path(os.environ["GATE_FAIL_PASS_OUTPUT"])
+now_raw = os.environ.get("GATE_FAIL_PASS_NOW", "").strip()
+if now_raw:
+    now = datetime.fromisoformat(now_raw.replace("Z", "+00:00"))
+else:
+    now = datetime.now(timezone.utc)
+if now.tzinfo is None:
+    now = now.replace(tzinfo=timezone.utc)
+cutoff = now - timedelta(days=30)
+
+fire_log = repo / "logs" / "gate_fire_log.yaml"
+re_ts = re.compile(r'ts:\s*"([^"]+)"')
+re_file = re.compile(r'file:\s*"([^"]*)"')
+re_gate = re.compile(r'gate:\s*"?(.*?)"?(?:,|\s+result:)')
+re_result = re.compile(r'result:\s*([A-Z][A-Z-]*)')
+
+entries = []
+for raw in fire_log.read_text(encoding="utf-8", errors="ignore").splitlines():
+    line = raw.strip()
+    if not line.startswith("- "):
+        continue
+    tm = re_ts.search(line)
+    gm = re_gate.search(line)
+    rm = re_result.search(line)
+    if not (tm and gm and rm):
+        continue
+    fm = re_file.search(line)
+    file_value = fm.group(1) if fm else ""
+    if file_value.startswith("/tmp/"):
+        continue
+    try:
+        ts = datetime.fromisoformat(tm.group(1).replace("Z", "+00:00"))
+    except ValueError:
+        continue
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    if ts < cutoff or ts > now + timedelta(minutes=5):
+        continue
+    entries.append((ts, gm.group(1).strip(), rm.group(1).strip()))
+
+entries.sort(key=lambda item: item[0])
+stats = defaultdict(lambda: {"fail": 0, "recovered": 0, "open": 0, "pass": 0})
+for _ts, gate, result in entries:
+    if result == "FAIL":
+        stats[gate]["fail"] += 1
+        stats[gate]["open"] += 1
+    elif result == "PASS":
+        stats[gate]["pass"] += 1
+        if stats[gate]["open"] > 0:
+            stats[gate]["recovered"] += stats[gate]["open"]
+            stats[gate]["open"] = 0
+
+output.parent.mkdir(parents=True, exist_ok=True)
+header = "ts\twindow_days\tgate\ttransition_rate_pct\trecovered_fail\tfail_total\tunrecovered_fail\tpass_total\n"
+if not output.exists() or output.stat().st_size == 0:
+    output.write_text(header, encoding="utf-8")
+
+run_ts = now.isoformat()
+rows = []
+for gate, item in stats.items():
+    fail = item["fail"]
+    recovered = item["recovered"]
+    rate = round((recovered / fail) * 100) if fail else 100
+    rows.append((gate, rate, recovered, fail, item["open"], item["pass"]))
+rows.sort(key=lambda row: (-row[3], row[0]))
+
+with output.open("a", encoding="utf-8") as fh:
+    if rows:
+        for gate, rate, recovered, fail, open_count, pass_count in rows:
+            fh.write(f"{run_ts}\t30\t{gate}\t{rate}\t{recovered}\t{fail}\t{open_count}\t{pass_count}\n")
+    else:
+        fh.write(f"{run_ts}\t30\tSKIP_NO_RECENT_DATA\t0\t0\t0\t0\t0\n")
+
+print(f"GATE-FAIL-PASS-TRANSITION: wrote {len(rows) or 1} row(s) to {output}")
+PY
+    then
+        log "GATE-FAIL-PASS-TRANSITION: daily record done"
+    else
+        log "GATE-FAIL-PASS-TRANSITION: daily record failed (non-blocking)"
+    fi
+    printf '%s\n' "$now" > "$GATE_FAIL_PASS_TRANSITION_STATE_FILE" 2>/dev/null || true
+}
+
 check_ntfy_batch_flush() {
     local now
     now=$EPOCHSECONDS
@@ -3823,6 +3937,9 @@ while true; do
 
     # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
     check_skill_auto_improve
+
+    # ═══ gate_fire_log FAIL→PASS遷移率の日次記録（cmd_2755） ═══
+    check_gate_fail_pass_transition
 
     # ═══ INFOバッチ通知フラッシュ（15分間隔 cmd_960 AC2） ═══
     check_ntfy_batch_flush
