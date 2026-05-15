@@ -325,6 +325,67 @@ cat "$LESSON_DEPRECATION_LOG"
     [[ "$output" == *"METRICS: total_lessons=12 active_lessons=9 deprecated_lessons=3"* ]]
 }
 
+@test "check_script_size_thresholds logs trend and posts refactor request" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+export SCRIPT_DIR
+LOG="$TMP_ROOT/monitor.log"
+STATE_DIR="$TMP_ROOT/state"
+TEST_BULLETIN="$TMP_ROOT/bulletin.log"
+export TEST_BULLETIN
+SCRIPT_SIZE_CHECK_STATE_FILE="$STATE_DIR/script_size.last"
+SCRIPT_SIZE_TREND_LOG="$TMP_ROOT/logs/script_size_trend.log"
+SCRIPT_SIZE_CHECK_INTERVAL=86400
+SCRIPT_SIZE_LINE_THRESHOLD=3
+SCRIPT_SIZE_COMPLEXITY_THRESHOLD=50
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/scripts/big_script.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+big_func() {
+  if true; then
+    echo ok
+  fi
+}
+EOF
+
+cat > "$SCRIPT_DIR/scripts/small_script.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+echo small
+EOF
+
+cat > "$SCRIPT_DIR/scripts/bulletin_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "notify=%s posted_by=%s action=%s\n" "${BULLETIN_NOTIFY:-}" "$1" "${4:-}" >> "$TEST_BULLETIN"
+printf "%s\n" "$2" >> "$TEST_BULLETIN"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/"*.sh
+
+log() { echo "$1" >> "$LOG"; }
+
+check_script_size_thresholds
+
+cat "$LOG"
+cat "$TEST_BULLETIN"
+cat "$SCRIPT_SIZE_TREND_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SCRIPT-SIZE-ALERT: scripts/big_script.sh lines=6/3"* ]]
+    [[ "$output" == *"SCRIPT-SIZE: posted"* ]]
+    [[ "$output" == *"notify=shogun posted_by=ninja_monitor action=action_required"* ]]
+    [[ "$output" == *"script_size_alert: scripts/配下の主要スクリプト"* ]]
+    [[ "$output" == *"scripts/big_script.sh"* ]]
+    [[ "$output" == *"timestamp"$'\t'"file"$'\t'"lines"$'\t'"functions"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail

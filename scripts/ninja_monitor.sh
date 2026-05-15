@@ -99,6 +99,11 @@ SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 LESSON_DEPRECATION_INTERVAL=86400  # effectiveness低下教訓のdeprecate候補抽出間隔（秒）— 1日
 LESSON_DEPRECATION_STATE_FILE="$STATE_DIR/shogun_lesson_deprecation_candidates.last"
 LESSON_DEPRECATION_LOG="$SCRIPT_DIR/logs/lesson_deprecation_candidates.log"
+SCRIPT_SIZE_CHECK_INTERVAL=86400  # scripts/配下主要スクリプトの肥大化チェック間隔（秒）— 1日
+SCRIPT_SIZE_CHECK_STATE_FILE="$STATE_DIR/shogun_script_size_check.last"
+SCRIPT_SIZE_TREND_LOG="$SCRIPT_DIR/logs/script_size_trend.log"
+SCRIPT_SIZE_LINE_THRESHOLD=${SCRIPT_SIZE_LINE_THRESHOLD:-2500}
+SCRIPT_SIZE_COMPLEXITY_THRESHOLD=${SCRIPT_SIZE_COMPLEXITY_THRESHOLD:-3000}
 GATE_FAIL_PASS_TRANSITION_INTERVAL=86400  # gate_fire_log FAIL→PASS遷移率の日次記録間隔（秒）
 GATE_FAIL_PASS_TRANSITION_STATE_FILE="$STATE_DIR/shogun_gate_fail_pass_transition.last"
 GATE_FAIL_PASS_TRANSITION_LOG="$SCRIPT_DIR/logs/gate_fail_pass_transition.log"
@@ -3428,6 +3433,89 @@ check_lesson_deprecation_candidates() {
     printf '%s\n' "$now" > "$LESSON_DEPRECATION_STATE_FILE" 2>/dev/null || true
 }
 
+check_script_size_thresholds() {
+    local now last elapsed stats alerts alert_count bulletin_content
+    now=$EPOCHSECONDS
+    last=0
+    if [ -f "$SCRIPT_SIZE_CHECK_STATE_FILE" ]; then
+        read -r last < "$SCRIPT_SIZE_CHECK_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$SCRIPT_SIZE_CHECK_INTERVAL" ] && return
+
+    if [ ! -d "$SCRIPT_DIR/scripts" ]; then
+        log "SCRIPT-SIZE: scripts directory not found, skip"
+        printf '%s\n' "$now" > "$SCRIPT_SIZE_CHECK_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    mkdir -p "$(dirname "$SCRIPT_SIZE_TREND_LOG")"
+    stats=$(
+        find "$SCRIPT_DIR/scripts" -maxdepth 1 -type f -name '*.sh' -print 2>/dev/null \
+            | sort \
+            | while IFS= read -r script_path; do
+                [ -f "$script_path" ] || continue
+                awk -v file="${script_path#$SCRIPT_DIR/}" '
+                    { lines++ }
+                    /^[[:space:]]*#/ { next }
+                    {
+                        if ($0 ~ /^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*[[:space:]]*[(][)]|function[[:space:]]+[A-Za-z_][A-Za-z0-9_]*)/) funcs++
+                        if ($0 ~ /^[[:space:]]*(if|elif|for|while|case)[[:space:]]/) branches++
+                    }
+                    END {
+                        complexity = lines + (funcs * 25) + (branches * 5)
+                        printf "%s\t%d\t%d\t%d\t%d\n", file, lines, funcs, branches, complexity
+                    }
+                ' "$script_path"
+            done \
+            | sort -k2,2nr
+    )
+
+    if [ -z "$stats" ]; then
+        log "SCRIPT-SIZE: no scripts found"
+        printf '%s\n' "$now" > "$SCRIPT_SIZE_CHECK_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    {
+        printf 'timestamp\tfile\tlines\tfunctions\tbranches\tcomplexity\n'
+        printf '%s\n' "$stats" | awk -v ts="$(date -Is)" 'BEGIN{OFS="\t"} {print ts,$1,$2,$3,$4,$5}'
+    } >> "$SCRIPT_SIZE_TREND_LOG"
+
+    alerts=$(
+        printf '%s\n' "$stats" | awk \
+            -v line_threshold="$SCRIPT_SIZE_LINE_THRESHOLD" \
+            -v complexity_threshold="$SCRIPT_SIZE_COMPLEXITY_THRESHOLD" \
+            'BEGIN{OFS="\t"} ($2 > line_threshold || $5 > complexity_threshold) {print $0}'
+    )
+    alert_count=$(printf '%s\n' "$alerts" | awk 'NF {c++} END {print c+0}')
+
+    if [ "$alert_count" -gt 0 ] 2>/dev/null; then
+        printf '%s\n' "$alerts" | while IFS=$'\t' read -r file lines funcs branches complexity; do
+            [ -n "$file" ] || continue
+            log "SCRIPT-SIZE-ALERT: ${file} lines=${lines}/${SCRIPT_SIZE_LINE_THRESHOLD} complexity=${complexity}/${SCRIPT_SIZE_COMPLEXITY_THRESHOLD} functions=${funcs} branches=${branches}"
+        done
+        bulletin_content=$(
+            {
+                printf 'script_size_alert: scripts/配下の主要スクリプト %s件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=%s complexity_threshold=%s log=%s\n' "$alert_count" "$SCRIPT_SIZE_LINE_THRESHOLD" "$SCRIPT_SIZE_COMPLEXITY_THRESHOLD" "$SCRIPT_SIZE_TREND_LOG"
+                printf '%s\n' "$alerts" | awk 'BEGIN{FS="\t"} {printf "- %s: lines=%s functions=%s branches=%s complexity=%s\n",$1,$2,$3,$4,$5}'
+            }
+        )
+        if BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" ninja_monitor "$bulletin_content" false action_required >> "$LOG" 2>&1; then
+            log "SCRIPT-SIZE: posted ${alert_count} refactor request candidates to shogun bulletin"
+        else
+            log "SCRIPT-SIZE: bulletin_write failed (non-blocking)"
+        fi
+    else
+        local top_summary
+        top_summary=$(printf '%s\n' "$stats" | head -3 | awk 'BEGIN{FS="\t"; ORS=" "} {printf "%s:%sl/%scx",$1,$2,$5}')
+        log "SCRIPT-SIZE: OK top=${top_summary}"
+    fi
+
+    printf '%s\n' "$now" > "$SCRIPT_SIZE_CHECK_STATE_FILE" 2>/dev/null || true
+}
+
 check_gate_fail_pass_transition() {
     local now last elapsed
     now=$EPOCHSECONDS
@@ -4003,6 +4091,9 @@ while true; do
 
     # ═══ effectiveness低下教訓deprecate候補の日次抽出（cmd_2757） ═══
     check_lesson_deprecation_candidates
+
+    # ═══ scripts/主要スクリプト肥大化チェック（cmd_2759） ═══
+    check_script_size_thresholds
 
     # ═══ gate_fire_log FAIL→PASS遷移率の日次記録（cmd_2755） ═══
     check_gate_fail_pass_transition
