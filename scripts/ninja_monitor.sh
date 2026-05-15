@@ -2146,9 +2146,16 @@ check_report_done_idle_mismatch() {
         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
         [ -f "$task_file" ] || continue
 
-        local task_status task_id
-        task_status=$(yaml_field_get "$task_file" "status")
-        task_id=$(yaml_field_get "$task_file" "task_id")
+        # awk単一パスでstatus/task_id/parent_cmdを一括取得（従来yaml_field_get×3=最大3サブシェル→awk×1）
+        # L4-R24最適化パターン（check_stall/write_karo_snapshotと同方式、L511:WSL2プロセス起動コスト削減）
+        local task_status task_id parent_cmd
+        IFS='|' read -r task_status task_id parent_cmd < <(awk '
+            BEGIN { s=""; t=""; p="" }
+            /^[ \t]*status:/ && s=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+            /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+            /^[ \t]*parent_cmd:/ && p=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
+            END { print s "|" t "|" (p=="" ? "unknown" : p) }
+        ' "$task_file" 2>/dev/null)
 
         # idle/done は正常状態 → スキップ
         case "$task_status" in
@@ -2161,9 +2168,6 @@ check_report_done_idle_mismatch() {
             continue
         fi
 
-        # parent_cmd取得（デバウンスキーに使用）
-        local parent_cmd
-        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "unknown")
         local mismatch_key="${name}:${parent_cmd}"
 
         # デバウンス: 5分以内の再通知を抑止
@@ -3908,7 +3912,7 @@ check_bulletin_archive() {
         return 0
     fi
     local entry_count
-    entry_count=$(grep -c '^- id:' "$bulletin_file" 2>/dev/null || echo 0)
+    entry_count=$(awk '/^- id:/ {c++} END {print c+0}' "$bulletin_file" 2>/dev/null || echo 0)
     if [ "$entry_count" -gt 30 ]; then
         local result
         result=$(timeout 30 bash "$SCRIPT_DIR/scripts/bulletin_archive.sh" 2>&1) || true
@@ -3934,18 +3938,18 @@ check_karo_idle_cycle() {
 
     # 条件1: 全忍者がidle/completed/doneか確認
     local ninja_total
-    ninja_total=$(grep -c "^ninja|" "$snapshot_file" || true)
+    ninja_total=$(awk '/^ninja\|/ {c++} END {print c+0}' "$snapshot_file" 2>/dev/null || echo 0)
     [ "${ninja_total:-0}" -eq 0 ] && return
 
     local active_count
-    active_count=$(awk -F'|' '/^ninja\|/ && $4 !~ /^(idle|completed|done)$/' "$snapshot_file" | wc -l)
+    active_count=$(awk -F'|' '/^ninja\|/ && $4 !~ /^(idle|completed|done)$/ {c++} END {print c+0}' "$snapshot_file" 2>/dev/null || echo 0)
     if [ "${active_count:-0}" -gt 0 ]; then
         return
     fi
 
     # 条件2: パイプラインに未処理cmdがないか確認
     local pending_count
-    pending_count=$(grep -cE '^\s+status:\s*(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
+    pending_count=$(awk '/^[[:space:]]+status:[[:space:]]*(pending|new)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
     if [ "${pending_count:-0}" -gt 0 ]; then
         return
     fi
