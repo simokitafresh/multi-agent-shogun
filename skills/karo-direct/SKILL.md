@@ -21,6 +21,10 @@ quality_metric: "当該スキルで配備したkaro_directタスクのgate通過
 - ninja_name: idle忍者名
 - purpose: タスクの目的（1行）
 
+内部で使う `deploy_task.sh` は次の2系統:
+- `bash scripts/deploy_task.sh --yaml <yaml_file> <ninja_name>`: ci_fix/recon2/hotfix用。YAML内の `parent_cmd:` を `CMD_ID` として自動取得する。
+- `bash scripts/deploy_task.sh --direct <ninja_name> <cmd_id>`: training用。`cmd_id` は `cmd_training_...` 形式にする。
+
 ## 実行フロー
 
 ### Step 1: idle忍者確認
@@ -30,13 +34,13 @@ grep "idle" queue/karo_snapshot.txt
 ```
 指定忍者がidleでなければ停止。
 
-### Step 2: タスクYAML作成
+### Step 2: タスクYAML作成（ci_fix/recon2/hotfix）
 ```bash
 # /tmp に一時YAML作成（deploy_task.shの重複ガード回避）
 cat > /tmp/karo_direct_task.yaml << 'YAML'
 task:
-  cmd_id: cmd_karo_<task_type>_<timestamp>
-  type: <task_type>
+  parent_cmd: cmd_karo_<task_type>_<timestamp>
+  task_type: <task_type>
   project: <project>
   purpose: <purpose>
   acceptance_criteria:
@@ -48,13 +52,16 @@ YAML
 
 ### Step 3: タスク配備
 ```bash
-# /tmp から deploy_task.sh --yaml 経由で配備する
-# deploy_task.sh が cp 前に reset_stale_fields を実行し、旧task YAMLの残留フィールドを清掃する。
+# /tmp から deploy_task.sh --yaml 経由で配備する。
+# --yaml は <yaml_file> <ninja_name> の順。parent_cmdはYAMLから自動取得される。
+# deploy_task.sh は共通経路で reset_stale_fields を実行し、旧task YAMLの残留フィールドを清掃する。
 bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 
-# inbox_write は deploy_task.sh 内部で自動送信されるため不要
+# deploy_task.sh は direct_mode として resolve_cmd_to_task をスキップし、
+# parent_cmd/task_id/status を設定してから inbox_write を自動送信する。
+# 手動 inbox_write は不要。
 ```
-Script refs verified: 2026-05-16 cmd_2793.
+Script refs verified: 2026-05-16 cmd_2799.
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
@@ -80,14 +87,15 @@ acceptance_criteria:
 ### training（必ず deploy_task.sh --direct を使え）
 ```bash
 # ★ training だけは /tmp 手動YAML禁止。deploy_task.sh --direct が修行テンプレート(purpose/AC)を自動注入する。
-# cmd_id は cmd_training_L4_r<round>_<ninja_name> 形式
+# cmd_id は cmd_training_L4_r<round>_<ninja_name> 形式など、cmd_training_ で始める。
 bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninja_name>
-# inbox_write は deploy_task.sh 内部で自動送信されるため不要
+# --direct は parent_cmd/task_id/status を自動設定し、cmd_training_* なら inject_direct_training_template が
+# purpose/ACを自動注入する。inbox_write は deploy_task.sh 内部で自動送信されるため不要。
 ```
 手動でpurpose/ACを書いてはならない。inject_direct_training_template が自動注入する。
 
 ## 制約
 - training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
-- ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field resetを迂回するため）
-- cmd_idは `cmd_karo_<task_type>_<簡潔な説明>` 形式（training 除く）
+- ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、inbox通知を迂回するため）
+- `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）
