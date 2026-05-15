@@ -6,6 +6,43 @@ target: "scripts/clear_prep_check.sh"
 worker: "hayate"
 ---
 
+## Saizo Follow-up G2: Spec Completion
+
+Task: `cmd_training_codd_g2_saizo`
+
+`/home/simokitafresh/.codd-venv/bin/codd spec --path . scripts/clear_prep_check.sh` was executed on 2026-05-16 02:47 JST. Local CoDD v2.18.0 has no `spec` subcommand, returning `Error: No such command 'spec'.` This section records the missing target-specific spec as the durable spec-equivalent artifact for `scripts/clear_prep_check.sh`.
+
+### Target-Specific Functional Requirements
+
+| ID | Requirement | Evidence / Current implementation |
+|----|-------------|-----------------------------------|
+| FR-G2-1 | Check unresolved or non-deferred pending decisions before allowing a shogun session reset. | `queue/pending_decisions.yaml` status scan |
+| FR-G2-2 | Check pending commands so work queued for Karo is not lost across `/new`. | `queue/shogun_to_karo.yaml` pending status scan |
+| FR-G2-3 | Surface dashboard `要対応` items and active/blocked ninja state as clear-prep blockers. | dashboard section parsing and `queue/karo_snapshot.txt` state parsing |
+| FR-G2-4 | Verify conversation continuity by checking recent inbound Lord messages since the latest session summary. | `queue/lord_conversation.jsonl` JSONL parser |
+| FR-G2-5 | Detect important uncommitted operational files without expanding to full-repo status on WSL2. | limited `git status --short -- scripts instructions config context CLAUDE.md` scan |
+| FR-G2-6 | Verify artifact map, knowledge embedding, and decision propagation so session learning survives reset. | `gate_artifact_map.sh`, lesson/semantic/project freshness checks |
+| FR-G2-7 | Emit bracketed human-readable lines and a final `[STATUS] OK/ALERT` while using nonzero exit for clear blockers. | final status block and `exit 1` when `issues > 0` |
+
+### Required CoDD Graph Nodes
+
+| Node | Purpose |
+|------|---------|
+| `codd/requirements/clear_prep_check_requirements.md` | Canonical requirements for session-reset safety: PD, command queue, dashboard alerts, agent state, conversation continuity, git persistence, artifact map, knowledge embedding, and decision propagation. |
+| `codd/design/clear_prep_check_design.md` | Design contract for read-only checks, bounded WSL2 I/O, output rendering, issue aggregation, and exit-code behavior. |
+| coverage axis: `session_state_preservation` | Pending decisions, queued commands, and agent state are surfaced before reset. |
+| coverage axis: `conversation_continuity` | Lord conversation records after the latest summary are detected. |
+| coverage axis: `persistence_risk` | Important uncommitted files and artifact-map gaps are surfaced without broad scans. |
+| coverage axis: `knowledge_embedding` | New lessons, semantic index state, and project decision propagation are visible before reset. |
+
+### Spec Gaps To Close Before Future Generate
+
+1. Replace awk parsing of operational YAML with small structured readers that preserve read-only behavior and produce stable count/id output.
+2. Split each of the ten checks into functions returning `{status, reason, evidence}` and keep the current text as a renderer.
+3. Add a machine-readable output mode for `/shogun-clear-prep` so tests and CoDD coverage can assert each axis independently.
+4. Add fixture tests for OK plus each ALERT family: pending decisions, pending commands, dashboard alerts, stale snapshot, blocked ninja, conversation JSON error, uncommitted important files, artifact WARN, knowledge embedding, and decision propagation.
+5. Add role-aware execution context so shogun-only knowledge checks can be classified correctly when the script is invoked during ninja/training analysis.
+
 # CoDD L4: clear_prep_check.sh
 
 ## AC1: Spec Equivalent
@@ -132,3 +169,20 @@ Task: `cmd_training_codd_fix2_saizo`
 | AC1 | Existing artifact read and generate command executed | yes |
 | AC2 | Validate executed and result separated before/after generate cleanup | yes |
 | AC3 | Measure executed and at least three improvements identified | yes |
+
+## Saizo Follow-up G2: Validate / Measure After Spec Completion
+
+Task: `cmd_training_codd_g2_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: `OK: validated 16 Markdown files under configured doc_dirs` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0` |
+
+### G2 Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | `codd spec` was executed and the local CLI failure plus spec-equivalent requirements were inserted into this existing file near the top, immediately after frontmatter. | yes |
+| AC2 | `codd validate` was rerun after the spec completion section was added, and this result was appended to this file. | yes |
+| AC3 | `codd measure` was rerun after validation, and `health_score=95` is recorded here. | yes |
