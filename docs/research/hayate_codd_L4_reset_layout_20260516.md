@@ -1,5 +1,43 @@
 # reset_layout.sh CoDD L4 Spec / Elicit / Measure
 
+## Saizo Follow-up G3: Spec Completion
+
+Task: `cmd_training_codd_g3_saizo`
+
+`/home/simokitafresh/.codd-venv/bin/codd spec --path . scripts/reset_layout.sh` was executed on 2026-05-16 02:49 JST. Local CoDD v2.18.0 has no `spec` subcommand, returning `Error: No such command 'spec'.` This section records the missing target-specific spec as the durable spec-equivalent artifact for `scripts/reset_layout.sh`.
+
+### Target-Specific Functional Requirements
+
+| ID | Requirement | Evidence / Current implementation |
+|----|-------------|-----------------------------------|
+| FR-G3-1 | Derive the expected agent list from `scripts/lib/agent_config.sh` instead of hard-coding pane membership. | `get_all_agents`, `get_agent_role` |
+| FR-G3-2 | Ensure `shogun:agents` has exactly the expected pane count, adding missing panes but stopping on surplus panes. | Step 1 pane-count branch |
+| FR-G3-3 | Restore pane order by matching expected `@agent_id` values and swapping panes into canonical positions. | Step 2 forward scan and `tmux swap-pane` |
+| FR-G3-4 | Respawn dead panes and start the configured CLI for panes that are alive but lack a CLI child process. | Step 3 / Step 3.5 |
+| FR-G3-5 | Reapply pane metadata, prompt colors, model display, group, background, title, border format, and layout. | Step 4 / Step 5 |
+| FR-G3-6 | Preserve live pane task/context state while initializing only respawned panes. | `RESPAWNED` tracking and conditional reset |
+| FR-G3-7 | Keep `--dry-run` non-mutating across pane creation, swaps, respawn, CLI start, option writes, layout, and watcher restart. | `DRY_RUN` guards |
+| FR-G3-8 | Restart watchers after a real restoration run so inbox and pane variables are synchronized. | Step 6 `scripts/restart_watchers.sh` |
+
+### Required CoDD Graph Nodes
+
+| Node | Purpose |
+|------|---------|
+| `codd/requirements/reset_layout_requirements.md` | Canonical requirements for pane count, pane identity, liveness recovery, CLI startup, metadata restore, layout restore, dry-run safety, and watcher synchronization. |
+| `codd/design/reset_layout_design.md` | Design contract for tmux mutations, helper dependencies, dry-run boundaries, respawn state handling, and final summary output. |
+| coverage axis: `pane_topology` | Expected, missing, surplus, swapped, duplicate, and unknown pane states. |
+| coverage axis: `process_recovery` | Dead panes, alive panes without CLI, CLI direct-child assumptions, and post-start verification. |
+| coverage axis: `non_mutating_dry_run` | No split, swap, respawn, CLI start, option write, layout change, or watcher restart under `--dry-run`. |
+| coverage axis: `watcher_sync` | Watcher restart success, failure, and partial synchronization after layout restore. |
+
+### Spec Gaps To Close Before Future Generate
+
+1. Add fake-tmux fixture tests that assert `--dry-run` emits intended actions without mutating panes/options/processes.
+2. Replace direct-child-only CLI detection with process-tree detection, or document direct-child CLI as an invariant.
+3. Define watcher restart failure semantics: full failure, partial success, or retry policy.
+4. Add a machine-readable summary mode for pane_add, swap, respawn, cli_start, var_fix, layout, and watcher counts.
+5. Emit duplicate/unknown `@agent_id` diagnostics when pane count is greater than expected instead of only returning a generic surplus-pane error.
+
 cmd: cmd_training_L4_codd_202605160001_hayate
 date: 2026-05-16
 author: hayate
@@ -149,3 +187,20 @@ Rationale:
 | AC1 | PASS | This document records purpose, constraints, scope, data boundaries, and functional requirements derived from `scripts/reset_layout.sh` |
 | AC2 | PASS | Elicit/lexicon gaps and coverage axes are listed in dedicated sections |
 | AC3 | PASS | CoDD validate/measure results, quality score, and six improvement candidates are recorded |
+
+## Saizo Follow-up G3: Validate / Measure After Spec Completion
+
+Task: `cmd_training_codd_g3_saizo`
+
+| Command | Result |
+|---------|--------|
+| `/home/simokitafresh/.codd-venv/bin/codd validate --path .` | PASS: `OK: validated 16 Markdown files under configured doc_dirs` |
+| `/home/simokitafresh/.codd-venv/bin/codd measure --path . --json` | PASS: `health_score=95`, `validation_errors=0`, `validation_warnings=0`, `documents_checked=16`, `coverage_ratio=0.0` |
+
+### G3 Binary Checks
+
+| AC | Check | Result |
+|----|-------|--------|
+| AC1 | `codd spec` was executed and the local CLI failure plus spec-equivalent requirements were inserted into this existing file near the top. | yes |
+| AC2 | `codd validate` was rerun after the spec completion section was added, and this result was appended to this file. | yes |
+| AC3 | `codd measure` was rerun after validation, and `health_score=95` is recorded here. | yes |
