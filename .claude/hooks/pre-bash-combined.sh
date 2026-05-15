@@ -206,6 +206,7 @@ if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
 fi
 
 # === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
+# + LG007: capture-pane=残像リマインダー
 if [[ "$payload" == *'capture-pane'* ]]; then
     if [[ -n "${command:-}" && "$command" =~ capture-pane.*-S[[:space:]]+-([0-9]+) ]]; then
         lines="${BASH_REMATCH[1]}"
@@ -213,6 +214,7 @@ if [[ "$payload" == *'capture-pane'* ]]; then
             emit_deny "BLOCK: capture-pane -S -${lines} は不十分。-S -30 以上を使え（末尾${lines}行では忍者の作業状態を見落とす）"
         fi
     fi
+    echo "INFO(LG007): capture-pane出力は過去の残像。現在の状態はファイルmtime(inbox/task YAML)で確認せよ。" >&2
 fi
 
 # === Guard 7: inbox_mark_read without prior Read — prevent stop hook bypass ===
