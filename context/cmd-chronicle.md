@@ -820,3 +820,4 @@
 | cmd_2777 | cmd_2775偵察で特定した高優先度60関数をcontext/infrastructure.mdにカテゴリ別で追記し、全エージェントが起動時に自動ロードできる受動的知識に昇格させる | infra | 05-15 | context/infrastructure.mdにcmd_ |
 | cmd_2779 | cmd_save.sh BLOCK後のREMINDに教訓記録だけでなく環境埋込み判定を強制追加し、BLOCKのたびにインフラ改善cmdの要否を自動判定させる | infra | 05-15 | cmd_save.shのCLEAR時REMINDに環境埋込み |
 | cmd_2780 | Simple-OCRリポジトリ全体にcodd extract --ai を実行し、6層MECE設計書を逆生成する。OCRエンジン切替実装の土台とする | infra | 05-15 | Simple-OCRでCoDD brownfield ext |
+| cmd_2781 | 設計書(docs/ocr-engine-switching-design.md)のPhase 1-3を実装。OCREngine抽象クラス+Google/Claude/GPTの3エンジンを切替可能にする | infra | 05-15 | OCRエンジン抽象化を追加し、Google/Claude/G |
