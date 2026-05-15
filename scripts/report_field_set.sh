@@ -189,6 +189,12 @@ for i, item in enumerate(data):
             fi
             ;;
         self_gate_check)
+            if [[ "$dot_key" == "self_gate_check" ]]; then
+                echo "BLOCK: self_gate_check へのトップレベル書込みは禁止。dict構造を維持するため dot notation を使え。" >&2
+                echo "  正: self_gate_check.lesson_ref PASS" >&2
+                echo "  誤: self_gate_check PASS" >&2
+                return 1
+            fi
             if [[ "$val" != "PASS" ]] && [[ "$val" != "FAIL" ]]; then
                 echo "BLOCK: self_gate_check は PASS/FAIL のみ。受信: $val" >&2
                 return 1

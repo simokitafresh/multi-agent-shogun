@@ -52,3 +52,22 @@ teardown() {
     run bash -c "echo '[]' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
     [ "$status" -eq 0 ]
 }
+
+@test "self_gate_check: トップレベルscalar書込みはexit 1" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' self_gate_check PASS 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: self_gate_check へのトップレベル書込みは禁止"* ]]
+    [[ "$output" == *"self_gate_check.lesson_ref PASS"* ]]
+}
+
+@test "self_gate_check: dot notation書込みはdict構造を保持してexit 0" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' self_gate_check.lesson_ref PASS 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+assert isinstance(data.get("self_gate_check"), dict), data
+assert data["self_gate_check"]["lesson_ref"] == "PASS", data
+PY
+}
