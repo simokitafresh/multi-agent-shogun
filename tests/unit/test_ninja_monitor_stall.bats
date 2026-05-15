@@ -1154,3 +1154,42 @@ grep "^idle|saizo,kagemaru$" "$snapshot"
 '
     [ "$status" -eq 0 ]
 }
+
+@test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+parent_cmd: cmd_flat_done
+task_id: task_flat_done
+status: in_progress
+EOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_flat_done.yaml" <<'"'"'EOF'"'"'
+parent_cmd: cmd_flat_done
+task_id: task_flat_done
+status: done
+EOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_and_update_done_task kagemaru
+
+grep -q "^status: done$" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+grep -q "^completed_at:" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+! grep -q "^task:" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+! grep -q "FLAT-YAML-FALLBACK" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}

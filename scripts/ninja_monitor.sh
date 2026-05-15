@@ -1175,24 +1175,8 @@ check_and_update_done_task() {
                     exit 1
                 fi
                 if ! yaml_field_set "$task_file" "task" "status" "done"; then
-                    # cmd_1156: Flat YAML fallback — yaml_field_set fails when no "task:" block
-                    if grep -q "^status:" "$task_file"; then
-                        sed -i "s/^status: .*/status: done/" "$task_file"
-                        log "FLAT-YAML-FALLBACK: $name status → done (yaml_field_set failed, flat format detected)"
-                    else
-                        log "ERROR: yaml_field_set failed for ${name} task status update (not flat format either)"
-                        exit 1
-                    fi
-                    # Flat YAML: completed_at via sed (python3 block requires task block)
-                    if ! grep -q "^completed_at:" "$task_file"; then
-                        sed -i "/^status: done/a completed_at: '$completed_ts'" "$task_file"
-                    fi
-                    # Post-update verification
-                    _verify_status=$(yaml_field_get "$task_file" "status")
-                    if [ "$_verify_status" != "done" ]; then
-                        log "ERROR: FLAT-YAML-FALLBACK verification failed for ${name} (status=$_verify_status, expected=done)"
-                        exit 1
-                    fi
+                    log "ERROR: yaml_field_set failed for ${name} task status update"
+                    exit 1
                 else
                     # completed_at自動記録（cmd_387: 既存なら上書きしない）
                     if [ -z "$(yaml_field_get "$task_file" "completed_at")" ]; then
