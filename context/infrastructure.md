@@ -258,6 +258,90 @@ session_start_inject.shが全ロールのstartup gateをセッション開始時
 
 根因: cmd_2678-2680で同一cmdに2名配備→先行完了→後発空報告→レビュー+クリーンでトークン浪費(3連続)。
 
+## 暗黒物質Phase 2: 高優先度60関数（cmd_2777）
+
+cmd_2775偵察でcontext未記載だった238関数のうち、他エージェントの運用フロー・状態遷移に直接影響する60関数を受動知識化。調査時は関数名でgrepして到達せよ。
+
+### ninja_monitor.sh: 状態管理・配備・監視・自動化（26件）
+
+| カテゴリ | 関数 | 1行説明 |
+|----------|------|---------|
+| 状態管理 | `write_karo_snapshot` | 家老復帰用の陣形図を生成し、cmd・忍者状態・報告状況を集約する。 |
+| 状態管理 | `check_idle` | pane実態から忍者/家老がidleかを判定し、誤clearや誤配備を防ぐ入口になる。 |
+| 状態管理 | `handle_confirmed_idle` | idle確定後の通知・auto-clear・auto-deployなど後続処理を統括する。 |
+| 状態管理 | `handle_busy` | busy中paneの監視状態を更新し、idle向け処理を発火させない。 |
+| 状態管理 | `update_inbox_counts` | tmux pane変数へ未読inbox数を反映し、nudge欠落時の復元材料にする。 |
+| 状態管理 | `discover_panes` | tmux上のagent paneを探索し、監視対象一覧を更新する。 |
+| clear制御 | `safe_send_clear` | CLI種別とreport gateを考慮して安全に/newまたは/clearを送る中核。 |
+| clear制御 | `send_karo_clear` | 家老paneへ復帰用clearを送信し、陣形図付き復帰を成立させる。 |
+| clear制御 | `check_karo_clear` | 家老clearの必要性を判定し、pending状態との競合を避ける。 |
+| clear制御 | `can_send_clear_with_report_gate` | report未完了・未処理状態を見てclear送信可否を判定する防御層。 |
+| pending/cmd監視 | `check_karo_pending_cmd` | 家老が処理すべきcmdの滞留を検出し、再nudge判断に使う。 |
+| pending/cmd監視 | `check_karo_pending` | 家老pending全般を確認し、idle家老への復帰・再通知を制御する。 |
+| pending/cmd監視 | `check_undeployed_cmds` | 未配備cmdを検出し、配備漏れを家老へ通知する。 |
+| pending/cmd監視 | `check_stale_cmds` | 古いcmd状態を検出し、stale作業や放置を表面化する。 |
+| 整合性回収 | `check_report_done_idle_mismatch` | 報告doneとpane/task状態の不一致を検出し、ghost状態を回収する。 |
+| 整合性回収 | `auto_void_if_parent_cmd_completed` | parent cmd完了後に残る後発タスクを自動voidし、二重配備被害を止める。 |
+| handler | `_handle_auto_clear` | auto-clear条件成立時の実処理を担う内部handler。 |
+| handler | `_handle_idle_notify` | idle通知の送信・抑制を扱う内部handler。 |
+| handler | `_handle_deploy_stall` | 配備後STALLを検知し、本人/家老への回復通知へつなぐ。 |
+| 修行自動化 | `_training_condition_met` | training自動配備の発火条件を判定する。 |
+| 修行自動化 | `_handle_training_auto_deploy` | training候補をidle忍者へ自動配備する処理を担う。 |
+| 健全性監視 | `check_ninja_cli_dead` | 忍者CLI死亡を検知し、pane復旧や通知判断につなげる。 |
+| 健全性監視 | `check_loop_health` | 監視ループ自体の健全性を確認し、停止や劣化を検出する。 |
+| 健全性監視 | `check_inbox_renudge` | 未読inboxが放置されたpaneへ再nudgeする。 |
+| 健全性監視 | `check_inbox_watcher_health` | inbox_watcherの稼働を確認し、通知経路の断絶を検出する。 |
+| 健全性監視 | `check_ntfy_listener_health` | ntfy_listenerの稼働を確認し、殿通知経路の断絶を検出する。 |
+
+### deploy_task.sh: 注入・ゲート・配備制御（20件）
+
+| カテゴリ | 関数 | 1行説明 |
+|----------|------|---------|
+| 配備入口 | `deploy_task_main` | deploy_task.sh全体の入口で、配備前検査からtask/report生成までを統括する。 |
+| 配備入口 | `check_idle` | 配備先paneがidleか確認し、作業中忍者への上書き配備を防ぐ。 |
+| stale防止 | `reset_stale_fields` | 前task由来の残留フィールドを初期化し、stale contaminationを防ぐ。 |
+| 注入 | `inject_related_lessons` | 関連教訓をtask YAMLへ注入し、忍者の受動知識を増やす。 |
+| 注入 | `inject_ac_version` | ACハッシュをtask/reportへ注入し、AC差替えや古いtask実行を検出可能にする。 |
+| 注入 | `inject_ninja_weak_points` | 忍者別WA傾向をtaskへ注入し、頻出失敗を作業前に可視化する。 |
+| 注入 | `inject_task_id` | task_idを正規化して注入し、report/gate/monitorの照合キーを揃える。 |
+| 注入 | `inject_semantic_concepts` | semantic mapから関連概念をtaskへ注入し、必要contextへの到達を補助する。 |
+| 注入 | `inject_standard_skills` | report-write/verdict-check等の標準スキルをtaskへ注入する。 |
+| 注入 | `inject_production_invariants` | PJの本番不変量をtaskへ注入し、実装前の違反を防ぐ。 |
+| 注入 | `inject_checklist_constraints` | PJチェックリストや制約をtaskへ注入し、手順飛ばしを防ぐ。 |
+| 注入 | `inject_growth_loop_defense` | 学習ループ防御情報をtaskへ注入し、計測→還流を強制する。 |
+| 注入 | `inject_engineering_preferences` | PJ固有のengineering_preferencesをtaskへ注入する。 |
+| report生成 | `generate_report_template` | 忍者報告YAMLテンプレートを生成し、提出形式を固定する。 |
+| cmd解決 | `resolve_cmd_to_task` | cmd情報からtask化に必要なID・AC・scopeを解決する。 |
+| gate | `check_entrance_gate` | 配備入口条件を検査し、危険な配備を事前に止める。 |
+| gate | `check_scout_gate` | 偵察タスク向けの要件を検査し、低品質偵察を防ぐ。 |
+| gate | `preflight_gate_artifacts` | 配備前に必要artifactやgate前提を確認する。 |
+| postcondition | `postcondition_lesson_inject` | 教訓注入後の成立条件を確認し、注入漏れを表面化する。 |
+| mutation | `deploy_task_apply_task_mutations` | task YAMLへの各種mutationを一箇所で適用する。 |
+
+### inbox_write.sh: メッセージ管理・重複検出（9件）
+
+| カテゴリ | 関数 | 1行説明 |
+|----------|------|---------|
+| 書込み | `inbox_append_message_locked` | flock下でinboxへメッセージを追記し、lost updateを防ぐ正規経路。 |
+| 書込み | `inbox_append_message_fast_locked` | 高速経路でinbox追記を行い、同時配信時もロック内で整合性を保つ。 |
+| 重複配備防止 | `find_active_peer_deployments` | 同一parent cmdで稼働中のpeer配備を検出する。 |
+| 重複配備防止 | `notify_karo_duplicate_deploy_block` | 重複配備BLOCKを家老へ通知し、配備判断を止める。 |
+| unread管理 | `inbox_unread_count` | 対象inboxの未読数を数え、nudgeや復帰判断の材料にする。 |
+| gate連携 | `trigger_cmd_complete_gate_background` | 完了報告受信後にcmd_complete_gateを背後で起動する。 |
+| 宛先解決 | `list_active_ninjas` | 稼働中忍者一覧を取得し、通知対象や重複検査に使う。 |
+| レビュー連携 | `forward_gunshi_review_result_to_active_ninjas` | 軍師レビュー結果を該当する稼働中忍者へ転送する。 |
+| 件数確認 | `inbox_message_count` | inbox内メッセージ総数を数え、配送・既読化検証に使う。 |
+
+### cmd_save.sh: 品質ゲート補助（5件）
+
+| カテゴリ | 関数 | 1行説明 |
+|----------|------|---------|
+| 終了制御 | `handle_cmd_save_exit` | cmd_save終了時のBLOCK/WARN表示や学習ループ連鎖を統括する。 |
+| summary | `show_quality_summary` | cmd品質ゲート結果を要約表示し、将軍が修正点を把握できるようにする。 |
+| hook検査 | `check_gate_hook_action_conversion` | gate発火後に行動変換へつながる記述があるかを確認する。 |
+| 学習ループ | `parse_structured_environment_change` | environment_changeを構造化して読み取り、BLOCK後の環境改善を検証する。 |
+| red flag | `check_bundle_red_flag` | SG7 bundle等の赤旗条件を検出し、cmd保存前に警告/BLOCKする。 |
+
 ## ninja_monitor.sh
 
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。
