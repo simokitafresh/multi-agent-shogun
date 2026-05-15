@@ -116,10 +116,10 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
-    # L3: scripts/gates/ 変更→gate関連テスト全体
+    # L3: scripts/gates/ 変更→gate関連テスト全体 + 上位cmd完了ゲートテスト
     if [[ "$changed" == scripts/gates/* ]]; then
         gate_base=$(basename "$changed" .sh)
-        for tf in "$TEST_DIR"/test_gate*.bats "$TEST_DIR"/test_"${gate_base}"*.bats; do
+        for tf in "$TEST_DIR"/test_gate*.bats "$TEST_DIR"/test_"${gate_base}"*.bats "$TEST_DIR"/test_cmd_complete_gate*.bats; do
             if [ -f "$tf" ]; then
                 AFFECTED_TESTS["$tf"]=1
                 matched=1

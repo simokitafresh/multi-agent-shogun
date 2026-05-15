@@ -21,6 +21,12 @@ setup_file() {
     [[ "$output" == *"tests/unit/test_gate_report_format_pass_no_improvement.bats"* ]]
 }
 
+@test "test_select maps gate script changes to cmd_complete_gate tests" {
+    run bash "$TEST_SELECT" scripts/gates/gate_context_freshness.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_cmd_complete_gate.bats"* ]]
+}
+
 @test "test_select warns but succeeds when no mapping exists" {
     run bash "$TEST_SELECT" README.md
     [ "$status" -eq 0 ]
