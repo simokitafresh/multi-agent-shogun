@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-15 -->
+<!-- last_updated: 2026-05-16 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,39 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_karo_gp190 | GP-190 commit check waive — scout_exempt/研究cmdのbinary_checksからcommit check除外 | infra | 04-15 | GP-190: scout_exempt=trueのcomm |
-| cmd_1898 | 奥義ALMシン 21体 パリティチェック — holding_signal+monthly_return突合 | dm-signal | 04-15 | cmd_1898 parity実測完了。21体のうち hol |
-| cmd_1903 | 将軍のcmd起票品質を構造的に引き上げる。Phase 31-32で11過ちが全てgateを通過した根因=「無知の知」がcmd起票に強制されていない。q10で検証済み空間の明示を強制し、q7を昇格し、研究cmd手順を追加する | infra | 04-15 | AC1(q10 WARNING), AC2(q7 dm-si |
-| cmd_1906 | WARNINGは意志依存で壊れる。trust:unverifiedが残存するcmdをBLOCKし、sourceのファイルパス実在を検査することで、将軍の前提自己申告の嘘を構造的に防ぐ | infra | 04-15 | AC1: Check 20のtrust:unverified |
-| cmd_1907 | cmd_1902の6指標α版3486ペアCSVからα-Calmar Top30を抽出し、モード混成(激攻×鉄壁)・忍法組合せ・奥義レベル構成の出現頻度を定量化する。Phase 32の発見(激攻+鉄壁混成がα安定性の構造的源泉)を数字で裏付ける | dm-signal | 04-15 | cmd_1902のalpha-Calmar Top30を抽出 |
-| cmd_1908 | L3 α-Calmar Top30 Pareto最適ペア特定(6指標)。→殿指摘「なぜペアなの？3体の研究したよな」で車輪再発明に気づく | dm-signal | 04-15 | Pareto最適9/30件特定。しかし2体分析の重複。次は3体C(84,3) |
-| cmd_1904 | 将軍cmd品質フィードバックループ — 軍師RC傾向の起動時可視化+verdict自動記録 | infra | 04-15 | gate_shogun_startup.shにRC傾向表示+cmd_design_quality verdict自動更新 |
-| cmd_1905 | cmd前提明示 — assumptionsフィールド新設+trust検査+軍師review連携(なぜなぜ7回到達点) | infra | 04-15 | assumptions+trust WARNING。AC≧3のcmdで前提明示を促す |
-| cmd_1909 | GP-194実装 — 分割配備時binary_checksをac_assigned範囲に制限 | infra | 04-15 | 配備中(小太郎) |
-| cmd_1910 | テスト統合整理Phase1 — deploy_task.sh 16→7ファイル統合(軍師設計書準拠) | infra | 04-15 | 配備中(半蔵) |
-| cmd_1912 | 強化 — assumptions未記入BLOCK化: AC≧3のcmdにassumptions必須化 | infra | 04-15 | Check 20でAC>=3のassumptions欠落をB |
-| cmd_1913 | 強化 — 未コミット変更WARNに陣形図照合追加(cmd_1912誤キャンセル事故防止) | infra | 04-15 | cmd_save.shの未コミット変更警告に直近完了忍者一覧 |
-| cmd_1911 | fix — CI RED修正: テスト並列化(--jobs 4)で露出した14テストの分離不足修正 | infra | 04-15 | 4テストファイルのsetup/teardownでBATS_T |
-| cmd_1914 | 整備 — CoDDリファクタリング台帳作成+既存実績登録+軍師連携 | infra | 04-15 | CoDDリファクタリング台帳を新設し、既存3実績登録・inf |
-| cmd_1915 | 強化 — q11_not_already_done: cmdの必要性検証BLOCK(車輪の再発明の原理的防止) | infra | 04-15 | cmd_save.sh に q11_not_already_ |
-| cmd_1917 | 偵察 — cmd_save.sh CoDDプロファイリング(Phase 1): 関数レベルボトルネック特定 | infra | 04-15 | cmd_save.sh を隔離cloneで実測し、全体中央値 |
-| cmd_1919 | 強化 — inbox_writeにaction_required引数追加(全エージェントデッドロック防止) | infra | 04-15 | scripts/inbox_write.sh に任意5引数 |
-| cmd_1920 | 強化 — 掲示板システム導入: 全エージェント共有ボード+チェックボックス確認追跡 | infra | 04-15 | 共有掲示板を導入し、書込み/確認スクリプトと shogun・ |
-| cmd_1916 | 強化 — q11自動検索: cmdの対象スクリプトとdocs/research/を自動照合(意志依存ゼロ層) | infra | 04-15 | cmd_save.shにcommandフィールドのスクリプト名自動抽出+docs/research grep+INFO表示 |
-| cmd_1918 | fix — q11自動検索バグ修正(cmd_1916実装の動作不良修正) | infra | 04-15 | cmd_save.sh L298-336のq11自動検索ロジック修正 |
-| cmd_1921 | fix — 掲示板requires_confirmationバグ修正+Q4形骸化防止(前セッション出来事注入) | infra | 04-15 | 作業中(影丸) |
-| cmd_1922 | 強化 — 因果探索原則を将軍必読ファイルに追加(CLAUDE.md+startup gate) | infra | 04-15 | CLAUDE.md Step 2.55+gate存在チェック追加。テスト済み |
-| cmd_1923 | cmd_save.sh Check 21: ACの数値絶対値WARN検出 | infra | 04-15 | cmd_save.shにCheck 21を追加し、AC de |
-| cmd_1924 | Androidアプリ知識のcontext登録 — 存在するものを探せない問題の根因修正 | infra | 04-15 | context/infrastructure.md に An |
-| cmd_karo_feedback_gap | fix — lesson feedback記録欠損の根因調査+修正 | infra | 04-15 | AC1: cmd_complete_gate.sh L403 |
-| cmd_1926 | cmd_1924取消 — 各論パッチrevert | infra | 04-15 | cmd_1924で追加されたAndroid知識をcontex |
-| cmd_1925 | 殿の全入力に確認リマインド注入 — 確認せずに回答する真因修正 | infra | 04-15 | 通常モードの additionalContext に `re |
-| cmd_1927 | cmd_1925取消 — 確認なし起票のrevert | infra | 04-15 | cmd_1925で加えられた確認リマインド注入を撤去し、追加 |
-| cmd_1930 | deepdive_causal_tracing Phase 6追記 — 人殺しの思想 | infra | 04-15 | deepdive_causal_tracing に Phas |
-| cmd_karo_revert_1928_1930 | fix — cmd_1928/1930のgate_shogun_startup.sh変更をrevert | infra | 04-15 | gate_shogun_startup.shからcmd_19 |
-| cmd_karo_revert_1928_1930_v2 | fix — revert不完全修正(deepdive Phase 6 + gate L750-753) | infra | 04-15 | Gate 18(lord_conversation inbo |
-| cmd_karo_ci_fix_ga056 | fix — CI RED修正(gate_karo_startup.bats + cmd_save.bats テスト失敗4件) | infra | 04-15 | CI失敗テスト(test_cmd_save.bats×5件 |
-| cmd_1933 | cmd_save.sh Check 10の作成cmd偽陽性修正。ファイル不在時に親ディレクトリが存在すれば作成対象としてINFO表示に降格し、親ディレクトリも不在ならBLOCK維持。cmd_1931/1932で2回連続BLOCKされた実害あり | infra | 04-15 | Check 10で親ディレクトリが存在する未作成パスをINF |
 | cmd_1931 | 将軍の追体験品質が構造的に低い根因修正。家老(lessons_karo.yaml 55件)と軍師(lessons_gunshi.yaml 26件)にはdeepdive前に通読する具体的失敗データがあるが、将軍にはない。教訓の格納形式が出力の深さを決める(軍師分析)。lessons_shogun.yamlを作成し起動手順に組み込む | infra | 04-16 | lessons_shogun.yaml 20件を新設し、将軍 |
 | cmd_1932 | 掲示板システムの引数順バグ修正+ライフサイクル管理追加。4エントリ中3件でcontent/posted_byが逆転。根因=引数順<posted_by> <content>がinbox_write.sh(<target> <content> ... <from>)と不一致でエージェントが間違える | infra | 04-16 | 掲示板の引数順バグを修正し、明示クローズ機能追加と既存3件の |
 | cmd_karo_ci_fix_acpaths | CI RED修正 — test_cmd_save_ac_paths.bats更新コミット | infra | 04-16 | AC path test期待値を更新し、追加で露出したbul |
@@ -829,3 +796,4 @@
 | cmd_2788 | record_lesson_feedback.sh L91の${task_type:-impl}がexact/recon/trainingを全てimplにフォールバックし、deploy_task.shのeffectiveness_score計算でexactタスクの有効率が歪む(有効率30%)。task YAMLからtask_type取得のフォールバックを追加する | infra | 05-15 | record_lesson_feedback.shにtask |
 | cmd_2791 | auto-ops/gc/db等の教訓にwhen/howフィールドが欠落している69件を補完する。when/howがないと教訓注入時のタスク特性マッチングが効かず、注入精度が低下する | infra | 05-15 | — |
 | cmd_2792 | dashboard_auto_section.shのCI取得ロジックがcheck failedと表示するが、gh run list直近5件は全てsuccess。表示と実態の乖離原因を特定する | infra | 05-15 | dashboardのCI check failed表示は、l |
+| cmd_2790 | deploy_task.shが全ACにbinary_checksスタブを注入するため、担当外ACにもbc:noが入りverdictがFAILになる(WA 10回)。task YAMLにac_assigned追加→担当ACのみスタブ生成に限定する | infra | 05-16 | inject_ac_assigned_from_stk()を |
