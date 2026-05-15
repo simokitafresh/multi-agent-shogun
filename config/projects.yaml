@@ -73,4 +73,12 @@ projects:
     priority: low
     status: archived
 
+  - id: kj-partshift
+    name: "KJ Partshift Checker"
+    path: "/mnt/c/Python_app/kj-partshift-checker"
+    repo: "https://github.com/simokitafresh/kj-partshift-checker"
+    priority: medium
+    status: active
+    note: "パートタイムのシフト見える化MVP。FastAPI+HTMX+SQLite+Render構成"
+
 current_project: dm-signal
