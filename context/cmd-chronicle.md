@@ -816,3 +816,6 @@
 | cmd_2768 | harmful閾値に加えuseful率(helpful/参照回数)が低い教訓も自動deprecateし、効果の薄い教訓が永続する穴を解消する | infra | 05-15 | — |
 | cmd_2769 | deploy_task.sh配備後にinbox未配信が5回頻発した根因を特定し、再発防止策を設計する | infra | 05-15 | cmd_2662-2666の未配信疑いは、5件ともinbox |
 | cmd_2762 | 設計書ゼロの主要スクリプト4本(deploy_task.sh/cmd_save.sh/ninja_monitor.sh/inbox_write.sh)にcodd brownfieldを実行し、DAG構築+設計書逆生成でリファクタとcodd fix/verifyの土台を作る | infra | 05-15 | 主要4スクリプトのCoDD brownfield成果物(re |
+| cmd_2776 | セマンティック辞書に未マッピングの5概念カテゴリを追加し30ファイルの辞書到達性を確保。前提崩壊の構造的防止 | infra | 05-15 | セマンティック辞書SSOTに5概念を追加し、semantic |
+| cmd_2777 | cmd_2775偵察で特定した高優先度60関数をcontext/infrastructure.mdにカテゴリ別で追記し、全エージェントが起動時に自動ロードできる受動的知識に昇格させる | infra | 05-15 | context/infrastructure.mdにcmd_ |
+| cmd_2779 | cmd_save.sh BLOCK後のREMINDに教訓記録だけでなく環境埋込み判定を強制追加し、BLOCKのたびにインフラ改善cmdの要否を自動判定させる | infra | 05-15 | cmd_save.shのCLEAR時REMINDに環境埋込み |
