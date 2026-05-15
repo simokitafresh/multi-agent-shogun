@@ -386,6 +386,66 @@ cat "$SCRIPT_SIZE_TREND_LOG"
     [[ "$output" == *"timestamp"$'\t'"file"$'\t'"lines"$'\t'"functions"* ]]
 }
 
+@test "check_lesson_and_loop_health detect alerts after here-string grep conversion" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "OK: first line\n"
+printf "ALERT: lesson drift\n"
+printf "ALERT: lesson missing\n"
+EOF
+cat > "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "OK: first line\n"
+printf "WARNING: loop slow\n"
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$1" >> "$SCRIPT_DIR/ntfy.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/gates/"*.sh "$SCRIPT_DIR/scripts/"*.sh
+
+LESSON_CHECK_INTERVAL=0
+LESSON_ALERT_DEBOUNCE=0
+LAST_LESSON_CHECK=0
+LAST_LESSON_ALERT=0
+LOOP_HEALTH_CHECK_INTERVAL=0
+LOOP_HEALTH_ALERT_DEBOUNCE=0
+LAST_LOOP_HEALTH_CHECK=0
+LAST_LOOP_HEALTH_ALERT=0
+log() { echo "$1" >> "$LOG"; }
+
+check_lesson_health
+check_loop_health
+
+cat "$LOG"
+cat "$SCRIPT_DIR/inbox.log"
+cat "$SCRIPT_DIR/ntfy.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LESSON-HEALTH: ALERT: lesson drift ALERT: lesson missing"* ]]
+    [[ "$output" == *"karo|lesson_health|lesson健全性ALERT: ALERT: lesson drift ALERT: lesson missing"* ]]
+    [[ "$output" == *"LOOP-HEALTH: WARNING: loop slow"* ]]
+    [[ "$output" == *"【三層ループALERT】WARNING: loop slow"* ]]
+}
+
 @test "run_lock_cleanup deletes stale shogun locks with one configurable scan" {
     run bash -lc '
 set -euo pipefail

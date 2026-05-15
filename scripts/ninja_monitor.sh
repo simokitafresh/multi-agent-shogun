@@ -364,6 +364,8 @@ declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key:
 declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
 declare -A TRAINING_EFFECT_RECORDED     # 修行効果記録済みフラグ — key: "ninja:task_id", value: "1" (cmd_2767)
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
+declare -A _INBOX_COUNT_CACHE     # サイクル内inbox未読数キャッシュ — key: agent_name, value: count
+_INBOX_COUNT_CACHE_CYCLE=-1       # キャッシュが有効なサイクル番号（cycleと一致する間は有効）
 declare -A CLI_DEAD_RESTART_TIMES    # CLI死亡再起動時刻リスト — key: ninja_name, value: スペース区切りepoch秒リスト (cmd_1851)
 declare -A CLI_DEAD_LOOP_LAST_NTFY   # CLI-DEAD-LOOP ntfy最終送信時刻 — key: ninja_name, value: epoch秒 (ntfy flood防止)
 
