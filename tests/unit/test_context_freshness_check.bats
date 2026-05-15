@@ -44,6 +44,16 @@ PROJYAML
 
     export TEST_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh"
     export CFC_ARCHIVE_CACHE="$TEST_TMPDIR/context_freshness_cache.txt"
+    export CONTEXT_FRESHNESS_EXCLUDE_LIST="$TEST_TMPDIR/config/context_freshness_excludes.txt"
+
+    cat > "$CONTEXT_FRESHNESS_EXCLUDE_LIST" <<'EOF'
+context/README.md
+context/cdp-philosophy.md
+context/cdp-severity.md
+context/checklist-alm-registration.md
+context/checklist-shin-v2-registration.md
+context/checklist-ward-fof-production.md
+EOF
 }
 
 teardown() {
@@ -189,6 +199,27 @@ STKYAML
     [[ "$output" != *"checklist-alm-registration.md"* ]]
     [[ "$output" != *"checklist-shin-v2-registration.md"* ]]
     [[ "$output" != *"checklist-ward-fof-production.md"* ]]
+}
+
+@test "--dashboard-warnings excludes context listed by exclude-list path and keeps non-listed alerts" {
+    cat >> "$CONTEXT_FRESHNESS_EXCLUDE_LIST" <<'EOF'
+context/gunshi-opt12-analysis.md
+EOF
+    _create_context "context/gunshi-opt12-analysis.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "infra" "completed" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/gunshi-opt12-analysis.md"* ]]
+    [[ "$output" == *"context/infrastructure.md"* ]]
+}
+
+@test "missing exclude list fails safely" {
+    CONTEXT_FRESHNESS_EXCLUDE_LIST="$TEST_TMPDIR/config/missing_excludes.txt" \
+        run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"context freshness exclude list not found"* ]]
 }
 
 # === Test 6: --dashboard-warnings last_updated未記載 → WARN "未記載" ===

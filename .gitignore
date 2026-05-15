@@ -114,6 +114,7 @@ tmp/
 !config/ninja_bashrc_safety.sh
 !config/lesson_tags.yaml
 !config/dashboard_template.md
+!config/context_freshness_excludes.txt
 
 # Templates
 !templates/

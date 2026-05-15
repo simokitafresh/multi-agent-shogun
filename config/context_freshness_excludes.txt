@@ -1,0 +1,43 @@
+# context_freshness_check.sh exclusion list.
+# One context path or basename per line. Blank lines and comments are ignored.
+# These files are stable references, design guides, checklists, or completed analyses
+# whose age alone is not actionable freshness debt.
+
+context/README.md
+context/cdp-philosophy.md
+context/cdp-severity.md
+context/checklist-alm-registration.md
+context/checklist-shin-v2-registration.md
+context/checklist-ward-fof-production.md
+context/doc-style-guide.md
+context/growth-loop.md
+context/gs-speedup-knowledge.md
+context/gstack-knowledge.md
+context/gunshi-4metrics-design.md
+context/gunshi-alm-38metrics-design.md
+context/gunshi-codd-analysis.md
+context/gunshi-flair-deepdive.md
+context/gunshi-fof-deterioration-analysis.md
+context/gunshi-fullrecalc-resilience-analysis.md
+context/gunshi-fullrecalc-speed-analysis.md
+context/gunshi-gs-landscape-analysis.md
+context/gunshi-gs-speed-optimization-design.md
+context/gunshi-infra-perf-audit.md
+context/gunshi-interpretation-layer-design.md
+context/gunshi-metrics-engine-design.md
+context/gunshi-nazenaze-synthesis.md
+context/gunshi-opt12-analysis.md
+context/gunshi-silent-fallback-analysis.md
+context/karo-operations.md
+context/l2-okugi-progress.md
+context/l3-robustness.md
+context/milk.md
+context/neo-design-exploration.md
+context/oshio-comparison.md
+context/robustness-verification-catalog.md
+context/semantic-map.md
+context/senkyoku-log.md
+context/skill-design-rules.md
+context/slop-scan-dont-fix.md
+context/training-cycle.md
+context/ui-design-guide.md

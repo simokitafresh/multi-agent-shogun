@@ -5,15 +5,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-}"
 ARG="${2:-}"
 STALE_DAYS="${CONTEXT_STALE_DAYS:-7}"
-EXCLUDE_FILES=(
-    "README.md"
-    "cdp-philosophy.md"
-    "cdp-severity.md"
-    "checklist-alm-registration.md"
-    "checklist-shin-v2-registration.md"
-    "checklist-ward-fof-production.md"
-)
-EXCLUDE_FILES_CSV="$(IFS=,; printf '%s' "${EXCLUDE_FILES[*]}")"
+EXCLUDE_LIST_FILE="${CONTEXT_FRESHNESS_EXCLUDE_LIST:-$SCRIPT_DIR/config/context_freshness_excludes.txt}"
+
+if [[ ! -f "$EXCLUDE_LIST_FILE" ]]; then
+    echo "ERROR: context freshness exclude list not found: $EXCLUDE_LIST_FILE" >&2
+    echo "  action: config/context_freshness_excludes.txt を復旧し、安定contextの除外対象を明示せよ。" >&2
+    exit 1
+fi
+
+EXCLUDE_ENTRIES=()
+while IFS= read -r _exclude_line || [[ -n "$_exclude_line" ]]; do
+    _exclude_line="${_exclude_line%%#*}"
+    _exclude_line="${_exclude_line#"${_exclude_line%%[![:space:]]*}"}"
+    _exclude_line="${_exclude_line%"${_exclude_line##*[![:space:]]}"}"
+    [[ -n "$_exclude_line" ]] || continue
+    EXCLUDE_ENTRIES+=("$_exclude_line")
+done < "$EXCLUDE_LIST_FILE"
+EXCLUDE_ENTRIES_CSV="$(IFS=,; printf '%s' "${EXCLUDE_ENTRIES[*]}")"
 
 usage() {
     cat <<'EOF'
@@ -45,7 +53,7 @@ _ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-/tmp/dashboard_arch_cfc_cache.txt}"
 
 _CACHE_TTL="${CFC_OUTPUT_CACHE_TTL:-2}"
 _ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
-_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_FILES_CSV" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
+_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
 _CACHE_FILE="/tmp/context_freshness_check_${_ROOT_KEY}_${_MODE_KEY}.cache"
 
 if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACHE_FILE" ]]; then
@@ -58,7 +66,7 @@ if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACH
 fi
 
 _TMP_CACHE="${_CACHE_FILE}.$$"
-python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_FILES_CSV" > "$_TMP_CACHE" <<'PY'
+python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" > "$_TMP_CACHE" <<'PY'
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -72,7 +80,7 @@ mode = sys.argv[2]
 cmd_id = sys.argv[3]
 threshold_days = int(sys.argv[4])
 archive_cache_path = sys.argv[5] if len(sys.argv) > 5 else ""
-exclude_files = {
+exclude_entries = {
     item.strip()
     for item in (sys.argv[6] if len(sys.argv) > 6 else "").split(",")
     if item.strip()
@@ -540,7 +548,8 @@ def build_warning(rel_path: str, days_old: int | None) -> str:
 
 
 def is_excluded_context_file(rel_path: str) -> bool:
-    return os.path.basename(rel_path) in exclude_files
+    normalized = rel_path.strip().lstrip("./")
+    return normalized in exclude_entries or os.path.basename(normalized) in exclude_entries
 
 
 warnings: list[str] = []
