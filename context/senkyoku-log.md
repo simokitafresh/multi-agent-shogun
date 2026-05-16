@@ -26,6 +26,10 @@
 | cmd_2806 | Codex respawn無限ループ(GP-222精緻化) | GATE CLEAR | 本日99回respawn→60sスキップ窓追加で根絶 |
 | cmd_2807 | weak_points注入副作用(cmd_2801検出) | GATE CLEAR | cmd_2801のERROR通知が即座に検出→免疫系動作確認 |
 | cmd_2808 | ntfy.sh グローバルthrottle(429 rate limit) | GATE CLEAR | **778回429→殿通知全失敗**。10s間隔+60s cooldownで根絶 |
+| cmd_2809 | SKILL.md追従7件+cmd_complete_gate即時検知 | GATE CLEAR | 3session連続WARN根因=事後検知のみ。cmd_complete_gateに組込みで遅延ゼロ |
+| cmd_2810 | draft_lessons循環BLOCK修正 | cancelled | **車輪の再発明**: cmd_2613(05-09)で解決済み。cmd-chronicle類似検索で検出されたが確認せず起票 |
+| cmd_2811 | L6横展開 3PJ教訓70件when/how補完 | 委任中 | auto-ops57+gc11+db2=70件when/howゼロ。L6がdm-signal限定で停止していた |
+| session_20260516b | 自走: なぜなぜ7回×3本+startup BLOCK全解消 | 進行中 | cmd_2809 CLEAR+2810 cancelled(車輪)+2811委任中。SKILL.md事前強制化+L6横展開+insights消化+CI RED家老通知+軍師修行再設計提案を家老に転送 |
 | session | なぜなぜ7回×4本→隠れバグ8件発見→10cmd全CLEAR | WA:0 | silent failure/偽陽性/gate検出漏れ/無限ループ。全て「見えない問題」を構造的に排除 |
 
 ## 2026-05-15

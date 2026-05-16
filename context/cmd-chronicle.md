@@ -808,3 +808,7 @@
 | cmd_2802 | scripts/gates/*.sh変更時にtest_selectがそのgateを呼ぶ上位テスト(test_cmd_complete_gate.bats等)を選出しない。cmd_2798でgate_context_freshness.sh変更→test_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28漏れ→CI RED。gate→消費先テストの間接依存マッピングを追加する | infra | 05-16 | scripts/gates/*.sh変更時にcmd_comp |
 | cmd_2808 | ntfy.shにbackoff/cooldownがなく本日778回429エラー(殿通知ほぼ全失敗)。cmd_2797は1送信元の部分対策。新送信元追加で再発する構造。ntfy.shにグローバルthrottle(10s間隔+429時60s cooldown)を追加し全送信元を一括保護する | infra | 05-16 | ntfy.shに10秒グローバルthrottleとHTTP |
 | cmd_2807 | cmd_2801の_sv()修正後にinject_ninja_weak_pointsがkagemaru+hanzoで連続YAML注入失敗(各2回)。配備自体は成功(weak_pointsはオプショナル)だがsilent failure可視化(cmd_2801で追加)がERRORを検出。_sv()修正の副作用か別の原因かを特定し修正する | infra | 05-16 | inject_ninja_weak_pointsの連続YAM |
+| cmd_2809 | 前セッションのcmd_2801/2802/2808がスクリプト4本を変更したがSKILL.md未更新。3セッション連続WARNの根因はcmd_complete_gateにSKILL.md追従チェックが未組込み(事後検知のみで事前強制なし)。 | infra | 05-16 | SKILL.md script参照WARN 6件を追従更新し |
+| cmd_2810 | cmd_complete_gate.sh L3650のauto_draft_lesson.shがdraft教訓を生成した直後に、L4843のdraft教訓チェックが自cmdが生成したdraftをBLOCKする循環構造。直近50cmdで19件BLOCK(最頻パターン)。 | infra | 05-16 | — |
+| cmd_2812 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウンのselected属性がgoogle側についており、UIデフォルトがGoogle Visionになっている。バックエンドはtwo_stageがデフォルトだがフロントが不整合。 | simple-ocr | 05-16 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウン |
+| cmd_2813 | OCR結果カードのタイトルがOCR結果とハードコードされている。two_stageパイプラインはpatient_nameを構造化JSONで出力済みなので、タイトルに患者名を表示する。テキスト本文からは消さない。 | simple-ocr | 05-16 | OCR結果カードのタイトルにtwo_stage抽出の患者名を |
