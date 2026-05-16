@@ -807,9 +807,7 @@ get_context_pct() {
             # usage モード（例: "CTX:XX%"）— 値をそのまま使用
             ctx_num=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
             if [ -n "$ctx_num" ]; then
-                tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-                echo "$ctx_num"
-                return 0
+                _ctx_pct_emit "$pane_target" "$ctx_num"; return
             fi
         elif [ "$ctx_mode" = "remaining" ]; then
             # remaining モード（例: "XX% context left"）— usage%に変換
@@ -817,9 +815,7 @@ get_context_pct() {
             remaining=$(echo "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
             if [ -n "$remaining" ]; then
                 ctx_num=$((100 - remaining))
-                tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-                echo "$ctx_num"
-                return 0
+                _ctx_pct_emit "$pane_target" "$ctx_num"; return
             fi
         elif [ "$ctx_mode" = "bar" ]; then
             # bar モード（Codex "Context [▌    ]"）— バー充填率をusage%に変換
@@ -833,9 +829,7 @@ get_context_pct() {
                     bar_spaces=$(printf '%s' "$bar_content" | tr -cd ' ' | wc -c)
                     bar_filled=$((bar_total - bar_spaces))
                     ctx_num=$(( (bar_filled * 100) / bar_total ))
-                    tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-                    echo "$ctx_num"
-                    return 0
+                    _ctx_pct_emit "$pane_target" "$ctx_num"; return
                 fi
             fi
         fi
@@ -843,18 +837,14 @@ get_context_pct() {
         # フォールバック: agent_name未指定時は両パターン試行
         ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
         if [ -n "$ctx_num" ]; then
-            tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-            echo "$ctx_num"
-            return 0
+            _ctx_pct_emit "$pane_target" "$ctx_num"; return
         fi
 
         local remaining
         remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
         if [ -n "$remaining" ]; then
             ctx_num=$((100 - remaining))
-            tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
-            echo "$ctx_num"
-            return 0
+            _ctx_pct_emit "$pane_target" "$ctx_num"; return
         fi
     fi
 
@@ -4218,15 +4208,13 @@ while true; do
                             continue
                         fi
                         # Stale task: reset status to idle and allow /clear
-                        if grep -q "^status:" "$_s1_task_file"; then
-                            sed -i "s/^status: .*/status: idle/" "$_s1_task_file"
-                        else
-                            yaml_field_set "$_s1_task_file" "task" "status" "idle" 2>/dev/null || \
-                                sed -i "s/^  status: .*/  status: idle/" "$_s1_task_file"
-                        fi
+                        # L545対応: flat/nested混在に対応。yaml_field_setはblock_id未発見時にroot-levelへ自動フォールバック
+                        # YAML書込み安全規則: sed -i(flock未使用)を排除し、yaml_field_setに一本化
+                        yaml_field_set "$_s1_task_file" "task" "status" "idle" 2>/dev/null || \
+                            log "WARN: STAGE1-TIMEOUT yaml_field_set failed for $name, proceeding with maybe_idle"
                         log "STAGE1-TIMEOUT: $name task_status=$_s1_task_status stale for ${_s1_age}s, resetting to idle"
                         # cmd_1185 AC2: TIMEOUT後はGuard 2をバイパスしてmaybe_idleへ直接追加
-                        # 理由: sed/yaml_field_setでmtime更新→Guard 2が120s未満と誤判定→/clear永久スキップ
+                        # 理由: yaml_field_setでmtime更新→Guard 2が120s未満と誤判定→/clear永久スキップ
                         maybe_idle+=("$name")
                         continue
                     else
