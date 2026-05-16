@@ -13,17 +13,10 @@ setup_file() {
     eval "$(sed -n '/^show_uncommitted_changes_warning()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f show_uncommitted_changes_warning
 
-    export TEST_SHARED_TMP
-    TEST_SHARED_TMP="$(mktemp -d)"
-}
-
-teardown_file() {
-    rm -rf "$TEST_SHARED_TMP"
 }
 
 setup() {
-    export PROJECT_DIR="$TEST_SHARED_TMP/project"
-    rm -rf "$PROJECT_DIR"
+    export PROJECT_DIR="$BATS_TEST_TMPDIR/project"
     mkdir -p "$PROJECT_DIR/queue"
 }
 
