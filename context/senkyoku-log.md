@@ -10,6 +10,12 @@
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| cmd_2793 | PHANTOM偽陽性修正(awk+grep) | GATE CLEAR | 家老自走分析→軍師RC(grep根因)→両方修正で0件 |
+| cmd_2794 | effectiveness除外拡張(fallback) | BLOCK | **前提否定**: fallback内除外は実装済み。軍師RC→家老現物確認→停止→偵察cmd |
+| cmd_2795 | still-injected 10件偵察 | GATE CLEAR | 真因=分析時点差。最新stderrでは大半除外済み。修正cmd不要 |
+| cmd_2796 | codd.yaml scan設定修正 | GATE CLEAR | health_score 0→95。CoDD修行天井解消 |
+| cmd_2797 | ntfy重複送信デバウンス(60分) | GATE CLEAR | context_freshness 5分間隔送信→rate limit部分対策 |
+| cmd_2798 | 安定context除外リスト | GATE CLEAR | 不要ALERT根絶。CI RED発生→cmd_karo_ci_fix+cmd_2802で波及対策 |
 | cmd_2799 | SKILL.md追従(karo-direct←deploy_task.sh) | GATE CLEAR | 3session連続WARN→BLOCK昇格解消 |
 | cmd_2800 | self_gate_check dict保護(scalar書込みBLOCK) | GATE CLEAR | 軍師発見22件FAIL→report_field_set.shガード追加 |
 | cmd_2801 | _sv() silent failure根絶(インデント連動+ERROR通知) | GATE CLEAR | **最大発見**: 2sp固定→ネスト3+YAML崩壊→教訓/AC/WP全スキップ3件。cmd_2807副作用検出=ERROR通知が即機能した証拠 |

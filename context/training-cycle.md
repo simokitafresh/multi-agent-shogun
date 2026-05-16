@@ -939,3 +939,9 @@ R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大�
 ### 成果物
 - 全20本のCoDD設計書: `docs/research/{ninja}_codd_*.md`
 - extract出力: `docs/research/*_extract_*/`
+
+### CoDD修行天井と解消(2026-05-16)
+- **天井**: health_score=0/100が全忍者共通。原因はrepo-wide CoDD設定問題(codd.yaml source_dirs=src/不在+doc_dirs=docs/で613件MD巻き込み→662 errors)
+- **解消**: cmd_2796でcodd.yaml修正(source_dirs→scripts/, doc_dirs→codd/配下3ディレクトリ)→health_score 0→95
+- **教訓**: 修行の天井=忍者スキルの限界ではなく環境の限界。環境を磨いてから修行を再開せよ
+- **次**: CoDD修行loop配備→同じhealth_score=0→学びなし、を§0.1問い0(10回繰り返したら？)で検知。L4 R2(通常報告修行)への切替を提案中
