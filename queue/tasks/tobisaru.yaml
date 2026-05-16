@@ -40,7 +40,7 @@ task:
   project: infra
   purpose: cmd_2801の_sv()修正後にinject_ninja_weak_pointsがkagemaru+hanzoで連続YAML注入失敗(各2回)。配備自体は成功(weak_pointsはオプショナル)だがsilent
   scout_exempt: true
-  status: idle
+  status: done
   stop_for: []
   task_id: cmd_2807_exact
   task_type: exact

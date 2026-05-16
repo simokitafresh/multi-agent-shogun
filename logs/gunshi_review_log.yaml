@@ -347,7 +347,7 @@
   report_task_id: cmd_2801_exact
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, premortem]
   findings_summary: "4観点OK。_sv()ネスト深度連動+失敗通知ハンドラ。bats回帰テスト新設。silent failure根絶"
   observations:
@@ -356,3 +356,137 @@
   lesson_quality: OK
   causal_chain: "軍師なぜなぜ→_sv()バグ発見→将軍cmd→忍者修正→parse error根絶+silent failure可視化=利他サイクル完走"
   timestamp: "2026-05-16T10:25:00"
+- cmd_id: idle_nazenaze_codex_respawn_loop_20260516
+  review_type: self_study
+  findings_summary: "なぜなぜ7回: Codex忍者respawn無限ループ(108回/日)。GP-222(CTX=0%非スキップ)+600sデバウンス→idle+タスクなし+respawn直後でもAUTO-CLEAR発動→無限ループ"
+  observations:
+    - "本日99回CODEX-RESPAWN(hayate35/kagemaru36/saizo37)。全て(task in progress workaround)"
+    - "根因: GP-222がCodex CTX=0%を未検出と区別できないため常にAUTO-CLEAR対象→600s(10分)デバウンスで無限ループ"
+    - "修正案: respawn直後(前回clear60秒以内)ならCTX=0%スキップ許可。GP-222の精緻化"
+  cs_checklist: "CS1:全量(ninja_monitor.log 241件走査) CS2:自データ(日別/時間帯/忍者分布計測) CS3:コード比較(ninja_monitor.sh L1585-1653+L732-744精読) CS4:行動変換(永続化+掲示板+cmd起票要請) CS5:次(GP-222修正cmd) CS6:因果(GP-222+600sデバウンス→respawn後スキップなし→ループ。精緻化→ループ断絶=正の複利)"
+  causal_chain: "修行完了→idle→AUTO-CLEAR(600s)→GP-222(CTX=0非スキップ)→respawn→再idle→600s後再発動→∞ループ。前回clear60s以内→スキップ→ループ断絶=正の複利"
+  timestamp: "2026-05-16T10:40:00"
+- cmd_id: cmd_2802
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。test_select gate→消費先テスト間接依存追加。CI RED防止。マッピング追加方向=安全"
+  observations:
+    - "cmd_2798→gate_context_freshness.sh変更→test28漏れ→CI RED。間接依存マッピング不在が根因"
+    - "追加方向のみ。既存テスト選出に影響なし"
+  ambiguity_points: none
+  causal_chain: "gate変更→間接依存未選出→テスト漏れ→CI RED。マッピング追加→自動選出=正の複利"
+  timestamp: "2026-05-16T10:45:00"
+- cmd_id: cmd_2803
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。cmd_save.sh AC抽出awkをdict形式AC対応に修正。18回消火の根因修正"
+  observations:
+    - "L311 awk /^[[:space:]]{6,}-/ がdict形式AC(AC1: description:)を抽出しない→WARN累計昇格→BLOCK"
+    - "将軍が18回AC書き方で消火。根因はgate側(awk抽出パターン)。抽出範囲拡大方向のみ"
+  ambiguity_points: none
+  causal_chain: "dict形式AC未抽出→キーワード検出不可→WARN消えない→累計BLOCK→将軍消火18回。awk修正→正しく検出=正の複利"
+  timestamp: "2026-05-16T10:45:00"
+- cmd_id: cmd_2804
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "6観点OK。exact scope時split deploy検出スキップ。35件偽陽性WARN根絶。条件分岐追加のみ"
+  observations:
+    - "scope_mode=exactで_ac_task_id empty→split deploy検出が毎回WARN(35件)。exact=AC分割なし→検出自体不要"
+    - "非exact時は従来通り。既存動作の明示化のみ"
+  ambiguity_points: none
+  causal_chain: "exact scope→_ac_task_id empty→WARN偽陽性35件→ログノイズ。exactスキップ→WARN根絶=正の複利(信号対雑音比向上)"
+  timestamp: "2026-05-16T10:50:00"
+- cmd_id: cmd_2805
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "6観点OK。bare except→OSError限定。silent failure排除。1行修正"
+  observations:
+    - "L351 bare except: passが全例外飲み込み→backend impl検出失敗がsilent"
+    - "OSErrorのみcatch(ファイルI/O)。他例外はstderrに出力→可視化"
+  ambiguity_points: none
+  causal_chain: "bare except→全例外silent→precheck担保なし。OSError限定→非OSError可視化=正の複利(PI-018排除)"
+  timestamp: "2026-05-16T10:55:00"
+- cmd_id: cmd_2803
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2803_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK(FAIL報告)。AC1/AC2充足(dict形式AC抽出+bats 87件PASS)。commit失敗=scope外conflict。家老commit要"
+  observations:
+    - "awk抽出条件1行拡張。bats 87件PASS skipなし。dict形式AC回帰テスト追加"
+    - "commit失敗: context/lord-conversation-index.md既存未マージ衝突。scope外で忍者に非なし"
+  lesson_quality: OK
+  causal_chain: "dict形式AC未抽出→18回消火→awk修正→正しく検出。commit失敗=scope外conflict→家老解消要"
+  gate_result: CLEAR
+  timestamp: "2026-05-16T11:00:00"
+- cmd_id: cmd_2802
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2802_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions]
+  findings_summary: "4観点OK。test_select間接依存追加。bats 101件PASS。CI RED防止"
+  observations:
+    - "scripts/gates/*→test_cmd_complete_gate*.batsマッピング追加。回帰テスト追加"
+    - "gate_context_freshness.sh入力でtest_cmd_complete_gate.bats選出確認"
+  lesson_quality: OK
+  causal_chain: "gate変更→テスト漏れ→CI RED。間接依存マッピング→自動選出=正の複利"
+  timestamp: "2026-05-16T11:05:00"
+- cmd_id: cmd_2806
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。GP-222 respawn直後スキップ(60s窓)。99回無限ループ根絶。通常CTX=0%検出維持"
+  observations:
+    - "軍師なぜなぜ3件目の修正cmd。99回respawn(本日)→60sスキップでループ断絶"
+    - "60s窓は狭い。通常CTX=0%異常(長時間idle)検出は維持"
+  ambiguity_points: none
+  causal_chain: "GP-222+600sデバウンス→respawn∞ループ。60sスキップ→ループ断絶=正の複利(リソース浪費根絶)"
+  timestamp: "2026-05-16T11:05:00"
+- cmd_id: cmd_2804
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2804_exact
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions]
+  findings_summary: "4観点OK。exact scope split deploy WARNスキップ。35件偽陽性根絶"
+  observations:
+    - "scope_mode=exactガード追加。非exact時は従来通り動作"
+    - "bats PASS。commit 934cf889"
+  lesson_quality: OK
+  causal_chain: "exact scope→_ac_task_id empty→WARN35件。exactスキップ→偽陽性根絶=正の複利"
+  timestamp: "2026-05-16T11:10:00"
+- cmd_id: cmd_2807
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "6観点OK。inject_ninja_weak_points YAML注入失敗の根因調査+修正。cmd_2801副作用。ERROR通知が正常機能した証拠"
+  observations:
+    - "cmd_2801 _sv()修正後にkagemaru+hanzo各2回ERROR。weak_pointsオプショナルで配備影響なし"
+    - "cmd_2801のERROR通知追加が副作用を即座に検出→利他サイクルの正常動作"
+  ambiguity_points: none
+  causal_chain: "cmd_2801 _sv()修正→weak_points注入パスに副作用→ERROR通知で即検出→根因調査cmd→修正=正の複利(ERROR通知が機能した証拠)"
+  timestamp: "2026-05-16T11:15:00"

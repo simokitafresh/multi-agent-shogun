@@ -1,15 +1,22 @@
 task:
-  _ac_task_id: cmd_2796_exact
+  _ac_task_id: cmd_2808_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2796
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2808 (deployed 2026-05-16T09:05:58). Read from the beginning.
   ac_version: 2edf2958
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'codd/codd.yamlのsource_dirsがscripts/を含み、doc_dirsがcodd/配下3ディレクトリに限定されている'
+    - check: 'ntfy.shが前回送信から10s未満の送信をスキップし429エラーが発生しない'
   - id: 'AC2'
     checks:
-    - check: 'codd健全性スコアが修正前(0)より向上し、ソース検出でscripts配下の.shファイルが認識されている'
+    - check: '429レスポンス受信時に60s cooldownが発動し次の送信が60s後まで抑止される'
+  binary_checks_template:
+    AC1:
+    - check: テスト28がPASS
+      result: 'yes'
+    AC2:
+    - check: 全55テストPASS
+      result: 'yes'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -35,54 +42,63 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_2796
+  parent_cmd: cmd_2808
   project: infra
-  purpose: codd.yamlのsource_dirs(src/)が存在せず、doc_dirs(docs/)が研究ノート613件を設計書として取り込みhealth_score=0(662
+  purpose: ntfy.shにbackoff/cooldownがなく本日778回429エラー(殿通知ほぼ全失敗)。cmd_2797は1送信元の部分対策。新送信元追加で再発する構造。ntfy.shにグローバルthrottle(10s間隔+429時60s cooldown)を追加し全送信元を一括保護する
+  recommended_skills:
+  - skill-creator
+  - skill-installer
+  - hensei
+  - hensei-mixed
+  - hensei-opus
+  - karo-direct
+  - recon-dual
+  - reset-layout
+  - shogun-all-codex-switch
+  - shogun-peacetime-rollback
   scout_exempt: true
+  semantic_concepts:
+  - 'skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md'
+  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
   status: idle
   stop_for: []
-  task_id: cmd_2796_exact
+  task_id: cmd_2808_exact
   task_type: exact
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L340'
-    summary: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-    detail: 'cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo '
-  - id: 'L417'
-    summary: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-    detail: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-  - id: 'L524'
-    summary: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-    detail: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-  - id: 'L339'
-    summary: 'context_freshness_check.shのarchive scanでproject IDをf-string in textで検出していたが、短いID'
-    detail: 'context_freshness_check.shのarchive scanでproject IDをf-string in textで検出していたが、短いID'
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L290'
-    summary: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-    detail: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-  - id: 'L377'
-    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
-    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
-  - id: 'L101'
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+  - id: 'L570'
+    summary: 'codd generate --wave NはAI APIを使うため、org月次利用制限でERROR。bash実装はSKILL.md記載通り手動が正。AIリミッ'
+    detail: 'codd generate --wave NはAI APIを使うため、org月次利用制限でERROR。bash実装はSKILL.md記載通り手動が正。AIリミッ'
+  - id: 'L207'
+    summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
+    detail: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
+  - id: 'L117'
+    summary: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+    detail: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+  - id: 'L241'
+    summary: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
+    detail: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
+  - id: 'L079'
+    summary: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
+    detail: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
+  - id: 'L138'
+    summary: 'taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が'
+    detail: 'taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L285'
+    summary: 'sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s'
+    detail: 'sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s'
+  - id: 'L169'
+    summary: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
+    detail: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
-  recommended_skills:
-  - "codd"
-  - "codd-refactor"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -96,21 +112,21 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L340: cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo 
-      - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY
-      - L524: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す
-      - L339: context_freshness_check.shのarchive scanでproject IDをf-string in textで検出していたが、短いID
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
-      - L290: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
-      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
-      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
+      - L570: codd generate --wave NはAI APIを使うため、org月次利用制限でERROR。bash実装はSKILL.md記載通り手動が正。AIリミッ
+      - L207: summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par
+      - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re
+      - L241: D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti
+      - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed
+      - L138: taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が
+      - L114: cmd_464_hotfix
+      - L285: sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s
+      - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
     ────────────────────────────────────────
     
     
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2796.yaml
-  report_path: queue/reports/hayate_report_cmd_2796.yaml
+  report_filename: hayate_report_cmd_2808.yaml
+  report_path: queue/reports/hayate_report_cmd_2808.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -145,4 +161,4 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 2
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-05-16T07:34:38"
+  deployed_at: "2026-05-16T09:06:22"

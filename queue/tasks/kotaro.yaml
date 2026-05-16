@@ -30,7 +30,7 @@ task:
   project: infra
   purpose: GP-222がCodex忍者のCTX=0%を異常と判定しrespawnするが、respawn直後は正常にCTX=0%。結果10分ごとにrespawn→idle→respawn→∞の無限ループ(本日99回)。respawn直後(前回clear
   scout_exempt: true
-  status: acknowledged
+  status: idle
   stop_for: []
   task_id: cmd_2806_exact
   task_type: exact

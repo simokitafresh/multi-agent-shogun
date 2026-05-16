@@ -6038,3 +6038,13 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combined.sh を combined.sh として切り出す問題でも発生した。script参照抽出では[A-Za-z0-9_-]+.sh等でハイフンを含め、実gateで反証確認する。
+
+### L615: yaml_field_set_batch AWK L524バグが引き起こすYAML破損: yaml.dump width指定が防御策
+- **日付**: 2026-05-16
+- **出典**: cmd_2807
+- **記録者**: tobisaru
+- **tags**: [infra,yaml]
+- **target_files**: [scripts/lib/inject_task_modifiers.py,tests/unit/test_gate_meta_quality.bats,tests/unit/test_dashboard_auto_context_freshness.bats]
+- **when**: 未設定
+- **how**: 未設定
+- inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_field_set_batch AWKがL524バグ(prev_inline_scalar+indent>field_indent)でその継続行を消去しYAMLを破損させる。修正: yaml.dumpにwidth=1000000を追加。根本原因はL524のAWKバグだが、yaml.dumpが折り畳みを出力しないことで回避できる。
