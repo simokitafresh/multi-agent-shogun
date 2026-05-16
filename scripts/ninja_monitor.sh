@@ -762,6 +762,15 @@ safe_send_clear() {
     return 0
 }
 
+# ─── CTX%取得ヘルパー: tmuxキャッシュ書き込み+echo ───
+# get_context_pct()内で重複していた3行パターンを1箇所に集約
+_ctx_pct_emit() {
+    local pane_target="$1" ctx_num="$2"
+    tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+    echo "$ctx_num"
+    return 0
+}
+
 # ─── CTX%取得（多重ソース） ───
 # @context_pct変数 → capture-pane出力 → 0(不明)
 # $1: pane_target, $2: agent_name（省略時はフォールバックパターン使用）
