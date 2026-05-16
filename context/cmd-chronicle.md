@@ -805,3 +805,5 @@
 | cmd_2798 | gate_context_freshness.shが安定context(軍師分析索引/設計ガイド/完成済み知見等)に14日ルールを一律適用し20件以上のALERTを出し続ける。安定contextを除外リストで管理し鮮度チェック対象から外す。cmd_2797(重複抑止)は安全網として維持 | infra | 05-16 | context鮮度チェックに除外リストファイルを導入し、安定 |
 | cmd_2800 | report_field_set.shがself_gate_checkにPASS/FAILをトップレベルscalarで書くとdict構造がscalarに上書きされgate FAILを引き起こす。全忍者で22件発生(kagemaru25/hayate16/saizo15)。dot notation必須化でdict構造を保護する | infra | 05-16 | self_gate_checkのトップレベルscalar書込 |
 | cmd_2799 | deploy_task.shが更新されたがskills/karo-direct/SKILL.mdが追従していない。gate_skill_script_refs.shが3セッション連続WARNでstartup BLOCK昇格。SKILL.mdの記述をdeploy_task.shの現在の動作に合わせて更新する | infra | 05-16 | skills/karo-direct/SKILL.mdをde |
+| cmd_2802 | scripts/gates/*.sh変更時にtest_selectがそのgateを呼ぶ上位テスト(test_cmd_complete_gate.bats等)を選出しない。cmd_2798でgate_context_freshness.sh変更→test_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28漏れ→CI RED。gate→消費先テストの間接依存マッピングを追加する | infra | 05-16 | scripts/gates/*.sh変更時にcmd_comp |
+| cmd_2808 | ntfy.shにbackoff/cooldownがなく本日778回429エラー(殿通知ほぼ全失敗)。cmd_2797は1送信元の部分対策。新送信元追加で再発する構造。ntfy.shにグローバルthrottle(10s間隔+429時60s cooldown)を追加し全送信元を一括保護する | infra | 05-16 | ntfy.shに10秒グローバルthrottleとHTTP |
