@@ -213,6 +213,7 @@ EOF
         TEST_TMPDIR="$TEST_TMPDIR" \
         CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
         CONTEXT_FRESHNESS_TODAY="2026-04-18" \
+        CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alerts" \
         bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
 
     [ "$status" -eq 1 ]

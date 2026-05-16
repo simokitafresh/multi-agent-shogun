@@ -75,6 +75,8 @@ EOF
 # DM Core
 <!-- last_updated: 2026-03-10 cmd_003 -->
 EOF
+
+    touch "$TEST_PROJECT/config/context_freshness_excludes.txt"
 }
 
 teardown() {

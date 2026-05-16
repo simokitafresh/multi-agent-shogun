@@ -1,7 +1,15 @@
 task:
-  _ac_task_id: cmd_2775_exact
+  _ac_task_id: cmd_2807_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2775
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2807
+  ac_version: 2edf2958
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'inject_ninja_weak_points YAML注入失敗の根因が特定されている'
+  - id: 'AC2'
+    checks:
+    - check: '根因修正後にweak_points注入が正常動作しERRORが発生しない'
   cmd_id: cmd_training_L4_codd_202605151403_tobisaru
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -11,78 +19,108 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: 
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_2807
   project: infra
-  purpose: scripts/配下の全bashスクリプトの関数を列挙し、context/*.mdへの記載有無を突合。contextから参照できない仕組みを特定し、可視化優先度を判定する
+  purpose: cmd_2801の_sv()修正後にinject_ninja_weak_pointsがkagemaru+hanzoで連続YAML注入失敗(各2回)。配備自体は成功(weak_pointsはオプショナル)だがsilent
   scout_exempt: true
   status: idle
   stop_for: []
-  task_id: cmd_2775_exact
+  task_id: cmd_2807_exact
   task_type: exact
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L324'
-    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-  - id: 'L333'
-    summary: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
-    detail: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
-  - id: 'L183'
-    summary: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
-    detail: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-  - id: 'L415'
-    summary: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
-    detail: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
-  - id: 'L134'
-    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
-    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
-  - id: 'L301'
-    summary: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
-    detail: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
-  - id: 'L564'
-    summary: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
-    detail: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
-  - id: 'L526'
-    summary: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
-    detail: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L070'
+    summary: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
+    detail: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
+  - id: 'L287'
+    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+  - id: 'L417'
+    summary: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
+    detail: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L524'
+    summary: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
+    detail: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
+  - id: 'L357'
+    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L101'
+    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+  - id: 'L351'
+    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
+  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
+  recommended_skills:
+  - "hensei"
+  - "hensei-mixed"
+  - "hensei-opus"
+  - "karo-direct"
+  - "recon-dual"
+  - "reset-layout"
+  - "shogun-all-codex-switch"
+  - "shogun-peacetime-rollback"
+  - "switch-to-codex"
+  - "switch-to-opus"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
-      - L333: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
-      - L183: Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-      - L415: auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され
-      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
-      - L301: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
-      - L564: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す
-      - L526: validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L070: L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_36
+      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
+      - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L524: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す
+      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
+      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - description: '4スクリプトの全関数が列挙されている。grep -c 関数名 で件数を確認'
-  - description: '各関数のcontext記載有無が判定されている。context記載0件の関数リストが報告に含まれる'
-  - description: 'context記載0件の関数について可視化優先度(高/中/低)が判定されている。判定基準: 他エージェントが知る必要があるか'
-  ac_version: 7d010443
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_2775.yaml
-  report_path: queue/reports/tobisaru_report_cmd_2775.yaml
+  report_filename: tobisaru_report_cmd_2807.yaml
+  report_path: queue/reports/tobisaru_report_cmd_2807.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -114,4 +152,4 @@ task:
     - reason: 'lesson_done_missing'
       count: 1
       hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-  deployed_at: "2026-05-15T14:08:35"
+  deployed_at: "2026-05-16T08:31:17"
