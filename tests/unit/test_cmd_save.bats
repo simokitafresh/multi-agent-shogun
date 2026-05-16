@@ -645,6 +645,41 @@ YAML
     [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
 }
 
+@test "cmd_2803: dict形式ACのdescriptionに自動実行があれば行動変換WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2803_dict_ac:
+    id: cmd_2803_dict_ac
+    title: "強化 — 新規gate追加"
+    purpose: "cmd_save.shへ新規gateを追加してWARN止まりの設計を検出する"
+    command: |
+      scripts/cmd_save.shに新規gateを追加する
+    acceptance_criteria:
+      AC1:
+        description: "行動変換不足時は自動実行フローへ接続される"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — dict形式AC description抽出の局所回帰確認のみ"
+      q5_verified_source: "scripts/cmd_save.sh code_reading + tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: dict形式ACのdescriptionを行動変換判定に含める → WHAT: 自動実行入りdescriptionでWARN抑止"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -rn gate_hook_action_conversion scripts/cmd_save.sh → 既存gateあり。dict形式AC抽出のみ未達成"
+    assumptions:
+      - claim: "2026-05-16時点でdict形式ACはdescription配下に本文を持つ"
+        source: "queue/tasks/kagemaru.yaml"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2803_dict_ac"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
+}
+
 @test "cmd_2628: gate/hook追加cmdなら既存強制フロー候補INFOを表示する" {
     create_queue_file << 'YAML'
 commands:

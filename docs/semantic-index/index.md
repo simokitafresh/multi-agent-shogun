@@ -69,7 +69,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -88,6 +88,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T07:29:14+09:00 CoDDのdoc_dirs設定整理が必要について、なぜなぜ7回。改善しよう |
 | cmd | `cmd_2796` codd.yaml scan設定をリポジトリ構造に一致させhealth_score 0を解消 (`codd/codd.yaml`, `codd/scan/edges.jsonl`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:03:21+09:00 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:17:45+09:00 自立自走 なぜなぜ7回 続けろ |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -392,6 +393,8 @@ codd:
 | cmd | `cmd_2790` 強化 — deploy_task.sh ac_assigned導入でbc注入範囲を担当ACに限定 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 | cmd | `cmd_2799` karo-direct/SKILL.md をdeploy_task.sh最新変更に追従更新 (`skills/karo-direct/SKILL.md`) |
 | cmd | `cmd_2801` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
+| cmd | `cmd_2804` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| cmd | `cmd_2806` (`queue/tasks/kotaro.yaml`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
