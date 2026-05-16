@@ -61,6 +61,8 @@ tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id} #{pane_dead} #{@
 2. 出力結果を確認（swap件数、respawn件数、変数修正件数）
 3. `bash scripts/ntfy.sh "reset_layout完了。swap:N件、respawn:N件"` で殿に報告
 
+`scripts/ntfy.sh`はendpoint単位のflock付きグローバルthrottleを持つ。既定では10秒以内の連続送信をskipし、HTTP 429後は60秒cooldownするため、reset完了通知は1回だけ送る。
+
 `--dry-run` で事前確認してから実行することを推奨。
 
 ## 前提条件

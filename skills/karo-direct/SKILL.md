@@ -60,8 +60,10 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # deploy_task.sh は direct_mode として resolve_cmd_to_task をスキップし、
 # parent_cmd/task_id/status を設定してから inbox_write を自動送信する。
 # 手動 inbox_write は不要。
+# YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
+# failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
 ```
-Script refs verified: 2026-05-16 cmd_2799.
+Script refs verified: 2026-05-16 cmd_2809.
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
@@ -98,4 +100,5 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 - training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
 - ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、inbox通知を迂回するため）
 - `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
+- 複数行ACやdescriptionはdeploy_task.shの手動YAML構築でindent保持される。YAML注入後に `python3 -c "import yaml; yaml.safe_load(open('queue/tasks/<ninja>.yaml'))"` で構文確認する。
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）

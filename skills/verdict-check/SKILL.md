@@ -79,6 +79,8 @@ else:
 bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 ```
 
+`self_gate_check`を直す必要がある場合、`report_field_set.sh "$REPORT" self_gate_check PASS` はBLOCKされる。dict構造を壊さないよう、`self_gate_check.lesson_ref PASS` のように各keyを個別更新する。
+
 ### Step 3: 整合性最終確認
 ```bash
 # report_field_set.shのGP-072c4が自動検証

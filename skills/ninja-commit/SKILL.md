@@ -68,6 +68,8 @@ COMMIT_HASH=$(git log --format="%H" -1)
 bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 ```
 
+`report_field_set.sh`は`self_gate_check`トップレベル書込みをBLOCKする。報告修正が必要な場合は `self_gate_check.lesson_ref PASS` のようにdot notationで個別fieldだけを更新する。
+
 ## 禁止事項
 
 - **`git add .` / `git add -A`** — scope外混入の原因

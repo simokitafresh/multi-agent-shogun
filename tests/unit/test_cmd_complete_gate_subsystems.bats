@@ -28,6 +28,7 @@ setup_file() {
         extract_function find_overlapping_workers
         extract_function run_review_quality_check
         extract_function run_todo_fixme_residual_check
+        extract_function run_skill_script_refs_check
         sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$SUBSYSTEM_HELPERS"
@@ -213,6 +214,33 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"[CRITICAL] NG ← 1件のTODO/FIXMEが残存:"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
+}
+
+@test "skill script refs check runs after clear and keeps stale refs non-blocking" {
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/skill_refs_clear.XXXXXX")"
+    export SCRIPT_DIR="$TEST_TMPDIR"
+    export LOG_DIR="$TEST_TMPDIR/logs"
+    export CMD_ID="cmd_999"
+    export SKILL_SCRIPT_REFS_GATE_PATH="$TEST_TMPDIR/gate_skill_script_refs.sh"
+    mkdir -p "$LOG_DIR"
+    cat > "$SKILL_SCRIPT_REFS_GATE_PATH" <<'EOF'
+#!/usr/bin/env bash
+echo "=== SKILL.md script reference check ==="
+echo "走査: 1 SKILL.md / script参照 1件 / 参照あり 1件 / roots=skills"
+echo "=== 要更新スキル一覧 (script newer than SKILL.md) ==="
+echo "  WARN: skills/demo/SKILL.md <- scripts/demo.sh (newer: scripts/demo.sh)"
+echo "--- 総合判定: WARN ---"
+exit 2
+EOF
+    chmod +x "$SKILL_SCRIPT_REFS_GATE_PATH"
+
+    run run_skill_script_refs_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKILL.md script refs (GATE CLEAR):"* ]]
+    [[ "$output" == *"要更新スキル一覧"* ]]
+    [[ "$output" == *"non-blocking after CLEAR"* ]]
+    grep -q 'skill_script_refs' "$LOG_DIR/gate_fire_log.yaml"
 }
 
 # ═══════════════════════════════════════════════════════

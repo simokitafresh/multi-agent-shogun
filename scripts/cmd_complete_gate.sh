@@ -869,6 +869,43 @@ run_codd_propagate_update() {
     return 0
 }
 
+# ─── SKILL.md script参照鮮度チェック（cmd_2809） ───
+# GATE CLEAR後に、変更済み scripts/* を参照するSKILL.mdの追従漏れを可視化する。
+# CLEAR済み後処理なので非BLOCKだが、実行自体は毎回強制する。
+run_skill_script_refs_check() {
+    local gate_script="${SKILL_SCRIPT_REFS_GATE_PATH:-$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh}"
+    local output
+    local rc
+
+    echo ""
+    echo "SKILL.md script refs (GATE CLEAR):"
+
+    if [ ! -x "$gate_script" ]; then
+        echo "  [WARN] gate_skill_script_refs.sh not executable or not found: ${gate_script}"
+        return 0
+    fi
+
+    set +e
+    output=$(SKILL_REF_DISABLE_CACHE=1 bash "$gate_script" "$SCRIPT_DIR" 2>&1)
+    rc=$?
+    set -e
+
+    if [ "$rc" -eq 0 ]; then
+        printf '%s\n' "$output" | grep -E '^(走査:|OK:|--- 総合判定)' | sed 's/^/  /' || true
+        return 0
+    fi
+
+    printf '%s\n' "$output" | grep -E '^(走査:|=== 要更新|=== 参照先|  WARN:|--- 総合判定)' | head -40 | sed 's/^/  /' || true
+    if [ "$rc" -eq 2 ]; then
+        echo "  [WARN] SKILL.md script refs need follow-up (non-blocking after CLEAR)"
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" stale_or_missing_refs" >> "$LOG_DIR/gate_fire_log.yaml"
+    else
+        echo "  [WARN] gate_skill_script_refs.sh failed rc=${rc} (non-blocking after CLEAR)"
+        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" execution_failed rc=${rc}" >> "$LOG_DIR/gate_fire_log.yaml"
+    fi
+    return 0
+}
+
 # ─── karo_workarounds resolved_by_cmd 自動補完（cmd_2692） ───
 # GATE CLEAR時、同一cmdの過去BLOCK理由からworkaroundカテゴリを推定し、
 # resolved_by_cmd未記入の同カテゴリエントリを現在cmdで埋める。
@@ -3700,6 +3737,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [GATE] lesson_merge: SKIP (script not found)"
     fi
 
+    run_skill_script_refs_check
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
@@ -5451,6 +5489,7 @@ PY
 
     append_codd_registry_entry "$CMD_ID"
     run_codd_propagate_update
+    run_skill_script_refs_check
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"

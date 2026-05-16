@@ -124,6 +124,8 @@ dashboard.mdの `<!-- KARO_SECTION_START -->` 〜 末尾を、プライマリYAM
 bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline:{M}件"
 ```
 
+`scripts/ntfy.sh`はendpoint単位のflock付きグローバルthrottleを持つ。既定では10秒以内の連続送信をskipし、HTTP 429後は60秒cooldownするため、ここで独自retryや連打回避sleepを追加しない。
+
 **重複防止**: `/tmp/last_dashboard_ntfy.txt` に前回送信内容を保存。同一内容ならスキップ。
 
 ## 注意事項
