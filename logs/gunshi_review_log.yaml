@@ -66,6 +66,7 @@
 # 詳細エントリ: 20260516a(cmd_2785〜cmd_2792+D0x5+deepdive) → logs/archive/gunshi_review_log_20260516a.yaml
 # 詳細エントリ: 20260516b(cmd_2743〜idle_clear_durability_fix+cmd_2794 draft RC) → logs/archive/gunshi_review_log_20260516b.yaml
 # ★動的データの静的スナップショットに有効期限を付けよ(still-injected時点差事故。lesson_impact.tsvの分析結果を固定的にcmd前提としたが7hの時点差で陳腐化)
+# ★隠れたインフラバグの探し方(2026-05-16 4件実証): gate_fire_log FAIL集計→同一パターン3+件=道具バグ(LG014)。deploy_task.log ERROR→silent failure。ninja_monitor.log異常回数→無限ループ。ntfy.log 429→rate limit全滅。「見えない」=致命的。見えるようにするのが第一手(cmd_2801 ERROR通知が即座にcmd_2807副作用を検出した実例)
 - cmd_id: cmd_2793
   review_type: draft
   verdict: REQUEST_CHANGES

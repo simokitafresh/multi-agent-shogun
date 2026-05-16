@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-05-16
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2799 | SKILL.md追従(karo-direct←deploy_task.sh) | GATE CLEAR | 3session連続WARN→BLOCK昇格解消 |
+| cmd_2800 | self_gate_check dict保護(scalar書込みBLOCK) | GATE CLEAR | 軍師発見22件FAIL→report_field_set.shガード追加 |
+| cmd_2801 | _sv() silent failure根絶(インデント連動+ERROR通知) | GATE CLEAR | **最大発見**: 2sp固定→ネスト3+YAML崩壊→教訓/AC/WP全スキップ3件。cmd_2807副作用検出=ERROR通知が即機能した証拠 |
+| cmd_2802 | test_select間接依存(gate→消費先テスト) | GATE CLEAR | cmd_2798 CI RED根因。家老なぜなぜ7回で特定 |
+| cmd_2803 | cmd_save.sh awk dict形式AC対応 | GATE CLEAR | **将軍18回消火の根因**: L311 awkがdict形式ACを抽出しない→gate_hook_action_conversion偽陰性 |
+| cmd_2804 | _ac_task_id偽陽性(exact scope split deploy skip) | GATE CLEAR | 35件WARNノイズ→ログ信号対雑音比向上 |
+| cmd_2805 | bare except→OSError限定(gunshi precheck) | GATE CLEAR | silent failure可視化。全例外飲込み→I/Oエラーのみ許容 |
+| cmd_2806 | Codex respawn無限ループ(GP-222精緻化) | GATE CLEAR | 本日99回respawn→60sスキップ窓追加で根絶 |
+| cmd_2807 | weak_points注入副作用(cmd_2801検出) | GATE CLEAR | cmd_2801のERROR通知が即座に検出→免疫系動作確認 |
+| cmd_2808 | ntfy.sh グローバルthrottle(429 rate limit) | GATE CLEAR | **778回429→殿通知全失敗**。10s間隔+60s cooldownで根絶 |
+| session | なぜなぜ7回×4本→隠れバグ8件発見→10cmd全CLEAR | WA:0 | silent failure/偽陽性/gate検出漏れ/無限ループ。全て「見えない問題」を構造的に排除 |
+
 ## 2026-05-15
 
 | cmd/action | 意図 | 結果 | 因果 |
