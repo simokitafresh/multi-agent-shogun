@@ -807,3 +807,4 @@
 | cmd_2799 | deploy_task.shが更新されたがskills/karo-direct/SKILL.mdが追従していない。gate_skill_script_refs.shが3セッション連続WARNでstartup BLOCK昇格。SKILL.mdの記述をdeploy_task.shの現在の動作に合わせて更新する | infra | 05-16 | skills/karo-direct/SKILL.mdをde |
 | cmd_2802 | scripts/gates/*.sh変更時にtest_selectがそのgateを呼ぶ上位テスト(test_cmd_complete_gate.bats等)を選出しない。cmd_2798でgate_context_freshness.sh変更→test_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28漏れ→CI RED。gate→消費先テストの間接依存マッピングを追加する | infra | 05-16 | scripts/gates/*.sh変更時にcmd_comp |
 | cmd_2808 | ntfy.shにbackoff/cooldownがなく本日778回429エラー(殿通知ほぼ全失敗)。cmd_2797は1送信元の部分対策。新送信元追加で再発する構造。ntfy.shにグローバルthrottle(10s間隔+429時60s cooldown)を追加し全送信元を一括保護する | infra | 05-16 | ntfy.shに10秒グローバルthrottleとHTTP |
+| cmd_2807 | cmd_2801の_sv()修正後にinject_ninja_weak_pointsがkagemaru+hanzoで連続YAML注入失敗(各2回)。配備自体は成功(weak_pointsはオプショナル)だがsilent failure可視化(cmd_2801で追加)がERRORを検出。_sv()修正の副作用か別の原因かを特定し修正する | infra | 05-16 | inject_ninja_weak_pointsの連続YAM |
