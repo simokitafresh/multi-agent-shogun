@@ -121,6 +121,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=files_modified: is dict (must be string or list of file paths); lessons_useful[0]: useful=yes is str (must be true or false); lessons_useful[1]: useful=yes is str (must be true ...
+- 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING
+
 - 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=assumption_invalidation: MISSING; self_gate_check: is str (must be dict)
 - 2026-05-15: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']
 

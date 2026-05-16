@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-16T12:28:47+09:00 -->
+<!-- generated_at: 2026-05-16T12:39:48+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-16T12:39:47+09:00 | terminal | response | cmd_2809のdraftが書けた。publishする。 [meta] stop_reason=tool_use
 - 2026-05-16T12:28:47+09:00 | terminal | response | 掲示板未確認3件を確認処理し、action_required対応のためにinsightsキューと CI REDを確認する。 [meta] stop_reason=tool_use
 - 2026-05-16T12:28:39+09:00 | ntfy | outbound | 【karo】復帰済み。全忍者idle(小太郎・飛猿L4修行中)。PD-038/044未解決。idle自走開始。
 - 2026-05-16T12:27:47+09:00 | ntfy | outbound | 【家老】cmd_training_L4_auto_202605161227_tobisaru 初回配備開始 (title=(untitled), ninja=tobisaru) 📋 https://gist.github.com/simo…
@@ -13,7 +14,6 @@
 - 2026-05-16T11:17:20+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=87件 clear_prep_check=ALERT [1.…
 - 2026-05-16T11:16:45+09:00 | ntfy | outbound | 📊 Dashboard: 16cmd完了(15 CLEAR/1 BLOCK)。WA率0%。なぜなぜ7回×4本→隠れバグ8件修正。idle:6名 | pipeline:0件
 - 2026-05-16T11:14:07+09:00 | terminal | response | push完了。強くてニューゲームの準備完了。 **環境に埋め込んだもの:** 1. **戦局日誌** — 10cmd全結果+因果(context/senkyoku-log.md) 2. **session_summary** — lord…
-- 2026-05-16T11:12:20+09:00 | terminal | inbound | 今クリアされても、今より強くてニューゲーム出来るようにせよ
 
 ## 未解決確認事項
 - 掲示板未確認3件を確認処理し、action_required対応のためにinsightsキューと CI REDを確認する。 [meta] stop_reason=tool_use
