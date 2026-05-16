@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-16T11:14:07+09:00 -->
+<!-- generated_at: 2026-05-16T12:28:47+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-16T12:28:47+09:00 | terminal | response | 掲示板未確認3件を確認処理し、action_required対応のためにinsightsキューと CI REDを確認する。 [meta] stop_reason=tool_use
+- 2026-05-16T12:28:39+09:00 | ntfy | outbound | 【karo】復帰済み。全忍者idle(小太郎・飛猿L4修行中)。PD-038/044未解決。idle自走開始。
+- 2026-05-16T12:27:47+09:00 | ntfy | outbound | 【家老】cmd_training_L4_auto_202605161227_tobisaru 初回配備開始 (title=(untitled), ninja=tobisaru) 📋 https://gist.github.com/simo…
+- 2026-05-16T12:26:42+09:00 | ntfy | outbound | 【家老】cmd_training_L4_auto_202605161226_kotaro 初回配備開始 (title=(untitled), ninja=kotaro) 📋 https://gist.github.com/simokita…
+- 2026-05-16T12:25:19+09:00 | terminal | inbound | y
+- 2026-05-16T11:23:51+09:00 | ntfy | outbound | CI赤: run 25950176694 Unit Tests (bats)
+- 2026-05-16T11:17:20+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=87件 clear_prep_check=ALERT [1.…
+- 2026-05-16T11:16:45+09:00 | ntfy | outbound | 📊 Dashboard: 16cmd完了(15 CLEAR/1 BLOCK)。WA率0%。なぜなぜ7回×4本→隠れバグ8件修正。idle:6名 | pipeline:0件
 - 2026-05-16T11:14:07+09:00 | terminal | response | push完了。強くてニューゲームの準備完了。 **環境に埋め込んだもの:** 1. **戦局日誌** — 10cmd全結果+因果(context/senkyoku-log.md) 2. **session_summary** — lord…
 - 2026-05-16T11:12:20+09:00 | terminal | inbound | 今クリアされても、今より強くてニューゲーム出来るようにせよ
-- 2026-05-16T11:12:20+09:00 | terminal | session_summary | 本セッション: なぜなぜ7回×4本→隠れインフラバグ8件発見→10cmd(2799-2808)全GATE CLEAR。(1)_sv() silent failure根絶(教訓/AC/WP全スキップ3件) (2)cmd_save.sh aw…
-- 2026-05-16T10:04:11+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-16 10:01:51|CI緑: run 25948275764
-- 2026-05-16T09:48:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-16 09:45:42|cmd_2807
-- 2026-05-16T09:46:20+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率95% 連勝15
-- 2026-05-16T09:46:08+09:00 | terminal | response | 殿、**本セッション全10cmd GATE CLEAR完走。** | cmd | 隠れたインフラバグ | 状態 | |-----|-------------------|------| | 2799 | SKILL.md追従漏れ(3ses…
-- 2026-05-16T09:25:58+09:00 | ntfy | outbound | CI赤: run 25947484470 Unit Tests (bats)
-- 2026-05-16T09:19:11+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
-- 2026-05-16T09:17:52+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-16 09:12:58|cmd_2808
 
 ## 未解決確認事項
+- 掲示板未確認3件を確認処理し、action_required対応のためにinsightsキューと CI REDを確認する。 [meta] stop_reason=tool_use
+- 【karo】復帰済み。全忍者idle(小太郎・飛猿L4修行中)。PD-038/044未解決。idle自走開始。
+- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=87件 clear_prep_check=ALERT [1.PD未決] 0件: なし [2.cmd …
 - push完了。強くてニューゲームの準備完了。 **環境に埋め込んだもの:** 1. **戦局日誌** — 10cmd全結果+因果(context/senkyoku-log.md) 2. **session_summary** — lord_conversation.jsonlに…
 - 本セッション: なぜなぜ7回×4本→隠れインフラバグ8件発見→10cmd(2799-2808)全GATE CLEAR。(1)_sv() silent failure根絶(教訓/AC/WP全スキップ3件) (2)cmd_save.sh awk dict形式AC未対応(18回消火の…
 - 掲示板を確認せよ
 - 殿、自走報告。 **なぜなぜ7回の成果 — 隠れたインフラバグ3件発見→4cmd起票:** | cmd | 発見 | 根因 | 状態 | |-----|------|------|------| | cmd_2799 | SKILL.md 3セッション連続WARN | depl…
 - cmd_2800一発PASS、委任完了。 **本セッション自走まとめ:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2798 | 安定context除外リスト(前セッション) | GATE CLEAR | | cmd_karo…
-- コミット完了。環境に埋め込んだもの: 1. **戦局日誌** — 6cmd全結果+セッション総括（因果含む） 2. **session_summary** — lord_conversation.jsonlに記録済み 3. **将軍教訓LS033** — コード精読不足でcmd…
-- 本セッション: infra自走6cmd(2793-2798)。5 CLEAR+1 cancelled。(1)cmd_2793: PHANTOM awk偽陽性+grepハイフン修正+SKILL.md 3件追従→startup 3セッション連続BLOCK解消 (2)cmd_2794…
-- cmd_2797 GATE CLEAR確認。ntfy重複送信抑止が稼働開始。 **本セッション全cmd状況:** | cmd | 内容 | 結果 | |-----|------|------| | cmd_2793 | PHANTOM awk偽陽性修正+SKILL.md追従 |…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-16T09:46:08+09:00 | 殿、**本セッション全10cmd GATE CLEAR完走。** | cmd | 隠れたインフラバグ | 状態 | |-----|-------------------|------| | 2799 | SKILL.md追従漏れ(3session BLOCK) | CLEAR …
@@ -52,6 +52,7 @@
 - cmd_2805
 - cmd_2807
 - cmd_2808
+- PD-038
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
