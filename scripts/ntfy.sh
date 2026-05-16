@@ -86,6 +86,16 @@ LOGFILE="$SCRIPT_DIR/logs/ntfy.log"
 MSG="$1"
 
 NTFY_ENDPOINT="${NTFY_ENDPOINT:-https://ntfy.sh/$TOPIC}"
+NTFY_MIN_INTERVAL_SECONDS="${NTFY_MIN_INTERVAL_SECONDS:-10}"
+NTFY_429_COOLDOWN_SECONDS="${NTFY_429_COOLDOWN_SECONDS:-60}"
+NTFY_STATE_DIR="${NTFY_STATE_DIR:-/tmp/multi_agent_shogun_ntfy}"
+[[ "$NTFY_429_COOLDOWN_SECONDS" =~ ^[0-9]+$ ]] || NTFY_429_COOLDOWN_SECONDS=60
+
+mkdir -p "$NTFY_STATE_DIR" 2>/dev/null || true
+_ntfy_state_key="$(printf '%s' "$NTFY_ENDPOINT" | sha256sum | awk '{print $1}')"
+NTFY_STATE_FILE="$NTFY_STATE_DIR/${_ntfy_state_key}.state"
+NTFY_LOCK_FILE="$NTFY_STATE_DIR/${_ntfy_state_key}.lock"
+unset _ntfy_state_key
 
 append_lord_conversation_safe() {
   local payload="$1"
@@ -113,13 +123,68 @@ _ntfy_send() {
   echo "$http_code"
 }
 
+_ntfy_read_state_value() {
+  local key="$1"
+  local value=""
+
+  if [ -f "$NTFY_STATE_FILE" ]; then
+    while IFS='=' read -r state_key state_value || [ -n "$state_key" ]; do
+      if [ "$state_key" = "$key" ]; then
+        value="$state_value"
+        break
+      fi
+    done < "$NTFY_STATE_FILE"
+  fi
+
+  printf '%s\n' "$value"
+}
+
+_ntfy_write_state() {
+  local last_send_epoch="$1"
+  local cooldown_until="$2"
+  local tmp="${NTFY_STATE_FILE}.$$"
+
+  {
+    printf 'last_send_epoch=%s\n' "$last_send_epoch"
+    printf 'cooldown_until=%s\n' "$cooldown_until"
+  } > "$tmp"
+  mv "$tmp" "$NTFY_STATE_FILE"
+}
+
 send_with_retry() {
   local payload="$1"
-  local http_code
+  local http_code now last_send_epoch cooldown_until elapsed
+
+  now=$EPOCHSECONDS
+  last_send_epoch="$(_ntfy_read_state_value last_send_epoch)"
+  cooldown_until="$(_ntfy_read_state_value cooldown_until)"
+  [[ "$last_send_epoch" =~ ^[0-9]+$ ]] || last_send_epoch=0
+  [[ "$cooldown_until" =~ ^[0-9]+$ ]] || cooldown_until=0
+
+  if (( cooldown_until > now )); then
+    printf '%(%Y-%m-%d %H:%M:%S)T SKIP cooldown_until=%s remaining=%ss msg="%s"\n' -1 "$cooldown_until" "$((cooldown_until - now))" "${payload:0:80}" >> "$LOGFILE"
+    return 0
+  fi
+
+  if [[ "$NTFY_MIN_INTERVAL_SECONDS" =~ ^[0-9]+$ ]] && (( NTFY_MIN_INTERVAL_SECONDS > 0 && last_send_epoch > 0 )); then
+    elapsed=$((now - last_send_epoch))
+    if (( elapsed >= 0 && elapsed < NTFY_MIN_INTERVAL_SECONDS )); then
+      printf '%(%Y-%m-%d %H:%M:%S)T SKIP throttle elapsed=%ss min=%ss msg="%s"\n' -1 "$elapsed" "$NTFY_MIN_INTERVAL_SECONDS" "${payload:0:80}" >> "$LOGFILE"
+      return 0
+    fi
+  fi
 
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
+    _ntfy_write_state "$EPOCHSECONDS" 0
     append_lord_conversation_safe "$payload"
+    return 0
+  fi
+
+  if [ "$http_code" = "429" ]; then
+    cooldown_until=$((EPOCHSECONDS + NTFY_429_COOLDOWN_SECONDS))
+    _ntfy_write_state "$EPOCHSECONDS" "$cooldown_until"
+    printf '%(%Y-%m-%d %H:%M:%S)T COOLDOWN http=429 until=%s msg="%s"\n' -1 "$cooldown_until" "${payload:0:80}" >> "$LOGFILE"
     return 0
   fi
 
@@ -135,8 +200,16 @@ send_with_retry() {
   sleep 3
   http_code=$(_ntfy_send "$payload")
   if [ "$http_code" = "200" ]; then
+    _ntfy_write_state "$EPOCHSECONDS" 0
     append_lord_conversation_safe "$payload"
     printf '%(%Y-%m-%d %H:%M:%S)T RETRY_OK\n' -1 >> "$LOGFILE"
+    return 0
+  fi
+
+  if [ "$http_code" = "429" ]; then
+    cooldown_until=$((EPOCHSECONDS + NTFY_429_COOLDOWN_SECONDS))
+    _ntfy_write_state "$EPOCHSECONDS" "$cooldown_until"
+    printf '%(%Y-%m-%d %H:%M:%S)T COOLDOWN http=429 until=%s msg="%s"\n' -1 "$cooldown_until" "${payload:0:80}" >> "$LOGFILE"
     return 0
   fi
 
@@ -146,10 +219,16 @@ send_with_retry() {
 }
 
 if [ "${NTFY_SYNC:-0}" = "1" ]; then
-  send_with_retry "$MSG"
+  (
+    flock -w 30 200 || { echo "ERROR: ntfy throttle lock timeout" >&2; exit 1; }
+    send_with_retry "$MSG"
+  ) 200>"$NTFY_LOCK_FILE"
   exit $?
 fi
 
 # Default mode: fire-and-forget
-send_with_retry "$MSG" &
+(
+  flock -w 30 200 || { echo "ERROR: ntfy throttle lock timeout" >&2; exit 1; }
+  send_with_retry "$MSG"
+) 200>"$NTFY_LOCK_FILE" &
 exit 0
