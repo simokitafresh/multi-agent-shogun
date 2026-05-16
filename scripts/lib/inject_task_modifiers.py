@@ -34,7 +34,7 @@ def atomic_write(data, task_file):
     try:
         with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False,
-                      allow_unicode=True, indent=2)
+                      allow_unicode=True, indent=2, width=1000000)
         os.replace(tmp_path, task_file)
     except Exception:
         try:
