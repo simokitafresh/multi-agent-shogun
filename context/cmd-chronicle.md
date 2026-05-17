@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-16 -->
+<!-- last_updated: 2026-05-17 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,57 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1931 | 将軍の追体験品質が構造的に低い根因修正。家老(lessons_karo.yaml 55件)と軍師(lessons_gunshi.yaml 26件)にはdeepdive前に通読する具体的失敗データがあるが、将軍にはない。教訓の格納形式が出力の深さを決める(軍師分析)。lessons_shogun.yamlを作成し起動手順に組み込む | infra | 04-16 | lessons_shogun.yaml 20件を新設し、将軍 |
-| cmd_1932 | 掲示板システムの引数順バグ修正+ライフサイクル管理追加。4エントリ中3件でcontent/posted_byが逆転。根因=引数順<posted_by> <content>がinbox_write.sh(<target> <content> ... <from>)と不一致でエージェントが間違える | infra | 04-16 | 掲示板の引数順バグを修正し、明示クローズ機能追加と既存3件の |
-| cmd_karo_ci_fix_acpaths | CI RED修正 — test_cmd_save_ac_paths.bats更新コミット | infra | 04-16 | AC path test期待値を更新し、追加で露出したbul |
-| cmd_1934 | 研究 — 3体EW全量探索: C(21,3)=1330通り×4手法β調整α6指標 | dm-signal | 04-16 | cmd_1934 実装完了。⑤_* 21列の3体1330通り |
-| cmd_1935 | 整備 — context/codd.md新設: CoDD v1.8.0知識一元化 | infra | 04-16 | context/codd.mdを新設し、CLAUDE.md/ |
-| cmd_karo_gp195_197 | GP-195+197統合 — gate_diagnose_check.shをgate_report_format.shに統合 | infra | 04-16 | gate_report_format.sh の FAIL 経 |
-| cmd_karo_gp196 | GP-196 — 教訓注入絞込み 10→3件+IF-THEN構造化 | infra | 04-16 | deploy_task.sh の related_lesso |
-| cmd_1936 | 強化 — gist作成時にインデックスgistを自動更新するスクリプト | infra | 04-16 | gist一覧の自動更新スクリプトと52+件実データの分類テス |
-| cmd_karo_gp198 | GP-198 — Session State: タスクレベル失敗履歴引継ぎ | infra | 04-16 | GP-198実装完了。gate_report_format. |
-| cmd_1937 | 整備 — context/ui-design-guide.md新設: 全エージェント共通UIデザインガイド | infra | 04-16 | Created context/ui-design-guid |
-| cmd_1938 | 整備 — context/ui-design-guide.md補強: ボタンデザイン9tips+16tips統合 | infra | 04-16 | context/ui-design-guide.md に 1 |
-| cmd_1939 | 強化 — scripts/cmd_save.sh L3診断推論: BLOCK時Diagnose MANDATORY+Session State | infra | 04-16 | cmd_save.shにDiagnose MANDATORY |
-| cmd_1942 | 強化 — 忍者ACテストをaffected_tests.sh(関連テストのみ)に変更 | infra | 04-16 | deploy_task.shのテストAC生成で、全量unit |
-| cmd_1941 | 強化 — GP/改善にbefore/after退化計測を義務化 | infra | 04-16 | GP/改善cmd向けreport templateにbefo |
-| cmd_1940 | 強化 — gate_lesson_health.sh閾値をuseful率に変更+低効果教訓自動除外 | infra | 04-16 | gate_lesson_health.shにuseful率計 |
-| cmd_1943 | 改修 — Androidアプリ ボトムナビ「メモ」→「Gist Index」差替え | infra | 04-16 | ボトムナビの「メモ」を「Gist Index」に差し替え、旧 |
-| cmd_1945 | 修正 — Androidアプリ ライトテーマ文字コントラスト強化（殿フィードバック: ルール違反） | infra | 04-16 | DarkSengokuPalette の textMuted |
-| cmd_1946 | verdict_override構造対策 — waive_ac正式機構 + 研究cmd commit check自動waive | infra | 04-16 | deploy_task.shに研究cmd/waive_ac用 |
-| cmd_1947 | 研究 — N体EW比較: 1体/2体/3体 × 4手法 × 6指標 横並び分析 | dm-signal | 04-16 | cmd_1947完了。⑤_* 21列の1体21通り・2体21 |
-| cmd_1948 | 研究 — N体EW比較(①×①): 1体/2体/3体 × 4手法 × 6指標 | dm-signal | 04-16 | cmd_1947を実行し、⑤_*21列の1体21通り・2体2 |
-| cmd_1949 | 研究 — N体EW比較(①2⑤1): クロス 2体+3体(①多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①×⑤クロス2体441通りと①①⑤の3体4410通りをcmd |
-| cmd_karo_1948_retry | 研究 — N体EW比較(①×①) 再配備: load_monthly_returns引数化済み | dm-signal | 04-16 | ①_* 21列の1/2/3体EWを4手法×6指標で再計算し、 |
-| cmd_1950 | 研究 — N体EW比較(①1⑤2): クロス 3体(⑤多め) × 4手法 × 6指標 | dm-signal | 04-16 | ①1⑤2の3体4410通りをcmd_1934同手法で算出し、 |
-| cmd_1951 | 偵察 — インフラスクリプト全量プロファイリング+CoDD改善リスト作成 | infra | 04-16 | 全220本を計測・分類しCoDD改善リスト作成 |
-| cmd_karo_ci_fix_cmd_save | CI修正 — cmd_save.shテスト期待値修正(BLOCKメッセージ形式変更対応) | infra | 04-16 | cmd_save の現行出力に合わせて 5 件の失敗テスト期 |
-| cmd_1957 | CoDD改善#5 — gate_artifact_map.sh高速化(2.2s→目標400ms) | infra | 04-16 | gate_artifact_map.sh高速化完了。967m |
-| cmd_1954 | CoDD改善#2 — dashboard_auto_section.sh高速化(2.8s→目標500ms) | infra | 04-16 | dashboard_auto_section.sh を高速化 |
-| cmd_1953 | CoDD改善#1 — shutsujin_departure.sh高速化(2.4s→目標500ms) | infra | 04-16 | scripts/shutsujin_departure.sh |
-| cmd_1956 | CoDD改善#4 — report_merge.sh高速化(1.9s→目標300ms) | infra | 04-16 | report_merge.sh: 1ファイルあたり4-5回の |
-| cmd_1955 | CoDD改善#3 — gate_cycle_health.sh高速化(2.6s→目標500ms) | infra | 04-16 | gate_cycle_health.sh を 793ms→2 |
-| cmd_1958 | CoDD改善#6 — gate_karo_startup.sh高速化(1.1s→目標300ms) | infra | 04-16 | gate_karo_startup.sh高速化完了。befo |
-| cmd_1960 | CoDD改善#8 — inbox_write.sh高速化(89ms→目標40ms) | infra | 04-16 | inbox_write.shを高速化。agent_confi |
-| cmd_1961 | CoDD改善#9 — ntfy.sh高速化(130ms→目標50ms) | infra | 04-16 | ntfy.sh高速化: before 33ms→after |
-| cmd_1959 | CoDD改善#7 — gate_recalculate_completeness.sh高速化(4.0s→目標500ms) | infra | 04-16 | gate_recalculate_completeness. |
-| cmd_1963 | CoDD改善#11 — gate_loop_health.sh高速化(493ms→目標100ms) | infra | 04-16 | gate_loop_health.sh 287ms→93ms |
-| cmd_1964 | CoDD改善#12 — gate_lesson_health.sh高速化(228ms→目標50ms) | infra | 04-16 | gate_lesson_health.sh を 666ms |
-| cmd_1962 | CoDD改善#10 — lesson_effectiveness.sh高速化(5.5s→目標500ms) | infra | 04-16 | lesson_effectiveness.sh高速化: ba |
-| cmd_1966 | CoDD改善#14 — report_field_set.sh高速化(40ms×73回→目標15ms) | infra | 04-16 | report_field_set.shを高速化し、scala |
-| cmd_1965 | CoDD改善#13 — ninja_done.sh高速化(68ms×104回→目標30ms) | infra | 04-16 | ninja_done.sh を軽量化し、usage/help |
-| cmd_1970 | CoDD改善#18 — gate_workaround_rate.sh高速化(135ms×14回→目標40ms) | infra | 04-16 | gate_workaround_rate.sh高速化: py |
-| cmd_1972 | CoDD改善#20 — parity_check.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | parity_check.sh に --help fast- |
-| cmd_1974 | CoDD改善#22 — post_recalculate_checks.sh高速化(5.5s timeout→目標500ms) | infra | 04-16 | post_recalculate_checks.shをCRL |
-| cmd_1975 | CoDD改善#23 — test_hooks.sh高速化(4.0s timeout→目標500ms) | infra | 04-16 | test_hooks.shを共通evaluator直呼びへ変 |
-| cmd_1976 | CoDD改善#24 — gate_vercel_phase.sh高速化(481ms×7回→目標100ms) | infra | 04-16 | gate_vercel_phase.sh高速化完了。norm |
-| cmd_1969 | CoDD改善#17 — pre_compact_save.sh高速化(141ms×毎compaction→目標40ms) | infra | 04-16 | pre_compact_save.sh高速化完了。jq×2→ |
-| cmd_1977 | CoDD改善#25 — cmd_save.sh高速化(4.0s→目標500ms) | infra | 04-16 | cmd_save.sh高速化結果を記録。warm media |
-| cmd_1978 | CoDD改善#26 — stop-lint-gate.sh高速化(3.0s→目標500ms) | infra | 04-16 | Stop hookの changed-file 取得を Gi |
-| cmd_1980 | CoDD改善#28 — gate_recalculate_completeness.sh再トライ(2.74s→目標500ms) | infra | 04-16 | gate_recalculate_completeness. |
-| cmd_1984 | CoDD改善#32 — gate_karo_startup.sh再トライ(225ms→目標80ms, 起動ごと) | infra | 04-16 | gate_karo_startup.sh 3改善: pyth |
-| cmd_1983 | CoDD改善#31 — deploy_task.sh再トライ(88ms→目標30ms, 配備ごと) | infra | 04-16 | deploy_task.sh generate_report |
-| cmd_1981 | CoDD改善#29 — dashboard_auto_section.sh再トライ(340ms→目標100ms, ×21回) | infra | 04-16 | dashboard_auto_section.shの第2次高 |
 | cmd_karo_ci_fix_1987 | CI RED修正 — test_stop_lint_gate.bats test 941 HASH_FILE未生成 | infra | 04-17 | bats --jobs 8並列実行でHASH_FILEが/t |
 | cmd_karo_context_freshness_1993 | context鮮度更新 — dm-signal-research.md+infrastructure.md | infra | 04-17 | context鮮度更新2件を反映し、対象2ファイルのみをコミ |
 | cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |
@@ -812,3 +761,4 @@
 | cmd_2810 | cmd_complete_gate.sh L3650のauto_draft_lesson.shがdraft教訓を生成した直後に、L4843のdraft教訓チェックが自cmdが生成したdraftをBLOCKする循環構造。直近50cmdで19件BLOCK(最頻パターン)。 | infra | 05-16 | — |
 | cmd_2812 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウンのselected属性がgoogle側についており、UIデフォルトがGoogle Visionになっている。バックエンドはtwo_stageがデフォルトだがフロントが不整合。 | simple-ocr | 05-16 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウン |
 | cmd_2813 | OCR結果カードのタイトルがOCR結果とハードコードされている。two_stageパイプラインはpatient_nameを構造化JSONで出力済みなので、タイトルに患者名を表示する。テキスト本文からは消さない。 | simple-ocr | 05-16 | OCR結果カードのタイトルにtwo_stage抽出の患者名を |
+| cmd_2814 | clear_prep_check.sh Check 8がWARN表示のみでALERT昇格しない。insights 5件放置/semantic-index未更新/BLOCK経験ありlesson 0件が/clear時に素通りし、次の将軍が今セッションの学びを持てない。なぜなぜ7回で確認と対処の未分離が根因。最終防衛線を強化する。 | infra | 05-17 | clear_prep_check.shで知識埋込み漏れ3条件 |
