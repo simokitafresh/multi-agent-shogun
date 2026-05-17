@@ -633,9 +633,38 @@ YAML
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_pending.yaml" ]
     [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*cmd_2529cap_[0-9]*.yaml' | wc -l)" -eq 9 ]
+}
+
+@test "cmd_2827: sweep caps completed report backlog even when cmd_id is specified" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands: []
+YAML
+    for i in $(seq 1 12); do
+        cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2827cap_${i}.yaml" <<YAML
+parent_cmd: cmd_2827cap_${i}
+status: completed
+result:
+  summary: "overflow ${i}"
+YAML
+        touch -d "$((20 - i)) minutes ago" "$TEST_PROJECT/queue/reports/saizo_report_cmd_2827cap_${i}.yaml"
+    done
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_2827cap_pending.yaml" <<'YAML'
+parent_cmd: cmd_2827cap_pending
+status: pending
+result:
+  summary: "pending"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh" cmd_2827
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
+    [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2827cap_pending.yaml" ]
+    [ -f "$TEST_PROJECT/queue/gates/cmd_2827/archive.done" ]
+    [[ "$output" == *"fallback_gate_incomplete=12"* ]]
+    [[ "$output" == *"overflow-cap:"* ]]
 }
 
 @test "cmd_2545: overflow cap excludes pending active parent and gate-incomplete reports with log counts" {
@@ -684,7 +713,7 @@ YAML
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_active.yaml" ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_gate_wait.yaml" ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_pending.yaml" ]
