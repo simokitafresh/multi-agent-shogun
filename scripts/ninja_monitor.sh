@@ -1125,21 +1125,26 @@ check_and_update_done_task() {
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local report_file=""
 
-    # タスクのparent_cmdを取得
-    local task_parent_cmd
-    task_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    # awk単一パスでtask_fileから必要フィールドを一括取得
+    # (check_stall/auto_void_if_parent_cmd_completedと同パターン: サブシェル3回削減)
+    local task_parent_cmd task_status task_id
+    IFS='|' read -r task_parent_cmd task_status task_id < <(awk '
+        BEGIN { pc=""; s=""; ti=""; ai="" }
+        /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+        /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
+        END { print pc "|" s "|" (ti!=""?ti:ai) }
+    ' "$task_file")
     [ -z "$task_parent_cmd" ] && return 1
-
     # cmd_1262: 既にdoneなら即リターン（AUTO-DONE重複書込み+通知嵐を根絶）
-    local task_status
-    task_status=$(yaml_field_get "$task_file" "status")
     [ "$task_status" = "done" ] && return 0
 
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
 
     # 報告のparent_cmdを取得
-    local report_parent_cmd
+    local report_parent_cmd report_task_id
     report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
     [ -z "$report_parent_cmd" ] && return 1
 
@@ -1147,9 +1152,6 @@ check_and_update_done_task() {
     [ "$task_parent_cmd" != "$report_parent_cmd" ] && return 1
 
     # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
-    local task_id report_task_id
-    task_id=$(yaml_field_get "$task_file" "task_id")
-    [ -z "$task_id" ] && task_id=$(yaml_field_get "$task_file" "_ac_task_id")
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
 
@@ -1515,14 +1517,22 @@ _handle_deploy_stall() {
           "【DEPLOY-STALL】${name}が${task_status}のままidle ${elapsed}秒。/clear+再送実施。" \
           deploy_stall ninja_monitor >> "$LOG" 2>&1
         # AC2: STALLカウンター+エスカレーション
-        local subtask_id
-        subtask_id=$(yaml_field_get "$task_file" "subtask_id")
-        local stall_count_key="${name}:${subtask_id}"
+        # L112: subtask_id優先→task_id→_ac_task_idのフォールバック（nested task形式/subtask_id不在対応）
+        # L4-R24最適化パターン: awk単一パスで取得（yaml_field_get×3サブシェルを回避）
+        local stall_id
+        stall_id=$(awk '
+            BEGIN { t="" }
+            /^[ \t]*subtask_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+            /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+            /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+            END { print t }
+        ' "$task_file")
+        local stall_count_key="${name}:${stall_id}"
         STALL_COUNT[$stall_count_key]=$((${STALL_COUNT[$stall_count_key]:-0} + 1))
         local count=${STALL_COUNT[$stall_count_key]}
         if [ "$count" -ge 2 ]; then
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-              "【STALL-ESCALATE】${name}が${subtask_id}で${count}回STALL。差し替え必須。" \
+              "【STALL-ESCALATE】${name}が${stall_id}で${count}回STALL。差し替え必須。" \
               stall_escalate ninja_monitor >> "$LOG" 2>&1
         fi
     else
