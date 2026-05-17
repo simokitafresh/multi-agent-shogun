@@ -768,3 +768,5 @@
 | cmd_2822 | 因果ネットワーク活用の第二出口。deploy_task.shが忍者タスクYAMLに関連因果[[リンク]]を自動注入する。忍者が実装時に関連する過去の失敗/裁定を参照でき、同じ失敗の再発を防ぐ。 | infra | 05-17 | deploy_task.shにinject_causal_l |
 | cmd_2821 | 因果ネットワーク活用の出口。lessons_shogun.yamlのエントリでoriginフィールドが空またはリンク0件のものを起動時にWARN表示し、因果不明ルールを可視化する。将軍が因果を埋める行動を促す。 | infra | 05-17 | gate_shogun_startupにlessons_sh |
 | cmd_2823 | 因果ネットワーク(Obsidian [[リンク]]+origin)の仕組み知識が将軍の頭の中にしかない。家老・軍師・忍者は存在を知らず利用できない。使えないものは存在しないのと同じ(殿厳命)。CLAUDE.md Knowledge Map+各ロールinstructionsに因果NW利用手順を埋込み、全エージェントが自動化活用できる状態にする。 | infra | 05-17 | 因果ネットワークのorigin/Obsidianリンク手順を |
+| cmd_2824 | 将軍がRenderのプラン挙動を知らずコールドスタート推測を繰り返す(殿指摘2026-05-17)。根因=Render知識がcontext/instructionsに体系化されていない。プラン別挙動(Free=コールドスタート/Starter=なし)、ログ取得方法、障害切り分け手順、全サービス一覧をcontext/infrastructure.mdに追記し、全エージェントが考えずに利用できる状態にする。 | infra | 05-17 | context/infrastructure.mdにRend |
+| cmd_2826 | 将軍が殿の質問に答える前にセマンティック辞書/Obsidianリンクを検索しない(意志依存)。Render障害でコールドスタート推測を繰り返した根因。prompt_state_inject.sh(UserPromptSubmit hook)に殿の入力テキストでsemantic_search.shを自動実行し、関連知識を将軍のコンテキストに自動注入する。 | infra | 05-17 | prompt_state_inject.shが殿入力をsem |
