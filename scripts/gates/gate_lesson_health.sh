@@ -88,7 +88,7 @@ check_ssot_conflict_markers() {
 }
 
 # ─── 高速化: lessons.yaml を1回だけ読んで全統計を計算 ───
-# 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint|when_count|how_count
+# 出力1行目: active_count|max_id|deprecated_count|unsynced_count|new_since_checkpoint|when_count|how_count|origin_count
 # 追加行: PROBLEM:L番号: injection=N, helpful=0 [pid]
 _compute_lesson_stats() {
     local file="$1"
@@ -122,6 +122,7 @@ _compute_lesson_stats() {
             active_nc++
             if (has_when) when_count++
             if (has_how) how_count++
+            if (has_origin) origin_count++
             if (n > max_id) max_id = n
             if (n > synced + 0) unsynced++
             if (n > chk + 0) new_since++
@@ -135,9 +136,10 @@ _compute_lesson_stats() {
         current_id = $0
         sub(/^.*id:[[:space:]]*['\''"]?L/, "", current_id)
         sub(/[^0-9].*$/, "", current_id)
-        is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0
+        is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0; has_origin = 0
         if (is_set_value(inline_value($0, "when"))) has_when = 1
         if (is_set_value(inline_value($0, "how"))) has_how = 1
+        if (is_set_value(inline_value($0, "origin"))) has_origin = 1
     }
     /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
     /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }
@@ -151,6 +153,11 @@ _compute_lesson_stats() {
         sub(/^[[:space:]]+how:[[:space:]]*/, "", v)
         if (is_set_value(v)) has_how = 1
     }
+    /^[[:space:]]+origin:[[:space:]]*[^[:space:]]/ {
+        v = $0
+        sub(/^[[:space:]]+origin:[[:space:]]*/, "", v)
+        if (is_set_value(v)) has_origin = 1
+    }
     /[[:space:]]+injection_count:[[:space:]]/ {
         gsub(/.*injection_count:[[:space:]]*/,""); ic = $1 + 0
     }
@@ -159,10 +166,68 @@ _compute_lesson_stats() {
     }
     END {
         flush_current()
-        printf "%d|%d|%d|%d|%d|%d|%d\n", active_nc+0, max_id+0, dep+0, unsynced+0, new_since+0, when_count+0, how_count+0
+        printf "%d|%d|%d|%d|%d|%d|%d|%d\n", active_nc+0, max_id+0, dep+0, unsynced+0, new_since+0, when_count+0, how_count+0, origin_count+0
         for (i in problems) printf "PROBLEM:%s\n", problems[i]
     }
     ' "$file"
+}
+
+check_role_lesson_origins() {
+    local label="$1"
+    local lessons_file="$2"
+
+    [ -f "$lessons_file" ] || return 0
+
+    local origin_result
+    origin_result=$(python3 - "$lessons_file" <<'PY' 2>/dev/null || true
+import re
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+lessons = data.get("lessons") or []
+missing = []
+empty = []
+no_links = []
+for item in lessons:
+    if not isinstance(item, dict):
+        continue
+    lesson_id = str(item.get("id") or "?")
+    if "origin" not in item:
+        missing.append(lesson_id)
+        continue
+    origin = item.get("origin")
+    origin_text = "" if origin is None else str(origin).strip()
+    if not origin_text:
+        empty.append(lesson_id)
+        continue
+    if not re.search(r"\[\[[^]\n]+\]\]", origin_text):
+        no_links.append(lesson_id)
+
+total = len([x for x in lessons if isinstance(x, dict)])
+bad = len(missing) + len(empty) + len(no_links)
+print(f"{total}\t{bad}\t{','.join(missing[:5])}\t{','.join(empty[:5])}\t{','.join(no_links[:5])}")
+PY
+)
+    if [ -z "$origin_result" ]; then
+        echo "WARN: ${label} origin検査に失敗。YAML構文または形式を確認せよ"
+        return 0
+    fi
+
+    local origin_total origin_bad origin_missing origin_empty origin_no_links
+    IFS=$'\t' read -r origin_total origin_bad origin_missing origin_empty origin_no_links <<< "$origin_result"
+    origin_total=${origin_total:-0}
+    origin_bad=${origin_bad:-0}
+    if [ "$origin_bad" -gt 0 ]; then
+        echo "WARN: ${label} origin因果リンク不備 ${origin_bad}/${origin_total}件"
+        [ -n "$origin_missing" ] && echo "  origin欠落: $origin_missing"
+        [ -n "$origin_empty" ] && echo "  origin空: $origin_empty"
+        [ -n "$origin_no_links" ] && echo "  リンク0件: $origin_no_links"
+    else
+        echo "OK: ${label} origin因果リンク (${origin_total}件)"
+    fi
 }
 
 write_lesson_effect_status() {
@@ -435,7 +500,7 @@ for _pid in "${_target_pids[@]}"; do
         "$INJECTION_WARN_THRESHOLD" "$_pid")
 
     _stats_line="${_stats_output%%$'\n'*}"
-    IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count _when_count _how_count <<< "$_stats_line"
+    IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count _when_count _how_count _origin_count <<< "$_stats_line"
     _injection_problems=$(printf '%s\n' "$_stats_output" | grep '^PROBLEM:' | sed 's/^PROBLEM://' || true)
 
     # ─── check_project 相当 ───
@@ -459,6 +524,15 @@ for _pid in "${_target_pids[@]}"; do
         emit_actionable \
             "WARN: ${_pid} when/how欠落教訓あり(when欠落:${_when_missing}, how欠落:${_how_missing}, total:${_total_lessons})" \
             "lesson_write.sh の新テンプレートに沿って既存教訓へ when/how を補完せよ。"
+    fi
+
+    _origin_missing=$((_total_lessons - ${_origin_count:-0}))
+    _origin_rate=$(awk -v ok="${_origin_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
+    echo "INFO: ${_pid} origin充足率: origin=${_origin_count:-0}/${_total_lessons}(${_origin_rate}%)"
+    if [ "$_origin_missing" -gt 0 ]; then
+        emit_actionable \
+            "WARN: ${_pid} origin欠落教訓あり(origin欠落:${_origin_missing}, total:${_total_lessons})" \
+            "lesson_write.sh の --origin または source_cmd 由来の [[cmd_XXX]] origin を既存教訓へ補完せよ。"
     fi
 
     if [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ]; then
@@ -551,6 +625,11 @@ if [ "$_phantom_count" -gt 0 ]; then
 else
     echo "OK: enforcement phantom検出: 0件"
 fi
+
+# ─── role別lesson origin因果リンク検出 ───
+check_role_lesson_origins "lessons_shogun.yaml" "$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
+check_role_lesson_origins "lessons_gunshi.yaml" "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml"
+check_role_lesson_origins "lessons_karo.yaml" "$SCRIPT_DIR/projects/infra/lessons_karo.yaml"
 
 # ─── check_lesson_effectiveness ───
 if [ $# -ge 1 ]; then

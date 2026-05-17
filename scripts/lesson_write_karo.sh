@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write_karo.sh — 家老専用教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"]
+# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"]
 # → projects/infra/lessons_karo.yaml に追記
 
 set -e
@@ -9,12 +9,49 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TITLE="${1:-}"
 DETAIL="${2:-}"
 SOURCE_CMD="${3:-}"
-WHEN_COND="${4:-同種の状況が再発した時}"
-HOW_ACTION="${5:-$DETAIL}"
+shift 3 || true
+
+WHEN_COND="同種の状況が再発した時"
+HOW_ACTION="$DETAIL"
+ORIGIN=""
+_positional=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --origin)
+            ORIGIN="${2:-}"
+            shift 2
+            ;;
+        --when)
+            WHEN_COND="${2:-}"
+            shift 2
+            ;;
+        --how)
+            HOW_ACTION="${2:-}"
+            shift 2
+            ;;
+        *)
+            _positional=$((_positional + 1))
+            if [ "$_positional" -eq 1 ]; then
+                WHEN_COND="$1"
+            elif [ "$_positional" -eq 2 ]; then
+                HOW_ACTION="$1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$ORIGIN" ]; then
+    if [[ "$SOURCE_CMD" =~ ^cmd_ ]]; then
+        ORIGIN="[[${SOURCE_CMD}]]"
+    else
+        ORIGIN="未指定"
+    fi
+fi
 
 # Validate arguments
 if [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
-    echo "Usage: lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX" >&2
+    echo "Usage: lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX [\"発動条件\"] [\"実行手順\"] [--origin \"[[cmd_XXX]]\"]" >&2
     exit 1
 fi
 
@@ -54,7 +91,7 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ORIGIN
         export WHEN_COND HOW_ACTION
         python3 << 'PYEOF'
 import yaml, os, sys
@@ -65,6 +102,7 @@ timestamp = os.environ["TIMESTAMP"]
 title = os.environ["TITLE"]
 detail = os.environ["DETAIL"]
 source_cmd = os.environ.get("SOURCE_CMD", "")
+origin = os.environ.get("ORIGIN", "未指定")
 when_cond = os.environ.get("WHEN_COND", "")
 how_action = os.environ.get("HOW_ACTION", "")
 
@@ -119,6 +157,7 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
         f.write('\n')
     f.write(f'- id: {_sv(new_id_str)}\n')
     f.write(f'  title: {_sv(title)}\n')
+    f.write(f'  origin: {_sv(origin)}\n')
     f.write(f'  detail: {_sv(detail)}\n')
     f.write(f'  source_cmd: {_sv(source_cmd)}\n')
     f.write(f'  when: {_sv(when_cond)}\n')
