@@ -800,14 +800,12 @@ check_origin_field() {
 
     if [[ -z "${origin_value:-}" ]]; then
         echo "WARNING: origin未記入。cmdの根拠ルール/裁定を origin: \"[[ルールID]] ...\" または origin: \"[[殿裁定YYYY-MM-DD]] ...\" 形式で記入せよ" >&2
-        record_warn_reason "origin未記入" "check=origin_field"
         return 0
     fi
 
     if ! printf '%s\n' "$origin_value" | grep -qE '\[\[(ルール[0-9A-Za-z_.-]+|殿裁定[0-9]{4}-[0-9]{2}-[0-9]{2})\]\]'; then
         echo "WARNING: origin形式不正。[[ルールID]] または [[殿裁定YYYY-MM-DD]] 形式のリンクを含めよ" >&2
         echo "  現在値: ${origin_value}" >&2
-        record_warn_reason "origin形式不正" "check=origin_field"
     fi
 }
 
