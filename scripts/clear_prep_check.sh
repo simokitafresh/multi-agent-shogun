@@ -19,6 +19,67 @@ issue_reasons=()
 
 echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 
+# 最新session_summaryをセッション境界として扱う。/clear直前の最終防衛線なので、
+# 「セッション中のcmd完了あり」を知識埋込みALERTの条件に使う。
+session_start_ts=""
+session_start_date=""
+session_completed_cmds=0
+if [ -f "$LORD_CONV" ]; then
+  session_state="$(python3 - "$LORD_CONV" <<'PY'
+import datetime as dt
+import json
+import re
+import sys
+
+path = sys.argv[1]
+entries = []
+with open(path, encoding="utf-8") as f:
+    for raw in f:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            entries.append(parsed)
+
+session_start = ""
+for entry in entries:
+    if entry.get("direction") == "session_summary" and entry.get("ts"):
+        session_start = str(entry["ts"])
+
+cmds = set()
+completion_words = ("GATE CLEAR", "委任完了", "完了", "PASS")
+for entry in entries:
+    ts = str(entry.get("ts", ""))
+    if session_start and ts < session_start:
+        continue
+    if entry.get("direction") not in ("response", "outbound"):
+        continue
+    text = " ".join(str(entry.get(k, "")) for k in ("summary", "detail", "content", "message", "text"))
+    if not any(word in text for word in completion_words):
+        continue
+    cmds.update(re.findall(r"cmd_[0-9]+", text))
+
+date = ""
+if session_start:
+    date = session_start[:10]
+if not date:
+    date = dt.datetime.now().astimezone().date().isoformat()
+print(f"{session_start}|{date}|{len(cmds)}")
+PY
+)"
+  session_start_ts="${session_state%%|*}"
+  session_state_rest="${session_state#*|}"
+  session_start_date="${session_state_rest%%|*}"
+  session_completed_cmds="${session_state_rest#*|}"
+fi
+if [ -z "$session_start_date" ]; then
+  session_start_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+fi
+
 # ─── Check 1: PD未決 ───
 pd_count=0
 pd_ids="なし"
@@ -287,6 +348,9 @@ else
   artifact_status="SKIP(進行表 or gateなし)"
 fi
 echo "[7.成果物] ${artifact_status}"
+if [ "${artifact_warn:-0}" -gt 0 ]; then
+  echo "$artifact_output" | awk '/^  WARN:/ { print }'
+fi
 
 # ─── Check 8: セッション中の新知識埋込み確認 ───
 embed_issues=0
@@ -294,16 +358,8 @@ embed_details=()
 
 # (a) lesson_write_shogun.sh実行有無 — 最新session_summaryのts以降にlessonが追加されたか
 LESSONS_SHOGUN="$ROOT_DIR/projects/infra/lessons_shogun.yaml"
-session_start_date=""
 lesson_count_session=0
-if [ -f "$LORD_CONV" ]; then
-  # 最新session_summaryのts日付(セッション開始時刻の近似)
-  session_start_date=$(grep '"session_summary"' "$LORD_CONV" | tail -1 | \
-    grep -oP '"ts":\s*"\K[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || echo "")
-fi
-if [ -z "$session_start_date" ]; then
-  session_start_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
-fi
+cmd_save_block_session=0
 
 if [ -f "$LESSONS_SHOGUN" ]; then
   lesson_count_session=$(awk -v date="$session_start_date" '
@@ -316,10 +372,51 @@ if [ -f "$LESSONS_SHOGUN" ]; then
 fi
 
 if [ "${lesson_count_session:-0}" -eq 0 ]; then
-  embed_details+=("(a)lesson登録: 0件(${session_start_date}以降) ⚠ lesson_write_shogun.sh未実行?")
-  embed_issues=$((embed_issues + 1))
+  embed_details+=("(a)lesson登録: 0件(${session_start_date}以降) WARN lesson_write_shogun.sh未実行?")
 else
   embed_details+=("(a)lesson登録: ${lesson_count_session}件(${session_start_date}以降) OK")
+fi
+
+CMD_QUALITY_LOG="$ROOT_DIR/logs/cmd_design_quality.yaml"
+if [ -f "$CMD_QUALITY_LOG" ]; then
+  cmd_save_block_session=$(python3 - "$CMD_QUALITY_LOG" "$session_start_date" <<'PY'
+import sys
+
+path = sys.argv[1]
+date = sys.argv[2]
+count = 0
+block = {}
+
+def flush(item):
+    global count
+    if (
+        item.get("source") == "cmd_save"
+        and item.get("gate_result") == "BLOCK"
+        and item.get("timestamp", "")[:10] >= date
+    ):
+        count += 1
+
+with open(path, encoding="utf-8") as f:
+    for raw in f:
+        line = raw.rstrip("\n")
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            flush(block)
+            block = {}
+            stripped = stripped[2:].strip()
+        if ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        block[key.strip()] = value.strip().strip('"').strip("'")
+flush(block)
+print(count)
+PY
+  )
+fi
+embed_details+=("(a2)cmd_save BLOCK履歴: ${cmd_save_block_session}件(${session_start_date}以降)")
+if [ "${cmd_save_block_session:-0}" -gt 0 ] && [ "${lesson_count_session:-0}" -eq 0 ]; then
+  embed_details+=("(a2)ALERT: cmd_save.sh BLOCK履歴あり + lesson_write_shogun.sh実行0件")
+  embed_issues=$((embed_issues + 1))
 fi
 
 # (b) セマンティクスインデックス更新有無
@@ -330,6 +427,10 @@ if [ -f "$SEMANTIC_INDEX" ]; then
     embed_details+=("(b)semantic-index: OK(更新: ${semantic_date})")
   else
     embed_details+=("(b)semantic-index: WARN(最終更新: ${semantic_date} — セッション前から未更新)")
+    if [ "${session_completed_cmds:-0}" -gt 0 ]; then
+      embed_details+=("(b)ALERT: セッション中cmd完了${session_completed_cmds}件 + semantic-index当日未更新")
+      embed_issues=$((embed_issues + 1))
+    fi
   fi
 else
   embed_details+=("(b)semantic-index: SKIP(ファイル不在)")
@@ -342,6 +443,10 @@ if [ -f "$INSIGHTS_FILE" ]; then
   pending_insights=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null || echo 0)
 fi
 embed_details+=("(c)insights未処理: ${pending_insights}件")
+if [ "${pending_insights:-0}" -ge 5 ] && [ "${session_completed_cmds:-0}" -gt 0 ]; then
+  embed_details+=("(c)ALERT: セッション中cmd完了${session_completed_cmds}件 + insights未処理${pending_insights}件")
+  embed_issues=$((embed_issues + 1))
+fi
 
 # (d) 完了cmdのproject別にprojects/*.yamlの更新有無を確認
 # セッション中にcmd完了したprojectのprojects/{id}.yamlがセッション後に更新されているか
@@ -403,6 +508,7 @@ if [ -f "$CHRONICLE" ] && [ -n "$session_start_date" ]; then
 fi
 
 echo "[8.知識埋込み] lesson:${lesson_count_session}件(${session_start_date}以降)"
+echo "  セッション中cmd完了: ${session_completed_cmds}件"
 for d in "${embed_details[@]}"; do
   echo "  ${d}"
 done
@@ -505,6 +611,77 @@ else
   decision_detail="lord_conversation.jsonl不在"
 fi
 echo "[10.裁定反映] ${decision_status}: ${decision_detail}"
+
+# ─── Check 11: session_summary自動生成 ───
+summary_status="SKIP"
+summary_detail="lord_conversation.jsonl不在"
+if [ -f "$LORD_CONV" ]; then
+  summary_result="$(python3 - "$LORD_CONV" "$session_start_ts" <<'PY'
+import datetime as dt
+import fcntl
+import json
+import os
+import sys
+
+path = sys.argv[1]
+session_start = sys.argv[2]
+
+entries = []
+bad_lines = 0
+with open(path, encoding="utf-8") as f:
+    for raw in f:
+        line = raw.strip()
+        if not line:
+            continue
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            bad_lines += 1
+            continue
+        if isinstance(parsed, dict):
+            entries.append(parsed)
+
+inbound = []
+for entry in entries:
+    if entry.get("direction") != "inbound":
+        continue
+    ts = str(entry.get("ts", ""))
+    if session_start and ts < session_start:
+        continue
+    text = str(entry.get("summary") or entry.get("detail") or "").strip()
+    if text:
+        inbound.append(text)
+
+if not inbound:
+    print("SKIP|inbound=0")
+    raise SystemExit(0)
+
+now = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+joined = " / ".join(inbound[-5:])
+if len(joined) > 480:
+    joined = joined[:479] + "…"
+detail = f"auto clear prep summary: inbound={len(inbound)}件; latest={joined}"
+entry = {
+    "ts": now,
+    "source": "clear_prep_check",
+    "direction": "session_summary",
+    "summary": detail[:140] if len(detail) <= 140 else detail[:139] + "…",
+    "detail": detail,
+    "agent": "shogun",
+}
+lock_path = path + ".lock"
+with open(lock_path, "w", encoding="utf-8") as lock:
+    fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+    with open(path, "a", encoding="utf-8") as out:
+        out.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+print(f"APPENDED|inbound={len(inbound)}, bad_json={bad_lines}")
+PY
+)"
+  summary_status="${summary_result%%|*}"
+  summary_detail="${summary_result#*|}"
+fi
+echo "[11.session_summary] ${summary_status}: ${summary_detail}"
 
 # ─── 総合判定 ───
 echo ""
