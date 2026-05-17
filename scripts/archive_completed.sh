@@ -945,8 +945,6 @@ EOF
     }
 
     archive_overflow_reports_to_cap() {
-        [ -z "$CMD_ID" ] || return 0
-
         local cap=10
         local remaining
         remaining=$(find "$REPORTS_DIR" -maxdepth 1 -type f -name '*.yaml' | wc -l)
@@ -978,6 +976,7 @@ for task_path in glob.glob(os.path.join(project_dir, "queue", "tasks", "*.yaml")
 
 eligible_statuses = {"done", "completed", "complete", "success", "failed", "pass", "fail", "blocked", "waived", "stop_for"}
 candidates = []
+gate_incomplete_candidates = []
 skipped_pending = 0
 skipped_ineligible = 0
 skipped_active_parent = 0
@@ -988,7 +987,24 @@ def gate_complete(parent):
         return True
     if parent.startswith(("cmd_training_", "cmd_cycle_", "cmd_selfimprovement_")):
         return True
-    return os.path.isfile(os.path.join(project_dir, "queue", "gates", parent, "archive.done"))
+    archive_done = os.path.join(project_dir, "queue", "gates", parent, "archive.done")
+    if os.path.isfile(archive_done):
+        return True
+    gate_metrics_log = os.path.join(project_dir, "logs", "gate_metrics.log")
+    try:
+        with open(gate_metrics_log, encoding="utf-8") as f:
+            for line in f:
+                fields = line.rstrip("\n").split("\t")
+                if len(fields) >= 3 and (
+                    (fields[1] == parent and fields[2] == "CLEAR")
+                    or (fields[1] == "CLEAR" and fields[2] == parent)
+                ):
+                    os.makedirs(os.path.dirname(archive_done), exist_ok=True)
+                    open(archive_done, "a", encoding="utf-8").close()
+                    return True
+    except OSError:
+        pass
+    return False
 
 for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     if os.path.islink(report_path) or not os.path.isfile(report_path):
@@ -1013,6 +1029,7 @@ for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
         continue
     if not gate_complete(parent):
         skipped_gate_incomplete += 1
+        gate_incomplete_candidates.append((os.path.getmtime(report_path), report_path))
         continue
     candidates.append((os.path.getmtime(report_path), report_path))
 
@@ -1020,11 +1037,14 @@ print(
     "[archive] overflow candidates: "
     f"eligible={len(candidates)} skipped_pending={skipped_pending} "
     f"skipped_ineligible={skipped_ineligible} skipped_active_parent={skipped_active_parent} "
-    f"skipped_gate_incomplete={skipped_gate_incomplete}",
+    f"skipped_gate_incomplete={skipped_gate_incomplete} "
+    f"fallback_gate_incomplete={len(gate_incomplete_candidates)}",
     file=sys.stderr,
 )
 
 for _mtime, path in sorted(candidates):
+    print(path)
+for _mtime, path in sorted(gate_incomplete_candidates):
     print(path)
 PY
 
@@ -1040,7 +1060,6 @@ PY
                 overflow_dest="$ARCHIVE_REPORT_DIR/${overflow_base%.yaml}_$(date '+%H%M%S').yaml"
             fi
             mv "$overflow_path" "$overflow_dest" || { echo "[archive] WARN: overflow mv failed: $overflow_path → $overflow_dest" >&2; continue; }
-            ln -sf "$overflow_dest" "$overflow_path" 2>/dev/null || true
             overflow_archived=$((overflow_archived + 1))
             archived=$((archived + 1))
             remaining=$((remaining - 1))
