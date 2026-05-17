@@ -765,3 +765,5 @@
 | cmd_2815 | gate_shogun_startup.sh Gate 13が教訓健全度ALERTを一律'/lesson-sort推奨'とするが、useful_rate<30%は/lesson-sortで解決しない。3セッション連続BLOCKの根因。ALERT種別(useful_rate vs 未振り分け)を判別し適切な推奨を表示するよう条件分岐を追加する。 | infra | 05-17 | Gate 13の教訓健全度ALERTをuseful_rate |
 | cmd_2817 | binary_checks_fail FAILが直近50件中7件。ashigaru.md L52にルールはあるが具体的YAML記入例がなく忍者が形式を間違える。記入例追加で忍者の報告作成時の行動フローをFAIL→PASSに変換する。 | infra | 05-17 | AC1は完了。AC2は指定ID INS-20260516-1 |
 | cmd_2818 | /clear後の将軍が各ルールの因果チェーン(何の実験→何の失敗→殿のどの裁定→ルール化)を持たないため、外部記事1本で安易に棚卸しを提案した。根因=時系列×因果のネットワークが環境に永続化されていない。Obsidian式[[リンク]]で既存lessons/senkyoku-logに因果辺を埋込み、逆引きCLIで任意ノードの前後を辿れるようにする。 | infra | 05-17 | 将軍教訓26件にoriginリンクを追加し、逆引きCLIとl |
+| cmd_2822 | 因果ネットワーク活用の第二出口。deploy_task.shが忍者タスクYAMLに関連因果[[リンク]]を自動注入する。忍者が実装時に関連する過去の失敗/裁定を参照でき、同じ失敗の再発を防ぐ。 | infra | 05-17 | deploy_task.shにinject_causal_l |
+| cmd_2821 | 因果ネットワーク活用の出口。lessons_shogun.yamlのエントリでoriginフィールドが空またはリンク0件のものを起動時にWARN表示し、因果不明ルールを可視化する。将軍が因果を埋める行動を促す。 | infra | 05-17 | gate_shogun_startupにlessons_sh |
