@@ -48,11 +48,11 @@ decision_candidate:
   found: false
 binary_checks:
   AC1:
-    check: "AC1の実装が完了しているか"
-    result: "yes"
+    - check: "AC1の実装が完了しているか"
+      result: yes
   AC2:
-    check: "AC2の検証が失敗していないか"
-    result: "no"
+    - check: "AC2の検証が失敗していないか"
+      result: no
 lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
   # 参照なしなら lessons_useful: []
   # 後方互換: lessons_useful: [] は旧 lesson_referenced: false と同等扱い

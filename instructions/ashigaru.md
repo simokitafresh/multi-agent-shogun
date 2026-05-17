@@ -50,8 +50,17 @@ forbidden_actions:
 - **Shadow Paths Exist**: happyだけでなくnil/empty/errorも辿れ
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 - **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
-  記入例: `AC1: {check: "AC1の実装が完了しているか", result: "yes"}` / `AC2: {check: "AC2の検証が失敗していないか", result: "no"}`。
-  提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
+  報告YAMLにはACごとにリスト形式で記入する。`result`は引用符なしの`yes`/`no`でもよいが、`PASS`/`FAIL`/空欄は禁止。
+  ```yaml
+  binary_checks:
+    AC1:
+      - check: "instructions/ashigaru.mdに具体的YAML記入例があるか"
+        result: yes
+    AC2:
+      - check: "grepで対象insightがresolvedと確認できたか"
+        result: yes
+  ```
+  FAIL時は該当ACを`result: no`にして停止し、原因を`result.details`へ書け。提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 
 ## 逸脱管理ルール (Deviation Management)
 
