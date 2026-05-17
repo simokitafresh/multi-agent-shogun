@@ -3087,6 +3087,16 @@ write_karo_snapshot() {
                                 bash|zsh|sh) status="dead" ;;
                             esac
                         fi
+                        # snapshot実態乖離補正: task YAMLがidle/completedだがCTX>0%ならcapture-paneで実態確認
+                        # Codex CLIはhook未発火で@agent_stateが更新されず、snapshotが古いstatusを表示し続ける問題の根治
+                        local _ctx_num_snap="${_ctx%\%}"
+                        if [[ "$status" =~ ^(idle|completed|done)$ ]] && [ -n "$_ctx_num_snap" ] && [ "$_ctx_num_snap" != "?" ] && [ "$_ctx_num_snap" -gt 0 ] 2>/dev/null; then
+                            if [ -n "$_pane_target" ] && ! check_agent_busy "$_pane_target" "$name"; then
+                                :  # pane confirms idle — status unchanged
+                            else
+                                status="in_progress"
+                            fi
+                        fi
                         _snapshot_status[$name]="${status:-}"
                         echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}"
                     else
