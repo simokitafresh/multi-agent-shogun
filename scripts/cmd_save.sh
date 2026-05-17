@@ -791,6 +791,26 @@ check_depends_on_field() {
     fi
 }
 
+check_origin_field() {
+    load_cmd_block || return 0
+    load_cmd_block_cache || return 0
+
+    local origin_value
+    origin_value="$(cmd_block_get_field "origin")"
+
+    if [[ -z "${origin_value:-}" ]]; then
+        echo "WARNING: origin未記入。cmdの根拠ルール/裁定を origin: \"[[ルールID]] ...\" または origin: \"[[殿裁定YYYY-MM-DD]] ...\" 形式で記入せよ" >&2
+        record_warn_reason "origin未記入" "check=origin_field"
+        return 0
+    fi
+
+    if ! printf '%s\n' "$origin_value" | grep -qE '\[\[(ルール[0-9A-Za-z_.-]+|殿裁定[0-9]{4}-[0-9]{2}-[0-9]{2})\]\]'; then
+        echo "WARNING: origin形式不正。[[ルールID]] または [[殿裁定YYYY-MM-DD]] 形式のリンクを含めよ" >&2
+        echo "  現在値: ${origin_value}" >&2
+        record_warn_reason "origin形式不正" "check=origin_field"
+    fi
+}
+
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -1798,6 +1818,9 @@ QG_TEMPLATE
 
     # depends_on: cmd間依存の暗黙化を入口で可視化（WARN導入 cmd_2627）
     check_depends_on_field
+
+    # origin: cmdの根拠ルール/殿裁定を因果ネットワーク入口として必須可視化（WARN導入 cmd_2819）
+    check_origin_field
 
     # q4_depth: WARN_COUNTに加算（段階的導入→本格化 2026-04-21殿裁定）
     if ! cmd_block_has_field "quality_gate.q4_depth"; then
