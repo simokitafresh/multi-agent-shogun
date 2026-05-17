@@ -211,6 +211,15 @@ if not isinstance(data, dict):
 " <<< "$val" || return 1
             fi
             ;;
+        assumption_invalidation)
+            # GP-240: assumption_invalidation dict保護 (gate_fire_log FAIL 23件の根因)
+            if [[ "$dot_key" == "assumption_invalidation" ]]; then
+                echo "BLOCK: assumption_invalidation へのトップレベル書込みは禁止。dict構造を維持するため dot notation を使え。" >&2
+                echo "  正: assumption_invalidation.found false" >&2
+                echo "  誤: assumption_invalidation false" >&2
+                return 1
+            fi
+            ;;
         knowledge_candidate)
             # GP-126: knowledge_candidate validation (事実データ循環)
             if [[ "$dot_key" == "knowledge_candidate" ]]; then
