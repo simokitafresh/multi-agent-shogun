@@ -795,18 +795,41 @@ process_unread
 # Timeout 60s: WSL2 /mnt/c/ can miss inotify events.
 # On timeout (exit 2), check for unread messages as a safety net.
 INOTIFY_TIMEOUT="${INOTIFY_TIMEOUT:-60}"
+MTIME_POLL_INTERVAL="${MTIME_POLL_INTERVAL:-10}"  # MTIME_POLL: seconds between stat mtime checks
+
+# Initialize mtime baseline for MTIME_POLL fallback
+LAST_MTIME=$(stat -c %Y "$INBOX" 2>/dev/null || echo 0)
 
 while true; do
-    # Block until file is modified OR timeout (safety net for WSL2)
+    # Start inotifywait in background to allow parallel MTIME_POLL
     # set +e: inotifywait returns 2 on timeout, which would kill script under set -e
     # outer timeout: WSL2 DrvFs bug — when inbox_write.sh atomically replaces the file
     #   (os.replace = rename), inotifywait loses the inode and its -t timeout can hang
-    #   indefinitely. The outer `timeout` command provides an OS-level safety net.
+    #   indefinitely (3-hour blank confirmed). The outer `timeout` provides an OS-level safety net.
     set +e
-    timeout "$((INOTIFY_TIMEOUT + 2))" inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null
+    timeout "$((INOTIFY_TIMEOUT + 2))" inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null &
+    INOTIFY_PID=$!
+
+    # MTIME_POLL: parallel stat mtime poller — WSL2 inotifywait hang fallback
+    # If mtime changes but inotifywait is hung, kill it to unblock within MTIME_POLL_INTERVAL seconds.
     # rc=0: event, rc=1: watch invalidated (atomic write), rc=2: timeout
     # rc=124: outer timeout killed inotifywait (WSL2 DrvFs inode-replace hang)
-    # All cases handled identically: check unread then re-watch
+    # MTIME_POLL kill: mtime changed while inotifywait hung — force unblock
+    (
+        while kill -0 "$INOTIFY_PID" 2>/dev/null; do
+            sleep "$MTIME_POLL_INTERVAL"
+            CURRENT_MTIME=$(stat -c %Y "$INBOX" 2>/dev/null || echo 0)
+            if [[ "$CURRENT_MTIME" != "$LAST_MTIME" ]]; then
+                kill "$INOTIFY_PID" 2>/dev/null || true
+                break
+            fi
+        done
+    ) &
+    POLLER_PID=$!
+
+    wait "$INOTIFY_PID" 2>/dev/null || true
+    kill "$POLLER_PID" 2>/dev/null || true
+    wait "$POLLER_PID" 2>/dev/null || true
     set -e
 
     # rc=0: event fired (instant delivery)
@@ -815,6 +838,10 @@ while true; do
     #        File still exists with new inode. Treat as event, re-watch next loop.
     # rc=2: timeout (60s safety net for WSL2 inotify gaps)
     # All cases: check for unread, then loop back to inotifywait (re-watches new inode)
+
+    # Update mtime baseline for next MTIME_POLL iteration
+    LAST_MTIME=$(stat -c %Y "$INBOX" 2>/dev/null || echo 0)
+
     sleep 0.3
 
     process_unread
