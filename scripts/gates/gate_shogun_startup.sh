@@ -1047,6 +1047,64 @@ else
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
 fi
 
+# --- Gate 13.5b: 将軍教訓 origin 因果リンク健全度 ---
+echo "■ 将軍教訓origin"
+if [ -f "$_LS_FILE" ]; then
+    _origin_result=$(python3 - "$_LS_FILE" <<'PY' 2>/dev/null || true
+import re
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+lessons = data.get("lessons") or []
+missing = []
+empty = []
+no_links = []
+for item in lessons:
+    if not isinstance(item, dict):
+        continue
+    lesson_id = str(item.get("id") or "?")
+    if "origin" not in item:
+        missing.append(lesson_id)
+        continue
+    origin = item.get("origin")
+    origin_text = "" if origin is None else str(origin).strip()
+    if not origin_text:
+        empty.append(lesson_id)
+        continue
+    if not re.search(r"\[\[[^]\n]+\]\]", origin_text):
+        no_links.append(lesson_id)
+
+total = len([x for x in lessons if isinstance(x, dict)])
+bad = len(missing) + len(empty) + len(no_links)
+print(f"{total}\t{bad}\t{','.join(missing[:5])}\t{','.join(empty[:5])}\t{','.join(no_links[:5])}")
+PY
+)
+    if [ -z "$_origin_result" ]; then
+        echo "  WARN: lessons_shogun.yaml origin検査に失敗。YAML構文または形式を確認せよ"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("将軍教訓origin: 検査失敗")
+    else
+        IFS=$'\t' read -r _origin_total _origin_bad _origin_missing _origin_empty _origin_no_links <<< "$_origin_result"
+        _origin_total=${_origin_total:-0}
+        _origin_bad=${_origin_bad:-0}
+        if [ "$_origin_bad" -gt 0 ]; then
+            echo "  WARN: lessons_shogun.yaml origin因果リンク不備 ${_origin_bad}/${_origin_total}件"
+            [ -n "$_origin_missing" ] && echo "    origin欠落: $_origin_missing"
+            [ -n "$_origin_empty" ] && echo "    origin空: $_origin_empty"
+            [ -n "$_origin_no_links" ] && echo "    リンク0件: $_origin_no_links"
+            if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+            alerts+=("将軍教訓origin: 因果リンク不備 ${_origin_bad}/${_origin_total}件")
+        else
+            echo "  OK: lessons_shogun.yaml origin因果リンク (${_origin_total}件)"
+        fi
+    fi
+else
+    echo "  SKIP: lessons_shogun.yaml不在"
+fi
+
 # --- Gate 13.6: 教訓Stats (type別/活用率) ---
 # GStack/GBrain takeaway #12 (教訓Stats — type別/信頼度/活用率)
 echo "■ 教訓Stats"

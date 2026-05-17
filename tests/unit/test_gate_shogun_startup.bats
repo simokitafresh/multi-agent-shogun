@@ -97,6 +97,7 @@ MOCK
 lessons:
 - id: LS001
   title: test lesson
+  origin: '[[cmd_001]]'
   detail: test detail for gate pass
 EOF
 
@@ -213,6 +214,52 @@ teardown() {
 @test "all checks pass → 総合判定: OK" {
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons:
+- id: LS001
+  title: missing origin
+  detail: test detail
+- id: LS002
+  title: empty origin
+  origin: ''
+  detail: test detail
+- id: LS003
+  title: no causal link
+  origin: plain text only
+  detail: test detail
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ 将軍教訓origin"* ]]
+    [[ "$output" == *"WARN: lessons_shogun.yaml origin因果リンク不備 3/3件"* ]]
+    [[ "$output" == *"origin欠落: LS001"* ]]
+    [[ "$output" == *"origin空: LS002"* ]]
+    [[ "$output" == *"リンク0件: LS003"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "lessons_shogun all origins with causal links → origin WARN is not shown" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons:
+- id: LS001
+  title: linked origin
+  origin: '[[cmd_001]]'
+  detail: test detail
+- id: LS002
+  title: linked ruling origin
+  origin: '[[殿裁定2026-05-17]]'
+  detail: test detail
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: lessons_shogun.yaml origin因果リンク (2件)"* ]]
+    [[ "$output" != *"origin因果リンク不備"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
