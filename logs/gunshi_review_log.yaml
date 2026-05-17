@@ -635,6 +635,159 @@
   lesson_quality: OK
   causal_chain: "タイトルOCR結果固定→patient_name表示+フォールバック→複数結果識別性向上=正の複利(UX)"
   timestamp: "2026-05-16T15:50:00"
+- cmd_id: cmd_2814
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2814_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 279
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。clear_prep知識埋込み漏れALERT化+成果物欠落詳細+session_summary自動append。+267/-12。batsテスト追加"
+  observations:
+    - "AC5個全yes。ALERT昇格(BLOCK非)で将軍/clear前の最終防衛線強化"
+    - "session_summary自動append: inbound 0件ならSKIP(空要約防止)"
+    - "adversarial: rollback容易(bash+bats)/ALERT過多リスク低(条件厳密)/監視穴なし"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "Rollback容易、ALERT条件厳密(cmd完了AND閾値超)で偽陽性低、運用誤用・負の複利なし"
+  lesson_quality: OK
+  causal_chain: "WARN表示止まり→知識埋込み漏れ見逃し→/clear後に学び消失。ALERT昇格→最終防衛線=正の複利(ラルフループ強化)"
+  timestamp: "2026-05-17T13:02:00"
+- cmd_id: cmd_2815
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2815_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。Gate 13 ALERT分類(useful_rate/unsorted別推奨)。+36/-1。gate_shogun_startup.sh変更→adversarial PASS"
+  observations:
+    - "既存alerts配列パターン(L274)で分岐追加。フォールバック(action行確認)で未知ALERT安全"
+    - "adversarial: rollback容易/情報表示のみ(判断強制なし)/新ALERT生成なし"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate_shogun_startup.sh変更だが分岐追加のみ。rollback容易、フォールバック完備"
+  lesson_quality: OK
+  causal_chain: "Gate 13一律ALERT→原因不明→分類(useful_rate/unsorted)→適切な推奨表示=正の複利(将軍の判断精度)"
+  timestamp: "2026-05-17T13:55:00"
+- cmd_id: cmd_2816
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2816_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。gate誤検知3件修正(lesson_health infra計数/database ssot_path/startup孤立context)。+1/-1=2行極小。adversarial PASS"
+  observations:
+    - "3ファイル変更だが実質+1/-1=2行。誤検知解消方向で安全"
+    - "adversarial: gate変更だが計数条件修正のみ。既存動作破壊方向ではない"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "+1/-1極小変更。誤検知解消方向。rollback容易"
+  lesson_quality: OK
+  causal_chain: "gate誤検知→不要ALERT→将軍判断ノイズ。修正→ノイズ除去=正の複利(ALERT精度)"
+  timestamp: "2026-05-17T13:58:00"
+- cmd_id: cmd_2817
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2817_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers]
+  findings_summary: "4観点OK(FAIL報告)。AC1完了(ashigaru.md記入例追加)。AC2 FAIL=指定ID不在(将軍cmd ID誤記)。忍者判断正確。decision_candidate有(ID訂正要)"
+  observations:
+    - "AC2 INS-20260516-150159095不在。rgで確認し近傍ID(150159207/150159329)をresolved化。正直にbc:no報告"
+    - "assumption_invalidation found=true。忍者起因ではなくcmd起票のID誤記"
+  lesson_quality: OK
+  causal_chain: "cmd AC2のID誤記→忍者が存在確認→不在報告→FAIL自己申告。正当なFAIL(忍者品質高い)"
+  timestamp: "2026-05-17T13:58:00"
+- cmd_id: cmd_2818
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2818_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。将軍教訓26件にorigin追加+causal_backlinks.sh逆引きCLI+lesson_write_shogun origin対応。+132/-7。yaml safe_load PASS"
+  observations:
+    - "26教訓×origin links。causal_backlinks.sh初版20s超→rg -l単発化で高速化(lesson_candidate)"
+    - "lessons_useful 5/5 useful=true。全理由具体的。報告品質高い"
+  lesson_quality: OK
+  causal_chain: "教訓→cmd逆引き不在→原因追跡困難。origin追加+逆引きCLI→因果追跡可能=正の複利(知識基盤)"
+  timestamp: "2026-05-17T14:35:00"
+- cmd_id: cmd_2822
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_2822_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。deploy_task.shにinject_causal_links追加。origin→[[リンク]]抽出→task YAML自動注入。+82/-0。inject_semantic_conceptsと同パターン"
+  observations:
+    - "origin未記入時return 0(安全スキップ)。inject_semantic_concepts直後に呼出し。既存フロー変更なし"
+    - "hook_failures 2件(Guard4 BLOCK→python3/tmp方式に変更)は適切な回避"
+  lesson_quality: OK
+  causal_chain: "因果ネットワーク構築→第二出口(deploy_task.sh自動注入)→忍者がcmd起源の因果リンクを参照可能=正の複利(知識活用)"
+  timestamp: "2026-05-17T16:35:00"
+- cmd_id: cmd_2819
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2819_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。cmd_save.shにorigin根拠リンクWARN追加。+132/-2。既存field gateパターン。WARN_COUNT非加算で互換維持。bats 259件PASS"
+  observations:
+    - "origin未記入/形式不正をWARN表示。WARN_COUNTに加算せず既存fixture互換維持"
+    - "test_cmd_save_origin.bats新設(missing/valid/malformed)。関連35本259件全PASS"
+  lesson_quality: OK
+  causal_chain: "cmd起票時origin未記入→因果ネットワーク入口欠落。cmd_save WARN→起票時に可視化=正の複利(因果ネットワーク完全性)"
+  timestamp: "2026-05-17T16:38:00"
+- cmd_id: cmd_2821
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_2821_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。startup gate Gate 13.5b origin因果リンク不備WARN追加。+105/-0。読み取り専用。adversarial PASS"
+  observations:
+    - "safe_load読み取りのみ。yaml.dump未使用(L548準拠)。origin欠落/空/リンクなしをカテゴリ別WARN"
+    - "adversarial: 読み取り専用+WARN表示のみ。書込みなし。rollback容易"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "読み取り専用parse+WARN表示。書込みゼロ。rollback容易"
+  lesson_quality: OK
+  causal_chain: "origin不備→因果不明ルール残存→起動時に不可視。startup gate WARN→可視化=正の複利(因果ネットワーク健全性)"
+  timestamp: "2026-05-17T16:58:00"
+- cmd_id: cmd_2820
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2820_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。pending_decision_write.shにorigin引数追加。+21/-5。既存互換維持(任意引数)。bats 22/22 PASS"
+  observations:
+    - "origin未指定時=従来通りフィールドなし。既存呼び出し互換"
+    - "bats 22/22 PASS。[[cmd_2820]]と[[LS-A123]]のgrep確認"
+  lesson_quality: OK
+  causal_chain: "裁定記録にorigin欠落→因果辺蓄積不可。origin引数追加→裁定→ルール化の因果辺自動蓄積=正の複利(因果ネットワーク)"
+  timestamp: "2026-05-17T17:00:00"
 - cmd_id: cmd_training_L4_auto_202605171241_kotaro
   review_type: draft
   verdict: APPROVE
@@ -661,3 +814,37 @@
   ambiguity_points: none
   causal_chain: "L4修行→ninja_monitor.sh改善→修行サイクル(第一層個)=正の複利"
   timestamp: "2026-05-17T12:42:00"
+- cmd_id: cmd_karo_watcher_stat_fallback
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: watcher_stat_fallback
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。inbox_watcher WSL2 inotifywaitハング対策。stat mtimeポーリング10秒フォールバック追加。bats 30/30 PASS"
+  observations:
+    - "inotifywaitバックグラウンド化+サブシェルpoller。wait/kill/waitでクリーンアップ。既存フロー変更なし"
+    - "3時間空白の実証済み問題への根本対策。最大遅延10秒に短縮"
+  lesson_quality: OK
+  causal_chain: "WSL2 inotifywaitハング→3時間通知空白。stat mtimeポーリング→最大10秒遅延=正の複利(inbox信頼性)"
+  timestamp: "2026-05-17T17:12:00"
+- cmd_id: cmd_2823
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2823_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。因果ネットワーク手順をCLAUDE.md+instructions追記。+13/-0。追記のみ。adversarial PASS"
+  observations:
+    - "正本4ファイル+generated4ファイル。build_instructions.sh同期。grep 4件全命中"
+    - "adversarial: +13行追記のみ。既存ルール削除なし。rollback容易"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "CLAUDE.md+instructions追記のみ。削除なし。rollback容易"
+  lesson_quality: OK
+  causal_chain: "因果ネットワーク手順不可視→エージェントが[[リンク]]利用方法不明。CLAUDE.md+instructions追記→全エージェント可視=正の複利(知識活用)"
+  timestamp: "2026-05-17T19:28:00"

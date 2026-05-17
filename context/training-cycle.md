@@ -945,3 +945,12 @@ R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大�
 - **解消**: cmd_2796でcodd.yaml修正(source_dirs→scripts/, doc_dirs→codd/配下3ディレクトリ)→health_score 0→95
 - **教訓**: 修行の天井=忍者スキルの限界ではなく環境の限界。環境を磨いてから修行を再開せよ
 - **次**: CoDD修行loop配備→同じhealth_score=0→学びなし、を§0.1問い0(10回繰り返したら？)で検知。L4 R2(通常報告修行)への切替を提案中
+
+---
+
+## 因果リンク
+
+- ← [[growth-loop]] 成長ループの忍者向け実装
+- ← [[infrastructure]] インフラ(gate/hook)が修行を駆動
+- ← [[deepdive_why_chain_20260321]] Phase 8利他=忍者を助ける仕組み
+- → [[lessons_shogun]] 修行結果→教訓蓄積

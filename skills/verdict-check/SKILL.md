@@ -95,6 +95,8 @@ bash scripts/report_field_set.sh "$REPORT" verdict "PASS"  # or "FAIL"
 - **verdict を Edit toolで直接書くな** — report_field_set.sh経由（GP-072c5: bc:no→verdict:PASS BLOCK）
 
 ## 注意ポイント
+
+- 2026-05-17: gate=cmd_complete_gate result=FAIL executor=saizo reason=saizo:binary_checks_fail|saizo:purpose_validation_fit_false
 - 2026-05-16: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:binary_checks_fail|kagemaru:purpose_validation_fit_false
 
 - 2026-05-10: gate=gate_report_format result=FAIL executor=unknown reason=binary_checks: AC self-verification missing (0/1 ACs). 全ACの二値チェックを記入せよ

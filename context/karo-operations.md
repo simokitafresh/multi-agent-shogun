@@ -387,3 +387,11 @@ retry_policy: |
 → 行動（直接修正 or insight記録 or cmd提案）→ 次のデータを見る
 ```
 考えて進む、考えて進む。止まったらPhase 3を読め。
+
+---
+
+## 因果リンク
+
+- ← [[infrastructure]] インフラを操作する手順
+- ← [[deepdive_karo_verification_20260405]] 家老専用deepdive=運用品質の根拠
+- → [[growth-loop]] 家老の第二層学習ループ(対)の実践

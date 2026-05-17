@@ -171,3 +171,13 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - D0: gate_vercel_phase broken ref候補自動提案(Level 5化)
 
 **詳細監査データ**: `docs/research/gunshi_defense_hierarchy_audit_20260510.md`(全16仕組み+全4PJ横断+cmd_save WARN TOP5+なぜなぜ7回)
+
+---
+
+## 因果リンク
+
+- ← [[deepdive_why_chain_20260321]] Phase 4-5: 自動化×強制=知性の外部化→成長ループの理論的基盤
+- ← [[deepdive_causal_tracing_20260415]] 因果をたどる=成長ループのSystem 2側
+- → [[training-cycle]] 修行サイクル=成長ループの忍者向け実装
+- → [[infrastructure]] gate/hook/lessons=成長ループの環境埋込み先
+- → [[lessons_shogun]] 将軍教訓=成長ループの第一層(個)の蓄積先

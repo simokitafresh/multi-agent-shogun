@@ -70,7 +70,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -94,6 +94,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T12:45:13+09:00 shogun-clear-prepのスキルをなぜなぜ7回でレベルアップしよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T13:59:44+09:00 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ。なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T14:13:36+09:00 そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな。CoDDのように利用すればいい |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T19:35:15+09:00 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -580,7 +581,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな |
+| aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？ |
 | skills | note-writer, cdp-browse |
 
 | 種別 | パス/参照 |
@@ -592,6 +593,7 @@ codd:
 | file | `/mnt/c/Python_app/DM-signal/marketing-director/content/articles/note-basic-dual-momentum.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 tier=料金プラン対応表確定(殿裁定) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T00:09:31+09:00 特にビジネスプランの話を今後するときにスムーズにやりたいな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T20:07:46+09:00 starterplanにcold startあったっけ？ |
 
 ## alpha_6_metrics — α6指標
 

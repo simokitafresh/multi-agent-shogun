@@ -950,3 +950,13 @@ done | sort -u
 - **SKIP=FAIL**: Diff-aware実行でもSKIP数1以上は「テスト未完了」扱い
 - **本番前は全量**: cmd_complete_gate.sh実行前・PR作成前は必ず全量テスト
 - **全量前提の場合**: 呼び出し元が「全件テスト必須」と明示した場合はDiff-awareを適用しない（#26デメリット緩和策）
+
+---
+
+## 因果リンク
+
+- ← [[deepdive_why_chain_20260321]] Phase 6-7: gate/hook=知性の外部化の実装先
+- → [[growth-loop]] 成長ループ=インフラの設計原理
+- → [[training-cycle]] 修行サイクル=インフラで駆動する忍者成長
+- → [[karo-operations]] 家老運用=インフラを操作する手順
+- → [[dm-signal]] DM-Signal=インフラが支えるPJ
