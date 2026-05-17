@@ -69,7 +69,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -89,6 +89,8 @@ codd:
 | cmd | `cmd_2796` codd.yaml scan設定をリポジトリ構造に一致させhealth_score 0を解消 (`codd/codd.yaml`, `codd/scan/edges.jsonl`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:03:21+09:00 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:17:45+09:00 自立自走 なぜなぜ7回 続けろ |
+| cmd | `cmd_2809` SKILL.md追従7件更新+cmd_complete_gateにSKILL.md追従WARN組込み (`scripts/cmd_complete_gate.sh`, `skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T12:45:13+09:00 shogun-clear-prepのスキルをなぜなぜ7回でレベルアップしよう |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -463,7 +465,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, task notification task id bk57ke2j0 task id tool use id tool |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -504,6 +506,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T22:56:22+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:06:43+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:00:46+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T14:58:22+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T16:16:18+09:00 bk57ke2j0 toolu_01XReqR4daTsjr4sbj7uht1K /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -639,7 +643,7 @@ codd:
 |------|---|
 | id | simple_ocr |
 | label | Simple OCR（画像OCR Webアプリ） |
-| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, mnt c Users simok OneDrive 画像 Screenshots スクリーンショット png mnt, Image 受信したOCR結果のinbox1, OCR結果の題名に患者名にすることは可能？, 国立国会図書館のNDLOCR Liteもうまくいかなかったエピソードも必要だな, task notification task id bsah7qf9x task id tool use id tool  |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -675,6 +679,16 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:35:50+09:00 まず自分で丁寧に読み込んでみよう。C:\Python_app\Simple-OCR\testsに画像をコピーすることから始めたらどうだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T02:42:37+09:00 '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サンプル/20250524_141003.jpg' '/mnt/c/Users/simok/OneDrive/画像/スクリーンショット/お薬手帳サン |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T03:11:43+09:00 simple-OCRに問題を見つけた。用法が「分3」などを理解せずに「3」だけが残っている。平山トミ 令和7年1月11日 塩島内科医院 Dr.塩島俊也 アジスロマイシン錠500mg「トーワ」 1 朝食後服用 3日分 ツムラ麦門冬湯エキス顆粒 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:20:15+09:00 simple-OCRの話をしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:22:26+09:00 '/mnt/c/Users/simok/OneDrive/画像/Screenshots/スクリーンショット 2026-05-16 151944.png' '/mnt/c/Users/simok/OneDrive/画像/Screenshots |
+| cmd | `cmd_2812` Simple-OCR UIデフォルトエンジンをtwo_stageに変更 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:34:04+09:00 [Image #2] 受信したOCR結果のinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:35:01+09:00 OCR結果の題名に患者名にすることは可能？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:40:16+09:00 simple-OCRでフォーマットや段組みが様々なお薬手帳をOCRでテキストにするまでのフローを詳しく知りたい |
+| cmd | `cmd_2813` Simple-OCR 結果カードのタイトルを患者名に変更 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:50:34+09:00 国立国会図書館のNDLOCR-Liteもうまくいかなかったエピソードも必要だな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:54:07+09:00 ２と３は順序が逆だ。google vision api単独だと余分な情報が多すぎる→Google Vision API + 除外パターンマッチ→LLMの性能向上で解決できないかと思いClaude Vision / GPT-4o に画像を直接 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:58:08+09:00 bsah7qf9x toolu_01WV1yc5SsovXeiRnzhGjuYG /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 

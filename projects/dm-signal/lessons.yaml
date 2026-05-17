@@ -1359,6 +1359,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1869_2x2_factor_analysis.md
   - outputs/scripts/cmd_1869_2x2_factor_analysis.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-16'
 - id: L614
   title: 既存スクリプトの関数を再実装した（車輪再発明）
   summary: cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。kar
@@ -1505,7 +1508,7 @@ lessons:
   summary: cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: パターンID頭部のNXXXとCSVキャッシュで照合確認必須
@@ -1605,7 +1608,7 @@ lessons:
   summary: TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がs
   tags:
   - universal
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: '修正: sorted(context.current_tickers)またはcomponents配列順に従う並び替えでパリティ確保'
@@ -1725,7 +1728,7 @@ lessons:
   summary: cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_sear
   tags:
   - universal
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: AC作成時に出力先パスの確認が必要
@@ -1888,7 +1891,7 @@ lessons:
   summary: 119,493列級CSVの再読込では `.cache.npz` + object metadata のままでは約1.45秒かかる。`arr/columns/in
   tags:
   - universal
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '2026-04-07'
@@ -1973,7 +1976,7 @@ lessons:
   summary: cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matri
   tags:
   - universal
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matrix_from_tensorがargminを使用するようになる
@@ -2146,7 +2149,7 @@ lessons:
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
   tags:
   - universal
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: '2026-04-04'
@@ -2167,7 +2170,7 @@ lessons:
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: bulk metrics用prepared frameのRFは各PFの実date軸に対して個別解決せよ
@@ -2435,7 +2438,7 @@ lessons:
   summary: K=2-5のβ分離分析でα share(%)が単調減少(6.5%→4.2%→1.3%→1.0%)。分散(K増)はβリスクを希釈するが、同時にmomentum選出
   tags:
   - recon
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: K=4はK=3より低β(1.087 vs 1.105)だが、cmd_1589の3条件PASSはβ露出込み=αとしての付加価値はK=3よりさらに確認困難
@@ -3627,7 +3630,7 @@ lessons:
   summary: flush関数がfof_flush.pyに実装・__init__.pyでexport済みでも、呼び出し元(recalculate_fof.py)のimport+
   tags:
   - universal
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: helper本体と__init__.py exportだけでなく、呼び出し元のimport文と実呼び出し行を二値チェックに含める
@@ -3672,7 +3675,7 @@ lessons:
   summary: 今回は事故契機の一括チェックだが、pipeline_config欠落のような設定不備は保存時に混入しうる。月次or四半期で自動実行し、早期検出するのが望ましい。
   tags:
   - pipeline
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 全PF健全性スイープを月次または四半期の定期実行候補にし、保存時混入を早期検出する
@@ -3699,7 +3702,7 @@ lessons:
   summary: IF シン四神の過適合検証を設計する THEN CPCVを使うな BECAUSE (1)FoF材料は全天候である必要がない。一瞬のきらめきがあれば材料として価値
   tags:
   - testing
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: CPCVを使うな
@@ -4127,7 +4130,7 @@ lessons:
   tags:
   - yaml
   - git
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: AC実行前にgit status+git log -1 --statで実差分を確認し、実際に残っている差分だけを扱うべき
@@ -4232,7 +4235,7 @@ lessons:
   summary: 5忍法のcontext build共有で削減できるのは約48s/83,482s(0.058%)。性能改善はsimulate_pattern最適化に集中すべき。共
   tags:
   - frontend
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 共有化の主な価値は保守性向上(バグ修正一元化・新忍法追加容易化)であり性能ではない
@@ -4358,9 +4361,9 @@ lessons:
   summary: 本番DB確認はPostgreSQL必須。SQLiteミラー(backend/static/data/dm_signal.db)は不完全。加速FoFが本番3体/S
   tags:
   - db
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 本番DB確認はPostgreSQL必須
   when: DB・データ取得・永続化に関わる作業を行う時
 - id: L356
@@ -4431,7 +4434,7 @@ lessons:
   summary: CPCV設計でlive common periodとgroup_countの割り切りを先に検証せよ。割り切れない場合はcontiguous np.array_s
   tags:
   - testing
-  helpful_count: 5
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: CPCV設計でlive common periodとgroup_countの割り切りを先に検証せよ
@@ -4743,7 +4746,7 @@ lessons:
     >= MIN_PE
   tags:
   - testing
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 設計時はcalc_p_average内部のMIN_PERIOD_LENGTH制約を考慮し、months_per_fold >= MIN_PERIOD_LENGTHを事前検証すべき
@@ -4961,7 +4964,7 @@ lessons:
   tags:
   - data
   - preprocessing
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: tick/日次前提のSADF/GSADF/VPIN/Kyle等を除外し、CUSUM・Amihud月次集計・Binary Entropyなど月次で成立する特徴量だけ検証する
@@ -5022,7 +5025,7 @@ lessons:
   summary: 'LC-D1: PSR/DSRは時系列順序を無視する根本的弱点がある。p平均法(期間分割t検定のp値平均)で補完必須。 LC-D2: 154,350パターンGSに'
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: FDR(BH手続き)を使え
@@ -5175,7 +5178,7 @@ lessons:
     bre
   tags:
   - testing
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: レジーム検出を追加する場合は『break 検出』と『break 後の悪化方向判定』を分離しないと、改善方向の regime shift まで deterioration
@@ -5203,9 +5206,9 @@ lessons:
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
   tags:
   - universal
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 確率値だけでなく頻度リフレーミングと百分位ランクを併記し、過信を誘発しない表現にする
   when: 健全度・崩壊確率・検出確率などの確率値を非専門家向けUIやレポートに表示する時
 - id: L286
@@ -5273,7 +5276,7 @@ lessons:
   summary: 投資UIの語彙は行動に直結。recommend→candidateの語彙選択がwhipsaw抑制の生命線。遅行指標ベースのアクション提案は単月閾値ではなく連続月
   tags:
   - frontend
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '2026-03-12'
@@ -5850,7 +5853,7 @@ lessons:
     -le
   tags:
   - bash
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: statistics.median/meanはfloatを返すため、JSON経由でshellに渡す際にint()変換が必要
@@ -6283,7 +6286,7 @@ lessons:
   - testing
   - review
   - gate
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: compare-summaryとdeteriorationでselectedFolderIds+toggleFolder+All/Clear実装を揃えたことで、ページ間挙動差分の検証が最小化できた
@@ -6800,7 +6803,7 @@ lessons:
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
   tags:
   - universal
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: deprecated
@@ -7061,7 +7064,7 @@ lessons:
   - frontend
   - testing
   - lesson
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: Pydantic制約がPortfolio層(top_n le=2等)に偏在し、BB config(Dict[str,Any])が型検証なし
@@ -7105,7 +7108,7 @@ lessons:
   tags:
   - frontend
   - gate
-  helpful_count: 6
+  helpful_count: 8
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: Phase3のmomentum_cache事前計算に頼らず、FoF再計算ループ内のComponentPriceBlock出力またはGS側cumulative_return直接計算に合わせる
@@ -7230,7 +7233,7 @@ lessons:
   tags:
   - frontend
   - testing
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
@@ -7403,7 +7406,7 @@ lessons:
   tags:
   - pipeline
   - gate
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: PipelineEngineのMomentumFilterBlockはティッカー単位でNaNスキップ(部分的成功)

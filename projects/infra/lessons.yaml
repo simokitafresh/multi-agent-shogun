@@ -1,14 +1,31 @@
 ssot_path: '/mnt/c/tools/multi-agent-shogun/tasks/lessons.md'
-last_synced: '2026-05-16T09:45:23'
+last_synced: '2026-05-16T15:35:28'
 archive_path: '/mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml'
-lesson_count: 610
+lesson_count: 611
 lessons:
+- id: 'L616'
+  title: 'L6横展開時のAC件数検証'
+  summary: 'lessons.yaml when/how補完時はPJ単位でlesson_count vs when/how存在数を比較しmissing=[]を報告証跡に残す'
+  tags:
+  - 'infra'
+  - 'testing'
+  - 'yaml'
+  - 'lesson'
+  how: '未設定'
+  target_files:
+  - 'projects/auto-ops/lessons.yaml'
+  - 'projects/google-classroom/lessons.yaml'
+  - 'projects/database/lessons.yaml'
+  when: '未設定'
 - id: 'L615'
   title: 'yaml_field_set_batch AWK L524バグが引き起こすYAML破損: yaml.dump width指定が防御策'
   summary: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
   tags:
   - 'infra'
   - 'yaml'
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-16'
   how: '未設定'
   target_files:
   - 'scripts/lib/inject_task_modifiers.py'
@@ -121,7 +138,7 @@ lessons:
   - 'bash'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-05-16T09:46:01+09:00'
+  deprecated_at: '2026-05-16T15:50:25+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   how: 'cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行'
   target_files:
@@ -149,7 +166,7 @@ lessons:
   - 'gate'
   - 'bash'
   deprecated: true
-  deprecated_at: '2026-05-16T09:46:01+09:00'
+  deprecated_at: '2026-05-16T15:50:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   how: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_prevention_stepsで自動参照'
   target_files:
@@ -180,7 +197,7 @@ lessons:
   - 'deploy'
   - 'bash'
   - 'yaml'
-  helpful_count: 6
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '手動YAML禁止'
@@ -197,7 +214,7 @@ lessons:
   - 'bash'
   - 'yaml'
   deprecated: true
-  deprecated_at: '2026-05-16T09:46:00+09:00'
+  deprecated_at: '2026-05-16T15:50:23+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=18 referenced=0'
   how: 'deploy_task.sh --directはinject_direct_training_templateを呼ぶため、trainingタイプのkaro_direct配備は必ずdeploy_task.sh --directを使え'
   target_files:
@@ -212,7 +229,7 @@ lessons:
   - 'recon'
   - 'yaml'
   deprecated: true
-  deprecated_at: '2026-05-16T09:46:00+09:00'
+  deprecated_at: '2026-05-16T15:50:22+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
   how: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)'
   target_files:
@@ -227,7 +244,7 @@ lessons:
   - 'review'
   - 'yaml'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:59+09:00'
+  deprecated_at: '2026-05-16T15:50:22+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=28 referenced=0'
   how: '現行indexではmissing=0だったため、掲示板とgunshi_review_logを追加で追跡する必要があった'
   target_files:
@@ -313,7 +330,7 @@ lessons:
   - 'deploy'
   - 'testing'
   - 'bash'
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1347のflock失敗exit 1や検証処理の異常がdeploy_task全体へ伝播する'
@@ -438,7 +455,7 @@ lessons:
   - 'gate'
   - 'bash'
   - 'yaml'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'gateはflow-style id/when/howを読み、未設定を充足扱いしないチェックを持つべき'
@@ -486,7 +503,7 @@ lessons:
   - 'review'
   - 'yaml'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:58+09:00'
+  deprecated_at: '2026-05-16T15:50:21+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   how: 'STALE_FIELDSから除外したフィールドに対してresolve_cmd側で未設定時falseを明示すると、STKにscout_exemptが無いcmdで家老がtask YAMLへ事前設定したtrueを再び消してしまう'
   target_files:
@@ -502,7 +519,7 @@ lessons:
   - 'yaml'
   - 'reporting'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:58+09:00'
+  deprecated_at: '2026-05-16T15:50:20+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   how: '先着完了確認後、後着忍者のtask idle化+report YAML削除が必須'
   when: '二重配備時は'
@@ -527,7 +544,7 @@ lessons:
   - 'bash'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:57+09:00'
+  deprecated_at: '2026-05-16T15:50:19+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=25 referenced=0'
   how: 'lesson_write.shのfixture検証で、entry挿入後に挿入前contentのmatch offsetを使うとlast_synced_lesson markerが意図しない位置へ入ることを確認した'
   target_files:
@@ -554,7 +571,7 @@ lessons:
   - 'testing'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:56+09:00'
+  deprecated_at: '2026-05-16T15:50:18+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   how: 'cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象targetに注入されないことまで検証する'
   target_files:
@@ -570,7 +587,7 @@ lessons:
   tags:
   - 'infra'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:56+09:00'
+  deprecated_at: '2026-05-16T15:50:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   how: 'skill_indexは設定skills_dirsを優先しログ由来pathはフォールバックとする'
   target_files:
@@ -605,7 +622,7 @@ lessons:
   - 'gate'
   - 'bash'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:55+09:00'
+  deprecated_at: '2026-05-16T15:50:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=14 referenced=0'
   how: '2026-05-09'
   target_files:
@@ -641,7 +658,7 @@ lessons:
   - 'infra'
   - 'api'
   - 'bash'
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '2026-05-06'
@@ -720,7 +737,7 @@ lessons:
   - 'bash'
   - 'git'
   - 'wsl2'
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す'
@@ -901,7 +918,7 @@ lessons:
   tags:
   - 'infra'
   - 'deploy'
-  helpful_count: 5
+  helpful_count: 4
   harmful_count: 2
   last_referenced: '2026-05-16'
   how: 'is_direct=sys.argv[2]==''true''で判定しacceptance_criteriaリセットを条件付き追加'
@@ -928,7 +945,7 @@ lessons:
   - 'recon'
   - 'process'
   - 'yaml'
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する'
@@ -995,9 +1012,6 @@ lessons:
   - 'testing'
   - 'process'
   - 'yaml'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-15'
   how: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlのような同期でIDが入れ替わる運用ファイルの特定IDに依存させず、TEST_TMPDIRに最小fixtureを作って検証す'
   target_files:
   - 'tests/unit/test_cmd_save_environment_change.bats'
@@ -1091,7 +1105,7 @@ lessons:
   - 'infra'
   - 'testing'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:55+09:00'
+  deprecated_at: '2026-05-16T15:50:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=12 referenced=0'
   how: 'bats --jobs Nで並列実行時、cmd_save.shが/tmp/shogun_to_karo.lockを取り合いWARNが偽発火する'
   target_files:
@@ -1148,7 +1162,7 @@ lessons:
   - 'infra'
   - 'git'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:55+09:00'
+  deprecated_at: '2026-05-16T15:50:15+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   how: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する'
   when: '同種の作業・判断・検証を行う時'
@@ -1159,7 +1173,7 @@ lessons:
   - 'infra'
   - 'git'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:54+09:00'
+  deprecated_at: '2026-05-16T15:50:14+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   how: '2026-04-25'
   target_files:
@@ -1187,7 +1201,7 @@ lessons:
   tags:
   - 'infra'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:54+09:00'
+  deprecated_at: '2026-05-16T15:50:12+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
   how: '2026-04-25'
   target_files:
@@ -1216,7 +1230,7 @@ lessons:
   - 'process'
   - 'gate'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:53+09:00'
+  deprecated_at: '2026-05-16T15:50:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'cmd_save.shに『assumptions claimに日付なし』チェックを追加した際、既存6テストファイルのフィクスチャが未対応でCI REDとなった'
   target_files:
@@ -1232,7 +1246,7 @@ lessons:
   tags:
   - 'infra'
   - 'yaml'
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '修正: インラインスカラー行がバックスラッシュで終わる場合flow_cont=1を設定し継続行を保護'
@@ -1257,7 +1271,7 @@ lessons:
   - 'infra'
   - 'gate'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:53+09:00'
+  deprecated_at: '2026-05-16T15:50:10+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: '2026-04-22'
   target_files:
@@ -1713,7 +1727,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:52+09:00'
+  deprecated_at: '2026-05-16T15:50:09+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
   how: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生'
   target_files:
@@ -1820,7 +1834,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:52+09:00'
+  deprecated_at: '2026-05-16T15:50:08+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
   how: '.gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる'
   when: 'whitelist型.gitignoreではスクリプト追加時に'
@@ -1830,7 +1844,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:52+09:00'
+  deprecated_at: '2026-05-16T15:50:07+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
   how: '復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須'
   when: '復元コミットでenum値変更リスク — 削除→復元時は'
@@ -1840,7 +1854,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:51+09:00'
+  deprecated_at: '2026-05-16T15:50:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
   how: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった'
   when: 'テスト設計・実行・結果判定を行う時'
@@ -1859,7 +1873,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:50+09:00'
+  deprecated_at: '2026-05-16T15:50:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
   how: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい'
   when: '同種の作業・判断・検証を行う時'
@@ -1869,7 +1883,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:49+09:00'
+  deprecated_at: '2026-05-16T15:50:05+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
   how: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く'
   target_files:
@@ -1881,7 +1895,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:49+09:00'
+  deprecated_at: '2026-05-16T15:50:04+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
   how: '2026-04-08'
   when: '同種の作業・判断・検証を行う時'
@@ -1891,7 +1905,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:48+09:00'
+  deprecated_at: '2026-05-16T15:50:03+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   how: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止'
   when: 'gateやhookの検知・補正ロジックを変更する時'
@@ -1910,7 +1924,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:48+09:00'
+  deprecated_at: '2026-05-16T15:50:02+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
   how: '2026-04-07'
   when: '同種の作業・判断・検証を行う時'
@@ -1936,7 +1950,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:48+09:00'
+  deprecated_at: '2026-05-16T15:50:02+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   how: 'IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認'
   when: '同種の作業・判断・検証を行う時'
@@ -2129,7 +2143,7 @@ lessons:
   tags:
   - 'gate'
   - 'bash'
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 'Bash sedを使えば両方回避できる'
@@ -2167,7 +2181,7 @@ lessons:
   - 'process'
   - 'bash'
   - 'yaml'
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'bash parameter expansion(${var//pattern/replacement})で書込み前にエスケープせよ'
@@ -2191,7 +2205,7 @@ lessons:
   - 'security'
   - 'lesson'
   - 'reporting'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 'シングルクォート含有時にPython構文エラーまたは任意コード実行の可能性'
@@ -2217,7 +2231,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:47+09:00'
+  deprecated_at: '2026-05-16T15:50:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: '2026-03-31'
   when: '同種の作業・判断・検証を行う時'
@@ -2253,7 +2267,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:47+09:00'
+  deprecated_at: '2026-05-16T15:50:00+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: 'aware/naive混在を許さない設計が必要'
   when: '同種の作業・判断・検証を行う時'
@@ -2273,7 +2287,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:46+09:00'
+  deprecated_at: '2026-05-16T15:49:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: '((var++))のgrepスキャンを定期実行すべき'
   target_files:
@@ -2520,7 +2534,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:46+09:00'
+  deprecated_at: '2026-05-16T15:49:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった'
   when: '同種の作業・判断・検証を行う時'
@@ -2562,7 +2576,7 @@ lessons:
   - 'bash'
   - 'yaml'
   - 'lesson'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える'
@@ -2646,7 +2660,7 @@ lessons:
   summary: 'usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった。値を計算したら全消費箇所で使われ'
   tags:
   - 'monitor'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった'
@@ -2756,7 +2770,7 @@ lessons:
   tags:
   - 'universal'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:45+09:00'
+  deprecated_at: '2026-05-16T15:49:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: '2026-03-31'
   when: '同種の作業・判断・検証を行う時'
@@ -2767,9 +2781,9 @@ lessons:
   - 'process'
   - 'yaml'
   - 'lesson'
-  helpful_count: 1
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 'CLAUDE.md明記のyaml.dump禁止規則に抵触'
   target_files:
   - 'lesson_auto_tag.sh'
@@ -2810,9 +2824,6 @@ lessons:
   - 'bash'
   - 'yaml'
   - 'security'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-15'
   how: '2026-03-31'
   target_files:
   - 'karo_workaround_log.sh'
@@ -2831,7 +2842,7 @@ lessons:
   summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
   tags:
   - 'yaml'
-  helpful_count: 5
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'CLAUDE.mdのyaml.dump禁止ポリシー(cmd_1399事故由来)に該当'
@@ -2877,7 +2888,7 @@ lessons:
   - 'monitor'
   - 'inbox'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:45+09:00'
+  deprecated_at: '2026-05-16T15:49:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
   how: 'git add -fで回避可能だが、ホワイトリスト追加が正規対応'
   target_files:
@@ -3110,7 +3121,7 @@ lessons:
   - 'process'
   - 'bash'
   - 'reporting'
-  helpful_count: 4
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-30'
@@ -3263,9 +3274,6 @@ lessons:
   tags:
   - 'deploy'
   - 'reporting'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-15'
   how: 'inject_task_modifiers.pyが設定するフィールドとSTALE_FIELDSの差分を定期チェックすべき'
   target_files:
   - 'deploy_task.sh'
@@ -3308,7 +3316,7 @@ lessons:
   tags:
   - 'deploy'
   - 'yaml'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 'cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510)'
@@ -3348,7 +3356,7 @@ lessons:
   summary: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
   tags:
   - 'bash'
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: '2026-03-28'
@@ -3463,7 +3471,7 @@ lessons:
   summary: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
   tags:
   - 'yaml'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'yaml.safe_loadは成功するがninja名はdetail/root_causeテキストから日本語名romajiマッピングで抽出必要'
@@ -3497,9 +3505,9 @@ lessons:
   - 'process'
   - 'gate'
   - 'yaml'
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-16'
   how: 'gate_shogun_startup.shと同様のfallback regex parserが必須'
   target_files:
   - 'gate_shogun_startup.sh'
@@ -3574,7 +3582,7 @@ lessons:
   summary: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A'
   tags:
   - 'monitor'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される'
@@ -4146,7 +4154,7 @@ lessons:
   tags:
   - 'deploy'
   - 'yaml'
-  helpful_count: 3
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'テストはmissing/Noneだけでなく空文字と空リストのsentinelも再現せよ'
@@ -4520,7 +4528,7 @@ lessons:
   - 'testing'
   - 'review'
   - 'bash'
-  helpful_count: 6
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '環境変数追加レビューで `bash -lc ''source ~/.bashrc''` だけを見ると false negative になるため、行番号確認か `bash -ic` での実測を併用すべき'
@@ -4627,9 +4635,6 @@ lessons:
   tags:
   - 'deploy'
   - 'bash'
-  helpful_count: 1
-  harmful_count: 0
-  last_referenced: '2026-05-15'
   how: '2026-03-06'
   target_files:
   - 'deploy_task.sh'
@@ -4667,7 +4672,7 @@ lessons:
   tags:
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:44+09:00'
+  deprecated_at: '2026-05-16T15:49:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す'
   target_files:
@@ -4981,7 +4986,7 @@ lessons:
   tags:
   - 'bash'
   - 'monitor'
-  helpful_count: 7
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメインループを実行せず関数定義のみロードせよ'
@@ -5257,7 +5262,7 @@ lessons:
   - 'testing'
   - 'bash'
   - 'tmux'
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-15'
   how: 'tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗'
@@ -5291,7 +5296,7 @@ lessons:
   - 'yaml'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:46+09:00'
+  deprecated_at: '2026-05-16T15:49:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   how: '2026-02-27'
   target_files:
@@ -5304,7 +5309,7 @@ lessons:
   tags:
   - 'gate'
   - 'yaml'
-  helpful_count: 6
+  helpful_count: 8
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '実装前にファイル形式を確認せよ'
@@ -5366,7 +5371,7 @@ lessons:
   - 'gate'
   - 'reporting'
   deprecated: true
-  deprecated_at: '2026-05-16T09:45:44+09:00'
+  deprecated_at: '2026-05-16T15:49:55+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(unused): injected=9 referenced=0'
   how: 'archive_dashboard()のgrep ''^\| [0-9]''は戦果行(| cmd_XXX |)にマッチしない'
   when: 'archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時'
@@ -5432,7 +5437,7 @@ lessons:
   - 'deploy'
   - 'yaml'
   - 'lesson'
-  helpful_count: 4
+  helpful_count: 6
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: '推定タグ数上限(max 3)の導入が必要'
@@ -5623,7 +5628,7 @@ lessons:
   - 'yaml-key-mismatch'
   - 'silent-fail'
   - 'deploy'
-  helpful_count: 3
+  helpful_count: 5
   harmful_count: 0
   last_referenced: '2026-05-16'
   how: 'grep -E ''^\s+フィールド名:''に統一せよ'

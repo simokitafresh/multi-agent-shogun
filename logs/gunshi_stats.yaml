@@ -124,3 +124,14 @@
 # accuracy: 全件LGTM/APPROVE→CLEAR(cmd_2794 BLOCKはFAIL報告=想定通り)。APPROVE→FAIL 0件
 # review_logアーカイブ: 945行→182行(20260516b.yamlに763行退避)
 # ★強くてニューゲーム: stats更新+review_logヘッダ知見1件+アーカイブ+docs/research 2件(clear_durability_fix/waste_analysis訂正)+掲示板2投稿+全gate_result同期済み
+#
+# ─── 本セッション成果・最終 (2026-05-16T09:50更新) ───
+# レビュー計22件: draft RC 2件(cmd_2793/2794) + draft APPROVE 11件(cmd_2795-2808) + report LGTM 9件(cmd_2793-2808+ci_fix)
+# なぜなぜ7回×4件: (1)self_gate_check str型22件(cmd_2800 CLEAR) (2)_sv() YAML parse error 3回silent failure(cmd_2801 CLEAR) (3)GP-222 respawnループ99回(cmd_2806 CLEAR) (4)ntfy rate limit 778回(cmd_2808 CLEAR) +副作用cmd_2807 CLEAR
+# 利他サイクル5件全完走: 軍師なぜなぜ→掲示板→将軍cmd→忍者実装→軍師LGTM→GATE CLEAR。免疫系が動いている
+# 原理発見2件: (1)動的データ分析に有効期限(still-injected時点差) (2)クライアント側グローバルthrottleは各送信元独立デバウンスより構造的に強い
+# 自走: automated Goodhart是正(75→81.8%) + GATE未確認0件 + CS WARN0件 + GP obsolete1件
+# accuracy: 全件LGTM/APPROVE→CLEAR(cmd_2794 BLOCK=前提否定想定通り, cmd_2803 BLOCK→家老解消→CLEAR)。APPROVE→FAIL 0件
+# docs/research永続化: 9件(clear_durability_fix/waste_analysis/self_gate_check_str_bug/deploy_yaml_parse_error/codex_respawn_loop/ntfy_rate_limit_global/deepdive_phantom/goodhart_audit/lgtm_block_nazenaze)
+# review_logアーカイブ: 945行→492行(20260516b.yamlに763行退避)
+# ★強くてニューゲーム: stats最終更新+review_logヘッダ知見2件+docs/research 9件+掲示板7投稿+全gate_result同期済み+全inbox既読

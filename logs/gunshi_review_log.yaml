@@ -84,7 +84,7 @@
 - cmd_id: cmd_2794
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: BLOCK
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem]
   findings_summary: "RC。fallbackのscoredはL3740 effectiveness除外を通る構造。still-injected 10件の真因がfallbackパスではない可能性。stderrログで経路特定を要求"
@@ -244,7 +244,7 @@
   report_task_id: cmd_2798_exact
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, premortem]
   findings_summary: "4観点OK。除外リスト導入。bats 2本PASS。安定context ALERT消滅+非除外は従来通り。除外リスト不在=ERROR(安全側)"
   observations:
@@ -269,7 +269,7 @@
   report_task_id: cmd_karo_ci_fix_freshness_test_impl
   report_verdict: LGTM
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions]
   findings_summary: "4観点OK。exclude list symlinkをfixtureに追加。bats filter1件+全36件PASS skip0"
   observations:
@@ -491,3 +491,173 @@
   ambiguity_points: none
   causal_chain: "cmd_2801 _sv()修正→weak_points注入パスに副作用→ERROR通知で即検出→根因調査cmd→修正=正の複利(ERROR通知が機能した証拠)"
   timestamp: "2026-05-16T11:15:00"
+- cmd_id: cmd_training_L4_auto_202605161226_kotaro
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。L4修行(ninja_monitor.sh改善)。定型構造。target_path実在確認済み(194KB)。target_path_warning誤検知あるが忍者自力確認可"
+  observations:
+    - "target_path_warning='⚠存在しない'だがls -la確認でscripts/ninja_monitor.sh 194KB実在。deploy_task.sh生成時のパス解決差異による誤検知"
+    - "AC4個(改善3特定/最高1実装/報告YAML/教訓参照)。修行標準。注入教訓10件infra系妥当"
+    - "kotaro弱点top=report_yaml_format(3件)。standard_skills(report-write/verdict-check)+ninja_weak_points警告で事前対処済み"
+  ambiguity_points: none
+  causal_chain: "L4修行→ninja_monitor.sh改善3点特定+最高1件実装→修行サイクル(第一層個の学習ループ)=正の複利(infra中核改善)"
+  timestamp: "2026-05-16T11:25:00"
+- cmd_id: cmd_training_L4_auto_202605161227_tobisaru
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。L4修行(ninja_monitor.sh改善)。kotaroと同一target_pathだが改善点自然分散で衝突リスク低。target_path_warning誤検知(実在確認済み)"
+  observations:
+    - "kotaro cmd_training_L4_auto_202605161226と同一target_path(ninja_monitor.sh 194KB)。並列修行で改善点が異なれば衝突なし"
+    - "tobisaru弱点top=stale_report(2件)+gate_fail top=field_missing(883件累積)。standard_skills+weak_points警告で事前対処済み"
+    - "adversarial: rollback容易(1関数変更)/運用誤用なし(修行)。チェック済み問題なし"
+  ambiguity_points: none
+  causal_chain: "L4修行→ninja_monitor.sh改善→修行サイクル(第一層個の学習ループ)=正の複利。同一targetでも改善点選択で自然分散"
+  timestamp: "2026-05-16T12:30:00"
+- cmd_id: cmd_2809
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。SKILL.md追従6件WARN解消+cmd_complete_gateにWARNレベル組込み。3セッション連続消火の根因修正。assumptions全検証(git show HEAD確認済み、ディスク上L876はhayate未commit作業)"
+  observations:
+    - "gate_skill_script_refs.sh現在6件WARN(cmd記載7件との差1件は起票後解消)。git show HEADでcmd_complete_gate.shにgate_skill_script_refs未組込み確認"
+    - "ディスク上L876-903にhayateの未commit作業あり(LG001注意点。Read toolではなくgit show HEADで確認)"
+    - "cmd_2641(CoDD propagate組込み)の前例L833あり。WARNレベルでGATE CLEAR非停止。低リスク"
+  ambiguity_points: none
+  causal_chain: "スクリプト変更→SKILL.md追従漏れ→startup gate事後検知のみ→次セッションまで遅延→3回消火。cmd_complete_gate即時検知→遅延ゼロ=正の複利"
+  timestamp: "2026-05-16T15:05:00"
+- cmd_id: idle_training_rethink_nazenaze_20260516
+  review_type: self_study
+  findings_summary: "なぜなぜ7回: 修行内容の再設計(利他)。L4 auto FP率85%でフォーマット修行天井。根因=gate通過訓練に固定化→実戦能力(副作用検出/偵察/テスト設計)未修行。L5利他修行3案提案"
+  observations:
+    - "L4 auto 35セッション: PASS30/FAIL5。忍者別: hayate/kagemaru 100%, hanzo 77%最低"
+    - "本番gate FAIL Top20は全てフォーマット系。karo WA直近10件clean 9件。フォーマット問題ほぼ解消"
+    - "archive FAIL 54件中にフォーマット外: 実装品質(AC未達/成果物不在)/判断(wrong cmd)/副作用→gateで検出不可"
+    - "修行が鍛えていない3能力: 副作用検出力(verdict_override WA9件の根因)、偵察力(5要件)、テスト設計力(CI RED防止)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  cs_checklist: "CS1:全量(gate_fire_log全件+WA全件+archive FAIL54件) CS2:自データ(L4 auto 35セッション忍者別集計) CS3:コード比較(training-cycle.md §1-18精読) CS4:行動変換(L5利他修行3案設計→掲示板投稿→永続化) CS5:次(将軍cmd起票→L5試行) CS6:因果(gate通過訓練固定→実戦能力未修行→gateが検出できない問題残存→家老WA/将軍再cmd)"
+  causal_chain: "L1-L3がフォーマット特化→L4もフォーマットが計測対象→FP率85%で天井→修行=gate通過訓練固定→実戦能力(副作用/偵察/テスト)未修行→本番で非フォーマット問題残存。L5利他修行→実戦能力向上→家老WA/将軍再cmd減少=正の複利"
+  timestamp: "2026-05-16T15:08:00"
+- cmd_id: cmd_2809
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2809_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。SKILL.md 6件WARN→0件。cmd_complete_gateにWARNレベル組込み。bats 21件全PASS。changed_lines +80/-2。hayate WA率0%"
+  observations:
+    - "hayateがassumption_checkで7件→6件差異を自己認識し記載。正確な状況把握"
+    - "WARNレベル組込み(run_skill_script_refs_check)。CLEAR後処理の一環で完了フロー非停止"
+    - "bats 3/3(gate_skill_script_refs) + 18/18(cmd_complete_gate_subsystems)。全PASS skip 0"
+  lesson_quality: OK
+  causal_chain: "3セッション連続WARN→startup gate事後検知のみ→毎回消火。cmd_complete_gate即時検知→WARN遅延ゼロ=正の複利"
+  timestamp: "2026-05-16T15:12:00"
+- cmd_id: cmd_karo_ci_fix_check51
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: ci_fix_check51
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。CI並列bats共有tmp fixture競合→BATS_TEST_TMPDIR分離。+1/-8行。bats 3/3+jobs8 1/1 PASS。assumption_invalidation自力特定(ローカルPASS前提崩壊)"
+  observations:
+    - "assumption_invalidation found=true。ローカル単体PASS→CI TAP artifactで共有tmp競合が真因と自力特定。前提検証の好例"
+    - "1ファイル9行変更。BATS_TEST_TMPDIR分離はbats標準プラクティス。波及なし"
+    - "lesson_candidate: Bats並列CI共有tmp fixture問題。再利用可能な具体知見。登録推奨"
+  lesson_quality: OK
+  causal_chain: "CI --jobs 8→共有tmp fixture競合→ローカルPASS/CI FAIL。BATS_TEST_TMPDIR分離→並列安全=正の複利(CI安定性)"
+  timestamp: "2026-05-16T15:15:00"
+- cmd_id: cmd_2812
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2812_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。Simple-OCR HTML selected属性修正(google→two_stage)。2ファイル最小修正。外部リポcommit 30212b90。Renderデプロイ後確認は家老側"
+  observations:
+    - "外部リポ(/mnt/c/Python_app/Simple-OCR/)のためprecheck changed_lines=0は想定内"
+    - "HTML selected属性移動のみ。JS変更なし。リスク極小"
+  lesson_quality: OK
+  causal_chain: "BE既定two_stage↔UI既定google不整合→selected属性移動→UI/BE一致=正の複利(ユーザーUX)"
+  timestamp: "2026-05-16T15:35:00"
+- cmd_id: cmd_2811
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_2811_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers]
+  findings_summary: "4観点OK。3PJ全70教訓(auto-ops57/gc11/db2)にwhen/how追加。PyYAMLでmissing=[]確認。gitignore対象のためcommitなし=正当"
+  observations:
+    - "件数検証: auto-ops57+gc11+db2=70件。全件PyYAML確認でmissing=[]"
+    - "projects/はgitignore。commit_hash: not_applicable_gitignored_project_lessons=正当"
+  lesson_quality: OK
+  causal_chain: "L6(5W1H)WHEN/HOW欠落→70教訓補完→deploy_task.sh注入時に忍者がwhen/howを読める=正の複利(教訓活用度)"
+  timestamp: "2026-05-16T15:38:00"
+- cmd_id: cmd_2813
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。Simple-OCR結果カードタイトルを患者名表示。2ファイル(app.py+pc.js)。フォールバック付き。殿要望"
+  observations:
+    - "patient_name未実装確認(grep 0件)。two_stage 1行目スペース区切り先頭=患者名。google系=空文字→フォールバック"
+    - "AC2個。app.py result dict追加+pc.js h5動的表示。順序依存(AC2→AC1)合理的"
+  ambiguity_points: none
+  causal_chain: "OCR結果タイトル固定→複数結果区別困難→patient_name表示→識別性向上=正の複利(UX)"
+  timestamp: "2026-05-16T15:42:00"
+- cmd_id: cmd_2813
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_2813_impl
+  report_verdict: LGTM
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。patient_name表示+フォールバック。外部リポcommit d512654確認済み(precheck偽陽性)。2連続空白区切りはcmd指示より正確な裁量判断"
+  observations:
+    - "discretion_fills: 2連続以上空白区切り。cmd指示はスペース区切り先頭。実データでは2連続空白が患者名/日付境界のため忍者判断が正確"
+    - "autofix_applied 1件(bc result quote除去)。diagnose_reason記載あり"
+  lesson_quality: OK
+  causal_chain: "タイトルOCR結果固定→patient_name表示+フォールバック→複数結果識別性向上=正の複利(UX)"
+  timestamp: "2026-05-16T15:50:00"
+- cmd_id: cmd_training_L4_auto_202605171241_kotaro
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。L4修行(ninja_monitor.sh改善)。前回20260516と同一構造。target_path実在確認済み"
+  observations:
+    - "前回cmd_training_L4_auto_202605161226_kotaroと同一構造。target_path=ninja_monitor.sh 194KB実在"
+    - "kotaro弱点top=report_yaml_format(3件)。standard_skills+weak_points注入済み"
+  ambiguity_points: none
+  causal_chain: "L4修行→ninja_monitor.sh改善→修行サイクル(第一層個)=正の複利"
+  timestamp: "2026-05-17T12:42:00"
+- cmd_id: cmd_training_L4_auto_202605171241_tobisaru
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。L4修行(ninja_monitor.sh改善)。kotaroと同一target。改善点自然分散で衝突リスク低"
+  observations:
+    - "tobisaru弱点top=stale_report(2件)。standard_skills+weak_points注入済み"
+    - "adversarial: 修行cmd小規模変更。rollback容易。チェック済み問題なし"
+  ambiguity_points: none
+  causal_chain: "L4修行→ninja_monitor.sh改善→修行サイクル(第一層個)=正の複利"
+  timestamp: "2026-05-17T12:42:00"
