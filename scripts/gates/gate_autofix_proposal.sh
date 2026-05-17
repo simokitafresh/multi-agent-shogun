@@ -96,6 +96,18 @@ PROPOSAL_MAP = {
     },
 }
 
+# Patterns already handled by Level 4+ gates (gate_report_format_main.py BLOCK + FIX hint).
+# These target ashigaru.md/ashigaru-procedures.md which ninjas DON'T read after /clear
+# (CLAUDE.md ninja recovery: "Do NOT read instructions/ashigaru.md (cost saving)").
+# The gate BLOCK itself IS the immune system — doc proposals are structurally invalid.
+GATED_PATTERNS = {
+    "report_format",                  # gate_report_format_main.py L165-204
+    "fill_this_remaining",            # gate_report_format_main.py L36
+    "binary_checks_fail",             # gate_report_format_main.py L223-224
+    "purpose_validation_fit_false",   # gate_report_format_main.py L318-322
+    "ac_version_mismatch",            # gate_report_format_main.py L404+
+}
+
 
 def normalize_reason(raw):
     raw = raw.strip()
@@ -168,6 +180,9 @@ print("Proposals:")
 for pattern, count in pattern_counts.most_common():
     spec = PROPOSAL_MAP.get(pattern)
     if spec is None or count < min_count:
+        continue
+    if pattern in GATED_PATTERNS:
+        print(f"  {pattern}: SKIP (Level4 gate handles this; target file ninja-unread)")
         continue
 
     examples = " ; ".join(pattern_examples.get(pattern, [])[:2])
