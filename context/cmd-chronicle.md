@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-17 -->
+<!-- last_updated: 2026-05-18 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,42 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_karo_ci_fix_1987 | CI RED修正 — test_stop_lint_gate.bats test 941 HASH_FILE未生成 | infra | 04-17 | bats --jobs 8並列実行でHASH_FILEが/t |
-| cmd_karo_context_freshness_1993 | context鮮度更新 — dm-signal-research.md+infrastructure.md | infra | 04-17 | context鮮度更新2件を反映し、対象2ファイルのみをコミ |
-| cmd_karo_1995_fix | cmd_1995補足 — compare_snapshots.py holding_signal空振り修正+列名統一 | dm-signal | 04-17 | compare_snapshots.pyのholding_s |
-| cmd_1994 | Phase 4準備① — fullrecalculate cProfile計測(read-only) | dm-signal | 04-17 | recalculate_fast.py fullrecalc |
-| cmd_karo_ci_fix_f821 | CI RED修正 — run_077_yotsume.py F821(未定義変数)解消 | dm-signal | 04-17 | run_077_yotsume.py F821/F841/B |
-| cmd_karo_gp190_fix | GP-190バグ修正 — scout_exemptがcommit checkを消す問題解消 | infra | 04-17 | deploy_task.sh修正: scout_exempt |
-| cmd_1998 | Phase 4偵察 — fullrecalculate cache miss/fallback/N+1実測 | dm-signal | 04-17 | Phase4 cache/miss偵察を完了。signal_ |
-| cmd_1999 | インフラ改善 — cmd_delegate.sh gate先行送信化(レースコンディション防止) | infra | 04-17 | cmd_delegate の gate FAIL分岐を実装・ |
-| cmd_karo_ci_fix_blt72 | CI RED修正 — test_bulletin_board.bats test 72修正 | infra | 04-17 | bulletin_confirm.sh の if rc: ガ |
-| cmd_karo_gp210_fix | GP-210修正 — inbox_watcher STATE_DIRパス不一致解消 | infra | 04-17 | restart_watchers.shの3箇所からSHOGU |
-| cmd_2000 | Phase 4偵察② — fullrecalculate SQLクエリログ分類+top10重クエリ特定 | dm-signal | 04-17 | SQLAlchemy queryロギングをcmd_1994ハ |
-| cmd_2003 | Phase 4偵察④ — fullrecalculate DB呼出のループ構造現物確認 | dm-signal | 04-17 | expand_portfolio_to_tickersの直呼 |
-| cmd_2002 | Gist Index分類改善 — gist_index_update.sh classify_gist()を10カテゴリに再設計 | infra | 04-17 | gist_index_update.shのCATEGORY_ |
-| cmd_2005 | Phase 4偵察⑤ — B1 preload変更のFE/UI影響範囲確認+設計書追記 | dm-signal | 04-17 | preload条件は monthly_return 値を変え |
-| cmd_karo_ci_fix_ga091 | CI RED修正(GA-091) — gist_index_updateテスト期待値を新カテゴリ体系に更新+CATEGORY_ORDER修正 | infra | 04-17 | gist_index_update.sh のカテゴリ体系を新 |
-| cmd_karo_ci_fix_ga092 | CI RED修正(GA-092) — cmd_delegate inbox_write失敗時のexit code修正 | infra | 04-17 | cmd_delegate の inbox_write失敗仕様 |
-| cmd_2007 | Phase 4事前確認 — preload動作3パターン記録(standardPF/FoF/nestedFoF) | dm-signal | 04-17 | 代表3体(standard/FoF/nestedFoF)を |
-| cmd_2008 | Phase 4 golden data化 — cmd_2007スナップショットを全改善cmdのパリティ基準に固定 | dm-signal | 04-17 | golden baseline固定・設計書作成・compar |
-| cmd_2009 | Phase 4設計書更新 — §3全改善項目にgolden dataパリティ基準を明記 | dm-signal | 04-17 | §3の5改善項目と§6.4 golden data節を設計書 |
-| cmd_2010 | インフラ修正 — cmd初期statusをdraftに変更(gate未通過配備防止) | infra | 04-17 | — |
-| cmd_2006 | Phase 4 B1 impl — monthly_returns preload条件変更(N+1解消) | dm-signal | 04-17 | monthly_returns の FoF partial- |
-| cmd_1997 | Phase 4準備②補足 — compare_snapshots.py列名不一致修正 | dm-signal | 04-17 | compare tool修正はbranch履歴に存在しpus |
-| cmd_2011 | Phase 4設計書更新 — B1実測反映+本番baseline計測位置づけ明記 | dm-signal | 04-17 | Phase4設計書更新完了 |
-| cmd_2001 | Phase 4偵察③ — Render上cProfile計測(純Python時間取得) | dm-signal | 04-17 | Render cProfile結果を docs/resear |
-| cmd_2012 | Phase 4偵察⑥ — DELETE FROM signals 2505s(77%)の真因特定 | dm-signal | 04-17 | signals cleanup経路を特定し、DELETE条件 |
-| cmd_2013 | Phase 4偵察⑦ — fullrecalculate PF×date網羅性検証(UPSERT化可否判定) | dm-signal | 04-17 | full recalcのPF取得・date範囲・inacti |
-| cmd_2016 | Phase 4偵察⑨ — スキーマドリフト修正方法確認(CASCADE本番未反映) | dm-signal | 04-17 | 本番DB FK制約 vs models.py宣言の差分を全件 |
-| cmd_2014 | Phase 4 C1 spec作成 — cleanup UPSERT化の影響範囲設計+他テーブルDELETE時間確認 | dm-signal | 04-17 | C1 UPSERT specを新規作成し、signals D |
-| cmd_2018 | Phase 4 A2 CoDD spec — _generate_trade_performance ベクトル化設計 | dm-signal | 04-17 | A2 vectorize specを新規作成し、5候補の変更 |
-| cmd_2019 | Karpathy Simplicity導入 — 軍師review_log+忍者報告テンプレートに自問追加 | infra | 04-17 | gunshi_review_log headerとdeplo |
-| cmd_2017 | Phase 4 C1 impl — signals cleanup DELETE→UPSERT化(fullrecalc 77%削減) | dm-signal | 04-17 | signals cleanup DELETEをskipしてP |
-| cmd_2020 | Phase 4設計書v3.0更新 — C面追加+B1/C1実測反映+Render cProfile統合+次ステップ計画 | dm-signal | 04-17 | Phase 4設計書をv3.0三面作戦の完了状態へ同期し、C |
-| cmd_2021 | Phase 4 C1後Render本番計測 — 新ベースライン確定+self time分析 | dm-signal | 04-17 | C1をmainへmerge(PR #12)してRender本 |
-| cmd_2022 | Phase 4締め括り — 設計書v3.1最終更新+研究日誌Phase 34追記+成果サマリ | dm-signal | 04-17 | Phase 4設計書にcmd_2021の実測値(842.90 |
-| cmd_2024 | L3選出(正確版) — 2体EWプール861通り+3体EWプール10150通りから3目的×Top1=6体 | dm-signal | 04-17 | 2体/3体EWプールからWF α 3目的のTop1候補6体を |
-| cmd_2025 | L3秘奥義6体 本番登録 — フォルダー作成+FoF登録+hide+fullrecalculate+パリティ | dm-signal | 04-17 | 秘奥義6体の本番登録・folder hide・fullrec |
 | cmd_2026 | ⑤奥義-ASS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義ALMシン21体を奥義-ASS-{}形式へ改名し、新規フ |
 | cmd_2027 | ①奥義-SSS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義-シン忍法フォルダーとplain奥義21体を奥義-SSS |
 | cmd_2028 | p̄バッチ実行 — 全active PFの劣化指標+p̄一括再計算 | dm-signal | 04-18 | 本番 deterioration-batch を実行し、秘奥 |
@@ -780,3 +744,8 @@
 | cmd_2836 | 教訓健全度ALERT(useful_rate=28.1%)が3セッション連続。家老分析で不参照TOP4(L500/L078/L585/L101)が特定済み。根因はL500/L585/L078にuniversalタグが付与されており全タスクに注入されるが内容は超限定的(特定関数/特定パス)。universalタグを具体的なファイル/機能タグに変更しノイズ注入を削減する。 | infra | 05-17 | L500/L585/L078/L101の教訓タグを内容に合う |
 | cmd_2837 | cmd_2834偵察で特定された6チェック関数の偽陽性パターンを修正する。(1)GS/WFツール検出:偵察/分析cmdを除外 (2)否定的前提claim:検査対象をclaim限定 (3)AC基準チェック:infra/偵察を除外 (4)q11既存代替:q5/assumptionsのrg結果も補助認定 (5)q8縮小表現:非破壊/スコープ限定文脈を除外 (6)行動変換:偵察/分析を除外+同義語追加。累計昇格BLOCK 227件(15%)の構造的解消。 | infra | 05-17 | cmd_save.shの6チェック関数にcmd_2834偵察 |
 | cmd_2835 | 家老のidle自走分析(掲示板blt_20260517_203516)で特定された忍者報告品質の構造的改善3件。(1)report_format FAIL 11件/50cmd→ashigaru-procedures.mdにRFS再実行手順を先頭固定化。(2)binary_checks FAIL 7件→ashigaru.mdにbc yes/no記入例付き強調。(3)purpose_validation不一致 3件→ashigaru.mdにcmd目的との差分確認を明記。全てドキュメント追記のみで新仕組みゼロ。 | infra | 05-17 | cmd_2835の忍者報告品質改善3件は正本に反映済み。現物 |
+| cmd_2838 | dashboard_update.shがdashboard_template.mdの必須セクションをdashboard.mdに照合するが、テンプレートが古く3セクション不一致(進行中=欠落/調査結果=欠落/要対応=絵文字不一致)でFAIL率22%(11/50)。テンプレートをdashboard.mdの現行構造に同期する。 | infra | 05-17 | dashboard_template.mdのKAROセクショ |
+| cmd_2839 | cmd_2837のcheck_research_tool_explicit FP修正で除外条件が広すぎ、テスト556(RTE-T004: wf_engine参照は従来通りWF警告する)がFAIL。正当なWF警告が消された。除外条件を偵察/分析文脈に限定し正当WARNを復活させる。 | infra | 05-17 | cmd_2839対象のcheck_research_tool |
+| cmd_2841 | gate_report_format_main.pyがassumption_invalidationのaffected_cmdsを必須検証するが、RFS(report_field_set.sh)経由で書き込む際にaffected_cmdsが欠落し39件FAILが発生。テンプレート(L1883-1886)にはデフォルト値があるがRFS書込みで上書きされる際にサブフィールドが消える。RFSのassumption_invalidation書込みでaffected_cmdsを保持する修正を行う。 | infra | 05-17 | RFSのassumption_invalidation.*書 |
+| cmd_2845 | cmd_2840でlesson_write.shにorigin引数を追加し新規教訓は自動でorigin付与されるようになった。だが既存軍師教訓33件はorigin=0件のまま。因果NWの既存ノードにリンクを遡及追加しネットワーク密度を即時向上させる。 | infra | 05-18 | projects/infra/lessons_gunshi. |
+| cmd_2844 | cmd_2840でlesson_write.sh(軍師共通)にorigin引数を追加した。残り2件: (1)gate_lesson_health.shに教訓originフィールド欠落時のWARN追加(将軍教訓にはcmd_2821で実装済み→同パターン転用)。(2)lesson_write_karo.sh(家老専用)にも--origin引数追加。因果NW自動成長の対象を全ロールに拡大する。 | infra | 05-18 | cmd_2844のorigin全ロール拡大を実装済みとして確 |
