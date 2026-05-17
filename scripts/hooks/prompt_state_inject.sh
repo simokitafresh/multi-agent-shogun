@@ -162,7 +162,7 @@ detect_skill_triggers() {
     current_project="$(awk '/^current_project:[[:space:]]*/{print $2; exit}' "$projects_yaml" | tr -d '"'\''')"
   fi
 
-  PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" python3 - <<'PY'
+PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" timeout "${PROMPT_STATE_SKILL_TRIGGER_TIMEOUT:-0.10}" python3 - <<'PY'
 import os
 import re
 import sys
@@ -317,6 +317,18 @@ if len(matches) > 5:
 PY
 }
 
+# --- Semantic auto-injection (first-layer only, no LLM fallback) ---
+_prompt_state_semantic_inject() {
+  local _psi_query="${1:0:300}"
+  local _psi_search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+  _psi_query="${_psi_query//$'\n'/ }"
+  [[ -z "${_psi_query// }" ]] && return 0
+  [[ -f "$_psi_search_cmd" ]] || return 0
+  SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
+    SEMANTIC_DISABLE_LLM=1 \
+    timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.30}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null || true
+}
+
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
@@ -426,6 +438,14 @@ if (( ${#karo_snapshot} > snapshot_budget )); then
 fi
 
 additional_context="${fixed_part}${karo_snapshot}"
+
+# --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
+semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
+if [[ -n "$semantic_result" ]]; then
+  additional_context="${additional_context}
+--- semantic_knowledge ---
+${semantic_result}"
+fi
 
 # --- Output JSON ---
 _prompt_state_emit_output "UserPromptSubmit" "$additional_context"

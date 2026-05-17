@@ -168,6 +168,66 @@ PY
     [ "${result[2]}" = "True" ]
 }
 
+@test "SSH-003b: prompt_state_inject injects semantic_search result for shogun prompt" {
+    export MOCK_AGENT_ID="shogun"
+    semantic_mock="$TEST_TMPDIR/semantic_search_mock.sh"
+    cat > "$semantic_mock" <<'EOF'
+#!/usr/bin/env bash
+printf 'query=%s\n' "$*" > "$SEMANTIC_MOCK_LOG"
+cat <<'OUT'
+## semantic_dictionary_design — セマンティック辞書構想
+matched: 意味検索
+resources:
+- file: `docs/research/semantic_index_design.md`
+OUT
+EOF
+    chmod +x "$semantic_mock"
+    export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$semantic_mock"
+    export SEMANTIC_MOCK_LOG="$TEST_TMPDIR/semantic_query.log"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"意味検索を使えるか？\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("--- semantic_knowledge ---" in ctx)
+print("semantic_dictionary_design" in ctx)
+print("docs/research/semantic_index_design.md" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+    [ "$(cat "$SEMANTIC_MOCK_LOG")" = "query=意味検索を使えるか？" ]
+}
+
+@test "SSH-003c: prompt_state_inject omits semantic section when semantic_search has no matches" {
+    export MOCK_AGENT_ID="shogun"
+    semantic_mock="$TEST_TMPDIR/semantic_search_nomatch.sh"
+    cat > "$semantic_mock" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$semantic_mock"
+    export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$semantic_mock"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"未知の入力\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+obj = json.loads(os.environ["OUTPUT_JSON"])
+ctx = obj["hookSpecificOutput"]["additionalContext"]
+print("--- semantic_knowledge ---" in ctx)
+PY
+)
+    [ "${result[0]}" = "False" ]
+}
+
 @test "SSH-004: session_end_clear_check is silent for non-shogun" {
     export MOCK_AGENT_ID="saizo"
     run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{}' | scripts/hooks/session_end_clear_check.sh"

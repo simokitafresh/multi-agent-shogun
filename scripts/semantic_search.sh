@@ -14,6 +14,7 @@ skip the alias layer and run semantic matching directly.
 Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
+  SEMANTIC_DISABLE_LLM Set to 1 to stop after the alias layer
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
@@ -168,6 +169,9 @@ if [ "$force_llm" = false ]; then
         rc=$?
         if [ "$rc" -ne 1 ]; then
             exit "$rc"
+        fi
+        if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
+            exit 1
         fi
     fi
 fi
