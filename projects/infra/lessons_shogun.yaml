@@ -454,3 +454,11 @@ lessons:
   created_at: '2026-05-16'
   automated: true
   enforcement: '意志依存。cmd_save.sh q5でstructure_verified要求済みだが精読範囲の網羅性は将軍の判断に依存'
+- id: 'LS034'
+  title: '外部PJ cmdのsource/env_changeパス解決'
+  origin: '[[cmd_2825]]'
+  detail: 'project=kj-toilet等の外部PJではsource/env_changeのパス解決先がPJ配下(projects.yaml path)になる。将軍リポ内ファイル(config/projects.yaml等)は参照不可。AGENT.mdやPJ内ファイルを指定せよ。cmd_2825で6回BLOCKの根因。'
+  source_cmd: 'cmd_2825'
+  created_at: '2026-05-17'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=PROJECT_DIR'
