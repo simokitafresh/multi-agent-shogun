@@ -81,3 +81,10 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 
 - （L001-L002は振り分け済 → §4 Render構成(L001), §5 DM-Signalとの関係(L002)）
 <!-- last_synced_lesson: L002 -->
+
+---
+
+## 因果リンク
+
+- ← [[dm-signal-ops]] DB運用との接続
+- ← [[dm-signal-core]] パイプラインのデータ層

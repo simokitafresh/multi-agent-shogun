@@ -723,3 +723,11 @@ import metrics_research_engine as MRE
 - `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/` は構築済み。`index.md` M79-M84: DeepUnifiedMom, VAA/BAA, Hierarchical Momentum, Factor Momentum, ADTS/CADTS Bandit Portfolio, Expert Aggregation WASA
 - 直近追加ファイル: `deep-unified-momentum.md`, `vigilant-bold-asset-allocation.md`, `hierarchical-momentum.md`, `factor-momentum.md`, `bandit-portfolio-adts.md`, `expert-aggregation-wasa.md`
 - 一次知識層ルール: 外部論文原典の数式・前提・落とし穴・verificationをmethodsへ、DM-Signal固有解釈は`knowledge-base/dm-signal/`へ分離
+
+---
+
+## 因果リンク
+
+- ← [[dm-signal]] 運用層
+- ← [[dm-signal-core]] コアの運用面
+- → [[database]] DB運用との接続

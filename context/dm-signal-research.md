@@ -413,3 +413,11 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 全9体α-CAGR>0。詳細→gist: https://gist.github.com/simokitafresh/97bf38e764ec09070a50f91fd250a1fa
 設計追体験→gist: https://gist.github.com/simokitafresh/732d31d0ec93a38b8398ab51cade0f6a
+
+---
+
+## 因果リンク
+
+- ← [[dm-signal]] 研究層
+- ← [[dialogue_preprocessing_research_20260331]] 前処理研究日誌
+- ← [[dialogue_alm_finite_time_20260404]] ALM有限時間4指標

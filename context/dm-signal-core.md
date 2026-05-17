@@ -513,3 +513,11 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - `outputs/analysis/cmd_2422_l2_champions_constrained.yaml` = 制約付きL2 champion 21体SSOT
 - cmd_2424でGSシン奥義21体本番hide登録完了。完了判定はAPI status + DB `recalculation_status`二重確認(L690/L691)
 - knowledge-base methods SSOT: `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md`。M79-M84にDeepUnifiedMom/VAA-BAA/Hierarchical Momentum/Factor Momentum/ADTS-CADTS/WASAを追加済み
+
+---
+
+## 因果リンク
+
+- ← [[dm-signal]] メインPJの核心層
+- → [[dm-signal-ops]] コア→運用への接続
+- → [[dialogue_preprocessing_research_20260331]] 前処理研究日誌=コア改善の知的基盤
