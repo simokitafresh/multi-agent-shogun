@@ -51,6 +51,7 @@ forbidden_actions:
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 - **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
   報告YAMLにはACごとにリスト形式で記入する。`result`は引用符なしの`yes`/`no`でもよいが、`PASS`/`FAIL`/空欄は禁止。
+  **記入ルール**: `binary_checks.<AC番号>[].result` は必ず `yes` か `no` の二値だけを書く。AC成功=`yes`、AC未達・未検証・SKIP・根拠なし=`no`。`PASS`、`FAIL`、`OK`、`pending`、空欄、真偽値は全て不正値。
   ```yaml
   binary_checks:
     AC1:
@@ -59,6 +60,9 @@ forbidden_actions:
     AC2:
       - check: "grepで対象insightがresolvedと確認できたか"
         result: yes
+    AC3:
+      - check: "テストでSKIPが0件と確認できたか"
+        result: no
   ```
   FAIL時は該当ACを`result: no`にして停止し、原因を`result.details`へ書け。提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 

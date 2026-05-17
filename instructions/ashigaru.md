@@ -51,6 +51,7 @@ forbidden_actions:
 - **Review Is Read-only**: reviewは読む任務。修正は別taskへ返せ
 - **Learning Loop**: AC完了ごとに二値チェック→FAIL即停止→PASS次AC。**binary_checksは全ACについてresultにyes/noのみ記入せよ。PASS/FAILは禁止。**
   報告YAMLにはACごとにリスト形式で記入する。`result`は引用符なしの`yes`/`no`でもよいが、`PASS`/`FAIL`/空欄は禁止。
+  **記入ルール**: `binary_checks.<AC番号>[].result` は必ず `yes` か `no` の二値だけを書く。AC成功=`yes`、AC未達・未検証・SKIP・根拠なし=`no`。`PASS`、`FAIL`、`OK`、`pending`、空欄、真偽値は全て不正値。
   ```yaml
   binary_checks:
     AC1:
@@ -59,6 +60,9 @@ forbidden_actions:
     AC2:
       - check: "grepで対象insightがresolvedと確認できたか"
         result: yes
+    AC3:
+      - check: "テストでSKIPが0件と確認できたか"
+        result: no
   ```
   FAIL時は該当ACを`result: no`にして停止し、原因を`result.details`へ書け。提出前に全binary_checksの`result`が空でないことを確認し、lesson_candidateに「次回追加すべきチェック」を書け
 
@@ -283,6 +287,23 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 2. purpose外だがcmd文脈から必要な成果が欠落していないか？
 3. 実装の副作用で既存機能が壊れていないか？
 → `goal_backward_check: pass/fail` を報告YAMLに記載
+
+### cmd目的整合確認(Purpose Validation) — 実装・偵察共通
+
+報告前にtask YAMLの`purpose`と`parent_cmd`の目的を読み直し、成果物が目的の因果に直接つながるか確認せよ。ACを満たしていても目的とずれている場合は完了扱いにせず、`purpose_validation.fit: false` と `purpose_gap` に差分を記載して停止・報告する。
+
+確認手順:
+1. task YAMLの`purpose`を1文で報告YAMLの`purpose_validation.cmd_purpose`へ転記する
+2. 変更内容・調査結果がpurpose内の「何を改善するか」に対応しているか照合する
+3. 目的外の成果、未達、代替実装、追加判断がある場合は`purpose_gap`へ具体的に書く
+
+例:
+```yaml
+purpose_validation:
+  cmd_purpose: "binary_checks FAIL削減のため、yes/no記入例をashigaru.mdへ追記する"
+  fit: true
+  purpose_gap: ""
+```
 
 ## テスト義務 (MANDATORY)
 
