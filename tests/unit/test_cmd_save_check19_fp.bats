@@ -88,12 +88,30 @@ setup() {
     [[ "$output" != *"WARNING: パリティcmdのAC基準欠落"* ]]
 }
 
+@test "C19-FP-005: infra偵察でcheck_parity_ac_requirements識別子を含んでもCheck 19を発火しない" {
+    CMD_BLOCK='  project: infra
+  scout_exempt: true
+  title: cmd_save check_parity_ac_requirements偵察
+  purpose: parity_ac_missingの偽陽性条件を調査する'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='infra'
+    CMD_BLOCK_CACHE['scout_exempt']='true'
+    CMD_BLOCK_CACHE['scope_mode']=''
+    export CMD_BLOCK CMD_BLOCK_NC
+
+    run check_19_parity_ac
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: パリティcmdのAC基準欠落"* ]]
+}
+
 # --- AC3: 本番DB操作系cmdでCheck 19が正当発火 ---
 
 @test "C19-TP-001: 本番登録recalculate syncを含むcmdはCheck 19を発火する" {
     CMD_BLOCK='  title: 本番登録 recalculate sync実行
+  project: dm-signal
   purpose: 全PF本番データ更新'
     CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
     AC_TEXT=""
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
@@ -105,8 +123,10 @@ setup() {
 
 @test "C19-TP-002: パリティ確認cmdはCheck 19を発火する" {
     CMD_BLOCK='  title: パリティ確認 本番環境
+  project: dm-signal
   purpose: 本番DBとの整合性確認'
     CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
     AC_TEXT=""
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
@@ -118,8 +138,10 @@ setup() {
 
 @test "C19-TP-003: 本番登録本番環境のparity cmdはCheck 19を発火する" {
     CMD_BLOCK='  title: parity check 本番登録
+  project: dm-signal
   purpose: シン忍法v3 本番登録実施'
     CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
     AC_TEXT=""
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT

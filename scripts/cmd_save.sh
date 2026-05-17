@@ -214,7 +214,10 @@ is_gate_or_hook_addition_cmd() {
 
     scope_mode="$(cmd_block_get_field "scope_mode")"
     scout_exempt="$(cmd_block_get_field "scout_exempt")"
+    local task_type
+    task_type="$(cmd_block_get_field "task_type")"
     [[ "${scope_mode:-}" == "SCOUT" || "${scout_exempt:-}" == "true" ]] && return 1
+    [[ "${task_type:-}" == "scout" || "${task_type:-}" == "recon" || "${task_type:-}" == "analysis" ]] && return 1
 
     q11_context=$(printf '%s\n' "$block_text" | awk '
         /^[[:space:]]*(title|purpose):/ { print; next }
@@ -238,6 +241,11 @@ is_gate_or_hook_addition_cmd() {
     ')
 
     [[ -n "${q11_context:-}" ]] || return 1
+    if printf '%s\n' "$q11_context" | grep -qiE '偵察|分析|レビュー|調査|修正方針|結果確認|ログ確認'; then
+        if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
+            return 1
+        fi
+    fi
     if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和'; then
         if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
             return 1
@@ -312,7 +320,7 @@ check_gate_hook_action_conversion() {
     ')"
 
     [[ -n "${action_text:-}" ]] || return 0
-    if printf '%s\n' "$action_text" | grep -qiE 'BLOCK|exit[[:space:]]+1|強制|自動実行|自動化'; then
+    if printf '%s\n' "$action_text" | grep -qiE 'BLOCK|exit[[:space:]]+1|強制|自動実行|自動化|遮断|停止|失敗させ|必須化|止める'; then
         return 0
     fi
 
@@ -548,17 +556,9 @@ for line in lines:
 if current:
     entries.append(current)
 
-if not negative_pat.search(scan_content):
-    raise SystemExit(0)
-
 for entry in entries:
     claim = entry.get("claim", "").strip()
-    if claim and evidence_pat.search(claim):
-        raise SystemExit(0)
-
-for entry in entries:
-    claim = entry.get("claim", "").strip()
-    if claim:
+    if claim and negative_pat.search(claim) and not evidence_pat.search(claim):
         print(claim)
 PY
 }
@@ -1902,7 +1902,11 @@ QG_TEMPLATE
         # WHAT部分の縮小表現検出（WARN — AC2）
         _Q8_WW_VAL="$(cmd_block_get_field "quality_gate.q8_why_what")"
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
-        if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表'; then
+        _Q8_SCOPE_EXEMPT=false
+        if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
+            _Q8_SCOPE_EXEMPT=true
+        fi
+        if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
             echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
             record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
@@ -2138,7 +2142,20 @@ QG_TEMPLATE
     fi
 
     _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
-    if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "$_Q11_VAL"; then
+    _Q11_SUPPLEMENTAL_CONTEXT="$(
+        printf '%s\n' "$(cmd_block_get_field "quality_gate.q5_verified_source")"
+        printf '%s\n' "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
+            in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
+            in_assumptions && /^[[:space:]]{6,}/ { print; next }
+            /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
+            /^[[:space:]]*command:[[:space:]]*[^|]/ { sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
+            in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
+            in_command && /^[[:space:]]{4,}/ { print; next }
+        '
+    )"
+    if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "${_Q11_VAL}
+${_Q11_SUPPLEMENTAL_CONTEXT}"; then
         echo "BLOCK: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
         echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
         record_block_reason "q11に既存代替の現物確認なし"
@@ -3759,13 +3776,17 @@ ${FULL_CMD}"
     fi
     if [[ "$HIT_GS" == true ]] && [[ -z "$GS_PATH_CANDIDATE" ]] \
         && printf '%s\n' "$SEARCH_TEXT" | grep -q 'outputs/grid_search' \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -q '偵察'; then
+        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認'; then
         HIT_GS=false
     fi
 
     # WF検出: l1_alm_wf_engine / walk.forward / WF(大文字) / ウォークフォワード
     if echo "$WF_SEARCH_TEXT" | grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで'; then
         HIT_WF=true
+    fi
+    if [[ "$HIT_WF" == true ]] && [[ -z "$WF_PATH_CANDIDATE" ]] \
+        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認'; then
+        HIT_WF=false
     fi
 
     # どちらも検出されなければ対象外
@@ -3959,9 +3980,17 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '
 # トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
 # FP修正(2026-04-27): descriptionにPARITY_PATH等の変数名があると偽陽性。title+purposeのみでトリガー
 # FP修正(2026-04-29): 過去形コンテキスト(修正後/修正版/修正済み/完了)の行を除外して分析cmdの誤検出を防ぐ
-_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' | grep -viE '修正後|修正版|修正済み|完了' || true)
+_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' | grep -viE '修正後|修正版|修正済み|完了|check_parity_ac_requirements|parity_ac_missing' || true)
 # scope_mode=SCOUT/VERIFYはDB変更なし→パリティP3-P5不要
 _CHECK19_SCOPE="$(cmd_block_get_field "scope_mode")"
+_CHECK19_PROJECT="$(cmd_block_get_field "project")"
+_CHECK19_SCOUT_EXEMPT="$(cmd_block_get_field "scout_exempt")"
+if [[ -n "${_CHECK19_PROJECT:-}" && "${_CHECK19_PROJECT}" != "dm-signal" ]]; then
+    _CHECK19_TRIGGER=""
+fi
+if [[ "${_CHECK19_SCOUT_EXEMPT:-}" == "true" ]]; then
+    _CHECK19_TRIGGER=""
+fi
 if [[ "${_CHECK19_SCOPE}" != "SCOUT" && "${_CHECK19_SCOPE}" != "VERIFY" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
     PARITY_MISSING=()
     # P1: holding_signal

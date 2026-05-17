@@ -645,6 +645,74 @@ YAML
     [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
 }
 
+@test "cmd_2837: q8の偵察のみ/コード変更なしは縮小表現WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2837_q8_fp:
+    id: cmd_2837_q8_fp
+    title: "偵察 — q8縮小表現FP確認"
+    purpose: "コード変更なしの偵察cmdでq8縮小表現が誤発火しないことを確認する"
+    command: |
+      logsを分析する
+    acceptance_criteria:
+      - "AC1: 偵察結果が記録されている"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q8縮小表現FPの局所回帰確認のみ"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 偵察の非破壊性を説明する → WHAT: 偵察のみ。コード変更なし → WHEN: cmd保存時 → WHERE: tests/unit/test_cmd_save.bats → WHO: 将軍 → HOW: q8縮小表現の例外を確認する。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg q8_縮小表現 scripts/cmd_save.sh で既存チェック確認済み"
+    assumptions:
+      - claim: "2026-05-17時点でfixtureはq8縮小表現チェック対象"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2837_q8_fp"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q8_縮小表現"* ]]
+}
+
+@test "cmd_2837: q8の代表/一部は正当WARNINGを維持する" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_2837_q8_tp:
+    id: cmd_2837_q8_tp
+    title: "検証 — q8縮小表現TP確認"
+    purpose: "代表サンプルだけに縮小するcmdでq8縮小表現が発火することを確認する"
+    command: |
+      代表サンプルのみ検証する
+    acceptance_criteria:
+      - "AC1: 代表サンプルの結果が記録されている"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q8縮小表現TPの局所回帰確認のみ"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: パラメータ空間縮小を検出する → WHAT: 代表サンプルのみ検証する → WHEN: cmd保存時 → WHERE: tests/unit/test_cmd_save.bats → WHO: 将軍 → HOW: q8縮小表現をWARN化する。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg q8_縮小表現 scripts/cmd_save.sh で既存チェック確認済み"
+    assumptions:
+      - claim: "2026-05-17時点でfixtureはq8縮小表現チェック対象"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_2837_q8_tp"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q8_why_whatのWHATに縮小表現を検出"* ]]
+}
+
 @test "cmd_2803: dict形式ACのdescriptionに自動実行があれば行動変換WARNINGなし" {
     create_queue_file << 'YAML'
 commands:
@@ -1958,13 +2026,13 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
-@test "Check20.8: 否定的前提キーワードあり+grep証跡なし→WARNING" {
-    CMD_BLOCK='purpose: "未対応の入口防止を追加"
+@test "Check20.8: 否定的assumptions.claimあり+grep証跡なし→WARNING" {
+    CMD_BLOCK='purpose: "入口防止を追加"
 description: AC1
 description: AC2
 description: AC3
 assumptions:
-  - claim: "2026-05-10時点で既存代替の確認は完了している"
+  - claim: "2026-05-10時点で既存代替は未実装"
     source: "tests/unit/test_cmd_save.bats"
     trust: "verified"'
     CMD_BLOCK_NC="$CMD_BLOCK"
@@ -2014,6 +2082,44 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.10b: cmd本文の問題説明だけなら否定的前提WARNINGなし" {
+    CMD_BLOCK='purpose: "未対応の入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-17時点で既存代替の確認は完了している"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"否定的前提キーワードを検出"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "Check20.10c: assumptions.claim内の否定語はgrep証跡なしならWARNING" {
+    CMD_BLOCK='purpose: "入口防止を追加"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-17時点で既存代替は存在しない"
+    source: "tests/unit/test_cmd_save.bats"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" == *"否定的前提キーワードを検出"* ]]
     [ "$status" -eq 0 ]
 }
 

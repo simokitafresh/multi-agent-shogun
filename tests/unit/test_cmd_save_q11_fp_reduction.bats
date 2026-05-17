@@ -13,8 +13,9 @@ setup_file() {
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
-        is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification
+        is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion
 }
 
 setup() {
@@ -38,6 +39,19 @@ setup() {
     [ "$status" -eq 1 ]
 }
 
+@test "Q11-FP-001b: task_type=analysisはgate文言を含んでも追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "分析 — gate/hook FP調査"
+    task_type: analysis
+    purpose: "既存gateの偽陽性を分析する。コード変更なし"
+    command: |
+      logsを確認してgate_hook_action_conversionの修正方針をまとめる'
+    CMD_BLOCK_CACHE['task_type']='analysis'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
 @test "Q11-FP-002: 既存gate精度改善cmdは詳細手順に追加語があっても追加cmd扱いしない" {
     CMD_BLOCK_NC='    title: "強化 — cmd_save.sh gate偽陽性一括修正"
     scope_mode: IMPL
@@ -45,6 +59,18 @@ setup() {
     command: |
       logs/cmd_design_quality.yamlの直近50件でFPを分析し共通根を修正せよ
       is_gate_or_hook_addition_cmd()にscope_mode=SCOUT除外追加'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
+@test "Q11-FP-002b: gate調査cmdは追加/実装語を含む修正方針でも追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "調査 — gate行動変換の修正方針"
+    scope_mode: EXACT
+    purpose: "gate/hook追加cmdの偽陽性を調査し修正方針を整理する"
+    command: |
+      is_gate_or_hook_addition_cmd()への除外条件追加案をレビューする'
     export CMD_BLOCK_NC
 
     run is_gate_or_hook_addition_cmd
@@ -132,6 +158,22 @@ setup() {
 
     run is_gate_or_hook_addition_cmd
     [ "$status" -eq 0 ]
+}
+
+@test "Q11-TP-003: action conversion同義語の遮断はWARNINGを出さない" {
+    CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
+    scope_mode: EXACT
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: "scripts/cmd_save.shに新規gateを追加し、不備があれば遮断する"
+    quality_gate:
+      q11_not_already_done: "未達成。grep -rn missing_required_field scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"'
+    export CMD_BLOCK_NC
+    WARN_COUNT=0
+    WARN_REASONS=()
+
+    run check_gate_hook_action_conversion "$CMD_BLOCK_NC"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"gate/hook追加cmdに行動変換キーワードがありません"* ]]
 }
 
 @test "Q11-FP-008: 既存gateへの条件追加は新規gate追加cmd扱いしない" {

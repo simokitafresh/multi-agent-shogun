@@ -95,6 +95,23 @@ teardown() {
     [[ "$output" != *"Check 18"* ]]
 }
 
+@test "RTE-T002c: outputs/grid_searchを参照する分析cmdはGS警告しない" {
+    local CMD_BLOCK='    project: dm-signal
+    title: "分析 — GS CSV結果の差分確認"
+    command: |
+      outputs/grid_search/okugi/cmd_2103_okugi_grid_monthly.csv を確認して差分分析する
+    acceptance_criteria:
+      - id: AC1
+        description: "CSV差分を確認する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GS道具"* ]]
+    [[ "$output" != *"Check 18"* ]]
+}
+
 @test "RTE-T003: WF四神とWF選別の説明文だけではWF警告しない" {
     local CMD_BLOCK='    project: dm-signal
     title: "設計 — WF四神の説明整理"
@@ -103,6 +120,23 @@ teardown() {
     acceptance_criteria:
       - id: AC1
         description: "説明文を更新する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WF道具"* ]]
+    [[ "$output" != *"Check 18"* ]]
+}
+
+@test "RTE-T003b: WF結果参照の分析cmdはWF警告しない" {
+    local CMD_BLOCK='    project: dm-signal
+    title: "分析 — WF結果CSVの確認"
+    command: |
+      WF結果CSVを差分確認して、l1_alm_wf_engineの過去出力を分析する
+    acceptance_criteria:
+      - id: AC1
+        description: "CSV差分を確認する"'
 
     run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
     echo "$output" >&2
