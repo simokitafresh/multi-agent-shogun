@@ -97,8 +97,6 @@ PROPOSAL_MAP = {
 }
 
 # Patterns already handled by Level 4+ gates (gate_report_format_main.py BLOCK + FIX hint).
-# These target ashigaru.md/ashigaru-procedures.md which ninjas DON'T read after /clear
-# (CLAUDE.md ninja recovery: "Do NOT read instructions/ashigaru.md (cost saving)").
 # The gate BLOCK itself IS the immune system — doc proposals are structurally invalid.
 GATED_PATTERNS = {
     "report_format",                  # gate_report_format_main.py L165-204
@@ -107,6 +105,23 @@ GATED_PATTERNS = {
     "purpose_validation_fit_false",   # gate_report_format_main.py L318-322
     "ac_version_mismatch",            # gate_report_format_main.py L404+
 }
+
+# Ninja recovery explicitly does not read these files after /new. Proposing changes
+# here for ninja-originated report mistakes creates unread instructions instead of
+# changing the execution path.
+NINJA_UNREAD_TARGETS = {
+    "instructions/ashigaru.md",
+    "instructions/ashigaru-procedures.md",
+}
+
+
+def proposal_skip_reason(pattern, spec):
+    target = spec.get("target", "")
+    if pattern in GATED_PATTERNS:
+        return "Level4 gate handles this; gate_report_format already BLOCKS it"
+    if target in NINJA_UNREAD_TARGETS:
+        return "target file ninja-unread"
+    return None
 
 
 def normalize_reason(raw):
@@ -181,8 +196,9 @@ for pattern, count in pattern_counts.most_common():
     spec = PROPOSAL_MAP.get(pattern)
     if spec is None or count < min_count:
         continue
-    if pattern in GATED_PATTERNS:
-        print(f"  {pattern}: SKIP (Level4 gate handles this; target file ninja-unread)")
+    skip_reason = proposal_skip_reason(pattern, spec)
+    if skip_reason:
+        print(f"  {pattern}: SKIP ({skip_reason})")
         continue
 
     examples = " ; ".join(pattern_examples.get(pattern, [])[:2])
