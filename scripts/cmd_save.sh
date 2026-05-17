@@ -4289,6 +4289,9 @@ check_ac_phase_mixing() {
     function check_buf(text,    lt) {
         if (text == "") return
         lt = tolower(text)
+        # Exclude concrete file/script references before keyword matching.
+        # Example: scripts/deploy_task.sh contains "deploy" but is not a delivery action.
+        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|ts|tsx|js|jsx|yaml|yml|json|sql|html|css|toml|cfg|env)/, " ", lt)
         if (lt !~ /実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce/) return
         if (lt ~ /cdp|計測|測定|実測|measure|measurement|benchmark|ベンチ/ ||
             lt ~ /commit|push|deploy|コミット|デプロイ/) { print "FOUND" }
