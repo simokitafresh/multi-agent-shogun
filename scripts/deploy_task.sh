@@ -2468,7 +2468,7 @@ inject_semantic_concepts() {
 
     # semantic_search.sh でマッチする概念+ファイル+スキルを取得
     local matches
-    matches=$(timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+    matches=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
         /^## /{label=$0; sub(/^## /,"",label); next}
         /^- skills:/{sub(/^- skills: /,""); if($0!="なし") skills=skills " " $0; next}
         /^- file:/{gsub(/`/,"",$0); sub(/^- file: /,""); files=files " " $0; next}
@@ -2478,7 +2478,7 @@ inject_semantic_concepts() {
     [ -z "$matches" ] && return 0
 
     local recommended_skills
-    recommended_skills=$(timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+    recommended_skills=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
         /^- skills:/ {
             sub(/^- skills: /,"")
             if ($0 == "" || $0 == "なし") next
