@@ -46,6 +46,8 @@ CMD_FORCED=""
 MESSAGE="$DEFAULT_MESSAGE"
 TYPE="task_assigned"
 FROM="karo"
+DEPLOY_TASK_MAIN_TIMEOUT_SEC="${DEPLOY_TASK_MAIN_TIMEOUT_SEC:-300}"
+DEPLOY_TASK_MAIN_DEADLINE=0
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -68,6 +70,30 @@ deploy_task_release_lock() {
     flock -u "$lock_fd" || true
     eval "exec ${lock_fd}>&-"
     log "deploy_lock: released ${lock_file}"
+}
+
+deploy_task_start_deadline() {
+    local timeout_sec="${DEPLOY_TASK_MAIN_TIMEOUT_SEC:-0}"
+    case "$timeout_sec" in
+        ''|*[!0-9]*) timeout_sec=0 ;;
+    esac
+    if [ "$timeout_sec" -gt 0 ] 2>/dev/null; then
+        DEPLOY_TASK_MAIN_DEADLINE=$((SECONDS + timeout_sec))
+        log "main_timeout: armed (${timeout_sec}s)"
+    else
+        DEPLOY_TASK_MAIN_DEADLINE=0
+        log "main_timeout: disabled"
+    fi
+}
+
+deploy_task_check_deadline() {
+    local phase="$1"
+    if [ "${DEPLOY_TASK_MAIN_DEADLINE:-0}" -gt 0 ] 2>/dev/null && [ "$SECONDS" -ge "$DEPLOY_TASK_MAIN_DEADLINE" ] 2>/dev/null; then
+        log "TIMEOUT: deploy_task_main exceeded ${DEPLOY_TASK_MAIN_TIMEOUT_SEC}s at ${phase}; exiting safely"
+        echo "TIMEOUT: deploy_task_main exceeded ${DEPLOY_TASK_MAIN_TIMEOUT_SEC}s at ${phase}; deployment stopped safely. Check logs/deploy_task.log and retry." >&2
+        return 124
+    fi
+    return 0
 }
 
 deploy_task_has_completed_peer_report() {
@@ -211,6 +237,41 @@ deploy_task_send_direct_renudge() {
         log "${agent_name}: delayed direct re-nudge sent (inbox${unread_count})"
     else
         log "${agent_name}: WARN delayed direct re-nudge failed (inbox${unread_count})"
+    fi
+}
+
+deploy_task_post_deploy_verify() {
+    local ninja_name="$1"
+    local pane_target unread_count agent_state capture_tail prompt_seen
+
+    pane_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},${ninja_name}}" 2>/dev/null | head -1)
+    if [ -z "$pane_target" ]; then
+        log "POST-DEPLOY VERIFY ${ninja_name}: pane not found; retry suggestion: bash scripts/deploy_task.sh ${ninja_name} <cmd_id>"
+        return 0
+    fi
+
+    agent_state=$(tmux show-options -p -t "$pane_target" -v @agent_state 2>/dev/null || true)
+    unread_count="$(deploy_task_unread_count "$ninja_name")"
+    case "$unread_count" in
+        ''|*[!0-9]*) unread_count=0 ;;
+    esac
+    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null | tail -5 || true)
+    log "POST-DEPLOY VERIFY ${ninja_name}: pane=${pane_target}, state=${agent_state:-unknown}, unread=${unread_count}"
+    while IFS= read -r line; do
+        log "POST-DEPLOY VERIFY ${ninja_name} pane: ${line}"
+    done <<< "$capture_tail"
+
+    prompt_seen=0
+    if [[ "$capture_tail" == *"›"* ]] || [[ "$capture_tail" == *"❯"* ]]; then
+        prompt_seen=1
+    fi
+    if [ "$unread_count" -gt 0 ] 2>/dev/null && [ "$prompt_seen" -eq 1 ]; then
+        log "POST-DEPLOY VERIFY ${ninja_name}: unread inbox remains while prompt is visible; sending direct re-nudge"
+        deploy_task_send_direct_renudge "$ninja_name"
+    elif [ "$unread_count" -gt 0 ] 2>/dev/null; then
+        log "POST-DEPLOY VERIFY ${ninja_name}: unread inbox remains; retry proposal if unchanged: bash scripts/deploy_task.sh ${ninja_name} <cmd_id>"
+    else
+        log "POST-DEPLOY VERIFY ${ninja_name}: inbox consumed or no unread messages detected"
     fi
 }
 
@@ -1609,15 +1670,33 @@ generate_report_template() {
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
     # GP-084改: gawk BEGINFILE/ENDFILE一括でverdict+parent_cmdを抽出（field_get逐次→一括化）
-    # 報告ファイルが増えてもI/O 1回で済む（旧: N×field_get, 新: 1×gawk）
+    # cmd_2832: 全報告globを避け、対象忍者分 + 同一parent_cmd分だけを読む。
+    # 同一parent_cmd分は他忍者の完了報告を誤archiveしないために必要。
     declare -A _rpt_verdict _rpt_pcmd
-    local _gawk_output
-    _gawk_output=$(gawk '
+    local _gawk_output _scan_report _report_scan_files=()
+    for _scan_report in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
+        [ -f "$_scan_report" ] || continue
+        _report_scan_files+=("$_scan_report")
+    done
+    if [[ -n "$_p_parent_cmd" && "$_p_parent_cmd" == cmd_* ]]; then
+        for _scan_report in "$SCRIPT_DIR/queue/reports/"*"_report_${_p_parent_cmd}.yaml"; do
+            [ -f "$_scan_report" ] || continue
+            case " ${_report_scan_files[*]} " in
+                *" $_scan_report "*) ;;
+                *) _report_scan_files+=("$_scan_report") ;;
+            esac
+        done
+    fi
+    if [ "${#_report_scan_files[@]}" -gt 0 ]; then
+        _gawk_output=$(gawk '
         BEGINFILE { pcmd=""; verd="" }
         /^parent_cmd:/ { sub(/^parent_cmd:[[:space:]]*/, ""); sub(/^["'"'"']/, ""); sub(/["'"'"']$/, ""); sub(/[[:space:]]*$/, ""); pcmd=$0 }
         /^verdict:/ { sub(/^verdict:[[:space:]]*/, ""); sub(/^["'"'"']/, ""); sub(/["'"'"']$/, ""); sub(/[[:space:]]*$/, ""); verd=$0 }
         ENDFILE { printf "%s\t%s\t%s\n", FILENAME, pcmd, verd }
-    ' "$SCRIPT_DIR/queue/reports/"*_report_*.yaml 2>/dev/null) || true
+    ' "${_report_scan_files[@]}" 2>/dev/null) || true
+    else
+        _gawk_output=""
+    fi
     while IFS=$'\t' read -r _rpt_file _rpt_p _rpt_v; do
         [ -z "$_rpt_file" ] && continue
         _rpt_verdict["$_rpt_file"]="$_rpt_v"
@@ -6137,7 +6216,9 @@ deploy_task_apply_task_mutations() {
 # メイン処理
 # ═══════════════════════════════════════
 deploy_task_main() {
+    deploy_task_start_deadline
     parse_deploy_task_args "$@"
+    deploy_task_check_deadline "after_parse_args" || return $?
     cleanup_none_task_files
     deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
@@ -6147,6 +6228,7 @@ deploy_task_main() {
     local pane_target ctx_pct
     local is_idle=false
     pane_target=$(resolve_pane "$NINJA_NAME")
+    deploy_task_check_deadline "after_resolve_pane" || return $?
     if [ -z "$pane_target" ]; then
         log "ERROR: Unknown ninja: $NINJA_NAME"
         return 1
@@ -6171,6 +6253,7 @@ deploy_task_main() {
             return 1
         fi
         log "deploy_lock: acquired ${deploy_lock_file}"
+        deploy_task_check_deadline "after_deploy_lock" || return $?
     fi
 
     pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
@@ -6259,6 +6342,7 @@ except Exception:
             deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
             return 1
         fi
+        deploy_task_check_deadline "after_cmd_resolution" || return $?
     fi
 
     task_status=$(field_get "$task_yaml" "status" "unknown")
@@ -6389,6 +6473,7 @@ except Exception:
     fi
 
     deploy_task_apply_task_mutations "$NINJA_NAME"
+    deploy_task_check_deadline "after_task_mutations" || return $?
     DEPLOY_TASK_EXIT_NUDGE_ARMED=1
 
     if [ -n "$deploy_lock_fd" ]; then
@@ -6406,6 +6491,7 @@ except Exception:
         log "${NINJA_NAME}: CTX=${ctx_pct}%, busy. Sending inbox_write (queued, watcher will nudge later)"
         safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
     fi
+    deploy_task_check_deadline "after_inbox_write" || return $?
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
 
@@ -6426,14 +6512,7 @@ except Exception:
 
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
     # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
-    local _pd_pane
-    _pd_pane=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},${NINJA_NAME}}" 2>/dev/null | head -1)
-    if [ -n "$_pd_pane" ]; then
-        local _pd_capture
-        _pd_capture=$(tmux capture-pane -t "$_pd_pane" -p -S -5 2>/dev/null | tail -3)
-        log "POST-DEPLOY VERIFY ${NINJA_NAME} pane:"
-        echo "  ${_pd_capture}" | head -3
-    fi
+    deploy_task_post_deploy_verify "$NINJA_NAME"
 
     # Codex忍者向け遅延re-nudge (cmd_karo_codex_renudge)
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする

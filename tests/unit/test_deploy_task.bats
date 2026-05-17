@@ -182,6 +182,60 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "cmd_2832: deploy_task_main arms internal cooperative timeout" {
+    run grep -F "deploy_task_start_deadline" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+
+    run grep -F "deploy_task_check_deadline \"after_inbox_write\"" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+
+    run grep -F "TIMEOUT: deploy_task_main exceeded" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2832: post-deploy verification can re-nudge when pane still has unread inbox" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
+messages:
+- id: msg_1
+  read: false
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/post_deploy_verify.log"; }
+        tmux() {
+            case "$1" in
+                list-panes) printf "shogun:agents.2\n" ;;
+                show-options) printf "idle\n" ;;
+                capture-pane) printf "ready\n› \n" ;;
+            esac
+        }
+        deploy_task_send_direct_renudge() {
+            printf "%s\n" "$1" > "$TEST_PROJECT/logs/post_deploy_renudge.log"
+        }
+        deploy_task_post_deploy_verify sasuke
+    '
+
+    [ "$status" -eq 0 ]
+    run cat "$TEST_PROJECT/logs/post_deploy_renudge.log"
+    [ "$status" -eq 0 ]
+    [ "$output" = "sasuke" ]
+    grep -q "sending direct re-nudge" "$TEST_PROJECT/logs/post_deploy_verify.log"
+}
+
+@test "cmd_2832: report gawk scan avoids global all-ninja glob" {
+    run grep -F '"$SCRIPT_DIR/queue/reports/"*_report_*.yaml' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -ne 0 ]
+
+    run grep -F '"$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+
+    run grep -F '"$SCRIPT_DIR/queue/reports/"*"_report_${_p_parent_cmd}.yaml"' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task EXIT trap sends pending nudge once when armed" {
     mkdir -p "$TEST_PROJECT/logs"
 
