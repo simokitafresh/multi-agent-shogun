@@ -67,6 +67,56 @@ EOF
     [ -z "$output" ]
 }
 
+@test "same cmd assigned redeploy skips resolve when report template already exists" {
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_9008
+  task_id: cmd_9008_impl
+  status: assigned
+  report_path: queue/reports/sasuke_report_cmd_9008.yaml
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_9008.yaml" <<'EOF'
+worker_id: sasuke
+task_id: cmd_9008_impl
+parent_cmd: cmd_9008
+status: pending
+verdict: ""
+EOF
+
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { echo "$*"; }
+        should_skip_same_cmd_resolve "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_9008 sasuke
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_resolve: SKIP duplicate same-cmd deploy (cmd_9008 → sasuke)"* ]]
+}
+
+@test "same cmd resolve skip does not trigger before report template exists" {
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_9009
+  task_id: cmd_9009_impl
+  status: assigned
+  report_path: queue/reports/sasuke_report_cmd_9009.yaml
+EOF
+
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { echo "$*"; }
+        should_skip_same_cmd_resolve "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_9009 sasuke
+    '
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+}
+
 @test "done redeploy: completed report path is reused and diff-only note is injected" {
     mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
 

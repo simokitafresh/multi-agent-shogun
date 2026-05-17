@@ -5809,6 +5809,44 @@ capture_done_redeploy_context() {
     log "done_redeploy_capture: cmd=${prev_parent_cmd} report=${prev_report_path:-none} task_id=${prev_task_id:-none} ac_task_id=${prev_ac_task_id:-none}"
 }
 
+should_skip_same_cmd_resolve() {
+    local task_file="$1"
+    local requested_cmd="$2"
+    local ninja_name="${3:-}"
+    local prev_status prev_parent_cmd prev_task_id prev_report_path prev_report_filename
+
+    [ -f "$task_file" ] || return 1
+    [ -n "$requested_cmd" ] || return 1
+
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        status parent_cmd task_id report_path report_filename 2>/dev/null)" || true
+
+    prev_status="${status:-}"
+    prev_parent_cmd="${parent_cmd:-}"
+    prev_task_id="${task_id:-}"
+    prev_report_path="${report_path:-}"
+    prev_report_filename="${report_filename:-}"
+
+    [ "$prev_parent_cmd" = "$requested_cmd" ] || return 1
+    case "$prev_status" in
+        assigned|acknowledged) ;;
+        *) return 1 ;;
+    esac
+    [ -n "$prev_task_id" ] || return 1
+
+    if [ -z "$prev_report_path" ] && [ -n "$prev_report_filename" ]; then
+        prev_report_path="queue/reports/${prev_report_filename}"
+    fi
+    if [ -z "$prev_report_path" ] && [ -n "$ninja_name" ]; then
+        prev_report_path="queue/reports/${ninja_name}_report_${requested_cmd}.yaml"
+    fi
+    [ -n "$prev_report_path" ] || return 1
+    [ -f "$SCRIPT_DIR/$prev_report_path" ] || return 1
+
+    log "cmd_resolve: SKIP duplicate same-cmd deploy (${requested_cmd} → ${ninja_name:-unknown}); reusing existing task YAML"
+    return 0
+}
+
 inject_done_redeploy_hints() {
     local task_file="$1"
     local report_path report_filename existing_desc note
@@ -6286,8 +6324,12 @@ except Exception:
         fi
         export _DEPLOY_PREV_SESSION_STATE
         export _DEPLOY_PREV_PARENT_CMD
-        reset_stale_fields "$NINJA_NAME"
-        if [ "$DIRECT_MODE" = true ]; then
+        if should_skip_same_cmd_resolve "$task_yaml" "$CMD_ID" "$NINJA_NAME"; then
+            _DEPLOY_PREV_PARENT_CMD="$CMD_ID"
+            log "same_cmd_redeploy: skipped reset_stale_fields and resolve_cmd_to_task for ${CMD_ID}"
+        else
+            reset_stale_fields "$NINJA_NAME"
+            if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
                 if [ ! -f "$YAML_FILE" ]; then
                     log "ERROR: --yaml file not found: $YAML_FILE"
@@ -6314,7 +6356,7 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
             inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
-        elif [ -n "$CMD_FORCED" ]; then
+            elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
             # parent_cmd/task_idを直接設定。解決失敗でもabortしない。
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_FORCED" \
@@ -6334,13 +6376,14 @@ except Exception:
                 || { log "FATAL: yaml_field_set failed for _ac_worker_id (cmd_forced)"; return 1; }
             _overwrite_ac_from_cmd "$task_yaml" || true
             log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
-        elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
-            log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
-        else
-            log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
-            echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
-            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-            return 1
+            elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
+            else
+                log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
+                echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            fi
         fi
         deploy_task_check_deadline "after_cmd_resolution" || return $?
     fi
