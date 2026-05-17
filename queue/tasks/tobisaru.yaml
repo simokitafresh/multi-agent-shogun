@@ -1,16 +1,28 @@
 task:
-  _ac_task_id: cmd_2807_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2807
-  ac_version: 2edf2958
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'inject_ninja_weak_points YAML注入失敗の根因が特定されている'
-  - id: 'AC2'
-    checks:
-    - check: '根因修正後にweak_points注入が正常動作しERRORが発生しない'
-  cmd_id: cmd_training_L4_codd_202605151403_tobisaru
+    AC1:
+      binary_checks:
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定スクリプトの改善点を3つ特定し、根拠付きで報告する
+    AC2:
+      binary_checks:
+      - '最高インパクト1件を実装したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、必要な検証を実行する
+    AC3:
+      binary_checks:
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -19,80 +31,56 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_2807
+  parallel_ok: []
+  parent_cmd: 
   project: infra
-  purpose: cmd_2801の_sv()修正後にinject_ninja_weak_pointsがkagemaru+hanzoで連続YAML注入失敗(各2回)。配備自体は成功(weak_pointsはオプショナル)だがsilent
+  purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
   status: idle
   stop_for: []
-  task_id: cmd_2807_exact
-  task_type: exact
+  target_path: scripts/ninja_monitor.sh
+  task_id: cmd_training_L4_auto_202605171241_tobisaru_normal
+  task_type: training
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L070'
-    summary: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-    detail: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
-  - id: 'L287'
-    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
-  - id: 'L417'
-    summary: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
-    detail: 'cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY'
+  - id: 'L147'
+    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+  - id: 'L230'
+    summary: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
+    detail: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
+  - id: 'L545'
+    summary: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
+    detail: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
+  - id: 'L300'
+    summary: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
+    detail: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
+  - id: 'L547'
+    summary: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
+    detail: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
+  - id: 'L384'
+    summary: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
+    detail: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
   - id: 'L088'
     summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
     detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L524'
-    summary: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-    detail: 'yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-  - id: 'L101'
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+  - id: 'L343'
+    summary: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+    detail: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+  - id: 'L356'
+    summary: 'lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite'
+    detail: 'lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  recommended_skills:
-  - "hensei"
-  - "hensei-mixed"
-  - "hensei-opus"
-  - "karo-direct"
-  - "recon-dual"
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  - "switch-to-codex"
-  - "switch-to-opus"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -106,21 +94,25 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L070: L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_36
-      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
-      - L417: cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがY
+      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
+      - L230: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
+      - L545: queue/tasksはflat形式とnested task形式が混在している。awk '^  status:' や data.get('task', {}) 
+      - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
+      - L547: CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依
+      - L384: result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_
       - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L524: yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去す
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
-      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+      - L343: lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:
+      - L356: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite
     ────────────────────────────────────────
     
     
+  ac_version: c5435a62
+  _ac_task_id: cmd_training_L4_auto_202605171241_tobisaru_normal
+  _ac_worker_id: 
+  target_path_warning: "⚠ target_pathが存在しない: scripts/ninja_monitor.sh"
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_2807.yaml
-  report_path: queue/reports/tobisaru_report_cmd_2807.yaml
+  report_filename: tobisaru_report_cmd_training_L4_auto_202605171241_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_L4_auto_202605171241_tobisaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -152,4 +144,4 @@ task:
     - reason: 'lesson_done_missing'
       count: 1
       hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-  deployed_at: "2026-05-16T08:31:17"
+  deployed_at: "2026-05-17T12:42:07"

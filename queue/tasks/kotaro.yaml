@@ -1,15 +1,28 @@
 task:
-  _ac_task_id: cmd_2806_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2806
-  ac_version: 2edf2958
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'ninja_monitorがrespawn直後(前回clear 60s以内)のCTX=0%忍者に対してrespawnを発動しない'
-  - id: 'AC2'
-    checks:
-    - check: 'respawn直後でないCTX=0%忍者に対しては従来通りrespawnが発動する'
+    AC1:
+      binary_checks:
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定スクリプトの改善点を3つ特定し、根拠付きで報告する
+    AC2:
+      binary_checks:
+      - '最高インパクト1件を実装したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、必要な検証を実行する
+    AC3:
+      binary_checks:
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,83 +36,73 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_2806
+  parallel_ok: []
+  parent_cmd: 
   project: infra
-  purpose: GP-222がCodex忍者のCTX=0%を異常と判定しrespawnするが、respawn直後は正常にCTX=0%。結果10分ごとにrespawn→idle→respawn→∞の無限ループ(本日99回)。respawn直後(前回clear
+  purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
   status: idle
   stop_for: []
-  task_id: cmd_2806_exact
-  task_type: exact
+  target_path: scripts/ninja_monitor.sh
+  task_id: cmd_training_L4_auto_202605171241_kotaro_normal
+  task_type: training
   related_lessons:
   - id: 'L500'
     summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
     detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
-  - id: 'L114'
-    summary: 'cmd_464_hotfix'
-    detail: 'cmd_464_hotfix'
-  - id: 'L531'
-    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
-    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
-  - id: 'L205'
-    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
-    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
-  - id: 'L252'
-    summary: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
-    detail: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+  - id: 'L112'
+    summary: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
+    detail: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
+  - id: 'L615'
+    summary: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
+    detail: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
+  - id: 'L305'
+    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
+    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
+  - id: 'L147'
+    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+  - id: 'L230'
+    summary: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
+    detail: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L603'
+    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
   - id: 'L248'
     summary: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
     detail: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
-  - id: 'L226'
-    summary: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
-    detail: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  - id: 'L361'
-    summary: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
-    detail: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
-  - id: 'L134'
-    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
-    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+  - id: 'L545'
+    summary: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
+    detail: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  recommended_skills:
-  - "hensei"
-  - "hensei-mixed"
-  - "hensei-opus"
-  - "karo-direct"
-  - "recon-dual"
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  - "switch-to-codex"
-  - "switch-to-opus"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
-      - L114: cmd_464_hotfix
-      - L531: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン
-      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
-      - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
+      - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT
+      - L615: inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi
+      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
+      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
+      - L230: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
       - L248: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止
-      - L226: ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L361: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
-      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
+      - L545: queue/tasksはflat形式とnested task形式が混在している。awk '^  status:' や data.get('task', {}) 
     ────────────────────────────────────────
     
     
+  ac_version: c5435a62
+  _ac_task_id: cmd_training_L4_auto_202605171241_kotaro_normal
+  _ac_worker_id: 
+  target_path_warning: "⚠ target_pathが存在しない: scripts/ninja_monitor.sh"
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_2806.yaml
-  report_path: queue/reports/kotaro_report_cmd_2806.yaml
+  report_filename: kotaro_report_cmd_training_L4_auto_202605171241_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L4_auto_202605171241_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -122,4 +125,4 @@ task:
     - reason: 'lesson_done_missing'
       count: 1
       hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
-  deployed_at: "2026-05-16T08:25:56"
+  deployed_at: "2026-05-17T12:41:34"

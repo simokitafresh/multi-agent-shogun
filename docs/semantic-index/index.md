@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ） |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -62,6 +62,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T16:45:43+09:00 ではrebalancerの概要を教えてくれ。セマンティック辞書にも登録しよう |
 | cmd | `cmd_2739` 改善 — スキルTRIGGER照合をproject文脈対応+セマンティック辞書棚卸し (`scripts/hooks/prompt_state_inject.sh`, `skills/cdp-browse/SKILL.md`, `skills/codd/SKILL.md`) |
 | cmd | `cmd_2776` 強化 — セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase 1） (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T14:17:11+09:00 ここまでの知識を記憶してセマンティクスインデックスにも保存せよ |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -69,7 +70,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -91,6 +92,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:17:45+09:00 自立自走 なぜなぜ7回 続けろ |
 | cmd | `cmd_2809` SKILL.md追従7件更新+cmd_complete_gateにSKILL.md追従WARN組込み (`scripts/cmd_complete_gate.sh`, `skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T12:45:13+09:00 shogun-clear-prepのスキルをなぜなぜ7回でレベルアップしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T13:59:44+09:00 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T14:13:36+09:00 そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな。CoDDのように利用すればいい |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -151,7 +154,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制 |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 俺との会話はdeepdiveを前提としていることが多くないかinbox1, 因果ネットワーク構想 Obsidian vault化 殿承認 |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -160,6 +163,8 @@ codd:
 | deepdive | `memory/deepdive_causal_tracing_20260415.md` |
 | deepdive | `memory/deepdive_karo_verification_20260405.md` |
 | file | `context/training-cycle.md` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T13:54:49+09:00 俺との会話はdeepdiveを前提としていることが多くないかinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T14:17:00+09:00 因果ネットワーク構想(Obsidian vault化)殿承認。根因=時系列×因果のネットワーク不在で外部記事に揺らぐ。解法=Obsidianをそのまま使い[[リンク]]で因果辺永続化。全エージェント利用可能な進化する前提知識ネットワーク。d |
 
 ## growth_loop — 学習ループ
 
@@ -344,7 +349,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加 |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？ |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
@@ -397,6 +402,8 @@ codd:
 | cmd | `cmd_2801` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
 | cmd | `cmd_2804` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
 | cmd | `cmd_2806` (`queue/tasks/kotaro.yaml`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
+| cmd | `cmd_2822` deploy_task.sh 因果リンク自動注入(忍者タスクに関連因果を自動化提供) (`scripts/deploy_task.sh`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-17T16:49:55+09:00 配備が止まっていないか？ |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 

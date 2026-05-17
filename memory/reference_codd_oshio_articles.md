@@ -37,3 +37,9 @@ Source: `https://zenn.dev/shio_shoppaize/articles/codd-v2-17-milestone`
 | `codd fix [PHENOMENON]` | 自然言語の事象から関連設計書を選び、設計書 -> 実装 -> テストを更新し、DAG検査まで回す | CI REDだけでなく、UX/仕様違和感の修正にもCoDDを使える |
 | `codd dag verify` | 設計書・コード・テストをDAGで検査し、家系図の欠落を検出する | docs更新の完了条件にDAG/伝播/semantic index反映を含める |
 | v2.17実績 | v1.34以前のgreenfield難を5日でv2.17.1まで改善。次の挑戦はbrownfield | v2.x情報ではv1.xの制限を過去履歴として扱い、現CLIを必ず実測する |
+
+---
+
+## 因果リンク
+
+- → [[technique_judgment_framework]] CoDD設計書→判断フレームワークの道具

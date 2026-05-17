@@ -6048,3 +6048,33 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_field_set_batch AWKがL524バグ(prev_inline_scalar+indent>field_indent)でその継続行を消去しYAMLを破損させる。修正: yaml.dumpにwidth=1000000を追加。根本原因はL524のAWKバグだが、yaml.dumpが折り畳みを出力しないことで回避できる。
+
+### L616: L6横展開時のAC件数検証
+- **日付**: 2026-05-16
+- **出典**: cmd_2811
+- **記録者**: karo
+- **tags**: [infra,testing,yaml,lesson]
+- **target_files**: [projects/auto-ops/lessons.yaml,projects/google-classroom/lessons.yaml,projects/database/lessons.yaml]
+- **when**: 未設定
+- **how**: 未設定
+- lessons.yaml when/how補完時はPJ単位でlesson_count vs when/how存在数を比較しmissing=[]を報告証跡に残す
+
+### L617: AC内の存在しない運用YAML IDは開始時grepで検出し報告する
+- **日付**: 2026-05-17
+- **出典**: cmd_2817
+- **記録者**: saizo
+- **tags**: [infra,process,yaml,reporting]
+- **target_files**: [instructions/ashigaru.md,instructions/roles/ashigaru_role.md,instructions/generated/ashigaru.md,instructions/generated/codex-ashigaru.md,instructions/generated/copilot-ashigaru.md]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決IDは150159207と150159329だった。ACで運用YAML IDを扱う場合は作業開始時にrgで存在確認し、不在なら近傍IDを処理してもbinary_checksはnoにし、ID不一致をresult.detailsへ残す。
+
+### L618: 逆引きCLIはrg -l単発にする(ファイル単位rg多重化は20s超)
+- **日付**: 2026-05-17
+- **出典**: cmd_2818
+- **記録者**: karo
+- **tags**: [infra,bash]
+- **target_files**: [projects/infra/,projects/infra/lessons_shogun.yaml,scripts/lesson_write_shogun.sh,scripts/causal_backlinks.sh,tests/unit/test_lesson_write_shogun.bats]
+- **when**: 未設定
+- **how**: 未設定
+- causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回同種CLI作成時は実リポ計測をACに含める。

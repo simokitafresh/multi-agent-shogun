@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-05-17
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2815 | startup gate Gate 13 ALERT推奨分岐 | GATE CLEAR | 3session連続BLOCK根因=一律/lesson-sort推奨→useful_rate/unsorted分岐 |
+| cmd_2816 | gate when/how計数修正+ssot_path+進化検知 | GATE CLEAR | gate偽陽性6件解消 |
+| cmd_2817 | 忍者binary_checks記入例追加 | GATE CLEAR | FAIL 7/50件→L5防御 |
+| cmd_2818 | 因果NW導入(Obsidian [[リンク]]+origin) | GATE CLEAR | 殿「記憶は時系列で因果によってネットワーク化される」 |
+| cmd_2819-2822 | 因果NW自動成長4件(cmd_save/PD/startup/deploy) | 全CLEAR | 入口(cmd/裁定)+出口(孤立検出/忍者注入) |
+| cmd_2823 | 全ロール環境埋込み(CLAUDE.md+instructions) | 委任中 | 使えないものは存在しないのと同じ(殿厳命) |
+| session_20260517 | 起動問題4cmd+因果NW5cmd+Obsidian vault化+記事分析 | 8CLEAR+1委任 | 記事パターンマッチ→殿指摘で前提崩壊→因果NW構想→Obsidian+junction+環境埋込み |
+
 ## 2026-05-16
 
 | cmd/action | 意図 | 結果 | 因果 |
