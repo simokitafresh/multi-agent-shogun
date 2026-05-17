@@ -71,3 +71,39 @@ assert isinstance(data.get("self_gate_check"), dict), data
 assert data["self_gate_check"]["lesson_ref"] == "PASS", data
 PY
 }
+
+@test "assumption_invalidation: 欠落ブロックへのdot notation書込みは必須フィールドを補完する" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation.found false 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ai = data.get("assumption_invalidation")
+assert isinstance(ai, dict), data
+assert ai["found"] is False, ai
+assert ai["affected_cmds"] == [], ai
+assert ai["detail"] == "", ai
+PY
+}
+
+@test "assumption_invalidation: 既存affected_cmdsはdot notation書込み後も保持される" {
+    cat >> "$TEST_REPORT" <<'YAML'
+assumption_invalidation:
+  found: true
+  affected_cmds:
+    - cmd_100
+  detail: before
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation.detail after 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ai = data.get("assumption_invalidation")
+assert ai["found"] is True, ai
+assert ai["affected_cmds"] == ["cmd_100"], ai
+assert ai["detail"] == "after", ai
+PY
+}

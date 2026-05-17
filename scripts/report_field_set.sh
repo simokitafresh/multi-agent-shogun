@@ -868,6 +868,19 @@ else:
                 print(f'[report_field_set] binary_checks保護: {protected}個のcheck項目をテンプレートから維持', file=sys.stderr)
     current[last_key] = value
 
+    # cmd_2841: any assumption_invalidation.* write must leave the gate-required
+    # shape intact.  When the block is missing, dot-notation writes create only
+    # the requested leaf; add the template defaults instead of producing a report
+    # that gate_report_format_main.py rejects.
+    if keys[0] == 'assumption_invalidation':
+        ai = data.get('assumption_invalidation')
+        if not isinstance(ai, dict):
+            ai = {}
+            data['assumption_invalidation'] = ai
+        ai.setdefault('found', False)
+        ai.setdefault('affected_cmds', [])
+        ai.setdefault('detail', '')
+
 dir_name = os.path.dirname(report_path) or '.'
 fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
 try:
