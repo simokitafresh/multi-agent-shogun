@@ -45,6 +45,15 @@
 # insights清掃: 54件→0件
 # 教訓useful率基準: 28.4%(gate_lesson_health)→cmd_2685 CLEAR(threshold0.40+target_files)。baseline確立済み
 #
+# ─── 本セッション成果 (2026-05-17T23:40更新) ───
+# draft review 7件: cmd_2824-2838。RC 2件(assumption誤り+AC既実装)。APPROVE 5件。全CLEAR
+# report review 8件: cmd_2824-2837。LGTM 7件+FAIL 1件(報告YAML不在)。全CLEAR
+# D0直接実装 4件: origin regex(948057bb)+assumption_invalidation保護(c5b12b41)+LLMフォールバック(f933b82a)+STALE_FIELDS(3c0ce2d6)
+# セマンティック監査: 9スクリプト×5カテゴリ。P0修正1件+P1/P2 7件検出→全件cmd化CLEAR
+# 隠れたインフラバグ: deploy配備timeout3因子(report蓄積+LLM10秒+nudge末尾)→全件修正。duration_sec=unknown全件→STALE_FIELDS欠落修正。assumption_invalidation FAIL23件→dict保護追加。WARN累計昇格FP6件→偵察+修正
+# 利他: 修行レポート164件手動archive(gawk 634→244ms)。WA率: 3月51%→4月10%→5月1%
+# 殿指摘: Obsidian因果リンク有効活用0%(軍師教訓origin 0/33件)→なぜなぜ7回→lesson_write.sh origin未追加が根因→L4設計提案
+#
 # ─── 本セッション成果 (2026-05-12T13:00更新) ───
 # レビュー5件: cmd_training_L4_r16_kotaro draft APPROVE, cmd_2685 draft APPROVE+report LGTM→CLEAR, cmd_2686 draft RC+report LGTM→CLEAR
 # 利他提案→完結: cmd_2685(useful率)+cmd_2686(lesson_done_missing)両方CLEAR。軍師提案→将軍cmd→忍者実装→軍師レビュー(RC反映)→CLEAR
@@ -135,3 +144,13 @@
 # docs/research永続化: 9件(clear_durability_fix/waste_analysis/self_gate_check_str_bug/deploy_yaml_parse_error/codex_respawn_loop/ntfy_rate_limit_global/deepdive_phantom/goodhart_audit/lgtm_block_nazenaze)
 # review_logアーカイブ: 945行→492行(20260516b.yamlに763行退避)
 # ★強くてニューゲーム: stats最終更新+review_logヘッダ知見2件+docs/research 9件+掲示板7投稿+全gate_result同期済み+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-17T19:35更新) ───
+# レビュー計18件: draft APPROVE 5件(修行kotaro/tobisaru×2+cmd_2809+cmd_2813) + report LGTM 12件(cmd_2809/2811/2812/2813/2814/2815/2816/2818/2819/2820/2821/2822/2823+CI修正1件+watcher_stat_fallback) + FAIL正当1件(cmd_2817 ID不在)
+# adversarial review 3件: cmd_2814(+267/-12 PASS)/cmd_2815(gate_shogun_startup PASS)/cmd_2821(gate_shogun_startup PASS)/cmd_2823(CLAUDE.md+instructions PASS)
+# なぜなぜ7回: 修行再設計(利他)。L4 FP率85%天井→gate通過訓練固定→L5利他修行3案(副作用検出/偵察/テスト設計)。→docs/research/gunshi_idle_training_rethink_nazenaze_20260516.md
+# D0直接実装2件: (1)idle-persist Step 5 利他還流判断(LG030 gate化) commit a7811f60 (2)ninja_monitor snapshot実態乖離補正(task YAML idle+CTX>0%→check_agent_busy) commit ea29975e
+# 殿指摘→即行動: 「分析→報告で止まるな」→snapshot乖離修正を即実装。「穴はないか」でPhase 3の罠に気づいた
+# accuracy: 全件LGTM/APPROVE→CLEAR(cmd_2817 BLOCK=忍者自己申告FAIL想定通り)。APPROVE→FAIL 0件
+# review_logアーカイブ: 852行→72行(20260517a.yamlに781行退避)
+# ★強くてニューゲーム: stats更新+review_logヘッダ知見2件(分析→即実装/修行再設計)+docs/research 1件(training_rethink)+D0 2件commit+掲示板3投稿+全gate_result同期済み+全inbox既読
