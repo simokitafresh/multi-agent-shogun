@@ -470,7 +470,7 @@ existing_parent_cmd = _pc_m.group(1) if _pc_m else ''
 # スカラー+リスト両方を確実にクリアするフィールド一覧
 STALE_FIELDS = [
     # 第1層: cmd固有メタデータ(スカラー)
-    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at',
+    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at', 'completed_at', 'done_at', 'acknowledged_at',
     # 第2層: inject_task_modifiers.pyが「存在チェック」するフィールド(リスト含む)
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
