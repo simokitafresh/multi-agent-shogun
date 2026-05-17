@@ -111,7 +111,7 @@ _compute_lesson_stats() {
     }
     function is_set_value(v) {
         v = trim(v)
-        return (v != "" && v != "未設定")
+        return (v != "")
     }
     function flush_current(    n) {
         if (current_id == "") return
