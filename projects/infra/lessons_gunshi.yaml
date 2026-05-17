@@ -6,6 +6,7 @@ lessons:
   title: git show HEAD検証必須 — Read toolはuncommitted含むため既実装判定に不十分
   detail: draft/report reviewで「既実装か」を判定する際、Read toolはuncommittedな変更も含めて表示する。cmd_1178-1181で3件誤判定が発生。対策はgit show HEAD:ファイルで確定済みのコードのみ確認すること。
   source_cmd: cmd_1178
+  origin: '[[cmd_1178]]'
   created_at: '2026-03-21'
   automated: true
   enforcement_level: 2
@@ -16,6 +17,7 @@ lessons:
   title: 並行配備衝突チェック — 事前検死で同一ファイル変更衝突を確認
   detail: 並行cmdが同一ファイルを変更するケースをレビュー時に検出する。cmd_1173で検出された。事前検死で並行配備中のcmdとの変更対象ファイル重複を必ず確認せよ。
   source_cmd: cmd_1173
+  origin: '[[cmd_1173]]'
   created_at: '2026-03-21'
   automated: true
   enforcement: GP-042 deploy_task.sh L2859-2872 他忍者同cmd配備→BLOCK
@@ -25,6 +27,7 @@ lessons:
   title: 前提崩壊パターン — 未実装/未対応主張はコード現物で再検証
   detail: 偵察報告やlesson_candidateの「未実装」「未対応」主張をそのまま信頼してはならない。cmd_1176-1179で5件連続で前提崩壊が発生した。cmd化前にコード現物(grepまたはgit show)で再検証すること。
   source_cmd: cmd_1176
+  origin: '[[cmd_1176]]'
   created_at: '2026-03-21'
   automated: false
   enforcement_level: 2
@@ -35,6 +38,7 @@ lessons:
   title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
   detail: 忍者のcommitにタスクscope外のコード変更が混入することがある。事前検死で変更ファイル一覧とscope定義を照合し、scope外変更を検出せよ。cmd_1187で検出。
   source_cmd: cmd_1187
+  origin: '[[cmd_1187]]'
   created_at: '2026-03-21'
   automated: true
   enforcement: report review SG3(scope)+gate_report_format.sh files_modified×task scope照合
@@ -44,6 +48,7 @@ lessons:
   title: AC pending矛盾 — status:done報告にAC pending項目があればFAIL
   detail: 忍者がstatus:doneで報告しつつAC pending項目が残存する矛盾パターン。cmd_1199影丸で発見。done報告にpending ACがあれば即FAIL判定し、差し戻すこと。
   source_cmd: cmd_1199
+  origin: '[[cmd_1199]]'
   created_at: '2026-03-21'
   automated: true
   enforcement: gate_report_format.sh GP-128(verdict↔bc整合性)+status↔pending AC矛盾検出
@@ -53,6 +58,7 @@ lessons:
   title: GATEフォーマット不備=報告FAIL必須 — LGTM+注記は消火構造
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
   source_cmd: cmd_1242
+  origin: '[[cmd_1242]]'
   created_at: '2026-03-22'
   automated: true
   enforcement_level: 4
@@ -63,6 +69,7 @@ lessons:
   title: capture-pane=残像、ファイルタイムスタンプ=現在 — 状態確認の優先順位
   detail: エージェント状態確認はdashboard→inbox→capture-paneの順。capture-paneは過去の残像(Editエラー等が残る)であり現在の状態を反映しない。ファイルタイムスタンプが現在の状態。S5サイクル2で実証(家老Editエラー残像→リトライ成功済みなのに不要フォローアップ送信)。将軍F006/F007(想像するな確認せよ)と同根だが全役割に普遍的に適用。
   source_cmd: gunshi_S5_cycle2
+  origin: '[[gunshi_S5_cycle2]]'
   created_at: '2026-03-22'
   automated: true
   enforcement_level: 4
@@ -73,6 +80,7 @@ lessons:
   title: 防御階層原則 — GP設計はLevel4(フロー内埋込BLOCK)を目指せ
   detail: 'Level1(事後検出gate) < Level2(事前予防doc) < Level3(事前強制auto-gen) < Level4(フロー内埋込BLOCK) < Level5(事前コンテキスト提供)。GP-053-060の実装で実証。事後検出(gate FAIL→手動修正)より事前強制(フロー内でBLOCK)の方が構造的に強い。全GPの設計品質指標として使える。deepdive Phase4(自動化×強制)の具体化。'
   source_cmd: GP-053-060
+  origin: '[[GP-053-060]]'
   created_at: '2026-03-24'
   automated: true
   enforcement_level: 2
@@ -83,6 +91,7 @@ lessons:
   title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
   detail: 'cmdのACで参照されるファイルパス・行番号・セクション(§)が実在するか自動検証するスクリプト(ac_physical_verify.sh)を実装。draft review時にbash scripts/ac_physical_verify.sh <cmd_id>で忍者ナビゲーションシートを自動生成。cmd_1360のWA=0に事前調査が貢献した実績に基づく。防御階層Level 5(事前コンテキスト提供)の概念化。gunshi.mdのdraft reviewプロトコルにstep 0追加を推奨。'
   source_cmd: cmd_1360
+  origin: '[[cmd_1360]]'
   created_at: '2026-03-24'
   automated: true
   enforcement: gunshi.md draft review Step 0.5に統合済み。bash scripts/ac_physical_verify.sh <cmd_id>で自動実行
@@ -92,6 +101,7 @@ lessons:
   title: チェックリスト参照cmdの隣接Step制約転写確認
   detail: 'cmdがチェックリストの特定Stepを実行する場合、隣接Step(特に直後Step)の禁則がcmd AC/制約に転写されているか確認せよ。cmd_1397でStep6実行時にStep7禁則(再計算禁止=殿が実行)が転写されず影丸が再計算を実行。draft review時にチェックリスト参照先の前後Stepを確認し、禁則の欠落をREQUEST_CHANGESで指摘すること。'
   source_cmd: cmd_1397
+  origin: '[[cmd_1397]]'
   created_at: '2026-03-25'
   automated: true
   enforcement_level: 4
@@ -113,6 +123,7 @@ lessons:
     CS6: 因果推論(気付きを列挙で終えていないか。原因→結果の連鎖を追跡しているか。優先順位=行動順序であり、低優先でも最終的にはやるものだ)
     遡及検証: CoDD分析に適用→CS1(v1で違反),CS2(v3まで違反),CS3(v4で初実施),CS4(将軍がやり軍師は未実施),CS5(v1-v4全て殿に押された),CS6(殿に指摘されるまで列挙止まり)
   source_cmd: cmd_1494
+  origin: '[[cmd_1494]]'
   created_at: '2026-03-29'
   automated: true
   enforcement: gate_gunshi_cs_checklist.sh(直近10件チェック)+gate_gunshi_startup.sh Check 7に統合済み
@@ -127,6 +138,7 @@ lessons:
     レビュー時の問い: 「このworkaround/gate FAILは忍者のミスか、それとも道具が壊れているか？」
     karo_workarounds.yamlで同一categoryが3件以上あれば道具を疑え。
   source_cmd: gunshi_deepdive_20260406
+  origin: '[[gunshi_deepdive_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 2
@@ -142,6 +154,7 @@ lessons:
     修正: `git log --grep="${CMD_ID}" --format="" --name-only | grep '^context/'` でcmd固有commitのみ検出。
     発見手法: karo_workarounds.yamlのcategory集計→ci_gate_mismatch 13件→root_cause分析→HEAD~1が根因。
   source_cmd: gunshi_infra_audit_20260406
+  origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement: cmd_complete_gate.sh L3384に修正適用済み
@@ -158,6 +171,7 @@ lessons:
     一般原則: **デーモンから外部スクリプトを呼ぶ時は常にtimeoutで包め。** flock/ファイルI/Oは
     WSL2 NTFSで無期限hangしうる。
   source_cmd: gunshi_infra_audit_20260406
+  origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement: ntfy_listener.sh L349,L424に`timeout 15`適用済み。heartbeat判定をninja_monitor.sh check_ntfy_listener_health()に組込済み
@@ -172,6 +186,7 @@ lessons:
     修正: ninja_monitor.shにrun_lock_cleanup()追加(1h周期、60min超lockを削除)。
     初回実行で10,268件を即削除。
   source_cmd: gunshi_infra_audit_20260406
+  origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement: ninja_monitor.sh run_lock_cleanup()がメインループ毎サイクル実行
@@ -181,6 +196,7 @@ lessons:
   title: 提案は行動ではない — proposed GPは自力実行判定→即実行
   detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 2
@@ -191,6 +207,7 @@ lessons:
   title: タイムボックス原則 — 見込み不明タスクにtimeout 60先行
   detail: 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 2
@@ -201,6 +218,7 @@ lessons:
   title: 数値は実測 — 設計書中の数値を入力データから再計算して検証
   detail: 設計書やcmd文面の数値を鵜呑みにせず入力データから再計算。セルフレビュー3点に埋込み済み
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 2
@@ -211,6 +229,7 @@ lessons:
   title: cmd分割3基準 — 任意忍者実行可能/短完了/依存並列考慮
   detail: cmdを分割する際の3基準。(1)任意忍者で実行可能(2)各ステップ短く完了明確(3)依存と並列を考慮
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 4
@@ -221,6 +240,7 @@ lessons:
   title: baseline必須 — 改善主張の研究cmdに比較対象を含める
   detail: 改善を主張する研究cmdには必ず比較対象(baseline)を含める。改善幅の定量評価に必須
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
   enforcement_level: 4
@@ -231,6 +251,7 @@ lessons:
   title: 原理1行>各論パッチ — シンプルな原則をプロセスに膨らませるな
   detail: 既存の1行原理で解決できることに各論パッチ(30行hook等)を作るな。deepdive Phase4-5の家老版実践
   source_cmd: gunshi_session_20260406
+  origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: false
   enforcement_level: 2
@@ -246,6 +267,7 @@ lessons:
     見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。
     根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと。
   source_cmd: cmd_gunshi_ruling_20260408
+  origin: '[[cmd_gunshi_ruling_20260408]]'
   created_at: '2026-04-08'
   automated: false
   enforcement_level: 2
@@ -262,6 +284,7 @@ lessons:
     成功実績: cmd_1844(hanzo)がGS CSV 7本・195万パターンを直列事後計算で21チャンピオン選出。OOMなし、PASS。
     運用: l1_alm_wf_engine.py --csv で1本ずつfor文実行。wf_runner.py使用禁止。
   source_cmd: cmd_1843
+  origin: '[[cmd_1843]]'
   created_at: '2026-04-10'
   automated: true
   enforcement: pre-bash-combined.sh Guard 8(wf_runner.py BLOCK)。Level 4。4テストPASS。設計書=docs/research/gunshi_wf_oom_prevention_design_20260410.md
@@ -276,6 +299,7 @@ lessons:
     対策: SGプロトコルにstep S0追加(自己変更チェック: 6観点+他覚的検証+殿運用原則突合)。
     対象=hook/gate/CLAUDE.md/instructions/settings系に限定。
   source_cmd: gunshi_session_20260412
+  origin: '[[gunshi_session_20260412]]'
   created_at: '2026-04-12'
   automated: true
   enforcement_level: 4
@@ -290,6 +314,7 @@ lessons:
     IF gate健全性を判定するなら THEN 回答率でなく有効率を計測せよ
     BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
   source_cmd: gunshi_codd_session_20260416
+  origin: '[[gunshi_codd_session_20260416]]'
   created_at: '2026-04-16'
   automated: true
   enforcement_level: 4
@@ -306,6 +331,7 @@ lessons:
     対策: _fast_beta関数で10倍高速化(pandas排除→numpy直接OLS)。
     一般原理: 計算時間推定はO(外側ループ)×O(内側ループ)×単位時間。外側のみで推定するな。
   source_cmd: cmd_1949_scalability
+  origin: '[[cmd_1949_scalability]]'
   created_at: '2026-04-16'
   automated: false
   enforcement_level: 2
@@ -321,6 +347,7 @@ lessons:
     対策: PRE3にファイル実在チェック追加+GP-202(parent_cmdプレフィックス不一致WARN)。
     一般原理: 手段を免除するとき、目的を達成する代替手段を同時に埋め込め。
   source_cmd: cmd_1948_gate_failure
+  origin: '[[cmd_1948_gate_failure]]'
   created_at: '2026-04-16'
   automated: true
   enforcement: PRE3(ファイル実在チェック)+GP-202(プレフィックス不一致WARN)+review_logヘッダ
@@ -334,6 +361,7 @@ lessons:
     実装→検証→掲示板→★lesson_candidate送信→lessons登録まで回して初めて利他完了。
     自分の環境に埋め込む(自立)と他者の環境に埋め込む(利他)は別ステップ。
   source_cmd: gunshi_session_20260416
+  origin: '[[gunshi_session_20260416]]'
   created_at: '2026-04-16'
   automated: false
   enforcement_level: 2
@@ -347,6 +375,7 @@ lessons:
     files_modifiedにhook/gate/scripts/gates/scripts/hooks含む場合はgit diff --statで変更規模を確認し、
     50%以上の削減がある場合はテスト結果とCI状態を重点チェックせよ。
   source_cmd: cmd_1975
+  origin: '[[cmd_1975]]'
   created_at: '2026-04-17'
   automated: true
   enforcement: GP-205実装済み→gate_gunshi_report_precheck.sh SG-PRE13に組込み(2026-04-17)
@@ -358,6 +387,7 @@ lessons:
     GP-208で実証。掲示板を読む行動の強制→新仕組み不要、inbox全文配信(inboxは既にstartup gate+stop hookで強制済み)に乗せるだけで解決。
     GP設計時の自問: 「既存の強制された行動に乗せられないか？」。deepdive Phase 6(原理1行を環境に埋め込む)の軍師版実践。
   source_cmd: GP-208
+  origin: '[[GP-208]]'
   created_at: '2026-04-17'
   automated: false
   enforcement_level: 2
@@ -370,6 +400,7 @@ lessons:
     bulletin_write.shに既にinbox通知機能があったのに確認せず「読む側の強制がない」と提案した。
     想像するな確認せよ原則の再適用。GP提案前にgrep/Readで既存実装を現物確認。
   source_cmd: GP-208
+  origin: '[[GP-208]]'
   created_at: '2026-04-17'
   automated: true
   enforcement_level: 2
@@ -382,6 +413,7 @@ lessons:
     パラメータ空間縮小禁止(CLAUDE.md)と同根。tmux/wsl2のみ修正し他を低ROIで放置→殿指摘「一部対処は穴を残す」。
     作業量を理由にスコープを縮小する構造的弱点。なぜなぜ7回で根因特定(2026-05-07)。
   source_cmd: gunshi_nazenaze_20260507
+  origin: '[[gunshi_nazenaze_20260507]]'
   created_at: '2026-05-07'
   automated: true
   enforcement_level: 2
@@ -392,6 +424,7 @@ lessons:
   title: 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須
   detail: 'スキルが使われなければ成長ループ(§10)が回らない=学習速度ゼロ。手動操作をhook/gateでBLOCK(Guard 9)し、スキル以外の道を塞ぐ。enforcement: pre-bash-combined.sh Guard 9'
   source_cmd: cmd_karo_skill_usage_lesson
+  origin: '[[cmd_karo_skill_usage_lesson]]'
   created_at: '2026-05-10'
   automated: true
   enforcement: pre-bash-combined.sh Guard 9
