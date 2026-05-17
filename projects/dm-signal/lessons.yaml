@@ -1727,10 +1727,11 @@ lessons:
   title: AC2のoutput_pathがoutputs/grid_search/であるにもかかわらずoutputs/analysis/と記載
   summary: cmd_1796のAC2には全7忍法CSVがoutputs/analysis/配下に揃うことと記載されているが、実際の出力先はoutputs/grid_sear
   tags:
-  - universal
-  helpful_count: 2
-  harmful_count: 0
-  last_referenced: '2026-05-16'
+  - grid_search
+  - testing
+  helpful_count: 4
+  harmful_count: 1
+  last_referenced: '2026-05-17'
   how: AC作成時に出力先パスの確認が必要
   target_files:
   - tasks/lessons.md
@@ -2709,10 +2710,12 @@ lessons:
   summary: IF ガード条件(is_kalman_meta等)を除去または変更する THEN そのガードが保護していた全変数のスコープと副作用を確認せよ
     BECAUSE c
   tags:
-  - universal
-  helpful_count: 39
-  harmful_count: 2
-  last_referenced: '2026-05-16'
+  - fullrecalculate
+  - fof
+  - pipeline
+  helpful_count: 52
+  harmful_count: 3
+  last_referenced: '2026-05-17'
   how: そのガードが保護していた全変数のスコープと副作用を確認せよ
   target_files:
   - tasks/lessons.md
@@ -7106,10 +7109,11 @@ lessons:
   title: MultiViewのPhase3 momentum_cache事前計算はFoF専用のためskipされる
   summary: recalculate_fast.py Phase3(OPT-A)ではMultiView/SingleView/TrendReversalはFoF専用としてmo
   tags:
-  - frontend
-  - gate
-  helpful_count: 8
-  harmful_count: 0
+  - fullrecalculate
+  - fof
+  - cache
+  helpful_count: 17
+  harmful_count: 4
   last_referenced: '2026-05-16'
   how: Phase3のmomentum_cache事前計算に頼らず、FoF再計算ループ内のComponentPriceBlock出力またはGS側cumulative_return直接計算に合わせる
   target_files:
@@ -7334,9 +7338,11 @@ lessons:
   title: PortfolioRepository.load()は1PFバリデーションエラーで全PF読込失敗する単一障害点
   summary: IF benchmark_ticker=空文字等のバリデーションエラーが1つでもあるとPortfolioRepository.load()がNoneを返しrec
   tags:
-  - universal
-  helpful_count: 6
-  harmful_count: 0
+  - fullrecalculate
+  - fof
+  - pipeline
+  helpful_count: 11
+  harmful_count: 4
   last_referenced: '2026-05-16'
   how: 問題PFのバリデーションを分離し、FoF recalcは必要に応じて_recalculate_fof_history()直接呼出しで単一障害点を回避する
   when: PortfolioRepository.load()がNoneを返す、または1PFのvalidation errorで全PF再計算が停止する時
