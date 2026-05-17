@@ -52,6 +52,15 @@ bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "idle_<topic>_<da
 bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "idle_<topic>_<date>" output "docs/research/gunshi_idle_<topic>_<date>.md"
 ```
 
+### Step 5: 利他還流判断（LG030 gate化）
+分析結果が他者(忍者/家老)のlessonsに追加すべき知見を含むか判断する。
+
+判断基準: 「この知見を忍者/家老が知っていれば、将来のWA/BLOCK/再cmdを防げるか？」
+- **YES** → `bash scripts/inbox_write.sh karo "{知見1行要約}" gunshi_lesson_candidate gunshi` を送信
+- **NO** → review_logエントリの `altruism_check: not_needed` に理由を1行記載
+
+★ このStepを省略するな。利他還流の判断自体が記録される(YES=送信/NO=理由)ことで、LG030「行動完了≠還流完了」を構造的に解消する。
+
 ## 制約
 - ファイル名は `gunshi_idle_` プレフィックス固定（検索性担保）
 - 日付はYYYYMMDD形式（ISO 8601のdate部分）
