@@ -17,6 +17,7 @@ setup() {
 lessons:
 - id: 'LS001'
   title: '既存サンプル'
+  origin: '[[cmd_001]]'
   detail: '既存サンプル詳細。事故状況と原因と修正を含むテスト用データ。'
   source_cmd: 'cmd_001'
   created_at: '2026-01-01'
@@ -45,15 +46,17 @@ run_lesson_write_shogun() {
         "新規環境変化を許可する" \
         "新しいgateファイルとチェック名をenforcementに含める場合は登録できることを確認する。" \
         "cmd_2476" \
-        "type=gate; file=scripts/gates/gate_lesson_write_shogun_enforcement.sh; pattern=lesson_write_shogun_enforcement_new_check"
+        "type=gate; file=scripts/gates/gate_lesson_write_shogun_enforcement.sh; pattern=lesson_write_shogun_enforcement_new_check" \
+        "[[cmd_2476]]"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"LS002 added"* ]]
 
-    run grep -A6 "LS002" "$TEST_ROOT/projects/infra/lessons_shogun.yaml"
+    run grep -A7 "LS002" "$TEST_ROOT/projects/infra/lessons_shogun.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"automated: true"* ]]
     [[ "$output" == *"lesson_write_shogun_enforcement_new_check"* ]]
+    [[ "$output" == *"origin: '[[cmd_2476]]'"* ]]
 }
 
 @test "preserves existing append and sequential ID behavior" {
@@ -64,10 +67,12 @@ run_lesson_write_shogun() {
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"LS002 added"* ]]
+    [[ "$output" == *"WARN: origin未指定"* ]]
 
-    run grep -A6 "LS002" "$TEST_ROOT/projects/infra/lessons_shogun.yaml"
+    run grep -A7 "LS002" "$TEST_ROOT/projects/infra/lessons_shogun.yaml"
     [ "$status" -eq 0 ]
     [[ "$output" == *"title: '基本追記は維持'"* ]]
+    [[ "$output" == *"origin: '[[cmd_2476]]'"* ]]
     [[ "$output" == *"automated: false"* ]]
     [[ "$output" == *"enforcement: '未自動化'"* ]]
 }

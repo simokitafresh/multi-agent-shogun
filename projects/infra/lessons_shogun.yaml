@@ -14,6 +14,7 @@ lessons:
 # === クラスタ1: deepdive原理 ===
 - id: LS-A01
   title: deepdive原理ポインタ — 詳細はmemory/deepdive_*.md
+  origin: '[[cmd_1186]] + deepdive_why_chain_20260321 + deepdive_causal_tracing_20260415'
   detail: |
     観察スキップ→出力偏重→自動化×強制→追体験で起動。
     deepdive毎セッション必読(CLAUDE.md Step 7)で追体験済み。
@@ -26,6 +27,7 @@ lessons:
 # === クラスタ2: 殿との対話パターン ===
 - id: LS-A02
   title: 殿との対話原則 — ヒントは方向指示、沈黙は承認ではない
+  origin: '[[cmd_1931]] + deepdive_why_chain_Phase7-8 + [[cmd_1939]]'
   detail: |
     (1)殿のヒントは結論でなく方向。因果でたどってから行動
     (2)沈黙≠承認。重要前提は明示的に確認
@@ -40,6 +42,7 @@ lessons:
 
 - id: LS-A03
   title: 前提切替原則 — PJ切替・方向転換・新検証で古い前提をリセット
+  origin: '[[cmd_1944]]'
   detail: |
     殿が方向転換したらサンクコストを捨てよ。新検証結果は古い前提を覆す。
     PJ切替時はcontext再ロード。対話中の暗黙的PJ切替に注意。
@@ -52,6 +55,7 @@ lessons:
 # === クラスタ3: cmd_save.sh BLOCK対応 ===
 - id: LS-A04
   title: cmdテンプレートルール — バンドルFP回避+AC設計+書き方是正
+  origin: '[[cmd_2316]] [[cmd_2318]] [[cmd_2320]] [[cmd_2322]] [[cmd_2323]] [[cmd_2337]] [[cmd_2339]] [[cmd_2342]] [[cmd_2344]] [[cmd_2345]] [[cmd_2350]] [[cmd_2352]] [[cmd_2353]] [[cmd_2355]] [[cmd_2358]] [[cmd_2372]] [[cmd_2376]] [[cmd_2386]] [[cmd_2391]] [[cmd_2394]] [[cmd_2395]]'
   detail: |
     (1)command内にスクリプトフルパスを書かない(引数のみ)
     (2)target_pathは出力ディレクトリに設定(スクリプトパスと重複回避)
@@ -90,6 +94,7 @@ lessons:
 
 - id: LS-A05
   title: 遡及学習対応 — BLOCKされたら修正より先にlesson_write
+  origin: '[[cmd_2329]] + [[cmd_2199]] [[cmd_2219]] [[cmd_2220]] [[cmd_2223]] [[cmd_2224]] [[cmd_2245]]'
   detail: |
     教訓記録を後回しにすると遡及学習のWARN累計昇格で後続全cmdが汚染される。
     連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
@@ -103,6 +108,7 @@ lessons:
 
 - id: LS-A06
   title: BLOCK→成長の主軸 — コードを読め、1CMD1ゲート、環境変化
+  origin: '[[cmd_2093]] [[cmd_2225]] [[cmd_2229]] [[cmd_2248]]'
   detail: |
     BLOCKされたらgateの検出ロジックのコードを読んでから修正(表面修正ループ脱出)。
     cmd_save.sh Session Stateが同一WARN 2回目以降で検出ロジックを自動表示。
@@ -115,6 +121,7 @@ lessons:
 # === クラスタ4: gate迂回・先走り ===
 - id: LS-A07
   title: gate迂回禁止 — 正規フローが通らない=調査対象
+  origin: '[[cmd_2134]]'
   detail: |
     迂回は1回で致命的(滑り坂: 1回目→2回目→3回目で完全崩壊)。
     正規フローが通らない=インフラバグか自分の理解不足。どちらも調査すれば解決。
@@ -127,6 +134,7 @@ lessons:
 
 - id: LS-A08
   title: 殿の指示範囲厳守 — 近道を最後にする、100億回従う
+  origin: '[[cmd_2142]] [[cmd_2150]]'
   detail: |
     先走りは究極の害。殿の指示範囲を完遂してから次を考える。
     殿が話していないことを記録するな(知識記録での先走り)。
@@ -140,6 +148,7 @@ lessons:
 # === クラスタ5: 想像するな確認せよ ===
 - id: LS-A09
   title: 現物確認必須 — 定義/パス/データ/DB/掲示板/過去対話/PI全量照合
+  origin: '[[cmd_1710]] [[cmd_1703]] [[cmd_1199]] [[cmd_2213]] [[cmd_2233]]'
   detail: |
     (1)殿の固有名詞→本番コードの定義箇所まで降りる
     (2)「未実装」「未対応」→grep/git showで反証を探す
@@ -156,6 +165,7 @@ lessons:
 
 - id: LS-A10
   title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
+  origin: '[[cmd_karo_gp210]]'
   detail: |
     計測データの生成メカニズム(コードパス)を理解せずに数字で結論するな。
     ローカル計測(WSL→Singapore RTT 80ms)≠本番ボトルネック(Render内RTT 1-5ms)。
@@ -169,6 +179,7 @@ lessons:
 # === クラスタ6: 独立パターン ===
 - id: LS-A11
   title: infra修正実績 — バグはenforcement(hook/gate)で修正済み
+  origin: '[[cmd_1946]] + session_20260422'
   detail: |
     CDP 403=auto-ops launch_browser(非headless)。inbox盲点=PostToolUse hook。
     watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
@@ -180,6 +191,7 @@ lessons:
 
 - id: LS-A12
   title: inbox_write guard 3段階設計 — 迂回路ゼロの構造
+  origin: '[[cmd_2004]] + [[cmd_1994]]'
   detail: |
     第1版=exit code判定→出力多様で不安定。第2版=status判定→正規フローもBLOCK。
     第3版=cmd_delegate.sh内でstatus変更順序入替→bypass廃止→迂回路ゼロ。
@@ -192,6 +204,7 @@ lessons:
 
 - id: LS-A13
   title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
+  origin: '[[cmd_1905]] [[cmd_1822]] [[cmd_1953]] [[cmd_2107]] [[cmd_2129]] [[cmd_2166]] [[cmd_2173]]'
   detail: |
     (1)assumptions+tool引数を明示(q5/q7 gate強制)。書かなかった前提はgate検知不能
     (2)事前100%は怠慢→事前(粗い網)+事後(軍師レビュー)+診断(Session State)の3層
@@ -204,6 +217,7 @@ lessons:
 
 - id: LS-A14
   title: 進行中計画は即永続化 — /clearは予告なく来る
+  origin: '[[cmd_1947]]'
   detail: 殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
   source_ids: [LS034]
   created_at: '2026-04-24'
@@ -213,6 +227,7 @@ lessons:
 
 - id: LS-A15
   title: 研究道具制約 — 研究≠本番、GS OOM防止は1忍法1CMD
+  origin: '[[cmd_1871_oom_consultation]] [[cmd_2179]]'
   detail: |
     研究出力を本番に流すな(目的と適用層を区別)。
     忍法GSは1忍法1CMD×1忍者。配備は完全直列。並列配備禁止(RSS=8.5GB実証)。
@@ -224,6 +239,7 @@ lessons:
 
 - id: LS-A16
   title: 本番パリティ必須 — DB変更後即確認+3レイヤー貫通+savepoint
+  origin: '[[cmd_1082]] [[cmd_2196]] + checklist-alm-registration'
   detail: |
     DB変更→即fullrecalculate/差分確認。後回し禁止。
     pipeline_config欠落=全滅事故(cmd_1082)。ACにcritical field確認を列挙。
@@ -237,6 +253,7 @@ lessons:
 
 - id: LS-A17
   title: 成長ループ実装 — CoDD L3→Session State、忍者=矛盾を書けない構造
+  origin: '[[cmd_2181]] + dialogue_shogun_operator_trap_20260402 + dialogue_preprocessing_research_20260331'
   detail: |
     CoDD #5の3層(L1事前/L2事後/L3診断推論)を直接適用→Session State。
     外部知見の取込パターン: 記事→対応探す→ギャップ→なぜなぜ→cmd化。
@@ -250,6 +267,7 @@ lessons:
 
 - id: LS-A18
   title: 計測されていないものは改善ループが回らない
+  origin: '[[cmd_2019]] [[cmd_2100]] + session_20260421 + blt_20260417_021130'
   detail: |
     Karpathy Simplicity: 計測カテゴリ不在=見えていない=改善不能。
     結論鵜呑み=忖度構造。全員が「確認する」を徹底するだけで解決。
@@ -261,6 +279,7 @@ lessons:
 
 - id: LS-A19
   title: 原理3則 — 車輪/各論パッチ/無知の知
+  origin: '[[cmd_1908]] [[cmd_1903]] + dialogue_alm_finite_time_20260404 + dialogue_heuristics_system2_20260401'
   detail: |
     (1)既存道具・分析を確認してから新規着手(q11_not_already_done BLOCK)
     (2)原理1行>各論パッチ。新しい箱を作るな既存を磨け
@@ -272,6 +291,7 @@ lessons:
 
 - id: LS-A20
   title: 因果チェーン — cmd配備→実装→報告の因果を追え
+  origin: '[[cmd_2818]]: deepdive_causal_tracing_20260415起源の因果チェーン教訓を逆引き可能にするためoriginを付与'
   detail: 現象単位で止めず、入力・変換・出力の連鎖で問題を見る。どこに防御層を置くか決める。
   source_ids: [LS013]
   created_at: '2026-04-24'
@@ -280,6 +300,7 @@ lessons:
 
 - id: LS-A22
   title: gate FPパターン — SCOUT偽陽性+研究道具FP+parity FP+教訓上限デッドロック
+  origin: '[[cmd_2314]] [[cmd_2315]] [[cmd_2318]] [[cmd_2319]] [[cmd_2330]] [[cmd_2331]] [[cmd_2332]] [[cmd_2343]] [[cmd_2351]] [[cmd_2355]] [[cmd_2358]] [[cmd_2366]] [[cmd_2367]] [[cmd_2368]] [[cmd_2369]] [[cmd_2374]] [[cmd_2377]] [[cmd_2379]] [[cmd_2381]] [[cmd_2382]] [[cmd_2383]] [[cmd_2384]] [[cmd_2385]] [[cmd_2392]]'
   detail: |
     (1)is_gate_or_hook_addition_cmd(): SCOUT除外実装済み(cmd_2279 L120)
     (2)check_gunshi_reference_numeric_relaxation: カタログ閾値除外実装済み(cmd_2279)
@@ -380,6 +401,7 @@ lessons:
 # LS047: superseded by LS-A04 (source pathのproject解決: project=dm-signalだとDM-Signal配下で解決。教訓ファイルはinfra管理→project=infra。cmd_2657, 2026-05-10)
 - id: 'LS029'
   title: '画像認識精度+reCAPTCHA教訓: MECEに全ブロック判断し殿に確認を取れ'
+  origin: '[[cmd_session_20260510]]'
   detail: 'reCAPTCHAチャレンジで画像認識精度が極端に低い(バス/自転車/信号機/橋で連続失敗)。根因: (1)低解像度スクリーンショットでの判断 (2)色や形の短絡判断(柱=信号機、交差点=信号機あり) (3)左下タイルを軽視する傾向 (4)失敗時に学習せず同じ基準で次を判断 (5)スクショ→分析→クリックの3ターンが遅くタイムアウト。殿の教え: MECEに全ブロックを判断するのは正しい方法。クリックしてから殿に確認→答え合わせで学習。ずるをせずに愚直にトレーニングが最短。'
   source_cmd: 'cmd_session_20260510'
   created_at: '2026-05-11'
@@ -402,6 +424,7 @@ lessons:
 # LS030(cmd_2718)→LS-A05 — 物理削除済み
 - id: 'LS030'
   title: 'スキル使用は意志依存ではなく構造的強制'
+  origin: '[[cmd_2734]]'
   detail: '殿指摘: CDP未使用/DB-check誤使用が繰返し発生。根因=概念→スキルの対応がインフラに存在しない。cmd_2734-2739で5層カバー(L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK)。cmd_2739でproject文脈対応。本番=DM-Signalではない(殿指摘)。セマンティック辞書の精度が上流'
   source_cmd: 'cmd_2734'
   created_at: '2026-05-15'
@@ -409,6 +432,7 @@ lessons:
   enforcement: 'type=5layer; file=scripts/hooks/prompt_state_inject.sh+scripts/deploy_task.sh+instructions/gunshi.md+scripts/gates/gate_karo_startup.sh; pattern=detect_skill_triggers+inject_semantic_concepts+Review Criteria+スキル品質'
 - id: 'LS031'
   title: '将軍の自走=鎖の中。F004過剰解釈の修正'
+  origin: '[[cmd_2744]]'
   detail: '殿指摘: 自分で出したcmdの結果確認は鎖の中。F004(polling禁止)を過剰解釈し殿の入力なしに動けなかった。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿報告)はpolling loopではない。殿を必要とする時点で仕組みとして崩壊(殿指摘)。cmd_2743で通知常時送信+cmd_2744でshogun.md/startup gateに自走フロー明文化'
   source_cmd: 'cmd_2744'
   created_at: '2026-05-15'
@@ -416,6 +440,7 @@ lessons:
   enforcement: 'type=documentation+gate; file=instructions/shogun.md+scripts/gates/gate_shogun_startup.sh; pattern=workflow+GATE CLEAR'
 - id: 'LS032'
   title: 'ハルシネーションに基づくforce push事故: capture-paneのテキストを殿の裁定と誤認'
+  origin: '[[cmd_2783]]'
   detail: 'capture-paneに見えたテキストを殿の承認と断定しforce pushで26commits消失(2026-05-15)。根因: (1)capture-paneは時刻・発言者情報なし。殿の裁定はlord_conversation inboundでのみ確認可能 (2)自分の記憶・認識も確認対象。見えた気がする≠見えた (3)破壊的操作の前に殿の明示承認がなかった (4)時系列で因果を確認していれば防げた。殿指摘: 事実を確認する前に反省するのは逃げ。ハルシネーションに基づいた反省はナンセンス'
   source_cmd: 'cmd_2783'
   created_at: '2026-05-15'
@@ -423,6 +448,7 @@ lessons:
   enforcement: 'type=hook; file=.claude/hooks/pre-bash-combined.sh; pattern=Guard(cmd_2784で実装予定)'
 - id: 'LS033'
   title: 'コード精読不足でcmd前提崩壊'
+  origin: '[[cmd_2794]]'
   detail: 'cmd_2794: L3705のfallbackパスがeffectiveness除外の前と判断したが、L3713-3726に既にfallback内除外が実装済み。sed -n 3700,3710pで止めてL3713-3726を読まなかった。軍師分析の結論を鵜呑みにし現物を部分的にしか確認しなかった。LS-A09(現物確認必須)の再発'
   source_cmd: 'cmd_2794'
   created_at: '2026-05-16'

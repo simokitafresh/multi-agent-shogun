@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write_shogun.sh — 将軍専用教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement記述"]
+# Usage: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement記述"] ["origin記述"]
 #        bash scripts/lesson_write_shogun.sh --supersedes LS005 LS029 "新しい検証で覆された"
 # → projects/infra/lessons_shogun.yaml に追記 or 既存教訓にsuperseded_by追記
 # enforcement省略時はautomated: false, enforcement: "未自動化"で登録
@@ -10,7 +10,7 @@ set -e
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     case "${1:-}" in
         ""|-h|--help)
-            echo "Usage: lesson_write_shogun.sh \"タイトル\" \"詳細\" cmd_XXX [\"enforcement記述\"]" >&2
+            echo "Usage: lesson_write_shogun.sh \"タイトル\" \"詳細\" cmd_XXX [\"enforcement記述\"] [\"origin記述\"]" >&2
             echo "       lesson_write_shogun.sh --supersedes LS005 LS029 \"新しい検証で覆された\"" >&2
             exit 1
             ;;
@@ -80,11 +80,21 @@ TITLE="${1:-}"
 DETAIL="${2:-}"
 SOURCE_CMD="${3:-}"
 ENFORCEMENT="${4:-未自動化}"
+ORIGIN="${5:-}"
 
 # Validate arguments
 if [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
-    echo "Usage: lesson_write_shogun.sh \"タイトル\" \"詳細\" cmd_XXX [\"enforcement記述\"]" >&2
+    echo "Usage: lesson_write_shogun.sh \"タイトル\" \"詳細\" cmd_XXX [\"enforcement記述\"] [\"origin記述\"]" >&2
     exit 1
+fi
+
+if [ -z "$ORIGIN" ]; then
+    echo "WARN: origin未指定。source_cmdからoriginを補完します。因果を残すには第5引数に [[cmd_XXXX]] を含むoriginを指定せよ。" >&2
+    if [[ "$SOURCE_CMD" =~ ^cmd_ ]]; then
+        ORIGIN="[[${SOURCE_CMD}]]"
+    else
+        ORIGIN="未指定"
+    fi
 fi
 
 # Enforcement quality gate — "existing automation" references do not create a new
@@ -141,7 +151,7 @@ while [ $attempt -lt $max_attempts ]; do
     (
         flock -w 10 200 || exit 2
 
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ENFORCEMENT AUTOMATED
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ENFORCEMENT AUTOMATED ORIGIN
         python3 << 'PYEOF'
 import yaml, os, sys
 from difflib import SequenceMatcher
@@ -153,6 +163,7 @@ detail = os.environ["DETAIL"]
 source_cmd = os.environ.get("SOURCE_CMD", "")
 enforcement = os.environ.get("ENFORCEMENT", "未自動化")
 automated = os.environ.get("AUTOMATED", "false")
+origin = os.environ.get("ORIGIN", "未指定")
 
 with open(lessons_file, encoding='utf-8') as f:
     data = yaml.safe_load(f)
@@ -208,6 +219,7 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
         f.write('\n')
     f.write(f'- id: {_sv(new_id_str)}\n')
     f.write(f'  title: {_sv(title)}\n')
+    f.write(f'  origin: {_sv(origin)}\n')
     f.write(f'  detail: {_sv(detail)}\n')
     f.write(f'  source_cmd: {_sv(source_cmd)}\n')
     f.write(f'  created_at: {_sv(timestamp)}\n')
