@@ -125,6 +125,18 @@ _run_pd() { bash "$SCRIPT_UNDER_TEST" "$@"; }
     grep -q "  pending: 1$"           "$df"
 }
 
+# ── Test 5b: create - optional origin is written to YAML ──
+@test "create records origin field with causal links" {
+    run _run_pd create "Origin decision" "cmd_2820" "lord_decision" "shogun" "[[cmd_2820]] [[LS-A123]] 根拠リンク"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PD_ID=PD-001"* ]]
+
+    local df="$TEST_TMPDIR/queue/pending_decisions.yaml"
+    grep -q "origin: '\\[\\[cmd_2820\\]\\] \\[\\[LS-A123\\]\\] 根拠リンク'" "$df"
+    grep -q "\\[\\[cmd_2820\\]\\]" "$df"
+    grep -q "\\[\\[LS-A123\\]\\]" "$df"
+}
+
 # ── Test 6: create - auto-increment generates PD-002 when PD-001 exists ──
 @test "create auto-increments ID when existing PD exists" {
     # Create first PD

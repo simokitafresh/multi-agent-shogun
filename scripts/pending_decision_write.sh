@@ -1,7 +1,7 @@
 #!/bin/bash
 # pending_decision_write.sh — 殿裁定のYAMLデータ管理（排他ロック付き）
 # Usage:
-#   bash scripts/pending_decision_write.sh create <summary> <source_cmd> <type> <created_by>
+#   bash scripts/pending_decision_write.sh create <summary> <source_cmd> <type> <created_by> [origin]
 #   bash scripts/pending_decision_write.sh resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]
 #   bash scripts/pending_decision_write.sh list [--status pending|resolved|all]
 #
@@ -14,7 +14,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
             echo "Usage: pending_decision_write.sh <create|resolve|list|recalc> [args...]" >&2
             echo "" >&2
             echo "Subcommands:" >&2
-            echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
+            echo "  create  <summary> <source_cmd> <type> <created_by> [origin]" >&2
             echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
             echo "  list    [--status pending|resolved|all]" >&2
             echo "  recalc  (no args) recalculate summary from actual decisions" >&2
@@ -112,9 +112,10 @@ cmd_create() {
     local SOURCE_CMD="$2"
     local TYPE="$3"
     local CREATED_BY="$4"
+    local ORIGIN="${5:-}"
 
     if [ -z "$SUMMARY" ] || [ -z "$SOURCE_CMD" ] || [ -z "$TYPE" ] || [ -z "$CREATED_BY" ]; then
-        echo "Usage: pending_decision_write.sh create <summary> <source_cmd> <type> <created_by>" >&2
+        echo "Usage: pending_decision_write.sh create <summary> <source_cmd> <type> <created_by> [origin]" >&2
         exit 1
     fi
 
@@ -140,7 +141,7 @@ cmd_create() {
             (
             flock -w 5 200 || exit 1
 
-            python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" "$SCRIPT_DIR/dashboard.md" <<'PY' || exit 1
+            python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" "$SCRIPT_DIR/dashboard.md" "$ORIGIN" <<'PY' || exit 1
 import yaml, sys, os, tempfile
 
 data_path = sys.argv[1]
@@ -150,6 +151,7 @@ pd_type = sys.argv[4]
 created_by = sys.argv[5]
 timestamp = sys.argv[6]
 dashboard_path = sys.argv[7]
+origin = sys.argv[8]
 
 def _atomic_write_text(path, content):
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix='.tmp')
@@ -228,6 +230,8 @@ try:
         'created_at': timestamp,
         'created_by': created_by,
     }
+    if origin:
+        new_decision['origin'] = origin
     data['decisions'].append(new_decision)
 
     # Update summary (AC2/AC3: auto-generated counts)
@@ -645,7 +649,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
             echo "Usage: pending_decision_write.sh <create|resolve|list|recalc> [args...]" >&2
             echo "" >&2
             echo "Subcommands:" >&2
-            echo "  create  <summary> <source_cmd> <type> <created_by>" >&2
+            echo "  create  <summary> <source_cmd> <type> <created_by> [origin]" >&2
             echo "  resolve <id> <resolved_content> [resolved_by_cmd] [--no-context-sync]" >&2
             echo "  list    [--status pending|resolved|all]" >&2
             echo "  recalc  (no args) recalculate summary from actual decisions" >&2
