@@ -1013,7 +1013,13 @@ if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
     echo "  $lesson_result"
     if echo "$lesson_result" | grep -q "ALERT"; then
         overall="ALERT"
-        alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
+        if grep -Eq 'METRIC: .*status=ALERT .*useful_rate=([0-9](\.[0-9]+)?|[12][0-9](\.[0-9]+)?)%?' "$_TMP_G13"; then
+            alerts+=("教訓健全度: ALERT → when/how品質向上・低useful教訓の改善/淘汰を実行せよ")
+        elif grep -q "未振り分け" "$_TMP_G13"; then
+            alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
+        else
+            alerts+=("教訓健全度: ALERT → gate_lesson_health.shのaction行を確認し、原因別に対処せよ")
+        fi
     elif echo "$lesson_result" | grep -q "WARN"; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
@@ -1304,6 +1310,7 @@ sources = [
 sources.extend(sorted((script_dir / "instructions").glob("*.md")))
 sources.extend([
     script_dir / "config/projects.yaml",
+    script_dir / "config/context_freshness_excludes.txt",
     script_dir / "dashboard.md",
 ])
 

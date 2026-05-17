@@ -647,6 +647,34 @@ MOCK
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "Gate 13 useful_rate ALERT recommends when/how quality improvement" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "INFO: useful率(直近30cmd): 55/214 = 25.7%"
+echo "METRIC: lesson_effectiveness_threshold status=ALERT rate=64.0% useful_rate=25.7% window_cmds=30 referenced=301 injected=470 useful=55 total_feedback=214 scope=all"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"when/how品質向上"* ]]
+    [[ "$output" != *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
+}
+
+@test "Gate 13 unsorted ALERT recommends lesson-sort" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "ALERT: infraの未振り分け教訓12件 → /lesson-sort推奨"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
+}
+
 # === Test 13: p̄鮮度 WARN (ALERTではない) → 総合判定WARN ===
 @test "p̄鮮度 WARN → 総合判定: WARN" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh" <<'MOCK'
