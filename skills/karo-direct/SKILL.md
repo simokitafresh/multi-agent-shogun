@@ -57,13 +57,17 @@ YAML
 # deploy_task.sh は共通経路で reset_stale_fields を実行し、旧task YAMLの残留フィールドを清掃する。
 bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 
-# deploy_task.sh は direct_mode として resolve_cmd_to_task をスキップし、
-# parent_cmd/task_id/status を設定してから inbox_write を自動送信する。
+# deploy_task.sh は共通入口で reset_stale_fields を完了してから /tmp YAML を task YAML に反映し、
+# direct_mode として resolve_cmd_to_task をスキップする。
+# その後 parent_cmd/status/task_id を設定し、通常配備と同じ注入チェーン
+# (related_lessons, standard_skills, semantic_concepts, causal_links, growth_loop_defense,
+# report_filename/report_path, weak_points など) と report template 生成を通す。
+# 最後に safe_inbox_write で inbox 永続化を確認し、必要なら watcher失敗をWARN扱いで継続する。
 # 手動 inbox_write は不要。
 # YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
 # failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
 ```
-Script refs verified: 2026-05-16 cmd_2809.
+Script refs verified: 2026-05-17 cmd_2829.
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
@@ -98,7 +102,7 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 
 ## 制約
 - training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
-- ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、inbox通知を迂回するため）
+- ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、注入チェーン、report template生成、safe_inbox_write通知を迂回するため）
 - `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
 - 複数行ACやdescriptionはdeploy_task.shの手動YAML構築でindent保持される。YAML注入後に `python3 -c "import yaml; yaml.safe_load(open('queue/tasks/<ninja>.yaml'))"` で構文確認する。
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）

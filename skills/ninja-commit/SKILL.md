@@ -69,6 +69,7 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 ```
 
 `report_field_set.sh`は`self_gate_check`トップレベル書込みをBLOCKする。報告修正が必要な場合は `self_gate_check.lesson_ref PASS` のようにdot notationで個別fieldだけを更新する。
+Script refs verified: 2026-05-17 cmd_2829. `report_field_set.sh` は空文字値を許可し、構造体/複数行/stdin YAMLをPython fallbackで保持する。commit後のreport追記も同helper経由で行い、直接Editしない。
 
 ## 禁止事項
 

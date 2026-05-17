@@ -43,6 +43,7 @@ binary_checksの全結果を読み取り、verdictを自動決定する。手動
 ### 矛盾防止の必須手順
 - bc:no と verdict:PASS の矛盾防止: verdictを書き込む直前に全 `binary_checks.*[].result` を列挙する。1つでも `no` があれば verdict は必ず `FAIL`。`PASS` を書こうとしている状態で `no` を見つけたら、ACの実態を直すのではなく verdict を `FAIL` に変更する。
 - verdict空欄防止: `binary_checks` に空欄、`FILL_THIS`、`waive`、`PASS`、`FAIL` が残っている場合は verdict を書かない。先に全resultを `yes/no` に正規化し、再度Step 1を実行してから `report_field_set.sh "$REPORT" verdict ...` を使う。
+- Script refs verified: 2026-05-17 cmd_2829. `report_field_set.sh` は verdict 書込み時に既存reportを読み、`binary_checks` 未記入、全empty、`bc:no` + `verdict:PASS` の矛盾を事前BLOCKする。
 ### Step 1: binary_checksを全て記入済みか確認
 ```bash
 # 報告YAMLからbinary_checksの全resultを抽出

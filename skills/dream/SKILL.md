@@ -79,7 +79,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
-Script refs verified: 2026-05-16 cmd_2793 (PHANTOM extraction and pipefail-safe effect scan included).
+Script refs verified: 2026-05-17 cmd_2829 (PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:
@@ -87,6 +87,7 @@ Script refs verified: 2026-05-16 cmd_2793 (PHANTOM extraction and pipefail-safe 
   - lesson→context 未合流数（ALERT_THRESHOLD=5超でALERT）と未振り分け教訓数（UNSORTED_THRESHOLD=10超でALERT）
   - when/how 欠落、注入10回以上かつ helpful_count=0 の教訓
   - lesson effectiveness / useful率（WARN=50%未満、ALERT=30%未満）
+  - enforcement phantom（自動化済み教訓の `enforcement` が存在しない `.sh` を指していないか）
 
 ### 2b. セッションJSONL（二次ソース — grepで絞る）
 ```bash

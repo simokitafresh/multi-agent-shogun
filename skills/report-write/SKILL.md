@@ -35,6 +35,7 @@ description: |
 ### 必須事前検査
 - verdict空文字防止: verdictを書き込む直前に `binary_checks` 全resultが `yes` または `no` で埋まっていることを確認する。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば verdict を書かず、該当ACを `report_field_set.sh` で修正する。
 - FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
+- Script refs verified: 2026-05-17 cmd_2829. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate`、`verdict` は書込み前に型/値をBLOCK検証する。
 ### Step 1: 報告パスを確認
 ```bash
 # タスクYAMLから報告パスを取得
@@ -120,6 +121,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-17: gate=cmd_complete_gate result=FAIL executor=saizo reason=report_format:saizo_report_cmd_2825.yaml|saizo:binary_checks_fail
 
 - 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=files_modified: is dict (must be string or list of file paths); lessons_useful[0]: useful=yes is str (must be true or false); lessons_useful[1]: useful=yes is str (must be true ...
 - 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING

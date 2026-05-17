@@ -139,7 +139,8 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
    - 未振り分け教訓数もチェック（UNSORTED_THRESHOLD=10超でALERT）
    - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
    - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
-   - Script refs verified: 2026-05-16 cmd_2793 (PHANTOM extraction and pipefail-safe effect scan included).
+   - enforcement phantomを確認（infraの家老/軍師教訓で `automated: true` かつ top-level `enforcement:` が `.sh` を指す場合、`scripts/` または `.claude/hooks/` に実在するか検証）
+   - Script refs verified: 2026-05-17 cmd_2829 (PHANTOM extraction and pipefail-safe effect scan included).
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出
@@ -427,6 +428,7 @@ for lesson in data['lessons']:
 | when/how充足 | gate_lesson_health.sh | when:{N}/{M} how:{N}/{M} | OK/WARN |
 | 教訓効果率 | gate_lesson_health.sh | referenced/injected, useful/feedback | OK/WARN/ALERT |
 | 注入過多 | gate_lesson_health.sh | injection>=10 and helpful=0 | OK/WARN |
+| enforcement phantom | gate_lesson_health.sh | 自動化済み教訓の参照script不在{N}件 | OK/WARN |
 | YAML整合性 | gate_yaml_status.sh --dry-run | {status} | OK/要更新 |
 | PD反映 | gate_pd_sync.sh | {SYNCED/NOT_SYNCED} | OK/WARNING |
 | ゲート通過率 | count_gate_metrics.sh | CLEAR:{N} BLOCK:{N} ({%}) | 健全/要改善 |
