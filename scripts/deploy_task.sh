@@ -2542,6 +2542,87 @@ inject_semantic_concepts() {
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 }
 
+# ─── 因果リンク注入（task YAMLにcmdのoriginリンクを挿入） ───
+# Level5: 忍者が関連する過去の失敗/裁定因果を自動で知る。意志依存ゼロ。
+inject_causal_links() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$stk" ] || return 0
+
+    # parent_cmdを取得
+    local parent_cmd
+    parent_cmd=$(awk '/^  parent_cmd:/{sub(/^  parent_cmd:[[:space:]]*/,""); gsub(/'"'"'|"/,""); print; exit}' "$task_file" 2>/dev/null)
+    [ -z "$parent_cmd" ] && return 0
+
+    # shogun_to_karo.yamlからoriginフィールドを抽出
+    local origin
+    origin=$(awk -v cmd="$parent_cmd" '
+        /^  [^ ]/ {
+            if (in_cmd) { exit }
+            s = $0; sub(/^  /, "", s); sub(/:.*/, "", s)
+            if (s == cmd) { in_cmd = 1; next }
+        }
+        in_cmd && /^    origin:/ {
+            val = $0; sub(/^    origin:[[:space:]]*/, "", val)
+            fc = substr(val, 1, 1); lc = substr(val, length(val), 1)
+            if (length(val) >= 2 && ((fc == "\"" && lc == "\"") || (fc == "\x27" && lc == "\x27")))
+                val = substr(val, 2, length(val) - 2)
+            print val
+            exit
+        }
+    ' "$stk" 2>/dev/null)
+    [ -z "$origin" ] && return 0
+
+    # [[...]]形式のリンクを抽出
+    local links
+    links=$(printf '%s\n' "$origin" | grep -oE '\[\[[^]]+\]\]' | sort -u)
+    [ -z "$links" ] && return 0
+
+    # task YAMLにrelated_causal_linksフィールドとして注入
+    local indent="  "
+    local inject_block="${indent}related_causal_links:"
+    while IFS= read -r link; do
+        [ -z "$link" ] && continue
+        inject_block="${inject_block}"$'\n'"${indent}- \"${link}\""
+    done <<< "$links"
+
+    # 既存のrelated_causal_linksを除去してから追加
+    local tmp_file
+    tmp_file=$(mktemp)
+    awk '
+        /^  related_causal_links:/ { skip=1; next }
+        skip && /^  - / { next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    # description の直前に挿入（description は最後のフィールド）
+    if grep -q "^  description:" "$tmp_file"; then
+        local insert_file
+        insert_file=$(mktemp)
+        printf '%s\n' "$inject_block" > "$insert_file"
+        awk -v insert_file="$insert_file" '
+            /^  description:/ && !inserted {
+                while ((getline line < insert_file) > 0) print line
+                close(insert_file)
+                inserted=1
+            }
+            { print }
+        ' "$tmp_file" > "${tmp_file}.inserted"
+        mv "${tmp_file}.inserted" "$tmp_file"
+        rm -f "$insert_file"
+    else
+        printf '%s\n' "$inject_block" >> "$tmp_file"
+    fi
+
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_causal_links: $(printf '%s\n' "$links" | wc -l) links injected from ${parent_cmd}.origin"
+}
+
 # ─── 標準スキル注入（全task YAMLに常時使用スキルを明示） ───
 # Level5: 忍者が報告/commit時に必要なスキルを自動で知る。意志依存ゼロ。
 inject_standard_skills() {
@@ -5978,6 +6059,7 @@ deploy_task_apply_task_mutations() {
     inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
     inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
+    inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
