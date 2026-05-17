@@ -465,6 +465,78 @@ capture-paneバナー解析: モデル名+バージョン番号の精密パタ�
 
 → auto-ops固有の経費管理パターンは `context/auto-ops.md §gws CLI` 参照
 
+## Render運用（cmd_2824, 2026-05-17）
+
+推測禁止。コールドスタート仮説を出す前に、対象が `free` web service か、paid web service か、static site かをこの表で判定する。
+根拠: Render公式Docs `https://render.com/free` / `https://render.com/docs/faq` / `https://render.com/docs/static-sites/` + `render services --output json` 実測(2026-05-17)。
+
+### プラン別挙動
+
+| 対象 | 挙動 | 障害切り分けでの扱い |
+|------|------|----------------------|
+| Free web service | 15分無通信でspin down。次のHTTP/WebSocketでspin upし、約1分かかる | 初回遅延/502/503はコールドスタート候補。ただしAPI疎通で確認してから判断 |
+| Starter/Standard/Pro web service | Paid instance。Render FAQ上、paid instanceはspin downしない | コールドスタート仮説を採用しない。アプリ/DB/ログ/Render障害を先に見る |
+| Static Site | Render Static Site。global CDN配信 | サーバー起動待ちはない。障害はビルド成果物、rewrite、CDN/Render Status、接続先APIを見る |
+| Cron Job | スケジュール実行コンテナ | URLなし。失敗時はcron job logs、呼び出し先API、envVars、重複cronを確認 |
+| Render Postgres | managed database | API不調時はDB接続/クエリ/容量/メンテナンスを確認。web serviceのcold startとは別物 |
+
+### 障害切り分け手順
+
+1. **API確認**: 対象URLの `/healthz` / `/health` / 主要APIを叩く。Static Siteなら接続先API URLも別に確認する。
+2. **DB確認**: APIがDB依存なら `render psql <dpg-id>` またはPJ標準のDB確認手順で接続・代表クエリを確認する。
+3. **ログ確認**: `render logs --output text <service-id-or-name>` / cron job logsでアプリ例外、OOM、deploy失敗、env不足を見る。
+4. **Renderステータス確認**: 上記で異常が説明できない場合だけ `https://status.render.com/` とDashboardを確認する。
+
+### 全サービス一覧
+
+| 名前 | ID | 種別 | プラン | URL | 状態 |
+|------|----|------|--------|-----|------|
+| CPCV | `srv-d1map9qli9vc7399sk8g` | web_service | starter | `https://cpcv.onrender.com` | suspended |
+| DM-metrics-checker | `srv-d2j03qe3jp1c73bvjnig` | web_service | standard | `https://dm-metrics-checker.onrender.com` | suspended |
+| DM-momentum-checker | `srv-d2v8c9vdiees73dsaup0` | web_service | free | `https://dm-momentum-checker.onrender.com` | suspended |
+| DualMomentum-Combination | `srv-d1q4hpbipnbc738lhfag` | web_service | starter | `https://dualmomentum-combination.onrender.com` | suspended |
+| DualMomentum-Rebalancer | `srv-d1utt3re5dus7399plrg` | web_service | starter | `https://dualmomentum-rebalancer.onrender.com` | not_suspended |
+| Kubun-checker | `srv-d10hahe3jp1c73907un0` | static_site | starter | `https://kubun-checker.onrender.com` | not_suspended |
+| LP-DM-Standrad | `srv-d20skn95pdvs739dbnig` | static_site | starter | `https://lp-dm-standrad.onrender.com` | not_suspended |
+| Legacy_PF_Rebalancer | `srv-d4iih4ili9vc73ej3m50` | web_service | starter | `https://rebalancer-backend-z9qd.onrender.com` | suspended |
+| QuickCard | `srv-d1hnmkje5dus7397jth0` | web_service | starter | `https://quickcard-edrr.onrender.com` | not_suspended |
+| Real-CPCV | `srv-d1ohqnbipnbc73f2bqqg` | web_service | starter | `https://real-cpcv.onrender.com` | suspended |
+| Road-To-S4 | `srv-d1d5t4re5dus73b179ng` | web_service | starter | `https://road-to-s4.onrender.com` | suspended |
+| Simple-Dual-Momentum | `srv-d15qgc7diees73ecrk3g` | web_service | starter | `https://simple-dual-momentum.onrender.com` | suspended |
+| Simple-OCR | `srv-d1l2gnmmcj7s73bnmfp0` | web_service | starter | `https://simple-ocr.onrender.com` | not_suspended |
+| SmartQuiz by Original | `srv-d1ela7be5dus73bj80m0` | web_service | free | `https://smartquiz-ocr.onrender.com` | not_suspended |
+| Stockdata-API | `srv-d2psuqbe5dus73bedm2g` | web_service | standard | `https://stockdata-api-6xok.onrender.com` | not_suspended |
+| Stockdata-API-daily-update | `crn-d2vqn6buibrs73dla6vg` | cron_job | starter | `-` | not_suspended |
+| TEST-dm-signal-backend-lyk3 | `srv-d5ahs0ali9vc73b6tprg` | web_service | standard | `https://test-dm-signal-backend-lyk3.onrender.com` | suspended |
+| askul-order | `srv-d0s64ps9c44c73cqpub0` | web_service | starter | `https://askul-order.onrender.com` | not_suspended |
+| cafe_fresh | `srv-d0o6uh0dl3ps73aadid0` | static_site | starter | `https://cafe-fresh.onrender.com` | not_suspended |
+| classroom-dashboard | `srv-d6hk293h46gs73e99ao0` | static_site | starter | `https://classroom-dashboard-5c2h.onrender.com` | not_suspended |
+| dm-chart-backend | `srv-d4enc8pr0fns73br4o30` | web_service | starter | `https://dm-chart-backend.onrender.com` | not_suspended |
+| dm-chart-etl | `crn-d4ene6hr0fns73br60a0` | cron_job | starter | `-` | not_suspended |
+| dm-chart-frontend | `srv-d4enc8pr0fns73br4o2g` | static_site | starter | `https://dm-chart-frontend.onrender.com` | not_suspended |
+| dm-rebalancer-backend | `srv-d4jacrfpm1nc73dudmn0` | web_service | starter | `https://dm-rebalancer-backend.onrender.com` | not_suspended |
+| dm-rebalancer-frontend | `srv-d4jacrfpm1nc73dudmmg` | static_site | starter | `https://dm-rebalancer-frontend.onrender.com` | not_suspended |
+| dm-signal-backend | `srv-d4ja7q15pdvs739a4q1g` | web_service | pro | `https://dm-signal-backend.onrender.com` | not_suspended |
+| dm-signal-db | `dpg-d542chchg0os73979vg0-a` | postgres | basic_1gb | `-` | not_suspended |
+| dm-signal-deterioration-batch | `crn-d6kehqlm5p6s73dov630` | cron_job | starter | `-` | not_suspended |
+| dm-signal-etl | `crn-d4ja8pp5pdvs739a5fs0` | cron_job | pro | `-` | suspended |
+| dm-signal-frontend | `srv-d4ja8pp5pdvs739a5fsg` | static_site | starter | `https://dm-signal-frontend.onrender.com` | not_suspended |
+| dm-signal-password-rotation | `crn-d53agure5dus73ap8el0` | cron_job | starter | `-` | not_suspended |
+| dm-signal-sync-fof | `crn-d5e8rabe5dus73fhlkjg` | cron_job | starter | `-` | not_suspended |
+| dm-signal-sync-prices | `crn-d5e8rabe5dus73fhlkj0` | cron_job | starter | `-` | not_suspended |
+| dm-signal-sync-standard | `crn-d5e8rabe5dus73fhlkl0` | cron_job | starter | `-` | not_suspended |
+| dm-signal-sync-tickers | `crn-d5e8rabe5dus73fhlkkg` | cron_job | starter | `-` | not_suspended |
+| inventory-app | `srv-d1d3m9re5dus73av45q0` | web_service | free | `https://inventory-app-uaou.onrender.com` | not_suspended |
+| karajibi-stabilo-checker | `srv-d22ddeidbo4c73f3s0gg` | static_site | starter | `https://karajibi-stabilo-checker.onrender.com` | not_suspended |
+| kj-partshift-checker | `srv-d4vta05actks73aan3s0` | web_service | starter | `https://kj-partshift-checker.onrender.com` | not_suspended |
+| kj-toilet-backend | `srv-d4la0dgdl3ps7382pk60` | web_service | starter | `https://kj-toilet-backend.onrender.com` | not_suspended |
+| kj-toilet-db | `dpg-d4la00gdl3ps7382pdfg-a` | postgres | basic_256mb | `-` | not_suspended |
+| kj-toilet-frontend | `srv-d4la00gdl3ps7382pdeg` | static_site | starter | `https://kj-toilet-frontend.onrender.com` | not_suspended |
+| note-dr-premium | `srv-d1u5r0ur433s73ed6kc0` | static_site | starter | `https://note-dr-premium.onrender.com` | not_suspended |
+| rebalancer-frontend | `srv-d4iil54hg0os739v3cc0` | static_site | starter | `https://rebalancer-frontend.onrender.com` | suspended |
+| simple-dual-momentum-db | `dpg-d1altb95pdvs73avn820-a` | postgres | basic_256mb | `-` | suspended |
+| sunabaco | `srv-d0k2kmje5dus73bd94qg` | web_service | starter | `https://sunabaco.onrender.com` | suspended |
+
 ## WSL2固有
 
 inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死注意。→ §8
