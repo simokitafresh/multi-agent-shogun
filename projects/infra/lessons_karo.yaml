@@ -56,7 +56,7 @@ lessons:
   enforcement: 'deploy_task.sh STALE_FIELDS全フィールドクリア+重複ガード(GP-042)+Codex config.toml instruction設定'
 
   when: deploy_task.shで忍者に配備する時。再配備時
-  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示
+  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ(tail -3で切り詰めるな。nudge未送信に気づかず配備不完全→STALL誤判断→Sonnet誤切替の連鎖事故実証済み2026-05-17)
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
   detail: |
@@ -405,3 +405,26 @@ lessons:
   when: '§0.1問い2にCLIツール構文確認を追加'
   how: 'codd extract/elicit/generate等のサブコマンド構文をCLI --helpで確認せずにACを設計→4忍者全FAIL。coddはファイル引数ではなく--path/サブコマンド形式。§0.1問い2(現物確認)の適用範囲にCLIツール構文確認を含める。'
   created_at: '2026-05-16'
+- id: 'LK007'
+  title: '修行配備は殿指示時のみ — コスト責任者は殿'
+  detail: 'idle忍者への修行配備は家老の自立自走に含めない。金と権限がないロールがリアルマネーを使うのは越権行為(殿厳命2026-05-17)。トークン消費=殿のリアルマネー。家老には予算権限がない。自立自走=コストの掛からない分析・思考・改善提案(workaround分析/教訓監査/PD対応等)。修行配備は殿の明示的指示がある時のみ実施。'
+  source_cmd: 'cmd_karo_self_driving'
+  when: '同種の状況が再発した時'
+  how: 'idle忍者への修行配備は家老の自立自走に含めない。トークン/コンテキストのコスト責任者は殿。家老が勝手にリソースを消費する権限はない。自立自走=コストの掛からない分析・思考・改善提案。修行配備は殿の明示的指示がある時のみ実施。'
+  created_at: '2026-05-17'
+- id: 'LK008'
+  title: 'STALL≠配備不完全 — nudge到達を確認してからSTALL判断せよ'
+  origin: '[[cmd_karo_stall_vs_deploy]]'
+  detail: 'CTX:0%+空プロンプト=STALLと即断するな。deploy_task.shのdeployment complete+re-nudge sentが出ていなければ配備不完全(nudge未到達)。STALLではなく配備をやり直せ。2026-05-17にGPT忍者4名連続STALL誤判断→Sonnet誤切替→全巻き戻しの事故。§0.1問い2(現物確認)の適用範囲にdeploy_task.logのnudge送信確認を含める。'
+  source_cmd: 'cmd_karo_stall_vs_deploy'
+  when: 'enforcement: post-bash-combined.sh deploy完了検証guard(Level4)+LK-A02 v7(deployment complete確認必須)'
+  how: 'CTX:0%+空プロンプト=STALLと即断するな。deploy_task.shのdeployment complete+re-nudge sentが出ていなければ配備不完全(nudge未到達)。STALLではなく配備をやり直せ。2026-05-17にGPT忍者4名連続STALL誤判断→Sonnet誤切替→全巻き戻しの事故。§0.1問い2(現物確認)の適用範囲にdeploy_task.logのnudge送信確認を含める。'
+  created_at: '2026-05-18'
+- id: 'LK009'
+  title: '間違いに気づいたら元まで巻き戻せ — 対処を重ねるな'
+  origin: '[[cmd_karo_rollback]]'
+  detail: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
+  source_cmd: 'cmd_karo_rollback'
+  when: 'enforcement: §0.1問い0(10回繰り返したら)で連鎖対処の負の複利を検出'
+  how: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
+  created_at: '2026-05-18'

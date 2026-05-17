@@ -268,4 +268,17 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
     fi
 fi
 
+# === Guard: deploy_task.sh completion verification ===
+# deploy_task.sh実行後に「deployment complete」が出力に含まれるか検証
+# 含まれなければnudge未送信→配備不完全の警告(LK-A02 v7: 2026-05-17事故)
+if [[ "$payload" == *'deploy_task.sh'* ]]; then
+    _deploy_output="$(PAYLOAD="$payload" jq -r '
+        (.tool_result.stdout // .toolResult.stdout // .content // "") | tostring
+    ' 2>/dev/null <<< "$payload" || true)"
+    if [[ -n "$_deploy_output" ]] && [[ "$_deploy_output" != *"deployment complete"* ]]; then
+        _warn_msg="⚠ deploy_task.sh出力に'deployment complete'が見つからない。nudge未送信の可能性。出力全文を確認し、必要なら手動nudge(inbox_write.sh)を送信せよ"
+        printf '%s' "$_warn_msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+    fi
+fi
+
 exit 0
