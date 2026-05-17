@@ -80,6 +80,13 @@ teardown() {
     [[ "$output" == *"WARN: infra when/how欠落教訓あり(when欠落:1, how欠落:1, total:1)"* ]]
 }
 
+@test "gate_lesson_health warns when project lessons miss origin" {
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: infra origin充足率: origin=0/1(0.0%)"* ]]
+    [[ "$output" == *"WARN: infra origin欠落教訓あり(origin欠落:1, total:1)"* ]]
+}
+
 @test "gate_lesson_health reports full when/how coverage" {
     cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
 ssot_path: $TEST_TMPDIR/tasks/lessons.md
@@ -98,6 +105,45 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO: infra when/how充足率: when=1/1(100.0%) how=1/1(100.0%)"* ]]
     [[ "$output" != *"when/how欠落教訓あり"* ]]
+}
+
+@test "gate_lesson_health warns when role lesson origins are missing, empty, or linkless" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons:
+- id: LK001
+  title: missing origin
+  detail: test detail
+- id: LK002
+  title: empty origin
+  origin: ''
+  detail: test detail
+- id: LK003
+  title: no causal link
+  origin: plain text only
+  detail: test detail
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: lessons_karo.yaml origin因果リンク不備 3/3件"* ]]
+    [[ "$output" == *"origin欠落: LK001"* ]]
+    [[ "$output" == *"origin空: LK002"* ]]
+    [[ "$output" == *"リンク0件: LK003"* ]]
+}
+
+@test "gate_lesson_health reports OK when role lesson origins have causal links" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons:
+- id: LK001
+  title: linked origin
+  origin: '[[cmd_001]]'
+  detail: test detail
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: lessons_karo.yaml origin因果リンク (1件)"* ]]
+    [[ "$output" != *"lessons_karo.yaml origin因果リンク不備"* ]]
 }
 
 @test "gate_lesson_health alerts when SSOT contains git conflict markers" {
