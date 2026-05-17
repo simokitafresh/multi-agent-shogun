@@ -803,8 +803,8 @@ check_origin_field() {
         return 0
     fi
 
-    if ! printf '%s\n' "$origin_value" | grep -qE '\[\[(ルール[0-9A-Za-z_.-]+|殿裁定[0-9]{4}-[0-9]{2}-[0-9]{2})\]\]'; then
-        echo "WARNING: origin形式不正。[[ルールID]] または [[殿裁定YYYY-MM-DD]] 形式のリンクを含めよ" >&2
+    if ! printf '%s\n' "$origin_value" | grep -qE '\[\[[^]]+\]\]'; then
+        echo "WARNING: origin形式不正。Obsidian [[リンク]] を1つ以上含めよ (例: [[cmd_XXXX]] [[LGXXX]] [[殿裁定YYYY-MM-DD]])" >&2
         echo "  現在値: ${origin_value}" >&2
     fi
 }
