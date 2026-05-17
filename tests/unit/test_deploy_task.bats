@@ -177,6 +177,63 @@ EOF
     grep -q "failed before persistence" "$TEST_PROJECT/logs/safe_inbox_write.log"
 }
 
+@test "deploy_task registers EXIT trap for interrupted nudge delivery" {
+    run grep -F "trap deploy_task_exit_nudge EXIT" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
+@test "deploy_task EXIT trap sends pending nudge once when armed" {
+    mkdir -p "$TEST_PROJECT/logs"
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/exit_nudge.log"; }
+        safe_inbox_write() {
+            printf "%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" >> "$TEST_PROJECT/logs/exit_nudge_send.log"
+        }
+        NINJA_NAME=sasuke
+        MESSAGE="task assigned"
+        TYPE=task_assigned
+        FROM=karo
+        DEPLOY_TASK_EXIT_NUDGE_ARMED=1
+        DEPLOY_TASK_EXIT_NUDGE_SENT=0
+        deploy_task_exit_nudge
+        deploy_task_exit_nudge
+    '
+
+    [ "$status" -eq 0 ]
+    run wc -l "$TEST_PROJECT/logs/exit_nudge_send.log"
+    [ "$status" -eq 0 ]
+    [ "${output##* }" = "$TEST_PROJECT/logs/exit_nudge_send.log" ]
+    [[ "$output" == "1 "* ]]
+    run cat "$TEST_PROJECT/logs/exit_nudge_send.log"
+    [ "$output" = "sasuke|task assigned|task_assigned|karo" ]
+}
+
+@test "deploy_task EXIT trap skips after main nudge marked sent" {
+    mkdir -p "$TEST_PROJECT/logs"
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        safe_inbox_write() {
+            printf "%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" >> "$TEST_PROJECT/logs/exit_nudge_send.log"
+        }
+        NINJA_NAME=sasuke
+        MESSAGE="task assigned"
+        TYPE=task_assigned
+        FROM=karo
+        DEPLOY_TASK_EXIT_NUDGE_ARMED=1
+        DEPLOY_TASK_EXIT_NUDGE_SENT=1
+        deploy_task_exit_nudge
+    '
+
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_PROJECT/logs/exit_nudge_send.log" ]
+}
+
 @test "inject_semantic_concepts injects recommended_skills from semantic search skills rows" {
     use_private_scripts_fixture
     cat > "$TEST_PROJECT/scripts/semantic_search.sh" <<'EOF'

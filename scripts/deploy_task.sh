@@ -214,6 +214,23 @@ deploy_task_send_direct_renudge() {
     fi
 }
 
+deploy_task_exit_nudge() {
+    if [ "${DEPLOY_TASK_EXIT_NUDGE_ARMED:-0}" != "1" ]; then
+        return 0
+    fi
+    if [ "${DEPLOY_TASK_EXIT_NUDGE_SENT:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ -z "${NINJA_NAME:-}" ] || [ -z "${MESSAGE:-}" ] || [ -z "${TYPE:-}" ] || [ -z "${FROM:-}" ]; then
+        return 0
+    fi
+
+    DEPLOY_TASK_EXIT_NUDGE_SENT=1
+    log "${NINJA_NAME}: EXIT trap sending inbox_write (interrupted before main nudge)"
+    safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" || \
+        log "${NINJA_NAME}: WARN EXIT trap inbox_write failed"
+}
+
 run_python_logged() {
     local output_file="$1"
     shift
@@ -6123,6 +6140,9 @@ deploy_task_main() {
     parse_deploy_task_args "$@"
     cleanup_none_task_files
     deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    DEPLOY_TASK_EXIT_NUDGE_SENT=0
+    trap deploy_task_exit_nudge EXIT
 
     local pane_target ctx_pct
     local is_idle=false
@@ -6369,6 +6389,7 @@ except Exception:
     fi
 
     deploy_task_apply_task_mutations "$NINJA_NAME"
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=1
 
     if [ -n "$deploy_lock_fd" ]; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
@@ -6385,6 +6406,8 @@ except Exception:
         log "${NINJA_NAME}: CTX=${ctx_pct}%, busy. Sending inbox_write (queued, watcher will nudge later)"
         safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
     fi
+    DEPLOY_TASK_EXIT_NUDGE_SENT=1
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=0
 
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
     record_deployed_at "$task_yaml" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
