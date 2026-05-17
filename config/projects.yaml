@@ -89,4 +89,12 @@ projects:
     status: active
     note: "パートタイムのシフト見える化MVP。FastAPI+HTMX+SQLite+Render構成"
 
+  - id: kj-toilet
+    name: "KJ Toilet Checker"
+    path: "/mnt/c/Python_app/KJ-Toilet-Cheker"
+    repo: "https://github.com/simokitafresh/KJ-Toilet-Cheker"
+    priority: medium
+    status: active
+    note: "トイレ掃除管理アプリ。Next.js14(PWA)+FastAPI+PostgreSQL+Render Disk。10秒ルール+半匿名(動物アイコン)+リアルタイム可視化。Phase A最終版"
+
 current_project: dm-signal

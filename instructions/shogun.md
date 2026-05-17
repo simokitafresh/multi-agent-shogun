@@ -302,3 +302,12 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
   - §20 OSS Pull Request Review
   - §21 Memory MCP
   - §22 裁定同時記録（殿厳命）
+
+---
+
+## 因果リンク
+
+- ← [[deepdive_why_chain_20260321]] Phase 7自走+Phase 8利他=将軍の本質
+- ← [[deepdive_causal_tracing_20260415]] 因果をたどれ=将軍判断の方法論
+- → [[growth-loop]] 将軍の成長ループ(environment_change)
+- → [[dialogue_shogun_operator_trap_20260402]] オペレーター罠=将軍の構造的弱点
