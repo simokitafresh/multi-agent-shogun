@@ -762,3 +762,6 @@
 | cmd_2812 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウンのselected属性がgoogle側についており、UIデフォルトがGoogle Visionになっている。バックエンドはtwo_stageがデフォルトだがフロントが不整合。 | simple-ocr | 05-16 | PC受信画面とスタンドアロン版のOCRエンジンドロップダウン |
 | cmd_2813 | OCR結果カードのタイトルがOCR結果とハードコードされている。two_stageパイプラインはpatient_nameを構造化JSONで出力済みなので、タイトルに患者名を表示する。テキスト本文からは消さない。 | simple-ocr | 05-16 | OCR結果カードのタイトルにtwo_stage抽出の患者名を |
 | cmd_2814 | clear_prep_check.sh Check 8がWARN表示のみでALERT昇格しない。insights 5件放置/semantic-index未更新/BLOCK経験ありlesson 0件が/clear時に素通りし、次の将軍が今セッションの学びを持てない。なぜなぜ7回で確認と対処の未分離が根因。最終防衛線を強化する。 | infra | 05-17 | clear_prep_check.shで知識埋込み漏れ3条件 |
+| cmd_2815 | gate_shogun_startup.sh Gate 13が教訓健全度ALERTを一律'/lesson-sort推奨'とするが、useful_rate<30%は/lesson-sortで解決しない。3セッション連続BLOCKの根因。ALERT種別(useful_rate vs 未振り分け)を判別し適切な推奨を表示するよう条件分岐を追加する。 | infra | 05-17 | Gate 13の教訓健全度ALERTをuseful_rate |
+| cmd_2817 | binary_checks_fail FAILが直近50件中7件。ashigaru.md L52にルールはあるが具体的YAML記入例がなく忍者が形式を間違える。記入例追加で忍者の報告作成時の行動フローをFAIL→PASSに変換する。 | infra | 05-17 | AC1は完了。AC2は指定ID INS-20260516-1 |
+| cmd_2818 | /clear後の将軍が各ルールの因果チェーン(何の実験→何の失敗→殿のどの裁定→ルール化)を持たないため、外部記事1本で安易に棚卸しを提案した。根因=時系列×因果のネットワークが環境に永続化されていない。Obsidian式[[リンク]]で既存lessons/senkyoku-logに因果辺を埋込み、逆引きCLIで任意ノードの前後を辿れるようにする。 | infra | 05-17 | 将軍教訓26件にoriginリンクを追加し、逆引きCLIとl |
