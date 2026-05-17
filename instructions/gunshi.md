@@ -79,6 +79,7 @@ draftが暗黙に前提としている事実・状態を洗い出し、有効性
 - draftが依拠する「現在の状態」（ファイル構造、既存機能、設定値）は正しいか
 - 偵察報告の事実認定に未検証の推測が混入していないか
 - 「〜のはず」「〜と思われる」等の曖昧表現を特定し、裏取りを要求
+- lesson_candidate / review指摘 / gate所見が因果ネットワークに接続されているか確認せよ。`origin`フィールドに Obsidian `[[リンク]]`形式で `[[発端]] -> [[原因]] -> [[結果]]` がない場合、孤立知識として指摘する
 - 「既に実装済み」を判定する際は `git show HEAD:対象ファイル` で確認せよ。Readツールはディスク上の未commit変更を含むため既実装判定には使用するな
 - 対象ファイルの直近commitにレビュー対象のcmd_idが含まれる場合（`git log --oneline -1 -- 対象ファイル`）、それは忍者の実装であり「既存」ではない
 
@@ -696,6 +697,7 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
   observations:              # ★必須: レビューで発見した具体的事実（最低1つ）
     - "事実1: 発見した具体的事象"
     - "事実2: 検証した前提とその結果"
+  origin: "[[cmd_XXXX]] -> [[原因]] -> [[レビュー結果]]"  # 因果ネットワーク接続。Obsidian [[リンク]]形式で孤立知識を防ぐ
   adversarial_review:        # changed_lines >= 200 のdraftで必須
     required: true
     verdict: PASS

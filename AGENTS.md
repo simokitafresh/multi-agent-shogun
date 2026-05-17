@@ -157,6 +157,7 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   AC完了ごとに二値チェック(binary_checks欄)で自己検証。
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
+  lesson_candidateには `origin: "[[発端]] -> [[原因]] -> [[結果]]"` を添え、Obsidian [[リンク]]形式で因果ネットワークへ接続せよ。
   計測して止まるだけでは品質管理。還流して初めて成長。
   分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 
@@ -399,6 +400,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 | projects/infra/lessons_{role}.yaml | 各ロール | ロール別教訓(具体的失敗+原因+修正+enforcement) | 将軍=lesson_write_shogun.sh, 家老=lesson_write_karo.sh, 軍師=家老が登録 |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
+| 因果ネットワーク | 全員 | Obsidian `[[リンク]]` + `origin`フィールドで「発端→原因→結果」を接続。lesson_candidate/review/gate所見には `origin: "[[cmd_XXX]] -> [[LXXX]] -> [[対象事象]]"` を添え、孤立知識を作らない | 各担当が報告・レビュー時に記入 |
 
 **MCP書込み制限**:
 - MCPに書くのは「殿の好み」「殿の哲学」「受動的層に収まらない情報」のみ
@@ -413,6 +415,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
   ├─ 全員が常に守るルール？ → instructions/*.md or AGENTS.md
   ├─ PJ固有の知識？ → projects/{id}.yaml
   ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
+  │   └─ lesson_candidateには origin と Obsidian [[リンク]]を付け、因果ネットワークへ接続
   ├─ ロール別の教訓？ → 将軍: lesson_write_shogun.sh / 家老: lesson_write_karo.sh / 軍師: 家老が登録
   ├─ タスクの指示・状態？ → queue/ YAML
   ├─ 状況の報告？ → dashboard.md / reports/
