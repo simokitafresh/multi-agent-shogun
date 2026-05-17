@@ -95,6 +95,21 @@ for changed in "${CHANGED_FILES[@]}"; do
         continue
     fi
 
+    # context/*.md changes affect context freshness and Vercel-style reference gates.
+    # They are documentation, but not test-free: stale metadata or broken links can
+    # break startup/completion gates, so select the focused context gate tests.
+    if [[ "$changed" == context/*.md ]]; then
+        for tf in \
+            "$TEST_DIR"/test_context_freshness_check.bats \
+            "$TEST_DIR"/test_gate_context_freshness.bats \
+            "$TEST_DIR"/test_gate_vercel_phase.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # L1+L2: マップから検索
     for key in "${!TEST_MAP[@]}"; do
         if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$(basename "$changed")"* ]]; then

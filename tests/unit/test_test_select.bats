@@ -40,3 +40,12 @@ setup_file() {
     [[ "$output" != *"WARN"* ]]
     [[ "$output" != *"tests/unit/"* ]]
 }
+
+@test "test_select maps context markdown changes to context gate tests" {
+    run bash "$TEST_SELECT" context/infrastructure.md
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_context_freshness_check.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_context_freshness.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_vercel_phase.bats"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
