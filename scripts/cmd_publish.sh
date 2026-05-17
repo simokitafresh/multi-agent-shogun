@@ -126,6 +126,52 @@ shogun_lesson_exists_for_cmd() {
     grep -qF "$source_cmd_id" "$SHOGUN_LESSONS_FILE" 2>/dev/null
 }
 
+ensure_cmd_publish_default_fields() {
+    local depends_on_value origin_value
+
+    depends_on_value="$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "depends_on" 2>/dev/null || true)"
+    if [ -z "${depends_on_value:-}" ]; then
+        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "depends_on" "none" || {
+            echo "ERROR: failed to set depends_on=none for $CMD_ID" >&2
+            return 1
+        }
+        echo "OK: $CMD_ID depends_on未記入 → depends_on: none を自動挿入"
+    fi
+
+    origin_value="$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "origin" 2>/dev/null || true)"
+    if [ -z "${origin_value:-}" ]; then
+        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "origin" "none" || {
+            echo "ERROR: failed to set origin=none for $CMD_ID" >&2
+            return 1
+        }
+        echo "OK: $CMD_ID origin未記入 → origin: none を自動挿入"
+    fi
+}
+
+run_cmd_save_with_block_summary() {
+    local output_file summary_line
+    output_file="$(mktemp "${TMPDIR:-/tmp}/cmd_publish_cmd_save.XXXXXX")"
+
+    if bash "$CMD_SAVE_SCRIPT" "$CMD_ID" >"$output_file" 2>&1; then
+        cat "$output_file"
+        rm -f "$output_file"
+        return 0
+    fi
+
+    summary_line="$(awk '
+        /^[[:space:]]*(BLOCK|保存確認NG|ERROR|WARNING):/ {
+            print
+            exit
+        }
+    ' "$output_file")"
+    [ -n "$summary_line" ] || summary_line="cmd_save.sh failed for $CMD_ID"
+
+    echo "BLOCK SUMMARY: ${summary_line}" >&2
+    cat "$output_file" >&2
+    rm -f "$output_file"
+    return 1
+}
+
 run_publish_preflight() {
     local lesson_count lesson_threshold prev_cmd_id prev_block_count
 
@@ -170,8 +216,10 @@ if [ "$current_status" = "on_hold" ]; then
     promoted_from_on_hold=true
 fi
 
+ensure_cmd_publish_default_fields
+
 echo "=== [1/3] cmd_save.sh gate検証: $CMD_ID ==="
-if ! bash "$CMD_SAVE_SCRIPT" "$CMD_ID"; then
+if ! run_cmd_save_with_block_summary; then
     [ "$promoted_from_on_hold" = true ] && echo "KEEP: $CMD_ID status=on_hold"
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
     exit 1

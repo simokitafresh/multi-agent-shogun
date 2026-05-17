@@ -212,3 +212,50 @@ SH
     [[ "$output" != *"stub cmd_delegate"* ]]
     grep -q "status: on_hold" "$TEST_QUEUE"
 }
+
+@test "AC6: depends_on/origin未記入ならcmd_save前にnoneを自動挿入する" {
+    write_queue draft
+    write_lessons 1
+    : > "$TEST_QUALITY_LOG"
+    cat > "$TEST_CMD_SAVE" <<'SH'
+#!/usr/bin/env bash
+echo "stub cmd_save $1"
+grep -q "depends_on: none" "$TEST_QUEUE"
+grep -q "origin: none" "$TEST_QUEUE"
+exit 0
+SH
+    chmod +x "$TEST_CMD_SAVE"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"depends_on未記入 → depends_on: none を自動挿入"* ]]
+    [[ "$output" == *"origin未記入 → origin: none を自動挿入"* ]]
+    [[ "$output" == *"stub cmd_save cmd_curr"* ]]
+    grep -q "depends_on: none" "$TEST_QUEUE"
+    grep -q "origin: none" "$TEST_QUEUE"
+}
+
+@test "AC7: cmd_save BLOCK時はBLOCK SUMMARYを詳細出力より先に表示する" {
+    write_queue draft
+    write_lessons 1
+    : > "$TEST_QUALITY_LOG"
+    cat > "$TEST_CMD_SAVE" <<'SH'
+#!/usr/bin/env bash
+echo "long diagnostic before block"
+echo "BLOCK: synthetic_missing_origin" >&2
+exit 1
+SH
+    chmod +x "$TEST_CMD_SAVE"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK SUMMARY: BLOCK: synthetic_missing_origin"* ]]
+    summary_line="$(printf '%s\n' "$output" | grep -n "BLOCK SUMMARY" | head -1 | cut -d: -f1)"
+    detail_line="$(printf '%s\n' "$output" | grep -n "long diagnostic before block" | head -1 | cut -d: -f1)"
+    [ "$summary_line" -lt "$detail_line" ]
+    [[ "$output" == *"BLOCK: cmd_save.sh failed for cmd_curr"* ]]
+}

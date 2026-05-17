@@ -771,6 +771,33 @@ cmd_block_get_field() {
     fi
 }
 
+auto_insert_cmd_default_fields() {
+    load_cmd_block || return 0
+    load_cmd_block_cache || return 0
+
+    local inserted=0
+    if ! cmd_block_has_field "depends_on" || [[ -z "$(cmd_block_get_field "depends_on")" ]]; then
+        bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" "depends_on" "none" >/dev/null || return 1
+        echo "INFO: depends_on未記入 → depends_on: none を自動挿入" >&2
+        inserted=1
+    fi
+
+    if ! cmd_block_has_field "origin" || [[ -z "$(cmd_block_get_field "origin")" ]]; then
+        bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" "origin" "none" >/dev/null || return 1
+        echo "INFO: origin未記入 → origin: none を自動挿入" >&2
+        inserted=1
+    fi
+
+    if [[ "$inserted" -eq 1 ]]; then
+        CMD_BLOCK_LOADED=0
+        CMD_BLOCK_FOUND=0
+        CMD_BLOCK_CACHE_LOADED=0
+        declare -gA CMD_BLOCK_CACHE=()
+        load_cmd_block || return 0
+        load_cmd_block_cache || return 0
+    fi
+}
+
 check_depends_on_field() {
     load_cmd_block || return 0
     load_cmd_block_cache || return 0
@@ -800,6 +827,10 @@ check_origin_field() {
 
     if [[ -z "${origin_value:-}" ]]; then
         echo "WARNING: origin未記入。cmdの根拠ルール/裁定を origin: \"[[ルールID]] ...\" または origin: \"[[殿裁定YYYY-MM-DD]] ...\" 形式で記入せよ" >&2
+        return 0
+    fi
+
+    if [[ "$origin_value" == "none" ]]; then
         return 0
     fi
 
@@ -1608,6 +1639,10 @@ elif ! load_cmd_block; then
     echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
     record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
 fi
+
+# --- Check 1.1: 定型フィールド自動補完 ---
+# cmd_publish/pre-bash経路に依存せず、cmd_save単体実行でも暗黙の空欄を潰す。
+auto_insert_cmd_default_fields
 
 # --- Check 1.5: 委任済みcmd再保存BLOCK ---
 # cmd_1688事故: 将軍が委任済みcmdを3回上書き→忍者フリーズ→殿指摘
