@@ -285,11 +285,30 @@ EOF
     [[ "$output" == *"**target_files**: [scripts/foo.sh,tests/foo.bats]"* ]]
 }
 
+@test "--origin writes explicit origin field" {
+    run_lesson_write testproj "origin明示教訓" "origin明示指定が正しく記録されるかの確認テストです" "cmd_703" "karo" "" --origin "[[cmd_703]] [[LG001]]"
+    [ "$status" -eq 0 ]
+
+    run grep "origin" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**origin**: [[cmd_703]] [[LG001]]"* ]]
+}
+
+@test "origin defaults from source_cmd when --origin omitted" {
+    run_lesson_write testproj "origin自動教訓" "origin未指定時にsource_cmdから自動生成される確認テストです" "cmd_704" "karo"
+    [ "$status" -eq 0 ]
+
+    run grep "origin" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**origin**: [[cmd_704]]"* ]]
+}
+
 @test "--help mentions subdomain option" {
     run bash "$SHARED_DIR/scripts/lesson_write.sh" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"--subdomain fe|be|gs|infra"* ]]
     [[ "$output" == *"--target-files"* ]]
+    [[ "$output" == *"--origin"* ]]
 }
 
 @test "draft status is written when --status draft specified" {

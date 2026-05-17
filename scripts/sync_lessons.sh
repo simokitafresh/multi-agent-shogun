@@ -135,6 +135,7 @@ while i < len(lines):
     retired_at = None
     target_files = None
     subdomain = None
+    origin = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -287,6 +288,11 @@ while i < len(lines):
             m_ftf = re.match(r'- \*\*target_files\*\*:\s*\[(.+)\]', sline)
             if m_ftf:
                 target_files = [t.strip() for t in m_ftf.group(1).split(',')]
+        # Extract origin field (causal backlink)
+        if origin is None:
+            m_forigin = re.match(r'- \*\*origin\*\*:\s*(.+)', sline)
+            if m_forigin:
+                origin = m_forigin.group(1).strip()
         # Extract retired_at field
         if retired_at is None:
             m_fretired_at = re.match(r'- \*\*retired_at\*\*:\s*(.+)', sline)
@@ -298,7 +304,7 @@ while i < len(lines):
             summary_parts.append(text)
         elif len(summary_parts) < 2 and sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|origin|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -326,6 +332,8 @@ while i < len(lines):
         entry['how'] = how_action
     if subdomain:
         entry['subdomain'] = subdomain
+    if origin:
+        entry['origin'] = origin
     if retired:
         entry['retired'] = True
     if retired_at:
@@ -525,6 +533,8 @@ for l in active_lessons:
         entry['how'] = l['how']
     if l.get('target_files'):
         entry['target_files'] = FlowList(l['target_files'])
+    if l.get('origin'):
+        entry['origin'] = l['origin']
     if l.get('retired'):
         entry['retired'] = True
     index_entries.append(entry)

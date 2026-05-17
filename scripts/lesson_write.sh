@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--origin "[[cmd_XXX]]"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -280,6 +280,7 @@ RETAG_ID=""
 RETAG_TAGS=""
 SUBDOMAIN=""
 TARGET_FILES=""
+ORIGIN=""
 
 show_usage() {
     cat <<'EOF'
@@ -294,6 +295,7 @@ Options:
                           教訓の対象サブドメインを明示指定
   --target-files "pattern1,pattern2"
                           教訓の対象ファイルパターンを明示指定
+  --origin "[[cmd_XXX]]"  因果ネットワーク用originを明示指定
   --when "trigger"        発動条件を明示指定
   --how "steps"           実行手順を明示指定
   --if "condition" --then "action" --because "reason"
@@ -330,6 +332,10 @@ while [ $# -gt 0 ]; do
             ;;
         --target-files)
             TARGET_FILES="${2:-}"
+            shift 2
+            ;;
+        --origin)
+            ORIGIN="${2:-}"
             shift 2
             ;;
         --if)
@@ -421,6 +427,14 @@ normalize_target_files_csv() {
 if [ -n "$TARGET_FILES" ]; then
     TARGET_FILES="$(normalize_target_files_csv "$TARGET_FILES")"
 fi
+
+resolve_origin_value() {
+    if [ -n "${ORIGIN:-}" ]; then
+        printf '%s\n' "$ORIGIN"
+    elif [ -n "${SOURCE_CMD:-}" ]; then
+        printf '[[%s]]\n' "$SOURCE_CMD"
+    fi
+}
 
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
 if [ -n "$RETAG_ID" ]; then
@@ -792,6 +806,7 @@ print(','.join(tags[:3]))
 
         _lw_when="${WHEN_COND:-${IF_COND:-未設定}}"
         _lw_how="${HOW_ACTION:-${THEN_ACTION:-未設定}}"
+        _lw_origin="$(resolve_origin_value)"
 
         # Build and append new entry
         {
@@ -803,6 +818,7 @@ print(','.join(tags[:3]))
             printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
             [ -n "${SUBDOMAIN:-}" ] && printf -- '- **subdomain**: %s\n' "$SUBDOMAIN"
             [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"
+            [ -n "$_lw_origin" ] && printf -- '- **origin**: %s\n' "$_lw_origin"
             printf -- '- **when**: %s\n' "$_lw_when"
             printf -- '- **how**: %s\n' "$_lw_how"
             [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"

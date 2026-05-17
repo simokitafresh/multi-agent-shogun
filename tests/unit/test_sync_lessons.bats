@@ -151,6 +151,33 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons propagates origin from markdown to index" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+---
+title: Test Lessons
+---
+
+## 教訓索引
+
+### L001: origin propagation
+- **日付**: 2026-05-17
+- **出典**: cmd_2840
+- **origin**: [[cmd_2840]] [[LG001]]
+- originフィールドがYAMLへ伝搬される確認
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    python3 - "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'PY'
+import sys, yaml
+with open(sys.argv[1], encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+lesson = data['lessons'][0]
+assert lesson.get('origin') == '[[cmd_2840]] [[LG001]]', lesson
+PY
+}
+
 @test "sync_lessons propagates late when and how after summary lines" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: late metadata propagation
