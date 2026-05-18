@@ -290,6 +290,16 @@ read_task_context_hints() {
     ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
+read_task_production_invariants() {
+    awk '
+        /^task:/ { in_task=1; next }
+        in_task && /^  production_invariants:/ { in_pi=1; next }
+        in_pi && /^  - / { line=$0; sub(/^  - /,"",line); gsub(/^"|"$/,"",line); print line; next }
+        in_pi && /^  [a-zA-Z_]/ { in_pi=0 }
+        in_pi && /^[^ ]/ { in_pi=0; in_task=0 }
+    ' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
 # ─── gate_blocks ヘルパー関数 ───
 
 read_gate_blocks() {
@@ -1501,6 +1511,57 @@ EOF
     [[ "$output" == *"context/robustness-verification-catalog.md"* ]]
     [[ "$output" == *"context/gs-speedup-knowledge.md"* ]]
     [[ "$output" == *"/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"* ]]
+}
+
+@test "cmd_2852: context hints insertion handles slash brackets parentheses and Japanese" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "context hint special chars test"
+  task_type: exact
+  project: dm-signal
+  purpose: "dm-signal-terminology.md、training-cycle.md、robustness-verification-catalog.md(日本語/[x])を読む"
+  description: "description anchor"
+EOF
+
+    run inject_context_hints_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_context_hints
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"* ]]
+    [[ "$output" == *"context/training-cycle.md"* ]]
+    [[ "$output" == *"context/robustness-verification-catalog.md"* ]]
+
+    run python3 -c "import yaml; yaml.safe_load(open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8'))"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2852: production invariant insertion handles slash brackets parentheses and Japanese" {
+    cat > "$TEST_PROJECT/projects/infra.yaml" <<'EOF'
+project:
+  id: infra
+production_invariants:
+  entries:
+    - {id: PI-INFRA-999, fact: "origin(→/[]/括弧/日本語)を壊さず配備する"}
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "production invariant special chars test"
+  task_type: exact
+  project: infra
+  purpose: "PI注入を確認する"
+  description: "description anchor"
+EOF
+
+    run inject_production_invariants_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_production_invariants
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PI-INFRA-999: origin(→/[]/括弧/日本語)を壊さず配備する"* ]]
+
+    run python3 -c "import yaml; yaml.safe_load(open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8'))"
+    [ "$status" -eq 0 ]
 }
 
 # ═══════════════════════════════════════════════════════════

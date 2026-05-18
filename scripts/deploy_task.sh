@@ -2764,6 +2764,29 @@ inject_standard_skills() {
     log "inject_standard_skills: standard skills injected"
 }
 
+insert_task_block_before_description() {
+    local tmp_file="$1"
+    local inject_block="$2"
+
+    if grep -q "^  description:" "$tmp_file"; then
+        local insert_file
+        insert_file=$(mktemp)
+        printf '%s\n' "$inject_block" > "$insert_file"
+        awk -v insert_file="$insert_file" '
+            /^  description:/ && !inserted {
+                while ((getline line < insert_file) > 0) print line
+                close(insert_file)
+                inserted=1
+            }
+            { print }
+        ' "$tmp_file" > "${tmp_file}.inserted"
+        mv "${tmp_file}.inserted" "$tmp_file"
+        rm -f "$insert_file"
+    else
+        printf '%s\n' "$inject_block" >> "$tmp_file"
+    fi
+}
+
 # ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
 # R2残件: 重要contextをタスクYAMLに強制注入し、忍者の能動検索依存をなくす。
 inject_context_hints() {
@@ -2822,11 +2845,7 @@ ${command_text}"
         inject_block="${inject_block}"$'\n'"${indent}- \"${hint}\""
     done
 
-    if grep -q "^  description:" "$tmp_file"; then
-        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
-    else
-        printf '%s\n' "$inject_block" >> "$tmp_file"
-    fi
+    insert_task_block_before_description "$tmp_file" "$inject_block"
 
     cp "$tmp_file" "$task_file"
     rm -f "$tmp_file"
@@ -2878,11 +2897,7 @@ inject_production_invariants() {
         !skip { print }
     ' "$task_file" > "$tmp_file"
 
-    if grep -q "^  description:" "$tmp_file"; then
-        sed -i "/^  description:/i\\${inject_block}" "$tmp_file"
-    else
-        echo "$inject_block" >> "$tmp_file"
-    fi
+    insert_task_block_before_description "$tmp_file" "$inject_block"
 
     cp "$tmp_file" "$task_file"
     rm -f "$tmp_file"

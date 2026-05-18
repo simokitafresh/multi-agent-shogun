@@ -534,3 +534,17 @@ inject_context_hints_only() {
         inject_context_hints "$task_file"
     )
 }
+
+inject_production_invariants_only() {
+    local ninja_name="$1"
+    local task_file="$TEST_PROJECT/queue/tasks/${ninja_name}.yaml"
+    (
+        # shellcheck disable=SC2030,SC2031
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        # shellcheck disable=SC2317
+        log() { :; }
+        inject_production_invariants "$task_file"
+    )
+}
