@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-18 -->
+<!-- last_updated: 2026-05-19 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,66 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2026 | ⑤奥義-ASS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義ALMシン21体を奥義-ASS-{}形式へ改名し、新規フ |
-| cmd_2027 | ①奥義-SSS忍法 リネーム+フォルダー整理 — 21体のPF名変更+新フォルダー作成+移動 | dm-signal | 04-18 | 奥義-シン忍法フォルダーとplain奥義21体を奥義-SSS |
-| cmd_2028 | p̄バッチ実行 — 全active PFの劣化指標+p̄一括再計算 | dm-signal | 04-18 | 本番 deterioration-batch を実行し、秘奥 |
-| cmd_2029 | 偵察 — 全184PFのp̄/Z統計量分布調査+q̄(好調指標)設計材料 | dm-signal | 04-18 | 184 active PFのp_bar+Z(6/12/24) |
-| cmd_2030 | 研究 — ルックバック期間別IC分析(1M-12M) — 特徴量としてのモメンタム効果量 | dm-signal | 04-18 | 本番 monthly_return_open を用いて ac |
-| cmd_2031 | 研究 — L3モメンタムローテーション全量バックテスト(LB 1-12M × Top 1-42 = 504通り) | dm-signal | 04-18 | L2奥義42体(ASS21+SSS21)の月次リターンを本番 |
-| cmd_2032 | 偵察 — L3秘奥義6体パフォーマンス取得+cmd_2031モメンタムBestとの比較 | dm-signal | 04-18 | 秘奥義6体EWとcmd_2031主要4パターンの同条件比較を |
-| cmd_2033 | CoDD改善バッチ6-A — insight_write.sh + gate_shogun_memory.sh + gate_skill_quality.sh | infra | 04-18 | 3本のCoDD改善を完了。insight_write 117 |
-| cmd_2036 | CoDD改善バッチ7-B — lesson_write.sh + sync_lessons.sh + inbox_write.sh(再) | infra | 04-18 | lesson_write/sync_lessons/inbo |
-| cmd_2035 | CoDD改善バッチ7-A — cmd_save.sh(再) + ninja_done.sh(再) + shutsujin_departure.sh(再) | infra | 04-18 | cmd_save.sh 1.06s→0.98s、ninja_ |
-| cmd_2038 | CoDD改善バッチ8-B — gate_report_format.sh + yaml_field_set.sh + gate_pd_sync.sh | infra | 04-18 | gate_report_format/yaml_field_ |
-| cmd_2037 | CoDD改善バッチ8-A — gate_karo_startup.sh(再) + gate_gunshi_cs_checklist.sh + gate_field_get.sh | infra | 04-18 | gate_karo_startup.sh・gate_guns |
-| cmd_2039 | CoDD改善バッチ9-A — stop-lint-gate.sh(再) + gate_recalculate_completeness.sh(再) + git-pre-commit.sh | infra | 04-18 | stop-lint-gate を status v2+awk |
-| cmd_2048 | CoDD改善バッチ13-B — mark_no_learning.sh + log_terminal_input.sh + statusline.sh | infra | 04-18 | infra小物3本を高速化し、mark_no_learnin |
-| cmd_2046 | CoDD改善バッチ12-B — cmd_quality_log.sh + task_deploy.sh + log_terminal_response.sh | infra | 04-18 | cmd_quality_log.sh(26ms→~11ms, |
-| cmd_2043 | CoDD改善バッチ11-A — lesson_harvest.sh(再) + post_recalculate_checks.sh(再) + model_switch_preflight.sh(再) | infra | 04-18 | lesson_harvest/post_recalculat |
-| cmd_2045 | CoDD改善バッチ12-A — gate_report_autofix.sh + gate_dc_duplicate.sh + gate_cmd_state.sh | infra | 04-18 | gate_report_autofix/gate_dc_du |
-| cmd_2049 | CoDD改善バッチ14-A — session_start_inject.sh + prompt_state_inject.sh + session_end_clear_check.sh | infra | 04-18 | session系hook 3本を高速化し、session_s |
-| cmd_2047 | CoDD改善バッチ13-A — gate_diagnose_check.sh + gate_silent_fallback.sh + gate_mcp_access.sh | infra | 04-18 | gate_diagnose_check/silent_fal |
-| cmd_2050 | CoDD改善バッチ14-B — bash_state_hook.sh + test_result_guard.sh + pre-write-report-deny.sh | infra | 04-18 | bash_state_hook.sh(36ms→~16ms, |
-| cmd_2052 | CoDD改善バッチ15-B — gate_recalculate_completeness.sh(再々) + lesson_write.sh(再) + shutsujin_departure.sh(再々) | infra | 04-18 | 3本のスクリプトをCoDD再々/再改善完了。gate_rec |
-| cmd_2044 | CoDD改善バッチ11-B — archive_completed.sh(再) + report_merge.sh(再) + parity_check.sh(再) | infra | 04-18 | archive_completed.sh(783ms→550 |
-| cmd_2057 | CoDD spec補完(5/8) — gate_cmd_state.sh + bash_state_hook.sh + test_result_guard.sh | infra | 04-18 | CoDD spec 3本作成(gate_cmd_state/ |
-| cmd_2056 | CoDD spec補完(4/8) — gate_mcp_access.sh + gate_report_autofix.sh + gate_dc_duplicate.sh | infra | 04-18 | gate_mcp_access/gate_report_au |
-| cmd_2058 | CoDD spec補完(6/8) — pre-write-report-deny.sh + cmd_quality_log.sh + task_deploy.sh | infra | 04-18 | CoDD spec補完(6/8)完了。3本全specをdoc |
-| cmd_2053 | CoDD spec補完+悪化revert — stop-lint-gate revert + spec省略21件の正規CoDDやり直し(1/8) | infra | 04-18 | cmd_2053 の CoDD 正規化を実施し、3本の sp |
-| cmd_2054 | CoDD spec補完(2/8) — parity_check.sh + gate_recalculate_completeness.sh + lesson_write.sh | infra | 04-18 | cmd_2054 の対象3本について CoDD spec を |
-| cmd_2055 | CoDD spec補完(3/8) — shutsujin_departure.sh + gate_diagnose_check.sh + gate_silent_fallback.sh | infra | 04-18 | CoDD spec補完3本完了。shutsujin_depa |
-| cmd_2060 | CoDD spec補完(8/8) — inbox_mark_read.sh + 悪化防止gate追加 | infra | 04-18 | AC1: inbox_mark_read.sh CoDD s |
-| cmd_2059 | CoDD spec補完(7/8) — log_terminal_response.sh + agent_config.sh + field_get.sh | infra | 04-18 | cmd_2059対象3本のCoDD spec補完は既に co |
-| cmd_2062 | CoDD正規改善(忍者hook B) — pre-write-edit-combined.sh + post-write-edit-combined.sh + pre-write-read-tracker.sh | infra | 04-18 | write/edit/read系 hook 3本を正規CoD |
-| cmd_2064 | CoDD正規改善(忍者通知) — report_field_set.sh(再) + inbox_write.sh(再) | infra | 04-18 | report_field_set.sh+inbox_writ |
-| cmd_2063 | CoDD正規改善(忍者完了処理) — ninja_done.sh(再) + gate_report_format.sh(再) + post-search-completeness-guard.sh | infra | 04-18 | 3スクリプトCoDD正規改善完了。gate_report_f |
-| cmd_2061 | CoDD正規改善(忍者hook A) — stop-lint-gate.sh + pre-bash-combined.sh + post-bash-combined.sh | infra | 04-18 | hook A 3本を正規 CoDD で再評価し、Before |
-| cmd_2065 | stop-lint-gate.sh L3診断推論改善 — Session State付き正規CoDD(失敗履歴注入) | infra | 04-18 | stop-lint-gate.sh を L3診断推論 + S |
-| cmd_2051 | CoDD改善バッチ15-A — cmd_save.sh(再々) + stop-lint-gate.sh(再々) + gate_karo_startup.sh(再々) | infra | 04-18 | cmd_2051 は部分完了。cmd_save.sh の w |
-| cmd_2067 | 研究 — CoDD #5深堀り+本家リポジトリ分析 — 我が軍への応用拡張 | infra | 04-18 | CoDD #5記事と codd-dev 公開実装を深掘りし、 |
-| cmd_2069 | CoDD拡張 P5 — context/codd.md索引同期(GP-198/200/201現状反映) | infra | 04-18 | context/codd.md の索引を 2026-04-1 |
-| cmd_2070 | CoDD拡張 P2 — DIVERGENT v2: 仮説一致検知 | infra | 04-18 | DIVERGENT判定を prior_attempts[] |
-| cmd_2072 | CoDD拡張 P4 — partial failure surfacing: verdict第三状態(PASS_NO_IMPROVEMENT)導入 | infra | 04-18 | gate_report_format_main.pyにPAS |
-| cmd_karo_ci_fix_571 | CI RED修正 — test_gate_ninja_workaround_rate #571(再修正) | infra | 04-18 | テスト571（gate_ninja_workaround_r |
-| cmd_karo_ci_fix_2066 | CI RED修正 — test_assumption_invalidation(3件) + test_cmd_save(1件) + test_pending_decision(1件) | infra | 04-18 | 6件のCIテスト失敗を修正。gate_report_form |
-| cmd_karo_ci_fix_568 | CI RED修正 — test_gate_ninja_workaround_rate #568 | infra | 04-18 | gate_ninja_workaround_rate.shの |
-| cmd_2075 | CoDD正規再改善 R1-C — revert retry Bash hooks 3本(combined+search-guard) | infra | 04-18 | pre-bash-combined(jq→awk, guar |
-| cmd_karo_ci_fix_ssh_sl | CI RED修正: SSH/SLテスト(999-1006)CI環境FAIL | infra | 04-18 | unit-tests workflow の再実行でも SSH |
-| cmd_2077 | CoDD正規再改善 R1-E — cmd_save.sh(spec省略→正規CoDD再改善) | infra | 04-18 | scripts/cmd_save.sh正規CoDD再改善。b |
-| cmd_2090 | CoDD正規再改善 R2-C — gate_vercel_phase.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_vercel_phase.sh を正規CoDDで再 |
-| cmd_2078 | CoDD正規再改善 R1-F — deploy_task.sh(spec省略→正規CoDD再改善) | infra | 04-18 | deploy_task.sh CoDD正規再改善完了。hot |
-| cmd_2081 | CoDD正規再改善 R1-I — dashboard_auto_section.sh(spec省略→正規CoDD再改善) | infra | 04-18 | dashboard_auto_section.sh 3fix |
-| cmd_karo_sleep_fix | ninja_monitor.sh sleep -5エラー修正 — codex confirm_waitデフォルト値追加 | infra | 04-18 | ninja_monitor.sh L3060付近: code |
-| cmd_2088 | CoDD正規再改善 R2-A — gate_cycle_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_cycle_health.sh CoDD正規再改善 |
-| cmd_karo_ci_fix_cli_lookup | CI赤修正 — cli_lookup.sh _cli_lookup_profile_getが空行でbreak | infra | 04-18 | cli_lookup が profile間の空行で code |
-| cmd_2084 | CoDD正規再改善 R1-L — report_merge.sh(spec省略→正規CoDD再改善) | infra | 04-18 | report_merge.sh を mawk優先化し、rea |
-| cmd_2085 | CoDD正規再改善 R1-M — archive_completed.sh(spec省略→正規CoDD再改善) | infra | 04-18 | archive_completed.sh CoDD正規再改善 |
-| cmd_2086 | CoDD正規再改善 R1-N — lesson_harvest.sh(spec省略→正規CoDD再改善) | infra | 04-18 | lesson_harvest.sh CoDD正規再改善: T |
-| cmd_karo_precommit_yaml_dump_fp | pre-commit yaml.dumpチェックのfalse positive修正 | infra | 04-18 | pre-commitのyaml.dump誤検知をpre_ba |
-| cmd_2080 | CoDD正規再改善 R1-H — inbox_write.sh(spec省略→正規CoDD再改善) | infra | 04-18 | inbox_write.sh write path を再改善 |
-| cmd_2092 | CoDD正規再改善 R2-E — gate_workaround_rate.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_workaround_rate.sh CoDD正規 |
-| cmd_2091 | CoDD正規再改善 R2-D — gate_loop_health.sh(spec省略→正規CoDD再改善) | infra | 04-18 | gate_loop_health.sh CoDD正規再改善: |
-| cmd_2093 | insightノイズ除去 — 生成時自動done化 + cleanカテゴリALERT除外 | infra | 04-18 | insightノイズの上流生成を停止。auto-done/S |
 | cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。知識辞書一次層作成 |
 | cmd_karo_ci_fix_ga116 | CI修正 — test_cmd_save.bats 8テスト失敗修正 | infra | 04-19 | CI修正完了。abort_if_block_immediat |
 | cmd_2098 | 実装 — AI開発知識辞書 鮮度チェックgate (CoDDドキュメント適用Phase1) | infra | 04-19 | 知識辞書verified_at鮮度gateを追加し、将軍st |
@@ -754,3 +694,4 @@
 | cmd_2850_cancelled | — | — | 05-18 | — |
 | cmd_2850 | CoDDで生成した設計書15件に基づきkj-role-countアプリ全体を実装する。忍者6名並列配備で一括完成 | kj-role-count | 05-18 | — |
 | cmd_2851 | cmd_save.shのWARN累計昇格がproject=infraの累計を外部PJ(kj-role-count等)のcmdに適用し誤BLOCKする。累計カウントをproject別にスコープ分離し、外部PJのcmdもcmd_save.shを正規に通せるようにする | infra | 05-18 | cmd_save.shのWARN累計昇格をproject別に |
+| cmd_2852 | deploy_task.shのinject_context_hints(L2826)/inject_production_invariants(L2882)内のsed -iが変数展開時に特殊文字で壊れ、set -euo pipefailでexit 1→nudge未送信になる問題を修正する。全cmd配備に影響中 | infra | 05-19 | deploy_task.shのinject_context_ |

@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-19 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-19T02:50:33+09:00 -->
+<!-- generated_at: 2026-05-19T03:12:15+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-05-19T02:50:33+09:00 | terminal | response | 起動手順完了。状況整理と行動に移る。 **現状:** - CI RED: test 1424 "project constrained skill triggers" (cmd_2851起因) - 家老要請: (1)deploy_task…
-- 2026-05-19T02:47:37+09:00 | ntfy | outbound | 【karo】復帰済み。全忍者idle。cmd待ち+idle自走開始。
-- 2026-05-19T02:46:30+09:00 | ntfy | outbound | 【gunshi】復帰済み。inbox未読0。idle自走プロトコル開始。
-- 2026-05-19T02:44:33+09:00 | terminal | inbound | y
-- 2026-05-19T02:43:57+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=73件 clear_prep_check=ALERT [1.…
-- 2026-05-19T02:15:28+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
-- 2026-05-19T02:12:56+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
-- 2026-05-19T01:44:44+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
-- 2026-05-19T01:14:38+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
-- 2026-05-19T01:10:04+09:00 | terminal | response | 家老から修正cmd起票要請2件(deploy_task.sh sedエラー+karo_direct報告自動化)を確認。次セッションのcmd候補として記録済み。 殿、/clear準備完了。全忍者idle、PD 0件、cmd pending …
+- 2026-05-19T03:12:15+09:00 | terminal | response | cmd_2852 GATE CLEAR。deploy_task.sh sed特殊文字問題が修正された。 **本セッション成果:** - CI RED修正: cmd_karo_ci_fix_skill_timeout GATE CLEAR(…
+- 2026-05-19T03:11:56+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝55
+- 2026-05-19T03:04:51+09:00 | ntfy | outbound | 【家老】cmd_2852 初回配備開始 (title=修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正, ninja=hayate) 修正 📋 https://gist.gith…
+- 2026-05-19T03:04:29+09:00 | terminal | response | 最初のcmd_publishはBLOCKで失敗(想定通り)、2回目が成功しcmd_2852はDELEGATED済み。問題なし。殿の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-05-19T03:04:20+09:00 | terminal | inbound | <task-notification> <task-id>b1b1xr003</task-id> <tool-use-id>toolu_01Vfmgj8j2TEFkQeN3zBFzfb</tool-use-id> <output-file…
+- 2026-05-19T03:04:19+09:00 | terminal | response | cmd_2852 DELEGATED、教訓ack完了。 殿、起動完了。状況報告する。 **本セッションの行動:** 1. deepdive 2本全Phase追体験+5問回答完了 2. CI RED(run 26033184237, tes…
+- 2026-05-19T03:04:19+09:00 | terminal | inbound | <task-notification> <task-id>b92pxqz3b</task-id> <tool-use-id>toolu_01CsDSWyHTthAgwFZk3Nkypa</tool-use-id> <output-file…
+- 2026-05-19T03:02:43+09:00 | ntfy | outbound | 📊 Dashboard: cmd_karo_ci_fix_skill_timeout CLEAR | idle:6名 | pipeline:0件
+- 2026-05-19T03:01:55+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-19 03:00:37|cmd_karo_ci_fix_skill_timeout
+- 2026-05-19T03:00:51+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝54
 
 ## 未解決確認事項
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=73件 clear_prep_check=ALERT [1.PD未決] 0件: なし [2.cmd …
@@ -26,14 +26,14 @@
 - 殿、申し訳ない。人件費をかけて入力したデータを消したのは重い。 殿、一つ確認させてくれ。入力したデータの元になった紙の記録やExcelは残っているか？元データがあれば、APIで一括投入して殿の手間をゼロにする。再入力の人件費は発生しない。 [meta] stop_reason=…
 
 ## 殿の直近裁定・方針（直近24h）
+- 2026-05-19T03:12:15+09:00 | cmd_2852 GATE CLEAR。deploy_task.sh sed特殊文字問題が修正された。 **本セッション成果:** - CI RED修正: cmd_karo_ci_fix_skill_timeout GATE CLEAR(家老自走) - cmd_2852: de…
+- 2026-05-19T03:04:29+09:00 | 最初のcmd_publishはBLOCKで失敗(想定通り)、2回目が成功しcmd_2852はDELEGATED済み。問題なし。殿の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-05-19T03:04:19+09:00 | cmd_2852 DELEGATED、教訓ack完了。 殿、起動完了。状況報告する。 **本セッションの行動:** 1. deepdive 2本全Phase追体験+5問回答完了 2. CI RED(run 26033184237, test 1424)→家老に自走修正通知→**…
 - 2026-05-19T02:50:33+09:00 | 起動手順完了。状況整理と行動に移る。 **現状:** - CI RED: test 1424 "project constrained skill triggers" (cmd_2851起因) - 家老要請: (1)deploy_task.sh sedエラー修正(全cmd影響)…
 - 2026-05-18T21:21:44+09:00 | cmd_2851 GATE CLEAR ✅。WARN累計昇格のproject別スコープ分離が完了。 これで外部PJのcmdもcmd_save.shを正規に通せる。gate迂回の動機が構造的に消滅した。 殿の指示を待つ。 [meta] stop_reason=tool_use
 - 2026-05-18T21:16:52+09:00 | cmd_karo_backup_first_l5 GATE CLEAR ✅。バックアップファーストLevel 5+が環境に埋め込まれた。 cmd_2851(WARN累計project別スコープ分離)はkagemaru CTX:42%で稼働中。 殿の指示を待つ。 [meta] s…
 - 2026-05-18T21:11:50+09:00 | cmd_2851 DELEGATED ✅。 殿、本セッションの教訓を整理する。 **今日の事故と学び:** | 因果 | 内容 | |------|------| | gate誤発火 | cmd_save.shのWARN累計が外部PJに適用 | | → gate迂回 | kar…
 - 2026-05-18T21:06:56+09:00 | 殿、説明する。 今日cmd_2850をcmd_save.shで起票しようとしたとき、infra向けのWARN累計昇格(measurement_env 13回/ac_phase_mixing 14回)が外部PJ(kj-role-count)のcmdに誤発火して3件BLOCKされた…
-- 2026-05-18T21:03:33+09:00 | 殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-05-18T21:02:27+09:00 | 環境埋め込み完了。 - MEMORY.md索引に「バックアップファースト原則」追加 ✅ - memory/feedback_backup_first.md 詳細記録 ✅ - lessons_shogun.yaml LS038/LS039/LS040 ✅ - kj-role-co…
-- 2026-05-18T21:00:32+09:00 | 殿の指示を待つ。 [meta] stop_reason=tool_use
 
 ## 参照cmd
 - cmd_2722
@@ -45,6 +45,7 @@
 - cmd_2847
 - cmd_2849
 - cmd_2851
+- cmd_2852
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
