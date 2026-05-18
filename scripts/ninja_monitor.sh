@@ -2034,6 +2034,20 @@ _cleanup_stale_keys() {
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "DESTRUCTIVE_WARN_LAST[$key]"
     done
+
+    # compound key (agent:cmd_id) の配列: agentが非アクティブなら削除
+    # REPORT_DONE_MISMATCH_NOTIFIEDはcmd_idごとに1エントリ蓄積→長期稼働でキー無制限増加
+    for key in "${!REPORT_DONE_MISMATCH_NOTIFIED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "REPORT_DONE_MISMATCH_NOTIFIED[$key]"
+    done
+
+    # compound key (agent:task_id) の配列: agentが非アクティブなら削除
+    # TRAINING_EFFECT_RECORDEDはtask_idごとに1エントリ蓄積（1日1件ペース）→長期稼働でキー増加
+    for key in "${!TRAINING_EFFECT_RECORDED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "TRAINING_EFFECT_RECORDED[$key]"
+    done
 }
 
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
