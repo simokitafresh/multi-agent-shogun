@@ -19,6 +19,7 @@ LOCK_FILE="/tmp/cmd_design_quality.lock"
 SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
+PROJECT_ID="${CMD_QUALITY_PROJECT:-}"
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -225,6 +226,7 @@ ${field_indent}gate_result: "$GATE_RESULT"
 ${field_indent}karo_rework: "$KARO_REWORK"
 ${field_indent}gunshi_verdict: "$GUNSHI_VERDICT"
 ${field_indent}ninja_blockers: $NINJA_BLOCKERS
+${field_indent}project: "$PROJECT_ID"
 ${field_indent}supplementary_cmds: $SUPPLEMENTARY_CMDS
 ${field_indent}source: "$SOURCE_STAGE"
 ${field_indent}timestamp: "$TIMESTAMP"

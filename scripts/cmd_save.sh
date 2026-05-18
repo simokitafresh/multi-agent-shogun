@@ -1315,6 +1315,7 @@ log_cmd_save_block() {
     CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
     CMD_QUALITY_SOURCE="cmd_save" \
     CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
+    CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
     CMD_QUALITY_FAST_METADATA=1 \
     bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 || true
 }
@@ -1326,6 +1327,7 @@ log_cmd_save_warns() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save_warn" \
         CMD_QUALITY_DIAGNOSIS="" \
+        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 || true
     done
@@ -1367,6 +1369,7 @@ ${field_indent}gate_result: "PASS"
 ${field_indent}karo_rework: "no"
 ${field_indent}gunshi_verdict: "unknown"
 ${field_indent}ninja_blockers: 0
+${field_indent}project: "$(cmd_block_get_field "project" 2>/dev/null || true)"
 ${field_indent}supplementary_cmds: 0
 ${field_indent}source: "cmd_save"
 ${field_indent}timestamp: "$timestamp"
@@ -1380,18 +1383,27 @@ count_same_warn_pattern() {
         echo 0
         return 0
     }
+    local current_project
+    current_project="$(cmd_block_get_field "project" 2>/dev/null || true)"
     CMD_SAVE_CMD_ID="$CMD_ID" \
     CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
     CMD_SAVE_WARN_PATTERN="$warn_pattern" \
+    CMD_SAVE_CURRENT_PROJECT="$current_project" \
+    CMD_SAVE_QUEUE_FILE="$QUEUE_FILE" \
+    CMD_SAVE_ARCHIVE_CMD_DIR="$ARCHIVE_CMD_DIR" \
     CMD_SAVE_SHOGUN_LESSONS_FILE="$CMD_SAVE_SHOGUN_LESSONS_FILE" \
     python3 - <<'PY'
 import os
+import glob
 import re
 import yaml
 
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 warn_pattern = os.environ.get("CMD_SAVE_WARN_PATTERN", "").strip()
+current_project = os.environ.get("CMD_SAVE_CURRENT_PROJECT", "").strip()
+queue_path = os.environ.get("CMD_SAVE_QUEUE_FILE", "")
+archive_dir = os.environ.get("CMD_SAVE_ARCHIVE_CMD_DIR", "")
 lessons_path = os.environ.get("CMD_SAVE_SHOGUN_LESSONS_FILE", "")
 
 if not cmd_id or not warn_pattern or not log_path or not os.path.exists(log_path):
@@ -1409,11 +1421,71 @@ if lessons_path and os.path.exists(lessons_path):
 with open(log_path, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 
+project_cache = {}
+
+def extract_project(payload, target_cmd):
+    if not isinstance(payload, dict):
+        return ""
+    commands = payload.get("commands")
+    if isinstance(commands, dict):
+        cmd_data = commands.get(target_cmd)
+        if isinstance(cmd_data, dict):
+            return str(cmd_data.get("project", "") or "").strip()
+    cmd_data = payload.get(target_cmd)
+    if isinstance(cmd_data, dict):
+        return str(cmd_data.get("project", "") or "").strip()
+    if str(payload.get("id", "") or "").strip() == target_cmd:
+        return str(payload.get("project", "") or "").strip()
+    return str(payload.get("project", "") or "").strip()
+
+def read_project_from_yaml(path, target_cmd):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return extract_project(yaml.safe_load(fh) or {}, target_cmd)
+    except Exception:
+        return ""
+
+def resolve_cmd_project(target_cmd, entry):
+    if not target_cmd:
+        return ""
+    if isinstance(entry, dict):
+        explicit = str(entry.get("project", "") or "").strip()
+        if explicit:
+            return explicit
+    if target_cmd == cmd_id and current_project:
+        return current_project
+    if target_cmd in project_cache:
+        return project_cache[target_cmd]
+
+    project = ""
+    if queue_path and os.path.exists(queue_path):
+        project = read_project_from_yaml(queue_path, target_cmd)
+    if not project and archive_dir and os.path.isdir(archive_dir):
+        for path in sorted(glob.glob(os.path.join(archive_dir, f"{target_cmd}*.yaml"))):
+            project = read_project_from_yaml(path, target_cmd)
+            if project:
+                break
+
+    project_cache[target_cmd] = project
+    return project
+
+def project_matches(entry):
+    if not current_project:
+        return True
+    entry_cmd = str(entry.get("cmd_id", "") or "").strip()
+    entry_project = resolve_cmd_project(entry_cmd, entry)
+    if entry_project:
+        return entry_project == current_project
+    # Legacy cmd_save_warn rows predate project logging. They came from the infra
+    # command queue; keep infra continuity without contaminating external projects.
+    return current_project == "infra"
+
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 count = sum(
     1
     for entry in entries
     if isinstance(entry, dict)
+    and project_matches(entry)
     and entry.get("source") == "cmd_save_warn"
     and entry.get("gate_result") == "WARN"
     and (

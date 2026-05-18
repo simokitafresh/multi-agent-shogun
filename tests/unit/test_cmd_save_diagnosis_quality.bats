@@ -83,12 +83,13 @@ run_diag_save() {
 
 # WARN累計テスト用: q8に複利の問いが欠落したcmd（毎回WARNを出す）
 write_warn_cmd() {
+    local project="${1:-infra}"
     cat > "$TEST_QUEUE" <<YAML
 commands:
   cmd_warntest:
     id: cmd_warntest
     title: "infra — WARN累計テスト"
-    project: infra
+    project: ${project}
     depends_on: none
     command: "テスト用cmd"
     status: pending
@@ -236,4 +237,55 @@ run_warn_save() {
     [[ "$output" == *"WARN累計昇格"* ]]
     [[ "$output" == *"q8_複利の問い"* ]]
     [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "AC2-4: project違いの同一WARN履歴ではBLOCK昇格しない" {
+    write_warn_cmd "kj-role-count"
+
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: "cmd_infra_hist"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    project: "infra"
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-18T00:00:00Z"
+    notes: "q8_複利の問い|check=quality_gate_q8_compound_question"
+YAML
+
+    run_warn_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
+    [[ "$output" != *"WARN累計昇格"* ]]
+}
+
+@test "AC2-5: project一致の同一WARN履歴では従来通りBLOCK昇格する" {
+    write_warn_cmd "infra"
+
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: "cmd_infra_hist"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    project: "infra"
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-05-18T00:00:00Z"
+    notes: "q8_複利の問い|check=quality_gate_q8_compound_question"
+YAML
+
+    run_warn_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARN累計昇格"* ]]
 }
