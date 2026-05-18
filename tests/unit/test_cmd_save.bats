@@ -65,13 +65,15 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^is_db_operation_command_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_db_backup_ac_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -236,6 +238,39 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: cmdテキスト内にパイプ文字"* ]]
+}
+
+@test "Check21.2: DB操作cmdならバックアップAC WARNを出力" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    command: |
+      backend migrationを追加し、ALTER TABLE users ADD COLUMN role TEXTを実行する
+    acceptance_criteria:
+      - "AC1: migrationが適用される"
+YAML
+
+    load_cmd_block
+    run check_db_backup_ac_warn
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: DB操作cmdを検出"* ]]
+    [[ "$output" == *"変更前バックアップ実行済みであること"* ]]
+}
+
+@test "Check21.2: 非DB cmdならバックアップAC WARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    command: |
+      dashboard.mdの表示文言を更新する
+    acceptance_criteria:
+      - "AC1: 表示文言が更新される"
+YAML
+
+    load_cmd_block
+    run check_db_backup_ac_warn
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
 }
 
 @test "Check6: GP番号なしcmdはスキップ" {

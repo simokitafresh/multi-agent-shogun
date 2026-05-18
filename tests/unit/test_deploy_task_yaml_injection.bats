@@ -56,3 +56,75 @@ PY
     grep -q 'inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons"' "$PROJECT_ROOT/scripts/deploy_task.sh"
     grep -q 'inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points"' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
+
+@test "db backup controls: DB cmd injects stop_for and backup instructions" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_db
+  task_id: cmd_db_impl
+  status: assigned
+  description: "DB schema変更を実装する"
+  acceptance_criteria:
+  - id: AC1
+    description: "schema変更が完了する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_db:
+    command: |
+      ALTER TABLE users ADD COLUMN status TEXT;
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="db_backup_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert 'バックアップなしのDB変更' in task['stop_for'], task
+assert '【DB変更前バックアップ必須】' in task['description'], task['description']
+PY
+}
+
+@test "db backup controls: non-DB cmd does not inject stop_for" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_docs
+  task_id: cmd_docs_impl
+  status: assigned
+  description: "dashboard.mdの文言を更新する"
+  acceptance_criteria:
+  - id: AC1
+    description: "文言が更新される"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_docs:
+    command: |
+      dashboard.mdの表示文言を更新する
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="db_backup_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert 'stop_for' not in task, task
+assert '【DB変更前バックアップ必須】' not in task['description'], task['description']
+PY
+}
