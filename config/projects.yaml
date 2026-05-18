@@ -97,4 +97,12 @@ projects:
     status: active
     note: "トイレ掃除管理アプリ。Next.js14(PWA)+FastAPI+PostgreSQL+Render Disk。10秒ルール+半匿名(動物アイコン)+リアルタイム可視化。Phase A最終版"
 
+  - id: kj-role-count
+    name: "KJ Role Count"
+    path: "/mnt/c/Python_app/kj-role-count"
+    repo: "https://github.com/simokitafresh/kj-role-count"
+    priority: medium
+    status: planned
+    note: "診療介助ロール担当回数記録・可視化。Next.js+FastAPI+SQLite+Render Disk。共有スマホ氏名入力+二重承認(日+週)+棒グラフ"
+
 current_project: dm-signal
