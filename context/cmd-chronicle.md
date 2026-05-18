@@ -752,3 +752,5 @@
 | cmd_2846 | autofix提案が忍者未読ファイルを対象に+既存gateで解決済み問題を提案する二重無効状態を解消。INSIGHT_REPEAT action_required蓄積の根因 | infra | 05-18 | gate_autofix_proposalで未読target |
 | cmd_2849 | 偵察cmd_2848で特定された根因を修正。GATE BLOCK時にlesson_write --status draftで自動生成されたdraftが、同一cmdの後続GATEでCRITICAL BLOCKされる自己循環(19件中15件=78.9%)を解消 | infra | 05-18 | GATE自動生成draftへgate_auto_draftマ |
 | cmd_2850_cancelled | — | — | 05-18 | — |
+| cmd_2850 | CoDDで生成した設計書15件に基づきkj-role-countアプリ全体を実装する。忍者6名並列配備で一括完成 | kj-role-count | 05-18 | — |
+| cmd_2851 | cmd_save.shのWARN累計昇格がproject=infraの累計を外部PJ(kj-role-count等)のcmdに適用し誤BLOCKする。累計カウントをproject別にスコープ分離し、外部PJのcmdもcmd_save.shを正規に通せるようにする | infra | 05-18 | cmd_save.shのWARN累計昇格をproject別に |
