@@ -308,6 +308,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"--subdomain fe|be|gs|infra"* ]]
     [[ "$output" == *"--target-files"* ]]
+    [[ "$output" == *"--source-marker"* ]]
     [[ "$output" == *"--origin"* ]]
 }
 
@@ -316,6 +317,14 @@ EOF
     [ "$status" -eq 0 ]
 
     run grep "status.*draft" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+}
+
+@test "source marker is written when --source-marker specified" {
+    run_lesson_write testproj "ソースマーカーテスト" "生成元マーカーが記録されるかの確認テストです" "cmd_801" "gate_auto" "" --status "draft" --source-marker "gate_auto_draft"
+    [ "$status" -eq 0 ]
+
+    run grep "source.*gate_auto_draft" "$EXT_PROJECT/tasks/lessons.md"
     [ "$status" -eq 0 ]
 }
 

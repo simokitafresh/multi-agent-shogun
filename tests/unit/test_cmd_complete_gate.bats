@@ -1235,3 +1235,23 @@ EOF
     [[ "$output" == *"GATE BLOCK"* ]]
     [[ "$output" == *"sasuke:binary_checks_fail"* ]]
 }
+
+@test "draft lesson check ignores gate_auto_draft marker but keeps manual drafts blocking" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert '--source-marker "gate_auto_draft"' in text
+
+start = text.index('own_draft_count=$(awk -v cmd="${CMD_ID}"')
+end = text.index("' \"$DRAFT_LESSONS_FILE\"", start)
+block = text[start:end]
+
+assert r'- \*\*source\*\*:[[:space:]]*gate_auto_draft' in block
+assert '&& !is_gate_auto_draft' in block
+assert 'is_draft && is_own' in block
+PY
+    [ "$status" -eq 0 ]
+}

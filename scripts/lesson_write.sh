@@ -1,6 +1,6 @@
 #!/bin/bash
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--origin "[[cmd_XXX]]"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
+# Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--source-marker "gate_auto_draft"] [--origin "[[cmd_XXX]]"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
 # Tags: --tags "tag1,tag2" (explicit) or auto-inferred project tag. Fallback: universal
 # Example: bash scripts/lesson_write.sh dm-signal "本番DBはPostgreSQL" "SQLiteに書くな" "cmd_079" "karo"
 # Example: bash scripts/lesson_write.sh infra "Gate改修" "ゲート検証" "cmd_100" "saizo" "" --tags "gate,process"
@@ -280,6 +280,7 @@ RETAG_ID=""
 RETAG_TAGS=""
 SUBDOMAIN=""
 TARGET_FILES=""
+SOURCE_MARKER=""
 ORIGIN=""
 
 show_usage() {
@@ -295,6 +296,7 @@ Options:
                           教訓の対象サブドメインを明示指定
   --target-files "pattern1,pattern2"
                           教訓の対象ファイルパターンを明示指定
+  --source-marker "value" 教訓生成元マーカーを明示指定
   --origin "[[cmd_XXX]]"  因果ネットワーク用originを明示指定
   --when "trigger"        発動条件を明示指定
   --how "steps"           実行手順を明示指定
@@ -332,6 +334,10 @@ while [ $# -gt 0 ]; do
             ;;
         --target-files)
             TARGET_FILES="${2:-}"
+            shift 2
+            ;;
+        --source-marker)
+            SOURCE_MARKER="${2:-}"
             shift 2
             ;;
         --origin)
@@ -815,6 +821,7 @@ print(','.join(tags[:3]))
             [ -n "${SOURCE_CMD:-}" ] && printf -- '- **出典**: %s\n' "$SOURCE_CMD"
             printf -- '- **記録者**: %s\n' "${AUTHOR:-karo}"
             [ "${STATUS:-confirmed}" = "draft" ] && printf -- '- **status**: draft\n'
+            [ -n "${SOURCE_MARKER:-}" ] && printf -- '- **source**: %s\n' "$SOURCE_MARKER"
             printf -- '- **tags**: %s\n' "$_lw_tags_yaml"
             [ -n "${SUBDOMAIN:-}" ] && printf -- '- **subdomain**: %s\n' "$SUBDOMAIN"
             [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"

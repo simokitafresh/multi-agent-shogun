@@ -4865,11 +4865,15 @@ if [ -n "$CMD_PROJECT" ]; then
             own_draft_count=0
             if [ "$draft_count" -gt 0 ]; then
                 own_draft_count=$(awk -v cmd="${CMD_ID}" '
-                    /^\#\#\# L[0-9]+:/ { if (in_lesson && is_draft && is_own) count++; in_lesson=1; is_draft=0; is_own=0; next }
+                    function close_lesson() {
+                        if (in_lesson && is_draft && is_own && !is_gate_auto_draft) count++
+                    }
+                    /^\#\#\# L[0-9]+:/ { close_lesson(); in_lesson=1; is_draft=0; is_own=0; is_gate_auto_draft=0; next }
                     in_lesson && /^\- \*\*status\*\*: draft/ { is_draft=1 }
+                    in_lesson && /^\- \*\*source\*\*:[[:space:]]*gate_auto_draft[[:space:]]*$/ { is_gate_auto_draft=1 }
                     in_lesson && /^\- \*\*出典\*\*:/ && index($0, cmd) { is_own=1 }
-                    in_lesson && /^$/ { if (is_draft && is_own) count++; in_lesson=0 }
-                    END { if (in_lesson && is_draft && is_own) count++; print count+0 }
+                    in_lesson && /^$/ { close_lesson(); in_lesson=0 }
+                    END { close_lesson(); print count+0 }
                 ' "$DRAFT_LESSONS_FILE" 2>/dev/null)
                 own_draft_count=${own_draft_count:-0}
             fi
@@ -6121,7 +6125,7 @@ else
             if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" \
                 "[自動生成] 有効教訓の記録を怠った: ${CMD_ID}" \
                 "lessons_usefulが空のサブタスクが${lr_count}件。役立った教訓IDを報告に記載してから完了せよ" \
-                "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft 2>&1; then
+                "${CMD_ID}" "gate_auto" "${CMD_ID}" --status draft --source-marker "gate_auto_draft" 2>&1; then
                 echo "  draft: 有効教訓の記録を怠った (${lr_count}件)"
                 DRAFT_GENERATED=$((DRAFT_GENERATED + 1))
             else
