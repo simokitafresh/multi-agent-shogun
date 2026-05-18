@@ -208,6 +208,7 @@ build_pane_head_tail_excerpt() {
     local pane_target="$1"
     local capture line
     local -a first_lines=()
+    local -a all_lines=()
     local -a tail_lines=()
     local line_count=0
 
@@ -218,6 +219,10 @@ build_pane_head_tail_excerpt() {
         if [ "$line_count" -le 5 ]; then
             first_lines+=("$line")
         fi
+        # all_lines: ≤10行ケースで全行を保持（tail_linesは最後の5行のみのためL6-L10が欠落するバグ修正）
+        if [ "$line_count" -le 10 ]; then
+            all_lines+=("$line")
+        fi
         tail_lines+=("$line")
         if [ "${#tail_lines[@]}" -gt 5 ]; then
             tail_lines=("${tail_lines[@]:1}")
@@ -226,7 +231,7 @@ build_pane_head_tail_excerpt() {
 
     [ "$line_count" -gt 0 ] || return 1
     if [ "$line_count" -le 10 ] 2>/dev/null; then
-        printf '%s\n' "${tail_lines[@]}"
+        printf '%s\n' "${all_lines[@]}"
         return 0
     fi
 
