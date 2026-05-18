@@ -749,3 +749,4 @@
 | cmd_2841 | gate_report_format_main.pyがassumption_invalidationのaffected_cmdsを必須検証するが、RFS(report_field_set.sh)経由で書き込む際にaffected_cmdsが欠落し39件FAILが発生。テンプレート(L1883-1886)にはデフォルト値があるがRFS書込みで上書きされる際にサブフィールドが消える。RFSのassumption_invalidation書込みでaffected_cmdsを保持する修正を行う。 | infra | 05-17 | RFSのassumption_invalidation.*書 |
 | cmd_2845 | cmd_2840でlesson_write.shにorigin引数を追加し新規教訓は自動でorigin付与されるようになった。だが既存軍師教訓33件はorigin=0件のまま。因果NWの既存ノードにリンクを遡及追加しネットワーク密度を即時向上させる。 | infra | 05-18 | projects/infra/lessons_gunshi. |
 | cmd_2844 | cmd_2840でlesson_write.sh(軍師共通)にorigin引数を追加した。残り2件: (1)gate_lesson_health.shに教訓originフィールド欠落時のWARN追加(将軍教訓にはcmd_2821で実装済み→同パターン転用)。(2)lesson_write_karo.sh(家老専用)にも--origin引数追加。因果NW自動成長の対象を全ロールに拡大する。 | infra | 05-18 | cmd_2844のorigin全ロール拡大を実装済みとして確 |
+| cmd_2846 | autofix提案が忍者未読ファイルを対象に+既存gateで解決済み問題を提案する二重無効状態を解消。INSIGHT_REPEAT action_required蓄積の根因 | infra | 05-18 | gate_autofix_proposalで未読target |
