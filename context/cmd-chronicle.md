@@ -751,3 +751,4 @@
 | cmd_2844 | cmd_2840でlesson_write.sh(軍師共通)にorigin引数を追加した。残り2件: (1)gate_lesson_health.shに教訓originフィールド欠落時のWARN追加(将軍教訓にはcmd_2821で実装済み→同パターン転用)。(2)lesson_write_karo.sh(家老専用)にも--origin引数追加。因果NW自動成長の対象を全ロールに拡大する。 | infra | 05-18 | cmd_2844のorigin全ロール拡大を実装済みとして確 |
 | cmd_2846 | autofix提案が忍者未読ファイルを対象に+既存gateで解決済み問題を提案する二重無効状態を解消。INSIGHT_REPEAT action_required蓄積の根因 | infra | 05-18 | gate_autofix_proposalで未読target |
 | cmd_2849 | 偵察cmd_2848で特定された根因を修正。GATE BLOCK時にlesson_write --status draftで自動生成されたdraftが、同一cmdの後続GATEでCRITICAL BLOCKされる自己循環(19件中15件=78.9%)を解消 | infra | 05-18 | GATE自動生成draftへgate_auto_draftマ |
+| cmd_2850_cancelled | — | — | 05-18 | — |
