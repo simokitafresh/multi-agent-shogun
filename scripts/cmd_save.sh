@@ -4274,6 +4274,22 @@ extract_command_text_block() {
     '
 }
 
+is_db_operation_command_text() {
+    local command_text="${1:-}"
+    [[ -n "${command_text//[[:space:]]/}" ]] || return 1
+
+    printf '%s\n' "$command_text" | grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' || return 1
+}
+
+check_db_backup_ac_warn() {
+    local command_text
+    command_text="$(extract_command_text_block)"
+    is_db_operation_command_text "$command_text" || return 0
+
+    echo "WARNING: DB操作cmdを検出。ACに「変更前バックアップ実行済みであること」を追加せよ" >&2
+    record_warn_reason "変更前バックアップ実行済みであること" "check=db_backup_required"
+}
+
 collect_numeric_derivation_source_evidence() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -4434,6 +4450,11 @@ check_ac_absolute_literals
 # 起源: LG020 — 数値の算出元未確認により、grep結果の対象を誤認した
 # 目的: 3桁以上整数またはL行番号参照を検出し、算出元コマンド+結果の明記を促す
 check_numeric_literal_derivation_source_info
+
+# --- Check 21.2: DB操作cmdのバックアップAC注入提案（WARN） ---
+# 起源: 殿厳命 — コードは書き直せる、データは書き直せない。
+# 目的: DB変更を含むcmd保存時に変更前バックアップACを必ず可視化する
+check_db_backup_ac_warn
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL

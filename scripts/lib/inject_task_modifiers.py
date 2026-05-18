@@ -20,12 +20,42 @@ import tempfile
 import yaml
 
 
+DB_OPERATION_RE = re.compile(
+    r'(^|[^A-Za-z0-9_])'
+    r'(migrate|ALTER\s+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE\s+FROM)'
+    r'([^A-Za-z0-9_]|$)',
+    re.IGNORECASE,
+)
+
+BACKUP_STOP_FOR = 'バックアップなしのDB変更'
+BACKUP_INSTRUCTION_MARKER = '【DB変更前バックアップ必須】'
+BACKUP_INSTRUCTION = (
+    '【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、'
+    '取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。'
+)
+
+
 def load_yaml_safe(path):
     try:
         with open(path, encoding='utf-8') as f:
             return yaml.safe_load(f) or {}
     except Exception:
         return {}
+
+
+def parent_cmd_entry(task, script_dir):
+    parent_cmd = str(task.get('parent_cmd', '') or '').strip()
+    if not parent_cmd or not script_dir:
+        return {}
+    stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
+    if not os.path.exists(stk):
+        return {}
+    stk_data = load_yaml_safe(stk)
+    cmd_data = stk_data.get('commands', {})
+    if not isinstance(cmd_data, dict):
+        return {}
+    entry = cmd_data.get(parent_cmd, {})
+    return entry if isinstance(entry, dict) else {}
 
 
 def atomic_write(data, task_file):
@@ -514,6 +544,40 @@ def inject_execution_controls(task):
     return changed
 
 
+def inject_db_backup_controls(task, script_dir):
+    texts = [
+        str(task.get('command', '') or ''),
+        str(task.get('description', '') or ''),
+    ]
+    parent_entry = parent_cmd_entry(task, script_dir)
+    if parent_entry:
+        texts.extend([
+            str(parent_entry.get('command', '') or ''),
+            str(parent_entry.get('description', '') or ''),
+        ])
+
+    if not any(DB_OPERATION_RE.search(text) for text in texts):
+        return False
+
+    changed = False
+    stop_for = task.get('stop_for')
+    if not isinstance(stop_for, list):
+        stop_for = [] if stop_for in (None, '') else [str(stop_for)]
+    if BACKUP_STOP_FOR not in stop_for:
+        task['stop_for'] = stop_for + [BACKUP_STOP_FOR]
+        changed = True
+
+    desc = str(task.get('description', '') or '')
+    if BACKUP_INSTRUCTION_MARKER not in desc:
+        task['description'] = BACKUP_INSTRUCTION + '\n  ────────────────────────────────────────\n' + desc
+        changed = True
+
+    if changed:
+        print('[DB_BACKUP] Injected DB backup stop_for + instructions',
+              file=sys.stderr)
+    return changed
+
+
 # ─── recon task template hints ───
 def inject_recon_task_template(task):
     task_type = str(task.get('task_type', '') or '').lower()
@@ -684,6 +748,8 @@ def main():
          lambda: inject_report_template(task, script_dir)),
         ('execution_controls',
          lambda: inject_execution_controls(task)),
+        ('db_backup_controls',
+         lambda: inject_db_backup_controls(task, script_dir)),
         ('recon_task_template',
          lambda: inject_recon_task_template(task)),
         ('golden_snapshot_for_be',
