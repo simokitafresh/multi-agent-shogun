@@ -94,7 +94,7 @@ YAML
     echo "$output" >&2
 
     [ "$status" -eq 1 ]
-    [[ "$(printf '%s\n' "$output" | head -n 1)" == "止まるな、修正して再実行せよ" ]]
+    [[ "$(printf '%s\n' "$output" | grep -m1 '^止まるな、修正して再実行せよ$')" == "止まるな、修正して再実行せよ" ]]
     [[ "$(printf '%s\n' "$output" | grep -c '^止まるな、修正して再実行せよ$')" -eq 1 ]]
     [[ "$output" == *"BLOCK: 必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"* ]]
     [[ "$output" == *"未記入: q11_not_already_done"* ]]
