@@ -355,6 +355,12 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 
 **AC実行可能性チェック（必須）**: 全ACのbinary checkが物理的に実行可能か確認。gitignore対象へのcommit要求、進行中月データの完全一致要求、推奨事項の必須混同はNG→REQUEST_CHANGES(verdict_override WA根因。直近6件中5件がAC設計ミス)
 
+**ACスコープ完結性チェック（必須）**: 全AC条件が忍者のscope内で完結するか確認。忍者が制御できない環境要因がACに混入していないか？
+- 速度目標AC + 対象外スクリプトが律速 → scope外。REQUEST_CHANGES(AC条件を忍者制御範囲に限定せよ)
+- 全量テストAC + 環境依存ツール(sqlite3等) → scope外。REQUEST_CHANGES(preflightまたは除外条件を追加せよ)
+- 本番確認AC + 忍者にアクセス権限なし → scope外。REQUEST_CHANGES(家老実施ACに分離せよ)
+- 実例: cmd_2855/cmd_2856でAC4(5秒未満)がWSL2環境律速→忍者FAIL→家老waive→FAIL形骸化(2026-05-19なぜなぜ7回)
+
 **時間効率チェック（必須）**: q4_depth=deep or 計算量が他cmdの10倍超の場合、以下を確認:
 - 「idle忍者がいるのに1忍者単独配備か？」→YES→REQUEST_CHANGES(severity: urgent)。分割並列案を提示
 - 判断基準: WF数×計算重み。100 WF超かつidle忍者2名以上→分割必須
