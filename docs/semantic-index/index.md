@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -67,6 +67,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:35:26+09:00 obsidianは有効活用できてるか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:36:10+09:00 obsidian×セマンティック辞書で可能性が広がると思う。なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:41:32+09:00 真の穴: INS-024911のセマンティック辞書未登録2件は対処すべき |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:57:03+09:00 obsidian×セマンティックインデックスの発展について、なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:01:24+09:00 Obsidian×セマンティック統合パイプライン(因果辺トラバース)の概念自体をセマンティック辞書に追加しよう |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -74,7 +76,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -114,6 +116,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:28:29+09:00 全部やろう。なぜなぜ7回 |
 | cmd | `cmd_2859` 修正 — SKILL.md script参照9件一括追従更新 (`skills/codd-fix/SKILL.md`, `skills/dream/SKILL.md`, `skills/gate-sync/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:57:51+09:00 なぜなぜ7回。再発を構造的に予防しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:52:07+09:00 軍師提案に対応しよう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:02:03+09:00 これを成長させるためには何が必要だ？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:12:21+09:00 さらに これを成長させるためには何が必要だ？なぜなぜ7回 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -442,6 +447,7 @@ codd:
 | cmd | `cmd_karo_backup_first_l5` (`tests/unit/test_cmd_save.bats`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
 | cmd | `cmd_2852` 修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
+| cmd | `cmd_2864` 強化 — 教訓注入キーワードスコア最低閾値追加(score>=2で無関係注入削減) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
 | causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
 | causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
@@ -561,6 +567,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T15:21:41+09:00 確認しよう。デプロイが終わったらCDPで確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T11:32:30+09:00 他にも隠れたインフラバグや、実行速度が極端に落ちたスクリプトがないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:45:57+09:00 他に放置しているものがないか確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:24:40+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -813,3 +820,34 @@ codd:
 | file | `scripts/deploy_task.sh` |
 | cmd | `cmd_1393` 7サブプロセス→1統合(inject_task_modifiers.py誕生) |
 
+## openpbx_reference — OpenPBX(コリ先生PBX MVP)
+
+| 属性 | 値 |
+|------|---|
+| id | openpbx_reference |
+| label | OpenPBX(コリ先生PBX MVP) |
+| aliases | OpenPBX, コリ先生, tanimurahifukka, Asterisk PBX, command-room-ai, DAWN SERIES |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| discussion | 2026-05-19 殿確認 |
+| url | `https://github.com/tanimurahifukka/openpbx` |
+
+## causal_traversal_pipeline — 因果辺トラバース統合パイプライン(Obsidian×セマンティック)
+
+| 属性 | 値 |
+|------|---|
+| id | causal_traversal_pipeline |
+| label | 因果辺トラバース統合パイプライン(Obsidian×セマンティック) |
+| aliases | 因果辺トラバース, causal_traversal, 因果辺拡張, Obsidian統合パイプライン, backlink traverse, 概念拡張検索, semantic causal integration |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/semantic_search.sh` |
+| file | `scripts/causal_backlinks.sh` |
+| file | `scripts/semantic_map_generate.sh` |
+| cmd | `cmd_2818` 因果NW導入 |
+| cmd | `cmd_2860` 因果辺抽出 |
+| cmd | `cmd_2866` 統合パイプライン |

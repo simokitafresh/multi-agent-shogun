@@ -27,6 +27,7 @@ setup() {
 | 種別 | パス/参照 |
 |------|----------|
 | file | `docs/research/semantic_index_design.md` |
+| url | `https://github.com/example/semantic-index-reference` |
 
 ## growth_loop — 学習ループ
 
@@ -55,6 +56,7 @@ teardown() {
     [[ "$output" == *"## semantic_dictionary_design — セマンティック辞書構想"* ]]
     [[ "$output" == *"matched: 意味検索"* ]]
     [[ "$output" == *"docs/research/semantic_index_design.md"* ]]
+    [[ "$output" == *"- url: \`https://github.com/example/semantic-index-reference\`"* ]]
     [[ "$output" != *"should-not-run"* ]]
 }
 

@@ -24,6 +24,7 @@ setup() {
 | 種別 | パス/参照 |
 |------|----------|
 | file | `docs/research/semantic_index_design.md` |
+| url | `https://github.com/example/semantic-index-reference` |
 
 ## growth_loop — 学習ループ
 
@@ -121,6 +122,7 @@ teardown() {
     grep -q 'node_id: design:semantic-map' "$SEMANTIC_MAP_PATH"
     grep -q 'modules:' "$SEMANTIC_MAP_PATH"
     grep -q 'セマンティック辞書構想' "$SEMANTIC_MAP_PATH"
+    grep -q 'https://github.com/example/semantic-index-reference' "$SEMANTIC_MAP_PATH"
 }
 
 @test "semantic map generator auto-resolves semantic_index_update insights when enabled" {

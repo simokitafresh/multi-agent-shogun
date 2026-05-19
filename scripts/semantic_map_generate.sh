@@ -123,6 +123,7 @@ def parse_concepts(text):
         aliases = attrs.get("aliases", "").strip()
         label = attrs.get("label") or heading.split(" — ", 1)[-1].strip()
         files = [value for kind, value in resources if kind == "file"][:3]
+        urls = [value for kind, value in resources if kind == "url"][:3]
         lessons = [
             value for kind, value in resources
             if kind in {"lesson", "deepdive"} or value.lstrip("`").startswith(("L", "LS", "PI-"))
@@ -132,6 +133,7 @@ def parse_concepts(text):
             "aliases": aliases,
             "skills": attrs.get("skills", "").strip(),
             "files": files,
+            "urls": urls,
             "lessons": lessons,
         })
     return concepts
@@ -148,13 +150,14 @@ lines = [
     "<!-- auto-generated from docs/semantic-index/index.md -->",
     "<!-- do not edit directly; update docs/semantic-index/index.md and run codd propagate --update -->",
     "",
-    "| 概念 | 別名 | 主要ファイル | 教訓 | skills |",
-    "|------|------|------------|------|--------|",
+    "| 概念 | 別名 | 主要ファイル | 外部URL | 教訓 | skills |",
+    "|------|------|------------|---------|------|--------|",
 ]
 for concept in concepts:
     lines.append(
         f"| {concept['label']} | {cell(concept['aliases'])} | "
-        f"{cell(concept['files'])} | {cell(concept['lessons'])} | {cell(concept['skills'])} |"
+        f"{cell(concept['files'])} | {cell(concept['urls'])} | "
+        f"{cell(concept['lessons'])} | {cell(concept['skills'])} |"
     )
 
 body = "\n".join(lines) + "\n"
