@@ -441,3 +441,200 @@
   origin: "[[cmd_2862]] -> [[assumption崩壊(既実装)]] -> [[REQUEST_CHANGES]]"
   causal_chain: "cmd起票時のgrep確認が不十分→既実装機能のcmd重複→軍師が現物確認で検出→RC。車輪原則(LG033)"
   timestamp: "2026-05-19T13:08:00"
+# === 本セッション(2026-05-19 13:10-14:42)追記 ===
+- cmd_id: cmd_2863
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, ambiguity]
+  ambiguity_points: none
+  findings_summary: "AC1/AC2は既にworking copyに実装済み(未commit +76行)。忍者が並行実装中だった(タイミング競合)"
+  observations:
+    - "git diff scripts/cmd_save.sh → +76行。collect_q11_guard_list等4関数が完全実装済み"
+    - "git show HEAD→該当関数なし。working copy限定の未commit変更(忍者作業中)"
+  origin: "[[cmd_2863]] -> [[assumption崩壊(working copy既実装)]] -> [[REQUEST_CHANGES]]"
+  causal_chain: "cmd起票→忍者並行実装→RC送信とcommitが同時(89秒差)→タイミング競合"
+  timestamp: "2026-05-19T13:15:00"
+- cmd_id: cmd_2863
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  changed_lines: 233
+  finding_categories: [assumptions, premortem, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "読取専用操作のみ。rollback容易。silent fallback不在"
+  findings_summary: "4観点OK+adversarial PASS。Guard一覧自動表示+BLOCK導線実装完全"
+  observations:
+    - "commit 12ec1278: +77行(cmd_save.sh)+152行(bats4ファイル)"
+    - "bats Q11-GUARD-001/002追加。実測PASS確認"
+  origin: "[[cmd_2863]] -> [[Guard一覧自動表示実装]] -> [[LGTM]]"
+  causal_chain: "車輪再発明2回→Guard一覧自動表示+BLOCK導線→+1複利"
+  timestamp: "2026-05-19T13:20:00"
+- cmd_id: cmd_2864
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "MIN_KEYWORD_SCORE=2導入。HEADで未実装確認済み"
+  observations:
+    - "77/77 useful=0%の根因対処。閾値2は保守的(title含有=3で通過)"
+  origin: "[[cmd_2864]] -> [[score>0緩すぎ]] -> [[APPROVE]]"
+  causal_chain: "教訓注入精度の構造的改善→+1複利"
+  timestamp: "2026-05-19T13:36:00"
+- cmd_id: cmd_2864
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "AC1/AC3 PASS。AC2 result:noは変更範囲外テスト(sqlite3不在)。test_triage=pre_existing"
+  observations:
+    - "deploy_task関連338件+score除外10件全PASS"
+  origin: "[[cmd_2864]] -> [[MIN_KEYWORD_SCORE導入]] -> [[LGTM]]"
+  timestamp: "2026-05-19T13:52:00"
+- cmd_id: cmd_2865
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "score列追加。HEADで未実装確認済み"
+  timestamp: "2026-05-19T13:58:00"
+- cmd_id: cmd_2865
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "lesson_impact.tsv score列追加。bats 10件PASS。後方互換"
+  timestamp: "2026-05-19T14:02:00"
+- cmd_id: cmd_2866
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "semantic_search因果辺トラバース統合。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:03:00"
+- cmd_id: cmd_2866
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "因果辺トラバース統合完了。DISABLE_CAUSAL後方互換。bats 10件PASS"
+  timestamp: "2026-05-19T14:25:00"
+- cmd_id: cmd_2867
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "セマンティック辞書自動成長ループ。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:08:00"
+- cmd_id: cmd_2867
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "辞書自動成長ループ構築。bats 96件PASS"
+  timestamp: "2026-05-19T14:12:00"
+- cmd_id: cmd_2868
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "traversal_depth列追加。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:10:00"
+- cmd_id: cmd_2868
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  changed_lines: 204
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "TSV列追加のみ。後方互換。rollback容易"
+  findings_summary: "traversal_depth列追加。10/11/12列後方互換。bats 12件PASS"
+  timestamp: "2026-05-19T14:15:00"
+- cmd_id: cmd_2869
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "q11 semantic_search統合。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:28:00"
+- cmd_id: cmd_2869
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "q11 semantic_search因果辺トラバース統合完了"
+  timestamp: "2026-05-19T14:32:00"
+- cmd_id: cmd_2870
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "url種別追加。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:28:00"
+- cmd_id: cmd_2870
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "url種別追加完了。bats 20件PASS"
+  timestamp: "2026-05-19T14:33:00"
+- cmd_id: cmd_2871
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "verdict計算値化。原理1行「書くな導出せよ」。各論4層→原理1行"
+  timestamp: "2026-05-19T14:34:00"
+- cmd_id: cmd_2871
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "blast_radius大(gate変更)。退化なし。rollback容易"
+  findings_summary: "verdict計算値化完了。bc自動導出。bats 29件PASS"
+  timestamp: "2026-05-19T14:37:00"
+- cmd_id: cmd_2872
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "cmd_complete_gate flock一括追加。HEADで未実装確認済み"
+  timestamp: "2026-05-19T14:40:00"
+- cmd_id: cmd_training_L4_auto_202605191330_kotaro
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "L4修行テンプレート。ninja_monitor.sh改善"
+  timestamp: "2026-05-19T13:35:00"
+- cmd_id: cmd_training_L4_auto_202605191330_kotaro
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kotaro
+  findings_summary: "context_freshness_check.sh 5分キャッシュ化。bats全PASS"
+  timestamp: "2026-05-19T13:42:00"
+- cmd_id: cmd_training_L4_auto_202605191330_tobisaru
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "L4修行テンプレート。ninja_monitor.sh改善"
+  timestamp: "2026-05-19T13:35:00"
+- cmd_id: cmd_training_L4_auto_202605191330_tobisaru
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: tobisaru
+  findings_summary: "list_pending_cmds Python3→awk(150ms→<1ms)。bats全PASS"
+  timestamp: "2026-05-19T13:45:00"
+- cmd_id: cmd_karo_selfgate_dict_enforce
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "self_gate_check dict強制+テスト追加。+9行小修正。34件PASS"
+  timestamp: "2026-05-19T13:50:00"
+- cmd_id: cmd_karo_wa_ninja_validate
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "known_ninjas.sh共通化+exit 1 BLOCK昇格。+85/-36"
+  timestamp: "2026-05-19T13:55:00"
