@@ -359,6 +359,19 @@ if [[ "$file_path" == *'docs/research/gunshi_'* ]]; then
     _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         echo "INFO(LG020): 設計書保存検出。数値は全て入力データからwc -l/head実測で再計算せよ。推定値は未実測と明記。" >&2
+        # LG028: 計算量推定で内部ループ計上漏れ防止
+        _content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
+        if printf '%s' "$_content" | grep -qiE '(秒|ms|WF|combo|ループ|loop|計算量|推定|パターン)'; then
+            echo "INFO(LG028): 計算量記述検出。外側ループ×内側ループ×単位時間で推定せよ。外側のみは過小評価(cmd_1949: 10倍外れ)。" >&2
+        fi
+    fi
+fi
+
+# === Guard 12: LG023/032 新機構作成リマインダー (既存活用優先) ===
+if [[ "$tool_name" == "Write" && "$file_path" =~ (scripts/gates/|scripts/hooks/|\.claude/hooks/) ]]; then
+    _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"
+    if [[ "$_agent_id" == "gunshi" ]]; then
+        echo "INFO(LG023/032): 新スクリプト作成検出。既存の仕組み(startup gate/stop hook/inbox/既存Guard)に乗せて解決できないか先に確認せよ。" >&2
     fi
 fi
 
