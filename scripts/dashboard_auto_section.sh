@@ -543,15 +543,33 @@ fi
 _cached_signature=""
 [[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
 
-if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_JSON_CACHE" ]] || [[ ! -f "$KM_MODEL_CACHE" ]]; then
+# L4-R?: knowledge_metrics専用キャッシュキー（lesson系ファイルmtimeベース）
+# 変更前: gate_log mtime変化(毎cycle)→毎回knowledge_metrics.sh実行(1537ms/回)
+# 変更後: lesson_tracking.tsv + projects/*/lessons.yaml mtime変化時のみ実行
+# model_analysis.sh は gate_signature(毎cycle)ベースのまま維持（軽量163msのため）
+_km_lesson_cache_key="/tmp/dashboard_km_lesson_key_${_proj_hash}.txt"
+# SC2046回避: find結果をxargs経由でstatに渡す（word splitting防止）
+_km_lesson_signature=$(
+    { stat -c '%Y:%s' "$PROJECT_DIR/logs/lesson_tracking.tsv" 2>/dev/null; \
+      find "$PROJECT_DIR/projects" -maxdepth 2 -name "lessons.yaml" 2>/dev/null \
+        | sort | head -20 | xargs -r stat -c '%Y:%s' 2>/dev/null; } \
+    | tr '\n' ':' || echo "missing"
+)
+_km_lesson_cached=""
+[[ -f "$_km_lesson_cache_key" ]] && _km_lesson_cached=$(cat "$_km_lesson_cache_key" 2>/dev/null || echo "")
+
+_PID_KM=""
+_PID_MA=""
+if [[ ! -f "$KM_JSON_CACHE" ]] || [[ "$_km_lesson_signature" != "$_km_lesson_cached" ]]; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null &
     _PID_KM=$!
+fi
+if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_MODEL_CACHE" ]]; then
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null &
     _PID_MA=$!
-    wait "$_PID_KM" 2>/dev/null || true
-    wait "$_PID_MA" 2>/dev/null || true
-    echo "$_gate_signature" > "$KM_CACHE_LINES"
 fi
+[[ -n "$_PID_KM" ]] && { wait "$_PID_KM" 2>/dev/null || true; echo "$_km_lesson_signature" > "$_km_lesson_cache_key"; }
+[[ -n "$_PID_MA" ]] && { wait "$_PID_MA" 2>/dev/null || true; echo "$_gate_signature" > "$KM_CACHE_LINES"; }
 
 if [[ -n "$_PID_CTX" ]]; then
     wait "$_PID_CTX" 2>/dev/null || true

@@ -1,12 +1,12 @@
 task:
-  cmd_id: cmd_training_speed_tobisaru_1
+  cmd_id: cmd_training_speed_tobisaru_2
   type: training
   project: infra
-  purpose: "修行: scripts/ninja_monitor.sh 速度最適化(brownfield)。codd extract --path scripts/ninja_monitor.shで設計書逆生成→ボトルネック特定→高速化実装→before/after計測。timeout 1200"
+  purpose: "修行サイクル2/3: scripts/dashboard_auto_section.sh 速度最適化(brownfield)。before計測→ボトルネック特定→高速化実装→after計測。timeout 1200"
   scout_exempt: true
   acceptance_criteria:
     AC1:
-      description: "scripts/ninja_monitor.shのbefore計測(median 5run)が記録されている"
+      description: "scripts/dashboard_auto_section.shのbefore計測(median 5run)が記録されている"
       checks:
         - check: "before計測完了"
     AC2:
@@ -14,7 +14,7 @@ task:
       checks:
         - check: "after計測でbefore比改善"
   scope:
-    - scripts/ninja_monitor.sh
+    - scripts/dashboard_auto_section.sh
   status: completed
   parent_cmd: ""
   related_lessons:
