@@ -13,16 +13,29 @@ setup_file() {
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_assumption_source_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_guard_list_from_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
-        is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion
+        is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
+        collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
+        collect_q11_guard_list check_gate_hook_action_conversion
 }
 
 setup() {
     export CMD_BLOCK_NC=""
     export CMD_BLOCK_FOUND=1
     export CMD_BLOCK_CACHE_LOADED=0
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d)"
+    export PROJECT_DIR="$TEST_TMPDIR"
     declare -gA CMD_BLOCK_CACHE=()
+}
+
+teardown() {
+    rm -rf "$TEST_TMPDIR"
 }
 
 @test "Q11-FP-001: SCOUT cmdはgate文言を含んでも追加cmd扱いしない" {
@@ -187,4 +200,38 @@ setup() {
 
     run is_gate_or_hook_addition_cmd
     [ "$status" -eq 1 ]
+}
+
+@test "Q11-GUARD-001: assumptions sourceからGuard一覧を抽出する" {
+    mkdir -p "$TEST_TMPDIR/.claude/hooks"
+    cat > "$TEST_TMPDIR/.claude/hooks/pre-write-edit-combined.sh" <<'EOF'
+# === Guard 0: shogun_to_karo.yaml起票前確認 ===
+echo guard0
+# === Guard 3: report-deny (Edit/Write to report YAML) ===
+echo guard3
+EOF
+    CMD_BLOCK_NC='    title: "強化 — 新規hook追加"
+    scope_mode: EXACT
+    purpose: "pre-write hookへ新規Guardを追加する"
+    command: "pre-write hookに新規Guardを追加する"
+    quality_gate:
+      q11_not_already_done: "未記入"
+    assumptions:
+      - claim: "pre-write hookを確認"
+        source: ".claude/hooks/pre-write-edit-combined.sh code_reading"
+        trust: "verified"'
+    export CMD_BLOCK_NC
+
+    run collect_q11_guard_list "$CMD_BLOCK_NC"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *".claude/hooks/pre-write-edit-combined.sh:1 # === Guard 0"* ]]
+    [[ "$output" == *".claude/hooks/pre-write-edit-combined.sh:3 # === Guard 3"* ]]
+}
+
+@test "Q11-GUARD-002: Guard一覧表示時はq11の重複確認が必須" {
+    run q11_has_guard_duplicate_check "未達成。grep -n report .claude/hooks/pre-write-edit-combined.sh → 0件"
+    [ "$status" -eq 1 ]
+
+    run q11_has_guard_duplicate_check "未達成。Guard一覧を確認し、既存Guardとの重複なしを確認。差分理由あり"
+    [ "$status" -eq 0 ]
 }

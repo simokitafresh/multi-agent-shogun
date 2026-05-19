@@ -327,6 +327,73 @@ q11_has_existing_alternative_verification() {
     return 0
 }
 
+collect_assumption_source_files() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local project_dir="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
+
+    [[ -n "$block_text" ]] || return 0
+
+    printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
+        in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
+        in_assumptions && /^[[:space:]]{6,}/ {
+            if ($0 ~ /^[[:space:]]*source:[[:space:]]*/ || $0 ~ /^[[:space:]]*-[[:space:]]*source:[[:space:]]*/) {
+                line = $0
+                sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+                sub(/^[[:space:]]*source:[[:space:]]*/, "", line)
+                gsub(/["'\''`]/, "", line)
+                print line
+            }
+            next
+        }
+    ' | while IFS= read -r _source_line; do
+        [[ -n "$_source_line" ]] || continue
+        printf '%s\n' "$_source_line" \
+            | grep -oE '(^|[[:space:]])(\.?/?[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.(sh|py)' \
+            | sed 's/^[[:space:]]*//' \
+            | while IFS= read -r _source_path; do
+                [[ -n "$_source_path" ]] || continue
+                case "$_source_path" in
+                    /*) _candidate="$_source_path" ;;
+                    *) _candidate="${project_dir%/}/$_source_path" ;;
+                esac
+                [[ -f "$_candidate" ]] || continue
+                printf '%s\n' "$_candidate"
+            done
+    done | awk '!seen[$0]++'
+}
+
+extract_guard_list_from_files() {
+    local file_path
+    local project_dir="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
+
+    while IFS= read -r file_path; do
+        [[ -n "$file_path" && -f "$file_path" ]] || continue
+        local rel_path="$file_path"
+        rel_path="${rel_path#"${project_dir%/}/"}"
+        grep -nE '^[[:space:]]*# === Guard[[:space:]]+' "$file_path" 2>/dev/null \
+            | sed -E "s#^([0-9]+):[[:space:]]*#  ${rel_path}:\\1 #"
+    done
+}
+
+q11_has_guard_duplicate_check() {
+    local q11_value="${1:-}"
+
+    [[ -n "$q11_value" ]] || return 1
+    printf '%s\n' "$q11_value" \
+        | grep -qE 'Guard一覧|既存Guard|Guard[^[:space:]]*(一覧|重複|既存|既設|照合|確認)|ガード[^[:space:]]*(一覧|重複|既存|既設|照合|確認)' \
+        || return 1
+    return 0
+}
+
+collect_q11_guard_list() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+
+    [[ -n "$block_text" ]] || return 0
+    is_gate_or_hook_addition_cmd "$block_text" || return 0
+    collect_assumption_source_files "$block_text" | extract_guard_list_from_files
+}
+
 check_gate_hook_action_conversion() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     local action_text=""
@@ -2325,6 +2392,16 @@ QG_TEMPLATE
     fi
 
     _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
+    _Q11_GUARD_LIST="$(collect_q11_guard_list "$CMD_BLOCK_NC" || true)"
+    if [[ -n "${_Q11_GUARD_LIST//[[:space:]]/}" ]]; then
+        echo "INFO: assumptions source Guard一覧(# === Guard):" >&2
+        printf '%s\n' "$_Q11_GUARD_LIST" >&2
+        if ! q11_has_guard_duplicate_check "$_Q11_VAL"; then
+            echo "BLOCK: q11_guard_duplicate_verification — Guard一覧が検出されました。q11_not_already_done に既存Guard一覧との重複確認を記載してください" >&2
+            echo "  推奨アクション: 表示された Guard 一覧を確認し、重複有無と差分理由を q11_not_already_done に書け" >&2
+            record_block_reason "q11にGuard一覧との重複確認なし"
+        fi
+    fi
     _Q11_SUPPLEMENTAL_CONTEXT="$(
         printf '%s\n' "$(cmd_block_get_field "quality_gate.q5_verified_source")"
         printf '%s\n' "$CMD_BLOCK_NC" | awk '

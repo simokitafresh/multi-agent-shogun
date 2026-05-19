@@ -53,6 +53,10 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_assumption_source_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_guard_list_from_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_lord_instruction_ac_alignment_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -76,7 +80,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -611,6 +615,83 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"q11_existing_alternative_verification"* ]]
+}
+
+@test "Check1-5: Guard一覧表示時にq11重複確認なしならBLOCK" {
+    mkdir -p "$TEST_SHARED_TMP/scripts/hooks"
+    cat > "$TEST_SHARED_TMP/scripts/hooks/sample_guard_hook.sh" <<'EOF'
+# === Guard 1: existing deny ===
+echo existing
+EOF
+    create_queue_file << 'YAML'
+commands:
+  cmd_guard_block:
+    id: cmd_guard_block
+    title: "強化 — 新規hook追加"
+    purpose: "sample hookへ新規Guardを追加して重複を防ぐ"
+    command: "scripts/hooks/sample_guard_hook.shに新規Guardを追加する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — Guard一覧BLOCKの局所回帰確認のみ"
+      q5_verified_source: "scripts/hooks/sample_guard_hook.sh code_reading + structure_verified"
+      q8_why_what: "WHY: 既存Guard見落としを防ぐ → WHAT: assumptions sourceのGuard一覧を表示して重複確認を強制"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。grep -n sample_guard_hook scripts/hooks/sample_guard_hook.sh で現物確認"
+    assumptions:
+      - claim: "2026-05-19時点でsample hookにGuard見出しがある"
+        source: "scripts/hooks/sample_guard_hook.sh code_reading"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_guard_block"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"INFO: assumptions source Guard一覧(# === Guard):"* ]]
+    [[ "$output" == *"scripts/hooks/sample_guard_hook.sh:1 # === Guard 1"* ]]
+    [[ "$output" == *"q11_guard_duplicate_verification"* ]]
+}
+
+@test "Check1-5: Guard一覧表示時にq11重複確認ありならGuard BLOCKなし" {
+    mkdir -p "$TEST_SHARED_TMP/scripts/hooks"
+    cat > "$TEST_SHARED_TMP/scripts/hooks/sample_guard_hook.sh" <<'EOF'
+# === Guard 1: existing deny ===
+echo existing
+EOF
+    create_queue_file << 'YAML'
+commands:
+  cmd_guard_pass:
+    id: cmd_guard_pass
+    title: "強化 — 新規hook追加"
+    purpose: "sample hookへ新規Guardを追加して重複を防ぐ"
+    command: "scripts/hooks/sample_guard_hook.shに新規Guardを追加し、不備をBLOCKする"
+    acceptance_criteria:
+      - "AC1: 重複時はBLOCKする"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — Guard一覧PASSの局所回帰確認のみ"
+      q5_verified_source: "scripts/hooks/sample_guard_hook.sh code_reading + structure_verified"
+      q8_why_what: "WHY: 既存Guard見落としを防ぐ → WHAT: assumptions sourceのGuard一覧を表示して重複確認を強制"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。Guard一覧を確認し、既存Guardとの重複なしを確認。grep -n '=== Guard' scripts/hooks/sample_guard_hook.sh で現物確認済み"
+    assumptions:
+      - claim: "2026-05-19時点でsample hookにGuard見出しがある"
+        source: "scripts/hooks/sample_guard_hook.sh code_reading"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_guard_pass"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: assumptions source Guard一覧(# === Guard):"* ]]
+    [[ "$output" != *"q11_guard_duplicate_verification"* ]]
 }
 
 @test "cmd_2612: gate追加cmdで行動変換キーワードがないならWARNING" {
