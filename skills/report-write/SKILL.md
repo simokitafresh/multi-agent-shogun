@@ -122,6 +122,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)
 
 - 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=ac_version_read: MISSING; lessons_useful: MISSING; parent_cmd: MISSING (empty value); lesson_candidate: found=true but no detail or summary; verdict: PASS but binary_checks cont...
 - 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_2896.yaml

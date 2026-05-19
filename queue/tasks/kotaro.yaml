@@ -49,3 +49,16 @@ task:
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
   report_path: reports/kotaro_report_cmd_training_speed_kotaro_2.yaml
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)'
+    tried_approaches:
+    - 'lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)'
+    diagnose_reason: '前タスク(cmd_training_speed_kotaro_1)の経験から、report_field_set.shを使わず直接Writeで作成してしまう習癖が残っている。本タスクは最初からreport_field_set.shフォーマットを意識して作成したが、必須フィールドはWriteで雛形を書いてからreport_field_set.shで修正する方法を取る。'
+    approach_summary: 'scripts/semantic_index_update.sh 速度最適化完了。2つの最適化実装。 before median=284ms → after median=237ms (16%削減, 47ms高速化)。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)'
+      diagnose_reason: '前タスク(cmd_training_speed_kotaro_1)の経験から、report_field_set.shを使わず直接Writeで作成してしまう習癖が残っている。本タスクは最初からreport_field_set.shフォーマットを意識して作成したが、必須フィールドはWriteで雛形を書いてからreport_field_set.shで修正する方法を取る。'
+      approach_summary: 'scripts/semantic_index_update.sh 速度最適化完了。2つの最適化実装。 before median=284ms → after median=237ms (16%削減, 47ms高速化)。'
