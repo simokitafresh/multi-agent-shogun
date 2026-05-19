@@ -9,7 +9,15 @@ run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
+local LIGHT_SKIP_HEAVY="${SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT:-}"
 local YAML_AUTO_ARCHIVE="$SCRIPT_DIR/scripts/yaml_auto_archive.sh"
+if [ -z "$LIGHT_SKIP_HEAVY" ]; then
+    if [ -n "${SHOGUN_STARTUP_ROOT:-}" ]; then
+        LIGHT_SKIP_HEAVY=0
+    else
+        LIGHT_SKIP_HEAVY=1
+    fi
+fi
 
 overall="OK"
 alerts=()
@@ -45,10 +53,15 @@ if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
 fi
 "$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 _PID_G1=$!
-bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
-_PID_G12=$!
-bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
-_PID_G13=$!
+if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
+    bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
+    _PID_G12=$!
+    bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
+    _PID_G13=$!
+else
+    _PID_G12=""
+    _PID_G13=""
+fi
 "$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
 _PID_G25=$!
 (cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
@@ -344,7 +357,7 @@ else
 fi
 
 # Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  ■ Phase逐次読込ガイド: SKIP(lightweight)"
 else
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
@@ -382,7 +395,7 @@ fi
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
 # gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
 echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
 echo "  SKIP(lightweight)"
 else
@@ -902,7 +915,9 @@ fi
 
 # --- Gate 12: 三層学習ループ健全性 ---
 echo "■ 三層学習ループ"
-if [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
+if [ "$LIGHT_MODE" = "1" ]; then
+    echo "  SKIP(lightweight)"
+elif [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
     wait $_PID_G12 || true
     loop_result=$(cat "$_TMP_G12")
     # Extract key metrics for brief summary
@@ -1033,7 +1048,10 @@ fi
 
 # --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
 echo "■ 教訓健全度"
-if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
+if [ "$LIGHT_MODE" = "1" ]; then
+    _DEFER_G13=0
+    echo "  SKIP(lightweight)"
+elif [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
     _DEFER_G13=1
     echo "  実行中（総合判定前に反映）"
 else

@@ -7,25 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# WSL2 NTFS最適化: field_getの依存ログ抑制。28回×20ms=0.56s削減
-export FIELD_GET_NO_LOG=1
-source "$SCRIPT_DIR/scripts/lib/field_get.sh"
-source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
-source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 CMD_ID="${1:-}"
-
-append_line_locked() {
-    local target_file="$1"
-    local line="$2"
-    local target_dir
-    target_dir="$(dirname "$target_file")"
-    mkdir -p "$target_dir" 2>/dev/null || true
-
-    (
-        flock -w 10 200 || exit 1
-        printf '%s\n' "$line" >> "$target_file"
-    ) 200>"$(lock_path "$target_file")"
-}
 
 if [ -z "$CMD_ID" ]; then
     echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
@@ -48,11 +30,40 @@ for arg in "$@"; do
     fi
 done
 
+# ─── CLEAR済みcmd早期exit（lib source前、GP-026 B案: cmd_1332） ───
+# WSL2最適化: source/mkdir/flock前にCLEARチェック。CLEARED cmdsのlib読込コスト削減
+LOG_DIR="$SCRIPT_DIR/logs"
+GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
+if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ]; then
+    if grep -qP "^[^\t]+\t${CMD_ID}\tCLEAR\t" "$GATE_METRICS_LOG"; then
+        echo "[gate] ${CMD_ID}: Already CLEARED (gate_metrics.logにCLEAR記録あり。--forceで再検査可能)"
+        exit 0
+    fi
+fi
+
+# WSL2 NTFS最適化: field_getの依存ログ抑制。28回×20ms=0.56s削減
+export FIELD_GET_NO_LOG=1
+source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+
+append_line_locked() {
+    local target_file="$1"
+    local line="$2"
+    local target_dir
+    target_dir="$(dirname "$target_file")"
+    mkdir -p "$target_dir" 2>/dev/null || true
+
+    (
+        flock -w 10 200 || exit 1
+        printf '%s\n' "$line" >> "$target_file"
+    ) 200>"$(lock_path "$target_file")"
+}
+
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
-LOG_DIR="$SCRIPT_DIR/logs"
-GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
+# LOG_DIR/GATE_METRICS_LOG already set above for early CLEAR check
 mkdir -p "$GATES_DIR" "$LOG_DIR"
 
 # ─── CMD_ID単位ロック（cmd_2119） ───
@@ -63,15 +74,6 @@ exec 209>"$CMD_GATE_LOCK_FILE"
 if ! flock -n 209; then
     echo "[gate] ${CMD_ID}: cmd_complete_gate already running (CMD_ID lock)"
     exit 0
-fi
-
-# ─── CLEAR済みcmd早期exit（GP-026 B案: cmd_1332） ───
-# gate_metrics.logに当該cmd_idのCLEAR記録があれば再検査をスキップ
-if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ]; then
-    if grep -qP "^[^\t]+\t${CMD_ID}\tCLEAR\t" "$GATE_METRICS_LOG"; then
-        echo "[gate] ${CMD_ID}: Already CLEARED (gate_metrics.logにCLEAR記録あり。--forceで再検査可能)"
-        exit 0
-    fi
 fi
 
 # ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
@@ -3601,15 +3603,14 @@ preflight_gate_flags() {
 DEFERRED_GATES=("archive")
 
 # ─── parent_cmd一致タスクファイルのキャッシュ（grep×26回→連想配列O(1)ルックアップ） ───
+# WSL2最適化: 個別grep×N回 → grep -l一括スキャン(プロセス1本)
 declare -A _CMD_TASK_MAP
 MATCHING_TASK_FILES=()
-for _cache_tf in "$TASKS_DIR"/*.yaml; do
+while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
-    if grep -q "parent_cmd: ${CMD_ID}" "$_cache_tf" 2>/dev/null; then
-        _CMD_TASK_MAP["$_cache_tf"]=1
-        MATCHING_TASK_FILES+=("$_cache_tf")
-    fi
-done
+    _CMD_TASK_MAP["$_cache_tf"]=1
+    MATCHING_TASK_FILES+=("$_cache_tf")
+done < <(grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null || true)
 MATCHING_TASK_FILES_INITIAL_COUNT=${#MATCHING_TASK_FILES[@]}
 MATCHING_TASK_FILES_PROCESSED_COUNT=0
 MATCHING_TASK_FILES_SKIPPED_COUNT=0
