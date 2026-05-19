@@ -438,7 +438,7 @@ fi
 # --- Gate 7: 前セッション裁定の知識還流チェック ---
 LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
 echo "■ 前セッション裁定"
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
 if [ -f "$LORD_INDEX" ]; then
@@ -485,7 +485,7 @@ fi
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
 echo "■ 気づきキュー"
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
 if [ -f "$INSIGHTS_FILE" ]; then
@@ -617,7 +617,7 @@ fi
 
 # --- Gate 9: 将軍パフォーマンスフィードバック ---
 echo "■ 将軍パフォーマンスフィードバック"
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
 DESIGN_QUALITY="$_TMP_DQ_RECENT"
@@ -915,7 +915,7 @@ fi
 
 # --- Gate 12: 三層学習ループ健全性 ---
 echo "■ 三層学習ループ"
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
 elif [ -f "$GATE_DIR/gate_loop_health.sh" ]; then
     wait $_PID_G12 || true
@@ -1048,7 +1048,7 @@ fi
 
 # --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
 echo "■ 教訓健全度"
-if [ "$LIGHT_MODE" = "1" ]; then
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     _DEFER_G13=0
     echo "  SKIP(lightweight)"
 elif [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then

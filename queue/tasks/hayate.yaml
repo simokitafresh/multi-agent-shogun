@@ -1,20 +1,20 @@
 task:
-  cmd_id: cmd_training_codd_hayate_2
+  cmd_id: cmd_training_speed_hayate_1
   type: training
   project: infra
-  purpose: "修行サイクル2/5: CoDD最適化ラウンド。CoDD台帳から未最適化スクリプトを選び(サイクル1と別)、codd extract→elicit→generate→validate→measureの5ステップを実行せよ"
+  purpose: "修行: scripts/gates/gate_shogun_startup.sh 速度最適化(brownfield)。before計測→ボトルネック特定→高速化実装→after計測。timeout 1200"
   scout_exempt: true
   acceptance_criteria:
     AC1:
-      description: "CoDD台帳から未最適化or最終更新14日超のスクリプトを1件選択し、codd extractを実行"
+      description: "scripts/gates/gate_shogun_startup.shのbefore計測(median 5run)が記録されている"
       checks:
-        - check: "codd extract完了"
+        - check: "before計測完了"
     AC2:
-      description: "codd elicit→generate --wave 1 --force→validate→measureを実行し結果を報告"
+      description: "ボトルネック1箇所以上を高速化しafter計測でbefore比改善が確認されている"
       checks:
-        - check: "measure結果が報告に記載"
+        - check: "after計測でbefore比改善"
   scope:
-    - docs/research/codd_refactor_registry.md
+    - scripts/gates/gate_shogun_startup.sh
   status: done
   parent_cmd: ""
   related_lessons:
@@ -48,5 +48,5 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  report_filename: hayate_report_cmd_training_codd_hayate_2.yaml
-  report_path: queue/reports/hayate_report_cmd_training_codd_hayate_2.yaml
+  report_filename: hayate_report_cmd_training_speed_hayate_1.yaml
+  report_path: queue/reports/hayate_report_cmd_training_speed_hayate_1.yaml
