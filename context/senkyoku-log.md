@@ -39,6 +39,17 @@
 | cmd_2872 | cmd_complete_gate並行flock追加 | GATE CLEAR | review_log 0バイト破壊事故→nohup並行のawk→tmp→mvをflock排他制御 |
 | cmd_2873 | daemon_supervisor.sh統一管理 | GATE CLEAR | 重複実行頻出(monitor3重/watcher2重)→統一管理+ヘルスチェック+自動再起動 |
 | karo_direct×5 | WA ninja validate/selfgate dict/prepush fix/CI fix×2 | 全完了 | LK013 Level4化+self_gate_check dict強制+pre-push tee→file redirect+CI RED修正2件 |
+| 教訓統合 | lessons_shogun 31→28件 | 完了 | LS030/032/033/037をLS-A09/A17に吸収。startup BLOCK解消 |
+| cmd_2874 | 辞書育成Phase 2(noise除去+カバレッジ) | GATE CLEAR | task notification等5件noise除去。殿「辞書の育成をやろう」 |
+| cmd_2875 | q11にcausal_backlinks統合 | GATE CLEAR | 辿る行動の強制化。道具の存在≠使う仕組み→cmd_save.shに埋込み |
+| cmd_2876 | 自動成長insight類似概念TOP3推薦 | GATE CLEAR | 未登録通知に分類推薦追加。判断コスト削減 |
+| cmd_2877 | kj-role-count定休日+パート色 | GATE CLEAR | 水/日+祝日入力不可。tailwind content paths lib/追加でパート色復活 |
+| cmd_2878 | origin空WARN L1→L5 | GATE CLEAR | 報告origin 1.2%→gate_report_format WARN強制 |
+| cmd_2879 | ナッジ防止Guard L0→L5 | GATE CLEAR | 殿指摘「CMDルール守れ」→from=shogun task_new BLOCK |
+| cmd_2880 | origin自動継承 零コスト | GATE CLEAR | cmd origin→報告origin自動プリセット。忍者負荷ゼロ |
+| LS043 | ナッジ乱発教訓 | 記録済み | 速さ>学習の優先逆転。Phase6滑り坂と同構造 |
+| karo_direct×3 | SKILL.md追従/kj集計トグル/kjロール切替 | 全完了 | SKILL.md 3件更新+kj-role-count集計フィルタ+ロール種類ドロップダウン |
+| session_summary | 7cmd全CLEAR+karo_direct3件+教訓統合+LS043 | 完了 | 因果NW加速5層(検出/零コスト/辿る/発見/防御)+kj-role-count6機能デプロイ確認済み |
 
 ## 2026-05-17
 
