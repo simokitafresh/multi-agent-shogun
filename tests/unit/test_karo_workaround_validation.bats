@@ -10,7 +10,7 @@ setup() {
     TEST_DIR=$(mktemp -d "$TMPDIR/wa_test.XXXXXX")
 
     # Create minimal repo structure
-    mkdir -p "$TEST_DIR/config" "$TEST_DIR/queue/tasks" "$TEST_DIR/logs" "$TEST_DIR/scripts"
+    mkdir -p "$TEST_DIR/config" "$TEST_DIR/queue/tasks" "$TEST_DIR/logs" "$TEST_DIR/scripts/lib"
 
     # settings.yaml with known agents
     cat > "$TEST_DIR/config/settings.yaml" <<'YAML'
@@ -59,6 +59,7 @@ SH
     # Copy under the fixture repo so the script's own SCRIPT_DIR/REPO_ROOT discovery
     # resolves to TEST_DIR without per-test sed rewrites on /mnt/c.
     cp "$SCRIPT" "$TEST_DIR/scripts/karo_workaround_log.sh"
+    cp "$(dirname "$SCRIPT")/lib/known_ninjas.sh" "$TEST_DIR/scripts/lib/known_ninjas.sh"
     chmod +x "$TEST_DIR/scripts/karo_workaround_log.sh"
 
     TEST_SCRIPT="$TEST_DIR/scripts/karo_workaround_log.sh"
@@ -92,26 +93,31 @@ teardown() {
     [ "$status" -ne 0 ]
 }
 
-@test "AC1: valid ninja_id (karo) — no WARN" {
-    run bash "$TEST_SCRIPT" cmd_test karo "test issue" "test fix description"
-    [[ "$output" != *"有効なエージェント名ではない"* ]]
+@test "AC1: valid ninja_id (unknown) — no error" {
+    run bash "$TEST_SCRIPT" cmd_test unknown "test issue" "test fix description"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"known_ninjas"* ]]
 }
 
-@test "AC1: invalid ninja_id — emits WARN" {
+@test "AC1: invalid ninja_id — exits 1" {
     run bash "$TEST_SCRIPT" cmd_test unknown_agent "test issue" "test fix description"
-    [[ "$output" == *"有効なエージェント名ではない"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"known_ninjas(hayate/kagemaru/hanzo/saizo/kotaro/tobisaru/unknown)"* ]]
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
 }
 
-@test "AC1: invalid ninja_id (typo) — emits WARN" {
+@test "AC1: invalid ninja_id (typo) — exits 1" {
     run bash "$TEST_SCRIPT" cmd_test hayat "test issue" "test fix description"
-    [[ "$output" == *"有効なエージェント名ではない"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"known_ninjas"* ]]
 }
 
 @test "argument auto-swap: validates ninja_id after cmd/ninja reversal is corrected" {
     run bash "$TEST_SCRIPT" hayate cmd_test "test issue" "test fix description"
     [ "$status" -eq 0 ]
     [[ "$output" == *"引数が逆順。自動スワップ実行"* ]]
-    [[ "$output" != *"有効なエージェント名ではない"* ]]
+    [[ "$output" != *"known_ninjas"* ]]
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -eq 0 ]
     run grep -n "ninja: hayate" "$TEST_DIR/logs/karo_workarounds.yaml"

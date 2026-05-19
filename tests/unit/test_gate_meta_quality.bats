@@ -145,6 +145,38 @@ EOF
     [ "$output" = "2" ]
 }
 
+@test "gate_wa_data_quality: known_ninjas.sh の共有リストでninja汚染を検出する" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_bad_ninja
+  ninja: sasuke
+  workaround: true
+  category: report_yaml_format
+  detail: 十分な長さのdetailです
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NINJA_CORRUPT"* ]]
+    [[ "$output" == *"ninja=\"sasuke\" not in known list"* ]]
+}
+
+@test "gate_wa_data_quality --fix: known_ninjas.sh の共有リストでninja汚染を検出する" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_bad_ninja
+  ninja: sasuke
+  workaround: true
+  category: report_yaml_format
+  detail: 十分な長さのdetailです
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" --fix
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NINJA_CORRUPT"* ]]
+    [[ "$output" == *"ninja=\"sasuke\" not in known list"* ]]
+}
+
 @test "gate_wa_data_quality: wrapper dict を保ったまま修復する" {
     cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
 version: 1

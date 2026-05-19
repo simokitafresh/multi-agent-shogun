@@ -16,6 +16,9 @@ LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
 
+# shellcheck source=scripts/lib/known_ninjas.sh
+source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
+
 # --- Reclassify mode: update category of existing entries ---
 if [[ "${1:-}" == "--reclassify" ]]; then
     shift
@@ -229,28 +232,10 @@ if [[ ! "$CMD_ID" =~ ^cmd_ && "$NINJA_NAME" =~ ^cmd_ ]]; then
 fi
 
 # --- AC1(cmd_1542): ninja_id validation ---
-# cmd_1967高速化: task dirループ(basename subprocess×10=45ms)廃止。
-# settings.yamlが全エージェントの権威リスト。task filesはephemeral state。
-validate_ninja_id() {
-    local ninja_id="$1"
-    local settings_file="$REPO_ROOT/config/settings.yaml"
-    # karo (caller agent) は常に有効
-    [[ "$ninja_id" == "karo" ]] && return 0
-    # settings.yaml agents のみで検証(早期exit付き)
-    awk -v id="$ninja_id" '
-        /^  agents:/ { in_agents=1; next }
-        in_agents && /^    [a-z][a-z0-9_]*:$/ {
-            name=$0; gsub(/^ +|:$/, "", name)
-            if (name == id) { found=1; exit }
-        }
-        in_agents && /^[^ ]/ { exit }
-        in_agents && /^  [a-z]/ { exit }
-        END { exit !found }
-    ' "$settings_file"
-}
-
-if ! validate_ninja_id "$NINJA_NAME"; then
-    echo "[karo_workaround_log] WARN: ninja_id '$NINJA_NAME' は有効なエージェント名ではない。config/settings.yaml・queue/tasks/を確認せよ" >&2
+if ! is_known_ninja "$NINJA_NAME"; then
+    echo "[karo_workaround_log] Error: ninja_id '$NINJA_NAME' はknown_ninjas($(known_ninjas_display))に含まれない" >&2
+    echo "  正しいninja名を指定せよ。unknownに集約する場合は明示的にunknownを渡せ" >&2
+    exit 1
 fi
 
 # --- YAML single-quote escaping (cmd_cycle_L4_026: injection防止) ---

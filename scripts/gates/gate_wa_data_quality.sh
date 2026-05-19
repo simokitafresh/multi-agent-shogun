@@ -21,6 +21,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WA_FILE="${WA_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 FIX_MODE=false
 
+# shellcheck source=scripts/lib/known_ninjas.sh
+source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
+
 if [[ "${1:-}" == "--fix" ]]; then
     FIX_MODE=true
 fi
@@ -31,7 +34,7 @@ if [[ ! -f "$WA_FILE" ]]; then
 fi
 
 if [[ "$FIX_MODE" == "false" ]]; then
-    awk '
+    awk -v known_ninjas_csv="$KNOWN_NINJAS_CSV" '
     function trim(s) {
         sub(/^[[:space:]]+/, "", s)
         sub(/[[:space:]]+$/, "", s)
@@ -96,8 +99,10 @@ if [[ "$FIX_MODE" == "false" ]]; then
         set_field($0)
     }
     END {
-        known["hayate"] = known["kagemaru"] = known["hanzo"] = known["saizo"] = 1
-        known["kotaro"] = known["tobisaru"] = known["unknown"] = 1
+        split(known_ninjas_csv, known_list, ",")
+        for (known_idx in known_list) {
+            known[known_list[known_idx]] = 1
+        }
 
         split("workaround不要|WA不要|修正なし|対処不要|修正不要|正規フロー完了|問題なし", clean_keywords, "|")
         for (i = 1; i <= n; i++) {
@@ -181,7 +186,7 @@ if [[ "$FIX_MODE" == "false" ]]; then
     exit $?
 fi
 
-python3 - "$WA_FILE" "$FIX_MODE" <<'PY'
+KNOWN_NINJAS_CSV="$KNOWN_NINJAS_CSV" python3 - "$WA_FILE" "$FIX_MODE" <<'PY'
 from __future__ import annotations
 
 import os
@@ -240,7 +245,7 @@ def fix_command(pattern: str) -> str:
         return 'bash scripts/karo_workaround_log.sh <cmd_id> <known_ninja> "<detail>" "<root_cause>" <category>'
     return "bash scripts/gates/gate_wa_data_quality.sh --fix"
 
-known_ninjas = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru", "unknown"}
+known_ninjas = {name for name in os.environ["KNOWN_NINJAS_CSV"].split(",") if name}
 clean_keywords = ["workaround不要", "WA不要", "修正なし", "対処不要", "修正不要", "正規フロー完了", "問題なし"]
 
 for i, entry in enumerate(entries):

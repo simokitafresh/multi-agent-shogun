@@ -12,6 +12,7 @@ setup_file() {
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/karo_startup.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/scripts/gates" \
+             "$TEST_TMPDIR/scripts/lib" \
              "$TEST_TMPDIR/queue/inbox" \
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/memory" \
@@ -23,6 +24,7 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
+    cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_TMPDIR/scripts/skill_execution_log.sh"
     chmod +x "$TEST_TMPDIR/scripts/skill_execution_log.sh"
 
