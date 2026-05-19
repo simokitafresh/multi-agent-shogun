@@ -994,8 +994,6 @@ EOF
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
 2026-05-12T00:00:00	cmd_a	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
 2026-05-12T00:00:00	cmd_b	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
-2026-05-12T00:00:00	cmd_c	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
-2026-05-12T00:00:00	cmd_d	sasuke	L_LOW	feedback	NOT_USEFUL	no	testproj	impl	None
 2026-05-12T00:00:00	cmd_a	sasuke	L_BAD	feedback	USEFUL	yes	testproj	impl	None
 2026-05-12T00:00:00	cmd_b	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
 2026-05-12T00:00:00	cmd_c	sasuke	L_BAD	feedback	NOT_USEFUL	no	testproj	impl	None
