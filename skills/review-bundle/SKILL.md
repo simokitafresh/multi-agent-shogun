@@ -87,6 +87,7 @@ FAIL時は将軍にも共有:
 ```bash
 BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> FAIL — <fail_reason>"
 ```
+`bulletin_write.sh` は投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
 
 ## 制約
 - verdict判定は軍師の手動判断。このスキルは判定後の記録・送信のみ

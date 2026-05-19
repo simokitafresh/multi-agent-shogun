@@ -79,7 +79,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
-Script refs verified: 2026-05-17 cmd_2829 (PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe).
+Script refs verified: 2026-05-19 cmd_2859 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:

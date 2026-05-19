@@ -67,7 +67,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
 # failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
 ```
-Script refs verified: 2026-05-17 cmd_2829.
+Script refs verified: 2026-05-19 cmd_2859 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。

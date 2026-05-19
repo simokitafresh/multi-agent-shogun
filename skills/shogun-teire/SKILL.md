@@ -140,7 +140,7 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
    - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
    - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
    - enforcement phantomを確認（infraの家老/軍師教訓で `automated: true` かつ top-level `enforcement:` が `.sh` を指す場合、`scripts/` または `.claude/hooks/` に実在するか検証）
-   - Script refs verified: 2026-05-17 cmd_2829 (PHANTOM extraction and pipefail-safe effect scan included).
+   - Script refs verified: 2026-05-19 cmd_2859 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction and pipefail-safe effect scan included).
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出

@@ -45,6 +45,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/r
 - `action_type` は `info` または `action_required`。idle分析の永続化報告は通常 `info`。
 - 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
+- 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
 
 ### Step 4: review_log記録
 ```bash
