@@ -715,3 +715,10 @@
 | cmd_2875 | semantic_search(cmd_2869)は概念レベル検索を実現したが、因果辺トラバース(causal_backlinks.sh)は未統合。道具はあるが使う仕組みに埋め込まれていない=意志依存。cmd起票時にq11のsemantic_search結果と合わせてcausal_backlinksの結果も自動表示し、関連cmd/教訓の因果辺を起票前に強制提示する | infra | 05-19 | cmd_save.shのq11 semantic_searc |
 | cmd_2878 | 報告YAMLのorigin付与率が1.2%(61/4938)。根因=gate_report_format.shとreport_field_set.shにorigin関連チェックがゼロ(grep確認済み)。Level 1(ドキュメント記載のみ)→Level 5(gate強制+書込み支援)に昇格し、因果ネットワークの成長速度を構造的に加速する | infra | 05-19 | cmd_2878: gate_report_formatのo |
 | cmd_2881 | startup gate BLOCK 3セッション連続。dashboard-update FAIL率16%(8/50)だがskill_execution_logにFAIL 1件のみ。ログ乖離の有無を含め根因を特定し対処方針を出す | infra | 05-19 | dashboard-update Gate20 8/50は実 |
+| cmd_2882 | cmd_2881偵察で判明: dashboard-update FAIL率16%(8/50)は全てcmd_test_*6件+誤呼出し2件。実運用FAILゼロ。分母からテスト用cmdを除外し3セッション連続startup BLOCKを解消する | infra | 05-19 | Gate20のskill FAIL率でcmd_test_*と |
+| cmd_2884 | 教訓健全度ALERT(useful_rate=16.7%)の根因=フィードバック記録率17%(参照36→記録6)。注入教訓のうち参照したがフィードバック未記録分を自動的にnot_usefulとして記録し、effectiveness_scoreの分母を正常化する | infra | 05-19 | record_lesson_feedback.shに未記載の |
+| cmd_2885 | Obsidian [[リンク]]1597あるが大半が静的deepdive参照。cmd間因果辺が成長しない根因=origin記入(入口)はあるがsemantic-map還流(出口)がない。GATE CLEAR時にorigin+depends_onから因果辺を自動追記し、cmd数に比例してNWを成長させる | infra | 05-19 | GATE CLEAR時のsemantic index更新pa |
+| cmd_2887 | 前セッションでscope/context stale残存が2件連続FAIL(cmd_2875+cmd_2880)。家老がLK-A02 v7で修正済みだがテスト未追加。再発防止テストを追加する | infra | 05-19 | reset_stale_fieldsのscope/conte |
+| cmd_2888 | ac_phase_mixing等のgate FPが今セッション6回BLOCK。高FP gateを自動検出し修正候補を提案する仕組みで、gate品質の学習速度を最大化する | infra | 05-19 | Gate 13.8のFP率計算を独立スクリプト化し、閾値超g |
+| cmd_2891 | CoDD台帳の最終更新が5/15で17日間停滞。修行サイクルにCoDD速度改善ラウンドを追加し、idle忍者にCoDD refactorを自動配備+軍師レビューで品質担保。インフラ最適化と忍者成長を同時に回す | infra | 05-19 | context/training-cycle.mdにCoDD |
+| cmd_2892 | 196ファイル1766テストが蓄積。追加のみで淘汰なし。殿の3問検証(リグレッション検出実績/変更頻度/維持コスト)で低価値テストを特定し統合/削除方針を出す | infra | 05-19 | unit 196ファイル/現状1765テストを3問基準で棚卸 |
