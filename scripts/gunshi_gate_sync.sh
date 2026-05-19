@@ -85,14 +85,26 @@ update_log() {
             if $DRY_RUN; then
                 echo "  [dry-run] $cmd_id: null → $result"
             else
-                awk -v cid="$cmd_id" -v res="$result" '
-                    /cmd_id:/ && $0 ~ cid { found=1 }
-                    found && /gate_result: null/ {
-                        sub(/gate_result: null/, "gate_result: " res)
-                        found=0
-                    }
-                    { print }
-                ' "$target_file" > "${target_file}.tmp" && mv "${target_file}.tmp" "$target_file"
+                if ! (
+                    flock -w 10 200 || exit 1
+                    awk -v cid="$cmd_id" -v res="$result" '
+                        /cmd_id:/ && $0 ~ cid { found=1 }
+                        found && /gate_result: null/ {
+                            sub(/gate_result: null/, "gate_result: " res)
+                            found=0
+                        }
+                        { print }
+                    ' "$target_file" > "${target_file}.tmp"
+                    if [[ -s "${target_file}.tmp" ]]; then
+                        mv "${target_file}.tmp" "$target_file"
+                    else
+                        rm -f "${target_file}.tmp"
+                        echo "  WARN: awk produced empty output for $target_file (race?), skipping mv" >&2
+                    fi
+                ) 200>"${target_file}.lock"; then
+                    echo "  WARN: flock timeout for $target_file, skipping" >&2
+                    continue
+                fi
             fi
             ((updated++)) || true
         else
@@ -119,14 +131,26 @@ update_log() {
                 echo "  [dry-run] $cmd_id: (missing) → $result"
             else
                 # review_type行の直後にgate_resultを挿入
-                awk -v cid="$cmd_id" -v res="$result" '
-                    /cmd_id:/ && $0 ~ cid { found=1 }
-                    { print }
-                    found && /review_type:/ {
-                        print "  gate_result: " res
-                        found=0
-                    }
-                ' "$target_file" > "${target_file}.tmp" && mv "${target_file}.tmp" "$target_file"
+                if ! (
+                    flock -w 10 200 || exit 1
+                    awk -v cid="$cmd_id" -v res="$result" '
+                        /cmd_id:/ && $0 ~ cid { found=1 }
+                        { print }
+                        found && /review_type:/ {
+                            print "  gate_result: " res
+                            found=0
+                        }
+                    ' "$target_file" > "${target_file}.tmp"
+                    if [[ -s "${target_file}.tmp" ]]; then
+                        mv "${target_file}.tmp" "$target_file"
+                    else
+                        rm -f "${target_file}.tmp"
+                        echo "  WARN: awk produced empty output for $target_file (race?), skipping mv" >&2
+                    fi
+                ) 200>"${target_file}.lock"; then
+                    echo "  WARN: flock timeout for $target_file, skipping" >&2
+                    continue
+                fi
             fi
             ((updated++)) || true
         else
