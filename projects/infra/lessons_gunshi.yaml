@@ -253,9 +253,9 @@ lessons:
   source_cmd: gunshi_session_20260406
   origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
-  automated: false
-  enforcement_level: 2
-  enforcement: gunshi.md §因果推論ルール L207に原理1行埋込み済み+review_logヘッダ(複利の問い)で毎レビュー時強制読込
+  automated: true
+  enforcement_level: 3
+  enforcement: Guard 12(pre-write-edit-combined.sh)がWrite+gates/hooks/検出→INFO。gunshi.md因果推論ルール+review_logヘッダ複利の問い
   when: 改善提案やGP設計時。新しいgate/Step/観点を作ろうとした時
   how: 既存の1行原理で解決できないか先に確認。原理を1箇所に埋め込めば未来の全類似問題に対応
 - id: LG024
@@ -333,9 +333,9 @@ lessons:
   source_cmd: cmd_1949_scalability
   origin: '[[cmd_1949_scalability]]'
   created_at: '2026-04-16'
-  automated: false
-  enforcement_level: 2
-  enforcement: review_logヘッダ+掲示板(blt_20260416_140131)に記録。次回のスケーラビリティ検証時に内部ループ回数を明記
+  automated: true
+  enforcement_level: 3
+  enforcement: Guard 10拡張(pre-write-edit-combined.sh)が計算量キーワード検出→INFO。設計書保存時に自動表示
   when: 研究cmdのスケーラビリティを推定する時。計算量が多いcmdのレビュー時
   how: 外側ループ×内側ループ×単位時間で推定。外側のみで推定しない。関数内部まで追跡
 - id: LG029
@@ -389,9 +389,9 @@ lessons:
   source_cmd: GP-208
   origin: '[[GP-208]]'
   created_at: '2026-04-17'
-  automated: false
-  enforcement_level: 2
-  enforcement: gunshi.md idle Step 6のGP設計時に自問追加
+  automated: true
+  enforcement_level: 3
+  enforcement: Guard 12(pre-write-edit-combined.sh)がWrite+gates/hooks/検出→INFO。LG023と統合(同根)
   when: GP設計で新しい強制の仕組みを作ろうとした時
   how: 既存の強制された行動(startup gate/stop hook/inbox)に乗せられないか自問。新仕組み不要のケースが多い
 - id: LG033

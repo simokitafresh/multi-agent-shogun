@@ -50,6 +50,23 @@
 | LS043 | ナッジ乱発教訓 | 記録済み | 速さ>学習の優先逆転。Phase6滑り坂と同構造 |
 | karo_direct×3 | SKILL.md追従/kj集計トグル/kjロール切替 | 全完了 | SKILL.md 3件更新+kj-role-count集計フィルタ+ロール種類ドロップダウン |
 | session_summary | 7cmd全CLEAR+karo_direct3件+教訓統合+LS043 | 完了 | 因果NW加速5層(検出/零コスト/辿る/発見/防御)+kj-role-count6機能デプロイ確認済み |
+| cmd_2881 | 偵察 — dashboard_update.sh FAIL率根因 | GATE CLEAR | Gate20 8/50=cmd_test_*6件+誤呼出し2件。実運用FAILゼロ |
+| cmd_2882 | 修正 — Gate20分母フィルタ | GATE CLEAR | cmd_test_除外で3セッション連続startup BLOCK解消 |
+| cmd_2883 | 強化 — SKILL.md追従5件 | GATE CLEAR | 3セッション連続WARN解消(2回目) |
+| cmd_2884 | 強化 — 教訓フィードバック自動not_useful化 | GATE CLEAR | 参照率36→55%即改善。分母正常化でeffectiveness_score精度向上 |
+| cmd_2885 | 強化 — 因果辺→semantic-map自動還流 | GATE CLEAR | GATE CLEAR時にcmd因果辺を自動追記。cmd数比例でNW成長 |
+| cmd_2886 | 修正 — report_review重複手動経路撤去 | GATE CLEAR | 毎セッション5-10件の無駄メッセージ根絶 |
+| cmd_2887 | 強化 — scope清掃テスト追加 | GATE CLEAR | deploy_task.sh stale残存2件連続FAILの再発防止 |
+| cmd_2888 | 強化 — gate FP率自動検出(L6) | GATE CLEAR | 高FP gate自動検出+修正候補提案 |
+| cmd_2889 | 強化 — SKILL.md追従自動検出(L6) | GATE CLEAR | script変更時にSKILL.md鮮度チェック自動化 |
+| cmd_2890 | 強化 — WA復活即検出(L6) | GATE CLEAR | 100件連続clean維持監視+復活ALERT |
+| cmd_2891 | 強化 — 修行×CoDD最適化ラウンド | GATE CLEAR | 17日間停滞のCoDD台帳を修行で自動回転 |
+| cmd_2892 | 偵察 — テスト1766件価値選別 | GATE CLEAR | 削除4+統合6=10ファイル+62小ファイル統合候補 |
+| cmd_2893 | 修正 — テスト削除4+統合6(第1波) | GATE CLEAR | 790行10ファイル削減 |
+| cmd_2894 | 強化 — テスト62ファイル統合(第2波) | GATE CLEAR | 196→130ファイル圧縮 |
+| cmd_2895 | 強化 — テストファイル粒度gate(L6) | GATE CLEAR | 追加時に既存統合を促し再肥大化防止 |
+| cmd_2896 | 修正 — 修行CoDDをbrownfield限定 | GATE CLEAR | greenfield30分超→brownfield10-15分 |
+| session_summary | 16cmd全CLEAR+L6化4件+テスト整理+CoDD再起動 | 完了 | startup BLOCK全解消+参照率36→55%+因果辺自動還流+テスト196→130+修行brownfield化。殿裁定=L6は速くやれ/brownfield明記/テスト整理/殿指示>F001 |
 
 ## 2026-05-17
 

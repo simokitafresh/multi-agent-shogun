@@ -30,6 +30,9 @@ codd:
 | cmd | `cmd_2573` 修正 — drawdowns.py limit撤廃(全DD格納)+fullrecalculate+パリティ検証 |
 | lesson | `L714` recalculate-sync acceptedでは完了判定にしない |
 | lesson | `L715` recalculate-sync acceptedは完了ではない。DB recalculation_status confirmed必須 |
+| cmd | `cmd_2893` 修正 — テスト削除4件+統合6件(偵察cmd_2892結果) (`tests/unit/test_agent_state.bats`, `tests/unit/test_agent_status.bats`, `tests/unit/test_api_usage.bats`) |
+| causal | `cmd_2893` origin: [[cmd_2892]] -> [[test_is_debt]] -> [[test_cleanup]] |
+| causal | `cmd_2893` depends_on: cmd_2892 |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -37,7 +40,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流 |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -73,6 +76,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T15:49:36+09:00 obsidian×セマンティックスインデックスは順調か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:08:16+09:00 obsidianのリンクは成長しているか？成長速度が遅くないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:10:39+09:00 bm5vc6kjt toolu_01UHpBBvAq2dGwh9R2soynjz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:47:14+09:00 obsidianのリンクが成長しないな。なにかアイデアはあるか？ |
+| cmd | `cmd_2885` 強化 — GATE CLEAR時にcmd因果辺をsemantic-mapへ自動還流 (`scripts/cmd_complete_gate.sh`, `scripts/semantic_index_update.sh`, `scripts/semantic_map_generate.sh`) |
+| causal | `cmd_2885` origin: [[cmd_2818_causal_NW]] -> [[semantic_map_generate]] -> [[obsidian_link_stagnation]] |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -80,7 +86,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回, やろう, 定休日扱い, CMDで対応しよう, 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう, さらに因果ネットワークの成長速度を構造的に加速しよう, 次に回すメリットはあるか？ないならいまやろう |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回, やろう, 定休日扱い, CMDで対応しよう, 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう, さらに因果ネットワークの成長速度を構造的に加速しよう, 次に回すメリットはあるか？ないならいまやろう, 進もう, 全部起票しよう, L6化ができるものは可能な限り速く対応したほうがいい, スクリプトやフックなどの最適化が進めば, Codd台帳のタイムスタンプは確認したか？ 1msinbox1e, テストの数が多すぎる気がするな, 修行サイクルにCoDD最適化ラウンド追加, もっと統合整理できそうな気がするけど, CoDDで最初からやる修行がうまくいっていない, 将軍が定義内にbrownfield方式を明記せよ |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -128,6 +134,42 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:16:37+09:00 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう。レベルいくつだ？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:20:27+09:00 さらに因果ネットワークの成長速度を構造的に加速しよう。なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T18:55:53+09:00 次に回すメリットはあるか？ないならいまやろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:10:55+09:00 You are matching a user query to a semantic index. Query: dashboard_update スキル FAIL率 改善 Instructions: - Choose up to 3 m |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:26:44+09:00 You are matching a user query to a semantic index. Query: title: "修正 — Gate20 FAIL率分母からテスト用cmdを除外" purpose: "cmd_2881偵察で |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:42:51+09:00 進もう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:46:06+09:00 You are matching a user query to a semantic index. Query: title: "強化 — 教訓フィードバック未記録を自動not_useful化" purpose: "教訓健全度ALERT( |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:51:15+09:00 全部起票しよう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:52:34+09:00 You are matching a user query to a semantic index. Query: title: "強化 — GATE CLEAR時にcmd因果辺をsemantic-mapへ自動還流" purpose: "O |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:57:20+09:00 You are matching a user query to a semantic index. Query: title: "修正 — report_review重複依頼の手動経路撤去" purpose: "毎セッション5-10件の重 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:57:32+09:00 You are matching a user query to a semantic index. Query: title: "修正 — report_review重複依頼の手動経路撤去" purpose: "毎セッション5-10件の重 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:05:41+09:00 L6化ができるものは可能な限り速く対応したほうがいい。早くやれば複利が最大化する。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:11:50+09:00 You are matching a user query to a semantic index. Query: title: "強化 — WA復活即検出をstartup gateに組込み(L6化)" purpose: "WA全7カテゴリ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:12:07+09:00 You are matching a user query to a semantic index. Query: title: "強化 — WA復活即検出をstartup gateに組込み(L6化)" purpose: "WA全7カテゴリ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:12:24+09:00 You are matching a user query to a semantic index. Query: title: "強化 — WA復活即検出をstartup gateに組込み(L6化)" purpose: "WA全7カテゴリ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:12:36+09:00 You are matching a user query to a semantic index. Query: title: "強化 — WA復活即検出をstartup gateに組込み(L6化)" purpose: "WA全7カテゴリ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:14:13+09:00 スクリプトやフックなどの最適化が進めば、ボトルネックがなくなり滑らかにより早く成長できるのでは？Codd台帳を確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:16:32+09:00 Codd台帳のタイムスタンプは確認したか？0.1msinbox1e |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:18:46+09:00 すべてやろう。なぜなぜ7回、ＣＭＤ起票 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:24:01+09:00 テストの数が多すぎる気がするな。整理整頓して本当に必要なテストを選別するのはどうだ？なぜなぜ7回 |
+| cmd | `cmd_2891` 強化 — 修行サイクルにCoDD最適化ラウンド追加 (`context/training-cycle.md`) |
+| causal | `cmd_2891` origin: [[codd_refactor_registry_stale]] -> [[training_cycle]] -> [[L6_codd_auto_rotation]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:27:29+09:00 You are matching a user query to a semantic index. Query: title: "偵察 — テスト1766件の価値選別(3問検証)" purpose: "196ファイル1766テストが蓄積。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:28:25+09:00 You are matching a user query to a semantic index. Query: title: "偵察 — テスト1766件の価値選別(3問検証)" purpose: "196ファイル1766テストが蓄積。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:28:34+09:00 You are matching a user query to a semantic index. Query: title: "偵察 — テスト1766件の価値選別(3問検証)" purpose: "196ファイル1766テストが蓄積。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:40:21+09:00 もっと統合整理できそうな気がするけど。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:42:55+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト62小ファイルをスクリプト単位統合(第2波)" purpose: "cmd_2892偵察の1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:43:04+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト62小ファイルをスクリプト単位統合(第2波)" purpose: "cmd_2892偵察の1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:44:01+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト新規ファイル作成時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:44:17+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト新規ファイル作成時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:44:33+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト新規ファイル作成時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:45:41+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト新規ファイル作成時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:46:25+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル作成時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:47:01+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル追加時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:47:23+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル追加時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:47:59+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル追加時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:48:10+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル追加時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:55:52+09:00 CoDDで最初からやる修行がうまくいっていない。とにかく遅いせいで進まないみたいだ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T21:00:28+09:00 将軍が定義内にbrownfield方式を明記せよ |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -207,7 +249,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで, 今回のBLOCKで何を学習して, BLOCK後に環境埋込み判定を強制（自動成長ループ完結） |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで, 今回のBLOCKで何を学習して, BLOCK後に環境埋込み判定を強制（自動成長ループ完結）, 学習ループによる自動成長が我らの最大の特徴だ, いまどのような自動成長の学習ループがある？ |
 | skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 
 | 種別 | パス/参照 |
@@ -231,6 +273,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T09:50:13+09:00 三層学習ループに同様の構造的な阻害がないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T15:13:59+09:00 今回のBLOCKで何を学習して、クリアされても次回BLOCKされないために実際にどう自動成長した？自動成長できていないのならインフラバグか自動成長ループの仕組を修正するべきだ。 |
 | cmd | `cmd_2779` 強化 — BLOCK後に環境埋込み判定を強制（自動成長ループ完結） (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:03:37+09:00 学習ループによる自動成長が我らの最大の特徴だ。そして自動成長の速度の最大化がinbox1レベル |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:04:10+09:00 いまどのような自動成長の学習ループがある？ |
 
 ## alm_research — ALM研究
 
@@ -340,6 +384,7 @@ codd:
 | cmd | `cmd_2871` 強化 — verdict計算値化(bcから自動導出。手動記入廃止) (`scripts/gates/gate_report_autofix_main.py`, `skills/verdict-check/SKILL.md`, `tests/test_gate_report_format.bats`) |
 | cmd | `cmd_karo_obs_required_check` (`scripts/gunshi_log_append.sh`, `skills/review-bundle/SKILL.md`) |
 | cmd | `cmd_karo_skill_md_verdict_sync` (`skills/ninja-commit/SKILL.md`, `skills/report-write/SKILL.md`) |
+| cmd | `cmd_2883` (`skills/idle-persist/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/ninja-commit/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -457,9 +502,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
 | cmd | `cmd_2864` 強化 — 教訓注入キーワードスコア最低閾値追加(score>=2で無関係注入削減) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:35:00+09:00 bja0fxnxt toolu_019QPfn1mVGPze6AxmHBwpN1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
-| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| cmd | `cmd_2887` 強化 — deploy_task.sh scope清掃テスト追加(再発防止) (`tests/unit/test_deploy_task_lifecycle.bats`) |
+| causal | `cmd_2887` origin: [[LK-A02_v7]] -> [[scope_context_stale]] -> [[test_gap]] |
+| cmd | `cmd_2894` 強化 — テスト62小ファイルをスクリプト単位統合(第2波) (`docs/research/codd_refactor_registry.md`, `tests/unit/test_auto_failure_lesson.bats`, `tests/unit/test_causal_backlinks.bats`) |
+| causal | `cmd_2894` origin: [[cmd_2892]] -> [[test_file_granularity]] -> [[script_unit_consolidation]] |
+| causal | `cmd_2894` depends_on: cmd_2893 |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -574,6 +621,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:57:37+09:00 確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:29:45+09:00 CDPで確認して |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T18:51:10+09:00 効果が出ているか確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:57:06+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -675,7 +723,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？ |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -702,6 +750,7 @@ codd:
 | cmd | `cmd_karo_rebalancer_push` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T03:15:53+09:00 リバランサーのGoogleOauthはもう誰でも利用できる？ |
 | cmd | `cmd_karo_rebalancer_push_2` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:15:21+09:00 なるほど精度はどうやって計測し、改善していくんだ？ |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -796,7 +845,7 @@ codd:
 |------|---|
 | id | cmd_quality_logging |
 | label | cmd設計品質ログ |
-| aliases | cmd品質ログ, cmd_quality_log, cmd_design_quality, 品質記録, karo_rework, gunshi_verdict, ninja_blockers, supplementary_cmds, BLOCK率, CLEAR率, ac_count |
+| aliases | cmd品質ログ, cmd_quality_log, cmd_design_quality, 品質記録, karo_rework, gunshi_verdict, ninja_blockers, supplementary_cmds, BLOCK率, CLEAR率, ac_count, FP率計算は累計昇格BLOCKを候補に含める, FP率計算は累計昇格BLOCKもFP候補に含める |
 | skills | cmd-complete |
 
 | 種別 | パス/参照 |
@@ -806,6 +855,8 @@ codd:
 | file | `logs/archive/cmd_design_quality.yaml` |
 | file | `scripts/gates/gate_shogun_startup.sh` |
 | cmd | `cmd_2855` cmd_quality_log.sh高速化 |
+| lesson | `L637` FP率計算は累計昇格BLOCKを候補に含める |
+| lesson | `L638` FP率計算は累計昇格BLOCKもFP候補に含める |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -845,7 +896,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, verdict自動導出は免除文脈 waive reason をgate検出へ残す |
+| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, verdict自動導出は免除文脈 waive reason をgate検出へ残す, gate report format sh skill execution log sh非同期化でPASSパスを87%高 |
 | skills | report-write, verdict-check |
 
 | 種別 | パス/参照 |
@@ -858,8 +909,7 @@ codd:
 | lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
 | cmd | `cmd_2880` 強化 — 報告YAML origin自動継承(cmd origin→報告origin零コスト転写) (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
-| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
+| lesson | `L643` gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避) |
 
 ## external_project_registry — 外部プロジェクト登録
 

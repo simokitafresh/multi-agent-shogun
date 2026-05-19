@@ -88,4 +88,49 @@
 # ★task YAML scope mismatch 2回(cmd_2875+cmd_2880): 忍者task YAMLのcontext/scopeがpurpose/ACと不一致→忍者が別タスク実装→FAIL。deploy_task.shのscope注入ロジックに構造的問題の可能性。家老報告済み
 # ★lesson_candidate detail欠落見落とし(cmd_karo_kj_role_filter): LGTM→BLOCK。precheck WARNでlesson_candidate存在検出→フィールド完全性(detail必須)まで未確認。summary≠detail
 # 詳細エントリ: 20260518a(D0_origin_regex〜cmd_2851+kj-role-count全件+修行2件+CI修正) → logs/archive/gunshi_review_log_20260518a.yaml
+# ★Gate20偽陽性パターン(2026-05-19): cmd_test_*6件+誤呼出し2件がdashboard-update FAIL率を16%に虚偽上昇。計測ロジック(gate_shogun_startup.sh)に分母フィルタ追加で解消(cmd_2882)
+# ★auto not_useful=分母正常化(2026-05-19): 教訓注入→参照→feedback未記録を自動not_useful化。effectiveness_score分母不足(17%→54.9%)解消。記入漏れ(2割)<分母正常化効果
+# ★LG003 Level4昇格(2026-05-19 D0): ac_physical_verify.shに未検証前提検出WARN追加(未実装/未対応/のはず/と思われる/おそらく)。/clear耐久率30/33(91%)
+# ★テスト負債連鎖完結(2026-05-19): 偵察(2892)→第1波(2893 10件)→第2波(2894 51件)→gate(2895 pre-commit WARN)。196→141ファイル。テスト数1761維持。小ファイル0件+追加時WARN=免疫完成
+# ★修行CoDDラウンド+brownfield限定(2026-05-19): cmd_2891(§28追加)+cmd_2896(brownfield限定)。greenfield30分→10-15分。回転数3倍
 # 詳細エントリ: 20260519a(cmd_2874〜cmd_2880+CI修正4件+kj-role-count4件+D0_Guard11+self_study) → logs/archive/gunshi_review_log_20260519a.yaml
+# 詳細エントリ: 20260519b(cmd_2881〜cmd_2896+D0x2+self_study。draft16+report16=32件全CLEAR) → logs/archive/gunshi_review_log_20260519b.yaml
+- cmd_id: D0_LG023_028_032_gate
+  review_type: self_study
+  verdict: null
+  findings_summary: "LG023/028/032 Level3 gate化。Guard10拡張+Guard12追加。5テスト全PASS。/clear耐久率90→100%"
+  observations:
+    - "LG023/032は同根(GP設計時の新機構過剰作成)。Guard12でWrite+gates/hooks/を検出しINFO表示"
+    - "LG028は研究設計書の計算量記述にキーワード検出。Guard10に4行追加で内部ループ推定をリマインド"
+    - "Level2→Level3昇格。Level4(BLOCK)は判断重の原則のため困難。INFOリマインダーが実効的天井"
+  origin: "[[LG023]] -> [[LG028]] -> [[LG032]] -> [[Guard12_新機構リマインダー]]"
+  causal_chain: "未自動化教訓3件→/clear後に意志依存で消失→Guard拡張+新設で環境埋込み→/clear耐久率100%。既存Guard活用=LG032自身の実践"
+  cs_checklist:
+    CS1: "OK: LG023/028/032の全文+enforcement+enforcement_levelを現物確認"
+    CS2: "OK: 自システムのpre-write-edit-combined.sh Guard構成を確認して設計"
+    CS3: "OK: 5テスト(正3+負2)で実コード動作確認"
+    CS4: "OK: D0実装→commit→家老報告→lessons更新まで完了"
+    CS5: "OK: Level4が困難な理由(判断重)を明示。改善余地を残した"
+    CS6: "OK: 因果鎖=意志依存→消失→環境埋込み→耐久率100%"
+  timestamp: "2026-05-19T22:10:00"
+- cmd_id: semantic_audit_20260519c
+  review_type: self_study
+  verdict: null
+  findings_summary: "セマンティック監査3スクリプト×2カテゴリ。真P0=0件(1件FP=新旧ロジック同一)。P2=1件(AWK exit code低リスク)。drift 0件"
+  observations:
+    - "report_field_set.sh P0指摘は偽陽性。verdict自動導出の新旧コードが完全同一(移動のみ)。agentが変更前状態を比較せず孤立分析"
+    - "inbox_watcher.sh P2: AWK exit code未検査だが自己修正型(次回ポーリングで補正)。実害リスク極低"
+    - "gate_shogun_startup.sh: 両カテゴリCLEAN。条件追加のみで副作用なし"
+  finding_categories:
+    - premortem
+    - assumptions
+  origin: "[[semantic_audit_20260519c]] -> [[修行速度改善cmd]] -> [[副作用なし確認]]"
+  causal_chain: "修行速度改善3cmd→コード移動/条件追加/ファストパス追加→論理変更なし→副作用0件。P0偽陽性=孤立分析の限界(diff比較なし)"
+  cs_checklist:
+    CS1: "OK: git show diffで新旧ロジック比較。全3commit確認"
+    CS2: "OK: 自システム3スクリプトの変更を2エージェント並列で網羅監査"
+    CS3: "OK: P0指摘を現物(diffの新旧比較)で偽陽性と判定"
+    CS4: "OK: review_log+docs/research永続化"
+    CS5: "OK: agentの孤立分析限界(変更前比較なし)を発見"
+    CS6: "OK: 因果鎖=速度最適化→論理不変→副作用0件"
+  timestamp: "2026-05-19T22:35:00"

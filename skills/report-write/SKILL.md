@@ -122,6 +122,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_2896.yaml
+
+- 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
 - 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=hayate:lesson_candidate_fields_empty:detail
 
 - 2026-05-19: gate=gate_report_format result=FAIL executor=hayate reason=lesson_candidate: found=true but no title

@@ -15,7 +15,7 @@ task:
         - check: "after計測でbefore比改善"
   scope:
     - scripts/context_freshness_check.sh
-  status: completed
+  status: idle
   parent_cmd: ""
   related_lessons:
   - id: 'L512'
@@ -48,3 +48,4 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  report_path: queue/reports/tobisaru_report_cmd_training_speed_tobisaru_3.yaml

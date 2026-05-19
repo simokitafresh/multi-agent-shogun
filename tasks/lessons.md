@@ -6264,3 +6264,91 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解決する設計が正解。
+
+### L636: Gate20 skill FAIL率は測定用cmdを分母から除外する
+- **日付**: 2026-05-19
+- **出典**: cmd_2881
+- **記録者**: hayate
+- **tags**: [infra,testing,process,gate]
+- **target_files**: [queue/tasks/hayate.yaml,queue/inbox/hayate.yaml,queue/reports/hayate_report_cmd_2881.yaml]
+- **origin**: [[cmd_2881]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update.shへ流れると、実運用cmdではないのにGate20の直近50件FAIL率を押し上げる。Gate20またはdashboard_updateログ時に cmd_test_* / invalid arg を明示分類し、実運用品質の分母から除外するチェックを追加すべき。 origin: [[cmd_2881]] -> [[dashboard_update_exit1]] -> [[gate_shogun_startup_BLOCK]]
+
+### L637: FP率計算は累計昇格BLOCKを候補に含める
+- **日付**: 2026-05-19
+- **出典**: cmd_2888
+- **記録者**: kagemaru
+- **tags**: [infra,gate,yaml]
+- **target_files**: [scripts/gates/gate_fp_relaxation_proposal.py,scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_fp_relaxation_proposal.bats]
+- **origin**: [[cmd_2888]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mixing連続BLOCKを0%扱いする。gate品質検出ではWARN累計昇格BLOCKもFP候補に含めて現象を捕捉する必要がある。
+
+### L638: FP率計算は累計昇格BLOCKもFP候補に含める
+- **日付**: 2026-05-19
+- **出典**: cmd_2888
+- **記録者**: karo
+- **tags**: [infra,gate]
+- **target_files**: [scripts/gates/gate_fp_relaxation_proposal.py,scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_fp_relaxation_proposal.bats]
+- **origin**: [[cmd_2888]]
+- **when**: 未設定
+- **how**: 未設定
+- ac_phase_mixingのような頻発BLOCKは累計昇格で閾値が下がった結果でもあり、FP率計算時にはcmd_design_quality全記録を対象にすべき。origin: [[cmd_2888]] -> [[gate_FP_detection]] -> [[ac_phase_mixing_FP]]
+
+### L639: 長いbatsのrun bashブロックへテストを統合する時は挿入位置を構文単位で確認する
+- **日付**: 2026-05-19
+- **出典**: cmd_2893
+- **記録者**: saizo
+- **tags**: [infra,testing,bash]
+- **target_files**: [tests/unit/test_ninja_monitor_stall.bats,tests/unit/test_inbox_watcher_health.bats,tests/unit/test_cmd_save.bats,tests/unit/test_agent_state.bats,tests/unit/test_usage_status.bats]
+- **origin**: [[cmd_2893]]
+- **when**: 未設定
+- **how**: 未設定
+- 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テスト実行時に別テストの文字列として解釈される。統合時はpatch後に `nl -ba 対象 | sed -n` で前後の閉じクォート/閉じ波括弧を確認し、関連suiteを即実行してgather段階の失敗も検出する。
+
+### L640: bats長いrunブロックへの統合時は挿入位置を構文単位で確認する
+- **日付**: 2026-05-19
+- **出典**: cmd_2893
+- **記録者**: karo
+- **tags**: [infra,testing]
+- **target_files**: [tests/unit/test_ninja_monitor_stall.bats,tests/unit/test_inbox_watcher_health.bats,tests/unit/test_cmd_save.bats,tests/unit/test_agent_state.bats,tests/unit/test_usage_status.bats]
+- **origin**: [[cmd_2893]]
+- **when**: 未設定
+- **how**: 未設定
+- テスト統合で既存@testブロック内にコピペすると構文が壊れる。挿入位置は@test境界の前後に限定。origin: [[cmd_2893]] -> [[test_consolidation]] -> [[syntax_break]]
+
+### L641: Batsのloadでは@test定義を集約できない
+- **日付**: 2026-05-19
+- **出典**: cmd_2894
+- **記録者**: saizo
+- **tags**: [infra,testing]
+- **target_files**: [queue/reports/saizo_report_cmd_2894.yaml,tests/unit/test_cmd_complete_gate_small_consolidated.bats,tests/unit/test_cmd_save_small_consolidated.bats,tests/unit/test_deploy_task_small_consolidated.bats,tests/unit/test_gate_small_consolidated.bats]
+- **origin**: [[cmd_2894]]
+- **when**: 未設定
+- **how**: 未設定
+- Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/相対パスを保つ必要がある場合、load断片化ではなく統合ファイル側で元テストを個別実行するか、setupを明示的に移植してから削除する。origin: [[cmd_2894]] -> [[bats_load_semantics]] -> [[test_consolidation_pattern]]
+
+### L642: Batsのloadでは@test定義を集約できない。統合ファイル生成か明示移植が必要
+- **日付**: 2026-05-19
+- **出典**: cmd_2894
+- **記録者**: karo
+- **tags**: [infra,testing,bash]
+- **target_files**: [queue/reports/saizo_report_cmd_2894.yaml,tests/unit/test_cmd_complete_gate_small_consolidated.bats,tests/unit/test_cmd_save_small_consolidated.bats,tests/unit/test_deploy_task_small_consolidated.bats,tests/unit/test_gate_small_consolidated.bats]
+- **origin**: [[cmd_2894]]
+- **when**: 未設定
+- **how**: 未設定
+- load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_2894]] -> [[bats_load_limitation]] -> [[test_consolidation]]
+
+### L643: gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避)
+- **日付**: 2026-05-19
+- **出典**: cmd_training_speed_hanzo_3
+- **記録者**: hanzo
+- **tags**: [infra,gate,bash,yaml]
+- **target_files**: [scripts/gates/gate_report_format.sh]
+- **origin**: [[cmd_training_speed_hanzo_3]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpython3を9回起動→合計18回×~150ms=2700ms超。PASSログはbest-effort(>/dev/null 2>&1 || true)なので& (非同期)化が安全。修正はheredoc末尾に&を追加する2行変更のみ。before 3365ms→after 428ms(87%削減)。WSL2でpython3が不可避なら非同期化で待機を回避する原則

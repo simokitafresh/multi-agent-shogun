@@ -729,27 +729,40 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        # Find max ID and append new entry (bash native — no python3)
-        _lw_max_id=0
-        _lw_duplicate_id=""
-        _lw_duplicate_title=""
-        while IFS= read -r _lw_line; do
-            if [[ "$_lw_line" =~ ^##[[:space:]]([0-9]+)\. ]]; then
-                _lw_n=$(( 10#${BASH_REMATCH[1]} ))
-                (( _lw_n > _lw_max_id )) && _lw_max_id=$_lw_n
-            elif [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+): ]]; then
-                _lw_n=$(( 10#${BASH_REMATCH[1]} ))
-                (( _lw_n > _lw_max_id )) && _lw_max_id=$_lw_n
-                if [ "${FORCE:-0}" != "1" ] && [[ "$_lw_line" =~ ^###[[:space:]]L([0-9]+):[[:space:]](.+)$ ]]; then
-                    _lw_eid="L$(printf '%03d' $(( 10#${BASH_REMATCH[1]} )))"
-                    _lw_etitle="${BASH_REMATCH[2]}"
-                    if [ "$TITLE" = "$_lw_etitle" ]; then
-                        _lw_duplicate_id="$_lw_eid"
-                        _lw_duplicate_title="$_lw_etitle"
-                    fi
-                fi
-            fi
-        done < "$LESSONS_FILE"
+        # Find max ID and exact duplicate in one awk process. Bash line-by-line
+        # scans are costly on WSL2/NTFS for the large lessons.md file.
+        _lw_scan=$(
+            awk -v title="$TITLE" -v force="${FORCE:-0}" '
+                /^##[[:space:]][0-9]+\./ {
+                    id = $0
+                    sub(/^##[[:space:]]*/, "", id)
+                    sub(/\..*$/, "", id)
+                    n = id + 0
+                    if (n > max_id) max_id = n
+                    next
+                }
+                /^###[[:space:]]L[0-9]+:/ {
+                    id = $0
+                    sub(/^###[[:space:]]L/, "", id)
+                    sub(/:.*/, "", id)
+                    n = id + 0
+                    if (n > max_id) max_id = n
+
+                    if (force != "1") {
+                        lesson_title = $0
+                        sub(/^###[[:space:]]L[0-9]+:[[:space:]]*/, "", lesson_title)
+                        if (lesson_title == title && duplicate_id == "") {
+                            duplicate_id = sprintf("L%03d", n)
+                            duplicate_title = lesson_title
+                        }
+                    }
+                }
+                END {
+                    printf "%d\t%s\t%s\n", max_id, duplicate_id, duplicate_title
+                }
+            ' "$LESSONS_FILE"
+        )
+        IFS=$'\t' read -r _lw_max_id _lw_duplicate_id _lw_duplicate_title <<< "$_lw_scan"
         _lw_new_id=$(( _lw_max_id + 1 ))
         printf -v _lw_new_id_str 'L%03d' "$_lw_new_id"
 
