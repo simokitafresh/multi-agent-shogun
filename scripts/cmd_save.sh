@@ -29,6 +29,10 @@ CMD_SAVE_SHOGUN_LESSON_ACK_FILE="${CMD_SAVE_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
+CMD_SAVE_LORD_CONVERSATION_MAX_LINES="${CMD_SAVE_LORD_CONVERSATION_MAX_LINES:-1000}"
+CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="${CMD_SAVE_LORD_CONVERSATION_MAX_BYTES:-2097152}"
+CMD_SAVE_CHRONICLE_MAX_LINES="${CMD_SAVE_CHRONICLE_MAX_LINES:-1200}"
+CMD_SAVE_CHRONICLE_MAX_BYTES="${CMD_SAVE_CHRONICLE_MAX_BYTES:-2097152}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -76,6 +80,45 @@ trim_inline_yaml_scalar() {
     fi
 
     printf '%s' "$value"
+}
+
+path_exists_for_cmd_source() {
+    local project_wd="${1:-}"
+    local fpath="${2:-}"
+    [[ -n "$fpath" ]] || return 1
+
+    if [[ "$fpath" = /* ]]; then
+        [[ -e "$fpath" ]]
+        return $?
+    fi
+
+    [[ -n "$project_wd" && -e "$project_wd/$fpath" ]] || [[ -e "$PROJECT_DIR/$fpath" ]]
+}
+
+parent_exists_for_cmd_source() {
+    local project_wd="${1:-}"
+    local fpath="${2:-}"
+    [[ -n "$fpath" ]] || return 1
+
+    local parent_dir
+    parent_dir=$(dirname "$fpath")
+    if [[ "$fpath" = /* ]]; then
+        [[ -d "$parent_dir" ]]
+        return $?
+    fi
+
+    [[ -n "$project_wd" && -d "$project_wd/$parent_dir" ]] || [[ -d "$PROJECT_DIR/$parent_dir" ]]
+}
+
+display_parent_for_cmd_source() {
+    local project_wd="${1:-}"
+    local fpath="${2:-}"
+
+    if [[ "$fpath" = /* ]]; then
+        dirname "$fpath"
+    else
+        printf '%s/%s' "$project_wd" "$(dirname "$fpath")"
+    fi
 }
 
 update_bulletin_actioned_by_for_cmd() {
@@ -2547,7 +2590,7 @@ check_ac_file_paths() {
         in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
         in_ac { print }
     ' || true)
-    PATHS=$(echo "$AC_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    PATHS=$(echo "$AC_BLOCK" | grep -oE '/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
@@ -2581,22 +2624,22 @@ check_ac_file_paths() {
     local HAS_CREATABLE=false
     while IFS= read -r fpath; do
         [[ -z "$fpath" ]] && continue
-        if [[ ! -e "$PROJECT_WD/$fpath" ]] && [[ ! -e "$PROJECT_DIR/$fpath" ]]; then
-            local parent_dir
-            parent_dir=$(dirname "$fpath")
+        if ! path_exists_for_cmd_source "$PROJECT_WD" "$fpath"; then
+            local display_parent
+            display_parent=$(display_parent_for_cmd_source "$PROJECT_WD" "$fpath")
 
-            if [[ -d "$PROJECT_WD/$parent_dir" ]] || [[ -d "$PROJECT_DIR/$parent_dir" ]]; then
+            if parent_exists_for_cmd_source "$PROJECT_WD" "$fpath"; then
                 if [[ "$HAS_CREATABLE" == false ]]; then
                     echo "INFO: AC内の未作成ファイルは親ディレクトリが存在するため作成対象として扱います:" >&2
                     HAS_CREATABLE=true
                 fi
-                echo "  • $fpath (parent: $PROJECT_WD/$parent_dir)" >&2
+                echo "  • $fpath (parent: $display_parent)" >&2
             else
                 if [[ "$HAS_MISSING" == false ]]; then
                     echo "WARNING: AC内のファイルパスが存在せず、親ディレクトリも不在です（cmd_1464教訓）:" >&2
                     HAS_MISSING=true
                 fi
-                echo "  ✗ $fpath (missing parent: $PROJECT_WD/$parent_dir)" >&2
+                echo "  ✗ $fpath (missing parent: $display_parent)" >&2
             fi
         fi
     done <<< "$PATHS"
@@ -2836,13 +2879,18 @@ show_lord_conversation_matches() {
         return 0
     }
 
-    CMD_BLOCK_FOR_LORD="$CMD_BLOCK_NC" python3 - "$LORD_CONVERSATION_FILE" >&2 <<'PY'
+    CMD_BLOCK_FOR_LORD="$CMD_BLOCK_NC" \
+    CMD_SAVE_LORD_CONVERSATION_MAX_LINES="$CMD_SAVE_LORD_CONVERSATION_MAX_LINES" \
+    CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="$CMD_SAVE_LORD_CONVERSATION_MAX_BYTES" \
+    python3 - "$LORD_CONVERSATION_FILE" >&2 <<'PY'
 import json
 import os
 import re
 import sys
 
 conversation_path = sys.argv[1]
+max_lines = int(os.environ.get("CMD_SAVE_LORD_CONVERSATION_MAX_LINES", "1000") or "1000")
+max_bytes = int(os.environ.get("CMD_SAVE_LORD_CONVERSATION_MAX_BYTES", "2097152") or "2097152")
 
 def tokenize(text):
     if not text:
@@ -2903,8 +2951,20 @@ if not query_words:
 entries = []
 total_inbound = 0
 try:
-    with open(conversation_path, encoding="utf-8") as fh:
-        for line in fh:
+    with open(conversation_path, "rb") as fh:
+        if max_bytes > 0:
+            fh.seek(0, os.SEEK_END)
+            file_size = fh.tell()
+            fh.seek(max(0, file_size - max_bytes), os.SEEK_SET)
+            if file_size > max_bytes:
+                fh.readline()
+            raw = fh.read()
+        else:
+            raw = fh.read()
+        lines = raw.decode("utf-8", errors="ignore").splitlines()
+        if max_lines > 0:
+            lines = lines[-max_lines:]
+        for line in lines:
             line = line.strip()
             if not line:
                 continue
@@ -2950,12 +3010,17 @@ show_cmd_chronicle_matches() {
         return 0
     }
 
-    CMD_BLOCK_FOR_CHRONICLE="$CMD_BLOCK_NC" python3 - "$CMD_CHRONICLE_FILE" >&2 <<'PY'
+    CMD_BLOCK_FOR_CHRONICLE="$CMD_BLOCK_NC" \
+    CMD_SAVE_CHRONICLE_MAX_LINES="$CMD_SAVE_CHRONICLE_MAX_LINES" \
+    CMD_SAVE_CHRONICLE_MAX_BYTES="$CMD_SAVE_CHRONICLE_MAX_BYTES" \
+    python3 - "$CMD_CHRONICLE_FILE" >&2 <<'PY'
 import os
 import re
 import sys
 
 chronicle_path = sys.argv[1]
+max_lines = int(os.environ.get("CMD_SAVE_CHRONICLE_MAX_LINES", "1200") or "1200")
+max_bytes = int(os.environ.get("CMD_SAVE_CHRONICLE_MAX_BYTES", "2097152") or "2097152")
 
 def tokenize(text):
     if not text:
@@ -3017,8 +3082,20 @@ if not query_words:
 entries = []
 total_cmds = 0
 try:
-    with open(chronicle_path, encoding="utf-8") as fh:
-        for raw_line in fh:
+    with open(chronicle_path, "rb") as fh:
+        if max_bytes > 0:
+            fh.seek(0, os.SEEK_END)
+            file_size = fh.tell()
+            fh.seek(max(0, file_size - max_bytes), os.SEEK_SET)
+            if file_size > max_bytes:
+                fh.readline()
+            raw = fh.read()
+        else:
+            raw = fh.read()
+        lines = raw.decode("utf-8", errors="ignore").splitlines()
+        if max_lines > 0:
+            lines = lines[-max_lines:]
+        for raw_line in lines:
             line = raw_line.strip()
             if not line.startswith("| cmd_"):
                 continue
@@ -4195,7 +4272,7 @@ for line in lines:
         if m:
             current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
 if current: entries.append(current)
-pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
+pat = re.compile(r'/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
 for e in entries:
     trust = e.get('trust', '')
     if 'verified' in trust and 'unverified' not in trust:
@@ -4212,12 +4289,16 @@ for e in entries:
                 _ASSUMP_HAS_MISSING=false
                 while IFS= read -r fpath; do
                     [[ -z "$fpath" ]] && continue
-                    if [[ ! -e "$_ASSUMP_PROJECT_WD/$fpath" ]]; then
+                    if ! path_exists_for_cmd_source "$_ASSUMP_PROJECT_WD" "$fpath"; then
                         if [[ "$_ASSUMP_HAS_MISSING" == false ]]; then
                             record_block_reason "assumptions sourceのファイルパスが存在しません:"
                             _ASSUMP_HAS_MISSING=true
                         fi
-                        echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
+                        if [[ "$fpath" = /* ]]; then
+                            echo "  ✗ $fpath" >&2
+                        else
+                            echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
+                        fi
                     fi
                 done <<< "$_ASSUMP_VERIFIED_PATHS"
                 if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
