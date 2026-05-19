@@ -1704,6 +1704,61 @@ else
     echo "  INFO: gate_skill_script_refs.sh 未配備"
 fi
 
+# --- Gate 20.7: skill_auto_improve code_fix_required 未解消 (gunshi_nazenaze_20260519) ---
+# 目的: SKILL.md改良3回以上効果なし→code_fix_required→掲示板通知のみで止まるサイクル断絶を検出。
+# 根拠: なぜなぜ7回(2026-05-19) — 通知≠行動(Phase 4)。LG030再発構造。
+echo "■ スキル自動成長エスカレーション"
+_skill_ai_state="$SCRIPT_DIR/logs/skill_auto_improve_state.json"
+if [ -f "$_skill_ai_state" ]; then
+    _cfr_list=$(python3 - "$_skill_ai_state" <<'PY' 2>/dev/null || true
+import json, sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+patterns = state.get("patterns", {})
+cutoff = datetime.now(timezone.utc) - timedelta(days=14)
+cfr = []
+for k, v in patterns.items():
+    if v.get("classification") != "code_fix_required":
+        continue
+    last_str = v.get("last_fail", "")
+    try:
+        last_dt = datetime.fromisoformat(last_str.replace("Z", "+00:00"))
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        if last_dt < cutoff:
+            continue
+    except (ValueError, TypeError):
+        pass
+    cfr.append((k, v))
+if not cfr:
+    print("OK")
+else:
+    for pid, p in cfr:
+        skill = p.get("skill", "?")
+        reason = p.get("reason", "?")[:80]
+        streak = p.get("unchanged_streak", 0)
+        last = p.get("last_fail", "?")
+        print(f"  ALERT: {skill} — SKILL.md改良{streak}回効果なし。コード修正cmd未起票。reason={reason} last_fail={last}")
+PY
+)
+    if [ -n "$_cfr_list" ]; then
+        if echo "$_cfr_list" | grep -q '^OK$'; then
+            echo "  OK: code_fix_required未解消パターンなし"
+        else
+            printf '%s\n' "$_cfr_list"
+            if [ "$overall" != "ALERT" ]; then
+                overall="WARN"
+                alerts+=("スキル自動成長: code_fix_requiredエスカレーション未解消あり。cmd起票を検討せよ")
+            fi
+        fi
+    else
+        echo "  OK: state解析対象なし"
+    fi
+else
+    echo "  SKIP: logs/skill_auto_improve_state.json 不在"
+fi
+
 # --- Gate 21: L6学習速度 (cmd_2668) ---
 # 目的: gate_fire_logのFAIL→PASS回復速度と防御仕組みのL6化率を起動時に可視化する。
 echo "■ L6学習速度"
