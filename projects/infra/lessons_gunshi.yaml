@@ -29,11 +29,11 @@ lessons:
   source_cmd: cmd_1176
   origin: '[[cmd_1176]]'
   created_at: '2026-03-21'
-  automated: false
-  enforcement_level: 2
-  enforcement: review_logヘッダL28「全称判定→反証を探せ」+gunshi.md §1前提検証で「未実装」主張の現物再検証が義務化
-  when: 偵察報告やlesson_candidateで未実装/未対応と主張されている時
-  how: grep/git showでコード現物を再検証。全称判定には反証を探す
+  automated: true
+  enforcement_level: 4
+  enforcement: ac_physical_verify.sh LG003検出(「未実装」「未対応」「のはず」「と思われる」「おそらく」をcmdテキストから検出→WARN)。draft review Step 0.5で自動実行
+  when: draft review Step 0.5のac_physical_verify.sh実行時。未検証前提を含むcmdテキストで自動発火
+  how: ac_physical_verify.shがWARN表示。軍師は該当前提を現物確認(grep/git show)してからレビュー
 - id: LG004
   title: scope外コード混入 — 忍者commitにscope外変更が混入するパターン検出
   detail: 忍者のcommitにタスクscope外のコード変更が混入することがある。事前検死で変更ファイル一覧とscope定義を照合し、scope外変更を検出せよ。cmd_1187で検出。

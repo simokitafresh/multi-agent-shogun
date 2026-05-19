@@ -256,6 +256,27 @@ if cmd_id and cmd_id != '-':
     except Exception:
         pass
 
+# LG003 gate: 未検証前提の検出 — 「未実装」「未対応」「のはず」「と思われる」を検出しWARN
+lg003_patterns = [
+    (r'未実装', '未実装'),
+    (r'未対応', '未対応'),
+    (r'のはず', 'のはず'),
+    (r'と思われる', 'と思われる'),
+    (r'おそらく', 'おそらく'),
+]
+lg003_hits = []
+for pat, label in lg003_patterns:
+    for m in re.finditer(pat, cmd_text):
+        start = max(0, m.start() - 20)
+        end = min(len(cmd_text), m.end() + 20)
+        context = cmd_text[start:end].replace('\n', ' ').strip()
+        lg003_hits.append((label, context))
+if lg003_hits:
+    print(f'\n--- LG003: 未検証前提の検出 ---')
+    for label, ctx in lg003_hits[:5]:
+        print(f'  [WARN] 「{label}」: ...{ctx}...')
+    print(f'  → 現物確認証拠(grep/git show)なしに信頼するな。前提を裏取りせよ')
+
 if missing > 0:
     sys.exit(1)
 else:
