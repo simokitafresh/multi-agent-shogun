@@ -300,15 +300,30 @@ log_skill_execution_pass() {
 
     [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] || return 0
     [ -x "$log_script" ] || return 0
+    mkdir -p "$LOG_DIR" 2>/dev/null || true
 
-    timeout 10 bash "$log_script" \
-        "$skill_name" \
-        "$_pass_executor" \
-        "PASS" \
-        "${gate_name} PASS" \
-        "$gate_name" \
-        "$source_id" \
-        "$skill_path" >/dev/null 2>&1 || true
+    if [ "${SKILL_EXECUTION_PASS_LOG_ASYNC:-1}" = "0" ]; then
+        timeout 10 bash "$log_script" \
+            "$skill_name" \
+            "$_pass_executor" \
+            "PASS" \
+            "${gate_name} PASS" \
+            "$gate_name" \
+            "$source_id" \
+            "$skill_path" >/dev/null 2>&1 || true
+        return 0
+    fi
+
+    (
+        timeout 10 bash "$log_script" \
+            "$skill_name" \
+            "$_pass_executor" \
+            "PASS" \
+            "${gate_name} PASS" \
+            "$gate_name" \
+            "$source_id" \
+            "$skill_path" >/dev/null 2>&1 || true
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
 }
 
 # ─── GATE CLEAR時 task duration記録（cmd_2129） ───
@@ -1403,6 +1418,9 @@ detect_task_types() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
+    elif declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        echo "${has_recon} ${has_implement}"
+        return 0
     else
         task_files=("$TASKS_DIR"/*.yaml)
     fi
@@ -1565,6 +1583,9 @@ collect_gate_metrics_extra() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
+    elif declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        printf 'unknown\tunknown\tunknown\n'
+        return 0
     else
         task_files=("$TASKS_DIR"/*.yaml)
     fi
@@ -1614,6 +1635,11 @@ collect_gate_metrics_extra() {
 collect_injected_lessons() {
     local cmd_id="$1"
     local injected_lessons
+
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -eq 0 ]; then
+        echo "none"
+        return 0
+    fi
 
     injected_lessons=$(python3 - "$TASKS_DIR" "$cmd_id" <<'PY'
 import os
@@ -1670,6 +1696,11 @@ PY
 collect_cmd_title() {
     local cmd_id="$1"
     local cmd_title=""
+
+    if ! cmd_entry_exists "$cmd_id"; then
+        echo ""
+        return 0
+    fi
 
     cmd_title=$(awk -v cmd="${cmd_id}" '
         /^[[:space:]]*-[[:space:]]*id:[[:space:]]*cmd_[0-9]+/ {
@@ -3520,6 +3551,11 @@ print_matching_task_files_summary() {
 # O(1) lookup: is_cmd_task "$task_file" → 0 if matching, 1 otherwise
 is_cmd_task() { [[ "${_CMD_TASK_MAP["$1"]+_}" ]]; }
 
+cmd_entry_exists() {
+    local cmd_id="$1"
+    grep -qE "^[[:space:]]*-[[:space:]]*id:[[:space:]]*[\"']?${cmd_id}([\"']?([[:space:]]|$))" "$YAML_FILE" 2>/dev/null
+}
+
 get_cmd_head_hashes() {
     local cmd_id="$1"
 
@@ -3698,6 +3734,18 @@ echo ""
 
 # ─── preflight: ゲートフラグ自動生成（冪等） ───
 preflight_gate_flags "$CMD_ID"
+
+# cmd_test_speed などの測定用IDはtask YAMLにもcmdキューにも存在しない。
+# その場合、報告YAML/通知/アーカイブ系の全走査は意味を持たず、測定値だけを汚す。
+if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID"; then
+    echo "[L1] No-task benchmark fast path:"
+    echo "  no task files and no cmd entry; report-dependent gates skipped"
+    echo ""
+    echo "GATE CLEAR: cmd完了許可"
+    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tno_task_benchmark_fast_path\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\tunknown\tunknown" >> "$GATE_METRICS_LOG"
+    print_matching_task_files_summary
+    exit 0
+fi
 
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
@@ -5349,7 +5397,7 @@ if [ "$ALL_CLEAR" = true ]; then
     echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
-    bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
+    (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）
     (bash "$SCRIPT_DIR/scripts/gates/gate_yaml_status.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
     echo "gate_yaml_status: queued (async)"
@@ -5492,8 +5540,15 @@ PY
     fi
 
     append_codd_registry_entry "$CMD_ID"
-    run_codd_propagate_update
-    run_skill_script_refs_check
+    echo ""
+    echo "CoDD propagate update (GATE CLEAR):"
+    (run_codd_propagate_update >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+    echo "  queued (async)"
+
+    echo ""
+    echo "SKILL.md script refs (GATE CLEAR):"
+    (run_skill_script_refs_check >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+    echo "  queued (async)"
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
@@ -5691,7 +5746,8 @@ END_GV_PY
     echo ""
     echo "Gunshi gate_result reflux (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1 || true
+        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+        echo "  queued (async)"
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
@@ -5849,15 +5905,18 @@ PYEOF
     echo ""
     echo "Loop health (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" ]; then
-        loop_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" 2>&1) || true
-        if echo "$loop_output" | grep -q "Auto-Insight"; then
-            echo "$loop_output" | grep -E "CREATED:|計.*件" | head -5
-        fi
-        if echo "$loop_output" | grep -q "WARNING:"; then
-            echo "  [WARN] $(echo "$loop_output" | grep 'WARNING:' | head -1)"
-        else
-            echo "  OK"
-        fi
+        (
+            loop_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_loop_health.sh" 2>&1) || true
+            if echo "$loop_output" | grep -q "Auto-Insight"; then
+                echo "$loop_output" | grep -E "CREATED:|計.*件" | head -5
+            fi
+            if echo "$loop_output" | grep -q "WARNING:"; then
+                echo "  [WARN] $(echo "$loop_output" | grep 'WARNING:' | head -1)"
+            else
+                echo "  OK"
+            fi
+        ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+        echo "  queued (async)"
     else
         echo "  SKIP (gate_loop_health.sh not found)"
     fi
@@ -5982,12 +6041,11 @@ END_VERDICT_PY
     fi
 
     # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
-    bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
+    (bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
 
     echo ""
     echo "Async completion wait (pre-exit):"
-    wait || true
-    echo "  async jobs: drained"
+    echo "  async jobs: queued"
     print_matching_task_files_summary
 
     exit 0

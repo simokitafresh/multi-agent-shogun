@@ -642,17 +642,24 @@ printf '%s|%s|%s|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$7" >> "$SKILL_EX
 EOF
     chmod +x "$SCRIPT_DIR/scripts/skill_execution_log.sh"
     export SKILL_EXECUTION_LOG_FILE="$TEST_TMPDIR/skill_execution_log.txt"
+    export SKILL_EXECUTION_PASS_LOG_ASYNC=0
     export AGENT_ID="karo"
 
     run log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
+    for _ in {1..20}; do
+        [ -f "$SKILL_EXECUTION_LOG_FILE" ] && break
+        sleep 0.05
+    done
     grep -q "^cmd-complete|karo|PASS|cmd_complete_gate PASS|cmd_complete_gate|$TEST_CMD_ID|$SCRIPT_DIR/skills/cmd-complete/SKILL.md$" "$SKILL_EXECUTION_LOG_FILE"
 }
 
-@test "cmd_complete_gate waits before both GATE CLEAR exits" {
+@test "cmd_complete_gate keeps emergency wait but normal clear exits after queueing async jobs" {
     run bash -lc "grep -c '^    wait || true$' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
-    [ "$output" -eq 2 ]
+    [ "$output" -eq 1 ]
+    run bash -lc "grep -q 'async jobs: queued' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
 }
 
 @test "cmd_complete_gate keeps existing harmful threshold auto-deprecate path" {
