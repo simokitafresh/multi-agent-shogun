@@ -15,7 +15,7 @@ task:
         - check: "after計測でbefore比改善"
   scope:
     - scripts/context_freshness_check.sh
-  status: done
+  status: idle
   parent_cmd: ""
   related_lessons:
   - id: 'L512'

@@ -134,3 +134,18 @@
     CS5: "OK: agentの孤立分析限界(変更前比較なし)を発見"
     CS6: "OK: 因果鎖=速度最適化→論理不変→副作用0件"
   timestamp: "2026-05-19T22:35:00"
+- cmd_id: cmd_karo_ci_fix_skill_log
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。非同期テスト競合をポーリング(5秒/0.1秒)で解消。22テスト全PASS。commit 762f0533確認"
+  observations:
+    - "事実: cmd_training_speed_hanzo_3の&非同期化がテスト競合の根因。テスト側ポーリングで解消(同期戻しは87%速度改善を毀損)"
+    - "事実: lesson_candidate=非同期テストのポーリング同期。再利用可能な具体知見(register推奨)"
+  finding_categories:
+    - assumptions
+    - premortem
+  origin: "[[cmd_karo_ci_fix_skill_log]] -> [[cmd_training_speed_hanzo_3]] -> [[async_test_race_fix]]"
+  causal_chain: "速度最適化(&非同期化)→テスト即読み競合→CI RED→ポーリング追加で両立(速度維持+テストPASS)。正の複利=非同期パターンのテスト知見獲得"
+  timestamp: "2026-05-19T22:55:00"

@@ -6352,3 +6352,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpython3を9回起動→合計18回×~150ms=2700ms超。PASSログはbest-effort(>/dev/null 2>&1 || true)なので& (非同期)化が安全。修正はheredoc末尾に&を追加する2行変更のみ。before 3365ms→after 428ms(87%削減)。WSL2でpython3が不可避なら非同期化で待機を回避する原則
+
+### L644: 非同期&テストはポーリング同期後に検証せよ
+- **日付**: 2026-05-19
+- **出典**: cmd_karo_ci_fix_skill_log
+- **記録者**: karo
+- **tags**: [infra,testing,gate,bash]
+- **target_files**: [tests/test_gate_report_format.bats]
+- **origin**: [[cmd_karo_ci_fix_skill_log]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format.shのskill_execution_log非同期化でテストが即時読込→不在FAILになった。非同期処理のテストはポーリング待機(5秒/0.1秒間隔)で完了を確認してから検証。origin: [[cmd_karo_ci_fix_skill_log]] -> [[async_test_race]] -> [[polling_sync]]
