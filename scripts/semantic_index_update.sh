@@ -492,12 +492,15 @@ else:
     insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(_project_root / "queue" / "insights.yaml")))
     if insights_path.exists():
         try:
-            import yaml as _y
-            _ins = _y.safe_load(insights_path.read_text(encoding="utf-8")) or {}
-            _pending_labels = [e.get("insight","") for e in _ins.get("insights",[]) if e.get("status")=="pending"]
-            if any(payload_label in lbl for lbl in _pending_labels):
-                print(f"NONE: dedup — {source_type}:{payload_label} already pending in insights")
-                sys.exit(0)
+            _raw_insights = insights_path.read_text(encoding="utf-8")
+            # テキスト検索で早期チェック: payload_labelが含まれない場合はyaml.safe_load不要(65ms節約)
+            if payload_label and payload_label in _raw_insights:
+                import yaml as _y
+                _ins = _y.safe_load(_raw_insights) or {}
+                _pending_labels = [e.get("insight","") for e in _ins.get("insights",[]) if e.get("status")=="pending"]
+                if any(payload_label in lbl for lbl in _pending_labels):
+                    print(f"NONE: dedup — {source_type}:{payload_label} already pending in insights")
+                    sys.exit(0)
         except Exception:
             pass
     message = (
@@ -521,8 +524,10 @@ PY
     done <<< "$changed_flag"
     if [ "$index_changed" = true ]; then
         if [ -f "$map_generate" ]; then
-            bash "$map_generate" >/dev/null
-            echo "semantic-map regenerated"
+            # バックグラウンド実行: semantic-mapはeventual consistencyで問題なし。
+            # 同期実行(586ms)→非同期化により呼び出し元の待ち時間を削減。
+            bash "$map_generate" >/dev/null &
+            echo "semantic-map regenerated (background)"
         else
             echo "WARN: semantic map generator not found: $map_generate" >&2
         fi
