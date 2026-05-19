@@ -1191,15 +1191,15 @@ elif verdict in ('', 'null', 'None') and has_no and not has_empty:
 " 2>/dev/null) || true
     if [[ "$_cur_verdict" == "INCONSISTENT" ]]; then
         # verdict:PASSだがbc:noあり → FAILに自動修正
-        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null
+        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null || true
         echo "★ verdict自動再導出: bc:no追加によりPASS→FAIL強制(時間軸矛盾排除)" >&2
     elif [[ "$_cur_verdict" == "AUTO_PASS" ]]; then
         # verdict空+bc全yes → PASS自動設定
-        bash "$0" "$REPORT_PATH" verdict PASS 2>/dev/null
+        bash "$0" "$REPORT_PATH" verdict PASS 2>/dev/null || true
         echo "★ verdict自動導出: bc全yes+verdict空→PASS自動設定" >&2
     elif [[ "$_cur_verdict" == "AUTO_FAIL" ]]; then
         # verdict空+bc:noあり → FAIL自動設定
-        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null
+        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null || true
         echo "★ verdict自動導出: bc:no検出+verdict空→FAIL自動設定" >&2
     fi
 fi

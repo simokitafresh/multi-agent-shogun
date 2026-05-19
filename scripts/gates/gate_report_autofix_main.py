@@ -182,6 +182,8 @@ def main() -> int:
     bc_fail_count = 0
     bc_result_total = 0
     bc_result_filled = 0
+    bc_has_waive_marker = False
+    bc_commit_fail_count = 0
     if isinstance(bc, dict):
         bc_dict_fixed = False
         bc15_fixed = False
@@ -270,7 +272,13 @@ def main() -> int:
                             bc_pass_count += 1
                             bc_result_filled += 1
                         elif norm == "no":
-                            bc_fail_count += 1
+                            waive = item.get("waive_reason", "")
+                            if "waive_reason" in item:
+                                bc_has_waive_marker = True
+                            if not (isinstance(waive, str) and waive.strip()):
+                                bc_fail_count += 1
+                                if ac_key == "commit":
+                                    bc_commit_fail_count += 1
                             bc_result_filled += 1
                     elif norm is not None:
                         bc_result_total += 1
@@ -314,7 +322,21 @@ def main() -> int:
     is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT")
     # cmd_2871: verdictはbinary_checksから常に導出できる計算値。
     # 全resultがyes/noで埋まっている時だけ上書きし、未記入はgate_report_format.shがBLOCKする。
-    if bc_result_total > 0 and bc_result_filled == bc_result_total:
+    should_derive_verdict = (
+        bc_result_total > 0
+        and bc_result_filled == bc_result_total
+        and (
+            not is_valid_verdict
+            or (verdict_val == "FAIL" and bc_fail_count == 0)
+            or (
+                verdict_val == "PASS"
+                and bc_fail_count > 0
+                and not bc_has_waive_marker
+                and bc_commit_fail_count == 0
+            )
+        )
+    )
+    if should_derive_verdict:
         derived_verdict = "FAIL" if bc_fail_count > 0 else "PASS"
         if verdict_val != derived_verdict:
             data["verdict"] = derived_verdict

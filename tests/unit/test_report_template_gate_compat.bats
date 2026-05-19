@@ -281,6 +281,7 @@ TASK
 
 @test "verdict CONDITIONAL_PASS is rejected by gate" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    sed -i '0,/result: "yes"/s//result: ""/' "$TEST_TMPDIR/report.yaml"
     sed -i 's/verdict: PASS/verdict: CONDITIONAL_PASS/' "$TEST_TMPDIR/report.yaml"
     _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
@@ -320,6 +321,7 @@ TASK
 
 @test "verdict null is rejected by gate" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    sed -i '0,/result: "yes"/s//result: ""/' "$TEST_TMPDIR/report.yaml"
     sed -i 's/verdict: PASS/verdict: null/' "$TEST_TMPDIR/report.yaml"
     _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
@@ -329,6 +331,7 @@ TASK
 
 @test "verdict empty string is rejected by gate" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "empty"
+    sed -i '0,/result: "yes"/s//result: ""/' "$TEST_TMPDIR/report.yaml"
     sed -i 's/verdict: PASS/verdict: ""/' "$TEST_TMPDIR/report.yaml"
     _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
@@ -557,6 +560,7 @@ EOF
 
 @test "Fix22-28撤去: verdict MISSING → autofixせず残存 → gate FAIL" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    sed -i '0,/result: "yes"/s//result: ""/' "$TEST_TMPDIR/report.yaml"
     sed -i '/^verdict:/d' "$TEST_TMPDIR/report.yaml"
     run bash "$GATE_AUTOFIX_SH" "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 0 ]
