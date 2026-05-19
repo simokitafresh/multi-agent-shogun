@@ -204,8 +204,8 @@
 # insights: 7件→2件(5件resolved+1件cmd化CLEAR)
 # ★強くてニューゲーム: stats最終+ヘッダ知見4件+D0 1件commit+docs/research 3件+掲示板4投稿+利他3本完結+全gate_result同期+全inbox既読
 #
-# ─── 本セッション成果 (2026-05-19T15:30更新) ───
-# レビュー計6件: draft APPROVE 1件(cmd_2873) + report LGTM 5件(cmd_2872/cmd_karo_ci_fix_score_column/cmd_2873/cmd_karo_ci_fix_skill_refs_test/cmd_karo_obs_required_check)
+# ─── 本セッション成果・最終 (2026-05-19T18:10更新) ───
+# レビュー計21件: draft APPROVE 6件(cmd_2873-2880) + report LGTM 12件(cmd_2872-2880+CI修正4件+kj-role-count3件+obs_check) + report FAIL正当3件(cmd_2875 task不整合/cmd_2880 holiday誤実装/cmd_karo_kj_role_filter detail欠落→修正後CLEAR)
 # adversarial review 1件: cmd_2873(+353行 daemon_supervisor PASS)
 # infra改善: cmd_2872(flock排他制御)+cmd_2873(daemon_supervisor統一管理)
 # CI修正: cmd_karo_ci_fix_score_column(TSV列位置→ヘッダー名参照)+cmd_karo_ci_fix_skill_refs_test(テスト依存関数追加)
@@ -217,4 +217,13 @@
 # 掲示板2投稿(observations分析+セマンティック監査)
 # review_logヘッダ知見3件追記(observations欠落真因/gate_result重複/flock subshell検証)
 # accuracy: 6件LGTM/APPROVE→CLEAR(cmd_karo_obs_required_check確認)。APPROVE→FAIL 0件。WA 0件
-# ★強くてニューゲーム: stats更新+ヘッダ知見3件+D0 3件+docs/research 2件+掲示板2投稿+利他1本完走+insights 0件+全gate_result同期+全inbox既読
+# セマンティック辞書強化: cmd_2874(Phase2 noise除去)+cmd_2875(q11 causal_backlinks)+cmd_2876(TOP3推薦)。全CLEAR
+# 因果NW強化3cmd: cmd_2878(origin WARN)+cmd_2879(task_new guard)+cmd_2880(origin自動継承)。全CLEAR
+# kj-role-count 4cmd: cmd_2877(定休日+パート色)+tailwind content+曜日表示+祝日対応+ロールフィルタ+ロール切替。全CLEAR
+# LGTM→BLOCK 1件: cmd_karo_kj_role_filter(lesson_candidate detail欠落見落とし)→忍者修正後CLEAR。ヘッダ知見追記
+# task YAML scope mismatch 2件(cmd_2875+cmd_2880): 配備不備→再配備で解消。構造的問題として家老報告済み
+# D0直接実装3件: Guard 11(observations WARN)+gate_sync sort -u+review_log 88行dedup
+# accuracy: 21件中LGTM→BLOCK 1件(detail欠落)。他全件CLEAR。WA 0件
+# review_logアーカイブ: 1131行→92行(20260519a.yamlに1044行退避)。ヘッダ知見5件追記
+# docs/research永続化2件+insights 0件+掲示板2投稿
+# ★強くてニューゲーム: stats最終+ヘッダ知見5件+D0 3件+docs/research 2件+掲示板2投稿+利他1本完走+review_logアーカイブ+insights 0件+全gate_result同期(1件GATE待ち)+全inbox既読
