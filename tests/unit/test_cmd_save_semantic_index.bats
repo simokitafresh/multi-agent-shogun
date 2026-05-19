@@ -10,7 +10,8 @@ setup_file() {
     eval "$(sed -n '/^show_semantic_index_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_q11_semantic_query()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^show_q11_semantic_search_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f show_semantic_index_matches extract_q11_semantic_query show_q11_semantic_search_matches
+    eval "$(sed -n '/^show_q11_causal_backlinks()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f show_semantic_index_matches extract_q11_semantic_query show_q11_semantic_search_matches show_q11_causal_backlinks
 }
 
 setup() {
@@ -106,6 +107,41 @@ EOF
     [[ "$output" == *"INFO: q11 semantic_search 関連概念/既存cmd候補:"* ]]
     [[ "$output" == *"MATCH: causal_traversal_pipeline"* ]]
     [[ "$output" == *"cmd_2866"* ]]
+}
+
+@test "q11 semantic_search output is expanded through causal_backlinks" {
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/docs"
+    cp "$PROJECT_ROOT/scripts/causal_backlinks.sh" "$TEST_TMPDIR/scripts/causal_backlinks.sh"
+    chmod +x "$TEST_TMPDIR/scripts/causal_backlinks.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'MATCH: causal_traversal_pipeline\n'
+printf 'cmd | `cmd_2875` related prior work\n'
+printf 'lesson | `L512` relevant lesson\n'
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    cat > "$TEST_TMPDIR/docs/trace.md" <<'EOF'
+origin: [[cmd_2875]]
+lesson: [[L512]]
+EOF
+    export CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/scripts/semantic_search.sh"
+    export CMD_SAVE_CAUSAL_BACKLINKS_SCRIPT="$TEST_TMPDIR/scripts/causal_backlinks.sh"
+    export SEMANTIC_CAUSAL_ROOT="$TEST_TMPDIR"
+
+    block='    title: "強化 — q11 causal backlinks統合"
+    purpose: "semantic_search.shの結果からcausal_backlinks.shを呼び出す"
+    command: |
+      scripts/cmd_save.sh のq11に因果辺表示を追加する
+    quality_gate:
+      q11_not_already_done: "既存semantic_searchだけでは因果辺が起票前に見えない"'
+
+    run bash -c 'show_q11_semantic_search_matches "$1" 2>&1' _ "$block"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: q11 causal_backlinks 因果辺候補:"* ]]
+    [[ "$output" == *"- link: [[cmd_2875]]"* ]]
+    [[ "$output" == *"- link: [[L512]]"* ]]
+    [[ "$output" == *"docs/trace.md"* ]]
 }
 
 @test "q11 semantic_search failure falls back without failing" {

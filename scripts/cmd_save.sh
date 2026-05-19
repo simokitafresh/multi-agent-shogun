@@ -404,6 +404,8 @@ show_q11_semantic_search_matches() {
         [[ -n "${output//[[:space:]]/}" ]] || return 0
         echo "INFO: q11 semantic_search 関連概念/既存cmd候補:" >&2
         printf '%s\n' "$output" | sed 's/^/  /' >&2
+        show_q11_causal_backlinks "${query}
+${output}"
         return 0
     fi
 
@@ -413,6 +415,54 @@ show_q11_semantic_search_matches() {
         echo "INFO: q11 semantic_search failed(rc=$rc)。既存grepチェックへフォールバックします" >&2
     fi
     return 0
+}
+
+show_q11_causal_backlinks() {
+    local search_text="${1:-}"
+    local causal_script="${CMD_SAVE_CAUSAL_BACKLINKS_SCRIPT:-$PROJECT_DIR/scripts/causal_backlinks.sh}"
+    [[ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ]] || return 0
+    [[ -n "${search_text//[[:space:]]/}" && -f "$causal_script" ]] || return 0
+
+    local links
+    links=$(
+        printf '%s\n' "$search_text" \
+            | grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' 2>/dev/null \
+            | sed 's/^\[\[//; s/\]\]$//' \
+            | awk 'NF && !seen[$0]++' \
+            | head -12 \
+        || true
+    )
+    [[ -n "${links//[[:space:]]/}" ]] || return 0
+
+    echo "INFO: q11 causal_backlinks 因果辺候補:" >&2
+    while IFS= read -r _q11_link_id; do
+        [[ -n "$_q11_link_id" ]] || continue
+        echo "  - link: [[${_q11_link_id}]]" >&2
+
+        local backlink_output
+        if command -v timeout >/dev/null 2>&1; then
+            backlink_output="$(
+                cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                    && { timeout 2 bash "$causal_script" "$_q11_link_id" 2>/dev/null || true; } \
+                    | head -8
+            )"
+        else
+            backlink_output="$(
+                cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                    && { bash "$causal_script" "$_q11_link_id" 2>/dev/null || true; } \
+                    | head -8
+            )"
+        fi
+
+        if [[ -n "${backlink_output//[[:space:]]/}" ]]; then
+            while IFS= read -r _q11_resource; do
+                [[ -n "$_q11_resource" ]] || continue
+                echo "    - resource: ${_q11_resource}" >&2
+            done <<< "$backlink_output"
+        else
+            echo "    - resource: none" >&2
+        fi
+    done <<< "$links"
 }
 
 collect_assumption_source_files() {
