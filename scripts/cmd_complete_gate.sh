@@ -5447,6 +5447,12 @@ PY
     else
         echo "  [INFO] semantic_index_update.sh not found (skip)"
     fi
+    if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
+        (bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true) &
+        echo "  semantic-map regenerate: queued (async)"
+    else
+        echo "  [INFO] semantic_map_generate.sh not found (skip)"
+    fi
 
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"

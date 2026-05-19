@@ -158,6 +158,58 @@ def parse_concepts(text):
         )
     return concepts
 
+def concept_terms(concepts):
+    terms = set()
+    for concept in concepts:
+        for value in [concept["id"], concept["label"], *concept["aliases"]]:
+            value_n = norm(value)
+            if value_n:
+                terms.add(value_n)
+    return terms
+
+def extract_wiki_targets(fields):
+    targets = []
+    seen = set()
+    for field in fields:
+        for raw in re.findall(r"\[\[([^\]]+)\]\]", str(field)):
+            target = raw.split("|", 1)[0].split("#", 1)[0].strip()
+            if not target:
+                continue
+            target_n = norm(target)
+            if target_n in seen:
+                continue
+            seen.add(target_n)
+            targets.append(target)
+    return targets
+
+def is_semantic_wiki_target(target):
+    target_n = norm(target)
+    if re.fullmatch(r"cmd_[a-z0-9_]+", target_n):
+        return False
+    if re.fullmatch(r"l\d+[a-z0-9_-]*", target_n):
+        return False
+    if re.fullmatch(r"ls[-_]?\d+[a-z0-9_-]*", target_n):
+        return False
+    return bool(strip_noise(target))
+
+def queue_insight(message, priority="low"):
+    if insight_write.exists():
+        result = subprocess.run(
+            ["bash", str(insight_write), message, priority, "semantic_index_update"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.stdout.strip():
+            print(result.stdout.strip())
+        if result.returncode != 0:
+            if result.stderr.strip():
+                print(result.stderr.strip(), file=sys.stderr)
+            sys.exit(result.returncode)
+    else:
+        print(f"WARN: insight_write not found: {insight_write}", file=sys.stderr)
+        print(message)
+
 def score_concept(concept, fields):
     normalized_fields = [norm(v) for v in fields if norm(v)]
     haystack = "\n".join(normalized_fields)
@@ -279,6 +331,17 @@ if not concepts:
     sys.exit(1)
 
 fields = flatten_text(payload)
+known_terms = concept_terms(concepts)
+for target in extract_wiki_targets(fields):
+    if not is_semantic_wiki_target(target):
+        continue
+    if norm(target) in known_terms:
+        continue
+    queue_insight(
+        f"semantic_index_update未登録[[リンク]]ターゲット: [[{target}]] は既存aliasesに一致なし。概念定義とaliases追加を検討せよ",
+        "low",
+    )
+
 rank = {"HIGH": 2, "LOW": 1, "NONE": 0}
 scored = []
 for concept in concepts:
@@ -341,22 +404,7 @@ else:
     )
     priority = "low"
 
-if insight_write.exists():
-    result = subprocess.run(
-        ["bash", str(insight_write), message, priority, "semantic_index_update"],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if result.stdout.strip():
-        print(result.stdout.strip())
-    if result.returncode != 0:
-        if result.stderr.strip():
-            print(result.stderr.strip(), file=sys.stderr)
-        sys.exit(result.returncode)
-else:
-    print(f"WARN: insight_write not found: {insight_write}", file=sys.stderr)
-    print(message)
+queue_insight(message, priority)
 
 print(f"{confidence}: insight queued for {source_type}:{payload_label}")
 PY

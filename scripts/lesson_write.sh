@@ -955,7 +955,7 @@ CTXEOF
         fi
         # セマンティクスインデックス: aliases照合で既存概念へlessonリソースを追記（失敗は非ブロック）
         if [ -n "$NEW_LESSON_ID" ] && [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
-            if _semantic_payload=$(LESSON_ID_ENV="$NEW_LESSON_ID" TITLE_ENV="$TITLE" DETAIL_ENV="$DETAIL" SOURCE_CMD_ENV="$SOURCE_CMD" python3 - <<'PY' 2>/dev/null
+            if _semantic_payload=$(LESSON_ID_ENV="$NEW_LESSON_ID" TITLE_ENV="$TITLE" DETAIL_ENV="$DETAIL" SOURCE_CMD_ENV="$SOURCE_CMD" ORIGIN_ENV="$(resolve_origin_value)" python3 - <<'PY' 2>/dev/null
 import json
 import os
 
@@ -964,11 +964,15 @@ print(json.dumps({
     "title": os.environ.get("TITLE_ENV", ""),
     "detail": os.environ.get("DETAIL_ENV", ""),
     "source_cmd": os.environ.get("SOURCE_CMD_ENV", ""),
+    "origin": os.environ.get("ORIGIN_ENV", ""),
 }, ensure_ascii=False))
 PY
             ); then
                 bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" lesson "$_semantic_payload" >/dev/null 2>&1 || true
             fi
+        fi
+        if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
+            bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true
         fi
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
         # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出

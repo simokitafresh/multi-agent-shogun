@@ -97,10 +97,21 @@ teardown() {
     grep -q 'semantic_index_update新概念候補' "$TEST_TMPDIR/queue/insights.log"
 }
 
+@test "wiki link target: unmatched causal link queues semantic concept insight" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L998","title":"学習ループで二値計測を強制する","origin":"[[cmd_2867]] -> [[B辞書自動更新+C概念自動発見]]"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: growth_loop updated"* ]]
+
+    grep -q 'semantic_index_update未登録\[\[リンク\]\]ターゲット: \[\[B辞書自動更新+C概念自動発見\]\]' "$TEST_TMPDIR/queue/insights.log"
+    ! grep -q '\[\[cmd_2867\]\]' "$TEST_TMPDIR/queue/insights.log"
+}
+
 @test "wiring: cmd_complete_gate, lesson_write, and log_terminal_input call semantic_index_update" {
     grep -q 'semantic_index_update.sh.*cmd_complete' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q 'semantic_index_update.sh.*lesson' "$PROJECT_ROOT/scripts/lesson_write.sh"
     grep -q 'semantic_index_update.sh.*discussion' "$PROJECT_ROOT/scripts/log_terminal_input.sh"
+    grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/lesson_write.sh"
 }
 
 @test "semantic map generator emits CoDD-tracked map from index" {
