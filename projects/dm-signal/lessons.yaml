@@ -1175,7 +1175,7 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   when: 同種の作業・判断・検証を行う時
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
   last_referenced: '2026-05-19'
 - id: L629
@@ -1259,6 +1259,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 1
+  harmful_count: 0
+  last_referenced: '2026-05-19'
 - id: L623
   title: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り
   summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuni'
@@ -1272,7 +1275,7 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   when: 同種の作業・判断・検証を行う時
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-19'
 - id: L622
@@ -1526,7 +1529,7 @@ lessons:
   summary: cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-19'
   how: パターンID頭部のNXXXとCSVキャッシュで照合確認必須
@@ -2715,7 +2718,7 @@ lessons:
   summary: recalculate_fof.pyのLOOP-1(L590-L868)はPhase4A最適化済みだがSignal DB書込みは毎日実行。月中のmomentum
   tags:
   - db
-  helpful_count: 2
+  helpful_count: 3
   harmful_count: 0
   last_referenced: '2026-05-19'
   how: 月中のmomentum_data保存範囲を最小化し、fof_signalsなど既存最適化後のdead code候補を併せて確認する
@@ -3712,7 +3715,7 @@ lessons:
   tags:
   - pipeline
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-19'
   how: 全PF健全性スイープを月次または四半期の定期実行候補にし、保存時混入を早期検出する
   target_files:
@@ -3774,9 +3777,9 @@ lessons:
   summary: IF backend/app/constants.pyの定数を変更する THEN frontend/lib/constants.tsに同名・同目的の定数がないか
   tags:
   - frontend
-  helpful_count: 2
+  helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-16'
+  last_referenced: '2026-05-19'
   how: frontend/lib/constants.tsに同名・同目的の定数がないか確認し、あれば同時に変更せよ
   target_files:
   - frontend/lib/constants.ts
@@ -4084,7 +4087,7 @@ lessons:
   summary: cmd_1034 angle1でprofiler内0.178ms/pat vs native 0.111ms/pat。内訳比率は方向性として有用だが絶対値は膨張
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 2
   harmful_count: 0
   last_referenced: '2026-05-19'
   how: '2026-03-17'
@@ -4171,7 +4174,7 @@ lessons:
   - git
   helpful_count: 1
   harmful_count: 0
-  last_referenced: '2026-05-18'
+  last_referenced: '2026-05-19'
   how: AC実行前にgit status+git log -1 --statで実差分を確認し、実際に残っている差分だけを扱うべき
   target_files:
   - outputs/analysis/cmd_1031_before_baseline.json
@@ -4608,7 +4611,7 @@ lessons:
   - db
   - api
   helpful_count: 2
-  harmful_count: 1
+  harmful_count: 0
   last_referenced: '2026-05-19'
   how: 非同期get()ではなくapiCache.has(key)でメモリTTLとIndexedDB manifestを確認し、ETag送信前のガードに使う
   target_files:

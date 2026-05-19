@@ -456,6 +456,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
 | cmd | `cmd_2864` 強化 — 教訓注入キーワードスコア最低閾値追加(score>=2で無関係注入削減) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:35:00+09:00 bja0fxnxt toolu_019QPfn1mVGPze6AxmHBwpN1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
+| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
+| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -523,7 +526,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -569,6 +572,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:24:40+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:57:37+09:00 確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:29:45+09:00 CDPで確認して |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T18:51:10+09:00 効果が出ているか確認しよう |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -852,6 +856,9 @@ codd:
 | cmd | `cmd_2871` verdict計算値化(bcから自動導出) |
 | lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
+| cmd | `cmd_2880` 強化 — 報告YAML origin自動継承(cmd origin→報告origin零コスト転写) (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 
 ## external_project_registry — 外部プロジェクト登録
 
