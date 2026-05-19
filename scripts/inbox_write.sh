@@ -6,6 +6,7 @@
 # Supported types:
 #   wake_up              — デフォルト。汎用起動通知
 #   task_assigned        — タスク配備通知（家老→忍者）
+#   task_new             — タスク作業指示（家老→忍者/家老内部）
 #   task_supplement      — タスク補足通知（家老/軍師→忍者）
 #   task_cancel          — タスク取消通知（家老→忍者）
 #   cmd_new              — 新cmd通知（将軍→家老）
@@ -983,6 +984,16 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
         echo "ERROR: ninja_monitor can send only to karo or shogun." >&2
         exit 1
     fi
+fi
+
+# task_new gate: 将軍からの直接作業指示はcmd品質ゲートを迂回するため禁止
+if [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; then
+    echo "" >&2
+    echo "==============================" >&2
+    echo "[task_new_gate] BLOCKED: shogun cannot send type=task_new directly" >&2
+    echo "[task_new_gate] Use cmd_save.sh→cmd_delegate.sh→karo deployment flow." >&2
+    echo "==============================" >&2
+    exit 1
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"

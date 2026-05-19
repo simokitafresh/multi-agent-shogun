@@ -257,6 +257,25 @@ setup() {
     grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
+@test "task_new_gate: shogun direct task_new is blocked before inbox write" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "karo" "直接作業指示" "task_new" "shogun"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"task_new_gate"* ]]
+    [[ "$output" == *"BLOCKED"* ]]
+    [[ "$output" == *"cmd_save.sh"* ]]
+    [ ! -f "$TEST_INBOX_DIR/karo.yaml" ]
+}
+
+@test "task_new_gate: karo task_new remains allowed" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "正規作業指示" "task_new" "karo"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+    grep -q "^  type: 'task_new'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'karo'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
 # =============================================================================
 # T-008: Overflow Protection — 50件超で古い既読を削除
 # =============================================================================
