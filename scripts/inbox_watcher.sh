@@ -100,6 +100,66 @@ get_unread_info() {
         printf '0\tfalse\t-\t-\tfalse\n'
         return
     fi
+    # Common path: normal unread messages only. Avoid Python startup on each
+    # watcher cycle; fall back to the parser below when special CLI commands
+    # may need multiline/base64 handling.
+    if ! grep -qE 'type:[[:space:]]*['"'"'"]?(clear_command|model_switch)['"'"'"]?' "$INBOX" 2>/dev/null; then
+        awk '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s) {
+    s = trim(s)
+    if ((substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"") ||
+        (substr(s, 1, 1) == "'\''" && substr(s, length(s), 1) == "'\''")) {
+        s = substr(s, 2, length(s) - 2)
+    }
+    return s
+}
+function assign(line, target,    key,value,pos) {
+    pos = index(line, ":")
+    if (pos == 0) return
+    key = trim(substr(line, 1, pos - 1))
+    value = unquote(substr(line, pos + 1))
+    target[key] = value
+}
+function flush_message(    mid) {
+    if (msg["read"] != "false") return
+    mid = msg["id"]
+    if (!mid) return
+    count++
+    ids[count] = mid
+    if (msg["type"] == "task_assigned") has_task = "true"
+}
+BEGIN { count = 0; has_task = "false"; in_msg = 0 }
+/^- / {
+    if (in_msg) flush_message()
+    delete msg
+    in_msg = 1
+    assign(substr($0, 3), msg)
+    next
+}
+in_msg && /^  [A-Za-z0-9_.-]+:/ {
+    assign(substr($0, 3), msg)
+}
+END {
+    if (in_msg) flush_message()
+    if (count == 0) {
+        print "0\tfalse\t-\t-\tfalse"
+        exit
+    }
+    for (i = 1; i <= count; i++) {
+        for (j = i + 1; j <= count; j++) {
+            if (ids[j] < ids[i]) {
+                tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp
+            }
+        }
+    }
+    fp = ids[1]
+    for (i = 2; i <= count; i++) fp = fp "," ids[i]
+    print count "\tfalse\t" fp "\t-\t" has_task
+}
+' "$INBOX"
+        return
+    fi
     INBOX_PATH="$INBOX" python3 -c "
 import sys, os, base64, ast
 
