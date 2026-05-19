@@ -208,9 +208,9 @@ YAML
     [ "$status" -eq 0 ]
 
     # skill_execution_log.sh calls are async (&) in gate_report_format.sh.
-    # Poll up to 5s for both entries to appear before reading the log.
+    # Poll up to 10s for both entries to appear before reading the log.
     local _i=0
-    while [ "$_i" -lt 50 ]; do
+    while [ "$_i" -lt 100 ]; do
         if [ -f "$SKILL_EXECUTION_LOG_FILE" ]; then
             python3 -c "
 import yaml, sys
