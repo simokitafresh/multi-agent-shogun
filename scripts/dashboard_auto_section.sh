@@ -76,6 +76,7 @@ GIT_REVLIST_CACHE="/tmp/dashboard_git_revlist_${_proj_hash}.txt"
 GIT_REVLIST_CACHE_TS="/tmp/dashboard_git_revlist_${_proj_hash}.ts"
 SKILL_METRICS_CACHE="/tmp/dashboard_skill_metrics_${_proj_hash}.txt"
 SKILL_METRICS_CACHE_TS="/tmp/dashboard_skill_metrics_${_proj_hash}.ts"
+SKILL_METRICS_REFRESH_LOCK="/tmp/dashboard_skill_metrics_${_proj_hash}.lock"
 _CACHE_NOW=$(date +%s)
 
 # ─── GP-cmd_1981: Heavy awk mtimeキャッシュ ───
@@ -568,8 +569,24 @@ elif [[ -x "$SKILL_METRICS_SCRIPT" ]]; then
         _skill_metrics_ts=$(cat "$SKILL_METRICS_CACHE_TS" 2>/dev/null || echo 0)
         _skill_metrics_age=$(( _CACHE_NOW - _skill_metrics_ts ))
     fi
-    if (( _skill_metrics_age < 300 )) && [[ -s "$SKILL_METRICS_CACHE" ]]; then
+    if [[ -s "$SKILL_METRICS_CACHE" ]]; then
         cp "$SKILL_METRICS_CACHE" "$TMP_SKILL_METRICS" 2>/dev/null || true
+        if (( _skill_metrics_age >= 300 )); then
+            _skill_lock_age=$(_refresh_lock_age "$SKILL_METRICS_REFRESH_LOCK")
+            if (( _skill_lock_age > 900 )); then
+                rm -f "$SKILL_METRICS_REFRESH_LOCK"
+            fi
+            if ( set -o noclobber; : > "$SKILL_METRICS_REFRESH_LOCK" ) 2>/dev/null; then
+                (
+                    _tmp_skill_refresh=$(mktemp "/tmp/dashboard_skill_metrics_${_proj_hash}.XXXXXX")
+                    trap 'rm -f "$_tmp_skill_refresh" "$SKILL_METRICS_REFRESH_LOCK"' EXIT
+                    if bash "$SKILL_METRICS_SCRIPT" > "$_tmp_skill_refresh" 2>/dev/null; then
+                        cp "$_tmp_skill_refresh" "$SKILL_METRICS_CACHE" 2>/dev/null || true
+                        date +%s > "$SKILL_METRICS_CACHE_TS" 2>/dev/null || true
+                    fi
+                ) >/dev/null 2>&1 &
+            fi
+        fi
     elif bash "$SKILL_METRICS_SCRIPT" > "$TMP_SKILL_METRICS" 2>/dev/null; then
         cp "$TMP_SKILL_METRICS" "$SKILL_METRICS_CACHE" 2>/dev/null || true
         date +%s > "$SKILL_METRICS_CACHE_TS" 2>/dev/null || true
