@@ -12,7 +12,7 @@ setup() {
     export TEST_ROOT
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/git_pre_commit.XXXXXX")"
     mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts/lib" "$TEST_ROOT/scripts" \
-        "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests"
+        "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests/unit"
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
     chmod +x "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
@@ -32,6 +32,12 @@ EOF
     cat > "$TEST_ROOT/instructions/generated/base.md" <<'EOF'
 # generated
 EOF
+    cat > "$TEST_ROOT/tests/unit/test_cmd_save.bats" <<'EOF'
+#!/usr/bin/env bats
+@test "existing cmd_save coverage" {
+    [ 1 -eq 1 ]
+}
+EOF
     mkdir -p "$TEST_ROOT/logs"
 
     (
@@ -40,7 +46,7 @@ EOF
         git config user.email test@example.com
         git config user.name "Test User"
         git add scripts/hooks/git-pre-commit.sh scripts/build_instructions.sh tool.py \
-            instructions/base.md instructions/generated/base.md
+            instructions/base.md instructions/generated/base.md tests/unit/test_cmd_save.bats
         git commit -qm "init"
     )
 }
@@ -151,4 +157,24 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: Generated instructions out of sync."* ]]
+}
+
+@test "warns when added bats file has existing script-level candidates" {
+    cat > "$TEST_ROOT/tests/unit/test_cmd_save_new_rule.bats" <<'EOF'
+#!/usr/bin/env bats
+@test "new cmd_save rule" {
+    bash scripts/cmd_save.sh --help >/dev/null 2>&1 || true
+}
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add tests/unit/test_cmd_save_new_rule.bats
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: new test_*.bats file may duplicate existing script-level tests."* ]]
+    [[ "$output" == *"added: tests/unit/test_cmd_save_new_rule.bats"* ]]
+    [[ "$output" == *"candidate: tests/unit/test_cmd_save.bats"* ]]
 }

@@ -14,6 +14,79 @@ list_staged_files() {
     git diff --cached --name-only --diff-filter=ACMR 2>/dev/null
 }
 
+list_added_test_files() {
+    git diff --cached --name-only --diff-filter=A -- 'tests/unit/test_*.bats' 2>/dev/null
+}
+
+infer_test_group_prefix() {
+    local base="${1:-}"
+    case "$base" in
+        cmd_save*) echo "cmd_save" ;;
+        cmd_complete_gate*) echo "cmd_complete_gate" ;;
+        deploy_task*) echo "deploy_task" ;;
+        gate_*) echo "gate" ;;
+        inbox_watcher*) echo "inbox_watcher" ;;
+        lesson_write*) echo "lesson_write" ;;
+        *) echo "$base" ;;
+    esac
+}
+
+collect_script_refs_from_staged_test() {
+    local file="${1:-}"
+    [[ -n "$file" ]] || return 0
+    git show ":$file" 2>/dev/null | grep -oE '(scripts|lib)/[A-Za-z0-9_./-]+\.sh' | sort -u || true
+}
+
+find_existing_test_candidates() {
+    local added_file="${1:-}" base="${2:-}" group="${3:-}" script_ref
+    local candidate
+    declare -A seen=()
+
+    for candidate in \
+        "$REPO_ROOT/tests/unit/test_${base}"*.bats \
+        "$REPO_ROOT/tests/unit/test_${group}"*.bats; do
+        [[ -f "$candidate" ]] || continue
+        candidate="${candidate#"$REPO_ROOT"/}"
+        [[ "$candidate" == "$added_file" ]] && continue
+        seen["$candidate"]=1
+    done
+
+    while IFS= read -r script_ref; do
+        [[ -n "$script_ref" ]] || continue
+        while IFS= read -r candidate; do
+            [[ -n "$candidate" ]] || continue
+            [[ "$candidate" == "$added_file" ]] && continue
+            seen["$candidate"]=1
+        done < <(grep -RIlF "$script_ref" "$REPO_ROOT/tests/unit" --include='test_*.bats' 2>/dev/null | sed "s|^$REPO_ROOT/||")
+    done < <(collect_script_refs_from_staged_test "$added_file")
+
+    if ((${#seen[@]} > 0)); then
+        printf '%s\n' "${!seen[@]}" | sort
+    fi
+}
+
+warn_test_file_granularity() {
+    local added_file base group candidates
+    local warned=false
+
+    while IFS= read -r added_file; do
+        [[ -n "$added_file" ]] || continue
+        base="$(basename "$added_file" .bats)"
+        base="${base#test_}"
+        group="$(infer_test_group_prefix "$base")"
+        candidates="$(find_existing_test_candidates "$added_file" "$base" "$group")"
+        [[ -n "$candidates" ]] || continue
+
+        if [[ "$warned" == "false" ]]; then
+            echo "WARN: new test_*.bats file may duplicate existing script-level tests." >&2
+            echo "Prefer adding cases to an existing test file or consolidated suite when the target script is the same." >&2
+            warned=true
+        fi
+        echo "  added: $added_file" >&2
+        echo "$candidates" | sed 's/^/    candidate: /' >&2
+    done < <(list_added_test_files)
+}
+
 is_yaml_dump_scan_target() {
     local file="${1:-}"
     [[ -n "$file" ]] || return 1
@@ -62,6 +135,8 @@ collect_yaml_dump_violations() {
 main() {
     local _yaml_dump_violations="" _instructions_changed=false _has_yaml_dump_scan_target=false
     local _staged_file
+
+    warn_test_file_granularity
 
     while IFS= read -r _staged_file; do
         [[ -n "$_staged_file" ]] || continue
