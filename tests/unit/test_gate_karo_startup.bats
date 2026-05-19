@@ -346,6 +346,53 @@ EOF
     [[ "$output" == *"report_yaml_format"* ]]
 }
 
+@test "WA consecutive clean count is displayed" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: true
+  category: report_yaml_format
+  root_cause: "field missing"
+- cmd_id: cmd_201
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_202
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_203
+  workaround: false
+  category: clean
+  root_cause: ""
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"連続clean: 3件 (総記録4件)"* ]]
+    [[ "$output" != *"WA復活"* ]]
+}
+
+@test "latest workaround true → WA regression ALERT" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_201
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_202
+  workaround: true
+  category: report_yaml_format
+  root_cause: "field missing"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"連続clean: 0件 (総記録3件)"* ]]
+    [[ "$output" == *"ALERT: WA復活 — 最新cmd cmd_202 が workaround=true (category=report_yaml_format)"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
 @test "WA data quality issues → startup gate shows False WA TOP3" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_400
