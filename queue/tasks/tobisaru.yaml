@@ -1,12 +1,12 @@
 task:
-  cmd_id: cmd_training_speed_tobisaru_2
+  cmd_id: cmd_training_speed_tobisaru_3
   type: training
   project: infra
-  purpose: "修行サイクル2/3: scripts/dashboard_auto_section.sh 速度最適化(brownfield)。before計測→ボトルネック特定→高速化実装→after計測。timeout 1200"
+  purpose: "修行サイクル3/3(最終): scripts/context_freshness_check.sh 速度最適化(brownfield)。before計測→ボトルネック特定→高速化実装→after計測。timeout 1200"
   scout_exempt: true
   acceptance_criteria:
     AC1:
-      description: "scripts/dashboard_auto_section.shのbefore計測(median 5run)が記録されている"
+      description: "scripts/context_freshness_check.shのbefore計測(median 5run)が記録されている"
       checks:
         - check: "before計測完了"
     AC2:
@@ -14,7 +14,7 @@ task:
       checks:
         - check: "after計測でbefore比改善"
   scope:
-    - scripts/dashboard_auto_section.sh
+    - scripts/context_freshness_check.sh
   status: completed
   parent_cmd: ""
   related_lessons:

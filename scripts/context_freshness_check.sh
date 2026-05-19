@@ -65,6 +65,28 @@ if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACH
     fi
 fi
 
+# L4-R?: Mtime-based signature cache for --dashboard-warnings
+# Skip Python (~66ms) when key files (projects.yaml + excludes + cmd-chronicle.md)
+# haven't changed since last run. Cost: 1 stat call (3 files, ~5ms).
+_new_sig=""
+_SIG_FILE=""
+if [[ "$MODE" == "--dashboard-warnings" ]]; then
+    _SIG_FILE="${_CACHE_FILE%.cache}.sig"
+    _new_sig=$(stat -c '%Y:%s' \
+        "$SCRIPT_DIR/config/projects.yaml" \
+        "$SCRIPT_DIR/config/context_freshness_excludes.txt" \
+        "$SCRIPT_DIR/context/cmd-chronicle.md" \
+        2>/dev/null | tr '\n' ':')
+    if [[ -f "$_SIG_FILE" ]] && [[ -f "$_CACHE_FILE" ]]; then
+        _cached_sig=""
+        IFS= read -r _cached_sig < "$_SIG_FILE" 2>/dev/null || true
+        if [[ "$_cached_sig" == "$_new_sig" ]]; then
+            cat "$_CACHE_FILE"
+            exit 0
+        fi
+    fi
+fi
+
 _TMP_CACHE="${_CACHE_FILE}.$$"
 python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" > "$_TMP_CACHE" <<'PY'
 from __future__ import annotations
@@ -585,6 +607,9 @@ PY
 _PY_STATUS=$?
 if [[ "$_PY_STATUS" -eq 0 ]]; then
     mv "$_TMP_CACHE" "$_CACHE_FILE"
+    if [[ -n "$_SIG_FILE" ]] && [[ -n "$_new_sig" ]]; then
+        printf '%s' "$_new_sig" > "$_SIG_FILE"
+    fi
     cat "$_CACHE_FILE"
 else
     rm -f "$_TMP_CACHE"
