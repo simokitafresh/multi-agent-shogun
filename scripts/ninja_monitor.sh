@@ -2267,35 +2267,34 @@ list_pending_cmds() {
     local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
     [ ! -f "$cmd_file" ] && return
 
-    python3 - "$cmd_file" <<'PYEOF'
-import sys
-import yaml
-
-cmd_file = sys.argv[1]
-
-try:
-    with open(cmd_file, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-except Exception:
-    sys.exit(0)
-
-cmds = data.get("commands", {})
-if isinstance(cmds, dict):
-    entries = cmds.items()
-elif isinstance(cmds, list):
-    entries = ((str(item.get("id", "")), item) for item in cmds if isinstance(item, dict))
-else:
-    entries = []
-
-for cmd_id, info in entries:
-    if not cmd_id or not isinstance(info, dict):
-        continue
-    if str(info.get("status", "")) != "pending":
-        continue
-    timestamp = str(info.get("timestamp", "") or "").strip('"')
-    delegated_at = str(info.get("delegated_at", "") or "").strip('"')
-    print(f"{cmd_id}|{timestamp}|{delegated_at}")
-PYEOF
+    # awk置換: python3起動コスト削減(WSL2 ~150ms/回 → <1ms) — dict形式対応
+    # dict形式: commands:\n  cmd_xxx:\n    status: pending\n    timestamp: ...\n    delegated_at: ...
+    awk '
+    function emit() {
+        if (cmd_id != "" && status == "pending") {
+            print cmd_id "|" timestamp "|" delegated_at
+        }
+    }
+    /^  [[:alnum:]_]+:$/ {
+        emit()
+        v = $0; sub(/^  /, "", v); sub(/:$/, "", v); gsub(/["'"'"'[:space:]]/, "", v)
+        cmd_id = v; status = ""; timestamp = ""; delegated_at = ""
+        next
+    }
+    /^    status:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["'"'"'[:space:]]/, "", v)
+        status = v; next
+    }
+    /^    timestamp:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["\\]/, "", v)
+        timestamp = v; next
+    }
+    /^    delegated_at:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["\\]/, "", v)
+        delegated_at = v; next
+    }
+    END { emit() }
+    ' "$cmd_file"
 }
 
 # ─── list_pending_cmds サイクル内キャッシュ ───
