@@ -28,6 +28,19 @@ if [ -z "$ENTRY" ]; then
     exit 1
 fi
 
+# --- observations必須チェック(draft/report/self_study) ---
+if echo "$ENTRY" | grep -qE 'review_type:\s*(draft|report|self_study)'; then
+    if ! echo "$ENTRY" | grep -q 'observations:'; then
+        echo "BLOCK: observationsが未記入(review_type=draft/report/self_study)。事実3点以上を記入してから再実行せよ" >&2
+        exit 2
+    fi
+    HAS_ITEM=$(echo "$ENTRY" | awk '/observations:/{found=1;next} found{if(/^\s*-\s+.+/){print "yes";exit} if(!/^\s*$/){exit}}')
+    if [ "$HAS_ITEM" != "yes" ]; then
+        echo "BLOCK: observations[]が空。1件以上の事実を記入してから再実行せよ" >&2
+        exit 2
+    fi
+fi
+
 # Append to log file (flock for safety)
 (
     flock -w 5 200 || { echo "ERROR: flock timeout" >&2; exit 1; }

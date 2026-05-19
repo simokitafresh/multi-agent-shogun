@@ -52,6 +52,21 @@ review:
   gate_prediction: <CLEAR|BLOCK>
 ```
 
+### Step 1.5: observations必須チェック（review_log追記前BLOCK）
+
+**review_type = draft / report / self_study の場合に必須**。Step 2に進む前に確認せよ:
+
+```
+[ ] observationsフィールドが設定されているか？
+[ ] 空リスト([])ではなく、具体的な事実が1件以上あるか？
+```
+
+→ **未記入/空の場合はSTOP。review_logへの追記を禁止する(BLOCK)。**
+  observationsに事実3点（例: 「事実1: ...」「事実2: ...」「事実3: ...」）を記入してから再実行せよ。
+
+**理由**: 22件中observationsが意志依存で放置された。記録なき知見は/clearで消える。
+自動チェック(gunshi_log_append.sh使用時): observationsなし → exit 2(BLOCK)で追記拒否。
+
 ### Step 2: review_log追記
 ```bash
 # gunshi_review_log.yamlに追記
