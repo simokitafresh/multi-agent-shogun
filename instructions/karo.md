@@ -339,7 +339,7 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 - **学習ループの接続**: workaround→軍師フィードバック、GATEフィードバック→軍師学習、軍師REQUEST_CHANGES→家老補足cmd。双方向に知見が流れる
 
 → レビュー詳細手順: `instructions/karo-procedures.md`
-  - §5 忍者報告レビューフロー（軍師+家老パートナー方式）
+  - §5 忍者報告レビュー自動フロー（`report_received` hook→`notify_gunshi_for_report`）
   - §6 レビュー品質チェック（フォールバック時必須）
   - §7 一次データ不可侵チェック
   - §8 lesson_candidate レビュー差し戻し条件
