@@ -76,7 +76,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -119,6 +119,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:52:07+09:00 軍師提案に対応しよう。なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:02:03+09:00 これを成長させるためには何が必要だ？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:12:21+09:00 さらに これを成長させるためには何が必要だ？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:35:19+09:00 Gate並行実行のflock漏れをなぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:36:51+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:07+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:49+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:59+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？なぜなぜ7回 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -311,7 +317,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従 |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従, verdict計算値化 bcから自動導出 |
 | skills | skill-creator, skill-installer |
 
 | 種別 | パス/参照 |
@@ -329,6 +335,7 @@ codd:
 | cmd | `cmd_2785` 強化 — SKILL.md 3件をscript変更に追従更新（3セッション連続WARN解消） (`skills/dream/SKILL.md`, `skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 | cmd | `cmd_2793` gate_lesson_health.sh PHANTOM検出awk偽陽性修正 + SKILL.md 3件追従更新 (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/shogun-teire/SKILL.md`) |
 | cmd | `cmd_2829` SKILL.md追従3件更新(dream/karo-direct/shogun-teire — script変更に追従) (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/ninja-commit/SKILL.md`) |
+| cmd | `cmd_2871` 強化 — verdict計算値化(bcから自動導出。手動記入廃止) (`scripts/gates/gate_report_autofix_main.py`, `skills/verdict-check/SKILL.md`, `tests/test_gate_report_format.bats`) |
 
 ## dmsignal_operations — DM-Signal運用
 
