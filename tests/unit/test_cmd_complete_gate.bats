@@ -89,6 +89,26 @@ assert rows["INS-OTHER"]["status"] == "pending"
 PY
 }
 
+@test "cmd_complete_gate protects shared file writes with lock_path flock" {
+    run grep -F 'append_line_locked "$GATE_METRICS_LOG"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run grep -F '200>"$(lock_path "$tracking_file")"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run grep -F '200>"$(lock_path "$impact_file")"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run grep -F '200>"$(lock_path "$DASHBOARD")"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run grep -F '200>"$(lock_path "$_GV_DQ_FILE")"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run grep -F '200>"$(lock_path "$_DQ_FILE")"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
 setup() {
     cmd_gate_scaffold "cmd_gate_ctx"
     export SCRIPT_DIR="$TEST_PROJECT"

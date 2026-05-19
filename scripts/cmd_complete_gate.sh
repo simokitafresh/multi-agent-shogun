@@ -14,6 +14,19 @@ source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 CMD_ID="${1:-}"
 
+append_line_locked() {
+    local target_file="$1"
+    local line="$2"
+    local target_dir
+    target_dir="$(dirname "$target_file")"
+    mkdir -p "$target_dir" 2>/dev/null || true
+
+    (
+        flock -w 10 200 || exit 1
+        printf '%s\n' "$line" >> "$target_file"
+    ) 200>"$(lock_path "$target_file")"
+}
+
 if [ -z "$CMD_ID" ]; then
     echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
     echo "受け取った引数: $*" >&2
@@ -913,10 +926,10 @@ run_skill_script_refs_check() {
     printf '%s\n' "$output" | grep -E '^(走査:|=== 要更新|=== 参照先|  WARN:|--- 総合判定)' | head -40 | sed 's/^/  /' || true
     if [ "$rc" -eq 2 ]; then
         echo "  [WARN] SKILL.md script refs need follow-up (non-blocking after CLEAR)"
-        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" stale_or_missing_refs" >> "$LOG_DIR/gate_fire_log.yaml"
+        append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" stale_or_missing_refs"
     else
         echo "  [WARN] gate_skill_script_refs.sh failed rc=${rc} (non-blocking after CLEAR)"
-        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" execution_failed rc=${rc}" >> "$LOG_DIR/gate_fire_log.yaml"
+        append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" execution_failed rc=${rc}"
     fi
     return 0
 }
@@ -1380,26 +1393,38 @@ append_changelog() {
     fi
     [ -z "$project" ] && project="unknown"
 
-    # ファイルが無ければヘッダ作成
-    if [ ! -f "$changelog" ]; then
-        echo "entries:" > "$changelog"
-    fi
+    (
+        flock -w 10 200 || exit 1
 
-    # エントリ追記
-    cat >> "$changelog" <<EOF
+        # ファイルが無ければヘッダ作成
+        if [ ! -f "$changelog" ]; then
+            echo "entries:" > "$changelog"
+        fi
+
+        # エントリ追記
+        cat >> "$changelog" <<EOF
   - id: ${cmd_id}
     project: ${project}
     purpose: "${purpose}"
     completed_at: "${completed_at}"
 EOF
 
-    # 20件超なら古い順に剪定（各エントリ=4行、ヘッダ=1行）
-    local entry_count
-    entry_count=$(awk '/^\s+- id:/{c++} END{print c+0}' "$changelog" 2>/dev/null)
-    if [ "$entry_count" -gt 20 ]; then
-        { head -1 "$changelog"; tail -n 80 "$changelog"; } > "${changelog}.tmp"
-        mv "${changelog}.tmp" "$changelog"
-    fi
+        # 20件超なら古い順に剪定（各エントリ=4行、ヘッダ=1行）
+        local entry_count
+        entry_count=$(awk '/^\s+- id:/{c++} END{print c+0}' "$changelog" 2>/dev/null)
+        if [ "$entry_count" -gt 20 ]; then
+            { head -1 "$changelog"; tail -n 80 "$changelog"; } > "${changelog}.tmp"
+            if [ -s "${changelog}.tmp" ]; then
+                mv "${changelog}.tmp" "$changelog"
+            else
+                rm -f "${changelog}.tmp"
+                echo "CHANGELOG WARNING: trim produced empty output, keeping existing file" >&2
+            fi
+        fi
+    ) 200>"$(lock_path "$changelog")" || {
+        echo "CHANGELOG WARNING: lock timeout for ${changelog}"
+        return 0
+    }
 
     echo "CHANGELOG: ${cmd_id} recorded (project=${project})"
 }
@@ -2752,12 +2777,18 @@ PY
     [ -z "$task_type" ] && task_type="unknown"
     timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
 
-    if [ ! -f "$tracking_file" ]; then
-        printf 'timestamp\tcmd_id\tninja\tgate_result\tinjected_ids\treferenced_ids\ttask_type\n' > "$tracking_file"
-    fi
+    (
+        flock -w 10 200 || exit 1
+        if [ ! -f "$tracking_file" ]; then
+            printf 'timestamp\tcmd_id\tninja\tgate_result\tinjected_ids\treferenced_ids\ttask_type\n' > "$tracking_file"
+        fi
 
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$timestamp" "$cmd_id" "$ninja" "$gate_result" "$injected_ids" "$referenced_ids" "$task_type" >> "$tracking_file"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$timestamp" "$cmd_id" "$ninja" "$gate_result" "$injected_ids" "$referenced_ids" "$task_type" >> "$tracking_file"
+    ) 200>"$(lock_path "$tracking_file")" || {
+        echo "LESSON_TRACKING: WARN lock timeout (${tracking_file})"
+        return 0
+    }
     echo "LESSON_TRACKING: ${cmd_id} (${gate_result}) appended"
 }
 
@@ -2772,7 +2803,9 @@ update_lesson_impact_tsv() {
         return 0
     fi
 
-    IMPACT_FILE="$impact_file" TASKS_DIR="$TASKS_DIR" REPORTS_DIR="$SCRIPT_DIR/queue/reports" CMD_ID="$cmd_id" GATE_RESULT="$gate_result" python3 - <<'PY'
+    (
+        flock -w 10 200 || exit 1
+        IMPACT_FILE="$impact_file" TASKS_DIR="$TASKS_DIR" REPORTS_DIR="$SCRIPT_DIR/queue/reports" CMD_ID="$cmd_id" GATE_RESULT="$gate_result" python3 - <<'PY'
 import csv
 import os
 import tempfile
@@ -2944,6 +2977,10 @@ except Exception:
 
 print(f"LESSON_IMPACT: {cmd_id} updated rows={updated} referenced_ids={len(referenced_ids)}")
 PY
+    ) 200>"$(lock_path "$impact_file")" || {
+        echo "LESSON_IMPACT: WARN lock timeout (${impact_file})"
+        return 0
+    }
 }
 
 # ─── BLOCK理由収集 ───
@@ -3516,7 +3553,7 @@ preflight_gate_flags() {
     done
     if [ "$tp_warn_count" -gt 0 ]; then
         echo "    -> ${tp_warn_count} file(s) with uncommitted changes (WARN, non-blocking)"
-        echo "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} gate: \"cmd_complete_gate\" target_path_uncommitted: ${tp_warn_count} file(s)" >> "$LOG_DIR/gate_fire_log.yaml"
+            append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} gate: \"cmd_complete_gate\" target_path_uncommitted: ${tp_warn_count} file(s)"
     else
         echo "    all target_path committed (OK)"
     fi
@@ -3690,7 +3727,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
         normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) || normalize_exit=$?
         if [ "$normalize_exit" -eq 0 ]; then
             echo "  [INFO] ${ninja_name}: auto-fixed: ${normalize_output}"
-            echo "$(date '+%Y-%m-%dT%H:%M:%S') [B層] ${CMD_ID} ${ninja_name}: ${normalize_output}" >> "$NORMALIZE_LOG"
+            append_line_locked "$NORMALIZE_LOG" "$(date '+%Y-%m-%dT%H:%M:%S') [B層] ${CMD_ID} ${ninja_name}: ${normalize_output}"
         elif [ "$normalize_exit" -eq 1 ]; then
             echo "  ${ninja_name}: OK (no normalization needed)"
         else
@@ -3742,7 +3779,7 @@ if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$C
     echo "  no task files and no cmd entry; report-dependent gates skipped"
     echo ""
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tno_task_benchmark_fast_path\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\tunknown\tunknown" >> "$GATE_METRICS_LOG"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tno_task_benchmark_fast_path\t%s\t%s\t%s\t%s\t%s\tunknown\tunknown' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
     print_matching_task_files_summary
     exit 0
 fi
@@ -3763,7 +3800,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tOVERRIDE\temergency_override\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
@@ -4375,7 +4412,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             # cmd_776 A層: BLOCK→自動修正+WARN。normalize_report.shで修正を試みる
             a_normalize_output=$(bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" 2>&1) && {
                 echo "  [INFO] ${ninja_name}: lesson_candidate旧形式を自動修正: ${a_normalize_output}"
-                echo "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}" >> "$SCRIPT_DIR/logs/normalize_report.log"
+                append_line_locked "$SCRIPT_DIR/logs/normalize_report.log" "$(date '+%Y-%m-%dT%H:%M:%S') [A層] ${CMD_ID} ${ninja_name}: ${a_normalize_output}"
                 # 修正成功 → 再検証
                 if awk '/^lesson_candidate:/{p=1;next} p&&/found:/{found=1;exit} /^[^ ]/{if(p)exit 1} END{if(!found)exit 1}' "$report_file" 2>/dev/null; then
                     lc_recheck="ok"
@@ -5390,11 +5427,11 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     if ! run_cdp_production_check; then
         echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
-        echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tcdp_production_check_failed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC")"
         exit 1
     fi
     echo "GATE CLEAR: cmd完了許可"
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tCLEAR\tall_gates_passed\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}\t${GATE_DURATION_METRIC}\t${GATE_CTX_METRIC}" >> "$GATE_METRICS_LOG"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
@@ -5656,7 +5693,10 @@ PY
     _GV_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
     _GV_DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
     if [ -f "$_GV_DQ_FILE" ] && [ -f "$_GV_REVIEW_LOG" ]; then
-        _gv_result=$(python3 - "$CMD_ID" "$_GV_REVIEW_LOG" "$_GV_ARCHIVE_DIR" "$_GV_DQ_FILE" 2>/dev/null <<'END_GV_PY'
+        _gv_result=$(
+            (
+                flock -w 10 200 || exit 1
+                python3 - "$CMD_ID" "$_GV_REVIEW_LOG" "$_GV_ARCHIVE_DIR" "$_GV_DQ_FILE" 2>/dev/null <<'END_GV_PY'
 import sys, re, os, glob, tempfile
 
 cmd_id = sys.argv[1]
@@ -5742,7 +5782,8 @@ if updated > 0:
 else:
     print(f"[INFO] {cmd_id}: no matching entries found in cmd_design_quality.yaml")
 END_GV_PY
-) || _gv_result="[INFO] gunshi_verdict update failed (non-blocking)"
+            ) 200>"$(lock_path "$_GV_DQ_FILE")"
+        ) || _gv_result="[INFO] gunshi_verdict update failed (non-blocking)"
         echo "  ${_gv_result}"
     else
         echo "  SKIP (cmd_design_quality.yaml or gunshi_review_log.yaml not found)"
@@ -5815,10 +5856,19 @@ END_GV_PY
                 _insight_insert="${_insight_insert}- [INSIGHT] ${CMD_ID} ${_note}\n"
             done < "$INSIGHT_TMP"
             if [ -n "$_insight_insert" ]; then
-                awk -v ins="$_insight_insert" '
-                    { print }
-                    /^## 将軍宛報告[[:space:]]*$/ { printf "%s", ins }
-                ' "$DASHBOARD" > "${DASHBOARD}.tmp" && mv "${DASHBOARD}.tmp" "$DASHBOARD" 2>/dev/null \
+                (
+                    flock -w 10 200 || exit 1
+                    awk -v ins="$_insight_insert" '
+                        { print }
+                        /^## 将軍宛報告[[:space:]]*$/ { printf "%s", ins }
+                    ' "$DASHBOARD" > "${DASHBOARD}.tmp"
+                    if [ -s "${DASHBOARD}.tmp" ]; then
+                        mv "${DASHBOARD}.tmp" "$DASHBOARD"
+                    else
+                        rm -f "${DASHBOARD}.tmp"
+                        echo "  [INFO] dashboard insight append produced empty output, keeping existing file" >&2
+                    fi
+                ) 200>"$(lock_path "$DASHBOARD")" 2>/dev/null \
                     || echo "  [INFO] dashboard insight append failed (non-blocking)"
             fi
             echo "  Notified: ${INSIGHT_COUNT} insight candidate(s) → dashboard 将軍宛セクション"
@@ -5959,7 +6009,10 @@ PYEOF
     _RL_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
     _RL_ARCHIVE=$(ls "$SCRIPT_DIR/logs/archive/gunshi_review_log"*.yaml 2>/dev/null | sort | tail -1)
     if [ -f "$_DQ_FILE" ] && [ -f "$_RL_FILE" ]; then
-        _verdict_result=$(python3 - "$CMD_ID" "$_RL_FILE" "${_RL_ARCHIVE:-}" "$_DQ_FILE" 2>/dev/null <<'END_VERDICT_PY'
+        _verdict_result=$(
+            (
+                flock -w 10 200 || exit 1
+                python3 - "$CMD_ID" "$_RL_FILE" "${_RL_ARCHIVE:-}" "$_DQ_FILE" 2>/dev/null <<'END_VERDICT_PY'
 import sys, re
 
 cmd_id = sys.argv[1]
@@ -6012,6 +6065,7 @@ if pattern.search(content):
 else:
     print(f'SKIP (cmd_id={cmd_id} not found in design_quality)')
 END_VERDICT_PY
+            ) 200>"$(lock_path "$_DQ_FILE")"
         ) || _verdict_result="ERROR (python3 failed)"
         echo "  ${_verdict_result}"
     else
@@ -6073,7 +6127,7 @@ else
         done
         block_reason="fallback_gate_status:$(IFS='|'; echo "${_gate_details[*]}")"
     fi
-    echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\t${block_reason}\t${GATE_TASK_TYPE}\t${GATE_MODEL}\t${GATE_BLOOM_LEVEL}\t${GATE_INJECTED_LESSONS}\t${CMD_TITLE}" >> "$GATE_METRICS_LOG"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     echo ""
