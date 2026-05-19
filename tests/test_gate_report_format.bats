@@ -81,24 +81,26 @@ YAML
     [[ "$output" == *"verdict"* ]]
 }
 
-# --- T-004: GP-128 PASS+no → auto-corrected to FAIL verdict → PASS ---
-@test "T-004: GP-128 verdict=PASS with bc no → gate FAIL (消火撤去: autofix verdict訂正廃止)" {
+# --- T-004: GP-128 PASS+no → auto-derived FAIL verdict → PASS ---
+@test "T-004: verdict=PASS with bc no is overwritten to FAIL" {
     local report=$(create_valid_report)
     sed -i 's/result: "yes"/result: "no"/' "$report"
-    # 消火撤去: autofixはverdict訂正しない。GP-128がgate側でFAILする
     run bash "$GATE" "$report"
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"verdict"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    run grep '^verdict: FAIL$' "$report"
+    [ "$status" -eq 0 ]
 }
 
-# --- T-005: GP-128 FAIL+all-yes → WARN ---
-@test "T-005: GP-128 verdict=FAIL with all-yes → WARN" {
+# --- T-005: GP-128 FAIL+all-yes → auto-derived PASS verdict ---
+@test "T-005: verdict=FAIL with all-yes is overwritten to PASS" {
     local report=$(create_valid_report)
     sed -i 's/^verdict: PASS/verdict: FAIL/' "$report"
     run bash "$GATE" "$report"
-    # FAIL verdict with all-yes bc → gate FAIL (because of other reason like lesson_candidate)
-    # But GP-128 WARN should appear
-    [[ "$output" == *"GP-128 WARN"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    run grep '^verdict: PASS$' "$report"
+    [ "$status" -eq 0 ]
 }
 
 # --- T-006: GP-073 PASS cache hit ---

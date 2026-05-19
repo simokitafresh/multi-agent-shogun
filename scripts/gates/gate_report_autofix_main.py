@@ -312,8 +312,15 @@ def main() -> int:
 
     verdict_val = data.get("verdict")
     is_valid_verdict = isinstance(verdict_val, str) and verdict_val in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT")
-    # verdict推定(blank/invalid→PASS/FAIL)は消火→撤去。gate_report_format.shがBLOCK
-    # verdict訂正(PASS→FAIL)も消火→撤去。GP-128でgateがWARN/ERROR
+    # cmd_2871: verdictはbinary_checksから常に導出できる計算値。
+    # 全resultがyes/noで埋まっている時だけ上書きし、未記入はgate_report_format.shがBLOCKする。
+    if bc_result_total > 0 and bc_result_filled == bc_result_total:
+        derived_verdict = "FAIL" if bc_fail_count > 0 else "PASS"
+        if verdict_val != derived_verdict:
+            data["verdict"] = derived_verdict
+            verdict_val = derived_verdict
+            is_valid_verdict = True
+            fixes.append(f"verdict binary_checks導出→{derived_verdict}")
 
     status_val = data.get("status")
     if (
