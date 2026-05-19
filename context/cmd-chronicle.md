@@ -714,3 +714,4 @@
 | cmd_2874 | 殿指示「辞書の育成をやろう」。Phase 1(cmd_2860-2867)でaliases追加+自動成長ループ構築済み。Phase 2=品質向上: (1)noise aliases除去(task notification文字列やtool-use-id等の非意味的文字列がlord_conversation自動取込で混入) (2)未カバードメイン概念追加(修行サイクル/デーモン管理/外部PJ群/報告品質) (3)aliases精度向上(自然言語バリエーション追加) | infra | 05-19 | semantic index Phase 2としてnoise |
 | cmd_2875 | semantic_search(cmd_2869)は概念レベル検索を実現したが、因果辺トラバース(causal_backlinks.sh)は未統合。道具はあるが使う仕組みに埋め込まれていない=意志依存。cmd起票時にq11のsemantic_search結果と合わせてcausal_backlinksの結果も自動表示し、関連cmd/教訓の因果辺を起票前に強制提示する | infra | 05-19 | cmd_save.shのq11 semantic_searc |
 | cmd_2878 | 報告YAMLのorigin付与率が1.2%(61/4938)。根因=gate_report_format.shとreport_field_set.shにorigin関連チェックがゼロ(grep確認済み)。Level 1(ドキュメント記載のみ)→Level 5(gate強制+書込み支援)に昇格し、因果ネットワークの成長速度を構造的に加速する | infra | 05-19 | cmd_2878: gate_report_formatのo |
+| cmd_2881 | startup gate BLOCK 3セッション連続。dashboard-update FAIL率16%(8/50)だがskill_execution_logにFAIL 1件のみ。ログ乖離の有無を含め根因を特定し対処方針を出す | infra | 05-19 | dashboard-update Gate20 8/50は実 |

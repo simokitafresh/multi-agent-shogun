@@ -20,6 +20,8 @@ Frontendは `frontend/` のNext.js static export。Backendは `backend/app/main.
 | Cache | `backend/app/services/cache.py` | disk JSON cache。Renderでは1GB diskを利用 |
 | Rebalance | `backend/app/api/rebalance.py` | USD価格をJPY換算し、target_weight合計100%を検証してBUY/SELL/HOLDを返す |
 
+- L609: Next.js srcなし時は`app/components`を正としてテスト配置。find/rgで実体確認（cmd_2719）
+
 ## §3 API
 
 | Method | Endpoint | 用途 |
@@ -63,6 +65,7 @@ Source of truthは `backend/app/config.py`。
 - Background updaterはFastAPI lifespan task。Render worker再起動時は初期取得から再開。
 - npm audit moderate 3件(postcss内蔵)はNo fix available。CI audit-level調整が必要（cmd_2715 decision_candidate）。
 - rebalancer repo全体に大量の未commit変更が残存（前開発者の遺産）。各cmd scope内ファイルのみcommitし残りは残置。
+- L608: `npm audit fix --omit=dev`はdevDependencies(@tailwindcss/postcss等)をnode_modulesから削除する（cmd_2707）
 
 ## §7 2026-05-14 改善成果（cmd_2704〜cmd_2722、19cmd全CLEAR）
 
@@ -92,6 +95,5 @@ Source of truthは `backend/app/config.py`。
 
 ## 教訓索引（自動追記）
 
-- L608: npm audit fix --omit=devはdevDependencies削除する(cmd_2707)
-- L609: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置(cmd_2719)
+<!-- lesson-sort 2026-05-19: L608→§6既知の注意点, L609→§2アーキテクチャに振り分け -->
 <!-- last_synced_lesson: L609 -->
