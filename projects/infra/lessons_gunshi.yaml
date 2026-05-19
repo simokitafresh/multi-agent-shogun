@@ -269,9 +269,9 @@ lessons:
   source_cmd: cmd_gunshi_ruling_20260408
   origin: '[[cmd_gunshi_ruling_20260408]]'
   created_at: '2026-04-08'
-  automated: false
-  enforcement_level: 2
-  enforcement: gunshi.md F-G05例外条項として文書化済み(Level 2)。家老は軍師direct_fixをinbox受領後にレビュー
+  automated: true
+  enforcement_level: 4
+  enforcement: gunshi.md §D0プロトコル(手順明記+適用条件1ファイル20行以下+S0セルフレビュー6項+家老レビュー)+pre-write-edit-combined.sh Guard 9(S0リマインダー)
   when: レビュー中に軽微な事実誤りを発見した時。D0適用条件(1ファイル20行以下)を満たす時
   how: 軍師が直接修正→S0セルフレビュー→家老レビュー。鎖(軍師→家老)維持
 - id: LG025

@@ -82,6 +82,69 @@
 # ★inject関数sed→awk統一(2026-05-19): deploy_task.shのsed -i×inject_blockが特殊文字(→/[]/括弧)でexit 1。awk一時ファイル挿入に統一(cmd_2852)。既存パターン横展開=低リスク
 # ★cmd_save.sh速度改善(2026-05-19): quality_log 39K行全走査→SCAN_LINES=5000制限で16秒→3.64秒(77%改善)。絶対パス二重結合も修正(cmd_2854)
 # ★BE API pin/pin_auth切り分け(2026-05-19): kj-role-countのrole_types.pyはpin期待、staff.pyはpin_auth期待。修正対象はrole-types L424/L443のみが正しい(cmd_2853で確認)
+# ★observations欠落=冷え全7観点0件の真因(2026-05-19自走発見): review_logエントリ22件(41%)でobservations/finding_categories欠落。高速レビュー時に意志依存で省略。Guard 11(pre-write-edit WARN)+gunshi_log_append exit 2(BLOCK)=2層防御で構造保証(cmd_karo_obs_required_check CLEAR)
+# ★gate_result重複(2026-05-19自走発見): gunshi_gate_sync Phase2がdraft+reportの同一cmd_idをmissing_cmdsに重複出力→各セッションで重複挿入。sort -uで根因修正。88行重複除去
+# ★flock subshellパターンは正しい(2026-05-19検証): `(flock -w N FD || exit 1; ...) FD>lockfile` のexit 1はsubshell→親に正しく伝播(exit code=1確認)。セマンティック監査P1指摘は偽陽性
+- cmd_id: cmd_2874
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。セマンティック辞書育成Phase 2。noise aliases除去+未カバー概念追加+aliases拡充。4AC適切。殿指示直接対応"
+  ambiguity_points: none
+  observations:
+    - "事実1: noise aliases 5件確認(task notification等のlord_conversation自動取込混入)"
+    - "事実2: Phase 1(cmd_2860-2867)で構築済み→Phase 2(品質向上)の正しい順序"
+    - "事実3: 4AC全てSSSOT直接編集+再生成。破壊的変更なし。定型作業"
+  origin: "[[cmd_2874]] -> [[殿指示_辞書育成]] -> [[APPROVE]]"
+  causal_chain: "noise aliases混入→概念検索偽陽性→noise除去+カバレッジ拡充→q11精度向上。正の複利(全cmdの車輪防止精度)"
+  timestamp: "2026-05-19T15:35:00"
+- cmd_id: cmd_karo_ci_fix_verdict_derive
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。verdict自動導出CI RED修正。waive_reason免除文脈をgate本体に残す設計。120テストPASS。lesson有(免除文脈保持)"
+  observations:
+    - "事実1: cmd_2871のverdict自動導出が16テストFAIL→waive_reason付きnoを失敗数から除外で解消"
+    - "事実2: report_field_set.sh再導出失敗時に元bc書込み成功を保持する安全設計"
+    - "事実3: 6+13+51+21+8+21=120テストPASS。gate_report系全カバー"
+  origin: "[[cmd_karo_ci_fix_verdict_derive]] -> [[cmd_2871_verdict自動導出]] -> [[waive免除文脈保持]]"
+  causal_chain: "verdict自動導出→waive_reason付きno→gate検出消失→免除除外で保持。正の複利(gate品質維持+自動導出両立)"
+  timestamp: "2026-05-19T15:40:00"
+- cmd_id: cmd_2874
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。辞書育成Phase 2。noise除去+4概念追加+aliases拡充。semantic_map再生成exit 0"
+  observations:
+    - "事実1: noise aliases除去確認(task notification grep 0件)"
+    - "事実2: 4概念追加(training_cycle_quality/report_quality_protocol/external_project_registry/daemon_supervision)"
+    - "事実3: semantic_map_generate.sh exit 0+semantic-map.md非空。SSOT→生成物の整合確認"
+  origin: "[[cmd_2874]] -> [[辞書育成Phase2]] -> [[LGTM]]"
+  causal_chain: "noise混入→偽陽性→除去+概念追加→q11精度向上。正の複利(車輪防止の網が密になる)"
+  timestamp: "2026-05-19T15:43:00"
+- cmd_id: cmd_karo_skill_md_verdict_sync
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "4観点OK。SKILL.md文言同期(verdict自動導出)。report-write+ninja-commit 2ファイル。grep確認済み"
+  observations:
+    - "事実1: report-write SKILL.mdからverdict手動記入手順削除+自動導出方針明記"
+    - "事実2: ninja-commit SKILL.mdにverdict手動記入禁止明記"
+    - "事実3: cmd_2871実装の追従。SKILL.md文言変更のみで実行フロー変更なし"
+  origin: "[[cmd_karo_skill_md_verdict_sync]] -> [[cmd_2871_verdict自動導出]] -> [[SKILL.md追従]]"
+  causal_chain: "verdict自動導出実装→SKILL.md未同期→忍者が旧手順で手動記入→自動導出と衝突→SKILL.md同期で予防"
+  timestamp: "2026-05-19T15:47:00"
 # 詳細エントリ: 20260518a(D0_origin_regex〜cmd_2851+kj-role-count全件+修行2件+CI修正) → logs/archive/gunshi_review_log_20260518a.yaml
 - cmd_id: self_study_semantic_audit_20260519
   review_type: self_study
@@ -115,6 +178,7 @@
   timestamp: "2026-05-19T03:02:00"
 - cmd_id: cmd_2852
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -131,6 +195,7 @@
   timestamp: "2026-05-19T03:08:00"
 - cmd_id: cmd_2852
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
   findings_summary: "4観点OK。sed→awk統一完了。特殊文字テスト2件追加。+100/-10"
@@ -154,6 +219,7 @@
   timestamp: "2026-05-19T11:19:00"
 - cmd_id: cmd_2853
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -170,6 +236,7 @@
   timestamp: "2026-05-19T11:27:00"
 - cmd_id: cmd_2854
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -185,6 +252,7 @@
   timestamp: "2026-05-19T11:35:00"
 - cmd_id: cmd_2853
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
   findings_summary: "4観点OK。kj-role-count FE5改善+BE API拡張。13ファイル。外部リポcommit 8871f78確認済み"
@@ -197,6 +265,7 @@
   timestamp: "2026-05-19T11:40:00"
 - cmd_id: cmd_2855
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -212,6 +281,7 @@
   timestamp: "2026-05-19T11:45:00"
 - cmd_id: cmd_2856
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -229,6 +299,7 @@
   timestamp: "2026-05-19T11:50:00"
 - cmd_id: cmd_2854
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
   findings_summary: "4観点OK。cmd_save.sh速度16秒→3.64秒(77%改善)。293test全PASS。絶対パス回帰テスト追加"
@@ -240,6 +311,7 @@
   timestamp: "2026-05-19T11:55:00"
 - cmd_id: cmd_2856
   review_type: report
+  gate_result: CLEAR
   verdict: FAIL
   report_ninja: hanzo
   changed_lines: 331
@@ -262,6 +334,7 @@
   timestamp: "2026-05-19T12:08:00"
 - cmd_id: cmd_2855
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
   changed_lines: 75391
@@ -319,6 +392,7 @@
   timestamp: "2026-05-19T12:33:00"
 - cmd_id: cmd_2857
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem]
@@ -331,10 +405,13 @@
   timestamp: "2026-05-19T12:38:00"
 - cmd_id: cmd_2858
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation]
   findings_summary: "6観点OK。MIN_SAMPLES=5→3。軍師なぜなぜ提案がcmd化。全前提自分で検証済み"
+  ambiguity_points: none
+  premortem_fm_accepted: "fb=3で偶然誤淘汰リスク: P(3連続不要|実は有用)≈(1-useful率)^3。useful率30%なら0.34。閾値緩和の効果(教訓注入精度恒久向上)が偶然誤淘汰リスクを上回る。GATE CLEARで事後確認済み"
   observations:
     - "deploy_task.sh L3293 MIN_SAMPLES=5を現物確認済み(なぜなぜ分析時)"
     - "fb=3でuseful=0は3回連続不要判定。偶然誤淘汰リスク許容"
@@ -343,6 +420,7 @@
   timestamp: "2026-05-19T12:38:00"
 - cmd_id: cmd_2859
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation]
@@ -355,6 +433,7 @@
   timestamp: "2026-05-19T12:42:00"
 - cmd_id: cmd_2857
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hanzo
   findings_summary: "4観点OK。codex_apps MCP無効化。apps=false+plugin disabled。memory MCP維持確認"
@@ -366,6 +445,7 @@
   timestamp: "2026-05-19T12:47:00"
 - cmd_id: cmd_2860
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem]
@@ -378,6 +458,7 @@
   timestamp: "2026-05-19T12:50:00"
 - cmd_id: cmd_2858
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kotaro
   findings_summary: "4観点OK。MIN_SAMPLES 5→3。利他サイクル完結(軍師なぜなぜ→cmd→実装→LGTM)"
@@ -389,6 +470,7 @@
   timestamp: "2026-05-19T12:55:00"
 - cmd_id: cmd_2861
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions]
@@ -398,6 +480,7 @@
   timestamp: "2026-05-19T12:58:00"
 - cmd_id: cmd_2859
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: tobisaru
   findings_summary: "4観点OK。SKILL.md 8件追従。commit 7a2273d1。gate WARN 0件"
@@ -409,6 +492,7 @@
   timestamp: "2026-05-19T12:58:00"
 - cmd_id: cmd_2860
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hanzo
   findings_summary: "4観点OK。origin因果辺→辞書自動注入。causal_chain 3件。冪等設計。bats 9/9"
@@ -420,6 +504,7 @@
   timestamp: "2026-05-19T13:02:00"
 - cmd_id: cmd_2861
   review_type: report
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kotaro
   findings_summary: "4観点OK。セマンティック辞書gap 2概念追加。bats 31件全PASS。利他サイクル完結"
@@ -431,6 +516,7 @@
   timestamp: "2026-05-19T13:05:00"
 - cmd_id: cmd_2862
   review_type: draft
+  gate_result: N/A
   verdict: REQUEST_CHANGES
   confidence: HIGH
   finding_categories: [assumptions]
@@ -444,6 +530,7 @@
 # === 本セッション(2026-05-19 13:10-14:42)追記 ===
 - cmd_id: cmd_2863
   review_type: draft
+  gate_result: CLEAR
   verdict: REQUEST_CHANGES
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, ambiguity]
@@ -475,6 +562,7 @@
   timestamp: "2026-05-19T13:20:00"
 - cmd_id: cmd_2864
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation]
@@ -496,6 +584,7 @@
   timestamp: "2026-05-19T13:52:00"
 - cmd_id: cmd_2865
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "score列追加。HEADで未実装確認済み"
@@ -509,6 +598,7 @@
   timestamp: "2026-05-19T14:02:00"
 - cmd_id: cmd_2866
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "semantic_search因果辺トラバース統合。HEADで未実装確認済み"
@@ -522,6 +612,7 @@
   timestamp: "2026-05-19T14:25:00"
 - cmd_id: cmd_2867
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "セマンティック辞書自動成長ループ。HEADで未実装確認済み"
@@ -535,6 +626,7 @@
   timestamp: "2026-05-19T14:12:00"
 - cmd_id: cmd_2868
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "traversal_depth列追加。HEADで未実装確認済み"
@@ -553,6 +645,7 @@
   timestamp: "2026-05-19T14:15:00"
 - cmd_id: cmd_2869
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "q11 semantic_search統合。HEADで未実装確認済み"
@@ -566,6 +659,7 @@
   timestamp: "2026-05-19T14:32:00"
 - cmd_id: cmd_2870
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "url種別追加。HEADで未実装確認済み"
@@ -579,6 +673,7 @@
   timestamp: "2026-05-19T14:33:00"
 - cmd_id: cmd_2871
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   findings_summary: "verdict計算値化。原理1行「書くな導出せよ」。各論4層→原理1行"
@@ -638,3 +733,355 @@
   report_ninja: kagemaru
   findings_summary: "known_ninjas.sh共通化+exit 1 BLOCK昇格。+85/-36"
   timestamp: "2026-05-19T13:55:00"
+- cmd_id: cmd_2872
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。flock+atomic replace方式でcmd_complete_gate.sh並行書込み競合を構造保証。41テストPASS skip0"
+  observations:
+    - "事実1: nohup+disown並行実行時に共有ファイル書込みflockなし→0バイト破壊事故"
+    - "事実2: append_line_locked+flock -w 10+atomic replace(tmp+mv)で統一。da64d73e方式と整合"
+    - "事実3: test_cmd_complete_gate 39件+locking 2件=41件全PASS skip0"
+  origin: "[[cmd_2872]] -> [[review_log_0byte破壊]] -> [[flock排他制御追加]]"
+  causal_chain: "nohup並行実行→共有ファイル競合→0バイト破壊→flock+atomic replace→並行安全性構造保証。正の複利"
+  timestamp: "2026-05-19T14:50:00"
+- cmd_id: cmd_karo_ci_fix_score_column
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。テスト列位置決め打ち→ヘッダー名参照に修正。32件PASS skip0。lesson_candidate有(列追加耐性)"
+  observations:
+    - "事実1: cmd_2868のtraversal_depth列追加でテスト659がscore列位置決め打ちFAIL"
+    - "事実2: タスクはscore未出力を疑っていたが忍者が現物確認→列位置ずれが真因と正しく特定"
+    - "事実3: awkヘッダー走査方式に変更→将来の列追加に耐性あり。32件全PASS"
+  origin: "[[cmd_karo_ci_fix_score_column]] -> [[cmd_2868_traversal_depth追加]] -> [[test659_列位置決め打ちFAIL]]"
+  causal_chain: "TSV列追加→固定列番号テストFAIL→ヘッダー名参照に変更→列追加耐性確保。正の複利: 今後の列追加でテスト壊れない"
+  timestamp: "2026-05-19T14:52:00"
+- cmd_id: cmd_2873
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。デーモン統一管理(ヘルスチェック+重複停止+自動再起動)。3AC適切。restart_watchers.sh包含設計。現状重複確認(watcher19/monitor2/listener2)"
+  observations:
+    - "事実1: 現状inbox_watcher19本/ninja_monitor2本/ntfy_listener2本の重複稼働を確認"
+    - "事実2: restart_watchers.shはwatcherのみ管轄。ninja_monitor/ntfy_listenerは統一管理層不在"
+    - "事実3: AC1にプロセス数検査+重複停止+再起動が明記。3AC=LG021範囲内"
+  origin: "[[cmd_2873]] -> [[デーモン3重起動事故]] -> [[統一管理層不在]]"
+  causal_chain: "統一管理層不在→デーモン重複蓄積→リソース消費増+誤動作リスク→supervisor一括管理→自動検知+自動回復。正の複利"
+  timestamp: "2026-05-19T14:58:00"
+- cmd_id: cmd_2873
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  changed_lines: 353
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点OK+adversarial PASS。daemon_supervisor.sh新規+353行。LIB_ONLYテスト隔離。8テストPASS。rollback容易(新規追加のみ)"
+  observations:
+    - "事実1: DAEMON_SUPERVISOR_LIB_ONLYでテスト隔離。実プロセス停止なしでbats検証可能"
+    - "事実2: TERM→KILL段階的停止+起動前プロセス数再チェックで誤殺リスク低減"
+    - "事実3: 8テストPASS+shellcheck PASS+bash -n PASS。既存restart/watchdog系テストもPASS"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "新規追加のみでrollback容易。LIB_ONLYテスト隔離。段階的停止で誤殺リスク低"
+  origin: "[[cmd_2873]] -> [[デーモン3重起動事故]] -> [[supervisor統一管理実装]]"
+  causal_chain: "デーモン重複蓄積→supervisor検査+修復+通知→自動回復。新規追加のみでblast radius小"
+  timestamp: "2026-05-19T15:05:00"
+- cmd_id: cmd_karo_ci_fix_skill_refs_test
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: saizo
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。cmd_2872 flock変更のテスト依存関数追加。+4行。テスト57 PASS+subsystems全体PASS"
+  observations:
+    - "事実1: cmd_2872のappend_line_locked追加→subsystemsテストで未定義関数エラーが真因"
+    - "事実2: テストヘルパーにappend_line_locked追加+setup_fileでlock_path.sh source"
+    - "事実3: scope内テスト全PASS。sqlite3 missing等はscope外既存失敗"
+  origin: "[[cmd_karo_ci_fix_skill_refs_test]] -> [[cmd_2872_flock変更]] -> [[テスト依存関数欠落]]"
+  causal_chain: "flock追加→新依存関数→テスト抽出にunresolved→CI RED→ヘルパー追加で解消"
+  timestamp: "2026-05-19T15:06:00"
+- cmd_id: cmd_karo_obs_required_check
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。gunshi_log_append.sh exit 2 BLOCK+SKILL.md Step 1.5=2層防御。25テストPASS。AC不整合(別cmd由来のAC文)あるが実装品質に問題なし"
+  observations:
+    - "事実1: AC1-AC3がpost-bulletin-notify-read-check.sh内容で実作業(observations必須化)と不整合。karo_direct配備のテンプレート混入"
+    - "事実2: gunshi_log_append.sh +13行。review_type=draft/report/self_studyでobservations空/欠落→exit 2(BLOCK)"
+    - "事実3: commit f46de80a。25テストPASS skip0。SKILL.md Step 1.5でLLM指示層も追加"
+  origin: "[[cmd_karo_obs_required_check]] -> [[observations欠落22件]] -> [[自動BLOCK化]]"
+  causal_chain: "observations欠落22件→意志依存→gunshi_log_append exit 2 BLOCK+SKILL.md指示→2層防御で構造保証。正の複利"
+  timestamp: "2026-05-19T15:22:00"
+- cmd_id: cmd_2875
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。q11にcausal_backlinks統合。道具存在≠使う仕組み存在→意志依存を強制化。3AC適切"
+  ambiguity_points: none
+  observations:
+    - "事実1: show_q11_semantic_search_matches L374確認。causal_backlinks.sh 634B存在確認"
+    - "事実2: Phase 4(自動化×強制)直接適用。辿る行動をcmd起票フローに埋め込む"
+    - "事実3: timeout付き呼出し推奨(semantic_search同様)。0件スキップでノイズ防止"
+  origin: "[[cmd_2875]] -> [[辿る行動ゼロ]] -> [[q11 causal_backlinks統合]]"
+  causal_chain: "道具存在→意志依存→誰も辿らない→q11に埋め込み→起票時に因果辺自動提示。正の複利(因果辺蓄積→提示情報豊かに)"
+  timestamp: "2026-05-19T16:00:00"
+- cmd_id: cmd_2876
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。未登録通知に類似概念TOP3推薦追加。検出→通知→推薦で判断コスト削減。3AC適切"
+  ambiguity_points: none
+  observations:
+    - "事実1: semantic_index_update.sh L341に未登録通知コード確認。index.md 881行=aliases走査は軽量"
+    - "事実2: 辞書成長ループの回転速度向上。推薦→即判断→alias追加→次の検出精度向上"
+    - "事実3: 完全一致スキップ(AC2)で既存aliasesの重複推薦を防止"
+  origin: "[[cmd_2876]] -> [[insight推薦精度低]] -> [[類似概念TOP3推薦]]"
+  causal_chain: "検出→通知のみ→判断コスト高→推薦追加→即行動可能。正の複利(辞書成長加速)"
+  timestamp: "2026-05-19T16:03:00"
+- cmd_id: cmd_2875
+  review_type: report
+  verdict: FAIL
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "配備不備。task YAMLのcontext/scope(CI修正)とpurpose/AC(causal_backlinks統合)が不一致。忍者はscope優先でCI確認のみ。AC1/AC2未実施。再配備要"
+  observations:
+    - "事実1: task YAMLのcontext=cmd_karo_ci_fix_verdict_derive, purpose/AC=cmd_2875。不一致"
+    - "事実2: 忍者の判断(scope優先+decision_candidate報告)は正確。task_clarity: 45"
+    - "事実3: CI修正は既存commit 241b322cで完了済み。指定3bats 70テストPASS"
+  origin: "[[cmd_2875]] -> [[task_YAML不整合]] -> [[FAIL(配備不備)]]"
+  causal_chain: "task YAML不整合→忍者scope優先→AC1/AC2未実施→FAIL。根因は配備側のcontext/purpose矛盾"
+  timestamp: "2026-05-19T16:07:00"
+- cmd_id: cmd_2876
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。未登録通知にTOP3推薦追加。包含+token/bigram+文字集合の合成スコア。11テストPASS"
+  observations:
+    - "事実1: alias_similarity_score+similar_concept_suggestions関数追加。既存parse_concepts構造再利用"
+    - "事実2: AC2で完全一致スキップをBatsで確認(成長ループaliasが未登録通知に出ない)"
+    - "事実3: commit 12ab9f29(実装)+34894607(テスト)。11テストPASS skip0"
+  origin: "[[cmd_2876]] -> [[insight推薦精度低]] -> [[TOP3推薦実装LGTM]]"
+  causal_chain: "検出のみ→判断材料なし→類似概念推薦追加→即判断可能。辞書成長ループ加速"
+  timestamp: "2026-05-19T16:10:00"
+- cmd_id: cmd_2877
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。kj-role-count定休日disabled+パート色修正。殿直接要望2件。FE修正のみ。2AC適切"
+  ambiguity_points: none
+  observations:
+    - "事実1: 水曜getDay()===3/日曜getDay()===0。DatePicker選択後なのでTZ影響なし"
+    - "事実2: staffRoleButtonClass(cmd_2853新設)のrole=part→bg-[#FFF3E0]設計をverified"
+    - "事実3: StaffSelector L17にdisabled prop存在をverified。BE変更なし"
+  origin: "[[cmd_2877]] -> [[殿要望_定休日+パート色]] -> [[APPROVE]]"
+  causal_chain: "定休日誤入力可能+パート色消失→FE曜日判定+色バグ修正→恒久防止。正の複利"
+  timestamp: "2026-05-19T16:15:00"
+- cmd_id: cmd_2877
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。定休日disabled(追加+取消両方)+パートオレンジ復元。typecheck+build PASS。commit 1853794確認"
+  observations:
+    - "事実1: 外部リポcommit 1853794確認。page.tsx+StaffSelector.tsx+staffRoleStyle.ts 3ファイル"
+    - "事実2: discretion_fills: 取消も不可=妥当。定休日は追加/取消両方を無効化"
+    - "事実3: npm run typecheck+build PASS。閲覧は影響なし(disabledは入力操作のみ)"
+  origin: "[[cmd_2877]] -> [[殿要望_定休日+パート色]] -> [[LGTM]]"
+  causal_chain: "定休日誤入力+パート色消失→3ファイル修正→恒久防止+視認性回復"
+  timestamp: "2026-05-19T16:20:00"
+- cmd_id: cmd_karo_fix_tailwind_content
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。tailwind.config.js content追加(lib配下)。パート色消失の根因(Tailwindパージ)修正。build成功"
+  observations:
+    - "事実1: cmd_2877でstaffRoleStyle.ts修正→ビルド時パージで消える根因=tailwind content不足"
+    - "事実2: ./lib/**/*.{ts,tsx}追加で根因解消。npm run build 36.6s成功"
+    - "事実3: scope外差分(page.tsx/package*.json)は未commit。1ファイルのみ"
+  origin: "[[cmd_karo_fix_tailwind_content]] -> [[cmd_2877_パート色]] -> [[Tailwindパージ根因修正]]"
+  causal_chain: "staffRoleStyle.ts色定義→Tailwind content不足→パージ→色消失→content追加→根因解消"
+  timestamp: "2026-05-19T16:50:00"
+- cmd_id: cmd_karo_kj_day_of_week
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。日付表示に曜日追加。getDay+日本語配列。scope外差分をgit apply --cachedで適切分離。build成功"
+  observations:
+    - "事実1: 既存ローカル日付パース(cmd_2877定休日判定)と同じgetDay方式で整合"
+    - "事実2: scope外祝日差分をgit apply --cachedで分離=scope遵守"
+    - "事実3: npm run build成功。1ファイル(page.tsx)のみ修正"
+  origin: "[[cmd_karo_kj_day_of_week]] -> [[殿要望_曜日表示]] -> [[LGTM]]"
+  causal_chain: "日付表示に曜日なし→定休日の視認性不足→曜日ラベル追加→直感的に定休日識別可能"
+  timestamp: "2026-05-19T16:53:00"
+- cmd_id: cmd_karo_kj_holiday
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hanzo
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。@holiday-jp導入+祝日定休日判定+祝日名表示。build成功。cmd_2877定休日判定に祝日統合"
+  observations:
+    - "事実1: @holiday-jp/holiday_jp導入。isClosedDateにOR条件で祝日追加"
+    - "事実2: 祝日名表示(憲法記念日等)をdiscretion_fillsで追加。ユーザ体験向上"
+    - "事実3: npm run build成功。commit 83f7486。page.tsx+package.json+lock 3ファイル"
+  origin: "[[cmd_karo_kj_holiday]] -> [[殿要望_祝日定休日]] -> [[LGTM]]"
+  causal_chain: "祝日に入力可能→誤入力リスク→holiday-jp+OR条件→祝日も定休日扱い。正の複利(恒久防止)"
+  timestamp: "2026-05-19T16:57:00"
+- cmd_id: cmd_karo_kj_role_filter
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。集計画面ロールフィルタ(ALL/常勤/パート)+ロール種類select。FE+BE 3ファイル。pytest 19 PASS+build成功。gate FAIL後修正版"
+  observations:
+    - "事実1: stats APIにrole_type_idクエリ追加=DB集計時点で絞り込み(FEフィルタでは不十分)"
+    - "事実2: gate FAIL(lesson title欠落+task_clarity未記入)→忍者自己修正+diagnose_reason記述"
+    - "事実3: 3ファイル修正(stats.py+dashboard/page.tsx+api.ts)。pytest 19 passed+npm run build成功"
+  origin: "[[cmd_karo_kj_role_filter]] -> [[殿要望_ロールフィルタ]] -> [[LGTM]]"
+  causal_chain: "集計画面フィルタなし→全ロール混在→FE+BE追加→雇用区分+ロール種類絞り込み可能"
+  timestamp: "2026-05-19T17:12:00"
+- cmd_id: cmd_karo_kj_role_switch
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。ロール種類切替UI(入力+カレンダー)。staff-role_type対応不在をassumption_invalidationで正しく報告。5ファイル。build成功"
+  observations:
+    - "事実1: DBにstaff-role_type対応テーブルなし→records.role_type_idでフィルタ(正しい判断)"
+    - "事実2: lesson_candidate有(title+detail両方存在)。DB関係不在時の安全な解釈パターン"
+    - "事実3: 5ファイル修正。npm run build成功。grep確認済み(page15件/calendar17件)"
+  origin: "[[cmd_karo_kj_role_switch]] -> [[ロール種類固定]] -> [[切替UI追加]]"
+  causal_chain: "診療介助固定→多ロール対応不可→role_types取得+選択IDフィルタ→全画面でロール切替可能"
+  timestamp: "2026-05-19T17:17:00"
+- cmd_id: cmd_2878
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。origin必須チェックL1→L5化。gate WARN+書込みサブコマンド追加。3AC適切。段階的導入"
+  ambiguity_points: none
+  observations:
+    - "事実1: origin付与率1.2%(61/4938)。gate/report_field_setにoriginチェック0件"
+    - "事実2: WARN開始→安定後BLOCK化の段階的導入。既存ワークフロー破壊なし"
+    - "事実3: L1→L5昇格。知性の外部化原則(Phase 4)直接適用"
+  origin: "[[cmd_2878]] -> [[origin付与率1.2%]] -> [[L5化(gate強制+書込み支援)]]"
+  causal_chain: "origin 1.2%→gate未対応→意志依存→gate WARN+書込み支援→因果辺成長加速。正の複利"
+  timestamp: "2026-05-19T17:22:00"
+- cmd_id: cmd_2879
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。将軍task_new BLOCK(L0→L5)。cmd品質ゲート迂回防止。既存cmd_new guardの横展開。3AC適切"
+  ambiguity_points: none
+  observations:
+    - "事実1: inbox_write.sh L1078にcmd_new guard存在。task_new guardなし(grep確認)"
+    - "事実2: from=shogun+task_new→BLOCK。from=karo→通過。鎖の原理維持"
+    - "事実3: 本セッション5件ナッジ乱発の根因修正。Phase 4(自動化×強制)直接適用"
+  origin: "[[cmd_2879]] -> [[ナッジ乱発5件]] -> [[task_new guard追加]]"
+  causal_chain: "将軍ナッジ→cmd_save品質ゲートバイパス→guard追加→cmd経由強制。正の複利(品質ゲート恒久保護)"
+  timestamp: "2026-05-19T17:25:00"
+- cmd_id: cmd_2879
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。task_new guard追加。from=shogun BLOCK/from=karo通過。32テストPASS。scope不一致を一次データで補正"
+  observations:
+    - "事実1: task YAMLのscopeがfrontend→parent_cmd一次データでinbox_write.shに補正(正しい判断)"
+    - "事実2: exit 1+stderrメッセージでBLOCK明示。サイレントBLOCKなし(L594準拠)"
+    - "事実3: 32/32テストPASS。from=shogun/karo両方の挙動をbats二値確認"
+  origin: "[[cmd_2879]] -> [[ナッジ乱発]] -> [[task_new guard LGTM]]"
+  causal_chain: "guard不在→ナッジ乱発→品質ゲートバイパス→guard追加→cmd経由強制。恒久防止"
+  timestamp: "2026-05-19T17:28:00"
+  origin: "[[cmd_2877]] -> [[殿要望_定休日+パート色]] -> [[LGTM]]"
+  causal_chain: "定休日誤入力+パート色消失→FE3ファイル修正→恒久防止+視認性回復"
+  timestamp: "2026-05-19T16:20:00"
+- cmd_id: cmd_2880
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "6観点OK。origin自動継承(cmd→報告)。忍者コスト=ゼロで因果辺生産。cmd_2878(WARN)と連携。3AC適切"
+  ambiguity_points: none
+  observations:
+    - "事実1: report_field_set.sh L52にorigin→lesson_candidate.originマッピング存在確認"
+    - "事実2: cmd_2878(gate WARN)+cmd_2880(自動継承)=検出+生産の2層"
+    - "事実3: karo_direct等cmd_id不在時はgraceful handling(AC2)"
+  origin: "[[cmd_2880]] -> [[忍者originコスト>0]] -> [[零コスト自動継承]]"
+  causal_chain: "origin手動→コスト>0→意志依存→1.2%→自動継承→コスト=0→全報告に因果辺。正の複利"
+  timestamp: "2026-05-19T17:30:00"
+- cmd_id: cmd_2878
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。origin未記入WARN+書込み短縮コマンド。33テストPASS。py_compile PASS。段階的導入"
+  observations:
+    - "事実1: gate_report_format_main.pyでorigin空/none/null/FILL_THIS→WARN出力(非BLOCK)"
+    - "事実2: report_field_set.sh originコマンドがlesson_candidate.originへ解決。短縮書込み可能"
+    - "事実3: 4ファイル修正。33テストPASS skip0。commit 53399b92"
+  origin: "[[cmd_2878]] -> [[origin付与率1.2%]] -> [[WARN+書込み支援LGTM]]"
+  causal_chain: "origin未対応→1.2%→gate WARN+書込み支援→検出+生産の基盤確立"
+  timestamp: "2026-05-19T17:33:00"
+- cmd_id: cmd_2880
+  review_type: report
+  verdict: FAIL
+  gate_result: null
+  report_ninja: hanzo
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "FAIL。purpose(origin自動継承)と実装(holiday-jp導入)が完全不一致。タスクYAML scope mismatch再発(cmd_2875と同パターン)。origin自動継承は未実施"
+  observations:
+    - "事実1: cmd_2880 purpose=報告YAML origin自動継承。忍者実装=holiday-jp導入+祝日判定(完全不一致)"
+    - "事実2: binary_checksにAC1-AC3(origin関連)への回答なし。commitチェックのみ"
+    - "事実3: cmd_2875と同パターン(task YAMLのcontext/scopeが別cmdの内容)。配備側の問題"
+  origin: "[[cmd_2880]] -> [[task_YAML_scope_mismatch]] -> [[FAIL(配備不備2回目)]]"
+  causal_chain: "task YAML不整合→忍者が別タスク実装→origin自動継承未実施→FAIL。根因=配備時のscope/purpose矛盾(2回目)"
+  timestamp: "2026-05-19T17:55:00"

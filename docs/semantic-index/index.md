@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -69,6 +69,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:41:32+09:00 真の穴: INS-024911のセマンティック辞書未登録2件は対処すべき |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:57:03+09:00 obsidian×セマンティックインデックスの発展について、なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:01:24+09:00 Obsidian×セマンティック統合パイプライン(因果辺トラバース)の概念自体をセマンティック辞書に追加しよう |
+| cmd | `cmd_2874` 強化 — セマンティック辞書ノイズ除去+カバレッジ拡充(辞書育成Phase 2) (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T15:49:36+09:00 obsidian×セマンティックスインデックスは順調か？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:08:16+09:00 obsidianのリンクは成長しているか？成長速度が遅くないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:10:39+09:00 bm5vc6kjt toolu_01UHpBBvAq2dGwh9R2soynjz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -76,7 +80,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回, やろう, 定休日扱い, CMDで対応しよう, 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう, さらに因果ネットワークの成長速度を構造的に加速しよう |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -115,6 +119,14 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:35:19+09:00 Gate並行実行のflock漏れをなぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:46:38+09:00 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T15:54:20+09:00 やろう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:02:00+09:00 You are matching a user query to a semantic index. Query: title: "修正 — kj-role-count 定休日入力不可+パート色消失修正" purpose: "殿の2要望:  |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:03:03+09:00 You are matching a user query to a semantic index. Query: title: "修正 — kj-role-count 定休日入力不可+パート色消失修正" purpose: "殿の2要望:  |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:03:16+09:00 You are matching a user query to a semantic index. Query: title: "修正 — kj-role-count 定休日入力不可+パート色消失修正" purpose: "殿の2要望:  |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:42:23+09:00 やろう。定休日扱い |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:14:34+09:00 CMDで対応しよう。レベルいくつだ？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:16:37+09:00 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう。レベルいくつだ？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T17:20:27+09:00 さらに因果ネットワークの成長速度を構造的に加速しよう。なぜなぜ7回 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -244,7 +256,7 @@ codd:
 |------|---|
 | id | shin_shijin_design |
 | label | 四神設計 |
-| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した |
+| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した, inbox write sh将軍ナッジ防止Guard追加 task new →L5化 |
 | skills | pf-registration, db-check |
 
 | 種別 | パス/参照 |
@@ -257,6 +269,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T23:55:13+09:00 シン忍法とシン四神からはPTU最強から1体、Average UWP最強から1体選ばないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-07T17:18:08+09:00 では記事を書いて。ベーシックはお試しプラン。standardは募集停止となったお得なプラン、アドオンもすでに募集停止となったスタンダードプランのアドオン。新しいスタンダードプランはシン四神を中心としたもの。プレミアムは特別な非公開プラン。限 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:55:37+09:00 step2のクライアントIDは取得した。1020628824992-30qnh5airgml0vhqljh6nkrflo0dvcuk.apps.googleusercontent.com |
+| cmd | `cmd_2879` 強化 — inbox_write.sh将軍ナッジ防止Guard追加(task_new L0→L5化) (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -325,6 +338,7 @@ codd:
 | cmd | `cmd_2829` SKILL.md追従3件更新(dream/karo-direct/shogun-teire — script変更に追従) (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/ninja-commit/SKILL.md`) |
 | cmd | `cmd_2871` 強化 — verdict計算値化(bcから自動導出。手動記入廃止) (`scripts/gates/gate_report_autofix_main.py`, `skills/verdict-check/SKILL.md`, `tests/test_gate_report_format.bats`) |
 | cmd | `cmd_karo_obs_required_check` (`scripts/gunshi_log_append.sh`, `skills/review-bundle/SKILL.md`) |
+| cmd | `cmd_karo_skill_md_verdict_sync` (`skills/ninja-commit/SKILL.md`, `skills/report-write/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -375,7 +389,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, 穴をふさごう, task notification task id bja0fxnxt task id tool use id tool |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
@@ -441,6 +455,7 @@ codd:
 | cmd | `cmd_2852` 修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
 | cmd | `cmd_2864` 強化 — 教訓注入キーワードスコア最低閾値追加(score>=2で無関係注入削減) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:35:00+09:00 bja0fxnxt toolu_019QPfn1mVGPze6AxmHBwpN1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -508,7 +523,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -553,6 +568,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:45:57+09:00 他に放置しているものがないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:24:40+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:57:37+09:00 確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:29:45+09:00 CDPで確認して |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -824,7 +840,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック |
+| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, verdict自動導出は免除文脈 waive reason をgate検出へ残す |
 | skills | report-write, verdict-check |
 
 | 種別 | パス/参照 |
@@ -835,6 +851,7 @@ codd:
 | file | `context/training-cycle.md` |
 | cmd | `cmd_2871` verdict計算値化(bcから自動導出) |
 | lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
+| lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
 
 ## external_project_registry — 外部プロジェクト登録
 

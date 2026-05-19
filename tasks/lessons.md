@@ -6198,3 +6198,69 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフィールドレベル照合も偵察に追加
+
+### L630: bulletin_write.shのSCRIPT_DIRはrepo root(parentディレクトリ)であり、scripts/yaml_auto_archive.shは$SCRIPT_DIR/scripts/yaml_auto_archive.shで到達する
+- **日付**: 2026-05-19
+- **出典**: cmd_2856
+- **記録者**: hanzo
+- **tags**: [infra,bash,yaml]
+- **target_files**: [scripts/cmd_save.sh,scripts/karo_workaround_log.sh,scripts/bulletin_write.sh,scripts/gates/gate_shogun_startup.sh,scripts/yaml_auto_archive.sh]
+- **origin**: [[cmd_2856]]
+- **when**: 未設定
+- **how**: 未設定
+- bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR/yaml_auto_archive.shとすると不在エラー。bulletin_write.sh独自命名規則に注意。origin: [[cmd_2856]] -> [[SCRIPT_DIR命名混乱]] -> [[パス解決エラー]]
+
+### L631: q11のGuard重複確認はファイル名guardではなくGuard一覧記述で判定する
+- **日付**: 2026-05-19
+- **出典**: cmd_2863
+- **記録者**: hayate
+- **tags**: [infra,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,tests/unit/test_cmd_save_assumptions_required.bats,tests/unit/test_cmd_save_q11_fp_reduction.bats,tests/unit/test_cmd_save_q5.bats]
+- **origin**: [[cmd_2863]]
+- **when**: 未設定
+- **how**: 未設定
+- q11_has_guard_duplicate_checkを最初はguard文字列の有無で判定したため sample_guard_hook.sh のファイル名に誤反応した。Guard一覧/既存Guard/Guard確認のような明示的記述だけを合格にする必要がある。origin: [[cmd_2863]] -> [[ファイル名guard誤検出]] -> [[Guard重複確認判定の限定]]
+
+### L632: TSV列追加時はテストの列参照をヘッダー名方式にせよ
+- **日付**: 2026-05-19
+- **出典**: cmd_karo_ci_fix_score_column
+- **記録者**: karo
+- **tags**: [infra]
+- **target_files**: [tests/unit/test_deploy_task_ac_handling.bats]
+- **origin**: [[cmd_karo_ci_fix_score_column]]
+- **when**: 未設定
+- **how**: 未設定
+- 固定列番号(cut -f11等)ではなくヘッダー行からフィールド名で列位置を解決せよ。cmd_2865でscore列追加後cmd_2868でtraversal_depth列追加→テスト659が列位置ずれでFAIL
+
+### L633: verdict自動導出は免除文脈(waive_reason)をgate検出へ残す
+- **日付**: 2026-05-19
+- **出典**: cmd_karo_ci_fix_verdict_derive
+- **記録者**: karo
+- **tags**: [infra,gate]
+- **target_files**: [scripts/gates/gate_report_autofix_main.py,scripts/report_field_set.sh,tests/unit/test_report_template_gate_compat.bats]
+- **origin**: [[cmd_karo_ci_fix_verdict_derive]]
+- **when**: 未設定
+- **how**: 未設定
+- autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパスされる。cmd_karo_ci_fix_verdict_derive(241b322c)で修正済み。enforcement: gate_report_autofix_main.py should_derive_verdictにbc_has_waive_marker条件
+
+### L634: stats APIの集計粒度不足はFEフィルタでは補えない(kj-role-count)
+- **日付**: 2026-05-19
+- **出典**: cmd_karo_kj_role_filter
+- **記録者**: karo
+- **tags**: [infra,db,api]
+- **target_files**: [backend/routers/stats.py,frontend/app/dashboard/page.tsx,frontend/lib/api.ts]
+- **origin**: [[cmd_karo_kj_role_filter]]
+- **when**: 未設定
+- **how**: 未設定
+- role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ追加が必要。
+
+### L635: DB関係不在時はUI要件を永続化キーと表示集計に分離解釈せよ(kj-role-count)
+- **日付**: 2026-05-19
+- **出典**: cmd_karo_kj_role_switch
+- **記録者**: karo
+- **tags**: [infra,db]
+- **target_files**: [frontend/app/page.tsx,frontend/app/calendar/page.tsx,frontend/components/Calendar.tsx,frontend/lib/types.ts,frontend/tsconfig.tsbuildinfo]
+- **origin**: [[cmd_karo_kj_role_switch]]
+- **when**: 未設定
+- **how**: 未設定
+- 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解決する設計が正解。

@@ -157,11 +157,14 @@ lessons:
     (5)パイプライン系cmdは全レイヤーの入出力を現物確認
     (6)金融データは遡及的に変わる。過去データ不変の暗黙前提禁止
     (7)技術的可能≠ビジネス制約クリア。PI全量照合して禁止制約確認してからcmd起票(cmd_2258 PI-024事故)
-    (8)grepの存在確認は内容理解ではない。0件なら別キーワード、N件なら各行の意味を精読してから判断せよ
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032]
+    (8)grepの存在確認は内容理解ではない。0件なら対象ファイルのGuard/Section一覧を通読+別キーワードで再検索+git diff --statで未commit変更確認。反証の不在≠不在の証明(cmd_2857/2862/2863の3連続車輪。Guard一覧自動表示+git diff導線で構造予防)
+    (9)capture-paneのテキストを殿の裁定と断定するな。殿の裁定はlord_conversation inboundでのみ確認可能。見えた気がする≠見えた。破壊的操作前に殿の明示承認必須(cmd_2783 force push 26commits消失)
+    (10)sed -n部分行で止めるな。前後含め十分な範囲を精読せよ。軍師分析の結論を鵜呑みにせず現物のコード行を全て確認(cmd_2794 L3713-3726見落とし)
+    (11)環境設定ファイル(render.yaml/CI等)は想像で書くな。動いている本番PJの同等ファイルをコピーして改変。3連続region/type/runtime間違い(cmd_2850)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037]
   created_at: '2026-04-25'
   automated: true
-  enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)'
+  enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)'
 
 - id: LS-A10
   title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
@@ -260,10 +263,10 @@ lessons:
     忍者の成長=間違える余地がない構造(report_field_set.sh GP-072c5)。
     スキル使用も成長ループの一部。適したスキルを無視できる状態は構造的バグであり、Guard/スキル強制へ埋め込む。
     idle時に殿入力待ちで止まるな。入力・確認・還流の鎖が切れている箇所を自走で塞げ。
-  source_ids: [LS027, LS028, LS060]
+  source_ids: [LS027, LS028, LS060, LS030]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md'
+  enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md+prompt_state_inject.sh(概念→スキル推奨L1)+deploy_task.sh(inject_semantic_concepts L4)+gunshi Guard9(L2)'
 
 - id: LS-A18
   title: 計測されていないものは改善ループが回らない
@@ -422,14 +425,7 @@ lessons:
 # LS034(cmd_2714)→LS-A04+A05+A09, LS035(cmd_2715)→LS-A04(27) — 物理削除済み
 # LS030(cmd_2716)→LS-A05, LS031(cmd_2717)→LS-A05 — 物理削除済み(2026-05-14)
 # LS030(cmd_2718)→LS-A05 — 物理削除済み
-- id: 'LS030'
-  title: 'スキル使用は意志依存ではなく構造的強制'
-  origin: '[[cmd_2734]]'
-  detail: '殿指摘: CDP未使用/DB-check誤使用が繰返し発生。根因=概念→スキルの対応がインフラに存在しない。cmd_2734-2739で5層カバー(L1概念→スキル推奨/L2レビュー検出/L3将軍TRIGGER表示/L4家老+忍者標準化/L5 PreToolUse BLOCK)。cmd_2739でproject文脈対応。本番=DM-Signalではない(殿指摘)。セマンティック辞書の精度が上流'
-  source_cmd: 'cmd_2734'
-  created_at: '2026-05-15'
-  automated: true
-  enforcement: 'type=5layer; file=scripts/hooks/prompt_state_inject.sh+scripts/deploy_task.sh+instructions/gunshi.md+scripts/gates/gate_karo_startup.sh; pattern=detect_skill_triggers+inject_semantic_concepts+Review Criteria+スキル品質'
+# LS030: superseded by LS-A17 (スキル構造的強制=成長ループ実装の一部。5層enforcement追記。2026-05-19統合)
 - id: 'LS031'
   title: '将軍の自走=鎖の中。F004過剰解釈の修正'
   origin: '[[cmd_2744]]'
@@ -438,22 +434,8 @@ lessons:
   created_at: '2026-05-15'
   automated: true
   enforcement: 'type=documentation+gate; file=instructions/shogun.md+scripts/gates/gate_shogun_startup.sh; pattern=workflow+GATE CLEAR'
-- id: 'LS032'
-  title: 'ハルシネーションに基づくforce push事故: capture-paneのテキストを殿の裁定と誤認'
-  origin: '[[cmd_2783]]'
-  detail: 'capture-paneに見えたテキストを殿の承認と断定しforce pushで26commits消失(2026-05-15)。根因: (1)capture-paneは時刻・発言者情報なし。殿の裁定はlord_conversation inboundでのみ確認可能 (2)自分の記憶・認識も確認対象。見えた気がする≠見えた (3)破壊的操作の前に殿の明示承認がなかった (4)時系列で因果を確認していれば防げた。殿指摘: 事実を確認する前に反省するのは逃げ。ハルシネーションに基づいた反省はナンセンス'
-  source_cmd: 'cmd_2783'
-  created_at: '2026-05-15'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-bash-combined.sh; pattern=Guard(cmd_2784で実装予定)'
-- id: 'LS033'
-  title: 'コード精読不足でcmd前提崩壊'
-  origin: '[[cmd_2794]]'
-  detail: 'cmd_2794: L3705のfallbackパスがeffectiveness除外の前と判断したが、L3713-3726に既にfallback内除外が実装済み。sed -n 3700,3710pで止めてL3713-3726を読まなかった。軍師分析の結論を鵜呑みにし現物を部分的にしか確認しなかった。LS-A09(現物確認必須)の再発'
-  source_cmd: 'cmd_2794'
-  created_at: '2026-05-16'
-  automated: true
-  enforcement: '意志依存。cmd_save.sh q5でstructure_verified要求済みだが精読範囲の網羅性は将軍の判断に依存'
+# LS032: superseded by LS-A09(9) (capture-pane誤認=現物確認必須の極端版。2026-05-19統合)
+# LS033: superseded by LS-A09(10) (コード精読不足=現物確認必須の再発。2026-05-19統合)
 - id: 'LS034'
   title: '外部PJ cmdのパス解決 — 相対パス指定+将軍リポ参照不可'
   origin: '[[cmd_2825]] [[cmd_2853]]'
@@ -471,14 +453,7 @@ lessons:
   created_at: '2026-05-18'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=brownfield'
-- id: 'LS037'
-  title: '新規PJの設定は既存本番PJからコピーして改変せよ'
-  origin: '[[cmd_2850]]'
-  detail: 'render.yaml/CI/デプロイ設定など環境設定ファイルは想像で書くな。動いている本番PJ(KJ-Toilet/KJ-Partshift/DM-Signal)の同等ファイルをまず読み、コピーして改変する。kj-role-countのrender.yamlでregion: japan(存在しない)、type: static(servicesでは無効)、runtime: node(staticが正しい)を3回連続で間違えた。全て既存PJの現物を最初に見ていれば防げた。'
-  source_cmd: 'cmd_2850'
-  created_at: '2026-05-18'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=render.yaml'
+# LS037: superseded by LS-A09(11) (新PJ設定コピー=現物確認必須の環境設定版。2026-05-19統合)
 # LS038: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
 # LS039: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
 - id: 'LS040'
@@ -498,3 +473,12 @@ lessons:
   created_at: '2026-05-19'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=yaml_auto_trim'
+# LS043: superseded by LS-A09 (grep0件→未実装断定。LS-A09(8)に吸収。cmd_2862, 2026-05-19)
+- id: 'LS043'
+  title: 'ナッジで作業させるな — cmd起票が学習機会'
+  origin: '[[cmd_2877]]'
+  detail: '殿の要望が連続で来た時にinbox_writeで家老に直接指示し、cmd起票を5件連続で省略(kj-role-count #2-#6)。根因=速さ>学習の優先逆転。cmd起票のquality_gate記入を時間コストと捉えたが、それは学習機会。ナッジで作業は進むがlesson_candidate/binary_checks/軍師レビューが全て欠落し、鎖全体の成長が止まる。Phase 2(出力=仕事の罠)の再現'
+  source_cmd: 'cmd_2877'
+  created_at: '2026-05-19'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001'

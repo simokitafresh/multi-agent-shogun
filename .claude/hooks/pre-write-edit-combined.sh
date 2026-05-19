@@ -346,6 +346,14 @@ if [[ "$file_path" =~ (hooks/|gates/gate_.*_startup|gates/gate_gunshi_|CLAUDE\.m
     fi
 fi
 
+# === Guard 11: observations必須リマインダー (review_log新エントリ追記時) ===
+if [[ "$file_path" == *'gunshi_review_log.yaml' ]]; then
+    _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+    if echo "$_new_string" | grep -q '^\- cmd_id:' && echo "$_new_string" | grep -q 'review_type:' && ! echo "$_new_string" | grep -q 'observations:'; then
+        echo "WARN(observations必須): review_logエントリにobservationsなし。最低1つの具体的事実を記載せよ(計測データが深さの唯一の証拠)。" >&2
+    fi
+fi
+
 # === Guard 10: LG020 数値実測リマインダー (軍師設計書保存時) ===
 if [[ "$file_path" == *'docs/research/gunshi_'* ]]; then
     _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"

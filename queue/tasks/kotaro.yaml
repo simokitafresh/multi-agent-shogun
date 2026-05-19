@@ -37,11 +37,11 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_training_L4_auto_202605191330_kotaro
+  parent_cmd: 
   project: infra
   purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/ninja_monitor.sh
   task_id: cmd_training_L4_auto_202605191330_kotaro_normal

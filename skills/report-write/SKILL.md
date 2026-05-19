@@ -120,6 +120,10 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=hayate:lesson_candidate_fields_empty:detail
+
+- 2026-05-19: gate=gate_report_format result=FAIL executor=hayate reason=lesson_candidate: found=true but no title
+- 2026-05-19: gate=gate_report_format result=FAIL executor=hanzo reason=ac_version_read: MISSING; lessons_useful: MISSING
 
 - 2026-05-18: gate=gate_report_format result=FAIL executor=tobisaru reason=files_modified: MISSING; purpose_validation: MISSING
 - 2026-05-18: gate=gate_report_format result=FAIL executor=kotaro reason=lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" fiel...
