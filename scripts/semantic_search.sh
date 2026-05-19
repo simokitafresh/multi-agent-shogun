@@ -19,6 +19,9 @@ Environment:
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
   SEMANTIC_NO_CACHE    Set to 1 to disable LLM cache lookup and writes
+  SEMANTIC_DISABLE_CAUSAL
+                       Set to 1 to suppress causal backlink expansion
+  SEMANTIC_CAUSAL_ROOT Override backlink search root (default: repository root)
 EOF
 }
 
@@ -84,6 +87,46 @@ first_layer_search() {
     semantic_index_python first-layer "$no_match_mode"
 }
 
+append_causal_expansion() {
+    local search_output="$1"
+    local links
+
+    [ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ] || return 0
+
+    links=$(
+        grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' "$search_output" 2>/dev/null \
+            | sed 's/^\[\[//; s/\]\]$//' \
+            | awk 'NF && !seen[$0]++' \
+            | head -20 \
+        || true
+    )
+    [ -n "$links" ] || return 0
+
+    echo ""
+    echo "causal_expansion:"
+    while IFS= read -r link_id; do
+        [ -n "$link_id" ] || continue
+        echo "- link: [[$link_id]]"
+
+        local backlink_output
+        backlink_output=$(
+            cd "${SEMANTIC_CAUSAL_ROOT:-$script_dir}" \
+                && bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
+                    | head -10 \
+            || true
+        )
+
+        if [ -n "$backlink_output" ]; then
+            while IFS= read -r resource; do
+                [ -n "$resource" ] || continue
+                echo "  - resource: $resource"
+            done <<< "$backlink_output"
+        else
+            echo "  - resource: none"
+        fi
+    done <<< "$links"
+}
+
 llm_cache_key() {
     local llm_cmd="$1"
     {
@@ -105,6 +148,7 @@ llm_search() {
         cache_file="$cache_dir/$key"
         if [ -f "$cache_file" ]; then
             cat "$cache_file"
+            append_causal_expansion "$cache_file"
             return 0
         fi
     fi
@@ -152,6 +196,7 @@ EOF
     } > "$final_output"
 
     cat "$final_output"
+    append_causal_expansion "$final_output"
 
     if [ "$no_cache" != "1" ] && [ -n "$cache_file" ]; then
         mkdir -p "$cache_dir"
@@ -163,7 +208,11 @@ EOF
 }
 
 if [ "$force_llm" = false ]; then
-    if first_layer_search silent; then
+    first_output="$(mktemp)"
+    trap 'rm -f "$first_output"' EXIT
+    if first_layer_search silent > "$first_output"; then
+        cat "$first_output"
+        append_causal_expansion "$first_output"
         exit 0
     else
         rc=$?

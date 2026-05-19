@@ -176,3 +176,43 @@ EOF
     [ ! -e "${SEMANTIC_INDEX_PATH}.cache.json" ]
     [ "$(find "$SEMANTIC_INDEX_CACHE_DIR" -type f -name '*.json' | wc -l)" -eq 1 ]
 }
+
+@test "first layer appends causal backlink resources for Obsidian links" {
+    mkdir -p "$TEST_TMPDIR/docs"
+    cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
+
+| causal_chain | `[[cmd_semantic_test]] -> [[semantic_edge]]` |
+| cmd | `cmd_plain_test` plain ID reference |
+EOF
+    cat > "$TEST_TMPDIR/docs/trace.md" <<'EOF'
+origin: [[cmd_semantic_test]]
+plain: [[cmd_plain_test]]
+EOF
+    export SEMANTIC_CAUSAL_ROOT="$TEST_TMPDIR"
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "二値計測"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"causal_expansion:"* ]]
+    [[ "$output" == *"- link: [[cmd_semantic_test]]"* ]]
+    [[ "$output" == *"- link: [[cmd_plain_test]]"* ]]
+    [[ "$output" == *"docs/trace.md"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "SEMANTIC_DISABLE_CAUSAL suppresses backlink expansion" {
+    cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
+
+| causal_chain | `[[cmd_semantic_test]]` |
+EOF
+    export SEMANTIC_CAUSAL_ROOT="$TEST_TMPDIR"
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    SEMANTIC_DISABLE_CAUSAL=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "二値計測"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"causal_expansion:"* ]]
+    [[ "$output" != *"- link: [[cmd_semantic_test]]"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
