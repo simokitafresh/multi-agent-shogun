@@ -45,6 +45,12 @@ source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
+# --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
+# update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
+# 主シェル文脈(update_all_context_pct経由)でのみ有効。サブシェルからのget_context_pct呼び出しは従来通り
+declare -gA _CTX_PROFILE_PATTERN_CACHE _CTX_PROFILE_MODE_CACHE 2>/dev/null || \
+    declare -A _CTX_PROFILE_PATTERN_CACHE _CTX_PROFILE_MODE_CACHE 2>/dev/null || true
+
 # --- Variables needed by lib functions (outside guard for lib-only mode) ---
 STALL_THRESHOLD_MIN=${STALL_THRESHOLD_MIN:-10} # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知 (cmd_1105: 15→10分に短縮)
 
@@ -2743,10 +2749,62 @@ check_inbox_renudge() {
 update_context_pct() {
     local pane_target="$1"
     local agent_name="$2"
-    # デフォルト値設定後、get_context_pctで再パース
-    # get_context_pctが成功すれば@context_pctを上書き、失敗すれば"--"が残る
-    tmux set-option -p -t "$pane_target" @context_pct "--" 2>/dev/null
-    get_context_pct "$pane_target" "$agent_name" > /dev/null
+    # L4-R?: 最適化版 — set-option "--" + show-options の2往復(~12ms)とcli_profile_getサブシェル(~156ms)を削除
+    # 変更前: set-option "--" → show-options(get "--") → capture-pane → cli_profile_get×2(subshell) → set-option N%
+    # 変更後: capture-pane → キャッシュ参照(or cli_profile_get初回のみ) → set-option N%
+    local output ctx_num ctx_pattern ctx_mode
+    output=$(tmux capture-pane -t "$pane_target" -p -J -S -30 2>/dev/null)
+
+    if [ -n "$agent_name" ]; then
+        if [[ -n "${_CTX_PROFILE_PATTERN_CACHE[$agent_name]+x}" ]]; then
+            # キャッシュヒット: サブシェル不要
+            ctx_pattern="${_CTX_PROFILE_PATTERN_CACHE[$agent_name]}"
+            ctx_mode="${_CTX_PROFILE_MODE_CACHE[$agent_name]}"
+        else
+            # キャッシュミス: サブシェルで取得しキャッシュに保存(次回以降0ms)
+            ctx_pattern=$(cli_profile_get "$agent_name" "ctx_pattern" 2>/dev/null || echo "")
+            ctx_mode=$(cli_profile_get "$agent_name" "ctx_mode" 2>/dev/null || echo "")
+            _CTX_PROFILE_PATTERN_CACHE[$agent_name]="$ctx_pattern"
+            _CTX_PROFILE_MODE_CACHE[$agent_name]="$ctx_mode"
+        fi
+    fi
+
+    if [ -n "$ctx_pattern" ]; then
+        if [ "$ctx_mode" = "usage" ]; then
+            ctx_num=$(printf '%s' "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+        elif [ "$ctx_mode" = "remaining" ]; then
+            local remaining
+            remaining=$(printf '%s' "$output" | grep -oE "$ctx_pattern" | tail -1 | grep -oE '[0-9]+')
+            [ -n "$remaining" ] && ctx_num=$((100 - remaining))
+        elif [ "$ctx_mode" = "bar" ]; then
+            local bar_match bar_content bar_total bar_spaces bar_filled
+            bar_match=$(printf '%s' "$output" | grep -oE "$ctx_pattern" | head -1)
+            if [ -n "$bar_match" ]; then
+                bar_content="${bar_match#*\[}"
+                bar_content="${bar_content%\]}"
+                bar_total=${#bar_content}
+                if [ "$bar_total" -gt 0 ]; then
+                    bar_spaces=$(printf '%s' "$bar_content" | tr -cd ' ' | wc -c)
+                    bar_filled=$((bar_total - bar_spaces))
+                    ctx_num=$(( (bar_filled * 100) / bar_total ))
+                fi
+            fi
+        fi
+    else
+        # フォールバック: agent_name未指定 or プロファイルなし
+        ctx_num=$(printf '%s' "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
+        if [ -z "$ctx_num" ]; then
+            local remaining
+            remaining=$(printf '%s' "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
+            [ -n "$remaining" ] && ctx_num=$((100 - remaining))
+        fi
+    fi
+
+    if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
+        tmux set-option -p -t "$pane_target" @context_pct "${ctx_num}%" 2>/dev/null
+    else
+        tmux set-option -p -t "$pane_target" @context_pct "0%" 2>/dev/null
+    fi
 }
 
 # ─── 全ペインのcontext_pct更新 ───
