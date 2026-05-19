@@ -1,28 +1,8 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - '改善点を3つ特定したか: yes/no'
-      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
-      description: 指定スクリプトの改善点を3つ特定し、根拠付きで報告する
-    AC2:
-      binary_checks:
-      - '最高インパクト1件を実装したか: yes/no'
-      - '関連テストまたは明示的な検証を実行したか: yes/no'
-      description: 改善点のうち最高インパクト1件を実装し、必要な検証を実行する
-    AC3:
-      binary_checks:
-      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
-      - 'AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no'
-      - 'verdictがbinary_checksと矛盾していないか: yes/no'
-      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
-    AC4:
-      binary_checks:
-      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
-      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
-      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+  _ac_task_id: cmd_2896_exact
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2896 (deployed 2026-05-19T21:04:00). Read from the beginning.
+  ac_version: b99834bc
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -31,56 +11,50 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
+  parent_cmd: cmd_2896
   project: infra
-  purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
+  purpose: '修行CoDDラウンドがgreenfield方式で遅すぎる(30分超)。brownfield(codd extract逆生成)に限定し10-15分に短縮。殿裁定: brownfield方式を明記せよ'
   scout_exempt: true
-  status: idle
+  status: acknowledged
   stop_for: []
-  target_path: scripts/ninja_monitor.sh
-  task_id: cmd_training_L4_auto_202605191330_kotaro_normal
-  task_type: training
+  target_path_warning: '⚠ target_pathが存在しない: scripts/ninja_monitor.sh'
+  task_id: cmd_2896_exact
+  task_type: exact
   related_lessons:
-  - id: 'L502'
-    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
-    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
-  - id: 'L623'
-    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-  - id: 'L230'
-    summary: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
-    detail: 'lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227'
-  - id: 'L300'
-    summary: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-    detail: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-  - id: 'L384'
-    summary: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
-    detail: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
-  - id: 'L547'
-    summary: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
-    detail: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L356'
-    summary: 'lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite'
-    detail: 'lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite'
-  - id: 'L295'
-    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-  - id: 'L117'
-    summary: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
-    detail: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+  - id: 'L512'
+    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
+    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
+  - id: 'L242'
+    summary: 'get_context_pct()とupdate_context_pct()がCTX%パース処理を重複実装。一方はecho返却、他方はtmux変数設定。IF 同'
+    detail: 'get_context_pct()とupdate_context_pct()がCTX%パース処理を重複実装。一方はecho返却、他方はtmux変数設定。IF 同'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
+  recommended_skills:
+  - "codd"
+  - "codd-refactor"
+  related_causal_links:
+  - "[[LS036_brownfield]]"
+  - "[[cmd_2891]]"
+  - "[[training_codd_speed]]"
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -95,25 +69,16 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L502: gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw
-      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
-      - L230: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
-      - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
-      - L384: result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_
-      - L547: CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L356: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite
-      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
-      - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re
+      - L512: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
+      - L242: get_context_pct()とupdate_context_pct()がCTX%パース処理を重複実装。一方はecho返却、他方はtmux変数設定。IF 同
     ────────────────────────────────────────
     
     
-  ac_version: c5435a62
-  _ac_task_id: cmd_training_L4_auto_202605191330_kotaro_normal
-  _ac_worker_id: 
-  target_path_warning: "⚠ target_pathが存在しない: scripts/ninja_monitor.sh"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'training-cycle.mdのCoDD最適化ラウンド定義にbrownfield方式限定が明記されている'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_L4_auto_202605191330_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_L4_auto_202605191330_kotaro.yaml
+  report_filename: kotaro_report_cmd_2896.yaml
+  report_path: 
   bloom_level: 
-  deployed_at: "2026-05-19T13:30:31"
