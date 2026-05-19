@@ -699,3 +699,6 @@
 | cmd_2854 | cmd_save.shの2つの問題を修正する。(1)殿発言検索+cmd履歴検索の全走査で16秒に低下。キャッシュまたは件数制限で高速化 (2)sourceに絶対パスを書くとPROJECT_WDと二重結合されファイル不在BLOCKになるバグ。絶対パス検出時はPROJECT_WD結合をスキップ | infra | 05-19 | cmd_save.shのquality log検索を直近50 |
 | cmd_2856 | 運用YAMLの肥大化を書込み時に自動制御する汎用機構を構築する。各書込みスクリプトが追記後にwc -l > 閾値なら即アーカイブ退避し、索引層を常に小さく保つ。startup gateやcronではなく書込み時に実行することで待機時間ゼロ | infra | 05-19 | yaml_auto_archive.shをcmd_save. |
 | cmd_2859 | startup gateで3セッション連続WARN。9件のSKILL.mdが参照scriptより古い。scriptの最新動作をSKILL.mdに反映する | infra | 05-19 | 8件のSKILL.mdに各scriptの最新動作を反映。ga |
+| cmd_2862 | gate_report_format FAILが直近でも発生(2026-05-19)。根因=忍者がEdit toolで報告YAMLを直接編集しフィールドをstr化/MISSING化する。report_field_set.sh経由なら型ガードが効くが直接Editを阻止する仕組みがない。PreToolUse hookで報告YAML直接Editを検出しBLOCKする | infra | 05-19 | — |
+| cmd_2863 | 本セッションでcmd_2857(self_gate_check既存)とcmd_2862(Guard 3既存)の車輪再発明が2回発生。根因=将軍のgrep検索キーワード不足で既存Guardを見落とし。cmd_save.shがhook/gate変更cmd検出時に対象ファイルのGuard一覧を自動抽出し表示することで、grepキーワード精度に依存しない確認を強制する | infra | 05-19 | cmd_save.shのq11でgate/hook変更cmd |
+| cmd_2864 | 教訓健全度ALERT 3セッション連続。根因分析: fb>=3の全77件がuseful=0%。deploy_task.sh L3953の`if score > 0`でcontent1回マッチ(score=1)でも注入される。汎用キーワード(修正/実装等)が広くマッチし無関係教訓を量産。MIN_KEYWORD_SCORE変数を導入しscore>=2に引き上げ、弱いマッチを除外する | infra | 05-19 | MIN_KEYWORD_SCORE=2をdeploy_tas |

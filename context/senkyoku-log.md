@@ -14,9 +14,21 @@
 | cmd_karo_ci_fix_skill_timeout | CI RED修正(家老自走) | GATE CLEAR | cmd_2851起因。test 1424 skill trigger timeout |
 | cmd_karo_regex_order_fix | cmd_save.sh regex順序修正(家老自走) | GATE CLEAR | ts→tsx切り詰めバグ。cmd_2853が4回BLOCK |
 | cmd_2853 | kj-role-count FE改善5件 | GATE CLEAR | 殿5要望: admin非表示+色分け統一+DatePickerバグ(JST→UTC)+カレンダー縦幅+ロール追加pin_auth→pin |
-| cmd_2854 | cmd_save.sh速度+パスバグ | 作業中 | 16秒→10秒未満目標。絶対パス二重結合修正 |
-| cmd_2855 | gate_shogun_startup.sh速度+アーカイブ | 作業中 | 15秒→5秒未満目標。cmd_design_quality 39K行走査が主因 |
-| cmd_2856 | 汎用yaml_auto_trim(書込み時自動アーカイブ) | 作業中 | 殿指摘: 真因=アーカイブ機構不在。書込み時に閾値チェック→即退避=Vercelスタイル |
+| cmd_2854 | cmd_save.sh速度+パスバグ | GATE CLEAR | 16秒→10秒未満。絶対パス二重結合修正 |
+| cmd_2855 | gate_shogun_startup.sh速度+アーカイブ | GATE CLEAR | cmd_design_quality走査制限で高速化 |
+| cmd_2856 | 汎用yaml_auto_trim(書込み時自動アーカイブ) | GATE CLEAR(AC4 WAIVE) | yaml_auto_archive機構正常。残速度はscope外 |
+| cmd_2857 | Codex codex_apps MCP無効化 | 作業中 | 殿発見。multi-CLIで全エージェント影響 |
+| cmd_2858 | 教訓useful率MIN_SAMPLES 5→3 | GATE CLEAR | 軍師なぜなぜ7回→fb蓄積速度<閾値が根因 |
+| cmd_2859 | SKILL.md 9件一括追従 | GATE CLEAR | 3セッション連続WARN解消 |
+| cmd_2860 | Obsidian×セマンティック因果辺統合 | 作業中 | 殿「obsidian×セマンティック辞書で可能性」→概念→因果到達パス自動化 |
+| cmd_2861 | セマンティック辞書未登録2件 | 作業中 | INS-024911。暗黒物質(未登録概念)可視化 |
+| cmd_2862 | 報告YAML Edit BLOCK | shelve | Guard 3(L272-274)で実装済み。車輪再発明 |
+| cmd_2863 | Guard一覧自動表示(車輪防止) | 作業中 | なぜなぜ7回→grepキーワード不足が根因→Guard一覧自動抽出で構造予防 |
+| LS043 | 教訓: grep0件で未実装断定するな | 記録済み | cmd_2857+2862の車輪2回→反証の不在≠不在の証明 |
+| session_dream | /dream Memory統合 | 完了 | MEMORY.md 184→180行。insight 3件。教訓32→31件統合 |
+| LS043→LS-A09 | 教訓統合+git diff追記 | 完了 | 車輪3連続根因=git diff未確認。LS-A09(8)にGuard通読+git diff追加 |
+| cmd_2863裁定 | (A)verify+commit化 | GATE CLEAR | Guard一覧自動表示稼働。車輪構造予防 |
+| cmd_2864 | 教訓注入スコア閾値(MIN_KEYWORD_SCORE>=2) | 配備中 | 77/77 useful=0%→score>0が緩すぎる→閾値引上げで無関係注入削減 |
 
 ## 2026-05-17
 
@@ -1021,3 +1033,4 @@
 | cmd_2797 | ntfy重複送信抑止(context鮮度ALERT 5分間隔連発→rate limit) | GATE CLEAR | 安全網。同一ALERT 60分間スキップ |
 | cmd_2798 | context鮮度 安定context除外リスト導入(殿指摘の真因修正) | 委任中 | 死因=更新不要な安定contextにも14日ルール一律適用で20件不要ALERT |
 | session_20260516 | 6cmd起票(2793-2798)。5 CLEAR+1 cancelled(前提否定LS033)。startup gate BLOCK全解消+ntfy rate limit修正+codd設定修正+教訓注入偵察。掲示板全件確認+insights消化 | 自走 | 殿指摘「更新不要な古いcontextがずっとALERT」→真因特定→除外リスト。cmd_2794前提崩壊→LS033(コード精読不足) |
+| session_20260519 | 12cmd処理。cmd_2852(sed→awk統一)+2853(kj-role-count FE5件)+2854(cmd_save 16→3.6秒)+2855(gate_startup 15→4.76秒)+2856(yaml_auto_archive)+2857(Codex MCP無効化)+2858(MIN_SAMPLES 5→3)+2859(SKILL.md 9件追従)+2860(semantic_map因果辺)+2861(辞書2概念)+2863(Guard一覧自動表示)。修行3名(hayate 18→0.96秒/kagemaru 0.09→0.01秒/saizo 4.9→0.25秒)。CI RED修正2件。cmd_2862 shelve(Guard 3既存)。noise教訓5件deprecated+origin 34件補完 | CLEAR×10+shelve×2 | 殿指示: 修行サイクル+テスト最適化なぜなぜ7回→test_select独立化提案。車輪再発明2回(cmd_2862/2863)→軍師ACスコープ完結性チェック(bf02cd97) |
