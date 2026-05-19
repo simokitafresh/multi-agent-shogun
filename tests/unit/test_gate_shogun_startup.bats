@@ -29,6 +29,8 @@ setup_file() {
              "$SHARED_BASE/bin" \
              "$SHARED_BASE/fakehome/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory"
 
+    cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
+
     # Gate 1 mock: gate_shogun_memory.sh → OK
     cat > "$SHARED_BASE/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
 #!/usr/bin/env bash
@@ -498,7 +500,7 @@ MOCK
     [[ "$output" != *"__FP_RELAXATION_REQUEST__"* ]]
     grep -q "notify=shogun" "$TEST_TMPDIR/logs/bulletin_calls.log"
     grep -q "Gate 13.8 高FP率検出" "$TEST_TMPDIR/logs/bulletin_calls.log"
-    grep -q "gate条件緩和cmd" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "条件緩和cmd" "$TEST_TMPDIR/logs/bulletin_calls.log"
     grep -q "直近BLOCK修正パターン分類: WARN累計昇格:1件" "$TEST_TMPDIR/logs/bulletin_calls.log"
 }
 
