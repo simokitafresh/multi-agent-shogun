@@ -1648,6 +1648,8 @@ def _entry_cmd_id(entry):
         return match.group(1)
     return ""
 
+# Benchmark cmd_test_* runs and malformed dashboard-update invocations are not
+# operational skill failures, so Gate20 excludes them before calculating rates.
 def _exclude_from_fail_denominator(entry):
     cmd_id = _entry_cmd_id(entry)
     if cmd_id.startswith("cmd_test_"):

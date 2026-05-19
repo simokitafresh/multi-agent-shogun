@@ -315,6 +315,59 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "skill fail rate excludes cmd_test and invalid dashboard-update invocations" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2099-01-01T00:00:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "PASS"
+  stumbling_points: "dashboard_update.sh exit=0 cmd=cmd_9000 dry_run=false"
+  gate: "dashboard_update"
+  source: "scripts/dashboard_update.sh cmd_9000"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+- ts: "2099-01-01T00:01:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_9001 dry_run=false"
+  gate: "dashboard_update"
+  source: "scripts/dashboard_update.sh cmd_9001"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+- ts: "2099-01-01T00:02:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_test_dummy dry_run=false"
+  gate: "dashboard_update"
+  source: "scripts/dashboard_update.sh cmd_test_dummy"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+- ts: "2099-01-01T00:03:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=--dry-run dry_run=false"
+  gate: "dashboard_update"
+  source: "scripts/dashboard_update.sh --dry-run"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+- ts: "2099-01-01T00:04:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=<empty> dry_run=false"
+  gate: "dashboard_update"
+  source: "scripts/dashboard_update.sh "
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ スキル別FAIL率"* ]]
+    [[ "$output" == *"dashboard-update: 直近50件FAIL率=50% (1/2) last=2099-01-01T00:01:00+0900"* ]]
+    [[ "$output" != *"80% (4/5)"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "L6 learning speed shows per-gate FAIL to PASS transition rates" {
     export L6_LEARNING_NOW="2099-01-31T00:00:00+09:00"
     cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
