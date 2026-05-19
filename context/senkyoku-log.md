@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-05-19
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2852 | deploy_task.sh sed特殊文字修正 | GATE CLEAR | LK010根因。inject関数のsed -i→awk統一 |
+| cmd_karo_ci_fix_skill_timeout | CI RED修正(家老自走) | GATE CLEAR | cmd_2851起因。test 1424 skill trigger timeout |
+| cmd_karo_regex_order_fix | cmd_save.sh regex順序修正(家老自走) | GATE CLEAR | ts→tsx切り詰めバグ。cmd_2853が4回BLOCK |
+| cmd_2853 | kj-role-count FE改善5件 | GATE CLEAR | 殿5要望: admin非表示+色分け統一+DatePickerバグ(JST→UTC)+カレンダー縦幅+ロール追加pin_auth→pin |
+| cmd_2854 | cmd_save.sh速度+パスバグ | 作業中 | 16秒→10秒未満目標。絶対パス二重結合修正 |
+| cmd_2855 | gate_shogun_startup.sh速度+アーカイブ | 作業中 | 15秒→5秒未満目標。cmd_design_quality 39K行走査が主因 |
+| cmd_2856 | 汎用yaml_auto_trim(書込み時自動アーカイブ) | 作業中 | 殿指摘: 真因=アーカイブ機構不在。書込み時に閾値チェック→即退避=Vercelスタイル |
+
 ## 2026-05-17
 
 | cmd/action | 意図 | 結果 | 因果 |
