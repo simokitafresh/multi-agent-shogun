@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -76,7 +76,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -88,7 +88,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T11:57:14+09:00 CoDD v2.18.0 アップデート完了 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T12:02:18+09:00 CoDDを有効活用するための準備はできているか？ |
 | cmd | `cmd_2760` CoDD v1.10.0時点の知識体系をv2.18.0に更新 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-15T20:31:24+09:00 by90fvbya toolu_01AsvZsDxzg3e4Xth1fevzM1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | cmd | `cmd_2780` 強化 — Simple-OCRリポジトリ全体のCoDD brownfield設計書逆生成 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T03:24:18+09:00 なぜなぜ7回。CoDDできちんとやろう。品質は下げない。現在の出力は合格点だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T07:27:25+09:00 掲示板にCoDDの修行の話はなかったか？ |
@@ -103,12 +102,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T19:35:15+09:00 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T11:36:52+09:00 まさにCoDDでやるのが理想的だよな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T11:37:21+09:00 https://zenn.dev/shio_shoppaize/articles/codd-v2-17-milestone読んでみて |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T12:00:22+09:00 b00zkeauj toolu_01SJqvipaodYYa1xjxkH3gcr /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T12:17:18+09:00 bdq3hyjo8 toolu_01RXHvdUAKomoMsvNinekNcK /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T12:27:15+09:00 b7hop8nj7 toolu_01DckQBfPcjc5ejBFxFA9PRx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T12:52:51+09:00 b3kje8sq6 toolu_01DsM5wENRdGPTenu9zAjzza /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T12:53:50+09:00 bgph2xan5 toolu_01PQMb16wTnYnG1QjXYNH5kB /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T13:00:17+09:00 bhyh1fzho toolu_013qbk3a9NwQaqRFzc7GVS93 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T13:05:00+09:00 CoDDは遅いね。一回作ってからCoDDで設計書を後から作るほうが早そう。どう思う？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T20:57:45+09:00 なぜなぜ7回。根源をただそう。本質はデータを再入力可能なものだと気安く考えている点だな。お前の感覚は中国の焚書やポル・ポト派が仏像や遺跡を破壊するのと同じ発想だ。人の命もそうだが、失ったら未来永劫宇宙から消えてしまうものに対する敬意と恐怖が |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:04:30+09:00 なぜなぜ7回 |
@@ -120,14 +113,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:02:03+09:00 これを成長させるためには何が必要だ？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:12:21+09:00 さらに これを成長させるためには何が必要だ？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:35:19+09:00 Gate並行実行のflock漏れをなぜなぜ7回 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:36:51+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:07+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:49+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:59+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:46:38+09:00 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:55:36+09:00 You are matching a user query to a semantic index. Query: 教訓注入 Instructions: - Choose up to 3 most related concepts from |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:56:30+09:00 You are matching a user query to a semantic index. Query: 教訓注入 Instructions: - Choose up to 3 most related concepts from |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -238,7 +225,7 @@ codd:
 |------|---|
 | id | alm_research |
 | label | ALM研究 |
-| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, CI RED修正 cmd 2837のwf engine除外条件が正当WARNまで消した回帰修正, task notification task id b20ajdtjj task id tool use id tool, task notification task id b92pxqz3b task id tool use id tool |
+| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, CI RED修正 cmd 2837のwf engine除外条件が正当WARNまで消した回帰修正 |
 | skills | pf-registration, db-check |
 
 | 種別 | パス/参照 |
@@ -250,8 +237,6 @@ codd:
 | lesson | `L566` ALM吸収はシン吸収と異なりメトリクスが変わる(helpful_count:3) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T22:36:14+09:00 ALMはディスコンだから俺が明示的に言わない限り、話題に絶対出すな |
 | cmd | `cmd_2839` CI RED修正(cmd_2837のwf_engine除外条件が正当WARNまで消した回帰修正) |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T00:00:14+09:00 b20ajdtjj toolu_015hF8n8duwfnkdFc76TsmjU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-19T03:04:19+09:00 b92pxqz3b toolu_01CsDSWyHTthAgwFZk3Nkypa /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## shin_shijin_design — 四神設計
 
@@ -339,6 +324,7 @@ codd:
 | cmd | `cmd_2793` gate_lesson_health.sh PHANTOM検出awk偽陽性修正 + SKILL.md 3件追従更新 (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/shogun-teire/SKILL.md`) |
 | cmd | `cmd_2829` SKILL.md追従3件更新(dream/karo-direct/shogun-teire — script変更に追従) (`skills/dream/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/ninja-commit/SKILL.md`) |
 | cmd | `cmd_2871` 強化 — verdict計算値化(bcから自動導出。手動記入廃止) (`scripts/gates/gate_report_autofix_main.py`, `skills/verdict-check/SKILL.md`, `tests/test_gate_report_format.bats`) |
+| cmd | `cmd_karo_obs_required_check` (`scripts/gunshi_log_append.sh`, `skills/review-bundle/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -389,7 +375,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, Build successful 🎉 Deploying Setting WEB CONCURRENCY by defa, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
@@ -427,8 +413,6 @@ codd:
 | cmd | `cmd_2695` 強化 — withheld悪循環の解消(MIN_SAMPLES未満教訓の初回注入保証) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
 | cmd | `cmd_2699` 修正 — draft_review SKIP: karo_direct配備時のac_countカウント修正 (`tests/unit/test_deploy_task_draft_review.bats`) |
 | cmd | `cmd_2700` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_ac_handling.bats`) |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:41:57+09:00 brdydjwk3 toolu_01YSsdUNnkY3gBfM9r47hmEH /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:43:04+09:00 b1fseli4u toolu_01TFhAEeMFFB8R8Hk6KbNrMW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 | cmd | `cmd_2734` 強化 — セマンティクスインデックスにスキル推奨列を追加し忍者タスクに自動注入 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `scripts/deploy_task.sh`) |
 | cmd | `cmd_2737` (`scripts/deploy_task.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/helpers/deploy_task_scaffold.bash`) |
 | cmd | `cmd_2746` 偵察 — deploy_task.sh配備後inbox未配信の根因調査 |
@@ -452,7 +436,6 @@ codd:
 | lesson | `L622` _cleanup_stale_keysはcompound-keyを持つ全配列を網羅すべき |
 | cmd | `cmd_training_L4_auto_202605181242_tobisaru` (`scripts/ninja_monitor.sh`) |
 | lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-18T15:16:28+09:00 ==> Build successful 🎉 ==> Deploying... ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instanc |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:06:34+09:00 外部PJなのでkaro_directで家老に配備する。とはなんだ？なぜ将軍がCMDを起票しない？説明して |
 | cmd | `cmd_karo_backup_first_l5` (`tests/unit/test_cmd_save.bats`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
 | cmd | `cmd_2852` 修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
@@ -490,8 +473,6 @@ codd:
 | vis_L3 | 保有シグナルを隠す | バックテスト(餌)は見せて上位Tier誘導 |
 | vis_L4 | 構成ticker(レシピ)を隠す | シグナルは公開、戦略の知的財産を保護 |
 | cmd | `cmd_2598` 修正 — Monthly Trade vis_L4マスク時position表示バグ(cmd_2451リグレッション) |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-07T23:35:09+09:00 You are matching a user query to a semantic index. Query: android Instructions: - Choose up to 3 most related concepts f |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-07T23:35:38+09:00 You are matching a user query to a semantic index. Query: アプリ Instructions: - Choose up to 3 most related concepts from  |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T18:07:04+09:00 tierが課金プランに紐付いているのは理解しているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T18:07:57+09:00 料金プランとの対応は知識となっているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T20:11:30+09:00 前にどのtierがどのPFを閲覧できるかまとめたのは覚えているか？ |
@@ -527,7 +508,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, task notification task id bk57ke2j0 task id tool use id tool, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -560,16 +541,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T18:09:07+09:00 CDPでこのページを確認すると知識を得られるはずだ。https://note.com/membership/settings/manage |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T18:30:26+09:00 完了したらCDPで確認しておいて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T19:48:59+09:00 続けて。CDPはスキルあるからスキル使うように。デプロイ済みか確認した？ |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-14T20:02:55+09:00 b0syhe3ag toolu_01LJWS89qVgHTT174GX6zi7S /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-14T21:36:18+09:00 baa9kjrve toolu_01U5nU664haAHLzy196ras4u /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-14T22:17:06+09:00 bayxsdn2u toolu_016qWPcnUxCj4Ym1yCHar8q7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7142d797-600b-40f5-9c3d-85c755 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-14T23:46:50+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T00:03:29+09:00 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある。DB-checkなどのスキルを実行しようとすることもあるな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T22:56:22+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T23:06:43+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T08:00:46+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T14:58:22+09:00 続けて |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-16T16:16:18+09:00 bk57ke2j0 toolu_01XReqR4daTsjr4sbj7uht1K /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T22:00:51+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T15:21:41+09:00 確認しよう。デプロイが終わったらCDPで確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T11:32:30+09:00 他にも隠れたインフラバグや、実行速度が極端に落ちたスクリプトがないか確認しよう |
@@ -583,7 +560,7 @@ codd:
 |------|---|
 | id | defense_hierarchy |
 | label | 防御階層原則(Level 1-6) |
-| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, research tool explicit偽陽性修正 ACパス自動提案 Level5化, 放置タスク滞留検出 BLOCK昇格をstartup gateに追加 Level5化, 否定的前提主張の反証grep強制 LG033 Level5化, 教訓件数WARN閾値を31件に引き下げ Level5化, cmd間依存の明示強制 LS A14 Level5化, gate hook追加cmd検出時に既存強制フロー候補を自動表示 LG032 Level5化, 計測 見積cmdにタイムボックス欄を自動要求 LG019 Level5化, AC command内の数値リテラルに再計算元表示を自動提案 LG020 Level5化, AC外作業検出INFO提案 LS A08 Level5化, 時間コスト関連cmdに環境差異欄を自動要求 LS A10 Level5化, gate vercel phase壊れ参照検出時に修正候補を自動提案 Level5化, Level1止まりgate6件に修正候補自動提案を追加 Level5化一括, ac param sufficiency WARN時にcontext projects yamlから候補値を自動提案 L, inject ninja weak points YAML注入失敗の根因調査 cmd 2801副作用 |
+| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, research tool explicit偽陽性修正 ACパス自動提案 Level5化, 放置タスク滞留検出 BLOCK昇格をstartup gateに追加 Level5化, 否定的前提主張の反証grep強制 LG033 Level5化, 教訓件数WARN閾値を31件に引き下げ Level5化, cmd間依存の明示強制 LS A14 Level5化, gate hook追加cmd検出時に既存強制フロー候補を自動表示 LG032 Level5化, 計測 見積cmdにタイムボックス欄を自動要求 LG019 Level5化, AC command内の数値リテラルに再計算元表示を自動提案 LG020 Level5化, AC外作業検出INFO提案 LS A08 Level5化, 時間コスト関連cmdに環境差異欄を自動要求 LS A10 Level5化, gate vercel phase壊れ参照検出時に修正候補を自動提案 Level5化, Level1止まりgate6件に修正候補自動提案を追加 Level5化一括, ac param sufficiency WARN時にcontext projects yamlから候補値を自動提案 L, inject ninja weak points YAML注入失敗の根因調査 cmd 2801副作用 |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -631,8 +608,6 @@ codd:
 | cmd | `cmd_2638` 強化 — gate_vercel_phase壊れ参照検出時に修正候補を自動提案(Level5化) (`scripts/gates/gate_vercel_phase.sh`, `tests/unit/test_gate_vercel_phase.bats`) |
 | cmd | `cmd_2643` 強化 — Level1止まりgate6件に修正候補自動提案を追加(Level5化一括) (`scripts/gates/gate_knowledge_freshness.sh`, `scripts/gates/gate_p_average_freshness.sh`, `scripts/gates/gate_silent_fallback.sh`) |
 | cmd | `cmd_2651` 強化 — ac_param_sufficiency WARN時にcontext/projects.yamlから候補値を自動提案(Level5化) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_warn_logging.bats`) |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-11T02:40:48+09:00 You are matching a user query to a semantic index. Query: L6 学習速度 Instructions: - Choose up to 3 most related concepts f |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-12T12:55:59+09:00 You are matching a user query to a semantic index. Query: drift Instructions: - Choose up to 3 most related concepts fro |
 | cmd | `cmd_2807` inject_ninja_weak_points YAML注入失敗の根因調査(cmd_2801副作用) (`queue/tasks/tobisaru.yaml`, `tests/unit/test_dashboard_auto_context_freshness.bats`, `tests/unit/test_gate_meta_quality.bats`) |
 
 ## tier_plan_mapping — Tier-プラン対応
@@ -713,7 +688,7 @@ codd:
 |------|---|
 | id | simple_ocr |
 | label | Simple OCR（画像OCR Webアプリ） |
-| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, mnt c Users simok OneDrive 画像 Screenshots スクリーンショット png mnt, Image 受信したOCR結果のinbox1, OCR結果の題名に患者名にすることは可能？, 国立国会図書館のNDLOCR Liteもうまくいかなかったエピソードも必要だな, task notification task id bsah7qf9x task id tool use id tool  |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, OCR結果の題名に患者名にすることは可能？, 国立国会図書館のNDLOCR Liteもうまくいかなかったエピソードも必要だな |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -735,7 +710,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:23:13+09:00 先にローカルで3エンジンの実際のOCR精度を試す |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:35:19+09:00 すくなくとも圧倒的にgoogle vision APIが優秀だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:41:51+09:00 https://github.com/ndl-lab/ndlocr-liteに役に立つ情報はないか？ |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:49:18+09:00 bqq5mjmxs toolu_01JLqHJC32Bq2EtNXo6VfzbB /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T21:51:53+09:00 ほかのAPIも使ってみたいな。google visionAPiににたAPIはないのか？ |
 | cmd | `cmd_2782` 実装 — Simple-OCR 座標付き二段構えOCRパイプライン（Google DOCUMENT_TEXT_DETECTION + Claude Haiku構造化） |
 | cmd | `cmd_karo_ci_fix_simple_ocr_rebase` |
@@ -758,7 +732,6 @@ codd:
 | cmd | `cmd_2813` Simple-OCR 結果カードのタイトルを患者名に変更 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:50:34+09:00 国立国会図書館のNDLOCR-Liteもうまくいかなかったエピソードも必要だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:54:07+09:00 ２と３は順序が逆だ。google vision api単独だと余分な情報が多すぎる→Google Vision API + 除外パターンマッチ→LLMの性能向上で解決できないかと思いClaude Vision / GPT-4o に画像を直接 |
-| discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:58:08+09:00 bsah7qf9x toolu_01WV1yc5SsovXeiRnzhGjuYG /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/23e2871c-af99-4a8b-a8c5-af194a |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -828,6 +801,77 @@ codd:
 | file | `scripts/deploy_task.sh` |
 | cmd | `cmd_1393` 7サブプロセス→1統合(inject_task_modifiers.py誕生) |
 
+## training_cycle_quality — 忍者修行サイクル品質
+
+| 属性 | 値 |
+|------|---|
+| id | training_cycle_quality |
+| label | 忍者修行サイクル品質 |
+| aliases | 修行サイクル, training cycle, 忍者修行, ダミータスク修行, gate BLOCK訓練, 一発PASS率, first pass rate, 修行レベル, L1修行, L2修行, L3修行, L4修行, gate_fire_log計測, BLOCKパターン学習 |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/training-cycle.md` |
+| file | `logs/gate_fire_log.yaml` |
+| file | `scripts/ninja_monitor.sh` |
+| cmd | `cmd_2754` ninja_monitorに修行サイクル自動トリガーを追加 |
+| cmd | `cmd_2755` FAIL→PASS遷移率の定期計測をninja_monitorに追加 |
+
+## report_quality_protocol — 忍者報告品質プロトコル
+
+| 属性 | 値 |
+|------|---|
+| id | report_quality_protocol |
+| label | 忍者報告品質プロトコル |
+| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック |
+| skills | report-write, verdict-check |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/gates/gate_report_format.sh` |
+| file | `scripts/gates/gate_report_format_main.py` |
+| file | `scripts/report_field_set.sh` |
+| file | `context/training-cycle.md` |
+| cmd | `cmd_2871` verdict計算値化(bcから自動導出) |
+| lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
+
+## external_project_registry — 外部プロジェクト登録
+
+| 属性 | 値 |
+|------|---|
+| id | external_project_registry |
+| label | 外部プロジェクト登録 |
+| aliases | 外部PJ, external project, project registry, projects yaml, config projects, PJ登録, プロジェクト登録, rebalancer, Simple-OCR, kj-partshift, Google Classroom, OpenPBX, プロジェクト核心知識, context project md |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `config/projects.yaml` |
+| file | `projects/rebalancer.yaml` |
+| file | `projects/simple-ocr.yaml` |
+| file | `projects/kj-partshift.yaml` |
+| cmd | `cmd_2701` rebalancer PJ登録 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:06:34+09:00 外部PJなのでkaro_directで家老に配備する。とはなんだ？ |
+
+## daemon_supervision — デーモン監視と復旧
+
+| 属性 | 値 |
+|------|---|
+| id | daemon_supervision |
+| label | デーモン監視と復旧 |
+| aliases | デーモン管理, daemon supervision, daemon_supervisor, watchdog, heartbeat, health check, 自動再起動, 全再起動セーフティ, stale daemon, ninja_monitor常駐, inbox_watcher常駐, ntfy_listener常駐, composite hash, プロセス復旧 |
+| skills | reset-layout |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/daemon_supervisor.sh` |
+| file | `scripts/ninja_monitor.sh` |
+| file | `scripts/inbox_watcher.sh` |
+| file | `docs/operations/daemon_runbook.md` |
+| cmd | `cmd_2873` デーモン統一管理 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？ |
+
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
 | 属性 | 値 |
@@ -866,7 +910,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, inbox_watcher, ninja_monitor, daemon_supervisor, ntfy_listener, heartbeat, プロセス管理, 重複実行, WSL2 NTFS |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ |
 | skills | reset-layout |
 
 | 種別 | パス/参照 |
