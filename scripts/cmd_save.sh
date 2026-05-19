@@ -327,6 +327,94 @@ q11_has_existing_alternative_verification() {
     return 0
 }
 
+extract_q11_semantic_query() {
+    local block_text="${1:-}"
+    [[ -n "${block_text//[[:space:]]/}" ]] || return 1
+
+    printf '%s\n' "$block_text" | awk '
+        function emit(label, value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            if (value != "") print label ": " value
+        }
+        /^[[:space:]]*title:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]]*title:[[:space:]]*/, "", value)
+            emit("title", value)
+            next
+        }
+        /^[[:space:]]*purpose:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]]*purpose:[[:space:]]*/, "", value)
+            emit("purpose", value)
+            next
+        }
+        /^[[:space:]]*q11_not_already_done:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]]*q11_not_already_done:[[:space:]]*/, "", value)
+            emit("q11", value)
+            next
+        }
+        /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; print "command:"; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            value=$0
+            sub(/^[[:space:]]*command:[[:space:]]*/, "", value)
+            emit("command", value)
+            next
+        }
+        in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
+        in_command && /^[[:space:]]{4,}/ {
+            value=$0
+            sub(/^[[:space:]]+/, "", value)
+            print value
+            next
+        }
+    ' | head -c 4000
+}
+
+show_q11_semantic_search_matches() {
+    local block_text="${1:-}"
+    local semantic_script="${CMD_SAVE_SEMANTIC_SEARCH_SCRIPT:-$PROJECT_DIR/scripts/semantic_search.sh}"
+    [[ -f "$semantic_script" ]] || return 0
+
+    local query output rc
+    query="$(extract_q11_semantic_query "$block_text" || true)"
+    [[ -n "${query//[[:space:]]/}" ]] || return 0
+
+    if command -v timeout >/dev/null 2>&1; then
+        if output="$(
+            SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                timeout 5 bash "$semantic_script" "$query" 2>&1
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    else
+        if output="$(
+            SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                bash "$semantic_script" "$query" 2>&1
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    fi
+
+    if [[ "$rc" -eq 0 ]]; then
+        [[ -n "${output//[[:space:]]/}" ]] || return 0
+        echo "INFO: q11 semantic_search 関連概念/既存cmd候補:" >&2
+        printf '%s\n' "$output" | sed 's/^/  /' >&2
+        return 0
+    fi
+
+    if [[ "$rc" -eq 124 ]]; then
+        echo "INFO: q11 semantic_search timeout(5s)。既存grepチェックへフォールバックします" >&2
+    else
+        echo "INFO: q11 semantic_search failed(rc=$rc)。既存grepチェックへフォールバックします" >&2
+    fi
+    return 0
+}
+
 collect_assumption_source_files() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     local project_dir="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
@@ -2277,6 +2365,8 @@ QG_TEMPLATE
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         ')
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
+            show_q11_semantic_search_matches "$CMD_BLOCK_NC"
+
             _Q11_TARGETS=$(
                 printf '%s\n' "$_Q11_COMMAND_SECTION" \
                     | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \

@@ -8,7 +8,9 @@ setup_file() {
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
     eval "$(sed -n '/^show_semantic_index_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f show_semantic_index_matches
+    eval "$(sed -n '/^extract_q11_semantic_query()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^show_q11_semantic_search_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f show_semantic_index_matches extract_q11_semantic_query show_q11_semantic_search_matches
 }
 
 setup() {
@@ -77,4 +79,50 @@ teardown() {
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO: [SEMANTIC] 学習ループ matched alias 'WF'"* ]]
+}
+
+@test "q11 semantic_search emits concepts and causal cmd candidates" {
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'MATCH: causal_traversal_pipeline\n'
+printf 'resource: scripts/semantic_search.sh\n'
+printf '\ncausal_expansion:\n'
+printf -- '- link: [[cmd_2866]]\n'
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    export CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    block='    title: "強化 — q11 semantic search統合"
+    purpose: "semantic_search.shをq11へ接続する"
+    command: |
+      scripts/cmd_save.sh のq11にsemantic_search.shを呼び出す
+    quality_gate:
+      q11_not_already_done: "grep単独では概念レベルの既存cmdを見逃す"'
+
+    run bash -c 'show_q11_semantic_search_matches "$1" 2>&1' _ "$block"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: q11 semantic_search 関連概念/既存cmd候補:"* ]]
+    [[ "$output" == *"MATCH: causal_traversal_pipeline"* ]]
+    [[ "$output" == *"cmd_2866"* ]]
+}
+
+@test "q11 semantic_search failure falls back without failing" {
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "semantic backend down" >&2
+exit 42
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    export CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    block='    title: "強化 — q11 fallback"
+    command: "scripts/cmd_save.sh を修正する"'
+
+    run bash -c 'show_q11_semantic_search_matches "$1" 2>&1' _ "$block"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: q11 semantic_search failed(rc=42)。既存grepチェックへフォールバックします"* ]]
 }
