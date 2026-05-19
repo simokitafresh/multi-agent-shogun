@@ -435,3 +435,4 @@ EOF
     fi
 
 ) 200>"$LOCK_FILE"
+bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 || true

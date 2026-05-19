@@ -9,6 +9,7 @@ run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
+local YAML_AUTO_ARCHIVE="$SCRIPT_DIR/scripts/yaml_auto_archive.sh"
 
 overall="OK"
 alerts=()
@@ -21,9 +22,27 @@ _d_idle_trigger=""
 echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
+if [ "$LIGHT_MODE" != "1" ] && [ -x "$YAML_AUTO_ARCHIVE" ]; then
+    "$YAML_AUTO_ARCHIVE" >/dev/null 2>&1 || true
+fi
+
 # --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
 _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
-trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED"' EXIT
+_TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
+trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS"' EXIT
+if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
+    tail -n "${SHOGUN_STARTUP_DQ_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/cmd_design_quality.yaml" > "$_TMP_DQ_RECENT"
+fi
+if [ -f "$SCRIPT_DIR/logs/karo_workarounds.yaml" ]; then
+    tail -n "${SHOGUN_STARTUP_WA_TAIL_LINES:-2000}" "$SCRIPT_DIR/logs/karo_workarounds.yaml" > "$_TMP_WA_RECENT"
+fi
+if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
+    {
+        printf 'executions:\n'
+        tail -n "${SHOGUN_STARTUP_SKILL_EXEC_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/skill_execution_log.yaml" \
+            | awk 'BEGIN{in_entry=0} /^executions:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+ts:/{in_entry=1} in_entry{print}'
+    } > "$_TMP_SKILL_EXEC_RECENT"
+fi
 "$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 _PID_G1=$!
 bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
@@ -34,6 +53,13 @@ _PID_G13=$!
 _PID_G25=$!
 (cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
 _PID_UNPUSHED=$!
+_skill_ref_gate="$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh"
+if [ "$LIGHT_MODE" != "1" ] && [ -x "$_skill_ref_gate" ]; then
+    bash "$_skill_ref_gate" "$SCRIPT_DIR" > "$_TMP_SKILL_REFS" 2>&1 &
+    _PID_SKILL_REFS=$!
+else
+    _PID_SKILL_REFS=""
+fi
 
 # --- Gate 1: Memory健全度 (Step 2.5) ---
 echo "■ Memory健全度"
@@ -581,8 +607,8 @@ echo "■ 将軍パフォーマンスフィードバック"
 if [ "$LIGHT_MODE" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
-DESIGN_QUALITY="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
-WORKAROUNDS_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+DESIGN_QUALITY="$_TMP_DQ_RECENT"
+WORKAROUNDS_FILE="$_TMP_WA_RECENT"
 REWORK_PCT="N/A"
 BLOCK_PCT="N/A"
 WA_COUNT=0
@@ -911,7 +937,7 @@ fi
 echo "■ 遡及学習(WARN/BLOCK頻度+再発率)"
 _DQ_FILE_125="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE_125" ]; then
-    _retro_result=$(python3 - "$_DQ_FILE_125" <<'RETRO_PY'
+    _retro_result=$(python3 - "$_TMP_DQ_RECENT" <<'RETRO_PY'
 import sys
 from collections import Counter
 
@@ -1008,25 +1034,10 @@ fi
 # --- Gate 13: 教訓健全度 (lesson_sort trigger) ---
 echo "■ 教訓健全度"
 if [ -f "$GATE_DIR/gate_lesson_health.sh" ]; then
-    wait $_PID_G13 || true
-    lesson_result=$(tail -1 "$_TMP_G13")
-    echo "  $lesson_result"
-    if echo "$lesson_result" | grep -q "ALERT"; then
-        overall="ALERT"
-        if grep -Eq 'METRIC: .*status=ALERT .*useful_rate=([0-9](\.[0-9]+)?|[12][0-9](\.[0-9]+)?)%?' "$_TMP_G13"; then
-            alerts+=("教訓健全度: ALERT → when/how品質向上・低useful教訓の改善/淘汰を実行せよ")
-        elif grep -q "未振り分け" "$_TMP_G13"; then
-            alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
-        else
-            alerts+=("教訓健全度: ALERT → gate_lesson_health.shのaction行を確認し、原因別に対処せよ")
-        fi
-    elif echo "$lesson_result" | grep -q "WARN"; then
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-            alerts+=("教訓健全度: WARN")
-        fi
-    fi
+    _DEFER_G13=1
+    echo "  実行中（総合判定前に反映）"
 else
+    _DEFER_G13=0
     echo "  gate_lesson_health.sh不在"
 fi
 
@@ -1141,16 +1152,16 @@ if [ "$LIGHT_MODE" = "1" ]; then
 else
 _DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE" ]; then
-    _dq_total=$(grep -c 'cmd_id:' "$_DQ_FILE" 2>/dev/null || true)
+    _dq_total=$(grep -c 'cmd_id:' "$_TMP_DQ_RECENT" 2>/dev/null || true)
     _dq_total=${_dq_total:-0}; _dq_total=${_dq_total//[^0-9]/}; _dq_total=${_dq_total:-0}
-    _dq_block=$(grep -c 'gate_result.*BLOCK' "$_DQ_FILE" 2>/dev/null || true)
+    _dq_block=$(grep -c 'gate_result.*BLOCK' "$_TMP_DQ_RECENT" 2>/dev/null || true)
     _dq_block=${_dq_block:-0}; _dq_block=${_dq_block//[^0-9]/}; _dq_block=${_dq_block:-0}
     if [ "$_dq_total" -gt 0 ]; then
         _dq_rate=$(( _dq_block * 100 / _dq_total ))
         echo "  全体: ${_dq_total}件中BLOCK ${_dq_block}件 (${_dq_rate}%)"
     fi
     # 直近10件のBLOCK理由を表示
-    _recent_blocks=$(tail -200 "$_DQ_FILE" | grep -B 1 'gate_result.*BLOCK' 2>/dev/null | grep 'notes:' 2>/dev/null | tail -5 | sed 's/.*notes: */  BLOCK: /' || true)
+    _recent_blocks=$(tail -200 "$_TMP_DQ_RECENT" | grep -B 1 'gate_result.*BLOCK' 2>/dev/null | grep 'notes:' 2>/dev/null | tail -5 | sed 's/.*notes: */  BLOCK: /' || true)
     if [ -n "$_recent_blocks" ]; then
         echo "  直近BLOCK理由:"
         echo "$_recent_blocks"
@@ -1168,7 +1179,7 @@ if [ "$LIGHT_MODE" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
 if [ -f "$_DQ_FILE" ]; then
-    _fp_report=$(python3 - "$_DQ_FILE" <<'PY'
+    _fp_report=$(python3 - "$_TMP_DQ_RECENT" <<'PY'
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -1529,7 +1540,7 @@ fi
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
 # 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
 # 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
-_scripts_status=$(cd "$SCRIPT_DIR" && git status --porcelain --branch -- scripts/ 2>/dev/null) || _scripts_status=""
+_scripts_status=$(cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') || _scripts_status=""
 _scripts_dirty=()
 _d_unpushed="?"
 if [ "$LIGHT_MODE" = "1" ]; then
@@ -1539,11 +1550,6 @@ elif [ -n "$_scripts_status" ]; then
     while IFS= read -r _scripts_line; do
         case "$_scripts_line" in
             '## '*)
-                if [[ "$_scripts_line" =~ \[ahead[[:space:]]+([0-9]+) ]]; then
-                    _d_unpushed="${BASH_REMATCH[1]}"
-                else
-                    _d_unpushed="0"
-                fi
                 ;;
             '?? scripts/oneshot/'*)
                 ;;
@@ -1601,14 +1607,29 @@ fi
 echo "■ スキル別FAIL率"
 _skill_exec_log="$SCRIPT_DIR/logs/skill_execution_log.yaml"
 if [ -f "$_skill_exec_log" ]; then
-    _skill_stats=$(python3 - "$_skill_exec_log" <<'PY' 2>/dev/null || true
+    _skill_stats=$(python3 - "$_TMP_SKILL_EXEC_RECENT" <<'PY' 2>/dev/null || true
 import sys
 from collections import defaultdict
-import yaml
+import re
 
-with open(sys.argv[1], encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-entries = data.get("executions") or []
+entries = []
+current = None
+field_re = re.compile(r'^\s*([a-zA-Z_]+):\s*(.*)\s*$')
+for raw in open(sys.argv[1], encoding="utf-8", errors="ignore"):
+    if re.match(r'^\s*-\s+ts:', raw):
+        if current:
+            entries.append(current)
+        current = {}
+        value = raw.split("ts:", 1)[1].strip().strip('"')
+        current["ts"] = value
+        continue
+    if current is None:
+        continue
+    match = field_re.match(raw)
+    if match:
+        current[match.group(1)] = match.group(2).strip().strip('"')
+if current:
+    entries.append(current)
 stats = defaultdict(lambda: {"total": 0, "fail": 0, "last": ""})
 by_skill = defaultdict(list)
 for entry in entries:
@@ -1663,12 +1684,13 @@ fi
 # --- Gate 20.5: SKILL.md script参照鮮度 (cmd_2489) ---
 # 目的: SKILL.mdが参照する scripts/* の消滅・更新漏れを起動時に検出する。
 echo "■ SKILL.md script参照"
-_skill_ref_gate="$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh"
-if [ -x "$_skill_ref_gate" ]; then
-    if _skill_ref_out=$(bash "$_skill_ref_gate" "$SCRIPT_DIR" 2>&1); then
+if [ -n "${_PID_SKILL_REFS:-}" ]; then
+    if wait "$_PID_SKILL_REFS"; then
+        _skill_ref_out=$(cat "$_TMP_SKILL_REFS")
         printf '%s\n' "$_skill_ref_out" | grep -E '^(走査:|OK:|--- 総合判定)' | sed 's/^/  /'
     else
         _skill_ref_status=$?
+        _skill_ref_out=$(cat "$_TMP_SKILL_REFS")
         printf '%s\n' "$_skill_ref_out" | grep -E '^(走査:|=== 要更新|=== 参照先|  WARN:|--- 総合判定)' | head -20 | sed 's/^/  /'
         if [ "$_skill_ref_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
             overall="WARN"
@@ -1882,11 +1904,33 @@ if [ -n "$_l6_out" ]; then
             BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_l6_bulletin" shogun action_required >/dev/null 2>&1 || true
         fi
     done <<< "$_l6_out"
-else
-    echo "  SKIP: L6学習速度集計失敗"
-fi
+	else
+	    echo "  SKIP: L6学習速度集計失敗"
+	fi
 
-# --- 総合判定 ---
+if [ "${_DEFER_G13:-0}" = "1" ]; then
+    wait $_PID_G13 || true
+    lesson_result=$(tail -1 "$_TMP_G13")
+    echo "■ 教訓健全度（遅延結果）"
+    echo "  $lesson_result"
+    if echo "$lesson_result" | grep -q "ALERT"; then
+        overall="ALERT"
+        if grep -Eq 'METRIC: .*status=ALERT .*useful_rate=([0-9](\.[0-9]+)?|[12][0-9](\.[0-9]+)?)%?' "$_TMP_G13"; then
+            alerts+=("教訓健全度: ALERT → when/how品質向上・低useful教訓の改善/淘汰を実行せよ")
+        elif grep -q "未振り分け" "$_TMP_G13"; then
+            alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
+        else
+            alerts+=("教訓健全度: ALERT → gate_lesson_health.shのaction行を確認し、原因別に対処せよ")
+        fi
+    elif echo "$lesson_result" | grep -q "WARN"; then
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("教訓健全度: WARN")
+        fi
+    fi
+fi
+	
+	# --- 総合判定 ---
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 if [ "${#alerts[@]}" -gt 0 ]; then

@@ -250,6 +250,8 @@ fi
 
 printf '%s\n' "$WRITE_RESULT"
 
+bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+
 # --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
 if [[ -f "$INBOX_WRITE" ]]; then
