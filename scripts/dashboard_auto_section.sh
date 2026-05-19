@@ -74,6 +74,8 @@ CI_STATUS_REFRESH_LOCK="/tmp/dashboard_ci_status_${_proj_hash}.lock"
 # L4-R29: git rev-list TTLキャッシュ（60s）— 毎回実行で179-364ms消費を削減
 GIT_REVLIST_CACHE="/tmp/dashboard_git_revlist_${_proj_hash}.txt"
 GIT_REVLIST_CACHE_TS="/tmp/dashboard_git_revlist_${_proj_hash}.ts"
+SKILL_METRICS_CACHE="/tmp/dashboard_skill_metrics_${_proj_hash}.txt"
+SKILL_METRICS_CACHE_TS="/tmp/dashboard_skill_metrics_${_proj_hash}.ts"
 _CACHE_NOW=$(date +%s)
 
 # ─── GP-cmd_1981: Heavy awk mtimeキャッシュ ───
@@ -287,7 +289,7 @@ if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
     while IFS='|' read -r _n _pcmd; do
         [[ -z "$_pcmd" ]] && continue
         NINJA_CMD[$_n]="$_pcmd"
-        jp=$(name_jp "$_n")
+        jp="${_JP_CACHE[$_n]:-$_n}"
         if [[ -n "${CMD_NINJAS[$_pcmd]:-}" ]]; then
             CMD_NINJAS[$_pcmd]="${CMD_NINJAS[$_pcmd]},${jp}"
         else
@@ -313,7 +315,7 @@ ACTIVE_NAMES=""
 for _an in $ALL_NINJAS; do
     if [[ ",$IDLE_LIST," != *",${_an},"* ]]; then
         ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
-        _jp_an=$(name_jp "$_an")
+        _jp_an="${_JP_CACHE[$_an]:-$_an}"
         if [[ -n "$ACTIVE_NAMES" ]]; then
             ACTIVE_NAMES="${ACTIVE_NAMES}, ${_jp_an}"
         else
@@ -353,7 +355,7 @@ STREAK=0
 STREAK_START=""
 STREAK_END=""
 TOTAL_CMDS=0
-declare -A CLEARED_CMDS=()
+CLEARED_CMD_LINES=""
 
 if [[ -f "$GATE_LOG" ]]; then
     if [[ "$_HEAVY_HIT" == true ]] && [[ -f "$_HEAVY_CACHE_DIR/metrics.tsv" ]]; then
@@ -365,9 +367,7 @@ if [[ -f "$GATE_LOG" ]]; then
                 < "$_HEAVY_CACHE_DIR/streak.txt" 2>/dev/null || true
         fi
         if [[ -f "$_HEAVY_CACHE_DIR/cleared.txt" ]]; then
-            while IFS= read -r _cc; do
-                [[ -n "$_cc" ]] && CLEARED_CMDS["$_cc"]=1
-            done < "$_HEAVY_CACHE_DIR/cleared.txt"
+            CLEARED_CMD_LINES=$'\n'"$(cat "$_HEAVY_CACHE_DIR/cleared.txt" 2>/dev/null)"$'\n'
         fi
     else
         # Cmd-latest dedup (exclude test cmds), sorted by timestamp
@@ -396,7 +396,7 @@ if [[ -f "$GATE_LOG" ]]; then
                 fi
                 STREAK=$((STREAK + 1))
                 STREAK_END="$_cmd"
-                CLEARED_CMDS[$_cmd]=1
+                CLEARED_CMD_LINES+="${_cmd}"$'\n'
             else
                 STREAK=0
                 STREAK_START=""
@@ -409,14 +409,16 @@ if [[ -f "$GATE_LOG" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\n' \
             "$STREAK" "$STREAK_START" "$STREAK_END" "$TOTAL_CMDS" "$CLEAR_COUNT" \
             > "$_HEAVY_CACHE_DIR/streak.txt" 2>/dev/null || true
-        for _cc in "${!CLEARED_CMDS[@]}"; do echo "$_cc"; done \
-            > "$_HEAVY_CACHE_DIR/cleared.txt" 2>/dev/null || true
+        if [[ -n "$CLEARED_CMD_LINES" ]]; then
+            printf '%s' "$CLEARED_CMD_LINES" > "$_HEAVY_CACHE_DIR/cleared.txt" 2>/dev/null || true
+            CLEARED_CMD_LINES=$'\n'"$CLEARED_CMD_LINES"
+        fi
     fi
 
     # Last GATE time (informational only, not rendered in dashboard)
 fi
 
-# CLEARED_CMDS is now populated in the streak loop above (single-pass optimization)
+# CLEARED_CMD_LINES is now populated in the streak loop above (single-pass optimization)
 
 # ─── Knowledge metrics (cached — only re-run when gate_metrics.log changes) ───
 KM_INJECT_RATE="—"
@@ -561,7 +563,17 @@ CONTEXT_WARNINGS="$(cat "$_TMP_CTX_WARN" 2>/dev/null || true)"
 if [[ -n "${DASHBOARD_SKILL_METRICS_FILE:-}" && -f "${DASHBOARD_SKILL_METRICS_FILE:-}" ]]; then
     cp "$DASHBOARD_SKILL_METRICS_FILE" "$TMP_SKILL_METRICS" 2>/dev/null || true
 elif [[ -x "$SKILL_METRICS_SCRIPT" ]]; then
-    bash "$SKILL_METRICS_SCRIPT" > "$TMP_SKILL_METRICS" 2>/dev/null || true
+    _skill_metrics_age=999
+    if [[ -f "$SKILL_METRICS_CACHE_TS" ]]; then
+        _skill_metrics_ts=$(cat "$SKILL_METRICS_CACHE_TS" 2>/dev/null || echo 0)
+        _skill_metrics_age=$(( _CACHE_NOW - _skill_metrics_ts ))
+    fi
+    if (( _skill_metrics_age < 300 )) && [[ -s "$SKILL_METRICS_CACHE" ]]; then
+        cp "$SKILL_METRICS_CACHE" "$TMP_SKILL_METRICS" 2>/dev/null || true
+    elif bash "$SKILL_METRICS_SCRIPT" > "$TMP_SKILL_METRICS" 2>/dev/null; then
+        cp "$TMP_SKILL_METRICS" "$SKILL_METRICS_CACHE" 2>/dev/null || true
+        date +%s > "$SKILL_METRICS_CACHE_TS" 2>/dev/null || true
+    fi
 fi
 
 # Parse JSON cache (inject_rate, ref_rate, normalized_delta.delta_pp + knowledge breakdown rows)
@@ -892,8 +904,8 @@ fi
     echo "|------|--------|------|-----|------|"
 
     for ninja in $ALL_NINJAS; do
-        jp=$(name_jp "$ninja")
-        model=$(get_model "$ninja")
+        jp="${_JP_CACHE[$ninja]:-$ninja}"
+        model="${_MODEL_CACHE[$ninja]:-unknown}"
 
         # Status from idle list
         status="稼働中"
@@ -982,7 +994,9 @@ fi
         while IFS=$'\t' read -r cid tit sta; do
             # Skip completed commands and already GATE CLEAR'd commands.
             [[ "$sta" == "completed" ]] && continue
-            [[ -n "${CLEARED_CMDS[$cid]:-}" ]] && continue
+            if [[ -n "$CLEARED_CMD_LINES" ]]; then
+                [[ "$CLEARED_CMD_LINES" == *$'\n'"$cid"$'\n'* ]] && continue
+            fi
             ninjas="${CMD_NINJAS[$cid]:-—}"
             echo "| ${cid} | ${tit} | ${sta} | ${ninjas} |"
             shown=$((shown + 1))
