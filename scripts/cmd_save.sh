@@ -2547,7 +2547,7 @@ check_ac_file_paths() {
         in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
         in_ac { print }
     ' || true)
-    PATHS=$(echo "$AC_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    PATHS=$(echo "$AC_BLOCK" | grep -oE '[A-Za-z0-9_-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
@@ -4195,7 +4195,7 @@ for line in lines:
         if m:
             current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
 if current: entries.append(current)
-pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|ts|tsx|js|jsx|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
+pat = re.compile(r'[A-Za-z0-9_/-]+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
 for e in entries:
     trust = e.get('trust', '')
     if 'verified' in trust and 'unverified' not in trust:
@@ -4443,7 +4443,7 @@ check_ac_phase_mixing() {
         lt = tolower(text)
         # Exclude concrete file/script references before keyword matching.
         # Example: scripts/deploy_task.sh contains "deploy" but is not a delivery action.
-        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|ts|tsx|js|jsx|yaml|yml|json|sql|html|css|toml|cfg|env)/, " ", lt)
+        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env)/, " ", lt)
         # Exclude function calls that happen to contain phase keywords.
         # Example: deploy_task() names a function; "deploy" alone remains a delivery action.
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
