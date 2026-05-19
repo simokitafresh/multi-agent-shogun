@@ -67,6 +67,9 @@ review:
 **理由**: 22件中observationsが意志依存で放置された。記録なき知見は/clearで消える。
 自動チェック(gunshi_log_append.sh使用時): observationsなし → exit 2(BLOCK)で追記拒否。
 
+**draft review時の追加チェック**: review_type=draft の場合、ambiguity_pointsフィールドが設定されているか確認せよ。
+未記入→STOP。`ambiguity_points: none` を明示してから再実行。理由: CS WARN 3件遡及(cmd_2881-2883)で発見。
+
 ### Step 2: review_log追記
 ```bash
 # gunshi_review_log.yamlに追記
