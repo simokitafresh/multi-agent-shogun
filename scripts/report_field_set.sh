@@ -905,6 +905,133 @@ END {
 ' "$report_path" > "$tmp_file"
 }
 
+_report_field_set_extract_binary_result() {
+    awk '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function unquote(s) {
+    s = trim(s)
+    if ((substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"") ||
+        (substr(s, 1, 1) == "'"'"'" && substr(s, length(s), 1) == "'"'"'")) {
+        s = substr(s, 2, length(s) - 2)
+    }
+    return s
+}
+/^[[:space:]]*result:[[:space:]]*/ {
+    v = $0
+    sub(/^[[:space:]]*result:[[:space:]]*/, "", v)
+    v = unquote(v)
+    if (v == "yes" || v == "no" || v == "") {
+        print v
+        found = 1
+        exit 0
+    }
+}
+END { if (!found) exit 2 }
+' <<< "$1"
+}
+
+_report_field_set_fast_binary_ac_result() {
+    local report_path="$1"
+    local tmp_file="$2"
+    local ac_key="$3"
+    local result_value="$4"
+
+    if [[ "$result_value" != "yes" && "$result_value" != "no" && "$result_value" != "" ]]; then
+        return 2
+    fi
+
+    awk \
+        -v ac_key="$ac_key" \
+        -v result_value="$result_value" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+function make_indent(n,    s,i) { s = ""; for (i = 0; i < n; i++) s = s " "; return s }
+function yaml_quote(v,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(v); i++) {
+        c = substr(v, i, 1)
+        if (c == "'\''") out = out "'\'''\''"
+        else out = out c
+    }
+    return "'\''" out "'\''"
+}
+BEGIN {
+    in_bc = 0
+    in_ac = 0
+    bc_indent = -1
+    ac_indent = -1
+    replaced = 0
+}
+{
+    line = $0
+    trimmed = trim(line)
+    indent = leading_spaces(line)
+
+    if (!in_bc && line ~ /^binary_checks:[[:space:]]*$/) {
+        in_bc = 1
+        bc_indent = indent
+        print line
+        next
+    }
+
+    if (in_bc && trimmed != "" && trimmed !~ /^#/ && indent <= bc_indent && line !~ /^binary_checks:[[:space:]]*$/) {
+        if (in_ac && !replaced) {
+            print make_indent(ac_indent + 2) "result: " yaml_quote(result_value)
+            replaced = 1
+        }
+        in_bc = 0
+        in_ac = 0
+        print line
+        next
+    }
+
+    if (in_bc && !in_ac) {
+        ac_re = "^" make_indent(bc_indent + 2) ac_key ":[[:space:]]*$"
+        if (line ~ ac_re) {
+            in_ac = 1
+            ac_indent = indent
+        }
+        print line
+        next
+    }
+
+    if (in_ac) {
+        if (trimmed != "" && trimmed !~ /^#/ && indent <= ac_indent && trimmed !~ /^-/ && line !~ ("^" make_indent(ac_indent) ac_key ":[[:space:]]*$")) {
+            if (!replaced) {
+                print make_indent(ac_indent + 2) "result: " yaml_quote(result_value)
+                replaced = 1
+            }
+            in_ac = 0
+            print line
+            next
+        }
+        if (!replaced && indent > ac_indent && trimmed ~ /^result:[[:space:]]*/) {
+            print make_indent(indent) "result: " yaml_quote(result_value)
+            replaced = 1
+            next
+        }
+    }
+
+    print line
+}
+END {
+    if (in_ac && !replaced) {
+        print make_indent(ac_indent + 2) "result: " yaml_quote(result_value)
+        replaced = 1
+    }
+    if (!replaced) exit 2
+}
+' "$report_path" > "$tmp_file"
+}
+
 # --- Python fallback (multi-line text, new block creation) ---
 _report_field_set_python() {
     local rp="$1" dk="$2" val="$3" sv="$4"
@@ -1088,6 +1215,29 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         flock -w 5 200 || { echo "[report_field_set] flock failed (attempt $attempt)" >&2; exit 1; }
         _report_field_set_prepare_backup
 
+        # binary_checks.AC*: common report path is a single result update.  The
+        # Python fallback preserves arbitrary structures, but this hot path can
+        # safely keep template check text and replace only the result scalar.
+        if [[ "$DOT_KEY" == binary_checks.AC* ]] && [[ "$DOT_KEY" != *.*.* ]] && [ -n "$STDIN_VALUE" ]; then
+            _bc_result="$(_report_field_set_extract_binary_result "$STDIN_VALUE" 2>/dev/null || true)"
+            if [ -n "$_bc_result" ]; then
+                tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+                rm -f "$tmp_file"
+                if _report_field_set_fast_binary_ac_result "$REPORT_PATH" "$tmp_file" "${KEYS[1]}" "$_bc_result"; then
+                    if ! mv "$tmp_file" "$REPORT_PATH"; then
+                        rm -f "$tmp_file"
+                        echo "FATAL: report_field_set: atomic replace failed" >&2
+                        exit 1
+                    fi
+                    echo "[report_field_set] binary_checks保護: check項目をテンプレートから維持" >&2
+                    echo "[report_field_set] $DOT_KEY.result = ${_bc_result:0:80}"
+                    _report_field_set_validate_or_restore
+                    exit $?
+                fi
+                rm -f "$tmp_file"
+            fi
+        fi
+
         # Multi-line stdin text → Python fallback
         if [ "$USE_PYTHON" -eq 1 ]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$STDIN_VALUE"
@@ -1268,36 +1418,58 @@ fi
 # 忍者がcheck="PASS"やresult=自由記述を書いた瞬間にフィードバック。
 # gateは事後(cmd完了時)。ここは即時検出。品質の起点を早くする。
 if [[ "$DOT_KEY" == binary_checks* ]]; then
-    _bc_check=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+    _bc_post=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys
 rp = os.environ['REPORT_PATH']
+action = ''
+issues = []
 try:
     with open(rp) as f:
-        data = yaml.safe_load(f)
+        data = yaml.safe_load(f) or {}
 except Exception:
+    print('ACTION:')
     sys.exit(0)
-if not isinstance(data, dict):
-    sys.exit(0)
-bc = data.get('binary_checks')
-if not isinstance(bc, dict):
-    sys.exit(0)
-verdict_words = {'PASS','FAIL','OK','NG','yes','no','YES','NO','true','false','True','False','pass','fail','ok','ng'}
-issues = []
-for ac_key, ac_val in bc.items():
-    if not isinstance(ac_val, list):
-        continue
-    for j, ci in enumerate(ac_val):
-        if not isinstance(ci, dict):
-            continue
-        ck = str(ci.get('check','')).strip()
-        rs = str(ci.get('result','')).strip()
-        if ck in verdict_words:
-            issues.append(f'{ac_key}[{j}].check=\"{ck}\" — 確認項目ではなく判定値。何を確認したかを書け')
-        if rs and rs.lower() not in ('yes','no','true','false',''):
-            issues.append(f'{ac_key}[{j}].result=\"{rs[:30]}\" — yes/noのみ。自由記述はdetailに書け')
-if issues:
-    print('\\n'.join(issues))
+if isinstance(data, dict):
+    bc = data.get('binary_checks')
+    if isinstance(bc, dict):
+        verdict_words = {'PASS','FAIL','OK','NG','yes','no','YES','NO','true','false','True','False','pass','fail','ok','ng'}
+        has_no = False
+        has_empty = False
+        for ac_key, ac_val in bc.items():
+            if not isinstance(ac_val, list):
+                continue
+            for j, ci in enumerate(ac_val):
+                if not isinstance(ci, dict):
+                    continue
+                ck = str(ci.get('check','')).strip()
+                rs = str(ci.get('result','')).strip()
+                if ck in verdict_words:
+                    issues.append(f'{ac_key}[{j}].check=\"{ck}\" — 確認項目ではなく判定値。何を確認したかを書け')
+                if rs and rs.lower() not in ('yes','no','true','false',''):
+                    issues.append(f'{ac_key}[{j}].result=\"{rs[:30]}\" — yes/noのみ。自由記述はdetailに書け')
+                r = rs.lower()
+                if r == 'no':
+                    has_no = True
+                elif r not in ('yes',):
+                    has_empty = True
+        verdict = str(data.get('verdict', '')).strip()
+        if verdict in ('PASS', 'PASS_NO_IMPROVEMENT') and has_no:
+            action = 'INCONSISTENT'
+        elif verdict in ('', 'null', 'None') and not has_empty and not has_no:
+            action = 'AUTO_PASS'
+        elif verdict in ('', 'null', 'None') and has_no and not has_empty:
+            action = 'AUTO_FAIL'
+print(f'ACTION:{action}')
+for issue in issues:
+    print(issue)
 " 2>/dev/null) || true
+    _cur_verdict="${_bc_post%%$'\n'*}"
+    _cur_verdict="${_cur_verdict#ACTION:}"
+    if [[ "$_bc_post" == *$'\n'* ]]; then
+        _bc_check="${_bc_post#*$'\n'}"
+    else
+        _bc_check=""
+    fi
     if [ -n "$_bc_check" ]; then
         echo "" >&2
         echo "⚠ binary_checks品質問題検出 ⚠" >&2
@@ -1306,35 +1478,6 @@ if issues:
         echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
     fi
     # ★穴B/C対策: bc書込み後にverdictを自動再導出(矛盾状態を時間軸でも作れない)
-    _cur_verdict=$(REPORT_PATH="$REPORT_PATH" python3 -c "
-import yaml, os, sys
-rp = os.environ.get('REPORT_PATH', '')
-if not rp or not os.path.exists(rp):
-    sys.exit(0)
-with open(rp) as f:
-    data = yaml.safe_load(f) or {}
-verdict = str(data.get('verdict', '')).strip()
-bc = data.get('binary_checks', {})
-if not isinstance(bc, dict) or not bc:
-    sys.exit(0)
-has_no = False
-has_empty = False
-for ac_val in bc.values():
-    if isinstance(ac_val, list):
-        for item in ac_val:
-            if isinstance(item, dict):
-                r = str(item.get('result', '')).strip().lower()
-                if r == 'no':
-                    has_no = True
-                elif r not in ('yes',):
-                    has_empty = True
-if verdict in ('PASS', 'PASS_NO_IMPROVEMENT') and has_no:
-    print('INCONSISTENT', end='')
-elif verdict in ('', 'null', 'None') and not has_empty and not has_no:
-    print('AUTO_PASS', end='')
-elif verdict in ('', 'null', 'None') and has_no and not has_empty:
-    print('AUTO_FAIL', end='')
-" 2>/dev/null) || true
     if [[ "$_cur_verdict" == "INCONSISTENT" ]]; then
         # verdict:PASSだがbc:noあり → FAILに自動修正
         bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null || true
