@@ -1,11 +1,10 @@
 task:
-  _ac_task_id: null
+  _ac_task_id: cmd_2880_focused
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2880 (deployed 2026-05-19T17:54:18). Read from the beginning.
-  ac_version: 7d010443
+  ac_version: d41d8cd9
   cmd_id: cmd_karo_kj_role_filter
   context: '## 要望
-
     ## 実装方針'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -15,7 +14,6 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  growth_loop_defense:
   - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
   - 'Level1(事後検出): 間違えた後にgateが検出'
   - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
@@ -31,22 +29,12 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2880
+  parent_cmd: 
   project: infra
   purpose: cmd_2878はorigin空をWARNするが、忍者がoriginを正しく書くコストがゼロでない=意志依存が残る。report_field_set.sh L52にorigin→lesson_candidate.originマッピングは存在するが自動生成なし。タスクYAMLのcmd_idからcmdのoriginを読み取り、報告作成時にlesson_candidate.originを自動プリセットする。忍者のコスト=ゼロで因果辺が生まれる
-  recommended_skills:
-  - report-write
-  - verdict-check
-  related_causal_links:
-  - '[[Level1意志依存]]'
-  - '[[gate_report_format未対応]]'
-  - '[[報告YAML_origin_1.2%]]'
   scope:
   - frontend/app/dashboard/page.tsx
-  semantic_concepts:
-  - 'defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)'
-  - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
-  status: assigned
+  status: idle
   stop_for: []
   task_id: cmd_2880_focused
   task_type: focused
@@ -85,6 +73,27 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  recommended_skills:
+  - "report-write"
+  - "verdict-check"
+  related_causal_links:
+  - "[[cmd_2878_origin_L5化]]"
+  - "[[忍者originコスト>0]]"
+  - "[[意志依存残存]]"
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L502: gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw
@@ -100,3 +109,44 @@ task:
     ────────────────────────────────────────
     
     
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_2880.yaml
+  report_path: queue/reports/hayate_report_cmd_2880.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'report_yaml_format(1件)'
+    breakdown: 'report_yaml_format(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 324
+    - pattern: 'verdict_invalid'
+      count: 93
+    - pattern: 'bc_result_invalid'
+      count: 91
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; binary_checksのresultは"yes"/"no"のみ。"PASS"/"FAIL"/"pending"等は不正値'
+    gate_blocks:
+    - reason: 'lesson_done_missing'
+      count: 12
+      hint: 'lesson登録完了の確認が不足。lesson_write.sh実行後にdone確認'
+    - reason: 'empty_lessons_useful'
+      count: 10
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'binary_checks_fail'
+      count: 10
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_format'
+      count: 8
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'invalid_lessons_useful_format'
+      count: 3
+      hint: 'lessons_usefulはリスト[{id,useful,reason}]形式。dict/null禁止'
+    - reason: 'purpose_validation_fit_false'
+      count: 2
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
+    - reason: 'lesson_candidate_fields_empty'
+      count: 2
+      hint: 'gate BLOCK: lesson_candidate_fields_empty'
+  deployed_at: "2026-05-19T17:55:01"
