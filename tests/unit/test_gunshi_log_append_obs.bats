@@ -1,0 +1,99 @@
+#!/usr/bin/env bats
+# test_gunshi_log_append_obs.bats - gunshi_log_append.sh observations必須チェックのunit test
+# @covers: scripts/gunshi_log_append.sh lines 31-42
+
+setup_file() {
+    export PROJECT_ROOT
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export ORIG_SCRIPT="$PROJECT_ROOT/scripts/gunshi_log_append.sh"
+    [ -f "$ORIG_SCRIPT" ] || return 1
+}
+
+setup() {
+    # テスト用ディレクトリをプロジェクトルート構造に合わせて構築
+    export TEST_ROOT
+    TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/log_append_obs.XXXXXX")"
+    mkdir -p "$TEST_ROOT/scripts" "$TEST_ROOT/logs/archive"
+
+    # スクリプトをコピーしてSCRIPT_DIRをテスト用に差し替え
+    sed "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\\\$0\")/..\" && pwd)\"|SCRIPT_DIR=\"$TEST_ROOT\"|" \
+        "$ORIG_SCRIPT" > "$TEST_ROOT/scripts/gunshi_log_append.sh"
+    chmod +x "$TEST_ROOT/scripts/gunshi_log_append.sh"
+
+    # 最小限のログファイル
+    printf '# gunshi review log\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+}
+
+teardown() {
+    rm -rf "$TEST_ROOT"
+}
+
+# --- observations未記入 → BLOCK ---
+
+@test "report with no observations field → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t001
+  review_type: report
+  verdict: APPROVE
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "draft with no observations field → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t002
+  review_type: draft
+  verdict: FAIL
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "self_study with no observations field → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t003
+  review_type: self_study
+  verdict: APPROVE
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+# --- observations空リスト → BLOCK ---
+
+@test "report with empty observations list → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t004
+  review_type: report
+  observations: []
+  verdict: APPROVE
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+# --- observations 1件以上 → OK ---
+
+@test "report with 1 observation → OK exit 0" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t005
+  review_type: report
+  verdict: APPROVE
+  observations:
+    - 事実1: テスト実施済み
+ENTRY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+# --- 非対象review_type → チェックなし ---
+
+@test "review_type=gate_sync without observations → exit 0" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t006
+  review_type: gate_sync
+  verdict: CLEAR
+ENTRY
+    [ "$status" -eq 0 ]
+}
