@@ -1179,108 +1179,12 @@ if [ "$LIGHT_MODE" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
 if [ -f "$_DQ_FILE" ]; then
-    _fp_report=$(python3 - "$_TMP_DQ_RECENT" <<'PY'
-import sys
-from collections import defaultdict
-from datetime import datetime, timedelta, timezone
-
-dq_file = sys.argv[1]
-cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-
-# Parse entries from YAML (simple line-based parsing)
-entries = []
-current = {}
-with open(dq_file, 'r', encoding='utf-8', errors='ignore') as f:
-    for line in f:
-        line = line.rstrip()
-        if '  - cmd_id:' in line:
-            if current:
-                entries.append(current)
-            current = {'cmd_id': line.split('"')[1] if '"' in line else ''}
-        elif 'gate_result:' in line and current:
-            current['gate_result'] = line.split('"')[1] if '"' in line else ''
-        elif 'source:' in line and current:
-            current['source'] = line.split('"')[1] if '"' in line else ''
-        elif 'notes:' in line and current:
-            current['notes'] = line.split('"')[1] if '"' in line else line.split('notes:')[1].strip().strip('"')
-        elif 'timestamp:' in line and current:
-            current['timestamp'] = line.split('"')[1] if '"' in line else ''
-    if current:
-        entries.append(current)
-
-# Filter to last 30 days only
-entries = [e for e in entries if e.get('timestamp', '') >= cutoff[:10]]
-
-# Find WARNs from cmd_save_warn
-warn_by_cmd = defaultdict(set)  # cmd_id -> set of warn notes
-for e in entries:
-    if e.get('source') == 'cmd_save_warn' and e.get('gate_result') == 'WARN':
-        warn_by_cmd[e['cmd_id']].add(e.get('notes', 'unknown'))
-
-# Find CLEARed cmds from cmd_complete_gate
-cleared_cmds = set()
-for e in entries:
-    if e.get('source') == 'cmd_complete_gate' and e.get('gate_result') == 'CLEAR':
-        cleared_cmds.add(e['cmd_id'])
-
-# Count cmd_save executions per cmd (to distinguish "fixed then CLEAR" from "WARN ignored then CLEAR")
-cmd_save_runs = defaultdict(int)
-for e in entries:
-    if e.get('source') in ('cmd_save_warn', 'cmd_save_block') and e.get('cmd_id'):
-        cmd_save_runs[e['cmd_id']] += 1
-
-# Compute FP rate per WARN type
-# FP = WARN出た + CLEARされた + 同一cmdでcmd_save実行が1回のみ(=修正せずに通った)
-# TP = WARN出た + CLEARされた + 同一cmdでcmd_save実行が2回以上(=修正して通した=gateが機能した)
-warn_type_total = defaultdict(int)
-warn_type_fp = defaultdict(int)
-for cmd_id, notes_set in warn_by_cmd.items():
-    for note in notes_set:
-        warn_type_total[note] += 1
-        if cmd_id in cleared_cmds and cmd_save_runs.get(cmd_id, 0) <= 1:
-            warn_type_fp[note] += 1
-
-# Report
-if not warn_type_total:
-    print("  WARN記録なし")
-    sys.exit(0)
-
-high_fp = []
-for wtype, total in sorted(warn_type_total.items(), key=lambda x: -x[1]):
-    fp = warn_type_fp.get(wtype, 0)
-    rate = fp * 100 // total if total > 0 else 0
-    if total >= 3 and rate >= 60:
-        high_fp.append(f"  ALERT: \"{wtype}\" FP率={rate}% ({fp}/{total}) → gate精度劣化。修正を検討せよ")
-    elif total >= 3:
-        print(f"  OK: \"{wtype}\" FP率={rate}% ({fp}/{total})")
-
-if high_fp:
-    for line in high_fp:
-        print(line)
-    block_patterns = defaultdict(int)
-    for e in entries:
-        if e.get('gate_result') != 'BLOCK':
-            continue
-        note = e.get('notes', 'unknown').strip() or 'unknown'
-        if '|check=' in note:
-            note = note.split('|check=', 1)[0].strip()
-        if 'WARN累計昇格' in note:
-            note = 'WARN累計昇格'
-        block_patterns[note] += 1
-    if block_patterns:
-        pattern_summary = ', '.join(
-            f'{name}:{count}件'
-            for name, count in sorted(block_patterns.items(), key=lambda x: (-x[1], x[0]))[:3]
-        )
-    else:
-        pattern_summary = '直近BLOCKなし'
-    for line in high_fp:
-        payload = line.strip()
-        print(f"__FP_RELAXATION_REQUEST__\t{payload}\t{pattern_summary}")
-else:
-    print("  高FP率のWARN typeなし")
-PY
-)
+    _fp_report=$(python3 "$SCRIPT_DIR/scripts/gates/gate_fp_relaxation_proposal.py" \
+        "$_DQ_FILE" \
+        --limit "${SHOGUN_STARTUP_DQ_ENTRY_LIMIT:-5000}" \
+        --days "${SHOGUN_STARTUP_FP_DAYS:-30}" \
+        --min-count "${SHOGUN_STARTUP_FP_MIN_COUNT:-3}" \
+        --threshold "${SHOGUN_STARTUP_FP_THRESHOLD:-60}")
     _fp_visible="$(printf '%s\n' "$_fp_report" | grep -v '^__FP_RELAXATION_REQUEST__' || true)"
     echo "$_fp_visible"
     if echo "$_fp_report" | grep -q "ALERT"; then
@@ -1289,9 +1193,9 @@ PY
             alerts+=("gate偽陽性: 高FP率のWARN type検出。精度改善を検討せよ")
         fi
         if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
-            while IFS=$'\t' read -r _fp_marker _fp_alert _fp_patterns; do
+            while IFS=$'\t' read -r _fp_marker _fp_alert _fp_patterns _fp_proposal; do
                 [ "$_fp_marker" = "__FP_RELAXATION_REQUEST__" ] || continue
-                _fp_bulletin="Gate 13.8 高FP率検出: ${_fp_alert}。直近BLOCK修正パターン分類: ${_fp_patterns}。将軍はgate条件緩和cmdを起票されたし。"
+                _fp_bulletin="Gate 13.8 高FP率検出: ${_fp_alert}。直近BLOCK修正パターン分類: ${_fp_patterns}。修正候補: ${_fp_proposal}"
                 BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_fp_bulletin" shogun action_required >/dev/null 2>&1 || true
             done <<< "$_fp_report"
         fi
