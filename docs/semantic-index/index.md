@@ -779,3 +779,35 @@ codd:
 | lesson | `LK-A01 v6` 破壊的操作はremote現状確認+lord_conversation確認必須 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:03:06+09:00 全ての作業で共通の内容だぞ。各論にするな。破壊的操作を禁止するのはナンセンスで責任転換しているだけだ。人もLLMもミスをする。俺に判断を投げるという発想が根本的に間違っているな。 |
 
+## cmd_quality_logging — cmd設計品質ログ
+
+| 属性 | 値 |
+|------|---|
+| id | cmd_quality_logging |
+| label | cmd設計品質ログ |
+| aliases | cmd品質ログ, cmd_quality_log, cmd_design_quality, 品質記録, karo_rework, gunshi_verdict, ninja_blockers, supplementary_cmds, BLOCK率, CLEAR率, ac_count |
+| skills | cmd-complete |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/cmd_quality_log.sh` |
+| file | `logs/cmd_design_quality.yaml` |
+| file | `logs/archive/cmd_design_quality.yaml` |
+| file | `scripts/gates/gate_shogun_startup.sh` |
+| cmd | `cmd_2855` cmd_quality_log.sh高速化 |
+
+## task_modifier_injection — タスク修飾子注入
+
+| 属性 | 値 |
+|------|---|
+| id | task_modifier_injection |
+| label | タスク修飾子注入 |
+| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出 |
+| skills | なし |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/lib/inject_task_modifiers.py` |
+| file | `scripts/deploy_task.sh` |
+| cmd | `cmd_1393` 7サブプロセス→1統合(inject_task_modifiers.py誕生) |
+
