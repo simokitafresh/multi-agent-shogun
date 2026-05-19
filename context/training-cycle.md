@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-04-09 -->
+<!-- last_updated: 2026-05-19 -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理
@@ -945,6 +945,57 @@ R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大�
 - **解消**: cmd_2796でcodd.yaml修正(source_dirs→scripts/, doc_dirs→codd/配下3ディレクトリ)→health_score 0→95
 - **教訓**: 修行の天井=忍者スキルの限界ではなく環境の限界。環境を磨いてから修行を再開せよ
 - **次**: CoDD修行loop配備→同じhealth_score=0→学びなし、を§0.1問い0(10回繰り返したら？)で検知。L4 R2(通常報告修行)への切替を提案中
+
+## §28 CoDD速度改善ラウンド（2026-05-19定義）
+
+### 目的
+
+CoDD台帳の最終更新停滞をidle時間で解消し、インフラ最適化と忍者修行を同時に回す。
+通常の報告書修行ではなく、`docs/research/codd_refactor_registry.md`をSSOTとして未最適化スクリプトを選び、CoDD refactorを実施するラウンド。
+
+### 発動条件
+
+| 条件 | 判定 |
+|------|------|
+| 本番cmd待ち | idle忍者がいる |
+| 台帳鮮度 | `docs/research/codd_refactor_registry.md` の最新日付が7日以上前、または家老が改善対象を追加指定 |
+| CoDD環境 | `context/codd.md` §1のローカルCLI版数と `codd.yaml` が確認済み |
+| 配備方式 | 忍者別cmd_idで `deploy_task.sh --cmd` 配備。手動task YAML作成禁止 |
+
+### 対象選定
+
+家老は台帳から既改善済み対象を除外し、次の順で未最適化候補を選ぶ。
+
+1. 起動・監視・配備ホットパス: `scripts/gates/*startup*.sh`, `scripts/ninja_monitor.sh`, `scripts/deploy_task.sh`, inbox/dashboard系
+2. 直近30日のgate/WARNで頻出するスクリプト: `logs/gate_metrics.log`, `logs/gate_fire_log.yaml` で発火頻度を確認
+3. テスト時間が長いBats: `bats --timing` で10秒超、または固定コスト制約を超える30秒超
+4. CoDD台帳に未登場、または最終改善から30日以上経過して仕様・実装が変わった対象
+
+除外: 台帳に直近30日以内のPhase 5以上があり、Before/Afterとテスト結果が十分な対象。再改善する場合は「前回改善後に何が変わったか」をtask descriptionに明記する。
+
+### タスクACテンプレート
+
+CoDD速度改善ラウンドは必ず4AC以上に分解する。`/codd-refactor`の一言指定だけで配備しない。
+
+| AC | 内容 |
+|----|------|
+| AC1 計測 | 対象のbefore値を3回以上計測し、ボトルネック仮説を `docs/research/` に記録 |
+| AC2 CoDD設計 | `extract/require`, `elicit`, `dag verify` または `measure` を実行し、設計書/DAGの整合性を確認 |
+| AC3 実装 | 設計に基づき最小変更で速度・保守性を改善。運用YAMLはCoDD auto-repair対象外 |
+| AC4 検証 | after値、関連テストPASS、SKIP=0、`docs/research/codd_refactor_registry.md` 追記を確認 |
+
+### 完了基準
+
+- `docs/research/codd_refactor_registry.md` に日付・実施者・対象・Phase到達・Before→After・spec/afterパスが追記されている
+- 報告YAMLのbinary_checksでAC1-AC4がすべてyes
+- テスト報告にSKIPが1件でもあれば未完了扱い
+- 改善率が低い場合も、固定コスト・I/O支配・安全性維持などの理由を台帳に残す
+
+### 家老運用メモ
+
+配備時は5W1Hをtask YAMLへ注入する。
+WHY=台帳鮮度回復、WHAT=対象スクリプトのCoDD速度改善、WHEN=idle時、WHERE=対象パス+台帳、WHO=配備忍者+家老レビュー、HOW=AC1-AC4。
+軍師レビューは、台帳SSOT・既改善除外・before/after計測・SKIP=0を重点確認する。
 
 ---
 
