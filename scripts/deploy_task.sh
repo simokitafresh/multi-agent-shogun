@@ -3299,6 +3299,7 @@ script_dir = os.environ['SCRIPT_DIR_ENV']
 DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
+MIN_KEYWORD_SCORE = int(os.environ.get('MIN_KEYWORD_SCORE', '2'))  # weak single-hit matches are too noisy
 
 def tech_terms(text):
     '''技術用語のみ抽出（日本語テキスト対応）'''
@@ -3930,6 +3931,7 @@ try:
 
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []
+    keyword_score_filtered = 0
     for lesson in tag_candidates:
         lid = lesson.get('id', '')
         l_title = str(lesson.get('title', ''))
@@ -3950,11 +3952,20 @@ try:
         if cross_project_score and score < cross_project_score:
             score = cross_project_score
 
-        if score > 0:
-            # cmd_2270: プロジェクト一致ボーナス — 同プロジェクト教訓を優先注入
-            if lesson.get('_source_project') == project:
-                score += 2
-            scored.append((score, lid, l_summary or l_title))
+        if score <= 0:
+            continue
+
+        if score < MIN_KEYWORD_SCORE:
+            keyword_score_filtered += 1
+            continue
+
+        # cmd_2270: プロジェクト一致ボーナス — 同プロジェクト教訓を優先注入
+        if lesson.get('_source_project') == project:
+            score += 2
+        scored.append((score, lid, l_summary or l_title))
+
+    if keyword_score_filtered:
+        print(f'[INJECT] keyword score filter: removed {keyword_score_filtered} lessons below MIN_KEYWORD_SCORE={MIN_KEYWORD_SCORE}', file=sys.stderr)
 
     # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
     # GP-221: target_filesなし教訓のフォールバック注入廃止。タスク無関係教訓のNOT_USEFUL量産防止

@@ -32,6 +32,7 @@ import sys
 project = sys.argv[1]
 keywords = json.loads(sys.argv[2])
 lessons = json.loads(sys.argv[3])
+MIN_KEYWORD_SCORE = 2
 
 scored = []
 for lesson in lessons:
@@ -48,11 +49,16 @@ for lesson in lessons:
         # cmd_2270: 頻度重み付きスコアリング (deploy_task.shと同一ロジック)
         score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
-    if score > 0:
-        # cmd_2270: プロジェクト一致ボーナス (deploy_task.shと同一ロジック)
-        if lesson.get('_source_project') == project:
-            score += 2
-        scored.append((score, lid))
+    if score <= 0:
+        continue
+    if score < MIN_KEYWORD_SCORE:
+        print(f'excluded {lid} score={score} < MIN_KEYWORD_SCORE={MIN_KEYWORD_SCORE}', file=sys.stderr)
+        continue
+
+    # cmd_2270: プロジェクト一致ボーナス (deploy_task.shと同一ロジック)
+    if lesson.get('_source_project') == project:
+        score += 2
+    scored.append((score, lid))
 
 scored.sort(key=lambda x: -x[0])
 for score, lid in scored:
@@ -162,6 +168,19 @@ PY
     [[ "$output" != *"L_IRRELEVANT"* ]]
     # L_RELEVANT は出力される
     [[ "$output" == *"L_RELEVANT"* ]]
+}
+
+@test "cmd_2864: score=1の弱いキーワードマッチはMIN_KEYWORD_SCOREで除外される" {
+    run run_scoring "infra" \
+        '["deploy"]' \
+        '[
+          {"id": "L_SINGLE", "summary": "deploy once",        "_source_project": "infra"},
+          {"id": "L_STRONG", "title": "deploy deploy guide",  "_source_project": "infra"}
+        ]'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L_SINGLE:"* ]]
+    [[ "$output" == *"L_STRONG"* ]]
+    [[ "$output" == *"excluded L_SINGLE score=1 < MIN_KEYWORD_SCORE=2"* ]]
 }
 
 @test "AC3: 全教訓がマッチしない場合は出力が空" {
