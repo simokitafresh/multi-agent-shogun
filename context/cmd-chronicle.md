@@ -697,3 +697,5 @@
 | cmd_2852 | deploy_task.shのinject_context_hints(L2826)/inject_production_invariants(L2882)内のsed -iが変数展開時に特殊文字で壊れ、set -euo pipefailでexit 1→nudge未送信になる問題を修正する。全cmd配備に影響中 | infra | 05-19 | deploy_task.shのinject_context_ |
 | cmd_2853 | 殿の5要望を一括修正する。(1)入力画面にrole=admin非表示 (2)常勤/パート色分けを集計BarChart+管理画面+カレンダー詳細に統一 (3)DatePicker shiftDateのtoISOString UTCバグ修正(右矢印無反応+左矢印2日戻る) (4)カレンダーセル縦幅拡大(5名表示) (5)管理画面ロール追加/切替のpin_auth→pinフィールド名修正 | kj-role-count | 05-19 | 殿の5要望を実装し、admin非表示・常勤/パート色分け統一 |
 | cmd_2854 | cmd_save.shの2つの問題を修正する。(1)殿発言検索+cmd履歴検索の全走査で16秒に低下。キャッシュまたは件数制限で高速化 (2)sourceに絶対パスを書くとPROJECT_WDと二重結合されファイル不在BLOCKになるバグ。絶対パス検出時はPROJECT_WD結合をスキップ | infra | 05-19 | cmd_save.shのquality log検索を直近50 |
+| cmd_2856 | 運用YAMLの肥大化を書込み時に自動制御する汎用機構を構築する。各書込みスクリプトが追記後にwc -l > 閾値なら即アーカイブ退避し、索引層を常に小さく保つ。startup gateやcronではなく書込み時に実行することで待機時間ゼロ | infra | 05-19 | yaml_auto_archive.shをcmd_save. |
+| cmd_2859 | startup gateで3セッション連続WARN。9件のSKILL.mdが参照scriptより古い。scriptの最新動作をSKILL.mdに反映する | infra | 05-19 | 8件のSKILL.mdに各scriptの最新動作を反映。ga |
