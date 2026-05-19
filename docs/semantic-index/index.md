@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -76,7 +76,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -125,6 +125,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:49+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:37:59+09:00 You are matching a user query to a semantic index. Query: title: "修正 — cmd_complete_gate.sh並行実行時の共有ファイルflock追加(review_lo |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:46:38+09:00 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:55:36+09:00 You are matching a user query to a semantic index. Query: 教訓注入 Instructions: - Choose up to 3 most related concepts from |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:56:30+09:00 You are matching a user query to a semantic index. Query: 教訓注入 Instructions: - Choose up to 3 most related concepts from |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -185,7 +188,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 俺との会話はdeepdiveを前提としていることが多くないかinbox1, 因果ネットワーク構想 Obsidian vault化 殿承認, 環境に埋め込むというのはレベル5以上の自動化×強制になっているか？ |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 俺との会話はdeepdiveを前提としていることが多くないかinbox1, 因果ネットワーク構想 Obsidian vault化 殿承認, 環境に埋め込むというのはレベル5以上の自動化×強制になっているか？ |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -386,7 +389,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, Build successful 🎉 Deploying Setting WEB CONCURRENCY by defa, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, Build successful 🎉 Deploying Setting WEB CONCURRENCY by defa, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
@@ -455,9 +458,6 @@ codd:
 | cmd | `cmd_2852` 修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
 | cmd | `cmd_2864` 強化 — 教訓注入キーワードスコア最低閾値追加(score>=2で無関係注入削減) (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
-| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
-| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -575,6 +575,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T11:32:30+09:00 他にも隠れたインフラバグや、実行速度が極端に落ちたスクリプトがないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:45:57+09:00 他に放置しているものがないか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T13:24:40+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:57:37+09:00 確認しよう |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -858,3 +859,22 @@ codd:
 | cmd | `cmd_2818` 因果NW導入 |
 | cmd | `cmd_2860` 因果辺抽出 |
 | cmd | `cmd_2866` 統合パイプライン |
+
+## infrastructure_ops — インフラ運用基盤
+
+| 属性 | 値 |
+|------|---|
+| id | infrastructure_ops |
+| label | インフラ運用基盤 |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, inbox_watcher, ninja_monitor, daemon_supervisor, ntfy_listener, heartbeat, プロセス管理, 重複実行, WSL2 NTFS |
+| skills | reset-layout |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/ninja_monitor.sh` |
+| file | `scripts/inbox_watcher.sh` |
+| file | `scripts/daemon_supervisor.sh` |
+| file | `scripts/ntfy_listener.sh` |
+| file | `context/infrastructure.md` |
+| cmd | `cmd_2872` cmd_complete_gate flock追加 |
+| cmd | `cmd_2873` デーモン統一管理 |
