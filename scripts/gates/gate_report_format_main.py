@@ -454,6 +454,21 @@ def main() -> int:
         except Exception:
             pass
 
+    origin_candidates = [
+        str(data.get("origin", "") or "").strip(),
+    ]
+    if isinstance(lc, dict):
+        origin_candidates.append(str(lc.get("origin", "") or "").strip())
+    if not any(
+        origin and origin.lower() not in ("none", "null", "n/a", "na", "fILL_THIS".lower())
+        for origin in origin_candidates
+    ):
+        hints.append(
+            "WARN: origin欄が空/未記入 — 因果ネットワーク接続のため "
+            'bash scripts/report_field_set.sh <report> origin "[[cmd_xxx]] -> [[原因]] -> [[結果]]" '
+            "で記入せよ"
+        )
+
     ai = data.get("assumption_invalidation")
     if ai is None and "assumption_invalidation" in data:
         errors.append("assumption_invalidation: null (must be dict with found/affected_cmds/detail)")

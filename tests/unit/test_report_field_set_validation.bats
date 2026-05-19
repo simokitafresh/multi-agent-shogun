@@ -115,3 +115,24 @@ assert ai["affected_cmds"] == ["cmd_100"], ai
 assert ai["detail"] == "after", ai
 PY
 }
+
+@test "origin: shorthand writes lesson_candidate.origin" {
+    cat >> "$TEST_REPORT" <<'YAML'
+lesson_candidate:
+  found: true
+  title: "既存タイトル"
+  detail: "既存詳細"
+  project: infra
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' origin '[[cmd_test]] -> [[cause]] -> [[result]]' 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+lc = data.get("lesson_candidate")
+assert isinstance(lc, dict), data
+assert lc["origin"] == "[[cmd_test]] -> [[cause]] -> [[result]]", lc
+assert lc["title"] == "既存タイトル", lc
+PY
+}

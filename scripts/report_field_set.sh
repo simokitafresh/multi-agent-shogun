@@ -46,6 +46,13 @@ if [ -z "$VALUE" ]; then
     VALUE="''"
 fi
 
+# Convenience command for causal-network reports.  Report templates store the
+# backlink with lesson_candidate, but operators should not need to remember the
+# nested path for the common write.
+if [ "$DOT_KEY" = "origin" ]; then
+    DOT_KEY="lesson_candidate.origin"
+fi
+
 # Resolve to absolute path if relative
 if [[ "$REPORT_PATH" != /* ]]; then
     REPORT_PATH="$SCRIPT_DIR/$REPORT_PATH"

@@ -63,6 +63,15 @@ YAML
     [[ "$output" == *"PASS"* ]]
 }
 
+@test "T-001b: missing origin emits WARN without failing" {
+    local report=$(create_valid_report)
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"WARN: origin欄が空/未記入"* ]]
+    [[ "$output" == *"report_field_set.sh <report> origin"* ]]
+}
+
 # --- T-002: Missing file → FAIL ---
 @test "T-002: missing file returns FAIL" {
     run bash "$GATE" "$TMPDIR_BATS/nonexistent.yaml"
