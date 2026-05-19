@@ -12,14 +12,17 @@ setup_file() {
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     export SRC_FIELD_GET="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_LOCK_PATH="$PROJECT_ROOT/scripts/lib/lock_path.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET" ] || return 1
+    [ -f "$SRC_LOCK_PATH" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
     export SUBSYSTEM_HELPERS="$BATS_FILE_TMPDIR/cmd_complete_gate_subsystems_helpers.bash"
     {
+        sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
         extract_function record_block_reason
         extract_function level_heading
         extract_function detect_task_role
@@ -49,6 +52,7 @@ extract_function() {
 setup() {
     source "$SRC_FIELD_GET"
     source "$SRC_YAML_FIELD_SET"
+    source "$SRC_LOCK_PATH"
     source "$SUBSYSTEM_HELPERS"
 }
 
