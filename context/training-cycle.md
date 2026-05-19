@@ -953,6 +953,16 @@ R12で疾風がdeploy_task.sh(2000行)テスト最適化でSTALL。当初「大�
 CoDD台帳の最終更新停滞をidle時間で解消し、インフラ最適化と忍者修行を同時に回す。
 通常の報告書修行ではなく、`docs/research/codd_refactor_registry.md`をSSOTとして未最適化スクリプトを選び、CoDD refactorを実施するラウンド。
 
+### 方式: brownfield限定（codd extract 逆生成）
+
+**greenfield（ゼロから設計書作成）禁止。brownfield方式のみ使用せよ。**
+
+- **起点**: `codd extract` で既存コードから設計書を逆生成してから開始
+- **目標時間**: 10〜15分/ラウンド（greenfield方式は30分超が実証済み。殿裁定2026-05-19）
+- **禁止操作**: `codd require` / `codd spec` によるゼロからの設計書構築
+
+理由: greenfield方式では忍者が既存コードを読まずに設計書を構築しようとして時間超過する。brownfield方式はextractで既存コードの構造を一発取得するため出発点の質が保証され、10-15分に収まる。
+
 ### 発動条件
 
 | 条件 | 判定 |
@@ -980,7 +990,7 @@ CoDD速度改善ラウンドは必ず4AC以上に分解する。`/codd-refactor`
 | AC | 内容 |
 |----|------|
 | AC1 計測 | 対象のbefore値を3回以上計測し、ボトルネック仮説を `docs/research/` に記録 |
-| AC2 CoDD設計 | `extract/require`, `elicit`, `dag verify` または `measure` を実行し、設計書/DAGの整合性を確認 |
+| AC2 CoDD設計 | **`codd extract`（brownfield）起点**。elicit、dag verify または measure を実行し、設計書/DAGの整合性を確認。`codd require`（greenfield）禁止 |
 | AC3 実装 | 設計に基づき最小変更で速度・保守性を改善。運用YAMLはCoDD auto-repair対象外 |
 | AC4 検証 | after値、関連テストPASS、SKIP=0、`docs/research/codd_refactor_registry.md` 追記を確認 |
 
