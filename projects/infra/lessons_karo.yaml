@@ -39,6 +39,7 @@ lessons:
 # === 配備技術 ===
   when: 行動する前、状態確認が必要な全場面。CI赤/STALL/idle通知受信時
   how: capture-pane/grep/gh run viewで一次データ確認→行動。pane tail -3で判断するな。配備前陣形図再取得
+  origin: "[[LK065]] -> [[確認しない]] -> [[pane残像で誤判断]]"
 - id: LK-A02
   title: deploy_task.sh正しい使い方 — cmd_id引数+全フィールドリセット
   detail: |
@@ -57,6 +58,7 @@ lessons:
 
   when: deploy_task.shで忍者に配備する時。再配備時
   how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ(tail -3で切り詰めるな。nudge未送信に気づかず配備不完全→STALL誤判断→Sonnet誤切替の連鎖事故実証済み2026-05-17)
+  origin: "[[LK061]] -> [[cmd_id引数省略]] -> [[旧タスク実行]]"
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
   detail: |
@@ -71,6 +73,7 @@ lessons:
 # === 修行/訓練 ===
   when: ninja_monitorからSTALL通知受信時
   how: 検証3点(progress/重複/uncommitted)→クリア→再配備。Stage 1ガードで構造防御
+  origin: "[[LK019]] -> [[STALL誤判断]] -> [[二重配備]]"
 - id: LK-A04
   title: 修行サイクル設計原則 — テンプレート+環境改善+gate BLOCKは成長機会
   detail: |
@@ -89,6 +92,7 @@ lessons:
 # === 消火禁止 ===
   when: 修行サイクル設計・配備時。idle忍者への訓練配備時
   how: テンプレート+環境改善+gate BLOCKは成長機会。忍者別cmd_idで配備(重複ガード回避)
+  origin: "[[LK014]] -> [[修行設計]] -> [[gate BLOCK=成長機会]]"
 - id: LK-A05
   title: 消火禁止 — パターン集計→構造的解決→発火検証の3段階
   detail: |
@@ -106,6 +110,7 @@ lessons:
 # === 並列配備/競合 ===
   when: workaround記録時。同一category 3件以上の時
   how: パターン集計→構造的解決cmd起票→gate作成→発火率確認。代筆禁止(忍者に差し戻す)
+  origin: "[[LK064]] -> [[消火パターン]] -> [[構造的解決不在]]"
 - id: LK-A06
   title: 並列配備の排他ルール — DB/gate系/ビルドは直列必須+万全偵察はparent_cmd分離
   detail: |
@@ -126,6 +131,7 @@ lessons:
 # === cmd設計/品質の鎖 ===
   when: 複数忍者への同時配備計画時。DB操作/gate系/ビルド含むcmd。万全偵察はparent_cmd分離
   how: DB=直列。gate系=直列。Androidビルド=排他。R000は優先順位であり排他ではない
+  origin: "[[LK022]] -> [[並列DB操作]] -> [[タイムアウト]]"
 - id: LK-A07
   title: 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す
   detail: |
@@ -140,6 +146,7 @@ lessons:
 
   when: cmd分解・タスクYAML作成時。仕組み変更cmd時
   how: 配備品質が忍者品質を決める。仕組み変更は3層同時修正(テンプレート/忍者ルール/家老ルール)
+  origin: "[[LK017]] -> [[cmd曖昧]] -> [[品質低下連鎖]]"
 - id: LK-A08
   title: cmdの制約を独自解釈するな — 制約通りに配備
   detail: |
@@ -153,6 +160,7 @@ lessons:
 
   when: cmdの制約に疑問を感じた時。途中修正したい時
   how: 制約通りに配備。疑問→将軍に確認。途中修正の二択(別CMD or 神速停止)
+  origin: "[[LK024]] -> [[独自解釈]] -> [[OOM事故]]"
 - id: LK-A09
   title: 配備後の軍師レビュー依頼を漏らすな → 自動化済み
   detail: |
@@ -170,6 +178,7 @@ lessons:
 
   when: 忍者配備完了直後。deploy_task.sh実行後
   how: deploy_task.shが自動でdraft review+report_review送信。karo_directでは手動review依頼
+  origin: "[[LK081]] -> [[レビュー依頼漏れ]] -> [[品質未検証通過]]"
 - id: LK-A10
   title: 研究cmd固有ルール — 成果物現物確認+ファイル名AC明示+context還流
   detail: |
@@ -184,6 +193,7 @@ lessons:
 
   when: 研究cmd完了時のレビュー。成果物確認時
   how: 成果物のls+headで現物確認。ACに出力ファイル名プレフィックス明記。context還流チェック
+  origin: "[[LK058]] -> [[研究成果物未確認]] -> [[空deliverable]]"
 - id: LK-A11
   title: AC設計は忍者が物理的に達成可能か事前確認
   detail: |
@@ -201,6 +211,7 @@ lessons:
 # === infra修正実績 ===
   when: AC設計時。cmdのbinary_checks設計時
   how: 忍者が物理的に達成可能か事前確認。gitignore対象へのcommit要求禁止。推奨と必須を混同するな
+  origin: "[[LK042]] -> [[達成不可能AC]] -> [[verdict_override]]"
 - id: LK-A12
   title: infra修正実績(ninja_monitor/inbox_watcher) — 各バグはenforcementで修正済み
   detail: |
@@ -217,6 +228,7 @@ lessons:
 
   when: ninja_monitor/inbox_watcher関連のバグ修正時。infra修正レビュー時
   how: 各バグはenforcementで修正済み。新バグ発見時は同パターンの他箇所をgrep横展開
+  origin: "[[LK025]] -> [[ninja_monitor]] -> [[infraバグ修正]]"
 - id: LK-A13
   title: infra修正実績(deploy_task.sh/gate/hook) — 各バグはenforcementで修正済み
   detail: |
@@ -241,6 +253,7 @@ lessons:
 # === 独立パターン ===
   when: deploy_task.sh/gate/hook関連のバグ修正時
   how: 各バグはenforcementで修正済み。draft教訓二重管理防止。karo_directフロー正規化
+  origin: "[[LK039]] -> [[deploy_task.sh]] -> [[gate/hookバグ修正]]"
 - id: LK-A14
   title: LG027横展開確認 — grep修正前パターンで残存0件確認必須
   detail: 同パターンが複数ファイルにコピペ散在。修正後にgrep残存確認が不在→12体Cash100%事故。
@@ -251,6 +264,7 @@ lessons:
 
   when: コード修正後のレビュー時。修正パターンが複数ファイルに存在しうる時
   how: grep修正前パターンで残存0件確認必須。横展開未確認→12体Cash100%事故
+  origin: "[[LK052]] -> [[grep残存未確認]] -> [[12体Cash100%事故]]"
 - id: LK-A15
   title: cmdライフサイクル両端の自動化 — cmd_save.sh pending注入+GATE CLEAR completed自動設定
   detail: status未設定cmd蓄積の根因を両端自動化で解消。新しい仕組みゼロ。
@@ -261,6 +275,7 @@ lessons:
 
   when: cmd起票時(cmd_save.sh)とGATE CLEAR時(cmd_complete_gate.sh)
   how: cmd_save.sh pending自動注入+cmd_complete_gate.sh completed自動設定。手動status管理不要
+  origin: "[[LK059]] -> [[status未設定蓄積]] -> [[ライフサイクル両端自動化]]"
 - id: LK-A16
   title: Step 0無限ループ回避 — 配備後は即思考ステップへ
   detail: idle自走のStep 0(配備最優先)がidle忍者がいる限り無限ループし思考に到達しない。配備=手段、思考=目的。
@@ -271,6 +286,7 @@ lessons:
 
   when: idle自走Step 0(配備最優先)で忍者全員配備済みの時
   how: 即Step 1(思考)へ進む。配備=手段、思考=目的。配備ループに閉じ込められるな
+  origin: "[[LK031]] -> [[Step0無限ループ]] -> [[思考未到達]]"
 - id: LK-A17
   title: 将軍への報告は掲示板経由+CMD起票要請まで回せ
   detail: |
@@ -291,6 +307,7 @@ lessons:
 
   when: 将軍への報告・意見が必要な時。idle自走の最終ステップ。Step5で「優先度低」「cmd待ち」で止まりそうな時
   how: 掲示板投稿+CMD起票要請まで回す。「優先度低」は隠語(LG034)。順番付けて全部やる。分析結果があるなら必ず掲示板投稿
+  origin: "[[LK075]] -> [[inbox_writeのみ]] -> [[掲示板=永続記録]]"
 - id: LK-A18
   title: revert前に変更元エージェントに通知 + revert後は再計測強制
   detail: revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。
@@ -301,6 +318,7 @@ lessons:
 
   when: 忍者の変更をrevertする前。revert後
   how: revert前に変更元忍者に理由通知。revert後はbefore/after再計測必須(SG-PRE14)
+  origin: "[[LK062]] -> [[revert未通知]] -> [[代替案消失]]"
 - id: LK-A19
   title: 情報フィルタは品質軸 — ブロック判定だけでは品質の鎖が切れる
   detail: 軽微指摘を伝えない=10回繰返したら10件手戻り=負の複利。自動転送(1d0a59e)で解決済み。
@@ -311,6 +329,7 @@ lessons:
 
   when: 軍師から軽微指摘を受けた時
   how: 伝えない=10回繰返しで10件手戻り=負の複利。自動転送(1d0a59e)で解決済み
+  origin: "[[LK038]] -> [[軽微指摘フィルタ]] -> [[手戻り蓄積]]"
 - id: LK-A20
   title: PI登録時の原理抽出 — 個別事実→共通根→原理PI昇華
   detail: PI74%が個別事実。複数PIに共通の根があれば原理PIに昇華(PI-020はPI-004/007/009/013/014/019の共通根)。
@@ -321,6 +340,7 @@ lessons:
 
   when: "projects/{id}.yaml PI登録時"
   how: 複数PIに共通の根があれば原理PIに昇華。個別事実のままPI蓄積しない
+  origin: "[[LK020]] -> [[個別PI蓄積]] -> [[原理PI昇華]]"
 - id: LK-A21
   title: 自動化実装時に既存ルール(lessons/karo.md)更新を連動させよ
   detail: コード変更完了しても知識基盤が旧フローのまま→次の家老が旧ルールに従い二重送信。ACに「既存ルール更新」を含めよ。
@@ -331,6 +351,7 @@ lessons:
 
   when: 自動化コード変更完了時。gate/hook/テンプレート修正後
   how: ACに既存ルール(lessons/karo.md/operations)更新を含める。コード変更→知識基盤更新を連動
+  origin: "[[LK070]] -> [[自動化実装]] -> [[既存ルール未更新]]"
 - id: LK-A22
   title: depends_onはAC単位で分析 — cmd全体を鵜呑みにするな
   detail: depends_on cmd_Xがあっても全ACが依存するとは限らない。AC単位で依存分析し並列可能な部分を先に配備。idle=最大の無駄。
@@ -353,6 +374,7 @@ lessons:
 # LK009/LK011→LK-A01(確認系+startup hook), LK010→LK-A06(並列E2E fixture)
 # LK013→LK-A04(karo_direct修行AC手動設定)
 # 全詳細はdocs/research/lessons_karo_v1_archive.mdに保存済み
+  origin: "[[LK054]] -> [[depends_on鵜呑み]] -> [[不要直列配備]]"
 - id: 'LK001'
   title: 'CI表示乖離: in_progress runをcheck failedと表示するな'
   detail: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
@@ -360,6 +382,7 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
   created_at: '2026-05-15'
+  origin: "[[cmd_2792]]"
 - id: 'LK002'
   title: 'CoDD修行ACは各コマンド個別明記(5AC)で配備せよ'
   detail: |
@@ -374,6 +397,7 @@ lessons:
   when: 'karo-operations.md §修行配備テンプレート'
   how: '3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。5AC(spec/elicit/generate/validate/measure各1AC)で個別強制。さらに配備時の初回ナッジでも全5ステップ実行を明示。殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。'
   created_at: '2026-05-16'
+  origin: "[[cmd_training_codd]]"
 - id: 'LK003'
   title: 'CoDD修行ACにtimeout 600必須 — AI呼び出しがデフォルト2分でタイムアウトする'
   detail: |
@@ -384,6 +408,7 @@ lessons:
   when: 'task YAML AC記載+補足ナッジ'
   how: 'codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。全CoDD修行ACにtimeout 600(10分)+run_in_background:trueを明記。殿指摘: 何回やっても未完になっている。'
   created_at: '2026-05-16'
+  origin: "[[cmd_training_codd]]"
 - id: 'LK004'
   title: 'cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階'
   detail: 'cmd_2794で軍師REQUEST_CHANGES→家老が現物確認(deploy_task.sh L3713-3726にfallback内除外実装済み)→前提否定確定→影丸停止指示→将軍にshelve+偵察cmd要請。忍者に作業続行させると前提誤りのまま成果物が生まれる。enforcement: §0.1問い2(現物確認)が前提否定の入口。停止→確認→報告→偵察の4段階を手順化'
@@ -391,6 +416,7 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'cmd_2794で軍師REQUEST_CHANGES→家老が現物確認(deploy_task.sh L3713-3726にfallback内除外実装済み)→前提否定確定→影丸停止指示→将軍にshelve+偵察cmd要請。忍者に作業続行させると前提誤りのまま成果物が生まれる。enforcement: §0.1問い2(現物確認)が前提否定の入口。停止→確認→報告→偵察の4段階を手順化'
   created_at: '2026-05-16'
+  origin: "[[cmd_2794]]"
 - id: 'LK005'
   title: 'gate修正cmdはtest_select波及先テストを配備前に確認せよ'
   detail: 'cmd_2798でgate_context_freshness.sh修正→pre-pushはtest_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28が漏れ→CI RED。根因=test_selectにgate→消費先テスト間接依存がなかった(cmd_2802で修正)。家老はgate修正cmd配備前に「このgateを呼ぶ上位テストは何か」を確認せよ。enforcement: cmd_2802でtest_selectにgate間接依存マッピング追加済み(環境側防御)。家老側=§0.1問い2適用(配備前にgrep -r gate名 tests/で消費先テスト確認)'
@@ -398,6 +424,7 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'cmd_2798でgate_context_freshness.sh修正→pre-pushはtest_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28が漏れ→CI RED。根因=test_selectにgate→消費先テスト間接依存がなかった(cmd_2802で修正)。家老はgate修正cmd配備前に「このgateを呼ぶ上位テストは何か」を確認せよ。enforcement: cmd_2802でtest_selectにgate間接依存マッピング追加済み(環境側防御)。家老側=§0.1問い2適用(配備前にgrep -r gate名 tests/で消費先テスト確認)'
   created_at: '2026-05-16'
+  origin: "[[cmd_2798]]"
 - id: 'LK006'
   title: 'CoDD修行AC設計前にCLI --helpで構文現物確認必須'
   detail: 'codd extract/elicit/generate等のサブコマンド構文をCLI --helpで確認せずにACを設計→4忍者全FAIL。coddはファイル引数ではなく--path/サブコマンド形式。§0.1問い2(現物確認)の適用範囲にCLIツール構文確認を含める。'
@@ -405,6 +432,7 @@ lessons:
   when: '§0.1問い2にCLIツール構文確認を追加'
   how: 'codd extract/elicit/generate等のサブコマンド構文をCLI --helpで確認せずにACを設計→4忍者全FAIL。coddはファイル引数ではなく--path/サブコマンド形式。§0.1問い2(現物確認)の適用範囲にCLIツール構文確認を含める。'
   created_at: '2026-05-16'
+  origin: "[[cmd_training_codd_202605161230]]"
 - id: 'LK007'
   title: '修行配備は殿指示時のみ — コスト責任者は殿'
   detail: 'idle忍者への修行配備は家老の自立自走に含めない。金と権限がないロールがリアルマネーを使うのは越権行為(殿厳命2026-05-17)。トークン消費=殿のリアルマネー。家老には予算権限がない。自立自走=コストの掛からない分析・思考・改善提案(workaround分析/教訓監査/PD対応等)。修行配備は殿の明示的指示がある時のみ実施。'
@@ -412,6 +440,7 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'idle忍者への修行配備は家老の自立自走に含めない。トークン/コンテキストのコスト責任者は殿。家老が勝手にリソースを消費する権限はない。自立自走=コストの掛からない分析・思考・改善提案。修行配備は殿の明示的指示がある時のみ実施。'
   created_at: '2026-05-17'
+  origin: "[[cmd_karo_self_driving]]"
 - id: 'LK008'
   title: 'STALL≠配備不完全 — nudge到達を確認してからSTALL判断せよ'
   origin: '[[cmd_karo_stall_vs_deploy]]'
@@ -428,3 +457,27 @@ lessons:
   when: 'enforcement: §0.1問い0(10回繰り返したら)で連鎖対処の負の複利を検出'
   how: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
   created_at: '2026-05-18'
+- id: 'LK010'
+  title: 'deploy_task.sh inject_causal_links sedエラーでexit 1→nudge未送信が全cmd発生'
+  origin: '[[cmd_2846]]'
+  detail: 'originフィールドの日本語+特殊文字(→/[]/括弧)がsedコマンドを壊しexit 1。task YAMLは正常設定済みだがnudge未送信。毎回手動inbox_writeでnudge送信が必要になった。根因=inject_causal_linksのsed区切り文字がorigin内容と衝突。enforcement: 掲示板報告済み(blt_20260518_074606)。修正cmd未起票'
+  source_cmd: 'cmd_2846'
+  when: '同種の状況が再発した時'
+  how: 'originフィールドの日本語+特殊文字(→/[]/括弧)がsedコマンドを壊しexit 1。task YAMLは正常設定済みだがnudge未送信。毎回手動inbox_writeでnudge送信が必要になった。根因=inject_causal_linksのsed区切り文字がorigin内容と衝突。enforcement: 掲示板報告済み(blt_20260518_074606)。修正cmd未起票'
+  created_at: '2026-05-19'
+- id: 'LK011'
+  title: 'karo_direct配備のGPT忍者は報告YAML未作成率が高い→完了確認はcommit存在で代替'
+  origin: '[[cmd_karo_kjrc_fix_hayate]]'
+  detail: 'karo_direct配備ではreport_templateが自動生成されない場合があり、GPT忍者(Codex)は報告YAMLを自力作成しないことが多い。完了確認はgit log --onelineでcommit存在確認→idle化。報告YAML不在でもcommit確認済みならclean扱い。enforcement: L625(report_path未注入task)と同根。karo_direct配備テンプレートに報告YAML作成手順を含める改善が必要'
+  source_cmd: 'cmd_karo_kjrc_fix_hayate'
+  when: '同種の状況が再発した時'
+  how: 'karo_direct配備ではreport_templateが自動生成されない場合があり、GPT忍者(Codex)は報告YAMLを自力作成しないことが多い。完了確認はgit log --onelineでcommit存在確認→idle化。報告YAML不在でもcommit確認済みならclean扱い。enforcement: L625(report_path未注入task)と同根。karo_direct配備テンプレートに報告YAML作成手順を含める改善が必要'
+  created_at: '2026-05-19'
+- id: 'LK012'
+  title: 'karo_direct配備は完了時に必ず軍師review手動送信が必要(hook未発火)'
+  origin: '[[cmd_karo_kjrc_recon_tobisaru]]'
+  detail: 'deploy_task.sh経由でない配備はreport_received hookが発火しない。忍者完了報告受信→WA記録→軍師review手動inbox_writeの3ステップを毎回実行。LK-A09に記載済みだが今セッションで6回以上手動送信。自動化が必要(deploy_task.shのgunshi通知自動送信はcmd配備のみ対応)'
+  source_cmd: 'cmd_karo_kjrc_recon_tobisaru'
+  when: '同種の状況が再発した時'
+  how: 'deploy_task.sh経由でない配備はreport_received hookが発火しない。忍者完了報告受信→WA記録→軍師review手動inbox_writeの3ステップを毎回実行。LK-A09に記載済みだが今セッションで6回以上手動送信。自動化が必要(deploy_task.shのgunshi通知自動送信はcmd配備のみ対応)'
+  created_at: '2026-05-19'

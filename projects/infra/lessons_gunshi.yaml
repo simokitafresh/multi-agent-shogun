@@ -363,9 +363,9 @@ lessons:
   source_cmd: gunshi_session_20260416
   origin: '[[gunshi_session_20260416]]'
   created_at: '2026-04-16'
-  automated: false
-  enforcement_level: 2
-  enforcement: instructions/gunshi.md サイクルの鉄則に「行動完了≠還流完了」1行埋込み済み。毎サイクル自動読込
+  automated: true
+  enforcement_level: 4
+  enforcement: 'idle-persist SKILL.md Step 5(利他還流判断)+gunshi.md idle鉄則に1行埋込み済み。スキル実行フロー上で構造的にチェック。毎サイクル自動読込'
   when: 実装+検証+掲示板投稿で完了と思った時。利他の完了確認
   how: lesson_candidate送信→他者のlessons更新まで回す。自分の環境埋込み(自立)と他者の環境埋込み(利他)は別ステップ
 - id: LG031

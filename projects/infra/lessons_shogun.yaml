@@ -455,10 +455,46 @@ lessons:
   automated: true
   enforcement: '意志依存。cmd_save.sh q5でstructure_verified要求済みだが精読範囲の網羅性は将軍の判断に依存'
 - id: 'LS034'
-  title: '外部PJ cmdのsource/env_changeパス解決'
-  origin: '[[cmd_2825]]'
-  detail: 'project=kj-toilet等の外部PJではsource/env_changeのパス解決先がPJ配下(projects.yaml path)になる。将軍リポ内ファイル(config/projects.yaml等)は参照不可。AGENT.mdやPJ内ファイルを指定せよ。cmd_2825で6回BLOCKの根因。'
+  title: '外部PJ cmdのパス解決 — 相対パス指定+将軍リポ参照不可'
+  origin: '[[cmd_2825]] [[cmd_2853]]'
+  detail: '外部PJ(kj-toilet/kj-role-count等)のcmdには2つの罠がある。(1)source/env_changeのパス解決先がPJ配下(projects.yaml path)になる。将軍リポ内ファイルは参照不可。AGENT.mdやPJ内ファイルを指定せよ(cmd_2825で6回BLOCK)。(2)sourceに絶対パスを書くとPROJECT_WD/fpathと二重結合されファイル不在BLOCK(cmd_2853で4回BLOCK)。プロジェクト相対パスで書けば正しく解決される。LS041を統合(2026-05-19)。'
   source_cmd: 'cmd_2825'
   created_at: '2026-05-17'
   automated: true
-  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=PROJECT_DIR'
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=PROJECT_DIR+ASSUMP_PROJECT_WD'
+# LS035: 撤回(2026-05-18)。gate迂回=Phase6再発。cmd_2851でgateを修正する
+- id: 'LS036'
+  title: 'CoDDはbrownfield逆生成が正解。greenfield generateは遅い'
+  origin: '[[cmd_2850]]'
+  detail: 'CoDD greenfield generate(wave1-5直列)は各wave数分×5=30分以上かかる。先に実装を完成させてcodd extract(brownfield逆生成)のほうが圧倒的に早い。Simple-OCR(cmd_2780)で実証済み。kj-role-countでgreenfield 5wave実行→30分以上消費。忍者6並列実装→逆生成が正しいフロー。'
+  source_cmd: 'cmd_2850'
+  created_at: '2026-05-18'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=brownfield'
+- id: 'LS037'
+  title: '新規PJの設定は既存本番PJからコピーして改変せよ'
+  origin: '[[cmd_2850]]'
+  detail: 'render.yaml/CI/デプロイ設定など環境設定ファイルは想像で書くな。動いている本番PJ(KJ-Toilet/KJ-Partshift/DM-Signal)の同等ファイルをまず読み、コピーして改変する。kj-role-countのrender.yamlでregion: japan(存在しない)、type: static(servicesでは無効)、runtime: node(staticが正しい)を3回連続で間違えた。全て既存PJの現物を最初に見ていれば防げた。'
+  source_cmd: 'cmd_2850'
+  created_at: '2026-05-18'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=render.yaml'
+# LS038: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
+# LS039: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
+- id: 'LS040'
+  title: 'バックアップファースト — DB変更前に必ずバックアップ。例外なし'
+  origin: '[[cmd_2850]]'
+  detail: '本番DBに触る全操作(マイグレーション/スキーマ変更/データ修正)の前にバックアップを取る。バックアップがなければ変更しない。kj-role-countでDB_RESETによりクリニック2ヶ月分業務データ消失(人件費発生済み)。バックアップがあれば30秒で復元できた。殿の教え: LLMはデジタルデータしか扱えない。だからこそバックアップファーストを徹底せよ。LS038/LS039を統合。'
+  source_cmd: 'cmd_2850'
+  created_at: '2026-05-18'
+  automated: true
+  enforcement: 'type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup'
+# LS041: superseded by LS034 (外部PJパス二重結合を統合。2026-05-19)
+- id: 'LS042'
+  title: '書込み時自動アーカイブ=Vercelスタイルの運用YAML適用'
+  origin: '[[cmd_2856]]'
+  detail: '運用YAMLの肥大化対策はstartup gate/cronではなく書込み時に実行。書込みスクリプトが追記後にwc -l > 閾値なら即アーカイブ退避。索引層が常に小さい=走査側の変更不要。殿指摘: タイミング設計が肝。待機時間を生まない=書込み時が正解。cmd_design_quality.yaml 39K行→cmd_save.sh+gate_shogun_startup.sh 16秒の根因。'
+  source_cmd: 'cmd_2856'
+  created_at: '2026-05-19'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=yaml_auto_trim'

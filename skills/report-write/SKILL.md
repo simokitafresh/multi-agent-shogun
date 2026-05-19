@@ -121,6 +121,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-05-18: gate=gate_report_format result=FAIL executor=tobisaru reason=files_modified: MISSING; purpose_validation: MISSING
+- 2026-05-18: gate=gate_report_format result=FAIL executor=kotaro reason=lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" fiel...
+
+- 2026-05-18: gate=gate_report_format result=FAIL executor=kagemaru reason=self_gate_check: missing required key \"lesson_ref\" (required: lesson_ref, lesson_candidate, status_valid, purpose_fit); self_gate_check: missing required key \"lesson_candidat...
 - 2026-05-17: gate=cmd_complete_gate result=FAIL executor=saizo reason=report_format:saizo_report_cmd_2825.yaml|saizo:binary_checks_fail
 
 - 2026-05-16: gate=gate_report_format result=FAIL executor=hayate reason=files_modified: is dict (must be string or list of file paths); lessons_useful[0]: useful=yes is str (must be true or false); lessons_useful[1]: useful=yes is str (must be true ...

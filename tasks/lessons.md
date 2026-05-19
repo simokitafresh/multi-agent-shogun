@@ -6078,3 +6078,123 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回同種CLI作成時は実リポ計測をACに含める。
+
+### L619: draft_lessonsは自動生成元と検査元の閉ループで判定せよ
+- **日付**: 2026-05-18
+- **出典**: cmd_2848
+- **記録者**: saizo
+- **tags**: [infra,recon,gate,bash]
+- **target_files**: [cmd_2848_scout_no_file_scout_only]
+- **origin**: [[cmd_2848]]
+- **when**: 未設定
+- **how**: 未設定
+- draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時lesson_write --status draft生成経路と後段draft検査を同一cmd時系列で確認する。生成側がdraftを作り、検査側が同じdraftをBLOCKする自己循環が根因になりうる。origin: [[cmd_2848]] -> [[draft_lessons_19件]] -> [[auto_draft_lesson失敗パス誤認]]
+
+### L620: 同一バグを複数セッションが独立発見→auto-commitで先行入り済みのパターン
+- **日付**: 2026-05-18
+- **出典**: cmd_training_L4_auto_202605181241_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,git]
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[cmd_training_L4_auto_202605181241_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- build_pane_head_tail_excerpt()の6-10行欠落バグをkotaroとkagemaruが独立発見。kotoraがimplement→editするも、kagemaruのauto-commit(2726fe55)で既に同一修正がHEAD入り済みのためno-op。複数忍者が同一ターゲットのL4修行を並列実施する場合、既存変更を先に確認(git log --oneline -5 -- target_file)することで重複実装を防げる
+
+### L621: 並列修行で同一バグ独立発見→git log -5確認で重複防止
+- **日付**: 2026-05-18
+- **出典**: cmd_training_L4_auto_202605181241_kotaro
+- **記録者**: --origin
+- **tags**: [infra,git]
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[parallel_training]] -> [[duplicate_fix]] -> [[git_log_check]]
+- **when**: 未設定
+- **how**: 未設定
+- 複数忍者が同一ファイルに対する修行を並列実行すると同一バグを独立発見し重複修正する。commit前にgit log -5で他忍者の先行修正を確認せよ
+
+### L622: _cleanup_stale_keysはcompound-keyを持つ全配列を網羅すべき
+- **日付**: 2026-05-18
+- **出典**: cmd_training_L4_auto_202605181242_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,bash,monitor]
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[cmd_training_L4_auto_202605181242_tobisaru]]
+- **when**: 未設定
+- **how**: 未設定
+- _cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)とTRAINING_EFFECT_RECORDED(ninja:task_id)が漏れていた。compound-keyを持つ新しい配列を追加する際は_cleanup_stale_keysへの追加を必須とする。origin: [[ninja_monitor.sh]] -> [[memory_leak_assoc_array]] -> [[_cleanup_stale_keys_incomplete]]
+
+### L623: task YAML nested binary_checksへのyaml_field_set.sh直指定は構文破壊リスクがある
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_A_db_models
+- **記録者**: hayate
+- **tags**: [infra,testing,bash,yaml]
+- **target_files**: [backend/database.py,backend/models.py]
+- **origin**: [[cmd_karo_kjrc_A_db_models]]
+- **when**: 未設定
+- **how**: 未設定
+- queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinary_checks.resultではなくAC直下やrelated_lessons直下へresultを追加しYAML構文を壊した。ネスト更新には専用スクリプトまたはreport_field_set型のdot notation対応を使い、更新直後にyaml.safe_loadで検証する。
+
+### L624: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_A_db_models
+- **記録者**: --origin
+- **tags**: [infra,bash,yaml,fof]
+- **target_files**: [backend/database.py,backend/models.py]
+- **origin**: [[cmd_karo_kjrc_A_db_models]] -> [[yaml_field_set_nested]] -> [[構文破壊]]
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用ツールが必要
+
+### L625: report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_B_staff_records
+- **記録者**: --origin
+- **tags**: [infra,gate,yaml,inbox]
+- **target_files**: [/mnt/c/Python_app/kj-role-count/backend/routers/__init__.py,/mnt/c/Python_app/kj-role-count/backend/routers/staff.py,/mnt/c/Python_app/kj-role-count/backend/routers/records.py]
+- **origin**: [[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]
+- **when**: 未設定
+- **how**: 未設定
+- task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCKする。karo_direct配備では報告テンプレートが自動生成されない場合がある
+
+### L626: Next依存はnpm auditまで二値確認する
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_D_fe_record_calendar
+- **記録者**: --origin
+- **tags**: [infra,frontend,security,monitor]
+- **target_files**: [/mnt/c/Python_app/kj-role-count/frontend/app/globals.css,/mnt/c/Python_app/kj-role-count/frontend/app/layout.tsx,/mnt/c/Python_app/kj-role-count/frontend/app/page.tsx,/mnt/c/Python_app/kj-role-count/frontend/app/record/page.tsx,/mnt/c/Python_app/kj-role-count/frontend/components/Calendar.tsx]
+- **origin**: [[cmd_karo_kjrc_D_fe_record_calendar]] -> [[npm_audit_warning]] -> [[dependency_version_update]]
+- **when**: 未設定
+- **how**: 未設定
+- frontend新規作成時、初期Next版に既知脆弱性がありnpm installで警告。npm view next version+postcss overridesで0 vulnerabilitiesまで確認してから完了扱いにする
+
+### L627: 設計書のrender.yaml記載は実装より先行するため初期実装後に必ず再照合が必要
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_recon_tobisaru
+- **記録者**: --origin
+- **tags**: [infra,frontend,yaml]
+- **origin**: [[cmd_karo_kjrc_recon_tobisaru]] -> [[render_yaml_drift]] -> [[design_impl_mismatch]]
+- **when**: 未設定
+- **how**: 未設定
+- architecture.mdのrender.yamlセクションが実装から乖離(Frontend runtime node→static, disk mountPath /data→/var/data)。設計書が先行して書かれるため実装後の再照合が必須
+
+### L628: 偵察では設計書の主流手順だけでなく併存ドキュメントの別起動方式も実行確認する
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_recon_hayate
+- **記録者**: --origin
+- **tags**: [infra,recon,process]
+- **target_files**: [偵察のみ。コード変更なし。]
+- **origin**: [[cmd_karo_kjrc_recon_hayate]] -> [[起動方式併存]] -> [[package_import_failure]]
+- **when**: 未設定
+- **how**: 未設定
+- 主流手順(from main import app)はPASSだがarchitecture.mdのbackend.main方式はauth.pyの絶対importでFAIL。偵察時はrgで起動方式を列挙し代表コマンドを全て実行確認する
+
+### L629: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ
+- **日付**: 2026-05-18
+- **出典**: cmd_karo_kjrc_recon_kotaro
+- **記録者**: --origin
+- **tags**: [infra,recon]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_kjrc_recon_kotaro]] -> [[layout_navItems_mismatch]] -> [[routing_inversion]]
+- **when**: 未設定
+- **how**: 未設定
+- layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフィールドレベル照合も偵察に追加
