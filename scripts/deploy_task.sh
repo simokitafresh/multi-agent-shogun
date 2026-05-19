@@ -538,6 +538,8 @@ STALE_FIELDS = [
     # 第10層: inject_related_lessons/inject_task_modifiersで毎回再注入されるが、
     # 配備前に旧値が残るとCodex忍者がSTALLする(LK092: cmd_2250 hayate STALL実証)
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
+    # 第11層: cmd固有scope/context(LK-A02 v7: 2件連続FAIL cmd_2875+cmd_2880。前taskのscope/contextが残存し忍者が旧scopeで作業)
+    'scope', 'context_hints', 'context',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
