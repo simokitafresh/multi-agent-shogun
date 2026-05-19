@@ -420,4 +420,21 @@ EOF
     fi
 
 ) 200>"$LOCK_FILE"
-bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+# karo_workarounds.yaml 専用軽量 archive:
+# yaml_auto_archive.sh の Python起動コスト(~45ms)をawk実装で削減。
+# keep=100件を超えた場合のみ、古いエントリをarchiveに移動する。
+_wa_total=$(awk '/^- cmd_id:/{c++}END{print c+0}' "$LOG_FILE" 2>/dev/null)
+if [[ "${_wa_total:-0}" -gt 100 ]]; then
+    _to_archive=$(( _wa_total - 100 ))
+    _archive_dir="$REPO_ROOT/logs/archive"
+    _archive_file="$_archive_dir/karo_workarounds.yaml"
+    mkdir -p "$_archive_dir" 2>/dev/null || true
+    (
+        flock -w 10 300 || { echo "[karo_workaround_log] WARN: archive lock timeout" >&2; exit 0; }
+        awk -v n="$_to_archive" -v arch="$_archive_file" '
+        /^- cmd_id:/ { entry++ }
+        entry <= n { print >> arch; next }
+        { print }
+        ' "$LOG_FILE" > "${LOG_FILE}.tmp.$$" && mv "${LOG_FILE}.tmp.$$" "$LOG_FILE"
+    ) 300>/tmp/karo_workarounds_archive.lock
+fi
