@@ -113,6 +113,7 @@ update_log() {
     done
 
     # Phase 2: gate_resultフィールド不在のdraft/reportエントリ → 挿入
+    # sort -u: 同一cmd_idのdraft+reportが両方missing→重複挿入防止
     local missing_cmds
     missing_cmds=$(awk '
         /^- cmd_id:/ {
@@ -122,7 +123,7 @@ update_log() {
         /^  gate_result:/ { has_gate=1 }
         /^  review_type:/ { v=$2; gsub(/["'"'"']/, "", v); if (v=="draft"||v=="report") rt=v }
         END { if (n>0 && !has_gate && (rt=="draft"||rt=="report")) print prev_cmd }
-    ' "$target_file")
+    ' "$target_file" | sort -u)
 
     for cmd_id in $missing_cmds; do
         local result="${GATE_MAP[$cmd_id]:-}"
