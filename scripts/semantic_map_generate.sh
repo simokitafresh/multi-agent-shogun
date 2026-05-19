@@ -26,7 +26,8 @@ if [ ! -f "$index_path" ]; then
     exit 1
 fi
 
-python3 - "$index_path" "$map_path" "$body_only" <<'PY'
+python3 - "$index_path" "$map_path" "$body_only" "$repo_root" <<'PY'
+import glob
 import re
 import sys
 from pathlib import Path
@@ -34,6 +35,68 @@ from pathlib import Path
 index_path = Path(sys.argv[1])
 map_path = Path(sys.argv[2])
 body_only = sys.argv[3] == "true"
+repo_root = Path(sys.argv[4]) if len(sys.argv) > 4 else index_path.parent.parent.parent
+
+def load_lesson_origins(repo_root):
+    """projects/*/lessons*.yaml（archive除く）からlesson_id→originマップを作成"""
+    origins = {}
+    pattern = str(repo_root / "projects" / "*" / "lessons*.yaml")
+    for yaml_path in sorted(glob.glob(pattern)):
+        if "archive" in Path(yaml_path).name:
+            continue
+        try:
+            text = Path(yaml_path).read_text(encoding="utf-8")
+        except Exception:
+            continue
+        current_id = None
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if line.startswith("- id:"):
+                current_id = line[len("- id:"):].strip()
+            elif line.startswith("origin:") and current_id:
+                val = line[len("origin:"):].strip().strip("'\"")
+                if "[[" in val:
+                    origins[current_id] = val
+                current_id = None
+    return origins
+
+def inject_causal_chains(index_path, origins):
+    """index.mdの各概念のlesson参照からoriginを取得しcausal_chainを注入（冪等）"""
+    if not origins:
+        return 0
+    text = index_path.read_text(encoding="utf-8")
+    parts = re.split(r"(?m)(?=^## )", text)
+    new_parts = []
+    injected = 0
+    for part in parts:
+        if not part.startswith("## "):
+            new_parts.append(part)
+            continue
+        # 既存causal_chainを削除（冪等）
+        part = re.sub(r"\| causal_chain \|[^\n]*\n?", "", part)
+        # lesson idを抽出（`Lxxx` 形式）
+        lesson_ids = re.findall(r"\|\s*lesson\s*\|\s*`(L\w+)`", part)
+        chains = []
+        for lid in lesson_ids:
+            if lid in origins:
+                chains.append(f"| causal_chain | `{origins[lid]}` ({lid}) |")
+        if chains:
+            lines = part.splitlines(keepends=True)
+            last_pipe_idx = -1
+            for i, line in enumerate(lines):
+                stripped = line.strip()
+                if stripped.startswith("|") and not stripped.startswith("|---") and stripped != "|":
+                    last_pipe_idx = i
+            if last_pipe_idx >= 0:
+                for chain in reversed(chains):
+                    lines.insert(last_pipe_idx + 1, chain + "\n")
+                part = "".join(lines)
+                injected += len(chains)
+        new_parts.append(part)
+    new_text = "".join(new_parts)
+    if new_text != text:
+        index_path.write_text(new_text, encoding="utf-8")
+    return injected
 
 def parse_concepts(text):
     matches = list(re.finditer(r"(?m)^##\s+(.+)$", text))
@@ -111,6 +174,10 @@ codd:
     map_path.parent.mkdir(parents=True, exist_ok=True)
     map_path.write_text(frontmatter + body, encoding="utf-8")
     print(f"generated: {map_path}")
+    origins = load_lesson_origins(repo_root)
+    injected = inject_causal_chains(index_path, origins)
+    if injected:
+        print(f"causal_chain entries injected: {injected}")
 PY
 
 auto_resolve_semantic_index_insights() {

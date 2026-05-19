@@ -37,7 +37,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -64,6 +64,9 @@ codd:
 | cmd | `cmd_2776` 強化 — セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase 1） (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T14:17:11+09:00 ここまでの知識を記憶してセマンティクスインデックスにも保存せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T20:28:24+09:00 obsidian、セマンティック辞書は活用できているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:35:26+09:00 obsidianは有効活用できてるか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:36:10+09:00 obsidian×セマンティック辞書で可能性が広がると思う。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:41:32+09:00 真の穴: INS-024911のセマンティック辞書未登録2件は対処すべき |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -71,7 +74,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, task notification task id btp9xyne3 task id tool use id tool, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, task notification task id b00zkeauj task id tool use id tool, task notification task id bdq3hyjo8 task id tool use id tool, task notification task id b7hop8nj7 task id tool use id tool, task notification task id b3kje8sq6 task id tool use id tool, task notification task id bgph2xan5 task id tool use id tool, task notification task id bhyh1fzho task id tool use id tool, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -107,6 +110,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T13:05:00+09:00 CoDDは遅いね。一回作ってからCoDDで設計書を後から作るほうが早そう。どう思う？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T20:57:45+09:00 なぜなぜ7回。根源をただそう。本質はデータを再入力可能なものだと気安く考えている点だな。お前の感覚は中国の焚書やポル・ポト派が仏像や遺跡を破壊するのと同じ発想だ。人の命もそうだが、失ったら未来永劫宇宙から消えてしまうものに対する敬意と恐怖が |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:04:30+09:00 なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:09:14+09:00 気づきがあれば行動せよ。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:28:29+09:00 全部やろう。なぜなぜ7回 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -367,7 +372,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, Build successful 🎉 Deploying Setting WEB CONCURRENCY by defa, 外部PJなのでkaro directで家老に配備する |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, task notification task id brdydjwk3 task id tool use id tool, task notification task id b1fseli4u task id tool use id tool, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, Build successful 🎉 Deploying Setting WEB CONCURRENCY by defa, 外部PJなのでkaro directで家老に配備する, 穴をふさごう |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 
 | 種別 | パス/参照 |
@@ -434,6 +439,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:06:34+09:00 外部PJなのでkaro_directで家老に配備する。とはなんだ？なぜ将軍がCMDを起票しない？説明して |
 | cmd | `cmd_karo_backup_first_l5` (`tests/unit/test_cmd_save.bats`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
 | cmd | `cmd_2852` 修正 — deploy_task.sh inject関数のsed特殊文字エスケープ不足によるexit 1修正 (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:40:38+09:00 穴をふさごう。2860はまだ未配備だな |
+| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
+| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -503,7 +512,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, task notification task id bk57ke2j0 task id tool use id tool, 確認しよう, 他にも隠れたインフラバグや |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, task notification task id b0syhe3ag task id tool use id tool, task notification task id baa9kjrve task id tool use id tool, task notification task id bayxsdn2u task id tool use id tool, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, task notification task id bk57ke2j0 task id tool use id tool, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -549,6 +558,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T22:00:51+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T15:21:41+09:00 確認しよう。デプロイが終わったらCDPで確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T11:32:30+09:00 他にも隠れたインフラバグや、実行速度が極端に落ちたスクリプトがないか確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-19T12:45:57+09:00 他に放置しているものがないか確認しよう |
 
 ## defense_hierarchy — 防御階層原則
 
