@@ -1630,6 +1630,35 @@ for raw in open(sys.argv[1], encoding="utf-8", errors="ignore"):
         current[match.group(1)] = match.group(2).strip().strip('"')
 if current:
     entries.append(current)
+
+def _entry_cmd_id(entry):
+    haystacks = [
+        str(entry.get("source") or ""),
+        str(entry.get("stumbling_points") or ""),
+    ]
+    for text in haystacks:
+        match = re.search(r'\bcmd=([^ \t]+)', text)
+        if match:
+            return match.group(1).strip().strip('"')
+    source = str(entry.get("source") or "").strip().strip('"')
+    if source.startswith("cmd_"):
+        return source.split()[0]
+    match = re.search(r'(?:^|\s)(cmd_[A-Za-z0-9_-]+)(?:\s|$)', source)
+    if match:
+        return match.group(1)
+    return ""
+
+def _exclude_from_fail_denominator(entry):
+    cmd_id = _entry_cmd_id(entry)
+    if cmd_id.startswith("cmd_test_"):
+        return True
+    skill = str(entry.get("skill") or "").strip()
+    if skill == "dashboard-update" and cmd_id in ("", "<empty>"):
+        return True
+    if skill == "dashboard-update" and cmd_id.startswith("-"):
+        return True
+    return False
+
 stats = defaultdict(lambda: {"total": 0, "fail": 0, "last": ""})
 by_skill = defaultdict(list)
 for entry in entries:
@@ -1637,6 +1666,8 @@ for entry in entries:
         continue
     skill = str(entry.get("skill") or "").strip()
     if not skill:
+        continue
+    if _exclude_from_fail_denominator(entry):
         continue
     by_skill[skill].append(entry)
 for skill, skill_entries in by_skill.items():
