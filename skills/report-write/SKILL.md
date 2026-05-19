@@ -28,14 +28,14 @@ description: |
 - <!-- skill-auto-improve:47a7cd7f4343 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-02T23:59:28+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:8b0229f09993 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:2」(count=1, last=2026-05-02T21:57:04+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 
-- <!-- skill-auto-improve:8976e9afe4a5 --> 自動防止: gate=gate_report_format のTop FAIL理由「verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")」(count=4, last=2026-05-02T18:54:01+0900)を避ける。確認: verdict が空/None/不正値でないこと、かつ binary_checks 記入後に決めていることを確認する。修正: `/verdict-check` または `report_field_set.sh ... verdict PASS|FAIL` で再導出する。
-- <!-- skill-auto-improve:648694597565 --> 自動防止: gate=gate_report_format のTop FAIL理由「lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文...」(count=2, last=2026-05-02T22:22:28+0900)を避ける。確認: 提出前に対象YAML/本文へ `rg -n 'FILL_THIS'` を実行する / verdict が空/None/不正値でないこと、かつ binary_checks 記入後に決めていることを確認する。修正: 残存箇所を実値または具体的な no_* reason に置換する / `/verdict-check` または `report_field_set.sh ... verdict PASS|FAIL` で再導出する。
-- <!-- skill-auto-improve:734212e8bbbd --> 自動防止: gate=gate_report_format のTop FAIL理由「ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; result.summary: MISSI...」(count=1, last=2026-05-06T00:24:24+0900)を避ける。確認: verdict が空/None/不正値でないこと、かつ binary_checks 記入後に決めていることを確認する / 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: `/verdict-check` または `report_field_set.sh ... verdict PASS|FAIL` で再導出する / 各ACの result を yes/no に直し、1つでも no なら verdict を FAIL にする。
+- <!-- skill-auto-improve:8976e9afe4a5 --> 自動防止: gate=gate_report_format のTop FAIL理由「verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")」(count=4, last=2026-05-02T18:54:01+0900)を避ける。確認: binary_checks 全resultが yes/no で埋まっていることを確認する。修正: binary_checks を修正して `gate_report_format.sh` を再実行し、verdict を自動導出させる。
+- <!-- skill-auto-improve:648694597565 --> 自動防止: gate=gate_report_format のTop FAIL理由「lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文...」(count=2, last=2026-05-02T22:22:28+0900)を避ける。確認: 提出前に対象YAML/本文へ `rg -n 'FILL_THIS'` を実行する / binary_checks 全resultが yes/no で埋まっていることを確認する。修正: 残存箇所を実値または具体的な no_* reason に置換する / binary_checks を修正して `gate_report_format.sh` を再実行し、verdict を自動導出させる。
+- <!-- skill-auto-improve:734212e8bbbd --> 自動防止: gate=gate_report_format のTop FAIL理由「ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; result.summary: MISSI...」(count=1, last=2026-05-06T00:24:24+0900)を避ける。確認: 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: 各ACの result を yes/no に直し、`gate_report_format.sh` で verdict を自動導出させる。
 - <!-- skill-auto-improve:bb1bffc5e476 --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: is str (must be dict)」(count=1, last=2026-05-02T18:38:56+0900)を避ける。確認: assumption_invalidation に detail と affected_cmds があることを確認する。修正: `report_field_set.sh <report> assumption_invalidation found false` で dict 形式を保証する。
 ### 必須事前検査
-- verdict空文字防止: verdictを書き込む直前に `binary_checks` 全resultが `yes` または `no` で埋まっていることを確認する。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば verdict を書かず、該当ACを `report_field_set.sh` で修正する。
+- verdict自動導出: 忍者は verdict を手動記入禁止。`binary_checks` 全resultを `yes` または `no` で埋め、`gate_report_format.sh` に verdict を自動導出させる。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば該当ACを `report_field_set.sh` で修正する。
 - FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
-- Script refs verified: 2026-05-17 cmd_2829. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate`、`verdict` は書込み前に型/値をBLOCK検証する。
+- Script refs verified: 2026-05-19 cmd_karo_skill_md_verdict_sync. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate` は書込み前に型/値をBLOCK検証する。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
 ### Step 1: 報告パスを確認
 ```bash
 # タスクYAMLから報告パスを取得
@@ -44,7 +44,7 @@ report_path="queue/reports/{ninja_name}_report_{cmd_id}.yaml"
 
 ### Step 2: 必須フィールドを記入（report_field_set.sh経由）
 
-**記入順序を守れ。verdict は最後。**
+**記入順序を守れ。verdict は手動記入禁止。**
 
 ```bash
 REPORT="queue/reports/{ninja_name}_report_{cmd_id}.yaml"
@@ -91,8 +91,7 @@ bash scripts/report_field_set.sh "$REPORT" "skill_candidate" "{found: false}"
 # 11. decision_candidate（判断が必要な事項）
 bash scripts/report_field_set.sh "$REPORT" "decision_candidate" "{found: false}"
 
-# 12. verdict は最後（/verdict-check で自動判定推奨）
-bash scripts/report_field_set.sh "$REPORT" verdict "PASS"
+# 12. verdict は gate_report_format.sh が自動導出する。忍者は手動記入禁止。
 ```
 
 ### Step 3: 事前検証
@@ -106,7 +105,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 - **Edit toolで報告YAMLを直接編集するな** — テンプレートフィールド巻き添え消去の原因
 - **FILL_THISを残すな** — gate_report_format.shがBLOCKする
-- **verdictをbinary_checksより先に書くな** — 不整合の原因(→/verdict-check)
+- **verdictを手動記入するな** — `gate_report_format.sh` が binary_checks から自動導出する
 - **lessons_usefulのidにUNKNOWN/null/FILL_THISを書くな** — BLOCK
 
 ## フィールド型ルール
