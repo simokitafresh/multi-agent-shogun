@@ -1159,7 +1159,7 @@ if issues:
         echo "FIX: check=「確認した内容」 result=\"yes\" or \"no\"" >&2
         echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
     fi
-    # ★穴B/C対策: bc書込み後にverdictを自動再導出(矛���状態を時間軸でも作れない)
+    # ★穴B/C対策: bc書込み後にverdictを自動再導出(矛盾状態を時間軸でも作れない)
     _cur_verdict=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys
 rp = os.environ.get('REPORT_PATH', '')
@@ -1168,21 +1168,38 @@ if not rp or not os.path.exists(rp):
 with open(rp) as f:
     data = yaml.safe_load(f) or {}
 verdict = str(data.get('verdict', '')).strip()
-if verdict not in ('PASS', 'PASS_NO_IMPROVEMENT'):
-    sys.exit(0)  # FAILや未設定なら何もしない
 bc = data.get('binary_checks', {})
-if not isinstance(bc, dict):
+if not isinstance(bc, dict) or not bc:
     sys.exit(0)
+has_no = False
+has_empty = False
 for ac_val in bc.values():
     if isinstance(ac_val, list):
         for item in ac_val:
-            if isinstance(item, dict) and str(item.get('result', '')).strip().lower() == 'no':
-                print('INCONSISTENT', end='')
-                sys.exit(0)
+            if isinstance(item, dict):
+                r = str(item.get('result', '')).strip().lower()
+                if r == 'no':
+                    has_no = True
+                elif r not in ('yes',):
+                    has_empty = True
+if verdict in ('PASS', 'PASS_NO_IMPROVEMENT') and has_no:
+    print('INCONSISTENT', end='')
+elif verdict in ('', 'null', 'None') and not has_empty and not has_no:
+    print('AUTO_PASS', end='')
+elif verdict in ('', 'null', 'None') and has_no and not has_empty:
+    print('AUTO_FAIL', end='')
 " 2>/dev/null) || true
     if [[ "$_cur_verdict" == "INCONSISTENT" ]]; then
         # verdict:PASSだがbc:noあり → FAILに自動修正
         bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null
         echo "★ verdict自動再導出: bc:no追加によりPASS→FAIL強制(時間軸矛盾排除)" >&2
+    elif [[ "$_cur_verdict" == "AUTO_PASS" ]]; then
+        # verdict空+bc全yes → PASS自動設定
+        bash "$0" "$REPORT_PATH" verdict PASS 2>/dev/null
+        echo "★ verdict自動導出: bc全yes+verdict空→PASS自動設定" >&2
+    elif [[ "$_cur_verdict" == "AUTO_FAIL" ]]; then
+        # verdict空+bc:noあり → FAIL自動設定
+        bash "$0" "$REPORT_PATH" verdict FAIL 2>/dev/null
+        echo "★ verdict自動導出: bc:no検出+verdict空→FAIL自動設定" >&2
     fi
 fi
