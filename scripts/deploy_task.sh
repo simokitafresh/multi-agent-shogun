@@ -23,6 +23,52 @@ SCRIPT_DIR="${_dt_self%/scripts/deploy_task.sh}"
 unset _dt_self
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
+deploy_task_early_target_from_args() {
+    local first="${1:-}"
+    shift || true
+
+    if [[ "$first" == "--direct" ]]; then
+        first="${1:-}"
+        shift || true
+    fi
+
+    if [[ "$first" == "--yaml" ]]; then
+        shift || true  # yaml file
+        first="${1:-}"
+    fi
+
+    printf '%s\n' "$first"
+}
+
+deploy_task_early_target_known() {
+    local target="$1"
+    [ -n "$target" ] || return 1
+    awk -v target="$target" '
+        /^  agents:[[:space:]]*$/ { in_agents=1; next }
+        in_agents && !/^    / { in_agents=0; next }
+        in_agents && /^    [a-z][a-z_0-9]*:[[:space:]]*$/ {
+            name = $0
+            sub(/^[ \t]+/, "", name)
+            sub(/:[[:space:]]*$/, "", name)
+            if (name == target) found = 1
+        }
+        END { exit(found ? 0 : 1) }
+    ' "$SCRIPT_DIR/config/settings.yaml"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
+    _dt_early_target="$(deploy_task_early_target_from_args "$@")"
+    if [ -z "$_dt_early_target" ] || [ "${_dt_early_target,,}" = "none" ] || [[ "$_dt_early_target" == cmd_* ]]; then
+        echo "ERROR: ninja_name is required and must be a configured agent, not '${_dt_early_target:-empty}'." >&2
+        exit 1
+    fi
+    if ! deploy_task_early_target_known "$_dt_early_target"; then
+        echo "ERROR: Unknown ninja: $_dt_early_target" >&2
+        exit 1
+    fi
+    unset _dt_early_target
+fi
+
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -3290,7 +3336,7 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
 
-USEFUL_RATE_MIN_SAMPLES = 5  # feedback件数がこの値未満の教訓にはeffectiveness除外を適用しない
+USEFUL_RATE_MIN_SAMPLES = 3  # feedback件数がこの値未満の教訓にはeffectiveness除外を適用しない
 
 def compute_useful_rates(script_dir):
     """lesson_impact.tsvのfeedback行からlesson別effectiveness_scoreを算出。
@@ -6280,7 +6326,7 @@ deploy_task_main() {
 
     local pane_target ctx_pct
     local is_idle=false
-    pane_target=$(resolve_pane "$NINJA_NAME")
+    pane_target=$(resolve_pane "$NINJA_NAME" || true)
     deploy_task_check_deadline "after_resolve_pane" || return $?
     if [ -z "$pane_target" ]; then
         log "ERROR: Unknown ninja: $NINJA_NAME"

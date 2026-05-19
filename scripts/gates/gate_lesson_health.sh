@@ -31,6 +31,7 @@ LESSON_EFFECT_ALERT_THRESHOLD=30
 LESSON_EFFECT_STATUS_FILE="${LESSON_EFFECT_STATUS_FILE:-$SCRIPT_DIR/queue/lesson_effectiveness_status.txt}"
 LESSON_EFFECT_NOTIFY_STATE="${LESSON_EFFECT_NOTIFY_STATE:-$SCRIPT_DIR/queue/lesson_effectiveness_notify_state.txt}"
 LESSON_EFFECT_NTFY_ENABLED="${LESSON_EFFECT_NTFY_ENABLED:-1}"
+LESSON_EFFECT_MIN_SAMPLES="${LESSON_EFFECT_MIN_SAMPLES:-3}"  # deploy_task.shのUSEFUL_RATE_MIN_SAMPLESと同期
 INJECTION_WARN_THRESHOLD=10
 ACCUMULATION_THRESHOLD=10
 UNSORTED_THRESHOLD=10
@@ -325,7 +326,8 @@ check_lesson_effectiveness() {
     fi
 
     local metric
-    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v project="$target_project" '
+    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v project="$target_project" \
+        -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" '
         BEGIN {
             while ((getline line < cmd_file) > 0) {
                 gsub(/\r$/, "", line)
@@ -335,9 +337,9 @@ check_lesson_effectiveness() {
         }
         $1 == "timestamp" { next }
         {
-            cmd=$2; action=$5; result=$6; ref=tolower($7); proj=$8
+            cmd=$2; action=$5; result=$6; ref=tolower($7); proj=$8; lid=$4
             gsub(/\r$/, "", cmd); gsub(/\r$/, "", action)
-            gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj)
+            gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj); gsub(/\r$/, "", lid)
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
@@ -345,11 +347,19 @@ check_lesson_effectiveness() {
                 injected++
                 if (ref == "yes" || ref == "true" || ref == "1") referenced++
             } else if (action == "feedback") {
-                total_feedback++
-                if (toupper(result) == "USEFUL") useful++
+                lesson_total[lid]++
+                if (toupper(result) == "USEFUL") lesson_useful[lid]++
             }
         }
-        END { printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0 }
+        END {
+            for (lid in lesson_total) {
+                if (lesson_total[lid] >= min_samples) {
+                    total_feedback += lesson_total[lid]
+                    useful += (lid in lesson_useful) ? lesson_useful[lid] : 0
+                }
+            }
+            printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0
+        }
     ' "$LESSON_IMPACT_FILE")
     rm -f "$cmd_file"
 
