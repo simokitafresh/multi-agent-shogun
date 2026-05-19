@@ -180,22 +180,21 @@ log_output_file() {
 deploy_task_unread_count() {
     local agent_name="$1"
     local inbox_file="$SCRIPT_DIR/queue/inbox/${agent_name}.yaml"
+    local count
 
     if [ ! -f "$inbox_file" ]; then
         echo 1
         return 0
     fi
 
-    python3 - "$inbox_file" <<'PY' 2>/dev/null || echo 1
-import sys
-import yaml
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-messages = data.get("messages") or []
-count = sum(1 for msg in messages if isinstance(msg, dict) and not msg.get("read", False))
-print(count if count > 0 else 1)
-PY
+    count=$(awk '
+        /^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/ { count++ }
+        END { print count + 0 }
+    ' "$inbox_file" 2>/dev/null || echo 0)
+    case "$count" in
+        ''|*[!0-9]*) count=0 ;;
+    esac
+    echo "$([ "$count" -gt 0 ] && printf '%s' "$count" || printf '1')"
 }
 
 deploy_task_inbox_message_count() {
