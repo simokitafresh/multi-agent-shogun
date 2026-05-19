@@ -1048,11 +1048,12 @@ EOF
     run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
-    run awk -F'\t' 'NR==1{print $NF}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    run awk -F'\t' 'NR==1{for (i=1; i<=NF; i++) if ($i=="score") print i}' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
-    [ "$output" = "score" ]
+    [[ "$output" =~ ^[0-9]+$ ]]
 
-    run awk -F'\t' '$5=="injected" && $4=="L_SCORE"{print $11}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    score_idx="$output"
+    run awk -F'\t' -v score_idx="$score_idx" '$5=="injected" && $4=="L_SCORE"{print $score_idx}' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
     [[ "$output" =~ ^[0-9]+$ ]]
     [ "$output" -gt 0 ]
