@@ -19,9 +19,9 @@ lock_path() {
     local file_path="$1"
     case "$file_path" in
         /mnt/c/*|/mnt/d/*)
-            local hash
-            hash=$(printf '%s' "$file_path" | md5sum | cut -c1-16)
-            printf '/tmp/shogun_lock_%s.lock' "$hash"
+            # WSL2最適化: md5sum+cut subprocess(~10ms)を純bashハッシュ(~0ms)に置換
+            local sanitized="${file_path//[\/: .#*?!]/_}"
+            printf '/tmp/shogun_lock_%s.lock' "${sanitized: -48}"
             ;;
         *)
             printf '%s.lock' "$file_path"
@@ -724,7 +724,8 @@ yaml_field_set() {
     local lock_file
     lock_file="$(lock_path "$yaml_file")"
     local tmp_file
-    tmp_file="$(mktemp "${yaml_file}.tmp.XXXXXX")" || {
+    # WSL2最適化: tmpfsにtemp作成(NTFS mktemp/mv削減)。flock内のcat>yaml_fileで書込み
+    tmp_file="$(mktemp)" || {
         echo "FATAL: yaml_field_set: failed to create temp file for $yaml_file" >&2
         return 1
     }
@@ -774,9 +775,10 @@ yaml_field_set() {
             return 1
         fi
 
-        if ! mv "$tmp_file" "$yaml_file"; then
+        # WSL2最適化: mv NTFS→NTFS(~40ms)をcat tmpfs→NTFS(~10ms)に置換。flock内なので競合安全
+        if ! { cat "$tmp_file" > "$yaml_file" && rm -f "$tmp_file"; }; then
             rm -f "$tmp_file"
-            echo "FATAL: yaml_field_set: atomic replace failed: $yaml_file" >&2
+            echo "FATAL: yaml_field_set: write failed: $yaml_file" >&2
             return 1
         fi
 
