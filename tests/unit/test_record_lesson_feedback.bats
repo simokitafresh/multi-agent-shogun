@@ -65,3 +65,42 @@ EOF
     [[ "$output" == *"12:7:"* ]]
     [[ "$output" == *"12:feedback:NOT_USEFUL::"* ]]
 }
+
+@test "record_lesson_feedback auto-records unreported injected lessons as not useful" {
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-05-19T00:00:00	cmd_test_exact	kagemaru	L001	injected	pending	pending	infra	exact	unknown	7	0
+2026-05-19T00:00:00	cmd_test_exact	kagemaru	L002	injected	pending	pending	infra	exact	unknown	6	0
+2026-05-19T00:00:00	cmd_test_exact	kagemaru	L003	injected	pending	pending	infra	exact	unknown	5	0
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  task_id: cmd_test_exact
+  parent_cmd: cmd_test
+  project: infra
+  task_type: exact
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/kagemaru_report_cmd_test.yaml" <<'EOF'
+worker_id: kagemaru
+task_id: cmd_test_exact
+parent_cmd: cmd_test
+project: infra
+task_type: exact
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: used
+EOF
+
+    run bash "$TEST_PROJECT/scripts/record_lesson_feedback.sh" "$TEST_PROJECT/queue/reports/kagemaru_report_cmd_test.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Auto-recorded 2 missing injected lessons as NOT_USEFUL"* ]]
+
+    run awk -F'\t' '$5 == "feedback" { print $4 ":" $6 ":" $7 ":" NF }' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L001:USEFUL:yes:12"* ]]
+    [[ "$output" == *"L002:NOT_USEFUL:no:12"* ]]
+    [[ "$output" == *"L003:NOT_USEFUL:no:12"* ]]
+}

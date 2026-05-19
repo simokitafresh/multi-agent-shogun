@@ -85,7 +85,33 @@ fi
 #   useful: false
 #   reason: "..."
 feedback_count=0
+auto_feedback_count=0
 in_lessons=0
+current_id=""
+reported_ids=()
+
+record_feedback() {
+    local lesson_id="$1"
+    local result="$2"
+    local ref="$3"
+
+    # flockで排他書込み。feedback行は注入時scoreを持たないためscoreは空欄。
+    (
+        flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
+        echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${lesson_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t\t" >> "$IMPACT_TSV"
+    ) 200>"${IMPACT_TSV}.lock"
+}
+
+has_reported_id() {
+    local lesson_id="$1"
+    local existing
+    for existing in "${reported_ids[@]}"; do
+        if [[ "$existing" == "$lesson_id" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
 
 while IFS= read -r line; do
     # lessons_usefulセクション開始
@@ -113,11 +139,8 @@ while IFS= read -r line; do
                     result="NOT_USEFUL"
                     ref="no"
                 fi
-                # flockで排他書込み。feedback行は注入時scoreを持たないためscoreは空欄。
-                (
-                    flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
-                    echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${current_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t\t" >> "$IMPACT_TSV"
-                ) 200>"${IMPACT_TSV}.lock"
+                record_feedback "$current_id" "$result" "$ref"
+                reported_ids+=("$current_id")
                 feedback_count=$((feedback_count + 1))
                 current_id=""
             fi
@@ -125,8 +148,27 @@ while IFS= read -r line; do
     fi
 done < "$report_file"
 
+if [[ -n "$dedup_key" ]]; then
+    while IFS= read -r injected_id; do
+        [[ -n "$injected_id" ]] || continue
+        if ! has_reported_id "$injected_id"; then
+            record_feedback "$injected_id" "NOT_USEFUL" "no"
+            auto_feedback_count=$((auto_feedback_count + 1))
+        fi
+    done < <(
+        awk -F'\t' -v key="$dedup_key" '
+            NR > 1 && $2 == key && tolower($5) == "injected" && $4 != "" { seen[$4] = 1 }
+            END { for (id in seen) print id }
+        ' "$IMPACT_TSV" | sort
+    )
+fi
+
 if [[ $feedback_count -gt 0 ]]; then
     echo "[feedback] Recorded $feedback_count lesson feedback entries for ${cmd_id:-unknown}" >&2
 else
     echo "[feedback] No lessons_useful found in $report_file" >&2
+fi
+
+if [[ $auto_feedback_count -gt 0 ]]; then
+    echo "[feedback] Auto-recorded $auto_feedback_count missing injected lessons as NOT_USEFUL for ${cmd_id:-unknown}" >&2
 fi
