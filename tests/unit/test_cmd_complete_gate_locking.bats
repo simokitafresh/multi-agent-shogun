@@ -27,7 +27,7 @@ teardown() {
         exec 9>"$1"
         flock -n 9 || exit 1
         touch "$2"
-        sleep 0.12
+        sleep 0.5
     ' _ "$lock_file" "$ready_file" &
     locker_pid=$!
     for _ in 1 2 3 4 5; do
