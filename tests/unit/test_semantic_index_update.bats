@@ -32,7 +32,7 @@ setup() {
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測 |
+| aliases | 学習ループ, 成長ループ, 自動成長ループ, 二値計測 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -104,7 +104,18 @@ teardown() {
     [[ "$output" == *"HIGH: growth_loop updated"* ]]
 
     grep -q 'semantic_index_update未登録\[\[リンク\]\]ターゲット: \[\[B辞書自動更新+C概念自動発見\]\]' "$TEST_TMPDIR/queue/insights.log"
+    grep -q '類似概念TOP3:' "$TEST_TMPDIR/queue/insights.log"
     ! grep -q '\[\[cmd_2867\]\]' "$TEST_TMPDIR/queue/insights.log"
+}
+
+@test "wiki link target: similar aliases are recommended and exact aliases are skipped" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L997","title":"二値計測の確認","origin":"[[自動成長ループ改善]] -> [[成長ループ]]"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: growth_loop updated"* ]]
+
+    grep -q 'semantic_index_update未登録\[\[リンク\]\]ターゲット: \[\[自動成長ループ改善\]\]' "$TEST_TMPDIR/queue/insights.log"
+    grep -q 'growth_loop(学習ループ; alias=自動成長ループ' "$TEST_TMPDIR/queue/insights.log"
+    ! grep -q 'ターゲット: \[\[成長ループ\]\]' "$TEST_TMPDIR/queue/insights.log"
 }
 
 @test "wiring: cmd_complete_gate, lesson_write, and log_terminal_input call semantic_index_update" {
