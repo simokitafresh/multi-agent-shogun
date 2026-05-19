@@ -94,6 +94,8 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
     if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
+        # WSL2最適化: skill_execution_log.sh(python3×9回起動/呼出し)を非同期化。
+        # 出力は既に>/dev/null 2>&1 || true(best-effort)なので非同期化は安全。
         bash "$_SKILL_LOG" \
             "report-write" \
             "$_REPORT_EXECUTOR" \
@@ -101,7 +103,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
             "gate_report_format PASS" \
             "gate_report_format" \
             "$REPORT_PATH" \
-            "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
+            "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 &
         bash "$_SKILL_LOG" \
             "verdict-check" \
             "$_REPORT_EXECUTOR" \
@@ -109,7 +111,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
             "gate_report_format verdict/binary_checks PASS" \
             "gate_report_format" \
             "$REPORT_PATH" \
-            "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 || true
+            "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 &
     fi
     # Update PASS cache (GP-073) — flock for concurrent gate runs
     if [ -n "$_MTIME" ]; then
