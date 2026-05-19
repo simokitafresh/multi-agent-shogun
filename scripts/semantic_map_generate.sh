@@ -126,7 +126,7 @@ def parse_concepts(text):
         urls = [value for kind, value in resources if kind == "url"][:3]
         lessons = [
             value for kind, value in resources
-            if kind in {"lesson", "deepdive"} or value.lstrip("`").startswith(("L", "LS", "PI-"))
+            if kind in {"lesson", "deepdive", "cmd", "causal"} or value.lstrip("`").startswith(("L", "LS", "PI-", "cmd_"))
         ][:3]
         concepts.append({
             "label": label,

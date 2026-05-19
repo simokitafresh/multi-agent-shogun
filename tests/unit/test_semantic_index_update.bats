@@ -62,6 +62,16 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+@test "cmd_complete payload appends origin and depends_on causal resources" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2885","title":"セマンティクスインデックス 因果辺","purpose":"semantic-mapへ因果辺を還流","files":["scripts/cmd_complete_gate.sh"],"origin":"[[cmd_2818_causal_NW]] -> [[semantic_map_generate]] -> [[obsidian_link_stagnation]]","depends_on":"[[cmd_2875]] -> [[セマンティック辞書構想]]"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
+
+    grep -q '| causal | `cmd_2885` origin: \[\[cmd_2818_causal_NW\]\] -> \[\[semantic_map_generate\]\] -> \[\[obsidian_link_stagnation\]\] |' "$SEMANTIC_INDEX_PATH"
+    grep -q '| causal | `cmd_2885` depends_on: \[\[cmd_2875\]\] -> \[\[セマンティック辞書構想\]\] |' "$SEMANTIC_INDEX_PATH"
+    grep -q '`cmd_2885` origin:' "$SEMANTIC_MAP_PATH"
+}
+
 @test "HIGH: map regeneration works when generator is readable but not executable" {
     cp "$PROJECT_ROOT/scripts/semantic_map_generate.sh" "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
     chmod 0644 "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
@@ -120,6 +130,9 @@ teardown() {
 
 @test "wiring: cmd_complete_gate, lesson_write, and log_terminal_input call semantic_index_update" {
     grep -q 'semantic_index_update.sh.*cmd_complete' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q 'CMD_YAML_FILE_ENV' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q '"origin": cmd_data.get("origin"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q '"depends_on": cmd_data.get("depends_on"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q 'semantic_index_update.sh.*lesson' "$PROJECT_ROOT/scripts/lesson_write.sh"
     grep -q 'semantic_index_update.sh.*discussion' "$PROJECT_ROOT/scripts/log_terminal_input.sh"
     grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"

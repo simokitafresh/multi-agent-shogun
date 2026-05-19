@@ -329,6 +329,35 @@ def resource_row(source_type, payload):
         ref += f" {summary}"
     return f"| discussion | {ref} |"
 
+def causal_resource_rows(payload):
+    if source_type != "cmd_complete":
+        return []
+    cmd_id = str(payload.get("id") or payload.get("cmd_id") or "").strip()
+    if not cmd_id:
+        return []
+
+    rows = []
+    seen = set()
+    for key in ("origin", "depends_on"):
+        raw = payload.get(key)
+        if raw is None:
+            continue
+        if isinstance(raw, list):
+            values = raw
+        else:
+            values = [raw]
+        for value in values:
+            text = str(value).strip()
+            if not text or norm(text) in {"none", "なし", "null", "[]"}:
+                continue
+            if "[[" not in text and not re.search(r"\bcmd_[a-z0-9_]+\b", text, re.I):
+                continue
+            row = f"| causal | {shell_quote_backtick(cmd_id)} {key}: {text} |"
+            if row not in seen:
+                rows.append(row)
+                seen.add(row)
+    return rows
+
 def append_row_to_block(block, row):
     if row in block:
         return block, False
@@ -421,8 +450,12 @@ payload_label = payload_id or "payload"
 matched = ", ".join(exact + sorted(set(partial))) or "none"
 
 if confidence == "HIGH":
-    row = resource_row(source_type, payload)
-    new_block, changed = append_row_to_block(best["block"], row)
+    rows = [resource_row(source_type, payload)] + causal_resource_rows(payload)
+    new_block = best["block"]
+    changed = False
+    for row in rows:
+        new_block, row_changed = append_row_to_block(new_block, row)
+        changed = changed or row_changed
     if changed:
         updated = text[: best["start"]] + new_block + text[best["end"] :]
         index_path.write_text(updated, encoding="utf-8")
@@ -434,9 +467,13 @@ if confidence == "HIGH":
 
 if confidence == "LOW":
     aliases_to_add = candidate_aliases(source_type, payload, best["aliases"])
-    row = resource_row(source_type, payload)
     alias_block, alias_changed = append_aliases_to_block(best["block"], aliases_to_add)
-    new_block, row_changed = append_row_to_block(alias_block, row)
+    rows = [resource_row(source_type, payload)] + causal_resource_rows(payload)
+    new_block = alias_block
+    row_changed = False
+    for row in rows:
+        new_block, changed_one = append_row_to_block(new_block, row)
+        row_changed = row_changed or changed_one
     if alias_changed or row_changed:
         updated = text[: best["start"]] + new_block + text[best["end"] :]
         index_path.write_text(updated, encoding="utf-8")

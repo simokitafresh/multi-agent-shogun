@@ -5462,17 +5462,37 @@ if [ "$ALL_CLEAR" = true ]; then
     echo ""
     echo "Semantic index update (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
-        if _semantic_payload=$(CMD_ID_ENV="$CMD_ID" CMD_TITLE_ENV="${CMD_TITLE:-}" CMD_PURPOSE_ENV="${CMD_PURPOSE:-}" CMD_CHANGED_FILES_ENV="${CMD_CHANGED_FILES:-}" python3 - <<'PY' 2>/dev/null
+        if _semantic_payload=$(CMD_ID_ENV="$CMD_ID" CMD_TITLE_ENV="${CMD_TITLE:-}" CMD_PURPOSE_ENV="${CMD_PURPOSE:-}" CMD_CHANGED_FILES_ENV="${CMD_CHANGED_FILES:-}" CMD_YAML_FILE_ENV="$YAML_FILE" python3 - <<'PY' 2>/dev/null
 import json
 import os
 
 files_raw = os.environ.get("CMD_CHANGED_FILES_ENV", "")
 files = [p.strip() for p in files_raw.replace(",", "\n").splitlines() if p.strip()]
+
+cmd_id = os.environ.get("CMD_ID_ENV", "")
+cmd_data = {}
+yaml_file = os.environ.get("CMD_YAML_FILE_ENV", "")
+if yaml_file:
+    try:
+        import yaml
+        with open(yaml_file, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if isinstance(data, dict):
+            raw_cmd = data.get(cmd_id)
+            if raw_cmd is None and isinstance(data.get("commands"), dict):
+                raw_cmd = data["commands"].get(cmd_id)
+            if isinstance(raw_cmd, dict):
+                cmd_data = raw_cmd
+    except Exception:
+        cmd_data = {}
+
 print(json.dumps({
     "id": os.environ.get("CMD_ID_ENV", ""),
     "title": os.environ.get("CMD_TITLE_ENV", ""),
     "purpose": os.environ.get("CMD_PURPOSE_ENV", ""),
     "files": files,
+    "origin": cmd_data.get("origin", ""),
+    "depends_on": cmd_data.get("depends_on", ""),
 }, ensure_ascii=False))
 PY
         ); then
