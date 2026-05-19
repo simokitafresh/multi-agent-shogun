@@ -246,13 +246,14 @@ esac
 
 # === Guard 2: read-tracker (Write/Edit must be preceded by Read) ===
 # queue/tasks/*.yaml → unconditional deny
+report_yaml_deny_reason="BLOCKED: 報告YAMLへの直接Write/Edit禁止。\\n対象: $file_path\\nWHY: report_field_set.sh経由でのみ更新可。flock排他制御+構造保全のため。\\nFIX: bash scripts/report_field_set.sh $file_path <dot.notation.key> <value>\\n例: bash scripts/report_field_set.sh $file_path result.summary 検証完了\\n例: bash scripts/report_field_set.sh $file_path binary_checks.AC1 '[{check: 確認内容, result: yes}]'\\n例: bash scripts/report_field_set.sh $file_path verdict PASS"
 case "$file_path" in
     */queue/tasks/*.yaml)
         emit_deny "queue/tasks/*.yamlはWrite/Editで直接書くな。状態更新→bash scripts/lib/yaml_field_set.sh queue/tasks/{name}.yaml task {field} {value}。新規配備→deploy_task.sh。"
         exit 1
         ;;
     */queue/reports/*.yaml)
-        emit_deny "queue/reports/*.yamlはWrite/Editで直接書くな。report_field_set.shを使え。"
+        emit_deny "$report_yaml_deny_reason"
         exit 1
         ;;
 esac
@@ -270,7 +271,7 @@ fi
 
 # === Guard 3: report-deny (Edit/Write to report YAML) ===
 if [[ "$file_path" =~ queue/reports/[^/]*_report_[^/]*\.yaml$ ]]; then
-    emit_deny "BLOCKED: 報告YAMLへの直接Edit/Write禁止。\\n対象: $file_path\\nWHY: report_field_set.sh経由でのみ更新可。flock排他制御+構造保全のため。\\nFIX: bash scripts/report_field_set.sh $file_path <dot.notation.key> <value>\\n例: bash scripts/report_field_set.sh $file_path result.summary 検証完了\\n例: bash scripts/report_field_set.sh $file_path binary_checks.AC1 [check: 確認内容, result: yes]\\n例: bash scripts/report_field_set.sh $file_path verdict PASS"
+    emit_deny "$report_yaml_deny_reason"
     exit 1
 fi
 

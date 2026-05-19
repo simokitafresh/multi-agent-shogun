@@ -41,7 +41,22 @@ _run_post() {
     _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$TMP_REPORT"'"}}'
     [ "$status" -ne 0 ]
     [[ "$output" == *'"permissionDecision":"deny"'* ]]
-    [[ "$output" == *'queue/reports/*.yamlはWrite/Editで直接書くな。report_field_set.shを使え。'* ]]
+    [[ "$output" == *'報告YAMLへの直接Write/Edit禁止'* ]]
+    [[ "$output" == *'report_field_set.sh'* ]]
+}
+
+@test "pre combined hook denies report yaml edits" {
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_REPORT"'"}}'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'報告YAMLへの直接Write/Edit禁止'* ]]
+    [[ "$output" == *'bash scripts/report_field_set.sh'* ]]
+}
+
+@test "pre combined hook allows report_field_set bash path" {
+    _run_pre '{"tool_name":"Bash","tool_input":{"command":"bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml result.summary ok"}}'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 @test "pre combined hook allows non-report new file" {
