@@ -123,6 +123,9 @@ CI_STATUS_CHECK_INTERVAL=300    # CI statusキャッシュ有効期間（秒）�
 UNPUSHED_COUNT_CACHE=0          # unpushed commits数キャッシュ — git rev-list毎サイクル実行削減
 UNPUSHED_COUNT_CHECK_LAST=0     # unpushedキャッシュ最終更新時刻（epoch秒）
 UNPUSHED_COUNT_CHECK_INTERVAL=120  # unpushedキャッシュ有効期間（秒）— 2分(git起動コスト削減)
+CONTEXT_WARN_SIG_CACHE="missing"   # context_freshness_check.sh --dashboard-warningsキャッシュ値（毎サイクル→300s間隔に削減）
+CONTEXT_WARN_SIG_CHECK_LAST=0      # context_warn_sigキャッシュ最終更新時刻（epoch秒）
+CONTEXT_WARN_SIG_CHECK_INTERVAL=300  # context_warn_sigキャッシュ有効期間（秒）— 5分（CI_STATUS_CACHEと同様）
 CLI_DEAD_LOOP_WINDOW=300    # CLI死亡ループ防止ウィンドウ（秒）— 5分 (cmd_1851)
 CLI_DEAD_LOOP_THRESHOLD=2   # CLI死亡ループ防止閾値（回）— 5分以内にN回以上でALERT (cmd_1851)
 
@@ -4443,10 +4446,14 @@ while true; do
     # 状態変化時のみ呼び出す（コスト最適化）
     current_idle=$(grep "^idle|" "$SCRIPT_DIR/queue/karo_snapshot.txt" 2>/dev/null | head -1 || echo "")
     current_gate_lines=$(wc -l < "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo 0)
-    current_context_warn_sig=$(
-        bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --dashboard-warnings 2>/dev/null \
-            | cksum | awk '{print $1 ":" $2}' || echo "missing"
-    )
+    # context_warn_sig: 5分間隔キャッシュ（context_freshness_check.sh毎サイクル起動→WSL2プロセス起動コスト削減）
+    _ctx_warn_now=$EPOCHSECONDS
+    if (( _ctx_warn_now - CONTEXT_WARN_SIG_CHECK_LAST >= CONTEXT_WARN_SIG_CHECK_INTERVAL )); then
+        CONTEXT_WARN_SIG_CACHE=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --dashboard-warnings 2>/dev/null \
+            | cksum | awk '{print $1 ":" $2}' || echo "missing")
+        CONTEXT_WARN_SIG_CHECK_LAST=$_ctx_warn_now
+    fi
+    current_context_warn_sig="$CONTEXT_WARN_SIG_CACHE"
     # CI status: 5分間隔でキャッシュ更新（GitHubAPI毎サイクル呼出し→1708ms/cycle削減 L4-R24）
     _ci_check_now=$EPOCHSECONDS
     if (( _ci_check_now - CI_STATUS_CHECK_LAST >= CI_STATUS_CHECK_INTERVAL )); then
