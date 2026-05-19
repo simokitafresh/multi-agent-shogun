@@ -31,6 +31,8 @@ lessons:
     v6吸収(2026-05-15):
     - 破壊的操作(force push/reset/clean)は将軍指示でも必ずremote現状確認(git log origin/main --oneline -5)+lord_conversation.jsonlで殿発言現物確認(LK015: Simple-OCR force push事故で26commits消失。将軍の「殿裁定」をlord_conversation未確認のまま実行。CLAUDE.md Tier1/Tier2は将軍含む誰にもoverride不可)
     - cmd_2784でpre-bash hookにlord_conversation承認確認Guard追加済み(hook側防御)。本教訓は家老判断側の防御層
+    v7吸収(2026-05-19):
+    - 外部PJ(kj-role-count等)のcmd完了時もgit log origin/main..mainでpush確認必須(殿指摘で5件未push発覚)。cmd-complete Step 7.5はDM-Signal専用→外部PJ pushステップをcmd-complete SKILLに追加要
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -56,8 +58,10 @@ lessons:
   automated: true
   enforcement: 'deploy_task.sh STALE_FIELDS全フィールドクリア+重複ガード(GP-042)+Codex config.toml instruction設定'
 
+  v7吸収(2026-05-19):
+    - deploy_task.shのSTALE_FIELDSにscope/contextが含まれず、前taskのscope/contextが残存→忍者が前taskのscopeで作業し新cmdのACを未実施(cmd_2875疾風+cmd_2880半蔵で2件連続FAIL)。根因=STALE_FIELDSリストにscope/context未含。偵察cmd要請済み(掲示板blt_20260519_175410)
   when: deploy_task.shで忍者に配備する時。再配備時
-  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ(tail -3で切り詰めるな。nudge未送信に気づかず配備不完全→STALL誤判断→Sonnet誤切替の連鎖事故実証済み2026-05-17)
+  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ。★再配備時はscope/context stale残存に注意(2件連続FAIL実証)
   origin: "[[LK061]] -> [[cmd_id引数省略]] -> [[旧タスク実行]]"
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
