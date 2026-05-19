@@ -32,22 +32,21 @@ bash scripts/deploy_task.sh <cmd_id> <ninja1> scout
 deploy_task.shが正規のタスクYAML生成+教訓注入+inbox_writeを実行。
 
 ### Step 3: 2人目配備（karo_direct方式）
-deploy_task.shの重複ガードを回避するため、/tmp経由で配備:
+deploy_task.shの重複ガードを回避するため、/tmp YAMLを作って `--yaml` 経由で配備:
 ```bash
-# 1人目のタスクYAMLをベースにrecon2用に調整
+# 1人目のタスクYAMLをベースにrecon2用に調整（正式task YAMLへ直接cpしない）
 cp queue/tasks/<ninja1>.yaml /tmp/recon2_<ninja2>.yaml
-# cmd_idを変更（recon2サフィックス）
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "parent_cmd" "<cmd_id>_recon2"
 bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "cmd_id" "<cmd_id>_recon2"
-# 正式パスにコピー
-cp /tmp/recon2_<ninja2>.yaml queue/tasks/<ninja2>.yaml
-# inbox_writeで通知
-bash scripts/inbox_write.sh <ninja2> "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 ```
+`deploy_task.sh --yaml` が stale field reset、注入チェーン、report template生成、safe_inbox_write通知を実行する。手動 `cp` で `queue/tasks/<ninja2>.yaml` を上書きしたり、手動 `inbox_write` で通知したりしない。
 
 ### Step 4: 陣形図確認
 両忍者がin_progressになったことを確認。
 
 ## 制約
-- 1人目=deploy_task.sh正規フロー、2人目=karo_direct方式。この順序を崩すな
+- 1人目=deploy_task.sh正規フロー、2人目=`deploy_task.sh --yaml` のkaro_direct方式。この順序を崩すな
 - 2人目のcmd_idは `<cmd_id>_recon2` サフィックス
 - 偵察結果の突合は家老が手動で実施（報告YAML受領後）
+- Script refs verified: 2026-05-19 cmd_2883. `deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。

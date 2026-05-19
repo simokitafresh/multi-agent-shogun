@@ -35,7 +35,7 @@ description: |
 ### 必須事前検査
 - verdict自動導出: 忍者は verdict を手動記入禁止。`binary_checks` 全resultを `yes` または `no` で埋め、`gate_report_format.sh` に verdict を自動導出させる。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば該当ACを `report_field_set.sh` で修正する。
 - FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
-- Script refs verified: 2026-05-19 cmd_karo_skill_md_verdict_sync. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate` は書込み前に型/値をBLOCK検証する。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
+- Script refs verified: 2026-05-19 cmd_2883. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate` は書込み前に型/値をBLOCK検証する。`report_field_set.sh <report> origin [value]` は `lesson_candidate.origin` へ書き、value省略時はworker task/reportのcmdからoriginを自動継承する。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
 ### Step 1: 報告パスを確認
 ```bash
 # タスクYAMLから報告パスを取得
@@ -84,6 +84,8 @@ bash scripts/report_field_set.sh "$REPORT" "lessons_useful" "[{id: L123, useful:
 bash scripts/report_field_set.sh "$REPORT" "lesson_candidate" "{found: false, no_lesson_reason: '既知の手順で完了。新発見なし'}"
 # または found: trueの場合:
 # bash scripts/report_field_set.sh "$REPORT" "lesson_candidate" "{found: true, title: '発見タイトル', detail: '詳細'}"
+# originだけ追記/自動継承する場合:
+bash scripts/report_field_set.sh "$REPORT" origin
 
 # 10. skill_candidate（3回以上同じ手順を実行していたら）
 bash scripts/report_field_set.sh "$REPORT" "skill_candidate" "{found: false}"

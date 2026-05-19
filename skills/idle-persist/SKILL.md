@@ -46,6 +46,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/r
 - 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 - 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
+- Script refs verified: 2026-05-19 cmd_2883. `inbox_write.sh` は `from=shogun type=task_new` をBLOCKする。軍師から家老への `gunshi_lesson_candidate` 送信は対象外だが、将軍の作業指示を `task_new` で直送する手順をこのスキルへ追加してはならない。
 
 ### Step 4: review_log記録
 ```bash

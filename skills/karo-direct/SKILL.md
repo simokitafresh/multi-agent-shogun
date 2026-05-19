@@ -58,6 +58,7 @@ YAML
 bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 
 # deploy_task.sh は共通入口で reset_stale_fields を完了してから /tmp YAML を task YAML に反映し、
+# 前task由来の `scope`、`context_hints`、`context` も毎回クリアする。
 # direct_mode として resolve_cmd_to_task をスキップする。
 # その後 parent_cmd/status/task_id を設定し、通常配備と同じ注入チェーン
 # (related_lessons, standard_skills, semantic_concepts, causal_links, growth_loop_defense,
@@ -67,7 +68,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
 # failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
 ```
-Script refs verified: 2026-05-19 cmd_2859 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化)。
+Script refs verified: 2026-05-19 cmd_2883 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。

@@ -70,7 +70,7 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 verdict は `gate_report_format.sh` が binary_checks から自動導出する。commit後の報告追記でも手動記入禁止。
 
 `report_field_set.sh`は`self_gate_check`トップレベル書込みをBLOCKする。報告修正が必要な場合は `self_gate_check.lesson_ref PASS` のようにdot notationで個別fieldだけを更新する。
-Script refs verified: 2026-05-19 cmd_karo_skill_md_verdict_sync (cmd_2841: assumption_invalidation.*書込み時にfound/affected_cmds/detailを自動初期化。gate_report_formatが要求する形状を自動保証)。`report_field_set.sh` は空文字値を許可し、構造体/複数行/stdin YAMLをPython fallbackで保持する。commit後のreport追記も同helper経由で行い、直接Editしない。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
+Script refs verified: 2026-05-19 cmd_2883 (cmd_2841: assumption_invalidation.*書込み時にfound/affected_cmds/detailを自動初期化。gate_report_formatが要求する形状を自動保証。cmd_2883: `report_field_set.sh <report> origin [value]` は `lesson_candidate.origin` へ書く。value省略時はtask/reportからcmdを特定し、queue/archive内のcmd originを自動継承する)。`report_field_set.sh` は空文字値を許可し、構造体/複数行/stdin YAMLをPython fallbackで保持する。commit後のreport追記も同helper経由で行い、直接Editしない。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
 
 ## 禁止事項
 
