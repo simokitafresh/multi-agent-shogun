@@ -167,6 +167,70 @@ def concept_terms(concepts):
                 terms.add(value_n)
     return terms
 
+def similarity_tokens(value):
+    cleaned = strip_noise(value)
+    tokens = [norm(t) for t in re.split(r"\s+", cleaned) if norm(t)]
+    if tokens:
+        return set(tokens)
+    compact = norm(cleaned)
+    if not compact:
+        return set()
+    if len(compact) <= 2:
+        return {compact}
+    return {compact[i : i + 2] for i in range(len(compact) - 1)}
+
+def alias_similarity_score(target, alias):
+    target_n = norm(target)
+    alias_n = norm(alias)
+    if not target_n or not alias_n:
+        return 0.0
+    if target_n == alias_n:
+        return 100.0
+
+    score = 0.0
+    shorter, longer = sorted((target_n, alias_n), key=len)
+    if len(shorter) >= 2 and shorter in longer:
+        score += 55.0 * (len(shorter) / max(len(longer), 1))
+
+    target_tokens = similarity_tokens(target)
+    alias_tokens = similarity_tokens(alias)
+    if target_tokens and alias_tokens:
+        overlap = target_tokens & alias_tokens
+        if overlap:
+            score += 35.0 * (len(overlap) / max(len(target_tokens), len(alias_tokens)))
+
+    target_chars = {c for c in target_n if not c.isspace()}
+    alias_chars = {c for c in alias_n if not c.isspace()}
+    if target_chars and alias_chars:
+        score += 10.0 * (len(target_chars & alias_chars) / max(len(target_chars | alias_chars), 1))
+
+    return score
+
+def similar_concept_suggestions(target, concepts, limit=3):
+    suggestions = []
+    for concept in concepts:
+        best_score = 0.0
+        best_alias = ""
+        for alias in concept["aliases"]:
+            score = alias_similarity_score(target, alias)
+            if score > best_score:
+                best_score = score
+                best_alias = alias
+        if best_score <= 0:
+            continue
+        suggestions.append((best_score, concept["id"], concept["label"], best_alias))
+    suggestions.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return suggestions[:limit]
+
+def format_similar_concepts(target, concepts):
+    suggestions = similar_concept_suggestions(target, concepts)
+    if not suggestions:
+        return "類似概念TOP3: なし"
+    rows = []
+    for score, concept_id, label, alias in suggestions:
+        rows.append(f"{concept_id}({label}; alias={alias}; score={score:.1f})")
+    return "類似概念TOP3: " + " / ".join(rows)
+
 def extract_wiki_targets(fields):
     targets = []
     seen = set()
@@ -337,8 +401,9 @@ for target in extract_wiki_targets(fields):
         continue
     if norm(target) in known_terms:
         continue
+    similar = format_similar_concepts(target, concepts)
     queue_insight(
-        f"semantic_index_update未登録[[リンク]]ターゲット: [[{target}]] は既存aliasesに一致なし。概念定義とaliases追加を検討せよ",
+        f"semantic_index_update未登録[[リンク]]ターゲット: [[{target}]] は既存aliasesに一致なし。{similar}。概念定義とaliases追加を検討せよ",
         "low",
     )
 
