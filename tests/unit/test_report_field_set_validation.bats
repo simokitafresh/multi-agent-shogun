@@ -136,3 +136,55 @@ assert lc["origin"] == "[[cmd_test]] -> [[cause]] -> [[result]]", lc
 assert lc["title"] == "既存タイトル", lc
 PY
 }
+
+@test "origin: omitted value inherits origin from parent_cmd archive" {
+    local archive_dir="$PROJECT_ROOT/queue/archive/cmds"
+    local archive_file="$archive_dir/cmd_rfs_origin_auto_completed_20990101.yaml"
+    mkdir -p "$archive_dir"
+    cat > "$archive_file" <<'YAML'
+id: cmd_rfs_origin_auto
+origin: "[[cmd_parent]] -> [[auto_source]] -> [[auto_result]]"
+YAML
+    TEST_REPORT="$TEST_TMPDIR/rfsorigin_report_cmd_rfs_origin_auto.yaml"
+    cat > "$TEST_REPORT" <<'YAML'
+worker_id: rfsorigin
+parent_cmd: cmd_rfs_origin_auto
+ac_version_read: abc12345
+lesson_candidate:
+  found: false
+  no_lesson_reason: existing
+YAML
+
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' origin 2>&1"
+    rm -f "$archive_file"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+lc = data.get("lesson_candidate")
+assert lc["origin"] == "[[cmd_parent]] -> [[auto_source]] -> [[auto_result]]", lc
+PY
+}
+
+@test "origin: omitted value stays empty when cmd origin is unavailable" {
+    TEST_REPORT="$TEST_TMPDIR/rfsorigin_report_cmd_missing_origin.yaml"
+    cat > "$TEST_REPORT" <<'YAML'
+worker_id: rfsorigin
+parent_cmd: cmd_missing_origin
+ac_version_read: abc12345
+lesson_candidate:
+  found: false
+  no_lesson_reason: existing
+YAML
+
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' origin 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+lc = data.get("lesson_candidate")
+assert lc["origin"] == "", lc
+PY
+}

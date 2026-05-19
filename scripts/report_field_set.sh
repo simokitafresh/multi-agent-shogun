@@ -46,16 +46,155 @@ if [ -z "$VALUE" ]; then
     VALUE="''"
 fi
 
-# Convenience command for causal-network reports.  Report templates store the
-# backlink with lesson_candidate, but operators should not need to remember the
-# nested path for the common write.
-if [ "$DOT_KEY" = "origin" ]; then
-    DOT_KEY="lesson_candidate.origin"
-fi
-
 # Resolve to absolute path if relative
 if [[ "$REPORT_PATH" != /* ]]; then
     REPORT_PATH="$SCRIPT_DIR/$REPORT_PATH"
+fi
+
+# Resolve the current task/cmd origin for the shorthand command when operators
+# intentionally omit the value: `report_field_set.sh <report> origin`.
+_report_field_set_resolve_cmd_origin() {
+    python3 - "$REPORT_PATH" "$SCRIPT_DIR" <<'PY'
+import glob
+import os
+import sys
+import yaml
+
+report_path = sys.argv[1]
+repo_root = sys.argv[2]
+
+def load_yaml(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+def origin_from_entry(entry):
+    if isinstance(entry, dict):
+        origin = str(entry.get("origin", "") or "").strip()
+        if origin:
+            return origin
+    return ""
+
+def find_origin_in_doc(doc, cmd_id):
+    if not cmd_id:
+        return ""
+    if isinstance(doc, dict):
+        commands = doc.get("commands")
+        if isinstance(commands, dict):
+            found = origin_from_entry(commands.get(cmd_id))
+            if found:
+                return found
+        found = origin_from_entry(doc.get(cmd_id))
+        if found:
+            return found
+        cmd = doc.get("cmd")
+        if isinstance(cmd, dict) and str(cmd.get("id", "") or "").strip() == cmd_id:
+            found = origin_from_entry(cmd)
+            if found:
+                return found
+        if str(doc.get("id", "") or "").strip() == cmd_id:
+            return origin_from_entry(doc)
+        for value in doc.values():
+            if isinstance(value, dict) and str(value.get("id", "") or "").strip() == cmd_id:
+                found = origin_from_entry(value)
+                if found:
+                    return found
+    elif isinstance(doc, list):
+        for item in doc:
+            if isinstance(item, dict) and str(item.get("id", "") or "").strip() == cmd_id:
+                found = origin_from_entry(item)
+                if found:
+                    return found
+    return ""
+
+def unquote_scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1]
+        if value and value[0] == "'":
+            value = value.replace("''", "'")
+    return value.strip()
+
+def find_origin_in_text(path, cmd_id):
+    if not cmd_id:
+        return ""
+    try:
+        with open(path, encoding="utf-8") as f:
+            lines = f.readlines()
+    except Exception:
+        return ""
+    cmd_re = f"{cmd_id}:"
+    in_block = False
+    block_indent = 0
+    for line in lines:
+        stripped = line.strip()
+        if not in_block:
+            if stripped == cmd_re or stripped.startswith(f"id: {cmd_id}"):
+                in_block = True
+                block_indent = len(line) - len(line.lstrip(" "))
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if stripped and not stripped.startswith("#") and indent <= block_indent and not stripped.startswith("origin:"):
+            break
+        if stripped.startswith("origin:"):
+            return unquote_scalar(stripped.split(":", 1)[1])
+    return ""
+
+report = load_yaml(report_path)
+worker = str(report.get("worker_id", "") or "").strip() if isinstance(report, dict) else ""
+if not worker:
+    base = os.path.basename(report_path)
+    if "_report_" in base:
+        worker = base.split("_report_", 1)[0]
+
+task = {}
+if worker:
+    task_doc = load_yaml(os.path.join(repo_root, "queue", "tasks", f"{worker}.yaml"))
+    task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+
+candidate_ids = []
+for candidate in (
+    task.get("cmd_id") if isinstance(task, dict) else "",
+    task.get("parent_cmd") if isinstance(task, dict) else "",
+    report.get("parent_cmd") if isinstance(report, dict) else "",
+):
+    candidate = str(candidate or "").strip()
+    if candidate and candidate not in candidate_ids:
+        candidate_ids.append(candidate)
+
+queue_doc = load_yaml(os.path.join(repo_root, "queue", "shogun_to_karo.yaml"))
+queue_path = os.path.join(repo_root, "queue", "shogun_to_karo.yaml")
+for cmd_id in candidate_ids:
+    found = find_origin_in_doc(queue_doc, cmd_id)
+    if not found:
+        found = find_origin_in_text(queue_path, cmd_id)
+    if found:
+        print(found)
+        sys.exit(0)
+    for path in sorted(glob.glob(os.path.join(repo_root, "queue", "archive", "cmds", f"{cmd_id}*.yaml")), reverse=True):
+        found = find_origin_in_doc(load_yaml(path), cmd_id)
+        if not found:
+            found = find_origin_in_text(path, cmd_id)
+        if found:
+            print(found)
+            sys.exit(0)
+PY
+}
+
+# Convenience command for causal-network reports.  Report templates store the
+# backlink with lesson_candidate, but operators should not need to remember the
+# nested path for the common write.  If the shorthand value is omitted, inherit
+# the cmd origin from the worker task/report context when available.
+if [ "$DOT_KEY" = "origin" ]; then
+    if [ -z "$VALUE" ] || [ "$VALUE" = "''" ] || [ "$VALUE" = '""' ] || [ "$VALUE" = "null" ] || [ "$VALUE" = "None" ]; then
+        _auto_origin="$(_report_field_set_resolve_cmd_origin 2>/dev/null || true)"
+        if [ -n "$_auto_origin" ]; then
+            VALUE="$_auto_origin"
+        fi
+    fi
+    DOT_KEY="lesson_candidate.origin"
 fi
 
 LOCKFILE="${REPORT_PATH}.lock"
