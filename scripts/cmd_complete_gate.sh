@@ -927,6 +927,39 @@ run_skill_script_refs_check() {
     if [ "$rc" -eq 2 ]; then
         echo "  [WARN] SKILL.md script refs need follow-up (non-blocking after CLEAR)"
         append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" stale_or_missing_refs"
+        if printf '%s\n' "${CMD_CHANGED_FILES:-}" | grep -qE '^scripts/'; then
+            local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
+            local changed_scripts
+            local warn_summary
+            local insight_msg
+
+            changed_scripts=$(printf '%s\n' "${CMD_CHANGED_FILES:-}" | grep -E '^scripts/' | head -5 | paste -sd, -)
+            warn_summary=$(printf '%s\n' "$output" | awk '
+                /^  WARN:/ {
+                    sub(/^  WARN:[[:space:]]*/, "")
+                    if (count > 0) {
+                        printf "; "
+                    }
+                    printf "%s", $0
+                    count++
+                    if (count >= 5) exit
+                }
+            ')
+            [ -n "$warn_summary" ] || warn_summary="gate_skill_script_refs.sh rc=2"
+            insight_msg="SKILL.md追従cmd候補: ${CMD_ID} で scripts変更(${changed_scripts})後にSKILL.md参照鮮度WARN。追従cmdを起票して ${warn_summary} を解消せよ。"
+
+            if [ -x "$insight_script" ]; then
+                if bash "$insight_script" "$insight_msg" "medium" "cmd_complete_gate:skill_script_refs:${CMD_ID}" >/dev/null 2>&1; then
+                    echo "  insight: queued SKILL.md follow-up candidate"
+                else
+                    echo "  [WARN] insight_write failed for SKILL.md follow-up candidate"
+                fi
+            else
+                echo "  [WARN] insight_write.sh not executable; SKILL.md follow-up candidate not queued"
+            fi
+        else
+            echo "  insight: SKIP (no scripts/* changes in cmd)"
+        fi
     else
         echo "  [WARN] gate_skill_script_refs.sh failed rc=${rc} (non-blocking after CLEAR)"
         append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" execution_failed rc=${rc}"

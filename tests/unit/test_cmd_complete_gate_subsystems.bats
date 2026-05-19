@@ -205,6 +205,57 @@ _run_todo_check_with_state() {
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+_setup_skill_script_refs_check() {
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/skill_refs_cmd_gate.XXXXXX")"
+    export SCRIPT_DIR="$TEST_TMPDIR"
+    export LOG_DIR="$TEST_TMPDIR/logs"
+    export CMD_ID="cmd_2889_test"
+    mkdir -p "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/logs"
+
+    cat > "$TEST_TMPDIR/scripts/gates/gate_skill_script_refs.sh" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+=== SKILL.md script reference check ===
+走査: 1 SKILL.md / script参照 1件 / 参照あり 1件 / roots=skills
+=== 要更新スキル一覧 (script newer than SKILL.md) ===
+  WARN: skills/demo/SKILL.md <- scripts/demo.sh (newer: scripts/demo.sh)
+--- 総合判定: WARN ---
+OUT
+exit 2
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_skill_script_refs.sh"
+
+    cat > "$TEST_TMPDIR/scripts/insight_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$TEST_INSIGHT_LOG"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/insight_write.sh"
+    export TEST_INSIGHT_LOG="$TEST_TMPDIR/insights.log"
+}
+
+@test "run_skill_script_refs_check queues insight when scripts changed and SKILL.md is stale" {
+    _setup_skill_script_refs_check
+    export CMD_CHANGED_FILES=$'scripts/demo.sh\nREADME.md'
+
+    run run_skill_script_refs_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKILL.md script refs need follow-up"* ]]
+    [[ "$output" == *"insight: queued SKILL.md follow-up candidate"* ]]
+    grep -q "SKILL.md追従cmd候補: cmd_2889_test" "$TEST_INSIGHT_LOG"
+    grep -q "cmd_complete_gate:skill_script_refs:cmd_2889_test" "$TEST_INSIGHT_LOG"
+}
+
+@test "run_skill_script_refs_check does not queue insight when no scripts changed" {
+    _setup_skill_script_refs_check
+    export CMD_CHANGED_FILES=$'docs/research/demo.md\nskills/demo/SKILL.md'
+
+    run run_skill_script_refs_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"insight: SKIP (no scripts/* changes in cmd)"* ]]
+    [ ! -f "$TEST_INSIGHT_LOG" ]
+}
+
 @test "TODO in non-test files blocks gate" {
     _setup_review_quality
     mkdir -p "$TEST_TMPDIR/scripts"
