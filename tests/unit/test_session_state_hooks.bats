@@ -261,6 +261,38 @@ EOF
     [[ "$output" == *"【SessionEnd 報告】/clear前確認"* ]]
 }
 
+@test "bash_state_hook PreToolUse updates agent_state and bash_running_since with one tmux invocation" {
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$MOCK_BIN/tmux" <<'EOF'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+EOF
+    chmod +x "$MOCK_BIN/tmux"
+
+    run bash -c 'printf "%s" "{\"hook_event_name\":\"PreToolUse\"}" | "$1"' _ "$PROJECT_ROOT/scripts/hooks/bash_state_hook.sh"
+
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TMUX_LOG" | tr -d ' ')" -eq 1 ]
+    grep -q '@agent_state bash_running' "$TMUX_LOG"
+    grep -q '@bash_running_since' "$TMUX_LOG"
+}
+
+@test "bash_state_hook PostToolUse restores agent_state and clears bash_running_since with one tmux invocation" {
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$MOCK_BIN/tmux" <<'EOF'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+EOF
+    chmod +x "$MOCK_BIN/tmux"
+
+    run bash -c 'printf "%s" "{\"hook_event_name\":\"PostToolUse\"}" | "$1"' _ "$PROJECT_ROOT/scripts/hooks/bash_state_hook.sh"
+
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TMUX_LOG" | tr -d ' ')" -eq 1 ]
+    grep -q '@agent_state active' "$TMUX_LOG"
+    grep -q '@bash_running_since' "$TMUX_LOG"
+}
+
 @test "SSH-006: session_start_inject emits JSON without jq" {
     shadow_missing_jq
     export MOCK_AGENT_ID="saizo"

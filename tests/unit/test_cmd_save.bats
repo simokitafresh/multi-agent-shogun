@@ -264,6 +264,72 @@ YAML
     [[ "$output" == *"変更前バックアップ実行済みであること"* ]]
 }
 
+@test "AC1: 引用記号なしのWHYでもq8_WHY引用WARNを出さない" {
+    local q8_tmpdir q8_queue q8_archive q8_quality q8_lock q8_last q8_lessons q8_autolearn q8_lord q8_chronicle
+    q8_tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_q8relax.XXXXXX")"
+    q8_queue="$q8_tmpdir/shogun_to_karo.yaml"
+    q8_archive="$q8_tmpdir/archive"
+    q8_quality="$q8_tmpdir/cmd_design_quality.yaml"
+    q8_lock="$q8_tmpdir/shogun_to_karo.lock"
+    q8_last="$q8_tmpdir/cmd_save_last_cmd.txt"
+    q8_lessons="$q8_tmpdir/lessons_shogun.yaml"
+    q8_autolearn="$q8_tmpdir/preflight_autolearn.txt"
+    q8_lord="$q8_tmpdir/lord_conversation.jsonl"
+    q8_chronicle="$q8_tmpdir/cmd-chronicle.md"
+    mkdir -p "$q8_archive"
+
+    cat > "$q8_queue" <<'YAML'
+commands:
+  cmd_q8relax:
+    id: cmd_q8relax
+    title: "infra — q8 WHY検出緩和テスト"
+    purpose: "WHYが明示されていれば引用記号なしでも不要WARNを出さない"
+    project: infra
+    depends_on: none
+    task_type: impl
+    command: "q8_why_what の回帰確認"
+    acceptance_criteria:
+      - "AC1: q8 WHY引用WARNが出ない"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "WHY文面の語彙差で偽陽性を出さない"
+      q3_next_quality: "q8の意図確認が引用記号依存にならない"
+      q4_depth: "shallow"
+      q5_verified_source: "code_reading + isolated_test"
+      q6_not_hiding: "no — q8の偽陽性除去であり問題の隠蔽ではない"
+      q7_definition_verified: "yes — q8はWHY/WHATの明示だけを要件とする"
+      q8_why_what: "WHY: 学習ループを強化する必要がある → WHAT: q8の引用依存を外す → WHEN: 引用記号なしWHYの回帰を検証する時 → WHERE: tests/unit/test_cmd_save.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: q8 WHY引用WARNを出さず保存確認OKまで通す。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。q8 WHY引用WARNが残っていないことを未確認"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "2026-04-24時点で q8 WHY引用チェックの有無は cmd_save.sh の出力で判定できる"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$q8_queue" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$q8_archive" \
+        CMD_QUALITY_LOG_FILE="$q8_quality" \
+        CMD_SAVE_LOCK_FILE="$q8_lock" \
+        CMD_SAVE_LAST_CMD_FILE="$q8_last" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$q8_lessons" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$q8_autolearn" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$q8_lord" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$q8_chronicle" \
+        bash "$SRC_SAVE_SCRIPT" cmd_q8relax
+
+    rm -rf "$q8_tmpdir"
+
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK"* ]]
+    [[ "$output" != *"q8 WHYに殿の指示引用がありません"* ]]
+    [[ "$output" != *"q8_WHY引用"* ]]
+}
+
 @test "Check21.2: 非DB cmdならバックアップAC WARNなし" {
     create_queue_file << 'YAML'
 commands:
