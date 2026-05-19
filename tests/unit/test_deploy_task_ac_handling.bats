@@ -1022,6 +1022,42 @@ EOF
     [[ "$output" != *"L_LOW"* ]]
 }
 
+@test "deploy_task writes score column for injected lesson impact rows" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_SCORE
+    title: deploy score metric tracer
+    summary: deploy score metric tracer
+    status: confirmed
+    helpful_count: 1
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy score metric"
+  description: "deploy score metric"
+  task_id: cmd_score_column
+  assigned_to: sasuke
+  task_type: impl
+  project: testproj
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run awk -F'\t' 'NR==1{print $NF}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "score" ]
+
+    run awk -F'\t' '$5=="injected" && $4=="L_SCORE"{print $11}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^[0-9]+$ ]]
+    [ "$output" -gt 0 ]
+}
+
 @test "deploy_task excludes mature low-effectiveness feedback lessons from related_lessons" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'

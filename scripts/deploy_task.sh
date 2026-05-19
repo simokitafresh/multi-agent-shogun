@@ -4051,6 +4051,9 @@ try:
     withheld = list(effectiveness_excluded)
     universal_added = 0
     seen_ids_final = set()
+    lesson_scores = {}
+    for _score, _lid, _summary in scored:
+        lesson_scores[_lid] = _score
 
     # Phase 1: Universal枠（最大MAX_UNIVERSAL）
     for ul in universal_lessons:
@@ -4259,18 +4262,21 @@ try:
     ninja_name = task.get('assigned_to', 'unknown')
     task_type = task.get('task_type') or task.get('type', 'unknown')
     bloom = task.get('bloom_level', 'unknown')
+    impact_header = 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\n'
 
     try:
         os.makedirs(os.path.dirname(impact_log), exist_ok=True)
         write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
         with open(impact_log, 'a', encoding='utf-8') as lf:
             if write_header:
-                lf.write('timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\n')
+                lf.write(impact_header)
             ts = datetime.datetime.now().isoformat(timespec='seconds')
             for r in related:
-                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{r["id"]}\tinjected\tpending\tpending\t{project}\t{task_type}\t{bloom}\n')
+                score_value = lesson_scores.get(r["id"], 0)
+                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{r["id"]}\tinjected\tpending\tpending\t{project}\t{task_type}\t{bloom}\t{score_value}\n')
             for w in withheld:
-                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{w["id"]}\twithheld\tpending\tno\t{project}\t{task_type}\t{bloom}\n')
+                score_value = lesson_scores.get(w["id"], 0)
+                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{w["id"]}\twithheld\tpending\tno\t{project}\t{task_type}\t{bloom}\t{score_value}\n')
         print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
     except Exception as ie:
         print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)

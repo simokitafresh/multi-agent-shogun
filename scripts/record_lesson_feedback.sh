@@ -7,6 +7,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
+IMPACT_HEADER=$'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore'
 
 report_file="${1:-}"
 if [[ -z "$report_file" || ! -f "$report_file" ]]; then
@@ -16,7 +17,21 @@ fi
 
 # ヘッダ確認（lesson_impact.tsvが存在しない場合は作成）
 if [[ ! -f "$IMPACT_TSV" ]]; then
-    echo -e "timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level" > "$IMPACT_TSV"
+    printf '%s\n' "$IMPACT_HEADER" > "$IMPACT_TSV"
+else
+    # Backward compatibility: add the trailing score column to old 10-column logs.
+    (
+        flock -w 10 200 || { echo "[feedback] WARN: flock timeout during header upgrade" >&2; exit 0; }
+        current_header="$(head -n 1 "$IMPACT_TSV" 2>/dev/null || true)"
+        if [[ "$current_header" != *$'\tscore' ]]; then
+            tmp_file="${IMPACT_TSV}.tmp.$$"
+            awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
+                NR == 1 { print header; next }
+                { print $0, "" }
+            ' "$IMPACT_TSV" > "$tmp_file"
+            mv "$tmp_file" "$IMPACT_TSV"
+        fi
+    ) 200>"${IMPACT_TSV}.lock"
 fi
 
 # 報告YAMLからメタデータ抽出（フィールド不在時は空文字でOK）
@@ -91,10 +106,10 @@ while IFS= read -r line; do
                     result="NOT_USEFUL"
                     ref="no"
                 fi
-                # flockで排他書込み
+                # flockで排他書込み。feedback行は注入時scoreを持たないためscoreは空欄。
                 (
                     flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
-                    echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${current_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone" >> "$IMPACT_TSV"
+                    echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${current_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t" >> "$IMPACT_TSV"
                 ) 200>"${IMPACT_TSV}.lock"
                 feedback_count=$((feedback_count + 1))
                 current_id=""
