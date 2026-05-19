@@ -196,13 +196,15 @@ lessons:
   origin: "[[LK058]] -> [[研究成果物未確認]] -> [[空deliverable]]"
 - id: LK-A11
   title: AC設計は忍者が物理的に達成可能か事前確認
-  detail: |
-    gitignore対象ファイルへのcommit ACは達成不可能。推奨事項を必須binary_checkに混入。
-    verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。
-    CI完了待ちで忍者を止めるな(報告を先に書かせろ)。
-    追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。
-    v5吸収(2026-05-15):
-    - 外部リポ(Simple-OCR等)のpush ACは忍者push禁止規則と構造的に衝突。push ACは家老実施前提で設計せよ(cmd_2782/2783/karo_ci_fix_simple_ocr_rebase実証)
+  detail: "gitignore対象ファイルへのcommit ACは達成不可能。推奨事項を必須binary_checkに混入。
+verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。
+CI完了待ちで忍者を止めるな(報告を先に書かせろ)。
+追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。
+v5吸収(2026-05-15):
+- 外部リポ(Simple-OCR等)のpush ACは忍者push禁止規則と構造的に衝突。push ACは家老実施前提で設計せよ(cmd_2782/2783/karo_ci_fix_simple_ocr_rebase実証)
+v7吸収(2026-05-19):
+- 全テストPASS ACは忍者環境でbats全1816件26分超。test_select.sh使用+関連テストPASSに修正せよ(cmd_training_speed修行で実証)
+- 速度目標ACでWSL2環境固有律速がscope外の場合→FAIL形骸化(cmd_2856 AC4 WAIVE。軍師ACスコープ完結性チェックbf02cd97で構造防止)"
   source_ids: [LK006, LK042, LK020, LK078, LK014]
   created_at: '2026-04-24'
   automated: true
@@ -210,7 +212,7 @@ lessons:
 
 # === infra修正実績 ===
   when: AC設計時。cmdのbinary_checks設計時
-  how: 忍者が物理的に達成可能か事前確認。gitignore対象へのcommit要求禁止。推奨と必須を混同するな
+  how: "忍者が物理的に達成可能か事前確認。gitignore対象へのcommit要求禁止。推奨と必須を混同するな。v7: 全テストPASS AC→test_select.sh関連テストのみ。速度目標ACはscope完結性確認(bf02cd97)"
   origin: "[[LK042]] -> [[達成不可能AC]] -> [[verdict_override]]"
 - id: LK-A12
   title: infra修正実績(ninja_monitor/inbox_watcher) — 各バグはenforcementで修正済み
@@ -221,6 +223,8 @@ lessons:
     追加吸収: LK001(background shell残存で/clear不発), LK009(@agent_id汚染), LK012(pane CWD残留)。
     v3吸収(2026-05-10):
     - context鮮度WARN連日再発(LK009b: 重複抑止なし。初回掲示板報告後は既読化のみ。GP候補)
+    v7吸収(2026-05-19):
+    - pre-push hookのexec 2> >(tee)がWSL2でexit code汚染→534テスト全PASSでもpush BLOCK。修正: exec 2>fileに置換(cmd_karo_prepush_fix)。一般原則: WSL2のhook/デーモンでプロセス置換(>(...))を使うな
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b]
   created_at: '2026-04-24'
   automated: true
@@ -465,6 +469,7 @@ lessons:
   when: '同種の状況が再発した時'
   how: 'originフィールドの日本語+特殊文字(→/[]/括弧)がsedコマンドを壊しexit 1。task YAMLは正常設定済みだがnudge未送信。毎回手動inbox_writeでnudge送信が必要になった。根因=inject_causal_linksのsed区切り文字がorigin内容と衝突。enforcement: 掲示板報告済み(blt_20260518_074606)。修正cmd未起票'
   created_at: '2026-05-19'
+  enforcement: cmd_2852で修正済み(666bba94)。inject_context_hints/inject_production_invariantsのsed→awk統一。再発なし
 - id: 'LK011'
   title: 'karo_direct配備のGPT忍者は報告YAML未作成率が高い→完了確認はcommit存在で代替'
   origin: '[[cmd_karo_kjrc_fix_hayate]]'
@@ -480,4 +485,12 @@ lessons:
   source_cmd: 'cmd_karo_kjrc_recon_tobisaru'
   when: '同種の状況が再発した時'
   how: 'deploy_task.sh経由でない配備はreport_received hookが発火しない。忍者完了報告受信→WA記録→軍師review手動inbox_writeの3ステップを毎回実行。LK-A09に記載済みだが今セッションで6回以上手動送信。自動化が必要(deploy_task.shのgunshi通知自動送信はcmd配備のみ対応)'
+  created_at: '2026-05-19'
+- id: 'LK013'
+  title: 'karo_workaround_log.shの引数はcmd_id ninja_nameの順。detailをninja引数に入れるとNINJA_CORRUPT'
+  origin: '[[cmd_karo_wa_fix]]'
+  detail: '本セッションで2回NINJA_CORRUPT発生→cmd_karo_wa_ninja_validateでLevel4化完了(e752d5eb)。scripts/lib/known_ninjas.shを共通定義化し、karo_workaround_log.shが不正ninja名でexit 1。gate_wa_data_quality.shも同定義を参照。入口BLOCKで再発構造的に防止'
+  source_cmd: 'cmd_karo_wa_fix'
+  when: '[[cmd_karo_wa_fix]] -> [[karo_workaround_log.sh引数順序]] -> [[NINJA_CORRUPT]]'
+  how: '本セッションで2回NINJA_CORRUPT発生(cmd_karo_idle_self_driving+cmd_karo_ci_fix_skill_timeout)。karo_workaround_log.sh --clean <cmd_id> <ninja_name>の第2引数は忍者名のみ。詳細はdetail引数に書け。enforcement: gate_wa_data_quality.shが自動検知するがそもそもの引数ミスを防ぐ'
   created_at: '2026-05-19'

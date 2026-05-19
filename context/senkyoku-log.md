@@ -20,15 +20,25 @@
 | cmd_2857 | Codex codex_apps MCP無効化 | 作業中 | 殿発見。multi-CLIで全エージェント影響 |
 | cmd_2858 | 教訓useful率MIN_SAMPLES 5→3 | GATE CLEAR | 軍師なぜなぜ7回→fb蓄積速度<閾値が根因 |
 | cmd_2859 | SKILL.md 9件一括追従 | GATE CLEAR | 3セッション連続WARN解消 |
-| cmd_2860 | Obsidian×セマンティック因果辺統合 | 作業中 | 殿「obsidian×セマンティック辞書で可能性」→概念→因果到達パス自動化 |
-| cmd_2861 | セマンティック辞書未登録2件 | 作業中 | INS-024911。暗黒物質(未登録概念)可視化 |
+| cmd_2860 | Obsidian×セマンティック因果辺統合 | GATE CLEAR | 殿「obsidian×セマンティック辞書で可能性」→概念→因果到達パス自動化 |
+| cmd_2861 | セマンティック辞書未登録2件 | GATE CLEAR | INS-024911。暗黒物質(未登録概念)可視化 |
 | cmd_2862 | 報告YAML Edit BLOCK | shelve | Guard 3(L272-274)で実装済み。車輪再発明 |
-| cmd_2863 | Guard一覧自動表示(車輪防止) | 作業中 | なぜなぜ7回→grepキーワード不足が根因→Guard一覧自動抽出で構造予防 |
+| cmd_2863 | Guard一覧自動表示(車輪防止) | GATE CLEAR | なぜなぜ7回→grepキーワード不足が根因→Guard一覧自動抽出で構造予防 |
 | LS043 | 教訓: grep0件で未実装断定するな | 記録済み | cmd_2857+2862の車輪2回→反証の不在≠不在の証明 |
 | session_dream | /dream Memory統合 | 完了 | MEMORY.md 184→180行。insight 3件。教訓32→31件統合 |
 | LS043→LS-A09 | 教訓統合+git diff追記 | 完了 | 車輪3連続根因=git diff未確認。LS-A09(8)にGuard通読+git diff追加 |
 | cmd_2863裁定 | (A)verify+commit化 | GATE CLEAR | Guard一覧自動表示稼働。車輪構造予防 |
-| cmd_2864 | 教訓注入スコア閾値(MIN_KEYWORD_SCORE>=2) | 配備中 | 77/77 useful=0%→score>0が緩すぎる→閾値引上げで無関係注入削減 |
+| cmd_2864 | 教訓注入スコア閾値(MIN_KEYWORD_SCORE>=2) | GATE CLEAR | 77/77 useful=0%→score>0が緩すぎる→閾値引上げ。useful率13.3%→20.9%効果発現 |
+| cmd_2865 | lesson_impact.tsvにscore列追加 | GATE CLEAR | 軍師REQ_CHANGES→計測基盤構築。score帯別useful率分析可能に |
+| cmd_2866 | semantic_search因果辺トラバース統合 | GATE CLEAR | Obsidian×セマンティック統合パイプライン核。概念→因果辺→関連resources一括返却 |
+| cmd_2867 | セマンティック辞書自動成長ループ | GATE CLEAR | lesson_write/GATE完了時にsemantic_map自動再生成+未登録[[リンク]]insight通知 |
+| cmd_2868 | traversal_depth列追加(精度計測) | GATE CLEAR | 直接マッチ(0)vs因果辺経由(1+)の有用性計測。depth別チューニング基盤 |
+| cmd_2869 | q11にsemantic_search統合(車輪防止概念化) | GATE CLEAR | grep単独→概念レベル検索。3連続車輪の根因対処 |
+| cmd_2870 | セマンティック辞書url種別追加 | GATE CLEAR | 外部知識(GitHub/Zenn)→内部因果辺接続。OpenPBX等が辞書から到達可能に |
+| cmd_2871 | verdict計算値化(bc自動導出) | GATE CLEAR | verdict独立フィールド=矛盾の温床→bcから常に導出。GP-072c2-c5の4層防御を根本解消 |
+| cmd_2872 | cmd_complete_gate並行flock追加 | GATE CLEAR | review_log 0バイト破壊事故→nohup並行のawk→tmp→mvをflock排他制御 |
+| cmd_2873 | daemon_supervisor.sh統一管理 | GATE CLEAR | 重複実行頻出(monitor3重/watcher2重)→統一管理+ヘルスチェック+自動再起動 |
+| karo_direct×5 | WA ninja validate/selfgate dict/prepush fix/CI fix×2 | 全完了 | LK013 Level4化+self_gate_check dict強制+pre-push tee→file redirect+CI RED修正2件 |
 
 ## 2026-05-17
 
