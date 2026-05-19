@@ -15,6 +15,8 @@ setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_save_chronicle.XXXXXX")"
     export CMD_CHRONICLE_FILE="$TEST_TMPDIR/cmd-chronicle.md"
+    export CMD_SAVE_CHRONICLE_MAX_LINES=1200
+    export CMD_SAVE_CHRONICLE_MAX_BYTES=2097152
     export CMD_BLOCK="present"
 }
 
@@ -51,4 +53,24 @@ MD
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO: [CHRONICLE] cmd履歴検索: cmd-chronicle.md不在のため0件"* ]]
+}
+
+@test "chronicle search is limited to configured recent lines" {
+    cat > "$CMD_CHRONICLE_FILE" <<'MD'
+# CMD年代記
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_1000 | 古いcmd_save検索改善 | infra | 05-01 | 古い一致 |
+| cmd_1001 | unrelated recent | infra | 05-02 | unrelated |
+MD
+    export CMD_BLOCK_NC='    title: "cmd_save検索改善"
+    purpose: "cmd_save検索改善"'
+    export CMD_SAVE_CHRONICLE_MAX_LINES=1
+
+    run bash -c 'show_cmd_chronicle_matches 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"completed 1件"* ]]
+    [[ "$output" != *"cmd_1000"* ]]
 }

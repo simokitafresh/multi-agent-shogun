@@ -43,6 +43,9 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
 
     # check_quality_gate が依存する helper 群
     eval "$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^path_exists_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^parent_exists_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^display_parent_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^load_cmd_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -73,7 +76,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
+    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -1993,6 +1996,35 @@ assumptions:
     rm -rf "$FAKE_WD"
     [[ "$output" == *"BLOCK: assumptions sourceのファイルパスが存在しません"* ]]
     [ "$status" -eq 1 ]
+}
+
+@test "Check20.3b: trust:verified+絶対パス→PROJECT_DIR二重結合せずPASS" {
+    local FAKE_WD
+    FAKE_WD="$(mktemp -d)"
+    mkdir -p "$FAKE_WD/config" "$FAKE_WD/external"
+    touch "$FAKE_WD/external/source.sh"
+    cat > "$FAKE_WD/config/projects.yaml" << YAML
+current_project: fake
+projects:
+  - id: fake
+    path: "$FAKE_WD"
+YAML
+    CMD_BLOCK="description: AC1
+description: AC2
+description: AC3
+project: fake
+assumptions:
+  - claim: \"絶対パスsourceは存在する\"
+    source: \"$FAKE_WD/external/source.sh code_reading\"
+    trust: \"verified\""
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$FAKE_WD"
+    run check_20_assumptions
+    echo "$output" >&2
+    rm -rf "$FAKE_WD"
+    [[ "$output" != *"BLOCK: assumptions sourceのファイルパスが存在しません"* ]]
+    [[ "$output" != *"$FAKE_WD/$FAKE_WD"* ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "Check20.4: AC数2かつassumptions欠落→PASS" {

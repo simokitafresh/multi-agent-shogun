@@ -22,6 +22,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 QUEUE_FILE="${CMD_SAVE_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
 ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
 QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
+QUALITY_LOG_SCAN_LINES="${CMD_QUALITY_LOG_SCAN_LINES:-5000}"
 LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
@@ -1209,10 +1210,21 @@ abort_if_block_immediate() {
     return 1
 }
 
+make_quality_log_scan_file() {
+    local scan_file
+    [[ -f "$QUALITY_LOG_FILE" ]] || return 1
+    scan_file="$(mktemp)"
+    printf 'entries:\n' > "$scan_file"
+    tail -n "$QUALITY_LOG_SCAN_LINES" "$QUALITY_LOG_FILE" \
+        | awk 'BEGIN{in_entry=0} /^entries:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+cmd_id:/{in_entry=1} in_entry{print}' \
+        >> "$scan_file"
+    printf '%s\n' "$scan_file"
+}
+
 show_prior_attempts() {
     [[ -f "$QUALITY_LOG_FILE" ]] || return 0
 
-    local prior_output cache_file cache_tmp cache_sig cached_sig
+    local prior_output cache_file cache_tmp cache_sig cached_sig scan_file
     cache_file="/tmp/cmd_save_prior_attempts_${CMD_ID}.cache"
     cache_sig="$(stat -c '%Y:%s' "$QUALITY_LOG_FILE" 2>/dev/null || echo "")"
 
@@ -1224,7 +1236,8 @@ show_prior_attempts() {
     fi
 
     if [[ -z "${prior_output:-}" ]]; then
-        prior_output=$(CMD_SAVE_CMD_ID="$CMD_ID" CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" python3 - <<'PY'
+        scan_file="$(make_quality_log_scan_file)" || return 0
+        prior_output=$(CMD_SAVE_CMD_ID="$CMD_ID" CMD_SAVE_QUALITY_LOG="$scan_file" python3 - <<'PY'
 import os
 import yaml
 
@@ -1261,6 +1274,7 @@ for idx, entry in enumerate(filtered, start=1):
         print(f"Attempt {idx}: {reason}")
 PY
 )
+        rm -f "$scan_file"
         if [[ -n "$cache_sig" ]]; then
             cache_tmp="$(mktemp)"
             {
@@ -1289,8 +1303,13 @@ count_same_reason_prior_blocks() {
         return 0
     }
 
+    local scan_file
+    scan_file="$(make_quality_log_scan_file)" || {
+        echo 0
+        return 0
+    }
     CMD_SAVE_CMD_ID="$CMD_ID" \
-    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    CMD_SAVE_QUALITY_LOG="$scan_file" \
     CMD_SAVE_BLOCK_REASON="$current_reason" \
     python3 - <<'PY'
 import os
@@ -1326,6 +1345,7 @@ for entry in reversed(filtered[-5:]):
 
 print(count)
 PY
+    rm -f "$scan_file"
 }
 
 extract_last_block_reason() {
@@ -1418,6 +1438,7 @@ ${field_indent}source: "cmd_save"
 ${field_indent}timestamp: "$timestamp"
 EOF
     ) 200>/tmp/cmd_design_quality.lock
+    bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 || true
 }
 
 count_same_warn_pattern() {
@@ -1427,9 +1448,14 @@ count_same_warn_pattern() {
         return 0
     }
     local current_project
+    local scan_file
     current_project="$(cmd_block_get_field "project" 2>/dev/null || true)"
+    scan_file="$(make_quality_log_scan_file)" || {
+        echo 0
+        return 0
+    }
     CMD_SAVE_CMD_ID="$CMD_ID" \
-    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    CMD_SAVE_QUALITY_LOG="$scan_file" \
     CMD_SAVE_WARN_PATTERN="$warn_pattern" \
     CMD_SAVE_CURRENT_PROJECT="$current_project" \
     CMD_SAVE_QUEUE_FILE="$QUEUE_FILE" \
@@ -1549,6 +1575,7 @@ count = sum(
 )
 print(count)
 PY
+    rm -f "$scan_file"
 }
 
 count_cmd_save_blocks_for_cmd() {
@@ -1558,8 +1585,13 @@ count_cmd_save_blocks_for_cmd() {
         return 0
     }
 
+    local scan_file
+    scan_file="$(make_quality_log_scan_file)" || {
+        echo 0
+        return 0
+    }
     CMD_SAVE_TARGET_CMD_ID="$target_cmd_id" \
-    CMD_SAVE_QUALITY_LOG="$QUALITY_LOG_FILE" \
+    CMD_SAVE_QUALITY_LOG="$scan_file" \
     python3 - <<'PY'
 import os
 import yaml
@@ -1585,6 +1617,7 @@ count = sum(
 )
 print(count)
 PY
+    rm -f "$scan_file"
 }
 
 cmd_save_shogun_lesson_exists_for_cmd() {
@@ -4035,7 +4068,10 @@ show_quality_summary() {
         return 0
     fi
 
-    # Single awk pass: parse entries, output AC1 summary + AC2 warnings
+    local scan_file
+    scan_file="$(make_quality_log_scan_file)" || return 0
+
+    # Single awk pass over recent index layer: parse entries, output AC1 summary + AC2 warnings
     awk '
     /^ *- cmd_id:/ { n++ }
     /karo_rework:/ {
@@ -4077,7 +4113,8 @@ show_quality_summary() {
         if (br > 10) printf "WARNING: blocker率%.0f%%。前提条件の確認を強化せよ\n", br
         if (sr > 30) printf "WARNING: 補足cmd率%.0f%%。スコープ漏れの傾向\n", sr
     }
-    ' "$QUALITY_LOG" || true
+    ' "$scan_file" || true
+    rm -f "$scan_file"
 }
 
 show_quality_summary

@@ -15,6 +15,8 @@ setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_save_lord_conv.XXXXXX")"
     export LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
+    export CMD_SAVE_LORD_CONVERSATION_MAX_LINES=1000
+    export CMD_SAVE_LORD_CONVERSATION_MAX_BYTES=2097152
     export CMD_BLOCK="present"
 }
 
@@ -50,3 +52,18 @@ JSONL
     [[ "$output" == *"INFO: [LORD] 殿発言検索: lord_conversation.jsonl不在のため0件"* ]]
 }
 
+@test "lord conversation search is limited to configured recent lines" {
+    cat > "$LORD_CONVERSATION_FILE" <<'JSONL'
+{"ts":"2026-05-10T01:01:26+09:00","source":"terminal","direction":"inbound","summary":"古いcmd_save検索改善","detail":"古いcmd_save検索改善","agent":"lord"}
+{"ts":"2026-05-10T01:02:00+09:00","source":"terminal","direction":"inbound","summary":"最近の別話題","detail":"最近の別話題","agent":"lord"}
+JSONL
+    export CMD_BLOCK_NC='    title: "cmd_save検索改善"
+    purpose: "cmd_save検索改善"'
+    export CMD_SAVE_LORD_CONVERSATION_MAX_LINES=1
+
+    run bash -c 'show_lord_conversation_matches 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"inbound 1件"* ]]
+    [[ "$output" != *"古いcmd_save検索改善"* ]]
+}

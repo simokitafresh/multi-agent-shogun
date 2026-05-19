@@ -50,6 +50,9 @@ WRAPPER
     sed -n '/^warn_note_key()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^warn_note_message()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     sed -n '/^record_warn_reason()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^path_exists_for_cmd_source()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^parent_exists_for_cmd_source()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
+    sed -n '/^display_parent_for_cmd_source()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     # cmd_save.shからcheck_ac_file_paths関数定義を抽出
     sed -n '/^check_ac_file_paths()/,/^}$/p' "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/test_func.sh"
     # CMD_BLOCK_NC(コメント除去版)を設定してから関数呼出し
@@ -136,4 +139,17 @@ teardown() {
     [[ "$output" == *"mobile/app/screens/Home.tsx"* ]]
     [[ "$output" == *"BLOCK:"* ]]
     [[ "$output" != *"✗ backend/app/services/engine.py"* ]]
+}
+
+@test "T-007: absolute AC source path is not joined with project working directory" {
+    local absolute_file="$FAKE_PROJECT_DIR/backend/app/services/engine.py"
+    local CMD_BLOCK="    acceptance_criteria:
+      - 'AC1: $absolute_file を確認'
+    project: test-proj"
+
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing parent"* ]]
+    [[ "$output" != *"$FAKE_PROJECT_DIR/$absolute_file"* ]]
+    [[ "$output" != *"BLOCK:"* ]]
 }
