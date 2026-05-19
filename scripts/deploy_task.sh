@@ -3300,6 +3300,46 @@ DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
 MIN_KEYWORD_SCORE = int(os.environ.get('MIN_KEYWORD_SCORE', '2'))  # weak single-hit matches are too noisy
+IMPACT_COLUMNS = [
+    'timestamp', 'cmd_id', 'ninja', 'lesson_id', 'action', 'result',
+    'referenced', 'project', 'task_type', 'bloom_level', 'score',
+    'traversal_depth',
+]
+
+def ensure_impact_header(impact_path):
+    """Upgrade existing lesson_impact.tsv headers without losing old rows."""
+    if not os.path.exists(impact_path) or os.path.getsize(impact_path) == 0:
+        return
+    with open(impact_path, 'r', encoding='utf-8', newline='') as f:
+        rows = list(csv.reader(f, delimiter='\t'))
+    if not rows:
+        return
+    header = rows[0]
+    if header == IMPACT_COLUMNS:
+        return
+
+    new_header = list(header)
+    for col in IMPACT_COLUMNS:
+        if col not in new_header:
+            new_header.append(col)
+
+    upgraded_rows = [new_header]
+    for row in rows[1:]:
+        upgraded = list(row)
+        while len(upgraded) < len(new_header):
+            upgraded.append('')
+        upgraded_rows.append(upgraded)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(impact_path), prefix='lesson_impact.', suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+            writer.writerows(upgraded_rows)
+        os.replace(tmp_path, impact_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 def tech_terms(text):
     '''技術用語のみ抽出（日本語テキスト対応）'''
@@ -4262,10 +4302,11 @@ try:
     ninja_name = task.get('assigned_to', 'unknown')
     task_type = task.get('task_type') or task.get('type', 'unknown')
     bloom = task.get('bloom_level', 'unknown')
-    impact_header = 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\n'
+    impact_header = '\t'.join(IMPACT_COLUMNS) + '\n'
 
     try:
         os.makedirs(os.path.dirname(impact_log), exist_ok=True)
+        ensure_impact_header(impact_log)
         write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
         with open(impact_log, 'a', encoding='utf-8') as lf:
             if write_header:
@@ -4273,10 +4314,10 @@ try:
             ts = datetime.datetime.now().isoformat(timespec='seconds')
             for r in related:
                 score_value = lesson_scores.get(r["id"], 0)
-                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{r["id"]}\tinjected\tpending\tpending\t{project}\t{task_type}\t{bloom}\t{score_value}\n')
+                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{r["id"]}\tinjected\tpending\tpending\t{project}\t{task_type}\t{bloom}\t{score_value}\t0\n')
             for w in withheld:
                 score_value = lesson_scores.get(w["id"], 0)
-                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{w["id"]}\twithheld\tpending\tno\t{project}\t{task_type}\t{bloom}\t{score_value}\n')
+                lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{w["id"]}\twithheld\tpending\tno\t{project}\t{task_type}\t{bloom}\t{score_value}\t0\n')
         print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
     except Exception as ie:
         print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)

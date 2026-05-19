@@ -7,7 +7,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
-IMPACT_HEADER=$'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore'
+IMPACT_HEADER=$'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth'
 
 report_file="${1:-}"
 if [[ -z "$report_file" || ! -f "$report_file" ]]; then
@@ -19,16 +19,23 @@ fi
 if [[ ! -f "$IMPACT_TSV" ]]; then
     printf '%s\n' "$IMPACT_HEADER" > "$IMPACT_TSV"
 else
-    # Backward compatibility: add the trailing score column to old 10-column logs.
+    # Backward compatibility: add trailing score/traversal_depth columns to old logs.
     (
         flock -w 10 200 || { echo "[feedback] WARN: flock timeout during header upgrade" >&2; exit 0; }
         current_header="$(head -n 1 "$IMPACT_TSV" 2>/dev/null || true)"
-        if [[ "$current_header" != *$'\tscore' ]]; then
+        if [[ "$current_header" != *$'\ttraversal_depth' ]]; then
             tmp_file="${IMPACT_TSV}.tmp.$$"
-            awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
-                NR == 1 { print header; next }
-                { print $0, "" }
-            ' "$IMPACT_TSV" > "$tmp_file"
+            if [[ "$current_header" == *$'\tscore' ]]; then
+                awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
+                    NR == 1 { print header; next }
+                    { print $0, "" }
+                ' "$IMPACT_TSV" > "$tmp_file"
+            else
+                awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
+                    NR == 1 { print header; next }
+                    { print $0, "", "" }
+                ' "$IMPACT_TSV" > "$tmp_file"
+            fi
             mv "$tmp_file" "$IMPACT_TSV"
         fi
     ) 200>"${IMPACT_TSV}.lock"
@@ -109,7 +116,7 @@ while IFS= read -r line; do
                 # flockで排他書込み。feedback行は注入時scoreを持たないためscoreは空欄。
                 (
                     flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
-                    echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${current_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t" >> "$IMPACT_TSV"
+                    echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${current_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t\t" >> "$IMPACT_TSV"
                 ) 200>"${IMPACT_TSV}.lock"
                 feedback_count=$((feedback_count + 1))
                 current_id=""

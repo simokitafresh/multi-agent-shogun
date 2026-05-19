@@ -1099,6 +1099,45 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "lesson_impact update preserves score and traversal_depth columns" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: subtask_test
+  subtask_id: subtask_test
+  assigned_to: sasuke
+  task_type: review
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L100
+    useful: true
+    reason: 'test'
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-03-04T00:00:00	subtask_test	sasuke	L100	injected	pending	pending	infra	review	routine	5	1
+EOF
+
+    run update_lesson_impact_tsv "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+
+    run grep -F $'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+
+    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tCLEAR\tyes\tinfra\treview\troutine\t5\t1' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+}
+
 @test "B層: normalize OK when report already dict format (exit 1)" {
     write_cmd_yaml "without_context"
     write_report
