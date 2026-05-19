@@ -288,7 +288,20 @@ awk -v root="$SCRIPT_DIR" '
         next
     }
     FILENAME ~ /logs\/karo_workarounds\.yaml$/ {
-        if (/^- (cmd_id|cmd|timestamp):/) { n++; wa[n]=0; cat[n]="uncategorized"; rc[n]=""; next }
+        if (/^- (cmd_id|cmd|timestamp):/) {
+            n++
+            wa[n]=0
+            cat[n]="uncategorized"
+            rc[n]=""
+            wa_cmd[n]=""
+            if (/^- (cmd_id|cmd):/) {
+                wa_cmd[n]=$0
+                sub(/^- (cmd_id|cmd):[[:space:]]*/, "", wa_cmd[n])
+                gsub(/["'"'"']/, "", wa_cmd[n])
+                gsub(/[[:space:]]+$/, "", wa_cmd[n])
+            }
+            next
+        }
         if (/^  workaround:/) { v=$2; if (v ~ /true|yes/) wa[n]=1; next }
         if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
         if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
@@ -359,6 +372,15 @@ awk -v root="$SCRIPT_DIR" '
         if (cause_str == "") cause_str = "none"
         if (max_cat == "") max_cat = "none"
         print "WA|" wc "|" total "|" cat_str "|" cause_str "|" max_cat "|" max_count+0
+        clean_streak = 0
+        for (i=n; i>=1; i--) {
+            if (wa[i]) break
+            clean_streak++
+        }
+        latest_regression = (n > 0 && wa[n]) ? 1 : 0
+        latest_cmd = (n > 0 && wa_cmd[n] != "") ? wa_cmd[n] : "unknown"
+        latest_cat = (n > 0 && cat[n] != "") ? cat[n] : "uncategorized"
+        print "WACLEAN|" clean_streak "|" n+0 "|" latest_regression "|" latest_cmd "|" latest_cat
         print "ORPHAN|" orphan_found+0 "|" orphan_cmds
     }
 ' "${_AGG_FILES[@]}" > "$_aggregate_tmp" 2>/dev/null || true
@@ -379,6 +401,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         GP) _gp_pending_count=${_agg_a:-0} ;;
         PD) total_d=${_agg_a:-0}; resolved_d=${_agg_b:-0} ;;
         WA) wa_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}|${_agg_f}" ;;
+        WACLEAN) wa_clean_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}" ;;
         ORPHAN) orphan_result="${_agg_a}|${_agg_b}" ;;
     esac
 done < "$_aggregate_tmp"
@@ -617,7 +640,15 @@ wa_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$wa_file" ]; then
     wa_result=${wa_result:-"0|0|error|awk error|none|0"}
     IFS='|' read -r WA_COUNT WA_TOTAL WA_CATS WA_CAUSES WA_MAX_CAT WA_MAX_COUNT <<< "$wa_result"
+    wa_clean_result=${wa_clean_result:-"0|0|0|unknown|uncategorized"}
+    IFS='|' read -r WA_CLEAN_STREAK WA_ENTRY_TOTAL WA_REGRESSION WA_LATEST_CMD WA_LATEST_CAT <<< "$wa_clean_result"
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
+    echo "  連続clean: ${WA_CLEAN_STREAK}件 (総記録${WA_ENTRY_TOTAL}件)"
+    if [ "${WA_REGRESSION:-0}" -eq 1 ]; then
+        echo "  ALERT: WA復活 — 最新cmd ${WA_LATEST_CMD} が workaround=true (category=${WA_LATEST_CAT})"
+        overall="ALERT"
+        alerts+=("WA復活: ${WA_LATEST_CMD} (${WA_LATEST_CAT})")
+    fi
     if [ "$WA_COUNT" -gt 0 ]; then
         echo "  カテゴリ: ${WA_CATS}"
         echo "  原因: ${WA_CAUSES}"
