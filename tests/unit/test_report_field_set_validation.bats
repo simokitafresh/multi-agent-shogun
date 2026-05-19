@@ -57,7 +57,15 @@ teardown() {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' self_gate_check PASS 2>&1"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK: self_gate_check へのトップレベル書込みは禁止"* ]]
+    [[ "$output" == *"dict形式で再入力せよ"* ]]
     [[ "$output" == *"self_gate_check.lesson_ref PASS"* ]]
+}
+
+@test "self_gate_check: stdin string形式入力はexit 1" {
+    run bash -c "echo 'all good' | bash '$SCRIPT' '$TEST_REPORT' self_gate_check - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: self_gate_check へのトップレベル書込みは禁止"* ]]
+    [[ "$output" == *"dict形式で再入力せよ"* ]]
 }
 
 @test "self_gate_check: dot notation書込みはdict構造を保持してexit 0" {
