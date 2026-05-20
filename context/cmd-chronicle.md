@@ -702,3 +702,5 @@
 | cmd_2907 | cmd_2906でCodex idle時を/new経路に変更したが、Codex CLIが/newをtask in progressで拒否しCTXリセット不能。元のrespawn-pane -k経路に戻す | infra | 05-20 | Codex safe_send_clearのテスト期待値をr |
 | cmd_2908 | cmd_save.sh/cmd_publish.sh BLOCK時にPostToolUse hookのGuard 0が発火せず、将軍がBLOCK後に停止する。根因はexit_code抽出jqがClaude Codeの実payload構造にマッチしないこと | infra | 05-20 | post-bash Guard 0がClaude Code実 |
 | cmd_2910 | 因果辺のoriginノード名の68%がセマンティクスインデックス未登録。GATE CLEAR時にoriginノードをaliases照合し、未登録ノードをinsights.yamlにpending蓄積→概念自動成長を実現する | infra | 05-20 | cmd_complete originノードを専用にalia |
+| cmd_2911 | lessons_karo.yamlが35件上限に到達し新規教訓追加がBLOCK。LK-A01にv8吸収(設計意図確認)とLK013(STALL再配備3点確認)をA系列に統合し件数を削減する | infra | 05-20 | LK-A01へv8設計意図確認を統合し、LK013をLK-A |
+| cmd_2912 | insights.yamlに蓄積されたpending概念22件がセマンティクスインデックスに昇格されず手動待ち。類似概念スコア照合で既存概念のaliases自動拡張し、因果NWの到達性を自動的に拡大する | infra | 05-20 | pending semantic insightsを類似度ス |
