@@ -1080,17 +1080,17 @@ check_origin_field() {
     origin_value="$(cmd_block_get_field "origin")"
 
     if [[ -z "${origin_value:-}" ]]; then
-        record_warn_reason "origin未記入。cmdの根拠を origin: \"[[発端]] -> [[原因]] -> [[結果]]\" 形式で記入せよ。因果NW成長の源泉" "check=origin_field"
+        record_block_reason "origin未記入。cmdの根拠を origin: \"[[発端]] -> [[原因]] -> [[結果]]\" 形式で記入せよ。因果NW成長の源泉"
         return 0
     fi
 
     if [[ "$origin_value" == "none" ]]; then
-        record_warn_reason "origin=none。因果辺なしではセマンティックインデックスに還流されない。最低1つの[[リンク]]を含めよ" "check=origin_field"
+        record_block_reason "origin=none。因果辺なしではセマンティックインデックスに還流されない。最低1つの[[リンク]]を含めよ"
         return 0
     fi
 
     if ! printf '%s\n' "$origin_value" | grep -qE '\[\[[^]]+\]\]'; then
-        echo "WARNING: origin形式不正。Obsidian [[リンク]] を1つ以上含めよ (例: [[cmd_XXXX]] [[LGXXX]] [[殿裁定YYYY-MM-DD]])" >&2
+        record_block_reason "origin形式不正。Obsidian [[リンク]] を1つ以上含めよ (例: [[cmd_XXXX]] [[LGXXX]] [[殿裁定YYYY-MM-DD]])"
         echo "  現在値: ${origin_value}" >&2
     fi
 }
