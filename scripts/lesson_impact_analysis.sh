@@ -4,6 +4,156 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 
+if [ "$#" -eq 0 ]; then
+    awk -F '\t' '
+function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+function upper(s) { return toupper(s) }
+function lower(s) { return tolower(s) }
+function pct(num, den) { return den <= 0 ? 0 : int((num * 100.0 / den) + 0.5) }
+function safe_date(ts, s) { s = trim(ts); return length(s) >= 10 ? substr(s, 1, 10) : "unknown" }
+function bool_value(v, s) { s = lower(trim(v)); return s == "yes" || s == "true" || s == "1" || s == "y" }
+function rate_line(id) {
+    return sprintf("  %-5s injected:%-4d ref_rate:%3d%%  CLEAR:%3d%%  BLOCK:%3d%%",
+        id, injected[id], pct(referenced_count[id], injected[id]),
+        pct(inj_clear[id], injected[id]), pct(inj_block[id], injected[id]))
+}
+function ab_line(id, inj_n, with_n, inj_clear_pct, with_clear_pct, delta, sig, sign) {
+    inj_n = injected[id]
+    with_n = withheld[id]
+    inj_clear_pct = pct(inj_clear[id], inj_n)
+    with_clear_pct = pct(with_clear[id], with_n)
+    delta = inj_clear_pct - with_clear_pct
+    sig = (inj_n < 10 || with_n < 10 || (delta < 0 ? -delta : delta) < 20) ? "n/s" : "*"
+    sign = delta >= 0 ? "+" : ""
+    return sprintf("  %-5s injected:%-3d CLEAR:%3d%%  |  withheld:%-3d CLEAR:%3d%%  |  delta:%s%d%%  sig:%s",
+        id, inj_n, inj_clear_pct, with_n, with_clear_pct, sign, delta, sig)
+}
+function better_top(id, best) {
+    return best == "" || injected[id] > injected[best] || (injected[id] == injected[best] && id < best)
+}
+function better_low_ref(id, best, p, bp) {
+    if (best == "") return 1
+    p = pct(referenced_count[id], injected[id])
+    bp = pct(referenced_count[best], injected[best])
+    return p < bp || (p == bp && (injected[id] > injected[best] || (injected[id] == injected[best] && id < best)))
+}
+function better_high_block(id, best, p, bp) {
+    if (best == "") return 1
+    p = pct(inj_block[id], injected[id])
+    bp = pct(inj_block[best], injected[best])
+    return p > bp || (p == bp && (injected[id] > injected[best] || (injected[id] == injected[best] && id < best)))
+}
+function better_ab(id, best, d, bd) {
+    if (best == "") return 1
+    d = pct(inj_clear[id], injected[id]) - pct(with_clear[id], withheld[id])
+    bd = pct(inj_clear[best], injected[best]) - pct(with_clear[best], withheld[best])
+    return d > bd || (d == bd && id < best)
+}
+function print_top10(kind,    printed, pass, i, id, best) {
+    delete used
+    printed = 0
+    for (pass = 1; pass <= 10; pass++) {
+        best = ""
+        for (i = 1; i <= key_count; i++) {
+            id = keys[i]
+            if (used[id] || injected[id] <= 0) continue
+            if (kind == "top" && better_top(id, best)) best = id
+            else if (kind == "low" && better_low_ref(id, best)) best = id
+            else if (kind == "high" && better_high_block(id, best)) best = id
+            else if (kind == "never" && referenced_count[id] == 0 && better_top(id, best)) best = id
+        }
+        if (best == "") break
+        used[best] = 1
+        if (kind == "never") printf("  %-5s injected:%-4d ref_rate:  0%%\n", best, injected[best])
+        else print rate_line(best)
+        printed++
+    }
+    return printed
+}
+NR == 1 {
+    for (i = 1; i <= NF; i++) col[$i] = i
+    next
+}
+{
+    lesson_id = trim($col["lesson_id"])
+    action = lower(trim($col["action"]))
+    result = upper(trim($col["result"]))
+    if (lesson_id == "" || (action != "injected" && action != "withheld") || result == "PENDING") next
+
+    if (!(lesson_id in seen)) {
+        seen[lesson_id] = 1
+        keys[++key_count] = lesson_id
+    }
+    d = safe_date($col["timestamp"])
+    if (row_count == 0 || d < min_date) min_date = d
+    if (row_count == 0 || d > max_date) max_date = d
+    row_count++
+
+    if (action == "injected") {
+        injected[lesson_id]++
+        total_injected++
+        if (result == "CLEAR") inj_clear[lesson_id]++
+        else if (result == "BLOCK") inj_block[lesson_id]++
+        if (bool_value($col["referenced"])) {
+            referenced_count[lesson_id]++
+            if (result == "CLEAR") ref_clear[lesson_id]++
+            else if (result == "BLOCK") ref_block[lesson_id]++
+        }
+    } else {
+        withheld[lesson_id]++
+        if (result == "CLEAR") with_clear[lesson_id]++
+        else if (result == "BLOCK") with_block[lesson_id]++
+    }
+}
+END {
+    print "=== Lesson Impact Analysis ==="
+    if (row_count > 0) print "Period: " min_date " ~ " max_date
+    else print "Period: n/a"
+    print "Total injections: " total_injected
+    print "Unique lessons: " key_count
+    print ""
+
+    print "Top 10 Most Injected:"
+    if (print_top10("top") == 0) print "  none"
+    print ""
+
+    print "Low Reference Rate (noise candidates):"
+    if (print_top10("low") == 0) print "  none"
+    print ""
+
+    print "High BLOCK Rate (harm candidates):"
+    if (print_top10("high") == 0) print "  none"
+    print ""
+
+    print "Never Referenced:"
+    if (print_top10("never") == 0) print "  none"
+    print ""
+
+    print "=== A/B Comparison (lessons with N>=5 in both groups) ==="
+    delete used
+    ab_count = 0
+    while (1) {
+        best = ""
+        for (i = 1; i <= key_count; i++) {
+            id = keys[i]
+            if (used[id] || injected[id] < 5 || withheld[id] < 5) continue
+            if (better_ab(id, best)) best = id
+        }
+        if (best == "") break
+        used[best] = 1
+        print ab_line(best)
+        ab_count++
+    }
+    if (ab_count > 0) {
+        print "sig: n/s=not significant, *=p<0.05 (heuristic)"
+    } else {
+        print "  insufficient data for A/B comparison"
+    }
+}
+' "$DATA_FILE"
+    exit 0
+fi
+
 python3 - "$DATA_FILE" "$@" <<'PY'
 import csv
 import os
