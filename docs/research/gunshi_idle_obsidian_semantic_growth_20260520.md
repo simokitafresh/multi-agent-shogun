@@ -1,13 +1,13 @@
 # Obsidian×セマンティックインデックス成長設計書
 
-## 現状 (2026-05-20計測)
+## 現状 (2026-05-20 23:30更新)
 
 | 指標 | 値 | 備考 |
 |------|---|------|
-| セマンティック概念数 | 40件 (35→+5) | 本セッションで5概念追加 |
-| [[リンク]]ユニークターゲット | 289件 | lessons/review_log/deepdive/reports全体 |
-| スクリプトカバレッジ | 37.7% (77/204) | 17.6%→37.7%。暗黒物質127件残 |
-| causal_backlinks利用回数 | 1回 (review_log言及) | --detail/--semantic拡張済み |
+| セマンティック概念数 | 44件 (35→40→44) | L7a 3バッチで概念+リソース拡充 |
+| [[リンク]]ユニークターゲット | 289件+ | lessons/review_log/deepdive/reports全体 |
+| スクリプトカバレッジ | 33.0% (77/233) | 3バッチ: 52→63→67→77。全スクリプト数204→233に増加 |
+| causal_backlinks利用回数 | L7c/L7e/SG-PRE21で自動利用開始 | --detail/--semantic拡張済み+自動消費4箇所 |
 | origin付き教訓 | 97件 (gunshi33+karo35+shogun29) | 全lessons [[リンク]]付き |
 
 ## 本セッション実施項目
@@ -56,8 +56,8 @@
 
 | Phase | 目標 | カバレッジ予測 |
 |-------|------|-------------|
-| Phase 1 (完了) | P0空白解消+causal_backlinks拡張 | 37.7% |
-| Phase 2 | P2 script_commons + P3 metrics | ~50% |
+| Phase 1 (完了) | P0空白解消+causal_backlinks拡張+L7a 3バッチ | 33.0%(77/233。全script増加で率低下) |
+| Phase 2 | P2 script_commons + P3 metrics + 暗黒物質156件削減 | ~50% |
 | Phase 3 | レビュー/配備フローにcausal_backlinks統合 | - |
 | Phase 4 | deploy_task.shにcmd因果背景Level 5注入 | - |
 
