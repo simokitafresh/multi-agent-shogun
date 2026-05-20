@@ -1803,6 +1803,16 @@ if stats:
 else:
     print("  SKIP: gate_fire_log直近30日データなし")
 
+# WARN Top3 (偽陽性温床の早期検出)
+warn_counts = defaultdict(int)
+for _ts, gate, result in entries:
+    if result == "WARN":
+        warn_counts[gate] += 1
+if warn_counts:
+    print("WARN発火Top3(直近30日):")
+    for gate, count in sorted(warn_counts.items(), key=lambda x: -x[1])[:3]:
+        print(f"  {gate}: {count}件")
+
 open_failures = defaultdict(list)
 for ts, gate, result in sorted(all_entries, key=lambda item: item[0]):
     if result == "FAIL":
