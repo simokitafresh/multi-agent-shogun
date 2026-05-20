@@ -1211,6 +1211,85 @@ collect_primary_cmd_targets() {
         | sort -u
 }
 
+_cmd_save_git_target_info() {
+    local target_path="${1:-}"
+    local abs_path repo_root rel_path base_dir
+    [[ -n "$target_path" ]] || return 1
+
+    if [[ "$target_path" = /* ]]; then
+        abs_path="$target_path"
+    else
+        abs_path="$PROJECT_DIR/$target_path"
+    fi
+
+    [[ -e "$abs_path" ]] || return 1
+
+    if [[ -d "$abs_path" ]]; then
+        base_dir="$abs_path"
+    else
+        base_dir="$(dirname "$abs_path")"
+    fi
+
+    repo_root="$(git -C "$base_dir" rev-parse --show-toplevel 2>/dev/null || true)"
+    [[ -n "$repo_root" ]] || return 1
+
+    rel_path="$(realpath --relative-to="$repo_root" "$abs_path" 2>/dev/null || true)"
+    [[ -n "$rel_path" ]] || return 1
+
+    printf '%s\t%s\n' "$repo_root" "$rel_path"
+}
+
+_cmd_save_target_keyword() {
+    local target_path="${1:-}"
+    local base stem
+    base="${target_path%/}"
+    base="${base##*/}"
+    [[ -n "$base" ]] || return 1
+    stem="${base%.*}"
+    if [[ -n "$stem" && "$stem" != "$base" ]]; then
+        printf '%s\n' "$stem"
+    else
+        printf '%s\n' "$base"
+    fi
+}
+
+show_target_path_git_history() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    local targets target_path git_info repo_root rel_path keyword history keyword_history
+    targets="$(collect_primary_cmd_targets || true)"
+    [[ -n "${targets//[[:space:]]/}" ]] || return 0
+
+    while IFS= read -r target_path; do
+        [[ -n "${target_path//[[:space:]]/}" ]] || continue
+
+        git_info="$(_cmd_save_git_target_info "$target_path" || true)"
+        if [[ -z "$git_info" ]]; then
+            echo "INFO: [TARGET_PATH_GIT] target_path git log: ${target_path} は存在しない、またはgit管理外のためスキップ" >&2
+            continue
+        fi
+
+        IFS=$'\t' read -r repo_root rel_path <<< "$git_info"
+        echo "INFO: [TARGET_PATH_GIT] target_path git log直近5件: ${rel_path}" >&2
+        history="$(git -C "$repo_root" log --oneline -5 -- "$rel_path" 2>/dev/null || true)"
+        if [[ -n "$history" ]]; then
+            printf '%s\n' "$history" | sed 's/^/  - /' >&2
+        else
+            echo "  - 履歴なし" >&2
+        fi
+
+        keyword="$(_cmd_save_target_keyword "$rel_path" || true)"
+        [[ -n "$keyword" ]] || continue
+        echo "INFO: [TARGET_PATH_GIT] keyword git log --all --grep直近5件: ${keyword}" >&2
+        keyword_history="$(git -C "$repo_root" log --all --oneline -5 --grep="$keyword" 2>/dev/null || true)"
+        if [[ -n "$keyword_history" ]]; then
+            printf '%s\n' "$keyword_history" | sed 's/^/  - /' >&2
+        else
+            echo "  - 履歴なし" >&2
+        fi
+    done <<< "$targets"
+}
+
 check_self_reread_red_flag() {
     local combined
 
@@ -3558,6 +3637,10 @@ PY
 }
 
 show_cmd_chronicle_matches
+
+# --- Check 11.11: target_path git履歴表示（informational — WARN_COUNTに加算しない） ---
+# 目的: target_pathの変更経緯を起票時に自動表示し、現物履歴未確認のままcmdを書く余地を減らす。
+show_target_path_git_history
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止

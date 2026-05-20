@@ -8,7 +8,10 @@ setup_file() {
     export SRC="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC" ] || return 1
     eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC")"
-    export -f collect_primary_cmd_targets
+    eval "$(sed -n '/^_cmd_save_git_target_info()/,/^}/p' "$SRC")"
+    eval "$(sed -n '/^_cmd_save_target_keyword()/,/^}/p' "$SRC")"
+    eval "$(sed -n '/^show_target_path_git_history()/,/^}/p' "$SRC")"
+    export -f collect_primary_cmd_targets _cmd_save_git_target_info _cmd_save_target_keyword show_target_path_git_history
 }
 
 @test "BDL-T001: assumptions内パスはバンドル対象外" {
@@ -135,4 +138,50 @@ YAML
     targets="$(collect_primary_cmd_targets || true)"
     count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
     [ "$count" -eq 0 ]
+}
+
+@test "TPG-T001: target_pathが存在する場合git log直近5件とkeyword grepをINFO表示" {
+    tmpdir="$(mktemp -d)"
+    export PROJECT_DIR="$tmpdir"
+    mkdir -p "$tmpdir/scripts"
+    git -C "$tmpdir" init >/dev/null 2>&1
+    git -C "$tmpdir" config user.email test@example.com
+    git -C "$tmpdir" config user.name tester
+    printf '#!/usr/bin/env bash\n' > "$tmpdir/scripts/cmd_save.sh"
+    git -C "$tmpdir" add scripts/cmd_save.sh
+    git -C "$tmpdir" commit -m "cmd_save initial" >/dev/null 2>&1
+    printf 'echo ok\n' >> "$tmpdir/scripts/cmd_save.sh"
+    git -C "$tmpdir" add scripts/cmd_save.sh
+    git -C "$tmpdir" commit -m "cmd_save update" >/dev/null 2>&1
+
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "強化 — cmd_save.sh修正"
+    target_path: scripts/cmd_save.sh
+YAML
+)"
+    export CMD_BLOCK_NC
+
+    run bash -c 'show_target_path_git_history 2>&1'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: [TARGET_PATH_GIT] target_path git log直近5件: scripts/cmd_save.sh"* ]]
+    [[ "$output" == *"cmd_save update"* ]]
+    [[ "$output" == *"INFO: [TARGET_PATH_GIT] keyword git log --all --grep直近5件: cmd_save"* ]]
+}
+
+@test "TPG-T002: target_pathが存在しない場合はエラーにせずスキップ" {
+    tmpdir="$(mktemp -d)"
+    export PROJECT_DIR="$tmpdir"
+    git -C "$tmpdir" init >/dev/null 2>&1
+
+    CMD_BLOCK_NC="$(cat <<'YAML'
+    title: "強化 — missing target"
+    target_path: scripts/missing.sh
+YAML
+)"
+    export CMD_BLOCK_NC
+
+    run bash -c 'show_target_path_git_history 2>&1'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: [TARGET_PATH_GIT] target_path git log: scripts/missing.sh は存在しない、またはgit管理外のためスキップ"* ]]
+    [[ "$output" != *"fatal:"* ]]
 }
