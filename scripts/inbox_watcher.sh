@@ -902,7 +902,7 @@ while true; do
     # Update mtime baseline for next MTIME_POLL iteration
     LAST_MTIME=$(stat -c %Y "$INBOX" 2>/dev/null || echo 0)
 
-    sleep 0.3
+    sleep 2  # coalesce rapid-fire events (e.g. screenshot+ntfy 1sec apart → single nudge)
 
     process_unread
     check_script_update "$AGENT_ID" "$PANE_TARGET"
