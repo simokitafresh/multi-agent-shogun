@@ -457,6 +457,14 @@ capture-paneバナー解析: モデル名+バージョン番号の精密パタ�
 - CSV→2D配列変換は`--json '{"values": [[row1...],[row2...]]}'`
 - 新規作成: `gws sheets spreadsheets create --json '{"properties":{"title":"..."}}'`
 
+**Gmail操作（cmd_2900, 2026-05-20）:**
+- 認証確認: `gws auth status`だけでログアウト判定するな。暗号化credentials検出漏れで`auth_method: none`でも実APIが通る場合あり。正判定は `gws gmail +triage --max 1 --format json` の成功確認（read-only、実測5.6秒）
+- triage: `gws gmail +triage --max 5 --query 'is:unread newer_than:7d' --format table` / ラベル付き確認は `gws gmail +triage --labels --max 10`
+- 検索: `gws gmail users messages list --params '{"userId":"me","q":"from:alerts@example.com is:unread","maxResults":10}'`。詳細取得は返却IDで `gws gmail users messages get --params '{"userId":"me","id":"MSG_ID","format":"metadata","metadataHeaders":"Subject"}'`
+- フィルタ一覧/取得/削除: `gws gmail users settings filters list --params '{"userId":"me"}'` / `gws gmail users settings filters get --params '{"userId":"me","id":"FILTER_ID"}'` / `gws gmail users settings filters delete --params '{"userId":"me","id":"FILTER_ID"}'`
+- フィルタ作成: `gws gmail users settings filters create --params '{"userId":"me"}' --json '{"criteria":{"from":"alerts@example.com","query":"subject:(deploy) newer_than:30d"},"action":{"addLabelIds":["Label_123"],"removeLabelIds":["INBOX"]}}'`。`removeLabelIds:["INBOX"]` がarchive相当。Gmail APIにfilter updateはないため、変更はdelete→create
+- メッセージ操作: 既読化は `gws gmail users messages modify --params '{"userId":"me","id":"MSG_ID"}' --json '{"removeLabelIds":["UNREAD"]}'`、archiveは `--json '{"removeLabelIds":["INBOX"]}'`、ラベル付与は `--json '{"addLabelIds":["Label_123"]}'`。破壊操作のdeleteではなく必要ならtrash系を優先
+
 **教訓(auto-ops由来、全PJ適用):**
 - L023/L027: Sheets取得は`spreadsheets values get --params`形式が正（+read旧式）
 - L028: Drive files get alt=media構文
