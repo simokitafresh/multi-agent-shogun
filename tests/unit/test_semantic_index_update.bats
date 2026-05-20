@@ -128,6 +128,18 @@ teardown() {
     ! grep -q 'ターゲット: \[\[成長ループ\]\]' "$TEST_TMPDIR/queue/insights.log"
 }
 
+@test "cmd origin nodes: aliases are checked and only unknown origin node queues insight" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2910","title":"セマンティクスインデックス","purpose":"GATE CLEAR origin自動成長","origin":"[[cmd_2908]] -> [[成長ループ]] -> [[origin_aliases_gap]]","depends_on":"[[unknown_depends_node]]"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
+
+    grep -q 'semantic_index_update未登録cmd originノード: \[\[origin_aliases_gap\]\]' "$TEST_TMPDIR/queue/insights.log"
+    ! grep -q 'cmd originノード: \[\[成長ループ\]\]' "$TEST_TMPDIR/queue/insights.log"
+    ! grep -q 'cmd originノード: \[\[cmd_2908\]\]' "$TEST_TMPDIR/queue/insights.log"
+    grep -c 'origin_aliases_gap' "$TEST_TMPDIR/queue/insights.log" | grep -qx '1'
+    grep -q 'semantic_index_update未登録\[\[リンク\]\]ターゲット: \[\[unknown_depends_node\]\]' "$TEST_TMPDIR/queue/insights.log"
+}
+
 @test "wiring: cmd_complete_gate, lesson_write, and log_terminal_input call semantic_index_update" {
     grep -q 'semantic_index_update.sh.*cmd_complete' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q 'CMD_YAML_FILE_ENV' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"

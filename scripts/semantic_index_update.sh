@@ -246,6 +246,15 @@ def extract_wiki_targets(fields):
             targets.append(target)
     return targets
 
+def extract_cmd_origin_targets(payload):
+    if source_type != "cmd_complete":
+        return []
+    raw = payload.get("origin")
+    if raw is None:
+        return []
+    fields = raw if isinstance(raw, list) else [raw]
+    return extract_wiki_targets(fields)
+
 def is_semantic_wiki_target(target):
     target_n = norm(target)
     if re.fullmatch(r"cmd_[a-z0-9_]+", target_n):
@@ -273,6 +282,18 @@ def queue_insight(message, priority="low"):
     else:
         print(f"WARN: insight_write not found: {insight_write}", file=sys.stderr)
         print(message)
+
+def queue_unregistered_target(target, concepts, message_prefix):
+    if not is_semantic_wiki_target(target):
+        return False
+    if norm(target) in known_terms:
+        return False
+    similar = format_similar_concepts(target, concepts)
+    queue_insight(
+        f"{message_prefix}: [[{target}]] は既存aliasesに一致なし。{similar}。概念定義とaliases追加を検討せよ",
+        "low",
+    )
+    return True
 
 def score_concept(concept, fields):
     normalized_fields = [norm(v) for v in fields if norm(v)]
@@ -425,16 +446,15 @@ if not concepts:
 
 fields = flatten_text(payload)
 known_terms = concept_terms(concepts)
+origin_targets_seen = set()
+for target in extract_cmd_origin_targets(payload):
+    origin_targets_seen.add(norm(target))
+    queue_unregistered_target(target, concepts, "semantic_index_update未登録cmd originノード")
+
 for target in extract_wiki_targets(fields):
-    if not is_semantic_wiki_target(target):
+    if norm(target) in origin_targets_seen:
         continue
-    if norm(target) in known_terms:
-        continue
-    similar = format_similar_concepts(target, concepts)
-    queue_insight(
-        f"semantic_index_update未登録[[リンク]]ターゲット: [[{target}]] は既存aliasesに一致なし。{similar}。概念定義とaliases追加を検討せよ",
-        "low",
-    )
+    queue_unregistered_target(target, concepts, "semantic_index_update未登録[[リンク]]ターゲット")
 
 rank = {"HIGH": 2, "LOW": 1, "NONE": 0}
 scored = []
