@@ -468,6 +468,31 @@ else
     echo "  SKIP: task YAML未取得"
 fi
 
+# ─── SG-PRE21: 因果辺照合(L7穴1対策: レビュー時の因果消費) ───
+echo ""
+echo "■ SG-PRE21: 因果辺照合(causal_backlinks)"
+if [ -n "${FILES_MODIFIED:-}" ]; then
+    _causal_script="$REPO_ROOT/scripts/causal_backlinks.sh"
+    if [ -f "$_causal_script" ]; then
+        _causal_out=""
+        for fpath in $FILES_MODIFIED; do
+            _stem=$(basename "$fpath" | sed 's/\.[^.]*$//')
+            _links=$(bash "$_causal_script" "$_stem" 2>/dev/null | head -3 || true)
+            [ -n "$_links" ] && _causal_out="${_causal_out}  ${_stem}→ ${_links}"$'\n'
+        done
+        if [ -n "$_causal_out" ]; then
+            echo "  因果辺あり(設計意図カタログ照合せよ):"
+            echo "$_causal_out" | head -10
+        else
+            echo "  PASS: 因果辺なし(causal_backlinks 0件)"
+        fi
+    else
+        echo "  SKIP: causal_backlinks.sh not found"
+    fi
+else
+    echo "  SKIP: files_modified empty"
+fi
+
 # ─── GATE_PREDICTION (自動計算) ───
 # PRE12b draft_lessons補正: engine.pyに未連携のためbash側で上書き
 if [ "${_draft_lessons_total:-0}" -gt 0 ]; then
