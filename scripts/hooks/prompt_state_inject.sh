@@ -151,6 +151,16 @@ record_shogun_growth_metrics() {
   } 9>"${metrics_file}.lock"
 }
 
+record_semantic_no_match_metric() {
+  local metrics_file="${PROMPT_STATE_SEMANTIC_NO_MATCH_FILE:-$SCRIPT_DIR/logs/semantic_no_match_metrics.log}"
+
+  mkdir -p "$(dirname "$metrics_file")"
+  {
+    flock 9
+    printf '%s\tsource=prompt_state_inject.sh\tagent_id=%s\tcount=1\n' "$timestamp" "$agent_id" >> "$metrics_file"
+  } 9>"${metrics_file}.lock"
+}
+
 detect_skill_triggers() {
   local skills_dir="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
   local projects_yaml="${PROMPT_STATE_PROJECTS_YAML:-$SCRIPT_DIR/config/projects.yaml}"
@@ -317,17 +327,31 @@ if len(matches) > 5:
 PY
 }
 
-# --- Semantic auto-injection (first-layer only, no LLM fallback) ---
-_prompt_state_semantic_inject() {
-  local _psi_query="${1:0:300}"
-  local _psi_search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
-  _psi_query="${_psi_query//$'\n'/ }"
-  [[ -z "${_psi_query// }" ]] && return 0
-  [[ -f "$_psi_search_cmd" ]] || return 0
-  SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
-    SEMANTIC_DISABLE_LLM=1 \
-    timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.30}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null || true
-}
+	# --- Semantic auto-injection (first-layer only, no LLM fallback) ---
+	_prompt_state_semantic_inject() {
+	  local _psi_query="${1:0:300}"
+	  local _psi_search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+	  local _psi_result _psi_rc
+	  _psi_query="${_psi_query//$'\n'/ }"
+	  [[ -z "${_psi_query// }" ]] && return 0
+	  [[ -f "$_psi_search_cmd" ]] || return 0
+	  set +e
+	  _psi_result="$(
+	    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
+	      SEMANTIC_DISABLE_LLM=1 \
+	      timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.30}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null
+	  )"
+	  _psi_rc=$?
+	  set -e
+	  if [[ "$_psi_rc" -eq 0 ]]; then
+	    printf '%s' "$_psi_result"
+	    return 0
+	  fi
+	  if [[ "$_psi_rc" -eq 1 ]]; then
+	    record_semantic_no_match_metric 2>/dev/null || true
+	  fi
+	  return 0
+	}
 
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
