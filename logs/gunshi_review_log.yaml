@@ -257,6 +257,8 @@
   timestamp: "2026-05-21T00:32:00"
 - cmd_id: cmd_2918
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   gate_result: CLEAR
   confidence: HIGH
@@ -269,6 +271,8 @@
   timestamp: "2026-05-21T00:39:00"
 - cmd_id: cmd_2919
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   gate_result: CLEAR
   confidence: HIGH
@@ -282,6 +286,8 @@
   timestamp: "2026-05-21T00:42:00"
 - cmd_id: cmd_2918
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
   findings_summary: "4観点OK。将軍gate NO_MATCH計測+100行。テスト38/38 PASS。commit 66e35d22"
@@ -294,6 +300,8 @@
   timestamp: "2026-05-21T00:45:00"
 - cmd_id: cmd_2919
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: saizo
   findings_summary: "4観点OK。hook NO_MATCHカウント記録テスト+23行。テスト53/53 PASS。commit e369070d"
@@ -306,6 +314,8 @@
   timestamp: "2026-05-21T00:51:00"
 - cmd_id: cmd_2920
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   gate_result: CLEAR
   confidence: HIGH
@@ -320,6 +330,8 @@
   timestamp: "2026-05-21T00:52:00"
 - cmd_id: cmd_2920
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
   findings_summary: "4観点OK。NO_MATCH purpose→pending aliases→L7f自動昇格接続+91行。テスト17/17 PASS。commit 2459d721"
@@ -332,6 +344,8 @@
   timestamp: "2026-05-21T00:57:00"
 - cmd_id: cmd_2921
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
   findings_summary: "4観点OK。SKILL.md 5件touch(mtime更新のみ)。gate WARN 0件。commit 92f3aa1d"
@@ -343,6 +357,8 @@
   timestamp: "2026-05-21T01:37:00"
 - cmd_id: cmd_2922
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   gate_result: CLEAR
   confidence: HIGH
@@ -356,6 +372,8 @@
   timestamp: "2026-05-21T01:38:00"
 - cmd_id: cmd_2922
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: LGTM
   report_ninja: saizo
   findings_summary: "4観点OK。semantic_stress_test.sh新規+480行。テスト21件PASS。commit 0d379733"

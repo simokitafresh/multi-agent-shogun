@@ -32,8 +32,8 @@ task:
   scope:
     - scripts/model_analysis.sh
     - docs/research/codd_refactor_registry.md
-  status: completed
-  parent_cmd: cmd_training_speed_tobisaru_5
+  status: idle
+  parent_cmd: 
   related_lessons: []
   related_lessons:
   - id: 'L512'

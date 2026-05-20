@@ -162,7 +162,7 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-04-19T00:40:00+09:00 |
+| verified_at | 2026-05-20 |
 | method | WebFetch(GitHub repo/commits/ACE_Framework.md) + WebSearch + WebFetch(arXiv/Medium) |
 | source | github.com/daveshap/ACE_Framework (commit履歴・archive状態確認), arxiv.org/abs/2310.06775 |
 | confidence | HIGH — GitHub直接確認。Stars/archive状態・最終commit日を原典で検証 |

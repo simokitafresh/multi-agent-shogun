@@ -504,7 +504,7 @@ lessons:
 - id: 'LS048'
   title: 'inbox処理=起動時と同じ態度で正しく深く読む'
   origin: '[[cmd_2922]] -> [[inbox_mark_read_before_processing]] -> [[sabori_spirit]] -> [[deepdive_phase4_no_survival_instinct]]'
-  detail: '01:32軍師提案をmark_readだけして中身を読まずcmd_2922を委任した。Guard 0d追加で解決しようとしたが殿指摘: 読み方の問題をコードで解決するのは逃げ。起動時deepdiveは1Phaseずつ読み自問し省略厳禁。inbox処理も同じ。全文読む→自分の作業にどう影響するか自問→影響あれば反映→反映後にmark_read。mark_readは対処の最後。読む前・対処前のmark_read禁止。Guard追加は読む態度が正しくなってから検討'
+  detail: "inbox処理=起動時と同じ態度で正しく深く読む。Read toolで全文読め。mark_readだけするな。殿教え: 正しい記憶=L7まで育てる。作業の本質=仕組みの概念を考え抽象と具象を極限まで磨く。ミスを認めろ=事実を最初に特定。全力を極限まで出して完璧にするのが最もイージーで近道。1つのミスからL1-L7貫通で埋め込む"
   source_cmd: 'cmd_2922'
   created_at: '2026-05-21'
   automated: true

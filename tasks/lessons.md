@@ -6363,3 +6363,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - gate_report_format.shのskill_execution_log非同期化でテストが即時読込→不在FAILになった。非同期処理のテストはポーリング待機(5秒/0.1秒間隔)で完了を確認してから検証。origin: [[cmd_karo_ci_fix_skill_log]] -> [[async_test_race]] -> [[polling_sync]]
+
+### L645: cmd_saveトリガー表示は行本文を出さず最小メタ情報に限定する
+- **日付**: 2026-05-20
+- **出典**: cmd_2898
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save_diagnosis_quality.bats]
+- **origin**: [[cmd_2898]]
+- **when**: 未設定
+- **how**: 未設定
+- BLOCK/WARNトリガーマップに該当行本文まで出すと、既存テストが禁止したい文字列(WARN累計昇格など)をサマリ経由で拾い、偽の再発に見える。将軍の修正行動に必要な情報はline/keyword/checkで足りるため、出力は最小メタ情報に限定する。

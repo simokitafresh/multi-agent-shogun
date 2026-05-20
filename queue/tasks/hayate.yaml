@@ -1,7 +1,7 @@
 task:
-  _ac_task_id: cmd_2909_exact
+  _ac_task_id: cmd_2913_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2909 (deployed 2026-05-20T21:48:54). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2913 (deployed 2026-05-21T01:41:22). Read from the beginning.
   ac_version: 88572c76
   cmd_id: cmd_training_speed_hayate_5
   engineering_preferences:
@@ -27,69 +27,56 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2909
+  parent_cmd: 
   project: infra
-  purpose: 家老と軍師が因果ネットワークの消費者でない(消費=忍者配備+将軍cmd保存の2箇所のみ)。家老startup gateに直近cmd関連の因果概念を表示し、家老も因果NWを消費する仕組みにする
+  purpose: cmd_2909のstartup gate表示は1回/セッション。家老がcmd受領時に毎回semantic_searchを実行し因果概念を表示することで消費頻度を大幅に向上させる
   scout_exempt: true
-  status: done
+  status: failed
   stop_for: []
-  target_path: scripts/gates/gate_karo_startup.sh
-  task_id: cmd_2909_exact
+  target_path: scripts/deploy_task.sh
+  task_id: cmd_2913_exact
   task_type: exact
   related_lessons:
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-  - id: 'L583'
-    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L097'
-    summary: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
-    detail: 'cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現'
-  - id: 'L314'
-    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
-    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
-  - id: 'L101'
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+  - id: 'L500'
+    summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
+    detail: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
   - id: 'L305'
     summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
     detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
+  - id: 'L630'
+    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
+    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
+  - id: 'L623'
+    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
+    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
+  - id: 'L070'
+    summary: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
+    detail: 'L171/172/666/901/942/943の6箇所がgrep ''^  フィールド名:''で2sp固定。archive_completed.sh(cmd_36'
+  - id: 'L101'
+    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L287'
+    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
   - id: 'L079'
     summary: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
     detail: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
-  - id: 'L574'
-    summary: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-    detail: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-  - id: 'L274'
-    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md"
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml"
-  recommended_skills:
-  - "hensei"
-  - "hensei-mixed"
-  - "hensei-opus"
-  - "karo-direct"
-  - "recon-dual"
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  - "switch-to-codex"
-  - "switch-to-opus"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
   related_causal_links:
-  - "[[L7_WHO]]"
-  - "[[karo_startup_gate]]"
-  - "[[semantic_concepts_consumption]]"
+  - "[[L7_WHO_frequency]]"
+  - "[[deploy_time_consumption]]"
+  - "[[startup_gate_once_per_session]]"
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -104,30 +91,32 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
-      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L097: cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現
-      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
-      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
+      - L500: Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'
       - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
+      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
+      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
+      - L070: L171/172/666/901/942/943の6箇所がgrep '^  フィールド名:'で2sp固定。archive_completed.sh(cmd_36
+      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
       - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed
-      - L574: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g
-      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '家老startup gateが稼働中cmdのtarget_pathからsemantic_searchを自動実行し、関連概念と因果辺を表示する'
+    - check: 'deploy_task.shがcmd配備時に対象cmdのtarget_pathからsemantic_searchを自動実行し、家老向けに因果概念+設計意図を表示する'
   - id: 'AC2'
     checks:
-    - check: '表示は既存semantic_search.shを呼び出す形で実装されている（新規検索エンジン不要）'
+    - check: '既存inject_semantic_concepts(L2600)のパターンを家老向けに横展開した実装である'
   - id: 'AC3'
     checks:
-    - check: 'テストで関連概念表示の動作が検証されている'
+    - check: 'テストでcmd配備時の因果概念表示が検証されている'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2909.yaml
-  report_path: 
+  report_filename: hayate_report_cmd_2913.yaml
+  report_path: queue/reports/hayate_report_cmd_2913.yaml
   bloom_level: 
+  deployed_at: "2026-05-21T01:41:59"
+  progress: "cancelled: task_halt received from karo; AC1 existing implementation confirmed by gunshi; trial change reverted in commit c40eef350f003a3de8acf63e55c1110f8510b4d5; report status=cancelled"

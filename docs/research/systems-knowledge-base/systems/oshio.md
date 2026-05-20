@@ -158,7 +158,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-04-19 |
+| verified_at | 2026-05-20 |
 | method | WebFetch (GitHub Releases/API) + WebFetch (Zenn profile) + WebSearch |
 | source | github.com/yohey-w/multi-agent-shogun releases, zenn.dev/shio_shoppaize, github.com/yohey-w/codd-dev |
 | baseline | docs/research/system-comparison-2026-03-13.md §2.5 |

@@ -169,6 +169,6 @@
 
 ## Verification
 
-- verified_at: 2026-04-19
+- verified_at: 2026-05-20
 - method: WebSearch("Claude Code 2026 changelog update") + WebFetch(GitHub releases, 公式ドキュメント, Anthropic Engineering)
 - source: github.com/anthropics/claude-code/releases, code.claude.com/docs/en/whats-new, code.claude.com/docs/en/agent-teams, www.anthropic.com/engineering/building-c-compiler

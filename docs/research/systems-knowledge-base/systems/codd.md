@@ -130,7 +130,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-04-19 |
+| verified_at | 2026-05-20 |
 | method | ローカルCLI実行確認 (`codd --version`) + context/codd.md精読 + oshio.md CoDD Changelogセクション参照 |
 | source | context/codd.md (ローカル一次資料) / github.com/yohey-w/codd-dev (repo確認) / zenn.dev/shio_shoppaize (記事群) |
 | notes | v1.9.3はcontext/codd.mdの2026-04-18時点cmd_2067調査より。bash非対応はmemory/tool_codd_lessons.mdで実証済み |

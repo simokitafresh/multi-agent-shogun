@@ -195,7 +195,7 @@ Claude Code (or 10 other hosts)
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-04-19T00:30:00+09:00 |
+| verified_at | 2026-05-20 |
 | method | WebFetch(GitHub README/CHANGELOG) + WebSearch(多メディア記事) |
 | source | github.com/garrytan/gstack (CHANGELOG 170+バージョン確認) |
 | confidence | HIGH — GitHub直接確認。Garry TanのX発言は検索結果引用(直接fetch不可) |

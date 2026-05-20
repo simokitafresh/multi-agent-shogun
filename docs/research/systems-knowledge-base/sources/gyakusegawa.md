@@ -167,6 +167,6 @@ A4: Coding Agentワークフロー総括 (2026-03-14)
 
 ## Verification
 
-- verified_at: 2026-04-19
+- verified_at: 2026-05-20
 - method: WebFetch (nyosegawa.com全記事一覧 + 各記事直接取得) + WebSearch ("逆瀬川 Claude Code 2026", "@gyakuse coding agent workflow 2026")
 - source: https://nyosegawa.com / https://x.com/gyakuse

@@ -140,7 +140,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-04-19T09:18:08+09:00 |
+| verified_at | 2026-05-20 |
 | method | ローカル一次資料読取 (`AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md`) + `git remote -v` + 件数確認 |
 | source | `AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md` |
 | notes | `context/cmd-chronicle.md` の `cmd_` 行数は 725、知識辞書の既存件数は `systems=7`, `sources=1` を確認 |
