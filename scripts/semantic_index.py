@@ -42,7 +42,7 @@ def parse_index(index_path: Path) -> list:
             right = "|".join(parts[2:-1]).strip()
             if left in {"属性", "------", "種別"} or right in {"値", "----------"}:
                 continue
-            if left in {"id", "label", "aliases", "skills"}:
+            if left in {"id", "label", "aliases", "skills", "related_concepts"}:
                 attrs[left] = right
             elif right:
                 resources.append((left, right))
@@ -59,6 +59,11 @@ def parse_index(index_path: Path) -> list:
                 "skills": [
                     item.strip()
                     for item in attrs.get("skills", "").split(",")
+                    if item.strip()
+                ],
+                "related_concepts": [
+                    item.strip().strip("`")
+                    for item in attrs.get("related_concepts", "").split(",")
                     if item.strip()
                 ],
                 "resources": resources,
@@ -110,6 +115,27 @@ def print_resources(concept: dict) -> None:
         print("- none")
 
 
+def print_related_concepts(concept: dict, concepts: list) -> None:
+    related_ids = concept.get("related_concepts", [])
+    if not related_ids:
+        return
+
+    by_id = {item["id"]: item for item in concepts}
+    printed = False
+    for related_id in related_ids:
+        related = by_id.get(related_id)
+        if not related:
+            continue
+        if not printed:
+            print("")
+            print("related_concepts:")
+            printed = True
+        print(f"## {related['id']} — {related['label']}")
+        print(f"aliases: {', '.join(related['aliases'])}")
+        print_resources(related)
+        print("")
+
+
 def main() -> None:
     index_path = Path(sys.argv[1])
     query = sys.argv[2].strip()
@@ -148,6 +174,8 @@ def main() -> None:
             print(f"matched: {', '.join(matched_terms)}")
             print(f"aliases: {', '.join(concept['aliases'])}")
             print_resources(concept)
+            if len(matches) == 1:
+                print_related_concepts(concept, concepts)
 
     elif mode == "render-llm-resources":
         llm_output_path = Path(mode_arg)

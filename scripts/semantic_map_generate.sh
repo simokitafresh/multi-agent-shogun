@@ -116,7 +116,7 @@ def parse_concepts(text):
             left, right = row.group(1).strip(), row.group(2).strip()
             if left in {"属性", "------", "種別"}:
                 continue
-            if left in {"id", "label", "aliases", "skills"}:
+            if left in {"id", "label", "aliases", "skills", "related_concepts"}:
                 attrs[left] = right
             elif left and right and left != "------":
                 resources.append((left, right))
