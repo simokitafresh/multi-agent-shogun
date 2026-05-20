@@ -256,9 +256,24 @@ check_inbox_watchers() {
     local agents
     read -ra agents <<< "$agents_str"
 
+    # 最適化: 9回のpgrep呼び出し(~150ms)を1回のps+awkで置換(~27ms)
+    # /inbox_watcher.sh の直後引数(argv[2])がエージェント名。shogun:agents.N との誤マッチを防ぐ。
+    declare -A _iw_pid_map
+    while IFS=' ' read -r _iw_pid _iw_agent; do
+        [[ -n "$_iw_pid" && -n "$_iw_agent" ]] || continue
+        [[ -d "/proc/${_iw_pid}" ]] || continue
+        _iw_pid_map["$_iw_agent"]="${_iw_pid_map[$_iw_agent]:-$_iw_pid}"
+    done < <(ps ax -o pid=,args= 2>/dev/null | awk '
+        /\/inbox_watcher\.sh [a-z]/{
+            for(i=1;i<=NF;i++){
+                if($i ~ /\/inbox_watcher\.sh$/){ if(i+1<=NF) print $1, $(i+1); break }
+            }
+        }
+    ' 2>/dev/null || true)
+
     for agent in "${agents[@]}"; do
-        # pgrep -f でエージェント名を含むinbox_watcherプロセスを検索
-        if find_live_daemon_pid "[i]nbox_watcher\.sh.*${agent}" "inbox_watcher.sh" >/dev/null; then
+        # マップ参照でpgrep不要(O(1))
+        if [[ -n "${_iw_pid_map[$agent]:-}" ]]; then
             # プロセス生存中でもhangしていないか確認
             _check_inbox_watcher_hang "$agent" || true
             continue

@@ -167,6 +167,15 @@ process_gate() {
     local exit_code=0
 
     output=$($gate_script 2>&1) || exit_code=$?
+    evaluate_gate_result "$gate_name" "$output" "$exit_code" "$extra_alert_exit" "$extra_alert_pattern"
+}
+
+evaluate_gate_result() {
+    local gate_name="$1"
+    local output="$2"
+    local exit_code="$3"
+    local extra_alert_exit="${4:-}"    # 追加ALERTとするexit code (e.g., "2")
+    local extra_alert_pattern="${5:-}" # 追加ALERTとするgrepパターン (e.g., "WARN:")
 
     # ALERT判定: exit_code=1 または出力に "ALERT:" を含む
     local is_alert=false
@@ -213,6 +222,14 @@ check_ci_red() {
     output=$(gh run list --repo simokitafresh/multi-agent-shogun --limit 3 --json conclusion,name,headBranch \
         --jq '.[] | select(.headBranch=="main") | .conclusion' 2>&1) || exit_code=$?
 
+    evaluate_ci_red_result "$output" "$exit_code"
+}
+
+evaluate_ci_red_result() {
+    local output="$1"
+    local exit_code="$2"
+    local gate_name="ci_red"
+
     if [ "$exit_code" -ne 0 ]; then
         echo "SKIP: ci_red — gh run list failed: $output"
         return 0
@@ -242,6 +259,42 @@ echo "=== gate_improvement_trigger.sh ==="
 echo "timestamp: $(date '+%Y-%m-%dT%H:%M:%S%z')"
 echo ""
 
+RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gate_improvement_trigger.XXXXXX")
+cleanup_run_dir() {
+    rm -rf "$RUN_DIR"
+}
+trap cleanup_run_dir EXIT
+
+run_check_async() {
+    local key="$1"
+    shift
+    (
+        set +e
+        "$@" > "$RUN_DIR/${key}.out" 2>&1
+        printf '%s\n' "$?" > "$RUN_DIR/${key}.rc"
+    ) &
+}
+
+read_check_output() {
+    local key="$1"
+    cat "$RUN_DIR/${key}.out" 2>/dev/null || true
+}
+
+read_check_rc() {
+    local key="$1"
+    local rc
+    rc=$(cat "$RUN_DIR/${key}.rc" 2>/dev/null || true)
+    if [[ "$rc" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$rc"
+    else
+        printf '127\n'
+    fi
+}
+
+# `gh run list`は外部待ちが支配的なため、I/O-heavyなgate直列実行の裏で先行取得する。
+run_check_async ci_red gh run list --repo simokitafresh/multi-agent-shogun --limit 3 --json conclusion,name,headBranch --jq '.[] | select(.headBranch=="main") | .conclusion'
+pid_ci_red=$!
+
 # (1) gate_lesson_health
 process_gate "lesson_health" "bash $GATES_DIR/gate_lesson_health.sh"
 
@@ -255,7 +308,8 @@ process_gate "context_freshness" "bash $GATES_DIR/gate_context_freshness.sh" "2"
 process_gate "p_average_freshness" "bash $GATES_DIR/gate_p_average_freshness.sh"
 
 # (5) CI赤
-check_ci_red
+wait "$pid_ci_red" || true
+evaluate_ci_red_result "$(read_check_output ci_red)" "$(read_check_rc ci_red)"
 
 # (6) Hook失敗検知 (cmd_1117)
 # logs/hook_failures.yamlに新規レコードがあれば穴検出3問を家老inboxに送信

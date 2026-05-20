@@ -25,15 +25,21 @@ session_start_ts=""
 session_start_date=""
 session_completed_cmds=0
 if [ -f "$LORD_CONV" ]; then
-  session_state="$(python3 - "$LORD_CONV" <<'PY'
+  mapfile -t _conv_data < <(python3 - "$LORD_CONV" "$ROOT_DIR/projects" <<'PY'
 import datetime as dt
+import glob
 import json
+import os
 import re
 import sys
 
-path = sys.argv[1]
+conv_path = sys.argv[1]
+projects_dir = sys.argv[2]
+
+# Parse file once
 entries = []
-with open(path, encoding="utf-8") as f:
+bad_lines = 0
+with open(conv_path, encoding="utf-8") as f:
     for raw in f:
         raw = raw.strip()
         if not raw:
@@ -41,15 +47,18 @@ with open(path, encoding="utf-8") as f:
         try:
             parsed = json.loads(raw)
         except json.JSONDecodeError:
+            bad_lines += 1
             continue
         if isinstance(parsed, dict):
             entries.append(parsed)
 
+# session_state: find last session_summary
 session_start = ""
 for entry in entries:
     if entry.get("direction") == "session_summary" and entry.get("ts"):
         session_start = str(entry["ts"])
 
+# completed cmds after session_start
 cmds = set()
 completion_words = ("GATE CLEAR", "委任完了", "完了", "PASS")
 for entry in entries:
@@ -63,18 +72,69 @@ for entry in entries:
         continue
     cmds.update(re.findall(r"cmd_[0-9]+", text))
 
-date = ""
-if session_start:
-    date = session_start[:10]
-if not date:
-    date = dt.datetime.now().astimezone().date().isoformat()
+date = session_start[:10] if session_start else dt.datetime.now().astimezone().date().isoformat()
+
+# check5: conv health
+inbound = [
+    entry for entry in entries
+    if entry.get("direction") == "inbound"
+    and (not session_start or entry.get("ts", "") >= session_start)
+]
+last_inbound = inbound[-1].get("ts", "none") if inbound else "none"
+
+# check10: decision check
+keywords = ("裁定", "決裁", "決定", "方針", "承認", "却下")
+decision_count = 0
+latest_decision_ts = ""
+for entry in entries:
+    if entry.get("direction") != "inbound":
+        continue
+    text = " ".join(str(entry.get(k, "")) for k in ("detail", "content", "message", "text"))
+    if not any(keyword in text for keyword in keywords):
+        continue
+    decision_count += 1
+    ts = str(entry.get("ts", ""))
+    if ts and ts > latest_decision_ts:
+        latest_decision_ts = ts
+
+project_files = glob.glob(os.path.join(projects_dir, "*.yaml"))
+latest_project_mtime = 0.0
+latest_project_path = "none"
+for path in project_files:
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        continue
+    if mtime > latest_project_mtime:
+        latest_project_mtime = mtime
+        latest_project_path = os.path.basename(path)
+
+def parse_ts(value):
+    if not value:
+        return 0.0
+    normalized = value.replace("Z", "+00:00")
+    try:
+        return dt.datetime.fromisoformat(normalized).timestamp()
+    except ValueError:
+        return 0.0
+
+latest_decision_epoch = parse_ts(latest_decision_ts)
+latest_project_iso = "none"
+if latest_project_mtime:
+    latest_project_iso = dt.datetime.fromtimestamp(latest_project_mtime, dt.timezone.utc).astimezone().isoformat(timespec="seconds")
+
+needs_update = decision_count > 0 and (not latest_project_mtime or latest_project_mtime < latest_decision_epoch)
+
+# Output 3 lines
 print(f"{session_start}|{date}|{len(cmds)}")
+print(f"{len(inbound)}|{last_inbound}|{session_start or 'none'}|{bad_lines}")
+print(f"{decision_count}|{latest_decision_ts or 'none'}|{latest_project_iso}|{latest_project_path}|{1 if needs_update else 0}|{bad_lines}")
 PY
-)"
-  session_start_ts="${session_state%%|*}"
-  session_state_rest="${session_state#*|}"
-  session_start_date="${session_state_rest%%|*}"
-  session_completed_cmds="${session_state_rest#*|}"
+)
+  session_start_ts="${_conv_data[0]%%|*}"
+  _ss_rest="${_conv_data[0]#*|}"
+  session_start_date="${_ss_rest%%|*}"
+  session_completed_cmds="${_ss_rest#*|}"
 fi
 if [ -z "$session_start_date" ]; then
   session_start_date=$(TZ=Asia/Tokyo date +%Y-%m-%d)
@@ -246,37 +306,7 @@ fi
 conv_status="OK"
 conv_detail=""
 if [ -f "$LORD_CONV" ]; then
-  conv_result="$(python3 - "$LORD_CONV" <<'PY'
-import json
-import sys
-
-path = sys.argv[1]
-entries = []
-bad_lines = 0
-with open(path, encoding="utf-8") as f:
-    for line in f:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entries.append(json.loads(line))
-        except json.JSONDecodeError:
-            bad_lines += 1
-
-session_start = ""
-for entry in entries:
-    if entry.get("direction") == "session_summary" and entry.get("ts"):
-        session_start = entry["ts"]
-
-inbound = [
-    entry for entry in entries
-    if entry.get("direction") == "inbound"
-    and (not session_start or entry.get("ts", "") >= session_start)
-]
-last_inbound = inbound[-1].get("ts", "none") if inbound else "none"
-print(f"{len(inbound)}|{last_inbound}|{session_start or 'none'}|{bad_lines}")
-PY
-)"
+  conv_result="${_conv_data[1]:-0|none|none|0}"
   inbound_session="${conv_result%%|*}"
   conv_rest="${conv_result#*|}"
   last_inbound_ts="${conv_rest%%|*}"
@@ -308,9 +338,11 @@ uncommitted_count=0
 uncommitted_files=""
 if command -v git &>/dev/null && git -C "$ROOT_DIR" rev-parse --git-dir &>/dev/null; then
   # Staged + unstaged modified + untracked (excluding queue/ logs/ etc.)
-  # WSL2 NTFS最適化: フルスキャン(1.7s)→パス限定(0.2s)。除外grepチェーンも不要に
-  uncommitted_files=$(git -C "$ROOT_DIR" status --porcelain -- scripts/ instructions/ config/ context/ CLAUDE.md 2>/dev/null \
-    | head -20)
+  # WSL2 NTFS最適化: git diff HEAD(~0.82s) + ls-files --others は git status --porcelain(~1.1s)より速い
+  uncommitted_files=$(
+    { git -C "$ROOT_DIR" diff HEAD --name-only -- scripts/ instructions/ config/ context/ CLAUDE.md;
+      git -C "$ROOT_DIR" ls-files --others --exclude-standard -- scripts/ instructions/ config/ context/ CLAUDE.md; } 2>/dev/null | head -20
+  )
   uncommitted_count=$(echo "$uncommitted_files" | grep -c '[^ ]' || true)
 fi
 echo "[6.未commit] ${uncommitted_count}件"
@@ -321,7 +353,7 @@ if [ "$uncommitted_count" -gt 0 ]; then
   fi
   # INFO扱い（WARNではない。運用ファイルの変更は常にある）
   # ただしscripts/やcontext/の変更はWARN
-  critical_uncommitted=$(echo "$uncommitted_files" | grep -cE '^\s*[MADR?]+\s+(scripts/|context/|instructions/)' || true)
+  critical_uncommitted=$(echo "$uncommitted_files" | grep -cE '^(scripts/|context/|instructions/)' || true)
   if [ "$critical_uncommitted" -gt 0 ]; then
     echo "  ⚠ scripts/context/instructions配下に未commit変更あり(${critical_uncommitted}件)"
     issues=$((issues + 1))
@@ -524,70 +556,7 @@ echo "[9.強くてニューゲーム] 今クリアされても次の将軍はこ
 decision_status="OK"
 decision_detail="裁定キーワードinbound=0件"
 if [ -f "$LORD_CONV" ]; then
-  decision_result="$(python3 - "$LORD_CONV" "$ROOT_DIR/projects" <<'PY'
-import datetime as dt
-import glob
-import json
-import os
-import sys
-
-conv_path = sys.argv[1]
-projects_dir = sys.argv[2]
-keywords = ("裁定", "決裁", "決定", "方針", "承認", "却下")
-
-decision_count = 0
-latest_decision_ts = ""
-bad_lines = 0
-with open(conv_path, encoding="utf-8") as f:
-    for line in f:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            bad_lines += 1
-            continue
-        if entry.get("direction") != "inbound":
-            continue
-        text = " ".join(str(entry.get(k, "")) for k in ("detail", "content", "message", "text"))
-        if not any(keyword in text for keyword in keywords):
-            continue
-        decision_count += 1
-        ts = str(entry.get("ts", ""))
-        if ts and ts > latest_decision_ts:
-            latest_decision_ts = ts
-
-project_files = glob.glob(os.path.join(projects_dir, "*.yaml"))
-latest_project_mtime = 0.0
-latest_project_path = "none"
-for path in project_files:
-    try:
-        mtime = os.path.getmtime(path)
-    except OSError:
-        continue
-    if mtime > latest_project_mtime:
-        latest_project_mtime = mtime
-        latest_project_path = os.path.basename(path)
-
-def parse_ts(value):
-    if not value:
-        return 0.0
-    normalized = value.replace("Z", "+00:00")
-    try:
-        return dt.datetime.fromisoformat(normalized).timestamp()
-    except ValueError:
-        return 0.0
-
-latest_decision_epoch = parse_ts(latest_decision_ts)
-latest_project_iso = "none"
-if latest_project_mtime:
-    latest_project_iso = dt.datetime.fromtimestamp(latest_project_mtime, dt.timezone.utc).astimezone().isoformat(timespec="seconds")
-
-needs_update = decision_count > 0 and (not latest_project_mtime or latest_project_mtime < latest_decision_epoch)
-print(f"{decision_count}|{latest_decision_ts or 'none'}|{latest_project_iso}|{latest_project_path}|{1 if needs_update else 0}|{bad_lines}")
-PY
-)"
+  decision_result="${_conv_data[2]:-0|none|none|none|0|0}"
   decision_count="${decision_result%%|*}"
   decision_rest="${decision_result#*|}"
   latest_decision_ts="${decision_rest%%|*}"
