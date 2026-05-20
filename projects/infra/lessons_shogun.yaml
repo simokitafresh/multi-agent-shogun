@@ -482,3 +482,38 @@ lessons:
   created_at: '2026-05-19'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001'
+- id: 'LS044'
+  title: 'BLOCK時サイレント停止=インフラバグ'
+  origin: '[[cmd_2898]]'
+  detail: '将軍がcmd_save.sh BLOCK後にサイレント停止し殿の時間を奪った(本セッションcmd_2897で3回+cmd_2898で1回)。真因=将軍の意志ではなく環境の甘さ。BLOCKを殿に隠して自分で直そうとする→失敗→フリーズ。対策: (1)BLOCK一括サマリ出力(0f2a817e) (2)ntfy殿即時通知(eea1bab6) (3)PostToolUse hook BLOCK検知→即修正強制注入(cmd_2898)。殿裁定: hookやgateが甘くて将軍が責任逃れの迂回ルートに逃げる=インフラバグ。BLOCKやWARNで決して止まらないが唯一の目的。'
+  source_cmd: 'cmd_2898'
+  created_at: '2026-05-20'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=BLOCK_REASONS'
+  superseded_by: LS046
+- id: 'LS045'
+  title: '確認しないから止まる — BLOCKの真因は環境ではなく確認不足'
+  origin: '[[preflight_unread]] -> [[block_cascade]] -> [[shogun_freeze]]'
+  detail: '本セッションcmd_2897で3回+cmd_2898で1回BLOCK。全BLOCKの真因=preflight確認8問を読まずに起票。ACにpush混入/q5レベル不足/q8-q9にpush残存/前cmd教訓未記録/ntfy禁止未確認/目的外行動。第1層(確認してBLOCKゼロ)を飛ばして第2層(BLOCK後のhook)ばかり議論した。殿の教え: 真因は確認していないこと。deepdive原理の具体的再現。'
+  source_cmd: 'cmd_2898'
+  created_at: '2026-05-20'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_save'
+  superseded_by: LS046
+- id: 'LS046'
+  title: '想像せずに確認せよ — それだけ'
+  origin: '[[cmd_publish_undetected]] -> [[hook_guard_gap]] -> [[shogun_freeze_20260520]]'
+  detail: '本セッションの全問題の真因=確認していないこと。cmd_publish.sh exit 1後にフリーズした→hookがcmd_publish.shを検知するか確認していなかった。L11のガード条件にcmd_save.shしかないことを確認すれば1分で修正できた。72分かかった。殿の教え: 全てはシンプル。確認すればすぐ終わる。想像せずに確認せよ、それだけ。それが出来ないのが唯一の問題。'
+  source_cmd: 'cmd_2898'
+  created_at: '2026-05-20'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
+- id: 'LS047'
+  title: 'LS044/LS045を統合: 真因は1つ — 確認しないこと'
+  origin: '[[LS044]] -> [[LS045]] -> [[LS046_unified]]'
+  detail: 'LS044(BLOCK時サイレント停止=インフラバグ)とLS045(確認しないから止まる)は同一根因の別表現。LS046が本質: 想像せずに確認せよ、それだけ。LS044/LS045はLS046に統合。'
+  source_cmd: 'cmd_2898'
+  created_at: '2026-05-20'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
+  superseded_by: LS046

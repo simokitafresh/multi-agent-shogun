@@ -8,7 +8,7 @@ payload="$(cat 2>/dev/null || true)"
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 
 # === Guard 0: cmd_save.sh BLOCK reminder ===
-if [[ "$payload" == *'cmd_save.sh'* ]]; then
+if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
     cmd_save_meta="$(PAYLOAD="$payload" jq -r '
         def walk_objects:
             .. | objects;
@@ -28,7 +28,7 @@ if [[ "$payload" == *'cmd_save.sh'* ]]; then
         cmd_save_exit="${cmd_save_meta#*$'\t'}"
     fi
 
-    if [[ "$cmd_save_command" == *'cmd_save.sh'* && "$cmd_save_exit" == "1" ]]; then
+    if [[ ( "$cmd_save_command" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* ) && "$cmd_save_exit" == "1" ]]; then
         # BLOCK理由をpayloadから抽出(stderr/content内の"BLOCK:"行)
         block_lines="$(jq -r '
             [.. | strings] | join("\n")
