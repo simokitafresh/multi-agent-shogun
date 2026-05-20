@@ -92,7 +92,7 @@ _set_cmd_block_nc() {
     [[ "$output" == *"check=check_ac_phase_mixing"* ]]
 }
 
-@test "同一AC内に実装とcommitが共起するとWARNが発火する(TP)" {
+@test "同一AC内に実装とcommitが共起してもWARNしない(FP修正)" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
       check: '追加してgit commitする'"
@@ -110,9 +110,29 @@ _set_cmd_block_nc() {
         printf "WARN_REASONS=%s\n" "${WARN_REASONS[*]}"
     '
     echo "$output" >&2
-    [[ "$output" == *"WARN: ACフェーズ混在を検出"* ]]
-    [[ "$output" == *"WARN_COUNT=1"* ]]
-    [[ "$output" == *"check=check_ac_phase_mixing"* ]]
+    [[ "$output" != *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "同一AC内に実装とコミットが共起してもWARNしない(FP修正)" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - id: AC1
+      check: '追加してコミットする'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_message()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^record_warn_reason()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_phase_mixing()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        declare -a WARN_REASONS=()
+        check_ac_phase_mixing
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
 }
 
 @test "実装のみのACはWARNしない" {

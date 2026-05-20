@@ -4826,7 +4826,7 @@ check_ac_phase_mixing() {
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
         if (lt !~ /実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce/) return
         if (lt ~ /cdp|計測|測定|実測|measure|measurement|benchmark|ベンチ/ ||
-            lt ~ /commit|push|deploy|コミット|デプロイ/) { print "FOUND" }
+            lt ~ /push|deploy|デプロイ/) { print "FOUND" }
     }
     BEGIN { min_indent = -1; buf = "" }
     {
@@ -4848,16 +4848,16 @@ check_ac_phase_mixing() {
     local impl_hits measure_hits delivery_hits
     impl_hits="$(printf '%s\n' "$ac_block" | grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' || true)"
     measure_hits="$(printf '%s\n' "$ac_block" | grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' || true)"
-    delivery_hits="$(printf '%s\n' "$ac_block" | grep -inE 'commit|push|deploy|コミット|デプロイ' || true)"
+    delivery_hits="$(printf '%s\n' "$ac_block" | grep -inE 'push|deploy|デプロイ' || true)"
 
-    echo "WARN: ACフェーズ混在を検出。同一AC内に実装と計測/commit/deployが共起しています" >&2
+    echo "WARN: ACフェーズ混在を検出。同一AC内に実装と計測/deployが共起しています" >&2
     echo "  実装ACと後続フェーズACはcmdを分割せよ(cmd_2300教訓)" >&2
     echo "  実装側: $(printf '%s\n' "$impl_hits" | head -n 2 | tr '\n' ' ')" >&2
     if [[ -n "$measure_hits" ]]; then
         echo "  計測側: $(printf '%s\n' "$measure_hits" | head -n 2 | tr '\n' ' ')" >&2
     fi
     if [[ -n "$delivery_hits" ]]; then
-        echo "  commit/deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
+        echo "  deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
     fi
     # Level5: フェーズ分割テンプレート提案
     echo "  ─── 分割案(コピペ用) ───" >&2
@@ -4907,7 +4907,7 @@ check_db_backup_ac_warn
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL
-# 目的: 実装フェーズと計測/commit/deployフェーズの同居を検出し、cmd分割を促す
+# 目的: 実装フェーズと計測/deployフェーズの同居を検出し、cmd分割を促す
 check_ac_phase_mixing
 
 # --- Check 21.6: ACテストスコープ検証（WARN） ---
