@@ -22,7 +22,8 @@ setup() {
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 共通概念 |
+| related_concepts | growth_loop |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -35,7 +36,8 @@ setup() {
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 共通概念 |
+| related_concepts | semantic_dictionary_design |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -56,8 +58,31 @@ teardown() {
     [[ "$output" == *"## semantic_dictionary_design — セマンティック辞書構想"* ]]
     [[ "$output" == *"matched: 意味検索"* ]]
     [[ "$output" == *"docs/research/semantic_index_design.md"* ]]
+    [[ "$output" == *"related_concepts:"* ]]
+    [[ "$output" == *"## growth_loop — 学習ループ"* ]]
+    [[ "$output" == *"context/growth-loop.md"* ]]
     [[ "$output" == *"- url: \`https://github.com/example/semantic-index-reference\`"* ]]
     [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "first layer expands related concept resources only for a single concept match" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"related_concepts:"* ]]
+    [[ "$output" == *"## growth_loop — 学習ループ"* ]]
+    [[ "$output" == *"- file: \`context/growth-loop.md\`"* ]]
+    [ "$(grep -c '^## semantic_dictionary_design' <<< "$output")" -eq 1 ]
+    [[ "$output" != *"should-not-run"* ]]
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "共通概念"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"## semantic_dictionary_design — セマンティック辞書構想"* ]]
+    [[ "$output" == *"## growth_loop — 学習ループ"* ]]
+    [[ "$output" != *"related_concepts:"* ]]
 }
 
 @test "unmatched first layer falls back to LLM and resolves resources" {
