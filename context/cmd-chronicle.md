@@ -693,3 +693,5 @@
 | cmd_2894 | cmd_2892偵察の10件は5%。196ファイル中62ファイル(32%)が1-3テストの小ファイルで同一スクリプトのテストが分散。スクリプト単位で統合し196→推定130ファイルに圧縮する | infra | 05-19 | 1-3件の小規模Bats 51ファイルを6本のスクリプト単位 |
 | cmd_2895 | テスト196ファイル蓄積の根因=追加時にファイル粒度ガイドラインなし。追加test_*.bats作成時に同一対象スクリプトの既存テストファイルを検出→統合を促しファイル肥大化を構造的に防止する | infra | 05-19 | pre-commitで新規tests/unit/test_* |
 | cmd_2897 | ac_phase_mixing FP率100%(3/3)。commitは忍者の通常完了動作であり実装ACに書くのが自然。deliveryキーワードからcommit/コミットを除外し偽陽性を根絶する | infra | 05-20 | cmd_save.shのAC phase mixing de |
+| cmd_2898 | 将軍がcmd_save BLOCK後にフリーズする根因=どの行のどのキーワードがBLOCKを引き起こしたか不明で1箇所ずつ修正→再BLOCK→探す→修正の繰り返し。全BLOCK要因を一括表示し1回の修正で全解消できるようにする | infra | 05-20 | cmd_save.shのBLOCK/WARN終了サマリにチェ |
+| cmd_2900 | gws CLIのGmail操作知識がcontext/infrastructure.mdに不足。auth statusが暗号化credentialsを検出できないバグがあり、将軍がログアウトと誤判断→殿に無駄なブラウザ認証を依頼した。実APIで確認すれば1秒で動くことを確認できた。知識不足が確認不足を招く構造を修正する | infra | 05-20 | context/infrastructure.md §gws |

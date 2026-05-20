@@ -17,6 +17,14 @@
 | LS046 | 想像せずに確認せよ — それだけ | 記録済み | 本セッション全問題の真因=確認していないこと。殿教え |
 | 知識辞書 | 11件stale→全fresh | 完了 | 31日stale解消 |
 | CI | RED→GREEN→push 22件 | GREEN | 半蔵CI修正→push完了 |
+| 修行R1 | CoDD速度改善6名配備 | 全完了 | kagemaru 250→200ms, tobisaru 415→172ms, kotaro 1.63→1.10s, hanzo 236→95ms |
+| 修行R2 | 軽量3AC速度改善5名 | 全完了 | kagemaru 11.04→0.85s(-92%), hayate 19.47→5.52s(-72%), hanzo 2.23→0.89s(-60%), kotaro 1.95→0.47s(-76%), tobisaru model_analysis 28→1.1s(-96%) |
+| cmd_2897 | ac_phase_mixing FP根絶 | GATE CLEAR | saizo完了。commit/コミットをdelivery判定から除外 |
+| cmd_2898 | BLOCK全量マップ | GATE CLEAR | hayate完了。トリガーワード位置マップ一括出力 |
+| cmd_2899 | SKILL.md追従10件 | GATE CLEAR | kagemaru完了。12ファイル更新。WARN 0件 |
+| Guard 3 | halt/clear停止検証BLOCK化 | 実装済み | 送信→CTX記録→次Bash時CTX検証→未低下ならBLOCK。迂回不可 |
+| §0.1問い7 | 指示即実行。聞き返すな | 追加済み | 殿の時間を奪う行為の根因対策 |
+| LK013 | STALL再配備前3点確認 | 登録済み | pane+nudge到達+遅延到達の全確認必須 |
 
 ## 2026-05-19
 
