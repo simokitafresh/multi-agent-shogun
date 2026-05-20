@@ -2724,6 +2724,7 @@ inject_semantic_concepts() {
     # L7穴2: 家老が配備時に因果概念を毎回消費する(startup gateは/clear後のみで低頻度)
     echo "INFO: [SEMANTIC_CONTEXT] 配備cmd関連概念:" >&2
     printf '%s\n' "$matches" | sed 's/^/  /' >&2
+    show_karo_target_semantic_context "$target_path"
     local _causal_script="${SCRIPT_DIR}/scripts/causal_backlinks.sh"
     if [ -f "$_causal_script" ]; then
         local _target_stem
@@ -2733,6 +2734,40 @@ inject_semantic_concepts() {
             _causal_out=$(bash "$_causal_script" "$_target_stem" 2>/dev/null | head -3 || true)
             [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
         fi
+    fi
+}
+
+show_karo_target_semantic_context() {
+    local target_path="${1:-}"
+    [ -n "${target_path//[[:space:]]/}" ] || return 0
+    [ "$target_path" != "none" ] || return 0
+
+    local semantic_script="${SCRIPT_DIR}/scripts/semantic_search.sh"
+    [ -f "$semantic_script" ] || return 0
+
+    local target_matches rc
+    if command -v timeout >/dev/null 2>&1; then
+        target_matches=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$semantic_script" "$target_path" 2>/dev/null) || rc=$?
+    else
+        target_matches=$(SEMANTIC_DISABLE_LLM=1 bash "$semantic_script" "$target_path" 2>/dev/null) || rc=$?
+    fi
+    rc="${rc:-0}"
+    [ "$rc" -eq 0 ] || return 0
+    [ -n "${target_matches//[[:space:]]/}" ] || return 0
+
+    echo "INFO: [TARGET_PATH_SEMANTIC] target_path関連概念/設計意図: ${target_path}" >&2
+    printf '%s\n' "$target_matches" | sed 's/^/  /' >&2
+
+    local causal_script="${SCRIPT_DIR}/scripts/causal_backlinks.sh"
+    [ -f "$causal_script" ] || return 0
+    local target_key target_causal
+    target_key="${target_path##*/}"
+    target_key="${target_key%.*}"
+    [ -n "${target_key//[[:space:]]/}" ] || return 0
+    target_causal=$(bash "$causal_script" --semantic "$target_key" 2>/dev/null | head -5 || true)
+    if [ -n "$target_causal" ]; then
+        echo "INFO: [TARGET_PATH_CAUSAL] target_path因果辺/設計意図: ${target_key}" >&2
+        printf '%s\n' "$target_causal" | sed 's/^/  → /' >&2
     fi
 }
 
