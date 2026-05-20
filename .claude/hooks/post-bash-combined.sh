@@ -29,7 +29,15 @@ if [[ "$payload" == *'cmd_save.sh'* ]]; then
     fi
 
     if [[ "$cmd_save_command" == *'cmd_save.sh'* && "$cmd_save_exit" == "1" ]]; then
-        msg=$'cmd_save.sh がBLOCK(exit 1)しました。\nWHY: gate未通過のcmdをpending/委任へ進めると、品質ゲートを迂回した配備になります。\nFIX: BLOCK理由を修正し、bash scripts/cmd_save.sh <cmd_id> を再実行してPASSを確認してから次へ進めてください。'
+        # BLOCK理由をpayloadから抽出(stderr/content内の"BLOCK:"行)
+        block_lines="$(jq -r '
+            [.. | strings] | join("\n")
+        ' 2>/dev/null <<< "$payload" | grep -E '^BLOCK:|^  [0-9]+\.' | head -10 || true)"
+        msg=$'★★★ cmd_save.sh BLOCK — 止まるな、全件修正して再実行せよ ★★★\n'
+        if [[ -n "$block_lines" ]]; then
+            msg+=$'\n'"$block_lines"$'\n'
+        fi
+        msg+=$'\n即修正→ bash scripts/cmd_save.sh <cmd_id> 再実行。PASSまで回せ。止まるな。'
         printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
         exit 0
     fi
