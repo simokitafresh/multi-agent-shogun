@@ -328,6 +328,17 @@ log_ok "CLI起動: ${cli_start_count}件"
 # ═══════════════════════════════════════════════════════════════
 log "Step 4: 全ペイン変数の正規化"
 
+# ─── Batch-read existing pane vars (1 tmux call replaces N×4 individual calls) ───
+declare -A _PANE_AGENT_ID _PANE_MODEL _PANE_GROUP _PANE_CLI
+while IFS=$'\t' read -r _pi _aid _mod _grp _cli; do
+    [[ -n "$_pi" ]] || continue
+    _PANE_AGENT_ID[$_pi]="$_aid"
+    _PANE_MODEL[$_pi]="$_mod"
+    _PANE_GROUP[$_pi]="$_grp"
+    _PANE_CLI[$_pi]="$_cli"
+done < <(tmux list-panes -t shogun:agents \
+    -F '#{pane_index}	#{@agent_id}	#{@model_name}	#{@agent_group}	#{@agent_cli}')
+
 for i in $(seq 0 "$LAST_IDX"); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
@@ -335,16 +346,19 @@ for i in $(seq 0 "$LAST_IDX"); do
     # CLI type
     cli_t=$(get_cli_type "$agent_id")
 
-    # モデル表示名
-    model_display=$(_resolve_model_display "$agent_id" "$p")
+    # モデル表示名 — use cached @model_name to avoid expensive detect_real_model
+    model_display="${_PANE_MODEL[$p]:-}"
+    if [[ -z "$model_display" ]]; then
+        model_display=$(_resolve_model_display "$agent_id" "$p")
+    fi
     agent_group=$(_resolve_agent_group "$agent_id" "$cli_t" "$model_display")
 
     if [[ "$DRY_RUN" == true ]]; then
-        # 現在値と比較して差分を表示
-        cur_aid=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null || echo "")
-        cur_model=$(tmux show-options -p -t "shogun:agents.${p}" -v @model_name 2>/dev/null || echo "")
-        cur_group=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_group 2>/dev/null || echo "")
-        cur_cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "")
+        # 現在値と比較して差分を表示 (batch-read data, no per-pane tmux calls)
+        cur_aid="${_PANE_AGENT_ID[$p]:-}"
+        cur_model="${_PANE_MODEL[$p]:-}"
+        cur_group="${_PANE_GROUP[$p]:-}"
+        cur_cli="${_PANE_CLI[$p]:-}"
 
         changes=""
         [[ "$cur_aid" != "$agent_id" ]] && changes+=" @agent_id:${cur_aid:-empty}->${agent_id}"
