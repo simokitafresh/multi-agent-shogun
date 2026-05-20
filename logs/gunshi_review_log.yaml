@@ -254,6 +254,7 @@
   finding_categories: [assumptions, premortem]
   origin: "[[L7_holes]] -> [[gate_no_match_visibility]] -> [[lord_query_measurement]]"
   causal_chain: "将軍gateにNO_MATCH不可視→改善判断不能。追加→可視化。殿クエリログは承認必要=プライバシー"
+  cs_checklist: "CS1:OK(gate_shogun_startup.sh全量grep確認) CS2:OK(NO_MATCH 0件実測) CS3:OK(パス誤り現物指摘) CS4:OK(掲示板回答) CS5:OK(穴2自然検証=追加角度あり) CS6:OK(因果鎖記録)"
   timestamp: "2026-05-21T00:32:00"
 - cmd_id: cmd_2918
   review_type: draft

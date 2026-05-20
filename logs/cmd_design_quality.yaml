@@ -8,40 +8,6 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_save_warn"
-  timestamp: "2026-05-19T13:08:12Z"
-  notes: "計測研究cmd timeout_minutes未記入|check=check_timebox_minutes_required"
-- cmd_id: "cmd_9999"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-05-19T13:08:12Z"
-  diagnosis: "テスト計測用"
-  notes: "WARN累計昇格: 「計測研究cmd timeout_minutes未記入|check=check_timebox_minutes_required」が2回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_9999"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-05-19T13:08:16Z"
-  notes: "q6_not_hiding未記入|check=quality_gate_q6_not_hiding"
-- cmd_id: "cmd_9999"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
   timestamp: "2026-05-19T13:08:16Z"
   notes: "q7_definition_verified未記入|check=quality_gate_q7_definition_verified"
 - cmd_id: "cmd_9999"
@@ -2127,3 +2093,35 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-05-20T16:43:11Z"
+- cmd_id: "cmd_2924"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-20T17:26:10Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 軍師設計準拠+全フィールド記入+Guard一覧明示"
+  notes: "assumptions sourceのファイルパスが存在しません:"
+- cmd_id: "cmd_2924"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-20T17:26:57Z"
+- cmd_id: "cmd_2924"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-05-20T17:27:04Z"

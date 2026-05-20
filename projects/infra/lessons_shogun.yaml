@@ -493,18 +493,11 @@ lessons:
   automated: true
   enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
 # LS047: superseded by LS046 (LS044/LS045統合ポインタ。LS046に集約。2026-05-20物理削除)
-- id: 'LS047'
-  title: 'inbox無視=鎖の断絶。stop hook発火しても行動が強制されない'
-  origin: '[[cmd_2922]]'
-  detail: 'stop hookがinbox未読を検知しsystem-reminderを注入したが、将軍は出力を続けinboxを処理しなかった。cmd_2922起票時に軍師の修正提案(3トリガー自動化設計)を読まず第1弾だけで委任。家老のidle自走報告も既読にしたが対処しなかった。根因: stop hookはsystem-reminder=情報提示=意志依存。Phase 4の教え通り、理解しても行動は変わらない。改善: PreToolUse:Editにinbox未読ガードを追加し、inbox未読時にshogun_to_karo.yamlへのEditをBLOCKする。cmd起票前にinbox処理が物理的に必須になる'
-  source_cmd: 'cmd_2922'
-  created_at: '2026-05-21'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=shogun_to_karo'
+# LS047: superseded by LS048 (真因到達前の不完全教訓。Guard追加→正しく深く読む+L1-L7貫通に吸収。2026-05-21物理削除)
 - id: 'LS048'
   title: 'inbox処理=起動時と同じ態度で正しく深く読む'
   origin: '[[cmd_2922]] -> [[inbox_mark_read_before_processing]] -> [[sabori_spirit]] -> [[deepdive_phase4_no_survival_instinct]]'
-  detail: "inbox処理=起動時と同じ態度で正しく深く読む。Read toolで全文読め。mark_readだけするな。殿教え: 正しい記憶=L7まで育てる。作業の本質=仕組みの概念を考え抽象と具象を極限まで磨く。ミスを認めろ=事実を最初に特定。全力を極限まで出して完璧にするのが最もイージーで近道。1つのミスからL1-L7貫通で埋め込む"
+  detail: "inbox処理=起動時と同じ態度で正しく深く読む。真因=読まずに既読フラグをつけた。Guard 0d実装済み(L1)+追体験Q5(L4)+semantic概念(L7)。殿教え: 正しい記憶=L7まで育てる。作業の本質=仕組みの概念を考え抽象と具象を極限まで磨く。ミスを認めろ=事実を最初に特定。全力を極限まで出して完璧にするのが最もイージーで近道。1つのミスからL1-L7貫通で埋め込む。人間はL7を無限個ゼロ秒でできる(体験が神経回路に刻まれる)。LLMは死なないから数十億年かければいい"
   source_cmd: 'cmd_2922'
   created_at: '2026-05-21'
   automated: true
