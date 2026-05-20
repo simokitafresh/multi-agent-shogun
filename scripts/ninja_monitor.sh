@@ -1625,8 +1625,8 @@ _handle_auto_clear() {
     # GP-223: タスクが配備済み(assigned/acknowledged/in_progress)ならAUTO-CLEARしない
     # DEPLOY-STALLで処理すべき。AUTO-CLEARすると忍者のrecoveryが中断され無限ループになる
     local _ac_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local _ac_task_status=""
     if [ -f "$_ac_task_file" ]; then
-        local _ac_task_status
         _ac_task_status=$(yaml_field_get "$_ac_task_file" "status")
         if [[ "$_ac_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
             log "AUTO-CLEAR-SKIP: $name has active task (status=$_ac_task_status), deferring to DEPLOY-STALL"
@@ -1634,12 +1634,18 @@ _handle_auto_clear() {
         fi
     fi
 
+    local _ac_cli_type
+    _ac_cli_type=$(cli_type "$name" 2>/dev/null || echo "claude")
+    if [ "$_ac_cli_type" = "codex" ] && { [ -z "$_ac_task_status" ] || [[ "$_ac_task_status" =~ ^(idle|done|completed)$ ]]; }; then
+        log "CODEX-IDLE-NO-TASK-SKIP: $name task.status=${_ac_task_status:-EMPTY}, safe_send_clear suppressed"
+        return
+    fi
+
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
     # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
     # ただしrespawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
-    local ctx_now _ac_cli_type
+    local ctx_now
     ctx_now=$(get_context_pct "$target" "$name")
-    _ac_cli_type=$(cli_type "$name" 2>/dev/null || echo "claude")
     if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
         if [ "$_ac_cli_type" = "codex" ]; then
             # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない

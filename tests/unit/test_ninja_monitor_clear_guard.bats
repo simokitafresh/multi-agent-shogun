@@ -569,8 +569,8 @@ fi
     [[ "$output" == *"PASS: delegated pipeline work detected"* ]]
 }
 
-# AC1: Codex CTX=0% + respawn < 60s → CODEX-CTX0-SKIP (respawnしない)
-@test "codex respawn loop AC1: CTX=0% within 60s of last respawn → CODEX-CTX0-SKIP" {
+# AC1: Codex idle + no_task → safe_send_clearを呼ばない
+@test "codex respawn loop AC1: idle no_task suppresses safe_send_clear" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -608,10 +608,10 @@ export -f tmux
 
 _handle_auto_clear "hayate" 10000
 
-if grep -q "CODEX-CTX0-SKIP" "$LOG"; then
-    echo "PASS: CODEX-CTX0-SKIP logged"
+if grep -q "CODEX-IDLE-NO-TASK-SKIP" "$LOG"; then
+    echo "PASS: CODEX-IDLE-NO-TASK-SKIP logged"
 else
-    echo "FAIL: CODEX-CTX0-SKIP not logged"
+    echo "FAIL: CODEX-IDLE-NO-TASK-SKIP not logged"
     cat "$LOG"
     exit 1
 fi
@@ -624,12 +624,12 @@ else
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: CODEX-CTX0-SKIP logged"* ]]
+    [[ "$output" == *"PASS: CODEX-IDLE-NO-TASK-SKIP logged"* ]]
     [[ "$output" == *"PASS: no respawn triggered"* ]]
 }
 
-# AC2: Codex CTX=0% + respawn >= 60s → respawn発動
-@test "codex respawn loop AC2: CTX=0% after 60s of last respawn → respawn triggered" {
+# AC2: Codex idle + no_taskはrespawn経過時間に関係なくsafe_send_clearを呼ばない
+@test "codex respawn loop AC2: idle no_task suppresses safe_send_clear after 60s" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -667,23 +667,23 @@ export -f tmux
 
 _handle_auto_clear "hayate" 10000
 
-if ! grep -q "CODEX-CTX0-SKIP" "$LOG"; then
-    echo "PASS: CODEX-CTX0-SKIP not logged (elapsed >= 60s)"
+if grep -q "CODEX-IDLE-NO-TASK-SKIP" "$LOG"; then
+    echo "PASS: CODEX-IDLE-NO-TASK-SKIP logged"
 else
-    echo "FAIL: CODEX-CTX0-SKIP was logged unexpectedly"
+    echo "FAIL: CODEX-IDLE-NO-TASK-SKIP not logged"
     cat "$LOG"
     exit 1
 fi
 
-if [ "$RESPAWN_CALLED" -eq 1 ]; then
-    echo "PASS: respawn triggered"
+if [ "$RESPAWN_CALLED" -eq 0 ]; then
+    echo "PASS: no respawn triggered"
 else
-    echo "FAIL: safe_send_clear was not called"
+    echo "FAIL: safe_send_clear was called unexpectedly"
     cat "$LOG"
     exit 1
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: CODEX-CTX0-SKIP not logged"* ]]
-    [[ "$output" == *"PASS: respawn triggered"* ]]
+    [[ "$output" == *"PASS: CODEX-IDLE-NO-TASK-SKIP logged"* ]]
+    [[ "$output" == *"PASS: no respawn triggered"* ]]
 }
