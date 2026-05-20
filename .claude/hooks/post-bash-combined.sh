@@ -276,7 +276,20 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
     fi
 fi
 
-# === Guard: deploy_task.sh completion verification ===
+# === Guard 3: inbox_write/deploy後の確認強制 ===
+# 送信は確認ではない。結果を確認せよ(LK013: 2026-05-20全失敗の根因)
+if [[ "$payload" == *'inbox_write'* ]]; then
+    _iw_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    if [[ "$_iw_cmd" == *'inbox_write'* ]]; then
+        _iw_target="$(echo "$_iw_cmd" | grep -oP 'inbox_write\.sh\s+\K\S+' || true)"
+        if [[ -n "$_iw_target" && "$_iw_target" != "karo" && "$_iw_target" != "shogun" && "$_iw_target" != "gunshi" ]]; then
+            printf '%s' "★確認必須: ${_iw_target}のpaneをcapture-pane -S -30で確認し、nudgeが到達したか・作業を開始したかを目視確認せよ。送信≠確認。" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+            exit 0
+        fi
+    fi
+fi
+
+# === Guard 4: deploy_task.sh completion verification ===
 # deploy_task.sh実行後に「deployment complete」が出力に含まれるか検証
 # 含まれなければnudge未送信→配備不完全の警告(LK-A02 v7: 2026-05-17事故)
 if [[ "$payload" == *'deploy_task.sh'* ]]; then
@@ -286,6 +299,12 @@ if [[ "$payload" == *'deploy_task.sh'* ]]; then
     if [[ -n "$_deploy_output" ]] && [[ "$_deploy_output" != *"deployment complete"* ]]; then
         _warn_msg="⚠ deploy_task.sh出力に'deployment complete'が見つからない。nudge未送信の可能性。出力全文を確認し、必要なら手動nudge(inbox_write.sh)を送信せよ"
         printf '%s' "$_warn_msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+    else
+        # deployment complete でもnudge到達は別問題。pane確認を強制
+        _deploy_target="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" | grep -oP 'deploy_task\.sh\s+\K\S+' || true)"
+        if [[ -n "$_deploy_target" ]]; then
+            printf '%s' "★確認必須: ${_deploy_target}のpaneをcapture-pane -S -30で確認し、nudgeが到達し作業を開始したか目視確認せよ。deploy完了≠nudge到達。" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+        fi
     fi
 fi
 
