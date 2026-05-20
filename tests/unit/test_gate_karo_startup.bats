@@ -518,3 +518,49 @@ EOF
     [[ "$output" != *"軍師GP pending"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
 }
+
+@test "active cmd target_path → semantic_search concepts and causal edges displayed" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: in_progress
+  cmd_id: cmd_2909
+  target_path: scripts/gates/gate_karo_startup.sh
+YAML
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf 'query=%s\n' "$*" >> "$TEST_TMPDIR/logs/semantic_calls.log"
+cat <<'EOF'
+## gate_quality_framework — ゲート品質統合フレームワーク
+resources:
+- file: `scripts/gates/gate_karo_startup.sh`
+causal_expansion:
+- link: [[karo_startup_gate]]
+  - resource: context/karo-operations.md
+EOF
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    cat > "$TEST_TMPDIR/scripts/causal_backlinks.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf 'context/karo-operations.md\n'
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/causal_backlinks.sh"
+    export TEST_TMPDIR
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ 稼働中cmd関連因果概念"* ]]
+    [[ "$output" == *"hayate: cmd_2909 target_path=scripts/gates/gate_karo_startup.sh"* ]]
+    [[ "$output" == *"gate_quality_framework"* ]]
+    [[ "$output" == *"causal_expansion:"* ]]
+    [[ "$output" == *"causal_edges:"* ]]
+    [[ "$output" == *"[[karo_startup_gate]]"* ]]
+    [[ "$(cat "$TEST_TMPDIR/logs/semantic_calls.log")" == *"scripts/gates/gate_karo_startup.sh"* ]]
+}

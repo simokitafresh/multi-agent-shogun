@@ -44,6 +44,140 @@ phase_guide_cached() {
     tail -n +2 "$cache_file"
 }
 
+show_active_cmd_semantic_context() {
+    local semantic_script="$SCRIPT_DIR/scripts/semantic_search.sh"
+    local causal_script="$SCRIPT_DIR/scripts/causal_backlinks.sh"
+    local timeout_sec="${KARO_STARTUP_SEMANTIC_TIMEOUT:-5}"
+    local task_file ninja status cmd_id target_path semantic_output links link_id backlink_output rc active_count shown_count
+
+    echo "■ 稼働中cmd関連因果概念"
+    if [ ! -f "$semantic_script" ]; then
+        echo "  SKIP: scripts/semantic_search.sh 不在"
+        echo ""
+        return 0
+    fi
+
+    active_count=0
+    shown_count=0
+    for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+        task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+        [ -f "$task_file" ] || continue
+        IFS='|' read -r status cmd_id target_path < <(
+            awk '
+                function trim(s) {
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+                    gsub(/^["'\''"]|["'\''"]$/, "", s)
+                    return s
+                }
+                /^[[:space:]]*status:[[:space:]]*/ {
+                    v=$0
+                    sub(/^[[:space:]]*status:[[:space:]]*/, "", v)
+                    status=trim(v)
+                    next
+                }
+                /^[[:space:]]*cmd_id:[[:space:]]*/ {
+                    v=$0
+                    sub(/^[[:space:]]*cmd_id:[[:space:]]*/, "", v)
+                    cmd_id=trim(v)
+                    next
+                }
+                /^[[:space:]]*target_path:[[:space:]]*/ {
+                    v=$0
+                    sub(/^[[:space:]]*target_path:[[:space:]]*/, "", v)
+                    target_path=trim(v)
+                    next
+                }
+                END { printf "%s|%s|%s\n", status, cmd_id, target_path }
+            ' "$task_file" 2>/dev/null
+        )
+
+        [[ "$status" =~ ^(assigned|acknowledged|in_progress)$ ]] || continue
+        active_count=$((active_count + 1))
+        if [ -z "${target_path//[[:space:]]/}" ]; then
+            echo "  ${ninja}: ${cmd_id:-unknown} target_pathなし"
+            continue
+        fi
+
+        echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
+        if command -v timeout >/dev/null 2>&1; then
+            if semantic_output="$(
+                SEMANTIC_DISABLE_LLM=1 \
+                SEMANTIC_DISABLE_CAUSAL=1 \
+                SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
+                timeout "$timeout_sec" bash "$semantic_script" "$target_path" 2>&1
+            )"; then
+                rc=0
+            else
+                rc=$?
+            fi
+        else
+            if semantic_output="$(
+                SEMANTIC_DISABLE_LLM=1 \
+                SEMANTIC_DISABLE_CAUSAL=1 \
+                SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
+                bash "$semantic_script" "$target_path" 2>&1
+            )"; then
+                rc=0
+            else
+                rc=$?
+            fi
+        fi
+
+        if [ "$rc" -eq 0 ] && [ -n "${semantic_output//[[:space:]]/}" ]; then
+            shown_count=$((shown_count + 1))
+            printf '%s\n' "$semantic_output" | awk 'NR <= 60 { print "    " $0 } NR == 61 { print "    ..."; exit }'
+            if [ -f "$causal_script" ]; then
+                links="$(
+                    printf '%s\n' "$semantic_output" \
+                        | grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' 2>/dev/null \
+                        | sed 's/^\[\[//; s/\]\]$//' \
+                        | awk 'NF && !seen[$0]++' \
+                        | head -8 \
+                    || true
+                )"
+                if [ -n "${links//[[:space:]]/}" ]; then
+                    echo "    causal_edges:"
+                    while IFS= read -r link_id; do
+                        [ -n "$link_id" ] || continue
+                        echo "    - link: [[${link_id}]]"
+                        if command -v timeout >/dev/null 2>&1; then
+                            backlink_output="$(
+                                cd "$SCRIPT_DIR" \
+                                    && { timeout 1 bash "$causal_script" "$link_id" 2>/dev/null || true; } \
+                                    | head -5
+                            )"
+                        else
+                            backlink_output="$(
+                                cd "$SCRIPT_DIR" \
+                                    && { bash "$causal_script" "$link_id" 2>/dev/null || true; } \
+                                    | head -5
+                            )"
+                        fi
+                        if [ -n "$backlink_output" ]; then
+                            printf '%s\n' "$backlink_output" | sed 's/^/      - resource: /'
+                        else
+                            echo "      - resource: none"
+                        fi
+                    done <<< "$links"
+                fi
+            fi
+        elif [ "$rc" -eq 124 ]; then
+            echo "    SKIP: semantic_search timeout(${timeout_sec}s)"
+        elif [ "$rc" -eq 1 ]; then
+            echo "    関連概念なし"
+        else
+            echo "    SKIP: semantic_search failed(rc=${rc})"
+        fi
+    done
+
+    if [ "$active_count" -eq 0 ]; then
+        echo "  active cmdなし"
+    elif [ "$shown_count" -eq 0 ]; then
+        echo "  表示対象の関連概念なし"
+    fi
+    echo ""
+}
+
 # === 高速化: バックグラウンド並列 + WA rateキャッシュ(300s TTL) ===
 # cmd_2076: WA rate スクリプト結果を /tmp にキャッシュ (TTL 300秒)
 # 前回(python3→awk+statusキャッシュ)との差分: WA rate結果自体をキャッシュ (異なる対象)
@@ -804,6 +938,9 @@ else
     alerts+=("セマンティクスインデックス: index不在")
 fi
 echo ""
+
+# --- 稼働中cmdのtarget_pathから関連概念/因果辺を表示 ---
+show_active_cmd_semantic_context
 
 # --- 教訓効果計測(lesson_impact TOP5) ---
 echo "■ 教訓効果計測"
