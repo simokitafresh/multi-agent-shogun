@@ -24,6 +24,7 @@ echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 session_start_ts=""
 session_start_date=""
 session_completed_cmds=0
+_conv_data=()
 if [ -f "$LORD_CONV" ]; then
   mapfile -t _conv_data < <(python3 - "$LORD_CONV" "$ROOT_DIR/projects" <<'PY'
 import datetime as dt
