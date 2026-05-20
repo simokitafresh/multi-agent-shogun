@@ -4433,7 +4433,10 @@ inject_target_path_check() {
     # 存在しないパスを検出
     local -a missing=()
     for p in "${paths[@]}"; do
-        [ ! -e "$p" ] && missing+=("$p")
+        # 相対パスはSCRIPT_DIR基準で解決(deploy実行時cwdが不定のため)
+        local resolved="$p"
+        [[ "$p" != /* ]] && resolved="$SCRIPT_DIR/$p"
+        [ ! -e "$resolved" ] && missing+=("$p")
     done
 
     [ ${#missing[@]} -eq 0 ] && return 0
