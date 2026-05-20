@@ -168,6 +168,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | **Stop hook** | `{"decision":"block"}`の挙動差異 | **Claude Code**: メッセージ表示+ターン停止。**Codex**: reason文をプロンプトとして再実行=**無限ループ**。忍者done/completed時はblockせずidle flag+exit 0 |
 | **launch_cmd** | `cli_profiles.yaml` | Codexは**絶対パス必須**(`/home/.../bin/codex`)。respawn-paneは.bashrc未読込→nvm PATHなし→`codex: command not found` |
 | **respawn方式** | `ninja_monitor.sh safe_send_clear()` | Codex再起動は`tmux respawn-pane -k`方式。Ctrl-C方式はcodex=PID 1終了→pane dead→relaunch届かない |
+| **Codex idle時も respawn-pane -k 必須** | 設計意図(殿裁定2026-05-20) | `/new`はCodex CLI内部状態が「task in progress」だと拒否される。ninja_monitorがidle判定しても、CLI内部はsession activeのまま→`/new`非互換。respawn-pane -kはCLI内部状態に関係なくpaneプロセスを殺して再起動するため唯一確実なリセット手段。cmd_2904/2906で/new経路に変更→3忍者CTX滞留(51%/55%/43%)で実証。一見乱暴だが理由がある設計。198回/日ループの真因は発火条件(デバウンス/idle判定頻度)側であり、respawn手段を変えるべきではない。因果: [[cmd_2904_overfix]] -> [[codex_new_rejected]] -> [[respawn_is_correct_design]]。カタログ: `docs/research/gunshi_idle_infra_design_intent_catalog_20260520.md` |
 
 ## Claude Code バージョン固定と復帰
 
