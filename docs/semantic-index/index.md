@@ -40,7 +40,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存 |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -48,6 +48,8 @@ codd:
 | file | `docs/research/semantic_index_design.md` |
 | file | `context/lord-conversation-index.md` |
 | file | `scripts/semantic_map_generate.sh` |
+| file | `scripts/insight_write.sh` |
+| file | `scripts/semantic_index_update.sh` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T20:10 セマンティック辞書と単語定義辞書 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T23:42 aliases照合+LLM照合 |
 | cmd | `cmd_2563` セマンティック検索+鮮度gate実装 |
@@ -386,7 +388,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従, verdict計算値化 bcから自動導出, skill_gate_feedback, skill_auto_improve, スキル自動改善 |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従, verdict計算値化 bcから自動導出, skill_gate_feedback, skill_auto_improve, スキル自動改善, skill_execution_log, スキル実行ログ |
 | skills | skill-creator, skill-installer |
 
 | 種別 | パス/参照 |
@@ -395,6 +397,7 @@ codd:
 | file | `docs/research/dream-skill-design.md` |
 | file | `scripts/skill_gate_feedback.sh` |
 | file | `scripts/skill_auto_improve.sh` |
+| file | `scripts/skill_execution_log.sh` |
 | file | `context/codd.md` |
 | file | `skills/codd/SKILL.md` |
 | file | `skills/codd-refactor/SKILL.md` |
@@ -1056,7 +1059,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, sh preflightにtarget path git log自動表示 |
+| aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, sh preflightにtarget path git log自動表示, context_freshness_check, コンテキスト鮮度 |
 | skills | |
 
 | 種別 | パス/参照 |
@@ -1068,6 +1071,7 @@ codd:
 | file | `scripts/gates/gate_lesson_health.sh` |
 | file | `scripts/gates/gate_enforcement_audit.sh` |
 | file | `scripts/gates/gate_autofix_proposal.sh` |
+| file | `scripts/context_freshness_check.sh` |
 | file | `scripts/gates/gate_ninja_workaround_rate.sh` |
 | file | `scripts/cmd_save.sh` |
 | file | `context/growth-loop.md` |
@@ -1084,12 +1088,13 @@ codd:
 |------|---|
 | id | lesson_lifecycle |
 | label | 教訓ライフサイクル管理 |
-| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons |
+| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録 |
 | skills | |
 
 | 種別 | パス/参照 |
 |------|----------|
 | file | `scripts/lesson_write.sh` |
+| file | `scripts/auto_draft_lesson.sh` |
 | file | `scripts/sync_lessons.sh` |
 | file | `scripts/lesson_write_karo.sh` |
 | file | `scripts/lesson_write_shogun.sh` |
