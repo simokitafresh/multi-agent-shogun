@@ -276,12 +276,50 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
     fi
 fi
 
-# === Guard 3: inbox_write/deploy後の確認強制 ===
+# === Guard 3: halt/clear送信後の停止検証(BLOCK) + inbox_write後確認強制 ===
 # 送信は確認ではない。結果を確認せよ(LK013: 2026-05-20全失敗の根因)
+# Phase 1: halt/clear送信検出→CTX記録。Phase 2: 次のBash実行時にCTX低下を検証→未低下ならBLOCK
+_HALT_PENDING_DIR="/tmp/shogun_halt_pending"
+mkdir -p "$_HALT_PENDING_DIR" 2>/dev/null || true
+
+# Phase 2: 前回のhalt/clear送信の停止確認(次のBashアクション時に発火)
+for _hf in "$_HALT_PENDING_DIR"/*.pending; do
+    [[ -f "$_hf" ]] || continue
+    _halt_ninja="$(basename "$_hf" .pending)"
+    _old_ctx="$(cat "$_hf" 2>/dev/null || echo "")"
+    # 対象忍者のpaneを取得してCTX確認
+    _halt_pane="$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},$_halt_ninja}" 2>/dev/null | head -1 || true)"
+    _new_ctx=""
+    if [[ -n "$_halt_pane" ]]; then
+        _new_ctx="$(tmux capture-pane -t "$_halt_pane" -p -S -30 2>/dev/null | grep -oP 'CTX:\d+%' | tail -1 || true)"
+    fi
+    if [[ -n "$_old_ctx" && -n "$_new_ctx" && "$_old_ctx" == "$_new_ctx" && "$_new_ctx" != "CTX:0%" ]]; then
+        # CTX変化なし+0%でない → 停止未確認 → BLOCK
+        printf '%s' "BLOCK: ${_halt_ninja}にhalt/clearを送信したがCTX未変化(${_old_ctx}→${_new_ctx})。停止していない。capture-pane -S -30で全体を確認し、停止を実証してからpendingファイルを削除せよ: rm ${_hf}" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+        exit 2
+    fi
+    # CTX低下 or 0% → 停止確認OK → pendingクリア
+    rm -f "$_hf" 2>/dev/null
+done
+
+# Phase 1: halt/clear送信検出→CTX記録
 if [[ "$payload" == *'inbox_write'* ]]; then
     _iw_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
     if [[ "$_iw_cmd" == *'inbox_write'* ]]; then
         _iw_target="$(echo "$_iw_cmd" | grep -oP 'inbox_write\.sh\s+\K\S+' || true)"
+        _iw_type="$(echo "$_iw_cmd" | grep -oP '(task_halt|clear_command)' || true)"
+        if [[ -n "$_iw_target" && -n "$_iw_type" ]]; then
+            # halt/clear送信先のCTXを記録
+            _target_pane="$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},$_iw_target}" 2>/dev/null | head -1 || true)"
+            _target_ctx=""
+            if [[ -n "$_target_pane" ]]; then
+                _target_ctx="$(tmux capture-pane -t "$_target_pane" -p -S -30 2>/dev/null | grep -oP 'CTX:\d+%' | tail -1 || true)"
+            fi
+            echo "$_target_ctx" > "$_HALT_PENDING_DIR/${_iw_target}.pending" 2>/dev/null || true
+            printf '%s' "★halt/clear送信: ${_iw_target}(${_target_ctx})。次のBash実行時にCTX低下を自動検証する。停止未確認ならBLOCK。" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+            exit 0
+        fi
+        # 通常のinbox_write(halt/clear以外)
         if [[ -n "$_iw_target" && "$_iw_target" != "karo" && "$_iw_target" != "shogun" && "$_iw_target" != "gunshi" ]]; then
             printf '%s' "★確認必須: ${_iw_target}のpaneをcapture-pane -S -30で確認し、nudgeが到達したか・作業を開始したかを目視確認せよ。送信≠確認。" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
             exit 0
