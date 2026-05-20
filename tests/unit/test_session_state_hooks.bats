@@ -228,6 +228,29 @@ PY
     [ "${result[0]}" = "False" ]
 }
 
+@test "SSH-003d: prompt_state_inject records semantic NO_MATCH count without prompt text" {
+    export MOCK_AGENT_ID="shogun"
+    semantic_mock="$TEST_TMPDIR/semantic_search_nomatch.sh"
+    cat > "$semantic_mock" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$semantic_mock"
+    export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$semantic_mock"
+    export PROMPT_STATE_SEMANTIC_NO_MATCH_FILE="$TEST_TMPDIR/logs/semantic_no_match_metrics.log"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"秘密の未知クエリ\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+    [ -f "$PROMPT_STATE_SEMANTIC_NO_MATCH_FILE" ]
+
+    run cat "$PROMPT_STATE_SEMANTIC_NO_MATCH_FILE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source=prompt_state_inject.sh"* ]]
+    [[ "$output" == *"agent_id=shogun"* ]]
+    [[ "$output" == *"count=1"* ]]
+    [[ "$output" != *"秘密の未知クエリ"* ]]
+}
+
 @test "SSH-004: session_end_clear_check is silent for non-shogun" {
     export MOCK_AGENT_ID="saizo"
     run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{}' | scripts/hooks/session_end_clear_check.sh"
