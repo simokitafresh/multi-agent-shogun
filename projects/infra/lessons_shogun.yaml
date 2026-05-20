@@ -517,3 +517,11 @@ lessons:
   created_at: '2026-05-21'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS049'
+- id: 'LS050'
+  title: '事実を最初に特定せよ — なぜなぜの前に何が起きたかを認めろ'
+  origin: '[[LS049_admit_mistake]] -> [[fact_before_why]] -> [[lord_sees_fact_shogun_sees_interpretation]]'
+  detail: '殿は01:35で真因が見えていた。将軍は40分かかった。差=殿は事実(読まなかった)を見ている。将軍は解釈(仕組みの不備)を見ている。なぜなぜを事実の前に始めるから解釈にすり替わる。行動規範: (1)何が起きたか事実を1行で書く (2)自分のミスを認める (3)その後になぜなぜ。事実→ミス認知→なぜなぜの順序を逆転させるな'
+  source_cmd: 'cmd_2922'
+  created_at: '2026-05-21'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS049'
