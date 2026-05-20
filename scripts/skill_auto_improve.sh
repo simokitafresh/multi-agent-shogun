@@ -171,8 +171,26 @@ def skill_file_for(skill_name, logged_path):
     return None
 
 
+NINJA_NAMES_RE = r"(?:sasuke|kirimaru|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)"
+
+
 def normalize_reason(value):
-    return " ".join(str(value or "").split())
+    normalized = " ".join(str(value or "").split())
+    if not normalized:
+        return ""
+
+    # Group by root cause, not by the volatile command or worker that hit it.
+    # Keep gate names such as cmd_complete_gate intact; they are causal context.
+    def _cmd_repl(match):
+        token = match.group(0)
+        if token.endswith("_gate"):
+            return token
+        return "<cmd_id>"
+
+    normalized = re.sub(r"\bcmd_[A-Za-z0-9][A-Za-z0-9_-]*\b", _cmd_repl, normalized)
+    normalized = re.sub(rf"\b{NINJA_NAMES_RE}(?=:)", "<ninja>", normalized)
+    normalized = re.sub(rf"\b{NINJA_NAMES_RE}(?=_report_)", "<ninja>", normalized)
+    return normalized
 
 
 def shorten(value, limit=180):

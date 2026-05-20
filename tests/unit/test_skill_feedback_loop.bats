@@ -562,6 +562,37 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "dashboard_update.sh --dry-run without cmd_id exits success and logs PASS" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DRY-RUN: cmd_id未指定"* ]]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+entry = data["executions"][-1]
+assert entry["skill"] == "dashboard-update"
+assert entry["result"] == "PASS"
+assert entry["gate"] == "dashboard_update"
+assert "cmd=<empty> dry_run=true" in entry["stumbling_points"]
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "skill_auto_improve outputs per-skill Top3 FAIL reasons" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/cmd-complete"
     cat > "$TEST_SKILL_LOG" <<'EOF'
@@ -616,6 +647,111 @@ EOF
     [[ "$output" == *"report-write | 3 | 1"* ]]
     [[ "$output" != *"report-write | 4"* ]]
     [[ "$output" == *"cmd-complete | 1 | 1 | 2026-05-02T10:05:00+0900 | cmd_complete_gate | ac_version mismatch"* ]]
+}
+
+@test "skill_auto_improve groups volatile cmd and ninja ids and refreshes last_fail" {
+    mkdir -p "$TEST_TMPDIR/skills/dashboard-update" "$TEST_TMPDIR/skills/verdict-check"
+    cat > "$TEST_TMPDIR/skills/dashboard-update/SKILL.md" <<'EOF'
+---
+name: dashboard-update
+---
+
+# dashboard-update
+
+## 実行フロー
+既存手順。
+EOF
+    cat > "$TEST_TMPDIR/skills/verdict-check/SKILL.md" <<'EOF'
+---
+name: verdict-check
+---
+
+# verdict-check
+
+## 実行フロー
+既存手順。
+EOF
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "dashboard-update"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_1001 dry_run=false"
+  gate: "dashboard_update"
+  skill_path: "$TEST_TMPDIR/skills/dashboard-update/SKILL.md"
+- ts: "2026-05-02T10:02:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_1002 dry_run=false"
+  gate: "dashboard_update"
+  skill_path: "$TEST_TMPDIR/skills/dashboard-update/SKILL.md"
+- ts: "2026-05-02T10:03:00+0900"
+  skill: "verdict-check"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "saizo:binary_checks_fail"
+  gate: "cmd_complete_gate"
+  skill_path: "$TEST_TMPDIR/skills/verdict-check/SKILL.md"
+- ts: "2026-05-02T10:04:00+0900"
+  skill: "verdict-check"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "hayate:binary_checks_fail"
+  gate: "cmd_complete_gate"
+  skill_path: "$TEST_TMPDIR/skills/verdict-check/SKILL.md"
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3 --apply
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"dashboard-update | 1 | 2 | 2026-05-02T10:02:00+0900 | dashboard_update | dashboard_update.sh exit=1 cmd=<cmd_id> dry_run=false"* ]]
+    [[ "$output" == *"verdict-check | 1 | 2 | 2026-05-02T10:04:00+0900 | cmd_complete_gate | <ninja>:binary_checks_fail"* ]]
+    [[ "$output" != *"cmd_1001"* ]]
+    [[ "$output" != *"cmd_1002"* ]]
+
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "dashboard-update"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_1001 dry_run=false"
+  gate: "dashboard_update"
+  skill_path: "$TEST_TMPDIR/skills/dashboard-update/SKILL.md"
+- ts: "2026-05-02T10:05:00+0900"
+  skill: "dashboard-update"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_1003 dry_run=false"
+  gate: "dashboard_update"
+  skill_path: "$TEST_TMPDIR/skills/dashboard-update/SKILL.md"
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3 --apply
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import json
+from pathlib import Path
+state = json.loads(Path("$STATE_JSON").read_text(encoding="utf-8"))
+dashboard = [p for p in state["patterns"].values() if p["skill"] == "dashboard-update"]
+assert len(dashboard) == 1
+assert dashboard[0]["reason"] == "dashboard_update.sh exit=1 cmd=<cmd_id> dry_run=false"
+assert dashboard[0]["last_fail"] == "2026-05-02T10:05:00+0900"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
 }
 
 @test "skill_auto_improve applies Top FAIL reasons to SKILL.md procedure section without duplicates" {
