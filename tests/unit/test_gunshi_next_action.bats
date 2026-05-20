@@ -29,7 +29,14 @@ EOF
     export GUNSHI_NEXT_ACTION_DEPLOY_LOG="$TEST_TMPDIR/logs/deploy_task.log"
     export GUNSHI_NEXT_ACTION_PROMPT_NO_MATCH_LOG="$TEST_TMPDIR/logs/semantic_no_match_metrics.log"
     export GUNSHI_NEXT_ACTION_INSIGHTS="$TEST_TMPDIR/queue/insights.yaml"
+    export GUNSHI_NEXT_ACTION_INBOX="$TEST_TMPDIR/queue/inbox.yaml"
+    export GUNSHI_NEXT_ACTION_WA_LOG="$TEST_TMPDIR/logs/karo_workarounds.yaml"
+    export GUNSHI_NEXT_ACTION_REVIEW_LOG="$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+    export GUNSHI_NEXT_ACTION_SNAPSHOT="$TEST_TMPDIR/queue/karo_snapshot.txt"
+    export GUNSHI_NEXT_ACTION_FIRE_LOG="$TEST_TMPDIR/logs/gate_fire_log.yaml"
     export GUNSHI_NEXT_ACTION_NO_MATCH_SCAN_LINES=20
+    printf 'reviews:\n' > "$GUNSHI_NEXT_ACTION_REVIEW_LOG"
+    : > "$GUNSHI_NEXT_ACTION_SNAPSHOT"
 }
 
 teardown() {

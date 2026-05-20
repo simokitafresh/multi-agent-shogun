@@ -7,12 +7,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-INBOX="$REPO_ROOT/queue/inbox/gunshi.yaml"
-WA_LOG="$REPO_ROOT/logs/karo_workarounds.yaml"
-REVIEW_LOG="$REPO_ROOT/logs/gunshi_review_log.yaml"
-SNAPSHOT="$REPO_ROOT/queue/karo_snapshot.txt"
+INBOX="${GUNSHI_NEXT_ACTION_INBOX:-$REPO_ROOT/queue/inbox/gunshi.yaml}"
+WA_LOG="${GUNSHI_NEXT_ACTION_WA_LOG:-$REPO_ROOT/logs/karo_workarounds.yaml}"
+REVIEW_LOG="${GUNSHI_NEXT_ACTION_REVIEW_LOG:-$REPO_ROOT/logs/gunshi_review_log.yaml}"
+SNAPSHOT="${GUNSHI_NEXT_ACTION_SNAPSHOT:-$REPO_ROOT/queue/karo_snapshot.txt}"
 # gate_fire_log path for P6 self-study reference
-_FIRE_LOG="$REPO_ROOT/logs/gate_fire_log.yaml"
+_FIRE_LOG="${GUNSHI_NEXT_ACTION_FIRE_LOG:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 INSIGHTS="${GUNSHI_NEXT_ACTION_INSIGHTS:-$REPO_ROOT/queue/insights.yaml}"
 SEMANTIC_INDEX="$REPO_ROOT/docs/semantic-index/index.md"
 SEMANTIC_STRESS_SCRIPT="${SEMANTIC_STRESS_CMD:-$REPO_ROOT/scripts/semantic_stress_test.sh}"
@@ -159,7 +159,7 @@ if [[ -f "$_FIRE_LOG" ]]; then
 fi
 
 # (c) 次cmdの先行学習: snapshotから直近cmdを読み取り
-latest_cmd=$(grep -oP 'cmd_\d+' "$SNAPSHOT" 2>/dev/null | sort -t_ -k2 -n | tail -1)
+latest_cmd=$(grep -oP 'cmd_\d+' "$SNAPSHOT" 2>/dev/null | sort -t_ -k2 -n | tail -1 || true)
 if [[ -n "$latest_cmd" ]]; then
     reviewed=$(grep -c "cmd_id: $latest_cmd" "$REVIEW_LOG" 2>/dev/null || true)
     if (( reviewed == 0 )); then
