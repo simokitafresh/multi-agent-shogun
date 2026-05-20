@@ -5108,6 +5108,8 @@ else
             echo "  $((i+1)). ${BLOCK_REASONS[$i]}" >&2
         done
         echo "━━━━━━━━━━━━━━━━" >&2
+        # 殿への即時通知(BLOCK可視化: 将軍がサイレントに止まっても殿に見える)
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【BLOCK】${CMD_ID}: ${BLOCK_COUNT}件。$(IFS='; '; echo "${BLOCK_REASONS[*]:0:3}")" 2>/dev/null &
     else
         echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
     fi
