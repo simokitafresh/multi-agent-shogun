@@ -15,6 +15,7 @@ setup() {
     export GATE_FIRE_LOG_FILE="$TMPDIR_BATS/gate_fire_log.yaml"
     export SKILL_EXECUTION_LOG_FILE="$TMPDIR_BATS/skill_execution_log.yaml"
     export SKILL_GATE_FEEDBACK_DISABLE=1
+    export SKILL_LOG_SYNC=1
 }
 
 teardown() {
@@ -207,22 +208,7 @@ YAML
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
 
-    # skill_execution_log.sh calls are async (&) in gate_report_format.sh.
-    # Poll up to 10s for both entries to appear before reading the log.
-    local _i=0
-    while [ "$_i" -lt 100 ]; do
-        if [ -f "$SKILL_EXECUTION_LOG_FILE" ]; then
-            python3 -c "
-import yaml, sys
-data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
-skills = {e.get('skill') for e in data.get('executions', [])}
-sys.exit(0 if frozenset(['report-write', 'verdict-check']).issubset(skills) else 1)
-" "$SKILL_EXECUTION_LOG_FILE" 2>/dev/null && break
-        fi
-        sleep 0.1
-        _i=$((_i + 1))
-    done
-
+    # SKILL_LOG_SYNC=1 により同期実行。ポーリング不要。
     run python3 - <<EOF
 import yaml
 data = yaml.safe_load(open("$SKILL_EXECUTION_LOG_FILE", encoding="utf-8"))

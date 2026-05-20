@@ -94,24 +94,43 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
     if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
-        # WSL2最適化: skill_execution_log.sh(python3×9回起動/呼出し)を非同期化。
-        # 出力は既に>/dev/null 2>&1 || true(best-effort)なので非同期化は安全。
-        bash "$_SKILL_LOG" \
-            "report-write" \
-            "$_REPORT_EXECUTOR" \
-            "PASS" \
-            "gate_report_format PASS" \
-            "gate_report_format" \
-            "$REPORT_PATH" \
-            "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 &
-        bash "$_SKILL_LOG" \
-            "verdict-check" \
-            "$_REPORT_EXECUTOR" \
-            "PASS" \
-            "gate_report_format verdict/binary_checks PASS" \
-            "gate_report_format" \
-            "$REPORT_PATH" \
-            "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 &
+        # WSL2最適化: skill_execution_log.sh を非同期化。
+        # SKILL_LOG_SYNC=1 でテスト時は同期実行(CI並列でポーリング競合を回避)。
+        if [ "${SKILL_LOG_SYNC:-0}" = "1" ]; then
+            bash "$_SKILL_LOG" \
+                "report-write" \
+                "$_REPORT_EXECUTOR" \
+                "PASS" \
+                "gate_report_format PASS" \
+                "gate_report_format" \
+                "$REPORT_PATH" \
+                "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
+            bash "$_SKILL_LOG" \
+                "verdict-check" \
+                "$_REPORT_EXECUTOR" \
+                "PASS" \
+                "gate_report_format verdict/binary_checks PASS" \
+                "gate_report_format" \
+                "$REPORT_PATH" \
+                "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 || true
+        else
+            bash "$_SKILL_LOG" \
+                "report-write" \
+                "$_REPORT_EXECUTOR" \
+                "PASS" \
+                "gate_report_format PASS" \
+                "gate_report_format" \
+                "$REPORT_PATH" \
+                "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 &
+            bash "$_SKILL_LOG" \
+                "verdict-check" \
+                "$_REPORT_EXECUTOR" \
+                "PASS" \
+                "gate_report_format verdict/binary_checks PASS" \
+                "gate_report_format" \
+                "$REPORT_PATH" \
+                "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 &
+        fi
     fi
     # Update PASS cache (GP-073) — flock for concurrent gate runs
     if [ -n "$_MTIME" ]; then
