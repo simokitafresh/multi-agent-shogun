@@ -59,6 +59,32 @@ run_hook() {
     [[ "$context" == *'再実行'* ]]
 }
 
+@test "cmd_save BLOCK detects Claude Code toolUseResult exitCode payload" {
+    local payload
+    payload="$(jq -cn --arg cmd "bash scripts/cmd_save.sh cmd_100" --arg result "BLOCK: actual payload failure" '{tool_name:"Bash", tool_input:{command:$cmd}, toolUseResult:{exitCode:1, stderr:$result}}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
+    context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+    [ "$hook_name" = "PostToolUse" ]
+    [[ "$context" == *'cmd_save.sh BLOCK'* ]]
+    [[ "$context" == *'actual payload failure'* ]]
+}
+
+@test "cmd_save BLOCK detects BLOCK output when exit code field is unavailable" {
+    local payload
+    payload="$(jq -cn --arg cmd "bash scripts/cmd_save.sh cmd_100" --arg result "BLOCK: output-only failure" '{tool_name:"Bash", tool_input:{command:$cmd}, toolUseResult:{stderr:$result}}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
+    context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+    [ "$hook_name" = "PostToolUse" ]
+    [[ "$context" == *'cmd_save.sh BLOCK'* ]]
+    [[ "$context" == *'output-only failure'* ]]
+}
+
 @test "cmd_save PASS stays silent" {
     local payload
     payload="$(jq -cn --arg cmd "bash scripts/cmd_save.sh cmd_100" --arg result "CMD_SAVE PASS" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:{exit_code:0, stdout:$result}}')"

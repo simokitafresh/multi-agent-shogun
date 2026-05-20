@@ -12,23 +12,50 @@ if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
     cmd_save_meta="$(PAYLOAD="$payload" jq -r '
         def walk_objects:
             .. | objects;
+        def text_values:
+            [
+                .tool_result?,
+                .toolUseResult?,
+                .tool_response?,
+                .toolResponse?,
+                .result?,
+                .output?,
+                .stdout?,
+                .stderr?
+            ]
+            | map(select(. != null))
+            | [ .[] | .. | strings ]
+            | join("\n");
         [
             (.tool_input.command // .toolInput.command // ""),
             ([
                 walk_objects
-                | (.exit_code? // .exitCode? // .status?)
+                | (.exit_code? // .exitCode?)
                 | select(type == "number" or type == "string")
                 | tostring
-            ] | first // "")
+            ] | first // ""),
+            text_values
         ] | @tsv
     ' 2>/dev/null <<< "$payload" || true)"
     cmd_save_command="${cmd_save_meta%%$'\t'*}"
-    cmd_save_exit=""
+    cmd_save_rest=""
     if [[ "$cmd_save_meta" == *$'\t'* ]]; then
-        cmd_save_exit="${cmd_save_meta#*$'\t'}"
+        cmd_save_rest="${cmd_save_meta#*$'\t'}"
+    fi
+    cmd_save_exit="${cmd_save_rest%%$'\t'*}"
+    cmd_save_output=""
+    if [[ "$cmd_save_rest" == *$'\t'* ]]; then
+        cmd_save_output="${cmd_save_rest#*$'\t'}"
     fi
 
-    if [[ ( "$cmd_save_command" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* ) && "$cmd_save_exit" == "1" ]]; then
+    cmd_save_block_detected=0
+    if [[ "$cmd_save_exit" == "1" ]]; then
+        cmd_save_block_detected=1
+    elif [[ "$cmd_save_output" == *'BLOCK:'* && ( "$cmd_save_output" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* || "$cmd_save_command" == *'cmd_save.sh'* ) ]]; then
+        cmd_save_block_detected=1
+    fi
+
+    if [[ ( "$cmd_save_command" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* ) && "$cmd_save_block_detected" == "1" ]]; then
         # BLOCK理由をpayloadから抽出(stderr/content内の"BLOCK:"行)
         block_lines="$(jq -r '
             [.. | strings] | join("\n")
