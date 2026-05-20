@@ -675,3 +675,5 @@
 | cmd_2913 | cmd_2909のstartup gate表示は1回/セッション。家老がcmd受領時に毎回semantic_searchを実行し因果概念を表示することで消費頻度を大幅に向上させる | infra | 05-21 | cmd_2913は家老task_haltにより中止。軍師レビ |
 | cmd_2923 | 既存Guard 0にinbox未読チェック追加+既存inbox_mark_read.shに対処引数必須化。既存cmd_save.sh Session Stateが自動でBLOCK履歴を蓄積し累計昇格する(自己改善ループは既存インフラに内蔵済み) | infra | 05-21 | — |
 | cmd_2924 | cmd_2922(ストレステストツール本体)を3つの自動発火トリガーに接続する。軍師5W1H設計(blt_013243)に基づく。手動実行→自動組込みで意志依存をゼロにする | infra | 05-21 | L7 semantic stress testの3トリガー配 |
+| cmd_2926 | idle忍者の修行ACに対象スクリプトの機能用途をaliases候補として提案するステップを追加。6忍者並列でaliases品質を加速。修行の成果がL7パイプラインに直結する | infra | 05-21 | context/training-cycle.mdのCoDD |
+| cmd_2927 | index.mdにrelated_conceptsフィールド追加。semantic_search.shで1概念ヒット時に関連概念も注入。45概念の相互接続で配備時コンテキスト密度を倍増する | infra | 05-21 | semantic indexにrelated_concept |
