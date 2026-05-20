@@ -4,10 +4,12 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_WRITE="$PROJECT_ROOT/scripts/bulletin_write.sh"
+    export SRC_ARCHIVE="$PROJECT_ROOT/scripts/bulletin_archive.sh"
     export SRC_CONFIRM="$PROJECT_ROOT/scripts/bulletin_confirm.sh"
     export SRC_CLOSE="$PROJECT_ROOT/scripts/bulletin_close.sh"
     export SRC_AGENT_CONFIG="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     [ -f "$SRC_WRITE" ] || return 1
+    [ -f "$SRC_ARCHIVE" ] || return 1
     [ -f "$SRC_CONFIRM" ] || return 1
     [ -f "$SRC_CLOSE" ] || return 1
     [ -f "$SRC_AGENT_CONFIG" ] || return 1
@@ -17,6 +19,7 @@ setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/bulletin.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/scripts/bin" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/config"
     cp "$SRC_WRITE" "$TEST_TMPDIR/scripts/bulletin_write.sh"
+    cp "$SRC_ARCHIVE" "$TEST_TMPDIR/scripts/bulletin_archive.sh"
     cp "$SRC_CONFIRM" "$TEST_TMPDIR/scripts/bulletin_confirm.sh"
     cp "$SRC_CLOSE" "$TEST_TMPDIR/scripts/bulletin_close.sh"
     cp "$SRC_AGENT_CONFIG" "$TEST_TMPDIR/scripts/lib/agent_config.sh"
@@ -24,7 +27,7 @@ setup() {
 #!/usr/bin/env bash
 printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG:?}"
 EOF
-    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_archive.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
     cat > "$TEST_TMPDIR/scripts/bin/tmux" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "${BULLETIN_TEST_AGENT_ID:-hayate}"
@@ -145,6 +148,29 @@ teardown() {
     run wc -l "$INBOX_WRITE_LOG"
     [ "$status" -eq 0 ]
     [[ "$output" == "2 $INBOX_WRITE_LOG" ]]
+}
+
+@test "bulletin_write auto archives when bulletin exceeds threshold" {
+    for i in $(seq 1 50); do
+        env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "既存投稿 $i" >/dev/null
+    done
+
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "閾値超過投稿"
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_TMPDIR/queue/bulletin_board.yaml" "$TEST_TMPDIR/queue/archive/bulletin_$(date +%Y%m%d).yaml" <<'PY'
+import sys
+import yaml
+
+board_path, archive_path = sys.argv[1:3]
+with open(board_path, encoding="utf-8") as fh:
+    board = yaml.safe_load(fh) or {}
+with open(archive_path, encoding="utf-8") as fh:
+    archive = yaml.safe_load(fh) or {}
+print(f"board={len(board.get('entries', []))} archive={len(archive.get('entries', []))}")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "board=30 archive=21" ]
 }
 
 @test "bulletin_write warns when inbox_write fails" {
