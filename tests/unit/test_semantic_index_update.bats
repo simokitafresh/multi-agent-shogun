@@ -127,6 +127,22 @@ teardown() {
     grep -q 'semantic_index_update新概念候補' "$TEST_TMPDIR/queue/insights.log"
 }
 
+@test "NONE: discussion timestamp with transport-only text is skipped as noise" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-20T23:00:11+09:00","summary":"task notification task id tool use id inbox1"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NONE: skipped noise-only candidate for discussion:2026-05-20T23:00:11+09:00"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+}
+
+@test "NONE: cmd_complete generic event payload is skipped as noise" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2914","title":"cmd_completeイベント","purpose":"GATE CLEAR PASS pending"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NONE: skipped noise-only candidate for cmd_complete:cmd_2914"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+}
+
 @test "pending semantic insights: similar concept is absorbed into aliases and resolved" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'

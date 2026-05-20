@@ -122,10 +122,51 @@ def is_noise_only_candidate(payload_id, fields):
     payload_id_clean = norm(strip_noise(payload_id))
     if payload_id_clean and combined == payload_id_clean:
         return True
-    # A payload that only contains generic source words after ID stripping still
-    # has no concept signal worth sending to the insight backlog.
-    generic = {"cmd", "complete", "lesson", "discussion", "payload"}
-    tokens = [t for t in re.split(r"\s+", combined) if t and t not in generic]
+    # A payload that only contains generic source/event words after ID stripping
+    # still has no concept signal worth sending to the insight backlog. Keep this
+    # list conservative: it should catch transport/status chatter, not domain terms.
+    generic = {
+        "cmd",
+        "complete",
+        "completed",
+        "lesson",
+        "discussion",
+        "payload",
+        "event",
+        "task",
+        "notification",
+        "id",
+        "tool",
+        "use",
+        "timestamp",
+        "terminal",
+        "response",
+        "inbound",
+        "outbound",
+        "ntfy",
+        "status",
+        "pass",
+        "pending",
+        "gate",
+        "clear",
+        "inbox",
+        "イベント",
+        "タスク",
+        "通知",
+        "完了",
+        "済み",
+        "委任",
+        "タイムスタンプ",
+    }
+    def generic_token(token):
+        token = norm(token)
+        compact = re.sub(r"[\d_]+", "", token)
+        if token in generic or compact in generic:
+            return True
+        transport_fragments = ("complete", "notification", "timestamp", "inbox", "イベント")
+        return any(fragment in token for fragment in transport_fragments)
+
+    tokens = [t for t in re.split(r"\s+", combined) if t and not generic_token(t)]
     return not tokens
 
 def parse_concepts(text):
