@@ -6374,3 +6374,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - BLOCK/WARNトリガーマップに該当行本文まで出すと、既存テストが禁止したい文字列(WARN累計昇格など)をサマリ経由で拾い、偽の再発に見える。将軍の修正行動に必要な情報はline/keyword/checkで足りるため、出力は最小メタ情報に限定する。
+
+### L646: set -euo pipefail下のgrep 0件はCI並列時にexit化する
+- **日付**: 2026-05-21
+- **出典**: cmd_karo_ci_fix_gunshi_next_action
+- **記録者**: saizo
+- **tags**: [infra,pipeline,testing,process]
+- **target_files**: [scripts/gunshi_next_action.sh,tests/unit/test_gunshi_next_action.bats]
+- **origin**: [[cmd_karo_ci_fix_gunshi_next_action]]
+- **when**: 未設定
+- **how**: 未設定
+- 推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv overrideでqueue/logs依存をtmp fixtureへ隔離し、空snapshot等のNO_MATCHをテストに含める。

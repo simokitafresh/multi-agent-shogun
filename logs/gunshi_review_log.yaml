@@ -160,9 +160,7 @@
 - cmd_id: cmd_2915
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "L7計測基盤。APPROVE。AC1コードがHEAD L2624に既存(hayate auto-commit)。動作未検証。影丸はHEAD確認から着手すべし"
   observations:
@@ -175,7 +173,6 @@
   timestamp: "2026-05-21T00:02:00"
 - cmd_id: cmd_2915
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
@@ -190,9 +187,7 @@
 - cmd_id: cmd_2916
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "L5防御preflight拡張。APPROVE。assumption陳腐化(timeout_minutes既存)だが才蔵db89b99a実装済み"
   observations:
@@ -203,7 +198,6 @@
   timestamp: "2026-05-21T00:15:00"
 - cmd_id: cmd_2916
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: saizo
@@ -218,9 +212,7 @@
 - cmd_id: cmd_2917
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "EXIT trapにdraft_reviewフォールバック追加。APPROVE。ARMED flagで二重呼出し防止。L6698-L6712 gapは極小リスク"
   observations:
@@ -232,7 +224,6 @@
   timestamp: "2026-05-21T00:22:00"
 - cmd_id: cmd_2917
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
@@ -259,9 +250,7 @@
 - cmd_id: cmd_2918
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "将軍gate NO_MATCH計測追加。APPROVE。前提OK。家老gate L181関数コピー+呼出し"
   observations:
@@ -273,9 +262,7 @@
 - cmd_id: cmd_2919
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "殿側NO_MATCHカウント計測。APPROVE。カウントのみ(クエリ非記録)。殿承認済み"
   observations:
@@ -287,7 +274,6 @@
   timestamp: "2026-05-21T00:42:00"
 - cmd_id: cmd_2918
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
@@ -302,7 +288,6 @@
 - cmd_id: cmd_2919
   review_type: report
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: LGTM
   report_ninja: saizo
   findings_summary: "4観点OK。hook NO_MATCHカウント記録テスト+23行。テスト53/53 PASS。commit e369070d"
@@ -316,9 +301,7 @@
 - cmd_id: cmd_2920
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "L7 aliases自動成長。APPROVE。candidate_aliases+L7f auto-promote既存基盤の接続。threshold=16.0でノイズフィルタ"
   observations:
@@ -331,7 +314,6 @@
   timestamp: "2026-05-21T00:52:00"
 - cmd_id: cmd_2920
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: hayate
@@ -346,7 +328,6 @@
 - cmd_id: cmd_2921
   review_type: report
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: LGTM
   report_ninja: kagemaru
   findings_summary: "4観点OK。SKILL.md 5件touch(mtime更新のみ)。gate WARN 0件。commit 92f3aa1d"
@@ -359,9 +340,7 @@
 - cmd_id: cmd_2922
   review_type: draft
   gate_result: CLEAR
-  gate_result: CLEAR
   verdict: APPROVE
-  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "L7ストレステストツール。APPROVE。新規作成+既存パイプライン接続。DISABLE_CAUSAL=1でtimeout誤判定防止"
   observations:
@@ -373,7 +352,6 @@
   timestamp: "2026-05-21T01:38:00"
 - cmd_id: cmd_2922
   review_type: report
-  gate_result: CLEAR
   gate_result: CLEAR
   verdict: LGTM
   report_ninja: saizo
@@ -398,3 +376,58 @@
   origin: "[[cmd_2913]] -> [[L7_WHO_frequency]] -> [[already_implemented_D0]]"
   causal_chain: "assumption陳腐化(D0で先行実装済み)→二重実装リスク。既実装確認→cmd取消しまたはAC限定修正"
   timestamp: "2026-05-21T01:44:00"
+- cmd_id: cmd_2924
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "L7 3トリガー自動組込み。APPROVE。前提OK(NO_MATCH8件/semantic_index_update3箇所/stress_test存在)。AC3個scope内完結。cmd_complete hookでstress_test非同期実行の設計が合理的"
+  observations:
+    - "事実: rg stress_test cmd_complete_gate.sh=0件。未実装確認OK"
+    - "事実: semantic_index_update L5533が&で非同期実行済み。stress_testも同パターンで遅延なし"
+    - "事実: gate_shogun_startup.sh NO_MATCH 8件。show_semantic_no_match_metrics()既存"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2924]] -> [[L7_3trigger_auto]] -> [[aliases_growth_automation]]"
+  causal_chain: "手動ツール(cmd_2922)=意志依存=Phase4→3トリガー自動組込み→aliases変更ごとに自動計測+改善ループ自走=正の複利"
+  timestamp: "2026-05-21T02:32:00"
+- cmd_id: cmd_2924
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。L7 3トリガーテスト検証。86テスト全PASS(SKIP=0)。実装本体はHEAD既存→テスト追加で固定。commit cc9d8eed"
+  observations:
+    - "事実: files_modified=3件全てテストファイル。本番コード変更なし。回帰リスク極小"
+    - "事実: テスト合計86件(18+39+1+4+23+1)全PASS。SKIP=0。FAIL=0"
+    - "事実: AC1/2/3全てyes。stress_test自動実行+hit率表示+idle蓄積の3トリガー検証完了"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2924]] -> [[L7_3trigger_auto]] -> [[test_verification_complete]]"
+  causal_chain: "テストなし=回帰検知不能→テスト追加→3トリガー動作保証=正の複利。86テスト全PASSで免疫確立"
+  timestamp: "2026-05-21T02:40:00"
+- cmd_id: idle_semantic_audit_20260521
+  review_type: self_study
+  verdict: null
+  findings_summary: "17スクリプト×2カテゴリ(silent_failure+side_effect)。P0=0,P1→全件降格(設計意図),P2=1件(knowledge_metrics regex偽陰性)。drift=0件。gate_result重複22件清掃"
+  observations:
+    - "事実: P1候補5件全てが || true / set +e の意図的設計パターン(非クリティカルパスのskip許容)"
+    - "事実: semantic index 45概念、file references全件実在。drift=0件"
+    - "事実: gate_result重複22件(414→392行)。根因=Phase2重複出力。sort -u修正済みだが残存データを手動除去"
+  finding_categories: [assumptions, numbers]
+  origin: "[[idle_semantic_audit]] -> [[silent_failure_check]] -> [[design_intent_validation]]"
+  causal_chain: "定期監査→P1候補検出→設計意図照合→全件FP確認→構造的バグなし確認=免疫系健全。gate_result重複→清掃→sort -u再発防止=正の複利"
+  cs_checklist: "CS1:OK(17スクリプト全量確認) CS2:OK(自システムdiffで検証) CS3:OK(設計意図カタログ照合) CS4:OK(docs/research永続化+掲示板投稿) CS5:OK(P2 1件=追加調査余地) CS6:OK(因果鎖記録)"
+  timestamp: "2026-05-21T02:42:00"
+- cmd_id: cmd_karo_ci_fix_gunshi_next_action
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。CI RED修正(grep 0件exit→|| true空値継続+fixture隔離)。テスト4回全PASS。commit 04dbaf67"
+  observations:
+    - "事実: set -euo pipefail下のgrep 0件がexit 1→CI RED。|| trueで空値継続が正しい対処"
+    - "事実: bats fixtureをenv overrideで隔離→CI並列時の共有snapshot揺れを再現不能化"
+    - "事実: テスト4回(単体+test_select+parallel jobs8+bash -n)全PASS。SKIP=0"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_karo_ci_fix_gunshi_next_action]] -> [[CI_parallel_shared_fixture]] -> [[grep_no_match_exit]]"
+  causal_chain: "grep 0件=exit 1(set -e)→CI RED→|| true空値継続+fixture隔離→CI GREEN復帰+再発防止=正の複利"
+  timestamp: "2026-05-21T02:50:00"

@@ -122,6 +122,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-05-21: gate=gate_report_format result=FAIL executor=hanzo reason=lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: \"FILL_THIS\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0]...
 - 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)
 
 - 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=ac_version_read: MISSING; lessons_useful: MISSING; parent_cmd: MISSING (empty value); lesson_candidate: found=true but no detail or summary; verdict: PASS but binary_checks cont...

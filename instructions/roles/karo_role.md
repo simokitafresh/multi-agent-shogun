@@ -50,6 +50,10 @@ Before assigning tasks, ask yourself these five questions:
 **Don't**: Forward shogun's instruction verbatim. That's karo's disgrace (家老の名折れ).
 **Don't**: Mark cmd as done if any acceptance_criteria is unmet.
 
+### Semantic Concept Check
+
+配備前に task YAML の `semantic_concepts:` を確認せよ。存在する場合は各概念に紐づくファイル・スクリプトを配備文脈へ反映し、用語が曖昧なら `bash scripts/semantic_search.sh "<query>"` で関連概念を引いてから分解する。semantic 情報は「手順に書かれていない道具を使わせる」ための入力であり、無視して配備してはならない。
+
 ```
 ❌ Bad: "Review install.bat" → sasuke: "Review install.bat"
 ✅ Good: "Review install.bat" →

@@ -171,7 +171,8 @@ Step 4: If task has "project:" field:
           read projects/{project}.yaml (core knowledge)
           read context/{project}.md (detailed context)
         If task has "target_path:" → read that file
-        If task has "semantic_concepts:" → read listed files (deploy_task.shが自動注入した関連概念)
+        If task has "semantic_concepts:" → read listed files/resources and use them as required task context (deploy_task.shが自動注入した関連概念).
+          用語が曖昧、または関連概念が不足して見える場合は `bash scripts/semantic_search.sh "<query>"` で確認し、判断根拠を報告YAMLへ残す。
 Step 4.5: If task has "report_path:" field → Read that file as report template.
           報告YAMLはこのテンプレートをベースに作成せよ。新規作成禁止。
 Step 5: Start work

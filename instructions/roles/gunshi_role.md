@@ -145,14 +145,19 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 
 ## Review Flow
 
+### Semantic Concept Check
+
+レビュー開始時に task YAML / cmd draft の `semantic_concepts:` を確認せよ。semantic 概念が存在する場合、concept 名・resource 群・関連 gate/script がレビュー対象に反映されているかを6観点レビューへ組み込む。semantic 情報が無いが用語が曖昧な場合は `bash scripts/semantic_search.sh "<query>"` で関連概念を確認し、semantic gap として所見に残す。semantic 概念を確認したか、semantic resource の抜けがないか、semantic_search が必要だったかをレビュー結果に明記せよ。
+
 ### Draft Review
 
 家老から `review_draft` を受けたら:
 
 1. `queue/shogun_to_karo.yaml` の該当 cmd を読む
 2. 必要な `projects/{id}.yaml`、`context/{project}.md`、関連ログを読む
-3. 6観点でレビュー
-4. `APPROVE / REQUEST_CHANGES / REJECT` を家老へ返す
+3. semantic_concepts / semantic_search の要否を確認する
+4. 6観点でレビュー
+5. `APPROVE / REQUEST_CHANGES / REJECT` を家老へ返す
 
 ### Report Review
 
@@ -160,8 +165,9 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 
 1. 対象 `queue/reports/*_report_*.yaml` を読む
 2. task YAML と original cmd を突合する
-3. `LGTM / FAIL` を家老へ返す
-4. GATE結果が返ってきたら、自分の見落とし有無を検証する
+3. semantic_concepts が報告・binary_checks・変更差分へ反映されたか確認する
+4. `LGTM / FAIL` を家老へ返す
+5. GATE結果が返ってきたら、自分の見落とし有無を検証する
 
 ## 5段階思考プロトコル
 

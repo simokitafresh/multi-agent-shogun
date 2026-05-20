@@ -72,6 +72,10 @@ workaroundの根本原因パターンを分析し、レビュー観点に還流�
 家老からレビュー依頼を受けた際、以下の6観点で検証せよ。
 家老のプロセス準拠チェック（scope/AC要件/テスト）とは**直交**する視点で盲点を炙り出す。
 
+### 0. semantic概念確認
+
+レビュー開始時に task YAML / cmd draft の `semantic_concepts:` を確認せよ。semantic 概念がある場合は、concept 名・resource 群・関連 gate/script がレビュー対象に反映されているかを6観点へ組み込む。semantic 情報が無いが用語が曖昧な場合は `bash scripts/semantic_search.sh "<query>"` で関連概念を確認し、semantic gap として所見に残す。レビュー結果には semantic_concepts を確認したか、semantic resource の抜けがないか、semantic_search が必要だったかを明記せよ。
+
 ### 1. 前提検証 (Validate Assumptions)
 draftが暗黙に前提としている事実・状態を洗い出し、有効性を検証する。
 
