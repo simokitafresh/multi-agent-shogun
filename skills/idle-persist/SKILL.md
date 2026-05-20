@@ -46,7 +46,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/r
 - 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 - 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
-- Script refs verified: 2026-05-19 cmd_2883. `inbox_write.sh` は `from=shogun type=task_new` をBLOCKする。軍師から家老への `gunshi_lesson_candidate` 送信は対象外だが、将軍の作業指示を `task_new` で直送する手順をこのスキルへ追加してはならない。
+- Script refs verified: 2026-05-19 cmd_2883, 2026-05-20 cmd_2899. `inbox_write.sh` は `from=shogun type=task_new` をBLOCKする。軍師から家老への `gunshi_lesson_candidate` 送信は対象外だが、将軍の作業指示を `task_new` で直送する手順をこのスキルへ追加してはならない。cmd_2899: `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化+tmpfs temp)。
 
 ### Step 4: review_log記録
 ```bash
@@ -67,3 +67,4 @@ bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "idle_<topic>_<da
 - ファイル名は `gunshi_idle_` プレフィックス固定（検索性担保）
 - 日付はYYYYMMDD形式（ISO 8601のdate部分）
 - 掲示板通知先はデフォルトshogunのみ（全員共有不要な場合）
+- Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` はtmpfs一時ファイル+flock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。idle分析のreview_log記録はhelper経由で完了させる。

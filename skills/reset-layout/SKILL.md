@@ -65,6 +65,8 @@ tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id} #{pane_dead} #{@
 
 `--dry-run` で事前確認してから実行することを推奨。
 
+Script refs verified: 2026-05-20 cmd_2899. `reset_layout.sh` は `agent_config.sh` の `get_all_agents` から期待ペインを生成し、gunshiを含む役割別prompt color、model_resolve/pane_format/layout_string、CLI未起動ペイン検出、pane変数のbatch read、pane-border-format再適用、`restart_watchers.sh` 再起動まで一括で行う。
+
 ## 前提条件
 
 - shogun:agents ウィンドウが存在すること

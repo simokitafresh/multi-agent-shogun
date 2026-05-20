@@ -61,3 +61,5 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 - review_logのEdit直接編集禁止（yaml_field_set.sh経由）
 - accuracy計算はreview_logのgate_prediction+gate_result両方存在するエントリのみ
 - gate_sync.shが一括処理する場合と競合しない（yaml_field_set.shのflock排他）
+- Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` はtmpfs一時ファイル+flock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_log更新はこのhelper以外で行わない。
+- Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化+tmpfs temp+cat, lock解決~0ms)。
