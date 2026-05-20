@@ -176,6 +176,36 @@ assert rows["INS-DISTANT"]["status"] == "pending"
 PY
 }
 
+@test "NO_MATCH purpose: cmd_complete queues pending aliases and L7f absorbs similar aliases" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    export INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH"
+    export SEMANTIC_INSIGHT_WRITE="$PROJECT_ROOT/scripts/insight_write.sh"
+    export SEMANTIC_DEPLOY_LOG="$TEST_TMPDIR/logs/deploy_task.log"
+    export SEMANTIC_NO_MATCH_SCAN_LINES=20
+    mkdir -p "$TEST_TMPDIR/logs"
+    cat > "$SEMANTIC_DEPLOY_LOG" <<'EOF'
+[2026-05-20 10:00:00] [DEPLOY] inject_semantic_concepts: NO_MATCH purpose=意味検索改善 target_path=scripts/foo.sh
+[2026-05-20 10:01:00] [DEPLOY] inject_semantic_concepts: NO_MATCH purpose=完全別物 target_path=scripts/bar.sh
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2920","title":"セマンティクスインデックス","purpose":"NO_MATCH purpose aliases","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NO_MATCH_PURPOSE_ALIAS: queued 2 pending alias candidate(s)"* ]]
+    [[ "$output" == *"PENDING_ALIAS_SCORE: 意味検索改善 -> semantic_dictionary_design"* ]]
+    [[ "$output" == *"semantic-map regenerated"* ]]
+
+    grep -q '| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 意味検索改善 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = data["insights"]
+similar = [e for e in rows if "[[意味検索改善]]" in e["insight"]][0]
+distant = [e for e in rows if "[[完全別物]]" in e["insight"]][0]
+assert similar["status"] == "done"
+assert distant["status"] == "pending"
+PY
+}
+
 @test "wiki link target: unmatched causal link queues semantic concept insight" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L998","title":"学習ループで二値計測を強制する","origin":"[[cmd_2867]] -> [[B辞書自動更新+C概念自動発見]]"}'
     [ "$status" -eq 0 ]

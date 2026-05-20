@@ -63,7 +63,10 @@ index_path = Path(index_arg)
 insight_write = Path(insight_arg)
 semantic_root = index_path.parent.parent.parent
 insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(semantic_root / "queue" / "insights.yaml")))
+deploy_log_path = Path(os.environ.get("SEMANTIC_DEPLOY_LOG", str(semantic_root / "logs" / "deploy_task.log")))
 pending_alias_threshold = float(os.environ.get("SEMANTIC_PENDING_ALIAS_THRESHOLD", "16.0"))
+no_match_scan_lines = int(os.environ.get("SEMANTIC_NO_MATCH_SCAN_LINES", "500"))
+no_match_alias_limit = int(os.environ.get("SEMANTIC_NO_MATCH_ALIAS_LIMIT", "5"))
 
 try:
     payload = json.loads(payload_raw)
@@ -343,6 +346,61 @@ def queue_unregistered_target(target, concepts, message_prefix):
     )
     return True
 
+def purpose_alias_candidate(raw):
+    cleaned = strip_noise(raw)
+    cleaned = re.sub(r"^(修正|実装|改善|追加|強化)\s*[—:-]\s*", "", cleaned).strip()
+    cleaned = cleaned.strip(" ・、。:：-")
+    if not cleaned:
+        return ""
+    for part in re.split(r"[。．.!?\n]|[、,]\s*", cleaned):
+        part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
+        if len(part) >= 2:
+            return part[:60]
+    return ""
+
+def recent_no_match_purpose_aliases(path):
+    if no_match_alias_limit <= 0:
+        return []
+    if not path.exists() or not path.stat().st_size:
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception as exc:
+        print(f"WARN: failed to read NO_MATCH deploy log: {exc}", file=sys.stderr)
+        return []
+
+    aliases = []
+    seen = set()
+    for line in lines[-max(no_match_scan_lines, 1) :]:
+        if "inject_semantic_concepts: NO_MATCH" not in line or "purpose=" not in line:
+            continue
+        purpose = line.split("purpose=", 1)[1]
+        purpose = re.sub(r"\s+target_path=.*$", "", purpose).strip()
+        alias = purpose_alias_candidate(purpose)
+        alias_n = norm(alias)
+        if not alias or alias_n in seen:
+            continue
+        seen.add(alias_n)
+        aliases.append(alias)
+        if len(aliases) >= no_match_alias_limit:
+            break
+    return aliases
+
+def queue_no_match_purpose_aliases(concepts):
+    known = concept_terms(concepts)
+    queued = 0
+    for alias in recent_no_match_purpose_aliases(deploy_log_path):
+        if norm(alias) in known:
+            continue
+        similar = format_similar_concepts(alias, concepts)
+        queue_insight(
+            f"[[{alias}]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。{similar}。既存概念aliasesへの自動昇格候補",
+            "low",
+        )
+        queued += 1
+    if queued:
+        print(f"NO_MATCH_PURPOSE_ALIAS: queued {queued} pending alias candidate(s)")
+
 def score_concept(concept, fields):
     normalized_fields = [norm(v) for v in fields if norm(v)]
     haystack = "\n".join(normalized_fields)
@@ -602,6 +660,9 @@ concepts = parse_concepts(text)
 if not concepts:
     print("ERROR: no concepts found in semantic index", file=sys.stderr)
     sys.exit(1)
+
+if source_type == "cmd_complete":
+    queue_no_match_purpose_aliases(concepts)
 
 text, concepts, pending_changed, pending_messages = absorb_pending_semantic_insights(text, concepts)
 for msg in pending_messages:
