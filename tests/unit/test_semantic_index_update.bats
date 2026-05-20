@@ -41,6 +41,25 @@ EOF
 
     cat > "$SEMANTIC_INSIGHT_WRITE" <<'EOF'
 #!/usr/bin/env bash
+if [ "${1:-}" = "--resolve" ]; then
+    python3 - "$2" "${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" <<'PY'
+import sys
+target, path = sys.argv[1:3]
+lines = open(path, encoding="utf-8").read().splitlines()
+out = []
+in_target = False
+for line in lines:
+    if line.startswith("- id: "):
+        in_target = line[len("- id: "):].strip() == target
+    if in_target and line.startswith("  status:"):
+        out.append("  status: done")
+    else:
+        out.append(line)
+open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+PY
+    echo "RESOLVED: $2"
+    exit 0
+fi
 printf '%s|%s|%s\n' "$1" "${2:-}" "${3:-}" >> "$TEST_TMPDIR/queue/insights.log"
 echo "INS-TEST"
 EOF
@@ -106,6 +125,39 @@ teardown() {
     [[ "$output" == *"NONE: insight queued"* ]]
 
     grep -q 'semantic_index_update新概念候補' "$TEST_TMPDIR/queue/insights.log"
+}
+
+@test "pending semantic insights: similar concept is absorbed into aliases and resolved" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-SIMILAR
+  ts: "2026-05-20T00:00:00+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[意味検索改善]] は既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  status: pending
+- id: INS-DISTANT
+  ts: "2026-05-20T00:00:01+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[完全別物]] は既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2912","title":"セマンティクスインデックス","purpose":"pending alias吸収","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_SCORE: 意味検索改善 -> semantic_dictionary_design"* ]]
+    [[ "$output" == *"semantic-map regenerated"* ]]
+
+    grep -q '| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 意味検索改善 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-SIMILAR"]["status"] == "done"
+assert rows["INS-DISTANT"]["status"] == "pending"
+PY
 }
 
 @test "wiki link target: unmatched causal link queues semantic concept insight" {

@@ -61,6 +61,9 @@ from pathlib import Path
 source_type, payload_raw, index_arg, insight_arg = sys.argv[1:5]
 index_path = Path(index_arg)
 insight_write = Path(insight_arg)
+semantic_root = index_path.parent.parent.parent
+insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(semantic_root / "queue" / "insights.yaml")))
+pending_alias_threshold = float(os.environ.get("SEMANTIC_PENDING_ALIAS_THRESHOLD", "16.0"))
 
 try:
     payload = json.loads(payload_raw)
@@ -221,6 +224,10 @@ def similar_concept_suggestions(target, concepts, limit=3):
         suggestions.append((best_score, concept["id"], concept["label"], best_alias))
     suggestions.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return suggestions[:limit]
+
+def best_similar_concept(target, concepts):
+    suggestions = similar_concept_suggestions(target, concepts, limit=1)
+    return suggestions[0] if suggestions else None
 
 def format_similar_concepts(target, concepts):
     suggestions = similar_concept_suggestions(target, concepts)
@@ -438,11 +445,129 @@ def append_aliases_to_block(block, aliases):
         return block, False
     return "\n".join(lines) + "\n\n", True
 
+def parse_pending_semantic_insights(path):
+    if not path.exists() or not path.stat().st_size:
+        return []
+    try:
+        import yaml
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        print(f"WARN: failed to read semantic insights: {exc}", file=sys.stderr)
+        return []
+
+    pending = []
+    for entry in data.get("insights") or []:
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("status", "")).strip() != "pending":
+            continue
+        if str(entry.get("source", "")).strip() != "semantic_index_update":
+            continue
+        insight_id = str(entry.get("id", "")).strip()
+        insight = str(entry.get("insight", "")).strip()
+        if not insight_id or not insight:
+            continue
+
+        candidates = []
+        for raw in re.findall(r"\[\[([^\]]+)\]\]", insight):
+            target = raw.split("|", 1)[0].split("#", 1)[0].strip()
+            if target:
+                candidates.append(target)
+        m = re.search(r"semantic_index_update新概念候補:\s*([^ ]+)\s+は", insight)
+        if m:
+            label = m.group(1).split(":", 1)[-1].strip()
+            if label:
+                candidates.append(label)
+
+        seen = set()
+        for candidate in candidates:
+            candidate_n = norm(candidate)
+            if not candidate_n or candidate_n in seen:
+                continue
+            seen.add(candidate_n)
+            if is_semantic_wiki_target(candidate):
+                pending.append({"id": insight_id, "alias": candidate, "insight": insight})
+    return pending
+
+def resolve_semantic_insight(insight_id):
+    if not insight_write.exists():
+        return False
+    env = os.environ.copy()
+    env["INSIGHTS_FILE"] = str(insights_path)
+    result = subprocess.run(
+        ["bash", str(insight_write), "--resolve", insight_id],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+    )
+    if result.returncode != 0:
+        err = result.stderr.strip() or result.stdout.strip()
+        if err:
+            print(f"WARN: semantic insight resolve failed: {insight_id}: {err}", file=sys.stderr)
+        return False
+    return True
+
+def absorb_pending_semantic_insights(text, concepts):
+    additions = {}
+    resolved_ids = set()
+    messages = []
+
+    known = concept_terms(concepts)
+    for item in parse_pending_semantic_insights(insights_path):
+        alias = item["alias"]
+        alias_n = norm(alias)
+        if alias_n in known:
+            resolved_ids.add(item["id"])
+            messages.append(f"PENDING_ALIAS: already known {alias}")
+            continue
+        best_match = best_similar_concept(alias, concepts)
+        if not best_match:
+            continue
+        score, concept_id, label, matched_alias = best_match
+        messages.append(
+            f"PENDING_ALIAS_SCORE: {alias} -> {concept_id}({label}) via {matched_alias} score={score:.1f}"
+        )
+        if score < pending_alias_threshold:
+            continue
+        additions.setdefault(concept_id, [])
+        if alias_n not in {norm(v) for v in additions[concept_id]}:
+            additions[concept_id].append(alias)
+            known.add(alias_n)
+        resolved_ids.add(item["id"])
+
+    if not additions and not resolved_ids:
+        return text, concepts, False, messages
+
+    updated = text
+    concepts_by_id = {concept["id"]: concept for concept in concepts}
+    changed = False
+    for concept_id in sorted(additions, key=lambda cid: concepts_by_id[cid]["start"], reverse=True):
+        concept = concepts_by_id[concept_id]
+        new_block, block_changed = append_aliases_to_block(concept["block"], additions[concept_id])
+        if block_changed:
+            updated = updated[: concept["start"]] + new_block + updated[concept["end"] :]
+            changed = True
+
+    for insight_id in sorted(resolved_ids):
+        resolve_semantic_insight(insight_id)
+
+    if changed:
+        concepts = parse_concepts(updated)
+    return updated, concepts, changed, messages
+
 text = index_path.read_text(encoding="utf-8")
 concepts = parse_concepts(text)
 if not concepts:
     print("ERROR: no concepts found in semantic index", file=sys.stderr)
     sys.exit(1)
+
+text, concepts, pending_changed, pending_messages = absorb_pending_semantic_insights(text, concepts)
+for msg in pending_messages:
+    print(msg)
+if pending_changed:
+    index_path.write_text(text, encoding="utf-8")
+    print("__SEMANTIC_INDEX_CHANGED__")
 
 fields = flatten_text(payload)
 known_terms = concept_terms(concepts)
@@ -508,8 +633,6 @@ else:
         print(f"NONE: skipped noise-only candidate for {source_type}:{payload_label}")
         sys.exit(0)
     # Dedup: skip if same payload_label already pending in insights
-    _project_root = index_path.parent.parent
-    insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(_project_root / "queue" / "insights.yaml")))
     if insights_path.exists():
         try:
             _raw_insights = insights_path.read_text(encoding="utf-8")
