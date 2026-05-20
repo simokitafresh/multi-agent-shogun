@@ -593,7 +593,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | cmd履歴 | `context/cmd-chronicle.md` cmd_1809-1816, cmd_1924, cmd_1943, cmd_1945, cmd_2104 |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L645 -->
+<!-- last_synced_lesson: L650 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -957,6 +957,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L643: gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避)（cmd_training_speed_hanzo_3）
 - L644: 非同期&テストはポーリング同期後に検証せよ（cmd_karo_ci_fix_skill_log）
 - L645: cmd_saveトリガー表示は行本文を出さず最小メタ情報に限定する（cmd_2898）
+- L647: dry-run health checkは対象未指定でもFAIL学習ログにしない（cmd_2929）
+- L648: AC文の検査語を報告テンプレートへ直コピーすると提出前grepが自己検出する（cmd_2930）
+- L649: dry-runヘルスチェック系実行でcmd_id省略時はexit 0にする（cmd_2929）
+- L650: AC文にプレースホルダ検査語が含まれる場合テンプレート生成時に安全表記へ正規化（cmd_2930）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

@@ -677,3 +677,6 @@
 | cmd_2924 | cmd_2922(ストレステストツール本体)を3つの自動発火トリガーに接続する。軍師5W1H設計(blt_013243)に基づく。手動実行→自動組込みで意志依存をゼロにする | infra | 05-21 | L7 semantic stress testの3トリガー配 |
 | cmd_2926 | idle忍者の修行ACに対象スクリプトの機能用途をaliases候補として提案するステップを追加。6忍者並列でaliases品質を加速。修行の成果がL7パイプラインに直結する | infra | 05-21 | context/training-cycle.mdのCoDD |
 | cmd_2927 | index.mdにrelated_conceptsフィールド追加。semantic_search.shで1概念ヒット時に関連概念も注入。45概念の相互接続で配備時コンテキスト密度を倍増する | infra | 05-21 | semantic indexにrelated_concept |
+| cmd_2925 | semantic_searchの道具は存在するが全ロールの手順に未記載。家老karo.md=0件、忍者ashigaru.md/CLAUDE.md=0件、軍師gunshi.md=レビュー時0件。Phase 4: 手順にないものは使われない。全ロールのinstructions/recovery手順にsemantic概念確認ステップを追加する | infra | 05-21 | cmd_2925は家老task_haltにより中止。軍師レビ |
+| cmd_2928 | skill_auto_improve.shのreasonグルーピングがcmdID/ninjaID含みで同一根因が別パターン化。古いパターンのlast_failが更新されず14日カットオフで除外→Gate 20.7が12件中1件しか表示しない。グルーピングキーを正規化し、last_failを常時最新に更新する | infra | 05-21 | skill_auto_improveのFAIL reason |
+| cmd_2931 | 教訓注入のuseful率7.1%(95注入中2有用)。現在のkeyword/tag/pathマッチは意味を理解しない。semantic_searchが既にdeploy_task.shで概念を検出しているため、概念にrelated_lessonsフィールドを追加し、検出された概念の教訓をスコアブーストで優先注入する | infra | 05-21 | semantic概念related_lessonsとdepl |
