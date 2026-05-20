@@ -40,7 +40,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存, L7tohanannda |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -87,6 +87,7 @@ codd:
 | causal | `cmd_2910` origin: [[L7_HOW]] -> [[origin_aliases_gap]] -> [[concept_auto_growth]] |
 | cmd | `cmd_2912` 強化: pending概念の自動昇格でセマンティクスインデックスを自動成長(L7f) (`scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
 | causal | `cmd_2912` origin: [[L7f_concept_auto_promote]] -> [[pending_insights_22]] -> [[semantic_index_auto_growth]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T23:24:55+09:00 L7tohanannda |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -212,6 +213,7 @@ codd:
 | file | `scripts/gates/gate_report_format.sh` 報告YAML品質gate |
 | file | `scripts/gates/gate_report_format_main.py` 報告YAML検証エンジン |
 | file | `scripts/report_field_set.sh` 報告YAML安全書込み(gate迂回防止) |
+| file | `scripts/gate_improvement_trigger.sh` gate ALERT通知(家老inbox+ntfy。自動消火抑制) |
 
 ## terminology_dictionary — 用語辞書
 
@@ -300,6 +302,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:04:10+09:00 いまどのような自動成長の学習ループがある？ |
 | cmd | `cmd_2911` 整備: lessons_karo.yaml上限到達に伴う教訓統合(LK-A01 v8吸収+LK013統合) (`projects/infra/lessons_karo.yaml`) |
 | causal | `cmd_2911` origin: [[lessons_karo_limit]] -> [[LK-A01_v8_absorption]] -> [[lesson_cycle_unblock]] |
+| file | `scripts/lesson_impact_analysis.sh` 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) |
+| file | `scripts/ralph_loop_metrics.sh` ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) |
+| file | `scripts/knowledge_metrics.sh` 教訓有効性+陳腐化検出(JSON/TSV出力対応) |
 
 ## alm_research — ALM研究
 
@@ -1001,6 +1006,7 @@ codd:
 | file | `docs/operations/daemon_runbook.md` |
 | cmd | `cmd_2873` デーモン統一管理 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？ |
+| file | `scripts/daemon_watchdog.sh` デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -1052,6 +1058,9 @@ codd:
 | file | `context/infrastructure.md` |
 | cmd | `cmd_2872` cmd_complete_gate flock追加 |
 | cmd | `cmd_2873` デーモン統一管理 |
+| file | `scripts/dashboard_auto_section.sh` ダッシュボードリアルタイムステータス自動生成 |
+| file | `scripts/auto_deploy_next.sh` サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) |
+| file | `scripts/reset_layout.sh` agentsウィンドウペイン配置一発復元 |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -1081,6 +1090,8 @@ codd:
 | causal | `cmd_2902` origin: [[origin_none_passthrough]] -> [[causal_edge_zero]] -> [[semantic_reflux_dead]] |
 | cmd | `cmd_2905` 強化 — cmd_save.sh preflightにtarget_path git log自動表示 (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_bundle.bats`) |
 | cmd | `cmd_2909` (`scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
+| file | `scripts/ac_physical_verify.sh` AC物理検証(ファイルパス/行番号/§実在確認) |
+| file | `scripts/model_analysis.sh` モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
