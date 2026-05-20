@@ -61,6 +61,13 @@ teardown() {
     [[ "$output" == *"self_gate_check.lesson_ref PASS"* ]]
 }
 
+@test "lesson_candidate: string形式入力はexit 1 and preserves report" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' lesson_candidate 'FILL_THIS' 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: lesson_candidate はdict形式必須"* ]]
+    ! grep -Fq "lesson_candidate:" "$TEST_REPORT"
+}
+
 @test "self_gate_check: stdin string形式入力はexit 1" {
     run bash -c "echo 'all good' | bash '$SCRIPT' '$TEST_REPORT' self_gate_check - 2>&1"
     [ "$status" -eq 1 ]

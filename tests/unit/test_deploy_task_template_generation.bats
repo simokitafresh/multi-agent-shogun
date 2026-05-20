@@ -594,6 +594,41 @@ YAML
     _fixture_project_end
 }
 
+@test "binary_checks generated from AC text do not leave literal FILL_THIS in report" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_fill_this_literal
+  task_id: cmd_fill_this_literal_exact
+  project: infra
+  ac_version: deadbeef
+  report_filename: sasuke_report_cmd_fill_this_literal.yaml
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "report_field_set.sh経由で全フィールド記入後にFILL_THISが残存しない"
+    - id: AC2
+      description: "FILL_THIS残存がないことを確認する"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_fill_this_literal_exact cmd_fill_this_literal infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_fill_this_literal.yaml"
+    run rg -n "FILL_THIS" "$report_path"
+    [ "$status" -eq 1 ]
+    grep -Fq "FILL-THIS" "$report_path"
+
+    _fixture_project_end
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════

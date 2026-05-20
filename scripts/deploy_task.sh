@@ -2072,6 +2072,7 @@ EOF
         }
         function normalize_check_text(text, ac_desc, out) {
             out = text
+            gsub(/FILL_THIS/, "FILL-THIS", out)
             if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
                 out = out " (進行中月除外)"
             }
@@ -2225,6 +2226,7 @@ ${_commit_bc}"
             }
             function normalize_check_text(text, ac_desc, out) {
                 out = text
+                gsub(/FILL_THIS/, "FILL-THIS", out)
                 if (ac_desc ~ /(monthly|月次)/ && out !~ /進行中月除外/) {
                     out = out " (進行中月除外)"
                 }
