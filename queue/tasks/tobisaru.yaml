@@ -41,8 +41,8 @@ task:
   scope:
     - scripts/daemon_watchdog.sh
     - docs/research/codd_refactor_registry.md
-  status: in_progress
-  parent_cmd: cmd_training_speed_tobisaru_4
+  status: idle
+  parent_cmd: 
   related_lessons: []
   related_lessons:
   - id: 'L512'
@@ -77,3 +77,14 @@ task:
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
   acceptance_criteria.AC1.binary_checks.0.result: yes
   verdict: PASS
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
+    tried_approaches:
+    - 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
+    approach_summary: 'daemon_watchdog.sh check_inbox_watchers: 9×pgrep(~150ms)→1×ps+awk PIDマップ(~27ms)置換。cold median 415ms→172ms(-58.5%, 2.4x)。41/41 PASS, SKIP=0'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
+      approach_summary: 'daemon_watchdog.sh check_inbox_watchers: 9×pgrep(~150ms)→1×ps+awk PIDマップ(~27ms)置換。cold median 415ms→172ms(-58.5%, 2.4x)。41/41 PASS, SKIP=0'
