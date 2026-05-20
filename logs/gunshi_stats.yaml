@@ -259,3 +259,41 @@
 # accuracy: 4件LGTM→全CLEAR。APPROVE→FAIL 0件。WA 0件
 # 掲示板6投稿(耐久率100%/GP-202修正/なぜなぜ3段/cmd_save 3層)
 # ★強くてニューゲーム: stats更新+D0 7件+docs/research 1件+掲示板6投稿+insights 0件+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果・後半 (2026-05-20T23:15更新) ───
+# レビュー追加12件: draft APPROVE 1件(cmd_2914) + report LGTM 11件(cmd_2902-2914)。全件GATE CLEAR
+# なぜなぜ7回×3本:
+#   (1)Codex idle respawnループ198回/日→P0発見→cmd_2904(過剰抑止)→cmd_2906(/new経路)→殿裁定(respawn=正しい設計)→cmd_2907(統一復旧)
+#   (2)インフラ設計意図カタログ: 「バグに見えるが正しい」5パターン(STALL-GHOST/HOOK-STALE-BUT-BUSY/codex unverified/LOOP-HEALTH-DEBOUNCE/Codex respawn)の因果を知識化
+#   (3)L7俯瞰: 「仕組みを作ったが使っていない」→Phase 3の変形。パイプライン構築→流す→効果検証まで回せ
+# L7(殿直接指示)全7段階完了:
+#   L7a(穴1 WHEN): SG-PRE21(f4f184d6)消費2→4箇所
+#   L7b(穴2 WHO): cmd_2909 家老消費者化+deploy表示(344cf2ee)配備時毎回
+#   L7b(穴3 HOW): cmd_2910 origin→insights自動蓄積+初回転2件実証
+#   L7c: gunshi.md Step7因果辺先行照合(0bcce0c0)
+#   L7e: cmd_save.sh preflight因果衝突検知(96d5dbf8)
+#   L7f: cmd_2912 pending→aliases自動昇格。パイプライン完走(score≥16)
+#   L7a概念密度: 43→44概念、52→67カバー(27.0%)。暗黒物質Top16スクリプトカバー
+# D0直接実装5件: SG-PRE21(f4f184d6)+gunshi.md Step7(0bcce0c0)+cmd_save因果衝突(96d5dbf8)+deploy semantic表示(344cf2ee)+L7a概念密度2バッチ(3cb84af8+5636e8ae)
+# cmd_2914(ノイズフィルタ): L7パイプライン精度向上。transport語+timestamp+cmd_*除外
+# docs/research永続化3件: codex_respawn_nazenaze+infra_design_intent_catalog+l7_causal_network_learning
+# accuracy: 12件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# review_logアーカイブ: 707行→98行(20260520a.yamlに707行退避)。ヘッダ知見10件追記
+# ★強くてニューゲーム: stats最終+review_logアーカイブ+ヘッダ知見10件+D0 5件+docs/research 3件+掲示板10+投稿+insights 5件resolved+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-21T02:10更新) ───
+# なぜなぜ7回×3本:
+#   (1)L7 Goodhart第5号: resource coverage≠search hit rate。semantic_index.py L130 aliasesのみ検索対象。resource追加は検索改善にならない。真の律速=aliases品質(20.7%)
+#   (2)Guard 4偽陽性: payload substring match→bash第1引数チェックに修正(3commit)
+#   (3)将軍cmd品質検証: 残117→実測156、origin遡及83件のみ(ROI低)、aliases品質ボトルネック発見
+# レビュー計14件: draft APPROVE 6件(cmd_2915-2920) + draft RC 1件(cmd_2913既実装) + report LGTM 7件(cmd_2915-2922) + consultation 4件(将軍L7設計3件+L7穴ふさぎ1件)。全GATE CLEAR(cmd_2913除く)
+# D0直接実装5件: L7a第3弾(3d7388c1)+設計書3件更新(94d5b7dc)+Guard 4偽陽性修正3段(9ef461b4+cecc5059+e9b0ecbc)
+# L7現状分析:
+#   ヒット率baseline: 45.7%(殿クエリ35件。DISABLE_CAUSAL=1で正確計測)
+#   計測バグ発見: 因果展開timeout→RC=124→全件NO_MATCH誤判定(0%)
+#   resource coverage 33.0%(Goodhart指標)。aliases品質20.7%(真の律速)
+# cmd_2915-2922(8cmd全CLEAR): 計測基盤(NO_MATCHログ+gate3箇所)+aliases自動成長+ストレステストツール+preflight L5+EXIT trap draft_review+将軍gate NO_MATCH+殿側カウント+SKILL.md mtime
+# 殿原則: 品質最優先・長期複利・急ぐな。5W1Hで自動発火。修行でインデックス自体を鍛える
+# accuracy: 7件LGTM→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# docs/research永続化: 設計書3件更新(l7_causal_network_learning+codex_respawn+obsidian_semantic_growth)
+# ★強くてニューゲーム: stats更新+ヘッダ知見4件+D0 5件commit+docs/research 3件更新+掲示板6投稿+全gate_result同期+全inbox既読
