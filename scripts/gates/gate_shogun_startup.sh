@@ -27,6 +27,73 @@ _d_proposals=0
 _d_inbox=0
 _d_idle_trigger=""
 
+	show_semantic_no_match_metrics() {
+	    local deploy_log="${SHOGUN_STARTUP_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_task.log}"
+	    local prompt_log="${SHOGUN_STARTUP_PROMPT_SEMANTIC_NO_MATCH_LOG:-$SCRIPT_DIR/logs/semantic_no_match_metrics.log}"
+	    local scan_lines="${SHOGUN_STARTUP_NO_MATCH_SCAN_LINES:-500}"
+
+	    echo "■ セマンティックNO_MATCH計測"
+	    if [ -f "$prompt_log" ]; then
+	        local lord_no_match_count
+	        lord_no_match_count="$(tail -n "$scan_lines" "$prompt_log" 2>/dev/null | awk -F'\t' '/source=prompt_state_inject\.sh/ && /count=1/ {c++} END {print c+0}')"
+	        echo "  殿クエリNO_MATCHカウント: ${lord_no_match_count}件 (scan_lines=${scan_lines})"
+	    else
+	        echo "  殿クエリNO_MATCHカウント: 0件 (logなし)"
+	    fi
+	    if [ ! -f "$deploy_log" ]; then
+	        echo "  SKIP: logs/deploy_task.log 不在"
+	        echo ""
+        return 0
+    fi
+
+    tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '
+        /inject_semantic_concepts:/ {
+            attempts++
+            if (/NO_MATCH/) {
+                no_match++
+                purpose = $0
+                sub(/^.*NO_MATCH purpose=/, "", purpose)
+                sub(/[[:space:]]target_path=.*/, "", purpose)
+                gsub(/[[:space:]]+/, " ", purpose)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", purpose)
+                if (purpose == "") purpose = "(purposeなし)"
+                miss[purpose]++
+            }
+        }
+        END {
+            if (attempts == 0) {
+                print "  semantic注入試行: 0件"
+                exit
+            }
+            rate = int((no_match * 1000 / attempts) + 0.5) / 10
+            printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
+            if (no_match == 0) {
+                print "  TOP3 miss purpose: none"
+                exit
+            }
+            print "  TOP3 miss purpose:"
+            for (purpose in miss) {
+                order[++n] = purpose
+            }
+            for (i = 1; i <= n; i++) {
+                for (j = i + 1; j <= n; j++) {
+                    if (miss[order[j]] > miss[order[i]]) {
+                        tmp = order[i]; order[i] = order[j]; order[j] = tmp
+                    }
+                }
+            }
+            limit = (n < 3) ? n : 3
+            for (i = 1; i <= limit; i++) {
+                p = order[i]
+                shown = p
+                if (length(shown) > 100) shown = substr(shown, 1, 97) "..."
+                printf "    %d. %s (%d件)\n", i, shown, miss[p]
+            }
+        }
+    ' scan_lines="$scan_lines"
+    echo ""
+}
+
 echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
@@ -141,6 +208,7 @@ else
     fi
     alerts+=("セマンティクスインデックス鮮度: index不在")
 fi
+show_semantic_no_match_metrics
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ cmd委任状態"

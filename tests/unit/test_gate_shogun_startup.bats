@@ -1007,3 +1007,35 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"WARNING: AC不一致"* ]]
 }
+
+@test "semantic NO_MATCH metrics displays rate and top3 purposes" {
+    cat > "$TEST_TMPDIR/logs/deploy_task.log" <<'EOF'
+2026-05-21 00:00:01 inject_semantic_concepts: concepts injected purpose=hit one target_path=scripts/a.sh
+2026-05-21 00:00:02 inject_semantic_concepts: NO_MATCH purpose=missing alpha target_path=scripts/a.sh
+2026-05-21 00:00:03 inject_semantic_concepts: NO_MATCH purpose=missing beta target_path=scripts/b.sh
+2026-05-21 00:00:04 inject_semantic_concepts: NO_MATCH purpose=missing alpha target_path=scripts/c.sh
+EOF
+
+    SHOGUN_STARTUP_NO_MATCH_SCAN_LINES=20 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ セマンティックNO_MATCH計測"* ]]
+    [[ "$output" == *"NO_MATCH率: 75.0% (3/4, scan_lines=20)"* ]]
+    [[ "$output" == *"TOP3 miss purpose:"* ]]
+    [[ "$output" == *"1. missing alpha (2件)"* ]]
+    [[ "$output" == *"2. missing beta (1件)"* ]]
+}
+
+@test "semantic NO_MATCH metrics displays lord query count without query content" {
+    cat > "$TEST_TMPDIR/logs/semantic_no_match_metrics.log" <<'EOF'
+2026-05-21T00:00:01+09:00	source=prompt_state_inject.sh	agent_id=shogun	count=1
+2026-05-21T00:00:02+09:00	source=prompt_state_inject.sh	agent_id=shogun	count=1
+EOF
+    cat > "$TEST_TMPDIR/logs/deploy_task.log" <<'EOF'
+2026-05-21 00:00:01 inject_semantic_concepts: 1 concepts injected
+EOF
+
+    SHOGUN_STARTUP_NO_MATCH_SCAN_LINES=20 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"殿クエリNO_MATCHカウント: 2件 (scan_lines=20)"* ]]
+    [[ "$output" != *"未知クエリ"* ]]
+}
