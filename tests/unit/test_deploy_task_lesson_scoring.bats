@@ -20,19 +20,26 @@ teardown() {
 }
 
 # Helper: スコアリングロジックを実行してIDとスコアを返す (ID:score形式、スコア降順)
-# Usage: run_scoring <project> <keywords_json> <lessons_json>
+# Usage: run_scoring <project> <keywords_json> <lessons_json> [task_type]
 run_scoring() {
     local project="$1"
     local keywords_json="$2"
     local lessons_json="$3"
-    python3 - "$project" "$keywords_json" "$lessons_json" <<'PY'
+    local task_type="${4:-impl}"
+    python3 - "$project" "$keywords_json" "$lessons_json" "$task_type" <<'PY'
 import json
 import sys
 
 project = sys.argv[1]
 keywords = json.loads(sys.argv[2])
 lessons = json.loads(sys.argv[3])
-MIN_KEYWORD_SCORE = 2
+task_type = sys.argv[4].lower()
+MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
+    'default': 2,
+    'exact': 4,
+    'focused': 4,
+}
+MIN_KEYWORD_SCORE = MIN_KEYWORD_SCORE_BY_TASK_TYPE.get(task_type, MIN_KEYWORD_SCORE_BY_TASK_TYPE['default'])
 
 scored = []
 for lesson in lessons:
@@ -181,6 +188,29 @@ PY
     [[ "$output" != *"L_SINGLE:"* ]]
     [[ "$output" == *"L_STRONG"* ]]
     [[ "$output" == *"excluded L_SINGLE score=1 < MIN_KEYWORD_SCORE=2"* ]]
+}
+
+@test "cmd_2901: task_type=exactはimplより高いMIN_KEYWORD_SCOREを使う" {
+    run run_scoring "infra" \
+        '["deploy"]' \
+        '[
+          {"id": "L_SCORE_3", "title": "deploy", "summary": "", "_source_project": "other"},
+          {"id": "L_SCORE_4", "title": "deploy", "summary": "deploy", "_source_project": "other"}
+        ]' \
+        "exact"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L_SCORE_3:"* ]]
+    [[ "$output" == *"L_SCORE_4"* ]]
+    [[ "$output" == *"excluded L_SCORE_3 score=3 < MIN_KEYWORD_SCORE=4"* ]]
+
+    run run_scoring "infra" \
+        '["deploy"]' \
+        '[
+          {"id": "L_SCORE_3", "title": "deploy", "summary": "", "_source_project": "other"}
+        ]' \
+        "impl"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L_SCORE_3:3"* ]]
 }
 
 @test "AC3: 全教訓がマッチしない場合は出力が空" {

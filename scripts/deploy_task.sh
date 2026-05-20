@@ -3300,7 +3300,11 @@ script_dir = os.environ['SCRIPT_DIR_ENV']
 DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
-MIN_KEYWORD_SCORE = int(os.environ.get('MIN_KEYWORD_SCORE', '2'))  # weak single-hit matches are too noisy
+MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
+    'default': int(os.environ.get('MIN_KEYWORD_SCORE', '2')),
+    'exact': int(os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4')),
+    'focused': int(os.environ.get('MIN_KEYWORD_SCORE_FOCUSED', os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4'))),
+}
 IMPACT_COLUMNS = [
     'timestamp', 'cmd_id', 'ninja', 'lesson_id', 'action', 'result',
     'referenced', 'project', 'task_type', 'bloom_level', 'score',
@@ -3448,6 +3452,7 @@ try:
     task = data['task']
     project = task.get('project', '')
     task_type = str(task.get('task_type') or task.get('type') or task.get('scope_mode') or 'unknown').lower().strip()
+    MIN_KEYWORD_SCORE = MIN_KEYWORD_SCORE_BY_TASK_TYPE.get(task_type, MIN_KEYWORD_SCORE_BY_TASK_TYPE['default'])
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
     CROSS_PROJECT_SCORE_THRESHOLD = 9  # 3キーワード以上要求(FP率0%是正: 旧3=1kw通過→37件全NOT_USEFUL)
 
