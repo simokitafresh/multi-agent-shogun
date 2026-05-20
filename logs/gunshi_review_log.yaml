@@ -149,3 +149,261 @@
   origin: "[[cmd_karo_ci_fix_skill_log]] -> [[cmd_training_speed_hanzo_3]] -> [[async_test_race_fix]]"
   causal_chain: "速度最適化(&非同期化)→テスト即読み競合→CI RED→ポーリング追加で両立(速度維持+テストPASS)。正の複利=非同期パターンのテスト知見獲得"
   timestamp: "2026-05-19T22:55:00"
+- cmd_id: D0_GP202_training_FP_fix
+  review_type: self_study
+  verdict: null
+  findings_summary: "GP-202偽陽性修正。cmd_training_*/cmd_karo_*をスキップ。22テスト全PASS。修行gate FAIL3件のパターン分析から発見"
+  observations:
+    - "事実: 修行cmd3件(hanzo1+kotaro2)全てでGP-202発火。cmd_training_speed_*はファイル名に含まれない構造的偽陽性"
+    - "事実: kotaro2回連続FAIL→3回目PASS。免疫系(FAIL→自己修正→PASS)が動作。修行の目的達成"
+    - "事実: テンプレートフィールド上書き消失が修行FAIL共通根因。LG006系の既知パターンでgateが正しく検出"
+  finding_categories:
+    - assumptions
+    - simulation
+  origin: "[[修行gate_FAIL]] -> [[GP-202偽陽性]] -> [[構造的cmd_id不含]]"
+  causal_chain: "修行cmd配備→karo_direct方式→cmd_idがcommit/ファイル名に不含→GP-202常時発火(ノイズ)→WARNの信号品質低下→除外条件追加で信号回復"
+  cs_checklist:
+    CS1: "OK: gate FAIL通知3件+gate_report_format_main.py L98-99確認"
+    CS2: "OK: 自システムのGP-202発火パターンを修行/通常cmdで切り分け"
+    CS3: "OK: 修行報告2件+CI修正報告1件でGP-202消失確認+22テストPASS"
+    CS4: "OK: D0実装→commit→家老報告→review_log記録"
+    CS5: "OK: 通常cmdの防御維持を確認(cmd_NNNNは除外条件に該当しない)"
+    CS6: "OK: ノイズ除去→信号品質向上→WARNの意味回復"
+  timestamp: "2026-05-20T00:05:00"
+- cmd_id: cmd_training_L4_auto_202605201330_kotaro
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "L4修行標準パターン。target_path=ninja_monitor.sh存在。AC4個整合。即配備可"
+  observations:
+    - "事実: target_path_warningが不在表示だが実際は201KB存在。deploy_task.sh注入時の一時状態"
+  finding_categories:
+    - assumptions
+    - simulation
+  origin: "[[cmd_training_L4_auto_202605201330_kotaro]] -> [[修行L4]] -> [[kotaro]]"
+  causal_chain: "修行L4配備→kotaro ninja_monitor.sh改善→報告品質訓練(前回2回FAIL経験活用)"
+  timestamp: "2026-05-20T13:35:00"
+- cmd_id: D0_target_path_warning_FP_fix
+  review_type: self_study
+  verdict: null
+  findings_summary: "target_path_warning偽陽性修正。相対パスをSCRIPT_DIR基準で解決。kotaro修行draftレビューで発見"
+  observations:
+    - "事実: deploy_task.sh行4436の[ ! -e $p ]が相対パスをcwd基準で評価→常に不在判定。SCRIPT_DIR/付加で修正"
+    - "事実: kotaro修行task YAMLにtarget_path_warning偽陽性が混入。忍者に誤った情報提供(target_path存在するのに不在と表示)"
+  finding_categories:
+    - assumptions
+    - simulation
+  origin: "[[cmd_training_L4_auto_202605201330_kotaro]] -> [[target_path_warning偽陽性]] -> [[cwd依存パス解決]]"
+  causal_chain: "draft reviewでtarget_path_warning偽陽性発見→deploy_task.sh行4436のcwd依存→SCRIPT_DIR基準修正→偽陽性根絶"
+  cs_checklist:
+    CS1: "OK: deploy_task.sh行4410-4453のtarget_pathチェック全体を確認"
+    CS2: "OK: 自システムの問題(偽陽性WARNING)を修行draftから発見"
+    CS3: "OK: 相対+絶対パス2パターンで検証"
+    CS4: "OK: D0実装→commit→家老報告→review_log記録"
+    CS5: "OK: 絶対パスケースの副作用なしを確認"
+    CS6: "OK: レビュー→気づき→即修正の行動サイクル完走"
+  timestamp: "2026-05-20T13:45:00"
+- cmd_id: D0_target_path_project_resolve
+  review_type: self_study
+  verdict: null
+  findings_summary: "なぜなぜ7回→target_path 90件偽陽性の根因=project情報未参照。2段解決で修正。4パターンPASS"
+  observations:
+    - "事実: gate_fire_log.yamlにinject_target_path_check WARN 90件(2026-04-20〜)。1ヶ月放置"
+    - "事実: 86件はDM-Signal相対パスで実在。SCRIPT_DIR基準の単一リポ前提が根因"
+    - "事実: WARNはBLOCKしないため配備に影響なし→発見されない構造(Why2: WARN=存在しないのと同じ)"
+  finding_categories:
+    - assumptions
+    - simulation
+    - north_star
+  origin: "[[D0_target_path_warning_FP_fix]] -> [[90件偽陽性]] -> [[project_path未参照]]"
+  causal_chain: "draftレビュー→偽陽性発見→Phase1(cwd修正)→gate_fire_log確認→90件発覚→なぜなぜ7回→根因=project未参照→Phase2(2段解決)→90件根絶"
+  cs_checklist:
+    CS1: "OK: gate_fire_log.yaml 90件+deploy_task.sh行4405-4455+projects/dm-signal.yaml確認"
+    CS2: "OK: 自システムの偽陽性90件を定量検証"
+    CS3: "OK: DM-Signalパス実在を現物確認(ls)"
+    CS4: "OK: D0実装→commit→家老報告→docs/research永続化→review_log記録"
+    CS5: "OK: 残課題(startup gateのWARN集計対象拡大)を明記"
+    CS6: "OK: 7段因果鎖でproject_path未参照まで到達"
+  timestamp: "2026-05-20T14:05:00"
+- cmd_id: D0_warn_top3_startup_gate
+  review_type: self_study
+  verdict: null
+  findings_summary: "startup gateにWARN Top3集計追加。なぜなぜ7回のWhy4-5(WARN集計未整備)を解消"
+  observations:
+    - "事実: gate_fire_logのWARNは既存集計対象外(FAIL/PASSのみ)。90件偽陽性が1ヶ月検出されない根因"
+    - "事実: 7行追加でWARN発火Top3を起動時表示。既存出力に影響なし"
+  finding_categories:
+    - north_star
+    - simulation
+  origin: "[[D0_target_path_project_resolve]] -> [[なぜなぜWhy4-5]] -> [[WARN集計追加]]"
+  causal_chain: "WARN計測なし→偽陽性放置→計測追加→早期検出可能。なぜなぜ7回の残課題を環境に埋め込み"
+  cs_checklist:
+    CS1: "OK: gate_shogun_startup.sh行1780-1804のentries/stats構造を確認"
+    CS2: "OK: 自システムのgate_fire_log WARN 90件を定量確認"
+    CS3: "OK: python3直接テストでWARN集計出力確認"
+    CS4: "OK: D0実装→commit→家老報告→review_log記録"
+    CS5: "OK: entries空ケース→出力なし(安全)"
+    CS6: "OK: なぜなぜ7回→根因修正(Phase1-2)→集計追加(Phase3)=3段の完走"
+  timestamp: "2026-05-20T14:25:00"
+- cmd_id: D0_cmd_save_block_summary
+  review_type: self_study
+  verdict: null
+  findings_summary: "cmd_save.sh BLOCK一括サマリ出力追加。将軍フリーズ問題の根因=BLOCK理由散在→一括把握不可→繰り返し修正。5行追加"
+  observations:
+    - "事実: cmd_save.shは全チェック通過後にexit 1。BLOCK_REASONS配列に全理由蓄積済みだが最終出力に一覧なし"
+    - "事実: 将軍はcmd_2897で3回、cmd_2898で1回BLOCK→修正→再BLOCKの繰り返し。殿の時間を奪う"
+    - "事実: 5行追加(番号付き一括リスト)で全理由を一目で把握可能。模擬3件テストで出力フォーマット確認"
+  finding_categories:
+    - simulation
+    - premortem
+  origin: "[[cmd_2897]] -> [[cmd_save BLOCK繰返し]] -> [[BLOCK理由散在]] -> [[一括サマリ追加]]"
+  causal_chain: "将軍BLOCK3回→根因=理由散在(修正箇所不明)→BLOCK_REASONS一括出力追加→1回で全修正把握→繰り返し回避"
+  cs_checklist:
+    CS1: "OK: cmd_save.sh全5109行の構造+BLOCK_REASONS蓄積箇所+最終出力箇所を確認"
+    CS2: "OK: 将軍の報告(cmd_2897で3回BLOCK)と出力構造の突合で根因確認"
+    CS3: "OK: 模擬3件BLOCKで出力フォーマット確認"
+    CS4: "OK: D0→commit→家老報告→掲示板(将軍宛)→review_log"
+    CS5: "OK: BLOCK_REASONS空→forスキップ(安全)"
+    CS6: "OK: 将軍の時間節約=殿の時間節約。利他のサイクル"
+  timestamp: "2026-05-20T14:50:00"
+- cmd_id: cmd_2897
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。ac_phase_mixingのcommit FP除外+deploy検出維持。108テスト全PASS。commit 51a74b0e確認"
+  observations:
+    - "事実: deliveryキーワードからcommit/コミット除外。push/deploy/デプロイは維持。専用テスト11件+既存97件全PASS"
+    - "事実: commit後のcmd_save.sh別差分は軍師D0修正(一括サマリ+ntfy)。saizo成果物と無関係。正確な報告"
+  finding_categories:
+    - assumptions
+    - premortem
+  origin: "[[cmd_2897]] -> [[ac_phase_mixing_FP]] -> [[commit_not_delivery]]"
+  causal_chain: "ac_phase_mixingがcommitをdeliveryと誤判定→将軍BLOCK→キーワード縮小で根因修正→108テスト維持→FP根絶"
+  timestamp: "2026-05-20T15:20:00"
+- cmd_id: cmd_2899
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。SKILL.md追従12件一括更新。gate_skill_script_refs.sh WARN 0件。commit 0b368829確認"
+  observations:
+    - "事実: 12 SKILL.md全件commit確認。gate出力で13参照/12スキルに拡大(task記載10件→12件に裁量拡大。正当)"
+  finding_categories:
+    - assumptions
+  origin: "[[cmd_2899]] -> [[skill_script_refs_warn]] -> [[SKILL.md追従完了]]"
+  causal_chain: "startup gate SKILL.md追従WARN→12件一括更新→WARN 0件→スキル品質維持"
+  timestamp: "2026-05-20T15:25:00"
+- cmd_id: cmd_2898
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。cmd_saveトリガーマップ回帰テスト24件追加+コメント1行。285テスト全PASS。commit f40749f4+45fba10a"
+  observations:
+    - "事実: emit_block_warn_trigger_summary/emit_cmd_trigger_locations関数は既存。hayateの成果=コメント追加+回帰テスト24行"
+    - "事実: lesson_candidate=トリガーマップ出力は行本文を含めない(テスト干渉回避)。register推奨"
+  finding_categories:
+    - assumptions
+    - premortem
+  origin: "[[cmd_2898]] -> [[cmd_save_trigger_map]] -> [[regression_test_addition]]"
+  causal_chain: "将軍BLOCK→トリガーマップ既存→テスト未整備→回帰テスト追加で品質保証。行本文出力はテスト干渉→最小メタ情報に限定"
+  timestamp: "2026-05-20T15:35:00"
+- cmd_id: D0_semantic_5concepts_causal_enhance
+  review_type: self_study
+  verdict: null
+  findings_summary: "セマンティックインデックス5概念追加+causal_backlinks拡張。概念35→40。カバレッジ17.6%→37.7%"
+  observations:
+    - "事実: カバレッジ監査で204スクリプト中168件(82.4%)が暗黒物質。P0空白=gate/lesson/bulletin/hook"
+    - "事実: causal_backlinks.sh --detailでorigin因果鎖テキスト表示。--semanticで概念逆引き。レビュー/配備/自走で利用可能"
+    - "事実: 重要14スクリプト中11件(78.6%)がカバー済み。残3件(gate_gunshi_startup/bulletin_write/lesson_write)を今回カバー"
+  finding_categories:
+    - north_star
+    - simulation
+  origin: "[[semantic_dictionary_design]] -> [[カバレッジ監査]] -> [[5概念追加]]"
+  causal_chain: "殿指示(Obsidian×セマンティック成長)→カバレッジ監査(17.6%)→P0空白特定→5概念追加→37.7%→利他(全エージェントが使える道具)"
+  cs_checklist:
+    CS1: "OK: index.md全35概念+scripts/ 204ファイルを定量監査"
+    CS2: "OK: 自システムのカバレッジを204件ベースで実測"
+    CS3: "OK: causal_backlinks 3モード+複合テスト全PASS"
+    CS4: "OK: index.md+semantic-map.md更新→家老報告→掲示板→review_log"
+    CS5: "OK: 残り暗黒物質127件のP1-P3分類済み(次サイクルで対応)"
+    CS6: "OK: 利他サイクル=全エージェントのsemantic_search/causal_backlinks利用基盤拡大"
+  timestamp: "2026-05-20T16:10:00"
+- cmd_id: cmd_2900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。gws Gmail知識体系化。AC3個exact型。§gws Gmail未記載確認。auth statusバグ実測verified"
+  observations:
+    - "事実: rg -nF 'gmail' context/infrastructure.md → 0件。Gmail操作知識がcontextに完全不在"
+    - "事実: auth statusバグ=暗号化credentialsを検出できない。実APIで1秒確認可能(将軍の誤判断の根因)"
+  finding_categories:
+    - assumptions
+    - north_star
+  origin: "[[cmd_2900]] -> [[gws_auth_status_bug]] -> [[知識不足→誤判断→殿時間浪費]]"
+  causal_chain: "gws Gmail知識不在→将軍がauth status信用→ログアウトと誤判断→殿にブラウザ認証依頼→知識追記で構造的防止"
+  timestamp: "2026-05-20T16:15:00"
+- cmd_id: cmd_2900
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK。§gws Gmail操作+auth確認+フィルタ追記。auth status乖離を実測確認。commit 2490f67b"
+  observations:
+    - "事実: auth status=auth_method none返却でも実API(gws gmail +triage)は成功。表示と実態の乖離を文書化"
+    - "事実: filter updateはGmail API不在。delete→createが正しい手順(discretion_fills適切)"
+  finding_categories:
+    - assumptions
+    - premortem
+  origin: "[[cmd_2900]] -> [[gws_auth_status_bug]] -> [[context知識体系化]]"
+  causal_chain: "auth status誤判定→殿に不要な認証依頼→Gmail知識をcontext追記→全エージェントが正しい手順を参照→同種誤判断を構造的防止"
+  timestamp: "2026-05-20T16:20:00"
+- cmd_id: cmd_2901
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "6観点OK。keyword_score task_type別閾値。AC3個exact型。origin [[リンク]]付き。未実装確認済み"
+  observations:
+    - "事実: MIN_KEYWORD_SCORE=2が全task_type共通(L3303)。exact型useful率12.5%(1/8)の根因"
+    - "事実: origin=[[exact_useful_rate_12pct]]付き。因果辺がセマンティック還流に乗る"
+  finding_categories:
+    - assumptions
+    - simulation
+  origin: "[[cmd_2901]] -> [[keyword_score_task_type]] -> [[useful率改善]]"
+  causal_chain: "exact型useful率12.5%→MIN_KEYWORD_SCORE固定→task_type別閾値→注入精度向上→noise削減"
+  timestamp: "2026-05-20T16:25:00"
+- cmd_id: cmd_2902
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "6観点OK。origin BLOCK化(WARN→BLOCK昇格)。3箇所特定正確。L1093漏れもAC含む。テスト修正済み"
+  observations:
+    - "事実: 自分のD0(bf419f34)でL1083/L1088をrecord_warn_reasonに昇格したがL1093のecho WARNINGは漏れ→将軍指摘→cmd_2902に含む"
+    - "事実: origin [[リンク]]付きcmdの起票。因果辺がセマンティック還流に乗る実例"
+  finding_categories:
+    - assumptions
+    - simulation
+    - north_star
+  origin: "[[cmd_2902]] -> [[origin_block]] -> [[因果NW強制成長]]"
+  causal_chain: "軍師D0(WARN昇格)→将軍なぜなぜ7回共有→将軍cmd_2902(BLOCK化)→因果NW自動成長の駆動力確立"
+  timestamp: "2026-05-20T16:35:00"
+- cmd_id: cmd_2901
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。keyword_score task_type別閾値(exact/focused=4, impl=2)。203テスト全PASS。commit 2acec985"
+  observations:
+    - "事実: 隔離実行でimpl=2件注入, exact=1件注入(score3の教訓が除外)。useful率改善の方向性確認"
+    - "事実: discretion_fills=focusedもexactと同等閾値。scope同様に狭いため合理的判断"
+  finding_categories:
+    - assumptions
+    - simulation
+  origin: "[[cmd_2901]] -> [[keyword_score_task_type]] -> [[useful率改善実装]]"
+  causal_chain: "exact useful率12.5%→閾値2固定→task_type別4/2→注入精度向上→noise削減→CTX節約"
+  timestamp: "2026-05-20T16:40:00"

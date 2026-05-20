@@ -86,7 +86,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回, やろう, 定休日扱い, CMDで対応しよう, 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう, さらに因果ネットワークの成長速度を構造的に加速しよう, 次に回すメリットはあるか？ないならいまやろう, 進もう, 全部起票しよう, L6化ができるものは可能な限り速く対応したほうがいい, スクリプトやフックなどの最適化が進めば, Codd台帳のタイムスタンプは確認したか？ 1msinbox1e, テストの数が多すぎる気がするな, 修行サイクルにCoDD最適化ラウンド追加, もっと統合整理できそうな気がするけど, CoDDで最初からやる修行がうまくいっていない, 将軍が定義内にbrownfield方式を明記せよ |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, CoDDの効果は順調か？, なぜなぜ7回, 掲示板にCoDDの修行の話はなかったか？, codd yaml scan設定をリポジトリ構造に一致させhealth score 0を解消, 自立自走 なぜなぜ7回 隠れたインフラ バグを探そう, 自立自走 なぜなぜ7回 続けろ, SKILL md追従7件更新 cmd complete gateにSKILL md追従WARN組込み, shogun clear prepのスキルをなぜなぜ7回でレベルアップしよう, 時系列×因果×ネットワーク×随時更新で因果ネットワークをどう維持して自動成長させるかは重要だ, そもそもobsidianを利用するアイデアはないのか？全てを独自実装する意味はないよな, 既存の情報や知識のリンクをつくったほうがいいのでは？なぜなぜ7回, まさにCoDDでやるのが理想的だよな, CoDDは遅いね, 根源をただそう, 気づきがあれば行動せよ, 全部やろう, SKILL md script参照9件一括追従更新, 再発を構造的に予防しよう, 軍師提案に対応しよう, これを成長させるためには何が必要だ？なぜなぜ7回, Gate並行実行のflock漏れをなぜなぜ7回, デーモン異常は頻出する, 将軍と家老で意見が違わないか？将軍は何を根拠に進捗を確認している？これはインフラバグか？なぜなぜ7回, やろう, 定休日扱い, CMDで対応しよう, 将軍のナッジ乱発を構造的に防ぐ仕組みも作ろう, さらに因果ネットワークの成長速度を構造的に加速しよう, 次に回すメリットはあるか？ないならいまやろう, 進もう, 全部起票しよう, L6化ができるものは可能な限り速く対応したほうがいい, スクリプトやフックなどの最適化が進めば, Codd台帳のタイムスタンプは確認したか？ 1msinbox1e, テストの数が多すぎる気がするな, 修行サイクルにCoDD最適化ラウンド追加, もっと統合整理できそうな気がするけど, CoDDで最初からやる修行がうまくいっていない, 将軍が定義内にbrownfield方式を明記せよ, 現状を確認, keyword score改善cmdを起票しよう, 起票しよう |
 | skills | codd, codd-refactor |
 
 | 種別 | パス/参照 |
@@ -170,6 +170,15 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:48:10+09:00 You are matching a user query to a semantic index. Query: title: "強化 — テスト追加ファイル追加時に既存統合を強制(L6化)" purpose: "テスト196ファイル蓄積 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T20:55:52+09:00 CoDDで最初からやる修行がうまくいっていない。とにかく遅いせいで進まないみたいだ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T21:00:28+09:00 将軍が定義内にbrownfield方式を明記せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T14:19:18+09:00 現状を確認。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T14:47:06+09:00 You are matching a user query to a semantic index. Query: title: "強化 — cmd_save.sh BLOCK時に全トリガーワード位置マップを一括出力" purpose: " |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T14:52:07+09:00 You are matching a user query to a semantic index. Query: title: "強化 — cmd_save.sh BLOCK時に全トリガーワード位置マップを一括出力" purpose: " |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T14:52:31+09:00 You are matching a user query to a semantic index. Query: title: "強化 — cmd_save.sh BLOCK時に全トリガーワード位置マップを一括出力" purpose: " |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T15:06:08+09:00 You are matching a user query to a semantic index. Query: title: "infra — q8 WHY検出緩和テスト" purpose: "WHYが明示されていれば引用記号なしでも不 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T16:02:50+09:00 You are matching a user query to a semantic index. Query: title: "強化 — gws CLI知識体系化(Gmail操作+auth確認+フィルタ)" purpose: "gws  |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T16:16:12+09:00 keyword_score改善cmdを起票しよう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T16:24:55+09:00 起票しよう。なぜなぜ7回 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T16:33:10+09:00 You are matching a user query to a semantic index. Query: title: "infra — q8 WHY検出緩和テスト" purpose: "WHYが明示されていれば引用記号なしでも不 |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -385,6 +394,7 @@ codd:
 | cmd | `cmd_karo_obs_required_check` (`scripts/gunshi_log_append.sh`, `skills/review-bundle/SKILL.md`) |
 | cmd | `cmd_karo_skill_md_verdict_sync` (`skills/ninja-commit/SKILL.md`, `skills/report-write/SKILL.md`) |
 | cmd | `cmd_2883` (`skills/idle-persist/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/ninja-commit/SKILL.md`) |
+| cmd | `cmd_2899` (`skills/dashboard-update/SKILL.md`, `skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -507,6 +517,10 @@ codd:
 | cmd | `cmd_2894` 強化 — テスト62小ファイルをスクリプト単位統合(第2波) (`docs/research/codd_refactor_registry.md`, `tests/unit/test_auto_failure_lesson.bats`, `tests/unit/test_causal_backlinks.bats`) |
 | causal | `cmd_2894` origin: [[cmd_2892]] -> [[test_file_granularity]] -> [[script_unit_consolidation]] |
 | causal | `cmd_2894` depends_on: cmd_2893 |
+| cmd | `cmd_2901` 修正 — deploy_task.sh keyword_scoreにtask_type別閾値導入 (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`) |
+| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
+| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -574,7 +588,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう |
 | skills | cdp-browse |
 
 | 種別 | パス/参照 |
@@ -622,6 +636,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T16:29:45+09:00 CDPで確認して |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T18:51:10+09:00 効果が出ているか確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T19:57:06+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T15:55:12+09:00 これ毎回俺がやるのはおかしいな。CDPができるんだから将軍側でできるのでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T16:26:59+09:00 起票する前に確認しよう。書き直しが必要になるはずだ |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -685,7 +701,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Render知識体系化 プラン別挙動 障害切り分け サービス一覧をcontext化 |
+| aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Render知識体系化 プラン別挙動 障害切り分け サービス一覧をcontext化, プレミアム会員優先 すし 㐂邑 きむら 追加枠のお知らせ OMAKASEなどがそうだ |
 | skills | note-writer, cdp-browse |
 
 | 種別 | パス/参照 |
@@ -699,6 +715,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-11T00:09:31+09:00 特にビジネスプランの話を今後するときにスムーズにやりたいな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-17T20:07:46+09:00 starterplanにcold startあったっけ？ |
 | cmd | `cmd_2824` Render知識体系化(プラン別挙動+障害切り分け+サービス一覧をcontext化) (`context/infrastructure.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-20T15:50:50+09:00 (プレミアム会員優先) すし 㐂邑 (きむら) 追加枠のお知らせ [OMAKASEなどがそうだ |
 
 ## alpha_6_metrics — α6指標
 
@@ -857,6 +874,8 @@ codd:
 | cmd | `cmd_2855` cmd_quality_log.sh高速化 |
 | lesson | `L637` FP率計算は累計昇格BLOCKを候補に含める |
 | lesson | `L638` FP率計算は累計昇格BLOCKもFP候補に含める |
+| causal_chain | `[[cmd_2888]]` (L637) |
+| causal_chain | `[[cmd_2888]]` (L638) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -910,6 +929,9 @@ codd:
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
 | cmd | `cmd_2880` 強化 — 報告YAML origin自動継承(cmd origin→報告origin零コスト転写) (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
 | lesson | `L643` gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
+| causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
 
 ## external_project_registry — 外部プロジェクト登録
 
@@ -997,3 +1019,141 @@ codd:
 | file | `context/infrastructure.md` |
 | cmd | `cmd_2872` cmd_complete_gate flock追加 |
 | cmd | `cmd_2873` デーモン統一管理 |
+
+## gate_quality_framework — ゲート品質統合フレームワーク
+
+| 属性 | 値 |
+|------|---|
+| id | gate_quality_framework |
+| label | ゲート品質統合フレームワーク |
+| aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/gates/gate_shogun_startup.sh` |
+| file | `scripts/gates/gate_karo_startup.sh` |
+| file | `scripts/gates/gate_gunshi_startup.sh` |
+| file | `scripts/gates/gate_cmd_state.sh` |
+| file | `scripts/gates/gate_lesson_health.sh` |
+| file | `scripts/gates/gate_enforcement_audit.sh` |
+| file | `scripts/gates/gate_autofix_proposal.sh` |
+| file | `scripts/gates/gate_ninja_workaround_rate.sh` |
+| file | `scripts/cmd_save.sh` |
+| file | `context/growth-loop.md` |
+| cmd | `cmd_2897` ac_phase_mixing commit FP除外 |
+| cmd | `cmd_2898` cmd_save BLOCK時トリガーマップ一括表示 |
+
+## lesson_lifecycle — 教訓ライフサイクル管理
+
+| 属性 | 値 |
+|------|---|
+| id | lesson_lifecycle |
+| label | 教訓ライフサイクル管理 |
+| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺 |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/lesson_write.sh` |
+| file | `scripts/lesson_write_karo.sh` |
+| file | `scripts/lesson_write_shogun.sh` |
+| file | `scripts/lesson_effectiveness.sh` |
+| file | `scripts/lesson_harvest.sh` |
+| file | `scripts/lesson_deprecate.sh` |
+| file | `scripts/lesson_deprecation_scan.sh` |
+| file | `scripts/causal_backlinks.sh` |
+| file | `projects/infra/lessons_gunshi.yaml` |
+| file | `projects/infra/lessons_karo.yaml` |
+| file | `projects/infra/lessons_shogun.yaml` |
+
+## bulletin_communication — 掲示板通信基盤
+
+| 属性 | 値 |
+|------|---|
+| id | bulletin_communication |
+| label | 掲示板通信基盤 |
+| aliases | bulletin_write, 掲示板, bulletin_board, BULLETIN_NOTIFY, 掲示板投稿, bulletin_archive, bulletin_close, bulletin_confirm, 将軍宛報告 |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/bulletin_write.sh` |
+| file | `scripts/bulletin_archive.sh` |
+| file | `scripts/bulletin_close.sh` |
+| file | `scripts/bulletin_confirm.sh` |
+| file | `queue/bulletin_board.yaml` |
+
+## hook_automation_framework — Hook自動化フレームワーク
+
+| 属性 | 値 |
+|------|---|
+| id | hook_automation_framework |
+| label | Hook自動化フレームワーク |
+| aliases | PreToolUse, PostToolUse, SessionStart, Stop, pre-bash-combined, post-bash-combined, pre-write-edit-combined, Guard, session_start_inject, stop_check_inbox, hook, フック, 自動化×強制 |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `.claude/hooks/pre-bash-combined.sh` |
+| file | `.claude/hooks/post-bash-combined.sh` |
+| file | `.claude/hooks/pre-write-edit-combined.sh` |
+| file | `.claude/hooks/pre-write-read-tracker.sh` |
+| file | `.claude/hooks/pre-edit-pi-inject.sh` |
+| file | `.claude/hooks/post-write-edit-combined.sh` |
+| file | `.claude/hooks/stop-lint-gate.sh` |
+| file | `scripts/hooks/session_start_inject.sh` |
+| file | `scripts/hooks/stop_check_inbox.sh` |
+| file | `.claude/settings.json` |
+
+## test_quality_framework — テスト品質統合フレームワーク
+
+| 属性 | 値 |
+|------|---|
+| id | test_quality_framework |
+| label | テスト品質統合フレームワーク |
+| aliases | テスト統合, test consolidation, テスト品質, test quality, テストファイル整理, 小ファイル統合, test_is_debt, test_cleanup, test_gap, test_file_granularity, script_unit_consolidation, テスト負債, @test境界 |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `tests/` |
+| file | `docs/test/acceptance_criteria.md` |
+| cmd | `cmd_2893` テスト第1波(10件削除/統合) |
+| cmd | `cmd_2894` テスト第2波(51件→6統合) |
+| cmd | `cmd_2895` pre-commit WARN(テスト追加時) |
+| lesson | テストは負債。3問検証(リグレッション/変更頻度/コスト) |
+
+## semantic_causal_automation — セマンティック因果自動化
+
+| 属性 | 値 |
+|------|---|
+| id | semantic_causal_automation |
+| label | セマンティック因果自動化 |
+| aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/semantic_map_generate.sh` |
+| file | `scripts/causal_backlinks.sh` |
+| file | `docs/semantic-index/index.md` |
+| cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
+| cmd | `cmd_2860` origin因果辺→辞書自動注入 |
+| cmd | `cmd_2818` 因果NW導入 |
+
+## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
+
+| 属性 | 値 |
+|------|---|
+| id | scope_integrity_lifecycle |
+| label | スコープ鮮度ライフサイクル |
+| aliases | スコープ清掃, scope integrity, コンテキスト汚染, context contamination, scope_context_stale, 再発防止テンプレート, deploy scope, task scope mismatch |
+| skills | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/deploy_task.sh` |
+| file | `queue/tasks/` |
+| cmd | `cmd_2887` scope清掃テスト追加 |
+| lesson | `LK-A02` スコープ外ファイル混入防止 |
