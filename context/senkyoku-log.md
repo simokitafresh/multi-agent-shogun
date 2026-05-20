@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-05-20
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2897 | ac_phase_mixing FP率100%根絶 | 委任済み(疾風+才蔵) | deliveryキーワードからcommit除外。startup gate偽陽性率ALERTが根拠 |
+| cmd_2898 | BLOCK一括サマリ出力 | 委任済み(影丸) | 将軍フリーズ根因=修正箇所不明。全BLOCK理由番号付き一括出力 |
+| cmd_2899 | SKILL.md追従10件(第3波) | 委任済み(半蔵) | 3セッション連続WARN。cmd_2809(7件)+cmd_2859(9件)に続く |
+| 軍師D0×5 | GP-202 FP/target_path FP/一括サマリ/ntfy(revert)/PostToolUse hook強制注入 | 全完了 | 将軍フリーズ=インフラバグ。3層対応→hook検証→cmd_publish.sh穴発見→修正 |
+| LS046 | 想像せずに確認せよ — それだけ | 記録済み | 本セッション全問題の真因=確認していないこと。殿教え |
+| 知識辞書 | 11件stale→全fresh | 完了 | 31日stale解消 |
+| CI | RED→GREEN→push 22件 | GREEN | 半蔵CI修正→push完了 |
+
 ## 2026-05-19
 
 | cmd/action | 意図 | 結果 | 因果 |
