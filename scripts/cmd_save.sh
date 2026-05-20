@@ -5102,6 +5102,12 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
 else
     if [[ "$BLOCK_COUNT" -gt 0 ]]; then
         echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
+        # 全BLOCK理由の一括サマリ(将軍フリーズ防止: 修正箇所を一目で把握)
+        echo "━━━ BLOCK理由一覧 ━━━" >&2
+        for i in "${!BLOCK_REASONS[@]}"; do
+            echo "  $((i+1)). ${BLOCK_REASONS[$i]}" >&2
+        done
+        echo "━━━━━━━━━━━━━━━━" >&2
     else
         echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
     fi
