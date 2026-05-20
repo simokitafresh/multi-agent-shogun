@@ -96,7 +96,9 @@ def main() -> int:
             elif isinstance(item, str):
                 fm_paths.append(item)
         if fm_paths and not any(parent_cmd_value in os.path.basename(path) for path in fm_paths if path):
-            hints.append(f"GP-202 WARN: files_modified内に{parent_cmd_value}を含むファイルが0件。別cmdの成果物を上書きしていないか確認せよ")
+            # 修行cmd/CI修正/karo_direct配備はcmd_idがファイル名に含まれない構造的偽陽性
+            if not (parent_cmd_value.startswith("cmd_training_") or parent_cmd_value.startswith("cmd_karo_")):
+                hints.append(f"GP-202 WARN: files_modified内に{parent_cmd_value}を含むファイルが0件。別cmdの成果物を上書きしていないか確認せよ")
 
     lc = data.get("lesson_candidate")
     if lc is None and "lesson_candidate" in data:
