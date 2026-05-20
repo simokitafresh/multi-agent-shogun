@@ -66,7 +66,9 @@ _d_idle_trigger=""
                 exit
             }
             rate = int((no_match * 1000 / attempts) + 0.5) / 10
+            hit_rate = int(((attempts - no_match) * 1000 / attempts) + 0.5) / 10
             printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
+            printf "  ヒット率: %.1f%% (%d/%d)\n", hit_rate, attempts - no_match, attempts
             if (no_match == 0) {
                 print "  TOP3 miss purpose: none"
                 exit

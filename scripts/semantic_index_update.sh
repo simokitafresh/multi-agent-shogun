@@ -40,12 +40,37 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
 map_generate="${SEMANTIC_MAP_GENERATE:-$script_dir/scripts/semantic_map_generate.sh}"
 insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
+stress_test="${SEMANTIC_STRESS_CMD:-$script_dir/scripts/semantic_stress_test.sh}"
 lock_path="${SEMANTIC_INDEX_LOCK:-${index_path}.lock}"
 
 if [ ! -f "$index_path" ]; then
     echo "ERROR: semantic index not found: $index_path" >&2
     exit 1
 fi
+
+run_semantic_stress_after_alias_change() {
+    [ "${SEMANTIC_STRESS_AFTER_ALIAS_CHANGE:-1}" = "0" ] && return 0
+    [ -f "$stress_test" ] || return 0
+
+    local limit="${SEMANTIC_STRESS_AFTER_ALIAS_LIMIT:-20}"
+    local baseline="${SEMANTIC_STRESS_BASELINE:-$script_dir/logs/semantic_stress_baseline.json}"
+    local log_path="${SEMANTIC_STRESS_LOG:-$script_dir/logs/semantic_stress_test.log}"
+    local insights="${INSIGHTS_FILE:-$script_dir/queue/insights.yaml}"
+
+    echo "semantic-stress after-alias-change: running"
+    if bash "$stress_test" \
+        --source all \
+        --limit "$limit" \
+        --baseline "$baseline" \
+        --log "$log_path" \
+        --insights "$insights"; then
+        echo "semantic-stress after-alias-change: complete"
+    else
+        local rc=$?
+        echo "WARN: semantic-stress after-alias-change failed(rc=$rc)" >&2
+        return 0
+    fi
+}
 
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
@@ -670,6 +695,7 @@ for msg in pending_messages:
 if pending_changed:
     index_path.write_text(text, encoding="utf-8")
     print("__SEMANTIC_INDEX_CHANGED__")
+    print("__SEMANTIC_ALIASES_CHANGED__")
 
 fields = flatten_text(payload)
 known_terms = concept_terms(concepts)
@@ -727,6 +753,8 @@ if confidence == "LOW":
         added = ", ".join(aliases_to_add) if alias_changed else "none"
         print(f"LOW: {best['id']} updated from {source_type}:{payload_label} matched={matched} aliases_added={added}")
         print("__SEMANTIC_INDEX_CHANGED__")
+        if alias_changed:
+            print("__SEMANTIC_ALIASES_CHANGED__")
     else:
         print(f"LOW: {best['id']} already contains {source_type}:{payload_label} matched={matched}")
     sys.exit(0)
@@ -760,9 +788,12 @@ print(f"{confidence}: insight queued for {source_type}:{payload_label}")
 PY
     )"
     index_changed=false
+    aliases_changed=false
     while IFS= read -r line; do
         if [ "$line" = "__SEMANTIC_INDEX_CHANGED__" ]; then
             index_changed=true
+        elif [ "$line" = "__SEMANTIC_ALIASES_CHANGED__" ]; then
+            aliases_changed=true
         else
             printf '%s\n' "$line"
         fi
@@ -775,6 +806,9 @@ PY
             echo "semantic-map regenerated (background)"
         else
             echo "WARN: semantic map generator not found: $map_generate" >&2
+        fi
+        if [ "$aliases_changed" = true ]; then
+            run_semantic_stress_after_alias_change
         fi
     fi
 ) 200>"$lock_path"

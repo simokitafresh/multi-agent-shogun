@@ -13,8 +13,9 @@ REVIEW_LOG="$REPO_ROOT/logs/gunshi_review_log.yaml"
 SNAPSHOT="$REPO_ROOT/queue/karo_snapshot.txt"
 # gate_fire_log path for P6 self-study reference
 _FIRE_LOG="$REPO_ROOT/logs/gate_fire_log.yaml"
-INSIGHTS="$REPO_ROOT/queue/insights.yaml"
+INSIGHTS="${GUNSHI_NEXT_ACTION_INSIGHTS:-$REPO_ROOT/queue/insights.yaml}"
 SEMANTIC_INDEX="$REPO_ROOT/docs/semantic-index/index.md"
+SEMANTIC_STRESS_SCRIPT="${SEMANTIC_STRESS_CMD:-$REPO_ROOT/scripts/semantic_stress_test.sh}"
 
 echo "=== 軍師サイクル推薦 $(date +%H:%M:%S) ==="
 echo ""
@@ -249,6 +250,36 @@ PY
         echo "      → 概念定義・aliases・resources案に集約せよ"
     else
         echo "    semantic_index_candidate: OK"
+    fi
+
+    deploy_no_match=0
+    deploy_log="${GUNSHI_NEXT_ACTION_DEPLOY_LOG:-$REPO_ROOT/logs/deploy_task.log}"
+    scan_lines="${GUNSHI_NEXT_ACTION_NO_MATCH_SCAN_LINES:-500}"
+    if [[ -f "$deploy_log" ]]; then
+        deploy_no_match=$(tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '/inject_semantic_concepts:/ && /NO_MATCH/ {c++} END {print c+0}')
+    fi
+    prompt_no_match=0
+    prompt_log="${GUNSHI_NEXT_ACTION_PROMPT_NO_MATCH_LOG:-$REPO_ROOT/logs/semantic_no_match_metrics.log}"
+    if [[ -f "$prompt_log" ]]; then
+        prompt_no_match=$(tail -n "$scan_lines" "$prompt_log" 2>/dev/null | awk '/source=prompt_state_inject\.sh/ && /count=1/ {c++} END {print c+0}')
+    fi
+    total_no_match=$((deploy_no_match + prompt_no_match))
+    if (( total_no_match > 0 )) && [[ -f "$SEMANTIC_STRESS_SCRIPT" ]]; then
+        echo "    semantic_stress: NO_MATCH ${total_no_match}件 → insights蓄積実行"
+        if bash "$SEMANTIC_STRESS_SCRIPT" \
+            --source all \
+            --limit "${GUNSHI_NEXT_ACTION_STRESS_LIMIT:-20}" \
+            --baseline "${SEMANTIC_STRESS_BASELINE:-$REPO_ROOT/logs/semantic_stress_baseline.json}" \
+            --log "${SEMANTIC_STRESS_LOG:-$REPO_ROOT/logs/semantic_stress_test.log}" \
+            --insights "$INSIGHTS"; then
+            echo "    semantic_stress: OK"
+        else
+            echo "    semantic_stress: WARN(rc=$?)"
+        fi
+    elif (( total_no_match > 0 )); then
+        echo "    semantic_stress: SKIP(scriptなし)"
+    else
+        echo "    semantic_stress: NO_MATCHなし"
     fi
     echo ""
 fi
