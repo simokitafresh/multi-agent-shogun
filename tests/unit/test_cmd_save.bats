@@ -287,6 +287,7 @@ commands:
     project: infra
     depends_on: none
     task_type: impl
+    origin: "[[test_q8_relax]] -> [[WHY引用偽陽性]] -> [[回帰テスト]]"
     command: "q8_why_what の回帰確認"
     acceptance_criteria:
       - "AC1: q8 WHY引用WARNが出ない"
