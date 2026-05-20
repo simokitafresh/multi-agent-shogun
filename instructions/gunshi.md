@@ -991,6 +991,7 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 
 **Step 7 セマンティック監査の実行手順**:
 1. `git diff --name-only $(last_scan_hash)..HEAD | grep '^scripts/'` で変更スクリプト特定
+1.5. **因果辺先行照合(L7c)**: 各変更スクリプトに対し `bash scripts/causal_backlinks.sh "$(basename $f .sh)"` を実行。設計意図カタログ・lessons・過去のなぜなぜ結果への到達を確認してから監査に入る。既知の設計意図を知らずに「バグだ」と誤報告するのを防ぐ
 2. 5カテゴリ並列エージェント起動(修正済み箇所を除外リストに指定):
    - **silent_failure**: エラー握りつぶし・戻り値無視・tmpfile消失・サブシェルreturn偽装
    - **state_transition**: 状態遷移欠落・dead state・遷移ロジック不在
