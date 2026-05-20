@@ -421,15 +421,21 @@ discover_panes() {
         return 1
     fi
 
+    # マッピングを一括パース（N忍者分のecho|grep|awk→1回のread loop、18サブシェル排除）
+    declare -A _pmap
+    while IFS=' ' read -r _pt _aid; do
+        [ -n "$_aid" ] && _pmap[$_aid]="$_pt"
+    done <<< "$mapping"
+
     local found=0
     for name in "${NINJA_NAMES[@]}"; do
-        local target
-        target=$(echo "$mapping" | grep " ${name}$" | awk '{print $1}')
-        if [ -n "$target" ]; then
-            PANE_TARGETS[$name]="shogun:${target}"
+        local _target="${_pmap[$name]:-}"
+        if [ -n "$_target" ]; then
+            PANE_TARGETS[$name]="shogun:${_target}"
             found=$((found + 1))
         fi
     done
+    unset _pmap
 
     log "Pane discovery: ${found}/${#NINJA_NAMES[@]} ninja found"
 }
