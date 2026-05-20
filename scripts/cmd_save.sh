@@ -54,6 +54,7 @@ CMD_BLOCK_FOUND=0
 CMD_BLOCK_CACHE_LOADED=0
 declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
+declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
 exec 3>&2
 exec 2> >(tee -a "$CMD_SAVE_STDERR_LOG" >&3)
@@ -1254,7 +1255,142 @@ record_block_reason() {
 
     echo "BLOCK: $reason" >&2
     BLOCK_REASONS+=("$reason")
+    BLOCK_CHECKS+=("$(cmd_save_caller_check_name record_block_reason)")
     BLOCK_COUNT=$((BLOCK_COUNT + 1))
+}
+
+cmd_save_caller_check_name() {
+    local skip_fn="${1:-}"
+    local stack_fn
+    for stack_fn in "${FUNCNAME[@]:1}"; do
+        case "$stack_fn" in
+            ""|cmd_save_caller_check_name|record_block_reason|record_warn_reason|main|source|"$skip_fn")
+                continue
+                ;;
+        esac
+        printf '%s' "$stack_fn"
+        return 0
+    done
+    printf 'cmd_save_main'
+}
+
+emit_cmd_trigger_locations() {
+    local check_name="${1:-unknown}"
+    local reason="${2:-}"
+
+    [[ -n "${QUEUE_FILE:-}" && -f "$QUEUE_FILE" && -n "${CMD_ID:-}" ]] || {
+        printf '      - check=%s line=? keyword=? reason=%s\n' "$check_name" "$reason"
+        return 0
+    }
+
+    CMD_SAVE_TRIGGER_CHECK="$check_name" \
+    CMD_SAVE_TRIGGER_REASON="$reason" \
+    CMD_SAVE_TRIGGER_CMD_ID="$CMD_ID" \
+    python3 - "$QUEUE_FILE" <<'PY'
+import os
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+cmd_id = os.environ.get("CMD_SAVE_TRIGGER_CMD_ID", "")
+check = os.environ.get("CMD_SAVE_TRIGGER_CHECK", "unknown")
+reason = os.environ.get("CMD_SAVE_TRIGGER_REASON", "")
+
+try:
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+except Exception:
+    print(f"      - check={check} line=? keyword=? reason={reason}")
+    raise SystemExit(0)
+
+block = []
+in_block = False
+cmd_re = re.compile(r"^  cmd_[A-Za-z0-9_-]+:\s*$")
+for lineno, line in enumerate(lines, 1):
+    if not in_block:
+        if re.match(rf"^  {re.escape(cmd_id)}:\s*$", line):
+            in_block = True
+            block.append((lineno, line))
+        continue
+    if cmd_re.match(line) and not re.match(rf"^  {re.escape(cmd_id)}:\s*$", line):
+        break
+    block.append((lineno, line))
+
+stop = {
+    "BLOCK", "WARN", "WARNING", "check", "cmd_save", "cmd", "reason",
+    "未記入", "形式不正", "検出", "記載", "実行", "確認", "追加",
+    "されて", "してください", "する", "せよ", "あり", "なし",
+}
+keywords = []
+
+def add(token: str) -> None:
+    token = token.strip().strip('"\':,，。「」（）()[]{}')
+    if not token or token in stop or len(token) < 2:
+        return
+    if token not in keywords:
+        keywords.append(token)
+
+for token in re.findall(r"[A-Za-z_][A-Za-z0-9_.-]*|cmd_[0-9A-Za-z_-]+|q[0-9][A-Za-z0-9_.-]*", check):
+    add(token)
+for token in re.findall(r"[A-Za-z_][A-Za-z0-9_.-]*|cmd_[0-9A-Za-z_-]+|q[0-9][A-Za-z0-9_.-]*", reason):
+    add(token)
+for token in re.findall(r"[一-龥ぁ-んァ-ンー]{3,}", reason):
+    add(token)
+for quoted in re.findall(r"[「『'\"]([^」』'\"]{2,80})[」』'\"]", reason):
+    for token in re.findall(r"[A-Za-z_][A-Za-z0-9_.-]*|q[0-9][A-Za-z0-9_.-]*|[一-龥ぁ-んァ-ンー]{2,}", quoted):
+        add(token)
+
+hits = []
+seen = set()
+for lineno, line in block:
+    stripped = line.strip()
+    if not stripped:
+        continue
+    for kw in keywords:
+        if kw and kw in line:
+            key = (lineno, kw)
+            if key in seen:
+                continue
+            seen.add(key)
+            hits.append((lineno, kw, stripped[:140]))
+            if len(hits) >= 12:
+                break
+    if len(hits) >= 12:
+        break
+
+if hits:
+    for lineno, kw, _text in hits:
+        print(f"      - check={check} line={lineno} keyword={kw}")
+else:
+    print(f"      - check={check} line=? keyword=? reason={reason}")
+PY
+}
+
+emit_block_warn_trigger_summary() {
+    local i reason check_name warn_note
+
+    if [[ ${#BLOCK_REASONS[@]} -gt 0 ]]; then
+        echo "━━━ BLOCKトリガーマップ ━━━" >&2
+        for i in "${!BLOCK_REASONS[@]}"; do
+            reason="${BLOCK_REASONS[$i]}"
+            check_name="${BLOCK_CHECKS[$i]:-cmd_save_main}"
+            echo "  $((i+1)). ${reason}" >&2
+            emit_cmd_trigger_locations "$check_name" "$reason" >&2
+        done
+        echo "━━━━━━━━━━━━━━━━" >&2
+    fi
+
+    if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
+        echo "━━━ WARNトリガーマップ ━━━" >&2
+        for i in "${!WARN_REASONS[@]}"; do
+            warn_note="${WARN_REASONS[$i]}"
+            reason="$(warn_note_message "$warn_note")"
+            check_name="$(warn_note_check_name "$warn_note")"
+            echo "  $((i+1)). ${reason}" >&2
+            emit_cmd_trigger_locations "$check_name" "$reason" >&2
+        done
+        echo "━━━━━━━━━━━━━━━━" >&2
+    fi
 }
 
 build_warn_note() {
@@ -2016,6 +2152,7 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
         log_cmd_save_block "${BLOCK_REASONS[-1]}"
     fi
     echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
+    emit_block_warn_trigger_summary
     rm -f "$CMD_SAVE_STDERR_LOG"
     trap - EXIT
     exit 1
@@ -5108,8 +5245,10 @@ else
             echo "  $((i+1)). ${BLOCK_REASONS[$i]}" >&2
         done
         echo "━━━━━━━━━━━━━━━━" >&2
+        emit_block_warn_trigger_summary
     else
         echo "保存確認NG: ${CMD_ID} (${WARN_COUNT}件のWARN)" >&2
+        emit_block_warn_trigger_summary
     fi
     exit 1
 fi
