@@ -358,11 +358,14 @@ fi
 # deploy_task.sh実行後に「deployment complete」が出力に含まれるか検証
 # 含まれなければnudge未送信→配備不完全の警告(LK-A02 v7: 2026-05-17事故)
 # Fix(なぜなぜ7回 2026-05-21): payload substring matchだとgrep/diff/gitでも発火(偽陽性)
-# 根因: `sh`が`/multi-agent-shogun/`パス内にマッチ。`bash`のみ+先頭コマンドチェック
-# 実呼出しパターン: `bash scripts/deploy_task.sh <ninja>` or `bash "$SCRIPT_DIR/scripts/deploy_task.sh" <ninja>`
+# 根因1: `sh`がパス内マッチ。根因2: verb=bash+引数内文字列マッチ(inbox_write msg内のdeploy_task.sh)
+# → bashの第1引数(スクリプトパス)がdeploy_task.shを含むかで判定
 _g4_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
 _g4_verb="${_g4_cmd%%[[:space:]]*}"
-if [[ "$_g4_verb" == "bash" && "$_g4_cmd" == *'deploy_task.sh'* ]]; then
+_g4_rest="${_g4_cmd#*[[:space:]]}"
+_g4_arg1="${_g4_rest%%[[:space:]]*}"
+_g4_arg1="${_g4_arg1//\"/}"
+if [[ "$_g4_verb" == "bash" && "$_g4_arg1" == *deploy_task.sh* ]]; then
     _deploy_output="$(PAYLOAD="$payload" jq -r '
         (.tool_result.stdout // .toolResult.stdout // .content // "") | tostring
     ' 2>/dev/null <<< "$payload" || true)"
