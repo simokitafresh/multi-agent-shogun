@@ -3741,6 +3741,71 @@ try:
     expanded = [part for w in words for part in _boundary.split(w) if part]
     keywords = list(set(w.lower() for w in expanded if len(w) > 3 or (len(w) >= 2 and w.isupper() and w.isascii())))
 
+    SEMANTIC_LESSON_BOOST = int(os.environ.get('SEMANTIC_LESSON_BOOST', '20'))
+
+    def _split_semantic_cell(value):
+        return [
+            item.strip().strip('`')
+            for item in str(value or '').split(',')
+            if item.strip() and item.strip() != 'なし'
+        ]
+
+    def _semantic_concept_lesson_boosts(query_text):
+        """Boost lessons linked from matched semantic concepts in docs/semantic-index."""
+        index_md = os.path.join(script_dir, 'docs', 'semantic-index', 'index.md')
+        if not os.path.exists(index_md):
+            return {}, []
+        try:
+            raw_index = open(index_md, encoding='utf-8').read()
+        except Exception:
+            return {}, []
+
+        query_fold = str(query_text or '').casefold()
+        boosts = {}
+        matched_concepts = []
+        for section in re.split(r'(?m)^##\s+', raw_index)[1:]:
+            lines = section.splitlines()
+            if not lines:
+                continue
+            heading = lines[0].strip()
+            if ' — ' in heading:
+                concept_id, heading_label = heading.split(' — ', 1)
+            else:
+                concept_id, heading_label = heading, ''
+            attrs = {'id': concept_id.strip(), 'label': heading_label.strip()}
+            for line in lines[1:]:
+                stripped = line.strip()
+                if not stripped.startswith('|') or not stripped.endswith('|'):
+                    continue
+                parts = stripped.split('|')
+                if len(parts) < 4:
+                    continue
+                left = parts[1].strip()
+                right = '|'.join(parts[2:-1]).strip()
+                if left in {'id', 'label', 'aliases', 'related_lessons'}:
+                    attrs[left] = right
+
+            lesson_ids = _split_semantic_cell(attrs.get('related_lessons', ''))
+            if not lesson_ids:
+                continue
+            terms = [attrs.get('label', ''), *_split_semantic_cell(attrs.get('aliases', ''))]
+            matched_terms = [
+                term for term in terms
+                if term and (term.casefold() in query_fold or query_fold in term.casefold())
+            ]
+            if not matched_terms:
+                continue
+            cid = attrs.get('id') or concept_id.strip()
+            matched_concepts.append(cid)
+            for lid in lesson_ids:
+                boosts[lid] = max(boosts.get(lid, 0), SEMANTIC_LESSON_BOOST)
+
+            if len(matched_concepts) >= 5:
+                break
+        return boosts, matched_concepts
+
+    semantic_lesson_boosts, semantic_matched_concepts = _semantic_concept_lesson_boosts(task_text)
+
     # cmd_2606: target_path由来のサブドメインで教訓を絞る。
     # subdomain未設定の既存教訓は後方互換のため全サブドメインにマッチさせる。
     SUBDOMAIN_ALIASES = {
@@ -3949,6 +4014,8 @@ try:
         for _l in confirmed_lessons:
             if _l.get('_cross_project_opt_in'):
                 continue
+            if _l.get('id', '') in semantic_lesson_boosts:
+                continue
             _ltf = _l.get('target_files', [])
             if not _ltf:
                 continue
@@ -3967,6 +4034,8 @@ try:
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
             if _ltf and any(str(p).strip() for p in _ltf):
+                if _l.get('id', '') in semantic_lesson_boosts:
+                    continue
                 _tf_excluded_ids.add(_l.get('id', ''))
         if _tf_excluded_ids:
             print(f'[INJECT] target_files filter (no task files): {len(_tf_excluded_ids)} lessons with target_files excluded', file=sys.stderr)
@@ -3983,6 +4052,10 @@ try:
         l_tags = [str(t).lower().strip() for t in l_tags if t]
 
         if lesson.get('_cross_project_opt_in'):
+            tag_candidates.append(lesson)
+            continue
+
+        if lesson.get('id', '') in semantic_lesson_boosts:
             tag_candidates.append(lesson)
             continue
 
@@ -4047,6 +4120,10 @@ try:
             # タイトル内出現回数×3 + その他テキスト内出現回数×1
             score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
+        semantic_boost = semantic_lesson_boosts.get(lid, 0)
+        if semantic_boost:
+            score += semantic_boost
+
         cross_project_score = lesson.get('_cross_project_score', 0) or 0
         if cross_project_score and score < cross_project_score:
             score = cross_project_score
@@ -4065,6 +4142,13 @@ try:
 
     if keyword_score_filtered:
         print(f'[INJECT] keyword score filter: removed {keyword_score_filtered} lessons below MIN_KEYWORD_SCORE={MIN_KEYWORD_SCORE}', file=sys.stderr)
+    if semantic_lesson_boosts:
+        boosted_ids = sorted(set(semantic_lesson_boosts) & {lid for _, lid, _ in scored})
+        print(
+            f'[INJECT] semantic lesson boost: concepts={semantic_matched_concepts} '
+            f'candidate_lessons={sorted(semantic_lesson_boosts)} boosted={boosted_ids} boost={SEMANTIC_LESSON_BOOST}',
+            file=sys.stderr,
+        )
 
     # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
     # GP-221: target_filesなし教訓のフォールバック注入廃止。タスク無関係教訓のNOT_USEFUL量産防止

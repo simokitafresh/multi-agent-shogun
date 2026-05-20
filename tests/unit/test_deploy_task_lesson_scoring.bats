@@ -28,12 +28,16 @@ run_scoring() {
     local task_type="${4:-impl}"
     python3 - "$project" "$keywords_json" "$lessons_json" "$task_type" <<'PY'
 import json
+import os
 import sys
 
 project = sys.argv[1]
 keywords = json.loads(sys.argv[2])
 lessons = json.loads(sys.argv[3])
 task_type = sys.argv[4].lower()
+semantic_boosts = {}
+if os.environ.get("SEMANTIC_BOOST_ID"):
+    semantic_boosts[os.environ["SEMANTIC_BOOST_ID"]] = int(os.environ.get("SEMANTIC_BOOST_SCORE", "20"))
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': 2,
     'exact': 4,
@@ -56,6 +60,8 @@ for lesson in lessons:
         # cmd_2270: 頻度重み付きスコアリング (deploy_task.shと同一ロジック)
         score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
+    score += int(semantic_boosts.get(lid, 0) or 0)
+
     if score <= 0:
         continue
     if score < MIN_KEYWORD_SCORE:
@@ -71,6 +77,29 @@ scored.sort(key=lambda x: -x[0])
 for score, lid in scored:
     print(f'{lid}:{score}')
 PY
+}
+
+@test "cmd_2931 AC1: semantic index has related_lessons on at least 10 concepts" {
+    count=$(grep -c '^| related_lessons |' "$PROJECT_ROOT/docs/semantic-index/index.md")
+    [ "$count" -ge 10 ]
+}
+
+@test "cmd_2931 AC2: semantic concept related_lessons receive a score boost" {
+    SEMANTIC_BOOST_ID="L_SEMANTIC" SEMANTIC_BOOST_SCORE="20" run run_scoring "infra" \
+        '["deploy"]' \
+        '[
+          {"id": "L_SEMANTIC", "title": "unrelated title", "summary": "", "_source_project": "infra"},
+          {"id": "L_KEYWORD",  "title": "deploy deploy",   "summary": "", "_source_project": "infra"}
+        ]' \
+        "exact"
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+    first_id=$(echo "$output" | head -1 | cut -d: -f1)
+    [ "$first_id" = "L_SEMANTIC" ]
+    [[ "$output" == *"L_SEMANTIC:22"* ]]
+    [[ "$output" == *"L_KEYWORD:8"* ]]
+
+    grep -q 'SEMANTIC_LESSON_BOOST' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    grep -q 'semantic_lesson_boosts.get(lid' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
 # ─── AC1: 上位10件スコアリングテスト ───

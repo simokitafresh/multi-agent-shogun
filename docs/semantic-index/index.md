@@ -44,6 +44,7 @@ codd:
 | aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存, L7tohanannda, L7の成長速度を最大化させるために何が必要か？なぜなぜ7回, 強化 L7計測基盤 — semantic searchのNO MATCHログ startup gate表示, L7を確認しよう, 強化 prompt state inject shにsemantic search NO MATCHカウント計測追加, 強化 cmd complete時にpurposeキーワードを既存概念aliasesに自動蓄積 aliases自動成長, 強化 L7ストレステストツール — semantic searchヒット率計測 aliases自動蓄積, そうだな, L7まで貫通させずに, 強化 L7ストレステスト3トリガー自動組込み aliases変更後計測 startup gate表示 idle蓄積, セマンティクスインデックスに埋め込んでるか？, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, 3トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, ストレステストツール本体 を3つの自動発火トリガーに接続する, 強化 修行サイクルをaliases鍛錬に転用 L7品質加速 |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop |
+| related_lessons | `L317`, `L088`, `L079` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -107,6 +108,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:50:21+09:00 セマンティクスインデックスに埋め込んでるか？ |
 | cmd | `cmd_2926` 強化: 修行サイクルをaliases鍛錬に転用(L7品質加速) (`context/training-cycle.md`) |
 | causal | `cmd_2926` origin: [[L7_aliases_quality]] -> [[training_cycle_idle]] -> [[gunshi_idea1_aliases_training]] |
+| cmd | `cmd_2927` 強化: semantic concept間リンク(related_concepts)でコンテキスト密度倍増 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_search.bats`) |
+| causal | `cmd_2927` origin: [[L7_concept_isolation]] -> [[gunshi_idea3_related_concepts]] -> [[context_density_doubling]] |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -227,6 +230,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:00:10+09:00 ヒントをやろう。お前は起動時にどうしてる？inboxが届けば同じ事をやればいいのではない？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:20:41+09:00 止まらず全てやろう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:55:25+09:00 起票せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-21T03:16:24+09:00 全部やろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-21T03:35:14+09:00 やろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-21T03:37:23+09:00 穴はないか？なぜなぜ7回、起票しよう |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -312,7 +318,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで, 今回のBLOCKで何を学習して, BLOCK後に環境埋込み判定を強制（自動成長ループ完結）, 学習ループによる自動成長が我らの最大の特徴だ, いまどのような自動成長の学習ループがある？, 整備 lessons karo yaml上限到達に伴う教訓統合 LK A01 v8吸収 LK013統合 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 将軍自身の学習ループは順調か？成長しているか？, 学習ループは順調か？, 自動成長ループは順調か？, 適したスキルを無視するのはバグ — TRIGGER条件合致時はSkill tool必須, 自動成長ループが構造的に阻害されている場所はないか？, 同様のコード修正までが一気通貫していないせいで, 今回のBLOCKで何を学習して, BLOCK後に環境埋込み判定を強制（自動成長ループ完結）, 学習ループによる自動成長が我らの最大の特徴だ, いまどのような自動成長の学習ループがある？, 整備 lessons karo yaml上限到達に伴う教訓統合 LK A01 v8吸収 LK013統合, 記録だけしていないで行動せよ, 分析で止まるな行動に変換せよ, その他の自動成長ループは順調か |
 | skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle |
 
@@ -436,7 +442,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従, verdict計算値化 bcから自動導出, skill_gate_feedback, skill_auto_improve, スキル自動改善, skill_execution_log, スキル実行ログ, 修正 SKILL md 5件mtime更新 script参照偽陽性3セッション連続WARN解消, gate_skill_script_refs, script_refs, スキルスクリプト参照, SKILL.md追従, mtime同期 |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, SKILL md 3件をscript変更に追従更新（3セッション連続WARN解消）, gate lesson health sh PHANTOM検出awk偽陽性修正 SKILL md 3件追従更新, SKILL md追従3件更新 dream karo direct shogun teire — script変更に追従, verdict計算値化 bcから自動導出, skill_gate_feedback, skill_auto_improve, スキル自動改善, skill_execution_log, スキル実行ログ, 修正 SKILL md 5件mtime更新 script参照偽陽性3セッション連続WARN解消, gate_skill_script_refs, script_refs, スキルスクリプト参照, SKILL.md追従, mtime同期, 修正 skill auto improve sh reason正規化 last fail常時更新, dry run health checkは対象未指定でもFAIL学習ログにしない, dry runヘルスチェック系実行でcmd id省略時はexit 0にする |
 | skills | skill-creator, skill-installer |
 | related_concepts | codd_methodology, hook_automation_framework, agent_formation_management |
 
@@ -465,6 +471,10 @@ codd:
 | cmd | `cmd_2899` (`skills/dashboard-update/SKILL.md`, `skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 | cmd | `cmd_2921` 修正: SKILL.md 5件mtime更新(script参照偽陽性3セッション連続WARN解消) |
 | causal | `cmd_2921` origin: [[gate_skill_script_refs]] -> [[mtime_false_positive]] -> [[startup_block_escalation]] |
+| cmd | `cmd_2928` 修正: skill_auto_improve.sh reason正規化+last_fail常時更新 (`scripts/skill_auto_improve.sh`, `tests/unit/test_skill_feedback_loop.bats`) |
+| causal | `cmd_2928` origin: [[gunshi_blt_031525_escalated]] -> [[skill_auto_improve_reason_grouping]] -> [[gate_20_7_false_negative]] |
+| lesson | `L647` dry-run health checkは対象未指定でもFAIL学習ログにしない |
+| lesson | `L649` dry-runヘルスチェック系実行でcmd_id省略時はexit 0にする |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -520,6 +530,7 @@ codd:
 | aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, 穴をふさごう, task notification task id bja0fxnxt task id tool use id tool, clear_prep_check, build_instructions, instructions再生成 |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework |
+| related_lessons | `L594`, `L603`, `L550`, `L310` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -603,9 +614,8 @@ codd:
 | causal | `cmd_2907` origin: [[cmd_2906]] -> [[Codex_CLI_new_incompatible]] -> [[CTX_accumulation]] |
 | cmd | `cmd_2917` 修正: deploy_task.sh exit 1時のdraft_review未送信フォールバック追加 (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_draft_review.bats`) |
 | causal | `cmd_2917` origin: [[deploy_exit_1_no_draft_review]] -> [[success_path_only_notification]] -> [[review_flow_breakage]] |
-| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
-| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| lesson | `L648` AC文の検査語を報告テンプレートへ直コピーすると提出前grepが自己検出する |
+| cmd | `cmd_2930` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_template_generation.bats`, `tests/unit/test_report_field_set_validation.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -738,6 +748,7 @@ codd:
 | aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口改善, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, research tool explicit偽陽性修正 ACパス自動提案 Level5化, 放置タスク滞留検出 BLOCK昇格をstartup gateに追加 Level5化, 否定的前提主張の反証grep強制 LG033 Level5化, 教訓件数WARN閾値を31件に引き下げ Level5化, cmd間依存の明示強制 LS A14 Level5化, gate hook追加cmd検出時に既存強制フロー候補を自動表示 LG032 Level5化, 計測 見積cmdにタイムボックス欄を自動要求 LG019 Level5化, AC command内の数値リテラルに再計算元表示を自動提案 LG020 Level5化, AC外作業検出INFO提案 LS A08 Level5化, 時間コスト関連cmdに環境差異欄を自動要求 LS A10 Level5化, gate vercel phase壊れ参照検出時に修正候補を自動提案 Level5化, Level1止まりgate6件に修正候補自動提案を追加 Level5化一括, ac param sufficiency WARN時にcontext projects yamlから候補値を自動提案 L, inject ninja weak points YAML注入失敗の根因調査 cmd 2801副作用 |
 | skills | なし |
 | related_concepts | growth_loop, gate_quality_framework, hook_automation_framework |
+| related_lessons | `L317`, `L512` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -974,8 +985,6 @@ codd:
 | cmd | `cmd_2855` cmd_quality_log.sh高速化 |
 | lesson | `L637` FP率計算は累計昇格BLOCKを候補に含める |
 | lesson | `L638` FP率計算は累計昇格BLOCKもFP候補に含める |
-| causal_chain | `[[cmd_2888]]` (L637) |
-| causal_chain | `[[cmd_2888]]` (L638) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -1002,6 +1011,7 @@ codd:
 | aliases | 修行サイクル, training cycle, 忍者修行, ダミータスク修行, gate BLOCK訓練, 一発PASS率, first pass rate, 修行レベル, L1修行, L2修行, L3修行, L4修行, gate_fire_log計測, BLOCKパターン学習 |
 | skills | なし |
 | related_concepts | agent_formation_management, growth_loop, report_quality_protocol |
+| related_lessons | `L603`, `L310` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1020,6 +1030,7 @@ codd:
 | aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, verdict自動導出は免除文脈 waive reason をgate検出へ残す, gate report format sh skill execution log sh非同期化でPASSパスを87%高 |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write |
+| related_lessons | `L625`, `L633`, `L643` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1032,9 +1043,6 @@ codd:
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
 | cmd | `cmd_2880` 強化 — 報告YAML origin自動継承(cmd origin→報告origin零コスト転写) (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
 | lesson | `L643` gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
-| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
-| causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
 
 ## external_project_registry — 外部プロジェクト登録
 
@@ -1142,6 +1150,7 @@ codd:
 | aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, sh preflightにtarget path git log自動表示, context_freshness_check, コンテキスト鮮度 |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework |
+| related_lessons | `L512`, `L079`, `L633` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1176,6 +1185,7 @@ codd:
 | aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録 |
 | skills | |
 | related_concepts | growth_loop, semantic_causal_automation, report_quality_protocol |
+| related_lessons | `L317`, `L088`, `L079`, `L548` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1309,6 +1319,7 @@ codd:
 | aliases | スコープ清掃, scope integrity, コンテキスト汚染, context contamination, scope_context_stale, 再発防止テンプレート, deploy scope, task scope mismatch |
 | skills | |
 | related_concepts | task_modifier_injection, infra_design_intent, yaml_safe_write |
+| related_lessons | `LK-A02`, `L310` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1326,6 +1337,7 @@ codd:
 | aliases | yaml_field_set, yaml_field_set_batch, yaml.dump禁止, flock, 運用YAML書込み, yaml_field_get, lock_path, YAML構文破壊, yaml safe write, report_field_set, inbox_mark_read, shogun_to_karo parse error |
 | skills | |
 | related_concepts | destructive_operations, scope_integrity_lifecycle, inbox_processing_discipline |
+| related_lessons | `L548`, `L550`, `L625` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1345,6 +1357,7 @@ codd:
 | label | inbox処理規律 |
 | aliases | inbox既読スルー, mark_read, inbox無視, 読まずに既読, サボりの精神, Guard 0d, LS048, LS049, LS050 |
 | related_concepts | bulletin_communication, inbox_watcher_process_model, agent_formation_management |
+| related_lessons | `L594`, `L625`, `L587` |
 
 | 種別 | パス/参照 |
 |------|----------|

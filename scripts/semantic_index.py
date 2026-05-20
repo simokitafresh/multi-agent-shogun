@@ -42,7 +42,7 @@ def parse_index(index_path: Path) -> list:
             right = "|".join(parts[2:-1]).strip()
             if left in {"属性", "------", "種別"} or right in {"値", "----------"}:
                 continue
-            if left in {"id", "label", "aliases", "skills", "related_concepts"}:
+            if left in {"id", "label", "aliases", "skills", "related_concepts", "related_lessons"}:
                 attrs[left] = right
             elif right:
                 resources.append((left, right))
@@ -64,6 +64,11 @@ def parse_index(index_path: Path) -> list:
                 "related_concepts": [
                     item.strip().strip("`")
                     for item in attrs.get("related_concepts", "").split(",")
+                    if item.strip()
+                ],
+                "related_lessons": [
+                    item.strip().strip("`")
+                    for item in attrs.get("related_lessons", "").split(",")
                     if item.strip()
                 ],
                 "resources": resources,

@@ -116,7 +116,7 @@ def parse_concepts(text):
             left, right = row.group(1).strip(), row.group(2).strip()
             if left in {"属性", "------", "種別"}:
                 continue
-            if left in {"id", "label", "aliases", "skills", "related_concepts"}:
+            if left in {"id", "label", "aliases", "skills", "related_concepts", "related_lessons"}:
                 attrs[left] = right
             elif left and right and left != "------":
                 resources.append((left, right))
@@ -128,6 +128,13 @@ def parse_concepts(text):
             value for kind, value in resources
             if kind in {"lesson", "deepdive", "cmd", "causal"} or value.lstrip("`").startswith(("L", "LS", "PI-", "cmd_"))
         ][:3]
+        related_lessons = [
+            item.strip()
+            for item in attrs.get("related_lessons", "").split(",")
+            if item.strip()
+        ]
+        if related_lessons:
+            lessons = (related_lessons + lessons)[:3]
         concepts.append({
             "label": label,
             "aliases": aliases,
