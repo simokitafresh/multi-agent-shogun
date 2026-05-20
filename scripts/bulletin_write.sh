@@ -250,6 +250,13 @@ fi
 
 printf '%s\n' "$WRITE_RESULT"
 
+if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then
+    ENTRY_COUNT="$(awk '/^- id: / {count++} END {print count + 0}' "$BULLETIN_FILE")"
+    if [[ "$ENTRY_COUNT" -gt 50 ]]; then
+        bash "$SCRIPT_DIR/scripts/bulletin_archive.sh" --max-keep 30 >/dev/null 2>&1 || true
+    fi
+fi
+
 bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
 
 # --- 投稿者以外に自動通知 ---

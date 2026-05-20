@@ -50,7 +50,7 @@ while [[ $attempt -lt $max_attempts ]]; do
         MAX_KEEP_ENV="$MAX_KEEP" MAX_AGE_HOURS_ENV="$MAX_AGE_HOURS" \
         BULLETIN_PATH="$BULLETIN_FILE" ARCHIVE_PATH="$ARCHIVE_FILE" \
         DRY_RUN_ENV="${DRY_RUN:-0}" \
-        python3 -c "
+        python3 - <<'PY'
 import os, sys, yaml, tempfile
 from datetime import datetime, timedelta, timezone
 
@@ -126,6 +126,13 @@ for entry in entries:
     else:
         keep.append(entry)
 
+# Always keep at least max_keep newest entries in the hot bulletin.
+if len(keep) < max_keep and to_archive:
+    to_archive.sort(key=lambda e: e.get('posted_at', ''), reverse=True)
+    restore_count = min(max_keep - len(keep), len(to_archive))
+    keep.extend(to_archive[:restore_count])
+    to_archive = to_archive[restore_count:]
+
 # If we still have too many, archive oldest beyond max_keep
 if len(keep) > max_keep:
     # Sort by posted_at, keep newest max_keep
@@ -141,7 +148,7 @@ if not to_archive:
 if dry_run:
     print(f'[bulletin_archive] DRY RUN: would archive {len(to_archive)}/{total} entries, keep {len(keep)}')
     for e in to_archive:
-        print(f'  - {e.get(\"id\", \"?\")} posted={e.get(\"posted_at\",\"?\")} status={e.get(\"status\",\"?\")}')
+        print(f'  - {e.get("id", "?")} posted={e.get("posted_at","?")} status={e.get("status","?")}')
     sys.exit(0)
 
 # --- yaml.dump禁止: 手動YAML構築 (inbox_archive.sh準拠) ---
@@ -154,19 +161,19 @@ def write_entries(fh, entries_list):
         return
     fh.write('entries:\n')
     for entry in entries_list:
-        fh.write(f\"- id: '{sq(entry.get('id', ''))}'\n\")
+        fh.write(f"- id: '{sq(entry.get('id', ''))}'\n")
         fh.write('  content: |-\n')
         text = str(entry.get('content', ''))
         lines = text.splitlines() or ['']
         for line in lines:
             fh.write(f'    {line}\n')
-        fh.write(f\"  posted_by: '{sq(entry.get('posted_by', ''))}'\n\")
-        fh.write(f\"  posted_at: '{sq(entry.get('posted_at', ''))}'\n\")
+        fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
+        fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
         rc = entry.get('requires_confirmation')
         if isinstance(rc, list):
             fh.write('  requires_confirmation:\n')
             for agent_name in rc:
-                fh.write(f\"    - '{sq(agent_name)}'\n\")
+                fh.write(f"    - '{sq(agent_name)}'\n")
         elif rc:
             fh.write('  requires_confirmation: true\n')
         else:
@@ -180,10 +187,10 @@ def write_entries(fh, entries_list):
         if confirmed:
             fh.write('  confirmed_by:\n')
             for agent in confirmed:
-                fh.write(f\"    - '{sq(agent)}'\n\")
+                fh.write(f"    - '{sq(agent)}'\n")
         else:
             fh.write('  confirmed_by: []\n')
-        fh.write(f\"  status: '{sq(entry.get('status', 'open'))}'\n\")
+        fh.write(f"  status: '{sq(entry.get('status', 'open'))}'\n")
 
 # Load existing archive
 if os.path.exists(archive_path):
@@ -221,7 +228,7 @@ except Exception:
     raise
 
 print(f'[bulletin_archive] Archived {len(to_archive)}/{total} entries to {archive_path}. Kept {len(keep)}.')
-" || exit 1
+PY
 
     ) 200>"$LOCKFILE"; then
         exit 0
