@@ -70,9 +70,12 @@ _run_post() {
     [ "$status" -eq 0 ]
     [[ "$output" == *'"hookEventName"'* ]]
     [[ "$output" == *'"PreToolUse"'* ]]
+    [[ "$output" == *'起票前確認9問'* ]]
     [[ "$output" == *'対象現物を確認したか'* ]]
     [[ "$output" == *'既存代替で足りないことを確認したか'* ]]
     [[ "$output" == *'cmd_save.sh関連チェック名を確認したか'* ]]
+    [[ "$output" == *'environment_changeのpatternを対象fileでgrep確認したか'* ]]
+    [[ "$output" == *'rg -nF'*'対象ファイル'* ]]
 }
 
 @test "pre combined hook shows quality_gate template with q8 5W1H labels" {
@@ -84,7 +87,7 @@ _run_post() {
         q5_verified_source q6_not_hiding q6_related_lessons \
         q7_definition_check q7_definition_verified q8_why_what \
         q9_deployment_risk q10_pi_check q10_knowledge_boundary \
-        q11_not_already_done q_ambiguity
+        q11_not_already_done q_ambiguity timeout_minutes
     do
         [[ "$output" == *"$field"* ]]
     done
@@ -104,6 +107,7 @@ _run_post() {
     [[ "$output" == *'environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"'* ]]
     [[ "$output" == *'1行テキスト形式必須'* ]]
     [[ "$output" == *'patternは実装済みの既存文字列のみ'* ]]
+    [[ "$output" == *'grep確認したか'* ]]
     [[ "$output" == *'バックスラッシュ・パイプ禁止'* ]]
 }
 

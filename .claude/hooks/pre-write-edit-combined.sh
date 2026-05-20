@@ -179,7 +179,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
                 }
             ')"
         fi
-        _checklist="起票前確認8問:
+        _checklist="起票前確認9問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
@@ -188,6 +188,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
 6. command欄のステップ数≦AC数か？各ステップの成果物がACに対応しているか？(command_steps_over_ac 10回累計BLOCK)
 7. CMD全文に目視確認/セルフレビュー/自問を含まないか？「現物確認」「grep確認」等の客観表現に置換せよ(self_reread 4回累計BLOCK)
 8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)
+9. environment_changeのpatternを対象fileでgrep確認したか？例: rg -nF \"pattern文字列\" \"対象ファイル\" → 1件以上(environment_change未実装pattern累計BLOCK)
 
 quality_gate template (cmd_save.sh必須フィールド):
   q1_firefighting: \"\"
@@ -205,6 +206,7 @@ quality_gate template (cmd_save.sh必須フィールド):
   q10_knowledge_boundary: \"\"
   q11_not_already_done: \"\"
   q_ambiguity: \"\"
+  timeout_minutes: \"\"  # 計測/研究/見積/探索cmdの場合は想定実行時間上限(分)を記入
 
 environment_change template (cmd_save.sh構造化形式):
   environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"
