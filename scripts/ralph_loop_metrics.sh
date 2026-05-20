@@ -99,12 +99,24 @@ $3 == "CLEAR" && !seen[$2]++ {
 }
 ' "$GATE_LOG" | sort -t'|' -k1,1n > "$TMP/clear_times.tsv"
 
-# --- (E)+(F) 統合: 単一gawkパスでarchive全ファイルを1回走査 ---
-# GP-079: Section(E) delegated_at抽出 + Section(F) related_lessons計数を統合
-# 旧: bash forループ×1178ファイル(~5890 fork, 9.6秒) + grep+awk whileループ(3秒)
-# 新: gawk BEGINFILE/ENDFILE 1パス(~2.5秒)
-echo "  archive cmdsスキャン中(gawk統合パス)..." >&2
-gawk -v tmpdir="$TMP" '
+# --- (E)+(F) 統合: GATE対象cmdに絞ってarchiveを走査 ---
+# 指標3/4はGATE結果と突合するため、GATEログに存在しないarchiveは読まない。
+awk -F'|' '{ print $1 }' "$TMP/gate_outcomes.tsv" > "$TMP/gate_cmd_ids.txt"
+find "$ARCHIVE_DIR" -maxdepth 1 -name 'cmd_*.yaml' > "$TMP/archive_files.txt" 2>/dev/null || true
+awk '
+    NR == FNR { want[$1] = 1; next }
+    {
+        cmd = $0
+        sub(/.*cmd_/, "", cmd)
+        sub(/[^0-9].*/, "", cmd)
+        if (want[cmd + 0]) print $0
+    }
+' "$TMP/gate_cmd_ids.txt" "$TMP/archive_files.txt" > "$TMP/archive_scan_files.txt"
+
+echo "  archive cmdsスキャン中(GATE対象 $(wc -l < "$TMP/archive_scan_files.txt")件)..." >&2
+mapfile -t archive_scan_files < "$TMP/archive_scan_files.txt"
+if [ "${#archive_scan_files[@]}" -gt 0 ]; then
+    gawk -v tmpdir="$TMP" '
     BEGINFILE {
         cmd = FILENAME
         sub(/.*cmd_/, "", cmd)
@@ -132,7 +144,11 @@ gawk -v tmpdir="$TMP" '
             print cmd "|" rl_count > tmpdir "/lesson_counts_raw.tsv"
         }
     }
-' "$ARCHIVE_DIR"/cmd_*.yaml 2>/dev/null
+' "${archive_scan_files[@]}" 2>/dev/null
+else
+    : > "$TMP/start_times.tsv"
+    : > "$TMP/lesson_counts_raw.tsv"
+fi
 echo "  cmd開始時刻: $(wc -l < "$TMP/start_times.tsv" 2>/dev/null || echo 0)件" >&2
 
 # (F) lesson_counts整形(数値ソート)
@@ -464,7 +480,7 @@ echo ""
 echo "  注: related_lessons機能はcmd_158で導入。"
 total_cmds=$(wc -l < "$TMP/lesson_counts.tsv" 2>/dev/null || echo 0)
 cmds_with_lessons=$(awk -F'|' '$2+0 > 0' "$TMP/lesson_counts.tsv" 2>/dev/null | wc -l)
-echo "      archived cmds ${total_cmds}件中、"
+echo "      GATE対象archived cmds ${total_cmds}件中、"
 echo "      related_lessonsフィールドを持つのは${cmds_with_lessons}件のみ。"
 echo "      大部分のcmdは教訓注入記録なし(0件扱い)。"
 echo ""

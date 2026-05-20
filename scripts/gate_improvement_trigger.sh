@@ -170,6 +170,36 @@ process_gate() {
     evaluate_gate_result "$gate_name" "$output" "$exit_code" "$extra_alert_exit" "$extra_alert_pattern"
 }
 
+process_gate_cached() {
+    local gate_name="$1"
+    local ttl_seconds="$2"
+    local gate_script="$3"
+    local extra_alert_exit="${4:-}"    # 追加ALERTとするexit code (e.g., "2")
+    local extra_alert_pattern="${5:-}" # 追加ALERTとするgrepパターン (e.g., "WARN:")
+    local cache_key="${SCRIPT_DIR//[\/: .#*?!]/_}_${gate_name}"
+    local cache_base="${TMPDIR:-/tmp}/gate_improvement_trigger_${cache_key}"
+    local output_file="${cache_base}.out"
+    local rc_file="${cache_base}.rc"
+    local now cache_mtime cache_age output exit_code
+
+    now=$(date +%s)
+    cache_mtime=$(stat -c %Y "$output_file" 2>/dev/null || printf 0)
+    cache_age=$((now - cache_mtime))
+    if [ -s "$output_file" ] && [ -s "$rc_file" ] && [ "$cache_age" -ge 0 ] && [ "$cache_age" -lt "$ttl_seconds" ]; then
+        output=$(cat "$output_file" 2>/dev/null || true)
+        exit_code=$(cat "$rc_file" 2>/dev/null || printf 127)
+        if [[ "$exit_code" =~ ^[0-9]+$ ]]; then
+            evaluate_gate_result "$gate_name" "$output" "$exit_code" "$extra_alert_exit" "$extra_alert_pattern"
+            return 0
+        fi
+    fi
+
+    output=$($gate_script 2>&1) || exit_code=$?
+    printf '%s\n' "$output" > "$output_file"
+    printf '%s\n' "${exit_code:-0}" > "$rc_file"
+    evaluate_gate_result "$gate_name" "$output" "${exit_code:-0}" "$extra_alert_exit" "$extra_alert_pattern"
+}
+
 evaluate_gate_result() {
     local gate_name="$1"
     local output="$2"
@@ -296,7 +326,10 @@ run_check_async ci_red gh run list --repo simokitafresh/multi-agent-shogun --lim
 pid_ci_red=$!
 
 # (1) gate_lesson_health
-process_gate "lesson_health" "bash $GATES_DIR/gate_lesson_health.sh"
+# A single lesson_health run can exceed 10s on /mnt/c, so a 5s TTL expires before
+# consecutive trigger invocations can reuse it. Keep this below the 5-minute
+# monitor cadence while avoiding duplicate scans in burst/manual runs.
+process_gate_cached "lesson_health" 60 "bash $GATES_DIR/gate_lesson_health.sh"
 
 # (2) gate_cmd_state
 process_gate "cmd_state" "bash $GATES_DIR/gate_cmd_state.sh"
