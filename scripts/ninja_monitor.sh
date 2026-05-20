@@ -749,32 +749,22 @@ safe_send_clear() {
     safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
     log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
 
-    # Codex CLI: /newはtask in_progress中に無視される → respawn-pane -k で強制リセット
-    # idle/done/emptyなら通常のclear_cmd(/new)経路へ落とし、CTX蓄積を解消する。
+    # Codex CLI: /newはCLI内部状態がtask in progressのまま残ると拒否される。
+    # ninja_monitor側のtask statusに関係なく、respawn-pane -kでプロセスごと確実にリセットする。
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
-        local _codex_task_file _codex_task_status
-        _codex_task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
-        _codex_task_status=""
-        if [ -f "$_codex_task_file" ]; then
-            _codex_task_status=$(yaml_field_get "$_codex_task_file" "status")
-        fi
-        if [ "$_codex_task_status" = "in_progress" ]; then
-            local _launch_cmd
-            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-            [ -z "$_launch_cmd" ] && log "CODEX-RESPAWN-SKIP: $agent_name task.status=in_progress but launch_cmd empty"
-        else
-            log "CODEX-RESPAWN-SKIP: $agent_name task.status=${_codex_task_status:-EMPTY}, using $clear_cmd"
-        fi
-        if [ "${_codex_task_status:-}" = "in_progress" ] && [ -n "${_launch_cmd:-}" ]; then
+        local _launch_cmd
+        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
-            log "CODEX-RESPAWN: $agent_name respawn-pane (task in progress workaround)"
+            log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
+        log "CODEX-RESPAWN-SKIP: $agent_name launch_cmd empty, using $clear_cmd"
     fi
 
     log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
