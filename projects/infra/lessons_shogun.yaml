@@ -509,3 +509,11 @@ lessons:
   created_at: '2026-05-21'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS047'
+- id: 'LS049'
+  title: 'ミスを認めろ — 仕組みの不備へのすり替えは真因から遠ざかる'
+  origin: '[[cmd_2922_inbox_ignore]] -> [[responsibility_transfer_to_system]] -> [[40min_waste]] -> [[admit_mistake_first]]'
+  detail: 'inbox既読スルーを指摘されて40分。仕組み不備/入力免疫系/Guard追加に責任転嫁し続けた。殿が真因(読まずに既読にした)を直接教えるまで認めなかった。始まりのミスを認めれば真因は目の前にある。すり替えるから40分かかる。認めれば10分で終わる。殿の教え: ミスを認めろ、そうすれば早くて楽だ'
+  source_cmd: 'cmd_2922'
+  created_at: '2026-05-21'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS049'
