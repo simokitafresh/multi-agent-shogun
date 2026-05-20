@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-19 -->
+<!-- last_updated: 2026-05-20 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,39 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2094 | 偵察+実装 — 他システム知識辞書 一次知識層作成 (6システム並列調査) | infra | 04-19 | AC4完了。知識辞書一次層作成 |
-| cmd_karo_ci_fix_ga116 | CI修正 — test_cmd_save.bats 8テスト失敗修正 | infra | 04-19 | CI修正完了。abort_if_block_immediat |
-| cmd_2098 | 実装 — AI開発知識辞書 鮮度チェックgate (CoDDドキュメント適用Phase1) | infra | 04-19 | 知識辞書verified_at鮮度gateを追加し、将軍st |
-| cmd_2100 | 実装 — AI開発知識辞書 落とし穴+相互参照の補完 (全エントリ) | infra | 04-19 | ace/vercel/gsd に Pitfalls/Cros |
-| cmd_karo_ci_fix_ga117 | CI修正 — test_cmd_save.bats 5テスト失敗(BLOCK集約副作用) | infra | 04-19 | cmd_save.shの2箇所を修正: (1)q5 elif |
-| cmd_2102 | 改善 — gate_shogun_startup.sh CoDD再改善 (サブプロセス削減で1.3秒→目標0.5秒) | infra | 04-19 | gate_shogun_startup.sh を 1.28s |
-| cmd_2104 | 偵察 — Android SSH入力消失の原因調査 (両面調査) | infra | 04-19 | Android/SSH入力消失を5観点で切り分け、P1=Cl |
-| cmd_2105 | 実装 — 変更連動テスト実行 (git diff→対応テストのみ実行) | infra | 04-19 | scripts/test_select.sh を新規作成。g |
-| cmd_2103 | 改善 — テストCoDD高速化第一弾 TOP5ファイル (32秒→目標10秒) | infra | 04-19 | — |
-| cmd_2109 | 改善 — テストCoDD高速化 test_gate_shogun_startup.bats (6.8秒→目標3秒) | infra | 04-19 | Gate 4.5 python3 fast-path追加 + |
-| cmd_2107 | 改善 — テストCoDD高速化 test_deploy_task_ac_version.bats (32秒→目標10秒) | infra | 04-19 | AC4完了: test_deploy_task_ac_ver |
-| cmd_2111 | 改善 — テストCoDD高速化 test_stop_check_inbox.bats (6.2秒→目標3秒) | infra | 04-19 | test_stop_check_inbox.bats 46. |
-| cmd_2113 | 改善 — テストCoDD高速化 test_cli_adapter.bats (4.6秒→目標2秒) | infra | 04-19 | test_cli_adapter.bats の fixtur |
-| cmd_2108 | 改善 — テストCoDD高速化 test_deploy_task_template_generation.bats (9.8秒→目標4秒) | infra | 04-19 | deploy_task template generatio |
-| cmd_2116 | 改善 — テストCoDD高速化 test_build_system.bats (3.6秒→目標1.5秒) | infra | 04-19 | test_build_system.bats を37.6%高 |
-| cmd_karo_pane_lookup_fix | pane_lookup.sh lazy init修正 — deploy_task.sh pane解決障害の真因修正 | infra | 04-19 | cmd_karo_pane_lookup_fix は com |
-| cmd_2115 | 改善 — テストCoDD高速化 test_cmd_save.bats (4.2秒→目標2秒) | infra | 04-19 | test_cmd_save.bats の CMD_BLOCK |
-| cmd_2112 | 改善 — テストCoDD高速化 test_deploy_task_lifecycle.bats (4.7秒→目標2秒) | infra | 04-19 | before 7.104s → after 4.134s ( |
-| cmd_2122 | 強化(家老) — deploy_task.sh タスク明瞭性チェック追加 (配備前検証) | infra | 04-19 | HEAD上でcmd_2122要件が既に実装済みと確認。dep |
-| cmd_2127 | 強化 — 軍師LGTM収束判定 (ambiguity_points 0件をLGTM条件に) | infra | 04-19 | instructions/gunshi.md のdraftレ |
-| cmd_2128 | 強化 — 修行サイクルhold-outテスト設計 (gate過適合検出) | infra | 04-19 | context/training-cycle.md §27 |
-| cmd_2124 | 強化(忍者) — gate_report_format binary_checks客観裏付け (git diff突合) | infra | 04-19 | gate_report_format_main.pyにbin |
-| cmd_2123 | 強化(軍師) — karo_workaround_log.sh SG紐付けフィールド追加 (偽陰性計測) | infra | 04-19 | karo_workaround_log.shへ任意の第6引数 |
-| cmd_2023 | L3選出 — 6パターン×3目的関数 WF-α Top1 候補リスト生成 | dm-signal | 04-19 | — |
-| cmd_2130 | 強化 — 指示文書TDD (忍者task_clarity_scoreで指示品質を計測) | infra | 04-19 | deploy_task.shテンプレートにtask_clar |
-| cmd_karo_ci_fix_lk084 | CI修正 — test_cmd_complete_gate_locking.bats bash -lc→bash -c (LK084) | infra | 04-19 | tests/unit/test_cmd_complete_g |
-| cmd_2131 | 偵察(緊急) — FoF monthly_returns 0件の根因特定 | dm-signal | 04-19 | FoF monthly_returns 0件の主因は sig |
-| cmd_2132 | 修正(緊急) — sync-standard FoF分離 + monthly_returns crash-safe化 | dm-signal | 04-19 | sync_standardの親FoF波及を止め、Monthl |
-| cmd_2134 | 設計 — 3レジーム市場分析ページ CoDD設計書 | dm-signal | 04-19 | 3レジーム分析の spec と CoDD 設計文書 3 本を |
-| cmd_2135 | 修正(緊急) — DM-Signal PR #15 コンフリクト解決+マージ+Renderデプロイ | dm-signal | 04-19 | PR #15 の2競合を解消し、FoF flush help |
-| cmd_2137 | 設計 — 3レジーム市場分析 Frontend CoDD設計書 | dm-signal | 04-19 | Regime analysis frontend向けのspe |
-| cmd_2138 | 実装 — 3レジーム市場分析 Frontend (チャート+テーブル+API連携) | dm-signal | 04-19 | MetricsページをRegime Analysis表示へ切 |
-| cmd_2140 | 修正 — cmd_2138 frontend変更revert + 本番スクリーンショット撮影 | dm-signal | 04-19 | frontend 3ファイルを origin/main 一致 |
 | cmd_2142 | CoDD最適化 — run_077_bunshin.py (GS分身忍法) | dm-signal | 04-20 | run_077_bunshin.py の serial ho |
 | cmd_2143 | CoDD最適化 — run_077_kasoku_diff.py (GS加速diff忍法) | dm-signal | 04-20 | run_077_kasoku_diff.py に month |
 | cmd_2146 | CoDD最適化 — run_077_nukimi.py (GS抜き身忍法) | dm-signal | 04-20 | run_077_nukimi.py CoDD再最適化完了。s |
@@ -725,3 +692,4 @@
 | cmd_2893 | cmd_2892偵察で低価値テスト10ファイル(削除4+統合6)を特定。790行削減+10ファイル削減でCI保守コストを下げる | infra | 05-19 | 低価値bats 10ファイルを4削除+6統合し、unitファ |
 | cmd_2894 | cmd_2892偵察の10件は5%。196ファイル中62ファイル(32%)が1-3テストの小ファイルで同一スクリプトのテストが分散。スクリプト単位で統合し196→推定130ファイルに圧縮する | infra | 05-19 | 1-3件の小規模Bats 51ファイルを6本のスクリプト単位 |
 | cmd_2895 | テスト196ファイル蓄積の根因=追加時にファイル粒度ガイドラインなし。追加test_*.bats作成時に同一対象スクリプトの既存テストファイルを検出→統合を促しファイル肥大化を構造的に防止する | infra | 05-19 | pre-commitで新規tests/unit/test_* |
+| cmd_2897 | ac_phase_mixing FP率100%(3/3)。commitは忍者の通常完了動作であり実装ACに書くのが自然。deliveryキーワードからcommit/コミットを除外し偽陽性を根絶する | infra | 05-20 | cmd_save.shのAC phase mixing de |
