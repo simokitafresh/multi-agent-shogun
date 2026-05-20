@@ -6,16 +6,23 @@ DATA_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 
 python3 - "$DATA_FILE" "$@" <<'PY'
 import csv
-import glob
 import os
 import sys
-import fcntl
 from collections import Counter, defaultdict
 
-try:
-    import yaml
-except Exception:
-    yaml = None
+yaml = None
+
+
+def require_yaml():
+    global yaml
+    if yaml is not None:
+        return yaml
+    try:
+        import yaml as yaml_module
+    except Exception:
+        return None
+    yaml = yaml_module
+    return yaml
 
 
 def usage() -> None:
@@ -96,13 +103,19 @@ def load_rows(path: str):
 
 def load_lesson_summaries(root: str):
     summaries = {}
+    yaml_module = require_yaml()
+    if yaml_module is None:
+        return summaries
+
+    import glob
+
     if yaml is None:
         return summaries
 
     for lesson_file in glob.glob(os.path.join(root, "projects", "*", "lessons.yaml")):
         try:
             with open(lesson_file, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
+                data = yaml_module.safe_load(f) or {}
         except Exception:
             continue
         for lesson in data.get("lessons", []):
@@ -309,9 +322,13 @@ def print_detail(lesson_id: str, stats: dict, summaries: dict):
 
 
 def sync_counters(rows, root, dry_run=False):
-    if yaml is None:
+    yaml_module = require_yaml()
+    if yaml_module is None:
         print("ERROR: PyYAML required for --sync-counters", file=sys.stderr)
         sys.exit(1)
+
+    import fcntl
+    import glob
 
     counts = {}
     for r in rows:
@@ -340,11 +357,11 @@ def sync_counters(rows, root, dry_run=False):
 
         if dry_run:
             with open(lesson_file, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
+                data = yaml_module.safe_load(f) or {}
         else:
             f = open(lesson_file, "r+", encoding="utf-8")
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-            data = yaml.safe_load(f) or {}
+            data = yaml_module.safe_load(f) or {}
 
         updated = 0
         for lesson in data.get("lessons", []):
@@ -366,7 +383,7 @@ def sync_counters(rows, root, dry_run=False):
             if not dry_run:
                 f.seek(0)
                 f.truncate()
-                yaml.dump(
+                yaml_module.dump(
                     data, f,
                     allow_unicode=True,
                     default_flow_style=False,
