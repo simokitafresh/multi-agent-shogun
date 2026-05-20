@@ -5,18 +5,13 @@ run_embedded_test() {
     local original_path="$1"
     local test_name="$2"
     local content_func="$3"
-    local created="false"
 
-    if [ ! -f "$original_path" ]; then
-        mkdir -p "$(dirname "$original_path")"
-        "$content_func" > "$original_path"
-        created="true"
-    fi
+    # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
+    local unique_path="$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-$$}_$(basename "$original_path")"
+    "$content_func" > "$unique_path"
 
-    run bats --filter "^${test_name}$" "$original_path"
-    if [ "$created" = "true" ]; then
-        rm -f "$original_path"
-    fi
+    run bats --filter "^${test_name}$" "$unique_path"
+    rm -f "$unique_path"
 
     [ "$status" -eq 0 ]
 }
