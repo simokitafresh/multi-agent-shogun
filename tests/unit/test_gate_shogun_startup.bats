@@ -1020,6 +1020,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ セマンティックNO_MATCH計測"* ]]
     [[ "$output" == *"NO_MATCH率: 75.0% (3/4, scan_lines=20)"* ]]
+    [[ "$output" == *"ヒット率: 25.0% (1/4)"* ]]
     [[ "$output" == *"TOP3 miss purpose:"* ]]
     [[ "$output" == *"1. missing alpha (2件)"* ]]
     [[ "$output" == *"2. missing beta (1件)"* ]]

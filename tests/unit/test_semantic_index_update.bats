@@ -119,6 +119,37 @@ teardown() {
     [[ "$output" == *"aliases_added"* ]]
 }
 
+@test "LOW: alias expansion runs semantic stress test and records before/after diff" {
+    cat > "$TEST_TMPDIR/scripts/semantic_stress_test.sh" <<'EOF'
+#!/usr/bin/env bash
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --log) log="$2"; shift 2 ;;
+    --baseline) baseline="$2"; shift 2 ;;
+    --insights) insights="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+mkdir -p "$(dirname "$log")" "$(dirname "$baseline")" "$(dirname "$insights")"
+printf '{"diff":{"hit_rate_delta":12.5,"no_match_delta":-2}}\n' >> "$log"
+printf '{"hit_rate":50.0,"no_match":2,"total":4}\n' > "$baseline"
+printf 'insights:\n' > "$insights"
+echo 'before_after: hit_rate_delta=12.5 no_match_delta=-2 total_delta=0'
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_stress_test.sh"
+    export SEMANTIC_STRESS_CMD="$TEST_TMPDIR/scripts/semantic_stress_test.sh"
+    export SEMANTIC_STRESS_LOG="$TEST_TMPDIR/logs/stress.log"
+    export SEMANTIC_STRESS_BASELINE="$TEST_TMPDIR/logs/baseline.json"
+    export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-05T00:00:00+09:00","summary":"意味検索の話"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic-stress after-alias-change: running"* ]]
+    [[ "$output" == *"before_after: hit_rate_delta=12.5 no_match_delta=-2 total_delta=0"* ]]
+    [[ "$output" == *"semantic-stress after-alias-change: complete"* ]]
+    grep -q '"hit_rate_delta":12.5' "$SEMANTIC_STRESS_LOG"
+}
+
 @test "NONE: unmatched payload queues new concept candidate" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_none","title":"完全に未知の話題","purpose":"新規"}'
     [ "$status" -eq 0 ]
