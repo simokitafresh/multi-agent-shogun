@@ -1,36 +1,27 @@
 task:
-  cmd_id: cmd_training_speed_tobisaru_4
+  cmd_id: cmd_training_speed_tobisaru_5
   type: training
   project: infra
-  purpose: "CoDD速度改善ラウンド: scripts/daemon_watchdog.sh (355行) のbefore計測→CoDD extract→実装→after検証"
+  purpose: "速度改善修行: scripts/model_analysis.sh のbefore計測→最小実装→after検証"
   scout_exempt: true
-  target_path: scripts/daemon_watchdog.sh
+  target_path: scripts/model_analysis.sh
   acceptance_criteria:
     AC1:
-      description: "対象スクリプトのbefore値を3回以上計測(cold実行)し、ボトルネック仮説をdocs/research/に記録"
+      description: "before計測(cold 3回以上)+ボトルネック仮説を報告"
       binary_checks:
-        - check: "before計測を3回以上cold実行したか"
+        - check: "before計測をcold 3回以上実行したか"
           result: ""
-        - check: "ボトルネック仮説をdocs/research/に記録したか"
+        - check: "ボトルネック仮説を特定したか"
           result: ""
     AC2:
-      description: "codd extract(brownfield起点)→elicit→generate --wave 1 --force→validate→measureを実行。timeout 1200。codd require/spec(greenfield)禁止"
-      binary_checks:
-        - check: "codd extractを実行したか"
-          result: ""
-        - check: "codd generate --wave 1 --forceを実行したか"
-          result: ""
-        - check: "codd measureを実行したか"
-          result: ""
-    AC3:
-      description: "設計に基づき最小変更で速度改善を実装"
+      description: "最小変更で速度改善を実装+test_select関連テストPASS"
       binary_checks:
         - check: "実装が最小変更か"
           result: ""
         - check: "test_select関連テストを全てPASSしたか"
           result: ""
-    AC4:
-      description: "after値計測(cold 3回以上)+docs/research/codd_refactor_registry.md追記+SKIP=0確認"
+    AC3:
+      description: "after計測(cold 3回以上)+codd_refactor_registry.md追記+報告YAML完成"
       binary_checks:
         - check: "after計測をcold 3回以上実行したか"
           result: ""
@@ -39,10 +30,10 @@ task:
         - check: "テストSKIP=0か"
           result: ""
   scope:
-    - scripts/daemon_watchdog.sh
+    - scripts/model_analysis.sh
     - docs/research/codd_refactor_registry.md
-  status: idle
-  parent_cmd: 
+  status: completed
+  parent_cmd: cmd_training_speed_tobisaru_5
   related_lessons: []
   related_lessons:
   - id: 'L512'
@@ -75,16 +66,3 @@ task:
   - id: 'L503'
     summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
     detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  acceptance_criteria.AC1.binary_checks.0.result: yes
-  verdict: PASS
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
-    tried_approaches:
-    - 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
-    approach_summary: 'daemon_watchdog.sh check_inbox_watchers: 9×pgrep(~150ms)→1×ps+awk PIDマップ(~27ms)置換。cold median 415ms→172ms(-58.5%, 2.4x)。41/41 PASS, SKIP=0'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field'
-      approach_summary: 'daemon_watchdog.sh check_inbox_watchers: 9×pgrep(~150ms)→1×ps+awk PIDマップ(~27ms)置換。cold median 415ms→172ms(-58.5%, 2.4x)。41/41 PASS, SKIP=0'

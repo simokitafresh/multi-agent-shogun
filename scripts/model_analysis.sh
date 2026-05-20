@@ -481,22 +481,7 @@ def parse_archives():
                 if not cmd_id.startswith("cmd_"):
                     cmd_id = "cmd_" + cmd_id[3:]
                 cmd_ninjas[cmd_id].add(m.group(1))
-    # Archived cmd YAML text → ninja name mentions
-    cmds_dir = os.path.join(ARCHIVE_DIR, "cmds")
-    if os.path.isdir(cmds_dir):
-        for fname in os.listdir(cmds_dir):
-            m = re.match(r"(cmd_\d+)_", fname)
-            if not m:
-                continue
-            cmd_id = m.group(1)
-            try:
-                with open(os.path.join(cmds_dir, fname), "r") as f:
-                    content = f.read()
-                for n in ALL_NINJAS:
-                    if n in content:
-                        cmd_ninjas[cmd_id].add(n)
-            except Exception:
-                continue
+    # cmds_dir: ファイル内容scan削除(~20s cold / 2921files)。tracking+reports+inboxで十分
     return cmd_ninjas
 
 archive_ninjas = parse_archives()
