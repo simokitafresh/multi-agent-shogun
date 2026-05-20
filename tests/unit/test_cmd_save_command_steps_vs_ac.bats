@@ -39,6 +39,7 @@ commands:
     purpose: "command欄ステップ数警告が acceptance_criteria の実項目数だけを比較することを確認する"
     project: infra
     depends_on: none
+    origin: "[[cmd_2902]] [[command_steps_over_ac]]"
     task_type: impl
     command: |
 ${command_block}

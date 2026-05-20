@@ -48,6 +48,7 @@ commands:
     title: "infra — environment_change必須テスト"
     project: infra
     depends_on: none
+    origin: "[[cmd_2902]] [[environment_change]]"
     command: "テスト用cmd"
     status: pending
     quality_gate:

@@ -6,6 +6,12 @@ run_embedded_test() {
     local test_name="$2"
     local content_func="$3"
 
+    if [ -f "$original_path" ]; then
+        run bats --filter "^${test_name}$" "$original_path"
+        [ "$status" -eq 0 ]
+        return
+    fi
+
     # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
     local unique_path="$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-$$}_$(basename "$original_path")"
     "$content_func" > "$unique_path"
@@ -883,4 +889,3 @@ EOF
 @test 'test_cmd_save_tool_growth.bats :: TG-T003: non-research impl cmd is skipped' {
     run_embedded_test 'tests/unit/test_cmd_save_tool_growth.bats' 'TG-T003: non-research impl cmd is skipped' content_test_cmd_save_tool_growth
 }
-

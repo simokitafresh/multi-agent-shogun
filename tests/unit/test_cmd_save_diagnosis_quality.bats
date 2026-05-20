@@ -44,6 +44,7 @@ commands:
     title: "infra — diagnosis質検査テスト"
     project: infra
     depends_on: none
+    origin: "[[cmd_2902]] [[diagnosis_quality]]"
     command: "テスト用cmd"
     status: pending
     quality_gate:
@@ -91,6 +92,7 @@ commands:
     title: "infra — WARN累計テスト"
     project: ${project}
     depends_on: none
+    origin: "[[cmd_2902]] [[warn_escalation]]"
     command: "テスト用cmd"
     status: pending
     quality_gate:

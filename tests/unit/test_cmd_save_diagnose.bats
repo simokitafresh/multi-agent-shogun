@@ -38,6 +38,7 @@ commands:
     title: "infra — 診断テスト"
     project: infra
     depends_on: none
+    origin: "[[cmd_2902]] [[diagnose_gate]]"
     command: "診断挙動のテスト"
     status: pending
     quality_gate:
