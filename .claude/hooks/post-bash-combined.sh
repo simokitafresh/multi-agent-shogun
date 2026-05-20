@@ -332,7 +332,12 @@ done
 # Phase 1: halt/clear送信検出→CTX記録
 if [[ "$payload" == *'inbox_write'* ]]; then
     _iw_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
-    if [[ "$_iw_cmd" == *'inbox_write'* ]]; then
+    # Fix(2026-05-21): heredoc/文字列内のinbox_writeにマッチ防止。bash第1引数チェック
+    _iw_verb="${_iw_cmd%%[[:space:]]*}"
+    _iw_arg1_raw="${_iw_cmd#*[[:space:]]}"
+    _iw_arg1="${_iw_arg1_raw%%[[:space:]]*}"
+    _iw_arg1="${_iw_arg1//\"/}"
+    if [[ "$_iw_verb" == "bash" && "$_iw_arg1" == *'inbox_write.sh'* ]]; then
         _iw_target="$(echo "$_iw_cmd" | grep -oP 'inbox_write\.sh\s+\K\S+' || true)"
         _iw_type="$(echo "$_iw_cmd" | grep -oP '(task_halt|clear_command)' || true)"
         if [[ -n "$_iw_target" && -n "$_iw_type" ]]; then
