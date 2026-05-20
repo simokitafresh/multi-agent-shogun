@@ -61,9 +61,19 @@ log "Start: cmd=${CMD_ID} completed=${COMPLETED_SUBTASK_ID}"
 # stdout: TAB区切り結果行
 # stderr: ログ → $LOG に追記
 
+# ─── grep fast-path: find matching task files before starting Python3 ───
+# Avoids Python3 startup + yaml.safe_load for all files when no match exists
+MATCHING_FILES=$(grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null || true)
+if [ -z "$MATCHING_FILES" ]; then
+    log "ERROR: no subtasks found for ${CMD_ID} (fast-path)"
+    echo "ERROR: no subtasks found for ${CMD_ID}" >&2
+    exit 1
+fi
+
 ANALYSIS_EXIT=0
 ANALYSIS=$(CMD_ID="$CMD_ID" COMPLETED_ID="$COMPLETED_SUBTASK_ID" \
     TASKS_DIR="$TASKS_DIR" REPORTS_DIR="$REPORTS_DIR" \
+    MATCHING_FILES="$MATCHING_FILES" \
     python3 -c "
 import yaml, sys, os, glob
 
@@ -72,9 +82,16 @@ completed_id = os.environ['COMPLETED_ID']
 tasks_dir = os.environ['TASKS_DIR']
 reports_dir = os.environ['REPORTS_DIR']
 
-# ─── Scan all task YAMLs for parent_cmd match ───
+# ─── Use pre-filtered files from grep fast-path ───
+matching_str = os.environ.get('MATCHING_FILES', '')
+if matching_str:
+    yaml_files = sorted(f for f in matching_str.split('\n') if f and not f.endswith('.lock'))
+else:
+    yaml_files = sorted(glob.glob(os.path.join(tasks_dir, '*.yaml')))
+
+# ─── Scan matching task YAMLs for parent_cmd ───
 raw_subtasks = []
-for fpath in sorted(glob.glob(os.path.join(tasks_dir, '*.yaml'))):
+for fpath in yaml_files:
     if fpath.endswith('.lock'):
         continue
     try:
@@ -346,13 +363,9 @@ WRITE_EXIT=0
     local_yfs="$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
     # Set assigned_to if not already set
-    existing_assigned=$(python3 -c "
-import yaml, sys
-with open('${TARGET_YAML}') as f:
-    d = yaml.safe_load(f)
-v = d.get('task',{}).get('assigned_to','')
-print(v if v else '')
-" 2>/dev/null || true)
+    # awk fast-path replaces Python3 yaml.safe_load (~87ms) for this single field read
+    existing_assigned=$(awk '/^  assigned_to: [^'"'"'"]/{gsub(/^  assigned_to: /, ""); print; exit}' \
+        "${TARGET_YAML}" 2>/dev/null || true)
 
     if [ -z "$existing_assigned" ]; then
         bash "$local_yfs" "$TARGET_YAML" "task" "assigned_to" "$SELECTED_NINJA" 2>> "$LOG"
