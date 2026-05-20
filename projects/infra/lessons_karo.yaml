@@ -33,6 +33,8 @@ lessons:
     - cmd_2784でpre-bash hookにlord_conversation承認確認Guard追加済み(hook側防御)。本教訓は家老判断側の防御層
     v7吸収(2026-05-19):
     - 外部PJ(kj-role-count等)のcmd完了時もgit log origin/main..mainでpush確認必須(殿指摘で5件未push発覚)。cmd-complete Step 7.5はDM-Signal専用→外部PJ pushステップをcmd-complete SKILLに追加要
+    v8吸収(2026-05-20):
+    - 動いている仕組みを変更する前にgit log --grepで設計意図(なぜそうなっているか)を確認せよ(cmd_2904/2906: respawn-pane→/new変更→CLIが/new拒否→3忍者CTX滞留。元のrespawnには理由があった=CLI内部状態に関係なく確実にリセットする唯一の手段。殿裁定2026-05-20: 一見不合理でも因果がある。サンクコストに囚われず元に戻す判断も正しい)
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -69,7 +71,10 @@ lessons:
     STALL通知は信号であり事実ではない。検証3点:
     (i)task YAML progressに進捗あるか (ii)同一cmd_idが他忍者に配備済みでないか (iii)uncommitted changesがあるか
     Stage 1ガード(assigned/pending/acknowledged/in_progress保護)で構造防御。
-  source_ids: [LK019, LK032]
+    v2吸収(2026-05-20):
+    - LK013を吸収。STALL再配備前に(1)pane全体確認(CTX/Working有無) (2)deploy_task.sh出力でnudge送信痕跡確認 (3)クリア後30秒待ちpane再確認(遅延到達)を必須化。hayate/kagemaru/saizoの3回連続誤再配備を同クラスタへ統合。
+  source_ids: [LK019, LK032, LK013]
+  superseded_ids: [LK013]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh Stage 1ガード+deploy_task.sh重複ガード+karo.md STALL手順'
@@ -466,7 +471,7 @@ v7吸収(2026-05-19):
   how: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
   created_at: '2026-05-18'
 # v8統合(2026-05-20): LK010→LK-A13(sed修正済み/enforcement記載済み), LK011→LK-A02(GPT報告未作成=commit確認で代替),
-# LK012→LK-A09(karo_direct手動review=既記載), LK013→LK-A12(WA引数=Level4化済みe752d5eb)。4件吸収削除
+# LK012→LK-A09(karo_direct手動review=既記載), LK013→LK-A03(STALL再配備3点確認)。4件吸収削除
 - id: 'LK010'
   title: 'deploy_task.sh exit 1でもnudge送信済みの場合あり — deploy出力のnudge痕跡を確認してから手動nudge判断'
   origin: '[[cmd_2881]]'
