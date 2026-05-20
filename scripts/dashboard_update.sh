@@ -19,9 +19,25 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck source=/dev/null
 source "$PROJECT_DIR/scripts/lib/agent_config.sh"
 
-CMD_ID="${1:-}"
+CMD_ID=""
 DRY_RUN=false
-[[ "${2:-}" == "--dry-run" ]] && DRY_RUN=true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            if [[ -z "$CMD_ID" ]]; then
+                CMD_ID="$1"
+                shift
+            else
+                echo "ERROR: unknown extra argument: $1" >&2
+                exit 1
+            fi
+            ;;
+    esac
+done
 
 _DASHBOARD_UPDATE_LOGGED=0
 log_dashboard_update_skill_result() {
@@ -45,6 +61,11 @@ log_dashboard_update_skill_result() {
 trap 'rc=$?; log_dashboard_update_skill_result "$rc"; exit "$rc"' EXIT
 
 # ─── Validation ───
+if [[ -z "$CMD_ID" && "$DRY_RUN" == true ]]; then
+    echo "DRY-RUN: cmd_id未指定のためdashboard_update本体をスキップ"
+    exit 0
+fi
+
 if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[a-zA-Z0-9_]+$ ]]; then
     echo "ERROR: cmd_id は cmd_XXX 形式（英数字・アンダースコア）で指定せよ。" >&2
     echo "  進捗メモの追記は Edit tool で dashboard.md を直接編集すること。" >&2
