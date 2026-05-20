@@ -78,6 +78,30 @@ run_draft_review() {
     [[ "$output" == *"gunshi draft cmd_normal レビュー依頼。通常cmd。ninja=sasuke。 review_draft karo"* ]]
 }
 
+@test "EXIT trap fallback sends draft review on deploy failure" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { printf "%s\n" "$1"; }
+        trap deploy_task_exit_nudge EXIT
+        DEPLOY_TASK_DRAFT_REVIEW_ARMED=1
+        DEPLOY_TASK_DRAFT_REVIEW_SENT=0
+        DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE="'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'"
+        DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=cmd_normal
+        DEPLOY_TASK_DRAFT_REVIEW_NINJA=sasuke
+        DEPLOY_TASK_DRAFT_REVIEW_TYPE=task_assigned
+        false
+    '
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"sasuke: EXIT trap draft_review fallback"* ]]
+    [[ "$output" == *"draft_review: SENT (gunshi)"* ]]
+    run cat "$TEST_PROJECT/logs/inbox_write_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gunshi draft cmd_normal レビュー依頼。通常cmd。ninja=sasuke。 review_draft karo"* ]]
+}
+
 @test "malformed task YAML falls back to cmd source AC count and still sends draft review" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
 task:

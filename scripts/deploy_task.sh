@@ -94,6 +94,12 @@ TYPE="task_assigned"
 FROM="karo"
 DEPLOY_TASK_MAIN_TIMEOUT_SEC="${DEPLOY_TASK_MAIN_TIMEOUT_SEC:-300}"
 DEPLOY_TASK_MAIN_DEADLINE=0
+DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+DEPLOY_TASK_DRAFT_REVIEW_SENT=0
+DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE=""
+DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
+DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
+DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -321,6 +327,8 @@ deploy_task_post_deploy_verify() {
 }
 
 deploy_task_exit_nudge() {
+    deploy_task_exit_draft_review_fallback
+
     if [ "${DEPLOY_TASK_EXIT_NUDGE_ARMED:-0}" != "1" ]; then
         return 0
     fi
@@ -335,6 +343,30 @@ deploy_task_exit_nudge() {
     log "${NINJA_NAME}: EXIT trap sending inbox_write (interrupted before main nudge)"
     safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" || \
         log "${NINJA_NAME}: WARN EXIT trap inbox_write failed"
+}
+
+deploy_task_exit_draft_review_fallback() {
+    if [ "${DEPLOY_TASK_DRAFT_REVIEW_ARMED:-0}" != "1" ]; then
+        return 0
+    fi
+    if [ "${DEPLOY_TASK_DRAFT_REVIEW_SENT:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ -z "${DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE:-}" ] ||
+       [ -z "${DEPLOY_TASK_DRAFT_REVIEW_CMD_ID:-}" ] ||
+       [ -z "${DEPLOY_TASK_DRAFT_REVIEW_NINJA:-}" ] ||
+       [ -z "${DEPLOY_TASK_DRAFT_REVIEW_TYPE:-}" ]; then
+        return 0
+    fi
+
+    DEPLOY_TASK_DRAFT_REVIEW_SENT=1
+    log "${DEPLOY_TASK_DRAFT_REVIEW_NINJA}: EXIT trap draft_review fallback"
+    maybe_notify_draft_review \
+        "$DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE" \
+        "$DEPLOY_TASK_DRAFT_REVIEW_CMD_ID" \
+        "$DEPLOY_TASK_DRAFT_REVIEW_NINJA" \
+        "$DEPLOY_TASK_DRAFT_REVIEW_TYPE" || \
+        log "${DEPLOY_TASK_DRAFT_REVIEW_NINJA}: WARN EXIT trap draft_review fallback failed"
 }
 
 run_python_logged() {
@@ -6420,6 +6452,12 @@ deploy_task_main() {
     deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
     DEPLOY_TASK_EXIT_NUDGE_SENT=0
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+    DEPLOY_TASK_DRAFT_REVIEW_SENT=0
+    DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE=""
+    DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
+    DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
+    DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
     trap deploy_task_exit_nudge EXIT
 
     local pane_target ctx_pct
@@ -6598,6 +6636,13 @@ except Exception:
         warn_same_ninja_redeploy "$task_yaml" "$NINJA_NAME" "$deploy_parent_cmd"
     fi
 
+    DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE="$task_yaml"
+    DEPLOY_TASK_DRAFT_REVIEW_CMD_ID="$deploy_parent_cmd"
+    DEPLOY_TASK_DRAFT_REVIEW_NINJA="$NINJA_NAME"
+    DEPLOY_TASK_DRAFT_REVIEW_TYPE="$TYPE"
+    DEPLOY_TASK_DRAFT_REVIEW_SENT=0
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=1
+
     # _ac_task_id必須チェック: 分割配備の判定に必要。scope_mode=exactはAC分割しないため対象外。
     if [ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then
         log "WARN: _ac_task_id is empty — split deploy detection may misfire"
@@ -6710,6 +6755,8 @@ except Exception:
     ) 201>"$rr_lock_file" 2>/dev/null || log "WARN: rr_pointer update failed (non-fatal)"
 
     maybe_notify_draft_review "$task_yaml" "$deploy_parent_cmd" "$NINJA_NAME" "$TYPE"
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+    DEPLOY_TASK_DRAFT_REVIEW_SENT=1
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
 
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
