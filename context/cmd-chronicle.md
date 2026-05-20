@@ -700,3 +700,5 @@
 | cmd_2904 | Codex CLI忍者がidle時にsafe_send_clear()で無条件respawn-pane -kされ無限ループ(198回/今日)。根因=L754のcodex分岐がtask statusを確認せずidle/in_progress問わず一律respawn。idleならcodex /newで十分。respawnはin_progress時のみ必要。task status分岐を追加し無限ループを根絶する | infra | 05-20 | Codex idle+no_task時に_handle_au |
 | cmd_2906 | cmd_2904がCodex+idle時にsafe_send_clearを呼ばない即returnを追加した結果、Codex忍者がidle時にCTXリセットされなくなった(GPT忍者3名のCTX蓄積中)。修正: (1)_handle_auto_clearの即returnを削除 (2)safe_send_clear内のCodex分岐でtask statusを確認し、idle/done→respawn分岐スキップ→clear_cmd=/new経路に落ちる。in_progress→respawn-pane -k維持 | infra | 05-20 | ninja_monitor.shのCodex idle時 / |
 | cmd_2907 | cmd_2906でCodex idle時を/new経路に変更したが、Codex CLIが/newをtask in progressで拒否しCTXリセット不能。元のrespawn-pane -k経路に戻す | infra | 05-20 | Codex safe_send_clearのテスト期待値をr |
+| cmd_2908 | cmd_save.sh/cmd_publish.sh BLOCK時にPostToolUse hookのGuard 0が発火せず、将軍がBLOCK後に停止する。根因はexit_code抽出jqがClaude Codeの実payload構造にマッチしないこと | infra | 05-20 | post-bash Guard 0がClaude Code実 |
+| cmd_2910 | 因果辺のoriginノード名の68%がセマンティクスインデックス未登録。GATE CLEAR時にoriginノードをaliases照合し、未登録ノードをinsights.yamlにpending蓄積→概念自動成長を実現する | infra | 05-20 | cmd_complete originノードを専用にalia |
