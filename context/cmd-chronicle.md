@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-20 -->
+<!-- last_updated: 2026-05-21 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,45 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2142 | CoDD最適化 — run_077_bunshin.py (GS分身忍法) | dm-signal | 04-20 | run_077_bunshin.py の serial ho |
-| cmd_2143 | CoDD最適化 — run_077_kasoku_diff.py (GS加速diff忍法) | dm-signal | 04-20 | run_077_kasoku_diff.py に month |
-| cmd_2146 | CoDD最適化 — run_077_nukimi.py (GS抜き身忍法) | dm-signal | 04-20 | run_077_nukimi.py CoDD再最適化完了。s |
-| cmd_2144 | CoDD最適化 — run_077_kasoku_ratio.py (GS加速ratio忍法) | dm-signal | 04-20 | run_077_kasoku_ratio.py の simu |
-| cmd_2149 | CoDD最適化 — champion_selector.py (チャンピオン選出) | dm-signal | 04-20 | champion_selector.py のCSV fall |
-| cmd_2151 | CoDD最適化 — cmd_1947_l3_ew_combo_stability.py (2体EW安定性) | dm-signal | 04-20 | cmd_1947をcache-first fallback+ |
-| cmd_2152 | CoDD最適化 — cmd_1934_l3_threebody_stability.py (3体EW安定性) | dm-signal | 04-20 | cmd_1934_l3_threebody_stabilit |
-| cmd_karo_ci_fix_ga135 | CI修正 — TG-T002テスト失敗(SG10 AC_SECTIONインデント検出) | infra | 04-20 | check_research_tool_growth_ac |
-| cmd_2157 | 強化 — cmd_save.sh assumptions全cmd必須化(CMD品質原理的解決) | infra | 04-20 | cmd_save.shのassumptions必須チェック閾 |
-| cmd_2158 | 強化 — cmd_save.sh 1cmd毎ゲート強制(前回cmd未昇格ならBLOCK) | infra | 04-20 | cmd_save.sh に Check 1.6 を追加: P |
-| cmd_2159 | 強化 — cmd_save.sh BLOCK/WARN学習ループ強制(diagnosis質検査+WARN累計昇格) | infra | 04-20 | diagnosis質検査(Check 3.5)とWARN累計 |
-| cmd_2160 | 強化 — cmd_save.sh environment_change強制(BLOCK→環境埋込の免疫系完成) | infra | 04-20 | BLOCK後の再PASS時にenvironment_chan |
-| cmd_2161 | 強化 — gate_report_format 忍者BLOCK学習ループ(同一パターンN回→テンプレート自動改善) | infra | 04-20 | gate_report_formatの反復BLOCK学習ルー |
-| cmd_2162 | 修正 — deploy_task.sh target_path転写漏れ恒久修正 | infra | 04-20 | deploy_task.shのcmd解決経路へtarget_ |
-| cmd_2163 | 強化 — LK007環境埋込: workaroundパターン3件累積で構造的解決cmd自動起票催促 | infra | 04-20 | gate_karo_startup.sh に同カテゴリwor |
-| cmd_karo_ci_fix_ga137 | CI修正 — cmd_save系bats 16件FAIL(cmd_2157-2160新フィールド未対応) | infra | 04-20 | cmd_save系batsフィクスチャをassumption |
-| cmd_2166 | 修正 — cmd_save.sh バンドル定義修正: 変更対象(target_path+command)のみスキャン | infra | 04-20 | collect_primary_cmd_targetsをta |
-| cmd_2164 | 強化 — 忍者BLOCK学習ループ汎用化: 全BLOCKパターン自動学習→テンプレートprefill | infra | 04-20 | gate_report_format学習ループを汎化し、pr |
-| cmd_2167 | 研究 — WF L0四神24体作成: shin_shijin_l1 GS 4CSV × WFエンジン → シン12体+ALM12体チャンピオン選出 | dm-signal | 04-20 | AC1-AC4完了。shin_shijin_l1 の 4 C |
-| cmd_2169 | 修正 — cmd_save.sh ���ンドル除外リストにoutputs/とcontext/を追加(非変更パス誤検出) | infra | 04-20 | scripts/cmd_save.shのL213-220 a |
-| cmd_2168 | 修正 — cmd_save.sh Check 18 GS誤検出修正: outputs/grid_searchパスをGS実行と判定しない | infra | 04-20 | cmd_save.shのGS検出を出力CSVパスでは反応しな |
-| cmd_2170 | 研究 — WF L1準備: WF四神BB月次リターンCSV抽出 + universe YAML 2本作成 | dm-signal | 04-20 | WFシン12体/月次CSV、WF ALM12体/月次CSV、 |
-| cmd_2171 | 修正 — cmd_save.sh バンドル検出: target_pathとcommandの重複パスを除外(dedup) | infra | 04-20 | collect_primary_cmd_targetsでta |
-| cmd_2172 | 修正 — cmd_save.sh Check 18 WF誤検出修正: WFエンジンを使わないcmdでWF WARN発火しない | infra | 04-20 | WF検出前にWF四神とWF選別を説明ラベルとして無害化し、w |
-| cmd_2175 | 研究 — WF L1 WF-AS忍法21体: WF ALM四神BBで忍法GS 7本実行 + WFα選出 | dm-signal | 04-20 | WF ALM四神BBで忍法GS 7本実行(全rc=0)・WF |
-| cmd_2173 | 強化 — cmd_save.sh environment_change構造化+自動検証: 約束の履行をBLOCKで強制 | infra | 04-20 | environment_change が type=...; |
-| cmd_2176 | L1でWFα選出が逆効果(2勝19敗)だった。WF四神BB(L0改善済み)はそのまま活かし、忍法チャンピオン選出だけ事後選出に戻す。WFα選出(cmd_2174)との比較で、どの選出方式が有効かを判定する材料を得る | dm-signal | 04-20 | cmd_2174 GS成果物へ champion_selec |
-| cmd_2178 | L2奥義のBBを準備する。cmd_2176(SS事後21体)+cmd_2177(AS事後21体)のチャンピオンpattern_idをL1 GS月次CSVから抽出し、L2用BB月次リターンCSV+universe YAMLを作成する。cmd_2170(L0→L1準備)と同構造 | dm-signal | 04-20 | L2 WF universe準備完了。SS/AS月次CSV各 |
-| cmd_2129 | 強化 — CTX消費率による忍者タスク負荷検出 (tool_uses質的解釈の代替) | infra | 04-20 | GATE CLEAR時にCTX%をgate_metrics. |
-| cmd_2179 | L2奥義SS系統。cmd_2178で作成したSS 21体BBで忍法GS 7本→事後選出で21体(7忍法×3目的)を確定する。L0 WF四神+L1事後選出+L2事後選出の3層積み上げ | dm-signal | 04-20 | — |
-| cmd_2180 | L2奥義AS系統。cmd_2178で作成したAS 21体BBで忍法GS 7本→事後選出で21体(7忍法×3目的)を確定する。cmd_2179のAS版 | dm-signal | 04-20 | — |
-| cmd_2181 | 道具磨き — run_077_kasoku_diff.py CoDDメモリ削減(8.5GB→3-4GB) | dm-signal | 04-20 | AC4: 全batsテスト(unit 1158件+top-l |
-| cmd_2182 | 道具磨き — run_077_kasoku_ratio.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_kasoku_ratio.py は既に ka |
-| cmd_2184 | 道具磨き — run_077_oikaze.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_oikaze.py に kasoku_dif |
-| cmd_2183 | 道具磨き — run_077_nukimi.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_nukimi.py に PatternSpe |
-| cmd_2187 | 道具磨き — run_077_bunshin.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_bunshin.py に PatternSp |
-| cmd_2185 | 道具磨き — run_077_kawarimi.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_kawarimi.py に kasoku_d |
-| cmd_2186 | 道具磨き — run_077_yotsume.py CoDDメモリ+速度一括最適化(kasoku_diff横展開) | dm-signal | 04-20 | run_077_yotsume.py に kasoku_di |
-| cmd_karo_ctx_reflux_2188 | context還流 — gs-speedup-knowledge.md にcmd_2181-2187成果反映 | dm-signal | 04-20 | context/gs-speedup-knowledge.m |
 | cmd_karo_env_change_gate | karo_workaround_log.shにenvironment_change強制+grep検証を追加 | infra | 04-21 | karo_workaround_log.sh に --wa |
 | cmd_karo_ci_fix_env_change | CI RED修正 — test_cmd_save_environment_change.bats 3件FAIL修正 | infra | 04-21 | environment_change系テスト4件の期待値を現 |
 | cmd_karo_ci_fix_aggregation | CI RED修正 — test_cmd_save_block_aggregation.bats AC2期待値更新 | infra | 04-21 | cmd_save BLOCK集約テストの期待値を現行挙動へ更 |
@@ -704,3 +665,8 @@
 | cmd_2910 | 因果辺のoriginノード名の68%がセマンティクスインデックス未登録。GATE CLEAR時にoriginノードをaliases照合し、未登録ノードをinsights.yamlにpending蓄積→概念自動成長を実現する | infra | 05-20 | cmd_complete originノードを専用にalia |
 | cmd_2911 | lessons_karo.yamlが35件上限に到達し新規教訓追加がBLOCK。LK-A01にv8吸収(設計意図確認)とLK013(STALL再配備3点確認)をA系列に統合し件数を削減する | infra | 05-20 | LK-A01へv8設計意図確認を統合し、LK013をLK-A |
 | cmd_2912 | insights.yamlに蓄積されたpending概念22件がセマンティクスインデックスに昇格されず手動待ち。類似概念スコア照合で既存概念のaliases自動拡張し、因果NWの到達性を自動的に拡大する | infra | 05-20 | pending semantic insightsを類似度ス |
+| cmd_2915 | L7成長速度最大化のなぜなぜ7回→軍師検証で律速=aliases品質と判明。改善にはNO_MATCHの内容(purpose/target_path)が必要だが現在記録されていない。計測基盤を先に作り、データ駆動でaliases拡充する道具を整える | infra | 05-21 | HEAD既存のsemantic NO_MATCH記録を現物確 |
+| cmd_2917 | deploy_task.shがexit 1で終了した場合、maybe_notify_draft_review(L6712)が成功パスにのみ存在するため軍師へのdraft_review通知が送信されない。EXIT trap(L323)にdraft_reviewフォールバックを追加し、配備失敗時も軍師レビューフローが途切れないようにする | infra | 05-21 | deploy_task.shのEXIT trapにdraft |
+| cmd_2918 | L7現物確認でNO_MATCH率表示が家老gateのみで将軍gateにないことを発見。L7は将軍が管理するがL7健全度が起動時に見えない。家老gate(L181 show_semantic_no_match_metrics)と同じ計測セクションを将軍gateに追加する | infra | 05-21 | 将軍startup gateにセマンティックNO_MATCH |
+| cmd_2919 | 殿のクエリがsemantic_searchを経由するが、NO_MATCH時の記録がない。L7の最重要消費者(殿)側の計測が盲点。NO_MATCHカウントのみ記録し(クエリ内容は非記録)、startup gateで可視化する | infra | 05-21 | prompt_state_injectのsemantic_s |
+| cmd_2920 | L7成長速度の律速=aliases品質(軍師検証確定)。cmd_complete時にsemantic_index_update.shがpurposeからaliases候補を生成する基盤(L437 candidate_aliases)は既にあるが、NO_MATCH時の候補を既存概念のaliases拡充に使う経路がない。NO_MATCHログ(cmd_2915)のpurposeキーワードをpending aliasesに自動蓄積し、L7f(score閾値自動昇格)基盤でaliasesに自動追加する | infra | 05-21 | NO_MATCH purposeをpending alias |
