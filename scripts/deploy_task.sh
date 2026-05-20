@@ -4430,12 +4430,24 @@ inject_target_path_check() {
 
     [ ${#paths[@]} -eq 0 ] && return 0
 
-    # 存在しないパスを検出
+    # project pathを取得(別リポジトリのtarget_path解決用)
+    local project_id project_path=""
+    project_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    if [ -n "$project_id" ] && [ -f "$SCRIPT_DIR/projects/${project_id}.yaml" ]; then
+        project_path=$(grep -m1 '^\s*path:' "$SCRIPT_DIR/projects/${project_id}.yaml" 2>/dev/null | sed 's/.*path:[[:space:]]*//' | tr -d "'" | tr -d '"')
+    fi
+
+    # 存在しないパスを検出(SCRIPT_DIR→project_pathの2段解決)
     local -a missing=()
     for p in "${paths[@]}"; do
-        # 相対パスはSCRIPT_DIR基準で解決(deploy実行時cwdが不定のため)
         local resolved="$p"
-        [[ "$p" != /* ]] && resolved="$SCRIPT_DIR/$p"
+        if [[ "$p" != /* ]]; then
+            resolved="$SCRIPT_DIR/$p"
+            # SCRIPT_DIR基準で不在→project_path基準でも試行
+            if [ ! -e "$resolved" ] && [ -n "$project_path" ]; then
+                resolved="$project_path/$p"
+            fi
+        fi
         [ ! -e "$resolved" ] && missing+=("$p")
     done
 
