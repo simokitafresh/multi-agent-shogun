@@ -1278,6 +1278,7 @@ emit_cmd_trigger_locations() {
     local check_name="${1:-unknown}"
     local reason="${2:-}"
 
+    # cmd_2898: show the exact command YAML location that triggered each BLOCK/WARN.
     [[ -n "${QUEUE_FILE:-}" && -f "$QUEUE_FILE" && -n "${CMD_ID:-}" ]] || {
         printf '      - check=%s line=? keyword=? reason=%s\n' "$check_name" "$reason"
         return 0
