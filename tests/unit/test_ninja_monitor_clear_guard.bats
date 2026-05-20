@@ -688,7 +688,7 @@ fi
     [[ "$output" == *"PASS: safe_send_clear called"* ]]
 }
 
-@test "safe_send_clear codex idle task uses /new instead of respawn" {
+@test "safe_send_clear codex idle task uses respawn-pane" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -718,25 +718,30 @@ cli_profile_get() {
     esac
 }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
-tmux() { echo ""; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
 export -f tmux
 
 safe_send_clear "shogun:2.3" "hayate" "TEST"
 
-grep -q "CODEX-RESPAWN-SKIP: hayate task.status=idle, using /new" "$LOG"
-grep -q "CLEAR-SEND: hayate confirmed idle, sending /new" "$LOG"
-grep -q "SEND:/new" "$LOG"
-if grep -q "CODEX-RESPAWN:" "$LOG"; then
+grep -q "CODEX-RESPAWN: hayate respawn-pane" "$LOG"
+grep -q "RESPAWN:respawn-pane" "$LOG"
+if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1
 fi
-echo "PASS: idle uses /new"
+echo "PASS: idle respawns"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: idle uses /new"* ]]
+    [[ "$output" == *"PASS: idle respawns"* ]]
 }
 
-@test "safe_send_clear codex done and empty tasks use /new instead of respawn" {
+@test "safe_send_clear codex done and empty tasks use respawn-pane" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -762,7 +767,13 @@ cli_profile_get() {
     esac
 }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
-tmux() { echo ""; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
 export -f tmux
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
@@ -773,20 +784,19 @@ safe_send_clear "shogun:2.3" "hayate" "DONE-TEST"
 rm -f "$SCRIPT_DIR/queue/tasks/hayate.yaml"
 safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST"
 
-grep -q "CODEX-RESPAWN-SKIP: hayate task.status=done, using /new" "$LOG"
-grep -q "CODEX-RESPAWN-SKIP: hayate task.status=EMPTY, using /new" "$LOG"
-test "$(grep -c "SEND:/new" "$LOG")" -eq 2
-if grep -q "CODEX-RESPAWN:" "$LOG"; then
+test "$(grep -c "CODEX-RESPAWN: hayate respawn-pane" "$LOG")" -eq 2
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
+if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1
 fi
-echo "PASS: done and empty use /new"
+echo "PASS: done and empty respawn"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: done and empty use /new"* ]]
+    [[ "$output" == *"PASS: done and empty respawn"* ]]
 }
 
-@test "safe_send_clear codex in_progress keeps respawn workaround" {
+@test "safe_send_clear codex in_progress uses respawn-pane" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
