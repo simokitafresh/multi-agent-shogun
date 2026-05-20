@@ -518,3 +518,11 @@ lessons:
   created_at: '2026-05-21'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS049'
+- id: 'LS051'
+  title: 'watcher 2プロセス/agentは正常(親子関係) — killすると全滅する'
+  origin: '[[inbox_watcher_restart]] -> [[pgrep_count_misread]] -> [[parent_child_kill_cascade]]'
+  detail: 'pgrep -cfで2プロセス検出→重複と誤判断→kill→全滅→再起動→また2プロセス→試行錯誤20分。事実: restart_watchers.shは親プロセスを起動し、script change detectionで子がexec再起動。PPID確認で親子判定可能。killすると親子連鎖で全滅。watcher重複を疑う前にps -o pid,ppid,startで親子関係を確認せよ'
+  source_cmd: 'cmd_2924'
+  created_at: '2026-05-21'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS050'

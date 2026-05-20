@@ -40,7 +40,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存, L7tohanannda, L7の成長速度を最大化させるために何が必要か？なぜなぜ7回, 強化 L7計測基盤 — semantic searchのNO MATCHログ startup gate表示, L7を確認しよう, 強化 prompt state inject shにsemantic search NO MATCHカウント計測追加, 強化 cmd complete時にpurposeキーワードを既存概念aliasesに自動蓄積 aliases自動成長, 強化 L7ストレステストツール — semantic searchヒット率計測 aliases自動蓄積, そうだな, L7まで貫通させずに |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, セマンティクスインデックス候補除外精度, セマンティクスインデックス成長ループ構築 ノイズ除外 aliases自動拡張 参照切れ修正, セマンティクスインデックスaliases照合をcmd品質ゲートに接続 Level5化, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, 今回の知識は, セマンティック辞書やインデックスに追加すべき内容を確認せよ, セマンティクスインデックスにL6化セッションの成果を反映, ではrebalancerの概要を教えてくれ, スキルTRIGGER照合をproject文脈対応 セマンティック辞書棚卸し, セマンティック辞書に未登録5概念を追加（暗黒物質可視化Phase ）, ここまでの知識を記憶してセマンティクスインデックスにも保存せよ, obsidian, obsidianは有効活用できてるか？, 真の穴 INS 024911のセマンティック辞書未登録2件は対処すべき, obsidian×セマンティックインデックスの発展について, obsidian×セマンティックスインデックスは順調か？, obsidianのリンクは成長しているか？成長速度が遅くないか？, task notification task id bm5vc6kjt task id tool use id tool, obsidianのリンクが成長しないな, GATE CLEAR時にcmd因果辺をsemantic mapへ自動還流, 2905は送っているか？こういうことにobsidian セマンティックインデックスの仕組みがあるのでは？inbox1, まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい, 強化 GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流 L7穴3 HOW, concept_auto_growth, 概念自動成長, L7, L7穴3, insight_write, insightsキュー, 気づき保存, L7tohanannda, L7の成長速度を最大化させるために何が必要か？なぜなぜ7回, 強化 L7計測基盤 — semantic searchのNO MATCHログ startup gate表示, L7を確認しよう, 強化 prompt state inject shにsemantic search NO MATCHカウント計測追加, 強化 cmd complete時にpurposeキーワードを既存概念aliasesに自動蓄積 aliases自動成長, 強化 L7ストレステストツール — semantic searchヒット率計測 aliases自動蓄積, そうだな, L7まで貫通させずに, 強化 L7ストレステスト3トリガー自動組込み aliases変更後計測 startup gate表示 idle蓄積 |
 | skills | なし |
 
 | 種別 | パス/参照 |
@@ -99,6 +99,9 @@ codd:
 | causal | `cmd_2922` origin: [[L7_growth_speed]] -> [[aliases_quality_bottleneck]] -> [[measurement_tool_absent]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:17:34+09:00 そうだな。L1-L7までを貫通させる。いい案だと思う。おまえらは死なないから無限に成長できる。俺ら人間と比べて能力は極端に劣るが、いつか追いこせるだろう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:19:15+09:00 L1-L7まで貫通させずに、放置しているものはないか？ |
+| cmd | `cmd_2924` 強化: L7ストレステスト3トリガー自動組込み(aliases変更後計測+startup gate表示+idle蓄積) (`logs/archive/cmd_design_quality.yaml`, `logs/cmd_design_quality.yaml`, `logs/gunshi_review_log.yaml`) |
+| causal | `cmd_2924` origin: [[cmd_2922]] -> [[manual_tool_phase4]] -> [[gunshi_5w1h_3trigger_design]] |
+| causal | `cmd_2924` depends_on: cmd_2922 |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -580,9 +583,6 @@ codd:
 | causal | `cmd_2907` origin: [[cmd_2906]] -> [[Codex_CLI_new_incompatible]] -> [[CTX_accumulation]] |
 | cmd | `cmd_2917` 修正: deploy_task.sh exit 1時のdraft_review未送信フォールバック追加 (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_draft_review.bats`) |
 | causal | `cmd_2917` origin: [[deploy_exit_1_no_draft_review]] -> [[success_path_only_notification]] -> [[review_flow_breakage]] |
-| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
-| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -940,8 +940,6 @@ codd:
 | cmd | `cmd_2855` cmd_quality_log.sh高速化 |
 | lesson | `L637` FP率計算は累計昇格BLOCKを候補に含める |
 | lesson | `L638` FP率計算は累計昇格BLOCKもFP候補に含める |
-| causal_chain | `[[cmd_2888]]` (L637) |
-| causal_chain | `[[cmd_2888]]` (L638) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -995,9 +993,6 @@ codd:
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
 | cmd | `cmd_2880` 強化 — 報告YAML origin自動継承(cmd origin→報告origin零コスト転写) (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
 | lesson | `L643` gate_report_format.sh: skill_execution_log.sh非同期化でPASSパスを87%高速化(WSL2 python3起動コスト回避) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
-| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
-| causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
 
 ## external_project_registry — 外部プロジェクト登録
 
@@ -1074,7 +1069,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ |
 | skills | reset-layout |
 
 | 種別 | パス/参照 |
@@ -1089,6 +1084,7 @@ codd:
 | file | `scripts/dashboard_auto_section.sh` ダッシュボードリアルタイムステータス自動生成 |
 | file | `scripts/auto_deploy_next.sh` サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) |
 | file | `scripts/reset_layout.sh` agentsウィンドウペイン配置一発復元 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:45:19+09:00 デーモンが無事に再起動できているか確認せよ |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -1290,3 +1286,9 @@ codd:
 - aliases: [inbox既読スルー, mark_read, inbox無視, 読まずに既読, サボりの精神, Guard 0d, LS048, LS049, LS050]
 - resources: [.claude/hooks/pre-write-edit-combined.sh, scripts/hooks/stop_check_inbox.sh, scripts/inbox_mark_read.sh]
 - origin: "[[cmd_2922]] -> [[inbox_mark_read_before_processing]] -> [[sabori_spirit]]"
+
+## inbox_watcher_process_model
+- label: inbox_watcher プロセスモデル
+- aliases: [watcher重複, watcher 2プロセス, pgrep 2件, 親子関係, restart_watchers, kill全滅, script change detection, PPID確認]
+- resources: [scripts/inbox_watcher.sh, scripts/restart_watchers.sh]
+- origin: "[[inbox_watcher_restart]] -> [[pgrep_count_misread]] -> [[parent_child_kill_cascade]]"
