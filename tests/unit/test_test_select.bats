@@ -17,8 +17,8 @@ setup_file() {
 @test "test_select maps gate script changes to gate tests" {
     run bash "$TEST_SELECT" scripts/gates/gate_report_format.sh
     [ "$status" -eq 0 ]
-    [[ "$output" == *"tests/unit/test_gate_report_format_learning.bats"* ]]
     [[ "$output" == *"tests/unit/test_gate_report_format_pass_no_improvement.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_small_consolidated.bats"* ]]
 }
 
 @test "test_select maps gate script changes to cmd_complete_gate tests" {
