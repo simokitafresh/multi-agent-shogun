@@ -193,6 +193,18 @@ run_warn_save() {
     [[ "$output" == *"diagnosisの形式不正"* ]]
 }
 
+@test "cmd_2898: BLOCK時にトリガーマップを一括表示する" {
+    write_diag_cmd "単なるメモ。対策: q11を記入した"
+    run_diag_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"━━━ BLOCKトリガーマップ ━━━"* ]]
+    [[ "$output" == *"check=cmd_save_main"* ]]
+    [[ "$output" == *"line="* ]]
+    [[ "$output" == *"keyword=diagnosis"* ]]
+}
+
 # --- AC2: WARN累計昇格 ---
 
 @test "AC2-1: 同一WARNが1回目はWARNのまま(BLOCKなし)" {
@@ -204,6 +216,18 @@ run_warn_save() {
     [ "$status" -ne 0 ]   # WARNがあるのでNG
     [[ "$output" != *"WARN累計昇格"* ]]
     [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
+}
+
+@test "cmd_2898: WARN時にチェック名と行番号つきトリガーマップを一括表示する" {
+    write_warn_cmd
+    run_warn_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"━━━ WARNトリガーマップ ━━━"* ]]
+    [[ "$output" == *"check=quality_gate_q8_compound_question"* ]]
+    [[ "$output" == *"line="* ]]
+    [[ "$output" == *"keyword=q8"* ]]
 }
 
 @test "AC2-2: 同一WARNが2回目でBLOCK昇格(閾値1)" {
