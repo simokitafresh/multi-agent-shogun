@@ -696,3 +696,5 @@
 | cmd_2898 | 将軍がcmd_save BLOCK後にフリーズする根因=どの行のどのキーワードがBLOCKを引き起こしたか不明で1箇所ずつ修正→再BLOCK→探す→修正の繰り返し。全BLOCK要因を一括表示し1回の修正で全解消できるようにする | infra | 05-20 | cmd_save.shのBLOCK/WARN終了サマリにチェ |
 | cmd_2900 | gws CLIのGmail操作知識がcontext/infrastructure.mdに不足。auth statusが暗号化credentialsを検出できないバグがあり、将軍がログアウトと誤判断→殿に無駄なブラウザ認証を依頼した。実APIで確認すれば1秒で動くことを確認できた。知識不足が確認不足を招く構造を修正する | infra | 05-20 | context/infrastructure.md §gws |
 | cmd_2902 | 因果NW成長が停止している根因=cmdのoriginフィールドが空/noneでもWARN止まりで通過する。causal_resource_rows()は実装済みだがorigin空では辺が生成されずsemantic_index還流が不発。originに[[リンク]]1つ以上を必須化しBLOCKで強制する | infra | 05-20 | origin空/none/リンクなしをBLOCKとして固定す |
+| cmd_2903 | 掲示板が100件に膨張(open85件)。bulletin_archive.shがPython SyntaxErrorで動かない(L177-178のf-stringエスケープ漏れ)。真因=手動実行前提で自動パスがなくバグが放置された。構文修正+bulletin_write.shに閾値超過時の自動アーカイブ呼出しを追加し、掲示板肥大化を構造的に防止する | infra | 05-20 | bulletin_archive.shのSyntaxErro |
+| cmd_2904 | Codex CLI忍者がidle時にsafe_send_clear()で無条件respawn-pane -kされ無限ループ(198回/今日)。根因=L754のcodex分岐がtask statusを確認せずidle/in_progress問わず一律respawn。idleならcodex /newで十分。respawnはin_progress時のみ必要。task status分岐を追加し無限ループを根絶する | infra | 05-20 | Codex idle+no_task時に_handle_au |

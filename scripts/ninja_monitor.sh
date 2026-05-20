@@ -749,12 +749,24 @@ safe_send_clear() {
     safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
     log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
 
-    # Codex CLI: /newはtask in progress中に無視される → respawn-pane -k で強制リセット
+    # Codex CLI: /newはtask in_progress中に無視される → respawn-pane -k で強制リセット
+    # idle/done/emptyなら通常のclear_cmd(/new)経路へ落とし、CTX蓄積を解消する。
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
-        local _launch_cmd
-        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-        if [ -n "$_launch_cmd" ]; then
+        local _codex_task_file _codex_task_status
+        _codex_task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+        _codex_task_status=""
+        if [ -f "$_codex_task_file" ]; then
+            _codex_task_status=$(yaml_field_get "$_codex_task_file" "status")
+        fi
+        if [ "$_codex_task_status" = "in_progress" ]; then
+            local _launch_cmd
+            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+            [ -z "$_launch_cmd" ] && log "CODEX-RESPAWN-SKIP: $agent_name task.status=in_progress but launch_cmd empty"
+        else
+            log "CODEX-RESPAWN-SKIP: $agent_name task.status=${_codex_task_status:-EMPTY}, using $clear_cmd"
+        fi
+        if [ "${_codex_task_status:-}" = "in_progress" ] && [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
             log "CODEX-RESPAWN: $agent_name respawn-pane (task in progress workaround)"
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
@@ -1636,10 +1648,6 @@ _handle_auto_clear() {
 
     local _ac_cli_type
     _ac_cli_type=$(cli_type "$name" 2>/dev/null || echo "claude")
-    if [ "$_ac_cli_type" = "codex" ] && { [ -z "$_ac_task_status" ] || [[ "$_ac_task_status" =~ ^(idle|done|completed)$ ]]; }; then
-        log "CODEX-IDLE-NO-TASK-SKIP: $name task.status=${_ac_task_status:-EMPTY}, safe_send_clear suppressed"
-        return
-    fi
 
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
     # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
