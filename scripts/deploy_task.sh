@@ -2683,6 +2683,20 @@ inject_semantic_concepts() {
     cp "$tmp_file" "$task_file"
     rm -f "$tmp_file"
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
+
+    # L7穴2: 家老が配備時に因果概念を毎回消費する(startup gateは/clear後のみで低頻度)
+    echo "INFO: [SEMANTIC_CONTEXT] 配備cmd関連概念:" >&2
+    printf '%s\n' "$matches" | sed 's/^/  /' >&2
+    local _causal_script="${SCRIPT_DIR}/scripts/causal_backlinks.sh"
+    if [ -f "$_causal_script" ]; then
+        local _target_stem
+        _target_stem=$(awk '/^  target_path:/{sub(/^  target_path: /,""); gsub(/.*\//,""); sub(/\.[^.]*$/,""); print; exit}' "$task_file" 2>/dev/null)
+        if [ -n "$_target_stem" ]; then
+            local _causal_out
+            _causal_out=$(bash "$_causal_script" "$_target_stem" 2>/dev/null | head -3 || true)
+            [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
+        fi
+    fi
 }
 
 # ─── 因果リンク注入（task YAMLにcmdのoriginリンクを挿入） ───
