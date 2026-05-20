@@ -670,3 +670,5 @@
 | cmd_2918 | L7現物確認でNO_MATCH率表示が家老gateのみで将軍gateにないことを発見。L7は将軍が管理するがL7健全度が起動時に見えない。家老gate(L181 show_semantic_no_match_metrics)と同じ計測セクションを将軍gateに追加する | infra | 05-21 | 将軍startup gateにセマンティックNO_MATCH |
 | cmd_2919 | 殿のクエリがsemantic_searchを経由するが、NO_MATCH時の記録がない。L7の最重要消費者(殿)側の計測が盲点。NO_MATCHカウントのみ記録し(クエリ内容は非記録)、startup gateで可視化する | infra | 05-21 | prompt_state_injectのsemantic_s |
 | cmd_2920 | L7成長速度の律速=aliases品質(軍師検証確定)。cmd_complete時にsemantic_index_update.shがpurposeからaliases候補を生成する基盤(L437 candidate_aliases)は既にあるが、NO_MATCH時の候補を既存概念のaliases拡充に使う経路がない。NO_MATCHログ(cmd_2915)のpurposeキーワードをpending aliasesに自動蓄積し、L7f(score閾値自動昇格)基盤でaliasesに自動追加する | infra | 05-21 | NO_MATCH purposeをpending alias |
+| cmd_2921 | gate_skill_script_refs.shの3セッション連続WARNを解消する。5件全て現物確認済みでインタフェース変更なし | infra | 05-21 | gate_skill_script_refs.shのWARN |
+| cmd_2922 | semantic_searchのヒット率を定量計測し、NO_MATCHデータをaliases自動成長パイプライン(cmd_2920)に流す道具を作る。軍師実測でヒット率45.7%、因果展開timeout誤判定バグも発見済み | infra | 05-21 | semantic_searchのalias層ヒット率を3入力 |
