@@ -2605,9 +2605,11 @@ inject_semantic_concepts() {
     [ -f "$index_path" ] || return 0
 
     # purpose から検索テキストを取得
-    local purpose
+    local purpose target_path
     purpose=$(awk '/^  purpose:/{sub(/^  purpose: /,""); p=$0; next} p && /^  [a-z]/{exit} p{p=p " " $0} END{print p}' "$task_file" 2>/dev/null)
     [ -z "$purpose" ] && return 0
+    target_path=$(awk '/^  target_path:/{sub(/^  target_path: /,""); print; exit}' "$task_file" 2>/dev/null)
+    target_path="${target_path:-none}"
 
     # semantic_search.sh でマッチする概念+ファイル+スキルを取得
     local matches
@@ -2618,7 +2620,10 @@ inject_semantic_concepts() {
         /^$/{if(label!="" && files!="") print label ": " files; label=""; files=""}
         END{if(label!="" && files!="") print label ": " files}
     ' | head -5)
-    [ -z "$matches" ] && return 0
+    if [ -z "$matches" ]; then
+        log "inject_semantic_concepts: NO_MATCH purpose=${purpose//$'\n'/ } target_path=${target_path//$'\n'/ }"
+        return 0
+    fi
 
     local recommended_skills
     recommended_skills=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '

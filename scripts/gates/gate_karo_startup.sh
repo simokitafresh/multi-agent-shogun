@@ -178,6 +178,69 @@ show_active_cmd_semantic_context() {
     echo ""
 }
 
+show_semantic_no_match_metrics() {
+    local deploy_log="${KARO_STARTUP_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_task.log}"
+    local scan_lines="${KARO_STARTUP_NO_MATCH_SCAN_LINES:-500}"
+
+    echo "■ セマンティックNO_MATCH計測"
+    if [ ! -f "$deploy_log" ]; then
+        echo "  SKIP: logs/deploy_task.log 不在"
+        echo ""
+        return 0
+    fi
+
+    tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '
+        /inject_semantic_concepts:/ {
+            attempts++
+            if (/NO_MATCH/) {
+                no_match++
+                purpose = $0
+                sub(/^.*NO_MATCH purpose=/, "", purpose)
+                sub(/[[:space:]]target_path=.*/, "", purpose)
+                gsub(/[[:space:]]+/, " ", purpose)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", purpose)
+                if (purpose == "") purpose = "(purposeなし)"
+                miss[purpose]++
+            }
+        }
+        END {
+            if (attempts == 0) {
+                print "  semantic注入試行: 0件"
+                exit
+            }
+            rate = int((no_match * 1000 / attempts) + 0.5) / 10
+            printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
+            if (no_match == 0) {
+                print "  TOP3 miss purpose: none"
+                exit
+            }
+            print "  TOP3 miss purpose:"
+            for (purpose in miss) {
+                order[++n] = purpose
+            }
+            for (i = 1; i <= n; i++) {
+                for (j = i + 1; j <= n; j++) {
+                    if (miss[order[j]] > miss[order[i]]) {
+                        tmp = order[i]; order[i] = order[j]; order[j] = tmp
+                    }
+                }
+            }
+            limit = (n < 3) ? n : 3
+            for (i = 1; i <= limit; i++) {
+                p = order[i]
+                shown = p
+                if (length(shown) > 100) shown = substr(shown, 1, 97) "..."
+                printf "    %d. %s (%d件)\n", i, shown, miss[p]
+            }
+        }
+    ' scan_lines="$scan_lines"
+    echo ""
+}
+
+if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 # === 高速化: バックグラウンド並列 + WA rateキャッシュ(300s TTL) ===
 # cmd_2076: WA rate スクリプト結果を /tmp にキャッシュ (TTL 300秒)
 # 前回(python3→awk+statusキャッシュ)との差分: WA rate結果自体をキャッシュ (異なる対象)
@@ -941,6 +1004,7 @@ echo ""
 
 # --- 稼働中cmdのtarget_pathから関連概念/因果辺を表示 ---
 show_active_cmd_semantic_context
+show_semantic_no_match_metrics
 
 # --- 教訓効果計測(lesson_impact TOP5) ---
 echo "■ 教訓効果計測"
