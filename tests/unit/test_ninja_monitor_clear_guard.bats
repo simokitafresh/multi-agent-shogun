@@ -569,8 +569,8 @@ fi
     [[ "$output" == *"PASS: delegated pipeline work detected"* ]]
 }
 
-# AC1: Codex idle + no_task → safe_send_clearを呼ばない
-@test "codex respawn loop AC1: idle no_task suppresses safe_send_clear" {
+# AC1: Codex idle + no_task → debounce経過後はsafe_send_clearを呼ぶ
+@test "codex idle no_task calls safe_send_clear" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -587,12 +587,12 @@ touch "$LOG"
 
 declare -A LAST_CLEARED PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
 
-# respawn 30秒前
-LAST_CLEARED[hayate]=9970
+# respawn 1000秒前 (clear_debounce経過)
+LAST_CLEARED[hayate]=9000
 PANE_TARGETS[hayate]="shogun:2.3"
 
 log() { echo "$@" >> "$LOG"; }
-get_context_pct() { echo "0"; }
+get_context_pct() { echo "80"; }
 cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
@@ -601,35 +601,35 @@ cli_profile_get() {
     esac
 }
 can_send_clear_with_report_gate() { return 0; }
-RESPAWN_CALLED=0
-safe_send_clear() { RESPAWN_CALLED=1; return 0; }
+CLEAR_CALLED=0
+safe_send_clear() { CLEAR_CALLED=1; return 0; }
 tmux() { echo ""; }
 export -f tmux
 
 _handle_auto_clear "hayate" 10000
 
 if grep -q "CODEX-IDLE-NO-TASK-SKIP" "$LOG"; then
-    echo "PASS: CODEX-IDLE-NO-TASK-SKIP logged"
-else
-    echo "FAIL: CODEX-IDLE-NO-TASK-SKIP not logged"
+    echo "FAIL: obsolete CODEX-IDLE-NO-TASK-SKIP logged"
     cat "$LOG"
     exit 1
+else
+    echo "PASS: obsolete skip not logged"
 fi
 
-if [ "$RESPAWN_CALLED" -eq 0 ]; then
-    echo "PASS: no respawn triggered"
+if [ "$CLEAR_CALLED" -eq 1 ]; then
+    echo "PASS: safe_send_clear called"
 else
-    echo "FAIL: safe_send_clear was called unexpectedly"
+    echo "FAIL: safe_send_clear was not called"
     exit 1
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: CODEX-IDLE-NO-TASK-SKIP logged"* ]]
-    [[ "$output" == *"PASS: no respawn triggered"* ]]
+    [[ "$output" == *"PASS: obsolete skip not logged"* ]]
+    [[ "$output" == *"PASS: safe_send_clear called"* ]]
 }
 
-# AC2: Codex idle + no_taskはrespawn経過時間に関係なくsafe_send_clearを呼ばない
-@test "codex respawn loop AC2: idle no_task suppresses safe_send_clear after 60s" {
+# AC2: Codex idle + no_taskはrespawn経過後もsafe_send_clearを呼ぶ
+@test "codex idle no_task calls safe_send_clear after 60s" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -660,30 +660,181 @@ cli_profile_get() {
     esac
 }
 can_send_clear_with_report_gate() { return 0; }
-RESPAWN_CALLED=0
-safe_send_clear() { RESPAWN_CALLED=1; return 0; }
+CLEAR_CALLED=0
+safe_send_clear() { CLEAR_CALLED=1; return 0; }
 tmux() { echo ""; }
 export -f tmux
 
 _handle_auto_clear "hayate" 10000
 
 if grep -q "CODEX-IDLE-NO-TASK-SKIP" "$LOG"; then
-    echo "PASS: CODEX-IDLE-NO-TASK-SKIP logged"
-else
-    echo "FAIL: CODEX-IDLE-NO-TASK-SKIP not logged"
+    echo "FAIL: obsolete CODEX-IDLE-NO-TASK-SKIP logged"
     cat "$LOG"
     exit 1
+else
+    echo "PASS: obsolete skip not logged"
 fi
 
-if [ "$RESPAWN_CALLED" -eq 0 ]; then
-    echo "PASS: no respawn triggered"
+if [ "$CLEAR_CALLED" -eq 1 ]; then
+    echo "PASS: safe_send_clear called"
 else
-    echo "FAIL: safe_send_clear was called unexpectedly"
+    echo "FAIL: safe_send_clear was not called"
     cat "$LOG"
     exit 1
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: CODEX-IDLE-NO-TASK-SKIP logged"* ]]
-    [[ "$output" == *"PASS: no respawn triggered"* ]]
+    [[ "$output" == *"PASS: obsolete skip not logged"* ]]
+    [[ "$output" == *"PASS: safe_send_clear called"* ]]
+}
+
+@test "safe_send_clear codex idle task uses /new instead of respawn" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+touch "$LOG"
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+safe_send_clear "shogun:2.3" "hayate" "TEST"
+
+grep -q "CODEX-RESPAWN-SKIP: hayate task.status=idle, using /new" "$LOG"
+grep -q "CLEAR-SEND: hayate confirmed idle, sending /new" "$LOG"
+grep -q "SEND:/new" "$LOG"
+if grep -q "CODEX-RESPAWN:" "$LOG"; then
+    cat "$LOG"
+    exit 1
+fi
+echo "PASS: idle uses /new"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: idle uses /new"* ]]
+}
+
+@test "safe_send_clear codex done and empty tasks use /new instead of respawn" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+YAML
+safe_send_clear "shogun:2.3" "hayate" "DONE-TEST"
+rm -f "$SCRIPT_DIR/queue/tasks/hayate.yaml"
+safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST"
+
+grep -q "CODEX-RESPAWN-SKIP: hayate task.status=done, using /new" "$LOG"
+grep -q "CODEX-RESPAWN-SKIP: hayate task.status=EMPTY, using /new" "$LOG"
+test "$(grep -c "SEND:/new" "$LOG")" -eq 2
+if grep -q "CODEX-RESPAWN:" "$LOG"; then
+    cat "$LOG"
+    exit 1
+fi
+echo "PASS: done and empty use /new"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: done and empty use /new"* ]]
+}
+
+@test "safe_send_clear codex in_progress keeps respawn workaround" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: in_progress
+YAML
+touch "$LOG"
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
+export -f tmux
+
+safe_send_clear "shogun:2.3" "hayate" "TEST"
+
+grep -q "CODEX-RESPAWN: hayate respawn-pane" "$LOG"
+grep -q "RESPAWN:respawn-pane" "$LOG"
+if grep -q "SEND:/new" "$LOG"; then
+    cat "$LOG"
+    exit 1
+fi
+echo "PASS: in_progress respawns"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: in_progress respawns"* ]]
 }
