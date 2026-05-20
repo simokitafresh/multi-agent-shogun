@@ -493,6 +493,27 @@ else
     echo "  SKIP: files_modified empty"
 fi
 
+# ─── SG-PRE22: semantic概念表示(L7浸透: レビュー時に関連概念を強制表示) ───
+echo ""
+echo "■ SG-PRE22: semantic関連概念(L7)"
+_semantic_script="$REPO_ROOT/scripts/semantic_search.sh"
+_purpose=""
+if [ -n "${CMD_SPEC:-}" ]; then
+    _purpose=$(echo "$CMD_SPEC" | grep 'purpose:' | head -1 | sed 's/.*purpose: *//' | sed 's/"//g')
+fi
+[ -z "$_purpose" ] && [ -n "${PARENT_CMD:-}" ] && _purpose="$PARENT_CMD"
+if [ -f "$_semantic_script" ] && [ -n "${_purpose:-}" ]; then
+    _sem_result=$(SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 timeout 3 bash "$_semantic_script" "$_purpose" 2>/dev/null | head -5 || true)
+    if [ -n "$_sem_result" ]; then
+        echo "  関連概念:"
+        printf '%s\n' "$_sem_result" | while IFS= read -r _line; do echo "    $_line"; done
+    else
+        echo "  NO_MATCH: 関連概念なし(aliases候補として蓄積検討)"
+    fi
+else
+    echo "  SKIP: semantic_search.sh not found or purpose empty"
+fi
+
 # ─── GATE_PREDICTION (自動計算) ───
 # PRE12b draft_lessons補正: engine.pyに未連携のためbash側で上書き
 if [ "${_draft_lessons_total:-0}" -gt 0 ]; then
