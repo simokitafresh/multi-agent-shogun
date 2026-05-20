@@ -1287,6 +1287,17 @@ show_target_path_git_history() {
         else
             echo "  - 履歴なし" >&2
         fi
+
+        # L7e: 因果辺照合 — target_pathの設計意図を表示(因果衝突検知)
+        local _causal_script="${CMD_SAVE_CAUSAL_BACKLINKS_SCRIPT:-$PROJECT_DIR/scripts/causal_backlinks.sh}"
+        if [[ -f "$_causal_script" ]]; then
+            local _causal_links
+            _causal_links="$(bash "$_causal_script" "$keyword" 2>/dev/null | head -5 || true)"
+            if [[ -n "$_causal_links" ]]; then
+                echo "INFO: [TARGET_PATH_CAUSAL] 因果辺(設計意図照合): ${keyword}" >&2
+                printf '%s\n' "$_causal_links" | sed 's/^/  → /' >&2
+            fi
+        fi
     done <<< "$targets"
 }
 
