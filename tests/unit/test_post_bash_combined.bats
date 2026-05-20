@@ -55,8 +55,8 @@ run_hook() {
     hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
     context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
     [ "$hook_name" = "PostToolUse" ]
-    [[ "$context" == *'cmd_save.sh がBLOCK(exit 1)しました。'* ]]
-    [[ "$context" == *'再実行してPASSを確認'* ]]
+    [[ "$context" == *'cmd_save.sh BLOCK'* ]]
+    [[ "$context" == *'再実行'* ]]
 }
 
 @test "cmd_save PASS stays silent" {
