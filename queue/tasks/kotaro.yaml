@@ -32,8 +32,8 @@ task:
   scope:
     - scripts/knowledge_metrics.sh
     - docs/research/codd_refactor_registry.md
-  status: in_progress
-  parent_cmd: cmd_training_speed_kotaro_5
+  status: idle
+  parent_cmd: 
   related_lessons: []
   related_lessons:
   - id: 'L512'
