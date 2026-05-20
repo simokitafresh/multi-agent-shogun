@@ -1080,11 +1080,12 @@ check_origin_field() {
     origin_value="$(cmd_block_get_field "origin")"
 
     if [[ -z "${origin_value:-}" ]]; then
-        echo "WARNING: origin未記入。cmdの根拠ルール/裁定を origin: \"[[ルールID]] ...\" または origin: \"[[殿裁定YYYY-MM-DD]] ...\" 形式で記入せよ" >&2
+        record_warn_reason "origin未記入。cmdの根拠を origin: \"[[発端]] -> [[原因]] -> [[結果]]\" 形式で記入せよ。因果NW成長の源泉" "check=origin_field"
         return 0
     fi
 
     if [[ "$origin_value" == "none" ]]; then
+        record_warn_reason "origin=none。因果辺なしではセマンティックインデックスに還流されない。最低1つの[[リンク]]を含めよ" "check=origin_field"
         return 0
     fi
 
