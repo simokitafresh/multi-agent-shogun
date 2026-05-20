@@ -148,9 +148,9 @@ if has_conclusion:
     result += " | ★結論を含む通知あり。自分の証拠と突合せよ。矛盾があれば問い返せ。撤回は突合後。"
 
 if result:
-    reason_text = f"inbox未読{unread_count}件あり。内容: {result}"
+    reason_text = f"inbox未読{unread_count}件あり。内容: {result}\n★Read toolで全文読め。mark_readだけするな。各メッセージが今の作業にどう影響するか自問せよ。起動時と同じ態度で(LS048)"
 else:
-    reason_text = f"inbox未読{unread_count}件あり"
+    reason_text = f"inbox未読{unread_count}件あり\n★Read toolで全文読め。mark_readだけするな(LS048)"
 
 print(json.dumps({"decision": "block", "reason": reason_text}, ensure_ascii=False))
 PY

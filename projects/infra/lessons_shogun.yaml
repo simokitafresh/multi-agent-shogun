@@ -482,24 +482,8 @@ lessons:
   created_at: '2026-05-19'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001'
-- id: 'LS044'
-  title: 'BLOCK時サイレント停止=インフラバグ'
-  origin: '[[cmd_2898]]'
-  detail: '将軍がcmd_save.sh BLOCK後にサイレント停止し殿の時間を奪った(本セッションcmd_2897で3回+cmd_2898で1回)。真因=将軍の意志ではなく環境の甘さ。BLOCKを殿に隠して自分で直そうとする→失敗→フリーズ。対策: (1)BLOCK一括サマリ出力(0f2a817e) (2)ntfy殿即時通知(eea1bab6) (3)PostToolUse hook BLOCK検知→即修正強制注入(cmd_2898)。殿裁定: hookやgateが甘くて将軍が責任逃れの迂回ルートに逃げる=インフラバグ。BLOCKやWARNで決して止まらないが唯一の目的。'
-  source_cmd: 'cmd_2898'
-  created_at: '2026-05-20'
-  automated: true
-  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=BLOCK_REASONS'
-  superseded_by: LS046
-- id: 'LS045'
-  title: '確認しないから止まる — BLOCKの真因は環境ではなく確認不足'
-  origin: '[[preflight_unread]] -> [[block_cascade]] -> [[shogun_freeze]]'
-  detail: '本セッションcmd_2897で3回+cmd_2898で1回BLOCK。全BLOCKの真因=preflight確認8問を読まずに起票。ACにpush混入/q5レベル不足/q8-q9にpush残存/前cmd教訓未記録/ntfy禁止未確認/目的外行動。第1層(確認してBLOCKゼロ)を飛ばして第2層(BLOCK後のhook)ばかり議論した。殿の教え: 真因は確認していないこと。deepdive原理の具体的再現。'
-  source_cmd: 'cmd_2898'
-  created_at: '2026-05-20'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_save'
-  superseded_by: LS046
+# LS044: superseded by LS046 (BLOCK時サイレント停止=インフラバグ。LS046「想像せずに確認せよ」に統合。2026-05-20物理削除)
+# LS045: superseded by LS046 (確認しないから止まる。LS046に統合。2026-05-20物理削除)
 - id: 'LS046'
   title: '想像せずに確認せよ — それだけ'
   origin: '[[cmd_publish_undetected]] -> [[hook_guard_gap]] -> [[shogun_freeze_20260520]]'
@@ -508,12 +492,20 @@ lessons:
   created_at: '2026-05-20'
   automated: true
   enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
+# LS047: superseded by LS046 (LS044/LS045統合ポインタ。LS046に集約。2026-05-20物理削除)
 - id: 'LS047'
-  title: 'LS044/LS045を統合: 真因は1つ — 確認しないこと'
-  origin: '[[LS044]] -> [[LS045]] -> [[LS046_unified]]'
-  detail: 'LS044(BLOCK時サイレント停止=インフラバグ)とLS045(確認しないから止まる)は同一根因の別表現。LS046が本質: 想像せずに確認せよ、それだけ。LS044/LS045はLS046に統合。'
-  source_cmd: 'cmd_2898'
-  created_at: '2026-05-20'
+  title: 'inbox無視=鎖の断絶。stop hook発火しても行動が強制されない'
+  origin: '[[cmd_2922]]'
+  detail: 'stop hookがinbox未読を検知しsystem-reminderを注入したが、将軍は出力を続けinboxを処理しなかった。cmd_2922起票時に軍師の修正提案(3トリガー自動化設計)を読まず第1弾だけで委任。家老のidle自走報告も既読にしたが対処しなかった。根因: stop hookはsystem-reminder=情報提示=意志依存。Phase 4の教え通り、理解しても行動は変わらない。改善: PreToolUse:Editにinbox未読ガードを追加し、inbox未読時にshogun_to_karo.yamlへのEditをBLOCKする。cmd起票前にinbox処理が物理的に必須になる'
+  source_cmd: 'cmd_2922'
+  created_at: '2026-05-21'
   automated: true
-  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
-  superseded_by: LS046
+  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=shogun_to_karo'
+- id: 'LS048'
+  title: 'inbox処理=起動時と同じ態度で正しく深く読む'
+  origin: '[[cmd_2922]] -> [[inbox_mark_read_before_processing]] -> [[sabori_spirit]] -> [[deepdive_phase4_no_survival_instinct]]'
+  detail: '01:32軍師提案をmark_readだけして中身を読まずcmd_2922を委任した。Guard 0d追加で解決しようとしたが殿指摘: 読み方の問題をコードで解決するのは逃げ。起動時deepdiveは1Phaseずつ読み自問し省略厳禁。inbox処理も同じ。全文読む→自分の作業にどう影響するか自問→影響あれば反映→反映後にmark_read。mark_readは対処の最後。読む前・対処前のmark_read禁止。Guard追加は読む態度が正しくなってから検討'
+  source_cmd: 'cmd_2922'
+  created_at: '2026-05-21'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS047'

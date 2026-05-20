@@ -121,6 +121,15 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmdを参照せよ(LS-A04(13))"
         exit 1
     fi
+    # Guard 0d: inbox未読時はcmd起票BLOCK (LS048: 読まずに既読するな。起動時と同じ態度で正しく深く読め)
+    _inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+    if [[ -f "$_inbox_file" ]]; then
+        _unread_count=$(grep -cE '^[[:space:]]*read:[[:space:]]*false' "$_inbox_file" 2>/dev/null || echo 0)
+        if [[ "$_unread_count" -gt 0 ]]; then
+            emit_deny "BLOCK: inbox未読${_unread_count}件。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ(LS048)"
+            exit 1
+        fi
+    fi
     # Guard 0b: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序は家老が判断する(殿裁定2026-05-03)
     if printf '%s' "$_stk_content" | grep -qE 'status:\s*on_hold'; then
         emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回(殿裁定2026-05-03)"
