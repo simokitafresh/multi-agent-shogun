@@ -49,6 +49,7 @@ commands:
       q10_knowledge_boundary: "tests/unit/test_cmd_save_warn_logging.bats の検証範囲のみ使用"
       q11_not_already_done: "未達成。WARN notes記録の回帰テストを追加していない"
       q_ambiguity: "none"
+    origin: "[[cmd_test]] -> [[WARN記録検証]] -> [[check_ac_param_sufficiency]]"
     assumptions:
       - claim: "AC数量指定WARNは cmd_save.sh の check_ac_param_sufficiency で検出される"
         source: "scripts/cmd_save.sh code_reading"
@@ -88,6 +89,7 @@ commands:
       q10_knowledge_boundary: "$TEST_TMPDIR/context/ac-candidates.md のみ"
       q11_not_already_done: "未達成。候補値表示テストがない"
       q_ambiguity: "none"
+    origin: "[[cmd_test]] -> [[候補値表示検証]] -> [[check_ac_param_sufficiency]]"
     assumptions:
       - claim: "候補値は関連contextから抽出できる"
         source: "$TEST_TMPDIR/context/ac-candidates.md"
