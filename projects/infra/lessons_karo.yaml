@@ -66,8 +66,10 @@ lessons:
     - deploy_task.shのSTALE_FIELDSにscope/contextが含まれず、前taskのscope/contextが残存→忍者が前taskのscopeで作業し新cmdのACを未実施(cmd_2875疾風+cmd_2880半蔵で2件連続FAIL)。根因=STALE_FIELDSリストにscope/context未含。偵察cmd要請済み(掲示板blt_20260519_175410)
   v8吸収(2026-05-21):
     - deploy_task.shがinject_causal_links等のエラーでexit 1→nudge送信に到達しない(全10回配備で100%手動nudge必須)。deploy出力にdeployment completeが出ない場合は即手動nudge。exit 1でもnudge送信済みの場合あり(LK010)→出力のnudge痕跡を確認してから判断
-  when: deploy_task.shで忍者に配備する時。再配備時
-  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ。出ない場合は即手動nudge。★再配備時はscope/context stale残存に注意(2件連続FAIL実証)
+  v9吸収(2026-05-21):
+    - ★前ラウンドGATE CLEAR前に次ラウンド配備するな(殿指摘2026-05-21)。即配備→task YAML上書き→忍者/clear→報告YAMLがcommit前に消失。本セッション6件消失(GPT 18.5%/Sonnet 5.6%)。対策: 完了→GATE CLEAR確認→次ラウンド配備の順序厳守。cmd_2951でdeploy_task.shにpending reportチェックBLOCKを追加(構造的防止)
+  when: deploy_task.shで忍者に配備する時。再配備時。修行連続ラウンド配備時
+  how: cmd_id引数渡し+全フィールドリセット。★前ラウンドGATE CLEAR確認後に次配備(v9)。Codex忍者にはnudgeにtask YAMLパス付き具体指示。deployment complete確認。scope/context stale注意
   origin: "[[LK061]] -> [[cmd_id引数省略]] -> [[旧タスク実行]]"
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
