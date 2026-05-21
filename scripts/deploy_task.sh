@@ -1727,19 +1727,20 @@ generate_report_template() {
     # cmd_1983: 12+ field_get → field_get_multi 1回 (WSL2 subprocess削減)
     # task_id・parent_cmd はパラメータと同名のため上書き前にコピー
     local _p_task_id="$task_id" _p_parent_cmd="$parent_cmd"
-    local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd \
+    local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd cmd_id \
           ac_version title task_type target_path scout_exempt type scope_mode \
           command constraints not_in_scope
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
-        parent_cmd ac_version title task_type target_path scout_exempt \
+        parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
         type scope_mode command constraints not_in_scope 2>/dev/null)" || true
 
     # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
+    local _effective_parent_cmd="${_p_parent_cmd:-${parent_cmd:-$cmd_id}}"
     if [ -n "$report_filename" ]; then
         report_file="$SCRIPT_DIR/queue/reports/${report_filename}"
-    elif [[ -n "$_p_parent_cmd" && "$_p_parent_cmd" == cmd_* ]]; then
-        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${_p_parent_cmd}.yaml"
+    elif [[ -n "$_effective_parent_cmd" && "$_effective_parent_cmd" == cmd_* ]]; then
+        report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${_effective_parent_cmd}.yaml"
     else
         # 後方互換: parent_cmdが未設定/不正なら旧形式にフォールバック
         report_file="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
@@ -1865,7 +1866,7 @@ generate_report_template() {
     if [ -z "$resolved_task_id" ]; then
         resolved_task_id="${_ac_task_id}"
     fi
-    local resolved_parent_cmd="${parent_cmd:-$_p_parent_cmd}"
+    local resolved_parent_cmd="${parent_cmd:-${cmd_id:-$_p_parent_cmd}}"
     # ac_version: field_get_multi済み($ac_version)
     local _before_after_block=""
     if is_before_after_required_task "$task_file" "$resolved_parent_cmd" "$title" "$task_type"; then

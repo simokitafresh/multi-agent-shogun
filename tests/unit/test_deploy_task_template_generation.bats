@@ -489,6 +489,38 @@ YAML
     _fixture_project_end
 }
 
+@test "cmd_idのみの直接配備形でもcmd名レポートを生成しassumption_invalidationを含める" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  cmd_id: cmd_karo_direct_only
+  task_id: cmd_karo_direct_only_exact
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "cmd_idのみの直接配備テンプレートを生成する"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_karo_direct_only_exact "" infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_karo_direct_only.yaml"
+    [ -f "$report_path" ]
+    grep -Fq 'parent_cmd: cmd_karo_direct_only' "$report_path"
+    grep -Fq 'assumption_invalidation:' "$report_path"
+    grep -Fq '  affected_cmds: []' "$report_path"
+    grep -Fq 'report_path: queue/reports/sasuke_report_cmd_karo_direct_only.yaml' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+    _fixture_project_end
+}
+
 @test "既存テンプレート補完は報告gate必須9項目のMISSINGを残さない" {
     _fixture_project_start
 
