@@ -3435,7 +3435,7 @@ def greedy_dedup(scored_list, all_lessons, threshold=DEDUP_THRESHOLD):
         print(f'[INJECT] dedup: removed {deduped_count} similar lessons (threshold={threshold})', file=sys.stderr)
     return accepted
 
-USEFUL_RATE_MIN_SAMPLES = 3  # feedback件数がこの値未満の教訓にはeffectiveness除外を適用しない
+USEFUL_RATE_MIN_SAMPLES = int(os.environ.get('USEFUL_RATE_MIN_SAMPLES', '1'))  # 3→1: 除外感度向上(除外=降格であり完全削除ではない)
 
 def compute_useful_rates(script_dir):
     """lesson_impact.tsvのfeedback行からlesson別effectiveness_scoreを算出。
