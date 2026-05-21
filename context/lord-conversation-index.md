@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-21T04:05:12+09:00 -->
+<!-- generated_at: 2026-05-21T12:48:58+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-05-21T04:05:11+09:00 | terminal | response | **本セッション全4件GATE CLEAR:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2928 | skill_auto_improve.sh reason正規化+last_fail…
-- 2026-05-21T03:51:01+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
-- 2026-05-21T03:47:54+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-21 03:40:10|CI緑: run 26182127689
-- 2026-05-21T03:44:12+09:00 | terminal | response | inbox 0件。軍師の次レバー2件をinsightに記録済み(cmd_2931完了後トリガー)。 cmd_2931作業中(疾風CTX:27%)。殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-05-21T03:41:44+09:00 | terminal | response | cmd_2931 **PASS→委任完了**。 **本セッション全成果:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2928 | skill_auto_improve.sh reaso…
-- 2026-05-21T03:37:23+09:00 | terminal | inbound | 穴はないか？なぜなぜ7回、起票しよう
-- 2026-05-21T03:36:08+09:00 | terminal | response | 殿の問いに答える。/lesson-sort作業を止める。 **できる。** 現在の教訓注入はproject/pathベースのマッチ。purposeに「パリティ」と書いてもパリティ関連の教訓が注入されるとは限らない。L7(semantic …
-- 2026-05-21T03:35:14+09:00 | terminal | inbound | やろう
-- 2026-05-21T03:34:47+09:00 | terminal | response | 教訓健全度の改善に入る。useful率7.1%が3セッション連続ALERTで最大の負債。理由: 教訓が忍者に注入されているがusefulと報告されない=教訓のwhen/howが具体的でないか、注入対象が的外れ。/lesson-sortで低…
-- 2026-05-21T03:34:21+09:00 | terminal | inbound | これから何をやるつもりだ
+- 2026-05-21T12:48:58+09:00 | terminal | response | Step 7: 最終検査。 [meta] stop_reason=tool_use
+- 2026-05-21T12:47:32+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
+- 2026-05-21T11:47:32+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
+- 2026-05-21T10:42:31+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
+- 2026-05-21T09:37:48+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
+- 2026-05-21T08:40:13+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2855 (duration=2466s, median=359.0s, ratio=6.87x, delta=+2107.0s) WARNING: ta…
+- 2026-05-21T08:33:19+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
+- 2026-05-21T08:14:40+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
+- 2026-05-21T07:45:34+09:00 | ntfy | outbound | 【CLI再起動成功】hayate: pane_cmd=node
+- 2026-05-21T07:28:59+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(21日)
 
 ## 未解決確認事項
 - cmd_2931 **PASS→委任完了**。 **本セッション全成果:** | cmd | 内容 | 状態 | |-----|------|------| | cmd_2928 | skill_auto_improve.sh reason正規化 | **GATE CLEAR*…
