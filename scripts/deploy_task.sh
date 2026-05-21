@@ -1892,12 +1892,12 @@ EOF
 # \$RFS result.details "詳細文"
 # \$RFS lesson_candidate.found "false"
 # \$RFS lesson_candidate.no_lesson_reason "既知パターンL084"
-# \$RFS verdict "PASS"
 # echo '[{check: "内容", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# verdict は gate_report_format.sh が binary_checks から自動導出する。手動記入禁止。
 # !! スペース区切り(lesson_candidate found false)は不可 → ドット記法必須 !!
 # ━━━ 提出手順（番号順に実行せよ）━━━
 # 1. 内容記入: result.summary/details, purpose_validation, lesson_candidate, files_modified
-# 2. 構造記入: binary_checks全result→yes/no, lessons_useful全reason記入, verdict→PASS/FAIL, status→completed
+# 2. 構造記入: binary_checks全result→yes/no, lessons_useful全reason記入, status→completed
 # 3. gate実行: bash scripts/gates/gate_report_format.sh <このファイル>
 # 4. PASS確認後: inbox_writeで家老に報告
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1976,11 +1976,11 @@ self_gate_check:
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: ""  # 全binary_checks完了後に PASS / FAIL / PASS_NO_IMPROVEMENT を記入(status_detailではない)
+verdict: ""  # gate_report_format.shがbinary_checksから PASS / FAIL / PASS_NO_IMPROVEMENT を自動導出する
 # ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
 # □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
 # □ lessons_useful: 全reason欄に有用/無用の具体的理由を記入したか
-# □ verdict: "PASS" or "FAIL" を記入したか
+# □ verdict: 手動記入していないか（gateが自動導出する）
 # □ status: completed に変更したか
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
@@ -2619,7 +2619,7 @@ EOF
 
     if ! grep -Eq '^verdict:' "$report_file" 2>/dev/null; then
         cat >> "$report_file" <<'EOF'
-verdict: ""  # 全binary_checks完了後に PASS / FAIL / PASS_NO_IMPROVEMENT を記入(status_detailではない)
+verdict: ""  # gate_report_format.shがbinary_checksから PASS / FAIL / PASS_NO_IMPROVEMENT を自動導出する
 EOF
         modified=true
     fi

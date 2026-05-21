@@ -1236,10 +1236,11 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
                         echo "" >&2
                         echo "[report_format_gate] 修正方法: bash scripts/report_field_set.sh <report_path> <key> <value>" >&2
                         echo "[report_format_gate] 修正例:" >&2
-                        echo "  bash scripts/report_field_set.sh $REPORT_PATH verdict PASS" >&2
+                        echo "  echo '[{check: \"AC完了確認\", result: \"yes\"}]' | bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 -" >&2
                         echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.found false" >&2
                         echo "  bash scripts/report_field_set.sh $REPORT_PATH lesson_candidate.no_lesson_reason '既知のL084と同じパターン'" >&2
                         echo "  bash scripts/report_field_set.sh $REPORT_PATH result.summary '実装完了'" >&2
+                        echo "  # verdict は gate_report_format.sh が binary_checks から自動導出" >&2
                         echo "==============================" >&2
                         echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
                         exit 1
