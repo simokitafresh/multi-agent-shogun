@@ -548,6 +548,7 @@ EOF
 
     run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --dry-run
     [ "$status" -eq 0 ]
+    [[ "$output" == *"test purpose"* ]]
 
     run python3 - <<EOF
 import yaml
@@ -600,6 +601,7 @@ EOF
     run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_3000 --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"DRY-RUN: - **cmd_3000**:"* ]]
+    [[ "$output" == *"fallback purpose"* ]]
     [[ "$output" == *"fallback report found"* ]]
 }
 

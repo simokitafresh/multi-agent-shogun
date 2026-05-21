@@ -149,6 +149,20 @@ def get_first(data, *paths, default=''):
     return default
 
 
+def iter_commands(commands):
+    """Yield command dicts from both mapping and legacy list YAML shapes."""
+    if isinstance(commands, dict):
+        for cmd_id, cmd in commands.items():
+            if isinstance(cmd, dict):
+                if 'id' not in cmd:
+                    cmd = {**cmd, 'id': cmd_id}
+                yield cmd
+    elif isinstance(commands, list):
+        for cmd in commands:
+            if isinstance(cmd, dict):
+                yield cmd
+
+
 def summarize_ac(ac_val):
     """AC情報を短縮文字列に変換。"""
     if isinstance(ac_val, dict):
@@ -313,7 +327,7 @@ try:
     with open(STK_FILE) as f:
         stk = yaml.safe_load(f)
     if stk and 'commands' in stk:
-        for cmd in stk['commands']:
+        for cmd in iter_commands(stk['commands']):
             if cmd.get('id') == CMD_ID:
                 title = cmd.get('title', cmd.get('purpose', ''))
                 break
