@@ -1864,6 +1864,10 @@ _handle_training_auto_deploy() {
     fi
 
     cmd_id="cmd_training_L4_auto_$(date '+%Y%m%d%H%M')_${name}"
+    if ! mkdir -p "$STATE_DIR"; then
+        log "TRAINING-AUTO-SKIP: failed to prepare state dir for ${name}: ${STATE_DIR}"
+        return 1
+    fi
     if ! tmp_task=$(mktemp "${STATE_DIR}/training_auto_${name}.XXXXXX.yaml"); then
         log "TRAINING-AUTO-SKIP: failed to create temporary task YAML for ${name}"
         return 1

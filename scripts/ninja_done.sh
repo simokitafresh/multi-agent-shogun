@@ -18,9 +18,7 @@ usage() {
 }
 
 show_help() {
-    echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>"
-    echo "Example: bash scripts/ninja_done.sh hayate cmd_795"
-    echo "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid."
+    usage 2>&1
 }
 
 resolve_report_file() {
