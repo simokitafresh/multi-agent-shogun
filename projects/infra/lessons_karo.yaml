@@ -62,8 +62,10 @@ lessons:
 
   v7吸収(2026-05-19):
     - deploy_task.shのSTALE_FIELDSにscope/contextが含まれず、前taskのscope/contextが残存→忍者が前taskのscopeで作業し新cmdのACを未実施(cmd_2875疾風+cmd_2880半蔵で2件連続FAIL)。根因=STALE_FIELDSリストにscope/context未含。偵察cmd要請済み(掲示板blt_20260519_175410)
+  v8吸収(2026-05-21):
+    - deploy_task.shがinject_causal_links等のエラーでexit 1→nudge送信に到達しない(全10回配備で100%手動nudge必須)。deploy出力にdeployment completeが出ない場合は即手動nudge。exit 1でもnudge送信済みの場合あり(LK010)→出力のnudge痕跡を確認してから判断
   when: deploy_task.shで忍者に配備する時。再配備時
-  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ。★再配備時はscope/context stale残存に注意(2件連続FAIL実証)
+  how: cmd_id引数渡し+全フィールドリセット。Codex忍者にはnudgeにtask YAMLパス付き具体指示。★出力にdeployment completeが出るまで確認せよ。出ない場合は即手動nudge。★再配備時はscope/context stale残存に注意(2件連続FAIL実証)
   origin: "[[LK061]] -> [[cmd_id引数省略]] -> [[旧タスク実行]]"
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
@@ -73,6 +75,8 @@ lessons:
     Stage 1ガード(assigned/pending/acknowledged/in_progress保護)で構造防御。
     v2吸収(2026-05-20):
     - LK013を吸収。STALL再配備前に(1)pane全体確認(CTX/Working有無) (2)deploy_task.sh出力でnudge送信痕跡確認 (3)クリア後30秒待ちpane再確認(遅延到達)を必須化。hayate/kagemaru/saizoの3回連続誤再配備を同クラスタへ統合。
+    v3吸収(2026-05-21):
+    - auto-clear後のtask status残留パターン: commit+報告YAML存在だがtask status=in_progress(ninja_monitorがcommit後・inbox_write前にauto-clear発動)。STALL通知が来てもpane全体にcommit hash確認+報告YAML存在→作業完了と判断。task statusを手動doneにしGATE処理を進める(cmd_2931で実証)
   source_ids: [LK019, LK032, LK013]
   superseded_ids: [LK013]
   created_at: '2026-04-24'
@@ -234,7 +238,11 @@ v7吸収(2026-05-19):
     - context鮮度WARN連日再発(LK009b: 重複抑止なし。初回掲示板報告後は既読化のみ。GP候補)
     v7吸収(2026-05-19):
     - pre-push hookのexec 2> >(tee)がWSL2でexit code汚染→534テスト全PASSでもpush BLOCK。修正: exec 2>fileに置換(cmd_karo_prepush_fix)。一般原則: WSL2のhook/デーモンでプロセス置換(>(...))を使うな
-  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b]
+    v8吸収(2026-05-21):
+    - dashboard.md Edit中にdashboard_auto_section.sh非同期実行が競合すると0バイト化(cmd_2924)。GATE CLEAR時の非同期処理と家老のEdit toolが同時書込み→0バイト。対策: dashboard更新はスキル内で排他制御、またはGATE非同期完了後にEdit
+    v9吸収(2026-05-21):
+    - CI --jobs 8並列テスト隔離3パターン: (1)config/ symlink実体書換え→他テスト壊す。symlink→ローカルコピー差替え(93deca55) (2)/tmpキャッシュ共有→DEPLOY_LESSON_CACHE_DIR環境変数で隔離 (3)semantic aliases出力がq11 INFOに混入→テスト否定条件偽陽性。BLOCK:プレフィックスで精密化(6964acf3)。一般原則: テスト追加時に外部共有リソース(symlink実体/tmpキャッシュ/semantic index)への依存を確認せよ
+  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh各修正+inbox_watcher.sh各修正+cmd_complete_gate.sh lifecycle自動化'
@@ -496,3 +504,12 @@ v7吸収(2026-05-19):
   when: '同種の状況が再発した時'
   how: 'CI --jobs 8並列でrun_embedded_testの一時ファイルが/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。tests/unit/配下にBATS_TEST_NUMBER付きユニーク名で生成。cf7adb49で6ファイル修正済み。enforcement: cf7adb49'
   created_at: '2026-05-20'
+# LK013→LK-A12 v8吸収(2026-05-21): dashboard 0バイト競合
+- id: 'LK013'
+  title: 'D0レビューでテスト前提更新を確認せよ'
+  origin: '[[cmd_karo_d0_test_review]]'
+  detail: '軍師D0でMIN_SAMPLES 3→1変更+デバウンス追加。軍師は18テスト全PASSと報告。しかしテストはMIN_SAMPLES=3前提で書かれており、pre-push hookでFAIL 2件検出→CI RED。D0変更がデフォルト値・閾値・新ロジック追加の場合、既存テストの前提が古くなっていないか確認必須。§0.1問い2(現物確認)の適用範囲にD0テスト前提確認を追加。enforcement: LK-A01適用拡張(D0レビュー時にgit diff --stat対象ファイルの関連テストをgrep確認)'
+  source_cmd: 'cmd_karo_d0_test_review'
+  when: '同種の状況が再発した時'
+  how: '軍師D0でMIN_SAMPLES 3→1変更+デバウンス追加。軍師は18テスト全PASSと報告。しかしテストはMIN_SAMPLES=3前提で書かれており、pre-push hookでFAIL 2件検出→CI RED。D0変更がデフォルト値・閾値・新ロジック追加の場合、既存テストの前提が古くなっていないか確認必須。§0.1問い2(現物確認)の適用範囲にD0テスト前提確認を追加。enforcement: LK-A01適用拡張(D0レビュー時にgit diff --stat対象ファイルの関連テストをgrep確認)'
+  created_at: '2026-05-21'
