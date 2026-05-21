@@ -446,6 +446,7 @@ logs/gunshi_review_log\.yaml
 
 - hook/gate: 手動呼出しで出力確認。全 source_type で実測。副作用を `git status` で確認
 - CLAUDE.md/instructions: grep で反映確認。エージェント視点で読み直し
+- デフォルト値・閾値変更時: 関連テストの前提値が変更後の値と一致するか `grep -rn "旧値" tests/` で確認。不一致→テストも更新（CI RED事故 2026-05-21: MIN_SAMPLES 3→1変更時にテスト前提未更新→2件FAIL）
 
 ★殿丸投げ検査: 「殿に動作確認お願いします」と書いていないか？→ NO 必須
 
