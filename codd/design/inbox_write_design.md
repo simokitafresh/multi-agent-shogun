@@ -32,9 +32,16 @@ The script validates arguments and routing, computes the inbox path and lock pat
 
 Inputs are CLI arguments, `queue/tasks/`, `queue/inbox/`, report YAMLs, agent config, and tmux pane metadata. Outputs are inbox YAML records, wake-up nudges, duplicate-deployment notifications, report-gate side effects, and logs.
 
+## Cross-References
+
+- [[inbox_write.sh]] is the primary implementation; its header (line 2) declares `semantic-links: [[YAML安全書込み]], [[インフラ設計意図カタログ]]` and line 4 documents the usage interface as `bash scripts/inbox_write.sh <target_agent> <content> [type] [from] [action]`.
+- [[inbox_write_brownfield.md]] is the CoDD brownfield report for this target and records the elicitation run.
+- [[cmd_2762_inbox_write_requirements.md]] is the requirements baseline; it defines FR-1 through FR-8 (target validation, routing enforcement, WSL2-safe locking, duplicate deployment blocking, lesson-injection safety net, report gate side-effects) and SR-1 through SR-3 (persistence-first, ninja-to-shogun prohibition, flock semantics) — this design satisfies `req:script:inbox-write` (line 3 of requirements).
+
 ## Brownfield Evidence
 
 - `scripts/inbox_write.sh` lists supported message types in its header.
 - `scripts/inbox_write.sh` validates target and sender routing before persistence.
 - `scripts/inbox_write.sh` blocks duplicate task assignment before writing the message.
 - `codd/brownfield/inbox_write_brownfield.md` records the CoDD brownfield run for this target.
+- Test coverage: [[test_inbox_write.bats]] (line 2: "inbox_write.sh ユニットテスト T-001 ~ T-012: リグレッションテスト仕様書実装") covers the core routing, persistence, and gate side-effect behaviors.
