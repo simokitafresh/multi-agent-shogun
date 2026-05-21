@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[因果辺トラバース統合パイプライン(Obsidian×セマンティック)]]
 # semantic_search.sh — Two-layer semantic-index search.
 
 set -euo pipefail

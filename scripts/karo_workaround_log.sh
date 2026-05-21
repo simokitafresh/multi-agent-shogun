@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[学習ループ]]
 # karo_workaround_log.sh — 家老ワークアラウンド記録スクリプト
 # Usage:
 #   bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]

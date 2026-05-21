@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # lesson_deprecation_scan.sh - deprecation候補を自動検出+自動退役する
 # cmd_531: ファイル消滅教訓・有効率10%未満×注入10回以上の教訓を自動deprecated化
 # Usage: bash scripts/lesson_deprecation_scan.sh [--project dm-signal|infra|all] [--candidates-only]

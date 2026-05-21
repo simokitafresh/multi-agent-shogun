@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[掲示板通信基盤]]
 # bulletin_close.sh — 掲示板エントリを明示的に閉じる
 # Usage: bash scripts/bulletin_close.sh <entry_id>
 

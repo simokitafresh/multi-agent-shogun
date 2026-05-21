@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[inbox_watcherプロセスモデル]]
 # restart_watchers.sh — inbox_watcher全プロセスを再起動
 # Usage: bash scripts/restart_watchers.sh
 # cmd_100: スクリプト更新後の再起動用

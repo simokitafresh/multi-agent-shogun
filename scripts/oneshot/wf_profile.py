@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[GS忍法研究]]
 """WFエンジン プロファイル計測スクリプト。
 bunshin(最小CSV)でフェーズ別時間を計測し、kasoku_diff推定に使用。
 

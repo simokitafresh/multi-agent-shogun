@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[セマンティック因果自動化]], [[因果辺トラバース統合パイプライン(Obsidian×セマンティック)]], [[教訓ライフサイクル管理]]
 # causal_backlinks.sh — Obsidian-style backlink lookup for [[ID]] causal links.
 # --detail: show origin/causal_chain context lines alongside file paths
 # --semantic: also show matching semantic-index concepts

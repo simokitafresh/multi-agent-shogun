@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[CDP(ブラウザ操作能力)]]
 # cdp_measure.sh — CDP計測ワンコマンドラッパー（なぜなぜ7回 自動化ターゲット1-3）
 #
 # Usage: bash scripts/cdp/cdp_measure.sh <cmd_id> [--baseline <path>] [--pages <page1> <page2>...]

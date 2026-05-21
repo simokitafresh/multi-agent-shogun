@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[Silent Fallback品質]]
 # gate_gunshi_report_precheck_engine.py
 # gate_gunshi_report_precheck.sh の全Pythonチェックを1回のファイル読込で実行するエンジン
 # Usage: python3 gate_gunshi_report_precheck_engine.py --report <path> --tasks-dir <dir>

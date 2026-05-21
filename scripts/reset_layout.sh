@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[インフラ運用基盤]]
 # reset_layout.sh — agentsウィンドウ(shogun:agents)一発復元
 # ペイン配置・変数・レイアウト・watcherを初期状態に復元する
 #

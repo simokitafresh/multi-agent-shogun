@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # sync_lessons.sh — SSOT (lessons.md) からキャッシュ (lessons.yaml) を自動生成
 # Usage: bash scripts/sync_lessons.sh [project_id]
 # Default project_id: dm-signal

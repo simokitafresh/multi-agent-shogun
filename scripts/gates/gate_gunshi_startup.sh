@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_gunshi_startup.sh — 軍師セッション起動時の全チェックを一括実行
 # 目的: /clear後の状態復元に必要な6項目を一括チェック（知性の外部化原則）
 # Usage: bash scripts/gates/gate_gunshi_startup.sh

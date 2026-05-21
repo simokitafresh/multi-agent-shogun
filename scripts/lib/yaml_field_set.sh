@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[YAML安全書込み]]
 # yaml_field_set.sh - Safe YAML field update helper with post-write verification.
 #
 # Usage:

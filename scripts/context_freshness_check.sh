@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

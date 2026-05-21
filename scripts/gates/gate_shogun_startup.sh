@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[cmd設計品質ログ]], [[ゲート品質統合フレームワーク]]
 # gate_shogun_startup.sh — 将軍セッション起動時の全チェックを一括実行
 # 目的: 3つの個別gateを覚えて実行する「意志依存」を排除（知性の外部化原則 2026-03-21）
 # Usage: bash scripts/gates/gate_shogun_startup.sh

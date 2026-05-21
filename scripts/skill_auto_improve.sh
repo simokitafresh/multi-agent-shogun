@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Skill設計ルール]]
 # skill_auto_improve.sh — convert skill FAIL patterns into SKILL.md prevention steps.
 #
 # Usage:

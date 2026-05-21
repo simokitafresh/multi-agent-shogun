@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_enforcement_audit.sh — 強制度監査 gate (meta-level)
 #
 # 目的: 「自動化×強制」を謳っているが実は意志依存の script を自動検出する。

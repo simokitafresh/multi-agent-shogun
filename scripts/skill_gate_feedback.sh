@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Skill設計ルール]]
 # skill_gate_feedback.sh — identify the relevant skill for a gate failure and append a caution.
 #
 # Usage:

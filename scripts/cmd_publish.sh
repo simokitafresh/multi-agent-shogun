@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[cmd設計品質ログ]]
 # cmd_publish.sh — 起票サイクルの機械的ステップを一括実行
 #
 # Usage:

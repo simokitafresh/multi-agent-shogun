@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[セマンティック因果自動化]], [[セマンティック辞書構想]], [[因果辺トラバース統合パイプライン(Obsidian×セマンティック)]]
 # semantic_map_generate.sh — Generate context/semantic-map.md from semantic index SSOT.
 # Usage:
 #   bash scripts/semantic_map_generate.sh

@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # auto_draft_lesson.sh — 報告YAMLのlesson_candidateからdraft教訓を自動登録
 # Usage: bash scripts/auto_draft_lesson.sh <report_yaml_path>
 # - found: true → lesson_write.sh --status confirmed で登録

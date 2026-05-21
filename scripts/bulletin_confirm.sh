@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[掲示板通信基盤]]
 # bulletin_confirm.sh — 掲示板エントリの確認チェック
 # Usage: bash scripts/bulletin_confirm.sh <agent_id> <entry_id>
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[CDP(ブラウザ操作能力)]]
 # cdp_cli.sh — Thin CLI wrapper for CDP persistent daemon (cdp_server.py)
 # Reads port+token from /tmp/cdp-server.json, auto-starts server if needed.
 set -euo pipefail

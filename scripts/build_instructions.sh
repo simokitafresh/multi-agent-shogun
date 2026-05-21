@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[編成管理]]
 # shellcheck disable=SC1091,SC2129
 # ============================================================
 # Instruction File Build System

@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[セマンティック辞書構想]]
 # insight_write.sh — 学習ループの「次の気づき」を即座に保存
 # Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
 #        bash scripts/insight_write.sh --resolve <id>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[CDP(ブラウザ操作能力)]]
 """CDP Persistent Daemon Server — WSL2 HTTP server wrapping Chrome DevTools Protocol.
 
 Architecture:

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[インフラ運用基盤]]
 # auto_deploy_next.sh — サブタスク完了時の次サブタスク自動配備
 # Usage: bash scripts/auto_deploy_next.sh <cmd_id> <completed_subtask_id>
 #

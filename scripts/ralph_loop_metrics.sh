@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[学習ループ]]
 # scripts/ralph_loop_metrics.sh — ラルフループ効果検証5指標計測
 # cmd_1118: 教訓→GATE→学習ループの効果を定量化
 #

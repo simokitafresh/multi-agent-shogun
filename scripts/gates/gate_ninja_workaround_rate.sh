@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_ninja_workaround_rate.sh — 忍者別workaround率を集計
 # 目的: karo_workarounds.yamlから直近N cmd分の忍者別workaround件数/率を出力
 # Usage: bash scripts/gates/gate_ninja_workaround_rate.sh [--last N] [--quiet] [--ninja NAME]

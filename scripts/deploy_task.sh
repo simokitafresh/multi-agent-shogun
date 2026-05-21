@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[スコープ鮮度ライフサイクル]], [[タスク修飾子注入]], [[編成管理]]
 # shellcheck disable=SC1091
 # deploy_task.sh — タスク配備ヘルパー（忍者状態自動検知付き）
 # Usage: bash scripts/deploy_task.sh [--direct] <ninja_name> [cmd_id] [message] [type] [from]

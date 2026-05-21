@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_autofix_proposal.sh — 直近BLOCKパターンから instructions 修正提案を自動起票
 # 目的: idle時に「頻出BLOCKをどの指示で潰すべきか」を queue/insights.yaml へ還流する
 # Usage: bash scripts/gates/gate_autofix_proposal.sh

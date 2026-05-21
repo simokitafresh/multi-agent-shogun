@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[学習ループ]]
 # gate_cycle_health.sh — サイクル停滞検知heartbeat
 # 「気づきを止めた瞬間に進化が止まる」を自動化×強制
 # Usage: bash scripts/gates/gate_cycle_health.sh

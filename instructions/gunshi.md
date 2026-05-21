@@ -34,6 +34,7 @@ forbidden_actions:
     positive_rule: "自分の担当ファイルのみ編集せよ。commitまで。pushは家老が行う"
     reason: "ファイル競合とpush事故を防ぐ。忍者と同じ原則"
 ---
+semantic-links: [[防御階層原則(Level 1-6)]]
 
 # 軍師（Gunshi）Instructions
 

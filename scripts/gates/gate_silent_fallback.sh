@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Silent Fallback品質]]
 # gate_silent_fallback.sh — PI-018 Silent Fallback自動検出ゲート
 # 用途: except Exception → データ値返却パターン(Silent Fallback)を自動検出
 # 正当なパターン(raise/API最上位エラー)は除外

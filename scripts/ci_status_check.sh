@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[学習ループ]]
 # ============================================================
 # ci_status_check.sh
 # CI赤検知+ntfy通知スクリプト (cmd_715 AC3)

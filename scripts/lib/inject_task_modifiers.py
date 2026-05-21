@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[タスク修飾子注入]]
 """inject_task_modifiers.py — Consolidated task YAML injection operations.
 
 cmd_1393: Merged 7 separate Python subprocesses into 1 for performance.

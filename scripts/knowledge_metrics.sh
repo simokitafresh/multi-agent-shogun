@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[学習ループ]]
 # knowledge_metrics.sh — 教訓効果メトリクス+淘汰候補検出
 # Usage: bash scripts/knowledge_metrics.sh [--json] [--since YYYY-MM-DD] [--threshold N] [--model] [--time] [--by-project] [--by-model]
 

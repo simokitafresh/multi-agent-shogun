@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[Silent Fallback品質]]
 # gate_gunshi_cs_checklist.sh — consultation/self_studyエントリのCS観点チェックリスト強制
 # @source: cmd_1494 (CoDD分析4サイクルで自己検出率0%→CS観点プロトコル定義)
 # 知性の外部化: CS観点を軍師の意志に依存させず、自動検証で強制

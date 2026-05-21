@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # ============================================================
 # gate_lesson_health.sh
 # 教訓(lessons) → context合流状態の健全性チェック

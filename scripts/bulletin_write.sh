@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[掲示板通信基盤]]
 # bulletin_write.sh — 全エージェント共有掲示板への書込み
 # Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]
 #    or: bash scripts/bulletin_write.sh <content> [requires_confirmation] [action_type]

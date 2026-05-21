@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_karo_startup.sh — 家老セッション起動時の全チェックを一括実行
 # 目的: 5項目を一括チェックし、deepdive必読を自動化×強制
 # Usage: bash scripts/gates/gate_karo_startup.sh

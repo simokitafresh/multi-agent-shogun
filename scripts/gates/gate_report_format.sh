@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[gate迂回防止]], [[忍者報告品質プロトコル]]
 # gate_report_format.sh — 忍者報告YAMLのフォーマット検証
 # 目的: 家老の手動フォーマット修正作業を根絶（karo_workarounds 5件連続同一問題）
 # 知性の外部化原則: 正しいフォーマットを忍者の記憶に依存させず、自動検証で強制

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[cmd設計品質ログ]]
 # cmd_quality_log.sh — cmd設計品質をlogs/cmd_design_quality.yamlに記録
 # Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値> [notes]
 #

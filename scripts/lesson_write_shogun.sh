@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # lesson_write_shogun.sh — 将軍専用教訓追記（排他ロック付き）
 # Usage: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement記述"] ["origin記述"]
 #        bash scripts/lesson_write_shogun.sh --supersedes LS005 LS029 "新しい検証で覆された"

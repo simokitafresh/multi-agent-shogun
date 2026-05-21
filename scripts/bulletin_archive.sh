@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[掲示板通信基盤]]
 # bulletin_archive.sh — 掲示板の古いエントリをアーカイブに退避
 # Usage: bash scripts/bulletin_archive.sh [--max-keep N] [--max-age-hours H]
 # Default: 直近30件保持、24h超+closed or requires_confirmation:false のエントリをアーカイブ

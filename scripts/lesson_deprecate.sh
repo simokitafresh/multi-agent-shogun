@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # lesson_deprecate.sh - Mark a lesson as deprecated in projects/<project>/lessons.yaml
 # Usage: bash scripts/lesson_deprecate.sh <project> <lesson_id> "<reason>" [cmd_id]
 # Example: bash scripts/lesson_deprecate.sh infra L044 "Injected 12x, referenced 0x" cmd_414

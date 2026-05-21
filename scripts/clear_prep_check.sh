@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[編成管理]]
 # clear_prep_check.sh — /shogun-clear-prep 用の/clear前確認
 # /clearで消える情報がないか7項目チェック
 # Usage: bash scripts/clear_prep_check.sh

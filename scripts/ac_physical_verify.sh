@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # ac_physical_verify.sh — AC対象ファイルの物理的検証
 # GP-065: draft reviewの「事前調査」を自動化。
 # cmdテキストからファイルパス・行番号・セクション参照を抽出し、実在性を検証。

@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[Silent Fallback品質]]
 # gate_gunshi_report_precheck.sh — 軍師レビュー前の機械的検証を自動化
 # 目的: 7つの意志依存ステップを1コマンドに統合。意志依存ゼロ。
 # Usage: bash scripts/gates/gate_gunshi_report_precheck.sh <report_yaml_path>

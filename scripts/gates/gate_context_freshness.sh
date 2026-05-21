@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[防御階層原則(Level 1-6)]]
 # ============================================================
 # gate_context_freshness.sh
 # dashboardと同じ監視対象に対してlast_updated鮮度を自動チェックする

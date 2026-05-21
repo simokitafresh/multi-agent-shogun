@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]], [[inbox処理規律]], [[編成管理]]
 # @source: cmd_451 (inbox未読チェックstop防止hook)
 set -euo pipefail
 

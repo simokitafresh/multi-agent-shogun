@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[テスト品質統合フレームワーク]]
 # test_select.sh — git diff変更ファイルから対応テストファイルを特定
 # affected_tests.sh のpre-push向け変種:
 #   - 未知ファイルはWARN+スキップ (フォールバック全テスト実行なし)

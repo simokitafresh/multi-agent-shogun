@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[YAML安全書込み]], [[inbox処理規律]]
 # inbox_mark_read.sh — inboxメッセージの既読化（排他ロック＋アトミック書込み）
 # Usage: bash scripts/inbox_mark_read.sh <agent_id> [msg_id]
 #   msg_id指定: そのメッセージのみ read:true に変更

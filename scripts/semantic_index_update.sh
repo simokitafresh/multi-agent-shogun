@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[セマンティック辞書構想]]
 # semantic_index_update.sh — Update semantic-index resources from known events.
 # Usage: bash scripts/semantic_index_update.sh <cmd_complete|lesson|discussion> '<json-payload>'
 

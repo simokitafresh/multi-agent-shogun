@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ゲート品質統合フレームワーク]]
 # ============================================================
 # cmd_save.sh
 # 将軍がEdit toolでshogun_to_karo.yamlに書いたcmdブロックの保存前安全チェック

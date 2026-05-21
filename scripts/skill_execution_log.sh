@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Skill設計ルール]]
 # skill_execution_log.sh — skill execution outcome log.
 # Usage:
 #   bash scripts/skill_execution_log.sh summary

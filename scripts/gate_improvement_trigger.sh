@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[gate迂回防止]]
 # ============================================================
 # gate_improvement_trigger.sh
 # gate ALERT検知 → 穴検出3問を家老inbox送信 + ntfy通知

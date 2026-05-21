@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[インフラ運用基盤]]
 # shellcheck disable=SC1091,SC2034,SC2317
 # ═══════════════════════════════════════════════════════════════
 # ntfy Input Listener

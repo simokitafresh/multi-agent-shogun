@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # lesson_harvest.sh — アーカイブ済み報告からlesson_candidate未登録候補をスキャン
 # Usage: bash scripts/lesson_harvest.sh
 # Output: cmd_id | ninja | title | detail(先頭60文字)

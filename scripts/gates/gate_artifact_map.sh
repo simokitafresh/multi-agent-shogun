@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[GS忍法研究]]
 # gate_artifact_map.sh — 成果物所在マッピング健全度チェック
 # なぜなぜ7回(2026-04-12)の対策: 完了ブロックに成果物所在がないとWARN
 #

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[gate迂回防止]], [[忍者報告品質プロトコル]]
 import json
 import os
 import re

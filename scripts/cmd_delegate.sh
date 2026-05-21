@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[gate迂回防止]]
 # cmd_delegate.sh — cmd委任の原子的実行（将軍ワークフロー Step 3）
 #
 # Usage:

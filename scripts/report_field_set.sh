@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[YAML安全書込み]], [[gate迂回防止]], [[忍者報告品質プロトコル]]
 # report_field_set.sh — 報告YAMLのフィールドをflock排他制御で安全に更新
 # 共通ライブラリ(lib/yaml_field_set.sh)の関数を使用
 #

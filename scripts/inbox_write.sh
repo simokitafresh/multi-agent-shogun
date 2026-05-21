@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[YAML安全書込み]], [[インフラ設計意図カタログ]]
 # inbox_write.sh — メールボックスへのメッセージ書き込み（排他ロック付き）
 # Usage: bash scripts/inbox_write.sh <target_agent> <content> [type] [from] [action]
 # Example: bash scripts/inbox_write.sh karo "半蔵、任務完了" report_received hanzo notify_karo

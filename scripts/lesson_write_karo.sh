@@ -1,4 +1,5 @@
 #!/bin/bash
+# semantic-links: [[教訓ライフサイクル管理]]
 # lesson_write_karo.sh — 家老専用教訓追記（排他ロック付き）
 # Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"]
 # → projects/infra/lessons_karo.yaml に追記

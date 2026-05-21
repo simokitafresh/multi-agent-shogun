@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]]
 # @source: cmd_452 (SessionStart context注入hook)
 set -euo pipefail
 

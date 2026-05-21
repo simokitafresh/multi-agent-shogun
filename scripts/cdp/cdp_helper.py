@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[CDP(ブラウザ操作能力)]]
 """CDP Helper Library — Browser Launch Utilities for WSL2.
 
 Provides browser detection and launch functions for Chrome/Edge with
