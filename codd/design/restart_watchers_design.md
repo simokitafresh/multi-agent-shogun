@@ -34,6 +34,10 @@ The script acquires a singleton flock, stops all existing inbox_watcher processe
 Inputs are tmux pane options (`@agent_cli`), `scripts/lib/agent_config.sh`, and `scripts/lib/pane_lookup.sh`.
 Outputs are per-agent `logs/inbox_watcher_{agent}.log` files and running `inbox_watcher.sh` processes.
 
+## Requirements Traceability
+
+[[restart_watchers_requirements.md]] defines the wrapper purpose as atomic inbox watcher restart for every configured agent, followed by watcher and `inotifywait` liveness verification before returning success. This design maps those requirements to the singleton guard, two-stage stop phase, per-agent launch loop, liveness check, health warning, and pane variable sync below.
+
 ## Implementation Trace
 
 - [[restart_watchers.sh]] is the implementation authority for the restart sequence: it takes the flock, stops watcher processes, launches each watcher, checks process liveness, checks `inotifywait`, then runs [[sync_pane_vars.sh]].
