@@ -93,11 +93,13 @@ append_causal_expansion() {
 
     [ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ] || return 0
 
+    # sed+head を awk 内に統合: subprocess 2個削減（L324原則: pipe fork最小化）
     links=$(
         grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' "$search_output" 2>/dev/null \
-            | sed 's/^\[\[//; s/\]\]$//' \
-            | awk 'NF && !seen[$0]++' \
-            | head -20 \
+            | awk '{
+                sub(/^\[\[/, ""); sub(/\]\]$/, "")
+                if ($0 && !seen[$0]++) { print; if (++n >= 20) exit }
+            }' \
         || true
     )
     [ -n "$links" ] || return 0
