@@ -304,6 +304,18 @@ YAML
     [[ "$output" == *"Usage"* ]]
 }
 
+@test "cmd_delegate: 不正cmd_idはYAML照合前にエラー" {
+    create_shogun_yaml_with_pending
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" "cmd_100[bad]" "不正cmd"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid cmd_id"* ]]
+
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+}
+
 @test "cmd_delegate: 異常系 — 未配備cmd(pending+delegated_at)検出でWARNING出力" {
     create_shogun_yaml_with_stuck_cmd
 

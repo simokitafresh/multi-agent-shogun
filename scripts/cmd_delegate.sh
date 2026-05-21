@@ -44,6 +44,11 @@ if [ -z "$CMD_ID" ] || [ -z "$MESSAGE" ]; then
     exit 1
 fi
 
+if [[ ! "$CMD_ID" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "ERROR: invalid cmd_id '$CMD_ID' (allowed: A-Z a-z 0-9 _ . -)" >&2
+    exit 1
+fi
+
 if [ ! -f "$SHOGUN_TO_KARO" ]; then
     echo "ERROR: shogun_to_karo.yaml not found: $SHOGUN_TO_KARO" >&2
     exit 1
@@ -153,6 +158,7 @@ BEGIN {
 {
     remaining = $0
     offset = 0
+    # Scan every occurrence so "cmd_1000 ... cmd_100" still detects cmd_100.
     while ((pos = index(remaining, cmd_id)) > 0) {
         abs_pos = offset + pos
         before_char = (abs_pos > 1) ? substr($0, abs_pos - 1, 1) : ""
