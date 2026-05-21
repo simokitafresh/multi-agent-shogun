@@ -23,6 +23,15 @@ codd:
 
 # Findings
 
+## Implementation Evidence Update
+
+The brownfield findings below were generated from broad context and should now be read with the current implementation evidence in [[ninja_monitor.sh]], plus operating context in [[infrastructure]] and [[training-cycle]].
+
+- `stall_detection_threshold` / `polling_interval`: implementation evidence exists. `ninja_monitor.sh` defines `STALL_THRESHOLD_MIN`, `POLL_INTERVAL`, and `CONFIRM_WAIT`; the remaining gap is whether the report should mark these findings resolved or keep them open for behavior-level explanation.
+- `monitoring_scope`: implementation evidence exists. `ninja_monitor.sh` builds `NINJA_NAMES` from `get_ninja_names`, with comments stating karo and shogun are excluded.
+- `send_keys_mechanism`: implementation evidence exists. `safe_send_clear()` gates reset through `check_idle()` and `can_send_clear_with_report_gate()`, then uses Codex `respawn-pane -k` for Codex agents and `safe_send_keys_atomic` for non-Codex reset.
+- `error_handling_monitor_failure`: implementation evidence exists in [[daemon_watchdog.sh]]. `check_ninja_monitor()` verifies the pid file/live process, restarts `scripts/ninja_monitor.sh`, throttles restart storms, and emits watchdog notifications; the remaining gap is whether this external watchdog should close or downgrade the original high-severity finding.
+
 <!-- codd:finding
 {"details": {"gap": "STALLの定義（時間ベース/出力ベース/状態ベース）と閾値が明示されていない", "source": "CLAUDE.md: 'Ghost deployment checkはninja_monitorのSTALL検知が常時カバー'"}, "id": "stall_detection_threshold", "kind": "behavioral_specification", "name": "STALL検知の閾値・判定基準が未定義", "question": "ninja_monitorがSTALLと判定する条件は何か？時間閾値、出力停止、capture-paneの内容パターン等、具体的な判定ロジックはどう定義されているか？", "rationale": "STALL検知は家老の手動チェックを代替する自動化機能。閾値が不明だと偽陽性/偽陰性のリスクが評価できない", "related_requirement_ids": ["ghost_deployment_check"], "severity": "high", "source": "greenfield"}
 -->
@@ -129,6 +138,8 @@ gap: /clear発行がinbox_write経由かsend-keys直接かの実装パスが不�
 - name: ninja_monitor自身の障害時の挙動が未定義
 - question: ninja_monitorプロセスがクラッシュまたはハングした場合の検知・自動復旧メカニズムはあるか？watchdog的な上位監視は存在するか？
 - rationale: ninja_monitorが停止すると全忍者のSTALL検知とidle/clearが機能停止し、CTXオーバーフローやゴーストデプロイが検知されなくなる
+
+Implementation evidence: [[daemon_watchdog.sh]] has a dedicated `check_ninja_monitor()` path that checks the pid file/live process, restarts `scripts/ninja_monitor.sh`, records restart attempts, and notifies on restart failure or restart storms.
 
 ```yaml
 gap: 監視者自身の監視(quis custodiet ipsos custodes)が未定義
