@@ -993,7 +993,7 @@ CoDD速度改善ラウンドは必ず4AC以上に分解する。`/codd-refactor`
 | AC2 CoDD設計 | **`codd extract`（brownfield）起点**。elicit、dag verify または measure を実行し、設計書/DAGの整合性を確認。`codd require`（greenfield）禁止 |
 | AC3 実装 | 設計に基づき最小変更で速度・保守性を改善。運用YAMLはCoDD auto-repair対象外 |
 | AC4 検証 | after値、関連テストPASS、SKIP=0、`docs/research/codd_refactor_registry.md` 追記を確認 |
-| AC5 aliases候補提案 | 対象スクリプトの機能用途を1-3個の概念名付きalias行として報告する。形式: `[[概念名]] alias: 候補1, 候補2`。既存の `docs/semantic-index/index.md` / `context/semantic-map.md` の概念名へ直接紐づけるか、新概念候補かを明記 |
+| AC5 aliases候補提案 | 対象スクリプトの機能用途を1-3個の概念名付きalias行として報告する。形式: `[[概念名]] alias: 候補1, 候補2`。既存の `docs/semantic-index/index.md` / `context/semantic-map.md` の概念名へ直接紐づけるか、新概念候補かを明記。**報告後に`bash scripts/insight_write.sh "[[概念名]] alias: 候補1, 候補2" low semantic_stress_test`で蓄積し、`grep -c pending queue/insights.yaml`で蓄積確認せよ（蓄積なしは未完了）** |
 
 ### aliases候補提案ステップ
 
@@ -1003,12 +1003,18 @@ CoDD速度改善ラウンドでは、対象スクリプトを読んだ忍者が�
 - 照合先: `docs/semantic-index/index.md` と `context/semantic-map.md`
 - 報告形式: `[[概念名]] alias: 候補1, 候補2`。例: `[[agent_formation_management]] alias: 忍者編成切替, CLI編成管理`
 - 判定: 既存概念に対応する場合は `[[概念ID]] alias: ...` で概念名を明示し、新概念が必要な場合は `new_concept_candidate` として理由を添える
+- **品質基準(3条件)**:
+  - (a) 短い用途語(3-5単語)。文をそのまま入れるな。良い例:「BLOCK後環境埋込み」悪い例:「BLOCKされたら環境に変更を埋め込む処理」
+  - (b) 既存aliasesと重複しないこと。`grep "候補語" docs/semantic-index/index.md`で既存確認してから提案
+  - (c) 概念名はindex.mdの正確なid(英語snake_case)またはlabel(日本語)で指定。曖昧な日本語名はparse失敗する
+- **蓄積手順(省略禁止)**: 報告YAML記入後に`bash scripts/insight_write.sh "[[概念ID]] alias: 候補1, 候補2" low semantic_stress_test`を各alias行ごとに実行。`grep -c pending queue/insights.yaml`で蓄積確認。0件増なら再実行
 
 ### 完了基準
 
 - `docs/research/codd_refactor_registry.md` に日付・実施者・対象・Phase到達・Before→After・spec/afterパスが追記されている
 - 報告YAMLのbinary_checksでAC1-AC4がすべてyes
 - 報告YAMLに対象スクリプトの `[[概念名]] alias: ...` が1件以上あり、既存概念または新概念候補への対応が明記されている
+- **aliases候補がinsights.yamlにpendingとして蓄積されている**（`grep -c pending queue/insights.yaml`で報告前より増加していること）
 - テスト報告にSKIPが1件でもあれば未完了扱い
 - 改善率が低い場合も、固定コスト・I/O支配・安全性維持などの理由を台帳に残す
 
