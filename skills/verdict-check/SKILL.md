@@ -41,6 +41,7 @@ binary_checksの全結果を読み取り、未記入や不正値がないか確�
 
 - <!-- skill-auto-improve:c9bc422a2822 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「hayate:binary_checks_fail」(count=1, last=2026-05-05T11:34:15+0900)を避ける。確認: 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: 各ACの result を yes/no に直し、1つでも no なら verdict を FAIL にする。
 - <!-- skill-auto-improve:68b9c844f407 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「saizo:binary_checks_fail」(count=1, last=2026-05-03T11:04:05+0900)を避ける。確認: 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: 各ACの result を yes/no に直し、1つでも no なら verdict を FAIL にする。
+- <!-- skill-auto-improve:c58dbdce16a1 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「<ninja>:binary_checks_fail」(count=3, last=2026-05-05T11:34:15+0900)を避ける。確認: 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: 各ACの result を yes/no に直し、1つでも no なら verdict を FAIL にする。
 ### 矛盾防止の必須手順
 - bc:no と verdict:PASS の矛盾防止: 忍者はverdictを書かない。全 `binary_checks.*[].result` を列挙し、空欄・不正値がないことだけ確認する。
 - verdict空欄防止: `binary_checks` に空欄、`FILL_THIS`、`waive`、`PASS`、`FAIL` が残っている場合はgate_report_format.shがBLOCKする。先に全resultを `yes/no` に正規化せよ。
@@ -97,6 +98,8 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+
+- 2026-05-21: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 - 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hanzo reason=hanzo:binary_checks_fail
 
 - 2026-05-17: gate=cmd_complete_gate result=FAIL executor=saizo reason=saizo:binary_checks_fail|saizo:purpose_validation_fit_false

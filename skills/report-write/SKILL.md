@@ -32,6 +32,7 @@ description: |
 - <!-- skill-auto-improve:648694597565 --> 自動防止: gate=gate_report_format のTop FAIL理由「lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文...」(count=2, last=2026-05-02T22:22:28+0900)を避ける。確認: 提出前に対象YAML/本文へ `rg -n 'FILL_THIS'` を実行する / binary_checks 全resultが yes/no で埋まっていることを確認する。修正: 残存箇所を実値または具体的な no_* reason に置換する / binary_checks を修正して `gate_report_format.sh` を再実行し、verdict を自動導出させる。
 - <!-- skill-auto-improve:734212e8bbbd --> 自動防止: gate=gate_report_format のTop FAIL理由「ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; result.summary: MISSI...」(count=1, last=2026-05-06T00:24:24+0900)を避ける。確認: 全 binary_checks の result が yes/no のみで、空欄・waive・PASS・FAIL を含まないことを確認する。修正: 各ACの result を yes/no に直し、`gate_report_format.sh` で verdict を自動導出させる。
 - <!-- skill-auto-improve:bb1bffc5e476 --> 自動防止: gate=gate_report_format のTop FAIL理由「assumption_invalidation: is str (must be dict)」(count=1, last=2026-05-02T18:38:56+0900)を避ける。確認: assumption_invalidation に detail と affected_cmds があることを確認する。修正: `report_field_set.sh <report> assumption_invalidation found false` で dict 形式を保証する。
+- <!-- skill-auto-improve:a693dd5bd951 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|<ninja>:lesson_done_missing」(count=2, last=2026-05-05T01:02:40+0900)を避ける。確認: FAIL理由に出たフィールド名を報告YAML上で `rg -n '<field>' <report>` で検索する。修正: 欠落フィールドを `report_field_set.sh` 経由で追加する。
 ### 必須事前検査
 - verdict自動導出: 忍者は verdict を手動記入禁止。`binary_checks` 全resultを `yes` または `no` で埋め、`gate_report_format.sh` に verdict を自動導出させる。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば該当ACを `report_field_set.sh` で修正する。
 - FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
@@ -122,6 +123,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-05-21: gate=gate_report_format result=FAIL executor=hanzo reason=lessons_useful[1]: missing \"id\" field (must have lesson ID like L074); lessons_useful[2]: missing \"id\" field (must have lesson ID like L074); lessons_useful[3]: missing \"id...
+- 2026-05-21: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せ...
 
 - 2026-05-21: gate=gate_report_format result=FAIL executor=hanzo reason=lesson_candidate: no_lesson_reason=\"FILL_THIS\" is placeholder (write a real reason); binary_checks.AC1[0].result: \"FILL_THIS\" は不正。\"yes\" または \"no\" のみ; binary_checks.AC2[0]...
 - 2026-05-19: gate=gate_report_format result=FAIL executor=kotaro reason=lesson_candidate: found=true but no title; assumption_invalidation: found=true but affected_cmds is empty (影響cmdを列挙せよ)
