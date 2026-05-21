@@ -195,6 +195,14 @@ if [ "$status" != "pending" ]; then
     exit 1
 fi
 
+# Step 2.5: 家老inboxのcmd_newメッセージに既にcmd_idが存在するかチェック（別経路委任の検出）
+# 重複が明確な場合は cmd_save.sh を走らせず、状態を変えない。
+if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; then
+    echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
+    echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
+    exit 1
+fi
+
 # Step 3: 初回委任前に cmd_save.sh を強制実行
 cmd_save_exit=0
 if bash "$PROJECT_DIR/scripts/cmd_save.sh" "$CMD_ID"; then
@@ -222,13 +230,6 @@ if [ -n "$undeployed_cmds" ]; then
     while IFS= read -r line; do
         echo "  - $line" >&2
     done <<< "$undeployed_cmds"
-fi
-
-# Step 3.5: 家老inboxのcmd_newメッセージに既にcmd_idが存在するかチェック（別経路委任の検出）
-if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; then
-    echo "WARN: $CMD_ID is already mentioned in karo inbox (previously sent via another path)" >&2
-    echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
-    exit 1
 fi
 
 # Step 3.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）

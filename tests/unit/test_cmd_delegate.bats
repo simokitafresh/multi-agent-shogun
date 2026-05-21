@@ -456,6 +456,7 @@ YAML
     [[ "$output" == *"Refusing to send duplicate"* ]]
 
     [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
     run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
     [ "$status" -ne 0 ]
     run grep "status: pending" "${TEST_TMP}/queue/shogun_to_karo.yaml"
