@@ -121,6 +121,7 @@ PY
 @test "assumption_invalidation: historical found false form is normalized to dict" {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation found false 2>&1"
     [ "$status" -eq 0 ]
+    [[ "$output" == *"assumption_invalidation.found = False"* ]]
     python3 - "$TEST_REPORT" <<'PY'
 import sys, yaml
 with open(sys.argv[1]) as f:

@@ -38,6 +38,7 @@ VALUE="$3"
 # Keep the compatibility shim scoped to this field so the extra positional
 # argument cannot silently affect unrelated writes.
 if [ "$DOT_KEY" = "assumption_invalidation" ] && [ "${3:-}" = "found" ] && [ -n "${4:-}" ]; then
+    DOT_KEY="assumption_invalidation.found"
     VALUE="$4"
 fi
 
