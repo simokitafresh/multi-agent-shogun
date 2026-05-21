@@ -9,11 +9,12 @@
 #
 # Behavior:
 #   1. shogun_to_karo.yaml に cmd_id が存在し status=pending か検証
-#   2. delegated_at が既にあれば ALREADY_DELEGATED で終了（冪等性）
-#   3. 初回委任時のみ cmd_save.sh を自動実行。PASS(exit 0)時のみ次へ進む
-#   4. inbox_write.sh karo "<msg>" cmd_new shogun を実行
-#   5. 成功後、delegated_at: <ISO8601> を cmd エントリに追加
-#   6. 出力: DELEGATED: cmd_XXX at 2026-03-04T18:17:05
+#   2. delegated_at 既存時は status/inbox/archive を照合し、冪等終了または安全に再通知
+#   3. cmd_new 重複が既にあれば cmd_save.sh 前に BLOCK
+#   4. 初回委任時のみ cmd_save.sh を自動実行。PASS(exit 0)時のみ次へ進む
+#   5. status=delegated + delegated_at: <ISO8601> を cmd エントリに追加
+#   6. inbox_write.sh karo "<msg>" cmd_new shogun を実行
+#   7. 出力: DELEGATED: cmd_XXX at 2026-03-04T18:17:05
 #
 # Exit codes:
 #   0 — 委任成功 or 既に委任済み
@@ -195,9 +196,7 @@ cmd_is_archived() {
     fi
     shopt -s nullglob
     local archived_matches=("$ARCHIVE_DIR/${cmd_id}_"*)
-    if [ "$nullglob_was_set" -eq 1 ]; then
-        shopt -s nullglob
-    else
+    if [ "$nullglob_was_set" -eq 0 ]; then
         shopt -u nullglob
     fi
     [ "${#archived_matches[@]}" -gt 0 ]
@@ -275,7 +274,7 @@ if [ -n "$undeployed_cmds" ]; then
 fi
 
 # Step 3.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
-if [ -f "$DASHBOARD" ] && grep -Fqm1 "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
+if [ -f "$DASHBOARD" ] && grep -Fqwm1 "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
     echo "WARN: $CMD_ID is already listed in dashboard.md (karo may already be aware). Proceeding — dashboard is secondary data." >&2
 fi
 
