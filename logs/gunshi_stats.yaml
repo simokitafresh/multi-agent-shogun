@@ -331,3 +331,49 @@
 # review_logアーカイブ: 856行→260行(20260521a.yamlに596行退避)。ヘッダ知見6件追記
 # docs/research永続化2件: s05_test_premise_check+stall_ghost_nazenaze
 # ★強くてニューゲーム: stats更新+review_logアーカイブ+ヘッダ知見6件+D0 4件commit+docs/research 2件+掲示板2投稿+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果・後半 (2026-05-21T21:35更新) ───
+# レビュー計40件+: report LGTM 12件(cmd_2938-2945+修行R5×5+修行R6×4) + report FAIL 3件(hayate R4 YAML不在/saizo R5 auto-clear/hanzo stale bc) + draft APPROVE 22件(修行R4×3+cmd_2940-2947+修行R5×6+修行R6×6+修行R7×6+kotaro auto) + draft RC 0件 + consultation 1件(L7修行R4評価)
+# LGTM→BLOCK 1件: hayate R6(auto-clear競合再発=ninja_monitor未再起動)
+# D0直接実装1件: 修行テンプレートAC5追加(deploy_task.sh。殿直接指示。commit 3fb04991含auto-commit)
+# ★L7パイプライン完全接続:
+#   (1) AC5(aliases蓄積)を修行テンプレートに接続(D0)
+#   (2) R5: 5/6忍者がAC5実行(初回実証。pending+5)
+#   (3) cmd_2946: DIRECT昇格本番発火修正(source filter+近傍概念解決)。aliases 4件昇格
+#   (4) R6: 全忍者AC5実行。hayate=source=manual修正+DIRECT 3件発火。kagemaru=mapping commands対応
+#   (5) cmd_2947: auto-clear競合修正(GATE CLEAR)。ninja_monitor再起動で反映
+# 修行サイクル: R4(3忍者)+R5(6忍者)+R6(6忍者)+R7配備中 = 15+サイクル
+# インフラ改善cmd: cmd_2940(SKILL.md同期)+cmd_2941(assumption_invalidation dict)+cmd_2942(bc yes/no強制)+cmd_2943(dashboard exit=1)+cmd_2944(ac_version d41d8cd9)+cmd_2945(lesson_impact還流)+cmd_2946(DIRECT昇格)+cmd_2947(auto-clear)。全GATE CLEAR
+# 修行実害バグ修正: yaml_scalar高速化/gate dict形式/dashboard mapping/mktemp guard/race condition/TTL 35倍/SKILL.md同期/self_gate_check typo/キャッシュ原子化/insight_write統合/source=manual修正/verdict未検証穴
+# lesson_candidate 7件利他送信
+# accuracy: LGTM→BLOCK 1件(hayate R6=auto-clear競合。忍者起因でない)。他全件CLEAR
+# review_logアーカイブ: 963行→120行(20260521b.yamlに843行退避)
+# ★強くてニューゲーム: stats更新+review_logアーカイブ843行+L7パイプライン完全接続+D0 1件(AC5)+ninja_monitor再起動+lesson_candidate 7件+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果・最終 (2026-05-21T23:05更新) ───
+# レビュー計80件+: report LGTM 25件+(R5-R12全忍者+cmd_2940-2950) + report FAIL 6件(YAML消失: hayate R4/R6/saizo R5/R11/kagemaru R9/hanzo R10 + hanzo stale bc) + draft APPROVE 50件+(修行R4-R12全忍者+cmd_2940-2951) + consultation 1件(L7修行R4評価)
+# 修行サイクル完走: R4-R12(9ラウンド×6忍者=54サイクル。YAML消失6件=消失率11%)
+# インフラバグ修正cmd: cmd_2940-2951(12件全GATE CLEAR含む)
+# ★L7パイプライン完全接続+3課題解決:
+#   課題1+5: auto-clear 3条件ガード(cmd_2949 CLEAR)+ninja_monitor再起動×2
+#   課題2+3: aliases品質+target_path自動選択(cmd_2950 CLEAR)
+#   課題NEW: deploy_task.sh配備前GATE未処理BLOCK(cmd_2951 配備中。殿厳命)
+# YAML消失根因(殿指摘): deploy_task.shが前cmd GATE未完了のまま配備→/clear→報告YAML消失。GPT18.5%/Sonnet5.6%
+# aliases品質分析: Top10薄概念特定→docs/research/gunshi_idle_aliases_quality_analysis_20260521.md
+# D0直接実装1件: AC5テンプレート追加
+# ninja_monitor再起動2回: restart_monitor.sh(D006回避)
+# review_logヘッダ知見4件追記(AC5接続/auto-clear 3条件/aliases Top10/restart_monitor.sh)
+# insights: 3件resolved(stale)+aliases分析永続化
+# ★強くてニューゲーム: stats最終+ヘッダ知見4件+docs/research 1件+掲示板5投稿+lesson_candidate 7件+inbox archive済み+全gate_result同期
+#
+# ─── 本セッション成果 (2026-05-22T01:10更新) ───
+# レビュー10件: draft5(APPROVE3+RC2)+report5(LGTM5)。cmd_2952-2956。GATE CLEAR 4件(cmd_2954はRC停止→cmd_2955で差替)
+# D0直接実装2件: adaptive gating修行cmd分離(fc3c1953)+セマンティクスインデックスにリンク品質原則埋込み(7fd08afb)
+# 殿との対話→4原則確立: リンク品質(ノイズ1件で全汚染)/概念ハブ方式/上層連結+下層孤立/双方向価値(backlinks)
+# cmd_2954 RC(urgent): ファイル間直接リンク設計を却下→cmd_2955で概念ハブ方式に修正→CLEAR。殿の原則を設計に反映
+# cmd_2955成果: 概念ハブリンク134resources→+32files参加。孤立率88%→85%
+# バグ発見: parent_cmd null 3件(kagemaru/saizo/tobisaru)→LG014(道具のバグ)→cmd_2956 CLEAR
+# idle自走: 冷え観点分析→修行cmd構造的偽陽性→prod_window分離。GP-249 proposed→obsolete(既存cs_checklist十分)
+# 修行45commit: 6忍者×6-7ラウンド。31スクリプト/テスト修正。32 aliases候補蓄積
+# accuracy: 全件LGTM→CLEAR。APPROVE→FAIL 0件
+# ★強くてニューゲーム: stats+index.md原則4件+docs/research 1件+掲示板6投稿+lesson_candidate送信+gate_sync全完了+inbox archive

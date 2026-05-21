@@ -696,3 +696,12 @@
   reason: "gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった"
   evidence: "実行検証: infra tasks/lessons.mdのdraft 1件を正確にWARN検出。S0全6項PASS"
   evidence: "修正後gate実行: numbers 1/10→5/10, zero_streak=7��0。S0全6項PASS"
+- id: GP-249
+  description: "adversarial冷え真陽性対策: 本番cmdレビュー時にadversarial観点強制チェック追加"
+  source: self_study_adaptive_gating_bucket_20260521
+  status: obsolete
+  proposed_at: "2026-05-21T23:30:00"
+  self_executable: true
+  existing_impl_check: "pending — adversarial強制チェックの既存実装を確認後に設計"
+  defense_level: 4
+  reason: "adversarialが本番cmdのみ直近10件で連続0件。真の冷えであり偽陽性ではない"

@@ -117,7 +117,12 @@
 # ★STALL-GHOST 172件(2026-05-21なぜなぜ7回): ninja_monitorがcmd_id検索対象外→karo_direct配備のstall検出が無効化。根因=karo_directと通常配備のインターフェース不一致。cmd_2939で修正
 # ★CI RED symlink破壊(2026-05-21): テスト649/650がconfig/projects.yaml書換え→symlinkの実体(本番config)上書き→他テスト連鎖FAIL。symlink→ローカルコピー差替え(93deca55)で解消
 # ★S0-5テスト前提更新(2026-05-21 D0): デフォルト値・閾値変更時にテスト前提値の更新確認を追加(f549c4e6)。MIN_SAMPLES 3→1変更時のCI RED事故対応
+# ★修行AC5接続(2026-05-21 D0): deploy_task.sh inject_direct_training_templateにAC5(aliases蓄積)追加。R5で初回実証(5/6忍者AC5 yes)。修行×L7二重複利の接続
+# ★auto-clear競合はYAML+verdict+家老通知の3条件が必要(2026-05-21): cmd_2947(2条件)では不十分。kagemaru R9で再発。inbox_write完了前にclear発動が根因。cmd_2949で3条件に拡張
+# ★aliases品質ボトルネックTop10(2026-05-21): gate_bypass_prevention/recalculate_pipeline各4件。平均21.3件の1/3以下。修行targetに優先指定が必要→docs/research/gunshi_idle_aliases_quality_analysis_20260521.md
+# ★ninja_monitor再起動スクリプト(2026-05-21): scripts/restart_monitor.sh。D006(kill禁止)で直接killできないが、専用スクリプトで安全再起動可能
 # 詳細エントリ: 20260521a(D0_L7a_batch3〜cmd_2932+consultations+L7 nazenaze) → logs/archive/gunshi_review_log_20260521a.yaml
+# 詳細エントリ: 20260521b(cmd_2938〜修行R6全件+cmd_2940-2947+consultation) → logs/archive/gunshi_review_log_20260521b.yaml
 - cmd_id: cmd_2933
   review_type: report
   verdict: LGTM
@@ -235,7 +240,7 @@
 - cmd_id: cmd_2938
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   ambiguity_points: none
   severity: normal
@@ -252,7 +257,7 @@
 - cmd_id: cmd_2939
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   ambiguity_points: none
   findings_summary: "APPROVE。karo_directインターフェース不一致修正(STALL-GHOST+assumption_invalidation)。軍師なぜなぜ7回分析どおり。前提verified。shallow(awk1行+フィールド1行)"
@@ -264,3 +269,841 @@
   origin: "[[cmd_2939]] -> [[karo_direct_interface_mismatch]] -> [[stall_ghost_root_cause]]"
   causal_chain: "karo_direct配備→cmd_idのみ→ninja_monitor検索対象外→STALL-GHOST→stall検出無効化。cmd_idフォールバック追加→検出復活=正の複利"
   timestamp: "2026-05-21T19:02:00"
+- cmd_id: cmd_2938
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。training source DIRECT auto-promote E2Eテスト追加。21テストPASS。AC1/AC2は家老補足でD0検証のみ、AC3テスト追加に集中。commit 265fe19b"
+  observations:
+    - "事実: test_semantic_index_update.batsに+25行。source=trainingのpending insightがPENDING_ALIAS_DIRECTでaliases昇格+status=done化の完全E2Eテスト"
+    - "事実: bats 21/21 PASS(SKIP=0)。既存テスト全件維持"
+    - "事実: files_modified=1件(tests/unit/test_semantic_index_update.bats)。scope内完結"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2938]] -> [[training_source_direct_promote_test]] -> [[L7_quality_assurance]]"
+  causal_chain: "修行AC5→DIRECT昇格パイプラインにテストなし→リグレッション不検出リスク。E2Eテスト追加→DIRECT経路の品質保証=正の複利"
+  timestamp: "2026-05-21T19:10:00"
+- cmd_id: cmd_2939
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。karo_directインターフェース不一致修正。ninja_monitor cmd_id fallback 1行+deploy_task parent_cmd補完。52テストPASS。commit 8edd4934"
+  observations:
+    - "事実: ninja_monitor.sh L2108にcmd_id fallback 1行追加。既存subtask_id→task_id→_ac_task_id→cmd_idの4段フォールバック"
+    - "事実: deploy_task.sh _effective_parent_cmd=${_p_parent_cmd:-${parent_cmd:-$cmd_id}}でparent_cmd不在時cmd_idから生成"
+    - "事実: test_ninja_monitor_stall.bats 24PASS+test_deploy_task_template_generation.bats 28PASS。karo_direct配備固有テスト追加"
+    - "事実: lessons_useful L112/L587/L280/L511がuseful=true。同型問題への教訓適用が適切"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2939]] -> [[karo_direct_interface_mismatch]] -> [[stall_ghost_and_template_gap_fix]]"
+  causal_chain: "karo_direct配備→cmd_idのみ→ninja_monitor+report_template両方で不認識→STALL-GHOST 172件+gate FAIL。4段フォールバック+parent_cmd補完→インターフェース統一=正の複利"
+  timestamp: "2026-05-21T19:12:00"
+- cmd_id: cmd_training_L7_v3_hayate_4_20260521192408
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L4修行(brownfield改善)。4AC標準テンプレート。semantic_conceptsで対象導線あり。修行=忍者成長+L7 aliases鍛錬"
+  observations:
+    - "事実: AC4構造は修行テンプレート標準(改善3点特定→最高1件実装→報告YAML→教訓参照)"
+    - "事実: semantic_concepts 2件(training_cycle_quality+report_quality_protocol)が対象スクリプトの導線"
+    - "事実: standard_skills(report-write/verdict-check/ninja-commit)全3件注入済み"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_training_L7_v3_hayate_4]] -> [[L4_brownfield_training]] -> [[ninja_growth]]"
+  causal_chain: "修行テンプレート→AC標準化→忍者の判断余地最小化→GATE PASS率向上。修行×L7=aliases鍛錬+品質向上の二重複利"
+  timestamp: "2026-05-21T19:26:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_4_20260521192452
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L4修行(brownfield改善)。同一テンプレート。kagemaru向けsemantic_concepts(agent_formation+report_quality+infrastructure_ops+infra_design_intent)で導線充実"
+  observations:
+    - "事実: AC4構造はhayate修行と同一テンプレート。ac_version=c5435a62一致"
+    - "事実: semantic_concepts 4件(agent_formation_management+report_quality_protocol+infrastructure_ops+infra_design_intent)が対象導線"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_training_L7_v3_kagemaru_4]] -> [[L4_brownfield_training]] -> [[ninja_growth]]"
+  causal_chain: "修行テンプレート標準→同一品質保証。3忍者並列修行=L7 aliases成長3倍速=正の複利"
+  timestamp: "2026-05-21T19:28:00"
+- cmd_id: cmd_training_L7_v3_saizo_4_20260521192535
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L4修行(brownfield改善)。同一テンプレート。saizo向け。task_type=normal(kagemaru/hayateはexact)"
+  observations:
+    - "事実: AC4構造はhayate/kagemaru修行と同一テンプレート"
+    - "事実: task_type=normal(他2名はexact)。修行配備方式の差異あるが忍者作業への影響なし"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_training_L7_v3_saizo_4]] -> [[L4_brownfield_training]] -> [[ninja_growth]]"
+  causal_chain: "3忍者並列修行→aliases候補量産→L7パイプライン加速=正の複利"
+  timestamp: "2026-05-21T19:29:00"
+- cmd_id: cmd_training_L7_v3_saizo_4_20260521192535
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。skill_execution_log.sh改善(yaml_scalar Python→bashエスケープ)。bash -n+YAML parse+bats 18件PASS。lesson_candidate有(hot path Python多重起動回避)"
+  observations:
+    - "事実: skill_execution_log.sh yaml_scalarをPython subprocess→bashパラメータ展開に置換。記録1件あたりpython3起動9回→0回"
+    - "事実: テスト3件PASS(bash -n/YAML parse smoke/bats 18件)。互換性確認済み"
+    - "事実: lesson_candidate found=true。title/detail/project記入。L511(性能最適化)を判断根拠に適用"
+    - "事実: target_path未指定→saizo自身がsemantic_conceptsから選定。裁量判断として合理的"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_saizo_4]] -> [[yaml_scalar_python_subprocess]] -> [[skill_log_latency_reduction]]"
+  causal_chain: "フィールドごとPython起動9回→bashエスケープ0回。hot path最適化→全スキル実行でログ書込み高速化=正の複利"
+  timestamp: "2026-05-21T19:33:00"
+- cmd_id: cmd_2940
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。SKILL.md 3件をscript最新仕様に同期。gate_skill_script_refs 3セッション連続WARN解消。assumptions 2件verified。AC4=gate検証で完全性保証"
+  observations:
+    - "事実: gate_skill_script_refs.shが3セッション連続WARNを出力(dream/karo-direct/recon-dual)"
+    - "事実: insight_write.sh+deploy_task.shが更新済みだがSKILL.mdが追従していない"
+    - "事実: AC4件(各SKILL.md更新3件+gate検証1件)。独立実行可能"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2940]] -> [[skill_script_refs_divergence]] -> [[startup_gate_WARN_resolution]]"
+  causal_chain: "script更新→SKILL.md未追従→gate WARN→エージェントが古い仕様でスキル実行→FAIL。同期→WARN解消→正確な仕様参照=正の複利"
+  timestamp: "2026-05-21T19:34:00"
+- cmd_id: cmd_training_L7_v3_hayate_4_20260521192408
+  review_type: report
+  verdict: FAIL
+  gate_result: null
+  report_ninja: hayate
+  findings_summary: "FAIL。報告YAML不在。queue/reports/hayate_report_cmd_training_L7_v3_hayate_4_20260521192408.yaml が存在しない"
+  observations:
+    - "事実: ls queue/reports/hayate_report_cmd_training*→0件。報告YAMLファイルが作成されていない"
+    - "事実: 家老依頼メッセージにはreport=hayate_report_cmd_training_L7_v3_hayate_4_20260521192408.yamlと記載"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_hayate_4]] -> [[report_yaml_missing]] -> [[FAIL]]"
+  causal_chain: "報告YAML不在→レビュー不可→FAIL"
+  timestamp: "2026-05-21T19:43:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_4_20260521192452
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。gate_report_format_main.py dict形式AC母数計算改善+回帰テスト追加。27テストPASS。lesson_candidate有(AC形式drift検出)"
+  observations:
+    - "事実: gate_report_format_main.pyにdict形式AC正規化ヘルパ追加。list/dict両形式でAC数/BC数を正しく計数"
+    - "事実: test_gate_report_format_pass_no_improvement.bats 6PASS+autofix 21PASS=27/27。py_compile PASS"
+    - "事実: lesson_candidate found=true。AC形式追加時にgate母数計算+回帰テスト同時更新の教訓"
+    - "事実: lessons_useful L625/L545/L300がuseful=true。構造混在パターンへの教訓適用が適切"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_kagemaru_4]] -> [[task_ac_format_drift]] -> [[report_gate_improvement]]"
+  causal_chain: "dict形式AC→gate母数0扱い→BC不足見逃し→報告品質低下。正規化ヘルパ→全形式対応→検出漏れ根絶=正の複利"
+  timestamp: "2026-05-21T19:44:00"
+- cmd_id: cmd_2940
+  review_type: report
+  verdict: FAIL
+  gate_result: CLEAR
+  report_ninja: hanzo
+  findings_summary: "FAIL。binary_checks AC1-3がcmd_2940(SKILL.md同期)と不整合。AC1-3はpost-bulletin-notify-read-check.sh(別cmd残骸)に言及。AC4のみ正当。stale binary_checks"
+  observations:
+    - "事実: files_modified 4件(dream/karo-direct/recon-dual/idle-persist SKILL.md)はpurposeと一致"
+    - "事実: binary_checks AC1='post-bulletin-notify-read-check.shがREAD_LOG_DIR環境変数をサポート'→cmd_2940の目的(SKILL.md同期)と無関係"
+    - "事実: binary_checks AC2/AC3もbulletin_notify test関連。cmd_2940のAC(SKILL.md更新+gate検証)と完全不一致"
+    - "事実: AC4のみ正当(gate_skill_script_refs.sh PASS確認)"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2940]] -> [[stale_binary_checks]] -> [[report_content_mismatch]]"
+  causal_chain: "別cmdのbinary_checksがstaleで残存→cmd_2940のAC検証が不在→成果物完全性不足→FAIL"
+  timestamp: "2026-05-21T19:47:00"
+- cmd_id: cmd_2941
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。report-write assumption_invalidation dict型バグ修正。3セッション連続エスカレーション根因。assumptions 2件verified。AC3=テスト検証"
+  observations:
+    - "事実: gate_report_format_main.py L154でdict型チェック実装確認(verified)"
+    - "事実: SKILL.md改良5回で未解消→スクリプト側修正が必要(根因到達)"
+    - "事実: AC3件(report_field_set dict出力+gate検証+テスト)。忍者単独完走可能"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2941]] -> [[assumption_invalidation_str_type]] -> [[report_gate_FAIL_resolution]]"
+  causal_chain: "assumption_invalidation string型→gate dict型チェックFAIL→報告品質低下→3セッション連続。dict形式出力→型一致→FAIL解消=正の複利"
+  timestamp: "2026-05-21T19:48:00"
+- cmd_id: consultation_L7_training_r4_eval
+  review_type: consultation
+  verdict: null
+  findings_summary: "L7修行R4評価。saizo/kagemaru LGTM(高品質)。hayate FAIL(報告不在)。AC5(aliases蓄積)が3忍者とも未遂行=テンプレートにAC5未注入。target_path未指定で裁量判断必要。改善3提案"
+  observations:
+    - "事実: pending insights 17件中training source=0件。AC5蓄積手順が実行されていない"
+    - "事実: 修行テンプレートのacceptance_criteriaがAC1-4のみ。training-cycle.md §AC5定義あるがdeploy注入にAC5欠落"
+    - "事実: 3忍者ともtask_clarity.scoreが72-90(target_path未指定で裁量補完が必要だった)"
+  cs_checklist:
+    CS1: OK(報告YAML全文+insights.yaml確認)
+    CS2: OK(自システムデータで検証)
+    CS3: OK(テンプレートのAC注入を現物確認)
+    CS4: OK(改善3提案を家老に送信)
+    CS5: OK(aliases蓄積・target_path・hayate根因の3角度)
+    CS6: OK(AC5未注入→aliases未蓄積→L7成長速度低下の因果鎖)
+  causal_chain: "修行テンプレートにAC5未注入→忍者がaliases候補蓄積を実行しない→L7パイプラインに入力なし→修行×L7二重複利の片輪が空転"
+  timestamp: "2026-05-21T19:50:00"
+- cmd_id: cmd_2942
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。binary_checks result値yes/no強制バリデーション。SKILL.md 5回改良未解消→スクリプト側Level4。assumptions verified(autofix L560存在+カバー不足)"
+  observations:
+    - "事実: report_field_set.sh L560にautofix(true/PASS→yes等)存在確認。しかしcmd_complete_gateでbinary_checks_fail依然発生"
+    - "事実: SKILL.md auto-improve 5回でverdict-check未解消。意志依存→構造的バリデーションが必要"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2942]] -> [[binary_checks_invalid_value]] -> [[report_field_set_validation]]"
+  causal_chain: "不正値混入→cmd_complete_gate BLOCK→完了処理停止。書込み時バリデーション→不正値構造的排除=正の複利"
+  timestamp: "2026-05-21T19:52:00"
+- cmd_id: cmd_2943
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。dashboard_update.sh exit=1根因修正。3セッション連続エスカレーション。SKILL.md 5回改良未解消。bash -xで発生箇所特定→修正の正攻法"
+  observations:
+    - "事実: SKILL.md auto-improve履歴にexit=1パターン3件(cmd_2739/cmd_karo_test/cmd_2514)"
+    - "事実: AC1 dry_run→AC2実行→AC3テストの順序で検証。dry_run事前検証はリスク低減"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_2943]] -> [[dashboard_update_exit1]] -> [[dashboard_reliability_improvement]]"
+  causal_chain: "exit=1→ダッシュボード更新停止→殿への状況報告遅延。根因修正→exit=0恒久化=正の複利"
+  timestamp: "2026-05-21T19:53:00"
+- cmd_id: cmd_2941
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。assumption_invalidation dict正規化+歴史的誤形互換shim。テスト42件PASS。lesson_candidate有(誤形互換shim設計)"
+  observations:
+    - "事実: report_field_set.shでassumption_invalidation 'false'→{found:false,affected_cmds:[],detail:''}正規化追加"
+    - "事実: 歴史的誤形'assumption_invalidation found false'(4引数)も互換shimで吸収"
+    - "事実: テスト5種42件以上全PASS(bash -n/bats 16/bats 4/bats 22/smoke)"
+    - "事実: lesson_candidate found=true。誤形互換shimパターンの教訓。register_recommended: true"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2941]] -> [[assumption_invalidation_str_type]] -> [[dict_normalization_fix]]"
+  causal_chain: "string型入力→gate dict型チェックFAIL→3セッション連続。正規化shim→全入力パターンdict化→FAIL構造的消滅=正の複利"
+  timestamp: "2026-05-21T19:55:00"
+- cmd_id: cmd_2944
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。cmd-complete lesson_done_missing+ac_version d41d8cd9修正。karo_directインターフェース統一の続き(cmd_2939兄弟)。assumptions verified"
+  observations:
+    - "事実: cmd_2939でcmd_id/parent_cmd補完済み。ac_version自動設定は未対応(grep確認)"
+    - "事実: d41d8cd9=空文字列md5。karo_direct配備でac_version未設定が根因"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2944]] -> [[karo_direct_ac_version_missing]] -> [[cmd_complete_reliability]]"
+  causal_chain: "karo_direct→ac_version未設定→d41d8cd9→mismatch BLOCK。自動補完→一致保証→BLOCK構造的消滅=正の複利"
+  timestamp: "2026-05-21T19:57:00"
+- cmd_id: cmd_2942
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。binary_checks result yes/noバリデーションテスト更新。本体はHEAD実装済み→テスト仕様固定。66テストPASS"
+  observations:
+    - "事実: report_field_set.sh本体はHEADでyes/no以外BLOCK済み。テスト更新のみ(files_modified=1件)"
+    - "事実: test_report_field_set_bc_validation.bats 15PASS。true/false/PASS/FAIL拒否+yes/no許可"
+    - "事実: 関連テスト合計66件PASS(bc_validation15+verdict_status+validation+multiline27+yaml_field_set24)"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2942]] -> [[binary_checks_result_validation]] -> [[test_specification_lock]]"
+  causal_chain: "本体実装済み→テスト未追従→仕様drift可能性。テスト追加→仕様固定→退化防止=正の複利"
+  timestamp: "2026-05-21T19:59:00"
+- cmd_id: cmd_2943
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。dashboard_update.sh report探索parent_cmdフォールバック追加。exit=1根因解消。assumption_invalidation有(ファイル名=cmd_id前提崩壊)。lesson_candidate有"
+  observations:
+    - "事実: reportファイル名にcmd_idを含まないケース(karo_direct配備)でfilename検索miss→exit=1"
+    - "事実: parent_cmd行のrg先行絞り込み→全archive YAML parse回避(L511適用。39秒→即座)"
+    - "事実: cmd_2514 dry-run exit=0+cmd_2739実更新exit=0+bats 3PASS+bash -n PASS"
+    - "事実: assumption_invalidation found=true。cmd_2514でファイル名≠parent_cmdの実例報告"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2943]] -> [[dashboard_update_exit1]] -> [[parent_cmd_fallback_search]]"
+  causal_chain: "filename一致miss→report未発見→exit=1→ダッシュボード更新停止。parent_cmdフォールバック→全report到達可能→exit=1構造的消滅=正の複利"
+  timestamp: "2026-05-21T20:01:00"
+- cmd_id: cmd_2945
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。lesson_impact.tsvフィードバック還流修正。useful_rate 16.7% 3セッション連続ALERT。全件pending=書戻し不発。免疫系修復"
+  observations:
+    - "事実: lesson_impact.tsv末尾20行全件status=pending, helpful_count=0(現物確認)"
+    - "事実: deprecation_scan --candidates-onlyで退役候補0件=退役サイクル停止"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2945]] -> [[feedback_not_flowing_to_impact_tsv]] -> [[lesson_retirement_cycle_fix]]"
+  causal_chain: "フィードバック未還流→退役スキャン不能→低useful教訓永続注入→CTX浪費。書戻し修正→退役サイクル正常化→注入品質自動改善=正の複利"
+  timestamp: "2026-05-21T20:03:00"
+- cmd_id: cmd_2945
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。lesson_impact.tsvフィードバック還流+deprecation_scan集計順序修正。50テストPASS。免疫系修復"
+  observations:
+    - "事実: cmd_complete_gateにlessons_useful→lesson_impact.tsv USEFUL/NOT_USEFUL書戻し追加"
+    - "事実: deprecation_scanのPENDING除外+feedback行統合で退役候補正しく検出"
+    - "事実: テスト50件PASS(cmd_complete_gate 39+deprecation_scan 6+record_feedback 3+lesson_impact 2)"
+    - "事実: lessons_useful L625/L217/L295 useful=true。既存helper活用+yaml.dump回避"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2945]] -> [[feedback_flow_restored]] -> [[lesson_retirement_cycle_normalized]]"
+  causal_chain: "全件pending→書戻し追加→USEFUL/NOT_USEFUL反映→退役スキャン機能復活→低useful教訓自動退役=正の複利(免疫系修復)"
+  timestamp: "2026-05-21T20:05:00"
+- cmd_id: cmd_2944
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: tobisaru
+  findings_summary: "4観点OK。_compute_ac_hash item境界バグ修正(d41d8cd9根因解消)+SKILL.md誤エントリ削除。34テストPASS。lesson_candidate有"
+  observations:
+    - "事実: _compute_ac_hash()がchecks[]内の'- check:'をitem境界と誤判定→desc=''→md5('')=d41d8cd9"
+    - "事実: ac_item_indent追跡で境界制御。check文字列をdescriptionフォールバックとして使用"
+    - "事実: test_deploy_task_ac_version.bats 34/34 PASS(新規3件: karo_direct AC検証)"
+    - "事実: SKILL.md誤auto-improve(git hash上書き手順)を削除。エスカレーション直接原因除去"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2944]] -> [[_compute_ac_hash_item_boundary_bug]] -> [[ac_version_mismatch_resolved]]"
+  causal_chain: "checks[]行をitem境界誤判定→desc空→d41d8cd9→ac_version不一致BLOCK。ac_item_indent+checkフォールバック→意味あるハッシュ→BLOCK構造的消滅=正の複利"
+  timestamp: "2026-05-21T20:22:00"
+- cmd_id: cmd_training_L7_v3_hayate_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き初回)。AC5注入確認済み(2箇所)。修行×L7二重複利の実証ラウンド"
+  observations:
+    - "事実: task YAMLにAC5が2箇所含まれる(AC5定義+AC3 bcリスト内AC5言及)"
+    - "事実: AC5=[[概念名]] alias形式提案+insight_write蓄積+grep検証。L7パイプライン接続済み"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_training_L7_v3_hayate_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→忍者がaliases候補蓄積→auto-promoteパイプライン→aliases品質向上=修行×L7二重複利の初回実証"
+  timestamp: "2026-05-21T20:30:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き)。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: kagemaru task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_kagemaru_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→aliases蓄積→L7パイプライン接続=二重複利"
+  timestamp: "2026-05-21T20:31:00"
+- cmd_id: cmd_training_L7_v3_saizo_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き)。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: saizo task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_saizo_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→aliases蓄積→L7パイプライン接続=二重複利"
+  timestamp: "2026-05-21T20:32:00"
+- cmd_id: cmd_training_L7_v3_hanzo_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き)。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: hanzo task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_hanzo_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→aliases蓄積→L7パイプライン接続=二重複利"
+  timestamp: "2026-05-21T20:33:00"
+- cmd_id: cmd_training_L7_v3_kotaro_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き)。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: kotaro task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_kotaro_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→aliases蓄積→L7パイプライン接続=二重複利"
+  timestamp: "2026-05-21T20:34:00"
+- cmd_id: cmd_training_L7_v3_tobisaru_5_20260521202900
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R5(AC5付き)。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: tobisaru task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_tobisaru_5]] -> [[L7_AC5_first_round]] -> [[aliases_quality_improvement]]"
+  causal_chain: "AC5注入→aliases蓄積→L7パイプライン接続=二重複利"
+  timestamp: "2026-05-21T20:35:00"
+- cmd_id: cmd_training_L7_v3_hayate_5_20260521202900
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。ninja_monitor mktemp失敗時ガード追加+テスト追加。★AC5初回実証成功: [[training_auto_deploy]] alias蓄積+pending 26→27確認"
+  observations:
+    - "事実: AC5実行確認。insight_writeで[[training_auto_deploy]] alias蓄積。pending 26→27(+1)"
+    - "事実: ninja_monitor.sh _handle_training_auto_deployにmktemp/書込失敗ガード追加"
+    - "事実: bc AC1-5+commit=12項目全yes。AC5 bcが初めてyes記入された"
+    - "事実: lessons_useful L625/L112/L623/L351/L544 useful=true(5件)。適切な教訓活用"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_hayate_5]] -> [[AC5_first_proof]] -> [[L7_training_pipeline_connected]]"
+  causal_chain: "AC5注入→忍者がaliases蓄積実行→pending+1→auto-promoteパイプラインに入力到達。修行×L7二重複利の初回実証=正の複利"
+  timestamp: "2026-05-21T20:36:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_5_20260521202900
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。dashboard_update.sh mapping型commands対応。AC5実行(pending 25→26)。lesson_candidate有(fixture output assert)"
+  observations:
+    - "事実: iter_commands()でmapping/list両対応。mapping時keyをidとして補完"
+    - "事実: AC5実行。[[dashboard_update_title_resolution]] alias蓄積。pending+1"
+    - "事実: bc AC1-5+commit=12項目全yes。bats 3/3 PASS"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_kagemaru_5]] -> [[mapping_commands_support]] -> [[dashboard_title_fix]]"
+  causal_chain: "mapping型commands→iter例外→title欠落。normalizer→両形式対応→title表示復活=正の複利"
+  timestamp: "2026-05-21T20:38:00"
+- cmd_id: cmd_training_L7_v3_saizo_5_20260521202900
+  review_type: report
+  verdict: FAIL
+  gate_result: null
+  report_ninja: saizo
+  findings_summary: "FAIL。報告YAML不在"
+  observations:
+    - "事実: saizo_report_cmd_training_L7_v3_saizo_5_20260521202900.yamlが存在しない"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_saizo_5]] -> [[report_yaml_missing]] -> [[FAIL]]"
+  causal_chain: "報告YAML不在→レビュー不可→FAIL"
+  timestamp: "2026-05-21T20:39:00"
+- cmd_id: cmd_2946
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7 DIRECT昇格コードパス本番未発火の根因調査+修正。テストPASS≠本番動作(Phase 3)。assumptions verified"
+  observations:
+    - "事実: cmd_2938テスト21/21 PASSだが本番DIRECT昇格0件。git diff semantic-map.md=aliases追加なし"
+    - "事実: training source insight 3件蓄積済みだがaliases未昇格=発火条件不一致"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2946]] -> [[PENDING_ALIAS_DIRECT_production_gap]] -> [[L7_pipeline_final_fix]]"
+  causal_chain: "テストPASS→本番未動作→テスト/本番乖離。発火条件修正→本番昇格→修行×L7接続の最後のピース=正の複利"
+  timestamp: "2026-05-21T20:41:00"
+- cmd_id: cmd_training_L7_v3_hanzo_5_20260521202900
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  findings_summary: "4観点OK。SKILL.md 3件同期(dashboard-update/report-write/verdict-check)。AC5実行([[gate_context_freshness]] alias蓄積)"
+  observations:
+    - "事実: SKILL.md 3件にauto-improve追加+注意ポイント記載。gate_skill_script_refs WARN残余4件は別cmd"
+    - "事実: AC5実行。INS-20260521-203558003-c590で[[gate_context_freshness]] alias蓄積"
+    - "事実: bc AC1-5+commit=12項目全yes"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_hanzo_5]] -> [[SKILL_md_sync]] -> [[gate_WARN_partial_resolution]]"
+  causal_chain: "SKILL.md未追従→gate WARN→エージェントが古い仕様参照。3件同期+AC5蓄積→WARN削減+aliases品質向上=正の複利"
+  timestamp: "2026-05-21T20:42:00"
+- cmd_id: cmd_training_L7_v3_tobisaru_5_20260521202900
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: tobisaru
+  findings_summary: "4観点OK。lesson_write_karo.sh flock外race condition修正+None安全。AC5実行。lesson_candidate有"
+  observations:
+    - "事実: flock取得前のgrep -c→flock後のlen(lessons)>=35チェックに移動。原子性保証"
+    - "事実: yaml.safe_load None対策(if data is None: data={})追加"
+    - "事実: bc AC1-5+commit=12項目全yes。AC5実行済み"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_tobisaru_5]] -> [[flock_race_condition_fix]] -> [[lesson_write_atomicity]]"
+  causal_chain: "flock外カウント→並列追加で上限超え。flock内チェック→原子性保証=正の複利"
+  timestamp: "2026-05-21T20:44:00"
+- cmd_id: cmd_2947
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。auto-clear競合バグ修正。本セッション3件で報告YAML消失(hayate R4/saizo R4/saizo R5)。status=done+報告YAML存在の二重条件。実害バグ"
+  observations:
+    - "事実: saizo R5 FAIL(YAML不在)の根因がこのauto-clear競合バグ。軍師FAILの原因判明"
+    - "事実: 家老掲示板blt_20260521_203858で3件報告。agent_state busy修正(3beefbd0)ではtiming問題未解決"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2947]] -> [[auto_clear_timing_race]] -> [[report_yaml_preservation]]"
+  causal_chain: "status=done検出→即/clear→報告YAML未作成→消失→GATE停止。二重条件→報告完了待機→消失防止=正の複利"
+  timestamp: "2026-05-21T20:45:00"
+- cmd_id: cmd_training_L7_v3_kotaro_5_20260521202900
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kotaro
+  findings_summary: "4観点OK。gate_skill_script_refs.sh CACHE_TTL 2s→30s(35倍高速化)。AC5実行(pending+1)。lesson_candidate有"
+  observations:
+    - "事実: 926ms→26ms。startup gate複数呼び出しでPythonスキャン1回→キャッシュ"
+    - "事実: AC5実行。[[gate_skill_script_refs]] alias蓄積。pending 31→32(+1)"
+    - "事実: bc AC1-5+commit=12項目全yes。1行変更(TTL値)"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_kotaro_5]] -> [[gate_cache_ttl_optimization]] -> [[startup_performance]]"
+  causal_chain: "TTL 2s=事実上無効→毎回Python起動→startup 3-5秒浪費。TTL 30s→キャッシュ有効→35倍高速化=正の複利"
+  timestamp: "2026-05-21T20:47:00"
+- cmd_id: cmd_2947
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。auto-clear競合バグ修正。safe_send_clear共通経路にreport存在ゲート追加。17テストPASS。saizo R5 FAIL根因修正"
+  observations:
+    - "事実: safe_send_clearにcan_send_clear_with_report_gate追加。done+YAML未存在→REPORT-MISSING-BLOCK"
+    - "事実: bats 17/17 PASS。存在/不在両パターン検証"
+    - "事実: L625/L278 useful=true。同型事故教訓を直接適用"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2947]] -> [[auto_clear_report_gate]] -> [[report_yaml_loss_prevented]]"
+  causal_chain: "done→即clear→YAML消失。共通ゲート→YAML存在確認→消失構造的防止=正の複利"
+  timestamp: "2026-05-21T20:49:00"
+- cmd_id: cmd_2946
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。★L7 DIRECT昇格本番発火修正。根因2つ(source filter+近傍概念解決)。本番同等実行でaliases 4件昇格確認。semantic-map+index反映済み。23テストPASS"
+  observations:
+    - "事実: 根因1: source filterがL7R形式(hanzo-L7R5等)を未許可→training source認定追加"
+    - "事実: 根因2: DIRECT targetが概念ID完全一致でない→best_similar_concept閾値照合で近傍概念に昇格"
+    - "事実: 本番同等実行でPENDING_ALIAS_DIRECT発火。gate_context_freshness→gate_quality_frameworkにaliases 4件追加"
+    - "事実: assumption_invalidation有。cmd_2938テストPASS≠本番発火(fixture不足が根因)"
+    - "事実: lesson_candidate有。修行sourceの実値をテストfixtureへ入れよ"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2946]] -> [[L7_DIRECT_production_fix]] -> [[training_aliases_pipeline_complete]]"
+  causal_chain: "source filter未許可+概念完全一致限定→本番DIRECT昇格0件。source拡張+近傍照合→本番発火→修行×L7パイプライン完全接続=正の複利"
+  timestamp: "2026-05-21T20:51:00"
+- cmd_id: cmd_training_L7_v3_hayate_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: hayate task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_hayate_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6=DIRECT昇格本番発火後の初ラウンド。aliases蓄積→即昇格が期待できる=加速フェーズ"
+  timestamp: "2026-05-21T20:55:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: kagemaru task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_kagemaru_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6加速フェーズ。aliases蓄積→DIRECT昇格→品質向上=正の複利"
+  timestamp: "2026-05-21T20:56:00"
+- cmd_id: cmd_training_L7_v3_saizo_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: saizo task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_saizo_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6加速フェーズ。aliases蓄積→DIRECT昇格→品質向上=正の複利"
+  timestamp: "2026-05-21T20:57:00"
+- cmd_id: cmd_training_L7_v3_hanzo_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: hanzo task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_hanzo_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6加速フェーズ"
+  timestamp: "2026-05-21T20:58:00"
+- cmd_id: cmd_training_L7_v3_kotaro_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: kotaro task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_kotaro_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6加速フェーズ"
+  timestamp: "2026-05-21T20:59:00"
+- cmd_id: cmd_training_L7_v3_tobisaru_6_20260521205341
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L7修行R6。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: tobisaru task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L7_v3_tobisaru_6]] -> [[L7_R6_training]] -> [[aliases_quality_improvement]]"
+  causal_chain: "R6加速フェーズ"
+  timestamp: "2026-05-21T21:00:00"
+- cmd_id: cmd_training_L7_v3_hayate_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: hayate
+  findings_summary: "4観点OK。★DIRECT source=manual不発修正。本番3件発火+pending 30→27。AC5実行(pending+1)。24テストPASS"
+  observations:
+    - "事実: source許可判定がdirect alias構文解析より前に実行→source=manual候補を捨てていた"
+    - "事実: 本番PENDING_ALIAS_DIRECT 3件発火。pending 30→27(3件昇格)"
+    - "事実: AC5実行。pending 27→28(+1)"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_training_L7_v3_hayate_6]] -> [[manual_source_direct_fix]] -> [[L7_pipeline_acceleration]]"
+  causal_chain: "source=manual未許可→DIRECT不発。順序変更→manual候補も昇格→パイプライン加速=正の複利"
+  timestamp: "2026-05-21T21:02:00"
+- cmd_id: cmd_training_L7_v3_kagemaru_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。auto-clear report gate verdict未検証穴修正。AC5実行"
+  observations:
+    - "事実: verdict未検証reportでclear許可される穴を修正"
+    - "事実: bc AC1-5+commit全yes。AC5実行"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_kagemaru_6]] -> [[auto_clear_verdict_gap]] -> [[report_gate_strengthened]]"
+  causal_chain: "verdict未検証→不完全reportでclear→品質低下。verdict検証追加→完全report保証=正の複利"
+  timestamp: "2026-05-21T21:03:00"
+- cmd_id: cmd_training_L7_v3_tobisaru_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: tobisaru
+  findings_summary: "4観点OK。gate_autofix_proposal CACHE_TTL改善+テスト追加。AC5実行"
+  observations:
+    - "事実: gate_autofix_proposal.sh CACHE_TTL改善。bc全yes"
+    - "事実: AC5実行。aliases蓄積済み"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_tobisaru_6]] -> [[autofix_cache_optimization]] -> [[gate_performance]]"
+  causal_chain: "CACHE_TTL短すぎ→毎回フルスキャン。TTL延長→キャッシュ有効=正の複利"
+  timestamp: "2026-05-21T21:06:00"
+- cmd_id: cmd_training_L7_v3_saizo_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: saizo
+  findings_summary: "4観点OK。report_field_set self_gate_checkバリデーション強化。AC5実行(pending+1)"
+  observations:
+    - "事実: self_gate_check未知キーtypo事前BLOCK化。bc全yes"
+    - "事実: AC5実行。[[report_quality_protocol]] alias蓄積。pending 30→31"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_saizo_6]] -> [[self_gate_check_typo_block]] -> [[report_quality]]"
+  causal_chain: "未知キーtypo→self_gate_check素通り→品質低下。事前BLOCK→typo構造的排除=正の複利"
+  timestamp: "2026-05-21T21:08:00"
+- cmd_id: cmd_training_L7_v3_hanzo_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  findings_summary: "4観点OK。insight_write.sh Python2回→1回統合(12%高速化)。21テストPASS。AC5実行"
+  observations:
+    - "事実: 2ファイル読込みを1回のPythonプロセスに統合。~12%高速化"
+    - "事実: bc全yes。AC5実行済み"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_hanzo_6]] -> [[insight_write_python_consolidation]] -> [[write_performance]]"
+  causal_chain: "Python2回起動→1回統合→I/O削減=正の複利"
+  timestamp: "2026-05-21T21:10:00"
+- cmd_id: cmd_training_L7_v3_kotaro_6_20260521205341
+  review_type: report
+  verdict: LGTM
+  gate_result: null
+  report_ninja: kotaro
+  findings_summary: "4観点OK。gate_skill_script_refs 2ファイルキャッシュ→単一ファイル統合+原子書込み。AC5実行"
+  observations:
+    - "事実: CACHE_OUT+CACHE_CODE→.cache単一ファイル統合。原子書込み実現"
+    - "事実: bc全yes。AC5実行済み"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_training_L7_v3_kotaro_6]] -> [[cache_atomic_consolidation]] -> [[gate_reliability]]"
+  causal_chain: "2ファイルキャッシュ→非原子→部分更新リスク。単一ファイル原子書込み→一貫性保証=正の複利"
+  timestamp: "2026-05-21T21:17:00"
+- cmd_id: cmd_training_L4_auto_202605212127_kotaro
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。L4 auto修行。AC5注入確認済み(2箇所)"
+  observations:
+    - "事実: kotaro task YAMLにAC5 2箇所確認"
+  finding_categories: [assumptions]
+  origin: "[[cmd_training_L4_auto_kotaro]] -> [[L4_auto_training]] -> [[ninja_growth]]"
+  causal_chain: "auto修行→インフラ改善+aliases蓄積=二重複利"
+  timestamp: "2026-05-21T21:27:00"
+- cmd_id: self_study_adaptive_gating_bucket_20260521
+  review_type: self_study
+  findings_summary: "修行cmdがadaptive gating冷え検知を支配→simulation偽陽性。prod_window分離でD0修正"
+  observations:
+    - "事実: simulation冷え0/10は修行cmd比率が根因。本番cmdのみでは4/10(正常)"
+    - "事実: adversarial冷え0/10は本番cmdでも真。修行cmd分離後も変わらず"
+    - "事実: WARN20件(冷え観点未反映)は全て修行cmd起因"
+  finding_categories: [assumptions, numbers, simulation]
+  cs_checklist:
+    CS1: "OK — review_log全件+gate出力を現物確認"
+    CS2: "OK — 自システムデータ(67修行cmd/10件窓)で偽陽性を実証"
+    CS3: "OK — gate_gunshi_startup.sh Python集計ロジックを直接修正"
+    CS4: "OK — D0実装+テスト+commit fc3c1953+家老通知"
+    CS5: "OK — adversarial冷えは本番でも真→次サイクルで再活性化手段を検討"
+    CS6: "OK — 因果鎖: 修行cmd集中→冷え偽陽性→WARN疲れ→本番見落とし。分離=正の複利"
+  origin: "[[adaptive_gating]] -> [[training_cmd_ratio]] -> [[cold_false_positive]]"
+  causal_chain: "修行cmd集中→冷え偽陽性→WARN疲れ→本番見落としリスク。prod_window分離で偽陽性根絶=正の複利"
+  proposals:
+    - id: GP-249
+      description: "adversarial冷え真陽性対策: 本番cmdレビュー時にadversarial観点強制チェック追加"
+      status: pending
+      defense_level: 4
+  timestamp: "2026-05-21T23:30:00"
+- cmd_id: cmd_2952
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。SKILL.md 5件のscript変更追従更新。WARN5件現物確認済み。cmd_2948同パターン"
+  observations:
+    - "事実: gate_skill_script_refs.sh実行でWARN 5件確認(bulletin_write.sh×3, deploy_task.sh×2)"
+    - "事実: 全対象ファイル8件実在確認済み"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2952]] -> [[gate_skill_script_refs]] -> [[SKILL.md追従]]"
+  causal_chain: "cmd_2949-2951のscript変更→SKILL.md陳腐化→startup gate WARN 3セッション連続→追従更新で正の複利"
+  timestamp: "2026-05-22T00:20:00"
+- cmd_id: cmd_2953
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  ambiguity_points: none
+  findings_summary: "RC。AC4がscope外(修行ラウンド実行は家老管轄)。AC1-3はOK"
+  observations:
+    - "事実: 944md中111リンク含有/833孤立(88%)をrg -l実測で確認。assumptions正確"
+    - "事実: AC4『修行1ラウンド後にgit diffで増加確認』は家老の配備に依存し忍者scope外"
+  finding_categories: [assumptions, simulation]
+  origin: "[[cmd_2953]] -> [[ac_scope_check]] -> [[training_target_obsidian]]"
+  causal_chain: "AC4が家老配備依存→忍者scope外→FAIL形骸化リスク。AC分離で正の複利"
+  timestamp: "2026-05-22T00:22:00"
+- cmd_id: cmd_2952
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "LGTM。SKILL.md 5件追従更新。precheck全PASS。AC6件全yes"
+  observations:
+    - "事実: gate_skill_script_refs.sh WARN 5→0件(commit 0fac49ed確認)"
+    - "事実: lessons_useful 10件記入(useful 4件)。L602(karo-direct旧仕様事故)が有用と判定"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2952]] -> [[SKILL.md追従]] -> [[gate_WARN解消]]"
+  causal_chain: "script変更→SKILL.md陳腐化→WARN連続→追従更新→WARN根絶=正の複利"
+  timestamp: "2026-05-22T00:25:00"
+  timestamp: "2026-05-21T21:28:00"
+- cmd_id: cmd_2953
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  changed_lines: 200
+  findings_summary: "LGTM。修行target孤立Markdown優先。RC(AC4 scope外)をdecision_candidate+assumption_invalidationで適切記録"
+  observations:
+    - "事実: changed_lines=200でadversarial review実施。既存target_path尊重+fallback設計で安全"
+    - "事実: lesson_candidate有(ACスコープ完結性教訓)。register_recommended: true"
+    - "事実: RC指摘をpurpose_gap/decision_candidate/assumption_invalidationの3箇所で記録。忍者の対応品質高"
+  finding_categories: [assumptions, simulation, adversarial]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "deploy_task.sh拡張は既存fallback維持。markdown_link_counts.sh独立ファイルで副作用限定。revert可能"
+  origin: "[[cmd_2953]] -> [[obsidian孤立]] -> [[修行target改善]]"
+  causal_chain: "88%孤立→修行target孤立優先→ラウンド毎リンク増加→ネットワーク密度複利。RC反映で忍者scope完結=正の複利"
+  timestamp: "2026-05-22T00:28:00"
+- cmd_id: cmd_2954
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: N/A
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "RC(urgent)。AC2がファイル間直接リンク=品質リスク大。殿との議論で概念ハブ方式確定。ファイル→[[概念名]]のみが正解"
+  observations:
+    - "事実: 46概念は既に1連結成分(related_conceptsで全連結)。概念間リンク追加は不要"
+    - "事実: 殿指摘『ノイズ1件で全汚染』。ファイル間直接リンクは因果不明でノイズリスク"
+    - "事実: 正しい設計=各ファイルに[[概念名]]のみ追記。概念がハブ。2ホップで全関連ファイルに到達"
+  finding_categories: [assumptions, premortem, north_star]
+  origin: "[[cmd_2954]] -> [[殿指摘_リンク品質]] -> [[概念ハブ方式]]"
+  causal_chain: "ファイル間直接リンク→因果不明→ノイズ混入→全リンク信頼崩壊。概念ハブ方式→品質保証+2ホップ到達=正の複利"
+  timestamp: "2026-05-22T00:45:00"
+- cmd_id: cmd_2955
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。cmd_2954 RC反映。概念名リンク方式(スター型)。殿の結論が正確に設計反映"
+  observations:
+    - "事実: AC2にファイル間直接リンク禁止を明記。概念名[[label]]のみ挿入"
+    - "事実: 240 resources全実在(先行検証済み)。SSOT品質はsemantic_index_driftで別途担保"
+  finding_categories: [assumptions, simulation, north_star]
+  origin: "[[cmd_2955]] -> [[cmd_2954_RC]] -> [[概念ハブ方式確立]]"
+  causal_chain: "cmd_2954直接リンク設計→RC→概念名リンクv2→品質保証+スター型ネットワーク=正の複利"
+  timestamp: "2026-05-22T00:50:00"
+- cmd_id: cmd_2956
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。karo_direct修行配備parent_cmd null根因修正。LG014(道具のバグ)即対応。3件同一パターン"
+  observations:
+    - "事実: kagemaru/saizo/tobisaruの3件でparent_cmd=null同一パターン。軍師inboxでも3件確認"
+    - "事実: deploy_task.sh risk:mediumだが修正範囲をkaro_direct parent_cmd設定に限定"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_2956]] -> [[parent_cmd_null_3件]] -> [[deploy_task_karo_direct_bug]]"
+  causal_chain: "karo_direct配備→parent_cmd未伝搬→null設定→gate FAIL→修行停止。根因修正で配備信頼性恒久向上=正の複利"
+  timestamp: "2026-05-22T00:58:00"
+- cmd_id: cmd_2955
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "LGTM。概念ハブ方式で134 resources処理。+32ファイルがネットワーク参加(111→143)。孤立率88→85%"
+  observations:
+    - "事実: before rg -l=518→after=559(kagemaru報告値)。独自計測: リンク含有111→143(+32)"
+    - "事実: 再dry-run changed_files=0(冪等性確認済み)。外部パスは安全規則で除外(正しい判断)"
+    - "事実: lesson_candidate有(自動生成resource上書き→再dry-run必須)"
+  finding_categories: [assumptions, numbers, north_star]
+  origin: "[[cmd_2955]] -> [[概念ハブリンク]] -> [[孤立率削減]]"
+  causal_chain: "SSOT概念→ファイル[[概念名]]追記→backlinks可視化→孤立率3%削減→ネットワーク密度複利"
+  timestamp: "2026-05-22T01:03:00"
