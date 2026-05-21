@@ -34,6 +34,12 @@ The script acquires a singleton flock, stops all existing inbox_watcher processe
 Inputs are tmux pane options (`@agent_cli`), `scripts/lib/agent_config.sh`, and `scripts/lib/pane_lookup.sh`.
 Outputs are per-agent `logs/inbox_watcher_{agent}.log` files and running `inbox_watcher.sh` processes.
 
+## Implementation Trace
+
+- [[restart_watchers.sh]] is the implementation authority for the restart sequence: it takes the flock, stops watcher processes, launches each watcher, checks process liveness, checks `inotifywait`, then runs [[sync_pane_vars.sh]].
+- [[inbox_watcher.sh]] is the restarted daemon and owns mailbox wake-up delivery; this design only covers the batch restart wrapper.
+- [[agent_config.sh]] and [[pane_lookup.sh]] define the dynamic agent/pane boundary used by the launch loop.
+
 ## Known Gaps
 
 - **gap-1 (CLI fallback)**: The fallback value `"claude"` for `@agent_cli` may resolve to the auto-update binary at `~/.local/bin/claude` rather than the pinned `~/bin/claude`. Operations documentation states the pinned path is mandatory for manual invocations; the fallback may silently use an unpinned CLI.
