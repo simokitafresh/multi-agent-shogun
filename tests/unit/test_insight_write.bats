@@ -230,6 +230,8 @@ print('TEST FIXTURE SKIPPED')
 }
 
 @test "同一source繰返し: 閾値到達で将軍へbulletin通知する" {
+    # デバウンスファイルをクリア(前回テストの残存防止)
+    rm -f /tmp/shogun_insight_repeat_repeat_source.last
     cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'notify=%s\nposted_by=%s\ncontent=%s\n' "${BULLETIN_NOTIFY:-}" "$1" "$2" >> "$TEST_TMP/bulletin.log"

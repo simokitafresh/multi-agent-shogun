@@ -1013,7 +1013,7 @@ task:
     - AC1
 EOF
 
-    run deploy_task_lessons_only sasuke
+    USEFUL_RATE_MIN_SAMPLES=3 run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
     run awk -F'\t' '$5=="withheld"{print $4}' "$TEST_PROJECT/logs/lesson_impact.tsv"
