@@ -1332,3 +1332,36 @@ EOF
     [ "$task_version" = "$report_version" ]
     [ "$task_version" != "d41d8cd9" ]
 }
+
+@test "cmd_2956: training redeploy repairs null parent_cmd from cmd_id before template generation" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "training null parent repair"
+  task_type: exact
+  cmd_id: cmd_training_L7_v3_sasuke_3_20260522010101
+  task_id: cmd_2952_exact
+  parent_cmd: null
+  status: idle
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'training parent_cmd is repaired'
+EOF
+
+    run deploy_task_fast sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_field parent_cmd
+    [ "$output" = "cmd_training_L7_v3_sasuke_3_20260522010101" ]
+
+    run read_task_field task_id
+    [ "$output" = "cmd_training_L7_v3_sasuke_3_20260522010101_exact" ]
+
+    run read_task_field status
+    [ "$output" = "assigned" ]
+
+    [ -f "$TEST_PROJECT/queue/reports/sasuke_report_cmd_training_L7_v3_sasuke_3_20260522010101.yaml" ]
+    grep -Fq 'parent_cmd: cmd_training_L7_v3_sasuke_3_20260522010101' \
+        "$TEST_PROJECT/queue/reports/sasuke_report_cmd_training_L7_v3_sasuke_3_20260522010101.yaml"
+}

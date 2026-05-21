@@ -168,6 +168,7 @@ deploy_task_fast() {
 
         local task_file="$TEST_PROJECT/queue/tasks/${NINJA_NAME}.yaml"
         maybe_normalize_task_yaml "$task_file"
+        repair_training_parent_cmd_from_cmd_id "$task_file" || return 1
 
         if [ -n "$CMD_ID" ]; then
             if [ "$DIRECT_MODE" = true ]; then

@@ -1451,6 +1451,51 @@ TRAINING_TEMPLATE_PY
     log "direct_mode: training L4 template injected for ${cmd_id}"
 }
 
+deploy_task_is_nullish_value() {
+    local value="${1:-}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    value="${value%\"}"
+    value="${value#\"}"
+    value="${value%\'}"
+    value="${value#\'}"
+    case "${value,,}" in
+        ""|"null"|"none"|"~") return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+repair_training_parent_cmd_from_cmd_id() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local parent_cmd cmd_id task_id task_type status
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" parent_cmd cmd_id task_id task_type status 2>/dev/null)" || true
+
+    deploy_task_is_nullish_value "$parent_cmd" || return 0
+    [[ "${cmd_id:-}" =~ ^cmd_training_ ]] || return 0
+
+    local suffix="normal"
+    if [ "${task_type:-}" = "exact" ]; then
+        suffix="exact"
+    fi
+
+    yaml_field_set "$task_file" "task" "parent_cmd" "$cmd_id" \
+        || { log "FATAL: failed to repair training parent_cmd from cmd_id=${cmd_id}"; return 1; }
+
+    if deploy_task_is_nullish_value "$task_id" || [[ "$task_id" != "${cmd_id}_"* ]]; then
+        yaml_field_set "$task_file" "task" "task_id" "${cmd_id}_${suffix}" \
+            || { log "FATAL: failed to repair training task_id from cmd_id=${cmd_id}"; return 1; }
+    fi
+
+    if deploy_task_is_nullish_value "$status" || [ "$status" = "idle" ]; then
+        yaml_field_set "$task_file" "task" "status" "assigned" \
+            || { log "FATAL: failed to repair training status for cmd_id=${cmd_id}"; return 1; }
+    fi
+
+    log "training_parent_cmd_repair: parent_cmd=${cmd_id} task_id=${cmd_id}_${suffix}"
+}
+
 inject_training_target_path_from_alias_quality() {
     local task_file="$1"
     local cmd_id="$2"
@@ -6820,6 +6865,7 @@ deploy_task_main() {
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
     normalize_task_yaml "$task_yaml" || true
+    repair_training_parent_cmd_from_cmd_id "$task_yaml" || return $?
 
     if [ -n "$CMD_ID" ]; then
         deploy_lock_file="$(deploy_task_lock_path "$CMD_ID")"
