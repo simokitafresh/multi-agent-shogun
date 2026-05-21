@@ -133,11 +133,14 @@ append_causal_expansion() {
 llm_cache_key() {
     local llm_cmd="$1"
     local _key
-    # awk '{print $1}' を bash parameter expansion に置換: subprocess 1個削減（L324原則）
+    # cat "$index_path"→sha256sum を stat(mtime+size)に置換（L508: WSL2 NTFS I/O削減）
+    # インデックス全量read(O(file_size))→1 statコール(O(1))。同サイズ変更はSEMANTIC_NO_CACHE=1で回避可能
     _key=$({
         printf 'q=%s\n' "$query"
         printf 'cmd=%s\n' "$llm_cmd"
-        cat "$index_path"
+        stat -c '%Y %s' "$index_path" 2>/dev/null \
+            || stat -f '%m %z' "$index_path" 2>/dev/null \
+            || printf 'fallback\n'
     } | sha256sum)
     printf '%s' "${_key%% *}"
 }
