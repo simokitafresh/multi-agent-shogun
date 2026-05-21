@@ -419,6 +419,68 @@ fi
     [[ "$output" == *"PASS: verdict present → return 0 (allowed)"* ]]
 }
 
+# verdict値チェック: report存在+verdict不正値→return 1(clearブロック)
+@test "report_gate: invalid verdict blocks clear" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: done
+  task_id: cmd_test_verdict
+  parent_cmd: cmd_test_verdict
+  report_filename: kagemaru_report_cmd_test_verdict.yaml
+INNEREOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_verdict.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_verdict
+parent_cmd: cmd_test_verdict
+verdict: None
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+result=0
+can_send_clear_with_report_gate kagemaru "test_trigger" || result=$?
+wait 2>/dev/null
+
+if [ "$result" -eq 1 ]; then
+    echo "PASS: invalid verdict → return 1 (blocked)"
+else
+    echo "FAIL: expected return 1, got $result"
+    exit 1
+fi
+
+if grep -q "VERDICT-INVALID-BLOCK" "$LOG"; then
+    echo "PASS: invalid verdict log present"
+else
+    echo "FAIL: VERDICT-INVALID-BLOCK not logged"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: invalid verdict → return 1 (blocked)"* ]]
+    [[ "$output" == *"PASS: invalid verdict log present"* ]]
+}
+
 # cmd_2279: PSTREE-OVERRIDE-SKIP: task status=idleならbash subprocess有でもIDLE扱い
 @test "check_idle: PSTREE-OVERRIDE-SKIP when task status=idle" {
     run bash -lc '
@@ -789,6 +851,15 @@ cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_test.yaml" <<YAML
 worker_id: hayate
 parent_cmd: cmd_test
 status: done
+verdict: FILL_THIS
+YAML
+INVALID_BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "DONE-INVALID-REPORT" || INVALID_BLOCKED=$?
+
+cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_test.yaml" <<YAML
+worker_id: hayate
+parent_cmd: cmd_test
+status: done
 verdict: PASS
 YAML
 safe_send_clear "shogun:2.3" "hayate" "DONE-WITH-REPORT"
@@ -798,7 +869,9 @@ safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST"
 test "$(grep -c "CODEX-RESPAWN: hayate respawn-pane" "$LOG")" -eq 2
 test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
 test "$DONE_BLOCKED" -eq 1
+test "$INVALID_BLOCKED" -eq 1
 grep -q "REPORT-MISSING-BLOCK: hayate done but no report" "$LOG"
+grep -q "VERDICT-INVALID-BLOCK: hayate report verdict invalid" "$LOG"
 if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1

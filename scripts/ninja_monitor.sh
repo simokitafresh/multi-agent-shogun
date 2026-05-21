@@ -1052,13 +1052,25 @@ report_file_has_verdict() {
     local verdict
 
     verdict=$(yaml_field_get "$report_file" "verdict")
-    if [ -z "$verdict" ]; then
-        log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger}, report=$(basename "$report_file"))"
-        if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
-            log "WARN: inbox_write verdict_empty failed for $name"
-        fi
-        return 1
-    fi
+    case "$verdict" in
+        PASS|FAIL|PASS_NO_IMPROVEMENT)
+            return 0
+            ;;
+        "")
+            log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger}, report=$(basename "$report_file"))"
+            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
+                log "WARN: inbox_write verdict_empty failed for $name"
+            fi
+            return 1
+            ;;
+        *)
+            log "VERDICT-INVALID-BLOCK: $name report verdict invalid (${trigger}, verdict=${verdict}, report=$(basename "$report_file"))"
+            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告verdictが不正値(${verdict})。/clear保留中。対象: $(basename "$report_file")" verdict_invalid ninja_monitor >> "$LOG" 2>&1; then
+                log "WARN: inbox_write verdict_invalid failed for $name"
+            fi
+            return 1
+            ;;
+    esac
     return 0
 }
 
@@ -1846,8 +1858,8 @@ _handle_training_auto_deploy() {
     fi
 
     deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
-    if [ ! -x "$deploy_script" ]; then
-        log "TRAINING-AUTO-SKIP: deploy_task.sh not executable"
+    if [ ! -f "$deploy_script" ] || [ ! -r "$deploy_script" ]; then
+        log "TRAINING-AUTO-SKIP: deploy_task.sh not readable"
         return 1
     fi
 
@@ -4270,7 +4282,7 @@ done
 # ─── メインループ ───
 cycle=0
 prev_idle=""
-prev_gate_lines=0
+prev_gate_sig=""
 
 while true; do
     cycle=$((cycle + 1))
@@ -4557,7 +4569,8 @@ while true; do
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）
     current_idle=$(grep "^idle|" "$SCRIPT_DIR/queue/karo_snapshot.txt" 2>/dev/null | head -1 || echo "")
-    current_gate_lines=$(wc -l < "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo 0)
+    # gate_metrics変化検知: wc -l(全量134KB読込)→stat mtime+size(メタデータのみ) (L511同原則: 全量scan回避)
+    current_gate_sig=$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "0:0")
     # context_warn_sig: 5分間隔キャッシュ（context_freshness_check.sh毎サイクル起動→WSL2プロセス起動コスト削減）
     _ctx_warn_now=$EPOCHSECONDS
     if (( _ctx_warn_now - CONTEXT_WARN_SIG_CHECK_LAST >= CONTEXT_WARN_SIG_CHECK_INTERVAL )); then
@@ -4580,10 +4593,10 @@ while true; do
         UNPUSHED_COUNT_CHECK_LAST=$_unpushed_now
     fi
     current_unpushed_count="$UNPUSHED_COUNT_CACHE"
-    if [[ "$current_idle" != "$prev_idle" || "$current_gate_lines" != "$prev_gate_lines" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" || "$current_unpushed_count" != "$prev_unpushed_count" ]]; then
+    if [[ "$current_idle" != "$prev_idle" || "$current_gate_sig" != "$prev_gate_sig" || "$current_context_warn_sig" != "$prev_context_warn_sig" || "$current_ci_status" != "$prev_ci_status" || "$current_unpushed_count" != "$prev_unpushed_count" ]]; then
         bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" 2>/dev/null || true
         prev_idle="$current_idle"
-        prev_gate_lines="$current_gate_lines"
+        prev_gate_sig="$current_gate_sig"
         prev_context_warn_sig="$current_context_warn_sig"
         prev_ci_status="$current_ci_status"
         prev_unpushed_count="$current_unpushed_count"
