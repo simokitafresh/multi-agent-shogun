@@ -362,6 +362,11 @@ for i, item in enumerate(data):
                 echo "  誤: self_gate_check PASS" >&2
                 return 1
             fi
+            if [[ ! "$dot_key" =~ ^self_gate_check\.(lesson_ref|lesson_candidate|status_valid|purpose_fit)$ ]]; then
+                echo "BLOCK: self_gate_check の未知キーは禁止。必須キーのみ使え: lesson_ref / lesson_candidate / status_valid / purpose_fit" >&2
+                echo "  受信: $dot_key" >&2
+                return 1
+            fi
             if [[ "$val" != "PASS" ]] && [[ "$val" != "FAIL" ]]; then
                 echo "BLOCK: self_gate_check は PASS/FAIL のみ。受信: $val" >&2
                 return 1

@@ -68,6 +68,35 @@ teardown() {
     ! grep -Fq "lesson_candidate:" "$TEST_REPORT"
 }
 
+@test "lesson_candidate: found=trueの必須フィールド欠落はexit 1" {
+    run bash -c "echo '{found: true, title: 発見タイトル, project: infra}' | bash '$SCRIPT' '$TEST_REPORT' lesson_candidate - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: lesson_candidate.found=true だが必須フィールド欠落: detail"* ]]
+    ! grep -Fq "lesson_candidate:" "$TEST_REPORT"
+}
+
+@test "lesson_candidate: found=falseのno_lesson_reason欠落はexit 1" {
+    run bash -c "echo '{found: false}' | bash '$SCRIPT' '$TEST_REPORT' lesson_candidate - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: lesson_candidate.found=false だが no_lesson_reason"* ]]
+    ! grep -Fq "lesson_candidate:" "$TEST_REPORT"
+}
+
+@test "lesson_candidate: found=trueで必須フィールドありならexit 0" {
+    run bash -c "echo '{found: true, title: 発見タイトル, detail: 詳細, project: infra}' | bash '$SCRIPT' '$TEST_REPORT' lesson_candidate - 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+lc = data.get("lesson_candidate")
+assert lc["found"] is True, lc
+assert lc["title"] == "発見タイトル", lc
+assert lc["detail"] == "詳細", lc
+assert lc["project"] == "infra", lc
+PY
+}
+
 @test "self_gate_check: stdin string形式入力はexit 1" {
     run bash -c "echo 'all good' | bash '$SCRIPT' '$TEST_REPORT' self_gate_check - 2>&1"
     [ "$status" -eq 1 ]
@@ -85,6 +114,13 @@ with open(sys.argv[1]) as f:
 assert isinstance(data.get("self_gate_check"), dict), data
 assert data["self_gate_check"]["lesson_ref"] == "PASS", data
 PY
+}
+
+@test "self_gate_check: 未知キーtypoはexit 1" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' self_gate_check.lessonref PASS 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: self_gate_check の未知キーは禁止"* ]]
+    ! grep -Fq "lessonref" "$TEST_REPORT"
 }
 
 @test "assumption_invalidation: 欠落ブロックへのdot notation書込みは必須フィールドを補完する" {
