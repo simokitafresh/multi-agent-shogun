@@ -1410,9 +1410,16 @@ notify_idle_batch() {
         local target="${PANE_TARGETS[$name]}"
         local ctx
         ctx=$(get_context_pct "$target" "$name")
-        local last_task
-        last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "task_id")
-        [ -z "$last_task" ] && last_task=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "_ac_task_id")
+        # awk単一パス: yaml_field_get×2(task_id→_ac_task_id)→awk×1（write_state_file L2924同パターン）
+        local last_task=""
+        local _nt_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        if [ -f "$_nt_task_file" ]; then
+            last_task=$(awk '
+                /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                END { print t }
+            ' "$_nt_task_file")
+        fi
         details="${details}${name}(CTX:${ctx}%,last:${last_task}), "
         # pane最終3行を添付（家老がidle判断の直接証拠として使う）
         local pane_tail
@@ -1848,6 +1855,18 @@ _handle_training_auto_deploy() {
     fi
     if ! mkdir -p "$last_dir"; then
         log "TRAINING-AUTO-SKIP: failed to prepare cooldown state dir for ${name}: ${last_dir}"
+        return 1
+    fi
+    if [ -e "$last_file" ] && [ ! -f "$last_file" ]; then
+        log "TRAINING-AUTO-SKIP: cooldown state path is not a regular file for ${name}: ${last_file}"
+        return 1
+    fi
+    if [ -f "$last_file" ] && [ ! -w "$last_file" ]; then
+        log "TRAINING-AUTO-SKIP: cooldown state file is not writable for ${name}: ${last_file}"
+        return 1
+    fi
+    if [ ! -e "$last_file" ] && [ ! -w "$last_dir" ]; then
+        log "TRAINING-AUTO-SKIP: cooldown state dir is not writable for ${name}: ${last_dir}"
         return 1
     fi
     last=0
