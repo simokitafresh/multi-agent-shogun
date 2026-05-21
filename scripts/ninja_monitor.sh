@@ -998,6 +998,9 @@ can_send_clear_with_report_gate() {
         if ! report_file_has_verdict "$name" "$report_path" "$trigger"; then
             return 1
         fi
+        if ! report_notification_completed "$name" "$report_path" "$trigger"; then
+            return 1
+        fi
         return 0
     fi
 
@@ -1029,6 +1032,9 @@ can_send_clear_with_report_gate() {
                 if ! report_file_has_verdict "$name" "$matched_report" "$trigger"; then
                     return 1
                 fi
+                if ! report_notification_completed "$name" "$matched_report" "$trigger"; then
+                    return 1
+                fi
                 return 0
             fi
         done
@@ -1042,6 +1048,90 @@ can_send_clear_with_report_gate() {
     log "REPORT-MISSING-BLOCK: $name done but no report matching ${search_pattern} in reports/ or archive/reports/ (${trigger})"
     if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}がdone状態だが報告未作成。/clear保留中。" report_missing ninja_monitor >> "$LOG" 2>&1; then
         log "WARN: inbox_write report_missing failed for $name"
+    fi
+    return 1
+}
+
+report_notification_completed() {
+    local name="$1"
+    local report_file="$2"
+    local trigger="$3"
+    local report_epoch
+    local -a inbox_sources archive_sources
+
+    report_epoch=$(stat -c %Y "$report_file" 2>/dev/null || echo 0)
+    inbox_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
+
+    shopt -s nullglob
+    archive_sources=("$SCRIPT_DIR/archive/inbox/karo_"*.yaml)
+    shopt -u nullglob
+    inbox_sources+=("${archive_sources[@]}")
+
+    if python3 - "$name" "$report_epoch" "${inbox_sources[@]}" <<'PY'
+import datetime as _dt
+import os
+import sys
+
+import yaml
+
+name = sys.argv[1]
+try:
+    report_epoch = int(float(sys.argv[2]))
+except Exception:
+    report_epoch = 0
+sources = sys.argv[3:]
+
+
+def _timestamp_epoch(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        dt = _dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_dt.datetime.now().astimezone().tzinfo)
+    return int(dt.timestamp())
+
+
+for source in sources:
+    if not source or not os.path.isfile(source):
+        continue
+    try:
+        with open(source, "r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+    except Exception:
+        continue
+    messages = data.get("messages") if isinstance(data, dict) else None
+    if not isinstance(messages, list):
+        continue
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        if str(msg.get("type", "")) != "report_received":
+            continue
+        if str(msg.get("from", "")) != name:
+            continue
+        msg_epoch = _timestamp_epoch(msg.get("timestamp"))
+        if msg_epoch is None:
+            continue
+        # inbox_write persists the notification after ninja_done validates the
+        # report. Allow a small filesystem timestamp skew on WSL2/NTFS.
+        if report_epoch == 0 or msg_epoch >= report_epoch - 10:
+            sys.exit(0)
+
+sys.exit(1)
+PY
+    then
+        return 0
+    fi
+
+    log "REPORT-NOTIFY-MISSING-BLOCK: $name report exists and verdict is valid but karo report_received notification is missing (${trigger}, report=$(basename "$report_file"))"
+    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告YAMLは存在するが家老へのreport_received通知が未確認。/clear保留中。対象: $(basename "$report_file")" report_notification_missing ninja_monitor >> "$LOG" 2>&1; then
+        log "WARN: inbox_write report_notification_missing failed for $name"
     fi
     return 1
 }

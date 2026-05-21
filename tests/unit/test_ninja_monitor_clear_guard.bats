@@ -385,7 +385,7 @@ TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox"
 touch "$LOG"
 
 cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
@@ -402,6 +402,16 @@ task_id: cmd_test_verdict
 parent_cmd: cmd_test_verdict
 verdict: PASS
 INNEREOF
+now="$(date "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "kagemaru、任務完了。報告YAML確認されたし。"
+  from: kagemaru
+  id: msg_test
+  read: false
+  timestamp: "$now"
+  type: report_received
+INNEREOF
 
 log() { echo "$1" >> "'"$TMP_ROOT"'/test.log"; }
 
@@ -417,6 +427,62 @@ fi
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: verdict present → return 0 (allowed)"* ]]
+}
+
+# 家老通知チェック: report存在+verdict有効でもreport_received通知なし→return 1(clearブロック)
+@test "report_gate: missing karo report_received notification blocks clear" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: done
+  task_id: cmd_test_notify
+  parent_cmd: cmd_test_notify
+  report_filename: kagemaru_report_cmd_test_notify.yaml
+INNEREOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_notify.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_notify
+parent_cmd: cmd_test_notify
+verdict: PASS
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+result=0
+can_send_clear_with_report_gate kagemaru "test_trigger" || result=$?
+wait 2>/dev/null
+
+if [ "$result" -eq 1 ]; then
+    echo "PASS: missing report_received → return 1 (blocked)"
+else
+    echo "FAIL: expected return 1, got $result"
+    exit 1
+fi
+
+grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: missing report_received → return 1 (blocked)"* ]]
 }
 
 # verdict値チェック: report存在+verdict不正値→return 1(clearブロック)
@@ -817,6 +883,7 @@ SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue/inbox"
 touch "$LOG"
 
 check_idle() { return 0; }
@@ -861,6 +928,16 @@ worker_id: hayate
 parent_cmd: cmd_test
 status: done
 verdict: PASS
+YAML
+now="$(date "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "hayate、任務完了。報告YAML確認されたし。"
+  from: hayate
+  id: msg_test
+  read: false
+  timestamp: "$now"
+  type: report_received
 YAML
 safe_send_clear "shogun:2.3" "hayate" "DONE-WITH-REPORT"
 rm -f "$SCRIPT_DIR/queue/tasks/hayate.yaml"
