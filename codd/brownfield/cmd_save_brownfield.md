@@ -15,7 +15,7 @@ codd:
 
 - extract_output: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract`
 - extract_input: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract/extracted.md`
-- requirements_path: `skipped`
+- requirements_path: `docs/requirements/cmd_2762_cmd_save_requirements.md`
 - lexicon_path: `discovery mode`
 - diff_findings: 0
 - elicit_findings: 10
@@ -23,24 +23,30 @@ codd:
 
 # Findings
 
+## Cross-References
+
+- [[cmd_save.sh]] is the executable gate implementation for this report's subject; its header defines the interface as `bash scripts/cmd_save.sh <cmd_id>` and lists quality gate validation as a core check.
+- [[cmd_2762_cmd_save_requirements.md]] is the current brownfield requirements document; it defines FR-1 through FR-6 and SR-1 through SR-3 for command loading, gate enforcement, outcome logging, and shared-file safety.
+- [[growth-loop.md]] defines cmd_save.sh as the Shogun growth-loop enforcement point: BLOCK/WARN requires structured `environment_change` plus grep verification.
+- [[test_cmd_save_environment_change.bats]] covers the highest-risk `environment_change` behavior, including required structure, banned vague values, and grep-backed implementation proof.
+- [[test_cmd_save_small_consolidated.bats]] is the consolidated regression surface for cmd_save.sh behavior and preserves original cmd_save test cases through embedded test dispatch.
+
 <!-- codd:finding
 {"details": {"codd_status": "brownfield_target directory exists but no spec/plan/design documents were supplied to this elicitation", "context_hint": "CLAUDE.md mentions cmd_save.sh as '将軍cmd保存前チェック' with quality_gate q1-q3=BLOCK, q4_depth=WARNING"}, "id": "missing_requirements_spec", "kind": "missing_input", "name": "No requirements document provided for cmd_save", "question": "cmd_save.sh の要件定義書（機能要件・非機能要件）は存在するか？CoDD spec として生成済みか？", "rationale": "Elicitation cannot discover gaps without a requirements baseline. The brownfield target directory suggests CoDD adoption is planned but spec generation has not yet occurred.", "related_requirement_ids": [], "severity": "critical", "source": "greenfield"}
 -->
-## missing_requirements_spec - No requirements document provided for cmd_save
+## missing_requirements_spec - Requirements baseline now exists for cmd_save
 
-- approval: [ ] `missing_requirements_spec`
+- approval: [x] `missing_requirements_spec`
 - id: `missing_requirements_spec`
 - kind: `missing_input`
 - severity: `critical`
-- name: No requirements document provided for cmd_save
+- name: Requirements baseline now exists for cmd_save
 - question: cmd_save.sh の要件定義書（機能要件・非機能要件）は存在するか？CoDD spec として生成済みか？
-- rationale: Elicitation cannot discover gaps without a requirements baseline. The brownfield target directory suggests CoDD adoption is planned but spec generation has not yet occurred.
+- rationale: `docs/requirements/cmd_2762_cmd_save_requirements.md` now supplies the brownfield requirements baseline, so follow-up elicitation should evaluate this report against that file instead of treating requirements as absent.
 
 ```yaml
-context_hint: CLAUDE.md mentions cmd_save.sh as '将軍cmd保存前チェック' with quality_gate q1-q3=BLOCK,
-  q4_depth=WARNING
-codd_status: brownfield_target directory exists but no spec/plan/design documents
-  were supplied to this elicitation
+requirements_path: docs/requirements/cmd_2762_cmd_save_requirements.md
+codd_status: requirements baseline exists; design/plan completeness remains a separate check
 ```
 
 <!-- codd:finding
