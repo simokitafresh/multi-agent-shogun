@@ -680,3 +680,7 @@
 | cmd_2925 | semantic_searchの道具は存在するが全ロールの手順に未記載。家老karo.md=0件、忍者ashigaru.md/CLAUDE.md=0件、軍師gunshi.md=レビュー時0件。Phase 4: 手順にないものは使われない。全ロールのinstructions/recovery手順にsemantic概念確認ステップを追加する | infra | 05-21 | cmd_2925は家老task_haltにより中止。軍師レビ |
 | cmd_2928 | skill_auto_improve.shのreasonグルーピングがcmdID/ninjaID含みで同一根因が別パターン化。古いパターンのlast_failが更新されず14日カットオフで除外→Gate 20.7が12件中1件しか表示しない。グルーピングキーを正規化し、last_failを常時最新に更新する | infra | 05-21 | skill_auto_improveのFAIL reason |
 | cmd_2931 | 教訓注入のuseful率7.1%(95注入中2有用)。現在のkeyword/tag/pathマッチは意味を理解しない。semantic_searchが既にdeploy_task.shで概念を検出しているため、概念にrelated_lessonsフィールドを追加し、検出された概念の教訓をスコアブーストで優先注入する | infra | 05-21 | semantic概念related_lessonsとdepl |
+| cmd_2932 | 教訓健全度ALERT(useful_rate=16%)の根因修正。DM-Signal固有教訓(L510/L630/L594/L509/L097)がcross-project opt-inで全infra taskに漏洩→全件NOT_USEFUL。有効性0%教訓のauto-deprecated化+cross-project scoringにproject固有語比率フィルタを追加し、注入精度を改善する | infra | 05-21 | deploy_task.shのcross-project教訓 |
+| cmd_2933 | assumptions_bulletin_count_grep_evidenceのFP率66%(2/3)を改善する。claimにblt_XXXX(掲示板ID)を含む場合は掲示板自体が検証済みソースであり、grep証跡不要。bulletin ID引用をgrep_evidence_patの許容パターンに追加する | infra | 05-21 | cmd_save.shのbulletin件数claim検証で |
+| cmd_2935 | 殿が5/21 02:39にスクショで確認した事象: 1着信に対しnudge(inbox1)が2回送信される。既存のdebounce/dedup機構があるにもかかわらず二重送信が発生する根因を特定する | infra | 05-21 | 二重nudgeの根因は同一agentに複数のinbox_wa |
+| cmd_2936 | 修行中の忍者がAC5で概念名付きaliases候補を提案する形式を設計し、parse_pending_semantic_insightsがその形式を認識→概念名で直接マッチ→similarity_score不要でauto-promote可能にする。修行6忍者並列で高品質aliases蓄積を加速する | infra | 05-21 | 修行AC5を概念名付きalias行へ更新し、直接昇格を検証す |
