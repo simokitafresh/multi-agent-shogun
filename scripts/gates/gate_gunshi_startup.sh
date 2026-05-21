@@ -230,11 +230,23 @@ with open(path, encoding="utf-8") as fh:
 flush()
 
 reviews = [e for e in entries if e["review_type"] in ("draft", "report")]
-window = reviews[-10:]
+
+def is_training(entry):
+    for line in entry["text"]:
+        m = re.match(r"^- (?:cmd_id|id):\s*(.+)", line)
+        if m:
+            return m.group(1).strip().strip("'\"").startswith("cmd_training")
+    return False
+
+prod_reviews = [e for e in reviews if not is_training(e)]
+prod_window = prod_reviews[-10:] if prod_reviews else []
+all_window = reviews[-10:]
+
+# Primary: production-only window (accurate cold detection)
 for name, threshold, patterns in catalog:
     hits = 0
     zero_streak = 0
-    for entry in window:
+    for entry in prod_window:
         categories = {c.lower() for c in entry["finding_categories"]}
         haystack = "\n".join(entry["text"]).lower()
         matched = name in categories or any(re.search(p, haystack) for p in patterns)
@@ -243,12 +255,27 @@ for name, threshold, patterns in catalog:
             zero_streak = 0
         else:
             zero_streak += 1
-    print(f"{name}|{hits}|{len(window)}|{zero_streak}|{threshold}")
+    print(f"{name}|{hits}|{len(prod_window)}|{zero_streak}|{threshold}")
+
+# Secondary: all (including training) for reference
+for name, threshold, patterns in catalog:
+    hits = 0
+    for entry in all_window:
+        categories = {c.lower() for c in entry["finding_categories"]}
+        haystack = "\n".join(entry["text"]).lower()
+        if name in categories or any(re.search(p, haystack) for p in patterns):
+            hits += 1
+    print(f"ALL_{name}|{hits}|{len(all_window)}")
 PY
 )
     while IFS='|' read -r cat_name cat_hits cat_total cat_zero cat_threshold; do
         [ -n "$cat_name" ] || continue
-        echo "  ${cat_name}: ${cat_hits}/${cat_total}件, zero_streak=${cat_zero}/${cat_threshold}"
+        # ALL_ prefix = reference line (training+production combined)
+        if [[ "$cat_name" == ALL_* ]]; then
+            echo "  (参考:全cmd含む) ${cat_name#ALL_}: ${cat_hits}/${cat_total}件"
+            continue
+        fi
+        echo "  ${cat_name}: ${cat_hits}/${cat_total}件(本番), zero_streak=${cat_zero}/${cat_threshold}"
         if [ "${cat_total:-0}" -gt 0 ] && [ "${cat_zero:-0}" -ge "${cat_threshold:-0}" ]; then
             echo "    LOW confidence候補: ${cat_name}観点が直近${cat_threshold}件で連続0件"
         fi
