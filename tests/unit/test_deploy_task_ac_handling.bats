@@ -1206,6 +1206,7 @@ task:
 EOF
 
     run deploy_task_lessons_only sasuke
+    echo "CI-DEBUG test649 deploy_task_lessons_only status=$status output=$output" >&2
     [ "$status" -eq 0 ]
 
     run python3 -c "
@@ -1216,6 +1217,7 @@ ids = [entry.get('id') for entry in (data.get('task') or {}).get('related_lesson
 assert 'L_DM_SPECIFIC' in ids, ids
 print(','.join(ids))
 "
+    echo "CI-DEBUG test649 python3 status=$status output=$output" >&2
     [ "$status" -eq 0 ]
 }
 
@@ -1263,6 +1265,7 @@ task:
 EOF
 
     ZERO_USEFUL_DEPRECATE_MIN_SAMPLES=1 run deploy_task_lessons_only sasuke
+    echo "CI-DEBUG test650 deploy_task_lessons_only status=$status output=$output" >&2
     [ "$status" -eq 0 ]
 
     run python3 -c "

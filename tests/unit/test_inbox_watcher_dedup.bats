@@ -88,9 +88,11 @@ wait "$pid1"
 wait "$pid2"
 
 sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+echo "CI-DEBUG test1120 sent_count=$sent_count tmux_log_contents=$(cat "$TMP_ROOT/tmux.log" 2>/dev/null || echo EMPTY)" >&2
 [ "$sent_count" = "1" ]
 echo "WAKEUP_SENT_ONCE=yes"
 '
+    echo "CI-DEBUG test1120 status=$status output=$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" == *"WAKEUP_SENT_ONCE=yes"* ]]
 }
