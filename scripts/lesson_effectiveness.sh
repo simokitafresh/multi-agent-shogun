@@ -46,6 +46,11 @@ useful_count = {}
 preventable_count = {}
 all_lessons = set()
 
+# hotloop用: gate_metrics.log処理(行数×lesson数/行 回呼び出し)のためL49より前にコンパイル
+# 他の_RE_*パターン(L64-70)はparse_report()内のみ使用のため関数定義前でも可だが、
+# このパターンはmodule levelで即座に使用されるため先行定義必須
+_RE_LESSON_ID = re.compile(r'^L\d+')
+
 # --- 1. gate_metrics.log: injected_lessons (8th column, 0-indexed: col 7) ---
 if os.path.isfile(gate_metrics_log):
     with open(gate_metrics_log, errors='replace') as f:
@@ -56,7 +61,7 @@ if os.path.isfile(gate_metrics_log):
                 if injected and injected != 'none':
                     for lid in injected.split(','):
                         lid = lid.strip()
-                        if lid and re.match(r'^L\d+', lid):
+                        if lid and _RE_LESSON_ID.match(lid):
                             inject_count[lid] = inject_count.get(lid, 0) + 1
                             all_lessons.add(lid)
 

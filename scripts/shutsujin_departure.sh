@@ -48,15 +48,13 @@ fi
 # 殿裁定(2026-04-22): デフォルトは将軍・家老・軍師=Opus。Codex切替は手動スキル実行時のみ。
 _SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 for _commander in shogun karo gunshi; do
-    if grep -q "^    ${_commander}:" "$_SETTINGS" 2>/dev/null; then
-        _current_type=$(awk "/^    ${_commander}:/{found=1} found && /type:/{print \$2; exit}" "$_SETTINGS" 2>/dev/null)
-        if [[ "$_current_type" == "codex" ]]; then
-            if [[ "$DRY_RUN" == true ]]; then
-                echo "[DRY-RUN] Reset ${_commander} type: codex → claude (default Opus)"
-            else
-                sed -i "/^    ${_commander}:/,/^    [a-z]/{s/type: codex/type: claude/}" "$_SETTINGS" 2>/dev/null
-                echo "[shutsujin] Reset ${_commander}: codex → claude (default Opus)"
-            fi
+    _current_type=$(awk "/^    ${_commander}:/{found=1} found && /type:/{print \$2; exit}" "$_SETTINGS" 2>/dev/null)
+    if [[ "$_current_type" == "codex" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[DRY-RUN] Reset ${_commander} type: codex → claude (default Opus)"
+        else
+            sed -i "/^    ${_commander}:/,/^    [a-z]/{s/type: codex/type: claude/}" "$_SETTINGS" 2>/dev/null
+            echo "[shutsujin] Reset ${_commander}: codex → claude (default Opus)"
         fi
     fi
 done
