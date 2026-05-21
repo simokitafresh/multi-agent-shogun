@@ -527,7 +527,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, 教訓注入, lesson injection, useful率, score閾値, MIN_KEYWORD_SCORE, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, 穴をふさごう, task notification task id bja0fxnxt task id tool use id tool, clear_prep_check, build_instructions, instructions再生成 |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, report review受信時にkaro direct配備か通常配備かを確認せよ, 二重配備はstallの判断ミスだろうな, inbox write sh task assigned時の二重配備自動検査, 確かidle判定やstall判定が未熟で, GATE BLOCK FAIL時の家老自動通知 再配備提案を追加, 配備が止まっていないか？, 同一バグを複数セッションが独立発見→auto commitで先行入り済みのパターン, report path未注入taskでは完了報告前にreport field setで報告YAMLを明示作成する, 外部PJなのでkaro directで家老に配備する, clear_prep_check, build_instructions, instructions再生成 |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -616,6 +616,8 @@ codd:
 | causal | `cmd_2917` origin: [[deploy_exit_1_no_draft_review]] -> [[success_path_only_notification]] -> [[review_flow_breakage]] |
 | lesson | `L648` AC文の検査語を報告テンプレートへ直コピーすると提出前grepが自己検出する |
 | cmd | `cmd_2930` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_template_generation.bats`, `tests/unit/test_report_field_set_validation.bats`) |
+| cmd | `cmd_2931` 強化: L7教訓注入 — semantic概念にrelated_lessons追加+注入スコアブースト (`context/semantic-map.md`, `docs/semantic-index/index.md`, `scripts/deploy_task.sh`) |
+| causal | `cmd_2931` origin: [[lesson_useful_rate_7pct]] -> [[keyword_match_no_semantics]] -> [[L7_pipeline_lesson_connection]] |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
