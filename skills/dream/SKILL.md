@@ -79,7 +79,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
-Script refs verified: 2026-05-19 cmd_2859 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe).
+Script refs verified: 2026-05-21 cmd_2940 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe. 2026-05-21: INSIGHT_REPEAT通知に10分デバウンス追加、massbatch時の掲示板洪水を防止).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:
@@ -315,6 +315,7 @@ bash scripts/insight_write.sh "DREAM-LESSON: {suggestion}" dream
 - pending中の同一insight、または先頭50文字一致のinsightは重複登録せず `SKIP:<id>` を返す。
 - `修正済み` / `解消` / `登録済み` / `対処済み` を含むmessageは登録時点で `done` 扱いにする。
 - 同一 `source` のpending insightが `INSIGHT_SOURCE_REPEAT_THRESHOLD`（既定3）以上になると、`bulletin_write.sh` 経由で将軍へ `action_required` 掲示板通知する。掲示板失敗はinsight保存自体を失敗させない。
+- INSIGHT_REPEAT通知は同一sourceに10分デバウンスを適用（massbatch時の掲示板洪水防止。2026-05-21 fix追加）。
 
 ---
 

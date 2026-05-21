@@ -49,4 +49,4 @@ bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 - 1人目=deploy_task.sh正規フロー、2人目=`deploy_task.sh --yaml` のkaro_direct方式。この順序を崩すな
 - 2人目のcmd_idは `<cmd_id>_recon2` サフィックス
 - 偵察結果の突合は家老が手動で実施（報告YAML受領後）
-- Script refs verified: 2026-05-19 cmd_2883, 2026-05-20 cmd_2899. `deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。cmd_2899: deploy_task.sh target_path存在チェックのproject_path 2段解決追加+yaml_field_set.sh WSL2最適化(lock_path純bash化)。
+- Script refs verified: 2026-05-21 cmd_2883, cmd_2899, cmd_2939. `deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。cmd_2899: deploy_task.sh target_path存在チェックのproject_path 2段解決追加+yaml_field_set.sh WSL2最適化(lock_path純bash化)。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更。

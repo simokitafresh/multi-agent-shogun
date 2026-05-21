@@ -68,7 +68,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
 # failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
 ```
-Script refs verified: 2026-05-19 cmd_2883, 2026-05-20 cmd_2899 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正)。
+Script refs verified: 2026-05-21 cmd_2883, cmd_2899, cmd_2939 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
