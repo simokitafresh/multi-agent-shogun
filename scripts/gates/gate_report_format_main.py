@@ -8,6 +8,52 @@ import sys
 import yaml
 
 
+def _iter_task_acceptance_criteria(task_data):
+    ac = task_data.get("acceptance_criteria", [])
+    if isinstance(ac, dict):
+        for ac_id, ac_value in ac.items():
+            yield str(ac_id), ac_value
+    elif isinstance(ac, list):
+        for index, ac_value in enumerate(ac, 1):
+            if isinstance(ac_value, dict):
+                yield str(ac_value.get("id") or f"AC{index}"), ac_value
+            else:
+                yield f"AC{index}", ac_value
+
+
+def _count_task_ac_sections(task_data, assigned_acs):
+    count = 0
+    for ac_id, _ac_value in _iter_task_acceptance_criteria(task_data):
+        if assigned_acs and ac_id not in assigned_acs:
+            continue
+        count += 1
+    return count
+
+
+def _count_task_binary_checks(task_data, assigned_acs):
+    task_bc_count = 0
+    tbc = task_data.get("binary_checks", {})
+    if isinstance(tbc, dict):
+        for key, value in tbc.items():
+            if assigned_acs and key != "commit" and key not in assigned_acs:
+                continue
+            if isinstance(value, list):
+                task_bc_count += len(value)
+
+    if task_bc_count:
+        return task_bc_count
+
+    for ac_id, ac_value in _iter_task_acceptance_criteria(task_data):
+        if assigned_acs and ac_id not in assigned_acs:
+            continue
+        if isinstance(ac_value, dict):
+            checks = ac_value.get("binary_checks") or ac_value.get("checks")
+            if isinstance(checks, list):
+                task_bc_count += len(checks)
+
+    return task_bc_count
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("FAIL: report path required")
@@ -275,14 +321,7 @@ def main() -> int:
                 continue
             if isinstance(value, list):
                 rpt_bc_count += len(value)
-        task_bc_count = 0
-        tbc = task_data.get("binary_checks", {})
-        if isinstance(tbc, dict):
-            for key, value in tbc.items():
-                if assigned_acs and key != "commit" and key not in assigned_acs:
-                    continue
-                if isinstance(value, list):
-                    task_bc_count += len(value)
+        task_bc_count = _count_task_binary_checks(task_data, assigned_acs)
         if task_bc_count > 0:
             if rpt_bc_count < task_bc_count * 0.5:
                 errors.append(f"binary_checks: item count {rpt_bc_count}/{task_bc_count} (<50% of task template)")
@@ -290,13 +329,7 @@ def main() -> int:
             elif rpt_bc_count < task_bc_count:
                 hints.append(f"GP-131 WARN: binary_checks item count {rpt_bc_count}/{task_bc_count} (task templateより少ない)")
         else:
-            ac_count = 0
-            ac_list = task_data.get("acceptance_criteria", [])
-            if isinstance(ac_list, list):
-                if assigned_acs:
-                    ac_count = sum(1 for ac in ac_list if isinstance(ac, dict) and ac.get("id", "") in assigned_acs)
-                else:
-                    ac_count = len(ac_list)
+            ac_count = _count_task_ac_sections(task_data, assigned_acs)
             if ac_count > 0:
                 rpt_ac_keys = [k for k in bc.keys() if k.upper().startswith("AC")]
                 # Fallback: description配下にAC1/AC2等のcheckが格納されている場合もカウント

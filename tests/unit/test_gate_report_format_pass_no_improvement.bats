@@ -120,6 +120,31 @@ EOF
     [[ "$output" != *"PASS_NO_IMPROVEMENT"* ]]
 }
 
+@test "dict形式task acceptance_criteriaのbinary_checks件数不足を検出する" {
+    local tpath="$TEST_TMPDIR/queue/tasks/tobisaru.yaml"
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
+    cat > "$tpath" <<'EOF'
+task:
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+        - "改善点を3つ特定したか: yes/no"
+        - "各改善点に対象ファイル・根拠を添えたか: yes/no"
+    AC2:
+      binary_checks:
+        - "最高インパクト1件を実装したか: yes/no"
+        - "関連テストまたは明示的な検証を実行したか: yes/no"
+EOF
+    _write_base_pni_report "$rpath" "binary_checks:
+  AC1:
+    - check: 改善点を3つ特定したか
+      result: yes"
+
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"binary_checks: item count 1/4 (<50% of task template)"* ]]
+}
+
 # === Test 4: PASS_NO_IMPROVEMENT はゲートとしてexit 0 (PASSと同等) ===
 @test "PASS_NO_IMPROVEMENTのときゲートはexit 0を返す" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
