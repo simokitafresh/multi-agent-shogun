@@ -316,6 +316,7 @@ bash scripts/insight_write.sh "DREAM-LESSON: {suggestion}" dream
 - `修正済み` / `解消` / `登録済み` / `対処済み` を含むmessageは登録時点で `done` 扱いにする。
 - 同一 `source` のpending insightが `INSIGHT_SOURCE_REPEAT_THRESHOLD`（既定3）以上になると、`bulletin_write.sh` 経由で将軍へ `action_required` 掲示板通知する。掲示板失敗はinsight保存自体を失敗させない。
 - INSIGHT_REPEAT通知は同一sourceに10分デバウンスを適用（massbatch時の掲示板洪水防止。2026-05-21 fix追加）。
+- 2026-05-21 cmd_training_L7_v3_hanzo_6: dedup確認、pending source件数計算、YAML追記を単一Pythonプロセスへ統合し、保存経路は同じflock付き追記のまま高速化。
 
 ---
 
