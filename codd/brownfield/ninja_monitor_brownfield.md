@@ -31,6 +31,7 @@ The brownfield findings below were generated from broad context and should now b
 - `monitoring_scope`: implementation evidence exists. `ninja_monitor.sh` builds `NINJA_NAMES` from `get_ninja_names`, with comments stating karo and shogun are excluded.
 - `send_keys_mechanism`: implementation evidence exists. `safe_send_clear()` gates reset through `check_idle()` and `can_send_clear_with_report_gate()`, then uses Codex `respawn-pane -k` for Codex agents and `safe_send_keys_atomic` for non-Codex reset.
 - `error_handling_monitor_failure`: implementation evidence exists in [[daemon_watchdog.sh]]. `check_ninja_monitor()` verifies the pid file/live process, restarts `scripts/ninja_monitor.sh`, throttles restart storms, and emits watchdog notifications; the remaining gap is whether this external watchdog should close or downgrade the original high-severity finding.
+- `task_yaml_race_condition`: implementation evidence exists. `ninja_monitor.sh` wraps auto-void and auto-done task mutations in `/tmp/task_${name}.lock`, revalidates parent/task identity after lock acquisition, and writes status through [[yaml_field_set.sh]] instead of direct YAML rewrites.
 
 <!-- codd:finding
 {"details": {"gap": "STALLの定義（時間ベース/出力ベース/状態ベース）と閾値が明示されていない", "source": "CLAUDE.md: 'Ghost deployment checkはninja_monitorのSTALL検知が常時カバー'"}, "id": "stall_detection_threshold", "kind": "behavioral_specification", "name": "STALL検知の閾値・判定基準が未定義", "question": "ninja_monitorがSTALLと判定する条件は何か？時間閾値、出力停止、capture-paneの内容パターン等、具体的な判定ロジックはどう定義されているか？", "rationale": "STALL検知は家老の手動チェックを代替する自動化機能。閾値が不明だと偽陽性/偽陰性のリスクが評価できない", "related_requirement_ids": ["ghost_deployment_check"], "severity": "high", "source": "greenfield"}
@@ -194,6 +195,8 @@ gap: 検知→通知→対応のフロー全体が未定義
 - name: タスクYAML読取りと家老の書込みの競合
 - question: ninja_monitorがtask YAMLのstatus確認中に家老がタスクを配備（YAML書込み）した場合のrace conditionは考慮されているか？flock等の排他制御はあるか？
 - rationale: idleと判定して/clearした直後にタスクが配備されると、忍者が新タスクを受け取れない
+
+Implementation evidence: `ninja_monitor.sh` uses per-ninja flock files around task status mutation, rechecks `parent_cmd`/`task_id` inside the lock, and delegates the actual YAML write to [[yaml_field_set.sh]].
 
 ```yaml
 gap: ninja_monitorとkaro間のファイルロック戦略が未定義
