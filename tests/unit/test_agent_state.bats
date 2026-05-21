@@ -329,6 +329,27 @@ rmdir "$SHOGUN_STATE_DIR"
     [ "$status" -eq 0 ]
 }
 
+@test "agent_is_busy_check returns busy when thinking and idle prompt coexist" {
+    # Bug: hanzo/kotaro pane shows both "thinking" and "❯" simultaneously.
+    # Before fix: idle_pat (❯) matched first → return 1 (idle) → thinking never checked.
+    # After fix: busy_pat checked first → "thinking" detected → return 0 (busy).
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1" in
+        display-message) echo "active"; return 0 ;;
+        capture-pane) printf "· 刀折れ矢尽き充電切れ… (3m 9s · thinking)\n\n❯ \n\n  CTX:0%%\n"; return 0 ;;
+        set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+cli_profile_get() { echo ""; }
+agent_is_busy_check "shogun:agents.5" "hanzo"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "get_agent_state_label returns unknown when pane is absent" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"

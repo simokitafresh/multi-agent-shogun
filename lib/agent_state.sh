@@ -149,18 +149,11 @@ agent_is_busy_check() {
         return 0
     fi
 
-    local idle_pat
-    idle_pat=$(_agent_state_profile_get "$agent_id" "idle_pattern")
-    if [ -z "$idle_pat" ]; then
-        idle_pat="$AGENT_STATE_DEFAULT_IDLE_PATTERN"
-    else
-        idle_pat="${idle_pat}|\\? for shortcuts|[0-9]+% (context )?left"
-    fi
-
-    if printf '%s\n' "$pane_tail" | grep -qE "$idle_pat"; then
-        return 1
-    fi
-
+    # BUSY check BEFORE idle check: pane_tail can contain both ❯ (idle prompt)
+    # and "thinking" (busy marker) simultaneously. If idle is checked first,
+    # ❯ matches and returns idle=1, never reaching the busy check.
+    # Root cause of hanzo/kotaro false-idle (2026-05-21): CTX:0% + ❯ visible
+    # while "thinking" was also present → idle判定 → 家老がSTALLと誤判断。
     local busy_pat
     busy_pat=$(_agent_state_profile_get "$agent_id" "busy_patterns")
     if [ -z "$busy_pat" ]; then
@@ -171,6 +164,18 @@ agent_is_busy_check() {
 
     if printf '%s\n' "$pane_tail" | grep -qiE "$busy_pat"; then
         return 0
+    fi
+
+    local idle_pat
+    idle_pat=$(_agent_state_profile_get "$agent_id" "idle_pattern")
+    if [ -z "$idle_pat" ]; then
+        idle_pat="$AGENT_STATE_DEFAULT_IDLE_PATTERN"
+    else
+        idle_pat="${idle_pat}|\\? for shortcuts|[0-9]+% (context )?left"
+    fi
+
+    if printf '%s\n' "$pane_tail" | grep -qE "$idle_pat"; then
+        return 1
     fi
 
     return 2
