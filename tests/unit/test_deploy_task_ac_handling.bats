@@ -1175,6 +1175,12 @@ print(','.join(ids))
 
 @test "deploy_task cross-project opt-in allows lessons with a project-specific matched keyword" {
     mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    # symlink→実体書換え防止: configをローカルコピーに差替え
+    if [ -L "$TEST_PROJECT/config" ]; then
+        local _real_config; _real_config="$(readlink -f "$TEST_PROJECT/config")"
+        rm "$TEST_PROJECT/config"
+        cp -r "$_real_config" "$TEST_PROJECT/config"
+    fi
     cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
 projects:
   - id: infra
@@ -1223,6 +1229,12 @@ print(','.join(ids))
 
 @test "deploy_task auto-deprecates zero-useful cross-project lessons and excludes them" {
     mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    # symlink→実体書換え防止: configをローカルコピーに差替え
+    if [ -L "$TEST_PROJECT/config" ]; then
+        local _real_config; _real_config="$(readlink -f "$TEST_PROJECT/config")"
+        rm "$TEST_PROJECT/config"
+        cp -r "$_real_config" "$TEST_PROJECT/config"
+    fi
     cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
 projects:
   - id: infra

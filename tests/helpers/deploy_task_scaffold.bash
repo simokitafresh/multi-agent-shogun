@@ -108,6 +108,7 @@ deploy_task_scaffold() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/${tmpdir_prefix}.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
+    export DEPLOY_LESSON_CACHE_DIR="$TEST_TMPDIR"
 
     # cmd_2117: cp -rP preserves symlinks (scripts/lib/config → /tmp copies)
     if [[ -n "${DEPLOY_TASK_PROJECT_TEMPLATE:-}" && -d "$DEPLOY_TASK_PROJECT_TEMPLATE" ]]; then
