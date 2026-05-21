@@ -178,7 +178,7 @@ YAML
 
     [ "$status" -ne 0 ]
     [[ "$output" != *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
-    [[ "$output" != *"WARN累計昇格"* ]]
+    [[ "$output" != *"BLOCK: WARN累計昇格"* ]]
 }
 
 @test "AC4: AC数量指定WARN時に関連contextから候補値が表示される" {
