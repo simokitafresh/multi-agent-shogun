@@ -1,62 +1,142 @@
 task:
-  cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
-  type: training
-  project: infra
-  purpose: "L7修行v3 3/3 — insight_write.sh(266行)の機能用途aliases候補提案"
-  target_path: scripts/insight_write.sh
+  _ac_task_id: cmd_training_L7_v3_hayate_6_20260521205341_exact
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2946 (deployed 2026-05-21T20:35:36). Read from the beginning.
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  ac_version: 37b92c94
   acceptance_criteria:
     AC1:
-      description: "insight_write.shの主要機能(気づき保存/dedup検出/severity分類/semantic_stress_test自動発火等)を読み、各機能の用途を把握する"
       binary_checks:
-        - check: "insight_write.shの主要機能セクションを読んだか"
-          result: ""
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定スクリプトの改善点を3つ特定し、根拠付きで報告する
     AC2:
-      description: |-
-        既存概念id一覧(照合必須): recalculate_pipeline, semantic_dictionary_design, codd_methodology, gate_bypass_prevention, terminology_dictionary, production_parity, deepdive_principles, growth_loop, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, skill_design_rules, dmsignal_operations, google_classroom, agent_formation_management, visibility_tier_masking, shogun_android_app, cdp_browser_capability, defense_hierarchy, tier_plan_mapping, alpha_6_metrics, rebalancer_app, simple_ocr, kj_partshift, destructive_operations, cmd_quality_logging, task_modifier_injection, training_cycle_quality, report_quality_protocol, external_project_registry, daemon_supervision, causal_traversal_pipeline, infrastructure_ops, gate_quality_framework, lesson_lifecycle, bulletin_communication, hook_automation_framework, test_quality_framework, semantic_causal_automation, infra_design_intent, scope_integrity_lifecycle, yaml_safe_write, inbox_processing_discipline, inbox_watcher_process_model
-        品質基準: (a)短い用途語3-5単語 (b)grep -i で既存重複確認 (c)概念名はindex.mdの正確なid
-        蓄積手順: 各alias行をbash scripts/insight_write.sh "[[概念id]] alias: 候補" low semantic_stress_test で蓄積→grep -c pending queue/insights.yaml で件数確認
       binary_checks:
-        - check: "既存概念idとの照合+既存aliases重複grep確認を実施したか"
-          result: ""
+      - '最高インパクト1件を実装したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、必要な検証を実行する
     AC3:
-      description: "3-5個のaliases候補を報告。形式: [[概念id]] alias: 候補1, 候補2。★蓄積: bash scripts/insight_write.sh で各行蓄積→grep -c pending queue/insights.yaml で件数確認し報告に記載"
       binary_checks:
-        - check: "3個以上のaliases候補を報告し、insight_writeで蓄積し、grep -cで件数確認したか"
-          result: ""
-  scope:
-    - scripts/insight_write.sh
-    - docs/semantic-index/index.md
-    - context/semantic-map.md
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+    AC5:
+      binary_checks:
+      - '[[概念名]] alias: 候補 形式のaliases候補を1件以上報告したか: yes/no'
+      - 'bash scripts/insight_write.shで蓄積し、grep -c pending queue/insights.yamlで増加を確認したか: yes/no'
+      description: '対象スクリプトの機能用途を[[概念名]] alias: 候補1, 候補2形式で1件以上提案し、insight_writeで蓄積する'
+  cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_training_L7_v3_hayate_6_20260521205341
+  project: infra
+  purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
+  related_causal_links:
+  - '[[PENDING_ALIAS_DIRECT_zero_persists]]'
+  - '[[cmd_2938]]'
+  - '[[test_production_divergence]]'
   status: done
-  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_3_20260521182558.yaml
+  stop_for: []
+  task_id: cmd_training_L7_v3_hayate_6_20260521205341_exact
+  task_type: exact
   related_lessons:
   - id: 'L512'
-    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1'
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
+    detail: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L079'
+    summary: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
+    detail: 'scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L603'
+    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L317'
+    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+  - id: 'L310'
+    summary: '修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ'
+    detail: '修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ'
+  - id: 'L351'
+    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  recommended_skills:
+  - "report-write"
+  - "verdict-check"
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L512: gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patte
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L079: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
+      - L310: 修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ
+      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+    ────────────────────────────────────────
+    
+    
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_training_L7_v3_hayate_6_20260521205341.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_6_20260521205341.yaml
+  bloom_level: 
+  deployed_at: "2026-05-21T20:54:09"
