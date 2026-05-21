@@ -684,3 +684,4 @@
 | cmd_2933 | assumptions_bulletin_count_grep_evidenceのFP率66%(2/3)を改善する。claimにblt_XXXX(掲示板ID)を含む場合は掲示板自体が検証済みソースであり、grep証跡不要。bulletin ID引用をgrep_evidence_patの許容パターンに追加する | infra | 05-21 | cmd_save.shのbulletin件数claim検証で |
 | cmd_2935 | 殿が5/21 02:39にスクショで確認した事象: 1着信に対しnudge(inbox1)が2回送信される。既存のdebounce/dedup機構があるにもかかわらず二重送信が発生する根因を特定する | infra | 05-21 | 二重nudgeの根因は同一agentに複数のinbox_wa |
 | cmd_2936 | 修行中の忍者がAC5で概念名付きaliases候補を提案する形式を設計し、parse_pending_semantic_insightsがその形式を認識→概念名で直接マッチ→similarity_score不要でauto-promote可能にする。修行6忍者並列で高品質aliases蓄積を加速する | infra | 05-21 | 修行AC5を概念名付きalias行へ更新し、直接昇格を検証す |
+| cmd_2937 | cmd_2935偵察結果に基づく修正。根因=同一agentにinbox_watcher.shが2本以上常駐し同一イベントを並列処理。singleton lockでagent別1プロセスを保証し、debounce/fingerprint check+writeを同一flock内でatomic化する | infra | 05-21 | inbox_watcherのagent別singletonと |
