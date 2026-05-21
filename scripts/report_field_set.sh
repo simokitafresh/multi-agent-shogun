@@ -33,6 +33,14 @@ REPORT_PATH="$1"
 DOT_KEY="$2"
 VALUE="$3"
 
+# Historical skill guidance accidentally used:
+#   report_field_set.sh <report> assumption_invalidation found false
+# Keep the compatibility shim scoped to this field so the extra positional
+# argument cannot silently affect unrelated writes.
+if [ "$DOT_KEY" = "assumption_invalidation" ] && [ "${3:-}" = "found" ] && [ -n "${4:-}" ]; then
+    VALUE="$4"
+fi
+
 if [ -z "$REPORT_PATH" ] || [ -z "$DOT_KEY" ]; then
     echo "Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>" >&2
     echo "  value が '-' ならstdinから読む。空文字列は ''(YAML空文字)として書込み。" >&2
@@ -359,12 +367,18 @@ if not isinstance(data, dict):
             fi
             ;;
         assumption_invalidation)
-            # GP-240: assumption_invalidation dict保護 (gate_fire_log FAIL 23件の根因)
             if [[ "$dot_key" == "assumption_invalidation" ]]; then
-                echo "BLOCK: assumption_invalidation へのトップレベル書込みは禁止。dict構造を維持するため dot notation を使え。" >&2
-                echo "  正: assumption_invalidation.found false" >&2
-                echo "  誤: assumption_invalidation false" >&2
-                return 1
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, dict):
+    print(f'BLOCK: assumption_invalidation はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
+    sys.exit(1)
+for field in ('found', 'affected_cmds', 'detail'):
+    if field not in data:
+        print(f'BLOCK: assumption_invalidation.{field} が欠落', file=sys.stderr)
+        sys.exit(1)
+" <<< "$val" || return 1
             fi
             ;;
         knowledge_candidate)
@@ -649,6 +663,38 @@ elif isinstance(data, list) and len(data) >= 1:
         print(raw, end='')
 else:
     print(raw, end='')
+" <<< "$val")
+                echo "$fixed"
+                return 0
+            fi
+            ;;
+        assumption_invalidation)
+            if [[ "$dot_key" == "assumption_invalidation" ]]; then
+                local fixed
+                fixed=$(python3 -c "
+import yaml, sys
+raw = sys.stdin.read().strip()
+lower = raw.lower().strip('\"\\'')
+try:
+    data = yaml.safe_load(raw)
+except yaml.YAMLError:
+    data = raw
+
+if isinstance(data, dict):
+    data.setdefault('found', False)
+    data.setdefault('affected_cmds', [])
+    data.setdefault('detail', '')
+elif isinstance(data, bool):
+    data = {'found': data, 'affected_cmds': [], 'detail': ''}
+elif data is None or lower in ('', \"''\", '\"\"', 'none', 'null', 'false', 'no'):
+    data = {'found': False, 'affected_cmds': [], 'detail': ''}
+elif lower in ('true', 'yes'):
+    data = {'found': True, 'affected_cmds': [], 'detail': ''}
+else:
+    data = {'found': True, 'affected_cmds': [], 'detail': raw}
+
+print('[autofix] assumption_invalidation scalar→dict変換', file=sys.stderr)
+print(yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False), end='')
 " <<< "$val")
                 echo "$fixed"
                 return 0

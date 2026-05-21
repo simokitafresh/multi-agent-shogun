@@ -102,6 +102,37 @@ assert ai["detail"] == "", ai
 PY
 }
 
+@test "assumption_invalidation: top-level false write is normalized to dict" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation false 2>&1"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"assumption_invalidation scalar→dict変換"* ]]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ai = data.get("assumption_invalidation")
+assert isinstance(ai, dict), data
+assert ai["found"] is False, ai
+assert ai["affected_cmds"] == [], ai
+assert ai["detail"] == "", ai
+PY
+}
+
+@test "assumption_invalidation: historical found false form is normalized to dict" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation found false 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ai = data.get("assumption_invalidation")
+assert isinstance(ai, dict), data
+assert ai["found"] is False, ai
+assert ai["affected_cmds"] == [], ai
+assert ai["detail"] == "", ai
+PY
+}
+
 @test "assumption_invalidation: 既存affected_cmdsはdot notation書込み後も保持される" {
     cat >> "$TEST_REPORT" <<'YAML'
 assumption_invalidation:
