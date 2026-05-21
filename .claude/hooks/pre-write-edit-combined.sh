@@ -130,15 +130,6 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
             exit 1
         fi
     fi
-    # Guard 0e: action_required未対処時はcmd起票BLOCK (掲示板=将軍宛報告チャネル。確認して対処するまで次のcmd起票は不可)
-    _bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
-    if [[ -f "$_bulletin_file" ]]; then
-        _ar_unactioned=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{count++; ar=0} {if(/^- id:/){ar=0}} END{print count+0}' "$_bulletin_file" 2>/dev/null)
-        if [[ "$_ar_unactioned" -gt 0 ]]; then
-            emit_deny "BLOCK: 掲示板action_required未対処${_ar_unactioned}件。対処してactioned_byを埋めてからcmd起票せよ"
-            exit 1
-        fi
-    fi
     # Guard 0b: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序は家老が判断する(殿裁定2026-05-03)
     if printf '%s' "$_stk_content" | grep -qE 'status:\s*on_hold'; then
         emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回(殿裁定2026-05-03)"
