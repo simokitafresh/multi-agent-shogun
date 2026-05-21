@@ -48,3 +48,8 @@ Bashシェルスクリプトベースのマルチエージェントオーケス�
 | `AGENTS.md` | 43,022 B | 全エージェントの役割・動作仕様書 |
 | `archive/frozen/gunshi.md` | 9,626 B | gunshi（軍師）エージェントの凍結仕様 |
 ```
+
+## Cross-References
+
+- [[deploy_task_design.md]] はタスク配備オーケストレーション（4.2節 `scripts/deploy_task.sh` に対応）の設計書。
+- [[ninja_monitor_design.md]] は4.1節の忍者エージェントCLIスクリプト群の稼働監視・自動クリア・スナップショット生成を担う設計書。
