@@ -593,7 +593,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | cmd履歴 | `context/cmd-chronicle.md` cmd_1809-1816, cmd_1924, cmd_1943, cmd_1945, cmd_2104 |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L657 -->
+<!-- last_synced_lesson: L669 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -968,6 +968,18 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L655: report_field_setの歴史的誤形は互換shimで吸収する（cmd_2941）
 - L656: dashboard_update report探索はfilename一致miss時にparent_cmd SSOTへフォールバックする（cmd_2943）
 - L657: _compute_ac_hash: checks[]内の'- check:'行がitem境界と誤判定されcheck文字列がハッシュに未反映（cmd_2944）
+- L658: 一時YAML作成失敗時は配備処理を即停止する（cmd_training_L7_v3_hayate_5_20260521202900）
+- L659: YAML形状互換のfixtureは出力までassertせよ（cmd_training_L7_v3_kagemaru_5_20260521202900）
+- L660: gate_skill_script_refs WARNは対象外ファイルの更新漏れを示す:3件更新後も残余WARNあり（cmd_training_L7_v3_hanzo_5_20260521202900）
+- L661: flock外のリソースカウントはrace conditionを引き起こす。カウントチェックはロック取得後に実行すべき（cmd_training_L7_v3_tobisaru_5_20260521202900）
+- L662: CACHE_TTL_SECONDSのデフォルトが2秒と短すぎるとstartupで毎回フルスキャンが走る（cmd_training_L7_v3_kotaro_5_20260521202900）
+- L663: 修行sourceの実値をテストfixtureへ入れよ（cmd_2946）
+- L664: 報告存在ゲートは完了判定フィールドまで確認する（cmd_training_L7_v3_kagemaru_6_20260521205341）
+- L665: direct alias構文のfixtureは本番source値を含める（cmd_training_L7_v3_hayate_6_20260521205341）
+- L666: idle系スクリプトのCACHE_TTLデフォルト2秒はキャッシュ効果がほぼない（cmd_training_L7_v3_tobisaru_6_20260521205341）
+- L667: report_field_setはself_gate_check未知キーを事前BLOCKせよ（cmd_training_L7_v3_saizo_6_20260521205341）
+- L668: insight_write.shのPython2回起動→1回統合: dedup+write+count単一パス化で~12%高速化（cmd_training_L7_v3_hanzo_6_20260521205341）
+- L669: 2ファイル順次write→1ファイル原子writeでcache race condition排除+57%高速化（cmd_training_L7_v3_kotaro_6_20260521205341）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
