@@ -297,3 +297,37 @@
 # accuracy: 7件LGTM→全CLEAR。APPROVE→FAIL 0件。WA 0件
 # docs/research永続化: 設計書3件更新(l7_causal_network_learning+codex_respawn+obsidian_semantic_growth)
 # ★強くてニューゲーム: stats更新+ヘッダ知見4件+D0 5件commit+docs/research 3件更新+掲示板6投稿+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果・後半 (2026-05-21T13:40更新) ───
+# レビュー計14件: draft APPROVE 7件(cmd_2924/2926/2928/2929/2930/2931+CI修正) + draft RC 2件(cmd_2925既実装/cmd_2927循環参照) + report LGTM 7件(cmd_2924/2926/2927/2928/2929/2930/2931)。全GATE CLEAR
+# D0直接実装6件: SG-PRE22(23bc83a8)+aliases汚染+スコープチェック(3d7dadbd)+source filter(69392826)+スコープ偽陽性(47574537)+MIN_SAMPLES(dce44607)+INSIGHT_REPEATデバウンス(5cb03155)。全件家老LGTM
+# L7改善連鎖:
+#   ヒット率: 45.7%→94.9%(NO_MATCH3件aliases即追加+related_concepts+教訓注入L7化)
+#   aliases汚染防止: スコープチェック(概念label/id/既存aliases全件照合)で守備範囲外排除
+#   auto-promote接続: stress_test由来21件がパイプライン対象に(source filter拡張)
+#   concept間リンク: 46概念全件にrelated_concepts(cmd_2927 CLEAR)
+#   教訓注入L7化: related_lessons+SEMANTIC_LESSON_BOOST=20(cmd_2931 CLEAR)
+#   MIN_SAMPLES 3→1: 教訓除外7→48件(useful率改善即効)
+#   L7サイクル手動1周: 配備→忍者活用確認→aliases汚染発見→根因修正(殿指示で実行)
+# ESCALATED_CODE_FIX: 33件滞留→根因3本修正(cmd_2928 reason正規化/cmd_2929 dashboard dry-run/cmd_2930 FILL_THIS自己混入)。全CLEAR
+# INSIGHT_REPEAT掲示板洪水: 32件全汚染→デバウンス10分+復元71件+archive306件
+# 掲示板整理: 72件→open 6件(陳腐化45件closed)
+# セマンティック監査: 17スクリプト×2カテゴリ。P0=0。drift=0
+# accuracy: 全件LGTM/APPROVE→CLEAR。APPROVE→FAIL 0件。WA 0件
+# insights: 処理完了。pending 3件(L7設計案B待ち/修行semantic待ち/二重nudgeバグ)
+# ★強くてニューゲーム: stats最終+review_logヘッダ知見7件+D0 6件commit+docs/research 1件+掲示板整理(72→6open)+insights 3件pending+inbox archive+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-21T19:10更新) ───
+# レビュー計14件: draft APPROVE 5件(cmd_2932/2933/2935/2936/2937) + draft RC 2件(cmd_2934ファイル名誤記/cmd_2938既実装) + report LGTM 8件(cmd_2932/2933/2934/2935/2936/2937+CI修正2件)。全GATE CLEAR
+# D0直接実装4件: S0-5テスト前提確認(f549c4e6)+sourceフィルタにtraining追加(d40325f9)+修行aliases30件バックフィル(46a3611f)+修行3回目バックフィル(a8bcc88d)
+# なぜなぜ7回×3本:
+#   (1)L7 auto-promote未発火: pending aliases score最大13.8/閾値16.0。根因=stress_test NO_MATCH全件蓄積→operational noise。入力フィルタ追加(cmd_2934)+AC5直結(cmd_2936)
+#   (2)修行aliases未反映: sourceフィルタ("semantic_index_update","semantic_stress_test")がtraining sourceを弾く。"training" in source追加(d40325f9)→16件即DIRECT昇格
+#   (3)隠れたインフラバグ: STALL-GHOST 172件(cmd_id検索対象外)+assumption_invalidation MISSING(karo_directテンプレート不在)→cmd_2939で修正
+# 修行サイクル: 9サイクル完了(3忍者×3ラウンド)。全aliasesをindex反映(57候補)。修行テンプレートに品質基準3条件+蓄積手順を環境埋込み(9c4b5ffb)
+# L7ヒット率: 配備95.0%(76/80)、gate 77.8%(7/9)
+# CI RED: symlink破壊→ローカルコピー差替え(93deca55)→CI修正v3(9d9fd3cb)→GATE CLEAR
+# accuracy: 8件LGTM→全CLEAR。5件APPROVE→全CLEAR。APPROVE→FAIL 0件。WA 0件
+# review_logアーカイブ: 856行→260行(20260521a.yamlに596行退避)。ヘッダ知見6件追記
+# docs/research永続化2件: s05_test_premise_check+stall_ghost_nazenaze
+# ★強くてニューゲーム: stats更新+review_logアーカイブ+ヘッダ知見6件+D0 4件commit+docs/research 2件+掲示板2投稿+全gate_result同期+全inbox既読

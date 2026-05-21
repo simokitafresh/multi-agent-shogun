@@ -112,510 +112,155 @@
 # ★ESCALATED_CODE_FIX 33件滞留(2026-05-21): state.json last_fail陳腐化(5/2)+reason完全一致パターン分裂→Gate 20.7が1件しか表示しなかった。手動更新+cmd_2928-2930で根因3本修正
 # ★SG-PRE22(2026-05-21 D0): レビュー開始時にcmd purposeでsemantic_searchを自動実行し関連概念を強制表示。意志依存なし(23bc83a8)
 # 詳細エントリ: 20260520a(D0_LG023〜cmd_2914+L7全段+設計意図カタログ+なぜなぜ7回×3) → logs/archive/gunshi_review_log_20260520a.yaml
-- cmd_id: D0_L7a_batch3
-  review_type: self_study
-  verdict: null
-  findings_summary: "L7a概念密度向上第3弾。暗黒物質10スクリプト→5概念追加(67→77,33.0%)。S0全6項PASS。commit 3d7388c1"
+# ★L7 auto-promote sourceフィルタ(2026-05-21): parse_pending_semantic_insightsがsource="cmd_training_L7_..."を弾いていた。"training" in source追加(d40325f9)で修行aliases 16件即DIRECT昇格。テストPASS≠本番動作(Phase 3)
+# ★L7修行入力品質(2026-05-21): pending aliasesがoperational noise(ALERT/INFO等)で汚染→score最大13.8/閾値16.0→auto-promote未発火。入力フィルタ追加(cmd_2934)+修行AC5直結(cmd_2936)で解消
+# ★STALL-GHOST 172件(2026-05-21なぜなぜ7回): ninja_monitorがcmd_id検索対象外→karo_direct配備のstall検出が無効化。根因=karo_directと通常配備のインターフェース不一致。cmd_2939で修正
+# ★CI RED symlink破壊(2026-05-21): テスト649/650がconfig/projects.yaml書換え→symlinkの実体(本番config)上書き→他テスト連鎖FAIL。symlink→ローカルコピー差替え(93deca55)で解消
+# ★S0-5テスト前提更新(2026-05-21 D0): デフォルト値・閾値変更時にテスト前提値の更新確認を追加(f549c4e6)。MIN_SAMPLES 3→1変更時のCI RED事故対応
+# 詳細エントリ: 20260521a(D0_L7a_batch3〜cmd_2932+consultations+L7 nazenaze) → logs/archive/gunshi_review_log_20260521a.yaml
+- cmd_id: cmd_2933
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。blt_IDパターンをgrep_evidence_patに追加。309テストPASS。commit 47ab9c1f"
   observations:
-    - "事実: 高変更頻度暗黒物質10件特定(lesson_impact_analysis等)。全件実在確認OK"
-    - "事実: カバー率28.7%→33.0%。暗黒物質166→156件に削減"
-  finding_categories: [numbers, assumptions]
-  origin: "[[L7a_density]] -> [[dark_matter_scripts]] -> [[concept_coverage_increase]]"
-  causal_chain: "暗黒物質=概念未接続→因果探索不能→レビュー時に設計意図到達不能。密度向上→接続率向上→因果辺消費機会増加=正の複利"
-  cs_checklist: "CS1:OK(全量git変更確認) CS2:OK(grep実測) CS3:OK(S0検証) CS4:OK(D0実装+commit+掲示板+家老通知) CS5:OK(L7a第4弾の余地あり=156件残) CS6:OK(因果鎖記録)"
-  timestamp: "2026-05-20T23:26:00"
-- cmd_id: shogun_consultation_L7_growth
-  review_type: consultation
-  verdict: REQUEST_CHANGES
-  findings_summary: "将軍L7 3cmd案検証。数値不整合(117→156)、origin遡及ROI低(83件のみ)、aliases品質ボトルネック発見。案1 APPROVE、案2 RC(代替提案)、案3 APPROVE"
+    - "事実: grep_evidence_patにblt_[0-9A-Za-z_]+追加(単語境界なし=日本語直後対応)。kagemaru裁量判断として妥当"
+    - "事実: テスト309/309 PASS(SKIP=0)。新規Check20.15b(blt_ID参照WARN回避)+既存Check20.14(non-blt WARN維持)"
+    - "事実: files_modified=2件(cmd_save.sh+test_cmd_save.bats)。scope内完結"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2933]] -> [[assumptions_bulletin_count_grep_evidence_fp]] -> [[gate_precision_improvement]]"
+  causal_chain: "blt_ID引用をgrep証跡として認識→FP除去→WARN累計昇格→BLOCK予防=正の複利"
+  timestamp: "2026-05-21T14:55:00"
+- cmd_id: cmd_2936
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "APPROVE。修行AC5→auto-promote直結。前提verified(candidate_aliases L575/parse_pending L634/AC5 L996確認)。新規パターン追加のみ。修行×L7=二重複利"
   observations:
-    - "事実: 未カバースクリプト156件(将軍主張117件と39件差)"
-    - "事実: origin WARN導入=cmd_2819(5/17)、BLOCK化=cmd_2902(5/20)。cmd_2818以前にoriginフィールド不在"
-    - "事実: 遡及対象はcmd_2819-2901の約83件のみ。2800件にはoriginなし"
+    - "事実: candidate_aliases L575、parse_pending_semantic_insights L634に存在確認"
+    - "事実: AC5テンプレート L996に形式定義済み: [[概念名]] alias: 候補1, 候補2"
+    - "事実: q11「parse_pending未存在」は誤記(L634に存在)だが趣旨は「AC5形式認識の拡張が未実装」で正しい"
+  finding_categories: [assumptions, simulation, premortem]
+  origin: "[[cmd_2936]] -> [[training_aliases_direct_promote]] -> [[L7_growth_acceleration]]"
+  causal_chain: "修行AC5で概念名付きaliases提案→parse認識→概念直接マッチ→similarity_score不要→auto-promote発火→ヒット率向上。修行6並列で候補量産=正の複利"
+  timestamp: "2026-05-21T14:58:00"
+- cmd_id: cmd_2935
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  findings_summary: "4観点OK。二重nudge偵察。根因=同一agent複数watcher常駐+check/write非atomic。pgreg実測+ログL6120-6127で裏付け。修正案3点。偵察品質5要件全クリア"
+  observations:
+    - "事実: pgrep実測で全agent2本以上(tobisaru 4本)のwatcher常駐を確認"
+    - "事実: shogunログL6120-6127で02:39:28-29に同一unread=1のFP-CHANGE/NUDGE/Wake-upが2回記録"
+    - "事実: debounce(L292)のcheck+refresh、fingerprint(L761-770)のprev比較+writeが非atomicで複数プロセスが同時通過可能"
   finding_categories: [assumptions, numbers, premortem]
-  origin: "[[L7_growth_speed]] -> [[concept_density_bottleneck]] -> [[aliases_quality_lever]]"
-  causal_chain: "概念密度33%=律速段階(将軍分析正しい)→だがresource追加のみではaliasesヒット率不変→密度×aliases品質の2軸が真のレバー。origin遡及は対象83件=ROI低→代替(gate_fire_log/WA)でデータ量10倍"
-  cs_checklist: "CS1:OK(全量grep実測) CS2:OK(自システムデータで検証) CS3:OK(cmd_save git log確認) CS4:OK(掲示板回答) CS5:OK(aliases品質=追加ボトルネック) CS6:OK(因果鎖記録)"
-  timestamp: "2026-05-20T23:37:00"
-- cmd_id: nazenaze7_L7_resource_vs_aliases
-  review_type: consultation
-  verdict: REQUEST_CHANGES
-  findings_summary: "resource coverage≠search hit rate。semantic_index.py L130: aliases のみ検索対象。resource追加は検索改善にならない。Goodhart第5号"
-  observations:
-    - "事実: semantic_index.py first-layer検索はlabel+aliasesのみマッチ。resourcesは表示用(L150)"
-    - "事実: lesson_impact_analysisをresource追加済み→semantic_search→NO_MATCH(exit 1)。実測証明"
-    - "事実: スクリプト名aliases含有率=21.6%(33/153)。resource coverage 33.0%とは別指標"
-    - "事実: L7a第1-3弾(52→77 resource追加)は全てカタログ整備。検索改善ゼロ"
-  finding_categories: [assumptions, numbers, north_star, adversarial]
-  origin: "[[L7_resource_coverage]] -> [[Goodhart_metric_5]] -> [[aliases_is_real_lever]]"
-  causal_chain: "resource coverage最適化→代理指標→本来目標(search hit rate)不変→6忍者×26スクリプト投入→効果ゼロ→時間浪費=負の複利。正のレバー=aliases拡充"
-  cs_checklist: "CS1:OK(semantic_index.py全コード確認) CS2:OK(実測テスト2件) CS3:OK(aliases含有率python計測) CS4:OK(掲示板投稿) CS5:OK(正しいレバー提案) CS6:OK(因果鎖:Goodhart構造の5度目再現)"
-  timestamp: "2026-05-20T23:46:00"
-- cmd_id: shogun_design_L7_aliases_cmds
-  review_type: consultation
-  verdict: null
-  findings_summary: "将軍設計依頼→3cmd設計(計測→修正→自動化)。baseline実測56.4%ヒット率。bulk忍者並列は品質リスクで不採用"
-  observations:
-    - "事実: deploy_task.log 110配備中62件inject成功=56.4%ヒット率(true baseline)"
-    - "事実: NO_MATCH 48件のpurpose/target_pathがログに残らない→改善ターゲット不明"
-    - "事実: 殿原則「品質最優先・長期複利・急ぐな」→計測基盤を先に作り、データ駆動で修正する順序が正解"
-  finding_categories: [numbers, simulation, north_star]
-  origin: "[[L7_aliases_lever]] -> [[measurement_first]] -> [[data_driven_fix]]"
-  causal_chain: "NO_MATCHログなし→改善対象不明→bulk追加(勘)→品質劣化リスク。計測追加→TOP20特定→ターゲット修正→56.4%→70%=正の複利。自動化→永続成長"
-  cs_checklist: "CS1:OK(deploy_task.log全量確認) CS2:OK(110/62実測) CS3:OK(計測→修正→自動化の順序設計) CS4:OK(掲示板投稿) CS5:OK(自動化cmd含む) CS6:OK(因果鎖記録)"
-  timestamp: "2026-05-20T23:49:00"
-- cmd_id: cmd_2915
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "L7計測基盤。APPROVE。AC1コードがHEAD L2624に既存(hayate auto-commit)。動作未検証。影丸はHEAD確認から着手すべし"
-  observations:
-    - "事実: git show HEAD:scripts/deploy_task.sh L2624にNO_MATCHログ出力コードが存在(7cbd627b)"
-    - "事実: inject_semantic_concepts由来のNO_MATCHログ出力は0件(コード追加直後で未発火)"
-    - "事実: assumption「grep -c NO_MATCH=0件」は誤り(実際1件)。LG001違反だがcmd品質は影響なし"
-  finding_categories: [assumptions, simulation, premortem]
-  origin: "[[cmd_2915]] -> [[L7_measurement_infra]] -> [[no_match_visibility]]"
-  causal_chain: "NO_MATCHログ不在→改善対象不明→bulk追加(勘)→品質劣化。計測基盤追加→データ駆動修正可能に=正の複利"
-  timestamp: "2026-05-21T00:02:00"
-- cmd_id: cmd_2915
+  origin: "[[cmd_2935]] -> [[inbox_watcher_double_nudge]] -> [[watcher多重常駐+非atomic]]"
+  causal_chain: "daemon_supervisor再起動→旧watcher残存+新watcher生成→同一inbox監視→FP-CHANGE同時判定→二重nudge。singleton lock→多重常駐構造的に不可=正の複利"
+  timestamp: "2026-05-21T15:02:00"
+- cmd_id: cmd_2934
   review_type: report
-  gate_result: CLEAR
   verdict: LGTM
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。AC1(既存コード検証)、AC2(gate L181表示)、AC3(テスト2/2 PASS)。commit a181cb68"
-  observations:
-    - "事実: AC1コードはHEAD既存。kagemaru は検証+テスト追加に切替え(assumption_check適切)"
-    - "事実: gate_karo_startup.sh L181にshow_semantic_no_match_metrics()実装確認"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2915]] -> [[L7_measurement_infra]] -> [[no_match_visibility]]"
-  causal_chain: "NO_MATCHログ+gate表示→データ駆動aliases拡充の基盤。計測なき改善=Goodhartリスク→計測あり=正の複利"
-  timestamp: "2026-05-21T00:12:00"
-- cmd_id: cmd_2916
-  review_type: draft
   gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "L5防御preflight拡張。APPROVE。assumption陳腐化(timeout_minutes既存)だが才蔵db89b99a実装済み"
-  observations:
-    - "事実: HEAD時点でtimeout_minutes=1件、起票前確認9問が既存(db89b99a commit済み)"
-  finding_categories: [assumptions]
-  origin: "[[cmd_2916]] -> [[timeout_15x_warn]] -> [[L5_preflight_template]]"
-  causal_chain: "15回累計WARN→テンプレート不在→忘れる→BLOCK。L5テンプレート追加→事前提示→忘れない=正の複利"
-  timestamp: "2026-05-21T00:15:00"
-- cmd_id: cmd_2916
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
   report_ninja: saizo
-  findings_summary: "4観点OK。Guard 0テンプレート拡張+8行。commit db89b99a"
+  findings_summary: "4観点OK。L7入力ノイズフィルタ。消費側+生成側二重ガード+pending 11件resolve。RC(ファイル名誤記)対応済み。35テストPASS。commit e0cb0e6a"
   observations:
-    - "事実: pre-write-edit-combined.sh Guard 0に9問目(env_change pattern grep)+timeout_minutesテンプレート追加"
-    - "事実: テストtest_write_edit_combined_hooks.bats +6行で表示検証"
+    - "事実: semantic_index_update.sh is_semantic_wiki_targetに【】/ALERT/INFO/CI緑/復帰/ダミー除外追加"
+    - "事実: semantic_stress_test.shにも候補書込み前ガード追加(生成側フィルタ)"
+    - "事実: pending semantic_stress_test insight 11件→0件(全件done化)。test 35/35 PASS"
   finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2916]] -> [[timeout_15x_warn]] -> [[L5_preflight_template]]"
-  causal_chain: "テンプレート不在→忘れる→BLOCK 15回。L5テンプレート追加→事前提示→BLOCK予防=正の複利"
-  timestamp: "2026-05-21T00:18:00"
-- cmd_id: cmd_2917
-  review_type: draft
+  origin: "[[cmd_2934]] -> [[L7_autopromote_noise_filter]] -> [[input_quality_improvement]]"
+  causal_chain: "operational noise蓄積→score最大13.8→auto-promote未発火。ノイズフィルタ→高品質候補のみ蓄積→auto-promote発火可能=正の複利"
+  timestamp: "2026-05-21T15:05:00"
+- cmd_id: cmd_2936
+  review_type: report
+  verdict: LGTM
   gate_result: CLEAR
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。修行AC5→auto-promote直結形式。テンプレート更新+PENDING_ALIAS_DIRECT経路テスト検証。36テストPASS。commit 83cf93d7"
+  observations:
+    - "事実: context/training-cycle.md AC5に[[概念名]] alias: 候補1, 候補2形式定義。既存AC5から形式明確化"
+    - "事実: semantic_index_update.shのPENDING_ALIAS_DIRECT経路(概念名直接マッチ→similarity_score不要)が既存HEADで確認済み"
+    - "事実: test_semantic*.bats 36/36 PASS(SKIP=0)。新規テストでAC5形式parse+直接aliases追加を検証"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_2936]] -> [[training_aliases_direct_promote]] -> [[L7_growth_acceleration]]"
+  causal_chain: "修行AC5で概念名付き提案→PENDING_ALIAS_DIRECT→similarity_score不要→auto-promote確実発火。修行6並列で高品質候補量産=正の複利"
+  timestamp: "2026-05-21T15:08:00"
+- cmd_id: cmd_2937
+  review_type: draft
   verdict: APPROVE
+  gate_result: CLEAR
   confidence: HIGH
   ambiguity_points: none
-  findings_summary: "EXIT trapにdraft_reviewフォールバック追加。APPROVE。ARMED flagで二重呼出し防止。L6698-L6712 gapは極小リスク"
+  findings_summary: "APPROVE。inbox_watcher二重nudge修正(singleton lock+atomic化)。偵察cmd_2935 CLEAR済み。前提verified(singleton 0件/send_wakeup L506/debounce L292)。殿確認済みバグの根本修正"
   observations:
-    - "事実: EXIT trap(L323-338)内にdraft_review呼出し0件(grep確認)。成功パスL6712のみ"
-    - "事実: ARMED flag(L6679 ARM→L6698 DISARM)がEXIT trap発動を制御。成功時DISARM済みで二重呼出し構造的に不可"
+    - "事実: grep -c singleton inbox_watcher.sh=0件。未実装確認OK"
+    - "事実: send_wakeup L506、refresh_debounce_file L292、flock -w 5 L627に既存lockパターン存在"
+    - "事実: depends_on cmd_2935(GATE CLEAR済み)。偵察で根因・修正箇所・エッジケース全て特定済み"
   finding_categories: [assumptions, simulation, premortem]
-  origin: "[[cmd_2917]] -> [[exit_1_no_draft_review]] -> [[review_flow_completeness]]"
-  causal_chain: "exit 1時draft_review未送信→軍師レビュー不発→品質管理の穴。EXIT trapフォールバック→全終了パスでレビュー発動=正の複利"
-  timestamp: "2026-05-21T00:22:00"
-- cmd_id: cmd_2917
+  origin: "[[cmd_2937]] -> [[inbox_watcher_singleton_lock]] -> [[殿二重nudgeバグ修正]]"
+  causal_chain: "watcher多重常駐→同一イベント並列処理→二重nudge。singleton lock→1プロセス保証→構造的排除=正の複利(全バグクラス防止)"
+  timestamp: "2026-05-21T15:12:00"
+- cmd_id: cmd_2937
   review_type: report
-  gate_result: CLEAR
   verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  findings_summary: "4観点OK。殿確認済み二重nudgeバグ修正。singleton lock+noclobber最終ガード+debounce/fingerprint atomic化。15テストPASS。commit 2e29d085"
+  observations:
+    - "事実: agent別singleton lock追加(STATE_DIR/inbox_watcher_singleton_AGENT.lock)。取得不可→即exit"
+    - "事実: fingerprint/debounce判定をSTATE_LOCK内に集約+送信直前にnoclobberトークンで二重送信防止(最終ガード)"
+    - "事実: test_inbox_watcher_dedup.bats新規。二重起動exit+同一未読1件でWake-up 1回のみを検証。15/15 PASS"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2937]] -> [[inbox_watcher_singleton_lock]] -> [[殿二重nudgeバグ根本修正]]"
+  causal_chain: "多重watcher→同一イベント並列処理→二重nudge。singleton lock→1プロセス保証+noclobber→送信1回保証=正の複利"
+  timestamp: "2026-05-21T15:15:00"
+- cmd_id: cmd_karo_ci_fix_2tests_20260521180725
+  review_type: report
+  verdict: LGTM
+  gate_result: null
   report_ninja: hayate
-  findings_summary: "4観点OK。EXIT trap draft_reviewフォールバック+71行。テスト27/27 PASS。commit 16796596"
+  findings_summary: "4観点OK。CI RED修正。cmd_saveキャッシュ混線耐性+inbox_watcher lib-only依存分離。1809テスト全PASS(--jobs 8)。commit 9d9fd3cb"
   observations:
-    - "事実: deploy_task.sh +47行(EXIT trap内にdraft_reviewフォールバック+SENT flag)"
-    - "事実: テスト12/12新規+既存15件=27/27 PASS SKIP=0"
+    - "事実: テスト588 cmd_save一時キャッシュキーにQUALITY_LOG_FILEパス含めて混線防止"
+    - "事実: テスト1120 INBOX_WATCHER_LIB_ONLY時にinotifywait依存チェックをスキップ(CI最小環境対応)"
+    - "事実: bats tests/unit/ --jobs 8で1809/1809 PASS。SKIP=0"
   finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2917]] -> [[exit_1_no_draft_review]] -> [[review_flow_completeness]]"
-  causal_chain: "EXIT trapフォールバック→全終了パスでdraft_review発動→軍師レビュー漏れゼロ=正の複利"
-  timestamp: "2026-05-21T00:25:00"
-- cmd_id: shogun_consultation_L7_holes
-  review_type: consultation
-  verdict: APPROVE
-  findings_summary: "穴1 APPROVE(関数コピー最小変更)。穴3 RC(パス誤り+殿クエリログ承認必要)。穴2自然検証"
-  observations:
-    - "事実: gate_shogun_startup.shにNO_MATCH関連0件。穴1実在"
-    - "事実: prompt_state_inject.shはscripts/hooks/配下(将軍案のパス誤り)"
-  finding_categories: [assumptions, premortem]
-  origin: "[[L7_holes]] -> [[gate_no_match_visibility]] -> [[lord_query_measurement]]"
-  causal_chain: "将軍gateにNO_MATCH不可視→改善判断不能。追加→可視化。殿クエリログは承認必要=プライバシー"
-  cs_checklist: "CS1:OK(gate_shogun_startup.sh全量grep確認) CS2:OK(NO_MATCH 0件実測) CS3:OK(パス誤り現物指摘) CS4:OK(掲示板回答) CS5:OK(穴2自然検証=追加角度あり) CS6:OK(因果鎖記録)"
-  timestamp: "2026-05-21T00:32:00"
-- cmd_id: cmd_2918
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "将軍gate NO_MATCH計測追加。APPROVE。前提OK。家老gate L181関数コピー+呼出し"
-  observations:
-    - "事実: git show HEAD gate_shogun_startup.sh NO_MATCH=0件。穴1実在確認"
-  finding_categories: [assumptions]
-  origin: "[[cmd_2918]] -> [[L7_shogun_gate_blind_spot]] -> [[shogun_l7_visibility]]"
-  causal_chain: "将軍gateにNO_MATCH不可視→L7改善判断不能。可視化→毎起動で確認→改善アクション高速化=正の複利"
-  timestamp: "2026-05-21T00:39:00"
-- cmd_id: cmd_2919
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "殿側NO_MATCHカウント計測。APPROVE。カウントのみ(クエリ非記録)。殿承認済み"
-  observations:
-    - "事実: prompt_state_inject.sh NO_MATCH=0件(git show HEAD確認)"
-    - "事実: semantic_search exit 1=NO_MATCH。L329の|| true後にexit code判定でカウント可能"
-  finding_categories: [assumptions, premortem]
-  origin: "[[cmd_2919]] -> [[L7_lord_side_blind_spot]] -> [[lord_query_visibility]]"
-  causal_chain: "殿クエリNO_MATCH不可視→aliases改善対象不明→改善勘依存。カウント計測→可視化→データ駆動改善=正の複利"
-  timestamp: "2026-05-21T00:42:00"
-- cmd_id: cmd_2918
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。将軍gate NO_MATCH計測+100行。テスト38/38 PASS。commit 66e35d22"
-  observations:
-    - "事実: gate_shogun_startup.sh +68行(show_semantic_no_match_metrics関数コピー+呼出し)"
-    - "事実: bats +32行。テスト38/38 PASS(NO_MATCH率75.0%+TOP3表示検証含む)"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2918]] -> [[L7_shogun_gate_blind_spot]] -> [[shogun_l7_visibility]]"
-  causal_chain: "将軍gate NO_MATCH可視化→毎起動でL7健全度確認→改善アクション高速化=正の複利"
-  timestamp: "2026-05-21T00:45:00"
-- cmd_id: cmd_2919
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
-  report_ninja: saizo
-  findings_summary: "4観点OK。hook NO_MATCHカウント記録テスト+23行。テスト53/53 PASS。commit e369070d"
-  observations:
-    - "事実: AC1/AC2はHEAD既存実装で満たされていた。才蔵はテスト補強に切替え(適切)"
-    - "事実: bats追加でNO_MATCHカウント記録+クエリ非記録を検証"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2919]] -> [[L7_lord_side_blind_spot]] -> [[lord_query_visibility]]"
-  causal_chain: "殿側NO_MATCH計測→データ蓄積→aliases改善ターゲット特定=正の複利"
-  timestamp: "2026-05-21T00:51:00"
-- cmd_id: cmd_2920
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "L7 aliases自動成長。APPROVE。candidate_aliases+L7f auto-promote既存基盤の接続。threshold=16.0でノイズフィルタ"
-  observations:
-    - "事実: candidate_aliases(L437)はtitle/purpose/summaryからaliases候補抽出(既存)"
-    - "事実: absorb_pending_semantic_insights(L7f)はscore≥16でaliases自動昇格(稼働中)"
-    - "事実: NONEパス(L674)にpending aliases蓄積経路なし→本cmdで接続"
-  finding_categories: [assumptions, simulation]
-  origin: "[[cmd_2920]] -> [[L7_aliases_auto_growth]] -> [[aliases_quality_improvement]]"
-  causal_chain: "NO_MATCH purpose→candidate_aliases→pending aliases→L7f auto-promote→aliases拡充→ヒット率向上。毎cmd_completeで自動=長期複利"
-  timestamp: "2026-05-21T00:52:00"
-- cmd_id: cmd_2920
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
-  report_ninja: hayate
-  findings_summary: "4観点OK。NO_MATCH purpose→pending aliases→L7f自動昇格接続+91行。テスト17/17 PASS。commit 2459d721"
-  observations:
-    - "事実: semantic_index_update.sh +61行(deploy_task.log NO_MATCH読取→candidate_aliases→pending蓄積→auto-promote接続)"
-    - "事実: YAML安全規則遵守(L548/L615)。insight_write.sh経路で蓄積。yaml.dump未使用"
-  finding_categories: [assumptions, numbers, simulation]
-  origin: "[[cmd_2920]] -> [[L7_aliases_auto_growth]] -> [[aliases_quality_improvement]]"
-  causal_chain: "NO_MATCH purpose→aliases候補自動蓄積→score≥16で自動昇格→ヒット率向上。毎cmd_completeで自動=永続的長期複利"
-  timestamp: "2026-05-21T00:57:00"
-- cmd_id: cmd_2921
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。SKILL.md 5件touch(mtime更新のみ)。gate WARN 0件。commit 92f3aa1d"
-  observations:
-    - "事実: touch 5件のみ。内容差分なし。gate_skill_script_refs.sh WARN 0件/PASS確認"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2921]] -> [[gate_skill_script_refs]] -> [[mtime_false_positive]]"
-  causal_chain: "mtime stale→3セッション連続WARN→touch解消→WARN 0件。根因=script変更後のSKILL.md追従漏れ"
-  timestamp: "2026-05-21T01:37:00"
-- cmd_id: cmd_2922
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "L7ストレステストツール。APPROVE。新規作成+既存パイプライン接続。DISABLE_CAUSAL=1でtimeout誤判定防止"
-  observations:
-    - "事実: semantic_stress_test.sh未存在(新規作成)。candidate_aliases+insights.yaml接続先存在"
-    - "事実: 殿5W1H指摘の自動発火トリガーは後続cmd B/C。本cmdはcmd A(共通ツール)"
-  finding_categories: [assumptions, simulation]
-  origin: "[[cmd_2922]] -> [[L7_stress_test_tool]] -> [[aliases_growth_acceleration]]"
-  causal_chain: "計測ツール不在→改善ループ不在。ツール作成→ストレステスト可能→NO_MATCH→aliases蓄積→ヒット率向上=正の複利"
-  timestamp: "2026-05-21T01:38:00"
-- cmd_id: cmd_2922
-  review_type: report
-  gate_result: CLEAR
-  verdict: LGTM
-  report_ninja: saizo
-  findings_summary: "4観点OK。semantic_stress_test.sh新規+480行。テスト21件PASS。commit 0d379733"
-  observations:
-    - "事実: 3パターン入力(lord/cmds/file)+DISABLE_CAUSAL固定+candidate_aliases蓄積+before/after"
-    - "事実: YAML安全規則遵守(L548/L615/L351)。insight_write.sh経路で蓄積"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2922]] -> [[L7_stress_test_tool]] -> [[aliases_growth_acceleration]]"
-  causal_chain: "ストレステストツール完成→NO_MATCH一括特定→aliases自動蓄積→ヒット率向上=正の複利"
-  timestamp: "2026-05-21T01:42:00"
-- cmd_id: cmd_2913
+  origin: "[[cmd_karo_ci_fix_2tests]] -> [[CI_parallel_fixture_isolation]] -> [[lib_only_daemon_dependency]]"
+  causal_chain: "CI並列でキャッシュ混線+inotifywait不在→テスト2件FAIL。キャッシュキー隔離+lib-only分岐→CI GREEN復帰=正の複利"
+  timestamp: "2026-05-21T18:25:00"
+- cmd_id: cmd_2938
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: N/A
+  gate_result: null
   confidence: HIGH
   ambiguity_points: none
-  findings_summary: "RC: AC1(因果概念表示)はD0 344cf2ee L2724-2736で既実装。assumption「causal_backlinks=0件」は誤り(HEAD 1件)"
-  observations:
-    - "事実: git show HEAD:deploy_task.sh L2727にcausal_backlinks既存(D0 344cf2ee)"
-    - "事実: SEMANTIC_CONTEXT+CAUSAL_CONTEXT表示がinject_semantic_concepts内に実装済み"
-  finding_categories: [assumptions]
-  origin: "[[cmd_2913]] -> [[L7_WHO_frequency]] -> [[already_implemented_D0]]"
-  causal_chain: "assumption陳腐化(D0で先行実装済み)→二重実装リスク。既実装確認→cmd取消しまたはAC限定修正"
-  timestamp: "2026-05-21T01:44:00"
-- cmd_id: cmd_2924
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "L7 3トリガー自動組込み。APPROVE。前提OK(NO_MATCH8件/semantic_index_update3箇所/stress_test存在)。AC3個scope内完結。cmd_complete hookでstress_test非同期実行の設計が合理的"
-  observations:
-    - "事実: rg stress_test cmd_complete_gate.sh=0件。未実装確認OK"
-    - "事実: semantic_index_update L5533が&で非同期実行済み。stress_testも同パターンで遅延なし"
-    - "事実: gate_shogun_startup.sh NO_MATCH 8件。show_semantic_no_match_metrics()既存"
-  finding_categories: [assumptions, simulation, premortem]
-  origin: "[[cmd_2924]] -> [[L7_3trigger_auto]] -> [[aliases_growth_automation]]"
-  causal_chain: "手動ツール(cmd_2922)=意志依存=Phase4→3トリガー自動組込み→aliases変更ごとに自動計測+改善ループ自走=正の複利"
-  timestamp: "2026-05-21T02:32:00"
-- cmd_id: cmd_2924
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。L7 3トリガーテスト検証。86テスト全PASS(SKIP=0)。実装本体はHEAD既存→テスト追加で固定。commit cc9d8eed"
-  observations:
-    - "事実: files_modified=3件全てテストファイル。本番コード変更なし。回帰リスク極小"
-    - "事実: テスト合計86件(18+39+1+4+23+1)全PASS。SKIP=0。FAIL=0"
-    - "事実: AC1/2/3全てyes。stress_test自動実行+hit率表示+idle蓄積の3トリガー検証完了"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2924]] -> [[L7_3trigger_auto]] -> [[test_verification_complete]]"
-  causal_chain: "テストなし=回帰検知不能→テスト追加→3トリガー動作保証=正の複利。86テスト全PASSで免疫確立"
-  timestamp: "2026-05-21T02:40:00"
-- cmd_id: idle_semantic_audit_20260521
-  review_type: self_study
-  verdict: null
-  findings_summary: "17スクリプト×2カテゴリ(silent_failure+side_effect)。P0=0,P1→全件降格(設計意図),P2=1件(knowledge_metrics regex偽陰性)。drift=0件。gate_result重複22件清掃"
-  observations:
-    - "事実: P1候補5件全てが || true / set +e の意図的設計パターン(非クリティカルパスのskip許容)"
-    - "事実: semantic index 45概念、file references全件実在。drift=0件"
-    - "事実: gate_result重複22件(414→392行)。根因=Phase2重複出力。sort -u修正済みだが残存データを手動除去"
-  finding_categories: [assumptions, numbers]
-  origin: "[[idle_semantic_audit]] -> [[silent_failure_check]] -> [[design_intent_validation]]"
-  causal_chain: "定期監査→P1候補検出→設計意図照合→全件FP確認→構造的バグなし確認=免疫系健全。gate_result重複→清掃→sort -u再発防止=正の複利"
-  cs_checklist: "CS1:OK(17スクリプト全量確認) CS2:OK(自システムdiffで検証) CS3:OK(設計意図カタログ照合) CS4:OK(docs/research永続化+掲示板投稿) CS5:OK(P2 1件=追加調査余地) CS6:OK(因果鎖記録)"
-  timestamp: "2026-05-21T02:42:00"
-- cmd_id: cmd_karo_ci_fix_gunshi_next_action
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: saizo
-  findings_summary: "4観点OK。CI RED修正(grep 0件exit→|| true空値継続+fixture隔離)。テスト4回全PASS。commit 04dbaf67"
-  observations:
-    - "事実: set -euo pipefail下のgrep 0件がexit 1→CI RED。|| trueで空値継続が正しい対処"
-    - "事実: bats fixtureをenv overrideで隔離→CI並列時の共有snapshot揺れを再現不能化"
-    - "事実: テスト4回(単体+test_select+parallel jobs8+bash -n)全PASS。SKIP=0"
-  finding_categories: [assumptions, simulation]
-  origin: "[[cmd_karo_ci_fix_gunshi_next_action]] -> [[CI_parallel_shared_fixture]] -> [[grep_no_match_exit]]"
-  causal_chain: "grep 0件=exit 1(set -e)→CI RED→|| true空値継続+fixture隔離→CI GREEN復帰+再発防止=正の複利"
-  timestamp: "2026-05-21T02:50:00"
-- cmd_id: cmd_2925
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: N/A
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "RC: 3AC全て既実装。karo.md L268-272に4件(claim=0件は事実誤認)、CLAUDE.md L174にsemantic_concepts読込、gunshi.md L75にsemantic概念確認セクション。assumption陳腐化"
-  observations:
-    - "事実: grep -c semantic instructions/karo.md=4件。L268 semantic概念確認STEP4が既存"
-    - "事実: grep -n semantic_concepts CLAUDE.md=L174。忍者recovery Step4に読込指示既存"
-    - "事実: grep -c semantic instructions/gunshi.md=6件。L75 '### 0. semantic概念確認'が既存(idle監査4件+レビュー時2件)"
-  finding_categories: [assumptions]
-  origin: "[[cmd_2925]] -> [[L7_penetration_gap]] -> [[already_implemented_all_3ac]]"
-  causal_chain: "assumption陳腐化(全3AC既実装)→二重実装リスク。将軍起票時点のgrep結果が古い or 直前の変更を反映していない"
   severity: normal
-  suggested_changes: "全3ACが既実装のため、cmd自体の目的を再検討。(1)既存記載の品質が十分かの検証cmdに変更、または(2)別のL7浸透施策(hookでの強制)にピボット"
-  timestamp: "2026-05-21T03:02:00"
-- cmd_id: cmd_2927
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "RC(normal): 循環参照防止の明示なし。related_concepts展開は1段階限定(再帰禁止)をAC2に追記すべき。前提・数値OK"
+  suggested_changes: "AC1/AC2は軍師D0(9c4b5ffb+d40325f9)で既実装。AC文面を検証または別価値(end-to-endテスト)に変更"
+  findings_summary: "RC(normal): AC1(insight_writeコマンド例)とAC2(grep検証)は軍師D0で既にtraining-cycle.mdに実装済み。sourceフィルタもd40325f9で修正済み。3回目未蓄積の根因=/clear前旧テンプレート使用"
   observations:
-    - "事実: grep -c related_concepts index.md=1件(aliases文字列内)。semantic_index.py=0件。未実装確認OK"
-    - "事実: FM1循環参照(A→B→A)がcmd/ACに未言及。再帰展開すると無限ループ"
-    - "事実: q9に未定義スキップ記載あり。FM3は対処済み"
-  finding_categories: [assumptions, premortem]
-  origin: "[[cmd_2927]] -> [[L7_concept_isolation]] -> [[related_concepts_cycle_risk]]"
-  causal_chain: "related_concepts再帰展開→循環参照→無限ループ→配備hang。1段階限定→安全に関連概念注入=正の複利"
-  severity: normal
-  suggested_changes: "AC2に「related_concepts展開は1段階のみ(再帰しない)。循環参照防止」を追記"
-  timestamp: "2026-05-21T03:05:00"
-- cmd_id: cmd_2926
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: saizo
-  findings_summary: "4観点OK。修行ACテンプレートにaliases鍛錬ステップ(AC5)追加。commit ad606812"
-  observations:
-    - "事実: context/training-cycle.md §28にAC5 aliases候補提案ステップ追加確認(grep aliases=1件以上)"
-    - "事実: commit ad606812で変更確定。files_modified=1件(training-cycle.mdのみ)"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2926]] -> [[L7_aliases_quality]] -> [[training_aliases_step]]"
-  causal_chain: "修行ACにaliases鍛錬なし→修行成果がL7に未接続→AC5追加→修行するたびにaliases候補蓄積=正の複利"
-  timestamp: "2026-05-21T03:08:00"
-- cmd_id: cmd_2927
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。46概念全件にrelated_concepts追加+パーサー1段展開(循環参照防止)。5ファイル変更。commit 6aa252e3"
-  observations:
-    - "事実: RC指摘(循環参照防止)が1段展開・非再帰で反映済み。assumption_checkに明記"
-    - "事実: 実動作確認。semantic_search '成長ループ'→ヒット+関連概念resources表示OK"
-    - "事実: files_modified=5件(index.md/semantic-map.md/semantic_index.py/semantic_map_generate.sh/test_semantic_search.bats)"
-  finding_categories: [assumptions, numbers, simulation]
-  origin: "[[cmd_2927]] -> [[concept_isolation]] -> [[related_concepts_implemented]]"
-  causal_chain: "概念孤立→1ヒットで終了→related_concepts追加→1ヒットで関連概念も注入→コンテキスト密度倍増=正の複利"
-  timestamp: "2026-05-21T03:12:00"
-- cmd_id: cmd_2928
+    - "事実: training-cycle.md AC5に'bash scripts/insight_write.sh ... low semantic_stress_test'が既記載(9c4b5ffb)"
+    - "事実: semantic_index_update.sh L651に'training' not in entry_sourceが既追加(d40325f9)"
+    - "事実: 3回目未蓄積はinsights.yamlに0件。根因=/clear前の旧テンプレートで実行(新テンプレート未読)"
+  finding_categories: [assumptions]
+  origin: "[[cmd_2938]] -> [[D0_already_implemented]] -> [[template_stale_read]]"
+  causal_chain: "AC1/AC2既実装→二重実装リスク。3回目の根因=/clear前旧テンプレート。次回/clear後配備で解消済み"
+  timestamp: "2026-05-21T18:58:00"
+- cmd_id: cmd_2939
   review_type: draft
   verdict: APPROVE
-  gate_result: CLEAR
+  gate_result: null
   confidence: HIGH
   ambiguity_points: none
-  findings_summary: "APPROVE。reason正規化+last_fail更新。前提OK(L174 normalize_reason=空白のみ、L190 escalation_key=reason完全一致ハッシュ)。AC2個scope内完結"
+  findings_summary: "APPROVE。karo_directインターフェース不一致修正(STALL-GHOST+assumption_invalidation)。軍師なぜなぜ7回分析どおり。前提verified。shallow(awk1行+フィールド1行)"
   observations:
-    - "事実: L174 normalize_reasonは空白正規化のみ。cmdID/ninjaID除去なし。未実装確認OK"
-    - "事実: L190 escalation_keyはskill+gate+reasonの完全一致SHA1。reasonにcmd_XXXやninjaID含むと別キー"
-    - "事実: 軍師先行分析で12パターンのlast_failを手動更新済み。本cmdで根因修正"
-  finding_categories: [assumptions, simulation, premortem]
-  origin: "[[cmd_2928]] -> [[skill_auto_improve_reason_grouping]] -> [[gate_20_7_false_negative_fix]]"
-  causal_chain: "reason完全一致ハッシュ→cmdID含みで別パターン化→last_fail陳腐化→14日カットオフ除外→ALERT不発。正規化→同一根因統合→last_fail最新化→ALERT全件表示=正の複利"
-  timestamp: "2026-05-21T03:23:00"
-- cmd_id: cmd_2929
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "APPROVE。L48-51のCMD_IDバリデーションが不正引数(--dry-run/空)でexit 1。根因明確。AC2個scope内完結"
-  observations:
-    - "事実: L48 CMD_ID regex ^cmd_[a-zA-Z0-9_]+$ が --dry-run や空文字をreject→exit 1"
-    - "事実: FAILログのreason=exit=1 cmd=--dry-run/cmd=<empty>がL48-51の発火と完全一致"
-    - "事実: L68 dashboard.md不在、L79 flock失敗も別経路のexit 1だがFAILログにはcmd引数問題のみ"
-  finding_categories: [assumptions, premortem]
-  origin: "[[cmd_2929]] -> [[dashboard_update_exit1]] -> [[cmd_id_validation_mismatch]]"
-  causal_chain: "引数パースで--dry-runがCMD_IDに入る→バリデーションexit 1→スキルFAIL→SKILL.md改良空振り。引数パース修正→正常終了=正の複利"
-  timestamp: "2026-05-21T03:25:00"
-- cmd_id: cmd_2930
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "APPROVE。FILL_THIS残存+型不正修正。前提概ねOK(q11のFILL_THIS 0件は実測1件だがnormal)。AC2個scope内完結"
-  observations:
-    - "事実: report_field_set.sh L302にFILL_THISチェック1件存在(q11 claim=0件は誤差)"
-    - "事実: gate_report_format.shにFILL_THIS直接チェック0件。FAILはno_lesson_reason等の値検証で検出"
-    - "事実: 直近FAIL=2026-05-21T02:59。現在進行中の問題"
-  finding_categories: [assumptions, premortem]
-  origin: "[[cmd_2930]] -> [[report_field_set_fill_this]] -> [[ninja_report_quality]]"
-  causal_chain: "FILL_THIS残存→gate FAIL→家老workaround→CTX浪費。report_field_set.sh修正→FILL_THIS構造的除去→FAIL率0%=正の複利"
-  timestamp: "2026-05-21T03:27:00"
-- cmd_id: cmd_2928
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: saizo
-  findings_summary: "4観点OK。reason正規化(cmdID→<cmd_id>/ninjaID→<ninja>)+last_fail最新化。17テストPASS。実データdry-run確認済み。commit 7c7a2572"
-  observations:
-    - "事実: normalize_reasonにcmd_<id>→<cmd_id>、忍者名→<ninja>正規化追加。gate名(cmd_complete_gate等)は保持"
-    - "事実: テスト17/17 PASS + 実データdry-runでdashboard-update同根FAIL 31件集約確認"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2928]] -> [[skill_auto_improve_reason_grouping]] -> [[gate_20_7_false_negative_fix]]"
-  causal_chain: "reason完全一致→パターン分裂→last_fail陳腐化→ALERT不発。正規化→集約→last_fail最新化→Gate 20.7全件表示=正の複利"
-  timestamp: "2026-05-21T03:29:00"
-- cmd_id: cmd_2929
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: hayate
-  findings_summary: "4観点OK。--dry-run引数パース修正。dry-run単独exit 0化。bats 2/2 PASS。commit 7f696915"
-  observations:
-    - "事実: --dry-run位置非依存パース+cmd_id省略時skip exit 0。通常実行のcmd_id必須は維持"
-    - "事実: bash -n PASS + dry-run 2パターン(単独/cmd付き)共にexit 0確認"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2929]] -> [[dashboard_update_exit1]] -> [[dry_run_argument_parse_fix]]"
-  causal_chain: "dry-run→CMD_IDに入る→バリデーションexit 1→FAIL。引数パース修正→exit 0→FAIL根絶=正の複利"
-  timestamp: "2026-05-21T03:32:00"
-- cmd_id: cmd_2930
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  findings_summary: "4観点OK。AC文プレースホルダ自己混入防止(FILL_THIS→FILL-THIS正規化)+型不正回帰テスト。76テストPASS。commit 0fc389f6"
-  observations:
-    - "事実: deploy_task.shのbinary_checks.check生成でFILL_THIS→FILL-THIS正規化。提出前grep自己検出防止"
-    - "事実: bats 41/41+35/35=76テストPASS。report_field_set+gate_report_format両方カバー"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2930]] -> [[report_field_set_fill_this]] -> [[check_self_contamination_fix]]"
-  causal_chain: "AC文にFILL_THIS含む→テンプレート直コピー→提出前grepが自己検出→FAIL。正規化→自己検出防止→FAIL根絶=正の複利"
-  timestamp: "2026-05-21T03:32:00"
-- cmd_id: cmd_2931
-  review_type: draft
-  verdict: APPROVE
-  gate_result: CLEAR
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "APPROVE。L7教訓注入(概念→related_lessons+スコアブースト)。前提OK(2関数未連携確認)。フォールバック設計(NO_MATCH→keyword注入維持)で偽陽性リスク吸収。ヒット率95.8%でカバー範囲広い"
-  observations:
-    - "事実: grep semantic deploy_task.sh | grep lesson=0件。inject_semantic_conceptsとinject_related_lessonsは未連携"
-    - "事実: 軍師助言(blt_034021)のヒット率95.8%更新+MIN_SAMPLES提案+cmd_2927同パターン確認が将軍設計に反映済み"
-  finding_categories: [assumptions, simulation, premortem]
-  origin: "[[cmd_2931]] -> [[lesson_useful_rate_7pct]] -> [[L7_lesson_injection]]"
-  causal_chain: "keyword一致のみ→意味不理解→useful率7%。semantic概念経由→意味ベース教訓注入→useful率改善=正の複利"
-  timestamp: "2026-05-21T03:45:00"
-- cmd_id: cmd_2931
-  review_type: report
-  verdict: LGTM
-  gate_result: CLEAR
-  report_ninja: hayate
-  findings_summary: "4観点OK。L7教訓注入(related_lessons 12概念+SEMANTIC_LESSON_BOOST=20)。6ファイル変更。commit 1ba98986"
-  observations:
-    - "事実: related_lessons 12件(AC1≥10 PASS)。deploy_task.sh L3744にSEMANTIC_LESSON_BOOST=20実装"
-    - "事実: lessons_useful 4/10件useful(L079/L317/L310/L088)。semantic概念ブーストの設計根拠として有用"
-  finding_categories: [assumptions, numbers]
-  origin: "[[cmd_2931]] -> [[L7_lesson_injection]] -> [[useful_rate_improvement]]"
-  causal_chain: "keyword一致のみ→useful率7%→semantic概念経由スコアブースト→意味ベース注入→useful率向上=正の複利"
-  timestamp: "2026-05-21T04:07:00"
+    - "事実: ninja_monitor.sh L2105-2107にcmd_idパターンなし(subtask_id/task_id/_ac_task_idのみ)。karo_direct配備はcmd_idのみ→STALL-GHOST"
+    - "事実: deploy_task.sh L2598にassumption_invalidation補完あるがkaro_direct報告テンプレートはこのパスを不通過"
+    - "事実: STALL-GHOST 172件(hayate130/saizo22/kagemaru20)が修行期間に集中"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2939]] -> [[karo_direct_interface_mismatch]] -> [[stall_ghost_root_cause]]"
+  causal_chain: "karo_direct配備→cmd_idのみ→ninja_monitor検索対象外→STALL-GHOST→stall検出無効化。cmd_idフォールバック追加→検出復活=正の複利"
+  timestamp: "2026-05-21T19:02:00"
