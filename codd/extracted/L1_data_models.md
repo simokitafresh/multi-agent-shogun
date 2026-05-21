@@ -98,4 +98,16 @@ artifact_count: 384
 | `dashboard.md.bak` | 7,517 B | ダッシュボードバックアップ |
 | `download.csv` | 60,465 B | エクスポートデータ |
 | `download.html` | 0 B | エクスポートデータ（空） |
+
+## 関連レイヤー
+
+このレイヤー(L1)のデータモデルを読み書きする主要スクリプトと上位レイヤー:
+
+- [[L2_api_endpoints]] — L2: API Endpoints。本システムはCLIベースのため "APIエンドポイントの実装ファイルは存在しない" (L2_api_endpoints.md line 13)
+- [[L3_ui_pages]] — L3: UI Pages (layer: L3)
+- [[L4_business_logic]] — L4: Business Logic (layer: L4)
+- [[L5_infrastructure]] — L5: Infrastructure / Config (layer: L5)
+- [[L6_tests]] — L6: Tests (layer: L6)
+- [[inbox_write.sh]] — 1.2 インボックスメッセージの書き込み実装。`queue/inbox/{agent}.yaml` への原子書き込みを担当
+- [[deploy_task.sh]] — 1.3/1.4 レポートテンプレートの生成実装。`generate_report_template` で `queue/reports/` に出力
 ```
