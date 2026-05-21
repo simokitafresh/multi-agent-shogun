@@ -6,7 +6,12 @@
 set -euo pipefail
 
 # ── Fast-path: no-args before SCRIPT_DIR/source ──────────────────────────────
-if [[ $# -lt 1 || "${1:-}" == "-h" || "${1:-}" == "--help" || "${2:-}" == "-h" || "${2:-}" == "--help" ]]; then
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${2:-}" == "-h" || "${2:-}" == "--help" ]]; then
+    echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]"
+    echo "    or: bash scripts/bulletin_write.sh <content> [requires_confirmation] [action_type]"
+    exit 0
+fi
+if [[ $# -lt 1 ]]; then
     echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
     exit 1
 fi

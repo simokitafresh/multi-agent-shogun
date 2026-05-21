@@ -1297,13 +1297,17 @@ is_task_deployed() {
                         gate_passed=false
                     fi
                 fi
-                if [ -n "$gate_report_file" ] && [ -f "$gate_report_file" ] && [ "${REPORT_GATE_SENT[$gate_key]}" != "1" ]; then
+                if [ -n "$gate_report_file" ] && [ -f "$gate_report_file" ]; then
                     gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$gate_report_file" 2>&1) || true
                     if ! echo "$gate_output" | grep -q "^PASS"; then
                         gate_passed=false
-                        REPORT_GATE_SENT[$gate_key]="1"
-                        log "REPORT-FORMAT-FAIL: $name report=$(basename "$gate_report_file") output=$gate_output — auto_deploy BLOCKED"
-                        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "報告YAMLフォーマットエラー: ${gate_output}。報告YAMLを修正して再送信せよ。対象: $(basename "$gate_report_file")" report_format_fix karo >> "$LOG" 2>&1 &
+                        if [ "${REPORT_GATE_SENT[$gate_key]}" != "1" ]; then
+                            REPORT_GATE_SENT[$gate_key]="1"
+                            log "REPORT-FORMAT-FAIL: $name report=$(basename "$gate_report_file") output=$gate_output — auto_deploy BLOCKED"
+                            bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" "報告YAMLフォーマットエラー: ${gate_output}。報告YAMLを修正して再送信せよ。対象: $(basename "$gate_report_file")" report_format_fix karo >> "$LOG" 2>&1 &
+                        else
+                            log "REPORT-FORMAT-FAIL-RECHECK: $name report=$(basename "$gate_report_file") output=$gate_output — auto_deploy BLOCKED"
+                        fi
                     else
                         REPORT_GATE_SENT[$gate_key]="1"
                         log "REPORT-FORMAT-PASS: $name report=$(basename "$gate_report_file")"
