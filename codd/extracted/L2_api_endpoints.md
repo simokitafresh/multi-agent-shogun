@@ -1,4 +1,3 @@
-```markdown
 ---
 id: L2_api_endpoints
 layer: L2
@@ -29,5 +28,6 @@ artifact_count: 0
 
 HTTP API endpointは存在しないが、運用上のAPI境界は `scripts/inbox_write.sh <target_agent> <content> [type] [from] [action]` と `queue/inbox/{agent}.yaml` である。外部呼び出し側はHTTP routeではなく、CLI引数・YAML mailbox・tmux nudgeの順序契約に依存する。
 
+[[inbox_write.sh]] がこのCLI API境界の実装正本であり、usage行で `<target_agent> <content> [type] [from] [action]` を定義する。[[test_inbox_write.bats]] はrouting・persistence・report gate side-effectの回帰検証を担う。
+
 CDPはWebSocket依存を持つ補助経路であり、このL2ではHTTP endpointとして数えない。CDP関連の実装・依存はインフラ層で扱う。
-```
