@@ -58,9 +58,29 @@ task:
   semantic_concepts:
   - 'training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh'
   - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
-  status: acknowledged
+  status: idle
   stop_for: []
   task_id: cmd_training_L7_v3_tobisaru_12_20260521231234_exact
   task_type: exact
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   bloom_level: 
+
+  session_state:
+    attempt: 3
+    last_block_reason: 'stale_report: filename has null but parent_cmd=cmd_training_speed_tobisaru_5 (cmd_id mismatch)'
+    tried_approaches:
+    - 'parent_cmd: MISSING (empty value)'
+    - 'stale_report: filename has null but parent_cmd=cmd_training_speed_tobisaru_5 (cmd_id mismatch)'
+    diagnose_reason: 'parent_cmd: nullをそのまま設定したがgateはnull→空文字に変換してMISSING扱い。task.cmd_idのcmd_training_speed_tobisaru_5を正しい値として設定すべきだった'
+    approach_summary: 'monthly_common.py(dm-signal)の機能用途を分析し、3既存概念へのaliases候補3行をinsights.yaml(pending)に蓄積した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'parent_cmd: MISSING (empty value)'
+      approach_summary: 'monthly_common.py(dm-signal)の機能用途を分析し、3既存概念へのaliases候補3行をinsights.yaml(pending)に蓄積した'
+    - attempt: 2
+      block_reason: 'parent_cmd: MISSING (empty value)'
+      approach_summary: 'monthly_common.py(dm-signal)の機能用途を分析し、3既存概念へのaliases候補3行をinsights.yaml(pending)に蓄積した'
+    - attempt: 3
+      block_reason: 'stale_report: filename has null but parent_cmd=cmd_training_speed_tobisaru_5 (cmd_id mismatch)'
+      diagnose_reason: 'parent_cmd: nullをそのまま設定したがgateはnull→空文字に変換してMISSING扱い。task.cmd_idのcmd_training_speed_tobisaru_5を正しい値として設定すべきだった'
+      approach_summary: 'monthly_common.py(dm-signal)の機能用途を分析し、3既存概念へのaliases候補3行をinsights.yaml(pending)に蓄積した'

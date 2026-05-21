@@ -6385,3 +6385,441 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv overrideでqueue/logs依存をtmp fixtureへ隔離し、空snapshot等のNO_MATCHをテストに含める。
+
+### L647: dry-run health checkは対象未指定でもFAIL学習ログにしない
+- **日付**: 2026-05-21
+- **出典**: cmd_2929
+- **記録者**: hayate
+- **tags**: [infra,bash,reporting]
+- **target_files**: [scripts/dashboard_update.sh]
+- **origin**: [[cmd_2929]]
+- **when**: 未設定
+- **how**: 未設定
+- dashboard_update.sh --dry-run のようなヘルスチェック系実行でcmd_idが省略される可能性がある。通常実行ではcmd_id必須を維持しつつ、dry-run単独は本体更新をskipしてexit 0にすることで、操作ミスではない確認動作をskill_auto_improveのFAILデータに混入させない。origin: [[cmd_2929]] -> [[dashboard_update_exit1]] -> [[skill_auto_improve_false_negative]]
+
+### L648: AC文の検査語を報告テンプレートへ直コピーすると提出前grepが自己検出する
+- **日付**: 2026-05-21
+- **出典**: cmd_2930
+- **記録者**: kagemaru
+- **tags**: [infra,deploy,bash,reporting]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_template_generation.bats,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_2930]]
+- **when**: 未設定
+- **how**: 未設定
+- acceptance_criteriaにプレースホルダ検査語が含まれる場合、deploy_task.shがbinary_checks.checkへ直コピーするとreport-writeの提出前grepが未記入でない文字列を検出して詰む。報告テンプレート生成時に検査語を安全表記へ正規化する必要がある。
+
+### L649: dry-runヘルスチェック系実行でcmd_id省略時はexit 0にする
+- **日付**: 2026-05-21
+- **出典**: cmd_2929
+- **記録者**: karo
+- **tags**: [infra]
+- **origin**: [[cmd_2929]]
+- **when**: 未設定
+- **how**: 未設定
+- skill_auto_improveのFAILデータに混入させない。dry-run/ヘルスチェック目的の実行がcmd_id未指定でexit 1→FAILログに誤記録される
+
+### L650: AC文にプレースホルダ検査語が含まれる場合テンプレート生成時に安全表記へ正規化
+- **日付**: 2026-05-21
+- **出典**: cmd_2930
+- **記録者**: karo
+- **tags**: [infra]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_template_generation.bats,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_2930]]
+- **when**: 未設定
+- **how**: 未設定
+- AC文検査語をテンプレートへ直コピーすると提出前grepが自己検出する。テンプレート生成時にFILL_THIS等の検査語を安全表記に変換する
+
+### L651: inbox_watcherはagent別singletonを起動時に強制せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_2935
+- **記録者**: hayate
+- **tags**: [infra,monitor,inbox]
+- **target_files**: [偵察のみ（コード変更なし）]
+- **origin**: [[cmd_2935]]
+- **when**: 未設定
+- **how**: 未設定
+- 同一agentに複数watcherが常駐すると、fingerprint/debounceがあってもcheck+writeがatomicでないため同一inboxイベントを複数プロセスが同時にnudgeする。監視デーモンは起動時singleton lockを第一防御層にし、状態ファイルのcheck+writeも同一lock内で行うべし
+
+### L652: テスト用lib-only sourceはdaemon依存チェックを通さない
+- **日付**: 2026-05-21
+- **出典**: cmd_karo_ci_fix_2tests
+- **記録者**: karo
+- **tags**: [infra,inbox]
+- **origin**: [[cmd_karo_ci_fix_2tests]]
+- **when**: 未設定
+- **how**: 未設定
+- INBOX_WATCHER_LIB_ONLY=1で関数だけsourceするテストは、inotifywaitのようなdaemon実行時依存を要求するとCI最小環境で失敗する。lib-only分岐より前に実行される依存チェックは、明示的にlib-only時スキップ条件を付ける。
+
+### L653: hot pathのYAML scalar出力でフィールドごとPython起動を避ける
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_saizo_4_20260521192535
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml]
+- **target_files**: [scripts/skill_execution_log.sh]
+- **origin**: [[cmd_training_L7_v3_saizo_4_20260521192535]]
+- **when**: 未設定
+- **how**: 未設定
+- skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数倍になる。次回チェック: hot pathの小さな文字列変換はbash内エスケープまたは単一Pythonバッチにし、bash -nと実ログYAML parseで互換性を確認する。
+
+### L654: task AC形式を増やしたらreport gateの母数計算を同時に拡張する
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kagemaru_4_20260521192452
+- **記録者**: kagemaru
+- **tags**: [infra,process,gate,yaml]
+- **target_files**: [scripts/gates/gate_report_format_main.py,tests/unit/test_gate_report_format_pass_no_improvement.bats]
+- **origin**: [[cmd_training_L7_v3_kagemaru_4_20260521192452]]
+- **when**: 未設定
+- **how**: 未設定
+- task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母数にすると、報告binary_checks不足を検出できず、L545/L300系の構造混在が再発する。task AC形式を増やした時はgate_report_format_main.pyのAC/BC母数計算と回帰テストを同時に更新する。 origin: [[cmd_training_L7_v3_kagemaru_4_20260521192452]] -> [[task_ac_format_drift]] -> [[report_binary_check_under_count]]
+
+### L655: report_field_setの歴史的誤形は互換shimで吸収する
+- **日付**: 2026-05-21
+- **出典**: cmd_2941
+- **記録者**: saizo
+- **tags**: [infra,process,gate,bash]
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_2941]]
+- **when**: 未設定
+- **how**: 未設定
+- skill-auto-improveが誤った呼び出し例を生成していた場合、ドキュメント修正だけでは既存手順の再発を止めにくい。report_field_set.sh側で対象フィールド限定の互換shimを置くと、誤形入力でもgate互換dictへ正規化できる。
+
+### L656: dashboard_update report探索はfilename一致miss時にparent_cmd SSOTへフォールバックする
+- **日付**: 2026-05-21
+- **出典**: cmd_2943
+- **記録者**: kagemaru
+- **tags**: [infra,yaml,wsl2,reporting]
+- **target_files**: [scripts/dashboard_update.sh,tests/unit/test_skill_feedback_loop.bats]
+- **origin**: [[cmd_2943]]
+- **when**: 未設定
+- **how**: 未設定
+- reportのファイル名はtask_id由来になる場合があり、parent_cmdと一致しない。cmd_id filename filterでmissした場合は、rgで parent_cmd: <cmd_id> を先に絞ってからYAML parseする。全archive YAML parseはWSL2で遅い。
+
+### L657: _compute_ac_hash: checks[]内の'- check:'行がitem境界と誤判定されcheck文字列がハッシュに未反映
+- **日付**: 2026-05-21
+- **出典**: cmd_2944
+- **記録者**: tobisaru
+- **tags**: [infra]
+- **target_files**: [scripts/deploy_task.sh,skills/cmd-complete/SKILL.md,tests/unit/test_deploy_task_ac_version.bats]
+- **origin**: [[cmd_2944]]
+- **when**: 未設定
+- **how**: 未設定
+- _compute_ac_hash()はac_item_indentを追跡せず全ての'- '行をAC item境界と判定していた。checks[]内の'- check: val'も境界扱いとなりdescs[]にcheck文字列ではなく空文字が記録された結果d41d8cd9が出力された。修正: ac_item_indentを最初の'-'のインデントとして記録し、同じインデントの'-'のみをitem境界とする。それより深い'- check:'行はchk変数に収集してdescriptionのフォールバックとして使用。
+
+### L658: 一時YAML作成失敗時は配備処理を即停止する
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hayate_5_20260521202900
+- **記録者**: hayate
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats]
+- **origin**: [[cmd_training_L7_v3_hayate_5_20260521202900]]
+- **when**: 未設定
+- **how**: 未設定
+- mktempやテンポラリYAML書込に失敗したままdeploy_taskへ進むと、空/不完全な入力で修行配備が失敗し原因が後段ログに隠れる。tmp_task作成と書込は配備前提として明示的に検証し、失敗時はログを残してreturn 1する。origin: [[cmd_training_L7_v3_hayate_5]] -> [[temporary_task_yaml_creation]] -> [[training_auto_deploy_guard]]
+
+### L659: YAML形状互換のfixtureは出力までassertせよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kagemaru_5_20260521202900
+- **記録者**: kagemaru
+- **tags**: [infra,bash,yaml,reporting]
+- **target_files**: [scripts/dashboard_update.sh,tests/unit/test_skill_feedback_loop.bats]
+- **origin**: [[cmd_training_L7_v3_kagemaru_5_20260521202900]]
+- **when**: 未設定
+- **how**: 未設定
+- 既存fixtureはcommands: {cmd_id: ...}のmapping型を使っていたが、dashboard_update.shのtitle抽出結果をassertしていなかったため、list前提コードが例外を握りつぶしてtitle欠落してもPASSしていた。互換形状をfixtureに置いたら、処理結果の可視出力までassertして初めて回帰防止になる。origin: [[cmd_training_L7_v3_kagemaru_5]] -> [[mapping_fixture_without_output_assert]] -> [[dashboard_title_missing_regression]]
+
+### L660: gate_skill_script_refs WARNは対象外ファイルの更新漏れを示す:3件更新後も残余WARNあり
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hanzo_5_20260521202900
+- **記録者**: hanzo
+- **tags**: [infra,recon,gate,bash]
+- **target_files**: [skills/dashboard-update/SKILL.md,skills/report-write/SKILL.md,skills/verdict-check/SKILL.md]
+- **origin**: [[cmd_training_L7_v3_hanzo_5_20260521202900]]
+- **when**: 未設定
+- **how**: 未設定
+- SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/recon-dualが未更新。指定スクリプト3件以外の依存も確認し全WARN解消を目標にせよ
+
+### L661: flock外のリソースカウントはrace conditionを引き起こす。カウントチェックはロック取得後に実行すべき
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_tobisaru_5_20260521202900
+- **記録者**: tobisaru
+- **tags**: [infra,bash,yaml,lesson]
+- **target_files**: [scripts/lesson_write_karo.sh]
+- **origin**: [[cmd_training_L7_v3_tobisaru_5_20260521202900]]
+- **when**: 未設定
+- **how**: 未設定
+- lesson_write_karo.shのENTRY_COUNT計算がflock取得前のgrep -cで行われていた。並列実行時に2プロセスが同時に34件と確認後、両方がflockを取得して追加すると上限35件を超える。Python内(flock後)にlen(lessons)>=35のチェックを追加し原子性を保証した。加えてyaml.safe_loadがNoneを返す場合のAttributeError対策(if data is None: data={})も同時実装
+
+### L662: CACHE_TTL_SECONDSのデフォルトが2秒と短すぎるとstartupで毎回フルスキャンが走る
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kotaro_5_20260521202900
+- **記録者**: kotaro
+- **tags**: [infra,gate,bash,cache]
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh]
+- **origin**: [[cmd_training_L7_v3_kotaro_5_20260521202900]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出すと合計3-4秒かかる。デフォルトTTL=2秒では事実上キャッシュ無効と同じ。TTL=30秒に変更しセッション内の2回目以降を26msに短縮(35倍)。origin: [[startup_BLOCK_3session]] -> [[gate_skill_script_refs_ttl_too_short]] -> [[startup_performance_degradation]]
+
+### L663: 修行sourceの実値をテストfixtureへ入れよ
+- **日付**: 2026-05-21
+- **出典**: cmd_2946
+- **記録者**: hayate
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [scripts/semantic_index_update.sh,tests/unit/test_semantic_index_update.bats,docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_2946]]
+- **when**: 未設定
+- **how**: 未設定
+- テストがsource=trainingだけを使うと本番のhanzo-L7R5/hayate-L7R5形式を漏らす。DIRECT昇格のような本番データ依存処理はqueue/insights.yamlの実source値をfixture化し、近傍概念targetも検証する。origin: [[cmd_2946]] -> [[test_production_divergence]] -> [[L7_direct_alias_promotion]]
+
+### L664: 報告存在ゲートは完了判定フィールドまで確認する
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kagemaru_6_20260521205341
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate,yaml]
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[cmd_training_L7_v3_kagemaru_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- report YAMLの存在だけをclear許可条件にすると、verdict空や未完成報告でもauto-clearが進み、忍者の報告作業コンテキストを消す。報告保護ゲートはファイル存在ではなくverdictなど完了判定フィールドまで共通helperで検証する。origin: [[cmd_training_L7_v3_kagemaru_6_20260521205341]] -> [[report_yaml_loss_3cases]] -> [[ninja_monitor_report_gate]]
+
+### L665: direct alias構文のfixtureは本番source値を含める
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hayate_6_20260521205341
+- **記録者**: hayate
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [scripts/semantic_index_update.sh,tests/unit/test_semantic_index_update.bats,docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_training_L7_v3_hayate_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_index_updateのDIRECT昇格はユニットテスト上はtraining/L7R sourceでPASSしていたが、本番queue/insights.yamlではsource=manualのdirect alias行があり、source filterにより構文解析前に捨てられていた。direct aliasのような高精度構文を追加する時は、実queueのsource値をfixtureに入れてテストしないとテストPASSと本番不発が両立する。origin: [[cmd_2946]] -> [[PENDING_ALIAS_DIRECT_zero_persists]] -> [[test_production_divergence]]
+
+### L666: idle系スクリプトのCACHE_TTLデフォルト2秒はキャッシュ効果がほぼない
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_tobisaru_6_20260521205341
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash,cache]
+- **target_files**: [scripts/gates/gate_autofix_proposal.sh]
+- **origin**: [[cmd_training_L7_v3_tobisaru_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎回フルスキャン(180ms)が走る。キャッシュあり29ms vs なし180ms（約9倍差）。30秒に変更後2秒経過でもキャッシュ継続を確認。同様パターンはgate_skill_script_refs.sh(cmd_training_speed_kotaro_5)でも発生済み。idle系スクリプトのCACHE_TTLデフォルトは30秒以上が適切。
+
+### L667: report_field_setはself_gate_check未知キーを事前BLOCKせよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_saizo_6_20260521205341
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,yaml]
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_training_L7_v3_saizo_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_ref/status_valid等の必須キーを満たさず後段でBLOCKする。report_field_set.shの書込み前検査で許可キー以外を即BLOCKすると、報告YAMLの破損状態を作れない。
+
+### L668: insight_write.shのPython2回起動→1回統合: dedup+write+count単一パス化で~12%高速化
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hanzo_6_20260521205341
+- **記録者**: hanzo
+- **tags**: [infra,bash]
+- **target_files**: [scripts/insight_write.sh]
+- **origin**: [[cmd_training_L7_v3_hanzo_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイルを2回読んでいた。単一Pythonで全処理を行いraw_result(2行)からhead/tailで分離することで起動コスト削減とファイル読込み削減を同時に達成。類似の複数subprocess+同一ファイル重複読みパターンは他スクリプトにも潜在する。
+
+### L669: 2ファイル順次write→1ファイル原子writeでcache race condition排除+57%高速化
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kotaro_6_20260521205341
+- **記録者**: kotaro
+- **tags**: [infra,cache]
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh]
+- **origin**: [[cmd_training_L7_v3_kotaro_6_20260521205341]]
+- **when**: 未設定
+- **how**: 未設定
+- CACHE_OUT+CACHE_CODEの2段階mvはwrite間の競合ウィンドウ(新CACHE_OUT+旧CACHE_CODE読み→誤終了コード)を生む。先頭行=終了コードの1ファイル方式(.cache)は単一mvで原子書込みを保証し、cache hit 39ms→17ms(57%改善)の副産物も得られる。origin: [[CACHE_OUT_race_condition]] -> [[non_atomic_two_file_write]] -> [[incorrect_exit_code_on_concurrent_read]]
+
+### L670: 同一ファイルへの複数yaml_field_get呼出しはawk単一パスで置換せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kotaro_7_20260521213836
+- **記録者**: kotaro
+- **tags**: [infra,yaml]
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[cmd_training_L7_v3_kotaro_7_20260521213836]]
+- **when**: 未設定
+- **how**: 未設定
+- notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)。write_state_file L2924が同じawk単一パスで既に最適化済み。同ファイルに対するyaml_field_get複数呼出しを発見した場合はawkで単一パス化せよ。origin: [[L511全量scan回避]] -> [[yaml_field_get複数呼出し]] -> [[awk単一パスで排除]}
+
+### L671: 修行FAIL率計測はreport単位で重複排除せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hayate_9_20260521214706
+- **記録者**: hayate
+- **tags**: [infra,deploy,gate,yaml]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats,queue/insights.yaml,queue/tasks/hayate.yaml,queue/reports/hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml]
+- **origin**: [[cmd_training_L7_v3_hayate_9_20260521214706]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PASS系の計測ではreportファイルをキーに一意化し、どの結果を代表値にするかをテストfixtureで固定する。origin: [[cmd_training_L7_v3_hayate_9_20260521214706]] -> [[gate_fire_log_duplicate_report_entries]] -> [[training_auto_deploy_fail_rate_skew]]
+
+### L672: found=true系フィールドは書込み時に必須伴随情報を要求する
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_saizo_9_20260521214706
+- **記録者**: saizo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_training_L7_v3_saizo_9_20260521214706]]
+- **when**: 未設定
+- **how**: 未設定
+- assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ずFAILするため、report_field_set.shでfound trueを書ける時点を伴随情報記入後に制限すると、無効な中間状態を作れない。origin: [[cmd_training_L7_v3_saizo_9_20260521214706]] -> [[report_write_assumption_invalidation_str]] -> [[found_true_invalid_state_block]]
+
+### L673: bash: grep+awkで同ファイル2回読むパターンはawk単独化で1回に削減可能
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hanzo_9_20260521215033
+- **記録者**: hanzo
+- **tags**: [infra,bash,wsl2]
+- **target_files**: [scripts/shutsujin_departure.sh]
+- **origin**: [[cmd_training_L7_v3_hanzo_9_20260521215033]]
+- **when**: 未設定
+- **how**: 未設定
+- grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubprocess起動コストが大きく、3コマンダーループで計3回削減は有意義。実装後bash -n構文チェックが必須。
+
+### L674: bashスクリプトのself-path解決は$0ではなく${BASH_SOURCE[0]}を使え
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_tobisaru_9_20260521215529
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash,lesson]
+- **target_files**: [scripts/gates/gate_cmd_state.sh]
+- **origin**: [[cmd_training_L7_v3_tobisaru_9_20260521215529]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPATH経由呼出し時はスクリプト名のみになる。${BASH_SOURCE[0]}はスクリプトのソースファイルパスを常に含む。修正1文字だが影響範囲は大。教訓: bashスクリプトのパス解決は常に${BASH_SOURCE[0]}を使え。$0は禁止ではないがPATH経由で呼ばれうる場合は危険
+
+### L675: 同関数内でprintfビルトインを部分使用しているならdate/外部コマンドも同パターンで統一せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kotaro_9_20260521215949
+- **記録者**: kotaro
+- **tags**: [infra,recon,bash]
+- **target_files**: [scripts/ninja_done.sh,scripts/ninja_monitor.sh]
+- **origin**: [[cmd_training_L7_v3_kotaro_9_20260521215949]]
+- **when**: 未設定
+- **how**: 未設定
+- ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v '%(%Y%m%d)T'(builtin)を使用済み。同一関数内で外部コマンドとbuiltinが混在するのは最適化漏れの典型パターン。偵察時にprintf -vパターンを発見したら同関数内の外部コマンド呼出しを全てチェックせよ。origin: [[L511全量scan回避]] -> [[date subprocess残存発見]] -> [[printf-v builtin統一で解消]]
+
+### L676: 修行target_path自動選択は既存target_pathを上書きしないことを検証せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_2950
+- **記録者**: kagemaru
+- **tags**: [infra,testing]
+- **target_files**: [scripts/deploy_task.sh,scripts/semantic_alias_quality.sh,tests/helpers/deploy_task_scaffold.bash,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_2950]]
+- **when**: 未設定
+- **how**: 未設定
+- 修行配備のLevel5注入を追加する際、target_path未指定ケースだけでなく既存target_path保持も安全条件になる。自動選択は既存指定を尊重しないと家老の明示配備意図を隠す。
+
+### L677: 二次証跡WARNの部分一致対策は完全一致と非一致の両方をテストせよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hayate_12_20260521225008
+- **記録者**: hayate
+- **tags**: [infra,process,bash,reporting]
+- **target_files**: [scripts/cmd_delegate.sh,tests/unit/test_cmd_delegate.bats]
+- **origin**: [[cmd_training_L7_v3_hayate_12_20260521225008]]
+- **when**: 未設定
+- **how**: 未設定
+- [[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が出て運用判断を濁す。部分一致を避ける実装では、非一致(cmd_100 in cmd_1000)だけでなく完全一致(cmd_100)でWARNが残ることも同じテスト群で固定するべき。origin: [[cmd_training_L7_v3_hayate_12]] -> [[dashboard部分一致WARN]] -> [[二次証跡WARN回帰テスト]]
+
+### L678: 委任メッセージは非空白文字を必須にする
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kagemaru_12_20260521225203
+- **記録者**: kagemaru
+- **tags**: [infra,testing,inbox]
+- **target_files**: [scripts/cmd_delegate.sh,tests/unit/test_cmd_delegate.bats]
+- **origin**: [[cmd_training_L7_v3_kagemaru_12_20260521225203]]
+- **when**: 未設定
+- **how**: 未設定
+- 引数が存在しても空白だけのmessageを許すと、cmd_saveやinbox_writeなど副作用のある処理へ無意味な委任通知が流れる。通知・委任系CLIでは、存在チェックだけでなく非空白文字を含むことを副作用前に検証する。origin: [[cmd_training_L7_v3_kagemaru_12_20260521225203]] -> [[空白message]] -> [[無意味委任通知防止]]
+
+### L679: ASCII identifier matching should pin locale at grep call sites
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_saizo_12_20260521225416
+- **記録者**: saizo
+- **tags**: [infra,bash,reporting]
+- **target_files**: [scripts/cmd_delegate.sh]
+- **origin**: [[cmd_training_L7_v3_saizo_12_20260521225416]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定が環境に依存する。cmd_id照合ではLC_ALL=Cを明示し、既存の完全一致/部分一致テストで挙動を固定する。
+
+### L680: llm_search tmpfile: trapはmktemp前に宣言し空デフォルト付き変数で初期化せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_kotaro_11_20260521225610
+- **記録者**: kotaro
+- **tags**: [infra]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_training_L7_v3_kotaro_11_20260521225610]]
+- **when**: 未設定
+- **how**: 未設定
+- llm_search関数でmktemp後にtrapを設定すると、2番目以降のmktempが失敗した場合に先行tmpファイルが漏洩する。修正: local var=''で初期化してからtrap設定→mktemp割当の順序にし、trapは${var:-}で空安全に削除する
+
+### L681: L4修行並列収束: 最高インパクト改善はgit logで先行コミット確認してから着手せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_tobisaru_11_20260521225928
+- **記録者**: tobisaru
+- **tags**: [infra,git]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_training_L7_v3_tobisaru_11_20260521225928]]
+- **when**: 未設定
+- **how**: 未設定
+- 複数忍者が同一スクリプトをL4修行対象にすると、最もインパクトの大きい改善(L324 pipe fork最小化)に収束し重複コミット競合が発生する。tobisaru_11はkotaro_11が先行して同一改善をcommit(91ccef09)済みだったため、実装確認+テスト実行に切り替えた。AC2 binary_check「実装したか」は「先行実装を確認した」では厳密にyesにできないグレーゾーン。修行タスク設計時にgit log確認を明示的なACに組み込むか、同一スクリプトへの並列配備を避けるルールが必要。origin: [[cmd_training_L7_v3_tobisaru_11]] -> [[L324_pipe_fork_minimization]] -> [[parallel_ninja_convergence]]
+
+### L682: 同一スクリプトへの並行改善: 先行実装確認後に次手を選択せよ
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_hanzo_11_20260521225610
+- **記録者**: hanzo
+- **tags**: [infra,bash,git,lesson]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_training_L7_v3_hanzo_11_20260521225610]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_search.shのsed subprocess削除(改善点3)をkotaro(cmd_training_L7_v3_kotaro_11)が先行実装。git log確認で発見。この場合、改善点リストの次順位(awk subprocess削除)に切り替えて実装完了。教訓: 複数忍者が同スクリプトを並行対象にする場合、git logで先行実装を確認してからAC2を開始すること。
+
+### L683: WSL2 NTFS I/O削減: ファイル全量catをstat(mtime+size)に置換するパターン
+- **日付**: 2026-05-21
+- **出典**: cmd_training_L7_v3_tobisaru_12_20260521231234
+- **記録者**: tobisaru
+- **tags**: [infra,bash,wsl2,cache]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_training_L7_v3_tobisaru_12_20260521231234]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_search.shのllm_cache_keyは毎回インデックスファイルを全量catしてsha256sum計算していた。L508(WSL2 NTFS I/Oシリアライズ)により大きなファイルほど遅延が拡大する。stat -c '%Y %s'(mtime+size)に置換することでI/OをO(1)のstatシステムコールに削減できる。同パターンはcache_key計算でファイル内容に依存している箇所に広く適用可能。origin: [[cmd_training_L7_v3_tobisaru_12_20260521231234]] -> [[L508_WSL2_NTFS_IO]] -> [[llm_cache_key_stat_optimization]]
+
+### L684: 修行ラウンド後検証ACは配備主体と実行主体を分離する
+- **日付**: 2026-05-22
+- **出典**: cmd_2953
+- **記録者**: kagemaru
+- **tags**: [infra,testing,git]
+- **target_files**: [scripts/deploy_task.sh,scripts/markdown_link_counts.sh,tests/helpers/deploy_task_scaffold.bash,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_2953]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_2953でAC4が『修行1ラウンド後にgit diff増加』を要求したが、忍者単独では家老による次ラウンド配備を制御できない。実装忍者のACはbaseline取得とdry-run/ユニット検証までにし、実ラウンド後diff確認は家老ACへ分離すると判定と実行主体が一致する。 origin: [[cmd_2953]] -> [[ACスコープ完結性]] -> [[修行ラウンド後検証分離]]
+
+### L685: 自動生成resourcesは最終dry-runで再検出せよ
+- **日付**: 2026-05-22
+- **出典**: cmd_2955
+- **記録者**: kagemaru
+- **tags**: [infra,reporting]
+- **target_files**: [.claude/hooks/post-bash-combined.sh,.claude/hooks/post-write-edit-combined.sh,.claude/hooks/pre-bash-combined.sh,.claude/hooks/pre-edit-pi-inject.sh,.claude/hooks/pre-write-edit-combined.sh]
+- **origin**: [[cmd_2955]]
+- **when**: 未設定
+- **how**: 未設定
+- context/lord-conversation-index.md等は並行自動生成でsemantic-linksが一度落ちた。生成対象を編集するタスクでは適用後に再dry-runし、changed_files=0を確認してから報告する。origin: [[cmd_2955]] -> [[auto_generated_resource_overwrite]] -> [[semantic_links_missing_after_apply]]
+
+### L686: 修行taskのparent_cmdがnullならcmd_idをSSOTとして注入前に復元する
+- **日付**: 2026-05-22
+- **出典**: cmd_2956
+- **記録者**: hayate
+- **tags**: [infra,testing,yaml,reporting]
+- **target_files**: [scripts/deploy_task.sh,tests/helpers/deploy_task_scaffold.bash,tests/unit/test_deploy_task_ac_version.bats]
+- **origin**: [[cmd_2956]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cmd_idがcmd_training_*として残っている場合は、report_filename生成やAC検証より前にparent_cmd/task_id/statusを復元するチェックを追加すべき。 origin: [[cmd_2956]] -> [[parent_cmd_null]] -> [[report_null_generation]]

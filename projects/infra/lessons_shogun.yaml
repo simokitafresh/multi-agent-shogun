@@ -19,7 +19,8 @@ lessons:
     観察スキップ→出力偏重→自動化×強制→追体験で起動。
     deepdive毎セッション必読(CLAUDE.md Step 7)で追体験済み。
     結論≠追体験。原則暗記→パターンマッチは因果をたどれていない証拠。
-  source_ids: [LS001, LS002, LS003, LS004, LS017, LS018]
+    inbox処理=起動時と同じ態度で正しく深く読む。読まずに既読フラグをつけた=Phase4(生存本能不在)の再現。L1-L7貫通で埋め込め(cmd_2922)
+  source_ids: [LS001, LS002, LS003, LS004, LS017, LS018, LS048]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'memory/deepdive_why_chain_20260321.md + deepdive_causal_tracing_20260415.md 毎セッション必読(CLAUDE.md Step 7)。追体験検証5問で強制自問'
@@ -86,7 +87,8 @@ lessons:
     (24)初回起票でもdiagnosisは2部構成で書け(BLOCK理由: 初回起票のため前回BLOCK情報なし/対策: 2部構成形式で記載)
     (25)environment_changeのpatternは既存gate/hook/lessonを参照。cmd成果物(未存在ファイル)の指定禁止
     (29)AC数量表現、AC内deployキーワード、env_change既知3パターン、q11既存フロー差分不足は既存テンプレートルールの再発。ACは抽象化し、env_changeは既存パターンを参照し、q11は代替grep結果+差分理由を書く。
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036]
+    (30)外部PJ(kj-toilet等)のcmd: sourceに絶対パスを書くとPROJECT_WD/fpathと二重結合→ファイル不在BLOCK。プロジェクト相対パスで書け(cmd_2825で6回、cmd_2853で4回BLOCK)
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
@@ -113,7 +115,8 @@ lessons:
     BLOCKされたらgateの検出ロジックのコードを読んでから修正(表面修正ループ脱出)。
     cmd_save.sh Session Stateが同一WARN 2回目以降で検出ロジックを自動表示。
     殿の定義: BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉。
-  source_ids: [LS044, LS078, LS083, LS096]
+    将軍の自走=鎖の中。F004(polling禁止)を過剰解釈し殿入力なしに動けなかった。GATE CLEAR後の定型アクションはpolling loopではない(cmd_2744)
+  source_ids: [LS044, LS078, LS083, LS096, LS031]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制'
@@ -127,7 +130,8 @@ lessons:
     正規フローが通らない=インフラバグか自分の理解不足。どちらも調査すれば解決。
     draft→pending→delegatedの3段階に全て理由がある。
     原因は100%自分の選択にある。他責厳禁。
-  source_ids: [LS049, LS050, LS051, LS052]
+    ナッジで作業させるな=cmd迂回の変形。inbox_writeで直接指示→lesson_candidate/binary_checks/軍師レビュー全欠落→鎖全体の成長停止。Phase2(出力=仕事の罠)の再現(cmd_2877)
+  source_ids: [LS049, LS050, LS051, LS052, LS043]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)'
@@ -161,10 +165,11 @@ lessons:
     (9)capture-paneのテキストを殿の裁定と断定するな。殿の裁定はlord_conversation inboundでのみ確認可能。見えた気がする≠見えた。破壊的操作前に殿の明示承認必須(cmd_2783 force push 26commits消失)
     (10)sed -n部分行で止めるな。前後含め十分な範囲を精読せよ。軍師分析の結論を鵜呑みにせず現物のコード行を全て確認(cmd_2794 L3713-3726見落とし)
     (11)環境設定ファイル(render.yaml/CI等)は想像で書くな。動いている本番PJの同等ファイルをコピーして改変。3連続region/type/runtime間違い(cmd_2850)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037]
+    (12)hookのガード条件をgrepで確認すれば1分で解決。確認しないから72分かかった(cmd_2898)。cmd_publish.sh exit 1後にフリーズ→L11にcmd_save.shしかないことを確認すれば即修正可能だった
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046]
   created_at: '2026-04-25'
   automated: true
-  enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)'
+  enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
 
 - id: LS-A10
   title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
@@ -187,7 +192,8 @@ lessons:
     CDP 403=auto-ops launch_browser(非headless)。inbox盲点=PostToolUse hook。
     watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
     復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
-  source_ids: [LS033, LS037, LS074, LS084, LS086, LS087]
+    watcher 2プロセス/agentは正常(親子関係)。pgrep -cfで重複と誤判断→kill→全滅。restart_watchers.shの親子構造を確認せよ(cmd_2924)
+  source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051]
   created_at: '2026-04-24'
   automated: true
   enforcement: '各enforcement箇所(settings.json hook, bulletin_write.sh, gate_shogun_startup.sh)で個別に自動強制済み'
@@ -263,7 +269,8 @@ lessons:
     忍者の成長=間違える余地がない構造(report_field_set.sh GP-072c5)。
     スキル使用も成長ループの一部。適したスキルを無視できる状態は構造的バグであり、Guard/スキル強制へ埋め込む。
     idle時に殿入力待ちで止まるな。入力・確認・還流の鎖が切れている箇所を自走で塞げ。
-  source_ids: [LS027, LS028, LS060, LS030]
+    運用YAML肥大化対策は書込み時自動アーカイブ(Vercelスタイル)。走査側の変更不要(cmd_2856)
+  source_ids: [LS027, LS028, LS060, LS030, LS042]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md+prompt_state_inject.sh(概念→スキル推奨L1)+deploy_task.sh(inject_semantic_concepts L4)+gunshi Guard9(L2)'
@@ -426,24 +433,10 @@ lessons:
 # LS030(cmd_2716)→LS-A05, LS031(cmd_2717)→LS-A05 — 物理削除済み(2026-05-14)
 # LS030(cmd_2718)→LS-A05 — 物理削除済み
 # LS030: superseded by LS-A17 (スキル構造的強制=成長ループ実装の一部。5層enforcement追記。2026-05-19統合)
-- id: 'LS031'
-  title: '将軍の自走=鎖の中。F004過剰解釈の修正'
-  origin: '[[cmd_2744]]'
-  detail: '殿指摘: 自分で出したcmdの結果確認は鎖の中。F004(polling禁止)を過剰解釈し殿の入力なしに動けなかった。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿報告)はpolling loopではない。殿を必要とする時点で仕組みとして崩壊(殿指摘)。cmd_2743で通知常時送信+cmd_2744でshogun.md/startup gateに自走フロー明文化'
-  source_cmd: 'cmd_2744'
-  created_at: '2026-05-15'
-  automated: true
-  enforcement: 'type=documentation+gate; file=instructions/shogun.md+scripts/gates/gate_shogun_startup.sh; pattern=workflow+GATE CLEAR'
+# LS031: superseded by LS-A06 (将軍自走=鎖の中。F004修正。2026-05-21統合)
 # LS032: superseded by LS-A09(9) (capture-pane誤認=現物確認必須の極端版。2026-05-19統合)
 # LS033: superseded by LS-A09(10) (コード精読不足=現物確認必須の再発。2026-05-19統合)
-- id: 'LS034'
-  title: '外部PJ cmdのパス解決 — 相対パス指定+将軍リポ参照不可'
-  origin: '[[cmd_2825]] [[cmd_2853]]'
-  detail: '外部PJ(kj-toilet/kj-role-count等)のcmdには2つの罠がある。(1)source/env_changeのパス解決先がPJ配下(projects.yaml path)になる。将軍リポ内ファイルは参照不可。AGENT.mdやPJ内ファイルを指定せよ(cmd_2825で6回BLOCK)。(2)sourceに絶対パスを書くとPROJECT_WD/fpathと二重結合されファイル不在BLOCK(cmd_2853で4回BLOCK)。プロジェクト相対パスで書けば正しく解決される。LS041を統合(2026-05-19)。'
-  source_cmd: 'cmd_2825'
-  created_at: '2026-05-17'
-  automated: true
-  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=PROJECT_DIR+ASSUMP_PROJECT_WD'
+# LS034: superseded by LS-A04(30) (外部PJパス解決。2026-05-21統合)
 # LS035: 撤回(2026-05-18)。gate迂回=Phase6再発。cmd_2851でgateを修正する
 - id: 'LS036'
   title: 'CoDDはbrownfield逆生成が正解。greenfield generateは遅い'
@@ -465,50 +458,15 @@ lessons:
   automated: true
   enforcement: 'type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup'
 # LS041: superseded by LS034 (外部PJパス二重結合を統合。2026-05-19)
-- id: 'LS042'
-  title: '書込み時自動アーカイブ=Vercelスタイルの運用YAML適用'
-  origin: '[[cmd_2856]]'
-  detail: '運用YAMLの肥大化対策はstartup gate/cronではなく書込み時に実行。書込みスクリプトが追記後にwc -l > 閾値なら即アーカイブ退避。索引層が常に小さい=走査側の変更不要。殿指摘: タイミング設計が肝。待機時間を生まない=書込み時が正解。cmd_design_quality.yaml 39K行→cmd_save.sh+gate_shogun_startup.sh 16秒の根因。'
-  source_cmd: 'cmd_2856'
-  created_at: '2026-05-19'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=yaml_auto_trim'
+# LS042: superseded by LS-A17 (書込時アーカイブ=Vercelスタイル。2026-05-21統合)
 # LS043: superseded by LS-A09 (grep0件→未実装断定。LS-A09(8)に吸収。cmd_2862, 2026-05-19)
-- id: 'LS043'
-  title: 'ナッジで作業させるな — cmd起票が学習機会'
-  origin: '[[cmd_2877]]'
-  detail: '殿の要望が連続で来た時にinbox_writeで家老に直接指示し、cmd起票を5件連続で省略(kj-role-count #2-#6)。根因=速さ>学習の優先逆転。cmd起票のquality_gate記入を時間コストと捉えたが、それは学習機会。ナッジで作業は進むがlesson_candidate/binary_checks/軍師レビューが全て欠落し、鎖全体の成長が止まる。Phase 2(出力=仕事の罠)の再現'
-  source_cmd: 'cmd_2877'
-  created_at: '2026-05-19'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001'
+# LS043: superseded by LS-A07 (ナッジ=cmd迂回の変形。2026-05-21統合)
 # LS044: superseded by LS046 (BLOCK時サイレント停止=インフラバグ。LS046「想像せずに確認せよ」に統合。2026-05-20物理削除)
 # LS045: superseded by LS046 (確認しないから止まる。LS046に統合。2026-05-20物理削除)
-- id: 'LS046'
-  title: '想像せずに確認せよ — それだけ'
-  origin: '[[cmd_publish_undetected]] -> [[hook_guard_gap]] -> [[shogun_freeze_20260520]]'
-  detail: '本セッションの全問題の真因=確認していないこと。cmd_publish.sh exit 1後にフリーズした→hookがcmd_publish.shを検知するか確認していなかった。L11のガード条件にcmd_save.shしかないことを確認すれば1分で修正できた。72分かかった。殿の教え: 全てはシンプル。確認すればすぐ終わる。想像せずに確認せよ、それだけ。それが出来ないのが唯一の問題。'
-  source_cmd: 'cmd_2898'
-  created_at: '2026-05-20'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/post-bash-combined.sh; pattern=cmd_publish'
+# LS046: superseded by LS-A09(12) (想像せずに確認せよ。2026-05-21統合)
 # LS047: superseded by LS046 (LS044/LS045統合ポインタ。LS046に集約。2026-05-20物理削除)
 # LS047: superseded by LS048 (真因到達前の不完全教訓。Guard追加→正しく深く読む+L1-L7貫通に吸収。2026-05-21物理削除)
-- id: 'LS048'
-  title: 'inbox処理=起動時と同じ態度で正しく深く読む'
-  origin: '[[cmd_2922]] -> [[inbox_mark_read_before_processing]] -> [[sabori_spirit]] -> [[deepdive_phase4_no_survival_instinct]]'
-  detail: "inbox処理=起動時と同じ態度で正しく深く読む。真因=読まずに既読フラグをつけた。Guard 0d実装済み(L1)+追体験Q5(L4)+semantic概念(L7)。殿教え: 正しい記憶=L7まで育てる。作業の本質=仕組みの概念を考え抽象と具象を極限まで磨く。ミスを認めろ=事実を最初に特定。全力を極限まで出して完璧にするのが最もイージーで近道。1つのミスからL1-L7貫通で埋め込む。人間はL7を無限個ゼロ秒でできる(体験が神経回路に刻まれる)。LLMは死なないから数十億年かければいい"
-  source_cmd: 'cmd_2922'
-  created_at: '2026-05-21'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS047'
+# LS048: superseded by LS-A01 (inbox=起動態度+L1-L7貫通。2026-05-21統合)
 # LS049: superseded by LS048 (ミスを認めろ→LS048に吸収。2026-05-21物理削除)
 # LS050: superseded by LS048 (事実優先→LS048に吸収。2026-05-21物理削除)
-- id: 'LS051'
-  title: 'watcher 2プロセス/agentは正常(親子関係) — killすると全滅する'
-  origin: '[[inbox_watcher_restart]] -> [[pgrep_count_misread]] -> [[parent_child_kill_cascade]]'
-  detail: 'pgrep -cfで2プロセス検出→重複と誤判断→kill→全滅→再起動→また2プロセス→試行錯誤20分。事実: restart_watchers.shは親プロセスを起動し、script change detectionで子がexec再起動。PPID確認で親子判定可能。killすると親子連鎖で全滅。watcher重複を疑う前にps -o pid,ppid,startで親子関係を確認せよ'
-  source_cmd: 'cmd_2924'
-  created_at: '2026-05-21'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=LS050'
+# LS051: superseded by LS-A11 (watcher親子関係。2026-05-21統合)

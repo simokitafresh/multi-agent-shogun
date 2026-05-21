@@ -26,7 +26,7 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_training_L7_v3_kotaro_11_20260521225610
+  parent_cmd: 
   project: infra
   recommended_skills:
   - report-write
@@ -35,7 +35,7 @@ task:
   semantic_concepts:
   - 'training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh'
   - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
-  status: acknowledged
+  status: idle
   stop_for: []
   task_id: cmd_training_L7_v3_kotaro_11_20260521225610_normal
   task_type: training
