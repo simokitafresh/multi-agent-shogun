@@ -3692,7 +3692,8 @@ try:
         except OSError:
             return []
         cache_key = hashlib.md5(yaml_path.encode()).hexdigest()[:12]
-        cache_path = f'/tmp/deploy_lesson_cache_{cache_key}_{mtime}.json'
+        _cache_dir = os.environ.get('DEPLOY_LESSON_CACHE_DIR', '/tmp')
+        cache_path = f'{_cache_dir}/deploy_lesson_cache_{cache_key}_{mtime}.json'
         # キャッシュヒット
         if os.path.exists(cache_path):
             try:
