@@ -103,12 +103,19 @@ bash scripts/inbox_write.sh karo "cmd_<cmd_id>レビュー完了。verdict=<verd
 ### Step 4: 掲示板投稿（FAIL時のみ）
 FAIL時は将軍にも共有:
 ```bash
-BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> FAIL — <fail_reason>"
+BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> FAIL — <fail_reason>" false action_required
 ```
-`bulletin_write.sh` は投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
+`bulletin_write.sh` の現在仕様:
+- 推奨形式は `bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`。
+- `requires_confirmation` は `true|false` または確認必須エージェントのCSV。`BULLETIN_NOTIFY` もCSV指定可能。
+- `action_type` は `info` または `action_required`。FAIL共有は将軍/家老の対応が必要なため `action_required` を指定する。
+- 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
+- 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
+- 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
 
 ## 制約
 - verdict判定は軍師の手動判断。このスキルは判定後の記録・送信のみ
 - SG7チェックリストの各項目は事前に判定済みであること
 - review_logのEdit直接編集禁止（yaml_field_set.sh経由）
 - Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` はtmpfs一時ファイル+flock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_logへのverdict/gate_prediction/reviewed_at記録はhelper経由で実施する。
+- Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` / `BULLETIN_NOTIFY` のCSV正規化、不正agent名ERROR、`action_type=info|action_required` 制約、DEDUP、全文inbox通知、archive自動実行を前提にする。

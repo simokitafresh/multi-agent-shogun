@@ -47,6 +47,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/r
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 - 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
 - Script refs verified: 2026-05-21 cmd_2883, cmd_2899, cmd_training_L7. `inbox_write.sh` は `from=shogun type=task_new` をBLOCKする。軍師から家老への `gunshi_lesson_candidate` 送信は対象外だが、将軍の作業指示を `task_new` で直送する手順をこのスキルへ追加してはならない。cmd_2899: `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化+tmpfs temp)。cmd_training_L7: report_format_gate修正メッセージがverdict例→binary_checks.AC1例に変更済み(verdictはgateが自動導出)。
+- Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` と `BULLETIN_NOTIFY` は `true|false` またはエージェントCSVを正規化する。idle分析の共有は `BULLETIN_NOTIFY=shogun` + `action_type=info` を使い、全員共有が必要な場合だけ通知先CSVを広げる。
 
 ### Step 4: review_log記録
 ```bash

@@ -56,6 +56,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 - 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 - 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
+- Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` と `BULLETIN_NOTIFY` は `true|false` またはエージェントCSVを正規化し、不正agent名はERRORで停止する。`action_type` は `info|action_required` のみ許可し、将軍対応依頼は `action_required` を使う。
 
 ## 制約
 - review_logのEdit直接編集禁止（yaml_field_set.sh経由）

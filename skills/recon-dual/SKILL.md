@@ -41,6 +41,7 @@ bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "cmd_id" "<c
 bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 ```
 `deploy_task.sh --yaml` が stale field reset、注入チェーン、report template生成、safe_inbox_write通知を実行する。手動 `cp` で `queue/tasks/<ninja2>.yaml` を上書きしたり、手動 `inbox_write` で通知したりしない。
+`deploy_task.sh` が配備前にpending own report / completed peer reportを検出してBLOCKした場合、報告YAML消失防止が優先である。cmd_complete_gate完了または別idle忍者選定まで、2人目を配備済み扱いにしない。
 
 ### Step 4: 陣形図確認
 両忍者がin_progressになったことを確認。
@@ -49,4 +50,4 @@ bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 - 1人目=deploy_task.sh正規フロー、2人目=`deploy_task.sh --yaml` のkaro_direct方式。この順序を崩すな
 - 2人目のcmd_idは `<cmd_id>_recon2` サフィックス
 - 偵察結果の突合は家老が手動で実施（報告YAML受領後）
-- Script refs verified: 2026-05-21 cmd_2883, cmd_2899, cmd_2939, cmd_2944. `deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。cmd_2899: deploy_task.sh target_path存在チェックのproject_path 2段解決追加+yaml_field_set.sh WSL2最適化(lock_path純bash化)。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` は `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、偵察/直接配備テンプレート由来ACのハッシュを空にしない。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更。
+- Script refs verified: 2026-05-22 cmd_2952. `deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。cmd_2899: deploy_task.sh target_path存在チェックのproject_path 2段解決追加+yaml_field_set.sh WSL2最適化(lock_path純bash化)。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` は `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、偵察/直接配備テンプレート由来ACのハッシュを空にしない。cmd_2950/2951: 配備前pending own report / completed peer reportをBLOCKし、報告YAML消失を防止。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更。

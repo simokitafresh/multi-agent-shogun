@@ -67,8 +67,11 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # 手動 inbox_write は不要。
 # YAML注入に失敗した場合、deploy_task.sh は deploy_error を家老inboxへ送る。
 # failure通知が出たら配備済み扱いにせず、deploy_task.log と対象task YAMLを確認する。
+# 配備前に同cmd・同忍者の未完了reportが残っている場合はBLOCKする。
+# PASS/FAIL/PASS_NO_IMPROVEMENT verdict済みreportがある場合、cmd_complete_gate完了前の再配備を禁止する。
+# exact以外で他忍者の完了済みpeer reportがある場合もBLOCKし、二重配備による報告YAML消失を防ぐ。
 ```
-Script refs verified: 2026-05-21 cmd_2883, cmd_2899, cmd_2939, cmd_2944 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更)。
+Script refs verified: 2026-05-22 cmd_2952 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_2950/2951: 配備前pending own report / completed peer reportをBLOCKし、報告YAML消失を防止。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
@@ -105,5 +108,6 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 - training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
 - ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、注入チェーン、report template生成、safe_inbox_write通知を迂回するため）
 - `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
+- 再配備前に対象忍者の既存reportを確認する。`deploy_task.sh` がpending own report / completed peer reportをBLOCKした場合は、cmd_complete_gate完了または別忍者選定まで配備済み扱いにしない。
 - 複数行ACやdescriptionはdeploy_task.shの手動YAML構築でindent保持される。YAML注入後に `python3 -c "import yaml; yaml.safe_load(open('queue/tasks/<ninja>.yaml'))"` で構文確認する。
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）
