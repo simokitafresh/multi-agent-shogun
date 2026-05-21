@@ -392,12 +392,14 @@ assert task["standard_skills"] == ["report-write", "verdict-check", "ninja-commi
 assert "L4修行" in task["purpose"]
 acs = task["acceptance_criteria"]
 assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"]
+assert "指定ファイル" in acs["AC1"]["description"]
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
+assert "[[リンク]]" in acs["AC2"]["description"]
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "lessons_useful" in acs["AC4"]["description"]
-assert "alias" in acs["AC5"]["description"].lower() or "概念名" in acs["AC5"]["description"]
+assert "リンク数" in acs["AC5"]["description"]
 for ac_id in ("AC1", "AC2", "AC3", "AC4", "AC5"):
     assert acs[ac_id]["binary_checks"], ac_id
 PY
@@ -431,10 +433,39 @@ acs = task["acceptance_criteria"]
 assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"], f"ACs not overwritten to 5-AC template: {list(acs.keys())}"
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
+assert "[[リンク]]" in acs["AC2"]["description"]
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
-assert "alias" in acs["AC5"]["description"].lower() or "概念名" in acs["AC5"]["description"]
+assert "リンク数" in acs["AC5"]["description"]
 PY
+}
+
+@test "markdown_link_counts ranks tracked Markdown files by ascending wiki links" {
+    mkdir -p "$TEST_PROJECT/docs"
+    (
+        cd "$TEST_PROJECT"
+        git init -q
+        git config user.email test@example.com
+        git config user.name test
+        cat > docs/isolated.md <<'EOF'
+# Isolated
+EOF
+        cat > docs/linked.md <<'EOF'
+# Linked
+[[alpha]]
+[[beta]]
+EOF
+        git add docs/isolated.md docs/linked.md
+    )
+
+    run bash "$TEST_PROJECT/scripts/markdown_link_counts.sh" --top 2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'1\t0\tdocs/isolated.md'* ]]
+    [[ "$output" == *$'2\t2\tdocs/linked.md'* ]]
+
+    run bash "$TEST_PROJECT/scripts/markdown_link_counts.sh" --select-file
+    [ "$status" -eq 0 ]
+    [ "$output" = "docs/isolated.md" ]
 }
 
 @test "semantic_alias_quality lists aliases thin Top10 and selects existing script target" {
@@ -478,9 +509,23 @@ EOF
     [ "$output" = "scripts/tools/thin.sh" ]
 }
 
-@test "deploy_task --direct cmd_training sets target_path from aliases thin concept when missing" {
-    mkdir -p "$TEST_PROJECT/docs/semantic-index" "$TEST_PROJECT/scripts/tools"
+@test "deploy_task --direct cmd_training sets target_path from isolated Markdown before aliases thin concept" {
+    mkdir -p "$TEST_PROJECT/docs/semantic-index" "$TEST_PROJECT/docs" "$TEST_PROJECT/scripts/tools"
     touch "$TEST_PROJECT/scripts/tools/thin.sh" "$TEST_PROJECT/scripts/tools/rich.sh"
+    (
+        cd "$TEST_PROJECT"
+        git init -q
+        git config user.email test@example.com
+        git config user.name test
+        cat > docs/isolated.md <<'EOF'
+# Isolated
+EOF
+        cat > docs/linked.md <<'EOF'
+# Linked
+[[alpha]]
+EOF
+        git add docs/isolated.md docs/linked.md
+    )
     cat > "$TEST_PROJECT/docs/semantic-index/index.md" <<'EOF'
 # Test semantic index
 
@@ -524,6 +569,6 @@ import yaml
 with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
     task = (yaml.safe_load(f) or {}).get("task") or {}
 
-assert task["target_path"] == "scripts/tools/thin.sh", task.get("target_path")
+assert task["target_path"] == "docs/isolated.md", task.get("target_path")
 PY
 }

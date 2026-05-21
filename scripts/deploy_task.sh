@@ -1343,19 +1343,20 @@ import tempfile
 
 task_file = os.environ["TASK_FILE_ENV"]
 
-purpose = "L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+purpose = "L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる"
 
 ac_lines = [
     "  acceptance_criteria:",
     "    AC1:",
-    "      description: \"指定スクリプトの改善点を3つ特定し、根拠付きで報告する\"",
+    "      description: \"指定ファイルの改善点を3つ特定し、根拠付きで報告する\"",
     "      binary_checks:",
     "        - \"改善点を3つ特定したか: yes/no\"",
     "        - \"各改善点に対象ファイル・根拠を添えたか: yes/no\"",
     "    AC2:",
-    "      description: \"改善点のうち最高インパクト1件を実装し、必要な検証を実行する\"",
+    "      description: \"改善点のうち最高インパクト1件を実装し、対象Markdownへ既存概念または関連ファイルの[[リンク]]を1件以上追加し、必要な検証を実行する\"",
     "      binary_checks:",
     "        - \"最高インパクト1件を実装したか: yes/no\"",
+    "        - \"対象Markdownへ[[リンク]]を1件以上追加したか: yes/no\"",
     "        - \"関連テストまたは明示的な検証を実行したか: yes/no\"",
     "    AC3:",
     "      description: \"lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる\"",
@@ -1369,10 +1370,10 @@ ac_lines = [
     "        - \"task.related_lessonsの注入教訓を1件以上参照したか: yes/no\"",
     "        - \"参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no\"",
     "    AC5:",
-    "      description: \"対象スクリプトの機能用途を[[概念名]] alias: 候補1, 候補2形式で1件以上提案し、insight_writeで蓄積する\"",
+    "      description: \"対象ファイルの現在リンク数baselineと変更後リンク数を計測し、[[リンク]]数増加を報告する\"",
     "      binary_checks:",
-    "        - \"[[概念名]] alias: 候補 形式のaliases候補を1件以上報告したか: yes/no\"",
-    "        - \"bash scripts/insight_write.shで蓄積し、grep -c pending queue/insights.yamlで増加を確認したか: yes/no\"",
+    "        - \"bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no\"",
+    "        - \"git diffで対象Markdownの[[リンク]]数増加を確認したか: yes/no\"",
 ]
 
 with open(task_file, encoding="utf-8") as f:
@@ -1467,22 +1468,30 @@ inject_training_target_path_from_alias_quality() {
         return 0
     fi
 
-    local selector="$SCRIPT_DIR/scripts/semantic_alias_quality.sh"
-    if [ ! -f "$selector" ]; then
-        log "WARN: semantic_alias_quality selector missing; training target_path left empty"
-        return 0
+    local selected_target=""
+    local markdown_selector="$SCRIPT_DIR/scripts/markdown_link_counts.sh"
+    if [ -f "$markdown_selector" ]; then
+        selected_target=$(bash "$markdown_selector" --select-file 2>/dev/null | head -1 || true)
+    else
+        log "WARN: markdown_link_counts selector missing; falling back to semantic_alias_quality"
     fi
 
-    local selected_target
-    selected_target=$(bash "$selector" --select-file 2>/dev/null | head -1 || true)
     if [ -z "$selected_target" ]; then
-        log "WARN: semantic_alias_quality produced no script target; training target_path left empty"
+        local selector="$SCRIPT_DIR/scripts/semantic_alias_quality.sh"
+        if [ ! -f "$selector" ]; then
+            log "WARN: semantic_alias_quality selector missing; training target_path left empty"
+            return 0
+        fi
+        selected_target=$(bash "$selector" --select-file 2>/dev/null | head -1 || true)
+    fi
+    if [ -z "$selected_target" ]; then
+        log "WARN: training target selector produced no target; training target_path left empty"
         return 0
     fi
 
     yaml_field_set "$task_file" "task" "target_path" "$selected_target" \
         || { log "FATAL: failed to set training target_path=${selected_target}"; return 1; }
-    log "training_target_path: aliases thin concept selected target_path=${selected_target}"
+    log "training_target_path: selected target_path=${selected_target}"
 }
 
 inject_ac_version() {

@@ -18,6 +18,7 @@ deploy_task_setup_file() {
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
     export SRC_DASHBOARD_AUTO_SECTION_SCRIPT="$PROJECT_ROOT/scripts/dashboard_auto_section.sh"
     export SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT="$PROJECT_ROOT/scripts/semantic_alias_quality.sh"
+    export SRC_MARKDOWN_LINK_COUNTS_SCRIPT="$PROJECT_ROOT/scripts/markdown_link_counts.sh"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
@@ -32,6 +33,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
     [ -f "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" ] || return 1
     [ -f "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" ] || return 1
+    [ -f "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
     export DEPLOY_TASK_TEMPLATE_DIR
@@ -61,6 +63,7 @@ deploy_task_setup_file() {
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
     cp "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
     cp "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/semantic_alias_quality.sh"
+    cp "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/markdown_link_counts.sh"
 
     for stub in inbox_write ntfy_cmd lesson_check; do
         printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"
