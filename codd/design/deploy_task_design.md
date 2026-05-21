@@ -34,6 +34,10 @@ The script initializes shared helpers, parses deployment arguments, validates th
 
 Inputs are `queue/shogun_to_karo.yaml`, target task YAML, project/context files, and shared lessons. Outputs are the target task YAML, report YAML, deployment logs, optional stale archives, and inbox messages.
 
+## Requirements Traceability
+
+[[deploy_task_requirements.md]] defines `deploy_task.sh` as the single supported task-assignment helper and lists FR-1 through FR-7 plus SR-1 through SR-3. This design maps those requirements to the entry flow, core components, data boundaries, and report template contract below.
+
 ## Implementation Evidence
 
 - [[deploy_task.sh]] lines 1876-1906 implement report path selection: `report_filename` wins first, then `ninja_report_${parent_cmd}.yaml`, then the legacy fallback.
