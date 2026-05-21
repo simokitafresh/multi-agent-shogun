@@ -82,8 +82,9 @@ fi
 
 echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE_AT_STARTUP, script_hash: $SCRIPT_HASH" >&2
 
-# Ensure inotifywait is available
-if ! command -v inotifywait &>/dev/null; then
+# Ensure inotifywait is available. Unit tests source this file with
+# INBOX_WATCHER_LIB_ONLY=1 to exercise helper functions without daemon deps.
+if [ "${INBOX_WATCHER_LIB_ONLY:-0}" != "1" ] && ! command -v inotifywait &>/dev/null; then
     echo "[inbox_watcher] ERROR: inotifywait not found. Install: sudo apt install inotify-tools" >&2
     exit 1
 fi

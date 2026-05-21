@@ -1676,8 +1676,9 @@ with open(sys.argv[2], 'w', encoding='utf-8') as f:
 show_prior_attempts() {
     [[ -f "$QUALITY_LOG_FILE" ]] || return 0
 
-    local prior_output cache_file cache_tmp cache_sig cached_sig scan_file
-    cache_file="/tmp/cmd_save_prior_attempts_${CMD_ID}.cache"
+    local prior_output cache_file cache_tmp cache_sig cached_sig scan_file cache_key
+    cache_key="$(printf '%s' "$QUALITY_LOG_FILE" | cksum | awk '{print $1}')"
+    cache_file="/tmp/cmd_save_prior_attempts_${CMD_ID}_${cache_key}.cache"
     cache_sig="$(stat -c '%Y:%s' "$QUALITY_LOG_FILE" 2>/dev/null || echo "")"
 
     if [[ -n "$cache_sig" && -f "$cache_file" ]]; then
