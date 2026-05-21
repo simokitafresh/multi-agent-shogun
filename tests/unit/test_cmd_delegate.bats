@@ -476,6 +476,26 @@ YAML
     [[ "$output" == *"cmd_new"* ]]
 }
 
+@test "cmd_delegate: cmd_new同一行の後続完全一致cmd_idを重複委任としてBLOCKする" {
+    create_shogun_yaml_with_pending
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: cmd_msg
+    content: "cmd_1000を確認後、cmd_100を書いた。配備せよ。"
+    type: cmd_new
+    from: shogun
+    read: false
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Refusing to send duplicate"* ]]
+
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
+}
+
 @test "cmd_delegate: cmd_new内の同一cmd_idは重複委任としてBLOCKする" {
     create_shogun_yaml_with_pending
     cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'

@@ -151,14 +151,19 @@ BEGIN {
     reset_block()
 }
 {
-    if (index($0, cmd_id) > 0) {
-        pos = index($0, cmd_id)
-        before_char = (pos > 1) ? substr($0, pos - 1, 1) : ""
-        after_char = substr($0, pos + length(cmd_id), 1)
+    remaining = $0
+    offset = 0
+    while ((pos = index(remaining, cmd_id)) > 0) {
+        abs_pos = offset + pos
+        before_char = (abs_pos > 1) ? substr($0, abs_pos - 1, 1) : ""
+        after_char = substr($0, abs_pos + length(cmd_id), 1)
         if ((before_char == "" || before_char !~ /[A-Za-z0-9_]/) &&
             (after_char == "" || after_char !~ /[A-Za-z0-9_]/)) {
             block_has_cmd = 1
+            break
         }
+        offset += pos
+        remaining = substr(remaining, pos + 1)
     }
     if ($0 ~ /^[[:space:]]*type:[[:space:]]*['\''"]?cmd_new['\''"]?([[:space:]]|$)/) {
         block_is_cmd_new = 1
