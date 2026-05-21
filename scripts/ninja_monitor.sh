@@ -1807,7 +1807,7 @@ _handle_training_auto_deploy() {
     local name="$1"
     local now="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local task_status last_file last elapsed idle_elapsed cmd_id deploy_script tmp_task
+    local task_status last_file last_dir last elapsed idle_elapsed cmd_id deploy_script tmp_task
     local training_variant training_target training_purpose
 
     [ -n "$name" ] || return 1
@@ -1842,6 +1842,14 @@ _handle_training_auto_deploy() {
     fi
 
     last_file=$(_training_auto_state_file "$name")
+    last_dir="${last_file%/*}"
+    if [ "$last_dir" = "$last_file" ]; then
+        last_dir="."
+    fi
+    if ! mkdir -p "$last_dir"; then
+        log "TRAINING-AUTO-SKIP: failed to prepare cooldown state dir for ${name}: ${last_dir}"
+        return 1
+    fi
     last=0
     if [ -f "$last_file" ]; then
         read -r last < "$last_file" || last=0
