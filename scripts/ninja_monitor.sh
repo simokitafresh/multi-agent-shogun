@@ -994,13 +994,7 @@ can_send_clear_with_report_gate() {
     fi
 
     if [ -f "$report_path" ]; then
-        local verdict
-        verdict=$(yaml_field_get "$report_path" "verdict")
-        if [ -z "$verdict" ]; then
-            log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger})"
-            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
-                log "WARN: inbox_write verdict_empty failed for $name"
-            fi
+        if ! report_file_has_verdict "$name" "$report_path" "$trigger"; then
             return 1
         fi
         return 0
@@ -1028,7 +1022,12 @@ can_send_clear_with_report_gate() {
     local dir pattern
     for pattern in "${search_patterns[@]}"; do
         for dir in "${search_dirs[@]}"; do
-            if compgen -G "${dir}/${pattern}" > /dev/null; then
+            local matched_report
+            matched_report=$(compgen -G "${dir}/${pattern}" | head -1 || true)
+            if [ -n "$matched_report" ]; then
+                if ! report_file_has_verdict "$name" "$matched_report" "$trigger"; then
+                    return 1
+                fi
                 return 0
             fi
         done
@@ -1044,6 +1043,23 @@ can_send_clear_with_report_gate() {
         log "WARN: inbox_write report_missing failed for $name"
     fi
     return 1
+}
+
+report_file_has_verdict() {
+    local name="$1"
+    local report_file="$2"
+    local trigger="$3"
+    local verdict
+
+    verdict=$(yaml_field_get "$report_file" "verdict")
+    if [ -z "$verdict" ]; then
+        log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger}, report=$(basename "$report_file"))"
+        if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
+            log "WARN: inbox_write verdict_empty failed for $name"
+        fi
+        return 1
+    fi
+    return 0
 }
 
 find_completed_parent_cmd_report_for_other_ninja() {
@@ -4319,16 +4335,29 @@ while true; do
                         # cmd_1292 AC1: report存在チェック — active taskでreport未提出なら/clear禁止
                         _s1_report_file=$(resolve_expected_report_file "$name")
                         _s1_report_found=false
+                        _s1_report_path=""
                         if [[ "$_s1_report_file" = /* ]]; then
-                            [ -f "$_s1_report_file" ] && _s1_report_found=true
+                            if [ -f "$_s1_report_file" ]; then
+                                _s1_report_found=true
+                                _s1_report_path="$_s1_report_file"
+                            fi
                         else
-                            [ -f "$SCRIPT_DIR/queue/reports/${_s1_report_file}" ] && _s1_report_found=true
+                            if [ -f "$SCRIPT_DIR/queue/reports/${_s1_report_file}" ]; then
+                                _s1_report_found=true
+                                _s1_report_path="$SCRIPT_DIR/queue/reports/${_s1_report_file}"
+                            fi
                             if [ "$_s1_report_found" = false ]; then
-                                compgen -G "$SCRIPT_DIR/queue/archive/reports/${_s1_report_file}" > /dev/null 2>&1 && _s1_report_found=true
+                                _s1_report_path=$(compgen -G "$SCRIPT_DIR/queue/archive/reports/${_s1_report_file}" | head -1 || true)
+                                [ -n "$_s1_report_path" ] && _s1_report_found=true
                             fi
                         fi
                         if [ "$_s1_report_found" = false ]; then
                             log "STAGE1-REPORT-MISSING: $name task_status=$_s1_task_status stale for ${_s1_age}s but no report (${_s1_report_file}), /clear禁止"
+                            PREV_STATE[$name]="busy"
+                            continue
+                        fi
+                        if ! report_file_has_verdict "$name" "$_s1_report_path" "STAGE1-TIMEOUT"; then
+                            log "STAGE1-VERDICT-EMPTY: $name task_status=$_s1_task_status stale for ${_s1_age}s but report verdict empty (${_s1_report_file}), /clear禁止"
                             PREV_STATE[$name]="busy"
                             continue
                         fi
