@@ -15,7 +15,7 @@
 # ============================================================
 set -euo pipefail
 
-_self="$0"
+_self="${BASH_SOURCE[0]}"  # use BASH_SOURCE not $0: $0 may be just the name when called via PATH
 SCRIPT_DIR="${_self%/*}"
 [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
