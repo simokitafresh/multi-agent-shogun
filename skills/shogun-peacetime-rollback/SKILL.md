@@ -7,7 +7,6 @@ description: |
   TRIGGER: /shogun-peacetime-rollback、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック
   DO NOT TRIGGER: 全員Codex切替（→/shogun-all-codex-switch）、単体ペイン修復
 ---
-semantic-links: [[編成管理]]
 
 # Shogun Peacetime Rollback
 

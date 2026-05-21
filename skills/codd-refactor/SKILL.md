@@ -9,7 +9,6 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合）"
 argument-hint: "[target_script or spec_path]"
 ---
-semantic-links: [[CoDD整合性駆動開発]], [[Skill設計ルール]]
 
 # CoDD Refactor Skill
 

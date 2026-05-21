@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# semantic-links: [[Hook自動化フレームワーク]], [[inbox処理規律]]
 # Combined Write/Edit PreToolUse guard: config-guard + read-tracker + report-deny + workaround-deny
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -eu

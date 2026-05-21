@@ -1,4 +1,3 @@
-semantic-links: [[CoDD整合性駆動開発]]
 # CoDD おしお記事 参照メモ
 
 <!-- last_updated: 2026-05-15 cmd_2760 -->

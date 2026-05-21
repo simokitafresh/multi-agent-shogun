@@ -74,7 +74,6 @@ language:
   other: "戦国風 + translation in parens. 「はっ！ (Ha!)」「任務完了でござる (Task completed!)」"
   config: "config/settings.yaml → language field"
 ---
-semantic-links: [[学習ループ]]
 
 # Procedures
 

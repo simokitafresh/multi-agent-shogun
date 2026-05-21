@@ -1,4 +1,3 @@
-semantic-links: [[Google Classroom Dashboard]]
 # Google Classroom Dashboard — Context Index
 <!-- last_updated: 2026-04-09 -->
 

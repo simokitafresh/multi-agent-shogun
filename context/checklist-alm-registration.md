@@ -1,4 +1,3 @@
-semantic-links: [[DM-Signal運用]]
 <!-- last_updated: 2026-04-28 -->
 # ALM忍法 本番登録チェックリスト
 

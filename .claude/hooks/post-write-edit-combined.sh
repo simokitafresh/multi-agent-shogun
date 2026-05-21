@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# semantic-links: [[Hook自動化フレームワーク]]
 # Combined Write/Edit PostToolUse guard: shellcheck + report-guard + instruction-consistency
 # cmd_1661: 3 hooks → 1 script. Eliminates 2 bash startup costs (~60ms each).
 # GP-095: crash耐性 — PostToolUse hookは非ゼロ終了禁止

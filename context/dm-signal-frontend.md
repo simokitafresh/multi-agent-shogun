@@ -1,4 +1,3 @@
-semantic-links: [[DM-Signal運用]]
 # DM-signal フロントエンド コンテキスト（索引）
 <!-- last_updated: 2026-05-06 cmd_karo_direct_context_refresh: Compare Summary UWP/PTU/TQQQ+loading改善+4/26 FE性能変更索引追記 -->
 

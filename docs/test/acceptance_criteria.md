@@ -58,7 +58,6 @@ codd:
   - restart_watchers
   - yaml_helpers
 ---
-semantic-links: [[テスト品質統合フレームワーク]]
 
 # Acceptance Criteria
 

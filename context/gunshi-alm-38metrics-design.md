@@ -1,4 +1,3 @@
-semantic-links: [[ALM研究]]
 <!-- last_updated: 2026-04-09 -->
 # 設計索引: l1_alm_wf_engine 6→38メトリクス拡張
 

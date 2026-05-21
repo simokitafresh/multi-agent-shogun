@@ -16,7 +16,6 @@ allowed-tools:
   - Glob
   - Grep
 ---
-semantic-links: [[CoDD整合性駆動開発]], [[Skill設計ルール]]
 
 # CoDD 設計書パイプラインスキル
 

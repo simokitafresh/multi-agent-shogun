@@ -12,7 +12,6 @@ allowed-tools:
   - Bash
   - Read
 ---
-semantic-links: [[Skill設計ルール]]
 
 # /reset-layout — agentsウィンドウ一発復元
 

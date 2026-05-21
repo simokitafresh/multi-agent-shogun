@@ -26,7 +26,6 @@ codd:
   - state_io
   - health_checks
 ---
-semantic-links: [[DM-Signal運用]], [[デーモン監視と復旧]]
 
 # Daemon Operations Runbook
 

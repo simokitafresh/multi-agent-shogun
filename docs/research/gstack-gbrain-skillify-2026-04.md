@@ -1,4 +1,3 @@
-semantic-links: [[Skill設計ルール]]
 # GStack v1.11 + GBrain v0.19 + Skillify 全分析（2026-04-25更新）
 
 > 前版: docs/research/gstack-analysis.md (2026-03-13, gstack v0.0.2)

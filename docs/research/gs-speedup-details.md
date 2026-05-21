@@ -1,4 +1,3 @@
-semantic-links: [[GS忍法研究]]
 # GS高速化×完全一致 — 詳細記録
 <!-- 索引: context/gs-speedup-knowledge.md -->
 <!-- last_updated: 2026-02-19 -->

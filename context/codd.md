@@ -1,4 +1,3 @@
-semantic-links: [[CoDD整合性駆動開発]], [[Skill設計ルール]]
 # CoDD (Coherence-Driven Development) 索引
 
 <!-- last_updated: 2026-05-15 cmd_2760 -->

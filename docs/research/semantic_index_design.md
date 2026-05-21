@@ -1,4 +1,3 @@
-semantic-links: [[セマンティック辞書構想]]
 # セマンティクスインデックス設計書
 <!-- created: 2026-05-04 | author: shogun | status: draft -->
 <!-- motivation: /clear後にセマンティック辞書構想を概念で引けなかった事故(2026-05-04) -->

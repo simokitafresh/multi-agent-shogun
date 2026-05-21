@@ -10,7 +10,6 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにPF登録順序・パリティ確認起因のworkaroundが記録されない割合）"
 allowed_projects: [dm-signal]
 ---
-semantic-links: [[Skill設計ルール]]
 
 # /pf-registration — 本番PF登録スキル
 

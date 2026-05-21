@@ -1,4 +1,3 @@
-semantic-links: [[Skill設計ルール]]
 # Skill Design Rules — 公式ガイド+実戦知見統合 (cmd_911)
 <!-- last_updated: 2026-04-06 cmd_1758 Dynamic Features+Execution Patterns+Anti-Patterns追加 -->
 
