@@ -275,6 +275,31 @@ assert rows["INS-AC5"]["status"] == "done"
 PY
 }
 
+@test "pending semantic insights: direct alias lines from training source auto-promote end-to-end" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-AC5-TRAINING
+  ts: "2026-05-21T15:05:00+09:00"
+  insight: "[[growth_loop]] alias: BLOCK後仕組み化"
+  priority: "low"
+  source: "training"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2938","title":"学習ループ","purpose":"AC5 source filter relaxation","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_DIRECT: growth_loop -> growth_loop aliases_added=BLOCK後仕組み化"* ]]
+
+    grep -q '| aliases | 学習ループ, 成長ループ, 自動成長ループ, 二値計測, BLOCK後仕組み化 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-AC5-TRAINING"]["status"] == "done"
+PY
+}
+
 @test "NO_MATCH purpose: cmd_complete queues pending aliases and L7f absorbs similar aliases" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     export INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH"
