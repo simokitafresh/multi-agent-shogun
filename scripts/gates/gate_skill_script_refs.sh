@@ -144,7 +144,7 @@ print("--- 総合判定: PASS ---")
 PY
 }
 
-CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-2}"
+CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-30}"
 RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
 SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
 
