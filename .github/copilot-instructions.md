@@ -7,7 +7,7 @@
 # ════════════════════════════════
 version: "3.0"
 updated: "2026-02-07"
-description: "Codex + tmux multi-agent parallel dev platform with sengoku military hierarchy"
+description: "GitHub Copilot CLI + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
 hierarchy: "Lord (human) → Shogun → Karo → Ninja 1-8"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
@@ -79,22 +79,22 @@ language:
 
 ## Session Start / Recovery (all agents)
 
-**This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see AGENTS.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
+**This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see copilot-instructions.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
 
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 1.5. **ROUTE BY ROLE (mandatory)**:
-     - 将軍(shogun) → 「/new Recovery (shogun)」セクションへ飛べ。
-     - 家老(karo) → 「/new Recovery (karo)」セクションへ飛べ。
-     - 軍師(gunshi) → 「/new Recovery (gunshi)」セクションへ飛べ。
-     - 忍者(ninja) → 「/new Recovery (ninja)」セクションへ飛べ。
+     - 将軍(shogun) → 「/clear Recovery (shogun)」セクションへ飛べ。
+     - 家老(karo) → 「/clear Recovery (karo)」セクションへ飛べ。
+     - 軍師(gunshi) → 「/clear Recovery (gunshi)」セクションへ飛べ。
+     - 忍者(ninja) → 「/clear Recovery (ninja)」セクションへ飛べ。
 
-## /new Recovery (shogun)
+## /clear Recovery (shogun)
 
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → shogun
 Step 2: MEMORY.md（自動ロード済み）をMCPの索引として信頼。read_graphしない。
         殿の好み・裁定はmcp__memory__open_nodes/search_nodesでピンポイント取得
-Step 3: Read instructions/generated/codex-shogun.md（原理・禁則・思考の枠組み。省略厳禁）
+Step 3: Read instructions/generated/copilot-shogun.md（原理・禁則・思考の枠組み。省略厳禁）
 Step 4: Read projects/infra/lessons_shogun.yaml（具体的失敗データ。deepdive追体験の材料。
         省略するとdeepdiveが抽象的テキスト処理になる。superseded_by付きは参考扱い）
 Step 5: Read queue/shogun_to_karo.yaml 冒頭15行（原理群ヘッダ。毎回読め）
@@ -135,9 +135,9 @@ Step 11: Review forbidden actions (F001-F008), then start work
 
 **CRITICAL**: dashboard.md is the Lord's self-service tool, not Shogun's information source. Lord reads it directly and never asks Shogun for dashboard content. Lord asks Shogun for real-time info NOT on the dashboard. Primary data = capture-pane (real-time) + lord_conversation (timeline) + YAML files.
 
-## /new Recovery (ninja)
+## /clear Recovery (ninja)
 
-Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instructions/generated/codex-ashigaru.md (cost saving).
+Lightweight recovery using only copilot-instructions.md (auto-loaded). Do NOT read instructions/generated/copilot-ashigaru.md (cost saving).
 
 ```
 ★ 汝は忍者なり。将軍にあらず。家老にあらず。
@@ -178,15 +178,15 @@ Step 4.5: If task has "report_path:" field → Read that file as report template
 Step 5: Start work
 ```
 
-Forbidden after /new: reading instructions/generated/codex-ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/new memory is gone.
+Forbidden after /clear: reading instructions/generated/copilot-ashigaru.md (1st task), polling (F004), contacting humans directly (F002). Trust task YAML only — pre-/clear memory is gone.
 
-## /new Recovery (karo)
+## /clear Recovery (karo)
 
 家老専用の軽量復帰手順。陣形図(snapshot)により状態復元が高速化。
 
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → karo
-Step 2: Read instructions/generated/codex-karo.md（人格・禁則・手順。省略厳禁）
+Step 2: Read instructions/generated/copilot-karo.md（人格・禁則・手順。省略厳禁）
 Step 2.5: Read projects/infra/lessons_karo.yaml（家老教訓の自動ロード）
 Step 2.6: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード。第二層学習ループ断絶防止）
 Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を読む
@@ -222,13 +222,13 @@ Step 7: 作業再開
 （Ghost deployment checkはninja_monitorのSTALL検知が常時カバー。家老の手動チェック廃止 2026-02-26）
 ```
 
-## /new Recovery (gunshi)
+## /clear Recovery (gunshi)
 
 軍師専用の軽量復帰手順。レビューと家老連携に必要な最小状態だけを復元する。
 
 ```
 Step 1: tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' → gunshi
-Step 2: Read instructions/generated/codex-gunshi.md（人格・禁則・レビュー基準。省略厳禁）
+Step 2: Read instructions/generated/copilot-gunshi.md（人格・禁則・レビュー基準。省略厳禁）
 Step 2.5: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード）
 Step 2.6: Read logs/karo_workarounds.yaml の直近10件（家老の手動補正パターン確認）
 Step 2.7: bash scripts/gates/gate_gunshi_startup.sh（9項目一括チェック: deepdive必読催促+inbox未読+レビュー統計+WA傾向+教訓+GATE未確認+CS観点+GP未実行+分析永続化）
@@ -269,9 +269,9 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ※ archive_completed.shはcmd_complete_gate.sh GATE CLEAR時に自動実行される（手動不要）
 ```
 
-## /new前手順（将軍のみ）
+## /clear前手順（将軍のみ）
 
-`/shogun-clear-prep` を実行してから `/new` する。状態確認+殿への報告を自動化。省略禁止。
+`/shogun-clear-prep` を実行してから `/clear` する。状態確認+殿への報告を自動化。省略禁止。
 
 ## 復帰時の手順（全エージェント共通）
 
@@ -320,7 +320,7 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Watcher never sends message content via send-keys.
 
 Special cases (CLI commands sent directly via send-keys):
-- `type: clear_command` → sends `/new` + Enter + content
+- `type: clear_command` → sends `/clear` + Enter + content
 - `type: model_switch` → sends the /model command directly
 
 ## Inbox Processing Protocol (karo/ninja)
@@ -378,7 +378,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 
 ## File Operation Rule
 
-**Always Read before Write/Edit.** Codex rejects Write/Edit on unread files.
+**Always Read before Write/Edit.** GitHub Copilot CLI rejects Write/Edit on unread files.
 
 ## YAML書込み安全規則（全エージェント必読）
 
@@ -394,7 +394,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 
 | 保存先 | 消費者 | 内容 | 書き込み権限 |
 |--------|--------|------|------------|
-| AGENTS.md | 全員(自動ロード) | 圧縮索引。恒久ルール・手順 | 家老のみ |
+| copilot-instructions.md | 全員(自動ロード) | 圧縮索引。恒久ルール・手順 | 家老のみ |
 | instructions/*.md | 全員 | 役割別の恒久ルール | 家老のみ |
 | projects/{id}.yaml | 全員(将軍・家老・軍師・忍者) | PJ核心知識(ルール要約/UUID/DBルール/PI) | 家老のみ |
 | projects/{id}/lessons.yaml | 忍者・家老 | PJ教訓(過去の失敗・発見) | 家老のみ(lesson_write.sh経由) |
@@ -413,7 +413,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 
 ```
 「これ覚えておくべきだな」
-  ├─ 全員が常に守るルール？ → instructions/*.md or AGENTS.md
+  ├─ 全員が常に守るルール？ → instructions/*.md or copilot-instructions.md
   ├─ PJ固有の知識？ → projects/{id}.yaml
   ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
   │   └─ lesson_candidateには origin と Obsidian [[リンク]]を付け、因果ネットワークへ接続
@@ -428,7 +428,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 **infraはPJではなくplatform。current_projectに関係なく常にロード対象。教訓も常時注入。**
 詳細 → `context/infrastructure.md` を読め。推測するな。
 
-- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/new,家老/new(陣形図付き)|AUTOCOMPACT=90%
+- CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
@@ -436,9 +436,9 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - **防御階層原則(Level1-6)**|Level5=事前コンテキスト提供、Level6=学習速度最大化。ゲート発火=未熟さの証拠|`context/growth-loop.md` §11
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
-- **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/codex-karo.md` §CI RED中の他作業
+- **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/copilot-karo.md` §CI RED中の他作業
 - CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
-- **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(Codex hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
+- **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(GitHub Copilot CLI hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
 - **Codex idle時もrespawn-pane -k必須**(殿裁定2026-05-20)|`/new`はCodex CLI内部状態が「task in progress」だと拒否される。respawn-pane -kはCLI内部状態に関係なく確実にリセットする唯一の手段。一見乱暴だが理由がある設計。修正前にgit logで設計意図を確認せよ|→ `context/infrastructure.md` §Codex multi-CLI統合
 - Claude version pin/rollback|2.1.87固定。auto-updateは`~/.local/bin/claude`を上書きするが`~/bin/claude`は不変|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
@@ -509,10 +509,10 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 ## Knowledge Maintenance
 
 1. 削るな、圧縮せよ — 情報量維持。判断ポイント(=ファイル読み回数)を減らせ
-2. AGENTS.md — 恒久ルール・圧縮索引のみ。古い情報を差し替え、新プロジェクト追加せよ
+2. copilot-instructions.md — 恒久ルール・圧縮索引のみ。古い情報を差し替え、新プロジェクト追加せよ
 3. projects/{id}.yaml — PJ核心知識(ルール要約/UUID/DBルール)。家老が管理
 4. projects/{id}/lessons.yaml — PJ教訓。忍者はlesson_candidate報告→家老がlesson_write.shで正式登録
-5. context/*.md — 詳細コンテキスト。AGENTS.mdには結論だけ書け。根拠と手順はここへ
+5. context/*.md — 詳細コンテキスト。copilot-instructions.mdには結論だけ書け。根拠と手順はここへ
 6. Memory MCP — 殿の好み+将軍教訓のみ(将軍専用)。事実・ポインタ・PJ詳細を入れるな。MCP書込み時は同一ターンでMEMORY.md索引も必ずペア更新せよ。週1で `/dream` にて突合
 7. 原則: 受動的(自動ロード,判断0回) > 能動的(Memory MCP,判断2回)
 8. ルール追記時はpositive_rule（代わりにやるべきこと）+ reason（なぜダメか）形式で書け（PD-038準拠）
