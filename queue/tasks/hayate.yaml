@@ -1,14 +1,14 @@
 task:
-  cmd_id: cmd_training_L7_v3_hayate_2_20260521182321
+  cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
   type: training
   project: infra
-  purpose: "L7修行v3 2/3 — bulletin_write.sh(287行)の機能用途aliases候補提案"
-  target_path: scripts/bulletin_write.sh
+  purpose: "L7修行v3 3/3 — insight_write.sh(266行)の機能用途aliases候補提案"
+  target_path: scripts/insight_write.sh
   acceptance_criteria:
     AC1:
-      description: "bulletin_write.shの主要機能(掲示板投稿/BULLETIN_NOTIFY通知先制御/auto-archive/inbox全文配信等)を読み、各機能の用途を把握する"
+      description: "insight_write.shの主要機能(気づき保存/dedup検出/severity分類/semantic_stress_test自動発火等)を読み、各機能の用途を把握する"
       binary_checks:
-        - check: "bulletin_write.shの主要機能セクションを読んだか"
+        - check: "insight_write.shの主要機能セクションを読んだか"
           result: ""
     AC2:
       description: |-
@@ -24,11 +24,11 @@ task:
         - check: "3個以上のaliases候補を報告し、insight_writeで蓄積し、grep -cで件数確認したか"
           result: ""
   scope:
-    - scripts/bulletin_write.sh
+    - scripts/insight_write.sh
     - docs/semantic-index/index.md
     - context/semantic-map.md
   status: done
-  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_2_20260521182321.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_3_20260521182558.yaml
   related_lessons:
   - id: 'L512'
     summary: 'gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。'
