@@ -562,6 +562,47 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "dashboard_update.sh finds report by parent_cmd when filename lacks cmd_id" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+# Dashboard
+## 最新更新
+EOF
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_3000:
+    purpose: fallback purpose
+EOF
+    cat > "$TEST_REPO/queue/archive/reports/hanzo_report_task_slug_20260503.yaml" <<'EOF'
+worker_id: hanzo
+parent_cmd: cmd_3000
+status: completed
+timestamp: '2026-05-03T03:33:34'
+result:
+  summary: fallback report found
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_3000 --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DRY-RUN: - **cmd_3000**:"* ]]
+    [[ "$output" == *"fallback report found"* ]]
+}
+
 @test "dashboard_update.sh --dry-run without cmd_id exits success and logs PASS" {
     TEST_REPO="$TEST_TMPDIR/repo"
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/skills/dashboard-update"

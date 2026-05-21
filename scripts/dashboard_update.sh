@@ -100,7 +100,7 @@ LOCK_FILE="${DASHBOARD}.lock"
     flock -w 10 200 || { echo "ERROR: flock取得失敗" >&2; exit 1; }
 
     python3 << 'PYEOF'
-import yaml, glob, os, sys, re
+import yaml, glob, os, sys, re, shutil, subprocess
 
 DASHBOARD = os.environ['DASHBOARD']
 REPORTS_DIR = os.environ['REPORTS_DIR']
@@ -176,6 +176,38 @@ def find_matches(search_dir, cmd_id_filter=None):
     if not os.path.isdir(search_dir):
         return []
 
+    parent_cmd_re = re.compile(
+        r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'[\'"]?\s*(?:#.*)?$'
+    )
+
+    def rg_parent_cmd_files():
+        if not shutil.which('rg'):
+            return None
+        pattern = r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'[\'"]?\s*(#.*)?$'
+        try:
+            proc = subprocess.run(
+                ['rg', '-l', pattern, search_dir, '-g', '*.yaml'],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+        except Exception:
+            return None
+        if proc.returncode not in (0, 1):
+            return None
+        return sorted(line for line in proc.stdout.splitlines() if line)
+
+    def file_mentions_parent_cmd(fpath):
+        try:
+            with open(fpath, encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    if parent_cmd_re.match(line.rstrip('\n')):
+                        return True
+        except Exception:
+            return False
+        return False
+
     def scan_files(file_list):
         found = []
         for fpath in file_list:
@@ -215,10 +247,14 @@ def find_matches(search_dir, cmd_id_filter=None):
         # parent_cmd holds the real cmd id (e.g. cmd_2514). Fall back to a
         # full scan only on miss so the hot path keeps the filename filter.
         scanned = set(filtered_list)
-        fallback_list = [
-            f for f in sorted(glob.glob(os.path.join(search_dir, '*.yaml')))
-            if f not in scanned
-        ]
+        rg_matches = rg_parent_cmd_files()
+        if rg_matches is not None:
+            fallback_list = [f for f in rg_matches if f not in scanned]
+        else:
+            fallback_list = [
+                f for f in sorted(glob.glob(os.path.join(search_dir, '*.yaml')))
+                if f not in scanned and file_mentions_parent_cmd(f)
+            ]
         return scan_files(fallback_list)
     else:
         file_list = sorted(glob.glob(os.path.join(search_dir, '*.yaml')))
