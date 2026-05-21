@@ -300,6 +300,57 @@ assert rows["INS-AC5-TRAINING"]["status"] == "done"
 PY
 }
 
+@test "pending semantic insights: direct alias lines from L7 round source auto-promote" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-AC5-L7R
+  ts: "2026-05-21T20:35:00+09:00"
+  insight: "[[growth_loop]] alias: 修行ラウンド起点の仕組み化"
+  priority: "low"
+  source: "hanzo-L7R5"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2946","title":"学習ループ","purpose":"AC5 L7 round source","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_DIRECT: growth_loop -> growth_loop aliases_added=修行ラウンド起点の仕組み化"* ]]
+
+    grep -q '| aliases | 学習ループ, 成長ループ, 自動成長ループ, 二値計測, 修行ラウンド起点の仕組み化 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-AC5-L7R"]["status"] == "done"
+PY
+}
+
+@test "pending semantic insights: direct alias target can resolve through similar concept" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-AC5-L7R-SIMILAR
+  ts: "2026-05-21T20:40:00+09:00"
+  insight: "[[自動成長ループ改善]] alias: BLOCK後テンプレート改善, 修行結果の環境埋込み"
+  priority: "low"
+  source: "hayate-L7R5"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2946","title":"学習ループ","purpose":"AC5 similar direct target","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_DIRECT: 自動成長ループ改善 matched growth_loop via 自動成長ループ"* ]]
+    [[ "$output" == *"PENDING_ALIAS_DIRECT: 自動成長ループ改善 -> growth_loop aliases_added=BLOCK後テンプレート改善, 修行結果の環境埋込み"* ]]
+
+    grep -q '| aliases | 学習ループ, 成長ループ, 自動成長ループ, 二値計測, BLOCK後テンプレート改善, 修行結果の環境埋込み |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-AC5-L7R-SIMILAR"]["status"] == "done"
+PY
+}
+
 @test "NO_MATCH purpose: cmd_complete queues pending aliases and L7f absorbs similar aliases" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     export INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH"

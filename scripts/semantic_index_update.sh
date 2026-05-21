@@ -648,13 +648,18 @@ def parse_pending_semantic_insights(path):
         if str(entry.get("status", "")).strip() != "pending":
             continue
         entry_source = str(entry.get("source", "")).strip()
-        if entry_source not in ("semantic_index_update", "semantic_stress_test") and "training" not in entry_source:
+        is_training_source = (
+            "training" in entry_source
+            or re.search(r"(?i)(^|[-_])L\d+R\d+($|[-_])", entry_source) is not None
+        )
+        if entry_source not in ("semantic_index_update", "semantic_stress_test") and not is_training_source:
             continue
         insight_id = str(entry.get("id", "")).strip()
         insight = str(entry.get("insight", "")).strip()
         if not insight_id or not insight:
             continue
 
+        direct_alias_entry = False
         for raw_target, raw_aliases in re.findall(
             r"\[\[([^\]]+)\]\]\s*alias(?:es)?\s*[:：]\s*([^\n]+)",
             insight,
@@ -675,6 +680,10 @@ def parse_pending_semantic_insights(path):
                         "insight": insight,
                     }
                 )
+                direct_alias_entry = True
+
+        if direct_alias_entry:
+            continue
 
         candidates = []
         for raw in re.findall(r"\[\[([^\]]+)\]\]", insight):
@@ -727,6 +736,7 @@ def absorb_pending_semantic_insights(text, concepts):
 
     known = concept_terms(concepts)
     names = concept_name_map(concepts)
+    concepts_by_id = {concept["id"]: concept for concept in concepts}
     for item in parse_pending_semantic_insights(insights_path):
         if item.get("noise"):
             resolved_ids.add(item["id"])
@@ -736,8 +746,16 @@ def absorb_pending_semantic_insights(text, concepts):
             target = item["direct_concept"]
             concept = names.get(norm(target))
             if not concept:
-                messages.append(f"PENDING_ALIAS_DIRECT: no concept match for {target}")
-                continue
+                best_match = best_similar_concept(target, concepts)
+                if best_match and best_match[0] >= pending_alias_threshold:
+                    _, concept_id, _label, _matched_alias = best_match
+                    concept = concepts_by_id.get(concept_id)
+                    messages.append(
+                        f"PENDING_ALIAS_DIRECT: {target} matched {concept_id} via {_matched_alias}"
+                    )
+                else:
+                    messages.append(f"PENDING_ALIAS_DIRECT: no concept match for {target}")
+                    continue
             added = []
             for alias in item.get("aliases") or []:
                 alias = str(alias).strip()
@@ -784,7 +802,6 @@ def absorb_pending_semantic_insights(text, concepts):
         return text, concepts, False, messages
 
     updated = text
-    concepts_by_id = {concept["id"]: concept for concept in concepts}
     changed = False
     for concept_id in sorted(additions, key=lambda cid: concepts_by_id[cid]["start"], reverse=True):
         concept = concepts_by_id[concept_id]
