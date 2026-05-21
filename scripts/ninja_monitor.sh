@@ -1829,7 +1829,10 @@ _handle_training_auto_deploy() {
     fi
 
     cmd_id="cmd_training_L4_auto_$(date '+%Y%m%d%H%M')_${name}"
-    tmp_task=$(mktemp "${STATE_DIR}/training_auto_${name}.XXXXXX.yaml")
+    if ! tmp_task=$(mktemp "${STATE_DIR}/training_auto_${name}.XXXXXX.yaml"); then
+        log "TRAINING-AUTO-SKIP: failed to create temporary task YAML for ${name}"
+        return 1
+    fi
     training_variant="${TRAINING_AUTO_DEPLOY_VARIANT:-script}"
     case "$training_variant" in
         codd)
@@ -1841,7 +1844,7 @@ _handle_training_auto_deploy() {
             training_purpose="L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
             ;;
     esac
-    cat > "$tmp_task" <<EOF
+    if ! cat > "$tmp_task" <<EOF
 task:
   parent_cmd: ${cmd_id}
   task_id: ${cmd_id}_training
@@ -1852,6 +1855,11 @@ task:
   status: assigned
   purpose: "${training_purpose}"
 EOF
+    then
+        rm -f "$tmp_task"
+        log "TRAINING-AUTO-SKIP: failed to write temporary task YAML for ${name}"
+        return 1
+    fi
 
     log "TRAINING-AUTO-DEPLOY: $name cmd=${cmd_id} via deploy_task.sh --direct --yaml"
     if bash "$deploy_script" --direct --yaml "$tmp_task" "$name" "$cmd_id" >> "$SCRIPT_DIR/logs/deploy_training_auto.log" 2>&1; then
