@@ -517,8 +517,19 @@ def append_row_to_block(block, row):
     lines.append(row)
     return "\n".join(lines) + "\n\n", True
 
-def candidate_aliases(source_type, payload, existing_aliases):
+def _scope_tokens(text):
+    """概念labelやaliases候補からスコープ判定用トークンを抽出"""
+    tokens = set()
+    tokens.update(w.lower() for w in re.findall(r'[a-zA-Z_][a-zA-Z0-9_]{2,}', str(text)))
+    # 日本語2文字以上の単語(カタカナ/漢字)
+    tokens.update(re.findall(r'[\u30A0-\u30FF\u4E00-\u9FFF]{2,}', str(text)))
+    return tokens
+
+def candidate_aliases(source_type, payload, existing_aliases, concept_label="", concept_id=""):
     existing_norm = {norm(alias) for alias in existing_aliases}
+    # スコープ判定: 概念label+idからトークンを抽出
+    scope_tokens = _scope_tokens(f"{concept_label} {concept_id}")
+    scope_tokens.update(_scope_tokens(" ".join(existing_aliases[:5])))  # 既存aliases上位5件も参照
     preferred_keys = {
         "cmd_complete": ["title", "purpose", "summary"],
         "lesson": ["title", "enforcement", "summary", "detail"],
@@ -538,6 +549,10 @@ def candidate_aliases(source_type, payload, existing_aliases):
         for part in re.split(r"[。．.!?\n]|[、,]\s*", cleaned):
             part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
             if len(part) < 2 or norm(part) in existing_norm:
+                continue
+            # スコープチェック: 候補aliasesのトークンと概念スコープに1語も共通がなければ除外
+            part_tokens = _scope_tokens(part)
+            if scope_tokens and part_tokens and not (scope_tokens & part_tokens):
                 continue
             aliases.append(part[:60])
             existing_norm.add(norm(part))
@@ -739,7 +754,7 @@ if confidence == "HIGH":
     sys.exit(0)
 
 if confidence == "LOW":
-    aliases_to_add = candidate_aliases(source_type, payload, best["aliases"])
+    aliases_to_add = candidate_aliases(source_type, payload, best["aliases"], concept_label=best.get("label", ""), concept_id=best.get("id", ""))
     alias_block, alias_changed = append_aliases_to_block(best["block"], aliases_to_add)
     rows = [resource_row(source_type, payload)] + causal_resource_rows(payload)
     new_block = alias_block
