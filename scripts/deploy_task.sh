@@ -3470,7 +3470,105 @@ def compute_useful_rates(script_dir):
         if vals[1] >= USEFUL_RATE_MIN_SAMPLES
     }
     feedback_totals = {lid: vals[1] for lid, vals in feedback_counts.items()}
-    return useful_rates, feedback_totals
+    useful_counts = {lid: vals[0] for lid, vals in feedback_counts.items()}
+    return useful_rates, feedback_totals, useful_counts
+
+ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '1'))
+
+def _deprecate_lessons_in_file(yaml_path, lesson_ids):
+    """Add deprecated: true to matching lesson blocks without round-tripping YAML."""
+    if not lesson_ids or not yaml_path or not os.path.exists(yaml_path):
+        return 0
+    target_ids = set(str(lid) for lid in lesson_ids if lid)
+    try:
+        with open(yaml_path, encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    except Exception:
+        return 0
+
+    out = []
+    current_id = None
+    current_indent = None
+    has_deprecated = False
+    pending_insert = False
+    changed = 0
+
+    def flush_pending():
+        nonlocal pending_insert, changed
+        if pending_insert and current_id in target_ids and not has_deprecated:
+            out.append(' ' * (current_indent + 2) + 'deprecated: true')
+            out.append(' ' * (current_indent + 2) + 'deprecation_reason: auto_useful_rate_zero')
+            changed += 1
+        pending_insert = False
+
+    id_re = re.compile(r'^(\s*)-\s+id:\s*[\'"]?([^\'"#\s]+)')
+    item_re = re.compile(r'^(\s*)-\s+')
+    deprecated_re = re.compile(r'^\s+deprecated:\s*true\s*(?:#.*)?$', re.IGNORECASE)
+    status_deprecated_re = re.compile(r'^\s+status:\s*[\'"]?deprecated[\'"]?\s*(?:#.*)?$', re.IGNORECASE)
+
+    for line in lines:
+        item_m = item_re.match(line)
+        if item_m and current_id is not None and len(item_m.group(1)) <= current_indent:
+            flush_pending()
+            current_id = None
+            current_indent = None
+            has_deprecated = False
+
+        id_m = id_re.match(line)
+        if id_m:
+            current_id = id_m.group(2).strip()
+            current_indent = len(id_m.group(1))
+            has_deprecated = False
+            pending_insert = current_id in target_ids
+            out.append(line)
+            continue
+
+        if current_id in target_ids and (deprecated_re.match(line) or status_deprecated_re.match(line)):
+            has_deprecated = True
+
+        out.append(line)
+
+    if current_id is not None:
+        flush_pending()
+
+    if changed <= 0:
+        return 0
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(yaml_path), prefix='.lessons_deprecated.', suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(out) + '\n')
+        os.replace(tmp_path, yaml_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return 0
+    return changed
+
+def apply_zero_useful_deprecation(lessons, lessons_path, feedback_totals, useful_counts):
+    """Auto-deprecate lessons whose confirmed feedback is 0% useful."""
+    if not lessons:
+        return 0
+    zero_lids = {
+        lid for lid, total in feedback_totals.items()
+        if total >= ZERO_USEFUL_DEPRECATE_MIN_SAMPLES and useful_counts.get(lid, 0) == 0
+    }
+    if not zero_lids:
+        return 0
+    changed_ids = []
+    for lesson in lessons:
+        lid = str(lesson.get('id', '') or '')
+        if not lid or lid not in zero_lids:
+            continue
+        if lesson.get('deprecated', False) or str(lesson.get('status', '')).lower() == 'deprecated':
+            continue
+        lesson['deprecated'] = True
+        lesson['deprecation_reason'] = 'auto_useful_rate_zero'
+        changed_ids.append(lid)
+    changed = _deprecate_lessons_in_file(lessons_path, changed_ids)
+    if changed:
+        print(f'[INJECT] auto-deprecated zero-useful lessons in {os.path.basename(os.path.dirname(lessons_path))}: {changed_ids}', file=sys.stderr)
+    return changed
 
 def build_lesson_detail(lesson):
     if_then = lesson.get('if_then')
@@ -3532,6 +3630,7 @@ try:
         except Exception as e:
             print(f'[INJECT] WARN: shogun_to_karo.yaml read failed for command keywords: {e}', file=sys.stderr)
     command_keywords = extract_keywords(command_text)
+    useful_rates, feedback_totals, useful_counts = compute_useful_rates(script_dir)
 
     # ═══ 偵察固有教訓リスト (cmd_1340) ═══
     # recon/scout/research タスクには以下の教訓のみ注入(全スキップ→固定リスト注入に変更)
@@ -3616,6 +3715,7 @@ try:
     lessons = load_lessons_cached(lessons_path)
     if not lessons and not os.path.exists(lessons_path):
         print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
+    apply_zero_useful_deprecation(lessons, lessons_path, feedback_totals, useful_counts)
     # cmd_2270: プロジェクトソーストラッキング (project-source boostに使用)
     for _l in lessons:
         _l['_source_project'] = project
@@ -3636,6 +3736,7 @@ try:
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
                     plat_path = plat_index if os.path.exists(plat_index) else plat_archive
                     plat_lessons = load_lessons_cached(plat_path)
+                    apply_zero_useful_deprecation(plat_lessons, plat_path, feedback_totals, useful_counts)
                     # cmd_2270: platformソースをトラッキング
                     for _l in plat_lessons:
                         _l['_source_project'] = pj['id']
@@ -3644,9 +3745,37 @@ try:
         except Exception as pe:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
+    CROSS_PROJECT_GENERIC_KEYWORDS = {
+        'task', 'tasks', 'cmd', 'command', 'project', 'lesson', 'lessons',
+        'deploy', 'deployment', 'check', 'verify', 'test', 'tests', 'fix',
+        'gate', 'report', 'yaml', 'script', 'scripts', 'status', 'error',
+        'filter', 'score', 'scores', 'rate', 'useful', 'feedback', 'context',
+        'implementation', 'change', 'changes', 'update', 'updates',
+        '確認', '検証', '修正', '実装', '教訓', '注入', '候補', '本番',
+    }
+
+    def _lesson_keyword_terms(lesson_list):
+        terms = set()
+        for lesson in lesson_list:
+            text = f"{lesson.get('title','')} {lesson.get('summary','')} {lesson.get('content','')}"
+            terms.update(extract_keywords(text, min_len=3))
+        return terms
+
+    same_context_terms = _lesson_keyword_terms(lessons)
+
+    def _cross_project_specific_terms(matched_terms):
+        specific = []
+        for term in sorted(set(matched_terms)):
+            if term in CROSS_PROJECT_GENERIC_KEYWORDS:
+                continue
+            if term in same_context_terms:
+                continue
+            specific.append(term)
+        return specific
+
     # GStack #13: Cross-project learnings
     # task.command由来キーワードで other project lesson.title を照合し、
-    # 関連度スコア(タイトル一致回数×3)が閾値以上のもののみ opt-in 候補化する。
+    # 関連度スコア(タイトル一致回数×3)が閾値以上かつ他PJ固有語を含むもののみopt-in候補化する。
     if command_keywords and pdata:
         for pj in (pdata or {}).get('projects', []):
             other_id = str(pj.get('id', '') or '').strip()
@@ -3658,20 +3787,31 @@ try:
             other_lessons = load_lessons_cached(other_path)
             if not other_lessons:
                 continue
+            apply_zero_useful_deprecation(other_lessons, other_path, feedback_totals, useful_counts)
             matched = []
             for _l in other_lessons:
+                if _l.get('deprecated', False) or str(_l.get('status', '')).lower() == 'deprecated':
+                    continue
                 title_text = str(_l.get('title', '') or '').lower()
                 if not title_text:
                     continue
                 score = 0
+                matched_terms = []
                 for kw in command_keywords:
-                    score += title_text.count(kw) * 3
+                    count = title_text.count(kw)
+                    if count:
+                        score += count * 3
+                        matched_terms.append(kw)
                 if score < CROSS_PROJECT_SCORE_THRESHOLD:
+                    continue
+                specific_terms = _cross_project_specific_terms(matched_terms)
+                if not specific_terms:
                     continue
                 _copy = dict(_l)
                 _copy['_source_project'] = other_id
                 _copy['_cross_project_opt_in'] = True
                 _copy['_cross_project_score'] = score
+                _copy['_cross_project_specific_terms'] = specific_terms
                 matched.append(_copy)
             if matched:
                 cross_project_projects += 1
@@ -4163,7 +4303,6 @@ try:
     # cmd_1564+karo_idle_fix: useful_rate feedback基盤
     # cmd_2700: mature feedback effectiveness_scoreが低い教訓は注入候補から除外
     # フィードバックデータ(record_lesson_feedback.sh)から実有用率を算出
-    useful_rates, feedback_totals = compute_useful_rates(script_dir)
     effectiveness_excluded = []
 
     def needs_initial_feedback(lid):
