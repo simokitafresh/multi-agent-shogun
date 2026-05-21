@@ -685,3 +685,4 @@
 | cmd_2935 | 殿が5/21 02:39にスクショで確認した事象: 1着信に対しnudge(inbox1)が2回送信される。既存のdebounce/dedup機構があるにもかかわらず二重送信が発生する根因を特定する | infra | 05-21 | 二重nudgeの根因は同一agentに複数のinbox_wa |
 | cmd_2936 | 修行中の忍者がAC5で概念名付きaliases候補を提案する形式を設計し、parse_pending_semantic_insightsがその形式を認識→概念名で直接マッチ→similarity_score不要でauto-promote可能にする。修行6忍者並列で高品質aliases蓄積を加速する | infra | 05-21 | 修行AC5を概念名付きalias行へ更新し、直接昇格を検証す |
 | cmd_2937 | cmd_2935偵察結果に基づく修正。根因=同一agentにinbox_watcher.shが2本以上常駐し同一イベントを並列処理。singleton lockでagent別1プロセスを保証し、debounce/fingerprint check+writeを同一flock内でatomic化する | infra | 05-21 | inbox_watcherのagent別singletonと |
+| cmd_2938 | cmd_2936で修行AC5→auto-promote直結を実装したがPENDING_ALIAS_DIRECT=0件。なぜなぜ7回: (1)忍者のinsight_writeのsource引数が未指定→parse側フィルタ(L651 training含む)に不合致→スキップ (2)insight自体がinsights.yamlに残っていない(archiveに退避or書込失敗)。修正: 修行テンプレートにinsight_write source=training引数を明示+書込後のgrep検証ACを追加+parse側のsourceフィルタ緩和 | infra | 05-21 | DIRECT経路のtraining source alias |
