@@ -176,7 +176,27 @@ def find_matches(search_dir, cmd_id_filter=None):
     if not os.path.isdir(search_dir):
         return []
 
-    found = []
+    def scan_files(file_list):
+        found = []
+        for fpath in file_list:
+            try:
+                with open(fpath) as f:
+                    raw = yaml.safe_load(f)
+                if not raw:
+                    continue
+                pcmd = str(get_first(raw, 'parent_cmd', 'report.parent_cmd'))
+                if pcmd != CMD_ID:
+                    continue
+                status = str(get_first(raw, 'status', 'report.status', default=''))
+                # Skip placeholder reports (empty status)
+                if not status.strip() or status.strip() == 'None':
+                    continue
+                ts = str(get_first(raw, 'timestamp', 'report.timestamp', default=''))
+                found.append({'ts': ts, 'path': fpath, 'data': raw})
+            except Exception:
+                continue
+        return found
+
     # GP-078: cmd_id指定時はファイル名でフィルタ（95→1-6件に削減）
     if cmd_id_filter:
         patterns = [
@@ -186,28 +206,23 @@ def find_matches(search_dir, cmd_id_filter=None):
         candidates = set()
         for pat in patterns:
             candidates.update(glob.glob(pat))
-        file_list = sorted(candidates)
+        filtered_list = sorted(candidates)
+        found = scan_files(filtered_list)
+        if found:
+            return found
+
+        # Historical reports sometimes use task_id-based filenames while
+        # parent_cmd holds the real cmd id (e.g. cmd_2514). Fall back to a
+        # full scan only on miss so the hot path keeps the filename filter.
+        scanned = set(filtered_list)
+        fallback_list = [
+            f for f in sorted(glob.glob(os.path.join(search_dir, '*.yaml')))
+            if f not in scanned
+        ]
+        return scan_files(fallback_list)
     else:
         file_list = sorted(glob.glob(os.path.join(search_dir, '*.yaml')))
-
-    for fpath in file_list:
-        try:
-            with open(fpath) as f:
-                raw = yaml.safe_load(f)
-            if not raw:
-                continue
-            pcmd = str(get_first(raw, 'parent_cmd', 'report.parent_cmd'))
-            if pcmd != CMD_ID:
-                continue
-            status = str(get_first(raw, 'status', 'report.status', default=''))
-            # Skip placeholder reports (empty status)
-            if not status.strip() or status.strip() == 'None':
-                continue
-            ts = str(get_first(raw, 'timestamp', 'report.timestamp', default=''))
-            found.append({'ts': ts, 'path': fpath, 'data': raw})
-        except Exception:
-            continue
-    return found
+        return scan_files(file_list)
 
 
 # ─── Step 1: Find matching report YAMLs ───
