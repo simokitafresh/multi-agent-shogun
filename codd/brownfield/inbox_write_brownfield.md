@@ -23,6 +23,13 @@ codd:
 
 # Findings
 
+## Cross-References
+
+- [[inbox_write.sh]] is the executable mailbox writer; its header defines the CLI contract and supported message types.
+- [[cmd_2762_inbox_write_requirements.md]] is the current brownfield requirements document for target validation, inbox serialization, locking, duplicate deployment blocking, and report notification behavior.
+- [[inbox_write_design.md]] maps the implemented flow: validate routing, compute inbox/lock paths, append under lock, then run wake-up or downstream side effects.
+- [[test_inbox_write.bats]] is the unit regression surface for argument validation, default fields, flock retry behavior, special character escaping, inbox initialization, and duplicate task assignment blocking.
+
 <!-- codd:finding
 {"details": {"context": "Elicitation L0の全入力フィールドが(none provided)。分析対象のドキュメントがない状態では網羅的なgap分析は不可能。"}, "id": "no_requirements_provided", "kind": "missing_input", "name": "要件定義ドキュメントが未提供", "question": "inbox_write.shの正式な要件定義書またはCoDD設計書(spec)は存在しますか？存在する場合、パスを教えてください。", "rationale": "要件が不明なままでは、カバレッジ評価もgap検出もできない。まずinbox_writeの仕様を明示する必要がある。", "related_requirement_ids": [], "severity": "critical", "source": "greenfield"}
 -->
@@ -209,3 +216,31 @@ evidence: CLAUDE.mdに'yaml.dump/yaml.safe_dumpで運用YAMLを上書きする�
 ```yaml
 concern: flockによる排他制御は同時書込みを防ぐが、flock待ちの順序がFIFO保証されるかはOS実装依存
 ```
+
+---
+
+## Implementation Reality
+
+> 実装照合: [[scripts/inbox_write.sh]] を直接確認した結果。
+> 関連設計書: [[codd/design/inbox_write_design.md]]
+
+brownfield elicitationで検出されたfindingのうち、複数は既に実装済みであることが判明した。
+未解決gapに集中するための照合表を以下に示す。
+
+| finding_id | 当初評価 | 実装状況 | 根拠（行番号） |
+|------------|----------|----------|----------------|
+| concurrency_safety | high: タイムアウト未定義 | ✅ 実装済み | L1309: `flock -w 5`, L1307–1474: 3回リトライループ, L1470: ntfy最終失敗通知 |
+| message_id_generation | medium: 生成方式不明 | ✅ 実装済み | L1007: `MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"` (timestamp+PID+randomhex) |
+| type_enum_completeness | medium: 散在 | ✅ 定義済み | L8–30: スクリプトヘッダに20種類のtype定義あり。CLAUDE.mdの6件は部分抜粋 |
+| target_agent_validation | medium: 挙動不明 | ✅ 実装済み | L961–964: 不正エージェント名は `ERROR: Invalid target agent` でexit 1 |
+| yaml_append_integrity | high: 手法不明 | ✅ 実装済み | L633–638: `printf '%s' >> "$inbox_file"` でbash printf追記。yaml.dump不使用 |
+| error_handling_strategy | medium: 未定義 | ✅ 実装済み | L1462–1474: 3回リトライ後エラーログ+ntfy通知 |
+| message_schema_validation | high: バリデーション不明 | ⚠️ 部分実装 | L930–935: cmd_*ターゲット拒否, L272: `value="${value//\'/\'\'}"` でシングルクォートエスケープあり。YAML特殊文字の完全バリデーションは未実装 |
+| wsl2_inotify_limitation | medium: ポーリング間隔未定義 | ⚠️ 設計外 | inbox_write.shではなくinbox_watcher.shの責務。本findingはwatcher側に転記すべき |
+| message_ordering_guarantee | info: 順序不保証 | ⚠️ OS依存 | flockは排他だがFIFO保証なし。設計上の既知制約として受理 |
+| no_requirements_provided | critical: 要件なし | ⚠️ 部分解消 | [[codd/design/inbox_write_design.md]] が設計書として機能している |
+
+**本照合で判明した真のgap（対処が必要なもの）:**
+- `message_schema_validation`: YAML特殊文字（コロン、改行等）のフルバリデーションが未実装
+- `wsl2_inotify_limitation`: inbox_watcher.sh側のポーリング間隔仕様が未文書化
+- `no_requirements_provided`: 正式なCoDD spec（requirements）が未作成
