@@ -42,6 +42,7 @@ PROJECT_ROOT="'"$PROJECT_ROOT"'"
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
 
 export SHOGUN_STATE_DIR="$TMP_ROOT/state"
 export PROJECT_ROOT TMP_ROOT

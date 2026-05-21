@@ -16,6 +16,11 @@ setup() {
     # shellcheck disable=SC1090
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
 
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+EOF
+
     # Default task for ac_version tests
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
