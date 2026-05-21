@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_L7_v3_hayate_8_20260521213836_exact
+  _ac_task_id: cmd_training_L7_v3_hayate_9_20260521214706_exact
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2946 (deployed 2026-05-21T20:35:36). Read from the beginning.
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
@@ -56,7 +56,7 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_training_L7_v3_hayate_8_20260521213836
+  parent_cmd: cmd_training_L7_v3_hayate_9_20260521214706
   project: infra
   purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
   related_causal_links:
@@ -65,7 +65,7 @@ task:
   - '[[test_production_divergence]]'
   status: done
   stop_for: []
-  task_id: cmd_training_L7_v3_hayate_8_20260521213836_exact
+  task_id: cmd_training_L7_v3_hayate_9_20260521214706_exact
   task_type: exact
   related_lessons:
   - id: 'L511'
@@ -136,9 +136,9 @@ task:
     
     
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_L7_v3_hayate_8_20260521213836.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_8_20260521213836.yaml
+  report_filename: hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml
   bloom_level: 
-  deployed_at: "2026-05-21T21:39:15"
-  progress: "AC1-AC5完了。report gate PASS。報告YAML: queue/reports/hayate_report_cmd_training_L7_v3_hayate_8_20260521213836.yaml"
-  completed_at: "2026-05-21T21:42:02"
+  deployed_at: "2026-05-21T21:47:44"
+  progress: "AC1-AC5完了。bash -n scripts/ninja_monitor.sh PASS、bats tests/unit/test_ninja_monitor_training_auto.bats 6/6 PASS。報告YAML: queue/reports/hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml"
+  completed_at: "2026-05-21T21:51:50"

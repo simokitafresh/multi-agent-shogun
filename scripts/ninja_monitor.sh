@@ -1765,6 +1765,10 @@ _training_recent_gate_stats() {
     if command -v tac >/dev/null 2>&1; then
         tac "$log_file" 2>/dev/null | awk -v name="$name" -v limit="$recent_limit" '
             $0 ~ ("queue/reports/" name "_report_") || $0 ~ ("/queue/reports/" name "_report_") || $0 ~ ("/queue/archive/reports/" name "_report_") {
+                file = $0
+                sub(/^.*file:[[:space:]]*"/, "", file)
+                sub(/".*$/, "", file)
+                if (file == "" || seen[file]++) next
                 total++
                 if ($0 ~ /result:[[:space:]]*FAIL/) fail++
                 if (total >= limit) exit
@@ -1782,12 +1786,15 @@ _training_recent_gate_stats() {
             lines[++n] = $0
         }
         END {
-            start = n - limit + 1
-            if (start < 1) start = 1
-            for (i = start; i <= n; i++) {
+            for (i = n; i >= 1; i--) {
                 if (lines[i] == "") continue
+                file = lines[i]
+                sub(/^.*file:[[:space:]]*"/, "", file)
+                sub(/".*$/, "", file)
+                if (file == "" || seen[file]++) continue
                 total++
                 if (lines[i] ~ /result:[[:space:]]*FAIL/) fail++
+                if (total >= limit) break
             }
             pct = (total > 0 ? int((fail * 100 + total - 1) / total) : 0)
             printf "%d %d %d\n", total + 0, fail + 0, pct + 0

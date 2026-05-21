@@ -4,6 +4,33 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "training recent gate stats counts each report file once" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/logs"
+
+cat > "$SCRIPT_DIR/logs/gate_fire_log.yaml" <<LOG
+- ts: "2026-05-21T21:00:00+09:00", file: "queue/reports/hayate_report_cmd_a.yaml", gate: "gate_report_format", result: FAIL
+- ts: "2026-05-21T21:01:00+09:00", file: "queue/reports/hayate_report_cmd_a.yaml", gate: "gate_report_format", result: PASS
+- ts: "2026-05-21T21:02:00+09:00", file: "queue/reports/hayate_report_cmd_b.yaml", gate: "gate_report_format", result: FAIL
+LOG
+
+TRAINING_AUTO_DEPLOY_RECENT=50
+read -r total fail pct < <(_training_recent_gate_stats hayate)
+printf "%s %s %s\n" "$total" "$fail" "$pct"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "2 1 50" ]
+}
+
 @test "training auto deploy stops when state dir cannot be prepared" {
     run bash -c '
 set -euo pipefail
