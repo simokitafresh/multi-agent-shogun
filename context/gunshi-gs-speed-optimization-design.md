@@ -1,3 +1,4 @@
+semantic-links: [[GS忍法研究]]
 <!-- last_updated: 2026-04-15 -->
 # GS速度最適化 設計分析
 

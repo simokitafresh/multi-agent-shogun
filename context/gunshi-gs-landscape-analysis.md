@@ -1,3 +1,4 @@
+semantic-links: [[GS忍法研究]]
 <!-- last_updated: 2026-04-09 -->
 # GS忍法パラメータ空間分析
 <!-- cmd_1711結果 | 2026-04-03 | author: gunshi -->

@@ -1,3 +1,4 @@
+semantic-links: [[Skill設計ルール]]
 # Dream-skill設計書 — Auto-dreamを超える5 Phase Memory Consolidation
 
 <!-- cmd_origin: cmd_1414 | author: shogun | created: 2026-03-27 -->

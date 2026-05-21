@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# semantic-links: [[破壊的操作安全機構]]
 # Guard D010: destructive git operations require explicit inbound Lord approval.
 
 setup_file() {

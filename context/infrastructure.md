@@ -1,3 +1,4 @@
+semantic-links: [[インフラ運用基盤]], [[学習ループ]], [[将軍Androidアプリ]], [[編成管理]]
 # インフラコンテキスト
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_infra_v2 -->
 

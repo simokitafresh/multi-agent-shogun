@@ -1,3 +1,4 @@
+semantic-links: [[GS忍法研究]]
 # GS結果: 四つ目(yotsume) フルGSチャンピオン選出
 <!-- 出典: context/dm-signal-research.md §24, cmd_284, 2026-02-23 -->
 <!-- 担当: tobisaru -->

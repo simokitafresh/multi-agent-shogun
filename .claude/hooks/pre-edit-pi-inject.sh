@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]]
 # pre-edit-pi-inject.sh — DM-Signal PIコンテキスト注入
 # PreToolUse:Write|Edit — DM-Signalプロジェクトファイル編集時に関連PIを表示
 # PI動的取得: projects/dm-signal.yaml production_invariants

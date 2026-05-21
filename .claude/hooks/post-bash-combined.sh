@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]]
 # Combined Bash PostToolUse guard: test_result_guard + commit-reminder
 # cmd_1661: 2 hooks → 1 script. Eliminates 1 bash startup cost (~60ms).
 set -eu

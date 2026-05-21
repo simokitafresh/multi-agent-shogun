@@ -1,3 +1,4 @@
+semantic-links: [[再計算パイプライン]]
 # fullrecalculate アーキテクチャ全量解析
 <!-- author: shogun | source: コード全文読了 -->
 <!-- revision: v4 2026-03-28T04:50+09:00 — §9消費者完全分析追加+§8 signal記述修正+OPT-E momentum_data空問題発見 -->

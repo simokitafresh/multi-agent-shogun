@@ -1,3 +1,4 @@
+semantic-links: [[本番パリティ]]
 # cmd_1985 DM-Signal パリティ検証手段 audit
 
 <!-- created: 2026-04-16 -->

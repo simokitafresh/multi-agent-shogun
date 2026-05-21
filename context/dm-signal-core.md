@@ -1,3 +1,4 @@
+semantic-links: [[DM-Signal運用]], [[Silent Fallback品質]], [[再計算パイプライン]], [[四神設計]], [[本番パリティ]]
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2/KB鮮度更新 -->
 

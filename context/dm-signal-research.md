@@ -1,3 +1,4 @@
+semantic-links: [[DM-Signal運用]]
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_research -->
 

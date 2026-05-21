@@ -1,3 +1,4 @@
+semantic-links: [[GS忍法研究]]
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
 <!-- last_updated: 2026-04-20 cmd_karo_ctx_reflux_2188 memory-structure-unification section added -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->

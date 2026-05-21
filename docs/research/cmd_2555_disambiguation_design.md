@@ -1,3 +1,4 @@
+semantic-links: [[用語辞書]]
 # DM-Signal 用語曖昧性解消辞書 設計書
 
 date: 2026-05-04

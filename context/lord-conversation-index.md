@@ -1,3 +1,4 @@
+semantic-links: [[セマンティック辞書構想]]
 # Lord Conversation Index
 <!-- last_updated: 2026-05-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->

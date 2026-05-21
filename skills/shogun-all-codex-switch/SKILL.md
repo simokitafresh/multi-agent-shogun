@@ -7,6 +7,7 @@ description: |
   TRIGGER: /shogun-all-codex-switch、全員Codex切替、Codex-only編成、緊急Codex編成
   DO NOT TRIGGER: 単体CLI切替、peacetime rollback（→/shogun-peacetime-rollback）
 ---
+semantic-links: [[編成管理]]
 
 # Shogun All Codex Switch
 

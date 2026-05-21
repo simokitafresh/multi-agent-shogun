@@ -1,3 +1,4 @@
+semantic-links: [[DM-Signal運用]]
 # ドキュメントインデックス + DB/パリティ/APIルール抜粋
 <!-- cmd_286 | 2026-02-23 | ops.mdから移動 -->
 <!-- 結論: docs/skills/(25件)+docs/rule/(25件)全一覧+DB接続・パリティ・API使用法ルール -->

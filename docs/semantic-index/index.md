@@ -4,6 +4,7 @@ codd:
   propagates_to:
     - context/semantic-map.md
 ---
+semantic-links: [[セマンティック因果自動化]]
 
 # セマンティクスインデックス SSOT
 

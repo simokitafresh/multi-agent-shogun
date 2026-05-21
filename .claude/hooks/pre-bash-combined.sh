@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]], [[gate迂回防止]], [[破壊的操作安全機構]]
 # Combined Bash PreToolUse guard: block_destructive + no-verify + report-deny + yaml-dump
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -euo pipefail

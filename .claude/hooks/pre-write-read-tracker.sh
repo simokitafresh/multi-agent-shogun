@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[Hook自動化フレームワーク]]
 set -eu
 
 # Read追跡 + Write/Edit未Readガード hook
