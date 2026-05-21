@@ -995,6 +995,82 @@ echo "AUTO_DEPLOY_KEY=${AUTO_DEPLOY_DONE[saizo:subtask_575_impl_a]:-0}"
     [[ "$output" == *"AUTO_DEPLOY_KEY=1"* ]]
 }
 
+@test "is_task_deployed: report gate notification sent still rechecks FAIL and blocks auto_deploy" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts/gates"
+
+declare -A AUTO_DEPLOY_DONE PANE_TARGETS UNCOMMITTED_BLOCK_SENT REPORT_GATE_SENT
+TEST_LOG="$(mktemp)"
+LOG="$TEST_LOG"
+PANE_TARGETS[saizo]=""
+AUTO_DEPLOY_DONE["saizo:subtask_575_impl_a"]=""
+UNCOMMITTED_BLOCK_SENT["saizo:cmd_575"]=""
+REPORT_GATE_SENT["saizo:cmd_575"]="1"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  task_id: subtask_575_impl_a
+  parent_cmd: cmd_575
+EOF
+
+cat > "$SCRIPT_DIR/queue/reports/saizo_report_cmd_575.yaml" <<'"'"'EOF'"'"'
+worker_id: saizo
+task_id: subtask_575_impl_a
+parent_cmd: cmd_575
+status: done
+verdict: ""
+EOF
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<'"'"'EOF'"'"'
+#!/bin/bash
+echo "FAIL forced report gate"
+exit 1
+EOF
+chmod +x "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"
+
+log() { echo "$1" >> "$TEST_LOG"; }
+check_and_update_done_task() { return 0; }
+yaml_field_get() {
+    case "$2" in
+        status) echo "done" ;;
+        task_id) echo "subtask_575_impl_a" ;;
+        parent_cmd) echo "cmd_575" ;;
+        *) echo "${3:-}" ;;
+    esac
+}
+timeout() { echo "TIMEOUT:$*" >> "$TEST_LOG"; return 0; }
+
+if is_task_deployed saizo; then
+    echo "DEPLOYED=1"
+else
+    echo "DEPLOYED=0"
+fi
+sleep 0.05
+
+if grep -q "^TIMEOUT:" "$TEST_LOG"; then
+    echo "AUTO_DEPLOY_CALL=1"
+else
+    echo "AUTO_DEPLOY_CALL=0"
+fi
+grep -q "REPORT-FORMAT-FAIL-RECHECK" "$TEST_LOG"
+echo "RECHECK_LOG=1"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEPLOYED=0"* ]]
+    [[ "$output" == *"AUTO_DEPLOY_CALL=0"* ]]
+    [[ "$output" == *"RECHECK_LOG=1"* ]]
+}
+
 @test "is_task_deployed: status=doneかつ未完了判定ならauto_deploy発火しない" {
     run bash -lc '
 set -euo pipefail
