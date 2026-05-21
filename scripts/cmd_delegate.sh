@@ -178,9 +178,17 @@ cmd_is_archived() {
         return 1
     fi
 
+    local nullglob_was_set=0
+    if shopt -q nullglob; then
+        nullglob_was_set=1
+    fi
     shopt -s nullglob
     local archived_matches=("$ARCHIVE_DIR/${cmd_id}_"*)
-    shopt -u nullglob
+    if [ "$nullglob_was_set" -eq 1 ]; then
+        shopt -s nullglob
+    else
+        shopt -u nullglob
+    fi
     [ "${#archived_matches[@]}" -gt 0 ]
 }
 
