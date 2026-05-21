@@ -409,7 +409,39 @@ for field in ('found', 'affected_cmds', 'detail'):
     if field not in data:
         print(f'BLOCK: assumption_invalidation.{field} が欠落', file=sys.stderr)
         sys.exit(1)
+found_s = str(data.get('found', '')).strip().lower()
+if found_s == 'true':
+    detail = str(data.get('detail', '') or '').strip()
+    affected_cmds = data.get('affected_cmds', [])
+    if not detail:
+        print('BLOCK: assumption_invalidation.found=true だが detail が空', file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(affected_cmds, list) or len(affected_cmds) == 0:
+        print('BLOCK: assumption_invalidation.found=true だが affected_cmds が空', file=sys.stderr)
+        sys.exit(1)
 " <<< "$val" || return 1
+            elif [[ "$dot_key" == "assumption_invalidation.found" ]] && [[ "$val" =~ ^([Tt][Rr][Uu][Ee]|true|TRUE|yes|YES)$ ]]; then
+                REPORT_PATH="$REPORT_PATH" python3 -c "
+import os, sys, yaml
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    print('BLOCK: assumption_invalidation.found=true は detail/affected_cmds 記入後に実行せよ', file=sys.stderr)
+    sys.exit(1)
+with open(rp) as f:
+    data = yaml.safe_load(f) or {}
+ai = data.get('assumption_invalidation', {})
+if not isinstance(ai, dict):
+    print('BLOCK: assumption_invalidation.found=true は既存dictが必要', file=sys.stderr)
+    sys.exit(1)
+detail = str(ai.get('detail', '') or '').strip()
+affected_cmds = ai.get('affected_cmds', [])
+if not detail:
+    print('BLOCK: assumption_invalidation.found=true だが detail が空。先に assumption_invalidation.detail を記入せよ', file=sys.stderr)
+    sys.exit(1)
+if not isinstance(affected_cmds, list) or len(affected_cmds) == 0:
+    print('BLOCK: assumption_invalidation.found=true だが affected_cmds が空。先に assumption_invalidation.affected_cmds を記入せよ', file=sys.stderr)
+    sys.exit(1)
+" || return 1
             fi
             ;;
         knowledge_candidate)

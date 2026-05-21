@@ -154,6 +154,13 @@ assert ai["detail"] == "", ai
 PY
 }
 
+@test "assumption_invalidation: top-level true without detail/cmds is blocked" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation true 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: assumption_invalidation.found=true だが detail が空"* ]]
+    ! grep -Fq "assumption_invalidation:" "$TEST_REPORT"
+}
+
 @test "assumption_invalidation: historical found false form is normalized to dict" {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation found false 2>&1"
     [ "$status" -eq 0 ]
@@ -168,6 +175,13 @@ assert ai["found"] is False, ai
 assert ai["affected_cmds"] == [], ai
 assert ai["detail"] == "", ai
 PY
+}
+
+@test "assumption_invalidation: found true dot write is blocked until detail and affected_cmds exist" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' assumption_invalidation.found true 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: assumption_invalidation.found=true だが detail が空"* ]]
+    ! grep -Fq "assumption_invalidation:" "$TEST_REPORT"
 }
 
 @test "assumption_invalidation: 既存affected_cmdsはdot notation書込み後も保持される" {
