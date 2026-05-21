@@ -248,10 +248,18 @@ print(count)
 PYEOF
 )
     if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
-      BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
-        "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
-        false action_required \
-        >/dev/null || echo "WARN: insight repeat bulletin failed for source=$source_info" >&2
+      # デバウンス: 同一sourceのINSIGHT_REPEATを10分以内に重複投稿しない
+      _repeat_debounce_file="/tmp/shogun_insight_repeat_${source_info//[^a-zA-Z0-9_]/_}.last"
+      _repeat_now=$(date +%s)
+      _repeat_last=0
+      [[ -f "$_repeat_debounce_file" ]] && _repeat_last=$(cat "$_repeat_debounce_file" 2>/dev/null || echo 0)
+      if (( _repeat_now - _repeat_last > 600 )); then
+        printf '%s' "$_repeat_now" > "$_repeat_debounce_file"
+        BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
+          "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
+          false action_required \
+          >/dev/null || echo "WARN: insight repeat bulletin failed for source=$source_info" >&2
+      fi
     fi
   fi
 
