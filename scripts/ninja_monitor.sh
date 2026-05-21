@@ -726,6 +726,13 @@ safe_send_clear() {
         return 1
     fi
 
+    # cmd_2947: status=done is not enough to reset a ninja.  The report YAML
+    # must exist first, otherwise auto-clear can erase the post-task reporting work.
+    if ! can_send_clear_with_report_gate "$agent_name" "$reason"; then
+        log "CLEAR-BLOCKED: $agent_name report gate blocked reset, reason=$reason"
+        return 1
+    fi
+
     # cmd_1296: /clear前のgit uncommittedチェック
     # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
     # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）

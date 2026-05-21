@@ -741,7 +741,7 @@ echo "PASS: idle respawns"
     [[ "$output" == *"PASS: idle respawns"* ]]
 }
 
-@test "safe_send_clear codex done and empty tasks use respawn-pane" {
+@test "safe_send_clear codex done requires report before respawn" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -754,7 +754,7 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 touch "$LOG"
 
 check_idle() { return 0; }
@@ -779,21 +779,34 @@ export -f tmux
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
   status: done
+  parent_cmd: cmd_test
+  report_filename: hayate_report_cmd_test.yaml
 YAML
-safe_send_clear "shogun:2.3" "hayate" "DONE-TEST"
+DONE_BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "DONE-MISSING-REPORT" || DONE_BLOCKED=$?
+
+cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_test.yaml" <<YAML
+worker_id: hayate
+parent_cmd: cmd_test
+status: done
+verdict: PASS
+YAML
+safe_send_clear "shogun:2.3" "hayate" "DONE-WITH-REPORT"
 rm -f "$SCRIPT_DIR/queue/tasks/hayate.yaml"
 safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST"
 
 test "$(grep -c "CODEX-RESPAWN: hayate respawn-pane" "$LOG")" -eq 2
 test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
+test "$DONE_BLOCKED" -eq 1
+grep -q "REPORT-MISSING-BLOCK: hayate done but no report" "$LOG"
 if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1
 fi
-echo "PASS: done and empty respawn"
+echo "PASS: done report gate and empty respawn"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: done and empty respawn"* ]]
+    [[ "$output" == *"PASS: done report gate and empty respawn"* ]]
 }
 
 @test "safe_send_clear codex in_progress uses respawn-pane" {
