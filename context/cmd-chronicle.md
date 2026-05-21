@@ -661,3 +661,4 @@
 | cmd_2953 | 修行targetを[[リンク]]数昇順で選択し、孤立ファイルから順にリンクネットワークを育てる。現状944 mdファイル中88%が孤立。修行ACに[[リンク]]追加を組込み、Obsidianグラフを修行サイクルで自然に成長させる | infra | 05-22 | 修行targetをMarkdownリンク数昇順で選び、孤立M |
 | cmd_2955 | cmd_2954設計変更(軍師REQUEST_CHANGES)。ファイル間直接リンクではなく概念名リンクのみ挿入。各resourcesファイルに所属概念名への[[概念名]]リンクを挿入し、概念をハブとするスター型ネットワークを構築 | infra | 05-22 | docs/semantic-index/index.mdから |
 | cmd_2954 | index.mdの46概念×resourcesをパースし、同一概念内resources間+概念⇔resourcesの双方向[[リンク]]を自動挿入。孤立率88%を一括削減。殿直接指示 | infra | 05-22 | — |
+| cmd_2957 | deploy_task.sh inject_direct_training_templateのAC2/AC5が概念名リンク(ハブ方式)を許容している。殿確定の分離原則(context/obsidian-link-principles.md)に準拠し、ファイル間直接リンク方式に修正する | infra | 05-22 | deploy_task.shのL4修行テンプレートをファイル |
