@@ -274,6 +274,7 @@ if [ -n "$undeployed_cmds" ]; then
 fi
 
 # Step 3.6: dashboardパイプラインに既にcmd_idが載っているかチェック（WARN only — secondary data）
+# -w: word-boundary matching。cmd_100 が cmd_1000 内にマッチして誤WARNするのを防ぐ（inbox_has_cmd_new_for_cmdと整合）
 if [ -f "$DASHBOARD" ] && grep -Fqwm1 "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
     echo "WARN: $CMD_ID is already listed in dashboard.md (karo may already be aware). Proceeding — dashboard is secondary data." >&2
 fi

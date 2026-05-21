@@ -339,6 +339,18 @@ YAML
     [[ "$output" != *"WARN: 委任済みだが未配備のcmdを検出"* ]]
 }
 
+@test "cmd_delegate: dashboard内の部分一致cmd_idでは既存掲載WARNを出さない" {
+    create_shogun_yaml_with_pending
+    echo "# Dashboard" > "${TEST_TMP}/dashboard.md"
+    echo "cmd_1000: 進行中" >> "${TEST_TMP}/dashboard.md"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" != *"already listed in dashboard.md"* ]]
+}
+
 @test "cmd_delegate: inbox_write失敗時エラー" {
     create_shogun_yaml_with_pending
 
@@ -675,4 +687,26 @@ YAML
     echo "output: $output"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: pending cmd なし"* ]]
+}
+
+@test "cmd_delegate: dashboard部分一致cmd_idはWARNなし (cmd_100 in cmd_1000)" {
+    create_shogun_yaml_with_pending
+    echo "cmd_1000: 進行中" > "${TEST_TMP}/dashboard.md"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" != *"already listed in dashboard.md"* ]]
+}
+
+@test "cmd_delegate: dashboard完全一致cmd_idはWARNあり" {
+    create_shogun_yaml_with_pending
+    echo "cmd_100: 進行中" > "${TEST_TMP}/dashboard.md"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" == *"already listed in dashboard.md"* ]]
 }
