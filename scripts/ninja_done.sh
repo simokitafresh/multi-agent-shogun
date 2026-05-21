@@ -34,7 +34,8 @@ resolve_report_file() {
     # cmd_2082: date-trial (printf %T builtin) でglobを回避 (~66ms→~3ms)
     # archiveファイル名: ${ninja}_report_${cmd_id}_${YYYYMMDD}.yaml
     local _epoch _date_str _candidate _d
-    _epoch=$(date +%s)
+    # L37: date +%s(subprocess)→printf -v(bashビルトイン)。L39の%(%Y%m%d)T同パターンで統一(0 subprocess)
+    printf -v _epoch '%(%s)T' -1
     for _d in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
         printf -v _date_str '%(%Y%m%d)T' $(( _epoch - _d * 86400 ))
         _candidate="$ARCHIVE_REPORT_DIR/${ninja_name}_report_${cmd_id}_${_date_str}.yaml"

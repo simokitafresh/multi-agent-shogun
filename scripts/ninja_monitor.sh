@@ -451,7 +451,8 @@ check_pane_survival() {
 
     local missing=()
     for name in "${NINJA_NAMES[@]}"; do
-        if ! echo "$actual_agents" | grep -qx "$name"; then
+        # L324: echo|grep-qx→2 subshell。[[ ]]で純bash(0 subshell)に置換。$'\n'前後付与で行単位厳密マッチ
+        if [[ $'\n'"$actual_agents"$'\n' != *$'\n'"$name"$'\n'* ]]; then
             missing+=("$name")
         fi
     done
