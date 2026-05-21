@@ -35,6 +35,8 @@ lessons:
     - 外部PJ(kj-role-count等)のcmd完了時もgit log origin/main..mainでpush確認必須(殿指摘で5件未push発覚)。cmd-complete Step 7.5はDM-Signal専用→外部PJ pushステップをcmd-complete SKILLに追加要
     v8吸収(2026-05-20):
     - 動いている仕組みを変更する前にgit log --grepで設計意図(なぜそうなっているか)を確認せよ(cmd_2904/2906: respawn-pane→/new変更→CLIが/new拒否→3忍者CTX滞留。元のrespawnには理由があった=CLI内部状態に関係なく確実にリセットする唯一の手段。殿裁定2026-05-20: 一見不合理でも因果がある。サンクコストに囚われず元に戻す判断も正しい)
+    v9吸収(2026-05-21):
+    - pane captureのtiming残像でSTALL即断するな。capture時点でCTX:0%+❯表示でもthinking中の場合がある(hanzo/kotaro事故: capture→STALL判断→task YAMLクリア→実は作業中。殿に「動いてるぞ？」と指摘された)。根因はagent_state.sh busy/idle判定順序バグ(3beefbd0で修正)だが、家老判断側でも「1回のcaptureで結論しない。15-20秒後に再capture」を徹底せよ
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -77,6 +79,8 @@ lessons:
     - LK013を吸収。STALL再配備前に(1)pane全体確認(CTX/Working有無) (2)deploy_task.sh出力でnudge送信痕跡確認 (3)クリア後30秒待ちpane再確認(遅延到達)を必須化。hayate/kagemaru/saizoの3回連続誤再配備を同クラスタへ統合。
     v3吸収(2026-05-21):
     - auto-clear後のtask status残留パターン: commit+報告YAML存在だがtask status=in_progress(ninja_monitorがcommit後・inbox_write前にauto-clear発動)。STALL通知が来てもpane全体にcommit hash確認+報告YAML存在→作業完了と判断。task statusを手動doneにしGATE処理を進める(cmd_2931で実証)
+    v4吸収(2026-05-21):
+    - 1回のpane captureでSTALL即断してtask YAMLクリア+再配備するな。15-20秒後に再captureで確認。agent_state busy判定バグ(3beefbd0)でthinking中がidle表示される場合があった。殿に「動いてるぞ」と指摘されて発覚。deepdive Phase 2「pane末尾だけ見てrespawnした」の再現
   source_ids: [LK019, LK032, LK013]
   superseded_ids: [LK013]
   created_at: '2026-04-24'
@@ -242,7 +246,11 @@ v7吸収(2026-05-19):
     - dashboard.md Edit中にdashboard_auto_section.sh非同期実行が競合すると0バイト化(cmd_2924)。GATE CLEAR時の非同期処理と家老のEdit toolが同時書込み→0バイト。対策: dashboard更新はスキル内で排他制御、またはGATE非同期完了後にEdit
     v9吸収(2026-05-21):
     - CI --jobs 8並列テスト隔離3パターン: (1)config/ symlink実体書換え→他テスト壊す。symlink→ローカルコピー差替え(93deca55) (2)/tmpキャッシュ共有→DEPLOY_LESSON_CACHE_DIR環境変数で隔離 (3)semantic aliases出力がq11 INFOに混入→テスト否定条件偽陽性。BLOCK:プレフィックスで精密化(6964acf3)。一般原則: テスト追加時に外部共有リソース(symlink実体/tmpキャッシュ/semantic index)への依存を確認せよ
-  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014]
+    v10吸収(2026-05-21):
+    - agent_state.sh busy/idle判定順序バグ: agent_is_busy_check()でidle_pat(❯)がbusy_pat(thinking)より先に評価→pane_tailに両方同時表示時にidle誤判定→家老がSTALL誤判断→task YAMLクリア事故(hanzo/kotaro 2名)。修正: busy_patチェックをidle_patチェックの前に移動(3beefbd0)+テスト13追加。一般原則: idle判定は消去法(busyでなければidle)で行え
+    - auto-clear競合バグ(cmd_2947): ninja_monitorがstatus=done検出→即idle扱い→/clear送信するが忍者のcommit+報告YAML作成+inbox_write未完了。本セッション3件報告YAML消失(hayate R4/saizo R4,R5)。修正: /clear前条件にstatus=done+報告YAML存在チェック追加(07d5f282)+17テストPASS
+    - L4修行テンプレート4AC→5AC更新(657c3bdc): 軍師D0でAC5(aliases候補)追加→テスト627/628が4AC期待のままでCI RED 3連続。テスト側を5AC期待に更新
+  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh各修正+inbox_watcher.sh各修正+cmd_complete_gate.sh lifecycle自動化'
