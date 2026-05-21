@@ -647,18 +647,20 @@ def parse_pending_semantic_insights(path):
             continue
         if str(entry.get("status", "")).strip() != "pending":
             continue
-        entry_source = str(entry.get("source", "")).strip()
-        is_training_source = (
-            "training" in entry_source
-            or re.search(r"(?i)(^|[-_])L\d+R\d+($|[-_])", entry_source) is not None
-        )
-        if entry_source not in ("semantic_index_update", "semantic_stress_test") and not is_training_source:
-            continue
         insight_id = str(entry.get("id", "")).strip()
         insight = str(entry.get("insight", "")).strip()
         if not insight_id or not insight:
             continue
 
+        entry_source = str(entry.get("source", "")).strip()
+        is_training_source = (
+            "training" in entry_source
+            or re.search(r"(?i)(^|[-_])L\d+R\d+($|[-_])", entry_source) is not None
+        )
+        source_allowed = entry_source in ("semantic_index_update", "semantic_stress_test") or is_training_source
+
+        # Direct alias syntax is already constrained and concept-named; accept it
+        # before source filtering so manually curated AC5 insights are not dropped.
         direct_alias_entry = False
         for raw_target, raw_aliases in re.findall(
             r"\[\[([^\]]+)\]\]\s*alias(?:es)?\s*[:：]\s*([^\n]+)",
@@ -683,6 +685,8 @@ def parse_pending_semantic_insights(path):
                 direct_alias_entry = True
 
         if direct_alias_entry:
+            continue
+        if not source_allowed:
             continue
 
         candidates = []

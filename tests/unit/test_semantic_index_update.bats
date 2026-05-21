@@ -300,6 +300,31 @@ assert rows["INS-AC5-TRAINING"]["status"] == "done"
 PY
 }
 
+@test "pending semantic insights: manual direct alias lines auto-promote" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-AC5-MANUAL
+  ts: "2026-05-21T20:36:00+09:00"
+  insight: "[[growth_loop]] alias: 手動蓄積alias昇格"
+  priority: "medium"
+  source: "manual"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2946","title":"学習ループ","purpose":"manual source direct alias","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_DIRECT: growth_loop -> growth_loop aliases_added=手動蓄積alias昇格"* ]]
+
+    grep -q '| aliases | 学習ループ, 成長ループ, 自動成長ループ, 二値計測, 手動蓄積alias昇格 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-AC5-MANUAL"]["status"] == "done"
+PY
+}
+
 @test "pending semantic insights: direct alias lines from L7 round source auto-promote" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
