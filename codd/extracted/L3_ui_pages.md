@@ -12,6 +12,10 @@ artifact_count: 12
 
 Androidアプリ「Shogun」がモバイルUIを提供。マルチエージェントシステムのターミナル操作、エージェントグリッド表示、ダッシュボード、設定、レート制限の5画面構成。
 
+## Source Traceability
+
+UI entry and routing evidence starts at [[AndroidManifest.xml]], whose activity and service declarations define the mobile app shell. Visual state evidence is represented by screenshot artifacts such as [[01_shogun_terminal.png]], and resource naming/theme evidence is rooted in Android resources such as [[strings.xml]].
+
 ## 3.1 画面定義 (1 file)
 
 | ファイル | サイズ | 説明 |
