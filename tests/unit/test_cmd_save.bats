@@ -2445,6 +2445,9 @@ assumptions:
 }
 
 @test "Check20.15b: bulletin由来の件数claimにblt_ID参照あり→WARNINGなし" {
+    # source fileの存在チェック(Check20 AC2)を通すためにテスト用ファイルを作成
+    mkdir -p "$PROJECT_ROOT/queue"
+    touch "$PROJECT_ROOT/queue/bulletin_board.yaml"
     CMD_BLOCK='project: infra
 purpose: "掲示板報告をもとにcmdを起票する"
 description: AC1
