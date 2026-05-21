@@ -844,6 +844,105 @@ EOF
     [ "$output" = "idle" ]
 }
 
+@test "cmd_2951: pending own report with verdict blocks redeploy before stale reset" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2951
+  task_type: exact
+  status: done
+  report_path: queue/reports/sasuke_report_cmd_2951.yaml
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_2951.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_2951
+status: completed
+verdict: PASS
+result:
+  summary: "GATE未処理の完了報告"
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        deploy_task_main --direct sasuke cmd_2951
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: sasuke has pending report for cmd_2951"* ]]
+
+    run grep -q "verdict: PASS" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_2951.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_2951: cmd_complete archive.done allows redeploy after pending report is processed" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2951
+  task_id: cmd_2951_exact
+  task_type: exact
+  status: done
+  report_path: queue/reports/sasuke_report_cmd_2951.yaml
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_2951.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_2951
+status: completed
+verdict: PASS
+result:
+  summary: "GATE処理済みの完了報告"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_2951"
+    touch "$TEST_PROJECT/queue/gates/cmd_2951/archive.done"
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        sleep() { :; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        capture_done_redeploy_context() { :; }
+        reset_stale_fields() { _STALE_RESET_DONE=1; }
+        check_firefighting_title() { :; }
+        warn_same_ninja_redeploy() { :; }
+        warn_task_clarity() { :; }
+        warn_recent_noncmd_commit_targets() { :; }
+        deploy_task_apply_task_mutations() { :; }
+        notify_initial_deploy_ntfy_once() { :; }
+        record_deployed_at() { :; }
+        preflight_gate_artifacts() { :; }
+        maybe_notify_draft_review() { :; }
+        deploy_task_send_direct_renudge() { :; }
+        tmux() { return 0; }
+        bash() {
+            if [[ "${1:-}" == */inbox_write.sh ]]; then
+                return 0
+            fi
+            command bash "$@"
+        }
+        deploy_task_main --direct sasuke cmd_2951
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 0 ]
+}
+
 # ═══════════════════════════════════════════════════════════
 # stale_field_reset テスト (2)
 # ═══════════════════════════════════════════════════════════

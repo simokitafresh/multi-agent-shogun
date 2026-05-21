@@ -173,6 +173,51 @@ deploy_task_has_completed_peer_report() {
     return 1
 }
 
+deploy_task_cmd_complete_processed() {
+    local parent_cmd="$1"
+    local gate_dir="$SCRIPT_DIR/queue/gates/${parent_cmd}"
+    local skill_log="$SCRIPT_DIR/logs/skill_execution.log"
+
+    [ -n "$parent_cmd" ] || return 1
+
+    if [ -f "$gate_dir/archive.done" ]; then
+        return 0
+    fi
+
+    if [ -f "$skill_log" ] && grep -Fq "|PASS|cmd_complete_gate PASS|cmd_complete_gate|${parent_cmd}|" "$skill_log"; then
+        return 0
+    fi
+
+    return 1
+}
+
+deploy_task_has_pending_own_report() {
+    local parent_cmd="$1"
+    local ninja_name="$2"
+    local report_file report_base report_status report_verdict
+
+    [ -n "$parent_cmd" ] || return 1
+    [ -n "$ninja_name" ] || return 1
+
+    if deploy_task_cmd_complete_processed "$parent_cmd"; then
+        return 1
+    fi
+
+    for report_file in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}"*.yaml; do
+        [ -f "$report_file" ] || continue
+        report_base=$(basename "$report_file")
+        report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
+        report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        if [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
+            log "BLOCK: ${parent_cmd} has pending own report ${report_base} (status=${report_status:-empty}, verdict=${report_verdict}, cmd_complete=missing)"
+            echo "BLOCK: ${ninja_name} has pending report for ${parent_cmd}: ${report_base}. Run/finish cmd_complete_gate before redeploying this ninja, or select another ninja." >&2
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 log_output_file() {
     local output_file="$1"
     if [ -f "$output_file" ]; then
@@ -6783,6 +6828,11 @@ deploy_task_main() {
         pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${pre_resolve_cmd:-unknown}. 前タスク完了を待て。"
         echo "BLOCK: ${NINJA_NAME} は ${pre_resolve_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    fi
+
+    if [ -n "$CMD_ID" ] && deploy_task_has_pending_own_report "$CMD_ID" "$NINJA_NAME"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
