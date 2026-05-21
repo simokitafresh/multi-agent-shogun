@@ -375,9 +375,10 @@ PY
     if [ "${bulletin_action_count:-0}" -gt 0 ]; then
         echo "  ALERT: 未対応action_required掲示板 ${bulletin_action_count}件"
         echo "  ★ action_required投稿に対応するcmdを起票し、actioned_byを埋めよ。"
+        echo "  ★ 全件対処してからcmd起票に入れ。放置は鎖の断絶(LS-A02)"
         printf '%s\n' "$bulletin_action_result" | tail -n +2 | sed 's/^/    /'
-        overall="ALERT"
-        alerts+=("掲示板action_required未対応: ${bulletin_action_count}件")
+        overall="BLOCK"
+        blocks+=("掲示板action_required未対応: ${bulletin_action_count}件")
     else
         echo "  未対応: 0件"
     fi
