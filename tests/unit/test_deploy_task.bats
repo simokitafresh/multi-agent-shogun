@@ -368,7 +368,7 @@ assert task["description"] == "末尾説明"
 PY
 }
 
-@test "deploy_task --direct cmd_training injects L4 purpose and four ACs" {
+@test "deploy_task --direct cmd_training injects L4 purpose and five ACs" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   task_type: normal
@@ -391,18 +391,19 @@ assert task["status"] == "assigned"
 assert task["standard_skills"] == ["report-write", "verdict-check", "ninja-commit"]
 assert "L4修行" in task["purpose"]
 acs = task["acceptance_criteria"]
-assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4"]
+assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"]
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "lessons_useful" in acs["AC4"]["description"]
-for ac_id in ("AC1", "AC2", "AC3", "AC4"):
+assert "alias" in acs["AC5"]["description"].lower() or "概念名" in acs["AC5"]["description"]
+for ac_id in ("AC1", "AC2", "AC3", "AC4", "AC5"):
     assert acs[ac_id]["binary_checks"], ac_id
 PY
 }
 
-@test "deploy_task --direct cmd_training overwrites pre-existing purpose and ACs with L4 template" {
+@test "deploy_task --direct cmd_training overwrites pre-existing purpose and ACs with L4+AC5 template" {
     # karo_direct手動YAML作成方式では目的/AC未注入が発生する（cmd_training_L4_r16事故）
     # deploy_task.sh --directを使えば既存purpose/ACを上書きして修行テンプレートを注入する
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -427,10 +428,11 @@ with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
 
 assert "L4修行" in task["purpose"], f"purpose not overwritten to L4 template: {task.get('purpose')}"
 acs = task["acceptance_criteria"]
-assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4"], f"ACs not overwritten to 4-AC template: {list(acs.keys())}"
+assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"], f"ACs not overwritten to 5-AC template: {list(acs.keys())}"
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
+assert "alias" in acs["AC5"]["description"].lower() or "概念名" in acs["AC5"]["description"]
 PY
 }
