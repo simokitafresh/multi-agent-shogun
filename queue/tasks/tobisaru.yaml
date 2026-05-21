@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_L7_v3_tobisaru_5_20260521202900_exact
+  _ac_task_id: cmd_training_L7_v3_tobisaru_10_20260521223726_exact
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2944 (deployed 2026-05-21T19:47:47). Read from the beginning.
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
@@ -56,7 +56,7 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_training_L7_v3_tobisaru_5_20260521202900
+  parent_cmd: cmd_training_L7_v3_tobisaru_10_20260521223726
   project: infra
   purpose: 'L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる'
   related_causal_links:
@@ -66,39 +66,40 @@ task:
   scout_exempt: true
   status: acknowledged
   stop_for: []
-  task_id: cmd_training_L7_v3_tobisaru_5_20260521202900_exact
+  target_path: scripts/cmd_delegate.sh
+  task_id: cmd_training_L7_v3_tobisaru_10_20260521223726_exact
   task_type: exact
   related_lessons:
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
+  - id: 'L511'
+    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
+    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L112'
-    summary: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
-    detail: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
+  - id: 'L603'
+    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L317'
+    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
   - id: 'L623'
     summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
     detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-  - id: 'L615'
-    summary: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
-    detail: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
-  - id: 'L305'
-    summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
-    detail: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510'
   - id: 'L351'
     summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
     detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L617'
-    summary: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
-    detail: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
+  - id: 'L670'
+    summary: 'notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)'
+    detail: 'notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)'
   - id: 'L544'
     summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
     detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -123,21 +124,21 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L509: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
+      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT
+      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
       - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
-      - L615: inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi
-      - L305: IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510
       - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
-      - L617: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
+      - L670: notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)
       - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
     ────────────────────────────────────────
     
     
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_training_L7_v3_tobisaru_5_20260521202900.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_L7_v3_tobisaru_5_20260521202900.yaml
+  report_filename: tobisaru_report_cmd_training_L7_v3_tobisaru_10_20260521223726.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_L7_v3_tobisaru_10_20260521223726.yaml
   bloom_level: 
-  deployed_at: "2026-05-21T20:32:40"
+  deployed_at: "2026-05-21T22:41:51"
