@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-05-21
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_2940 | SKILL.md 3件script追従 | GATE CLEAR | 3セッション連続WARN解消。dream/karo-direct/recon-dual |
+| cmd_2941 | report-write dict型バグ | GATE CLEAR | assumption_invalidation str→dict。スキル自動成長ALERT解消 |
+| cmd_2942 | binary_checks yes/noバリデーション | GATE CLEAR | verdict-check FAIL根因。report_field_set.shに入力検証追加 |
+| cmd_2943 | dashboard_update.sh exit=1 | GATE CLEAR | スキル自動成長ALERT解消 |
+| cmd_2944 | cmd-complete lesson_done+ac_version | GATE CLEAR | karo_direct配備のac_version空ハッシュ+lesson_done不在修正 |
+| cmd_2945 | 教訓フィードバック還流 | GATE CLEAR | useful feedback→lesson_impact.tsv書戻し断絶修正。退役サイクル正常化 |
+| cmd_2946 | L7 DIRECT昇格パス修正 | GATE CLEAR | PENDING_ALIAS_DIRECT 0件→実動作。R6でaliases自動成長確認 |
+| cmd_2947 | auto-clear競合バグ | GATE CLEAR | ninja_monitor done→即/clearで報告YAML消失(3件)。YAML存在チェック追加 |
+| L7修行R5-R6 | 6忍者全員×2ラウンド | 全CLEAR | ヒット率77.8%→100%。DIRECT経路修正後R6で自動aliases成長確認 |
+| insights | 29件pending消化 | 0件 | 教訓ALERT重複+stress_testノイズ+修行由来を全resolve |
+| startup BLOCK | 3セッション連続4項目 | 全項目cmd投入+CLEAR | SKILL.md/スキル自動成長/gate偽陽性/教訓健全度 |
+
 ## 2026-05-20
 
 | cmd/action | 意図 | 結果 | 因果 |
