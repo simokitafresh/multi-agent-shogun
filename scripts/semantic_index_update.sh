@@ -648,7 +648,7 @@ def parse_pending_semantic_insights(path):
         if str(entry.get("status", "")).strip() != "pending":
             continue
         entry_source = str(entry.get("source", "")).strip()
-        if entry_source not in ("semantic_index_update", "semantic_stress_test"):
+        if entry_source not in ("semantic_index_update", "semantic_stress_test") and "training" not in entry_source:
             continue
         insight_id = str(entry.get("id", "")).strip()
         insight = str(entry.get("insight", "")).strip()

@@ -3367,6 +3367,9 @@ IMPACT_COLUMNS = [
 def ensure_impact_header(impact_path):
     """Upgrade existing lesson_impact.tsv headers without losing old rows."""
     if not os.path.exists(impact_path) or os.path.getsize(impact_path) == 0:
+        os.makedirs(os.path.dirname(impact_path), exist_ok=True)
+        with open(impact_path, 'w', encoding='utf-8', newline='') as f:
+            f.write('\t'.join(IMPACT_COLUMNS) + '\n')
         return
     with open(impact_path, 'r', encoding='utf-8', newline='') as f:
         rows = list(csv.reader(f, delimiter='\t'))
