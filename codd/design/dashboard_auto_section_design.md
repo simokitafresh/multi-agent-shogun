@@ -45,6 +45,8 @@ Outputs: `dashboard.md` auto section (between markers), ntfy notification (on CL
 
 - [[dashboard_auto_section_requirements]] defines the functional, performance, and safety requirements satisfied by this design.
 - [[dashboard_auto_section.sh]] is the implementation source for the cache paths, subprocess launches, marker replacement, and ntfy dedup behavior described here.
+- [[ninja_monitor_design]] describes the daemon that invokes `dashboard_auto_section.sh` at line 4731 as part of its health loop; this is the primary automated caller.
+- [[dashboard_update.sh]] is the wrapper script invoked by the `/dashboard-update` skill; it calls `dashboard_auto_section.sh` at line 427 (Step 6.5) for the AUTO section refresh.
 
 ## External Script Contracts
 
