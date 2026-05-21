@@ -529,7 +529,7 @@ def candidate_aliases(source_type, payload, existing_aliases, concept_label="", 
     existing_norm = {norm(alias) for alias in existing_aliases}
     # スコープ判定: 概念label+idからトークンを抽出
     scope_tokens = _scope_tokens(f"{concept_label} {concept_id}")
-    scope_tokens.update(_scope_tokens(" ".join(existing_aliases[:5])))  # 既存aliases上位5件も参照
+    scope_tokens.update(_scope_tokens(" ".join(existing_aliases)))  # 既存aliases全件をスコープに含める
     preferred_keys = {
         "cmd_complete": ["title", "purpose", "summary"],
         "lesson": ["title", "enforcement", "summary", "detail"],
