@@ -151,16 +151,18 @@ SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
 if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
     CACHE_KEY="$(printf '%s\0%s\0%s' "$REPO_ROOT" "$RAW_ROOTS" "$SCRIPT_MTIME" | md5sum | cut -c1-16)"
     CACHE_BASE="/tmp/shogun_gate_skill_script_refs_${CACHE_KEY}"
-    CACHE_OUT="${CACHE_BASE}.out"
-    CACHE_CODE="${CACHE_BASE}.code"
+    # Single cache file: first line = exit code, remaining lines = output.
+    # Eliminates the race window between writing CACHE_OUT and CACHE_CODE separately.
+    CACHE_FILE="${CACHE_BASE}.cache"
     NOW="$(date +%s)"
 
-    if [ -f "$CACHE_OUT" ] && [ -f "$CACHE_CODE" ]; then
-        CACHE_MTIME="$(stat -c %Y "$CACHE_OUT" 2>/dev/null || printf '0')"
+    if [ -f "$CACHE_FILE" ]; then
+        CACHE_MTIME="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || printf '0')"
         CACHE_AGE=$((NOW - CACHE_MTIME))
         if [ "$CACHE_AGE" -ge 0 ] && [ "$CACHE_AGE" -le "$CACHE_TTL_SECONDS" ]; then
-            cat "$CACHE_OUT"
-            exit "$(cat "$CACHE_CODE")"
+            IFS= read -r CACHED_CODE < "$CACHE_FILE"
+            tail -n +2 "$CACHE_FILE"
+            exit "$CACHED_CODE"
         fi
     fi
 
@@ -169,10 +171,11 @@ if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 
     run_check >"$TMP_OUT"
     CHECK_CODE=$?
     set -e
-    printf '%s\n' "$CHECK_CODE" >"${CACHE_CODE}.tmp"
-    mv "$TMP_OUT" "$CACHE_OUT"
-    mv "${CACHE_CODE}.tmp" "$CACHE_CODE"
-    cat "$CACHE_OUT"
+    TMP_CACHE="$(mktemp "${CACHE_BASE}.XXXXXX")"
+    { printf '%s\n' "$CHECK_CODE"; cat "$TMP_OUT"; } >"$TMP_CACHE"
+    mv "$TMP_CACHE" "$CACHE_FILE"
+    cat "$TMP_OUT"
+    rm -f "$TMP_OUT"
     exit "$CHECK_CODE"
 fi
 
