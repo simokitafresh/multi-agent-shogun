@@ -436,3 +436,94 @@ assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "alias" in acs["AC5"]["description"].lower() or "概念名" in acs["AC5"]["description"]
 PY
 }
+
+@test "semantic_alias_quality lists aliases thin Top10 and selects existing script target" {
+    mkdir -p "$TEST_PROJECT/docs/semantic-index" "$TEST_PROJECT/scripts/tools"
+    touch "$TEST_PROJECT/scripts/tools/thin.sh" "$TEST_PROJECT/scripts/tools/rich.sh"
+    cat > "$TEST_PROJECT/docs/semantic-index/index.md" <<'EOF'
+# Test semantic index
+
+## thin_concept — 薄い概念
+
+| 属性 | 値 |
+|------|---|
+| id | thin_concept |
+| label | 薄い概念 |
+| aliases | thin |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/tools/thin.sh` |
+
+## rich_concept — 濃い概念
+
+| 属性 | 値 |
+|------|---|
+| id | rich_concept |
+| label | 濃い概念 |
+| aliases | rich, dense, many |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/tools/rich.sh` |
+EOF
+
+    run bash "$TEST_PROJECT/scripts/semantic_alias_quality.sh" --top 10
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"aliases薄概念Top10"* ]]
+    [[ "$output" == *$'thin_concept\t1\t100.0%\tscripts/tools/thin.sh'* ]]
+
+    run bash "$TEST_PROJECT/scripts/semantic_alias_quality.sh" --select-file
+    [ "$status" -eq 0 ]
+    [ "$output" = "scripts/tools/thin.sh" ]
+}
+
+@test "deploy_task --direct cmd_training sets target_path from aliases thin concept when missing" {
+    mkdir -p "$TEST_PROJECT/docs/semantic-index" "$TEST_PROJECT/scripts/tools"
+    touch "$TEST_PROJECT/scripts/tools/thin.sh" "$TEST_PROJECT/scripts/tools/rich.sh"
+    cat > "$TEST_PROJECT/docs/semantic-index/index.md" <<'EOF'
+# Test semantic index
+
+## thin_concept — 薄い概念
+
+| 属性 | 値 |
+|------|---|
+| id | thin_concept |
+| label | 薄い概念 |
+| aliases | thin |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/tools/thin.sh` |
+
+## rich_concept — 濃い概念
+
+| 属性 | 値 |
+|------|---|
+| id | rich_concept |
+| label | 濃い概念 |
+| aliases | rich, dense, many |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/tools/rich.sh` |
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: normal
+  project: infra
+EOF
+
+    run deploy_task_fast --direct sasuke cmd_training_L4_alias_target
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert task["target_path"] == "scripts/tools/thin.sh", task.get("target_path")
+PY
+}

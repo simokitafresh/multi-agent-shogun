@@ -17,6 +17,7 @@ deploy_task_setup_file() {
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
     export SRC_DASHBOARD_AUTO_SECTION_SCRIPT="$PROJECT_ROOT/scripts/dashboard_auto_section.sh"
+    export SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT="$PROJECT_ROOT/scripts/semantic_alias_quality.sh"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
@@ -30,6 +31,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
     [ -f "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" ] || return 1
+    [ -f "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
     export DEPLOY_TASK_TEMPLATE_DIR
@@ -58,6 +60,7 @@ deploy_task_setup_file() {
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
     cp "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
+    cp "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/semantic_alias_quality.sh"
 
     for stub in inbox_write ntfy_cmd lesson_check; do
         printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"
@@ -176,6 +179,7 @@ deploy_task_fast() {
                 yaml_field_set "$task_file" "task" "parent_cmd" "$CMD_ID"
                 yaml_field_set "$task_file" "task" "status" "assigned"
                 yaml_field_set "$task_file" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}"
+                inject_training_target_path_from_alias_quality "$task_file" "$CMD_ID" || true
                 inject_direct_training_template "$task_file" "$CMD_ID" || true
             elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
                 echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
