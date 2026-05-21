@@ -90,10 +90,10 @@ if allowlist_file.is_file():
             continue
         allow_basenames.add(line)
 
-hook_basenames = {Path(path).name for path in hook_scripts}
+hook_paths = set(hook_scripts)  # full path comparison: avoid false negatives from same-named scripts in different dirs
 missing = [
     ref for ref in claude_refs
-    if Path(ref).name not in allow_basenames and Path(ref).name not in hook_basenames
+    if Path(ref).name not in allow_basenames and ref not in hook_paths
 ]
 
 print(f"■ CLAUDE.md 参照 script: {len(claude_refs)} 本")
