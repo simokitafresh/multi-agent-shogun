@@ -656,7 +656,7 @@ def parse_pending_semantic_insights(path):
             continue
 
         for raw_target, raw_aliases in re.findall(
-            r"\[\[([^\]]+)\]\]\s*aliases?\s*[:：]\s*([^\n]+)",
+            r"\[\[([^\]]+)\]\]\s*alias(?:es)?\s*[:：]\s*([^\n]+)",
             insight,
             flags=re.I,
         ):
