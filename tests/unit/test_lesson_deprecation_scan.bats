@@ -169,6 +169,68 @@ EOF
     [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
 }
 
+@test "lesson_deprecation_scan counts reflected NOT_USEFUL injected rows" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L004
+    title: reflected feedback lesson
+    summary: infra summary
+    helpful_count: 0
+    harmful_count: 0
+    injection_count: 0
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-03-13T01:00:00	cmd_100	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:01:00	cmd_101	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:02:00	cmd_102	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:03:00	cmd_103	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:04:00	cmd_104	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:05:00	cmd_105	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:06:00	cmd_106	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:07:00	cmd_107	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:08:00	cmd_108	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+2026-03-13T01:09:00	cmd_109	sasuke	L004	injected	NOT_USEFUL	no	infra	impl	routine
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra --candidates-only
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[infra] L004"* ]]
+    [[ "$output" == *"injected=10, helpful=0"* ]]
+}
+
+@test "lesson_deprecation_scan counts feedback action rows when injected rows remain pending" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L005
+    title: appended feedback lesson
+    summary: infra summary
+    helpful_count: 0
+    harmful_count: 0
+    injection_count: 0
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-03-13T01:00:00	cmd_100	sasuke	L005	injected	PENDING	pending	infra	impl	routine
+2026-03-13T01:00:01	cmd_100	sasuke	L005	feedback	NOT_USEFUL	no	infra	impl	None
+2026-03-13T01:01:00	cmd_101	sasuke	L005	injected	PENDING	pending	infra	impl	routine
+2026-03-13T01:01:01	cmd_101	sasuke	L005	feedback	NOT_USEFUL	no	infra	impl	None
+2026-03-13T01:02:00	cmd_102	sasuke	L005	injected	PENDING	pending	infra	impl	routine
+2026-03-13T01:02:01	cmd_102	sasuke	L005	feedback	NOT_USEFUL	no	infra	impl	None
+2026-03-13T01:03:00	cmd_103	sasuke	L005	injected	PENDING	pending	infra	impl	routine
+2026-03-13T01:03:01	cmd_103	sasuke	L005	feedback	NOT_USEFUL	no	infra	impl	None
+2026-03-13T01:04:00	cmd_104	sasuke	L005	injected	PENDING	pending	infra	impl	routine
+2026-03-13T01:04:01	cmd_104	sasuke	L005	feedback	NOT_USEFUL	no	infra	impl	None
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra --candidates-only
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[infra] L005"* ]]
+    [[ "$output" == *"injected=5, helpful=0"* ]]
+}
+
 @test "lesson_deprecation_scan candidates-only reports metrics and does not deprecate" {
     run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra --candidates-only
     [ "$status" -eq 0 ]

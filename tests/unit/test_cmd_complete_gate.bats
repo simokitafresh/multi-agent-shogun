@@ -1109,13 +1109,13 @@ EOF
     run update_lesson_impact_tsv "$TEST_CMD_ID" "CLEAR"
     [ "$status" -eq 0 ]
 
-    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tCLEAR\tyes' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tUSEFUL\tyes' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 
-    run grep -F $'subtask_test\tsasuke\tL101\tinjected\tCLEAR\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    run grep -F $'subtask_test\tsasuke\tL101\tinjected\tNOT_USEFUL\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 
-    run grep -F $'cmd_999\tsasuke\tL101\tinjected\tCLEAR\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    run grep -F $'cmd_999\tsasuke\tL101\tinjected\tNOT_USEFUL\tno' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 }
 
@@ -1154,7 +1154,7 @@ EOF
     run grep -F $'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 
-    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tCLEAR\tyes\tinfra\treview\troutine\t5\t1' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tUSEFUL\tyes\tinfra\treview\troutine\t5\t1' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 }
 

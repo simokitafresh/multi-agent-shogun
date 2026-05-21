@@ -2892,6 +2892,7 @@ ninja_tasks = {}
 tracked_row_ids = []
 referenced_ids = []
 referenced_by_row_id = {}
+usefulness_by_row_id = {}
 
 try:
     task_files = sorted(
@@ -2937,6 +2938,7 @@ for ninja in ninjas:
         continue
     report = parse_yaml(report_file)
     report_refs = []
+    report_usefulness = {}
     lessons_useful = report.get("lessons_useful")
     if lessons_useful is None:
         # Backward compatibility for legacy report field.
@@ -2945,6 +2947,10 @@ for ninja in ninjas:
         for item in lessons_useful:
             if isinstance(item, dict):
                 add_unique(report_refs, item.get("id"))
+                lesson_id = str(item.get("id", "")).strip()
+                useful = item.get("useful")
+                if lesson_id and isinstance(useful, bool):
+                    report_usefulness[lesson_id] = "USEFUL" if useful else "NOT_USEFUL"
             else:
                 add_unique(report_refs, item)
 
@@ -2959,6 +2965,9 @@ for ninja in ninjas:
         row_refs = referenced_by_row_id.setdefault(row_id, [])
         for ref_id in report_refs:
             add_unique(row_refs, ref_id)
+        row_usefulness = usefulness_by_row_id.setdefault(row_id, {})
+        for lesson_id, useful_result in report_usefulness.items():
+            row_usefulness[lesson_id] = useful_result
 
 if not tracked_row_ids:
     tracked_row_ids.append(cmd_id)
@@ -2985,10 +2994,17 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
                     matched = True
                     break
         if matched and row.get("result") == "pending":
-            row["result"] = gate_result
             if row.get("action") != "withheld":
                 row_refs = referenced_by_row_id.get(row_cmd_id, referenced_ids)
-                row["referenced"] = "yes" if row.get("lesson_id") in row_refs else "no"
+                lesson_id = row.get("lesson_id")
+                row["referenced"] = "yes" if lesson_id in row_refs else "no"
+                row_usefulness = usefulness_by_row_id.get(row_cmd_id, usefulness_by_row_id.get("__all__", {}))
+                if lesson_id in row_usefulness:
+                    row["result"] = row_usefulness[lesson_id]
+                else:
+                    row["result"] = "NOT_USEFUL"
+            else:
+                row["result"] = gate_result
             updated += 1
         rows.append(row)
 
@@ -3016,6 +3032,52 @@ PY
         echo "LESSON_IMPACT: WARN lock timeout (${impact_file})"
         return 0
     }
+}
+
+record_lesson_feedback_for_cmd() {
+    local feedback_script="$SCRIPT_DIR/scripts/record_lesson_feedback.sh"
+    if [ ! -f "$feedback_script" ]; then
+        echo "  SKIP (record_lesson_feedback.sh not found)"
+        return 0
+    fi
+
+    local recorded=0
+    local seen_reports=""
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            continue
+        fi
+        local ninja_name report_yaml
+        ninja_name=$(basename "$task_file" .yaml)
+        report_yaml=$(resolve_report_file "$ninja_name")
+        if [ -f "$report_yaml" ]; then
+            case "$seen_reports" in *"|$report_yaml|"*) continue ;; esac
+            seen_reports="${seen_reports}|${report_yaml}|"
+            if bash "$feedback_script" "$report_yaml" 2>&1; then
+                echo "  feedback: OK ($report_yaml)"
+            else
+                echo "  [INFO] feedback: WARN ($report_yaml, non-blocking)"
+            fi
+            recorded=$((recorded + 1))
+        fi
+    done
+
+    if [ "$recorded" -eq 0 ]; then
+        for report_yaml in "$SCRIPT_DIR"/queue/reports/*_report_"${CMD_ID}"*.yaml; do
+            if [ -f "$report_yaml" ]; then
+                if bash "$feedback_script" "$report_yaml" 2>&1; then
+                    echo "  feedback: OK ($report_yaml)"
+                else
+                    echo "  [INFO] feedback: WARN ($report_yaml, non-blocking)"
+                fi
+                recorded=$((recorded + 1))
+            fi
+        done
+    fi
+
+    if [ "$recorded" -eq 0 ]; then
+        echo "  SKIP (no report YAML found for ${CMD_ID})"
+    fi
 }
 
 # ─── BLOCK理由収集 ───
@@ -3905,6 +3967,12 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     else
         echo "  [INFO] bulletin: WARN (failed, non-blocking)" >&2
     fi
+
+    echo ""
+    echo "Lesson feedback recording (pre-impact scan - emergency override):"
+    record_lesson_feedback_for_cmd
+    update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1 || echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
+    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
 
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
     echo ""
@@ -5483,10 +5551,18 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
     echo "CHANGELOG: queued (async)"
+
+    echo ""
+    echo "Lesson feedback recording (pre-impact scan):"
+    record_lesson_feedback_for_cmd
+
     (append_lesson_tracking "$CMD_ID" "CLEAR" >/dev/null 2>&1 || true) &
     echo "LESSON_TRACKING: queued (async)"
-    (update_lesson_impact_tsv "$CMD_ID" "CLEAR" >/dev/null 2>&1 || true) &
-    echo "LESSON_IMPACT: queued (async)"
+    if update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1; then
+        true
+    else
+        echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
+    fi
     (
         bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
         bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || true
@@ -6035,20 +6111,7 @@ PYEOF
     # karo_idle_fix: 報告YAMLのlessons_usefulをlesson_impact.tsvに書き戻し
     echo ""
     echo "Lesson feedback recording (post-GATE CLEAR):"
-    feedback_script="$SCRIPT_DIR/scripts/record_lesson_feedback.sh"
-    if [ -f "$feedback_script" ]; then
-        for report_yaml in "$SCRIPT_DIR"/queue/reports/*_report_"${CMD_ID}"*.yaml; do
-            if [ -f "$report_yaml" ]; then
-                if bash "$feedback_script" "$report_yaml" 2>&1; then
-                    echo "  feedback: OK ($report_yaml)"
-                else
-                    echo "  [INFO] feedback: WARN ($report_yaml, non-blocking)"
-                fi
-            fi
-        done
-    else
-        echo "  SKIP (record_lesson_feedback.sh not found)"
-    fi
+    record_lesson_feedback_for_cmd
 
     # ─── status: completed 自動設定（GATE CLEAR後。cmdライフサイクル完了） ───
     echo ""

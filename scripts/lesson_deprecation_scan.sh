@@ -222,6 +222,7 @@ if TRACKING_TSV.exists():
 # Columns: timestamp  cmd_id  ninja  lesson_id  action  result  referenced  project  task_type  bloom_level
 tsv_injection_count = {}  # (project_id, lesson_id) -> count
 tsv_helpful_count = {}    # (project_id, lesson_id) -> count
+counted_feedback = set()  # (cmd_id, project_id, lesson_id) rows with explicit USEFUL/NOT_USEFUL feedback
 
 if IMPACT_TSV.exists():
     with open(IMPACT_TSV, encoding="utf-8") as f:
@@ -240,9 +241,24 @@ if IMPACT_TSV.exists():
             key = (project_id, lesson_id_tsv)
             if result == "PENDING":
                 continue
-            if action == "injected" and re.match(r'^L\d+$', lesson_id_tsv) and project_id:
+            if not (re.match(r'^L\d+$', lesson_id_tsv) and project_id):
+                continue
+            if action == "feedback" and result in ("USEFUL", "NOT_USEFUL"):
+                feedback_key = (parts[1].strip(), project_id, lesson_id_tsv)
+                if feedback_key not in counted_feedback:
+                    counted_feedback.add(feedback_key)
+                    tsv_injection_count[key] = tsv_injection_count.get(key, 0) + 1
+                    if result == "USEFUL":
+                        tsv_helpful_count[key] = tsv_helpful_count.get(key, 0) + 1
+                continue
+            if action == "injected":
+                feedback_key = (parts[1].strip(), project_id, lesson_id_tsv)
+                if result in ("USEFUL", "NOT_USEFUL"):
+                    if feedback_key in counted_feedback:
+                        continue
+                    counted_feedback.add(feedback_key)
                 tsv_injection_count[key] = tsv_injection_count.get(key, 0) + 1
-                if referenced == "yes":
+                if result == "USEFUL" or referenced == "yes":
                     tsv_helpful_count[key] = tsv_helpful_count.get(key, 0) + 1
 
 
