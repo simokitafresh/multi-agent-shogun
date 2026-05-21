@@ -45,6 +45,11 @@ if [ -z "$CMD_ID" ] || [ -z "$MESSAGE" ]; then
     exit 1
 fi
 
+if [[ "$MESSAGE" != *[![:space:]]* ]]; then
+    echo "ERROR: message must contain non-whitespace content" >&2
+    exit 1
+fi
+
 if [[ ! "$CMD_ID" =~ ^[A-Za-z0-9_.-]+$ ]]; then
     echo "ERROR: invalid cmd_id '$CMD_ID' (allowed: A-Z a-z 0-9 _ . -)" >&2
     exit 1
