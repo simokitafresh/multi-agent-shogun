@@ -19,6 +19,12 @@ codd:
 
 The daemon loads shared libraries, acquires a singleton pid file, discovers panes, then loops through idle detection, task/report reconciliation, health checks, auto-clear handling, snapshot generation, and notification routines.
 
+## Related Files
+
+- [[ninja_monitor_requirements]] defines the supervision, idle detection, reset safety, snapshot, and health-monitoring requirements satisfied by this design.
+- [[ninja_monitor.sh]] is the implementation source for `check_idle`, `safe_send_clear`, `check_stall`, and `write_karo_snapshot`.
+- [[ninja_monitor_brownfield]] records the brownfield findings and current implementation evidence for unresolved or downgraded design risks.
+
 ## Core Components
 
 - `acquire_singleton_lock`: prevents multiple monitor instances from acting on the same formation.
@@ -36,6 +42,14 @@ The daemon loads shared libraries, acquires a singleton pid file, discovers pane
 Stall tracking starts only when `check_idle` confirms the target pane is idle. `assigned` uses `STALL_THRESHOLD_MIN`, `acknowledged` uses 10 minutes, and `in_progress` uses `cli_profiles.yaml` `in_progress_stall_min` with a 20 minute fallback. Recent `progress_updated_at` activity within 1200 seconds suppresses `in_progress` stall detection.
 
 Notifications are debounced per `ninja:task` by `STALL_RENOTIFY_DEBOUNCE` and escalate after `STALL_ESCALATE_THRESHOLD` notifications. For `in_progress` stalls, the monitor also sends the ninja a `task_assigned` recovery message so the task YAML is re-read.
+
+## Reset Safety Contract
+
+`safe_send_clear` is the only reset path for healthy panes. It first delegates liveness to `check_idle`, then runs the report gate so `status=done` alone cannot erase pending post-task reporting work.
+
+For Codex agents, reset uses `tmux respawn-pane -k` rather than `/new`, because Codex can keep an internal task-active state after the external task YAML has reached idle or done. The respawn path reloads the configured launch command from the project root and removes the idle flag after restart.
+
+Before reset, the monitor marks the agent inbox read and may auto-commit selected infrastructure paths. This behavior belongs to the infrastructure daemon, not to an agent-to-agent communication path; normal agent messages still use inbox delivery.
 
 ## Data Boundaries
 
