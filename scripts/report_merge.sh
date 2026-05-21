@@ -10,7 +10,7 @@
 #   2 — 一部/全件未完了(WAITING/PENDING)
 #   1 — 引数エラー
 
-set -e
+set -euo pipefail
 
 # Resolve project root from the script path. This must handle both
 # /abs/path/scripts/report_merge.sh and bash scripts/report_merge.sh.
@@ -25,7 +25,7 @@ case "$_script_dir" in
 esac
 SCRIPT_DIR="${_script_dir%/*}"
 unset _script_path _script_dir
-CMD_ID="$1"
+CMD_ID="${1:-}"  # set -u safe: empty string when no arg, triggers usage check below
 
 write_gate_flag() {
     local cmd_id="$1" gate_name="$2" result="$3" reason="$4"
