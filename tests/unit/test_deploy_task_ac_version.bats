@@ -1242,3 +1242,93 @@ EOF
     run grep "Archived criterion" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 }
+
+# cmd_2944: karo_direct形式AC (description:なし、checks:形式) のac_version検証
+@test "cmd_2944: karo_direct AC (checks only, no description) does not produce d41d8cd9" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "karo_direct test"
+  task_type: exact
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'karo_direct配備のac_versionがd41d8cd9にならない'
+  - id: AC2
+    checks:
+    - check: 'lesson_done検出がFAILしない'
+EOF
+
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_ac_version
+    [ "$status" -eq 0 ]
+    # check文字列がハッシュに反映されること: d41d8cd9(空ハッシュ)でないことを確認
+    [ "$output" != "d41d8cd9" ]
+    [ -n "$output" ]
+}
+
+@test "cmd_2944: karo_direct AC check strings are reflected in ac_version hash" {
+    # AC1のcheck文字列が違えばac_versionも異なることを確認
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "karo_direct hash content test A"
+  task_type: exact
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'check_string_A'
+EOF
+
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+    run read_task_ac_version
+    local hash_a="$output"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "karo_direct hash content test B"
+  task_type: exact
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'check_string_B'
+EOF
+
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+    run read_task_ac_version
+    local hash_b="$output"
+
+    # 異なるcheck文字列→異なるハッシュ
+    [ "$hash_a" != "d41d8cd9" ]
+    [ "$hash_b" != "d41d8cd9" ]
+    [ "$hash_a" != "$hash_b" ]
+}
+
+@test "cmd_2944: karo_direct ac_version matches report ac_version_read (no gate mismatch)" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "karo_direct gate match test"
+  task_type: exact
+  report_filename: sasuke_report_cmd_karo_direct.yaml
+  parent_cmd: cmd_karo_direct
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'ac_version照合がOKになること'
+EOF
+
+    run deploy_task_fast sasuke
+    [ "$status" -eq 0 ]
+
+    # task.ac_version と report.ac_version_read が一致すること
+    local task_version report_version
+    task_version=$(FIELD_GET_NO_LOG=1 field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "ac_version" "" 2>/dev/null)
+    report_version=$(grep -E "^ac_version_read:" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_karo_direct.yaml" 2>/dev/null | awk '{print $2}')
+
+    [ -n "$task_version" ]
+    [ -n "$report_version" ]
+    [ "$task_version" = "$report_version" ]
+    [ "$task_version" != "d41d8cd9" ]
+}

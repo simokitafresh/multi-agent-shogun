@@ -200,7 +200,7 @@ deploy_task_unread_count() {
     case "$count" in
         ''|*[!0-9]*) count=0 ;;
     esac
-    echo "$([ "$count" -gt 0 ] && printf '%s' "$count" || printf '1')"
+    [ "$count" -gt 0 ] && printf '%s\n' "$count" || printf '1\n'
 }
 
 deploy_task_inbox_message_count() {
@@ -977,11 +977,14 @@ inject_ac_assigned_from_stk() {
 # cmd_1393: Python→awk+md5sum置換
 
 # ─── _compute_ac_hash: ACハッシュ計算ヘルパー ───
+# cmd_2944: description:なし(karo_direct形式)のACでもcheck:フィールドをフォールバックとして使用。
+# ac_item_indentを追跡してchecks[]内の"- check:"をitem境界と誤判定しない設計。
+# description: 優先、なければchecks[]の全check値を"|"連結してdescs[]に格納。
 _compute_ac_hash() {
     local task_file="$1"
     local concat
     concat=$(awk '
-        BEGIN { in_ac=0; in_item=0; desc=""; n=0 }
+        BEGIN { in_ac=0; in_item=0; desc=""; chk=""; n=0; ac_item_indent=-1 }
         /^[[:space:]]*acceptance_criteria:/ {
             ac_indent = match($0, /[^ ]/) - 1
             in_ac=1; next
@@ -990,11 +993,13 @@ _compute_ac_hash() {
         {
             if (match($0, /[^ ]/)) ci = RSTART - 1; else next
             if (ci <= ac_indent && $0 !~ /^[[:space:]]*-/) {
-                if (in_item) { descs[n++]=desc; desc=""; in_item=0 }
+                if (in_item) { descs[n++]=(desc != "" ? desc : chk); desc=""; chk=""; in_item=0 }
                 in_ac=0; next
             }
-            if ($0 ~ /^[[:space:]]*- /) {
-                if (in_item) { descs[n++]=desc; desc="" }
+            # AC item境界: acceptance_criteria直下の"-"レベルのみ (checks[]内の"- check:"は除外)
+            if ($0 ~ /^[[:space:]]*- / && (ac_item_indent < 0 || ci == ac_item_indent)) {
+                if (in_item) { descs[n++]=(desc != "" ? desc : chk); desc=""; chk="" }
+                if (ac_item_indent < 0) ac_item_indent = ci
                 in_item=1; next
             }
             if (in_item) {
@@ -1004,11 +1009,22 @@ _compute_ac_hash() {
                     sub(/[[:space:]]*$/,"",line)
                     gsub(/^["'"'"']|["'"'"']$/,"",line)
                     desc=line
+                } else if (line ~ /^- check:/) {
+                    # checks[]リスト内の"- check:"をchkに収集(descriptionフォールバック)
+                    sub(/^- check:[[:space:]]*/,"",line)
+                    sub(/[[:space:]]*$/,"",line)
+                    gsub(/^["'"'"']|["'"'"']$/,"",line)
+                    if (chk == "") chk = line; else chk = chk "|" line
+                } else if (line ~ /^check:/) {
+                    sub(/^check:[[:space:]]*/,"",line)
+                    sub(/[[:space:]]*$/,"",line)
+                    gsub(/^["'"'"']|["'"'"']$/,"",line)
+                    if (chk == "") chk = line; else chk = chk "|" line
                 }
             }
         }
         END {
-            if (in_item) descs[n++]=desc
+            if (in_item) descs[n++]=(desc != "" ? desc : chk)
             for(i=0;i<n;i++) for(j=i+1;j<n;j++) if(descs[i]>descs[j]){t=descs[i];descs[i]=descs[j];descs[j]=t}
             r=""
             for(i=0;i<n;i++){if(i>0)r=r"|"; r=r descs[i]}

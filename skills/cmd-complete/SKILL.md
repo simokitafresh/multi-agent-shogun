@@ -22,9 +22,10 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 
 
 ### 自動防止ステップ
-- <!-- skill-auto-improve:894b86aa27a7 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76」(count=1, last=2026-05-02T23:46:44+0900)を避けるため、該当Step完了直後に同条件を確認し、FAILなら次へ進まず修正する。
 - <!-- skill-auto-improve:407f5d0b9905 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-05T09:25:12+0900)を避ける。確認: 関連教訓ごとに lessons_useful の id/useful/reason が埋まっていることを確認する。修正: UNKNOWN/null/FILL_THISを使わず、各教訓の有用性と理由を記入する。
-- <!-- skill-auto-improve:bf42976b4e85 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|hanzo:lesson_done_missing」(count=1, last=2026-05-05T16:39:29+0900)を避ける。確認: FAIL理由に出たフィールド名を報告YAML上で実際に検索し、欠落していないか確認する。修正: 欠落フィールドを report_field_set.sh 経由で追加する。
+- <!-- skill-auto-improve:bf42976b4e85 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|hanzo:lesson_done_missing」(cmd_2686以降WARN化済み)。lesson.doneはdeploy_task.shのpreflight_gate_flags()が自動生成する(found:trueなしならlesson_check.sh経由)。忍者は何もしなくてよい。
+- <!-- skill-auto-improve:38f7fb84d163 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|<ninja>:lesson_done_missing」(cmd_2686以降WARN化済み)。BLOCKしない設計。lesson.doneはpreflight_gate_flags()が自動生成。手動対処不要。
+- <!-- skill-auto-improve:cmd_2944 --> 自動防止: ac_version_mismatch(task=d41d8cd9)。ac_versionはACのdescription/check文字列のmd5(deploy_task.sh _compute_ac_hash)。gitハッシュ(git rev-parse --short HEAD)ではない。karo_direct配備のtask.ac_versionとreport.ac_version_readはdeploy_task.shが自動で一致させる。手動でgit hashを書き込むことは禁止。
 ### Step 1: lesson review
 ```bash
 bash scripts/lesson_review.sh
