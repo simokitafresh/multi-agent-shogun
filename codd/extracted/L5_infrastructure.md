@@ -25,6 +25,8 @@ GitHub Actions CI/CD、Androidビルドシステム（Gradle/Kotlin DSL）、git
 - **e2e-tests**: tmux + inotify-tools によるE2Eテスト（unit-tests, shellcheck 後）
 - **integration-tests**: Claude専用統合テスト（copilot/codex タグ除外）
 
+→ CI実行対象のテスト構成詳細: [[L6_tests]]（テストパス・フレームワーク・SKIP=FAILポリシー）
+
 ## 5.2 Git設定 (3 files)
 
 | ファイル | サイズ | 説明 |
@@ -43,7 +45,7 @@ GitHub Actions CI/CD、Androidビルドシステム（Gradle/Kotlin DSL）、git
 | `lefthook.yml` | 89 B | git hooks設定 |
 | `requirements.txt` | 109 B | Python依存（PyYAML, websocket-client） |
 | `install.bat` | 5,464 B | Windowsインストーラー |
-| `CLAUDE.md` | 42,968 B | Claude Code AI設定 |
+| `CLAUDE.md` | 42,968 B | Claude Code AI設定 → [[CLAUDE.md]]（全エージェント自動ロード。手順・禁則・通信プロトコルを収録） |
 | `CLAUDE.md.bak.jp.20260421` | 39,267 B | CLAUDE.md バックアップ |
 
 ## 5.4 プロジェクトドキュメント (5 files)
@@ -105,3 +107,9 @@ GitHub Actions CI/CD、Androidビルドシステム（Gradle/Kotlin DSL）、git
 
 合計: 32
 ```
+
+## Cross-References
+
+- [[L6_tests]] — L5のCI/CDパイプライン（5.1節）が実行するテストスイートの詳細構成。SKIP=FAILポリシー(FR-054)はL5のCIジョブが強制する規則。
+- [[L4_business_logic]] — L5のCI/CDがビルド・テスト対象とするビジネスロジック層。4.1節の忍者エージェントCLIスクリプトはL5の `.github/workflows/test.yml` によって品質が保証される。
+- [[CLAUDE.md]] — L5の5.3節に含まれる最大設定ファイル（42,968 B）。全エージェントへの自動ロード・手順・禁則・通信プロトコルを収録。
