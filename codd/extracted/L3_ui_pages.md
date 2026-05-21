@@ -44,4 +44,13 @@ UI entry and routing evidence starts at [[AndroidManifest.xml]], whose activity 
 | `android/screenshots/03_dashboard.png` | ダッシュボード画面 |
 | `android/screenshots/04_settings.png` | 設定画面 |
 | `android/screenshots/05_ratelimit.png` | レート制限画面 |
+
+## 関連レイヤーとコンテキスト
+
+- [[L1_data_models]] — L1: Data Models。インボックスYAML/レポートYAMLがUIの状態ソース
+- [[L2_api_endpoints]] — L2: API Endpoints。CLIベースのためHTTP API不在
+- [[L4_business_logic]] — L4: Business Logic (layer: L4)
+- [[L5_infrastructure]] — L5: Infrastructure / Config (layer: L5)
+- [[L6_tests]] — L6: Tests (layer: L6)
+- [[infrastructure]] — §Android App (line 579): "v6.4(versionCode 15)、SSH経由でtmuxを操作し、Dashboard/Agents/ShogunScreen/Settings/GistIndex/Usage を提供する"
 ```
