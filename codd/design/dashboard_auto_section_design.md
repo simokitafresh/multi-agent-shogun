@@ -41,11 +41,22 @@ External script outputs (consumed via temp files): `knowledge_metrics.sh --json 
 
 Outputs: `dashboard.md` auto section (between markers), ntfy notification (on CLEAR increase), terminal stdout (--dry-run).
 
+## Related Files
+
+- [[dashboard_auto_section_requirements]] defines the functional, performance, and safety requirements satisfied by this design.
+- [[dashboard_auto_section.sh]] is the implementation source for the cache paths, subprocess launches, marker replacement, and ntfy dedup behavior described here.
+
+## External Script Contracts
+
+The dashboard generator treats subprocess output as a parsing contract, not presentation text. `knowledge_metrics.sh --json --by-project --by-model` must emit valid JSON; `model_analysis.sh --summary` must emit `model_row=<slug>\t<label>\t<clear>\t<impl>\t<trend>\t<n>` rows; `ci_status_check.sh --status` must emit either `GREEN` or `RED:<run_id>:<failed>`; `context_freshness_check.sh --dashboard-warnings` must emit dashboard-ready warning lines; `skill_metrics.sh` must emit pipe-delimited skill health rows.
+
+Subprocess failures degrade the affected dashboard subsection only. The caller suppresses subprocess stderr and continues with cached data or placeholders, preserving `dashboard.md` update availability at the cost of reduced failure visibility.
+
 ## Known Design Gaps (elicit findings)
 
 - GAP-1 (concurrent_write_safety): No flock on `dashboard.md` write. Concurrent invocations (from dashboard-update skill and ninja_monitor) may interleave writes via the `.tmp` file.
 - GAP-2 (ntfy_dedup_scope): `/tmp/mas-dashboard-ntfy-last-clear.txt` is not project-scoped (no `_proj_hash`). Multiple MAS instances on the same host share this file, causing missed notifications.
-- GAP-3 (external_script_contract): Output format contracts for `knowledge_metrics.sh`, `model_analysis.sh`, `ci_status_check.sh`, `context_freshness_check.sh`, `skill_metrics.sh` are not documented in requirements or design.
+- GAP-3 (external_script_contract): Contract now documented in this design; requirements still list subprocesses without their output schemas.
 - GAP-4 (marker_order_unvalidated): Script checks marker existence but not that MARKER_START precedes MARKER_END; inverted markers produce a truncated output.
 - GAP-5 (silent_failure_opacity): `|| true` suppresses subprocess errors silently; no stderr log when data sources fail, making operational debugging difficult.
 
