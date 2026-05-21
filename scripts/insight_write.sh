@@ -129,12 +129,13 @@ id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
     printf 'insights:\n' > "$INSIGHTS_FILE"
   fi
 
-  # Dedup check + raw YAML append (avoids full-file YAML rewrite data loss).
+  # Dedup check + raw YAML append + source repeat count (single Python process).
+  # Merging into one pass avoids a second python3 startup and second file read.
   # Parse the controlled YAML shape directly to avoid importing PyYAML on every call.
-  result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
-           SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" STATUS_ENV="$status" \
-           RESOLVED_AT_ENV="$resolved_at" \
-           python3 - <<'PYEOF'
+  raw_result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
+               SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" STATUS_ENV="$status" \
+               RESOLVED_AT_ENV="$resolved_at" \
+               python3 - <<'PYEOF'
 import json
 import os
 import sys
@@ -156,20 +157,27 @@ def parse_scalar(raw):
         return value[1:-1].replace("''", "'")
     return value
 
-with open(insights_file, 'r', encoding='utf-8') as f:
-    current_id = None
-    current_insight = None
-    current_status = None
+# Single-pass: dedup check + source repeat count
+current_id = None
+current_insight = None
+current_status = None
+current_source = None
+source_pending_count = 0
 
+with open(insights_file, 'r', encoding='utf-8') as f:
     for line in f:
         if line.startswith('- id: '):
-            if current_status == 'pending' and current_insight is not None:
-                if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
-                    print('SKIP:' + current_id)
-                    sys.exit(0)
+            if current_status == 'pending':
+                if current_insight is not None:
+                    if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+                        print('SKIP:' + current_id)
+                        sys.exit(0)
+                if current_source == source_info:
+                    source_pending_count += 1
             current_id = line[len('- id: '):].strip()
             current_insight = None
             current_status = None
+            current_source = None
             continue
         if current_id is None:
             continue
@@ -177,11 +185,21 @@ with open(insights_file, 'r', encoding='utf-8') as f:
             current_insight = parse_scalar(line.split(':', 1)[1])
         elif line.startswith('  status:'):
             current_status = parse_scalar(line.split(':', 1)[1])
+        elif line.startswith('  source:'):
+            current_source = parse_scalar(line.split(':', 1)[1])
 
-    if current_status == 'pending' and current_insight is not None:
+# Finalize last entry
+if current_status == 'pending':
+    if current_insight is not None:
         if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
             print('SKIP:' + current_id)
             sys.exit(0)
+    if current_source == source_info:
+        source_pending_count += 1
+
+# Count new entry itself if it will be pending
+if status == 'pending':
+    source_pending_count += 1
 
 # Append raw YAML entry (no full-file rewrite — preserves existing multiline strings)
 def yaml_escape(s):
@@ -198,55 +216,20 @@ with open(insights_file, 'a', encoding='utf-8') as f:
     if resolved_at:
         f.write(f'  resolved_at: {yaml_escape(resolved_at)}\n')
 
+# Line 1: entry_id; Line 2: source_pending_count (for bulletin threshold check)
 print(entry_id)
+print(source_pending_count)
 PYEOF
 ) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
+  result=$(printf '%s\n' "$raw_result" | head -1)
   echo "$result"
 
   # Escalate repeated pending insights from the same source so important patterns
   # do not remain buried in queue/insights.yaml. Keep this out of the write path:
   # bulletin failures must not break normal insight recording.
   if [[ "$result" == INS-* && "$SOURCE_REPEAT_THRESHOLD" -gt 0 ]]; then
-    repeat_count=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" SOURCE_INFO_ENV="$source_info" \
-                   python3 - <<'PYEOF'
-import json
-import os
-
-insights_file = os.environ['INSIGHTS_FILE_ENV']
-source_info = os.environ['SOURCE_INFO_ENV']
-
-def parse_scalar(raw):
-    value = raw.strip()
-    if value.startswith('"'):
-        return json.loads(value)
-    if value.startswith("'") and value.endswith("'"):
-        return value[1:-1].replace("''", "'")
-    return value
-
-count = 0
-current_source = None
-current_status = None
-
-with open(insights_file, 'r', encoding='utf-8') as f:
-    for line in f:
-        if line.startswith('- id: '):
-            if current_source == source_info and current_status == 'pending':
-                count += 1
-            current_source = None
-            current_status = None
-            continue
-        if line.startswith('  source:'):
-            current_source = parse_scalar(line.split(':', 1)[1])
-        elif line.startswith('  status:'):
-            current_status = parse_scalar(line.split(':', 1)[1])
-
-if current_source == source_info and current_status == 'pending':
-    count += 1
-
-print(count)
-PYEOF
-)
+    repeat_count=$(printf '%s\n' "$raw_result" | tail -1)
     if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
       # デバウンス: 同一sourceのINSIGHT_REPEATを10分以内に重複投稿しない
       _repeat_debounce_file="/tmp/shogun_insight_repeat_${source_info//[^a-zA-Z0-9_]/_}.last"
