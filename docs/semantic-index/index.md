@@ -88,10 +88,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-20T21:44:00+09:00 まずやるべきは軍師提案の起票では？セマンティックインデックス×obsidianの複利効果はとてつもなくおおきい。L7だよな |
 | cmd | `cmd_2910` 強化: GATE CLEAR時にoriginノードをセマンティクスインデックスへ自動還流(L7穴3 HOW) (`scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
 | principle | **リンク品質原則(殿厳命2026-05-22)**: ノイズ1件で全リンクが汚染される。リンクの価値は品質100%が前提。自動一括リンク生成は品質担保不可 |
-| principle | **概念ハブ方式**: ファイル→[[概念名]]のみ追記。概念がハブ。2ホップで全関連ファイルに到達。ファイル間直接リンクは因果不明でノイズリスク |
-| principle | **ネットワーク構造**: 上層(46概念間)=全連結完了。下層(944ファイル→概念)=88%孤立が律速。ハブ同士が孤立するとネットワークにならない(殿指摘) |
+| principle | **Obsidianの本質=距離×濃度(殿指摘2026-05-22)**: ファイル間直接リンクが正しい。概念ハブ方式は全ファイルを等距離にし構造情報を消す(軍師誤判定→殿が否定)。直接リンク=近さの情報を持つ。リンク数=濃度=重要性の指標。修行で忍者が読んでファイル間直接リンクを張るのが正道 |
+| principle | ~~概念ハブ方式~~: **撤回(殿指摘2026-05-22)**。概念タグ付けは検索の発想であり、ネットワーク(距離×濃度)の発想ではない。cmd_2955はrevert済み |
 | principle | **双方向価値**: AがBにリンク→BのbacklinksにAが見える。孤立ファイル=backlinksゼロ=発見不能=存在しないのと同じ |
-| discussion | gunshi session 2026-05-22T00:30 殿との対話: リンク双方向価値→品質>量→概念ハブ方式→上層連結+下層孤立が律速 |
+| discussion | gunshi session 2026-05-22T00:30 殿との対話: リンク双方向価値→品質>量→概念ハブ方式(軍師提案)→殿否定: Obsidian本質=距離×濃度。ハブ化は構造情報消失。正解=ファイル間直接リンク+修行で品質保証 |
 | causal | `cmd_2910` origin: [[L7_HOW]] -> [[origin_aliases_gap]] -> [[concept_auto_growth]] |
 | cmd | `cmd_2912` 強化: pending概念の自動昇格でセマンティクスインデックスを自動成長(L7f) (`scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
 | causal | `cmd_2912` origin: [[L7f_concept_auto_promote]] -> [[pending_insights_22]] -> [[semantic_index_auto_growth]] |
