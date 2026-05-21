@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-21 -->
+<!-- last_updated: 2026-05-22 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,45 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_karo_env_change_gate | karo_workaround_log.shにenvironment_change強制+grep検証を追加 | infra | 04-21 | karo_workaround_log.sh に --wa |
-| cmd_karo_ci_fix_env_change | CI RED修正 — test_cmd_save_environment_change.bats 3件FAIL修正 | infra | 04-21 | environment_change系テスト4件の期待値を現 |
-| cmd_karo_ci_fix_aggregation | CI RED修正 — test_cmd_save_block_aggregation.bats AC2期待値更新 | infra | 04-21 | cmd_save BLOCK集約テストの期待値を現行挙動へ更 |
-| cmd_2189 | 研究 — WF L2 GS bunshin(SS系統): wf_l2_ss_21体でbunshin忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでbunshin GSをex |
-| cmd_2190 | 研究 — WF L2 GS kasoku_diff(SS系統): wf_l2_ss_21体でkasoku_diff忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_diff G |
-| cmd_2191 | 研究 — WF L2 GS kasoku_ratio(SS系統): wf_l2_ss_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでkasoku_ratio |
-| cmd_2192 | 研究 — WF L2 GS nukimi(SS系統): wf_l2_ss_21体でnukimi忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでnukimi GSをexi |
-| cmd_2194 | 研究 — WF L2 GS oikaze(SS系統): wf_l2_ss_21体でoikaze忍法GS実行 | dm-signal | 04-21 | wf_l2_ss_21ユニバースでoikaze GSをexi |
-| cmd_karo_auto_draft_review | deploy_task.shにdraftレビュー自動送信を追加 | infra | 04-21 | deploy_task.sh に draft review |
-| cmd_2197 | 修正 — run_077_kawarimi.py verify部分のsequential/batch整合バグ修正 | dm-signal | 04-21 | AC1/AC2はPASS。AC3はcmd_2196基準CSV |
-| cmd_2198 | 研究 — WF L2 SS系統 champion_selector統合: 7忍法GSからchampion事後選出 | dm-signal | 04-21 | wf_l2_ss の 7忍法 monthly/cache を |
-| cmd_karo_ci_fix_draft_review | CI RED修正 — test deploy draft_review送信テスト修正 | infra | 04-21 | draft review CI失敗の根因を特定し、並列テスト |
-| cmd_2199 | 研究 — WF L2 GS bunshin(AS系統): wf_l2_as_21体でbunshin忍法GS実行 | dm-signal | 04-21 | WF L2 AS bunshin GSを完了。exit 0 |
-| cmd_2200 | 研究 — WF L2 GS kasoku_diff(AS系統): wf_l2_as_21体でkasoku_diff忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkasoku_di |
-| cmd_2201 | 研究 — WF L2 GS kasoku_ratio(AS系統): wf_l2_as_21体でkasoku_ratio忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkasoku_ra |
-| cmd_2203 | 研究 — WF L2 GS kawarimi(AS系統): wf_l2_as_21体でkawarimi忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでkawarimi |
-| cmd_2205 | 研究 — WF L2 GS yotsume(AS系統): wf_l2_as_21体でyotsume忍法GS実行 | dm-signal | 04-21 | WF L2 AS 21体universeでyotsume G |
-| cmd_2207 | 研究 — WF L2 AS系統 champion_selector統合: 7忍法GSからchampion事後選出 | dm-signal | 04-21 | wf_l2_as 配下の7忍法 monthly CSV/ca |
-| cmd_karo_auto_review_gate | inbox_write.shにreport_review自動送信+GATE自動実行を追加 | infra | 04-21 | report_received→report_review自 |
-| cmd_karo_self_gate_template | deploy_task.shのreportテンプレートにself_gate_check 4項目を自動注入 | infra | 04-21 | deploy_task.shの報告テンプレートへself_g |
-| cmd_karo_lk086_update | LK086+karo.md更新 — report_review自動化に伴う3アクション→2アクションへ | infra | 04-21 | LK086を2アクション運用へ更新し、AC2はinstruc |
-| cmd_2209 | 修正 — cmd_save.shブロック抽出awkが非数字cmd_idで境界検出失敗 | infra | 04-21 | cmd_save.sh の cmd 境界判定を非数字 cmd |
-| cmd_karo_gate_wait | cmd_complete_gate.sh GATE CLEARパスにwait追加 — background子プロセス完走保証 | infra | 04-21 | cmd_complete_gate の GATE CLEAR |
-| cmd_2208 | 修正 — cmd_save.sh WARN記録にnotes欠落(FP率計測不能) | infra | 04-21 | cmd_2209で先行反映済みのWARN経路統一を現物確認し |
-| cmd_karo_pipeline_verify | 検証 — 自動パイプライン全段動作確認(draftレビュー→report_review→GATE→bulletin) | infra | 04-21 | context/senkyoku-log.md に cmd_ |
-| cmd_2211 | 偵察 — WF四神の本番fullrecalculate計算可能性調査 | dm-signal | 04-21 | 既存四神の保存実体を特定。シン四神pipeline_conf |
-| cmd_2212 | 修正 — scripts/cmd_save.sh Check 22 AC数検出バグ | infra | 04-21 | Check 22のAC件数カウントを acceptance_ |
-| cmd_2213 | 整備 — WF四神命名ルール+L2命名修正をドキュメント反映 | infra | 04-21 | WF命名ルールとL2命名乖離を文書へ反映し、wfシン/wfA |
-| cmd_2214 | 研究 — WFシン四神championの各foldパーセンタイル安定性検証 | dm-signal | 04-21 | WFシン四神12体のglobal fold percenti |
-| cmd_2215 | 研究 — WF ALM四神 α6指標top安定性検証(計算期間3M短縮) | dm-signal | 04-21 | WF ALM四神4ファミリーの6objectiveについて、 |
-| cmd_2216 | 整備 — 長期ロバストネス検証方法カタログ作成 | dm-signal | 04-21 | 7手法の長期ロバストネス検証カタログを新規作成し、cmd_2 |
-| cmd_2221 | 修正 — scripts/cmd_save.sh バンドル検出のcommandスキャンバグ | infra | 04-21 | cmd_save.sh のバンドル検出で command フ |
-| cmd_2217 | 研究 — L1シン忍法21体 ロバストネス検証(foldパーセンタイル+top安定性) | dm-signal | 04-21 | シン忍法21体ロバストネス検証完了。AC1(foldパーセン |
-| cmd_2218 | 研究 — L1 ALM忍法21体 ロバストネス検証(foldパーセンタイル+top安定性) | dm-signal | 04-21 | AC1/AC2/AC3: ALM忍法21体(7忍法×3目的) |
-| cmd_karo_gunshi_notify_flag | 修正 — gunshi_notify重複防止フラグが再修正報告の自動レビュー送信を阻害 | infra | 04-21 | deploy_task.shの再配備時にstale guns |
-| cmd_karo_2220_ac3 | 研究 — cmd_2220 AC3追記(4パターン比較コメント) | dm-signal | 04-21 | cmd_2220 Markdownに4パターン比較コメント追 |
-| cmd_karo_ci_fix_2221_r2 | CI RED修正 — test_cmd_save_command_steps_vs_ac.bats 1件FAIL残存 | infra | 04-21 | scripts/cmd_save.sh の command |
-| cmd_karo_inbox_watcher_selfwatch | fix — inbox_watcher self-watch誤検知で将軍nudge不送信 | infra | 04-21 | agent_has_self_watchがwatcher自身 |
-| cmd_2223 | 整備 — CLAUDE.md英語化(Language Policy Phase 2) | infra | 04-21 | Translated CLAUDE.md into Engl |
 | cmd_1825 | 奥義-シン忍法 WF直列実行 — AC1完了済み7 CSVに対し1本ずつWF実行 | dm-signal | 04-22 | — |
 | cmd_1824 | 研究道具レジストリ構築 — cmd起票時に道具の最新CLI引数を自動表示 | infra | 04-22 | — |
 | cmd_karo_gs_benchmark | GS Phase1c — 8スクリプト現行ベンチマーク | dm-signal | 04-22 | — |
@@ -696,3 +657,5 @@
 | cmd_2949 | cmd_2947でYAML存在チェックを追加したが、kagemaru R9で再発(本セッション4件消失)。忍者のinbox_write(家老通知)完了前にclear発動する競合が残存。3条件(YAML存在+verdict存在+家老通知完了)に拡張して根絶する | infra | 05-21 | ninja_monitorのauto-clear repor |
 | cmd_2950 | 修行がtarget_path未指定で全ラウンド実行されており、忍者が裁量でスクリプト選択→aliases薄概念が放置。deploy_task.shの修行配備時にaliases品質の低い概念のスクリプトを優先指定し、修行が自然にaliases品質を引き上げる仕組みにする | infra | 05-21 | aliases薄概念Top10を出す semantic_al |
 | cmd_2951 | deploy_task.shが次ラウンド配備時に前ラウンドのGATE未完了のまま忍者に/clear送信し、報告YAMLが消失する(本セッション6件、GPT忍者18.5%/Sonnet5.6%)。配備前にpending report存在チェックを追加し、GATE完了まで配備をBLOCKする | infra | 05-21 | deploy_task.shが対象忍者のGATE未処理報告を |
+| cmd_2952 | deploy_task.sh(cmd_2950/2951変更)+bulletin_write.sh変更がSKILL.md 5件に未反映。startup gate 3セッション連続WARN解消 | infra | 05-22 | SKILL.md 5件をbulletin_write.sh/ |
+| cmd_2953 | 修行targetを[[リンク]]数昇順で選択し、孤立ファイルから順にリンクネットワークを育てる。現状944 mdファイル中88%が孤立。修行ACに[[リンク]]追加を組込み、Obsidianグラフを修行サイクルで自然に成長させる | infra | 05-22 | 修行targetをMarkdownリンク数昇順で選び、孤立M |
