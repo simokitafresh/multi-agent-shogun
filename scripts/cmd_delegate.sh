@@ -152,7 +152,13 @@ BEGIN {
 }
 {
     if (index($0, cmd_id) > 0) {
-        block_has_cmd = 1
+        pos = index($0, cmd_id)
+        before_char = (pos > 1) ? substr($0, pos - 1, 1) : ""
+        after_char = substr($0, pos + length(cmd_id), 1)
+        if ((before_char == "" || before_char !~ /[A-Za-z0-9_]/) &&
+            (after_char == "" || after_char !~ /[A-Za-z0-9_]/)) {
+            block_has_cmd = 1
+        }
     }
     if ($0 ~ /^[[:space:]]*type:[[:space:]]*['\''"]?cmd_new['\''"]?([[:space:]]|$)/) {
         block_is_cmd_new = 1
@@ -165,6 +171,19 @@ END {
 ' "$inbox_file"
 }
 
+cmd_is_archived() {
+    local cmd_id="$1"
+
+    if [ ! -d "$ARCHIVE_DIR" ]; then
+        return 1
+    fi
+
+    shopt -s nullglob
+    local archived_matches=("$ARCHIVE_DIR/${cmd_id}_"*)
+    shopt -u nullglob
+    [ "${#archived_matches[@]}" -gt 0 ]
+}
+
 # Step 1: cmd_id が存在し status=pending か検証
 status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
     echo "ERROR: cmd_id '$CMD_ID' not found in shogun_to_karo.yaml" >&2
@@ -174,6 +193,10 @@ status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/nu
 existing_delegated=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" 2>/dev/null) || true
 if [ -n "$existing_delegated" ]; then
     if [ "$status" = "delegated" ]; then
+        if cmd_is_archived "$CMD_ID"; then
+            echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-notify delegation." >&2
+            exit 1
+        fi
         if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; then
             echo "ALREADY_DELEGATED: $CMD_ID at $existing_delegated"
             exit 0
@@ -238,14 +261,9 @@ if [ -f "$DASHBOARD" ] && grep -Fqm1 "$CMD_ID" "$DASHBOARD" 2>/dev/null; then
 fi
 
 # Step 3.7: archiveに完了済みとして存在するかチェック
-if [ -d "$ARCHIVE_DIR" ]; then
-    shopt -s nullglob
-    archived_matches=("$ARCHIVE_DIR/${CMD_ID}_"*)
-    shopt -u nullglob
-    if [ "${#archived_matches[@]}" -gt 0 ]; then
-        echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
-        exit 1
-    fi
+if cmd_is_archived "$CMD_ID"; then
+    echo "BLOCK: $CMD_ID is already archived (completed). Cannot re-delegate." >&2
+    exit 1
 fi
 
 # Step 4: status=delegated + delegated_at を先に設定（inbox_writeのcmd_new guardがstatus確認するため）

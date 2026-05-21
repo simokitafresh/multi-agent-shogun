@@ -371,6 +371,21 @@ MOCK
     [[ "$output" == *"shogun"* ]]
 }
 
+@test "cmd_delegate: archived cmdは再通知リトライしない" {
+    create_shogun_yaml_all_delegated
+    mkdir -p "${TEST_TMP}/queue/archive/cmds"
+    touch "${TEST_TMP}/queue/archive/cmds/cmd_100_20260304.yaml"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"already archived"* ]]
+    [[ "$output" == *"Cannot re-notify delegation"* ]]
+
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
+}
+
 @test "cmd_delegate: delegated_at書込失敗時はstatusをpendingへ戻す" {
     create_shogun_yaml_with_pending
 
@@ -439,6 +454,28 @@ YAML
     [[ "$output" == *"cmd_new"* ]]
 }
 
+@test "cmd_delegate: cmd_new内の部分一致cmd_idは重複委任扱いしない" {
+    create_shogun_yaml_with_pending
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: cmd_msg
+    content: "cmd_1000を書いた。配備せよ。"
+    type: cmd_new
+    from: shogun
+    read: false
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" != *"Refusing to send duplicate"* ]]
+
+    run cat "${TEST_TMP}/inbox_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_new"* ]]
+}
+
 @test "cmd_delegate: cmd_new内の同一cmd_idは重複委任としてBLOCKする" {
     create_shogun_yaml_with_pending
     cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
@@ -460,6 +497,27 @@ YAML
     run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
     [ "$status" -ne 0 ]
     run grep "status: pending" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_delegate: cmd_idの部分一致を重複委任扱いしない (cmd_100 in cmd_1000)" {
+    create_shogun_yaml_with_pending
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: cmd_msg_other
+    content: "cmd_1000を書いた。配備せよ。"
+    type: cmd_new
+    from: shogun
+    read: false
+YAML
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+    [[ "$output" != *"Refusing to send duplicate"* ]]
+
+    run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
     [ "$status" -eq 0 ]
 }
 
