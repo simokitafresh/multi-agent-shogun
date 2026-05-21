@@ -694,3 +694,5 @@
 | cmd_2946 | cmd_2936でDIRECT経路を実装、cmd_2938でテスト21件PASSしたが、本番でPENDING_ALIAS_DIRECT昇格が0件。修行12回転(hayate4+kagemaru4+saizo4)でinsight蓄積されたがaliasesに昇格していない。テストは通るが本番で動かない=テストと本番の乖離。semantic_index_update.shのDIRECT昇格コードパスがなぜ本番で発火しないかを特定し修正する | infra | 05-21 | semantic_index_update.shのDIREC |
 | cmd_2948 | 起動チェックでSKILL.md参照WARNが3セッション連続。scriptが更新されたがSKILL.mdが追従していない4件を更新し、スキル記述と実装の乖離を解消する | infra | 05-21 | SKILL.md 4件を現script仕様へ追従更新し、対象 |
 | cmd_2949 | cmd_2947でYAML存在チェックを追加したが、kagemaru R9で再発(本セッション4件消失)。忍者のinbox_write(家老通知)完了前にclear発動する競合が残存。3条件(YAML存在+verdict存在+家老通知完了)に拡張して根絶する | infra | 05-21 | ninja_monitorのauto-clear repor |
+| cmd_2950 | 修行がtarget_path未指定で全ラウンド実行されており、忍者が裁量でスクリプト選択→aliases薄概念が放置。deploy_task.shの修行配備時にaliases品質の低い概念のスクリプトを優先指定し、修行が自然にaliases品質を引き上げる仕組みにする | infra | 05-21 | aliases薄概念Top10を出す semantic_al |
+| cmd_2951 | deploy_task.shが次ラウンド配備時に前ラウンドのGATE未完了のまま忍者に/clear送信し、報告YAMLが消失する(本セッション6件、GPT忍者18.5%/Sonnet5.6%)。配備前にpending report存在チェックを追加し、GATE完了まで配備をBLOCKする | infra | 05-21 | deploy_task.shが対象忍者のGATE未処理報告を |
