@@ -340,6 +340,17 @@ for i, item in enumerate(data):
             # GP-072c2: Per-AC write (e.g., binary_checks.AC1) — only 2-level depth
             elif [[ "$dot_key" == binary_checks.AC* ]] && [[ "$dot_key" != *.*.* ]]; then
                 _validate_binary_checks "per_ac" "$val" || return 1
+            elif [[ "$dot_key" =~ ^binary_checks\.[^.]+\.[0-9]+\.result$ ]]; then
+                local bc_result
+                bc_result="${val%\"}"
+                bc_result="${bc_result#\"}"
+                bc_result="${bc_result%\'}"
+                bc_result="${bc_result#\'}"
+                bc_result="$(echo "$bc_result" | xargs)"
+                if [[ -n "$bc_result" && "$bc_result" != "yes" && "$bc_result" != "no" ]]; then
+                    echo "BLOCK: binary_checks result は yes/no のみ。受信: $val" >&2
+                    return 1
+                fi
             fi
             ;;
         self_gate_check)
@@ -535,50 +546,6 @@ _autofix_field_value() {
     local field="${dot_key%%.*}"
 
     case "$field" in
-        binary_checks)
-            # result: true/True/PASS/Pass/pass → yes, false/False/FAIL/Fail/fail → no
-            if [[ "$dot_key" == "binary_checks" ]] || [[ "$dot_key" == binary_checks.AC* ]]; then
-                local fixed
-                fixed=$(python3 -c "
-import yaml, sys, json
-raw = sys.stdin.read()
-try:
-    data = yaml.load(raw, Loader=yaml.BaseLoader)
-except yaml.YAMLError:
-    print(raw, end='')
-    sys.exit(0)
-changed = False
-true_aliases = {'true','True','TRUE','PASS','Pass','pass','OK','ok','Ok','YES'}
-false_aliases = {'false','False','FALSE','FAIL','Fail','fail','NG','ng','Ng','NO'}
-def fix_items(items):
-    global changed
-    if not isinstance(items, list):
-        return items
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        r = str(item.get('result','')).strip()
-        if r in true_aliases:
-            item['result'] = 'yes'
-            changed = True
-        elif r in false_aliases:
-            item['result'] = 'no'
-            changed = True
-    return items
-if isinstance(data, dict):
-    for k, v in data.items():
-        data[k] = fix_items(v)
-elif isinstance(data, list):
-    data = fix_items(data)
-if changed:
-    print('[autofix] binary_checks result正規化(true/PASS→yes, false/FAIL→no)', file=sys.stderr)
-out = yaml.dump(data, default_flow_style=False, allow_unicode=True)
-print(out, end='')
-" <<< "$val")
-                echo "$fixed"
-                return 0
-            fi
-            ;;
         files_modified)
             # string/string-list → dict-list (忍者がパス文字列だけを書く頻出パターン)
             if [[ "$dot_key" == "files_modified" ]]; then
