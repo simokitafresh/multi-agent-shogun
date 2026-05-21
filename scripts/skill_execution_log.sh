@@ -14,12 +14,11 @@ usage() {
 }
 
 yaml_scalar() {
-    python3 - "$1" <<'PY'
-import sys
-value = sys.argv[1]
-value = value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-print(f'"{value}"')
-PY
+    local value="${1:-}"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\n'/\\n}"
+    printf '"%s"\n' "$value"
 }
 
 skill="${1:-}"
