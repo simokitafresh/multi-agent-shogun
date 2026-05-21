@@ -110,10 +110,11 @@ append_causal_expansion() {
 
         local backlink_output
         backlink_output=$(
-            cd "${SEMANTIC_CAUSAL_ROOT:-$script_dir}" \
-                && bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
+            if cd "${SEMANTIC_CAUSAL_ROOT:-$script_dir}" 2>/dev/null; then
+                bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
                     | head -10 \
-            || true
+                || true
+            fi
         )
 
         if [ -n "$backlink_output" ]; then
@@ -153,11 +154,11 @@ llm_search() {
         fi
     fi
 
-    local prompt_file output_file final_output
+    local prompt_file="" output_file="" final_output=""
+    trap 'rm -f "${prompt_file:-}" "${output_file:-}" "${final_output:-}"' RETURN
     prompt_file="$(mktemp)"
     output_file="$(mktemp)"
     final_output="$(mktemp)"
-    trap 'rm -f "$prompt_file" "$output_file" "$final_output"' RETURN
 
     {
         cat <<EOF
