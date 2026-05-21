@@ -71,7 +71,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # PASS/FAIL/PASS_NO_IMPROVEMENT verdict済みreportがある場合、cmd_complete_gate完了前の再配備を禁止する。
 # exact以外で他忍者の完了済みpeer reportがある場合もBLOCKし、二重配備による報告YAML消失を防ぐ。
 ```
-Script refs verified: 2026-05-22 cmd_2952 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_2950/2951: 配備前pending own report / completed peer reportをBLOCKし、報告YAML消失を防止。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更)。
+Script refs verified: 2026-05-22 cmd_2953 (cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用するよう修正。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_2950/2951: 配備前pending own report / completed peer reportをBLOCKし、報告YAML消失を防止。cmd_2953: training target_pathは既存指定がなければ `markdown_link_counts.sh --select-file` で[[リンク]]数が少ないMarkdownを優先し、未取得時のみ `semantic_alias_quality.sh` へフォールバックする。cmd_training_L7: report templateのverdictはgate_report_format.shがbinary_checksから自動導出、手動記入禁止に変更)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
@@ -99,8 +99,8 @@ acceptance_criteria:
 # ★ training だけは /tmp 手動YAML禁止。deploy_task.sh --direct が修行テンプレート(purpose/AC)を自動注入する。
 # cmd_id は cmd_training_L4_r<round>_<ninja_name> 形式など、cmd_training_ で始める。
 bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninja_name>
-# --direct は parent_cmd/task_id/status を自動設定し、cmd_training_* なら inject_direct_training_template が
-# purpose/ACを自動注入する。inbox_write は deploy_task.sh 内部で自動送信されるため不要。
+# --direct は parent_cmd/task_id/status を自動設定し、cmd_training_* なら target_path 自動選定後に
+# inject_direct_training_template が purpose/ACを自動注入する。inbox_write は deploy_task.sh 内部で自動送信されるため不要。
 ```
 手動でpurpose/ACを書いてはならない。inject_direct_training_template が自動注入する。
 
