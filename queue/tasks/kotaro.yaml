@@ -1,8 +1,7 @@
 task:
-  _ac_task_id: cmd_2898_exact
+  _ac_task_id: cmd_training_L7_v3_kotaro_11_20260521225610_normal
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2898 (deployed 2026-05-20T15:06:00). Read from the beginning.
-  cmd_id: cmd_training_speed_kotaro_5
+  ac_version: d41d8cd9
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,95 +10,53 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  growth_loop_defense:
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
+  parent_cmd: cmd_training_L7_v3_kotaro_11_20260521225610
   project: infra
-  purpose: 将軍がcmd_save BLOCK後にフリーズする根因=どの行のどのキーワードがBLOCKを引き起こしたか不明で1箇所ずつ修正→再BLOCK→探す→修正の繰り返し。全BLOCK要因を一括表示し1回の修正で全解消できるようにする
+  recommended_skills:
+  - report-write
+  - verdict-check
   scout_exempt: true
-  status: idle
+  semantic_concepts:
+  - 'training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh'
+  - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
+  status: acknowledged
   stop_for: []
-  task_id: cmd_2898_exact
-  task_type: exact
+  task_id: cmd_training_L7_v3_kotaro_11_20260521225610_normal
+  task_type: training
   related_lessons:
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-  - id: 'L276'
-    summary: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
-    detail: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
-  - id: 'L241'
-    summary: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
-    detail: 'D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti'
-  - id: 'L087'
-    summary: 'knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の'
-    detail: 'knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の'
-  - id: 'L532'
-    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
-    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
-  - id: 'L262'
-    summary: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
-    detail: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
-  - id: 'L103'
-    summary: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-    detail: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L630'
-    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-  - id: 'L282'
-    summary: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
-    detail: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[cmd_2897_3block_freeze]]"
-  - "[[shogun_block_freeze]]"
-  - "[[trigger_map_output]]"
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
-      - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行
-      - L241: D001-D008防御hookのblock_destructive.shがsettings.local.json(ローカル専用)にのみ登録されている。setti
-      - L087: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の
-      - L532: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな
-      - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに'non-blo
-      - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
-      - L282: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
+      - L509: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'cmd_save.sh BLOCK/WARN発生時に全検出箇所(行番号+キーワード+チェック名)が一括出力される'
-  - id: 'AC2'
-    checks:
-    - check: '既存テストがPASS'
-  ac_version: 2edf2958
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_2898.yaml
-  report_path: 
+  report_filename: kotaro_report_cmd_training_L7_v3_kotaro_11_20260521225610.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L7_v3_kotaro_11_20260521225610.yaml
   bloom_level: 
+  deployed_at: "2026-05-22T00:31:00"
