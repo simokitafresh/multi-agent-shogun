@@ -109,7 +109,17 @@ how_action = os.environ.get("HOW_ACTION", "")
 with open(lessons_file, encoding='utf-8') as f:
     data = yaml.safe_load(f)
 
+if data is None:
+    data = {}
 lessons = data.get('lessons', [])
+
+# Entry count gate (flock内正確チェック: race condition防止)
+if len(lessons) >= 35:
+    print(f'BLOCK: lessons_karo.yaml が {len(lessons)}件に到達(上限35件)。', file=sys.stderr)
+    print('  新規追加の前に既存教訓を統合・パターン昇格せよ。', file=sys.stderr)
+    print('  個別事故→パターンに昇格し件数を減らしてから再実行。', file=sys.stderr)
+    print('  参考: docs/research/lessons_karo_v1_archive.md (92件→22件の統合実績)', file=sys.stderr)
+    sys.exit(1)
 
 # Find max numeric ID (LK format)
 max_id = 0
