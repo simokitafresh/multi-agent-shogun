@@ -50,6 +50,7 @@ RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
 RETRY_COUNT_FILE="${STATE_DIR}/inbox_watcher_retry_${AGENT_ID}"
 BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
+SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
@@ -506,6 +507,7 @@ agent_has_self_watch() {
 send_wakeup() {
     local unread_count="$1"
     local has_task_assigned="${2:-false}"
+    local current_fp="${3:-}"
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
         return 0
@@ -598,14 +600,86 @@ send_wakeup() {
     fi
 
     # Tier 1.5: Debounce repeated nudge storms (normal messages only)
-    if [ -f "$DEBOUNCE_FILE" ]; then
-        read -r last < "$DEBOUNCE_FILE" 2>/dev/null || last=""
-        if [[ "$last" =~ ^[0-9]+$ ]]; then
-            now="$(date +%s)"
-            elapsed=$((now - last))
-            if [ "$elapsed" -lt "$DEBOUNCE_SEC" ]; then
-                echo "[$(date)] [DEBOUNCE] Skipping nudge (${elapsed}s < ${DEBOUNCE_SEC}s) for $AGENT_ID" >&2
-                return 0
+    # For normal inbox nudges, fingerprint compare/update and debounce
+    # check/refresh happen under one flock so duplicate watchers cannot both send.
+    if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
+        local atomic_result decision log_line atomic_result_file
+        atomic_result_file="${STATE_DIR}/inbox_watcher_atomic_result_${AGENT_ID}_${BASHPID}"
+        if ! (
+            flock -w 5 201 || { echo "error	STATE_LOCK_TIMEOUT"; exit 1; }
+
+            _now="$(date +%s)"
+
+            if [ -f "$DEBOUNCE_FILE" ]; then
+                read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || _last=""
+                if [[ "$_last" =~ ^[0-9]+$ ]]; then
+                    _elapsed=$((_now - _last))
+                    if [ "$_elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                        printf 'skip\t[DEBOUNCE] Skipping nudge (%ss < %ss) for %s\n' "$_elapsed" "$DEBOUNCE_SEC" "$AGENT_ID" > "$atomic_result_file"
+                        exit 0
+                    fi
+                fi
+            fi
+
+            _prev_fp=""
+            if [ -f "$FINGERPRINT_FILE" ]; then
+                read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || _prev_fp=""
+            fi
+
+            if [ "$current_fp" != "$_prev_fp" ]; then
+                printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
+                printf '0' > "$RETRY_COUNT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[FP-CHANGE] Unread set changed for %s (%s unread), sending nudge\n' "$AGENT_ID" "$unread_count" > "$atomic_result_file"
+                exit 0
+            fi
+
+            _retry_count=0
+            if [ -f "$RETRY_COUNT_FILE" ]; then
+                read -r _retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || _retry_count=0
+            fi
+
+            if [ "$_retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
+                _retry_count=$((_retry_count + 1))
+                printf '%s' "$_retry_count" > "$RETRY_COUNT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[RETRY] Nudge unacknowledged, retry %s/%s for %s\n' "$_retry_count" "$RETRY_MAX" "$AGENT_ID" > "$atomic_result_file"
+                exit 0
+            fi
+
+            _fp_age=0
+            _fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
+            if [[ "$_fp_mtime" =~ ^[0-9]+$ ]] && [ "$_fp_mtime" -gt 0 ]; then
+                _fp_age=$((_now - _fp_mtime))
+            fi
+            if [ "$_fp_age" -ge "$BACKOFF_SEC" ]; then
+                touch "$FINGERPRINT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[BACKOFF] Stale unread for %ss >= %ss, re-notifying %s\n' "$_fp_age" "$BACKOFF_SEC" "$AGENT_ID" > "$atomic_result_file"
+                exit 0
+            fi
+
+            printf 'skip\t[FP-SAME] Same unread set (age %ss, retries exhausted), waiting for backoff for %s\n' "$_fp_age" "$AGENT_ID" > "$atomic_result_file"
+        ) 201>"$STATE_LOCK_FILE"; then
+            echo "[$(date)] WARNING: atomic wakeup state update failed for $AGENT_ID" >&2
+            return 1
+        fi
+        atomic_result="$(cat "$atomic_result_file" 2>/dev/null || true)"
+        rm -f "$atomic_result_file"
+        decision="${atomic_result%%$'\t'*}"
+        log_line="${atomic_result#*$'\t'}"
+        [ -n "$log_line" ] && echo "[$(date)] $log_line" >&2
+        [ "$decision" = "send" ] || return 0
+    else
+        if [ -f "$DEBOUNCE_FILE" ]; then
+            read -r last < "$DEBOUNCE_FILE" 2>/dev/null || last=""
+            if [[ "$last" =~ ^[0-9]+$ ]]; then
+                now="$(date +%s)"
+                elapsed=$((now - last))
+                if [ "$elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                    echo "[$(date)] [DEBOUNCE] Skipping nudge (${elapsed}s < ${DEBOUNCE_SEC}s) for $AGENT_ID" >&2
+                    return 0
+                fi
             fi
         fi
     fi
@@ -613,9 +687,12 @@ send_wakeup() {
     # Tier 2: paste-buffer nudge (replaces send-keys for content)
     echo "[$(date)] [NUDGE] Sending paste-buffer nudge to $AGENT_ID" >&2
 
-    # Optimistic lock: update debounce BEFORE send to prevent concurrent nudges
-    if ! refresh_debounce_file; then
-        echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
+    # Optimistic lock: update debounce BEFORE send to prevent concurrent nudges.
+    # Normal nudges already updated this in the atomic block above.
+    if [ -z "$current_fp" ] || [ "$current_fp" = "-" ]; then
+        if ! refresh_debounce_file; then
+            echo "[$(date)] WARNING: failed to update debounce file: $DEBOUNCE_FILE" >&2
+        fi
     fi
 
     # Send nudge via paste-buffer + Enter (atomic lock)
@@ -625,6 +702,20 @@ send_wakeup() {
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     if ! (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
+        if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
+            local safe_fp sent_token sent_mtime sent_elapsed
+            safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
+            sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
+            if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
+                sent_mtime=$(stat -c %Y "$sent_token" 2>/dev/null || echo 0)
+                sent_elapsed=$(( $(date +%s) - sent_mtime ))
+                if [ "$sent_elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                    echo "[$(date)] [SEND-DEDUPE] Skipping duplicate send for $AGENT_ID fingerprint $current_fp" >&2
+                    exit 0
+                fi
+                : > "$sent_token"
+            fi
+        fi
         # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)
         local in_mode
         in_mode=$(tmux display-message -t "$PANE_TARGET" -p '#{pane_in_mode}' 2>/dev/null || echo "0")
@@ -755,64 +846,18 @@ process_unread() {
 
     # Send wake-up nudge for normal messages (fingerprint dedup)
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
-        # Fingerprint already extracted from single python3 call above
-        local current_fp="$_current_fp"
-
-        local prev_fp=""
-        if [ -f "$FINGERPRINT_FILE" ]; then
-            read -r prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || prev_fp=""
-        fi
-
-        if [ "$current_fp" != "$prev_fp" ]; then
-            # Fingerprint changed → new unread messages arrived
-            echo "[$(date)] [FP-CHANGE] Unread set changed for $AGENT_ID ($normal_count unread), sending nudge" >&2
-            write_state_file "$FINGERPRINT_FILE" "$current_fp" "fingerprint" || true
-            write_state_file "$RETRY_COUNT_FILE" "0" "retry_count" || true
-            local wake_rc=0
-            send_wakeup "$normal_count" "$has_task_assigned" || wake_rc=$?
-            if [ "$wake_rc" -eq 2 ]; then
-                refresh_debounce_file || true
-                echo "[$(date)] [WAKE-DEFER] Deferred initial nudge for $AGENT_ID (busy gating)" >&2
-            fi
-        else
-            # FP-SAME: nudge was sent but agent hasn't read messages yet
-            # Improvement A: immediate retries before BACKOFF fallback
-            local retry_count=0
-            if [ -f "$RETRY_COUNT_FILE" ]; then
-                read -r retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || retry_count=0
-            fi
-
-            if [ "$retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
-                # Unacknowledged nudge → retry immediately (next cycle)
-                local wake_rc=0
-                send_wakeup "$normal_count" "$has_task_assigned" || wake_rc=$?
-                if [ "$wake_rc" -eq 2 ]; then
-                    refresh_debounce_file || true
-                    echo "[$(date)] [RETRY-DEFER] Busy gating deferred retry (${retry_count}/${RETRY_MAX}) for $AGENT_ID" >&2
-                else
-                    retry_count=$((retry_count + 1))
-                    write_state_file "$RETRY_COUNT_FILE" "$retry_count" "retry_count" || true
-                    echo "[$(date)] [RETRY] Nudge unacknowledged, retry ${retry_count}/${RETRY_MAX} for $AGENT_ID" >&2
-                fi
-            else
-                # Retries exhausted → fall back to BACKOFF_SEC interval
-                local fp_age
-                fp_age=$(get_fp_age)
-
-                if [ "$fp_age" -ge "$BACKOFF_SEC" ]; then
-                    echo "[$(date)] [BACKOFF] Stale unread for ${fp_age}s >= ${BACKOFF_SEC}s, re-notifying $AGENT_ID" >&2
-                    touch_state_file "$FINGERPRINT_FILE" "fingerprint" || true  # reset mtime for next backoff cycle
-                    send_wakeup "$normal_count" "$has_task_assigned"
-                else
-                    echo "[$(date)] [FP-SAME] Same unread set (age ${fp_age}s, retries exhausted), waiting for backoff for $AGENT_ID" >&2
-                fi
-            fi
+        local wake_rc=0
+        send_wakeup "$normal_count" "$has_task_assigned" "$_current_fp" || wake_rc=$?
+        if [ "$wake_rc" -eq 2 ]; then
+            echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
     else
         # No unread → clear fingerprint + retry counter
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
             rm -f "$RETRY_COUNT_FILE"
+            rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
+            rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
         clear_first_unread_seen
@@ -822,6 +867,14 @@ process_unread() {
 if [ "${INBOX_WATCHER_LIB_ONLY:-0}" = "1" ]; then
     # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
+fi
+
+# Agent-level singleton: two watchers for the same agent race on fingerprint and
+# debounce state, so the second process exits before observing inbox events.
+exec 209>"$SINGLETON_LOCK_FILE"
+if ! flock -n 209; then
+    echo "[$(date)] inbox_watcher already running for $AGENT_ID; exiting duplicate" >&2
+    exit 0
 fi
 
 # ─── Startup: ensure @agent_state is initialized (deadlock prevention) ───
