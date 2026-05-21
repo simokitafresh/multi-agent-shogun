@@ -132,11 +132,14 @@ append_causal_expansion() {
 
 llm_cache_key() {
     local llm_cmd="$1"
-    {
+    local _key
+    # awk '{print $1}' を bash parameter expansion に置換: subprocess 1個削減（L324原則）
+    _key=$({
         printf 'q=%s\n' "$query"
         printf 'cmd=%s\n' "$llm_cmd"
         cat "$index_path"
-    } | sha256sum | awk '{print $1}'
+    } | sha256sum)
+    printf '%s' "${_key%% *}"
 }
 
 llm_search() {
