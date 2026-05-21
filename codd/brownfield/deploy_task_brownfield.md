@@ -21,6 +21,14 @@ codd:
 - elicit_findings: 3
 - merged_findings: 3
 
+## Brownfield Source Context
+
+- Primary implementation: [[deploy_task.sh]].
+- Current maintained design: [[deploy_task_design.md]].
+- Acceptance coverage: [[acceptance_criteria.md]].
+
+The findings below are retained as the original CoDD run output, but they reflect an under-contexted elicitation session rather than the current repository state: the source script, maintained design, and acceptance criteria now exist in-repo and should be used as the starting context for the next brownfield pass.
+
 # Findings
 
 <!-- codd:finding
