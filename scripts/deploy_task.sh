@@ -3443,7 +3443,7 @@ def compute_useful_rates(script_dir):
     MIN_SAMPLES未満の教訓は除外対象外（サンプル不足でのペナルティ防止）。"""
     impact_path = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
     if not os.path.exists(impact_path):
-        return {}, {}
+        return {}, {}, {}
     feedback_counts = {}  # lesson_id -> [useful_count, total_feedback_count]
     try:
         with open(impact_path, 'r', encoding='utf-8', newline='') as f:
@@ -3462,7 +3462,7 @@ def compute_useful_rates(script_dir):
                 if result == 'USEFUL':
                     feedback_counts[lid][0] += 1
     except Exception:
-        return {}, {}
+        return {}, {}, {}
     # MIN_SAMPLES以上のfeedbackがある教訓のみscoreを返す
     useful_rates = {
         lid: vals[0] / vals[1] if vals[1] > 0 else 0.0

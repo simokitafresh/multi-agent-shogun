@@ -1122,6 +1122,160 @@ print(','.join(ids))
     [[ "$output" == *"L_BAD"* ]]
 }
 
+@test "deploy_task cross-project opt-in requires at least one project-specific matched keyword" {
+    mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
+projects:
+  - id: infra
+    type: platform
+  - id: dm-signal
+    type: product
+EOF
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_PROJECT/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_DM_GENERIC
+    title: deploy filter score rate feedback
+    summary: deploy filter score rate feedback
+    status: confirmed
+    helpful_count: 100
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "infra generic cross project"
+  command: "deploy filter score rate feedback"
+  task_id: cmd_cross_generic
+  assigned_to: sasuke
+  task_type: impl
+  project: infra
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+ids = [entry.get('id') for entry in (data.get('task') or {}).get('related_lessons') or []]
+assert 'L_DM_GENERIC' not in ids, ids
+print(','.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
+@test "deploy_task cross-project opt-in allows lessons with a project-specific matched keyword" {
+    mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
+projects:
+  - id: infra
+    type: platform
+  - id: dm-signal
+    type: product
+EOF
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_PROJECT/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_DM_SPECIFIC
+    title: shinshijin parity masking deploy
+    summary: shinshijin parity masking deploy
+    status: confirmed
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "infra specific cross project"
+  command: "shinshijin parity masking deploy"
+  task_id: cmd_cross_specific
+  assigned_to: sasuke
+  task_type: impl
+  project: infra
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+ids = [entry.get('id') for entry in (data.get('task') or {}).get('related_lessons') or []]
+assert 'L_DM_SPECIFIC' in ids, ids
+print(','.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
+@test "deploy_task auto-deprecates zero-useful cross-project lessons and excludes them" {
+    mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
+projects:
+  - id: infra
+    type: platform
+  - id: dm-signal
+    type: product
+EOF
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_PROJECT/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_DM_BAD
+    title: shinshijin parity masking deploy
+    summary: shinshijin parity masking deploy
+    status: confirmed
+    helpful_count: 100
+  - id: L_DM_GOOD
+    title: shinshijin parity masking fallback
+    summary: shinshijin parity masking fallback
+    status: confirmed
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-05-12T00:00:00	cmd_a	sasuke	L_DM_BAD	feedback	NOT_USEFUL	no	infra	impl	None
+2026-05-12T00:00:00	cmd_b	sasuke	L_DM_BAD	feedback	NOT_USEFUL	no	infra	impl	None
+2026-05-12T00:00:00	cmd_c	sasuke	L_DM_GOOD	feedback	USEFUL	yes	infra	impl	None
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "infra zero useful cross project"
+  command: "shinshijin parity masking deploy fallback"
+  task_id: cmd_cross_deprecated
+  assigned_to: sasuke
+  task_type: impl
+  project: infra
+  acceptance_criteria:
+    - AC1
+EOF
+
+    ZERO_USEFUL_DEPRECATE_MIN_SAMPLES=1 run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    task = (yaml.safe_load(f) or {}).get('task') or {}
+ids = [entry.get('id') for entry in task.get('related_lessons') or []]
+assert 'L_DM_BAD' not in ids, ids
+assert 'L_DM_GOOD' in ids, ids
+with open('$TEST_PROJECT/projects/dm-signal/lessons.yaml', encoding='utf-8') as f:
+    lessons = (yaml.safe_load(f) or {}).get('lessons') or []
+bad = next(item for item in lessons if item.get('id') == 'L_DM_BAD')
+assert bad.get('deprecated') is True, bad
+print(','.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task tag fallback injects all tag-matched lessons below MAX_INJECT=10" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
