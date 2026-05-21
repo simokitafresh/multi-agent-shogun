@@ -21,9 +21,9 @@ The script validates arguments and routing, computes the inbox path and lock pat
 
 ## Core Components
 
-- Agent validation helpers: `is_core_agent`, `known_agent_from_fs`, `sender_is_ninja_from_fs`, and config fallback loading.
+- Agent validation helpers: `is_core_agent`, `known_agent_from_fs`, `sender_is_ninja_from_fs`, and config fallback loading. — [[inbox_write.sh]] L51
 - YAML helpers: `inbox_yaml_field_get`, `inbox_yaml_emit_field`, `inbox_collect_records`, `inbox_write_records`, and `inbox_replace_file_with_retry`.
-- Duplicate deployment gate: `find_active_peer_deployments` and `notify_karo_duplicate_deploy_block`.
+- Duplicate deployment gate: `find_active_peer_deployments` and `notify_karo_duplicate_deploy_block`. — [[inbox_write.sh]] L164
 - Lesson safety net: task assignment path checks and injects universal lessons if missing.
 - Report path extraction and template detection: locate relevant report YAMLs and guard report notification quality.
 - Delivery helpers: pane resolution, tmux timeout wrapper, Codex-specific task nudge, and delivery verification.
