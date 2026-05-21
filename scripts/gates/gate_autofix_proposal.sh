@@ -10,7 +10,7 @@ LOG_FILE="$REPO_ROOT/logs/gate_metrics.log"
 INSIGHT_SCRIPT="$REPO_ROOT/scripts/insight_write.sh"
 WINDOW="${GATE_AUTOFIX_WINDOW:-50}"
 MIN_COUNT="${GATE_AUTOFIX_MIN_COUNT:-3}"
-CACHE_TTL="${GATE_AUTOFIX_CACHE_TTL:-2}"
+CACHE_TTL="${GATE_AUTOFIX_CACHE_TTL:-30}"
 
 if [[ ! -f "$LOG_FILE" ]]; then
     echo "SKIP: gate_metrics.log not found"

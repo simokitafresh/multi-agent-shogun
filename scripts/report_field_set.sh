@@ -375,6 +375,20 @@ data = yaml.safe_load(sys.stdin.read())
 if not isinstance(data, dict):
     print(f'BLOCK: lesson_candidate はdict形式必須。受信: {type(data).__name__}', file=sys.stderr)
     sys.exit(1)
+found = data.get('found')
+found_s = str(found).strip().lower()
+if found_s == 'true':
+    missing = [field for field in ('title', 'detail', 'project') if not str(data.get(field, '')).strip()]
+    if missing:
+        print(f'BLOCK: lesson_candidate.found=true だが必須フィールド欠落: {\", \".join(missing)}', file=sys.stderr)
+        print(\"  Correct: {found: true, title: '...', detail: '...', project: infra}\", file=sys.stderr)
+        sys.exit(1)
+elif found_s == 'false':
+    reason = str(data.get('no_lesson_reason', '')).strip()
+    if not reason or reason == 'FILL_THIS':
+        print('BLOCK: lesson_candidate.found=false だが no_lesson_reason が空またはplaceholder', file=sys.stderr)
+        print(\"  Correct: {found: false, no_lesson_reason: '既知教訓で被覆済み'}\", file=sys.stderr)
+        sys.exit(1)
 " <<< "$val" || return 1
             fi
             ;;
