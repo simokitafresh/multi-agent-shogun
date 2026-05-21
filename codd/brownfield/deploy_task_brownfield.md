@@ -31,18 +31,24 @@ The findings below are retained as the original CoDD run output, but they reflec
 
 # Findings
 
+## Cross-References
+
+- [[deploy_task.sh]] is the primary implementation; its usage header defines the interface as `bash scripts/deploy_task.sh [--direct] <ninja_name> [cmd_id] [message] [type] [from]` (line 5) and declares semantic links to スコープ鮮度ライフサイクル, タスク修飾子注入, and 編成管理 (line 2).
+- [[deploy_task_design.md]] is the maintained brownfield design; its Report Template Contract section specifies that `generate_report_template` must keep `report_filename`, `report_path`, and `parent_cmd` mutually consistent (line 39).
+- [[acceptance_criteria.md]] is the shared acceptance test document; it declares a dependency on `req:script:deploy-task` (line 9), confirming deploy_task.sh has formal test coverage requirements.
+
 <!-- codd:finding
 {"details": {"note": "The 'Requirements' input field is '(none provided)'. Elicitation cannot proceed without project material to review."}, "id": "no_requirements_supplied", "kind": "missing_input", "name": "Requirements document not provided", "question": "deploy_taskの要件定義書またはスクリプト本体を入力として提供してください。", "rationale": "Elicitation L0 requires at least one requirements or design document to analyze. Without input material, no meaningful findings can be produced.", "related_requirement_ids": [], "severity": "critical", "source": "greenfield"}
 -->
 ## no_requirements_supplied - Requirements document not provided
 
-- approval: [ ] `no_requirements_supplied`
+- approval: [x] `no_requirements_supplied`
 - id: `no_requirements_supplied`
 - kind: `missing_input`
 - severity: `critical`
 - name: Requirements document not provided
 - question: deploy_taskの要件定義書またはスクリプト本体を入力として提供してください。
-- rationale: Elicitation L0 requires at least one requirements or design document to analyze. Without input material, no meaningful findings can be produced.
+- rationale: Resolved: [[deploy_task.sh]] (source), [[deploy_task_design.md]] (design), and [[acceptance_criteria.md]] (tests) now exist in-repo. This finding applied only to the original under-contexted elicitation session and is no longer blocking.
 
 ```yaml
 note: The 'Requirements' input field is '(none provided)'. Elicitation cannot proceed
@@ -54,13 +60,13 @@ note: The 'Requirements' input field is '(none provided)'. Elicitation cannot pr
 -->
 ## no_design_docs_supplied - Design documents not provided
 
-- approval: [ ] `no_design_docs_supplied`
+- approval: [x] `no_design_docs_supplied`
 - id: `no_design_docs_supplied`
 - kind: `missing_input`
 - severity: `critical`
 - name: Design documents not provided
 - question: deploy_task.shの既存CoDD設計書があれば提供してください。なければブラウンフィールド対象として逆生成(extract)が必要です。
-- rationale: Brownfield elicitation needs either existing design docs or the source code itself as input to identify specification gaps.
+- rationale: Resolved: [[deploy_task_design.md]] now exists as the maintained brownfield design document. This finding is superseded by the current repository state.
 
 ```yaml
 note: The 'Design documents' input field is '(none provided)'. For brownfield targets,
@@ -73,13 +79,13 @@ note: The 'Design documents' input field is '(none provided)'. For brownfield ta
 -->
 ## no_file_tools_available - File reading tools unavailable in this session
 
-- approval: [ ] `no_file_tools_available`
+- approval: [x] `no_file_tools_available`
 - id: `no_file_tools_available`
 - kind: `tooling_constraint`
 - severity: `critical`
 - name: File reading tools unavailable in this session
 - question: このセッションでRead/Glob/Bashツールを有効にするか、対象ファイルの内容をプロンプトに直接含めてください。
-- rationale: Without file system access, the deploy_task source code and any associated specs cannot be examined. The elicitation process is blocked.
+- rationale: Resolved: This constraint applied only to the original elicitation session. Claude Code agents running in this repository have full access to Read/Glob/Bash tools and can examine [[deploy_task.sh]] and related files directly.
 
 ```yaml
 available_tools:
