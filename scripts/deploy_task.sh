@@ -1316,13 +1316,18 @@ ac_lines = [
     "      description: \"lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる\"",
     "      binary_checks:",
     "        - \"lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no\"",
-    "        - \"AC1/AC2/AC3/AC4のbinary_checksを全てyes/noで記入したか: yes/no\"",
+    "        - \"AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no\"",
     "        - \"verdictがbinary_checksと矛盾していないか: yes/no\"",
     "    AC4:",
     "      description: \"注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する\"",
     "      binary_checks:",
     "        - \"task.related_lessonsの注入教訓を1件以上参照したか: yes/no\"",
     "        - \"参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no\"",
+    "    AC5:",
+    "      description: \"対象スクリプトの機能用途を[[概念名]] alias: 候補1, 候補2形式で1件以上提案し、insight_writeで蓄積する\"",
+    "      binary_checks:",
+    "        - \"[[概念名]] alias: 候補 形式のaliases候補を1件以上報告したか: yes/no\"",
+    "        - \"bash scripts/insight_write.shで蓄積し、grep -c pending queue/insights.yamlで増加を確認したか: yes/no\"",
 ]
 
 with open(task_file, encoding="utf-8") as f:
