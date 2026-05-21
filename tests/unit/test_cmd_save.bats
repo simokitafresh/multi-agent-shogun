@@ -2443,6 +2443,26 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
+@test "Check20.15b: bulletin由来の件数claimにblt_ID参照あり→WARNINGなし" {
+    CMD_BLOCK='project: infra
+purpose: "掲示板報告をもとにcmdを起票する"
+description: AC1
+description: AC2
+description: AC3
+assumptions:
+  - claim: "2026-05-15時点でblt_target_20260515の掲示板報告由来の未処理が4件ある"
+    source: "queue/bulletin_board.yaml"
+    trust: "verified"'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_LOADED=1
+    export CMD_BLOCK CMD_BLOCK_NC PROJECT_DIR="$PROJECT_ROOT"
+    run check_20_assumptions
+    echo "$output" >&2
+    [[ "$output" != *"bulletin由来の件数claimを検出しました"* ]]
+    [ "$status" -eq 0 ]
+}
+
 @test "Check20.16: bulletin由来でない件数claim→WARNINGなし" {
     CMD_BLOCK='purpose: "通常ログの件数を確認する"
 description: AC1

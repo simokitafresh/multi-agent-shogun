@@ -869,7 +869,7 @@ if current:
 bulletin_pat = re.compile(r'(掲示板|bulletin|blt_[0-9A-Za-z_]+)', re.I)
 count_pat = re.compile(r'\d+\s*(?:件|entries?|items?|records?)', re.I)
 grep_evidence_pat = re.compile(
-    r'\b(?:grep|rg)\b[\s\S]*(?:[0-9]+\s*件|[0-9]+\s*hits?|0\s*matches?|no\s+matches?|ヒットなし|該当なし)',
+    r'(?:\b(?:grep|rg)\b[\s\S]*(?:[0-9]+\s*件|[0-9]+\s*hits?|0\s*matches?|no\s+matches?|ヒットなし|該当なし)|blt_[0-9A-Za-z_]+)',
     re.I,
 )
 
