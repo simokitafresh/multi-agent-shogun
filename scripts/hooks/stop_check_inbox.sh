@@ -155,12 +155,19 @@ else:
 print(json.dumps({"decision": "block", "reason": reason_text}, ensure_ascii=False))
 PY
 else
-  # 全ロール共通: inbox未読0でも掲示板action_required未対処があれば表示
+  # 全ロール共通: inbox未読0でも掲示板action_required未対処/insights pendingがあれば表示
   _bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
   if [[ -f "$_bulletin_file" ]]; then
     _ar_count=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{count++; ar=0} {if(/^- id:/){ar=0}} END{print count+0}' "$_bulletin_file" 2>/dev/null)
     if [[ "$_ar_count" -gt 0 ]]; then
       echo "⚠ 掲示板action_required未対処${_ar_count}件。対処してactioned_byを埋めよ" >&2
+    fi
+  fi
+  _insights_file="$SCRIPT_DIR/queue/insights.yaml"
+  if [[ -f "$_insights_file" ]]; then
+    _ins_pending=$(grep -cE 'status:.*pending' "$_insights_file" 2>/dev/null || echo 0)
+    if [[ "$_ins_pending" -gt 3 ]]; then
+      echo "⚠ insights pending ${_ins_pending}件（idle時に確認推奨）" >&2
     fi
   fi
   # 家老向け: inbox未読0でもpending workがあれば次アクションを表示(Codex STALL防止)
