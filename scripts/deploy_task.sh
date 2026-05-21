@@ -1354,10 +1354,11 @@ ac_lines = [
     "        - \"改善点を3つ特定したか: yes/no\"",
     "        - \"各改善点に対象ファイル・根拠を添えたか: yes/no\"",
     "    AC2:",
-    "      description: \"改善点のうち最高インパクト1件を実装し、対象Markdownへ既存概念または関連ファイルの[[リンク]]を1件以上追加し、必要な検証を実行する\"",
+    "      description: \"改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する\"",
     "      binary_checks:",
     "        - \"最高インパクト1件を実装したか: yes/no\"",
-    "        - \"対象Markdownへ[[リンク]]を1件以上追加したか: yes/no\"",
+    "        - \"対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no\"",
+    "        - \"追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no\"",
     "        - \"関連テストまたは明示的な検証を実行したか: yes/no\"",
     "    AC3:",
     "      description: \"lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる\"",
@@ -1371,10 +1372,10 @@ ac_lines = [
     "        - \"task.related_lessonsの注入教訓を1件以上参照したか: yes/no\"",
     "        - \"参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no\"",
     "    AC5:",
-    "      description: \"対象ファイルの現在リンク数baselineと変更後リンク数を計測し、[[リンク]]数増加を報告する\"",
+    "      description: \"対象ファイルの現在のファイル間直接[[ファイル名]]リンク数baselineと変更後リンク数を計測し、直接リンク数増加を報告する\"",
     "      binary_checks:",
     "        - \"bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no\"",
-    "        - \"git diffで対象Markdownの[[リンク]]数増加を確認したか: yes/no\"",
+    "        - \"git diffで対象Markdownのファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no\"",
 ]
 
 with open(task_file, encoding="utf-8") as f:

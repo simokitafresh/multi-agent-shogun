@@ -395,11 +395,16 @@ assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"]
 assert "指定ファイル" in acs["AC1"]["description"]
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
-assert "[[リンク]]" in acs["AC2"]["description"]
+assert "直接[[ファイル名]]リンク" in acs["AC2"]["description"]
+assert "既存概念" not in acs["AC2"]["description"]
+ac2_checks = "\n".join(acs["AC2"]["binary_checks"])
+assert "直接[[ファイル名]]リンク" in ac2_checks
+assert "リンク先ファイルから特定行を引用" in ac2_checks
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "lessons_useful" in acs["AC4"]["description"]
-assert "リンク数" in acs["AC5"]["description"]
+assert "ファイル間直接[[ファイル名]]リンク数baseline" in acs["AC5"]["description"]
+assert "ファイル間直接[[ファイル名]]リンク数増加" in "\n".join(acs["AC5"]["binary_checks"])
 for ac_id in ("AC1", "AC2", "AC3", "AC4", "AC5"):
     assert acs[ac_id]["binary_checks"], ac_id
 PY
@@ -433,10 +438,12 @@ acs = task["acceptance_criteria"]
 assert list(acs.keys()) == ["AC1", "AC2", "AC3", "AC4", "AC5"], f"ACs not overwritten to 5-AC template: {list(acs.keys())}"
 assert "改善点を3つ" in acs["AC1"]["description"]
 assert "最高インパクト1件" in acs["AC2"]["description"]
-assert "[[リンク]]" in acs["AC2"]["description"]
+assert "直接[[ファイル名]]リンク" in acs["AC2"]["description"]
+assert "既存概念" not in acs["AC2"]["description"]
+assert "リンク先ファイルから特定行を引用" in "\n".join(acs["AC2"]["binary_checks"])
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
-assert "リンク数" in acs["AC5"]["description"]
+assert "ファイル間直接[[ファイル名]]リンク数baseline" in acs["AC5"]["description"]
 PY
 }
 
