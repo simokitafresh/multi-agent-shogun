@@ -311,6 +311,31 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "cmd_delegate: inbox_write失敗後の再実行で家老通知を再送する" {
+    create_shogun_yaml_with_pending
+
+    cp "${TEST_TMP}/scripts/inbox_write_fail.sh" "${TEST_TMP}/scripts/inbox_write.sh"
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "初回通知失敗"
+    [ "$status" -eq 1 ]
+
+    cat > "${TEST_TMP}/scripts/inbox_write.sh" << 'MOCK'
+#!/bin/bash
+echo "INBOX_CALLED: $*" >> "${TEST_TMP}/inbox_calls.log"
+exit 0
+MOCK
+    chmod +x "${TEST_TMP}/scripts/inbox_write.sh"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notification retried"* ]]
+
+    run cat "${TEST_TMP}/inbox_calls.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_new"* ]]
+    [[ "$output" == *"shogun"* ]]
+}
+
 @test "cmd_delegate: cmd_save.sh BLOCK時は委任中止" {
     create_shogun_yaml_with_pending
 

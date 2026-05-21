@@ -171,16 +171,28 @@ status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/nu
     exit 1
 }
 
-if [ "$status" != "pending" ]; then
-    echo "ERROR: cmd_id '$CMD_ID' status is '$status', expected 'pending'" >&2
+existing_delegated=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" 2>/dev/null) || true
+if [ -n "$existing_delegated" ]; then
+    if [ "$status" = "delegated" ]; then
+        if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; then
+            echo "ALREADY_DELEGATED: $CMD_ID at $existing_delegated"
+            exit 0
+        fi
+        echo "WARN: $CMD_ID is status=delegated but no cmd_new found in karo inbox. Retrying notification." >&2
+        bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+            echo "ERROR: inbox_write.sh failed for $CMD_ID — status=delegatedは維持(手動inbox_writeで再送可)" >&2
+            exit 1
+        }
+        echo "DELEGATED: $CMD_ID at $existing_delegated (notification retried)"
+        exit 0
+    fi
+    echo "ERROR: $CMD_ID has delegated_at=$existing_delegated but status=$status (expected delegated). Refusing to treat inconsistent state as delegated." >&2
     exit 1
 fi
 
-# Step 2: delegated_at が既にあれば冪等に終了
-existing_delegated=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" 2>/dev/null) || true
-if [ -n "$existing_delegated" ]; then
-    echo "ALREADY_DELEGATED: $CMD_ID at $existing_delegated"
-    exit 0
+if [ "$status" != "pending" ]; then
+    echo "ERROR: cmd_id '$CMD_ID' status is '$status', expected 'pending'" >&2
+    exit 1
 fi
 
 # Step 3: 初回委任前に cmd_save.sh を強制実行
