@@ -606,7 +606,7 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
-@test "bulletin action_required without actioned_by → 総合判定: ALERT" {
+@test "bulletin action_required without actioned_by → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries:
 - id: 'blt_action_required'
@@ -627,7 +627,7 @@ EOF
     [[ "$output" == *"掲示板action_required未対応"* ]]
     [[ "$output" == *"ALERT: 未対応action_required掲示板 1件"* ]]
     [[ "$output" == *"blt_action_required by karo"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "bulletin action_required with actioned_by is not alerted" {
