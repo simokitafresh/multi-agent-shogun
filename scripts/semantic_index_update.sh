@@ -197,6 +197,42 @@ def is_noise_only_candidate(payload_id, fields):
     tokens = [t for t in re.split(r"\s+", combined) if t and not generic_token(t)]
     return not tokens
 
+OPERATIONAL_NOISE_RE = re.compile(
+    r"(?ix)"
+    r"^【[^】]+】"
+    r"|(?:\b|_)(?:alert|warning|info)(?:\b|_)"
+    r"|\bci\s*(?:red|green)\b"
+    r"|\bci緑\b"
+    r"|\bgate\s*(?:clear|pass|warn|block)?\b"
+    r"|\brun\s+\d+\b"
+    r"|\bpane_cmd\b"
+    r"|\binbox\d*\b"
+    r"|復帰"
+    r"|ダミー"
+    r"|起動alert"
+    r"|三層ループalert"
+    r"|context鮮度alert"
+    r"|cli再起動"
+    r"|infoバッチ"
+    r"|共有して"
+    r"|サボり"
+)
+
+STRUCTURAL_METADATA_RE = re.compile(
+    r"(?ix)"
+    r"^(?:title|type|node\s*id)\b"
+    r"|^modules$"
+)
+
+def is_operational_noise_target(target):
+    target_s = str(target).strip()
+    target_n = norm(target_s)
+    return bool(
+        OPERATIONAL_NOISE_RE.search(target_s)
+        or OPERATIONAL_NOISE_RE.search(target_n)
+        or STRUCTURAL_METADATA_RE.search(target_n)
+    )
+
 def parse_concepts(text):
     matches = list(re.finditer(r"(?m)^##\s+(.+)$", text))
     concepts = []
@@ -238,6 +274,15 @@ def concept_terms(concepts):
             if value_n:
                 terms.add(value_n)
     return terms
+
+def concept_name_map(concepts):
+    names = {}
+    for concept in concepts:
+        for value in [concept["id"], concept["label"], *concept["aliases"]]:
+            value_n = norm(value)
+            if value_n and value_n not in names:
+                names[value_n] = concept
+    return names
 
 def similarity_tokens(value):
     cleaned = strip_noise(value)
@@ -338,6 +383,8 @@ def is_semantic_wiki_target(target):
     if re.fullmatch(r"l\d+[a-z0-9_-]*", target_n):
         return False
     if re.fullmatch(r"ls[-_]?\d+[a-z0-9_-]*", target_n):
+        return False
+    if is_operational_noise_target(target):
         return False
     return bool(strip_noise(target))
 
@@ -608,6 +655,27 @@ def parse_pending_semantic_insights(path):
         if not insight_id or not insight:
             continue
 
+        for raw_target, raw_aliases in re.findall(
+            r"\[\[([^\]]+)\]\]\s*aliases?\s*[:：]\s*([^\n]+)",
+            insight,
+            flags=re.I,
+        ):
+            target = raw_target.split("|", 1)[0].split("#", 1)[0].strip()
+            aliases = []
+            for alias in re.split(r"[,、，]", raw_aliases):
+                alias = alias.strip(" \t;；。")
+                if alias:
+                    aliases.append(alias)
+            if target and aliases:
+                pending.append(
+                    {
+                        "id": insight_id,
+                        "direct_concept": target,
+                        "aliases": aliases,
+                        "insight": insight,
+                    }
+                )
+
         candidates = []
         for raw in re.findall(r"\[\[([^\]]+)\]\]", insight):
             target = raw.split("|", 1)[0].split("#", 1)[0].strip()
@@ -620,13 +688,17 @@ def parse_pending_semantic_insights(path):
                 candidates.append(label)
 
         seen = set()
+        semantic_count = 0
         for candidate in candidates:
             candidate_n = norm(candidate)
             if not candidate_n or candidate_n in seen:
                 continue
             seen.add(candidate_n)
             if is_semantic_wiki_target(candidate):
+                semantic_count += 1
                 pending.append({"id": insight_id, "alias": candidate, "insight": insight})
+        if candidates and semantic_count == 0:
+            pending.append({"id": insight_id, "alias": "", "insight": insight, "noise": True})
     return pending
 
 def resolve_semantic_insight(insight_id):
@@ -654,7 +726,39 @@ def absorb_pending_semantic_insights(text, concepts):
     messages = []
 
     known = concept_terms(concepts)
+    names = concept_name_map(concepts)
     for item in parse_pending_semantic_insights(insights_path):
+        if item.get("noise"):
+            resolved_ids.add(item["id"])
+            messages.append(f"PENDING_ALIAS: resolved noise {item['id']}")
+            continue
+        if item.get("direct_concept"):
+            target = item["direct_concept"]
+            concept = names.get(norm(target))
+            if not concept:
+                messages.append(f"PENDING_ALIAS_DIRECT: no concept match for {target}")
+                continue
+            added = []
+            for alias in item.get("aliases") or []:
+                alias = str(alias).strip()
+                alias_n = norm(alias)
+                if not alias_n or alias_n in known:
+                    continue
+                if is_operational_noise_target(alias) or not strip_noise(alias):
+                    continue
+                additions.setdefault(concept["id"], [])
+                if alias_n not in {norm(v) for v in additions[concept["id"]]}:
+                    additions[concept["id"]].append(alias)
+                    known.add(alias_n)
+                    added.append(alias)
+            if added:
+                messages.append(
+                    f"PENDING_ALIAS_DIRECT: {target} -> {concept['id']} aliases_added={', '.join(added)}"
+                )
+            else:
+                messages.append(f"PENDING_ALIAS_DIRECT: {target} -> {concept['id']} aliases_added=none")
+            resolved_ids.add(item["id"])
+            continue
         alias = item["alias"]
         alias_n = norm(alias)
         if alias_n in known:

@@ -99,3 +99,38 @@ EOF
     [[ "$output" == *"before_after: hit_rate_delta=20.0 no_match_delta=-1 total_delta=0"* ]]
     [ ! -f "$TEST_TMPDIR/queue/insights.yaml" ]
 }
+
+@test "candidate aliases: operational noise is excluded and semantic candidates pass" {
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"【INFOバッチ】 2026-05-21 04:14:16|CI緑: run 26183925378"}
+{"content":"【家老】復帰済み。全忍者idle。cmd待ち。"}
+{"content":"意味検索改善"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds:
+- id: cmd_noise
+  purpose: 速度計測テスト用のダミーcmd
+EOF
+    cat > "$TEST_TMPDIR/file_queries.txt" <<'EOF'
+title: セマンティクスマップ
+modules
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source all \
+        --file "$TEST_TMPDIR/file_queries.txt" \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/noise-baseline.json" \
+        --log "$TEST_TMPDIR/logs/noise-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidate_aliases=1"* ]]
+    [[ "$output" == *"意味検索改善 (lord)"* ]]
+    grep -q '\[\[意味検索改善\]\]' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'INFOバッチ' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q '復帰済み' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'ダミーcmd' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'title: セマンティクスマップ' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'modules' "$TEST_TMPDIR/queue/insights.yaml"
+}

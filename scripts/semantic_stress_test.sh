@@ -267,6 +267,50 @@ def alias_candidate(query):
             return part[:60]
     return ""
 
+OPERATIONAL_NOISE_RE = re.compile(
+    r"(?ix)"
+    r"^【[^】]+】"
+    r"|(?:\b|_)(?:alert|warning|info)(?:\b|_)"
+    r"|\bci\s*(?:red|green)\b"
+    r"|\bci緑\b"
+    r"|\bgate\s*(?:clear|pass|warn|block)?\b"
+    r"|\brun\s+\d+\b"
+    r"|\bpane_cmd\b"
+    r"|\binbox\d*\b"
+    r"|復帰"
+    r"|ダミー"
+    r"|起動alert"
+    r"|三層ループalert"
+    r"|context鮮度alert"
+    r"|cli再起動"
+    r"|infoバッチ"
+    r"|共有して"
+    r"|サボり"
+)
+
+STRUCTURAL_METADATA_RE = re.compile(
+    r"(?ix)"
+    r"^(?:title|type|node\s*id)\b"
+    r"|^modules$"
+)
+
+def is_semantic_wiki_target(target):
+    target_s = str(target).strip()
+    target_n = re.sub(r"\s+", " ", target_s.casefold()).strip()
+    if not target_n:
+        return False
+    if re.fullmatch(r"cmd_[a-z0-9_]+", target_n):
+        return False
+    if re.fullmatch(r"l\d+[a-z0-9_-]*", target_n):
+        return False
+    if re.fullmatch(r"ls[-_]?\d+[a-z0-9_-]*", target_n):
+        return False
+    if OPERATIONAL_NOISE_RE.search(target_s) or OPERATIONAL_NOISE_RE.search(target_n):
+        return False
+    if STRUCTURAL_METADATA_RE.search(target_n):
+        return False
+    return bool(target_n)
+
 sources = {}
 total = len(rows)
 hits = sum(1 for row in rows if row["status"] == "hit")
@@ -288,7 +332,7 @@ seen = set()
 for row in no_matches:
     alias = alias_candidate(row["query"])
     key = alias.casefold()
-    if alias and key not in seen:
+    if alias and is_semantic_wiki_target(alias) and key not in seen:
         seen.add(key)
         candidates.append({"alias": alias, "source": row["source"], "query": row["query"]})
 

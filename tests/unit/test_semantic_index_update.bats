@@ -207,6 +207,47 @@ assert rows["INS-DISTANT"]["status"] == "pending"
 PY
 }
 
+@test "pending semantic insights: operational noise is resolved without alias promotion" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-INFO
+  ts: "2026-05-21T00:00:00+09:00"
+  insight: "[[【INFOバッチ】 04 14 16 CI緑 run 26183925378]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=【INFOバッチ】 2026-05-21 04:14:16|CI緑: run 26183925378"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+- id: INS-RETURN
+  ts: "2026-05-21T00:00:01+09:00"
+  insight: "[[【家老】復帰済み]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=【家老】復帰済み。全忍者idle。cmd待ち。"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+- id: INS-SEMANTIC
+  ts: "2026-05-21T00:00:02+09:00"
+  insight: "[[意味検索改善]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=意味検索改善"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2934","title":"セマンティクスインデックス","purpose":"pending alias吸収","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_SCORE: 意味検索改善 -> semantic_dictionary_design"* ]]
+    [[ "$output" != *"PENDING_ALIAS_SCORE: 【INFOバッチ】"* ]]
+    [[ "$output" != *"PENDING_ALIAS_SCORE: 【家老】復帰済み"* ]]
+
+    grep -q '| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 意味検索改善 |' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-INFO"]["status"] == "done"
+assert rows["INS-RETURN"]["status"] == "done"
+assert rows["INS-SEMANTIC"]["status"] == "done"
+PY
+}
+
 @test "NO_MATCH purpose: cmd_complete queues pending aliases and L7f absorbs similar aliases" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     export INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH"
