@@ -1,4 +1,3 @@
-```markdown
 ---
 id: L1_data_models
 layer: L1
@@ -110,4 +109,4 @@ artifact_count: 384
 - [[L6_tests]] — L6: Tests (layer: L6)
 - [[inbox_write.sh]] — 1.2 インボックスメッセージの書き込み実装。`queue/inbox/{agent}.yaml` への原子書き込みを担当
 - [[deploy_task.sh]] — 1.3/1.4 レポートテンプレートの生成実装。`generate_report_template` で `queue/reports/` に出力
-```
+- [[dashboard_auto_section_design]] — 1.8 `dashboard.md` AUTO域の自動生成設計。"Outputs: `dashboard.md` auto section (between markers), ntfy notification (on CLEAR increase)" (dashboard_auto_section_design.md line 42)
