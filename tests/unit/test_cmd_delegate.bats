@@ -112,6 +112,21 @@ commands:
 YAML
 }
 
+create_shogun_yaml_with_status_delegated() {
+    cat > "${TEST_TMP}/queue/shogun_to_karo.yaml" << 'YAML'
+commands:
+  - id: cmd_100
+    timestamp: "2026-03-04T10:00:00"
+    title: "Test command"
+    project: infra
+    type: implement
+    priority: high
+    status: delegated
+    delegated_at: "2026-03-04T10:05:00"
+    purpose: "Test purpose"
+YAML
+}
+
 create_shogun_yaml_with_done() {
     cat > "${TEST_TMP}/queue/shogun_to_karo.yaml" << 'YAML'
 commands:
@@ -227,7 +242,15 @@ YAML
 }
 
 @test "cmd_delegate: 冪等性 — 二重実行でALREADY_DELEGATED" {
-    create_shogun_yaml_with_delegated
+    create_shogun_yaml_with_status_delegated
+    cat > "${TEST_TMP}/queue/inbox/karo.yaml" << 'YAML'
+messages:
+  - id: cmd_msg
+    content: "cmd_100を書いた。配備せよ。"
+    type: cmd_new
+    from: shogun
+    read: false
+YAML
 
     run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
     echo "output: $output"
@@ -235,6 +258,18 @@ YAML
     [[ "$output" == *"ALREADY_DELEGATED: cmd_100 at 2026-03-04T10:05:00"* ]]
 
     # inbox_write は呼ばれないことを確認
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
+}
+
+@test "cmd_delegate: 不整合 — pending+delegated_atをALREADY_DELEGATED扱いしない" {
+    create_shogun_yaml_with_delegated
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"has delegated_at=2026-03-04T10:05:00 but status=pending"* ]]
+
     [ ! -f "${TEST_TMP}/inbox_calls.log" ]
     [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
 }
@@ -334,6 +369,33 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"cmd_new"* ]]
     [[ "$output" == *"shogun"* ]]
+}
+
+@test "cmd_delegate: delegated_at書込失敗時はstatusをpendingへ戻す" {
+    create_shogun_yaml_with_pending
+
+    sed -i '0,/^yaml_field_set()/s/^yaml_field_set()/yaml_field_set_real()/' "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
+    cat >> "${TEST_TMP}/scripts/lib/yaml_field_set.sh" << 'MOCK'
+yaml_field_set() {
+    if [ "${3:-}" = "delegated_at" ]; then
+        echo "mock delegated_at write failure" >&2
+        return 1
+    fi
+    yaml_field_set_real "$@"
+}
+MOCK
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Failed to set delegated_at"* ]]
+    [[ "$output" == *"ROLLBACK: status restored to pending"* ]]
+
+    run grep "status: pending" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+    run grep "delegated_at" "${TEST_TMP}/queue/shogun_to_karo.yaml"
+    [ "$status" -ne 0 ]
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
 }
 
 @test "cmd_delegate: cmd_save.sh BLOCK時は委任中止" {

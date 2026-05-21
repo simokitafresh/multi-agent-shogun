@@ -255,6 +255,11 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
 }
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
     echo "ERROR: Failed to set delegated_at for $CMD_ID" >&2
+    if yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "pending"; then
+        echo "ROLLBACK: status restored to pending for $CMD_ID" >&2
+    else
+        echo "ERROR: rollback failed for $CMD_ID — status may be delegated without delegated_at" >&2
+    fi
     exit 1
 }
 
