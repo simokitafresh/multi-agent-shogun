@@ -1404,6 +1404,42 @@ TRAINING_TEMPLATE_PY
     log "direct_mode: training L4 template injected for ${cmd_id}"
 }
 
+inject_training_target_path_from_alias_quality() {
+    local task_file="$1"
+    local cmd_id="$2"
+
+    if [[ ! "$cmd_id" =~ ^cmd_training_ ]]; then
+        return 0
+    fi
+    if [ ! -f "$task_file" ]; then
+        log "inject_training_target_path_from_alias_quality: task file not found: $task_file"
+        return 1
+    fi
+
+    local current_target
+    current_target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
+    if [ -n "$current_target" ]; then
+        return 0
+    fi
+
+    local selector="$SCRIPT_DIR/scripts/semantic_alias_quality.sh"
+    if [ ! -f "$selector" ]; then
+        log "WARN: semantic_alias_quality selector missing; training target_path left empty"
+        return 0
+    fi
+
+    local selected_target
+    selected_target=$(bash "$selector" --select-file 2>/dev/null | head -1 || true)
+    if [ -z "$selected_target" ]; then
+        log "WARN: semantic_alias_quality produced no script target; training target_path left empty"
+        return 0
+    fi
+
+    yaml_field_set "$task_file" "task" "target_path" "$selected_target" \
+        || { log "FATAL: failed to set training target_path=${selected_target}"; return 1; }
+    log "training_target_path: aliases thin concept selected target_path=${selected_target}"
+}
+
 inject_ac_version() {
     local task_file="$1"
     if [ ! -f "$task_file" ]; then
@@ -6802,6 +6838,7 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
+            inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
             inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
             elif [ -n "$CMD_FORCED" ]; then
@@ -6823,6 +6860,7 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "_ac_worker_id" "" \
                 || { log "FATAL: yaml_field_set failed for _ac_worker_id (cmd_forced)"; return 1; }
             _overwrite_ac_from_cmd "$task_yaml" || true
+            inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_FORCED" || true
             log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
             elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
                 log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
