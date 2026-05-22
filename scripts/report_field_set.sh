@@ -1558,3 +1558,34 @@ for issue in issues:
         echo "★ verdict自動導出: bc:no検出+verdict空→FAIL自動設定" >&2
     fi
 fi
+
+# --- 記憶DB: report event INSERT (非破壊的) ---
+# フィールド書込み成功後にeventsテーブルへevent_type=reportでINSERT。
+# INSERT失敗時も報告YAML書込みは成功扱い(AC2: 非破壊的追加)
+_MEMORY_DB_INSERT_SCRIPT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+if [ -f "$_MEMORY_DB_INSERT_SCRIPT" ] && [ -f "$REPORT_PATH" ]; then
+    _rfs_ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    _rfs_agent=""
+    _rfs_parent_cmd=""
+    _rfs_verdict=""
+    if _rfs_yaml_out="$(python3 -c "
+import yaml,sys
+d=yaml.safe_load(open(sys.argv[1])) or {}
+print(d.get('worker_id',''))
+print(d.get('parent_cmd',''))
+print(d.get('verdict',''))
+" "$REPORT_PATH" 2>/dev/null)"; then
+        _rfs_agent="$(echo "$_rfs_yaml_out" | sed -n '1p')"
+        _rfs_parent_cmd="$(echo "$_rfs_yaml_out" | sed -n '2p')"
+        _rfs_verdict="$(echo "$_rfs_yaml_out" | sed -n '3p')"
+    fi
+    python3 "$_MEMORY_DB_INSERT_SCRIPT" report \
+        --report-path "$REPORT_PATH" \
+        --ts "$_rfs_ts" \
+        --agent "${_rfs_agent:-unknown}" \
+        --parent-cmd "${_rfs_parent_cmd:-}" \
+        --verdict "${_rfs_verdict:-}" \
+        --dot-key "$DOT_KEY" \
+        --source-file "$REPORT_PATH" \
+        2>/dev/null || true
+fi

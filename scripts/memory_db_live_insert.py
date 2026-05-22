@@ -251,6 +251,130 @@ def append_cmd_delegate(args: argparse.Namespace) -> None:
     )
 
 
+def append_lesson(args: argparse.Namespace) -> None:
+    lesson_id = normalize_text(args.lesson_id)
+    title = normalize_text(args.title)
+    detail = normalize_text(args.detail)
+    source_cmd = normalize_text(args.source_cmd)
+    agent = normalize_text(args.agent) or "karo"
+    project = normalize_text(args.project)
+    ts = normalize_text(args.ts)
+    summary = summarize(title) or lesson_id
+    detail_full = "\n".join(
+        line
+        for line in [
+            detail,
+            f"project: {project}" if project else "",
+            f"source_cmd: {source_cmd}" if source_cmd else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            f"lesson:{lesson_id}",
+            ts,
+            "lesson",
+            agent,
+            project,
+            "",
+            summary,
+            detail_full,
+            "",
+            source_cmd or infer_cmd_id(summary, detail_full),
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "normal",
+        ),
+    )
+
+
+def append_gate(args: argparse.Namespace) -> None:
+    gate_name = normalize_text(args.gate_name)
+    result = normalize_text(args.result)
+    cmd_id = normalize_text(args.cmd_id)
+    detail = normalize_text(args.detail)
+    ts = normalize_text(args.ts)
+    summary = f"{gate_name}: {result}"
+    if detail:
+        summary = f"{gate_name}: {result} — {detail[:80]}"
+    summary = summary[:SUMMARY_LIMIT]
+    importance = "high" if result in ("FAIL", "BLOCK") else "normal"
+    event_id = f"gate:{gate_name}:{cmd_id}:{ts}" if cmd_id else f"gate:{gate_name}:{ts}"
+    detail_full = "\n".join(
+        line
+        for line in [
+            detail,
+            f"cmd_id: {cmd_id}" if cmd_id else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            event_id,
+            ts,
+            "gate",
+            gate_name,
+            cmd_id,
+            result,
+            summary,
+            detail_full,
+            "",
+            cmd_id,
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            importance,
+        ),
+    )
+
+
+def append_report(args: argparse.Namespace) -> None:
+    report_path = normalize_text(args.report_path)
+    agent = normalize_text(args.agent) or "unknown"
+    parent_cmd = normalize_text(args.parent_cmd)
+    verdict = normalize_text(args.verdict)
+    dot_key = normalize_text(args.dot_key)
+    report_base = os.path.basename(report_path) if report_path else ""
+    summary = f"{agent} report:{report_base} field:{dot_key}"
+    if verdict:
+        summary = f"{summary} verdict:{verdict}"
+    summary = summary[:SUMMARY_LIMIT]
+    detail = "\n".join(
+        line
+        for line in [
+            f"report_path: {report_path}",
+            f"dot_key: {dot_key}",
+            f"verdict: {verdict}" if verdict else "",
+            f"parent_cmd: {parent_cmd}" if parent_cmd else "",
+        ]
+        if line
+    )
+    importance = "high" if verdict in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT") else "normal"
+    ts = normalize_text(args.ts)
+    append_event(
+        args.db_path,
+        (
+            f"report:{report_base}:{dot_key}:{ts}",
+            ts,
+            "report",
+            agent,
+            report_path,
+            dot_key,
+            summary,
+            detail,
+            "",
+            parent_cmd,
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            importance,
+        ),
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -306,6 +430,33 @@ def parse_args() -> argparse.Namespace:
     insight.add_argument("--resolved-at", default="")
     insight.add_argument("--source-file", required=True)
 
+    report = subparsers.add_parser("report")
+    report.add_argument("--report-path", required=True)
+    report.add_argument("--ts", required=True)
+    report.add_argument("--agent", default="unknown")
+    report.add_argument("--parent-cmd", default="")
+    report.add_argument("--verdict", default="")
+    report.add_argument("--dot-key", required=True)
+    report.add_argument("--source-file", required=True)
+
+    lesson = subparsers.add_parser("lesson")
+    lesson.add_argument("--lesson-id", required=True)
+    lesson.add_argument("--title", required=True)
+    lesson.add_argument("--detail", default="")
+    lesson.add_argument("--source-cmd", default="")
+    lesson.add_argument("--agent", default="karo")
+    lesson.add_argument("--ts", required=True)
+    lesson.add_argument("--project", default="")
+    lesson.add_argument("--source-file", required=True)
+
+    gate = subparsers.add_parser("gate")
+    gate.add_argument("--gate-name", required=True)
+    gate.add_argument("--result", required=True)
+    gate.add_argument("--cmd-id", default="")
+    gate.add_argument("--ts", required=True)
+    gate.add_argument("--detail", default="")
+    gate.add_argument("--source-file", required=True)
+
     return parser.parse_args()
 
 
@@ -321,6 +472,12 @@ def main() -> int:
         append_bulletin(args)
     elif args.event_type == "insight":
         append_insight(args)
+    elif args.event_type == "report":
+        append_report(args)
+    elif args.event_type == "lesson":
+        append_lesson(args)
+    elif args.event_type == "gate":
+        append_gate(args)
     return 0
 
 
