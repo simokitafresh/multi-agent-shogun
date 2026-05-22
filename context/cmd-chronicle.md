@@ -663,3 +663,7 @@
 | cmd_2954 | index.mdの46概念×resourcesをパースし、同一概念内resources間+概念⇔resourcesの双方向[[リンク]]を自動挿入。孤立率88%を一括削減。殿直接指示 | infra | 05-22 | — |
 | cmd_2957 | deploy_task.sh inject_direct_training_templateのAC2/AC5が概念名リンク(ハブ方式)を許容している。殿確定の分離原則(context/obsidian-link-principles.md)に準拠し、ファイル間直接リンク方式に修正する | infra | 05-22 | deploy_task.shのL4修行テンプレートをファイル |
 | cmd_2959 | 参照scriptがSKILL.mdより新しい11ファイルを更新し、スキル指示とスクリプト実態の乖離を解消する | infra | 05-22 | SKILL.md 13件の参照script仕様追従を更新し、 |
+| cmd_2960 | shutsujin_departure.sh L945が将軍watcherをASW_DISABLE_ESCALATION=1で起動し、GATE CLEAR通知が将軍に届かない。cmd_2403/2694で対症療法したが真因が残存。shutsujin側を修正し構造的に根絶する | infra | 05-22 | shutsujin_departure.shの将軍watch |
+| cmd_2962 | 将軍がcmd起票時にsemantic_search.shを使っていない。grepでは既知キーワードしか探せず、関連概念の見落としが起きる。起票前hookに10問目を追加し、将軍が毎回semantic_searchを実行する構造にする | infra | 05-22 | Guard 0の起票前確認を10問へ更新し、semantic |
+| cmd_2963 | lord_conversation.jsonlのアーカイブディレクトリは3月に作成済みだが退避処理が未実装で全セッションの対話が消失している。clear_prep_check.shに全文退避+知識抽出を追加し、長期記憶を構造的に保存する | infra | 05-22 | clear_prep_check.shにlord_conve |
+| cmd_2964 | 全文記録(24MB/79日)とsemantic_search(0.3秒)は動いているが、セッション中に発見した知識がObsidianリンクやaliasesに整理されずに消えている。全ロールの/clear前処理と作業完了時に記憶整理Phaseを追加し、短期記憶→長期記憶の移行を構造的に強制する | infra | 05-22 | 全ロール記憶整理Phaseとしてclear_prep_che |
