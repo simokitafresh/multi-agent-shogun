@@ -5063,13 +5063,18 @@ check_ac_phase_mixing() {
         if (lt ~ /cdp|計測|測定|実測|measure|measurement|benchmark|ベンチ/ ||
             lt ~ /push|deploy|デプロイ/) { print "FOUND" }
     }
-    BEGIN { min_indent = -1; buf = "" }
+    BEGIN { min_indent = -1; dict_indent = -1; buf = "" }
     {
         if (min_indent == -1 && /^[[:space:]]*- /) {
             s = $0; gsub(/[^ ].*/, "", s); min_indent = length(s)
         }
+        if (dict_indent == -1 && /^[[:space:]]*(AC|ac)?[0-9]+:[[:space:]]*$/) {
+            s = $0; gsub(/[^ ].*/, "", s); dict_indent = length(s)
+        }
         s = $0; gsub(/[^ ].*/, "", s)
         if (min_indent >= 0 && length(s) == min_indent && substr($0, min_indent+1, 2) == "- ") {
+            check_buf(buf); buf = $0 "\n"
+        } else if (dict_indent >= 0 && length(s) == dict_indent && $0 ~ /^[[:space:]]*(AC|ac)?[0-9]+:[[:space:]]*$/) {
             check_buf(buf); buf = $0 "\n"
         } else {
             buf = buf $0 "\n"
