@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -55,6 +56,30 @@ def _count_task_binary_checks(task_data, assigned_acs):
     return task_bc_count
 
 
+def _rfs_cmd(report_path, key, value):
+    return "bash scripts/report_field_set.sh {} {} {}".format(
+        shlex.quote(report_path),
+        shlex.quote(key),
+        shlex.quote(str(value)),
+    )
+
+
+def _rfs_stdin_cmd(report_path, key, yaml_text):
+    return "cat <<'YAML' | bash scripts/report_field_set.sh {} {} -\n{}\nYAML".format(
+        shlex.quote(report_path),
+        shlex.quote(key),
+        yaml_text.rstrip(),
+    )
+
+
+def _binary_checks_full_cmd(report_path):
+    return _rfs_stdin_cmd(
+        report_path,
+        "binary_checks",
+        'AC1:\n  - check: "確認内容を具体的に"\n    result: yes',
+    )
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("FAIL: report path required")
@@ -88,7 +113,7 @@ def main() -> int:
     missing_hints = {
         "worker_id": "FIX (worker_id): テンプレートに生成済み。上書きで消すな。report_field_set.sh経由で記入:\n  bash scripts/report_field_set.sh <report> worker_id <your_name>",
         "parent_cmd": "FIX (parent_cmd): テンプレートに生成済み。上書きで消すな。report_field_set.sh経由で記入:\n  bash scripts/report_field_set.sh <report> parent_cmd cmd_XXXX",
-        "binary_checks": 'FIX (binary_checks): report_field_set.shで記入せよ:\n  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: "yes"',
+        "binary_checks": 'FIX (binary_checks): report_field_set.shで記入せよ:\n  ' + _binary_checks_full_cmd(report_path),
         "files_modified": "FIX (files_modified): 変更したファイルパスを記入せよ:\n  files_modified:\n    - path/to/file.py",
         "lesson_candidate": 'FIX (lesson_candidate): report_field_set.shで記入せよ:\n  lesson_candidate:\n    found: false\n    no_lesson_reason: "理由を具体的に書け"',
         "lessons_useful": "FIX (lessons_useful): テンプレートに注入済みの教訓にuseful/reasonを記入せよ。空リストで上書きするな",
@@ -131,6 +156,7 @@ def main() -> int:
         errors.append(f"files_modified: is bool ({fm}), must be string or list of file paths")
     elif files_modified_has_fill_this(fm):
         errors.append("files_modified: FILL_THIS placeholder remaining (must fill actual file paths)")
+        hints.append("FIX COMMAND (files_modified): " + _rfs_cmd(report_path, "files_modified", "scripts/gates/gate_report_format_main.py"))
     elif isinstance(fm, list) and len(fm) == 0 and data.get("status") == "completed":
         hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で "偵察のみ" と記入')
 
@@ -153,7 +179,7 @@ def main() -> int:
     elif lc is not None:
         if isinstance(lc, str):
             errors.append("lesson_candidate: is string (must be dict with found/title/detail)")
-            hints.append('FIX (lesson_candidate): dict形式で再記入せよ:\n  lesson_candidate:\n    found: true  # or false\n    title: "教訓タイトル"\n    detail: "詳細"')
+            hints.append('FIX (lesson_candidate): dict形式で再記入せよ:\n  ' + _rfs_stdin_cmd(report_path, "lesson_candidate", 'found: false\nno_lesson_reason: "既知パターンのため新規教訓なし"'))
         elif isinstance(lc, dict):
             if "found" not in lc:
                 errors.append('lesson_candidate: missing "found" field')
@@ -168,7 +194,7 @@ def main() -> int:
                 placeholder_values = ["なし", "特になし", "N/A", "n/a", "none", "None", "no", "No", "FILL_THIS"]
                 if reason in placeholder_values:
                     errors.append(f'lesson_candidate: no_lesson_reason="{reason}" is placeholder (write a real reason)')
-                    hints.append("FIX (lesson_candidate): プレースホルダ禁止。なぜ教訓がないのか具体的に書け")
+                    hints.append("FIX COMMAND (lesson_candidate): " + _rfs_cmd(report_path, "lesson_candidate.no_lesson_reason", "既知パターンのため新規教訓なし"))
             if lc.get("found") and not lc.get("title"):
                 errors.append("lesson_candidate: found=true but no title")
             if lc.get("found") and not lc.get("detail") and not lc.get("summary"):
@@ -275,16 +301,16 @@ def main() -> int:
         hints.append('FIX (binary_checks): nullではなくdict形式で記入せよ:\n  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: "yes"')
     elif isinstance(bc, str):
         errors.append("binary_checks: is string (must be dict with AC entries)")
-        hints.append('FIX (binary_checks): dict形式で再記入せよ:\n  binary_checks:\n    AC1:\n      - check: "確認内容"\n        result: "yes"')
+        hints.append('FIX (binary_checks): dict形式で再記入せよ:\n  ' + _binary_checks_full_cmd(report_path))
     elif isinstance(bc, dict) and not bc:
         errors.append("binary_checks: empty dict (must have at least one AC entry)")
-        hints.append('FIX (binary_checks): AC完了ごとに二値チェックを記入せよ:\n  binary_checks:\n    AC1:\n      - check: "確認内容を具体的に"\n        result: "yes"')
+        hints.append('FIX (binary_checks): AC完了ごとに二値チェックを記入せよ:\n  ' + _binary_checks_full_cmd(report_path))
     elif isinstance(bc, dict):
         verdict_words = {"PASS", "FAIL", "OK", "NG", "yes", "no", "YES", "NO", "true", "false", "True", "False", "pass", "fail", "ok", "ng"}
         for ac_key, ac_val in bc.items():
             if not isinstance(ac_val, list):
                 errors.append(f"binary_checks.{ac_key}: is {type(ac_val).__name__} (must be list of check items)")
-                hints.append(f'FIX (binary_checks.{ac_key}): list形式で記入せよ:\n  binary_checks:\n    {ac_key}:\n      - check: "確認内容"\n        result: "yes"')
+                hints.append(f'FIX (binary_checks.{ac_key}): list形式で記入せよ:\n  ' + _rfs_stdin_cmd(report_path, f"binary_checks.{ac_key}", '- check: "確認内容を具体的に"\n  result: yes'))
             else:
                 for j, check_item in enumerate(ac_val):
                     if isinstance(check_item, list):
@@ -309,9 +335,11 @@ def main() -> int:
                     if isinstance(rs, str) and not rs.strip():
                         errors.append(f'binary_checks.{ac_key}[{j}].result: 空文字。"yes" または "no" を記入せよ')
                         hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): 確認結果を "yes" or "no" で記入せよ\n  ★引用符なし: result: yes（result: \'yes\' はNG。YAMLでは引用符付き文字列になる）')
+                        hints.append("FIX COMMAND (binary_checks result): " + _rfs_cmd(report_path, f"binary_checks.{ac_key}.{j}.result", "yes"))
                     elif isinstance(rs, str) and rs.strip().lower() not in ("yes", "no"):
                         errors.append(f'binary_checks.{ac_key}[{j}].result: "{rs[:40]}" は不正。"yes" または "no" のみ')
                         hints.append(f'FIX (binary_checks.{ac_key}[{j}].result): "yes" or "no" のみ。自由記述は acceptance_criteria.detail に書け\n  ★引用符なし: result: yes（result: \'yes\' はNG。YAMLでは引用符付き文字列になる）')
+                        hints.append("FIX COMMAND (binary_checks result): " + _rfs_cmd(report_path, f"binary_checks.{ac_key}.{j}.result", "yes"))
     elif isinstance(bc, list) and not bc:
         errors.append("binary_checks: empty list (must have at least one entry)")
 
@@ -347,7 +375,7 @@ def main() -> int:
                     rpt_ac_keys = [k for k in rpt_ac_keys if k in assigned_acs]
                 if len(rpt_ac_keys) == 0:
                     errors.append(f"binary_checks: AC self-verification missing (0/{ac_count} ACs). 全ACの二値チェックを記入せよ")
-                    hints.append(f"FIX (binary_checks): task YAMLに{ac_count}件のACがある。AC1, AC2, ... のセクションを追加し各result=yes/noを記入")
+                    hints.append(f"FIX (binary_checks): task YAMLに{ac_count}件のACがある。AC1, AC2, ... のセクションを追加し各result=yes/noを記入\n  " + _binary_checks_full_cmd(report_path))
                 elif len(rpt_ac_keys) < ac_count:
                     hints.append(f"GP-131b WARN: binary_checks has {len(rpt_ac_keys)} AC sections but task has {ac_count} ACs")
 
@@ -367,8 +395,10 @@ def main() -> int:
         summary = result.get("summary")
         if not summary:
             errors.append("result.summary: MISSING or empty")
+            hints.append("FIX COMMAND (result.summary): " + _rfs_cmd(report_path, "result.summary", "実施内容と検証結果を1行で要約"))
         elif isinstance(summary, str) and summary.strip() == "FILL_THIS":
             errors.append("result.summary: FILL_THIS placeholder remaining (must fill actual summary)")
+            hints.append("FIX COMMAND (result.summary): " + _rfs_cmd(report_path, "result.summary", "実施内容と検証結果を1行で要約"))
     else:
         errors.append("result: not a dict")
 
@@ -377,6 +407,7 @@ def main() -> int:
     if not isinstance(verdict, str) or verdict not in _VALID_VERDICTS:
         errors.append(f'verdict: "{verdict}" is not valid (must be "PASS", "FAIL", or "PASS_NO_IMPROVEMENT")')
         hints.append("verdictはPASS/FAIL/PASS_NO_IMPROVEMENTの三値のみ。binary_checks全yes→PASS、1つでもno→FAIL、revert多数→PASS_NO_IMPROVEMENT")
+        hints.append("FIX COMMAND (verdict): " + _rfs_cmd(report_path, "verdict", "PASS"))
 
     if isinstance(verdict, str) and verdict in _VALID_VERDICTS and isinstance(bc, dict) and bc:
         bc_has_no = False

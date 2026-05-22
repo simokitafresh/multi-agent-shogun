@@ -91,6 +91,36 @@ YAML
     [[ "$output" == *"verdict"* ]]
 }
 
+@test "T-003b: empty verdict emits report_field_set fix command" {
+    local report=$(create_valid_report)
+    sed -i 's/^verdict: PASS/verdict: ""/' "$report"
+    sed -i 's/result: "yes"/result: ""/' "$report"
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FIX COMMAND (verdict)"* ]]
+    [[ "$output" == *"bash scripts/report_field_set.sh $report verdict PASS"* ]]
+}
+
+@test "T-003c: empty binary_checks result emits report_field_set fix command" {
+    local report=$(create_valid_report)
+    sed -i 's/^verdict: PASS/verdict: ""/' "$report"
+    sed -i 's/result: "yes"/result: ""/' "$report"
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FIX COMMAND (binary_checks result)"* ]]
+    [[ "$output" == *"bash scripts/report_field_set.sh $report binary_checks.AC1.0.result yes"* ]]
+}
+
+@test "T-003d: FILL_THIS placeholder emits report_field_set fix command" {
+    local report=$(create_valid_report)
+    sed -i 's#files_modified: \[\]#files_modified: FILL_THIS#' "$report"
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"files_modified: FILL_THIS placeholder remaining"* ]]
+    [[ "$output" == *"FIX COMMAND (files_modified)"* ]]
+    [[ "$output" == *"bash scripts/report_field_set.sh $report files_modified scripts/gates/gate_report_format_main.py"* ]]
+}
+
 # --- T-004: GP-128 PASS+no → auto-derived FAIL verdict → PASS ---
 @test "T-004: verdict=PASS with bc no is overwritten to FAIL" {
     local report=$(create_valid_report)
