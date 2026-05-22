@@ -688,3 +688,8 @@
 | cmd_2991 | cmd品質記録(cmd_design_quality.yaml)をevent_type=cmd_qualityとして記憶DBにリアルタイムINSERTし、gate FP/BLOCK分析がDB検索で即座に可能になるようにする | infra | 05-22 | cmd_design_qualityの品質記録をevent_ |
 | cmd_2992 | memory_db_import.pyの/clear時再構築にskill_execution_log/完了cmd archive/pending_decisionsの3ソースを追加し、バッチ再構築時の網羅性を完成させる | infra | 05-22 | memory_db_import.pyのバッチ再構築にski |
 | cmd_2995 | スクリプト内部変更(DB INSERT追加等)でもSKILL.md追従WARNが発火する偽陽性を解消する。3セッション連続BLOCK再発の構造的原因 | infra | 05-22 | script_refs_checked_at markerを |
+| cmd_2997 | ルート直下の0バイト空DB削除と、eventsテーブルと完全重複するconversationsテーブル(27,154件同数)を整理する | infra | 05-22 | 0バイトDBを削除し、conversations実体テーブル |
+| cmd_2998 | 日本語の長いクエリでFTS5検索がタイムアウト(10秒超)する問題を改善する | infra | 05-22 | semantic_search.shのmemory_db_s |
+| cmd_3000 | Google Chrome公式のAIエージェント向けモダンWeb APIスキルを導入し、FE開発品質を向上させる | infra | 05-22 | Modern Web Guidanceを導入し、semant |
+| cmd_3001 | 記憶DBのスキーマ+event_type分布+サンプル行をmemory_db_import.pyの--build後に自動生成し、LLMが自然言語→SQL変換できる基盤を構築する | infra | 05-22 | memory_db_import.pyのschema mar |
+| cmd_3002 | memory_db_query.shにSELECT以外のSQL(DELETE/UPDATE/DROP等)をBLOCKするガードを追加し、記憶DBの安全な汎用クエリ実行を保証する | infra | 05-22 | memory_db_query.shにSELECT-only |
