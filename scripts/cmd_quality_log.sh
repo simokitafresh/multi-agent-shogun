@@ -21,6 +21,7 @@ SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
 PROJECT_ID="${CMD_QUALITY_PROJECT:-}"
+MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$REPO_ROOT/scripts/memory_db_live_insert.py}"
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -42,8 +43,8 @@ if [[ -z "$CMD_ID" || -z "$GATE_RESULT" || -z "$KARO_REWORK" || -z "$SUPPLEMENTA
 fi
 
 # Validate gate_result
-if [[ "$GATE_RESULT" != "CLEAR" && "$GATE_RESULT" != "FAIL" && "$GATE_RESULT" != "BLOCK" && "$GATE_RESULT" != "WARN" ]]; then
-    echo "[cmd_quality_log] Error: gate_result must be CLEAR, FAIL, BLOCK, or WARN (got: $GATE_RESULT)" >&2
+if [[ "$GATE_RESULT" != "CLEAR" && "$GATE_RESULT" != "PASS" && "$GATE_RESULT" != "FAIL" && "$GATE_RESULT" != "BLOCK" && "$GATE_RESULT" != "WARN" ]]; then
+    echo "[cmd_quality_log] Error: gate_result must be CLEAR, PASS, FAIL, BLOCK, or WARN (got: $GATE_RESULT)" >&2
     exit 1
 fi
 
@@ -250,3 +251,22 @@ EOF
     echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS | source:$SOURCE_STAGE${DIAGNOSIS_TEXT:+ | diagnosis:$DIAGNOSIS_TEXT}${NOTES:+ | notes:$NOTES}"
 
 ) 200>"$LOCK_FILE"
+
+if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_quality \
+        --cmd-id "$CMD_ID" \
+        --ts "$TIMESTAMP" \
+        --gate-result "$GATE_RESULT" \
+        --karo-rework "$KARO_REWORK" \
+        --gunshi-verdict "$GUNSHI_VERDICT" \
+        --ninja-blockers "$NINJA_BLOCKERS" \
+        --ac-count "$AC_COUNT" \
+        --supplementary-cmds "$SUPPLEMENTARY_CMDS" \
+        --project "$PROJECT_ID" \
+        --source "$SOURCE_STAGE" \
+        --diagnosis "$DIAGNOSIS_TEXT" \
+        --notes "$NOTES" \
+        --source-file "${LOG_FILE#$REPO_ROOT/}"; then
+        echo "[cmd_quality_log] WARN: DB INSERT skipped for ${CMD_ID}" >&2
+    fi
+fi

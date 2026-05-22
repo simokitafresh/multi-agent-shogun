@@ -1864,47 +1864,14 @@ log_cmd_save_warns() {
 }
 
 log_cmd_save_pass() {
-    local timestamp
     [[ -n "$CMD_ID" ]] || return 0
-    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-    (
-        flock -w 10 200 || exit 0
-
-        if [[ ! -f "$QUALITY_LOG_FILE" ]] || [[ ! -s "$QUALITY_LOG_FILE" ]]; then
-            printf 'entries:\n' > "$QUALITY_LOG_FILE"
-        else
-            local first_line
-            IFS= read -r first_line < "$QUALITY_LOG_FILE" || first_line=""
-            if [[ "$first_line" == "entries: []" ]]; then
-                sed -i '1s/^entries: \[\]$/entries:/' "$QUALITY_LOG_FILE"
-            fi
-        fi
-
-        local entry_indent field_indent
-        entry_indent="$(awk '
-            /^entries:[[:space:]]*$/ { in_entries=1; next }
-            in_entries && /^[[:space:]]*-/ {
-                match($0, /^[[:space:]]*/)
-                print substr($0, RSTART, RLENGTH)
-                exit
-            }
-        ' "$QUALITY_LOG_FILE")"
-        field_indent="${entry_indent}  "
-
-        cat >> "$QUALITY_LOG_FILE" <<EOF
-${entry_indent}- cmd_id: "$CMD_ID"
-${field_indent}ac_count: 0
-${field_indent}gate_result: "PASS"
-${field_indent}karo_rework: "no"
-${field_indent}gunshi_verdict: "unknown"
-${field_indent}ninja_blockers: 0
-${field_indent}project: "$(cmd_block_get_field "project" 2>/dev/null || true)"
-${field_indent}supplementary_cmds: 0
-${field_indent}source: "cmd_save"
-${field_indent}timestamp: "$timestamp"
-EOF
-    ) 200>/tmp/cmd_design_quality.lock
+    [[ -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+    CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+    CMD_QUALITY_SOURCE="cmd_save" \
+    CMD_QUALITY_DIAGNOSIS="" \
+    CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+    CMD_QUALITY_FAST_METADATA=1 \
+    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 || true
     bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 || true
 }
 
