@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # semantic-links: [[SQLite記憶DB]], [[eventsテーブル]], [[掲示板通信基盤]], [[セマンティック辞書構想]]
-"""Append live bulletin/insight events to the local memory DB."""
+"""Append live inbox/bulletin/insight events to the local memory DB."""
 
 from __future__ import annotations
 
@@ -152,6 +152,46 @@ def append_insight(args: argparse.Namespace) -> None:
     )
 
 
+def append_inbox(args: argparse.Namespace) -> None:
+    content = normalize_text(args.content)
+    message_type = normalize_text(args.message_type) or "wake_up"
+    action = normalize_text(args.action)
+    from_agent = normalize_text(args.from_agent) or "unknown"
+    target_agent = normalize_text(args.target_agent)
+    summary = summarize(content) or "inbox"
+    detail = "\n".join(
+        line
+        for line in [
+            content,
+            f"type: {message_type}" if message_type else "",
+            f"action: {action}" if action else "",
+            f"from: {from_agent}" if from_agent else "",
+            f"target: {target_agent}" if target_agent else "",
+        ]
+        if line
+    )
+    importance = "high" if message_type in {"cmd_new", "task_assigned", "report_received", "task_done"} else "normal"
+    append_event(
+        args.db_path,
+        (
+            f"inbox:{normalize_text(args.message_id)}",
+            normalize_text(args.ts),
+            "inbox",
+            from_agent,
+            target_agent,
+            message_type,
+            summary,
+            detail,
+            "",
+            infer_cmd_id(summary, detail),
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            importance,
+        ),
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -160,6 +200,16 @@ def parse_args() -> argparse.Namespace:
         default=Path(os.environ.get("SHOGUN_MEMORY_DB", DEFAULT_DB_PATH)),
     )
     subparsers = parser.add_subparsers(dest="event_type", required=True)
+
+    inbox = subparsers.add_parser("inbox")
+    inbox.add_argument("--message-id", required=True)
+    inbox.add_argument("--ts", required=True)
+    inbox.add_argument("--target-agent", required=True)
+    inbox.add_argument("--from-agent", required=True)
+    inbox.add_argument("--content", required=True)
+    inbox.add_argument("--message-type", required=True)
+    inbox.add_argument("--action", default="")
+    inbox.add_argument("--source-file", required=True)
 
     bulletin = subparsers.add_parser("bulletin")
     bulletin.add_argument("--entry-id", required=True)
@@ -186,7 +236,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.event_type == "bulletin":
+    if args.event_type == "inbox":
+        append_inbox(args)
+    elif args.event_type == "bulletin":
         append_bulletin(args)
     elif args.event_type == "insight":
         append_insight(args)

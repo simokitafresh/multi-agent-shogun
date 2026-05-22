@@ -49,6 +49,7 @@ MOCK
     chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
     printf '#!/bin/bash\necho "PASS: all checks passed"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
     chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$GIT_TEMPLATE_DIR/scripts/memory_db_live_insert.py"
 
     cat > "$GIT_TEMPLATE_DIR/queue/tasks/testninja.yaml" << 'YAML'
 task:
@@ -255,6 +256,81 @@ setup() {
     ! grep -qE "^[-]? action: " "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "memory DB live insert: inbox write appends event_type=inbox after YAML persistence" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    python3 <<EOF
+import sqlite3
+
+conn = sqlite3.connect("$TEST_TMPDIR/data/multi_agent_shogun_memory.db")
+conn.execute("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+)
+""")
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid')")
+conn.commit()
+conn.close()
+EOF
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "cmd_2985 記憶DB投入" "task_assigned" "karo" "notify"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+
+    python3 <<EOF
+import sqlite3
+
+conn = sqlite3.connect("$TEST_TMPDIR/data/multi_agent_shogun_memory.db")
+row = conn.execute("""
+SELECT event_type, agent, target, direction, summary, detail, source_file, importance
+FROM events
+""").fetchone()
+assert row == (
+    "inbox",
+    "karo",
+    "test_agent",
+    "task_assigned",
+    "cmd_2985 記憶DB投入",
+    "cmd_2985 記憶DB投入\ntype: task_assigned\naction: notify\nfrom: karo\ntarget: test_agent",
+    "$TEST_INBOX_DIR/test_agent.yaml",
+    "high",
+), row
+fts_count = conn.execute("SELECT COUNT(*) FROM events_fts").fetchone()[0]
+assert fts_count == 1, fts_count
+EOF
+}
+
+@test "memory DB live insert: DB failure is non-fatal and preserves inbox write" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/memory_db_live_insert.py" <<'PY'
+#!/usr/bin/env python3
+raise SystemExit(7)
+PY
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "DB失敗でもinbox成功" "wake_up" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"memory DB inbox insert failed"* ]]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+    grep -q "DB失敗でもinbox成功" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
 @test "task_new_gate: shogun direct task_new is blocked before inbox write" {

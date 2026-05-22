@@ -626,6 +626,22 @@ trigger_cmd_complete_gate_background() {
     echo "[inbox_write] cmd_complete_gate.sh started in background for ${cmd_id} (nohup+disown)" >&2
 }
 
+record_inbox_event_to_memory_db() {
+    local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+
+    [ -f "$live_insert_script" ] || return 0
+
+    python3 "$live_insert_script" inbox \
+        --message-id "$MSG_ID" \
+        --ts "$TIMESTAMP" \
+        --target-agent "$TARGET" \
+        --from-agent "$FROM" \
+        --content "$CONTENT" \
+        --message-type "$TYPE" \
+        --action "$ACTION" \
+        --source-file "$INBOX"
+}
+
 inbox_append_message_fast_locked() {
     local inbox_file="$1"
     local message_block="$2"
@@ -1335,6 +1351,9 @@ while [ $attempt -lt $max_attempts ]; do
 
     ) 200>"$LOCKFILE"; then
         # Success — inbox message persisted
+        if ! record_inbox_event_to_memory_db 2>/dev/null; then
+            echo "[inbox_write] WARN: memory DB inbox insert failed (non-fatal; inbox persisted)" >&2
+        fi
 
         # Hook: report_received/task_done from ninja → auto-update task YAML to done
         if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
