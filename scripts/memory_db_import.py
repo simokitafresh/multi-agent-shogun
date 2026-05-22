@@ -682,14 +682,12 @@ def event_rows_from_pending_decisions(
 def event_rows_from_documents(
     entries: list[dict[str, Any]],
     concepts: list[dict[str, Any]],
-    event_type: str = "document",
 ) -> list[EventRow]:
     event_rows: list[EventRow] = []
     seen_ids: set[str] = set()
     for idx, entry in enumerate(entries, start=1):
         source_file = normalize_text(entry.get("_source_file"))
-        event_id_prefix = "document" if event_type == "document" else event_type
-        event_id = f"{event_id_prefix}:{source_file or idx}"
+        event_id = f"document:{source_file or idx}"
         if event_id in seen_ids:
             continue
         seen_ids.add(event_id)
@@ -707,10 +705,10 @@ def event_rows_from_documents(
             (
                 event_id,
                 "",
-                event_type,
+                "document",
                 "document",
                 "",
-                event_type,
+                "document",
                 summary[:240],
                 detail,
                 "",
@@ -1002,7 +1000,6 @@ def build_db(
     cmd_archive_entries: list[dict[str, Any]] | None = None,
     pending_decision_entries: list[dict[str, Any]] | None = None,
     document_entries: list[dict[str, Any]] | None = None,
-    document_event_type: str = "document",
 ) -> None:
     concepts = list(iter_semantic_concepts(semantic_index_path))
     event_rows = event_rows_from_conversations(rows, concepts)
@@ -1011,7 +1008,7 @@ def build_db(
     event_rows.extend(event_rows_from_skill_executions(skill_execution_entries or [], concepts))
     event_rows.extend(event_rows_from_cmd_archives(cmd_archive_entries or [], concepts))
     event_rows.extend(event_rows_from_pending_decisions(pending_decision_entries or [], concepts))
-    event_rows.extend(event_rows_from_documents(document_entries or [], concepts, document_event_type))
+    event_rows.extend(event_rows_from_documents(document_entries or [], concepts))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
@@ -1169,12 +1166,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--doc-dirs",
         default="",
-        help="Comma-separated files/directories whose md/yaml/txt/rst documents are imported.",
-    )
-    parser.add_argument(
-        "--event-type",
-        default="document",
-        help="event_type used for rows imported from --doc-dirs. Defaults to document.",
+        help="Comma-separated files/directories whose md/yaml/txt/rst documents are imported as event_type=document.",
     )
     parser.add_argument(
         "--search",
@@ -1230,7 +1222,6 @@ def main() -> int:
         else default_pending_decisions_path_for_archive(archive_dir)
     )
     doc_dirs = parse_doc_dirs(args.doc_dirs)
-    document_event_type = normalize_text(args.event_type) or "document"
     if args.search:
         for row in search_events(db_path, args.search, args.limit, args.target):
             print(
@@ -1271,7 +1262,6 @@ def main() -> int:
         cmd_archive_entries,
         pending_decision_entries,
         document_entries,
-        document_event_type,
     )
     schema_output = Path(args.schema_output) if args.schema_output else None
     if schema_output is None and should_write_default_schema_doc(db_path):
