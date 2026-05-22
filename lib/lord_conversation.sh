@@ -2,7 +2,7 @@
 # lord_conversation.sh — lord_conversation.jsonl 原子追記ライブラリ
 #
 # 提供関数:
-#   append_lord_conversation <message> <direction> [agent] [source]
+#   append_lord_conversation <message> <direction> [agent] [source] [target]
 #     - message: 記録本文（必須）
 #     - direction: inbound/outbound/prompt/response 等（必須）
 #     - agent: 発話主体（任意）
@@ -17,6 +17,7 @@ append_lord_conversation() {
   local direction="${2:?append_lord_conversation: direction is required}"
   local agent="${3:-}"
   local source="${4:-ntfy}"
+  local target="${5:-}"
   local lock_wait="${LORD_CONVERSATION_LOCK_WAIT_SEC:-5}"
   local db_path="${LORD_CONVERSATION_DB:-}"
 
@@ -54,6 +55,7 @@ append_lord_conversation() {
     CONV_DIRECTION="$direction" \
     CONV_AGENT="$agent" \
     CONV_SOURCE="$source" \
+    CONV_TARGET="$target" \
     CONV_MESSAGE="$message" \
     CONV_DB_PATH="$db_path" \
     python3 - <<'PY'
@@ -76,9 +78,11 @@ timestamp = os.environ["CONV_TIMESTAMP"]
 direction = os.environ["CONV_DIRECTION"]
 agent = os.environ["CONV_AGENT"]
 source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
+target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+SQLITE_BUSY_TIMEOUT_MS = 5000
 
 
 def normalize_text(value: object) -> str:
@@ -156,7 +160,9 @@ def infer_cmd_id(summary: str, detail: str) -> str:
     return match.group(0) if match else ""
 
 
-def infer_target(entry_agent: str, entry_direction: str) -> str:
+def infer_target(entry_agent: str, entry_direction: str, entry_target: str) -> str:
+    if entry_target:
+        return entry_target
     if entry_direction == "inbound":
         return "shogun"
     if entry_direction in {"response", "outbound"}:
@@ -175,6 +181,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 "source": entry.get("source", ""),
                 "direction": entry.get("direction", ""),
                 "agent": entry.get("agent", ""),
+                "target": entry.get("target", ""),
                 "detail": entry.get("detail", ""),
                 "event_index": event_index,
             },
@@ -188,9 +195,12 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
     entry_direction = normalize_text(entry.get("direction", ""))
     entry_summary = normalize_text(entry.get("summary", ""))
     entry_detail = normalize_text(entry.get("detail", ""))
+    entry_target = normalize_text(entry.get("target", ""))
     source_file = str(path)
 
     with sqlite3.connect(db_path) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         tables = {
             row[0]
             for row in conn.execute(
@@ -226,7 +236,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 normalize_text(entry.get("ts", "")),
                 "conversation",
                 entry_agent,
-                infer_target(entry_agent, entry_direction),
+                infer_target(entry_agent, entry_direction, entry_target),
                 entry_direction,
                 entry_summary,
                 entry_detail,
@@ -266,6 +276,8 @@ entry = {
 }
 if agent:
     entry["agent"] = agent
+if target:
+    entry["target"] = target
 
 entries.append(entry)
 if len(entries) > MAX_ENTRIES:

@@ -29,7 +29,7 @@ setup() {
     cat > "$MOCK_BIN/tmux" <<'STUB'
 #!/usr/bin/env bash
 if [[ "$*" == *"display-message"* ]]; then
-    echo "shogun"
+    echo "${MOCK_AGENT_ID:-shogun}"
     exit 0
 fi
 if [[ "$*" == *"capture-pane"* ]]; then
@@ -110,4 +110,63 @@ PY
     echo "${result[2]}" | grep -q "transcript based response"
     echo "${result[2]}" | grep -q "stop_reason=end_turn"
     ! echo "${result[2]}" | grep -q "pane_noise_should_not_be_used"
+}
+
+@test "T-TL-005: lord input to karo pane is recorded with target and live inserted into events" {
+    export MOCK_AGENT_ID="karo"
+    mkdir -p "$TEST_TMPDIR/archive" "$TEST_TMPDIR/data"
+    python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" >/dev/null
+
+    run bash -c 'echo "{\"prompt\":\"家老に直接確認する\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_LORD_CONV" "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" <<'PY'
+import json
+import sqlite3
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    row = json.loads(f.read().strip().splitlines()[-1])
+conn = sqlite3.connect(sys.argv[2])
+event = conn.execute(
+    "SELECT agent, target, direction, summary FROM events ORDER BY rowid DESC LIMIT 1"
+).fetchone()
+print(row.get("agent", ""))
+print(row.get("target", ""))
+print(event[0])
+print(event[1])
+print(event[2])
+print("家老" in event[3])
+PY
+)
+    [ "${result[0]}" = "lord" ]
+    [ "${result[1]}" = "karo" ]
+    [ "${result[2]}" = "lord" ]
+    [ "${result[3]}" = "karo" ]
+    [ "${result[4]}" = "inbound" ]
+    [ "${result[5]}" = "True" ]
+}
+
+@test "T-TL-006: lord input to gunshi pane is recorded with target" {
+    export MOCK_AGENT_ID="gunshi"
+
+    run bash -c 'echo "{\"prompt\":\"軍師に直接確認する\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$TEST_LORD_CONV", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("agent", ""))
+print(obj.get("target", ""))
+print(obj.get("direction", ""))
+print(obj.get("detail", ""))
+PY
+)
+    [ "${result[0]}" = "lord" ]
+    [ "${result[1]}" = "gunshi" ]
+    [ "${result[2]}" = "inbound" ]
+    echo "${result[3]}" | grep -q "軍師"
 }

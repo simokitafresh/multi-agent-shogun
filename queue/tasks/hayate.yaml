@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_2970_exact
+  _ac_task_id: cmd_2989_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2970 (deployed 2026-05-22T13:28:54). Read from the beginning.
-  ac_version: e1199266
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2989 (deployed 2026-05-22T17:54:01). Read from the beginning.
+  ac_version: 12828061
   cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -27,47 +27,50 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2970
+  parent_cmd: cmd_2989
   project: infra
-  purpose: eventsテーブルのdetailをLIKE検索すると24MB全スキャン。FTS5仮想テーブルで全文検索を高速化し、parent_event_id(因果チェーン)とimportance(重要度)カラムを追加して検索品質と到達可能性を向上する
+  purpose: log_terminal_input/responseが将軍ペインのみ対象(agent_id=shogun制限)で、殿が家老・軍師・忍者に直接入力した会話が記憶DBに記録されない。全ペインの殿の入力を記録する
   recommended_skills:
-  - reset-layout
   - hensei
   - hensei-mixed
   - hensei-opus
   - karo-direct
   - recon-dual
+  - reset-layout
   - shogun-all-codex-switch
   - shogun-peacetime-rollback
   - switch-to-codex
   - switch-to-opus
   semantic_concepts:
-  - 'inbox_watcher_process_model — inbox_watcherプロセスモデル:  scripts/inbox_watcher.sh scripts/restart_watchers.sh'
-  - 'inbox_processing_discipline — inbox処理規律:  .claude/hooks/pre-write-edit-combined.sh Guard 0d scripts/hooks/stop_check_inbox.sh scripts/inbox_mark_read.sh'
-  - 'daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)'
   - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
+  - 'inbox_watcher_process_model — inbox_watcherプロセスモデル:  scripts/inbox_watcher.sh scripts/restart_watchers.sh'
+  - 'daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)'
+  - 'training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh'
+  - 'hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json'
   status: done
   stop_for: []
   target_path: scripts/
-  task_id: cmd_2970_exact
+  task_id: cmd_2989_exact
   task_type: exact
   related_lessons:
-  - id: 'L511'
-    summary: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-    detail: 'gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
+  - id: 'L689'
+    summary: 'android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検'
+    detail: 'android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検'
+  - id: 'L125'
+    summary: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+    detail: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[FTS5+因果+重要度]]"
-  - "[[テーブル設計穴]]"
+  - "[[agent_id制限]]"
+  - "[[家老/軍師会話未記録]]"
   - "[[殿指摘2026-05-22]]"
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -81,22 +84,23 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L511: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
+      - L689: android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検
+      - L125: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'events_fts仮想テーブル(FTS5)がsummary+detailで作成され、全文検索が強制的にFTS経由で実行される'
+    - check: '殿が家老ペインに入力した内容がlord_conversation.jsonlに記録される'
   - id: 'AC2'
     checks:
-    - check: 'eventsテーブルにparent_event_id(INTEGER)とimportance(TEXT)カラムが追加されている'
+    - check: '殿が軍師ペインに入力した内容がlord_conversation.jsonlに記録される'
   - id: 'AC3'
     checks:
-    - check: '変更対象の関連テスト(test_memory_db*.bats)PASS'
+    - check: '記録されたイベントがeventsテーブルにリアルタイムINSERTされる'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2970.yaml
+  report_filename: hayate_report_cmd_2989.yaml
   report_path: 
   bloom_level: 
