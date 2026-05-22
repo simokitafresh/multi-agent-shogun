@@ -662,3 +662,4 @@
 | cmd_2955 | cmd_2954設計変更(軍師REQUEST_CHANGES)。ファイル間直接リンクではなく概念名リンクのみ挿入。各resourcesファイルに所属概念名への[[概念名]]リンクを挿入し、概念をハブとするスター型ネットワークを構築 | infra | 05-22 | docs/semantic-index/index.mdから |
 | cmd_2954 | index.mdの46概念×resourcesをパースし、同一概念内resources間+概念⇔resourcesの双方向[[リンク]]を自動挿入。孤立率88%を一括削減。殿直接指示 | infra | 05-22 | — |
 | cmd_2957 | deploy_task.sh inject_direct_training_templateのAC2/AC5が概念名リンク(ハブ方式)を許容している。殿確定の分離原則(context/obsidian-link-principles.md)に準拠し、ファイル間直接リンク方式に修正する | infra | 05-22 | deploy_task.shのL4修行テンプレートをファイル |
+| cmd_2959 | 参照scriptがSKILL.mdより新しい11ファイルを更新し、スキル指示とスクリプト実態の乖離を解消する | infra | 05-22 | SKILL.md 13件の参照script仕様追従を更新し、 |
