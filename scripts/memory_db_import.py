@@ -25,6 +25,7 @@ DEFAULT_SKILL_EXECUTION_LOG = REPO_ROOT / "logs" / "skill_execution_log.yaml"
 DEFAULT_CMD_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive" / "cmds"
 DEFAULT_PENDING_DECISIONS_FILE = REPO_ROOT / "queue" / "pending_decisions.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
 SQLITE_BUSY_TIMEOUT_MS = 5000
 EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]
 
@@ -581,6 +582,26 @@ def event_rows_from_pending_decisions(
     return event_rows
 
 
+def event_link_rows(
+    event_rows: list[EventRow],
+) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for event_row in event_rows:
+        event_id = event_row[0]
+        text = f"{event_row[6]}\n{event_row[7]}"
+        for match in OBSIDIAN_LINK_RE.finditer(text):
+            concept = match.group(1).strip()
+            if not concept:
+                continue
+            key = (event_id, concept, "obsidian")
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(key)
+    return rows
+
+
 def event_concept_rows(
     event_rows: list[EventRow],
 ) -> list[tuple[str, str]]:
@@ -803,6 +824,26 @@ def build_db(
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_parent_event_id ON events(parent_event_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_importance ON events(importance)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_concepts_concept_name ON event_concepts(concept_name)")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS event_links (
+                source_event_id TEXT NOT NULL,
+                target_concept TEXT NOT NULL,
+                link_type TEXT NOT NULL DEFAULT 'obsidian',
+                PRIMARY KEY (source_event_id, target_concept, link_type),
+                FOREIGN KEY (source_event_id) REFERENCES events(id)
+            )
+            """
+        )
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO event_links (source_event_id, target_concept, link_type)
+            VALUES (?, ?, ?)
+            """,
+            event_link_rows(event_rows),
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_source_event_id ON event_links(source_event_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_target_concept ON event_links(target_concept)")
 
 
 def parse_args() -> argparse.Namespace:
