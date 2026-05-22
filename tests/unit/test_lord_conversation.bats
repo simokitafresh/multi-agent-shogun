@@ -258,3 +258,111 @@ PY
     [ "${result[1]}" = "legacy message" ]
     [ "${result[2]}" = "new message" ]
 }
+
+@test "T-LC-013: append_lord_conversation inserts appended entry into memory DB events and FTS" {
+    export LORD_CONVERSATION_DB="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$TEST_TMPDIR/data"
+    python3 - "$LORD_CONVERSATION_DB" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE conversations (
+    ts TEXT,
+    agent TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT
+);
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
+
+    run append_lord_conversation "cmd_2982 realtime sqlite insert" "response" "shogun" "terminal"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$LORD_CONVERSATION_DB" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+event = conn.execute(
+    """
+    SELECT event_type, agent, target, direction, cmd_id, concepts
+    FROM events
+    WHERE detail='cmd_2982 realtime sqlite insert'
+    """
+).fetchone()
+fts_count = conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'realtime'
+      AND e.detail='cmd_2982 realtime sqlite insert'
+    """
+).fetchone()[0]
+conversation_count = conn.execute(
+    "SELECT COUNT(*) FROM conversations WHERE detail='cmd_2982 realtime sqlite insert'"
+).fetchone()[0]
+print(event[0])
+print(event[1])
+print(event[2])
+print(event[3])
+print(event[4])
+print(event[5])
+print(fts_count)
+print(conversation_count)
+PY
+)
+    [ "${result[0]}" = "conversation" ]
+    [ "${result[1]}" = "shogun" ]
+    [ "${result[2]}" = "lord" ]
+    [ "${result[3]}" = "response" ]
+    [ "${result[4]}" = "cmd_2982" ]
+    [ "${result[5]}" = "[]" ]
+    [ "${result[6]}" = "1" ]
+    [ "${result[7]}" = "1" ]
+}
+
+@test "T-LC-014: append_lord_conversation keeps JSONL success when DB insert fails" {
+    export LORD_CONVERSATION_DB="$TEST_TMPDIR/broken_memory.db"
+    printf 'not sqlite\n' > "$LORD_CONVERSATION_DB"
+
+    run append_lord_conversation "jsonl survives db failure" "outbound" "karo"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$LORD_CONVERSATION", "r", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+print(len(rows))
+print(rows[-1].get("detail", ""))
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "jsonl survives db failure" ]
+    [[ "$output" == *"DB INSERT skipped"* ]]
+}

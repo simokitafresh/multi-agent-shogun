@@ -18,6 +18,7 @@ append_lord_conversation() {
   local agent="${3:-}"
   local source="${4:-ntfy}"
   local lock_wait="${LORD_CONVERSATION_LOCK_WAIT_SEC:-5}"
+  local db_path="${LORD_CONVERSATION_DB:-}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -38,6 +39,9 @@ append_lord_conversation() {
   local timestamp legacy_yaml
   timestamp="$(date "+%Y-%m-%dT%H:%M:%S%:z")"
   legacy_yaml="${LORD_CONVERSATION%.jsonl}.yaml"
+  if [ -z "$db_path" ]; then
+    db_path="$(cd "$(dirname "$LORD_CONVERSATION")/.." 2>/dev/null && pwd)/data/multi_agent_shogun_memory.db"
+  fi
 
   mkdir -p "$(dirname "$LORD_CONVERSATION")"
   [ -f "$LORD_CONVERSATION" ] || : > "$LORD_CONVERSATION"
@@ -51,9 +55,13 @@ append_lord_conversation() {
     CONV_AGENT="$agent" \
     CONV_SOURCE="$source" \
     CONV_MESSAGE="$message" \
+    CONV_DB_PATH="$db_path" \
     python3 - <<'PY'
+import hashlib
 import json
 import os
+import re
+import sqlite3
 import tempfile
 from pathlib import Path
 
@@ -69,6 +77,8 @@ direction = os.environ["CONV_DIRECTION"]
 agent = os.environ["CONV_AGENT"]
 source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
 message = os.environ["CONV_MESSAGE"]
+db_path = Path(os.environ.get("CONV_DB_PATH", ""))
+CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 
 
 def normalize_text(value: object) -> str:
@@ -141,6 +151,104 @@ def load_legacy_yaml(file_path: Path) -> list[dict]:
     return converted
 
 
+def infer_cmd_id(summary: str, detail: str) -> str:
+    match = CMD_RE.search(f"{summary}\n{detail}")
+    return match.group(0) if match else ""
+
+
+def infer_target(entry_agent: str, entry_direction: str) -> str:
+    if entry_direction == "inbound":
+        return "shogun"
+    if entry_direction in {"response", "outbound"}:
+        return "lord"
+    return ""
+
+
+def append_memory_db_entry(entry: dict, event_index: int) -> None:
+    if not db_path or not db_path.exists():
+        return
+
+    event_hash = hashlib.sha1(
+        json.dumps(
+            {
+                "ts": entry.get("ts", ""),
+                "source": entry.get("source", ""),
+                "direction": entry.get("direction", ""),
+                "agent": entry.get("agent", ""),
+                "detail": entry.get("detail", ""),
+                "event_index": event_index,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    session_id = Path(path).stem
+    event_id = f"conversation:{session_id}:live:{event_hash}"
+    entry_agent = normalize_text(entry.get("agent", ""))
+    entry_direction = normalize_text(entry.get("direction", ""))
+    entry_summary = normalize_text(entry.get("summary", ""))
+    entry_detail = normalize_text(entry.get("detail", ""))
+    source_file = str(path)
+
+    with sqlite3.connect(db_path) as conn:
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type IN ('table', 'virtual table')"
+            )
+        }
+        if not {"conversations", "events", "events_fts"}.issubset(tables):
+            return
+        conn.execute(
+            """
+            INSERT INTO conversations (
+                ts, agent, direction, summary, detail, session_id
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                normalize_text(entry.get("ts", "")),
+                entry_agent,
+                entry_direction,
+                entry_summary,
+                entry_detail,
+                session_id,
+            ),
+        )
+        cursor = conn.execute(
+            """
+            INSERT OR IGNORE INTO events (
+                id, ts, event_type, agent, target, direction, summary, detail,
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event_id,
+                normalize_text(entry.get("ts", "")),
+                "conversation",
+                entry_agent,
+                infer_target(entry_agent, entry_direction),
+                entry_direction,
+                entry_summary,
+                entry_detail,
+                session_id,
+                infer_cmd_id(entry_summary, entry_detail),
+                "[]",
+                source_file,
+                None,
+                "normal",
+            ),
+        )
+        if cursor.rowcount == 1:
+            rowid = conn.execute(
+                "SELECT rowid FROM events WHERE id = ?",
+                (event_id,),
+            ).fetchone()[0]
+            conn.execute(
+                "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
+                (rowid, entry_summary, entry_detail),
+            )
+
+
 entries = load_jsonl(path)
 if not entries and str(path).endswith(".jsonl"):
     entries = load_legacy_yaml(legacy_path)
@@ -173,6 +281,11 @@ try:
 except Exception:
     os.unlink(tmp_path)
     raise
+
+try:
+    append_memory_db_entry(entry, len(entries))
+except Exception as exc:
+    print(f"WARN: append_lord_conversation: DB INSERT skipped: {exc}", file=os.sys.stderr)
 PY
   ) 200>"$LORD_CONVERSATION_LOCK"; then
     return 1
