@@ -7115,9 +7115,9 @@ except Exception:
         return 1
     fi
 
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=1
     deploy_task_apply_task_mutations "$NINJA_NAME"
     deploy_task_check_deadline "after_task_mutations" || return $?
-    DEPLOY_TASK_EXIT_NUDGE_ARMED=1
 
     if [ -n "$deploy_lock_fd" ]; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"

@@ -288,6 +288,60 @@ EOF
     [ ! -f "$TEST_PROJECT/logs/exit_nudge_send.log" ]
 }
 
+@test "cmd_2974: deploy_task arms EXIT nudge before post-mutation deadline check" {
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: exact
+  status: idle
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$project/logs/exit_after_mutation.log"; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        repair_training_parent_cmd_from_cmd_id() { :; }
+        deploy_task_has_pending_own_report() { return 1; }
+        capture_done_redeploy_context() { :; }
+        reset_stale_fields() { _STALE_RESET_DONE=1; }
+        inject_training_target_path_from_alias_quality() { :; }
+        inject_direct_training_template() { :; }
+        warn_same_ninja_redeploy() { :; }
+        deploy_task_has_completed_peer_report() { return 1; }
+        check_firefighting_title() { :; }
+        warn_task_clarity() { :; }
+        warn_recent_noncmd_commit_targets() { :; }
+        deploy_task_apply_task_mutations() {
+            printf "mutated\n" >> "$project/logs/exit_after_mutation.log"
+        }
+        deploy_task_check_deadline() {
+            if [ "${1:-}" = "after_task_mutations" ]; then
+                return 1
+            fi
+            return 0
+        }
+        safe_inbox_write() {
+            printf "%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" >> "$project/logs/exit_after_mutation_send.log"
+        }
+        deploy_task_main --direct sasuke cmd_2974
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 1 ]
+    grep -q "mutated" "$TEST_PROJECT/logs/exit_after_mutation.log"
+    grep -q "EXIT trap sending inbox_write" "$TEST_PROJECT/logs/exit_after_mutation.log"
+    run cat "$TEST_PROJECT/logs/exit_after_mutation_send.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == sasuke\|*queue/tasks/sasuke.yaml* ]]
+    [[ "$output" == *"|task_assigned|karo" ]]
+}
+
 @test "inject_semantic_concepts injects recommended_skills from semantic search skills rows" {
     use_private_scripts_fixture
     cat > "$TEST_PROJECT/scripts/semantic_search.sh" <<'EOF'
