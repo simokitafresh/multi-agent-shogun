@@ -115,7 +115,7 @@ EOF
     db_path="$TEST_TMPDIR/data/memory.db"
     mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
     cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
-{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"aliases未登録語の検索","detail":"DB FTS5フォールバックだけが拾える到達不能語 foobarmemoryonly"}
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"aliases未登録語の検索","detail":"DB FTS5フォールバックだけが拾える到達不能語 foobarmemoryonly"}
 EOF
     run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$archive_dir" \
@@ -124,6 +124,7 @@ EOF
 
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
     unset SEMANTIC_DISABLE_MEMORY_DB
+    export AGENT_ID=hayate
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
 
     run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
@@ -132,6 +133,33 @@ EOF
     [[ "$output" == *"MEMORY_DB_MATCH: foobarmemoryonly"* ]]
     [[ "$output" == *"memory_db_fts_results:"* ]]
     [[ "$output" == *"aliases未登録語の検索"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "memory DB fallback filters hits to current agent target" {
+    archive_dir="$TEST_TMPDIR/archive"
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
+    cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"hayate宛の殿発言","detail":"sharedtargetneedle"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo宛の殿発言","detail":"sharedtargetneedle"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$archive_dir" \
+        --db "$db_path"
+    [ "$status" -eq 0 ]
+
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    unset SEMANTIC_DISABLE_MEMORY_DB
+    export AGENT_ID=hayate
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "sharedtargetneedle"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MEMORY_DB_MATCH: sharedtargetneedle"* ]]
+    [[ "$output" == *"hayate宛の殿発言"* ]]
+    [[ "$output" != *"karo宛の殿発言"* ]]
     [[ "$output" != *"should-not-run"* ]]
 }
 

@@ -123,6 +123,26 @@ EOF
     [[ "$output" != *"無関係"* ]]
 }
 
+@test "memory_db_import search CLI filters by target when requested" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"hayate宛検索対象","detail":"sameuniquetargetneedle"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo宛検索対象","detail":"sameuniquetargetneedle"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "sameuniquetargetneedle" \
+        --target "hayate"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate宛検索対象"* ]]
+    [[ "$output" != *"karo宛検索対象"* ]]
+}
+
 @test "memory_db_import schema CLI emits markdown with event types and samples" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"schema sample","detail":"event_type distribution check"}
@@ -202,6 +222,25 @@ EOF
         "SELECT e.summary FROM events_fts JOIN events AS e ON e.rowid = events_fts.rowid WHERE events_fts MATCH 'uniqueftsneedle'"
     [ "$status" -eq 0 ]
     [ "$output" = "FTS wrapper" ]
+}
+
+@test "memory_db_query default search filters by target" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"hayate query wrapper","detail":"querytargetneedle"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo query wrapper","detail":"querytargetneedle"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    AGENT_ID=hayate run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "querytargetneedle"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate query wrapper"* ]]
+    [[ "$output" != *"karo query wrapper"* ]]
 }
 
 @test "memory_db_query allows SELECT and WITH SELECT but blocks write statements" {
