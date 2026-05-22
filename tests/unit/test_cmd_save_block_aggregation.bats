@@ -188,6 +188,61 @@ YAML
     [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
 }
 
+@test "AC2b: 殿発言検索はtarget=karoのinboundを除外する" {
+    create_memory_db_fixture
+    cat > "$TEST_LORD_CONVERSATION" <<'JSONL'
+{"ts":"2026-05-23T03:00:00","direction":"inbound","target":"karo","summary":"target filter regression uniquehayate karo-only","detail":"cmd_save target filtering"}
+{"ts":"2026-05-23T03:01:00","direction":"inbound","target":"shogun","summary":"target filter regression uniquehayate shogun-visible","detail":"cmd_save target filtering"}
+{"ts":"2026-05-23T03:02:00","direction":"inbound","summary":"target filter regression uniquehayate legacy-visible","detail":"cmd_save target filtering"}
+JSONL
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_pass:
+    id: cmd_pass
+    title: "target filter regression uniquehayate"
+    purpose: "cmd_save target filtering regression"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_3017]] [[lord_conversation_target_filter]]"
+    task_type: impl
+    command: |
+      1. scripts/cmd_save.sh の殿発言検索target条件を確認する
+      2. target=karoのinboundが検索結果に出ないことを確認する
+    acceptance_criteria:
+      - id: AC1
+        description: "target条件が存在する"
+      - id: AC2
+        description: "target=karoのinboundが検索結果に含まれない"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "殿発言検索の宛先スコープをテストで固定する"
+      q3_next_quality: "将軍cmd設計時に家老・軍師宛の発言を混入させない"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test"
+      q6_not_hiding: "no — 対象外targetの除外であり、対象内の殿発言検索は維持する"
+      q7_definition_verified: "yes — target=karo除外とtarget=shogun/未設定許可を本テストで固定する"
+      q8_why_what: "WHY: 家老宛発言が将軍cmd設計に混入する → WHAT: targetフィルタをcmd_saveの殿発言検索へ追加する → WHEN: cmd_save実行時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: target=karoのJSONL fixtureをフル実行で除外検証する。複利: 正の複利"
+      q10_knowledge_boundary: "空間内。根拠: scripts/cmd_save.sh と tests/unit/test_cmd_save_block_aggregation.bats のみ"
+      q11_not_already_done: "未達成。cmd_3008/3009の同構造をcmd_save.shへ横展開する"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "2026-05-23 cmd_save.sh のshow_lord_conversation_matchesはdirection=inboundを検索対象にする"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+        verified_at: "2026-05-23"
+        detail: "target条件の回帰テストfixtureで検証する"
+YAML
+
+    run_cmd_save_pass
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_pass"* ]]
+    [[ "$output" == *"shogun-visible"* ]]
+    [[ "$output" == *"legacy-visible"* ]]
+    [[ "$output" != *"karo-only"* ]]
+}
+
 @test "AC1b: PASS時にcmd_save eventを記憶DBへINSERTする" {
     create_memory_db_fixture
     cat > "$TEST_QUEUE" <<'YAML'

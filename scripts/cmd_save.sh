@@ -3466,6 +3466,9 @@ try:
                 continue
             if entry.get("direction") != "inbound":
                 continue
+            target = str(entry.get("target", "") or "").strip().lower()
+            if target not in {"", "shogun"}:
+                continue
             total_inbound += 1
             text = " ".join(
                 str(entry.get(key, "") or "")
