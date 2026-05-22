@@ -710,7 +710,7 @@ PY
     [ "${result[1]}" = "1" ]
 }
 
-@test "memory_db_import imports markdown doc dirs as document events" {
+@test "memory_db_import imports doc dirs as document events" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
 EOF
@@ -725,13 +725,20 @@ EOF
 
 infra document searchable marker
 EOF
+    cat > "$TEST_TMPDIR/docs/projects/infra/lesson.yaml" <<'EOF'
+id: L3011
+summary: yaml lesson searchable marker
+EOF
+    cat > "$TEST_TMPDIR/docs/projects/infra/checklist.txt" <<'EOF'
+txt checklist searchable marker
+EOF
 
     run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --doc-dirs "$TEST_TMPDIR/docs/context,$TEST_TMPDIR/docs/projects/infra"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"documents=2"* ]]
+    [[ "$output" == *"documents=4"* ]]
 
     readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3
@@ -757,7 +764,7 @@ print(conn.execute(
 ).fetchone()[0])
 PY
 )
-    [ "${result[0]}" = "2" ]
+    [ "${result[0]}" = "4" ]
     [[ "${result[1]}" == "document|document|document|Context Document Heading|cmd_3011_exact_document|"* ]]
     [ "${result[2]}" = "1" ]
 

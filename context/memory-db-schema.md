@@ -1,4 +1,3 @@
-<!-- last_updated: 2026-05-22 cmd_3005 -->
 # Memory DB Schema
 
 - DB: `/mnt/c/tools/multi-agent-shogun/data/multi_agent_shogun_memory.db`
@@ -8,11 +7,11 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 52282 | event_id, concept_name |
-| table | event_links | 815 | source_event_id, target_concept, link_type |
-| table | events | 40249 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 40249 | summary, detail |
-| view | conversations | 27976 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 54192 | event_id, concept_name |
+| table | event_links | 1637 | source_event_id, target_concept, link_type |
+| table | events | 41373 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 41373 | summary, detail |
+| view | conversations | 28273 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -27,19 +26,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 27976 |
-| skill_execution | 3878 |
-| bulletin | 3260 |
-| cmd_archive | 3160 |
-| report | 925 |
-| insight | 409 |
-| inbox | 293 |
-| cmd_quality | 141 |
-| gate | 82 |
-| cmd_save | 56 |
+| conversation | 28273 |
+| skill_execution | 3912 |
+| cmd_archive | 3395 |
+| bulletin | 3274 |
+| report | 1116 |
+| insight | 471 |
+| inbox | 363 |
+| cmd_quality | 170 |
+| document | 153 |
+| gate | 100 |
+| cmd_save | 68 |
 | pending_decision | 43 |
-| cmd_delegate | 19 |
-| lesson | 7 |
+| cmd_delegate | 24 |
+| lesson | 11 |
 
 ## `event_concepts`
 

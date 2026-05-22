@@ -18,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ARCHIVE_DIR = REPO_ROOT / "logs" / "lord_conversation_archive"
 DEFAULT_DB_PATH = REPO_ROOT / "data" / "multi_agent_shogun_memory.db"
 DEFAULT_SCHEMA_DOC_PATH = REPO_ROOT / "context" / "memory-db-schema.md"
+DOCUMENT_SUFFIXES = {".md", ".yaml", ".yml", ".txt", ".rst"}
 DEFAULT_SEMANTIC_INDEX_PATH = REPO_ROOT / "docs" / "semantic-index" / "index.md"
 DEFAULT_BULLETIN_FILE = REPO_ROOT / "queue" / "bulletin_board.yaml"
 DEFAULT_BULLETIN_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive"
@@ -274,10 +275,14 @@ def parse_doc_dirs(value: str) -> list[Path]:
 def iter_document_files(doc_dirs: list[Path]) -> Iterable[Path]:
     seen: set[Path] = set()
     for doc_dir in doc_dirs:
-        if doc_dir.is_file() and doc_dir.suffix == ".md":
+        if doc_dir.is_file() and doc_dir.suffix.lower() in DOCUMENT_SUFFIXES:
             candidates: Iterable[Path] = [doc_dir]
         elif doc_dir.is_dir():
-            candidates = sorted(path for path in doc_dir.rglob("*.md") if path.is_file())
+            candidates = sorted(
+                path
+                for path in doc_dir.rglob("*")
+                if path.is_file() and path.suffix.lower() in DOCUMENT_SUFFIXES
+            )
         else:
             continue
         for path in candidates:
@@ -1161,7 +1166,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--doc-dirs",
         default="",
-        help="Comma-separated files/directories whose markdown documents are imported as event_type=document.",
+        help="Comma-separated files/directories whose md/yaml/txt/rst documents are imported as event_type=document.",
     )
     parser.add_argument(
         "--search",
