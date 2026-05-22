@@ -16,34 +16,48 @@ TSV_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 ARCHIVE_FILE="$SCRIPT_DIR/logs/archive/lesson_impact_archive.tsv"
 KEEP_LINES=2000
 
+# Keep the hot TSV visible to readers at all times.  The temp file must live
+# beside TSV_FILE so mv is an atomic rename instead of a cross-filesystem copy.
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+
 if [ ! -f "$TSV_FILE" ]; then
     exit 0
 fi
 
-total_lines=$(wc -l < "$TSV_FILE" | tr -d ' ')
+(
+    flock -w 10 200 || {
+        echo "[lesson_impact_rotate] WARN: lock timeout ($TSV_FILE)" >&2
+        exit 0
+    }
 
-# ヘッダー(1行) + データ行で KEEP_LINES+1 以下なら何もしない
-if [ "$total_lines" -le $((KEEP_LINES + 1)) ]; then
-    exit 0
-fi
+    total_lines=$(wc -l < "$TSV_FILE" | tr -d ' ')
 
-# アーカイブディレクトリ確保
-mkdir -p "$(dirname "$ARCHIVE_FILE")"
+    # ヘッダー(1行) + データ行で KEEP_LINES+1 以下なら何もしない
+    if [ "$total_lines" -le $((KEEP_LINES + 1)) ]; then
+        exit 0
+    fi
 
-# アーカイブファイルにヘッダーがなければ追加
-if [ ! -f "$ARCHIVE_FILE" ] || [ ! -s "$ARCHIVE_FILE" ]; then
-    head -1 "$TSV_FILE" > "$ARCHIVE_FILE"
-fi
+    # アーカイブディレクトリ確保
+    mkdir -p "$(dirname "$ARCHIVE_FILE")"
 
-# 退避対象: ヘッダーの次行 〜 (total - KEEP_LINES)行目
-archive_end=$((total_lines - KEEP_LINES))
-sed -n "2,${archive_end}p" "$TSV_FILE" >> "$ARCHIVE_FILE"
+    # アーカイブファイルにヘッダーがなければ追加
+    if [ ! -f "$ARCHIVE_FILE" ] || [ ! -s "$ARCHIVE_FILE" ]; then
+        head -1 "$TSV_FILE" > "$ARCHIVE_FILE"
+    fi
 
-# 保持: ヘッダー + 末尾KEEP_LINES行
-tmpfile=$(mktemp)
-head -1 "$TSV_FILE" > "$tmpfile"
-tail -"$KEEP_LINES" "$TSV_FILE" >> "$tmpfile"
-mv "$tmpfile" "$TSV_FILE"
+    # 退避対象: ヘッダーの次行 〜 (total - KEEP_LINES)行目
+    archive_end=$((total_lines - KEEP_LINES))
+    sed -n "2,${archive_end}p" "$TSV_FILE" >> "$ARCHIVE_FILE"
 
-archived=$((archive_end - 1))
-echo "[lesson_impact_rotate] archived=${archived} lines, kept=${KEEP_LINES} lines"
+    # 保持: ヘッダー + 末尾KEEP_LINES行
+    tsv_dir="$(dirname "$TSV_FILE")"
+    tmpfile=$(mktemp "$tsv_dir/.lesson_impact.XXXXXX.tmp")
+    trap 'rm -f "$tmpfile"' EXIT
+    head -1 "$TSV_FILE" > "$tmpfile"
+    tail -"$KEEP_LINES" "$TSV_FILE" >> "$tmpfile"
+    mv -f "$tmpfile" "$TSV_FILE"
+    trap - EXIT
+
+    archived=$((archive_end - 1))
+    echo "[lesson_impact_rotate] archived=${archived} lines, kept=${KEEP_LINES} lines"
+) 200>"$(lock_path "$TSV_FILE")"
