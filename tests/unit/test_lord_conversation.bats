@@ -267,17 +267,9 @@ import sqlite3
 import sys
 conn = sqlite3.connect(sys.argv[1])
 conn.executescript("""
-CREATE TABLE conversations (
-    ts TEXT,
-    agent TEXT,
-    direction TEXT,
-    summary TEXT,
-    detail TEXT,
-    session_id TEXT
-);
-CREATE TABLE events (
-    id TEXT PRIMARY KEY,
-    ts TEXT,
+	CREATE TABLE events (
+	    id TEXT PRIMARY KEY,
+	    ts TEXT,
     event_type TEXT,
     agent TEXT,
     target TEXT,
@@ -294,10 +286,14 @@ CREATE TABLE events (
 CREATE VIRTUAL TABLE events_fts USING fts5(
     summary,
     detail,
-    content='events',
-    content_rowid='rowid'
-);
-""")
+	    content='events',
+	    content_rowid='rowid'
+	);
+	CREATE VIEW conversations AS
+	SELECT ts, agent, direction, summary, detail, session_id
+	FROM events
+	WHERE event_type = 'conversation';
+	""")
 conn.commit()
 PY
 

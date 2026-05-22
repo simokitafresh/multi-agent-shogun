@@ -734,34 +734,6 @@ def build_db(
         configure_connection(conn)
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS conversations (
-                ts TEXT,
-                agent TEXT,
-                direction TEXT,
-                summary TEXT,
-                detail TEXT,
-                session_id TEXT
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_unique
-            ON conversations(ts, agent, direction, summary, detail, session_id)
-            """
-        )
-        conn.executemany(
-            """
-            INSERT OR REPLACE INTO conversations (
-                ts, agent, direction, summary, detail, session_id
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            [(ts, agent, direction, summary, detail, session_id) for ts, agent, direction, summary, detail, session_id, _source_file in rows],
-        )
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_conversations_ts ON conversations(ts)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_conversations_session_id ON conversations(session_id)")
-        conn.execute(
-            """
             CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY,
                 ts TEXT,
@@ -823,6 +795,21 @@ def build_db(
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_cmd_id ON events(cmd_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_parent_event_id ON events(parent_event_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_importance ON events(importance)")
+        conversation_object = conn.execute(
+            "SELECT type FROM sqlite_master WHERE name = 'conversations'"
+        ).fetchone()
+        if conversation_object and conversation_object[0] == "view":
+            conn.execute("DROP VIEW conversations")
+        elif conversation_object:
+            conn.execute("DROP TABLE conversations")
+        conn.execute(
+            """
+            CREATE VIEW conversations AS
+            SELECT ts, agent, direction, summary, detail, session_id
+            FROM events
+            WHERE event_type = 'conversation'
+            """
+        )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_concepts_concept_name ON event_concepts(concept_name)")
         conn.execute(
             """

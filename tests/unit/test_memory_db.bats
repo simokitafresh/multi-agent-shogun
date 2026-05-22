@@ -11,7 +11,7 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
-@test "memory_db_import creates conversations and events tables with required columns" {
+@test "memory_db_import creates conversations view and events table with required columns" {
     cat > "$TEST_TMPDIR/archive/2026-05-01.jsonl" <<'EOF'
 {"ts":"2026-05-01T00:00:00+09:00","agent":"lord","direction":"inbound","summary":"sum1","detail":"detail1"}
 {"ts":"2026-05-01T00:01:00+09:00","agent":"shogun","direction":"response","summary":"sum2","detail":"detail2","session_id":"explicit-session"}
@@ -29,8 +29,12 @@ import sys
 conn = sqlite3.connect(sys.argv[1])
 conversation_cols = [row[1] for row in conn.execute("PRAGMA table_info(conversations)")]
 event_cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+conversation_type = conn.execute(
+    "SELECT type FROM sqlite_master WHERE name='conversations'"
+).fetchone()[0]
 print(",".join(conversation_cols))
 print(",".join(event_cols))
+print(conversation_type)
 print(conn.execute("SELECT COUNT(*) FROM conversations").fetchone()[0])
 print(conn.execute("SELECT session_id FROM conversations ORDER BY ts LIMIT 1").fetchone()[0])
 print(conn.execute("SELECT session_id FROM conversations ORDER BY ts DESC LIMIT 1").fetchone()[0])
@@ -40,11 +44,12 @@ PY
 )
     [ "${result[0]}" = "ts,agent,direction,summary,detail,session_id" ]
     [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance" ]
-    [ "${result[2]}" = "2" ]
-    [ "${result[3]}" = "2026-05-01" ]
-    [ "${result[4]}" = "explicit-session" ]
-    [ "${result[5]}" = "2" ]
-    [ "${result[6]}" = "conversation" ]
+    [ "${result[2]}" = "view" ]
+    [ "${result[3]}" = "2" ]
+    [ "${result[4]}" = "2026-05-01" ]
+    [ "${result[5]}" = "explicit-session" ]
+    [ "${result[6]}" = "2" ]
+    [ "${result[7]}" = "conversation" ]
 }
 
 @test "memory_db_import creates FTS5 index and searches summary detail through MATCH" {

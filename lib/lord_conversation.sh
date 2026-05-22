@@ -204,26 +204,11 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
         tables = {
             row[0]
             for row in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type IN ('table', 'virtual table')"
+                "SELECT name FROM sqlite_master WHERE type IN ('table', 'view', 'virtual table')"
             )
         }
         if not {"conversations", "events", "events_fts"}.issubset(tables):
             return
-        conn.execute(
-            """
-            INSERT INTO conversations (
-                ts, agent, direction, summary, detail, session_id
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                normalize_text(entry.get("ts", "")),
-                entry_agent,
-                entry_direction,
-                entry_summary,
-                entry_detail,
-                session_id,
-            ),
-        )
         cursor = conn.execute(
             """
             INSERT OR IGNORE INTO events (
