@@ -4311,6 +4311,37 @@ try:
                     return True
         return False
 
+    def _path_relevance_terms(task_files):
+        terms = set()
+        for path in task_files:
+            path = str(path or '').lower()
+            if not path:
+                continue
+            terms.update(extract_keywords(path, min_len=3))
+            base = os.path.basename(path)
+            stem, _ = os.path.splitext(base)
+            terms.update(t for t in re.split(r'[^a-z0-9]+', stem.lower()) if len(t) >= 3)
+        return terms
+
+    task_file_terms = _path_relevance_terms(_all_task_files)
+
+    def _universal_without_target_files_is_relevant(lesson, l_tags):
+        """target_filesなしuniversalが全cmdへ漏れるのを防ぐため、target_pathとの語彙関連を要求する。"""
+        lesson_target_files = lesson.get('target_files', [])
+        if isinstance(lesson_target_files, str):
+            lesson_target_files = [lesson_target_files]
+        if any(str(p).strip() for p in lesson_target_files):
+            return True
+        non_universal_tags = {t for t in l_tags if t != 'universal'}
+        if task_tags and (set(task_tags) & non_universal_tags):
+            return True
+        if not task_file_terms:
+            return True
+        lesson_text = ' '.join(str(lesson.get(k, '') or '') for k in ('id', 'title', 'summary', 'content', 'source')).lower()
+        lesson_text += ' ' + ' '.join(non_universal_tags)
+        lesson_terms = set(extract_keywords(lesson_text, min_len=3))
+        return bool(task_file_terms & lesson_terms)
+
     # target_filesフィルタ: タグマッチした教訓は除外しない(忍者成長速度改善: タグ優先)
     _tf_excluded_ids = set()  # target_files不一致で除外候補のID
     if _all_task_files:
@@ -4362,9 +4393,12 @@ try:
             tag_candidates.append(lesson)
             continue
 
-        # universal教訓は常に注入対象
+        # universal教訓は広すぎるため、target_files未設定ならtarget_pathとの関連性を確認する。
         if 'universal' in l_tags:
-            universal_lessons.append(lesson)
+            if _universal_without_target_files_is_relevant(lesson, l_tags):
+                universal_lessons.append(lesson)
+            else:
+                _tf_excluded_ids.add(lesson.get('id', ''))
             continue
 
         # 教訓にtagsがない場合（旧フォーマット）→常にスコアリング候補に含める（後方互換）
