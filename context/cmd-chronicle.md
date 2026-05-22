@@ -660,3 +660,6 @@
 | cmd_3009 | post-shogun-inbox-check.shがlord_conversation.jsonlのinboundを全件表示し、殿が家老paneに入力した内容を将軍が自分宛てと誤認するバグを修正する | infra | 05-23 | post-shogun-inbox-check.shの殿発言 |
 | cmd_3010 | 記憶3層ハーネスPhase 2。cmd_3005棚卸し結果から品質保証済みの3カテゴリ132件を記憶DBに投入し、検索精度を向上させる | infra | 05-23 | — |
 | cmd_3011 | 記憶DBにcontext/教訓/チェックリスト等のドキュメントファイルを投入する手段がない。build_dbに7番目のソースとしてドキュメントファイル投入を追加する | infra | 05-23 | memory_db_import.pyの--doc-dirs |
+| cmd_3012 | cmd_3011で追加した--doc-dirsを使い、品質保証済み153件を記憶DBに投入する。殿裁定(2026-05-23): 品質未保証データ投入禁止、132件+記事21件に限定 | infra | 05-23 | 品質保証済み153件をmemory DBへdocument投 |
+| cmd_3014 | Phase 2追加投入。品質保証済みだが未投入の164件を記憶DBに投入する。event_type=documentのまま、source_fileパスが自然な分類子となる(殿裁定: 独自ラベル分類は不要) | infra | 05-23 | cmd_3014: 8ディレクトリ253文書をevent_t |
+| cmd_3013 | 投資知識とシステム知識とcontext文書を同一event_type=documentに混在させると検索結果が混乱する(殿指摘2026-05-23)。--event-typeでevent_typeを指定可能にし、投入時に分離する | infra | 05-23 | — |
