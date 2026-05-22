@@ -163,3 +163,9 @@
 | source | github.com/yohey-w/multi-agent-shogun releases, zenn.dev/shio_shoppaize, github.com/yohey-w/codd-dev |
 | baseline | docs/research/system-comparison-2026-03-13.md §2.5 |
 | note | Stars 1,045→1,220 (+175)。Zenn 26→36記事 (+10)。v4.0→v4.4.2。CoDD新規公開(v0.2.0a2→v1.8.0) |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

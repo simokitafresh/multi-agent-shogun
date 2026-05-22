@@ -136,3 +136,9 @@
 | last_commit_verified | 2026-04-15T17:47:20Z (API取得) |
 | principle_names | Think Before Coding / Simplicity First / Surgical Changes / Goal-Driven Execution (README直接確認) |
 | note | cmd_2097の事前情報では第4原則を「コード品質」と記載していたが、正式名称はGoal-Driven Execution |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

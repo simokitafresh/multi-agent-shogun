@@ -144,3 +144,9 @@
 | method | ローカル一次資料読取 (`AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md`) + `git remote -v` + 件数確認 |
 | source | `AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md` |
 | notes | `context/cmd-chronicle.md` の `cmd_` 行数は 725、知識辞書の既存件数は `systems=7`, `sources=1` を確認 |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

@@ -200,3 +200,9 @@ Claude Code (or 10 other hosts)
 | source | github.com/garrytan/gstack (CHANGELOG 170+バージョン確認) |
 | confidence | HIGH — GitHub直接確認。Garry TanのX発言は検索結果引用(直接fetch不可) |
 | 前回差分基準 | 前回調査 2026-03-13 v0.0.2時点。6スキル/414 stars → 23スキル/75.8k stars/v1.0.0.0 |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

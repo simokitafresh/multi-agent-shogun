@@ -197,3 +197,9 @@ Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antig
 | stars_verified | 54,610 (API取得。前回28,539から+26,071) |
 | version_verified | v1.37.1 (2026-04-17。前回v1.22.4から15マイナーバージョン進化) |
 | changelog_source | GitHub Releases API (直近25リリース全文確認) |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

@@ -18,7 +18,7 @@ systems-knowledge-base/
 - 一次知識層: `systems/` と `sources/`。原典由来の事実のみを置く
 - 解釈層: `our-army/`。我が軍への取込履歴や読み替えを分離する
 
-## Systems (8 entries)
+## Systems (9 entries)
 
 | ID | システム名 | 1行概要 | ファイル |
 |----|-----------|---------|---------|
@@ -30,6 +30,7 @@ systems-knowledge-base/
 | S06 | おしお殿 (multi-agent-shogun) | OSS 公開された将軍型マルチエージェントシステム | [`systems/oshio.md`](systems/oshio.md) |
 | S07 | Vercel Context Engineering | 受動的知識配置と agent-friendly docs を中核にした運用基盤 | [`systems/vercel.md`](systems/vercel.md) |
 | S08 | 我が軍 (current fork) | YAML 一次データ、学習ループ、GATE、復帰手順を統合した現行運用系 | [`systems/our-army.md`](systems/our-army.md) |
+| S09 | CoDD (Coherence-Driven Development) | 整合性駆動で仕様・実装・テスト・伝搬を結ぶ開発手法/ツール群 | [`systems/codd.md`](systems/codd.md) |
 
 ## Sources (2 entries)
 

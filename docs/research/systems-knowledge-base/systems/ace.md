@@ -167,3 +167,9 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 | source | github.com/daveshap/ACE_Framework (commit履歴・archive状態確認), arxiv.org/abs/2310.06775 |
 | confidence | HIGH — GitHub直接確認。Stars/archive状態・最終commit日を原典で検証 |
 | 前回差分基準 | 2026-03-13以降の変更なし(archived 2024-08-13)。概念参照価値のみ |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

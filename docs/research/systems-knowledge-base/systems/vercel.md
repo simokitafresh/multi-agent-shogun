@@ -170,3 +170,9 @@
 | version_verified | `agent-browser` v0.26.0 (published_at: 2026-04-16T23:40:31Z) |
 | last_commit_verified | `717d1b09e1c841a4c0206033886a1a861e3ca5d9` / 2026-04-16T23:33:23Z |
 | scope_note | Vercel system全体は単一repoに還元できないため、数値メタデータは公開OSS基盤 `agent-browser` を代表値として記録 |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

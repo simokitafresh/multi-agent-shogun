@@ -134,3 +134,9 @@
 | method | ローカルCLI実行確認 (`codd --version`) + context/codd.md精読 + oshio.md CoDD Changelogセクション参照 |
 | source | context/codd.md (ローカル一次資料) / github.com/yohey-w/codd-dev (repo確認) / zenn.dev/shio_shoppaize (記事群) |
 | notes | v1.9.3はcontext/codd.mdの2026-04-18時点cmd_2067調査より。bash非対応はmemory/tool_codd_lessons.mdで実証済み |
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]

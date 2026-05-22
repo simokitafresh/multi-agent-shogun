@@ -172,3 +172,9 @@
 - verified_at: 2026-05-20
 - method: WebSearch("Claude Code 2026 changelog update") + WebFetch(GitHub releases, 公式ドキュメント, Anthropic Engineering)
 - source: github.com/anthropics/claude-code/releases, code.claude.com/docs/en/whats-new, code.claude.com/docs/en/agent-teams, www.anthropic.com/engineering/building-c-compiler
+
+## 因果リンク
+
+- ← [[systems-knowledge-base/index]]
+- ↔ [[knowledge-base/index]]
+- → [[semantic-index/index]] cmd_3015: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]]
