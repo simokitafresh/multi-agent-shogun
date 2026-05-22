@@ -665,3 +665,6 @@
 | cmd_3013 | 投資知識とシステム知識とcontext文書を同一event_type=documentに混在させると検索結果が混乱する(殿指摘2026-05-23)。--event-typeでevent_typeを指定可能にし、投入時に分離する | infra | 05-23 | — |
 | cmd_3015 | 投資知識辞書108件とシステム知識辞書14件が記憶DBに投入済みだが、セマンティクスインデックスとObsidianリンクに未接続。3層全てに通す(殿指摘2026-05-23) | infra | 05-23 | 知識辞書2概念をsemantic-indexへ追加し、sys |
 | cmd_3016 | systems-knowledge-base/systems/の7件(Karpathy除く)は最終確認から35-43日以上経過。GitHub repoの最新バージョン+主要変更を調査し知識辞書を更新する | infra | 05-23 | systems知識辞書7件を2026-05-23時点のGit |
+| cmd_3017 | cmd_save.shのshow_lord_conversation_matches()がdirection=inboundのみでフィルタし、target未確認のため殿が家老/軍師宛てに発した発言が将軍のcmd設計時に関連発言として表示される。cmd_3008/3009(post-shogun-inbox-check.sh)で修正した同構造バグをcmd_save.shにも適用する | infra | 05-23 | cmd_save.shの殿発言検索にtargetフィルタを追 |
+| cmd_3018 | ci_status_check.sh L38の--limit 1が最新run=in_progressの場合UNKNOWNを返し、dashboard_auto_section.shがcheck failedと誤表示する。--limit 2にして2件目(completed)のconclusionを返すことで、CI実行中でも前回結果を正しく表示する。LK001(cmd_2792)で根因特定済み | infra | 05-23 | ci_status_check.shが最新2件から最新com |
+| cmd_3020 | deploy_task.sh L4283にtarget_filesマッチングがあるがtarget_files未設定の教訓はタグのみでマッチし全cmdに注入される。有用率0%教訓4件(L510等)の共通根因=tag=universalが広すぎて無関係cmdに注入。target_files未設定教訓に対しても、教訓のtags+cmdのtarget_pathの関連性を考慮したフィルタを追加する | infra | 05-23 | target_files未設定のuniversal教訓にta |
