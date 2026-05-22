@@ -372,7 +372,7 @@ PY
 {"agent":"lord","target":"","summary":"empty target"}
 EOF
 
-    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 10
+    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" bash "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 10
     [ "$status" -eq 0 ]
     echo "$output" | grep -q "to shogun"
     echo "$output" | grep -q "from shogun"
@@ -389,7 +389,7 @@ EOF
 {"agent":"lord","summary":"third"}
 EOF
 
-    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 2
+    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" bash "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 2
     [ "$status" -eq 0 ]
     ! echo "$output" | grep -q "first"
     ! echo "$output" | grep -q "excluded"
