@@ -40,6 +40,13 @@ def normalize_text(value: Any) -> str:
     return str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
+def repo_relative_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def escape_fts5_phrase(value: str) -> str:
     return '"' + value.replace('"', '""') + '"'
 
@@ -248,6 +255,60 @@ def load_pending_decision_entries(pending_decisions_file: Path) -> list[dict[str
         normalized = dict(entry)
         normalized["_source_file"] = str(pending_decisions_file)
         entries.append(normalized)
+    return entries
+
+
+def parse_doc_dirs(value: str) -> list[Path]:
+    dirs: list[Path] = []
+    for raw_part in value.split(","):
+        part = raw_part.strip()
+        if not part:
+            continue
+        path = Path(part)
+        if not path.is_absolute():
+            path = REPO_ROOT / path
+        dirs.append(path)
+    return dirs
+
+
+def iter_document_files(doc_dirs: list[Path]) -> Iterable[Path]:
+    seen: set[Path] = set()
+    for doc_dir in doc_dirs:
+        if doc_dir.is_file() and doc_dir.suffix == ".md":
+            candidates: Iterable[Path] = [doc_dir]
+        elif doc_dir.is_dir():
+            candidates = sorted(path for path in doc_dir.rglob("*.md") if path.is_file())
+        else:
+            continue
+        for path in candidates:
+            resolved = path.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            yield path
+
+
+def document_summary(path: Path, text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            heading = stripped.lstrip("#").strip()
+            if heading:
+                return heading[:240]
+    return path.stem.replace("-", " ")[:240]
+
+
+def load_document_entries(doc_dirs: list[Path]) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    for path in iter_document_files(doc_dirs):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        entries.append(
+            {
+                "_source_file": repo_relative_path(path),
+                "summary": document_summary(path, text),
+                "detail": text,
+            }
+        )
     return entries
 
 
@@ -613,6 +674,49 @@ def event_rows_from_pending_decisions(
     return event_rows
 
 
+def event_rows_from_documents(
+    entries: list[dict[str, Any]],
+    concepts: list[dict[str, Any]],
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
+    seen_ids: set[str] = set()
+    for idx, entry in enumerate(entries, start=1):
+        source_file = normalize_text(entry.get("_source_file"))
+        event_id = f"document:{source_file or idx}"
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        summary = normalize_text(entry.get("summary")) or source_file or "document"
+        body = normalize_text(entry.get("detail"))
+        detail = "\n".join(
+            line
+            for line in [
+                f"path: {source_file}" if source_file else "",
+                body,
+            ]
+            if line
+        )
+        event_rows.append(
+            (
+                event_id,
+                "",
+                "document",
+                "document",
+                "",
+                "document",
+                summary[:240],
+                detail,
+                "",
+                infer_cmd_id(summary, detail),
+                concepts_for_text(f"{summary}\n{detail}", concepts),
+                source_file,
+                None,
+                "normal",
+            )
+        )
+    return event_rows
+
+
 def event_link_rows(
     event_rows: list[EventRow],
 ) -> list[tuple[str, str, str]]:
@@ -710,7 +814,7 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
     if not fts_query:
         return []
     target = normalize_text(target)
-    target_clause = "AND e.target = ?" if target else ""
+    target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
     params: tuple[object, ...] = (fts_query, target, limit) if target else (fts_query, limit)
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
@@ -890,6 +994,7 @@ def build_db(
     skill_execution_entries: list[dict[str, Any]] | None = None,
     cmd_archive_entries: list[dict[str, Any]] | None = None,
     pending_decision_entries: list[dict[str, Any]] | None = None,
+    document_entries: list[dict[str, Any]] | None = None,
 ) -> None:
     concepts = list(iter_semantic_concepts(semantic_index_path))
     event_rows = event_rows_from_conversations(rows, concepts)
@@ -898,6 +1003,7 @@ def build_db(
     event_rows.extend(event_rows_from_skill_executions(skill_execution_entries or [], concepts))
     event_rows.extend(event_rows_from_cmd_archives(cmd_archive_entries or [], concepts))
     event_rows.extend(event_rows_from_pending_decisions(pending_decision_entries or [], concepts))
+    event_rows.extend(event_rows_from_documents(document_entries or [], concepts))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
@@ -1053,6 +1159,11 @@ def parse_args() -> argparse.Namespace:
         help="pending_decisions.yaml path. Defaults to queue/pending_decisions.yaml beside the archive root.",
     )
     parser.add_argument(
+        "--doc-dirs",
+        default="",
+        help="Comma-separated files/directories whose markdown documents are imported as event_type=document.",
+    )
+    parser.add_argument(
         "--search",
         default="",
         help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
@@ -1105,6 +1216,7 @@ def main() -> int:
         if args.pending_decisions_file
         else default_pending_decisions_path_for_archive(archive_dir)
     )
+    doc_dirs = parse_doc_dirs(args.doc_dirs)
     if args.search:
         for row in search_events(db_path, args.search, args.limit, args.target):
             print(
@@ -1134,6 +1246,7 @@ def main() -> int:
     skill_execution_entries = load_skill_execution_entries(skill_execution_log)
     cmd_archive_entries = load_cmd_archive_entries(cmd_archive_dir)
     pending_decision_entries = load_pending_decision_entries(pending_decisions_file)
+    document_entries = load_document_entries(doc_dirs)
     build_db(
         db_path,
         rows,
@@ -1143,6 +1256,7 @@ def main() -> int:
         skill_execution_entries,
         cmd_archive_entries,
         pending_decision_entries,
+        document_entries,
     )
     schema_output = Path(args.schema_output) if args.schema_output else None
     if schema_output is None and should_write_default_schema_doc(db_path):
@@ -1158,6 +1272,7 @@ def main() -> int:
         f"skill_executions={len(skill_execution_entries)} "
         f"cmd_archives={len(cmd_archive_entries)} "
         f"pending_decisions={len(pending_decision_entries)} "
+        f"documents={len(document_entries)} "
         f"schema={schema_output or 'not_written'} "
         f"db={db_path}"
     )
