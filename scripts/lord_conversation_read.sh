@@ -12,7 +12,8 @@ fi
 
 agent_id="$1"
 limit="${2:-5}"
-conversation_file="${LORD_CONVERSATION_FILE:-queue/lord_conversation.jsonl}"
+script_dir="$(cd "$(dirname "$0")/.." && pwd)"
+conversation_file="${LORD_CONVERSATION_FILE:-$script_dir/queue/lord_conversation.jsonl}"
 
 if [ -z "$agent_id" ]; then
   echo "FATAL: agent_id is required" >&2
