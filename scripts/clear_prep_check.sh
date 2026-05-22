@@ -111,6 +111,44 @@ PY
 
 archive_lord_conversation
 
+run_session_memory_db_import() {
+  local memory_db_import="$ROOT_DIR/scripts/memory_db_import.py"
+  local memory_db="$ROOT_DIR/data/multi_agent_shogun_memory.db"
+
+  echo "[8d.記憶整理Phase] memory DB再構築:"
+  if [ ! -f "$memory_db_import" ]; then
+    echo "  SKIP (memory_db_import.py不在)"
+    return 0
+  fi
+
+  local before_mtime=0
+  if [ -f "$memory_db" ]; then
+    before_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
+  fi
+
+  local import_output
+  if import_output="$(python3 "$memory_db_import" 2>&1)"; then
+    local after_mtime=0
+    if [ -f "$memory_db" ]; then
+      after_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
+    fi
+    if [ "$after_mtime" -gt 0 ] && [ "$after_mtime" -ge "$before_mtime" ]; then
+      echo "  OK: ${memory_db#$ROOT_DIR/} mtime=${after_mtime}"
+      echo "  ${import_output}"
+    else
+      echo "  ALERT: DB mtime未更新 before=${before_mtime} after=${after_mtime}"
+      issues=$((issues + 1))
+      issue_reasons+=("記憶DBmtime未更新")
+    fi
+  else
+    echo "  ALERT: memory_db_import.py failed"
+    echo "$import_output" | sed 's/^/  /'
+    issues=$((issues + 1))
+    issue_reasons+=("記憶DB再構築失敗")
+  fi
+  return 0
+}
+
 run_session_memory_semantic_scan() {
   local semantic_search="$ROOT_DIR/scripts/semantic_search.sh"
   local insight_write="$ROOT_DIR/scripts/insight_write.sh"
@@ -647,6 +685,7 @@ if [ "${pending_insights:-0}" -ge 5 ] && [ "${session_completed_cmds:-0}" -gt 0 
   embed_issues=$((embed_issues + 1))
 fi
 
+run_session_memory_db_import
 run_session_memory_semantic_scan
 
 # (d) 完了cmdのproject別にprojects/*.yamlの更新有無を確認
