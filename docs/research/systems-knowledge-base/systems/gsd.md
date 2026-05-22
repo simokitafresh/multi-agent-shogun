@@ -8,10 +8,10 @@
 |------|-----|
 | Author | TÂCHES (glittercowboy) / gsd-build organization |
 | Status | OSS 本番稼働中 (活発に進化) |
-| Stars | **54,610** (前回 v1.22.4 時点: 28,539 → +26,071) |
-| Forks | 4,580 |
-| Version | **v1.37.1** (2026-04-17) |
-| Last Commit | 2026-04-18 |
+| Stars | **63,626** (2026-05-23確認。前回 v1.22.4 時点: 28,539 → +35,087) |
+| Forks | 5,403 |
+| Version | **v1.42.3** latest / v1.43.0-rc2 next (2026-05-17) |
+| Last Commit | 2026-05-22 (c7102d7c) |
 | Repo | https://github.com/gsd-build/get-shit-done |
 | npm | https://www.npmjs.com/package/get-shit-done-cc |
 | License | MIT |
@@ -94,6 +94,10 @@ Verify Phase: 品質ゲート + テストカバレッジ確認
 | /gsd-spike | フィージビリティスパイク: 2〜5実験 × Given/When/Then判定 | v1.37.0 |
 | /gsd-sketch | UIデザインスケッチ: 2〜3インタラクティブHTMLモックアップ自動生成 | v1.37.0 |
 | Agent Size-Budget Enforcement | エージェントプロンプト行数制限(XL:1600/Large:1000/Default:500)CI検出 | v1.37.0 |
+| Package legitimacy gate | slopsquatting対策。registry/slopcheck確認と人間検証checkpointを強制 | v1.42.0 |
+| Skill surface profiles | install時にskill profileを選択し、runtime `/gsd:surface`で切替 | v1.42.0-rc4 |
+| CJS↔SDK seam refactor | STATE/Config/Workstream/Project-root系モジュールをgeneratorで分離 | v1.42.x |
+| Knowledge graph auto-update | main HEAD前進後に知識グラフを自動更新するopt-in機構 | v1.43.0-rc1 |
 
 ## Changelog since 2026-03-13
 
@@ -116,8 +120,13 @@ Verify Phase: 品質ゲート + テストカバレッジ確認
 | 2026-04-14 | v1.36.0 | /gsd-graphify (知識グラフ)、gsd-pattern-mapper、@gsd-build/sdk Phase 1 型付きクエリ | 知識グラフ統合 |
 | 2026-04-17 | v1.37.0 | /gsd-spike + /gsd-sketch、Agent Size-Budget Enforcement、Shared Boilerplate Extraction | スパイク・スケッチの形式化 |
 | 2026-04-17 | v1.37.1 | UI-phase researcher が /gsd-sketch 調査結果スキルを読込むバグ修正 | バグ修正 |
+| 2026-05-11 | v1.42.0 | slopsquatting対策のpackage legitimacy gate、end-of-phase human verification default、JSON error mode、installer migration framework | セキュリティ・人間検証・自動化向けエラー分類を強化 |
+| 2026-05-14 | v1.42.0-rc4 | skill surface profiles、runtime `/gsd:surface`、fallow structural pre-pass、reviewer roster設定、SDK state bug修正 | スキル面とレビュー面を拡張 |
+| 2026-05-15 | v1.42.1〜v1.42.2 | STATE.md Document Module、CJS↔SDK ADR、phase-number regex統一 | 内部モジュール化とドリフト対策 |
+| 2026-05-16 | v1.42.3 | latest hotfix release | npm latest安定版 |
+| 2026-05-17 | v1.43.0-rc1/rc2 | Configuration Module、Workstream Inventory Builder/Reader、Project-Root Resolution Module、QueryRuntimeBridge同期primitive、knowledge graph auto-update | CJS↔SDK hard seam refactorを継続 |
 
-**前回(v1.22.4)との比較**: Stars: +26,071 (+91.3%)、バージョン: +15マイナー、対応ランタイム: 6→15種
+**前回(v1.22.4)との比較**: Stars: +35,087 (+123.0%)、バージョン: +20マイナー、対応ランタイム: 6→15種
 
 ## Notable Techniques
 
@@ -163,7 +172,7 @@ Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antig
 |---------|-----------|------------------|
 | CTX指標の過信 | Context Rot対策は中核だが、CTX残量が多いこと自体は要件充足や本番正当性の証明にならない | verify不足、ドメイン制約見落とし時 |
 | フェーズと成果物が増える | planner/checker/executor/verifier や `.planning/` 群は強力だが、小規模作業では運用面の負荷になりうる | 小修正、単発実装、導入初期 |
-| 高速リリース由来の鮮度リスク | v1.23.0→v1.37.1まで短期間で機能面が大きく変化しており、旧理解のまま使うと構成やコマンド体系を外しやすい | 旧資料参照、複数ランタイム対応、セットアップ時 |
+| 高速リリース由来の鮮度リスク | v1.23.0→v1.42.3 latest / v1.43.0-rc2 nextまで短期間で機能面が大きく変化しており、旧理解のまま使うと構成やコマンド体系を外しやすい | 旧資料参照、複数ランタイム対応、セットアップ時 |
 
 ## Cross-References
 
@@ -191,12 +200,12 @@ Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antig
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-20 |
-| method | GitHub API (gh api repos/gsd-build/get-shit-done) + releases API + README fetch |
+| verified_at | 2026-05-23 |
+| method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + npm view (`get-shit-done-cc`) |
 | source | github.com/gsd-build/get-shit-done 公式リポジトリ直接取得 |
-| stars_verified | 54,610 (API取得。前回28,539から+26,071) |
-| version_verified | v1.37.1 (2026-04-17。前回v1.22.4から15マイナーバージョン進化) |
-| changelog_source | GitHub Releases API (直近25リリース全文確認) |
+| stars_verified | 63,626 (API取得。前回28,539から+35,087) |
+| version_verified | v1.42.3 latest / v1.43.0-rc2 next |
+| changelog_source | GitHub Releases API (2026-05-11〜05-17主要リリース確認) |
 
 ## 因果リンク
 

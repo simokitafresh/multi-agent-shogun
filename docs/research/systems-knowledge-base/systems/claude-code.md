@@ -8,12 +8,13 @@
 |------|-----|
 | Author | Anthropic |
 | Status | 本番稼働(GA)。Agent Teams は実験的(デフォルト無効) |
-| Stars | 115,000(GitHub, 2026-04-18時点) |
-| Forks | 19,300 |
-| CLI Version | v2.1.114 (2026-04-18) |
-| Agent SDK (Python/TS) | v0.1.59 |
+| Stars | 125,759 (GitHub, 2026-05-23確認) |
+| Forks | 20,641 |
+| CLI Version | v2.1.148 (2026-05-22) |
+| Agent SDK (Python/TS) | v0.3.148 (npm, 2026-05-23確認) |
 | Repo | https://github.com/anthropics/claude-code |
 | License | Anthropic Commercial Terms of Service |
+| Last Commit | 2026-05-22 (2194e8e0) |
 | Docs | https://code.claude.com/docs/en/overview |
 
 ## Design Philosophy
@@ -85,6 +86,9 @@
 
 | 日付 | バージョン | 変更 | 影響 |
 |------|-----------|------|------|
+| 2026-05-22 | v2.1.148 | Bash toolが一部環境で常にexit 127を返すv2.1.147回帰を修正 | shell実行の重大回帰修正 |
+| 2026-05-21 | v2.1.147 | pinned background sessionsのidle維持/更新時再起動、`/simplify`を`/code-review`へ改名、auto-updater改善、大規模diff描画改善 | バックグラウンド運用とレビュー導線を更新 |
+| 2026-05-19 | v2.1.145 | `claude agents --json`、OTEL spanへagent_id追加、Stop/SubagentStop hook入力にbackground_tasks/session_crons追加 | 自動化・観測性・hook連携強化 |
 | 2026-04-18 | v2.1.114 | 最新安定版 | 本番利用 |
 | 2026-04-17 | v2.1.113 | セキュリティ強化(PID namespace isolation/Credential scrubbing/PowerShell hardening)、Writeツール60%高速化、ネイティブバイナリをプラットフォーム別optional dependencyで配布 | セキュリティ・速度向上 |
 | 2026-04-16 | v2.1.111 | Opus 4.7(claude-opus-4-7)サポート。Agent SDK v0.2.111以降が必要 | 最新モデル利用可能 |
@@ -115,7 +119,7 @@
 
 ### コミュニティ
 
-- GitHub Stars: 115,000 (急成長中)
+- GitHub Stars: 125,759 (急成長中)
 - 公式ドキュメント: code.claude.com/docs
 - Anthropic Engineering Blog: 実装事例・設計解説を掲載
 
@@ -169,8 +173,8 @@
 
 ## Verification
 
-- verified_at: 2026-05-20
-- method: WebSearch("Claude Code 2026 changelog update") + WebFetch(GitHub releases, 公式ドキュメント, Anthropic Engineering)
+- verified_at: 2026-05-23
+- method: GitHub API (`repos`, `commits?per_page=1`, `releases`) + npm view (`@anthropic-ai/claude-code`, `@anthropic-ai/claude-agent-sdk`)
 - source: github.com/anthropics/claude-code/releases, code.claude.com/docs/en/whats-new, code.claude.com/docs/en/agent-teams, www.anthropic.com/engineering/building-c-compiler
 
 ## 因果リンク

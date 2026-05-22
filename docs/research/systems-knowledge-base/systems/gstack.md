@@ -8,10 +8,10 @@
 |------|------|
 | Author | Garry Tan (Y Combinator President & CEO) |
 | Status | OSS 本番稼働・高速進化中 |
-| Stars | 75,800+(前回調査 2026-03-13時点: 414) |
-| Forks | 10,800+ |
-| Version | v1.0.0.0 (2026-04-18) |
-| Last Commit | 2026-04-18 |
+| Stars | 100,825 (2026-05-23確認。前回調査 2026-03-13時点: 414) |
+| Forks | 15,016 |
+| Version | v1.43.3.0 (CHANGELOG, 2026-05-21) / package.json v1.43.2.0 |
+| Last Commit | 2026-05-22 (61c9a20b) |
 | Repo | https://github.com/garrytan/gstack |
 | License | MIT |
 
@@ -92,6 +92,10 @@ Claude Code (or 10 other hosts)
 | `/pair-agent` | マルチエージェント同一サイト並列操作 | v0.x |
 | `/careful` / `/freeze` / `/guard` | 破壊的操作防止 | v0.x |
 | Composable Skills | `{{INVOKE_SKILL}}`でスキル間呼び出し | v0.13.9.0 |
+| `/sync-gbrain` resume | gbrain checkpointをsource of truthとしてfull syncを再開 | v1.43.2.0 |
+| `/review` pre-emit verification | findingごとに根拠行quoteを要求し、未検証FPをconfidence gateで抑制 | v1.43.2.0 |
+| Voyage code embeddings | `VOYAGE_API_KEY`ありのPGLite初期化で`voyage-code-3`を既定化 | v1.43.1.0 |
+| headed embedder lifecycle fix | external supervisor下のheaded Chromiumが30分idleで落ちるdual-instanceバグ修正 | v1.43.3.0 |
 
 ## Changelog since 2026-03-13
 
@@ -121,6 +125,9 @@ Claude Code (or 10 other hosts)
 | 2026-04-17 | v0.18.3.0 | Windows cookieインポート、OpenCode 1コマンドインストール | Windows対応強化 |
 | 2026-04-17 | v0.19.0.0 | `/plan-tune`: 繰返し質問学習、ビルダーアーキタイプ | 個人適応化 |
 | 2026-04-18 | v1.0.0.0 | v1プロンプト簡略化、技術glossy注釈、簡潔モード、/retroメトリクス改善 | メジャーバージョン到達 |
+| 2026-05-21 | v1.43.1.0 | PGLite初期化時にVoyage code-specialized embeddingを既定化。実装ファイル検索のTop-1品質向上 | code semantic search強化 |
+| 2026-05-21 | v1.43.2.0 | `/retro` stale-base guard、`/sync-gbrain --full` checkpoint resume、`/review`根拠行quote gate、18件のcommunity/silent-failure修正 | 静かな誤報・無限再実行・レビューFPを抑制 |
+| 2026-05-21 | v1.43.3.0 | headed Chromium embedderが30分HTTP idleで自己終了するdual-instance bugを修正。`activeBrowserManager` indirectionと5件の回帰テスト追加 | gbrowser/embedded browse server安定化 |
 
 ## Notable Techniques
 
@@ -145,7 +152,7 @@ Claude Code (or 10 other hosts)
 
 | カテゴリ | 内容 |
 |---------|------|
-| コミュニティ | Stars 75.8k、Forks 10.8k。コミュニティPRを積極統合(セキュリティwave 8PR等) |
+| コミュニティ | Stars 100.8k、Forks 15.0k。コミュニティPRを積極統合(セキュリティwave 8PR等) |
 | ClawHub | OpenClawプラットフォームに4スキル公開(office-hours/ceo-review/investigate/retro) |
 | 対応プラットフォーム | Claude Code/Codex/OpenClaw/Cursor/Factory Droid/Slate/Kiro/Hermes/GBrain(10種) |
 | Conductor | 10-15並列Claude Codeセッション管理ツール(Tan本人が利用、gstackと連携) |
@@ -195,11 +202,11 @@ Claude Code (or 10 other hosts)
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-05-20 |
-| method | WebFetch(GitHub README/CHANGELOG) + WebSearch(多メディア記事) |
-| source | github.com/garrytan/gstack (CHANGELOG 170+バージョン確認) |
+| verified_at | 2026-05-23 |
+| method | GitHub API (`repos`, `commits?per_page=1`, `contents/package.json`, `contents/CHANGELOG.md`) |
+| source | github.com/garrytan/gstack (CHANGELOG v1.43.1.0〜v1.43.3.0確認) |
 | confidence | HIGH — GitHub直接確認。Garry TanのX発言は検索結果引用(直接fetch不可) |
-| 前回差分基準 | 前回調査 2026-03-13 v0.0.2時点。6スキル/414 stars → 23スキル/75.8k stars/v1.0.0.0 |
+| 前回差分基準 | 前回調査 2026-03-13 v0.0.2時点。6スキル/414 stars → 23スキル/100.8k stars/v1.43系 |
 
 ## 因果リンク
 

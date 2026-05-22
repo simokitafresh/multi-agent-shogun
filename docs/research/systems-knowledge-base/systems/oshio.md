@@ -8,10 +8,10 @@
 |------|-----|
 | Author | shio_shoppaize (GitHub: yohey-w) |
 | Status | OSS 本番稼働中 (活発に進化) |
-| Stars | **1,220** (前回 v4.0 時点: 1,045 → +175) |
-| Forks | 258 |
-| Version | **v4.4.2** (2026-04-10) |
-| Last Commit | 2026-04-10 |
+| Stars | **1,298** (2026-05-23確認。前回 v4.0 時点: 1,045 → +253) |
+| Forks | 272 |
+| Version | **v5.0.0** (2026-05-21) |
+| Last Commit | 2026-05-22 (84c8e82b) |
 | Repo | https://github.com/yohey-w/multi-agent-shogun |
 | Zenn | https://zenn.dev/shio_shoppaize (36記事) |
 | CoDD | https://github.com/yohey-w/codd-dev (`pip install codd-dev`) |
@@ -62,6 +62,7 @@
 | OSSスキル自動インストール | `first_setup.sh` で `~/.claude/skills/` に公式スキル一括配備 | v4.4.2 |
 | GitHub Sponsors | スポンサー支援受付開始 | 2026-04-10 |
 | CoDD統合 | 設計書パイプラインとハーネス整合性検証を多エージェント環境に適用 | v4.4.x |
+| OpenCode first-class support | Shogun/Karo/Ashigaru/Gunshi向け`.opencode/agents/*.md`生成、permission/TUI/model設定対応 | v5.0.0 |
 | Thinking無効化 | MAX_THINKING_TOKENS=0 で将軍を「考えるな、委譲しろ」に最適化 | — |
 
 ## Changelog since 2026-03-13
@@ -76,6 +77,9 @@
 | 2026-03-28 | v4.4.1 | Android版ratelimit表示修正・SSH秘密鍵改善・Codexステータス切り詰め対策 | モバイルUI安定化 |
 | 2026-04-10 | v4.4.2 | `first_setup.sh`でOSSスキルを`~/.claude/skills/`に自動インストール (Issue #117 Fix) | 初回セットアップの自動化 |
 | 2026-04-10 | — | GitHub Sponsors対応 (FUNDING.yml追加・README両言語更新) | OSS持続可能性強化 |
+| 2026-04-19 | v4.5.0 | dashboard live viewer、inbox self-send guard、README quick start修正、GitHub Sponsors表示 | 運用UIと通信安全性を改善 |
+| 2026-04-19 | v4.6.0 | `shutsujin_departure.sh`のpermission flags、Report flowをAshigaru→Gunshi→Karoへ統一 | 権限指定と報告経路を整理 |
+| 2026-05-21 | v5.0.0 | OpenCode first-class CLI support、`.opencode/agents/*.md`生成、permission/TUI/model設定、macOS CIのvenv-backed PyYAML修正 | Claude/Codex/Gemini/Cursorに加えOpenCode対応を本格化 |
 
 ### CoDD (codd-dev) — 同作者の別ツール
 
@@ -86,6 +90,7 @@
 | 2026-04-06 | v1.5.1 | `codd measure`クラッシュ修正・`codd validate`誤検出修正 |
 | 2026-04-06 | v1.6.0 | **OSS/Pro分割**: review/verify/audit/riskをcodd-pro(非公開)に移管 |
 | 〜2026-04-14 | v1.8.0 | codd extract・codd impact・codd fix追加。SWE-bench 73問 100%達成 (記事より) |
+| 2026-05-18 | v2.20.0 | Codex App Server JSON-RPC backendを追加。`codd implement`/`verify --auto-repair`/`fix`のAI呼び出しをpersistent threadへ迂回可能 | Codex cold-startを償却 |
 
 ## Notable Techniques
 
@@ -158,11 +163,11 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-20 |
-| method | WebFetch (GitHub Releases/API) + WebFetch (Zenn profile) + WebSearch |
-| source | github.com/yohey-w/multi-agent-shogun releases, zenn.dev/shio_shoppaize, github.com/yohey-w/codd-dev |
+| verified_at | 2026-05-23 |
+| method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + codd-dev release確認 |
+| source | github.com/yohey-w/multi-agent-shogun releases, github.com/yohey-w/codd-dev releases, zenn.dev/shio_shoppaize |
 | baseline | docs/research/system-comparison-2026-03-13.md §2.5 |
-| note | Stars 1,045→1,220 (+175)。Zenn 26→36記事 (+10)。v4.0→v4.4.2。CoDD新規公開(v0.2.0a2→v1.8.0) |
+| note | Stars 1,045→1,298 (+253)。v4.0→v5.0.0。CoDDはv2.20.0まで進化 |
 
 ## 因果リンク
 

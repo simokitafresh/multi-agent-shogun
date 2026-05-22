@@ -8,10 +8,10 @@
 |------|-----|
 | Author | Vercel (Jude Gao, Andrew Qu, Zach Cowan, Matthew Binshtok, Vercel Engineering) |
 | Status | 本番稼働中 + 活発に進化中 |
-| Stars | **29,678** (`vercel-labs/agent-browser`, 2026-04-19 API取得) |
-| Forks | 1,800 (`agent-browser`) |
-| Version | **agent-browser v0.26.0** (2026-04-16) |
-| Last Commit | 2026-04-16 (`agent-browser` main) |
+| Stars | **33,992** (`vercel-labs/agent-browser`, 2026-05-23 API取得) |
+| Forks | 2,121 (`agent-browser`) |
+| Version | **agent-browser v0.27.0** (2026-05-07) |
+| Last Commit | 2026-05-20 (`agent-browser` main, 4ad28489) |
 | Repo | https://github.com/vercel-labs/agent-browser |
 | Docs | https://vercel.com/docs/agent-resources |
 | Gateway | https://vercel.com/docs/ai-gateway |
@@ -78,6 +78,10 @@
 | Stable tab ids / labels | `t1`, `t2` のような安定tab識別子と `--label` を追加 | v0.26.0 |
 | Core skill guide | 約420行の usage guide を返す `skills get core` | v0.26.0 |
 | Config JSON Schema | `agent-browser.schema.json` によるIDE補完・検証 | v0.26.0 |
+| React introspection | `react tree/inspect/renders/suspense`でReact component tree・props/hooks/state・render profilingを取得 | v0.27.0 |
+| Web Vitals command | `vitals [url]`でLCP/CLS/TTFB/FCP/INPとReact hydration phasesを取得 | v0.27.0 |
+| SPA navigation | `pushstate <url>`でfull reloadなしにSPA遷移 | v0.27.0 |
+| Init scripts / feature flags | `--init-script`と`--enable`で組込init scriptやreact-devtoolsを有効化 | v0.27.0 |
 
 ## Changelog since 2026-03-13
 
@@ -88,6 +92,8 @@
 | 2026-03-30 | blog | `Agent responsibly` 公開。green CIは安全性の証明ではなく、alignmentとverificationを分けて扱うべきと整理 | agent運用の哲学を形式知化 |
 | 2026-04-06 | production practice | 最大級monorepoで agent が **58%** のPRを人手なしでmerge、平均merge時間を **29h → 10.9h** へ短縮 | platform-native agent review が実運用段階へ進んだ証拠 |
 | 2026-04-16 | `agent-browser` v0.26.0 | `doctor`、stable tab ids/labels、`core` skill guide、config JSON Schema、`--state` 読込修正 | browser substrate の診断性とagent可用性が大きく向上 |
+| 2026-05-07 | `agent-browser` v0.27.0 | React introspection、Web Vitals、SPA `pushstate`、init scripts/feature flags、network route resource type filter、cURL cookie import、dashboard proxy support | フロントエンド検証・React解析・代理環境対応が強化 |
+| 2026-05-20 | main | pnpm minimum release age enforcement、Node 24 requirement調整 | supply-chain/CI前提を厳格化 |
 
 ## Notable Techniques
 
@@ -163,12 +169,12 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-20 |
-| method | GitHub REST API (`repos`, `releases/latest`, `commits?per_page=1`) + Vercel公式blog/docsのMarkdown取得 + 前回比較文書との差分確認 |
+| verified_at | 2026-05-23 |
+| method | GitHub REST API (`repos`, `releases`, `commits?per_page=1`) + Vercel公式blog/docsのMarkdown取得 + 前回比較文書との差分確認 |
 | source | `vercel-labs/agent-browser` 公式repo、Vercel公式blog、Vercel公式docs、`docs/research/system-comparison-2026-03-13.md` |
-| stars_verified | 29,678 (`agent-browser`, 2026-04-19 API取得) |
-| version_verified | `agent-browser` v0.26.0 (published_at: 2026-04-16T23:40:31Z) |
-| last_commit_verified | `717d1b09e1c841a4c0206033886a1a861e3ca5d9` / 2026-04-16T23:33:23Z |
+| stars_verified | 33,992 (`agent-browser`, 2026-05-23 API取得) |
+| version_verified | `agent-browser` v0.27.0 (published_at: 2026-05-07T15:29:58Z) |
+| last_commit_verified | `4ad28489` / 2026-05-20T18:45:44Z |
 | scope_note | Vercel system全体は単一repoに還元できないため、数値メタデータは公開OSS基盤 `agent-browser` を代表値として記録 |
 
 ## 因果リンク

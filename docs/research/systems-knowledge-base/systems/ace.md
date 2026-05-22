@@ -8,9 +8,9 @@
 |------|------|
 | Author | David Shapiro (daveshap)、共著: Wangfan Li / Manuel Delaflor / Carlos Toxtli |
 | Status | Archived (read-only, 2024-08-13以降) |
-| Stars | 1,500+(2026-04-19時点) |
-| Forks | 218 |
-| Watchers | 91 |
+| Stars | 1,503 (2026-05-23 GitHub API確認) |
+| Forks | 219 |
+| Watchers | 1 subscriber / 1,503 watchers_count |
 | Version | — (リリースタグなし) |
 | Last Commit | 2024-02-06 (c6693ee2) |
 | Last Push | 2024-03-17 |
@@ -106,7 +106,7 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 
 | 日付 | 変更 | 影響 |
 |------|------|------|
-| — | 変更なし | リポジトリは2024-08-13にアーカイブ済み。2026-03-13以降の更新は確認できない |
+| — | 変更なし | リポジトリは2024-08-13にアーカイブ済み。2026-05-23確認でも最新commitは2024-02-06のまま |
 
 > **備考**: 最終commit 2024-02-06 (README更新)。2024-08-13にGitHub archive設定。概念アーキテクチャとしての参照価値が中心となっている。
 
@@ -125,7 +125,7 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 
 | カテゴリ | 内容 |
 |---------|------|
-| コミュニティ | Stars 1.5k、Forks 218。GitHub Discussions + Discord(ボランティア駆動) |
+| コミュニティ | Stars 1,503、Forks 219。GitHub Discussions + Discord(ボランティア駆動) |
 | 論文 | arXiv 2310.06775「Conceptual Framework for Autonomous Cognitive Entities」(2023-10-03) |
 | 独立レポジトリ | ACE_L1_Aspiration: Aspirational Layer独立実装(github.com/daveshap/ACE_L1_Aspiration) |
 | 紹介記事 | Medium記事「Autonomous Agents Are Here: Introducing the ACE Framework」(2023-09-17) |
@@ -162,8 +162,8 @@ Layer 6: Task Prosecution Layer   — デジタル/物理アクション実行
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-05-20 |
-| method | WebFetch(GitHub repo/commits/ACE_Framework.md) + WebSearch + WebFetch(arXiv/Medium) |
+| verified_at | 2026-05-23 |
+| method | GitHub API (`repos`, `commits?per_page=1`, `releases/latest`) + 既存WebFetch確認 |
 | source | github.com/daveshap/ACE_Framework (commit履歴・archive状態確認), arxiv.org/abs/2310.06775 |
 | confidence | HIGH — GitHub直接確認。Stars/archive状態・最終commit日を原典で検証 |
 | 前回差分基準 | 2026-03-13以降の変更なし(archived 2024-08-13)。概念参照価値のみ |

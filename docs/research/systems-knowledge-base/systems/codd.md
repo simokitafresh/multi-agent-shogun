@@ -8,10 +8,10 @@
 |------|-----|
 | Author | shio_shoppaize (GitHub: yohey-w) |
 | Status | OSS 本番稼働中 (活発に進化中) |
-| PyPI Package | `pip install codd-dev` |
-| Stars | 49 (2026-04-19時点) |
-| Version | v1.9.3 (公開 repo, 2026-04-18確認) / v1.8.0 (ローカルCLI実績値) |
-| Last Commit | 2026-04-14 以降継続 |
+| PyPI Package | `pip install codd-dev` (PyPI latest v2.19.0, 2026-05-23確認) |
+| Stars | 97 (2026-05-23確認) |
+| Version | GitHub release v2.20.0 (2026-05-18) / PyPI v2.19.0 |
+| Last Commit | 2026-05-19 (572350a4) |
 | Repo | https://github.com/yohey-w/codd-dev |
 | License | MIT |
 | Language | Python |
@@ -52,7 +52,7 @@
 | 区分 | 内容 |
 |------|------|
 | OSS (codd-dev) | init, plan, generate, validate, implement, assemble, extract, impact, fix, measure, mcp-server |
-| Pro (非公開) | review, verify, audit, risk |
+| Pro (非公開) | v2.19.0でPro Gate削除。`review`/`audit`/`risk`はCLIから削除、`verify`はOSS実装へ統合 |
 
 ## Key Features
 
@@ -65,6 +65,10 @@
 | codd measure | CoDD運用健全性を0-100で採点するメトリクス | 初期より |
 | mcp-server | stdio JSON-RPC経由で外部エージェントと連携 | 初期より |
 | DIVERGENT強制 | 同一原因での2回連続FAIL時に仮説転換を強制する | v1.8.0 |
+| `kind: common` DAG node | shared infraをDAGに残しつつ親design doc必須チェックから除外 | v2.15.0 |
+| `codd fix [PHENOMENON]` | 自然言語の事象からdesign/implementation/testsを更新 | v2.16.0 |
+| Full OSS verify | Pro Gateを削除し、`codd verify`をOSS単体で実行可能にした | v2.19.0 |
+| Codex App Server backend | Codex JSON-RPC app server経由のpersistent AI invocationをopt-in追加 | v2.20.0 |
 
 ## Changelog since 2026-03-29
 
@@ -76,6 +80,9 @@
 | 2026-04-06 | v1.6.0 | OSS/Pro分割: review/verify/audit/riskをcodd-pro(非公開)に移管 | OSSの範囲が明確化 |
 | 〜2026-04-14 | v1.8.0 | codd extract・codd impact・codd fix追加。SWE-bench 73問 100%達成 | 実装・修正支援コマンドの完成 |
 | 2026-04-15以降 | v1.8.1〜v1.9.3 | sprint前提撤去・flat task-based generate。失敗コンテキスト汚染ガード | 実装品質の向上と余分な暗黙前提の削減 |
+| 2026-05-11 | v2.14.0〜v2.18.0 | sidecar test metadata、`kind: common`、`codd fix [PHENOMENON]`、template wheel同梱fix、greenfield triage | DAG完全性・自然言語修正・配布品質を改善 |
+| 2026-05-16 | v2.19.0 | Full OSS release。Pro Gate削除、`verify`をOSSへ統合、未実装`review/audit/risk`をCLIから削除 | `pip install codd-dev`単体で全実装済みコマンド利用可能 |
+| 2026-05-18 | v2.20.0 | Codex App Server JSON-RPC backend。`codd.yaml`の`codex_app_server`でpersistent threadをopt-in | Codex cold-startを償却し長いCoDDコマンドのAI呼び出しを安定化 |
 
 ## Notable Techniques
 
@@ -104,7 +111,7 @@
 | 落とし穴 | 何が問題か | どこで表面化するか |
 |---------|-----------|------------------|
 | bash実装非対応 | codd implement/generateはPythonプロジェクト向けで、bashスクリプト生成には対応していない。bash中心のインフラ改善では設計書生成まで(spec/plan)は使えるが実装フェーズで止まる | bash中心のインフラ改善cmd、CI/CD設定ファイル生成 |
-| OSS/Pro分割によるフルフロー非実現 | review/verify/audit/riskはcodd-pro(非公開)に移管済みのため、OSSのcodd-devだけでは設計書生成→品質保証フローが完結しない | SWE-benchフロー再現、本格的な品質保証パイプライン構築時 |
+| 旧OSS/Pro分割理解の陳腐化 | v2.19.0でPro Gateは削除済み。`review/audit/risk`は削除、`verify`はOSS化されたため、旧「Pro前提」説明を信じると導入判断を誤る | CoDD導入判断、品質保証フロー設計時 |
 | Session State累積によるコンテキスト膨張 | FAIL時にtask YAMLへ記録する失敗履歴は再注入時のコンテキスト消費を増大させるため、多数FAIL後のリトライでは注入コストが上がりむしろ品質低下する | 多数失敗後のリトライ、長期継続セッション、複雑な設計修正 |
 
 ## Cross-References
@@ -130,10 +137,10 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-20 |
-| method | ローカルCLI実行確認 (`codd --version`) + context/codd.md精読 + oshio.md CoDD Changelogセクション参照 |
-| source | context/codd.md (ローカル一次資料) / github.com/yohey-w/codd-dev (repo確認) / zenn.dev/shio_shoppaize (記事群) |
-| notes | v1.9.3はcontext/codd.mdの2026-04-18時点cmd_2067調査より。bash非対応はmemory/tool_codd_lessons.mdで実証済み |
+| verified_at | 2026-05-23 |
+| method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + `python3 -m pip index versions codd-dev` |
+| source | github.com/yohey-w/codd-dev releases / PyPI codd-dev / zenn.dev/shio_shoppaize (記事群) |
+| notes | GitHub latest releaseはv2.20.0、PyPI latestはv2.19.0。bash非対応はmemory/tool_codd_lessons.mdで実証済み |
 
 ## 因果リンク
 
