@@ -137,8 +137,8 @@ EOF
 }
 
 @test "q11 recheck: warns when target_path grep hits increased" {
-    mkdir -p "$TEST_PROJECT/scripts"
-    cat > "$TEST_PROJECT/scripts/q11_target.sh" <<'EOF'
+    mkdir -p "$TEST_PROJECT/testdata"
+    cat > "$TEST_PROJECT/testdata/q11_target.sh" <<'EOF'
 q11_not_already_done
 EOF
 
@@ -146,13 +146,13 @@ EOF
 commands:
   cmd_9005:
     quality_gate:
-      q11_not_already_done: "grep -n 'q11_not_already_done' scripts/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
+      q11_not_already_done: "grep -n 'q11_not_already_done' testdata/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
 EOF
 
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: cmd_9005
-  target_path: scripts/q11_target.sh
+  target_path: $TEST_PROJECT/testdata/q11_target.sh
 EOF
 
     run_q11_recheck
@@ -162,20 +162,20 @@ EOF
 }
 
 @test "q11 recheck: stays quiet when target_path grep hits are unchanged" {
-    mkdir -p "$TEST_PROJECT/scripts"
-    : > "$TEST_PROJECT/scripts/q11_target.sh"
+    mkdir -p "$TEST_PROJECT/testdata"
+    : > "$TEST_PROJECT/testdata/q11_target.sh"
 
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_9006:
     quality_gate:
-      q11_not_already_done: "grep -n 'q11_not_already_done' scripts/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
+      q11_not_already_done: "grep -n 'q11_not_already_done' testdata/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
 EOF
 
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: cmd_9006
-  target_path: scripts/q11_target.sh
+  target_path: $TEST_PROJECT/testdata/q11_target.sh
 EOF
 
     run_q11_recheck
