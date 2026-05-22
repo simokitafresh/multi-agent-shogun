@@ -46,6 +46,31 @@ _set_cmd_block_nc() {
     [[ "$output" == *"WARN_COUNT=0"* ]]
 }
 
+@test "dict形式ACで実装ACと計測ACが別ACに分離されているとWARNしない(FP修正)" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: 'scripts/cmd_save.shにcheck_ac_phase_mixingを修正する'
+      AC2:
+        description: 'CDP計測でbefore/afterを確認する'
+      AC3:
+        description: 'test_cmd_save_ac_phase_mixing.bats PASS'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_message()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^record_warn_reason()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_phase_mixing()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        declare -a WARN_REASONS=()
+        check_ac_phase_mixing
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
 @test "実装ACとcommit ACが別ACに分離されているとWARNしない(FP修正)" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
@@ -73,6 +98,29 @@ _set_cmd_block_nc() {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
       check: '修正してCDP計測でbefore/afterを確認する'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^warn_note_message()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^record_warn_reason()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_phase_mixing()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        declare -a WARN_REASONS=()
+        check_ac_phase_mixing
+        echo "WARN_COUNT=$WARN_COUNT"
+        printf "WARN_REASONS=%s\n" "${WARN_REASONS[*]}"
+    '
+    echo "$output" >&2
+    [[ "$output" == *"WARN: ACフェーズ混在を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=1"* ]]
+    [[ "$output" == *"check=check_ac_phase_mixing"* ]]
+}
+
+@test "dict形式ACの同一AC内に実装と計測が共起するとWARNが発火する(TP)" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: '修正してCDP計測でbefore/afterを確認する'"
     run bash -c '
         eval "$(sed -n '"'"'/^build_warn_note()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
         eval "$(sed -n '"'"'/^warn_note_key()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
