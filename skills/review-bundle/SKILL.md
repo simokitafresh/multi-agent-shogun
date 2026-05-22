@@ -117,5 +117,5 @@ BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> 
 - verdict判定は軍師の手動判断。このスキルは判定後の記録・送信のみ
 - SG7チェックリストの各項目は事前に判定済みであること
 - review_logのEdit直接編集禁止（yaml_field_set.sh経由）
-- Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` はtmpfs一時ファイル+flock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_logへのverdict/gate_prediction/reviewed_at記録はhelper経由で実施する。
+- Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_logへのverdict/gate_prediction/reviewed_at記録はhelper経由で実施する。
 - Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` / `BULLETIN_NOTIFY` のCSV正規化、不正agent名ERROR、`action_type=info|action_required` 制約、DEDUP、全文inbox通知、archive自動実行を前提にする。

@@ -56,7 +56,7 @@ bash scripts/lib/yaml_field_set.sh config/settings.yaml "${AGENT}" model_name cl
 tmux set-option -p -t "$PANE_ID" @agent_cli claude
 ```
 
-Script refs verified: 2026-05-20 cmd_2899. `yaml_field_set.sh` はtmpfs一時ファイル+flock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。settings.yaml更新はhelperの検証完了後にtmux変数同期へ進む。
+Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。settings.yaml更新はhelperの検証完了後にtmux変数同期へ進む。
 
 ### Step 3: CLI respawn（旧CLI終了→新CLI起動）
 

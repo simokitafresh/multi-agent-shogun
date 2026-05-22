@@ -72,7 +72,7 @@ git diff --stat
 bash scripts/test_select.sh <changed-file>
 ```
 
-共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`はgate関連テストに加えて`tests/unit/test_cmd_complete_gate*.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。SKIPはFAILとして扱う。
+共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`はgate関連テストに加えて`tests/unit/test_cmd_complete_gate*.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。SKIPはFAILとして扱う。
 
 ## 報告
 

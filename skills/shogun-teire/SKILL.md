@@ -140,7 +140,7 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
    - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
    - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
    - enforcement phantomを確認（infraの家老/軍師教訓で `automated: true` かつ top-level `enforcement:` が `.sh` を指す場合、`scripts/` または `.claude/hooks/` に実在するか検証）
-   - Script refs verified: 2026-05-19 cmd_2859, 2026-05-20 cmd_2899 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction and pipefail-safe effect scan included。cmd_2899: knowledge_metrics.sh yaml.safe_load→regex parser置換(-75.7%高速化)).
+   - Script refs verified: 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction and pipefail-safe effect scan included。cmd_2899: knowledge_metrics.sh yaml.safe_load→regex parser置換(-75.7%高速化)。cmd_2959: lesson effectiveness windowは `cmd_test*` と `cmd_training*` を除外し、本番cmdの有効率を測る).
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出
@@ -310,7 +310,7 @@ for p in principles:
 - `scripts/lesson_deprecate.sh` — 教訓の非活性化（deprecated: true付与）
 - `logs/lesson_tracking.tsv` — 注入・参照ログ（deploy_task.sh + cmd_complete_gate.shが自動記録）
 
-Script refs verified: 2026-05-20 cmd_2899. `knowledge_metrics.sh` は `--time`、`--by-project`、`--by-model`、`--model`、`--json`、`--since`、`--threshold` を扱い、cmd単位dedup、deprecated除外、教訓あり/なしCLEAR率、構造パターン、モデル別効果、top/bottom lesson effectivenessを出力する。
+Script refs verified: 2026-05-22 cmd_2959. `knowledge_metrics.sh` は `--time`、`--by-project`、`--by-model`、`--model`、`--json`、`--since`、`--threshold` を扱い、cmd単位dedup、deprecated除外、教訓あり/なしCLEAR率、構造パターン、モデル別効果、top/bottom lesson effectivenessを出力する。`lesson_deprecate.sh` は `<project> <lesson_id> <reason> [cmd_id]` を受け、flock+手動YAML構築でdeprecated metadataを追記し、yaml.dumpを使わない。
 
 **手順**:
 

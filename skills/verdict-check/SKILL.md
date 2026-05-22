@@ -45,7 +45,7 @@ binary_checksの全結果を読み取り、未記入や不正値がないか確�
 ### 矛盾防止の必須手順
 - bc:no と verdict:PASS の矛盾防止: 忍者はverdictを書かない。全 `binary_checks.*[].result` を列挙し、空欄・不正値がないことだけ確認する。
 - verdict空欄防止: `binary_checks` に空欄、`FILL_THIS`、`waive`、`PASS`、`FAIL` が残っている場合はgate_report_format.shがBLOCKする。先に全resultを `yes/no` に正規化せよ。
-- Script refs verified: 2026-05-19 cmd_2871, 2026-05-20 cmd_2899. `gate_report_format.sh` は `binary_checks` が全てyes/noで埋まっている場合、既存verdict値をPASS/FAILへ自動導出・上書きする。cmd_2899: skill_execution_log.sh呼出しを非同期化(&付き, WSL2最適化87%削減)+SKILL_LOG_SYNC=1でテスト時は同期実行+GP-073 PASS_CACHE追加。
+- Script refs verified: 2026-05-22 cmd_2959. `gate_report_format.sh` は `binary_checks` が全てyes/noで埋まっている場合、既存verdict値をPASS/FAILへ自動導出・上書きする。PASS cache、`GATE_FAST_EXIT`/`GATE_NO_LOG`、中間状態FAILログ抑止、task_clarity未記入WARN、skill_execution_log.sh非同期実行を持つ。`SKILL_LOG_SYNC=1` でテスト時は同期実行する。
 ### Step 1: binary_checksを全て記入済みか確認
 ```bash
 # 報告YAMLからbinary_checksの全resultを抽出
