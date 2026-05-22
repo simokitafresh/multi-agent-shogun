@@ -22,6 +22,7 @@ DEFAULT_BULLETIN_FILE = REPO_ROOT / "queue" / "bulletin_board.yaml"
 DEFAULT_BULLETIN_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive"
 DEFAULT_INSIGHTS_FILE = REPO_ROOT / "queue" / "insights.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+SQLITE_BUSY_TIMEOUT_MS = 5000
 
 
 def normalize_text(value: Any) -> str:
@@ -392,6 +393,7 @@ def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Ro
     if not normalized_query:
         return []
     with sqlite3.connect(db_path) as conn:
+        configure_connection(conn)
         conn.row_factory = sqlite3.Row
         return list(
             conn.execute(
@@ -419,6 +421,11 @@ def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Ro
         )
 
 
+def configure_connection(conn: sqlite3.Connection) -> None:
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+
+
 def build_db(
     db_path: Path,
     rows: list[tuple[str, str, str, str, str, str, str]],
@@ -432,13 +439,10 @@ def build_db(
     event_rows.extend(event_rows_from_insights(insight_entries or [], concepts))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
-        conn.execute("PRAGMA journal_mode=DELETE")
-        conn.execute("DROP TABLE IF EXISTS events")
-        conn.execute("DROP TABLE IF EXISTS event_concepts")
-        conn.execute("DROP TABLE IF EXISTS conversations")
+        configure_connection(conn)
         conn.execute(
             """
-            CREATE TABLE conversations (
+            CREATE TABLE IF NOT EXISTS conversations (
                 ts TEXT,
                 agent TEXT,
                 direction TEXT,
@@ -448,19 +452,25 @@ def build_db(
             )
             """
         )
+        conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_unique
+            ON conversations(ts, agent, direction, summary, detail, session_id)
+            """
+        )
         conn.executemany(
             """
-            INSERT INTO conversations (
+            INSERT OR REPLACE INTO conversations (
                 ts, agent, direction, summary, detail, session_id
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             [(ts, agent, direction, summary, detail, session_id) for ts, agent, direction, summary, detail, session_id, _source_file in rows],
         )
-        conn.execute("CREATE INDEX idx_conversations_ts ON conversations(ts)")
-        conn.execute("CREATE INDEX idx_conversations_session_id ON conversations(session_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_conversations_ts ON conversations(ts)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_conversations_session_id ON conversations(session_id)")
         conn.execute(
             """
-            CREATE TABLE events (
+            CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY,
                 ts TEXT,
                 event_type TEXT,
@@ -480,7 +490,7 @@ def build_db(
         )
         conn.executemany(
             """
-            INSERT INTO events (
+            INSERT OR REPLACE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
                 session_id, cmd_id, concepts, source_file, parent_event_id, importance
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -489,7 +499,7 @@ def build_db(
         )
         conn.execute(
             """
-            CREATE TABLE event_concepts (
+            CREATE TABLE IF NOT EXISTS event_concepts (
                 event_id TEXT NOT NULL,
                 concept_name TEXT NOT NULL,
                 PRIMARY KEY (event_id, concept_name),
@@ -499,15 +509,14 @@ def build_db(
         )
         conn.executemany(
             """
-            INSERT INTO event_concepts (event_id, concept_name)
+            INSERT OR REPLACE INTO event_concepts (event_id, concept_name)
             VALUES (?, ?)
             """,
             event_concept_rows(event_rows),
         )
-        conn.execute("DROP TABLE IF EXISTS events_fts")
         conn.execute(
             """
-            CREATE VIRTUAL TABLE events_fts USING fts5(
+            CREATE VIRTUAL TABLE IF NOT EXISTS events_fts USING fts5(
                 summary,
                 detail,
                 content='events',
@@ -516,13 +525,13 @@ def build_db(
             """
         )
         conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
-        conn.execute("CREATE INDEX idx_events_ts ON events(ts)")
-        conn.execute("CREATE INDEX idx_events_event_type ON events(event_type)")
-        conn.execute("CREATE INDEX idx_events_agent ON events(agent)")
-        conn.execute("CREATE INDEX idx_events_cmd_id ON events(cmd_id)")
-        conn.execute("CREATE INDEX idx_events_parent_event_id ON events(parent_event_id)")
-        conn.execute("CREATE INDEX idx_events_importance ON events(importance)")
-        conn.execute("CREATE INDEX idx_event_concepts_concept_name ON event_concepts(concept_name)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_agent ON events(agent)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_cmd_id ON events(cmd_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_parent_event_id ON events(parent_event_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_importance ON events(importance)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_event_concepts_concept_name ON event_concepts(concept_name)")
 
 
 def parse_args() -> argparse.Namespace:

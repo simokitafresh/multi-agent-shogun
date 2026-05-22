@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB_PATH = REPO_ROOT / "data" / "multi_agent_shogun_memory.db"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 SUMMARY_LIMIT = 240
+SQLITE_BUSY_TIMEOUT_MS = 5000
 
 
 def normalize_text(value: Any) -> str:
@@ -50,6 +51,8 @@ def append_event(db_path: Path, row: tuple[Any, ...]) -> None:
     if not db_path.exists():
         return
     with sqlite3.connect(db_path) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         if not require_live_tables(conn):
             return
         cursor = conn.execute(
