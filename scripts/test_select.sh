@@ -173,6 +173,16 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # memory_db_import.py / memory_db_query.sh / semantic_search.sh 変更→関連テスト
+    if [[ "$changed" == *memory_db_import* ]] || [[ "$changed" == *memory_db_query* ]] || [[ "$changed" == *semantic_search* ]]; then
+        for tf in "$TEST_DIR"/test_memory_db*.bats "$TEST_DIR"/test_semantic*.bats "$TEST_DIR"/test_cmd_quality_memory_db*.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # report_field_set.sh変更→deploy_task+gate_report_formatテスト(間接依存)
     if [[ "$changed" == *report_field_set* ]]; then
         for tf in "$TEST_DIR"/test_deploy_task*.bats "$TEST_DIR"/test_gate_report_format*.bats; do
