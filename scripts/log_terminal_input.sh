@@ -2,9 +2,8 @@
 # log_terminal_input.sh — UserPromptSubmitフックで殿のターミナル入力を記録
 set -eu
 
-# agent_id判定（将軍ペインのみ）
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-[ "$AGENT_ID" = "shogun" ] || exit 0
+[ -n "$AGENT_ID" ] && [ "$AGENT_ID" != "unknown" ] || exit 0
 
 # 入力テキスト取得（stdin JSON の .prompt フィールドから）
 INPUT="$(jq -r '.prompt // ""' 2>/dev/null || true)"
@@ -26,7 +25,7 @@ source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
-append_lord_conversation "$INPUT" "inbound" "lord" "terminal"
+append_lord_conversation "$INPUT" "inbound" "lord" "terminal" "$AGENT_ID"
 
 # セマンティクスインデックス候補化。会話記録そのものは上で完了済みのため、失敗しても入力処理は止めない。
 if [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then

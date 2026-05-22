@@ -3,7 +3,7 @@
 set -eu
 
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-[ "$AGENT_ID" = "shogun" ] || exit 0
+[ -n "$AGENT_ID" ] && [ "$AGENT_ID" != "unknown" ] || exit 0
 
 HOOK_PAYLOAD="$(cat 2>/dev/null || true)"
 # Early exit for empty payload
@@ -155,7 +155,7 @@ PY
 
 [ -n "$DETAIL" ] || exit 0
 
-append_lord_conversation "$DETAIL" "response" "shogun" "terminal"
+append_lord_conversation "$DETAIL" "response" "$AGENT_ID" "terminal" "lord"
 
 # Stopフック末尾で24h保持と索引更新をバックグラウンド実行
 bash "$SCRIPT_DIR/scripts/conversation_retention.sh" &
