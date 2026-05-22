@@ -123,6 +123,33 @@ EOF
     [[ "$output" != *"無関係"* ]]
 }
 
+@test "memory_db_import schema CLI emits markdown with event types and samples" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"schema sample","detail":"event_type distribution check"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --schema-output "$TEST_TMPDIR/memory-db-schema.md"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_TMPDIR/memory-db-schema.md" ]
+    [[ "$output" == *"schema=$TEST_TMPDIR/memory-db-schema.md"* ]]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --schema
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"# Memory DB Schema"* ]]
+    [[ "$output" == *"## Event Type Distribution"* ]]
+    [[ "$output" == *"| conversation | 1 |"* ]]
+    [[ "$output" == *"## \`events\`"* ]]
+    [[ "$output" == *"schema sample"* ]]
+
+    run grep -F "schema sample" "$TEST_TMPDIR/memory-db-schema.md"
+    [ "$status" -eq 0 ]
+}
+
 @test "memory_db_import search tokenizes long Japanese queries for FTS5" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"日本語FTS改善","detail":"FTS5検索がタイムアウトする問題を改善する"}
