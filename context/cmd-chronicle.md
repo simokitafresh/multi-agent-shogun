@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-22 -->
+<!-- last_updated: 2026-05-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,45 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_1825 | 奥義-シン忍法 WF直列実行 — AC1完了済み7 CSVに対し1本ずつWF実行 | dm-signal | 04-22 | — |
-| cmd_1824 | 研究道具レジストリ構築 — cmd起票時に道具の最新CLI引数を自動表示 | infra | 04-22 | — |
-| cmd_karo_gs_benchmark | GS Phase1c — 8スクリプト現行ベンチマーク | dm-signal | 04-22 | — |
-| cmd_1775 | ALM四神 pipeline_config再生成 — 本番制約内champion再選別 | dm-signal | 04-22 | — |
-| cmd_1806 | fix — CI赤根治 — gunshi_role.md commit + bats期待値動的化 + 未追跡.md検出 | infra | 04-22 | — |
-| cmd_1818 | ALM青龍-激攻 1体パリティ — 研究L0リターンと本番monthly_returnsの完全一致 | dm-signal | 04-22 | — |
-| cmd_1820 | ALM四神 本番パリティ — 研究vs本番の月次リターン不一致原因特定+修正 | dm-signal | 04-22 | — |
-| cmd_1822 | 奥義-シン忍法(再) — シン忍法20体を材料にGS新規実行+67窓WF | dm-signal | 04-22 | — |
-| cmd_1839 | 奥義-シン忍法 WF実行+チャンピオン選出 — 3目的(CAGR/NHF/MaxDD)×7忍法 | dm-signal | 04-22 | — |
-| cmd_1843 | perf — wf_runner.py WF並列ランナー新規作成（7忍法メモリグループ並列） | dm-signal | 04-22 | — |
-| cmd_1828 | fix — l1_alm_wf_engine.py メモリ削減第2弾（中間配列float32化+drawdown追従） | dm-signal | 04-22 | — |
-| cmd_1876 | L2奥義 正しい設計で再実行 — 各方式3目的(最大21体)universe+GS+8パターン選出+因子分析 | dm-signal | 04-22 | — |
-| cmd_karo_ci_fix_1885 | CI修正 — cmd_1885 autofix pre-step導入によるテスト期待値不整合4件 | infra | 04-22 | — |
-| cmd_1895 | L3忍法GS — L2奥義84体(GS固定①③⑤⑦)を材料にした既存忍法パイプライン実行+β調整 | dm-signal | 04-22 | — |
-| cmd_karo_ci_fix_ga122 | CI修正 — cmd_2109副作用のテスト10件失敗修正 | infra | 04-22 | — |
-| cmd_2121 | 強化(将軍) — cmd_save.sh q_ambiguity追加 (不明瞭自覚の自己申告) | infra | 04-22 | scripts/cmd_save.shにq_ambiguit |
-| cmd_karo_ci_fix_2221 | CI RED修正 — cmd_save.sh関連テスト16件FAIL | infra | 04-22 | — |
-| cmd_2224 | 検証 — CLAUDE.md英語化の突合+4ロールテスト(cmd_2223後追い) | infra | 04-22 | CLAUDE.md日本語原本との40行突合を完了し、4ロール |
-| cmd_2225 | 整備 — Language Policy Phase 3b deploy_task.sh出力英語化 | infra | 04-22 | — |
-| cmd_2226 | 整備 — Language Policy Phase 3a/3d/3e 小規模スクリプト出力英語化 | infra | 04-22 | — |
-| cmd_karo_ci_fix_2225 | CI RED修正 — deploy_task.sh英語化によるテスト期待値不一致4件 | infra | 04-22 | Updated the two failing deploy |
-| cmd_karo_ci_fix_gp199 | CI RED修正 — GP-199テスト期待値が日本語のまま | infra | 04-22 | Updated the GP-199 warning exp |
-| cmd_2227 | research-tool — Vintage分析パイプライン雛形作成(道具磨き) | dm-signal | 04-22 | Implemented vintage_pipeline.p |
-| cmd_2228 | research — Vintage 2020分析(コロナショック L0→L1→L2再選出+OOS検証) | dm-signal | 04-22 | python3 scripts/analysis/alm_r |
-| cmd_2229 | research-tool — Vintage L0→L1→L2全レイヤーGSにend_date引数追加(道具磨き) | dm-signal | 04-22 | Added end-date cutoff propagat |
-| cmd_2230 | 殿裁定: 英語化により全エージェントの日本語理解が著しく低下。 CLAUDE.md/AGENTS.md/スクリプト出力/テストを全て日本語に戻す。 設計書: docs/research/rollback_english_design_20260422.md 軍師レビュー: APPROVE (confidence: HIGH, 指摘0件) | infra | 04-22 | Phase 3の10本をgit historyから日本語期待 |
-| cmd_karo_context_freshness_2224 | 整備 — dm-signal context鮮度回復(9日未更新) | dm-signal | 04-22 | dm-signal context indexes refr |
-| cmd_2231 | fix — ETL cron OOM解消: curl→python直接実行 + メモリ計測 | dm-signal | 04-22 | AC4: log_memory_usage()を全Phase |
-| cmd_2232 | 強化 — CDP CLI標準化: cdp_cli.shをワンストップCDP入口に拡張 | auto-ops | 04-22 | cdp_cli.sh に launch/navigate/e |
-| cmd_karo_auto_ops_context_freshness | 調査 — auto-ops context freshness ALERTの原因分析 | auto-ops | 04-22 | cmd_2232 の context未反映箇所を特定し、co |
-| cmd_2233 | CoDD偵察 — daily_etl.pyの存在理由調査: 本番fullrecalculateとの乖離分析 | dm-signal | 04-22 | FILL_THIS |
-| cmd_karo_ci_fix_ga158 | CI RED修正 — cmd_save environment_change テスト317-320復旧 | infra | 04-22 | cmd_save.shのPythonパーサーがassumpt |
-| cmd_2234 | fix — sync-prices(L0)を全期間取得+UPSERTに変更: 730日固定→FULL_HISTORY_START | dm-signal | 04-22 | sync_layers.py DEFAULT_LOOKBAC |
-| cmd_2236 | 廃止 — daily_etl.py + ETL cron削除: L0-L3 sync cronに統一 | dm-signal | 04-22 | ETL cron廃止完了。Render ETL cron(c |
-| cmd_2235 | 検証 — sync cron L0→L3手動実行: 全期間再取得+再計算の完走確認 | dm-signal | 04-22 | L0/L1/L2はRender logs+timinig h |
-| cmd_karo_deploy_notice_fix | 修正 — deploy_task.sh task YAML破損(_deploy_notice継続行残留)を根治 | infra | 04-22 | yaml_field_set.sh が scalar sib |
-| cmd_2237 | fix — 壊れた一回限りパリティテスト2本削除: pytest collection error解消 | dm-signal | 04-22 | 壊れたパリティテスト2本を削除して commit e7c69 |
-| cmd_2238 | 偵察 — pytest残存失敗8件の切り分け(修正候補 vs 削除候補) | dm-signal | 04-22 | FILL_THIS |
-| cmd_karo_max_inject_fix | 修正 — deploy_task lesson注入でMAX_INJECT未定義になる経路を根治 | infra | 04-22 | MAX_INJECT を tag fallback 前へ前倒 |
 | cmd_2141 | 実装 — Up vs Down MarketにSideways行追加 + レスポンシブ対応 | dm-signal | 04-23 | — |
 | cmd_2210 | 研究 — L2 GS固定選出 vs WF動的選出 比較分析記事+gist共有 | dm-signal | 04-23 | — |
 | cmd_2239 | CoDD最適化 — ticker_returns.py(L1: リターン計算) | dm-signal | 04-23 | — |
@@ -696,3 +657,6 @@
 | cmd_3005 | 全PJ(dm-signal/infra/google-classroom/database/simple-ocr等)のドキュメントファイルを棚卸しし、記憶DBに投入すべき知識資産の全体像を把握する | infra | 05-22 | 全登録PJのmd/yaml/yml/txt/rstをフル走査 |
 | cmd_3007 | 知識パスへのgrep実行を検知し、記憶DB検索結果を自動注入する。3層記憶を経由せずに行動する迂回路をふさぐ | infra | 05-22 | 知識パスgrep/rg検知時にmemory DB検索結果をa |
 | cmd_3008 | 記憶DB検索時にtarget=自分のagent_idでフィルタしていないため、殿が他ロールに向けた発言を自分宛てと誤認するバグを修正する | infra | 05-22 | memory DB検索のtargetフィルタ実装を検証する回 |
+| cmd_3009 | post-shogun-inbox-check.shがlord_conversation.jsonlのinboundを全件表示し、殿が家老paneに入力した内容を将軍が自分宛てと誤認するバグを修正する | infra | 05-23 | post-shogun-inbox-check.shの殿発言 |
+| cmd_3010 | 記憶3層ハーネスPhase 2。cmd_3005棚卸し結果から品質保証済みの3カテゴリ132件を記憶DBに投入し、検索精度を向上させる | infra | 05-23 | — |
+| cmd_3011 | 記憶DBにcontext/教訓/チェックリスト等のドキュメントファイルを投入する手段がない。build_dbに7番目のソースとしてドキュメントファイル投入を追加する | infra | 05-23 | memory_db_import.pyの--doc-dirs |
