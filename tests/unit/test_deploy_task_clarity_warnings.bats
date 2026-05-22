@@ -23,6 +23,15 @@ run_clarity_check() {
     '
 }
 
+run_q11_recheck() {
+    local ninja_name="${1:-sasuke}"
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        warn_q11_not_already_done_drift "'"$TEST_PROJECT/queue/tasks/$ninja_name.yaml"'"
+    '
+}
+
 @test "task clarity: warns when command is long and AC count is too small" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
@@ -123,6 +132,53 @@ task:
 EOF
 
     run_clarity_check
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "q11 recheck: warns when target_path grep hits increased" {
+    mkdir -p "$TEST_PROJECT/scripts"
+    cat > "$TEST_PROJECT/scripts/q11_target.sh" <<'EOF'
+q11_not_already_done
+EOF
+
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_9005:
+    quality_gate:
+      q11_not_already_done: "grep -n 'q11_not_already_done' scripts/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_9005
+  target_path: scripts/q11_target.sh
+EOF
+
+    run_q11_recheck
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q11_not_already_done drift (cmd_9005)"* ]]
+    [[ "$output" == *"起票時 0件 → 配備時 1件"* ]]
+}
+
+@test "q11 recheck: stays quiet when target_path grep hits are unchanged" {
+    mkdir -p "$TEST_PROJECT/scripts"
+    : > "$TEST_PROJECT/scripts/q11_target.sh"
+
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_9006:
+    quality_gate:
+      q11_not_already_done: "grep -n 'q11_not_already_done' scripts/q11_target.sh — 0件。配備時q11再チェック機能は未実装"
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_9006
+  target_path: scripts/q11_target.sh
+EOF
+
+    run_q11_recheck
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }

@@ -6555,6 +6555,106 @@ warn_recent_noncmd_commit_targets() {
     fi
 }
 
+# q11_not_already_done再確認: cmd起票後のauto-commit等で既実装が混入していないか配備直前にWARNする。
+warn_q11_not_already_done_drift() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local parent_cmd stk_path py_output
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 0
+
+    stk_path="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$stk_path" ] || return 0
+
+    py_output=$(mktemp)
+    if ! run_python_logged "$py_output" env \
+        TASK_FILE_ENV="$task_file" \
+        STK_PATH_ENV="$stk_path" \
+        SCRIPT_DIR_ENV="$SCRIPT_DIR" \
+        PARENT_CMD_ENV="$parent_cmd" \
+        python3 - <<'Q11_RECHECK_PY'; then
+import os
+import re
+import subprocess
+import sys
+
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+stk_path = os.environ['STK_PATH_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+parent_cmd = os.environ['PARENT_CMD_ENV']
+
+try:
+    with open(stk_path, encoding='utf-8') as f:
+        stk = yaml.safe_load(f) or {}
+    with open(task_file, encoding='utf-8') as f:
+        task_doc = yaml.safe_load(f) or {}
+except Exception as exc:
+    print(f'[Q11_RECHECK] WARN: failed to read YAML: {exc}', file=sys.stderr)
+    sys.exit(1)
+
+cmd = ((stk.get('commands') or {}).get(parent_cmd) or {})
+if not isinstance(cmd, dict):
+    sys.exit(0)
+
+q11 = ((cmd.get('quality_gate') or {}).get('q11_not_already_done') or cmd.get('q11_not_already_done') or '')
+q11 = str(q11 or '').strip()
+if not q11:
+    sys.exit(0)
+
+pattern_match = re.search(r"grep\s+(?:-[A-Za-z0-9]+\s+)*(['\"])(.*?)\1", q11)
+expected_match = re.search(r'([0-9]+)\s*件', q11)
+if not pattern_match or not expected_match:
+    sys.exit(0)
+
+pattern = pattern_match.group(2)
+expected_count = int(expected_match.group(1))
+
+task = task_doc.get('task') if isinstance(task_doc.get('task'), dict) else task_doc
+target_value = task.get('target_path') if isinstance(task, dict) else None
+if isinstance(target_value, str):
+    target_paths = [target_value] if target_value.strip() else []
+elif isinstance(target_value, list):
+    target_paths = [str(p) for p in target_value if str(p).strip()]
+else:
+    target_paths = []
+
+total_hits = 0
+checked_paths = []
+for raw_path in target_paths:
+    path = raw_path.strip()
+    full_path = path if os.path.isabs(path) else os.path.join(script_dir, path)
+    if not os.path.isfile(full_path):
+        continue
+    proc = subprocess.run(
+        ['grep', '-n', pattern, full_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        check=False,
+    )
+    if proc.returncode not in (0, 1):
+        continue
+    hits = len([line for line in proc.stdout.splitlines() if line])
+    total_hits += hits
+    checked_paths.append(path)
+
+if checked_paths and total_hits > expected_count:
+    print(
+        f'WARNING: q11_not_already_done drift ({parent_cmd}) 起票時 {expected_count}件 → '
+        f'配備時 {total_hits}件。target_path={", ".join(checked_paths)} pattern={pattern!r}。'
+        ' HEADに先行実装が混入した可能性あり。配備続行/中止を判断せよ',
+        file=sys.stderr,
+    )
+Q11_RECHECK_PY
+        log "WARN: q11_not_already_done recheck failed for ${parent_cmd} (non-fatal)"
+        return 0
+    fi
+    rm -f "$py_output"
+}
+
 # タスク明瞭性WARNING: 配備前に静的不明瞭さを軽量検査
 # cmd_2122: BLOCKではなくWARNINGで、家老が配備前にtask品質の粗さを可視化する。
 warn_task_clarity() {
@@ -7111,6 +7211,9 @@ except Exception:
 
     # GP-110修正版: target_pathの直近コミットが非cmd self-driveならWARN
     warn_recent_noncmd_commit_targets "$task_yaml"
+
+    # cmd_3019: q11_not_already_doneを配備時に再実行し、既実装レースをWARNで可視化
+    warn_q11_not_already_done_drift "$task_yaml"
 
     # AC3: _STALE_RESET_DONE確認ゲート — CMD_ID配備時にreset_stale_fieldsが実行済みか検証
     if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
