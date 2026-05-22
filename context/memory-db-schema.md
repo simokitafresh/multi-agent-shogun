@@ -7,11 +7,11 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 51327 | event_id, concept_name |
-| table | event_links | 779 | source_event_id, target_concept, link_type |
-| table | events | 38895 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 38895 | summary, detail |
-| view | conversations | 27449 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 52282 | event_id, concept_name |
+| table | event_links | 815 | source_event_id, target_concept, link_type |
+| table | events | 40249 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 40249 | summary, detail |
+| view | conversations | 27976 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -26,19 +26,19 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 27449 |
-| skill_execution | 3816 |
-| bulletin | 3230 |
-| cmd_archive | 2919 |
-| report | 703 |
-| insight | 288 |
-| inbox | 207 |
-| cmd_quality | 115 |
-| gate | 62 |
-| cmd_save | 46 |
+| conversation | 27976 |
+| skill_execution | 3878 |
+| bulletin | 3260 |
+| cmd_archive | 3160 |
+| report | 925 |
+| insight | 409 |
+| inbox | 293 |
+| cmd_quality | 141 |
+| gate | 82 |
+| cmd_save | 56 |
 | pending_decision | 43 |
-| cmd_delegate | 14 |
-| lesson | 3 |
+| cmd_delegate | 19 |
+| lesson | 7 |
 
 ## `event_concepts`
 
@@ -52,9 +52,9 @@
 
 | source_event_id | target_concept | link_type |
 | --- | --- | --- |
-| conversation:2026-03-20:5292 | "$_agent_name" == "karo" | obsidian |
-| conversation:2026-03-21:5566 | :space: | obsidian |
-| conversation:2026-04-17:14524 | -z "$agent_id" \|\| "$agent_id" == "shogun" | obsidian |
+| insight:INS-20260522-154650600-ec0e | 現状を整理した | obsidian |
+| insight:INS-20260522-154651286-6d3d | 記憶DBについて考えよう | obsidian |
+| insight:INS-20260522-154651722-25e9 | 現物確認の結果を報告する | obsidian |
 
 ## `events`
 
