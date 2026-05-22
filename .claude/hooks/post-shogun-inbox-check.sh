@@ -68,6 +68,8 @@ if [ -f "$LORD_CONV" ]; then
     /"direction"[[:space:]]*:[[:space:]]*"inbound"/{
         ts_raw = json_value($0, "ts")
         summary = json_value($0, "summary")
+        target = json_value($0, "target")
+        if (target != "" && target != "shogun") next
         if(summary) { ts=substr(ts_raw,12,5); lines[++n] = ts " " substr(summary,1,70) }
     }END{
         start = (n > 5) ? n - 4 : 1
