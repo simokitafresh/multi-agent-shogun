@@ -136,8 +136,8 @@ def infer_target(agent: str, direction: str) -> str:
 def event_rows_from_conversations(
     rows: list[tuple[str, str, str, str, str, str, str]],
     concepts: list[dict[str, Any]],
-) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str]]:
-    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str]] = []
+) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]]:
+    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]] = []
     for idx, (ts, agent, direction, summary, detail, session_id, source_file) in enumerate(rows, start=1):
         event_rows.append(
             (
@@ -153,9 +153,43 @@ def event_rows_from_conversations(
                 infer_cmd_id(summary, detail),
                 concepts_for_text(f"{summary}\n{detail}", concepts),
                 source_file,
+                None,
+                "normal",
             )
         )
     return event_rows
+
+
+def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Row]:
+    normalized_query = normalize_text(query)
+    if not normalized_query:
+        return []
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        return list(
+            conn.execute(
+                """
+                SELECT
+                    e.id,
+                    e.ts,
+                    e.event_type,
+                    e.agent,
+                    e.target,
+                    e.summary,
+                    e.detail,
+                    e.cmd_id,
+                    e.parent_event_id,
+                    e.importance,
+                    bm25(events_fts) AS rank
+                FROM events_fts
+                JOIN events AS e ON e.rowid = events_fts.rowid
+                WHERE events_fts MATCH ?
+                ORDER BY rank, e.ts
+                LIMIT ?
+                """,
+                (normalized_query, limit),
+            )
+        )
 
 
 def build_db(
@@ -206,7 +240,9 @@ def build_db(
                 session_id TEXT,
                 cmd_id TEXT,
                 concepts TEXT,
-                source_file TEXT
+                source_file TEXT,
+                parent_event_id INTEGER,
+                importance TEXT
             )
             """
         )
@@ -214,15 +250,29 @@ def build_db(
             """
             INSERT INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             event_rows,
         )
+        conn.execute("DROP TABLE IF EXISTS events_fts")
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE events_fts USING fts5(
+                summary,
+                detail,
+                content='events',
+                content_rowid='rowid'
+            )
+            """
+        )
+        conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
         conn.execute("CREATE INDEX idx_events_ts ON events(ts)")
         conn.execute("CREATE INDEX idx_events_event_type ON events(event_type)")
         conn.execute("CREATE INDEX idx_events_agent ON events(agent)")
         conn.execute("CREATE INDEX idx_events_cmd_id ON events(cmd_id)")
+        conn.execute("CREATE INDEX idx_events_parent_event_id ON events(parent_event_id)")
+        conn.execute("CREATE INDEX idx_events_importance ON events(importance)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -244,6 +294,17 @@ def parse_args() -> argparse.Namespace:
         default=str(DEFAULT_SEMANTIC_INDEX_PATH),
         help="Semantic index used to populate events.concepts by alias matching.",
     )
+    parser.add_argument(
+        "--search",
+        default="",
+        help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum rows returned by --search.",
+    )
     return parser.parse_args()
 
 
@@ -252,6 +313,21 @@ def main() -> int:
     archive_dir = Path(args.archive_dir)
     db_path = Path(args.db)
     semantic_index_path = Path(args.semantic_index)
+    if args.search:
+        for row in search_events(db_path, args.search, args.limit):
+            print(
+                "\t".join(
+                    [
+                        str(row["id"]),
+                        str(row["ts"]),
+                        str(row["agent"]),
+                        str(row["cmd_id"]),
+                        str(row["importance"]),
+                        normalize_text(row["summary"]).replace("\t", " "),
+                    ]
+                )
+            )
+        return 0
     rows = load_rows(archive_dir)
     build_db(db_path, rows, semantic_index_path)
     print(f"memory_db_import: files={len(list(iter_jsonl_files(archive_dir)))} rows={len(rows)} db={db_path}")

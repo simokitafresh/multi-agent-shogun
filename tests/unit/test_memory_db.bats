@@ -39,12 +39,83 @@ print(conn.execute("SELECT event_type FROM events ORDER BY ts LIMIT 1").fetchone
 PY
 )
     [ "${result[0]}" = "ts,agent,direction,summary,detail,session_id" ]
-    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file" ]
+    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance" ]
     [ "${result[2]}" = "2" ]
     [ "${result[3]}" = "2026-05-01" ]
     [ "${result[4]}" = "explicit-session" ]
     [ "${result[5]}" = "2" ]
     [ "${result[6]}" = "conversation" ]
+}
+
+@test "memory_db_import creates FTS5 index and searches summary detail through MATCH" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"高速化相談","detail":"events detail LIKE scan を FTS5 に置き換える"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"別件","detail":"通常の返答"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+fts_sql = conn.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='events_fts'"
+).fetchone()[0]
+plan = " ".join(
+    row[3]
+    for row in conn.execute(
+        """
+        EXPLAIN QUERY PLAN
+        SELECT e.id
+        FROM events_fts
+        JOIN events AS e ON e.rowid = events_fts.rowid
+        WHERE events_fts MATCH 'FTS5'
+        """
+    )
+)
+rows = conn.execute(
+    """
+    SELECT e.summary, e.detail
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'FTS5'
+    """
+).fetchall()
+print("USING fts5" in fts_sql)
+print("VIRTUAL TABLE INDEX" in plan)
+print(len(rows))
+print(rows[0][0])
+print("LIKE" in plan)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "1" ]
+    [ "${result[3]}" = "高速化相談" ]
+    [ "${result[4]}" = "False" ]
+}
+
+@test "memory_db_import search CLI returns FTS5 matches only" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"検索対象","detail":"parent_event_id と importance を検索品質に使う"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"無関係","detail":"通常の返答"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "importance"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"検索対象"* ]]
+    [[ "$output" != *"無関係"* ]]
 }
 
 @test "memory_db_import row count matches non-empty archive JSONL lines" {
