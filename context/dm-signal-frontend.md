@@ -19,6 +19,7 @@
 | テーマ | next-themes (class方式dark mode) |
 
 UIライブラリなし（全13コンポーネント手製）。
+Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式のモダンWeb API/FEベストプラクティス検索スキル。FE作業開始時に参照）
 
 ## 1. 構造概要
 

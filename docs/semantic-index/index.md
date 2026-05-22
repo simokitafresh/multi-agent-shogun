@@ -607,6 +607,23 @@ codd:
 | causal_chain | `[[cmd_training_L7_v3_kotaro_5_20260521202900]]` (L662) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_6_20260521205341]]` (L666) |
 
+## modern_web_guidance — Modern Web Guidance
+
+| 属性 | 値 |
+|------|---|
+| id | modern_web_guidance |
+| label | Modern Web Guidance |
+| aliases | モダンWeb, レガシーAPI防止, FEベストプラクティス, anchor positioning, popover, view transitions |
+| skills | modern-web-guidance |
+| related_concepts | skill_design_rules, dmsignal_operations, test_quality_framework |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `skills/modern-web-guidance/SKILL.md` |
+| file | `context/dm-signal-frontend.md` |
+| url | `https://skills.sh/GoogleChrome/modern-web-guidance` |
+| cmd | `cmd_3000` Google Chrome公式Modern Web Guidance導入 |
+
 ## dmsignal_operations — DM-Signal運用
 
 | 属性 | 値 |
