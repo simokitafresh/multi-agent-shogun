@@ -34,15 +34,16 @@ if ! command -v gh &>/dev/null; then
     exit 1
 fi
 
-# Get latest run on main branch
-run_json=$(timeout 15 gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch main --limit 1 --json status,conclusion,databaseId 2>/dev/null || true)
+# Get latest runs on main branch. When the newest run is in progress,
+# fall back to the latest completed run so dashboard status stays useful.
+run_json=$(timeout 15 gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch main --limit 2 --json status,conclusion,databaseId 2>/dev/null || true)
 
 if [[ -z "$run_json" ]] || [[ "$run_json" == "[]" ]]; then
     $STATUS_MODE && echo "UNKNOWN"
     exit 1
 fi
 
-read -r conclusion run_id <<< "$(echo "$run_json" | jq -r '.[0] | "\(.conclusion // "") \(.databaseId // "")"' 2>/dev/null || true)"
+read -r conclusion run_id <<< "$(echo "$run_json" | jq -r 'map(select((.conclusion // "") != "" and (.conclusion // "None") != "None")) | .[0] // {} | "\(.conclusion // "") \(.databaseId // "")"' 2>/dev/null || true)"
 
 if [[ -z "$conclusion" ]] || [[ "$conclusion" == "None" ]]; then
     # Still in progress
