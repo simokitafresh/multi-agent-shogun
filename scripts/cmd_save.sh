@@ -296,7 +296,7 @@ is_gate_or_hook_addition_cmd() {
             return 1
         fi
     fi
-    if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和'; then
+    if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和|追従|更新|拡張'; then
         if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
             return 1
         fi

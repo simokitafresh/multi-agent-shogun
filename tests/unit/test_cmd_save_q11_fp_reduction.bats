@@ -202,6 +202,45 @@ teardown() {
     [ "$status" -eq 1 ]
 }
 
+@test "Q11-FP-009: SKILL.md追従cmdはstartup gate文言と追加語があっても追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — SKILL.md 4件script追従"
+    scope_mode: EXACT
+    purpose: "startup gateでSKILL.md参照WARNが3セッション連続。scriptが更新されたがSKILL.mdが追従していない4件を更新する"
+    command: "SKILL.md 4件を現script仕様へ追従更新し、対象script参照の説明を追加する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg -n gate_skill_script_refs scripts/gates/gate_shogun_startup.sh で既存gateによる検出を確認。新規gate追加ではない"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
+@test "Q11-FP-010: semantic_search追従cmdはhook文言と追加語があっても追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — 起票前確認にsemantic_searchを追従"
+    scope_mode: EXACT
+    purpose: "将軍がcmd起票時にsemantic_search.shを使っていないため、既存hookの起票前確認を10問へ更新する"
+    command: "Guard 0の起票前確認にsemantic_search確認行を追加し、hookの表示文言を更新する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg -n semantic_search .claude/hooks/pre-write-edit-combined.sh で既存hook内の未接続を確認。新規hook追加ではない"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
+@test "Q11-FP-011: DB拡張cmdはgate文言と追加語があっても追加cmd扱いしない" {
+    CMD_BLOCK_NC='    title: "強化 — memory DB events拡張"
+    scope_mode: EXACT
+    purpose: "conversationsテーブルだけでなく全ロールeventを統合するためDBを拡張し、gate/report/inboxイベントを格納する"
+    command: "memory_db_init.shへeventsテーブルを追加し、gateイベントの取り込み列を拡張する"
+    quality_gate:
+      q11_not_already_done: "未達成。rg -n events scripts/memory_db_init.sh → 0件。DB拡張であり新規gate追加ではない"'
+    export CMD_BLOCK_NC
+
+    run is_gate_or_hook_addition_cmd
+    [ "$status" -eq 1 ]
+}
+
 @test "Q11-GUARD-001: assumptions sourceからGuard一覧を抽出する" {
     mkdir -p "$TEST_TMPDIR/.claude/hooks"
     cat > "$TEST_TMPDIR/.claude/hooks/pre-write-edit-combined.sh" <<'EOF'
