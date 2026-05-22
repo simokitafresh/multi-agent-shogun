@@ -12,6 +12,7 @@ CMD_FILE="$ROOT_DIR/queue/shogun_to_karo.yaml"
 DASHBOARD_FILE="$ROOT_DIR/dashboard.md"
 SNAPSHOT_FILE="$ROOT_DIR/queue/karo_snapshot.txt"
 LORD_CONV="$ROOT_DIR/queue/lord_conversation.jsonl"
+LORD_CONV_ARCHIVE_DIR="$ROOT_DIR/queue/archive/lord_conversation"
 PROGRESS_FILE="$ROOT_DIR/context/l2-okugi-progress.md"
 SNAPSHOT_STALE_THRESHOLD=600  # 10分（秒）
 
@@ -19,6 +20,96 @@ issues=0
 issue_reasons=()
 
 echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
+
+archive_lord_conversation() {
+  if [ ! -f "$LORD_CONV" ]; then
+    echo "[0.会話退避] SKIP: lord_conversation.jsonl不在"
+    return 0
+  fi
+
+  mkdir -p "$LORD_CONV_ARCHIVE_DIR"
+  local archive_ts
+  archive_ts="$(date '+%Y%m%dT%H%M%S%z')"
+  local archive_file="$LORD_CONV_ARCHIVE_DIR/lord_conversation_${archive_ts}.jsonl"
+  local knowledge_file="$LORD_CONV_ARCHIVE_DIR/lord_conversation_${archive_ts}.knowledge.json"
+
+  cp -p "$LORD_CONV" "$archive_file"
+  if ! cmp -s "$LORD_CONV" "$archive_file"; then
+    echo "[0.会話退避] ALERT: archive diff mismatch: ${archive_file#$ROOT_DIR/}"
+    issues=$((issues + 1))
+    issue_reasons+=("会話退避diff不一致")
+    return 0
+  fi
+
+  python3 - "$archive_file" "$knowledge_file" <<'PY'
+import json
+import sys
+
+archive_path = sys.argv[1]
+knowledge_path = sys.argv[2]
+
+entries = []
+bad_lines = 0
+with open(archive_path, encoding="utf-8") as f:
+    for raw in f:
+        line = raw.strip()
+        if not line:
+            continue
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            bad_lines += 1
+            continue
+        if isinstance(parsed, dict):
+            entries.append(parsed)
+
+def text_of(entry):
+    return str(
+        entry.get("summary")
+        or entry.get("detail")
+        or entry.get("content")
+        or entry.get("message")
+        or entry.get("text")
+        or ""
+    )
+
+session_start = ""
+direction_counts = {}
+latest_inbound = None
+latest_decision = None
+decision_keywords = ("裁定", "決裁", "決定", "方針", "承認", "却下")
+for entry in entries:
+    direction = str(entry.get("direction", "unknown"))
+    direction_counts[direction] = direction_counts.get(direction, 0) + 1
+    ts = str(entry.get("ts", ""))
+    if direction == "session_summary" and ts:
+        session_start = ts
+    if direction == "inbound":
+        latest_inbound = {"ts": ts, "text": text_of(entry)[:240]}
+        text = text_of(entry)
+        if any(keyword in text for keyword in decision_keywords):
+            latest_decision = {"ts": ts, "text": text[:240]}
+
+summary = {
+    "source": "clear_prep_check",
+    "archive_file": archive_path,
+    "total_entries": len(entries),
+    "bad_json_lines": bad_lines,
+    "direction_counts": direction_counts,
+    "session_start": session_start or None,
+    "latest_inbound": latest_inbound,
+    "latest_decision": latest_decision,
+}
+
+with open(knowledge_path, "w", encoding="utf-8") as out:
+    json.dump(summary, out, ensure_ascii=False, indent=2)
+    out.write("\n")
+PY
+
+  echo "[0.会話退避] OK: ${archive_file#$ROOT_DIR/} (diff一致), knowledge=${knowledge_file#$ROOT_DIR/}"
+}
+
+archive_lord_conversation
 
 # 最新session_summaryをセッション境界として扱う。/clear直前の最終防衛線なので、
 # 「セッション中のcmd完了あり」を知識埋込みALERTの条件に使う。

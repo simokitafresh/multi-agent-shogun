@@ -158,3 +158,19 @@ EOF
     grep -q '"direction": "session_summary"' "$TEST_TMPDIR/queue/lord_conversation.jsonl"
     grep -q 'auto clear prep summary: inbound=1件' "$TEST_TMPDIR/queue/lord_conversation.jsonl"
 }
+
+@test "Check 0 archives full lord_conversation before session_summary append" {
+    write_active_session_with_completed_cmd
+    cp "$TEST_TMPDIR/queue/lord_conversation.jsonl" "$TEST_TMPDIR/original_lord_conversation.jsonl"
+
+    run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
+
+    [[ "$output" == *"[0.会話退避] OK:"* ]]
+    archive_file="$(find "$TEST_TMPDIR/queue/archive/lord_conversation" -maxdepth 1 -name 'lord_conversation_*.jsonl' | head -1)"
+    knowledge_file="$(find "$TEST_TMPDIR/queue/archive/lord_conversation" -maxdepth 1 -name 'lord_conversation_*.knowledge.json' | head -1)"
+    [ -n "$archive_file" ]
+    [ -n "$knowledge_file" ]
+    cmp -s "$TEST_TMPDIR/original_lord_conversation.jsonl" "$archive_file"
+    grep -q '"total_entries": 3' "$knowledge_file"
+    grep -q '"latest_inbound"' "$knowledge_file"
+}
