@@ -93,7 +93,7 @@ def iter_bulletin_files(bulletin_file: Path, bulletin_archive_dir: Path) -> Iter
         yield path
 
 
-def row_from_line(path: Path, raw: str) -> tuple[str, str, str, str, str, str, str]:
+def row_from_line(path: Path, raw: str) -> tuple[str, str, str, str, str, str, str, str]:
     line = raw.rstrip("\n")
     try:
         parsed = json.loads(line)
@@ -118,6 +118,7 @@ def row_from_line(path: Path, raw: str) -> tuple[str, str, str, str, str, str, s
     return (
         normalize_text(parsed.get("ts")),
         normalize_text(parsed.get("agent")),
+        normalize_text(parsed.get("target")),
         normalize_text(parsed.get("direction")),
         normalize_text(parsed.get("summary")),
         normalize_text(parsed.get("detail")),
@@ -126,8 +127,8 @@ def row_from_line(path: Path, raw: str) -> tuple[str, str, str, str, str, str, s
     )
 
 
-def load_rows(archive_dir: Path) -> list[tuple[str, str, str, str, str, str, str]]:
-    rows: list[tuple[str, str, str, str, str, str, str]] = []
+def load_rows(archive_dir: Path) -> list[tuple[str, str, str, str, str, str, str, str]]:
+    rows: list[tuple[str, str, str, str, str, str, str, str]] = []
     for path in iter_jsonl_files(archive_dir):
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             for raw in handle:
@@ -309,18 +310,18 @@ def infer_target(agent: str, direction: str) -> str:
 
 
 def event_rows_from_conversations(
-    rows: list[tuple[str, str, str, str, str, str, str]],
+    rows: list[tuple[str, str, str, str, str, str, str, str]],
     concepts: list[dict[str, Any]],
 ) -> list[EventRow]:
     event_rows: list[EventRow] = []
-    for idx, (ts, agent, direction, summary, detail, session_id, source_file) in enumerate(rows, start=1):
+    for idx, (ts, agent, target, direction, summary, detail, session_id, source_file) in enumerate(rows, start=1):
         event_rows.append(
             (
                 f"conversation:{session_id}:{idx}",
                 ts,
                 "conversation",
                 agent,
-                infer_target(agent, direction),
+                target or infer_target(agent, direction),
                 direction,
                 summary,
                 detail,
@@ -704,16 +705,19 @@ def default_pending_decisions_path_for_archive(archive_dir: Path) -> Path:
     return archive_dir.parent / "queue" / "pending_decisions.yaml"
 
 
-def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Row]:
+def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") -> list[sqlite3.Row]:
     fts_query = fts5_query_for_text(query)
     if not fts_query:
         return []
+    target = normalize_text(target)
+    target_clause = "AND e.target = ?" if target else ""
+    params: tuple[object, ...] = (fts_query, target, limit) if target else (fts_query, limit)
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
         conn.row_factory = sqlite3.Row
         return list(
             conn.execute(
-                """
+                f"""
                 SELECT
                     e.id,
                     e.ts,
@@ -729,10 +733,11 @@ def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Ro
                 FROM events_fts
                 JOIN events AS e ON e.rowid = events_fts.rowid
                 WHERE events_fts MATCH ?
+                  {target_clause}
                 ORDER BY rank, e.ts
                 LIMIT ?
                 """,
-                (fts_query, limit),
+                params,
             )
         )
 
@@ -1053,6 +1058,11 @@ def parse_args() -> argparse.Namespace:
         help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
     )
     parser.add_argument(
+        "--target",
+        default="",
+        help="Filter --search results to events.target. Empty keeps the historical unfiltered behavior.",
+    )
+    parser.add_argument(
         "--build",
         action="store_true",
         help="Explicitly rebuild the DB. This is the default when neither --search nor --schema is set.",
@@ -1096,7 +1106,7 @@ def main() -> int:
         else default_pending_decisions_path_for_archive(archive_dir)
     )
     if args.search:
-        for row in search_events(db_path, args.search, args.limit):
+        for row in search_events(db_path, args.search, args.limit, args.target):
             print(
                 "\t".join(
                     [

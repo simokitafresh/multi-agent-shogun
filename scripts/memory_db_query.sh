@@ -9,7 +9,8 @@ db_path="${MEMORY_DB_QUERY_DB:-$script_dir/data/multi_agent_shogun_memory.db}"
 
 usage() {
     cat <<'EOF' >&2
-Usage: memory_db_query.sh [--db PATH] SQL
+Usage: memory_db_query.sh [--db PATH] [--target AGENT] --search QUERY
+       memory_db_query.sh [--db PATH] SQL
 
 Runs SQL through Python sqlite3 and prints sqlite3 CLI-style list output:
 pipe-separated fields, no headers, NULL as an empty field.
@@ -21,13 +22,69 @@ if [ "$#" -eq 0 ]; then
     exit 2
 fi
 
-if [ "${1:-}" = "--db" ]; then
-    if [ "$#" -lt 3 ]; then
-        usage
-        exit 2
+search_query=""
+target="${MEMORY_DB_QUERY_TARGET:-${AGENT_ID:-}}"
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --db)
+            if [ "$#" -lt 2 ]; then
+                usage
+                exit 2
+            fi
+            db_path="$2"
+            shift 2
+            ;;
+        --target)
+            if [ "$#" -lt 2 ]; then
+                usage
+                exit 2
+            fi
+            target="$2"
+            shift 2
+            ;;
+        --search)
+            if [ "$#" -lt 2 ]; then
+                usage
+                exit 2
+            fi
+            search_query="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            usage
+            exit 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
+    target="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+fi
+
+if [ -n "$search_query" ]; then
+    search_args=(
+        --db "$db_path"
+        --search "$search_query"
+        --limit "${MEMORY_DB_QUERY_LIMIT:-20}"
+    )
+    if [ -n "$target" ] && [ "$target" != "unknown" ]; then
+        search_args+=(--target "$target")
     fi
-    db_path="$2"
-    shift 2
+    python3 "$script_dir/scripts/memory_db_import.py" \
+        "${search_args[@]}"
+    exit $?
+fi
+
+if [ "$#" -ne 1 ]; then
+    usage
+    exit 2
 fi
 
 sql="$1"

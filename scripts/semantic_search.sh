@@ -24,6 +24,8 @@ Environment:
                        Maximum memory DB fallback rows (default: 10)
   SEMANTIC_MEMORY_DB_TIMEOUT
                        Maximum seconds for memory DB FTS fallback (default: 5)
+  SEMANTIC_MEMORY_DB_TARGET
+                       Override memory DB target filter (default: current agent_id)
   SEMANTIC_CONCEPT_EXPANSION_LIMIT
                        Maximum depth=1 event_links concept expansion count (default: 20)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
@@ -105,16 +107,27 @@ memory_db_search() {
     local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
     local limit="${SEMANTIC_MEMORY_DB_LIMIT:-10}"
     local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-5}"
+    local target="${SEMANTIC_MEMORY_DB_TARGET:-${AGENT_ID:-}}"
     local output_file
 
     [ -f "$db_path" ] || return 1
 
+    if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
+        target="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+
     output_file="$(mktemp)"
+    search_args=(
+        --db "$db_path"
+        --search "$query"
+        --limit "$limit"
+    )
+    if [ -n "$target" ] && [ "$target" != "unknown" ]; then
+        search_args+=(--target "$target")
+    fi
     set +e
     timeout "$search_timeout" python3 "$script_dir/scripts/memory_db_import.py" \
-        --db "$db_path" \
-        --search "$query" \
-        --limit "$limit" > "$output_file"
+        "${search_args[@]}" > "$output_file"
     local rc=$?
     set -e
     if [ "$rc" -ne 0 ]; then
