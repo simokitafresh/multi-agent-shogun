@@ -680,3 +680,8 @@
 | cmd_2977 | eventsテーブルが全件conversation型。bulletin_board.yamlのエントリをevent_type=bulletinとして投入し、GATE CLEAR/家老報告/INSIGHT等の非会話イベントを検索可能にする | infra | 05-22 | memory_db_import.pyのbulletin投入 |
 | cmd_2978 | insights.yamlの気づきエントリをevent_type=insightとして記憶DBに投入し、学習ループの気づきを検索可能にする | infra | 05-22 | insights.yamlをmemory DBのevents |
 | cmd_2979 | eventsテーブルのconcepts列がJSON配列のTEXT格納で検索が遅い。event_concepts(event_id, concept_name)ジャンクションテーブルに正規化しJOINで高速検索+概念別集計を可能にする | infra | 05-22 | memory_db_import.pyにevent_conc |
+| cmd_2981 | 記憶DBが手動実行でしか更新されない。clear_prep_check.shの記憶整理Phaseにmemory_db_import.py実行を追加し、毎/clear時にDBが自動再構築されるようにする | infra | 05-22 | clear_prep_checkの記憶整理Phaseでmem |
+| cmd_2982 | append_lord_conversation()でJSONL書込み後にDBへもINSERTし、lord_conversation全イベントがリアルタイムでDBに蓄積されるようにする | infra | 05-22 | append_lord_conversation()のJSO |
+| cmd_2984 | journal_mode=DELETEでリアルタイムINSERTと再構築が競合しdatabase locked発生。WALモードに変更し並行書込みを許可する。再構築もDROP+CREATEからINSERT OR REPLACEに変更し時間短縮 | infra | 05-22 | memory_db_import.pyのWAL再構築を確認し |
+| cmd_2985 | inbox_write.shの全agent間通信(配備指示/報告完了/gate_clear/nudge)をevent_type=inboxとして記憶DBにリアルタイムINSERTする | infra | 05-22 | inbox_write.shのYAML永続化成功後にeven |
+| cmd_2987 | 忍者の報告YAML書込み(report_field_set.sh)をevent_type=reportとして記憶DBにINSERTし、学習ループの成果(binary_checks/lesson_candidate)がDB検索可能になるようにする | infra | 05-22 | memory_db_live_insert.pyにrepor |
