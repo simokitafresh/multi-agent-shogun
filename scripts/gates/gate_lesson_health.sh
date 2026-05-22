@@ -303,6 +303,7 @@ check_lesson_effectiveness() {
             gsub(/\r$/, "", cmd); gsub(/\r$/, "", proj)
             if (cmd !~ /^cmd_/) next
             if (cmd ~ /^cmd_test/) next
+            if (cmd ~ /^cmd_training/) next
             if (project != "" && proj != project) next
             if (!(cmd in seen)) {
                 seen[cmd] = 1
