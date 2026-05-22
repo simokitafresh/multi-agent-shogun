@@ -940,9 +940,9 @@ NINJA_EOF
     pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
     sleep 1
 
-    # 将軍のwatcher（エスカレーション抑制 + タイムアウト無効化）
+    # 将軍のwatcher（タイムアウト無効化）
     _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 \
+    nohup env ASW_PROCESS_TIMEOUT=0 \
         bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
     disown
