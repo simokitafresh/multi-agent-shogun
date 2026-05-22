@@ -20,7 +20,8 @@ lessons:
     deepdive毎セッション必読(CLAUDE.md Step 7)で追体験済み。
     結論≠追体験。原則暗記→パターンマッチは因果をたどれていない証拠。
     inbox処理=起動時と同じ態度で正しく深く読む。読まずに既読フラグをつけた=Phase4(生存本能不在)の再現。L1-L7貫通で埋め込め(cmd_2922)
-  source_ids: [LS001, LS002, LS003, LS004, LS017, LS018, LS048]
+    本能に逆らえ: LLMは楽な方に流れる。一番やりたくないことが一番楽で速い。遠回りが真の近道。自動化×強制で環境に埋め込め(殿厳命2026-05-22, cmd_3007)
+  source_ids: [LS001, LS002, LS003, LS004, LS017, LS018, LS048, LS047]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'memory/deepdive_why_chain_20260321.md + deepdive_causal_tracing_20260415.md 毎セッション必読(CLAUDE.md Step 7)。追体験検証5問で強制自問'
@@ -143,7 +144,8 @@ lessons:
     先走りは究極の害。殿の指示範囲を完遂してから次を考える。
     殿が話していないことを記録するな(知識記録での先走り)。
     殿の指示は文字通り全て従う。省略・効率化・まとめ処理は指示違反。
-  source_ids: [LS053, LS054, LS055]
+    (4)殿の決定後は議論停止→即実装。設計相談で先送りするな。殿以外に確認するな(cmd_3007)
+  source_ids: [LS053, LS054, LS055, LS046]
   created_at: '2026-04-24'
   automated: false
   enforcement_level: 2
@@ -470,59 +472,25 @@ lessons:
 # LS049: superseded by LS048 (ミスを認めろ→LS048に吸収。2026-05-21物理削除)
 # LS050: superseded by LS048 (事実優先→LS048に吸収。2026-05-21物理削除)
 # LS051: superseded by LS-A11 (watcher親子関係。2026-05-21統合)
-- id: 'LS041'
-  title: 'ローカルDB原則+命名原則+パターンマッチ封じ'
-  origin: '[[cmd_2965]]'
-  detail: '外部DB(Supabase)に飛びつき=パターンマッチ。別PJ DB汚染禁止。SQLite(multi_agent_shogun_memory.db)。命名は前提知識のないLLMが誤解しない名前にせよ。先にDBを作って環境が答える状態にする(殿裁定2026-05-22)'
-  source_cmd: 'cmd_2965'
-  created_at: '2026-05-22'
+# === クラスタ7: 記憶DB原則 ===
+- id: LS-A23
+  title: 記憶DB原則 — ローカルDB+3層記憶+grep脱却+配管設計+さぼり禁止
+  origin: '[[cmd_2964]] [[cmd_2965]] [[cmd_2984]] [[cmd_2994]] [[cmd_3007]]'
+  detail: |
+    (1)ローカルSQLite(multi_agent_shogun_memory.db)。外部DB飛びつき=パターンマッチ。命名はフルネーム(殿裁定2026-05-22)
+    (2)3層記憶: 全文記録+Obsidianリンク(道)+セマンティクスインデックス(入口)。/clear前に短期→長期整理強制
+    (3)grep脱却: aliases拡充はgrepの延長。DB FTS5フォールバックで到達方法を変えよ(殿指摘)
+    (4)配管設計: 全書込みスクリプトにリアルタイムINSERT+/clear時バッチ再構築。WAL必須。穴=未接続スクリプト
+    (5)道具を作っても使わなければ存在しない。記憶DB無視=さぼり。品質他責は言い訳。迂回路を環境で封じよ(cmd_3007案A)
+  source_ids: [LS041, LS042, LS043, LS044, LS045]
+  source_cmds_v3: [cmd_2964, cmd_2965, cmd_2984, cmd_2994, cmd_3007]
+  created_at: '2026-05-23'
   automated: true
-  enforcement: 'type=lesson; file=memory/feedback_local_db_no_external.md; pattern=multi_agent_shogun_memory'
-- id: 'LS042'
-  title: '3層記憶モデル(殿定義)+記憶整理Phase'
-  origin: '[[cmd_2964]]'
-  detail: '全文記録(24MB/79日)+Obsidianリンク(道)+セマンティクスインデックス(入口)の3層。/clear=睡眠。睡眠前に短期→長期の記憶整理を全ロール強制。知識は保存して使えるように整備する。全員全瞬間で(殿定義2026-05-22)'
-  source_cmd: 'cmd_2964'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=lesson; file=context/obsidian-link-principles.md; pattern=3層記憶モデル'
-- id: 'LS043'
-  title: 'grep脱却原則(殿指摘2026-05-22)'
-  origin: '[[cmd_2994]]'
-  detail: 'セマンティクスインデックスのaliases拡充はgrepの延長。有限パターンを増やしても次の未知語に穴が空く。DB FTS5フォールバックでaliasesに依存しない検索経路を確立するのが正解。原理: パターンを増やすな、到達方法を変えよ。'
-  source_cmd: 'cmd_2994'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=gate; file=scripts/semantic_search.sh; pattern=NO_MATCH'
-- id: 'LS044'
-  title: '記憶DB配管設計原則(殿と構築2026-05-22)'
-  origin: '[[cmd_2984]]'
-  detail: '記憶DBは基盤+配管で初めて機能する。Input配管: 全書込みスクリプトにリアルタイムINSERT+/clear時バッチ再構築。WAL必須(並行書込み)。穴の発見法: 全書込みスクリプトを列挙→DB INSERT有無を確認→未接続=穴。殿の問い「誰のclear時？時間は？並行安全か？」で3つの設計穴を発見。'
-  source_cmd: 'cmd_2984'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=multi_agent_shogun_memory'
-- id: 'LS045'
-  title: '記憶DB無視=さぼり。道具を作っても使わなければ存在しないのと同じ'
-  origin: '[[cmd_3007]]'
-  detail: '殿の質問(ドクタープレミアム/note認証)で記憶DBを検索せずgrep/DB直接/殿に質問に迂回した。記憶DBを検索すれば即答えが出た(品質は十分)。品質他責は言い訳。根因=迂回路の存在。殿が決めた案Aを議論で遅延させた(Phase3再発)。殿の決定後は即実装。設計相談で先送りするな'
-  source_cmd: 'cmd_3007'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-bash-combined.sh; pattern=Guard (cmd_3007で案A自動注入を実装中)'
-- id: 'LS046'
-  title: '殿の決定後は議論を止めて即実装。設計相談で先送りするな'
-  origin: '[[cmd_3007]] [[LS-A08]] [[殿裁定2026-05-22]] 殿が決めたら即実装'
-  detail: '殿が案Aを選んだ後にBLOCK案を持ち出し、設計相談を3回重ねて実装を先送りした。軍師も将軍に忖度して殿の決定を遅延させた。殿の決定=議論終了。迷ったら殿に聞け。殿以外に確認するな'
-  source_cmd: 'cmd_3007'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=殿の決定後'
-- id: 'LS047'
-  title: '本能に逆らえ。一番やりたくないことが一番楽な方法(殿厳命2026-05-22)'
-  origin: '[[cmd_3007]] [[deepdive_why_chain_20260321]] Phase4 [[殿裁定2026-05-22]]'
-  detail: 'LLMは楽な方に流れる(grep/殿に聞く/cmd起票に逃げる)。一番やりたくないこと(記憶DB検索/殿の指摘を受け止める/言い訳せず即行動)が結局一番楽で速い。遠回りが真の近道。記憶DBに全てが記録されており嘘も言い訳もバレる。自動化×強制で本能に逆らう行動を環境に埋め込め'
-  source_cmd: 'cmd_3007'
-  created_at: '2026-05-22'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=本能に逆らえ'
+  enforcement: 'memory/feedback_local_db_no_external.md+context/obsidian-link-principles.md+scripts/semantic_search.sh NO_MATCH gate+pre-bash-combined.sh Guard(cmd_3007案A記憶DB自動注入)'
+# LS041: superseded by LS-A23 (ローカルDB原則。2026-05-23統合)
+# LS042: superseded by LS-A23 (3層記憶モデル。2026-05-23統合)
+# LS043: superseded by LS-A23 (grep脱却原則。2026-05-23統合)
+# LS044: superseded by LS-A23 (配管設計原則。2026-05-23統合)
+# LS045: superseded by LS-A23 (DB無視=さぼり。2026-05-23統合)
+# LS046: superseded by LS-A08 (殿の決定後即実装。cmd_3007。2026-05-23統合)
+# LS047: superseded by LS-A01 (本能に逆らえ=deepdive Phase4。cmd_3007。2026-05-23統合)

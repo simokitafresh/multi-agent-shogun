@@ -7,11 +7,11 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 54192 | event_id, concept_name |
-| table | event_links | 1637 | source_event_id, target_concept, link_type |
-| table | events | 41373 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 41373 | summary, detail |
-| view | conversations | 28273 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 59849 | event_id, concept_name |
+| table | event_links | 1868 | source_event_id, target_concept, link_type |
+| table | events | 42577 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 42577 | summary, detail |
+| view | conversations | 28511 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -26,20 +26,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 28273 |
-| skill_execution | 3912 |
-| cmd_archive | 3395 |
-| bulletin | 3274 |
-| report | 1116 |
-| insight | 471 |
-| inbox | 363 |
-| cmd_quality | 170 |
-| document | 153 |
-| gate | 100 |
-| cmd_save | 68 |
+| conversation | 28511 |
+| skill_execution | 3934 |
+| cmd_archive | 3855 |
+| bulletin | 3282 |
+| report | 1243 |
+| insight | 536 |
+| inbox | 410 |
+| document | 352 |
+| cmd_quality | 184 |
+| gate | 111 |
+| cmd_save | 76 |
 | pending_decision | 43 |
-| cmd_delegate | 24 |
-| lesson | 11 |
+| cmd_delegate | 28 |
+| lesson | 12 |
 
 ## `event_concepts`
 

@@ -663,3 +663,5 @@
 | cmd_3012 | cmd_3011で追加した--doc-dirsを使い、品質保証済み153件を記憶DBに投入する。殿裁定(2026-05-23): 品質未保証データ投入禁止、132件+記事21件に限定 | infra | 05-23 | 品質保証済み153件をmemory DBへdocument投 |
 | cmd_3014 | Phase 2追加投入。品質保証済みだが未投入の164件を記憶DBに投入する。event_type=documentのまま、source_fileパスが自然な分類子となる(殿裁定: 独自ラベル分類は不要) | infra | 05-23 | cmd_3014: 8ディレクトリ253文書をevent_t |
 | cmd_3013 | 投資知識とシステム知識とcontext文書を同一event_type=documentに混在させると検索結果が混乱する(殿指摘2026-05-23)。--event-typeでevent_typeを指定可能にし、投入時に分離する | infra | 05-23 | — |
+| cmd_3015 | 投資知識辞書108件とシステム知識辞書14件が記憶DBに投入済みだが、セマンティクスインデックスとObsidianリンクに未接続。3層全てに通す(殿指摘2026-05-23) | infra | 05-23 | 知識辞書2概念をsemantic-indexへ追加し、sys |
+| cmd_3016 | systems-knowledge-base/systems/の7件(Karpathy除く)は最終確認から35-43日以上経過。GitHub repoの最新バージョン+主要変更を調査し知識辞書を更新する | infra | 05-23 | systems知識辞書7件を2026-05-23時点のGit |

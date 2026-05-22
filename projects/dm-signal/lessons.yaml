@@ -369,6 +369,9 @@ lessons:
   - scripts/analysis/cmd_2436_dms_tvp_l0_backtest.py
   - outputs/analysis/cmd_2436_dms_tvp_l0_backtest.yaml
   when: タスク配備やデプロイ手順を変更・実行する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-23'
 - id: L692
   title: task内のmethod ID/ファイル名は実SSOTと照合して報告に明記する
   summary: 任務文のX-Trend番号・WASAファイル名が知識辞書index.md/methods実体とずれていた。context反映系ではtask文を丸写しせず、SSO
@@ -429,7 +432,7 @@ lessons:
   when: Payload再生成時は
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
 - id: L688
   title: Payload再生成時は内部メタデータを保持して検証する
   summary: API層でPortfoliosPayloadを非アクティブ除外のため再生成した際、skipped_portfoliosを引き継がず初回テストでmessageがn
@@ -777,7 +780,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L666
@@ -1103,7 +1106,7 @@ lessons:
   - grid_search
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: '2026-04-21'
   target_files:
   - docs/research/
@@ -1231,7 +1234,7 @@ lessons:
   deprecation_reason: auto_useful_rate_zero
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
 - id: L634
   title: マイグレーションスクリプトのテーブル名バグが本番未適用の根因
   summary: add_cascade_delete.pyに存在しない'performance'テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構
@@ -1239,7 +1242,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: add_cascade_delete.pyに存在しない'performance'テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた
   target_files:
   - docs/research/codd_phase4_schema_drift_analysis.md
@@ -1377,7 +1380,7 @@ lessons:
   - gs
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること
   target_files:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_alm_returns.csv
@@ -1393,7 +1396,7 @@ lessons:
   - gs
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する
   target_files:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_alm_returns.csv
@@ -1411,7 +1414,7 @@ lessons:
   - gs
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する'
   target_files:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_alm_returns.csv
@@ -1773,14 +1776,16 @@ lessons:
   summary: lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCo
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: '2026-04-10'
   target_files:
   - scripts/analysis/grid_search/run_077_yotsume.py
   - tasks/lessons.md
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L596
   title: pandas to_csvは大規模wide CSV(10万列超)で著しく低速。numpy savetxtで59x、.npyで2200x
   summary: kasoku_ratio 12体(347MB,119K列)でpandas to_csv=270s、numpy savetxt(f32)=4.6s、npy
@@ -2045,6 +2050,9 @@ lessons:
   target_files:
   - queue/tasks/kotaro.yaml
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-23'
 - id: L577
   title: 月次データcache最適化でexact date lookupを使う場合、ビジネスデー vs 月末日ミスマッチによる全NULL問題
   summary: 'MVMF/SVMF/MFのB-4 cache最適化で月次モメンタム値を{ts.date(): float}dictで保存し.get(target_date)でe'
@@ -2494,7 +2502,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: EMAがL0 momentum変化→selection結果変化→FoF構成変化→悪化の追加メカニズム
   target_files:
   - context/dm-signal-research.md
@@ -2679,7 +2687,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: '2026-03-31'
   target_files:
   - outputs/analysis/nested_fof/r29g_shin_clsel_2d_grid_extra_results.yaml
@@ -2906,7 +2914,7 @@ lessons:
   - reporting
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: 同一lockfileを再取得する入れ子呼び出しを避け、lock保持区間を分離するかlock済みコンテキスト用の内部更新関数を使う
   target_files:
   - tasks/lessons.md
@@ -2944,7 +2952,7 @@ lessons:
   when: 新規コードにexcept Exception→データ値返却パターンがある
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L507
@@ -2990,6 +2998,8 @@ lessons:
   target_files:
   - tasks/lessons.md
   when: タスク配備やデプロイ手順を変更・実行する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L504
   title: 性能異常値はリソース競合を先に疑え
   summary: pipeline_exec 626sをWard scipy O(n3)問題と分析していたが、同時実行runとの比較で全指標(daily_loop/db_quer
@@ -3945,6 +3955,11 @@ lessons:
   - outputs/analysis/cmd_1115_parity_result.csv
   - scripts/analysis/grid_search/grid_search_metrics_v2.py
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-22'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L426
   title: パリティ検証のpartial/MTD仮説は全体の1.5%のみ。構造的差異(日次vs月次解像度)が98.5%
   summary: cmd_1097+1098で発見された133件のシグナル不一致は、partial/MTD月の扱い差異ではほぼ説明できない(1.5%のみ)。 根本原因はGS月次解
@@ -4112,9 +4127,9 @@ lessons:
   summary: DM7+ 24M lookbackをRXLU固定でCPCV検定するとMax_Run-up PBOが1.0になりやすい。24M窓は変化が極めて緩慢でCPCVの短期
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: Max_Run-up PBOが1.0になりやすい(過適合判定)
   target_files:
   - outputs/analysis/cmd_1078_dm7p_rxlu_selected.csv
@@ -4342,9 +4357,9 @@ lessons:
   summary: grouped順+context cacheが効く小規模(150パターン)では、simulate_pattern逐次呼出しの方がsimulate_batch(毎
   tags:
   - pipeline
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-17'
+  last_referenced: '2026-05-23'
   how: '2026-03-17'
   target_files:
   - outputs/analysis/cmd_1035_batch_verification.json
@@ -4353,6 +4368,8 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L392
   title: yotsume 4視点union batch simでIEEE 754 FPノイズ(5.55e-17)発生。パリティ検証閾値は1e-12を採用
   summary: 4視点union mask+numpy broadcastingの演算順序が逐次版と異なりFP丸め誤差が最大5.55e-17発生。ロジック差異ではない。stri
@@ -4476,9 +4493,9 @@ lessons:
   summary: cmd_1034 angle1でprofiler内0.178ms/pat vs native 0.111ms/pat。内訳比率は方向性として有用だが絶対値は膨張
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-20'
+  last_referenced: '2026-05-23'
   how: '2026-03-17'
   target_files:
   - outputs/analysis/cmd_1034_angle6_ppe_overhead.json
@@ -4825,7 +4842,7 @@ lessons:
   - db
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: 本番DB確認はPostgreSQL必須
   when: DB・データ取得・永続化に関わる作業を行う時
   deprecated: true
@@ -4882,7 +4899,7 @@ lessons:
   - recon
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: Edit(追記)を使うかセクション分離ファイルで配備せよ
   target_files:
   - outputs/analysis/shin_shijin_script_catalog.md
@@ -5185,9 +5202,9 @@ lessons:
   summary: IF n_splits=5でmpf=1にすると各foldが1サンプルとなりttest_1sampの統計量がNaN→_calc_chunk_p_value()で1
   tags:
   - testing
-  helpful_count: 2
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-16'
+  last_referenced: '2026-05-22'
   how: 短窓解禁時はMIN_PERIOD_LENGTHだけでなくfoldあたり必要サンプル数を別制約として持たせるべき
   target_files:
   - backend/app/services/p_average.py
@@ -5196,6 +5213,8 @@ lessons:
   - scripts/analysis/p_bar_window_backtest.py
   - backend/app/api/p_average.py
   when: n_splits=5でmpf=1にすると各foldが1サンプルとなりttest_1sampの統計量がNaN→_calc_chunk_p_value()で1.0扱いになる
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L327
   title: 短窓BT reportは実効保有数を条件欄に明示せよ
   summary: IF p̄ tie cutoffでselected_count > top_nが起こりうるBT reportを作る THEN 条件欄の固定文言(top_n=2,
@@ -5277,9 +5296,9 @@ lessons:
   summary: '`pytest tests/ -q` では `tests/test_admin_tiers.py` が `https://api.render.com/v1/s'
   tags:
   - testing
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: ローカルbackend suiteを gate に使う場合、Render env 同期は mock 化するか、
   target_files:
   - tests/test_admin_tiers.py
@@ -5320,7 +5339,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: '2026-03-16'
   target_files:
   - test_right_tail_metrics.py
@@ -5580,9 +5599,9 @@ lessons:
   tags:
   - grid-search
   - architecture
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-20'
+  last_referenced: '2026-05-23'
   how: '2026-03-12'
   target_files:
   - docs/research/knowledge-base/index.md
@@ -5837,7 +5856,7 @@ lessons:
   - monitor
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: '2026-03-12'
   when: frontend/UIの表示・状態管理を変更する時
 - id: L277
@@ -6012,7 +6031,7 @@ lessons:
   - frontend
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: route層でpreloaded mapを作って注入する設計が必要
   target_files:
   - frontend/src/
@@ -6096,7 +6115,7 @@ lessons:
   - frontend
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: monthly-returns APIはticker_monthly_returnsが空になるとfallbackに落ちるが、fallbackがPrice全履歴を読む実装だとquick
     path(months=12)が即座に無効化される
   when: frontend/UIの表示・状態管理を変更する時
@@ -6215,11 +6234,13 @@ lessons:
   summary: compare-summary/deteriorationはSet multi-select、selector/navはscalar single-select
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-23'
   how: '2026-03-11'
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L244
   title: usePrefetch request stormは10N+3本。PF数最適化より先にroute gateとrequest budgetを導入せよ
   summary: frontend/hooks/usePrefetch.tsは選択PFで11本、他PFで10本のAPIを自動発火。100PFで1003リクエスト。endpoint
@@ -6316,9 +6337,9 @@ lessons:
   summary: 'Monthly TradeまたはMonthly Returnsの計算を修正したら、同一年月・同一PFでMonthly Trade ReturnとMonthly '
   tags:
   - trade-rule
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: 同一年月・同一PFでMonthly Trade Return = Monthly Returns Returnが完全一致することを検証せよ
   when: Monthly TradeまたはMonthly Returnsの計算を修正する時
   deprecated: true
@@ -6678,11 +6699,13 @@ lessons:
   summary: cmd_645(Content-Type書き換え)とcmd_646(API SWRキャッシュ)は同じsw.jsへの変更。統合実装で1回のSW更新により「SPA遷
   tags:
   - api
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-20'
+  last_referenced: '2026-05-22'
   how: 個別に実装すると2回のSW更新(CACHE_NAME 2回インクリメント)が必要で非効率
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -6850,9 +6873,9 @@ lessons:
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
   tags:
   - db
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-20'
+  last_referenced: '2026-05-23'
   how: analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離できなかった
   when: analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離できなかった時
 - id: L189
@@ -6953,11 +6976,13 @@ lessons:
   - render
   - cron
   - secret
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-14'
+  last_referenced: '2026-05-23'
   how: render.yamlで新規cronジョブ追加時、envVarsのsync:false(シークレット)はIaCで自動反映されずRenderダッシュボードで手動設定が必要
   when: render.yamlで新規cronジョブ追加時、envVarsのsync:false(シークレット)はIaCで自動反映されずRenderダッシュボードで手動設定が必要時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L179
   title: 新サービスのimport文とrequirements.txtの突合確認をデプロイ前チェックに含めるべき
   summary: IF 新機能のサービス層でscipy等の外部ライブラリを使用する場合、パイロット版（ローカル環境）では仮想環境にpip installされていても、本番デプロイ
@@ -6979,6 +7004,9 @@ lessons:
   - oauth
   how: Render本番のAPI障害では、`/openapi.json`で対象path有無を最初に確認すると、認証・CORS・DB要因より先に『デプロイドリフト/未反映』を即断できる
   when: タスク配備やデプロイ手順を変更・実行する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-23'
 - id: L177
   title: 本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる
   summary: IF FastAPI系の404では本番/openapi.jsonに当該pathが存在するか先に見ると、コード不具合ではなくデプロイドリフトを短時間で確定できる時
@@ -7028,9 +7056,9 @@ lessons:
   - db
   - deploy
   - testing
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-19'
+  last_referenced: '2026-05-23'
   how: DB層とコア計算を分離して移植対象を明確化すると、パリティ検証も関数単位で網羅できる
   target_files:
   - backend/app/services/deterioration.py
@@ -7134,7 +7162,7 @@ lessons:
   - process
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: 今回、_deprecated移動後の復元容易性(AC7)は差分ゼロ主張だけでは弱い
   when: 今回、_deprecated移動後の復元容易性(AC7)は差分ゼロ主張だけでは弱い時
   deprecated: true
@@ -7275,7 +7303,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: cmd_493再配備では、欠落アーティファクトを未検証値として明示し、実在するoutputs/archiveのみで本文を構成したことで、推測混入を抑止できた
   target_files:
   - docs/skills/building-block-pattern.md
@@ -7318,7 +7346,7 @@ lessons:
   - bug
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: 'build_signal_cache_value()はmomentum_data.weightsが存在する全パイプラインFoFで{"holding_signal":
     str, "weights": dict}を返す'
   when: 'build_signal_cache_value()はmomentum_data.weightsが存在する全パイプラインFoFで{"holding_signal":
@@ -7457,11 +7485,13 @@ lessons:
   summary: IF L010を実装・検証する時 THEN deprecated deprecated
   tags:
   - universal
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-19'
+  last_referenced: '2026-05-23'
   how: deprecated
   when: L010を実装・検証する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L134
   title: L025
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
@@ -7541,9 +7571,9 @@ lessons:
   summary: GS結果を利用する際は `DATA_CATALOG.md` と `meta.yaml` を必ず参照する（2026-02-14）
   tags:
   - yaml
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-23'
   how: 抜き身FoF作成時、GS champion のパラメータだけを見て `CANDIDATE_SET` の中身を確認せずに本番FoFを登録した
   when: GS結果を利用する際は
 - id: L126
@@ -7580,11 +7610,13 @@ lessons:
   tags:
   - wsl2
   - tmux
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-22'
   how: '2026-02-24'
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L122
   title: TTL付きGETキャッシュはwrite操作後に自動無効化されない
   summary: movePortfolioToFolder(POST)成功後、getSignalsLight(GET/TTL=3600s)が古いfolder_idを返し続けた。
@@ -7768,6 +7800,8 @@ lessons:
   last_referenced: '2026-05-22'
   how: Pydantic制約がPortfolio層(top_n le=2等)に偏在し、BB config(Dict[str,Any])が型検証なし
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L104
   title: subtask間依存でgitignoreがコミット計画をブロック
   summary: 前タスク(.gitignore追加)の成果物が後タスク(7コミット)のgit addをブロック。outputs/charts/*.pngとoutputs/gri
@@ -7788,7 +7822,7 @@ lessons:
   - reporting
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: '2026-02-22'
   target_files:
   - deploy_task.sh
@@ -7941,11 +7975,13 @@ lessons:
   - db
   - deploy
   - grid_search
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない
   when: GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L088
   title: L1パリティPASSはtie処理網羅の証明にはならない
   summary: L1 FoF検証(cmd_205)はcomponent平均突合が中心。tie境界ケースを明示的に切り出していない。L1構造的にtie問題は不発(10/12
@@ -7955,7 +7991,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-21'
+  last_referenced: '2026-05-23'
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
   when: 同種の作業・判断・検証を行う時
   deprecated: true
@@ -8001,11 +8037,13 @@ lessons:
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
   tags:
   - db
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-19'
+  last_referenced: '2026-05-23'
   how: is_running=Noneは状態不明であり完了(False)と誤判定してはならない
   when: is_running=Noneは状態不明であり完了(False)と誤判定してはならない時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L083
   title: close_fallback=openは部分欠損closeを補完しない
   summary: IF dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時 THEN
@@ -8013,11 +8051,13 @@ lessons:
   tags:
   - db
   - recon
-  helpful_count: 1
+  helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-15'
+  last_referenced: '2026-05-23'
   how: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ
   when: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
@@ -8056,7 +8096,7 @@ lessons:
   - deploy
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-22'
+  last_referenced: '2026-05-23'
   how: ウォームアップGET後にPF間でリトライと30秒待機を入れ、409は前回sync完了待ちとして扱う
   when: 複数PFへsync-fof APIを連続実行し、409 conflictやRender cold start timeoutが起きうる時
   deprecated: true

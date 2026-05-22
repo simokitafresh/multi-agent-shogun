@@ -6845,3 +6845,68 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 今回の成果物はMarkdown要約とCSV本体の2ファイルだったが、docs/research/*.csvは.gitignoreの全体ignoreに該当し、通常のgit statusには出なかった。ACの本体がCSVである場合、git check-ignoreで確認し、scope内ファイルだけgit add -fする必要がある。確認しないと要約だけcommitされ、棚卸し本体がcommitから漏れる。
+
+### L689: lord_conversation消費者はtargetフィルタ済みhelperを使え
+- **日付**: 2026-05-23
+- **出典**: cmd_karo_lord_conv_target_filter
+- **記録者**: karo
+- **tags**: [infra,db,bash]
+- **target_files**: [scripts/lord_conversation_read.sh,CLAUDE.md,tests/unit/test_lord_conversation.bats]
+- **origin**: [[cmd_karo_lord_conv_target_filter]]
+- **when**: 未設定
+- **how**: 未設定
+- lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消費側はscripts/lord_conversation_read.sh <agent_id> [limit]を通し、target/agentで絞った結果だけを読め。cmd_3008(記憶DB targetフィルタ)と同じ構造のバグ。殿指摘2026-05-23で発覚。
+
+### L690: cwd非依存スクリプトはscript_dir基準でパス解決せよ
+- **日付**: 2026-05-23
+- **出典**: cmd_karo_ci_fix_lord_conv_read
+- **記録者**: karo
+- **tags**: [infra,testing,bash]
+- **target_files**: [scripts/lord_conversation_read.sh]
+- **origin**: [[cmd_karo_ci_fix_lord_conv_read]]
+- **when**: 未設定
+- **how**: 未設定
+- CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。script_dir=$(cd $(dirname $0)/.. && pwd)でプロジェクトルートを導出し絶対パスで参照する。lord_conversation_read.shで実証(T-LC-015/016 CI FAIL→修正後PASS)。
+
+### L691: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する
+- **日付**: 2026-05-23
+- **出典**: cmd_karo_ci_fix_lord_conv_read_v2
+- **記録者**: kagemaru
+- **tags**: [infra,bash,git,wsl2]
+- **target_files**: [tests/unit/test_lord_conversation.bats]
+- **origin**: [[cmd_karo_ci_fix_lord_conv_read_v2]]
+- **when**: 未設定
+- **how**: 未設定
+- WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscripts配下を直接実行するとCIだけpermission deniedになるため、実行権限をcommitするかbash scripts/foo.sh形式で呼ぶチェックを追加すべき。
+
+### L692: CIでrepo内スクリプト呼出はgit実行権限かbash経由を確認せよ
+- **日付**: 2026-05-23
+- **出典**: cmd_karo_ci_fix_lord_conv_read_v2
+- **記録者**: karo
+- **tags**: [infra,bash,git]
+- **target_files**: [tests/unit/test_lord_conversation.bats]
+- **origin**: [[cmd_karo_ci_fix_lord_conv_read_v2]]
+- **when**: 未設定
+- **how**: 未設定
+- CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/xxx.sh)するとpermission denied。bash $PROJECT_ROOT/scripts/xxx.sh またはrun bash xxx.shで呼び出せばCIでも安全。lord_conversation_read.sh T-LC-015/016で3連続CI REDの根因。
+
+### L693: doc-dirs投入は品質対象拡張子を事前照合せよ
+- **日付**: 2026-05-23
+- **出典**: cmd_3012
+- **記録者**: kagemaru
+- **tags**: [infra,db,yaml,lesson]
+- **target_files**: [data/multi_agent_shogun_memory.db,context/memory-db-schema.md,scripts/memory_db_import.py,tests/unit/test_memory_db.bats]
+- **origin**: [[cmd_3012]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3005品質対象132件にはmd以外にyaml18件/txt3件が含まれたが、memory_db_import.pyの--doc-dirsはmd限定でAC1を満たせなかった。文書投入系ACでは棚卸しCSVのtarget_extensionsとimporter対応拡張子を事前に二値照合する。origin: [[cmd_3012]] -> [[doc-dirs md限定]] -> [[教訓YAML/TXT投入漏れ]]
+
+### L694: 新スクリプト追加時の3点確認(CI RED連鎖防止)
+- **日付**: 2026-05-23
+- **出典**: cmd_karo_ci_fix_lord_conv_read_v2
+- **記録者**: karo
+- **tags**: [infra,bash,git]
+- **origin**: [[cmd_karo_ci_fix_lord_conv_read_v2]]
+- **when**: 未設定
+- **how**: 未設定
+- 新スクリプト追加時は3点確認: (1)script_dir基準の絶対パス(デフォルトパスにCWD依存の相対パスを使うな) (2)git mode 100755 or テストはbash経由で呼び出す(CI checkoutで実行権限がない場合がある) (3)既存テスト実行パターンに合わせる。cmd_karo_lord_conv_target_filter→2連続CI RED(L690 cwd依存+L692 exec permission)の根因分析。軍師idle分析で導出。
