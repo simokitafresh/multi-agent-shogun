@@ -676,3 +676,7 @@
 | cmd_2973 | dashboard-update/verdict-check/cmd-complete/report-writeの4スキルがSKILL.md改良5回超で効果なし。code_fix_requiredエスカレーション9件。各スキルのFAIL根因を特定し修正cmdの設計材料を作る | infra | 05-22 | 4スキルFAILは、dashboard_updateのrep |
 | cmd_2974 | GPT忍者へのnudge自動到達率が0%(11/11手動)。deploy_task.shのEXIT trap内でnudgeが確実に送信されるよう修正し、配備後の自動到達を保証する | infra | 05-22 | deploy_task.shのEXIT nudge arm位 |
 | cmd_2975 | CI並列実行時にflaky test 2件(T-005+AC4-2)が発生。テスト間の状態共有が根因。並列隔離で安定化する | infra | 05-22 | T-005とAC4-2の並列flaky要因をテストfixtu |
+| cmd_2976 | memory_db_import.pyにFTS5+拡張列が実装済みだがDBが再構築されていない。再実行してDBスキーマを最新化する | infra | 05-22 | memory_db_import.pyを再実行し、data/ |
+| cmd_2977 | eventsテーブルが全件conversation型。bulletin_board.yamlのエントリをevent_type=bulletinとして投入し、GATE CLEAR/家老報告/INSIGHT等の非会話イベントを検索可能にする | infra | 05-22 | memory_db_import.pyのbulletin投入 |
+| cmd_2978 | insights.yamlの気づきエントリをevent_type=insightとして記憶DBに投入し、学習ループの気づきを検索可能にする | infra | 05-22 | insights.yamlをmemory DBのevents |
+| cmd_2979 | eventsテーブルのconcepts列がJSON配列のTEXT格納で検索が遅い。event_concepts(event_id, concept_name)ジャンクションテーブルに正規化しJOINで高速検索+概念別集計を可能にする | infra | 05-22 | memory_db_import.pyにevent_conc |
