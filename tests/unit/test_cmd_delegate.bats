@@ -63,6 +63,7 @@ MOCK
 
     # cmd_delegate.sh をコピー（パスは環境変数オーバーライドで切り替える）
     cp "$PROJECT_ROOT/scripts/cmd_delegate.sh" "${TEST_TMP}/scripts/cmd_delegate.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "${TEST_TMP}/scripts/memory_db_live_insert.py"
     chmod +x "${TEST_TMP}/scripts/cmd_delegate.sh"
 
     # gate_cmd_state.sh をコピーし、パスを調整
@@ -95,6 +96,42 @@ commands:
     status: pending
     purpose: "Test purpose"
 YAML
+}
+
+create_memory_db_fixture() {
+    local db_path="$1"
+    mkdir -p "$(dirname "$db_path")"
+    python3 - "$db_path" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
 }
 
 create_shogun_yaml_with_delegated() {
@@ -239,6 +276,40 @@ YAML
     [[ "$output" == *"karo"* ]]
     [[ "$output" == *"cmd_new"* ]]
     [[ "$output" == *"shogun"* ]]
+}
+
+@test "cmd_delegate: 正常委任後にcmd_delegate eventを記憶DBへINSERTする" {
+    create_shogun_yaml_with_pending
+    local memory_db="$TEST_TMP/data/memory.db"
+    create_memory_db_fixture "$memory_db"
+
+    run env SHOGUN_MEMORY_DB="$memory_db" bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100 searchable delegate"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+
+    readarray -t result < <(python3 - "$memory_db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT event_type, agent, target, direction, cmd_id, importance FROM events WHERE event_type='cmd_delegate'"
+).fetchone()
+fts_count = conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type = 'cmd_delegate'
+    """
+).fetchone()[0]
+print("|".join(row))
+print(fts_count)
+PY
+)
+    [ "${result[0]}" = "cmd_delegate|shogun|karo|delegate|cmd_100|high" ]
+    [ "${result[1]}" = "1" ]
 }
 
 @test "cmd_delegate: 冪等性 — 二重実行でALREADY_DELEGATED" {

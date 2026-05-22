@@ -21,6 +21,7 @@ setup() {
     export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
     export TEST_BULLETIN="$TEST_TMPDIR/bulletin_board.yaml"
+    export TEST_MEMORY_DB="$TEST_TMPDIR/data/memory.db"
     mkdir -p "$TEST_ARCHIVE_DIR"
 }
 
@@ -56,8 +57,44 @@ run_cmd_save_pass() {
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
+        SHOGUN_MEMORY_DB="$TEST_MEMORY_DB" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_pass
+}
+
+create_memory_db_fixture() {
+    mkdir -p "$(dirname "$TEST_MEMORY_DB")"
+    python3 - "$TEST_MEMORY_DB" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
 }
 
 @test "AC2: 1回の実行で複数BLOCK理由を一括表示する" {
@@ -104,6 +141,7 @@ YAML
 }
 
 @test "AC1: PASS時はBLOCKナッジを表示しない" {
+    create_memory_db_fixture
     cat > "$TEST_QUEUE" <<'YAML'
 commands:
   cmd_pass:
@@ -148,6 +186,74 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"保存確認OK: cmd_pass"* ]]
     [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
+}
+
+@test "AC1b: PASS時にcmd_save eventを記憶DBへINSERTする" {
+    create_memory_db_fixture
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_pass:
+    id: cmd_pass
+    title: "verify — cmd_save searchable insert"
+    purpose: "cmd_save PASS時に記憶DBへ投入される"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_2986]] [[cmd_save_insert]]"
+    task_type: impl
+    command: |
+      1. scripts/cmd_save.sh のPASS経路からmemory_db_live_insert.pyを呼ぶ
+      2. events.event_type=cmd_saveを確認する
+    acceptance_criteria:
+      - id: AC1
+        description: "cmd_save eventがINSERTされる"
+      - id: AC2
+        description: "FTS検索できる"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "cmd_save成功イベントを検索可能にする"
+      q3_next_quality: "将軍判断のDB検索性が上がる"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats structure_verified"
+      q6_not_hiding: "no — 成功後の非破壊INSERTでありgate結果を隠さない"
+      q7_definition_verified: "yes — events.event_type=cmd_save と FTS hit を本テストで固定する"
+      q8_why_what: "WHY: cmd起票を記憶DBへ入れる必要がある → WHAT: cmd_save PASS後INSERTを検証 → WHEN: cmd_save成功時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: SQLite fixtureでeventとFTSを確認する。複利: 正の複利"
+      q10_knowledge_boundary: "空間内。根拠: scripts/cmd_save.sh と tests/unit/test_cmd_save_block_aggregation.bats のみ"
+      q11_not_already_done: "未達成。rg -n 'event_type.*cmd_save|cmd_save:' scripts/memory_db_live_insert.py scripts/cmd_save.sh で今回追加対象を確認"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "2026-05-22 テスト用DBだけへINSERTする"
+        source: "tests/unit/test_cmd_save_block_aggregation.bats"
+        trust: "verified"
+        verified_at: "2026-05-22"
+        detail: "SHOGUN_MEMORY_DBで差し替える"
+YAML
+
+    run_cmd_save_pass
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    readarray -t result < <(python3 - "$TEST_MEMORY_DB" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT event_type, agent, direction, cmd_id, importance FROM events WHERE event_type='cmd_save'"
+).fetchone()
+fts_count = conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type = 'cmd_save'
+    """
+).fetchone()[0]
+print("|".join(row))
+print(fts_count)
+PY
+)
+    [ "${result[0]}" = "cmd_save|shogun|save|cmd_pass|high" ]
+    [ "${result[1]}" = "1" ]
 }
 
 @test "AC3: PASS時に参照されたaction_required掲示板へactioned_byを自動記録する" {

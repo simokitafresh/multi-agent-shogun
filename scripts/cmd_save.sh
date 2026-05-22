@@ -35,6 +35,7 @@ CMD_SAVE_LORD_CONVERSATION_MAX_LINES="${CMD_SAVE_LORD_CONVERSATION_MAX_LINES:-10
 CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="${CMD_SAVE_LORD_CONVERSATION_MAX_BYTES:-2097152}"
 CMD_SAVE_CHRONICLE_MAX_LINES="${CMD_SAVE_CHRONICLE_MAX_LINES:-1200}"
 CMD_SAVE_CHRONICLE_MAX_BYTES="${CMD_SAVE_CHRONICLE_MAX_BYTES:-2097152}"
+MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert.py}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -5325,6 +5326,32 @@ fi
 if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     echo "保存確認OK: ${CMD_ID}"
     log_cmd_save_pass
+    if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+        printf -v _CMD_SAVE_MEMORY_TS '%(%Y-%m-%dT%H:%M:%S)T' -1
+        _CMD_SAVE_MEMORY_SUMMARY="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*title:[[:space:]]*/ {
+                sub(/^[[:space:]]*title:[[:space:]]*/, "")
+                gsub(/^["'\'']|["'\'']$/, "")
+                print
+                exit
+            }
+            /^[[:space:]]*purpose:[[:space:]]*/ {
+                sub(/^[[:space:]]*purpose:[[:space:]]*/, "")
+                gsub(/^["'\'']|["'\'']$/, "")
+                print
+                exit
+            }
+        ')"
+        [[ -n "$_CMD_SAVE_MEMORY_SUMMARY" ]] || _CMD_SAVE_MEMORY_SUMMARY="$CMD_ID saved"
+        if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
+            --cmd-id "$CMD_ID" \
+            --ts "$_CMD_SAVE_MEMORY_TS" \
+            --summary "$_CMD_SAVE_MEMORY_SUMMARY" \
+            --detail "$CMD_BLOCK_NC" \
+            --source-file "${QUEUE_FILE#$PROJECT_DIR/}"; then
+            echo "[cmd_save] WARN: DB INSERT skipped for ${CMD_ID}" >&2
+        fi
+    fi
     _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
     if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then
         echo "  bulletin actioned_by更新: ${_BULLETIN_ACTIONED_UPDATED} → ${CMD_ID}"

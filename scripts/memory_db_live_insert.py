@@ -192,6 +192,65 @@ def append_inbox(args: argparse.Namespace) -> None:
     )
 
 
+def append_cmd_save(args: argparse.Namespace) -> None:
+    cmd_id = normalize_text(args.cmd_id)
+    summary = normalize_text(args.summary) or f"{cmd_id} saved"
+    detail = normalize_text(args.detail) or summary
+    append_event(
+        args.db_path,
+        (
+            f"cmd_save:{cmd_id}:{normalize_text(args.ts)}",
+            normalize_text(args.ts),
+            "cmd_save",
+            "shogun",
+            "",
+            "save",
+            summary,
+            detail,
+            "",
+            cmd_id,
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "high",
+        ),
+    )
+
+
+def append_cmd_delegate(args: argparse.Namespace) -> None:
+    cmd_id = normalize_text(args.cmd_id)
+    message = normalize_text(args.message)
+    delegated_at = normalize_text(args.delegated_at)
+    summary = normalize_text(args.summary) or summarize(message) or f"{cmd_id} delegated"
+    detail = "\n".join(
+        line
+        for line in [
+            message,
+            f"delegated_at: {delegated_at}" if delegated_at else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            f"cmd_delegate:{cmd_id}:{delegated_at or normalize_text(args.ts)}",
+            normalize_text(args.ts),
+            "cmd_delegate",
+            "shogun",
+            "karo",
+            "delegate",
+            summary,
+            detail,
+            "",
+            cmd_id,
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "high",
+        ),
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -210,6 +269,21 @@ def parse_args() -> argparse.Namespace:
     inbox.add_argument("--message-type", required=True)
     inbox.add_argument("--action", default="")
     inbox.add_argument("--source-file", required=True)
+
+    cmd_save = subparsers.add_parser("cmd_save")
+    cmd_save.add_argument("--cmd-id", required=True)
+    cmd_save.add_argument("--ts", required=True)
+    cmd_save.add_argument("--summary", default="")
+    cmd_save.add_argument("--detail", default="")
+    cmd_save.add_argument("--source-file", required=True)
+
+    cmd_delegate = subparsers.add_parser("cmd_delegate")
+    cmd_delegate.add_argument("--cmd-id", required=True)
+    cmd_delegate.add_argument("--ts", required=True)
+    cmd_delegate.add_argument("--delegated-at", default="")
+    cmd_delegate.add_argument("--message", required=True)
+    cmd_delegate.add_argument("--summary", default="")
+    cmd_delegate.add_argument("--source-file", required=True)
 
     bulletin = subparsers.add_parser("bulletin")
     bulletin.add_argument("--entry-id", required=True)
@@ -231,6 +305,7 @@ def parse_args() -> argparse.Namespace:
     insight.add_argument("--status", default="pending")
     insight.add_argument("--resolved-at", default="")
     insight.add_argument("--source-file", required=True)
+
     return parser.parse_args()
 
 
@@ -238,6 +313,10 @@ def main() -> int:
     args = parse_args()
     if args.event_type == "inbox":
         append_inbox(args)
+    elif args.event_type == "cmd_save":
+        append_cmd_save(args)
+    elif args.event_type == "cmd_delegate":
+        append_cmd_delegate(args)
     elif args.event_type == "bulletin":
         append_bulletin(args)
     elif args.event_type == "insight":
