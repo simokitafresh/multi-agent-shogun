@@ -368,3 +368,52 @@ PY
     [[ "${result[3]}" == *"resolved_reason: noise"* ]]
     [ "${result[4]}" = "1" ]
 }
+
+@test "memory_db_import uses WAL and preserves live inserts across rebuilds" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        bulletin \
+        --entry-id "live-test" \
+        --ts "2026-05-22T17:05:00" \
+        --agent "hayate" \
+        --content "cmd_2984 live insert during import test" \
+        --source-file "queue/inbox/hayate.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("PRAGMA journal_mode").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM conversations").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE id='bulletin:live-test'").fetchone()[0])
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'cmd_2984'
+      AND e.id='bulletin:live-test'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "wal" ]
+    [ "${result[1]}" = "1" ]
+    [ "${result[2]}" = "1" ]
+    [ "${result[3]}" = "1" ]
+}
