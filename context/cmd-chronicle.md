@@ -685,3 +685,4 @@
 | cmd_2984 | journal_mode=DELETEでリアルタイムINSERTと再構築が競合しdatabase locked発生。WALモードに変更し並行書込みを許可する。再構築もDROP+CREATEからINSERT OR REPLACEに変更し時間短縮 | infra | 05-22 | memory_db_import.pyのWAL再構築を確認し |
 | cmd_2985 | inbox_write.shの全agent間通信(配備指示/報告完了/gate_clear/nudge)をevent_type=inboxとして記憶DBにリアルタイムINSERTする | infra | 05-22 | inbox_write.shのYAML永続化成功後にeven |
 | cmd_2987 | 忍者の報告YAML書込み(report_field_set.sh)をevent_type=reportとして記憶DBにINSERTし、学習ループの成果(binary_checks/lesson_candidate)がDB検索可能になるようにする | infra | 05-22 | memory_db_live_insert.pyにrepor |
+| cmd_2991 | cmd品質記録(cmd_design_quality.yaml)をevent_type=cmd_qualityとして記憶DBにリアルタイムINSERTし、gate FP/BLOCK分析がDB検索で即座に可能になるようにする | infra | 05-22 | cmd_design_qualityの品質記録をevent_ |
