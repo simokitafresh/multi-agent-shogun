@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-05-22 cmd_3005 -->
 # Memory DB Query Templates
 
 DB: `data/multi_agent_shogun_memory.db`

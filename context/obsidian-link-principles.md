@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-05-22 discussion_20260522 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->

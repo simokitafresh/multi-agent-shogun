@@ -695,3 +695,4 @@
 | cmd_3002 | memory_db_query.shにSELECT以外のSQL(DELETE/UPDATE/DROP等)をBLOCKするガードを追加し、記憶DBの安全な汎用クエリ実行を保証する | infra | 05-22 | memory_db_query.shにSELECT-only |
 | cmd_3005 | 全PJ(dm-signal/infra/google-classroom/database/simple-ocr等)のドキュメントファイルを棚卸しし、記憶DBに投入すべき知識資産の全体像を把握する | infra | 05-22 | 全登録PJのmd/yaml/yml/txt/rstをフル走査 |
 | cmd_3007 | 知識パスへのgrep実行を検知し、記憶DB検索結果を自動注入する。3層記憶を経由せずに行動する迂回路をふさぐ | infra | 05-22 | 知識パスgrep/rg検知時にmemory DB検索結果をa |
+| cmd_3008 | 記憶DB検索時にtarget=自分のagent_idでフィルタしていないため、殿が他ロールに向けた発言を自分宛てと誤認するバグを修正する | infra | 05-22 | memory DB検索のtargetフィルタ実装を検証する回 |
