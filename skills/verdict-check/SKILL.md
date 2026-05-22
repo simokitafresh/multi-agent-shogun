@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
+<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+
 # /verdict-check — binary_checks確認スキル
 
 binary_checksの全結果を読み取り、未記入や不正値がないか確認する。verdictはgate_report_format.shが自動決定・上書きするため、忍者の手動verdict記入は不要。

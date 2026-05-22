@@ -24,6 +24,8 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
+<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+
 # /dream — Memory Consolidation (5 Phase)
 
 メモリの統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。

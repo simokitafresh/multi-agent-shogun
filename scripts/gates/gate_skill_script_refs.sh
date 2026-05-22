@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 repo_root = Path(os.environ["SKILL_REF_REPO_ROOT"]).resolve()
@@ -35,6 +36,11 @@ inline_ref_re = re.compile(
     r"/[^`\s]+?\.(?:sh|py|js))`"
 )
 script_ext_re = re.compile(r"\.(?:sh|py|js)$")
+checked_at_re = re.compile(
+    r"<!--\s*script_refs_checked_at\s*[:=]\s*"
+    r"([0-9]{4}-[0-9]{2}-[0-9]{2}(?:[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:Z|[+-][0-9]{2}:[0-9]{2})?)?)"
+    r"\s*-->"
+)
 
 
 def iter_skill_files(root: Path):
@@ -70,6 +76,26 @@ def extract_refs(text: str) -> list[str]:
     return sorted(set(refs))
 
 
+def parse_checked_at_epoch(text: str) -> float | None:
+    matches = checked_at_re.findall(text)
+    if not matches:
+        return None
+
+    raw = matches[-1].strip()
+    normalized = raw.replace("Z", "+00:00")
+    if " " in normalized and "T" not in normalized:
+        normalized = normalized.replace(" ", "T", 1)
+
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.timestamp()
+
+
 raw_roots = os.environ.get("SKILL_REF_DIRS", "skills:.claude/skills:.codex/skills")
 scan_roots: list[Path] = []
 for raw in raw_roots.split(":"):
@@ -101,7 +127,8 @@ for skill_file in skill_files:
     if refs:
         skills_with_refs += 1
     total_refs += len(refs)
-    skill_mtime = skill_file.stat().st_mtime
+    checked_at_epoch = parse_checked_at_epoch(text)
+    skill_freshness_time = checked_at_epoch if checked_at_epoch is not None else skill_file.stat().st_mtime
 
     for ref in refs:
         resolved = resolve_ref(ref)
@@ -109,7 +136,7 @@ for skill_file in skill_files:
         if not resolved.exists():
             missing.append((display_skill, ref, str(resolved)))
             continue
-        if resolved.is_file() and resolved.stat().st_mtime > skill_mtime + 1:
+        if resolved.is_file() and resolved.stat().st_mtime > skill_freshness_time + 1:
             stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved)))
 
 print("=== SKILL.md script reference check ===")

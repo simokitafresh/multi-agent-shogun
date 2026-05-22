@@ -10,6 +10,8 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+
 # /karo-direct — 家老自立配備スキル
 
 将軍cmd不要の配備を安全に実行。重複ガード回避の手順を標準化。

@@ -9,6 +9,8 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+
 # /recon-dual — 偵察2名配備スキル
 
 偵察cmd(type=scout)を2名の忍者に配備。毎回の手順バラつきをゼロに。

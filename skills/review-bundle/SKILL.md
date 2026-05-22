@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
+<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+
 # /review-bundle — レビュー完了後処理スキル
 
 レビュー判定後の4ステップ連鎖を1コマンドで実行。フォーマットブレ・転記忘れをゼロにする。
