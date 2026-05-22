@@ -156,7 +156,7 @@ EOF
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary, target, parent_event_id FROM events ORDER BY ts"
     [ "$status" -eq 0 ]
-    [ "$output" = "query wrapper|lord|" ]
+    [ "$output" = "query wrapper|shogun|" ]
 }
 
 @test "memory_db_query supports FTS5 MATCH queries" {
