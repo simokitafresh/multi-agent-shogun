@@ -341,7 +341,7 @@ fi
 li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
 if [ -f "$li_file" ] && [ "$(wc -l < "$li_file")" -gt 1 ]; then
     echo "■ 教訓注入参照率"
-    awk -F'\t' 'NR>1 && $5=="injected" {inj++; if($7=="yes") ref++}
+    awk -F'\t' 'NR>1 && $5=="injected" && $2 !~ /^cmd_training/ {inj++; if($7=="yes") ref++}
     END {
         rate=(inj>0) ? ref*100/inj : 0
         printf "  注入%d件, 参照%d件, 参照率%.0f%%\n", inj, ref+0, rate
