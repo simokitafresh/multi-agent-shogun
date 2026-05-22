@@ -670,3 +670,4 @@
 | cmd_2965 | 全文記録(lord_conversation_archive 24MB/79日分)がJSONLファイルで概念検索不能。SQLite(multi_agent_shogun_memory.db)に構造化して格納し、semantic_searchから到達可能にする。先にDBを作ることでLLMが外部DBに飛びつくパターンマッチを環境で封じる(殿裁定2026-05-22) | infra | 05-22 | SQLite記憶DBインポータを追加し、lord_conve |
 | cmd_2966 | cmd_2965のconversationsテーブルは殿×将軍の対話のみ。殿は家老/軍師/忍者にも直接指示する。全ロールの全イベント(inbox/掲示板/gate/報告/insight)を統合するeventsテーブルに拡張し、conceptsカラムでsemantic_search照合結果を格納してObsidian/セマンティクスインデックスと連携する | infra | 05-22 | memory_db_init.shを追加し、eventsテー |
 | cmd_2968 | 報告テンプレートのverdictフィールドにYAMLコメント付き空文字列が残存し、忍者がautofix前に保存するとverdict空でGATE BLOCKが発生(14件検出)。テンプレートからコメント行を除去し汚染を根絶する | infra | 05-22 | 報告テンプレートのverdict空値コメントを生成元から除去 |
+| cmd_2970 | eventsテーブルのdetailをLIKE検索すると24MB全スキャン。FTS5仮想テーブルで全文検索を高速化し、parent_event_id(因果チェーン)とimportance(重要度)カラムを追加して検索品質と到達可能性を向上する | infra | 05-22 | events_fts(FTS5)をsummary/detai |

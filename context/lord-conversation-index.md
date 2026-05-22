@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-22T13:28:49+09:00 -->
+<!-- generated_at: 2026-05-22T13:39:08+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-22T13:39:08+09:00 | terminal | response | 現物確認できた。3セッション連続BLOCKの5項目を整理: | # | BLOCK項目 | 現状 | 対処 | |---|----------|------|------| | 1 | Memory健全度ALERT | gate_memo…
+- 2026-05-22T13:31:27+09:00 | terminal | response | 殿、/clear準備完了。 **本セッション全成果:** | 項目 | 結果 | |------|------| | cmd起票 | 13cmd(2958-2970) **全GATE PASS** | | 3session連続BLOCK …
+- 2026-05-22T13:31:09+09:00 | ntfy | outbound | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0。本セッション13cmd全GATE PASS(2958-2970)。3session連続BLOCK全解消+インフラP1/P2修正+記憶DB(SQLite FTS5)+3層記憶モデル…
+- 2026-05-22T13:29:42+09:00 | clear_prep_check | session_summary | auto clear prep summary: inbound=1件; latest=いまクリアされても今より強くてニューゲームできるようにせよ
+- 2026-05-22T13:29:08+09:00 | terminal | inbound | いまクリアされても今より強くてニューゲームできるようにせよ
 - 2026-05-22T13:28:48+09:00 | terminal | response | 13cmd中12件CLEAR。cmd_2970(FTS5+因果+重要度)のみ配備中。殿の指示があれば即応する。 [meta] stop_reason=end_turn
 - 2026-05-22T13:28:28+09:00 | ntfy | outbound | 【家老】cmd_2967 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 - 2026-05-22T13:28:17+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝57
 - 2026-05-22T13:28:00+09:00 | terminal | response | 13cmd中11件CLEAR。cmd_2969(TOCTOU)とcmd_2970(FTS5)が配備中。殿の指示があれば即応する。 [meta] stop_reason=end_turn
 - 2026-05-22T13:27:35+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率96% 連勝56
-- 2026-05-22T13:27:30+09:00 | terminal | response | 殿、本セッション**13cmd全てGATE PASS**。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_2958-2964 | 3session連続BLOCK解消+インフラバグ+記憶基盤 |…
-- 2026-05-22T13:27:08+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=48件 clear_prep_check=ALERT [0.…
-- 2026-05-22T13:26:40+09:00 | ntfy | outbound | 【家老】cmd_2968 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-22T13:26:29+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率96% 連勝55
-- 2026-05-22T13:24:09+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(22日)
 
 ## 未解決確認事項
+- 現物確認できた。3セッション連続BLOCKの5項目を整理: | # | BLOCK項目 | 現状 | 対処 | |---|----------|------|------| | 1 | Memory健全度ALERT | gate_memory_health.shが不在。何がAL…
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=48件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=49件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=46件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
@@ -23,7 +24,6 @@
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=42件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
 - 先のbackground taskは完了済み。結果は既に確認済み（`logs/lord_conversation_archive/`に79日分のJSONL）。 殿の一連の指摘で到達した理解を整理する。 **本セッションの学び:** 1. **道具は揃っている** — 全文記録D…
 - 殿、事実を報告する。 **79日分、24MB、全文アーカイブ完備。** 今日だけで171行。仕組みは完全に動いていた。 自分が「ない」と言ったものは全て存在していた。`queue/archive/lord_conversation/`（空）だけ見て「アーカイブがない」と断定し、…
-- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=36件 clear_prep_check=ALERT [1.PD未決] 0件: なし [2.cmd …
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-22T13:28:48+09:00 | 13cmd中12件CLEAR。cmd_2970(FTS5+因果+重要度)のみ配備中。殿の指示があれば即応する。 [meta] stop_reason=end_turn
@@ -37,8 +37,6 @@
 
 ## 参照cmd
 - cmd_2
-- cmd_2722
-- cmd_2855
 - cmd_2928
 - cmd_2952
 - cmd_2953
