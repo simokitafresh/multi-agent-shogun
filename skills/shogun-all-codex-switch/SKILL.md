@@ -56,6 +56,11 @@ bash scripts/build_instructions.sh
 - Respawn tmux panes for all agents in Codex CLI (unless `--settings-only`).
 - Refresh pane metadata through the central switch flow.
 - Restart inbox watchers via `scripts/restart_watchers.sh` (unless `--settings-only`).
+- `restart_watchers.sh` enforces singleton watcher state: it stops existing `inbox_watcher.sh` and `inotifywait ... queue/inbox` processes with SIGTERM, escalates to SIGKILL only if needed, and fails if old watchers remain.
+- The restart must finish with exactly `EXPECTED_WATCHER_COUNT` watcher processes (default `9`). A total count mismatch or per-agent startup miss means the switch is incomplete.
+- Process matching uses bracketed patterns such as `[i]nbox_watcher\.sh` to avoid self-matching. The inotify health check remains diagnostic after the exact watcher count passes.
+
+Script refs verified: 2026-05-22 cmd_2967.
 
 ## Options
 

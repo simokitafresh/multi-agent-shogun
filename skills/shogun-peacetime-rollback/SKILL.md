@@ -44,6 +44,11 @@ cd /mnt/c/tools/multi-agent-shogun
 - `scripts/switch_cli_mode.sh codex --scope sasuke,kirimaru,hayate,saizo`
 - Pane metadata sync is handled by the central switch flow.
 - Restart `inbox_watcher` processes via `scripts/restart_watchers.sh`.
+- `restart_watchers.sh` now requires a clean singleton watcher set. It sends SIGTERM to existing `inbox_watcher.sh` and `inotifywait ... queue/inbox` processes, escalates to SIGKILL only on residue, then fails if any old watcher remains.
+- Rollback is incomplete unless the restart creates exactly `EXPECTED_WATCHER_COUNT` watcher processes (default `9`) and every launched agent has a matching `inbox_watcher.sh <agent>` process.
+- The watcher count check uses bracketed pgrep patterns such as `[i]nbox_watcher\.sh` to avoid self-matching. Treat count mismatch as rollback failure and rerun or investigate before reporting completion.
+
+Script refs verified: 2026-05-22 cmd_2967.
 
 ## Options
 
