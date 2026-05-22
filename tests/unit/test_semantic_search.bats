@@ -13,7 +13,7 @@ setup() {
     export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
     export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
     unset SEMANTIC_MEMORY_DB_PATH
-    unset SEMANTIC_DISABLE_MEMORY_DB
+    export SEMANTIC_DISABLE_MEMORY_DB=1
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -123,6 +123,7 @@ EOF
     [ "$status" -eq 0 ]
 
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    unset SEMANTIC_DISABLE_MEMORY_DB
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
 
     run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
@@ -145,6 +146,7 @@ EOF
     chmod +x "$TEST_TMPDIR/bin/timeout"
     export PATH="$TEST_TMPDIR/bin:$PATH"
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    unset SEMANTIC_DISABLE_MEMORY_DB
     export SEMANTIC_MEMORY_DB_TIMEOUT=1
     export SEMANTIC_LLM_CMD="bash -c 'cat >/dev/null; echo MATCH: growth_loop'"
 
@@ -154,6 +156,36 @@ EOF
     [[ "$output" == *"WARN: memory DB FTS fallback timed out after 1s"* ]]
     [[ "$output" == *"LLM_MATCH: foobarmemoryonly"* ]]
     [[ "$output" == *"MATCH: growth_loop"* ]]
+}
+
+@test "first layer expands depth-1 event_links concepts before memory DB concept search" {
+    archive_dir="$TEST_TMPDIR/archive"
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
+    cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"shogun","direction":"response","summary":"concept bridge","detail":"[[semantic_dictionary_design]] -> [[cmd_related_step]]"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$archive_dir" \
+        --db "$db_path" \
+        --semantic-index "$SEMANTIC_INDEX_PATH"
+    [ "$status" -eq 0 ]
+
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    export SEMANTIC_CONCEPT_EXPANSION_LIMIT=20
+    unset SEMANTIC_DISABLE_MEMORY_DB
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    SEMANTIC_DISABLE_CAUSAL=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"memory_db_concept_results:"* ]]
+    [[ "$output" == *"depth: 1"* ]]
+    [[ "$output" == *"expansion_limit: 20"* ]]
+    [[ "$output" == *"seed_concepts: semantic_dictionary_design, growth_loop"* ]]
+    [[ "$output" == *"expanded_concepts: cmd_related_step"* ]]
+    [[ "$output" == *"concept bridge"* ]]
+    [[ "$output" != *"should-not-run"* ]]
 }
 
 @test "--llm forces LLM search even when aliases match" {
