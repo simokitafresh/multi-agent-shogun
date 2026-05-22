@@ -194,3 +194,63 @@ PY
     [ "${result[4]}" = "True" ]
     [ "${result[5]}" = "${result[6]}" ]
 }
+
+@test "memory_db_import imports bulletin_board entries as bulletin events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/queue/archive"
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_test_open'
+  content: |-
+    GATE CLEAR cmd_2977: bulletin投入確認
+  posted_by: 'karo'
+  posted_at: '2026-05-22T15:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+    cat > "$TEST_TMPDIR/queue/archive/bulletin_20260521.yaml" <<'EOF'
+entries:
+- id: 'blt_test_archive'
+  content: |-
+    INSIGHT_REPEAT: source=semantic_stress_test pending_count=3
+  posted_by: 'saizo'
+  posted_at: '2026-05-21T15:00:00'
+  requires_confirmation:
+    - 'shogun'
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"bulletins=2"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='conversation'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='bulletin'").fetchone()[0])
+row = conn.execute(
+    "SELECT agent, direction, summary, cmd_id, importance FROM events WHERE id='bulletin:blt_test_open'"
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    "SELECT importance FROM events WHERE id='bulletin:blt_test_archive'"
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "2" ]
+    [ "${result[2]}" = "karo|info|GATE CLEAR cmd_2977: bulletin投入確認|cmd_2977|normal" ]
+    [ "${result[3]}" = "high" ]
+}
