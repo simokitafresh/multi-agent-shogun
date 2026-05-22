@@ -70,11 +70,15 @@ _run_post() {
     [ "$status" -eq 0 ]
     [[ "$output" == *'"hookEventName"'* ]]
     [[ "$output" == *'"PreToolUse"'* ]]
-    [[ "$output" == *'起票前確認9問'* ]]
+    [[ "$output" == *'起票前確認10問'* ]]
     [[ "$output" == *'対象現物を確認したか'* ]]
     [[ "$output" == *'既存代替で足りないことを確認したか'* ]]
     [[ "$output" == *'cmd_save.sh関連チェック名を確認したか'* ]]
     [[ "$output" == *'environment_changeのpatternを対象fileでgrep確認したか'* ]]
+    [[ "$output" == *'semantic_search.shで関連概念を検索したか'* ]]
+    [[ "$output" == *'bash scripts/semantic_search.sh'* ]]
+    [[ "$output" == *'grep依存=既知限定'* ]]
+    [[ "$output" == *'将軍semantic_search未使用'* ]]
     [[ "$output" == *'rg -nF'*'対象ファイル'* ]]
 }
 

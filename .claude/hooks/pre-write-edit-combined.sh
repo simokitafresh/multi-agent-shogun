@@ -188,7 +188,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
                 }
             ')"
         fi
-        _checklist="起票前確認9問:
+        _checklist="起票前確認10問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
@@ -198,6 +198,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
 7. CMD全文に目視確認/セルフレビュー/自問を含まないか？「現物確認」「grep確認」等の客観表現に置換せよ(self_reread 4回累計BLOCK)
 8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)
 9. environment_changeのpatternを対象fileでgrep確認したか？例: rg -nF \"pattern文字列\" \"対象ファイル\" → 1件以上(environment_change未実装pattern累計BLOCK)
+10. semantic_search.shで関連概念を検索したか？未実行ならここで止まり bash scripts/semantic_search.sh \"cmd主題または対象概念\" を実行し、既知キーワードgrepだけでは見落とす関連概念を確認せよ([[grep依存=既知限定]] -> [[将軍semantic_search未使用]] -> [[殿指摘2026-05-22]])
 
 quality_gate template (cmd_save.sh必須フィールド):
   q1_firefighting: \"\"
