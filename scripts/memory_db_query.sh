@@ -41,6 +41,7 @@ from pathlib import Path
 
 
 SQLITE_BUSY_TIMEOUT_MS = 5000
+ALLOWED_INITIAL_KEYWORDS = {"SELECT", "WITH"}
 
 
 def split_sql(sql: str) -> list[str]:
@@ -58,6 +59,39 @@ def split_sql(sql: str) -> list[str]:
     if remainder:
         statements.append(remainder)
     return statements
+
+
+def first_keyword(statement: str) -> str:
+    text = statement.lstrip()
+    while text:
+        if text.startswith("--"):
+            newline = text.find("\n")
+            if newline == -1:
+                return ""
+            text = text[newline + 1 :].lstrip()
+            continue
+        if text.startswith("/*"):
+            end = text.find("*/")
+            if end == -1:
+                return ""
+            text = text[end + 2 :].lstrip()
+            continue
+        break
+    keyword_chars: list[str] = []
+    for char in text:
+        if char.isalpha() or char == "_":
+            keyword_chars.append(char)
+            continue
+        break
+    return "".join(keyword_chars).upper()
+
+
+def require_select_statement(statement: str) -> None:
+    keyword = first_keyword(statement)
+    if keyword not in ALLOWED_INITIAL_KEYWORDS:
+        raise ValueError(
+            f"only SELECT statements are allowed; blocked statement starts with {keyword or 'UNKNOWN'}"
+        )
 
 
 def format_value(value: object) -> str:
@@ -78,16 +112,26 @@ def main() -> int:
     statements = split_sql(sql)
     if not statements:
         return 0
-
-    with sqlite3.connect(db_path) as conn:
-        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+    try:
         for statement in statements:
-            cursor = conn.execute(statement)
-            if cursor.description is None:
-                continue
-            for row in cursor:
-                print("|".join(format_value(value) for value in row))
-        conn.commit()
+            require_select_statement(statement)
+    except ValueError as exc:
+        print(f"memory_db_query: BLOCKED: {exc}", file=sys.stderr)
+        return 2
+
+    db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
+    with sqlite3.connect(db_uri, uri=True) as conn:
+        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        try:
+            for statement in statements:
+                cursor = conn.execute(statement)
+                if cursor.description is None:
+                    continue
+                for row in cursor:
+                    print("|".join(format_value(value) for value in row))
+        except sqlite3.DatabaseError as exc:
+            print(f"memory_db_query: BLOCKED: only SELECT statements are allowed ({exc})", file=sys.stderr)
+            return 2
     return 0
 
 

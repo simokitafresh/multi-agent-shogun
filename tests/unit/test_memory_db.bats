@@ -204,6 +204,64 @@ EOF
     [ "$output" = "FTS wrapper" ]
 }
 
+@test "memory_db_query allows SELECT and WITH SELECT but blocks write statements" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"guard row","detail":"SELECT-only guard"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "select summary from events"
+    [ "$status" -eq 0 ]
+    [ "$output" = "guard row" ]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "WITH recent AS (SELECT summary FROM events) SELECT summary FROM recent"
+    [ "$status" -eq 0 ]
+    [ "$output" = "guard row" ]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "delete from events"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCKED"* ]]
+    [[ "$output" == *"DELETE"* ]]
+
+    for sql in \
+        "insert into events (id, ts, event_type, summary) values ('x', '2026-05-22', 'test', 'x')" \
+        "drop table events" \
+        "alter table events add column blocked_text text" \
+        "create table blocked_table (id text)"
+    do
+        run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+            --db "$TEST_TMPDIR/data/memory.db" \
+            "$sql"
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"BLOCKED"* ]]
+    done
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT summary FROM events;
+UPDATE events SET summary = 'changed'"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCKED"* ]]
+    [[ "$output" == *"UPDATE"* ]]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "WITH target AS (SELECT id FROM events) DELETE FROM events WHERE id IN (SELECT id FROM target)"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCKED"* ]]
+    [[ "$output" == *"only SELECT statements are allowed"* ]]
+}
+
 @test "memory_db_import row count matches non-empty archive JSONL lines" {
     cat > "$TEST_TMPDIR/archive/2026-05-01.jsonl" <<'EOF'
 {"ts":"2026-05-01T00:00:00+09:00","direction":"inbound","summary":"a","detail":"a"}
