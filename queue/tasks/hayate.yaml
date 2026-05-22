@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_2989_exact
+  _ac_task_id: cmd_3004_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_2989 (deployed 2026-05-22T17:54:01). Read from the beginning.
-  ac_version: 12828061
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3004 (deployed 2026-05-22T21:22:30). Read from the beginning.
+  ac_version: bf48c2fb
   cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -27,50 +27,60 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_2989
+  parent_cmd: cmd_3004
   project: infra
-  purpose: log_terminal_input/responseが将軍ペインのみ対象(agent_id=shogun制限)で、殿が家老・軍師・忍者に直接入力した会話が記憶DBに記録されない。全ペインの殿の入力を記録する
-  recommended_skills:
-  - hensei
-  - hensei-mixed
-  - hensei-opus
-  - karo-direct
-  - recon-dual
-  - reset-layout
-  - shogun-all-codex-switch
-  - shogun-peacetime-rollback
-  - switch-to-codex
-  - switch-to-opus
-  semantic_concepts:
-  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  - 'inbox_watcher_process_model — inbox_watcherプロセスモデル:  scripts/inbox_watcher.sh scripts/restart_watchers.sh'
-  - 'daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)'
-  - 'training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh'
-  - 'hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json'
+  purpose: semantic_search.shの検索フローに概念間リンクたどり(Step 2)を追加し、入口→道→倉庫→解釈の4ステップ記憶検索を完成させる
   status: done
   stop_for: []
-  target_path: scripts/
-  task_id: cmd_2989_exact
+  target_path: scripts/semantic_search.sh
+  task_id: cmd_3004_exact
   task_type: exact
   related_lessons:
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-  - id: 'L689'
-    summary: 'android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検'
-    detail: 'android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検'
-  - id: 'L125'
-    summary: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
-    detail: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
+  - id: 'L683'
+    summary: 'semantic_search.shのllm_cache_keyは毎回インデックスファイルを全量catしてsha256sum計算していた。L508(WSL2 N'
+    detail: 'semantic_search.shのllm_cache_keyは毎回インデックスファイルを全量catしてsha256sum計算していた。L508(WSL2 N'
+  - id: 'L682'
+    summary: 'semantic_search.shのsed subprocess削除(改善点3)をkotaro(cmd_training_L7_v3_kotaro_11)が先'
+    detail: 'semantic_search.shのsed subprocess削除(改善点3)をkotaro(cmd_training_L7_v3_kotaro_11)が先'
+  - id: 'L679'
+    summary: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+    detail: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+  - id: 'L677'
+    summary: '[[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が'
+    detail: '[[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が'
+  - id: 'L675'
+    summary: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
+    detail: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
+  - id: 'L673'
+    summary: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+    detail: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+  - id: 'L672'
+    summary: 'assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず'
+    detail: 'assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず'
+  - id: 'L668'
+    summary: 'insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ'
+    detail: 'insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ'
+  - id: 'L666'
+    summary: 'gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎'
+    detail: 'gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "semantic_causal_automation — セマンティック因果自動化:  scripts/semantic_map_generate.sh scripts/causal_backlinks.sh docs/semantic-index/index.md"
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
+  - "causal_traversal_pipeline — 因果辺トラバース統合パイプライン(Obsidian×セマンティック):  scripts/semantic_search.sh scripts/causal_backlinks.sh scripts/semantic_map_generate.sh"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml"
   related_causal_links:
-  - "[[agent_id制限]]"
-  - "[[家老/軍師会話未記録]]"
-  - "[[殿指摘2026-05-22]]"
+  - "[[LS042]]"
+  - "[[LS043]]"
+  - "[[殿裁定2026-05-22]]"
   context_hints:
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -84,23 +94,30 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
-      - L689: android-sdk版sqlite3 CLIはFTS5なしだったが、実装が使うPython sqlite3はENABLE_FTS5有効だった。DB機能の前提検
-      - L125: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
+      - L509: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
+      - L683: semantic_search.shのllm_cache_keyは毎回インデックスファイルを全量catしてsha256sum計算していた。L508(WSL2 N
+      - L682: semantic_search.shのsed subprocess削除(改善点3)をkotaro(cmd_training_L7_v3_kotaro_11)が先
+      - L679: cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定
+      - L677: [[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が
+      - L675: ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v '%(%Y%m%d)T'(built
+      - L673: grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc
+      - L672: assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず
+      - L668: insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ
+      - L666: gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '殿が家老ペインに入力した内容がlord_conversation.jsonlに記録される'
+    - check: 'semantic_search.shがStep 1(概念特定)後にevent_linksを走査して関連概念を拡張し、拡張概念セットでDB検索を実行する'
   - id: 'AC2'
     checks:
-    - check: '殿が軍師ペインに入力した内容がlord_conversation.jsonlに記録される'
+    - check: '概念膨張をdepth=1+limit=20で制御する仕組みが組み込まれている'
   - id: 'AC3'
     checks:
-    - check: '記録されたイベントがeventsテーブルにリアルタイムINSERTされる'
+    - check: '既存のhook呼出し(gate_karo_startup等)での応答時間が増加しないこと(Step 2の追加は軽量DB走査のみ)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_2989.yaml
+  report_filename: hayate_report_cmd_3004.yaml
   report_path: 
   bloom_level: 
