@@ -667,3 +667,6 @@
 | cmd_2962 | 将軍がcmd起票時にsemantic_search.shを使っていない。grepでは既知キーワードしか探せず、関連概念の見落としが起きる。起票前hookに10問目を追加し、将軍が毎回semantic_searchを実行する構造にする | infra | 05-22 | Guard 0の起票前確認を10問へ更新し、semantic |
 | cmd_2963 | lord_conversation.jsonlのアーカイブディレクトリは3月に作成済みだが退避処理が未実装で全セッションの対話が消失している。clear_prep_check.shに全文退避+知識抽出を追加し、長期記憶を構造的に保存する | infra | 05-22 | clear_prep_check.shにlord_conve |
 | cmd_2964 | 全文記録(24MB/79日)とsemantic_search(0.3秒)は動いているが、セッション中に発見した知識がObsidianリンクやaliasesに整理されずに消えている。全ロールの/clear前処理と作業完了時に記憶整理Phaseを追加し、短期記憶→長期記憶の移行を構造的に強制する | infra | 05-22 | 全ロール記憶整理Phaseとしてclear_prep_che |
+| cmd_2965 | 全文記録(lord_conversation_archive 24MB/79日分)がJSONLファイルで概念検索不能。SQLite(multi_agent_shogun_memory.db)に構造化して格納し、semantic_searchから到達可能にする。先にDBを作ることでLLMが外部DBに飛びつくパターンマッチを環境で封じる(殿裁定2026-05-22) | infra | 05-22 | SQLite記憶DBインポータを追加し、lord_conve |
+| cmd_2966 | cmd_2965のconversationsテーブルは殿×将軍の対話のみ。殿は家老/軍師/忍者にも直接指示する。全ロールの全イベント(inbox/掲示板/gate/報告/insight)を統合するeventsテーブルに拡張し、conceptsカラムでsemantic_search照合結果を格納してObsidian/セマンティクスインデックスと連携する | infra | 05-22 | memory_db_init.shを追加し、eventsテー |
+| cmd_2968 | 報告テンプレートのverdictフィールドにYAMLコメント付き空文字列が残存し、忍者がautofix前に保存するとverdict空でGATE BLOCKが発生(14件検出)。テンプレートからコメント行を除去し汚染を根絶する | infra | 05-22 | 報告テンプレートのverdict空値コメントを生成元から除去 |
