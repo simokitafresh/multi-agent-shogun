@@ -2134,7 +2134,7 @@ self_gate_check:
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: ""  # gate_report_format.shがbinary_checksから PASS / FAIL / PASS_NO_IMPROVEMENT を自動導出する
+verdict: ""
 # ━━━ 提出前最終確認（gate実行前に全項目を確認せよ）━━━
 # □ binary_checks: 全ACの全result欄に "yes" or "no" を記入したか（"PASS"不可）
 # □ lessons_useful: 全reason欄に有用/無用の具体的理由を記入したか
@@ -2777,7 +2777,7 @@ EOF
 
     if ! grep -Eq '^verdict:' "$report_file" 2>/dev/null; then
         cat >> "$report_file" <<'EOF'
-verdict: ""  # gate_report_format.shがbinary_checksから PASS / FAIL / PASS_NO_IMPROVEMENT を自動導出する
+verdict: ""
 EOF
         modified=true
     fi

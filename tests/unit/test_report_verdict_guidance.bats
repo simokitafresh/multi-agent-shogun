@@ -10,6 +10,9 @@ setup() {
 
     run grep -n 'verdict は gate_report_format.sh が binary_checks から自動導出する。手動記入禁止。' "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
+
+    run grep -n '^verdict: ""[[:space:]]*#' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 1 ]
 }
 
 @test "report gate failure hints do not suggest setting verdict directly" {
