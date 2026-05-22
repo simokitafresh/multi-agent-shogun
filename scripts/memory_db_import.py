@@ -21,8 +21,12 @@ DEFAULT_SEMANTIC_INDEX_PATH = REPO_ROOT / "docs" / "semantic-index" / "index.md"
 DEFAULT_BULLETIN_FILE = REPO_ROOT / "queue" / "bulletin_board.yaml"
 DEFAULT_BULLETIN_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive"
 DEFAULT_INSIGHTS_FILE = REPO_ROOT / "queue" / "insights.yaml"
+DEFAULT_SKILL_EXECUTION_LOG = REPO_ROOT / "logs" / "skill_execution_log.yaml"
+DEFAULT_CMD_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive" / "cmds"
+DEFAULT_PENDING_DECISIONS_FILE = REPO_ROOT / "queue" / "pending_decisions.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 SQLITE_BUSY_TIMEOUT_MS = 5000
+EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]
 
 
 def normalize_text(value: Any) -> str:
@@ -143,6 +147,78 @@ def load_insight_entries(insights_file: Path) -> list[dict[str, Any]]:
     return entries
 
 
+def load_skill_execution_entries(skill_execution_log: Path) -> list[dict[str, Any]]:
+    try:
+        payload = yaml.safe_load(skill_execution_log.read_text(encoding="utf-8", errors="replace")) or {}
+    except (FileNotFoundError, yaml.YAMLError):
+        return []
+    if not isinstance(payload, dict):
+        return []
+    raw_entries = payload.get("executions", [])
+    if not isinstance(raw_entries, list):
+        return []
+    entries: list[dict[str, Any]] = []
+    for entry in raw_entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized = dict(entry)
+        normalized["_source_file"] = str(skill_execution_log)
+        entries.append(normalized)
+    return entries
+
+
+def iter_cmd_archive_files(cmd_archive_dir: Path) -> Iterable[Path]:
+    if not cmd_archive_dir.is_dir():
+        return []
+    return sorted(path for path in cmd_archive_dir.glob("*.yaml") if path.is_file())
+
+
+def load_cmd_archive_entries(cmd_archive_dir: Path) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    for path in iter_cmd_archive_files(cmd_archive_dir):
+        try:
+            payload = yaml.safe_load(path.read_text(encoding="utf-8", errors="replace")) or {}
+        except yaml.YAMLError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        commands = payload.get("commands", {})
+        if isinstance(commands, dict):
+            raw_entries = commands.values()
+        elif isinstance(commands, list):
+            raw_entries = commands
+        else:
+            raw_entries = []
+        for entry in raw_entries:
+            if not isinstance(entry, dict):
+                continue
+            normalized = dict(entry)
+            normalized["_source_file"] = str(path)
+            normalized["_source_stem"] = path.stem
+            entries.append(normalized)
+    return entries
+
+
+def load_pending_decision_entries(pending_decisions_file: Path) -> list[dict[str, Any]]:
+    try:
+        payload = yaml.safe_load(pending_decisions_file.read_text(encoding="utf-8", errors="replace")) or {}
+    except (FileNotFoundError, yaml.YAMLError):
+        return []
+    if not isinstance(payload, dict):
+        return []
+    raw_entries = payload.get("decisions", [])
+    if not isinstance(raw_entries, list):
+        return []
+    entries: list[dict[str, Any]] = []
+    for entry in raw_entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized = dict(entry)
+        normalized["_source_file"] = str(pending_decisions_file)
+        entries.append(normalized)
+    return entries
+
+
 def iter_semantic_concepts(index_path: Path) -> Iterable[dict[str, Any]]:
     if not index_path.exists():
         return []
@@ -204,8 +280,8 @@ def infer_target(agent: str, direction: str) -> str:
 def event_rows_from_conversations(
     rows: list[tuple[str, str, str, str, str, str, str]],
     concepts: list[dict[str, Any]],
-) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]]:
-    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]] = []
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
     for idx, (ts, agent, direction, summary, detail, session_id, source_file) in enumerate(rows, start=1):
         event_rows.append(
             (
@@ -247,8 +323,8 @@ def bulletin_requires_confirmation(value: Any) -> str:
 def event_rows_from_bulletins(
     entries: list[dict[str, Any]],
     concepts: list[dict[str, Any]],
-) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]]:
-    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]] = []
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
     seen_ids: set[str] = set()
     for idx, entry in enumerate(entries, start=1):
         raw_id = normalize_text(entry.get("id")) or f"generated:{idx}"
@@ -295,8 +371,8 @@ def event_rows_from_bulletins(
 def event_rows_from_insights(
     entries: list[dict[str, Any]],
     concepts: list[dict[str, Any]],
-) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]]:
-    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]] = []
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
     seen_ids: set[str] = set()
     for idx, entry in enumerate(entries, start=1):
         raw_id = normalize_text(entry.get("id")) or f"generated:{idx}"
@@ -343,8 +419,170 @@ def event_rows_from_insights(
     return event_rows
 
 
+def event_rows_from_skill_executions(
+    entries: list[dict[str, Any]],
+    concepts: list[dict[str, Any]],
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
+    seen_ids: set[str] = set()
+    for idx, entry in enumerate(entries, start=1):
+        skill = normalize_text(entry.get("skill"))
+        executor = normalize_text(entry.get("executor"))
+        result = normalize_text(entry.get("result"))
+        stumbling_points = normalize_text(entry.get("stumbling_points"))
+        gate = normalize_text(entry.get("gate"))
+        source = normalize_text(entry.get("source"))
+        raw_id = ":".join(
+            part
+            for part in [normalize_text(entry.get("ts")), skill, executor, source, str(idx)]
+            if part
+        )
+        event_id = f"skill_execution:{raw_id or idx}"
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        detail = "\n".join(
+            line
+            for line in [
+                stumbling_points,
+                f"skill: {skill}" if skill else "",
+                f"result: {result}" if result else "",
+                f"gate: {gate}" if gate else "",
+                f"source: {source}" if source else "",
+                f"skill_path: {normalize_text(entry.get('skill_path'))}" if normalize_text(entry.get("skill_path")) else "",
+                f"used: {normalize_text(entry.get('used'))}" if normalize_text(entry.get("used")) else "",
+            ]
+            if line
+        )
+        summary = f"{skill} {result}".strip()
+        if stumbling_points:
+            summary = f"{summary}: {stumbling_points[:180]}" if summary else stumbling_points[:240]
+        event_rows.append(
+            (
+                event_id,
+                normalize_text(entry.get("ts")),
+                "skill_execution",
+                executor,
+                skill,
+                result or "skill_execution",
+                summary or "skill_execution",
+                detail,
+                "",
+                infer_cmd_id(source, stumbling_points),
+                concepts_for_text(f"{summary}\n{detail}", concepts),
+                normalize_text(entry.get("_source_file")),
+                None,
+                "high" if result == "FAIL" else "normal",
+            )
+        )
+    return event_rows
+
+
+def event_rows_from_cmd_archives(
+    entries: list[dict[str, Any]],
+    concepts: list[dict[str, Any]],
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
+    seen_ids: set[str] = set()
+    for idx, entry in enumerate(entries, start=1):
+        cmd_id = normalize_text(entry.get("id")) or f"generated:{idx}"
+        source_stem = normalize_text(entry.get("_source_stem"))
+        event_id = f"cmd_archive:{cmd_id}:{source_stem or idx}"
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        purpose = normalize_text(entry.get("purpose"))
+        title = normalize_text(entry.get("title"))
+        status = normalize_text(entry.get("status"))
+        acceptance_criteria = entry.get("acceptance_criteria", [])
+        if isinstance(acceptance_criteria, list):
+            ac_detail = "\n".join(f"- {normalize_text(item)}" for item in acceptance_criteria if normalize_text(item))
+        else:
+            ac_detail = normalize_text(acceptance_criteria)
+        detail = "\n".join(
+            line
+            for line in [
+                purpose,
+                f"title: {title}" if title else "",
+                f"project: {normalize_text(entry.get('project'))}" if normalize_text(entry.get("project")) else "",
+                f"type: {normalize_text(entry.get('type'))}" if normalize_text(entry.get("type")) else "",
+                f"status: {status}" if status else "",
+                f"acceptance_criteria:\n{ac_detail}" if ac_detail else "",
+            ]
+            if line
+        )
+        summary = title or purpose[:240] or cmd_id
+        event_rows.append(
+            (
+                event_id,
+                normalize_text(entry.get("timestamp")),
+                "cmd_archive",
+                "shogun",
+                normalize_text(entry.get("project")),
+                status or "archived",
+                summary,
+                detail,
+                "",
+                cmd_id,
+                concepts_for_text(f"{summary}\n{detail}", concepts),
+                normalize_text(entry.get("_source_file")),
+                None,
+                "normal",
+            )
+        )
+    return event_rows
+
+
+def event_rows_from_pending_decisions(
+    entries: list[dict[str, Any]],
+    concepts: list[dict[str, Any]],
+) -> list[EventRow]:
+    event_rows: list[EventRow] = []
+    seen_ids: set[str] = set()
+    for idx, entry in enumerate(entries, start=1):
+        raw_id = normalize_text(entry.get("id")) or f"generated:{idx}"
+        event_id = f"pending_decision:{raw_id}"
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        summary = normalize_text(entry.get("summary")) or raw_id
+        status = normalize_text(entry.get("status"))
+        resolution = normalize_text(entry.get("resolution")) or normalize_text(entry.get("resolved_content"))
+        detail = "\n".join(
+            line
+            for line in [
+                summary,
+                f"type: {normalize_text(entry.get('type'))}" if normalize_text(entry.get("type")) else "",
+                f"status: {status}" if status else "",
+                f"source_cmd: {normalize_text(entry.get('source_cmd'))}" if normalize_text(entry.get("source_cmd")) else "",
+                f"resolution: {resolution}" if resolution else "",
+                f"context_synced: {normalize_text(entry.get('context_synced'))}" if normalize_text(entry.get("context_synced")) else "",
+            ]
+            if line
+        )
+        event_rows.append(
+            (
+                event_id,
+                normalize_text(entry.get("created_at")),
+                "pending_decision",
+                normalize_text(entry.get("created_by")),
+                normalize_text(entry.get("source_cmd")),
+                status or normalize_text(entry.get("type")) or "pending_decision",
+                summary[:240],
+                detail,
+                "",
+                infer_cmd_id(normalize_text(entry.get("source_cmd")), summary),
+                concepts_for_text(f"{summary}\n{detail}", concepts),
+                normalize_text(entry.get("_source_file")),
+                None,
+                "high" if status == "pending" else "normal",
+            )
+        )
+    return event_rows
+
+
 def event_concept_rows(
-    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]],
+    event_rows: list[EventRow],
 ) -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -386,6 +624,33 @@ def default_insights_path_for_archive(archive_dir: Path) -> Path:
     except FileNotFoundError:
         pass
     return archive_dir.parent / "queue" / "insights.yaml"
+
+
+def default_skill_execution_log_for_archive(archive_dir: Path) -> Path:
+    try:
+        if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
+            return DEFAULT_SKILL_EXECUTION_LOG
+    except FileNotFoundError:
+        pass
+    return archive_dir.parent / "logs" / "skill_execution_log.yaml"
+
+
+def default_cmd_archive_dir_for_archive(archive_dir: Path) -> Path:
+    try:
+        if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
+            return DEFAULT_CMD_ARCHIVE_DIR
+    except FileNotFoundError:
+        pass
+    return archive_dir.parent / "queue" / "archive" / "cmds"
+
+
+def default_pending_decisions_path_for_archive(archive_dir: Path) -> Path:
+    try:
+        if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
+            return DEFAULT_PENDING_DECISIONS_FILE
+    except FileNotFoundError:
+        pass
+    return archive_dir.parent / "queue" / "pending_decisions.yaml"
 
 
 def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Row]:
@@ -432,11 +697,17 @@ def build_db(
     semantic_index_path: Path = DEFAULT_SEMANTIC_INDEX_PATH,
     bulletin_entries: list[dict[str, Any]] | None = None,
     insight_entries: list[dict[str, Any]] | None = None,
+    skill_execution_entries: list[dict[str, Any]] | None = None,
+    cmd_archive_entries: list[dict[str, Any]] | None = None,
+    pending_decision_entries: list[dict[str, Any]] | None = None,
 ) -> None:
     concepts = list(iter_semantic_concepts(semantic_index_path))
     event_rows = event_rows_from_conversations(rows, concepts)
     event_rows.extend(event_rows_from_bulletins(bulletin_entries or [], concepts))
     event_rows.extend(event_rows_from_insights(insight_entries or [], concepts))
+    event_rows.extend(event_rows_from_skill_executions(skill_execution_entries or [], concepts))
+    event_rows.extend(event_rows_from_cmd_archives(cmd_archive_entries or [], concepts))
+    event_rows.extend(event_rows_from_pending_decisions(pending_decision_entries or [], concepts))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
@@ -569,6 +840,21 @@ def parse_args() -> argparse.Namespace:
         help="insights.yaml path. Defaults to queue/insights.yaml beside the archive root.",
     )
     parser.add_argument(
+        "--skill-execution-log",
+        default="",
+        help="skill_execution_log.yaml path. Defaults to logs/skill_execution_log.yaml beside the archive root.",
+    )
+    parser.add_argument(
+        "--cmd-archive-dir",
+        default="",
+        help="Directory containing completed cmd archive YAML files.",
+    )
+    parser.add_argument(
+        "--pending-decisions-file",
+        default="",
+        help="pending_decisions.yaml path. Defaults to queue/pending_decisions.yaml beside the archive root.",
+    )
+    parser.add_argument(
         "--search",
         default="",
         help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
@@ -591,6 +877,13 @@ def main() -> int:
     bulletin_file = Path(args.bulletin_file) if args.bulletin_file else default_bulletin_file
     bulletin_archive_dir = Path(args.bulletin_archive_dir) if args.bulletin_archive_dir else default_bulletin_archive_dir
     insights_file = Path(args.insights_file) if args.insights_file else default_insights_path_for_archive(archive_dir)
+    skill_execution_log = Path(args.skill_execution_log) if args.skill_execution_log else default_skill_execution_log_for_archive(archive_dir)
+    cmd_archive_dir = Path(args.cmd_archive_dir) if args.cmd_archive_dir else default_cmd_archive_dir_for_archive(archive_dir)
+    pending_decisions_file = (
+        Path(args.pending_decisions_file)
+        if args.pending_decisions_file
+        else default_pending_decisions_path_for_archive(archive_dir)
+    )
     if args.search:
         for row in search_events(db_path, args.search, args.limit):
             print(
@@ -609,13 +902,28 @@ def main() -> int:
     rows = load_rows(archive_dir)
     bulletin_entries = load_bulletin_entries(bulletin_file, bulletin_archive_dir)
     insight_entries = load_insight_entries(insights_file)
-    build_db(db_path, rows, semantic_index_path, bulletin_entries, insight_entries)
+    skill_execution_entries = load_skill_execution_entries(skill_execution_log)
+    cmd_archive_entries = load_cmd_archive_entries(cmd_archive_dir)
+    pending_decision_entries = load_pending_decision_entries(pending_decisions_file)
+    build_db(
+        db_path,
+        rows,
+        semantic_index_path,
+        bulletin_entries,
+        insight_entries,
+        skill_execution_entries,
+        cmd_archive_entries,
+        pending_decision_entries,
+    )
     print(
         "memory_db_import: "
         f"files={len(list(iter_jsonl_files(archive_dir)))} "
         f"rows={len(rows)} "
         f"bulletins={len(bulletin_entries)} "
         f"insights={len(insight_entries)} "
+        f"skill_executions={len(skill_execution_entries)} "
+        f"cmd_archives={len(cmd_archive_entries)} "
+        f"pending_decisions={len(pending_decision_entries)} "
         f"db={db_path}"
     )
     return 0

@@ -369,6 +369,164 @@ PY
     [ "${result[4]}" = "1" ]
 }
 
+@test "memory_db_import imports skill execution log entries as skill_execution events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/logs"
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-22T18:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "PASS"
+  used: "true"
+  stumbling_points: "cmd_2992 report gate searchable"
+  gate: "gate_report_format"
+  source: "queue/reports/saizo_report_cmd_2992.yaml"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/report-write/SKILL.md"
+- ts: "2026-05-22T18:01:00+0900"
+  skill: "verdict-check"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "binary check mismatch"
+  gate: "gate_report_format"
+  source: "queue/reports/saizo_report_cmd_2992.yaml"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/verdict-check/SKILL.md"
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"skill_executions=2"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='skill_execution'").fetchone()[0])
+row = conn.execute(
+    "SELECT agent, target, direction, cmd_id, importance FROM events WHERE event_type='skill_execution' AND target='report-write'"
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type='skill_execution'
+    """
+).fetchone()[0])
+print(conn.execute(
+    "SELECT importance FROM events WHERE event_type='skill_execution' AND target='verdict-check'"
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "2" ]
+    [ "${result[1]}" = "saizo|report-write|PASS|cmd_2992|normal" ]
+    [ "${result[2]}" = "1" ]
+    [ "${result[3]}" = "high" ]
+}
+
+@test "memory_db_import imports completed cmd archive entries as cmd_archive events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/queue/archive/cmds"
+    cat > "$TEST_TMPDIR/queue/archive/cmds/cmd_2992_done_20260522.yaml" <<'EOF'
+commands:
+  cmd_2992:
+    id: cmd_2992
+    title: "memory DB archive import"
+    project: infra
+    type: impl
+    purpose: "completed cmd archive searchable purpose"
+    acceptance_criteria:
+    - "AC1: cmd archive imported"
+    timestamp: "2026-05-22T18:05:00+09:00"
+    status: done
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_archives=1"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT event_type, agent, target, direction, summary, cmd_id, importance FROM events WHERE event_type='cmd_archive'"
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type='cmd_archive'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "cmd_archive|shogun|infra|done|memory DB archive import|cmd_2992|normal" ]
+    [ "${result[1]}" = "1" ]
+}
+
+@test "memory_db_import imports pending_decisions.yaml entries as pending_decision events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+summary:
+  total: 1
+  resolved: 0
+  pending: 1
+decisions:
+- id: PD-999
+  type: lord_decision
+  summary: "cmd_2992 pending decision searchable"
+  source_cmd: cmd_2992
+  status: pending
+  created_at: "2026-05-22T18:06:00+09:00"
+  created_by: shogun
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"pending_decisions=1"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT event_type, agent, target, direction, summary, cmd_id, importance FROM events WHERE id='pending_decision:PD-999'"
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type='pending_decision'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "pending_decision|shogun|cmd_2992|pending|cmd_2992 pending decision searchable|cmd_2992|high" ]
+    [ "${result[1]}" = "1" ]
+}
+
 @test "memory_db_import uses WAL and preserves live inserts across rebuilds" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
