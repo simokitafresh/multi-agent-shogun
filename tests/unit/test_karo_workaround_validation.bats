@@ -60,6 +60,7 @@ SH
     # resolves to TEST_DIR without per-test sed rewrites on /mnt/c.
     cp "$SCRIPT" "$TEST_DIR/scripts/karo_workaround_log.sh"
     cp "$(dirname "$SCRIPT")/lib/known_ninjas.sh" "$TEST_DIR/scripts/lib/known_ninjas.sh"
+    cp "$(dirname "$SCRIPT")/memory_db_live_insert.py" "$TEST_DIR/scripts/memory_db_live_insert.py"
     chmod +x "$TEST_DIR/scripts/karo_workaround_log.sh"
 
     TEST_SCRIPT="$TEST_DIR/scripts/karo_workaround_log.sh"
@@ -320,5 +321,66 @@ YAML
     run bash "$TEST_SCRIPT" --reclassify cmd_legacy_target verdict_override
     [ "$status" -eq 0 ]
     run grep -n "^- category: verdict_override$" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "memory DB: workaround record also inserts event_type=workaround when DB exists" {
+    db="$TEST_DIR/data/memory.db"
+    mkdir -p "$TEST_DIR/data"
+    python3 - "$db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id INTEGER,
+        importance TEXT
+    )
+    """
+)
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid')")
+conn.commit()
+PY
+
+    run env SHOGUN_MEMORY_DB="$db" \
+        bash "$TEST_SCRIPT" cmd_test hayate "test issue for DB" "test root cause" report_yaml_format
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT event_type, agent, target, direction, summary, cmd_id FROM events WHERE event_type='workaround'"
+).fetchone()
+print("|".join(row))
+print(conn.execute("SELECT COUNT(*) FROM events_fts").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "workaround|karo|hayate|report_yaml_format|test issue for DB|cmd_test" ]
+    [ "${result[1]}" = "1" ]
+}
+
+@test "memory DB: live insert failure does not block workaround YAML recording" {
+    mkdir -p "$TEST_DIR/data/not_a_db"
+
+    run env SHOGUN_MEMORY_DB="$TEST_DIR/data/not_a_db" \
+        bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test root cause" report_yaml_format
+    [ "$status" -eq 0 ]
+
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -eq 0 ]
 }

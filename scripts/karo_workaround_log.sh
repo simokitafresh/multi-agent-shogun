@@ -404,6 +404,18 @@ EOF
 EOF
         } >> "$LOG_FILE"
 
+        if [[ -f "$SCRIPT_DIR/memory_db_live_insert.py" ]]; then
+            python3 "$SCRIPT_DIR/memory_db_live_insert.py" \
+                workaround \
+                --cmd-id "$CMD_ID" \
+                --ts "$TIMESTAMP" \
+                --ninja "$NINJA_NAME" \
+                --category "$CATEGORY" \
+                --issue "$ISSUE" \
+                --root-cause "$FIX" \
+                --source-file "$LOG_FILE" >/dev/null 2>&1 || true
+        fi
+
         # --- Alert mechanism (AC1: cmd_1211) ---
         if [[ "$CATEGORY" != "clean" && $OCCURRENCE -ge 3 ]]; then
             echo "[karo_workaround_log] ALERT: カテゴリ「${CATEGORY}」が${OCCURRENCE}件。構造対策cmdを起票せよ"

@@ -217,6 +217,53 @@ def append_cmd_save(args: argparse.Namespace) -> None:
     )
 
 
+def append_cmd_quality(args: argparse.Namespace) -> None:
+    cmd_id = normalize_text(args.cmd_id)
+    gate_result = normalize_text(args.gate_result)
+    source = normalize_text(args.source) or "cmd_quality_log"
+    ts = normalize_text(args.ts)
+    notes = normalize_text(args.notes)
+    diagnosis = normalize_text(args.diagnosis)
+    project = normalize_text(args.project)
+    summary = f"{cmd_id} quality: {gate_result}" if cmd_id else f"quality: {gate_result}"
+    detail = "\n".join(
+        line
+        for line in [
+            f"gate_result: {gate_result}" if gate_result else "",
+            f"karo_rework: {normalize_text(args.karo_rework)}",
+            f"gunshi_verdict: {normalize_text(args.gunshi_verdict)}",
+            f"ninja_blockers: {normalize_text(args.ninja_blockers)}",
+            f"ac_count: {normalize_text(args.ac_count)}",
+            f"supplementary_cmds: {normalize_text(args.supplementary_cmds)}",
+            f"project: {project}" if project else "",
+            f"source: {source}" if source else "",
+            f"diagnosis: {diagnosis}" if diagnosis else "",
+            f"notes: {notes}" if notes else "",
+        ]
+        if line
+    )
+    importance = "high" if gate_result in ("FAIL", "BLOCK") else "normal"
+    append_event(
+        args.db_path,
+        (
+            f"cmd_quality:{cmd_id}:{gate_result}:{source}:{ts}",
+            ts,
+            "cmd_quality",
+            "shogun",
+            cmd_id,
+            gate_result,
+            summary[:SUMMARY_LIMIT],
+            detail,
+            "",
+            cmd_id,
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            importance,
+        ),
+    )
+
+
 def append_cmd_delegate(args: argparse.Namespace) -> None:
     cmd_id = normalize_text(args.cmd_id)
     message = normalize_text(args.message)
@@ -375,6 +422,45 @@ def append_report(args: argparse.Namespace) -> None:
     )
 
 
+def append_workaround(args: argparse.Namespace) -> None:
+    cmd_id = normalize_text(args.cmd_id)
+    ninja = normalize_text(args.ninja)
+    category = normalize_text(args.category)
+    issue = normalize_text(args.issue)
+    root_cause = normalize_text(args.root_cause)
+    ts = normalize_text(args.ts)
+    summary = summarize(issue) or f"{cmd_id} workaround"
+    detail = "\n".join(
+        line
+        for line in [
+            issue,
+            f"root_cause: {root_cause}" if root_cause else "",
+            f"category: {category}" if category else "",
+            f"ninja: {ninja}" if ninja else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            f"workaround:{cmd_id}:{ninja}:{ts}",
+            ts,
+            "workaround",
+            "karo",
+            ninja,
+            category,
+            summary,
+            detail,
+            "",
+            cmd_id or infer_cmd_id(summary, detail),
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "high",
+        ),
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -400,6 +486,21 @@ def parse_args() -> argparse.Namespace:
     cmd_save.add_argument("--summary", default="")
     cmd_save.add_argument("--detail", default="")
     cmd_save.add_argument("--source-file", required=True)
+
+    cmd_quality = subparsers.add_parser("cmd_quality")
+    cmd_quality.add_argument("--cmd-id", required=True)
+    cmd_quality.add_argument("--ts", required=True)
+    cmd_quality.add_argument("--gate-result", required=True)
+    cmd_quality.add_argument("--karo-rework", required=True)
+    cmd_quality.add_argument("--gunshi-verdict", default="")
+    cmd_quality.add_argument("--ninja-blockers", default="0")
+    cmd_quality.add_argument("--ac-count", default="0")
+    cmd_quality.add_argument("--supplementary-cmds", default="0")
+    cmd_quality.add_argument("--project", default="")
+    cmd_quality.add_argument("--source", default="cmd_quality_log")
+    cmd_quality.add_argument("--diagnosis", default="")
+    cmd_quality.add_argument("--notes", default="")
+    cmd_quality.add_argument("--source-file", required=True)
 
     cmd_delegate = subparsers.add_parser("cmd_delegate")
     cmd_delegate.add_argument("--cmd-id", required=True)
@@ -439,6 +540,15 @@ def parse_args() -> argparse.Namespace:
     report.add_argument("--dot-key", required=True)
     report.add_argument("--source-file", required=True)
 
+    workaround = subparsers.add_parser("workaround")
+    workaround.add_argument("--cmd-id", required=True)
+    workaround.add_argument("--ts", required=True)
+    workaround.add_argument("--ninja", required=True)
+    workaround.add_argument("--category", required=True)
+    workaround.add_argument("--issue", required=True)
+    workaround.add_argument("--root-cause", default="")
+    workaround.add_argument("--source-file", required=True)
+
     lesson = subparsers.add_parser("lesson")
     lesson.add_argument("--lesson-id", required=True)
     lesson.add_argument("--title", required=True)
@@ -466,6 +576,8 @@ def main() -> int:
         append_inbox(args)
     elif args.event_type == "cmd_save":
         append_cmd_save(args)
+    elif args.event_type == "cmd_quality":
+        append_cmd_quality(args)
     elif args.event_type == "cmd_delegate":
         append_cmd_delegate(args)
     elif args.event_type == "bulletin":
@@ -474,6 +586,8 @@ def main() -> int:
         append_insight(args)
     elif args.event_type == "report":
         append_report(args)
+    elif args.event_type == "workaround":
+        append_workaround(args)
     elif args.event_type == "lesson":
         append_lesson(args)
     elif args.event_type == "gate":

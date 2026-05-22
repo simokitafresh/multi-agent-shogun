@@ -417,3 +417,52 @@ PY
     [ "${result[2]}" = "1" ]
     [ "${result[3]}" = "1" ]
 }
+
+@test "memory_db_live_insert appends workaround events with event_type workaround" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        workaround \
+        --cmd-id "cmd_2990" \
+        --ts "2026-05-22T18:10:00Z" \
+        --ninja "hayate" \
+        --category "report_yaml_format" \
+        --issue "manual workaround recorded" \
+        --root-cause "manual fix applied" \
+        --source-file "logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    """
+    SELECT event_type, agent, target, direction, summary, replace(detail, char(10), '|'), cmd_id, importance, source_file
+    FROM events
+    WHERE id='workaround:cmd_2990:hayate:2026-05-22T18:10:00Z'
+    """
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'workaround'
+      AND e.event_type='workaround'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "workaround|karo|hayate|report_yaml_format|manual workaround recorded|manual workaround recorded|root_cause: manual fix applied|category: report_yaml_format|ninja: hayate|cmd_2990|high|logs/karo_workarounds.yaml" ]
+    [ "${result[1]}" = "1" ]
+}
