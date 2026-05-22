@@ -22,6 +22,8 @@ Environment:
                        Set to 1 to skip memory DB FTS fallback
   SEMANTIC_MEMORY_DB_LIMIT
                        Maximum memory DB fallback rows (default: 10)
+  SEMANTIC_MEMORY_DB_TIMEOUT
+                       Maximum seconds for memory DB FTS fallback (default: 5)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
@@ -99,16 +101,24 @@ memory_db_search() {
 
     local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
     local limit="${SEMANTIC_MEMORY_DB_LIMIT:-10}"
+    local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-5}"
     local output_file
 
     [ -f "$db_path" ] || return 1
 
     output_file="$(mktemp)"
-    if ! python3 "$script_dir/scripts/memory_db_import.py" \
+    set +e
+    timeout "$search_timeout" python3 "$script_dir/scripts/memory_db_import.py" \
         --db "$db_path" \
         --search "$query" \
-        --limit "$limit" > "$output_file"; then
+        --limit "$limit" > "$output_file"
+    local rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
         rm -f "$output_file"
+        if [ "$rc" -eq 124 ]; then
+            echo "WARN: memory DB FTS fallback timed out after ${search_timeout}s" >&2
+        fi
         return 1
     fi
 

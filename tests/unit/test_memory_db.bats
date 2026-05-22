@@ -123,6 +123,60 @@ EOF
     [[ "$output" != *"無関係"* ]]
 }
 
+@test "memory_db_import search tokenizes long Japanese queries for FTS5" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"日本語FTS改善","detail":"FTS5検索がタイムアウトする問題を改善する"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"無関係","detail":"通常の返答"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "日本語の長いクエリでFTS5検索がタイムアウトする問題を改善する"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"日本語FTS改善"* ]]
+    [[ "$output" != *"無関係"* ]]
+}
+
+@test "memory_db_query runs SQL through Python sqlite3 with sqlite3 CLI-style output" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"query wrapper","detail":"Python sqlite3 wrapper output check"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT summary, target, parent_event_id FROM events ORDER BY ts"
+    [ "$status" -eq 0 ]
+    [ "$output" = "query wrapper|lord|" ]
+}
+
+@test "memory_db_query supports FTS5 MATCH queries" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"FTS wrapper","detail":"uniqueftsneedle works through MATCH"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"miss","detail":"ordinary response"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT e.summary FROM events_fts JOIN events AS e ON e.rowid = events_fts.rowid WHERE events_fts MATCH 'uniqueftsneedle'"
+    [ "$status" -eq 0 ]
+    [ "$output" = "FTS wrapper" ]
+}
+
 @test "memory_db_import row count matches non-empty archive JSONL lines" {
     cat > "$TEST_TMPDIR/archive/2026-05-01.jsonl" <<'EOF'
 {"ts":"2026-05-01T00:00:00+09:00","direction":"inbound","summary":"a","detail":"a"}

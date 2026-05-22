@@ -134,6 +134,28 @@ EOF
     [[ "$output" != *"should-not-run"* ]]
 }
 
+@test "memory DB fallback is bounded by SEMANTIC_MEMORY_DB_TIMEOUT" {
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$TEST_TMPDIR/data" "$TEST_TMPDIR/bin"
+    : > "$db_path"
+    cat > "$TEST_TMPDIR/bin/timeout" <<'EOF'
+#!/usr/bin/env bash
+exit 124
+EOF
+    chmod +x "$TEST_TMPDIR/bin/timeout"
+    export PATH="$TEST_TMPDIR/bin:$PATH"
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    export SEMANTIC_MEMORY_DB_TIMEOUT=1
+    export SEMANTIC_LLM_CMD="bash -c 'cat >/dev/null; echo MATCH: growth_loop'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: memory DB FTS fallback timed out after 1s"* ]]
+    [[ "$output" == *"LLM_MATCH: foobarmemoryonly"* ]]
+    [[ "$output" == *"MATCH: growth_loop"* ]]
+}
+
 @test "--llm forces LLM search even when aliases match" {
     mock_llm="$TEST_TMPDIR/mock_llm.sh"
     cat > "$mock_llm" <<'EOF'

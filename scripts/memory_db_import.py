@@ -28,12 +28,41 @@ CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
 SQLITE_BUSY_TIMEOUT_MS = 5000
 EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]
+FTS_QUERY_TOKEN_RE = re.compile(
+    r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff]{3,}"
+)
 
 
 def normalize_text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
+
+
+def escape_fts5_phrase(value: str) -> str:
+    return '"' + value.replace('"', '""') + '"'
+
+
+def fts5_query_for_text(query: str, max_terms: int = 16) -> str:
+    normalized_query = normalize_text(query)
+    if not normalized_query:
+        return ""
+
+    terms: list[str] = []
+    seen: set[str] = set()
+    for match in FTS_QUERY_TOKEN_RE.finditer(normalized_query):
+        term = match.group(0)
+        key = term.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(term)
+        if len(terms) >= max_terms:
+            break
+
+    if not terms:
+        return escape_fts5_phrase(normalized_query)
+    return " OR ".join(escape_fts5_phrase(term) for term in terms)
 
 
 def iter_jsonl_files(archive_dir: Path) -> Iterable[Path]:
@@ -675,8 +704,8 @@ def default_pending_decisions_path_for_archive(archive_dir: Path) -> Path:
 
 
 def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Row]:
-    normalized_query = normalize_text(query)
-    if not normalized_query:
+    fts_query = fts5_query_for_text(query)
+    if not fts_query:
         return []
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
@@ -702,7 +731,7 @@ def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Ro
                 ORDER BY rank, e.ts
                 LIMIT ?
                 """,
-                (normalized_query, limit),
+                (fts_query, limit),
             )
         )
 
@@ -784,7 +813,8 @@ def build_db(
                 summary,
                 detail,
                 content='events',
-                content_rowid='rowid'
+                content_rowid='rowid',
+                tokenize='trigram'
             )
             """
         )
