@@ -671,3 +671,8 @@
 | cmd_2966 | cmd_2965のconversationsテーブルは殿×将軍の対話のみ。殿は家老/軍師/忍者にも直接指示する。全ロールの全イベント(inbox/掲示板/gate/報告/insight)を統合するeventsテーブルに拡張し、conceptsカラムでsemantic_search照合結果を格納してObsidian/セマンティクスインデックスと連携する | infra | 05-22 | memory_db_init.shを追加し、eventsテー |
 | cmd_2968 | 報告テンプレートのverdictフィールドにYAMLコメント付き空文字列が残存し、忍者がautofix前に保存するとverdict空でGATE BLOCKが発生(14件検出)。テンプレートからコメント行を除去し汚染を根絶する | infra | 05-22 | 報告テンプレートのverdict空値コメントを生成元から除去 |
 | cmd_2970 | eventsテーブルのdetailをLIKE検索すると24MB全スキャン。FTS5仮想テーブルで全文検索を高速化し、parent_event_id(因果チェーン)とimportance(重要度)カラムを追加して検索品質と到達可能性を向上する | infra | 05-22 | events_fts(FTS5)をsummary/detai |
+| cmd_2971 | deploy_task.sh/restart_watchers.sh変更後にSKILL.md 4件が未更新で3session連続WARNが発生。scriptの最新挙動をSKILL.mdに反映しgate判定をOKにする | infra | 05-22 | SKILL.md 4件を最新script挙動に追従し、gat |
+| cmd_2972 | is_gate_or_hook_addition_cmd()がSKILL.md追従/DB拡張/semantic_search等の非gate追加cmdをgate追加と誤判定しFP率100%(3/3)。L299除外キーワードに追従/更新/拡張を追加し偽陽性を解消する | infra | 05-22 | is_gate_or_hook_addition_cmdの追 |
+| cmd_2973 | dashboard-update/verdict-check/cmd-complete/report-writeの4スキルがSKILL.md改良5回超で効果なし。code_fix_requiredエスカレーション9件。各スキルのFAIL根因を特定し修正cmdの設計材料を作る | infra | 05-22 | 4スキルFAILは、dashboard_updateのrep |
+| cmd_2974 | GPT忍者へのnudge自動到達率が0%(11/11手動)。deploy_task.shのEXIT trap内でnudgeが確実に送信されるよう修正し、配備後の自動到達を保証する | infra | 05-22 | deploy_task.shのEXIT nudge arm位 |
+| cmd_2975 | CI並列実行時にflaky test 2件(T-005+AC4-2)が発生。テスト間の状態共有が根因。並列隔離で安定化する | infra | 05-22 | T-005とAC4-2の並列flaky要因をテストfixtu |
