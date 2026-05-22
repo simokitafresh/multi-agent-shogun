@@ -195,6 +195,61 @@ PY
     [ "${result[5]}" = "${result[6]}" ]
 }
 
+@test "memory_db_import normalizes concepts into event_concepts junction table" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:56:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2966 eventsテーブル拡張","detail":"multi_agent_shogun_memory.db とセマンティクスインデックスを連携する"}
+{"ts":"2026-05-22T12:57:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2970 FTS5","detail":"SQLite記憶DBをFTS5対応にする"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+tables = {
+    row[0]
+    for row in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )
+}
+cols = [row[1] for row in conn.execute("PRAGMA table_info(event_concepts)")]
+print("event_concepts" in tables)
+print(",".join(cols))
+print(conn.execute("SELECT COUNT(*) FROM event_concepts").fetchone()[0] > 0)
+print(conn.execute(
+    "SELECT COUNT(*) FROM event_concepts WHERE concept_name='local_memory_db'"
+).fetchone()[0] > 0)
+print(conn.execute(
+    """
+    SELECT concept_name, COUNT(*)
+    FROM event_concepts
+    GROUP BY concept_name
+    HAVING concept_name='local_memory_db'
+    """
+).fetchone()[1])
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM event_concepts AS ec
+    JOIN events AS e ON e.id = ec.event_id
+    WHERE ec.concept_name='local_memory_db'
+      AND e.event_type='conversation'
+    """
+).fetchone()[0] > 0)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "event_id,concept_name" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "True" ]
+    [ "${result[4]}" -ge 1 ]
+    [ "${result[5]}" = "True" ]
+}
+
 @test "memory_db_import imports bulletin_board entries as bulletin events" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}

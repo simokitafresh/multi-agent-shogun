@@ -342,6 +342,32 @@ def event_rows_from_insights(
     return event_rows
 
 
+def event_concept_rows(
+    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]],
+) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for event_row in event_rows:
+        event_id = event_row[0]
+        concepts_raw = event_row[10]
+        try:
+            concept_names = json.loads(concepts_raw)
+        except json.JSONDecodeError:
+            concept_names = []
+        if not isinstance(concept_names, list):
+            continue
+        for concept_name_raw in concept_names:
+            concept_name = normalize_text(concept_name_raw)
+            if not concept_name:
+                continue
+            key = (event_id, concept_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(key)
+    return rows
+
+
 def default_bulletin_paths_for_archive(archive_dir: Path) -> tuple[Path, Path]:
     try:
         if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
@@ -408,6 +434,7 @@ def build_db(
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA journal_mode=DELETE")
         conn.execute("DROP TABLE IF EXISTS events")
+        conn.execute("DROP TABLE IF EXISTS event_concepts")
         conn.execute("DROP TABLE IF EXISTS conversations")
         conn.execute(
             """
@@ -460,6 +487,23 @@ def build_db(
             """,
             event_rows,
         )
+        conn.execute(
+            """
+            CREATE TABLE event_concepts (
+                event_id TEXT NOT NULL,
+                concept_name TEXT NOT NULL,
+                PRIMARY KEY (event_id, concept_name),
+                FOREIGN KEY (event_id) REFERENCES events(id)
+            )
+            """
+        )
+        conn.executemany(
+            """
+            INSERT INTO event_concepts (event_id, concept_name)
+            VALUES (?, ?)
+            """,
+            event_concept_rows(event_rows),
+        )
         conn.execute("DROP TABLE IF EXISTS events_fts")
         conn.execute(
             """
@@ -478,6 +522,7 @@ def build_db(
         conn.execute("CREATE INDEX idx_events_cmd_id ON events(cmd_id)")
         conn.execute("CREATE INDEX idx_events_parent_event_id ON events(parent_event_id)")
         conn.execute("CREATE INDEX idx_events_importance ON events(importance)")
+        conn.execute("CREATE INDEX idx_event_concepts_concept_name ON event_concepts(concept_name)")
 
 
 def parse_args() -> argparse.Namespace:
