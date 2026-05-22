@@ -710,6 +710,70 @@ PY
     [ "${result[1]}" = "1" ]
 }
 
+@test "memory_db_import imports markdown doc dirs as document events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/docs/context" "$TEST_TMPDIR/docs/projects/infra"
+    cat > "$TEST_TMPDIR/docs/context/test-memory-doc.md" <<'EOF'
+# Context Document Heading
+
+context document unique needle cmd_3011_exact_document
+EOF
+    cat > "$TEST_TMPDIR/docs/projects/infra/infra-note.md" <<'EOF'
+# Infra Note
+
+infra document searchable marker
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --doc-dirs "$TEST_TMPDIR/docs/context,$TEST_TMPDIR/docs/projects/infra"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"documents=2"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='document'").fetchone()[0])
+row = conn.execute(
+    """
+    SELECT event_type, agent, direction, summary, cmd_id, source_file
+    FROM events
+    WHERE event_type='document' AND summary='Context Document Heading'
+    """
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'cmd_3011_exact_document'
+      AND e.event_type='document'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "2" ]
+    [[ "${result[1]}" == "document|document|document|Context Document Heading|cmd_3011_exact_document|"* ]]
+    [ "${result[2]}" = "1" ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "cmd_3011_exact_document"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Context Document Heading"* ]]
+
+    run env MEMORY_DB_QUERY_TARGET=hayate bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "cmd_3011_exact_document"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Context Document Heading"* ]]
+}
+
 @test "memory_db_import uses WAL and preserves live inserts across rebuilds" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
