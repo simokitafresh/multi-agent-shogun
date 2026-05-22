@@ -254,3 +254,62 @@ PY
     [ "${result[2]}" = "karo|info|GATE CLEAR cmd_2977: bulletin投入確認|cmd_2977|normal" ]
     [ "${result[3]}" = "high" ]
 }
+
+@test "memory_db_import imports insights.yaml entries as insight events" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
+EOF
+    mkdir -p "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-test-pending
+  ts: "2026-05-22T15:10:00+09:00"
+  insight: "cmd_2978 insight投入テスト pending"
+  priority: "medium"
+  source: "manual"
+  status: pending
+- id: INS-test-resolved
+  ts: "2026-05-22T15:11:00+09:00"
+  insight: "resolved insight should remain searchable"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: resolved
+  resolved_reason: "noise"
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"insights=2"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='conversation'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type='insight'").fetchone()[0])
+row = conn.execute(
+    "SELECT agent, direction, summary, cmd_id, importance FROM events WHERE id='insight:INS-test-pending'"
+).fetchone()
+print("|".join(row))
+print(conn.execute(
+    "SELECT detail FROM events WHERE id='insight:INS-test-resolved'"
+).fetchone()[0].replace("\n", "|"))
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.event_type = 'insight'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "2" ]
+    [ "${result[2]}" = "manual|pending|cmd_2978 insight投入テスト pending|cmd_2978|high" ]
+    [[ "${result[3]}" == *"resolved_reason: noise"* ]]
+    [ "${result[4]}" = "1" ]
+}

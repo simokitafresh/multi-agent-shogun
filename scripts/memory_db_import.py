@@ -20,6 +20,7 @@ DEFAULT_DB_PATH = REPO_ROOT / "data" / "multi_agent_shogun_memory.db"
 DEFAULT_SEMANTIC_INDEX_PATH = REPO_ROOT / "docs" / "semantic-index" / "index.md"
 DEFAULT_BULLETIN_FILE = REPO_ROOT / "queue" / "bulletin_board.yaml"
 DEFAULT_BULLETIN_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive"
+DEFAULT_INSIGHTS_FILE = REPO_ROOT / "queue" / "insights.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 
 
@@ -118,6 +119,26 @@ def load_bulletin_entries(bulletin_file: Path, bulletin_archive_dir: Path) -> li
             normalized = dict(entry)
             normalized["_source_file"] = str(path)
             entries.append(normalized)
+    return entries
+
+
+def load_insight_entries(insights_file: Path) -> list[dict[str, Any]]:
+    try:
+        payload = yaml.safe_load(insights_file.read_text(encoding="utf-8", errors="replace")) or {}
+    except (FileNotFoundError, yaml.YAMLError):
+        return []
+    if not isinstance(payload, dict):
+        return []
+    raw_entries = payload.get("insights", [])
+    if not isinstance(raw_entries, list):
+        return []
+    entries: list[dict[str, Any]] = []
+    for entry in raw_entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized = dict(entry)
+        normalized["_source_file"] = str(insights_file)
+        entries.append(normalized)
     return entries
 
 
@@ -270,6 +291,57 @@ def event_rows_from_bulletins(
     return event_rows
 
 
+def event_rows_from_insights(
+    entries: list[dict[str, Any]],
+    concepts: list[dict[str, Any]],
+) -> list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]]:
+    event_rows: list[tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]] = []
+    seen_ids: set[str] = set()
+    for idx, entry in enumerate(entries, start=1):
+        raw_id = normalize_text(entry.get("id")) or f"generated:{idx}"
+        event_id = f"insight:{raw_id}"
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        insight = normalize_text(entry.get("insight"))
+        status = normalize_text(entry.get("status"))
+        priority = normalize_text(entry.get("priority"))
+        source = normalize_text(entry.get("source"))
+        resolved_reason = normalize_text(entry.get("resolved_reason"))
+        detail = "\n".join(
+            line
+            for line in [
+                insight,
+                f"status: {status}" if status else "",
+                f"priority: {priority}" if priority else "",
+                f"source: {source}" if source else "",
+                f"resolved_reason: {resolved_reason}" if resolved_reason else "",
+            ]
+            if line
+        )
+        summary = insight[:240] if insight else "insight"
+        importance = "high" if priority == "high" or status == "pending" else "normal"
+        event_rows.append(
+            (
+                event_id,
+                normalize_text(entry.get("ts")),
+                "insight",
+                source,
+                "",
+                status or "insight",
+                summary,
+                detail,
+                "",
+                infer_cmd_id(summary, detail),
+                concepts_for_text(f"{summary}\n{detail}", concepts),
+                normalize_text(entry.get("_source_file")),
+                None,
+                importance,
+            )
+        )
+    return event_rows
+
+
 def default_bulletin_paths_for_archive(archive_dir: Path) -> tuple[Path, Path]:
     try:
         if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
@@ -278,6 +350,15 @@ def default_bulletin_paths_for_archive(archive_dir: Path) -> tuple[Path, Path]:
         pass
     base_dir = archive_dir.parent
     return base_dir / "queue" / "bulletin_board.yaml", base_dir / "queue" / "archive"
+
+
+def default_insights_path_for_archive(archive_dir: Path) -> Path:
+    try:
+        if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
+            return DEFAULT_INSIGHTS_FILE
+    except FileNotFoundError:
+        pass
+    return archive_dir.parent / "queue" / "insights.yaml"
 
 
 def search_events(db_path: Path, query: str, limit: int = 20) -> list[sqlite3.Row]:
@@ -317,10 +398,12 @@ def build_db(
     rows: list[tuple[str, str, str, str, str, str, str]],
     semantic_index_path: Path = DEFAULT_SEMANTIC_INDEX_PATH,
     bulletin_entries: list[dict[str, Any]] | None = None,
+    insight_entries: list[dict[str, Any]] | None = None,
 ) -> None:
     concepts = list(iter_semantic_concepts(semantic_index_path))
     event_rows = event_rows_from_conversations(rows, concepts)
     event_rows.extend(event_rows_from_bulletins(bulletin_entries or [], concepts))
+    event_rows.extend(event_rows_from_insights(insight_entries or [], concepts))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA journal_mode=DELETE")
@@ -427,6 +510,11 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing archived bulletin_*.yaml files.",
     )
     parser.add_argument(
+        "--insights-file",
+        default="",
+        help="insights.yaml path. Defaults to queue/insights.yaml beside the archive root.",
+    )
+    parser.add_argument(
         "--search",
         default="",
         help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
@@ -448,6 +536,7 @@ def main() -> int:
     default_bulletin_file, default_bulletin_archive_dir = default_bulletin_paths_for_archive(archive_dir)
     bulletin_file = Path(args.bulletin_file) if args.bulletin_file else default_bulletin_file
     bulletin_archive_dir = Path(args.bulletin_archive_dir) if args.bulletin_archive_dir else default_bulletin_archive_dir
+    insights_file = Path(args.insights_file) if args.insights_file else default_insights_path_for_archive(archive_dir)
     if args.search:
         for row in search_events(db_path, args.search, args.limit):
             print(
@@ -465,12 +554,14 @@ def main() -> int:
         return 0
     rows = load_rows(archive_dir)
     bulletin_entries = load_bulletin_entries(bulletin_file, bulletin_archive_dir)
-    build_db(db_path, rows, semantic_index_path, bulletin_entries)
+    insight_entries = load_insight_entries(insights_file)
+    build_db(db_path, rows, semantic_index_path, bulletin_entries, insight_entries)
     print(
         "memory_db_import: "
         f"files={len(list(iter_jsonl_files(archive_dir)))} "
         f"rows={len(rows)} "
         f"bulletins={len(bulletin_entries)} "
+        f"insights={len(insight_entries)} "
         f"db={db_path}"
     )
     return 0
