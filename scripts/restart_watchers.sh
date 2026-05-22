@@ -6,6 +6,7 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
 
 # 並行実行ガード（flock排他）
 LOCK_FILE="/tmp/restart_watchers.lock"
@@ -17,22 +18,50 @@ fi
 
 echo "=== inbox_watcher 再起動 ==="
 
+watcher_process_count() {
+    pgrep -fc "[i]nbox_watcher\.sh" 2>/dev/null || true
+}
+
+stop_existing_watchers() {
+    local remaining
+
+    pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
+    pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+    sleep 1
+
+    remaining="$(watcher_process_count)"
+    echo "  SIGTERM後残存: $remaining"
+
+    if [ "$remaining" -gt 0 ]; then
+        echo "  残存あり。SIGKILL送信..."
+        pkill -KILL -f "[i]nbox_watcher\.sh" 2>/dev/null || true
+        pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+        sleep 1
+        remaining="$(watcher_process_count)"
+        echo "  SIGKILL後残存: $remaining"
+    fi
+
+    if [ "$remaining" -ne 0 ]; then
+        echo "ERROR: 旧inbox_watcherが停止しきれていません (remaining=$remaining)"
+        return 1
+    fi
+}
+
+verify_watcher_count() {
+    local expected="$1"
+    local actual
+    actual="$(watcher_process_count)"
+    if [ "$actual" -ne "$expected" ]; then
+        echo "ERROR: inbox_watcherプロセス数が不正です (actual=${actual}, expected=${expected})"
+        pgrep -af "[i]nbox_watcher\.sh" 2>/dev/null || true
+        return 1
+    fi
+    echo "  OK: inbox_watcher ${actual}/${expected}"
+}
+
 # 1. 既存プロセスを停止
 echo "[1/3] 既存プロセスを停止..."
-pkill -f "inbox_watcher.sh" 2>/dev/null || true
-pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
-sleep 1
-
-remaining=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || remaining=0
-echo "  残存プロセス: $remaining"
-
-if [ "$remaining" -gt 0 ]; then
-    echo "  残存あり。SIGKILL送信..."
-    pkill -9 -f "inbox_watcher\.sh" 2>/dev/null || true
-    sleep 1
-    remaining=$(pgrep -fc "inbox_watcher\.sh" 2>/dev/null) || remaining=0
-    echo "  SIGKILL後残存: $remaining"
-fi
+stop_existing_watchers
 
 # 2. PANE_BASEを取得
 # pane_base: pane_lookup()が内部で解決するため直接参照は不要
@@ -90,7 +119,7 @@ failed_agents=()
 for i in "${!LAUNCHED_AGENTS[@]}"; do
     agent="${LAUNCHED_AGENTS[$i]}"
     # pgrep で実際の inbox_watcher.sh プロセスを確認（kill -0 はnohup bashが終了すると偽陽性になる）
-    if ! pgrep -f "inbox_watcher\.sh.*${agent}" > /dev/null 2>&1; then
+    if ! pgrep -f "[i]nbox_watcher\.sh ${agent} " > /dev/null 2>&1; then
         failed_agents+=("${agent}")
     fi
 done
@@ -101,6 +130,11 @@ ok=$((total - failed))
 
 if [ "$failed" -eq 0 ]; then
     echo "  稼働中: ${ok}/${total} プロセス"
+    if [ "$total" -ne "$EXPECTED_WATCHER_COUNT" ]; then
+        echo "=== 警告: 起動対象数が正常値と異なります (${total}/${EXPECTED_WATCHER_COUNT}) ==="
+        exit 1
+    fi
+    verify_watcher_count "$EXPECTED_WATCHER_COUNT"
     echo "=== 再起動完了 (${ok}/${total}) ==="
 else
     echo "  稼働中: ${ok}/${total} プロセス"

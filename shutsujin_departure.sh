@@ -69,6 +69,48 @@ log_war() {
     echo -e "\033[1;31m【戦】\033[0m $1"
 }
 
+EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
+
+inbox_watcher_process_count() {
+    pgrep -fc "[i]nbox_watcher\.sh" 2>/dev/null || true
+}
+
+stop_existing_inbox_watchers() {
+    local remaining
+
+    pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
+    pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+    sleep 1
+
+    remaining="$(inbox_watcher_process_count)"
+    log_info "  ├─ SIGTERM後残存watcher: ${remaining}"
+
+    if [ "$remaining" -gt 0 ]; then
+        pkill -KILL -f "[i]nbox_watcher\.sh" 2>/dev/null || true
+        pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+        sleep 1
+        remaining="$(inbox_watcher_process_count)"
+        log_info "  ├─ SIGKILL後残存watcher: ${remaining}"
+    fi
+
+    if [ "$remaining" -ne 0 ]; then
+        log_war "旧inbox_watcherが停止しきれていません (remaining=${remaining})"
+        return 1
+    fi
+}
+
+verify_inbox_watcher_count() {
+    local expected="$1"
+    local actual
+    actual="$(inbox_watcher_process_count)"
+    if [ "$actual" -ne "$expected" ]; then
+        log_war "inbox_watcherプロセス数が不正です (actual=${actual}, expected=${expected})"
+        pgrep -af "[i]nbox_watcher\.sh" 2>/dev/null || true
+        return 1
+    fi
+    log_success "  └─ inbox_watcherプロセス数確認: ${actual}/${expected}"
+}
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # プロンプト生成関数（bash/zsh対応）
 # ───────────────────────────────────────────────────────────────────────────────
@@ -935,10 +977,10 @@ NINJA_EOF
         [ -f "$SCRIPT_DIR/queue/inbox/${agent}.yaml" ] || echo "messages:" > "$SCRIPT_DIR/queue/inbox/${agent}.yaml"
     done
 
-    # 既存のwatcherと孤児inotifywaitをkill
-    pkill -f "inbox_watcher.sh" 2>/dev/null || true
-    pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
-    sleep 1
+    # 既存のwatcherと孤児inotifywaitをkillし、残存ゼロを強制確認
+    stop_existing_inbox_watchers
+
+    declare -a LAUNCHED_WATCHERS=()
 
     # 将軍のwatcher（タイムアウト無効化）
     _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
@@ -946,12 +988,14 @@ NINJA_EOF
         bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
     disown
+    LAUNCHED_WATCHERS+=("shogun")
 
     # 家老のwatcher
     _karo_watcher_cli=$(tmux show-options -p -t "shogun:agents.${PANE_IDS[0]}" -v @agent_cli 2>/dev/null || echo "claude")
     nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.${PANE_IDS[0]}" "$_karo_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
     disown
+    LAUNCHED_WATCHERS+=("karo")
 
     # 忍者・軍師のwatcher
     for i in $(seq 1 $NINJA_PANE_COUNT); do
@@ -961,7 +1005,15 @@ NINJA_EOF
         nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${ninja_name}" "shogun:agents.${p}" "$_ashi_watcher_cli" \
             &>> "$SCRIPT_DIR/logs/inbox_watcher_${ninja_name}.log" &
         disown
+        LAUNCHED_WATCHERS+=("${ninja_name}")
     done
+
+    if [ "${#LAUNCHED_WATCHERS[@]}" -ne "$EXPECTED_WATCHER_COUNT" ]; then
+        log_war "inbox_watcher起動対象数が正常値と異なります (${#LAUNCHED_WATCHERS[@]}/${EXPECTED_WATCHER_COUNT})"
+        exit 1
+    fi
+    sleep 1
+    verify_inbox_watcher_count "$EXPECTED_WATCHER_COUNT"
 
     log_success "  └─ $((AGENT_COUNT + 1))エージェント分のinbox_watcher起動完了"
 
