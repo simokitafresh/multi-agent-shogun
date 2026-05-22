@@ -1332,6 +1332,87 @@ PY
     return 0
 }
 
+run_report_memory_semantic_scan() {
+    local semantic_search="$SCRIPT_DIR/scripts/semantic_search.sh"
+    local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
+
+    echo "Report memory semantic scan (GATE CLEAR):"
+    if [ ! -x "$semantic_search" ] || [ ! -x "$insight_script" ]; then
+        echo "  SKIP (semantic_search.sh or insight_write.sh not executable)"
+        return 0
+    fi
+
+    local tmp_queries
+    tmp_queries="$(mktemp)"
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        local ninja_name report_file
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+        REPORT_PATH="$report_file" NINJA_NAME="$ninja_name" python3 - >> "$tmp_queries" <<'PY'
+import os
+import re
+import sys
+import yaml
+
+report_path = os.environ["REPORT_PATH"]
+ninja = os.environ["NINJA_NAME"]
+try:
+    with open(report_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(0)
+
+def clean(value):
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    return text[:240]
+
+items = []
+lc = data.get("lesson_candidate")
+if isinstance(lc, dict) and lc.get("found"):
+    items.append(("lesson_candidate", clean(" ".join([str(lc.get("title", "")), str(lc.get("detail", ""))]))))
+
+kc = data.get("knowledge_candidate")
+if isinstance(kc, dict) and kc.get("found"):
+    items.append(("knowledge_candidate", clean(" ".join([str(kc.get("fact", "")), str(kc.get("detail", ""))]))))
+
+dc = data.get("decision_candidate")
+if isinstance(dc, dict) and dc.get("found"):
+    items.append(("decision_candidate", clean(" ".join([str(dc.get("title", "")), str(dc.get("question", "")), str(dc.get("detail", ""))]))))
+
+for kind, query in items:
+    if len(query) >= 12:
+        print(f"{ninja}\t{kind}\t{query}")
+PY
+    done
+
+    local checked=0 matched=0 queued=0 failed=0
+    local ninja_name kind query
+    while IFS=$'\t' read -r ninja_name kind query; do
+        [ -n "$query" ] || continue
+        checked=$((checked + 1))
+        if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 "$semantic_search" "$query" >/dev/null 2>&1; then
+            matched=$((matched + 1))
+        else
+            local rc=$?
+            if [ "$rc" -eq 1 ]; then
+                if "$insight_script" "cmd_complete NO_MATCH aliases候補: ${CMD_ID} ${ninja_name} ${kind}: ${query}" low "cmd_complete_gate:memory_phase" >/dev/null 2>&1; then
+                    queued=$((queued + 1))
+                else
+                    failed=$((failed + 1))
+                fi
+            else
+                failed=$((failed + 1))
+            fi
+        fi
+    done < "$tmp_queries"
+    rm -f "$tmp_queries"
+
+    echo "  checked=${checked} matched=${matched} no_match_queued=${queued} failed=${failed}"
+    return 0
+}
+
 auto_resolve_cmd_related_insights() {
     local cmd_id="$1"
     local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
@@ -5620,6 +5701,7 @@ PY
     else
         echo "  [INFO] semantic_map_generate.sh not found (skip)"
     fi
+    run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)"
 
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"

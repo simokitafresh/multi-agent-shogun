@@ -111,6 +111,80 @@ PY
 
 archive_lord_conversation
 
+run_session_memory_semantic_scan() {
+  local semantic_search="$ROOT_DIR/scripts/semantic_search.sh"
+  local insight_write="$ROOT_DIR/scripts/insight_write.sh"
+
+  echo "[8e.記憶整理Phase] semantic_search照合:"
+  if [ ! -x "$semantic_search" ] || [ ! -x "$insight_write" ] || [ ! -f "$LORD_CONV" ]; then
+    echo "  SKIP (semantic_search/insight_write/lord_conversation不在)"
+    return 0
+  fi
+
+  local tmp_queries
+  tmp_queries="$(mktemp)"
+  python3 - "$LORD_CONV" "$session_start_ts" > "$tmp_queries" <<'PY'
+import json
+import re
+import sys
+
+path = sys.argv[1]
+session_start = sys.argv[2]
+noise = re.compile(r"(inbox\d+|復帰済み|GATE CLEAR|CI緑|ntfy|task_assigned|cmd_\d+配備済み)")
+queries = []
+
+with open(path, encoding="utf-8") as f:
+    for raw in f:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        ts = str(entry.get("ts", ""))
+        if session_start and ts < session_start:
+            continue
+        if entry.get("direction") not in ("inbound", "session_summary"):
+            continue
+        text = str(entry.get("detail") or entry.get("summary") or entry.get("content") or entry.get("message") or "").strip()
+        text = re.sub(r"\s+", " ", text)
+        if len(text) < 12 or noise.search(text):
+            continue
+        if text not in queries:
+            queries.append(text[:220])
+        if len(queries) >= 6:
+            break
+
+for query in queries:
+    print(query)
+PY
+
+  local total=0 matched=0 queued=0 failed=0
+  while IFS= read -r query; do
+    [ -n "$query" ] || continue
+    total=$((total + 1))
+    if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 "$semantic_search" "$query" >/dev/null 2>&1; then
+      matched=$((matched + 1))
+    else
+      local rc=$?
+      if [ "$rc" -eq 1 ]; then
+        if "$insight_write" "clear_prep NO_MATCH aliases候補: ${query}" low "clear_prep_check:memory_phase" >/dev/null 2>&1; then
+          queued=$((queued + 1))
+        else
+          failed=$((failed + 1))
+        fi
+      else
+        failed=$((failed + 1))
+      fi
+    fi
+  done < "$tmp_queries"
+  rm -f "$tmp_queries"
+
+  echo "  checked=${total} matched=${matched} no_match_queued=${queued} failed=${failed}"
+  return 0
+}
+
 # 最新session_summaryをセッション境界として扱う。/clear直前の最終防衛線なので、
 # 「セッション中のcmd完了あり」を知識埋込みALERTの条件に使う。
 session_start_ts=""
@@ -572,6 +646,8 @@ if [ "${pending_insights:-0}" -ge 5 ] && [ "${session_completed_cmds:-0}" -gt 0 
   embed_details+=("(c)ALERT: セッション中cmd完了${session_completed_cmds}件 + insights未処理${pending_insights}件")
   embed_issues=$((embed_issues + 1))
 fi
+
+run_session_memory_semantic_scan
 
 # (d) 完了cmdのproject別にprojects/*.yamlの更新有無を確認
 # セッション中にcmd完了したprojectのprojects/{id}.yamlがセッション後に更新されているか

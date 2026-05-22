@@ -32,6 +32,7 @@ setup_file() {
         extract_function run_review_quality_check
         extract_function run_todo_fixme_residual_check
         extract_function run_skill_script_refs_check
+        extract_function run_report_memory_semantic_scan
         sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$SUBSYSTEM_HELPERS"
@@ -254,6 +255,49 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"insight: SKIP (no scripts/* changes in cmd)"* ]]
     [ ! -f "$TEST_INSIGHT_LOG" ]
+}
+
+@test "run_report_memory_semantic_scan queues NO_MATCH aliases from lesson_candidate" {
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/report_memory_semantic.XXXXXX")"
+    export SCRIPT_DIR="$TEST_TMPDIR"
+    export CMD_ID="cmd_2964"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    export MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2964
+EOF
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_2964.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2964
+lesson_candidate:
+  found: true
+  title: "短期記憶を長期記憶へ移行するPhase"
+  detail: "semantic_searchでNO_MATCHをaliases候補として蓄積する"
+EOF
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$TEST_TMPDIR/semantic_calls.log"
+exit 1
+EOF
+    cat > "$TEST_TMPDIR/scripts/insight_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$TEST_TMPDIR/insight_calls.log"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh" "$TEST_TMPDIR/scripts/insight_write.sh"
+    resolve_report_file() {
+        local ninja="$1"
+        echo "$SCRIPT_DIR/queue/reports/${ninja}_report_${CMD_ID}.yaml"
+    }
+
+    run run_report_memory_semantic_scan
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"checked=1 matched=0 no_match_queued=1 failed=0"* ]]
+    grep -q "短期記憶を長期記憶へ移行するPhase" "$TEST_TMPDIR/semantic_calls.log"
+    grep -q "cmd_complete NO_MATCH aliases候補: cmd_2964 hayate lesson_candidate" "$TEST_TMPDIR/insight_calls.log"
+    grep -q "cmd_complete_gate:memory_phase" "$TEST_TMPDIR/insight_calls.log"
 }
 
 @test "TODO in non-test files blocks gate" {

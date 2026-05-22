@@ -119,6 +119,31 @@ EOF
     [[ "$output" == *"知識埋込み未確認"* ]]
 }
 
+@test "Check 8e queues NO_MATCH aliases from current session knowledge" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2026-05-17T09:00:00+09:00","direction":"session_summary","detail":"start"}
+{"ts":"2026-05-17T09:05:00+09:00","direction":"inbound","detail":"短期記憶を長期記憶へ移行する新しい合図を残す"}
+EOF
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$TEST_TMPDIR/semantic_calls.log"
+exit 1
+EOF
+    cat > "$TEST_TMPDIR/scripts/insight_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$TEST_TMPDIR/insight_calls.log"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh" "$TEST_TMPDIR/scripts/insight_write.sh"
+
+    run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
+
+    [[ "$output" == *"[8e.記憶整理Phase] semantic_search照合:"* ]]
+    [[ "$output" == *"checked=1 matched=0 no_match_queued=1 failed=0"* ]]
+    grep -q "短期記憶を長期記憶へ移行する新しい合図" "$TEST_TMPDIR/semantic_calls.log"
+    grep -q "clear_prep NO_MATCH aliases候補" "$TEST_TMPDIR/insight_calls.log"
+    grep -q "clear_prep_check:memory_phase" "$TEST_TMPDIR/insight_calls.log"
+}
+
 @test "Check 8 alerts when cmd_save BLOCK exists and no shogun lesson was written" {
     write_active_session_with_completed_cmd
     cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
