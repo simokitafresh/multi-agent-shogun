@@ -28,6 +28,37 @@ _d_proposals=0
 _d_inbox=0
 _d_idle_trigger=""
 
+	check_shogun_watcher_escalation_env() {
+	    local found=0
+	    local bad_pids=()
+	    local pid agent
+
+	    while IFS=' ' read -r pid agent; do
+	        [[ "$agent" == "shogun" ]] || continue
+	        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+	        found=1
+	        if [ -r "/proc/${pid}/environ" ] && tr '\0' '\n' < "/proc/${pid}/environ" 2>/dev/null | grep -qx 'ASW_DISABLE_ESCALATION=1'; then
+	            bad_pids+=("$pid")
+	        fi
+	    done < <(ps ax -o pid=,args= 2>/dev/null | awk '
+	        /\/inbox_watcher\.sh [a-z]/{
+	            for(i=1;i<=NF;i++){
+	                if($i ~ /\/inbox_watcher\.sh$/){ if(i+1<=NF) print $1, $(i+1); break }
+	            }
+	        }
+	    ' 2>/dev/null || true)
+
+	    if [ "${#bad_pids[@]}" -gt 0 ]; then
+	        echo "  ALERT: 将軍inbox_watcherがエスカレーション無効で稼働中 (pid=${bad_pids[*]})"
+	        overall="ALERT"
+	        alerts+=("将軍watcher環境変数: ASW_DISABLE_ESCALATION=1 pid=${bad_pids[*]}")
+	    elif [ "$found" -eq 1 ]; then
+	        echo "  OK: 将軍inbox_watcherのエスカレーション有効"
+	    else
+	        echo "  SKIP: 将軍inbox_watcher未検出"
+	    fi
+	}
+
 	show_semantic_no_match_metrics() {
 	    local deploy_log="${SHOGUN_STARTUP_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_task.log}"
 	    local prompt_log="${SHOGUN_STARTUP_PROMPT_SEMANTIC_NO_MATCH_LOG:-$SCRIPT_DIR/logs/semantic_no_match_metrics.log}"
@@ -103,6 +134,10 @@ echo ""
 if [ "$LIGHT_MODE" != "1" ] && [ -x "$YAML_AUTO_ARCHIVE" ]; then
     "$YAML_AUTO_ARCHIVE" >/dev/null 2>&1 || true
 fi
+
+# --- Gate 0.5: 将軍watcher環境変数 ---
+echo "■ 将軍watcher環境変数"
+check_shogun_watcher_escalation_env
 
 # --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
 _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
