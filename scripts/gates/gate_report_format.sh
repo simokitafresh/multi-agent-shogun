@@ -92,6 +92,12 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    # DB INSERT: eventsテーブルへゲート記録（非ブロック）
+    _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
+    python3 "$REPO_ROOT/scripts/memory_db_live_insert.py" gate \
+        --gate-name "gate_report_format" --result "PASS" \
+        --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "" \
+        --source-file "$REPORT_PATH" 2>/dev/null || true
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
     if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
@@ -177,6 +183,12 @@ except Exception:
             flock -w 5 200 2>/dev/null
             printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
         ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+        # DB INSERT: eventsテーブルへゲート記録（非ブロック）
+        _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
+        python3 "$REPO_ROOT/scripts/memory_db_live_insert.py" gate \
+            --gate-name "gate_report_format" --result "FAIL" \
+            --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "$REASONS" \
+            --source-file "$REPORT_PATH" 2>/dev/null || true
     fi
     # cmd_2459: Gate FAIL → relevant skill feedback loop.
     # Best-effort only: report gate must remain responsible for the FAIL exit.

@@ -1049,6 +1049,18 @@ PY
                 echo "WARN: 還流漏れの可能性あり。MISSING箇所にこの教訓の知見を反映すべきか検討せよ"
             fi
         fi
+        # DB INSERT: eventsテーブルへ教訓記録（非ブロック）
+        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert.py" ] && [ -n "$NEW_LESSON_ID" ]; then
+            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" lesson \
+                --lesson-id "$NEW_LESSON_ID" \
+                --title "$TITLE" \
+                --detail "$DETAIL" \
+                --source-cmd "${SOURCE_CMD:-}" \
+                --agent "${AUTHOR:-karo}" \
+                --ts "$(date -Is)" \
+                --project "$PROJECT_ID" \
+                --source-file "$LESSONS_FILE" 2>/dev/null || true
+        fi
         exit 0
     else
         # Check if failure was a validation error (not a lock timeout) — skip retry

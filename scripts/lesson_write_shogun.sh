@@ -233,6 +233,19 @@ PYEOF
     ) 200>"$LOCKFILE"
     rc=$?
     if [ $rc -eq 0 ]; then
+        # DB INSERT: eventsテーブルへ教訓記録（非ブロック）
+        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert.py" ]; then
+            _LW_SHOGUN_NEW_ID=$(grep '^- id:' "$LESSONS_FILE" | tail -1 | sed "s/^- id: '//;s/'\$//" | tr -d "'" 2>/dev/null || true)
+            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" lesson \
+                --lesson-id "${_LW_SHOGUN_NEW_ID:-unknown}" \
+                --title "$TITLE" \
+                --detail "$DETAIL" \
+                --source-cmd "${SOURCE_CMD:-}" \
+                --agent "shogun" \
+                --ts "$(date -Is)" \
+                --project "infra" \
+                --source-file "$LESSONS_FILE" 2>/dev/null || true
+        fi
         exit 0
     elif [ $rc -eq 2 ]; then
         # Lock timeout — retry

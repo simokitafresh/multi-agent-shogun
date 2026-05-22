@@ -4909,6 +4909,11 @@ inject_target_path_check() {
     local ts
     ts=$(date '+%Y-%m-%dT%H:%M:%S')
     echo "- ts: \"${ts}\", gate: inject_target_path_check, result: WARN, detail: \"${warn_msg}\"" >> "$gate_log" 2>/dev/null || true
+    # DB INSERT: eventsテーブルへゲート記録（非ブロック）
+    python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" gate \
+        --gate-name "deploy_task:inject_target_path_check" --result "WARN" \
+        --cmd-id "" --ts "$ts" --detail "$warn_msg" \
+        --source-file "$gate_log" 2>/dev/null || true
 }
 
 # ─── inject_task_modifiers: 7関数統合ラッパー（cmd_1393） ───
