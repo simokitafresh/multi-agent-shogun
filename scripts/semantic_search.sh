@@ -24,6 +24,8 @@ Environment:
                        Maximum memory DB fallback rows (default: 10)
   SEMANTIC_MEMORY_DB_TIMEOUT
                        Maximum seconds for memory DB FTS fallback (default: 5)
+  SEMANTIC_CONCEPT_EXPANSION_LIMIT
+                       Maximum depth=1 event_links concept expansion count (default: 20)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
@@ -88,6 +90,7 @@ semantic_index_python() {
     local mode="$1"
     local mode_arg="${2:-}"
     SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$script_dir/tmp/semantic_index_cache}" \
+        SEMANTIC_MEMORY_DB_PATH="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}" \
         python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" "$mode" "$mode_arg"
 }
 
