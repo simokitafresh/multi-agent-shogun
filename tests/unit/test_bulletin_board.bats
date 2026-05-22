@@ -8,11 +8,13 @@ setup_file() {
     export SRC_CONFIRM="$PROJECT_ROOT/scripts/bulletin_confirm.sh"
     export SRC_CLOSE="$PROJECT_ROOT/scripts/bulletin_close.sh"
     export SRC_AGENT_CONFIG="$PROJECT_ROOT/scripts/lib/agent_config.sh"
+    export SRC_MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py"
     [ -f "$SRC_WRITE" ] || return 1
     [ -f "$SRC_ARCHIVE" ] || return 1
     [ -f "$SRC_CONFIRM" ] || return 1
     [ -f "$SRC_CLOSE" ] || return 1
     [ -f "$SRC_AGENT_CONFIG" ] || return 1
+    [ -f "$SRC_MEMORY_DB_LIVE_INSERT" ] || return 1
 }
 
 setup() {
@@ -23,6 +25,7 @@ setup() {
     cp "$SRC_CONFIRM" "$TEST_TMPDIR/scripts/bulletin_confirm.sh"
     cp "$SRC_CLOSE" "$TEST_TMPDIR/scripts/bulletin_close.sh"
     cp "$SRC_AGENT_CONFIG" "$TEST_TMPDIR/scripts/lib/agent_config.sh"
+    cp "$SRC_MEMORY_DB_LIVE_INSERT" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
     cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG:?}"
@@ -52,6 +55,42 @@ cli:
 YAML
 }
 
+create_memory_db_fixture() {
+    local db_path="$1"
+    mkdir -p "$(dirname "$db_path")"
+    python3 - "$db_path" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
+}
+
 teardown() {
     rm -rf "$TEST_TMPDIR"
 }
@@ -77,6 +116,63 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"action_type: 'action_required'"* ]]
     [[ "$output" == *"actioned_by: ''"* ]]
+}
+
+@test "bulletin_write inserts bulletin event into memory DB after YAML write" {
+    local memory_db="$TEST_TMPDIR/data/memory.db"
+    create_memory_db_fixture "$memory_db"
+
+    run env SHOGUN_MEMORY_DB="$memory_db" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "cmd_2983 bulletin realtime searchable" false action_required
+    [ "$status" -eq 0 ]
+    [[ "$output" == blt_* ]]
+
+    readarray -t result < <(python3 - "$memory_db" "$output" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+event_id = "bulletin:" + sys.argv[2].splitlines()[0]
+row = conn.execute(
+    "SELECT event_type, agent, direction, cmd_id, importance FROM events WHERE id = ?",
+    (event_id,),
+).fetchone()
+fts_count = conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.id = ?
+    """,
+    (event_id,),
+).fetchone()[0]
+print(row[0])
+print(row[1])
+print(row[2])
+print(row[3])
+print(row[4])
+print(fts_count)
+PY
+)
+    [ "${result[0]}" = "bulletin" ]
+    [ "${result[1]}" = "saizo" ]
+    [ "${result[2]}" = "action_required" ]
+    [ "${result[3]}" = "cmd_2983" ]
+    [ "${result[4]}" = "high" ]
+    [ "${result[5]}" = "1" ]
+}
+
+@test "bulletin_write keeps YAML success when memory DB insert fails" {
+    local broken_db="$TEST_TMPDIR/data/broken.db"
+    mkdir -p "$(dirname "$broken_db")"
+    printf 'not sqlite\n' > "$broken_db"
+
+    run env SHOGUN_MEMORY_DB="$broken_db" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "DB失敗でもYAML成功"
+    [ "$status" -eq 0 ]
+    [[ "$output" == blt_* ]]
+    [[ "$output" == *"WARN: DB INSERT skipped"* ]]
+    run grep -F "DB失敗でもYAML成功" "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "bulletin_write accepts explicit posted_by from shared agent config" {

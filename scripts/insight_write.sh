@@ -14,6 +14,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSIGHTS_FILE="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
 BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
+MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
 SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
 # --resolve mode: mark insight as done
@@ -225,6 +226,20 @@ PYEOF
 
   result=$(printf '%s\n' "$raw_result" | head -1)
   echo "$result"
+
+  if [[ "$result" == INS-* && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    if ! python3 "$MEMORY_DB_LIVE_INSERT" insight \
+      --entry-id "$result" \
+      --ts "$ts" \
+      --insight "$msg" \
+      --priority "$priority" \
+      --source "$source_info" \
+      --status "$status" \
+      --resolved-at "$resolved_at" \
+      --source-file "$INSIGHTS_FILE"; then
+      echo "WARN: insight DB INSERT skipped for ${result}" >&2
+    fi
+  fi
 
   # Escalate repeated pending insights from the same source so important patterns
   # do not remain buried in queue/insights.yaml. Keep this out of the write path:

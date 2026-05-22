@@ -256,6 +256,22 @@ fi
 
 printf '%s\n' "$WRITE_RESULT"
 
+MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    if ! python3 "$MEMORY_DB_LIVE_INSERT" bulletin \
+        --entry-id "$WRITE_RESULT" \
+        --ts "$POSTED_AT" \
+        --agent "$POSTED_BY" \
+        --content "$CONTENT" \
+        --requires-confirmation "$REQUIRES_CONFIRMATION" \
+        --action-type "$ACTION_TYPE" \
+        --actioned-by "" \
+        --status "open" \
+        --source-file "$BULLETIN_FILE"; then
+        echo "[bulletin_write] WARN: DB INSERT skipped for ${WRITE_RESULT}" >&2
+    fi
+fi
+
 if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then
     ENTRY_COUNT="$(awk '/^- id: / {count++} END {print count + 0}' "$BULLETIN_FILE")"
     if [[ "$ENTRY_COUNT" -gt 50 ]]; then

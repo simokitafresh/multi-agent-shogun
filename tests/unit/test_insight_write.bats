@@ -12,11 +12,48 @@ setup() {
     sed \
         -e "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE\[0\]}\")\/\.\.\" && pwd)\"|SCRIPT_DIR=\"${TEST_TMP}\"|" \
         "$PROJECT_ROOT/scripts/insight_write.sh" > "${TEST_TMP}/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "${TEST_TMP}/scripts/memory_db_live_insert.py"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
 }
 
 teardown() {
     rm -rf "$TEST_TMP"
+}
+
+create_memory_db_fixture() {
+    local db_path="$1"
+    mkdir -p "$(dirname "$db_path")"
+    python3 - "$db_path" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
 }
 
 # --- 1. 正常なinsight追加 ---
@@ -42,6 +79,63 @@ print('ALL FIELDS OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALL FIELDS OK"* ]]
+}
+
+@test "DB連携: insight write後にmemory DB eventsとFTSへ投入される" {
+    local memory_db="$TEST_TMP/data/memory.db"
+    create_memory_db_fixture "$memory_db"
+
+    run env SHOGUN_MEMORY_DB="$memory_db" bash "${TEST_TMP}/scripts/insight_write.sh" "cmd_2983 insight realtime searchable" "high" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    readarray -t result < <(python3 - "$memory_db" "$output" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+event_id = "insight:" + sys.argv[2].splitlines()[0]
+row = conn.execute(
+    "SELECT event_type, agent, direction, cmd_id, importance FROM events WHERE id = ?",
+    (event_id,),
+).fetchone()
+fts_count = conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.id = ?
+    """,
+    (event_id,),
+).fetchone()[0]
+print(row[0])
+print(row[1])
+print(row[2])
+print(row[3])
+print(row[4])
+print(fts_count)
+PY
+)
+    [ "${result[0]}" = "insight" ]
+    [ "${result[1]}" = "unit_test" ]
+    [ "${result[2]}" = "pending" ]
+    [ "${result[3]}" = "cmd_2983" ]
+    [ "${result[4]}" = "high" ]
+    [ "${result[5]}" = "1" ]
+}
+
+@test "DB連携: DB失敗時もinsights YAML追記は成功する" {
+    local broken_db="$TEST_TMP/data/broken.db"
+    mkdir -p "$(dirname "$broken_db")"
+    printf 'not sqlite\n' > "$broken_db"
+
+    run env SHOGUN_MEMORY_DB="$broken_db" bash "${TEST_TMP}/scripts/insight_write.sh" "DB失敗でもYAML成功" "medium" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+    [[ "$output" == *"WARN: insight DB INSERT skipped"* ]]
+    run grep -F "DB失敗でもYAML成功" "$TEST_TMP/queue/insights.yaml"
+    [ "$status" -eq 0 ]
 }
 
 # --- 2. queue/insights.yamlへの追記確認 ---
