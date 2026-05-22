@@ -144,6 +144,27 @@ EOF
     grep -q "clear_prep_check:memory_phase" "$TEST_TMPDIR/insight_calls.log"
 }
 
+@test "Check 8d rebuilds memory DB during memory phase" {
+    write_active_session_with_completed_cmd
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"
+    cat > "$TEST_TMPDIR/scripts/memory_db_import.py" <<'EOF'
+import pathlib
+
+root = pathlib.Path(__file__).resolve().parents[1]
+db = root / "data" / "multi_agent_shogun_memory.db"
+db.parent.mkdir(parents=True, exist_ok=True)
+db.write_text("rebuilt\n", encoding="utf-8")
+print(f"memory_db_import: db={db}")
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
+
+    [[ "$output" == *"[8d.記憶整理Phase] memory DB再構築:"* ]]
+    [[ "$output" == *"OK: data/multi_agent_shogun_memory.db mtime="* ]]
+    [[ "$output" == *"memory_db_import: db="* ]]
+    [ -f "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" ]
+}
+
 @test "Check 8 alerts when cmd_save BLOCK exists and no shogun lesson was written" {
     write_active_session_with_completed_cmd
     cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
