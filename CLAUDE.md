@@ -101,7 +101,7 @@ Step 5: Read queue/shogun_to_karo.yaml 冒頭15行（原理群ヘッダ。毎回
 Step 6: bash scripts/gates/gate_shogun_startup.sh（一括チェック。ALERT時は該当スキル実行:
         Memory→/dream, lesson health→/lesson-sort, PD→/shogun-pd-sync）
 Step 6.5: 殿との直近対話をロード（deepdive前。Q&Aで殿との具体的出来事を紐付けるため）
-        (a) queue/lord_conversation.jsonl 直近5エントリを読む
+        (a) bash scripts/lord_conversation_read.sh shogun 5 で自分宛ての直近5エントリを読む
         (b) queue/bulletin_board.yaml を読む（掲示板=家老・軍師からの知見共有）
         ※ これがQ4/Q5の「直近の具体的経験」の材料。なければdeepdiveの要約コピペになる
 Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）

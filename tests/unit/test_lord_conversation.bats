@@ -362,3 +362,37 @@ PY
     [ "${result[1]}" = "jsonl survives db failure" ]
     [[ "$output" == *"DB INSERT skipped"* ]]
 }
+
+@test "T-LC-015: lord_conversation_read filters by target or agent and keeps unscoped entries" {
+    cat > "$LORD_CONVERSATION" <<'EOF'
+{"agent":"lord","target":"shogun","summary":"to shogun"}
+{"agent":"shogun","target":"lord","summary":"from shogun"}
+{"agent":"lord","target":"karo","summary":"to karo"}
+{"agent":"lord","summary":"no target"}
+{"agent":"lord","target":"","summary":"empty target"}
+EOF
+
+    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 10
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -q "to shogun"
+    echo "$output" | grep -q "from shogun"
+    echo "$output" | grep -q "no target"
+    echo "$output" | grep -q "empty target"
+    ! echo "$output" | grep -q "to karo"
+}
+
+@test "T-LC-016: lord_conversation_read applies limit after filtering" {
+    cat > "$LORD_CONVERSATION" <<'EOF'
+{"agent":"lord","target":"shogun","summary":"first"}
+{"agent":"lord","target":"karo","summary":"excluded"}
+{"agent":"lord","target":"shogun","summary":"second"}
+{"agent":"lord","summary":"third"}
+EOF
+
+    run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 2
+    [ "$status" -eq 0 ]
+    ! echo "$output" | grep -q "first"
+    ! echo "$output" | grep -q "excluded"
+    echo "$output" | grep -q "second"
+    echo "$output" | grep -q "third"
+}
