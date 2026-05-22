@@ -686,3 +686,5 @@
 | cmd_2985 | inbox_write.shの全agent間通信(配備指示/報告完了/gate_clear/nudge)をevent_type=inboxとして記憶DBにリアルタイムINSERTする | infra | 05-22 | inbox_write.shのYAML永続化成功後にeven |
 | cmd_2987 | 忍者の報告YAML書込み(report_field_set.sh)をevent_type=reportとして記憶DBにINSERTし、学習ループの成果(binary_checks/lesson_candidate)がDB検索可能になるようにする | infra | 05-22 | memory_db_live_insert.pyにrepor |
 | cmd_2991 | cmd品質記録(cmd_design_quality.yaml)をevent_type=cmd_qualityとして記憶DBにリアルタイムINSERTし、gate FP/BLOCK分析がDB検索で即座に可能になるようにする | infra | 05-22 | cmd_design_qualityの品質記録をevent_ |
+| cmd_2992 | memory_db_import.pyの/clear時再構築にskill_execution_log/完了cmd archive/pending_decisionsの3ソースを追加し、バッチ再構築時の網羅性を完成させる | infra | 05-22 | memory_db_import.pyのバッチ再構築にski |
+| cmd_2995 | スクリプト内部変更(DB INSERT追加等)でもSKILL.md追従WARNが発火する偽陽性を解消する。3セッション連続BLOCK再発の構造的原因 | infra | 05-22 | script_refs_checked_at markerを |

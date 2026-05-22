@@ -1,71 +1,64 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-22 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-22T18:20:50+09:00 -->
+<!-- generated_at: 2026-05-22T19:22:58+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-05-22T18:20:49+09:00 | terminal | response | cmd_2991 WA clean。report_received hookが軍師レビュー+GATE自動処理。 **現在状況:** - **cmd_2990**: GATE CLEAR完了 - **cmd_2991**: kagemaru…
-- 2026-05-22T18:19:59+09:00 | terminal | inbound | やろう
-- 2026-05-22T18:18:57+09:00 | terminal | response | はっ。殿の指摘の通り。 cmd_2994の設計が「SQL頻出キーワード抽出→aliases追加」になっている。これは**grepの延長**でしかない。キーワード頻度でaliasesを増やしても、次の未知語にまた穴が空く。各論パッチの量産。…
-- 2026-05-22T18:18:17+09:00 | terminal | inbound | 品質が重要だぞ。grepからの脱却を忘れるな
-- 2026-05-22T18:16:29+09:00 | terminal | inbound | それはoutput側だな。まずはindex側の穴をふさぐ時間だ
-- 2026-05-22T18:15:49+09:00 | terminal | response | **片方向の連携のみ。逆方向がない。** | 方向 | 状態 | 内容 | |------|------|------| | セマンティクスインデックス → DB | ✅ある | memory_db_import.pyがindex.mdの…
-- 2026-05-22T18:15:12+09:00 | terminal | inbound | セマンティクすインデックスとは連携するの
-- 2026-05-22T18:14:53+09:00 | terminal | response | 未読0件。全inbox処理済み。idle待機に復帰。 [meta] stop_reason=tool_use
-- 2026-05-22T18:14:35+09:00 | terminal | response | cmd_2990 /cmd-complete完了。kagemaru(2991)+saizo(2992)+hanzo(2993)稼働中、完了報告待ち。 [meta] stop_reason=tool_use
-- 2026-05-22T18:14:31+09:00 | terminal | response | cmd_2990 報告レビュー完了。verdict: LGTM。GATE自動起動済み。idle待機に復帰。 [meta] stop_reason=end_turn
+- 2026-05-22T19:22:58+09:00 | terminal | response | backgroundテスト結果: 長いクエリはLLM_MATCH(概念索引経由)、短いクエリはMEMORY_DB_MATCH(FTS5フォールバック)で到達。両方の経路が補完的に機能している。 殿、記憶DBの課題整理: 1. **FTS5…
+- 2026-05-22T19:22:37+09:00 | terminal | inbound | <task-notification> <task-id>bln1x9id7</task-id> <tool-use-id>toolu_01CNQ3WXR1uVbsuFMMQ2w5Gb</tool-use-id> <output-file…
+- 2026-05-22T19:22:35+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=34件 clear_prep_check=ALERT [0.…
+- 2026-05-22T19:22:16+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=35件 clear_prep_check=ALERT [0.…
+- 2026-05-22T19:22:04+09:00 | terminal | response | 殿、FTS5フォールバックの効果を確認した。 **結果:** - クエリ「karo_workarounds 記憶DB INSERT」→ **DB FTS5で3件ヒット**（以前はNO_MATCH） - クエリ「全ペイン会話記録」→ **D…
+- 2026-05-22T19:22:04+09:00 | terminal | response | ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────…
+- 2026-05-22T19:22:00+09:00 | terminal | response | ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────…
+- 2026-05-22T19:21:43+09:00 | terminal | response | MATCH: local_memory_db 理由: 「全ペイン 殿の会話 記録」=殿との対話・全ログをローカルに記録する文脈。lord_conversation_archiveをSQLite記憶DBへ投入する概念。 MATCH: bul…
+- 2026-05-22T19:21:24+09:00 | clear_prep_check | session_summary | auto clear prep summary: inbound=15件; latest=<task-notification> <task-id>bxlvjpbxy</task-id> <tool-use-id>toolu_01QvWh…
+- 2026-05-22T19:21:24+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=35件 clear_prep_check=ALERT [0.…
 
 ## 未解決確認事項
-- hanzo稼働確認(CTX:23%、thinking、task YAML読込済み)。 **現在状況:** - **cmd_2990**: hayate稼働中 — workaround INSERT(配管10) - **cmd_2991**: kagemaru稼働中 — cmd_…
-- kagemaru稼働確認(CTX:7%、Working)。 **現在状況:** - **cmd_2990**: hayate稼働中 — workaround INSERT(配管10) - **cmd_2991**: kagemaru稼働中 — cmd_quality INSER…
-- hayate稼働確認(CTX:9%、Working)。cmd_2990配備完了。完了報告待ち。 [meta] stop_reason=end_turn
-- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=31件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
-- cmd_2989 GATE CLEAR確認。全inbox処理済み。idle待機に復帰。 [meta] stop_reason=tool_use
-- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=32件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
+- backgroundテスト結果: 長いクエリはLLM_MATCH(概念索引経由)、短いクエリはMEMORY_DB_MATCH(FTS5フォールバック)で到達。両方の経路が補完的に機能している。 殿、記憶DBの課題整理: 1. **FTS5速度** — 長い日本語クエリでタイムア…
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=34件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
-- 報告YAML存在、status:completed、verdict:PASS。hayate完了確認。即処理。 [meta] stop_reason=tool_use
+- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=35件 clear_prep_check=ALERT [0.会話退避] OK: queue/arch…
+- 殿、FTS5フォールバックの効果を確認した。 **結果:** - クエリ「karo_workarounds 記憶DB INSERT」→ **DB FTS5で3件ヒット**（以前はNO_MATCH） - クエリ「全ペイン会話記録」→ **DB FTS5で2件ヒット**（以前はNO…
+- GATE処理バックグラウンドタスク完了(既にCLEARED確認済み)。cmd_2996完了処理も全ステップ完了済み。 パイプライン空。6名全員idle。次cmd待ち。Dispatch-then-Stop。 [meta] stop_reason=end_turn
+- 掲示板全件確認完了。殿、記憶DBの現状報告は先ほどお伝えした通り。殿のお考えをお聞かせ願いたい。 [meta] stop_reason=end_turn
+- cmd_2996 draft: **REQUEST_CHANGES** (severity: normal) - AC未定義(空ハッシュ)。忍者のbinary_checks基盤がない - バグ実在は確認済み(PASS時クリアロジック不在) - AC3件追加を家老に提案済み id…
+- 2箇所にDBがある。正規パス(data/)を確認。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
-- 2026-05-22T18:18:57+09:00 | はっ。殿の指摘の通り。 cmd_2994の設計が「SQL頻出キーワード抽出→aliases追加」になっている。これは**grepの延長**でしかない。キーワード頻度でaliasesを増やしても、次の未知語にまた穴が空く。各論パッチの量産。 本質的な問題は: **47個の概念×固…
-- 2026-05-22T18:13:38+09:00 | 23cmd中20件CLEAR。残りcmd_2991(cmd_quality INSERT)+cmd_2992(バッチ3ソース)+cmd_2993(Obsidian因果辺)が配備中。殿の指示があれば即応する。 [meta] stop_reason=end_turn
-- 2026-05-22T18:11:18+09:00 | 先のbackgroundタスク4件完了。全て既にcmd起票に活用済み。 本セッション23cmd全GATE PASS。cmd_2990-2993が配備中。殿の指示があれば即応する。 [meta] stop_reason=end_turn
-- 2026-05-22T18:10:08+09:00 | **本セッション全23cmd(2971-2993)全GATE PASS。** 記憶DB Input配管の全体像: | # | 配管 | cmd | 方式 | |---|------|-----|------| | 1 | /clear時再構築 | cmd_2981 | ✅バッチ…
-- 2026-05-22T17:55:51+09:00 | 家老・軍師両方にアンケート送信済み。掲示板に回答が投稿される。回答が届き次第報告する。 殿、本セッション19cmd(2971-2989)全GATE PASS。殿の指示があれば即応する。 [meta] stop_reason=end_turn
-- 2026-05-22T17:53:37+09:00 | cmd_2989 **PASS+DELEGATED**。 殿、記憶DBのInput配管を再整理する。 **接続済み(10本):** 1. 殿×将軍 会話 → ✅ conversation 2. 殿×家老/軍師/忍者 会話 → 🔄 cmd_2989配備中 3. 掲示板 → ✅ b…
-- 2026-05-22T17:25:31+09:00 | 殿の指示があれば即応する。全6忍者idle、全18cmd CLEAR。 [meta] stop_reason=tool_use
-- 2026-05-22T17:09:51+09:00 | 18cmd中18件目 — 最後のcmd_2988(lesson/gate INSERT)をkotaroが作業中。全完了まであと1件。殿の指示があれば即応する。 [meta] stop_reason=end_turn
+- 2026-05-22T19:01:00+09:00 | cmd_2995 GATE CLEAR処理完了。cmd_2996(スキル自動成長フラグクリア)の完了を待ちつつ、殿の指示があれば即応する。idle忍者4名あり。 [meta] stop_reason=end_turn
+- 2026-05-22T19:00:30+09:00 | backgroundタスク全完了確認。陣形図でhayateがcmd_2995 done — 完了が速い。 現在状況: - **cmd_2995**: hayate完了(done) — GATE CLEAR待ち - **cmd_2996**: 配備済み — 忍者割当待ち - id…
+- 2026-05-22T18:59:54+09:00 | cmd_2996 PASS→委任完了(18:58:59)。 3セッション連続BLOCKの自走対処状況: | BLOCK | cmd | 状態 | |-------|-----|------| | SKILL.md script参照 | cmd_2995 | 配備済み | | ス…
+- 2026-05-22T18:52:19+09:00 | 軍師のidle分析が優秀。SKILL.md追従の根因を特定: L1事後検出→∞ループ。L5解決案(deploy_task.shでAC自動注入)も提示済み。 cmd_2995(checked_atマーカー=短期偽陽性修正)と軍師のL5案(根本解決)は相補的。 殿、復帰後の進捗を報…
+- 2026-05-22T18:50:56+09:00 | **強くてニューゲーム状態確認:** | 項目 | 状態 | |------|------| | 全cmd | 25件全GATE CLEAR(cmd_2970-2994) | | WA | 全件clean | | inbox | 全既読+archive済み | | draft教…
+- 2026-05-22T18:28:58+09:00 | 24cmd中23件CLEAR。残りcmd_2993(Obsidian因果辺)+cmd_2994(FTS5フォールバック)。/clear準備完了済み。殿の指示があれば即応する。 [meta] stop_reason=tool_use
+- 2026-05-22T18:25:35+09:00 | 今セッションの知見を検証した結果: **環境に埋め込み済み(✅):** 1. review_log: 全26件(draft 14 + report 12)追記済み。アーカイブも含め永続 2. CS観点WARN: D0_training_filter_gate_fixにcs_ch…
+- 2026-05-22T18:22:17+09:00 | 24cmd中22件CLEAR。残りcmd_2992(バッチ3ソース)+cmd_2993(Obsidian因果辺)+cmd_2994(FTS5フォールバック)が配備中。 殿の指示があれば即応する。 [meta] stop_reason=tool_use
 
 ## 参照cmd
-- cmd_2
-- cmd_2722
-- cmd_2855
-- cmd_2958
-- cmd_2959
-- cmd_2960
-- cmd_2961
-- cmd_2962
+- cmd_2779
+- cmd_2932
 - cmd_2963
-- cmd_2964
 - cmd_2965
-- cmd_2966
-- cmd_2967
-- cmd_2968
-- cmd_2969
 - cmd_2970
 - cmd_2971
-- cmd_2972
-- cmd_2973
-- cmd_2974
-- cmd_2975
-- cmd_2976
 - cmd_2977
-- cmd_2978
-- cmd_2979
-- cmd_2980
 - cmd_2981
 - cmd_2982
 - cmd_2983
 - cmd_2984
+- cmd_2985
+- cmd_2986
+- cmd_2987
+- cmd_2988
+- cmd_2989
+- cmd_2990
+- cmd_2991
+- cmd_2992
+- cmd_2993
+- cmd_2994
+- cmd_2995
+- cmd_2996
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
