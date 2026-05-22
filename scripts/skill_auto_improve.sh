@@ -428,9 +428,8 @@ def apply_prevention_steps(skill_path, rows):
 
 
 stats = defaultdict(lambda: {"counter": Counter(), "last": {}, "gate": {}, "path": ""})
+latest_pass = {}
 for entry in load_entries(log_file):
-    if str(entry.get("result", "")).strip().upper() != "FAIL":
-        continue
     if str(entry.get("used", True)).strip().lower() == "false":
         continue
     gate_name = str(entry.get("gate") or "").strip()
@@ -439,11 +438,19 @@ for entry in load_entries(log_file):
         continue
     if skill_filter and skill != skill_filter:
         continue
+    result = str(entry.get("result", "")).strip().upper()
+    ts = str(entry.get("ts") or "").strip()
+    if result == "PASS":
+        pass_key = (skill, gate_name)
+        if ts >= latest_pass.get(pass_key, ""):
+            latest_pass[pass_key] = ts
+        continue
+    if result != "FAIL":
+        continue
     reason = normalize_reason(entry.get("stumbling_points"))
     if not reason:
         continue
     stats[skill]["counter"][reason] += 1
-    ts = str(entry.get("ts") or "").strip()
     if ts >= stats[skill]["last"].get(reason, ""):
         stats[skill]["last"][reason] = ts
         stats[skill]["gate"][reason] = gate_name
@@ -478,6 +485,23 @@ if not apply_changes:
 
 updated = 0
 escalation_state = load_escalation_state(escalation_state_path)
+cleared_code_fix = 0
+for key, entry in escalation_state.get("patterns", {}).items():
+    if not isinstance(entry, dict) or entry.get("classification") != "code_fix_required":
+        continue
+    skill = str(entry.get("skill") or "").strip()
+    gate = str(entry.get("gate") or "").strip()
+    last_fail = str(entry.get("last_fail") or "").strip()
+    pass_ts = latest_pass.get((skill, gate), "")
+    if not pass_ts or pass_ts < last_fail:
+        continue
+    entry.pop("classification", None)
+    entry.pop("classification_reason", None)
+    entry["code_fix_cleared_at"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    entry["code_fix_cleared_by"] = "skill_auto_improve_pass_result"
+    entry["code_fix_cleared_pass_ts"] = pass_ts
+    cleared_code_fix += 1
+    print(f"CLEARED_CODE_FIX: {skill} gate={gate or 'unknown_gate'} pass={pass_ts} last_fail={last_fail or 'unknown'}")
 for skill, rows in apply_plan.items():
     path = skill_file_for(skill, stats[skill]["path"])
     if not path:
@@ -492,6 +516,24 @@ for skill, rows in apply_plan.items():
     for row in rows:
         key = escalation_key(row)
         entry = escalation_state["patterns"].setdefault(key, {})
+        pass_ts = latest_pass.get((row["skill"], row.get("gate") or ""), "")
+        if pass_ts and pass_ts >= (row.get("last_fail") or ""):
+            entry.update({
+                "skill": row["skill"],
+                "gate": row.get("gate") or "",
+                "reason": row["reason"],
+                "last_fail": row.get("last_fail") or "",
+                "code_fix_cleared_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                "code_fix_cleared_by": "skill_auto_improve_pass_result",
+                "code_fix_cleared_pass_ts": pass_ts,
+            })
+            entry.pop("classification", None)
+            entry.pop("classification_reason", None)
+            print(
+                f"SKIPPED_CLASSIFICATION_AFTER_PASS: {row['skill']} rank={row['rank']} "
+                f"gate={row.get('gate') or 'unknown_gate'} pass={pass_ts} last_fail={row.get('last_fail') or 'unknown'}"
+            )
+            continue
         entry.update({
             "skill": row["skill"],
             "gate": row.get("gate") or "",
@@ -514,5 +556,5 @@ for skill, rows in apply_plan.items():
             request_code_fix(row, int(entry["unchanged_streak"]), entry)
 
 save_escalation_state(escalation_state_path, escalation_state)
-print(f"updated_skills={updated} generated_at={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
+print(f"updated_skills={updated} cleared_code_fix={cleared_code_fix} generated_at={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
 PY

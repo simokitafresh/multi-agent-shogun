@@ -925,3 +925,105 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "skill_auto_improve clears code_fix_required after later PASS and preserves unresolved FAIL" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/verdict-check"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+---
+
+# report-write
+
+## 報告YAML記入手順
+既存手順。
+EOF
+    cat > "$TEST_TMPDIR/skills/verdict-check/SKILL.md" <<'EOF'
+---
+name: verdict-check
+---
+
+# verdict-check
+
+## 実行フロー
+既存手順。
+EOF
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+- ts: "2026-05-02T10:05:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "gate_report_format PASS"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+- ts: "2026-05-02T10:10:00+0900"
+  skill: "verdict-check"
+  executor: "hayate"
+  result: "PASS"
+  stumbling_points: "cmd_complete_gate PASS"
+  gate: "cmd_complete_gate"
+  skill_path: "$TEST_TMPDIR/skills/verdict-check/SKILL.md"
+- ts: "2026-05-02T10:15:00+0900"
+  skill: "verdict-check"
+  executor: "hayate"
+  result: "FAIL"
+  stumbling_points: "hayate:binary_checks_fail"
+  gate: "cmd_complete_gate"
+  skill_path: "$TEST_TMPDIR/skills/verdict-check/SKILL.md"
+EOF
+    cat > "$STATE_JSON" <<'EOF'
+{
+  "patterns": {
+    "old_report": {
+      "skill": "report-write",
+      "gate": "gate_report_format",
+      "reason": "verdict missing",
+      "last_fail": "2026-05-02T10:00:00+0900",
+      "classification": "code_fix_required",
+      "classification_reason": "SKILL.md unchanged 3 consecutive runs"
+    },
+    "old_verdict": {
+      "skill": "verdict-check",
+      "gate": "cmd_complete_gate",
+      "reason": "<ninja>:binary_checks_fail",
+      "last_fail": "2026-05-02T10:15:00+0900",
+      "classification": "code_fix_required",
+      "classification_reason": "SKILL.md unchanged 3 consecutive runs"
+    }
+  }
+}
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLEARED_CODE_FIX: report-write gate=gate_report_format pass=2026-05-02T10:05:00+0900 last_fail=2026-05-02T10:00:00+0900"* ]]
+    [[ "$output" == *"SKIPPED_CLASSIFICATION_AFTER_PASS: report-write"* ]]
+
+    run python3 - <<EOF
+import json
+from pathlib import Path
+state = json.loads(Path("$STATE_JSON").read_text(encoding="utf-8"))
+report_entries = [p for p in state["patterns"].values() if p["skill"] == "report-write"]
+verdict_entries = [p for p in state["patterns"].values() if p["skill"] == "verdict-check"]
+assert report_entries
+assert all(p.get("classification") != "code_fix_required" for p in report_entries)
+assert any(p.get("code_fix_cleared_by") == "skill_auto_improve_pass_result" for p in report_entries)
+assert any(p.get("classification") == "code_fix_required" for p in verdict_entries)
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
