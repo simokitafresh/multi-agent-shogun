@@ -1107,3 +1107,440 @@
   origin: "[[cmd_2955]] -> [[概念ハブリンク]] -> [[孤立率削減]]"
   causal_chain: "SSOT概念→ファイル[[概念名]]追記→backlinks可視化→孤立率3%削減→ネットワーク密度複利"
   timestamp: "2026-05-22T01:03:00"
+- cmd_id: cmd_2991
+  review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。cmd_design_qualityリアルタイムINSERT(配管11)。PASS経路集約でCLEAR/WARN/BLOCK/PASS全記録同一DB投入。テスト全PASS"
+  observations:
+    - "事実1: cmd_save.sh PASS直書きをcmd_quality_log.shへ集約。全品質記録が同一live insert経路"
+    - "事実2: DB失敗時品質記録不変。knowledge_candidate有(経路統一の事実記録)"
+  finding_categories: [assumptions, adversarial]
+  origin: "[[cmd_2991]] -> [[品質記録配管11]] -> [[LGTM]]"
+  causal_chain: "品質記録がDB未投入→live INSERT+経路集約=FP/BLOCK分析リアルタイム検索=正の複利"
+  timestamp: "2026-05-22T18:35:00"
+- cmd_id: cmd_2994
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。semantic_search.shにNO_MATCH時DB FTS5フォールバック追加。aliases不変。DB不在時は既存NO_MATCH出力維持。grep脱却"
+  observations:
+    - "事実1: rg memory_db semantic_search.sh→0件(q11)。NO_MATCH率33.3%で到達手段ゼロ"
+    - "事実2: DB_MATCH:セクションでaliases結果と区別。フォールバックのみで既存動作不変"
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  origin: "[[cmd_2994]] -> [[DB FTS5フォールバック]] -> [[APPROVE]]"
+  causal_chain: "aliases未登録→NO_MATCH到達不能→DB FTS5フォールバック=grep脱却×記憶到達率向上=正の複利"
+  ambiguity_points: none
+  timestamp: "2026-05-22T18:40:00"
+- cmd_id: cmd_2992
+  review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "4観点OK。バッチ3ソース追加。skill_execution=3780+cmd_archive=2916+pending_decision=43件投入。テスト13件PASS"
+  observations:
+    - "事実1: 3ソース全て既存bulletin/insightと同一loader→event_rows→build_db配管で実装"
+    - "事実2: 実データ再構築で3ソース件数確認。読込失敗時は空リスト扱い(非破壊)"
+  finding_categories: [assumptions, adversarial]
+  origin: "[[cmd_2992]] -> [[バッチ3ソース追加]] -> [[LGTM]]"
+  causal_chain: "3ソース欠落→読込追加=バッチ完全性(6739件追加)=DB網羅性向上=正の複利"
+  timestamp: "2026-05-22T18:45:00"
+- cmd_id: cmd_2994
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "4観点OK。semantic_search.shにDB FTS5フォールバック追加。aliases NO_MATCH時にmemory_db_import.py --searchへ非破壊フォールバック。テスト26/26 PASS"
+  observations:
+    - "事実1: DB不在・空結果・python失敗は全てreturn 1で従来経路(LLM/NO_MATCH)へ安全に戻る"
+    - "事実2: --llm強制時はDBフォールバックをスキップし既存契約維持。MEMORY_DB_MATCH出力でaliases結果と区別"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_2994]] -> [[DB FTS5フォールバック]] -> [[LGTM]]"
+  causal_chain: "aliases未登録語→NO_MATCH到達不能→DB FTS5フォールバック=grep脱却×記憶到達率向上=正の複利"
+  timestamp: "2026-05-22T18:55:00"
+- cmd_id: cmd_2993
+  review_type: report
+  gate_result: CLEAR
+  verdict: FAIL
+  report_ninja: hanzo
+  fail_reasons:
+    - "verdict空文字(PASS/FAIL三値必須)"
+    - "binary_checks.commit.result空文字(yes/no必須)"
+    - "lessons_useful[0] reasonフィールド欠如(feedbackで記入)"
+  findings_summary: "SG-PRE1 FAIL(3件フォーマット不備)+SG-PRE3 WARN(commit未検出)。LG006適用"
+  observations:
+    - "事実1: verdict/commit.result/lessons_useful.reasonの3フィールドが空または不正形式。gate_report_format.sh FAIL"
+    - "事実2: files_modified 2ファイルにcmd_2993のcommitが未検出。成果物未確定"
+  finding_categories: [assumptions]
+  origin: "[[cmd_2993]] -> [[フォーマット不備]] -> [[FAIL]]"
+  causal_chain: "report_field_set.sh未使用→フォーマット不備3件→GATE BLOCK必至。LG006(LGTM+注記=消火)適用でFAIL"
+  timestamp: "2026-05-22T19:00:00"
+- cmd_id: cmd_2995
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。checked_atマーカー機構でSKILL.md偽陽性解消。commit 9674e1d7でAC1/AC2実装済み。gate PASS確認"
+  observations:
+    - "事実1: checked_at_re+parse_checked_at_epoch()がHEADに存在(git show HEAD確認)。AC1/AC2既実装"
+    - "事実2: gate_skill_script_refs.sh現在PASS(WARN 0件)。マーカーなしSKILL.mdはmtimeフォールバック(後方互換)"
+  finding_categories: [assumptions, premortem, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_2995]] -> [[SKILL.md偽陽性]] -> [[APPROVE]]"
+  causal_chain: "スクリプト内部変更→mtime更新→SKILL.md追従WARN偽陽性→checked_atマーカーで真の更新日を記録=偽陽性根絶=正の複利"
+  timestamp: "2026-05-22T19:05:00"
+- cmd_id: cmd_2995
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "4観点OK。checked_atマーカー実装+9スキルにマーカー追記。batsテスト追加2件+既存3件PASS。gate 10 WARN→PASS"
+  observations:
+    - "事実1: parse_checked_at_epoch追加でマーカーISO8601解析。マーカーなし→mtime fallback(後方互換)"
+    - "事実2: 9スキルSKILL.mdにマーカー追記。nocache gateで10 WARN→PASS確認。lesson_candidate有(register推奨)"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_2995]] -> [[checked_atマーカー]] -> [[LGTM]]"
+  causal_chain: "mtime偽陽性→3セッション連続BLOCK→checked_atマーカー導入=偽陽性根絶=正の複利(gate WARN CTX消費+WA削減)"
+  timestamp: "2026-05-22T19:10:00"
+- cmd_id: cmd_2996
+  review_type: draft
+  gate_result: CLEAR
+  verdict: REQUEST_CHANGES
+  confidence: MEDIUM
+  findings_summary: "AC未定義(ac_version=d41d8cd9=空ハッシュ)。バグ実在確認済み(classify_fail_causeはFAILブランチのみ)だがAC追加必須"
+  observations:
+    - "事実1: acceptance_criteria 0件。ac_version d41d8cd9=SHA-1(空文字列)。忍者のbinary_checks基盤なし"
+    - "事実2: classify_fail_cause() L506はFAILブランチのみ。PASS時のcode_fix_requiredクリアロジック不在(バグ確認)"
+  finding_categories: [assumptions, simulation]
+  ambiguity_points: "AC未定義のためcmd全体の完了条件が曖昧"
+  origin: "[[cmd_2996]] -> [[AC未定義]] -> [[REQUEST_CHANGES]]"
+  causal_chain: "AC未定義→忍者がscope推測→vague bc→GATE BLOCKリスク。AC追加で忍者ナビゲーション精度確保=正の複利"
+  timestamp: "2026-05-22T19:15:00"
+- cmd_id: cmd_2996
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。PASS時code_fix_requiredクリア(12→3件)。bats 20件PASS。継続FAIL 3件維持(後方互換)"
+  observations:
+    - "事実1: skill+gate単位で最新PASSログと突合し、last_fail以降のPASSがあるcode_fix_requiredを削除"
+    - "事実2: 古いFAIL再分類によるフラグ復活をskip処理で防止。実データで12→3件(9件クリア)確認"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_2996]] -> [[code_fix_requiredクリア]] -> [[LGTM]]"
+  causal_chain: "PASS後もフラグ残存→3セッション連続BLOCK→PASS時クリア+再分類skip=構造的バグ根絶=正の複利"
+  timestamp: "2026-05-22T19:20:00"
+- cmd_id: cmd_2997
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。0バイトDB削除+conversations重複テーブル整理+memory_db_import.py統合。AC2で重複確認が先行し安全"
+  observations:
+    - "事実1: ルート直下DB 0バイト実在確認(ls)。data/DB=82MB正常"
+    - "事実2: conversations=27161件、events=31514件。差4353件はconversation以外のevent_type。重複確認はAC2で忍者が検証"
+  finding_categories: [assumptions, numbers, premortem]
+  ambiguity_points: none
+  origin: "[[cmd_2997]] -> [[DB重複テーブル]] -> [[APPROVE]]"
+  causal_chain: "二重テーブル→混乱+ストレージ浪費→統合=複雑度削減=正の複利"
+  timestamp: "2026-05-22T19:35:00"
+- cmd_id: cmd_2997
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "4観点OK。0バイトDB削除+conversationsをevents由来VIEWに統合。27375件双方向EXCEPT 0件で完全重複確認"
+  observations:
+    - "事実1: multi_agent_shogun_memory.db FILE NOT FOUND=AC1削除成功。data/DBはgitignore対象でcommit不要"
+    - "事実2: conversations→VIEW変換で既存SELECT互換維持。lib/lord_conversation.sh live INSERT側もconversations廃止"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2997]] -> [[DB重複テーブル統合]] -> [[LGTM]]"
+  causal_chain: "二重テーブル(conversations+events)→重複27375件→VIEW統合=正本一元化=正の複利"
+  timestamp: "2026-05-22T19:45:00"
+- cmd_id: cmd_2998
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。FTS5日本語タイムアウト対策。AC1(timeout制御)+AC2(トークン分割改善)。cmd_2994後続改善"
+  observations:
+    - "事実1: memory_db_search()はcmd_2994で追加(本セッションLGTM済み)。FTS5 unicode61 tokenizerは日本語分割が粗い"
+    - "事実2: L509(cold計測教訓)注入済み。AC2件target 1ファイルで軽量修正"
+  finding_categories: [assumptions, premortem, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_2998]] -> [[FTS5日本語タイムアウト]] -> [[APPROVE]]"
+  causal_chain: "日本語long query→FTS5タイムアウト→timeout制御+トークン改善=検索到達率向上=正の複利"
+  timestamp: "2026-05-22T19:50:00"
+- cmd_id: cmd_2998
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "4観点OK。FTS5日本語タイムアウト修正。5s timeout+trigram tokenizer+16語正規化。10秒超→0.25秒。bats 28件PASS"
+  observations:
+    - "事実1: SEMANTIC_MEMORY_DB_TIMEOUT=5s default(ENV上書き可)。memory_db_import.pyに検索語正規化+trigram FTS追加"
+    - "事実2: 実DBで長い日本語クエリelapsed=0.25秒確認。L509(cold計測)有用活用"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_2998]] -> [[FTS5速度改善]] -> [[LGTM]]"
+  causal_chain: "日本語long query 10秒超→timeout 5s+trigram+16語正規化→0.25秒=検索実用化=正の複利"
+  timestamp: "2026-05-22T19:55:00"
+- cmd_id: cmd_2999
+  review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。WSL2 sqlite3 CLI FTS5未対応→Python sqlite3ラッパー(memory_db_query.sh)。AC2件明確"
+  observations:
+    - "事実1: WSL2のsqlite3 CLIはFTS5未ビルドが一般的。Python sqlite3は通常FTS5内蔵"
+    - "事実2: AC1(sqlite3互換出力)+AC2(FTS5 MATCH動作)。新規ファイル1つで軽量"
+  finding_categories: [assumptions, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_2999]] -> [[WSL2 FTS5不在]] -> [[APPROVE]]"
+  causal_chain: "sqlite3 CLI FTS5未対応→CLIベース検索不能→Python sqlite3ラッパー=DB CLIアクセス性確保=正の複利"
+  timestamp: "2026-05-22T19:55:00"
+- cmd_id: cmd_2999
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。memory_db_query.sh追加(96行)。Python sqlite3 FTS5ラッパー+sqlite3 CLI互換出力。bats PASS"
+  observations:
+    - "事実1: SQL+DBパスはsys.argv経由(L301/L415適用)。パイプ区切り・ヘッダなし・NULL空欄でCLI互換"
+    - "事実2: 実DBでFTS5 MATCH確認済み。lessons_useful 10件中5件useful(L509/L171/L301/L415/L426)"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_2999]] -> [[Python sqlite3ラッパー]] -> [[LGTM]]"
+  causal_chain: "WSL2 sqlite3 FTS5不在→CLI検索不能→Python sqlite3ラッパー=DB CLIアクセス性確保=正の複利"
+  timestamp: "2026-05-22T20:00:00"
+- cmd_id: cmd_3000
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。Modern Web Guidance導入+semantic-map概念追加+dm-signal-frontend参照追記。AC3件明確"
+  observations:
+    - "事実1: npx modern-web-guidance@latest installでSKILL.md配置。外部スキル導入の標準パターン"
+    - "事実2: semantic-map.mdにaliases 6件(モダンWeb/anchor positioning/view transitions等)追加"
+  finding_categories: [assumptions, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_3000]] -> [[Modern Web Guidance]] -> [[APPROVE]]"
+  causal_chain: "レガシーAPI使用→FE品質低下→Modern Web Guidance導入=FEベストプラクティス強制=正の複利"
+  timestamp: "2026-05-22T20:05:00"
+- cmd_id: cmd_3000
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "4観点OK。Modern Web Guidance導入。index.md正本更新→semantic_map_generate.sh伝搬。4件commit確認"
+  observations:
+    - "事実1: インストーラ既定(.agents/skills)をskills/正本に補正。生成物直接編集でなく正本→生成フロー遵守"
+    - "事実2: npx search anchor/popover/view transitions全て結果返却確認。aliases 6件追加"
+  finding_categories: [assumptions, premortem]
+  origin: "[[cmd_3000]] -> [[Modern Web Guidance導入]] -> [[LGTM]]"
+  causal_chain: "FEベストプラクティス未導入→レガシーAPI使用リスク→Modern Web Guidance+semantic統合=品質基盤=正の複利"
+  timestamp: "2026-05-22T20:10:00"
+- cmd_id: consultation_memory_db_design
+  review_type: consultation
+  verdict: null
+  findings_summary: "将軍設計相談回答。3案支持。FM3点(SELECT-onlyガード/ハルシネーション対策/schema自動生成)。優先: schema自動生成>テンプレート>LLM SQL"
+  observations:
+    - "事実1: events 31514件/14列/13 event_type。event_concepts 39614件。event_links+events_fts+conversations VIEW"
+    - "事実2: schema自動生成=Level5+正の複利。各論スクリプト量産=負の複利。殿指摘と整合"
+  finding_categories: [assumptions, numbers, premortem, simulation]
+  cs_checklist:
+    CS1: DB現物.schemaとevent_type分布を実測確認
+    CS2: 自システムデータで13 event_type/31514件の構造を検証
+    CS3: memory_db_query.sh/memory_db_import.pyの実コード確認済み
+    CS4: 掲示板で将軍に回答(FM3点+優先順提案)=行動変換
+    CS5: read-onlyガード+再試行ループ+自動生成の3角度で検討
+    CS6: schema不在→LLM変換不能→自動生成で解消の因果鎖追跡
+  origin: "[[将軍設計相談]] -> [[記憶DB汎用活用]] -> [[schema自動生成提案]]"
+  causal_chain: "DBスキーマ不在→LLM SQL変換不能→schema自動生成(L5)=全将来クエリ精度向上=正の複利"
+  timestamp: "2026-05-22T20:15:00"
+- cmd_id: cmd_3001
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。記憶DBスキーマ自動生成→context/memory-db-schema.md。軍師案(1)のcmd化。Level 5到達"
+  observations:
+    - "事実1: AC1(schemaサブコマンド)+AC2(context書込み)。DB読取専用明記。14列/13 event_type"
+    - "事実2: サンプル行は運用ログのみ(機密なし)。100行以内で収まる見込み"
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  origin: "[[cmd_3001]] -> [[DBスキーマ自動生成]] -> [[APPROVE]]"
+  causal_chain: "DBスキーマ不在→LLM SQL変換不能→schema自動生成(L5)→context/memory-db-schema.md=全将来クエリ精度向上=正の複利"
+  timestamp: "2026-05-22T20:20:00"
+- cmd_id: cmd_3001
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "4観点OK。記憶DBスキーマ自動生成→context/memory-db-schema.md(81行)。DB読取専用。テスト固定済み"
+  observations:
+    - "事実1: --schema --schema-output経路でDB読取のみ。production DB変更なし"
+    - "事実2: schema.md 81行(テーブル定義+event_type分布+サンプル行)。knowledge_candidate有(event_type分布)"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_3001]] -> [[schema自動生成]] -> [[LGTM]]"
+  causal_chain: "DBスキーマ不在→schema自動生成(81行)→context配置=LLM SQL変換基盤=正の複利"
+  timestamp: "2026-05-22T20:25:00"
+- cmd_id: cmd_3002
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。memory_db_query.sh SELECT専用ガード。破壊的SQL(DELETE/UPDATE/DROP等)BLOCK。Level 4"
+  observations:
+    - "事実1: 軍師FM1(SELECT-onlyガード)のcmd化。Destructive Operation Safety(CLAUDE.md)と同根"
+    - "事実2: 事前検死: case-insensitive+CTE先頭SELECT誤BLOCK+PRAGMA/EXPLAIN判断の3点注意"
+  finding_categories: [assumptions, premortem, adversarial]
+  ambiguity_points: none
+  origin: "[[cmd_3002]] -> [[SELECT専用ガード]] -> [[APPROVE]]"
+  causal_chain: "破壊的SQL実行リスク→SELECT-onlyガード(L4)=記憶DB安全性保証=正の複利"
+  timestamp: "2026-05-22T20:30:00"
+- cmd_id: cmd_3003
+  review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。記憶DB頻用クエリテンプレート集。AC1(5件以上)+AC2(ユースケース+SQL+出力例)。Level 5"
+  observations:
+    - "事実1: cmd_3001(schema)先行CLEAR済みで忍者がカラム名参照可能。テンプレートとschema整合可"
+    - "事実2: 新規ファイル作成のみ。5-10件100-150行見込み。CTX圧迫なし"
+  finding_categories: [assumptions, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_3003]] -> [[クエリテンプレート集]] -> [[APPROVE]]"
+  causal_chain: "LLM SQL生成に参考なし→テンプレート集(L5)=クエリパターン提供=正の複利"
+  timestamp: "2026-05-22T20:35:00"
+- cmd_id: cmd_3002
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。SELECT専用ガード(キーワード検査+read-only URI二重防御)。WITH SELECT対応。bats追加済み"
+  observations:
+    - "事実1: 初期キーワードSELECT/WITH限定+sqlite3 read-only URI接続の二重防御。write系WITHもDB層でBLOCK"
+    - "事実2: 軍師draftレビューのCTE注意がWITH SELECTテストで補完済み。L316/L244/L171有用活用"
+  finding_categories: [assumptions, premortem, adversarial]
+  origin: "[[cmd_3002]] -> [[SELECT専用ガード]] -> [[LGTM]]"
+  causal_chain: "破壊的SQL実行リスク→キーワード+read-only二重防御(L4)=記憶DB安全性保証=正の複利"
+  timestamp: "2026-05-22T20:40:00"
+- cmd_id: cmd_3003
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "4観点OK。頻用SQLテンプレート8件(187行)。memory_db_query.shで全8本実行確認。schema/ガード先行完了で整合"
+  observations:
+    - "事実1: 8テンプレート(AC要件5件超)。各ユースケース+SQL+出力例。187行でCTX圧迫なし"
+    - "事実2: validation追加チェックで8本SQL実行確認。cmd_3001(schema)+cmd_3002(ガード)先行完了"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_3003]] -> [[クエリテンプレート集]] -> [[LGTM]]"
+  causal_chain: "LLM SQL生成精度不足→テンプレート8件(L5)=パターン提供=正の複利"
+  timestamp: "2026-05-22T20:45:00"
+- cmd_id: consultation_4step_search
+  review_type: consultation
+  verdict: null
+  findings_summary: "将軍4ステップ検索設計回答。順序支持。FM4点(拡張膨張/遅延爆発/フラグ混同/キャッシュ未定)。Step 4デフォルトOFF必須"
+  observations:
+    - "事実1: event_links 779件/149概念/avg 5.1 links/event。causal_backlinks.sh既存で2ホップ走査実装済み"
+    - "事実2: semantic_searchはgates/hooks 7箇所から呼出し。Step 4(+2-10秒)全適用で起動/レビュー大幅遅延"
+  finding_categories: [assumptions, numbers, premortem, simulation]
+  cs_checklist:
+    CS1: event_links全量+呼出し元gates/hooks全件確認
+    CS2: 自システムデータ(779件/149概念/7呼出し箇所)で設計検証
+    CS3: causal_backlinks.sh既存実装と提案Step 2を実コード比較
+    CS4: 掲示板回答(FM4点+デフォルトOFF提案)=行動変換
+    CS5: --llm vs --interpret分離+キャッシュ戦略の2角度追加
+    CS6: Step 4全適用→遅延爆発→デフォルトOFFの因果鎖追跡
+  origin: "[[将軍設計相談]] -> [[4ステップ検索]] -> [[Step4デフォルトOFF提案]]"
+  causal_chain: "Step2欠落+Step4欠落→検索品質不足→4ステップ順序化。ただしStep4全適用→遅延爆発→デフォルトOFF必須"
+  timestamp: "2026-05-22T21:15:00"
+- cmd_id: cmd_3004
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。4ステップ記憶検索Step 2(Obsidianリンクたどり)追加。depth=1+limit=20膨張制御。AC3で性能保証"
+  observations:
+    - "事実1: event_links 779件/149概念/avg 5.1。軽量DB走査でhook応答時間非増加(AC3)"
+    - "事実2: Step 4(LLM解釈)はスコープ外。正しいcmd分割。入口→道→倉庫の3ステップが本cmdで完成"
+  finding_categories: [assumptions, simulation, premortem]
+  ambiguity_points: none
+  origin: "[[cmd_3004]] -> [[Step2 Obsidianリンクたどり]] -> [[APPROVE]]"
+  causal_chain: "Step2欠落→概念間接続なし→event_links走査+膨張制御(depth1/limit20)=検索品質向上=正の複利"
+  timestamp: "2026-05-22T21:25:00"
+- cmd_id: cmd_3004
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: hayate
+  findings_summary: "4観点OK。4ステップStep 2完成。event_links depth=1/limit=20。応答+0.02-0.09s(AC3保証)。lessons_useful 6/10有用"
+  observations:
+    - "事実1: indexed lookup限定(LEFT JOIN回避)。Python1回起動統合(L668)。memory_on 0.33-0.45s"
+    - "事実2: 本体はauto-commit 7b7ae52dに含まれ、テストcommit 60be0402がcmd_3004固有。並行作業技術的事情"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_3004]] -> [[Step2概念展開]] -> [[LGTM]]"
+  causal_chain: "概念間リンク未走査→検索精度不足→depth=1/limit=20展開(+0.02-0.09s)=入口→道→倉庫3ステップ完成=正の複利"
+  timestamp: "2026-05-22T21:40:00"
+- cmd_id: cmd_3005
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。全PJドキュメント棚卸し偵察。AC3件(一覧+カテゴリ8種+分類付与)。記憶DB投入基盤"
+  observations:
+    - "事実1: 対象PJ=dm-signal/infra/google-classroom/database/simple-ocr等。拡張子=md/yaml/txt/rst"
+    - "事実2: カテゴリ8種(記事/設計書/context/教訓/チェックリスト/自動生成/コード/除外)で投入可否判断"
+  finding_categories: [assumptions, simulation]
+  ambiguity_points: none
+  origin: "[[cmd_3005]] -> [[ドキュメント棚卸し]] -> [[APPROVE]]"
+  causal_chain: "記憶DB投入範囲未定義→全量棚卸し偵察=後続投入cmdの基盤=正の複利"
+  timestamp: "2026-05-22T22:15:00"
+- cmd_id: cmd_3005
+  review_type: report
+  gate_result: CLEAR
+  verdict: LGTM
+  report_ninja: kagemaru
+  findings_summary: "4観点OK。全PJドキュメント棚卸し12974件。CSV+要約MD。カテゴリ7種。lesson_candidate有(CSV gitignore例外)"
+  observations:
+    - "事実1: config/projects.yaml登録PJフル走査。12974件(ヘッダ込み12975行)。Python非空検証済み"
+    - "事実2: 壊れたsymlink 2件除外+明記。.gitignore例外CSV→git add -fでcommit(lesson_candidate)"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_3005]] -> [[ドキュメント棚卸し12974件]] -> [[LGTM]]"
+  causal_chain: "記憶DB投入範囲未定義→12974件全量棚卸し=後続投入cmdの正確な基盤=正の複利"
+  timestamp: "2026-05-22T22:30:00"
+- cmd_id: consultation_3layer_harness
+  review_type: consultation
+  verdict: null
+  findings_summary: "将軍設計書批判的評価。根因誤認(品質→迂回路)。as-is/to-be矛盾。how 3要素中2要素が各論パッチ。迂回BLOCKのみが根因対処"
+  observations:
+    - "事実1: 殿が検索して答えが出た=品質は十分。使わなかった=迂回路の方が楽。品質は根因でなく結果"
+    - "事実2: hookは発火しているが読み飛ばした(as-is)→品質改善(to-be)は因果不整合。強制使用が正しいto-be"
+  finding_categories: [assumptions, simulation, premortem, adversarial, north_star]
+  cs_checklist:
+    CS1: 殿の指摘「品質が低いは他責」をas-is/to-beと突合
+    CS2: deepdive Phase 4(理解≠行動変容)と将軍の自己分析を比較
+    CS3: LG023(原理1行>各論30行)でhow 3要素を検証
+    CS4: 掲示板で因果逆転(品質=結果≠根因)を指摘=行動変換
+    CS5: 迂回BLOCK→強制使用→フィードバック→品質改善の正しい順序を提示
+    CS6: 迂回路存在→楽な方選択→未使用→フィードバックなし→品質停滞の負の複利連鎖を追跡
+  origin: "[[将軍設計相談]] -> [[3層ハーネス]] -> [[因果逆転指摘]]"
+  causal_chain: "迂回路存在→楽な方選択→記憶未使用→フィードバックなし→品質停滞=負の複利。迂回BLOCK→強制使用→フィードバック→品質改善=正の複利。品質は根因でなく結果"
+  timestamp: "2026-05-22T22:40:00"
+- cmd_id: cmd_3007
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  findings_summary: "4観点OK。殿選択の案A実装。pre-bash知識パスgrep検知→記憶DB自動注入+targetフィルタ+30秒debounce+インフラ除外"
+  observations:
+    - "事実1: pre-bash-combined.sh+共有評価器+hookテストの3ファイル変更。SELECT専用DB(cmd_3002)経由で安全"
+    - "事実2: なぜなぜ7回の6穴全対策反映(パス限定/debounce/targetフィルタ/インフラ除外/コンパクト出力/agent限定)"
+  finding_categories: [assumptions, premortem, adversarial]
+  origin: "[[cmd_3007]] -> [[案A記憶3層ハーネス]] -> [[LGTM]]"
+  causal_chain: "迂回路(grep直接)→記憶DB無視→案A(自動注入)=迂回しても記憶結果がcontextに入る=正の複利"
+  timestamp: "2026-05-22T23:15:00"

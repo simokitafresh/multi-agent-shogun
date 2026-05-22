@@ -30,7 +30,7 @@ task:
   parent_cmd: cmd_3004
   project: infra
   purpose: semantic_search.shの検索フローに概念間リンクたどり(Step 2)を追加し、入口→道→倉庫→解釈の4ステップ記憶検索を完成させる
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/semantic_search.sh
   task_id: cmd_3004_exact

@@ -6823,3 +6823,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cmd_idがcmd_training_*として残っている場合は、report_filename生成やAC検証より前にparent_cmd/task_id/statusを復元するチェックを追加すべき。 origin: [[cmd_2956]] -> [[parent_cmd_null]] -> [[report_null_generation]]
+
+### L687: SKILL.md鮮度gateは確認時刻マーカーを正本にする
+- **日付**: 2026-05-22
+- **出典**: cmd_2995
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh,tests/unit/test_gate_skill_script_refs_marker.bats,skills/dashboard-update/SKILL.md,skills/dream/SKILL.md,skills/gate-sync/SKILL.md]
+- **origin**: [[cmd_2995]]
+- **when**: 未設定
+- **how**: 未設定
+- script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- script_refs_checked_at: ISO8601 -->としてSKILL.mdに残し、gateはその時刻を鮮度基準にする。次回同種gateではmtimeより明示確認マーカーを優先するチェックを追加すべし。 origin: [[cmd_2995]] -> [[mtime_false_positive]] -> [[script_refs_checked_at_marker]]
+
+### L688: CSV成果物は.gitignore例外を確認してcommit対象に含める
+- **日付**: 2026-05-22
+- **出典**: cmd_3005
+- **記録者**: kagemaru
+- **tags**: [infra,git]
+- **target_files**: [docs/research/cmd_3005_document_inventory_kagemaru.csv,docs/research/cmd_3005_document_inventory_kagemaru.md]
+- **origin**: [[cmd_3005]]
+- **when**: 未設定
+- **how**: 未設定
+- 今回の成果物はMarkdown要約とCSV本体の2ファイルだったが、docs/research/*.csvは.gitignoreの全体ignoreに該当し、通常のgit statusには出なかった。ACの本体がCSVである場合、git check-ignoreで確認し、scope内ファイルだけgit add -fする必要がある。確認しないと要約だけcommitされ、棚卸し本体がcommitから漏れる。
