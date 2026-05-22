@@ -157,7 +157,7 @@ EOF
 
     run_q11_recheck
     [ "$status" -eq 0 ]
-    [[ "$output" == *"q11_not_already_done drift (cmd_9005)"* ]]
+    [[ "$output" == *"WARNING: q11_not_already_done drift (cmd_9005)"* ]]
     [[ "$output" == *"起票時 0件 → 配備時 1件"* ]]
 }
 
