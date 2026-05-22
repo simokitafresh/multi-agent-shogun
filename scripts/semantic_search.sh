@@ -16,6 +16,12 @@ Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
   SEMANTIC_DISABLE_LLM Set to 1 to stop after the alias layer
+  SEMANTIC_MEMORY_DB_PATH
+                       Override data/multi_agent_shogun_memory.db for FTS fallback
+  SEMANTIC_DISABLE_MEMORY_DB
+                       Set to 1 to skip memory DB FTS fallback
+  SEMANTIC_MEMORY_DB_LIMIT
+                       Maximum memory DB fallback rows (default: 10)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
@@ -86,6 +92,48 @@ semantic_index_python() {
 first_layer_search() {
     local no_match_mode="${1:-print}"
     semantic_index_python first-layer "$no_match_mode"
+}
+
+memory_db_search() {
+    [ "${SEMANTIC_DISABLE_MEMORY_DB:-0}" != "1" ] || return 1
+
+    local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
+    local limit="${SEMANTIC_MEMORY_DB_LIMIT:-10}"
+    local output_file
+
+    [ -f "$db_path" ] || return 1
+
+    output_file="$(mktemp)"
+    if ! python3 "$script_dir/scripts/memory_db_import.py" \
+        --db "$db_path" \
+        --search "$query" \
+        --limit "$limit" > "$output_file"; then
+        rm -f "$output_file"
+        return 1
+    fi
+
+    if [ ! -s "$output_file" ]; then
+        rm -f "$output_file"
+        return 1
+    fi
+
+    echo "MEMORY_DB_MATCH: $query"
+    echo ""
+    echo "memory_db_fts_results:"
+    awk -F '\t' '
+        NF >= 6 {
+            printf "- id: %s\n", $1
+            printf "  ts: %s\n", $2
+            printf "  agent: %s\n", $3
+            if ($4 != "") {
+                printf "  cmd_id: %s\n", $4
+            }
+            printf "  importance: %s\n", $5
+            printf "  summary: %s\n", $6
+        }
+    ' "$output_file"
+    rm -f "$output_file"
+    return 0
 }
 
 append_causal_expansion() {
@@ -230,9 +278,14 @@ if [ "$force_llm" = false ]; then
             exit "$rc"
         fi
         if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
-            exit 1
+            memory_db_search
+            exit $?
         fi
     fi
+fi
+
+if [ "$force_llm" = false ] && memory_db_search; then
+    exit 0
 fi
 
 llm_search

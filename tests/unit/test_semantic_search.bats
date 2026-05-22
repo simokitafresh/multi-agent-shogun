@@ -12,6 +12,8 @@ setup() {
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
     export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
+    unset SEMANTIC_MEMORY_DB_PATH
+    unset SEMANTIC_DISABLE_MEMORY_DB
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -106,6 +108,30 @@ EOF
     [[ "$output" == *"## growth_loop — 学習ループ"* ]]
     [[ "$output" == *"context/growth-loop.md"* ]]
     [[ "$output" != *"NO_MATCH"* ]]
+}
+
+@test "unmatched first layer returns memory DB FTS hits before LLM fallback" {
+    archive_dir="$TEST_TMPDIR/archive"
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
+    cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"aliases未登録語の検索","detail":"DB FTS5フォールバックだけが拾える到達不能語 foobarmemoryonly"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$archive_dir" \
+        --db "$db_path"
+    [ "$status" -eq 0 ]
+
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MEMORY_DB_MATCH: foobarmemoryonly"* ]]
+    [[ "$output" == *"memory_db_fts_results:"* ]]
+    [[ "$output" == *"aliases未登録語の検索"* ]]
+    [[ "$output" != *"should-not-run"* ]]
 }
 
 @test "--llm forces LLM search even when aliases match" {
