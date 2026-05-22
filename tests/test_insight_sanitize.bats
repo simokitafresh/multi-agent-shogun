@@ -11,6 +11,7 @@ setup_file() {
 
 setup() {
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/insight_test.XXXXXX")"
+    export INSIGHT_SOURCE_REPEAT_THRESHOLD=0
     mkdir -p "$TEST_TMPDIR/queue"
     echo "insights: []" > "$TEST_TMPDIR/queue/insights.yaml"
     mkdir -p "$TEST_TMPDIR/scripts"

@@ -14,7 +14,8 @@ setup_file() {
 setup() {
     TEST_TMPDIR="$(mktemp -d)"
     export TEST_TMPDIR
-    TEST_CMD_ID="cmd_envtest_${BATS_TEST_NUMBER:-0}_$$"
+    TEST_TMP_TOKEN="$(basename "$TEST_TMPDIR" | tr -cd '[:alnum:]_-' | cut -c1-24)"
+    TEST_CMD_ID="cmd_envtest_${BATS_TEST_NUMBER:-0}_${TEST_TMP_TOKEN}_$$"
     export TEST_CMD_ID
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
     export TEST_ARCHIVE_DIR="$TEST_TMPDIR/archive"
@@ -29,6 +30,7 @@ setup() {
 }
 
 teardown() {
+    [[ -n "${TEST_CMD_ID:-}" ]] && rm -f /tmp/cmd_save_prior_attempts_"$TEST_CMD_ID"_*.cache
     rm -rf "$TEST_TMPDIR"
 }
 
