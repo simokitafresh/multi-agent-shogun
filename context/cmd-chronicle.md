@@ -693,3 +693,4 @@
 | cmd_3000 | Google Chrome公式のAIエージェント向けモダンWeb APIスキルを導入し、FE開発品質を向上させる | infra | 05-22 | Modern Web Guidanceを導入し、semant |
 | cmd_3001 | 記憶DBのスキーマ+event_type分布+サンプル行をmemory_db_import.pyの--build後に自動生成し、LLMが自然言語→SQL変換できる基盤を構築する | infra | 05-22 | memory_db_import.pyのschema mar |
 | cmd_3002 | memory_db_query.shにSELECT以外のSQL(DELETE/UPDATE/DROP等)をBLOCKするガードを追加し、記憶DBの安全な汎用クエリ実行を保証する | infra | 05-22 | memory_db_query.shにSELECT-only |
+| cmd_3005 | 全PJ(dm-signal/infra/google-classroom/database/simple-ocr等)のドキュメントファイルを棚卸しし、記憶DBに投入すべき知識資産の全体像を把握する | infra | 05-22 | 全登録PJのmd/yaml/yml/txt/rstをフル走査 |
