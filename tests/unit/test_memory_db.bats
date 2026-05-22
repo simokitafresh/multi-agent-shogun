@@ -624,3 +624,62 @@ PY
     [ "${result[0]}" = "workaround|karo|hayate|report_yaml_format|manual workaround recorded|manual workaround recorded|root_cause: manual fix applied|category: report_yaml_format|ninja: hayate|cmd_2990|high|logs/karo_workarounds.yaml" ]
     [ "${result[1]}" = "1" ]
 }
+
+@test "memory_db_import extracts obsidian links into event_links table" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"shogun","direction":"response","summary":"[[3層記憶モデル]]の設計","detail":"[[Obsidianリンク未連携]]と[[event_links因果辺]]を接続する。[[3層記憶モデル]]参照。"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","direction":"inbound","summary":"確認","detail":"[[event_links因果辺]]のクエリ動作確認"}
+{"ts":"2026-05-22T12:02:00+09:00","agent":"shogun","direction":"response","summary":"リンクなし","detail":"通常のテキストのみ"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+# AC1: event_links table exists with correct columns
+tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+cols = [row[1] for row in conn.execute("PRAGMA table_info(event_links)")]
+print("event_links" in tables)
+print(",".join(cols))
+# AC2: obsidian links extracted
+total = conn.execute("SELECT COUNT(*) FROM event_links").fetchone()[0]
+print(total > 0)
+row3 = conn.execute(
+    "SELECT COUNT(*) FROM event_links WHERE target_concept='3層記憶モデル'"
+).fetchone()[0]
+print(row3)
+link_type = conn.execute("SELECT DISTINCT link_type FROM event_links").fetchone()[0]
+print(link_type)
+# AC3: top-concept aggregation query
+rows = conn.execute(
+    "SELECT target_concept, COUNT(*) FROM event_links GROUP BY target_concept ORDER BY COUNT(*) DESC LIMIT 5"
+).fetchall()
+top_concept = rows[0][0]
+top_count = rows[0][1]
+print(top_concept)
+print(top_count >= 2)
+# no links for plain-text event
+no_links_event_count = conn.execute(
+    """
+    SELECT COUNT(*) FROM events e
+    WHERE e.summary='リンクなし'
+      AND EXISTS (SELECT 1 FROM event_links el WHERE el.source_event_id = e.id)
+    """
+).fetchone()[0]
+print(no_links_event_count == 0)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "source_event_id,target_concept,link_type" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" -ge 1 ]
+    [ "${result[4]}" = "obsidian" ]
+    [ "${result[5]}" = "event_links因果辺" ]
+    [ "${result[6]}" = "True" ]
+    [ "${result[7]}" = "True" ]
+}
