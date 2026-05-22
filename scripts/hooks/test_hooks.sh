@@ -10,8 +10,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "${REPO_ROOT}/scripts/lib/pre_bash_combined_guard.sh"
 
 APPROVAL_FILE="$(mktemp)"
+MEMORY_DB_FILE="$(mktemp)"
 export PRE_BASH_LORD_CONVERSATION_FILE="$APPROVAL_FILE"
-trap 'rm -f "$APPROVAL_FILE"' EXIT
+trap 'rm -f "$APPROVAL_FILE" "$MEMORY_DB_FILE"' EXIT
 
 PASS=0
 FAIL=0
@@ -53,6 +54,56 @@ expect_block() {
         printf "  FAIL [expected BLOCK] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
     fi
 }
+
+expect_memory_context() {
+    local desc="$1" cmd="$2" agent="$3" must_have="$4" must_not_have="$5"
+    TOTAL=$((TOTAL + 1))
+    local output rc
+    output="$(MEMORY_DB_QUERY_DB="$MEMORY_DB_FILE" pre_bash_combined_eval_command "$cmd" "$REPO_ROOT" "$agent" 2>/dev/null)" && rc=$? || rc=$?
+    if [[ $rc -eq 0 && "$output" == *"$must_have"* && ( -z "$must_not_have" || "$output" != *"$must_not_have"* ) ]]; then
+        PASS=$((PASS + 1))
+    else
+        FAIL=$((FAIL + 1))
+        printf "  FAIL [expected MEMORY CONTEXT] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
+    fi
+}
+
+expect_no_memory_context() {
+    local desc="$1" cmd="$2" agent="$3"
+    TOTAL=$((TOTAL + 1))
+    local output rc
+    output="$(MEMORY_DB_QUERY_DB="$MEMORY_DB_FILE" pre_bash_combined_eval_command "$cmd" "$REPO_ROOT" "$agent" 2>/dev/null)" && rc=$? || rc=$?
+    if [[ $rc -eq 0 && "$output" != *"memory-db自動注入"* ]]; then
+        PASS=$((PASS + 1))
+    else
+        FAIL=$((FAIL + 1))
+        printf "  FAIL [expected NO MEMORY CONTEXT] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
+    fi
+}
+
+sqlite3 "$MEMORY_DB_FILE" <<'SQL'
+CREATE TABLE events (
+  id TEXT PRIMARY KEY,
+  ts TEXT,
+  event_type TEXT,
+  agent TEXT,
+  target TEXT,
+  direction TEXT,
+  summary TEXT,
+  detail TEXT,
+  session_id TEXT,
+  cmd_id TEXT,
+  concepts TEXT,
+  source_file TEXT,
+  parent_event_id INTEGER,
+  importance TEXT
+);
+INSERT INTO events(id, ts, event_type, agent, target, direction, summary, detail)
+VALUES
+  ('e1', '2026-05-22T10:00:00', 'conversation', 'lord', 'saizo', 'inbound', 'needle saizo only', 'detail'),
+  ('e2', '2026-05-22T10:01:00', 'conversation', 'lord', 'shogun', 'inbound', 'needle shogun hidden', 'detail'),
+  ('e3', '2026-05-22T10:02:00', 'conversation', 'karo', 'saizo', 'task_assigned', 'needle karo hidden', 'detail');
+SQL
 
 echo "=== pre-bash-combined.sh Guard Tests ==="
 echo "Hook: pre_bash_combined_eval_command"
@@ -173,6 +224,13 @@ expect_block "capture-pane -S -10"  "tmux capture-pane -p -S -10"
 expect_allow "capture-pane -S -30"  "tmux capture-pane -p -S -30"
 expect_allow "capture-pane -S -50"  "tmux capture-pane -p -S -50"
 expect_allow "capture-pane -S -100" "tmux capture-pane -p -S -100"
+
+# ─── Guard 7: knowledge grep memory injection ───
+echo "--- Guard 7: knowledge grep memory injection ---"
+expect_memory_context "rg knowledge path injects lord->target rows" "rg -n needle context/infrastructure.md" "saizo" "needle saizo only" "needle shogun hidden"
+expect_memory_context "grep knowledge path injects same query" "grep -R needle docs/research" "saizo" "needle saizo only" "needle karo hidden"
+expect_no_memory_context "gate script grep is excluded" "grep -R needle scripts/gates" "saizo"
+expect_no_memory_context "non-knowledge grep is excluded" "rg -n needle scripts" "saizo"
 
 # ─── Safe commands (should all pass through) ───
 echo "--- Safe commands (all should ALLOW) ---"

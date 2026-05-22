@@ -35,6 +35,123 @@ _pre_bash_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
 unset _pre_bash_self
 
+knowledge_grep_query() {
+    COMMAND="$command" python3 - <<'PY'
+import os
+import re
+import shlex
+
+command = os.environ.get("COMMAND", "")
+knowledge_roots = ("context", "docs", "projects", "memory")
+infra_roots = ("scripts/gates/", "scripts/hooks/", ".claude/hooks/")
+
+
+def split_segments(cmd: str):
+    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+
+
+def normalize_tokens(segment: str):
+    try:
+        tokens = shlex.split(segment, posix=True)
+    except ValueError:
+        return []
+    while tokens and "=" in tokens[0] and not tokens[0].startswith("-") and tokens[0].split("=", 1)[0].isidentifier():
+        tokens = tokens[1:]
+    if tokens and tokens[0] == "timeout":
+        tokens = tokens[2:] if len(tokens) > 2 and tokens[1].replace(".", "", 1).isdigit() else tokens[1:]
+    if tokens and tokens[0] == "command":
+        tokens = tokens[1:]
+    return tokens
+
+
+def is_knowledge_path(token: str) -> bool:
+    clean = token.strip("'\"")
+    clean = clean[2:] if clean.startswith("./") else clean
+    root = clean.split("/", 1)[0]
+    return root in knowledge_roots
+
+
+def is_infra_path(token: str) -> bool:
+    clean = token.strip("'\"")
+    clean = clean[2:] if clean.startswith("./") else clean
+    return any(clean.startswith(root) for root in infra_roots)
+
+
+def extract_query(tokens: list[str], tool_index: int) -> str:
+    tool = os.path.basename(tokens[tool_index])
+    query = ""
+    i = tool_index + 1
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in ("-e", "--regexp", "--pattern") and i + 1 < len(tokens):
+            return tokens[i + 1]
+        if tok in ("-f", "--file", "-m", "--max-count", "-A", "-B", "-C", "--context") and i + 1 < len(tokens):
+            i += 2
+            continue
+        if tok.startswith("-"):
+            i += 1
+            continue
+        if not is_knowledge_path(tok):
+            query = tok
+        break
+    return query
+
+
+for segment in split_segments(command):
+    tokens = normalize_tokens(segment)
+    for idx, token in enumerate(tokens):
+        if os.path.basename(token) not in {"grep", "rg"}:
+            continue
+        if any(is_infra_path(tok) for tok in tokens[idx + 1:]):
+            continue
+        if not any(is_knowledge_path(tok) for tok in tokens[idx + 1:]):
+            continue
+        query = extract_query(tokens, idx)
+        if query:
+            print(query)
+            raise SystemExit(0)
+raise SystemExit(0)
+PY
+}
+
+emit_memory_db_for_knowledge_grep() {
+    local query agent_id hash_file now last rows sql query_sql agent_sql like_sql
+    query="$(knowledge_grep_query || true)"
+    [[ -z "$query" ]] && return 0
+
+    agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
+    [[ -z "$agent_id" ]] && agent_id="unknown"
+
+    hash_file="/tmp/pre_bash_memory_inject_$(printf '%s' "${agent_id}|${query}" | cksum | awk '{print $1}')"
+    now="$(date +%s)"
+    last="$(stat -c %Y "$hash_file" 2>/dev/null || echo 0)"
+    if [ $((now - last)) -lt "${PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC:-30}" ]; then
+        return 0
+    fi
+    : > "$hash_file" 2>/dev/null || true
+
+    query_sql="${query//\'/\'\'}"
+    agent_sql="${agent_id//\'/\'\'}"
+    like_sql="%${query_sql}%"
+    sql="SELECT ts || ' | ' || substr(summary,1,180) FROM events WHERE agent='lord' AND target='${agent_sql}' AND (summary LIKE '${like_sql}' OR detail LIKE '${like_sql}') ORDER BY ts DESC LIMIT 5;"
+    rows="$(bash "$SCRIPT_DIR/scripts/memory_db_query.sh" "$sql" 2>/dev/null || true)"
+    [[ -z "$rows" ]] && rows="該当なし (agent=lord target=${agent_id})"
+    INJECT_QUERY="$query" INJECT_AGENT="$agent_id" INJECT_ROWS="$rows" python3 - <<'PY'
+import json
+import os
+
+query = os.environ.get("INJECT_QUERY", "")
+agent = os.environ.get("INJECT_AGENT", "")
+rows = os.environ.get("INJECT_ROWS", "")
+message = (
+    "★memory-db自動注入: knowledge grep/rg検知。"
+    f" query={query!r} target={agent!r} agent='lord'のみ\n"
+    f"{rows}"
+)
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": message}}, ensure_ascii=False))
+PY
+}
+
 destructive_approval_reason() {
     local conversation_file="${PRE_BASH_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
     COMMAND="$command" LORD_CONVERSATION_FILE="$conversation_file" python3 - <<'PY'
@@ -276,7 +393,7 @@ fi
    "$payload" != *'dd '* && "$payload" != *'chrome'* && "$payload" != *'chromium'* && \
    "$payload" != *'curl'* && "$payload" != *'wget'* && \
    "$payload" != *'chmod'* && "$payload" != *'chown'* && \
-   "$payload" != *'tmux kill'* ]] && exit 0
+   "$payload" != *'tmux kill'* ]] && { emit_memory_db_for_knowledge_grep; exit 0; }
 
 # Dangerous keyword detected — extract command and run python3 checker
 [[ -z "${command:-}" ]] && exit 0
@@ -498,5 +615,7 @@ PY
 if [ -n "$reason" ]; then
     emit_deny "$reason"
 fi
+
+emit_memory_db_for_knowledge_grep
 
 exit 0

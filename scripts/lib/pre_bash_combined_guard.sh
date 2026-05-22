@@ -321,9 +321,123 @@ if not approved:
 PY
 }
 
+pre_bash_combined_knowledge_grep_query() {
+    local command="$1"
+
+    COMMAND="$command" python3 - <<'PY'
+import os
+import re
+import shlex
+
+command = os.environ.get("COMMAND", "")
+knowledge_roots = ("context", "docs", "projects", "memory")
+infra_roots = ("scripts/gates/", "scripts/hooks/", ".claude/hooks/")
+
+
+def split_segments(cmd: str):
+    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+
+
+def normalize_tokens(segment: str):
+    try:
+        tokens = shlex.split(segment, posix=True)
+    except ValueError:
+        return []
+    while tokens and "=" in tokens[0] and not tokens[0].startswith("-") and tokens[0].split("=", 1)[0].isidentifier():
+        tokens = tokens[1:]
+    if tokens and tokens[0] == "timeout":
+        tokens = tokens[2:] if len(tokens) > 2 and tokens[1].replace(".", "", 1).isdigit() else tokens[1:]
+    if tokens and tokens[0] == "command":
+        tokens = tokens[1:]
+    return tokens
+
+
+def is_knowledge_path(token: str) -> bool:
+    clean = token.strip("'\"")
+    clean = clean[2:] if clean.startswith("./") else clean
+    root = clean.split("/", 1)[0]
+    return root in knowledge_roots
+
+
+def is_infra_path(token: str) -> bool:
+    clean = token.strip("'\"")
+    clean = clean[2:] if clean.startswith("./") else clean
+    return any(clean.startswith(root) for root in infra_roots)
+
+
+def extract_query(tokens: list[str], tool_index: int) -> str:
+    query = ""
+    i = tool_index + 1
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in ("-e", "--regexp", "--pattern") and i + 1 < len(tokens):
+            return tokens[i + 1]
+        if tok in ("-f", "--file", "-m", "--max-count", "-A", "-B", "-C", "--context") and i + 1 < len(tokens):
+            i += 2
+            continue
+        if tok.startswith("-"):
+            i += 1
+            continue
+        if not is_knowledge_path(tok):
+            query = tok
+        break
+    return query
+
+
+for segment in split_segments(command):
+    tokens = normalize_tokens(segment)
+    for idx, token in enumerate(tokens):
+        if os.path.basename(token) not in {"grep", "rg"}:
+            continue
+        if any(is_infra_path(tok) for tok in tokens[idx + 1:]):
+            continue
+        if not any(is_knowledge_path(tok) for tok in tokens[idx + 1:]):
+            continue
+        query = extract_query(tokens, idx)
+        if query:
+            print(query)
+            raise SystemExit(0)
+raise SystemExit(0)
+PY
+}
+
+pre_bash_combined_memory_injection_context() {
+    local command="$1"
+    local project_root="$2"
+    local agent_id="${3:-unknown}"
+    local query rows sql query_sql agent_sql like_sql db_script
+
+    query="$(pre_bash_combined_knowledge_grep_query "$command" || true)"
+    [[ -z "$query" ]] && return 0
+
+    query_sql="${query//\'/\'\'}"
+    agent_sql="${agent_id//\'/\'\'}"
+    like_sql="%${query_sql}%"
+    db_script="$project_root/scripts/memory_db_query.sh"
+    sql="SELECT ts || ' | ' || substr(summary,1,180) FROM events WHERE agent='lord' AND target='${agent_sql}' AND (summary LIKE '${like_sql}' OR detail LIKE '${like_sql}') ORDER BY ts DESC LIMIT 5;"
+    rows="$(bash "$db_script" "$sql" 2>/dev/null || true)"
+    [[ -z "$rows" ]] && rows="該当なし (agent=lord target=${agent_id})"
+    INJECT_QUERY="$query" INJECT_AGENT="$agent_id" INJECT_ROWS="$rows" python3 - <<'PY'
+import json
+import os
+
+query = os.environ.get("INJECT_QUERY", "")
+agent = os.environ.get("INJECT_AGENT", "")
+rows = os.environ.get("INJECT_ROWS", "")
+message = (
+    "★memory-db自動注入: knowledge grep/rg検知。"
+    f" query={query!r} target={agent!r} agent='lord'のみ\n"
+    f"{rows}"
+)
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": message}}, ensure_ascii=False))
+PY
+}
+
 pre_bash_combined_eval_command() {
     local command="${1:-}"
     local project_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    local agent_id="${3:-${AGENT_ID:-unknown}}"
+    local memory_context=""
     local read_log=""
     local inbox_pattern=""
     local recent_reads=""
@@ -419,6 +533,8 @@ pre_bash_combined_eval_command() {
           "$command" != *'curl'* && "$command" != *'wget'* && \
           "$command" != *'chmod'* && "$command" != *'chown'* && \
           "$command" != *'tmux kill'* ]]; then
+        memory_context="$(pre_bash_combined_memory_injection_context "$command" "$project_root" "$agent_id" || true)"
+        [[ -n "$memory_context" ]] && printf '%s\n' "$memory_context"
         return 0
     fi
 
@@ -431,7 +547,11 @@ pre_bash_combined_eval_command() {
     reason="$(pre_bash_combined_destructive_reason "$command" "$project_root")"
     if [[ -n "$reason" ]]; then
         pre_bash_combined_emit_deny "$reason"
+        return 0
     fi
+
+    memory_context="$(pre_bash_combined_memory_injection_context "$command" "$project_root" "$agent_id" || true)"
+    [[ -n "$memory_context" ]] && printf '%s\n' "$memory_context"
     return 0
 }
 
