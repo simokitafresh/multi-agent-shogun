@@ -1,21 +1,22 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-23 auto-generated -->
+<!-- last_updated: 2026-05-24 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-23T23:09:23+09:00 -->
+<!-- generated_at: 2026-05-24T00:02:02+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-24T00:02:01+09:00 | terminal | response | context鮮度ALERT処理済み。全忍者idle、cmd待ち状態。新規cmdなし。 [meta] stop_reason=end_turn
+- 2026-05-24T00:01:20+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(24日)
+- 2026-05-23T23:51:48+09:00 | terminal | response | データは豊富。7年(2025)と8年(2026)のコースが混在している。8年(2026年度)が現在の学年と推測。 **8年(現学年)の中間試験対象科目:** | 科目 | コース名 | データ | |------|---------|--…
+- 2026-05-23T23:50:56+09:00 | terminal | inbound | 6月に中間試験がある。その対策をしたい。科目ごとにLLMで分析できるか？
+- 2026-05-23T23:19:55+09:00 | terminal | response | Google Classroom PJ内に6つのスキルがある: | スキル | 機能 | 出力 | |--------|------|------| | **local-dashboard-update** | スクレイプ→ダッシュボード…
+- 2026-05-23T23:18:35+09:00 | terminal | inbound | classroom内にあるスキルは？
+- 2026-05-23T23:17:53+09:00 | terminal | response | Google Classroomプロジェクトの機能一覧: | スクリプト | 機能 | |-----------|------| | `auto_login.py` | Google認証の自動ログイン(Playwright) | | `s…
+- 2026-05-23T23:17:14+09:00 | terminal | inbound | どんなスキルがある？
 - 2026-05-23T23:09:22+09:00 | terminal | response | Google Classroom PJの現状: - **Playwright headless**でGoogle Classroomをスクレイピング → ダッシュボード生成 - **status: active, priority: hi…
 - 2026-05-23T23:09:09+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(gunshi)を自動再起動しました
-- 2026-05-23T23:08:39+09:00 | terminal | inbound | google classroomの話をしよう
-- 2026-05-23T23:08:27+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
-- 2026-05-23T16:53:05+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
-- 2026-05-23T16:42:53+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2855 (duration=2466s, median=331.0s, ratio=7.45x, delta=+2135.0s) WARNING: ta…
-- 2026-05-23T15:52:36+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
-- 2026-05-23T14:52:24+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
-- 2026-05-23T13:47:14+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
-- 2026-05-23T13:13:03+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(tobisaru)を自動再起動しました
 
 ## 未解決確認事項
+- Google Classroomプロジェクトの機能一覧: | スクリプト | 機能 | |-----------|------| | `auto_login.py` | Google認証の自動ログイン(Playwright) | | `scrape_classroom.py` …
 - **CI GREEN復帰確認**。修正push(9869fb7b)でCI全テストPASS。 hayate(cmd_3021)完了報告を待機。 [meta] stop_reason=end_turn
 - 十分な情報が得られた。殿に回答する。 NewStandardプランで保有シグナルまで確認できるのは**GSシン分身シリーズ3体**。 | PF | CAGR | 累積(14年) | MaxDD | 特徴 | |---|---|---|---|---| | **GSシン分身-激攻…
 - 4件全てGATE CLEAR。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_3017 | cmd_save.sh殿発言検索targetフィルタ | CLEAR | | cmd_3018 | CI check failed誤検知修正…
@@ -23,7 +24,6 @@
 - cmd_3020 GATE CLEAR確認。全4件(cmd_3017/3018/3019/3020)GATE CLEAR完了。 inbox未読0件。レビュー依頼を待つ。idle自走継続可能。 [meta] stop_reason=end_turn
 - cmd_3017 GATE背景タスク完了確認。既に処理済み（GATE CLEAR+push完了）。 cmd_3020のhayate完了報告を待機中。 [meta] stop_reason=end_turn
 - 確認完了。cmd_3020の進捗を待つ。本セッション4件起票中3件GATE CLEAR、残り1件進行中。殿の指示を待つ。 [meta] stop_reason=end_turn
-- **Step 4**: 掲示板投稿不要（REQUEST_CHANGES normal、FAIL/REJECTではない）。 review-bundle完了。 --- **レビュー結果まとめ**: **cmd_3017**: REQUEST_CHANGES (severity: n…
 
 ## 殿の直近裁定・方針（直近24h）
 - 2026-05-23T23:09:22+09:00 | Google Classroom PJの現状: - **Playwright headless**でGoogle Classroomをスクレイピング → ダッシュボード生成 - **status: active, priority: high**（2026-03-23殿裁定でP…
