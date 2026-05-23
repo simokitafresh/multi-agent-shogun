@@ -34,6 +34,17 @@ with engine.connect() as conn:
 
 **理由**: `create_db_engine()`が`.env`読込+URL変換+接続プール設定を全て内包。
 
+### 実行場所と文字コード
+
+```bash
+cd /mnt/c/Python_app/DM-signal/backend
+PYTHONIOENCODING=utf-8 /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe your_check.py
+```
+
+- cwdは`/mnt/c/Python_app/DM-signal/backend`にする。`.env`相対読込の失敗を避ける。
+- WSL側`python3`に依存しない。`sqlalchemy`等が無い場合はプロジェクトの`.venv/Scripts/python.exe`を使う。
+- 日本語PF名を出す確認では`PYTHONIOENCODING=utf-8`を付ける。
+
 ---
 
 ## テーブルスキーマ（よく使う10テーブル）
@@ -100,6 +111,37 @@ p6, p12, p24, label, g1_slope_6, g1_slope_12
 PK: portfolio_id
 years, metrics_json(json), calculated_at, data_start_date, data_end_date, months_count
 ```
+**metrics_json実キー**: `portfolio_id`, `portfolio_name`, `benchmark_ticker`, `period_months`, `start_date`, `end_date`, `total_return`, `total_return_open`, `benchmark_total_return`, `benchmark_total_return_open`, `metrics`
+**注意**: DB型は`json`。PostgreSQLの`?`演算子を使う時は`metrics_json::jsonb ? 'total_return'`のようにcastする。
+
+### viewer_tiers — Tier名とID
+```
+PK: id(varchar/UUID)
+name(Basic/Standard/NewStandard/premium等), display_order, password_env_key
+created_at, updated_at, password_expires_at, last_rotated_at
+```
+**注意**: note.comの「スタンダードプラン(¥8,000)」はDB上`NewStandard`。古参¥4,000は`Standard`。
+
+### tier_visibility_settings — Tier別PF閲覧設定
+```
+PK: id(integer)
+tier_id(varchar/UUID, viewer_tiers.idへのFK, unique)
+hidden_pages(json), portfolio_settings(json), folder_settings(json), updated_at
+```
+**portfolio_settings JSON構造**:
+```json
+{
+  "<portfolio_id>": {
+    "hide_portfolio": false,
+    "hide_signal": false,
+    "hide_components": true
+  }
+}
+```
+- `hide_portfolio=true`: PF自体を非表示。Viewer APIでは404/一覧除外。
+- `hide_signal=true`: 保有シグナルをマスク。
+- `hide_components=true`: 構成tickerをマスク。
+- 設定が無いPFは安全側で非表示扱い。Tier別設定が優先、無ければglobal設定へfallback。
 
 ### fof_rebalance_decisions — リバランス判定履歴
 ```
@@ -204,6 +246,35 @@ conn.execute(text("""
     WHERE portfolio_id = :pid ORDER BY year_month DESC LIMIT 6
 """), {'pid': pf_id}).fetchall()
 ```
+
+### 11. Tier別PF閲覧確認（NewStandard）
+```python
+rows = conn.execute(text("""
+    WITH target_tier AS (
+        SELECT id, name
+        FROM viewer_tiers
+        WHERE name = :tier_name
+    ), tier_settings AS (
+        SELECT tvs.tier_id, tvs.portfolio_settings
+        FROM tier_visibility_settings tvs
+        JOIN target_tier tt ON tt.id = tvs.tier_id
+    )
+    SELECT p.id, p.name, p.type,
+           COALESCE((ts.portfolio_settings -> p.id ->> 'hide_portfolio')::boolean, true) AS hide_portfolio,
+           COALESCE((ts.portfolio_settings -> p.id ->> 'hide_signal')::boolean, false) AS hide_signal,
+           COALESCE((ts.portfolio_settings -> p.id ->> 'hide_components')::boolean, false) AS hide_components,
+           pm.metrics_json::jsonb ? 'total_return' AS has_total_return,
+           pm.metrics_json::jsonb ? 'metrics' AS has_metrics
+    FROM portfolios p
+    CROSS JOIN tier_settings ts
+    LEFT JOIN portfolio_metrics pm
+      ON pm.portfolio_id = p.id AND pm.years = 0
+    WHERE COALESCE((ts.portfolio_settings -> p.id ->> 'hide_portfolio')::boolean, true) = false
+    ORDER BY p.name
+    LIMIT :limit
+"""), {'tier_name': 'NewStandard', 'limit': 20}).mappings().all()
+```
+**判定**: `rows`が1件以上、`hide_portfolio=False`、必要に応じて`has_total_return=True`/`has_metrics=True`ならNewStandardで閲覧可能なPFに到達できている。
 
 ---
 
