@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-05-23 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-23T09:24:51+09:00 -->
+<!-- generated_at: 2026-05-23T11:05:21+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-23T11:05:21+09:00 | terminal | response | 内部設定で10年刻みのコードがあるわけではない。 秘奥義の**データ開始日が2016-03-31**（鉄壁のみ2015-03-31）で、これは構成する忍法PFのシグナル開始日に依存している。2016-03→2026-05 = 122ヶ月 …
+- 2026-05-23T11:04:48+09:00 | terminal | inbound | なんで10年という中途半端な数字を出したの？なんか内部設定に10年という刻みのコードが隠れてる？
+- 2026-05-23T10:38:52+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2855 (duration=2466s, median=331.0s, ratio=7.45x, delta=+2135.0s) WARNING: ta…
+- 2026-05-23T10:32:49+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
+- 2026-05-23T10:26:03+09:00 | terminal | response | 本番DB最新値（2026-05-22計算、data_end=2026-05-31）: **秘奥義シリーズ（全4体、FoF型）** | PF | 累積リターン | SPY比 | 期間 | |---|---|---|---| | **秘奥義-…
+- 2026-05-23T10:25:29+09:00 | terminal | inbound | 秘奥義のパフォーマンスは？
+- 2026-05-23T09:53:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-23 09:40:50|CI緑: run 26318316361
+- 2026-05-23T09:38:30+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-23 09:24:21|cmd_3021
+- 2026-05-23T09:28:45+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(23日)
 - 2026-05-23T09:24:51+09:00 | terminal | response | inbox未読0件。全件処理済み。idle自走継続。 [meta] stop_reason=tool_use
-- 2026-05-23T09:24:42+09:00 | terminal | response | cmd_3020 GATE CLEAR。本セッション5件全てGATE CLEAR。 | cmd | 内容 | 状態 | |-----|------|------| | cmd_3017 | cmd_save.sh targetフィルタ |…
-- 2026-05-23T09:24:34+09:00 | terminal | response | **cmd_3021 GATE CLEAR** ✓。本セッション全cmd完了: | cmd | 忍者 | 結果 | |-----|------|------| | cmd_3017 | hayate | **GATE CLEAR** ✓ …
-- 2026-05-23T09:24:24+09:00 | terminal | response | cmd_3021 LGTM送信+GATEトリガー完了。 [meta] stop_reason=end_turn
-- 2026-05-23T09:23:37+09:00 | terminal | response | cmd_3021 WA clean記録+軍師レビュー依頼送信完了。LGTM+GATE CLEARを待機。 [meta] stop_reason=end_turn
-- 2026-05-23T09:20:13+09:00 | terminal | response | hayate(cmd_3021)完了報告を待機。 [meta] stop_reason=end_turn
-- 2026-05-23T09:19:52+09:00 | terminal | response | cmd_3021 APPROVE送信完了。報告待ち。 [meta] stop_reason=tool_use
-- 2026-05-23T09:19:19+09:00 | terminal | response | **CI GREEN復帰確認**。修正push(9869fb7b)でCI全テストPASS。 hayate(cmd_3021)完了報告を待機。 [meta] stop_reason=end_turn
-- 2026-05-23T09:17:59+09:00 | terminal | response | BLOCK: timeout_minutes未記入。これはSKILL.md追記のみで「計測/研究」ではないがcommand欄のキーワードでマッチした偽陽性。timeout_minutesを記入して解消。 [meta] stop_reaso…
-- 2026-05-23T09:14:49+09:00 | terminal | inbound | コンセッションで試行錯誤 を学習して次から一発でできるように 試行錯誤 せずに1回でスムーズにできるようにする必要があるな
 
 ## 未解決確認事項
 - **CI GREEN復帰確認**。修正push(9869fb7b)でCI全テストPASS。 hayate(cmd_3021)完了報告を待機。 [meta] stop_reason=end_turn
@@ -40,7 +40,6 @@
 - cmd_30
 - cmd_301
 - cmd_2722
-- cmd_2825
 - cmd_2855
 - cmd_3000
 - cmd_3004
