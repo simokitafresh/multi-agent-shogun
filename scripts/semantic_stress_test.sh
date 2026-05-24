@@ -288,11 +288,27 @@ OPERATIONAL_NOISE_RE = re.compile(
     r"|サボり"
 )
 
+CONCEPT_HINT_RE = re.compile(
+    r"(?ix)"
+    r"意味検索|セマンティック|semantic|aliases?|alias|概念|索引|辞書|obsidian|"
+    r"gate|hook|cmd|inbox|bulletin|insight|memory|context|lesson|"
+    r"自動化|計測|検証|品質|成長|因果|学習|設計|実装|修正|改善|"
+    r"CI|DB|API|frontend|backend|deploy|review|test"
+)
+
 STRUCTURAL_METADATA_RE = re.compile(
     r"(?ix)"
     r"^(?:title|type|node\s*id)\b"
     r"|^modules$"
 )
+
+MIN_INSIGHT_QUERY_CHARS = int(__import__("os").environ.get("SEMANTIC_STRESS_MIN_INSIGHT_CHARS", "12"))
+
+def semantic_query_length(text):
+    return len(re.sub(r"\s+", "", str(text)))
+
+def has_concept_hint(text):
+    return bool(CONCEPT_HINT_RE.search(str(text)))
 
 def is_semantic_wiki_target(target):
     target_s = str(target).strip()
@@ -310,6 +326,12 @@ def is_semantic_wiki_target(target):
     if STRUCTURAL_METADATA_RE.search(target_n):
         return False
     return bool(target_n)
+
+def should_record_no_match(row, alias):
+    query = row.get("query", "")
+    if semantic_query_length(query) < MIN_INSIGHT_QUERY_CHARS and not has_concept_hint(query) and not has_concept_hint(alias):
+        return False
+    return True
 
 sources = {}
 total = len(rows)
@@ -332,7 +354,7 @@ seen = set()
 for row in no_matches:
     alias = alias_candidate(row["query"])
     key = alias.casefold()
-    if alias and is_semantic_wiki_target(alias) and key not in seen:
+    if alias and should_record_no_match(row, alias) and is_semantic_wiki_target(alias) and key not in seen:
         seen.add(key)
         candidates.append({"alias": alias, "source": row["source"], "query": row["query"]})
 

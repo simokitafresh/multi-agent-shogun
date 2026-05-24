@@ -134,3 +134,26 @@ EOF
     ! grep -q 'title: セマンティクスマップ' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'modules' "$TEST_TMPDIR/queue/insights.yaml"
 }
+
+@test "candidate aliases: short mundane NO_MATCH is not written but long conceptual NO_MATCH is written" {
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"そうだな"}
+{"content":"セマンティック辞書の未カバー概念を追加して検索品質を改善する"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/short-baseline.json" \
+        --log "$TEST_TMPDIR/logs/short-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidate_aliases=1"* ]]
+    [[ "$output" == *"セマンティック辞書の未カバー概念を追加して検索品質を改善する (lord)"* ]]
+    grep -q '\[\[セマンティック辞書の未カバー概念を追加して検索品質を改善する\]\]' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'そうだな' "$TEST_TMPDIR/queue/insights.yaml"
+}
