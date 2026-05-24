@@ -756,6 +756,25 @@ codd:
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_6_20260521205341]]` (L666) |
 | causal_chain | `[[cmd_2995]]` (L687) |
 
+## file_rename — ファイルリネーム
+
+| 属性 | 値 |
+|------|---|
+| id | file_rename |
+| label | ファイルリネーム |
+| aliases | ファイルリネーム, ファイル名整理, ファイル名変更, リネーム, 命名規則, Drive整理, PDF整理, rename_patterns, file-rename |
+| skills | file-rename |
+| related_concepts | skill_design_rules, semantic_dictionary_design, local_memory_db |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `skills/file-rename/SKILL.md` |
+| file | `memory/reference_drive_file_organize.md` |
+| cmd | `cmd_3041` file-renameスキル新規作成 |
+| cmd | `cmd_3042` file-renameスキルに日付3列+正規化ルール追加 |
+| causal | `cmd_3041` origin: [[Drive整理31%不正確_20260524]] -> [[殿指示_汎用スキル化]] -> [[file-rename SKILL.md作成]] |
+| causal | `cmd_3042` origin: [[殿指示_日付重要+正規化_20260524]] -> [[cmd_3041未反映2項目]] -> [[補足cmd追加]] |
+
 ## modern_web_guidance — Modern Web Guidance
 
 | 属性 | 値 |
