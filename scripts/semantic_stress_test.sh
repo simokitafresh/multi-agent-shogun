@@ -304,7 +304,10 @@ STRUCTURAL_METADATA_RE = re.compile(
     r"|^modules$"
 )
 
-MIN_INSIGHT_QUERY_CHARS = int(__import__("os").environ.get("SEMANTIC_STRESS_MIN_INSIGHT_CHARS", "12"))
+try:
+    MIN_INSIGHT_QUERY_CHARS = int(__import__("os").environ.get("SEMANTIC_STRESS_MIN_INSIGHT_CHARS", "12"))
+except (ValueError, TypeError):
+    MIN_INSIGHT_QUERY_CHARS = 12
 
 def semantic_query_length(text):
     return len(re.sub(r"\s+", "", str(text)))
