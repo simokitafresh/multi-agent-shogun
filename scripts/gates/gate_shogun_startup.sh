@@ -2188,10 +2188,82 @@ PY
         while IFS= read -r _streak_key; do
             [ -n "$_streak_key" ] || continue
             echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
+            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
             alerts+=("startup連続出現BLOCK: ${_streak_key}")
+            alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"
         overall="BLOCK"
     fi
+fi
+
+echo "■ 前セッションの先送り穴一覧"
+_deferred_holes=$(python3 - "$STARTUP_ALERT_HISTORY" <<'PY' 2>/dev/null || true
+import sys
+from collections import Counter
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.exists():
+    print("  INFO: 履歴なし")
+    raise SystemExit(0)
+
+runs = []
+current_run = None
+current_keys = []
+for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+    parts = raw.split("\t", 1)
+    if len(parts) != 2:
+        continue
+    run_id, key = parts
+    if current_run is None:
+        current_run = run_id
+    if run_id != current_run:
+        runs.append((current_run, current_keys))
+        current_run = run_id
+        current_keys = []
+    if key != "__OK__":
+        current_keys.append(key)
+if current_run is not None:
+    runs.append((current_run, current_keys))
+
+runs = [(run_id, keys) for run_id, keys in runs if keys]
+if not runs:
+    print("  none")
+    raise SystemExit(0)
+
+last_run, last_keys = runs[-1]
+counts = Counter()
+first_seen = {}
+last_seen = {}
+for run_id, keys in runs[-20:]:
+    for key in set(keys):
+        if key.startswith("startup連続出現BLOCK:") or key.startswith("先送り判断:"):
+            continue
+        counts[key] += 1
+        first_seen.setdefault(key, run_id)
+        last_seen[key] = run_id
+
+holes = []
+for key in set(last_keys):
+    if key.startswith("startup連続出現BLOCK:") or key.startswith("先送り判断:"):
+        continue
+    holes.append((counts.get(key, 0), key))
+
+if not holes:
+    print("  none")
+    raise SystemExit(0)
+
+print(f"  source: {last_run}")
+for idx, (count, key) in enumerate(sorted(holes, reverse=True)[:5], start=1):
+    print(f"  {idx}. {key}")
+    print(f"     repeated_last20={count} first_seen={first_seen.get(key, last_run)} last_seen={last_seen.get(key, last_run)}")
+    print("     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ")
+PY
+)
+if [ -n "$_deferred_holes" ]; then
+    printf '%s\n' "$_deferred_holes"
+else
+    echo "  INFO: 解析失敗"
 fi
 
 echo ""
