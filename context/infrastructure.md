@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_infra_v2 -->
+<!-- last_updated: 2026-05-24 cmd_3032 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -12,6 +12,21 @@
 全て外部インフラが自動処理。エージェントは何もするな。Codex忍者=/new、Claude忍者=/clear、家老=/clear(陣形図付き)、将軍=殿判断。
 閾値: ソフト50%（外部トリガー）、ハード90%（AUTOCOMPACT）。CLI差異は`config/settings.yaml`参照。
 → `docs/research/infra-details.md` §1
+
+## lord_conversation / 記憶DBデータフロー（cmd_2963〜cmd_3032）
+
+殿との対話はlive JSONL → アーカイブ → SQLite記憶DBの三層で保持する。一次データは`queue/lord_conversation.jsonl`、24h超過/200件超過分は`logs/lord_conversation_archive/*.jsonl`へ退避、検索・概念到達は`data/multi_agent_shogun_memory.db`を使う。
+
+| 層 | 正本/実装 | 役割 | 注意 |
+|----|-----------|------|------|
+| live | `queue/lord_conversation.jsonl` / `lib/lord_conversation.sh` | 直近対話を原子追記。terminal/ntfy response、terminal inboundを記録 | 消費者はtarget/agentで絞る。全inbound直読み禁止 |
+| retention | `scripts/conversation_retention.sh` / `context/lord-conversation-index.md` | liveを24h/200件に保ち、古い行を`logs/lord_conversation_archive/`へ追記退避 | アーカイブが一次データ。DBだけに飛びつくな |
+| batch DB | `scripts/memory_db_import.py` | archive/live/掲示板/report/insight/document等を`events`へ再構築 | `/clear`時再構築。WAL+INSERT OR REPLACE |
+| live DB | `scripts/memory_db_live_insert.py` + 各writer | inbox/report/cmd_quality等をリアルタイムINSERT | 失敗しても正本YAML/JSONL成功を優先 |
+| query | `scripts/memory_db_query.sh` / `scripts/semantic_search.sh` | SELECT-only SQL、FTS5 fallback、semantic検索補助 | destructive SQLは禁止 |
+
+記憶DB構造: DB pathは`data/multi_agent_shogun_memory.db`。主表は`events(id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance)`、全文検索はFTS5仮想表`events_fts(summary, detail)`、概念正規化は`event_concepts(event_id, concept_name)`、因果/Obsidianリンクは`event_links(source_event_id, target_concept, link_type)`。会話ビュー`conversations`は`events`由来。
+→ `context/memory-db-schema.md` / `context/memory-db-queries.md` / `context/lord-conversation-index.md`
 
 ## 直近改善（cmd_181〜cmd_541）
 
@@ -169,6 +184,16 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | **launch_cmd** | `cli_profiles.yaml` | Codexは**絶対パス必須**(`/home/.../bin/codex`)。respawn-paneは.bashrc未読込→nvm PATHなし→`codex: command not found` |
 | **respawn方式** | `ninja_monitor.sh safe_send_clear()` | Codex再起動は`tmux respawn-pane -k`方式。Ctrl-C方式はcodex=PID 1終了→pane dead→relaunch届かない |
 | **Codex idle時も respawn-pane -k 必須** | 設計意図(殿裁定2026-05-20) | `/new`はCodex CLI内部状態が「task in progress」だと拒否される。ninja_monitorがidle判定しても、CLI内部はsession activeのまま→`/new`非互換。respawn-pane -kはCLI内部状態に関係なくpaneプロセスを殺して再起動するため唯一確実なリセット手段。cmd_2904/2906で/new経路に変更→3忍者CTX滞留(51%/55%/43%)で実証。一見乱暴だが理由がある設計。198回/日ループの真因は発火条件(デバウンス/idle判定頻度)側であり、respawn手段を変えるべきではない。因果: [[cmd_2904_overfix]] -> [[codex_new_rejected]] -> [[respawn_is_correct_design]]。カタログ: `docs/research/gunshi_idle_infra_design_intent_catalog_20260520.md` |
+
+### 直近24日間の主要裁定/実装（2026-05-01〜2026-05-24）
+
+| 領域 | 結論 | 根拠 |
+|------|------|------|
+| Codex reset | Codex idle時も`tmux respawn-pane -k`必須。`/new`経路へ戻すな | cmd_2904/2906/2907、殿裁定2026-05-20 |
+| 記憶DB | lord_conversationはJSONL/アーカイブを一次データ、SQLiteを検索層として扱う | cmd_2963〜2982、cmd_3001/3002 |
+| target filter | 殿発言検索は`direction=inbound`の前にtarget/agentスコープを必ず確認 | cmd_3008/3009/3017/3028、L689/L698 |
+| CI並列隔離 | 並列Bats/CIでは共有状態を4系統で隔離: (1) per-test `TEST_TMPDIR`、(2) lock/cacheをTMPDIR配下、(3) script_dir基準の絶対パス、(4) repo内scriptはgit実行権限または`bash script.sh`呼出 | cmd_2663/2975、L477/L488/L535/L536/L690/L691/L694 |
+| 新スクリプトCI | 新規script追加時はscript_dir絶対パス、git mode 100755またはbash経由テスト、既存実行パターン踏襲の3点確認 | `docs/research/gunshi_idle_ci_red_chain_new_script_20260523.md` |
 
 ## Claude Code バージョン固定と復帰
 
