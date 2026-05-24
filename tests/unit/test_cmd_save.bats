@@ -866,6 +866,75 @@ YAML
     [[ "$output" != *"q8_縮小表現"* ]]
 }
 
+@test "cmd_3025: scope_mode=focusedならq8のだけ表現は縮小表現WARNINGなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3025_q8_focused:
+    id: cmd_3025_q8_focused
+    title: "強化 — q8縮小表現focused除外"
+    scope_mode: focused
+    purpose: "scope_mode=focusedのcmdでは限定表現が正当なためq8縮小表現WARNを出さない"
+    command: |
+      scripts/cmd_save.shのq8縮小表現判定だけを修正する
+    acceptance_criteria:
+      - "AC1: focusedでq8縮小表現WARNが出ない"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q8 focused除外の局所回帰確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: focused cmdは対象限定が正当 → WHAT: q8縮小表現判定だけを修正する → WHEN: cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: scope_mode=focusedを除外条件に入れる。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg -nF scope_mode scripts/cmd_save.sh でq8除外未接続を確認"
+    assumptions:
+      - claim: "2026-05-24時点でscope_mode=focusedはq8縮小表現チェックの正当除外対象"
+        source: "queue/tasks/kagemaru.yaml"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_3025_q8_focused"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q8_縮小表現"* ]]
+}
+
+@test "cmd_3025: scope_mode未設定ならq8のだけ表現は縮小表現WARNINGを維持する" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3025_q8_unset:
+    id: cmd_3025_q8_unset
+    title: "検証 — q8縮小表現従来挙動"
+    purpose: "scope_mode未設定のcmdでは限定表現が従来通りq8縮小表現WARNになる"
+    command: |
+      scripts/cmd_save.shのq8縮小表現WARNを検証する
+    acceptance_criteria:
+      - "AC1: scope_mode未設定でq8縮小表現WARNが出る"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q8 focused除外のTP回帰確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: 不明な限定は範囲縮小として検出する → WHAT: q8縮小表現判定だけを検証する → WHEN: cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: scope_mode未設定では既存WARNを維持する。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg q8_縮小表現 scripts/cmd_save.sh で既存チェック確認済み"
+    assumptions:
+      - claim: "2026-05-24時点でscope_mode未設定はq8縮小表現チェックの除外対象ではない"
+        source: "queue/tasks/kagemaru.yaml"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_3025_q8_unset"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q8_why_whatのWHATに縮小表現を検出"* ]]
+}
+
 @test "cmd_2837: q8の代表/一部は正当WARNINGを維持する" {
     create_queue_file << 'YAML'
 commands:

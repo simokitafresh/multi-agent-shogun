@@ -2532,7 +2532,12 @@ QG_TEMPLATE
         # WHAT部分の縮小表現検出（WARN — AC2）
         _Q8_WW_VAL="$(cmd_block_get_field "quality_gate.q8_why_what")"
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
+        _Q8_SCOPE_MODE="$(cmd_block_get_field "scope_mode")"
         _Q8_SCOPE_EXEMPT=false
+        # scope_mode=focused は限定表現が正当なので _Q8_SCOPE_EXEMPT 扱いにする。
+        if [[ "${_Q8_SCOPE_MODE,,}" == "focused" ]]; then
+            _Q8_SCOPE_EXEMPT=true
+        fi
         if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
             _Q8_SCOPE_EXEMPT=true
         fi
