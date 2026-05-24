@@ -263,3 +263,18 @@
   brainwash_check: "単純修正で甘くなるリスク→head -5+settings.json現物確認で対処"
   cs_checklist: "CS1:全文 CS2:head -5 CS3:389b279a CS4:APPROVE+LGTM+SG7 CS5:注入精度20% CS6:因果(誤検出→解消)"
   timestamp: "2026-05-24T20:28:00"
+- cmd_id: cmd_karo_ci_fix_cs_checklist
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。CI RED修正(c8f6062a副作用)。fixture brainwash_check追加。テスト15件全PASS"
+  observations:
+    - "事実1: CI RED原因=軍師D0(c8f6062a brainwash_check全level必須化)でfixture未更新"
+    - "事実2: LG026(S0-5テスト前提確認)の適用漏れ。新規フィールド必須化時にもS0-5を適用すべき"
+  origin: "[[c8f6062a]] -> [[brainwash_check必須化]] -> [[CI RED fixture不整合]]"
+  causal_chain: "軍師D0→統合fixture旧形式→CI RED→kagemaru修正→PASS。LG026適用範囲拡張が必要"
+  brainwash_check: "自分のD0が原因。忖度せず自責記録"
+  cs_checklist: "CS1:報告全文 CS2:c8f6062a diff CS3:テスト15件PASS CS4:LGTM+SG7+自責 CS5:LG026拡張 CS6:因果(D0→CI RED→修正)"
+  timestamp: "2026-05-24T20:32:00"
