@@ -30,6 +30,10 @@ setup_file() {
         printf '\n'
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^_check_lc_found()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^preflight_gate_flags()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^collect_report_modified_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -145,6 +149,126 @@ EOF
     BLOCK_REASONS=()
 
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+}
+
+@test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
+    export ALL_GATES=()
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+lesson_candidate:
+  found: true
+  project: infra
+  title: 自動登録テスト
+  detail: preflight should auto-register this candidate.
+EOF
+    cat > "$TEST_PROJECT/scripts/auto_draft_lesson.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >> "$TEST_PROJECT/auto_draft_calls.log"
+mkdir -p "$TEST_PROJECT/queue/gates/$TEST_CMD_ID"
+{
+  echo "timestamp: 2026-05-24T00:00:00"
+  echo "source: lesson_write"
+} > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
+EOF
+    chmod +x "$TEST_PROJECT/scripts/auto_draft_lesson.sh"
+
+    run preflight_gate_flags "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lesson: auto-registering found:true candidate (sasuke)"* ]]
+    [[ "$output" == *"lesson: preflight OK (via auto_draft_lesson/lesson_write)"* ]]
+    grep -q "sasuke_report_${TEST_CMD_ID}.yaml" "$TEST_PROJECT/auto_draft_calls.log"
+    grep -Fx "source: lesson_write" "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
+}
+
+@test "preflight skips lesson auto-register when lesson.done already exists" {
+    export ALL_GATES=()
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done" <<'EOF'
+timestamp: 2026-05-24T00:00:00
+source: lesson_write
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+lesson_candidate:
+  found: true
+  project: infra
+  title: 冪等テスト
+  detail: auto_draft must not run when lesson.done exists.
+EOF
+    cat > "$TEST_PROJECT/scripts/auto_draft_lesson.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'called\n' >> "$TEST_PROJECT/auto_draft_calls.log"
+exit 0
+EOF
+    chmod +x "$TEST_PROJECT/scripts/auto_draft_lesson.sh"
+
+    run preflight_gate_flags "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lesson: already exists (skip)"* ]]
+    [ ! -f "$TEST_PROJECT/auto_draft_calls.log" ]
+    grep -Fx "source: lesson_write" "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
+}
+
+@test "preflight uses lesson_check for found:false lesson candidate" {
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
+    export ALL_GATES=()
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+lesson_candidate:
+  found: false
+EOF
+    cat > "$TEST_PROJECT/scripts/auto_draft_lesson.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'called\n' >> "$TEST_PROJECT/auto_draft_calls.log"
+exit 0
+EOF
+    cat > "$TEST_PROJECT/scripts/lesson_check.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s\n' "$1" "$2" >> "$TEST_PROJECT/lesson_check_calls.log"
+mkdir -p "$TEST_PROJECT/queue/gates/$1"
+{
+  echo "timestamp: 2026-05-24T00:00:00"
+  echo "source: lesson_check"
+} > "$TEST_PROJECT/queue/gates/$1/lesson.done"
+EOF
+    chmod +x "$TEST_PROJECT/scripts/auto_draft_lesson.sh" "$TEST_PROJECT/scripts/lesson_check.sh"
+
+    run preflight_gate_flags "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lesson: preflight OK (via lesson_check)"* ]]
+    [ ! -f "$TEST_PROJECT/auto_draft_calls.log" ]
+    grep -q "$TEST_CMD_ID|preflight: no found:true lesson_candidate" "$TEST_PROJECT/lesson_check_calls.log"
+    grep -Fx "source: lesson_check" "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
 }
 
 @test "lesson_done_missing is WARN and does not force ALL_CLEAR false" {
