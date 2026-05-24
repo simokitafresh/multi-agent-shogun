@@ -100,6 +100,47 @@ YAML
     [[ "$output" == *"cmd_3001"* ]]
 }
 
+@test "confidence HIGH draft without brainwash_check is warned" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3034
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-05-24T18:33:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"confidence:HIGH draftにbrainwash_check未記入"* ]]
+    [[ "$output" == *"cmd_3034"* ]]
+}
+
+@test "confidence HIGH draft with brainwash_check does not warn" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3035
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  brainwash_check:
+    creator_position_talk: PASS
+    hidden_hole: PASS
+    deferred_cost: PASS
+  ambiguity_points: none
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-05-24T18:34:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"brainwash_check未記入"* ]]
+}
+
 @test "zero ambiguity only once emits INFO" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: cmd_3002
