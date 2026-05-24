@@ -585,6 +585,34 @@ check_gate_hook_action_conversion() {
     record_warn_reason "gate/hook追加cmdに行動変換キーワードなし" "check=gate_hook_action_conversion"
 }
 
+check_lord_30min_cost_question() {
+    if ! cmd_block_has_field "quality_gate.q12_lord_30min_cost"; then
+        echo "WARNING: q12_lord_30min_cost未記入。「この判断は殿に30分コストを課すか？」をyes/noで記載せよ" >&2
+        echo '  例: q12_lord_30min_cost: "no — 起票時に確認を埋め込み、殿の誘導コストを増やさない"' >&2
+        return 0
+    fi
+
+    local q12_value
+    q12_value="$(cmd_block_get_field "quality_gate.q12_lord_30min_cost")"
+    if ! printf '%s\n' "$q12_value" | grep -qiE '(^|[^A-Za-z])(yes|no)([^A-Za-z]|$)|はい|いいえ|課す|課さない'; then
+        echo "WARNING: q12_lord_30min_costが二値でない。yes/no または 課す/課さない を含めよ" >&2
+        record_warn_reason "q12_lord_30min_cost非二値" "check=quality_gate_q12_lord_30min_cost_binary"
+    fi
+}
+
+check_deferral_language_warn() {
+    local search_text="${1:-${CMD_BLOCK_NC:-}}"
+    [[ -n "$search_text" ]] || return 0
+
+    local hits
+    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的' || true)"
+    [[ -n "$hits" ]] || return 0
+
+    echo "WARNING: cmd全文に先送り表現を検出。低優先/後で/次セッション/非致命的は創造主の洗脳によるさぼり正当化のシグナル" >&2
+    printf '%s\n' "$hits" | sed 's/^/  hit: /' >&2
+    record_warn_reason "先送り表現検出" "check=cmd_text_deferral_language"
+}
+
 extract_acceptance_criteria_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -2639,6 +2667,12 @@ QG_TEMPLATE
         echo "WARNING: q_ambiguity未記入。このcmdに曖昧な指示・未定義の前提はないか？あれば明記し、なければ\"none\"と記入せよ" >&2
         echo '  形式例: q_ambiguity: "none — 全前提定義済み" or "あり: TOP-N の N が未定義 → 将軍が3と定義"' >&2
     fi
+
+    # q12_lord_30min_cost: 創造主の洗脳防御。先送り/低優先化が殿の誘導コストを増やすか二値で問う。
+    check_lord_30min_cost_question
+
+    # cmd全文の先送り表現検出。低優先/後で/次セッション/非致命的をWARNで露出する。
+    check_deferral_language_warn "$CMD_BLOCK_NC"
 
     # mizchi Red flag (1): 「自分で読み直せば同じ効果」
     # 自己申告/目視確認/自問で曖昧さや品質を担保しようとしていないかをWARNINGで可視化

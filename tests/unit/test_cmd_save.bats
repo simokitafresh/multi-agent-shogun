@@ -63,6 +63,8 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_bulletin_count_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_lord_30min_cost_question()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_deferral_language_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_action_immediate_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -81,7 +83,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_save_caller_check_name()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate
+    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -198,6 +200,47 @@ _setup_cmd_block() {
     CMD_BLOCK_NC="${CMD_BLOCK_NC%$'\n'}"
     [[ -n "$CMD_BLOCK" ]] && CMD_BLOCK_FOUND=1
     export CMD_BLOCK CMD_BLOCK_NC
+}
+
+@test "q12_lord_30min_cost missing emits binary cost warning" {
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    CMD_BLOCK_NC='    quality_gate:
+      q1_firefighting: "no — test"
+      q2_learning: "奪わない — test"
+      q3_next_quality: "上がる — test"'
+    export CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED CMD_BLOCK_NC
+
+    run bash -c 'declare -gA CMD_BLOCK_CACHE=(); check_lord_30min_cost_question 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q12_lord_30min_cost未記入"* ]]
+    [[ "$output" == *"この判断は殿に30分コストを課すか"* ]]
+}
+
+@test "q12_lord_30min_cost non-binary emits warning" {
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    CMD_BLOCK_NC='    quality_gate:
+      q12_lord_30min_cost: "確認する"'
+    export CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED CMD_BLOCK_NC
+
+    run bash -c 'declare -gA CMD_BLOCK_CACHE=(); check_lord_30min_cost_question 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"q12_lord_30min_costが二値でない"* ]]
+}
+
+@test "deferral language emits warn with hit lines" {
+    CMD_BLOCK_NC='    title: "改善cmd"
+    command: "非致命的なので後で対応する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_deferral_language_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"先送り表現を検出"* ]]
+    [[ "$output" == *"非致命的なので後で対応する"* ]]
 }
 
 # --- Check 6: GP重複検出 ---

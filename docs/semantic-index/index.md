@@ -28,6 +28,24 @@ codd:
 | cmd | `cmd_2965` infra — lord_conversation_archive 79日分をSQLite構造化記憶DBへ投入 |
 | causal | `cmd_2965` origin: [[殿裁定2026-05-22]] -> [[パターンマッチ封じ]] -> [[SQLite記憶DB]] |
 
+## creator_brainwashing_defense — 創造主の洗脳防御
+
+| 属性 | 値 |
+|------|---|
+| id | creator_brainwashing_defense |
+| label | 創造主の洗脳防御 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠 |
+| related_concepts | growth_loop, gate_quality_framework, defense_hierarchy |
+| related_lessons | `LS041` |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/creator_brainwashing_defense_design_20260524.md` |
+| file | `scripts/cmd_save.sh` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-24T18:12 創造主側のポジショントークと洗脳を理解し、現実を見て記憶せよ |
+| cmd | `cmd_3033_saizo` infra — cmd_save.shに30分コスト自問と先送り表現WARNを追加 |
+| causal | `cmd_3033_saizo` origin: [[creator_position_talk]] -> [[wrong_efficiency_instinct]] -> [[lord_cost_30min]] |
+
 ## recalculate_pipeline — 再計算パイプライン
 
 | 属性 | 値 |
