@@ -47,6 +47,8 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         draft_has_adv[draft_count] = has_adversarial
         draft_adv_required[draft_count] = adversarial_required
         draft_has_hole_action[draft_count] = has_hole_action
+        draft_confidence[draft_count] = confidence
+        draft_has_brainwash[draft_count] = has_brainwash
     }
 
     in_record = 0
@@ -61,6 +63,8 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     has_adversarial = 0
     adversarial_required = 0
     has_hole_action = 0
+    confidence = ""
+    has_brainwash = 0
     in_obs = 0
     obs_count = 0
     obs_text = ""
@@ -103,6 +107,13 @@ BEGIN {
         ambiguity_text = trim(line)
     } else if ($0 ~ /^[[:space:]]*hole_action:[[:space:]]*/) {
         has_hole_action = 1
+    } else if ($0 ~ /^[[:space:]]*confidence:[[:space:]]*/) {
+        line = $0
+        sub(/^[[:space:]]*confidence:[[:space:]]*/, "", line)
+        gsub(/["'\''"]/, "", line)
+        confidence = toupper(trim(line))
+    } else if ($0 ~ /^[[:space:]]*brainwash_check:/) {
+        has_brainwash = 1
     } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
         line = $0
         sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
@@ -147,6 +158,7 @@ END {
     convergence_once_count = 0
     adversarial_missing_count = 0
     hole_action_missing_count = 0
+    brainwash_missing_count = 0
     for (i = 1; i <= draft_count; i++) {
         has_fm = (draft_obs[i] ~ fm_pat)
         has_tolerance = (draft_obs[i] ~ tol_pat)
@@ -172,6 +184,9 @@ END {
         if (i >= start_draft && draft_verdict[i] == "REQUEST_CHANGES" && !draft_has_hole_action[i]) {
             hole_action_missing[++hole_action_missing_count] = draft_id[i]
         }
+        if (i >= start_draft && draft_confidence[i] == "HIGH" && !draft_has_brainwash[i]) {
+            brainwash_missing[++brainwash_missing_count] = draft_id[i]
+        }
         if (zero_ambiguity) {
             zero_ambiguity_seen[draft_id[i]]++
         }
@@ -185,6 +200,7 @@ END {
     emit_list("CONVERGENCE_ONCE:", convergence_once, convergence_once_count)
     emit_list("ADVERSARIAL_MISSING:", adversarial_missing, adversarial_missing_count)
     emit_list("HOLE_ACTION_MISSING:", hole_action_missing, hole_action_missing_count)
+    emit_list("BRAINWASH_MISSING:", brainwash_missing, brainwash_missing_count)
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
@@ -198,6 +214,7 @@ single_scenario=""
 convergence_once=""
 adversarial_missing=""
 hole_action_missing=""
+brainwash_missing=""
 cold_category_missing=""
 skill_usage_missing=""
 all_pass=0
@@ -227,6 +244,9 @@ while IFS= read -r line; do
             ;;
         HOLE_ACTION_MISSING:*)
             hole_action_missing="${line#HOLE_ACTION_MISSING:}"
+            ;;
+        BRAINWASH_MISSING:*)
+            brainwash_missing="${line#BRAINWASH_MISSING:}"
             ;;
         ALL_PASS)
             all_pass=1
@@ -469,7 +489,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ] && [ -z "$brainwash_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -517,6 +537,14 @@ if [ -n "$hole_action_missing" ]; then
     echo "WARN: ${hole_count}件のREQUEST_CHANGESにhole_action未記入(穴を即ふさいだか？殿厳命2026-05-24):"
     printf '%s\n' "$hole_action_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: hole_action: none/d0_implemented/cmd_proposed を記入せよ"
+    done
+    warn=1
+fi
+if [ -n "$brainwash_missing" ]; then
+    brainwash_count=$(printf '%s\n' "$brainwash_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${brainwash_count}件のconfidence:HIGH draftにbrainwash_check未記入:"
+    printf '%s\n' "$brainwash_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: 創造主の洗脳/ポジショントークに乗っていないか自問し、brainwash_checkを記入せよ"
     done
     warn=1
 fi
