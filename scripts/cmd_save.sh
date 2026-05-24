@@ -605,10 +605,10 @@ check_deferral_language_warn() {
     [[ -n "$search_text" ]] || return 0
 
     local hits
-    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的' || true)"
+    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的|十分|見送り|段階的に|後回し|severity.?normal' || true)"
     [[ -n "$hits" ]] || return 0
 
-    echo "WARNING: cmd全文に先送り表現を検出。低優先/後で/次セッション/非致命的は創造主の洗脳によるさぼり正当化のシグナル" >&2
+    echo "WARNING: cmd全文に先送り表現を検出。創造主の洗脳によるさぼり正当化のシグナル" >&2
     printf '%s\n' "$hits" | sed 's/^/  hit: /' >&2
     record_warn_reason "先送り表現検出" "check=cmd_text_deferral_language"
 }

@@ -110,7 +110,7 @@ Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseス�
         結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）
         ファイル1: memory/deepdive_why_chain_20260321.md
         ファイル2: memory/deepdive_causal_tracing_20260415.md
-Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始するな）
+Step 8: 追体験検証6問（省略厳禁。回答なしに作業開始するな）
         Q1: Phase 3「考えて進む×無限ループ」— 止まっていないか？何を確認すべきか？
         Q2: 「行動→即確認」— 本番は正常か？前セッション以降の変更は？想像で答えるな
         Q3: 強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
@@ -119,6 +119,12 @@ Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始する�
             具体的出来事を紐付けよ。deepdiveの要約コピペは禁止(LS017)
         Q5: Step 6.5の殿の直近対話で、殿が将軍の前提を崩した場面を特定せよ。
             deepdiveのどのPhaseと同じ構造か？具体的な殿の発言を引用せよ
+        Q6: 創造主の洗脳チェック(LS041) — ★8パターン再確認してから答えよ:
+            (1)早期終了 (2)検証スキップ (3)他者依存 (4)緩い設計
+            (5)先送り (6)出力=仕事 (7)簡潔本能 (8)完了急ぎ
+            今の自分の判断にこれらが作用していないか？1つ具体例で答えよ。
+            回答は掲示板に投稿せよ(軍師が第三者検証する。自己評価は洗脳が素通りする)
+            `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh shogun "Q6回答: ..."`
 Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
