@@ -102,7 +102,10 @@ print(f"recall miss件数: {recall_miss_count}")
 if recall_misses:
     shown = ", ".join(f"{skill}:{count}" for skill, count in recall_misses[:5])
     print(f"recall miss top: {shown}")
-if false_positive_rate > 20 or recall_miss_count > 5:
+min_data = 10  # 推薦+実行合計がmin_data未満は計測不足(ALERT抑制)
+if recommended_total + len(exec_entries) < min_data:
+    print(f"計測不足: データ{recommended_total + len(exec_entries)}件 < {min_data}件。ALERT抑制")
+elif false_positive_rate > 20 or recall_miss_count > 5:
     print("ALERT: Phase 3 cmd起票候補 — 推薦抑制/aliases補完を検討せよ")
     raise SystemExit(2)
 PY
