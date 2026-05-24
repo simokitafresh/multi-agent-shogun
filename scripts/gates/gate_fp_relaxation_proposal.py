@@ -110,13 +110,7 @@ def build_report(
     for cmd_id, notes_set in warn_by_cmd.items():
         for note in notes_set:
             warn_type_total[note] += 1
-            warn_type, check_name = _warn_key(note)
-            escalated_to_block = any(
-                "WARN累計昇格" in block_note
-                and (note in block_note or warn_type in block_note or (check_name and check_name in block_note))
-                for block_note in block_notes_by_cmd.get(cmd_id, [])
-            )
-            if escalated_to_block or (cmd_id in cleared_cmds and cmd_save_runs.get(cmd_id, 0) <= 1):
+            if cmd_id in cleared_cmds and cmd_save_runs.get(cmd_id, 0) <= 1:
                 warn_type_fp[note] += 1
 
     pattern_summary = "直近BLOCKなし"
