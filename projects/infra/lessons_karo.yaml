@@ -161,6 +161,7 @@ lessons:
     v2吸収(2026-05-24):
     - 具体的IDリストをタスクYAMLに渡さないとAC未充足になる(cmd_3038: 39件IDリスト未注入→影丸が独自判定で別50件deprecated化→AC「39件」が0件達成)。checklist/context_filesで具体的リストを渡せ。GATE CLEAR後もACの現物grep確認を省くな(§0.1問い2の適用拡大)
     - cmd途中追加指示が5回連続到着→ナッジに統合して送信したが(4)(5)が未着信時点で送信→未反映(cmd_3041)。追加指示が複数回来る場合は全件到着を確認してから統合ナッジを送信せよ
+    - checklist参照が構造的に機能しない場合がある(cmd_3038/3043で3度連続ターゲット違い)。Codex忍者はchecklist参照より自力判定を優先する傾向。3度失敗→忍者配備では解決しない→家老直接実装(sed等)が正解(将軍承認2026-05-24)。判断基準: 同パターン3回失敗=構造的問題→家老直接対処に切替
   source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
@@ -259,6 +260,8 @@ v7吸収(2026-05-19):
     - L4修行テンプレート4AC→5AC更新(657c3bdc): 軍師D0でAC5(aliases候補)追加→テスト627/628が4AC期待のままでCI RED 3連続。テスト側を5AC期待に更新
     v11吸収(2026-05-24):
     - CI並列隔離4パターン目: テスト内で$TEST_PROJECT/scripts/にファイル生成→scriptsはREAL scriptsへのsymlink→実体ディレクトリに書込み→--jobs 8で複数テストが同一実体ファイルに競合書込み→テストFAIL(cmd_3019 q11テスト)。修正: $TEST_PROJECT/testdata/に配置+絶対パス(9869fb7b)。v9パターン(1)の亜種。一般原則: テスト内でTEST_PROJECT/scripts配下にファイル生成するな(symlinkが実体を汚染)。非symlinkディレクトリ(testdata/)を使え
+    v12吸収(2026-05-24):
+    - yaml_field_set.shはlist item形式(`- id: LXXX`)のブロックIDに非対応。deprecatedフラグ追加等はsedで直接追加が確実: `sed -i "/^- id: ${lid}$/a\\  deprecated: true" file.yaml`
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
