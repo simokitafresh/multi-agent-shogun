@@ -107,16 +107,22 @@ template TEXT NOT NULL,
 example_original TEXT NOT NULL,
 example_renamed TEXT NOT NULL,
 source_location TEXT NOT NULL,
+file_created_at TEXT,
+file_added_at TEXT,
+renamed_at TEXT NOT NULL,
 created_at TEXT NOT NULL
 ```
 
 FTS5検索テーブルを併用し、`genre` と `source_location` を優先して絞る。`source_location` はDriveならDrive folder URL、ローカルならディレクトリパスにする。同じ場所のファイルは同じ命名パターンになる傾向があるため、場所一致を強く扱う。
 
+日付はISO 8601形式へ統一する。`file_created_at` はファイル自体の作成日時、`file_added_at` は対象フォルダ/ディレクトリに追加された日時、`renamed_at` は実際にリネームした日時を保存する。取得できない日時は推測で埋めずNULLにする。
+
 検索例:
 
 ```bash
 sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
-SELECT genre, subtype, template, example_original, example_renamed, source_location
+SELECT genre, subtype, template, example_original, example_renamed, source_location,
+       file_created_at, file_added_at, renamed_at
 FROM rename_patterns
 WHERE genre = :genre
   AND source_location = :source_location
@@ -129,7 +135,8 @@ FTS5検索例:
 
 ```bash
 sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
-SELECT rp.genre, rp.subtype, rp.template, rp.example_original, rp.example_renamed, rp.source_location
+SELECT rp.genre, rp.subtype, rp.template, rp.example_original, rp.example_renamed,
+       rp.source_location, rp.file_created_at, rp.file_added_at, rp.renamed_at
 FROM rename_patterns_fts fts
 JOIN rename_patterns rp ON rp.id = fts.rowid
 WHERE rename_patterns_fts MATCH :query
@@ -146,6 +153,22 @@ SQL
 - 同一テーマの連番は `YYYY-MM-DD_topic_01.ext` のように自然順で並ぶ形式にする。
 - 元拡張子を維持する。拡張子変更が必要な場合はリネームではなく変換作業として分ける。
 - Driveでは同名衝突を事前確認する。ローカルでは `test -e "<new_path>"` で衝突を確認する。
+
+INSERT前に以下を正規化する。
+
+- `genre` は小文字ひらがなへ統一する。英字・カタカナ・漢字の揺れを同じ概念として混在させない。
+- `subtype` は同一 `genre` 内で一意な表記に揃える。既存レコードに同義の `subtype` があれば新表記を作らない。
+- `file_created_at` / `file_added_at` / `renamed_at` / `created_at` はISO 8601形式に統一する。
+- `source_location` は末尾スラッシュなしに統一する。Drive folder URLもローカルディレクトリパスも同じ規則で保存する。
+
+ファイル日付は対象種別に応じて自動取得する。
+
+| 種別 | `file_created_at` / `file_added_at` の取得方法 |
+|------|-----------------------------------------------|
+| Drive上のファイル | `gws files get` または `gws files list --fields` で `createdTime` / `modifiedTime` を取得する。Drive APIでフォルダ追加日時を直接取れない場合は `file_added_at` をNULLにし、`modifiedTime` を追加日時として代用しない。 |
+| 写真・画像 | EXIF `DateTimeOriginal` を優先する。EXIFがなければファイルシステム時刻だけで撮影日時を推測しない。 |
+| CamScanner | ファイル名に埋め込まれた日時をパースする。パース不能ならNULLにする。 |
+| PDF | PDFメタデータの `CreationDate` を取得し、ISO 8601へ変換する。取得不能ならNULLにする。 |
 
 ### Step 5: 殿に提示して承認を得る
 
@@ -194,7 +217,8 @@ test ! -e "<new_path>"
 ```bash
 sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
 INSERT INTO rename_patterns (
-  genre, subtype, template, example_original, example_renamed, source_location, created_at
+  genre, subtype, template, example_original, example_renamed, source_location,
+  file_created_at, file_added_at, renamed_at, created_at
 ) VALUES (
   :genre,
   :subtype,
@@ -202,12 +226,16 @@ INSERT INTO rename_patterns (
   :example_original,
   :example_renamed,
   :source_location,
-  datetime('now')
+  :file_created_at,
+  :file_added_at,
+  :renamed_at,
+  :created_at
 );
 SQL
 ```
 
 `template` には再利用可能な形を保存する。例: `YYYY-MM-DD_invoice_{vendor}_{amount}.pdf`。個別ファイル名そのものだけを保存せず、次回検索で使える抽象度にする。
+INSERT直前に `genre`、`subtype`、日付4列、`source_location` の正規化結果を確認し、正規化できない値は推測補完せずNULLまたは停止で扱う。
 
 ### Step 8: 実行後検証
 
@@ -241,5 +269,7 @@ find "<target_dir>" -maxdepth 1 -type f | sort
 - Google DocsはPDF export後に確認している。
 - Step 3前に `rename_patterns` を `genre` + `source_location` で検索している。
 - リネーム案を殿に提示し、承認を得ている。
+- `file_created_at` / `file_added_at` / `renamed_at` をISO 8601形式で取得・記録している。
+- INSERT前に `genre`、`subtype`、日付、`source_location` を正規化している。
 - リネーム実行後に `rename_patterns` へ実例とテンプレートを記録している。
 - 実行後にDrive listまたはローカルfindで結果を確認している。
