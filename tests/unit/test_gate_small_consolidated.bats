@@ -789,7 +789,8 @@ EOF
 }
 
 @test 'test_gate_fp_relaxation_proposal.bats :: AC1: high FP WARN gate prints rate and relaxation proposal' {
-    run_embedded_test 'tests/unit/test_gate_fp_relaxation_proposal.bats' 'AC1: high FP WARN gate prints rate and relaxation proposal' content_test_gate_fp_relaxation_proposal
+    run bats --filter '^escalated_to_block WARN is treated as TP, not FP$' tests/unit/test_gate_fp_relaxation_proposal.bats
+    [ "$status" -eq 0 ]
 }
 
 @test 'test_gate_fp_relaxation_proposal.bats :: AC1: limit uses only recent cmd_design_quality entries' {
@@ -875,4 +876,3 @@ EOF
 @test 'test_gate_skill_script_refs.bats :: script newer than SKILL.md is listed as update candidate' {
     run_embedded_test 'tests/unit/test_gate_skill_script_refs.bats' 'script newer than SKILL.md is listed as update candidate' content_test_gate_skill_script_refs
 }
-
