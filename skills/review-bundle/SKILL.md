@@ -72,7 +72,11 @@ review:
 **draft review時の追加チェック**: review_type=draft の場合、ambiguity_pointsフィールドが設定されているか確認せよ。
 未記入→STOP。`ambiguity_points: none` を明示してから再実行。理由: CS WARN 3件遡及(cmd_2881-2883)で発見。
 
+**q11突合チェック(draft review時)**: q11_not_already_doneに「rg → 0件」等の現物確認記載がある場合、`git show HEAD:対象ファイル`で独立検証せよ。将軍のq11事実誤認率50%(2/4, 2026-05-24)。LG001(git show HEAD検証)をq11にも適用。
+
 **finding_categories自動補完**: ambiguity_points が `none` 以外の場合、finding_categories に `ambiguity` を含めよ。記録漏れ防止(2026-05-24: 全セッションambiguity 0件だが実態2件検出)。
+
+**GATE結果確証バイアス防止**: report reviewでGATE CLEARを既に知っている場合、brainwash_checkに「GATE CLEAR既知で確証バイアスリスクあり」と明記し、成果物を`git show`で全行独立確認せよ。GATE結果を知った上で「問題ない」と感じるのはP1(早期終了)の典型(2026-05-24: cmd_3037でリスク顕在化、cmd_karo_ci_fix_cs_checklistでLGTM→BLOCK発生)。
 
 ### Step 2: review_log追記
 ```bash
