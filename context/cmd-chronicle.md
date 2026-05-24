@@ -662,3 +662,5 @@
 | cmd_3025 | q8_縮小表現(quality_gate_q8_scope_expression)のFP率66%(2/3)。scope_mode=focusedのcmdはスコープ限定が正当なので除外すべき。L2536の_Q8_SCOPE_EXEMPTにscope_mode判定を追加する | infra | 05-24 | cmd_save.sh q8縮小表現WARNでscope_m |
 | cmd_3026 | gate_skill_script_refs.shが4スキル(codd-fix/idle-persist/karo-direct/recon-dual)で参照スクリプトがSKILL.mdより新しいとWARN。3セッション連続startup BLOCK要因。各SKILL.mdのscript_refs_checked_atを現在日時に更新し、参照スクリプトの変更がSKILL.md手順に影響しないか確認する | infra | 05-24 | 4スキルのscript_refs_checked_atを20 |
 | cmd_3027 | Phase 1(cmd_3024)でスキル推薦表示を全ロールに実装した。Phase 2は推薦が正しかったか計測する基盤を構築する。(2a)推薦ログ記録 (2b)source正規化 (2c)startup gate集計 (2d)recall miss補完の4段。全てロール非依存 | infra | 05-24 | スキル推薦ログ、source正規化、startup gate |
+| cmd_3028 | render_lord_decisionsが将軍のresponse(軍師D0承認等)を殿の裁定として分類する問題を修正。lord_conversation.jsonl消費者17本の波及確認も実施 | infra | 05-24 | render_lord_decisionsをinbound限 |
+| cmd_3029 | gate_fp_relaxation_proposal.py L119でWARN累計昇格(escalated_to_block)をFP(偽陽性)としてカウントしているバグを修正。WARN累計昇格=WARNが正しく問題を検出した証拠(TP)。TPをFPカウントするためFP率が実際より高く計算されALERTが誤発火し3セッション連続startup BLOCKを引き起こした | infra | 05-24 | WARN累計昇格をFPカウントから除外し、escalated |
