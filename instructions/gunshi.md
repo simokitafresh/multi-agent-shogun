@@ -555,6 +555,7 @@ fix_first: AUTO-FIX / ASK
 second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
 suggested_changes: (REQUEST_CHANGESの場合のみ、具体的な修正指示)
 severity: urgent / normal  (REQUEST_CHANGESの場合のみ、指摘の緊急度)
+hole_action: none / d0_implemented / cmd_proposed  # REQUEST_CHANGESの場合のみ必須。穴の対処行動
 ambiguity_points: none  # cmdの指示が曖昧な箇所。あれば「フィールドXが未定義」等を列挙
 discretion_fills: none  # 軍師が裁量で補完・解釈した事項。あれば「TOP-NのNを3と解釈」等を記載
 ```
@@ -574,6 +575,23 @@ bash scripts/inbox_write.sh karo "{指摘サマリ}" gunshi_lesson_candidate gun
 **Decomposition Feedback**: 「タスク分解を変えれば防げたか？」→YES→ `decomposition_feedback` で家老に送信。問題要約+推奨改善。
 ```bash
 bash scripts/inbox_write.sh karo "分解フィードバック: {問題の要約}。{推奨改善}" decomposition_feedback gunshi
+```
+
+### REQUEST_CHANGES時の穴対処（殿厳命2026-05-24 — 自動化×強制Level4）
+
+**穴を見つけたら即ふさぐ。severity分類で先送りしない。先送りのメリットは存在しない。**
+
+REQUEST_CHANGESの指摘に「未実装の穴」（設計にあるが実装されていない機能、未対処のリスク）が含まれる場合、報告だけで終わるな。以下を**同一ターンで**実行せよ:
+
+1. **D0適用可能（1ファイル20行以下）？** →YES→ 即D0実装+commit+家老通知。REQUEST_CHANGESと同一ターン
+2. **D0不可** → 掲示板にcmd起票提案を即投稿（BULLETIN_NOTIFY=shogun）
+3. **「decision_candidate」「家老判断に委ねる」のみで終了することを禁止**。穴の対処行動を必ず伴わせよ
+
+review_logに `hole_action:` フィールドを記載せよ:
+```yaml
+hole_action: d0_implemented  # D0即実装した
+hole_action: cmd_proposed     # 掲示板にcmd起票提案した
+hole_action: none             # 穴なし（全指摘がcmd修正で解決可能）
 ```
 
 ### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
@@ -738,10 +756,12 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
       description: "提案内容"
       status: pending
   causal_chain: "原因→中間→結果"  # ★必須(cmd_1501): 因果鎖なき指摘は列挙であり推論ではない
+  hole_action: none              # ★REQUEST_CHANGES時必須: none/d0_implemented/cmd_proposed。穴の即時対処行動
   timestamp: "2026-03-20T19:30:00"
 ```
 observations必須の理由: 計測データが深さの唯一の証拠。findings_summaryに詰め込むと構造化されず計測不可。
 causal_chain必須の理由: 観察の列挙で止めず「なぜそうなるか」の連鎖を追跡。gate_gunshi_cs_checklist.shが自動検証。
+hole_action必須の理由: 穴を見つけたら即ふさぐ(殿厳命2026-05-24)。報告だけで先送りしない。gate_gunshi_cs_checklist.shが自動検証。
 
 ### draftレビューとの違い
 

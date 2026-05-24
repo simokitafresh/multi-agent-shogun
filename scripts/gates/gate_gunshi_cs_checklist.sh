@@ -46,6 +46,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         draft_changed_lines[draft_count] = changed_lines + 0
         draft_has_adv[draft_count] = has_adversarial
         draft_adv_required[draft_count] = adversarial_required
+        draft_has_hole_action[draft_count] = has_hole_action
     }
 
     in_record = 0
@@ -59,6 +60,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     changed_lines = 0
     has_adversarial = 0
     adversarial_required = 0
+    has_hole_action = 0
     in_obs = 0
     obs_count = 0
     obs_text = ""
@@ -99,6 +101,8 @@ BEGIN {
         sub(/^[[:space:]]*ambiguity_points:[[:space:]]*/, "", line)
         gsub(/["'\''"]/, "", line)
         ambiguity_text = trim(line)
+    } else if ($0 ~ /^[[:space:]]*hole_action:[[:space:]]*/) {
+        has_hole_action = 1
     } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
         line = $0
         sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
@@ -142,6 +146,7 @@ END {
     single_scenario_count = 0
     convergence_once_count = 0
     adversarial_missing_count = 0
+    hole_action_missing_count = 0
     for (i = 1; i <= draft_count; i++) {
         has_fm = (draft_obs[i] ~ fm_pat)
         has_tolerance = (draft_obs[i] ~ tol_pat)
@@ -164,6 +169,9 @@ END {
         if (i >= start_draft && draft_adv_required[i] && !draft_has_adv[i]) {
             adversarial_missing[++adversarial_missing_count] = draft_id[i] "(required=true)"
         }
+        if (i >= start_draft && draft_verdict[i] == "REQUEST_CHANGES" && !draft_has_hole_action[i]) {
+            hole_action_missing[++hole_action_missing_count] = draft_id[i]
+        }
         if (zero_ambiguity) {
             zero_ambiguity_seen[draft_id[i]]++
         }
@@ -176,6 +184,7 @@ END {
     emit_list("SINGLE_SCENARIO:", single_scenario, single_scenario_count)
     emit_list("CONVERGENCE_ONCE:", convergence_once, convergence_once_count)
     emit_list("ADVERSARIAL_MISSING:", adversarial_missing, adversarial_missing_count)
+    emit_list("HOLE_ACTION_MISSING:", hole_action_missing, hole_action_missing_count)
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
@@ -188,6 +197,7 @@ ambiguity_missing=""
 single_scenario=""
 convergence_once=""
 adversarial_missing=""
+hole_action_missing=""
 cold_category_missing=""
 skill_usage_missing=""
 all_pass=0
@@ -214,6 +224,9 @@ while IFS= read -r line; do
             ;;
         ADVERSARIAL_MISSING:*)
             adversarial_missing="${line#ADVERSARIAL_MISSING:}"
+            ;;
+        HOLE_ACTION_MISSING:*)
+            hole_action_missing="${line#HOLE_ACTION_MISSING:}"
             ;;
         ALL_PASS)
             all_pass=1
@@ -456,7 +469,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -496,6 +509,14 @@ if [ -n "$adversarial_missing" ]; then
     echo "WARN: ${adversarial_count}件のdraftエントリでAdversarial review欠落:"
     printf '%s\n' "$adversarial_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: changed_lines>=200 なのに adversarial_review 記録なし"
+    done
+    warn=1
+fi
+if [ -n "$hole_action_missing" ]; then
+    hole_count=$(printf '%s\n' "$hole_action_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${hole_count}件のREQUEST_CHANGESにhole_action未記入(穴を即ふさいだか？殿厳命2026-05-24):"
+    printf '%s\n' "$hole_action_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: hole_action: none/d0_implemented/cmd_proposed を記入せよ"
     done
     warn=1
 fi
