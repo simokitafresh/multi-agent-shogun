@@ -43,10 +43,23 @@ recommend_entries = [
     item for item in (recommend_data.get("recommendations") or [])
     if isinstance(item, dict)
 ][-limit:]
-exec_entries = [
+
+# recall miss計算は推薦開始以降の実行ログのみ対象(推薦前の実行を誤計上しない)
+first_recommend_ts = ""
+for entry in recommend_entries:
+    ts = str(entry.get("ts") or "").strip()
+    if ts:
+        first_recommend_ts = ts
+        break
+
+all_exec = [
     item for item in (exec_data.get("executions") or [])
     if isinstance(item, dict) and str(item.get("used", "true")).lower() != "false"
-][-limit:]
+]
+if first_recommend_ts:
+    exec_entries = [e for e in all_exec if str(e.get("ts") or "") >= first_recommend_ts][-limit:]
+else:
+    exec_entries = all_exec[-limit:]
 
 recommended = []
 for entry in recommend_entries:
