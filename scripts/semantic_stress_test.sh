@@ -148,6 +148,8 @@ def lord_queries(rows, seen):
             obj = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if obj.get("direction") != "inbound":
+            continue
         for key in ("summary", "content", "message", "text"):
             if key in obj and obj[key]:
                 emit("lord", obj[key], rows, seen)

@@ -11,8 +11,8 @@ setup() {
     export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
 
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
-{"content":"lord hit concept"}
-{"content":"lord uncovered phrase"}
+{"content":"lord hit concept","direction":"inbound"}
+{"content":"lord uncovered phrase","direction":"inbound"}
 EOF
     cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
 cmds:
@@ -102,9 +102,9 @@ EOF
 
 @test "candidate aliases: operational noise is excluded and semantic candidates pass" {
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
-{"content":"【INFOバッチ】 2026-05-21 04:14:16|CI緑: run 26183925378"}
-{"content":"【家老】復帰済み。全忍者idle。cmd待ち。"}
-{"content":"意味検索改善"}
+{"content":"【INFOバッチ】 2026-05-21 04:14:16|CI緑: run 26183925378","direction":"inbound"}
+{"content":"【家老】復帰済み。全忍者idle。cmd待ち。","direction":"inbound"}
+{"content":"意味検索改善","direction":"inbound"}
 EOF
     cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
 cmds:
@@ -137,8 +137,8 @@ EOF
 
 @test "candidate aliases: short mundane NO_MATCH is not written but long conceptual NO_MATCH is written" {
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
-{"content":"そうだな"}
-{"content":"セマンティック辞書の未カバー概念を追加して検索品質を改善する"}
+{"content":"そうだな","direction":"inbound"}
+{"content":"セマンティック辞書の未カバー概念を追加して検索品質を改善する","direction":"inbound"}
 EOF
     cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
 cmds: []
