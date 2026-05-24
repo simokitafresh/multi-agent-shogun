@@ -1794,17 +1794,75 @@ fi
 echo "■ スキル自動成長エスカレーション"
 _skill_ai_state="$SCRIPT_DIR/logs/skill_auto_improve_state.json"
 if [ -f "$_skill_ai_state" ]; then
-    _cfr_list=$(python3 - "$_skill_ai_state" <<'PY' 2>/dev/null || true
+    _cfr_list=$(python3 - "$_skill_ai_state" "$_TMP_SKILL_EXEC_RECENT" <<'PY' 2>/dev/null || true
 import json, sys
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+
+state_path = Path(sys.argv[1])
+exec_log_path = Path(sys.argv[2])
+state = json.loads(state_path.read_text(encoding="utf-8"))
 patterns = state.get("patterns", {})
 cutoff = datetime.now(timezone.utc) - timedelta(days=14)
+
+def load_skill_exec_entries(path):
+    entries = []
+    current = None
+    field_re = re.compile(r'^\s*([a-zA-Z_]+):\s*(.*)\s*$')
+    if not path.exists():
+        return entries
+    for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if re.match(r'^\s*-\s+ts:', raw):
+            if current:
+                entries.append(current)
+            current = {}
+            current["ts"] = raw.split("ts:", 1)[1].strip().strip('"')
+            continue
+        if current is None:
+            continue
+        match = field_re.match(raw)
+        if match:
+            current[match.group(1)] = match.group(2).strip().strip('"')
+    if current:
+        entries.append(current)
+    return entries
+
+skill_exec_entries = load_skill_exec_entries(exec_log_path)
+
+def recent_skill_fail_count(skill, window=50):
+    if not skill:
+        return None
+    skill_entries = [
+        entry for entry in skill_exec_entries
+        if str(entry.get("skill") or "").strip() == skill
+    ][-window:]
+    if not skill_entries:
+        return None
+    fail_count = sum(
+        1 for entry in skill_entries
+        if str(entry.get("result") or "").strip().upper() == "FAIL"
+    )
+    return len(skill_entries), fail_count
+
 cfr = []
+changed = False
 for k, v in patterns.items():
     if v.get("classification") != "code_fix_required":
         continue
+    skill = str(v.get("skill") or "").strip()
+    recent = recent_skill_fail_count(skill)
+    if recent is not None:
+        total, fail = recent
+        if fail == 0:
+            v.pop("classification", None)
+            v.pop("classification_reason", None)
+            v["code_fix_cleared_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            v["code_fix_cleared_by"] = "gate_shogun_startup_recent50_zero_fail"
+            v["code_fix_cleared_recent50_total"] = total
+            v["code_fix_cleared_recent50_fail"] = fail
+            changed = True
+            continue
     last_str = v.get("last_fail", "")
     try:
         last_dt = datetime.fromisoformat(last_str.replace("Z", "+00:00"))
@@ -1815,6 +1873,8 @@ for k, v in patterns.items():
     except (ValueError, TypeError):
         pass
     cfr.append((k, v))
+if changed:
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 if not cfr:
     print("OK")
 else:

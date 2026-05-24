@@ -370,6 +370,96 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "code_fix_required alert clears when recent 50 skill executions have zero FAIL" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+EOF
+    for i in $(seq -w 1 50); do
+        cat >> "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<EOF
+- ts: "2099-01-01T00:${i}:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "gate_report_format PASS"
+  gate: "gate_report_format"
+EOF
+    done
+    cat > "$TEST_TMPDIR/logs/skill_auto_improve_state.json" <<'EOF'
+{
+  "patterns": {
+    "report_write_old": {
+      "skill": "report-write",
+      "gate": "gate_report_format",
+      "reason": "verdict missing",
+      "last_fail": "2099-01-01T00:00:00+0900",
+      "classification": "code_fix_required",
+      "classification_reason": "SKILL.md unchanged 3 consecutive runs"
+    }
+  }
+}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ スキル自動成長エスカレーション"* ]]
+    [[ "$output" == *"OK: code_fix_required未解消パターンなし"* ]]
+    [[ "$output" != *"ALERT: report-write"* ]]
+    run python3 - "$TEST_TMPDIR/logs/skill_auto_improve_state.json" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1], encoding="utf-8"))
+entry = state["patterns"]["report_write_old"]
+assert entry.get("classification") != "code_fix_required"
+assert entry.get("code_fix_cleared_by") == "gate_shogun_startup_recent50_zero_fail"
+assert entry.get("code_fix_cleared_recent50_total") == 50
+assert entry.get("code_fix_cleared_recent50_fail") == 0
+print("OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "code_fix_required alert remains when recent 50 skill executions include FAIL" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2099-01-01T00:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+EOF
+    for i in $(seq -w 1 49); do
+        cat >> "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<EOF
+- ts: "2099-01-01T00:${i}:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "gate_report_format PASS"
+  gate: "gate_report_format"
+EOF
+    done
+    cat > "$TEST_TMPDIR/logs/skill_auto_improve_state.json" <<'EOF'
+{
+  "patterns": {
+    "report_write_old": {
+      "skill": "report-write",
+      "gate": "gate_report_format",
+      "reason": "verdict missing",
+      "last_fail": "2099-01-01T00:00:00+0900",
+      "classification": "code_fix_required",
+      "classification_reason": "SKILL.md unchanged 3 consecutive runs"
+    }
+  }
+}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ スキル自動成長エスカレーション"* ]]
+    [[ "$output" == *"ALERT: report-write"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "L6 learning speed shows per-gate FAIL to PASS transition rates" {
     export L6_LEARNING_NOW="2099-01-31T00:00:00+09:00"
     cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
