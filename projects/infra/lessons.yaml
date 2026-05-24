@@ -64,6 +64,8 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   when: 未設定
 - id: L696
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: set-e下でALERT集計script呼出し時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
   tags:
@@ -78,6 +80,9 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   when: 未設定
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L695
@@ -324,6 +329,8 @@ lessons:
   - tests/unit/test_cmd_delegate.bats
   when: 未設定
 - id: L677
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 二次証跡WARNの部分一致対策は完全一致と非一致の両方をテストせよ
   summary: '[[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が'
   tags:
@@ -395,6 +402,8 @@ lessons:
   - scripts/shutsujin_departure.sh
   when: 未設定
 - id: L672
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: found=true系フィールドは書込み時に必須伴随情報を要求する
   summary: assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず
   tags:
@@ -407,6 +416,9 @@ lessons:
   - scripts/report_field_set.sh
   - tests/unit/test_report_field_set_validation.bats
   when: 未設定
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L671
@@ -452,6 +464,8 @@ lessons:
   - scripts/gates/gate_skill_script_refs.sh
   when: 未設定
 - id: L668
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'insight_write.shのPython2回起動→1回統合: dedup+write+count単一パス化で~12%高速化'
   summary: insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ
   tags:
@@ -673,6 +687,9 @@ lessons:
   - scripts/gates/gate_report_format_main.py
   - tests/unit/test_gate_report_format_pass_no_improvement.bats
   when: 未設定
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L653
   title: hot pathのYAML scalar出力でフィールドごとPython起動を避ける
   summary: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
@@ -1000,6 +1017,8 @@ lessons:
   - tests/unit/test_cmd_save_q5.bats
   when: 未設定
 - id: L630
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: bulletin_write.shのSCRIPT_DIRはrepo root(parentディレクトリ)であり、scripts/yaml_auto_archive.shは$SCRIPT_DIR/scripts/yaml_auto_archive.shで到達する
   summary: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
   tags:
@@ -1347,6 +1366,8 @@ lessons:
   - tests/unit/test_cmd_complete_gate_auto_lesson_write.bats
   when: _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF);
 - id: L605
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: gate FIXヒント→スキル防止ステップ自動転写の知識伝播パターン
   summary: gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio
   tags:
@@ -1358,6 +1379,9 @@ lessons:
   - scripts/gates/gate_report_format_main.py
   - scripts/skill_auto_improve.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L604
@@ -1431,6 +1455,8 @@ lessons:
   - context/semantic-map.md
   when: 同種の作業・判断・検証を行う時
 - id: L599
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: gate種別ごとにmissing失敗意味を分離(待てば進む vs 止めるべき)
   summary: lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし
   tags:
@@ -1451,6 +1477,8 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L598
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: gate種別ごとにmissingの失敗意味を分ける
   summary: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
   tags:
@@ -1465,6 +1493,9 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_2686.yaml
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L597
@@ -1795,6 +1826,8 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L573
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: set -euo pipefailスクリプトでgate非zero終了→後続チェック全スキップの罠
   summary: clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set
     -euo pip
@@ -2035,6 +2068,9 @@ lessons:
   - scripts/cmd_save.sh
   - docs/research/codd_refactor_registry.md
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L554
   title: 重複Batsは片側を高速化するより専用ファイルへcoverageを集約する
   summary: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
@@ -2363,6 +2399,9 @@ lessons:
   - scripts/gates/gate_skill_health.sh
   - tests/skill_routing_eval.bats
   when: 共有workspaceで並列忍者がcommitする際は
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L528
   title: 共有workspaceでのcommitは--onlyでpath固定する
   summary: git diff --cached --name-onlyで2ファイルだけ確認した直後、共有indexに別担当成果物が入り、通常のgit commitが4ファイ
@@ -2540,6 +2579,8 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L511
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'WSL2 NTFS: BEGIN getline from tac+early-breakが1-pass全量awk比較で-86%'
   summary: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
   tags:
@@ -2552,6 +2593,8 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L510
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 三層学習ループ健全性は入力指標(gate数)ではなく出力指標(gate FAIL数=防いだ問題数)で計測せよ
   summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh
     Check '
@@ -2564,16 +2607,25 @@ lessons:
   target_files:
   - gate_gunshi_startup.sh
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L509
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'hot-cache計測は冷却後性能を過小評価する: cold計測を必ず実施せよ'
   summary: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
   tags:
   - universal
   how: L496の教訓を確認しても冷却後に再計測しなかった
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L508
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
   summary: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python
@@ -2582,6 +2634,9 @@ lessons:
   - universal
   how: Python GILも追加制約
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L507
@@ -2629,15 +2684,22 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L504
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: WSL2 NTFS上のfind -mminはstat一括より不安定で遅い場合がある
   summary: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
   tags:
   - universal
   how: 必ず5回median計測してから採用判断せよ
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L503
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る'
   summary: 'CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninj'
   tags:
@@ -3336,6 +3398,8 @@ lessons:
   how: dry-run検証用の教訓エントリ
   when: テスト設計・実行・結果判定を行う時
 - id: L421
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: ~/.claude/skills/配下のファイル編集はEdit tool禁止、Bash sed必須
   summary: Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合
   tags:
@@ -3356,6 +3420,9 @@ lessons:
   - git
   how: '2026-03-31'
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L419
   title: 'sed -iの連続呼出しは非原子的: partial-writeで冪等チェックが永久ブロック'
   summary: workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪
@@ -3457,6 +3524,8 @@ lessons:
   how: aware/naive混在を許さない設計が必要
   when: 同種の作業・判断・検証を行う時
 - id: L409
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: precommitスクリプトの外部ツール依存チェックは全ツールで統一すべき
   summary: run_precommit_checks.shでruffは5段階フォールバック(resolve_ruff_cmd)、biomeはnpx自動取得だが、shellc
   tags:
@@ -3466,6 +3535,9 @@ lessons:
   target_files:
   - run_precommit_checks.sh
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L408
@@ -3518,6 +3590,8 @@ lessons:
   how: '2026-03-31'
   when: 同種の作業・判断・検証を行う時
 - id: L402
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: gate状態ファイルを/tmpに置くと再起動で冪等性喪失
   summary: gate_improvement_trigger.shの冪等性チェック用状態ファイルが/tmpに配置されていた。WSL再起動で/tmpが消去されるため、再起動後
   tags:
@@ -3528,6 +3602,9 @@ lessons:
   target_files:
   - gate_improvement_trigger.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L401
@@ -4377,6 +4454,8 @@ lessons:
   how: テストとテスト対象の変更は必ず同一コミットに含めること
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L314
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: unknown_block_reasonはgate diagnostics改善で排除可能
   summary: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
   tags:
@@ -4472,6 +4551,8 @@ lessons:
   how: 並行I/O増加は避けるべき
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L305
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: deploy_task.sh cmd_id引数なし→task YAML手動更新忘れで旧cmd配備
   summary: 'IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate
     cmd_1510'
@@ -4482,6 +4563,9 @@ lessons:
   target_files:
   - deploy_task.sh
   when: deploy_task.shを新cmdで呼ぶ
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L304
@@ -4522,6 +4606,8 @@ lessons:
   how: '2026-03-28'
   when: 同種の作業・判断・検証を行う時
 - id: L300
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: binary_checks GATE検証はACグループ化+yes/true値をサポートすべし
   summary: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
   tags:
@@ -4532,9 +4618,14 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L299
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: git_uncommitted_gateはプロジェクトリポジトリを解決すべし
   summary: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit
     statusを実行
@@ -4549,6 +4640,9 @@ lessons:
   target_files:
   - inbox_write.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L298
@@ -4652,6 +4746,8 @@ lessons:
   how: '2026-03-23'
   when: 同種の作業・判断・検証を行う時
 - id: L288
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: target_path/filesなしタスクではgit uncommittedチェックがスキップされる
   summary: 大半のタスクにtarget_pathがないため、report YAMLのfiles_modifiedからパス抽出する拡張を検討すべき
   tags:
@@ -4660,6 +4756,9 @@ lessons:
   - reporting
   how: '2026-03-23'
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L287
@@ -4719,6 +4818,8 @@ lessons:
   how: '2026-03-23'
   when: 同種の作業・判断・検証を行う時
 - id: L282
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: PostToolUse hookはpermissionDecision:deny不可。WARN/BLOCK切替はPreToolUse制御
   summary: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
   tags:
@@ -5302,6 +5403,8 @@ lessons:
   how: 「次にやるべきこと」を含むAI行動指示形式にせよ。チェックリストは外部md分離(Read失敗→STOP)。長手順は短名原則にパック化(Named Invariants)
   when: gate/スクリプトのエラー出力を設計する
 - id: L222
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 'deploy_task.sh既定値補完: empty sentinelテスト必須'
   summary: IF deploy_task.shが未設定/空文字/空リストを既定値へ補完する仕様を持つ THEN テストはmissing/Noneだけでなく空文字と空リストの
   tags:
@@ -5311,6 +5414,9 @@ lessons:
   target_files:
   - deploy_task.sh
   when: deploy_task.shが未設定/空文字/空リストを既定値へ補完する仕様を持つ
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L221
@@ -5323,6 +5429,8 @@ lessons:
   how: tr -d '\r'でCR除去してからパースする必要がある
   when: 同種の作業・判断・検証を行う時
 - id: L220
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: bulk commit AC4 は queue/禁止hook と live-generated tracked files を考慮して定義せよ
   summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
   tags:
@@ -5333,6 +5441,9 @@ lessons:
   target_files:
   - context/lord-conversation-index.md
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L219
@@ -5514,6 +5625,8 @@ lessons:
   how: '2026-03-10'
   when: Compose で固定テーマ定数が広く直参照されている時は
 - id: L201
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: MCP Memory APIにはobservation単位のメタデータ(tag/priority)がなく、マーカーは本文埋込が唯一の実用策
   summary: MCP Memory API(memory MCP server)のobservationは単なるstring[]で、個別observationへのtag/pr
   tags:
@@ -5521,6 +5634,9 @@ lessons:
   - process
   how: 'observation本文の先頭にマーカー（例:'
   when: MCP
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L200
@@ -5616,6 +5732,9 @@ lessons:
   - git
   how: review配備前にgit status確認すべき
   when: 並列impl配備時は
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L189
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ
   summary: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
@@ -5955,6 +6074,8 @@ lessons:
   how: スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
   when: Git hookをリポジトリに導入する時
 - id: L150
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: git commit --dry-runではpre-commitが走らずAC誤判定になる
   summary: IF commit関連のACを検証する時 THEN git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   tags:
@@ -5962,6 +6083,9 @@ lessons:
   - git
   how: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   when: commit関連のACを検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L149
@@ -6223,6 +6347,9 @@ lessons:
   - process
   how: SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認
   when: SKILL.md手順追加時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-05-24'
 - id: L121
   title: YAML回転処理でヘッダ保持を欠くと後続appendが既存履歴を失う
   summary: IF YAML回転処理(古いエントリの刈り込み)を実装する時 THEN echo headerで先にヘッダを書き出してからsed出力を>>追記せよ
@@ -6418,6 +6545,8 @@ lessons:
   - queue/gate_metrics.yaml
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L101
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
     6列: '
@@ -6563,6 +6692,8 @@ lessons:
   - lesson_tags.yaml
   when: タスク配備やデプロイ手順を変更・実行する時
 - id: L087
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
   summary: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の
   tags:
@@ -6668,6 +6799,8 @@ lessons:
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L078
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
   title: GATE BLOCK率65%は構造問題(missing_gate)。家老フラグ生成タイミングが主因
   summary: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
   tags:
