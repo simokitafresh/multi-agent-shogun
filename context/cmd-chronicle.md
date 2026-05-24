@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-23 -->
+<!-- last_updated: 2026-05-24 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,18 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2141 | 実装 — Up vs Down MarketにSideways行追加 + レスポンシブ対応 | dm-signal | 04-23 | — |
-| cmd_2210 | 研究 — L2 GS固定選出 vs WF動的選出 比較分析記事+gist共有 | dm-signal | 04-23 | — |
-| cmd_2239 | CoDD最適化 — ticker_returns.py(L1: リターン計算) | dm-signal | 04-23 | — |
-| cmd_2240 | CoDD最適化 — recalculate_fast.py(L2/L3計算本体) | dm-signal | 04-23 | — |
-| cmd_2241 | CoDD最適化 — recalculate_fof.py(L3: FoF再計算, 最大ボトルネック) | dm-signal | 04-23 | — |
-| cmd_2242 | CoDD最適化 — sync_layers.py(オーケストレーター) | dm-signal | 04-23 | — |
-| cmd_2243 | CoDD準備 — data_fetcher.py(L0) extract+spec作成 | dm-signal | 04-23 | 既存sandbox抽出物とspecの再確認でAC1/AC2は |
-| cmd_2244 | CoDD準備 — ticker_returns.py(L1) extract+spec作成 | dm-signal | 04-23 | AC1: CoDD extract完了(codd/extra |
-| cmd_2245 | CoDD準備 — recalculate_fast.py(L2/L3計算本体) extract+spec作成 | dm-signal | 04-23 | recalculate_fast.py(3048行)のcod |
-| cmd_2246 | CoDD準備 — recalculate_fof.py(L3: FoF再計算, 最大ボトルネック) extract+spec作成 | dm-signal | 04-23 | CoDD extractとspec作成は完了したが、AC3の |
-| cmd_2247 | CoDD準備 — sync_layers.py(オーケストレーター) extract+spec作成 | dm-signal | 04-23 | FILL_THIS |
-| cmd_karo_2231_ac7_retry | 検証 — cmd_2231 AC7やり直し: 既存成功job基準のsignal比較のみ | dm-signal | 04-23 | 既存成功job d7k7k1cm0tmc73acvga0 を |
 | cmd_karo_ci_fix_ga159 | CI RED修正 — deploy_task if_then/legacy detailテスト2件 | infra | 04-24 | cmd_save diagnose 系は HEAD 時点で既 |
 | cmd_2248 | fix — cmd_save.sh gate偽陽性率改善: FP率60%超のWARN type修正 | infra | 04-24 | cmd_save.sh のWARN noteを型付き化し、r |
 | cmd_karo_ci_fix_2248 | CI RED修正 — test_cmd_save_warn_logging AC2テスト失敗 | infra | 04-24 | test_cmd_save_warn_logging.bat |
@@ -669,3 +657,5 @@
 | cmd_3018 | ci_status_check.sh L38の--limit 1が最新run=in_progressの場合UNKNOWNを返し、dashboard_auto_section.shがcheck failedと誤表示する。--limit 2にして2件目(completed)のconclusionを返すことで、CI実行中でも前回結果を正しく表示する。LK001(cmd_2792)で根因特定済み | infra | 05-23 | ci_status_check.shが最新2件から最新com |
 | cmd_3020 | deploy_task.sh L4283にtarget_filesマッチングがあるがtarget_files未設定の教訓はタグのみでマッチし全cmdに注入される。有用率0%教訓4件(L510等)の共通根因=tag=universalが広すぎて無関係cmdに注入。target_files未設定教訓に対しても、教訓のtags+cmdのtarget_pathの関連性を考慮したフィルタを追加する | infra | 05-23 | target_files未設定のuniversal教訓にta |
 | cmd_3021 | NewStandard PF問合せで5回試行錯誤した。根因: db-checkスキルにtier_visibility_settingsのスキーマ(tier_id+portfolio_settings JSON構造)が未記載、portfolio_metricsのmetrics_json実キー(total_return等)が未記載、接続時のcwd+PYTHONIOENCODING注意が未記載。追記して次回から一発で到達可能にする | infra | 05-23 | db-checkスキルにNewStandard/Tier可視 |
+| cmd_3022 | verdict-check SKILL.md改良5回効果なし(binary_checks_fail)。忍者がbc:noのまま報告完了通知を送るとcmd_complete_gateでBLOCKされるが、inbox_write.sh report_received分岐のPhase 2とPhase 3の間にbc:no検出BLOCKを追加し、忍者の報告完了をその場で差戻す。意志依存を排除する構造予防 | infra | 05-24 | inbox_write report_receivedでve |
+| cmd_3024 | 全ロール(将軍・家老・軍師・忍者)で操作時にセマンティクスインデックスからスキルを自動推薦する。殿の入力テキストを検索キーにsemantic_searchを呼び、関連スキルをLevel 5(recommend)で表示する。殿裁定: 完全自動+全ロール+原理1つ+BLOCK不可+各論パッチ禁止 | infra | 05-24 | prompt_state_inject.shにsemanti |
