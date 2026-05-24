@@ -3602,9 +3602,35 @@ preflight_gate_flags() {
             fi
         done
         if [ "$has_found_true" = true ]; then
-            # auto_draft_lesson.sh already ran above and must call lesson_write.sh with CMD_ID.
-            # If lesson.done is still missing, keep the gate blocked instead of masking registration failure.
-            echo "  lesson: pending (found:true — waiting for lesson_write-generated flag)"
+            local pf_registered=false
+            for pf_task_file in "${MATCHING_TASK_FILES[@]}"; do
+                [ -f "$gates_dir/lesson.done" ] && pf_registered=true && break
+                if [ ! -f "$pf_task_file" ]; then
+                    continue
+                fi
+                local pf_report_file pf_lc_found pf_ninja_name
+                pf_ninja_name=$(basename "$pf_task_file" .yaml)
+                pf_report_file=$(resolve_report_file "$pf_ninja_name")
+                if [ -f "$pf_report_file" ]; then
+                    pf_lc_found=$(_check_lc_found "$pf_report_file")
+                    if [ "$pf_lc_found" = "true" ]; then
+                        echo "  lesson: auto-registering found:true candidate (${pf_ninja_name})"
+                        if bash "$SCRIPT_DIR/scripts/auto_draft_lesson.sh" "$pf_report_file" 2>&1; then
+                            if [ -f "$gates_dir/lesson.done" ]; then
+                                pf_registered=true
+                                break
+                            fi
+                        else
+                            echo "  [INFO] lesson: auto_draft_lesson failed for ${pf_ninja_name} (non-blocking)"
+                        fi
+                    fi
+                fi
+            done
+            if [ "$pf_registered" = true ]; then
+                echo "  lesson: preflight OK (via auto_draft_lesson/lesson_write)"
+            else
+                echo "  lesson: pending (found:true — waiting for lesson_write-generated flag)"
+            fi
         else
             # found:true候補なし → lesson_check.shで「教訓なし」フラグ生成
             if bash "$SCRIPT_DIR/scripts/lesson_check.sh" "$cmd_id" "preflight: no found:true lesson_candidate" 2>&1; then
