@@ -120,6 +120,8 @@ def render_lord_decisions(entries: list[dict[str, Any]]) -> str:
     keywords = ("指示", "裁定", "決裁", "決定", "方針", "承認", "却下")
     lines: list[str] = []
     for entry in sorted(entries, key=entry_sort_key, reverse=True):
+        if entry.get("direction") != "inbound":
+            continue
         source = str(entry.get("source", "")).lower()
         text = f"{entry.get('summary', '')}\n{entry.get('detail', '')}"
         if "lord" in source or any(token in text for token in keywords):

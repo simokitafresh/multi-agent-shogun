@@ -396,3 +396,21 @@ EOF
     echo "$output" | grep -q "second"
     echo "$output" | grep -q "third"
 }
+
+@test "T-LC-017: conversation_retention renders lord decisions from inbound entries only" {
+    local index_path="$TEST_TMPDIR/lord-conversation-index.md"
+    local archive_dir="$TEST_TMPDIR/archive"
+    cat > "$LORD_CONVERSATION" <<'EOF'
+{"ts":"2099-01-01T00:00:00+00:00","source":"terminal","direction":"response","summary":"軍師D0承認。進める。","detail":"軍師D0承認。進める。"}
+{"ts":"2099-01-01T00:01:00+00:00","source":"terminal","direction":"outbound","summary":"方針を共有した。","detail":"方針を共有した。"}
+{"ts":"2099-01-01T00:02:00+00:00","source":"terminal","direction":"inbound","summary":"殿裁定: inboundのみ採用せよ。","detail":"殿裁定: inboundのみ採用せよ。"}
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/conversation_retention.sh" "$LORD_CONVERSATION" "$index_path" "$archive_dir"
+    [ "$status" -eq 0 ]
+
+    decisions_section="$(sed -n '/^## 殿の直近裁定・方針/,/^## 参照cmd/p' "$index_path")"
+    echo "$decisions_section" | grep -q "殿裁定: inboundのみ採用せよ。"
+    ! echo "$decisions_section" | grep -q "軍師D0承認"
+    ! echo "$decisions_section" | grep -q "方針を共有"
+}
