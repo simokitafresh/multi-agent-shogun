@@ -93,14 +93,61 @@ gws files export "<file_id>" --mime-type "application/pdf" --output "<safe_tmp_n
 
 `content_checked` は `yes` / `blocked` の二値にする。`blocked` が1件でもあればリネーム実行へ進まない。
 
-### Step 3: リネーム案を作る
+### Step 3: 過去の命名パターンを検索する
+
+リネーム案を作る前に、同じジャンルと同じ場所の過去パターンを `data/multi_agent_shogun_memory.db` から検索する。保存先はJSONLではなくSQLiteの `rename_patterns` テーブル。
+
+`rename_patterns` テーブル:
+
+```sql
+id INTEGER PRIMARY KEY,
+genre TEXT NOT NULL,
+subtype TEXT,
+template TEXT NOT NULL,
+example_original TEXT NOT NULL,
+example_renamed TEXT NOT NULL,
+source_location TEXT NOT NULL,
+created_at TEXT NOT NULL
+```
+
+FTS5検索テーブルを併用し、`genre` と `source_location` を優先して絞る。`source_location` はDriveならDrive folder URL、ローカルならディレクトリパスにする。同じ場所のファイルは同じ命名パターンになる傾向があるため、場所一致を強く扱う。
+
+検索例:
+
+```bash
+sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
+SELECT genre, subtype, template, example_original, example_renamed, source_location
+FROM rename_patterns
+WHERE genre = :genre
+  AND source_location = :source_location
+ORDER BY created_at DESC
+LIMIT 10;
+SQL
+```
+
+FTS5検索例:
+
+```bash
+sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
+SELECT rp.genre, rp.subtype, rp.template, rp.example_original, rp.example_renamed, rp.source_location
+FROM rename_patterns_fts fts
+JOIN rename_patterns rp ON rp.id = fts.rowid
+WHERE rename_patterns_fts MATCH :query
+ORDER BY rp.created_at DESC
+LIMIT 10;
+SQL
+```
+
+該当パターンがあれば、内容確認台帳の `reason` に参照した `template` と `source_location` を書く。該当がなければ「過去パターンなし」と明記し、推測で既存パターンを捏造しない。
+
+### Step 4: リネーム案を作る
 
 - 名前は内容を表す固有語を優先し、曖昧な `document`, `image`, `scan`, `misc` を避ける。
 - 同一テーマの連番は `YYYY-MM-DD_topic_01.ext` のように自然順で並ぶ形式にする。
 - 元拡張子を維持する。拡張子変更が必要な場合はリネームではなく変換作業として分ける。
 - Driveでは同名衝突を事前確認する。ローカルでは `test -e "<new_path>"` で衝突を確認する。
 
-### Step 4: 殿に提示して承認を得る
+### Step 5: 殿に提示して承認を得る
 
 実行前に必ず以下を提示する。
 
@@ -115,7 +162,7 @@ blocked: 0
 
 承認なしに `gws files update` または `mv` を実行してはならない。承認後も、提示した表にないファイルは変更しない。
 
-### Step 5: 承認後に実行する
+### Step 6: 承認後に実行する
 
 Driveの場合:
 
@@ -138,7 +185,31 @@ test ! -e "<new_path>"
 
 大量件数では1件ずつ成功/失敗を記録する。途中失敗した場合は停止し、成功済み・未実行・失敗を分けて報告する。
 
-### Step 6: 実行後検証
+### Step 7: リネーム学習ログを記録する
+
+リネーム実行後、承認済みの命名パターンを `rename_patterns` に記録する。実行していない案や却下された案は記録しない。
+
+記録例:
+
+```bash
+sqlite3 data/multi_agent_shogun_memory.db <<'SQL'
+INSERT INTO rename_patterns (
+  genre, subtype, template, example_original, example_renamed, source_location, created_at
+) VALUES (
+  :genre,
+  :subtype,
+  :template,
+  :example_original,
+  :example_renamed,
+  :source_location,
+  datetime('now')
+);
+SQL
+```
+
+`template` には再利用可能な形を保存する。例: `YYYY-MM-DD_invoice_{vendor}_{amount}.pdf`。個別ファイル名そのものだけを保存せず、次回検索で使える抽象度にする。
+
+### Step 8: 実行後検証
 
 Driveの場合:
 
@@ -168,5 +239,7 @@ find "<target_dir>" -maxdepth 1 -type f | sort
 - PDFはPyMuPDF画像化後にRead toolで確認している。
 - 画像はRead toolで確認している。
 - Google DocsはPDF export後に確認している。
+- Step 3前に `rename_patterns` を `genre` + `source_location` で検索している。
 - リネーム案を殿に提示し、承認を得ている。
+- リネーム実行後に `rename_patterns` へ実例とテンプレートを記録している。
 - 実行後にDrive listまたはローカルfindで結果を確認している。
