@@ -277,4 +277,5 @@
   causal_chain: "軍師D0→統合fixture旧形式→CI RED→kagemaru修正→PASS。LG026適用範囲拡張が必要"
   brainwash_check: "自分のD0が原因。忖度せず自責記録"
   cs_checklist: "CS1:報告全文 CS2:c8f6062a diff CS3:テスト15件PASS CS4:LGTM+SG7+自責 CS5:LG026拡張 CS6:因果(D0→CI RED→修正)"
+  gate_result: BLOCK
   timestamp: "2026-05-24T20:32:00"
