@@ -668,3 +668,5 @@
 | cmd_3032 | context/infrastructure.mdが24日間未更新で連日WARN。lord_conversationデータフロー(live→アーカイブ→記憶DB)、記憶DB構造、Codex respawn-pane裁定、CI並列隔離等が未反映。将軍が/clear後にインフラ構造を参照できない真因を解消 | infra | 05-24 | context/infrastructure.mdへlord |
 | cmd_3035 | cmd_3033(将軍Level 0-7)とcmd_3034(軍師Level 4)で将軍・軍師の洗脳防御を実装したが家老gateには洗脳チェックがない。家老の判断(配備/workaround分類/LGTM)でAnthropicの早期終了本能が影響するケースを防御する | infra | 05-24 | 家老startup gateにworkaround brai |
 | cmd_3036 | CLAUDE.md Step 8にQ6(洗脳チェック)を追加したがgate検出がなく省略しても何も起きない(Level 2止まり)。gate_shogun_startup.shでQ6回答の有無を検証しLevel 4(gate BLOCK)に到達させる。軍師はcmd_3034でLevel 4実装済み。将軍も同等に | infra | 05-24 | gate_shogun_startup.shへQ6洗脳チェッ |
+| cmd_3037 | 家老だけinstructions洗脳防御0件(将軍12件/軍師6件)の穴を塞ぐ。§0.1日常フィルタ+idle深い監査+軍師第三者検証の2層構造 | infra | 05-24 | 家老向け洗脳防御を§0.1/idle自走/instructi |
+| cmd_3040 | lord_conversation_read.shは引数必須の手動実行道具スクリプト。hooks登録不可だがgateが意志依存と誤検出し7セッション連続ALERT。allowlistに追加して偽陽性を解消する | infra | 05-24 | lord_conversation_read.shをenfo |
