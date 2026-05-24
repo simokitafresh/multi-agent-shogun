@@ -78,6 +78,8 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   when: 未設定
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -405,6 +407,8 @@ lessons:
   - scripts/report_field_set.sh
   - tests/unit/test_report_field_set_validation.bats
   when: 未設定
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L671
   title: 修行FAIL率計測はreport単位で重複排除せよ
   summary: gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA
@@ -1354,6 +1358,8 @@ lessons:
   - scripts/gates/gate_report_format_main.py
   - scripts/skill_auto_improve.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L604
   title: gate_report_format_main.pyをlookup APIとして活用するパターン
   summary: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh
@@ -1459,6 +1465,8 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_2686.yaml
   when: gateやhookの検知・補正ロジックを変更する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L597
   title: 'lesson_write.sh REFLUX_CHECK: 日本語テキストでREFLUX_KEYWORDSが空の場合はSKIPPEDにし偽WARNを抑制せよ'
   summary: lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で
@@ -2541,6 +2549,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-05-24'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L510
   title: 三層学習ループ健全性は入力指標(gate数)ではなく出力指標(gate FAIL数=防いだ問題数)で計測せよ
   summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh
@@ -2561,6 +2571,8 @@ lessons:
   - universal
   how: L496の教訓を確認しても冷却後に再計測しなかった
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
@@ -2570,6 +2582,8 @@ lessons:
   - universal
   how: Python GILも追加制約
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -2621,6 +2635,8 @@ lessons:
   - universal
   how: 必ず5回median計測してから採用判断せよ
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L503
   title: 'dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る'
   summary: 'CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninj'
@@ -3450,6 +3466,8 @@ lessons:
   target_files:
   - run_precommit_checks.sh
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L408
   title: 'switch_project.shのL074パターン: ((sent++))がset -e環境で初回即死'
   summary: switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set
@@ -3510,6 +3528,8 @@ lessons:
   target_files:
   - gate_improvement_trigger.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L401
   title: python3 -cのシェル変数展開はインジェクション源。heredoc+sys.argvパターン統一必須
   summary: pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パ
@@ -4462,6 +4482,8 @@ lessons:
   target_files:
   - deploy_task.sh
   when: deploy_task.shを新cmdで呼ぶ
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L304
   title: grep -c || echo 0 二重出力バグ
   summary: gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit
@@ -4510,6 +4532,8 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L299
   title: git_uncommitted_gateはプロジェクトリポジトリを解決すべし
   summary: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit
@@ -4525,6 +4549,8 @@ lessons:
   target_files:
   - inbox_write.sh
   when: gateやhookの検知・補正ロジックを変更する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
   summary: ntfy_listener.shをNTFY_LISTENER_LIB_ONLY=1でsource時、flock guardはスキップされるがinbox初期化(e
@@ -4634,6 +4660,8 @@ lessons:
   - reporting
   how: '2026-03-23'
   when: 報告YAMLやレビュー結果を作成・検証する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L287
   title: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須
   summary: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
@@ -5283,6 +5311,8 @@ lessons:
   target_files:
   - deploy_task.sh
   when: deploy_task.shが未設定/空文字/空リストを既定値へ補完する仕様を持つ
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L221
   title: WSL2上の/mnt/c/配下ファイルはWindows改行(CRLF)を含むことがある
   summary: ~/.claude/skills/*/SKILL.mdがCRLFを含み、awkのregex ^---$ が ---\rにマッチしなかった。tr
@@ -5303,6 +5333,8 @@ lessons:
   target_files:
   - context/lord-conversation-index.md
   when: 同種の作業・判断・検証を行う時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
   summary: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
@@ -5489,6 +5521,8 @@ lessons:
   - process
   how: 'observation本文の先頭にマーカー（例:'
   when: MCP
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L200
   title: '殿のUI好み: 無地背景・チップ形式・デザインガイド参照'
   summary: シンプルな無地背景推奨(背景画像よりソリッドカラー)。フォルダ/カテゴリ選択にはチップ(chip/tag)形式がベスト。Androidアプリのデザインシステムは
@@ -5928,6 +5962,8 @@ lessons:
   - git
   how: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   when: commit関連のACを検証する時
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L149
   title: shellスクリプトでrgを使うな、grepを使え
   summary: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
