@@ -29,6 +29,7 @@
     - "事実3: 6件P1→全件FP/P3降格(wa初期化正常/try-except済み/prompt_only_terms低確率)"
   origin: "[[洗脳防御]] -> [[セマンティック監査]] -> [[全CLEAN]]"
   causal_chain: "洗脳防御cmd_3027-3036の5スクリプト変更→エージェント監査でP0/P1報告→設計意図照合で全件FP→変更は構造的バグを導入していない"
+  cs_checklist: "CS1:全量(5スクリプト全diff確認) CS2:自システムデータ(git diff+因果辺照合) CS3:実コード比較(grep/Read現物) CS4:行動変換(D0修正+docs永続化) CS5:追加角度なし(5カテゴリ×5スクリプト網羅) CS6:因果(設計意図→P0/P1→FP降格の連鎖追跡)"
   timestamp: "2026-05-24T19:35:00"
 - cmd_id: d0_semantic_drift_gap_20260524
   review_type: self_study
@@ -39,6 +40,7 @@
     - "事実2: gap=context/memory-db-schema.mdがlocal_memory_db概念のresourcesに未登録"
   origin: "[[セマンティック監査]] -> [[drift検出]] -> [[D0修正]]"
   causal_chain: "cmdアーカイブ時にindex.mdの参照更新漏れ→drift蓄積。新contextファイル作成時にindex未更新→gap。両方とも手動管理の限界→自動化候補"
+  cs_checklist: "CS1:全量(200ファイル参照全件走査) CS2:自システムデータ(os.path.exists実測) CS3:実コード(index.md現物Edit) CS4:行動変換(D0 commit cbf438ab) CS5:gap追加分析(cmd-chronicle概念→insight記録) CS6:因果(アーカイブ→参照残存→drift)"
   timestamp: "2026-05-24T19:42:00"
 - cmd_id: cmd_3037
   review_type: consultation
@@ -58,6 +60,7 @@
   origin: "[[cmd_3037]] -> [[karo洗脳防御穴]] -> [[APPROVE]]"
   causal_chain: "家老の洗脳防御がLevel4(gate)のみでLevel2(手順書)不在→パターン認識なく形式記入→形骸化リスク。§0.1問い8+idle Step 6で認識層を補完。正の複利"
   brainwash_check: "穴なし。穴の即時対処で先送りなし"
+  cs_checklist: "CS0:殿裁定確認(洗脳防御は殿厳命) CS1:全量(karo.md+karo-operations.md+gate_karo_startup.sh確認) CS2:自システムデータ(grep実測0件) CS3:実コード比較(将軍12/軍師6/家老0) CS4:行動変換(CMD-A支持掲示板投稿) CS5:Level4のみLevel2不在の視点 CS6:因果(gate有→instructions無→形骸化)"
   timestamp: "2026-05-24T19:49:00"
 - cmd_id: cmd_3038
   review_type: consultation
@@ -77,6 +80,7 @@
   origin: "[[cmd_3038]] -> [[USEFUL率0%教訓]] -> [[APPROVE]]"
   causal_chain: "infra教訓が忍者のdm-signalタスクに無関係マッチ注入→USEFUL率0%→CTX浪費。deprecated化で即排除。正の複利(1650-2200tok/タスク削減)"
   brainwash_check: "穴なし"
+  cs_checklist: "CS0:殿裁定なし(軍師主導分析) CS1:全量(lesson_impact.tsv全4000行走査) CS2:自システムデータ(独立検証43件) CS3:実コード(deploy_task.sh L4248-4254確認) CS4:行動変換(CMD-B支持掲示板投稿) CS5:deprecated既存43件との差分 CS6:因果(infraタグマッチ→無関係注入→CTX浪費)"
   timestamp: "2026-05-24T19:49:00"
 - cmd_id: cmd_3039
   review_type: consultation
@@ -96,4 +100,5 @@
   origin: "[[cmd_3039]] -> [[スキル推薦Phase2a]] -> [[APPROVE]]"
   causal_chain: "Phase2a未実装→推薦ログなし→precision/recall不正確(偽recall miss 20件)→計測基盤不全。ログ記録追加で計測正確化。正の複利"
   brainwash_check: "穴なし"
+  cs_checklist: "CS0:殿裁定確認(スキル推薦は殿なぜなぜ7回) CS1:全量(設計書v5全セクション確認) CS2:自システムデータ(detect_skill_triggers L283現物) CS3:実コード(semantic_skill_recommendations L205確認) CS4:行動変換(CMD-C支持掲示板投稿) CS5:Phase1既存→Phase2a追加の段階確認 CS6:因果(Phase2a未実装→計測不正確→偽recall miss)"
   timestamp: "2026-05-24T19:49:00"
