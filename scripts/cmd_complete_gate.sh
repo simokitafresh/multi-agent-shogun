@@ -6461,6 +6461,25 @@ else
         fi
     fi
 
+    # ─── GATE BLOCK時 recall miss検出（Phase 2d: 推薦されなかったが使うべきだったスキル） ───
+    if [ -n "$_target_skill" ]; then
+        _recall_miss_log="${SKILL_RECOMMEND_LOG_FILE:-$SCRIPT_DIR/logs/skill_recommend_log.yaml}"
+        if [ -f "$_recall_miss_log" ]; then
+            if ! grep -qF "$_target_skill" "$_recall_miss_log" 2>/dev/null; then
+                echo ""
+                echo "Skill recall miss detected:"
+                echo "  skill: $_target_skill (BLOCK理由: ${block_reason})"
+                echo "  推薦ログに $_target_skill の推薦記録なし → recall miss"
+                _recall_miss_entry="- ts: \"$(date '+%Y-%m-%dT%H:%M:%S%z')\""
+                _recall_miss_entry="${_recall_miss_entry}\n  type: recall_miss"
+                _recall_miss_entry="${_recall_miss_entry}\n  skill: \"$_target_skill\""
+                _recall_miss_entry="${_recall_miss_entry}\n  block_reason: \"${block_reason//\"/\\\"}\""
+                _recall_miss_entry="${_recall_miss_entry}\n  cmd_id: \"$CMD_ID\""
+                printf '%b\n' "$_recall_miss_entry" >> "$_recall_miss_log" 2>/dev/null || true
+            fi
+        fi
+    fi
+
     # ─── GATE BLOCK時自動draft教訓生成（ベストエフォート） ───
     echo ""
     echo "Auto-draft lessons for GATE BLOCK:"
