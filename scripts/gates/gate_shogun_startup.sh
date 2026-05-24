@@ -1745,6 +1745,26 @@ else
     echo "  SKIP: logs/skill_execution_log.yaml 不在"
 fi
 
+# --- Gate 20.2: スキル推薦 precision/recall (cmd_3027 Phase2) ---
+echo "■ スキル推薦 precision/recall"
+_skill_recommend_metrics="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
+if [ -x "$_skill_recommend_metrics" ] || [ -f "$_skill_recommend_metrics" ]; then
+    set +e
+    _skill_rec_out="$(bash "$_skill_recommend_metrics" 30 2>&1)"
+    _skill_rec_status=$?
+    set -e
+    printf '%s\n' "$_skill_rec_out" | sed 's/^/  /'
+    if [ "$_skill_rec_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("スキル推薦精度: Phase 3 cmd起票候補 — 推薦抑制/aliases補完")
+    elif [ "$_skill_rec_status" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("スキル推薦精度: 集計失敗")
+    fi
+else
+    echo "  SKIP: skill_recommend_metrics.sh 不在"
+fi
+
 # --- Gate 20.5: SKILL.md script参照鮮度 (cmd_2489) ---
 # 目的: SKILL.mdが参照する scripts/* の消滅・更新漏れを起動時に検出する。
 echo "■ SKILL.md script参照"

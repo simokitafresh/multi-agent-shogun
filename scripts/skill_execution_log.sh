@@ -22,6 +22,28 @@ yaml_scalar() {
     printf '"%s"\n' "$value"
 }
 
+normalize_skill_source() {
+    local source_value="${1:-}"
+    local base
+
+    if [[ -z "$source_value" ]]; then
+        printf '%s' "$source_value"
+        return 0
+    fi
+
+    base="${source_value##*/}"
+    if [[ "$base" =~ _report_(cmd_[A-Za-z0-9_.-]+)\.ya?ml$ ]]; then
+        printf '%s' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    if [[ "$source_value" =~ (^|[[:space:]/])(cmd_[A-Za-z0-9_.-]+)([[:space:]]|$) ]]; then
+        printf '%s' "${BASH_REMATCH[2]}"
+        return 0
+    fi
+
+    printf '%s' "$source_value"
+}
+
 skill="${1:-}"
 if [ "$skill" = "summary" ]; then
     if [ "${2:-}" ]; then
@@ -94,13 +116,14 @@ case "$source" in
         exit 0
         ;;
 esac
+source="$(normalize_skill_source "$source")"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 lock_file="${LOG_FILE}.lock"
 ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 
 (
-    flock -w 10 200
+    flock -w 5 200
     if [ ! -s "$LOG_FILE" ]; then
         printf 'executions:\n' > "$LOG_FILE"
     fi

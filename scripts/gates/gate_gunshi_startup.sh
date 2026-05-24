@@ -142,6 +142,26 @@ else
 fi
 
 # --- Check 3: レビューログ統計 ---
+echo "■ スキル推薦 precision/recall"
+skill_recommend_metrics_script="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
+if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_script" ]; then
+    set +e
+    _skill_rec_out="$(bash "$skill_recommend_metrics_script" 30 2>&1)"
+    _skill_rec_status=$?
+    set -e
+    printf '%s\n' "$_skill_rec_out" | sed 's/^/  /'
+    if [ "$_skill_rec_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("スキル推薦精度: Phase 3 cmd起票候補 — 推薦抑制/aliases補完")
+    elif [ "$_skill_rec_status" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("スキル推薦精度: 集計失敗")
+    fi
+else
+    echo "  SKIP: skill_recommend_metrics.sh 不在"
+fi
+echo ""
+
 echo "■ レビューログ統計"
 REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 STATS_FILE="$SCRIPT_DIR/logs/gunshi_stats.yaml"

@@ -156,6 +156,52 @@ record_semantic_no_match_metric() {
   } 9>"${metrics_file}.lock"
 }
 
+prompt_state_yaml_scalar() {
+  local value="${1:-}"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  printf '"%s"' "$value"
+}
+
+record_skill_recommendation_log() {
+  local prompt_hash="$1"
+  local skills="$2"
+  local recommend_log="${PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE:-$SCRIPT_DIR/logs/skill_recommend_log.yaml}"
+  local skill_name
+
+  [[ -n "$prompt_hash" ]] || return 0
+  [[ -n "${skills//[[:space:]]/}" ]] || return 0
+
+  mkdir -p "$(dirname "$recommend_log")"
+  {
+    flock -w 5 9 || return 0
+    if [[ ! -s "$recommend_log" ]]; then
+      printf 'recommendations:\n' > "$recommend_log"
+    fi
+    printf -- '- ts: %s\n' "$(prompt_state_yaml_scalar "$timestamp")" >> "$recommend_log"
+    printf '  agent_id: %s\n' "$(prompt_state_yaml_scalar "$agent_id")" >> "$recommend_log"
+    printf '  prompt_hash: %s\n' "$(prompt_state_yaml_scalar "$prompt_hash")" >> "$recommend_log"
+    printf '  recommended_skills:\n' >> "$recommend_log"
+    while IFS= read -r skill_name; do
+      [[ -n "$skill_name" ]] || continue
+      printf '  - %s\n' "$(prompt_state_yaml_scalar "$skill_name")" >> "$recommend_log"
+    done <<< "$skills"
+  } 9>"${recommend_log}.lock"
+
+  python3 - "$recommend_log" <<'PY' >/dev/null 2>&1 || true
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    yaml.safe_load(fh)
+PY
+}
+
+skill_names_from_recommendation_text() {
+  sed -nE 's/^- \/([A-Za-z0-9_.-]+).*/\1/p'
+}
+
 semantic_skill_recommendations() {
   local search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
   local cache_file
@@ -175,6 +221,8 @@ semantic_skill_recommendations() {
   if [[ -f "$cache_file" ]]; then
     cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
     if [[ "$cached_hash" == "$prompt_hash" ]]; then
+      skills="$(sed '1,/^---$/d' "$cache_file" 2>/dev/null | skill_names_from_recommendation_text || true)"
+      record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
       sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
       return 0
     fi
@@ -215,6 +263,7 @@ print("\n".join(names[:5]))
 PY
   )"
   [[ -n "$skills" ]] || return 0
+  record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
 
   {
     printf '⚠ SKILL RECOMMENDATION: semantic_search一致。必要なら該当SKILL.mdを読め。\n'
