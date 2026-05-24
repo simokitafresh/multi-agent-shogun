@@ -377,3 +377,60 @@
 # 修行45commit: 6忍者×6-7ラウンド。31スクリプト/テスト修正。32 aliases候補蓄積
 # accuracy: 全件LGTM→CLEAR。APPROVE→FAIL 0件
 # ★強くてニューゲーム: stats+index.md原則4件+docs/research 1件+掲示板6投稿+lesson_candidate送信+gate_sync全完了+inbox archive
+#
+# ─── 本セッション成果 (2026-05-22T23:25更新) ───
+# レビュー計26件: draft APPROVE 10件(cmd_2994-3005,3007) + draft RC 1件(cmd_2996 AC未定義) + report LGTM 11件(cmd_2992-3005,3007) + report FAIL 1件(cmd_2993フォーマット不備) + consultation 3件(DB汎用化/4ステップ検索/3層ハーネス批評)
+# 記憶DB強化シリーズ(殿主導): cmd_2994(FTS5フォールバック)→2998(日本語速度)→2999(CLIラッパー)→3001(schema自動生成)→3002(SELECT-onlyガード)→3003(テンプレート8件)→3004(Step2概念展開)→3005(棚卸し12974件)→3007(案A記憶3層ハーネス)。全GATE CLEAR
+# 殿厳命(2026-05-22): 鎖の頂点は殿のみ。将軍も軍師も同列。殿の決定を将軍への忖度で無視するな。迷ったら殿に聞け
+# 環境埋込み3箇所: instructions/gunshi.md §鎖の頂点は殿のみ(L4) + lessons_gunshi.yaml CS0殿優先チェック(gate WARN) + memory/feedback
+# 将軍監視: instructions/shogun.mdへの埋込みゼロ・enforcementがlesson自己参照(何もBLOCKしない)を殿に報告→殿「口だけ」確認
+# targetフィルタバグ発見: 将軍が他エージェント宛の殿の言葉を自分宛と誤認。memory_db_query.shにデフォルトtarget必要
+# accuracy: 全件LGTM/APPROVE→全CLEAR。APPROVE→FAIL 0件。FAIL→BLOCK 1件(cmd_2993正判定)。WA 0件
+# review_logアーカイブ: 1546行→ヘッダのみ(20260522a.yamlに退避)
+# ★強くてニューゲーム: stats更新+review_logアーカイブ+CS0埋込み(L4)+殿厳命3箇所+全gate_result同期+inbox archive
+#
+# ─── 本セッション成果 (2026-05-23T03:18更新) ───
+# レビュー計20件: draft RC 1件(cmd_3008既実装) + draft APPROVE 6件(cmd_3009/3011/3012/3013/3014/3015/3016) + report LGTM 12件(cmd_3008-3016全件) + self_study 1件(セマンティック監査)
+# targetフィルタ一連修正3箇所全CLEAR: cmd_3008(記憶DB) + cmd_3009(hook) + cmd_karo_lord_conv_target_filter(lord_conv helper)
+# 記憶DB Phase 2完了: cmd_3011(道具--doc-dirs) + cmd_3012(初回153件) + cmd_3014(追加253件=計352件) + cmd_3015(3層貫通: セマンティクス2概念+Obsidian90件)
+# cmd_3013 cancelled(殿裁定: event_type独自分類不要。source_file=自然分類子)
+# cmd_3016: OSS知識辞書7件最新化(ace/claude-code/gsd/gstack/oshio/vercel/codd)
+# CI fix 2連鎖: cmd_karo_ci_fix_lord_conv_read(cwd) + v2(exec permission)
+# idle自走: セマンティック監査(記憶DB 19cmd P0=0全CLEAN) + insights 6→0件 + semantic index gap 1件修正 + 設計書セルフレビュー3件
+# パターン分析2件: (1)既実装レース(3/6 draft)→deploy_task.sh q11再チェック提案 (2)CI RED連鎖→新スクリプト追加チェックリスト→lesson_candidate送信
+# accuracy: 全件LGTM/APPROVE→CLEAR。APPROVE→FAIL 0件。WA 0件
+# docs/research永続化2件: semantic_audit_memory_db + ci_red_chain_new_script
+# 記憶DB効果計測(定量): ヒット率2.9%(1/34, 2026-05-20)→100.0%(32/32, 2026-05-23)。+97.1pt。baseline更新済み
+# 教訓有効率: 34.5%(40/116)。前回28.4%→+6.1pt改善
+# 免疫系: FAIL→PASS遷移442件。accuracy 97.1%。WA率0%(直近全clean)
+# finding_categories冷え: north_star記録漏れ発見→ヘッダ知見追記で次セッションから修正
+# ★強くてニューゲーム: stats最終+review_log 345行+ヘッダ知見2件(既実装レース+north_star)+docs/research 2件+掲示板7投稿+lesson_candidate 1件+insights 0件+baseline更新+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-24T14:35更新) ───
+# レビュー計18件: draft RC 3件(cmd_3017/3018/3019既実装レース) + draft APPROVE 5件(cmd_3020/3021/3022/3023/3024) + report LGTM 9件(cmd_3017-3024+CI修正1件) + report LGTM 1件(cmd_karo_ci_fix_q11_test)。全GATE CLEAR
+# 既実装レース3連続: cmd_3017/3018/3019全てディスク上uncommitted→忍者はproper commit+テスト追加のみで完了
+# スキル推薦Level5設計+実装:
+#   殿なぜなぜ7回→セマンティクスインデックス逆引き→設計v1-v4(4回差戻し)→cmd_3024 GATE CLEAR
+#   殿裁定: recommend>enforce/各論パッチ禁止/Level5/全ロール共通注入ポイント(UserPromptSubmit)/殿入力テキスト=検索キー第1優先
+#   Phase 2設計v5: 推薦記録(prompt_state_inject)→使用記録(skill_execution_log source正規化)→集計(startup gate)の3段全てロール非依存
+# infra改善: cmd_3022(inbox_write verdict FAIL差戻しBLOCK)+cmd_3023(preflight auto_draft自動登録)+cmd_3025(q8 scope_mode=focused除外)+cmd_3026(SKILL.md 4件追従)
+# accuracy: 全件LGTM/APPROVE→CLEAR。APPROVE→FAIL 0件。WA 0件
+# review_logアーカイブ: 716行→16行(20260524a.yamlに退避)。ヘッダ知見3件追記(スキル推薦Level5/recommend>enforce/全ロール共通注入ポイント)
+# docs/research永続化1件: gunshi_idle_skill_recommend_design_20260524.md(v5)
+# 掲示板8投稿(既実装レース分析+スキル推薦v1-v4+Phase2 v2/v5)
+# ★強くてニューゲーム: stats更新+review_logアーカイブ+ヘッダ知見3件+docs/research 1件+掲示板8投稿+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-24T19:55更新) ───
+# consultation 3件: cmd_3037/3038/3039全APPROVE(洗脳防御3cmd設計レビュー)
+# self_study 2件: セマンティック監査(5スクリプト全CLEAN)+drift/gap D0
+# D0直接実装3件: (1)semantic index drift4件+gap1件(cbf438ab) (2)review-bundle ambiguity自動補完(c0143dc9) (3)ヘッダ知見2件追記
+# 将軍Q6第三者検証: 自己申告2件/家老13件=検出率15%。殿の「自己評価は洗脳が素通りする」定量実証
+# USEFUL率0%教訓検証: lesson_impact.tsv 43件(全infra)。家老46件と概ね一致。CMD-B支持
+# スキル推薦ALERT根因: recall miss 28件中20件がGuard 9成熟スキル。Phase2a未実装が根因。CMD-C支持
+# 洗脳防御gate初期精度: cmd_save q12+deferral 2件発火/2件真陽性=100%。偽陽性0件
+# ambiguity冷え発見: 前セッション全体0件→実態2件(ambiguity_points非none)。review-bundle SKILL.mdに自動補完追加
+# テスト: gate_gunshi_cs_checklist.bats 11件全PASS
+# docs/research永続化1件: gunshi_idle_semantic_audit_brainwash_batch_20260524.md
+# 掲示板6投稿(Q6検証+ALERT分析+CMD-A/B検証+セマンティック監査+3cmd APPROVE)
+# accuracy: consultation 3件全APPROVE。self_study 2件全CLEAN。WA 0件
+# ★強くてニューゲーム: stats更新+review_log6件+ヘッダ知見2件+D0 3件commit+docs/research 1件+掲示板6投稿+insight 1件+全inbox既読
