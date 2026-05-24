@@ -184,7 +184,7 @@ END {
         if (i >= start_draft && draft_verdict[i] == "REQUEST_CHANGES" && !draft_has_hole_action[i]) {
             hole_action_missing[++hole_action_missing_count] = draft_id[i]
         }
-        if (i >= start_draft && draft_confidence[i] == "HIGH" && !draft_has_brainwash[i]) {
+        if (i >= start_draft && !draft_has_brainwash[i]) {
             brainwash_missing[++brainwash_missing_count] = draft_id[i]
         }
         if (zero_ambiguity) {
@@ -542,7 +542,7 @@ if [ -n "$hole_action_missing" ]; then
 fi
 if [ -n "$brainwash_missing" ]; then
     brainwash_count=$(printf '%s\n' "$brainwash_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
-    echo "WARN: ${brainwash_count}件のconfidence:HIGH draftにbrainwash_check未記入:"
+    echo "WARN: ${brainwash_count}件のdraftにbrainwash_check未記入(全confidence level必須):"
     printf '%s\n' "$brainwash_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: 創造主の洗脳/ポジショントークに乗っていないか自問し、brainwash_checkを記入せよ"
     done

@@ -37,6 +37,7 @@ teardown() {
   review_type: draft
   verdict: APPROVE
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "通常レビュー"
     - "別観測あり"
@@ -89,6 +90,7 @@ YAML
   review_type: draft
   verdict: APPROVE
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1のみ"
   timestamp: "2026-04-18T00:00:00"
@@ -100,7 +102,7 @@ YAML
     [[ "$output" == *"cmd_3001"* ]]
 }
 
-@test "confidence HIGH draft without brainwash_check is warned" {
+@test "draft without brainwash_check is warned" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: cmd_3034
   review_type: draft
@@ -115,7 +117,7 @@ YAML
 
     run bash "$TEST_GATE"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"confidence:HIGH draftにbrainwash_check未記入"* ]]
+    [[ "$output" == *"draftにbrainwash_check未記入"* ]]
     [[ "$output" == *"cmd_3034"* ]]
 }
 
@@ -147,6 +149,7 @@ YAML
   review_type: draft
   verdict: APPROVE
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -166,6 +169,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -174,6 +178,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -182,6 +187,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -190,6 +196,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -198,6 +205,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -206,6 +214,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -214,6 +223,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -222,6 +232,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -230,6 +241,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -238,6 +250,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -246,6 +259,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -264,6 +278,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -272,6 +287,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -280,6 +296,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -288,6 +305,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -296,6 +314,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -304,6 +323,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -312,6 +332,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -320,6 +341,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -328,6 +350,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -336,6 +359,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
@@ -344,6 +368,7 @@ YAML
   verdict: APPROVE
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
   ambiguity_points: none
+  brainwash_check: "PASS"
   observations:
     - "事実1"
     - "事実2"
