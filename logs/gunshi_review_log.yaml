@@ -102,3 +102,164 @@
   brainwash_check: "穴なし"
   cs_checklist: "CS0:殿裁定確認(スキル推薦は殿なぜなぜ7回) CS1:全量(設計書v5全セクション確認) CS2:自システムデータ(detect_skill_triggers L283現物) CS3:実コード(semantic_skill_recommendations L205確認) CS4:行動変換(CMD-C支持掲示板投稿) CS5:Phase1既存→Phase2a追加の段階確認 CS6:因果(Phase2a未実装→計測不正確→偽recall miss)"
   timestamp: "2026-05-24T19:49:00"
+- cmd_id: cmd_3037
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  confidence_reason: "全前提verified。consultation段階で既にAPPROVE。draft再確認で問題なし"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+  findings_summary: "6観点OK。AC4件scope完結。FM3件mitigated。即配備可"
+  observations:
+    - "事実1: karo-operations.md §0.1問い0-7(L27-36)実在確認。問い8追加は自然な拡張"
+    - "事実2: §7 idle時改善サイクル(L374)実在確認。Step 6追加先が明確"
+  origin: "[[cmd_3037]] -> [[draft_review]] -> [[APPROVE]]"
+  causal_chain: "家老Level2不在→洗脳パターン認識なし→gate形骸化リスク。§0.1問い8+idle Step 6+第三者検証で3層防御。正の複利"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "穴なし。3層構造で形骸化防止"
+  finding_confidence_1_10: 9
+  fix_first: N/A
+  second_opinion: NOT_NEEDED
+  timestamp: "2026-05-24T20:00:00"
+- cmd_id: cmd_3038
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  confidence_reason: "q11事実誤認(deprecated 0件→52件)だがcmd目的への影響なし。AC/設計は妥当"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+  findings_summary: "6観点OK(注記: q11 deprecated数誤記。実害なし)。AC2件scope完結。即配備可"
+  observations:
+    - "事実1: q11「deprecated 0件」は事実誤認。grep -c deprecated:true → 52件"
+    - "事実2: 52件は過去retire分。今回の39件は新規deprecated化。目的が異なるため既実装ではない"
+  origin: "[[cmd_3038]] -> [[draft_review]] -> [[APPROVE]]"
+  causal_chain: "USEFUL率0%教訓39件→忍者CTX浪費→deprecated化で除外→有用教訓の注目度向上。q11誤記は検証プロセスの不備だがcmd品質に影響なし"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "穴なし"
+  finding_confidence_1_10: 8
+  fix_first: N/A
+  second_opinion: NOT_NEEDED
+  timestamp: "2026-05-24T20:05:00"
+- cmd_id: cmd_3039
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  confidence_reason: "git show HEAD確認でAC1/AC2とも既実装を現物検証"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+  findings_summary: "assumptions NG: AC1(semantic_search連携)+AC2(推薦ログ)ともPhase 1 cmd_3024で既実装。AC修正必要"
+  observations:
+    - "事実1: git show HEAD:prompt_state_inject.sh → semantic_skill_recommendations L205定義+L290/L453呼出し"
+    - "事実2: record_skill_recommendation_log L167定義+L225/L266呼出し"
+    - "事実3: logs/skill_recommend_log.yaml 17行存在(推薦データ蓄積中)"
+  origin: "[[cmd_3039]] -> [[既実装検出(LG001)]] -> [[REQUEST_CHANGES]]"
+  causal_chain: "将軍q11→0件は事実誤認→AC1/AC2が既実装→忍者重複実装リスク。Phase 2b/2cにAC修正で真に未実装部分を実装"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "穴なし"
+  severity: normal
+  hole_action: none
+  finding_confidence_1_10: 9
+  fix_first: ASK
+  second_opinion: NOT_NEEDED
+  suggested_changes: "AC修正: AC1→Phase 2b(source正規化)、AC2→Phase 2c(startup gate集計表示)"
+  timestamp: "2026-05-24T20:08:00"
+- cmd_id: cmd_3037
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+  findings_summary: "4観点OK。AC1-4全てcommit 07a13e7bに実装確認。8パターンテーブル正確(shogun.md/gunshi.md突合)。lesson_quality OK"
+  observations:
+    - "事実1: git show 07a13e7b → karo-operations.md §0.1問い8追加(L34)+idle Step 6追加(L382)。2行"
+    - "事実2: instructions/karo.md 洗脳チェック手順22行追加(L159-183)。8パターン二値判定テーブル+判定手順+第三者検証(BULLETIN_NOTIFY=gunshi)"
+    - "事実3: 8パターンがshogun.md/gunshi.mdの定義と一致(grep突合)"
+  origin: "[[cmd_3037]] -> [[report_review]] -> [[LGTM]]"
+  causal_chain: "AC4件全実装→成果物24行→8パターン正確→第三者検証構造あり→家老洗脳防御Level2完成。正の複利"
+  brainwash_check: "GATE CLEAR既知で確証バイアスリスクあり。対策: 成果物全行を現物確認(git show)。8パターン突合は独立に実施"
+  cs_checklist: "CS1:全量(diff全行確認) CS2:自システムデータ(grep突合) CS3:実コード(git show 07a13e7b) CS4:行動変換(LGTM+SG7バンドル) CS5:確証バイアス自覚 CS6:因果(Level2不在→追加→防御完成)"
+  timestamp: "2026-05-24T20:15:00"
+- cmd_id: cmd_3038
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。deprecated 50件(AC39件包含)。decision_candidate(差分11件)は家老判断。q11_target.sh削除済み"
+  observations:
+    - "事実1: commit a7f0ac08 lessons.yaml +6531/-6145行。deprecated追加50件"
+    - "事実2: q11_target.shディスク削除済み。untrackedのためcommit外"
+    - "事実3: AC39件vs実測50件の差分11件はdecision_candidateで報告済み"
+  origin: "[[cmd_3038]] -> [[report_review]] -> [[LGTM]]"
+  causal_chain: "USEFUL率0%教訓deprecated化→deploy_task.sh注入除外→忍者CTX削減"
+  brainwash_check: "殿指摘後の厳格レビュー。50vs39差分を検証"
+  cs_checklist: "CS1:全量(commit+AC突合) CS2:git show+存在確認 CS3:a7f0ac08 CS4:LGTM+SG7 CS5:50vs39差分 CS6:因果(deprecated→除外→削減)"
+  timestamp: "2026-05-24T20:22:00"
+- cmd_id: cmd_3039
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。RC反映(Phase 2b/2c)。assumption_invalidation正しく検出。source正規化+偽陽性抑制"
+  observations:
+    - "事実1: assumption_invalidation found=true(RC反映正しく認識)"
+    - "事実2: commit 0c30a24b skill_gate_feedback+skill_recommend_metrics+テスト3件"
+    - "事実3: recall miss min_data閾値追加(推薦ログ10件未満=N/A)"
+  origin: "[[cmd_3039]] -> [[RC反映]] -> [[LGTM]]"
+  causal_chain: "軍師RC→残スコープ実装→source正規化+偽陽性抑制→計測精度改善"
+  brainwash_check: "RC後確証バイアスリスク。assumption_invalidation記録を独立検証"
+  cs_checklist: "CS1:報告全文 CS2:commit確認 CS3:invalidation検証 CS4:LGTM+SG7 CS5:RC適切性 CS6:因果(RC→実装→改善)"
+  timestamp: "2026-05-24T20:22:00"
+- cmd_id: cmd_3040
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  confidence_reason: "lord_conversation_read.sh=引数必須手動ツール(head -5確認)。settings.jsonに未登録。allowlist追加は正当"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。AC2件scope完結。偽陽性7セッション連続解消"
+  observations:
+    - "事実1: lord_conversation_read.sh head -5 → usage() 引数必須。手動実行道具"
+    - "事実2: settings.jsonにlord_conversation_read未登録。hooks対象外"
+  origin: "[[cmd_3040]] -> [[allowlist偽陽性]] -> [[APPROVE]]"
+  causal_chain: "gate_enforcement_auditが手動ツールを意志依存と誤検出→7セッション連続ALERT→allowlist追加で偽陽性解消"
+  ambiguity_points: none
+  brainwash_check: "穴なし"
+  timestamp: "2026-05-24T20:28:00"
+- cmd_id: cmd_3040
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。commit 389b279a。lessons_useful 10件中2件useful(20%=注入精度低の実証)"
+  observations:
+    - "事実1: commit 389b279a enforcement_audit_allowlist.txt 1行追加"
+    - "事実2: lessons_useful 10件中useful=2(20%)。cmd_3038 deprecated化の効果裏付け"
+  origin: "[[cmd_3040]] -> [[report_review]] -> [[LGTM]]"
+  causal_chain: "allowlist追加→偽陽性解消→ALERTノイズ除去"
+  brainwash_check: "単純修正で甘くなるリスク→head -5+settings.json現物確認で対処"
+  cs_checklist: "CS1:全文 CS2:head -5 CS3:389b279a CS4:APPROVE+LGTM+SG7 CS5:注入精度20% CS6:因果(誤検出→解消)"
+  timestamp: "2026-05-24T20:28:00"
