@@ -132,6 +132,10 @@ EOF
 ## その他
 EOF
 
+    cat > "$SHARED_BASE/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。"}
+EOF
+
     # Gate 8: no insights file (simplest pass case)
     # (omit insights.yaml → "キューなし")
 
@@ -774,6 +778,26 @@ EOF
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"必読ファイル不在"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "Q6 brainwashing answer missing → 総合判定: WARN" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6(創造主の洗脳チェック)回答未検出"* ]]
+    [[ "$output" == *"追体験Q6回答: WARN"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "Q6 brainwashing answer present → no Q6 WARN" {
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出"* ]]
+    [[ "$output" != *"追体験Q6回答: WARN"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
 }
 
 # === Test 9: idle自走トリガー ON (全忍者idle) ===
