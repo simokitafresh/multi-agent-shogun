@@ -38,7 +38,7 @@ PDF、画像、Google Docs、ローカル文書を「中身を見てから」命
 Driveの場合:
 
 ```bash
-gws files list --query "'<folder_id>' in parents and trashed=false" --fields "files(id,name,mimeType,webViewLink)"
+gws files list --query "'<folder_id>' in parents and trashed=false" --fields "files(id,name,mimeType,quotaBytesUsed,webViewLink)"
 ```
 
 ローカルの場合:
@@ -49,9 +49,64 @@ find "<target_dir>" -maxdepth 1 -type f | sort
 
 対象外ファイル、既に適切な名前のファイル、サブディレクトリを分ける。対象件数を最初に数え、以降の台帳件数と一致させる。
 
+### Step 1.5: リネーム前バックアップを保存する
+
+リネーム案を作る前に、元ファイル名へ戻せる一覧をJSONLで保存する。バックアップなしに `gws files update` または `mv` へ進んではならない。
+
+Driveの場合は、`gws files list` の結果を1ファイル1行のJSONLとして保存する。最低限 `id`、`name`、`mimeType`、`quotaBytesUsed`、`webViewLink`、`source_location`、`captured_at` を残す。
+
+```bash
+backup="rename_backup_$(date +%Y%m%dT%H%M%S)_drive.jsonl"
+gws files list --query "'<folder_id>' in parents and trashed=false" --fields "files(id,name,mimeType,quotaBytesUsed,webViewLink)" \
+  | jq -c --arg source_location "<drive_folder_url>" --arg captured_at "$(date -Iseconds)" \
+      '.files[] | . + {source_location:$source_location, captured_at:$captured_at}' \
+  > "$backup"
+```
+
+ローカルの場合は、`ls` の結果を保存したうえで、ロールバック用に元パスをJSONLへ正規化して保存する。
+
+```bash
+backup_prefix="rename_backup_$(date +%Y%m%dT%H%M%S)_local"
+ls -1A -- "<target_dir>" > "${backup_prefix}.ls.txt"
+find "<target_dir>" -maxdepth 1 -type f -printf '%f\t%p\n' | sort \
+  | awk -F '\t' -v source_location="<target_dir>" -v captured_at="$(date -Iseconds)" \
+      'BEGIN { OFS="" }
+       { gsub(/\\/,"\\\\",$1); gsub(/"/,"\\\"",$1); name=$1;
+         gsub(/\\/,"\\\\",$2); gsub(/"/,"\\\"",$2); path=$2;
+         print "{\"name\":\"",name,"\",\"path\":\"",path,"\",\"source_location\":\"",source_location,"\",\"captured_at\":\"",captured_at,"\"}" }' \
+  > "${backup_prefix}.jsonl"
+```
+
+承認後、実行前に同じJSONLへ `approved_name`（Drive）または `new_path`（ローカル）を追記した実行用コピーを作る。元の `name` / `path` は上書きしない。
+
 ### Step 2: 全件の内容を確認する
 
 全件必須。読めないファイルを推測で命名してはならない。
+
+内容確認と並行して、同一サイズのファイル組を重複候補として検出する。サイズが異なるものは別物として扱い、画像類似度やハッシュ比較などの複雑な比較は不要。
+
+Driveの場合は `quotaBytesUsed` で比較する。
+
+```bash
+gws files list --query "'<folder_id>' in parents and trashed=false" --fields "files(id,name,quotaBytesUsed,webViewLink)" \
+  | jq -r '.files[] | select(.quotaBytesUsed != null) | [.quotaBytesUsed, .id, .name, .webViewLink] | @tsv' \
+  | sort -k1,1 \
+  | awk -F '\t' 'seen[$1]++ { dup[$1]=1 } { rows[$1]=rows[$1] $0 "\n" }
+       END { for (s in dup) printf "%s", rows[s] }'
+```
+
+ローカルの場合は `stat -c%s` で比較する。
+
+```bash
+find "<target_dir>" -maxdepth 1 -type f -print0 |
+while IFS= read -r -d '' path; do
+  printf '%s\t%s\n' "$(stat -c%s -- "$path")" "$path"
+done | sort -k1,1 |
+awk -F '\t' 'seen[$1]++ { dup[$1]=1 } { rows[$1]=rows[$1] $0 "\n" }
+     END { for (s in dup) printf "%s", rows[s] }'
+```
+
+重複候補がある場合は、Step 5の承認表とは別に「同一サイズの重複候補」として殿に報告する。重複候補の検出は削除・統合の承認ではないため、このスキル内ではファイル削除や移動をしない。
 
 | 種別 | 確認方法 |
 |------|----------|
@@ -181,6 +236,11 @@ blocked: 0
 
 | original | proposed | reason |
 |----------|----------|--------|
+
+同一サイズの重複候補:
+
+| size_bytes | files |
+|------------|-------|
 ```
 
 承認なしに `gws files update` または `mv` を実行してはならない。承認後も、提示した表にないファイルは変更しない。
@@ -236,6 +296,7 @@ SQL
 
 `template` には再利用可能な形を保存する。例: `YYYY-MM-DD_invoice_{vendor}_{amount}.pdf`。個別ファイル名そのものだけを保存せず、次回検索で使える抽象度にする。
 INSERT直前に `genre`、`subtype`、日付4列、`source_location` の正規化結果を確認し、正規化できない値は推測補完せずNULLまたは停止で扱う。
+`example_original` にはリネーム前の個別ファイル名を必ず保存する。これにより、後から `rename_patterns` を検索したときに、抽象テンプレートだけでなく「どの元ファイル名をどう解釈したか」を参照できる。
 
 ### Step 8: 実行後検証
 
@@ -253,16 +314,45 @@ find "<target_dir>" -maxdepth 1 -type f | sort
 
 検証結果で、承認済みの旧名が残っていないこと、新名が存在すること、件数が変わっていないことを確認する。
 
+### Step 9: 必要時に一括ロールバックする
+
+誤リネームが判明した場合は、Step 1.5で保存したJSONLの `name` / `path` を正とし、承認済みの変更だけを元へ戻す。バックアップに存在しないファイル、または実行用コピーに `approved_name` / `new_path` がないファイルは触らない。
+
+Driveの場合:
+
+```bash
+jq -r 'select(.id and .name and .approved_name) | [.id, .name] | @tsv' rename_backup_approved.jsonl |
+while IFS=$'\t' read -r file_id original_name; do
+  gws files update "$file_id" --name "$original_name"
+done
+```
+
+ローカルの場合:
+
+```bash
+jq -r 'select(.path and .new_path) | [.new_path, .path] | @tsv' rename_backup_approved.jsonl |
+while IFS=$'\t' read -r new_path original_path; do
+  test -e "$new_path"
+  test ! -e "$original_path"
+  mv -- "$new_path" "$original_path"
+done
+```
+
+ロールバック後はStep 8と同じ一覧検証を実行し、元名が復元され、件数が変わっていないことを確認する。
+
 ## Failure Handling
 
 - 内容確認不能: 停止し、対象ファイル、試した方法、次に必要な変換/OCR手段を報告する。
 - 同名衝突: 停止し、衝突先を提示して別名承認を得る。
 - Drive API失敗: 失敗ファイルID、エラー、成功済み件数を報告する。再実行時は成功済みをスキップする。
 - ローカル `mv` 失敗: 失敗パスと現在の `ls` 結果を確認し、推測で再実行しない。
+- ロールバック失敗: バックアップJSONL、失敗した行、現在の一覧を保存し、推測で追加リネームしない。
 
 ## Verification Checklist
 
 - 対象ファイル数と内容確認台帳の行数が一致している。
+- Step 1.5でDriveは `gws files list` 結果のJSONL、ローカルは `ls` 結果とJSONLを保存している。
+- Step 2でDriveは `quotaBytesUsed`、ローカルは `stat -c%s` による同一サイズの重複候補を確認し、候補があれば殿に報告している。
 - `content_checked=yes` が全件で、`blocked=0`。
 - PDFはPyMuPDF画像化後にRead toolで確認している。
 - 画像はRead toolで確認している。
@@ -271,5 +361,6 @@ find "<target_dir>" -maxdepth 1 -type f | sort
 - リネーム案を殿に提示し、承認を得ている。
 - `file_created_at` / `file_added_at` / `renamed_at` をISO 8601形式で取得・記録している。
 - INSERT前に `genre`、`subtype`、日付、`source_location` を正規化している。
-- リネーム実行後に `rename_patterns` へ実例とテンプレートを記録している。
+- リネーム実行後に `rename_patterns` へ `example_original`、`example_renamed`、テンプレートを記録している。
 - 実行後にDrive listまたはローカルfindで結果を確認している。
+- バックアップJSONLからDriveは `gws files update`、ローカルは `mv` で一括ロールバックできる。
