@@ -666,3 +666,5 @@
 | cmd_3029 | gate_fp_relaxation_proposal.py L119でWARN累計昇格(escalated_to_block)をFP(偽陽性)としてカウントしているバグを修正。WARN累計昇格=WARNが正しく問題を検出した証拠(TP)。TPをFPカウントするためFP率が実際より高く計算されALERTが誤発火し3セッション連続startup BLOCKを引き起こした | infra | 05-24 | WARN累計昇格をFPカウントから除外し、escalated |
 | cmd_3030 | skill_auto_improve_stateのcode_fix_requiredが直近50件FAIL率0%でも14日間ALERTし続ける。直近FAIL率0%なら自動解除してALERT誤発火を防止。現状cmd_2993の1イベントが3忍者×5回=15回ALERTに膨張 | infra | 05-24 | gate_shogun_startupのcode_fix_r |
 | cmd_3032 | context/infrastructure.mdが24日間未更新で連日WARN。lord_conversationデータフロー(live→アーカイブ→記憶DB)、記憶DB構造、Codex respawn-pane裁定、CI並列隔離等が未反映。将軍が/clear後にインフラ構造を参照できない真因を解消 | infra | 05-24 | context/infrastructure.mdへlord |
+| cmd_3035 | cmd_3033(将軍Level 0-7)とcmd_3034(軍師Level 4)で将軍・軍師の洗脳防御を実装したが家老gateには洗脳チェックがない。家老の判断(配備/workaround分類/LGTM)でAnthropicの早期終了本能が影響するケースを防御する | infra | 05-24 | 家老startup gateにworkaround brai |
+| cmd_3036 | CLAUDE.md Step 8にQ6(洗脳チェック)を追加したがgate検出がなく省略しても何も起きない(Level 2止まり)。gate_shogun_startup.shでQ6回答の有無を検証しLevel 4(gate BLOCK)に到達させる。軍師はcmd_3034でLevel 4実装済み。将軍も同等に | infra | 05-24 | gate_shogun_startup.shへQ6洗脳チェッ |
