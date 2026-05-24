@@ -665,3 +665,4 @@
 | cmd_3028 | render_lord_decisionsが将軍のresponse(軍師D0承認等)を殿の裁定として分類する問題を修正。lord_conversation.jsonl消費者17本の波及確認も実施 | infra | 05-24 | render_lord_decisionsをinbound限 |
 | cmd_3029 | gate_fp_relaxation_proposal.py L119でWARN累計昇格(escalated_to_block)をFP(偽陽性)としてカウントしているバグを修正。WARN累計昇格=WARNが正しく問題を検出した証拠(TP)。TPをFPカウントするためFP率が実際より高く計算されALERTが誤発火し3セッション連続startup BLOCKを引き起こした | infra | 05-24 | WARN累計昇格をFPカウントから除外し、escalated |
 | cmd_3030 | skill_auto_improve_stateのcode_fix_requiredが直近50件FAIL率0%でも14日間ALERTし続ける。直近FAIL率0%なら自動解除してALERT誤発火を防止。現状cmd_2993の1イベントが3忍者×5回=15回ALERTに膨張 | infra | 05-24 | gate_shogun_startupのcode_fix_r |
+| cmd_3032 | context/infrastructure.mdが24日間未更新で連日WARN。lord_conversationデータフロー(live→アーカイブ→記憶DB)、記憶DB構造、Codex respawn-pane裁定、CI並列隔離等が未反映。将軍が/clear後にインフラ構造を参照できない真因を解消 | infra | 05-24 | context/infrastructure.mdへlord |
