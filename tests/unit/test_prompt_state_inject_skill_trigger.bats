@@ -9,6 +9,7 @@ setup() {
   export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
   export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/no_semantic_search.sh"
+  export PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
   export PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=1
   export PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT=1
   unset PROMPT_STATE_CURRENT_PROJECT
@@ -152,6 +153,16 @@ EOF
   [[ "$output" == *"SKILL RECOMMENDATION"* ]]
   [[ "$output" == *"/cdp-browse"* ]]
   [[ "$output" == *"/db-check"* ]]
+  run python3 - "$PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+skills = data["recommendations"][-1]["recommended_skills"]
+assert skills == ["cdp-browse", "db-check"], skills
+PY
+  [ "$status" -eq 0 ]
 }
 
 @test "semantic_search without skills rows stays silent when no trigger matches" {

@@ -117,9 +117,24 @@ def _yaml_str(v):
     return f'"{v}"'
 
 
+def normalize_skill_source(source_value):
+    source_text = str(source_value or "").strip()
+    if not source_text:
+        return source_text
+    base = os.path.basename(source_text)
+    match = re.search(r"_report_(cmd_[A-Za-z0-9_.-]+)\.ya?ml$", base)
+    if match:
+        return match.group(1)
+    match = re.search(r"(^|[\s/])(cmd_[A-Za-z0-9_.-]+)([\s]|$)", source_text)
+    if match:
+        return match.group(2)
+    return source_text
+
+
 def _write_skill_log(skill_name, executor_name, result_str, stumbling, gate_name, source_path, skill_path_str):
     if _TESTS_PATH_RE.search(source_path):
         return
+    source_path = normalize_skill_source(source_path)
     log_path = skill_log_file()
     log_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path = log_path.parent / (log_path.name + ".lock")
@@ -219,6 +234,7 @@ def has_duplicate_caution(text, gate_name, reason_text):
     return False
 
 
+source = normalize_skill_source(source)
 logged_entry = None if explicit_skill else latest_fail_entry()
 logged_skill = ""
 logged_skill_path = ""

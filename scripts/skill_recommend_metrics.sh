@@ -84,11 +84,13 @@ hit_total = sum(min(count, executed_counter.get(skill, 0)) for skill, count in r
 precision = round((hit_total / recommended_total) * 100) if recommended_total else 0
 false_positive_candidate_count = max(0, recommended_total - hit_total)
 false_positive_rate = round((false_positive_candidate_count / recommended_total) * 100) if recommended_total else 0
+min_data = 10  # 推薦ログがmin_data未満ならrecall母集団なし(ALERT抑制)
 recall_misses = []
-for skill, count in sorted(executed_counter.items()):
-    miss_count = max(0, count - recommend_counter.get(skill, 0))
-    if miss_count:
-        recall_misses.append((skill, miss_count))
+if recommended_total >= min_data:
+    for skill, count in sorted(executed_counter.items()):
+        miss_count = max(0, count - recommend_counter.get(skill, 0))
+        if miss_count:
+            recall_misses.append((skill, miss_count))
 recall_miss_count = sum(count for _, count in recall_misses)
 
 print(f"推薦ログ: 直近{len(recommend_entries)}件 / 実行ログ: 直近{len(exec_entries)}件")
@@ -98,13 +100,15 @@ if recommended_total:
 else:
     print("precision率: N/A (推薦ログなし)")
     print("偽陽性率: N/A (推薦ログなし)")
-print(f"recall miss件数: {recall_miss_count}")
+if recommended_total >= min_data:
+    print(f"recall miss件数: {recall_miss_count}")
+else:
+    print(f"recall miss件数: N/A (推薦ログ不足: {recommended_total}件 < {min_data}件)")
 if recall_misses:
     shown = ", ".join(f"{skill}:{count}" for skill, count in recall_misses[:5])
     print(f"recall miss top: {shown}")
-min_data = 10  # 推薦+実行合計がmin_data未満は計測不足(ALERT抑制)
-if recommended_total + len(exec_entries) < min_data:
-    print(f"計測不足: データ{recommended_total + len(exec_entries)}件 < {min_data}件。ALERT抑制")
+if recommended_total < min_data:
+    print(f"計測不足: 推薦ログ{recommended_total}件 < {min_data}件。ALERT抑制")
 elif false_positive_rate > 20 or recall_miss_count > 5:
     print("ALERT: Phase 3 cmd起票候補 — 推薦抑制/aliases補完を検討せよ")
     raise SystemExit(2)
