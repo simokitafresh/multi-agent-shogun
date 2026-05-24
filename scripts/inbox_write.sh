@@ -161,6 +161,50 @@ report_yaml_is_template() {
     echo "no"
 }
 
+report_yaml_fail_details() {
+    local report_path="$1"
+
+    python3 - "$report_path" <<'PY'
+import sys
+import yaml
+
+report_path = sys.argv[1]
+
+try:
+    with open(report_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception as exc:
+    print(f"report YAML parse failed: {exc}")
+    sys.exit(1)
+
+if str(data.get("verdict", "") or "").strip() != "FAIL":
+    sys.exit(1)
+
+details = []
+binary_checks = data.get("binary_checks") or {}
+if isinstance(binary_checks, dict):
+    for ac_key, checks in binary_checks.items():
+        if not isinstance(checks, list):
+            continue
+        for index, item in enumerate(checks, 1):
+            if not isinstance(item, dict):
+                continue
+            result = str(item.get("result", "") or "").strip().lower()
+            waive_reason = str(item.get("waive_reason", "") or "").strip()
+            if result in ("no", "false", "fail", "ng") and not waive_reason:
+                check = str(item.get("check", "") or "").strip()
+                details.append(f"{ac_key}[{index}]: {check or '(check未記入)'}")
+
+if details:
+    for detail in details:
+        print(detail)
+else:
+    print("verdict: FAIL (binary_checksのno項目は検出できず。result.summary/lesson_candidate等を確認せよ)")
+
+sys.exit(0)
+PY
+}
+
 find_active_peer_deployments() {
     local target="$1"
     local tasks_dir="$SCRIPT_DIR/queue/tasks"
@@ -1260,6 +1304,26 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
                         echo "  # verdict は gate_report_format.sh が binary_checks から自動導出" >&2
                         echo "==============================" >&2
                         echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
+                        exit 1
+                    fi
+
+                    # Phase 2.5: フォーマットPASSでもverdict=FAILなら完了通知を通さない。
+                    # gate_report_format.shはbinary_checksからverdictを自動導出するため、
+                    # ここでFAIL報告を局所BLOCKしないとcmd_complete_gateまで進んでから差戻しになる。
+                    FAIL_DETAILS="$(report_yaml_fail_details "$FULL_REPORT" 2>/dev/null || true)"
+                    if [ -n "$FAIL_DETAILS" ]; then
+                        echo "" >&2
+                        echo "==============================" >&2
+                        echo "[report_format_gate] BLOCKED: binary_checksにnoがあるため報告完了を差戻し (ninja: ${FROM})" >&2
+                        echo "[report_format_gate] no判定のAC:" >&2
+                        while IFS= read -r _fail_line; do
+                            [ -n "$_fail_line" ] && echo "  $_fail_line" >&2
+                        done <<< "$FAIL_DETAILS"
+                        echo "" >&2
+                        echo "[report_format_gate] no項目を修正してbinary_checksをyesにするか、未達ならtaskをfailedとして家老へ報告せよ" >&2
+                        echo "[report_format_gate] 修正例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1.0.result yes" >&2
+                        echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
+                        echo "==============================" >&2
                         exit 1
                     fi
                 else

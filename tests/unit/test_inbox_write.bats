@@ -628,6 +628,30 @@ _wait_for_file() {
     [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 
+@test "report_received: verdict FAIL from binary_checks no → BLOCKED before inbox write" {
+    setup_git_test_env
+
+    python3 <<EOF
+import yaml
+
+path = "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["verdict"] = "FAIL"
+data["binary_checks"]["AC1"][0]["check"] = "AC1が未完了であることを確認"
+data["binary_checks"]["AC1"][0]["result"] = "no"
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+EOF
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"binary_checksにnoがあるため報告完了を差戻し"* ]]
+    [[ "$output" == *"AC1[1]: AC1が未完了であることを確認"* ]]
+    [[ "$output" == *"bash scripts/inbox_write.sh karo \"報告完了\" report_received testninja"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
 @test "report_received: only files_modified checked, not whole repo" {
     setup_git_test_env
 
