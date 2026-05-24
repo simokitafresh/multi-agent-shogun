@@ -8,7 +8,9 @@ setup() {
   export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
   export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
   export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/no_semantic_search.sh"
   export PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=1
+  export PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT=1
   unset PROMPT_STATE_CURRENT_PROJECT
   cat > "$PROMPT_STATE_PROJECTS_YAML" <<'EOF'
 projects: []
@@ -68,13 +70,14 @@ teardown() {
   [[ "$output" == *"作業開始前に該当SKILL.mdを読め"* ]]
 }
 
-@test "non-shogun prompt does not inject skill reminder" {
+@test "non-shogun prompt matching skill trigger injects skill reminder" {
   export PROMPT_STATE_AGENT_ID="hayate"
 
   run bash "$HOOK" <<< '{"prompt":"CDP未使用のまま進めていないか確認して"}'
 
   [ "$status" -eq 0 ]
-  [ "$output" = "" ]
+  [[ "$output" == *"SKILL TRIGGER HIT"* ]]
+  [[ "$output" == *"/cdp-browse"* ]]
 }
 
 @test "project constrained skill triggers only for matching current_project" {
@@ -128,4 +131,70 @@ teardown() {
 
   run rg -n 'codd dag verify --path \.' "$skill_file"
   [ "$status" -eq 0 ]
+}
+
+@test "semantic_search skills rows recommend skills for any role" {
+  export PROMPT_STATE_AGENT_ID="hayate"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_mock.sh"
+  cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+## cdp_browser_capability — CDP(ブラウザ操作能力)
+resources:
+- skills: cdp-browse, db-check
+OUT
+EOF
+  chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
+
+  run bash "$HOOK" <<< '{"prompt":"推薦なし入力"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SKILL RECOMMENDATION"* ]]
+  [[ "$output" == *"/cdp-browse"* ]]
+  [[ "$output" == *"/db-check"* ]]
+}
+
+@test "semantic_search without skills rows stays silent when no trigger matches" {
+  export PROMPT_STATE_AGENT_ID="hayate"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_no_skills.sh"
+  cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+## semantic_dictionary_design — セマンティック辞書構想
+resources:
+- file: `docs/research/semantic_index_design.md`
+OUT
+EOF
+  chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
+
+  run bash "$HOOK" <<< '{"prompt":"セマンティック推薦して"}'
+
+  [ "$status" -eq 0 ]
+  [ "$output" = "" ]
+}
+
+@test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
+  export PROMPT_STATE_AGENT_ID="hayate_cache_test"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
+  rm -f /tmp/skill_recommend_cache_hayate_cache_test
+  cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+printf 'call\n' >> "$SEMANTIC_CALL_LOG"
+cat <<'OUT'
+## report_flow — 報告経路
+resources:
+- skills: report-write
+OUT
+EOF
+  chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
+  export SEMANTIC_CALL_LOG="$TEST_TMPDIR/semantic_calls.log"
+
+  run bash "$HOOK" <<< '{"prompt":"同一プロンプト推薦"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/report-write"* ]]
+
+  run bash "$HOOK" <<< '{"prompt":"同一プロンプト推薦"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/report-write"* ]]
+  [ "$(wc -l < "$SEMANTIC_CALL_LOG" | tr -d ' ')" -eq 1 ]
 }

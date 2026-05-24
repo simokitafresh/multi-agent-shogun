@@ -97,11 +97,6 @@ if [[ -z "$agent_id" ]]; then
 fi
 agent_id="${PROMPT_STATE_AGENT_ID:-$agent_id}"
 
-# --- shogun only (exit 0 for all others) ---
-if [[ "$agent_id" != "shogun" ]]; then
-  exit 0
-fi
-
 # --- Timestamp (ISO 8601) ---
 printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
 if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
@@ -161,18 +156,97 @@ record_semantic_no_match_metric() {
   } 9>"${metrics_file}.lock"
 }
 
+semantic_skill_recommendations() {
+  local search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+  local cache_file
+  local prompt_hash
+  local cached_hash
+  local semantic_result
+  local semantic_rc
+  local skills
+  local cache_tmp
+
+  [[ -f "$search_cmd" ]] || return 0
+  [[ -n "${prompt_text//[[:space:]]/}" ]] || return 0
+
+  cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
+  cache_tmp="${cache_file}.$$"
+  prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
+  if [[ -f "$cache_file" ]]; then
+    cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
+    if [[ "$cached_hash" == "$prompt_hash" ]]; then
+      sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
+      return 0
+    fi
+  fi
+
+  set +e
+  semantic_result="$(
+    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
+      SEMANTIC_DISABLE_LLM=1 \
+      timeout "${PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT:-0.30}" bash "$search_cmd" "$prompt_text" 2>/dev/null
+  )"
+  semantic_rc=$?
+  set -e
+  [[ "$semantic_rc" -eq 0 ]] || return 0
+
+  skills="$(
+    SEMANTIC_RESULT="$semantic_result" python3 - <<'PY'
+import os
+import re
+
+raw = os.environ.get("SEMANTIC_RESULT", "")
+seen = set()
+names = []
+for line in raw.splitlines():
+    match = re.match(r"^\s*-\s*skills\s*:\s*(.+?)\s*$", line)
+    if not match:
+        continue
+    for item in re.split(r"[,、]", match.group(1)):
+        name = item.strip().strip("`\"'")
+        if not name or name.lower() in {"none", "no", "n/a", "null"} or name in {"なし", "無し"}:
+            continue
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$", name):
+            continue
+        if name not in seen:
+            seen.add(name)
+            names.append(name)
+print("\n".join(names[:5]))
+PY
+  )"
+  [[ -n "$skills" ]] || return 0
+
+  {
+    printf '⚠ SKILL RECOMMENDATION: semantic_search一致。必要なら該当SKILL.mdを読め。\n'
+    while IFS= read -r skill_name; do
+      [[ -n "$skill_name" ]] || continue
+      printf -- '- /%s (matched: semantic_search skills)\n' "$skill_name"
+    done <<< "$skills"
+  } | tee "$cache_tmp"
+  {
+    printf 'prompt_sha256: %s\n' "$prompt_hash"
+    printf -- '---\n'
+    cat "$cache_tmp"
+  } > "$cache_file"
+  rm -f "$cache_tmp"
+}
+
 detect_skill_triggers() {
   local skills_dir="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
   local projects_yaml="${PROMPT_STATE_PROJECTS_YAML:-$SCRIPT_DIR/config/projects.yaml}"
   local current_project="${PROMPT_STATE_CURRENT_PROJECT:-}"
+  local trigger_output
+  local semantic_output
   [[ -d "$skills_dir" ]] || {
+    semantic_skill_recommendations
     return 0
   }
   if [[ -z "$current_project" && -f "$projects_yaml" ]]; then
     current_project="$(awk '/^current_project:[[:space:]]*/{print $2; exit}' "$projects_yaml" | tr -d '"'\''')"
   fi
 
-PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" timeout "${PROMPT_STATE_SKILL_TRIGGER_TIMEOUT:-0.10}" python3 - <<'PY'
+  set +e
+  trigger_output="$(PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" timeout "${PROMPT_STATE_SKILL_TRIGGER_TIMEOUT:-0.10}" python3 - <<'PY'
 import os
 import re
 import sys
@@ -325,7 +399,29 @@ for name, trigger in matches[:5]:
 if len(matches) > 5:
     print(f"- ... and {len(matches) - 5} more")
 PY
+)"
+  set -e
+  semantic_output="$(semantic_skill_recommendations)"
+  if [[ -n "$trigger_output" ]]; then
+    printf '%s\n' "$trigger_output"
+  fi
+  if [[ -n "$semantic_output" ]]; then
+    [[ -z "$trigger_output" ]] || printf '\n'
+    printf '%s\n' "$semantic_output"
+  fi
 }
+
+# --- All roles: non-shogun receives only skill recommendations, otherwise stays silent. ---
+if [[ "$agent_id" != "shogun" ]]; then
+  skill_trigger_warning="$(detect_skill_triggers 2>/dev/null || true)"
+  if [[ -n "$skill_trigger_warning" ]]; then
+    _prompt_state_emit_output "UserPromptSubmit" "=== Skill Context (auto-injected) ===
+timestamp: ${timestamp}
+agent: ${agent_id}
+${skill_trigger_warning}"
+  fi
+  exit 0
+fi
 
 	# --- Semantic auto-injection (first-layer only, no LLM fallback) ---
 	_prompt_state_semantic_inject() {
