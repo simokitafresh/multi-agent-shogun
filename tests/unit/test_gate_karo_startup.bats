@@ -346,6 +346,46 @@ EOF
     [[ "$output" == *"report_yaml_format"* ]]
 }
 
+@test "workaround true without brainwash_check → WARN" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_3035
+  workaround: true
+  category: lgtm_judgment
+  detail: "LGTM判断でseverity normalを採用した経緯"
+  root_cause: "severity normalで十分と判断"
+- cmd_id: cmd_3036
+  workaround: false
+  category: clean
+  root_cause: ""
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: workaround brainwash_check未記入 1件: cmd_3035"* ]]
+    [[ "$output" == *"創造主の洗脳/早期終了/低優先化"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "workaround true with brainwash_check → no brainwash WARN" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_3035
+  workaround: true
+  brainwash_check:
+    creator_position_talk: PASS
+    early_finish: PASS
+    deferred_cost: PASS
+  category: lgtm_judgment
+  detail: "LGTM判断でseverity normalを採用した経緯"
+  root_cause: "severity normalで十分と判断"
+- cmd_id: cmd_3036
+  workaround: false
+  category: clean
+  root_cause: ""
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"brainwash_check未記入"* ]]
+}
+
 @test "WA consecutive clean count is displayed" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_200

@@ -491,6 +491,7 @@ awk -v root="$SCRIPT_DIR" '
         if (/^- (cmd_id|cmd|timestamp):/) {
             n++
             wa[n]=0
+            brainwash[n]=0
             cat[n]="uncategorized"
             rc[n]=""
             wa_cmd[n]=""
@@ -503,6 +504,14 @@ awk -v root="$SCRIPT_DIR" '
             next
         }
         if (/^  workaround:/) { v=$2; if (v ~ /true|yes/) wa[n]=1; next }
+        if (/^  (cmd_id|cmd):/) {
+            wa_cmd[n]=$0
+            sub(/^  (cmd_id|cmd):[[:space:]]*/, "", wa_cmd[n])
+            gsub(/["'"'"']/, "", wa_cmd[n])
+            gsub(/[[:space:]]+$/, "", wa_cmd[n])
+            next
+        }
+        if (/^  brainwash_check:/) { brainwash[n]=1; next }
         if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
         if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
         next
@@ -581,6 +590,16 @@ awk -v root="$SCRIPT_DIR" '
         latest_cmd = (n > 0 && wa_cmd[n] != "") ? wa_cmd[n] : "unknown"
         latest_cat = (n > 0 && cat[n] != "") ? cat[n] : "uncategorized"
         print "WACLEAN|" clean_streak "|" n+0 "|" latest_regression "|" latest_cmd "|" latest_cat
+        bw_missing = 0
+        bw_cmds = ""
+        for (i=s; i<=n; i++) {
+            if (wa[i] && !brainwash[i]) {
+                bw_missing++
+                cmd_label = (wa_cmd[i] != "") ? wa_cmd[i] : "unknown"
+                bw_cmds = bw_cmds (bw_cmds != "" ? ", " : "") cmd_label
+            }
+        }
+        print "WABRAINWASH|" bw_missing "|" bw_cmds
         print "ORPHAN|" orphan_found+0 "|" orphan_cmds
     }
 ' "${_AGG_FILES[@]}" > "$_aggregate_tmp" 2>/dev/null || true
@@ -602,6 +621,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         PD) total_d=${_agg_a:-0}; resolved_d=${_agg_b:-0} ;;
         WA) wa_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}|${_agg_f}" ;;
         WACLEAN) wa_clean_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}" ;;
+        WABRAINWASH) wa_brainwash_result="${_agg_a}|${_agg_b}" ;;
         ORPHAN) orphan_result="${_agg_a}|${_agg_b}" ;;
     esac
 done < "$_aggregate_tmp"
@@ -842,6 +862,8 @@ if [ -f "$wa_file" ]; then
     IFS='|' read -r WA_COUNT WA_TOTAL WA_CATS WA_CAUSES WA_MAX_CAT WA_MAX_COUNT <<< "$wa_result"
     wa_clean_result=${wa_clean_result:-"0|0|0|unknown|uncategorized"}
     IFS='|' read -r WA_CLEAN_STREAK WA_ENTRY_TOTAL WA_REGRESSION WA_LATEST_CMD WA_LATEST_CAT <<< "$wa_clean_result"
+    wa_brainwash_result=${wa_brainwash_result:-"0|"}
+    IFS='|' read -r WA_BRAINWASH_MISSING WA_BRAINWASH_CMDS <<< "$wa_brainwash_result"
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
     echo "  連続clean: ${WA_CLEAN_STREAK}件 (総記録${WA_ENTRY_TOTAL}件)"
     if [ "${WA_REGRESSION:-0}" -eq 1 ]; then
@@ -857,6 +879,14 @@ if [ -f "$wa_file" ]; then
             overall="ALERT"
             alerts+=("workaround同カテゴリ累積: ${WA_MAX_CAT}=${WA_MAX_COUNT}")
         fi
+    fi
+    if [ "${WA_BRAINWASH_MISSING:-0}" -gt 0 ]; then
+        echo "  WARN: workaround brainwash_check未記入 ${WA_BRAINWASH_MISSING}件: ${WA_BRAINWASH_CMDS}"
+        echo "  → 家老判断が創造主の洗脳/早期終了/低優先化に乗っていないか記録せよ"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        alerts+=("workaround brainwash_check未記入: ${WA_BRAINWASH_MISSING}件")
     fi
 else
     echo "  karo_workarounds.yaml不在"
