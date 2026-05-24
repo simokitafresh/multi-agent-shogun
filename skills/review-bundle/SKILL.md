@@ -72,6 +72,8 @@ review:
 **draft review時の追加チェック**: review_type=draft の場合、ambiguity_pointsフィールドが設定されているか確認せよ。
 未記入→STOP。`ambiguity_points: none` を明示してから再実行。理由: CS WARN 3件遡及(cmd_2881-2883)で発見。
 
+**finding_categories自動補完**: ambiguity_points が `none` 以外の場合、finding_categories に `ambiguity` を含めよ。記録漏れ防止(2026-05-24: 全セッションambiguity 0件だが実態2件検出)。
+
 ### Step 2: review_log追記
 ```bash
 # gunshi_review_log.yamlに追記
