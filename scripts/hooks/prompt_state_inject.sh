@@ -216,7 +216,6 @@ semantic_skill_recommendations() {
   [[ -n "${prompt_text//[[:space:]]/}" ]] || return 0
 
   cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
-  cache_tmp="$(mktemp "${cache_file}.XXXXXX")"
   prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
   if [[ -f "$cache_file" ]]; then
     cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
@@ -227,6 +226,8 @@ semantic_skill_recommendations() {
       return 0
     fi
   fi
+
+  cache_tmp="$(mktemp "${cache_file}.XXXXXX")"
 
   set +e
   semantic_result="$(
