@@ -574,6 +574,7 @@ def _scope_tokens(text):
     return tokens
 
 def candidate_aliases(source_type, payload, existing_aliases, concept_label="", concept_id=""):
+    max_alias_length = 30
     existing_norm = {norm(alias) for alias in existing_aliases}
     # スコープ判定: 概念label+idからトークンを抽出
     scope_tokens = _scope_tokens(f"{concept_label} {concept_id}")
@@ -598,11 +599,13 @@ def candidate_aliases(source_type, payload, existing_aliases, concept_label="", 
             part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
             if len(part) < 2 or norm(part) in existing_norm:
                 continue
+            if len(part) > max_alias_length:
+                continue
             # スコープチェック: 候補aliasesのトークンと概念スコープに1語も共通がなければ除外
             part_tokens = _scope_tokens(part)
             if scope_tokens and part_tokens and not (scope_tokens & part_tokens):
                 continue
-            aliases.append(part[:60])
+            aliases.append(part)
             existing_norm.add(norm(part))
             break
         if aliases:
