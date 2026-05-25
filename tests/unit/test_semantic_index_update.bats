@@ -119,6 +119,15 @@ teardown() {
     [[ "$output" == *"aliases_added"* ]]
 }
 
+@test "LOW: candidate aliases longer than 30 chars are rejected" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-05T00:00:00+09:00","summary":"セマンティクスインデックス長すぎる候補語を拒否するための長文alias"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated"* ]]
+    [[ "$output" == *"aliases_added=none"* ]]
+
+    ! grep '^| aliases |' "$SEMANTIC_INDEX_PATH" | grep -q 'セマンティクスインデックス長すぎる候補語を拒否するための長文alias'
+}
+
 @test "LOW: alias expansion runs semantic stress test and records before/after diff" {
     cat > "$TEST_TMPDIR/scripts/semantic_stress_test.sh" <<'EOF'
 #!/usr/bin/env bash
