@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-24 -->
+<!-- last_updated: 2026-05-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,25 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_karo_ci_fix_ga159 | CI RED修正 — deploy_task if_then/legacy detailテスト2件 | infra | 04-24 | cmd_save diagnose 系は HEAD 時点で既 |
-| cmd_2248 | fix — cmd_save.sh gate偽陽性率改善: FP率60%超のWARN type修正 | infra | 04-24 | cmd_save.sh のWARN noteを型付き化し、r |
-| cmd_karo_ci_fix_2248 | CI RED修正 — test_cmd_save_warn_logging AC2テスト失敗 | infra | 04-24 | test_cmd_save_warn_logging.bat |
-| cmd_2249 | fix — cmd_save.sh check_self_reread_red_flag FP修正: YAMLキー名をgrep対象から除外 | infra | 04-24 | check_self_reread_red_flag の P |
-| cmd_2250 | fix — cmd_save.sh Session State拡張: 同一WARN 2回目以降で検出ロジック自動表示 | infra | 04-24 | cmd_save.sh の WARN記録に check me |
-| cmd_2251 | 偵察 — recalculate_fof.py L3速度改善設計書: 依存分析+cProfile+FE整合性 | dm-signal | 04-24 | recalculate_fof/fullrecalculat |
-| cmd_2252 | fix — cmd_save.sh LS009/LS029 gate化: 各論パッチ検出+assumptions時系列強制 | infra | 04-24 | cmd_save の LS009/LS029 挙動を回帰テス |
-| cmd_karo_gate_clear_idle | fix — GATE CLEAR後のtask YAML自動idle化 | infra | 04-24 | cmd_complete_gate.sh に GATE CL |
-| cmd_2253 | 最適化 — trade_performance生成 速度改善（設計書Rank 1） | dm-signal | 04-24 | FILL_THIS |
-| cmd_karo_conflict_marker_gate | fix — lessons SSOT conflict markers検出gate | infra | 04-24 | gate_lesson_health.sh に SSOT l |
-| cmd_karo_pd_summary_fix | fix — pending_decisions.yaml summary自動再計算 | infra | 04-24 | pending_decision_write.shにreca |
-| cmd_2254 | fix — FoF MonthlyReturn DB永続化バグ修正（precompute rollback巻き添え防止） | dm-signal | 04-24 | precomputeをPF単位savepoint化し、例外時 |
-| cmd_2255 | 実装 — DM-Signal本番ヘルスチェックスクリプト（DB→API→FE 3レイヤー貫通確認） | dm-signal | 04-24 | scripts/health_check.py を追加し、D |
-| cmd_karo_ci_fix_2252 | fix — CI RED修正: cmd_save.bats 12テスト失敗 | infra | 04-24 | 6件テストフィクスチャのassumptions claimに |
-| cmd_2257 | 偵察+設計 — FoF増分計算化のCoDD設計書生成(recalculate_fof.py + recalculate_fast.py L2528-2638) | dm-signal | 04-24 | _recalculate_fof_history全文読解完了 |
-| cmd_2258 | impl — FoF sync-fof増分計算化(Signal差分+MR増分。462.8s→60s目標) | dm-signal | 04-24 | FoF増分計算実装完了。sync-fof(PORTFOLIO |
-| cmd_2259 | impl — FoF MR生成高速化: signal_cacheバッチ事前ロード+共有化(PI-024準拠・全期間再計算維持) | dm-signal | 04-24 | cmd_2259を完了した。初回修正(af469454)でs |
-| cmd_2260 | impl — FoF MR生成 DB fallback穴塞ぎ(356→0件目標。26.53s→1.5s) | dm-signal | 04-24 | price_ratio_calculatorのcomplet |
-| cmd_2261 | 偵察 — L3_fof daily_loop 224sの内訳計測+高速化ターゲット特定 | dm-signal | 04-24 | cmd_2261_scout完了。live timing(r |
 | cmd_2262 | 本番FEのユーザー体験速度を定量計測する。全ページの初回表示時間、PF切替時の再描画速度(10回連続)、ページ間遷移時間を計測し、ボトルネック特定の基礎データを取得する。コード変更なし。 | dm-signal | 04-25 | FILL_THIS |
 | cmd_2263 | cmd_save.sh BLOCK時に将軍が止まる問題を自動化×強制で解消する。BLOCK出力の冒頭に「止まるな、修正して再実行」ナッジを1行追加。 | infra | 04-25 | cmd_save.shのBLOCK初回出力にだけ「止まるな、 |
 | cmd_2264 | cmd_2262の計測データとFEコードの現状分析を基に、FE表示速度を改善するための設計書を作成する。全ページで「PF切替が一瞬」を達成するための改善施策を優先度付きで網羅する。コード変更なし。 | dm-signal | 04-25 | cmd_2262原票とFE/BEコードを基に、FE速度改善設 |
@@ -673,3 +654,5 @@
 | cmd_3041 | PDF/画像/ドキュメントの内容を確認してからリネームする汎用スキルを作成。Drive(gws)とローカル(mv)の両対応。全件内容確認を構造的に強制する | infra | 05-24 | skills/file-rename/SKILL.mdを新規 |
 | cmd_3042 | cmd_3041+追加commit(27a9e4c7)でsource_location+FTS5は反映済み。未反映の日付3列(file_created_at/file_added_at/renamed_at)とINSERT前正規化ルールを追加する | infra | 05-24 | file-rename SKILL.mdへrename_pa |
 | cmd_3044 | リネーム間違い時に元ファイル名に戻せる仕組みがない。リネーム前にファイル名一覧を保存し一括ロールバック可能にする。リスクは先にふさぐ(殿指示) | infra | 05-24 | file-renameスキルにリネーム前バックアップ、JSO |
+| cmd_3046 | lord_conversation.jsonlが202行でMAX_ENTRIES=200を超過しsession_summary喪失リスク。200→500に拡張 | infra | 05-25 | conversation_retention.shのMAX_ |
+| cmd_3045 | skill_auto_improve.shがcode_fix_cleared済みパターンを再分類→再エスカレーションするバグの修正。report-writeとverdict-checkで偽エスカレーションが毎起動発生し将軍の確認コストが累積する | infra | 05-25 | code_fix_cleared済みskill_auto_i |
