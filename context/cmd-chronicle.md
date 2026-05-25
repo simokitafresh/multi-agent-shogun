@@ -656,3 +656,4 @@
 | cmd_3044 | リネーム間違い時に元ファイル名に戻せる仕組みがない。リネーム前にファイル名一覧を保存し一括ロールバック可能にする。リスクは先にふさぐ(殿指示) | infra | 05-24 | file-renameスキルにリネーム前バックアップ、JSO |
 | cmd_3046 | lord_conversation.jsonlが202行でMAX_ENTRIES=200を超過しsession_summary喪失リスク。200→500に拡張 | infra | 05-25 | conversation_retention.shのMAX_ |
 | cmd_3045 | skill_auto_improve.shがcode_fix_cleared済みパターンを再分類→再エスカレーションするバグの修正。report-writeとverdict-checkで偽エスカレーションが毎起動発生し将軍の確認コストが累積する | infra | 05-25 | code_fix_cleared済みskill_auto_i |
+| cmd_3048 | 殿の入力受信時に記憶DB FTS5検索で過去の関連裁定を将軍に自動注入する。現在grep/rg実行時のみDB利用で殿対話時は未接続(なぜなぜ7回で特定した穴)。prompt_state_inject.sh内に関数追加 | infra | 05-25 | prompt_state_inject.shの殿入力時mem |
