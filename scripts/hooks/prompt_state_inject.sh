@@ -233,7 +233,9 @@ semantic_skill_recommendations() {
   semantic_result="$(
     SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
       SEMANTIC_DISABLE_LLM=1 \
-      timeout "${PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT:-0.30}" bash "$search_cmd" "$prompt_text" 2>/dev/null
+      SEMANTIC_DISABLE_CAUSAL=1 \
+      SEMANTIC_DISABLE_MEMORY_DB=1 \
+      timeout "${PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT:-0.60}" bash "$search_cmd" "$prompt_text" 2>/dev/null
   )"
   semantic_rc=$?
   set -e
@@ -485,7 +487,9 @@ fi
 	  _psi_result="$(
 	    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
 	      SEMANTIC_DISABLE_LLM=1 \
-	      timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.30}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null
+	      SEMANTIC_DISABLE_CAUSAL=1 \
+	      SEMANTIC_DISABLE_MEMORY_DB=1 \
+	      timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.60}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null
 	  )"
 	  _psi_rc=$?
 	  set -e
