@@ -60,6 +60,17 @@ append_line_locked() {
     ) 200>"$(lock_path "$target_file")"
 }
 
+log_gate_stderr_file() {
+    local label="$1"
+    local stderr_file="$2"
+    local line
+
+    [ -s "$stderr_file" ] || return 0
+    while IFS= read -r line; do
+        append_line_locked "$LOG_DIR/cmd_complete_gate_stderr.log" "$(date '+%Y-%m-%dT%H:%M:%S') [${CMD_ID}] ${label}: ${line}"
+    done < "$stderr_file"
+}
+
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
@@ -230,12 +241,16 @@ send_info_cmd_notification() {
 notify_shogun_gate_clear() {
     local cmd_id="$1"
     local message="${2:-GATE CLEAR — ${cmd_id} 完了}"
+    local stderr_tmp
+    stderr_tmp="$(mktemp)"
 
-    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$message" gate_clear cmd_complete_gate 2>/dev/null; then
+    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$message" gate_clear cmd_complete_gate 2>"$stderr_tmp"; then
         echo "  shogun inbox: OK (gate clear notify)"
     else
+        log_gate_stderr_file "notify_shogun_gate_clear inbox_write" "$stderr_tmp"
         echo "  [INFO] shogun inbox: WARN (gate clear notify failed, non-blocking)"
     fi
+    rm -f "$stderr_tmp"
 }
 
 notify_karo_cmd_complete_skill_hint() {
@@ -457,6 +472,8 @@ build_clear_ctx_metric() {
 update_status() {
     local cmd_id="$1"
     local current_status
+    local stderr_tmp
+    stderr_tmp="$(mktemp)"
     current_status=$(CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" python3 -c "
 import yaml, os, sys
 cmd_id = os.environ['CMD_ID_ENV']
@@ -480,7 +497,9 @@ try:
                 break
 except Exception as e:
     print(f'parse_error: {e}', file=sys.stderr)
-" 2>/dev/null || true)
+" 2>"$stderr_tmp" || true)
+    log_gate_stderr_file "update_status yaml_parse" "$stderr_tmp"
+    rm -f "$stderr_tmp"
 
     case "$current_status" in
         completed|done)
@@ -488,6 +507,7 @@ except Exception as e:
             return 0
             ;;
         "")
+            echo "WARN: status parse returned empty for ${cmd_id} in ${YAML_FILE}" >&2
             echo "ERROR: status not found for ${cmd_id} in ${YAML_FILE}" >&2
             return 1
             ;;
@@ -1431,7 +1451,9 @@ auto_resolve_cmd_related_insights() {
     [ -s "$insights_file" ] || return 0
 
     local ids
-    ids=$(INSIGHTS_FILE_ENV="$insights_file" CMD_ID_ENV="$cmd_id" python3 - <<'PY' 2>/dev/null || true
+    local stderr_tmp
+    stderr_tmp="$(mktemp)"
+    ids=$(INSIGHTS_FILE_ENV="$insights_file" CMD_ID_ENV="$cmd_id" python3 - <<'PY' 2>"$stderr_tmp" || true
 import json
 import os
 
@@ -1473,6 +1495,8 @@ for entry in entries:
         print(entry["id"])
 PY
     )
+    log_gate_stderr_file "auto_resolve_cmd_related_insights parse" "$stderr_tmp"
+    rm -f "$stderr_tmp"
 
     local count=0 id
     while IFS= read -r id; do

@@ -10,12 +10,26 @@ set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_FILE="$REPO_ROOT/logs/gunshi_review_log.yaml"
+STDERR_LOG="$REPO_ROOT/logs/gate_gunshi_cs_checklist_stderr.log"
+
+log_stderr_file() {
+    local label="$1"
+    local stderr_file="$2"
+    local line
+
+    [ -s "$stderr_file" ] || return 0
+    mkdir -p "$(dirname "$STDERR_LOG")" 2>/dev/null || true
+    while IFS= read -r line; do
+        printf '%s %s: %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$label" "$line" >> "$STDERR_LOG" || true
+    done < "$stderr_file"
+}
 
 if [ ! -f "$LOG_FILE" ]; then
     echo "ALERT: gunshi_review_log.yaml not found — レビューログ不在は異常"
     exit 1
 fi
 
+awk_stderr_tmp="$(mktemp)"
 RESULT=$(awk '
 function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
 function emit_list(prefix, arr, count,    i, out) {
@@ -204,7 +218,9 @@ END {
     if (cs_missing_count == 0 && causal_missing_count == 0) print "ALL_PASS"
     if (fm_flagged_count == 0) print "FM_PASS"
 }
-' "$LOG_FILE" 2>/dev/null)
+' "$LOG_FILE" 2>"$awk_stderr_tmp" || true)
+log_stderr_file "review_log awk" "$awk_stderr_tmp"
+rm -f "$awk_stderr_tmp"
 
 if [ -z "$RESULT" ]; then
     echo "WARN: review_log解析失敗(awk空結果)。CS観点チェックをスキップ" >&2

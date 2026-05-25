@@ -11,6 +11,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 overall="OK"
 alerts=()
+STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
+
+log_startup_stderr_file() {
+    local label="$1"
+    local stderr_file="$2"
+    local line
+
+    [ -s "$stderr_file" ] || return 0
+    mkdir -p "$(dirname "$STARTUP_STDERR_LOG")" 2>/dev/null || true
+    while IFS= read -r line; do
+        printf '%s %s: %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$label" "$line" >> "$STARTUP_STDERR_LOG" || true
+    done < "$stderr_file"
+}
 
 phase_guide_cached() {
     local source_file="${1:?source file required}"
@@ -250,6 +263,7 @@ fi
 # cache hit時: ~2ms。cache miss時: 57ms+53ms (現行と同等)
 
 _WA_RATE_TMP=$(mktemp)
+_WA_RATE_ERR_TMP=$(mktemp)
 _NINJA_WA_TMP=$(mktemp)
 _WA_DQ_TMP=$(mktemp)
 WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
@@ -269,7 +283,18 @@ if [[ -f "$_WA_RATE_CACHE" ]] && (( _now_epoch - $(stat -c %Y "$_WA_RATE_CACHE" 
     cp "$_WA_RATE_CACHE" "$_WA_RATE_TMP"
     _WA_RATE_PID=""
 elif [ -x "$WA_RATE_SCRIPT" ]; then
-    ( bash "$WA_RATE_SCRIPT" --last 10 2>&1 | tee "$_WA_RATE_TMP" > "$_WA_RATE_CACHE" ) &
+    (
+        if bash "$WA_RATE_SCRIPT" --last 10 > "$_WA_RATE_TMP" 2>"$_WA_RATE_ERR_TMP"; then
+            cat "$_WA_RATE_TMP" > "$_WA_RATE_CACHE"
+        else
+            _wa_rc=$?
+            log_startup_stderr_file "WA_RATE_SCRIPT" "$_WA_RATE_ERR_TMP"
+            {
+                echo "■ Workaround率"
+                echo "  WARN: gate_workaround_rate.sh failed rc=${_wa_rc}"
+            } > "$_WA_RATE_TMP"
+        fi
+    ) &
     _WA_RATE_PID=$!
 else
     echo "■ Workaround率" > "$_WA_RATE_TMP"
@@ -594,7 +619,7 @@ awk -v root="$SCRIPT_DIR" '
         bw_missing = 0
         bw_cmds = ""
         for (i=s; i<=n; i++) {
-            if (wa[i] && has_brainwash_field[i] && !brainwash[i]) {
+            if (wa[i] && !brainwash[i]) {
                 bw_missing++
                 cmd_label = (wa_cmd[i] != "") ? wa_cmd[i] : "unknown"
                 bw_cmds = bw_cmds (bw_cmds != "" ? ", " : "") cmd_label
@@ -958,7 +983,7 @@ fi
 echo ""
 
 # tmpファイル削除
-rm -f "$_WA_RATE_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
+rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
     "$_aggregate_tmp"
 
 # --- Check 10: スキル品質サマリ ---

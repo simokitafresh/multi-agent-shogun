@@ -14,6 +14,10 @@ setup_file() {
     {
         sed -n '/^record_block_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^log_gate_stderr_file()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -91,6 +95,18 @@ rows = {e["id"]: e for e in data["insights"]}
 assert rows["INS-CMD-MATCH"]["status"] == "done"
 assert rows["INS-OTHER"]["status"] == "pending"
 PY
+}
+
+@test "auto_resolve_cmd_related_insights logs parser stderr for unreadable insights path" {
+    export INSIGHTS_FILE="$TEST_PROJECT/queue/insights_as_dir.yaml"
+    mkdir -p "$INSIGHTS_FILE"
+    cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"resolved: 0 cmd-related insight(s)"* ]]
+    grep -F "auto_resolve_cmd_related_insights parse:" "$TEST_PROJECT/logs/cmd_complete_gate_stderr.log"
 }
 
 @test "cmd_complete_gate protects shared file writes with lock_path flock" {

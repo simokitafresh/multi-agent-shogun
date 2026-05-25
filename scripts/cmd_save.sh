@@ -43,6 +43,7 @@ source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 CMD_DIAGNOSIS=""
 PRIOR_ATTEMPT_COUNT=0
 CMD_SAVE_STDERR_LOG="$(mktemp)"
+CMD_SAVE_PERSISTENT_STDERR_LOG="${CMD_SAVE_PERSISTENT_STDERR_LOG:-$PROJECT_DIR/logs/cmd_save_stderr.log}"
 # スキャンファイルキャッシュ: PID固定パスを使いサブシェル経由でも確実にキャッシュが効く
 # .tmp=YAML版(awk処理用) .json=JSON版(Python高速パース用, yaml.safe_load→json.loadで7x高速化)
 CMD_SAVE_SCAN_FILE_CACHE="/tmp/cmd_save_scan_$$.tmp"
@@ -220,8 +221,10 @@ PY
 parse_structured_environment_change() {
     local env_change="${1:-}"
     [[ -n "$env_change" ]] || return 1
+    local stderr_tmp parsed rc line
+    stderr_tmp="$(mktemp)"
 
-    ENV_CHANGE_TEXT="$env_change" python3 - <<'PY'
+    if parsed=$(ENV_CHANGE_TEXT="$env_change" python3 - <<'PY' 2>"$stderr_tmp"
 import os
 import re
 import sys
@@ -249,6 +252,21 @@ if not (etype and efile and epattern):
 
 print(f"{etype}\t{efile}\t{epattern}")
 PY
+    ); then
+        printf '%s\n' "$parsed"
+        rm -f "$stderr_tmp"
+        return 0
+    else
+        rc=$?
+    fi
+    if [[ -s "$stderr_tmp" ]]; then
+        mkdir -p "$(dirname "$CMD_SAVE_PERSISTENT_STDERR_LOG")" 2>/dev/null || true
+        while IFS= read -r line; do
+            printf '%s parse_structured_environment_change: %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$line" >> "$CMD_SAVE_PERSISTENT_STDERR_LOG"
+        done < "$stderr_tmp"
+    fi
+    rm -f "$stderr_tmp"
+    return "$rc"
 }
 
 is_gate_or_hook_addition_cmd() {

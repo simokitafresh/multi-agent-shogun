@@ -411,6 +411,21 @@ EOF
     [[ "$output" != *"WA復活"* ]]
 }
 
+@test "WA rate script stderr is logged when script fails" {
+    rm -f /tmp/karo_wa_rate_cache
+    cat > "$TEST_TMPDIR/scripts/gates/gate_workaround_rate.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "wa rate injected failure" >&2
+exit 23
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_workaround_rate.sh"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: gate_workaround_rate.sh failed rc=23"* ]]
+    grep -F "WA_RATE_SCRIPT: wa rate injected failure" "$TEST_TMPDIR/logs/gate_karo_startup_stderr.log"
+}
+
 @test "latest workaround true → WA regression ALERT" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_200

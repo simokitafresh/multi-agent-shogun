@@ -179,6 +179,27 @@ YAML
     [[ "$output" == *"保存確認OK"* ]]
 }
 
+@test "parse_structured_environment_change logs python stderr on failure" {
+    local harness="$TEST_TMPDIR/parse_env_change.sh"
+    local stderr_log="$TEST_TMPDIR/logs/cmd_save_stderr.log"
+    mkdir -p "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
+    cat > "$TEST_TMPDIR/bin/python3" <<'SH'
+#!/usr/bin/env bash
+echo "SyntaxError: injected parser failure" >&2
+exit 1
+SH
+    chmod +x "$TEST_TMPDIR/bin/python3"
+    {
+        printf 'CMD_SAVE_PERSISTENT_STDERR_LOG=%q\n' "$stderr_log"
+        sed -n '/^parse_structured_environment_change()/,/^}/p' "$SAVE_SCRIPT"
+        printf 'parse_structured_environment_change "type=gate;file=scripts/cmd_save.sh;pattern=x"\n'
+    } > "$harness"
+
+    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$harness"
+    [ "$status" -ne 0 ]
+    grep -F "parse_structured_environment_change: SyntaxError: injected parser failure" "$stderr_log"
+}
+
 @test "AC4-2: 構造化environment_changeでpattern不一致ならBLOCK" {
     create_prior_block
     write_full_cmd "type=gate_add;file=scripts/cmd_save.sh;pattern=THIS_PATTERN_DOES_NOT_EXIST_2173"

@@ -162,6 +162,21 @@ YAML
     [[ "$output" == *"cmd_3002"* ]]
 }
 
+@test "awk stderr is logged and empty result emits WARN" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_unreadable
+  review_type: draft
+YAML
+    chmod 000 "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+
+    run bash "$TEST_GATE"
+    chmod 644 "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: review_log解析失敗(awk空結果)。CS観点チェックをスキップ"* ]]
+    grep -F "review_log awk:" "$TEST_TMPDIR/logs/gate_gunshi_cs_checklist_stderr.log"
+}
+
 @test "cold category from previous 10 reviews must be included in next finding_categories" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: cmd_4001
