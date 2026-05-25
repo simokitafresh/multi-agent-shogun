@@ -492,6 +492,7 @@ awk -v root="$SCRIPT_DIR" '
             n++
             wa[n]=0
             brainwash[n]=0
+            has_brainwash_field[n]=0
             cat[n]="uncategorized"
             rc[n]=""
             wa_cmd[n]=""
@@ -511,7 +512,7 @@ awk -v root="$SCRIPT_DIR" '
             gsub(/[[:space:]]+$/, "", wa_cmd[n])
             next
         }
-        if (/^  brainwash_check:/) { brainwash[n]=1; next }
+        if (/^  brainwash_check:/) { brainwash[n]=1; has_brainwash_field[n]=1; next }
         if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
         if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
         next
@@ -593,7 +594,7 @@ awk -v root="$SCRIPT_DIR" '
         bw_missing = 0
         bw_cmds = ""
         for (i=s; i<=n; i++) {
-            if (wa[i] && !brainwash[i]) {
+            if (wa[i] && has_brainwash_field[i] && !brainwash[i]) {
                 bw_missing++
                 cmd_label = (wa_cmd[i] != "") ? wa_cmd[i] : "unknown"
                 bw_cmds = bw_cmds (bw_cmds != "" ? ", " : "") cmd_label

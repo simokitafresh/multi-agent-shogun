@@ -233,7 +233,15 @@ def save_escalation_state(path, state):
         print(f"WARN: escalation state write failed: {exc}", file=sys.stderr)
 
 
-def classify_fail_cause(row, skill_changed, unchanged_streak):
+def is_code_fix_cleared(state_entry):
+    if not isinstance(state_entry, dict):
+        return False
+    return bool(state_entry.get("code_fix_cleared_at") or state_entry.get("code_fix_cleared_by"))
+
+
+def classify_fail_cause(row, skill_changed, unchanged_streak, state_entry=None):
+    if is_code_fix_cleared(state_entry):
+        return "code_fix_cleared", "code fix already cleared; skip reclassification"
     reason = row["reason"].lower()
     code_markers = [
         "traceback",
@@ -253,6 +261,9 @@ def classify_fail_cause(row, skill_changed, unchanged_streak):
 
 
 def request_code_fix(row, unchanged_streak, state_entry):
+    if is_code_fix_cleared(state_entry):
+        print(f"ESCALATION_SKIPPED_CODE_FIX_CLEARED: {row['skill']} streak={unchanged_streak}")
+        return False
     if state_entry.get("notified_streak", 0) >= unchanged_streak:
         print(f"ESCALATION_SKIPPED_ALREADY_NOTIFIED: {row['skill']} streak={unchanged_streak}")
         return False
@@ -516,6 +527,20 @@ for skill, rows in apply_plan.items():
     for row in rows:
         key = escalation_key(row)
         entry = escalation_state["patterns"].setdefault(key, {})
+        if is_code_fix_cleared(entry):
+            entry.update({
+                "skill": row["skill"],
+                "gate": row.get("gate") or entry.get("gate", ""),
+                "reason": row["reason"],
+                "last_fail": row.get("last_fail") or entry.get("last_fail", ""),
+            })
+            entry.pop("classification", None)
+            entry.pop("classification_reason", None)
+            print(
+                f"SKIPPED_CLASSIFICATION_CODE_FIX_CLEARED: {row['skill']} rank={row['rank']} "
+                f"gate={row.get('gate') or entry.get('gate') or 'unknown_gate'}"
+            )
+            continue
         pass_ts = latest_pass.get((row["skill"], row.get("gate") or ""), "")
         if pass_ts and pass_ts >= (row.get("last_fail") or ""):
             entry.update({
@@ -545,7 +570,7 @@ for skill, rows in apply_plan.items():
             entry["unchanged_streak"] = 0
         else:
             entry["unchanged_streak"] = int(entry.get("unchanged_streak", 0)) + 1
-        cause, cause_reason = classify_fail_cause(row, row_changed, int(entry["unchanged_streak"]))
+        cause, cause_reason = classify_fail_cause(row, row_changed, int(entry["unchanged_streak"]), entry)
         entry["classification"] = cause
         entry["classification_reason"] = cause_reason
         print(

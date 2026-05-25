@@ -206,6 +206,10 @@ END {
 }
 ' "$LOG_FILE" 2>/dev/null)
 
+if [ -z "$RESULT" ]; then
+    echo "WARN: review_log解析失敗(awk空結果)。CS観点チェックをスキップ" >&2
+fi
+
 cs_missing=""
 causal_missing=""
 fm_flagged=""
