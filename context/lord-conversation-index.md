@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-24 auto-generated -->
+<!-- last_updated: 2026-05-25 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-24T21:27:16+09:00 -->
+<!-- generated_at: 2026-05-25T17:10:42+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-25T17:10:41+09:00 | terminal | response | GA-380処理完了。GA-379と同根(codd.md stale)。内容未変更のため日付操作不要。cmd待ち。 [meta] stop_reason=tool_use
+- 2026-05-25T17:10:18+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-380)
+- 2026-05-25T17:06:08+09:00 | terminal | response | RECOVERY INCOMPLETE解消。復帰手順Step 1-11完了。 殿、将軍復帰いたしました。 **受信済みaction_required 2件**(家老skill_auto_improveエスカレーション): 1. **rep…
+- 2026-05-25T17:05:50+09:00 | terminal | response | GA-379対処完了: - **codd.md**: 内容変更なし→last_updatedそのまま(正常stale) - **memory-db-schema.md**: last_updated追加済み - **saxo-trade-…
+- 2026-05-25T17:05:06+09:00 | ntfy | outbound | 【CLI再起動成功】saizo: pane_cmd=node
+- 2026-05-25T17:04:32+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2855 (duration=2466s, median=309.0s, ratio=7.98x, delta=+2157.0s) WARNING: ta…
+- 2026-05-25T17:04:03+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(shogun)を自動再起動しました
+- 2026-05-25T17:03:19+09:00 | ntfy | outbound | 【watchdog/WARN】inbox_watcher(shogun)がhang検知。未読0 0件。強制再起動
 - 2026-05-24T21:27:16+09:00 | terminal | response | 前セッション裁定は全て反映済み確認: - 「サイズ違い=別物」→ file-rename SKILL.mdに組込み済み - 「ロールバック」→ cmd_3044で実装+GATE CLEAR済み --- **復帰完了。** 全ステップ終了。…
 - 2026-05-24T21:25:18+09:00 | terminal | response | 家老洗脳自己監査検証完了。inbox空。レビュー待ちidle状態。 [meta] stop_reason=end_turn
-- 2026-05-24T21:24:09+09:00 | terminal | response | 将軍Q6第三者検証完了。inbox空、レビュー待ち。idle自走継続。 [meta] stop_reason=end_turn
-- 2026-05-24T21:23:28+09:00 | terminal | response | 復帰完了。殿に通知送信済み。cmd待ち状態で待機する。 [meta] stop_reason=tool_use
-- 2026-05-24T21:23:24+09:00 | ntfy | outbound | 【家老】復帰済み。全忍者idle。連続clean100件。idle自走完了。cmd待ち。
-- 2026-05-24T21:21:01+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-24 21:13:22|CI緑: run 26360760560
-- 2026-05-24T21:17:46+09:00 | terminal | inbound | y
-- 2026-05-24T21:17:37+09:00 | terminal | inbound | y
-- 2026-05-24T21:14:34+09:00 | terminal | response | 軍師karo_direct LGTM。DC: memory/reference_drive_file_organize.mdがauto-memory側にのみ存在。参照先修正は将軍判断。 [meta] stop_reason=tool_use
-- 2026-05-24T21:13:53+09:00 | terminal | response | clear_prep_check.shのバックグラウンド実行がexit 1で終了。ただし出力は既に読んでチェック結果は確認済み(WARN 2件のみ、既知のfilter-repo除去済み成果物)。/clear準備の3ステップは全て完了。 殿…
 
 ## 未解決確認事項
 - 前セッション裁定は全て反映済み確認: - 「サイズ違い=別物」→ file-rename SKILL.mdに組込み済み - 「ロールバック」→ cmd_3044で実装+GATE CLEAR済み --- **復帰完了。** 全ステップ終了。 殿、将軍復帰いたしました。 **前セッ…
@@ -34,7 +34,6 @@
 - cmd_2855
 - cmd_3020
 - cmd_3024
-- cmd_3027
 - cmd_3028
 - cmd_3029
 - cmd_3030
