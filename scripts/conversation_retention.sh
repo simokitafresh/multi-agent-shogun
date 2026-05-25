@@ -26,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-MAX_ENTRIES = 200
+MAX_ENTRIES = 500
 WINDOW_HOURS = 24
 
 jsonl_path = Path(os.environ["CONV_JSONL"])
