@@ -52,6 +52,31 @@ PY
     [ "${result[7]}" = "conversation" ]
 }
 
+@test "memory_db_import builds lord ruling cache for inbound lord conversations" {
+    cat > "$TEST_TMPDIR/archive/2026-05-25.jsonl" <<'EOF'
+{"ts":"2026-05-25T20:00:00+09:00","agent":"lord","direction":"inbound","summary":"殿裁定その一","detail":"漢字LIKE検索対象"}
+{"ts":"2026-05-25T20:01:00+09:00","agent":"shogun","direction":"response","summary":"将軍返答","detail":"キャッシュ対象外"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --lord-ruling-cache "$TEST_TMPDIR/data/lord_ruling_cache.db"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lord_ruling_cache=$TEST_TMPDIR/data/lord_ruling_cache.db"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/lord_ruling_cache.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM lord_rulings").fetchone()[0])
+print(conn.execute("SELECT summary FROM lord_rulings").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "殿裁定その一" ]
+}
+
 @test "memory_db_import creates FTS5 index and searches summary detail through MATCH" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"高速化相談","detail":"events detail LIKE scan を FTS5 に置き換える"}

@@ -251,76 +251,55 @@ EOF
     [[ "$output" != *"秘密の未知クエリ"* ]]
 }
 
-@test "SSH-003e: prompt_state_inject injects lord memory DB FTS5 matches with limit 3" {
+@test "SSH-003e: prompt_state_inject injects lord ruling cache LIKE matches with limit 3" {
     export MOCK_AGENT_ID="shogun"
     mkdir -p "$TEST_TMPDIR/data"
-    db_path="$TEST_TMPDIR/data/multi_agent_shogun_memory.db"
-    python3 - "$db_path" <<'PY'
+    cache_path="$TEST_TMPDIR/data/lord_ruling_cache.db"
+    python3 - "$cache_path" <<'PY'
 import sqlite3
 import sys
 
 conn = sqlite3.connect(sys.argv[1])
 conn.executescript(
     """
-    CREATE TABLE events (
-        id TEXT PRIMARY KEY,
+    CREATE TABLE lord_rulings (
+        event_id TEXT PRIMARY KEY,
         ts TEXT,
         event_type TEXT,
-        agent TEXT,
-        target TEXT,
-        direction TEXT,
-        summary TEXT,
-        detail TEXT,
-        session_id TEXT,
         cmd_id TEXT,
-        concepts TEXT,
-        source_file TEXT,
-        parent_event_id TEXT,
-        importance TEXT
+        summary TEXT,
+        detail TEXT
     );
-    CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid');
     """
 )
 for idx in range(1, 5):
     conn.execute(
         """
-        INSERT INTO events (
-            id, ts, event_type, agent, target, direction, summary, detail,
-            session_id, cmd_id, concepts, source_file, parent_event_id, importance
-        ) VALUES (?, ?, 'conversation', 'lord', 'shogun', 'inbound', ?, ?, '', ?, '', '', '', 'high')
+        INSERT INTO lord_rulings (
+            event_id, ts, event_type, cmd_id, summary, detail
+        ) VALUES (?, ?, 'conversation', ?, ?, ?)
         """,
         (
             f"lord-{idx}",
             f"2026-05-25T19:0{idx}:00+09:00",
+            f"cmd_{3000 + idx}",
             f"関連裁定 needlememory {idx}",
             f"detail needlememory {idx}",
-            f"cmd_{3000 + idx}",
         ),
     )
-    rowid = conn.execute("SELECT rowid FROM events WHERE id = ?", (f"lord-{idx}",)).fetchone()[0]
-    conn.execute(
-        "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
-        (rowid, f"関連裁定 needlememory {idx}", f"detail needlememory {idx}"),
-    )
 conn.execute(
     """
-    INSERT INTO events (
-        id, ts, event_type, agent, target, direction, summary, detail,
-        session_id, cmd_id, concepts, source_file, parent_event_id, importance
-    ) VALUES ('shogun-1', '2026-05-25T19:10:00+09:00', 'conversation', 'shogun', 'lord', 'response',
-              'shogun needlememory should not appear', 'detail needlememory', '', 'cmd_3999', '', '', '', 'high')
+    INSERT INTO lord_rulings (
+        event_id, ts, event_type, cmd_id, summary, detail
+    ) VALUES ('old-1', '2026-05-25T18:10:00+09:00', 'conversation', 'cmd_2999',
+              '古い needlememory should not appear by limit', 'detail needlememory')
     """
-)
-rowid = conn.execute("SELECT rowid FROM events WHERE id = 'shogun-1'").fetchone()[0]
-conn.execute(
-    "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, 'shogun needlememory should not appear', 'detail needlememory')",
-    (rowid,),
 )
 conn.commit()
 conn.close()
 PY
 
-    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"needlememory の件\"}' | scripts/hooks/prompt_state_inject.sh"
+    run bash -c "cd '$TEST_TMPDIR' && export PROMPT_STATE_LORD_RULING_CACHE_PATH='$cache_path' && printf '%s' '{\"prompt\":\"needlememory の件\"}' | scripts/hooks/prompt_state_inject.sh"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
@@ -329,7 +308,7 @@ import os
 ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
 print("--- memory_db_fts5 ---" in ctx)
 print(ctx.count("summary: 関連裁定 needlememory"))
-print("shogun needlememory should not appear" in ctx)
+print("古い needlememory should not appear by limit" in ctx)
 PY
 )
     [ "${result[0]}" = "True" ]
@@ -337,57 +316,46 @@ PY
     [ "${result[2]}" = "False" ]
 }
 
-@test "SSH-003f: prompt_state_inject skips memory DB FTS5 for prompts shorter than 5 chars" {
+@test "SSH-003f: prompt_state_inject searches lord ruling cache for 2 character chunks" {
     export MOCK_AGENT_ID="shogun"
     mkdir -p "$TEST_TMPDIR/data"
-    db_path="$TEST_TMPDIR/data/multi_agent_shogun_memory.db"
-    python3 - "$db_path" <<'PY'
+    cache_path="$TEST_TMPDIR/data/lord_ruling_cache.db"
+    python3 - "$cache_path" <<'PY'
 import sqlite3
 import sys
 
 conn = sqlite3.connect(sys.argv[1])
 conn.executescript(
     """
-    CREATE TABLE events (
-        id TEXT PRIMARY KEY,
+    CREATE TABLE lord_rulings (
+        event_id TEXT PRIMARY KEY,
         ts TEXT,
         event_type TEXT,
-        agent TEXT,
-        target TEXT,
-        direction TEXT,
-        summary TEXT,
-        detail TEXT,
-        session_id TEXT,
         cmd_id TEXT,
-        concepts TEXT,
-        source_file TEXT,
-        parent_event_id TEXT,
-        importance TEXT
+        summary TEXT,
+        detail TEXT
     );
-    CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid');
-    INSERT INTO events (
-        id, ts, event_type, agent, target, direction, summary, detail,
-        session_id, cmd_id, concepts, source_file, parent_event_id, importance
-    ) VALUES ('lord-1', '2026-05-25T19:01:00+09:00', 'conversation', 'lord', 'shogun', 'inbound',
-              'abcd', 'abcd', '', '', '', '', '', 'high');
-    INSERT INTO events_fts(rowid, summary, detail) VALUES (1, 'abcd', 'abcd');
+    INSERT INTO lord_rulings (
+        event_id, ts, event_type, cmd_id, summary, detail
+    ) VALUES ('lord-1', '2026-05-25T19:01:00+09:00', 'conversation', '',
+              '配備完了', '配備');
     """
 )
 conn.commit()
 conn.close()
 PY
 
-    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"abcd\"}' | scripts/hooks/prompt_state_inject.sh"
+    run bash -c "cd '$TEST_TMPDIR' && export PROMPT_STATE_LORD_RULING_CACHE_PATH='$cache_path' && printf '%s' '{\"prompt\":\"配備\"}' | scripts/hooks/prompt_state_inject.sh"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
 import json
 import os
 ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
-print("--- memory_db_fts5 ---" in ctx)
+print("summary: 配備完了" in ctx)
 PY
 )
-    [ "${result[0]}" = "False" ]
+    [ "${result[0]}" = "True" ]
 }
 
 @test "SSH-004: session_end_clear_check is silent for non-shogun" {
