@@ -659,3 +659,4 @@
 | cmd_3048 | 殿の入力受信時に記憶DB FTS5検索で過去の関連裁定を将軍に自動注入する。現在grep/rg実行時のみDB利用で殿対話時は未接続(なぜなぜ7回で特定した穴)。prompt_state_inject.sh内に関数追加 | infra | 05-25 | prompt_state_inject.shの殿入力時mem |
 | cmd_3049 | cmd_3048のFTS5は漢字/カタカナでagent=lord 0件(unicode61 CJK問題)。ext4上のlord専用キャッシュ(5417件)にLIKE検索(3-4ms)で差替え。殿の入力から2-4文字チャンクを抽出しOR検索。実データ検証で10件中8件ヒット確認済み | infra | 05-25 | lord ruling cache LIKE検索の検証を追加 |
 | cmd_3050 | prompt_state_inject.shのsemantic_search呼出しがtimeout 0.30sで全語TIMEOUT(10/10=100%)。SEMANTIC_DISABLE_CAUSAL=1+SEMANTIC_DISABLE_MEMORY_DB=1追加+timeout 0.60sで安定HIT(8語全完了、max 298ms)。セマンティクスインデックス質的向上spec v3 Phase 1 | infra | 05-25 | prompt_state_inject.shのsemanti |
+| cmd_3051 | ブラックホール概念修復(5概念94件の30文字超aliases削除)+alias長上限validation追加+殿の6原則を独立概念化。8語正しいHIT率 12.5%→改善。spec v3 Phase 2 | infra | 05-25 | 5概念の長文aliasesを削除し、6原則概念を追加、sem |
