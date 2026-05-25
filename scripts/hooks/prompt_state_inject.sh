@@ -499,6 +499,99 @@ fi
 	  return 0
 	}
 
+	memory_db_fts5_inject() {
+	  local _psi_query="${1:0:300}"
+	  local _psi_db_path="${PROMPT_STATE_MEMORY_DB_PATH:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+	  local _psi_result _psi_rc
+	  _psi_query="${_psi_query//$'\n'/ }"
+	  _psi_query="${_psi_query#"${_psi_query%%[![:space:]]*}"}"
+	  _psi_query="${_psi_query%"${_psi_query##*[![:space:]]}"}"
+	  [[ ${#_psi_query} -ge 5 ]] || return 0
+	  [[ -f "$_psi_db_path" ]] || return 0
+
+	  set +e
+	  _psi_result="$(
+	    PROMPT_STATE_FTS_QUERY="$_psi_query" PROMPT_STATE_FTS_DB="$_psi_db_path" \
+	      timeout "${PROMPT_STATE_MEMORY_DB_TIMEOUT:-0.5}" python3 - <<'PY'
+from __future__ import annotations
+
+import os
+import re
+import sqlite3
+
+TOKEN_RE = re.compile(r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff]{3,}")
+
+
+def escape_fts5_phrase(value: str) -> str:
+    return '"' + value.replace('"', '""') + '"'
+
+
+def fts5_query_for_text(query: str, max_terms: int = 16) -> str:
+    normalized = " ".join(query.split())
+    if not normalized:
+        return ""
+    terms: list[str] = []
+    seen: set[str] = set()
+    for match in TOKEN_RE.finditer(normalized):
+        term = match.group(0)
+        key = term.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(term)
+        if len(terms) >= max_terms:
+            break
+    if not terms:
+        return escape_fts5_phrase(normalized)
+    return " OR ".join(escape_fts5_phrase(term) for term in terms)
+
+
+def one_line(value: object, max_len: int = 120) -> str:
+    text = "" if value is None else str(value)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:max_len]
+
+
+db_path = os.environ.get("PROMPT_STATE_FTS_DB", "")
+fts_query = fts5_query_for_text(os.environ.get("PROMPT_STATE_FTS_QUERY", ""))
+if not db_path or not fts_query:
+    raise SystemExit(0)
+
+with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+    conn.execute("PRAGMA busy_timeout=500")
+    rows = conn.execute(
+        """
+        SELECT e.ts, e.event_type, e.cmd_id, e.summary
+        FROM events_fts
+        JOIN events AS e ON e.rowid = events_fts.rowid
+        WHERE events_fts MATCH ?
+          AND e.agent = 'lord'
+        ORDER BY bm25(events_fts), e.ts DESC
+        LIMIT 3
+        """,
+        (fts_query,),
+    ).fetchall()
+
+if not rows:
+    raise SystemExit(0)
+
+print("memory_db_fts5_matches:")
+for ts, event_type, cmd_id, summary in rows:
+    print(f"- ts: {one_line(ts, 40)}")
+    print(f"  event_type: {one_line(event_type, 40)}")
+    if cmd_id:
+        print(f"  cmd_id: {one_line(cmd_id, 40)}")
+    print(f"  summary: {one_line(summary)}")
+PY
+	  )"
+	  _psi_rc=$?
+	  set -e
+	  [[ "$_psi_rc" -eq 0 ]] || return 0
+	  [[ -n "$_psi_result" ]] || return 0
+	  printf '%s' "$_psi_result"
+	  return 0
+	}
+
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
@@ -615,6 +708,13 @@ if [[ -n "$semantic_result" ]]; then
   additional_context="${additional_context}
 --- semantic_knowledge ---
 ${semantic_result}"
+fi
+
+memory_db_result="$(memory_db_fts5_inject "$prompt_text")"
+if [[ -n "$memory_db_result" ]]; then
+  additional_context="${additional_context}
+--- memory_db_fts5 ---
+${memory_db_result}"
 fi
 
 # --- Output JSON ---
