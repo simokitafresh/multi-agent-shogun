@@ -19,6 +19,7 @@ DEFAULT_ARCHIVE_DIR = REPO_ROOT / "logs" / "lord_conversation_archive"
 DEFAULT_DB_PATH = REPO_ROOT / "data" / "multi_agent_shogun_memory.db"
 DEFAULT_SCHEMA_DOC_PATH = REPO_ROOT / "context" / "memory-db-schema.md"
 DOCUMENT_SUFFIXES = {".md", ".yaml", ".yml", ".txt", ".rst"}
+DEFAULT_LORD_RULING_CACHE_PATH = Path("/tmp/lord_ruling_cache.db")
 DEFAULT_SEMANTIC_INDEX_PATH = REPO_ROOT / "docs" / "semantic-index" / "index.md"
 DEFAULT_BULLETIN_FILE = REPO_ROOT / "queue" / "bulletin_board.yaml"
 DEFAULT_BULLETIN_ARCHIVE_DIR = REPO_ROOT / "queue" / "archive"
@@ -993,6 +994,7 @@ def write_schema_markdown(db_path: Path, output_path: Path) -> None:
 def build_db(
     db_path: Path,
     rows: list[tuple[str, str, str, str, str, str, str]],
+    lord_ruling_cache_path: Path = DEFAULT_LORD_RULING_CACHE_PATH,
     semantic_index_path: Path = DEFAULT_SEMANTIC_INDEX_PATH,
     bulletin_entries: list[dict[str, Any]] | None = None,
     insight_entries: list[dict[str, Any]] | None = None,
@@ -1112,6 +1114,56 @@ def build_db(
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_source_event_id ON event_links(source_event_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_target_concept ON event_links(target_concept)")
+    build_lord_ruling_cache(lord_ruling_cache_path, event_rows)
+
+
+def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> None:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    rows = [
+        (event_id, ts, event_type, cmd_id, summary, detail)
+        for (
+            event_id,
+            ts,
+            event_type,
+            agent,
+            _target,
+            direction,
+            summary,
+            detail,
+            _session_id,
+            cmd_id,
+            _concepts,
+            _source_file,
+            _parent_event_id,
+            _importance,
+        ) in event_rows
+        if event_type == "conversation" and agent == "lord" and direction == "inbound"
+    ]
+    with sqlite3.connect(cache_path) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS lord_rulings (
+                event_id TEXT PRIMARY KEY,
+                ts TEXT,
+                event_type TEXT,
+                cmd_id TEXT,
+                summary TEXT,
+                detail TEXT
+            )
+            """
+        )
+        conn.execute("DELETE FROM lord_rulings")
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO lord_rulings (
+                event_id, ts, event_type, cmd_id, summary, detail
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_lord_rulings_ts ON lord_rulings(ts)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -1169,6 +1221,11 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated files/directories whose md/yaml/txt/rst documents are imported as event_type=document.",
     )
     parser.add_argument(
+        "--lord-ruling-cache",
+        default=str(DEFAULT_LORD_RULING_CACHE_PATH),
+        help="SQLite cache path for fast lord-only LIKE search used by prompt_state_inject.sh.",
+    )
+    parser.add_argument(
         "--search",
         default="",
         help="Search events.summary/detail using the FTS5 index instead of rebuilding the DB.",
@@ -1222,6 +1279,7 @@ def main() -> int:
         else default_pending_decisions_path_for_archive(archive_dir)
     )
     doc_dirs = parse_doc_dirs(args.doc_dirs)
+    lord_ruling_cache_path = Path(args.lord_ruling_cache)
     if args.search:
         for row in search_events(db_path, args.search, args.limit, args.target):
             print(
@@ -1255,6 +1313,7 @@ def main() -> int:
     build_db(
         db_path,
         rows,
+        lord_ruling_cache_path,
         semantic_index_path,
         bulletin_entries,
         insight_entries,
@@ -1278,6 +1337,7 @@ def main() -> int:
         f"cmd_archives={len(cmd_archive_entries)} "
         f"pending_decisions={len(pending_decision_entries)} "
         f"documents={len(document_entries)} "
+        f"lord_ruling_cache={lord_ruling_cache_path} "
         f"schema={schema_output or 'not_written'} "
         f"db={db_path}"
     )

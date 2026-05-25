@@ -501,12 +501,11 @@ fi
 
 	memory_db_fts5_inject() {
 	  local _psi_query="${1:0:300}"
-	  local _psi_db_path="${PROMPT_STATE_MEMORY_DB_PATH:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+	  local _psi_db_path="${PROMPT_STATE_LORD_RULING_CACHE_PATH:-/tmp/lord_ruling_cache.db}"
 	  local _psi_result _psi_rc
 	  _psi_query="${_psi_query//$'\n'/ }"
 	  _psi_query="${_psi_query#"${_psi_query%%[![:space:]]*}"}"
 	  _psi_query="${_psi_query%"${_psi_query##*[![:space:]]}"}"
-	  [[ ${#_psi_query} -ge 5 ]] || return 0
 	  [[ -f "$_psi_db_path" ]] || return 0
 
 	  set +e
@@ -519,31 +518,67 @@ import os
 import re
 import sqlite3
 
-TOKEN_RE = re.compile(r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff]{3,}")
+TOKEN_RE = re.compile(r"[\u4e00-\u9fff]+|[\u30a0-\u30ff]+|[\u3040-\u309f]+|[A-Za-z]+|[0-9]+")
+STOPWORDS = {
+    "する",
+    "した",
+    "して",
+    "ない",
+    "ある",
+    "いる",
+    "これ",
+    "それ",
+    "とか",
+    "から",
+    "まで",
+    "だけ",
+    "など",
+    "でも",
+    "けど",
+}
 
 
-def escape_fts5_phrase(value: str) -> str:
-    return '"' + value.replace('"', '""') + '"'
-
-
-def fts5_query_for_text(query: str, max_terms: int = 16) -> str:
+def like_terms_for_text(query: str, max_terms: int = 5) -> list[str]:
     normalized = " ".join(query.split())
     if not normalized:
-        return ""
-    terms: list[str] = []
+        return []
+    high_confidence: list[str] = []
+    low_confidence: list[str] = []
     seen: set[str] = set()
     for match in TOKEN_RE.finditer(normalized):
-        term = match.group(0)
-        key = term.casefold()
+        raw = match.group(0)
+        is_high = (
+            bool(re.fullmatch(r"[\u4e00-\u9fff]{2,}", raw))
+            or bool(re.fullmatch(r"[\u30a0-\u30ff]{2,}", raw))
+            or bool(re.fullmatch(r"[A-Za-z]{2,}", raw))
+            or bool(re.fullmatch(r"[0-9]{2,}", raw))
+        )
+        is_low = bool(re.fullmatch(r"[\u3040-\u309f]{3,6}", raw)) and raw not in STOPWORDS
+        if not is_high and not is_low:
+            continue
+        key = raw.casefold()
         if key in seen:
             continue
         seen.add(key)
-        terms.append(term)
-        if len(terms) >= max_terms:
-            break
-    if not terms:
-        return escape_fts5_phrase(normalized)
-    return " OR ".join(escape_fts5_phrase(term) for term in terms)
+        if is_high:
+            high_confidence.append(raw)
+        else:
+            low_confidence.append(raw)
+    return (high_confidence + low_confidence)[:max_terms]
+
+
+def like_pattern(value: str) -> str:
+    return f"%{value}%"
+
+
+def build_where_clause(terms: list[str]) -> tuple[str, list[str]]:
+    clauses: list[str] = []
+    params: list[str] = []
+    for term in terms:
+        pattern = like_pattern(term)
+        clauses.append("(summary LIKE ? OR detail LIKE ?)")
+        params.extend([pattern, pattern])
+    return " OR ".join(clauses), params
 
 
 def one_line(value: object, max_len: int = 120) -> str:
@@ -553,29 +588,28 @@ def one_line(value: object, max_len: int = 120) -> str:
 
 
 db_path = os.environ.get("PROMPT_STATE_FTS_DB", "")
-fts_query = fts5_query_for_text(os.environ.get("PROMPT_STATE_FTS_QUERY", ""))
-if not db_path or not fts_query:
+terms = like_terms_for_text(os.environ.get("PROMPT_STATE_FTS_QUERY", ""))
+if not db_path or not terms:
     raise SystemExit(0)
 
+where_clause, params = build_where_clause(terms)
 with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
     conn.execute("PRAGMA busy_timeout=500")
     rows = conn.execute(
-        """
-        SELECT e.ts, e.event_type, e.cmd_id, e.summary
-        FROM events_fts
-        JOIN events AS e ON e.rowid = events_fts.rowid
-        WHERE events_fts MATCH ?
-          AND e.agent = 'lord'
-        ORDER BY bm25(events_fts), e.ts DESC
+        f"""
+        SELECT ts, event_type, cmd_id, summary
+        FROM lord_rulings
+        WHERE {where_clause}
+        ORDER BY ts DESC
         LIMIT 3
         """,
-        (fts_query,),
+        params,
     ).fetchall()
 
 if not rows:
     raise SystemExit(0)
 
-print("memory_db_fts5_matches:")
+print("lord_ruling_cache_matches:")
 for ts, event_type, cmd_id, summary in rows:
     print(f"- ts: {one_line(ts, 40)}")
     print(f"  event_type: {one_line(event_type, 40)}")
