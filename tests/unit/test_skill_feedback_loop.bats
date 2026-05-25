@@ -1027,3 +1027,87 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "skill_auto_improve does not reclassify or escalate code_fix_cleared pattern" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+---
+
+# report-write
+
+## 報告YAML記入手順
+既存手順。
+EOF
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "script exit code failure in report-write"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+    BULLETIN_CAPTURE="$TEST_TMPDIR/bulletin_args.log"
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT="$TEST_TMPDIR/scripts/bulletin_write.sh" \
+        SKILL_AUTO_IMPROVE_POSTED_BY="hayate" \
+        BULLETIN_CAPTURE="$BULLETIN_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import json
+from pathlib import Path
+state = json.loads(Path("$STATE_JSON").read_text(encoding="utf-8"))
+entry = next(iter(state["patterns"].values()))
+entry["code_fix_cleared_by"] = "test_clear"
+entry["code_fix_cleared_at"] = "2026-05-02T10:05:00+0900"
+Path("$STATE_JSON").write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    before=0
+    [ -f "$BULLETIN_CAPTURE" ] && before="$(wc -l < "$BULLETIN_CAPTURE")"
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT="$TEST_TMPDIR/scripts/bulletin_write.sh" \
+        SKILL_AUTO_IMPROVE_POSTED_BY="hayate" \
+        BULLETIN_CAPTURE="$BULLETIN_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIPPED_CLASSIFICATION_CODE_FIX_CLEARED: report-write rank=1 gate=gate_report_format"* ]]
+    [[ "$output" != *"CLASSIFIED: report-write"* ]]
+    [[ "$output" != *"ESCALATED_CODE_FIX: report-write"* ]]
+    after=0
+    [ -f "$BULLETIN_CAPTURE" ] && after="$(wc -l < "$BULLETIN_CAPTURE")"
+    [ "$before" -eq "$after" ]
+
+    run python3 - <<EOF
+import json
+from pathlib import Path
+state = json.loads(Path("$STATE_JSON").read_text(encoding="utf-8"))
+entry = next(iter(state["patterns"].values()))
+assert entry.get("classification") is None, entry
+assert entry.get("code_fix_cleared_by") == "test_clear", entry
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
