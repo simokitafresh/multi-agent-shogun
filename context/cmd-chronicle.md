@@ -657,3 +657,5 @@
 | cmd_3046 | lord_conversation.jsonlが202行でMAX_ENTRIES=200を超過しsession_summary喪失リスク。200→500に拡張 | infra | 05-25 | conversation_retention.shのMAX_ |
 | cmd_3045 | skill_auto_improve.shがcode_fix_cleared済みパターンを再分類→再エスカレーションするバグの修正。report-writeとverdict-checkで偽エスカレーションが毎起動発生し将軍の確認コストが累積する | infra | 05-25 | code_fix_cleared済みskill_auto_i |
 | cmd_3048 | 殿の入力受信時に記憶DB FTS5検索で過去の関連裁定を将軍に自動注入する。現在grep/rg実行時のみDB利用で殿対話時は未接続(なぜなぜ7回で特定した穴)。prompt_state_inject.sh内に関数追加 | infra | 05-25 | prompt_state_inject.shの殿入力時mem |
+| cmd_3049 | cmd_3048のFTS5は漢字/カタカナでagent=lord 0件(unicode61 CJK問題)。ext4上のlord専用キャッシュ(5417件)にLIKE検索(3-4ms)で差替え。殿の入力から2-4文字チャンクを抽出しOR検索。実データ検証で10件中8件ヒット確認済み | infra | 05-25 | lord ruling cache LIKE検索の検証を追加 |
+| cmd_3050 | prompt_state_inject.shのsemantic_search呼出しがtimeout 0.30sで全語TIMEOUT(10/10=100%)。SEMANTIC_DISABLE_CAUSAL=1+SEMANTIC_DISABLE_MEMORY_DB=1追加+timeout 0.60sで安定HIT(8語全完了、max 298ms)。セマンティクスインデックス質的向上spec v3 Phase 1 | infra | 05-25 | prompt_state_inject.shのsemanti |
