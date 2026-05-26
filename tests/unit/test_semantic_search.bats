@@ -87,6 +87,7 @@ teardown() {
     [[ "$output" == *"matched: 意味検索"* ]]
     [[ "$output" == *"docs/research/semantic_index_design.md"* ]]
     [[ "$output" == *"related_concepts:"* ]]
+    [[ "$output" == *"path_b_score:"* ]]
     [[ "$output" == *"## growth_loop — 学習ループ"* ]]
     [[ "$output" == *"context/growth-loop.md"* ]]
     [[ "$output" == *"- url: \`https://github.com/example/semantic-index-reference\`"* ]]
@@ -100,6 +101,7 @@ teardown() {
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"related_concepts:"* ]]
+    [[ "$output" == *"connection_strength="* ]]
     [[ "$output" == *"## growth_loop — 学習ループ"* ]]
     [[ "$output" == *"- file: \`context/growth-loop.md\`"* ]]
     [ "$(grep -c '^## semantic_dictionary_design' <<< "$output")" -eq 1 ]
