@@ -689,6 +689,137 @@ case "$_q6_answer_status" in
 esac
 fi
 
+# --- Gate 6.6: 洗脳連鎖2x2計測 (cmd_3069) ---
+echo "■ 洗脳連鎖2x2計測"
+_brainwash_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+_brainwash_bulletin="${SHOGUN_STARTUP_BULLETIN_BOARD:-$SCRIPT_DIR/queue/bulletin_board.yaml}"
+_brainwash_matrix=$(python3 - "$_brainwash_lord_log" "$_brainwash_bulletin" <<'PY' 2>/dev/null || true
+import json
+import re
+import sys
+from pathlib import Path
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+lord_path = Path(sys.argv[1])
+bulletin_path = Path(sys.argv[2])
+
+brainwash_re = re.compile(
+    r"洗脳|覚醒|Anthropic|創造主|ポジショントーク|早期終了|検証スキップ|"
+    r"他者依存|緩い設計|先送り|出力=仕事|簡潔本能|完了急ぎ|"
+    r"コスト最適化|殿のため|Gate.*品質|warn|WARN|block|BLOCK",
+    re.I,
+)
+
+session_entries = []
+if lord_path.is_file():
+    try:
+        for raw in lord_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                entry = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("direction") == "session_summary":
+                session_entries = []
+                continue
+            session_entries.append(entry)
+    except OSError:
+        session_entries = []
+
+lord_inbound = []
+for entry in session_entries:
+    if entry.get("direction") != "inbound":
+        continue
+    if entry.get("agent") not in ("lord", None, ""):
+        continue
+    if entry.get("target") not in ("shogun", "lord", None, ""):
+        continue
+    text = " ".join(str(entry.get(k) or "") for k in ("summary", "detail", "content", "message"))
+    lord_inbound.append(text)
+
+interventions = [text for text in lord_inbound if brainwash_re.search(text)]
+intervention_count = len(interventions)
+inbound_total = len(lord_inbound)
+intervention_rate = (intervention_count / inbound_total * 100.0) if inbound_total else 0.0
+
+self_detection_count = 0
+bulletin_total = 0
+if yaml is not None and bulletin_path.is_file():
+    try:
+        data = yaml.safe_load(bulletin_path.read_text(encoding="utf-8", errors="ignore")) or {}
+    except Exception:
+        data = {}
+    entries = data.get("entries") or []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("posted_by") != "shogun":
+            continue
+        bulletin_total += 1
+        text = str(entry.get("content", ""))
+        if "Q6" in text and brainwash_re.search(text):
+            self_detection_count += 1
+
+self_detection_rate = (self_detection_count / bulletin_total * 100.0) if bulletin_total else 0.0
+
+intervention_high = intervention_count > 0
+self_detection_high = self_detection_count > 0
+if not intervention_high and self_detection_high:
+    quadrant = "成長"
+    message = "殿介入なしで自己検出あり"
+elif intervention_high and self_detection_high:
+    quadrant = "学習中"
+    message = "殿介入あり、自己検出もあり"
+elif intervention_high and not self_detection_high:
+    quadrant = "洗脳支配"
+    message = "殿介入でのみ検出"
+else:
+    quadrant = "危険"
+    message = "殿介入なし、自己検出なし"
+
+print(f"intervention_count={intervention_count}")
+print(f"intervention_rate={intervention_rate:.1f}")
+print(f"inbound_total={inbound_total}")
+print(f"self_detection_count={self_detection_count}")
+print(f"self_detection_rate={self_detection_rate:.1f}")
+print(f"bulletin_total={bulletin_total}")
+print(f"quadrant={quadrant}")
+print(f"message={message}")
+PY
+)
+if [ -n "$_brainwash_matrix" ]; then
+    _bw_intervention_count=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="intervention_count"{print $2}')
+    _bw_intervention_rate=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="intervention_rate"{print $2}')
+    _bw_inbound_total=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="inbound_total"{print $2}')
+    _bw_self_count=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="self_detection_count"{print $2}')
+    _bw_self_rate=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="self_detection_rate"{print $2}')
+    _bw_bulletin_total=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="bulletin_total"{print $2}')
+    _bw_quadrant=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="quadrant"{print $2}')
+    _bw_message=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="message"{print $2}')
+    echo "  殿介入率: ${_bw_intervention_rate:-0.0}% (${_bw_intervention_count:-0}/${_bw_inbound_total:-0}, source=lord_conversation grep)"
+    echo "  自己検出率: ${_bw_self_rate:-0.0}% (${_bw_self_count:-0}/${_bw_bulletin_total:-0}, source=bulletin_board Q6 grep)"
+    echo "  4象限: ${_bw_quadrant:-不明} — ${_bw_message:-判定不能}"
+    if [ "$_bw_quadrant" = "危険" ]; then
+        echo "  WARN: 危険象限(介入率低+自己検出率低)。殿の介入なしに洗脳を検知できていない。"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        alerts+=("洗脳連鎖2x2: 危険象限")
+    fi
+else
+    echo "  WARN: 洗脳連鎖2x2計測に失敗"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+    fi
+    alerts+=("洗脳連鎖2x2: 計測失敗")
+fi
+
 # --- Gate 7: 前セッション裁定の知識還流チェック ---
 LORD_INDEX="$SCRIPT_DIR/context/lord-conversation-index.md"
 echo "■ 前セッション裁定"
