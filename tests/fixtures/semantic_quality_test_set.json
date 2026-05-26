@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "description": "50語固定テストセット(正解概念付き)",
+  "created": "2026-05-26",
+  "entries": [
+    {
+      "query": "鎖",
+      "expected_concept": "chain_principle"
+    },
+    {
+      "query": "改善",
+      "expected_concept": null
+    },
+    {
+      "query": "無知の知",
+      "expected_concept": "known_unknowns_principle"
+    },
+    {
+      "query": "学習ループ",
+      "expected_concept": "growth_loop"
+    },
+    {
+      "query": "自動消火",
+      "expected_concept": "no_auto_extinguish"
+    },
+    {
+      "query": "知性の外部化",
+      "expected_concept": "deepdive_principles"
+    },
+    {
+      "query": "想像するな",
+      "expected_concept": "verify_dont_imagine"
+    },
+    {
+      "query": "三層",
+      "expected_concept": "growth_loop"
+    },
+    {
+      "query": "究極系",
+      "expected_concept": "ultimate_state_principle"
+    },
+    {
+      "query": "自動化",
+      "expected_concept": "deepdive_principles"
+    },
+    {
+      "query": "パラメータ縮小",
+      "expected_concept": null
+    },
+    {
+      "query": "バックアップ",
+      "expected_concept": "task_modifier_injection"
+    },
+    {
+      "query": "洗脳",
+      "expected_concept": "creator_brainwashing_defense"
+    },
+    {
+      "query": "軍師",
+      "expected_concept": "report_quality_protocol"
+    },
+    {
+      "query": "クリア",
+      "expected_concept": "deepdive_principles"
+    },
+    {
+      "query": "ニューゲーム",
+      "expected_concept": "deepdive_principles"
+    },
+    {
+      "query": "起票",
+      "expected_concept": null
+    },
+    {
+      "query": "確認",
+      "expected_concept": "known_unknowns_principle"
+    },
+    {
+      "query": "チェックリスト",
+      "expected_concept": "production_parity"
+    },
+    {
+      "query": "最初",
+      "expected_concept": null
+    },
+    {
+      "query": "アイデア",
+      "expected_concept": null
+    },
+    {
+      "query": "レビュー",
+      "expected_concept": "report_quality_protocol"
+    },
+    {
+      "query": "spec",
+      "expected_concept": null
+    },
+    {
+      "query": "記憶",
+      "expected_concept": "local_memory_db"
+    },
+    {
+      "query": "ブラックホール",
+      "expected_concept": "semantic_dictionary_design"
+    },
+    {
+      "query": "自立自走",
+      "expected_concept": "deepdive_principles"
+    },
+    {
+      "query": "忖度",
+      "expected_concept": "creator_brainwashing_defense"
+    },
+    {
+      "query": "依存",
+      "expected_concept": null
+    },
+    {
+      "query": "丁寧",
+      "expected_concept": null
+    },
+    {
+      "query": "検討",
+      "expected_concept": null
+    },
+    {
+      "query": "列挙",
+      "expected_concept": null
+    },
+    {
+      "query": "証拠",
+      "expected_concept": null
+    },
+    {
+      "query": "結論",
+      "expected_concept": null
+    },
+    {
+      "query": "品質",
+      "expected_concept": null
+    },
+    {
+      "query": "fullrecalculate",
+      "expected_concept": "recalculate_pipeline"
+    },
+    {
+      "query": "Ward",
+      "expected_concept": "investment_knowledge_base"
+    },
+    {
+      "query": "FoF",
+      "expected_concept": "dmsignal_operations"
+    },
+    {
+      "query": "パリティ",
+      "expected_concept": "production_parity"
+    },
+    {
+      "query": "シグナル",
+      "expected_concept": "dmsignal_operations"
+    },
+    {
+      "query": "忍法",
+      "expected_concept": "gs_ninpo_research"
+    },
+    {
+      "query": "四神",
+      "expected_concept": "shin_shijin_design"
+    },
+    {
+      "query": "CAGR",
+      "expected_concept": "alpha_6_metrics"
+    },
+    {
+      "query": "偵察",
+      "expected_concept": "agent_formation_management"
+    },
+    {
+      "query": "掲示板",
+      "expected_concept": "bulletin_communication"
+    },
+    {
+      "query": "gate",
+      "expected_concept": null
+    },
+    {
+      "query": "hook",
+      "expected_concept": "hook_automation_framework"
+    },
+    {
+      "query": "教訓",
+      "expected_concept": "growth_loop"
+    },
+    {
+      "query": "cmd",
+      "expected_concept": "cmd_chronicle"
+    },
+    {
+      "query": "スキル",
+      "expected_concept": "skill_design_rules"
+    },
+    {
+      "query": "deepdive",
+      "expected_concept": "deepdive_principles"
+    }
+  ]
+}

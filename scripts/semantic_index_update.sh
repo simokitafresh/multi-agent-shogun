@@ -73,6 +73,21 @@ run_semantic_stress_after_alias_change() {
     fi
 }
 
+run_semantic_quality_after_alias_change() {
+    [ "${SEMANTIC_QUALITY_AFTER_ALIAS_CHANGE:-1}" = "0" ] && return 0
+    local quality_test="${SEMANTIC_QUALITY_CMD:-$script_dir/scripts/semantic_quality_test.sh}"
+    [ -f "$quality_test" ] || return 0
+
+    echo "semantic-quality after-alias-change: running"
+    if bash "$quality_test"; then
+        echo "semantic-quality after-alias-change: complete"
+    else
+        local rc=$?
+        echo "WARN: semantic-quality after-alias-change failed(rc=$rc)" >&2
+        return 0
+    fi
+}
+
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
     changed_flag="$(
@@ -976,6 +991,7 @@ PY
         fi
         if [ "$aliases_changed" = true ]; then
             run_semantic_stress_after_alias_change
+            run_semantic_quality_after_alias_change
         fi
     fi
 ) 200>"$lock_path"

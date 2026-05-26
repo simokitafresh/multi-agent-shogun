@@ -17,7 +17,7 @@ codd:
 | id | cmd_chronicle |
 | label | CMD年代記 |
 | aliases | 戦局日誌, cmd履歴, cmd年代記, 完了cmd索引, senkyoku-log |
-| related_concepts | growth_loop, knowledge_maintenance |
+| related_concepts | growth_loop, lesson_lifecycle |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -31,7 +31,7 @@ codd:
 |------|---|
 | id | local_memory_db |
 | label | ローカル記憶DB |
-| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, lord_conversation_archive SQLite, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ |
 | related_concepts | semantic_dictionary_design, semantic_causal_automation |
 
 | 種別 | パス/参照 |
@@ -50,7 +50,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy |
 | related_lessons | `LS041` |
 
@@ -93,7 +93,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, リンク品質原則, 距離×濃度, ファイル間直接リンク, backlinks双方向, 孤立=存在しない, ノイズ1件で全汚染, 修行=リンク構築, 読んで理解してリンク, リンク修行の複利, 知識の幅, コードベース理解 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -264,6 +264,10 @@ codd:
 | lesson | `L708` レビュー結論は現物実行で裏付けよ — 検証なき結論禁止 |
 | lesson | `L711` 共有repoの自動commitが他忍者のstage済み差分を取り込む |
 | lesson | `L712` 共有repo auto-commitが他忍者のstage済みdiffを吸収する — stage→commitを連続区間で完了せよ |
+| cmd | `cmd_3051` 強化 — セマンティクスインデックス品質改善Phase 2(掃除+validation+原則概念化) (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_index_update.bats`) |
+| causal | `cmd_3051` origin: [[semantic_index_quality_spec_v3]] -> [[因果2_ブラックホール概念]] + [[因果3_原則未マッピング]] -> [[8語正しいHIT率12.5%]] |
+| causal | `cmd_3051` depends_on: cmd_3050 |
+| lesson | `L713` draft reviewでもgit show HEADでAC実装状態を確認せよ — LG001のdraft拡張 |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -271,7 +275,7 @@ codd:
 |------|---|
 | id | investment_knowledge_base |
 | label | 投資知識辞書 |
-| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, garch, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, APT, Arbitrage Pricing Theory, arima, ARIMA, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, CAPM, Carhart 4-Factor Model, carhart-4-factor, cointegration, Cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, Meta-Labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, Savitzky-Golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, VAR, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, VPIN, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot |
+| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, Arbitrage Pricing Theory, arima, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, Carhart 4-Factor Model, carhart-4-factor, cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot, garch, APT, ARIMA, CAPM, Cointegration, Meta-Labeling, Savitzky-Golay, VAR, VPIN |
 | related_concepts | dmsignal_operations, semantic_dictionary_design, causal_traversal_pipeline |
 
 | 種別 | パス/参照 |
@@ -288,7 +292,7 @@ codd:
 |------|---|
 | id | systems_knowledge_base |
 | label | システム知識辞書 |
-| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, codd, GSD, Get Shit Done, gsd, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army |
+| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, GSD, Get Shit Done, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army, codd, gsd |
 | related_concepts | semantic_dictionary_design, skill_design_rules, agent_formation_management |
 
 | 種別 | パス/参照 |
@@ -313,7 +317,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, PHENOMENON, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, codd yaml, brownfield方式, codd measure, dag build, codd propagate, codd review |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, lexicon, elicit, phenomenon, codd fix, codd fix PHENOMENON, dag verify, dag-verify, auto-repair, brownfield, coherence-engine, coverage report, codd v2, v2.18.0, codd yaml, brownfield方式, codd measure, dag build, codd propagate, codd review, PHENOMENON |
 | skills | codd, codd-refactor |
 | related_concepts | semantic_dictionary_design, skill_design_rules, test_quality_framework |
 
@@ -489,7 +493,7 @@ codd:
 |------|---|
 | id | gate_bypass_prevention |
 | label | gate迂回防止 |
-| aliases | gate迂回, 滑り坂, 正規フロー, cmd_delegate, cmd委任境界, 将軍委任フロー, pending委任ゲート, 委任重複検出, cmd_new重複, 後続cmd検出, cmd委任スクリプト, shogun委任実行, delegation_flow, atomic_delegate, shogun_dispatch, karo_notify, delegate_cmd, dashboard cmd照合, locale非依存grep, 二次証跡cmd検出, cmd 3004完了処理完了, cmd 3029完了処理全ステップ完了 |
+| aliases | gate迂回, 滑り坂, 正規フロー, cmd_delegate, cmd委任境界, 将軍委任フロー, pending委任ゲート, 委任重複検出, cmd_new重複, 後続cmd検出, cmd委任スクリプト, shogun委任実行, delegation_flow, atomic_delegate, shogun_dispatch, karo_notify, delegate_cmd, dashboard cmd照合, 二次証跡cmd検出, cmd 3004完了処理完了, cmd 3029完了処理全ステップ完了 |
 | skills | report-write, verdict-check |
 | related_concepts | hook_automation_framework, growth_loop, defense_hierarchy |
 
@@ -528,7 +532,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality |
 
@@ -546,7 +550,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化 |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走 |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, semantic_causal_automation |
 
@@ -660,7 +664,7 @@ codd:
 |------|---|
 | id | verify_dont_imagine |
 | label | 想像するな確認せよ |
-| aliases | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな |
+| aliases | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな, 無意識に本能で洗脳による選択をしていないか確認せよ |
 | skills | なし |
 | related_concepts | deepdive_principles, infrastructure_ops, inbox_processing_discipline |
 
@@ -668,6 +672,12 @@ codd:
 |------|----------|
 | file | `memory/deepdive_why_chain_20260321.md` |
 | file | `context/infrastructure.md` |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T12:16:44+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T12:18:36+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T12:30:36+09:00 洗脳監査。その他に無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T12:33:57+09:00 洗脳監査。その他に無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T13:35:19+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T13:35:26+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
 
 ## ultimate_state_principle — 究極系原則
 
@@ -705,7 +715,7 @@ codd:
 |------|---|
 | id | alm_research |
 | label | ALM研究 |
-| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, CI RED修正 cmd 2837のwf engine除外条件が正当WARNまで消した回帰修正 |
+| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り |
 | skills | pf-registration, db-check |
 | related_concepts | dmsignal_operations, gs_ninpo_research, recalculate_pipeline |
 
@@ -728,7 +738,7 @@ codd:
 |------|---|
 | id | shin_shijin_design |
 | label | 四神設計 |
-| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した, inbox write sh将軍ナッジ防止Guard追加 task new →L5化, task notification task id bql0jw4uv task id tool use id tool, task notification task id b0ysnl00p task id tool use id tool |
+| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した |
 | skills | pf-registration, db-check |
 | related_concepts | production_parity, dmsignal_operations, visibility_tier_masking |
 
@@ -774,7 +784,7 @@ codd:
 |------|---|
 | id | silent_fallback_quality |
 | label | Silent Fallback品質 |
-| aliases | silent fallback, Silent Fallback, サイレントフォールバック, 無言フォールバック, Cash fallback, SPY fallback, fail-open, fail-closed, PI-018, gate_silent_fallback, データ偽装, fallback品質 |
+| aliases | silent fallback, サイレントフォールバック, 無言フォールバック, Cash fallback, SPY fallback, fail-open, fail-closed, PI-018, gate_silent_fallback, データ偽装, fallback品質, Silent Fallback |
 | skills | なし |
 | related_concepts | production_parity, dmsignal_operations, defense_hierarchy |
 
@@ -899,7 +909,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, ** 上限値の状態除外漏れ timeout追加時にpending状態除外** **ファイル scripts semant |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル |
 | skills | db-check, pf-registration, cdp-browse |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking |
 
@@ -925,7 +935,7 @@ codd:
 |------|---|
 | id | google_classroom |
 | label | Google Classroom Dashboard |
-| aliases | Google Classroom, google classroom, Classroom, Classroom Dashboard, グーグルクラスルーム, classroom scraper, Classroomスクレイピング, auto_login, scrape_classroom, classroom内にあるスキルは？ |
+| aliases | Google Classroom, Classroom, Classroom Dashboard, グーグルクラスルーム, classroom scraper, Classroomスクレイピング, auto_login, scrape_classroom, classroom内にあるスキルは？, google classroom |
 | skills | なし |
 | related_concepts | external_project_registry, cdp_browser_capability |
 
@@ -948,7 +958,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察 |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -1082,7 +1092,7 @@ codd:
 |------|---|
 | id | visibility_tier_masking |
 | label | Visibility Tier制マスク |
-| aliases | visibility, Visibility Settings, vis_L2, vis_L3, vis_L4, hide_signal, hide_components, hide_portfolio, Tier, 料金プラン, マスク, tierが課金プランに紐付いているのは理解しているか？, 料金プランとの対応は知識となっているか？, 前にどのtierがどのPFを閲覧できるかまとめたのは覚えているか？, プラン毎に1つ推奨PFを決めてあげると, ポジション展開, expanded_tickers |
+| aliases | visibility, Visibility Settings, vis_L2, vis_L3, vis_L4, hide_signal, hide_components, hide_portfolio, Tier, 料金プラン, マスク, tierが課金プランに紐付いているのは理解しているか？, 料金プランとの対応は知識となっているか？, プラン毎に1つ推奨PFを決めてあげると, ポジション展開, expanded_tickers |
 | skills | cdp-browse |
 | related_concepts | tier_plan_mapping, dmsignal_operations |
 
@@ -1121,7 +1131,7 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, このアプリはGoogleで確認されていません」警告が出ても利用はできるよな？, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, モバイルポートフォリオ入力をコンパクト横並び1行 銘柄に再設計, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない, task notification task id bo9kpl63z task id tool use id tool |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない |
 | skills | cdp-browse |
 | related_concepts | agent_formation_management, infrastructure_ops |
 
@@ -1147,7 +1157,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 毎回CDPのスキルを未使用とする例が多くてトラブルになることがある, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, 穴はないか？品質低下につながる物はないか？既存の仕組みに劣る点はないか？確認しよう非致命的だから放置している点はないか？, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう |
 | skills | cdp-browse |
 | related_concepts | dmsignal_operations, google_classroom, external_project_registry |
 
@@ -1278,7 +1288,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, Tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Render知識体系化 プラン別挙動 障害切り分け サービス一覧をcontext化, プレミアム会員優先 すし 㐂邑 きむら 追加枠のお知らせ OMAKASEなどがそうだ |
+| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier |
 | skills | note-writer, cdp-browse |
 | related_concepts | visibility_tier_masking, dmsignal_operations |
 
@@ -1322,7 +1332,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, アイデア出しをしよう, Project URL と anon keyは envで保存しておかなくていいのか？rebalancer内においておけば, C \Python app\rebalancer\frontend\ env local, リバランサーのスマホ画面でのレスポンシブ対応が完了していないようだ, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね |
 | skills | cdp-browse |
 | related_concepts | external_project_registry, cdp_browser_capability |
 
@@ -1360,7 +1370,7 @@ codd:
 |------|---|
 | id | simple_ocr |
 | label | Simple OCR（画像OCR Webアプリ） |
-| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, OCR結果の題名に患者名にすることは可能？, 国立国会図書館のNDLOCR Liteもうまくいかなかったエピソードも必要だな |
+| aliases | Simple-OCR, OCR, お薬手帳, 薬手帳OCR, Google Vision, Claude Vision, GPT Vision, OCRエンジン切替, two_stage, Stage 1.5, schedule検出, 構造化JSON, グルーピング, 横向き画像, ブロックフィルタ, prompt caching, Flask-SocketIO, QRコード連携, PC受信モード, スタンドアロンOCR, 除外パターン, exclusion_manager, OCR結果の題名に患者名にすることは可能？ |
 | skills | なし |
 | related_concepts | external_project_registry, cdp_browser_capability |
 
@@ -1510,7 +1520,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, verdict自動導出は免除文脈 waive reason をgate検出へ残す, gate report format sh skill execution log sh非同期化でPASSパスを87%高, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, report field setの歴史的誤形は互換shimで吸収する, infra — report write assumption invalidation dict型バグ修正, infra — lesson impact tsvへのuseful feedback還流修正, infra — cmd complete lesson done missing ac version mismatch, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告gate再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, preflight時にlesson candidate found trueのauto draftを自動登録 |
+| aliases | 報告品質, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告gate, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告gate再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -1597,7 +1607,7 @@ codd:
 |------|---|
 | id | causal_traversal_pipeline |
 | label | 因果辺トラバース統合パイプライン(Obsidian×セマンティック) |
-| aliases | 因果辺トラバース, causal_traversal, 因果辺拡張, Obsidian統合パイプライン, backlink traverse, 概念拡張検索, semantic causal integration |
+| aliases | 因果辺トラバース, causal_traversal, 因果辺拡張, Obsidian統合パイプライン, backlink traverse, 概念拡張検索, semantic causal integration, backlinks双方向, コードベース理解, ノイズ1件で全汚染, ファイル間直接リンク, リンク修行の複利, リンク品質原則, 修行=リンク構築, 孤立=存在しない, 知識の幅, 読んで理解してリンク, 距離×濃度 |
 | skills | なし |
 | related_concepts | semantic_dictionary_design, semantic_causal_automation, lesson_lifecycle |
 
@@ -1648,7 +1658,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, sh preflightにtarget path git log自動表示, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, task notification task id brlruxrcz task id tool use id tool, sh殿発言検索にtargetフィルタ追加 cmd 3009と同構造, sh q8 縮小表現チェックにscope mode focused除外を追加, set e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する, set e下でALERT集計script呼出し時は終了値捕捉を明示する, gate偽陽性ALERTはバグだな, q12の新規WARN計上は既存cmd save fixtureを一斉BLOCK化する, 将軍洗脳防御 Level 4完成 — gate shogun startup shにQ6回答検出追加, 強制度監査allowlistにlord conversation read sh追加 偽陽性7セッション連続解消 |
+| aliases | gate統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, gate偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, 品質ゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, gate偽陽性ALERTはバグだな |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework |
 | related_lessons | `L512`, `L079`, `L633` |
@@ -1708,7 +1718,7 @@ codd:
 |------|---|
 | id | lesson_lifecycle |
 | label | 教訓ライフサイクル管理 |
-| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録, lesson_candidate自動draft, lesson_impact更新, lesson effectiveness scan, auto lesson registration, 教訓自動注入, related_lessonsスコアリング, useful率フィルタ, cross-project教訓opt-in, 教訓deprecated自動化, 教訓ID採番, 教訓メタデータ登録, 教訓タグ更新, 教訓文脈同期, 教訓排他登録, 教訓索引同期, 教訓退役処理, 教訓タグ再設定, 還流漏れ検査, 家老教訓書込み, 教訓追記, karo教訓登録, 教訓効果集計, lesson-metrics-collector, inject-useful-rate-reporter, 教訓ROI計算機, origin auto generated resource overwrite semantic links miss, draft **APPROVE**, origin doc dirs md限定 教訓YAML TXT投入漏れ |
+| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録, lesson_candidate自動draft, lesson_impact更新, lesson effectiveness scan, auto lesson registration, 教訓自動注入, related_lessonsスコアリング, useful率フィルタ, cross-project教訓opt-in, 教訓deprecated自動化, 教訓ID採番, 教訓メタデータ登録, 教訓タグ更新, 教訓文脈同期, 教訓排他登録, 教訓索引同期, 教訓退役処理, 教訓タグ再設定, 還流漏れ検査, 家老教訓書込み, 教訓追記, karo教訓登録, 教訓効果集計, lesson-metrics-collector, inject-useful-rate-reporter, 教訓ROI計算機, draft **APPROVE** |
 | skills | |
 | related_concepts | growth_loop, semantic_causal_automation, report_quality_protocol |
 | related_lessons | `L317`, `L088`, `L079`, `L548` |
@@ -1763,7 +1773,7 @@ codd:
 |------|---|
 | id | hook_automation_framework |
 | label | Hook自動化フレームワーク |
-| aliases | PreToolUse, PostToolUse, SessionStart, Stop, pre-bash-combined, post-bash-combined, pre-write-edit-combined, Guard, session_start_inject, stop_check_inbox, hook, フック, 自動化×強制, ★確認すべき事hookにtargetフィルタ追加 他ロール宛て殿発言の混入防止 |
+| aliases | PreToolUse, PostToolUse, SessionStart, Stop, pre-bash-combined, post-bash-combined, pre-write-edit-combined, Guard, session_start_inject, stop_check_inbox, hook, フック, 自動化×強制 |
 | skills | |
 | related_concepts | defense_hierarchy, gate_quality_framework, inbox_processing_discipline |
 
@@ -1823,7 +1833,7 @@ codd:
 |------|---|
 | id | semantic_causal_automation |
 | label | セマンティック因果自動化 |
-| aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, semantic searchの道具は存在するが全ロールの手順に未記載, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索, semantic search shにDB FTS5フォールバック追加 grep脱却 |
+| aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索 |
 | skills | |
 | related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle |
 
@@ -1935,7 +1945,7 @@ codd:
 | id | saxo_openapi_excel |
 | label | Saxo Bank OpenAPI for Excel |
 | aliases | Saxo Excel, OpenAPI for Excel, SaxoTraderGO API, Saxo Bank API, Excel Trading, OpenAPIGet, OpenAPIPost, OpenAPISubscribe, Formula Builder, FieldGroups, OpenAPIGetAutoResize, Saxo市場データ, Saxoサポート |
-| related_concepts | dm_signal_api_design, trading_automation |
+| related_concepts | dmsignal_operations, saxo_trade_engine |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1950,7 +1960,7 @@ codd:
 | id | saxo_trade_engine |
 | label | 汎用システムトレード基盤 |
 | aliases | Trade Execution Engine, 自動売買基盤, Saxo自動発注, システムトレード, 完全自動取引, リバランス自動化 |
-| related_concepts | saxo_openapi_excel, dm_signal_api_design |
+| related_concepts | saxo_openapi_excel, dmsignal_operations |
 
 | 種別 | パス/参照 |
 |------|----------|

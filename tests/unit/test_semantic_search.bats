@@ -44,6 +44,32 @@ setup() {
 | 種別 | パス/参照 |
 |------|----------|
 | file | `context/growth-loop.md` |
+
+## alm_research — ALM研究
+
+| 属性 | 値 |
+|------|---|
+| id | alm_research |
+| label | ALM研究 |
+| aliases | ALM忍法 |
+| related_concepts | growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/gunshi-alm-38metrics-design.md` |
+
+## gs_ninpo_research — GS忍法研究
+
+| 属性 | 値 |
+|------|---|
+| id | gs_ninpo_research |
+| label | GS忍法研究 |
+| aliases | 忍法 |
+| related_concepts | growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/gs-speedup-knowledge.md` |
 EOF
 }
 
@@ -85,6 +111,18 @@ teardown() {
     [[ "$output" == *"## semantic_dictionary_design — セマンティック辞書構想"* ]]
     [[ "$output" == *"## growth_loop — 学習ループ"* ]]
     [[ "$output" != *"related_concepts:"* ]]
+}
+
+@test "first layer prints shortest matched term first" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "忍法"
+
+    [ "$status" -eq 0 ]
+    first_heading="$(grep '^## ' <<< "$output" | head -n 1)"
+    [ "$first_heading" = "## gs_ninpo_research — GS忍法研究" ]
+    [[ "$output" == *"## alm_research — ALM研究"* ]]
+    [[ "$output" != *"should-not-run"* ]]
 }
 
 @test "unmatched first layer falls back to LLM and resolves resources" {
@@ -314,11 +352,16 @@ EOF
 
 @test "first layer appends causal backlink resources for Obsidian links" {
     mkdir -p "$TEST_TMPDIR/docs"
-    cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+from pathlib import Path
+import sys
 
-| causal_chain | `[[cmd_semantic_test]] -> [[semantic_edge]]` |
-| cmd | `cmd_plain_test` plain ID reference |
-EOF
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+needle = "| file | `context/growth-loop.md` |\n"
+replacement = needle + "| causal_chain | `[[cmd_semantic_test]] -> [[semantic_edge]]` |\n| cmd | `cmd_plain_test` plain ID reference |\n"
+path.write_text(text.replace(needle, replacement, 1), encoding="utf-8")
+PY
     cat > "$TEST_TMPDIR/docs/trace.md" <<'EOF'
 origin: [[cmd_semantic_test]]
 plain: [[cmd_plain_test]]
