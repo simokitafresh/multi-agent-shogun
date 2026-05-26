@@ -14,6 +14,7 @@ EXEC_LOG="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" <<'PY'
 import sys
 from collections import Counter
+from datetime import datetime
 
 import yaml
 
@@ -37,6 +38,19 @@ def load_yaml(path):
         raise SystemExit(1)
 
 
+def normalize_ts(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    # Logs contain both +09:00 and +0900 offsets. Normalize before comparison.
+    if len(text) >= 5 and text[-5] in "+-" and text[-3] != ":":
+        text = f"{text[:-2]}:{text[-2:]}"
+    try:
+        return datetime.fromisoformat(text).isoformat()
+    except ValueError:
+        return text
+
+
 recommend_data = load_yaml(recommend_path)
 exec_data = load_yaml(exec_path)
 recommend_entries = [
@@ -47,7 +61,7 @@ recommend_entries = [
 # recall miss計算は推薦開始以降の実行ログのみ対象(推薦前の実行を誤計上しない)
 first_recommend_ts = ""
 for entry in recommend_entries:
-    ts = str(entry.get("ts") or "").strip()
+    ts = normalize_ts(entry.get("ts"))
     if ts:
         first_recommend_ts = ts
         break
@@ -57,7 +71,7 @@ all_exec = [
     if isinstance(item, dict) and str(item.get("used", "true")).lower() != "false"
 ]
 if first_recommend_ts:
-    exec_entries = [e for e in all_exec if str(e.get("ts") or "") >= first_recommend_ts][-limit:]
+    exec_entries = [e for e in all_exec if normalize_ts(e.get("ts")) >= first_recommend_ts][-limit:]
 else:
     exec_entries = all_exec[-limit:]
 
@@ -111,7 +125,10 @@ print(f"推薦ログ: 直近{len(recommend_entries)}件 / 実行ログ: 直近{l
 if evaluable_recommended_total:
     print(f"precision率: {precision}% ({hit_total}/{evaluable_recommended_total})")
     print(f"偽陽性率: {false_positive_rate}% ({false_positive_candidate_count}/{evaluable_recommended_total})")
-    skipped = recommended_total - evaluable_recommended_total
+    skipped = sum(
+        count for skill, count in recommend_counter.items()
+        if skill not in observable_skills
+    )
     if skipped:
         print(f"precision評価対象外: {skipped}件 (実行ログ未観測スキル)")
 else:
@@ -126,7 +143,7 @@ if recall_misses:
     print(f"recall miss top: {shown}")
 if recommended_total < min_data:
     print(f"計測不足: 推薦ログ{recommended_total}件 < {min_data}件。ALERT抑制")
-elif false_positive_rate > 20 or recall_miss_count > 5:
+elif false_positive_rate > 20 or recall_miss_count > 0:
     print("ALERT: Phase 3 cmd起票候補 — 推薦抑制/aliases補完を検討せよ")
     raise SystemExit(2)
 PY

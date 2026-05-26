@@ -63,3 +63,62 @@ EOF
   [[ "$output" == *"recall miss top: verdict-check:1"* ]]
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
+
+@test "unobserved recommended skills are excluded from precision denominator" {
+  cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
+recommendations:
+EOF
+  for i in $(seq 1 10); do
+    cat >> "$SKILL_RECOMMEND_LOG_FILE" <<EOF
+- ts: "2026-05-24T15:${i}:00+09:00"
+  agent_id: "karo"
+  prompt_hash: "hash_${i}"
+  recommended_skills:
+  - "report-write"
+  - "hensei"
+EOF
+  done
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-05-24T18:00:00+0900"
+  skill: "report-write"
+  used: "true"
+EOF
+
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"precision率: 100% (1/1)"* ]]
+  [[ "$output" == *"precision評価対象外: 10件"* ]]
+  [[ "$output" != *"ALERT: Phase 3"* ]]
+}
+
+@test "post-completion automatic skills are not counted as recall miss" {
+  {
+    printf 'recommendations:\n'
+    for i in $(seq 1 10); do
+      printf -- '- ts: "2026-05-24T15:%02d:00+09:00"\n' "$i"
+      printf '  agent_id: "hayate"\n'
+      printf '  prompt_hash: "hash_%02d"\n' "$i"
+      printf '  recommended_skills:\n'
+      printf '  - "report-write"\n'
+    done
+  } > "$SKILL_RECOMMEND_LOG_FILE"
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-05-24T18:00:00+0900"
+  skill: "cmd-complete"
+  gate: "cmd_complete_gate"
+  used: "true"
+- ts: "2026-05-24T18:01:00+0900"
+  skill: "dashboard-update"
+  gate: "dashboard_update"
+  used: "true"
+EOF
+
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"recall miss件数: 0"* ]]
+  [[ "$output" != *"ALERT: Phase 3"* ]]
+}
