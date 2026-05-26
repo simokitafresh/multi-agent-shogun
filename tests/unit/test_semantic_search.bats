@@ -179,6 +179,62 @@ EOF
     [[ "$output" != *"should-not-run"* ]]
 }
 
+@test "memory DB FTS concept ranking favors recently frequent concepts with R(c)" {
+    archive_dir="$TEST_TMPDIR/archive"
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
+    cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-01-01T00:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"needle recency old","detail":"needle セマンティック辞書"}
+{"ts":"2026-05-25T00:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"needle recency recent 1","detail":"needle 学習ループ"}
+{"ts":"2026-05-25T01:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"needle recency recent 2","detail":"needle 学習ループ"}
+{"ts":"2026-05-25T02:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"needle recency recent 3","detail":"needle 学習ループ"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$archive_dir" \
+        --db "$db_path" \
+        --semantic-index "$SEMANTIC_INDEX_PATH"
+    [ "$status" -eq 0 ]
+
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    unset SEMANTIC_DISABLE_MEMORY_DB
+    export SEMANTIC_RECENCY_NOW="2026-05-26T00:00:00+09:00"
+    export SEMANTIC_RECLAMBDA_SENTINEL=unused
+    export AGENT_ID=hayate
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "needle"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"top_concept: growth_loop"* ]]
+    [[ "$output" == *"recency_weight:"* ]]
+    [[ "$output" != *"idf:"* ]]
+    [[ "$output" == *"ranked with R(c) recency-frequency"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "R(c) scaling uses IQR and median initialization for concepts without timestamps" {
+    run env SEMANTIC_RECENCY_NOW="2026-05-26T00:00:00+00:00" python3 - "$PROJECT_ROOT" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("semantic_index", root / "scripts" / "semantic_index.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+weights = module.iqr_scaled_recency_weights(
+    {
+        "old": ["2026-01-01T00:00:00+00:00"],
+        "recent": ["2026-05-25T00:00:00+00:00", "2026-05-25T01:00:00+00:00"],
+        "new": [],
+    }
+)
+assert weights["old"] < weights["new"] < weights["recent"], weights
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "memory DB fallback filters hits to current agent target" {
     archive_dir="$TEST_TMPDIR/archive"
     db_path="$TEST_TMPDIR/data/memory.db"

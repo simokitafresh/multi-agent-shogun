@@ -99,6 +99,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 source_type, payload_raw, index_arg, insight_arg = sys.argv[1:5]
@@ -177,6 +178,77 @@ def fts5_query_for_text(text):
             break
     return " OR ".join(terms)
 
+def parse_event_timestamp(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+def semantic_recency_now():
+    fixed = os.environ.get("SEMANTIC_RECENCY_NOW", "").strip()
+    if fixed:
+        parsed = parse_event_timestamp(fixed)
+        if parsed is not None:
+            return parsed
+    return datetime.now(timezone.utc)
+
+def percentile(sorted_values, pct):
+    if not sorted_values:
+        return 0.0
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    pos = (len(sorted_values) - 1) * pct
+    lower = math.floor(pos)
+    upper = math.ceil(pos)
+    if lower == upper:
+        return sorted_values[int(pos)]
+    fraction = pos - lower
+    return sorted_values[lower] + (sorted_values[upper] - sorted_values[lower]) * fraction
+
+def recency_frequency_raw(timestamps, now, decay_lambda):
+    total = 0.0
+    valid = 0
+    for value in timestamps:
+        parsed = parse_event_timestamp(value)
+        if parsed is None:
+            continue
+        delta_days = max((now - parsed).total_seconds() / 86400.0, 0.0)
+        total += math.exp(-decay_lambda * delta_days)
+        valid += 1
+    if valid == 0:
+        return None
+    return math.log1p(total)
+
+def iqr_scaled_recency_weights(concept_timestamps):
+    decay_lambda = float(os.environ.get("SEMANTIC_RECENCY_LAMBDA", "0.03"))
+    now = semantic_recency_now()
+    raw_by_concept = {
+        concept: recency_frequency_raw(timestamps, now, decay_lambda)
+        for concept, timestamps in concept_timestamps.items()
+    }
+    observed = sorted(value for value in raw_by_concept.values() if value is not None)
+    median = percentile(observed, 0.5) if observed else 0.0
+    q1 = percentile(observed, 0.25) if observed else median
+    q3 = percentile(observed, 0.75) if observed else median
+    iqr = q3 - q1
+    if iqr <= 0:
+        return {
+            concept: max(1.0, 1.0 + (median if raw is None else raw))
+            for concept, raw in raw_by_concept.items()
+        }
+
+    weights = {}
+    for concept, raw in raw_by_concept.items():
+        initialized = median if raw is None else raw
+        weights[concept] = max(0.1, 1.0 + ((initialized - q1) / iqr))
+    return weights
+
 def propagate_memory_db_concept_tags(concepts):
     if os.environ.get("SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION") == "1":
         return
@@ -219,6 +291,17 @@ def propagate_memory_db_concept_tags(concepts):
                 """
             )
         }
+        concept_timestamps = {concept: [] for concept in known_concepts}
+        for row in conn.execute(
+            """
+            SELECT ec.concept_name, e.ts
+            FROM event_concepts AS ec
+            JOIN events AS e
+              ON e.id = ec.event_id
+            """
+        ):
+            concept_timestamps.setdefault(str(row["concept_name"]), []).append(row["ts"])
+        recency_weights = iqr_scaled_recency_weights(concept_timestamps)
 
         selected_concepts = sorted(known_concepts & set(concept_counts))
         if not selected_concepts:
@@ -281,16 +364,15 @@ def propagate_memory_db_concept_tags(concepts):
             candidate_count = len(candidate_rows)
             for position, candidate in enumerate(candidate_rows, 1):
                 # One-hop only: tagged source event -> directly matched untagged event -> concept.
-                # bm25_rank orders content similarity; IDF favors specific concepts.
+                # bm25_rank orders content similarity; R(c) favors recently frequent concepts.
                 # bh_decay is a Benjamini-Hochberg-style rank decay to suppress tail matches.
                 target_event_id = str(candidate["target_event_id"])
-                doc_count = concept_counts.get(concept_name, 0)
-                idf = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
+                recency_weight = recency_weights.get(concept_name, 1.0)
                 bm25_position_weight = 1.0 / position
                 bh_decay = min(1.0, tag_bh_q * candidate_count / position)
                 candidate_scores[(target_event_id, concept_name)] = (
                     candidate_scores.get((target_event_id, concept_name), 0.0)
-                    + bm25_position_weight * idf * bh_decay
+                    + bm25_position_weight * recency_weight * bh_decay
                 )
 
         by_event = {}

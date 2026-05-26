@@ -12,6 +12,7 @@ import os
 import re
 import sqlite3
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -206,6 +207,82 @@ def placeholders(values: list[str]) -> str:
     return ", ".join("?" for _ in values)
 
 
+def parse_event_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def semantic_recency_now() -> datetime:
+    fixed = os.environ.get("SEMANTIC_RECENCY_NOW", "").strip()
+    if fixed:
+        parsed = parse_event_timestamp(fixed)
+        if parsed is not None:
+            return parsed
+    return datetime.now(timezone.utc)
+
+
+def percentile(sorted_values: list[float], pct: float) -> float:
+    if not sorted_values:
+        return 0.0
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    pos = (len(sorted_values) - 1) * pct
+    lower = math.floor(pos)
+    upper = math.ceil(pos)
+    if lower == upper:
+        return sorted_values[int(pos)]
+    fraction = pos - lower
+    return sorted_values[lower] + (sorted_values[upper] - sorted_values[lower]) * fraction
+
+
+def recency_frequency_raw(timestamps: list[object], now: datetime, decay_lambda: float) -> float | None:
+    total = 0.0
+    valid = 0
+    for value in timestamps:
+        parsed = parse_event_timestamp(value)
+        if parsed is None:
+            continue
+        delta_days = max((now - parsed).total_seconds() / 86400.0, 0.0)
+        total += math.exp(-decay_lambda * delta_days)
+        valid += 1
+    if valid == 0:
+        return None
+    return math.log1p(total)
+
+
+def iqr_scaled_recency_weights(concept_timestamps: dict[str, list[object]]) -> dict[str, float]:
+    decay_lambda = float(os.environ.get("SEMANTIC_RECENCY_LAMBDA", "0.03"))
+    now = semantic_recency_now()
+    raw_by_concept = {
+        concept: recency_frequency_raw(timestamps, now, decay_lambda)
+        for concept, timestamps in concept_timestamps.items()
+    }
+    observed = sorted(value for value in raw_by_concept.values() if value is not None)
+    median = percentile(observed, 0.5) if observed else 0.0
+    q1 = percentile(observed, 0.25) if observed else median
+    q3 = percentile(observed, 0.75) if observed else median
+    iqr = q3 - q1
+    if iqr <= 0:
+        return {
+            concept: max(1.0, 1.0 + (median if raw is None else raw))
+            for concept, raw in raw_by_concept.items()
+        }
+
+    weights: dict[str, float] = {}
+    for concept, raw in raw_by_concept.items():
+        initialized = median if raw is None else raw
+        weights[concept] = max(0.1, 1.0 + ((initialized - q1) / iqr))
+    return weights
+
+
 def memory_db_concept_rows(
     db_path: Path,
     seed_concepts: list[str],
@@ -350,6 +427,17 @@ def memory_db_fts_concept_rank_rows(
                 """
             )
         }
+        concept_timestamps: dict[str, list[object]] = {concept: [] for concept in concept_counts}
+        for row in conn.execute(
+            """
+            SELECT ec.concept_name, e.ts
+            FROM event_concepts AS ec
+            JOIN events AS e
+              ON e.id = ec.event_id
+            """
+        ):
+            concept_timestamps.setdefault(str(row["concept_name"]), []).append(row["ts"])
+        recency_weights = iqr_scaled_recency_weights(concept_timestamps)
         concept_rows = list(
             conn.execute(
                 f"""
@@ -375,26 +463,25 @@ def memory_db_fts_concept_rank_rows(
             continue
         rank_weight = 1.0 / position
         for concept_name in concepts_for_event:
-            doc_count = concept_counts.get(concept_name, 0)
-            idf = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
+            recency_weight = recency_weights.get(concept_name, 1.0)
             item = scores.setdefault(
                 concept_name,
                 {
                     "concept": concept_name,
                     "score": 0.0,
-                    "idf": idf,
+                    "recency_weight": recency_weight,
                     "hits": 0,
                     "events": [],
                 },
             )
-            item["score"] += rank_weight * idf
+            item["score"] += rank_weight * recency_weight
             item["hits"] += 1
             if len(item["events"]) < 3:
                 item["events"].append(event_by_id[event_id])
 
     ranked = sorted(
         scores.values(),
-        key=lambda item: (-item["score"], -item["idf"], item["concept"]),
+        key=lambda item: (-item["score"], -item["recency_weight"], item["concept"]),
     )
     return ranked, total_events
 
@@ -429,7 +516,7 @@ def print_memory_db_fts_concept_search(
     for item in ranked[: max(result_limit, 1)]:
         print(f"  - concept: {item['concept']}")
         print(f"    score: {item['score']:.6f}")
-        print(f"    idf: {item['idf']:.6f}")
+        print(f"    recency_weight: {item['recency_weight']:.6f}")
         print(f"    hits: {item['hits']}")
         print("    sample_events:")
         for event in item["events"]:
@@ -443,7 +530,7 @@ def print_memory_db_fts_concept_search(
 
     print("")
     print(f"MATCH: {top['concept']}")
-    print("reason: memory DB FTS5 bm25 hits joined to event_concepts and ranked with IDF.")
+    print("reason: memory DB FTS5 bm25 hits joined to event_concepts and ranked with R(c) recency-frequency.")
     concept = by_id.get(str(top["concept"]))
     if concept:
         print("")

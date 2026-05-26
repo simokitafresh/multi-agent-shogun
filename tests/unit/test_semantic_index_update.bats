@@ -81,7 +81,7 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
-@test "memory DB tag propagation uses FTS5 bm25 one-hop IDF BH decay" {
+@test "memory DB tag propagation uses FTS5 bm25 one-hop R(c) BH decay" {
     export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/memory.db"
     python3 - "$SEMANTIC_MEMORY_DB_PATH" <<'PY'
 import sqlite3
