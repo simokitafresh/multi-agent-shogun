@@ -2580,8 +2580,9 @@ QG_TEMPLATE
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
         _Q8_SCOPE_MODE="$(cmd_block_get_field "scope_mode")"
         _Q8_SCOPE_EXEMPT=false
-        # scope_mode=focused は限定表現が正当なので _Q8_SCOPE_EXEMPT 扱いにする。
-        if [[ "${_Q8_SCOPE_MODE,,}" == "focused" ]]; then
+        # scope_mode=focused/exact は限定表現が正当なので _Q8_SCOPE_EXEMPT 扱いにする。
+        # exact: 「IDF項のみR(c)に置換」等の正当な範囲限定(Gate FP 36件の根因)
+        if [[ "${_Q8_SCOPE_MODE,,}" == "focused" || "${_Q8_SCOPE_MODE,,}" == "exact" ]]; then
             _Q8_SCOPE_EXEMPT=true
         fi
         if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
@@ -5088,6 +5089,10 @@ check_ac_phase_mixing() {
         # Example: deploy_task() names a function; "deploy" alone remains a delivery action.
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
         if (lt !~ /実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce/) return
+        # Exempt "implementing measurement" pattern: measurement term as object of impl verb
+        # e.g. "計測機能を追加" "計測ロジックを実装" "benchmarkを作成" = measurement is the target
+        if (lt ~ /(計測|測定|実測|measure|measurement|benchmark|ベンチ).*(を|が|の|機能|ロジック|処理|セクション).*(実装|追加|修正|改修|変更|作成|導入|implement|add|fix|create)/) return
+        if (lt ~ /(implement|add|create|fix).*(measure|measurement|benchmark|計測|測定)/) return
         if (lt ~ /cdp|計測|測定|実測|measure|measurement|benchmark|ベンチ/ ||
             lt ~ /push|deploy|デプロイ/) { print "FOUND" }
     }
