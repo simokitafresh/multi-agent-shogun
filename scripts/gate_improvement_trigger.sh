@@ -19,11 +19,101 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="${GATE_IMPROVEMENT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 GATES_DIR="$SCRIPT_DIR/scripts/gates"
 ALERTS_FILE="$SCRIPT_DIR/logs/gate_alerts.yaml"
 STATE_DIR="$SCRIPT_DIR/logs/gate_state"
 mkdir -p "$STATE_DIR"
+DEDUP_WINDOW_SECONDS="${GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS:-86400}"
+
+current_epoch() {
+    if [[ "${GATE_IMPROVEMENT_NOW:-}" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$GATE_IMPROVEMENT_NOW"
+    else
+        date +%s
+    fi
+}
+
+sanitize_state_key() {
+    local value="$1"
+    value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/_/g; s/_+/_/g; s/^_//; s/_$//')"
+    if [[ -z "$value" ]]; then
+        value="unknown"
+    fi
+    printf '%s\n' "$value"
+}
+
+dedup_key_for_alert_line() {
+    local gate_name="$1"
+    local alert_line="$2"
+    local alert_type file_name
+
+    if [[ "$alert_line" =~ ^(WARN|ALERT):[[:space:]]+([^[:space:]]+) ]]; then
+        alert_type="${BASH_REMATCH[1]}"
+        file_name="${BASH_REMATCH[2]}"
+        printf '%s_%s_%s\n' "$(sanitize_state_key "$gate_name")" "$(sanitize_state_key "$alert_type")" "$(sanitize_state_key "$file_name")"
+        return 0
+    fi
+
+    return 1
+}
+
+alert_lines_have_file_alert_key() {
+    local gate_name="$1"
+    local alert_lines="$2"
+    local line
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        if dedup_key_for_alert_line "$gate_name" "$line" >/dev/null; then
+            return 0
+        fi
+    done <<< "$alert_lines"
+    return 1
+}
+
+dedup_alert_lines_24h() {
+    local gate_name="$1"
+    local alert_lines="$2"
+    local now
+    now="$(current_epoch)"
+
+    if ! [[ "$DEDUP_WINDOW_SECONDS" =~ ^[0-9]+$ ]]; then
+        DEDUP_WINDOW_SECONDS=86400
+    fi
+
+    local kept_lines=()
+    local skipped_count=0
+    local line key state_file last_epoch elapsed
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        if key="$(dedup_key_for_alert_line "$gate_name" "$line")"; then
+            state_file="${STATE_DIR}/gate_improvement_dedup_${key}.last"
+            if [[ -f "$state_file" ]]; then
+                last_epoch="$(head -n 1 "$state_file" 2>/dev/null || true)"
+                if [[ "$last_epoch" =~ ^[0-9]+$ ]]; then
+                    elapsed=$((now - last_epoch))
+                    if (( elapsed >= 0 && elapsed < DEDUP_WINDOW_SECONDS )); then
+                        echo "SKIP: ${gate_name} — ${line} は同一file+alert_typeで24時間以内に送信済み (${elapsed}s ago)" >&2
+                        skipped_count=$((skipped_count + 1))
+                        continue
+                    fi
+                fi
+            fi
+            printf '%s\n' "$now" > "$state_file"
+        fi
+        kept_lines+=("$line")
+    done <<< "$alert_lines"
+
+    if [[ "${#kept_lines[@]}" -eq 0 ]]; then
+        if [[ "$skipped_count" -gt 0 ]]; then
+            return 1
+        fi
+        return 0
+    fi
+
+    printf '%s\n' "${kept_lines[@]}"
+    return 0
+}
 
 # --- alert_id連番管理 ---
 get_next_alert_id() {
@@ -89,10 +179,24 @@ check_idempotent() {
 send_alert() {
     local gate_name="$1"
     local alert_lines="$2"
+    local deduped_alert_lines
 
-    if ! check_idempotent "$gate_name" "$alert_lines"; then
-        echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
+    if ! deduped_alert_lines="$(dedup_alert_lines_24h "$gate_name" "$alert_lines")"; then
+        if [[ -n "$deduped_alert_lines" ]]; then
+            printf '%s\n' "$deduped_alert_lines"
+        fi
+        echo "SKIP: ${gate_name} — 全ALERT行が同一file+alert_typeの24時間dedup対象。"
         return 1
+    fi
+    if [[ -n "$deduped_alert_lines" ]]; then
+        alert_lines="$deduped_alert_lines"
+    fi
+
+    if ! alert_lines_have_file_alert_key "$gate_name" "$alert_lines"; then
+        if ! check_idempotent "$gate_name" "$alert_lines"; then
+            echo "SKIP: ${gate_name} — 前回と同一ALERT状態。送信済み。"
+            return 1
+        fi
     fi
 
     local alert_id
