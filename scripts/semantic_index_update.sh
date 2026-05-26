@@ -111,7 +111,7 @@ pending_alias_threshold = float(os.environ.get("SEMANTIC_PENDING_ALIAS_THRESHOLD
 no_match_scan_lines = int(os.environ.get("SEMANTIC_NO_MATCH_SCAN_LINES", "500"))
 no_match_alias_limit = int(os.environ.get("SEMANTIC_NO_MATCH_ALIAS_LIMIT", "5"))
 memory_db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", str(semantic_root / "data" / "multi_agent_shogun_memory.db")))
-tag_propagation_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_LIMIT", "200"))
+tag_propagation_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_LIMIT", "30"))
 tag_candidate_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_CANDIDATES", "20"))
 tag_min_score = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_MIN_SCORE", "1.0"))
 tag_max_concepts = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_MAX_CONCEPTS", "3"))
@@ -164,10 +164,15 @@ def strip_noise(value):
 
 def fts5_query_for_text(text):
     terms = []
+    seen = set()
     for token in re.findall(r"[\w\u3040-\u30ff\u3400-\u9fff]+", str(text), flags=re.UNICODE):
         token = token.strip()
-        if token:
+        token_n = norm(token)
+        if token and token_n and token_n not in seen:
+            seen.add(token_n)
             terms.append(f'"{token.replace(chr(34), chr(34) + chr(34))}"')
+        if len(terms) >= int(os.environ.get("SEMANTIC_TAG_PROPAGATION_QUERY_TERMS", "12")):
+            break
     return " OR ".join(terms)
 
 def propagate_memory_db_concept_tags(concepts):
