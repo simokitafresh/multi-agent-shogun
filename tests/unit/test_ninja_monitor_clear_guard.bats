@@ -88,7 +88,7 @@ grep -q "AUTO-COMMIT-SKIP: hayate last auto-commit within 30min" "$LOG"
     [[ "$output" == *"AUTO-COMMIT-SKIP"* ]]
 }
 
-@test "auto_commit: commit pathspec does not include pre-staged unrelated files" {
+@test "auto_commit: skips when pre-staged unrelated files exist" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -117,18 +117,31 @@ printf "change\n" >> scripts/a.sh
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
 _uncommitted=$(git status --porcelain -uno -- scripts/)
+set +e
 auto_commit_before_clear hayate "$_uncommitted"
+rc=$?
+set -e
 
-committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+count=$(git rev-list --count HEAD)
 staged_files=$(git diff --cached --name-only | sort | tr "\n" " ")
-echo "committed=$committed_files"
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "rc=$rc"
+echo "count=$count"
 echo "staged=$staged_files"
-test "$committed_files" = "scripts/a.sh "
+echo "worktree=$worktree_files"
+cat "$LOG"
+test "$rc" = "2"
+test "$count" = "1"
 test "$staged_files" = "config/other.yaml "
+test "$worktree_files" = "scripts/a.sh "
+grep -q "AUTO-COMMIT-WARN-SKIP: hayate pre-existing staged files detected before auto-commit: config/other.yaml" "$LOG"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"committed=scripts/a.sh"* ]]
+    [[ "$output" == *"rc=2"* ]]
+    [[ "$output" == *"count=1"* ]]
     [[ "$output" == *"staged=config/other.yaml"* ]]
+    [[ "$output" == *"worktree=scripts/a.sh"* ]]
+    [[ "$output" == *"AUTO-COMMIT-WARN-SKIP"* ]]
 }
 
 @test "auto_commit: context batch skips within one hour" {

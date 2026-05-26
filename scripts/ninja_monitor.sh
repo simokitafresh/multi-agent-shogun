@@ -318,6 +318,15 @@ auto_commit_before_clear() {
     (
         cd "$SCRIPT_DIR" || exit
 
+        local preexisting_staged_paths
+        preexisting_staged_paths="$(git diff --cached --name-only 2>/dev/null || true)"
+        if [ -n "${preexisting_staged_paths//[[:space:]]/}" ]; then
+            local preexisting_staged_list
+            preexisting_staged_list="$(printf '%s\n' "$preexisting_staged_paths" | tr '\n' ' ')"
+            log "AUTO-COMMIT-WARN-SKIP: $agent_name pre-existing staged files detected before auto-commit: $preexisting_staged_list"
+            return 2
+        fi
+
         if [ -n "${regular_paths//[[:space:]]/}" ]; then
             if auto_commit_timestamp_recent "$last_file" 1800; then
                 log "AUTO-COMMIT-SKIP: $agent_name last auto-commit within 30min"
@@ -347,6 +356,8 @@ auto_commit_before_clear() {
                 fi
             fi
         fi
+
+        return 0
     )
 }
 
@@ -745,7 +756,10 @@ safe_send_clear() {
         local _file_list
         _file_list=$(echo "$_uncommitted" | sed 's/^...//' | tr '\n' ' ')
         log "AUTO-COMMIT-BEFORE-CLEAR: $agent_name uncommitted files: $_file_list"
-        auto_commit_before_clear "$agent_name" "$_uncommitted"
+        if ! auto_commit_before_clear "$agent_name" "$_uncommitted"; then
+            log "CLEAR-BLOCKED: $agent_name auto-commit skipped because pre-existing staged files require preservation, reason=$reason"
+            return 1
+        fi
     fi
 
     # /clear前にinboxを既読化（/clear後のnudge再起動を防止）
