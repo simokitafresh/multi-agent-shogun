@@ -9,6 +9,7 @@ setup() {
     export SEMANTIC_STRESS_CMD_QUEUE="$TEST_TMPDIR/queue/shogun_to_karo.yaml"
     export SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/scripts/semantic_search.sh"
     export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
+    export SEMANTIC_QUALITY_TEST_CMD="$TEST_TMPDIR/scripts/semantic_quality_test.sh"
 
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
 {"content":"lord hit concept","direction":"inbound"}
@@ -44,6 +45,25 @@ printf -- '- id: INS-MOCK-%s\n  insight: "%s"\n  priority: "%s"\n  source: "%s"\
   "$(wc -l < "$file")" "$1" "${2:-medium}" "${3:-manual}" >> "$file"
 echo INS-MOCK
 EOF
+    chmod +x "$SEMANTIC_INSIGHT_WRITE"
+    cat > "$SEMANTIC_QUALITY_TEST_CMD" <<'EOF'
+#!/usr/bin/env bash
+fixture=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --fixture) fixture="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+[ -n "$fixture" ] || exit 2
+python3 - "$fixture" <<'PY'
+import json
+import sys
+json.load(open(sys.argv[1], encoding="utf-8"))
+PY
+echo "semantic_quality_score: 100.0% (1/1)"
+EOF
+    chmod +x "$SEMANTIC_QUALITY_TEST_CMD"
 }
 
 teardown() {
@@ -184,4 +204,43 @@ EOF
     ! grep -q 'toolu_' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'bo84ps0qy' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q '"query": "ab"' "$TEST_TMPDIR/logs/junk-baseline.json"
+}
+
+@test "auto test-set add: high-frequency NO_MATCH passes blind non-regression and fixed fixture remains regression-only" {
+    cat > "$TEST_TMPDIR/quality_fixture.json" <<'EOF'
+{
+  "version": 1,
+  "entries": [
+    {
+      "query": "existing regression",
+      "expected_concept": null
+    }
+  ]
+}
+EOF
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"セマンティック辞書の新しい穴をテストセットに入れる","direction":"inbound"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/auto-baseline.json" \
+        --log "$TEST_TMPDIR/logs/auto-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml" \
+        --quality-fixture "$TEST_TMPDIR/quality_fixture.json" \
+        --auto-test-set-add
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"evaluation_mode=blind_random_sampling"* ]]
+    [[ "$output" == *"improvement_judgement=blind_hit_rate_non_regression_only"* ]]
+    [[ "$output" == *"fixed_50_test_role=regression_detection_only"* ]]
+    [[ "$output" == *"high_frequency_NO_MATCH=1"* ]]
+    grep -q 'test_set_candidate: high_frequency_NO_MATCH' "$TEST_TMPDIR/queue/insights.yaml"
+    grep -q 'blind_hit_rate_non_regression' "$TEST_TMPDIR/quality_fixture.json"
+    grep -q 'regression_detection_only' "$TEST_TMPDIR/quality_fixture.json"
+    grep -q 'セマンティック辞書の新しい穴をテストセットに入れる' "$TEST_TMPDIR/quality_fixture.json"
 }
