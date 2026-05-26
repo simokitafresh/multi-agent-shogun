@@ -47,6 +47,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
         ss_id[ss_count] = (entry_id != "" ? entry_id : "?")
         ss_has_cs[ss_count] = has_cs
         ss_has_causal[ss_count] = has_causal
+        ss_has_ops_sim[ss_count] = has_ops_sim
     }
 
     if (review_type == "draft") {
@@ -79,6 +80,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     has_hole_action = 0
     confidence = ""
     has_brainwash = 0
+    has_ops_sim = 0
     in_obs = 0
     obs_count = 0
     obs_text = ""
@@ -128,6 +130,8 @@ BEGIN {
         confidence = toupper(trim(line))
     } else if ($0 ~ /^[[:space:]]*brainwash_check:/) {
         has_brainwash = 1
+    } else if ($0 ~ /^[[:space:]]*operational_simulation:/) {
+        has_ops_sim = 1
     } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
         line = $0
         sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
@@ -206,8 +210,14 @@ END {
         }
     }
 
+    ops_sim_missing_count = 0
+    for (i = start_ss; i <= ss_count; i++) {
+        if (!ss_has_ops_sim[i]) ops_sim_missing[++ops_sim_missing_count] = ss_id[i]
+    }
+
     emit_list("CS_MISSING:", cs_missing, cs_missing_count)
     emit_list("CAUSAL_MISSING:", causal_missing, causal_missing_count)
+    emit_list("OPS_SIM_MISSING:", ops_sim_missing, ops_sim_missing_count)
     emit_list("FM_TOLERANCE:", fm_flagged, fm_flagged_count)
     emit_list("AMBIGUITY_MISSING:", ambiguity_missing, ambiguity_missing_count)
     emit_list("SINGLE_SCENARIO:", single_scenario, single_scenario_count)
@@ -237,6 +247,7 @@ hole_action_missing=""
 brainwash_missing=""
 cold_category_missing=""
 skill_usage_missing=""
+ops_sim_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -264,6 +275,9 @@ while IFS= read -r line; do
             ;;
         HOLE_ACTION_MISSING:*)
             hole_action_missing="${line#HOLE_ACTION_MISSING:}"
+            ;;
+        OPS_SIM_MISSING:*)
+            ops_sim_missing="${line#OPS_SIM_MISSING:}"
             ;;
         BRAINWASH_MISSING:*)
             brainwash_missing="${line#BRAINWASH_MISSING:}"
@@ -509,7 +523,7 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ] && [ -z "$brainwash_missing" ]; then
+if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ] && [ -z "$brainwash_missing" ] && [ -z "$ops_sim_missing" ]; then
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
@@ -557,6 +571,14 @@ if [ -n "$hole_action_missing" ]; then
     echo "WARN: ${hole_count}件のREQUEST_CHANGESにhole_action未記入(穴を即ふさいだか？殿厳命2026-05-24):"
     printf '%s\n' "$hole_action_missing" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: hole_action: none/d0_implemented/cmd_proposed を記入せよ"
+    done
+    warn=1
+fi
+if [ -n "$ops_sim_missing" ]; then
+    ops_count=$(printf '%s\n' "$ops_sim_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    echo "WARN: ${ops_count}件のconsultation/self_studyにoperational_simulation未記入(構造有無ではなく実運用で何が起きるかをStep3で検証せよ。殿指摘2026-05-27):"
+    printf '%s\n' "$ops_sim_missing" | tr ',' '\n' | while read -r id; do
+        [ -n "$id" ] && echo "  - $id: operational_simulation: 実運用シミュレーション結果を記入せよ"
     done
     warn=1
 fi
