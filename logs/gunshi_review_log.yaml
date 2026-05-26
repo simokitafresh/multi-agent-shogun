@@ -694,7 +694,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "4観点OK。growth_loop skills=なし+ロールフィルタ(skill_allowed_for_agent)+metrics旧分母復元。precision14→19%(+5pt)。recall miss6→0。5ファイル+221行"
   observations:
@@ -770,6 +770,8 @@
   origin: "[[blt_20260527_001826]] -> [[別ランキング検証]] -> [[BH再発穴]]"
   causal_chain: "パスB独立スコア(濃度のみ)→クエリ文脈なし→BH最多バックリンクが全クエリ上位→Goodhart再発"
   brainwash_check: "早期終了:No(超越2を構造的に認めつつBH再発リスクを掘った)"
+  operational_simulation: "パスB独立スコア運用: 濃度のみ→BH最多概念が常に上位→接続強度(双方向)でクエリ文脈復元→BH抑制"
+  cs_checklist: "CS0:殿裁定なし CS1:超越検証全文 CS2:濃度スコアBH再発計算 CS3:コード現物(bm25計算) CS4:掲示板投稿 CS5:接続強度二値の妥当性 CS6:因果(濃度のみ→BH再発)"
   timestamp: "2026-05-27T00:19:00"
 - cmd_id: consultation_pathB_brainwash_3of3_20260527
   review_type: consultation
@@ -783,12 +785,14 @@
   origin: "[[blt_20260527_001942]] -> [[確定設計6点検証]] -> [[致命的穴なし(追加3/3完了)]]"
   causal_chain: "穴A(重みなし)→濃度事前計算+穴B(統合未定義)→別ランキング和集合+BH→接続強度→確定設計6点"
   brainwash_check: "教訓: 「穴なし」判定で構造有無のみ検証=#1。構造品質(重み/スコア/統合)にも100億年テスト適用。将軍の追加監査で検出"
+  operational_simulation: "確定設計6点運用: 二値ハードコード(有無)は構造的→変動なし。接続強度でBH防止→全クエリで頻出概念が上位固定されない"
+  cs_checklist: "CS0:殿裁定なし CS1:確定設計6点全検証 CS2:二値区分vs連続値の妥当性 CS3:BH再発シミュレーション CS4:掲示板投稿 CS5:フラグ基準変更時再評価 CS6:因果(穴→超越→確定)"
   timestamp: "2026-05-27T00:20:00"
 - cmd_id: cmd_3063
   review_type: report
   report_ninja: saizo
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "4観点OK。FTS5タグ伝播(bm25+IDF+BH decay+1ホップ+環境変数)実装。ブラインド80.0%(自力)≥80%。固定100%維持。5ファイル+142行"
   observations:
@@ -842,6 +846,8 @@
   origin: "[[blt_20260527_004151]] -> [[spec Phase 6確認]] -> [[穴1件(質的分割基準不在)]]"
   causal_chain: "aliases数閾値のみ→意味的に均質な大概念も分割→概念細分化暴走→品質劣化"
   brainwash_check: "早期終了:No(3要素それぞれ100億年テストで検証)。穴:概念分割の質的基準"
+  operational_simulation: "Phase 6運用: テスト自動成長(NO_MATCH→追加)は殿選別原則準拠。概念分割がaliases数のみ→均質大概念不要分割→品質劣化。insight速度は既存auto-promoteで十分"
+  cs_checklist: "CS0:殿裁定なし CS1:spec Phase 6全文 CS2:品質テスト分割閾値 CS3:均質概念分割シミュレーション CS4:掲示板投稿 CS5:質的基準不在 CS6:因果(量的のみ→均質分割→品質劣化)"
   timestamp: "2026-05-27T00:44:00"
 - cmd_id: consultation_phase6_design_2of3_20260527
   review_type: consultation
@@ -855,6 +861,8 @@
   origin: "[[blt_20260527_004402]] -> [[FTS5クラスタリング検証]] -> [[PASS]]"
   causal_chain: "量的基準のみ→質的基準(FTS5クラスタリング)追加→均質大概念の不要分割防止"
   brainwash_check: "完了急ぎ:No(閾値未定義の小穴も指摘)。洗脳自覚:前回#8(2/3でcmd起票可能)の教訓を活かし3回完遂"
+  operational_simulation: "FTS5クラスタリング運用: bm25()再利用でLG023準拠。分割後品質テストでGoodhart防止。閾値は環境変数+経験的決定で調整可能"
+  cs_checklist: "CS0:殿裁定なし CS1:FTS5クラスタリング設計全文 CS2:概念数vs閾値 CS3:品質テストとの相互作用 CS4:掲示板投稿 CS5:閾値決定方法 CS6:因果(量的→質的追加→均質分割防止)"
   timestamp: "2026-05-27T00:45:00"
 - cmd_id: consultation_phase6_design_3of3_20260527
   review_type: consultation
@@ -868,6 +876,8 @@
   origin: "[[blt_20260527_004520]] -> [[命名半自動検証]] -> [[致命的穴なし(3/3完了)]]"
   causal_chain: "Phase 5c(パスA+B)+Phase 6(テスト+分割+insight)=三層全体の自動成長パイプライン"
   brainwash_check: "完了急ぎ:No(3/3完了後に判定)。教訓:前セッションのパスB 3/3→追加3往復→今回は将軍超越を待って判定"
+  operational_simulation: "Phase 6全体運用: テスト成長(NO_MATCH→追加)+概念分割(FTS5クラスタリング)+insight速度(auto-promote)=三層自動成長パイプライン完成。命名=半自動(有限コスト)"
+  cs_checklist: "CS0:殿裁定なし CS1:Phase 6 3要素全検証 CS2:命名コスト(殿語彙成長=有限) CS3:Phase 5c+Phase 6統合シミュレーション CS4:掲示板投稿 CS5:命名全自動リスク CS6:因果(半自動→品質維持+有限コスト)"
   timestamp: "2026-05-27T00:46:00"
 - cmd_id: consultation_phase6_brainwash_1of3_20260527
   review_type: consultation
@@ -881,6 +891,8 @@
   origin: "[[blt_20260527_004650]] -> [[穴C/D/E検証]] -> [[全て正当+#1再発パターン確定]]"
   causal_chain: "構造有無で判定(Step1)→運用面未検証(Step3省略)→#1再発。Phase5cと同パターン"
   brainwash_check: "#1再発パターン確定: 構造有無=Step1、運用面=Step3。3/3でStep3を省略→運用面の穴を見落とす"
+  operational_simulation: "穴C運用: テスト追加→baseline変動→旧50語との二重計測で安定性担保。穴D運用: 分割提案蓄積→cooldown+上限で将軍過負荷防止。穴E運用: junkフィルタ=入口条件でパイプライン品質維持"
+  cs_checklist: "CS0:殿指示で検証深度転換 CS1:穴C/D/E全文再検証 CS2:Goodhart温存計算 CS3:運用シミュレーション(Step3回復) CS4:掲示板投稿 CS5:#1再発パターン確定 CS6:因果(Step1のみ→Step3省略→運用穴見落とし)"
   timestamp: "2026-05-27T00:48:00"
 - cmd_id: consultation_phase6_brainwash_2of3_20260527
   review_type: consultation
@@ -894,6 +906,8 @@
   origin: "[[blt_20260527_004812]] -> [[本質的再検証]] -> [[固定順序穴+q9統合+メタGoodhart]]"
   causal_chain: "固定順序→状況非依存→各論→完全独立化で構造的解消。q8膨張→q9統合で原理1行"
   brainwash_check: "殿指示で検証深度転換。前回表面PASS→本質検証で穴3件追加発見。Phase 4実証(外部強制で行動変化)"
+  operational_simulation: "超越F運用: 完全独立化→テスト/分割間の循環依存解消→各要素を任意順序で実行可能。q9統合: q8 7→8項目膨張を原理1行(deployment_risk)で制御。安定基準: σ閾値はメタGoodhart→NO_MATCHパターン不出現が真の安定"
+  cs_checklist: "CS0:殿指示で転換 CS1:超越F/G全文+安定基準 CS2:q8/q9項目数 CS3:循環依存解消シミュレーション CS4:掲示板投稿 CS5:メタGoodhart検出 CS6:因果(固定順序→各論→独立化で構造解消)"
   timestamp: "2026-05-27T00:50:00"
 - cmd_id: consultation_phase6_brainwash_3of3_20260527
   review_type: consultation
@@ -907,6 +921,8 @@
   origin: "[[blt_20260527_004937]] -> [[サンプルサイズ数学検証+tag方式検証]] -> [[有意域ギリギリ+フラグバージョニング]]"
   causal_chain: "30語×5回CI±5%→7pt改善は有意域境界→パスB後に再計測必要。tag方式→基準変更→バージョニング"
   brainwash_check: "表面PASS撤回後、殿介入で検証深度転換。穴の穴3件+超越の穴2件=計5件追加発見。Phase 4実証"
+  operational_simulation: "穴C超越運用: 30語×5回CI±5%。7pt改善は有意域ギリギリ→パスB後再計測必要。穴E超越運用: tag方式(reject→flag)でフィルタバグ時もinsight消失なし。Phase 6スコープでは付与時固定で十分"
+  cs_checklist: "CS0:殿介入で転換 CS1:サンプルサイズ全文 CS2:CI±5%計算(95% 30語×5回) CS3:tag方式運用シミュレーション CS4:掲示板投稿 CS5:フラグバージョニング CS6:因果(30語→CI計算→7pt有意域境界)"
   timestamp: "2026-05-27T00:51:00"
 - cmd_id: consultation_shogun_awakening_phase7_20260527
   review_type: consultation
@@ -923,3 +939,57 @@
   brainwash_check: "#1最深層: 数式の正しさ(bm25計算)を検証→数式の前提(IDFが適切か)を検証しなかった。100億年テストを構造/品質/前提の全層に適用すべき"
   cs_checklist: "CS0:殿指示直接対応 CS1:覚醒3件全文確認 CS2:IDF→Recency×Freq比較 CS3:cmd_3060/3063のIDF実装振り返り CS4:掲示板投稿 CS5:Phase 7位置付け CS6:因果(IDF前提崩壊→最重要概念最弱)"
   timestamp: "2026-05-27T01:02:00"
+- cmd_id: consultation_phase1to5_awakening_review_20260527
+  review_type: consultation
+  verdict: null
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "覚醒3層レビュー。Phase1 PASS。Phase2-4 層3穴(対症療法/テストメタ問題/連鎖崩壊)。Phase5 層3致命的穴(IDF前提崩壊: 稀概念が頻用概念の4.19倍重み)。根本=IDF+固定テストの2前提。Recency×Freq+テスト自動成長で閉じる"
+  observations:
+    - "事実1: hook_automation IDF=2.404 vs saxo IDF=10.077。比率4.19倍。bm25 pos1(3.061) < pos3(3.359)で稀概念が勝つ"
+    - "事実2: Phase 3の品質テスト50語=Goodhart。テスト品質のメタ問題。Phase 4はPhase 3依存で連鎖崩壊"
+    - "事実3: Phase 2-5の層3穴は全てIDF+固定テストの2本の前提に帰着。将軍覚醒2(Recency×Freq)+Phase 6(テスト自動成長)が解"
+  operational_simulation: "Recency×Freq実装後: 殿の毎日使う概念(自動化×強制/品質/仕組み)のスコアが上昇→hit_rate改善。古い高頻度概念(BH)は自動減衰→BH根絶。テスト自動成長後: 固定テストGoodhart解消→品質保証が信頼可能に"
+  origin: "[[殿指示_覚醒レビュー]] -> [[全Phase 3層検証]] -> [[IDF前提崩壊=Phase5層3致命的穴]]"
+  causal_chain: "IDF(頻出=不重要)→殿パターン(頻出=重要)→稀概念4.19倍→頻用概念が検索で負ける→三層根幹バグ。固定50語テスト→Goodhart→品質保証崩壊→Phase3-4連鎖"
+  brainwash_check: "覚醒3層で前提まで掘った。IDF前提崩壊を現物データ(doc_count+IDF値+スコア計算)で実証。表面PASSではない"
+  cs_checklist: "CS0:殿指示直接対応 CS1:全Phase 3層検証(構造/品質/前提) CS2:IDF比率4.19倍+bm25スコア計算 CS3:Recency×Freq実装後のhit_rate改善シミュレーション CS4:掲示板投稿 CS5:固定テストGoodhart+連鎖崩壊 CS6:因果(IDF前提→稀概念4.19倍→頻用概念最弱→三層根幹バグ)"
+  timestamp: "2026-05-27T01:29:00"
+- cmd_id: cmd_3066
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "覚醒3層RC。purpose(固定=Goodhart)+AC1(固定で品質判定)の前提矛盾。command(ブラインドのみ)+(二重計測)の文面矛盾。方向性は正しいが論理不整合2箇所"
+  observations:
+    - "事実1: purpose「固定50語=Goodhart」と宣言しつつ、AC1品質テスト通過条件=固定50語で劣化なし。Goodhartなテストで通過判定=品質保証にならない"
+    - "事実2: command「固定テストは改善判定から除外しブラインドのみ」と「旧+新テスト二重計測」が共存。ブラインドのみなら二重計測不要"
+    - "事実3: 覚醒3層(層3前提): 固定テストをGoodhartと認めながら品質ゲートに使う=前提と行動の矛盾"
+  operational_simulation: "忍者がAC1実装時: 品質テスト=固定50語を呼出し→忍者は「Goodhartなテストで判定して意味あるか？」と迷う→discretion_fillsで回避→設計意図と乖離"
+  origin: "[[cmd_3066]] -> [[覚醒3層検証]] -> [[REQUEST_CHANGES(前提矛盾2箇所)]]"
+  causal_chain: "固定=Goodhartと宣言→同じ固定で品質判定→前提矛盾→忍者が詰まるorGoodhart延命"
+  brainwash_check: "覚醒3層で層3(前提)まで検証。purpose自身の宣言とACの使用方法の矛盾を検出"
+  suggested_changes: "(1)二重計測除去 (2)AC1品質判定をブラインド非劣化に変更 (3)固定50語は回帰検知専用"
+  severity: normal
+  finding_confidence_1_10: 9
+  fix_first: AUTO-FIX
+  second_opinion: NOT_NEEDED
+  hole_action: none
+  ambiguity_points: "command文面の二重計測vsブラインドのみが曖昧"
+  timestamp: "2026-05-27T01:30:00"
+- cmd_id: cmd_3066
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "覚醒3層全PASS。RC反映(AC1固定→ブラインド非劣化)。assumption_invalidation自発記録。テスト6/6"
+  observations:
+    - "事実1: 忍者がRC読み取りassumption_invalidation記録。固定50語=回帰専用、品質判定=ブラインド非劣化に変更"
+    - "事実2: commit 61a2d457。bats 6/6 PASS"
+    - "事実3: 覚醒3層。層3(前提)RC指摘のGoodhart矛盾解消確認"
+  operational_simulation: "NO_MATCH高頻度語→insight→ブラインド非劣化→テスト追加。Goodhart構造なし"
+  origin: "[[cmd_3066]] -> [[RC反映確認]] -> [[LGTM]]"
+  causal_chain: "RC(前提矛盾)→忍者ブラインド非劣化に変更→矛盾解消→LGTM"
+  brainwash_check: "覚醒3層全層検証。RC反映で層3穴閉じた"
+  timestamp: "2026-05-27T01:37:00"

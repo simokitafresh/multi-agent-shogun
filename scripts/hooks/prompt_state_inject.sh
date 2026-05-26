@@ -246,6 +246,8 @@ semantic_skill_recommendations() {
 
   [[ -f "$search_cmd" ]] || return 0
   [[ -n "${prompt_text//[[:space:]]/}" ]] || return 0
+  # Skip inbox nudge prompts (precision fix: inbox1 hash=86/111 FP)
+  [[ ! "$prompt_text" =~ ^inbox[0-9]+$ ]] || return 0
 
   cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
   prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
