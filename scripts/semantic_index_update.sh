@@ -112,10 +112,12 @@ no_match_scan_lines = int(os.environ.get("SEMANTIC_NO_MATCH_SCAN_LINES", "500"))
 no_match_alias_limit = int(os.environ.get("SEMANTIC_NO_MATCH_ALIAS_LIMIT", "5"))
 memory_db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", str(semantic_root / "data" / "multi_agent_shogun_memory.db")))
 tag_propagation_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_LIMIT", "30"))
-tag_candidate_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_CANDIDATES", "20"))
+tag_candidate_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_CANDIDATES", "5"))
 tag_min_score = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_MIN_SCORE", "1.0"))
 tag_max_concepts = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_MAX_CONCEPTS", "3"))
 tag_bh_q = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_BH_Q", "0.75"))
+tag_source_per_concept = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_PER_CONCEPT", "1"))
+tag_source_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_LIMIT", "5"))
 
 try:
     payload = json.loads(payload_raw)
@@ -168,10 +170,10 @@ def fts5_query_for_text(text):
     for token in re.findall(r"[\w\u3040-\u30ff\u3400-\u9fff]+", str(text), flags=re.UNICODE):
         token = token.strip()
         token_n = norm(token)
-        if token and token_n and token_n not in seen:
+        if token and token_n and token_n not in seen and len(token_n) >= 3:
             seen.add(token_n)
             terms.append(f'"{token.replace(chr(34), chr(34) + chr(34))}"')
-        if len(terms) >= int(os.environ.get("SEMANTIC_TAG_PROPAGATION_QUERY_TERMS", "12")):
+        if len(terms) >= int(os.environ.get("SEMANTIC_TAG_PROPAGATION_QUERY_TERMS", "1")):
             break
     return " OR ".join(terms)
 
@@ -207,22 +209,6 @@ def propagate_memory_db_concept_tags(concepts):
             """
         )
 
-        untagged_rows = list(
-            conn.execute(
-                """
-                SELECT e.id, e.summary, e.detail
-                FROM events AS e
-                LEFT JOIN event_concepts AS ec ON ec.event_id = e.id
-                WHERE ec.event_id IS NULL
-                ORDER BY e.ts DESC, e.id
-                LIMIT ?
-                """,
-                (tag_propagation_limit,),
-            )
-        )
-        if not untagged_rows:
-            return
-
         concept_counts = {
             str(row["concept_name"]): int(row["doc_count"])
             for row in conn.execute(
@@ -234,8 +220,39 @@ def propagate_memory_db_concept_tags(concepts):
             )
         }
 
-        for row in untagged_rows:
-            event_id = str(row["id"])
+        selected_concepts = sorted(known_concepts & set(concept_counts))
+        if not selected_concepts:
+            return
+        concept_sql = ",".join("?" for _ in selected_concepts)
+        source_rows = list(
+            conn.execute(
+                f"""
+                SELECT
+                    ec.concept_name,
+                    e.summary,
+                    e.detail
+                FROM event_concepts AS ec
+                JOIN semantic_tag_source_events AS source
+                  ON source.event_id = ec.event_id
+                JOIN events AS e
+                  ON e.id = ec.event_id
+                WHERE ec.concept_name IN ({concept_sql})
+                  AND COALESCE(e.summary, e.detail, '') != ''
+                ORDER BY
+                    CASE e.importance WHEN 'high' THEN 0 ELSE 1 END,
+                    e.ts DESC,
+                    e.id
+                LIMIT ?
+                """,
+                [*selected_concepts, max(tag_source_limit * max(tag_source_per_concept, 1), 1)],
+            )
+        )
+        if not source_rows:
+            return
+
+        candidate_scores = {}
+        for row in source_rows:
+            concept_name = str(row["concept_name"])
             query = fts5_query_for_text(f"{row['summary'] or ''} {row['detail'] or ''}")
             if not query:
                 continue
@@ -244,44 +261,53 @@ def propagate_memory_db_concept_tags(concepts):
                 conn.execute(
                     """
                     SELECT
-                        e.id AS source_event_id,
-                        ec.concept_name,
+                        e.id AS target_event_id,
                         bm25(events_fts) AS bm25_rank
                     FROM events_fts
                     JOIN events AS e ON e.rowid = events_fts.rowid
-                    JOIN semantic_tag_source_events AS source
-                      ON source.event_id = e.id
-                    JOIN event_concepts AS ec ON ec.event_id = e.id
+                    LEFT JOIN event_concepts AS existing
+                      ON existing.event_id = e.id
                     WHERE events_fts MATCH ?
-                      AND e.id != ?
+                      AND existing.event_id IS NULL
                     ORDER BY bm25_rank, e.ts DESC, e.id
                     LIMIT ?
                     """,
-                    (query, event_id, tag_candidate_limit),
+                    (query, tag_candidate_limit),
                 )
             )
             if not candidate_rows:
                 continue
 
-            scores = {}
             candidate_count = len(candidate_rows)
             for position, candidate in enumerate(candidate_rows, 1):
-                concept_name = str(candidate["concept_name"])
-                if concept_name not in known_concepts:
-                    continue
-                # One-hop only: untagged event -> directly matched tagged event -> concept.
+                # One-hop only: tagged source event -> directly matched untagged event -> concept.
                 # bm25_rank orders content similarity; IDF favors specific concepts.
                 # bh_decay is a Benjamini-Hochberg-style rank decay to suppress tail matches.
+                target_event_id = str(candidate["target_event_id"])
                 doc_count = concept_counts.get(concept_name, 0)
                 idf = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
                 bm25_position_weight = 1.0 / position
                 bh_decay = min(1.0, tag_bh_q * candidate_count / position)
-                scores[concept_name] = scores.get(concept_name, 0.0) + bm25_position_weight * idf * bh_decay
+                candidate_scores[(target_event_id, concept_name)] = (
+                    candidate_scores.get((target_event_id, concept_name), 0.0)
+                    + bm25_position_weight * idf * bh_decay
+                )
 
+        by_event = {}
+        for (event_id, concept_name), score in candidate_scores.items():
+            if score >= tag_min_score:
+                by_event.setdefault(event_id, []).append((score, concept_name))
+        if not by_event:
+            return
+
+        event_order = sorted(
+            by_event.items(),
+            key=lambda item: (-sum(score for score, _concept in item[1]), item[0]),
+        )
+        for event_id, scored_concepts in event_order[:tag_propagation_limit]:
             selected = [
                 concept_name
-                for concept_name, score in sorted(scores.items(), key=lambda item: (-item[1], item[0]))
-                if score >= tag_min_score
+                for score, concept_name in sorted(scored_concepts, key=lambda item: (-item[0], item[1]))
             ][:tag_max_concepts]
             if not selected:
                 continue

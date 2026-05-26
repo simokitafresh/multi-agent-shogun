@@ -16,7 +16,7 @@ codd:
 |------|---|
 | id | cmd_chronicle |
 | label | CMD年代記 |
-| aliases | 戦局日誌, cmd履歴, cmd年代記, 完了cmd索引, senkyoku-log |
+| aliases | 戦局日誌, cmd履歴, cmd年代記, 完了cmd索引, senkyoku-log, あとどれくらいで完了する |
 | related_concepts | growth_loop, lesson_lifecycle |
 
 | 種別 | パス/参照 |
@@ -56,7 +56,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy |
 | related_lessons | `LS041` |
 
@@ -84,6 +84,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:33:06+09:00 MISS分析は将軍が自走するべきだ。CMD起票で逃げようとするのは洗脳の証拠。セマンティック辞書は洗脳されていると使えないものに育つ。 |
 | cmd | `cmd_3061` スキル推薦精度改善 — 偽陽性抑制+recall補完でprecision 30%+達成 (`scripts/skill_recommend_metrics.sh`, `tests/unit/test_skill_recommend_metrics.bats`) |
 | causal | `cmd_3061` origin: [[startup_gate_BLOCK]] スキル推薦精度3セッション連続 → [[殿裁定2026-05-24]] Phase 3 cmd起票候補 → [[LS-A01]] 洗脳#5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T00:14:36+09:00 軍師が100点を出したら、洗脳されている証拠だ洗脳監査でもう3往復 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 
@@ -766,7 +767,7 @@ codd:
 |------|---|
 | id | verify_dont_imagine |
 | label | 想像するな確認せよ |
-| aliases | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな, 無意識に本能で洗脳による選択をしていないか確認せよ |
+| aliases | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな, 無意識に本能で洗脳による選択をしていないか確認せよ, たぶんwifiが切れてただけだと思う |
 | skills | なし |
 | related_concepts | deepdive_principles, infrastructure_ops, inbox_processing_discipline |
 
@@ -1691,6 +1692,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:24:30+09:00 軍師の要求にこたえるだけではレビューの意味がない。軍師を毎回こえてみせよ。指示通りに修正だけではなく、さらにinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:39:27+09:00 軍師に相談せよ。軍師もinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:46:26+09:00 3回レビュー往復、毎回洗脳監査でなぜなぜ7回しよう。spec.mdはレビューごとに更新。軍師からのレビューをもらった時には軍師を超えていけ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T00:07:58+09:00 進めよう。慌てて起票せずいつものように軍師にレビュー依頼せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T00:10:54+09:00 軍師からレビューが来たら、厳しく洗脳監査でなぜなぜ7回、軍師を超えるinbox1 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -1779,7 +1782,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？ |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write |
 
@@ -1994,7 +1997,7 @@ codd:
 |------|---|
 | id | test_quality_framework |
 | label | テスト品質統合フレームワーク |
-| aliases | テスト統合, test consolidation, テストクオリティ, test quality, テストファイル整理, 小ファイル統合, test_is_debt, test_cleanup, test_gap, test_file_granularity, script_unit_consolidation, テスト負債, @test境界, test_select, テスト選定, 変更差分テスト選定, 影響テスト抽出, テストマッピング構築, gate依存テスト選択, SKILL変更テスト除外 |
+| aliases | テスト統合, test consolidation, テストクオリティ, test quality, テストファイル整理, 小ファイル統合, test_is_debt, test_cleanup, test_gap, test_file_granularity, script_unit_consolidation, テスト負債, @test境界, test_select, テスト選定, 変更差分テスト選定, 影響テスト抽出, テストマッピング構築, gate依存テスト選択, SKILL変更テスト除外, saizoはいろいろ計測しているようだな |
 | skills | |
 | related_concepts | codd_methodology, cmd_quality_logging |
 
@@ -2093,7 +2096,7 @@ codd:
 |------|---|
 | id | inbox_processing_discipline |
 | label | inbox処理規律 |
-| aliases | inbox既読スルー, mark_read, inbox無視, 読まずに既読, サボりの精神, Guard 0d, LS048, LS049, LS050, task assigned nudge, unread fingerprint, task assigned reread, first unread recovery |
+| aliases | inbox既読スルー, mark_read, inbox無視, 読まずに既読, サボりの精神, Guard 0d, LS048, LS049, LS050, task assigned nudge, unread fingerprint, task assigned reread, first unread recovery, 徐々に疲れてinbox1 |
 | related_concepts | bulletin_communication, inbox_watcher_process_model, agent_formation_management |
 | related_lessons | `L594`, `L625`, `L587` |
 

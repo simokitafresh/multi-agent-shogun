@@ -81,6 +81,69 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+@test "memory DB tag propagation uses FTS5 bm25 one-hop IDF BH decay" {
+    export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/memory.db"
+    python3 - "$SEMANTIC_MEMORY_DB_PATH" <<'PY'
+import sqlite3
+import sys
+
+db_path = sys.argv[1]
+conn = sqlite3.connect(db_path)
+conn.executescript(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id TEXT,
+        importance TEXT
+    );
+    CREATE TABLE event_concepts (
+        event_id TEXT NOT NULL,
+        concept_name TEXT NOT NULL,
+        PRIMARY KEY (event_id, concept_name)
+    );
+    CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid');
+    """
+)
+rows = [
+    ("tagged_semantic", "2026-05-26T00:00:00", "discussion", "shogun", "", "response", "意味検索 FTS5 タグ伝播", "セマンティック辞書構想の概念タグ", "", "", '["semantic_dictionary_design"]', "", "", "high"),
+    ("untagged_semantic", "2026-05-26T00:01:00", "discussion", "shogun", "", "response", "意味検索 FTS5 タグ伝播", "未タグの類似イベント", "", "", "", "", "", "high"),
+]
+conn.executemany("INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+conn.execute("INSERT INTO event_concepts VALUES (?, ?)", ("tagged_semantic", "semantic_dictionary_design"))
+conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+conn.commit()
+PY
+
+    run env SEMANTIC_TAG_PROPAGATION_LIMIT=10 bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MEMORY_TAG_PROPAGATION"* ]]
+
+    python3 - "$SEMANTIC_MEMORY_DB_PATH" <<'PY'
+import json
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+rows = conn.execute(
+    "SELECT concept_name FROM event_concepts WHERE event_id = 'untagged_semantic'"
+).fetchall()
+assert rows == [("semantic_dictionary_design",)], rows
+concepts = conn.execute("SELECT concepts FROM events WHERE id = 'untagged_semantic'").fetchone()[0]
+assert json.loads(concepts) == ["semantic_dictionary_design"], concepts
+PY
+}
+
 @test "cmd_complete payload appends origin and depends_on causal resources" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2885","title":"セマンティクスインデックス 因果辺","purpose":"semantic-mapへ因果辺を還流","files":["scripts/cmd_complete_gate.sh"],"origin":"[[cmd_2818_causal_NW]] -> [[semantic_map_generate]] -> [[obsidian_link_stagnation]]","depends_on":"[[cmd_2875]] -> [[セマンティック辞書構想]]"}'
     [ "$status" -eq 0 ]
