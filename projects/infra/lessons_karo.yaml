@@ -37,6 +37,9 @@ lessons:
     - 動いている仕組みを変更する前にgit log --grepで設計意図(なぜそうなっているか)を確認せよ(cmd_2904/2906: respawn-pane→/new変更→CLIが/new拒否→3忍者CTX滞留。元のrespawnには理由があった=CLI内部状態に関係なく確実にリセットする唯一の手段。殿裁定2026-05-20: 一見不合理でも因果がある。サンクコストに囚われず元に戻す判断も正しい)
     v9吸収(2026-05-21):
     - pane captureのtiming残像でSTALL即断するな。capture時点でCTX:0%+❯表示でもthinking中の場合がある(hanzo/kotaro事故: capture→STALL判断→task YAMLクリア→実は作業中。殿に「動いてるぞ？」と指摘された)。根因はagent_state.sh busy/idle判定順序バグ(3beefbd0で修正)だが、家老判断側でも「1回のcaptureで結論しない。15-20秒後に再capture」を徹底せよ
+    v10吸収(2026-05-26):
+    - DB関連cmdの完了レビュー時にクエリ実行で実効性を確認せよ(cmd_3048: FTS5 CJK 0件問題を軍師第3ラウンドまで見逃し。sqlite3で1クエリ実行すれば検出できた)。§0.1問い2の適用範囲にDB検索品質の実行検証を含める
+    - gate alert「正常stale」結論前にstaleness_triggersのverify手順を実行せよ(codd.md: version 1.10.0→2.18.0を3回見逃し。verifyに「ローカル版数確認」と明記されていたのに未実行。思い込みで結論するな)
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -262,6 +265,8 @@ v7吸収(2026-05-19):
     - CI並列隔離4パターン目: テスト内で$TEST_PROJECT/scripts/にファイル生成→scriptsはREAL scriptsへのsymlink→実体ディレクトリに書込み→--jobs 8で複数テストが同一実体ファイルに競合書込み→テストFAIL(cmd_3019 q11テスト)。修正: $TEST_PROJECT/testdata/に配置+絶対パス(9869fb7b)。v9パターン(1)の亜種。一般原則: テスト内でTEST_PROJECT/scripts配下にファイル生成するな(symlinkが実体を汚染)。非symlinkディレクトリ(testdata/)を使え
     v12吸収(2026-05-24):
     - yaml_field_set.shはlist item形式(`- id: LXXX`)のブロックIDに非対応。deprecatedフラグ追加等はsedで直接追加が確実: `sed -i "/^- id: ${lid}$/a\\  deprecated: true" file.yaml`
+    v13吸収(2026-05-25):
+    - 軍師D0 Edit変更がauto-commit(影丸0c919e92)に先取りされ、軍師commit(65d98b20)にはprompt_state_inject.shのみ含まれた(gate_gunshi_cs_checklist.sh+gate_karo_startup.shの変更が別commitに分散)。D0レビュー時は報告のcommit hashだけでなく、直近のauto-commitも確認対象(git log --oneline -3で前後commit確認)。v8(dashboard 0バイト競合)と同根: 非同期auto-commitとの同時書込み
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
