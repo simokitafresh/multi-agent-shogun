@@ -308,6 +308,13 @@ def main() -> None:
                 print(f"NO_MATCH: {query}")
             sys.exit(1)
 
+        matches.sort(
+            key=lambda item: (
+                min(len(term) for term in item[1]),
+                item[0]["id"],
+            )
+        )
+
         for idx, (concept, matched_terms) in enumerate(matches, 1):
             if idx > 1:
                 print("")

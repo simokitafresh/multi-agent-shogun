@@ -276,6 +276,15 @@ def concept_terms(concepts):
                 terms.add(value_n)
     return terms
 
+def all_alias_terms(concepts):
+    aliases = set()
+    for concept in concepts:
+        for value in concept["aliases"]:
+            value_n = norm(value)
+            if value_n:
+                aliases.add(value_n)
+    return aliases
+
 def concept_name_map(concepts):
     names = {}
     for concept in concepts:
@@ -573,9 +582,11 @@ def _scope_tokens(text):
     tokens.update(re.findall(r'[\u30A0-\u30FF\u4E00-\u9FFF]{2,}', str(text)))
     return tokens
 
-def candidate_aliases(source_type, payload, existing_aliases, concept_label="", concept_id=""):
+def candidate_aliases(source_type, payload, existing_aliases, concept_label="", concept_id="", all_aliases_norm=None):
+    min_alias_length = 3
     max_alias_length = 30
     existing_norm = {norm(alias) for alias in existing_aliases}
+    all_aliases_norm = set(all_aliases_norm or ())
     # スコープ判定: 概念label+idからトークンを抽出
     scope_tokens = _scope_tokens(f"{concept_label} {concept_id}")
     scope_tokens.update(_scope_tokens(" ".join(existing_aliases)))  # 既存aliases全件をスコープに含める
@@ -597,7 +608,10 @@ def candidate_aliases(source_type, payload, existing_aliases, concept_label="", 
         # Keep aliases compact enough to stay useful in the index table.
         for part in re.split(r"[。．.!?\n]|[、,]\s*", cleaned):
             part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
-            if len(part) < 3 or norm(part) in existing_norm:
+            part_norm = norm(part)
+            if len(part) < min_alias_length or part_norm in existing_norm:
+                continue
+            if part_norm in all_aliases_norm:
                 continue
             if len(part) > max_alias_length:
                 continue
@@ -606,7 +620,8 @@ def candidate_aliases(source_type, payload, existing_aliases, concept_label="", 
             if scope_tokens and part_tokens and not (scope_tokens & part_tokens):
                 continue
             aliases.append(part)
-            existing_norm.add(norm(part))
+            existing_norm.add(part_norm)
+            all_aliases_norm.add(part_norm)
             break
         if aliases:
             break
@@ -884,7 +899,14 @@ if confidence == "HIGH":
     sys.exit(0)
 
 if confidence == "LOW":
-    aliases_to_add = candidate_aliases(source_type, payload, best["aliases"], concept_label=best.get("label", ""), concept_id=best.get("id", ""))
+    aliases_to_add = candidate_aliases(
+        source_type,
+        payload,
+        best["aliases"],
+        concept_label=best.get("label", ""),
+        concept_id=best.get("id", ""),
+        all_aliases_norm=all_alias_terms(concepts),
+    )
     alias_block, alias_changed = append_aliases_to_block(best["block"], aliases_to_add)
     rows = [resource_row(source_type, payload)] + causal_resource_rows(payload)
     new_block = alias_block
