@@ -128,19 +128,65 @@ def print_related_concepts(concept: dict, concepts: list) -> None:
         return
 
     by_id = {item["id"]: item for item in concepts}
+    backlink_counts = precompute_related_concept_backlinks(concepts)
+    ranked_related = rank_related_concepts(concept, by_id, backlink_counts)
+    limit = int(os.environ.get("SEMANTIC_RELATED_CONCEPT_LIMIT", "8"))
     printed = False
-    for related_id in related_ids:
-        related = by_id.get(related_id)
-        if not related:
-            continue
+    for related, score, density, strength, backlinks in ranked_related[: max(limit, 1)]:
         if not printed:
             print("")
             print("related_concepts:")
             printed = True
         print(f"## {related['id']} — {related['label']}")
+        print(
+            "path_b_score: "
+            f"{score:.3f} (density={density}, connection_strength={strength:.3f}, backlinks={backlinks})"
+        )
         print(f"aliases: {', '.join(related['aliases'])}")
         print_resources(related)
         print("")
+
+
+def precompute_related_concept_backlinks(concepts: list[dict]) -> dict[str, int]:
+    """Count incoming index.md related_concepts once for O(1) neighbor scoring."""
+    counts: dict[str, int] = {}
+    known_ids = {concept["id"] for concept in concepts}
+    for concept in concepts:
+        for related_id in concept.get("related_concepts", []):
+            if related_id in known_ids:
+                counts[related_id] = counts.get(related_id, 0) + 1
+    return counts
+
+
+def concept_density(concept: dict) -> int:
+    return (
+        1
+        + len(concept.get("resources", []))
+        + len(concept.get("skills", []))
+        + len(concept.get("related_lessons", []))
+    )
+
+
+def rank_related_concepts(
+    seed: dict,
+    by_id: dict[str, dict],
+    backlink_counts: dict[str, int],
+) -> list[tuple[dict, float, int, float, int]]:
+    seed_related = set(seed.get("related_concepts", []))
+    ranked: list[tuple[dict, float, int, float, int]] = []
+    for position, related_id in enumerate(seed.get("related_concepts", []), 1):
+        related = by_id.get(related_id)
+        if not related:
+            continue
+        reciprocal = 1.0 if seed["id"] in related.get("related_concepts", []) else 0.0
+        shared_neighbors = len(seed_related.intersection(related.get("related_concepts", [])))
+        backlinks = backlink_counts.get(related_id, 0)
+        strength = 1.0 + reciprocal + (shared_neighbors * 0.25) + math.log1p(backlinks)
+        density = concept_density(related)
+        score = density * strength / position
+        ranked.append((related, score, density, strength, backlinks))
+    ranked.sort(key=lambda item: (-item[1], -item[4], item[0]["id"]))
+    return ranked
 
 
 def concept_ids_from_search_output(output_path: Path) -> list[str]:

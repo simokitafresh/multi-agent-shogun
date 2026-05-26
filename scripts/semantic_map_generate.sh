@@ -126,6 +126,71 @@ def update_blocks_by_id(text, rows_by_id):
             changed = True
     return updated, changed
 
+def format_related_concepts(values):
+    cleaned = []
+    seen = set()
+    for value in values:
+        item = str(value).strip().strip("`")
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        cleaned.append(item)
+    return ", ".join(cleaned)
+
+def set_related_concepts_row(block_text, related_ids):
+    row = f"| related_concepts | {format_related_concepts(related_ids)} |"
+    if re.search(r"(?m)^\|\s*related_concepts\s*\|", block_text):
+        return re.sub(r"(?m)^\|\s*related_concepts\s*\|.*?\|$", row, block_text, count=1)
+    lines = block_text.splitlines()
+    insert_at = None
+    for i, line in enumerate(lines):
+        if re.match(r"^\|\s*(aliases|skills|related_lessons)\s*\|", line.strip()):
+            insert_at = i + 1
+    if insert_at is None:
+        for i, line in enumerate(lines):
+            if line.strip() == "|------|---|":
+                insert_at = i + 1
+                break
+    if insert_at is None:
+        return block_text.rstrip("\n") + "\n" + row + "\n"
+    lines.insert(insert_at, row)
+    return "\n".join(lines) + ("\n" if block_text.endswith("\n") else "")
+
+def ensure_bidirectional_related_concepts(text):
+    blocks = parse_index_blocks(text)
+    by_id = {block["id"]: block for block in blocks}
+    related_by_id = {}
+    for block in blocks:
+        rel = []
+        for raw in block["block"].splitlines():
+            row = re.match(r"^\|\s*related_concepts\s*\|\s*(.*?)\s*\|$", raw.strip())
+            if row:
+                rel = [item.strip().strip("`") for item in row.group(1).split(",") if item.strip()]
+                break
+        related_by_id[block["id"]] = rel
+
+    additions = {block_id: [] for block_id in by_id}
+    for source_id, related_ids in related_by_id.items():
+        for target_id in related_ids:
+            if target_id not in by_id:
+                continue
+            if source_id not in related_by_id.get(target_id, []):
+                additions[target_id].append(source_id)
+
+    additions = {block_id: values for block_id, values in additions.items() if values}
+    if not additions:
+        return text, 0
+
+    updated = text
+    for block in sorted(blocks, key=lambda item: item["start"], reverse=True):
+        add = additions.get(block["id"])
+        if not add:
+            continue
+        new_related = [*related_by_id.get(block["id"], []), *add]
+        new_block = set_related_concepts_row(block["block"], new_related)
+        updated = updated[: block["start"]] + new_block + updated[block["end"] :]
+    return updated, sum(len(values) for values in additions.values())
+
 def parse_projects_config(repo_root):
     config_path = Path(os.environ.get("SEMANTIC_PROJECTS_CONFIG", str(repo_root / "config" / "projects.yaml")))
     if not config_path.exists():
@@ -373,6 +438,7 @@ def auto_intake_semantic_index():
     text = index_path.read_text(encoding="utf-8")
     text, project_count = ensure_project_concepts(text)
     text, backfill_count = backfill_zero_cmd_concepts(text)
+    text, bidirectional_count = ensure_bidirectional_related_concepts(text)
     if text != index_path.read_text(encoding="utf-8"):
         index_path.write_text(text, encoding="utf-8")
     insight_count = queue_new_file_insights(text)
@@ -380,6 +446,8 @@ def auto_intake_semantic_index():
         print(f"project concepts auto-created: {project_count}")
     if backfill_count:
         print(f"cmd backfill rows added: {backfill_count}")
+    if bidirectional_count:
+        print(f"related_concepts bidirectional links added: {bidirectional_count}")
     if insight_count:
         print(f"new file semantic insights queued: {insight_count}")
 

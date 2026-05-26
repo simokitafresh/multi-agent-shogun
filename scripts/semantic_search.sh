@@ -28,6 +28,9 @@ Environment:
                        Override memory DB target filter (default: current agent_id)
   SEMANTIC_CONCEPT_EXPANSION_LIMIT
                        Maximum depth=1 event_links concept expansion count (default: 20)
+  SEMANTIC_RELATED_CONCEPT_LIMIT
+                       Maximum index.md related_concepts neighbors to render per single
+                       first-layer concept match (default: 8)
   SEMANTIC_CACHE_DIR   LLM result cache dir (default: tmp/semantic_search_cache)
   SEMANTIC_INDEX_CACHE_DIR
                        Parsed index JSON cache dir (default: tmp/semantic_index_cache)
