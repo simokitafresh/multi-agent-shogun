@@ -597,7 +597,7 @@ def candidate_aliases(source_type, payload, existing_aliases, concept_label="", 
         # Keep aliases compact enough to stay useful in the index table.
         for part in re.split(r"[。．.!?\n]|[、,]\s*", cleaned):
             part = re.sub(r"\s+", " ", part).strip(" ・、。:：-")
-            if len(part) < 2 or norm(part) in existing_norm:
+            if len(part) < 3 or norm(part) in existing_norm:
                 continue
             if len(part) > max_alias_length:
                 continue
