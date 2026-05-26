@@ -136,6 +136,7 @@ MOCK
     chmod +x "$TEST_TMPDIR/bin/tmux"
 
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
+    export KARO_WA_RATE_CACHE="$TEST_TMPDIR/karo_wa_rate_cache"
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
 }
@@ -412,7 +413,7 @@ EOF
 }
 
 @test "WA rate script stderr is logged when script fails" {
-    rm -f /tmp/karo_wa_rate_cache
+    rm -f "$KARO_WA_RATE_CACHE"
     cat > "$TEST_TMPDIR/scripts/gates/gate_workaround_rate.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "wa rate injected failure" >&2
