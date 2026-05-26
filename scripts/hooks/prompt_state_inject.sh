@@ -202,11 +202,43 @@ skill_names_from_recommendation_text() {
   sed -nE 's/^- \/([A-Za-z0-9_.-]+).*/\1/p'
 }
 
+skill_allowed_for_agent() {
+  local skill_name="$1"
+  local skills_dir="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
+  local skill_file="${skills_dir}/${skill_name}/SKILL.md"
+  local marker
+
+  [[ -f "$skill_file" ]] || return 1
+  marker="$(sed -n '1,80p' "$skill_file" | grep -oE '【[^】]+専用】' | head -1 || true)"
+  [[ -n "$marker" ]] || return 0
+
+  case "$marker" in
+    *将軍専用*) [[ "$agent_id" == "shogun" ]] ;;
+    *家老専用*) [[ "$agent_id" == "karo" ]] ;;
+    *軍師専用*) [[ "$agent_id" == "gunshi" ]] ;;
+    *忍者専用*) [[ "$agent_id" != "shogun" && "$agent_id" != "karo" && "$agent_id" != "gunshi" ]] ;;
+    *) return 0 ;;
+  esac
+}
+
+filter_skills_for_agent() {
+  local skill_name
+
+  while IFS= read -r skill_name; do
+    [[ -n "$skill_name" ]] || continue
+    if skill_allowed_for_agent "$skill_name"; then
+      printf '%s\n' "$skill_name"
+    fi
+  done
+}
+
 semantic_skill_recommendations() {
   local search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
   local cache_file
+  local cache_version="role-filter-v1"
   local prompt_hash
   local cached_hash
+  local cached_version
   local semantic_result
   local semantic_rc
   local skills
@@ -219,7 +251,8 @@ semantic_skill_recommendations() {
   prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
   if [[ -f "$cache_file" ]]; then
     cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
-    if [[ "$cached_hash" == "$prompt_hash" ]]; then
+    cached_version="$(sed -n '2s/^filter_version: //p' "$cache_file" 2>/dev/null || true)"
+    if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" ]]; then
       skills="$(sed '1,/^---$/d' "$cache_file" 2>/dev/null | skill_names_from_recommendation_text || true)"
       record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
       sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
@@ -265,6 +298,7 @@ for line in raw.splitlines():
 print("\n".join(names[:5]))
 PY
   )"
+  skills="$(printf '%s\n' "$skills" | filter_skills_for_agent)"
   [[ -n "$skills" ]] || return 0
   record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
 
@@ -277,6 +311,7 @@ PY
   } | tee "$cache_tmp"
   {
     printf 'prompt_sha256: %s\n' "$prompt_hash"
+    printf 'filter_version: %s\n' "$cache_version"
     printf -- '---\n'
     cat "$cache_tmp"
   } > "$cache_file"

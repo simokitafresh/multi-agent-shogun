@@ -64,7 +64,7 @@ EOF
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 
-@test "unobserved recommended skills are excluded from precision denominator" {
+@test "unobserved recommended skills remain in precision denominator" {
   cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
 recommendations:
 EOF
@@ -87,10 +87,11 @@ EOF
 
   run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
 
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"precision率: 100% (1/1)"* ]]
-  [[ "$output" == *"precision評価対象外: 10件"* ]]
-  [[ "$output" != *"ALERT: Phase 3"* ]]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"precision率: 5% (1/20)"* ]]
+  [[ "$output" == *"偽陽性率: 95% (19/20)"* ]]
+  [[ "$output" != *"precision評価対象外"* ]]
+  [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 
 @test "post-completion automatic skills are not counted as recall miss" {
@@ -104,17 +105,24 @@ EOF
       printf '  - "report-write"\n'
     done
   } > "$SKILL_RECOMMEND_LOG_FILE"
-  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
-executions:
-- ts: "2026-05-24T18:00:00+0900"
+  {
+    printf 'executions:\n'
+    for i in $(seq 1 10); do
+      printf -- '- ts: "2026-05-24T18:%02d:00+0900"\n' "$i"
+      printf '  skill: "report-write"\n'
+      printf '  used: "true"\n'
+    done
+    cat <<'EOF'
+- ts: "2026-05-24T18:20:00+0900"
   skill: "cmd-complete"
   gate: "cmd_complete_gate"
   used: "true"
-- ts: "2026-05-24T18:01:00+0900"
+- ts: "2026-05-24T18:21:00+0900"
   skill: "dashboard-update"
   gate: "dashboard_update"
   used: "true"
 EOF
+  } > "$SKILL_EXECUTION_LOG_FILE"
 
   run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
 

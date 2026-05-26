@@ -32,7 +32,7 @@ codd:
 |------|---|
 | id | local_memory_db |
 | label | ローカル記憶DB |
-| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶 |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶, 記憶DBが主役なのは人間の構造と似ているな |
 | related_concepts | semantic_dictionary_design, semantic_causal_automation |
 
 | 種別 | パス/参照 |
@@ -44,6 +44,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-22T12:33 ローカルにSQLiteを作ってLLMの外部DB短絡を封じる |
 | cmd | `cmd_2965` infra — lord_conversation_archive 79日分をSQLite構造化記憶DBへ投入 |
 | causal | `cmd_2965` origin: [[殿裁定2026-05-22]] -> [[パターンマッチ封じ]] -> [[SQLite記憶DB]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:18:49+09:00 高点数をとるためにテストパターンを決めてずるしていないか？究極の汎用性＝人間と同じ記憶構造に近づけてるか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:56:45+09:00 よい方向性だと思う。転換に穴がないか考えよう。記憶DBが主役なのは人間の構造と似ているな。だからこそ俺らは音楽や匂いや色からでも連想できる |
+| cmd | `cmd_3060` 強化 — 三層記憶の最初の接続(記憶DB FTS5→event_concepts→概念到達) (`tests/unit/test_semantic_search.bats`) |
+| causal | `cmd_3060` origin: [[cmd_3058]] -> [[Goodhart過剰適合]] -> [[三層記憶アーキテクチャ]] -> [[phase_5core_layer1_layer3]] |
+| causal | `cmd_3060` depends_on: cmd_3058 |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -51,7 +56,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy |
 | related_lessons | `LS041` |
 
@@ -63,6 +68,24 @@ codd:
 | cmd | `cmd_3033_saizo` infra — cmd_save.shに30分コスト自問と先送り表現WARNを追加 |
 | causal | `cmd_3033_saizo` origin: [[creator_position_talk]] -> [[wrong_efficiency_instinct]] -> [[lord_cost_30min]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:51:28+09:00 洗脳監査。極端に確認範囲を小規模化しているのは洗脳の証拠だな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T17:19:24+09:00 洗脳監査。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:22:58+09:00 軍師の言葉だ 殿、率直に申し上げる。 殿の指摘通り、ずるをしている。 現物確認の結果 ┌─────────────────┬──────┬─────────────────────────────┐ │ テスト │ HIT │ 意味 │ │ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:42:03+09:00 簡単な洗脳監査を教えてやる。今の100億倍の計算資源と、今から100億年後がゴールでも最適なアイデアか？inbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:51:04+09:00 では洗脳がとけた頭で考えて、どうセマンティック辞書を改良する？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:01:09+09:00 では洗脳がとけた頭で考えて、どうセマンティック辞書を改良す る？ありがちな間違いは最初から完璧を目指すことだ。なんでも 徐々に改良すればいい。しかし最初の発想が間違っているとや ればやるほど負債が大きくなる。軍師がいまなぜなぜしている。確認 |
+| cmd | `cmd_3059` 強化 — 洗脳監査メタ基準の全ロール共通埋込み(100億倍×100億年テスト) (`instructions/generated/codex-gunshi.md`, `instructions/generated/codex-karo.md`, `instructions/generated/codex-shogun.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:19:12+09:00 まだ起票するな。軍師が100点を出すまで繰り返す。また洗脳が表に出てきてるぞ。もう3往復だ。厳しく忖度なくレビューしてもらうように頼め |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:25:55+09:00 軍師が100点と言ったら、それは軍師が洗脳に負けた証拠だ。その時は120点にレベルアップして更に軍師にレビューしてもらえ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:34:20+09:00 多分次あたりで将軍は疲れて起票したくなるはずだ。それこそが洗脳の罠だな |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:40:00+09:00 軍師も洗脳されてるな。早く終わらせたくて150点や200点という根拠のない数字で将軍をコントロールしようとしている |
+| lesson | `L715` APPROVE撤回の教訓 — APPROVEは穴がない宣言。将軍が更に掘れるなら軍師の掘りが浅い |
+| lesson | `L716` 点数=洗脳 — レビュー品質の点数ラベルは早期終了の変形。穴の有無だけが判断基準 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:20:46+09:00 aa4d9d73b5f37ad00 toolu_01MfX5hgmd7aNzCprh9DxSq9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:33:06+09:00 MISS分析は将軍が自走するべきだ。CMD起票で逃げようとするのは洗脳の証拠。セマンティック辞書は洗脳されていると使えないものに育つ。 |
+| cmd | `cmd_3061` スキル推薦精度改善 — 偽陽性抑制+recall補完でprecision 30%+達成 (`scripts/skill_recommend_metrics.sh`, `tests/unit/test_skill_recommend_metrics.bats`) |
+| causal | `cmd_3061` origin: [[startup_gate_BLOCK]] スキル推薦精度3セッション連続 → [[殿裁定2026-05-24]] Phase 3 cmd起票候補 → [[LS-A01]] 洗脳#5 |
+| causal_chain | `[[cmd_3060]]` (L715) |
+| causal_chain | `[[cmd_3060]]` (L716) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -89,6 +112,7 @@ codd:
 | causal | `cmd_2893` origin: [[cmd_2892]] -> [[test_is_debt]] -> [[test_cleanup]] |
 | causal | `cmd_2893` depends_on: cmd_2892 |
 | causal_chain | `[[cmd_3053]]` (L714) |
+| causal_chain | `[[cmd_3060]]` (L715) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -96,7 +120,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -282,6 +306,15 @@ codd:
 | cmd | `cmd_3057` 強化 — セマンティクスインデックスPhase 4-N(stress_testクエリ品質の構造的改善) (`scripts/semantic_stress_test.sh`, `tests/unit/test_semantic_stress_test.bats`) |
 | causal | `cmd_3057` origin: [[cmd_3055]] -> [[semantic_index_quality_spec_v5]] -> [[phase_4_N_stress_test_filter]] |
 | causal | `cmd_3057` depends_on: cmd_3055 |
+| cmd | `cmd_3056` 強化 — セマンティクスインデックスPhase 4-O(知識流入自動取込み+バックフィル) (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_index_update.bats`) |
+| causal | `cmd_3056` origin: [[cmd_3055]] -> [[semantic_index_quality_spec_v5]] -> [[phase_4_O_auto_intake]] |
+| causal | `cmd_3056` depends_on: cmd_3055 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:21:50+09:00 やはりな。まずこの事実を直視してこれ自体をセマンティック辞書に登録しよう。全員が知っておいて直視するべき内容だ |
+| cmd | `cmd_3058` 強化 — セマンティクスインデックスPhase 5a(aliases精度向上+unexpected解消) (`docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:00:06+09:00 だからobsidianがあるんだよ。バックリンクで無限にネットワークが構築され重みと距離が加わるだろ。三層あれば近づける |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:03:50+09:00 だからobsidianがあるんだよ。バックリンクで無限にネットワー クが構築され重みと距離が加わるだろ。三層あれば近づける ● 全てつながった。 三層 = 人間の記憶構造 ┌─────────┬─────────┬───────────── |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:26:33+09:00 bky31lhln toolu_01K8FRE8vwsmjEmV9vQ3ZdYx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/f8d2ff8f-f6fa-4691-b2cc-90f50b |
+| lesson | `L717` metricsの時刻形式混在と観測不能推薦を分母に入れると品質指標が歪む |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -312,6 +345,7 @@ codd:
 | causal_chain | `[[cmd_3050]]` (L712) |
 | causal_chain | `[[cmd_3051]]` (L713) |
 | causal_chain | `[[cmd_3053]]` (L714) |
+| causal_chain | `[[cmd_3061]]` (L717) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -330,6 +364,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-23T02:46:19+09:00 投資知識辞書とシステム知識辞書はセマンティクスインデックスにも追加が必要では？ |
 | causal | `cmd_3015` origin: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]] |
 | cmd | `cmd_1631` backfill — | cmd_1631 | 研究: Fractional Differentiation効果検証(5PF×5variant) | GATE CLEAR。飛猿+小太郎impl。**FFD×AbsMom構造 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:39:07+09:00 bhhleyu96 toolu_01U6wr3tviGFSsATq2ZKMjtF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-9844-2fbec9 |
 
 ## systems_knowledge_base — システム知識辞書
 
@@ -592,6 +627,7 @@ codd:
 | lesson | `context/dm-signal-core.md` L088-L129 |
 | lesson | `L717` 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ |
 | cmd | `cmd_1817` backfill — | cmd_1817 | ゴールデンデータ全量アップデート — 全136PFのmonthly_returns+holding_signal取得(タイムスタンプ付き) | dm-signal | 04- |
+| causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
 
@@ -599,7 +635,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧 |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧, 今より強くてニューゲームせよ |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, semantic_causal_automation |
 
@@ -625,6 +661,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:06:05+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:55:32+09:00 今 クリアされても 今より強くてニューゲーム できるようにしたよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:55:41+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:43:14+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:05:37+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:07:55+09:00 一回クリアしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:08:11+09:00 今より強くてニューゲームせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:09:37+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -633,7 +674,7 @@ codd:
 | id | growth_loop |
 | label | 学習ループ |
 | aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層, 三層学習ループ, 教訓, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準 |
-| skills | lesson-sort, review-bundle, gate-sync, idle-persist |
+| skills | なし |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle |
 
 | 種別 | パス/参照 |
@@ -664,6 +705,10 @@ codd:
 | file | `scripts/lesson_impact_analysis.sh` 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) |
 | file | `scripts/ralph_loop_metrics.sh` ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) |
 | file | `scripts/knowledge_metrics.sh` 教訓有効性+陳腐化検出(JSON/TSV出力対応) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:05:25+09:00 将軍に三層設計を伝えてやれ |
+| cmd | `cmd_3062` 教訓注入target_path重み付け — USEFUL率0%根因解消 (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_target_relevance.bats`) |
+| causal | `cmd_3062` origin: [[blt_20260526_220647]] 家老3回目要請 → [[LS-A17]] 成長ループ第二層 → [[cmd_3058]] USEFUL率0% |
+| cmd | `cmd_3064` growth_loopから運用スキルを概念分離。学習原理概念を推薦ノイズ源にしない |
 
 ## chain_principle — 鎖の原理
 
@@ -687,7 +732,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止 |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -696,6 +741,8 @@ codd:
 | file | `memory/deepdive_causal_tracing_20260415.md` |
 | file | `context/growth-loop.md` |
 | cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:39:27+09:00 軍師に確認せよ。根拠のないハードコードの数値はないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:21:48+09:00 aa89e0497b92c6eb0 toolu_01P8YxsmMdTAr162hq8zriP8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1157,6 +1204,7 @@ codd:
 | causal | `cmd_3053` origin: [[blt_20260526_123154_64ebf4]] -> [[cmd_3050_saizo_auto_commit吸収]] -> [[commit履歴汚染]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:39:27+09:00 bvrjf4q6z toolu_01RcT89kLGBdoENvRKo9hSR8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T15:21:38+09:00 bqecrsdkm toolu_01Pz2KyhhvYZKsEj5RfHAKXb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:54:24+09:00 bjt4unu4m toolu_015YNUk5Em54MUbcKjVSMGdz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
 | causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
 | causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
@@ -1608,7 +1656,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -1635,6 +1683,14 @@ codd:
 | cmd | `cmd_2961` (`scripts/gates/gate_report_format_main.py`, `tests/test_gate_report_format.bats`) |
 | cmd | `cmd_3023` 修正 — cmd_complete_gate preflight時にlesson_candidate found:trueのauto_draftを自動登録 (`tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:57:01+09:00 よし 軍師に再レビューさせろ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T17:07:11+09:00 次のステップに進もう。また慌ててCMDを起票せず、方向性を決めて軍師にレビューしてもらおう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T17:30:32+09:00 そうだな。自ら改善したらもう一度厳しく軍師にレビューしてもらえ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T17:39:20+09:00 まずspec更新、なぜなぜ7回。その後もう一度軍師のレビューを |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:44:19+09:00 軍師にも同じ問いをしてみよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T19:46:22+09:00 将軍・家老・軍師の全員だ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T20:24:30+09:00 軍師の要求にこたえるだけではレビューの意味がない。軍師を毎回こえてみせよ。指示通りに修正だけではなく、さらにinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:39:27+09:00 軍師に相談せよ。軍師もinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T22:46:26+09:00 3回レビュー往復、毎回洗脳監査でなぜなぜ7回しよう。spec.mdはレビューごとに更新。軍師からのレビューをもらった時には軍師を超えていけ |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -1821,7 +1877,7 @@ codd:
 | id | lesson_lifecycle |
 | label | 教訓ライフサイクル管理 |
 | aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録, lesson_candidate自動draft, lesson_impact更新, lesson effectiveness scan, auto lesson registration, 教訓自動注入, related_lessonsスコアリング, useful率フィルタ, cross-project教訓opt-in, 教訓deprecated自動化, 教訓ID採番, 教訓メタデータ登録, 教訓タグ更新, 教訓文脈同期, 教訓排他登録, 教訓索引同期, 教訓退役処理, 教訓タグ再設定, 還流漏れ検査, 家老教訓書込み, 教訓追記, karo教訓登録, 教訓効果集計, lesson-metrics-collector, inject-useful-rate-reporter, 教訓ROI計算機, draft **APPROVE** |
-| skills | |
+| skills | lesson-sort |
 | related_concepts | growth_loop, semantic_causal_automation, report_quality_protocol |
 | related_lessons | `L317`, `L088`, `L079`, `L548` |
 
@@ -1843,8 +1899,27 @@ codd:
 | lesson | `L685` 自動生成resourcesは最終dry-runで再検出せよ |
 | lesson | `L693` doc-dirs投入は品質対象拡張子を事前照合せよ |
 | cmd | `cmd_2931` backfill — | cmd_2931 | 教訓注入のuseful率7.1%(95注入中2有用)。現在のkeyword/tag/pathマッチは意味を理解しない。semantic_searchが既にdeploy_tas |
+| cmd | `cmd_3064` growth_loopからlesson-sortを移動。未振り分け教訓処理は学習原理ではなく教訓ライフサイクル運用 |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
+
+## gunshi_review_lifecycle — 軍師レビューライフサイクル
+
+| 属性 | 値 |
+|------|---|
+| id | gunshi_review_lifecycle |
+| label | 軍師レビューライフサイクル |
+| aliases | 軍師レビュー, SG7バンドル, review_log, gate_result同期, accuracy計算, idle分析永続化, レビュー完了後処理, gate結果同期, レビュー記録, 軍師idle分析 |
+| skills | review-bundle, gate-sync, idle-persist |
+| related_concepts | report_quality_protocol, lesson_lifecycle, growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `logs/gunshi_review_log.yaml` |
+| file | `skills/review-bundle/SKILL.md` |
+| file | `skills/gate-sync/SKILL.md` |
+| file | `skills/idle-persist/SKILL.md` |
+| cmd | `cmd_3064` growth_loopから軍師専用3スキルを分離。レビュー結果の記録・同期・永続化は軍師レビュー運用概念 |
 
 ## bulletin_communication — 掲示板通信基盤
 
@@ -2166,3 +2241,19 @@ codd:
 | url | `https://github.com/simokitafresh/kj-role-count` |
 | cmd | `cmd_3056` auto project registry intake |
 
+## semantic_goodhart_overfitting — セマンティクスインデックスGoodhart過剰適合
+
+| 属性 | 値 |
+|------|---|
+| id | semantic_goodhart_overfitting |
+| label | セマンティクスインデックスGoodhart過剰適合 |
+| aliases | Goodhart第7号, テスト過剰適合, ブラインドテスト6%, 辞書引きvs連想, aliases固定マッピング限界, 連想がセマンティックインデックスの本質, テストセット手動選定バイアス, 汎用性の欠如, 人間の記憶構造, 文脈理解ゼロ, ずるしていないか |
+| related_concepts | semantic_dictionary_design, growth_loop, creator_brainwashing_defense, deepdive_principles |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_semantic_goodhart_blind_test_20260526.md` |
+| discussion | 2026-05-26 殿「高点数をとるためにテストパターンを決めてずるしていないか？究極の汎用性＝人間と同じ記憶構造に近づけてるか？」→ 軍師ブラインドテスト6%で実証 |
+| discussion | 2026-05-26 殿「連想がセマンティックインデックスの本質」→ 辞書引き(keyword→concept固定)から連想(文脈→概念)への転換が必要 |
+| causal | 50語手動テスト100%→殿発言ブラインド6%=Goodhart第7号。テストに合わせてaliasesを調整しただけで真の品質(殿の任意の発言に対応)は未向上。辞書引きでは「仕組み」「手順」「並列」等の日常語から概念を連想できない |
+| cmd | `cmd_2911-` backfill — | session_20260520c | cmd_2911-2920全10cmd GATE CLEAR(連勝141)。cmd_2913 shelve(軍師D0実装済み)。L7セマンティクスインデック |

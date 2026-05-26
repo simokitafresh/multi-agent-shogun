@@ -165,6 +165,57 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "semantic_search skill recommendations respect SKILL role markers" {
+  export PROMPT_STATE_AGENT_ID="hayate"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_role_skills.sh"
+  mkdir -p "$PROMPT_STATE_SKILLS_DIR/lesson-sort" "$PROMPT_STATE_SKILLS_DIR/report-write" "$PROMPT_STATE_SKILLS_DIR/general-skill"
+  cat > "$PROMPT_STATE_SKILLS_DIR/lesson-sort/SKILL.md" <<'EOF'
+---
+name: lesson-sort
+description: |
+  【将軍専用】家老・忍者は使用禁止。
+---
+EOF
+  cat > "$PROMPT_STATE_SKILLS_DIR/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  【忍者専用】報告YAML作成を標準化する。
+---
+EOF
+  cat > "$PROMPT_STATE_SKILLS_DIR/general-skill/SKILL.md" <<'EOF'
+---
+name: general-skill
+description: |
+  Markerless skill.
+---
+EOF
+  cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+## role_filter_check — role filter
+resources:
+- skills: lesson-sort, report-write, general-skill
+OUT
+EOF
+  chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
+
+  run bash "$HOOK" <<< '{"prompt":"ロールフィルタ確認"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/report-write"* ]]
+  [[ "$output" == *"/general-skill"* ]]
+  [[ "$output" != *"/lesson-sort"* ]]
+
+  export PROMPT_STATE_AGENT_ID="shogun"
+  run bash "$HOOK" <<< '{"prompt":"ロールフィルタ確認 shogun"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/lesson-sort"* ]]
+  [[ "$output" == *"/general-skill"* ]]
+  [[ "$output" != *"/report-write"* ]]
+}
+
 @test "semantic_search without skills rows stays silent when no trigger matches" {
   export PROMPT_STATE_AGENT_ID="hayate"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_no_skills.sh"
@@ -187,6 +238,14 @@ EOF
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
+  mkdir -p "$PROMPT_STATE_SKILLS_DIR/report-write"
+  cat > "$PROMPT_STATE_SKILLS_DIR/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  【忍者専用】報告YAML作成を標準化する。
+---
+EOF
   rm -f /tmp/skill_recommend_cache_hayate_cache_test
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
 #!/usr/bin/env bash
