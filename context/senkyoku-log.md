@@ -1116,3 +1116,4 @@
 | cmd_3057 | Phase 4-N: stress_testクエリ品質改善 | GATE CLEAR | 2層junkフィルタ(toolu_/task-id既知パターン+長さ/日本語/英字構造)実装。lord hit_rate 43.3%→73.3%(+30pt)。junk_candidates=0 |
 | cmd_3058 | Phase 5a: aliases精度向上+unexpected解消 | GATE CLEAR | unexpected 3件(改善/品質/gate)解消+不足3語(確認/忍法/教訓)alias追加。品質100%(50語テスト)。★軍師Goodhart発見: 50語テスト100%だがブラインド6%。連想の欠如が本質課題 |
 | cmd_3059 | 洗脳監査メタ基準の全ロール共通埋込み | GATE CLEAR | 殿裁定「100億倍の計算資源+100億年後でも最適か」を将軍/家老/軍師の洗脳防御セクションに追加。8パターンの上位メタ基準として全設計判断に適用 |
+| cmd_3060 | 三層記憶の最初の接続(FTS5+bm25+IDF) | GATE CLEAR | semantic_search.shに記憶DB三層検索パス追加。FTS5 bm25()→event_concepts JOIN→IDF重み付き概念ランキング。aliases単独6%→三層接続で概念到達率改善。殿設計(三層記憶アーキテクチャ)の最初の実装 |
