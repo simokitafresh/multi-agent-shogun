@@ -1,9 +1,11 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-25 auto-generated -->
+<!-- last_updated: 2026-05-26 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-25T23:42:36+09:00 -->
+<!-- generated_at: 2026-05-26T00:05:56+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-26T00:05:56+09:00 | terminal | response | GA-382処理完了。GA-379/380と同根(codd.md正常stale)。全忍者idle。cmd待ち。 [meta] stop_reason=tool_use
+- 2026-05-26T00:05:36+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-382)
 - 2026-05-25T23:42:35+09:00 | terminal | response | GA-381処理完了。p̄鮮度は現物確認でOK(0日前)。一時的API障害。全忍者idle。cmd待ち。 [meta] stop_reason=tool_use
 - 2026-05-25T22:26:38+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-25 22:19:47|CI緑: run 26402110955
 - 2026-05-25T22:11:15+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-25 22:06:29|cmd_3051
@@ -12,8 +14,6 @@
 - 2026-05-25T22:09:03+09:00 | ntfy | outbound | 【家老】cmd_3051 完了 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 - 2026-05-25T22:08:07+09:00 | terminal | response | precheck完了(既に結果確認・処理済み)。inbox到着待ち。 [meta] stop_reason=tool_use
 - 2026-05-25T22:07:58+09:00 | terminal | inbound | <task-notification> <task-id>bea4rvnid</task-id> <tool-use-id>toolu_01UAUC1gDWUzjuGCeA587A1G</tool-use-id> <output-file…
-- 2026-05-25T22:07:57+09:00 | terminal | response | gate-sync完了。cmd_3051: LGTM→CLEAR。accuracy 100%維持。inbox到着待ち。 [meta] stop_reason=tool_use
-- 2026-05-25T22:07:45+09:00 | terminal | response | 殿、Phase 2の効果が出た。 **Phase 1→Phase 2 比較**: | 指標 | Phase 1後 | Phase 2後 | 変化 | |---|---|---|---| | 正しいHIT | 24 (48%) | **33…
 
 ## 未解決確認事項
 - GA-381処理完了。p̄鮮度は現物確認でOK(0日前)。一時的API障害。全忍者idle。cmd待ち。 [meta] stop_reason=tool_use
