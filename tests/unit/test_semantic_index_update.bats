@@ -468,6 +468,57 @@ PY
     grep -q 'https://github.com/example/semantic-index-reference' "$SEMANTIC_MAP_PATH"
 }
 
+@test "semantic map generator auto-intakes projects, new files, and zero-cmd concept backfill" {
+    cat > "$TEST_TMPDIR/projects.yaml" <<'EOF'
+projects:
+  - id: beta-tool
+    name: "Beta Tool"
+    path: "/tmp/beta-tool"
+    context_file: "context/beta-tool.md"
+    repo: "https://github.com/example/beta-tool"
+    status: active
+EOF
+    cat > "$TEST_TMPDIR/cmd_history.yaml" <<'EOF'
+commands:
+  - id: cmd_4001
+    purpose: "セマンティクスインデックスを更新する"
+    status: completed
+  - id: cmd_4002
+    purpose: "学習ループと二値計測を強化する"
+    status: completed
+EOF
+
+    run env \
+        SEMANTIC_PROJECTS_CONFIG="$TEST_TMPDIR/projects.yaml" \
+        SEMANTIC_CMD_HISTORY_FILES="$TEST_TMPDIR/cmd_history.yaml" \
+        SEMANTIC_NEW_FILE_LIST="tests/fixtures/semantic_quality_test_set.json" \
+        bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"project concepts auto-created: 1"* ]]
+    [[ "$output" == *"cmd backfill rows added:"* ]]
+    [[ "$output" == *"new file semantic insights queued: 1"* ]]
+
+    grep -q '## project_beta_tool — Beta Tool' "$SEMANTIC_INDEX_PATH"
+    grep -q '| related_concepts | external_project_registry |' "$SEMANTIC_INDEX_PATH"
+    grep -q '| cmd | `cmd_4001` backfill' "$SEMANTIC_INDEX_PATH"
+    grep -q '| cmd | `cmd_4002` backfill' "$SEMANTIC_INDEX_PATH"
+    grep -q 'semantic_map_generate新規ファイル候補' "$TEST_TMPDIR/queue/insights.log"
+    grep -q 'Beta Tool' "$SEMANTIC_MAP_PATH"
+
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+zero = []
+for block in re.split(r"(?m)(?=^## )", text):
+    if block.startswith("## ") and not re.search(r"^\|\s*cmd\s*\|", block, re.M):
+        zero.append(block.splitlines()[0])
+assert not zero, zero
+PY
+}
+
 @test "semantic map generator auto-resolves semantic_index_update insights when enabled" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'

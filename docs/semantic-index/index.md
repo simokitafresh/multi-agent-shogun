@@ -24,6 +24,7 @@ codd:
 | file | `context/cmd-chronicle.md` |
 | file | `context/senkyoku-log.md` |
 | file | `archive/cmd-chronicle/2026-04.md` |
+| cmd | `cmd_karo_pipeline_verify` backfill — - 2026-04-21 cmd_karo_pipeline_verify: 疾風。`context/senkyoku-log.md` へ履歴1行を追記し、パイプライン検証cmdの記録を一次データへ反 |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -61,6 +62,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-24T18:12 創造主側のポジショントークと洗脳を理解し、現実を見て記憶せよ |
 | cmd | `cmd_3033_saizo` infra — cmd_save.shに30分コスト自問と先送り表現WARNを追加 |
 | causal | `cmd_3033_saizo` origin: [[creator_position_talk]] -> [[wrong_efficiency_instinct]] -> [[lord_cost_30min]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:51:28+09:00 洗脳監査。極端に確認範囲を小規模化しているのは洗脳の証拠だな |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -274,6 +276,12 @@ codd:
 | causal | `cmd_3052` depends_on: cmd_3051 |
 | lesson | `L714` auto-commit skipはclear停止まで接続せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:32:21+09:00 セマンティクスインデックスPhase 3bを進めよ |
+| cmd | `cmd_3055` 強化 — セマンティクスインデックスPhase 3b(2文字語の品質テスト判定) (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/fixtures/semantic_quality_test_set.json`) |
+| causal | `cmd_3055` origin: [[cmd_3052]] -> [[semantic_index_quality_spec_v6]] -> [[phase_3b_2char_words]] |
+| causal | `cmd_3055` depends_on: cmd_3052 |
+| cmd | `cmd_3057` 強化 — セマンティクスインデックスPhase 4-N(stress_testクエリ品質の構造的改善) (`scripts/semantic_stress_test.sh`, `tests/unit/test_semantic_stress_test.bats`) |
+| causal | `cmd_3057` origin: [[cmd_3055]] -> [[semantic_index_quality_spec_v5]] -> [[phase_4_N_stress_test_filter]] |
+| causal | `cmd_3057` depends_on: cmd_3055 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -321,6 +329,7 @@ codd:
 | file | `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/garch.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-23T02:46:19+09:00 投資知識辞書とシステム知識辞書はセマンティクスインデックスにも追加が必要では？ |
 | causal | `cmd_3015` origin: [[殿指摘2026-05-23 セマンティクス+Obsidian未接続]] -> [[3層貫通]] -> [[Phase 2完結]] |
+| cmd | `cmd_1631` backfill — | cmd_1631 | 研究: Fractional Differentiation効果検証(5PF×5variant) | GATE CLEAR。飛猿+小太郎impl。**FFD×AbsMom構造 |
 
 ## systems_knowledge_base — システム知識辞書
 
@@ -545,6 +554,7 @@ codd:
 | file | `scripts/gates/gate_report_format_main.py` 報告YAML検証エンジン |
 | file | `scripts/report_field_set.sh` 報告YAML安全書込み(gate迂回防止) |
 | file | `scripts/gate_improvement_trigger.sh` gate ALERT通知(家老inbox+ntfy。自動消火抑制) |
+| cmd | `cmd_2336` backfill — | cmd_2336 | cmd_delegate.sh L180のkaro inbox重複検出がgrep -F "$CMD_ID"で全文検索するため、 軍師のlesson_candidateやbul |
 
 ## terminology_dictionary — 用語辞書
 
@@ -581,6 +591,7 @@ codd:
 | file | `docs/research/dmsignal_parity_verification_audit.md` |
 | lesson | `context/dm-signal-core.md` L088-L129 |
 | lesson | `L717` 追加ベンチマークはticker_monthly_returnsだけでなくprices fallbackを確認せよ |
+| cmd | `cmd_1817` backfill — | cmd_1817 | ゴールデンデータ全量アップデート — 全136PFのmonthly_returns+holding_signal取得(タイムスタンプ付き) | dm-signal | 04- |
 
 ## deepdive_principles — deepdive原理
 
@@ -612,6 +623,8 @@ codd:
 | cmd | `cmd_3035` 家老洗脳防御 Level 4 — gate_karo_startup.shに洗脳チェックWARN追加 (`memory/deepdive_karo_verification_20260405.md`, `scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
 | causal | `cmd_3035` origin: [[殿裁定2026-05-24]] [[LS041]] — 家老はまだ洗脳に気づいていない。将軍(3033)+軍師(3034)の横展開 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:06:05+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:55:32+09:00 今 クリアされても 今より強くてニューゲーム できるようにしたよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:55:41+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -666,6 +679,7 @@ codd:
 |------|----------|
 | file | `AGENTS.md` 学習ループ原則 |
 | file | `context/growth-loop.md` |
+| cmd | `cmd_1631` backfill — | cmd_1631 | 研究: Fractional Differentiation効果検証(5PF×5variant) | GATE CLEAR。飛猿+小太郎impl。**FFD×AbsMom構造 |
 
 ## known_unknowns_principle — 無知の知
 
@@ -681,6 +695,7 @@ codd:
 |------|----------|
 | file | `memory/deepdive_causal_tracing_20260415.md` |
 | file | `context/growth-loop.md` |
+| cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -696,6 +711,7 @@ codd:
 |------|----------|
 | file | `AGENTS.md` 自動消火禁止 |
 | file | `context/training-cycle.md` |
+| cmd | `cmd_1171` backfill — | cmd_1171 | gate/BLOCK消火パターン偵察(21本段取りリスト) | GATE CLEAR。消火1件(gate_auto_respond.sh L115自動委任)。グレー15件(閾 |
 
 ## verify_dont_imagine — 想像するな確認せよ
 
@@ -717,6 +733,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T12:33:57+09:00 洗脳監査。その他に無意識に本能で洗脳による選択をしていないか確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T13:35:19+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T13:35:26+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:52:48+09:00 今後100億個の外部プロジェクトが増えても動くか？現在に過剰最適化していないか？確認せよ |
+| cmd | `cmd_2824` backfill — | cmd_2824 | 将軍がRenderのプラン挙動を知らずコールドスタート推測を繰り返す(殿指摘2026-05-17)。根因=Render知識がcontext/instructionsに体系化さ |
 
 ## ultimate_state_principle — 究極系原則
 
@@ -732,6 +750,7 @@ codd:
 |------|----------|
 | file | `context/growth-loop.md` |
 | file | `context/codd.md` |
+| cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 
 ## parameter_space_integrity — パラメータ空間縮小禁止
 
@@ -747,6 +766,7 @@ codd:
 |------|----------|
 | file | `AGENTS.md` パラメータ空間縮小禁止 |
 | file | `context/growth-loop.md` |
+| cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 
 ## alm_research — ALM研究
 
@@ -794,6 +814,7 @@ codd:
 | cmd | `cmd_2879` 強化 — inbox_write.sh将軍ナッジ防止Guard追加(task_new L0→L5化) (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-23T03:19:26+09:00 bql0jw4uv toolu_018X7ZN17dJXn1jp3awsGibs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-9844-2fbec9 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-24T18:38:12+09:00 b0ysnl00p toolu_013zgE3NerJnJTg8mjHWe57m /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/f8d2ff8f-f6fa-4691-b2cc-90f50b |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T15:33:58+09:00 bpg7wl0m2 toolu_017MHQRbKA3xkTn4rWCiCVP1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -1135,6 +1156,7 @@ codd:
 | cmd | `cmd_3053` 修正 — auto-commit吸収問題の構造的防止(stage済みdiff他忍者取込み防止) (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
 | causal | `cmd_3053` origin: [[blt_20260526_123154_64ebf4]] -> [[cmd_3050_saizo_auto_commit吸収]] -> [[commit履歴汚染]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:39:27+09:00 bvrjf4q6z toolu_01RcT89kLGBdoENvRKo9hSR8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T15:21:38+09:00 bqecrsdkm toolu_01Pz2KyhhvYZKsEj5RfHAKXb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/af8786c4-6bc1-4ef5-8b96-4077b0 |
 | causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
 | causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
@@ -1387,6 +1409,7 @@ codd:
 | file | `context/robustness-verification-catalog.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 UWP→Avg UWP変更(殿裁定) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 Sharpe→Sortino(殿: 上方ボラを罰するSharpeは好まない) |
+| cmd | `cmd_2372` backfill — | cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定 |
 
 ## rebalancer_app — Rebalancerアプリ
 
@@ -1496,6 +1519,7 @@ codd:
 | file | `/mnt/c/Python_app/kj-partshift-checker/future-001.md` 将来の修正候補リスト(F014-F042) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T18:40:17+09:00 kj-partshift-checkerを読み込んで |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-15T18:43:28+09:00 このプロジェクトを登録して |
+| cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 
 ## destructive_operations — 破壊的操作安全機構
 
@@ -1610,6 +1634,7 @@ codd:
 | lesson | `L672` found=true系フィールドは書込み時に必須伴随情報を要求する |
 | cmd | `cmd_2961` (`scripts/gates/gate_report_format_main.py`, `tests/test_gate_report_format.bats`) |
 | cmd | `cmd_3023` 修正 — cmd_complete_gate preflight時にlesson_candidate found:trueのauto_draftを自動登録 (`tests/unit/test_cmd_complete_gate.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:57:01+09:00 よし 軍師に再レビューさせろ |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -1671,6 +1696,7 @@ codd:
 |------|----------|
 | discussion | 2026-05-19 殿確認 |
 | url | `https://github.com/tanimurahifukka/openpbx` |
+| cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 
 ## causal_traversal_pipeline — 因果辺トラバース統合パイプライン(Obsidian×セマンティック)
 
@@ -1816,6 +1842,7 @@ codd:
 | file | `projects/infra/lessons_shogun.yaml` |
 | lesson | `L685` 自動生成resourcesは最終dry-runで再検出せよ |
 | lesson | `L693` doc-dirs投入は品質対象拡張子を事前照合せよ |
+| cmd | `cmd_2931` backfill — | cmd_2931 | 教訓注入のuseful率7.1%(95注入中2有用)。現在のkeyword/tag/pathマッチは意味を理解しない。semantic_searchが既にdeploy_tas |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 
@@ -2031,6 +2058,7 @@ codd:
 | file | `docs/research/saxo_openapi_excel_user_guide.md` |
 | discussion | 殿指示 2026-05-24 全11ページ取得→辞書取込 |
 | note | SaxoのOpenAPIラッパー。Excel関数でGET/POST/PUT/PATCH/DELETE。VBA統合可。SIM/LIVE環境。非FX商品は別途市場データサブスクリプション必要 |
+| cmd | `cmd_3052-` backfill — | session_20260526 | cmd_3052-3055全4cmd GATE CLEAR(連勝16)。セマンティクスPhase 3a(品質100% 36/36)+Phase 3b(品質10 |
 
 ## saxo_trade_engine — 汎用システムトレード基盤
 
@@ -2047,3 +2075,94 @@ codd:
 | file | `docs/research/saxo_openapi_excel_user_guide.md` |
 | discussion | 殿裁定 2026-05-24 完全自動+汎用基盤+承認不要 |
 | note | 殿Saxo口座あり(リージョン未確認)。Python+REST API+OAuth2。DM-Signal専用にしない。任意シグナルソース対応 |
+| cmd | `cmd_3052-` backfill — | session_20260526 | cmd_3052-3055全4cmd GATE CLEAR(連勝16)。セマンティクスPhase 3a(品質100% 36/36)+Phase 3b(品質10 |
+
+## project_database — Stock Database
+
+| 属性 | 値 |
+|------|---|
+| id | project_database |
+| label | Stock Database |
+| aliases | database, Stock Database, database project, Stock Database PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/database.yaml` |
+| file | `context/database.md` |
+| url | `https://github.com/simokitafresh/database` |
+| cmd | `cmd_3056` auto project registry intake |
+
+## project_milk — M!LK
+
+| 属性 | 値 |
+|------|---|
+| id | project_milk |
+| label | M!LK |
+| aliases | milk, M!LK, milk project, M!LK PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/milk.md` |
+| cmd | `cmd_3056` auto project registry intake |
+
+## project_auto_ops — Auto-Ops
+
+| 属性 | 値 |
+|------|---|
+| id | project_auto_ops |
+| label | Auto-Ops |
+| aliases | auto-ops, Auto-Ops, auto-ops project, Auto-Ops PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/auto-ops.yaml` |
+| file | `context/auto-ops.md` |
+| url | `https://github.com/simokitafresh/auto-ops` |
+| cmd | `cmd_3056` auto project registry intake |
+
+## project_mcas — Multi-Claude Account Switcher
+
+| 属性 | 値 |
+|------|---|
+| id | project_mcas |
+| label | Multi-Claude Account Switcher |
+| aliases | mcas, Multi-Claude Account Switcher, mcas project, Multi-Claude Account Switcher PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `projects/mcas.yaml` |
+| file | `docs/archive/mcas.md` |
+| cmd | `cmd_3056` auto project registry intake |
+
+## project_kj_toilet — KJ Toilet Checker
+
+| 属性 | 値 |
+|------|---|
+| id | project_kj_toilet |
+| label | KJ Toilet Checker |
+| aliases | kj-toilet, KJ Toilet Checker, kj-toilet project, KJ Toilet Checker PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| url | `https://github.com/simokitafresh/KJ-Toilet-Cheker` |
+| cmd | `cmd_3056` auto project registry intake |
+
+## project_kj_role_count — KJ Role Count
+
+| 属性 | 値 |
+|------|---|
+| id | project_kj_role_count |
+| label | KJ Role Count |
+| aliases | kj-role-count, KJ Role Count, kj-role-count project, KJ Role Count PJ |
+| related_concepts | external_project_registry |
+
+| 種別 | パス/参照 |
+|------|----------|
+| url | `https://github.com/simokitafresh/kj-role-count` |
+| cmd | `cmd_3056` auto project registry intake |
+
