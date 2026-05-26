@@ -137,6 +137,9 @@ MOCK
 
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     export KARO_WA_RATE_CACHE="$TEST_TMPDIR/karo_wa_rate_cache"
+    export KARO_NINJA_WA_CACHE="$TEST_TMPDIR/karo_ninja_wa_cache"
+    export KARO_SKILL_SUMMARY_CACHE="$TEST_TMPDIR/karo_skill_summary_cache"
+    export KARO_AGGREGATE_CACHE="$TEST_TMPDIR/karo_startup_aggregate_cache"
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
 }

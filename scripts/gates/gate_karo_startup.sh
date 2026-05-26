@@ -270,9 +270,9 @@ WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 WA_DQ_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_wa_data_quality.sh"
 _WA_RATE_CACHE="${KARO_WA_RATE_CACHE:-/tmp/karo_wa_rate_cache}"
-_NINJA_WA_CACHE="/tmp/karo_ninja_wa_cache"
-_SKILL_SUMMARY_CACHE="/tmp/karo_skill_summary_cache"
-_AGGREGATE_CACHE="/tmp/karo_startup_aggregate_cache"
+_NINJA_WA_CACHE="${KARO_NINJA_WA_CACHE:-/tmp/karo_ninja_wa_cache}"
+_SKILL_SUMMARY_CACHE="${KARO_SKILL_SUMMARY_CACHE:-/tmp/karo_skill_summary_cache}"
+_AGGREGATE_CACHE="${KARO_AGGREGATE_CACHE:-/tmp/karo_startup_aggregate_cache}"
 _WA_CACHE_TTL=300
 _SKILL_SUMMARY_CACHE_TTL=300
 
