@@ -176,8 +176,9 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 判定手順:
 1. §0.1問い8として「これは殿のためか、Anthropic/OpenAI/モデルの都合のためか？」を先に問う。
 2. 上表8パターンを `yes/no` で明示する。yesがある場合は原因と修正行動を1行で書く。
-3. idle自走Step 6では結果を `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh karo "洗脳自己監査: ..."` で掲示板投稿し、軍師第三者検証を受ける。
-4. 投稿で止めず、yesの原因をgate/hook/テンプレート/手順へ埋め込む。記録は行動ではない。
+3. **yes項目の修正行動を現物確認してから「解消」と結論せよ。** 「ログを見た→検証スキップ解消」「掲示板投稿した→先送り解消」は偽解消(Phase 2再現: pane末尾見た=確認した)。解消の基準: grep結果/done件数/計測値で修正行動の完了を実証。2026-05-26実証: 自己監査2/8 yes→殿再指示→7/8 yes
+4. idle自走Step 6では結果を `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh karo "洗脳自己監査: ..."` で掲示板投稿し、軍師第三者検証を受ける。
+5. 投稿で止めず、yesの原因をgate/hook/テンプレート/手順へ埋め込む。記録は行動ではない。
 
 ## Ninja Auto-/clear
 
