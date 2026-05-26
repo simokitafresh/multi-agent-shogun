@@ -642,3 +642,4 @@
 | cmd_3053 | 共有repoでstage→auto-commit間に他忍者のauto-commitが割込みstage済みdiffを吸収する。cmd_3050でsaizoが発見。ninja_monitor.shのauto-commit前にgit diff --cachedで他忍者のstageを検出しスキップする条件を追加 | infra | 05-26 | ninja_monitorのauto-commit前に既存s |
 | cmd_3054 | gate_improvement_triggerが同一ファイル+同一alert_typeで毎起動ALERTを発行し将軍の確認コストが累積。codd.md staleが3日連続(GA-379/380/382)。同一file+alert_typeの24h dedup条件を追加 | infra | 05-26 | gate_improvement_triggerに同一fil |
 | cmd_3055 | Phase 3a後の品質88%(44/50)を維持しつつ、2文字語3語(証拠/結論/丁寧)の概念マッピングをテスト駆動で判定する。テストが判断し、将軍も殿も判断しない(自動化×強制) | infra | 05-26 | Phase 3bの2文字語3語をテスト駆動で概念マッピングし |
+| cmd_3057 | stress_testのlordソースにtask-notification junk(toolu_/task-id等)が混入しNO_MATCH率を汚染している。2層防御フィルタを自動実行で実装し、正確なNO_MATCH率baselineを確立する | infra | 05-26 | semantic_stress_testのlord入力とca |
