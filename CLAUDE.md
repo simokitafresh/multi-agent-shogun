@@ -453,7 +453,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - Androidアプリ|v6.4 Kotlin+Compose|SSH経由tmux操作+Dashboard+音声入力|→ `context/infrastructure.md` §Android App
 
 ## Cross-Project Context
-- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
+- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md` | `context/saxo-trade-engine.md`
 - 修行サイクル: `context/training-cycle.md` — L1-L4全実績+モデル別FP率(§24-25: mixed編成Opus100%/Sonnet0-50%/GPT0-100%)+環境改善履歴。idle忍者配備時に参照
 
 ## Agents
