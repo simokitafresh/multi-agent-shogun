@@ -157,3 +157,31 @@ EOF
     grep -q '\[\[セマンティック辞書の未カバー概念を追加して検索品質を改善する\]\]' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'そうだな' "$TEST_TMPDIR/queue/insights.yaml"
 }
+
+@test "lord queries: task notification junk is filtered before search and candidate aliases" {
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"<task-notification> <task-id>bo84ps0qy</task-id> <tool-use-id>toolu_01Bbj2rdY7GrXVYLN9WLHcgL</tool-use-id> <output-file>/tmp/out</output-file>","direction":"inbound"}
+{"content":"x","direction":"inbound"}
+{"content":"ab","direction":"inbound"}
+{"content":"意味検索改善","direction":"inbound"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 10 \
+        --baseline "$TEST_TMPDIR/logs/junk-baseline.json" \
+        --log "$TEST_TMPDIR/logs/junk-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SEMANTIC_STRESS total=1 hits=0 no_match=1 errors=0 hit_rate=0.0%"* ]]
+    [[ "$output" == *"candidate_aliases=1"* ]]
+    grep -q '\[\[意味検索改善\]\]' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'task-notification' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'toolu_' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'bo84ps0qy' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q '"query": "ab"' "$TEST_TMPDIR/logs/junk-baseline.json"
+}

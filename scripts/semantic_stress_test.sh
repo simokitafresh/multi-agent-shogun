@@ -130,10 +130,34 @@ def clean(text):
     text = re.sub(r"\s+", " ", text).strip(" -:：、。")
     return text[:180]
 
+KNOWN_JUNK_RE = re.compile(
+    r"(?ix)"
+    r"<\s*/?\s*(?:task-notification|task-id|tool-use-id|output-file)\b"
+    r"|(?:\b|_)(?:toolu_[A-Za-z0-9_-]+|task[-_]?id|tool[-_]?use[-_]?id)(?:\b|_)"
+)
+
+def has_japanese(text):
+    return re.search(r"[\u3040-\u30FF\u3400-\u9FFF]", str(text)) is not None
+
+def has_english_word_min3(text):
+    return re.search(r"[A-Za-z]{3,}", str(text)) is not None
+
+def should_keep_query(query):
+    query = str(query).strip()
+    if KNOWN_JUNK_RE.search(query):
+        return False
+    if len(query) < 2:
+        return False
+    if not has_japanese(query) and not has_english_word_min3(query):
+        return False
+    return True
+
 def emit(source, query, rows, seen):
     query = clean(query)
+    if not should_keep_query(query):
+        return
     key = (source, query.casefold())
-    if len(query) < 2 or key in seen:
+    if key in seen:
         return
     seen.add(key)
     rows.append({"source": source, "query": query})
@@ -269,6 +293,28 @@ def alias_candidate(query):
             return part[:60]
     return ""
 
+KNOWN_JUNK_RE = re.compile(
+    r"(?ix)"
+    r"<\s*/?\s*(?:task-notification|task-id|tool-use-id|output-file)\b"
+    r"|(?:\b|_)(?:toolu_[A-Za-z0-9_-]+|task[-_]?id|tool[-_]?use[-_]?id)(?:\b|_)"
+)
+
+def has_japanese(text):
+    return re.search(r"[\u3040-\u30FF\u3400-\u9FFF]", str(text)) is not None
+
+def has_english_word_min3(text):
+    return re.search(r"[A-Za-z]{3,}", str(text)) is not None
+
+def passes_two_layer_filter(text):
+    text = str(text).strip()
+    if KNOWN_JUNK_RE.search(text):
+        return False
+    if len(text) < 2:
+        return False
+    if not has_japanese(text) and not has_english_word_min3(text):
+        return False
+    return True
+
 OPERATIONAL_NOISE_RE = re.compile(
     r"(?ix)"
     r"^【[^】]+】"
@@ -334,6 +380,8 @@ def is_semantic_wiki_target(target):
 
 def should_record_no_match(row, alias):
     query = row.get("query", "")
+    if not passes_two_layer_filter(query) or not passes_two_layer_filter(alias):
+        return False
     if semantic_query_length(query) < MIN_INSIGHT_QUERY_CHARS and not has_concept_hint(query) and not has_concept_hint(alias):
         return False
     return True
