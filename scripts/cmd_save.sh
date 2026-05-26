@@ -4831,13 +4831,13 @@ for line in lines:
         if m:
             current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
 if current: entries.append(current)
-pat = re.compile(r'/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)')
+pat = re.compile(r'/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)(?![a-zA-Z])')
 for e in entries:
     trust = e.get('trust', '')
     if 'verified' in trust and 'unverified' not in trust:
         # GP-216: source/tool_verified/csv_paths等の明示的パスフィールドからパス抽出
         # claim はフリーテキストのため除外（LS033: ファイル名パターン誤検出防止）
-        skip_keys = {'trust', 'claim'}
+        skip_keys = {'trust', 'claim', 'assumption'}
         for key, val in e.items():
             if key in skip_keys:
                 continue
