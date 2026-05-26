@@ -3512,6 +3512,7 @@ script_dir = os.environ['SCRIPT_DIR_ENV']
 DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
+TARGET_PATH_MATCH_BOOST = int(os.environ.get('TARGET_PATH_MATCH_BOOST', '50'))
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': int(os.environ.get('MIN_KEYWORD_SCORE', '2')),
     'exact': int(os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4')),
@@ -4311,6 +4312,15 @@ try:
                     return True
         return False
 
+    def _lesson_matches_task_target_path(lesson):
+        """target_path/files_modifiedに一致するtarget_files教訓を順位付けで強く優先する。"""
+        lesson_target_files = lesson.get('target_files', [])
+        if isinstance(lesson_target_files, str):
+            lesson_target_files = [lesson_target_files]
+        if not any(str(p).strip() for p in lesson_target_files):
+            return False
+        return _target_files_match(lesson_target_files, _all_task_files)
+
     def _path_relevance_terms(task_files):
         terms = set()
         for path in task_files:
@@ -4464,6 +4474,9 @@ try:
         cross_project_score = lesson.get('_cross_project_score', 0) or 0
         if cross_project_score and score < cross_project_score:
             score = cross_project_score
+
+        if _lesson_matches_task_target_path(lesson):
+            score += TARGET_PATH_MATCH_BOOST
 
         if score <= 0:
             continue

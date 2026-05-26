@@ -28,6 +28,19 @@ for lesson in task.get('related_lessons') or []:
 PY
 }
 
+first_related_lesson_id() {
+    python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = (yaml.safe_load(f) or {}).get('task', {})
+lessons = task.get('related_lessons') or []
+if lessons:
+    print(lessons[0].get('id', ''))
+PY
+}
+
 @test "cmd_3020 AC1: target_filesなしuniversal教訓はtarget_path無関連なら注入されない" {
     cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
 lessons:
@@ -114,4 +127,41 @@ EOF
     run related_lesson_ids
     [ "$status" -eq 0 ]
     [[ "$output" == *"L_RELATED_UNIVERSAL"* ]]
+}
+
+@test "cmd_3062 AC2: target_path一致教訓はinfra汎用教訓より上位に注入される" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_INFRA_GENERIC
+    title: task status report deploy yaml gate lesson context
+    summary: generic infra task deploy report yaml gate lesson context status
+    content: generic infra task deploy report yaml gate lesson context status
+    tags: [process]
+    helpful_count: 999
+  - id: L_SEMANTIC_INDEX_TARGET
+    title: semantic index maintenance
+    summary: semantic index aliases must preserve related_lessons links
+    content: docs semantic index related lessons aliases concept map
+    tags: [process]
+    target_files: [docs/semantic-index/index.md]
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  project: infra
+  task_id: cmd_3062_ac2
+  parent_cmd: cmd_3062
+  task_type: exact
+  title: "update infra lesson injection"
+  description: "Fix deploy_task lesson injection scoring for process tasks"
+  purpose: "target_path matching lessons should rank above generic infra lessons"
+  target_path: docs/semantic-index/index.md
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run first_related_lesson_id
+    [ "$status" -eq 0 ]
+    [ "$output" = "L_SEMANTIC_INDEX_TARGET" ]
 }
