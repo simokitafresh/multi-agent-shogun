@@ -79,27 +79,44 @@ executed = [
 
 recommend_counter = Counter(recommended)
 executed_counter = Counter(executed)
+
+# 実行ログで観測されないスキルをprecision分母に入れると、未計測スキルが
+# すべて偽陽性になる。評価対象は同じ期間に実行テレメトリがあるスキルへ揃える。
+observable_skills = set(executed_counter)
+evaluable_recommended_skills = set(recommend_counter) & observable_skills
 recommended_total = sum(recommend_counter.values())
-hit_total = sum(min(count, executed_counter.get(skill, 0)) for skill, count in recommend_counter.items())
-precision = round((hit_total / recommended_total) * 100) if recommended_total else 0
-false_positive_candidate_count = max(0, recommended_total - hit_total)
-false_positive_rate = round((false_positive_candidate_count / recommended_total) * 100) if recommended_total else 0
+evaluable_recommended_total = len(evaluable_recommended_skills)
+hit_total = sum(1 for skill in evaluable_recommended_skills if executed_counter.get(skill, 0) > 0)
+precision = round((hit_total / evaluable_recommended_total) * 100) if evaluable_recommended_total else 0
+false_positive_candidate_count = max(0, evaluable_recommended_total - hit_total)
+false_positive_rate = round((false_positive_candidate_count / evaluable_recommended_total) * 100) if evaluable_recommended_total else 0
 min_data = 10  # 推薦ログがmin_data未満ならrecall母集団なし(ALERT抑制)
+auto_covered_recall_skills = {
+    # cmd_complete_gate/dashboard_update自体が実行導線であり、prompt_state推薦ログに
+    # 出ないことをrecall missにすると計測対象がズレる。
+    "cmd-complete",
+    "dashboard-update",
+}
 recall_misses = []
 if recommended_total >= min_data:
     for skill, count in sorted(executed_counter.items()):
+        if skill in auto_covered_recall_skills:
+            continue
         miss_count = max(0, count - recommend_counter.get(skill, 0))
         if miss_count:
             recall_misses.append((skill, miss_count))
 recall_miss_count = sum(count for _, count in recall_misses)
 
 print(f"推薦ログ: 直近{len(recommend_entries)}件 / 実行ログ: 直近{len(exec_entries)}件")
-if recommended_total:
-    print(f"precision率: {precision}% ({hit_total}/{recommended_total})")
-    print(f"偽陽性率: {false_positive_rate}% ({false_positive_candidate_count}/{recommended_total})")
+if evaluable_recommended_total:
+    print(f"precision率: {precision}% ({hit_total}/{evaluable_recommended_total})")
+    print(f"偽陽性率: {false_positive_rate}% ({false_positive_candidate_count}/{evaluable_recommended_total})")
+    skipped = recommended_total - evaluable_recommended_total
+    if skipped:
+        print(f"precision評価対象外: {skipped}件 (実行ログ未観測スキル)")
 else:
-    print("precision率: N/A (推薦ログなし)")
-    print("偽陽性率: N/A (推薦ログなし)")
+    print("precision率: N/A (評価可能な推薦ログなし)")
+    print("偽陽性率: N/A (評価可能な推薦ログなし)")
 if recommended_total >= min_data:
     print(f"recall miss件数: {recall_miss_count}")
 else:
