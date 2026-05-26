@@ -643,3 +643,4 @@
 | cmd_3054 | gate_improvement_triggerが同一ファイル+同一alert_typeで毎起動ALERTを発行し将軍の確認コストが累積。codd.md staleが3日連続(GA-379/380/382)。同一file+alert_typeの24h dedup条件を追加 | infra | 05-26 | gate_improvement_triggerに同一fil |
 | cmd_3055 | Phase 3a後の品質88%(44/50)を維持しつつ、2文字語3語(証拠/結論/丁寧)の概念マッピングをテスト駆動で判定する。テストが判断し、将軍も殿も判断しない(自動化×強制) | infra | 05-26 | Phase 3bの2文字語3語をテスト駆動で概念マッピングし |
 | cmd_3057 | stress_testのlordソースにtask-notification junk(toolu_/task-id等)が混入しNO_MATCH率を汚染している。2層防御フィルタを自動実行で実装し、正確なNO_MATCH率baselineを確立する | infra | 05-26 | semantic_stress_testのlord入力とca |
+| cmd_3056 | 知識は無限に増える。PJ登録/ファイル作成/教訓追加の3経路で概念が自動的にセマンティクスインデックスに流入する仕組みを構築し、過去cmdの紐付けバックフィルで既存概念のcmd参照0件を解消する | infra | 05-26 | semantic_map_generate.shにPJ登録/ |
