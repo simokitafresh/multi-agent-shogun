@@ -7,10 +7,10 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 72189 | event_id, concept_name |
-| table | event_links | 2116 | source_event_id, target_concept, link_type |
-| table | events | 51802 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 51802 | summary, detail |
+| table | event_concepts | 73280 | event_id, concept_name |
+| table | event_links | 2151 | source_event_id, target_concept, link_type |
+| table | events | 52893 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 52893 | summary, detail |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -21,7 +21,7 @@
 | table | test_trigram_data | 2 | id, block |
 | table | test_trigram_docsize | 0 | id, sz |
 | table | test_trigram_idx | 0 | segid, term, pgno |
-| view | conversations | 31139 | ts, agent, direction, summary, detail, session_id |
+| view | conversations | 31292 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -36,20 +36,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 31139 |
-| cmd_archive | 5519 |
-| skill_execution | 4224 |
-| bulletin | 3564 |
-| report | 3252 |
-| insight | 1322 |
-| inbox | 1228 |
-| cmd_quality | 599 |
+| conversation | 31292 |
+| cmd_archive | 5756 |
+| skill_execution | 4266 |
+| bulletin | 3625 |
+| report | 3512 |
+| insight | 1471 |
+| inbox | 1334 |
+| cmd_quality | 643 |
 | document | 352 |
-| gate | 227 |
-| cmd_save | 225 |
-| cmd_delegate | 72 |
+| gate | 246 |
+| cmd_save | 236 |
+| cmd_delegate | 77 |
 | pending_decision | 43 |
-| lesson | 36 |
+| lesson | 40 |
 
 ## `event_concepts`
 
