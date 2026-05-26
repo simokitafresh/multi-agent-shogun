@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-25 -->
+<!-- last_updated: 2026-05-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,28 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2262 | 本番FEのユーザー体験速度を定量計測する。全ページの初回表示時間、PF切替時の再描画速度(10回連続)、ページ間遷移時間を計測し、ボトルネック特定の基礎データを取得する。コード変更なし。 | dm-signal | 04-25 | FILL_THIS |
-| cmd_2263 | cmd_save.sh BLOCK時に将軍が止まる問題を自動化×強制で解消する。BLOCK出力の冒頭に「止まるな、修正して再実行」ナッジを1行追加。 | infra | 04-25 | cmd_save.shのBLOCK初回出力にだけ「止まるな、 |
-| cmd_2264 | cmd_2262の計測データとFEコードの現状分析を基に、FE表示速度を改善するための設計書を作成する。全ページで「PF切替が一瞬」を達成するための改善施策を優先度付きで網羅する。コード変更なし。 | dm-signal | 04-25 | cmd_2262原票とFE/BEコードを基に、FE速度改善設 |
-| cmd_2265 | cmd_save.shのgate偽陽性率が高すぎる(16件がFP率66%超)。偽陽性は将軍のBLOCK対応時間を浪費し殿の時間を奪う。共通根を修正し全cmdに複利で効くgate精度改善を行う。 | infra | 04-25 | FILL_THIS |
-| cmd_2266 | cmd_2264設計書の穴6件を埋める補完偵察。BE profiling + FEフィールド使用マッピング + Render構成制約 + デプロイ順序 + Static Export制約 + 依存関係の正確な整理を行い、設計書を補完更新する。 | dm-signal | 04-25 | cmd_2266補完偵察完了。`docs/research/ |
-| cmd_2267 | /api/signalsの最大ボトルネック(FoF display展開 220-360ms/500-700ms)を事前計算化して初回表示・ページ遷移を250-400ms短縮する。設計書§4.2 Measure A + §6.1の分析に基づく。 | dm-signal | 04-25 | FoF displayをrequest時再展開から事前計算l |
-| cmd_2268 | cmd_2267(FoF display事前計算化)をpush→Render deploy→CDP再計測し、速度改善効果とバグ有無を確認する。cmd_2262のベースラインと比較。 | dm-signal | 04-25 | push・Render deploy・healthz確認まで |
-| cmd_2269 | gate BLOCKパターン分析→instructions修正提案を自動生成する仕組みを構築。GEPA(ICLR 2026 Oral)の自然言語反射アプローチを将軍システムに適用。deepdive Phase 5「なぜの目的=自動化ターゲット特定」の機械化。 | infra | 04-25 | FILL_THIS |
-| cmd_2270 | deploy_task.shの教訓注入で、タスク内容に基づく関連度スコアリングを導入。engram(autoresearch-engram)の頻度重み付きクロスセッション知識検索を参考に、教訓有用率を7.7%から大幅改善する。 | infra | 04-25 | deploy_task.shの教訓注入にキーワード関連度スコ |
-| cmd_2271 | cmd_2268のCDP計測失敗を条件調整して再実行。Phase 1-A(signals slim化)の速度改善効果とバグ有無を確認する。 | dm-signal | 04-25 | FILL_THIS |
-| cmd_karo_ci_fix_2270 | cmd_2270でMAX_INJECT=3→10に変更したがテスト2件(test 444/445)が旧値3を期待してFAIL。テストを新値10に更新しCI GREEN復帰する。 | infra | 04-25 | MAX_INJECT=10変更に追随して deploy_ta |
-| cmd_2272 | GStack/GBrain深掘りカタログ(docs/research/gstack-gbrain-takeaway-catalog.md §8)のRound 1全15項目をinstructions/context/templateに追記。全cmdのレビュー品質・偵察品質・報告品質に複利で効く。 | infra | 04-25 | AC2(ashigaru.md: bisect commit |
-| cmd_2273 | cmd_complete_gate.shに4つの新検証を追加し、忍者のscope逸脱・レビュー陳腐化・部分完了・修正暴走を構造的に検出する。cmd_2271事故(scope外174行改変)の再発防止。 | infra | 04-25 | cmd_complete_gate.shに4新検証(scop |
-| cmd_2274 | CDP計測結果にbaseline比較・回帰閾値判定・health score算出を追加。deploy後の性能変化を自動検出し、Phase毎の改善効果を数値で追跡可能にする。 | infra | 04-25 | scripts/cdp/cdp_benchmark.py(. |
-| cmd_2275 | 教訓管理の陳腐化検出(Prune)、プロジェクト横断教訓検索、deploy再実行の冪等性、差分テストの4機能を追加。教訓品質と配備効率に複利で効く。 | infra | 04-25 | AC1: ~/.claude/skills/dream/SK |
-| cmd_2276 | deploy_task.shの教訓注入がtarget_pathベースのタグマッチのみでCDP教訓が0件注入された事故(cmd_2271)の根因修正。purpose/command/context_filesのキーワードも加味し、タスク内容に関連する教訓を正しくルーティングする。 | infra | 04-25 | FILL_THIS |
-| cmd_2277 | 強化 — GStack知見Round 2-G2: レビュー系4項目(Adaptive gating/Adversarial review/Scope lock/前提3段階) | infra | 04-25 | FILL_THIS |
-| cmd_2278 | 強化 — GStack知見Round 3: L工数4項目(Deploy後監視/check-resolvable/routing-eval/ハイブリッド検索) | infra | 04-25 | AC1 cdp_canary.sh と AC4 hybrid |
-| cmd_2279 | 修正 — cmd_save.sh check_gunshi_design_num_relax カタログ参照FP除外 | infra | 04-25 | FILL_THIS |
-| cmd_2280 | 強化 — GStack知見Round 2-G2再実施: レビュー系4項目(Adaptive gating/Adversarial review/Scope lock/前提3段階) | infra | 04-25 | FILL_THIS |
-| cmd_2281 | Phase 1-A(FoF display事前計算化, cmd_2267)のdeploy済み本番FEをCDP計測し、cmd_2262ベースラインと速度改善効果を比較。cmd_2268/2271で2回失敗(認証不成立+artifact上書き)の教訓を反映。 | dm-signal | 04-25 | FILL_THIS |
-| cmd_2282 | BLOCK率50%の最大原因draft_lessons(13件/100件)の根因=教訓登録が意志依存を自動化×強制で解消 | infra | 04-25 | cmd_save.sh 4箇所精査完了。CLEARリマインド |
 | cmd_2283 | 実装 — FE signals handoff cache（Phase 1-B: hard navigation遷移時のblank/loading除去） | dm-signal | 04-26 | SignalsProviderにsessionStorage |
 | cmd_2285 | 強化 — cmd起票前の事前確認gate（PreToolUse:Edit hook for shogun_to_karo.yaml） | infra | 04-26 | shogun_to_karo.yaml Edit時の起票前確 |
 | cmd_2286 | 強化 — 忍者版事前ワクチン（DM-Signal本番ファイル編集時にPI注入） | infra | 04-26 | FILL_THIS |
@@ -660,3 +638,6 @@
 | cmd_3049 | cmd_3048のFTS5は漢字/カタカナでagent=lord 0件(unicode61 CJK問題)。ext4上のlord専用キャッシュ(5417件)にLIKE検索(3-4ms)で差替え。殿の入力から2-4文字チャンクを抽出しOR検索。実データ検証で10件中8件ヒット確認済み | infra | 05-25 | lord ruling cache LIKE検索の検証を追加 |
 | cmd_3050 | prompt_state_inject.shのsemantic_search呼出しがtimeout 0.30sで全語TIMEOUT(10/10=100%)。SEMANTIC_DISABLE_CAUSAL=1+SEMANTIC_DISABLE_MEMORY_DB=1追加+timeout 0.60sで安定HIT(8語全完了、max 298ms)。セマンティクスインデックス質的向上spec v3 Phase 1 | infra | 05-25 | prompt_state_inject.shのsemanti |
 | cmd_3051 | ブラックホール概念修復(5概念94件の30文字超aliases削除)+alias長上限validation追加+殿の6原則を独立概念化。8語正しいHIT率 12.5%→改善。spec v3 Phase 2 | infra | 05-25 | 5概念の長文aliasesを削除し、6原則概念を追加、sem |
+| cmd_3052 | Phase 2後の品質スコア63%(28/44)を93%(40/43)に改善。全概念ノイズalias掃除(39件30文字超+2件短いノイズ)+14語alias追加+first-layerスコアソート追加+validation(min_length+重複検出)+品質テスト自動実行+誤配置修正+リンク修復。spec v6 Phase 3a | infra | 05-26 | semantic index Phase 3a: spec準 |
+| cmd_3053 | 共有repoでstage→auto-commit間に他忍者のauto-commitが割込みstage済みdiffを吸収する。cmd_3050でsaizoが発見。ninja_monitor.shのauto-commit前にgit diff --cachedで他忍者のstageを検出しスキップする条件を追加 | infra | 05-26 | ninja_monitorのauto-commit前に既存s |
+| cmd_3054 | gate_improvement_triggerが同一ファイル+同一alert_typeで毎起動ALERTを発行し将軍の確認コストが累積。codd.md staleが3日連続(GA-379/380/382)。同一file+alert_typeの24h dedup条件を追加 | infra | 05-26 | gate_improvement_triggerに同一fil |
