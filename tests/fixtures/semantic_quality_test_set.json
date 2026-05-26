@@ -117,7 +117,7 @@
     },
     {
       "query": "丁寧",
-      "expected_concept": null
+      "expected_concept": "deepdive_principles"
     },
     {
       "query": "検討",
@@ -129,11 +129,11 @@
     },
     {
       "query": "証拠",
-      "expected_concept": null
+      "expected_concept": "creator_brainwashing_defense"
     },
     {
       "query": "結論",
-      "expected_concept": null
+      "expected_concept": "creator_brainwashing_defense"
     },
     {
       "query": "品質",

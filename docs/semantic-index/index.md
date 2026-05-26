@@ -31,7 +31,7 @@ codd:
 |------|---|
 | id | local_memory_db |
 | label | ローカル記憶DB |
-| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶 |
 | related_concepts | semantic_dictionary_design, semantic_causal_automation |
 
 | 種別 | パス/参照 |
@@ -50,7 +50,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 証拠, 結論 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy |
 | related_lessons | `LS041` |
 
@@ -311,7 +311,7 @@ codd:
 |------|---|
 | id | investment_knowledge_base |
 | label | 投資知識辞書 |
-| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, Arbitrage Pricing Theory, arima, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, Carhart 4-Factor Model, carhart-4-factor, cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot, garch, APT, ARIMA, CAPM, Cointegration, Meta-Labeling, Savitzky-Golay, VAR, VPIN |
+| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, Arbitrage Pricing Theory, arima, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, Carhart 4-Factor Model, carhart-4-factor, cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, Ward, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot, garch, APT, ARIMA, CAPM, Cointegration, Meta-Labeling, Savitzky-Golay, VAR, VPIN |
 | related_concepts | dmsignal_operations, semantic_dictionary_design, causal_traversal_pipeline |
 
 | 種別 | パス/参照 |
@@ -619,7 +619,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層, 三層学習ループ, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準 |
 | skills | lesson-sort, review-bundle, gate-sync, idle-persist |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle |
 
@@ -658,7 +658,7 @@ codd:
 |------|---|
 | id | chain_principle |
 | label | 鎖の原理 |
-| aliases | 鎖の原理, chain principle, weakest link, 最弱リンク, 全体品質, ボトルネック原理 |
+| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体品質, ボトルネック原理 |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, gate_quality_framework |
 
@@ -954,7 +954,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル |
 | skills | db-check, pf-registration, cdp-browse |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking |
 
@@ -1549,7 +1549,7 @@ codd:
 |------|---|
 | id | task_modifier_injection |
 | label | タスク修飾子注入 |
-| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, DB変更前バックアップ指示 |
+| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示 |
 | skills | なし |
 | related_concepts | agent_formation_management, semantic_dictionary_design, scope_integrity_lifecycle |
 
