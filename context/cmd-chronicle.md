@@ -615,3 +615,4 @@
 | cmd_3062 | deploy_task.sh inject_related_lessonsがtarget_pathを無視し汎用教訓を注入するため、aliases修正等の特定ファイル向けタスクでUSEFUL率0%。target_path重み付けで教訓の関連度を向上させる | infra | 05-26 | inject_related_lessonsでtarget_ |
 | cmd_3064 | cmd_3061軍師FAIL(Goodhart)の根因対処。growth_loop L677の4スキル集中を概念分離し、SKILL.md【X専用】パースでロールフィルタを追加。metrics.sh evaluable分母定義をrevertしてbaseline正常化 | infra | 05-26 | growth_loopのスキル集中を概念分離し、semant |
 | cmd_3065 | パスA(cmd_3063 FTS5タグ伝播)で到達した概念から、related_conceptsをO(1) lookupして隣接概念に連鎖する層2パスを実装。片方向56%(102/180)の双方向強制化+バックリンク数事前計算+接続強度スコアで三層記憶の連想ネットワークを完成させる | infra | 05-27 | related_concepts隣接ランキングと双方向強制化 |
+| cmd_3066 | 固定50語テスト=Goodhart(50語100%vsブラインド6%で実証)。ブラインドテストのみで改善判定する計測基盤を構築し、NO_MATCH高頻度語→品質テスト→テストセット追加の自動パイプラインで計測自体を自動成長させる | infra | 05-27 | semantic_stress_testのNO_MATCH高 |
