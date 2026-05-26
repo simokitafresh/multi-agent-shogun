@@ -14,6 +14,8 @@ Options:
   --baseline <path>              Baseline JSON path (default: logs/semantic_stress_baseline.json)
   --log <path>                   JSONL log path (default: logs/semantic_stress_test.log)
   --insights <path>              insights.yaml path for candidate alias output
+  --quality-fixture <path>       Fixed regression fixture path (default: tests/fixtures/semantic_quality_test_set.json)
+  --auto-test-set-add            Promote high-frequency NO_MATCH terms into the fixture after blind non-regression
   --no-insights                  Do not write candidate aliases to insights.yaml
 
 Sources:
@@ -21,8 +23,8 @@ Sources:
   cmds   recent queue/shogun_to_karo.yaml purpose/title-like lines
   file   one query per non-empty line from --file
 
-The script runs semantic_search.sh with LLM and causal expansion disabled so the
-metric covers alias-layer hit rate and cannot be distorted by causal timeout.
+Improvement judgement uses blind random sampling only. The fixed 50-word quality
+fixture is regression detection only, never the improvement gate.
 EOF
 }
 
@@ -33,6 +35,8 @@ limit=20
 baseline_path="${SEMANTIC_STRESS_BASELINE:-$script_dir/logs/semantic_stress_baseline.json}"
 log_path="${SEMANTIC_STRESS_LOG:-$script_dir/logs/semantic_stress_test.log}"
 insights_path="${INSIGHTS_FILE:-$script_dir/queue/insights.yaml}"
+quality_fixture="${SEMANTIC_QUALITY_FIXTURE:-$script_dir/tests/fixtures/semantic_quality_test_set.json}"
+auto_test_set_add="${SEMANTIC_STRESS_AUTO_TEST_SET_ADD:-false}"
 write_insights=true
 
 while [ "$#" -gt 0 ]; do
@@ -65,6 +69,14 @@ while [ "$#" -gt 0 ]; do
             insights_path="${2:?--insights requires a path}"
             shift 2
             ;;
+        --quality-fixture)
+            quality_fixture="${2:?--quality-fixture requires a path}"
+            shift 2
+            ;;
+        --auto-test-set-add)
+            auto_test_set_add=true
+            shift
+            ;;
         --no-insights)
             write_insights=false
             shift
@@ -89,6 +101,13 @@ if ! [[ "$limit" =~ ^[0-9]+$ ]] || [ "$limit" -lt 1 ]; then
     echo "ERROR: --limit must be a positive integer: $limit" >&2
     exit 2
 fi
+case "$auto_test_set_add" in
+    true|false) ;;
+    *)
+        echo "ERROR: SEMANTIC_STRESS_AUTO_TEST_SET_ADD must be true or false: $auto_test_set_add" >&2
+        exit 2
+        ;;
+esac
 
 if { [ "$source_mode" = "file" ] || [ "$source_mode" = "all" ]; } && [ -z "$query_file" ]; then
     query_file="$script_dir/context/semantic-map.md"
@@ -100,8 +119,13 @@ fi
 
 semantic_search="${SEMANTIC_SEARCH_CMD:-$script_dir/scripts/semantic_search.sh}"
 insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
+quality_test="${SEMANTIC_QUALITY_TEST_CMD:-$script_dir/scripts/semantic_quality_test.sh}"
 if [ ! -f "$semantic_search" ]; then
     echo "ERROR: semantic_search not found: $semantic_search" >&2
+    exit 1
+fi
+if [ "$auto_test_set_add" = true ] && [ ! -f "$quality_test" ]; then
+    echo "ERROR: semantic_quality_test not found: $quality_test" >&2
     exit 1
 fi
 
@@ -113,6 +137,8 @@ summary_json="$tmp_dir/summary.json"
 
 python3 - "$source_mode" "$limit" "$script_dir" "$query_file" "$queries_jsonl" <<'PY'
 import json
+import os
+import random
 import re
 import sys
 from pathlib import Path
@@ -122,6 +148,7 @@ limit = int(limit_raw)
 root = Path(root_raw)
 query_file = Path(query_file_raw) if query_file_raw else None
 out_path = Path(out_raw)
+rng = random.Random(os.environ.get("SEMANTIC_STRESS_RANDOM_SEED") or None)
 
 def clean(text):
     text = re.sub(r"<[^>]+>", " ", str(text))
@@ -162,11 +189,28 @@ def emit(source, query, rows, seen):
     seen.add(key)
     rows.append({"source": source, "query": query})
 
+def emit_blind_random_sample(source, queries, rows, seen):
+    # 改善判定はブラインドテスト(ランダムサンプリング)のみ。固定50語は回帰検知専用。
+    cleaned = []
+    local_seen = set()
+    for query in queries:
+        query = clean(query)
+        if not should_keep_query(query):
+            continue
+        key = query.casefold()
+        if key in local_seen:
+            continue
+        local_seen.add(key)
+        cleaned.append(query)
+    for query in rng.sample(cleaned, min(limit, len(cleaned))):
+        emit(source, query, rows, seen)
+
 def lord_queries(rows, seen):
     path = Path(__import__("os").environ.get("SEMANTIC_STRESS_LORD_LOG", root / "queue" / "lord_conversation.jsonl"))
     if not path.exists():
         return
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[-300:]
+    pool = []
     for line in reversed(lines):
         try:
             obj = json.loads(line)
@@ -176,10 +220,9 @@ def lord_queries(rows, seen):
             continue
         for key in ("summary", "content", "message", "text"):
             if key in obj and obj[key]:
-                emit("lord", obj[key], rows, seen)
+                pool.append(obj[key])
                 break
-        if sum(1 for row in rows if row["source"] == "lord") >= limit:
-            break
+    emit_blind_random_sample("lord", pool, rows, seen)
 
 def cmd_queries(rows, seen):
     path = Path(__import__("os").environ.get("SEMANTIC_STRESS_CMD_QUEUE", root / "queue" / "shogun_to_karo.yaml"))
@@ -187,26 +230,26 @@ def cmd_queries(rows, seen):
         return
     purpose_re = re.compile(r"^\s*(?:purpose|title|summary):\s*(.+?)\s*$")
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    pool = []
     for line in reversed(lines):
         match = purpose_re.match(line)
         if not match:
             continue
         value = match.group(1).strip().strip("'\"")
-        emit("cmds", value, rows, seen)
-        if sum(1 for row in rows if row["source"] == "cmds") >= limit:
-            break
+        pool.append(value)
+    emit_blind_random_sample("cmds", pool, rows, seen)
 
 def file_queries(rows, seen):
     if not query_file or not query_file.exists():
         return
+    pool = []
     for line in query_file.read_text(encoding="utf-8", errors="replace").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#") or stripped.startswith("|"):
             continue
         stripped = re.sub(r"^[-*]\s+", "", stripped)
-        emit("file", stripped, rows, seen)
-        if sum(1 for row in rows if row["source"] == "file") >= limit:
-            break
+        pool.append(stripped)
+    emit_blind_random_sample("file", pool, rows, seen)
 
 rows = []
 seen = set()
@@ -354,6 +397,10 @@ try:
     MIN_INSIGHT_QUERY_CHARS = int(__import__("os").environ.get("SEMANTIC_STRESS_MIN_INSIGHT_CHARS", "12"))
 except (ValueError, TypeError):
     MIN_INSIGHT_QUERY_CHARS = 12
+try:
+    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = int(__import__("os").environ.get("SEMANTIC_STRESS_HIGH_FREQUENCY_MIN_COUNT", "1"))
+except (ValueError, TypeError):
+    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = 1
 
 def semantic_query_length(text):
     return len(re.sub(r"\s+", "", str(text)))
@@ -402,14 +449,25 @@ for source, source_rows in sorted(by_source.items()):
         "hit_rate": round(source_hits / len(source_rows) * 100, 1) if source_rows else 0.0,
     }
 
-candidates = []
-seen = set()
+candidate_counts = Counter()
+candidate_rows = {}
 for row in no_matches:
     alias = alias_candidate(row["query"])
     key = alias.casefold()
-    if alias and should_record_no_match(row, alias) and is_semantic_wiki_target(alias) and key not in seen:
+    if alias and should_record_no_match(row, alias) and is_semantic_wiki_target(alias):
+        candidate_counts[key] += 1
+        candidate_rows.setdefault(key, {"alias": alias, "source": row["source"], "query": row["query"]})
+
+candidates = []
+seen = set()
+high_frequency_no_match_terms = []
+for key, count in candidate_counts.most_common():
+    row = candidate_rows[key]
+    if key not in seen:
         seen.add(key)
-        candidates.append({"alias": alias, "source": row["source"], "query": row["query"]})
+        candidates.append(row)
+    if count >= HIGH_FREQUENCY_NO_MATCH_MIN_COUNT:
+        high_frequency_no_match_terms.append({**row, "count": count})
 
 baseline = None
 baseline_created = False
@@ -423,6 +481,9 @@ if baseline is None:
 
 summary = {
     "timestamp": datetime.now(timezone.utc).isoformat(),
+    "evaluation_mode": "blind_random_sampling",
+    "improvement_judgement": "blind_hit_rate_non_regression_only",
+    "fixed_50_test_role": "regression_detection_only",
     "total": total,
     "hits": hits,
     "no_match": len(no_matches),
@@ -430,6 +491,7 @@ summary = {
     "hit_rate": round(hits / total * 100, 1) if total else 0.0,
     "sources": sources,
     "candidate_aliases": candidates,
+    "high_frequency_no_match_terms": high_frequency_no_match_terms,
     "status_counts": dict(Counter(row["status"] for row in rows)),
     "baseline_created": baseline_created,
 }
@@ -473,6 +535,84 @@ PY
     done < "$tmp_dir/candidates.tsv"
 fi
 
+python3 - "$summary_json" > "$tmp_dir/high_frequency_no_match_terms.tsv" <<'PY'
+import json
+import sys
+summary = json.load(open(sys.argv[1], encoding="utf-8"))
+for item in summary.get("high_frequency_no_match_terms", []):
+    print(f'{item["alias"]}\t{item["source"]}\t{item["query"]}\t{item["count"]}')
+PY
+
+if [ "$write_insights" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.tsv" ]; then
+    while IFS=$'\t' read -r alias source_name original_query frequency_count; do
+        [ -n "$alias" ] || continue
+        if [ -x "$insight_write" ] || [ -f "$insight_write" ]; then
+            INSIGHTS_FILE="$insights_path" bash "$insight_write" \
+                "[[$alias]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=$frequency_count source=$source_name query=$original_query quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only" \
+                medium semantic_stress_test >/dev/null
+        fi
+    done < "$tmp_dir/high_frequency_no_match_terms.tsv"
+fi
+
+if [ "$auto_test_set_add" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.tsv" ]; then
+    before_summary="$(bash "$quality_test" --fixture "$quality_fixture" 2>&1)" || {
+        before_rc=$?
+        printf '%s\n' "$before_summary" >&2
+        echo "ERROR: fixed 50-word regression detection failed before test-set auto add" >&2
+        exit "$before_rc"
+    }
+
+    python3 - "$quality_fixture" "$tmp_dir/high_frequency_no_match_terms.tsv" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+fixture_path = Path(sys.argv[1])
+candidate_path = Path(sys.argv[2])
+data = json.loads(fixture_path.read_text(encoding="utf-8"))
+entries = data.setdefault("entries", [])
+existing = {str(entry.get("query", "")).casefold() for entry in entries}
+added = 0
+for line in candidate_path.read_text(encoding="utf-8").splitlines():
+    if not line.strip():
+        continue
+    alias, source, query, count = line.split("\t", 3)
+    if query.casefold() in existing:
+        continue
+    entries.append(
+        {
+            "query": query,
+            "expected_concept": None,
+            "source": "semantic_stress_test:auto_test_set_add",
+            "candidate_alias": alias,
+            "no_match_frequency": int(count),
+            "quality_gate": "blind_hit_rate_non_regression",
+            "fixed_50_test_role": "regression_detection_only",
+            "added_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    existing.add(query.casefold())
+    added += 1
+data["auto_growth"] = {
+    "last_source": "semantic_stress_test",
+    "last_gate": "blind_hit_rate_non_regression",
+    "fixed_50_test_role": "regression_detection_only",
+    "last_added_count": added,
+    "updated_at": datetime.now(timezone.utc).isoformat(),
+}
+fixture_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(added)
+PY
+
+    after_summary="$(bash "$quality_test" --fixture "$quality_fixture" 2>&1)" || {
+        after_rc=$?
+        printf '%s\n' "$after_summary" >&2
+        echo "ERROR: fixed 50-word regression detection failed after test-set auto add" >&2
+        exit "$after_rc"
+    }
+fi
+
 mkdir -p "$(dirname "$log_path")"
 cat "$summary_json" | tr '\n' ' ' >> "$log_path"
 printf '\n' >> "$log_path"
@@ -484,9 +624,11 @@ summary = json.load(open(sys.argv[1], encoding="utf-8"))
 baseline_path = sys.argv[2]
 log_path = sys.argv[3]
 print(f'SEMANTIC_STRESS total={summary["total"]} hits={summary["hits"]} no_match={summary["no_match"]} errors={summary["errors"]} hit_rate={summary["hit_rate"]}%')
+print(f'evaluation_mode={summary["evaluation_mode"]} improvement_judgement={summary["improvement_judgement"]} fixed_50_test_role={summary["fixed_50_test_role"]}')
 for source, data in summary["sources"].items():
     print(f'  {source}: hit_rate={data["hit_rate"]}% hits={data["hits"]}/{data["total"]} no_match={data["no_match"]} errors={data["errors"]}')
 print(f'candidate_aliases={len(summary["candidate_aliases"])}')
+print(f'high_frequency_NO_MATCH={len(summary.get("high_frequency_no_match_terms", []))}')
 for item in summary["candidate_aliases"][:10]:
     print(f'  - {item["alias"]} ({item["source"]})')
 if summary["baseline_created"]:
