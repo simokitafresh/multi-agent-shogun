@@ -1,9 +1,8 @@
 task:
-  _ac_task_id: cmd_3017_exact
+  _ac_task_id: cmd_3064_exact
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3017 (deployed 2026-05-23T03:39:36). Read from the beginning.
-  ac_version: 5df2c00c
-  cmd_id: cmd_training_L7_v3_hayate_3_20260521182558
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3064 (deployed 2026-05-26T23:22:30). Read from the beginning.
+  ac_version: 2271c6e0
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -27,60 +26,76 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3017
+  parent_cmd: cmd_3064
   project: infra
-  purpose: cmd_save.shのshow_lord_conversation_matches()がdirection=inboundのみでフィルタし、target未確認のため殿が家老/軍師宛てに発した発言が将軍のcmd設計時に関連発言として表示される。cmd_3008/3009(post-shogun-inbox-check.sh)で修正した同構造バグをcmd_save.shにも適用する
+  purpose: cmd_3061軍師FAIL(Goodhart)の根因対処。growth_loop L677の4スキル集中を概念分離し、SKILL.md【X専用】パースでロールフィルタを追加。metrics.sh evaluable分母定義をrevertしてbaseline正常化
+  scout_exempt: true
   status: done
   stop_for: []
-  target_path: scripts/cmd_save.sh
-  task_id: cmd_3017_exact
+  target_path: docs/semantic-index/index.md
+  task_id: cmd_3064_exact
   task_type: exact
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ;…'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ;…'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ;…'
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L676'
-    summary: '修行配備のLevel5注入を追加する際、target_path未指定ケースだけでなく既存target_path保持も安全条件になる。自動選択は既存指定を尊重しな'
-    detail: '修行配備のLevel5注入を追加する際、target_path未指定ケースだけでなく既存target_path保持も安全条件になる。自動選択は既存指定を尊重しな'
-  - id: 'L536'
-    summary: 'bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f'
-    detail: 'bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f'
-  - id: 'L119'
-    summary: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
-    detail: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
-  - id: 'L651'
-    summary: '同一agentに複数watcherが常駐すると、fingerprint/debounceがあってもcheck+writeがatomicでないため同一inboxイ'
-    detail: '同一agentに複数watcherが常駐すると、fingerprint/debounceがあってもcheck+writeがatomicでないため同一inboxイ'
-  - id: 'L594'
-    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-  - id: 'L412'
-    summary: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
-    detail: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
-  - id: 'L398'
-    summary: 'lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -'
-    detail: 'lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -'
-  - id: 'L668'
-    summary: 'insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ'
-    detail: 'insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+  - id: 'L713'
+    summary: 'cmd_3051でAC2 validationが先行実装済みだったがdraft APPROVEで見逃した。6観点完了=安心停止(P1早期終了変形)。draft '
+    detail: 'cmd_3051でAC2 validationが先行実装済みだったがdraft APPROVEで見逃した。6観点完了=安心停止(P1早期終了変形)。draft '
+  - id: 'L600'
+    summary: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
+    detail: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
+  - id: 'L700'
+    summary: 'cmd_save.shにq12新規WARNを追加する際、既存fixtureが一斉にBLOCK化するリスクがある。未記入=表示のみ(WARN非計上)、記入済み不正'
+    detail: 'cmd_save.shにq12新規WARNを追加する際、既存fixtureが一斉にBLOCK化するリスクがある。未記入=表示のみ(WARN非計上)、記入済み不正'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L086'
+    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
+    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
+  - id: 'L190'
+    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+  - id: 'L078'
+    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+  - id: 'L421'
+    summary: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
+    detail: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応)"
   recommended_skills:
-  - "cmd-complete"
+  - "report-write"
+  - "verdict-check"
+  - "skill-creator"
+  - "skill-installer"
+  - "lesson-sort"
+  - "review-bundle"
+  - "gate-sync"
+  - "idle-persist"
   related_causal_links:
-  - "[[blt_20260523_032842_47ad5c]]"
-  - "[[cmd_3009]]"
-  - "[[cmd_save.sh L3467]]"
+  - "[[blt_20260526_224313]]"
+  - "[[cmd_3061]]"
+  - "[[なぜなぜ7回]]"
+  - "[[軍師3往復]]"
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -95,27 +110,27 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L676: 修行配備のLevel5注入を追加する際、target_path未指定ケースだけでなく既存target_path保持も安全条件になる。自動選択は既存指定を尊重しな
-      - L536: bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f
-      - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
-      - L651: 同一agentに複数watcherが常駐すると、fingerprint/debounceがあってもcheck+writeがatomicでないため同一inboxイ
-      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
-      - L412: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
-      - L398: lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -
-      - L668: insight_write.shのwrite pathではdedup+appendとsource_repeat_countの2回python3を起動し同一ファイ
+      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
+      - L713: cmd_3051でAC2 validationが先行実装済みだったがdraft APPROVEで見逃した。6観点完了=安心停止(P1早期終了変形)。draft 
+      - L600: 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=
+      - L700: cmd_save.shにq12新規WARNを追加する際、既存fixtureが一斉にBLOCK化するリスクがある。未記入=表示のみ(WARN非計上)、記入済み不正
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
+      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
+      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
+      - L421: Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'show_lord_conversation_matches()がtarget=shogunまたはtarget未設定のinboundエントリのみを検索対象とする。grep確認: 修正後コードにtarget条件が存在する'
+    - check: 'growth_loop概念のskills欄が空。4スキルが適切な概念に移動済み。prompt_state_inject.sh semantic_skill_recommendations内にSKILL.md【X専用】パースによるagent_idフィルタが実装済み。マーカーなしスキル=全ロール対象。grep確認'
   - id: 'AC2'
     checks:
-    - check: 'target=karoのinboundエントリを含むlord_conversation.jsonlでcmd_save.shを実行し、当該エントリが検索結果に含まれないことをテストで検証する'
+    - check: 'metrics.sh evaluable分母定義が旧定義に復元されている。skill_recommend_metrics.sh 30でprecision率がbaseline(旧定義計測値)から改善している'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3017.yaml
+  report_filename: hayate_report_cmd_3064.yaml
   report_path: 
   bloom_level: 
