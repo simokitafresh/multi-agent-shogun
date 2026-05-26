@@ -93,8 +93,10 @@ run_semantic_quality_after_alias_change() {
     changed_flag="$(
     python3 - "$source_type" "$payload_json" "$index_path" "$insight_write" <<'PY'
 import json
+import math
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -108,6 +110,12 @@ deploy_log_path = Path(os.environ.get("SEMANTIC_DEPLOY_LOG", str(semantic_root /
 pending_alias_threshold = float(os.environ.get("SEMANTIC_PENDING_ALIAS_THRESHOLD", "16.0"))
 no_match_scan_lines = int(os.environ.get("SEMANTIC_NO_MATCH_SCAN_LINES", "500"))
 no_match_alias_limit = int(os.environ.get("SEMANTIC_NO_MATCH_ALIAS_LIMIT", "5"))
+memory_db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", str(semantic_root / "data" / "multi_agent_shogun_memory.db")))
+tag_propagation_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_LIMIT", "200"))
+tag_candidate_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_CANDIDATES", "20"))
+tag_min_score = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_MIN_SCORE", "1.0"))
+tag_max_concepts = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_MAX_CONCEPTS", "3"))
+tag_bh_q = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_BH_Q", "0.75"))
 
 try:
     payload = json.loads(payload_raw)
@@ -153,6 +161,150 @@ def strip_noise(value):
     text = re.sub(r"[/._:,+#|()\[\]{}<>\"'=-]+", " ", text)
     text = re.sub(r"\b\d+\b", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+def fts5_query_for_text(text):
+    terms = []
+    for token in re.findall(r"[\w\u3040-\u30ff\u3400-\u9fff]+", str(text), flags=re.UNICODE):
+        token = token.strip()
+        if token:
+            terms.append(f'"{token.replace(chr(34), chr(34) + chr(34))}"')
+    return " OR ".join(terms)
+
+def propagate_memory_db_concept_tags(concepts):
+    if os.environ.get("SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION") == "1":
+        return
+    if tag_propagation_limit <= 0 or tag_candidate_limit <= 0 or tag_max_concepts <= 0:
+        return
+    if not memory_db_path.is_file():
+        return
+
+    known_concepts = {str(concept["id"]) for concept in concepts if str(concept.get("id") or "").strip()}
+    if not known_concepts:
+        return
+
+    inserted = 0
+    scanned = 0
+    conn = None
+    try:
+        conn = sqlite3.connect(memory_db_path)
+        conn.execute("PRAGMA busy_timeout=1000")
+        conn.row_factory = sqlite3.Row
+        total_events = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0] or 0)
+        if total_events <= 0:
+            return
+
+        conn.execute("DROP TABLE IF EXISTS temp.semantic_tag_source_events")
+        conn.execute(
+            """
+            CREATE TEMP TABLE semantic_tag_source_events AS
+            SELECT DISTINCT event_id
+            FROM event_concepts
+            """
+        )
+
+        untagged_rows = list(
+            conn.execute(
+                """
+                SELECT e.id, e.summary, e.detail
+                FROM events AS e
+                LEFT JOIN event_concepts AS ec ON ec.event_id = e.id
+                WHERE ec.event_id IS NULL
+                ORDER BY e.ts DESC, e.id
+                LIMIT ?
+                """,
+                (tag_propagation_limit,),
+            )
+        )
+        if not untagged_rows:
+            return
+
+        concept_counts = {
+            str(row["concept_name"]): int(row["doc_count"])
+            for row in conn.execute(
+                """
+                SELECT concept_name, COUNT(DISTINCT event_id) AS doc_count
+                FROM event_concepts
+                GROUP BY concept_name
+                """
+            )
+        }
+
+        for row in untagged_rows:
+            event_id = str(row["id"])
+            query = fts5_query_for_text(f"{row['summary'] or ''} {row['detail'] or ''}")
+            if not query:
+                continue
+            scanned += 1
+            candidate_rows = list(
+                conn.execute(
+                    """
+                    SELECT
+                        e.id AS source_event_id,
+                        ec.concept_name,
+                        bm25(events_fts) AS bm25_rank
+                    FROM events_fts
+                    JOIN events AS e ON e.rowid = events_fts.rowid
+                    JOIN semantic_tag_source_events AS source
+                      ON source.event_id = e.id
+                    JOIN event_concepts AS ec ON ec.event_id = e.id
+                    WHERE events_fts MATCH ?
+                      AND e.id != ?
+                    ORDER BY bm25_rank, e.ts DESC, e.id
+                    LIMIT ?
+                    """,
+                    (query, event_id, tag_candidate_limit),
+                )
+            )
+            if not candidate_rows:
+                continue
+
+            scores = {}
+            candidate_count = len(candidate_rows)
+            for position, candidate in enumerate(candidate_rows, 1):
+                concept_name = str(candidate["concept_name"])
+                if concept_name not in known_concepts:
+                    continue
+                # One-hop only: untagged event -> directly matched tagged event -> concept.
+                # bm25_rank orders content similarity; IDF favors specific concepts.
+                # bh_decay is a Benjamini-Hochberg-style rank decay to suppress tail matches.
+                doc_count = concept_counts.get(concept_name, 0)
+                idf = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
+                bm25_position_weight = 1.0 / position
+                bh_decay = min(1.0, tag_bh_q * candidate_count / position)
+                scores[concept_name] = scores.get(concept_name, 0.0) + bm25_position_weight * idf * bh_decay
+
+            selected = [
+                concept_name
+                for concept_name, score in sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+                if score >= tag_min_score
+            ][:tag_max_concepts]
+            if not selected:
+                continue
+
+            conn.executemany(
+                "INSERT OR IGNORE INTO event_concepts (event_id, concept_name) VALUES (?, ?)",
+                [(event_id, concept_name) for concept_name in selected],
+            )
+            merged = sorted(set(selected))
+            raw_concepts = conn.execute("SELECT concepts FROM events WHERE id = ?", (event_id,)).fetchone()
+            if raw_concepts and raw_concepts["concepts"]:
+                try:
+                    existing = json.loads(raw_concepts["concepts"])
+                    if isinstance(existing, list):
+                        merged = sorted(set(str(item) for item in existing if str(item).strip()) | set(selected))
+                except json.JSONDecodeError:
+                    pass
+            conn.execute("UPDATE events SET concepts = ? WHERE id = ?", (json.dumps(merged, ensure_ascii=False), event_id))
+            inserted += len(selected)
+
+        if inserted:
+            conn.commit()
+            print(f"MEMORY_TAG_PROPAGATION: scanned={scanned} inserted={inserted} db={memory_db_path}")
+    except sqlite3.Error as exc:
+        print(f"WARN: memory tag propagation failed: {exc}", file=sys.stderr)
+    finally:
+        if conn is not None:
+            conn.close()
 
 def is_noise_only_candidate(payload_id, fields):
     signals = []
@@ -860,6 +1012,8 @@ concepts = parse_concepts(text)
 if not concepts:
     print("ERROR: no concepts found in semantic index", file=sys.stderr)
     sys.exit(1)
+
+propagate_memory_db_concept_tags(concepts)
 
 if source_type == "cmd_complete":
     queue_no_match_purpose_aliases(concepts)
