@@ -153,11 +153,12 @@ EOF
     db_path="$TEST_TMPDIR/data/memory.db"
     mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
     cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
-{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"aliases未登録語の検索","detail":"DB FTS5フォールバックだけが拾える到達不能語 foobarmemoryonly"}
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"aliases未登録語の検索","detail":"DB FTS5フォールバックだけが拾える到達不能語 foobarmemoryonly 学習ループ"}
 EOF
     run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$archive_dir" \
-        --db "$db_path"
+        --db "$db_path" \
+        --semantic-index "$SEMANTIC_INDEX_PATH"
     [ "$status" -eq 0 ]
 
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
@@ -169,7 +170,9 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"MEMORY_DB_MATCH: foobarmemoryonly"* ]]
-    [[ "$output" == *"memory_db_fts_results:"* ]]
+    [[ "$output" == *"memory_db_concept_ranking:"* ]]
+    [[ "$output" == *"top_concept: growth_loop"* ]]
+    [[ "$output" == *"MATCH: growth_loop"* ]]
     [[ "$output" == *"aliases未登録語の検索"* ]]
     [[ "$output" != *"should-not-run"* ]]
 }
@@ -179,12 +182,13 @@ EOF
     db_path="$TEST_TMPDIR/data/memory.db"
     mkdir -p "$archive_dir" "$TEST_TMPDIR/data"
     cat > "$archive_dir/2026-05-22.jsonl" <<'EOF'
-{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"hayate宛の殿発言","detail":"sharedtargetneedle"}
-{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo宛の殿発言","detail":"sharedtargetneedle"}
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","target":"hayate","direction":"inbound","summary":"hayate宛の殿発言","detail":"sharedtargetneedle 学習ループ"}
+{"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo宛の殿発言","detail":"sharedtargetneedle セマンティック辞書"}
 EOF
     run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$archive_dir" \
-        --db "$db_path"
+        --db "$db_path" \
+        --semantic-index "$SEMANTIC_INDEX_PATH"
     [ "$status" -eq 0 ]
 
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
@@ -196,6 +200,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"MEMORY_DB_MATCH: sharedtargetneedle"* ]]
+    [[ "$output" == *"top_concept: growth_loop"* ]]
     [[ "$output" == *"hayate宛の殿発言"* ]]
     [[ "$output" != *"karo宛の殿発言"* ]]
     [[ "$output" != *"should-not-run"* ]]
