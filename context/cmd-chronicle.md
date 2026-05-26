@@ -645,3 +645,5 @@
 | cmd_3057 | stress_testのlordソースにtask-notification junk(toolu_/task-id等)が混入しNO_MATCH率を汚染している。2層防御フィルタを自動実行で実装し、正確なNO_MATCH率baselineを確立する | infra | 05-26 | semantic_stress_testのlord入力とca |
 | cmd_3056 | 知識は無限に増える。PJ登録/ファイル作成/教訓追加の3経路で概念が自動的にセマンティクスインデックスに流入する仕組みを構築し、過去cmdの紐付けバックフィルで既存概念のcmd参照0件を解消する | infra | 05-26 | semantic_map_generate.shにPJ登録/ |
 | cmd_3060 | セマンティクスインデックスの検索にaliases辞書引き(ブラインド6%)に加え記憶DB三層検索パス(FTS5+bm25()+IDF)を追加し、殿の実発言に対する概念到達率を56%以上に引き上げる。三層記憶アーキテクチャ(殿設計)の最初の接続 | infra | 05-26 | 記憶DB FTS→event_concepts→IDF概念ラ |
+| cmd_3061 | startup gate 3セッション連続BLOCK。推薦precision 14%/偽陽性86%を改善し、recall miss(cmd-complete, dashboard-update)を解消する | infra | 05-26 | skill_recommend_metrics.shの計測対 |
+| cmd_3062 | deploy_task.sh inject_related_lessonsがtarget_pathを無視し汎用教訓を注入するため、aliases修正等の特定ファイル向けタスクでUSEFUL率0%。target_path重み付けで教訓の関連度を向上させる | infra | 05-26 | inject_related_lessonsでtarget_ |
