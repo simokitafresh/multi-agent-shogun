@@ -7,6 +7,7 @@ Python bytecode caching and JSON index caching.
 
 import json
 import hashlib
+import math
 import os
 import re
 import sqlite3
@@ -234,6 +235,178 @@ def memory_db_concept_rows(
         return expanded, rows
 
 
+def fts5_query_for_text(text: str) -> str:
+    terms: list[str] = []
+    for token in re.findall(r"[\w\u3040-\u30ff\u3400-\u9fff]+", text, flags=re.UNICODE):
+        token = token.strip()
+        if token:
+            terms.append(f'"{token.replace(chr(34), chr(34) + chr(34))}"')
+    return " OR ".join(terms)
+
+
+def memory_db_fts_concept_rank_rows(
+    db_path: Path,
+    query: str,
+    result_limit: int,
+    target: str = "",
+) -> tuple[list[dict], int]:
+    fts_query = fts5_query_for_text(query)
+    if not fts_query or not db_path.is_file():
+        return [], 0
+
+    target = target.strip()
+    target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
+    params: list[object] = [fts_query]
+    if target:
+        params.append(target)
+    params.append(max(result_limit, 1))
+
+    uri = f"file:{db_path}?mode=ro"
+    with sqlite3.connect(uri, uri=True) as conn:
+        conn.execute("PRAGMA busy_timeout=1000")
+        conn.row_factory = sqlite3.Row
+        total_events = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0] or 0)
+        rows = list(
+            conn.execute(
+                f"""
+                SELECT
+                    e.id,
+                    e.ts,
+                    e.event_type,
+                    e.agent,
+                    e.target,
+                    e.cmd_id,
+                    e.importance,
+                    e.summary,
+                    bm25(events_fts) AS rank
+                FROM events_fts
+                JOIN events AS e ON e.rowid = events_fts.rowid
+                WHERE events_fts MATCH ?
+                  {target_clause}
+                ORDER BY rank, e.ts
+                LIMIT ?
+                """,
+                params,
+            )
+        )
+        if not rows:
+            return [], total_events
+
+        event_ids = [str(row["id"]) for row in rows]
+        event_sql = placeholders(event_ids)
+        concept_counts = {
+            str(row["concept_name"]): int(row["doc_count"])
+            for row in conn.execute(
+                f"""
+                SELECT concept_name, COUNT(DISTINCT event_id) AS doc_count
+                FROM event_concepts
+                GROUP BY concept_name
+                """
+            )
+        }
+        concept_rows = list(
+            conn.execute(
+                f"""
+                SELECT event_id, concept_name
+                FROM event_concepts
+                WHERE event_id IN ({event_sql})
+                ORDER BY event_id, concept_name
+                """,
+                event_ids,
+            )
+        )
+
+    concepts_by_event: dict[str, list[str]] = {}
+    for row in concept_rows:
+        concepts_by_event.setdefault(str(row["event_id"]), []).append(str(row["concept_name"]))
+
+    scores: dict[str, dict] = {}
+    event_by_id = {str(row["id"]): row for row in rows}
+    for position, row in enumerate(rows, 1):
+        event_id = str(row["id"])
+        concepts_for_event = concepts_by_event.get(event_id, [])
+        if not concepts_for_event:
+            continue
+        rank_weight = 1.0 / position
+        for concept_name in concepts_for_event:
+            doc_count = concept_counts.get(concept_name, 0)
+            idf = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
+            item = scores.setdefault(
+                concept_name,
+                {
+                    "concept": concept_name,
+                    "score": 0.0,
+                    "idf": idf,
+                    "hits": 0,
+                    "events": [],
+                },
+            )
+            item["score"] += rank_weight * idf
+            item["hits"] += 1
+            if len(item["events"]) < 3:
+                item["events"].append(event_by_id[event_id])
+
+    ranked = sorted(
+        scores.values(),
+        key=lambda item: (-item["score"], -item["idf"], item["concept"]),
+    )
+    return ranked, total_events
+
+
+def print_memory_db_fts_concept_search(
+    query: str,
+    concepts: list[dict],
+    mode_arg: str,
+) -> int:
+    db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", "data/multi_agent_shogun_memory.db"))
+    result_limit = int(os.environ.get("SEMANTIC_MEMORY_DB_LIMIT", "10"))
+    target = mode_arg.strip()
+    ranked, total_events = memory_db_fts_concept_rank_rows(
+        db_path,
+        query,
+        result_limit=max(result_limit, 1),
+        target=target,
+    )
+    if not ranked:
+        return 1
+
+    by_id = {item["id"]: item for item in concepts}
+    top = ranked[0]
+    print(f"MEMORY_DB_MATCH: {query}")
+    print("")
+    print("memory_db_concept_ranking:")
+    print(f"  fts_limit: {max(result_limit, 1)}")
+    print(f"  target: {target if target else 'none'}")
+    print(f"  total_events: {total_events}")
+    print(f"  top_concept: {top['concept']}")
+    print("  concepts:")
+    for item in ranked[: max(result_limit, 1)]:
+        print(f"  - concept: {item['concept']}")
+        print(f"    score: {item['score']:.6f}")
+        print(f"    idf: {item['idf']:.6f}")
+        print(f"    hits: {item['hits']}")
+        print("    sample_events:")
+        for event in item["events"]:
+            print(f"    - id: {event['id']}")
+            print(f"      ts: {event['ts']}")
+            print(f"      agent: {event['agent']}")
+            if event["cmd_id"]:
+                print(f"      cmd_id: {event['cmd_id']}")
+            summary = str(event["summary"]).replace("\n", " ")
+            print(f"      summary: {summary}")
+
+    print("")
+    print(f"MATCH: {top['concept']}")
+    print("reason: memory DB FTS5 bm25 hits joined to event_concepts and ranked with IDF.")
+    concept = by_id.get(str(top["concept"]))
+    if concept:
+        print("")
+        print(f"## {concept['id']} — {concept['label']}")
+        print(f"aliases: {', '.join(concept['aliases'])}")
+        print_resources(concept)
+    return 0
+
+
 def print_memory_db_concept_search(mode_arg: str) -> int:
     db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", "data/multi_agent_shogun_memory.db"))
     expansion_limit = int(os.environ.get("SEMANTIC_CONCEPT_EXPANSION_LIMIT", "20"))
@@ -363,6 +536,9 @@ def main() -> None:
 
     elif mode == "memory-db-concept-search":
         sys.exit(print_memory_db_concept_search(mode_arg))
+
+    elif mode == "memory-db-fts-concept-search":
+        sys.exit(print_memory_db_fts_concept_search(query, concepts, mode_arg))
 
     else:
         print(f"ERROR: unknown semantic index mode: {mode}", file=sys.stderr)

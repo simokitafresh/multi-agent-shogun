@@ -104,12 +104,11 @@ first_layer_search() {
 memory_db_search() {
     [ "${SEMANTIC_DISABLE_MEMORY_DB:-0}" != "1" ] || return 1
 
-    local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
-    local limit="${SEMANTIC_MEMORY_DB_LIMIT:-10}"
     local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-5}"
     local target="${SEMANTIC_MEMORY_DB_TARGET:-${AGENT_ID:-}}"
     local output_file
 
+    local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
     [ -f "$db_path" ] || return 1
 
     if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
@@ -117,17 +116,16 @@ memory_db_search() {
     fi
 
     output_file="$(mktemp)"
-    search_args=(
-        --db "$db_path"
-        --search "$query"
-        --limit "$limit"
-    )
+    local mode_arg=""
     if [ -n "$target" ] && [ "$target" != "unknown" ]; then
-        search_args+=(--target "$target")
+        mode_arg="$target"
     fi
     set +e
-    timeout "$search_timeout" python3 "$script_dir/scripts/memory_db_import.py" \
-        "${search_args[@]}" > "$output_file"
+    timeout "$search_timeout" env \
+        SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$script_dir/tmp/semantic_index_cache}" \
+        SEMANTIC_MEMORY_DB_PATH="$db_path" \
+        python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" \
+        "memory-db-fts-concept-search" "$mode_arg" > "$output_file"
     local rc=$?
     set -e
     if [ "$rc" -ne 0 ]; then
@@ -138,26 +136,7 @@ memory_db_search() {
         return 1
     fi
 
-    if [ ! -s "$output_file" ]; then
-        rm -f "$output_file"
-        return 1
-    fi
-
-    echo "MEMORY_DB_MATCH: $query"
-    echo ""
-    echo "memory_db_fts_results:"
-    awk -F '\t' '
-        NF >= 6 {
-            printf "- id: %s\n", $1
-            printf "  ts: %s\n", $2
-            printf "  agent: %s\n", $3
-            if ($4 != "") {
-                printf "  cmd_id: %s\n", $4
-            }
-            printf "  importance: %s\n", $5
-            printf "  summary: %s\n", $6
-        }
-    ' "$output_file"
+    cat "$output_file"
     rm -f "$output_file"
     return 0
 }

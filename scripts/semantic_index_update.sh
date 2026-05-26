@@ -59,7 +59,7 @@ run_semantic_stress_after_alias_change() {
     local insights="${INSIGHTS_FILE:-$script_dir/queue/insights.yaml}"
 
     echo "semantic-stress after-alias-change: running"
-    if bash "$stress_test" \
+    if SEMANTIC_DISABLE_MEMORY_DB=1 bash "$stress_test" \
         --source all \
         --limit "$limit" \
         --baseline "$baseline" \
