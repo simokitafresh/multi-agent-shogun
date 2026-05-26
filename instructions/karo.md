@@ -157,6 +157,7 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
   (1) WA記録(karo_workaround_log.sh --clean)
   (2) 既読化(inbox_mark_read.sh)
   ※ `report_received` hook が軍師報告レビュー依頼と、LGTM後の lesson_check→GATE(cmd_complete_gate.sh) を自動実行する
+  ※ **hook未発火時の手動GATE**: stop hookがstatus=done検知→手動GATE実行する場合でも、**軍師report_review_resultの到着を確認してからGATE実行せよ**。軍師FAILがGATE CLEAR後に到着するとGoodhart等の品質問題を事前検出できない(洗脳#8: cmd_3061で実証。LK-A01 v11)
 
 ## 洗脳チェック手順
 
