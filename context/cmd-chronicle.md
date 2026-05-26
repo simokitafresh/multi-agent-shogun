@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-26 -->
+<!-- last_updated: 2026-05-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,40 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2283 | 実装 — FE signals handoff cache（Phase 1-B: hard navigation遷移時のblank/loading除去） | dm-signal | 04-26 | SignalsProviderにsessionStorage |
-| cmd_2285 | 強化 — cmd起票前の事前確認gate（PreToolUse:Edit hook for shogun_to_karo.yaml） | infra | 04-26 | shogun_to_karo.yaml Edit時の起票前確 |
-| cmd_2286 | 強化 — 忍者版事前ワクチン（DM-Signal本番ファイル編集時にPI注入） | infra | 04-26 | FILL_THIS |
-| cmd_2287 | 修正 — cmd_complete_gate.shにtest_triage判定追加（pre_existing FAIL誤判定バグ修正） | infra | 04-26 | cmd_complete_gateのbinary_check |
-| cmd_2284 | 強化 — cmd_save.sh BLOCK後の将軍自走強制hook | infra | 04-26 | cmd_save.sh BLOCK(exit 1)時だけPo |
-| cmd_2288 | 検証 — Phase 1-B CDP再計測（handoff cache効果確認+ベースライン比較） | dm-signal | 04-26 | FILL_THIS |
-| cmd_2289 | 強化 — 第三層指標転換（忙しさ→賢さ: 同クラス再発率+ワクチン有効率をstartup gateに追加） | infra | 04-26 | Gate 12.5拡張完了。再発率(前50cmd vs直近5 |
-| cmd_2291 | 検証 — CDP再計測（道具磨き後・全ページ+PF切替） | dm-signal | 04-26 | — |
-| cmd_2292 | 偵察 — シン四神→シン忍法→シン奥義 L0→L2経路の現物検証 | dm-signal | 04-26 | シン四神12体(type=standard, compone |
-| cmd_2293 | 強化 — 殿の質問に対する確認強制hook(事前ワクチン系譜) | infra | 04-26 | FILL_THIS |
-| cmd_2294 | 修正 — dm-signal context §0陳腐化修正+L0/L1/L2定義統一 | dm-signal | 04-26 | FILL_THIS |
-| cmd_2295 | 強化 — projects/dm-signal.yaml Vercel圧縮(491→80行) | dm-signal | 04-26 | — |
-| cmd_2296 | 強化 — dm-signal context 4ファイルVercel圧縮+500行制限適用 | dm-signal | 04-26 | FILL_THIS |
-| cmd_2297 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定 | dm-signal | 04-26 | FE設計書(fe-speed-improvement-des |
-| cmd_2298 | 偵察 — FE/BE速度改善設計書の現状照合+次Phase特定(Codex独立視点) | dm-signal | 04-26 | FILL_THIS |
-| cmd_2299 | 強化 — 将軍弱点2計測hook(因果展開ステップ数+新規vs既存判断) | infra | 04-26 | prompt_state_inject.shへ殿入力回数の自 |
-| cmd_2300 | 実装 — Measure C: next-portfolio predictive prefetch(PF切替高速化) | dm-signal | 04-26 | FILL_THIS |
-| cmd_karo_ci_fix_375 | CI修正 — batsテスト#375失敗修正 | infra | 04-26 | FILL_THIS |
-| cmd_2301 | — | — | 04-26 | — |
-| cmd_2304 | 計測 — Measure C効果検証(CDP PF切替時間、1009msベースライン比較) | dm-signal | 04-26 | FILL_THIS |
-| cmd_2303 | 配備 — cmd_2300(Measure C prefetch)のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2303_normal: GitHub main と |
-| cmd_2306 | 偵察 — Measure A残り(pending_map/folders/portfolio全件/momentum payload)削減箇所特定 | dm-signal | 04-26 | FILL_THIS |
-| cmd_2305 | 偵察 — Measure D(full fetch defer)実装箇所特定+波及分析 | dm-signal | 04-26 | dashboard/monthly-returns/annu |
-| cmd_2308 | 実装 — Measure D: full fetch idle後ろ倒し(dashboard/monthly/annual 3ページ) | dm-signal | 04-26 | FILL_THIS |
-| cmd_2309 | 実装 — Measure A: signals.py pending_map月中スキップ+portfolio lazy load | dm-signal | 04-26 | FILL_THIS |
-| cmd_2307 | 偵察 — PF切替1009msフェーズ分解(API fetch vs FE処理の実測内訳) | dm-signal | 04-26 | PF切替1008-1009msをperf_measure定義 |
-| cmd_2310 | 改善 — perf_measure.py PF切替計測手法修正(dropdown固定待機520ms排除) | dm-signal | 04-26 | FILL_THIS |
-| cmd_2313 | 修正 — Codex config.toml approval_mode=full-auto追加(STALL根絶) | infra | 04-26 | FILL_THIS |
-| cmd_2312 | 計測 — Measure D/A効果検証(修正済み計測手法でCDP PF切替再計測) | dm-signal | 04-26 | FILL_THIS |
-| cmd_2311 | 配備 — Measure D/A/計測手法修正のpush+Render deploy確認 | dm-signal | 04-26 | cmd_2308/2309はDM-Signal GitHub |
-| cmd_karo_ci_fix_357 | CI修正 — batsテスト#357失敗修正 | infra | 04-26 | FILL_THIS |
-| cmd_karo_reprofile_freq | インフラスクリプト頻度再計測 — 直近24h | infra | 04-26 | 直近24hのインフラスクリプト頻度を5ソースで再計測し、do |
-| cmd_2314 | 偵察 — GS CSV パラメータ→月次リターン列マッピング調査 | dm-signal | 04-26 | summary CSV行i == monthly CSV列i |
-| cmd_karo_reprofile_bench | インフラスクリプト実行時間再計測 — Top 20 × 5回 | infra | 04-26 | 前回プロファイリングTop20を5回中央値で再計測し、doc |
 | cmd_2315 | 偵察 — GS CSV正規化Phase 0.5: スクリプト130本全量分類+サブディレクトリ最終確定 | dm-signal | 04-27 | cmd_2315 Phase 0.5偵察として、GS関連スク |
 | cmd_2316 | 実装 — GS正規化Phase 1: マニフェスト記録 | dm-signal | 04-27 | outputs/gs_backup/20260427_pre |
 | cmd_2317 | 実装 — GS正規化Phase 1.5a: gs_db_utils.py(SQLite write/read共通層) | dm-signal | 04-27 | FILL_THIS |
@@ -648,3 +614,4 @@
 | cmd_3061 | startup gate 3セッション連続BLOCK。推薦precision 14%/偽陽性86%を改善し、recall miss(cmd-complete, dashboard-update)を解消する | infra | 05-26 | skill_recommend_metrics.shの計測対 |
 | cmd_3062 | deploy_task.sh inject_related_lessonsがtarget_pathを無視し汎用教訓を注入するため、aliases修正等の特定ファイル向けタスクでUSEFUL率0%。target_path重み付けで教訓の関連度を向上させる | infra | 05-26 | inject_related_lessonsでtarget_ |
 | cmd_3064 | cmd_3061軍師FAIL(Goodhart)の根因対処。growth_loop L677の4スキル集中を概念分離し、SKILL.md【X専用】パースでロールフィルタを追加。metrics.sh evaluable分母定義をrevertしてbaseline正常化 | infra | 05-26 | growth_loopのスキル集中を概念分離し、semant |
+| cmd_3065 | パスA(cmd_3063 FTS5タグ伝播)で到達した概念から、related_conceptsをO(1) lookupして隣接概念に連鎖する層2パスを実装。片方向56%(102/180)の双方向強制化+バックリンク数事前計算+接続強度スコアで三層記憶の連想ネットワークを完成させる | infra | 05-27 | related_concepts隣接ランキングと双方向強制化 |
