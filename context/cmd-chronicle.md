@@ -647,3 +647,4 @@
 | cmd_3060 | セマンティクスインデックスの検索にaliases辞書引き(ブラインド6%)に加え記憶DB三層検索パス(FTS5+bm25()+IDF)を追加し、殿の実発言に対する概念到達率を56%以上に引き上げる。三層記憶アーキテクチャ(殿設計)の最初の接続 | infra | 05-26 | 記憶DB FTS→event_concepts→IDF概念ラ |
 | cmd_3061 | startup gate 3セッション連続BLOCK。推薦precision 14%/偽陽性86%を改善し、recall miss(cmd-complete, dashboard-update)を解消する | infra | 05-26 | skill_recommend_metrics.shの計測対 |
 | cmd_3062 | deploy_task.sh inject_related_lessonsがtarget_pathを無視し汎用教訓を注入するため、aliases修正等の特定ファイル向けタスクでUSEFUL率0%。target_path重み付けで教訓の関連度を向上させる | infra | 05-26 | inject_related_lessonsでtarget_ |
+| cmd_3064 | cmd_3061軍師FAIL(Goodhart)の根因対処。growth_loop L677の4スキル集中を概念分離し、SKILL.md【X専用】パースでロールフィルタを追加。metrics.sh evaluable分母定義をrevertしてbaseline正常化 | infra | 05-26 | growth_loopのスキル集中を概念分離し、semant |
