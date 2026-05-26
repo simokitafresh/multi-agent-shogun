@@ -295,10 +295,14 @@ def main() -> None:
         matches = []
         for concept in concepts:
             terms = [concept["id"], concept["label"], *concept["aliases"]]
+            min_ratio = 0.3 if any('\u3000' <= c <= '\u9fff' or '\u30a0' <= c <= '\u30ff' for c in query) else 0.5
             matched_terms = [
                 term
                 for term in terms
-                if query_fold in term.casefold() or term.casefold() in query_fold
+                if (
+                    term.casefold() in query_fold
+                    or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
+                )
             ]
             if matched_terms:
                 matches.append((concept, matched_terms))
