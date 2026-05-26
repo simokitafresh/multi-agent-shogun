@@ -30,7 +30,7 @@ codd:
 | 鎖の原理 | 鎖の原理, chain principle, weakest link, 最弱リンク, 全体品質, ボトルネック原理 | `AGENTS.md` 学習ループ原則, `context/growth-loop.md` | なし | なし | なし |
 | 無知の知 | 無知の知, 知らないと知る, 前提確認, 不明点可視化, 推測禁止 | `memory/deepdive_causal_tracing_20260415.md`, `context/growth-loop.md` | なし | なし | なし |
 | 自動消火禁止 | 自動消火禁止, 消火禁止, 根源を隠すな, autofix禁止, 表面対処禁止 | `AGENTS.md` 自動消火禁止, `context/training-cycle.md` | なし | なし | なし |
-| 想像するな確認せよ | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな | `memory/deepdive_why_chain_20260321.md`, `context/infrastructure.md` | なし | なし | なし |
+| 想像するな確認せよ | 想像するな確認せよ, 確認せよ, 実態確認, capture-pane確認, 推測で答えるな, 無意識に本能で洗脳による選択をしていないか確認せよ | `memory/deepdive_why_chain_20260321.md`, `context/infrastructure.md` | なし | なし | なし |
 | 究極系原則 | 究極系原則, 完成系, 理想状態, 最終形, あるべき姿 | `context/growth-loop.md`, `context/codd.md` | なし | なし | なし |
 | パラメータ空間縮小禁止 | パラメータ空間縮小禁止, 探索範囲維持, 範囲を狭めるな, 全探索継承, 計算量で絞るな | `AGENTS.md` パラメータ空間縮小禁止, `context/growth-loop.md` | なし | なし | なし |
 | ALM研究 | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, CI RED修正 cmd 2837のwf engine除外条件が正当WARNまで消した回帰修正 | `/mnt/c/Python_app/DM-signal/docs/research/alm-integration-design.md`, `context/gunshi-alm-38metrics-design.md`, `context/robustness-verification-catalog.md` | なし | `L566` ALM吸収はシン吸収と異なりメトリクスが変わる(helpful_count:3), `cmd_2839` CI RED修正(cmd_2837のwf_engine除外条件が正当WARNまで消した回帰修正) | pf-registration, db-check |
