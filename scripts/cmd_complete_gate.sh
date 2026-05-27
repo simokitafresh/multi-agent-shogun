@@ -3906,6 +3906,11 @@ run_cdp_production_check() {
     echo ""
     echo "CDP production check (FE post-gate):"
 
+    if [ "${CDP_SKIP:-}" = "1" ]; then
+        echo "  SKIP (CDP_SKIP=1)"
+        return 0
+    fi
+
     if ! cmd_requires_cdp_production_check; then
         echo "  SKIP (project=${CMD_PROJECT:-unknown}, frontend changes not detected)"
         return 0
