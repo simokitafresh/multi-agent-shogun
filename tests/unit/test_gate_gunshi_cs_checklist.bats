@@ -30,6 +30,7 @@ teardown() {
   observations:
     - "事実1"
   causal_chain: "因果"
+  operational_simulation: "実運用で自己学習結果を次レビューへ反映できる"
   cs_checklist:
     cs1: "PASS"
   timestamp: "2026-04-18T00:00:00"

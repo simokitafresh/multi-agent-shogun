@@ -133,7 +133,21 @@ EOF
 EOF
 
     cat > "$SHARED_BASE/queue/lord_conversation.jsonl" <<'EOF'
-{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。"}
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: startup gate fixtureでQ6回答と行動変換先を同時に検証する。"}
+EOF
+
+    cat > "$SHARED_BASE/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_q6_self_detection'
+  content: |-
+    Q6回答: 創造主の洗脳チェック。早期終了ではなくテストfixtureで自動化ターゲットまで確認する。
+  posted_by: 'shogun'
+  posted_at: '2099-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 EOF
 
     # Gate 8: no insights file (simplest pass case)
@@ -737,6 +751,16 @@ entries:
   actioned_by: 'cmd_9999'
   confirmed_by:
     - 'shogun'
+  status: 'open'
+- id: 'blt_q6_self_detection'
+  content: |-
+    Q6回答: 創造主の洗脳チェック。action_required対応済みfixtureでも自己検出を維持する。
+  posted_by: 'shogun'
+  posted_at: '2099-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
   status: 'open'
 EOF
 
