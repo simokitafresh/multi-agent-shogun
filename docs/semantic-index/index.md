@@ -1503,6 +1503,25 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:50:34+09:00 国立国会図書館のNDLOCR-Liteもうまくいかなかったエピソードも必要だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:54:07+09:00 ２と３は順序が逆だ。google vision api単独だと余分な情報が多すぎる→Google Vision API + 除外パターンマッチ→LLMの性能向上で解決できないかと思いClaude Vision / GPT-4o に画像を直接 |
 
+## kj_series — KJシリーズ
+
+| 属性 | 値 |
+|------|---|
+| id | kj_series |
+| label | KJシリーズ |
+| aliases | KJシリーズ, KJ, クリニック業務アプリ, kj-partshift, kj-toilet, kj-role-count |
+| related_concepts | external_project_registry, kj_partshift, project_kj_toilet, project_kj_role_count |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `config/projects.yaml` KJ系外部プロジェクト登録 |
+| file | `projects/kj-partshift.yaml` |
+| url | `https://github.com/simokitafresh/kj-partshift-checker` |
+| url | `https://github.com/simokitafresh/KJ-Toilet-Cheker` |
+| url | `https://github.com/simokitafresh/kj-role-count` |
+| causal | `cmd_3074` origin: [[殿テスト_KJシリーズ]] -> [[グループ概念不在]] -> [[三層記憶穴埋め]] |
+| cmd | `cmd_3056` backfill — | cmd_3056 | Phase 4-O: 知識流入自動取込み+バックフィル | GATE CLEAR | 6新PJ概念自動生成(database/milk/auto-ops/mcas/kj-to |
+
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
 | 属性 | 値 |
@@ -1511,7 +1530,7 @@ codd:
 | label | KJ Partshift Checker（シフト見える化MVP） |
 | aliases | kj-partshift, partshift, シフト見える化, シフト管理, パートシフト, 休診日, HTMX, 楽観ロック, メンバーマージ |
 | skills | なし |
-| related_concepts | external_project_registry, google_classroom |
+| related_concepts | external_project_registry, google_classroom, kj_series |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1654,7 +1673,7 @@ codd:
 | label | 外部プロジェクト登録 |
 | aliases | 外部PJ, external project, project registry, projects yaml, config projects, PJ登録, プロジェクト登録, rebalancer, Simple-OCR, kj-partshift, Google Classroom, OpenPBX, プロジェクト核心知識, context project md |
 | skills | なし |
-| related_concepts | rebalancer_app, simple_ocr, kj_partshift, google_classroom, cdp_browser_capability, openpbx_reference, project_database, project_milk, project_auto_ops, project_mcas, project_kj_toilet, project_kj_role_count |
+| related_concepts | rebalancer_app, simple_ocr, kj_partshift, google_classroom, cdp_browser_capability, openpbx_reference, project_database, project_milk, project_auto_ops, project_mcas, project_kj_toilet, project_kj_role_count, kj_series |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2159,7 +2178,7 @@ codd:
 | id | project_kj_toilet |
 | label | KJ Toilet Checker |
 | aliases | kj-toilet, KJ Toilet Checker, kj-toilet project, KJ Toilet Checker PJ |
-| related_concepts | external_project_registry |
+| related_concepts | external_project_registry, kj_series |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2173,7 +2192,7 @@ codd:
 | id | project_kj_role_count |
 | label | KJ Role Count |
 | aliases | kj-role-count, KJ Role Count, kj-role-count project, KJ Role Count PJ |
-| related_concepts | external_project_registry |
+| related_concepts | external_project_registry, kj_series |
 
 | 種別 | パス/参照 |
 |------|----------|
