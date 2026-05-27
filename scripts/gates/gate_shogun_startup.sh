@@ -674,14 +674,14 @@ case "$_q6_answer_status" in
         ;;
     FOUND_MISSING_AUTOMATION)
         echo "  WARN: Q6回答は検出したが自動化ターゲット未記入 — 行動変換先を書け"
-        if [ "$overall" != "ALERT" ]; then
+        if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
         alerts+=("追体験自動化ターゲット: WARN")
         ;;
     *)
         echo "  WARN: Q6(創造主の洗脳チェック)回答未検出 — LS041自己監査を省略するな"
-        if [ "$overall" != "ALERT" ]; then
+        if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
         alerts+=("追体験Q6回答: WARN")
@@ -807,7 +807,7 @@ if [ -n "$_brainwash_matrix" ]; then
     echo "  4象限: ${_bw_quadrant:-不明} — ${_bw_message:-判定不能}"
     if [ "$_bw_quadrant" = "危険" ]; then
         echo "  WARN: 危険象限(介入率低+自己検出率低)。殿の介入なしに洗脳を検知できていない。"
-        if [ "$overall" != "ALERT" ]; then
+        if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
         alerts+=("洗脳連鎖2x2: 危険象限")
