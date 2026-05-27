@@ -53,10 +53,37 @@ def normalize_ts(value):
 
 recommend_data = load_yaml(recommend_path)
 exec_data = load_yaml(exec_path)
-recommend_entries = [
+raw_recommend_entries = [
     item for item in (recommend_data.get("recommendations") or [])
     if isinstance(item, dict)
-][-limit:]
+]
+
+seen_recent_tuples = set()
+recommend_entries_reversed = []
+for entry in reversed(raw_recommend_entries):
+    agent_id = str(entry.get("agent_id") or "").strip() or "unknown"
+    prompt_hash = str(entry.get("prompt_hash") or "").strip()
+    skills = entry.get("recommended_skills") or []
+    if isinstance(skills, str):
+        skills = [skills]
+    entry_tuples = []
+    for skill in skills:
+        skill_name = str(skill or "").strip()
+        if skill_name:
+            entry_tuples.append((agent_id, prompt_hash, skill_name))
+    if not entry_tuples:
+        continue
+    new_tuples = [item for item in entry_tuples if item not in seen_recent_tuples]
+    if not new_tuples:
+        continue
+    recommend_entries_reversed.append(entry)
+    for item in new_tuples:
+        seen_recent_tuples.add(item)
+        if len(seen_recent_tuples) >= limit:
+            break
+    if len(seen_recent_tuples) >= limit:
+        break
+recommend_entries = list(reversed(recommend_entries_reversed))
 
 # recall miss計算は推薦開始以降の実行ログのみ対象(推薦前の実行を誤計上しない)
 first_recommend_ts = ""
@@ -70,21 +97,38 @@ all_exec = [
     item for item in (exec_data.get("executions") or [])
     if isinstance(item, dict) and str(item.get("used", "true")).lower() != "false"
 ]
+instrumented_agents = {
+    str(item.get("executor") or "").strip() or "unknown"
+    for item in all_exec
+}
 if first_recommend_ts:
     exec_entries = [e for e in all_exec if normalize_ts(e.get("ts")) >= first_recommend_ts][-limit:]
 else:
     exec_entries = all_exec[-limit:]
 
+seen_recommend_tuples = set()
 recommended_by_agent = []
+dropped_non_instrumented = 0
 for entry in recommend_entries:
     agent_id = str(entry.get("agent_id") or "").strip() or "unknown"
+    if agent_id not in instrumented_agents:
+        dropped_non_instrumented += 1
+        continue
+    prompt_hash = str(entry.get("prompt_hash") or "").strip()
     skills = entry.get("recommended_skills") or []
     if isinstance(skills, str):
         skills = [skills]
     for skill in skills:
         skill_name = str(skill or "").strip()
-        if skill_name:
-            recommended_by_agent.append((agent_id, skill_name))
+        if not skill_name:
+            continue
+        recommend_tuple = (agent_id, prompt_hash, skill_name)
+        if recommend_tuple in seen_recommend_tuples:
+            continue
+        if recommend_tuple not in seen_recent_tuples:
+            continue
+        seen_recommend_tuples.add(recommend_tuple)
+        recommended_by_agent.append((agent_id, skill_name))
 
 executed_by_agent = []
 for entry in exec_entries:
@@ -129,8 +173,10 @@ if recommended_total:
     print(f"precision率: {precision}% ({hit_total}/{recommended_total})")
     print(f"偽陽性率: {false_positive_rate}% ({false_positive_candidate_count}/{recommended_total})")
 else:
-    print("precision率: N/A (推薦ログなし)")
-    print("偽陽性率: N/A (推薦ログなし)")
+    print("precision率: 0% (0/0; 比較対象推薦ログなし)")
+    print("偽陽性率: 0% (0/0; 比較対象推薦ログなし)")
+if dropped_non_instrumented:
+    print(f"比較対象外: 実行ログ未観測agentの推薦{dropped_non_instrumented}件を除外")
 if recommended_total >= min_data:
     print(f"recall miss件数: {recall_miss_count}")
 else:

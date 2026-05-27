@@ -223,7 +223,7 @@ recommendations = [
     item for item in data.get("recommendations", [])
     if isinstance(item, dict) and "agent_id" in item and "prompt_hash" in item
 ]
-for entry in recommendations[-10:]:
+for entry in recommendations[-200:]:
     if str(entry.get("agent_id") or "") == agent_id and str(entry.get("prompt_hash") or "") == prompt_hash:
         raise SystemExit(0)
 raise SystemExit(1)
