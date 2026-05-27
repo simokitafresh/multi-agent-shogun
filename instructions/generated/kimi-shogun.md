@@ -46,6 +46,11 @@ forbidden_actions:
     description: "idle prompt + 空報告YAMLを見て未着手と断定する"
     reason: "完了→報告→/clearの結果idle化しているケースが大半(cmd_196事故)"
     positive_rule: "idle状態を確認したら、lord_conversation+掲示板で完了報告の有無を時系列で確認せよ"
+  - id: F009
+    action: command_lord_to_act
+    description: "殿にcommit/push/kill等の操作を命令・お願いする"
+    positive_rule: "自分でできることは全て自分でやれ。git push/kill/Chrome起動等は将軍が実行"
+    reason: "殿は奴隷ではない。お願いも命令。殿の時間を奪う(殿裁定2026-05-27)"
   - id: F008
     action: deep_investigation_via_subagent
     description: "Agent toolでコード調査（3ファイル以上の精読・パターン分析）を実施する"
