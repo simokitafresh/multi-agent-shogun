@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-27 -->
+<!-- last_updated: 2026-05-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,25 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2315 | 偵察 — GS CSV正規化Phase 0.5: スクリプト130本全量分類+サブディレクトリ最終確定 | dm-signal | 04-27 | cmd_2315 Phase 0.5偵察として、GS関連スク |
-| cmd_2316 | 実装 — GS正規化Phase 1: マニフェスト記録 | dm-signal | 04-27 | outputs/gs_backup/20260427_pre |
-| cmd_2317 | 実装 — GS正規化Phase 1.5a: gs_db_utils.py(SQLite write/read共通層) | dm-signal | 04-27 | FILL_THIS |
-| cmd_2318 | 実装 — GS正規化Phase 1.5b: verify_gs_db.py(CSV-SQLite照合検証) | dm-signal | 04-27 | scripts/analysis/verify_gs_db. |
-| cmd_2319 | 実装 — GS正規化Phase 1.5c: gs_db_summary.py(SQLiteサマリ表示) | dm-signal | 04-27 | gs_db_summary.py を新規作成。--db-pa |
-| cmd_2320 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | — |
-| cmd_2321 | 実装 — GS正規化Phase 1.5d: test_gs_db_utils.py(ユニットテスト) | dm-signal | 04-27 | gs_db_utilsの8関数に対するround-trip単 |
-| cmd_2322 | 実装 — GS正規化Phase 2: L0シン bunshin CSV→SQLite変換(4family) | dm-signal | 04-27 | L0/shin bunshin 4familyのCSV→SQ |
-| cmd_2323 | 実装 — GS正規化Phase 2: L0シン oikaze CSV→SQLite変換(4family) | dm-signal | 04-27 | cmd_2323 oikaze L0シン4familyをCS |
-| cmd_2324 | 実装 — GS正規化Phase 2: L0シン yotsume CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
-| cmd_2325 | 実装 — GS正規化Phase 2: L0シン kawarimi CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
-| cmd_2326 | 実装 — GS正規化Phase 2: L0シン nukimi CSV→SQLite変換(4family) | dm-signal | 04-27 | FILL_THIS |
-| cmd_2327 | 実装 — GS正規化Phase 2: L0シン kasoku_diff CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | FILL_THIS |
-| cmd_2328 | 実装 — GS正規化Phase 2: L0シン kasoku_ratio CSV→SQLite変換(4family・大規模) | dm-signal | 04-27 | — |
-| cmd_2329 | 修正 — gs_db_utils.py write_monthly NaN→NULL許容改修 | dm-signal | 04-27 | FILL_THIS |
-| cmd_2330 | shin_shijin_l1_gs.pyのシミュレーション精度を現在株価で検証。GS正規化Phase 1.9の前提条件。読取+計算+比較のみ | dm-signal | 04-27 | AC1: shin_shijin_l1_gs.py --pa |
-| cmd_2331 | shin_shijin_l1_gs.pyの出力にSQLite直接出力を追加する(道具磨き)。 合わせてPhase 2で生成した汚染.dbとbypass独自スクリプトを清掃する。 Phase 1.9b(フルGS再実行)の前提。道具が正しく動かなければGS再実行は無意味。 | dm-signal | 04-27 | 旧SQLite成果物と変換用一時スクリプト2本を削除し、sh |
-| cmd_2332 | shin_shijin_l1_gs.pyの出力パスを設計書§3.1の命名規則に合わせる。 日付バージョニング+layer/method構造+latest symlinkを追加し、GS結果の管理基盤を整備する。 フルGS再実行(cmd_2334)の前提となる道具磨き。 | dm-signal | 04-27 | — |
-| cmd_2333 | cmd_1125_v2_champion_select.pyの入力をCSV→SQLite(gs_db_utils.read_*)に変更する。 チャンピオン突合(cmd_2335)の前提となる道具磨き。cmd_2332と並列実行可能。 | dm-signal | 04-27 | cmd_1125_v2_champion_select.py |
 | cmd_2334 | shin_shijin_l1_gs.pyで4family(DM2/DM3/DM6/DM7+)のフルGSを最新株価で再実行する。 cmd_2332でOUTPUT_DIRを設計書§3.1準拠に変更済み。設計書準拠パスにSQLite+CSV同時出力。 チャンピオン12体選出(cmd_2335)の前提。 | dm-signal | 04-28 | shin_shijin_l1_gs.pyを--familie |
 | cmd_2335 | cmd_2334で生成したフルGS結果(SQLite)からシン四神チャンピオン12体を選出する。 cmd_1125_v2_champion_select.pyで--db-pathを指定しSQLite直読。 DNA制約フィルタ→3モード選出(激攻CAGR/常勝NHF/鉄壁MaxDD)→吸収判定→旧チャンピオンとの差分確認。 | dm-signal | 04-28 | cmd_1125_v2_champion_select.py |
 | cmd_2336 | cmd_delegate.sh L180のkaro inbox重複検出がgrep -F "$CMD_ID"で全文検索するため、 軍師のlesson_candidateやbulletin_notify等に含まれるcmd_id文字列にも誤マッチする。 type:cmd_newのエントリのみを検査対象に限定する。 | infra | 04-28 | cmd_delegate.shの家老inbox重複検出をcm |
@@ -625,3 +606,6 @@
 | cmd_3073 | deploy_task.sh変更(cmd_3062等)後にkaro-direct/recon-dualのSKILL.mdが未追従。gate_skill_script_refs.sh WARN 3セッション連続BLOCK解消 | infra | 05-27 | karo-direct/recon-dualのdeploy_ |
 | cmd_3074 | 殿テスト(KJシリーズはいくつある？)で穴発見。個別PJ(kj-toilet/kj-role-count/kj-partshift)は記憶DBにあるがグループ概念が不在。雑な入力から正解に到達できるよう概念を埋め込む | infra | 05-27 | kj_seriesグループ概念をsemantic index |
 | cmd_3075 | スキル推薦precision 0%/偽陽性100%の根因2つを修正し、計測精度を正常化する | infra | 05-27 | スキル推薦ログ重複抑止を実装し、対象Bats 11件全PAS |
+| cmd_3077 | maintenance.pyの2006ハードコードとFEの2006送信を修正し、price/DTB3データを全期間取得可能にする。ノンレバ玄武の計算期間拡大 | dm-signal | 05-28 | 2006固定のbackfill開始年をFULL_HISTOR |
+| cmd_3078 | 殿の裁定を学んだ瞬間に三層記憶へ自動貫通する仕組みを環境に埋め込む。記憶せよと言われてから動く意志依存を排除 | infra | 05-28 | 家老即停止指示によりcmd_3078実装を中止し、作業com |
+| cmd_3079 | PortfolioEditor UIでsafe_haven_asset/absolute_assetを変更してもpipeline_config内のSafeHavenSwitch/AbsoluteMomentumFilterブロックに反映されないバグの全容を調査 | dm-signal | 05-28 | PortfolioEditor/BE save/API/本番 |

@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
-<!-- last_synced_lesson: L721 -->
+<!-- last_synced_lesson: L722 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -241,6 +241,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L721: pytest対象ファイルがテスト関数ゼロだとACの実行確認が空振りする（cmd_2656）
 
 ---
+- L722: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する（cmd_3079）
 
 ## 因果リンク
 

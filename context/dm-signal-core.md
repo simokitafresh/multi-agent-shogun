@@ -516,6 +516,16 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 ---
 
+## PortfolioEditor UI ↔ pipeline_config 同期欠落 (cmd_3079偵察, 2026-05-28)
+
+- PortfolioEditor.tsx updateFieldはトップレベルPortfolioフィールドのみ更新。pipeline_config内ブロック(AbsoluteMomentumFilter/SafeHavenSwitch)は未操作
+- BE POST /api/portfolios/save→_validate_portfolio→Repository.saveもpipeline_configブロック同期なし
+- 本番136件中乖離1件: ノンレバ玄武-鉄壁(top SPY/QQQ vs block SPXL/TQQQ)
+- 殿裁定待ち: top-level同期 vs pipeline_config SSOT化
+- → `queue/reports/hayate_report_cmd_3079.yaml`(偵察全量)
+
+---
+
 ## 因果リンク
 
 - ← [[dm-signal]] メインPJの核心層
