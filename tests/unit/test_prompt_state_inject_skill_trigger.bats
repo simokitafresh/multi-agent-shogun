@@ -303,4 +303,14 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
   [ "$(wc -l < "$SEMANTIC_CALL_LOG" | tr -d ' ')" -eq 1 ]
+  run python3 - "$PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+entries = data["recommendations"]
+assert len(entries) == 1, entries
+PY
+  [ "$status" -eq 0 ]
 }

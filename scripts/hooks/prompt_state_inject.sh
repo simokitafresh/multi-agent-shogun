@@ -208,6 +208,26 @@ record_skill_recommendation_log() {
     if [[ ! -s "$recommend_log" ]]; then
       printf 'recommendations:\n' > "$recommend_log"
     fi
+    python3 - "$recommend_log" "$agent_id" "$prompt_hash" <<'PY' >/dev/null 2>&1 && return 0 || true
+import sys
+import yaml
+
+path, agent_id, prompt_hash = sys.argv[1:4]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except (FileNotFoundError, yaml.YAMLError):
+    raise SystemExit(1)
+
+recommendations = [
+    item for item in data.get("recommendations", [])
+    if isinstance(item, dict) and "agent_id" in item and "prompt_hash" in item
+]
+for entry in recommendations[-10:]:
+    if str(entry.get("agent_id") or "") == agent_id and str(entry.get("prompt_hash") or "") == prompt_hash:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
     printf -- '- ts: %s\n' "$(prompt_state_yaml_scalar "$timestamp")" >> "$recommend_log"
     printf '  agent_id: %s\n' "$(prompt_state_yaml_scalar "$agent_id")" >> "$recommend_log"
     printf '  prompt_hash: %s\n' "$(prompt_state_yaml_scalar "$prompt_hash")" >> "$recommend_log"
