@@ -261,7 +261,20 @@ PY
 
 @test "T-LC-013: append_lord_conversation inserts appended entry into memory DB events and FTS" {
     export LORD_CONVERSATION_DB="$TEST_TMPDIR/data/memory.db"
+    export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     mkdir -p "$TEST_TMPDIR/data"
+    mkdir -p "$TEST_TMPDIR/docs/semantic-index"
+    cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
+# セマンティクスインデックス SSOT
+
+## local_memory_db — ローカル記憶DB
+
+| 属性 | 値 |
+|------|---|
+| id | local_memory_db |
+| label | ローカル記憶DB |
+| aliases | multi_agent_shogun_memory.db, SQLite記憶DB |
+EOF
     python3 - "$LORD_CONVERSATION_DB" <<'PY'
 import sqlite3
 import sys
@@ -297,10 +310,11 @@ CREATE VIRTUAL TABLE events_fts USING fts5(
 conn.commit()
 PY
 
-    run append_lord_conversation "cmd_2982 realtime sqlite insert" "response" "shogun" "terminal"
+    run append_lord_conversation "cmd_2982 realtime sqlite insert multi_agent_shogun_memory.db" "response" "shogun" "terminal"
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - "$LORD_CONVERSATION_DB" <<'PY'
+import json
 import sqlite3
 import sys
 conn = sqlite3.connect(sys.argv[1])
@@ -308,7 +322,7 @@ event = conn.execute(
     """
     SELECT event_type, agent, target, direction, cmd_id, concepts
     FROM events
-    WHERE detail='cmd_2982 realtime sqlite insert'
+    WHERE detail='cmd_2982 realtime sqlite insert multi_agent_shogun_memory.db'
     """
 ).fetchone()
 fts_count = conn.execute(
@@ -317,20 +331,32 @@ fts_count = conn.execute(
     FROM events_fts
     JOIN events AS e ON e.rowid = events_fts.rowid
     WHERE events_fts MATCH 'realtime'
-      AND e.detail='cmd_2982 realtime sqlite insert'
+      AND e.detail='cmd_2982 realtime sqlite insert multi_agent_shogun_memory.db'
     """
 ).fetchone()[0]
 conversation_count = conn.execute(
-    "SELECT COUNT(*) FROM conversations WHERE detail='cmd_2982 realtime sqlite insert'"
+    "SELECT COUNT(*) FROM conversations WHERE detail='cmd_2982 realtime sqlite insert multi_agent_shogun_memory.db'"
 ).fetchone()[0]
+concept = conn.execute(
+    """
+    SELECT concept_name, relevance_score
+    FROM event_concepts
+    WHERE event_id = (
+        SELECT id FROM events
+        WHERE detail='cmd_2982 realtime sqlite insert multi_agent_shogun_memory.db'
+    )
+    """
+).fetchone()
 print(event[0])
 print(event[1])
 print(event[2])
 print(event[3])
 print(event[4])
-print(event[5])
+print(json.loads(event[5]))
 print(fts_count)
 print(conversation_count)
+print(concept[0])
+print(concept[1] > 0)
 PY
 )
     [ "${result[0]}" = "conversation" ]
@@ -338,9 +364,11 @@ PY
     [ "${result[2]}" = "lord" ]
     [ "${result[3]}" = "response" ]
     [ "${result[4]}" = "cmd_2982" ]
-    [ "${result[5]}" = "[]" ]
+    [ "${result[5]}" = "['local_memory_db']" ]
     [ "${result[6]}" = "1" ]
     [ "${result[7]}" = "1" ]
+    [ "${result[8]}" = "local_memory_db" ]
+    [ "${result[9]}" = "True" ]
 }
 
 @test "T-LC-014: append_lord_conversation keeps JSONL success when DB insert fails" {

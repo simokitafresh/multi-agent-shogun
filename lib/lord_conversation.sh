@@ -20,6 +20,7 @@ append_lord_conversation() {
   local target="${5:-}"
   local lock_wait="${LORD_CONVERSATION_LOCK_WAIT_SEC:-5}"
   local db_path="${LORD_CONVERSATION_DB:-}"
+  local semantic_index_path="${SEMANTIC_INDEX_PATH:-}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -43,6 +44,9 @@ append_lord_conversation() {
   if [ -z "$db_path" ]; then
     db_path="$(cd "$(dirname "$LORD_CONVERSATION")/.." 2>/dev/null && pwd)/data/multi_agent_shogun_memory.db"
   fi
+  if [ -z "$semantic_index_path" ]; then
+    semantic_index_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/docs/semantic-index/index.md"
+  fi
 
   mkdir -p "$(dirname "$LORD_CONVERSATION")"
   [ -f "$LORD_CONVERSATION" ] || : > "$LORD_CONVERSATION"
@@ -58,6 +62,7 @@ append_lord_conversation() {
     CONV_TARGET="$target" \
     CONV_MESSAGE="$message" \
     CONV_DB_PATH="$db_path" \
+    CONV_SEMANTIC_INDEX_PATH="$semantic_index_path" \
     python3 - <<'PY'
 import hashlib
 import json
@@ -81,6 +86,7 @@ source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
 target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
+semantic_index_path = Path(os.environ.get("CONV_SEMANTIC_INDEX_PATH", ""))
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 SQLITE_BUSY_TIMEOUT_MS = 5000
 
@@ -170,6 +176,75 @@ def infer_target(entry_agent: str, entry_direction: str, entry_target: str) -> s
     return ""
 
 
+def iter_semantic_concepts(index_path: Path) -> list[dict]:
+    if not index_path.exists():
+        return []
+
+    concepts: list[dict] = []
+    current: dict | None = None
+    for raw_line in index_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        heading = re.match(r"^##\s+([A-Za-z0-9_-]+)\s+—\s+(.+?)\s*$", raw_line)
+        if heading:
+            if current:
+                concepts.append(current)
+            current = {
+                "id": heading.group(1).strip(),
+                "label": heading.group(2).strip(),
+                "aliases": [],
+            }
+            continue
+        if current is None:
+            continue
+        alias_match = re.match(r"^\|\s*aliases\s*\|\s*(.*?)\s*\|$", raw_line)
+        if alias_match:
+            current["aliases"] = [
+                alias.strip()
+                for alias in alias_match.group(1).split(",")
+                if alias.strip()
+            ]
+    if current:
+        concepts.append(current)
+    return concepts
+
+
+def concept_terms(concept: dict) -> list[str]:
+    terms = [concept["id"], concept["label"], *concept.get("aliases", [])]
+    return [term for term in terms if len(term) >= 3]
+
+
+def concept_matches_for_text(text: str, concepts: list[dict]) -> list[tuple[str, float]]:
+    haystack = text.casefold()
+    matched: list[tuple[str, float]] = []
+    for concept in concepts:
+        terms = concept_terms(concept)
+        matched_terms = sum(1 for term in terms if term.casefold() in haystack)
+        if matched_terms:
+            matched.append((concept["id"], float(matched_terms)))
+    return sorted(matched, key=lambda item: item[0])
+
+
+def ensure_event_concepts_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS event_concepts (
+            event_id TEXT NOT NULL,
+            concept_name TEXT NOT NULL,
+            relevance_score REAL NOT NULL DEFAULT 1.0,
+            PRIMARY KEY (event_id, concept_name),
+            FOREIGN KEY (event_id) REFERENCES events(id)
+        )
+        """
+    )
+    columns = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info(event_concepts)")
+    }
+    if "relevance_score" not in columns:
+        conn.execute(
+            "ALTER TABLE event_concepts ADD COLUMN relevance_score REAL NOT NULL DEFAULT 1.0"
+        )
+
+
 def append_memory_db_entry(entry: dict, event_index: int) -> None:
     if not db_path or not db_path.exists():
         return
@@ -197,6 +272,14 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
     entry_detail = normalize_text(entry.get("detail", ""))
     entry_target = normalize_text(entry.get("target", ""))
     source_file = str(path)
+    concept_matches = concept_matches_for_text(
+        f"{entry_summary}\n{entry_detail}",
+        iter_semantic_concepts(semantic_index_path),
+    )
+    concept_names_json = json.dumps(
+        [concept_name for concept_name, _score in concept_matches],
+        ensure_ascii=False,
+    )
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA journal_mode=WAL")
@@ -209,6 +292,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
         }
         if not {"conversations", "events", "events_fts"}.issubset(tables):
             return
+        ensure_event_concepts_schema(conn)
         cursor = conn.execute(
             """
             INSERT OR IGNORE INTO events (
@@ -227,7 +311,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 entry_detail,
                 session_id,
                 infer_cmd_id(entry_summary, entry_detail),
-                "[]",
+                concept_names_json,
                 source_file,
                 None,
                 "normal",
@@ -241,6 +325,16 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
             conn.execute(
                 "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
                 (rowid, entry_summary, entry_detail),
+            )
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO event_concepts (event_id, concept_name, relevance_score)
+                VALUES (?, ?, ?)
+                """,
+                [
+                    (event_id, concept_name, relevance_score)
+                    for concept_name, relevance_score in concept_matches
+                ],
             )
 
 
