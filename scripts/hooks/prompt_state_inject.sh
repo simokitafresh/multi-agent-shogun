@@ -156,6 +156,35 @@ record_semantic_no_match_metric() {
   } 9>"${metrics_file}.lock"
 }
 
+dedup_semantic_discussions() {
+  python3 -c '
+import re
+import sys
+
+seen = set()
+for raw in sys.stdin:
+    line = raw.rstrip("\n")
+    if re.match(r"^\|\s*discussion\s*\|", line):
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        ref = cells[1] if len(cells) > 1 else line
+        timestamp_match = re.search(
+            r"\b(\d{4}-\d{2}-\d{2}T[0-9:]+(?:[+-]\d{2}:?\d{2}|Z)?|\d{4}-\d{2}-\d{2}[T ][0-9:]+)\b",
+            ref,
+        )
+        if timestamp_match:
+            summary = ref[timestamp_match.end():].strip()
+            summary = re.sub(r"^\[[^\]]+\]\s*", "", summary)
+            summary = re.sub(r"\s+", " ", summary)
+            key = (timestamp_match.group(1), summary)
+        else:
+            key = ("", re.sub(r"\s+", " ", ref))
+        if key in seen:
+            continue
+        seen.add(key)
+    print(line)
+'
+}
+
 prompt_state_yaml_scalar() {
   local value="${1:-}"
   value="${value//\\/\\\\}"
@@ -550,7 +579,7 @@ fi
 	  _psi_rc=$?
 	  set -e
 	  if [[ "$_psi_rc" -eq 0 ]]; then
-	    printf '%s' "$_psi_result"
+	    printf '%s' "$_psi_result" | dedup_semantic_discussions
 	    return 0
 	  fi
 	  if [[ "$_psi_rc" -eq 1 ]]; then

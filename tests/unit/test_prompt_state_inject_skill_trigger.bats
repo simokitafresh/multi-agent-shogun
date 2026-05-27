@@ -238,6 +238,38 @@ EOF
   [ "$output" = "" ]
 }
 
+@test "shogun semantic knowledge deduplicates discussion rows by timestamp and summary" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_discussion_dupes.sh"
+  cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+## growth_loop — 成長ループ
+resources:
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T11:08:00+09:00 [shogun宛て] 今クリアされても強くてニューゲームできるか |
+## deepdive_principles — deepdive
+resources:
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T11:08:00+09:00 [shogun宛て] 今クリアされても強くてニューゲームできるか |
+| discussion | `queue/lord_conversation.jsonl` 2026-05-27T11:09:00+09:00 [shogun宛て] 別の発言 |
+OUT
+EOF
+  chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
+
+  run bash "$HOOK" <<< '{"prompt":"ニューゲーム確認"}'
+
+  [ "$status" -eq 0 ]
+  run python3 - "$output" <<'PY'
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+ctx = payload["hookSpecificOutput"]["additionalContext"]
+assert ctx.count("今クリアされても強くてニューゲームできるか") == 1, ctx
+assert ctx.count("| discussion |") == 2, ctx
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"

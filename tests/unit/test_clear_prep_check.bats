@@ -50,6 +50,27 @@ EOF
     [[ "$output" == *"裁定projects未反映"* ]]
 }
 
+@test "G0 warns when latest five inbound entries have no clear prep instruction" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2026-05-10T09:00:00+09:00","direction":"inbound","detail":"通常の確認です"}
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
+
+    [[ "$output" == *"[G0.殿/clear指示] WARN: 直近1件の殿inboundに/clear前準備指示なし"* ]]
+}
+
+@test "G0 accepts clear prep instruction in latest five inbound entries" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2026-05-10T09:00:00+09:00","direction":"inbound","detail":"通常の確認です"}
+{"ts":"2026-05-10T09:01:00+09:00","direction":"inbound","detail":"/clear前の準備をして"}
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
+
+    [[ "$output" == *"[G0.殿/clear指示] OK: 直近2件内に指示あり ts=2026-05-10T09:01:00+09:00"* ]]
+}
+
 @test "Check 10 is OK when there is no inbound decision keyword" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2026-05-10T09:00:00+09:00","direction":"inbound","detail":"通常の確認です"}

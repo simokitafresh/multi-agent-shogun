@@ -21,6 +21,67 @@ issue_reasons=()
 
 echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 
+check_lord_clear_instruction_guard() {
+  if [ ! -f "$LORD_CONV" ]; then
+    echo "[G0.殿/clear指示] WARN: lord_conversation.jsonl不在。殿の直近/clear指示を確認できない"
+    issue_reasons+=("殿clear指示未確認")
+    return 0
+  fi
+
+  local guard_result
+  guard_result="$(python3 - "$LORD_CONV" <<'PY'
+import json
+import re
+import sys
+
+path = sys.argv[1]
+entries = []
+with open(path, encoding="utf-8") as fh:
+    for raw in fh:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if entry.get("direction") != "inbound":
+            continue
+        text = " ".join(
+            str(entry.get(key, ""))
+            for key in ("summary", "detail", "content", "message", "text")
+        )
+        entries.append((str(entry.get("ts") or entry.get("timestamp") or ""), text))
+
+recent = entries[-5:]
+pattern = re.compile(r"(/clear|/shogun-clear-prep|clear前|クリア前|セッション終了前)")
+matches = [(ts, text) for ts, text in recent if pattern.search(text)]
+if matches:
+    ts, text = matches[-1]
+    print(f"OK|{len(recent)}|{ts}|{text[:120]}")
+else:
+    print(f"WARN|{len(recent)}|none|none")
+PY
+)"
+
+  local guard_status guard_count guard_ts guard_text
+  guard_status="${guard_result%%|*}"
+  guard_result="${guard_result#*|}"
+  guard_count="${guard_result%%|*}"
+  guard_result="${guard_result#*|}"
+  guard_ts="${guard_result%%|*}"
+  guard_text="${guard_result#*|}"
+
+  if [ "$guard_status" = "OK" ]; then
+    echo "[G0.殿/clear指示] OK: 直近${guard_count}件内に指示あり ts=${guard_ts} text=${guard_text}"
+  else
+    echo "[G0.殿/clear指示] WARN: 直近${guard_count}件の殿inboundに/clear前準備指示なし。殿未指示なら/shogun-clear-prepを続行するな"
+    issue_reasons+=("殿clear指示なし")
+  fi
+}
+
+check_lord_clear_instruction_guard
+
 archive_lord_conversation() {
   if [ ! -f "$LORD_CONV" ]; then
     echo "[0.会話退避] SKIP: lord_conversation.jsonl不在"

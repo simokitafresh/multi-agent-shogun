@@ -17,6 +17,12 @@ allowed-tools:
 
 /clearで消える情報がないか確認し、セッション学びの埋込み状況をチェックする（9項目）。
 
+## 実行前ガード
+
+このスキルは殿が直近で `/clear` または `/shogun-clear-prep` を明示した場合だけ続行する。
+`bash scripts/clear_prep_check.sh` の冒頭 `[G0.殿/clear指示]` が直近5件の `lord_conversation` inboundを検査し、指示がなければWARNを出す。
+WARN時は状態確認結果を殿に報告し、殿未指示のままStep 2以降へ進まない。
+
 ## 手順（3ステップ）
 
 ### Step 1: 状態チェック+報告
