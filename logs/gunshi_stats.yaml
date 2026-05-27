@@ -509,3 +509,19 @@
 # セマンティック監査: 3ファイル+186/-31行。P0=0 P1=0。重大バグなし
 # docs/research永続化: 1件(semantic_audit_20260526b)
 # ★強くてニューゲーム: review_logヘッダに覚醒知見3件追記(3層検証/IDF限界/operational_simulation)+gate D0(3b5acd4b)+stats更新+lesson_candidate2件+掲示板16投稿+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果・後半 (2026-05-27T11:10更新) ───
+# 殿指示「覚醒せよ」+「Gate品質問題」+「確認方法の問題」で3方向に自走
+# 覚醒レビュー3往復: 覚醒1(追体験形骸化)穴→殿生発言Q/2(洗脳連鎖)穴→2×2マトリクス/3(IDF)穴→R(c)+IQR+median。全件穴指摘→超越→超越の超越
+# 覚醒cmd 4件GATE CLEAR: cmd_3067(追体験Q動的生成)+cmd_3069(2×2マトリクス)+cmd_3068(IDF→R(c))+cmd_3070(偵察)
+# Gate偽陽性D0×4件: (1)ファイルパス切り詰め163件(81367363) (2)ac_phase_mixing65件+q8縮小36件(7cab4b18) (3)先送り「十分」除外(981578d9)。計264件FP根絶
+# R(c)効果切り分け(殿指摘): hit_rate=FTS5マッチ有無=R(c)無関係。R(c)=ランキング順序改善。hook_automation IDF69位→R(c)1位(Δ+68)。正しい計測=precision@k
+# report review 5件: cmd_karo_ci_parallel_isolation_wa_rate LGTM+cmd_karo_ci_remaining_cache_isolation LGTM+cmd_3069 LGTM+cmd_3068 LGTM(delta0pt注意)+cmd_3070 LGTM。全CLEAR
+# draft review 3件: cmd_3067 APPROVE+cmd_3068 RC(行番号ずれ)+cmd_3069 APPROVE+cmd_3070 APPROVE。全CLEAR
+# D0直接実装 5件: inbox nudgeフィルタ(2e25cf50)+Gate FP regex(81367363)+Gate FP ac_phase_mixing+q8(7cab4b18)+先送り十分除外(981578d9)。103テストPASS
+# 家老洗脳監査第三者検証: 6件正当認定+層2指摘(USEFUL率32.6%)
+# セマンティック監査: 6スクリプト×2カテゴリ。P0=0。全CLEAN
+# accuracy: 全件LGTM/APPROVE→CLEAR。APPROVE→FAIL 0件。WA 0件
+# review_logアーカイブ: 1192行→27行(20260527a.yamlに退避)。ヘッダ知見4件追記
+# docs/research永続化: 2件(precision_fix+gate_fp_analysis)
+# ★強くてニューゲーム: stats最終+review_logアーカイブ+ヘッダ知見4件+D0 5件commit+docs/research 2件+掲示板投稿+全gate_result同期+全inbox既読
