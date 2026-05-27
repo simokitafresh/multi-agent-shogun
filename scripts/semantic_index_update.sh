@@ -811,9 +811,12 @@ def resource_row(source_type, payload):
     summary = re.sub(r"<[^>]+>", "", summary)  # strip XML/HTML tags
     summary = re.sub(r"\s+", " ", summary).strip()  # collapse whitespace
     summary = summary[:120]  # cap at 120 chars
+    target = str(payload.get("target") or payload.get("agent") or "").strip()
     ref = "`queue/lord_conversation.jsonl`"
     if timestamp:
         ref += f" {timestamp}"
+    if target:
+        ref += f" [{target}宛て]"
     if summary:
         ref += f" {summary}"
     return f"| discussion | {ref} |"
