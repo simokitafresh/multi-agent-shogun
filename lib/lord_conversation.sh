@@ -38,13 +38,8 @@ append_lord_conversation() {
   fi
 
   local timestamp legacy_yaml
-  local lib_self repo_root semantic_index_path
   timestamp="$(date "+%Y-%m-%dT%H:%M:%S%:z")"
   legacy_yaml="${LORD_CONVERSATION%.jsonl}.yaml"
-  lib_self="${BASH_SOURCE[0]}"
-  [[ "$lib_self" != /* ]] && lib_self="$PWD/$lib_self"
-  repo_root="${lib_self%/lib/lord_conversation.sh}"
-  semantic_index_path="${LORD_CONVERSATION_SEMANTIC_INDEX:-$repo_root/docs/semantic-index/index.md}"
   if [ -z "$db_path" ]; then
     db_path="$(cd "$(dirname "$LORD_CONVERSATION")/.." 2>/dev/null && pwd)/data/multi_agent_shogun_memory.db"
   fi
@@ -63,7 +58,6 @@ append_lord_conversation() {
     CONV_TARGET="$target" \
     CONV_MESSAGE="$message" \
     CONV_DB_PATH="$db_path" \
-    CONV_SEMANTIC_INDEX="$semantic_index_path" \
     python3 - <<'PY'
 import hashlib
 import json
@@ -87,7 +81,6 @@ source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
 target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
-semantic_index_path = Path(os.environ.get("CONV_SEMANTIC_INDEX", ""))
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 SQLITE_BUSY_TIMEOUT_MS = 5000
 
@@ -177,70 +170,6 @@ def infer_target(entry_agent: str, entry_direction: str, entry_target: str) -> s
     return ""
 
 
-def split_semantic_cell(value: str) -> list[str]:
-    return [part.strip() for part in str(value or "").split(",") if part.strip()]
-
-
-def iter_semantic_concepts(index_path: Path) -> list[dict]:
-    if not index_path.is_file():
-        return []
-    concepts: list[dict] = []
-    current: dict | None = None
-    for raw in index_path.read_text(encoding="utf-8").splitlines():
-        heading = re.match(r"^##\s+(.+?)\s*$", raw)
-        if heading:
-            if current:
-                concepts.append(current)
-            title = heading.group(1).strip()
-            concept_id, _, label = title.partition(" — ")
-            current = {"id": concept_id.strip(), "label": label.strip(), "aliases": []}
-            continue
-        if current is None:
-            continue
-        row = re.match(r"^\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|", raw)
-        if not row:
-            continue
-        key = row.group(1).strip()
-        value = row.group(2).strip()
-        if key == "id" and value:
-            current["id"] = value
-        elif key == "label" and value:
-            current["label"] = value
-        elif key == "aliases":
-            current["aliases"] = split_semantic_cell(value)
-    if current:
-        concepts.append(current)
-    return concepts
-
-
-def concept_terms(concept: dict) -> list[str]:
-    terms = [concept.get("id", ""), concept.get("label", ""), *concept.get("aliases", [])]
-    seen: set[str] = set()
-    normalized: list[str] = []
-    for term in terms:
-        term = normalize_text(term)
-        key = term.casefold()
-        if not term or key in seen:
-            continue
-        seen.add(key)
-        normalized.append(term)
-    return normalized
-
-
-def concepts_for_text(text: str) -> list[str]:
-    haystack = normalize_text(text).casefold()
-    if not haystack:
-        return []
-    matched: list[str] = []
-    for concept in iter_semantic_concepts(semantic_index_path):
-        concept_id = normalize_text(concept.get("id", ""))
-        if not concept_id:
-            continue
-        if any(term.casefold() in haystack for term in concept_terms(concept)):
-            matched.append(concept_id)
-    return sorted(set(matched))
-
-
 def append_memory_db_entry(entry: dict, event_index: int) -> None:
     if not db_path or not db_path.exists():
         return
@@ -268,8 +197,6 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
     entry_detail = normalize_text(entry.get("detail", ""))
     entry_target = normalize_text(entry.get("target", ""))
     source_file = str(path)
-    concept_names = concepts_for_text(f"{entry_summary}\n{entry_detail}")
-    concepts_json = json.dumps(concept_names, ensure_ascii=False)
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA journal_mode=WAL")
@@ -300,7 +227,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 entry_detail,
                 session_id,
                 infer_cmd_id(entry_summary, entry_detail),
-                concepts_json,
+                "[]",
                 source_file,
                 None,
                 "normal",
@@ -315,11 +242,6 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
                 (rowid, entry_summary, entry_detail),
             )
-            if "event_concepts" in tables and concept_names:
-                conn.executemany(
-                    "INSERT OR IGNORE INTO event_concepts (event_id, concept_name) VALUES (?, ?)",
-                    [(event_id, concept_name) for concept_name in concept_names],
-                )
 
 
 entries = load_jsonl(path)

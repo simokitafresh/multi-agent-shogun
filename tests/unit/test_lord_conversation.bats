@@ -363,90 +363,7 @@ PY
     [[ "$output" == *"DB INSERT skipped"* ]]
 }
 
-@test "T-LC-015: append_lord_conversation links live DB insert to semantic concepts" {
-    export LORD_CONVERSATION_DB="$TEST_TMPDIR/data/memory.db"
-    export LORD_CONVERSATION_SEMANTIC_INDEX="$TEST_TMPDIR/docs/semantic-index/index.md"
-    mkdir -p "$TEST_TMPDIR/data" "$TEST_TMPDIR/docs/semantic-index"
-    cat > "$LORD_CONVERSATION_SEMANTIC_INDEX" <<'EOF'
-# Semantic Index
-
-## lord_conversation_auto_pierce — Lord Conversation Auto Pierce
-| id | lord_conversation_auto_pierce |
-| label | Lord Conversation Auto Pierce |
-| aliases | 三層記憶, 自動貫通, lord conversation |
-EOF
-    python3 - "$LORD_CONVERSATION_DB" <<'PY'
-import sqlite3
-import sys
-conn = sqlite3.connect(sys.argv[1])
-conn.executescript("""
-CREATE TABLE events (
-    id TEXT PRIMARY KEY,
-    ts TEXT,
-    event_type TEXT,
-    agent TEXT,
-    target TEXT,
-    direction TEXT,
-    summary TEXT,
-    detail TEXT,
-    session_id TEXT,
-    cmd_id TEXT,
-    concepts TEXT,
-    source_file TEXT,
-    parent_event_id INTEGER,
-    importance TEXT
-);
-CREATE VIRTUAL TABLE events_fts USING fts5(
-    summary,
-    detail,
-    content='events',
-    content_rowid='rowid'
-);
-CREATE TABLE event_concepts (
-    event_id TEXT NOT NULL,
-    concept_name TEXT NOT NULL,
-    PRIMARY KEY (event_id, concept_name)
-);
-CREATE VIEW conversations AS
-SELECT ts, agent, direction, summary, detail, session_id
-FROM events
-WHERE event_type = 'conversation';
-""")
-conn.commit()
-PY
-
-    run append_lord_conversation "殿裁定: 三層記憶へ自動貫通せよ cmd_3078" "inbound" "lord" "terminal" "shogun"
-    [ "$status" -eq 0 ]
-
-    readarray -t result < <(python3 - "$LORD_CONVERSATION_DB" <<'PY'
-import json
-import sqlite3
-import sys
-conn = sqlite3.connect(sys.argv[1])
-row = conn.execute(
-    """
-    SELECT id, concepts
-    FROM events
-    WHERE detail='殿裁定: 三層記憶へ自動貫通せよ cmd_3078'
-    """
-).fetchone()
-concept_count = conn.execute(
-    """
-    SELECT COUNT(*)
-    FROM event_concepts
-    WHERE event_id=? AND concept_name='lord_conversation_auto_pierce'
-    """,
-    (row[0],),
-).fetchone()[0]
-print("lord_conversation_auto_pierce" in json.loads(row[1]))
-print(concept_count)
-PY
-)
-    [ "${result[0]}" = "True" ]
-    [ "${result[1]}" = "1" ]
-}
-
-@test "T-LC-016: lord_conversation_read filters by target or agent and keeps unscoped entries" {
+@test "T-LC-015: lord_conversation_read filters by target or agent and keeps unscoped entries" {
     cat > "$LORD_CONVERSATION" <<'EOF'
 {"agent":"lord","target":"shogun","summary":"to shogun"}
 {"agent":"shogun","target":"lord","summary":"from shogun"}
@@ -464,7 +381,7 @@ EOF
     ! echo "$output" | grep -q "to karo"
 }
 
-@test "T-LC-017: lord_conversation_read applies limit after filtering" {
+@test "T-LC-016: lord_conversation_read applies limit after filtering" {
     cat > "$LORD_CONVERSATION" <<'EOF'
 {"agent":"lord","target":"shogun","summary":"first"}
 {"agent":"lord","target":"karo","summary":"excluded"}
@@ -480,7 +397,7 @@ EOF
     echo "$output" | grep -q "third"
 }
 
-@test "T-LC-018: conversation_retention renders lord decisions from inbound entries only" {
+@test "T-LC-017: conversation_retention renders lord decisions from inbound entries only" {
     local index_path="$TEST_TMPDIR/lord-conversation-index.md"
     local archive_dir="$TEST_TMPDIR/archive"
     cat > "$LORD_CONVERSATION" <<'EOF'
