@@ -75,27 +75,30 @@ if first_recommend_ts:
 else:
     exec_entries = all_exec[-limit:]
 
-recommended = []
+recommended_by_agent = []
 for entry in recommend_entries:
+    agent_id = str(entry.get("agent_id") or "").strip() or "unknown"
     skills = entry.get("recommended_skills") or []
     if isinstance(skills, str):
         skills = [skills]
     for skill in skills:
         skill_name = str(skill or "").strip()
         if skill_name:
-            recommended.append(skill_name)
+            recommended_by_agent.append((agent_id, skill_name))
 
-executed = [
-    str(entry.get("skill") or "").strip()
-    for entry in exec_entries
-    if str(entry.get("skill") or "").strip()
-]
+executed_by_agent = []
+for entry in exec_entries:
+    skill_name = str(entry.get("skill") or "").strip()
+    if not skill_name:
+        continue
+    executor = str(entry.get("executor") or "").strip() or "unknown"
+    executed_by_agent.append((executor, skill_name))
 
-recommend_counter = Counter(recommended)
-executed_counter = Counter(executed)
+recommend_counter = Counter(recommended_by_agent)
+executed_counter = Counter(executed_by_agent)
 
 recommended_total = sum(recommend_counter.values())
-hit_total = sum(min(count, executed_counter.get(skill, 0)) for skill, count in recommend_counter.items())
+hit_total = sum(min(count, executed_counter.get(key, 0)) for key, count in recommend_counter.items())
 precision = round((hit_total / recommended_total) * 100) if recommended_total else 0
 false_positive_candidate_count = max(0, recommended_total - hit_total)
 false_positive_rate = round((false_positive_candidate_count / recommended_total) * 100) if recommended_total else 0
@@ -113,12 +116,12 @@ auto_covered_recall_skills = {
 }
 recall_misses = []
 if recommended_total >= min_data:
-    for skill, count in sorted(executed_counter.items()):
+    for (executor, skill), count in sorted(executed_counter.items()):
         if skill in auto_covered_recall_skills:
             continue
-        miss_count = max(0, count - recommend_counter.get(skill, 0))
+        miss_count = max(0, count - recommend_counter.get((executor, skill), 0))
         if miss_count:
-            recall_misses.append((skill, miss_count))
+            recall_misses.append((f"{executor}/{skill}", miss_count))
 recall_miss_count = sum(count for _, count in recall_misses)
 
 print(f"推薦ログ: 直近{len(recommend_entries)}件 / 実行ログ: 直近{len(exec_entries)}件")

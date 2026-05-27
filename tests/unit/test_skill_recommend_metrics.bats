@@ -60,7 +60,7 @@ EOF
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"recall miss件数: 1"* ]]
-  [[ "$output" == *"recall miss top: gate-sync:1"* ]]
+  [[ "$output" == *"recall miss top: unknown/gate-sync:1"* ]]
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 
@@ -81,6 +81,7 @@ EOF
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T18:00:00+0900"
+  executor: "karo"
   skill: "report-write"
   used: "true"
 EOF
@@ -91,6 +92,36 @@ EOF
   [[ "$output" == *"precision率: 5% (1/20)"* ]]
   [[ "$output" == *"偽陽性率: 95% (19/20)"* ]]
   [[ "$output" != *"precision評価対象外"* ]]
+  [[ "$output" == *"ALERT: Phase 3"* ]]
+}
+
+@test "precision matches recommendations and executions by agent_id" {
+  cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
+recommendations:
+EOF
+  for i in $(seq 1 10); do
+    cat >> "$SKILL_RECOMMEND_LOG_FILE" <<EOF
+- ts: "2026-05-24T15:${i}:00+09:00"
+  agent_id: "karo"
+  prompt_hash: "hash_${i}"
+  recommended_skills:
+  - "report-write"
+EOF
+  done
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-05-24T18:00:00+0900"
+  executor: "saizo"
+  skill: "report-write"
+  used: "true"
+EOF
+
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"precision率: 0% (0/10)"* ]]
+  [[ "$output" == *"偽陽性率: 100% (10/10)"* ]]
+  [[ "$output" == *"recall miss件数: 0"* ]]
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 
@@ -109,6 +140,7 @@ EOF
     printf 'executions:\n'
     for i in $(seq 1 10); do
       printf -- '- ts: "2026-05-24T18:%02d:00+0900"\n' "$i"
+      printf '  executor: "hayate"\n'
       printf '  skill: "report-write"\n'
       printf '  used: "true"\n'
     done
