@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-24T14:32:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-27T12:56:11+09:00 -->
 
 # /karo-direct — 家老自立配備スキル
 
@@ -73,7 +73,7 @@ bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>
 # PASS/FAIL/PASS_NO_IMPROVEMENT verdict済みreportがある場合、cmd_complete_gate完了前の再配備を禁止する。
 # exact以外で他忍者の完了済みpeer reportがある場合もBLOCKし、二重配備による報告YAML消失を防ぐ。
 ```
-Script refs verified: 2026-05-24 cmd_3026 (cmd_3019: q11_not_already_done再確認WARNは `deploy_task.sh --yaml/--direct` 共通経路で自動実行されるため手順追記不要。cmd_3020: universal lessonsのtarget_path関連フィルタは注入内容の精度変更で、karo_directの配備手順変更なし。cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_2951: 配備前pending own report / completed peer reportをBLOCKし、cmd_complete_gate未完了の報告YAML消失を防止。cmd_2956: cmd_training_* で parent_cmd がnullishならcmd_idからparent_cmd/task_id/statusを修復。cmd_2957: trainingテンプレートは関連ファイルへの直接[[ファイル名]]リンク追加、リンク先特定行引用、直接リンク数baseline/diff報告を要求。cmd_2953: training target_pathは既存指定がなければ `markdown_link_counts.sh --select-file` 優先、未取得時のみ `semantic_alias_quality.sh` へフォールバック。cmd_2968: report templateのverdictは空値のみを出力し、gate_report_format.shがbinary_checksから自動導出する。手動記入禁止コメントは提出前チェック側に集約)。
+Script refs verified: 2026-05-27 cmd_3062 (cmd_3062: `inject_related_lessons` は `target_path` / `files_modified` と教訓 `target_files` が一致した場合に `TARGET_PATH_MATCH_BOOST` で順位を上げる。注入精度の変更であり、karo_directの配備手順変更なし。cmd_3019: q11_not_already_done再確認WARNは `deploy_task.sh --yaml/--direct` 共通経路で自動実行されるため手順追記不要。cmd_3020: universal lessonsのtarget_path関連フィルタは注入内容の精度変更で、karo_directの配備手順変更なし。cmd_2852: context hints・PI注入のブロック挿入にinsert_task_block_before_description()ヘルパーを導入。sed -iの改行問題を解消し、descriptionブロック直前への挿入を確実化。cmd_2883: stale field reset対象に `scope`、`context_hints`、`context` を追加し、前taskのscope/context残留を防止。cmd_2899: target_path存在チェックにproject_path 2段解決追加+相対パスのSCRIPT_DIR基準解決による偽陽性修正。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用。cmd_2944: `_compute_ac_hash` はkaro_direct形式の `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、checks[]内の `- check:` をAC item境界と誤判定しない。cmd_2951: 配備前pending own report / completed peer reportをBLOCKし、cmd_complete_gate未完了の報告YAML消失を防止。cmd_2956: cmd_training_* で parent_cmd がnullishならcmd_idからparent_cmd/task_id/statusを修復。cmd_2957: trainingテンプレートは関連ファイルへの直接[[ファイル名]]リンク追加、リンク先特定行引用、直接リンク数baseline/diff報告を要求。cmd_2953: training target_pathは既存指定がなければ `markdown_link_counts.sh --select-file` 優先、未取得時のみ `semantic_alias_quality.sh` へフォールバック。cmd_2968: report templateのverdictは空値のみを出力し、gate_report_format.shがbinary_checksから自動導出する。手動記入禁止コメントは提出前チェック側に集約)。
 
 ### Step 4: 陣形図更新
 karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）。
