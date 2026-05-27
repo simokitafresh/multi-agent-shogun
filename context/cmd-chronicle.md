@@ -609,3 +609,6 @@
 | cmd_3077 | maintenance.pyの2006ハードコードとFEの2006送信を修正し、price/DTB3データを全期間取得可能にする。ノンレバ玄武の計算期間拡大 | dm-signal | 05-28 | 2006固定のbackfill開始年をFULL_HISTOR |
 | cmd_3078 | 殿の裁定を学んだ瞬間に三層記憶へ自動貫通する仕組みを環境に埋め込む。記憶せよと言われてから動く意志依存を排除 | infra | 05-28 | 家老即停止指示によりcmd_3078実装を中止し、作業com |
 | cmd_3079 | PortfolioEditor UIでsafe_haven_asset/absolute_assetを変更してもpipeline_config内のSafeHavenSwitch/AbsoluteMomentumFilterブロックに反映されないバグの全容を調査 | dm-signal | 05-28 | PortfolioEditor/BE save/API/本番 |
+| cmd_3080 | skill_recommend_log.yamlのデダップ窓が10件と狭く、同一(agent_id, prompt_hash)ペアが数百回重複記録され、precision=0%/偽陽性100%の計測障害が3セッション連続でstartup BLOCKを発生させている。根因はprompt_state_inject.sh L226のrecommendations[-10:]。修正して正確な計測を復元する | infra | 05-28 | skill推薦ログの重複記録窓を200件へ拡張し、metri |
+| cmd_3081 | cmd_3076(年制限全量特定)+cmd_3077(maintenance.py 2006→定数統一+backfill)+cmd_3079(UI-pipeline_config同期バグ)の成果がcontext/dm-signal-core.md・dm-signal-ops.mdに未反映(28日前更新)。/clear後の将軍が最新状態で起動できるよう還流する | dm-signal | 05-28 | context/dm-signal-ops.md §37に本 |
+| cmd_3082 | cmd_3077でFE文言変更のみなのにCDPチェック(cdp_measure.sh→powershell.exe)が必須実行され、WSL2ハング→GATE 30分停止→殿手動kill 2回発生。run_cdp_production_check()にCDP_SKIP環境変数チェックを追加し、CDPチェック不要時にスキップ可能にする | infra | 05-28 | run_cdp_production_checkにCDP_S |
