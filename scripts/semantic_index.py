@@ -229,6 +229,23 @@ def semantic_recency_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def latest_valid_timestamp(timestamps: list[object]) -> str:
+    latest: datetime | None = None
+    latest_raw = ""
+    for value in timestamps:
+        parsed = parse_event_timestamp(value)
+        if parsed is None:
+            continue
+        if latest is None or parsed > latest:
+            latest = parsed
+            latest_raw = str(value or "")
+    return latest_raw
+
+
 def percentile(sorted_values: list[float], pct: float) -> float:
     if not sorted_values:
         return 0.0
@@ -256,6 +273,29 @@ def recency_frequency_raw(timestamps: list[object], now: datetime, decay_lambda:
     if valid == 0:
         return None
     return math.log1p(total)
+
+
+def recency_distribution_diagnostics(concept_timestamps: dict[str, list[object]]) -> dict:
+    decay_lambda = float(os.environ.get("SEMANTIC_RECENCY_LAMBDA", "0.03"))
+    now = semantic_recency_now()
+    raw_by_concept = {
+        concept: recency_frequency_raw(timestamps, now, decay_lambda)
+        for concept, timestamps in concept_timestamps.items()
+    }
+    observed = sorted(value for value in raw_by_concept.values() if value is not None)
+    median = percentile(observed, 0.5) if observed else 0.0
+    q1 = percentile(observed, 0.25) if observed else median
+    q3 = percentile(observed, 0.75) if observed else median
+    return {
+        "observed_count": len(observed),
+        "observed_min": observed[0] if observed else 0.0,
+        "observed_max": observed[-1] if observed else 0.0,
+        "median": median,
+        "q1": q1,
+        "q3": q3,
+        "iqr": q3 - q1,
+        "fallback_iqr_le_zero": (q3 - q1) <= 0,
+    }
 
 
 def iqr_scaled_recency_weights(concept_timestamps: dict[str, list[object]]) -> dict[str, float]:
@@ -372,10 +412,10 @@ def memory_db_fts_concept_rank_rows(
     query: str,
     result_limit: int,
     target: str = "",
-) -> tuple[list[dict], int]:
+) -> tuple[list[dict], int, dict]:
     fts_query = fts5_query_for_text(query)
     if not fts_query or not db_path.is_file():
-        return [], 0
+        return [], 0, {}
 
     target = target.strip()
     target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
@@ -413,7 +453,7 @@ def memory_db_fts_concept_rank_rows(
             )
         )
         if not rows:
-            return [], total_events
+            return [], total_events, {}
 
         event_ids = [str(row["id"]) for row in rows]
         event_sql = placeholders(event_ids)
@@ -438,6 +478,10 @@ def memory_db_fts_concept_rank_rows(
         ):
             concept_timestamps.setdefault(str(row["concept_name"]), []).append(row["ts"])
         recency_weights = iqr_scaled_recency_weights(concept_timestamps)
+        debug_recency = env_flag("SEMANTIC_RECENCY_DEBUG")
+        recency_diagnostics = (
+            recency_distribution_diagnostics(concept_timestamps) if debug_recency else {}
+        )
         concept_rows = list(
             conn.execute(
                 f"""
@@ -449,6 +493,32 @@ def memory_db_fts_concept_rank_rows(
                 event_ids,
             )
         )
+        lord_conversation_stats = {}
+        if debug_recency:
+            matched_concepts = sorted({str(row["concept_name"]) for row in concept_rows})
+            if matched_concepts:
+                matched_concept_sql = placeholders(matched_concepts)
+                lord_conversation_stats = {
+                    str(row["concept_name"]): {
+                        "count": int(row["occurrence_count"]),
+                        "latest_ts": str(row["latest_ts"] or ""),
+                    }
+                    for row in conn.execute(
+                        f"""
+                        SELECT
+                            ec.concept_name,
+                            COUNT(DISTINCT ec.event_id) AS occurrence_count,
+                            MAX(e.ts) AS latest_ts
+                        FROM event_concepts AS ec
+                        JOIN events AS e
+                          ON e.id = ec.event_id
+                        WHERE ec.concept_name IN ({matched_concept_sql})
+                          AND e.source_file LIKE '%lord_conversation%'
+                        GROUP BY ec.concept_name
+                        """,
+                        matched_concepts,
+                    )
+                }
 
     concepts_by_event: dict[str, list[str]] = {}
     for row in concept_rows:
@@ -464,17 +534,32 @@ def memory_db_fts_concept_rank_rows(
         rank_weight = 1.0 / position
         for concept_name in concepts_for_event:
             recency_weight = recency_weights.get(concept_name, 1.0)
+            doc_count = concept_counts.get(concept_name, 0)
+            idf_weight = math.log((total_events + 1.0) / (doc_count + 1.0)) + 1.0
             item = scores.setdefault(
                 concept_name,
                 {
                     "concept": concept_name,
                     "score": 0.0,
+                    "idf_score": 0.0,
+                    "idf_weight": idf_weight,
                     "recency_weight": recency_weight,
+                    "doc_count": doc_count,
+                    "lord_conversation_count": lord_conversation_stats.get(
+                        concept_name, {}
+                    ).get("count", 0),
+                    "lord_conversation_latest_ts": lord_conversation_stats.get(
+                        concept_name, {}
+                    ).get("latest_ts", ""),
+                    "latest_ts": latest_valid_timestamp(
+                        concept_timestamps.get(concept_name, [])
+                    ),
                     "hits": 0,
                     "events": [],
                 },
             )
             item["score"] += rank_weight * recency_weight
+            item["idf_score"] += rank_weight * idf_weight
             item["hits"] += 1
             if len(item["events"]) < 3:
                 item["events"].append(event_by_id[event_id])
@@ -483,7 +568,19 @@ def memory_db_fts_concept_rank_rows(
         scores.values(),
         key=lambda item: (-item["score"], -item["recency_weight"], item["concept"]),
     )
-    return ranked, total_events
+    diagnostics = {
+        "ranked_recency_weights_same": len(
+            {f"{item['recency_weight']:.12f}" for item in ranked}
+        )
+        <= 1,
+        "unique_ranked_recency_weights": len(
+            {f"{item['recency_weight']:.12f}" for item in ranked}
+        ),
+        "matched_event_count": len(rows),
+        "matched_document_count": sum(1 for row in rows if row["event_type"] == "document"),
+        **recency_diagnostics,
+    }
+    return ranked, total_events, diagnostics
 
 
 def print_memory_db_fts_concept_search(
@@ -494,7 +591,7 @@ def print_memory_db_fts_concept_search(
     db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", "data/multi_agent_shogun_memory.db"))
     result_limit = int(os.environ.get("SEMANTIC_MEMORY_DB_LIMIT", "10"))
     target = mode_arg.strip()
-    ranked, total_events = memory_db_fts_concept_rank_rows(
+    ranked, total_events, diagnostics = memory_db_fts_concept_rank_rows(
         db_path,
         query,
         result_limit=max(result_limit, 1),
@@ -512,11 +609,44 @@ def print_memory_db_fts_concept_search(
     print(f"  target: {target if target else 'none'}")
     print(f"  total_events: {total_events}")
     print(f"  top_concept: {top['concept']}")
+    if env_flag("SEMANTIC_RECENCY_DEBUG"):
+        print("  recency_debug:")
+        print(
+            "    all_ranked_recency_weights_same: "
+            f"{str(diagnostics.get('ranked_recency_weights_same', False)).lower()}"
+        )
+        print(
+            "    unique_ranked_recency_weights: "
+            f"{diagnostics.get('unique_ranked_recency_weights', 0)}"
+        )
+        print(f"    matched_event_count: {diagnostics.get('matched_event_count', 0)}")
+        print(f"    matched_document_count: {diagnostics.get('matched_document_count', 0)}")
+        print(f"    observed_count: {diagnostics.get('observed_count', 0)}")
+        print(f"    observed_min: {diagnostics.get('observed_min', 0.0):.6f}")
+        print(f"    observed_max: {diagnostics.get('observed_max', 0.0):.6f}")
+        print(f"    median: {diagnostics.get('median', 0.0):.6f}")
+        print(f"    q1: {diagnostics.get('q1', 0.0):.6f}")
+        print(f"    q3: {diagnostics.get('q3', 0.0):.6f}")
+        print(f"    iqr: {diagnostics.get('iqr', 0.0):.6f}")
+        print(
+            "    fallback_iqr_le_zero: "
+            f"{str(diagnostics.get('fallback_iqr_le_zero', False)).lower()}"
+        )
     print("  concepts:")
     for item in ranked[: max(result_limit, 1)]:
         print(f"  - concept: {item['concept']}")
         print(f"    score: {item['score']:.6f}")
         print(f"    recency_weight: {item['recency_weight']:.6f}")
+        if env_flag("SEMANTIC_RECENCY_DEBUG"):
+            print(f"    idf_weight: {item['idf_weight']:.6f}")
+            print(f"    idf_score: {item['idf_score']:.6f}")
+            print(f"    concept_event_count: {item['doc_count']}")
+            print(f"    concept_latest_ts: {item['latest_ts'] if item['latest_ts'] else 'none'}")
+            print(f"    lord_conversation_occurrences: {item['lord_conversation_count']}")
+            print(
+                "    lord_conversation_latest_ts: "
+                f"{item['lord_conversation_latest_ts'] if item['lord_conversation_latest_ts'] else 'none'}"
+            )
         print(f"    hits: {item['hits']}")
         print("    sample_events:")
         for event in item["events"]:
