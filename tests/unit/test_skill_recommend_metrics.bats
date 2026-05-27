@@ -23,9 +23,11 @@ EOF
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T18:00:00+0900"
+  executor: "hayate"
   skill: "verdict-check"
   used: "true"
 - ts: "2026-05-24T18:01:00+0900"
+  executor: "hayate"
   skill: "cmd-complete"
   used: "true"
 EOF
@@ -52,6 +54,7 @@ EOF
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T18:00:00+0900"
+  executor: "hayate"
   skill: "gate-sync"
   used: "true"
 EOF
@@ -60,7 +63,7 @@ EOF
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"recall miss件数: 1"* ]]
-  [[ "$output" == *"recall miss top: unknown/gate-sync:1"* ]]
+  [[ "$output" == *"recall miss top: hayate/gate-sync:1"* ]]
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 
@@ -110,6 +113,10 @@ EOF
   done
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
+- ts: "2026-05-24T17:50:00+0900"
+  executor: "karo"
+  skill: "dashboard-update"
+  used: "true"
 - ts: "2026-05-24T18:00:00+0900"
   executor: "saizo"
   skill: "report-write"
