@@ -301,6 +301,25 @@ print("\n".join(names[:5]))
 PY
   )"
   skills="$(printf '%s\n' "$skills" | filter_skills_for_agent)"
+  # D0: Cross-validate semantic skills against TRIGGER keywords (precision fix).
+  # Semantic search matches concepts broadly; require at least one TRIGGER hit.
+  if [[ -n "$skills" ]]; then
+    local _sv_out="" _sv_skill _sv_file _sv_tl _sv_term
+    while IFS= read -r _sv_skill; do
+      [[ -n "$_sv_skill" ]] || continue
+      _sv_file="${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}/${_sv_skill}/SKILL.md"
+      [[ -f "$_sv_file" ]] || continue
+      _sv_tl="$(sed -nE '/^\s*TRIGGER\s*:/{ s/^[^:]*:\s*//; p; q }' "$_sv_file" 2>/dev/null)" || continue
+      IFS='、,' read -ra _sv_terms <<< "$_sv_tl"
+      for _sv_term in "${_sv_terms[@]}"; do
+        _sv_term="${_sv_term#"${_sv_term%%[![:space:]]*}"}"
+        _sv_term="${_sv_term%"${_sv_term##*[![:space:]]}"}"
+        _sv_term="${_sv_term%% project:*}"
+        [[ -n "$_sv_term" ]] && [[ "$prompt_text" == *"$_sv_term"* ]] && { _sv_out+="${_sv_skill}"$'\n'; break; }
+      done
+    done <<< "$skills"
+    skills="${_sv_out%$'\n'}"
+  fi
   [[ -n "$skills" ]] || return 0
   record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
 

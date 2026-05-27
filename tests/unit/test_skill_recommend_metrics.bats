@@ -52,7 +52,7 @@ EOF
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T18:00:00+0900"
-  skill: "verdict-check"
+  skill: "gate-sync"
   used: "true"
 EOF
 
@@ -60,7 +60,7 @@ EOF
 
   [ "$status" -eq 2 ]
   [[ "$output" == *"recall miss件数: 1"* ]]
-  [[ "$output" == *"recall miss top: verdict-check:1"* ]]
+  [[ "$output" == *"recall miss top: gate-sync:1"* ]]
   [[ "$output" == *"ALERT: Phase 3"* ]]
 }
 

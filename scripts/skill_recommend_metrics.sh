@@ -105,6 +105,11 @@ auto_covered_recall_skills = {
     # 出ないことをrecall missにすると計測対象がズレる。
     "cmd-complete",
     "dashboard-update",
+    # 忍者専用スキルはtask YAML推薦で到達。忍者プロンプト=inbox nudge(フィルタ済み)
+    # のためprompt推薦が構造的に不可能。recall missは偽アラーム。
+    "report-write",
+    "verdict-check",
+    "ninja-commit",
 }
 recall_misses = []
 if recommended_total >= min_data:

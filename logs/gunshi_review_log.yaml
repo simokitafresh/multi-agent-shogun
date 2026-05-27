@@ -29,3 +29,81 @@
 #   R(c)計測指標不一致(2026-05-27殿指摘): hit_rate=FTS5マッチ有無=R(c)と無関係。R(c)はランキング順序のみに影響。delta 0ptは正常動作。hook_automation IDF69位→R(c)1位(Δ+68)。正しい計測=precision@k。偵察cmd_3070で同結論
 #   追体験形骸化(2026-05-27殿指示): Q1-Q5で行動変容0/5=テキスト処理。殿生発言Q動的生成(cmd_3067)+自動化ターゲット必須+3セッションBLOCKで対処。Q品質にLLM使わない(自己参照回避)
 # アーカイブ: gunshi_review_log_20260527a.yaml (1192行)
+- cmd_id: consultation_semantic_knowledge_misguide
+  review_type: consultation
+  verdict: REQUEST_CHANGES
+  findings_summary: "将軍なぜなぜ7回は概ね正確。穴5件: (A)targetフィルタは将軍宛て過去発言を通過し今回の事象を防げない (B)discussion resource形式にtarget列不在でフィルタ適用不可 (C)設計2,3はLevel2注記でLevel4ではない (D)全量棚卸し(8パス)が設計に含まれていない (E)aliases攻撃面拡大"
+  observations:
+    - "semantic_search.sh結果でconcept deepdive_principles → discussion resourceに殿の直接発言5件が平文で含まれることを現物確認"
+    - "memory_db_fts5はクリア/ニューゲームで0件ヒット。今回の事象はsemantic_knowledge注入パスのみ"
+    - "targetフィルタは他ロール宛て除外に有効だが、将軍宛て過去発言(今回の事象)は通過する構造的限界"
+  cs_checklist:
+    CS0: "殿裁定未出。将軍分析を批判的にレビュー"
+    CS1: "semantic_search.sh/memory_db_fts5両方を現物実行して注入パス特定"
+    CS2: "自システムデータ(semantic_search実行結果)で殿発言混入を検証"
+    CS3: "prompt_state_inject.sh L515-541, L543-668の実コード読了"
+    CS4: "穴5件を掲示板投稿(BULLETIN_NOTIFY=shogun)で行動変換済み"
+    CS5: "8パスの全量棚卸しを実施。将軍が自問した2パターンを超える指摘"
+    CS6: "aliases→concept match→discussion注入→metadata不在→誤認の因果チェーン確認"
+  operational_simulation: "将軍が/clearやニューゲームに言及するたびにdeepdive_principles概念がマッチし殿の過去発言が注入される→将軍が頻繁に強くてニューゲームの確認をする場面で再発リスク高い"
+  causal_chain: "semantic_index aliases(ニューゲーム/クリア)→concept match→discussion resource平文注入→target/ts metadata不在→LLMが参照を行動指示と誤認→殿未指示の/clear準備実行"
+  brainwash_check: "100億年テスト: targetフィルタだけでは殿発言100億倍時に将軍宛て発言が全件通過。Level2注記も発言量に対して埋没する。構造(穴A)→品質(穴C Level2止まり)→前提(穴D 8パス未カバー)の3層で穴を検出"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  origin: "[[semantic_knowledge誤誘導]] -> [[discussion resource平文注入]] -> [[将軍/clear誤実行]]"
+  timestamp: "2026-05-27T11:28:00+09:00"
+- cmd_id: consultation_semantic_knowledge_misguide_2
+  review_type: consultation
+  verdict: APPROVE
+  findings_summary: "将軍超越5件は構造的に健全。残存穴3件(F:directive偽陰性/G:max=5根拠不在/I:R(c)未検証)はパラメータ精度問題で設計変更不要"
+  observations:
+    - "index.md discussion件数実測: codd141/semantic61/cdp36/deepdive22/編成14。max=5でcoddが3.5%に削減"
+    - "穴A超越の時間距離+種別2軸は100億年スケーラブル。穴C超越のハードリミットが最強防御"
+    - "穴E超越のaliases定義語限定は攻撃面の構造的縮小で再発防止"
+  cs_checklist:
+    CS0: "殿裁定未出。将軍超越を批判的に検証"
+    CS1: "index.md discussion件数を実測(awk集計)で根拠確認"
+    CS2: "discussion 446件の分布で5件上限の効果を定量検証"
+    CS3: "将軍のdirective判定キーワード(せよ/しろ/やれ)を殿の実際の命令形パターンと照合"
+    CS4: "穴G/I対処案(settings.yaml+計測ループ)を掲示板で提案→行動変換"
+    CS5: "R(c)未検証依存を指摘(穴I)"
+    CS6: "max=5→R(c)選択→有用性フィードバック→パラメータ調整の学習ループ因果"
+  operational_simulation: "max=5+R(c)で注入5件→将軍が殿過去発言を参照→古い命令形は時間フィルタで除外→現セッション関連の観察のみ注入→誤誘導リスク低い"
+  causal_chain: "discussion446件→max=5物理制限→R(c)選択→時間フィルタ+種別分類→注入量激減+行動性除外→誤誘導根絶"
+  brainwash_check: "穴Dの不要分類(3)-(6)(8)を検証。CLAUDE.md殿厳命は文脈ロードで単独トリガーにならない。startup gate殿引用は固定質問形式。判断根拠あり。早期終了なし"
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  origin: "[[semantic_knowledge誤誘導]] -> [[将軍超越5件]] -> [[残存穴3件(パラメータ精度)]]"
+  timestamp: "2026-05-27T11:31:00+09:00"
+- cmd_id: consultation_semantic_knowledge_final
+  review_type: consultation
+  verdict: APPROVE
+  findings_summary: "設計方針転換(discussion resource注入停止)を全面支持。原理1つで各論5件を置換。LG023教科書的適用。100億年テスト通過。穴なし"
+  observations:
+    - "discussion注入停止=Level4物理遮断。殿発言100億件でも0件注入=完全防御"
+    - "概念マッチ+aliases/resources/skills/cmd/lesson維持=知識注入に影響なし"
+  cs_checklist:
+    CS0: "殿の指摘による覚醒。殿裁定に沿う"
+    CS4: "掲示板APPROVE投稿で行動変換済み"
+    CS6: "各論5件→原理1つ。複雑さ削減=正の複利"
+  operational_simulation: "discussion注入停止後、殿の直近発言が自動参照されなくなるが、将軍がDB検索で能動的に取得可能。押し付けられる記憶vs取りに行く記憶の分離"
+  causal_chain: "殿指摘→各論パッチ中止→原理1つ(discussion停止)→Level4物理遮断→根因直接解決"
+  brainwash_check: "各論5件を1原理に圧縮=Simplicity。削除=楽のパターン1か？→NO。不要な複雑さの削除であり正の+1点"
+  finding_categories: [assumptions, north_star]
+  origin: "[[semantic_knowledge誤誘導]] -> [[殿指摘覚醒]] -> [[原理1つ: discussion注入停止]]"
+  timestamp: "2026-05-27T11:42:00+09:00"
+- cmd_id: cmd_karo_ci_fix_5tests_20260527
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。fixture前提追従(operational_simulation+Q6 bulletin)。381テスト0スキップ。commit f1b9fe94確認済み"
+  observations:
+    - "test_gate_gunshi_cs_checklist: operational_simulation fixture追加。前セッションD0(3b5acd4b)の追従"
+    - "test_gate_shogun_startup: Q6自動化ターゲット+bulletin自己検出追加。base fixture+actioned_by fixture両方に反映"
+    - "テスト326+12+43=381件全PASS。0スキップ"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "軍師D0(operational_simulation必須化+Q6 bulletin)→fixture未追従→CI RED 5件→hayate修正→381テストPASS"
+  brainwash_check: "fixture修正のみ。本番コード影響なし。副作用リスク低い。穴なし"
+  finding_categories: [assumptions, numbers]
+  origin: "[[cmd_karo_ci_fix_5tests_20260527]] -> [[fixture前提追従]] -> [[CI GREEN復帰]]"
+  timestamp: "2026-05-27T11:43:00+09:00"

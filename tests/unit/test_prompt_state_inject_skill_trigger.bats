@@ -147,7 +147,7 @@ OUT
 EOF
   chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
 
-  run bash "$HOOK" <<< '{"prompt":"推薦なし入力"}'
+  run bash "$HOOK" <<< '{"prompt":"CDPで確認してDB確認"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"SKILL RECOMMENDATION"* ]]
@@ -174,6 +174,7 @@ PY
 name: lesson-sort
 description: |
   【将軍専用】家老・忍者は使用禁止。
+  TRIGGER: /lesson-sort、教訓ソート
 ---
 EOF
   cat > "$PROMPT_STATE_SKILLS_DIR/report-write/SKILL.md" <<'EOF'
@@ -181,6 +182,7 @@ EOF
 name: report-write
 description: |
   【忍者専用】報告YAML作成を標準化する。
+  TRIGGER: /report-write、報告作成
 ---
 EOF
   cat > "$PROMPT_STATE_SKILLS_DIR/general-skill/SKILL.md" <<'EOF'
@@ -188,6 +190,7 @@ EOF
 name: general-skill
 description: |
   Markerless skill.
+  TRIGGER: /general-skill、汎用確認
 ---
 EOF
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
@@ -200,7 +203,7 @@ OUT
 EOF
   chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
 
-  run bash "$HOOK" <<< '{"prompt":"ロールフィルタ確認"}'
+  run bash "$HOOK" <<< '{"prompt":"報告作成と汎用確認"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
@@ -208,7 +211,7 @@ EOF
   [[ "$output" != *"/lesson-sort"* ]]
 
   export PROMPT_STATE_AGENT_ID="shogun"
-  run bash "$HOOK" <<< '{"prompt":"ロールフィルタ確認 shogun"}'
+  run bash "$HOOK" <<< '{"prompt":"教訓ソートと汎用確認"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"/lesson-sort"* ]]
@@ -244,6 +247,7 @@ EOF
 name: report-write
 description: |
   【忍者専用】報告YAML作成を標準化する。
+  TRIGGER: /report-write、報告YAML作成、報告記入
 ---
 EOF
   rm -f /tmp/skill_recommend_cache_hayate_cache_test
@@ -259,11 +263,11 @@ EOF
   chmod +x "$PROMPT_STATE_SEMANTIC_SEARCH_CMD"
   export SEMANTIC_CALL_LOG="$TEST_TMPDIR/semantic_calls.log"
 
-  run bash "$HOOK" <<< '{"prompt":"同一プロンプト推薦"}'
+  run bash "$HOOK" <<< '{"prompt":"報告YAML作成"}'
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
 
-  run bash "$HOOK" <<< '{"prompt":"同一プロンプト推薦"}'
+  run bash "$HOOK" <<< '{"prompt":"報告YAML作成"}'
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
   [ "$(wc -l < "$SEMANTIC_CALL_LOG" | tr -d ' ')" -eq 1 ]
