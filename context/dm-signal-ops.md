@@ -729,6 +729,7 @@ import metrics_research_engine as MRE
 ## §37 価格データ取得開始年統一 (cmd_3076偵察→cmd_3077修正, 2026-05-27)
 
 - maintenance.py/backfill_data.pyの`date(2006,1,1)`→`FULL_HISTORY_START`(=`date(2000,1,1)`)に統一。FE AdvancedOperations.tsxの2006→`FULL_BACKFILL_START_YEAR=2000`に一致化
+- 本番価格データ取得範囲の現状: SPY 1993~/QQQ 1999~/DTB3 1954~/SPXL 2008~/TQQQ 2010~
 - database PJは1970全履歴取得に改修済み→DM-Signal側2000でデータ不足なし
 - fullrecalculate別cmd必要(修正後にsignals/monthly_returns再計算)
 - → `queue/reports/hayate_report_cmd_3076.yaml`(偵察全量) / commit d2acaa91(修正)
