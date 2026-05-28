@@ -336,6 +336,16 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                     for concept_name, relevance_score in concept_matches
                 ],
             )
+            obsidian_links = set(
+                m.group(1).strip()
+                for m in re.finditer(r"\[\[([^\[\]]+)\]\]", f"{entry_summary}\n{entry_detail}")
+                if m.group(1).strip()
+            )
+            if obsidian_links and "event_links" in tables:
+                conn.executemany(
+                    "INSERT OR IGNORE INTO event_links (source_event_id, target_concept, link_type) VALUES (?, ?, ?)",
+                    [(event_id, target, "obsidian") for target in obsidian_links],
+                )
 
 
 entries = load_jsonl(path)
