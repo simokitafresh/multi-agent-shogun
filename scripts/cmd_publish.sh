@@ -39,6 +39,7 @@ SHOGUN_LESSON_ACK_FILE="${CMD_PUBLISH_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue
 SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"
 CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh}"
 CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
+CMD_PUBLISH_GIT_ROOT="${CMD_PUBLISH_GIT_ROOT:-$PROJECT_DIR}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
 
@@ -201,6 +202,104 @@ run_publish_preflight() {
     return 1
 }
 
+extract_q11_evidence_paths() {
+    local q11_value="${1:-}"
+
+    [[ -n "${q11_value//[[:space:]]/}" ]] || return 0
+    printf '%s\n' "$q11_value" | grep -qiE '(^|[^A-Za-z0-9_])(rg|grep)([^A-Za-z0-9_]|$)' || return 0
+
+    printf '%s\n' "$q11_value" \
+        | grep -oE '(^|[[:space:]"'\''`(])([A-Za-z0-9_.-]+/)?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\.(sh|py|md|yaml|yml|json|ts|tsx|js|jsx|rb|go|rs|sql|txt)' \
+        | sed -E 's/^[[:space:]"'\''`(]+//' \
+        | awk '!seen[$0]++'
+}
+
+get_cmd_publish_q11_value() {
+    awk -v cmd_id="$CMD_ID" '
+        function trim(s) {
+            sub(/^[ \t\r\n]+/, "", s)
+            sub(/[ \t\r\n]+$/, "", s)
+            return s
+        }
+        function unquote(s) {
+            if (length(s) >= 2) {
+                if (substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"") {
+                    s = substr(s, 2, length(s) - 2)
+                    gsub(/\\"/, "\"", s)
+                } else if (substr(s, 1, 1) == "'"'"'" && substr(s, length(s), 1) == "'"'"'") {
+                    s = substr(s, 2, length(s) - 2)
+                }
+            }
+            return s
+        }
+        function leading_spaces(line,    i,cnt,c) {
+            cnt = 0
+            for (i = 1; i <= length(line); i++) {
+                c = substr(line, i, 1)
+                if (c == " ") cnt++
+                else break
+            }
+            return cnt
+        }
+        {
+            stripped = $0
+            sub(/^[[:space:]]*/, "", stripped)
+            if (!in_cmd && stripped == cmd_id ":") {
+                in_cmd = 1
+                cmd_indent = leading_spaces($0)
+                next
+            }
+            if (in_cmd) {
+                indent = leading_spaces($0)
+                if (trim($0) != "" && indent <= cmd_indent) {
+                    exit 3
+                }
+                if (!in_qg && stripped == "quality_gate:") {
+                    in_qg = 1
+                    qg_indent = indent
+                    next
+                }
+                if (in_qg) {
+                    if (trim($0) != "" && indent <= qg_indent) {
+                        in_qg = 0
+                    } else if (stripped ~ /^q11_not_already_done:[[:space:]]*/) {
+                        value = stripped
+                        sub(/^q11_not_already_done:[[:space:]]*/, "", value)
+                        print trim(unquote(value))
+                        exit 0
+                    }
+                }
+            }
+        }
+        END { exit 0 }
+    ' "$SHOGUN_TO_KARO"
+}
+
+warn_if_q11_evidence_paths_changed() {
+    local q11_value path diff_stat any_changed=false
+
+    q11_value="$(get_cmd_publish_q11_value 2>/dev/null || true)"
+    [[ -n "${q11_value//[[:space:]]/}" ]] || return 0
+
+    if ! git -C "$CMD_PUBLISH_GIT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        return 0
+    fi
+
+    while IFS= read -r path; do
+        [[ -n "${path//[[:space:]]/}" ]] || continue
+        [[ -e "$CMD_PUBLISH_GIT_ROOT/$path" ]] || continue
+
+        diff_stat="$(git -C "$CMD_PUBLISH_GIT_ROOT" diff --stat HEAD -- "$path" 2>/dev/null || true)"
+        [[ -n "${diff_stat//[[:space:]]/}" ]] || continue
+
+        if [[ "$any_changed" == false ]]; then
+            echo "WARN: q11_not_already_done のgrep根拠ファイルに未コミット差分があります。起票時のgrep結果が陳腐化している可能性があります。" >&2
+            any_changed=true
+        fi
+        printf '%s\n' "$diff_stat" | sed 's/^/  /' >&2
+    done < <(extract_q11_evidence_paths "$q11_value")
+}
+
 # --- Step 1: cmd_save.sh gate検証 ---
 echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
 run_publish_preflight
@@ -249,4 +348,5 @@ fi
 
 # --- Step 3: cmd_delegate.sh 委任 ---
 echo "=== [3/3] cmd_delegate.sh 委任: $CMD_ID ==="
+warn_if_q11_evidence_paths_changed
 bash "$CMD_DELEGATE_SCRIPT" "$CMD_ID" "$MESSAGE"

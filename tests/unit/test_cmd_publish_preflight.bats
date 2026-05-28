@@ -76,6 +76,7 @@ run_publish() {
         CMD_PUBLISH_SHOGUN_LESSON_LIMIT=35 \
         CMD_PUBLISH_CMD_SAVE_SCRIPT="$TEST_CMD_SAVE" \
         CMD_PUBLISH_CMD_DELEGATE_SCRIPT="$TEST_CMD_DELEGATE" \
+        CMD_PUBLISH_GIT_ROOT="${TEST_GIT_ROOT:-$PROJECT_ROOT}" \
         bash "$PUBLISH_SCRIPT" cmd_curr "cmd_currを書いた。配備せよ。"
 }
 
@@ -258,4 +259,36 @@ SH
     detail_line="$(printf '%s\n' "$output" | grep -n "long diagnostic before block" | head -1 | cut -d: -f1)"
     [ "$summary_line" -lt "$detail_line" ]
     [[ "$output" == *"BLOCK: cmd_save.sh failed for cmd_curr"* ]]
+}
+
+@test "AC8: q11 grep根拠ファイルに未コミット差分があれば委任直前にWARNし委任は続行する" {
+    TEST_GIT_ROOT="$TEST_TMPDIR/gitroot"
+    export TEST_GIT_ROOT
+    mkdir -p "$TEST_GIT_ROOT/scripts"
+    printf '%s\n' 'old q11-free content' > "$TEST_GIT_ROOT/scripts/cmd_publish.sh"
+    git -C "$TEST_GIT_ROOT" init -q
+    git -C "$TEST_GIT_ROOT" config user.email test@example.invalid
+    git -C "$TEST_GIT_ROOT" config user.name test
+    git -C "$TEST_GIT_ROOT" add scripts/cmd_publish.sh
+    git -C "$TEST_GIT_ROOT" commit -q -m initial
+    printf '%s\n' 'new q11 content' >> "$TEST_GIT_ROOT/scripts/cmd_publish.sh"
+
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_curr:
+    id: cmd_curr
+    status: draft
+    quality_gate:
+      q11_not_already_done: "rg -nF 'q11' scripts/cmd_publish.sh → 0件"
+YAML
+    write_lessons 1
+    : > "$TEST_QUALITY_LOG"
+
+    run_publish
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: q11_not_already_done のgrep根拠ファイルに未コミット差分"* ]]
+    [[ "$output" == *"scripts/cmd_publish.sh"* ]]
+    [[ "$output" == *"stub cmd_delegate cmd_curr"* ]]
 }
