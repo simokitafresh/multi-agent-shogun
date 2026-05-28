@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-28 auto-generated -->
+<!-- last_updated: 2026-05-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-28T15:07:21+09:00 -->
+<!-- generated_at: 2026-05-29T01:00:45+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-05-28T15:07:20+09:00 | terminal | response | 本セッション全4cmd完了+バグ修正完了。 **最終状況:** - cmd_3085〜3088: 全てGATE CLEAR ✅ - 連勝: 49連勝(cmd_3041〜cmd_3088) - inbox_write.sh report_c…
-- 2026-05-28T15:07:10+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-28 15:00:43|cmd_3088
-- 2026-05-28T15:06:29+09:00 | terminal | response | 修正完了・push済み。 **報告:** - inbox_write.sh L1178/L1423に`report_completed`type追加 - 35テスト全PASS - auto-commitに含まれ push完了(51aa3b…
-- 2026-05-28T15:04:07+09:00 | terminal | response | 既にこのディレクトリにいます。何か作業を始めますか？ [meta] stop_reason=end_turn
-- 2026-05-28T15:03:48+09:00 | terminal | inbound | cd /mnt/c/tools/multi-agent-shogun
-- 2026-05-28T15:02:33+09:00 | terminal | response | 殿、本セッション4cmd全GATE CLEAR。全て完了。 | cmd | 根因 | 結果 | |-----|------|------| | **cmd_3085** | alert key交互出現→12セッションBLOCK不発火 | …
-- 2026-05-28T15:01:11+09:00 | terminal | response | cmd_3088 GATE CLEAR。LGTM→CLEAR正判定。全cmd完了。 idle待機に復帰。 [meta] stop_reason=end_turn
-- 2026-05-28T15:00:44+09:00 | terminal | inbound | どうなった？
-- 2026-05-28T15:00:23+09:00 | ntfy | outbound | 【家老】cmd_3088 完了 セマンティクスinsights消化 📋 https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
-- 2026-05-28T15:00:15+09:00 | terminal | response | cmd_3088のreview依頼が遅延到着。既にLGTM送信済み。追加アクション不要。 [meta] stop_reason=tool_use
+- 2026-05-29T01:00:44+09:00 | terminal | response | 家老からcontext_freshness ALERT: dm-signal系5ファイルが23-29日未更新。cmd起票要請を受領した。 殿、本セッション4cmd全GATE CLEAR完了の状態に変更なし。新着は家老からのcontext鮮…
+- 2026-05-29T01:00:21+09:00 | terminal | response | ALERT処理完了。将軍にcontext更新cmd起票を要請済み。全忍者idle、パイプライン空。次cmd待ち。 [meta] stop_reason=end_turn
+- 2026-05-29T01:00:01+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-391)
+- 2026-05-28T23:12:04+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
+- 2026-05-28T20:02:13+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
+- 2026-05-28T19:01:57+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
+- 2026-05-28T17:56:59+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
+- 2026-05-28T17:55:08+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_2855 (duration=2466s, median=309.0s, ratio=7.98x, delta=+2157.0s) WARNING: ta…
+- 2026-05-28T16:51:48+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
+- 2026-05-28T15:46:49+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(28日),dm-signal-frontend.md(22日),dm-signal-ops.md(28日),dm-signal-research.md(28日),…
 
 ## 未解決確認事項
 - 殿、本セッション4cmd全GATE CLEAR。全て完了。 | cmd | 根因 | 結果 | |-----|------|------| | **cmd_3085** | alert key交互出現→12セッションBLOCK不発火 | **CLEAR** 14:20 | | …
@@ -34,10 +34,7 @@
 - cmd_2722
 - cmd_2855
 - cmd_3041
-- cmd_3052
 - cmd_3072
-- cmd_3073
-- cmd_3074
 - cmd_3075
 - cmd_3076
 - cmd_3077
