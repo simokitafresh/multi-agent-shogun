@@ -1175,7 +1175,7 @@ fi
 # Report format gate: type=report_received/task_done → 報告YAMLのフォーマット検証
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 # LK013: Codex忍者がtask_done typeで報告→gunshi_notify不発を防止
-if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
+if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ]; then
     # Find report YAML path from task YAML
     ensure_agent_config_loaded
     is_ninja_reporter=0
@@ -1419,8 +1419,8 @@ while [ $attempt -lt $max_attempts ]; do
             echo "[inbox_write] WARN: memory DB inbox insert failed (non-fatal; inbox persisted)" >&2
         fi
 
-        # Hook: report_received/task_done from ninja → auto-update task YAML to done
-        if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ]; then
+        # Hook: report_received/task_done/report_completed from ninja → auto-update task YAML to done
+        if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ]; then
             ensure_agent_config_loaded
             is_ninja=0
             for ninja in $NINJA_NAMES; do
