@@ -163,3 +163,18 @@ EOF
     [[ "$output" == *"tasks/lessons.md:4:======="* ]]
     [[ "$output" == *"tasks/lessons.md:6:>>>>>>> Stashed changes"* ]]
 }
+
+@test "gate_lesson_health includes single feedback samples in useful_rate" {
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-05-28T00:00:00	cmd_900	saizo	L001	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:01:00	cmd_900	saizo	L001	feedback	USEFUL	yes	infra	single_script	routine	5	0
+2026-05-28T00:02:00	cmd_901	saizo	L002	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:03:00	cmd_901	saizo	L002	feedback	NOT_USEFUL	no	infra	single_script	routine	5	0
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: useful率(直近2cmd): 1/2 = 50.0%"* ]]
+    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=50.0% window_cmds=2 referenced=2 injected=2 useful=1 total_feedback=2 scope=infra"* ]]
+}
