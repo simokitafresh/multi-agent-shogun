@@ -1,0 +1,137 @@
+worker_id: hanzo
+task_id: cmd_3088_normal
+parent_cmd: cmd_3088
+timestamp: '2026-05-28T14:35:42+09:00'
+status: completed
+ac_version_read: e35f7313
+result:
+  summary: >
+    semantic_stress_test由来NO_MATCH候補29件を分類（構造的NO_MATCH15件+aliases拡充対象14件）。
+    docs/semantic-index/index.mdに4概念のaliases拡充と新概念db_price_data_range追加。
+    semantic_map_generate.shで再生成。28件のinsightsをdone状態に更新。commit c072c2e5。
+  details: |
+    AC1: 29件のNO_MATCH候補を全て分類済み
+      構造的NO_MATCH（alias拡充不可）15件:
+        - kill -9コマンド実行系: 4件（! kill -9 933135, kill 9 1018058 等）
+        - 文脈依存短文: 意図的だったんだが, 家老が問題のようだ, まずgistで共有したと思う 等 7件
+        - 技術コマンド列: 年制限全量特定 maintenance py 2006→定数統一 等 2件
+        - システムメタ文字列: test_ci_check, clear_prep内容 等 2件
+      aliases拡充対象14件:
+        - CDP/ログイン: 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？
+        - DM-Signal運用: 俺が今見てるのはyears 0の方では？, UI上で変更できるのか？, フロントエンドでは2001年からという表示 等
+        - DTB3/価格データ: DTB3の扱いも知らないのか？あるよ, XLUとDTB3による制限は？
+        - ノンレバ玄武: 安全資産PF, nonlev_genbu
+
+    AC2: aliases拡充をdocs/semantic-index/index.mdに追加
+      - shin_shijin_design: ノンレバ玄武, ノンレバ玄武-鉄壁, nonlev_genbu, 玄武-鉄壁はメトリクスが計算されていない, 安全資産PF
+      - dmsignal_operations: キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302
+      - cdp_browser_capability: ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる
+      - db_price_data_range（新概念）: DTB3, DTB3データ, DTB3の扱い, DTB3はもっと古い, DTB3制限, DTB3期間, XLUとDTB3による制限, XLU制限, XLU 2006年, QQQ 1999年, TQQQ 2010年, 2010年以前が0%, データ開始時期, 価格データ期間, 全期間データ取得, economic_indicators, 504日, 価格データ不足, QQQデータ範囲, economic_indicatorsテーブル, DTBスリー
+      - semantic_map_generate.sh再生成でcontext/semantic-map.mdに全aliases反映確認
+
+    AC3: 28件のsemantic_stress_test由来insightsをdone状態に更新
+      - semantic_stress_test pending 29件 → 28件をdone（残り1件はINS-20260528-005807268 test_ci_check別判断）
+      - done件数: 24→52件
+
+purpose_validation:
+  cmd_purpose: semantic_stress_testが蓄積したNO_MATCH候補40件のうち構造的NO_MATCHを除外し、残りからaliases拡充可能な概念を抽出してsemantic-map.mdに追加する。NO_MATCH率60%を40%以下に改善する
+  fit: true
+  purpose_gap: ''
+simplicity_check: >
+  既存のindex.md構造にaliasesを追加するのみ。
+  新インフラ不要。semantic_map_generate.shの既存パイプラインを活用。
+assumption_check: >
+  docs/semantic-index/index.mdがSSot（単一信頼源）であることをsemantic_map_generate.shコード確認。
+  Edit toolでの変更が永続しない問題を検出しPythonで直接書き込みに切り替え。
+  verify: Trueで変更内容を確認してから再生成。
+task_clarity:
+  score: 90
+  unclear_points: report_pathがtask YAMLに未指定
+  discretion_fills: 報告ファイル名をhanzo_report_cmd_3088.yamlとした
+status_detail: DONE
+test_triage: in_branch
+files_modified:
+- change: modified
+  path: docs/semantic-index/index.md
+- change: modified
+  path: context/semantic-map.md
+lesson_candidate:
+  found: true
+  title: Edit toolでのindex.md変更がauto_intake_semantic_indexに上書きされるリスク
+  detail: >
+    semantic_map_generate.shのauto_intake_semantic_index()がindex.mdを読み書きする。
+    Edit toolで変更後にsemantic_map_generate.shが実行されると変更が上書きされる可能性がある。
+    Python(open/read/replace/write)で直接書き換えてからverify: True確認し、
+    その後semantic_map_generate.shを実行するという手順が安全。
+    Edit toolでの変更は「成功」と表示されても内容が元に戻る事象を2回確認。
+  origin: "[[Edit tool変更消失]] -> [[auto_intake上書きリスク]] -> [[Python直接書込みで解決]]"
+  project: infra
+lessons_useful:
+- id: L500
+  useful: false
+  reason: bats TAPのskip形式の教訓。今回はbatsテスト実行なし。対象外。
+- id: L544
+  useful: true
+  reason: yaml.dump禁止の原則。今回Pythonでopen/writeを使用。yaml.dumpを回避できた。
+- id: L623
+  useful: false
+  reason: yaml_field_set.shのネストされたYAMLフィールド問題。今回のinsights更新はtop-levelフィールドのみでネスト不要。
+- id: L287
+  useful: false
+  reason: karo_workarounds.yamlのYAML構造破損。今回はinsights.yaml/index.mdが対象で同ファイルではない。
+- id: L351
+  useful: true
+  reason: insight_write.shがyaml.dumpで全件上書きする事故の教訓。Pythonでopen/write使用の根拠として有用。
+- id: L625
+  useful: true
+  reason: report_pathがtask YAMLに未指定の場合にBLOCKされる。今回も未指定のためreport_filenameから推測してreports/直下に作成。
+- id: L624
+  useful: false
+  reason: yaml_field_set.shでネストされたフィールド指定が危険。今回は単純なstatusフィールド更新のみで安全。
+- id: L617
+  useful: false
+  reason: insights.yamlに指定IDが存在しない問題。今回はgrepでID存在確認してから更新。
+- id: L414
+  useful: false
+  reason: 全ファイル書換えの_sv関数パターン。今回は個別IDごとにyaml_field_set.shで更新。
+- id: L384
+  useful: true
+  reason: sedで長文改行展開によるYAML破損。今回のindex.md修正でPython直接書き込みを選択した根拠。
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 1
+  details: 'pre-bash-combined.sh: inbox_mark_read前にRead toolでinboxを読めBLOCK。Read tool実行後に再実行でOK。'
+binary_checks:
+  AC1:
+  - check: 'NO_MATCH候補の全29件が分類済みか（aliases拡充対象 or 構造的NO_MATCH）'
+    result: 'yes'
+  - check: '分類根拠を報告に記載したか'
+    result: 'yes'
+  AC2:
+  - check: 'aliases拡充対象の概念がdocs/semantic-index/index.mdに追加されているか'
+    result: 'yes'
+  - check: 'semantic_map_generate.shを実行してcontext/semantic-map.mdに反映されているか'
+    result: 'yes'
+  - check: 'grep確認でノンレバ玄武/キャッシュポジション/DTB3がsemantic-map.mdに存在するか'
+    result: 'yes'
+  AC3:
+  - check: '28件のsemantic_stress_test由来pendingがdone状態に更新されているか'
+    result: 'yes'
+  commit:
+  - check: 'index.mdとsemantic-map.mdの変更をcommitしたか'
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
