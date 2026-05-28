@@ -727,13 +727,17 @@ def event_link_rows(
     event_rows: list[EventRow],
 ) -> list[tuple[str, str, str]]:
     rows: list[tuple[str, str, str]] = []
+    noise_targets = {
+        "リンク", "概念名", "ファイル名", "発端", "原因", "結果",
+        "対象事象", "レビュー結果",
+    }
     seen: set[tuple[str, str, str]] = set()
     for event_row in event_rows:
         event_id = event_row[0]
         text = f"{event_row[6]}\n{event_row[7]}"
         for match in OBSIDIAN_LINK_RE.finditer(text):
             concept = match.group(1).strip()
-            if not concept:
+            if not concept or concept in noise_targets:
                 continue
             key = (event_id, concept, "obsidian")
             if key in seen:
