@@ -615,3 +615,4 @@
 | cmd_3083 | 殿裁定「三層自動貫通」(2026-05-27)。現状lib/lord_conversation.sh L230でconcepts='[]'固定挿入しており、殿の発言が記憶DBに入っても概念紐付け(event_concepts)されない。memory_db_import.pyのconcepts_for_text(L357)と同等のロジックをappend_memory_db_entry内に追加し、リアルタイムで概念紐付けINSERTする | infra | 05-28 | live lord_conversation DB追記でセマ |
 | cmd_3084 | CLAUDE.md/instructions内のorigin説明文に[[リンク]][[発端]][[原因]][[結果]]がそのまま記載されており、memory_db_import.pyのOBSIDIAN_LINK_REが実データと区別できずevent_linksに149件のノイズを生成している(全2,310件中6.5%)。テンプレート/説明文の[[...]]をバッククォート囲みに変更し、regexにマッチしないようにする | infra | 05-28 | CLAUDE.md/instructionsのorigin説 |
 | cmd_3086 | cmd_publish.shのStep 2(pending昇格)→Step 3(cmd_delegate.sh委任)の間にauto-commitが走りq11のgrep根拠が陳腐化する構造的穴を修正する。cmd_3081で起票時に確認したq11根拠が配備時には崩壊していた事故の再発防止 | infra | 05-28 | cmd_publish.shの委任直前にq11 grep根拠 |
+| cmd_3088 | semantic_stress_testが蓄積したNO_MATCH候補40件のうち構造的NO_MATCH(コマンド系5件+短文3件)を除外し、残り32件からaliases拡充可能な概念を抽出してsemantic-map.mdに追加する。NO_MATCH率60%を40%以下に改善する | infra | 05-28 | NO_MATCH29件分類(構造的15件+aliases拡充 |
