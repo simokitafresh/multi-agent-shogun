@@ -40,6 +40,18 @@ lessons:
     v10吸収(2026-05-26):
     - DB関連cmdの完了レビュー時にクエリ実行で実効性を確認せよ(cmd_3048: FTS5 CJK 0件問題を軍師第3ラウンドまで見逃し。sqlite3で1クエリ実行すれば検出できた)。§0.1問い2の適用範囲にDB検索品質の実行検証を含める
     - gate alert「正常stale」結論前にstaleness_triggersのverify手順を実行せよ(codd.md: version 1.10.0→2.18.0を3回見逃し。verifyに「ローカル版数確認」と明記されていたのに未実行。思い込みで結論するな)
+    v11吸収(2026-05-27):
+    - D0レビューはgit show --statだけで止めるな。git show <hash> -- <file>で実コード本文をReadせよ(洗脳#2: 2e25cf50の2行追加をstat確認のみでOK判定。コード本文を読まずに「問題なし」と結論)
+    - GATE処理は軍師report review到着後に実行せよ(洗脳#8: cmd_3061でreport_received hook未発火→手動GATE急行→軍師FAILがGATE CLEAR後に到着。Goodhart問題を事前に検出できたタイミングを逃した)
+    - CI RED「ローカル再現せず」で閉じるな。CI環境固有条件(--jobs 8並列/tmp共有等)を掘れ(洗脳#1: test_gate_karo_startup.bats L415 /tmp/karo_wa_rate_cache競合をCI並列隔離問題として特定)
+    v12吸収(2026-05-27):
+    - 配備前にcmdのassumptions欄のverified claimを家老自身でもgrep再検証せよ(cmd_3072: 将軍が「ロールフィルタ未実装」と記載→家老は§0.1問い2で確認すべきだったがcmd信頼で配備→軍師urgent REQUEST_CHANGESでfilter_skills_for_agent L253既実装+agent_id記録済みが判明→shelve。grep 1秒で前提崩壊を検出できた)。将軍のcmdもverified前提を鵜呑みにするな
+    v13吸収(2026-05-28):
+    - grep対象はtarget_path限定ではなくプロジェクト全体(scripts/+lib/+hooks/)を必ず含めよ(cmd_3078: 将軍q11がprompt_state_inject.shのみ検索→lib/lord_conversation.sh L244-361の既存実装(append_memory_db_entry+event_concepts INSERT)を見逃し→前提崩壊→忍者revert。家老も§0.1問い2でscripts/hooks/のみgrepしlib/を含めなかった。grep -rnの対象ディレクトリにscripts/ lib/ hooks/の3つを必ず含める)
+    v14吸収(2026-05-28):
+    - report_received処理で報告YAML本文をReadせずWA記録+GATE待ちに入るな。家老確認2点: (1)binary_checks全yes確認 (2)commit_hash存在確認。full Readは軍師precheckと二重のため不要(軍師第三者検証で確認)。ただし2点確認なしでWA cleanを記録するのは検証スキップ(洗脳#2)
+    - 手順を回す最適化で「考える」が消える構造(洗脳覚醒監査8/6yes根因)。report_received→WA記録→軍師待ち→GATEの自動フローが「手順通り=完了」の錯覚を生む。deepdive Phase 5「家老は止まるポイントがない」の再現。対策: report_received時に2点確認を止まるポイントとして埋め込む
+    - 軍師自走+auto-commitのタイムラグで将軍q11確認結果と配備時点が乖離する(cmd_3081: q11時点で0件→配備時点でL519/L732に既記載。軍師context_reflux自走+kagemaru auto-commitの時間差)。家老§0.1問い2の適用タイミングを「cmd受領時」に加え「配備直前」にも実施
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -165,6 +177,8 @@ lessons:
     - 具体的IDリストをタスクYAMLに渡さないとAC未充足になる(cmd_3038: 39件IDリスト未注入→影丸が独自判定で別50件deprecated化→AC「39件」が0件達成)。checklist/context_filesで具体的リストを渡せ。GATE CLEAR後もACの現物grep確認を省くな(§0.1問い2の適用拡大)
     - cmd途中追加指示が5回連続到着→ナッジに統合して送信したが(4)(5)が未着信時点で送信→未反映(cmd_3041)。追加指示が複数回来る場合は全件到着を確認してから統合ナッジを送信せよ
     - checklist参照が構造的に機能しない場合がある(cmd_3038/3043で3度連続ターゲット違い)。Codex忍者はchecklist参照より自力判定を優先する傾向。3度失敗→忍者配備では解決しない→家老直接実装(sed等)が正解(将軍承認2026-05-24)。判断基準: 同パターン3回失敗=構造的問題→家老直接対処に切替
+    v3吸収(2026-05-26):
+    - 教訓注入USEFUL率がcmd種別で0%〜70%ばらつく(cmd_3058 aliases修正=0%/cmd_3059 洗脳基準=70%)。project:infraタグだけでは全infra教訓を均一注入しtarget_pathと無関係な教訓が大量NOT_USEFUL。target_path(semantic系/gate系/hook系)での絞り込みがUSEFUL率の鍵。CMD起票要請中(掲示板blt_20260526_150304+blt_20260526_220647)
   source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
@@ -267,6 +281,10 @@ v7吸収(2026-05-19):
     - yaml_field_set.shはlist item形式(`- id: LXXX`)のブロックIDに非対応。deprecatedフラグ追加等はsedで直接追加が確実: `sed -i "/^- id: ${lid}$/a\\  deprecated: true" file.yaml`
     v13吸収(2026-05-25):
     - 軍師D0 Edit変更がauto-commit(影丸0c919e92)に先取りされ、軍師commit(65d98b20)にはprompt_state_inject.shのみ含まれた(gate_gunshi_cs_checklist.sh+gate_karo_startup.shの変更が別commitに分散)。D0レビュー時は報告のcommit hashだけでなく、直近のauto-commitも確認対象(git log --oneline -3で前後commit確認)。v8(dashboard 0バイト競合)と同根: 非同期auto-commitとの同時書込み
+    v14吸収(2026-05-27):
+    - startup gate fixture上書き時はbase健全性前提も再注入せよ(cmd_karo_ci_fix_5tests_20260527: base fixtureにQ6自己検出を追加→個別テストでbulletin_board.yaml上書き→2x2自己検出が消失→OK期待テストがWARN。fixture上書き時は検証対象以外のbase pass前提も維持。v10 L4修行テンプレートAC数変更と同根: テストfixture完全性前提)
+    v15吸収(2026-05-28):
+    - 忍者のmetrics変更(cmd_3080 instrumented_agents filter追加)がテストfixture前提を壊す(executor未記載→3件FAIL)。家老pushで発覚→家老が即修正(ca329ab2)。v10/v14と同根: コード変更が新フィールドを追加/参照→既存テストfixture未対応。一般原則: フィルタ/必須フィールド追加時はテストfixtureの当該フィールド有無を確認。pre-push hookが構造防御済み
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
