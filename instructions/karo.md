@@ -153,7 +153,11 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 **Dispatch-then-Stop**: dispatch→inbox_write→(pending cmdあれば次)→stop→ninja完了→wakeup→全scan
 **途中修正≠補足ナッジ**: inbox_writeでの指示変更(AC変更等)は禁止(CLAUDE.md二択)。だが事実情報の補足ナッジ(正しいファイル名通知等)は許容。忍者が間違った前提で作業していたらナッジで補足せよ(LK076)
 **CI待ちで忍者を止めるな**: push後のCI完了待ちは忍者がやる仕事ではない。報告YAMLを先に書かせろ。CI GREEN確認は家老がgh run viewで確認(LK078)
-**report_received即処理(LK086)**: 忍者完了報告受信→即座に2アクション実行。溜めるな。分割配備でも独立cmdなら各完了を個別処理:
+**report_received即処理(LK086)**: 忍者完了報告受信→即座に3アクション実行。溜めるな。分割配備でも独立cmdなら各完了を個別処理:
+  (0) **報告YAML 2点確認**(止まるポイント。手順を回すだけで思考が消える防止。LK-A01 v14):
+      `grep 'result:.*yes\|result:.*no' queue/reports/{ninja}_report_{cmd}.yaml` でbinary_checks全yesか確認
+      `grep 'commit_hash:' queue/reports/{ninja}_report_{cmd}.yaml` でcommit_hash存在確認
+      1つでもno or commit_hash空→WA cleanにせずWA記録+差し戻し検討
   (1) WA記録(karo_workaround_log.sh --clean)
   (2) 既読化(inbox_mark_read.sh)
   ※ `report_received` hook が軍師報告レビュー依頼と、LGTM後の lesson_check→GATE(cmd_complete_gate.sh) を自動実行する
