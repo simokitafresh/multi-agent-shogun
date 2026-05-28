@@ -684,7 +684,7 @@ case "$_q6_answer_status" in
         if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
-        alerts+=("追体験Q6回答: WARN")
+        alerts+=("追体験自動化ターゲット: WARN")
         ;;
 esac
 fi
