@@ -1365,3 +1365,30 @@ EOF
     grep -Fq 'parent_cmd: cmd_training_L7_v3_sasuke_3_20260522010101' \
         "$TEST_PROJECT/queue/reports/sasuke_report_cmd_training_L7_v3_sasuke_3_20260522010101.yaml"
 }
+
+@test "cmd_3102 AC3: inject_ac_version derives task_id from parent_cmd when both task_id and _ac_task_id are empty" {
+    # Simulate karo_direct manual YAML: no task_id, no _ac_task_id, but parent_cmd is set
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  task_type: normal
+  status: assigned
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: 'something'
+EOF
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_ac_version "$TEST_PROJECT/queue/tasks/sasuke.yaml" || true
+    )
+
+    # task_id should be derived as {parent_cmd}_{task_type}
+    run read_task_field task_id
+    [ "$output" = "cmd_999_normal" ]
+}
