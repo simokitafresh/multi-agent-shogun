@@ -3570,6 +3570,65 @@ PY
     )
 }
 
+auto_update_context_last_updated_for_changes() {
+    local cmd_id="$1"
+    local changed_contexts
+
+    changed_contexts=$(
+        {
+            printf '%s\n' "${CMD_CHANGED_FILES:-}"
+            git -C "$SCRIPT_DIR" diff --name-only HEAD -- 'context/*.md' 2>/dev/null || true
+            git -C "$SCRIPT_DIR" diff --cached --name-only -- 'context/*.md' 2>/dev/null || true
+        } | awk '/^context\/.*\.md$/ && !seen[$0]++'
+    )
+
+    [ -n "$changed_contexts" ] || return 0
+
+    CHANGED_CONTEXTS="$changed_contexts" python3 - "$SCRIPT_DIR" "$cmd_id" <<'PY'
+from __future__ import annotations
+
+from datetime import date
+import os
+import re
+import sys
+
+root = sys.argv[1]
+cmd_id = sys.argv[2]
+today = date.today().isoformat()
+marker = f"<!-- last_updated: {today} {cmd_id} -->"
+changed = [line.strip() for line in os.environ.get("CHANGED_CONTEXTS", "").splitlines() if line.strip()]
+pattern = re.compile(r"<!--\s*last_updated:\s*[^>]*-->")
+
+for rel_path in changed:
+    abs_path = os.path.join(root, rel_path)
+    if not os.path.isfile(abs_path):
+        continue
+    try:
+        with open(abs_path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except Exception:
+        continue
+
+    replaced = False
+    for idx, line in enumerate(lines[:10]):
+        if pattern.search(line):
+            lines[idx] = pattern.sub(marker, line)
+            replaced = True
+            break
+
+    if not replaced:
+        insert_at = 1 if lines and lines[0].startswith("#") else 0
+        lines.insert(insert_at, marker)
+
+    text = "\n".join(lines)
+    if text:
+        text += "\n"
+    with open(abs_path, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(rel_path)
+PY
+}
+
 # ─── preflight: ゲートフラグ未存在時の自動生成（冪等） ───
 # GATE BLOCK率65%の主因=missing_gate(archive/lesson/review_gate)を解消。
 # gate本体チェック前に、対応するフラグ生成処理を先行実行する。
@@ -4202,6 +4261,7 @@ for gate in "${ALL_GATES[@]}"; do
 done
 
 # ─── context_update freshness check（cmd指定時のみBLOCK） ───
+auto_update_context_last_updated_for_changes "$CMD_ID" >/dev/null 2>&1 || true
 check_context_update "$CMD_ID"
 
 # ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: in_progress忍者はWAIT） ───

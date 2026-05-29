@@ -74,6 +74,7 @@ from datetime import date, timedelta
 import glob
 import os
 import re
+import subprocess
 import sys
 
 root = sys.argv[1]
@@ -290,6 +291,98 @@ def last_updated_days(abs_path: str) -> int | None:
         return None
 
     return None
+
+
+def last_updated_date(abs_path: str) -> date | None:
+    try:
+        with open(abs_path, encoding="utf-8") as f:
+            for _ in range(5):
+                line = f.readline()
+                if not line:
+                    break
+                m = LAST_UPDATED_RE.search(line)
+                if not m:
+                    continue
+                try:
+                    return date.fromisoformat(m.group(1))
+                except ValueError:
+                    return None
+    except Exception:
+        return None
+
+    return None
+
+
+def load_project_paths() -> dict[str, str]:
+    paths: dict[str, str] = {}
+    for project_id in ACTIVE_PROJECT_IDS:
+        project_yaml = os.path.join(root, "projects", f"{project_id}.yaml")
+        try:
+            with open(project_yaml, encoding="utf-8") as f:
+                for raw_line in f:
+                    stripped = raw_line.strip()
+                    if stripped.startswith("path:"):
+                        candidate = normalize_scalar(stripped.split(":", 1)[1])
+                        if candidate:
+                            paths[project_id] = candidate
+                        break
+        except Exception:
+            continue
+    return paths
+
+
+PROJECT_PATHS = load_project_paths()
+AUTO_COMMIT_SUBJECT_RE = re.compile(r"^chore: (auto-commit|batch context)\b")
+
+
+def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str]]:
+    project_path = PROJECT_PATHS.get(project_id, "")
+    base = os.path.basename(rel_path)
+    if project_path and os.path.abspath(project_path) != os.path.abspath(root):
+        if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
+            return project_path, []
+
+    return root, [rel_path]
+
+
+def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) -> int:
+    repo_path, pathspecs = source_repo_for_context(project_id, rel_path)
+    if not repo_path or not os.path.isdir(repo_path):
+        return 0
+
+    cmd = [
+        "git",
+        "-C",
+        repo_path,
+        "log",
+        f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00",
+        "--pretty=%s",
+    ]
+    if pathspecs:
+        cmd.extend(["--", *pathspecs])
+
+    try:
+        result = subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return 0
+
+    if result.returncode != 0:
+        return 0
+
+    count = 0
+    for subject in result.stdout.splitlines():
+        subject = subject.strip()
+        if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
+            continue
+        count += 1
+    return count
 
 def scan_archive_metadata(abs_path: str) -> tuple[str, str, str]:
     project_id = ""
@@ -548,6 +641,13 @@ def build_warning(rel_path: str, days_old: int | None) -> str:
     return f"WARN: {rel_path} last_updated {days_old}日前。更新要否を確認せよ"
 
 
+def build_source_warning(rel_path: str, commit_count: int, updated_at: date) -> str:
+    return (
+        f"ALERT: {rel_path} source commits {commit_count}件 "
+        f"since last_updated={updated_at.isoformat()}。更新要否を確認せよ"
+    )
+
+
 def is_excluded_context_file(rel_path: str) -> bool:
     normalized = rel_path.strip().lstrip("./")
     return normalized in exclude_entries or os.path.basename(normalized) in exclude_entries
@@ -565,9 +665,13 @@ if mode == "--dashboard-warnings":
         if not recent_project_cache[project_id]:
             continue
 
-        days_old = last_updated_days(abs_path)
-        if days_old is None or days_old >= threshold_days:
-            warnings.append(build_warning(rel_path, days_old))
+        updated_at = last_updated_date(abs_path)
+        if updated_at is None:
+            warnings.append(build_warning(rel_path, None))
+            continue
+        commit_count = source_commit_count_since(project_id, rel_path, updated_at)
+        if commit_count > 0:
+            warnings.append(build_source_warning(rel_path, commit_count, updated_at))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
     if project_id:
@@ -576,9 +680,13 @@ elif mode == "--cmd-warnings":
                 continue
             if is_excluded_context_file(rel_path):
                 continue
-            days_old = last_updated_days(abs_path)
-            if days_old is None or days_old >= threshold_days:
-                warnings.append(build_warning(rel_path, days_old))
+            updated_at = last_updated_date(abs_path)
+            if updated_at is None:
+                warnings.append(build_warning(rel_path, None))
+                continue
+            commit_count = source_commit_count_since(current_project, rel_path, updated_at)
+            if commit_count > 0:
+                warnings.append(build_source_warning(rel_path, commit_count, updated_at))
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)

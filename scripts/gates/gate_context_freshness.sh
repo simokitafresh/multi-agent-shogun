@@ -206,17 +206,22 @@ warnings_output() {
 }
 
 declare -A seen_paths=()
+declare -A source_alerts=()
 target_rel_paths=()
-while IFS= read -r rel_path; do
+while IFS= read -r warning_line; do
+    [[ -n "$warning_line" ]] || continue
+    rel_path="$(printf '%s\n' "$warning_line" | sed -nE 's/^(WARN|ALERT): ([^ ]+) .*$/\2/p')"
     [[ -n "$rel_path" ]] || continue
+    if [[ "$warning_line" == ALERT:*"source commits"* ]]; then
+        source_alerts["$rel_path"]="$warning_line"
+    fi
     if [[ -n "${seen_paths[$rel_path]:-}" ]]; then
         continue
     fi
     seen_paths["$rel_path"]=1
     target_rel_paths+=("$rel_path")
 done < <(
-    warnings_output \
-        | sed -nE 's/^WARN: ([^ ]+) last_updated .*$/\1/p'
+    warnings_output
 )
 
 if [[ "${#target_rel_paths[@]}" -eq 0 ]]; then
@@ -258,7 +263,13 @@ for rel_path in "${target_rel_paths[@]}"; do
     days_ago=$(( (TODAY_EPOCH - file_epoch) / 86400 ))
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
-    if [[ "$days_ago" -gt 14 ]]; then
+    if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
+        emit_actionable \
+            "ALERT: ${basename_file} (source commits since last_updated=${last_updated})" \
+            "${basename_file} をソースPJの最新commitと照合し、必要なら内容とlast_updatedを更新せよ。"
+        HAS_ALERT=1
+        ALERT_LIST+=("${basename_file}(source更新)")
+    elif [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
             "ALERT: ${basename_file} (${days_ago}日前更新)" \
             "${basename_file} の内容を確認し、最新情報へ更新せよ。"
