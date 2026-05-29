@@ -2766,66 +2766,46 @@ QG_TEMPLATE
                     || true
             )
             if [[ -n "${_Q11_TARGETS:-}" ]]; then
-                _Q11_CACHE_KEY="$(printf '%s\n%s\n' "$_Q11_RESEARCH_DIR" "$_Q11_TARGETS" | md5sum | cut -d' ' -f1)"
+                read -r _Q11_CACHE_KEY _ < <(printf '%s\n%s\n' "$_Q11_RESEARCH_DIR" "$_Q11_TARGETS" | cksum)
                 _Q11_CACHE_FILE="/tmp/cmd_save_q11_${_Q11_CACHE_KEY}.cache"
-                _Q11_RESEARCH_SIG="$(stat -c '%Y:%s' "$_Q11_RESEARCH_DIR" 2>/dev/null || echo '')"
                 _Q11_CACHE_SIG=""
                 _Q11_CACHE_BODY=""
-                if [[ -f "$_Q11_CACHE_FILE" ]]; then
-                    IFS= read -r _Q11_CACHE_SIG < "$_Q11_CACHE_FILE" || _Q11_CACHE_SIG=""
-                    if [[ "$_Q11_CACHE_SIG" == "$_Q11_RESEARCH_SIG" ]]; then
-                        _Q11_CACHE_BODY="$(tail -n +2 "$_Q11_CACHE_FILE")"
-                    fi
+                _Q11_CACHE_HIT=false
+                if [[ -f "$_Q11_CACHE_FILE" && "$_Q11_CACHE_FILE" -nt "$_Q11_RESEARCH_DIR" ]]; then
+                    _Q11_CACHE_HIT=true
+                    _Q11_SKIP_CACHE_SIG=true
+                    while IFS= read -r _q11_cache_line; do
+                        if [[ "$_Q11_SKIP_CACHE_SIG" == true ]]; then
+                            _Q11_CACHE_SIG="$_q11_cache_line"
+                            _Q11_SKIP_CACHE_SIG=false
+                            continue
+                        fi
+                        _Q11_CACHE_BODY+="${_q11_cache_line}"$'\n'
+                    done < "$_Q11_CACHE_FILE"
                 fi
 
-                if [[ -n "$_Q11_CACHE_BODY" ]]; then
+                if [[ "$_Q11_CACHE_HIT" == true ]]; then
                     [[ -n "${_Q11_CACHE_BODY//[[:space:]]/}" ]] && {
                         echo "INFO: 関連する既存成果物を検出:" >&2
                         printf '%s\n' "$_Q11_CACHE_BODY" >&2
                     }
                 else
-                    _Q11_CANDIDATE_DOCS=""
-                    if command -v rg >/dev/null 2>&1; then
-                        _Q11_PATTERN_ARGS=()
-                        while IFS= read -r _q11_target; do
-                            [[ -z "$_q11_target" ]] && continue
-                            _Q11_PATTERN_ARGS+=(-e "$_q11_target")
-                            _q11_base="${_q11_target##*/}"
-                            if [[ "$_q11_base" != "$_q11_target" ]]; then
-                                _Q11_PATTERN_ARGS+=(-e "$_q11_base")
-                            fi
-                        done <<< "$_Q11_TARGETS"
-                        _Q11_CANDIDATE_DOCS=$(rg -l -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
-                    else
-                        _Q11_PATTERN_ARGS=()
-                        while IFS= read -r _q11_target; do
-                            [[ -z "$_q11_target" ]] && continue
-                            _Q11_PATTERN_ARGS+=(-e "$_q11_target")
-                            _q11_base="${_q11_target##*/}"
-                            if [[ "$_q11_base" != "$_q11_target" ]]; then
-                                _Q11_PATTERN_ARGS+=(-e "$_q11_base")
-                            fi
-                        done <<< "$_Q11_TARGETS"
-                        _Q11_CANDIDATE_DOCS=$(grep -rl -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
-                    fi
-
                     _Q11_ANY_MATCH=false
                     _Q11_CACHE_BODY=""
+                    _Q11_USE_RG=false
+                    command -v rg >/dev/null 2>&1 && _Q11_USE_RG=true
                     while IFS= read -r _q11_target; do
                         [[ -z "$_q11_target" ]] && continue
                         _q11_base="${_q11_target##*/}"
-                        _Q11_MATCHES=""
-                        while IFS= read -r _q11_doc; do
-                            [[ -z "$_q11_doc" ]] && continue
-                            if [[ "$_q11_base" == "$_q11_target" ]]; then
-                                grep -Fq -- "$_q11_target" "$_q11_doc" 2>/dev/null || continue
-                            else
-                                grep -Fq -- "$_q11_target" "$_q11_doc" 2>/dev/null \
-                                    || grep -Fq -- "$_q11_base" "$_q11_doc" 2>/dev/null \
-                                    || continue
-                            fi
-                            _Q11_MATCHES+="${_q11_doc}"$'\n'
-                        done <<< "$_Q11_CANDIDATE_DOCS"
+                        _Q11_PATTERN_ARGS=(-e "$_q11_target")
+                        if [[ "$_q11_base" != "$_q11_target" ]]; then
+                            _Q11_PATTERN_ARGS+=(-e "$_q11_base")
+                        fi
+                        if [[ "$_Q11_USE_RG" == true ]]; then
+                            _Q11_MATCHES=$(rg -l -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                        else
+                            _Q11_MATCHES=$(grep -rl -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                        fi
                         [[ -z "${_Q11_MATCHES:-}" ]] && continue
                         if [[ "$_Q11_ANY_MATCH" == false ]]; then
                             echo "INFO: 関連する既存成果物を検出:" >&2
@@ -2840,7 +2820,7 @@ QG_TEMPLATE
                     done <<< "$_Q11_TARGETS"
 
                     {
-                        printf '%s\n' "$_Q11_RESEARCH_SIG"
+                        printf '%s\n' "v2"
                         printf '%s' "$_Q11_CACHE_BODY"
                     } > "$_Q11_CACHE_FILE"
                 fi
