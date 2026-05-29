@@ -3,7 +3,7 @@
 # cmd_1661: 2 hooks → 1 script. Eliminates 1 bash startup cost (~60ms).
 set -eu
 
-payload="$(cat 2>/dev/null || true)"
+payload="$(</dev/stdin)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 
@@ -307,10 +307,15 @@ fi
 # 送信は確認ではない。結果を確認せよ(LK013: 2026-05-20全失敗の根因)
 # Phase 1: halt/clear送信検出→CTX記録。Phase 2: 次のBash実行時にCTX低下を検証→未低下ならBLOCK
 _HALT_PENDING_DIR="/tmp/shogun_halt_pending"
-mkdir -p "$_HALT_PENDING_DIR" 2>/dev/null || true
 
 # Phase 2: 前回のhalt/clear送信の停止確認(次のBashアクション時に発火)
-for _hf in "$_HALT_PENDING_DIR"/*.pending; do
+_halt_pending_files=()
+if [[ -d "$_HALT_PENDING_DIR" ]]; then
+    shopt -s nullglob
+    _halt_pending_files=("$_HALT_PENDING_DIR"/*.pending)
+    shopt -u nullglob
+fi
+for _hf in "${_halt_pending_files[@]}"; do
     [[ -f "$_hf" ]] || continue
     _halt_ninja="$(basename "$_hf" .pending)"
     _old_ctx="$(cat "$_hf" 2>/dev/null || echo "")"
@@ -341,6 +346,7 @@ if [[ "$payload" == *'inbox_write'* ]]; then
         _iw_target="$(echo "$_iw_cmd" | grep -oP 'inbox_write\.sh\s+\K\S+' || true)"
         _iw_type="$(echo "$_iw_cmd" | grep -oP '(task_halt|clear_command)' || true)"
         if [[ -n "$_iw_target" && -n "$_iw_type" ]]; then
+            mkdir -p "$_HALT_PENDING_DIR" 2>/dev/null || true
             # halt/clear送信先のCTXを記録
             _target_pane="$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},$_iw_target}" 2>/dev/null | head -1 || true)"
             _target_ctx=""
@@ -365,12 +371,14 @@ fi
 # Fix(なぜなぜ7回 2026-05-21): payload substring matchだとgrep/diff/gitでも発火(偽陽性)
 # 根因1: `sh`がパス内マッチ。根因2: verb=bash+引数内文字列マッチ(inbox_write msg内のdeploy_task.sh)
 # → bashの第1引数(スクリプトパス)がdeploy_task.shを含むかで判定
-_g4_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
-_g4_verb="${_g4_cmd%%[[:space:]]*}"
-_g4_rest="${_g4_cmd#*[[:space:]]}"
-_g4_arg1="${_g4_rest%%[[:space:]]*}"
-_g4_arg1="${_g4_arg1//\"/}"
-if [[ "$_g4_verb" == "bash" && "$_g4_arg1" == *deploy_task.sh* ]]; then
+if [[ "$payload" == *'deploy_task.sh'* ]]; then
+    _g4_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    _g4_verb="${_g4_cmd%%[[:space:]]*}"
+    _g4_rest="${_g4_cmd#*[[:space:]]}"
+    _g4_arg1="${_g4_rest%%[[:space:]]*}"
+    _g4_arg1="${_g4_arg1//\"/}"
+fi
+if [[ "${_g4_verb:-}" == "bash" && "${_g4_arg1:-}" == *deploy_task.sh* ]]; then
     _deploy_output="$(PAYLOAD="$payload" jq -r '
         (.tool_result.stdout // .toolResult.stdout // .content // "") | tostring
     ' 2>/dev/null <<< "$payload" || true)"
