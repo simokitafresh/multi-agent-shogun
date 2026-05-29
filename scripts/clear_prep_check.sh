@@ -29,40 +29,50 @@ check_lord_clear_instruction_guard() {
   fi
 
   local guard_result
-  guard_result="$(python3 - "$LORD_CONV" <<'PY'
-import json
-import re
-import sys
-
-path = sys.argv[1]
-entries = []
-with open(path, encoding="utf-8") as fh:
-    for raw in fh:
-        raw = raw.strip()
-        if not raw:
-            continue
-        try:
-            entry = json.loads(raw)
-        except json.JSONDecodeError:
-            continue
-        if entry.get("direction") != "inbound":
-            continue
-        text = " ".join(
-            str(entry.get(key, ""))
-            for key in ("summary", "detail", "content", "message", "text")
-        )
-        entries.append((str(entry.get("ts") or entry.get("timestamp") or ""), text))
-
-recent = entries[-5:]
-pattern = re.compile(r"(/clear|/shogun-clear-prep|clear前|クリア前|セッション終了前)")
-matches = [(ts, text) for ts, text in recent if pattern.search(text)]
-if matches:
-    ts, text = matches[-1]
-    print(f"OK|{len(recent)}|{ts}|{text[:120]}")
-else:
-    print(f"WARN|{len(recent)}|none|none")
-PY
-)"
+  guard_result="$(awk '
+function json_value(line, key,    pattern, rest) {
+  pattern = "\"" key "\"[[:space:]]*:[[:space:]]*\""
+  rest = line
+  if (rest !~ pattern) return ""
+  sub("^.*" pattern, "", rest)
+  sub("\".*$", "", rest)
+  gsub(/\\"/, "\"", rest)
+  return rest
+}
+function trim_recent(    i) {
+  while (count > 5) {
+    for (i = 1; i < count; i++) {
+      ts[i] = ts[i + 1]
+      text[i] = text[i + 1]
+    }
+    count--
+  }
+}
+/"direction"[[:space:]]*:[[:space:]]*"inbound"/ {
+  count++
+  ts[count] = json_value($0, "ts")
+  if (ts[count] == "") ts[count] = json_value($0, "timestamp")
+  text[count] = json_value($0, "summary") " " json_value($0, "detail") " " json_value($0, "content") " " json_value($0, "message") " " json_value($0, "text")
+  trim_recent()
+}
+END {
+  status = "WARN"
+  match_idx = 0
+  for (i = 1; i <= count; i++) {
+    if (text[i] ~ /\/clear|\/shogun-clear-prep|clear前|クリア前|セッション終了前/) {
+      status = "OK"
+      match_idx = i
+    }
+  }
+  if (status == "OK") {
+    out = text[match_idx]
+    gsub(/[|]/, " ", out)
+    print "OK|" count "|" ts[match_idx] "|" substr(out, 1, 120)
+  } else {
+    print "WARN|" count "|none|none"
+  }
+}
+' "$LORD_CONV")"
 
   local guard_status guard_count guard_ts guard_text
   guard_status="${guard_result%%|*}"
