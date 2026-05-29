@@ -590,3 +590,6 @@
 | cmd_9997 | cmd_save.sh速度計測のための新規PASSシナリオ。全必須フィールドを充足しPASSを取る | — | 05-29 | — |
 | cmd_3099 | 軍師報告(blt_20260529_190957)で修行分27件中26件がCoDD台帳(codd_refactor_registry.md)未記載(96.3%漏れ)と判明。根因仮説: 修行cmdはcmd_complete_gateの自動台帳記載が発火しないフローで処理されている。一括台帳記載+自動記載フロー修正の2層対処 | infra | 05-29 | AC1: 修行分27件中26件(FAIL除く)の速度改善結果 |
 | cmd_3100 | gate_skill_script_refs.shが18 WARN(12ファイル)を検出。参照scriptが更新されたがSKILL.md内容が未同期。3セッション連続startup BLOCKの解消 | infra | 05-29 | gate_skill_script_refs.shの参照sc |
+| cmd_3103 | テスト2008件/12分超でpre-push hook BLOCK=日常回帰テスト不能。重複テスト名4件+1テストファイル2件+consolidated3.7%。テスト品質の自動管理基盤を構築し肥大化を構造的に防止 | infra | 05-29 | gate_test_health.sh新規作成(AC1: テ |
+| cmd_3104 | 1031リンクが44ファイルに集中。context/skills/docsからのリンクがほぼゼロ。リンク密度を計測し、context更新時の因果リンク付与をgate WARNで強制し、backlinks=0ファイルを修行対象に自動組込み | infra | 05-29 | backlink密度計測スクリプト、context更新時の因 |
+| cmd_3106 | cmd_3103で検出された統合候補52ファイル(テスト数5件以下)を統合し、テストファイル数を削減。test_cmd_save系3ファイルはcmd_3105で速度改善中のため除外し競合回避 | infra | 05-29 | watcher/起動系の小テスト2ファイルをtest_inf |
