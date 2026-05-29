@@ -12,8 +12,14 @@ fi
 
 agent_id="$1"
 limit="${2:-5}"
-script_dir="$(cd "$(dirname "$0")/.." && pwd)"
-conversation_file="${LORD_CONVERSATION_FILE:-$script_dir/queue/lord_conversation.jsonl}"
+if [ -n "${LORD_CONVERSATION_FILE:-}" ]; then
+  conversation_file="$LORD_CONVERSATION_FILE"
+elif [ -f "queue/lord_conversation.jsonl" ]; then
+  conversation_file="queue/lord_conversation.jsonl"
+else
+  script_dir="$(cd "$(dirname "$0")/.." && pwd)"
+  conversation_file="$script_dir/queue/lord_conversation.jsonl"
+fi
 
 if [ -z "$agent_id" ]; then
   echo "FATAL: agent_id is required" >&2
@@ -37,38 +43,21 @@ if [ ! -f "$conversation_file" ]; then
   exit 1
 fi
 
-python3 - "$agent_id" "$limit" "$conversation_file" <<'PY'
-import json
-import sys
-from collections import deque
-
-agent_id = sys.argv[1]
-limit = int(sys.argv[2])
-path = sys.argv[3]
-matches = deque(maxlen=limit)
-
-with open(path, "r", encoding="utf-8") as fh:
-    for lineno, raw in enumerate(fh, 1):
-        line = raw.rstrip("\n")
-        if not line.strip():
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError as exc:
-            print(f"FATAL: invalid JSONL at {path}:{lineno}: {exc}", file=sys.stderr)
-            sys.exit(1)
-        if not isinstance(entry, dict):
-            print(f"FATAL: JSONL entry is not an object at {path}:{lineno}", file=sys.stderr)
-            sys.exit(1)
-
-        target = entry.get("target")
-        agent = entry.get("agent")
-        target_text = "" if target is None else str(target)
-        agent_text = "" if agent is None else str(agent)
-
-        if target_text == "" or target_text == agent_id or agent_text == agent_id:
-            matches.append(line)
-
-for line in matches:
-    print(line)
-PY
+jq -Rrs --arg agent_id "$agent_id" --argjson limit "$limit" '
+  split("\n")
+  | map(
+      select(test("\\S")) as $line
+      | ($line | fromjson) as $entry
+      | if ($entry | type) != "object" then
+          error("JSONL entry is not an object")
+        else
+          select(
+            (($entry.target // "") | tostring) == ""
+            or (($entry.target // "") | tostring) == $agent_id
+            or (($entry.agent // "") | tostring) == $agent_id
+          )
+          | $line
+        end
+    )
+  | .[-$limit:][]
+' "$conversation_file"
