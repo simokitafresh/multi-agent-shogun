@@ -82,10 +82,19 @@ notify_completion() {
 }
 
 if [[ -n "$last_assistant_message" && "$agent_id" != "shogun" && "$agent_id" != "gunshi" ]]; then
-  if printf '%s\n' "$last_assistant_message" | grep -Eiq "$COMPLETE_PATTERN"; then
+  _nocasematch_was_set=false
+  if shopt -q nocasematch; then
+    _nocasematch_was_set=true
+  else
+    shopt -s nocasematch
+  fi
+  if [[ "$last_assistant_message" =~ $COMPLETE_PATTERN ]]; then
     notify_completion "report_completed" "${agent_id}、タスク完了"
-  elif printf '%s\n' "$last_assistant_message" | grep -Eiq "$ERROR_PATTERN"; then
+  elif [[ "$last_assistant_message" =~ $ERROR_PATTERN ]]; then
     notify_completion "error_report" "${agent_id}、エラー停止"
+  fi
+  if [[ "$_nocasematch_was_set" != "true" ]]; then
+    shopt -u nocasematch
   fi
 fi
 
@@ -105,15 +114,18 @@ if [[ -z "$last_assistant_message" && "$agent_id" != "karo" && "$agent_id" != "g
 fi
 
 has_unread=false
-if grep -qE '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null; then
+unread_count=0
+while IFS= read -r _inbox_line; do
+  if [[ "$_inbox_line" =~ ^[[:space:]]*read:[[:space:]]*false[[:space:]]*$ ]]; then
+    unread_count=$((unread_count + 1))
+  fi
+done < "$inbox_file" 2>/dev/null || true
+
+if (( unread_count > 0 )); then
   has_unread=true
 fi
 
 if [[ "$has_unread" == "true" ]]; then
-  unread_count="$(grep -cE '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null || true)"
-  if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
-    unread_count=1
-  fi
   : > "$idle_flag"
   # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
   INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
@@ -158,17 +170,31 @@ PY
 else
   # 全ロール共通: inbox未読0でも掲示板action_required未対処/insights pendingがあれば表示
   _bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
-  if [[ -f "$_bulletin_file" ]]; then
-    _ar_count=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{count++; ar=0} {if(/^- id:/){ar=0}} END{print count+0}' "$_bulletin_file" 2>/dev/null)
-    if [[ "$_ar_count" -gt 0 ]]; then
-      echo "⚠ 掲示板action_required未対処${_ar_count}件。対処してactioned_byを埋めよ" >&2
-    fi
-  fi
   _insights_file="$SCRIPT_DIR/queue/insights.yaml"
-  if [[ -f "$_insights_file" ]]; then
-    _ins_pending=$(grep -cE 'status:.*pending' "$_insights_file" 2>/dev/null || echo 0)
-    if [[ "$_ins_pending" -gt 3 ]]; then
-      echo "⚠ insights pending ${_ins_pending}件（idle時に確認推奨）" >&2
+  _warning_cache="$STATE_DIR/shogun_stop_check_warnings_${agent_id}"
+  if [[ -f "$_warning_cache" ]] \
+    && { [[ ! -f "$_bulletin_file" ]] || [[ ! "$_bulletin_file" -nt "$_warning_cache" ]]; } \
+    && { [[ ! -f "$_insights_file" ]] || [[ ! "$_insights_file" -nt "$_warning_cache" ]]; }; then
+    if [[ -s "$_warning_cache" ]]; then
+      cat "$_warning_cache" >&2
+    fi
+  else
+    _warning_text=""
+    if [[ -f "$_bulletin_file" ]]; then
+      _ar_count=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{count++; ar=0} {if(/^- id:/){ar=0}} END{print count+0}' "$_bulletin_file" 2>/dev/null)
+      if [[ "$_ar_count" -gt 0 ]]; then
+        _warning_text+="⚠ 掲示板action_required未対処${_ar_count}件。対処してactioned_byを埋めよ"$'\n'
+      fi
+    fi
+    if [[ -f "$_insights_file" ]]; then
+      _ins_pending=$(grep -cE 'status:.*pending' "$_insights_file" 2>/dev/null || echo 0)
+      if [[ "$_ins_pending" -gt 3 ]]; then
+        _warning_text+="⚠ insights pending ${_ins_pending}件（idle時に確認推奨）"$'\n'
+      fi
+    fi
+    printf '%s' "$_warning_text" > "$_warning_cache" 2>/dev/null || true
+    if [[ -n "$_warning_text" ]]; then
+      printf '%s' "$_warning_text" >&2
     fi
   fi
   # 家老向け: inbox未読0でもpending workがあれば次アクションを表示(Codex STALL防止)
@@ -214,7 +240,14 @@ else
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
-      if grep -qE '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null; then
+      _ninja_task_done=false
+      while IFS= read -r _task_line; do
+        if [[ "$_task_line" =~ ^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$) ]]; then
+          _ninja_task_done=true
+          break
+        fi
+      done < "$_ninja_task" 2>/dev/null || true
+      if [[ "$_ninja_task_done" == "true" ]]; then
         : > "$idle_flag"
         _reason="Task completed. Wait for next task assignment from karo. Do NOT start new work."
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
