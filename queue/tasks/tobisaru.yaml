@@ -113,3 +113,14 @@ task:
   report_path: queue/reports/tobisaru_report_cmd_3099.yaml
   bloom_level: 
   deployed_at: "2026-05-29T19:22:15"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'assumption_invalidation: MISSING'
+    tried_approaches:
+    - 'assumption_invalidation: MISSING'
+    approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'assumption_invalidation: MISSING'
+      approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
