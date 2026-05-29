@@ -124,3 +124,20 @@ SH
     [[ "$output" == *"WARN: warn-only.md (9日前更新)"* ]]
     [[ "$output" != *"--- 更新cmdテンプレート TOP3 ---"* ]]
 }
+
+@test "source commit warning is treated as ALERT regardless of elapsed days" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+ALERT: context/source-changed.md source commits 1件 since last_updated=2026-05-10。更新要否を確認せよ
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/source-changed.md 2026-05-10
+
+    run_gate
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: source-changed.md (source commits since last_updated=2026-05-10)"* ]]
+    [[ "$output" == *"--- 更新cmdテンプレート TOP3 ---"* ]]
+}

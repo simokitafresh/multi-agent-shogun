@@ -4260,7 +4260,7 @@ for gate in "${ALL_GATES[@]}"; do
     fi
 done
 
-# ─── context_update freshness check（cmd指定時のみBLOCK） ───
+# ─── context_update freshness check（context変更時はlast_updatedを自動更新してからBLOCK判定） ───
 auto_update_context_last_updated_for_changes "$CMD_ID" >/dev/null 2>&1 || true
 check_context_update "$CMD_ID"
 

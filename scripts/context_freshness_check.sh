@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# semantic-links: [[ゲート品質統合フレームワーク]]
+# semantic-links: [[ゲート品質統合フレームワーク]] [[context鮮度偽陽性_経過日数判定]]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

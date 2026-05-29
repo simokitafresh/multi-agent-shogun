@@ -2,7 +2,7 @@
 # semantic-links: [[防御階層原則(Level 1-6)]]
 # ============================================================
 # gate_context_freshness.sh
-# dashboardと同じ監視対象に対してlast_updated鮮度を自動チェックする
+# dashboardと同じ監視対象に対してソースcommit差分ベースで鮮度を自動チェックする
 #
 # Usage:
 #   bash scripts/gates/gate_context_freshness.sh
@@ -10,12 +10,10 @@
 # チェック内容:
 #   scripts/context_freshness_check.sh --dashboard-warnings と同じ対象
 #   （直近completed cmdがあるactive projectのcontext）のみを監視する
-#   各context/*.mdの先頭コメントから last_updated を解析
+#   各context/*.mdの先頭コメントから last_updated を解析し、ソースrepoの非auto commit有無を確認
 #   フォーマット: <!-- last_updated: YYYY-MM-DD --> または
 #                <!-- last_updated: YYYY-MM-DD cmd_XXX ... -->
-#   基準日からの経過日数:
-#     7日超 → WARN
-#     14日超 → ALERT
+#   ソースrepoにlast_updated後の新commitあり → ALERT
 #     last_updated未記載 → WARN（「未記載」と明示）
 #
 # Exit code: 0=全OK, 1=1つ以上ALERT, 2=WARNのみ(ALERTなし)

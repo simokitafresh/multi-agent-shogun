@@ -45,6 +45,7 @@ PROJYAML
     export TEST_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh"
     export CFC_ARCHIVE_CACHE="$TEST_TMPDIR/context_freshness_cache.txt"
     export CONTEXT_FRESHNESS_EXCLUDE_LIST="$TEST_TMPDIR/config/context_freshness_excludes.txt"
+    export CFC_OUTPUT_CACHE_TTL=0
 
     cat > "$CONTEXT_FRESHNESS_EXCLUDE_LIST" <<'EOF'
 context/README.md
@@ -54,9 +55,14 @@ context/checklist-alm-registration.md
 context/checklist-shin-v2-registration.md
 context/checklist-ward-fof-production.md
 EOF
+
+    git -C "$TEST_TMPDIR" init -q
+    git -C "$TEST_TMPDIR" config user.email "test@example.invalid"
+    git -C "$TEST_TMPDIR" config user.name "Test User"
 }
 
 teardown() {
+    unset CFC_OUTPUT_CACHE_TTL
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -70,6 +76,8 @@ _create_context() {
     else
         printf '# Context\nSome content without last_updated\n' > "$abs_path"
     fi
+    git -C "$TEST_TMPDIR" add "$rel_path"
+    git -C "$TEST_TMPDIR" commit -q -m "test source update for $rel_path"
 }
 
 # ── Helper: create archive cmd entry ──
@@ -175,9 +183,9 @@ STKYAML
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN:"* ]]
+    [[ "$output" == *"ALERT:"* ]]
     [[ "$output" == *"context/dm-signal.md"* ]]
-    [[ "$output" == *"日前"* ]]
+    [[ "$output" == *"source commits"* ]]
 }
 
 @test "--dashboard-warnings excludes low-frequency context files" {
@@ -289,24 +297,20 @@ EOF
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
-# === Test 8: CONTEXT_STALE_DAYS 環境変数オーバーライド ===
-@test "CONTEXT_STALE_DAYS override changes threshold" {
-    # 3日前のファイル: デフォルト7日では鮮度OK、2日閾値なら陳腐化
-    local three_days_ago
-    three_days_ago="$(date -d '3 days ago' +%Y-%m-%d 2>/dev/null || date -v-3d +%Y-%m-%d)"
-    _create_context "context/dm-signal.md" "$three_days_ago"
+# === Test 8: auto-commit filter ===
+@test "auto-commit source commits are ignored" {
+    local rel_path="context/dm-signal.md"
+    local abs_path="$TEST_TMPDIR/$rel_path"
+    mkdir -p "$(dirname "$abs_path")"
+    printf '<!-- last_updated: %s -->\n# Context\nSome content\n' "$STALE_DATE" > "$abs_path"
+    git -C "$TEST_TMPDIR" add "$rel_path"
+    git -C "$TEST_TMPDIR" commit -q -m "chore: auto-commit before /clear (hayate) — 運用ファイル"
     _create_context "context/dm-signal-core.md" "$TODAY"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
-    # デフォルト(7日): 3日前は鮮度OK → 警告なし
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [ -z "$output" ]
-
-    # 閾値2日に変更: 3日前は陳腐化 → WARN
-    CONTEXT_STALE_DAYS=2 run bash "$TEST_SCRIPT" --dashboard-warnings
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN:"* ]]
 }
 
 # === Test 9: 最近の完了cmdなしPJ → 警告スキップ(dashboard) ===
@@ -363,4 +367,36 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"context/dm-signal.md"* ]]
     [[ "$output" != *"infrastructure.md"* ]]
+}
+
+@test "dm-signal context uses external project git log" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'source\n' > "$source_repo/source.txt"
+    git -C "$source_repo" add source.txt
+    git -C "$source_repo" commit -q -m "feature: source project changed"
+
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_930" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_930
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal.md source commits"* ]]
+    [[ "$output" != *"infrastructure.md"* ]]
+}
+
+@test "infra context uses same-repo path git log" {
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_931" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_931
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/infrastructure.md source commits"* ]]
+    [[ "$output" != *"dm-signal.md"* ]]
 }

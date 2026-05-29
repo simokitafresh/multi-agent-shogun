@@ -22,6 +22,8 @@ setup_file() {
         printf '\n'
         sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^auto_update_context_last_updated_for_changes()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^resolve_report_file()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -1169,6 +1171,23 @@ run_report_format_validation() {
     [[ "$output" == *"OK: context/infrastructure.md: last_updated=2026-03-05 (cmd=2026-03-04)"* ]]
 }
 
+@test "context md changes auto-update last_updated before context_update check" {
+    write_cmd_yaml "with_context"
+    write_context_file "2025-01-01"
+    write_report
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email "test@example.invalid"
+    git -C "$TEST_PROJECT" config user.name "Test User"
+    git -C "$TEST_PROJECT" add context/infrastructure.md
+    git -C "$TEST_PROJECT" commit -q -m "baseline"
+    printf '\nnew context detail\n' >> "$TEST_PROJECT/context/infrastructure.md"
+    CMD_CHANGED_FILES=""
+
+    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+}
+
 @test "context_update missing: gate skips and keeps existing behavior" {
     write_cmd_yaml "without_context"
     write_context_file "2025-01-01"
@@ -1184,11 +1203,16 @@ run_report_format_validation() {
     write_cmd_yaml "without_context"
     write_context_file "2026-03-01"
     write_report
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email "test@example.invalid"
+    git -C "$TEST_PROJECT" config user.name "Test User"
+    git -C "$TEST_PROJECT" add context/infrastructure.md
+    git -C "$TEST_PROJECT" commit -q -m "test source update for context/infrastructure.md"
 
     run run_context_freshness_nudge
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context freshness nudge (GATE CLEAR):"* ]]
-    [[ "$output" == *"WARN: context/infrastructure.md last_updated"* ]]
+    [[ "$output" == *"ALERT: context/infrastructure.md source commits"* ]]
 }
 
 @test "lesson_impact rows keyed by subtask_id are updated on gate clear" {
