@@ -370,10 +370,12 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
             text=True,
             timeout=10,
         )
-    except Exception:
+    except Exception as e:
+        print(f"WARN: source_commit_count_since git failed: {repo_path} — {e}", file=sys.stderr)
         return 0
 
     if result.returncode != 0:
+        print(f"WARN: source_commit_count_since git returncode={result.returncode}: {repo_path}", file=sys.stderr)
         return 0
 
     count = 0
