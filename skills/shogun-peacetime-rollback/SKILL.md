@@ -8,6 +8,8 @@ description: |
   DO NOT TRIGGER: 全員Codex切替（→/shogun-all-codex-switch）、単体ペイン修復
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T23:35:23+09:00 -->
+
 # Shogun Peacetime Rollback
 
 ## Overview
@@ -48,7 +50,7 @@ cd /mnt/c/tools/multi-agent-shogun
 - Rollback is incomplete unless the restart creates exactly `EXPECTED_WATCHER_COUNT` watcher processes (default `9`) and every launched agent has a matching `inbox_watcher.sh <agent>` process.
 - The watcher count check uses bracketed pgrep patterns such as `[i]nbox_watcher\.sh` to avoid self-matching. Treat count mismatch as rollback failure and rerun or investigate before reporting completion.
 
-Script refs verified: 2026-05-22 cmd_2967.
+Script refs verified: 2026-05-29 cmd_3107/a4a64068. `restart_watchers.sh` counts only top-level inbox watcher wrapper processes via `ps`/`awk`, excluding child watcher processes from the total; diagnostic listing uses the same top-level filter. Singleton restart and exact `EXPECTED_WATCHER_COUNT` requirements remain unchanged. 2026-05-22 cmd_2967.
 
 ## Options
 

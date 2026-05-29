@@ -8,6 +8,8 @@ description: |
   DO NOT TRIGGER: 単体CLI切替、peacetime rollback（→/shogun-peacetime-rollback）
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T23:35:23+09:00 -->
+
 # Shogun All Codex Switch
 
 ## Overview
@@ -60,7 +62,7 @@ bash scripts/build_instructions.sh
 - The restart must finish with exactly `EXPECTED_WATCHER_COUNT` watcher processes (default `9`). A total count mismatch or per-agent startup miss means the switch is incomplete.
 - Process matching uses bracketed patterns such as `[i]nbox_watcher\.sh` to avoid self-matching. The inotify health check remains diagnostic after the exact watcher count passes.
 
-Script refs verified: 2026-05-22 cmd_2967.
+Script refs verified: 2026-05-29 cmd_3107/a4a64068. `restart_watchers.sh` counts only top-level inbox watcher wrapper processes via `ps`/`awk`, excluding child watcher processes from the total; diagnostic listing uses the same top-level filter. Singleton restart and exact `EXPECTED_WATCHER_COUNT` requirements remain unchanged. 2026-05-22 cmd_2967.
 
 ## Options
 
