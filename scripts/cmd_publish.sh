@@ -151,26 +151,26 @@ ensure_cmd_publish_default_fields() {
 }
 
 run_cmd_save_with_block_summary() {
-    local output_file summary_line
-    output_file="$(mktemp "${TMPDIR:-/tmp}/cmd_publish_cmd_save.XXXXXX")"
+    local output summary_line line
 
-    if bash "$CMD_SAVE_SCRIPT" "$CMD_ID" >"$output_file" 2>&1; then
-        cat "$output_file"
-        rm -f "$output_file"
+    if output="$(bash "$CMD_SAVE_SCRIPT" "$CMD_ID" 2>&1)"; then
+        printf '%s\n' "$output"
         return 0
     fi
 
-    summary_line="$(awk '
-        /^[[:space:]]*(BLOCK|保存確認NG|ERROR|WARNING):/ {
-            print
-            exit
-        }
-    ' "$output_file")"
+    summary_line=""
+    while IFS= read -r line; do
+        case "$line" in
+            BLOCK:*|保存確認NG:*|ERROR:*|WARNING:*)
+                summary_line="$line"
+                break
+                ;;
+        esac
+    done <<< "$output"
     [ -n "$summary_line" ] || summary_line="cmd_save.sh failed for $CMD_ID"
 
     echo "BLOCK SUMMARY: ${summary_line}" >&2
-    cat "$output_file" >&2
-    rm -f "$output_file"
+    printf '%s\n' "$output" >&2
     return 1
 }
 
