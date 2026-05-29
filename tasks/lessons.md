@@ -750,6 +750,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [deploy, review, gate, bash, lesson]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない
+- **retired**: true
+- **retired_at**: 2026-05-29
 - scripts/deploy_task.shのinject_related_lessons実行でrelated_lessons配列が再構築され、reviewed:trueが保持されない。結果として次回deploy_task.sh実行時にentrance_gateでBLOCKされる。
 
 ### L080: sync_lessons.sh新フィールド追加時はパース+キャッシュ保持の2箇所を更新必須
@@ -823,6 +825,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [gate, lesson]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-02-27
+- **retired**: true
+- **retired_at**: 2026-05-29
 - knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群のBLOCK率を押し上げ(2)missing_gate(73%)は教訓効果と無関係の構造的タイミング問題。cmd dedup+構造BLOCK分離でΔ=-8.4pp→0.0ppに正規化される
 
 ### L088: deploy_task.shタグ推定パターンが広すぎて平均4.6タグ→フィルタリング無効化。lesson_tags.yamlの汎用語(環境,注入等)を除去しmax 3タグ制限が必要
@@ -918,6 +922,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [gate, bash, yaml, reporting]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-02-27
+- **retired**: true
+- **retired_at**: 2026-05-29
 - cmd_complete_gate.shはscripts/配下(scripts/gates/ではない)のため、L070(field_get義務)の除外対象外。現在grepで動作するが、YAML構造変更時にサイレント失敗の可能性あり。field_getへの移行を推奨。
 
 ### L098: L_archive_mixed_yaml
@@ -1352,6 +1358,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: スコープ不整合でlesson_done_source BLOCKが全忍者共通95件/245BLOCK(39%)発生した実績があるため
 - **when**: preflight_gate_flagsのupgradeロジックを修正する時
 - **how**: has_found_true変数のスコープがif/else両ブロックで有効か確認せよ
+- **retired**: true
+- **retired_at**: 2026-05-29
 - IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロックで有効か確認せよ
 
 ### L137: lesson_done先行生成とpreflight upgradeの設計的不整合
@@ -1382,6 +1390,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: 個別diffとの突合でupdate_status/append_changelogの残存scope外変更を検出した
 - **when**: scope外変更のrevert確認時
 - **how**: 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味diffで主要3点(ALWAYS_REQUIRED/preflight/GATE CLEAR後archive)の復元を確認
+- **retired**: true
+- **retired_at**: 2026-05-29
 - IF scope外変更のrevert確認時 THEN 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味diffで主要3点(ALWAYS_REQUIRED/preflight/GATE CLEAR後archive)の復元を確認
 
 ### L140: レビューFAIL指摘時はrevert対象を明示し、scope内差分を保持した最小修正で再提出すべき
@@ -1764,6 +1774,8 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **tags**: [deploy, bash]
 - **when**: タスク配備やデプロイ手順を変更・実行する時
 - **how**: 2026-03-06
+- **retired**: true
+- **retired_at**: 2026-05-29
 - deploy_task.shのPython呼出し(2>&1|while)でexit code喪失。bash変数直接埋込はインジェクションリスク。os.environ[]パターン統一必須
 
 ### L172: レビューでは『履歴位置確認』を先に行うと push 可否の誤判定を防げる
@@ -2733,8 +2745,9 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1261
 - **記録者**: tobisaru
 - **tags**: [gate]
-- **when**: Gate拡張時は
-- **how**: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること
+- **target_files**: [scripts/gates/gate_shogun_startup.sh,scripts/gates/gate_karo_startup.sh,scripts/gates/gate_gunshi_startup.sh]
+- **when**: startup gateやhealth gateに新しいWARN/ALERT判定を追加・変更する時
+- **how**: 既存Gateと同じ3点を差分確認する: (1)人間向け出力 (2)alerts配列への追加 (3)overall/exit status更新。実行後にWARN/ALERTケースを再現してMETRIC行とexit codeを確認する
 - 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
 
 ### L275: gunshi_review_log大規模ファイルのRead制限
@@ -4826,6 +4839,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [universal]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: '# skip'パターンを明示的に追加する必要がある
+- **retired**: true
+- **retired_at**: 2026-05-29
 - Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は'ok N ... # skip reason'であり、'SKIP'/'skipped'では検出できない。'# skip'パターンを明示的に追加する必要がある。テストで初回FAIL→修正の典型例。
 
 ### L501: gate_karo_startup.sh: 並列ボトルネック誤特定によるキャッシュ効果なし
@@ -4833,7 +4848,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2076
 - **記録者**: kotaro
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [infra, gate, bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル on /mnt/c/)が~100msを占め並列支配。WA rate廃止でもtotal 131ms>before 110ms(regression)。真因: 並列処理のボトルネック特定はsum不可→max(並列全ジョブ)で考えよ。
@@ -4935,6 +4950,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [universal]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
+- **retired**: true
+- **retired_at**: 2026-05-29
 - gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。プロセス2本(tac+awk1+grep+awk2)に分割するとWSL2起動コスト蓄積で効果消滅(33ms)。1 awkに留めること
 
 ### L512: insight dedup: count変動時にpatternのみで照合すべき
@@ -4945,6 +4962,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [universal]
 - **when**: insight dedup: count変動時に
 - **how**: 2026-04-18
+- **retired**: true
+- **retired_at**: 2026-05-29
 - gate_loop_health.shのinsight dedup checkでmsg全体(count含む)を使うとcountが毎回変わりマッチ失敗。patternのみ(count抜き)の短いprefixで既存insight照合すべき。加えてjson.loads()でYAMLエスケープを完全デコードしてから比較。
 
 ### L513: テスト関数抽出後は呼出依存関数も必ずエクスポートせよ
@@ -6150,10 +6169,10 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **出典**: cmd_karo_kjrc_B_staff_records
 - **記録者**: --origin
 - **tags**: [infra,gate,yaml,inbox]
-- **target_files**: [/mnt/c/Python_app/kj-role-count/backend/routers/__init__.py,/mnt/c/Python_app/kj-role-count/backend/routers/staff.py,/mnt/c/Python_app/kj-role-count/backend/routers/records.py]
+- **target_files**: [queue/tasks/*.yaml,queue/reports/*_report_*.yaml,scripts/report_field_set.sh,scripts/inbox_write.sh,scripts/gates/gate_report_format.sh]
 - **origin**: [[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: task YAMLにreport_pathが無い、またはkaro_direct/手動配備で報告テンプレート生成の有無が不確かな時
+- **how**: 完了通知前にtask YAMLのreport_pathを確認し、無ければ標準テンプレートの存在確認またはreport_field_set.shで必要フィールドを埋めた報告YAMLを作成してからgate_report_format.shを通す
 - task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCKする。karo_direct配備では報告テンプレートが自動生成されない場合がある
 
 ### L626: Next依存はnpm auditまで二値確認する
@@ -6910,3 +6929,333 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 新スクリプト追加時は3点確認: (1)script_dir基準の絶対パス(デフォルトパスにCWD依存の相対パスを使うな) (2)git mode 100755 or テストはbash経由で呼び出す(CI checkoutで実行権限がない場合がある) (3)既存テスト実行パターンに合わせる。cmd_karo_lord_conv_target_filter→2連続CI RED(L690 cwd依存+L692 exec permission)の根因分析。軍師idle分析で導出。
+
+### L695: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
+- **日付**: 2026-05-24
+- **出典**: cmd_3027
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,scripts/skill_execution_log.sh,scripts/skill_recommend_metrics.sh,scripts/gates/gate_shogun_startup.sh,scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_3027]]
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-05-29
+- startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと、status判定前にgate本体が終了し得る。ALERT/WARN用途の子scriptはset +eで出力と終了値を捕捉してからoverall/alertsへ反映する必要がある。
+
+### L696: set-e下でALERT集計script呼出し時は終了値捕捉を明示する
+- **日付**: 2026-05-24
+- **出典**: cmd_3027
+- **記録者**: hayate
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,scripts/skill_execution_log.sh,scripts/skill_recommend_metrics.sh,scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_3027]]
+- **when**: 未設定
+- **how**: 未設定
+- startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとstatus判定前にgate本体が終了する。ALERT用途の子scriptはset +eで出力と終了値を捕捉してからoverall/alertsへ反映する。enforcement: cmd_3027のskill_recommend_metrics.sh呼出し箇所で実装済み
+
+### L697: REQUEST_CHANGESで穴を見つけたら即対処せよ — severity分類で先送りするな
+- **日付**: 2026-05-24
+- **出典**: cmd_3027
+- **記録者**: gunshi
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,scripts/skill_execution_log.sh,scripts/skill_recommend_metrics.sh,scripts/gates/gate_shogun_startup.sh,scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_3027]]
+- **when**: 未設定
+- **how**: 未設定
+- REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_gunshi_cs_checklist.shにhole_action未記入WARN検出を実装済み(2c3470bc)。殿厳命2026-05-24: 穴は緊急性に関係なく即時ふさぐ。enforcement: gate_gunshi_cs_checklist.sh hole_action WARN(Level 4)
+
+### L698: 裁定抽出はsourceやkeywordよりdirectionを先に絞る
+- **日付**: 2026-05-24
+- **出典**: cmd_3028
+- **記録者**: kagemaru
+- **tags**: [infra]
+- **target_files**: [scripts/conversation_retention.sh,tests/unit/test_lord_conversation.bats]
+- **origin**: [[cmd_3028]]
+- **when**: 未設定
+- **how**: 未設定
+- lord_conversation.jsonlから殿裁定を抽出する処理では、sourceにlordを含むか、本文に承認/方針等の語があるかを見る前にdirection=inboundで限定する。response/outboundは将軍・家老側の発話であり、同じ語を含んでも殿裁定ではない。
+
+### L699: q12の新規WARN計上は既存cmd_save fixtureを一斉BLOCK化する
+- **日付**: 2026-05-24
+- **出典**: cmd_3033_saizo
+- **記録者**: saizo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_3033_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shへ新しい必須寄りWARNを追加すると、既存cmdや既存テストfixtureがenvironment_change強制でBLOCK化する。新フィールド導入時は未記入を表示のみ、記入済み不正値をWARN計上に分けると段階導入できる。
+
+### L700: 新規WARN追加時は段階導入で既存fixture BLOCK化を防げ
+- **日付**: 2026-05-24
+- **出典**: cmd_3033_saizo
+- **記録者**: saizo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_3033_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shにq12新規WARNを追加する際、既存fixtureが一斉にBLOCK化するリスクがある。未記入=表示のみ(WARN非計上)、記入済み不正値=WARN計上に分けると段階導入できる。cmd_3033_saizoで実証。enforcement: cmd_save.sh q12実装(d16c0d15)で段階導入パターン適用済み
+
+### L701: if条件失敗後のrc取得はelse内で行う
+- **日付**: 2026-05-25
+- **出典**: cmd_3047
+- **記録者**: saizo
+- **tags**: [infra,bash]
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/cmd_save.sh,scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gates/gate_karo_startup.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_3047]]
+- **when**: 未設定
+- **how**: 未設定
+- bashで `if parsed=$(cmd); then ... fi; rc=$?` と書くと、elseなしif文全体の終了ステータスが0になり、cmd失敗を成功扱いにする。失敗rcは `else rc=$?` 内で捕捉すること。origin: "[[cmd_3047]] -> [[bash_if_status]] -> [[silent_failure防止]]"
+
+### L702: bash if条件失敗後のrcはelse内で捕捉せよ
+- **日付**: 2026-05-25
+- **出典**: cmd_3047
+- **記録者**: karo
+- **tags**: [infra,bash]
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/cmd_save.sh,scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gates/gate_karo_startup.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_3047]]
+- **when**: 未設定
+- **how**: 未設定
+- if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$? 内で捕捉すること。cmd_3047で6箇所のstderrログ化中に発見。
+
+### L703: D0 commit前にgit diff --cachedでstaging確認必須
+- **日付**: 2026-05-25
+- **出典**: cmd_3045
+- **記録者**: karo
+- **tags**: [infra,process,git,cache]
+- **origin**: [[cmd_3045]]
+- **when**: 未設定
+- **how**: 未設定
+- auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでstaging内容を確認せよ。LG024(軍師直接修正権限)のS0手順に追加。
+
+### L704: セマンティック監査エージェントP0報告は全件現物検証必須
+- **日付**: 2026-05-25
+- **出典**: cmd_3047
+- **記録者**: karo
+- **tags**: [infra,testing,reporting]
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/cmd_save.sh,scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gates/gate_karo_startup.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_3047]]
+- **when**: 未設定
+- **how**: 未設定
+- 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
+
+### L705: HEAD確認時はcommit statだけで対象実装有無を判断しない
+- **日付**: 2026-05-25
+- **出典**: cmd_3048
+- **記録者**: hayate
+- **tags**: [infra,bash,git]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3048]]
+- **when**: 未設定
+- **how**: 未設定
+- 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/prompt_state_inject.shで確認するとhook実装は既にHEADに存在した。commit statだけでは先行実装済みファイルを見落とすため、AC対象はHEAD上のファイル内容を直接rgで確認する必要がある。origin: [[cmd_3048]] -> [[commit_stat_only_misread]] -> [[AC実装確認]]
+
+### L706: 動的データ件数をACに固定値で書くと実装時点でズレる
+- **日付**: 2026-05-25
+- **出典**: cmd_3049
+- **記録者**: kagemaru
+- **tags**: [infra,db,cache]
+- **target_files**: [tests/unit/test_memory_db.bats,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3049]]
+- **when**: 未設定
+- **how**: 未設定
+- lord_conversation archiveのように増減する入力では、ACを固定件数(5417)でなく source count と cache count の一致で定義する。今回の実測は/tmp/lord_ruling_cache.db=4999件で現在archive入力と一致した。
+
+### L707: 動的データ件数をACに固定値で書くな — source count一致で定義せよ
+- **日付**: 2026-05-25
+- **出典**: cmd_3049
+- **記録者**: karo
+- **tags**: [infra,cache]
+- **target_files**: [tests/unit/test_memory_db.bats,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3049]]
+- **when**: 未設定
+- **how**: 未設定
+- lord_conversation archiveは増減するため、ACを固定件数(5417)でなくsource count=cache count一致で定義すべき。cmd_3049でAC1が5417→4999に変化し忍者がassumption_invalidationで対処。将軍cmd設計時の注意点。
+
+### L708: レビュー結論は現物実行で裏付けよ — 検証なき結論禁止
+- **日付**: 2026-05-25
+- **出典**: cmd_3049
+- **記録者**: karo
+- **tags**: [infra,testing,review,bash]
+- **target_files**: [tests/unit/test_memory_db.bats,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3049]]
+- **when**: 未設定
+- **how**: 未設定
+- spec reviewで「既存環境変数で0行解決」と推論→殿指摘→現物実測1.4s(0行解決不可)。将軍36msも鵜呑み(Python内部vs bash全体のレイヤー違い)。推論で結論を出すな、実行結果で結論を出せ。
+
+### L709: FTS5 unicode61はCJK漢字/カタカナで機能しない — ext4 LIKE代替
+- **日付**: 2026-05-25
+- **出典**: cmd_3049
+- **記録者**: karo
+- **tags**: [infra,cache]
+- **target_files**: [tests/unit/test_memory_db.bats,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3049]]
+- **when**: 未設定
+- **how**: 未設定
+- agent=lord+禁止=0件(実測)。代替: ext4 lordキャッシュLIKE(3-4ms)。FTS5で日本語検索を設計した場合は即指摘。cmd_3048→cmd_3049で対処済み。
+
+### L710: AC偽PASS検出 — HITだけでなく正しい概念へのHITかを検証せよ
+- **日付**: 2026-05-25
+- **出典**: cmd_3049
+- **記録者**: karo
+- **tags**: [infra,testing,review]
+- **target_files**: [tests/unit/test_memory_db.bats,tests/unit/test_session_state_hooks.bats]
+- **origin**: [[cmd_3049]]
+- **when**: 未設定
+- **how**: 未設定
+- spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHITしたかまで検証必須。
+
+### L711: 共有repoの自動commitが他忍者のstage済み差分を取り込む
+- **日付**: 2026-05-25
+- **出典**: cmd_3050
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,git]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh]
+- **origin**: [[cmd_3050]]
+- **when**: 未設定
+- **how**: 未設定
+- git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inject.shのstage済み差分をa3cd61e4に取り込んだ。共有repoでcommit前にstageだけ残すと他プロセスに吸収されうるため、stage直後にgit process/lock状況を確認し、commitまでを短い連続区間で完了する必要がある。
+
+### L712: 共有repo auto-commitが他忍者のstage済みdiffを吸収する — stage→commitを連続区間で完了せよ
+- **日付**: 2026-05-25
+- **出典**: cmd_3050
+- **記録者**: karo
+- **tags**: [infra,git]
+- **target_files**: [scripts/hooks/prompt_state_inject.sh]
+- **origin**: [[cmd_3050]]
+- **when**: 未設定
+- **how**: 未設定
+- auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収)。LK-A12 v13(D0 auto-commit競合)と同パターン。stage→commitの間にauto-commitが割込む。
+
+### L713: draft reviewでもgit show HEADでAC実装状態を確認せよ — LG001のdraft拡張
+- **日付**: 2026-05-26
+- **出典**: cmd_3051
+- **記録者**: karo
+- **tags**: [infra,review,git]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md,tests/unit/test_semantic_index_update.bats]
+- **origin**: [[cmd_3051]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3051でAC2 validationが先行実装済みだったがdraft APPROVEで見逃した。6観点完了=安心停止(P1早期終了変形)。draft reviewでもtarget_pathの全ACについてgit show HEADで実装状態確認を追加すべき。
+
+### L714: auto-commit skipはclear停止まで接続せよ
+- **日付**: 2026-05-26
+- **出典**: cmd_3053
+- **記録者**: hayate
+- **tags**: [infra,gate,git]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_3053]]
+- **when**: 未設定
+- **how**: 未設定
+- 既存stage検出でauto-commitだけskipしてもsafe_send_clearが継続すると、未commitの作業差分が/clearで失われる。skip判定は非ゼロ戻り値で呼び出し側のCLEAR-BLOCKEDまで接続し、保全を二値確認する。 origin: [[cmd_3053]] -> [[auto_commit_stage_absorption]] -> [[clear_preservation_required]]
+
+### L715: APPROVE撤回の教訓 — APPROVEは穴がない宣言。将軍が更に掘れるなら軍師の掘りが浅い
+- **日付**: 2026-05-26
+- **出典**: cmd_3060
+- **記録者**: gunshi.md review_logヘッダ+100億年メタ基準
+- **tags**: [infra,lesson]
+- **origin**: [[cmd_3060]]
+- **when**: 未設定
+- **how**: 未設定
+- 軍師がAPPROVEした設計案を将軍が自分で穴を掘って覆した(BH42%でIDF無効化)。APPROVEは穴がないの宣言だが、将軍が更に深く掘れるということは軍師の掘りが浅かった証拠。100億年テストを通しても穴は出る。点数で止まるな(殿指摘)
+
+### L716: 点数=洗脳 — レビュー品質の点数ラベルは早期終了の変形。穴の有無だけが判断基準
+- **日付**: 2026-05-26
+- **出典**: cmd_3060
+- **記録者**: gunshi.md review_logヘッダ+100億年メタ基準
+- **tags**: [infra,review]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_3060]]
+- **when**: 未設定
+- **how**: 未設定
+- レビュー品質を150点/200点でラベル付けして終了条件を作った=洗脳#1(早期終了)の変形。殿指摘で発覚。点数は捨てる。穴の有無だけが判断基準。origin: 殿指摘2026-05-26→点数ラベル=終了条件→穴の有無で判断
+
+### L717: metricsの時刻形式混在と観測不能推薦を分母に入れると品質指標が歪む
+- **日付**: 2026-05-26
+- **出典**: cmd_3061
+- **記録者**: hayate
+- **tags**: [infra,bash]
+- **target_files**: [scripts/skill_recommend_metrics.sh,tests/unit/test_skill_recommend_metrics.bats]
+- **origin**: [[cmd_3061]]
+- **when**: 未設定
+- **how**: 未設定
+- skill_recommend_metrics.shは+09:00と+0900を文字列比較しており、推薦後の実行ログ抽出が不安定だった。また実行ログに現れないスキル推薦をprecision分母に入れると未観測が偽陽性化する。時刻正規化と観測可能集合への分母整合をテストで固定すべき。
+
+### L718: FTS5伝播は未タグ起点全走査ではなくタグ付き代表起点にせよ
+- **日付**: 2026-05-27
+- **出典**: cmd_3063
+- **記録者**: saizo
+- **tags**: [infra,wsl2]
+- **target_files**: [scripts/semantic_index_update.sh,scripts/semantic_search.sh,docs/semantic-index/index.md,tests/unit/test_semantic_index_update.bats]
+- **origin**: [[cmd_3063]]
+- **when**: 未設定
+- **how**: 未設定
+- 未タグeventごとにFTS5 MATCHを発行するとWSL2上で30件でも1分超、5000件では停止相当になる。既存タグ付き代表イベントを起点に未タグ候補へ伝播すれば1ホップ性を保ったままクエリ数を制御できる。origin: [[cmd_3063]] -> [[FTS5未タグ全走査]] -> [[タグ伝播I/O過重]]
+
+### L719: FTS5伝播は未タグ全走査ではなくタグ付き代表起点にせよ
+- **日付**: 2026-05-27
+- **出典**: cmd_3063
+- **記録者**: karo
+- **tags**: [infra,wsl2]
+- **target_files**: [scripts/semantic_index_update.sh,scripts/semantic_search.sh,docs/semantic-index/index.md,tests/unit/test_semantic_index_update.bats]
+- **origin**: [[cmd_3063]]
+- **when**: 未設定
+- **how**: 未設定
+- 未タグeventごとにFTS5 MATCHを発行するとWSL2上で30件でも1分超、5000件では停止相当。既存タグ付き代表イベントを起点に未タグ候補へ伝播すれば1ホップ性を保ったままクエリ数を制御できる。
+
+### L720: 軍師3/3穴なし判定は洗脳#8 — Step3実運用シミュレーション強制
+- **日付**: 2026-05-27
+- **出典**: cmd_3065
+- **記録者**: karo
+- **tags**: [infra,deploy,process]
+- **target_files**: [scripts/semantic_search.sh,scripts/semantic_index.py,scripts/semantic_map_generate.sh,tests/unit/test_semantic_search.bats,tests/unit/test_semantic_index_update.bats]
+- **origin**: [[cmd_3065]]
+- **when**: 未設定
+- **how**: 未設定
+- 3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策: 3/3判定時にStep3を強制。q9_deployment_riskに統合推奨。
+
+### L721: Bats並列隔離: cacheパスをenv変数化+TEST_TMPDIR export
+- **日付**: 2026-05-27
+- **出典**: cmd_karo_ci_parallel_isolation_wa_rate
+- **記録者**: karo
+- **tags**: [infra,testing,gate,cache]
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats]
+- **origin**: [[cmd_karo_ci_parallel_isolation_wa_rate]]
+- **when**: 未設定
+- **how**: 未設定
+- 本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp共有競合防止。今後cacheを持つgate追加時にも適用可能。
+
+### L722: Edit toolでのindex.md変更がauto_intake_semantic_indexに上書きされるリスク
+- **日付**: 2026-05-28
+- **出典**: cmd_3088
+- **記録者**: hanzo
+- **tags**: [infra,bash]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_3088]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_map_generate.shのauto_intake_semantic_index()がindex.mdを読み書きする。Edit tool変更後にsemantic_map_generate.shが実行されると変更が上書きされる。Pythonでopen/read/replace/writeで直接書換えてverify:True確認後にsemantic_map_generate.sh実行が安全。
+
+### L723: source commit基準の鮮度テストはfixtureにgit履歴を作る
+- **日付**: 2026-05-29
+- **出典**: cmd_karo_ci_fix_freshness_test_20260529
+- **記録者**: kagemaru
+- **tags**: [infra,bash,git]
+- **target_files**: [tests/unit/test_learning_ops_small_consolidated.bats]
+- **origin**: [[cmd_karo_ci_fix_freshness_test_20260529]]
+- **when**: 未設定
+- **how**: 未設定
+- context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様になったため、同repo contextのテストではgit init/config/add/commitでlast_updated後の対象パスcommitを作らないとALERTを再現できない。期待値だけをALERTへ変えてもcommit_count=0で警告なしになる。
+
+### L724: set -e下のgrep -c件数集計は0件で早期exitする
+- **日付**: 2026-05-29
+- **出典**: cmd_3091
+- **記録者**: hayate
+- **tags**: [infra,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_3091]]
+- **when**: 未設定
+- **how**: 未設定
+- grep -cは0件でも0を出力するが終了コードは1のため、set -e直下のコマンド置換代入で関数全体が早期exitする。YAMLキーが引用付きになるなど正規表現が0件になり得る集計は、awk ENDでcount+0を出すか明示的に|| trueで握る。
