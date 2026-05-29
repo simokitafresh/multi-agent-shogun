@@ -156,7 +156,11 @@ while [ $attempt -lt $max_attempts ]; do
         _inbox_dir="${INBOX%/*}"
         _tmp=$(mktemp "${_inbox_dir}/.imr_XXXXXX.tmp")
 
-        extract_bulletin_confirms "$INBOX" "$MSG_ID" > "$CONFIRM_LIST_FILE"
+        if grep -q "type:[[:space:]]*['\"]*bulletin_notify['\"]*[[:space:]]*$" "$INBOX" 2>/dev/null; then
+            extract_bulletin_confirms "$INBOX" "$MSG_ID" > "$CONFIRM_LIST_FILE"
+        else
+            : > "$CONFIRM_LIST_FILE"
+        fi
 
         if [ -z "$MSG_ID" ]; then
             # Mark all: only message-level read fields, not literal content lines.

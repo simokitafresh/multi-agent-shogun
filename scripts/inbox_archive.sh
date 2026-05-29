@@ -5,7 +5,10 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_ia_self="${BASH_SOURCE[0]}"
+[[ "$_ia_self" != /* ]] && _ia_self="$PWD/$_ia_self"
+SCRIPT_DIR="${_ia_self%/scripts/inbox_archive.sh}"
+unset _ia_self
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
     || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
@@ -30,6 +33,196 @@ mkdir -p "$ARCHIVE_DIR"
 DATE_STAMP=$(date +%Y%m%d)
 ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
 
+inbox_archive_fast_path() {
+    local inbox_path="$1"
+    local archive_path="$2"
+    local agent_id="$3"
+
+    # Complex YAML remains on the existing PyYAML path. The hot inbox shape is a
+    # flat list of single-line scalar message fields.
+    if grep -Eq '^[[:space:]]{4,}[^[:space:]]|:[[:space:]]*[|>][+-]?[0-9]*[[:space:]]*$' "$inbox_path" 2>/dev/null; then
+        return 1
+    fi
+
+    local inbox_dir archive_dir read_tmp unread_tmp stats_tmp inbox_tmp archive_tmp
+    inbox_dir="${inbox_path%/*}"
+    archive_dir="${archive_path%/*}"
+    read_tmp=$(mktemp "$archive_dir/.ia_read_XXXXXX.tmp")
+    unread_tmp=$(mktemp "$inbox_dir/.ia_unread_XXXXXX.tmp")
+    stats_tmp=$(mktemp /tmp/.ia_stats_XXXXXX)
+
+    if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
+function trim(v) {
+    gsub(/^[ \t\r\n]+/, "", v)
+    gsub(/[ \t\r\n]+$/, "", v)
+    return v
+}
+function unquote(v,    q) {
+    v = trim(v)
+    if (length(v) >= 2) {
+        q = substr(v, 1, 1)
+        if (q == "'"'"'" && substr(v, length(v), 1) == "'"'"'") {
+            v = substr(v, 2, length(v) - 2)
+            gsub(/'"'"''"'"'/, "'"'"'", v)
+        } else if (q == "\"" && substr(v, length(v), 1) == "\"") {
+            v = substr(v, 2, length(v) - 2)
+            gsub(/\\"/, "\"", v)
+            gsub(/\\\\/, "\\", v)
+        }
+    }
+    return v
+}
+function sv(v,    out,i,c,sq) {
+    v = unquote(v)
+    if (v == "true" || v == "false") return v
+    sq = sprintf("%c", 39)
+    out = sq
+    for (i = 1; i <= length(v); i++) {
+        c = substr(v, i, 1)
+        if (c == sq) out = out sq sq
+        else out = out c
+    }
+    return out sq
+}
+function reset_msg(    i) {
+    delete values
+    delete seen
+    delete extra_keys
+    extra_count = 0
+    in_msg = 0
+    read_value = "false"
+}
+function set_field(k, v,    known) {
+    if (k == "") return
+    values[k] = v
+    seen[k] = 1
+    if (k == "read") read_value = unquote(v)
+    known = (k == "content" || k == "from" || k == "id" || k == "read" || k == "timestamp" || k == "type")
+    if (!known) extra_keys[++extra_count] = k
+}
+function emit_field(out, prefix, k) {
+    print prefix k ": " sv(values[k]) >> out
+}
+function emit_msg(out,    keys,nkeys,i,prefix,k) {
+    if (!in_msg) return
+    split("content from id read timestamp type", keys, " ")
+    nkeys = 6
+    prefix = "- "
+    for (i = 1; i <= nkeys; i++) {
+        k = keys[i]
+        if (seen[k]) {
+            emit_field(out, prefix, k)
+            prefix = "  "
+        }
+    }
+    for (i = 1; i <= extra_count; i++) {
+        k = extra_keys[i]
+        if (seen[k]) {
+            emit_field(out, prefix, k)
+            prefix = "  "
+        }
+    }
+}
+function flush_msg() {
+    if (!in_msg) return
+    total_count++
+    if (read_value == "true") {
+        read_count++
+        emit_msg(read_out)
+    } else {
+        unread_count++
+        emit_msg(unread_out)
+    }
+}
+BEGIN {
+    total_count = read_count = unread_count = 0
+    reset_msg()
+}
+/^[[:space:]]*messages:[[:space:]]*\[\][[:space:]]*$/ { empty_seen = 1; next }
+/^[[:space:]]*messages:[[:space:]]*$/ { next }
+/^[[:space:]]*-[[:space:]]*/ {
+    flush_msg()
+    reset_msg()
+    in_msg = 1
+    line = $0
+    sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+    key = line
+    sub(/:.*/, "", key)
+    val = line
+    sub(/^[^:]*:[[:space:]]*/, "", val)
+    set_field(trim(key), trim(val))
+    next
+}
+/^[[:space:]]+[A-Za-z0-9_.-]+:[[:space:]]*/ {
+    if (!in_msg) next
+    line = $0
+    sub(/^[[:space:]]+/, "", line)
+    key = line
+    sub(/:.*/, "", key)
+    val = line
+    sub(/^[^:]*:[[:space:]]*/, "", val)
+    set_field(trim(key), trim(val))
+    next
+}
+END {
+    flush_msg()
+    print total_count, read_count, unread_count > stats_out
+}
+' "$inbox_path"; then
+        rm -f "$read_tmp" "$unread_tmp" "$stats_tmp"
+        return 1
+    fi
+
+    local total_count read_count unread_count
+    read -r total_count read_count unread_count < "$stats_tmp" || {
+        rm -f "$read_tmp" "$unread_tmp" "$stats_tmp"
+        return 1
+    }
+    rm -f "$stats_tmp"
+
+    echo "[inbox_archive] ${agent_id}: total=${total_count}, read=${read_count}, unread=${unread_count}"
+
+    if [ "${total_count:-0}" -eq 0 ]; then
+        rm -f "$read_tmp" "$unread_tmp"
+        echo "[inbox_archive] No messages in inbox"
+        return 0
+    fi
+    if [ "${read_count:-0}" -eq 0 ]; then
+        rm -f "$read_tmp" "$unread_tmp"
+        echo "[inbox_archive] No read messages to archive"
+        return 0
+    fi
+    if [ "${unread_count:-0}" -gt 0 ]; then
+        echo "[inbox_archive] NOTE: ${unread_count} unread messages will be preserved"
+    fi
+
+    if [ -f "$archive_path" ]; then
+        cat "$read_tmp" >> "$archive_path"
+    else
+        archive_tmp=$(mktemp "$archive_dir/.ia_archive_XXXXXX.tmp")
+        {
+            printf 'messages:\n'
+            cat "$read_tmp"
+        } > "$archive_tmp"
+        mv "$archive_tmp" "$archive_path"
+    fi
+
+    inbox_tmp=$(mktemp "$inbox_dir/.ia_inbox_XXXXXX.tmp")
+    if [ "${unread_count:-0}" -eq 0 ]; then
+        printf 'messages: []\n' > "$inbox_tmp"
+    else
+        {
+            printf 'messages:\n'
+            cat "$unread_tmp"
+        } > "$inbox_tmp"
+    fi
+    mv "$inbox_tmp" "$inbox_path"
+
+    rm -f "$read_tmp" "$unread_tmp"
+    echo "[inbox_archive] Archived ${read_count} messages to ${archive_path}"
+    return 0
+}
+
 # Atomic archive with flock (same lock as inbox_write.sh)
 attempt=0
 max_attempts=3
@@ -37,6 +230,10 @@ max_attempts=3
 while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
+
+        if inbox_archive_fast_path "$INBOX" "$ARCHIVE_FILE" "$AGENT"; then
+            exit 0
+        fi
 
         INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE_FILE" AGENT_ID="$AGENT" python3 -c "
 import yaml, sys, os, tempfile
