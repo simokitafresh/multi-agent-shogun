@@ -587,3 +587,6 @@
 | cmd_3095 | context_freshness ALERT残存(saxo-trade-engine.md ソースPJ commit未反映 + 記憶DB定義ファイル last_updated未記載)を解消し、進化検知のmemory-db-queries.mdをCLAUDE.md知識マップに接続する | infra | 05-29 | context_freshness ALERTを解消し、Sa |
 | cmd_3096 | 軍師計測(blt_20260529_124540)でgate_gunshi_report_precheck.sh=76.6秒が速度TOP2。毎レビュー時に76秒消費(1日10レビュー=12.7分/日損失)。22項目直列+WSL2 I/O律速が根因 | infra | 05-29 | gate_gunshi_report_precheck.sh |
 | cmd_3097 | 軍師計測でgate_gunshi_startup.sh=23.4秒が速度TOP3。軍師起動時に23秒消費。gate_sync 3068件走査+統計集計が根因 | infra | 05-29 | gate_gunshi_startup.sh fresh実行 |
+| cmd_9997 | cmd_save.sh速度計測のための新規PASSシナリオ。全必須フィールドを充足しPASSを取る | — | 05-29 | — |
+| cmd_3099 | 軍師報告(blt_20260529_190957)で修行分27件中26件がCoDD台帳(codd_refactor_registry.md)未記載(96.3%漏れ)と判明。根因仮説: 修行cmdはcmd_complete_gateの自動台帳記載が発火しないフローで処理されている。一括台帳記載+自動記載フロー修正の2層対処 | infra | 05-29 | AC1: 修行分27件中26件(FAIL除く)の速度改善結果 |
+| cmd_3100 | gate_skill_script_refs.shが18 WARN(12ファイル)を検出。参照scriptが更新されたがSKILL.md内容が未同期。3セッション連続startup BLOCKの解消 | infra | 05-29 | gate_skill_script_refs.shの参照sc |
