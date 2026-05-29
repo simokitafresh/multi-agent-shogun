@@ -62,7 +62,7 @@ ds_pattern_pids() {
 
 ds_inbox_watcher_pids() {
     local agent="$1"
-    local pid cmdline
+    local pid ppid cmdline parent_cmdline
 
     while IFS= read -r pid; do
         [[ -n "$pid" ]] || continue
@@ -70,6 +70,13 @@ ds_inbox_watcher_pids() {
         ds_pid_live "$pid" || continue
         cmdline="$(ds_cmdline "$pid")"
         [[ "$cmdline" == *"inbox_watcher.sh ${agent} "* ]] || continue
+
+        ppid="$(awk '/^PPid:/ {print $2}' "/proc/${pid}/status" 2>/dev/null || true)"
+        if [[ -n "$ppid" ]] && ds_pid_live "$ppid"; then
+            parent_cmdline="$(ds_cmdline "$ppid")"
+            [[ "$parent_cmdline" == *"inbox_watcher.sh ${agent} "* ]] && continue
+        fi
+
         printf '%s\n' "$pid"
     done < <(pgrep -f "[i]nbox_watcher\.sh" 2>/dev/null || true)
 }

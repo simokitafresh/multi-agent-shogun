@@ -19,7 +19,18 @@ fi
 echo "=== inbox_watcher 再起動 ==="
 
 watcher_process_count() {
-    pgrep -fc "[i]nbox_watcher\.sh" 2>/dev/null || true
+    ps -eo pid=,ppid=,args= 2>/dev/null | awk '
+        /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
+            pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
+        }
+        END {
+            count=0
+            for (pid in watcher) {
+                if (!(parent[pid] in watcher)) count++
+            }
+            print count + 0
+        }
+    '
 }
 
 stop_existing_watchers() {
@@ -57,7 +68,16 @@ verify_watcher_count() {
     actual="$(watcher_process_count)"
     if [ "$actual" -ne "$expected" ]; then
         echo "ERROR: inbox_watcherプロセス数が不正です (actual=${actual}, expected=${expected})"
-        pgrep -af "[i]nbox_watcher\.sh" 2>/dev/null || true
+        ps -eo pid=,ppid=,args= 2>/dev/null | awk '
+            /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
+                pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
+            }
+            END {
+                for (pid in watcher) {
+                    if (!(parent[pid] in watcher)) print line[pid]
+                }
+            }
+        ' || true
         return 1
     fi
     echo "  OK: inbox_watcher ${actual}/${expected}"

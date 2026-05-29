@@ -3150,6 +3150,11 @@ check_ntfy_listener_health() {
 # ─── inbox_watcher生死監視+自動再起動 (おしお殿知見) ───
 # watcher_supervisor.sh相当。プロセス生存をpgrepで確認、死亡→個別再起動。
 check_inbox_watcher_health() {
+    if ! flock -n /tmp/restart_watchers.lock -c ':' 2>/dev/null; then
+        log "SKIP: restart_watchers.sh is running; inbox_watcher health check deferred"
+        return 0
+    fi
+
     # クールダウン期間内ならスキップ
     local now=$EPOCHSECONDS
     local cooldown_sec=$((WATCHER_RESTART_COOLDOWN_MIN * 60))

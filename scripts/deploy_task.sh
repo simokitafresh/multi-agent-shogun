@@ -6402,7 +6402,7 @@ maybe_notify_draft_review() {
     fi
 
     message="draft ${cmd_id} レビュー依頼。${title:-$cmd_id}。ninja=${ninja_name}。"
-    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "$message" review_draft karo; then
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "$message" review_draft karo review_request; then
         log "draft_review: SENT (gunshi)"
     else
         log "draft_review: WARN (inbox_write failed)"
@@ -7157,7 +7157,7 @@ except Exception:
         if [ "$verify_status" != "$TYPE" ]; then
             log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${verify_status}"
         fi
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "status_update"
         log "${NINJA_NAME}: deployment complete (type=${TYPE})"
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 0
