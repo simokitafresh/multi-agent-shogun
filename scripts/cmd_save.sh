@@ -1723,6 +1723,12 @@ with open(sys.argv[2], 'w', encoding='utf-8') as f:
 
 show_prior_attempts() {
     [[ -f "$QUALITY_LOG_FILE" ]] || return 0
+    # perf: grep fast-path — CMD_ID not in quality log → definitely 0 prior attempts
+    # grep は python3 起動コスト(~0.25s×2)を回避。同一入力に対する出力は同一。
+    if ! grep -qF "cmd_id: \"$CMD_ID\"" "$QUALITY_LOG_FILE" 2>/dev/null; then
+        PRIOR_ATTEMPT_COUNT=0
+        return 0
+    fi
 
     local prior_output cache_file cache_tmp cache_sig cached_sig scan_file cache_key
     cache_key="$(printf '%s' "$QUALITY_LOG_FILE" | cksum | awk '{print $1}')"
@@ -1887,38 +1893,43 @@ PY
 log_cmd_save_block() {
     local block_reason="${1:-}"
     [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
-
+    # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
     CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
     CMD_QUALITY_SOURCE="cmd_save" \
     CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
     CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
     CMD_QUALITY_FAST_METADATA=1 \
-    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 || true
+    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 &
 }
 
 log_cmd_save_warns() {
     [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     local warn_note
+    local _project
+    _project="$(cmd_block_get_field "project" 2>/dev/null || true)"
     for warn_note in "${WARN_REASONS[@]}"; do
+        # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save_warn" \
         CMD_QUALITY_DIAGNOSIS="" \
-        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_PROJECT="$_project" \
         CMD_QUALITY_FAST_METADATA=1 \
-        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 || true
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 &
     done
 }
 
 log_cmd_save_pass() {
     [[ -n "$CMD_ID" ]] || return 0
     [[ -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+    # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
     CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
     CMD_QUALITY_SOURCE="cmd_save" \
     CMD_QUALITY_DIAGNOSIS="" \
     CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
     CMD_QUALITY_FAST_METADATA=1 \
-    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 || true
-    bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
+    # perf: 非同期化 — yaml_auto_archive.sh は結果に影響しない後処理。
+    bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 &
 }
 
 count_same_warn_pattern() {
@@ -2069,6 +2080,12 @@ count_cmd_save_blocks_for_cmd() {
         echo 0
         return 0
     }
+    # perf: grep fast-path — cmd not in quality log → definitely 0 blocks
+    # grep は python3 起動コスト(~0.25s)を回避。同一入力に対する出力は同一。
+    if ! grep -qF "cmd_id: \"$target_cmd_id\"" "$QUALITY_LOG_FILE" 2>/dev/null; then
+        echo 0
+        return 0
+    fi
 
     local scan_file
     scan_file="$(make_quality_log_scan_file)" || {
@@ -3551,7 +3568,8 @@ for score, ts, summary, overlap in hits:
 PY
 }
 
-show_lord_conversation_matches
+# WSL2最適化: lord_conversation検索を非同期化（全出力>&2、判定に影響しない）
+show_lord_conversation_matches &
 
 # --- Check 11.10: cmd-chronicle.md強制検索（informational — WARN_COUNTに加算しない） ---
 # 目的: cmdのtitle/purposeから完了済みcmd履歴を自動検索し、
@@ -3678,7 +3696,8 @@ for score, cmd_id, title, overlap in hits:
 PY
 }
 
-show_cmd_chronicle_matches
+# WSL2最適化: cmd-chronicle検索を非同期化（全出力>&2、判定に影響しない）
+show_cmd_chronicle_matches &
 
 # --- Check 11.11: target_path git履歴表示（informational — WARN_COUNTに加算しない） ---
 # 目的: target_pathの変更経緯を起票時に自動表示し、現物履歴未確認のままcmdを書く余地を減らす。
@@ -3933,7 +3952,8 @@ if os.path.isdir(archive_dir):
 PY
 }
 
-check_content_duplicate
+# WSL2最適化: archive scan(cold ~1-2s)を非同期化（全出力>&2、判定に影響しない）
+check_content_duplicate &
 
 # --- Check 13: ACパラメータ充足度チェック（WARN — WARN_COUNTに加算） ---
 # 起源: cmd_1681事故 — ACに「前処理4条件」とだけ書き具体値未記載→忍者が独自判断でKalman_auto使用→条件不一致

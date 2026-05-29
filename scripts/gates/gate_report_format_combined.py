@@ -41,7 +41,24 @@ def main() -> int:
         print(f"  [WARN] autofix step failed: {_autofix_out}", file=sys.stderr)
 
     # Phase 2: format validation — normal stdout (PASS / FAIL: ...)
-    return _format.main()
+    _format_exit = _format.main()
+
+    # Phase 3: task_clarity check — integrated here to avoid a 2nd python3 subprocess
+    # (replaces the inline python3 heredoc in gate_report_format.sh)
+    # perf: same process reuses already-loaded yaml module (~0.1s startup saved)
+    if os.environ.get("GATE_CLARITY_WARN_DISABLE", "0") != "1":
+        try:
+            import yaml as _yaml  # already imported via gate_report_format_main
+            with open(report_path, encoding="utf-8") as _f:
+                _rd = _yaml.safe_load(_f) or {}
+            _tc = _rd.get("task_clarity") or {}
+            _score = str(_tc.get("score", "") or "").strip()
+            if not _score:
+                print("WARN: task_clarity.score未記入 (0-100で記入せよ)")
+        except Exception:
+            pass
+
+    return _format_exit
 
 
 if __name__ == "__main__":
