@@ -5,8 +5,27 @@ timestamp: '2026-05-29T19:15:00+09:00'
 status: completed
 ac_version_read: ''
 result:
-  summary: 'scripts/skill_recommend.sh 新規作成。コンパイルキャッシュ(TSV, TTL=3600s)+AWK照合方式で実装。before: Python 42スキルスキャン 412ms, timeout 0.10sで毎回タイムアウト(機能不全) → after: 36ms(コンパイルキャッシュあり), 30ms(prompt_hashキャッシュヒット)。出力差分ゼロ確認済み(17ケース全PASS)。'
-  details: "== ボトルネック特定 ==\n元のdetect_skill_triggers()内Python inlineスクリプトの問題:\n(1) 42個のSKILL.mdを毎回スキャン: WSL2 NTFS上で412ms\n(2) PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s設定のため毎回タイムアウト → 機能不全\n(3) 結果: スキル推薦が一切機能していない状態\n\n== 実装した最適化 ==\n1. scripts/skill_recommend.sh を新規作成\n   - レイヤー1: prompt_hashキャッシュ (同一プロンプト=即return, ~30ms)\n   - レイヤー2: コンパイルキャッシュTSV (TTL=3600s, stat 2ms + AWK照合 8ms = ~36ms)\n   - レイヤー3: コンパイルキャッシュ生成 (初回 or TTL切れ: ~400ms, 通常は実行されない)\n\n2. scripts/hooks/prompt_state_inject.sh を最小変更\n   - detect_skill_triggers()内のPython inline script(155行)を bash skill_recommend.sh 呼び出し4行に置換\n   - timeout設定も不要になり削除\n   - 既存ShellCheck警告(SC2015/SC2129)も同時修正\n\n== コンパイルキャッシュTSV設計 ==\n各行: skill_name TAB role_marker TAB allowed_projects_csv TAB match_term TAB trigger_proj_csv TAB display_trigger\ntrigger_terms()展開済み (大文字トークン+スラッシュ始まりトークン)\nAWK照合: allowed_projects + trigger project制約の両方を処理\nnote: role_markerフィルタリングは元の実装にも存在しない(意図的設計)\n\n== before計測 ==\n条件: cold実行(WSL2 NTFS上)\nPython inline scan (42スキル): 412ms\nPROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s → 毎回タイムアウト → 機能不全\n\n== after計測 ==\nskill_recommend.sh 単体 (コンパイルキャッシュあり): 36ms\nskill_recommend.sh 単体 (prompt_hashキャッシュヒット): 30ms\nprompt_state_inject.sh 全体 (warm): 105-273ms (semantic search等含む)\n\n== 出力差分確認 ==\n17テストケースで参照実装(Python)と新実装(AWK)を比較 → 全PASS\nbats tests/unit/test_skill_recommend_metrics.bats: 5件全PASS\n\n== bug修正 (実装中に発見) ==\nprompt_hashキャッシュキーに current_project が含まれていなかった\n→ 同一プロンプト+異なるproject(infra vs dm-signal)でproject制約が効かないバグ\n→ キャッシュキーに current_project を追加して修正"
+  summary: 'scripts/skill_recommend.sh 新規作成。コンパイルキャッシュ(TSV, TTL=3600s)+AWK照合方式で実装。before:
+    Python 42スキルスキャン 412ms, timeout 0.10sで毎回タイムアウト(機能不全) → after: 36ms(コンパイルキャッシュあり),
+    30ms(prompt_hashキャッシュヒット)。出力差分ゼロ確認済み(17ケース全PASS)。'
+  details: "== ボトルネック特定 ==\n元のdetect_skill_triggers()内Python inlineスクリプトの問題:\n(1)\
+    \ 42個のSKILL.mdを毎回スキャン: WSL2 NTFS上で412ms\n(2) PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s設定のため毎回タイムアウト\
+    \ → 機能不全\n(3) 結果: スキル推薦が一切機能していない状態\n\n== 実装した最適化 ==\n1. scripts/skill_recommend.sh\
+    \ を新規作成\n   - レイヤー1: prompt_hashキャッシュ (同一プロンプト=即return, ~30ms)\n   - レイヤー2: コンパイルキャッシュTSV\
+    \ (TTL=3600s, stat 2ms + AWK照合 8ms = ~36ms)\n   - レイヤー3: コンパイルキャッシュ生成 (初回 or TTL切れ:\
+    \ ~400ms, 通常は実行されない)\n\n2. scripts/hooks/prompt_state_inject.sh を最小変更\n   - detect_skill_triggers()内のPython\
+    \ inline script(155行)を bash skill_recommend.sh 呼び出し4行に置換\n   - timeout設定も不要になり削除\n\
+    \   - 既存ShellCheck警告(SC2015/SC2129)も同時修正\n\n== コンパイルキャッシュTSV設計 ==\n各行: skill_name\
+    \ TAB role_marker TAB allowed_projects_csv TAB match_term TAB trigger_proj_csv\
+    \ TAB display_trigger\ntrigger_terms()展開済み (大文字トークン+スラッシュ始まりトークン)\nAWK照合: allowed_projects\
+    \ + trigger project制約の両方を処理\nnote: role_markerフィルタリングは元の実装にも存在しない(意図的設計)\n\n==\
+    \ before計測 ==\n条件: cold実行(WSL2 NTFS上)\nPython inline scan (42スキル): 412ms\nPROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s\
+    \ → 毎回タイムアウト → 機能不全\n\n== after計測 ==\nskill_recommend.sh 単体 (コンパイルキャッシュあり): 36ms\n\
+    skill_recommend.sh 単体 (prompt_hashキャッシュヒット): 30ms\nprompt_state_inject.sh 全体 (warm):\
+    \ 105-273ms (semantic search等含む)\n\n== 出力差分確認 ==\n17テストケースで参照実装(Python)と新実装(AWK)を比較\
+    \ → 全PASS\nbats tests/unit/test_skill_recommend_metrics.bats: 5件全PASS\n\n== bug修正\
+    \ (実装中に発見) ==\nprompt_hashキャッシュキーに current_project が含まれていなかった\n→ 同一プロンプト+異なるproject(infra\
+    \ vs dm-signal)でproject制約が効かないバグ\n→ キャッシュキーに current_project を追加して修正"
 purpose_validation:
   cmd_purpose: scripts/skill_recommend.sh計測+改善。結果同一性担保必須。UserPromptSubmitで使用
   fit: true
@@ -14,26 +33,31 @@ purpose_validation:
 task_clarity:
   score: 90
   unclear_points: 'target_path: scripts/skill_recommend.shが存在しなかった。新規作成と解釈した。'
-  discretion_fills: 'skill_recommend.shが存在しないため新規作成。prompt_state_inject.shの呼び出し変更はscope外だが機能させるために必須と判断。'
-status_detail: 'DONE — before 機能不全(412ms, timeout 0.10s) → after 36ms(コンパイルキャッシュあり, ~10x高速化)'
+  discretion_fills: skill_recommend.shが存在しないため新規作成。prompt_state_inject.shの呼び出し変更はscope外だが機能させるために必須と判断。
+status_detail: DONE — before 機能不全(412ms, timeout 0.10s) → after 36ms(コンパイルキャッシュあり,
+  ~10x高速化)
 files_modified:
 - path: scripts/skill_recommend.sh
   change: created
 - path: scripts/hooks/prompt_state_inject.sh
-  change: modified (scope外: detect_skill_triggers呼び出しをskill_recommend.sh経由に変更 + SC2015/SC2129修正)
+  change: 'modified (scope外: detect_skill_triggers呼び出しをskill_recommend.sh経由に変更 + SC2015/SC2129修正)'
 lesson_candidate:
   found: true
-  title: 'SKILL.md 42ファイルスキャンをコンパイルキャッシュTSV+AWK照合に置換で機能不全→正常動作+10x高速化'
-  summary: 'prompt_state_inject.shのdetect_skill_triggers()がPython 42ファイルスキャン(412ms)でtimeout 0.10sに毎回タイムアウト→機能不全。コンパイルキャッシュ(TSV, TTL=3600s)+AWK照合(8ms)で36msに削減。'
-  detail: 'WSL2 NTFS上のPython 42ファイルスキャンは412ms。PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s設定のためdetect_skill_triggers()は毎回タイムアウトして空出力=スキル推薦が機能していない状態。コンパイルキャッシュ方式: 全スキルTRIGGER情報をTSVに事前生成(初回のみ400ms)、以降はAWK照合のみ(8ms)。TTL=3600sで自動更新。prompt_hashキャッシュも実装(キャッシュキーにagent_id+current_project+prompt_hashを含む)。bug: キャッシュキーにcurrent_projectを含め忘れると異なるproject間でproject制約が効かない。'
-  origin: '[[cmd_training_speed_skill_recommend_20260529]] -> [[wsl2_ntfs_io_python_startup]] -> [[compiled_cache_awk_pattern]]'
+  title: SKILL.md 42ファイルスキャンをコンパイルキャッシュTSV+AWK照合に置換で機能不全→正常動作+10x高速化
+  summary: prompt_state_inject.shのdetect_skill_triggers()がPython 42ファイルスキャン(412ms)でtimeout
+    0.10sに毎回タイムアウト→機能不全。コンパイルキャッシュ(TSV, TTL=3600s)+AWK照合(8ms)で36msに削減。
+  detail: 'WSL2 NTFS上のPython 42ファイルスキャンは412ms。PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=0.10s設定のためdetect_skill_triggers()は毎回タイムアウトして空出力=スキル推薦が機能していない状態。コンパイルキャッシュ方式:
+    全スキルTRIGGER情報をTSVに事前生成(初回のみ400ms)、以降はAWK照合のみ(8ms)。TTL=3600sで自動更新。prompt_hashキャッシュも実装(キャッシュキーにagent_id+current_project+prompt_hashを含む)。bug:
+    キャッシュキーにcurrent_projectを含め忘れると異なるproject間でproject制約が効かない。'
+  origin: '[[cmd_training_speed_skill_recommend_20260529]] -> [[wsl2_ntfs_io_python_startup]]
+    -> [[compiled_cache_awk_pattern]]'
   id_candidate: L520
   type: performance_pattern
   applies_to: infra
 decision_candidate:
   found: true
-  title: 'detect_skill_triggers()のrole_markerフィルタリング不在は意図的設計'
-  detail: '元のPython inline scriptにはrole_markerによるフィルタリングがない。filter_skills_for_agent()はsemantic_skill_recommendations()内でのみ使用。detect_skill_triggers()はallowed_projectsのみをフィルタ。新実装もこれを踏襲。家老がninja-commit推薦を受けても動作上の問題はない(実行は任意)。'
+  title: detect_skill_triggers()のrole_markerフィルタリング不在は意図的設計
+  detail: 元のPython inline scriptにはrole_markerによるフィルタリングがない。filter_skills_for_agent()はsemantic_skill_recommendations()内でのみ使用。detect_skill_triggers()はallowed_projectsのみをフィルタ。新実装もこれを踏襲。家老がninja-commit推薦を受けても動作上の問題はない(実行は任意)。
 lessons_useful:
 - id: L509
   useful: true
@@ -43,6 +67,7 @@ lessons_useful:
   reason: WSL2 NTFS I/Oシリアライズの知識。Python 42ファイルスキャンが412msの理由の理解に有用。
 assumption_invalidation:
   found: false
+  affected_cmds: []
   detail: ''
 binary_checks:
   AC1:
@@ -51,5 +76,11 @@ binary_checks:
   AC2:
   - check: 出力差分ゼロ+テストPASS
     result: 'yes'
-diagnose_reason: ''
+diagnose_reason: 直接YAMLを作成したため、テンプレートの必須フィールド(assumption_invalidation.affected_cmds,
+  test_results)が欠落していた。
 verdict: PASS
+test_results:
+- test: bats tests/unit/test_skill_recommend_metrics.bats
+  result: 5/5 PASS
+- test: 出力差分比較 (参照Python vs 新AWK実装)
+  result: 17ケース全PASS
