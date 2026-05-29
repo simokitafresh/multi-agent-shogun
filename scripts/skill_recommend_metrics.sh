@@ -16,8 +16,6 @@ import sys
 from collections import Counter
 from datetime import datetime
 
-import yaml
-
 recommend_path, exec_path, raw_limit = sys.argv[1:4]
 try:
     limit = int(raw_limit)
@@ -27,14 +25,67 @@ if limit <= 0:
     limit = 30
 
 
-def load_yaml(path):
+def unquote(value):
+    return str(value or "").strip().strip("\"'")
+
+
+def parse_log_list(path, root_key):
+    entries = []
+    current = None
+    list_key = None
     try:
-        with open(path, encoding="utf-8") as fh:
-            return yaml.safe_load(fh) or {}
+        fh = open(path, encoding="utf-8")
+    except FileNotFoundError:
+        return []
+    with fh:
+        for raw in fh:
+            line = raw.rstrip("\n")
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or stripped == f"{root_key}:":
+                continue
+            if line.startswith("- "):
+                if current:
+                    entries.append(current)
+                current = {}
+                list_key = None
+                rest = line[2:].strip()
+                if ":" in rest:
+                    key, value = rest.split(":", 1)
+                    current[key.strip()] = unquote(value)
+                continue
+            if current is None:
+                continue
+            if line.startswith("  - ") and list_key:
+                current.setdefault(list_key, []).append(unquote(line[4:]))
+                continue
+            if line.startswith("  ") and ":" in stripped:
+                key, value = stripped.split(":", 1)
+                key = key.strip()
+                value = value.strip()
+                if value == "":
+                    current[key] = []
+                    list_key = key
+                else:
+                    current[key] = unquote(value)
+                    list_key = None
+    if current:
+        entries.append(current)
+    return entries
+
+
+def load_yaml(path):
+    # This script runs in startup gates. PyYAML loading a multi-MB execution log on
+    # /mnt/c costs seconds, while these logs use a simple top-level list shape.
+    try:
+        if path == recommend_path:
+            return {"recommendations": parse_log_list(path, "recommendations")}
+        if path == exec_path:
+            return {"executions": parse_log_list(path, "executions")}
+        return {}
     except FileNotFoundError:
         return {}
-    except yaml.YAMLError as exc:
-        print(f"ALERT: YAML parse failed: {path}: {exc}")
+    except Exception as exc:
+        print(f"ALERT: log parse failed: {path}: {exc}")
         raise SystemExit(1)
 
 

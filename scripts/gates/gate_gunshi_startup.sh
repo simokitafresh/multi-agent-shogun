@@ -456,8 +456,45 @@ if [ -f "$REVIEW_LOG" ]; then
         # 自動sync実行（gate_result: nullをinbox/archiveから自動更新）
         GATE_SYNC="$SCRIPT_DIR/scripts/gunshi_gate_sync.sh"
         if [ -f "$GATE_SYNC" ]; then
+            sync_needed=$(python3 - "$REVIEW_LOG" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'PY' 2>/dev/null || echo yes
+import re
+import sys
+
+review_path, inbox_path = sys.argv[1:3]
+pending = []
+current = None
+with open(review_path, encoding="utf-8") as fh:
+    for raw in fh:
+        line = raw.rstrip("\n")
+        if re.match(r"^- (cmd_id|id):", line):
+            current = re.sub(r"^- (cmd_id|id):\s*", "", line).strip().strip("\"'")
+        elif current and re.match(r"^\s{2}gate_result:\s*(null|pending|)$", line):
+            pending.append(current)
+            current = None
+
+if not pending:
+    print("no")
+    raise SystemExit
+
+try:
+    inbox_text = open(inbox_path, encoding="utf-8").read()
+except FileNotFoundError:
+    inbox_text = ""
+for cmd_id in pending:
+    if re.search(rf"\b{re.escape(cmd_id)}\s+gate_result:\s+(CLEAR|BLOCK)", inbox_text):
+        print("yes")
+        break
+else:
+    print("no")
+PY
+)
+            if [ "$sync_needed" = "yes" ]; then
             sync_out=$(bash "$GATE_SYNC" 2>&1) || true
             echo "  自動sync実行: $sync_out"
+            else
+                sync_out="SKIP: inbox内に未反映cmdのgate_resultなし（archive全走査省略）"
+                echo "  自動sync実行: $sync_out"
+            fi
             # sync後に再計測
             ungated_after=$(awk '
             /^- (cmd_id|id):/ {
@@ -636,7 +673,7 @@ fi
 
 # --- Check 9.5: 設計書セルフレビュー催促 ---
 # docs/research/gunshi_* が直近24h以内に更新されていたら、セルフレビュー3点を表示
-recent_designs=$(find "$SCRIPT_DIR/docs/research" /mnt/c/Python_app/DM-signal/docs/research -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f 2>/dev/null | head -5)
+recent_designs=$(find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f 2>/dev/null | head -5)
 if [ -n "$recent_designs" ]; then
     echo ""
     echo "■ 設計書セルフレビュー"
@@ -655,7 +692,7 @@ echo "■ 分析結果永続化チェック"
 # + 直近7日のdocs/research/更新があるか確認
 research_dir="$SCRIPT_DIR/docs/research"
 if [ -d "$research_dir" ]; then
-    recent_research=$(find "$research_dir" -name "*.md" -mtime -7 -type f 2>/dev/null | wc -l)
+    recent_research=$(find "$research_dir" -maxdepth 1 -name "*.md" -mtime -7 -type f 2>/dev/null | wc -l)
     echo "  docs/research/ 直近7日更新: ${recent_research}件"
     if [ "$recent_research" -eq 0 ]; then
         echo "  WARN: 直近7日で分析結果の永続化なし"

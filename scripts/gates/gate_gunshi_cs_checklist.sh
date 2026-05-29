@@ -380,6 +380,7 @@ PY
 
 skill_usage_missing=$(python3 - "$REPO_ROOT" "$LOG_FILE" <<'PY' 2>/dev/null || true
 import os
+import re
 import sys
 
 import yaml
@@ -395,6 +396,68 @@ def load_yaml(path):
         return {}
     except yaml.YAMLError:
         return {}
+
+def unquote(value):
+    return str(value or "").strip().strip("\"'")
+
+def parse_review_reports(path):
+    reports = []
+    current = None
+    wanted = {"cmd_id", "id", "review_type", "report_ninja", "report_task_id"}
+    try:
+        fh = open(path, encoding="utf-8")
+    except FileNotFoundError:
+        return []
+    with fh:
+        for raw in fh:
+            line = raw.rstrip("\n")
+            if re.match(r"^- (cmd_id|id):", line):
+                if current and current.get("review_type") == "report":
+                    reports.append(current)
+                current = {}
+                key, value = line[2:].split(":", 1)
+                current["cmd_id"] = unquote(value)
+                continue
+            if current is None:
+                continue
+            if re.match(r"^\s{2}[a-z_]+:\s*", line):
+                key, value = line.strip().split(":", 1)
+                if key in wanted:
+                    current[key] = unquote(value)
+    if current and current.get("review_type") == "report":
+        reports.append(current)
+    return reports
+
+def parse_skill_execution_log(path):
+    entries = []
+    current = None
+    wanted = {"skill", "source", "used"}
+    try:
+        fh = open(path, encoding="utf-8")
+    except FileNotFoundError:
+        return []
+    with fh:
+        for raw in fh:
+            line = raw.rstrip("\n")
+            if line.startswith("- "):
+                if current:
+                    entries.append(current)
+                current = {}
+                rest = line[2:].strip()
+                if ":" in rest:
+                    key, value = rest.split(":", 1)
+                    if key.strip() in wanted:
+                        current[key.strip()] = unquote(value)
+                continue
+            if current is None:
+                continue
+            if line.startswith("  ") and ":" in line.strip():
+                key, value = line.strip().split(":", 1)
+                if key in wanted:
+                    current[key] = unquote(value)
+    if current:
+        entries.append(current)
+    return entries
 
 def as_list(value):
     if value is None:
@@ -429,24 +492,11 @@ def source_matches(source, report_path):
         or os.path.basename(source_text) == os.path.basename(report_path)
     )
 
-review_data = load_yaml(review_log_path)
-if isinstance(review_data, dict):
-    reviews = review_data.get("reviews") or []
-elif isinstance(review_data, list):
-    reviews = review_data
-else:
-    reviews = []
-
-skill_log = load_yaml(os.path.join(root, "logs", "skill_execution_log.yaml"))
-if isinstance(skill_log, dict):
-    skill_entries = skill_log.get("executions") or []
-elif isinstance(skill_log, list):
-    skill_entries = skill_log
-else:
-    skill_entries = []
+reviews = parse_review_reports(review_log_path)
+skill_entries = parse_skill_execution_log(os.path.join(root, "logs", "skill_execution_log.yaml"))
 
 warnings = []
-for entry in [item for item in reviews if isinstance(item, dict) and item.get("review_type") == "report"][-20:]:
+for entry in reviews[-20:]:
     ninja = str(entry.get("report_ninja") or "").strip()
     report_task_id = str(entry.get("report_task_id") or "").strip()
     if not ninja or not report_task_id:
