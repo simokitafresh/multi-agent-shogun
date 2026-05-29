@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
+<!-- last_updated: 2026-05-29 cmd_3091 -->
 <!-- last_synced_lesson: L722 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。

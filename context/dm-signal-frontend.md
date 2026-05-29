@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
+<!-- last_updated: 2026-05-29 cmd_3091 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-05-28 -->
+<!-- last_updated: 2026-05-29 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,44 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-| cmd_2334 | shin_shijin_l1_gs.pyで4family(DM2/DM3/DM6/DM7+)のフルGSを最新株価で再実行する。 cmd_2332でOUTPUT_DIRを設計書§3.1準拠に変更済み。設計書準拠パスにSQLite+CSV同時出力。 チャンピオン12体選出(cmd_2335)の前提。 | dm-signal | 04-28 | shin_shijin_l1_gs.pyを--familie |
-| cmd_2335 | cmd_2334で生成したフルGS結果(SQLite)からシン四神チャンピオン12体を選出する。 cmd_1125_v2_champion_select.pyで--db-pathを指定しSQLite直読。 DNA制約フィルタ→3モード選出(激攻CAGR/常勝NHF/鉄壁MaxDD)→吸収判定→旧チャンピオンとの差分確認。 | dm-signal | 04-28 | cmd_1125_v2_champion_select.py |
-| cmd_2336 | cmd_delegate.sh L180のkaro inbox重複検出がgrep -F "$CMD_ID"で全文検索するため、 軍師のlesson_candidateやbulletin_notify等に含まれるcmd_id文字列にも誤マッチする。 type:cmd_newのエントリのみを検査対象に限定する。 | infra | 04-28 | cmd_delegate.shの家老inbox重複検出をcm |
-| cmd_2337 | 本番DBのシン四神12体のconfig(lookback/rebalance/top_n)を取得し、 cmd_2335で選出したGS選出シン四神12体と正確に12体vs12体で突合する。 cmd_2335のスクリプトは旧JSON(吸収後10体)と比較しており、本番DB12体との正しい差分が未確認。 | dm-signal | 04-28 | 本番PostgreSQLのシン四神12体pipeline_c |
-| cmd_2338 | gunshi_notifyの重複防止フラグがdraft_reviewとreport_reviewで共有されており、 draft送信済みフラグが存在するとreport_received時のreport_reviewが不発になるバグを修正する。 cmd_2334で実証(家老報告 2026-04-28)。 | infra | 04-28 | draft_reviewの重複防止マーカーをcmd_id.s |
-| cmd_2339 | gs_data_loader.pyからCSV読込経路を完全に廃止し、DB直読を唯一のデータ取得経路にする。 殿裁定「CSVをまた作るな。DB直読せよ」の構造的実装。§33 Phase 3の前半。 | dm-signal | 04-28 | gs_data_loader.pyからCSV読込関数を削除し |
-| cmd_2340 | gs_data_loader.pyのL1_PORTFOLIO_MAP(L531-547、UUIDハードコード)を廃止し、 universe config(YAML)のcomponentsセクションをUUIDの唯一の供給源にする。 §33 Phase 3の後半。cmd_2339(CSV経路廃止)の完了が前提。 | dm-signal | 04-28 | — |
-| cmd_2341 | ninja_monitorでtask正常完了→idle遷移時にSTALL_FIRST_SEEN/STALL_COUNTがクリアされず、 新task配備直後に前taskの停滞時間+回数が持ち越されてESCALATE誤検知が発生する。 cmd_2340/hayateで29秒後に41140秒idle+2回STALLと誤検知された実証あり(家老掲示板報告)。 | infra | 04-28 | ninja_monitorの完了/idle遷移でSTALL_ |
-| cmd_2342 | ACに「全テストPASS」「0 failures, 0 skips」等のパターンがあった場合にWARNし、 「変更対象の関連テストPASS(pre-existing failure除外)」へのスコープ限定を促す。 将軍のcmd設計段階で達成不可能なACを防ぎ、忍者FAIL→家老waiveの消火循環を根絶する。 | infra | 04-28 | — |
-| cmd_2343 | outputs/analysis/配下のCSVファイルを調査し、GS入力用CSV(削除対象)と研究成果物(保護対象)を選別する。 Phase 3でCSV経路を廃止したが、旧CSV入力ファイルがoutputs/analysis/に残存(軍師確認済み)。 削除対象を特定してPhase 4実行cmdの前提とする。 | dm-signal | 04-28 | outputs/analysis配下CSVは807件・923 |
-| cmd_2344 | run_077_*.py 7本のデフォルトuniverse configをalm_l0_12.yaml(source_type:csv)から okugi_shin_ninpo_20.yaml(source_type:db, 20体UUID付き)に変更する。 Phase 3でCSV経路廃止済み→現状のデフォルトで実行するとValueError。DB直読を唯一の経路にする。 | dm-signal | 04-28 | run_077系7本のデフォルト--universeをoku |
-| cmd_2345 | cmd_2343偵察で特定した旧GS入力CSV 9件(371KB)を削除する。 Phase 3でCSV経路廃止済み(source_type=csv→ValueError)のため、これらを参照するコードパスは存在しない。 GS再実行(後続A)前にクリーンな状態にする。 | dm-signal | 04-28 | 旧GS入力CSV 9件を /mnt/c/Python_app |
-| cmd_2346 | run_077全7本で共通のGS結果SQLite出力モジュールを作成する。 現在のCSV出力関数(write_meta_yaml/append_data_catalog/write_monthly_csv_streaming)を SQLite出力版に置換する共通モジュール。殿裁定「CSVをまた作るな」に従いCSV出力は廃止。 shin_shijin_l1_gs.py L1041-1043のSQLite出力実装が参考。 | dm-signal | 04-28 | completed(将軍現物確認: gs_sqlite_output.py存在確認済み) |
-| cmd_2347 | cmd_2346で作成したSQLite出力共通モジュールを使い、run_077全7本のCSV出力をSQLite出力に切替える。 CSV出力関数(to_csv/write_monthly_csv_streaming)の呼出しを共通モジュールのSQLite出力に置換。 殿裁定「CSVをまた作るな」に従いCSV出力コードは削除。 | dm-signal | 04-28 | completed(GATE CLEAR+将軍現物確認: run_077全7本import済み) |
-| cmd_2348 | shin_shijin_l1_gs.py L1042-1043のCSV出力2行を削除する。 殿裁定「CSVをまた作るな」に違反する残存コード。 gs_db_utilsはDataFrameを直接受付可能(_as_frame L47-50)のためCSV経由は不要。 cmd_2346がこのファイルを参考実装として使うため、CSV出力を除去してから参考にさせる。 | dm-signal | 04-28 | shin_shijin_l1_gs.pyのGS出力をCSV中 |
-| cmd_2349 | gs_sqlite_output.py L56とgs_db_utils.py L50のpd.read_csv(CSV入力フォールバック)をValueErrorに変更する。 殿裁定「CSVをまた作るな」の徹底。DataFrame直接渡しが正規パス。CSV経由の裏口を完全封鎖。 cmd_2346の成果物(gs_sqlite_output.py)は機能するがCSV fallbackが残存→この補足cmdで修正。 | dm-signal | 04-28 | GS SQLite書込み系のCSVパス入力を拒否し、Data |
-| cmd_2350 | gs-data-normalization-spec.md Phase 7(近傍分析道具)の設計書を書くために必要な4つの未調査事項を確認する。 道具を作る前に入力データの構造と既存道具の改修範囲を把握する。 | dm-signal | 04-28 | cmd_1012の月次return入力、指定L0 SQLit |
-| cmd_2351 | 設計書(docs/design/gs-data-normalization-spec.md §5.2 Phase 7)のgs_grid_robustness.pyのコア機能を実装する。 SQLite .dbからparams+metricsを読み、指定されたgrid_axes軸で全パターンの指標値を抽出し、JSON出力する。 可視化(PNG)とpeak_ratio計算は後続cmdで追加する。本cmdはデータ抽出+JSON出力のみ。 | dm-signal | 04-28 | scripts/analysis/gs_grid_robus |
-| cmd_2352 | L0シン四神12体のchampion_pattern_idをSQLite .dbのparamsテーブルから特定し、 タイムスタンプ付きYAML(champion_list.yaml)に記録する。 gs_grid_robustness.pyの入力データとなるchampionリスト。 | dm-signal | 04-28 | outputs/robustness/champion_li |
-| cmd_2353 | cmd_2351で実装したgs_grid_robustness.pyのJSON出力を入力として、 PNGヒートマップ(α6指標ごとにchampionマーカー付き)と断面プロット(champion固定LBスイープ1Dライン)を生成する機能を追加する。 | dm-signal | 04-28 | gs_grid_robustness.pyに--visual |
-| cmd_2354 | cmd_2351で実装したgs_grid_robustness.pyのJSON出力に、 peak_ratio(champion / ±1隣接平均、方向正規化)と統合スコア(peak_ratio幾何平均)を追加する。 | dm-signal | 04-28 | — |
-| cmd_2355 | 軍師が殿の直接命令を3回連続で拒否した(2026-04-28 13:21頃)。 根因: instructions/gunshi.md F-G01が「殿に直接報告する」を禁止し、 Identityに「殿にも直接報告しない」と明記。環境が殿拒否を教えている。 殿の裁定「俺が絶対。それ以外に鎖の原理はないぞ」を環境に埋め込む。 | infra | 04-28 | cmd_2355完了。軍師指示に殿最上位原則を追加し、F-G |
-| cmd_2356 | Phase 7(gs_grid_robustness.py設計+実装)はcmd_2350-2354全てGATE CLEARだが、 設計書の進捗表(§5.3)がPhase 7を「未着手」のまま。実態と乖離している。 設計書を実態に合わせて更新し、Phase 7.1起票の前提を整える。 | dm-signal | 04-28 | — |
-| cmd_2357 | Phase 7で作ったgs_grid_robustness.pyをL0シン四神GS結果(SQLite)で実行し、 12体(4family×3mode)のグリッドロバストネスを検証する。 L0は1軸(lookback_index)のため2Dグリッドのみ。 結果を殿に提示し、閾値判断の材料とする。 | dm-signal | 04-28 | cmd_2357 L0 robustness generat |
-| cmd_2358 | Phase 1.95(L1 GS再実行)の前提。run_077がgs_data_loaderで構成PF月次リターンを読むが、 現在source_type:dbのみ(本番PostgreSQL直読=§5.5.4違反)。 L0 SQLite .dbにopen-to-open月次リターンが存在する(設計書§5.1.5確認済み)。 source_type:local_sqliteを追加し、ローカルSQLiteからchampion月次リターンを読む経路を作る。 | dm-signal | 04-28 | cmd_2358完了。gs_data_loader.pyにs |
-| cmd_2359 | Phase 1.95の第1弾。run_077_bunshin.pyをsource_type:local_sqlite(L0 SQLite直読)で実行し、 L1分身忍法のGS結果をSQLite .dbに出力する。 bunshinは0軸(LBなし、top_nのみ)で最軽量。OOMリスク最小。 | dm-signal | 04-28 | cmd_2359完了。run_077_bunshin.pyを |
-| cmd_2360 | Phase 1.95の第2弾。run_077_oikaze.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 追い風(MomentumFilter)は1軸LB忍法。bunshin(1/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2360完了。run_077_oikaze.pyをs |
-| cmd_2361 | Phase 1.95の第3弾。run_077_kawarimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 変わり身(TrendReversalFilter)は1軸LB忍法。oikaze(2/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2361完了。run_077_kawarimi.py |
-| cmd_2362 | Phase 1.95の第4弾。run_077_yotsume.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 四つ目(MultiViewMomentumFilter)は1軸LB忍法。kawarimi(3/7)GATE CLEAR確認済み。 | dm-signal | 04-28 | cmd_2362完了。run_077_yotsume.pyを |
-| cmd_2363 | Phase 1.95の第5弾。run_077_nukimi.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 抜き身(SingleViewMomentumFilter)は2軸LB忍法(base+skip)。yotsume(4/7)GATE CLEAR確認済み。 2軸忍法の最初。メモリ負荷増大に注意。 | dm-signal | 04-28 | cmd_2363_normal完了。run_077_nuki |
-| cmd_2364 | Phase 1.95の第6弾。run_077_kasoku_diff.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 加速D(MomentumAccelerationFilter method=diff)は2軸LB忍法。最大パターン数(119,493pat実績)。 nukimi(5/7)GATE CLEAR確認済み。Peak RSS 1,696MB実績あり。OOM注意。 | dm-signal | 04-28 | cmd_2364_normal完了。run_077_kaso |
-| cmd_2365 | Phase 1.95の最終弾。run_077_kasoku_ratio.pyをsource_type:local_sqlite(L0 SQLite直読)で実行。 加速R(MomentumAccelerationFilter method=ratio)は2軸LB忍法。kasoku_diff(6/7)GATE CLEAR確認済み。 これでL1全7忍法GS再実行が完了する。 | dm-signal | 04-28 | cmd_2365_normal完了。run_077_kaso |
-| cmd_2366 | Phase 1.95で再実行したL1全7忍法GS結果(ローカルSQLite 7本)からチャンピオンを選出し、 本番DBのシン忍法configと突合する。cmd_2335(L0四神)と同パターン。 L1は7忍法×3モード(激攻CAGR/常勝NHF/鉄壁MaxDD)。吸収判定後の体数がL1の確定体数になる。 | dm-signal | 04-28 | L1 7忍法×3モード=21チャンピオンをrun_077 S |
-| cmd_2367 | cmd_2366でL1チャンピオン21体中MATCH 8/MISMATCH 12/未登録1と判明。 殿の問い「L0が同じで構成PFが違うならどう違うのか」に答える分析。 MISMATCH 12体それぞれのGS選出パラメータ vs 本番パラメータを並べ、 乖離のパターン(component_set/lookback/top_n等)を分類する。 | dm-signal | 04-28 | MISMATCH 12体+未登録1体の詳細比較をMarkdo |
-| cmd_2368 | run_077のGSはPydanticバリデーションなしでパラメータグリッドを生成している。 GS選出チャンピオン21体のconfigを本番ビルディングブロック(MomentumFilter等)に通し、 バリデーションエラーで弾かれるパターンがないか検証する。 本番バリデーション下でGS結果と現行本番configが同一になるか確認する。 | dm-signal | 04-28 | cmd_2366選出21体を本番Pydantic入口(Pip |
-| cmd_2369 | 殿の仮説: 本番シン忍法はWF-α(Walk-Forward OOS alpha)で選出された可能性。 今回のGS結果(cmd_2359-2365 SQLite)からWF-α方式でチャンピオンを選出し、 (1)事後選出(cmd_2366)との差異、(2)本番configとの一致率を比較する。 WF-α-CAGR=激攻、WF-α-NHF=常勝、WF-α-MaxDD=鉄壁。 | dm-signal | 04-28 | cmd_2369: 7忍法run_077 SQLite DB |
-| cmd_2370 | cmd_1902のα6指標手法(alpha_t = return_t - beta * spy_return_t)を使い、 本番シン忍法20体と事後GS選出21体のβ調整α6指標を算出・比較する。 本番L1の月次リターンは本番DB(FoFパイプライン計算済み)から読取。 事後GS L1の月次リターンはrun_077 GS SQLiteから読取。 | dm-signal | 04-28 | 本番シン忍法20体とcmd_2366 L1事後GS21体につ |
-| cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定し、 OOS窓でα6指標(alpha-CAGR/NHF/MaxDD/MRU/Calmar/UWP)を計算。 20個の独立OOS結果を連結して最終α6を算出。 | dm-signal | 04-28 | cmd_2372: 本番シン忍法20体と事後GS21体のSP |
 | cmd_2373 | cmd_2366のチャンピオン選出スクリプトが忍法×モードごとに正しい目的関数で選出しているか検証する。 疑い: (1)鉄壁のMaxDD最小化で符号が逆転していないか (2)異なる忍法で同一パターンが選ばれる原因 (3)常勝3忍法のMaxDD完全一致(-0.3371)の原因特定。 | dm-signal | 04-29 | cmd_2366 L1チャンピオン選出ロジックを監査し、選出 |
 | cmd_2374 | 本番シン忍法20体のconfigパラメータ(component_set+lookback+top_n)でGS SQLiteを検索し、 該当パターンの月次リターンと本番DBのmonthly_returnsが一致するか検証する。 本番configがGS空間内に存在すること自体の確認+リターンパリティ。 | dm-signal | 04-29 | 本番シン忍法20体の同一パラメータpattern_idをGS |
 | cmd_2375 | cmd_2374で発見した「L1パリティ0/20 FAIL」の原因がmonthly_return(close) vs monthly_return_open(open)の列取り違えかを確認する。 本番DB側をmonthly_return_openに揃えて再突合し、GS L1にバグがあるか白黒つける。 | dm-signal | 04-29 | cmd_2375としてcmd_2374ベースのmonthly |
@@ -616,3 +578,6 @@
 | cmd_3084 | CLAUDE.md/instructions内のorigin説明文に[[リンク]][[発端]][[原因]][[結果]]がそのまま記載されており、memory_db_import.pyのOBSIDIAN_LINK_REが実データと区別できずevent_linksに149件のノイズを生成している(全2,310件中6.5%)。テンプレート/説明文の[[...]]をバッククォート囲みに変更し、regexにマッチしないようにする | infra | 05-28 | CLAUDE.md/instructionsのorigin説 |
 | cmd_3086 | cmd_publish.shのStep 2(pending昇格)→Step 3(cmd_delegate.sh委任)の間にauto-commitが走りq11のgrep根拠が陳腐化する構造的穴を修正する。cmd_3081で起票時に確認したq11根拠が配備時には崩壊していた事故の再発防止 | infra | 05-28 | cmd_publish.shの委任直前にq11 grep根拠 |
 | cmd_3088 | semantic_stress_testが蓄積したNO_MATCH候補40件のうち構造的NO_MATCH(コマンド系5件+短文3件)を除外し、残り32件からaliases拡充可能な概念を抽出してsemantic-map.mdに追加する。NO_MATCH率60%を40%以下に改善する | infra | 05-28 | NO_MATCH29件分類(構造的15件+aliases拡充 |
+| cmd_3089 | gate_context_freshness.shがlast_updatedコメントからの経過日数だけで鮮度を判定しており、ソースPJに変更がなくても時間経過でALERTが出る偽陽性バグを修正する。将軍×軍師3往復で収束した設計(ソースPJ commit比較+auto-commitフィルタ+ファイル名PJマッピング+ベースライン自動更新)を実装する | infra | 05-29 | context鮮度判定を日数ベースからソースrepo com |
+| cmd_3090 | DM-Signalリポジトリにlast_updated(2026-04-30)以降60件の新commitがあり、context/dm-signal系5ファイルが追随していない。git log --oneline --since=2026-04-30の差分を確認し、contextの索引層を最新化してlast_updatedを更新する | dm-signal | 05-29 | DM-Signal 2026-04-30以降の43commi |
+| cmd_3091 | deploy_task.shのメインフロー完走率が0.5%(208回中1回のみdeployment complete到達)。set -euo pipefail(L18)が7300行スクリプト全体に適用され、中間コマンドの非0 returnで早期exit、EXIT trapフォールバック。品質監視機能群(ntfy、deployed_at、preflight_gate、draft_review、post_deploy_verify)が99.5%到達不能。家老発見+軍師独立検証済み | infra | 05-29 | deploy_task.shのbinary_checks件数 |

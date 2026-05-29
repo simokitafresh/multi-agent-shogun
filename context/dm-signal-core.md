@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
+<!-- last_updated: 2026-05-29 cmd_3091 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
