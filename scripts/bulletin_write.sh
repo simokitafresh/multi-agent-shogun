@@ -48,8 +48,13 @@ normalize_csv_agents() {
     local token=""
     local trimmed=""
     local normalized=()
+    local joined=""
+    local old_ifs="$IFS"
+    local i=0
+    declare -A seen=()
 
     IFS=',' read -ra _bw_tokens <<< "$raw"
+    IFS="$old_ifs"
     for token in "${_bw_tokens[@]}"; do
         trimmed="${token#"${token%%[![:space:]]*}"}"
         trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
@@ -58,7 +63,10 @@ normalize_csv_agents() {
             echo "ERROR: unknown ${field_name} agent: $trimmed" >&2
             return 1
         fi
-        normalized+=("$trimmed")
+        if [[ -z "${seen[$trimmed]+x}" ]]; then
+            normalized+=("$trimmed")
+            seen["$trimmed"]=1
+        fi
     done
 
     if [[ ${#normalized[@]} -eq 0 ]]; then
@@ -66,7 +74,11 @@ normalize_csv_agents() {
         return 0
     fi
 
-    printf '%s\n' "$(printf '%s\n' "${normalized[@]}" | awk '!seen[$0]++' | paste -sd ',' -)"
+    joined="${normalized[0]}"
+    for ((i = 1; i < ${#normalized[@]}; i++)); do
+        joined+=",${normalized[$i]}"
+    done
+    printf '%s\n' "$joined"
 }
 
 normalize_confirmation_arg() {
@@ -100,14 +112,18 @@ normalize_action_type() {
 }
 
 POSTED_BY=""
-if [[ -n "${TMUX_PANE:-}" ]]; then
-    POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
-fi
-if [[ -z "$POSTED_BY" ]]; then
-    POSTED_BY="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
-fi
-if [[ -z "$POSTED_BY" ]]; then
-    POSTED_BY=""
+if [[ $# -ge 2 ]] && is_known_agent "$1"; then
+    POSTED_BY="$1"
+else
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+        POSTED_BY="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    if [[ -z "$POSTED_BY" ]]; then
+        POSTED_BY="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    if [[ -z "$POSTED_BY" ]]; then
+        POSTED_BY=""
+    fi
 fi
 
 # Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]
@@ -155,11 +171,13 @@ if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
     BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"
 fi
 
-POSTED_AT="$(date '+%Y-%m-%dT%H:%M:%S')"
-RAND_SUFFIX="$(printf '%s' "$(date +%s%N)$POSTED_BY$CONTENT" | sha1sum | cut -c1-6)"
-ENTRY_ID="blt_$(date '+%Y%m%d_%H%M%S')_${RAND_SUFFIX}"
+DATE_FIELDS="$(date '+%Y-%m-%dT%H:%M:%S %s%N %Y%m%d_%H%M%S')"
+read -r POSTED_AT DATE_NANOS ENTRY_STAMP <<< "$DATE_FIELDS"
+HASH_RESULT="$(printf '%s' "${DATE_NANOS}${POSTED_BY}${CONTENT}" | sha1sum)"
+RAND_SUFFIX="${HASH_RESULT:0:6}"
+ENTRY_ID="blt_${ENTRY_STAMP}_${RAND_SUFFIX}"
 
-mkdir -p "$(dirname "$BULLETIN_FILE")"
+mkdir -p "${BULLETIN_FILE%/*}"
 
 WRITE_RESULT="$({
     flock -x 200
@@ -279,7 +297,7 @@ if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; th
     fi
 fi
 
-bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+SHOGUN_ROOT="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
 
 # --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
