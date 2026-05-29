@@ -5,7 +5,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR: pure bash fast path for absolute script invocation; fallback keeps
+# relative invocation behavior unchanged.
+_SELF="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_SELF%/*}/.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 PROJECT_ID="${1:-}"
 LESSON_ID="${2:-}"
 SCORE_TYPE="${3:-}"
@@ -53,11 +57,14 @@ from datetime import datetime
 cache_file = os.environ["CACHE_FILE"]
 lesson_id = os.environ["LESSON_ID"]
 score_type = os.environ["SCORE_TYPE"]
+Loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+Dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
+dump_yaml = getattr(yaml, "dump")
 
 with open(cache_file, encoding='utf-8') as f:
     content = f.read()
 
-data = yaml.safe_load(content)
+data = yaml.load(content, Loader=Loader)
 if not data or 'lessons' not in data:
     print(f'ERROR: No lessons found in {cache_file}', flush=True)
     raise SystemExit(1)
@@ -94,7 +101,7 @@ tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(cache_file), suffix='.tm
 try:
     with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
         f.write(header)
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
+        dump_yaml(data, f, Dumper=Dumper, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
     os.replace(tmp_path, cache_file)
 except Exception:
     os.unlink(tmp_path)
