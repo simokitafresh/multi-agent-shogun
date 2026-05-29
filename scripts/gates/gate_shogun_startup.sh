@@ -612,7 +612,8 @@ echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
 echo "  SKIP(lightweight)"
 else
 # 高速化: 3回のpython3起動→1回に統合 (WSL2 NTFS python3起動~150ms×3→~150ms)
-_q6_combined=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
+_q6_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+_q6_combined=$(python3 - "$_q6_lord_log" 2>/dev/null <<'PY'
 import json
 import re
 import sys
@@ -693,6 +694,7 @@ empty_target_re = re.compile(r"自動化ターゲット\s*[:：]\s*(なし|無�
 target_re = re.compile(r"自動化ターゲット\s*[:：]\s*(.+)", re.I)
 found_answer = False
 found_automation_target = False
+automation_target = ""
 
 for entry in reversed(session_entries):
     if entry.get("direction") != "response":
@@ -708,6 +710,7 @@ for entry in reversed(session_entries):
         value = match.group(1).strip()
         if value and not value.startswith("<") and not empty_target_re.search(match.group(0)):
             found_automation_target = True
+            automation_target = value
     if any(term in text for term in answer_terms):
         if "Q6" in text and all(term in text for term in prompt_only_terms):
             continue
@@ -720,6 +723,8 @@ elif found_answer:
     print("FOUND_MISSING_AUTOMATION")
 else:
     print("NOT_FOUND")
+if automation_target:
+    print(f"TARGET\t{automation_target}")
 PY
 ) || _q6_combined="(取得失敗)
 ##LLIVE##
@@ -730,6 +735,7 @@ NOT_FOUND"
 _prev_session_summary=""
 _lord_live_questions=""
 _q6_answer_status="NOT_FOUND"
+_q6_automation_target=""
 _q6_parse_state=0
 while IFS= read -r _q6_line; do
     if [ "$_q6_parse_state" = "0" ]; then
@@ -749,8 +755,11 @@ while IFS= read -r _q6_line; do
             _lord_live_questions="${_q6_line}"
         fi
     else
-        _q6_answer_status="${_q6_line}"
-        break
+        if [ "$_q6_answer_status" = "NOT_FOUND" ]; then
+            _q6_answer_status="${_q6_line}"
+        elif [[ "$_q6_line" == TARGET$'\t'* ]]; then
+            _q6_automation_target="${_q6_line#TARGET	}"
+        fi
     fi
 done <<< "$_q6_combined"
 unset _q6_combined _q6_parse_state _q6_line
@@ -784,6 +793,106 @@ echo "  ※ reason: 結論を知っていることが追体験を殺す。テキ
 case "$_q6_answer_status" in
     FOUND_WITH_AUTOMATION)
         echo "  OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"
+        _q6_target_proof_marker="Q6_AUTOMATION_TARGET_PROOF"
+        _q6_target_proof=$(python3 - "$SCRIPT_DIR" "$_q6_automation_target" <<'PY' 2>/dev/null || true
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+target = sys.argv[2].strip() if len(sys.argv) > 2 else ""
+
+if not target:
+    print("SKIP\t自動化ターゲット本文なし")
+    raise SystemExit(0)
+
+path_re = re.compile(r"(?<![\w/.-])((?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.(?:sh|py|bats|md|yaml|yml|json|toml))")
+paths = []
+for match in path_re.finditer(target):
+    value = match.group(1)
+    if value not in paths:
+        paths.append(value)
+
+backtick_tokens = [m.group(1).strip() for m in re.finditer(r"`([^`]+)`", target)]
+identifier_tokens = re.findall(r"\b[A-Za-z][A-Za-z0-9_]{5,}\b", target)
+path_parts = set()
+for path in paths:
+    for part in re.split(r"[/._-]+", path):
+        if part:
+            path_parts.add(part.lower())
+
+stop = {
+    "scripts", "script", "gates", "gate", "startup", "target", "proof",
+    "implementation", "implemented", "automation", "automated", "fixture",
+    "tests", "test", "context", "queue", "logs",
+}
+tokens = []
+for raw in backtick_tokens + identifier_tokens:
+    token = raw.strip()
+    if not token or "/" in token:
+        continue
+    lowered = token.lower()
+    if lowered in stop or lowered in path_parts:
+        continue
+    if token not in tokens:
+        tokens.append(token)
+
+if not paths:
+    print("SKIP\t検証対象ファイル未指定")
+    raise SystemExit(0)
+if not tokens:
+    print("SKIP\t検証キーワード未指定")
+    raise SystemExit(0)
+
+failures = []
+passes = []
+for rel in paths:
+    path = (root / rel).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError:
+        failures.append(f"{rel}: root外パス")
+        continue
+    if not path.is_file():
+        failures.append(f"{rel}: ファイル不在")
+        continue
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError as exc:
+        failures.append(f"{rel}: 読込失敗({exc})")
+        continue
+    matched = [token for token in tokens if token in text]
+    if matched:
+        passes.append(f"{rel}: {','.join(matched[:3])}")
+    else:
+        failures.append(f"{rel}: キーワード未検出({','.join(tokens[:5])})")
+
+if failures:
+    print("BLOCK\t" + " | ".join(failures))
+else:
+    print("OK\t" + " | ".join(passes))
+PY
+)
+        _q6_target_proof_status="${_q6_target_proof%%	*}"
+        _q6_target_proof_detail="${_q6_target_proof#*	}"
+        case "$_q6_target_proof_status" in
+            OK)
+                echo "  OK: 自動化ターゲット実装証拠 grep検証 — ${_q6_target_proof_detail}"
+                ;;
+            BLOCK)
+                echo "  BLOCK: 自動化ターゲット実装証拠未検出 — ${_q6_target_proof_detail}"
+                overall="BLOCK"
+                alerts+=("追体験自動化ターゲット実装証拠: BLOCK")
+                ;;
+            *)
+                echo "  WARN: 自動化ターゲット実装証拠 grep検証スキップ — ${_q6_target_proof_detail}"
+                if [ "$overall" = "OK" ]; then
+                    overall="WARN"
+                fi
+                alerts+=("追体験自動化ターゲット実装証拠: WARN")
+                ;;
+        esac
+        unset _q6_target_proof _q6_target_proof_status _q6_target_proof_detail _q6_target_proof_marker
         ;;
     FOUND_MISSING_AUTOMATION)
         echo "  WARN: Q6回答は検出したが自動化ターゲット未記入 — 行動変換先を書け"
