@@ -730,7 +730,7 @@ def after_measurement(text):
     patterns = [
         r"(?i)after[^0-9]{0,40}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
         r"(?i)([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)[^0-9]{0,40}after",
-        r"([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+        r"~?([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*~?([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
     ]
     for pat in patterns:
         m = re.search(pat, text)
@@ -744,7 +744,7 @@ def after_measurement(text):
 
 def before_after_from_text(text):
     arrow = re.search(
-        r"([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
+        r"~?([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)\s*[→-]\s*~?([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|秒)",
         text,
     )
     before = first_measurement(text)
@@ -780,7 +780,7 @@ after = ""
 
 for task_path in task_paths:
     task = unwrap_task(load_yaml(task_path))
-    if str(task.get("parent_cmd") or "") != cmd_id:
+    if str(task.get("parent_cmd") or "") != cmd_id and str(task.get("cmd_id") or "") != cmd_id:
         continue
     task_records.append((task_path, task))
     task_texts = flatten_strings(task)
@@ -803,6 +803,9 @@ for task_path in task_paths:
 
 all_text = "\n".join(cmd_texts + report_texts)
 is_codd = bool(re.search(r"CoDD|codd_refactor|codd_refactor_registry|codd_spec", all_text, re.IGNORECASE))
+# 修行速度改善cmd (type: training) もCoDD台帳対象とする（cmd_3099教訓）
+if not is_codd:
+    is_codd = any(str(t.get("type") or "") == "training" for _, t in task_records)
 if not is_codd:
     print("SKIP: not a CoDD cmd")
     raise SystemExit(0)
@@ -4010,7 +4013,7 @@ while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
-done < <(grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null || true)
+done < <({ grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; grep -l "cmd_id: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; } | sort -u || true)
 MATCHING_TASK_FILES_INITIAL_COUNT=${#MATCHING_TASK_FILES[@]}
 MATCHING_TASK_FILES_PROCESSED_COUNT=0
 MATCHING_TASK_FILES_SKIPPED_COUNT=0
