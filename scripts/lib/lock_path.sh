@@ -14,8 +14,9 @@ lock_path() {
     case "$file_path" in
         /mnt/c/*|/mnt/d/*)
             local hash
-            hash=$(printf '%s' "$file_path" | md5sum | cut -c1-16)
-            printf '/tmp/shogun_lock_%s.lock' "$hash"
+            hash=$(printf '%s' "$file_path" | md5sum)
+            hash="${hash%% *}"
+            printf '/tmp/shogun_lock_%s.lock' "${hash:0:16}"
             ;;
         *)
             printf '%s.lock' "$file_path"
