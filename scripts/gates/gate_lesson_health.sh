@@ -529,8 +529,14 @@ for _pid in "${_target_pids[@]}"; do
 
     _when_missing=$((_total_lessons - ${_when_count:-0}))
     _how_missing=$((_total_lessons - ${_how_count:-0}))
-    _when_rate=$(awk -v ok="${_when_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
-    _how_rate=$(awk -v ok="${_how_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
+    # 高速化: awk 3回→1回で when/how/origin rate を一括計算
+    IFS='|' read -r _when_rate _how_rate _origin_rate <<< "$(awk \
+        -v wk="${_when_count:-0}" -v hk="${_how_count:-0}" -v ok="${_origin_count:-0}" \
+        -v total="${_total_lessons:-0}" \
+        'BEGIN{printf "%.1f|%.1f|%.1f\n", \
+            total?wk/total*100:100.0, \
+            total?hk/total*100:100.0, \
+            total?ok/total*100:100.0}')"
     echo "INFO: ${_pid} when/how充足率: when=${_when_count:-0}/${_total_lessons}(${_when_rate}%) how=${_how_count:-0}/${_total_lessons}(${_how_rate}%)"
     if [ "$_when_missing" -gt 0 ] || [ "$_how_missing" -gt 0 ]; then
         emit_actionable \
@@ -539,7 +545,6 @@ for _pid in "${_target_pids[@]}"; do
     fi
 
     _origin_missing=$((_total_lessons - ${_origin_count:-0}))
-    _origin_rate=$(awk -v ok="${_origin_count:-0}" -v total="${_total_lessons:-0}" 'BEGIN{printf "%.1f", total ? ok / total * 100 : 100.0}')
     echo "INFO: ${_pid} origin充足率: origin=${_origin_count:-0}/${_total_lessons}(${_origin_rate}%)"
     if [ "$_origin_missing" -gt 0 ]; then
         emit_actionable \
@@ -596,6 +601,13 @@ fi
 # ─── enforcement phantom検出 (deepdive 2026-05-16: 自己申告vs他覚的検証) ───
 _phantom_count=0
 _phantom_tmp="/tmp/_glh_phantom_$$"
+
+# 高速化: scripts/.claude/hooks の .sh ファイル一覧を事前に1回収集 (find N回→1回)
+declare -A _script_exists
+while IFS= read -r _s; do
+    _script_exists["$(basename "$_s")"]="1"
+done < <(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" 2>/dev/null)
+
 for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
     [ -f "$_lf" ] || continue
     awk '
@@ -620,7 +632,7 @@ for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projec
         [ -z "$_scripts" ] && continue
         _all_found=true
         for _s in $_scripts; do
-            if ! find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "$_s" -print -quit 2>/dev/null | grep -q .; then
+            if [ -z "${_script_exists[$_s]+x}" ]; then
                 _all_found=false
             fi
         done
