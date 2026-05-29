@@ -910,15 +910,32 @@ archive_reports() {
     local archived=0 kept=0 skipped=0 junk=0
     local date_stamp
     date_stamp="$(date '+%Y%m%d')"
+    local _gate_metrics_loaded=0
+    declare -A _gate_metrics_clear=()
+    declare -A _stale_gate_incomplete=()
+
+    # One find process for all stale checks. Per-report find calls are expensive on WSL2/NTFS.
+    while IFS= read -r _stale_path; do
+        [ -n "$_stale_path" ] && _stale_gate_incomplete["$_stale_path"]=1
+    done < <(find "$REPORTS_DIR" -daystart -maxdepth 1 -type f -name '*.yaml' -mtime +13 -print 2>/dev/null || true)
+
+    load_gate_metrics_clear_cache() {
+        [ "$_gate_metrics_loaded" -eq 1 ] && return 0
+        _gate_metrics_loaded=1
+        local _gate_metrics_log="$PROJECT_DIR/logs/gate_metrics.log"
+        [ -f "$_gate_metrics_log" ] || return 0
+        while IFS= read -r _clear_cmd; do
+            [ -n "$_clear_cmd" ] && _gate_metrics_clear["$_clear_cmd"]=1
+        done < <(awk -F'\t' '
+            $2 == "CLEAR" && $3 != "" { print $3; next }
+            $3 == "CLEAR" && $2 != "" { print $2; next }
+        ' "$_gate_metrics_log" 2>/dev/null | sort -u)
+    }
 
     gate_metrics_has_clear() {
         local _cmd="$1"
-        local _gate_metrics_log="$PROJECT_DIR/logs/gate_metrics.log"
-        [ -f "$_gate_metrics_log" ] || return 1
-        awk -F'\t' -v cmd="$_cmd" '
-            ($2 == cmd && $3 == "CLEAR") || ($2 == "CLEAR" && $3 == cmd) { found=1; exit }
-            END { exit !found }
-        ' "$_gate_metrics_log" 2>/dev/null
+        load_gate_metrics_clear_cache
+        [ "${_gate_metrics_clear[$_cmd]+x}" = "x" ]
     }
 
     write_review_gate_from_metrics() {
@@ -942,7 +959,7 @@ EOF
 
     report_is_stale_gate_incomplete() {
         local _report_file="$1"
-        [ -n "$(find "$_report_file" -daystart -maxdepth 0 -type f -mtime +13 -print -quit 2>/dev/null)" ]
+        [ "${_stale_gate_incomplete[$_report_file]+x}" = "x" ]
     }
 
     archive_overflow_reports_to_cap() {
