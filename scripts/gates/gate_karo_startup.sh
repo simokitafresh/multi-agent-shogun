@@ -142,7 +142,12 @@ show_active_cmd_semantic_context_one() {
                             && timeout -k 1 1 rg -n --fixed-strings --hidden \
                                 --glob '!.git/**' \
                                 --glob '!queue/archive/**' \
+                                --glob '!queue/**' \
                                 --glob '!archive/**' \
+                                --glob '!logs/**' \
+                                --glob '!tasks/**' \
+                                --glob '!tmp/**' \
+                                --glob '!data/**' \
                                 --glob '!node_modules/**' \
                                 --glob '!__pycache__/**' \
                                 -f "$pattern_file" . 2>/dev/null \
@@ -154,7 +159,12 @@ show_active_cmd_semantic_context_one() {
                             && rg -n --fixed-strings --hidden \
                                 --glob '!.git/**' \
                                 --glob '!queue/archive/**' \
+                                --glob '!queue/**' \
                                 --glob '!archive/**' \
+                                --glob '!logs/**' \
+                                --glob '!tasks/**' \
+                                --glob '!tmp/**' \
+                                --glob '!data/**' \
                                 --glob '!node_modules/**' \
                                 --glob '!__pycache__/**' \
                                 -f "$pattern_file" . 2>/dev/null \
@@ -351,7 +361,7 @@ skill_execution_summary_fast() {
 
     echo "skill | fail_count | last_fail | top_stumbling_point"
     [ -f "$log_file" ] || return 0
-    awk '
+    grep -E "^- ts:|^  (skill|result|used|stumbling_points):" "$log_file" 2>/dev/null | awk '
 function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
 function unquote(s) {
     s = trim(s)
@@ -367,25 +377,20 @@ function finish() {
         if (ts >= last[skill]) last[skill] = ts
         if (point != "") {
             key = skill SUBSEP point
-            point_count[key]++
+            c = ++point_count[key]
+            if (c > top_count[skill] || (c == top_count[skill] && (top_point[skill] == "" || point < top_point[skill]))) {
+                top_point[skill] = point
+                top_count[skill] = c
+            }
         }
     }
 }
-/^- / {
+/^- ts:/ {
     if (in_entry) finish()
     in_entry = 1
-    ts = skill = result = used = point = ""
+    skill = result = used = point = ""
     line = $0
-    sub(/^- /, "", line)
-    if (line ~ /^ts:/) {
-        sub(/^ts:[[:space:]]*/, "", line)
-        ts = unquote(line)
-    }
-    next
-}
-in_entry && /^  ts:/ {
-    line = $0
-    sub(/^  ts:[[:space:]]*/, "", line)
+    sub(/^- ts:[[:space:]]*/, "", line)
     ts = unquote(line)
     next
 }
@@ -416,22 +421,10 @@ in_entry && /^  stumbling_points:/ {
 END {
     if (in_entry) finish()
     for (s in count) {
-        top = ""
-        top_count = -1
-        for (k in point_count) {
-            split(k, parts, SUBSEP)
-            if (parts[1] != s) continue
-            p = parts[2]
-            c = point_count[k]
-            if (c > top_count || (c == top_count && p < top)) {
-                top = p
-                top_count = c
-            }
-        }
-        printf "%d|%s|%s|%s\n", count[s], last[s], s, top
+        printf "%d|%s|%s|%s\n", count[s], last[s], s, top_point[s]
     }
 }
-' "$log_file" \
+' \
         | sort -t'|' -k1,1nr -k3,3 \
         | awk -F'|' '{ print $3 " | " $1 " | " $2 " | " $4 }'
 }
