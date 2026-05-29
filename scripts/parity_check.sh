@@ -163,42 +163,94 @@ def resolve_portfolios(pg_conn, args):
         return results
 
 
-def check_return_parity(pg_conn, sqlite_conn, pf_id, pf_name):
-    """月次リターンのパリティ検証"""
-    # Production data
+def fetch_batch_prod_returns(pg_conn, pf_ids):
+    """PostgreSQL: N PFの月次リターンを1クエリで一括取得 (N→1クエリ削減)"""
+    if not pf_ids:
+        return {}
     with pg_conn.cursor() as cur:
         cur.execute(
-            """SELECT year_month, return_open, return_close
-               FROM monthly_returns
-               WHERE portfolio_id = %s
-               ORDER BY year_month""",
-            (pf_id,),
+            "SELECT portfolio_id, year_month, return_open, return_close "
+            "FROM monthly_returns WHERE portfolio_id = ANY(%s) "
+            "ORDER BY portfolio_id, year_month",
+            (list(pf_ids),),
         )
-        prod_returns = {row[0]: (row[1], row[2]) for row in cur.fetchall()}
+        result = {}
+        for row in cur.fetchall():
+            pf_id = row[0]
+            if pf_id not in result:
+                result[pf_id] = {}
+            result[pf_id][row[1]] = (row[2], row[3])
+    return result
 
-    # experiments.db data
+
+def fetch_batch_sqlite_data(sqlite_conn, pf_ids):
+    """SQLite: N PFのmonthly_returns+signalを1クエリで一括取得 (N→1クエリ削減)"""
+    if not pf_ids:
+        return {}, {}
+    placeholders = ",".join("?" * len(pf_ids))
     sqlite_cur = sqlite_conn.cursor()
     sqlite_cur.execute(
-        """SELECT year_month, return_open, return_close
-           FROM monthly_returns
-           WHERE portfolio_id = ?
-           ORDER BY year_month""",
-        (pf_id,),
+        f"SELECT portfolio_id, year_month, return_open, return_close, signal "
+        f"FROM monthly_returns WHERE portfolio_id IN ({placeholders}) "
+        f"ORDER BY portfolio_id, year_month",
+        list(pf_ids),
     )
-    gs_returns = {row[0]: (row[1], row[2]) for row in sqlite_cur.fetchall()}
+    returns_data = {}
+    signals_data = {}
+    for row in sqlite_cur.fetchall():
+        pf_id, ym, ret_open, ret_close, sig_raw = row
+        if pf_id not in returns_data:
+            returns_data[pf_id] = {}
+            signals_data[pf_id] = {}
+        returns_data[pf_id][ym] = (ret_open, ret_close)
+        if sig_raw:
+            try:
+                weights = json.loads(sig_raw)
+                if isinstance(weights, dict) and weights:
+                    main_ticker = max(weights, key=weights.get)
+                    signals_data[pf_id][ym] = main_ticker
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return returns_data, signals_data
 
-    if not gs_returns:
+
+def fetch_batch_prod_signals(pg_conn, pf_ids):
+    """PostgreSQL: N PFのsignalsを1クエリで一括取得 (N→1クエリ削減)"""
+    if not pf_ids:
+        return {}
+    with pg_conn.cursor() as cur:
+        cur.execute(
+            "SELECT portfolio_id, TO_CHAR(date, 'YYYY-MM') AS ym, holding_signal "
+            "FROM signals WHERE portfolio_id = ANY(%s) AND holding_signal IS NOT NULL "
+            "ORDER BY portfolio_id, date",
+            (list(pf_ids),),
+        )
+        result = {}
+        for row in cur.fetchall():
+            pf_id = row[0]
+            if pf_id not in result:
+                result[pf_id] = {}
+            result[pf_id][row[1]] = row[2]
+    return result
+
+
+def check_return_parity(prod_returns, gs_returns, pf_id, pf_name):
+    """月次リターンのパリティ検証 (pre-fetched data)"""
+    pf_prod = prod_returns.get(pf_id, {})
+    pf_gs = gs_returns.get(pf_id, {})
+
+    if not pf_gs:
         return "SKIP", 0, 0, "experiments.dbにデータなし"
 
     # Compare common months
-    common_months = sorted(set(prod_returns.keys()) & set(gs_returns.keys()))
+    common_months = sorted(set(pf_prod.keys()) & set(pf_gs.keys()))
     if not common_months:
         return "SKIP", 0, 0, "共通月なし"
 
     mismatches = []
     for ym in common_months:
-        prod_open, prod_close = prod_returns[ym]
-        gs_open, gs_close = gs_returns[ym]
+        prod_open, prod_close = pf_prod[ym]
+        gs_open, gs_close = pf_gs[ym]
 
         open_diff = abs((prod_open or 0) - (gs_open or 0))
         close_diff = abs((prod_close or 0) - (gs_close or 0))
@@ -231,56 +283,22 @@ def check_return_parity(pg_conn, sqlite_conn, pf_id, pf_name):
         return "PASS", matched, total, ""
 
 
-def check_signal_parity(pg_conn, sqlite_conn, pf_id, pf_name):
-    """シグナルのパリティ検証 (experiments.db monthly_returns.signal vs prod signals.holding_signal)"""
-    # Production holding_signals
-    with pg_conn.cursor() as cur:
-        cur.execute(
-            """SELECT TO_CHAR(date, 'YYYY-MM') as ym, holding_signal
-               FROM signals
-               WHERE portfolio_id = %s AND holding_signal IS NOT NULL
-               ORDER BY date""",
-            (pf_id,),
-        )
-        prod_signals = {}
-        for row in cur.fetchall():
-            prod_signals[row[0]] = row[1]
+def check_signal_parity(prod_signals, gs_signals, pf_id, pf_name):
+    """シグナルのパリティ検証 (pre-fetched data)"""
+    pf_prod = prod_signals.get(pf_id, {})
+    pf_gs = gs_signals.get(pf_id, {})
 
-    # experiments.db: extract main ticker from signal JSON weights
-    sqlite_cur = sqlite_conn.cursor()
-    sqlite_cur.execute(
-        """SELECT year_month, signal
-           FROM monthly_returns
-           WHERE portfolio_id = ?
-           ORDER BY year_month""",
-        (pf_id,),
-    )
-
-    gs_signals = {}
-    for row in sqlite_cur.fetchall():
-        ym = row[0]
-        sig_raw = row[1]
-        if sig_raw:
-            try:
-                weights = json.loads(sig_raw)
-                if isinstance(weights, dict) and weights:
-                    # 最大ウェイトのティッカーをシグナルとみなす
-                    main_ticker = max(weights, key=weights.get)
-                    gs_signals[ym] = main_ticker
-            except (json.JSONDecodeError, TypeError):
-                pass
-
-    if not gs_signals:
+    if not pf_gs:
         return "SKIP", 0, 0, "experiments.dbにシグナルデータなし"
 
-    common_months = sorted(set(prod_signals.keys()) & set(gs_signals.keys()))
+    common_months = sorted(set(pf_prod.keys()) & set(pf_gs.keys()))
     if not common_months:
         return "SKIP", 0, 0, "共通月なし"
 
     mismatches = []
     for ym in common_months:
-        if prod_signals[ym] != gs_signals[ym]:
-            mismatches.append(f"    {ym}: prod={prod_signals[ym]}, gs={gs_signals[ym]}")
+        if pf_prod.get(ym) != pf_gs[ym]:
+            mismatches.append(f"    {ym}: prod={pf_prod.get(ym)}, gs={pf_gs[ym]}")
 
     total = len(common_months)
     matched = total - len(mismatches)
@@ -307,6 +325,13 @@ def main():
         print(f"Parity check: {len(portfolios)} PF(s)")
         print("=" * 60)
 
+        # Batch fetch: N PFのデータを各3クエリ(prod returns/signals + sqlite)で一括取得
+        # 旧: N PFごとに4クエリ = 4N+1クエリ → 新: 4クエリ固定 (--allで20PF時: 81→4クエリ)
+        pf_ids = [pf[0] for pf in portfolios]
+        all_prod_returns = fetch_batch_prod_returns(pg_conn, pf_ids)
+        all_sqlite_returns, all_sqlite_signals = fetch_batch_sqlite_data(sqlite_conn, pf_ids)
+        all_prod_signals = fetch_batch_prod_signals(pg_conn, pf_ids)
+
         overall_fail = False
         check_count = 0
         skip_count = 0
@@ -316,7 +341,7 @@ def main():
 
             # Return parity
             ret_status, ret_match, ret_total, ret_detail = check_return_parity(
-                pg_conn, sqlite_conn, pf_id, pf_name
+                all_prod_returns, all_sqlite_returns, pf_id, pf_name
             )
             if ret_status == "SKIP":
                 print(f"  Returns: SKIP — {ret_detail}")
@@ -333,7 +358,7 @@ def main():
             # Signal parity (standard PFs only)
             if pf_type != "fof":
                 sig_status, sig_match, sig_total, sig_detail = check_signal_parity(
-                    pg_conn, sqlite_conn, pf_id, pf_name
+                    all_prod_signals, all_sqlite_signals, pf_id, pf_name
                 )
                 if sig_status == "SKIP":
                     print(f"  Signals: SKIP — {sig_detail}")

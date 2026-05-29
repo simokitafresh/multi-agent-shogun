@@ -1,11 +1,11 @@
 task:
-  cmd_id: cmd_training_speed_insight_process_20260529
+  cmd_id: cmd_training_speed_parity_check_20260529
   type: training
   project: infra
-  purpose: "速度改善修行 — insight_process.sh計測+改善。結果同一性担保必須。insightキュー消費で使用"
-  target_path: "scripts/insight_process.sh"
+  purpose: "速度改善修行 — parity_check.sh計測+改善。結果同一性担保必須。PF登録パリティ検証で使用"
+  target_path: "scripts/parity_check.sh"
   scope:
-    - "scripts/insight_process.sh"
+    - "scripts/parity_check.sh"
   acceptance_criteria:
     AC1:
       description: "before計測を記録し、ボトルネック箇所を特定し、速度改善を実装"
@@ -20,7 +20,7 @@ task:
   context: |
     殿厳命: 結果同一性の担保が最重要。
     改善不可なら「改善不可: 理由」をAC1に記入。
-  status: assigned
+  status: acknowledged
   related_lessons:
   - id: 'L510'
     summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
