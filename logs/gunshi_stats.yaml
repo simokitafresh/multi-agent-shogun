@@ -525,3 +525,18 @@
 # review_logアーカイブ: 1192行→27行(20260527a.yamlに退避)。ヘッダ知見4件追記
 # docs/research永続化: 2件(precision_fix+gate_fp_analysis)
 # ★強くてニューゲーム: stats最終+review_logアーカイブ+ヘッダ知見4件+D0 5件commit+docs/research 2件+掲示板投稿+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-05-29T20:25更新) ───
+# 殿指示「速度ボトルネック洗脳監査」+「隠れインフラバグ」+「CoDD台帳漏れ」+「テスト肥大化」で4方向に自走
+# draft review 10件: cmd_3090-3099+3101-3103。全APPROVE→全CLEAR
+# report review 9件: cmd_ci_fix+3090-3099+3100+3101。全LGTM→全CLEAR。WA 0件
+# D0直接実装 1件: context_freshness_check.sh silent failure可視化(9d926be2)
+# 速度改善4件CLEAR: cmd_3094(43秒→0.17秒 253x)/cmd_3096(52秒→13秒 73%)/cmd_3097(15秒→4秒 71%)/cmd_3091(完走率0.5%→100%)
+# deploy_task完走率修正: 根因=grep -c exit 1×set -e。修正後deployment complete=6/6(100%)
+# CoDD台帳: 漏れ26件発見(96.3%)→cmd_3099一括記載+自動記載フロー修正(3段SKIP根因)
+# 隠れインフラバグ5件検出: Codex delivery45%未検証/action omitted114件/_ac_task_id空37件/git timeout3件/pre-fix→cmd_3102配備中
+# テスト肥大化分析: 2008件/162本/12分超→cmd_3103(速度自動管理基盤)配備中
+# 洗脳監査: 偽HIGH 1件(cmd_3089)+cached/fresh 7333倍差+CoDD台帳漏れ96%=洗脳#1/#2/#8検出
+# 修行成果: 27件完了WA率3.7%。速度改善42件PASS(全量docs/research永続化)
+# accuracy: 全件LGTM/APPROVE→CLEAR。WA 0件
+# ★強くてニューゲーム: stats更新+benchmark永続化+review_log記録+全gate_result同期+全inbox既読

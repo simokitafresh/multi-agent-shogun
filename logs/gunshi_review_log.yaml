@@ -107,3 +107,121 @@
   finding_categories: [assumptions, numbers]
   origin: "[[cmd_karo_ci_fix_5tests_20260527]] -> [[fixture前提追従]] -> [[CI GREEN復帰]]"
   timestamp: "2026-05-27T11:43:00+09:00"
+- cmd_id: cmd_3099
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。CoDD台帳漏れ26件一括記載+自動記載フロー修正。AC2件。2層対処(各論+根因)"
+  observations:
+    - "軍師計測で26/27件台帳未記載を発見。洗脳#2の大規模事例"
+    - "AC1(一括記載)+AC2(フロー修正)で再発防止。2層設計"
+    - "修行cmdはcmd_complete_gateの自動台帳記載が不発火する構造的穴"
+  causal_chain: "修行cmd完了→自動台帳不発火→26件漏れ→一括記載+フロー修正→自動蓄積回復"
+  brainwash_check: "各論で止めず根因まで掘る。穴なし。HIGH正当"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  origin: "[[cmd_3099]] -> [[96.3%台帳漏れ]] -> [[自動記載フロー修正]]"
+  ambiguity_points: none
+  timestamp: "2026-05-29T19:25:00+09:00"
+- cmd_id: cmd_3099
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 224
+  findings_summary: "4観点OK。台帳59エントリ一括記載+cmd_complete_gate 4箇所修正。AC2修正はf8ac93ba(kagemaru auto-commit)に帰属。成果物は正確"
+  observations:
+    - "AC1: codd_refactor_registry.md +57行。26件の速度改善結果を記載。grep確認"
+    - "AC2: cmd_complete_gate.sh 4箇所修正(cmd_id検索/parent_cmd判定/training認識/~計測値)。修正はf8ac93baに含まれtobisaru commit f54f91dcには不在"
+    - "3段SKIP根因(cmd_id未検索/type:training未認識/~計測値未対応)の特定と修正は正確"
+    - "lesson_candidate: 3段SKIP根因。具体的で再利用可能"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "修行cmdフロー不発→3段SKIP→26件漏れ→4箇所修正+59エントリ記載→台帳完全性+自動記載回復"
+  brainwash_check: "commit帰属不正確(f8ac93ba)だが修正内容は正確。軽微な問題で成果品質に影響なし"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_3099]] -> [[3段SKIP修正+59エントリ]] -> [[台帳漏れ96%解消]]"
+  timestamp: "2026-05-29T20:05:00+09:00"
+- cmd_id: cmd_3101
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。useful_rate 38.6%→改善+GC origin補完11件。AC2件。3セッション連続WARN解消。cmd_3093 CLEAR後再発=窓更新中"
+  observations:
+    - "cmd_3093でTOP10 retired→useful_rate WARN再発=feedback窓の更新途上で閾値未達"
+    - "Phase 1(GC origin 11件)+Phase 2(低useful改善)+Phase 3(gate確認)の3段構成"
+    - "scope:focused。教訓品質の構造改善"
+  causal_chain: "useful_rate 38.6% WARN→origin補完+低useful改善→gate OK→学習ループ効率向上"
+  brainwash_check: "定型教訓改善。穴なし。HIGH正当"
+  finding_categories: [assumptions, numbers, simulation, north_star]
+  origin: "[[cmd_3101]] -> [[useful_rate WARN再発]] -> [[教訓品質改善]]"
+  ambiguity_points: none
+  timestamp: "2026-05-29T20:10:00+09:00"
+- cmd_id: cmd_3102
+  review_type: draft
+  gate_result: null
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。隠れインフラバグ3件修正。AC3件(LG021内)。軍師自身が計測した5件中HIGH/MEDIUM 3件。配備信頼性の構造改善"
+  observations:
+    - "Bug1(HIGH): Codex delivery 45%未検証→到達確認または再送メカニズム"
+    - "Bug2(MEDIUM): action omitted 114件→hookスキップ経路の封鎖"
+    - "Bug3(MEDIUM): _ac_task_id empty 37件→二重配備防止の復活"
+  causal_chain: "殿指示→軍師計測→5件検出→TOP3修正cmd→配備信頼性構造改善"
+  brainwash_check: "自分の計測データ。3件とも根因仮説明確。穴なし。HIGH正当"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  origin: "[[cmd_3102]] -> [[隠れインフラバグ3件]] -> [[配備信頼性改善]]"
+  ambiguity_points: none
+  timestamp: "2026-05-29T20:14:00+09:00"
+- cmd_id: cmd_3103
+  review_type: draft
+  gate_result: null
+  verdict: APPROVE
+  confidence: HIGH
+  findings_summary: "6観点OK。テスト速度自動管理基盤。AC3件(実行時間台帳+重複解消+統合候補リスト)。殿直接指示。2008件12分超の構造的対処"
+  observations:
+    - "軍師計測: 2008件/162本/52585行/12分超。pre-push BLOCK=日常回帰テスト不能"
+    - "AC1(台帳)+AC2(重複修正)+AC3(統合候補)で計測→可視化→候補特定。統合自体は別cmd"
+    - "bats --timing対応要確認(FM1)。重複修正時のカバレッジ確認必要(FM2)"
+  causal_chain: "テスト肥大化12分→pre-push不能→品質回帰未検知→台帳+重複解消+候補特定→自動管理基盤"
+  brainwash_check: "殿直接指示。自分のデータ。穴なし。HIGH正当"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  origin: "[[cmd_3103]] -> [[テスト肥大化12分]] -> [[速度自動管理基盤]]"
+  ambiguity_points: none
+  timestamp: "2026-05-29T20:17:00+09:00"
+- cmd_id: cmd_3100
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  changed_lines: 170
+  findings_summary: "4観点OK。SKILL.md 17件script_refs_checked_at更新。CACHE無効PASS。配備文12→実態17=拡大方向で問題なし"
+  observations:
+    - "commit a5def648: 18ファイル(+83/-87)。skills/配下のみ"
+    - "配備時12 WARN→実行時17 WARN。全解消。SKILL_REF_DISABLE_CACHE=1で実測PASS"
+    - "lessons_useful 3/10(L660/L421/L529)。SKILL.md鮮度同期の定型作業"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "script変更→SKILL.md 17件未追随→gate WARN→checked_at更新→WARN 0件→startup BLOCK解消"
+  brainwash_check: "SKILL.md鮮度更新。穴なし"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_3100]] -> [[SKILL.md 17件更新]] -> [[startup BLOCK解消]]"
+  timestamp: "2026-05-29T20:20:00+09:00"
+- cmd_id: cmd_3101
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  findings_summary: "4観点OK(事後確認)。useful_rate 38.6%→86.7%。根因: pending+deprecated分母混入→除外。GC origin 11件補完。10/10テストPASS"
+  observations:
+    - "lesson_effectiveness分母からpending行+deprecated教訓を除外→真のuseful_rate 86.7%"
+    - "google-classroom L001-L011にorigin補完。因果ネットワーク接続"
+    - "lesson_candidate: pending/deprecatedを分母から除外する原則。具体的で再利用可能"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "pending+deprecated分母混入→useful_rate偽低下38.6%→除外修正→86.7%→WARN解消"
+  brainwash_check: "分母定義修正。穴なし"
+  finding_categories: [assumptions, numbers, premortem]
+  origin: "[[cmd_3101]] -> [[pending分母除外]] -> [[useful_rate 86.7%回復]]"
+  timestamp: "2026-05-29T20:22:00+09:00"
