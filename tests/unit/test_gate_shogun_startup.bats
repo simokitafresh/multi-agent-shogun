@@ -30,6 +30,12 @@ setup_file() {
              "$SHARED_BASE/fakehome/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory"
 
     cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
+    cat > "$SHARED_BASE/scripts/gates/q6_target_fixture.sh" <<'EOF'
+#!/usr/bin/env bash
+q6_target_probe() {
+    return 0
+}
+EOF
 
     # Gate 1 mock: gate_shogun_memory.sh → OK
     cat > "$SHARED_BASE/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
@@ -133,7 +139,7 @@ EOF
 EOF
 
     cat > "$SHARED_BASE/queue/lord_conversation.jsonl" <<'EOF'
-{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: startup gate fixtureでQ6回答と行動変換先を同時に検証する。"}
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
 EOF
 
     cat > "$SHARED_BASE/queue/bulletin_board.yaml" <<'EOF'
@@ -234,6 +240,31 @@ teardown() {
 @test "all checks pass → 総合判定: OK" {
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "Q6 automation target proof missing keyword → 総合判定: BLOCK" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `definitely_missing_q6_probe` をgrep検証する。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: 自動化ターゲット実装証拠未検出"* ]]
+    [[ "$output" == *"definitely_missing_q6_probe"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+@test "Q6 automation target proof implemented keyword → 総合判定: OK" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
