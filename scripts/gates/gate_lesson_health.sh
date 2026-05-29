@@ -294,16 +294,48 @@ check_lesson_effectiveness() {
     # 高速化: reversed_file tempファイルを排除 (tac→awk直結)
     # 高速化: cmd_fileを$$固定パスに (mktemp呼び出し削減)
     local cmd_file="/tmp/_glh_cmds_$$"
+    local active_file="/tmp/_glh_active_lessons_$$"
+
+    : > "$active_file"
+    local _active_pid _active_lessons_file
+    local _active_pids=()
+    if [ -n "$target_project" ]; then
+        _active_pids=("$target_project")
+    else
+        _active_pids=("${_target_pids[@]}")
+    fi
+    for _active_pid in "${_active_pids[@]}"; do
+        _active_lessons_file="$SCRIPT_DIR/projects/${_active_pid}/lessons.yaml"
+        [ -f "$_active_lessons_file" ] || continue
+        awk -v pid="$_active_pid" '
+            function flush_current() {
+                if (id != "" && !deprecated) print pid "\t" id
+            }
+            /^- / && /id:[[:space:]]*['\''"]?L[0-9]+/ {
+                flush_current()
+                id = $0
+                sub(/^.*id:[[:space:]]*['\''"]?/, "", id)
+                sub(/[^L0-9].*$/, "", id)
+                deprecated = 0
+                if ($0 ~ /deprecated:[[:space:]]*true/ || $0 ~ /status:[[:space:]]*deprecated/) deprecated = 1
+                next
+            }
+            /^[[:space:]]+deprecated:[[:space:]]*true/ { deprecated = 1 }
+            /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
+            END { flush_current() }
+        ' "$_active_lessons_file" >> "$active_file"
+    done
 
     tac "$LESSON_IMPACT_FILE" | awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" \
         -v project="$target_project" '
         $1 == "timestamp" { next }
         {
-            cmd = $2; proj = $8
-            gsub(/\r$/, "", cmd); gsub(/\r$/, "", proj)
+            cmd = $2; result = tolower($6); ref = tolower($7); proj = $8
+            gsub(/\r$/, "", cmd); gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj)
             if (cmd !~ /^cmd_/) next
             if (cmd ~ /^cmd_test/) next
             if (cmd ~ /^cmd_training/) next
+            if (result == "pending" || ref == "pending") next
             if (project != "" && proj != project) next
             if (!(cmd in seen)) {
                 seen[cmd] = 1
@@ -318,7 +350,7 @@ check_lesson_effectiveness() {
     local window_cmds
     window_cmds=$(awk 'END{print NR}' "$cmd_file")
     if [ "$window_cmds" -eq 0 ]; then
-        rm -f "$cmd_file"
+        rm -f "$cmd_file" "$active_file"
         emit_actionable \
             "WARN: 教訓効果率計算対象cmdなし(scope:${scope})" \
             "scope 設定と logs/lesson_impact.tsv の project 列を確認せよ。"
@@ -328,7 +360,7 @@ check_lesson_effectiveness() {
     fi
 
     local metric
-    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v project="$target_project" \
+    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v active_file="$active_file" -v project="$target_project" \
         -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" '
         BEGIN {
             while ((getline line < cmd_file) > 0) {
@@ -336,6 +368,11 @@ check_lesson_effectiveness() {
                 if (line != "") selected[line] = 1
             }
             close(cmd_file)
+            while ((getline line < active_file) > 0) {
+                split(line, parts, "\t")
+                if (parts[1] != "" && parts[2] != "") active[parts[1] SUBSEP parts[2]] = 1
+            }
+            close(active_file)
         }
         $1 == "timestamp" { next }
         {
@@ -345,6 +382,8 @@ check_lesson_effectiveness() {
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
+            if (!((proj SUBSEP lid) in active)) next
+            if (result == "pending" || ref == "pending") next
             if (action == "injected") {
                 injected++
                 if (ref == "yes" || ref == "true" || ref == "1") referenced++
@@ -363,7 +402,7 @@ check_lesson_effectiveness() {
             printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0
         }
     ' "$LESSON_IMPACT_FILE")
-    rm -f "$cmd_file"
+    rm -f "$cmd_file" "$active_file"
 
     local referenced_count=0 injected_count=0 useful_count=0 total_feedback_count=0
     IFS=$'\t' read -r referenced_count injected_count useful_count total_feedback_count <<< "$metric"
