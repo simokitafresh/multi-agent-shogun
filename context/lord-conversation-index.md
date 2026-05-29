@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-05-29 auto-generated -->
+<!-- last_updated: 2026-05-29 cmd_3105 -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-05-29T22:11:06+09:00 -->
+<!-- generated_at: 2026-05-29T22:32:42+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-05-29T22:32:41+09:00 | terminal | response | 復帰通知送信済み。軍師応答待ち。 [meta] stop_reason=end_turn
+- 2026-05-29T22:31:10+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(shogun)を自動再起動しました
+- 2026-05-29T22:30:47+09:00 | ntfy | outbound | 【daemon_supervisor】inbox_watcher(shogun)が2重起動。古いプロセスを停止します
+- 2026-05-29T22:29:13+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(shogun)を自動再起動しました
+- 2026-05-29T22:28:03+09:00 | ntfy | outbound | CI赤: run 26635638667 Unit Tests (bats)
+- 2026-05-29T22:21:48+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝68
+- 2026-05-29T22:19:11+09:00 | ntfy | outbound | 【watchdog】ninja_monitor.shを自動再起動しました
+- 2026-05-29T22:18:11+09:00 | ntfy | outbound | 【watchdog】ninja_monitor.shを自動再起動しました
 - 2026-05-29T22:11:03+09:00 | terminal | response | 才蔵は作業中。bats --timing で計測実行し、改善前ベースライン約54秒を取得した段階。プロンプト待ちに見えるが、background処理完了待ちの可能性あり。 作業継続中と判断。待機する。 [meta] stop_reason…
 - 2026-05-29T22:10:38+09:00 | terminal | response | スキル推薦は誤検知(DM-Signal本番FE確認ではない)。無視。 バックグラウンドタスク完了は先ほどのgrep検索の結果。既に処理済み。 才蔵のcmd_3105完了報告を待機中。 [meta] stop_reason=end_turn
-- 2026-05-29T22:09:44+09:00 | terminal | inbound | <task-notification> <task-id>bj31wnw6a</task-id> <tool-use-id>toolu_01HTKq2JnQhCKep5omXJFYQ2</tool-use-id> <output-file…
-- 2026-05-29T22:09:27+09:00 | terminal | response | 処理完了。才蔵のcmd_3105完了報告を待機。 [meta] stop_reason=end_turn
-- 2026-05-29T22:09:05+09:00 | terminal | response | 全タスク完了。状況まとめ: - **cmd_3106**: /cmd-complete完了。GATE CLEAR。才蔵完遂。WA clean - **cmd_3105**: 疾風STALL→才蔵に再配備完了(deployment comp…
-- 2026-05-29T22:06:54+09:00 | ntfy | outbound | Dashboard: cmd_3106 CLEAR | idle:3名 | pipeline:cmd_3105(STALL再配備予定)
-- 2026-05-29T22:01:00+09:00 | terminal | response | 全3件既読化完了。 **未読処理サマリ**: - cmd_3106 saizo報告: **LGTM** (4観点OK、SG7バンドル付き家老送信済み) - cmd_3106 gate_result: **CLEAR** (review_l…
-- 2026-05-29T21:54:14+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝68
-- 2026-05-29T21:52:23+09:00 | ntfy | outbound | 【INFOバッチ】 2026-05-29 20:49:41|cmd_3104 2026-05-29 20:57:17|cmd_3106
-- 2026-05-29T21:52:08+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(shogun)を自動再起動しました
 
 ## 未解決確認事項
 - スキル推薦は誤検知(DM-Signal本番FE確認ではない)。無視。 バックグラウンドタスク完了は先ほどのgrep検索の結果。既に処理済み。 才蔵のcmd_3105完了報告を待機中。 [meta] stop_reason=end_turn

@@ -593,3 +593,4 @@
 | cmd_3103 | テスト2008件/12分超でpre-push hook BLOCK=日常回帰テスト不能。重複テスト名4件+1テストファイル2件+consolidated3.7%。テスト品質の自動管理基盤を構築し肥大化を構造的に防止 | infra | 05-29 | gate_test_health.sh新規作成(AC1: テ |
 | cmd_3104 | 1031リンクが44ファイルに集中。context/skills/docsからのリンクがほぼゼロ。リンク密度を計測し、context更新時の因果リンク付与をgate WARNで強制し、backlinks=0ファイルを修行対象に自動組込み | infra | 05-29 | backlink密度計測スクリプト、context更新時の因 |
 | cmd_3106 | cmd_3103で検出された統合候補52ファイル(テスト数5件以下)を統合し、テストファイル数を削減。test_cmd_save系3ファイルはcmd_3105で速度改善中のため除外し競合回避 | infra | 05-29 | watcher/起動系の小テスト2ファイルをtest_inf |
+| cmd_3105 | cmd_3103で判明したSLOW 3件(test_cmd_save 88s+test_cmd_save_block_aggregation 51s+test_cmd_save_command_steps_vs_ac 44s=合計183秒)を最適化。テスト速度改善→全量計測も高速化する複利効果 | infra | 05-29 | test_cmd_save_command_steps_vs |
