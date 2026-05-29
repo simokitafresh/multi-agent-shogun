@@ -193,6 +193,67 @@ prompt_state_yaml_scalar() {
   printf '"%s"' "$value"
 }
 
+prompt_state_semantic_cached_search() {
+  local query="$1"
+  local timeout_seconds="$2"
+  local search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+  local prompt_hash
+  local cache_file
+  local cache_tmp
+  local cache_version="semantic-search-v1"
+  local cached_hash
+  local cached_version
+  local cached_cmd
+  local cached_timeout
+  local cached_rc
+  local result
+  local rc
+
+  [[ -f "$search_cmd" ]] || return 127
+  [[ -n "${query//[[:space:]]/}" ]] || return 1
+
+  prompt_hash="$(printf '%s' "$query" | sha256sum | awk '{print $1}')"
+  cache_file="/tmp/prompt_state_semantic_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
+
+  if [[ -f "$cache_file" ]]; then
+    cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
+    cached_version="$(sed -n '2s/^cache_version: //p' "$cache_file" 2>/dev/null || true)"
+    cached_cmd="$(sed -n '3s/^search_cmd: //p' "$cache_file" 2>/dev/null || true)"
+    cached_timeout="$(sed -n '4s/^timeout: //p' "$cache_file" 2>/dev/null || true)"
+    cached_rc="$(sed -n '5s/^rc: //p' "$cache_file" 2>/dev/null || true)"
+    if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" && "$cached_cmd" == "$search_cmd" && "$cached_timeout" == "$timeout_seconds" && "$cached_rc" =~ ^[0-9]+$ ]]; then
+      sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
+      return "$cached_rc"
+    fi
+  fi
+
+  set +e
+  result="$(
+    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
+      SEMANTIC_DISABLE_LLM=1 \
+      SEMANTIC_DISABLE_CAUSAL=1 \
+      SEMANTIC_DISABLE_MEMORY_DB=1 \
+      timeout "$timeout_seconds" bash "$search_cmd" "$query" 2>/dev/null
+  )"
+  rc=$?
+  set -e
+
+  cache_tmp="$(mktemp "${cache_file}.XXXXXX")"
+  {
+    printf 'prompt_sha256: %s\n' "$prompt_hash"
+    printf 'cache_version: %s\n' "$cache_version"
+    printf 'search_cmd: %s\n' "$search_cmd"
+    printf 'timeout: %s\n' "$timeout_seconds"
+    printf 'rc: %s\n' "$rc"
+    printf -- '---\n'
+    printf '%s' "$result"
+  } > "$cache_tmp"
+  mv "$cache_tmp" "$cache_file"
+
+  printf '%s' "$result"
+  return "$rc"
+}
+
 record_skill_recommendation_log() {
   local prompt_hash="$1"
   local skills="$2"
@@ -282,7 +343,6 @@ filter_skills_for_agent() {
 }
 
 semantic_skill_recommendations() {
-  local search_cmd="${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
   local cache_file
   local cache_version="role-filter-v1"
   local prompt_hash
@@ -293,7 +353,6 @@ semantic_skill_recommendations() {
   local skills
   local cache_tmp
 
-  [[ -f "$search_cmd" ]] || return 0
   [[ -n "${prompt_text//[[:space:]]/}" ]] || return 0
   # Skip inbox nudge prompts (precision fix: inbox1 hash=86/111 FP)
   [[ ! "$prompt_text" =~ ^inbox[0-9]+$ ]] || return 0
@@ -314,13 +373,7 @@ semantic_skill_recommendations() {
   cache_tmp="$(mktemp "${cache_file}.XXXXXX")"
 
   set +e
-  semantic_result="$(
-    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
-      SEMANTIC_DISABLE_LLM=1 \
-      SEMANTIC_DISABLE_CAUSAL=1 \
-      SEMANTIC_DISABLE_MEMORY_DB=1 \
-      timeout "${PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT:-0.60}" bash "$search_cmd" "$prompt_text" 2>/dev/null
-  )"
+  semantic_result="$(prompt_state_semantic_cached_search "$prompt_text" "${PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT:-0.60}")"
   semantic_rc=$?
   set -e
   [[ "$semantic_rc" -eq 0 ]] || return 0
@@ -587,15 +640,8 @@ fi
 	  local _psi_result _psi_rc
 	  _psi_query="${_psi_query//$'\n'/ }"
 	  [[ -z "${_psi_query// }" ]] && return 0
-	  [[ -f "$_psi_search_cmd" ]] || return 0
 	  set +e
-	  _psi_result="$(
-	    SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$SCRIPT_DIR/tmp/semantic_index_cache}" \
-	      SEMANTIC_DISABLE_LLM=1 \
-	      SEMANTIC_DISABLE_CAUSAL=1 \
-	      SEMANTIC_DISABLE_MEMORY_DB=1 \
-	      timeout "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.60}" bash "$_psi_search_cmd" "$_psi_query" 2>/dev/null
-	  )"
+	  _psi_result="$(PROMPT_STATE_SEMANTIC_SEARCH_CMD="$_psi_search_cmd" prompt_state_semantic_cached_search "$_psi_query" "${PROMPT_STATE_SEMANTIC_TIMEOUT:-0.60}")"
 	  _psi_rc=$?
 	  set -e
 	  if [[ "$_psi_rc" -eq 0 ]]; then
