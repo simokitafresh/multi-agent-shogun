@@ -83,7 +83,9 @@ if [[ -z "${query//[[:space:]]/}" ]]; then
     usage >&2
     exit 2
 fi
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_semantic_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_semantic_self" != /* ]] && _semantic_self="$PWD/$_semantic_self"
+script_dir="${_semantic_self%/scripts/semantic_search.sh}"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
 
 if [ ! -f "$index_path" ]; then
@@ -109,8 +111,6 @@ memory_db_search() {
 
     local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-15}"
     local target="${SEMANTIC_MEMORY_DB_TARGET:-${AGENT_ID:-}}"
-    local output_file
-
     local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
     [ -f "$db_path" ] || return 1
 
@@ -118,7 +118,6 @@ memory_db_search() {
         target="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
     fi
 
-    output_file="$(mktemp)"
     local mode_arg=""
     if [ -n "$target" ] && [ "$target" != "unknown" ]; then
         mode_arg="$target"
@@ -128,19 +127,16 @@ memory_db_search() {
         SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$script_dir/tmp/semantic_index_cache}" \
         SEMANTIC_MEMORY_DB_PATH="$db_path" \
         python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" \
-        "memory-db-fts-concept-search" "$mode_arg" > "$output_file"
+        "memory-db-fts-concept-search" "$mode_arg"
     local rc=$?
     set -e
     if [ "$rc" -ne 0 ]; then
-        rm -f "$output_file"
         if [ "$rc" -eq 124 ]; then
             echo "WARN: memory DB FTS fallback timed out after ${search_timeout}s" >&2
         fi
         return 1
     fi
 
-    cat "$output_file"
-    rm -f "$output_file"
     return 0
 }
 
@@ -274,20 +270,35 @@ EOF
 }
 
 if [ "$force_llm" = false ]; then
-    first_output="$(mktemp)"
-    trap 'rm -f "$first_output"' EXIT
-    if first_layer_search silent > "$first_output"; then
-        cat "$first_output"
-        append_causal_expansion "$first_output"
-        exit 0
-    else
-        rc=$?
-        if [ "$rc" -ne 1 ]; then
-            exit "$rc"
+    if [ "${SEMANTIC_DISABLE_CAUSAL:-0}" = "1" ]; then
+        if first_layer_search silent; then
+            exit 0
+        else
+            rc=$?
+            if [ "$rc" -ne 1 ]; then
+                exit "$rc"
+            fi
+            if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
+                memory_db_search
+                exit $?
+            fi
         fi
-        if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
-            memory_db_search
-            exit $?
+    else
+        first_output="$(mktemp)"
+        trap 'rm -f "$first_output"' EXIT
+        if first_layer_search silent > "$first_output"; then
+            cat "$first_output"
+            append_causal_expansion "$first_output"
+            exit 0
+        else
+            rc=$?
+            if [ "$rc" -ne 1 ]; then
+                exit "$rc"
+            fi
+            if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
+                memory_db_search
+                exit $?
+            fi
         fi
     fi
 fi
