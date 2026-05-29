@@ -24,8 +24,11 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+_dashboard_script="${BASH_SOURCE[0]:-$0}"
+[[ "$_dashboard_script" != /* ]] && _dashboard_script="$PWD/$_dashboard_script"
+SCRIPT_DIR="${_dashboard_script%/*}"
+PROJECT_DIR="${SCRIPT_DIR%/*}"
+unset _dashboard_script
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -87,8 +90,8 @@ _CACHE_NOW=$(date +%s)
 _HEAVY_CACHE_DIR="/tmp/das_heavy_${_proj_hash}"
 mkdir -p "$_HEAVY_CACHE_DIR" 2>/dev/null || true
 _heavy_key_file="$_HEAVY_CACHE_DIR/.key"
-_heavy_key=$(stat -c '%Y' "$GATE_FIRE_LOG" "$GATE_LOG" "$LESSON_IMPACT_FILE" \
-    "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null | tr '\n' ':') || true
+_heavy_key=$(stat --printf='%Y:' "$GATE_FIRE_LOG" "$GATE_LOG" "$LESSON_IMPACT_FILE" \
+    "$LESSON_EFFECT_STATUS_FILE" 2>/dev/null) || true
 _cached_heavy_key=$(cat "$_heavy_key_file" 2>/dev/null || echo "MISS")
 _HEAVY_HIT=false
 if [[ "$_heavy_key" == "$_cached_heavy_key" ]] && [[ -n "$_heavy_key" ]] && \
