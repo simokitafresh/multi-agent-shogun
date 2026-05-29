@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
@@ -81,7 +81,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
-Script refs verified: 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe and excludes `cmd_training*` from the production effectiveness window. 2026-05-21: INSIGHT_REPEAT通知に10分デバウンス追加、massbatch時の掲示板洪水を防止。2026-05-22: insight_writeはdedup+append+source repeat countを単一Python passで処理).
+Script refs verified: 2026-05-29 cmd_3087 (lesson effectivenessは最小サンプル数1から全feedbackを評価対象に含める。少数サンプルでもWARN/ALERT対象にするため、dream時は低サンプルを理由に無視しない). 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe and excludes `cmd_training*` from the production effectiveness window. 2026-05-21: INSIGHT_REPEAT通知に10分デバウンス追加、massbatch時の掲示板洪水を防止。2026-05-22: insight_writeはdedup+append+source repeat countを単一Python passで処理).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:

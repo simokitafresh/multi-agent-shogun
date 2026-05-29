@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-24T14:32:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
 
 # /idle-persist — idle分析永続化スキル
 
@@ -48,6 +48,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "<summary>→docs/r
 - 同一 `posted_by` + 同一 `content` は重複投稿せずDEDUPする。
 - 投稿後のinbox通知は掲示板本文全文を含む。`inbox_write` 失敗やwatcher未起動はWARN表示される。
 - 投稿成功後に `yaml_auto_archive.sh` を自動呼出し。bulletin_board.yaml が閾値超過時に古いエントリをアーカイブする（cmd_2856）。
+- Script refs verified: 2026-05-29 cmd_3087/3091. `inbox_write.sh` の最新変更は忍者報告完了type `report_completed` のreport gate/auto-done対象追加であり、Step 5の `gunshi_lesson_candidate` 送信手順には影響しない。
 - Script refs verified: 2026-05-24 cmd_3026. `inbox_write.sh` cmd_3022変更は `report_received` / `task_done` のFAIL報告差戻しであり、Step 5の `gunshi_lesson_candidate` 送信手順には影響しない。
 - Script refs verified: 2026-05-22 cmd_2959. `inbox_write.sh` は `from=shogun type=task_new` をBLOCKする。軍師から家老への `gunshi_lesson_candidate` 送信は対象外だが、将軍の作業指示を `task_new` で直送する手順をこのスキルへ追加してはならない。`yaml_field_set.sh` はflock+post-write readback検証付き。report_format_gate修正メッセージはverdict例ではなくbinary_checks.AC1例を示す(verdictはgateが自動導出)。
 - Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` と `BULLETIN_NOTIFY` は `true|false` またはエージェントCSVを正規化する。idle分析の共有は `BULLETIN_NOTIFY=shogun` + `action_type=info` を使い、全員共有が必要な場合だけ通知先CSVを広げる。

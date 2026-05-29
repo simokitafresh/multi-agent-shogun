@@ -24,6 +24,8 @@ allowed-tools:
   - Edit
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
+
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
 7層知識基盤を横断的に監査し、衛生状態・整合性・鮮度を検査する。殿の承認なしに変更を実行してはならない。
@@ -138,9 +140,9 @@ CLAUDE.md Knowledge Mapと一致する7層構造。L3はVercelスタイルの2�
    - ALERT: 未合流5件超 → context未反映の教訓が蓄積（context反映 + last_synced_lesson更新）
    - 未振り分け教訓数もチェック（UNSORTED_THRESHOLD=10超でALERT）
    - SSOT lessons.md の conflict marker / ssot_path 不備、when/how欠落、注入10回以上かつ helpful_count=0 の教訓を併せて確認
-   - lesson effectiveness / useful率を確認（WARN=50%未満、ALERT=30%未満）
+   - lesson effectiveness / useful率を確認（最小サンプル数1、WARN=50%未満、ALERT=30%未満）
    - enforcement phantomを確認（infraの家老/軍師教訓で `automated: true` かつ top-level `enforcement:` が `.sh` を指す場合、`scripts/` または `.claude/hooks/` に実在するか検証）
-   - Script refs verified: 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction and pipefail-safe effect scan included。cmd_2899: knowledge_metrics.sh yaml.safe_load→regex parser置換(-75.7%高速化)。cmd_2959: lesson effectiveness windowは `cmd_test*` と `cmd_training*` を除外し、本番cmdの有効率を測る).
+   - Script refs verified: 2026-05-29 cmd_3087 (lesson effectivenessは最小サンプル数1から全feedbackを評価対象に含める。棚卸し時は少数サンプルでも低useful率を確認対象にする). 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction and pipefail-safe effect scan included。cmd_2899: knowledge_metrics.sh yaml.safe_load→regex parser置換(-75.7%高速化)。cmd_2959: lesson effectiveness windowは `cmd_test*` と `cmd_training*` を除外し、本番cmdの有効率を測る).
 2. **YAML整合性チェック** — `bash scripts/gates/gate_yaml_status.sh <cmd_id> --dry-run`（直近完了cmdを対象）
    - ALREADY_OK: status=completed（正常）
    - DRY-RUN出力でstatus未更新cmdを検出
