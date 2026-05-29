@@ -70,7 +70,7 @@ _run_hook() {
     [ "$status" -eq 0 ]
 }
 
-@test "Empty payload is allowed (no crash)" {
+@test "Empty payload is allowed (no crash) [edit hook]" {
     _run_hook ''
     [ "$status" -eq 0 ]
 }

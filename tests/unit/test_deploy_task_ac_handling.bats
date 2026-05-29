@@ -510,7 +510,7 @@ EOF
 # ac_version injection + if_then lesson detail behavior
 # ═══════════════════════════════════════════════════════════
 
-@test "deploy_task injects ac_version and report ac_version_read on first deploy" {
+@test "deploy_task injects ac_version and report ac_version_read on first deploy [template_only]" {
     run deploy_task_template_only sasuke
     [ "$status" -eq 0 ]
 

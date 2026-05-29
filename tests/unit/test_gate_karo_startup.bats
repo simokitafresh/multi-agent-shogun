@@ -150,7 +150,7 @@ teardown() {
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
-@test "all checks pass → 総合判定: OK" {
+@test "all checks pass → 総合判定: OK [karo]" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
 - ts: "2026-05-02T10:01:00+0900"
@@ -286,7 +286,7 @@ EOF
 }
 
 # === Test 6: deepdive不在のみ → ALERT ===
-@test "deepdive missing → 総合判定: ALERT" {
+@test "deepdive missing → 総合判定: ALERT [karo]" {
     rm -f "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
