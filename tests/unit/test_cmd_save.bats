@@ -320,7 +320,7 @@ YAML
     q8_autolearn="$q8_tmpdir/preflight_autolearn.txt"
     q8_lord="$q8_tmpdir/lord_conversation.jsonl"
     q8_chronicle="$q8_tmpdir/cmd-chronicle.md"
-    mkdir -p "$q8_archive"
+    mkdir -p "$q8_archive" "$q8_tmpdir/docs/research"
 
     cat > "$q8_queue" <<'YAML'
 commands:
@@ -364,6 +364,9 @@ YAML
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$q8_autolearn" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$q8_lord" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$q8_chronicle" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$q8_tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$q8_tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
         bash "$SRC_SAVE_SCRIPT" cmd_q8relax
 
     rm -rf "$q8_tmpdir"

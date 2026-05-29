@@ -26,7 +26,8 @@ setup() {
     export TEST_PREFLIGHT_AUTOLEARN="$TEST_TMPDIR/preflight_autolearn.txt"
     export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
-    mkdir -p "$TEST_ARCHIVE_DIR"
+    export TEST_Q11_RESEARCH_DIR="$TEST_TMPDIR/docs/research"
+    mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR"
 }
 
 teardown() {
@@ -84,6 +85,8 @@ run_save() {
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
         CMD_SAVE_ACCUMULATE_BLOCKS=0 \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" "$TEST_CMD_ID"
@@ -95,7 +98,7 @@ create_prior_block() {
     # ここで cmd_save.sh をもう1回起動すると、各テストが重い全チェックを二重実行してtimeoutする。
     cat > "$TEST_QUALITY_LOG" <<YAML
 entries:
-  - cmd_id: ${TEST_CMD_ID}
+  - cmd_id: "${TEST_CMD_ID}"
     gate_result: BLOCK
     source: cmd_save
     notes: "q11_not_already_done未記入"

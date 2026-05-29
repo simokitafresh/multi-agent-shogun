@@ -22,7 +22,8 @@ setup() {
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
     export TEST_BULLETIN="$TEST_TMPDIR/bulletin_board.yaml"
     export TEST_MEMORY_DB="$TEST_TMPDIR/data/memory.db"
-    mkdir -p "$TEST_ARCHIVE_DIR"
+    export TEST_Q11_RESEARCH_DIR="$TEST_TMPDIR/docs/research"
+    mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR"
 }
 
 teardown() {
@@ -41,6 +42,8 @@ run_cmd_save() {
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_multi_block
 }
@@ -58,6 +61,8 @@ run_cmd_save_pass() {
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
         SHOGUN_MEMORY_DB="$TEST_MEMORY_DB" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_pass
 }

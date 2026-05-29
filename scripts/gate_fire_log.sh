@@ -18,8 +18,9 @@ if [ ! -f "$FIRE_LOG" ]; then
 fi
 
 # --- mtimeキャッシュ: 同一ファイルの2回目以降はほぼゼロms ---
-mtime=$(stat -c '%Y' "$FIRE_LOG" 2>/dev/null || printf '0')
-cache_file="/tmp/gate_fire_log_stats_${mtime}"
+cache_sig=$(stat -c '%Y:%s' "$FIRE_LOG" 2>/dev/null || printf '0:0')
+cache_key=$(printf '%s:%s' "$FIRE_LOG" "$cache_sig" | cksum | awk '{print $1}')
+cache_file="/tmp/gate_fire_log_stats_${cache_key}"
 
 if [ -f "$cache_file" ]; then
     cat "$cache_file"

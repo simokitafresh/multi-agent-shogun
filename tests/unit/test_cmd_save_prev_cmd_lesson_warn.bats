@@ -78,7 +78,7 @@ write_quality_log_with_prev_blocks() {
         i=1
         while [ "$i" -le "$count" ]; do
             cat <<YAML
-  - cmd_id: cmd_prev
+  - cmd_id: "cmd_prev"
     gate_result: BLOCK
     source: cmd_save
     notes: "missing_field_$i"
@@ -95,7 +95,7 @@ write_quality_log_with_current_blocks() {
         i=1
         while [ "$i" -le "$count" ]; do
             cat <<YAML
-  - cmd_id: cmd_curr
+  - cmd_id: "cmd_curr"
     gate_result: BLOCK
     source: cmd_save
     notes: "current_missing_field_$i"
