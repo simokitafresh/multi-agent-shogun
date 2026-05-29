@@ -142,7 +142,9 @@ check_shogun_watcher_escalation_env
 # --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
 _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
 _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
-trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS"' EXIT
+_TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
+_TMP_SCRIPT_INDEX=$(mktemp)
+trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_SCRIPT_INDEX"' EXIT
 if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
     tail -n "${SHOGUN_STARTUP_DQ_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/cmd_design_quality.yaml" > "$_TMP_DQ_RECENT"
 fi
@@ -156,6 +158,23 @@ if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
             | awk 'BEGIN{in_entry=0} /^executions:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+ts:/{in_entry=1} in_entry{print}'
     } > "$_TMP_SKILL_EXEC_RECENT"
 fi
+if [ -d "$SCRIPT_DIR/scripts" ] || [ -d "$SCRIPT_DIR/.claude/hooks" ]; then
+    find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -type f -name '*.sh' -printf '%f\t%p\n' 2>/dev/null > "$_TMP_SCRIPT_INDEX" || true
+fi
+export SHOGUN_STARTUP_SCRIPT_INDEX="$_TMP_SCRIPT_INDEX"
+find() {
+    if [ -n "${SHOGUN_STARTUP_SCRIPT_INDEX:-}" ] \
+        && [ -f "$SHOGUN_STARTUP_SCRIPT_INDEX" ] \
+        && [ "$#" -eq 6 ] \
+        && [ "$3" = "-name" ] \
+        && [ "$5" = "-print" ] \
+        && [ "$6" = "-quit" ]; then
+        awk -F '\t' -v name="$4" '$1 == name { print $2; exit }' "$SHOGUN_STARTUP_SCRIPT_INDEX"
+        return 0
+    fi
+    command find "$@"
+}
+export -f find
 "$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 _PID_G1=$!
 if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
@@ -171,6 +190,92 @@ fi
 _PID_G25=$!
 (cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
 _PID_UNPUSHED=$!
+(cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') > "$_TMP_SCRIPTS_STATUS" &
+_PID_SCRIPTS_STATUS=$!
+if [ "$LIGHT_MODE" != "1" ]; then
+    python3 - "$SCRIPT_DIR/context" > "$_TMP_GUNSHI_INFO" <<'PY' &
+from pathlib import Path
+import sys
+import time
+
+context_dir = Path(sys.argv[1])
+for gfile in sorted(context_dir.glob("gunshi-*.md")):
+    if not gfile.is_file():
+        continue
+    title = ""
+    try:
+        with gfile.open(encoding="utf-8", errors="ignore") as fh:
+            for _ in range(5):
+                line = fh.readline()
+                if not line:
+                    break
+                if line.startswith("#"):
+                    title = line.lstrip("#").strip()
+                    break
+        mtime = time.strftime("%m-%d %H:%M", time.localtime(gfile.stat().st_mtime))
+    except Exception:
+        mtime = "?"
+    print(f"{gfile.name}\t{mtime}\t{title}")
+PY
+    _PID_GUNSHI_INFO=$!
+    python3 - "$SCRIPT_DIR" "$HOME" > "$_TMP_EVO_SCAN" <<'PY' &
+from pathlib import Path
+import sys
+import time
+
+script_dir = Path(sys.argv[1])
+home_dir = Path(sys.argv[2])
+sources = [
+    script_dir / "CLAUDE.md",
+    home_dir / ".claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md",
+]
+sources.extend(sorted((script_dir / "instructions").glob("*.md")))
+sources.extend([
+    script_dir / "config/projects.yaml",
+    script_dir / "config/context_freshness_excludes.txt",
+    script_dir / "dashboard.md",
+])
+
+kmap_parts = []
+missing = []
+for src in sources:
+    if src.is_file():
+        try:
+            kmap_parts.append(src.read_text(encoding="utf-8", errors="ignore"))
+        except Exception:
+            missing.append(src.name)
+    else:
+        missing.append(src.name)
+kmap_text = "\n".join(kmap_parts)
+
+for name in missing:
+    print(f"MISSING\t{name}")
+
+for cfile in sorted((script_dir / "context").glob("*.md")):
+    if not cfile.is_file() or cfile.name == "README.md":
+        continue
+    if cfile.name in kmap_text:
+        continue
+    title = ""
+    try:
+        with cfile.open(encoding="utf-8", errors="ignore") as fh:
+            for _ in range(5):
+                line = fh.readline()
+                if not line:
+                    break
+                if line.startswith("#"):
+                    title = line.lstrip("#").strip()
+                    break
+        mtime = time.strftime("%m-%d %H:%M", time.localtime(cfile.stat().st_mtime))
+    except Exception:
+        mtime = "?"
+    print(f"ORPHAN\t{cfile.name}\t{mtime}\t{title}")
+PY
+    _PID_EVO_SCAN=$!
+else
+    _PID_GUNSHI_INFO=""
+    _PID_EVO_SCAN=""
+fi
 _skill_ref_gate="$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh"
 if [ "$LIGHT_MODE" != "1" ] && [ -x "$_skill_ref_gate" ]; then
     bash "$_skill_ref_gate" "$SCRIPT_DIR" > "$_TMP_SKILL_REFS" 2>&1 &
@@ -1615,32 +1720,8 @@ echo "■ 軍師分析状態"
 if [ "$LIGHT_MODE" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
-_gunshi_info=$(
-    python3 - "$SCRIPT_DIR/context" <<'PY'
-from pathlib import Path
-import sys
-import time
-
-context_dir = Path(sys.argv[1])
-for gfile in sorted(context_dir.glob("gunshi-*.md")):
-    if not gfile.is_file():
-        continue
-    title = ""
-    try:
-        with gfile.open(encoding="utf-8", errors="ignore") as fh:
-            for _ in range(5):
-                line = fh.readline()
-                if not line:
-                    break
-                if line.startswith("#"):
-                    title = line.lstrip("#").strip()
-                    break
-        mtime = time.strftime("%m-%d %H:%M", time.localtime(gfile.stat().st_mtime))
-    except Exception:
-        mtime = "?"
-    print(f"{gfile.name}\t{mtime}\t{title}")
-PY
-)
+wait $_PID_GUNSHI_INFO || true
+_gunshi_info=$(cat "$_TMP_GUNSHI_INFO")
 if [ -n "$_gunshi_info" ]; then
     while IFS=$'\t' read -r _g_name _g_mtime _g_title; do
         [ -n "$_g_name" ] || continue
@@ -1671,61 +1752,8 @@ else
 _evo_orphans=""
 _evo_count=0
 _KMAP_MISSING=()
-_evo_scan=$(
-    python3 - "$SCRIPT_DIR" "$HOME" <<'PY'
-from pathlib import Path
-import sys
-import time
-
-script_dir = Path(sys.argv[1])
-home_dir = Path(sys.argv[2])
-sources = [
-    script_dir / "CLAUDE.md",
-    home_dir / ".claude/projects/-mnt-c-tools-multi-agent-shogun/memory/MEMORY.md",
-]
-sources.extend(sorted((script_dir / "instructions").glob("*.md")))
-sources.extend([
-    script_dir / "config/projects.yaml",
-    script_dir / "config/context_freshness_excludes.txt",
-    script_dir / "dashboard.md",
-])
-
-kmap_parts = []
-missing = []
-for src in sources:
-    if src.is_file():
-        try:
-            kmap_parts.append(src.read_text(encoding="utf-8", errors="ignore"))
-        except Exception:
-            missing.append(src.name)
-    else:
-        missing.append(src.name)
-kmap_text = "\n".join(kmap_parts)
-
-for name in missing:
-    print(f"MISSING\t{name}")
-
-for cfile in sorted((script_dir / "context").glob("*.md")):
-    if not cfile.is_file() or cfile.name == "README.md":
-        continue
-    if cfile.name in kmap_text:
-        continue
-    title = ""
-    try:
-        with cfile.open(encoding="utf-8", errors="ignore") as fh:
-            for _ in range(5):
-                line = fh.readline()
-                if not line:
-                    break
-                if line.startswith("#"):
-                    title = line.lstrip("#").strip()
-                    break
-        mtime = time.strftime("%m-%d %H:%M", time.localtime(cfile.stat().st_mtime))
-    except Exception:
-        mtime = "?"
-    print(f"ORPHAN\t{cfile.name}\t{mtime}\t{title}")
-PY
-)
+wait $_PID_EVO_SCAN || true
+_evo_scan=$(cat "$_TMP_EVO_SCAN")
 if [ -n "$_evo_scan" ]; then
     while IFS=$'\t' read -r _evo_kind _evo_name _evo_mtime _evo_title; do
         case "$_evo_kind" in
@@ -1847,7 +1875,8 @@ fi
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
 # 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
 # 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
-_scripts_status=$(cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') || _scripts_status=""
+wait $_PID_SCRIPTS_STATUS || true
+_scripts_status=$(cat "$_TMP_SCRIPTS_STATUS") || _scripts_status=""
 _scripts_dirty=()
 _d_unpushed="?"
 if [ "$LIGHT_MODE" = "1" ]; then

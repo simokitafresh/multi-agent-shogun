@@ -58,11 +58,144 @@ phase_guide_cached() {
     tail -n +2 "$cache_file"
 }
 
-show_active_cmd_semantic_context() {
+show_active_cmd_semantic_context_one() {
     local semantic_script="$SCRIPT_DIR/scripts/semantic_search.sh"
     local causal_script="$SCRIPT_DIR/scripts/causal_backlinks.sh"
     local timeout_sec="${KARO_STARTUP_SEMANTIC_TIMEOUT:-5}"
-    local task_file ninja status cmd_id target_path semantic_output links link_id backlink_output rc active_count shown_count
+    local ninja="$1"
+    local cmd_id="$2"
+    local target_path="$3"
+    local shown_file="$4"
+    local semantic_output links link_id backlink_output rc
+    local link_tmp link_idx link_tmp_list
+    local semantic_cache_dir semantic_cache_key semantic_cache_file semantic_cache_sig semantic_current_sig
+
+    echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
+    semantic_cache_dir="${KARO_STARTUP_SEMANTIC_CACHE_DIR:-/tmp/karo_startup_semantic_cache}"
+    semantic_current_sig="$(
+        {
+            printf '%s\n' "$target_path"
+            stat -c '%Y:%s' "$SCRIPT_DIR/docs/semantic-index/index.md" 2>/dev/null || true
+            stat -c '%Y:%s' "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" 2>/dev/null || true
+        } | sha256sum | awk '{print $1}'
+    )"
+    semantic_cache_key="${target_path//[^A-Za-z0-9_.-]/_}"
+    semantic_cache_file="$semantic_cache_dir/${semantic_cache_key}.${semantic_current_sig}.cache"
+    if [ -f "$semantic_cache_file" ]; then
+        IFS= read -r rc < "$semantic_cache_file" || rc=1
+        semantic_output="$(tail -n +2 "$semantic_cache_file")"
+    elif command -v timeout >/dev/null 2>&1; then
+        if semantic_output="$(
+            SEMANTIC_DISABLE_LLM=1 \
+            SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
+            timeout -k 1 "$timeout_sec" bash "$semantic_script" "$target_path" 2>&1
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    else
+        if semantic_output="$(
+            SEMANTIC_DISABLE_LLM=1 \
+            SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
+            bash "$semantic_script" "$target_path" 2>&1
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    fi
+    if [ ! -f "$semantic_cache_file" ]; then
+        mkdir -p "$semantic_cache_dir" 2>/dev/null || true
+        {
+            printf '%s\n' "$rc"
+            printf '%s\n' "$semantic_output"
+        } > "$semantic_cache_file" 2>/dev/null || true
+    fi
+
+    if [ "$rc" -eq 0 ] && [ -n "${semantic_output//[[:space:]]/}" ]; then
+        printf 'shown\n' > "$shown_file"
+        printf '%s\n' "$semantic_output" | awk 'NR <= 60 { print "    " $0 } NR == 61 { print "    ..."; exit }'
+        if [ -f "$causal_script" ]; then
+            links="$(
+                printf '%s\n' "$semantic_output" \
+                    | grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' 2>/dev/null \
+                    | sed 's/^\[\[//; s/\]\]$//' \
+                    | awk 'NF && !seen[$0]++' \
+                    | head -8 \
+                || true
+            )"
+            if [ -n "${links//[[:space:]]/}" ]; then
+                echo "    causal_edges:"
+                local pattern_file backlink_hits
+                pattern_file=$(mktemp)
+                while IFS= read -r link_id; do
+                    [ -n "$link_id" ] || continue
+                    printf '[[%s]]\n' "$link_id" >> "$pattern_file"
+                done <<< "$links"
+                if command -v timeout >/dev/null 2>&1; then
+                    backlink_hits="$(
+                        cd "$SCRIPT_DIR" \
+                            && timeout -k 1 1 rg -n --fixed-strings --hidden \
+                                --glob '!.git/**' \
+                                --glob '!queue/archive/**' \
+                                --glob '!archive/**' \
+                                --glob '!node_modules/**' \
+                                --glob '!__pycache__/**' \
+                                -f "$pattern_file" . 2>/dev/null \
+                            || true
+                    )"
+                else
+                    backlink_hits="$(
+                        cd "$SCRIPT_DIR" \
+                            && rg -n --fixed-strings --hidden \
+                                --glob '!.git/**' \
+                                --glob '!queue/archive/**' \
+                                --glob '!archive/**' \
+                                --glob '!node_modules/**' \
+                                --glob '!__pycache__/**' \
+                                -f "$pattern_file" . 2>/dev/null \
+                            || true
+                    )"
+                fi
+                rm -f "$pattern_file"
+                while IFS= read -r link_id; do
+                    [ -n "$link_id" ] || continue
+                    echo "    - link: [[${link_id}]]"
+                    backlink_output="$(
+                        printf '%s\n' "$backlink_hits" \
+                            | grep -F "[[${link_id}]]" \
+                            | cut -d: -f1 \
+                            | awk 'NF && !seen[$0]++ { print; if (++n >= 5) exit }' \
+                        || true
+                    )"
+                    if [ -n "$backlink_output" ]; then
+                        printf '%s\n' "$backlink_output" | sed 's/^/      - resource: /'
+                    else
+                        echo "      - resource: none"
+                    fi
+                done <<< "$links"
+            fi
+        fi
+    elif [ "$rc" -eq 124 ]; then
+        echo "    SKIP: semantic_search timeout(${timeout_sec}s)"
+    elif [ "$rc" -eq 1 ]; then
+        echo "    関連概念なし"
+    else
+        echo "    SKIP: semantic_search failed(rc=${rc})"
+    fi
+}
+
+show_active_cmd_semantic_context() {
+    local semantic_script="$SCRIPT_DIR/scripts/semantic_search.sh"
+    local task_file ninja status cmd_id target_path active_count shown_count
+    local out_file shown_file pid
+    local active_ninjas=()
+    local out_files=()
+    local shown_files=()
+    local pids=()
 
     echo "■ 稼働中cmd関連因果概念"
     if [ ! -f "$semantic_script" ]; then
@@ -108,80 +241,39 @@ show_active_cmd_semantic_context() {
         [[ "$status" =~ ^(assigned|acknowledged|in_progress)$ ]] || continue
         active_count=$((active_count + 1))
         if [ -z "${target_path//[[:space:]]/}" ]; then
-            echo "  ${ninja}: ${cmd_id:-unknown} target_pathなし"
+            out_file=$(mktemp)
+            shown_file=$(mktemp)
+            echo "  ${ninja}: ${cmd_id:-unknown} target_pathなし" > "$out_file"
+            active_ninjas+=("$ninja")
+            out_files+=("$out_file")
+            shown_files+=("$shown_file")
+            pids+=("")
             continue
         fi
 
-        echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
-        if command -v timeout >/dev/null 2>&1; then
-            if semantic_output="$(
-                SEMANTIC_DISABLE_LLM=1 \
-                SEMANTIC_DISABLE_CAUSAL=1 \
-                SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
-                timeout "$timeout_sec" bash "$semantic_script" "$target_path" 2>&1
-            )"; then
-                rc=0
-            else
-                rc=$?
-            fi
-        else
-            if semantic_output="$(
-                SEMANTIC_DISABLE_LLM=1 \
-                SEMANTIC_DISABLE_CAUSAL=1 \
-                SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
-                bash "$semantic_script" "$target_path" 2>&1
-            )"; then
-                rc=0
-            else
-                rc=$?
-            fi
-        fi
+        out_file=$(mktemp)
+        shown_file=$(mktemp)
+        show_active_cmd_semantic_context_one "$ninja" "$cmd_id" "$target_path" "$shown_file" > "$out_file" &
+        pid=$!
+        active_ninjas+=("$ninja")
+        out_files+=("$out_file")
+        shown_files+=("$shown_file")
+        pids+=("$pid")
+    done
 
-        if [ "$rc" -eq 0 ] && [ -n "${semantic_output//[[:space:]]/}" ]; then
+    for pid in "${pids[@]}"; do
+        [ -n "$pid" ] && wait "$pid" 2>/dev/null || true
+    done
+
+    for out_file in "${out_files[@]}"; do
+        cat "$out_file"
+        rm -f "$out_file"
+    done
+    for shown_file in "${shown_files[@]}"; do
+        if [ -s "$shown_file" ]; then
             shown_count=$((shown_count + 1))
-            printf '%s\n' "$semantic_output" | awk 'NR <= 60 { print "    " $0 } NR == 61 { print "    ..."; exit }'
-            if [ -f "$causal_script" ]; then
-                links="$(
-                    printf '%s\n' "$semantic_output" \
-                        | grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' 2>/dev/null \
-                        | sed 's/^\[\[//; s/\]\]$//' \
-                        | awk 'NF && !seen[$0]++' \
-                        | head -8 \
-                    || true
-                )"
-                if [ -n "${links//[[:space:]]/}" ]; then
-                    echo "    causal_edges:"
-                    while IFS= read -r link_id; do
-                        [ -n "$link_id" ] || continue
-                        echo "    - link: [[${link_id}]]"
-                        if command -v timeout >/dev/null 2>&1; then
-                            backlink_output="$(
-                                cd "$SCRIPT_DIR" \
-                                    && { timeout 1 bash "$causal_script" "$link_id" 2>/dev/null || true; } \
-                                    | head -5
-                            )"
-                        else
-                            backlink_output="$(
-                                cd "$SCRIPT_DIR" \
-                                    && { bash "$causal_script" "$link_id" 2>/dev/null || true; } \
-                                    | head -5
-                            )"
-                        fi
-                        if [ -n "$backlink_output" ]; then
-                            printf '%s\n' "$backlink_output" | sed 's/^/      - resource: /'
-                        else
-                            echo "      - resource: none"
-                        fi
-                    done <<< "$links"
-                fi
-            fi
-        elif [ "$rc" -eq 124 ]; then
-            echo "    SKIP: semantic_search timeout(${timeout_sec}s)"
-        elif [ "$rc" -eq 1 ]; then
-            echo "    関連概念なし"
-        else
-            echo "    SKIP: semantic_search failed(rc=${rc})"
         fi
+        rm -f "$shown_file"
     done
 
     if [ "$active_count" -eq 0 ]; then
