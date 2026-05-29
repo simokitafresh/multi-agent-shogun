@@ -22,7 +22,27 @@ SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 # tmux排他制御ライブラリ（将軍pane直接注入用）
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
-TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
+# 高速化: grep|awk|tr + awk 計3プロセス→awk 1回でTOPIC+SCREENSHOT_PATH同時取得
+_settings_parsed=$(awk '
+    /^ntfy_topic:[[:space:]]*/ {
+        v = substr($0, index($0, $2))
+        gsub(/^[ \t"'"'"']+|[ \t"'"'"']+$/, "", v)
+        topic = v
+    }
+    /^screenshot:[[:space:]]*$/ { in_block=1; next }
+    in_block && /^[^[:space:]]/ { in_block=0 }
+    in_block && /^[[:space:]]+path:[[:space:]]*/ {
+        sub(/^[[:space:]]+path:[[:space:]]*/, "", $0)
+        gsub(/"/, "", $0)
+        screenshot = $0
+    }
+    END { print topic "\t" screenshot }
+' "$SETTINGS")
+TOPIC="${_settings_parsed%%	*}"
+SCREENSHOT_PATH="${_settings_parsed##*	}"
+[ -z "$SCREENSHOT_PATH" ] && SCREENSHOT_PATH="queue/screenshots"
+unset _settings_parsed
+
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
 CORRUPT_DIR="$SCRIPT_DIR/logs/ntfy_inbox_corrupt"
 
@@ -48,18 +68,6 @@ AUTH_ARGS=()
 while IFS= read -r line; do
     [ -n "$line" ] && AUTH_ARGS+=("$line")
 done < <(ntfy_get_auth_args "$SCRIPT_DIR/config/ntfy_auth.env")
-
-SCREENSHOT_PATH=$(awk '
-    /^screenshot:[[:space:]]*$/ { in_block=1; next }
-    in_block && /^[^[:space:]]/ { in_block=0 }
-    in_block && /^[[:space:]]+path:[[:space:]]*/ {
-        sub(/^[[:space:]]+path:[[:space:]]*/, "", $0)
-        gsub(/"/, "", $0)
-        print $0
-        exit
-    }
-' "$SETTINGS")
-[ -z "$SCREENSHOT_PATH" ] && SCREENSHOT_PATH="queue/screenshots"
 
 if [[ "$SCREENSHOT_PATH" = /* ]]; then
     SCREENSHOT_DIR="$SCREENSHOT_PATH"
@@ -328,7 +336,8 @@ process_stream_line() {
     [ "$EVENT" != "message" ] && return 0
 
     # Skip outbound messages (sent by our own scripts/ntfy.sh)
-    echo "$TAGS" | grep -q "outbound" && return 0
+    # 高速化: echo|grep サブシェル→bash パターンマッチ
+    [[ "$TAGS" == *outbound* ]] && return 0
 
     HAS_IMAGE_ATTACHMENT=0
     if [[ "$ATTACHMENT_TYPE" == image/* ]] && [ -n "$ATTACHMENT_URL" ]; then
