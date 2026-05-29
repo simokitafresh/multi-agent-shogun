@@ -19,7 +19,10 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+_ci_script="${BASH_SOURCE[0]:-$0}"
+[[ "$_ci_script" != /* ]] && _ci_script="$PWD/$_ci_script"
+SCRIPT_DIR="${_ci_script%/*}"
+unset _ci_script
 
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
