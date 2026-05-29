@@ -73,60 +73,47 @@ summary_is_present() {
     local report_file="$1"
     local summary=""
     local trimmed=""
+    local line raw base_indent=0 indent in_block=0
 
-    summary=$(
-        awk '
-            function trim(s) {
-                sub(/^[[:space:]]+/, "", s)
-                sub(/[[:space:]]+$/, "", s)
-                return s
-            }
-            function unquote(s, q) {
-                q = substr(s, 1, 1)
-                if ((q == "\"" || q == "'\''") && substr(s, length(s), 1) == q) {
-                    return substr(s, 2, length(s) - 2)
-                }
-                return s
-            }
-            function indent_of(line) {
-                if (match(line, /[^ ]/)) {
-                    return RSTART - 1
-                }
-                return length(line)
-            }
-            /^[[:space:]]*#/ { next }
-            {
-                if (!seen_summary && $0 ~ /^[[:space:]]*summary:[[:space:]]*/) {
-                    seen_summary = 1
-                    base_indent = indent_of($0)
-                    line = $0
-                    sub(/^[[:space:]]*summary:[[:space:]]*/, "", line)
-                    line = trim(line)
+    while IFS= read -r line || [ -n "$line" ]; do
+        raw="${line#"${line%%[![:space:]]*}"}"
+        [[ "$raw" == \#* ]] && continue
 
-                    if (line == "|" || line == "|-" || line == ">" || line == ">-") {
-                        in_block = 1
-                        next
-                    }
+        if [ "$in_block" -eq 0 ]; then
+            case "$raw" in
+                summary:*)
+                    base_indent=$((${#line} - ${#raw}))
+                    summary="${raw#summary:}"
+                    summary="${summary#"${summary%%[![:space:]]*}"}"
+                    summary="${summary%"${summary##*[![:space:]]}"}"
 
-                    print unquote(line)
-                    exit
-                }
+                    case "$summary" in
+                        "|"|"|-"|">"|">-")
+                            in_block=1
+                            continue
+                            ;;
+                    esac
 
-                if (in_block) {
-                    if ($0 ~ /^[[:space:]]*$/) {
-                        next
-                    }
+                    if [ "${#summary}" -ge 2 ]; then
+                        case "$summary" in
+                            \"*\") summary="${summary#\"}"; summary="${summary%\"}" ;;
+                            \'*\') summary="${summary#\'}"; summary="${summary%\'}" ;;
+                        esac
+                    fi
+                    break
+                    ;;
+            esac
+            continue
+        fi
 
-                    if (indent_of($0) <= base_indent) {
-                        exit
-                    }
+        raw="${line#"${line%%[![:space:]]*}"}"
+        [ -z "$raw" ] && continue
+        indent=$((${#line} - ${#raw}))
+        [ "$indent" -le "$base_indent" ] && break
+        summary="${raw%"${raw##*[![:space:]]}"}"
+        break
+    done < "$report_file"
 
-                    print trim($0)
-                    exit
-                }
-            }
-        ' "$report_file"
-    )
     trimmed="${summary//$'\r'/}"
     trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
     trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
