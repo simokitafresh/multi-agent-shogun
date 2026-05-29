@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_research -->
+<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -364,7 +364,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 ## §36. 金融ML知識辞書 2026-04-30 追加9件（cmd_2426〜cmd_2434）
 
-→ 一覧SSOT: `/mnt/c/Python_app/DM-Signal/docs/research/knowledge-base/index.md`
+→ 一覧SSOT: `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md`
 
 2026-04-30時点で `docs/research/knowledge-base/methods/` に追加・反映済みの9件。DM-Signal適用時は各methodのLayer/Phaseと、DM PF=L0意思決定系列・月次データ制約を照合してから採否判定する。
 
@@ -413,6 +413,20 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 全9体α-CAGR>0。詳細→gist: https://gist.github.com/simokitafresh/97bf38e764ec09070a50f91fd250a1fa
 設計追体験→gist: https://gist.github.com/simokitafresh/732d31d0ec93a38b8398ab51cade0f6a
+
+### 2026-05 追記
+
+- cmd_2439 Ave DMS lookbacksは2026-04-30に再実行済み(commit d5acc4f7)。結果確認時は最新成果物を参照する
+- cmd_2440 combo exhaustive search、cmd_2442 single-period alignment修正、cmd_2449 combo stability analysis、cmd_2450 hiougi registration artifactsが追加済み
+- 2026-05-02 commit 69d7afdbでDMS-TVP layer selection設計書とcmd_2424登録成果物がまとめてコミット済み。登録CSV/summaryは`outputs/registration/cmd_2424/`
+
+## §37. 用語辞書・投資知識リンク 2026-05更新
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| terminology | DM-Signal terminology / disambiguationを拡張。UWP/PTU/MaxDD UWPなど衝突しやすい語はcanonical定義を確認する | commits a39d6d19, ff142314, 40a22dc6; `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md` |
+| knowledge links | method全件へ関連投資知識リンクを接続済み。研究時は単独methodだけでなくリンク先methodも候補に含める | cmd_3015; `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/` |
+| marketing research outputs | note記事/weekly reportsはDM-Signal知識の公開向け再構成。研究正本ではないが説明・商品設計の文脈確認に使える | commit 1a5f5149; `marketing-director/content/` |
 
 ---
 

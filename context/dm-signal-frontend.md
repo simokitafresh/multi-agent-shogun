@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-05-06 cmd_karo_direct_context_refresh: Compare Summary UWP/PTU/TQQQ+loading改善+4/26 FE性能変更索引追記 -->
+<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -78,6 +78,15 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Compare Summary benchmark | Compare SummaryにTQQQをSPYと並列の追加ベンチマークとして表示。型はmetrics側にも追加。 | cmd_2578; `frontend/app/compare-summary/page.tsx`, `frontend/lib/types/metrics.ts` |
 | Compare loading | `/compare` はchart data loading中もPF選択などの比較コントロールを保持。 | cmd_2569; `frontend/app/compare/page.tsx` |
 | Drawdowns | all drawdowns表示変更(cmd_2571)は同日revert済み。現行Drawdowns/API/FAQはrevert後挙動を正とする。 | ab5eac9d → 1aa09525; `frontend/app/drawdowns/page.tsx`, `frontend/lib/api-client.ts`, `frontend/lib/faq-content.ts` |
+
+## 2.6 直近FE変更索引（2026-05-07〜05-27）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| Monthly Trade FoF mask/display | masked monthly trade表示を修正。FoF ticker/weight表示はprecomputed weightsと月初Signal由来のdisplay_ticker_weightsを優先 | cmd_2451, cmd_2598; `frontend/components/monthly-trade-table.tsx`, `frontend/lib/monthly-trade-display.ts` |
+| Auth token cleanup | count-based eviction削除により、viewer/admin tokenは期限切れのみcleanup。FE側でtoken数上限前提の挙動を置かない | cmd_2599; `backend/app/auth.py` |
+| Home holiday awareness | 封鎖中Homeにも市場休日認識を追加。`date-fns`依存追加済み | cmd_2880; `frontend/app/page.tsx`, `frontend/package.json` |
+| Admin backfill year | AdvancedOperationsのfull backfill開始年は`FULL_BACKFILL_START_YEAR=2000`に統一 | cmd_3077; `frontend/app/admin/components/AdvancedOperations.tsx` |
 
 ## 3. 状態管理
 

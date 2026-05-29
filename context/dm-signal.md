@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録+knowledge-base methods更新 -->
+<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
 <!-- last_synced_lesson: L722 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -185,6 +185,18 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 | L1 GSシン忍法 | cmd_2392でGSシン忍法21体を本番hide登録。fullrecalculate成功、既存20体diff=0、GSパリティ21/21 PASS | `context/dm-signal-ops.md` §32 |
 | L2奥義 | cmd_2422で制約付きL2 champion 21体を選出し、cmd_2424で本番hide登録+fullrecalculate完了。完了判定はAPI statusだけでなくDB `recalculation_status`で二重確認 | `context/dm-signal-ops.md` §34 / `context/dm-signal-core.md` GSL2正規パス |
 | knowledge-base methods | `docs/research/knowledge-base/methods/` にM79-M84を追加: DeepUnifiedMom, VAA/BAA, Hierarchical Momentum, Factor Momentum, ADTS/CADTS, Expert Aggregation WASA | `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md` |
+
+## §33 2026-05-01〜05-27 ソースcommit鮮度更新 (cmd_3090)
+
+検証: `git -C /mnt/c/Python_app/DM-signal log --oneline --since=2026-04-30` で43commit確認。主要変更のみ索引化。
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| FoF表示/監査 | Monthly TradeのFoF表示はprecomputed weights / year_month月初Signal優先へ修正。signal change audit logging追加。FoF valid_start_date/lookback型も修正済み | `context/dm-signal-core.md` §21 / commits 85f42b3c〜c7e91634 |
+| 認証/CI | auth token count eviction削除。pytest GitHub Actions追加、PyYAML/依存導入、PostgreSQL service付きCIへ拡張 | `context/dm-signal-core.md` §22 / commits 2e9e1b7d〜86661769 |
+| FE/指標 | Compare SummaryにAvg UWP/PTU/MaxDD UWP/TQQQ benchmark/right-tail metricsを追加。Drawdowns全件化はrevert済み。Monthly Trade masked表示修正 | `context/dm-signal-frontend.md` §2.6 |
+| 用語/知識 | DM-Signal用語disambiguation拡張、UWP/PTU区別追加、method全件へinvestment knowledge links接続 | `context/dm-signal-research.md` §37 |
+| 運用 | Homeに休日認識追加、価格backfill開始年を2000へ統一。fullrecalculateは別cmd必要 | `context/dm-signal-ops.md` §37-§38 |
 
 ## 補助ポインタ
 

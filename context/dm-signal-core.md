@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2/KB鮮度更新 -->
+<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -29,6 +29,7 @@
 ## 1. システム全体像
 
 本番: Render.com — PostgreSQL + FastAPI + Next.js。StockData API毎日01:00 UTC自動同期。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
+2026-05-07: auth token cleanupのcount-based evictionは削除済み。期限切れtokenのみ削除する設計を正とする(cmd_2599, commit 86661769)。
 ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。
 - L500: ガード条件(is_kalman_meta等)除去時は保護していた全変数のスコープと副作用を確認（cmd_1445）
 - L501: is_custom_weightガード除去でEqualWeight PFにカスタムweight計算パスが発動する副作用（cmd_1445）
@@ -523,6 +524,21 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 本番136件中乖離1件: ノンレバ玄武-鉄壁(top SPY/QQQ vs block SPXL/TQQQ)
 - 殿裁定待ち: top-level同期 vs pipeline_config SSOT化
 - → `queue/reports/hayate_report_cmd_3079.yaml`(偵察全量)
+
+---
+
+## §21 FoF表示・監査系 2026-05更新 (cmd_2451〜2455)
+
+- Monthly Trade FoF表示はUUIDそのものではなく表示ticker/weightsを使う。`display_ticker_weights` / precomputed weights / year_month月初Signalの優先順を維持する
+- FoF valid_start_date/lookbackは型・参照期間を修正済み。lookback修正は`backend/app/jobs/recalculate_fof.py`と`backend/tests/test_fof_valid_start_lookback.py`
+- signal change audit logging追加済み。`backend/app/db/models.py` / `backend/app/db/migrations.py` / flush処理で変更ログを扱う
+- 2026-05-05: `_collect_signal_change_logs`はbatch IN clauseでstack depth limit回避済み(commit 5c8a9cf2)
+
+## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
+
+- `.github/workflows/pytest.yml` を追加。PyYAML/pytest依存をCIへ導入し、PostgreSQL service付きpytestへ拡張済み
+- `backend/tests/test_pipeline_cache_optimization.py` はCI対象。テスト関数ゼロの空振りを避ける教訓L721を併用する
+- CI失敗調査ではworkflow依存不足とDB service起動を先に確認する
 
 ---
 

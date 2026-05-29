@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-04-30 cmd_karo_ctx_freshness_ops L2奥義登録完了+GS/KB更新反映 -->
+<!-- last_updated: 2026-05-29 cmd_3090 DM-Signal 5月commit反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -733,6 +733,16 @@ import metrics_research_engine as MRE
 - database PJは1970全履歴取得に改修済み→DM-Signal側2000でデータ不足なし
 - fullrecalculate別cmd必要(修正後にsignals/monthly_returns再計算)
 - → `queue/reports/hayate_report_cmd_3076.yaml`(偵察全量) / commit d2acaa91(修正)
+
+## §38 2026-05 運用・CI・知識基盤更新
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| CI pytest | GitHub Actions pytest workflow追加。PyYAML/pytest依存、PostgreSQL service導入済み。DB接続前提テストはCI service前提で確認する | commits 2e9e1b7d, 0771ba29, 5b93ae17, a99a8623 |
+| codd lexicon | `codd.yaml` / `project_lexicon.yaml` 追加。CoDD設計・fix時はPJ語彙を参照する | cmd_2761 |
+| lesson metadata | `tasks/lessons.md` にwhen/how系field backfill + concrete tags追加。教訓検索・注入の粒度が上がっている | cmd_2748, cmd_2836 |
+| knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
+| Home holiday | FE Homeへ休日認識追加。封鎖ページでも市場営業日表示に関わる変更として扱う | cmd_2880 |
 
 ## 因果リンク
 
