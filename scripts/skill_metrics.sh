@@ -34,8 +34,6 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-import yaml
-
 log_file, skills_dirs = sys.argv[1:3]
 
 
@@ -48,7 +46,12 @@ def load_quality_metrics(raw_dirs):
         root = Path(os.path.expanduser(raw_dir))
         if not root.is_dir():
             continue
-        for skill_file in sorted(root.rglob("SKILL.md")):
+        skill_files = []
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames.sort()
+            if "SKILL.md" in filenames:
+                skill_files.append(Path(dirpath) / "SKILL.md")
+        for skill_file in sorted(skill_files):
             try:
                 resolved = skill_file.resolve()
             except OSError:
@@ -56,25 +59,70 @@ def load_quality_metrics(raw_dirs):
             if resolved in seen_paths:
                 continue
             seen_paths.add(resolved)
-            text = skill_file.read_text(encoding="utf-8", errors="ignore")
-            match = re.search(r'^quality_metric:\s*["\']?(.*?)["\']?\s*$', text, re.MULTILINE)
-            if not match:
+            skill_name = skill_file.parent.name
+            found_name = False
+            metric = ""
+            with skill_file.open(encoding="utf-8", errors="ignore") as fh:
+                for line in fh:
+                    if not metric:
+                        match = re.match(r'^quality_metric:\s*["\']?(.*?)["\']?\s*$', line)
+                        if match:
+                            metric = match.group(1).strip()
+                    if not found_name:
+                        name_match = re.match(r"^name:\s*([^\n]+?)\s*$", line)
+                        if name_match:
+                            skill_name = name_match.group(1).strip().strip('"\'')
+                            found_name = True
+                    if metric and found_name:
+                        break
+            if not metric:
                 continue
-            name_match = re.search(r"^name:\s*([^\n]+?)\s*$", text, re.MULTILINE)
-            skill_name = name_match.group(1).strip().strip('"\'') if name_match else skill_file.parent.name
-            metric = match.group(1).strip()
             skills.setdefault(skill_name, {"metric": metric, "path": str(skill_file)})
     return skills
 
 
+def parse_scalar(raw):
+    value = raw.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+        if raw.strip().startswith('"'):
+            value = value.replace('\\"', '"').replace("\\\\", "\\")
+    return value
+
+
 def load_entries(path):
     try:
-        with open(path, encoding="utf-8") as fh:
-            data = yaml.safe_load(fh) or {}
+        fh = open(path, encoding="utf-8", errors="ignore")
     except FileNotFoundError:
         return []
-    entries = data.get("executions") or []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    entries = []
+    current = None
+    wanted = {"ts", "skill", "result", "used"}
+    with fh:
+        for line in fh:
+            if line.startswith("- "):
+                if current is not None:
+                    entries.append(current)
+                current = {}
+                body = line[2:].strip()
+                if ":" in body:
+                    key, value = body.split(":", 1)
+                    key = key.strip()
+                    if key in wanted:
+                        current[key] = parse_scalar(value)
+                continue
+            if current is None or not line.startswith("  ") or line.startswith("    "):
+                continue
+            body = line.strip()
+            if ":" not in body:
+                continue
+            key, value = body.split(":", 1)
+            key = key.strip()
+            if key in wanted:
+                current[key] = parse_scalar(value)
+    if current is not None:
+        entries.append(current)
+    return entries
 
 
 skills = load_quality_metrics(skills_dirs)
