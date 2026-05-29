@@ -121,25 +121,28 @@ build_instruction_file() {
     # Write entire file in a single pass to reduce WSL2 filesystem overhead.
     # Multiple >> appends each open/close the output file; a single {} > file
     # opens it once and streams all content through one file descriptor.
+    # perf: role content + CLI tools pre-built into /tmp (no NTFS reads in hot path)
     {
-        # Extract YAML front matter from original file
-        if [ -f "$original_file" ]; then
+        # Role content (frontmatter + role_role.md) from pre-built /tmp file
+        if [[ -n "${_BUILD_ROLE_TMPS[$role]+x}" ]]; then
+            cat "${_BUILD_ROLE_TMPS[$role]}"
+        elif [ -f "$original_file" ]; then
             echo "---"
             awk '/^---$/{if(++n==2) {print "---"; exit} if(n==1) next} n==1' "$original_file"
             echo ""
+            cat "$PARTS_DIR/roles/${role}_role.md"
         else
-            # Minimal YAML front matter
             printf -- '---\nrole: %s\nversion: "3.0"\ncli_type: %s\n---\n\n' "$role" "$cli_type"
+            cat "$PARTS_DIR/roles/${role}_role.md"
         fi
-
-        # Role-specific content
-        cat "$PARTS_DIR/roles/${role}_role.md"
 
         # Common sections (pre-built once; avoids re-reading 3 files per call)
         cat "$_BUILD_COMMON_TMP"
 
-        # CLI-specific tools section
-        if [ -f "$tools_file" ]; then
+        # CLI-specific tools section from pre-built /tmp file
+        if [[ -n "${_BUILD_TOOLS_TMPS[$cli_type]+x}" ]]; then
+            cat "${_BUILD_TOOLS_TMPS[$cli_type]}"
+        elif [ -f "$tools_file" ]; then
             printf '\n'
             cat "$tools_file"
         else
@@ -168,6 +171,43 @@ trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
     printf '\n'
     cat "$PARTS_DIR/common/forbidden_actions.md"
 } > "$_BUILD_COMMON_TMP"
+
+# ============================================================
+# Pre-build per-role + per-CLI-type content into /tmp (serial)
+# perf: eliminates 4×N NTFS reads in parallel instruction jobs
+#       (N = number of CLI types = 4; saves ~32 NTFS reads in the hot parallel path)
+# Note: parallel pre-build causes NTFS I/O contention → serial is faster on WSL2
+# ============================================================
+declare -A _BUILD_ROLE_TMPS _BUILD_TOOLS_TMPS
+
+for _r in shogun karo gunshi ashigaru; do
+    _BUILD_ROLE_TMPS[$_r]=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "rm -f '${_BUILD_ROLE_TMPS[$_r]}'" EXIT INT TERM
+    {
+        _lmd="$SCRIPT_DIR/instructions/${_r}.md"
+        if [ -f "$_lmd" ]; then
+            echo "---"
+            awk '/^---$/{if(++n==2) {print "---"; exit} if(n==1) next} n==1' "$_lmd"
+            echo ""
+        else
+            printf -- '---\nrole: %s\nversion: "3.0"\n---\n\n' "$_r"
+        fi
+        cat "$PARTS_DIR/roles/${_r}_role.md"
+    } > "${_BUILD_ROLE_TMPS[$_r]}"
+done
+unset _r _lmd
+
+for _c in claude codex copilot kimi; do
+    _BUILD_TOOLS_TMPS[$_c]=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "rm -f '${_BUILD_TOOLS_TMPS[$_c]}'" EXIT INT TERM
+    _tf="$PARTS_DIR/cli_specific/${_c}_tools.md"
+    if [ -f "$_tf" ]; then
+        { printf '\n'; cat "$_tf"; } > "${_BUILD_TOOLS_TMPS[$_c]}"
+    fi
+done
+unset _c _tf
 
 # ============================================================
 # Build instruction files — profile-driven from cli_profiles.yaml
