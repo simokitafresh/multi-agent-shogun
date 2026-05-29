@@ -140,7 +140,7 @@ skill_candidate:
 decision_candidate:
   found: false
 verdict: PASS
-commit_hash: 24ee776a
+commit_hash: d5e8b492234a21717c5cdea7104a844d50336fa0
 report_path: reports/kotaro_report_cmd_training_speed_cmd_save_report_format_20260529.yaml
 test_results: >-
   test_cmd_save.bats 103/103 PASS |
