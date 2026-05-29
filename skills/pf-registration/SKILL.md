@@ -11,6 +11,8 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 allowed_projects: [dm-signal]
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /pf-registration — 本番PF登録スキル
 
 本番PF登録をステップ順に実行し、各ステップ後にパリティ検証を強制する。

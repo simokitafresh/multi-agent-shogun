@@ -9,7 +9,7 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-24T14:32:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
 
 # codd-fix
 

@@ -24,7 +24,7 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:10:48+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 

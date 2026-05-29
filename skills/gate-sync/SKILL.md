@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
 
 # /gate-sync — gate結果同期スキル
 

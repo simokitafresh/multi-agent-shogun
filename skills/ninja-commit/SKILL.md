@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
 
 # /ninja-commit — 忍者commit手順スキル
 

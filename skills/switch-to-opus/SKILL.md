@@ -16,6 +16,8 @@ allowed-tools:
   - Edit
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /switch-to-opus -- エージェント個別Opus復帰
 
 ## 概要

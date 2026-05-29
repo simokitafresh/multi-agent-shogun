@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:10:48+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 

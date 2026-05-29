@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /report-write — 報告YAML作成スキル
 
 報告YAMLの全フィールドをreport_field_set.sh経由で記入する。Edit tool直接編集禁止。

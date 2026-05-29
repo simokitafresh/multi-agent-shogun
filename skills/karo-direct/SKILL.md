@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T13:05:00+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
 
 # /karo-direct — 家老自立配備スキル
 

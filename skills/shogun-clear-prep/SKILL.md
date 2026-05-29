@@ -13,6 +13,8 @@ allowed-tools:
   - Bash
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /shogun-clear-prep — 将軍の/clear前準備
 
 /clearで消える情報がないか確認し、セッション学びの埋込み状況をチェックする（9項目）。

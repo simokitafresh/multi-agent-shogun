@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-05-22T18:54:13+09:00 -->
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
 
 # /dashboard-update — KARO_SECTION自動生成
 

@@ -16,6 +16,8 @@ allowed-tools:
   - Edit
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /switch-to-codex -- エージェント個別Codex切替
 
 ## 概要

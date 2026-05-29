@@ -13,6 +13,8 @@ allowed-tools:
   - Read
 ---
 
+<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+
 # /reset-layout — agentsウィンドウ一発復元
 
 ## 概要
