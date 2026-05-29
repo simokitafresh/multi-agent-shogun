@@ -2,24 +2,17 @@
 # semantic-links: [[SQLite記憶DB]], [[eventsテーブル]], [[掲示板通信基盤]], [[セマンティック辞書構想]]
 """Append live inbox/bulletin/insight events to the local memory DB."""
 
-from __future__ import annotations
-
-import argparse
-import re
-import sqlite3
 import os
-from pathlib import Path
-from typing import Any
+import sys
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DB_PATH = REPO_ROOT / "data" / "multi_agent_shogun_memory.db"
-CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_DB_PATH = os.path.join(REPO_ROOT, "data", "multi_agent_shogun_memory.db")
 SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
 
 
-def normalize_text(value: Any) -> str:
+def normalize_text(value: object) -> str:
     if value is None:
         return ""
     return str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
@@ -33,25 +26,34 @@ def summarize(text: str) -> str:
 
 
 def infer_cmd_id(summary: str, detail: str) -> str:
-    match = CMD_RE.search(f"{summary}\n{detail}")
-    return match.group(0) if match else ""
+    text = f"{summary}\n{detail}"
+    start = text.find("cmd_")
+    while start != -1:
+        end = start + 4
+        while end < len(text) and (text[end].isalnum() or text[end] == "_"):
+            end += 1
+        if end > start + 4:
+            return text[start:end]
+        start = text.find("cmd_", start + 4)
+    return ""
 
 
-def require_live_tables(conn: sqlite3.Connection) -> bool:
-    tables = {
-        row[0]
-        for row in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type IN ('table', 'virtual table')"
-        )
-    }
-    return {"events", "events_fts"}.issubset(tables)
+def require_live_tables(conn) -> bool:
+    for table_name in ("events", "events_fts"):
+        if conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE name = ? AND type IN ('table', 'virtual table') LIMIT 1",
+            (table_name,),
+        ).fetchone() is None:
+            return False
+    return True
 
 
-def append_event(db_path: Path, row: tuple[Any, ...]) -> None:
-    if not db_path.exists():
+def append_event(db_path: str, row: tuple[object, ...]) -> None:
+    if not os.path.exists(db_path):
         return
+    import sqlite3
+
     with sqlite3.connect(db_path) as conn:
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         if not require_live_tables(conn):
             return
@@ -72,7 +74,7 @@ def append_event(db_path: Path, row: tuple[Any, ...]) -> None:
             )
 
 
-def append_bulletin(args: argparse.Namespace) -> None:
+def append_bulletin(args) -> None:
     content = normalize_text(args.content)
     action_type = normalize_text(args.action_type) or "info"
     status = normalize_text(args.status) or "open"
@@ -112,7 +114,7 @@ def append_bulletin(args: argparse.Namespace) -> None:
     )
 
 
-def append_insight(args: argparse.Namespace) -> None:
+def append_insight(args) -> None:
     insight = normalize_text(args.insight)
     status = normalize_text(args.status) or "pending"
     priority = normalize_text(args.priority) or "medium"
@@ -152,7 +154,7 @@ def append_insight(args: argparse.Namespace) -> None:
     )
 
 
-def append_inbox(args: argparse.Namespace) -> None:
+def append_inbox(args) -> None:
     content = normalize_text(args.content)
     message_type = normalize_text(args.message_type) or "wake_up"
     action = normalize_text(args.action)
@@ -192,7 +194,7 @@ def append_inbox(args: argparse.Namespace) -> None:
     )
 
 
-def append_cmd_save(args: argparse.Namespace) -> None:
+def append_cmd_save(args) -> None:
     cmd_id = normalize_text(args.cmd_id)
     summary = normalize_text(args.summary) or f"{cmd_id} saved"
     detail = normalize_text(args.detail) or summary
@@ -217,7 +219,7 @@ def append_cmd_save(args: argparse.Namespace) -> None:
     )
 
 
-def append_cmd_quality(args: argparse.Namespace) -> None:
+def append_cmd_quality(args) -> None:
     cmd_id = normalize_text(args.cmd_id)
     gate_result = normalize_text(args.gate_result)
     source = normalize_text(args.source) or "cmd_quality_log"
@@ -264,7 +266,7 @@ def append_cmd_quality(args: argparse.Namespace) -> None:
     )
 
 
-def append_cmd_delegate(args: argparse.Namespace) -> None:
+def append_cmd_delegate(args) -> None:
     cmd_id = normalize_text(args.cmd_id)
     message = normalize_text(args.message)
     delegated_at = normalize_text(args.delegated_at)
@@ -298,7 +300,7 @@ def append_cmd_delegate(args: argparse.Namespace) -> None:
     )
 
 
-def append_lesson(args: argparse.Namespace) -> None:
+def append_lesson(args) -> None:
     lesson_id = normalize_text(args.lesson_id)
     title = normalize_text(args.title)
     detail = normalize_text(args.detail)
@@ -337,7 +339,7 @@ def append_lesson(args: argparse.Namespace) -> None:
     )
 
 
-def append_gate(args: argparse.Namespace) -> None:
+def append_gate(args) -> None:
     gate_name = normalize_text(args.gate_name)
     result = normalize_text(args.result)
     cmd_id = normalize_text(args.cmd_id)
@@ -378,7 +380,7 @@ def append_gate(args: argparse.Namespace) -> None:
     )
 
 
-def append_report(args: argparse.Namespace) -> None:
+def append_report(args) -> None:
     report_path = normalize_text(args.report_path)
     agent = normalize_text(args.agent) or "unknown"
     parent_cmd = normalize_text(args.parent_cmd)
@@ -422,7 +424,7 @@ def append_report(args: argparse.Namespace) -> None:
     )
 
 
-def append_workaround(args: argparse.Namespace) -> None:
+def append_workaround(args) -> None:
     cmd_id = normalize_text(args.cmd_id)
     ninja = normalize_text(args.ninja)
     category = normalize_text(args.category)
@@ -461,113 +463,128 @@ def append_workaround(args: argparse.Namespace) -> None:
     )
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--db-path",
-        type=Path,
-        default=Path(os.environ.get("SHOGUN_MEMORY_DB", DEFAULT_DB_PATH)),
-    )
-    subparsers = parser.add_subparsers(dest="event_type", required=True)
+def parse_args():
+    specs = {
+        "inbox": (
+            {
+                "action": "",
+            },
+            ["message_id", "ts", "target_agent", "from_agent", "content", "message_type", "source_file"],
+        ),
+        "cmd_save": (
+            {
+                "summary": "",
+                "detail": "",
+            },
+            ["cmd_id", "ts", "source_file"],
+        ),
+        "cmd_quality": (
+            {
+                "gunshi_verdict": "",
+                "ninja_blockers": "0",
+                "ac_count": "0",
+                "supplementary_cmds": "0",
+                "project": "",
+                "source": "cmd_quality_log",
+                "diagnosis": "",
+                "notes": "",
+            },
+            ["cmd_id", "ts", "gate_result", "karo_rework", "source_file"],
+        ),
+        "cmd_delegate": (
+            {
+                "delegated_at": "",
+                "summary": "",
+            },
+            ["cmd_id", "ts", "message", "source_file"],
+        ),
+        "bulletin": (
+            {
+                "requires_confirmation": "",
+                "action_type": "info",
+                "actioned_by": "",
+                "status": "open",
+            },
+            ["entry_id", "ts", "agent", "content", "source_file"],
+        ),
+        "insight": (
+            {
+                "priority": "medium",
+                "source": "manual",
+                "status": "pending",
+                "resolved_at": "",
+            },
+            ["entry_id", "ts", "insight", "source_file"],
+        ),
+        "report": (
+            {
+                "agent": "unknown",
+                "parent_cmd": "",
+                "verdict": "",
+            },
+            ["report_path", "ts", "dot_key", "source_file"],
+        ),
+        "workaround": (
+            {
+                "root_cause": "",
+            },
+            ["cmd_id", "ts", "ninja", "category", "issue", "source_file"],
+        ),
+        "lesson": (
+            {
+                "detail": "",
+                "source_cmd": "",
+                "agent": "karo",
+                "project": "",
+            },
+            ["lesson_id", "title", "ts", "source_file"],
+        ),
+        "gate": (
+            {
+                "cmd_id": "",
+                "detail": "",
+            },
+            ["gate_name", "result", "ts", "source_file"],
+        ),
+    }
 
-    inbox = subparsers.add_parser("inbox")
-    inbox.add_argument("--message-id", required=True)
-    inbox.add_argument("--ts", required=True)
-    inbox.add_argument("--target-agent", required=True)
-    inbox.add_argument("--from-agent", required=True)
-    inbox.add_argument("--content", required=True)
-    inbox.add_argument("--message-type", required=True)
-    inbox.add_argument("--action", default="")
-    inbox.add_argument("--source-file", required=True)
+    argv = sys.argv[1:]
+    values = {"db_path": os.environ.get("SHOGUN_MEMORY_DB", DEFAULT_DB_PATH)}
+    while argv and argv[0].startswith("--"):
+        key = argv.pop(0)
+        if key in ("-h", "--help"):
+            print(__doc__ or "")
+            raise SystemExit(0)
+        if key != "--db-path" or not argv:
+            print(f"FATAL: invalid global argument: {key}", file=sys.stderr)
+            raise SystemExit(2)
+        values["db_path"] = argv.pop(0)
 
-    cmd_save = subparsers.add_parser("cmd_save")
-    cmd_save.add_argument("--cmd-id", required=True)
-    cmd_save.add_argument("--ts", required=True)
-    cmd_save.add_argument("--summary", default="")
-    cmd_save.add_argument("--detail", default="")
-    cmd_save.add_argument("--source-file", required=True)
+    if not argv:
+        print("FATAL: event_type is required", file=sys.stderr)
+        raise SystemExit(2)
+    event_type = argv.pop(0)
+    if event_type not in specs:
+        print(f"FATAL: unknown event_type: {event_type}", file=sys.stderr)
+        raise SystemExit(2)
 
-    cmd_quality = subparsers.add_parser("cmd_quality")
-    cmd_quality.add_argument("--cmd-id", required=True)
-    cmd_quality.add_argument("--ts", required=True)
-    cmd_quality.add_argument("--gate-result", required=True)
-    cmd_quality.add_argument("--karo-rework", required=True)
-    cmd_quality.add_argument("--gunshi-verdict", default="")
-    cmd_quality.add_argument("--ninja-blockers", default="0")
-    cmd_quality.add_argument("--ac-count", default="0")
-    cmd_quality.add_argument("--supplementary-cmds", default="0")
-    cmd_quality.add_argument("--project", default="")
-    cmd_quality.add_argument("--source", default="cmd_quality_log")
-    cmd_quality.add_argument("--diagnosis", default="")
-    cmd_quality.add_argument("--notes", default="")
-    cmd_quality.add_argument("--source-file", required=True)
+    defaults, required = specs[event_type]
+    values.update(defaults)
+    values["event_type"] = event_type
 
-    cmd_delegate = subparsers.add_parser("cmd_delegate")
-    cmd_delegate.add_argument("--cmd-id", required=True)
-    cmd_delegate.add_argument("--ts", required=True)
-    cmd_delegate.add_argument("--delegated-at", default="")
-    cmd_delegate.add_argument("--message", required=True)
-    cmd_delegate.add_argument("--summary", default="")
-    cmd_delegate.add_argument("--source-file", required=True)
+    while argv:
+        option = argv.pop(0)
+        if not option.startswith("--") or not argv:
+            print(f"FATAL: invalid argument for {event_type}: {option}", file=sys.stderr)
+            raise SystemExit(2)
+        values[option[2:].replace("-", "_")] = argv.pop(0)
 
-    bulletin = subparsers.add_parser("bulletin")
-    bulletin.add_argument("--entry-id", required=True)
-    bulletin.add_argument("--ts", required=True)
-    bulletin.add_argument("--agent", required=True)
-    bulletin.add_argument("--content", required=True)
-    bulletin.add_argument("--requires-confirmation", default="")
-    bulletin.add_argument("--action-type", default="info")
-    bulletin.add_argument("--actioned-by", default="")
-    bulletin.add_argument("--status", default="open")
-    bulletin.add_argument("--source-file", required=True)
+    missing = [name for name in required if name not in values or values[name] == ""]
+    if missing:
+        print(f"FATAL: missing required argument(s): {', '.join(missing)}", file=sys.stderr)
+        raise SystemExit(2)
 
-    insight = subparsers.add_parser("insight")
-    insight.add_argument("--entry-id", required=True)
-    insight.add_argument("--ts", required=True)
-    insight.add_argument("--insight", required=True)
-    insight.add_argument("--priority", default="medium")
-    insight.add_argument("--source", default="manual")
-    insight.add_argument("--status", default="pending")
-    insight.add_argument("--resolved-at", default="")
-    insight.add_argument("--source-file", required=True)
-
-    report = subparsers.add_parser("report")
-    report.add_argument("--report-path", required=True)
-    report.add_argument("--ts", required=True)
-    report.add_argument("--agent", default="unknown")
-    report.add_argument("--parent-cmd", default="")
-    report.add_argument("--verdict", default="")
-    report.add_argument("--dot-key", required=True)
-    report.add_argument("--source-file", required=True)
-
-    workaround = subparsers.add_parser("workaround")
-    workaround.add_argument("--cmd-id", required=True)
-    workaround.add_argument("--ts", required=True)
-    workaround.add_argument("--ninja", required=True)
-    workaround.add_argument("--category", required=True)
-    workaround.add_argument("--issue", required=True)
-    workaround.add_argument("--root-cause", default="")
-    workaround.add_argument("--source-file", required=True)
-
-    lesson = subparsers.add_parser("lesson")
-    lesson.add_argument("--lesson-id", required=True)
-    lesson.add_argument("--title", required=True)
-    lesson.add_argument("--detail", default="")
-    lesson.add_argument("--source-cmd", default="")
-    lesson.add_argument("--agent", default="karo")
-    lesson.add_argument("--ts", required=True)
-    lesson.add_argument("--project", default="")
-    lesson.add_argument("--source-file", required=True)
-
-    gate = subparsers.add_parser("gate")
-    gate.add_argument("--gate-name", required=True)
-    gate.add_argument("--result", required=True)
-    gate.add_argument("--cmd-id", default="")
-    gate.add_argument("--ts", required=True)
-    gate.add_argument("--detail", default="")
-    gate.add_argument("--source-file", required=True)
-
-    return parser.parse_args()
+    return type("Args", (), values)()
 
 
 def main() -> int:
