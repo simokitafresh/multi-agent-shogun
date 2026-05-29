@@ -36,90 +36,92 @@ if [ ! -d "$TASKS_DIR" ]; then
 fi
 
 set +e
-PY_OUT="$(python3 - "$CMD_ID" "$TASKS_DIR" <<'PYEOF'
-import yaml, glob, sys, os
+PY_OUT="$(
+    awk -v cmd_id="$CMD_ID" '
+function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+function unquote(s) {
+    s = trim(s)
+    if (length(s) >= 2) {
+        first = substr(s, 1, 1)
+        last = substr(s, length(s), 1)
+        if ((first == "\"" && last == "\"") || (first == "'\''" && last == "'\''")) {
+            s = substr(s, 2, length(s) - 2)
+        }
+    }
+    return s
+}
+function lower(s) { return tolower(s) }
+function field_value(line) {
+    sub(/^[[:space:]]*[A-Za-z0-9_.-]+:[[:space:]]*/, "", line)
+    return unquote(line)
+}
+function has_code_keyword(text) {
+    text = lower(text)
+    return text ~ /(commit|push|コード変更|修正|実装|implement|update|change|refactor|fix|create|add|delete|config|script|hook|wrapper|modify|patch|remove|更新|変更|リファクタ|作成|追加|削除|設定|構築|強化)/
+}
+function has_review_keyword(text) {
+    text = lower(text)
+    return text ~ /(review|レビュー)/
+}
+function finish_task() {
+    if (!in_task) return
+    if (parent_cmd != cmd_id) return
 
-cmd_id = sys.argv[1]
-tasks_dir = sys.argv[2]
+    all_count++
+    search_text = command " " purpose
+    is_review = (lower(task_type) == "review" || has_review_keyword(search_text))
+    is_code = has_code_keyword(search_text)
 
-# コード変更を示すキーワード
-code_keywords = [
-    # 既存
-    'commit', 'push', 'コード変更', '修正', '実装', 'implement',
-    # 英語追加
-    'update', 'change', 'refactor', 'fix', 'create', 'add',
-    'delete', 'config', 'script', 'hook', 'wrapper', 'modify',
-    'patch', 'remove',
-    # 日本語追加
-    '更新', '変更', 'リファクタ', '作成', '追加', '削除',
-    '設定', '構築', '強化',
-]
-# レビューを示すキーワード
-review_keywords = ['review', 'レビュー']
-
-# 全タスクYAMLを走査
-all_tasks = []
-for yaml_path in glob.glob(os.path.join(tasks_dir, '*.yaml')):
-    try:
-        with open(yaml_path) as f:
-            data = yaml.safe_load(f)
-        if not data or 'task' not in data:
-            continue
-        task = data['task']
-        if task.get('parent_cmd') != cmd_id:
-            continue
-        all_tasks.append(task)
-    except Exception:
-        continue
-
-if not all_tasks:
-    print(f'SKIP: {cmd_id}に該当するタスクなし')
-    sys.exit(0)
-
-# コード変更タスクの検出
-code_tasks = []
-review_tasks = []
-
-for task in all_tasks:
-    command = (task.get('command') or '').lower()
-    purpose = (task.get('purpose') or '').lower()
-    search_text = command + ' ' + purpose
-    task_type = (task.get('task_type') or '').lower()
-
-    is_code = any(kw.lower() in search_text for kw in code_keywords)
-    is_review = task_type == 'review' or any(kw.lower() in search_text for kw in review_keywords)
-
-    if is_review:
-        review_tasks.append(task)
-    if is_code and not is_review:
-        code_tasks.append(task)
-
-if not code_tasks:
-    print(f'SKIP: コード変更タスクなし ({len(all_tasks)}件中0件)')
-    sys.exit(0)
-
-# コード変更あり → レビュータスクの確認
-if not review_tasks:
-    code_ids = ', '.join(t.get('task_id', '?') for t in code_tasks)
-    print(f'BLOCK: コード変更あるがレビュータスクなし (変更タスク: {code_ids})')
-    sys.exit(1)
-
-# レビュータスクの状態チェック
-done_reviews = [t for t in review_tasks if t.get('status') == 'done']
-not_done = [t for t in review_tasks if t.get('status') != 'done']
-
-if done_reviews and not not_done:
-    reviewers = ', '.join(t.get('assigned_to', '?') for t in done_reviews)
-    print(f'PASS: レビュー済み ({reviewers})')
-    sys.exit(0)
-else:
-    for t in not_done:
-        reviewer = t.get('assigned_to', '?')
-        status = t.get('status', '?')
-        tid = t.get('task_id', '?')
-        print(f'BLOCK: レビュー未完了 ({reviewer}が{status}) [{tid}]')
-    sys.exit(1)
-PYEOF
+    if (is_review) {
+        review_count++
+        if (status == "done") {
+            done_review_count++
+            done_reviewers = done_reviewers (done_reviewers != "" ? ", " : "") (assigned_to != "" ? assigned_to : "?")
+        } else {
+            not_done_count++
+            not_done_lines = not_done_lines sprintf("BLOCK: レビュー未完了 (%sが%s) [%s]\n", assigned_to != "" ? assigned_to : "?", status != "" ? status : "?", task_id != "" ? task_id : "?")
+        }
+    }
+    if (is_code && !is_review) {
+        code_count++
+        code_ids = code_ids (code_ids != "" ? ", " : "") (task_id != "" ? task_id : "?")
+    }
+}
+FNR == 1 {
+    finish_task()
+    in_task = 0
+    task_id = status = parent_cmd = command = purpose = task_type = assigned_to = ""
+}
+/^task:[[:space:]]*$/ { in_task = 1; next }
+in_task && /^[[:space:]]{2}task_id:/ { task_id = field_value($0); next }
+in_task && /^[[:space:]]{2}status:/ { status = field_value($0); next }
+in_task && /^[[:space:]]{2}parent_cmd:/ { parent_cmd = field_value($0); next }
+in_task && /^[[:space:]]{2}command:/ { command = field_value($0); next }
+in_task && /^[[:space:]]{2}purpose:/ { purpose = field_value($0); next }
+in_task && /^[[:space:]]{2}task_type:/ { task_type = field_value($0); next }
+in_task && /^[[:space:]]{2}assigned_to:/ { assigned_to = field_value($0); next }
+END {
+    finish_task()
+    if (all_count == 0) {
+        printf "SKIP: %sに該当するタスクなし\n", cmd_id
+        exit 0
+    }
+    if (code_count == 0) {
+        printf "SKIP: コード変更タスクなし (%d件中0件)\n", all_count
+        exit 0
+    }
+    if (review_count == 0) {
+        printf "BLOCK: コード変更あるがレビュータスクなし (変更タスク: %s)\n", code_ids
+        exit 1
+    }
+    if (done_review_count > 0 && not_done_count == 0) {
+        printf "PASS: レビュー済み (%s)\n", done_reviewers
+        exit 0
+    }
+    printf "%s", not_done_lines
+    exit 1
+}
+' "$TASKS_DIR"/*.yaml
 )"
 PY_RC=$?
 set -e
