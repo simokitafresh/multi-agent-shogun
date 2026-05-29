@@ -19,8 +19,10 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+_apv_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_apv_self" != /* ]] && _apv_self="$PWD/$_apv_self"
+SCRIPT_DIR="${_apv_self%/*}"
+REPO_ROOT="${SCRIPT_DIR%/*}"
 
 CMD_ID="${1:-}"
 
@@ -35,9 +37,14 @@ if [[ "$CMD_ID" == "-" ]]; then
     CMD_TEXT="$(cat)"
 fi
 
+PYTHON_CMD=(python3)
+if [[ "$CMD_ID" == "-" ]]; then
+    PYTHON_CMD=(python3 -S)
+fi
+
 # Run verification
-REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" python3 -c "
-import re, os, sys, subprocess
+REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" "${PYTHON_CMD[@]}" -c "
+import re, os, sys
 
 repo_root = os.environ['REPO_ROOT']
 cmd_id = os.environ.get('CMD_ID', '')
@@ -174,6 +181,7 @@ for p in sorted(paths):
     rel_paths.append(rel_path)
 if rel_paths:
     try:
+        import subprocess
         result = subprocess.run(
             ['git', '-C', repo_root, 'check-ignore', '--stdin'],
             input='\n'.join(rel_paths) + '\n',
@@ -225,6 +233,7 @@ for i, block in enumerate(ac_blocks):
 cmd_id = os.environ.get('CMD_ID', '')
 if cmd_id and cmd_id != '-':
     try:
+        import subprocess
         result = subprocess.run(
             ['git', '-C', repo_root, 'log', f'--grep={cmd_id}', '--oneline', '-5'],
             capture_output=True, text=True, timeout=15
