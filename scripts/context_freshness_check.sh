@@ -70,6 +70,7 @@ _TMP_CACHE="${_CACHE_FILE}.$$"
 python3 - "$SCRIPT_DIR" "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" > "$_TMP_CACHE" <<'PY'
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 import glob
 import os
@@ -333,6 +334,10 @@ def load_project_paths() -> dict[str, str]:
 
 PROJECT_PATHS = load_project_paths()
 AUTO_COMMIT_SUBJECT_RE = re.compile(r"^chore: (auto-commit|batch context)\b")
+# WSL2 NTFS上でgit logが7秒以上かかるため並列実行と組み合わせてこの値で打ち切る。
+# テスト用小さいrepoでは瞬時完了するため精度に影響しない。
+# 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
+_GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "3"))
 
 
 def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str]]:
@@ -368,7 +373,7 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             text=True,
-            timeout=10,
+            timeout=_GIT_TIMEOUT,
         )
     except Exception as e:
         print(f"WARN: source_commit_count_since git failed: {repo_path} — {e}", file=sys.stderr)
@@ -385,6 +390,31 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
             continue
         count += 1
     return count
+
+
+def _compute_one_commit_count(
+    args: tuple[str, str, str, date],
+) -> tuple[tuple[str, str], int]:
+    """ThreadPoolExecutor worker: source_commit_count_since を呼んで結果を返す"""
+    project_id, rel_path, _abs_path, updated_at = args
+    count = source_commit_count_since(project_id, rel_path, updated_at)
+    return (project_id, rel_path), count
+
+
+def batch_source_commit_counts(
+    infos: list[tuple[str, str, str, date]],
+) -> dict[tuple[str, str], int]:
+    """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）"""
+    if not infos:
+        return {}
+    counts: dict[tuple[str, str], int] = {}
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = {executor.submit(_compute_one_commit_count, info): info for info in infos}
+        for future in as_completed(futures):
+            key, count = future.result()
+            counts[key] = count
+    return counts
+
 
 def scan_archive_metadata(abs_path: str) -> tuple[str, str, str]:
     project_id = ""
@@ -659,6 +689,7 @@ warnings: list[str] = []
 
 if mode == "--dashboard-warnings":
     recent_project_cache: dict[str, bool] = {}
+    files_for_git: list[tuple[str, str, str, date]] = []
     for project_id, rel_path, abs_path in iter_context_files():
         if is_excluded_context_file(rel_path):
             continue
@@ -671,12 +702,15 @@ if mode == "--dashboard-warnings":
         if updated_at is None:
             warnings.append(build_warning(rel_path, None))
             continue
-        commit_count = source_commit_count_since(project_id, rel_path, updated_at)
-        if commit_count > 0:
-            warnings.append(build_source_warning(rel_path, commit_count, updated_at))
+        files_for_git.append((project_id, rel_path, abs_path, updated_at))
+    commit_counts = batch_source_commit_counts(files_for_git)
+    for project_id, rel_path, abs_path, updated_at in files_for_git:
+        if commit_counts.get((project_id, rel_path), 0) > 0:
+            warnings.append(build_source_warning(rel_path, commit_counts[(project_id, rel_path)], updated_at))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
     if project_id:
+        files_for_git = []
         for current_project, rel_path, abs_path in iter_context_files():
             if current_project != project_id:
                 continue
@@ -686,9 +720,11 @@ elif mode == "--cmd-warnings":
             if updated_at is None:
                 warnings.append(build_warning(rel_path, None))
                 continue
-            commit_count = source_commit_count_since(current_project, rel_path, updated_at)
-            if commit_count > 0:
-                warnings.append(build_source_warning(rel_path, commit_count, updated_at))
+            files_for_git.append((current_project, rel_path, abs_path, updated_at))
+        commit_counts = batch_source_commit_counts(files_for_git)
+        for current_project, rel_path, abs_path, updated_at in files_for_git:
+            if commit_counts.get((current_project, rel_path), 0) > 0:
+                warnings.append(build_source_warning(rel_path, commit_counts[(current_project, rel_path)], updated_at))
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)
