@@ -27,6 +27,8 @@ stop_existing_watchers() {
 
     pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
     pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+    pkill -TERM -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
+    fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
     sleep 1
 
     remaining="$(watcher_process_count)"
@@ -36,6 +38,8 @@ stop_existing_watchers() {
         echo "  残存あり。SIGKILL送信..."
         pkill -KILL -f "[i]nbox_watcher\.sh" 2>/dev/null || true
         pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
+        pkill -KILL -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
+        fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
         sleep 1
         remaining="$(watcher_process_count)"
         echo "  SIGKILL後残存: $remaining"

@@ -85,6 +85,17 @@ ds_newest_pid() {
     [[ -n "$newest" ]] && printf '%s\n' "$newest"
 }
 
+ds_oldest_pid() {
+    local oldest="" pid
+    for pid in "$@"; do
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+        if [[ -z "$oldest" ]] || (( pid < oldest )); then
+            oldest="$pid"
+        fi
+    done
+    [[ -n "$oldest" ]] && printf '%s\n' "$oldest"
+}
+
 ds_stop_pid() {
     local pid="$1"
     local label="$2"
@@ -112,7 +123,7 @@ ds_stop_duplicates() {
     local pids=("$@")
     local keep pid
 
-    keep="$(ds_newest_pid "${pids[@]}")"
+    keep="$(ds_oldest_pid "${pids[@]}")"
     [[ -n "$keep" ]] || return 0
 
     for pid in "${pids[@]}"; do

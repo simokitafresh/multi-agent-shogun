@@ -922,7 +922,7 @@ while true; do
     #   (os.replace = rename), inotifywait loses the inode and its -t timeout can hang
     #   indefinitely (3-hour blank confirmed). The outer `timeout` provides an OS-level safety net.
     set +e
-    timeout "$((INOTIFY_TIMEOUT + 2))" inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null &
+    timeout "$((INOTIFY_TIMEOUT + 2))" inotifywait -q -t "$INOTIFY_TIMEOUT" -e modify -e close_write "$INBOX" 2>/dev/null 209>&- &
     INOTIFY_PID=$!
 
     # MTIME_POLL: parallel stat mtime poller — WSL2 inotifywait hang fallback
@@ -939,7 +939,7 @@ while true; do
                 break
             fi
         done
-    ) &
+    ) 209>&- &
     POLLER_PID=$!
 
     wait "$INOTIFY_PID" 2>/dev/null || true

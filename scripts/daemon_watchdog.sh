@@ -250,6 +250,11 @@ _check_inbox_watcher_hang() {
 }
 
 check_inbox_watchers() {
+    if ! flock -n /tmp/restart_watchers.lock -c ':' 2>/dev/null; then
+        log "SKIP: restart_watchers.sh is running; inbox_watcher supervision deferred"
+        return 0
+    fi
+
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
     local agents_str
