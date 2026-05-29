@@ -11,7 +11,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_insight_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_insight_self" != /* ]] && _insight_self="$PWD/$_insight_self"
+SCRIPT_DIR="${_insight_self%/scripts/insight_write.sh}"
 INSIGHTS_FILE="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
 BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
@@ -102,7 +104,7 @@ if [[ ! "$SOURCE_REPEAT_THRESHOLD" =~ ^[0-9]+$ ]]; then
   echo "ERROR: INSIGHT_SOURCE_REPEAT_THRESHOLD must be a non-negative integer, got: '$SOURCE_REPEAT_THRESHOLD'" >&2
   exit 1
 fi
-ts="$(date -Iseconds)"
+ts="$(date '+%Y-%m-%dT%H:%M:%S%:z')"
 
 # Skip synthetic test fixtures. They are useful in tests, but must not pollute the real queue.
 if [[ "$msg" == *"test_pattern"* || "$msg" == *"test_fix"* ]]; then
@@ -118,7 +120,10 @@ if [[ "$msg" == *"修正済み"* || "$msg" == *"解消"* || "$msg" == *"登録�
 fi
 
 # Generate ID: INS-YYYYMMDD-HHMMSSmmm-{4hex} (ミリ秒精度+UUID先頭4桁)
-id="INS-$(date '+%Y%m%d-%H%M%S%3N')-$(cut -c1-4 /proc/sys/kernel/random/uuid)"
+read -r _insight_uuid < /proc/sys/kernel/random/uuid
+_insight_now="$(date '+%Y%m%d-%H%M%S%3N %Y-%m-%dT%H:%M:%S%:z')"
+id="INS-${_insight_now%% *}-${_insight_uuid:0:4}"
+ts="${_insight_now#* }"
 
 # flock for concurrent safety
 (
