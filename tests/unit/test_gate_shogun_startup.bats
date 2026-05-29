@@ -283,6 +283,23 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "backlinks=0 files are displayed as training candidates when count script exists" {
+    cp "$PROJECT_ROOT/scripts/causal_backlink_counts.sh" "$TEST_TMPDIR/scripts/"
+    chmod +x "$TEST_TMPDIR/scripts/causal_backlink_counts.sh"
+    cat > "$TEST_TMPDIR/context/orphan-context.md" <<'EOF'
+# Orphan Context
+
+No incoming links.
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ backlinks=0 修行候補"* ]]
+    [[ "$output" == *"WARN: backlinks=0 context/orphan-context.md"* ]]
+    [[ "$output" == *"修行タスク候補"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "強制度監査 ALERT shows hook registration proposal" {
     unset SHOGUN_STARTUP_LIGHTWEIGHT
     cat > "$TEST_TMPDIR/scripts/gates/gate_enforcement_audit.sh" <<'MOCK'

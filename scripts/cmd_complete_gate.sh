@@ -3705,6 +3705,10 @@ for rel in targets:
         )
     else:
         print(f"OK\t{rel}: last_updated={last_updated} (cmd={cmd_date})")
+
+    if rel.startswith("context/") and rel.endswith(".md"):
+        if "## 因果リンク" not in text:
+            print(f"WARN\tcontext_update:{rel}:causal_links_section_missing")
 PY
     )
 }

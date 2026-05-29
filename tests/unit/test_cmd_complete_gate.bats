@@ -1171,6 +1171,16 @@ run_report_format_validation() {
     [[ "$output" == *"OK: context/infrastructure.md: last_updated=2026-03-05 (cmd=2026-03-04)"* ]]
 }
 
+@test "context_update target without causal links section emits WARN" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+    write_report
+
+    run run_context_update_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context_update:context/infrastructure.md:causal_links_section_missing"* ]]
+}
+
 @test "context md changes auto-update last_updated before context_update check" {
     write_cmd_yaml "with_context"
     write_context_file "2025-01-01"

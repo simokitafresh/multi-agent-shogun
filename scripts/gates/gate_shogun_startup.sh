@@ -2587,6 +2587,22 @@ else
     echo "  INFO: 解析失敗"
 fi
 
+echo "■ backlinks=0 修行候補"
+_backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+if [ -f "$_backlink_counts_script" ]; then
+    _backlink_zero_output="$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 2>/dev/null || true)"
+    if [ -n "$_backlink_zero_output" ]; then
+        printf '%s\n' "$_backlink_zero_output" | awk -F '\t' '{ printf "  WARN: backlinks=0 %s (link_id=%s)\n", $2, $3 }'
+        echo "  action: 上記ファイルを修行タスク候補にし、context/skills/docsから因果リンクを接続せよ"
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("backlinks=0: 修行候補あり")
+    else
+        echo "  OK: backlinks=0候補なし"
+    fi
+else
+    echo "  SKIP: causal_backlink_counts.sh不在"
+fi
+
 echo ""
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
