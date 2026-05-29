@@ -16,6 +16,80 @@ run_embedded_test() {
     [ "$status" -eq 0 ]
 }
 
+@test "restart_watchers kills old watchers and verifies exact normal count" {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+grep -q "stop_existing_watchers" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -q "pkill -TERM -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -q "pkill -KILL -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -q "verify_watcher_count \"\$EXPECTED_WATCHER_COUNT\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -q "EXPECTED_WATCHER_COUNT=\"\${EXPECTED_WATCHER_COUNT:-9}\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "shutsujin departure watcher path kills old watchers and verifies exact normal count" {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+grep -q "stop_existing_inbox_watchers" "$PROJECT_ROOT/shutsujin_departure.sh"
+grep -q "pkill -TERM -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/shutsujin_departure.sh"
+grep -q "pkill -KILL -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/shutsujin_departure.sh"
+grep -q "verify_inbox_watcher_count \"\$EXPECTED_WATCHER_COUNT\"" "$PROJECT_ROOT/shutsujin_departure.sh"
+grep -q "EXPECTED_WATCHER_COUNT=\"\${EXPECTED_WATCHER_COUNT:-9}\"" "$PROJECT_ROOT/shutsujin_departure.sh"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "T-SD-WE-001: shutsujin shogun watcher launch does not disable escalation" {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+awk "
+    /inbox_watcher.sh\" shogun \"shogun:main\"/ {
+        if (block ~ /ASW_DISABLE_ESCALATION=1/) {
+            print \"shogun watcher launch disables escalation\"
+            exit 1
+        }
+        found=1
+    }
+    {
+        block = block \"\n\" \$0
+        if (length(block) > 1200) {
+            block = substr(block, length(block) - 1200)
+        }
+    }
+    END {
+        if (!found) {
+            print \"shogun watcher launch not found\"
+            exit 1
+        }
+    }
+" "$PROJECT_ROOT/shutsujin_departure.sh"
+echo "SHOGUN_WATCHER_ESCALATION_ENABLED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SHOGUN_WATCHER_ESCALATION_ENABLED=yes"* ]]
+}
+
+@test "T-SD-WE-002: shogun startup gate alerts when watcher disables escalation" {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+grep -q "■ 将軍watcher環境変数" "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+grep -q "ASW_DISABLE_ESCALATION=1" "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+grep -q "将軍watcher環境変数: ASW_DISABLE_ESCALATION=1" "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+echo "STARTUP_GATE_ENV_ALERT_PRESENT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STARTUP_GATE_ENV_ALERT_PRESENT=yes"* ]]
+}
+
 content_test_cdp_benchmark() {
     base64 -d <<'EOF'
 IyEvdXNyL2Jpbi9lbnYgYmF0cwoKc2V0dXAoKSB7CiAgICBQUk9KRUNUX1JPT1Q9IiQoY2QgIiQo
@@ -727,4 +801,3 @@ EOF
 @test 'test_yaml_auto_archive.bats :: yaml_auto_archive is a no-op when count is within keep limit' {
     run_embedded_test 'tests/unit/test_yaml_auto_archive.bats' 'yaml_auto_archive is a no-op when count is within keep limit' content_test_yaml_auto_archive
 }
-
