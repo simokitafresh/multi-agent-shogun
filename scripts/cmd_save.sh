@@ -3682,7 +3682,8 @@ show_cmd_chronicle_matches
 
 # --- Check 11.11: target_path git履歴表示（informational — WARN_COUNTに加算しない） ---
 # 目的: target_pathの変更経緯を起票時に自動表示し、現物履歴未確認のままcmdを書く余地を減らす。
-show_target_path_git_history
+# WSL2最適化: 全出力が >&2 のみ（判定に影響しない）のでバックグラウンド化。
+show_target_path_git_history &
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
@@ -5375,14 +5376,14 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
             }
         ')"
         [[ -n "$_CMD_SAVE_MEMORY_SUMMARY" ]] || _CMD_SAVE_MEMORY_SUMMARY="$CMD_ID saved"
-        if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
+        # WSL2最適化: memory_db_live_insert を非同期化（DB書込みは判定に影響しない）
+        ( python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
             --cmd-id "$CMD_ID" \
             --ts "$_CMD_SAVE_MEMORY_TS" \
             --summary "$_CMD_SAVE_MEMORY_SUMMARY" \
             --detail "$CMD_BLOCK_NC" \
-            --source-file "${QUEUE_FILE#$PROJECT_DIR/}"; then
-            echo "[cmd_save] WARN: DB INSERT skipped for ${CMD_ID}" >&2
-        fi
+            --source-file "${QUEUE_FILE#"$PROJECT_DIR"/}" \
+            2>/dev/null || echo "[cmd_save] WARN: DB INSERT skipped for ${CMD_ID}" >&2 ) &
     fi
     _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
     if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then

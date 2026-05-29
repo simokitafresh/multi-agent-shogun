@@ -481,15 +481,16 @@ def main() -> int:
                             _rs_b = str(_item_b.get("result", "")).strip().lower()
                             if _rs_b == "yes" and any(kw in _chk_b for kw in ("commit", "push")):
                                 _commit_ac_yes = True
-            if _commit_ac_yes and _pc_for_check:
+            _commit_hash_present = bool(str(data.get("commit_hash", "") or "").strip())
+            if _commit_ac_yes and _pc_for_check and not _commit_hash_present:
                 _git_cwd = os.path.dirname(os.path.abspath(report_path))
                 _log_res = subprocess.run(
-                    ["git", "log", "--oneline", "-30"],
+                    ["git", "log", "--oneline", "-5"],
                     capture_output=True, text=True, timeout=5, cwd=_git_cwd,
                 )
                 if _log_res.returncode == 0 and _pc_for_check not in _log_res.stdout:
                     hints.append(
-                        f"GP-201b WARN: commit+push ACがyesだが直近30コミットに{_pc_for_check}が見つからない — "
+                        f"GP-201b WARN: commit+push ACがyesだが直近5コミットに{_pc_for_check}が見つからない — "
                         "pushが完了しているか確認せよ"
                     )
         except Exception:

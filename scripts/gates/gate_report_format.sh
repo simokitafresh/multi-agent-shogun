@@ -88,16 +88,18 @@ LOG_FILE="${GATE_FIRE_LOG_FILE:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 TS=$(date -Is)
 
 if [ "$RESULT_IS_PASS" -eq 1 ]; then
+    # WSL2最適化: gate_fire_log書込みをバックグラウンド化（ログは判定に影響しない）
     (
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
-    ) 200>"$LOG_FILE.lock" 2>/dev/null || true
+    ) 200>"$LOG_FILE.lock" 2>/dev/null &
     # DB INSERT: eventsテーブルへゲート記録（非ブロック）
     _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
+    # WSL2最適化: memory_db_live_insert を非同期化（DB書込みは判定に影響しない）
     python3 "$REPO_ROOT/scripts/memory_db_live_insert.py" gate \
         --gate-name "gate_report_format" --result "PASS" \
         --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "" \
-        --source-file "$REPORT_PATH" 2>/dev/null || true
+        --source-file "$REPORT_PATH" 2>/dev/null &
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
     if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
@@ -139,13 +141,10 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
                 "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 &
         fi
     fi
-    # Update PASS cache (GP-073) — flock for concurrent gate runs
+    # Update PASS cache (GP-073) — WSL2最適化: sed dedup削除、直接append
+    # 旧エントリは次回grep時にmtime不一致で自然失効。correctnessに影響なし。
     if [ -n "$_MTIME" ]; then
-        (
-            flock -w 5 201 2>/dev/null
-            sed -i "\|^${_CANON} |d" "$PASS_CACHE" 2>/dev/null || true
-            echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE"
-        ) 201>"$PASS_CACHE.lock" 2>/dev/null || true
+        echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE" 2>/dev/null || true
     fi
     exit 0
 else

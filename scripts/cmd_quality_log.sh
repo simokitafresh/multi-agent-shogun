@@ -72,49 +72,51 @@ fetch_gunshi_verdict() {
         local draft_verdict=""
         local report_verdict=""
 
-        # Scan all entries for this cmd_id, classify by review_type
-        # awk outputs: review_type<TAB>verdict (rtype defaults to "draft" when absent)
-        while IFS=$'\t' read -r _rtype _rverdict; do
-            case "$_rtype" in
-                draft)
-                    [[ -z "$draft_verdict" ]] && draft_verdict="$_rverdict"
-                    ;;
-                report)
-                    [[ -z "$report_verdict" ]] && report_verdict="$_rverdict"
-                    ;;
-            esac
-        done < <(awk -v cid="$CMD_ID" '
-            /^- cmd_id:/ || /^-  *cmd_id:/ {
-                if (match_cmd && verdict != "") {
-                    print (rtype == "" ? "draft" : rtype) "\t" verdict
+        if grep -Fq "$CMD_ID" "$review_log" 2>/dev/null; then
+            # Scan all entries for this cmd_id, classify by review_type
+            # awk outputs: review_type<TAB>verdict (rtype defaults to "draft" when absent)
+            while IFS=$'\t' read -r _rtype _rverdict; do
+                case "$_rtype" in
+                    draft)
+                        [[ -z "$draft_verdict" ]] && draft_verdict="$_rverdict"
+                        ;;
+                    report)
+                        [[ -z "$report_verdict" ]] && report_verdict="$_rverdict"
+                        ;;
+                esac
+            done < <(awk -v cid="$CMD_ID" '
+                /^- cmd_id:/ || /^-  *cmd_id:/ {
+                    if (match_cmd && verdict != "") {
+                        print (rtype == "" ? "draft" : rtype) "\t" verdict
+                    }
+                    match_cmd = 0; rtype = ""; verdict = ""
+                    sub(/.*cmd_id:[[:space:]]*/, "")
+                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                    if ($0 == cid) match_cmd = 1
+                    next
                 }
-                match_cmd = 0; rtype = ""; verdict = ""
-                sub(/.*cmd_id:[[:space:]]*/, "")
-                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                if ($0 == cid) match_cmd = 1
-                next
-            }
-            match_cmd && /review_type:/ {
-                sub(/.*review_type:[[:space:]]*/, "")
-                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                rtype = $0
-            }
-            match_cmd && /report_verdict:/ {
-                sub(/.*report_verdict:[[:space:]]*/, "")
-                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                verdict = $0
-            }
-            match_cmd && !/report_verdict:/ && /verdict:/ {
-                sub(/.*verdict:[[:space:]]*/, "")
-                gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                if (verdict == "") verdict = $0
-            }
-            END {
-                if (match_cmd && verdict != "") {
-                    print (rtype == "" ? "draft" : rtype) "\t" verdict
+                match_cmd && /review_type:/ {
+                    sub(/.*review_type:[[:space:]]*/, "")
+                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                    rtype = $0
                 }
-            }
-        ' "$review_log" 2>/dev/null)
+                match_cmd && /report_verdict:/ {
+                    sub(/.*report_verdict:[[:space:]]*/, "")
+                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                    verdict = $0
+                }
+                match_cmd && !/report_verdict:/ && /verdict:/ {
+                    sub(/.*verdict:[[:space:]]*/, "")
+                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
+                    if (verdict == "") verdict = $0
+                }
+                END {
+                    if (match_cmd && verdict != "") {
+                        print (rtype == "" ? "draft" : rtype) "\t" verdict
+                    }
+                }
+            ' "$review_log" 2>/dev/null)
+        fi
 
         # Priority: draft verdict > report verdict
         if [[ -n "$draft_verdict" ]]; then
@@ -147,23 +149,35 @@ fetch_gunshi_verdict() {
 # Count reports with parent_cmd=cmd_id and status=blocked
 fetch_ninja_blockers() {
     local reports_dir="$REPO_ROOT/queue/reports"
-    local count=0
     if [[ ! -d "$reports_dir" ]]; then
         echo 0
         return
     fi
+
+    local report_files=()
+    local report
     for report in "$reports_dir"/*_report_*.yaml; do
         [[ -f "$report" ]] || continue
-        local has_parent has_blocked
-        has_parent=$(grep -c "^parent_cmd: $CMD_ID$" "$report" 2>/dev/null) || true
-        if [[ "$has_parent" -gt 0 ]]; then
-            has_blocked=$(grep -c "^status: blocked$" "$report" 2>/dev/null) || true
-            if [[ "$has_blocked" -gt 0 ]]; then
-                count=$((count + 1))
-            fi
-        fi
+        report_files+=("$report")
     done
-    echo "$count"
+    if [[ "${#report_files[@]}" -eq 0 ]]; then
+        echo 0
+        return
+    fi
+
+    awk -v cid="$CMD_ID" '
+        FNR == 1 {
+            if (NR > 1 && has_parent && has_blocked) count++
+            has_parent = 0
+            has_blocked = 0
+        }
+        $0 == "parent_cmd: " cid { has_parent = 1 }
+        $0 == "status: blocked" { has_blocked = 1 }
+        END {
+            if (NR > 0 && has_parent && has_blocked) count++
+            print count + 0
+        }
+    ' "${report_files[@]}" 2>/dev/null || echo 0
 }
 
 # --- Auto-fetch: ac_count ---
