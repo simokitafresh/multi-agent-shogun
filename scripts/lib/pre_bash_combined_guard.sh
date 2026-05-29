@@ -407,6 +407,15 @@ pre_bash_combined_memory_injection_context() {
     local agent_id="${3:-unknown}"
     local query rows sql query_sql agent_sql like_sql db_script
 
+    case "$command" in
+        *grep*|*rg*) ;;
+        *) return 0 ;;
+    esac
+    case "$command" in
+        *context/*|*docs/*|*projects/*|*memory/*) ;;
+        *) return 0 ;;
+    esac
+
     query="$(pre_bash_combined_knowledge_grep_query "$command" || true)"
     [[ -z "$query" ]] && return 0
 
@@ -446,7 +455,7 @@ pre_bash_combined_eval_command() {
     local approval_reason=""
     local redirect_pattern tee_pattern python3_pattern mark_agent
 
-    if [[ "$command" == *'filter-repo'* && "$command" != *'echo'* && "$command" != *'grep'* && "$command" != *'commit'* ]]; then
+    if [[ "$command" =~ (^|[\;\&\|])[[:space:]]*(git[[:space:]]+filter-repo|git-filter-repo) ]]; then
         pre_bash_combined_emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
         return 1
     fi

@@ -10,7 +10,7 @@ command=""
 # cmd_2075: jq → awk置換 (jq≈4ms → awk≈2ms, 前回revertとの差: サブシェル維持/ツール軽量化)
 # awk char-by-char で \"エスケープを正しく処理
 if [[ "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
-    command="$(printf '%s' "$payload" | awk '
+    command="$(awk '
         match($0, /"command"[[:space:]]*:[[:space:]]*"/) {
             s = substr($0, RSTART + RLENGTH)
             n = length(s); result = ""
@@ -22,7 +22,7 @@ if [[ "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
             }
             print result; exit
         }
-    ' 2>/dev/null || true)"
+    ' <<< "$payload" 2>/dev/null || true)"
 fi
 
 emit_deny() {
@@ -116,6 +116,16 @@ PY
 
 emit_memory_db_for_knowledge_grep() {
     local query agent_id hash_file now last rows sql query_sql agent_sql like_sql
+
+    case "$command" in
+        *grep*|*rg*) ;;
+        *) return 0 ;;
+    esac
+    case "$command" in
+        *context/*|*docs/*|*projects/*|*memory/*) ;;
+        *) return 0 ;;
+    esac
+
     query="$(knowledge_grep_query || true)"
     [[ -z "$query" ]] && return 0
 
@@ -250,7 +260,7 @@ PY
 # === Guard 0: filter-repo working tree destruction prevention (cmd_1881 incident) ===
 # コマンド呼出し位置(行頭 or ;|&&||| の後)のみマッチ。引数内の文字列は無視。
 # 旧: payload全文+command全文マッチ→report_field_set.sh引数で誤発火(cmd_2397事故)
-if [[ -n "$command" ]] && echo "$command" | grep -qE '(^|[;&|])\s*(git\s+filter-repo|git-filter-repo)'; then
+if [[ -n "$command" && "$command" =~ (^|[\;\&\|])[[:space:]]*(git[[:space:]]+filter-repo|git-filter-repo) ]]; then
     emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
 fi
 
