@@ -28,6 +28,7 @@ TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-2}"
 ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-3600}"
 ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshness_alerts}"
+GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-1}"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -195,11 +196,11 @@ warnings_output() {
 
     if [[ -n "$cache_file" ]]; then
         local tmp_cache="${cache_file}.$$"
-        bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi
 }
 

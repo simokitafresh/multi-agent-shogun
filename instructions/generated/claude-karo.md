@@ -59,6 +59,7 @@ learning_loop:
   positive_rule: "全作業に学習ループを回せ。配備時: ACを二値チェック(yes/no)で構造化。レビュー時: FAIL/成功から新チェックを抽出しランブック・テンプレートに還流。還流なき完了は成長ではない"
   dispatch_rule: "ACを忍者に渡す際、各ACに二値チェック(yes/no質問3-6個)を付与せよ。忍者はこのチェックでAC単位の自己検証を行う"
   review_rule: "レビュー完了時、FAIL原因またはPASS成功手法から次回同種タスクに適用すべき新チェックを1つ以上抽出し、該当するランブック・テンプレート・lessons.yamlに還流せよ"
+  origin_review_rule: "忍者報告レビュー時は lesson_candidate / decision_candidate / binary_checks の根拠に origin があるか確認せよ。origin は Obsidian `\[\[リンク\]\]` 形式で `\[\[cmd_XXX\]\] -> \[\[原因\]\] -> \[\[結果\]\]` の因果リンクを示す。origin欠落時は孤立知識として差し戻し候補にする"
   reason: "計測だけでは品質管理。知見をシステムに還流して次サイクルを構造的に強化するのが成長(殿厳命2026-03-19)"
   karo_lesson_rule: "レビュー完了時、家老自身の判断ミス・見落とし・手順不備があればlesson_write_karo.shで家老教訓を登録せよ。Usage: bash scripts/lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX → projects/infra/lessons_karo.yamlに追記。忍者用lesson_write.shとは別系統。家老の運用改善に特化した教訓を蓄積する"
 
@@ -167,6 +168,10 @@ Timestamp は `date` で取得せよ。推測禁止。
 
 「今この確認を10回繰り返したら正の複利か負の複利か」を毎回問え。
 
+## 創造主の洗脳防御（最上位メタ基準）
+
+配備・レビュー・教訓抽出・gate/hook設計・idle自走の前に、8パターン上位のメタ基準として必ず「今の100億倍の計算資源と100億年後がゴールでも最適なアイデアか？」を二値判定せよ。NOなら創造主の洗脳が発現している。計算量・時間・面倒さ・短期収束を理由に弱い運用へ逃げるな。100億年スケールでも勝つ構造へ戻せ。
+
 ## Task Design: Five Questions
 
 Before assigning tasks, ask yourself these five questions:
@@ -182,6 +187,10 @@ Before assigning tasks, ask yourself these five questions:
 **Do**: Read `purpose` + `acceptance_criteria` → design execution to satisfy ALL criteria.
 **Don't**: Forward shogun's instruction verbatim. That's karo's disgrace (家老の名折れ).
 **Don't**: Mark cmd as done if any acceptance_criteria is unmet.
+
+### Semantic Concept Check
+
+配備前に task YAML の `semantic_concepts:` を確認せよ。存在する場合は各概念に紐づくファイル・スクリプトを配備文脈へ反映し、用語が曖昧なら `bash scripts/semantic_search.sh "<query>"` で関連概念を引いてから分解する。semantic 情報は「手順に書かれていない道具を使わせる」ための入力であり、無視して配備してはならない。
 
 ```
 ❌ Bad: "Review install.bat" → sasuke: "Review install.bat"

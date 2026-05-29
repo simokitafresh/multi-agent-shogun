@@ -26,11 +26,20 @@ esac
 SCRIPT_DIR="${_script_dir%/*}"
 unset _script_path _script_dir
 CMD_ID="${1:-}"  # set -u safe: empty string when no arg, triggers usage check below
+GATES_DIR_PREPARED=""
+
+prepare_gate_dirs() {
+    local cmd_id="$1"
+    if [ "$GATES_DIR_PREPARED" != "$cmd_id" ]; then
+        mkdir -p "$SCRIPT_DIR/queue/gates/${cmd_id}"
+        GATES_DIR_PREPARED="$cmd_id"
+    fi
+}
 
 write_gate_flag() {
     local cmd_id="$1" gate_name="$2" result="$3" reason="$4"
     local gates_dir="$SCRIPT_DIR/queue/gates"
-    mkdir -p "$gates_dir"
+    prepare_gate_dirs "$cmd_id"
     local flag_file="$gates_dir/${cmd_id}_${gate_name}.${result}"
     # GP-XXX3: cat+dateサブシェル2個 → printf -v timestamp + printf (subshell排除)
     local _ts; printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
@@ -41,7 +50,7 @@ write_gate_flag() {
 write_done_flag() {
     local cmd_id="$1" result="$2"
     local done_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
-    mkdir -p "$done_dir"
+    prepare_gate_dirs "$cmd_id"
     # GP-XXX3: cat+dateサブシェル2個 → printf -v timestamp + printf (subshell排除)
     local _ts; printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
     printf 'timestamp: %s\nresult: %s\n' "$_ts" "$result" > "$done_dir/report_merge.done"
@@ -64,10 +73,9 @@ fi
 # ─── 偵察タスク収集（全ファイルを単一awkパスで処理）───
 # 旧実装: field_get を1ファイルあたり4-5回呼び出し(subshell多数) → 遅い
 # 現在: awk系実装を優先。WSL2では mawk が gawk より軽いため、あれば優先使用する
-declare -a RECON_FILES=()
-declare -a RECON_NINJAS=()
-declare -a RECON_STATUSES=()
-declare -a RECON_TASK_IDS=()
+TOTAL=0
+DONE_COUNT=0
+PENDING_NINJAS=()
 
 # awkで全タスクファイルを1パス処理: TAB区切りで file|ninja|status|task_id を出力
 while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
@@ -75,10 +83,20 @@ while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
         echo "[WARN] Empty status in $r_file" >&2
         continue
     fi
-    RECON_FILES+=("$r_file")
-    RECON_NINJAS+=("$r_ninja")
-    RECON_STATUSES+=("$r_status")
-    RECON_TASK_IDS+=("$r_task_id")
+    TOTAL=$((TOTAL + 1))
+    report_path="${REPORTS_DIR}/${r_ninja}_report_${CMD_ID}.yaml"
+    if [ ! -f "$report_path" ]; then
+        # 後方互換: 旧形式を許容
+        report_path="${REPORTS_DIR}/${r_ninja}_report.yaml"
+    fi
+
+    if [ "$r_status" = "done" ]; then
+        DONE_COUNT=$((DONE_COUNT + 1))
+        echo "${r_ninja}: done (${report_path})"
+    else
+        PENDING_NINJAS+=("$r_ninja")
+        echo "${r_ninja}: ${r_status} (${report_path})"
+    fi
 done < <(
     shopt -s nullglob
     files=("$TASKS_DIR"/*.yaml)
@@ -120,9 +138,6 @@ done < <(
     ' "${files[@]}"
 )
 
-# ─── 偵察タスク数 ───
-TOTAL=${#RECON_FILES[@]}
-
 # ─── 偵察タスクなし ───
 if [ "$TOTAL" -eq 0 ]; then
     echo "INFO: ${CMD_ID}に偵察タスクなし"
@@ -131,28 +146,6 @@ if [ "$TOTAL" -eq 0 ]; then
     write_done_flag "$CMD_ID" "SKIP"
     exit 0
 fi
-
-# ─── 完了状態の集計 ───
-DONE_COUNT=0
-PENDING_NINJAS=()
-
-for i in "${!RECON_NINJAS[@]}"; do
-    ninja="${RECON_NINJAS[$i]}"
-    status="${RECON_STATUSES[$i]}"
-    report_path="${REPORTS_DIR}/${ninja}_report_${CMD_ID}.yaml"
-    if [ ! -f "$report_path" ]; then
-        # 後方互換: 旧形式を許容
-        report_path="${REPORTS_DIR}/${ninja}_report.yaml"
-    fi
-
-    if [ "$status" = "done" ]; then
-        DONE_COUNT=$((DONE_COUNT + 1))
-        echo "${ninja}: done (${report_path})"
-    else
-        PENDING_NINJAS+=("$ninja")
-        echo "${ninja}: ${status} (${report_path})"
-    fi
-done
 
 # ─── 判定結果出力 ───
 if [ "$DONE_COUNT" -eq "$TOTAL" ]; then
