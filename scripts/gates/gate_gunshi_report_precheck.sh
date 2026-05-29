@@ -476,13 +476,27 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
     _causal_script="$REPO_ROOT/scripts/causal_backlinks.sh"
     if [ -f "$_causal_script" ]; then
         _causal_out=""
+        _causal_timeout=0
         for fpath in $FILES_MODIFIED; do
             _stem=$(basename "$fpath" | sed 's/\.[^.]*$//')
-            _links=$(bash "$_causal_script" "$_stem" 2>/dev/null | head -3 || true)
+            set +e
+            _links=$(timeout 1 bash "$_causal_script" "$_stem" 2>/dev/null)
+            _rc=$?
+            set -e
+            _links=$(printf '%s\n' "$_links" | head -3)
+            if [ "$_rc" -eq 124 ]; then
+                _causal_timeout=1
+                _causal_out="${_causal_out}  ${_stem}→ WARN: causal_backlinks timeout(1s). 手動照合せよ"$'\n'
+                continue
+            fi
             [ -n "$_links" ] && _causal_out="${_causal_out}  ${_stem}→ ${_links}"$'\n'
         done
         if [ -n "$_causal_out" ]; then
-            echo "  因果辺あり(設計意図カタログ照合せよ):"
+            if [ "$_causal_timeout" -eq 1 ]; then
+                echo "  因果辺照合WARN(タイムアウトあり。PASS扱い禁止):"
+            else
+                echo "  因果辺あり(設計意図カタログ照合せよ):"
+            fi
             echo "$_causal_out" | head -10
         else
             echo "  PASS: 因果辺なし(causal_backlinks 0件)"
@@ -504,8 +518,14 @@ if [ -n "${CMD_SPEC:-}" ]; then
 fi
 [ -z "$_purpose" ] && [ -n "${PARENT_CMD:-}" ] && _purpose="$PARENT_CMD"
 if [ -f "$_semantic_script" ] && [ -n "${_purpose:-}" ]; then
-    _sem_result=$(SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 timeout 3 bash "$_semantic_script" "$_purpose" 2>/dev/null | head -5 || true)
-    if [ -n "$_sem_result" ]; then
+    set +e
+    _sem_result=$(SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 timeout 1 bash "$_semantic_script" "$_purpose" 2>/dev/null)
+    _sem_rc=$?
+    set -e
+    _sem_result=$(printf '%s\n' "$_sem_result" | head -5)
+    if [ "$_sem_rc" -eq 124 ]; then
+        echo "  WARN: semantic_search timeout(1s). 手動で関連概念を確認せよ"
+    elif [ -n "$_sem_result" ]; then
         echo "  関連概念:"
         printf '%s\n' "$_sem_result" | while IFS= read -r _line; do echo "    $_line"; done
     else
