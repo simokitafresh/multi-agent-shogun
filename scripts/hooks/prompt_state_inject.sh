@@ -269,7 +269,7 @@ record_skill_recommendation_log() {
     if [[ ! -s "$recommend_log" ]]; then
       printf 'recommendations:\n' > "$recommend_log"
     fi
-    python3 - "$recommend_log" "$agent_id" "$prompt_hash" <<'PY' >/dev/null 2>&1 && return 0 || true
+    if python3 - "$recommend_log" "$agent_id" "$prompt_hash" >/dev/null 2>&1 <<'PY'
 import sys
 import yaml
 
@@ -289,14 +289,19 @@ for entry in recommendations[-200:]:
         raise SystemExit(0)
 raise SystemExit(1)
 PY
-    printf -- '- ts: %s\n' "$(prompt_state_yaml_scalar "$timestamp")" >> "$recommend_log"
-    printf '  agent_id: %s\n' "$(prompt_state_yaml_scalar "$agent_id")" >> "$recommend_log"
-    printf '  prompt_hash: %s\n' "$(prompt_state_yaml_scalar "$prompt_hash")" >> "$recommend_log"
-    printf '  recommended_skills:\n' >> "$recommend_log"
-    while IFS= read -r skill_name; do
-      [[ -n "$skill_name" ]] || continue
-      printf '  - %s\n' "$(prompt_state_yaml_scalar "$skill_name")" >> "$recommend_log"
-    done <<< "$skills"
+    then
+      return 0
+    fi
+    {
+      printf -- '- ts: %s\n' "$(prompt_state_yaml_scalar "$timestamp")"
+      printf '  agent_id: %s\n' "$(prompt_state_yaml_scalar "$agent_id")"
+      printf '  prompt_hash: %s\n' "$(prompt_state_yaml_scalar "$prompt_hash")"
+      printf '  recommended_skills:\n'
+      while IFS= read -r skill_name; do
+        [[ -n "$skill_name" ]] || continue
+        printf '  - %s\n' "$(prompt_state_yaml_scalar "$skill_name")"
+      done <<< "$skills"
+    } >> "$recommend_log"
   } 9>"${recommend_log}.lock"
 
   python3 - "$recommend_log" <<'PY' >/dev/null 2>&1 || true
@@ -456,160 +461,12 @@ detect_skill_triggers() {
   fi
 
   set +e
-  trigger_output="$(PROMPT_TEXT="$prompt_text" SKILLS_DIR="$skills_dir" CURRENT_PROJECT="$current_project" timeout "${PROMPT_STATE_SKILL_TRIGGER_TIMEOUT:-0.10}" python3 - <<'PY'
-import os
-import re
-import sys
-
-prompt = os.environ.get("PROMPT_TEXT", "")
-skills_dir = os.environ.get("SKILLS_DIR", "")
-current_project = os.environ.get("CURRENT_PROJECT", "").strip()
-prompt_lower = prompt.lower()
-top_key_re = re.compile(r"^[A-Za-z_-]+:")
-
-
-def extract_frontmatter(text):
-    lines = text.replace("\r", "").splitlines()
-    if not lines or lines[0] != "---":
-        return ""
-    try:
-        end = lines.index("---", 1)
-    except ValueError:
-        return ""
-    return "\n".join(lines[1:end])
-
-
-def extract_description(frontmatter):
-    if not frontmatter:
-        return ""
-    lines = frontmatter.splitlines()
-    for idx, line in enumerate(lines):
-        if not line.startswith("description:"):
-            continue
-        tail = line.split(":", 1)[1].strip()
-        if tail in ("|", ">"):
-            chunks = []
-            for follow in lines[idx + 1:]:
-                if top_key_re.match(follow):
-                    break
-                if follow[:1].isspace():
-                    chunks.append(follow.lstrip())
-                else:
-                    break
-            return "\n".join(chunks).strip()
-        return tail.strip("\"'")
-    return ""
-
-
-def extract_allowed_projects(frontmatter):
-    match = re.search(r"(?m)^allowed_projects:\s*\[([^\]]*)\]\s*$", frontmatter)
-    if not match:
-        return []
-    return [
-        item.strip().strip("\"'")
-        for item in match.group(1).split(",")
-        if item.strip()
-    ]
-
-
-def extract_triggers(description):
-    triggers = []
-    for line in description.splitlines():
-        if re.match(r"^\s*TRIGGER\s*:", line, re.IGNORECASE):
-            content = line.split(":", 1)[1]
-            for part in re.split(r"[、,]", content):
-                part = part.strip()
-                if part:
-                    triggers.append(part)
-    return triggers
-
-
-def split_project_constraint(trigger):
-    projects = []
-    patterns = [
-        r"\[\s*project(?:s)?\s*[:=]\s*([^\]]+)\]",
-        r"\(\s*project(?:s)?\s*[:=]\s*([^)]+)\)",
-        r"project(?:s)?\s*[:=]\s*([A-Za-z0-9_-]+(?:\s*[|/]\s*[A-Za-z0-9_-]+)*)",
-    ]
-    cleaned = trigger
-    for pattern in patterns:
-        for match in re.finditer(pattern, trigger, flags=re.IGNORECASE):
-            raw = match.group(1)
-            for part in re.split(r"[,|/、\s]+", raw):
-                part = part.strip().strip("\"'")
-                if part:
-                    projects.append(part)
-        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
-    return cleaned.strip(" -:;、"), projects
-
-
-def project_allowed(projects):
-    if not projects:
-        return True
-    return bool(current_project) and current_project in projects
-
-
-def trigger_terms(trigger):
-    terms = [trigger]
-    for token in re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]{1,}", trigger):
-        # Uppercase acronyms such as CDP/DB are intentional routing keys.
-        if token.isupper() or trigger.startswith("/"):
-            terms.append(token)
-    return terms
-
-
-matches = []
-try:
-    entries = sorted(os.scandir(skills_dir), key=lambda item: item.name)
-except OSError:
-    entries = []
-
-for entry in entries:
-    if not entry.is_dir():
-        continue
-    skill_file = os.path.join(entry.path, "SKILL.md")
-    if not os.path.isfile(skill_file):
-        continue
-    try:
-        with open(skill_file, encoding="utf-8") as fh:
-            text = fh.read()
-    except OSError:
-        continue
-
-    frontmatter = extract_frontmatter(text)
-    if not project_allowed(extract_allowed_projects(frontmatter)):
-        continue
-
-    desc = extract_description(frontmatter)
-    for trigger in extract_triggers(desc):
-        clean_trigger, trigger_projects = split_project_constraint(trigger)
-        if not project_allowed(trigger_projects):
-            continue
-        for term in trigger_terms(clean_trigger):
-            if term and term.lower() in prompt_lower:
-                matches.append((entry.name, clean_trigger))
-                break
-        if matches and matches[-1][0] == entry.name:
-            break
-
-for name, trigger in (
-    ("codd-fix", "codd fix"),
-    ("codd-fix", "事象修正"),
-    ("codd-fix", "現象修正"),
-):
-    if trigger.lower() in prompt_lower and not any(item[0] == name for item in matches):
-        matches.append((name, trigger))
-
-if not matches:
-    sys.exit(0)
-
-print("⚠ SKILL TRIGGER HIT: 作業開始前に該当SKILL.mdを読め。")
-for name, trigger in matches[:5]:
-    print(f"- /{name} (matched: {trigger})")
-if len(matches) > 5:
-    print(f"- ... and {len(matches) - 5} more")
-PY
-)"
+  trigger_output="$(
+    SKILL_RECOMMEND_CACHE_DIR="${PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR:-/tmp/skill_recommend_cache}" \
+    SKILL_RECOMMEND_COMPILED_TTL="${PROMPT_STATE_SKILL_COMPILED_TTL:-3600}" \
+    bash "$SCRIPT_DIR/scripts/skill_recommend.sh" \
+      "$prompt_text" "$agent_id" "$skills_dir" "$current_project" 2>/dev/null
+  )"
   set -e
   semantic_output="$(semantic_skill_recommendations)"
   if [[ -n "$trigger_output" ]]; then

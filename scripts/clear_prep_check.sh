@@ -192,6 +192,14 @@ run_session_memory_db_import() {
     return 0
   fi
 
+  if [ -f "$memory_db" ] && ! memory_db_needs_rebuild "$memory_db"; then
+    local current_mtime
+    current_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
+    echo "  OK: ${memory_db#$ROOT_DIR/} mtime=${current_mtime}"
+    echo "  memory_db_import: cache_fresh db=${memory_db}"
+    return 0
+  fi
+
   local before_mtime=0
   if [ -f "$memory_db" ]; then
     before_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
@@ -218,6 +226,39 @@ run_session_memory_db_import() {
     issue_reasons+=("記憶DB再構築失敗")
   fi
   return 0
+}
+
+memory_db_needs_rebuild() {
+  local memory_db="$1"
+  local source
+  for source in \
+    "$ROOT_DIR/docs/semantic-index/index.md" \
+    "$ROOT_DIR/queue/bulletin_board.yaml" \
+    "$ROOT_DIR/queue/insights.yaml" \
+    "$ROOT_DIR/logs/skill_execution_log.yaml" \
+    "$ROOT_DIR/queue/pending_decisions.yaml"
+  do
+    if [ -f "$source" ] && [ "$source" -nt "$memory_db" ]; then
+      return 0
+    fi
+  done
+
+  local newer_archive
+  newer_archive="$(
+    find \
+      "$ROOT_DIR/logs/lord_conversation_archive" \
+      "$ROOT_DIR/queue/archive/cmds" \
+      "$ROOT_DIR/queue/archive/bulletin_board" \
+      -type f \( -name '*.jsonl' -o -name '*.yaml' \) \
+      -newer "$memory_db" -print -quit 2>/dev/null || true
+  )"
+  if [ -n "$newer_archive" ]; then
+    return 0
+  fi
+
+  find "$ROOT_DIR/queue/archive" -maxdepth 1 -type f \
+    \( -name 'bulletin_*.yaml' -o -name 'bulletin_board_archive.yaml' \) \
+    -newer "$memory_db" -print -quit 2>/dev/null | grep -q .
 }
 
 run_session_memory_semantic_scan() {
