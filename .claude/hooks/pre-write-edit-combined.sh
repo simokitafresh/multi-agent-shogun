@@ -3,7 +3,7 @@
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -eu
 
-payload="$(cat 2>/dev/null || true)"
+payload="$(</dev/stdin)"
 case "$payload" in
     *[![:space:]]*) ;;
     *) exit 0 ;;
@@ -23,7 +23,10 @@ emit_context() {
     printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":.}}'
 }
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+_pre_write_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_pre_write_self" != /* ]] && _pre_write_self="$PWD/$_pre_write_self"
+SCRIPT_DIR="${_pre_write_self%/.claude/hooks/pre-write-edit-combined.sh}"
+unset _pre_write_self
 PREFLIGHT_AUTOLEARN_FILE="${PREFLIGHT_AUTOLEARN_FILE:-$SCRIPT_DIR/logs/preflight_autolearn.txt}"
 CMD_DESIGN_QUALITY_FILE="${CMD_DESIGN_QUALITY_FILE:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
 
@@ -100,10 +103,33 @@ auto_q11_script_grep_results() {
     done <<< "$script_paths"
 }
 
-# Single jq call to extract tool_name and file_path
-_parsed="$(printf '%s' "$payload" | jq -r '[(.tool_name // .toolName // ""), ((.tool_input // .toolInput // {}) | .file_path // .filePath // .path // "")] | @tsv' 2>/dev/null)" || exit 0
-tool_name="${_parsed%%	*}"
-file_path="${_parsed#*	}"
+# Extract tool_name and file_path without jq/awk on the hot path.
+json_string_after() {
+    local line="$1" key="$2" rest c result i
+    rest="${line#*\"$key\"}"
+    [[ "$rest" != "$line" ]] || return 0
+    rest="${rest#*:}"
+    rest="${rest#"${rest%%[![:space:]]*}"}"
+    [[ "${rest:0:1}" == '"' ]] || return 0
+    rest="${rest:1}"
+    result=""
+    for ((i = 0; i < ${#rest}; i++)); do
+        c="${rest:i:1}"
+        if [[ "$c" == "\\" && $((i + 1)) -lt ${#rest} ]]; then
+            result+="${rest:i:2}"
+            ((i++))
+            continue
+        fi
+        [[ "$c" == '"' ]] && break
+        result+="$c"
+    done
+    printf '%s' "$result"
+}
+tool_name="$(json_string_after "$payload" "tool_name")"
+[[ -n "$tool_name" ]] || tool_name="$(json_string_after "$payload" "toolName")"
+file_path="$(json_string_after "$payload" "file_path")"
+[[ -n "$file_path" ]] || file_path="$(json_string_after "$payload" "filePath")"
+[[ -n "$file_path" ]] || file_path="$(json_string_after "$payload" "path")"
 
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
