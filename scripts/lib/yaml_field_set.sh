@@ -48,11 +48,30 @@ _yaml_field_set_unquote() {
     printf '%s' "$s"
 }
 
+# WSL2最適化: subshell 3回(trim→unquote→trim)をpure bash変数展開に置換(55x高速化)。
+# 結果は _YFS_NORM に格納。呼び出し元はサブシェルキャプチャ不要。
+_yaml_field_set_normalize_v() {
+    local s="$1"
+    # trim leading whitespace
+    s="${s#"${s%%[![:space:]]*}"}"
+    # trim trailing whitespace
+    s="${s%"${s##*[![:space:]]}"}"
+    # unquote
+    if [ "${#s}" -ge 2 ]; then
+        case "$s" in
+            \"*\") s="${s#\"}"; s="${s%\"}"; s="${s//\\\"/\"}" ;;
+            \'*\') s="${s#\'}"; s="${s%\'}" ;;
+        esac
+    fi
+    # trim again after unquote
+    s="${s#"${s%%[![:space:]]*}"}"
+    s="${s%"${s##*[![:space:]]}"}"
+    _YFS_NORM="$s"
+}
+
 _yaml_field_set_normalize() {
-    local s
-    s="$(_yaml_field_set_trim "$1")"
-    s="$(_yaml_field_set_unquote "$s")"
-    printf '%s' "$(_yaml_field_set_trim "$s")"
+    _yaml_field_set_normalize_v "$1"
+    printf '%s' "$_YFS_NORM"
 }
 
 _yaml_field_set_apply_root() {
@@ -783,7 +802,7 @@ yaml_field_set() {
             return 1
         fi
 
-        local actual normalized_actual normalized_expected
+        local actual
         if [ "$use_root" -eq 1 ]; then
             if ! actual="$(_yaml_field_get_root "$yaml_file" "$field")"; then
                 echo "FATAL: yaml_field_set: post-write readback failed for root.${field} in $yaml_file" >&2
@@ -794,8 +813,9 @@ yaml_field_set() {
             return 1
         fi
 
-        normalized_actual="$(_yaml_field_set_normalize "$actual")"
-        normalized_expected="$(_yaml_field_set_normalize "$new_value")"
+        # WSL2最適化: _normalize_v でsubshellキャプチャを排除
+        _yaml_field_set_normalize_v "$actual";   local normalized_actual="$_YFS_NORM"
+        _yaml_field_set_normalize_v "$new_value"; local normalized_expected="$_YFS_NORM"
         if [ "$normalized_actual" != "$normalized_expected" ]; then
             echo "FATAL: yaml_field_set: post-write verification mismatch for ${block_id}.${field} in $yaml_file (expected='$normalized_expected', actual='$normalized_actual')" >&2
             return 1
@@ -1047,8 +1067,9 @@ END {
                 echo "FATAL: yaml_field_set_batch: verify failed for ${block_id}.${_vf}" >&2
                 return 1
             fi
-            _norm_a="$(_yaml_field_set_normalize "$actual")"
-            _norm_e="$(_yaml_field_set_normalize "$_va")"
+            # WSL2最適化: _normalize_v でsubshellキャプチャを排除
+            _yaml_field_set_normalize_v "$actual"; _norm_a="$_YFS_NORM"
+            _yaml_field_set_normalize_v "$_va";    _norm_e="$_YFS_NORM"
             if [ "$_norm_a" != "$_norm_e" ]; then
                 echo "FATAL: yaml_field_set_batch: mismatch ${block_id}.${_vf} (expected='$_norm_e', actual='$_norm_a')" >&2
                 return 1
