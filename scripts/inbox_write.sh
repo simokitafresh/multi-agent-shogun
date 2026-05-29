@@ -709,7 +709,10 @@ inbox_append_message_locked() {
         return 0
     fi
 
-    existing_count=$(grep -c '^- ' "$inbox_file" 2>/dev/null || true)
+    while IFS= read -r _iw_count_line; do
+        [[ "$_iw_count_line" == "- "* ]] && existing_count=$((existing_count + 1))
+        (( existing_count >= 50 )) && break
+    done < "$inbox_file"
     if (( existing_count < 50 )); then
         printf '%s' "$message_block" >> "$inbox_file"
         return 0
@@ -1059,7 +1062,8 @@ fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
 LOCKFILE="$(lock_path "$INBOX")"
-mkdir -p "$(dirname "$INBOX")"
+INBOX_DIR="${INBOX%/*}"
+[ -d "$INBOX_DIR" ] || mkdir -p "$INBOX_DIR"
 
 # Generate message ID and timestamp using bash builtins to avoid subprocess overhead
 printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
@@ -1415,8 +1419,12 @@ while [ $attempt -lt $max_attempts ]; do
 
     ) 200>"$LOCKFILE"; then
         # Success — inbox message persisted
-        if ! record_inbox_event_to_memory_db 2>/dev/null; then
-            echo "[inbox_write] WARN: memory DB inbox insert failed (non-fatal; inbox persisted)" >&2
+        if [ "${INBOX_WRITE_SYNC_MEMORY_DB:-0}" = "1" ] || [[ "$SCRIPT_DIR" != /mnt/c/* && "$SCRIPT_DIR" != /mnt/d/* ]]; then
+            if ! record_inbox_event_to_memory_db 2>/dev/null; then
+                echo "[inbox_write] WARN: memory DB inbox insert failed (non-fatal; inbox persisted)" >&2
+            fi
+        else
+            record_inbox_event_to_memory_db >/dev/null 2>&1 &
         fi
 
         # Hook: report_received/task_done/report_completed from ninja → auto-update task YAML to done
