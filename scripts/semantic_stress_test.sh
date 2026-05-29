@@ -132,6 +132,8 @@ fi
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 queries_jsonl="$tmp_dir/queries.jsonl"
+queries_tsv="$tmp_dir/queries.tsv"
+results_tsv="$tmp_dir/results.tsv"
 results_jsonl="$tmp_dir/results.jsonl"
 summary_json="$tmp_dir/summary.json"
 
@@ -270,9 +272,20 @@ if [ ! -s "$queries_jsonl" ]; then
     exit 1
 fi
 
-while IFS= read -r row; do
-    query="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["query"])' <<< "$row")"
-    source_name="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["source"])' <<< "$row")"
+python3 - "$queries_jsonl" > "$queries_tsv" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+    if not line.strip():
+        continue
+    row = json.loads(line)
+    print(f'{row["source"]}\t{row["query"]}')
+PY
+
+while IFS=$'\t' read -r source_name query; do
+    [ -n "$query" ] || continue
     output_file="$tmp_dir/search.out"
     status="hit"
     rc=0
@@ -286,25 +299,35 @@ while IFS= read -r row; do
             status="error"
         fi
     fi
-    python3 - "$source_name" "$query" "$status" "$rc" "$output_file" >> "$results_jsonl" <<'PY'
+    first_line="$(awk 'NR == 1 { print; exit }' "$output_file")"
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$source_name" \
+        "${query//$'\t'/ }" \
+        "$status" \
+        "$rc" \
+        "${first_line//$'\t'/ }" >> "$results_tsv"
+done < "$queries_tsv"
+
+python3 - "$results_tsv" > "$results_jsonl" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-source, query, status, rc, output_path = sys.argv[1:6]
-output = Path(output_path).read_text(encoding="utf-8", errors="replace")
-print(json.dumps(
-    {
-        "source": source,
-        "query": query,
-        "status": status,
-        "exit_code": int(rc),
-        "first_line": output.splitlines()[0] if output.splitlines() else "",
-    },
-    ensure_ascii=False,
-))
+for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+    if not line.strip():
+        continue
+    source, query, status, rc, first_line = line.split("\t", 4)
+    print(json.dumps(
+        {
+            "source": source,
+            "query": query,
+            "status": status,
+            "exit_code": int(rc),
+            "first_line": first_line,
+        },
+        ensure_ascii=False,
+    ))
 PY
-done < "$queries_jsonl"
 
 python3 - "$results_jsonl" "$baseline_path" "$summary_json" <<'PY'
 import json
