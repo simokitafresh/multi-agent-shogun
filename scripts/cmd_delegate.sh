@@ -142,6 +142,88 @@ END {
 ' "$yaml_file" 2>/dev/null || true
 }
 
+get_cmd_status_and_delegated() {
+    local yaml_file="$1"
+    local target_cmd="$2"
+
+    awk -v target_cmd="$target_cmd" '
+function trim(s) {
+    sub(/^[[:space:]]+/, "", s)
+    sub(/[[:space:]]+$/, "", s)
+    return s
+}
+function unquote(s) {
+    s = trim(s)
+    if (length(s) >= 2) {
+        if (substr(s, 1, 1) == "\"" && substr(s, length(s), 1) == "\"") {
+            s = substr(s, 2, length(s) - 2)
+        } else if (substr(s, 1, 1) == "'"'"'" && substr(s, length(s), 1) == "'"'"'") {
+            s = substr(s, 2, length(s) - 2)
+        }
+    }
+    return trim(s)
+}
+function flush_block() {
+    if (cmd_id == target_cmd) {
+        found = 1
+        print status "\t" delegated_at
+        exit 0
+    }
+    cmd_id = ""
+    status = ""
+    delegated_at = ""
+}
+BEGIN {
+    in_commands = 0
+    cmd_id = ""
+    status = ""
+    delegated_at = ""
+    found = 0
+}
+/^commands:[[:space:]]*$/ {
+    in_commands = 1
+    next
+}
+in_commands && $0 !~ /^[[:space:]]/ && $0 !~ /^$/ {
+    flush_block()
+    exit
+}
+in_commands && /^  - id:[[:space:]]*/ {
+    flush_block()
+    cmd_id = $0
+    sub(/^  - id:[[:space:]]*/, "", cmd_id)
+    cmd_id = unquote(cmd_id)
+    next
+}
+in_commands && /^  [^[:space:]-][^:]*:[[:space:]]*$/ {
+    flush_block()
+    cmd_id = $0
+    sub(/^  /, "", cmd_id)
+    sub(/:[[:space:]]*$/, "", cmd_id)
+    cmd_id = unquote(cmd_id)
+    next
+}
+in_commands && /^    status:[[:space:]]*/ {
+    status = $0
+    sub(/^    status:[[:space:]]*/, "", status)
+    status = unquote(status)
+    next
+}
+in_commands && /^    delegated_at:[[:space:]]*/ {
+    delegated_at = $0
+    sub(/^    delegated_at:[[:space:]]*/, "", delegated_at)
+    delegated_at = unquote(delegated_at)
+    next
+}
+END {
+    if (!found) {
+        flush_block()
+    }
+    if (!found) exit 2
+}
+' "$yaml_file"
+}
+
 inbox_has_cmd_new_for_cmd() {
     local inbox_file="$1"
     local cmd_id="$2"
@@ -209,13 +291,12 @@ cmd_is_archived() {
     [ "${#archived_matches[@]}" -gt 0 ]
 }
 
-# Step 1: cmd_id が存在し status=pending か検証
-status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
+cmd_state=$(get_cmd_status_and_delegated "$SHOGUN_TO_KARO" "$CMD_ID" 2>/dev/null) || {
     echo "ERROR: cmd_id '$CMD_ID' not found in shogun_to_karo.yaml" >&2
     exit 1
 }
+IFS=$'\t' read -r status existing_delegated <<< "$cmd_state"
 
-existing_delegated=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" 2>/dev/null) || true
 if [ -n "$existing_delegated" ]; then
     if [ "$status" = "delegated" ]; then
         if cmd_is_archived "$CMD_ID"; then
@@ -314,7 +395,8 @@ bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
     exit 1
 }
 
-if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+MEMORY_DB_PATH="${SHOGUN_MEMORY_DB:-$PROJECT_DIR/data/multi_agent_shogun_memory.db}"
+if [[ -f "$MEMORY_DB_LIVE_INSERT" && -f "$MEMORY_DB_PATH" ]]; then
     if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_delegate \
         --cmd-id "$CMD_ID" \
         --ts "$TIMESTAMP" \
