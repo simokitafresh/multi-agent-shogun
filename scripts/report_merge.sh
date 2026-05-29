@@ -76,31 +76,32 @@ fi
 TOTAL=0
 DONE_COUNT=0
 PENDING_NINJAS=()
+shopt -s nullglob
+TASK_FILES=("$TASKS_DIR"/*.yaml)
+shopt -u nullglob
 
 # awkで全タスクファイルを1パス処理: TAB区切りで file|ninja|status|task_id を出力
-while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
-    if [ -z "$r_status" ]; then
-        echo "[WARN] Empty status in $r_file" >&2
-        continue
-    fi
-    TOTAL=$((TOTAL + 1))
-    report_path="${REPORTS_DIR}/${r_ninja}_report_${CMD_ID}.yaml"
-    if [ ! -f "$report_path" ]; then
-        # 後方互換: 旧形式を許容
-        report_path="${REPORTS_DIR}/${r_ninja}_report.yaml"
-    fi
+if [ "${#TASK_FILES[@]}" -gt 0 ]; then
+    while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
+        if [ -z "$r_status" ]; then
+            echo "[WARN] Empty status in $r_file" >&2
+            continue
+        fi
+        TOTAL=$((TOTAL + 1))
+        report_path="${REPORTS_DIR}/${r_ninja}_report_${CMD_ID}.yaml"
+        if [ ! -f "$report_path" ]; then
+            # 後方互換: 旧形式を許容
+            report_path="${REPORTS_DIR}/${r_ninja}_report.yaml"
+        fi
 
-    if [ "$r_status" = "done" ]; then
-        DONE_COUNT=$((DONE_COUNT + 1))
-        echo "${r_ninja}: done (${report_path})"
-    else
-        PENDING_NINJAS+=("$r_ninja")
-        echo "${r_ninja}: ${r_status} (${report_path})"
-    fi
-done < <(
-    shopt -s nullglob
-    files=("$TASKS_DIR"/*.yaml)
-    [ "${#files[@]}" -eq 0 ] && exit 0
+        if [ "$r_status" = "done" ]; then
+            DONE_COUNT=$((DONE_COUNT + 1))
+            echo "${r_ninja}: done (${report_path})"
+        else
+            PENDING_NINJAS+=("$r_ninja")
+            echo "${r_ninja}: ${r_status} (${report_path})"
+        fi
+    done < <(
     # shellcheck disable=SC2016 # awk program, not shell interpolation
     "$AWK_BIN" -v cmd_id="$CMD_ID" '
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
@@ -135,8 +136,9 @@ done < <(
             print cur_file "\t" assigned_to "\t" status "\t" tid
         }
     }
-    ' "${files[@]}"
-)
+    ' "${TASK_FILES[@]}"
+    )
+fi
 
 # ─── 偵察タスクなし ───
 if [ "$TOTAL" -eq 0 ]; then
