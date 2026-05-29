@@ -30,11 +30,15 @@ USAGE
         ;;
 esac
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# 高速化: cd+pwd subshell→pure-bash (WSL2 ~21ms節約)
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/switch_cli_mode.sh}"
+unset _self
 SETTINGS_FILE="${SCRIPT_DIR}/config/settings.yaml"
 
 source "${SCRIPT_DIR}/lib/cli_adapter.sh"
-source "${SCRIPT_DIR}/scripts/lib/cli_lookup.sh"
+# cli_lookup.shはcli_adapter.sh内でsource済みのため省略 (WSL2 ~30ms節約)
 source "${SCRIPT_DIR}/lib/agent_state.sh"
 
 TARGET_CLI="${1:-}"
@@ -128,7 +132,7 @@ case "$SCOPE" in
     *)
         IFS=',' read -r -a raw_agents <<< "$SCOPE"
         for a in "${raw_agents[@]}"; do
-            a="$(echo "$a" | tr -d '[:space:]')"
+            a="${a//[[:space:]]/}"
             [[ -n "$a" ]] || continue
             TARGET_AGENTS+=("$a")
         done
