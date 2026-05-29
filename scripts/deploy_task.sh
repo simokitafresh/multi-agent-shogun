@@ -2441,7 +2441,10 @@ ${_commit_bc}"
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         if [ -n "$_bc_block" ]; then
             local _bc_ac_count
-            _bc_ac_count=$(echo "$_bc_block" | grep -c '^\s\s[A-Z]')
+            _bc_ac_count=$(printf '%s\n' "$_bc_block" | awk '
+                /^[[:space:]][[:space:]]['\''"]?AC[[:alnum:]_-]*['\''"]?:/ { count++ }
+                END { print count + 0 }
+            ')
             if [ -n "$_commit_bc" ]; then
                 log "binary_checks template: ${_bc_ac_count} ACs + commit check injected"
             else

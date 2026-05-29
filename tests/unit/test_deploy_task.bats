@@ -342,6 +342,108 @@ EOF
     [[ "$output" == *"|task_assigned|karo" ]]
 }
 
+@test "cmd_3091: quoted AC ids do not abort report template binary check injection under set -e" {
+    use_private_scripts_fixture
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_3091
+  task_id: cmd_3091_normal
+  task_type: normal
+  project: infra
+  report_filename: sasuke_report_cmd_3091.yaml
+  related_lessons:
+  - id: 'L502'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'deployment complete reaches main flow'
+  - id: 'AC2'
+    checks:
+    - check: 'quality monitors run'
+  - id: 'AC3'
+    checks:
+    - check: 'EXIT trap remains fallback only'
+  - id: 'AC4'
+    checks:
+    - check: 'deploy_task tests pass'
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1"; }
+        generate_report_template sasuke cmd_3091_normal cmd_3091 infra
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"binary_checks template: 4 ACs + commit check injected"* ]]
+    [[ "$output" == *"report_template: generated"* ]]
+    grep -q "^  'AC1':" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_3091.yaml"
+    grep -q "report_path: queue/reports/sasuke_report_cmd_3091.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
+@test "cmd_3091: deploy_task_main reaches quality monitors before deployment complete" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_3091
+  task_id: cmd_3091_normal
+  task_type: normal
+  status: idle
+  project: infra
+  _ac_task_id: cmd_3091_normal
+  report_filename: sasuke_report_cmd_3091.yaml
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { printf "log:%s\n" "$1"; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        sleep() { :; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        repair_training_parent_cmd_from_cmd_id() { :; }
+        deploy_task_has_pending_own_report() { return 1; }
+        capture_done_redeploy_context() { :; }
+        reset_stale_fields() { _STALE_RESET_DONE=1; }
+        inject_training_target_path_from_alias_quality() { :; }
+        inject_direct_training_template() { :; }
+        warn_same_ninja_redeploy() { :; }
+        deploy_task_has_completed_peer_report() { return 1; }
+        check_firefighting_title() { :; }
+        warn_task_clarity() { :; }
+        warn_recent_noncmd_commit_targets() { :; }
+        warn_q11_not_already_done_drift() { :; }
+        deploy_task_apply_task_mutations() { :; }
+        safe_inbox_write() { printf "safe_inbox_write\n"; }
+        notify_initial_deploy_ntfy_once() { printf "notify_initial_deploy_ntfy_once\n"; }
+        record_deployed_at() { printf "record_deployed_at\n"; }
+        preflight_gate_artifacts() { printf "preflight_gate_artifacts\n"; }
+        maybe_notify_draft_review() { printf "maybe_notify_draft_review\n"; }
+        deploy_task_post_deploy_verify() { printf "deploy_task_post_deploy_verify\n"; }
+        deploy_task_send_direct_renudge() { printf "deploy_task_send_direct_renudge\n"; }
+        tmux() { return 0; }
+        deploy_task_main --direct sasuke cmd_3091
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"safe_inbox_write"* ]]
+    [[ "$output" == *"notify_initial_deploy_ntfy_once"* ]]
+    [[ "$output" == *"record_deployed_at"* ]]
+    [[ "$output" == *"preflight_gate_artifacts"* ]]
+    [[ "$output" == *"maybe_notify_draft_review"* ]]
+    [[ "$output" == *"log:sasuke: deployment complete (type=task_assigned)"* ]]
+    [[ "$output" == *"deploy_task_post_deploy_verify"* ]]
+}
+
 @test "inject_semantic_concepts injects recommended_skills from semantic search skills rows" {
     use_private_scripts_fixture
     cat > "$TEST_PROJECT/scripts/semantic_search.sh" <<'EOF'
