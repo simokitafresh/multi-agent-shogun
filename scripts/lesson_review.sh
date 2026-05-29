@@ -5,7 +5,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR: pure bash fast path for absolute script invocation; fallback keeps
+# relative invocation behavior unchanged.
+_SELF="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_SELF%/*}/.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 PROJECT_ID="${1:-}"
 
 if [ -z "$PROJECT_ID" ]; then
@@ -14,41 +18,36 @@ if [ -z "$PROJECT_ID" ]; then
     exit 0
 fi
 
-# Get project path from config/projects.yaml (env var to avoid shell injection)
+# Resolve project path and parse draft lessons in one Python process.
 export PROJECT_ID
 export SCRIPT_DIR
-PROJECT_PATH=$(python3 -c "
-import os, yaml
-script_dir = os.environ['SCRIPT_DIR']
-project_id = os.environ['PROJECT_ID']
-with open(os.path.join(script_dir, 'config/projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == project_id:
-        print(p['path'])
-        break
-")
-
-if [ -z "$PROJECT_PATH" ]; then
-    echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
-    exit 0
-fi
-
-LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-
-if [ ! -f "$LESSONS_FILE" ]; then
-    echo "ERROR: $LESSONS_FILE not found." >&2
-    exit 0
-fi
-
-# Parse and display draft lessons (read-only, no flock needed)
-export LESSONS_FILE
 python3 << 'PYEOF'
-import re, os
+import os
+import re
+import sys
 
-lessons_file = os.environ.get("LESSONS_FILE", "")
-if not lessons_file:
-    exit(0)
+import yaml
+
+script_dir = os.environ["SCRIPT_DIR"]
+project_id = os.environ["PROJECT_ID"]
+
+with open(os.path.join(script_dir, "config/projects.yaml"), encoding="utf-8") as f:
+    cfg = yaml.safe_load(f) or {}
+
+project_path = ""
+for p in cfg.get("projects", []):
+    if p.get("id") == project_id:
+        project_path = p.get("path", "")
+        break
+
+if not project_path:
+    print(f"ERROR: Project '{project_id}' not found in config/projects.yaml", file=sys.stderr)
+    raise SystemExit(0)
+
+lessons_file = os.path.join(project_path, "tasks", "lessons.md")
+if not os.path.isfile(lessons_file):
+    print(f"ERROR: {lessons_file} not found.", file=sys.stderr)
+    raise SystemExit(0)
 
 with open(lessons_file, encoding='utf-8') as f:
     content = f.read()
