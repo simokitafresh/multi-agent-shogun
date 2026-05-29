@@ -64,15 +64,11 @@ append_lord_conversation() {
     CONV_DB_PATH="$db_path" \
     CONV_SEMANTIC_INDEX_PATH="$semantic_index_path" \
     python3 - <<'PY'
-import hashlib
 import json
 import os
 import re
-import sqlite3
 import tempfile
 from pathlib import Path
-
-import yaml
 
 MAX_ENTRIES = 500
 SUMMARY_LIMIT = 140
@@ -130,6 +126,8 @@ def load_legacy_yaml(file_path: Path) -> list[dict]:
     if not file_path.exists():
         return []
     try:
+        import yaml
+
         with file_path.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     except Exception:
@@ -223,7 +221,7 @@ def concept_matches_for_text(text: str, concepts: list[dict]) -> list[tuple[str,
     return sorted(matched, key=lambda item: item[0])
 
 
-def ensure_event_concepts_schema(conn: sqlite3.Connection) -> None:
+def ensure_event_concepts_schema(conn) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS event_concepts (
@@ -248,6 +246,9 @@ def ensure_event_concepts_schema(conn: sqlite3.Connection) -> None:
 def append_memory_db_entry(entry: dict, event_index: int) -> None:
     if not db_path or not db_path.exists():
         return
+
+    import hashlib
+    import sqlite3
 
     event_hash = hashlib.sha1(
         json.dumps(
