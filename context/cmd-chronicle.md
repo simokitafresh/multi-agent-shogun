@@ -594,3 +594,4 @@
 | cmd_3104 | 1031リンクが44ファイルに集中。context/skills/docsからのリンクがほぼゼロ。リンク密度を計測し、context更新時の因果リンク付与をgate WARNで強制し、backlinks=0ファイルを修行対象に自動組込み | infra | 05-29 | backlink密度計測スクリプト、context更新時の因 |
 | cmd_3106 | cmd_3103で検出された統合候補52ファイル(テスト数5件以下)を統合し、テストファイル数を削減。test_cmd_save系3ファイルはcmd_3105で速度改善中のため除外し競合回避 | infra | 05-29 | watcher/起動系の小テスト2ファイルをtest_inf |
 | cmd_3105 | cmd_3103で判明したSLOW 3件(test_cmd_save 88s+test_cmd_save_block_aggregation 51s+test_cmd_save_command_steps_vs_ac 44s=合計183秒)を最適化。テスト速度改善→全量計測も高速化する複利効果 | infra | 05-29 | test_cmd_save_command_steps_vs |
+| cmd_3107 | 3セッション連続startup BLOCK 2件解消: scripts/未コミット変更3件のcommit + SKILL.md script参照4件の追随更新 | infra | 05-29 | 対象4件のSKILL.mdを現行script実装へ追随更新し |
