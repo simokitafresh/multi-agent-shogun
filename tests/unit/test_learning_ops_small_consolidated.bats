@@ -166,7 +166,7 @@ EOF
 }
 
 content_test_dashboard_auto_context_freshness() {
-    base64 -d <<'EOF'
+    base64 -d <<'EOF' | perl -0pe 's/    touch "\$TEST_PROJECT\/config\/context_freshness_excludes\.txt"\n/    touch "\$TEST_PROJECT\/config\/context_freshness_excludes.txt"\n\n    git -C "\$TEST_PROJECT" init -q\n    git -C "\$TEST_PROJECT" config user.email "test@example.com"\n    git -C "\$TEST_PROJECT" config user.name "Test User"\n    git -C "\$TEST_PROJECT" add context\/infrastructure.md\n    GIT_AUTHOR_DATE="2026-03-03T00:00:00+09:00" \\\n    GIT_COMMITTER_DATE="2026-03-03T00:00:00+09:00" \\\n        git -C "\$TEST_PROJECT" commit -q -m "test: update infra context source"\n/s; s/WARN: context\/infrastructure\.md last_updated/ALERT: context\/infrastructure.md source commits 1件 since last_updated=2026-03-01/'
 IyEvdXNyL2Jpbi9lbnYgYmF0cwoKc2V0dXBfZmlsZSgpIHsKICAgIGV4cG9ydCBQUk9KRUNUX1JP
 T1QKICAgIFBST0pFQ1RfUk9PVD0iJChjZCAiJChkaXJuYW1lICIkQkFUU19URVNUX0ZJTEVOQU1F
 IikvLi4vLi4iICYmIHB3ZCkiCiAgICBleHBvcnQgU1JDX0RBU0hCT0FSRF9TQ1JJUFQ9IiRQUk9K
@@ -829,4 +829,3 @@ EOF
 @test 'test_record_lesson_feedback.bats :: record_lesson_feedback auto-records unreported injected lessons as not useful' {
     run_embedded_test 'tests/unit/test_record_lesson_feedback.bats' 'record_lesson_feedback auto-records unreported injected lessons as not useful' content_test_record_lesson_feedback
 }
-
