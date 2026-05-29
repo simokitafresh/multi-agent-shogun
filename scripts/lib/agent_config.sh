@@ -26,6 +26,11 @@ if [[ -z "${_AGENT_CONFIG_SCRIPT_DIR:-}" ]]; then
     _AGENT_CONFIG_SCRIPT_DIR="${_ac_self%/scripts/lib/agent_config.sh}"
 fi
 _AGENT_CONFIG_SETTINGS="${_AGENT_CONFIG_SCRIPT_DIR}/config/settings.yaml"
+_ac_cache_key="${_AGENT_CONFIG_SCRIPT_DIR//[\/: .#*?!]/_}"
+if ((${#_ac_cache_key} > 48)); then
+    _ac_cache_key="${_ac_cache_key: -48}"
+fi
+_AGENT_CONFIG_CACHE="/tmp/shogun_agent_config_${_ac_cache_key}.cache"
 
 # Cache: loaded raw data (tab-separated: name\trole\tjapanese_name)
 _AGENT_CONFIG_RAW=""
@@ -39,6 +44,15 @@ _agent_config_load() {
     # Guard: already loaded in this process
     if [[ -n "$_AGENT_CONFIG_RAW" ]]; then
         return 0
+    fi
+
+    if [[ -f "$_AGENT_CONFIG_CACHE" && "$_AGENT_CONFIG_CACHE" -nt "$_AGENT_CONFIG_SETTINGS" ]]; then
+        # shellcheck source=/dev/null
+        if source "$_AGENT_CONFIG_CACHE" 2>/dev/null \
+            && [[ "${_AGENT_CONFIG_CACHE_VERSION:-}" == "3" ]] \
+            && [[ -n "$_AGENT_CONFIG_RAW" ]]; then
+            return 0
+        fi
     fi
 
     # Parse settings.yaml agents section with awk (python3 eliminates ~36ms subprocess)
@@ -82,6 +96,23 @@ _agent_config_load() {
 
     _AGENT_CONFIG_NINJA_NAMES="${ninjas[*]}"
     _AGENT_CONFIG_ALL_NAMES="${all_names[*]}"
+    {
+        printf '_AGENT_CONFIG_CACHE_VERSION=3\n'
+        printf '_AGENT_CONFIG_RAW=%q\n' "$_AGENT_CONFIG_RAW"
+        printf '_AGENT_CONFIG_NINJA_NAMES=%q\n' "$_AGENT_CONFIG_NINJA_NAMES"
+        printf '_AGENT_CONFIG_ALL_NAMES=%q\n' "$_AGENT_CONFIG_ALL_NAMES"
+        printf '_AGENT_CONFIG_ROLE_MAP=('
+        local _ac_key
+        for _ac_key in "${!_AGENT_CONFIG_ROLE_MAP[@]}"; do
+            printf '[%q]=%q ' "$_ac_key" "${_AGENT_CONFIG_ROLE_MAP[$_ac_key]}"
+        done
+        printf ')\n'
+        printf '_AGENT_CONFIG_JP_MAP=('
+        for _ac_key in "${!_AGENT_CONFIG_JP_MAP[@]}"; do
+            printf '[%q]=%q ' "$_ac_key" "${_AGENT_CONFIG_JP_MAP[$_ac_key]}"
+        done
+        printf ')\n'
+    } > "$_AGENT_CONFIG_CACHE" 2>/dev/null || true
 }
 
 get_ninja_names() {
