@@ -36,41 +36,50 @@ fi
 # --- テストマッピング構築 (3層マッチング) ---
 declare -A TEST_MAP  # script_path → test_file(s)
 declare -A SCRIPT_PATHS_BY_BASENAME
+# perf: hash set for O(1) script existence check (replaces 805 NTFS -f stat calls in L1)
+declare -A SCRIPT_EXISTS
 
+# perf: basename subshell → bash param expansion (saves 246 subprocess forks on NTFS)
 while IFS= read -r script_path; do
-    script_base=$(basename "$script_path")
+    script_base="${script_path##*/}"
     rel_path="${script_path#"$REPO_ROOT"/}"
     SCRIPT_PATHS_BY_BASENAME["$script_base"]+="$rel_path "
+    SCRIPT_EXISTS["$rel_path"]=1
 done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name '*.sh' 2>/dev/null)
 
 # L1: 命名規則マッチ (test_foo.bats → scripts/foo.sh)
+# perf: basename+sed subshell → bash param expansion (saves 161 subprocess forks × 2)
+# perf: -f stat check → hash set lookup (saves ~805 NTFS stat calls)
 for test_file in "$TEST_DIR"/test_*.bats; do
     [ -f "$test_file" ] || continue
-    base=$(basename "$test_file" .bats | sed 's/^test_//')
+    _b="${test_file##*/}"; base="${_b%.bats}"; base="${base#test_}"
     for candidate in \
         "scripts/${base}.sh" \
         "scripts/gates/${base}.sh" \
         "scripts/gates/gate_${base}.sh" \
         "scripts/lib/${base}.sh" \
         "lib/${base}.sh"; do
-        if [ -f "$REPO_ROOT/$candidate" ]; then
+        if [[ -n "${SCRIPT_EXISTS[$candidate]+x}" ]]; then
             TEST_MAP["$candidate"]+="$test_file "
         fi
     done
 done
 
-# L2: テスト内のsource/bash解析 (静的grep)
-for test_file in "$TEST_DIR"/test_*.bats; do
-    [ -f "$test_file" ] || continue
-    while IFS= read -r script_ref; do
-        script_base=$(echo "$script_ref" | sed 's|.*[/]||' | sed 's/["\x27]//g')
-        [ -z "$script_base" ] && continue
-        for rel_path in ${SCRIPT_PATHS_BY_BASENAME[$script_base]:-}; do
-            [ -n "$rel_path" ] || continue
-            TEST_MAP["$rel_path"]+="$test_file "
-        done
-    done < <(grep -ohE '(source|bash|\.) +[^ ]+\.sh' "$test_file" 2>/dev/null | sed 's/^[^ ]* //')
-done
+# L2: テスト内のsource/bash解析 — single grep -rH pass
+# perf: replaces 161×grep + 507×(echo|sed|sed) with one process (~13s → ~0.3s)
+while IFS= read -r line; do
+    test_file="${line%%:*}"
+    match="${line#*:}"
+    script_ref="${match#* }"      # strip "source " / "bash " / ". " prefix
+    script_base="${script_ref##*/}"
+    script_base="${script_base//\"/}"
+    script_base="${script_base//\'/}"
+    [ -z "$script_base" ] && continue
+    for rel_path in ${SCRIPT_PATHS_BY_BASENAME[$script_base]:-}; do
+        [ -n "$rel_path" ] || continue
+        TEST_MAP["$rel_path"]+="$test_file "
+    done
+done < <(grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/dev/null)
 
 # --- 影響テスト特定 ---
 declare -A AFFECTED_TESTS
@@ -78,6 +87,8 @@ UNMATCHED=()
 
 for changed in "${CHANGED_FILES[@]}"; do
     matched=0
+    # perf: pre-compute basename once (replaces $(basename "$changed") subshell per key in inner loop)
+    ch_base="${changed##*/}"
 
     # 変更ファイル自体がテストなら直接追加
     if [[ "$changed" == tests/unit/test_*.bats ]]; then
@@ -113,7 +124,7 @@ for changed in "${CHANGED_FILES[@]}"; do
 
     # L1+L2: マップから検索
     for key in "${!TEST_MAP[@]}"; do
-        if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$(basename "$changed")"* ]]; then
+        if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$ch_base"* ]]; then
             for tf in ${TEST_MAP[$key]}; do
                 AFFECTED_TESTS["$tf"]=1
                 matched=1
