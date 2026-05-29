@@ -29,16 +29,19 @@ skills_dir = os.environ["SKILLS_DIR_ENV"]
 top_key_re = re.compile(r"^[A-Za-z_-]+:")
 
 
-def extract_frontmatter(text):
-    """YAMLフロントマターを抽出"""
-    lines = text.replace("\r", "").splitlines()
-    if not lines or lines[0] != "---":
-        return ""
-    try:
-        end = lines.index("---", 1)
-    except ValueError:
-        return ""
-    return "\n".join(lines[1:end])
+def read_frontmatter(path):
+    """SKILL.mdのYAMLフロントマターだけを読む"""
+    lines = []
+    with open(path, "r", encoding="utf-8") as fh:
+        first = fh.readline()
+        if first.rstrip("\r\n") != "---":
+            return ""
+        for raw in fh:
+            line = raw.rstrip("\n").rstrip("\r")
+            if line == "---":
+                return "\n".join(lines)
+            lines.append(line)
+    return ""
 
 
 def extract_description(frontmatter):
@@ -113,13 +116,10 @@ if os.path.isdir(skills_dir):
         if not os.path.isfile(skill_file):
             continue
         try:
-            with open(skill_file, "r", encoding="utf-8") as fh:
-                text = fh.read()
+            fm = read_frontmatter(skill_file)
         except OSError as e:
             parse_errors.append(f"{entry.name}: 読取エラー ({e})")
             continue
-
-        fm = extract_frontmatter(text)
         if not fm:
             parse_errors.append(f"{entry.name}: フロントマターなし (--- 区切り未検出)")
             continue
