@@ -266,6 +266,7 @@ safe_inbox_write() {
     local message="$2"
     local msg_type="$3"
     local from="$4"
+    local action="${5:-}"  # AC2: action省略によるhookスキップ構造穴修正(cmd_3102)
     local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
     local before_count after_count output status
 
@@ -275,7 +276,7 @@ safe_inbox_write() {
     esac
 
     status=0
-    output="$(bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" 2>&1)" || status=$?
+    output="$(bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" "$action" 2>&1)" || status=$?
     if [ -n "$output" ]; then
         while IFS= read -r line; do
             log "inbox_write: $line"
@@ -387,7 +388,7 @@ deploy_task_exit_nudge() {
 
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     log "${NINJA_NAME}: EXIT trap sending inbox_write (interrupted before main nudge)"
-    safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" || \
+    safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start" || \
         log "${NINJA_NAME}: WARN EXIT trap inbox_write failed"
 }
 
@@ -1558,6 +1559,18 @@ inject_ac_version() {
     local curr_task_id curr_worker_id prev_ac_task_id prev_ac_worker_id
     local task_id="" _ac_task_id="" worker_id="" _ac_worker_id=""
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id worker_id _ac_worker_id)"
+    # AC3修正: task_id/ac_task_id両方空=karo_direct手動YAML等でtask_idが未設定のケース。
+    # parent_cmd+task_typeからtask_idを導出してYAMLに書込み、二重配備防止を確実に発火させる(cmd_3102)
+    if [ -z "$task_id" ] && [ -z "$_ac_task_id" ]; then
+        local _pcmd="" _ttype=""
+        _pcmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+        _ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "normal")
+        if [ -n "$_pcmd" ]; then
+            task_id="${_pcmd}_${_ttype:-normal}"
+            yaml_field_set "$task_file" "task" "task_id" "$task_id" 2>/dev/null || true
+            log "[AC_VERSION] derived task_id from parent_cmd: $task_id (AC3: 二重配備防止発火保証)"
+        fi
+    fi
     # task_idが空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
     if [ -z "$task_id" ]; then
         curr_task_id="$_ac_task_id"
@@ -7284,13 +7297,13 @@ except Exception:
 
     if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
         log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
-        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start"
     elif [ "$is_idle" = "true" ]; then
         log "${NINJA_NAME}: CTX=${ctx_pct}%, idle. Sending inbox_write (normal nudge)"
-        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start"
     else
         log "${NINJA_NAME}: CTX=${ctx_pct}%, busy. Sending inbox_write (queued, watcher will nudge later)"
-        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM"
+        safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start"
     fi
     deploy_task_check_deadline "after_inbox_write" || return $?
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
@@ -7317,11 +7330,17 @@ except Exception:
     # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
     deploy_task_post_deploy_verify "$NINJA_NAME"
 
-    # Codex忍者向け遅延re-nudge (cmd_karo_codex_renudge)
+    # Codex忍者向け遅延re-nudge + 配備確認ログ (cmd_karo_codex_renudge / cmd_3102 AC1修正)
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
-    # 対象: codexタイプ かつ CTX=0% の場合のみ。Claude Code(claude/Opus/Sonnet)は対象外
-    if [ "$ctx_pct" -le 0 ] 2>/dev/null && [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
-        log "${NINJA_NAME}: Codex+CTX=0% detected. Scheduling delayed re-nudge in 5s (background)"
+    # AC1修正: CTX=0%条件を撤去。Codexエージェントは常に遅延re-nudge対象
+    #          + 配備確認ログをlogs/codex_delivery_log.yamlに記録し到達確認可能に
+    if [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
+        log "${NINJA_NAME}: Codex detected. Scheduling delayed re-nudge in 5s (background, ctx=${ctx_pct}%)"
+        # 到達確認ログ: ninja/cmd/ctx/timestamp を記録
+        printf '- ninja: %s\n  cmd: %s\n  ctx_pct: %s\n  timestamp: %s\n  renudge: scheduled\n' \
+            "$NINJA_NAME" "${deploy_parent_cmd:-unknown}" "${ctx_pct:-unknown}" \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" \
+            >> "$SCRIPT_DIR/logs/codex_delivery_log.yaml" 2>/dev/null || true
         local _renudge_name="$NINJA_NAME"
         (
             sleep 5
