@@ -29,20 +29,34 @@ notify_gunshi_for_report() {
     # レポート内のstatus確認（LK002: status未設定でもnotify発火させる）
     # report YAMLが存在する時点で忍者は報告を書いた=完了意思。statusがcompleted/done以外でもnotify。
     # 旧コード: status!=completed&&!=done→return0 がhayate(cmd_2317 index.lock STALL後)でnotify不発の根因。
-    local report_status
-    report_status=$(grep -E '^\s*status:' "$report_path" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
+    local report_status=""
+    local _gn_line _gn_trim
+    while IFS= read -r _gn_line; do
+        _gn_trim="${_gn_line#"${_gn_line%%[![:space:]]*}"}"
+        case "$_gn_trim" in
+            status:*)
+                report_status="${_gn_trim#status:}"
+                report_status="${report_status#"${report_status%%[![:space:]]*}"}"
+                report_status="${report_status%"${report_status##*[![:space:]]}"}"
+                report_status="${report_status//\"/}"
+                report_status="${report_status//\'/}"
+                break
+                ;;
+        esac
+    done < "$report_path"
     if [ "$report_status" = "failed" ] || [ "$report_status" = "cancelled" ]; then
         return 0
     fi
 
     # 軍師にinbox通知
+    local report_base="${report_path##*/}"
     if bash "$project_root/scripts/inbox_write.sh" gunshi \
-        "${ninja_name}報告完了。レビュー依頼: ${cmd_id} report=$(basename "$report_path")" \
+        "${ninja_name}報告完了。レビュー依頼: ${cmd_id} report=${report_base}" \
         report_review karo 2>/dev/null; then
         echo "  gunshi_notify: SENT (${ninja_name} → gunshi)"
         echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$flag_file"
         echo "ninja: ${ninja_name}" >> "$flag_file"
-        echo "report: $(basename "$report_path")" >> "$flag_file"
+        echo "report: ${report_base}" >> "$flag_file"
     else
         echo "  gunshi_notify: WARN (inbox_write failed for ${ninja_name})"
     fi
