@@ -2744,7 +2744,7 @@ QG_TEMPLATE
     # q11自動検索: command内スクリプト名とdocs/researchの既存成果物を照合（INFO）
     # 起源: cmd_1916 — q11手動記入は嘘が書ける。自動露出で車輪の再発明を補助的に防ぐ
     _Q11_PROJECT_DIR="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
-    _Q11_RESEARCH_DIR="${_Q11_PROJECT_DIR}/docs/research"
+    _Q11_RESEARCH_DIR="${CMD_SAVE_Q11_RESEARCH_DIR:-${_Q11_PROJECT_DIR}/docs/research}"
     if [[ -d "$_Q11_RESEARCH_DIR" ]]; then
         _Q11_COMMAND_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
             /^\s*command:\s*\|/ { found=1; next }

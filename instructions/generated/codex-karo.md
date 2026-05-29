@@ -100,8 +100,8 @@ model_deployment_rules:
 
 random_deployment_rules:
   - id: R000
-    positive_rule: "Codex忍者(GPTモデル)をidle忍者の中で最優先で配備せよ。Codex→Sonnet→Opusの順。ただし排他ではない。GPT全員稼働中ならSonnetに配備。idle=最大の無駄(LK079)"
-    reason: "Opus/Sonnetのレート制限温存(殿裁定2026-04-12)。R001(round-robin)より上位ルール。殿指摘(2026-04-17): Sonnet利用は禁止ではない"
+    positive_rule: "CMD(normal/recon等)はGPT忍者3名(hayate/kagemaru/saizo)のみに配備せよ。Sonnet忍者にCMDを配備するな。修行(training)は全6忍者に配備可"
+    reason: "Sonnet忍者は遅い(殿裁定2026-05-29)。GPT3名全員稼働中でCMDが来た場合は完了待ち。Sonnetに回すな"
   - id: R001
     positive_rule: "同一モデル内ではround-robinで行え"
     reason: "同一モデル内では選択バイアス回避のためround-robin維持"
