@@ -1564,20 +1564,37 @@ fi
 # INSERT失敗時も報告YAML書込みは成功扱い(AC2: 非破壊的追加)
 _MEMORY_DB_INSERT_SCRIPT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
 if [ -f "$_MEMORY_DB_INSERT_SCRIPT" ] && [ -f "$REPORT_PATH" ]; then
-    _rfs_ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf -v _rfs_ts '%(%Y-%m-%dT%H:%M:%SZ)T' -1
     _rfs_agent=""
     _rfs_parent_cmd=""
     _rfs_verdict=""
-    if _rfs_yaml_out="$(python3 -c "
-import yaml,sys
-d=yaml.safe_load(open(sys.argv[1])) or {}
-print(d.get('worker_id',''))
-print(d.get('parent_cmd',''))
-print(d.get('verdict',''))
-" "$REPORT_PATH" 2>/dev/null)"; then
-        _rfs_agent="$(echo "$_rfs_yaml_out" | sed -n '1p')"
-        _rfs_parent_cmd="$(echo "$_rfs_yaml_out" | sed -n '2p')"
-        _rfs_verdict="$(echo "$_rfs_yaml_out" | sed -n '3p')"
+    if _rfs_yaml_out="$(awk '
+        BEGIN { worker_id = ""; parent_cmd = ""; verdict = "" }
+        /^[[:space:]]*worker_id:[[:space:]]*/ && worker_id == "" {
+            worker_id = $0
+            sub(/^[[:space:]]*worker_id:[[:space:]]*/, "", worker_id)
+            gsub(/^["'\'' ]+|["'\'' ]+$/, "", worker_id)
+        }
+        /^[[:space:]]*parent_cmd:[[:space:]]*/ && parent_cmd == "" {
+            parent_cmd = $0
+            sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", parent_cmd)
+            gsub(/^["'\'' ]+|["'\'' ]+$/, "", parent_cmd)
+        }
+        /^[[:space:]]*verdict:[[:space:]]*/ && verdict == "" {
+            verdict = $0
+            sub(/^[[:space:]]*verdict:[[:space:]]*/, "", verdict)
+            gsub(/^["'\'' ]+|["'\'' ]+$/, "", verdict)
+        }
+        END {
+            print worker_id
+            print parent_cmd
+            print verdict
+        }
+    ' "$REPORT_PATH" 2>/dev/null)"; then
+        mapfile -t _rfs_fields <<< "$_rfs_yaml_out"
+        _rfs_agent="${_rfs_fields[0]:-}"
+        _rfs_parent_cmd="${_rfs_fields[1]:-}"
+        _rfs_verdict="${_rfs_fields[2]:-}"
     fi
     python3 "$_MEMORY_DB_INSERT_SCRIPT" report \
         --report-path "$REPORT_PATH" \
