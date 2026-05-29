@@ -76,7 +76,6 @@ show_active_cmd_semantic_context_one() {
         {
             printf '%s\n' "$target_path"
             stat -c '%Y:%s' "$SCRIPT_DIR/docs/semantic-index/index.md" 2>/dev/null || true
-            stat -c '%Y:%s' "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" 2>/dev/null || true
         } | sha256sum | awk '{print $1}'
     )"
     semantic_cache_key="${target_path//[^A-Za-z0-9_.-]/_}"
