@@ -3193,6 +3193,142 @@ record_lesson_feedback_for_cmd() {
     fi
 }
 
+update_lesson_scores_batch() {
+    local project_id="$1"
+    local score_entries="$2"
+
+    [ -n "$project_id" ] || return 1
+    [ -n "$score_entries" ] || {
+        echo "  Updated: 0 lesson(s)"
+        return 0
+    }
+
+    local archive_file="$SCRIPT_DIR/projects/${project_id}/lessons_archive.yaml"
+    local fallback_file="$SCRIPT_DIR/projects/${project_id}/lessons.yaml"
+    local cache_file
+    local result
+
+    if [ -f "$archive_file" ]; then
+        cache_file="$archive_file"
+    else
+        cache_file="$fallback_file"
+    fi
+
+    if [ ! -f "$cache_file" ]; then
+        echo "  [INFO] lesson score update skipped: ${cache_file} not found"
+        return 0
+    fi
+
+    result=$(
+        (
+            flock -w 10 200 || { echo "WARN: lock timeout"; exit 0; }
+            SCORE_ENTRIES="$score_entries" CACHE_FILE="$cache_file" python3 - <<'PY'
+import os
+import tempfile
+from collections import Counter
+from datetime import datetime
+
+import yaml
+
+cache_file = os.environ["CACHE_FILE"]
+entries_raw = os.environ.get("SCORE_ENTRIES", "")
+
+counts = Counter()
+sources = {}
+for raw in entries_raw.splitlines():
+    parts = raw.split("\t")
+    if len(parts) < 2:
+        continue
+    source, lesson_id = parts[0].strip(), parts[1].strip()
+    if not lesson_id:
+        continue
+    counts[lesson_id] += 1
+    if lesson_id not in sources or source == "explicit":
+        sources[lesson_id] = source or "explicit"
+
+if not counts:
+    print("Updated: 0 lesson(s)")
+    raise SystemExit(0)
+
+with open(cache_file, encoding="utf-8") as f:
+    content = f.read()
+
+data = yaml.safe_load(content) or {}
+lessons = data.get("lessons")
+if not isinstance(lessons, list):
+    print(f"WARN: no lessons found in {cache_file}")
+    raise SystemExit(0)
+
+now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+found = set()
+updated_total = 0
+updates = {}
+for lesson in lessons:
+    if not isinstance(lesson, dict):
+        continue
+    lesson_id = str(lesson.get("id", "")).strip()
+    increment = counts.get(lesson_id, 0)
+    if increment <= 0:
+        continue
+    current = lesson.get("helpful_count", 0) or 0
+    try:
+        current = int(current)
+    except Exception:
+        current = 0
+    lesson["helpful_count"] = current + increment
+    lesson["last_referenced"] = now
+    found.add(lesson_id)
+    updated_total += increment
+    updates[lesson_id] = current + increment
+    suffix = " (auto-detected in report text)" if sources.get(lesson_id) == "auto" else ""
+    print(f"{lesson_id}: helpful +{increment}{suffix}")
+
+missing = [lesson_id for lesson_id in counts if lesson_id not in found]
+for lesson_id in missing:
+    print(f"[INFO] {lesson_id}: score update failed (lesson not found, non-blocking)")
+
+if updates:
+    lines = content.splitlines(keepends=True)
+    out = []
+    current_id = None
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("- id:"):
+            current_id = stripped.split(":", 1)[1].strip().strip("'\"")
+            out.append(line)
+            continue
+        if current_id in updates and stripped.startswith("helpful_count:"):
+            indent = line[: len(line) - len(line.lstrip())]
+            newline = "\n" if line.endswith("\n") else ""
+            out.append(f"{indent}helpful_count: {updates[current_id]}{newline}")
+            continue
+        if current_id in updates and stripped.startswith("last_referenced:"):
+            indent = line[: len(line) - len(line.lstrip())]
+            newline = "\n" if line.endswith("\n") else ""
+            out.append(f"{indent}last_referenced: '{now}'{newline}")
+            continue
+        out.append(line)
+
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(cache_file), suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.writelines(out)
+        os.replace(tmp_path, cache_file)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+print(f"Updated: {updated_total} lesson(s)")
+PY
+        ) 200>"$(lock_path "$cache_file")"
+    )
+
+    while IFS= read -r line; do
+        [ -n "$line" ] && echo "  $line"
+    done <<< "$result"
+}
+
 # ─── BLOCK理由収集 ───
 record_block_reason() {
     local reason="$1"
@@ -5855,8 +5991,9 @@ PY
     # ─── lesson score自動更新（GATE CLEAR時のみ、ベストエフォート） ───
     echo ""
     echo "Lesson score update (helpful):"
-    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_update_score.sh" ]; then
+    if [ -n "$CMD_PROJECT" ]; then
         SCORE_UPDATED=0
+        ALL_SCORE_ENTRIES=""
         for task_file in "${MATCHING_TASK_FILES[@]}"; do
             if [ ! -f "$task_file" ]; then
                 echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -5901,24 +6038,19 @@ PY
                 while IFS=$'\t' read -r score_type lid; do
                     [ -z "$score_type" ] && continue
                     [ -z "$lid" ] && continue
-                    if bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$CMD_PROJECT" "$lid" helpful 2>&1; then
-                        if [ "$score_type" = "auto" ]; then
-                            echo "  ${lid}: helpful +1 (auto-detected in report text)"
-                        else
-                            echo "  ${lid}: helpful +1"
-                        fi
-                        SCORE_UPDATED=$((SCORE_UPDATED + 1))
-                    else
-                        echo "  [INFO] ${lid}: score update failed (non-blocking)"
-                    fi
+                    ALL_SCORE_ENTRIES="${ALL_SCORE_ENTRIES}${score_type}	${lid}
+"
+                    SCORE_UPDATED=$((SCORE_UPDATED + 1))
                 done <<< "$score_entries"
             fi
         done
-        echo "  Updated: ${SCORE_UPDATED} lesson(s)"
+        if [ -n "$ALL_SCORE_ENTRIES" ]; then
+            update_lesson_scores_batch "$CMD_PROJECT" "$ALL_SCORE_ENTRIES" || echo "  [INFO] lesson score batch update failed (non-blocking)"
+        else
+            echo "  Updated: 0 lesson(s)"
+        fi
     elif [ -z "$CMD_PROJECT" ]; then
         echo "  SKIP (project not found in cmd)"
-    else
-        echo "  SKIP (lesson_update_score.sh not found — waiting for subtask_309_score)"
     fi
 
     append_codd_registry_entry "$CMD_ID"
