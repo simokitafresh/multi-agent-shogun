@@ -6972,14 +6972,12 @@ deploy_task_apply_task_mutations() {
     inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
     check_context_freshness "$task_file" || true
 
-    local task_id parent_cmd project
-    task_id=$(field_get "$task_file" "task_id" "")
+    local task_id parent_cmd project _ac_task_id
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project 2>/dev/null)" || true
     # task_id空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
-    if [ -z "$task_id" ]; then
-        task_id=$(field_get "$task_file" "_ac_task_id" "")
+    if [ -z "${task_id:-}" ]; then
+        task_id="${_ac_task_id:-}"
     fi
-    parent_cmd=$(field_get "$task_file" "parent_cmd" "")
-    project=$(field_get "$task_file" "project" "")
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
     inject_done_redeploy_hints "$task_file" || true
 }
@@ -7176,11 +7174,13 @@ except Exception:
         return 1
     fi
 
-    deploy_parent_cmd=$(field_get "$task_yaml" "parent_cmd" "")
-    deploy_task_id=$(field_get "$task_yaml" "_ac_task_id" "")
-    deploy_scope_mode=$(field_get "$task_yaml" "task_type" "")
-    [ -z "$deploy_scope_mode" ] && deploy_scope_mode=$(field_get "$task_yaml" "scope_mode" "")
-    [ -z "$deploy_scope_mode" ] && deploy_scope_mode=$(field_get "$task_yaml" "type" "")
+    local task_type="" scope_mode="" type=""
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" parent_cmd _ac_task_id task_type scope_mode type 2>/dev/null)" || true
+    deploy_parent_cmd="${parent_cmd:-}"
+    deploy_task_id="${_ac_task_id:-}"
+    deploy_scope_mode="${task_type:-}"
+    [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${scope_mode:-}"
+    [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${type:-}"
     deploy_scope_mode="${deploy_scope_mode,,}"
 
     if [ -n "$deploy_parent_cmd" ]; then
