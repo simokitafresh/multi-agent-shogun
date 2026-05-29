@@ -410,14 +410,18 @@ def score_cmd_for_concept(block, cmd):
 
 def backfill_zero_cmd_concepts(text):
     blocks = parse_index_blocks(text)
+    zero_cmd_blocks = [
+        block for block in blocks
+        if not re.search(r"^\|\s*cmd\s*\|", block["block"], flags=re.M)
+    ]
+    if not zero_cmd_blocks:
+        return text, 0
     candidates = cmd_history_candidates()
     if not candidates:
         return text, 0
     rows_by_id = {}
     fallback = next((cmd for cmd in reversed(candidates) if "semantic" in norm(cmd["text"]) or "セマンティック" in cmd["text"]), candidates[-1])
-    for block in blocks:
-        if re.search(r"^\|\s*cmd\s*\|", block["block"], flags=re.M):
-            continue
+    for block in zero_cmd_blocks:
         best = None
         best_score = 0
         for cmd in candidates:
@@ -436,10 +440,11 @@ def backfill_zero_cmd_concepts(text):
 
 def auto_intake_semantic_index():
     text = index_path.read_text(encoding="utf-8")
+    original_text = text
     text, project_count = ensure_project_concepts(text)
     text, backfill_count = backfill_zero_cmd_concepts(text)
     text, bidirectional_count = ensure_bidirectional_related_concepts(text)
-    if text != index_path.read_text(encoding="utf-8"):
+    if text != original_text:
         index_path.write_text(text, encoding="utf-8")
     insight_count = queue_new_file_insights(text)
     if project_count:
