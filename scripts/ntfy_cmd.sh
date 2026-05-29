@@ -19,7 +19,11 @@ fi
 CMD_ID="$1"
 MESSAGE="$2"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_ntfy_cmd_script="${BASH_SOURCE[0]}"
+[[ "$_ntfy_cmd_script" != /* ]] && _ntfy_cmd_script="$PWD/$_ntfy_cmd_script"
+_ntfy_cmd_dir="${_ntfy_cmd_script%/*}"
+SCRIPT_DIR="${_ntfy_cmd_dir%/*}"
+unset _ntfy_cmd_script _ntfy_cmd_dir
 
 # sender取得（ntfy.shと同じロジック）
 SENDER=""
@@ -44,20 +48,61 @@ esac
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 PURPOSE=""
 
+trim_yaml_scalar() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s\n' "$value"
+}
+
 if [ -f "$YAML_FILE" ]; then
   # Method 1: commands:リスト形式（id: cmd_XXX）
-  RAW=$(grep -A5 -E "id: ${CMD_ID}( |$)" "$YAML_FILE" 2>/dev/null \
-    | grep "purpose:" | head -1 \
-    | sed 's/^[[:space:]]*purpose:[[:space:]]*//' \
-    | sed 's/^"//' | sed 's/"[[:space:]]*$//')
+  RAW=""
+  _watch_list=0
+  _watch_key=0
+  _watch_count=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    trimmed="${line#"${line%%[![:space:]]*}"}"
+    [[ "$trimmed" == "- "* ]] && trimmed="${trimmed#- }"
+    if [[ "$trimmed" == id:* ]]; then
+      value="$(trim_yaml_scalar "${trimmed#id:}")"
+      if [ "$value" = "$CMD_ID" ]; then
+        _watch_list=1
+        _watch_key=0
+        _watch_count=0
+        continue
+      fi
+    fi
+    if [[ "$trimmed" == "${CMD_ID}:" ]]; then
+      _watch_key=1
+      _watch_list=0
+      _watch_count=0
+      continue
+    fi
+    if [ "$_watch_list" = "1" ]; then
+      _watch_count=$((_watch_count + 1))
+      if [[ "$trimmed" == purpose:* ]]; then
+        RAW="$(trim_yaml_scalar "${trimmed#purpose:}")"
+        break
+      fi
+      [ "$_watch_count" -lt 5 ] || _watch_list=0
+    elif [ "$_watch_key" = "1" ]; then
+      _watch_count=$((_watch_count + 1))
+      if [[ "$trimmed" == purpose:* ]] || [[ "$trimmed" == title:* ]]; then
+        RAW="$(trim_yaml_scalar "${trimmed#*:}")"
+        break
+      fi
+      [ "$_watch_count" -lt 5 ] || _watch_key=0
+    fi
+  done < "$YAML_FILE"
+  unset _watch_list _watch_key _watch_count trimmed value
 
   # Method 2: キー形式フォールバック（cmd_XXX: で始まる形式）
-  if [ -z "$RAW" ]; then
-    RAW=$(grep -A5 -E "^[[:space:]]+${CMD_ID}:" "$YAML_FILE" 2>/dev/null \
-      | grep -E "(purpose|title):" | head -1 \
-      | sed 's/^[[:space:]]*\(purpose\|title\):[[:space:]]*//' \
-      | sed 's/^"//' | sed 's/"[[:space:]]*$//')
-  fi
+  # (bash loop above handles both formats)
 
   # 「—」以前の部分のみ使用（簡潔に）
   if [ -n "$RAW" ]; then
@@ -69,7 +114,12 @@ fi
 STREAK=""
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
 if [ -f "$DASHBOARD" ]; then
-  STREAK=$(grep '連勝' "$DASHBOARD" 2>/dev/null | grep -oP '\d+' | head -1)
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"連勝"* && "$line" =~ ([0-9]+) ]]; then
+      STREAK="${BASH_REMATCH[1]}"
+      break
+    fi
+  done < "$DASHBOARD"
 fi
 
 # 軍師verdict取得（queue/inbox + archive/inboxのgunshi→karo msg）

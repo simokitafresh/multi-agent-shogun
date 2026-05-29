@@ -92,7 +92,8 @@ NTFY_STATE_DIR="${NTFY_STATE_DIR:-/tmp/multi_agent_shogun_ntfy}"
 [[ "$NTFY_429_COOLDOWN_SECONDS" =~ ^[0-9]+$ ]] || NTFY_429_COOLDOWN_SECONDS=60
 
 mkdir -p "$NTFY_STATE_DIR" 2>/dev/null || true
-_ntfy_state_key="$(printf '%s' "$NTFY_ENDPOINT" | sha256sum | awk '{print $1}')"
+_ntfy_state_key="${NTFY_ENDPOINT//[^[:alnum:]._-]/_}"
+[ -n "$_ntfy_state_key" ] || _ntfy_state_key="default"
 NTFY_STATE_FILE="$NTFY_STATE_DIR/${_ntfy_state_key}.state"
 NTFY_LOCK_FILE="$NTFY_STATE_DIR/${_ntfy_state_key}.lock"
 unset _ntfy_state_key
