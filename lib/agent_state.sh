@@ -70,6 +70,19 @@ _agent_state_extract_cli_pids() {
     printf '%s\n' "$matches" | sed -E 's/.*\(([0-9]+)\)/\1/' | awk '!seen[$0]++'
 }
 
+_agent_state_tree_has_cli_bash() {
+    local tree="$1"
+    local flat_tree
+
+    flat_tree="${tree//$'\n'/ }"
+    printf '%s\n' "$flat_tree" | grep -Eq '(claude|codex)\([0-9]+\).*bash\([0-9]+\)'
+}
+
+_agent_state_tree_has_cli() {
+    local tree="$1"
+    printf '%s\n' "$tree" | grep -Eq '(claude|codex)\([0-9]+\)'
+}
+
 _agent_state_descendant_has_process_name() {
     local parent_pid="$1"
     local target_name="$2"
@@ -104,6 +117,13 @@ _agent_state_has_busy_subprocess() {
     # pstree -A -p でプロセスツリーを取得（ASCII出力）
     local tree
     tree=$(pstree -A -p "$pane_pid" 2>/dev/null) || return 1
+
+    if _agent_state_tree_has_cli_bash "$tree"; then
+        return 0
+    fi
+    if _agent_state_tree_has_cli "$tree" && ! printf '%s\n' "$tree" | grep -q 'bash([0-9]'; then
+        return 1
+    fi
 
     # codex/claudeを優先し、無い場合のみnodeへフォールバック
     local cli_pids cli_pid
