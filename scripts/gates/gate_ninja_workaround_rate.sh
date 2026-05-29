@@ -49,7 +49,8 @@ if [ "$_WA_MTIME" = "$_WA_CACHED_MTIME" ] && [ -f "$_WA_CACHE" ]; then
     exit 0
 fi
 
-_WA_TMP=$(mktemp /tmp/shogun_wa_wrk.XXXXXX)
+# 高速化: mktemp(13ms)をPID固定パスに変更
+_WA_TMP="/tmp/shogun_wa_wrk_$$"
 awk -v quiet="$QUIET" -v last_n="$LAST_N" -v ninja_filter="$NINJA_FILTER" '
 function trim(s) {
     sub(/^[ \t\r\n]+/, "", s)

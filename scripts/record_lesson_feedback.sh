@@ -41,26 +41,66 @@ else
     ) 200>"${IMPACT_TSV}.lock"
 fi
 
-# 報告YAMLからメタデータ抽出（フィールド不在時は空文字でOK）
-cmd_id=$(grep -m1 "^parent_cmd:" "$report_file" | sed 's/parent_cmd:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
-ninja=$(grep -m1 "^worker_id:" "$report_file" | sed 's/worker_id:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
-task_id=$(grep -m1 "^task_id:" "$report_file" | sed 's/task_id:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
+# 報告YAMLからメタデータとlessons_usefulを1回の走査で抽出する。
+cmd_id=""
+ninja=""
+task_id=""
+project=""
+task_type=""
+lesson_records=()
+while IFS=$'\t' read -r record_type field value; do
+    case "$record_type" in
+        META)
+            case "$field" in
+                parent_cmd) cmd_id="$value" ;;
+                worker_id) ninja="$value" ;;
+                task_id) task_id="$value" ;;
+                project) project="$value" ;;
+                task_type) task_type="$value" ;;
+            esac
+            ;;
+        LESSON)
+            lesson_records+=("${field}"$'\t'"${value}")
+            ;;
+    esac
+done < <(
+    awk '
+        function clean(line) {
+            sub(/^[^:]*:[[:space:]]*/, "", line)
+            gsub(/\047|"/, "", line)
+            return line
+        }
+        /^parent_cmd:/ { print "META\tparent_cmd\t" clean($0); next }
+        /^worker_id:/ { print "META\tworker_id\t" clean($0); next }
+        /^task_id:/ { print "META\ttask_id\t" clean($0); next }
+        /^project:/ { print "META\tproject\t" clean($0); next }
+        /^task_type:/ { print "META\ttask_type\t" clean($0); next }
+        /^lessons_useful:/ { in_lessons = 1; next }
+        in_lessons && /^[a-z_]+:/ { exit }
+        in_lessons && /id:/ { current_id = clean($0); next }
+        in_lessons && /useful:/ {
+            useful_val = tolower(clean($0))
+            if (current_id != "") {
+                print "LESSON\t" current_id "\t" useful_val
+                current_id = ""
+            }
+        }
+    ' "$report_file"
+)
 
 # projectフィールド: 報告YAML → task YAMLフォールバック
-project=$(grep -m1 "^project:" "$report_file" | sed 's/project:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
 if [[ -z "$project" && -n "$ninja" ]]; then
     task_yaml="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
     if [[ -f "$task_yaml" ]]; then
-        project=$(grep -m1 "project:" "$task_yaml" | sed 's/.*project:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
+        project=$(awk '/project:/ { sub(/.*project:[[:space:]]*/, ""); gsub(/\047|"/, ""); print; exit }' "$task_yaml")
     fi
 fi
 
 # task_typeフィールド: 報告YAML → task YAMLフォールバック
-task_type=$(grep -m1 "^task_type:" "$report_file" | sed 's/task_type:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
 if [[ -z "$task_type" && -n "$ninja" ]]; then
     task_yaml="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
     if [[ -f "$task_yaml" ]]; then
-        task_type=$(grep -m1 "task_type:" "$task_yaml" | sed 's/.*task_type:[[:space:]]*//' | tr -d "'" | tr -d '"' || true)
+        task_type=$(awk '/task_type:/ { sub(/.*task_type:[[:space:]]*/, ""); gsub(/\047|"/, ""); print; exit }' "$task_yaml")
     fi
 fi
 
@@ -113,40 +153,21 @@ has_reported_id() {
     return 1
 }
 
-while IFS= read -r line; do
-    # lessons_usefulセクション開始
-    if echo "$line" | grep -q "^lessons_useful:"; then
-        in_lessons=1
-        continue
-    fi
-    # セクション終了（次のトップレベルキー）
-    if [[ $in_lessons -eq 1 ]] && echo "$line" | grep -qE "^[a-z_]+:"; then
-        break
-    fi
-    if [[ $in_lessons -eq 1 ]]; then
-        # id行
-        if echo "$line" | grep -q "id:"; then
-            current_id=$(echo "$line" | sed 's/.*id:[[:space:]]*//' | tr -d "'" | tr -d '"')
+for lesson_record in "${lesson_records[@]}"; do
+    IFS=$'\t' read -r current_id useful_val <<< "$lesson_record"
+    if [[ -n "$current_id" ]]; then
+        if [[ "$useful_val" == "true" ]]; then
+            result="USEFUL"
+            ref="yes"
+        else
+            result="NOT_USEFUL"
+            ref="no"
         fi
-        # useful行
-        if echo "$line" | grep -q "useful:"; then
-            useful_val=$(echo "$line" | sed 's/.*useful:[[:space:]]*//' | tr -d "'" | tr -d '"' | tr '[:upper:]' '[:lower:]')
-            if [[ -n "$current_id" ]]; then
-                if [[ "$useful_val" == "true" ]]; then
-                    result="USEFUL"
-                    ref="yes"
-                else
-                    result="NOT_USEFUL"
-                    ref="no"
-                fi
-                record_feedback "$current_id" "$result" "$ref"
-                reported_ids+=("$current_id")
-                feedback_count=$((feedback_count + 1))
-                current_id=""
-            fi
-        fi
+        record_feedback "$current_id" "$result" "$ref"
+        reported_ids+=("$current_id")
+        feedback_count=$((feedback_count + 1))
     fi
-done < "$report_file"
+done
 
 if [[ -n "$dedup_key" ]]; then
     while IFS= read -r injected_id; do
