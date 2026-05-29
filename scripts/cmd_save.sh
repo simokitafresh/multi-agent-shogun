@@ -983,21 +983,26 @@ load_cmd_block() {
 
     [[ -f "$QUEUE_FILE" ]] || return 1
 
+    # cmd_training_speed_block_get_field_20260529: single awk pass (block extract + comment strip)
+    # eliminates 1 awk fork (printf|awk for CMD_BLOCK_NC was separate)
     CMD_BLOCK=$(awk -v cmd_id="$CMD_ID" '
         $0 == "  " cmd_id ":" { found = 1; next }
         found && /^  cmd_[^:]+:/ { exit }
+        found && /^[[:space:]]*#/ { next }
         found { print }
     ' "$QUEUE_FILE")
 
     [[ -n "$CMD_BLOCK" ]] || return 1
 
-    CMD_BLOCK_NC=$(printf '%s\n' "$CMD_BLOCK" | awk '!/^[[:space:]]*#/')
+    CMD_BLOCK_NC="$CMD_BLOCK"
     CMD_BLOCK_FOUND=1
     return 0
 }
 
 load_cmd_block_cache() {
-    local line key value current_section="" _tcv
+    # cmd_training_speed_block_get_field_20260529: bash regex → string ops + case
+    # [[ line =~ regex ]] + BASH_REMATCH → ${line:0:N} + case + %%:* (no regex per iteration)
+    local line key value current_section="" _tcv _c1 _c2
 
     if [[ "$CMD_BLOCK_CACHE_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -1008,14 +1013,46 @@ load_cmd_block_cache() {
     [[ "$CMD_BLOCK_FOUND" -eq 1 ]] || return 1
 
     while IFS= read -r line; do
-        if [[ "$line" =~ ^[[:space:]]{4}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$ ]]; then
-            current_section=""
-            key="${BASH_REMATCH[1]}"
-            value="${BASH_REMATCH[2]}"
-            if [[ -z "$value" ]]; then
-                CMD_BLOCK_CACHE["$key"]=""
-                current_section="$key"
-            else
+        # Level-1: exactly 4-space indent + identifier start
+        if [[ "${line:0:4}" == "    " && "${line:4:1}" != " " && -n "${line:4:1}" ]]; then
+            _c1="${line:4:1}"
+            case "$_c1" in
+            [A-Za-z_])
+                current_section=""
+                key="${line:4}"; key="${key%%:*}"
+                value="${line:$((4 + ${#key} + 1))}"
+                value="${value#"${value%%[![:space:]]*}"}"
+                value="${value%"${value##*[![:space:]]}"}"
+                if [[ -z "$value" ]]; then
+                    CMD_BLOCK_CACHE["$key"]=""
+                    current_section="$key"
+                else
+                    # cmd_2077: trim_inline_yaml_scalarをインライン化してsubshell排除
+                    _tcv="$value"
+                    _tcv="${_tcv#"${_tcv%%[![:space:]]*}"}"
+                    _tcv="${_tcv%"${_tcv##*[![:space:]]}"}"
+                    if [[ "$_tcv" == \"*\" && "$_tcv" == *\" && ${#_tcv} -ge 2 ]]; then
+                        _tcv="${_tcv:1:${#_tcv}-2}"
+                    elif [[ "$_tcv" == \'*\' && "$_tcv" == *\' && ${#_tcv} -ge 2 ]]; then
+                        _tcv="${_tcv:1:${#_tcv}-2}"
+                        _tcv="${_tcv//\'\'/\'}"
+                    fi
+                    CMD_BLOCK_CACHE["$key"]="$_tcv"
+                fi
+                ;;
+            esac
+            continue
+        fi
+
+        # Level-2: exactly 6-space indent + identifier start (only inside a section)
+        if [[ -n "$current_section" && "${line:0:6}" == "      " && "${line:6:1}" != " " && -n "${line:6:1}" ]]; then
+            _c2="${line:6:1}"
+            case "$_c2" in
+            [A-Za-z_])
+                key="${line:6}"; key="${key%%:*}"
+                value="${line:$((6 + ${#key} + 1))}"
+                value="${value#"${value%%[![:space:]]*}"}"
+                value="${value%"${value##*[![:space:]]}"}"
                 # cmd_2077: trim_inline_yaml_scalarをインライン化してsubshell排除
                 _tcv="$value"
                 _tcv="${_tcv#"${_tcv%%[![:space:]]*}"}"
@@ -1026,25 +1063,9 @@ load_cmd_block_cache() {
                     _tcv="${_tcv:1:${#_tcv}-2}"
                     _tcv="${_tcv//\'\'/\'}"
                 fi
-                CMD_BLOCK_CACHE["$key"]="$_tcv"
-            fi
-            continue
-        fi
-
-        if [[ -n "$current_section" && "$line" =~ ^[[:space:]]{6}([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            value="${BASH_REMATCH[2]}"
-            # cmd_2077: trim_inline_yaml_scalarをインライン化してsubshell排除
-            _tcv="$value"
-            _tcv="${_tcv#"${_tcv%%[![:space:]]*}"}"
-            _tcv="${_tcv%"${_tcv##*[![:space:]]}"}"
-            if [[ "$_tcv" == \"*\" && "$_tcv" == *\" && ${#_tcv} -ge 2 ]]; then
-                _tcv="${_tcv:1:${#_tcv}-2}"
-            elif [[ "$_tcv" == \'*\' && "$_tcv" == *\' && ${#_tcv} -ge 2 ]]; then
-                _tcv="${_tcv:1:${#_tcv}-2}"
-                _tcv="${_tcv//\'\'/\'}"
-            fi
-            CMD_BLOCK_CACHE["${current_section}.${key}"]="$_tcv"
+                CMD_BLOCK_CACHE["${current_section}.${key}"]="$_tcv"
+                ;;
+            esac
         fi
     done <<< "$CMD_BLOCK_NC"
 

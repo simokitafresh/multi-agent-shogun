@@ -87,6 +87,7 @@ show_active_cmd_semantic_context_one() {
         if semantic_output="$(
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_DISABLE_MEMORY_DB=1 \
             SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
             timeout -k 1 "$timeout_sec" bash "$semantic_script" "$target_path" 2>&1
         )"; then
@@ -98,6 +99,7 @@ show_active_cmd_semantic_context_one() {
         if semantic_output="$(
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_DISABLE_MEMORY_DB=1 \
             SEMANTIC_CAUSAL_ROOT="$SCRIPT_DIR" \
             bash "$semantic_script" "$target_path" 2>&1
         )"; then
@@ -342,6 +344,96 @@ show_semantic_no_match_metrics() {
         }
     ' scan_lines="$scan_lines"
     echo ""
+}
+
+skill_execution_summary_fast() {
+    local log_file="$1"
+
+    echo "skill | fail_count | last_fail | top_stumbling_point"
+    [ -f "$log_file" ] || return 0
+    awk '
+function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+function unquote(s) {
+    s = trim(s)
+    gsub(/^"|"$/, "", s)
+    gsub(/^'\''|'\''$/, "", s)
+    return s
+}
+function finish() {
+    r = toupper(result)
+    u = tolower(used == "" ? "true" : used)
+    if (r == "FAIL" && u != "false" && skill != "") {
+        count[skill]++
+        if (ts >= last[skill]) last[skill] = ts
+        if (point != "") {
+            key = skill SUBSEP point
+            point_count[key]++
+        }
+    }
+}
+/^- / {
+    if (in_entry) finish()
+    in_entry = 1
+    ts = skill = result = used = point = ""
+    line = $0
+    sub(/^- /, "", line)
+    if (line ~ /^ts:/) {
+        sub(/^ts:[[:space:]]*/, "", line)
+        ts = unquote(line)
+    }
+    next
+}
+in_entry && /^  ts:/ {
+    line = $0
+    sub(/^  ts:[[:space:]]*/, "", line)
+    ts = unquote(line)
+    next
+}
+in_entry && /^  skill:/ {
+    line = $0
+    sub(/^  skill:[[:space:]]*/, "", line)
+    skill = unquote(line)
+    next
+}
+in_entry && /^  result:/ {
+    line = $0
+    sub(/^  result:[[:space:]]*/, "", line)
+    result = unquote(line)
+    next
+}
+in_entry && /^  used:/ {
+    line = $0
+    sub(/^  used:[[:space:]]*/, "", line)
+    used = unquote(line)
+    next
+}
+in_entry && /^  stumbling_points:/ {
+    line = $0
+    sub(/^  stumbling_points:[[:space:]]*/, "", line)
+    point = unquote(line)
+    next
+}
+END {
+    if (in_entry) finish()
+    for (s in count) {
+        top = ""
+        top_count = -1
+        for (k in point_count) {
+            split(k, parts, SUBSEP)
+            if (parts[1] != s) continue
+            p = parts[2]
+            c = point_count[k]
+            if (c > top_count || (c == top_count && p < top)) {
+                top = p
+                top_count = c
+            }
+        }
+        printf "%d|%s|%s|%s\n", count[s], last[s], s, top
+    }
+}
+' "$log_file" \
+        | sort -t'|' -k1,1nr -k3,3 \
+        | awk -F'|' '{ print $3 " | " $1 " | " $2 " | " $4 }'
 }
 
 if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
@@ -1099,10 +1191,7 @@ if [ -x "$skill_summary_script" ]; then
         && (( _now_epoch - $(stat -c %Y "$_SKILL_SUMMARY_CACHE" 2>/dev/null || echo 0) < _SKILL_SUMMARY_CACHE_TTL )); then
         skill_summary="$(tail -n +2 "$_SKILL_SUMMARY_CACHE")"
     else
-        skill_summary="$(
-            SKILL_EXECUTION_LOG_FILE="$SCRIPT_DIR/logs/skill_execution_log.yaml" \
-                bash "$skill_summary_script" summary 2>/dev/null || true
-        )"
+        skill_summary="$(skill_execution_summary_fast "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || true)"
         {
             printf '%s\n' "$_skill_current_sig"
             printf '%s\n' "$skill_summary"
@@ -1180,8 +1269,8 @@ _li_script="$SCRIPT_DIR/scripts/lesson_impact_analysis.sh"
 _li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
 if [ -x "$_li_script" ] && [ -f "$_li_file" ] && [ "$(wc -l < "$_li_file")" -gt 10 ]; then
     _li_output=$(timeout 10 bash "$_li_script" 2>/dev/null || true)
-    _li_noise=$(echo "$_li_output" | awk '/^Low Reference Rate/,/^$/' | grep -c "ref_rate:  0%")
-    _li_harm=$(echo "$_li_output" | awk '/^High BLOCK Rate/,/^$/' | grep -c "BLOCK:100%")
+    _li_noise=$(echo "$_li_output" | awk '/^Low Reference Rate/,/^$/' | grep -c "ref_rate:  0%" || true)
+    _li_harm=$(echo "$_li_output" | awk '/^High BLOCK Rate/,/^$/' | grep -c "BLOCK:100%" || true)
     echo "  noise候補(参照率0%): ${_li_noise}件, harm候補(BLOCK率100%): ${_li_harm}件"
     if [ "$_li_harm" -gt 3 ]; then
         echo "  ★ harm候補${_li_harm}件: 教訓改善/廃止を検討せよ"

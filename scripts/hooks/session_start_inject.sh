@@ -14,6 +14,10 @@ _session_start_json_get() {
   local _session_start_value
 
   if [[ "$_session_start_field" == ".type" ]]; then
+    if [[ "$payload" =~ \"type\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+      printf '%s' "${BASH_REMATCH[1]:-$_session_start_default}"
+      return 0
+    fi
     if _session_start_value="$(jq -r 'try (.type // "unknown") catch "unknown"' 2>/dev/null <<<"$payload")"; then
       printf '%s' "$_session_start_value"
       return 0
@@ -107,10 +111,9 @@ fi
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
 unread_count=0
 if [[ -f "$inbox_file" ]]; then
-  unread_count="$(awk '/^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo 0)"
-  if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
-    unread_count=0
-  fi
+  while IFS= read -r _session_start_line; do
+    [[ "$_session_start_line" =~ ^[[:space:]]*read:[[:space:]]*false[[:space:]]*$ ]] && ((++unread_count))
+  done < "$inbox_file"
 fi
 
 # --- karo_snapshot ---
@@ -140,15 +143,20 @@ elif [[ -f "$compact_file" ]]; then
   if [[ -z "$raw_state" ]]; then
     compact_state="none"
   else
-    # timestamp行を抽出してepoch比較。quote除去にawkを使用
-    ts_line="$(awk '
-      /^timestamp:/ {
-        sub(/^timestamp:[[:space:]]*/, "")
-        gsub(/^'\''|'\''$/, "")
-        print
-        exit
-      }
-    ' "$compact_file" 2>/dev/null || true)"
+    # timestamp行を抽出してepoch比較。短命hookなのでawk起動は避ける。
+    ts_line=""
+    while IFS= read -r _session_start_line; do
+      case "$_session_start_line" in
+        timestamp:*)
+          ts_line="${_session_start_line#timestamp:}"
+          ts_line="${ts_line#"${ts_line%%[![:space:]]*}"}"
+          ts_line="${ts_line%"${ts_line##*[![:space:]]}"}"
+          ts_line="${ts_line#\'}"
+          ts_line="${ts_line%\'}"
+          break
+          ;;
+      esac
+    done < "$compact_file"
     if [[ -n "$ts_line" ]]; then
       ts_epoch="$(date -d "$ts_line" +%s 2>/dev/null || echo 0)"
       printf -v now_epoch '%(%s)T' -1

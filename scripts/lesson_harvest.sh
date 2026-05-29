@@ -29,7 +29,6 @@ import subprocess
 import os
 import pickle
 import hashlib
-import time
 from pathlib import Path
 
 import yaml
@@ -37,12 +36,10 @@ import yaml
 archive_dir = Path(sys.argv[1])
 projects_dir = Path(sys.argv[2])
 
-_CACHE_TTL = 300  # 5 minutes
-
 
 def _scan_cache_key():
     try:
-        return int(archive_dir.stat().st_mtime * 1000)
+        return archive_dir.stat().st_mtime_ns
     except OSError:
         return None
 
@@ -55,8 +52,6 @@ def _scan_cache_path():
 def _load_scan_cache():
     try:
         p = _scan_cache_path()
-        if time.time() - p.stat().st_mtime > _CACHE_TTL:
-            return None
         with p.open("rb") as f:
             entry = pickle.load(f)
         if entry.get("key") != _scan_cache_key():
