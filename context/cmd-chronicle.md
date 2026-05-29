@@ -585,3 +585,5 @@
 | cmd_3093 | gate_lesson_health.shのuseful_rate=25.7%がALERT(3セッション連続startup BLOCK)。低useful教訓を特定しwhen/how品質向上または淘汰でuseful_rateを改善する。軍師分析(gunshi_idle_useful_rate_alert_nazenaze_20260519.md等)を参照し根因に基づく改善を行う | infra | 05-29 | 低useful教訓TOP10をlesson_impact.t |
 | cmd_3094 | 軍師計測(blt_20260529_124846)でcmd_complete_gate.sh(fresh)=220秒が全スクリプト最大ボトルネックと判明。毎cmd完了時に3分40秒消費。殿指示「スクリプト速度ボトルネック洗脳監査」への対応 | infra | 05-29 | cmd_complete_gate.shのGATE CLEA |
 | cmd_3095 | context_freshness ALERT残存(saxo-trade-engine.md ソースPJ commit未反映 + 記憶DB定義ファイル last_updated未記載)を解消し、進化検知のmemory-db-queries.mdをCLAUDE.md知識マップに接続する | infra | 05-29 | context_freshness ALERTを解消し、Sa |
+| cmd_3096 | 軍師計測(blt_20260529_124540)でgate_gunshi_report_precheck.sh=76.6秒が速度TOP2。毎レビュー時に76秒消費(1日10レビュー=12.7分/日損失)。22項目直列+WSL2 I/O律速が根因 | infra | 05-29 | gate_gunshi_report_precheck.sh |
+| cmd_3097 | 軍師計測でgate_gunshi_startup.sh=23.4秒が速度TOP3。軍師起動時に23秒消費。gate_sync 3068件走査+統計集計が根因 | infra | 05-29 | gate_gunshi_startup.sh fresh実行 |
