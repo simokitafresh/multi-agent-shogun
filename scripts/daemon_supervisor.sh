@@ -130,7 +130,7 @@ ds_stop_duplicates() {
     local pids=("$@")
     local keep pid
 
-    keep="$(ds_oldest_pid "${pids[@]}")"
+    keep="$(ds_newest_pid "${pids[@]}")"
     [[ -n "$keep" ]] || return 0
 
     for pid in "${pids[@]}"; do

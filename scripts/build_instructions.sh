@@ -118,6 +118,11 @@ build_instruction_file() {
 
     echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
+    if [[ "${_BUILD_ROLE_VALID[$role]:-1}" != "1" ]]; then
+        echo "  ❌ Missing role parts for: $role" >&2
+        return 1
+    fi
+
     # Write entire file in a single pass to reduce WSL2 filesystem overhead.
     # Multiple >> appends each open/close the output file; a single {} > file
     # opens it once and streams all content through one file descriptor.
@@ -178,10 +183,11 @@ trap "rm -f '$_BUILD_COMMON_TMP'" EXIT INT TERM
 #       (N = number of CLI types = 4; saves ~32 NTFS reads in the hot parallel path)
 # Note: parallel pre-build causes NTFS I/O contention → serial is faster on WSL2
 # ============================================================
-declare -A _BUILD_ROLE_TMPS _BUILD_TOOLS_TMPS
+declare -A _BUILD_ROLE_TMPS _BUILD_ROLE_VALID _BUILD_TOOLS_TMPS
 
 for _r in shogun karo gunshi ashigaru; do
     _BUILD_ROLE_TMPS[$_r]=$(mktemp)
+    _BUILD_ROLE_VALID[$_r]=1
     # shellcheck disable=SC2064
     trap "rm -f '${_BUILD_ROLE_TMPS[$_r]}'" EXIT INT TERM
     {
@@ -193,7 +199,12 @@ for _r in shogun karo gunshi ashigaru; do
         else
             printf -- '---\nrole: %s\nversion: "3.0"\n---\n\n' "$_r"
         fi
-        cat "$PARTS_DIR/roles/${_r}_role.md"
+        if [[ -f "$PARTS_DIR/roles/${_r}_role.md" ]]; then
+            cat "$PARTS_DIR/roles/${_r}_role.md"
+        else
+            _BUILD_ROLE_VALID[$_r]=0
+            echo "  ❌ Missing role file: $PARTS_DIR/roles/${_r}_role.md" >&2
+        fi
     } > "${_BUILD_ROLE_TMPS[$_r]}"
 done
 unset _r _lmd
