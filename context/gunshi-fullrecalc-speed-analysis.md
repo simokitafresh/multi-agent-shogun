@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-04-13 -->
 <!-- Vercel圧縮: 2026-04-13 267行→索引化 -->
 # fullrecalculate速度向上 分析 (索引)
 

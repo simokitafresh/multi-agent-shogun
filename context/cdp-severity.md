@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-04-25 -->
 <!-- GStack/GBrain takeaway #15 -->
 # CDP Severity
 

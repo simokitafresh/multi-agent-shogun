@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-05-29 -->
 # Memory DB Schema
 
 - DB: `/mnt/c/tools/multi-agent-shogun/data/multi_agent_shogun_memory.db`

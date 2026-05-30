@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-04-13 -->
 # Metrics Research Engine — Rolling拡張設計 (索引)
 <!-- Vercel圧縮: 2026-04-13 980行→索引化 -->
 

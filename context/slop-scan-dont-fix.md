@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-04-25 -->
 # Slop-Scan Don't-Fix — 修正すべきでないパターン集
 <!-- GStack/GBrain takeaway #28 (CLAUDE.md Slop-scan don't-fix) -->
 <!-- 出典: GStack CLAUDE.md §Slop-scan don't fix patterns (takeaway #28) -->

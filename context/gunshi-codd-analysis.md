@@ -1,3 +1,4 @@
+<!-- last_updated: 2026-04-16 -->
 <!-- Vercel圧縮: 2026-04-13 295行→索引化 -->
 # CoDD (Coherence-Driven Development) vs 将軍システム分析 (索引)
 
