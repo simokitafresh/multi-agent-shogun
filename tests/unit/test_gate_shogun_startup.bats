@@ -214,6 +214,22 @@ else
 fi
 MOCK
     chmod +x "$SHARED_BASE/bin/git"
+
+    cat > "$SHARED_BASE/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"success"}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$SHARED_BASE/bin/gh"
+
+    cat > "$SHARED_BASE/scripts/inbox_write.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${SHOGUN_STARTUP_ROOT}/logs/inbox_write_calls.log"
+MOCK
+    chmod +x "$SHARED_BASE/scripts/inbox_write.sh"
 }
 
 setup() {
@@ -241,6 +257,37 @@ teardown() {
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "CI RED failure sends ci_red_fix to karo and shows WARN" {
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure"}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ CI RED自動修正配備"* ]]
+    [[ "$output" == *"WARN: 最新CI conclusion=failure"* ]]
+    [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+    grep -q "karo CI RED検知: 最新GitHub Actions conclusion=failure" "$TEST_TMPDIR/logs/inbox_write_calls.log"
+    grep -q "ci_red_fix gate_shogun_startup" "$TEST_TMPDIR/logs/inbox_write_calls.log"
+}
+
+@test "CI GREEN passes silently without WARN or inbox notification" {
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"■ CI RED自動修正配備"* ]]
+    [[ "$output" != *"CI RED"* ]]
+    [[ "$output" != *"ci_red_fix"* ]]
+    [ ! -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]
     [[ "$output" == *"総合判定: OK"* ]]
 }
 

@@ -1,7 +1,8 @@
 task:
-  _ac_task_id: cmd_3100_batch
+  _ac_task_id: cmd_3109_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3100 (deployed 2026-05-29T20:05:48). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3109 (deployed 2026-05-30T21:21:56). Read from the beginning.
+  ac_version: 2297ab47
   cmd_id: cmd_training_speed_gate_metrics_20260529
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -11,76 +12,81 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3100
+  parent_cmd: cmd_3109
   project: infra
-  purpose: gate_skill_script_refs.shが18 WARN(12ファイル)を検出。参照scriptが更新されたがSKILL.md内容が未同期。3セッション連続startup BLOCKの解消
+  purpose: 全エージェント/clear後(shutsujin再起動)にCI REDが放置される仕組みの穴を塞ぐ。gate_shogun_startup.shにCI RED検知セクションを追加し、RED検知時に家老への自動ci_red_fix配備を実行する
   status: done
   stop_for: []
-  target_path: skills/
-  task_id: cmd_3100_batch
-  task_type: batch
+  target_path: scripts/gates/
+  task_id: cmd_3109_focused
+  task_type: focused
   related_lessons:
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-  - id: 'L618'
-    summary: 'causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回'
-    detail: 'causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回'
-  - id: 'L660'
-    summary: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
-    detail: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
-  - id: 'L630'
-    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-  - id: 'L190'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-  - id: 'L421'
-    summary: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
-    detail: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
-  - id: 'L667'
-    summary: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
-    detail: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
-  - id: 'L603'
-    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L114'
-    summary: 'cmd_464_hotfix'
-    detail: 'cmd_464_hotfix'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+  - id: 'L594'
+    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L728'
+    summary: 'deploy_task.shのsafe_inbox_write()がinbox_write.shの第5引数(action)を4引数で止めていた。inbox_wa'
+    detail: 'deploy_task.shのsafe_inbox_write()がinbox_write.shの第5引数(action)を4引数で止めていた。inbox_wa'
+  - id: 'L531'
+    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン'
+  - id: 'L584'
+    summary: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
+    detail: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
+  - id: 'L431'
+    summary: 'テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推'
+    detail: 'テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推'
+  - id: 'L321'
+    summary: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
+    detail: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
+  - id: 'L289'
+    summary: 'SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別'
+    detail: 'SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別'
+  - id: 'L209'
+    summary: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
+    detail: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
-  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
   - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
   recommended_skills:
-  - "skill-creator"
-  - "skill-installer"
-  - "codd"
-  - "codd-refactor"
   - "hensei"
   - "hensei-mixed"
   - "hensei-opus"
   - "karo-direct"
   - "recon-dual"
   - "reset-layout"
+  - "shogun-all-codex-switch"
+  - "shogun-peacetime-rollback"
+  - "switch-to-codex"
+  - "switch-to-opus"
   related_causal_links:
-  - "[[SKILL.md_script乖離]]"
-  - "[[startup_BLOCK_3連続]]"
-  - "[[スキル実行品質劣化リスク]]"
+  - "[[LS-A01]]"
+  - "[[deepdive_why_chain_20260321]]"
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -95,26 +101,34 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
-      - L618: causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回
-      - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
-      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
-      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
-      - L421: Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合
-      - L667: self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re
-      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L114: cmd_464_hotfix
+      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
+      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L728: deploy_task.shのsafe_inbox_write()がinbox_write.shの第5引数(action)を4引数で止めていた。inbox_wa
+      - L531: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_saveを保存するときにL1070で呼ばれる。前cmdCLEAR直後にはリマイン
+      - L584: run_python_logged ... <<'MARKER'; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc
+      - L431: テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推
+      - L321: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ
+      - L289: SG7バンドルはinbox_writeの引数として1行に収める設計。内容が長い場合や特殊文字を含む場合にシェル引数が壊れる可能性がある。問題発生時はバンドルを別
+      - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも 
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '12 SKILL.md全件が参照scriptの最新変更内容を反映し、gate_skill_script_refs.shの実行結果がWARN 0件であることが確認されている'
-  ac_version: 0d696101
+    - check: 'gate_shogun_startup.shにCI REDチェックセクションが追加され、gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusionでfailureを検出する'
+  - id: 'AC2'
+    checks:
+    - check: 'CI RED検知時にinbox_write.sh karoへci_red_fix typeメッセージが自動送信され、家老が自動配備を開始する強制フローになっている'
+  - id: 'AC3'
+    checks:
+    - check: 'CI GREEN時は無音通過する(WAR/ALERT/inbox送信なし)'
+  - id: 'AC4'
+    checks:
+    - check: 'テストがbatsで追加され全PASS(CI RED時のWARN表示+inbox送信、GREEN時の無音通過)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3100.yaml
-  report_path: queue/reports/hayate_report_cmd_3100.yaml
+  report_filename: hayate_report_cmd_3109.yaml
+  report_path: queue/reports/hayate_report_cmd_3109.yaml
   bloom_level: 
-  deployed_at: "2026-05-29T20:06:18"
+  deployed_at: "2026-05-30T21:22:30"

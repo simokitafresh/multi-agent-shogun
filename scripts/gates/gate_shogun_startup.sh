@@ -28,6 +28,47 @@ _d_proposals=0
 _d_inbox=0
 _d_idle_trigger=""
 
+	check_ci_red_autodeploy() {
+	    if ! command -v gh >/dev/null 2>&1; then
+	        return 0
+	    fi
+
+	    local ci_json ci_conclusion
+	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-15}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
+	    [ -n "$ci_json" ] || return 0
+
+	    ci_conclusion="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
+import json
+import sys
+
+try:
+    runs = json.loads(sys.argv[1])
+except Exception:
+    raise SystemExit(0)
+if isinstance(runs, list) and runs:
+    print(str((runs[0] or {}).get("conclusion") or ""))
+PY
+)"
+	    [ "$ci_conclusion" = "failure" ] || return 0
+
+	    echo "■ CI RED自動修正配備"
+	    echo "  WARN: 最新CI conclusion=failure"
+	    if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+	        "CI RED検知: 最新GitHub Actions conclusion=failure。gh run view --log-failedで失敗テストを特定し、idle忍者へci_red_fix配備せよ。" \
+	        ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
+	        echo "  ACTION: karoへci_red_fix通知送信"
+	    else
+	        echo "  ALERT: karoへのci_red_fix通知失敗"
+	        overall="ALERT"
+	        alerts+=("CI RED自動修正配備: inbox送信失敗")
+	        return 0
+	    fi
+	    if [ "$overall" = "OK" ]; then
+	        overall="WARN"
+	    fi
+	    alerts+=("CI RED自動修正配備: WARN")
+	}
+
 	check_shogun_watcher_escalation_env() {
 	    local found=0
 	    local bad_pids=()
@@ -134,6 +175,9 @@ echo ""
 if [ "$LIGHT_MODE" != "1" ] && [ -x "$YAML_AUTO_ARCHIVE" ]; then
     "$YAML_AUTO_ARCHIVE" >/dev/null 2>&1 || true
 fi
+
+# --- Gate 0.9: CI RED自動修正配備 ---
+check_ci_red_autodeploy
 
 # --- Gate 0.5: 将軍watcher環境変数 ---
 echo "■ 将軍watcher環境変数"
