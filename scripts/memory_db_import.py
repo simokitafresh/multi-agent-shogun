@@ -32,8 +32,14 @@ OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
 SQLITE_BUSY_TIMEOUT_MS = 5000
 EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]
 FTS_QUERY_TOKEN_RE = re.compile(
-    r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff]{3,}"
+    r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]{2,}"
 )
+
+_CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]")
+
+
+def has_cjk(text: str) -> bool:
+    return bool(_CJK_RE.search(text))
 
 
 def normalize_text(value: Any) -> str:
@@ -820,15 +826,53 @@ def default_pending_decisions_path_for_archive(archive_dir: Path) -> Path:
 
 
 def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") -> list[sqlite3.Row]:
-    fts_query = fts5_query_for_text(query)
-    if not fts_query:
+    normalized_query = normalize_text(query)
+    if not normalized_query:
         return []
     target = normalize_text(target)
     target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
-    params: tuple[object, ...] = (fts_query, target, limit) if target else (fts_query, limit)
+
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
         conn.row_factory = sqlite3.Row
+
+        # CJK文字を含むクエリはLIKEフォールバック(FTS5 trigramはCJK MATCH非対応)
+        if has_cjk(normalized_query):
+            like_pattern = f"%{normalized_query}%"
+            params: tuple[object, ...] = (
+                (like_pattern, like_pattern, target, limit) if target
+                else (like_pattern, like_pattern, limit)
+            )
+            return list(
+                conn.execute(
+                    f"""
+                    SELECT
+                        e.id,
+                        e.ts,
+                        e.event_type,
+                        e.agent,
+                        e.target,
+                        e.summary,
+                        e.detail,
+                        e.cmd_id,
+                        e.parent_event_id,
+                        e.importance,
+                        0 AS rank
+                    FROM events AS e
+                    WHERE (e.summary LIKE ? OR e.detail LIKE ?)
+                      {target_clause}
+                    ORDER BY e.importance DESC, e.ts DESC
+                    LIMIT ?
+                    """,
+                    params,
+                )
+            )
+
+        # ASCII/Latin: FTS5 MATCH (bm25ランキング)
+        fts_query = fts5_query_for_text(query)
+        if not fts_query:
+            return []
+        params = (fts_query, target, limit) if target else (fts_query, limit)
         return list(
             conn.execute(
                 f"""
