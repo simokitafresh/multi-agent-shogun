@@ -1064,9 +1064,11 @@ def build_db(
             """,
             event_concept_rows(event_rows),
         )
+        # DROP→再作成でtokenizerをtrigramに強制切替(IF NOT EXISTSだと古いunicode61が残る)
+        conn.execute("DROP TABLE IF EXISTS events_fts")
         conn.execute(
             """
-            CREATE VIRTUAL TABLE IF NOT EXISTS events_fts USING fts5(
+            CREATE VIRTUAL TABLE events_fts USING fts5(
                 summary,
                 detail,
                 content='events',
