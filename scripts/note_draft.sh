@@ -243,39 +243,30 @@ js_eval(tab, """(function(){
 })()""", port=PORT)
 print("[note_draft] Title set")
 
-# Step 5: Insert body
-encoded = base64.b64encode(
-    json.dumps(sections, ensure_ascii=False).encode("utf-8")
-).decode("ascii")
+# Step 5: Insert body via innerHTML (ProseMirror execCommand非対応のため)
+html_parts = []
+for s in sections:
+    if s["type"] == "heading":
+        html_parts.append(f"<h3>{s['text']}</h3>")
+    elif s["type"] in ("text", "bullet"):
+        html_parts.append(f"<p>{s['text']}</p>")
+    elif s["type"] == "hr":
+        html_parts.append("<hr>")
 
-# Focus body
-js_eval(tab, "(function(){var b=document.querySelector('div[contenteditable]');if(b){b.focus();return 'ok';}return 'no';})()", port=PORT)
+body_html = "\n".join(html_parts)
+encoded_html = base64.b64encode(body_html.encode("utf-8")).decode("ascii")
 
-insert_js = """(function(){
-  var body = document.querySelector('div[contenteditable]');
+result = js_eval(tab, """(function(){
+  var body = document.querySelector('div.ProseMirror, div[contenteditable]');
+  if(!body) return 'no_prosemirror';
   body.focus();
-  var raw = atob('""" + encoded + """');
-  var decoded = decodeURIComponent(escape(raw));
-  var sections = JSON.parse(decoded);
-  var first = true;
-  for(var i = 0; i < sections.length; i++){
-    var s = sections[i];
-    if(!first) document.execCommand('insertParagraph', false, null);
-    if(s.type === 'heading'){
-      document.execCommand('formatBlock', false, 'h3');
-      document.execCommand('insertText', false, s.text);
-    } else if(s.type === 'text' || s.type === 'bullet'){
-      document.execCommand('formatBlock', false, 'p');
-      document.execCommand('insertText', false, s.text);
-    } else if(s.type === 'hr'){
-      document.execCommand('insertHorizontalRule', false, null);
-    }
-    first = false;
-  }
-  return 'inserted ' + sections.length;
-})()"""
-
-result = js_eval(tab, insert_js, port=PORT)
+  var raw = atob('""" + encoded_html + """');
+  var html = decodeURIComponent(escape(raw));
+  body.innerHTML = html;
+  body.dispatchEvent(new Event('input', {bubbles:true}));
+  body.dispatchEvent(new Event('change', {bubbles:true}));
+  return 'inserted ' + body.children.length;
+})()""", port=PORT)
 print(f"[note_draft] Body: {result}")
 
 # Step 6: Save draft
