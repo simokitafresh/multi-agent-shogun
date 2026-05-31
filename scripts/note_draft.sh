@@ -244,14 +244,27 @@ js_eval(tab, """(function(){
 print("[note_draft] Title set")
 
 # Step 5: Insert body via innerHTML (ProseMirror execCommand非対応のため)
+# 連続するtext/bullet行は1つの<p>にまとめ、<br>で改行する（noteのp間マージン対策）
 html_parts = []
+text_acc = []
+
+def flush_acc():
+    global text_acc
+    if text_acc:
+        html_parts.append("<p>" + "<br>".join(text_acc) + "</p>")
+        text_acc = []
+
 for s in sections:
     if s["type"] == "heading":
+        flush_acc()
         html_parts.append(f"<h3>{s['text']}</h3>")
     elif s["type"] in ("text", "bullet"):
-        html_parts.append(f"<p>{s['text']}</p>")
+        text_acc.append(s["text"])
     elif s["type"] == "hr":
+        flush_acc()
         html_parts.append("<hr>")
+
+flush_acc()
 
 body_html = "\n".join(html_parts)
 encoded_html = base64.b64encode(body_html.encode("utf-8")).decode("ascii")
