@@ -435,3 +435,4 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 - ← [[dm-signal]] 研究層
 - ← [[dialogue_preprocessing_research_20260331]] 前処理研究日誌
 - ← [[dialogue_alm_finite_time_20260404]] ALM有限時間4指標
+- → [[gunshi-fof-deterioration-analysis.md]] EMA前処理のFoF悪化メカニズム分析

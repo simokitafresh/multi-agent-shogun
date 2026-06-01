@@ -86,3 +86,7 @@ CDPプロトコルはChromium共通。Chrome/Edge区別不要。
 - **curlはWindows localhostのCDPに接続不可**（Connection refused）
 - **Python socketは接続可能**
 - CDPチェックはcurlではなく`cdp_helper.preflight_cdp_check`(Python)を使え
+
+## 因果リンク
+
+- → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類

@@ -100,5 +100,6 @@ Obsidianリンクとセマンティクスインデックスは**別の道具**�
 
 - ← [[deepdive_why_chain_20260321]] Phase 4: 自動化×強制（リンク=知性の外部化）
 - ← [[deepdive_causal_tracing_20260415]] Phase 4: 因果はたどれ（ハブ方式=パターンマッチ適用の失敗）
+- → [[context/README.md]] contextディレクトリの目的・テンプレート・読込順序
 - → [[training-cycle]] 修行AC設計にリンク記録を反映
 - → [[semantic_index_design]] セマンティクスインデックスとの分離を明記
