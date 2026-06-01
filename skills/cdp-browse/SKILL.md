@@ -96,7 +96,13 @@ document.querySelector('button[type="submit"], button').click();
 
 同時に複数サイトを扱う場合はポートと `--user-data-dir` を分ける。ログイン状態やCookieを混ぜない。
 
-note.com下書き保存では、既存実績として `CDP_PORT=9234 bash scripts/note_draft.sh <記事.md>` を使う。9234はnote.com専用の隔離プロファイルとして扱い、9222の汎用確認や9400のdaemon操作口と混ぜない。
+note.com下書き保存では、共通ヘルパー `scripts/note_draft.sh` を使う。引数はMarkdownファイル1件のみで、`CDP_PORT` 未指定時は9234を使う。9234はnote.com専用の隔離プロファイルとして扱い、9222の汎用確認や9400のdaemon操作口と混ぜない。
+
+```bash
+CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"
+```
+
+`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出す。
 
 ## cdp_cli.sh不可時の直接WS操作
 

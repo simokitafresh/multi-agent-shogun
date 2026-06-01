@@ -165,23 +165,21 @@ noteはCommonMark仕様に従うため、太字の配置に制約がある。
 
 ### Step 6: note.comに下書き保存
 
-CDP経由でnote.comに下書き保存する。手順は共通リファレンス参照:
-→ `memory/reference_cdp_note_com.md`
+CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scripts/note_draft.sh` に委譲する。
 
-実行は共通ヘルパーに委譲する:
+引数はMarkdownファイル1件のみ。`CDP_PORT` 未指定時は9234を使う。
 
 ```bash
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-未ログイン時は`.env.note`の`NOTE_EMAIL`/`NOTE_PASSWORD`で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは`/tmp/note_recaptcha_challenge.png`を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
 
-Markdown→note.com変換ルール（詳細は共通リファレンス§4-3参照）:
-- `## 見出し` → h3見出し（`formatBlock('h3')`）
-- `---` → 区切り線（`insertHorizontalRule`）
-- 連続する通常テキスト → **1段落に結合**して`insertText`（間延び防止）
-- `**太字ラベル**` → サブ見出し扱い、個別段落
-- `- リスト項目` → 個別段落
-- 画像 → テキスト挿入後に§6の手順で別途挿入（Windowsパス必須）
-- 空行 → スキップ（余分な改行防止）
-- `# タイトル` → titleのtextareaに設定（本文に含めない）
+Markdown→note.com変換ルール:
+- `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う
+- `## 見出し` → `<h3>` として本文HTMLに入れる
+- `---` → `<hr>` として本文HTMLに入れる
+- 通常テキストと `- リスト項目` → 連続分を1つの `<p>` にまとめ、行間は `<br>` でつなぐ
+- 空行とコードフェンス行 → スキップ
+- 本文は `div.ProseMirror, div[contenteditable]` に `innerHTML` で挿入し、`input` / `change` eventを発火する
+- 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力する
