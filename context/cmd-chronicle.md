@@ -544,3 +544,4 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | cmd_3110 | recalculate_fof.pyのs_data構築(L517-527)でholding_signal_rawとsignal_cacheがif/elif排他構造のため、preloadでDBの古いデータがholding_signal_rawに入ると、1段目FoF計算後にsignal_cacheに書き戻された新データを2段目以降のネストFoFが読めない。6月signal未生成42件(奥義-GS 18/旧忍法系16/秘奥義4/NFF3/Ward1)の根因 | dm-signal | 06-01 | recalculate_fof.pyのFoF s_data構 |
+| cmd_3111 | portfolio_config_snapshotsテーブルは076マイグレーションで作成済みだが書込みロジックが未接続(0件)。PF設定のロールバック手段がない。recalculate Phase 0直前とPF保存時に自動スナップショットを取る | dm-signal | 06-01 | portfolio_config_snapshotsへのPF |
