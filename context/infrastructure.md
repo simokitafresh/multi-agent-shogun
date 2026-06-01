@@ -616,6 +616,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | README | `android/README_ja.md` / `android/README.md` |
 | APK | `android/release/` |
 | cmd履歴 | `context/cmd-chronicle.md` cmd_1809-1816, cmd_1924, cmd_1943, cmd_1945, cmd_2104 |
+| 入力ロス調査 | [[android-ssh-input-loss-investigation.md]] |
 
 ## Infra教訓索引
 <!-- last_synced_lesson: L729 -->

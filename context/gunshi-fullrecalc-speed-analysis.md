@@ -27,3 +27,7 @@
 → `docs/research/gunshi-fullrecalc-speed-analysis.md` §改善提案
 
 Tier 1全項目+Tier 2 NEW-1/2a実装済み。残: NEW-2b(whileループNumPy化, ROI未確定)
+
+## 因果リンク
+
+- → [[gunshi-fullrecalc-resilience-analysis.md]] 速度改善がzero-signal解消に寄与した一方、処理時間依存の正確性保証は中断耐性リスクを残す
