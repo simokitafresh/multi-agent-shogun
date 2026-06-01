@@ -1,3 +1,5 @@
+<!-- last_updated: 2026-06-02 -->
+
 # Memory DB Schema
 
 - DB: `/mnt/c/tools/multi-agent-shogun/data/multi_agent_shogun_memory.db`
@@ -7,10 +9,10 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 82750 | event_id, concept_name, relevance_score |
+| table | event_concepts | 82829 | event_id, concept_name, relevance_score |
 | table | event_links | 2324 | source_event_id, target_concept, link_type |
-| table | events | 66519 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 66519 | summary, detail |
+| table | events | 66788 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 66788 | summary, detail |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -21,7 +23,7 @@
 | table | test_trigram_data | 2 | id, block |
 | table | test_trigram_docsize | 0 | id, sz |
 | table | test_trigram_idx | 0 | segid, term, pgno |
-| view | conversations | 34221 | ts, agent, direction, summary, detail, session_id |
+| view | conversations | 34268 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -36,18 +38,18 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 34221 |
-| report | 7929 |
+| conversation | 34268 |
+| report | 8088 |
 | cmd_archive | 7420 |
 | skill_execution | 4792 |
-| bulletin | 3846 |
-| insight | 2859 |
-| inbox | 2269 |
-| cmd_quality | 1594 |
-| gate | 496 |
-| cmd_save | 492 |
+| bulletin | 3852 |
+| insight | 2883 |
+| inbox | 2297 |
+| cmd_quality | 1601 |
+| gate | 497 |
+| cmd_save | 494 |
 | document | 352 |
-| cmd_delegate | 123 |
+| cmd_delegate | 124 |
 | lesson | 51 |
 | pending_decision | 43 |
 | workaround | 26 |

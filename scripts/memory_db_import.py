@@ -8,6 +8,7 @@ import argparse
 import json
 import re
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -1040,6 +1041,8 @@ def schema_markdown(db_path: Path) -> str:
         conn.row_factory = sqlite3.Row
         objects = sqlite_objects(conn)
         lines = [
+            f"<!-- last_updated: {datetime.now().strftime('%Y-%m-%d')} -->",
+            "",
             "# Memory DB Schema",
             "",
             f"- DB: `{db_path}`",
@@ -1413,6 +1416,11 @@ def main() -> int:
         markdown = schema_markdown(db_path)
         if args.schema_output:
             output_path = Path(args.schema_output)
+        elif should_write_default_schema_doc(db_path):
+            output_path = DEFAULT_SCHEMA_DOC_PATH
+        else:
+            output_path = None
+        if output_path is not None:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(markdown, encoding="utf-8")
         print(markdown, end="")
