@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-05-29 cmd_3091 -->
+<!-- last_updated: 2026-06-01 cmd_3110 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -55,6 +55,7 @@ Phase構成全量 → `docs/research/fullrecalculate-architecture-2026-03-28.md`
 | Phase 2 | Phase 3.7/4 | `signal_cache` dict(OPT-6) | in-memory共有。参照のみなら安全 | — |
 | Phase 4/4.5 | **Phase 5 FoF** | **DB上のSignalレコード** | flush遅延/deferred→FoF DB queryが空→ゼロ信号 | **cmd_1474**(OPT-13: deferred flush) |
 | Phase 2 | **Phase 5 FoF** | `signal_cache`+`holding_signal_raw`(OPT-15) | signal_cacheはbuild_signal_cache_value変換済み(holding_signal or signal)でDB生値と不一致。holding_signal_raw二層cacheが必要(L531) | **cmd_1622**(N+1 query除去) |
+| **Phase 5 FoF 1段目** | **Phase 5 FoF 2段目+** | `holding_signal_raw` vs `signal_cache` L519-527 | if/elif排他: preloadでDBの古い日付がholding_signal_rawに入る→cidキー存在→signal_cacheのelif分岐到達不能→2段目ネストFoFが1段目計算結果の新日付を読めない(42件signal未生成) | **cmd_3110**([[LS041]]) |
 | Phase 5 FoF | **Phase 5 precompute** | **SQLAlchemy session** | session-bound preload→commit後expire→下流例外→silent skip(PI-018) | **cmd_1479**(portfolio_preload expire) |
 | Phase 5 FoF | **monthly_returns** | **momentum_data[weights]** | OPT-A(cmd_1450)で非リバランス日={skipped:true}→weightsキー消失→EWフォールバック(L1067-1070) | **cmd_1568**(Ward/KalmanMeta bimonthly/quarterly。月次FoFは影響なし) |
 
