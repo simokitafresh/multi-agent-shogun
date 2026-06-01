@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-01 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-01T21:39:30+09:00 -->
+<!-- generated_at: 2026-06-01T23:40:51+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-01T23:40:51+09:00 | terminal | response | **cmd_3112 PASS+DELEGATED。** 家老に委任完了。GPT忍者に配備される。 本セッション成果まとめ: | cmd | 内容 | 状態 | |-----|------|------| | cmd_3110 | ネスト…
+- 2026-06-01T23:35:22+09:00 | terminal | inbound | 旧式PF 58件の物理削除cmdを起票しよう
+- 2026-06-01T22:49:04+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-frontend.md(source更新),dm-signal-ops.md(source更新),dm-signal-research.md(source更新),dm-signa…
+- 2026-06-01T21:48:24+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-frontend.md(source更新),dm-signal-ops.md(source更新),dm-signal-research.md(source更新),dm-signa…
 - 2026-06-01T21:39:29+09:00 | terminal | response | 連続inbox1（26件）は同一メッセージのnudge連打。未読はGA-402の1件のみ、処理済み。全忍者idle、cmd待ち状態。 [meta] stop_reason=tool_use
 - 2026-06-01T20:48:04+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-frontend.md(source更新),dm-signal-ops.md(source更新),dm-signal-research.md(source更新),dm-signa…
 - 2026-06-01T20:11:47+09:00 | terminal | response | 完了。T1/T2/NEWTIER消滅、正規5件+レガシー2件(VIEWER_PASS, VIEWER_AUTH_BYPASS, ADMIN_PASS)のみ残存。 殿、次は何をするか。旧式PF 58件の物理削除cmdを起票するか、他の話題に…
 - 2026-06-01T20:10:31+09:00 | terminal | inbound | T1/T2/NEWTIERの３件を削除しよう
 - 2026-06-01T20:09:21+09:00 | terminal | response | 現物確認完了。 殿、事実を報告する。 ## Render BE環境変数の現状 | env var | DBのviewer_tiers | 状態 | |---------|-----------------|------| | VIEWER…
 - 2026-06-01T20:08:13+09:00 | terminal | inbound | みよう
-- 2026-06-01T20:07:41+09:00 | terminal | response | 殿、根因が判明した。 ## VIEWER_PASS_T1 / T2 / NEWTIER の正体 **犯人: `password_rotation.py` + Renderクーロンジョブ `dm-signal-password-rotati…
-- 2026-06-01T20:05:05+09:00 | terminal | inbound | 以前から気になっていたのだが、DM-signalのenviromentでVIEWER_PASS_T2、VIEWER_PASS_T1、VIEWER_PASS_NEWTIERはだれがいつ作ってるんだ？おれは作った記憶がないし、消しても気づくと…
-- 2026-06-01T20:01:51+09:00 | terminal | response | 三層貫通完了+検証済み。 | 層 | 到達確認 | 内容 | |----|---------|------| | **層1: セマンティクス** | ✅ 「PF物理削除」「FK制約」で到達 | production_parityにalia…
-- 2026-06-01T19:58:17+09:00 | terminal | inbound | このやり方を三層記憶に貫通させよう
 
 ## 未解決確認事項
 - 現物確認完了。 殿、事実を報告する。 ## Render BE環境変数の現状 | env var | DBのviewer_tiers | 状態 | |---------|-----------------|------| | VIEWER_PASS_ADDON | ✅ AddO…
@@ -29,16 +29,11 @@
 - 該当なし
 
 ## 参照cmd
-- cmd_2
 - cmd_3
-- cmd_2722
-- cmd_2855
 - cmd_3041
-- cmd_3091
-- cmd_3094
-- cmd_3106
 - cmd_3110
 - cmd_3111
+- cmd_3112
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
