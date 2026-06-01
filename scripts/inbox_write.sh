@@ -1154,6 +1154,16 @@ fi
 if [ "$TYPE" = "cmd_new" ]; then
     # contentからcmd_idを抽出（"cmd_XXXX"パターン）
     _CMD_NEW_ID=$(echo "$CONTENT" | grep -oP 'cmd_\d+' | head -1 || true)
+    if [ "$FROM" = "shogun" ] && [ -z "$_CMD_NEW_ID" ]; then
+        echo "" >&2
+        echo "==============================" >&2
+        echo "[cmd_new_gate] BLOCKED: shogun cmd_new にcmd_idが含まれていない" >&2
+        echo "[cmd_new_gate] LS-A07: gate迂回禁止。cmd_idなしのcmd_newはcmd_save/cmd_new_gate/軍師レビュー/教訓サイクルを全て迂回する" >&2
+        echo "[cmd_new_gate] 正規テンプレート: bash scripts/cmd_publish.sh cmd_XXXX \"cmd_XXXXを書いた。配備せよ。\"" >&2
+        echo "[cmd_new_gate] 既存cmd委任のみなら: bash scripts/cmd_delegate.sh cmd_XXXX" >&2
+        echo "==============================" >&2
+        exit 1
+    fi
     if [ -n "$_CMD_NEW_ID" ]; then
         # statusを確認。pendingならgate未通過(cmd_delegate.shはinbox_write前にstatus=delegatedに変更済み)
         _CMD_STATUS=$(awk -v id="$_CMD_NEW_ID" '

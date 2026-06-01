@@ -421,6 +421,51 @@ else
     echo "  未読: 0件"
 fi
 
+# --- Gate 4.05: shogun cmd_new gate bypass history ---
+echo "■ shogun cmd_new gate迂回履歴"
+karo_inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
+if [ -f "$karo_inbox_file" ]; then
+    cmd_new_bypass_result=$(python3 - "$karo_inbox_file" <<'PY'
+import re
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages") or []
+violations = []
+for msg in messages:
+    if not isinstance(msg, dict):
+        continue
+    if str(msg.get("from", "")).strip() != "shogun":
+        continue
+    if str(msg.get("type", "")).strip() != "cmd_new":
+        continue
+    content = str(msg.get("content", ""))
+    if re.search(r"cmd_\d+", content):
+        continue
+    violations.append((str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:100]))
+print(len(violations))
+for msg_id, ts, head in violations[:10]:
+    print(f"{msg_id}\t{ts}\t{head}")
+PY
+)
+    cmd_new_bypass_count=$(printf '%s\n' "$cmd_new_bypass_result" | head -1)
+    if [ "${cmd_new_bypass_count:-0}" -gt 0 ]; then
+        echo "  WARN: shogun cmd_idなしcmd_new送信 ${cmd_new_bypass_count}件"
+        printf '%s\n' "$cmd_new_bypass_result" | tail -n +2 | awk -F'\t' '{printf "    %s (%s) — %s\n", $1, $2, $3}'
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        alerts+=("shogun cmd_new gate迂回履歴: ${cmd_new_bypass_count}件")
+    else
+        echo "  OK: cmd_idなしcmd_new送信なし"
+    fi
+else
+    echo "  OK: karo inboxなし"
+fi
+
 # --- Gate 4.1: 未確認GATE CLEAR ---
 echo "■ 未確認GATE CLEAR"
 if [ -f "$inbox_file" ]; then

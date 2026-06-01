@@ -116,6 +116,9 @@ messages:
   read: true
   id: msg_1
 EOF
+    cat > "$SHARED_BASE/queue/inbox/karo.yaml" <<'EOF'
+messages: []
+EOF
 
     echo "entries: []" > "$SHARED_BASE/queue/bulletin_board.yaml"
 
@@ -785,6 +788,30 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未読: 2件"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "shogun cmd_new without cmd_id history warns on startup" {
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- content: "配備せよ。"
+  from: shogun
+  id: msg_bypass
+  read: true
+  timestamp: "2099-01-01T00:00:00"
+  type: cmd_new
+- content: "cmd_100を書いた。配備せよ。"
+  from: shogun
+  id: msg_valid
+  read: true
+  timestamp: "2099-01-01T00:01:00"
+  type: cmd_new
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun cmd_idなしcmd_new送信 1件"* ]]
+    [[ "$output" == *"msg_bypass"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 

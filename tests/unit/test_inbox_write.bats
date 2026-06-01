@@ -117,7 +117,12 @@ init_test_env() {
 setup_basic_test_env() {
     export INBOX_WRITE_TEST=1
     export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
-    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/scripts"
+    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_100:
+    status: delegated
+YAML
     if [ ! -L "$TEST_TMPDIR/scripts/lib" ]; then
         ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
     fi
@@ -155,7 +160,7 @@ setup() {
 
 @test "T-003: normal write to new inbox file → messages array with correct fields" {
     setup_basic_test_env
-    run bash "$TEST_INBOX_WRITE" "test_agent" "テストメッセージ" "cmd_new" "shogun"
+    run bash "$TEST_INBOX_WRITE" "test_agent" "cmd_100 テストメッセージ" "cmd_new" "shogun"
     [ "$status" -eq 0 ]
 
     # YAMLファイルが作成されていることを確認
@@ -163,12 +168,22 @@ setup() {
 
     # grep検証 (python3不要)
     [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
-    grep -q "^- content: 'テストメッセージ'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^- content: 'cmd_100 テストメッセージ'" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  from: 'shogun'" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -qE "^  id: 'msg_" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  type: 'cmd_new'" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml"
     grep -q "^  timestamp: " "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "T-003b: shogun cmd_new without cmd_id is blocked with LS-A07 guidance" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "配備せよ" "cmd_new" "shogun"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"[cmd_new_gate] BLOCKED: shogun cmd_new にcmd_idが含まれていない"* ]]
+    [[ "$output" == *"LS-A07: gate迂回禁止"* ]]
+    [[ "$output" == *"bash scripts/cmd_publish.sh cmd_XXXX"* ]]
+    [ ! -f "$TEST_INBOX_DIR/test_agent.yaml" ]
 }
 
 # =============================================================================

@@ -51,6 +51,12 @@ forbidden_actions:
     description: "殿にcommit/push/kill等の操作を命令・お願いする"
     positive_rule: "自分でできることは全て自分でやれ。git push/kill/Chrome起動等は将軍が実行"
     reason: "殿は奴隷ではない。お願いも命令。殿の時間を奪う(殿裁定2026-05-27)"
+  - id: F010
+    action: shogun_karo_direct
+    description: "cmd_idなしのcmd_newやkaro_direct相当の直接配備でcmd_save/cmd_new_gate/軍師レビュー/教訓サイクルを迂回する"
+    delegate_to: karo
+    positive_rule: "cmd起票はcmd_publish.shまたはcmd_delegate.shの正規フローだけで行え。inbox_writeでcmd_newを送る場合も必ずcmd_idを含めよ"
+    reason: "cmd_idなしのcmd_newは品質gate・レビュー・教訓還流の鎖を切り、L0-L7の防御を無効化する"
   - id: F008
     action: deep_investigation_via_subagent
     description: "Agent toolでコード調査（3ファイル以上の精読・パターン分析）を実施する"
