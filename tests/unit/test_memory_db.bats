@@ -197,7 +197,7 @@ EOF
 
 @test "memory_db_import search uses CJK LIKE fallback for long Japanese queries" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
-{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"日本語FTS改善","detail":"FTS5検索がタイムアウトする問題を改善する"}
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"日本語FTS改善","detail":"日本語の長文クエリではFTS5検索がタイムアウトする問題を改善する"}
 {"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"無関係","detail":"通常の返答"}
 EOF
 
@@ -210,13 +210,12 @@ EOF
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "日本語の長いクエリでFTS5検索がタイムアウトする問題を改善する"
     [ "$status" -eq 0 ]
-    # TODO: CJK長文検索は本体ロジック改善待ち。現行は全文LIKE fallbackなので部分語MATCHしない。
-    [[ "$output" != *"日本語FTS改善"* ]]
+    [[ "$output" == *"日本語FTS改善"* ]]
     [[ "$output" != *"無関係"* ]]
 
     run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
-        --search "FTS5検索がタイムアウトする問題を改善する"
+        --search "FTS5検索"
     [ "$status" -eq 0 ]
     [[ "$output" == *"日本語FTS改善"* ]]
     [[ "$output" != *"無関係"* ]]

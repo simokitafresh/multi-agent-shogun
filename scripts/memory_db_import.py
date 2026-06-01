@@ -36,10 +36,69 @@ FTS_QUERY_TOKEN_RE = re.compile(
 )
 
 _CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]")
+CJK_LONG_QUERY_THRESHOLD = 20
+LIKE_QUERY_MAX_TERMS = 16
 
 
 def has_cjk(text: str) -> bool:
     return bool(_CJK_RE.search(text))
+
+
+def _cjk_char_group(char: str) -> str:
+    code = ord(char)
+    if 0x3040 <= code <= 0x309F:
+        return "hiragana"
+    if 0x30A0 <= code <= 0x30FF:
+        return "katakana"
+    if 0x3400 <= code <= 0x9FFF or 0xF900 <= code <= 0xFAFF:
+        return "han"
+    if char.isascii() and (char.isalnum() or char == "_"):
+        return "ascii"
+    return "other"
+
+
+def cjk_like_terms(query: str, max_terms: int = LIKE_QUERY_MAX_TERMS) -> list[str]:
+    """Split long CJK queries into AND-able LIKE terms at script boundaries."""
+    normalized_query = normalize_text(query)
+    if not normalized_query:
+        return []
+    if not has_cjk(normalized_query) or len(normalized_query) < CJK_LONG_QUERY_THRESHOLD:
+        return [normalized_query]
+
+    terms: list[str] = []
+    seen: set[str] = set()
+    current: list[str] = []
+    current_group = ""
+
+    def flush_current() -> None:
+        nonlocal current, current_group
+        if not current:
+            return
+        term = "".join(current).strip()
+        current = []
+        current_group = ""
+        if len(term) < 2:
+            return
+        key = term.casefold()
+        if key in seen:
+            return
+        seen.add(key)
+        terms.append(term)
+
+    for char in normalized_query:
+        group = _cjk_char_group(char)
+        if group == "other":
+            flush_current()
+            continue
+        if current and group != current_group:
+            flush_current()
+        current_group = group
+        current.append(char)
+    flush_current()
+
+    if not terms:
+        return [normalized_query]
+    return terms[:max_terms]
 
 
 def normalize_text(value: Any) -> str:
@@ -838,10 +897,15 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
 
         # CJK文字を含むクエリはLIKEフォールバック(FTS5 trigramはCJK MATCH非対応)
         if has_cjk(normalized_query):
-            like_pattern = f"%{normalized_query}%"
+            like_terms = cjk_like_terms(normalized_query)
+            like_clause = " AND ".join("(e.summary LIKE ? OR e.detail LIKE ?)" for _ in like_terms)
+            like_params: list[object] = []
+            for term in like_terms:
+                like_pattern = f"%{term}%"
+                like_params.extend((like_pattern, like_pattern))
             params: tuple[object, ...] = (
-                (like_pattern, like_pattern, target, limit) if target
-                else (like_pattern, like_pattern, limit)
+                tuple(like_params + [target, limit]) if target
+                else tuple(like_params + [limit])
             )
             return list(
                 conn.execute(
@@ -859,7 +923,7 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
                         e.importance,
                         0 AS rank
                     FROM events AS e
-                    WHERE (e.summary LIKE ? OR e.detail LIKE ?)
+                    WHERE {like_clause}
                       {target_clause}
                     ORDER BY e.importance DESC, e.ts DESC
                     LIMIT ?
