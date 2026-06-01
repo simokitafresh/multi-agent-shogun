@@ -744,6 +744,21 @@ import metrics_research_engine as MRE
 | knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
 | Home holiday | FE Homeへ休日認識追加。封鎖ページでも市場営業日表示に関わる変更として扱う | cmd_2880 |
 
+## §39 PF物理削除手順 (2026-06-01)
+
+**手順(安全順序)**:
+1. バックアップ: `portfolio_config_snapshots` INSERT + ローカルJSON(`docs/research/pf_config_backup_*.json`)
+2. NO ACTIONテーブル9個の関連レコード先行DELETE: signals/monthly_returns/annual_returns/drawdown_periods/portfolio_metrics/risk_management_metrics/rolling_returns_chart/rolling_returns_summary/trade_performance
+3. portfolios DELETE(CASCADE 10テーブルは自動削除)
+4. 逆依存順: FoF of FoF of FoF → FoF of FoF → FoF → standard PF
+5. 空フォルダー削除
+
+**注意**: `portfolio_config_snapshots`はCASCADE。物理DELETE時にスナップショットも消える→ローカルJSONが最終安全策
+
+**実績**: 四神(12)+忍法(15)+L0(30)+旧忍法Ward(1)=58件。NO ACTION関連260,965行。config全量バックアップ済み(`docs/research/pf_config_backup_20260601_pre_delete.json`)
+
+→ [[production_parity]] FK制約+削除手順 / [[LS040]] バックアップファースト
+
 ## 因果リンク
 
 - ← [[dm-signal]] 運用層
