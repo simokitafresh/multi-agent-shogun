@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-02 cmd_3118 -->
+<!-- last_updated: 2026-06-02 cmd_3125 -->
 
 # Memory DB Schema
 
@@ -9,10 +9,10 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 105018 | event_id, concept_name, relevance_score |
-| table | event_links | 2334 | source_event_id, target_concept, link_type |
-| table | events | 67667 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 67667 | summary, detail |
+| table | event_concepts | 91100 | event_id, concept_name, relevance_score |
+| table | event_links | 2388 | source_event_id, target_concept, link_type |
+| table | events | 68698 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 68698 | summary, detail |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -23,7 +23,7 @@
 | table | test_trigram_data | 2 | id, block |
 | table | test_trigram_docsize | 0 | id, sz |
 | table | test_trigram_idx | 0 | segid, term, pgno |
-| view | conversations | 34384 | ts, agent, direction, summary, detail, session_id |
+| view | conversations | 34537 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -38,18 +38,18 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 34384 |
-| report | 8345 |
-| cmd_archive | 7651 |
-| skill_execution | 4822 |
-| bulletin | 3869 |
-| insight | 2955 |
-| inbox | 2383 |
-| cmd_quality | 1633 |
-| cmd_save | 510 |
-| gate | 505 |
+| conversation | 34537 |
+| report | 8659 |
+| cmd_archive | 7895 |
+| skill_execution | 4881 |
+| bulletin | 3893 |
+| insight | 3011 |
+| inbox | 2482 |
+| cmd_quality | 1678 |
+| cmd_save | 531 |
+| gate | 513 |
 | document | 352 |
-| cmd_delegate | 131 |
+| cmd_delegate | 139 |
 | lesson | 51 |
 | pending_decision | 43 |
 | workaround | 26 |

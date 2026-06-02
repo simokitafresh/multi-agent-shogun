@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-05-29 cmd_3107 -->
+<!-- last_updated: 2026-06-02 cmd_3125 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -27,6 +27,16 @@
 
 記憶DB構造: DB pathは`data/multi_agent_shogun_memory.db`。主表は`events(id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance)`、全文検索はFTS5仮想表`events_fts(summary, detail)`、概念正規化は`event_concepts(event_id, concept_name)`、因果/Obsidianリンクは`event_links(source_event_id, target_concept, link_type)`。会話ビュー`conversations`は`events`由来。
 → `context/memory-db-schema.md` / `context/memory-db-queries.md` / `context/lord-conversation-index.md`
+
+### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
+
+殿指示で家老×軍師協議→穴分析→13cmd一気通貫で三層記憶の概念空間を接続。
+- **cmd_3116**: live_insert概念付与(速度2.3ms/一致率100%)
+- **cmd_3117**: テキスト品質改善(report充填3/10→10/10)
+- **cmd_3118**: 歴史データbackfill(31636件→11531件更新)
+- **cmd_3119**: event_concepts→教訓注入boost接続(deploy_task.shが概念横断で教訓候補を動的発見)
+- **cmd_3121**: 教訓注入偽陽性71.2%→22.7%根治
+- 概念充填率: report 0.4%→49%、lesson 2%→68.6%、gate 0%→97.8%、WA 0%→96.2%
 
 ## 直近改善（cmd_181〜cmd_541）
 

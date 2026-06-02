@@ -521,3 +521,9 @@
 | cmd_3117 | live_insertの概念付与入力テキストがevent_type別に品質差大。report=フィールド名メタデータ(充填0.8%)、cmd_delegate=定型文(4.7%)。concept_textにcmd title/purposeを逆引き注入し意味密度を向上 | infra | 06-02 | memory_db_live_insertの概念抽出にcmd |
 | cmd_3120 | 軍師startup gateのWARN表示→推薦行動が人間依存(L2)。idle活動率5.4%(37件中2件)。WARN検出→対応するidle自走ステップを自動実行指示をpromptに注入し、WARNを見て判断する工程を排除(L4化) | infra | 06-02 | 軍師startup gateのWARN/ALERTをidle |
 | cmd_3118 | 記憶DB 67456件中31617件(46.9%)が概念空。cmd_3116/3117は新規INSERT改善だが歴史データは空のまま。memory_db_import.pyのconcepts_for_text()で既存データを一括backfill | infra | 06-02 | events.concepts空履歴31636件をbackf |
+| cmd_3119 | deploy_task.shの教訓注入はindex.mdのrelated_lessons(10概念28リンク)の静的マッチのみ使用。記憶DBのevent_concepts(71概念83494行)が教訓注入に還流しない。概念経由で関連教訓を動的発見し注入候補を拡張 | infra | 06-02 | deploy_task.shのrelated_lessons |
+| cmd_3121 | 教訓注入59件中42件がNOT_USEFUL(偽陽性71.2%)。impl=100%偽陽性(7/7)。キーワードスコアリングが広すぎて無関係教訓が注入される。task_type別MIN_KEYWORD_SCORE引き上げで注入精度向上 | infra | 06-02 | impl task_typeのMIN_KEYWORD_SCO |
+| cmd_3124 | useful率全期間28.8%(WARN)と直近窓58.6%(OK)の乖離。startup gateが全期間値でWARN判定→過去蓄積で改善が遅い。gate_lesson_health.shと同じ直近窓に統一 | infra | 06-02 | startup gateの教訓useful率判定をgate_ |
+| cmd_3127 | infra教訓585/685件(85%)がorigin([[リンク]])なし。教訓が孤立し因果をたどれない。lesson_write.shにorigin必須化gateを追加し新規登録時の因果接続を強制 | infra | 06-02 | lesson_write.shにorigin必須gateを追 |
+| cmd_3128 | event_concepts(概念タグ)は70.3%改善したがevent_links(因果リンク)は1.2%(813/67875件)。memory_db_live_insert.pyにorigin/[[リンク]]自動抽出→event_links自動INSERTを追加 | infra | 06-02 | memory_db_live_insert.pyのappen |
+| cmd_3125 | hook_automation_framework(14389件)が突出し概念付与が偏集中。広すぎるaliasesが原因で横断検索にノイズ。aliasesを精査し概念分散を改善 | infra | 06-02 | hook_automation_frameworkの広すぎる |
