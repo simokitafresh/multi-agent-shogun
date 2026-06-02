@@ -267,6 +267,41 @@ PY
     done
 }
 
+@test "cmd_3123: memory_db_live_insert short aliases match only as complete standalone text" {
+    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" <<'PY'
+import importlib.util
+import json
+import sys
+
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+concepts = [
+    {"id": "apt_concept", "terms": ["apt"]},
+    {"id": "hmm_concept", "terms": ["HMM"]},
+    {"id": "mvo_concept", "terms": ["MVO"]},
+]
+cases = [
+    ("apt", ["apt_concept"]),
+    ("apt-get", []),
+    ("apt install", []),
+    ("HMM", ["hmm_concept"]),
+    ("HMM model", []),
+    ("MVO", ["mvo_concept"]),
+    ("MVO optimization", []),
+]
+for text, expected in cases:
+    actual = json.loads(module.concepts_for_text(text, concepts))
+    print(f"{text}|{actual == expected}|{actual}")
+PY
+)
+    [ "${#result[@]}" -eq 7 ]
+    for line in "${result[@]}"; do
+        [[ "$line" == *"|True|"* ]]
+    done
+}
+
 @test "memory_db_live_insert enriches low-density events with command title and purpose" {
     init_empty_memory_db
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/context"

@@ -6,6 +6,7 @@ import os
 import sys
 import json
 import glob
+import re
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -306,12 +307,21 @@ def semantic_concept_cache() -> list[dict[str, object]]:
     return _SEMANTIC_CONCEPT_CACHE
 
 
+def _concept_term_matches(term: object, haystack: str) -> bool:
+    needle = normalize_text(term).casefold()
+    if not needle:
+        return False
+    if len(needle) <= 3:
+        return re.fullmatch(rf"\b{re.escape(needle)}\b", haystack) is not None
+    return needle in haystack
+
+
 def concepts_for_text(text: str, concepts: list[dict[str, object]] | None = None) -> str:
-    haystack = text.casefold()
+    haystack = normalize_text(text).casefold()
     matched: list[str] = []
     for concept in semantic_concept_cache() if concepts is None else concepts:
         terms = concept.get("terms", [])
-        if any(str(term).casefold() in haystack for term in terms):
+        if any(_concept_term_matches(term, haystack) for term in terms):
             matched.append(str(concept["id"]))
     return json.dumps(sorted(set(matched)), ensure_ascii=False)
 
