@@ -19,3 +19,7 @@ CDP計測・canary・ブラウザ実測の異常は、以下の4段階で扱う�
 - `medium/low` は闇雲に直すな。再現条件と頻度を先に固める
 - severity は主観でなく、ユーザー影響と blast radius で決める
 - `critical` と `high` は canary / deploy 後監視の優先対象とする
+
+## 因果リンク
+
+- → [[cdp-philosophy.md]] CDP操作哲学・技術スタック・`cdp_measure.sh`フロー（severity判断の前提知識）
