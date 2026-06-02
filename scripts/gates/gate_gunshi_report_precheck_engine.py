@@ -130,6 +130,13 @@ def main():
     # ── 2b. binary_checks result:no 検出 → T1違反予防 ──────────────────
     report_bc = report.get('binary_checks') or {}
     bc_no_items = []
+
+    def _normalize_bc_result(raw: object) -> str:
+        """YAML unquoted yes/no → PyYAML bool True/False を正規化."""
+        if isinstance(raw, bool):
+            return 'yes' if raw else 'no'
+        return str(raw).strip().lower()
+
     if isinstance(report_bc, dict):
         for ac_key, checks in report_bc.items():
             if not isinstance(checks, list):
@@ -137,7 +144,7 @@ def main():
             for check_item in checks:
                 if not isinstance(check_item, dict):
                     continue
-                res = str(check_item.get('result', '')).strip().lower()
+                res = _normalize_bc_result(check_item.get('result', ''))
                 if res == 'no':
                     check_name = check_item.get('check', ac_key)
                     bc_no_items.append(f'{ac_key}/{check_name}')
@@ -153,7 +160,7 @@ def main():
         for check_item in (report_bc.get('commit') or []):
             if not isinstance(check_item, dict):
                 continue
-            res = str(check_item.get('result', '')).strip().lower()
+            res = _normalize_bc_result(check_item.get('result', ''))
             waive = str(check_item.get('waive_reason', '')).strip()
             if res == 'no' and waive and commit_hash:
                 waive_commit_contradiction = f'bc commit:no(waive={waive!r}) but commit_hash={commit_hash[:12]} exists'
