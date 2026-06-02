@@ -2572,8 +2572,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1121
 - **記録者**: karo
 - **tags**: [yaml, lesson]
-- **when**: 同種の作業・判断・検証を行う時
-- **how**: 2026-03-20
+- **when**: lessons.yaml/lesson注入ログ/定期読込ファイルの肥大化を計測・圧縮・アーカイブ設計する時
+- **how**: ファイルサイズやCTX占有率を実測し、単調増加ファイルは削除ではなくアーカイブ/索引化で制御する
 - 定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_karo.yaml(42k)は全カテゴリ共通Redで定期アーカイブが全エージェントに効く。構造的ファイルは圧縮限界あり。単調増加型5件は定期パージで制御可能。cmd_1121で計測
 
 ### L256: deploy_task.sh lessons_by_id dictのID衝突でPJ間教訓が上書きされる
@@ -3133,8 +3133,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: lessons,deploy,injection,useful-rate
 - **記録者**: karo
 - **tags**: [deploy, recon, lesson]
-- **when**: タスク配備やデプロイ手順を変更・実行する時
-- **how**: 2026-03-30
+- **when**: deploy_task.shのlesson_tags/related_lessons注入条件、またはlesson useful率改善を扱う時
+- **how**: useful:false理由をtask_type/project/対象ファイル別に集計し、広すぎるタグ語を削るか狭スコープ教訓をdormant/deprecated候補へ分ける
 - 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコープ教訓が全タスクに注入される。死蔵教訓は個別事象レベルで再発条件が極めて限定的。改善: 適用頻度閾値による自動dormant化+教訓の原理レベルへの昇格リライト+空理由の自動ブロック
 
 ### L318: infraテストは全件必要（後半27テスト全て90日以内変更+本番フロー関与）
@@ -4909,8 +4909,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: kagemaru
 - **status**: confirmed
 - **tags**: [universal]
-- **when**: 同種の作業・判断・検証を行う時
-- **how**: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高
+- **when**: archive_completed.shやreport/gate走査のキャッシュを設計し、入力ファイル集合が処理中に移動・削除され得る時
+- **how**: キャッシュキーに件数だけを使わず、archive_reports後のファイル集合変化を実測してからTTLキャッシュまたは外部index化を選ぶ
 - archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2 NTFSの個別[ -f ]チェック(~7ms/件)の根本問題は解決できていない。TTLキャッシュまたはqueue/gates外部index化が真の解決策。
 
 ### L508: WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process 2.2x改善も実測でregression
@@ -4938,8 +4938,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: gunshi_session_20260418
 - **記録者**: karo
 - **tags**: [universal]
-- **when**: 同種の作業・判断・検証を行う時
-- **how**: 2026-04-18
+- **when**: gate_cycle_health/gate_gunshi_startup等の学習ループ健全性メトリクスを設計・レビューする時
+- **how**: gate数など入力指標ではなく、gate_fire_logのFAIL件数や再発防止数のような出力指標で健全性を判定する
 - gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 11に自動計測埋込み済み
 
 ### L511: WSL2 NTFS: BEGIN getline from tac+early-breakが1-pass全量awk比較で-86%
@@ -5338,8 +5338,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: karo
 - **tags**: [infra,recon,process,yaml]
 - **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
-- **when**: 同種の作業・判断・検証を行う時
-- **how**: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する
+- **when**: queue/tasks・queue/reports・queue/inboxなど運用YAMLを書き換えるスクリプトや偵察を担当する時
+- **how**: rg 'yaml\\.dump|yaml\\.safe_dump' と書込先確認を行い、運用YAMLはyaml_field_set/report_field_set/inbox_mark_read等の専用helperへ置き換える
 - queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|yaml.safe_dumpと書込先確認を必須チェックにする
 
 ### L549: gate/hookはflat/nested両task YAML形式をfixtureで検証
@@ -5821,10 +5821,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: saizo
 - **tags**: [infra,deploy,testing,bash]
 - **target_files**: [queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml,queue/tasks/saizo.yaml]
-- **when**: タスク配備やデプロイ手順を変更・実行する時
-- **how**: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1347のflock失敗exit 1や検証処理の異常がdeploy_task全体へ伝播する
-- **when**: タスク配備やデプロイ手順を変更・実行する時
-- **how**: 未設定
+- **when**: deploy_task.shやkaro_directでinbox_writeをset -e下から呼び、送信失敗が後続のtask生成・通知・検証へ波及し得る時
+- **how**: inbox_write呼出しをsafe wrapperまたはif分岐で囲み、永続化失敗はWARN記録に分離して後続確認を継続できる形にする
 - deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1347のflock失敗exit 1や検証処理の異常がdeploy_task全体へ伝播する。送信は永続化・通知・後続post-deploy確認を分離し、失敗時もログ+明示WARNで後続確認へ進めるチェックを追加すべき。
 
 ### L595: test_selectはテスト不要の既知ドキュメント対象をWARNなしで明示スキップする
