@@ -20,7 +20,7 @@ context/
 ```
 
 ## 記述ルール
-- context/*.md は1-2行結論 + 参照先パス + 必要なら§番号/grep語で書く
+- context/*.md は [[doc-style-guide]] に従い、1-2行結論 + 参照先パス + 必要なら§番号/grep語で書く
 - 調査詳細・経緯・表は `docs/research/*.md` に保存し、context側からリンクする
 - 圧縮時は先にリンク先を作成し、存在確認してからcontextを索引化する
 - 用語や到達先が曖昧な時は [[semantic-map]] と `bash scripts/semantic_search.sh "<query>"` を使う
