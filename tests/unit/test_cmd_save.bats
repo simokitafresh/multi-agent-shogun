@@ -216,6 +216,8 @@ _setup_cmd_block() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"q12_lord_30min_cost未記入"* ]]
     [[ "$output" == *"この判断は殿に30分コストを課すか"* ]]
+    [[ "$output" == *"直接Edit所要時間 vs cmd委任全体時間"* ]]
+    [[ "$output" == *"F001前提条件に反する"* ]]
 }
 
 @test "q12_lord_30min_cost non-binary emits warning" {
