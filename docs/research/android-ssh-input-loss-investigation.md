@@ -58,6 +58,7 @@ Androidコンパニオンアプリ経路は別に脆い。実装は `tmux send-k
   - 文字列送信と `Enter` が別SSH exec。
   - `safe_send_keys_atomic` 相当の排他なし。
   - `send-keys -l` ではないため、特殊キー解釈や quoting 差分の影響も残る。
+- → [[cmd_1756_android]] `docs/research/cmd_1756_android.md §3.2-3.4` — SSH exec実装差分(stderr capture未取込・`2>&1`未追加)。H2のrace条件と直結する改善候補を列挙。
 
 ### 5. tmux runtime設定
 
