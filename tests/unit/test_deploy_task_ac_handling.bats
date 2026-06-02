@@ -914,7 +914,7 @@ task:
     - AC1
 EOF
 
-    run deploy_task_lessons_only sasuke
+    MIN_KEYWORD_SCORE_IMPL=2 run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
     run python3 -c "
@@ -1018,7 +1018,7 @@ task:
     - AC1
 EOF
 
-    USEFUL_RATE_MIN_SAMPLES=3 run deploy_task_lessons_only sasuke
+    MIN_KEYWORD_SCORE_IMPL=2 USEFUL_RATE_MIN_SAMPLES=3 run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
     run awk -F'\t' '$5=="withheld"{print $4}' "$TEST_PROJECT/logs/lesson_impact.tsv"
