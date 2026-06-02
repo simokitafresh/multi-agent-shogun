@@ -20,6 +20,40 @@ EOF
         --db "$TEST_TMPDIR/data/memory.db" >/dev/null
 }
 
+init_empty_memory_db() {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+);
+CREATE VIRTUAL TABLE events_fts USING fts5(
+    summary,
+    detail,
+    content='events',
+    content_rowid='rowid'
+);
+""")
+conn.commit()
+PY
+}
+
 @test "memory_db_live_insert appends cmd_quality events with event_type cmd_quality" {
     init_memory_db
 
@@ -230,5 +264,91 @@ PY
     [ "${#result[@]}" -eq 5 ]
     for line in "${result[@]}"; do
         [[ "$line" == *"|True|1" ]]
+    done
+}
+
+@test "memory_db_live_insert enriches low-density events with command title and purpose" {
+    init_empty_memory_db
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/context"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    cat > "$TEST_TMPDIR/context/semantic-map.md" <<'EOF'
+| 概念 | aliases | docs |
+|------|---------|------|
+| Command Context Target | dragon needle | test |
+EOF
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_context_demo:
+    title: "Improve live insert dragon needle matching"
+    purpose: "Inject dragon needle command context into low density live events"
+EOF
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        report \
+        --report-path "queue/reports/hayate_report_cmd_context_demo.yaml" \
+        --ts "2026-06-02T12:00:00Z" \
+        --dot-key "result.summary" \
+        --agent "hayate" \
+        --parent-cmd "cmd_context_demo" \
+        --source-file "queue/reports/hayate_report_cmd_context_demo.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        cmd_save \
+        --cmd-id "cmd_context_demo" \
+        --ts "2026-06-02T12:00:01Z" \
+        --source-file "queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        cmd_delegate \
+        --cmd-id "cmd_context_demo" \
+        --ts "2026-06-02T12:00:02Z" \
+        --message "cmd_context_demoを配備せよ" \
+        --source-file "queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        inbox \
+        --message-id "msg_context_demo" \
+        --ts "2026-06-02T12:00:03Z" \
+        --target-agent "hayate" \
+        --from-agent "karo" \
+        --content "cmd_context_demo task assigned" \
+        --message-type "task_assigned" \
+        --source-file "queue/inbox/hayate.yaml"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import json
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+event_ids = [
+    "report:hayate_report_cmd_context_demo.yaml:result.summary:2026-06-02T12:00:00Z",
+    "cmd_save:cmd_context_demo:2026-06-02T12:00:01Z",
+    "cmd_delegate:cmd_context_demo:2026-06-02T12:00:02Z",
+    "inbox:msg_context_demo",
+]
+for event_id in event_ids:
+    row = conn.execute("SELECT concepts, summary, detail FROM events WHERE id = ?", (event_id,)).fetchone()
+    concepts = json.loads(row[0]) if row else []
+    stored_text = f"{row[1]}\n{row[2]}" if row else ""
+    junction = conn.execute(
+        "SELECT COUNT(*) FROM event_concepts WHERE event_id = ? AND concept_name = 'Command Context Target'",
+        (event_id,),
+    ).fetchone()[0]
+    print(f"{event_id}|{'Command Context Target' in concepts}|{junction}|{'dragon needle' in stored_text}")
+PY
+)
+    [ "${#result[@]}" -eq 4 ]
+    for line in "${result[@]}"; do
+        [[ "$line" == *"|True|1|False" ]]
     done
 }

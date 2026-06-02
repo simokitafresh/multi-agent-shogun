@@ -5,6 +5,7 @@
 import os
 import sys
 import json
+import glob
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,6 +15,7 @@ DEFAULT_SEMANTIC_INDEX_PATH = os.path.join(REPO_ROOT, "docs", "semantic-index", 
 SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
 _SEMANTIC_CONCEPT_CACHE = None
+_CMD_CONTEXT_CACHE: dict[str, str] = {}
 
 
 def normalize_text(value: object) -> str:
@@ -39,6 +41,127 @@ def infer_cmd_id(summary: str, detail: str) -> str:
         if end > start + 4:
             return text[start:end]
         start = text.find("cmd_", start + 4)
+    return ""
+
+
+def _yaml_scalar_value(raw_value: str) -> str:
+    value = normalize_text(raw_value)
+    if len(value) >= 2:
+        if value[0] == value[-1] == '"':
+            return value[1:-1].replace('\\"', '"')
+        if value[0] == value[-1] == "'":
+            return value[1:-1].replace("''", "'")
+    return value
+
+
+def _line_indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
+def _extract_scalar_in_block(lines: list[str], start_index: int, base_indent: int, key: str) -> str:
+    prefix = f"{key}:"
+    for line in lines[start_index + 1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = _line_indent(line)
+        stripped = line.strip()
+        if base_indent >= 0 and indent <= base_indent:
+            break
+        if stripped.startswith(prefix):
+            return _yaml_scalar_value(stripped[len(prefix):])
+    return ""
+
+
+def _extract_cmd_context_from_text(text: str, cmd_id: str) -> str:
+    lines = text.splitlines()
+    candidates: list[tuple[int, int]] = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        indent = _line_indent(line)
+        if stripped == f"{cmd_id}:":
+            candidates.append((index, indent))
+            continue
+        if stripped.startswith("- id:") and _yaml_scalar_value(stripped[len("- id:"):]) == cmd_id:
+            candidates.append((index, indent))
+            continue
+        if stripped.startswith("id:") and _yaml_scalar_value(stripped[len("id:"):]) == cmd_id:
+            candidates.append((index, -1))
+
+    for index, indent in candidates:
+        title = _extract_scalar_in_block(lines, index, indent, "title")
+        purpose = _extract_scalar_in_block(lines, index, indent, "purpose")
+        if title or purpose:
+            return "\n".join(
+                line for line in [
+                    f"cmd_id: {cmd_id}",
+                    f"cmd_title: {title}" if title else "",
+                    f"cmd_purpose: {purpose}" if purpose else "",
+                ]
+                if line
+            )
+    return ""
+
+
+def _extract_task_context_from_text(text: str, cmd_id: str) -> str:
+    lines = text.splitlines()
+    candidates: list[tuple[int, int]] = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        indent = _line_indent(line)
+        for key in ("task_id", "parent_cmd"):
+            prefix = f"{key}:"
+            if stripped.startswith(prefix) and _yaml_scalar_value(stripped[len(prefix):]) == cmd_id:
+                candidates.append((index, max(indent - 2, -1)))
+
+    for index, indent in candidates:
+        title = _extract_scalar_in_block(lines, index, indent, "title")
+        purpose = _extract_scalar_in_block(lines, index, indent, "purpose")
+        command = _extract_scalar_in_block(lines, index, indent, "command")
+        result_summary = _extract_scalar_in_block(lines, index, indent, "result_summary")
+        if title or purpose or command or result_summary:
+            return "\n".join(
+                line for line in [
+                    f"cmd_id: {cmd_id}",
+                    f"cmd_title: {title}" if title else "",
+                    f"cmd_purpose: {purpose}" if purpose else "",
+                    f"cmd_command: {command}" if command else "",
+                    f"cmd_result_summary: {result_summary}" if result_summary else "",
+                ]
+                if line
+            )
+    return ""
+
+
+def command_context_text(cmd_id: str) -> str:
+    cmd_id = normalize_text(cmd_id)
+    if not cmd_id:
+        return ""
+    if cmd_id in _CMD_CONTEXT_CACHE:
+        return _CMD_CONTEXT_CACHE[cmd_id]
+
+    source_paths = [
+        os.path.join(REPO_ROOT, "queue", "shogun_to_karo.yaml"),
+        os.path.join(REPO_ROOT, "queue", "archive", "shogun_to_karo_done.yaml"),
+    ]
+    source_paths.extend(glob.glob(os.path.join(REPO_ROOT, "queue", "archive", "cmds", f"{cmd_id}*.yaml")))
+
+    for path in source_paths:
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            context = _extract_cmd_context_from_text(handle.read(), cmd_id)
+        if context:
+            _CMD_CONTEXT_CACHE[cmd_id] = context
+            return context
+
+    for path in glob.glob(os.path.join(REPO_ROOT, "queue", "tasks", "*.yaml")):
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            context = _extract_task_context_from_text(handle.read(), cmd_id)
+        if context:
+            _CMD_CONTEXT_CACHE[cmd_id] = context
+            return context
+
+    _CMD_CONTEXT_CACHE[cmd_id] = ""
     return ""
 
 
@@ -78,12 +201,53 @@ def load_semantic_map_concept_cache(
     semantic_map_path: str = DEFAULT_SEMANTIC_MAP_PATH,
     semantic_index_path: str = DEFAULT_SEMANTIC_INDEX_PATH,
 ) -> list[dict[str, object]]:
-    """Load concept aliases once from context/semantic-map.md for live inserts."""
+    """Load concept aliases from index.md (SSOT) for live inserts.
+
+    Bug 4 fix: Previously read semantic-map.md (generated), causing alias divergence
+    with batch import (which reads index.md). Now both use the same source.
+    semantic-map.md is kept as fallback only if index.md is unavailable.
+    """
+    import re as _re
+
+    # Primary: index.md (SSOT, same as batch import memory_db_import.py)
+    if os.path.exists(semantic_index_path):
+        concepts: list[dict[str, object]] = []
+        current_id = ""
+        current_label = ""
+        current_aliases: list[str] = []
+        for raw_line in open(semantic_index_path, encoding="utf-8", errors="replace"):
+            heading = _re.match(r"^##\s+([A-Za-z0-9_-]+)\s+—\s+(.+?)\s*$", raw_line)
+            if heading:
+                if current_id:
+                    terms = [current_id, current_label, *current_aliases]
+                    concepts.append({
+                        "id": current_id,
+                        "terms": [t for t in terms if len(t) >= 3],
+                    })
+                current_id = heading.group(1).strip()
+                current_label = heading.group(2).strip()
+                current_aliases = []
+                continue
+            alias_match = _re.match(r"^\|\s*aliases\s*\|\s*(.*?)\s*\|$", raw_line)
+            if alias_match and current_id:
+                current_aliases = [
+                    normalize_text(a) for a in alias_match.group(1).split(",")
+                    if normalize_text(a) and len(normalize_text(a)) >= 3
+                ]
+        if current_id:
+            terms = [current_id, current_label, *current_aliases]
+            concepts.append({
+                "id": current_id,
+                "terms": [t for t in terms if len(t) >= 3],
+            })
+        return concepts
+
+    # Fallback: semantic-map.md (generated) — only if index.md unavailable
     label_to_id = _semantic_index_label_to_id(semantic_index_path)
     if not os.path.exists(semantic_map_path):
         return []
 
-    concepts: list[dict[str, object]] = []
+    concepts = []
     with open(semantic_map_path, encoding="utf-8", errors="replace") as handle:
         for raw_line in handle:
             cells = _split_markdown_row(raw_line)
@@ -94,13 +258,11 @@ def load_semantic_map_concept_cache(
                 continue
             concept_id = label_to_id.get(label, label)
             aliases = [normalize_text(part) for part in cells[1].split(",") if normalize_text(part)]
-            terms = [concept_id, label, *aliases]
-            concepts.append(
-                {
-                    "id": concept_id,
-                    "terms": [term for term in terms if len(term) >= 3],
-                }
-            )
+            terms_list = [concept_id, label, *aliases]
+            concepts.append({
+                "id": concept_id,
+                "terms": [term for term in terms_list if len(term) >= 3],
+            })
     return concepts
 
 
@@ -141,13 +303,13 @@ def require_live_tables(conn) -> bool:
     return True
 
 
-def append_event(db_path: str, row: tuple[object, ...]) -> None:
+def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str = "") -> None:
     if not os.path.exists(db_path):
         return
     import sqlite3
 
     mutable_row = list(row)
-    concept_text = f"{mutable_row[6]}\n{mutable_row[7]}"
+    concept_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{concept_text_extra}"
     mutable_row[10] = concepts_for_text(concept_text)
     row = tuple(mutable_row)
 
@@ -285,6 +447,7 @@ def append_inbox(args) -> None:
         if line
     )
     importance = "high" if message_type in {"cmd_new", "task_assigned", "report_received", "task_done"} else "normal"
+    cmd_id = infer_cmd_id(summary, detail)
     append_event(
         args.db_path,
         (
@@ -297,12 +460,13 @@ def append_inbox(args) -> None:
             summary,
             detail,
             "",
-            infer_cmd_id(summary, detail),
+            cmd_id,
             "[]",
             normalize_text(args.source_file),
             None,
             importance,
         ),
+        concept_text_extra=command_context_text(cmd_id),
     )
 
 
@@ -328,6 +492,7 @@ def append_cmd_save(args) -> None:
             None,
             "high",
         ),
+        concept_text_extra=command_context_text(cmd_id),
     )
 
 
@@ -409,6 +574,7 @@ def append_cmd_delegate(args) -> None:
             None,
             "high",
         ),
+        concept_text_extra=command_context_text(cmd_id),
     )
 
 
@@ -533,6 +699,7 @@ def append_report(args) -> None:
             None,
             importance,
         ),
+        concept_text_extra=command_context_text(parent_cmd),
     )
 
 
