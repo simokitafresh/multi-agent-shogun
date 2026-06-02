@@ -1,5 +1,8 @@
 # Android SSH Input Loss Investigation
 
+<!-- semantic-links: [[Android SSH Input Loss]], [[AndroidアプリSSH送信]], [[tmux送信競合]], [[inbox_watcher]], [[prompt_state_inject]] -->
+<!-- origin: [[cmd_2104_recon]] -> [[android_ssh_two_step_race]] -> [[pane_trace_required]] -->
+
 - date: `2026-04-19`
 - task: `cmd_2104_recon`
 - scope: Android/SSH経路で「送信後に入力が消える」現象の切り分け
@@ -24,34 +27,34 @@ Androidコンパニオンアプリ経路は別に脆い。実装は `tmux send-k
 
 ### 1. watcher/send-keys競合は主因ではない
 
-- `scripts/inbox_watcher.sh:384-523`
+- [[inbox_watcher]] `scripts/inbox_watcher.sh:384-523`
   - 通常nudgeは `paste-buffer` で本文注入し、`send-keys` は `Enter` のみ。
   - flock lock (`tmux_sendkeys_*`) あり。
   - direct SSHでの手入力そのものとは別経路。
 
 ### 2. 将軍hookは入力送信直後の再描画候補になる
 
-- `.claude/settings.json:40-127`
+- [[settings]] `.claude/settings.json:40-127`
   - `PostToolUse` で `post-shogun-inbox-check.sh`
   - `Stop` で `log_terminal_response.sh`
   - `UserPromptSubmit` で `log_terminal_input.sh` + `prompt_state_inject.sh`
-- `.claude/hooks/post-shogun-inbox-check.sh:1-28`
+- [[post-shogun-inbox-check]] `.claude/hooks/post-shogun-inbox-check.sh:1-28`
   - unread inbox があると追加Contextを返す。
-- `scripts/hooks/prompt_state_inject.sh:1-117`
+- [[prompt_state_inject]] `scripts/hooks/prompt_state_inject.sh:1-117`
   - `UserPromptSubmit` ごとに将軍向け追加Contextを注入する。
 
 ### 3. 既存ログは「送信前後の生ストリーム」を残していない
 
-- `scripts/log_terminal_input.sh:1-27`
+- [[log_terminal_input]] `scripts/log_terminal_input.sh:1-27`
   - `UserPromptSubmit` 後に `.prompt` を `lord_conversation.jsonl` へ記録。
   - Claudeが prompt submit を受け取れなかったケースは残らない。
-- `scripts/log_terminal_response.sh:1-139`
+- [[log_terminal_response]] `scripts/log_terminal_response.sh:1-139`
   - `Stop` 時の応答記録であり、入力消失瞬間の raw I/O ではない。
 
 ### 4. Androidコンパニオンの送信は2段階 `send-keys`
 
-- `android/app/src/main/java/com/shogun/android/viewmodel/ShogunViewModel.kt:94-117`
-- `android/app/src/main/java/com/shogun/android/viewmodel/AgentsViewModel.kt:170-188`
+- [[ShogunViewModel]] `android/app/src/main/java/com/shogun/android/viewmodel/ShogunViewModel.kt:94-117`
+- [[AgentsViewModel]] `android/app/src/main/java/com/shogun/android/viewmodel/AgentsViewModel.kt:170-188`
   - 文字列送信と `Enter` が別SSH exec。
   - `safe_send_keys_atomic` 相当の排他なし。
   - `send-keys -l` ではないため、特殊キー解釈や quoting 差分の影響も残る。
@@ -110,8 +113,8 @@ Androidコンパニオンアプリ経路は別に脆い。実装は `tmux send-k
 
 ### 追加ファイル
 
-- `scripts/tmux_pipe_logger.py`
-- `scripts/enable_pane_trace.sh`
+- [[tmux_pipe_logger]] `scripts/tmux_pipe_logger.py`
+- [[enable_pane_trace]] `scripts/enable_pane_trace.sh`
 
 ### 有効化コマンド
 
@@ -137,4 +140,12 @@ logs/pane_trace/shogun_main.log
 1. 再発時の `logs/pane_trace/shogun_main.log`
 2. 同時刻の `queue/lord_conversation.jsonl`
 3. `logs/inbox_watcher_shogun.log`
-4. Androidアプリ再現時は `ShogunViewModel.sendCommand()` 呼出しログ
+4. Androidアプリ再現時は [[ShogunViewModel]] `ShogunViewModel.sendCommand()` 呼出しログ
+
+## 因果リンク
+
+- → [[infrastructure]] tmux/inbox_watcher/hook群の設計意図
+- → [[inbox_watcher]] watcher競合分析の根拠スクリプト
+- → [[prompt_state_inject]] 将軍hook再描画の主因候補
+- → [[ShogunViewModel]] Androidアプリ送信実装（2段階send-keys）
+- ← [[cmd_2104_recon]] この調査を発動した偵察cmd
