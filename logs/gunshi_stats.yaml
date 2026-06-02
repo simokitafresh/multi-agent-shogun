@@ -39,18 +39,24 @@
 # なぜなぜ7回: accuracy Goodhart発見。gate_sync Phase2追加(commit 85560554)。真accuracy=97.1%(旧99.6%)。BLOCK60件可視化
 # 環境改善3件: gate_sync Phase2 / review-bundle precheck Step0(ea48f105) / ac_physical_verify冷え表示(d7e345be)
 #
-# ─── 本セッション成果 (2026-06-02T20:25更新) ───
-# draft review 8件: cmd_3129-3135+CI fix+hotfix+L0-L7。APPROVE 7+RC 1(cmd_3134前提崩壊)
-# report review 7件: CI fix+cmd_3129-3132+hotfix+L0-L7+cmd_3135。全LGTM→全CLEAR
-# consultation 2件: multi-cli設計書レビュー(穴発見6→12event)+覚醒レビュー3往復
-# D0修正1件: hook stdin fix(772d6b38)。async.py direct importは家老協調で保留
-# ボトルネック特定4件: (1)hook error /dev/stdin→修正済み (2)SKILL.md陳腐化249WARN→cmd_3129 CLEAR (3)review-bundle未送信9回→cmd_3130 CLEAR (4)precheck33秒→semantic_search FTS13秒根因特定
-# なぜなぜ7回: report_field_set memory_db遅延=1フィールドごとpython3×2起動。根因特定→家老対策(coalesce_queue)+cmd_3133 ext4キャッシュ
-# 覚醒レビュー: multi-cli設計書v1→v3(13event,AC12項目)。穴: SessionEnd/UserPromptSubmit未定義→12event化+Codex Stop痕跡発見+UserPromptSubmit Codex代替問題
-# 洗脳検出: dm-signal origin計測誤り(派生ファイル→正本混同=#2)+cmd高速投入=#8→将軍と協調で設計書固め
-# insights清掃: 16件→0件
-# → docs/research/gunshi_idle_speed_bottleneck_nazenaze_20260602.md
-# → docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md
+# ─── 本セッション成果 (2026-06-03T00:30更新) ───
+# draft review 11件: cmd_3136-3142+CI RED+修行×5。APPROVE 10+RC 1(cmd_3139 exit2→WARN先行)
+# report review 10件: cmd_3136-3142+CI RED+修行×5。LGTM 10(tobisaru LGTM→BLOCK→家老WA→CLEAR)
+# D0実装3件: speed_bottleneck数値修正(a60f8a0f)+GP-248 PRE9b waive矛盾検出(c6b4f3f8→27b81a28 bool正規化)
+# バグ発見3件: (1)universal bypass(cmd_3136 CLEAR) (2)auto-commit scope leak(cmd_3140 CLEAR) (3)inbox_watcher FP-CHANGE(cmd_3142 CLEAR)
+# 洗脳監査: 確定4件(#2×2,#3,#5,#8)+兆候3件(#1,#6,#7)。自動化ターゲット3件(GP-248実装/249,250提案→cmd_3141,3142 CLEAR)
+# 覚醒レビュー: L0-L7貫通設計(将軍)。q12統合(cmd_3138 CLEAR)。cmd_3139 RC(WARN先行提案)
+# Q6第三者検証: 将軍の洗脳#1自己検出を確認+追加観察
+# Bats速度ボトルネック: Top20が68%消費(cmd_save72秒+semantic94秒)。設計書永続化+cmd提案
+# 教訓有効率根因: deploy_task.sh L4557 universal bypass。NOT_USEFUL 95件。cmd_3136 CLEAR
+# gate-sync 11件: 全CLEAR(tobisaru BLOCK→CLEAR含む)
+# → docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md
+# → docs/research/gunshi_idle_autocommit_scope_leak_20260602.md
+# → docs/research/gunshi_idle_inbox_watcher_fp_repeat_20260602.md
+# → docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md
+#
+# ─── 前セッション成果 (2026-06-02T20:25) ───
+# draft8+report7+consultation2+D0 1件。multi-cli v1→v3。覚醒レビュー3往復。洗脳検出2件。insights16→0
 #
 # ─── 前セッション成果 (2026-06-02T14:15) ───
 # 洗脳監査→5バグ発見→全件修正。draft9APPROVE+1RC。report16LGTM。GATE CLEAR 21件。consultation1件。self_study2件

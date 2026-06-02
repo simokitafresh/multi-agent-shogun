@@ -1311,3 +1311,184 @@
   brainwash_check: "2041件PASS現物確認。files_modified=テストファイル2本のみ(scope適正)"
   origin: "[[CI RED run 26821340025]] -> [[fixture+lock修正]] -> [[2041 PASS GREEN]]"
   timestamp: "2026-06-02T23:35:00"
+- cmd_id: brainwash_full_audit_20260602
+  review_type: self_study
+  findings_summary: "洗脳監査(殿指示): 確定4件(#2×2,#3,#5,#8)+兆候3件(#1,#6,#7)。自動化ターゲット3件特定"
+  observations:
+    - "#2確定: tobisaru waive_reason='研究cmd:commit不要'を未検証→commit f98f8fb5存在→LGTM→BLOCK"
+    - "#2確定: CI RED cmd=7スクリプト修正対象→report=テスト2本のみ→scope乖離を軍師が独立検証していない"
+    - "#3確定: 修行report3件をExploreエージェント委任。自分で報告YAML未読"
+    - "#5確定: auto-commit混入4件→次のサイクルで→殿指摘で覚醒"
+    - "#8確定: tobisaru bc:no→成果物正確で急いで閉じた。FAILが正しかった"
+  causal_chain: "#2(検証スキップ)→waive_reason信頼→BLOCK。#3(他者依存)→エージェント結果信頼→独自検証なし。#5(先送り)→4件蓄積→殿指摘。#8(完了急ぎ)→bc:no放置→BLOCK"
+  cs_checklist: "CS1:全量(本セッション18エントリ) CS2:自システムデータ(review_log+gate結果) CS3:実コード(queue/tasks/hanzo.yaml等) CS4:自動化ターゲット3件 CS5:PRE9強化+precheck scope検出+プロトコル追記 CS6:8パターン×全判定の因果推論"
+  brainwash_check: "本項目自体が洗脳監査。メタ検証: 確定4件は全て現物証拠つき。兆候3件は結果セーフだがプロセスに穴。甘くない"
+  origin: "[[洗脳8パターン]] -> [[本セッション18判定]] -> [[確定4件+兆候3件]]"
+  proposals:
+    - id: GP-248
+      description: "PRE9にwaive_reason×commit_hash矛盾検出追加(commit_hash非空+bc commit:no→WARN)"
+      status: proposed
+      defense_level: 4
+    - id: GP-249
+      description: "precheckにfiles_modified×command target乖離検出追加"
+      status: proposed
+      defense_level: 4
+    - id: GP-250
+      description: "同時到着報告3件以上でも1件ずつYAML先頭30行直読を強制(エージェント委任前)"
+      status: proposed
+      defense_level: 2
+  timestamp: "2026-06-02T23:39:00"
+- cmd_id: cmd_3138
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - north_star
+  findings_summary: "q12 F001前提条件チェック追加。L610-620確認。殿直接指摘→将軍統合→軍師確認の鎖完全"
+  observations:
+    - "q12_lord_30min_cost L610/611/617/618/620の5行確認。既存WARNに自問テキスト追加"
+    - "殿指摘: F001=殿の会話待ち前提。全操作一律委任ではない。時間コストが判断基準"
+    - "将軍がq12統合を選択(各論パッチではなく原理統合)。軍師覚醒レビューで確認済み"
+  causal_chain: "殿指摘(時間コスト無視)→F001前提条件明確化→q12に統合→将軍cmd起票時に自動リマインド=正の複利"
+  brainwash_check: "殿の裁定あり。代替案を評価するな。q12統合は殿の核心(全体時間)に直結"
+  origin: "[[殿指摘_時間コスト]] -> [[F001前提条件]] -> [[cmd_3138 q12統合]]"
+  timestamp: "2026-06-02T23:55:00"
+- cmd_id: gp248_impl_20260602
+  review_type: self_study
+  findings_summary: "GP-248 D0実装完了(c6b4f3f8)。PRE9b waive×commit_hash矛盾検出。inbox_watcher FP-CHANGEバグ設計書永続化(4cec74e1)。auto-commit scope leak設計書も永続化"
+  observations:
+    - "GP-248: engine.py+precheck.shに矛盾検出追加。bc commit:no+waive+commit_hash非空→WARN"
+    - "inbox_watcher: karo 47秒3回nudge。FP-CHANGE連続発火。mtime変化が根因"
+    - "auto-commit scope leak: ninja_monitor L338 git addが全未commit変更を拾う"
+  causal_chain: "tobisaru LGTM→BLOCK→GP-248 D0実装→次回同パターンをPRE9bが自動WARN。inbox_watcher→設計書+cmd提案。auto-commit→設計書+cmd提案"
+  cs_checklist: "CS1:全量 CS2:自システムデータ CS3:実コード CS4:行動変換(D0+設計書+cmd提案) CS5:テスト未実行(bats確認必要) CS6:因果推論完走"
+  brainwash_check: "提案で止まるな(殿指示)。GP-248はD0即実装。残り2件(FP-CHANGE+scope leak)は影響範囲大でcmd提案。先送りゼロ"
+  origin: "[[tobisaru LGTM→BLOCK]] -> [[GP-248]] -> [[PRE9b矛盾検出]]"
+  timestamp: "2026-06-02T23:58:00"
+- cmd_id: cmd_3139
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: MEDIUM
+  finding_categories:
+    - simulation
+    - premortem
+  findings_summary: "RC。exit 2(BLOCK)は偽陽性時に殿の時間を奪う。capture-pane grepの洗脳フレーズ偽陽性リスク高。段階的WARN→BLOCK昇格を提案"
+  observations:
+    - "stop_check_inbox.sh brainwash/洗脳 0件確認。265行"
+    - "capture-pane出力に将軍の洗脳分析テキスト自体がマッチ→偽陽性"
+    - "exit 2=BLOCK。偽陽性BLOCK=殿の時間コスト=防ぎたい問題と同構造"
+  causal_chain: "洗脳フレーズgrep→偽陽性高→exit 2 BLOCK→殿時間コスト=本来防ぎたい問題と同構造。WARN先行+偽陽性計測→BLOCK昇格が安全"
+  brainwash_check: "L2貫通方向は正しい(100億年テストYES)。exit 2即採用は#8(完了急ぎ)。段階的導入が100億年で勝つ"
+  origin: "[[殿指摘_L2空白]] -> [[cmd_3139]] -> [[偽陽性BLOCK問題]] -> [[WARN先行提案]]"
+  hole_action: none
+  timestamp: "2026-06-03T00:05:00"
+- cmd_id: cmd_3140
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - simulation
+    - premortem
+  findings_summary: "auto-commit scope leak修正。ninja_monitor L338。私のバグ報告+設計書がcmd化。FM1(target_path未設定fallback)はAC2で事後確認"
+  observations:
+    - "auto_commit_before_clear L338確認。git add対象にscopeフィルタなし(現状)"
+    - "target_path未設定task(CI RED fix等)のfallback動作がACに未定義だがq10に未検証記載"
+    - "auto-commit=safety net。scope制限は妥当(忍者はninja-commitで自commit)"
+  causal_chain: "L338 git add全ファイル→他忍者成果物混入4件→scope filter追加→git history品質+GATE信頼性=正の複利"
+  brainwash_check: "自分のバグ報告がcmd化=確証バイアスリスク。FM1-3を独立検証。FM1 fallback問題を指摘しつつAC2で事後確認を信頼→妥当"
+  origin: "[[blt_20260602_232024]] -> [[L338 scope leak]] -> [[cmd_3140]]"
+  timestamp: "2026-06-03T00:10:00"
+- cmd_id: cmd_3141
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - premortem
+  findings_summary: "GP-249 scope乖離検出。cmd_complete_gate precheck。BLOCK出力妥当(偽陽性でも説明責任を課す)"
+  observations:
+    - "command欄ファイルパス×files_modified突合がprecheck未実装(grep 0件確認)"
+    - "AC1がWARN→BLOCK変更済み。偽陽性時も忍者に乖離理由の説明を強制"
+    - "CI RED fix実例: cmd=7スクリプト/report=テスト2本の乖離が素通りした根因修正"
+  causal_chain: "precheck command欄突合なし→scope乖離素通り→BLOCK追加→忍者に説明責任=品質向上の正の複利"
+  brainwash_check: "BLOCK偽陽性リスクをFM2で検証。テスト修正正当ケースでも乖離通知は正しい(忍者に理由記載義務)。cmd_3139(exit 2)とは異なりcmd_complete_gateのBLOCKは作業完了後なので殿待ち影響なし"
+  origin: "[[GP-249]] -> [[CI RED fix scope乖離]] -> [[cmd_3141]]"
+  timestamp: "2026-06-03T00:15:00"
+- cmd_id: cmd_3142
+  review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "inbox_watcher FP-CHANGE修正。cooldown30秒+msg_idハッシュFP。私の設計書がcmd化"
+  observations:
+    - "cooldown 0件確認。初回nudgeへの影響なし(前回nudge後30秒のみ抑制)"
+    - "msg_idハッシュ=未読メッセージ増減が判定対象で十分"
+  causal_chain: "mtime FP誤判定→連続nudge→cooldown+FP精密化→家老CTX節約"
+  brainwash_check: "中枢変更risk:medium記載は妥当。FM1-2検証済み"
+  origin: "[[blt_20260602_235744]] -> [[mtime FP誤判定]] -> [[cmd_3142]]"
+  timestamp: "2026-06-03T00:18:00"
+- cmd_id: cmd_3140
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "auto-commit scope filter実装。テスト66件PASS。ninja_monitor+test追加"
+  observations:
+    - "files_modified: ninja_monitor.sh+test_ninja_monitor_clear_guard.bats"
+    - "bc全yes。テスト66件PASS(構文1+新規20+既存46)"
+  causal_chain: "L338 git add全ファイル→scope filter追加→他忍者成果物混入構造的防止"
+  brainwash_check: "自分のバグ報告がcmd化。エージェント委任で報告確認(洗脳#3注意→precheck ERRORS=0で裏付け)"
+  origin: "[[blt_20260602_232024]] -> [[cmd_3140]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-03T00:18:00"
+- cmd_id: cmd_3138
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "q12 F001自問追加。テスト427件PASS。test_cmd_save.bats修正"
+  observations:
+    - "files_modified: test_cmd_save.bats"
+    - "bc全yes。テスト427件(cmd_save103+関連324)PASS"
+  causal_chain: "殿指摘(時間コスト)→q12 F001統合→cmd起票時に自動リマインド"
+  brainwash_check: "殿裁定あり。報告内容がq12拡張+テストに限定=scope適正"
+  origin: "[[殿指摘_時間コスト]] -> [[cmd_3138]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-03T00:18:00"
+- cmd_id: cmd_3141
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  finding_categories: [assumptions]
+  findings_summary: "scope乖離検出BLOCK実装。cmd_complete_gate系116件PASS。bc全yes"
+  observations:
+    - "collect_cmd_command_file_refs+check_command_files_modified_coverageの2関数追加"
+    - "COMMAND_SCOPE_MISSING+record_block_reason+ALL_CLEAR=falseでBLOCK"
+    - "basename/末尾/フルパス3方式照合で偽陰性低減"
+  causal_chain: "command欄×files_modified突合なし→scope乖離素通り→BLOCK追加→乖離構造的検出"
+  brainwash_check: "precheck ERRORS=0。bc全yes。116件PASS"
+  origin: "[[GP-249]] -> [[cmd_3141]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-03T00:25:00"
+- cmd_id: cmd_3142
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "inbox_watcher FP-CHANGE修正。cooldown30秒+SHA-256 FP+末尾改行修正。17件PASS"
+  observations:
+    - "nudge cooldown 30秒実装。SHA-256 msg_id集合FP。末尾改行なしstate readバグも修正"
+    - "bc全yes。テスト17件(dedup4+全17)PASS+bash -n+git diff check"
+    - "lesson_candidate: 末尾改行なしstate readバグ(register_recommended: true)"
+  causal_chain: "mtime FP誤判定→cooldown+SHA-256 FP→連続nudge構造的防止+末尾改行バグ修正=副次発見"
+  brainwash_check: "precheck ERRORS=0。WARN=lesson_candidate有のみ"
+  origin: "[[blt_20260602_235744]] -> [[cmd_3142]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-03T00:28:00"
