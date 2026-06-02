@@ -16,6 +16,39 @@ SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
 _SEMANTIC_CONCEPT_CACHE = None
 _CMD_CONTEXT_CACHE: dict[str, str] = {}
+REPORT_METADATA_DOT_KEYS = {
+    "ac_version_read",
+    "files_modified",
+    "hook_failures",
+    "parent_cmd",
+    "status",
+    "status_detail",
+    "task_id",
+    "timestamp",
+    "verdict",
+    "worker_id",
+}
+REPORT_METADATA_PREFIXES = (
+    "binary_checks.",
+    "hook_failures.",
+    "lessons_useful.",
+    "self_gate_check.",
+    "skill_candidate.",
+    "task_clarity.",
+    "test_triage.",
+)
+REPORT_MEANINGFUL_DOT_KEYS = {
+    "assumption_check",
+    "simplicity_check",
+}
+REPORT_MEANINGFUL_PREFIXES = (
+    "assumption_invalidation.",
+    "decision_candidate.",
+    "knowledge_candidate.",
+    "lesson_candidate.",
+    "purpose_validation.",
+    "result.",
+)
 
 
 def normalize_text(value: object) -> str:
@@ -303,14 +336,15 @@ def require_live_tables(conn) -> bool:
     return True
 
 
-def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str = "") -> None:
+def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str | None = "") -> None:
     if not os.path.exists(db_path):
         return
     import sqlite3
 
     mutable_row = list(row)
-    concept_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{concept_text_extra}"
-    mutable_row[10] = concepts_for_text(concept_text)
+    if concept_text_extra is not None:
+        concept_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{concept_text_extra}"
+        mutable_row[10] = concepts_for_text(concept_text)
     row = tuple(mutable_row)
 
     with sqlite3.connect(db_path) as conn:
@@ -658,6 +692,67 @@ def append_gate(args) -> None:
     )
 
 
+def _report_dot_key(dot_key: str) -> str:
+    dot_key = normalize_text(dot_key)
+    if dot_key.startswith("report_field_set."):
+        return dot_key[len("report_field_set."):]
+    return dot_key
+
+
+def _report_field_has_concepts(dot_key: str) -> bool:
+    normalized = _report_dot_key(dot_key)
+    if normalized in REPORT_METADATA_DOT_KEYS:
+        return False
+    if any(normalized.startswith(prefix) for prefix in REPORT_METADATA_PREFIXES):
+        return False
+    if normalized in REPORT_MEANINGFUL_DOT_KEYS:
+        return True
+    return any(normalized.startswith(prefix) for prefix in REPORT_MEANINGFUL_PREFIXES)
+
+
+def _report_value_to_text(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, dict):
+        return "\n".join(_report_value_to_text(v) for v in value.values())
+    if isinstance(value, list):
+        return "\n".join(_report_value_to_text(v) for v in value)
+    return normalize_text(value)
+
+
+def _resolve_report_path(report_path: str) -> str:
+    if not report_path:
+        return ""
+    if os.path.isabs(report_path):
+        return report_path
+    repo_relative = os.path.join(REPO_ROOT, report_path)
+    if os.path.exists(repo_relative):
+        return repo_relative
+    return report_path
+
+
+def _extract_report_field_value(report_path: str, dot_key: str) -> str:
+    path = _resolve_report_path(report_path)
+    if not path or not os.path.exists(path):
+        return ""
+    try:
+        import yaml
+    except ImportError:
+        return ""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            data = yaml.safe_load(handle) or {}
+    except Exception:
+        return ""
+    current: object = data
+    for part in _report_dot_key(dot_key).split("."):
+        if isinstance(current, dict):
+            current = current.get(part)
+        else:
+            return ""
+    return _report_value_to_text(current)
+
+
 def append_report(args) -> None:
     report_path = normalize_text(args.report_path)
     agent = normalize_text(args.agent) or "unknown"
@@ -681,6 +776,15 @@ def append_report(args) -> None:
     )
     importance = "high" if verdict in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT") else "normal"
     ts = normalize_text(args.ts)
+    concept_text_extra = None
+    if _report_field_has_concepts(dot_key):
+        concept_text_extra = "\n".join(
+            line for line in [
+                _extract_report_field_value(report_path, dot_key),
+                command_context_text(parent_cmd),
+            ] if line
+        )
+
     append_event(
         args.db_path,
         (
@@ -699,7 +803,7 @@ def append_report(args) -> None:
             None,
             importance,
         ),
-        concept_text_extra=command_context_text(parent_cmd),
+        concept_text_extra=concept_text_extra,
     )
 
 

@@ -352,3 +352,68 @@ PY
         [[ "$line" == *"|True|1|False" ]]
     done
 }
+
+@test "memory_db_live_insert skips report metadata concepts and uses meaningful report values" {
+    init_empty_memory_db
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/context" "$TEST_TMPDIR/queue/reports"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    cat > "$TEST_TMPDIR/context/semantic-map.md" <<'EOF'
+| 概念 | aliases | docs |
+|------|---------|------|
+| Report Value Target | dragon needle | test |
+EOF
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_report_values.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_report_values
+status: completed
+result:
+  summary: "dragon needle summary value"
+EOF
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        report \
+        --report-path "queue/reports/hayate_report_cmd_report_values.yaml" \
+        --ts "2026-06-02T13:00:00Z" \
+        --dot-key "status" \
+        --agent "hayate" \
+        --parent-cmd "cmd_report_values" \
+        --source-file "queue/reports/hayate_report_cmd_report_values.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        report \
+        --report-path "queue/reports/hayate_report_cmd_report_values.yaml" \
+        --ts "2026-06-02T13:00:01Z" \
+        --dot-key "result.summary" \
+        --agent "hayate" \
+        --parent-cmd "cmd_report_values" \
+        --source-file "queue/reports/hayate_report_cmd_report_values.yaml"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import json
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+for event_id in [
+    "report:hayate_report_cmd_report_values.yaml:status:2026-06-02T13:00:00Z",
+    "report:hayate_report_cmd_report_values.yaml:result.summary:2026-06-02T13:00:01Z",
+]:
+    row = conn.execute("SELECT concepts FROM events WHERE id = ?", (event_id,)).fetchone()
+    concepts = json.loads(row[0]) if row else []
+    junction = conn.execute(
+        "SELECT COUNT(*) FROM event_concepts WHERE event_id = ?",
+        (event_id,),
+    ).fetchone()[0]
+    print(f"{event_id}|{concepts}|{junction}")
+PY
+)
+    [ "${#result[@]}" -eq 2 ]
+    [[ "${result[0]}" == *"|[]|0" ]]
+    [[ "${result[1]}" == *"Report Value Target"* ]]
+    [[ "${result[1]}" == *"|1" ]]
+}
