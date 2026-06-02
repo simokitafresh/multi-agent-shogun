@@ -1,8 +1,83 @@
 ssot_path: '/mnt/c/tools/multi-agent-shogun/tasks/lessons.md'
-last_synced: '2026-06-02T21:55:23'
+last_synced: '2026-06-02T23:32:14'
 archive_path: '/mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml'
-lesson_count: 723
+lesson_count: 729
 lessons:
+- id: 'L734'
+  title: 'ロック競合テストは保持時間を待機上限より十分長くする'
+  summary: '並列Batsではテストプロセス開始が遅れ、短いsleepで保持したロックが検証前に解放されると、本来FAILすべきlock timeoutテストがPASSして偽'
+  tags:
+  - 'infra'
+  - 'testing'
+  how: '未設定'
+  origin: '[[cmd_karo_ci_red_fix_26821340025]]'
+  source_cmd: 'cmd_karo_ci_red_fix_26821340025'
+  target_files:
+  - 'tests/unit/test_cmd_save_block_aggregation.bats'
+  - 'tests/unit/test_lord_conversation.bats'
+  when: '未設定'
+- id: 'L733'
+  title: '軍師分析Markdownの因果リンクセクション欠如パターン: 速度分析-耐性分析ペアは片方向リンクのみになりやすい'
+  summary: 'gunshi-fullrecalc-speed-analysis→resilience-analysisの一方向リンクは存在したが逆方向なし。2ファイルが補完関'
+  tags:
+  - 'infra'
+  - 'fullrecalculate'
+  how: '未設定'
+  origin: '[[cmd_training_backlinks_kotaro_20260602]]'
+  source_cmd: 'cmd_training_backlinks_kotaro_20260602'
+  target_files:
+  - 'context/gunshi-fullrecalc-resilience-analysis.md'
+  when: '未設定'
+- id: 'L732'
+  title: 'docs/research孤立ファイルへのsemantic-links+origin+[[根拠リンク]]+因果リンクセクション一括追加パターン'
+  summary: 'android-ssh-input-loss-investigation.mdはincoming backlinks=0で完全孤立していた。改善手順: (1)s'
+  tags:
+  - 'infra'
+  - 'process'
+  how: '未設定'
+  origin: '[[cmd_training_backlinks_tobisaru_20260602]]'
+  source_cmd: 'cmd_training_backlinks_tobisaru_20260602'
+  target_files:
+  - 'docs/research/android-ssh-input-loss-investigation.md'
+  when: '未設定'
+- id: 'L731'
+  title: '孤立Markdown修行ではincoming backlinkとoutgoing wiki linkを分けて報告する'
+  summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+  tags:
+  - 'infra'
+  - 'bash'
+  - 'git'
+  - 'reporting'
+  how: '未設定'
+  origin: '[[cmd_training_backlinks_saizo_20260602]]'
+  source_cmd: 'cmd_training_backlinks_saizo_20260602'
+  target_files:
+  - 'context/gunshi-fof-deterioration-analysis.md'
+  when: '未設定'
+- id: 'L730'
+  title: '孤立Markdownは因果リンクセクション追加で双方向接続を確立できる'
+  summary: 'cdp-severity.mdは[[リンク]]ゼロで孤立していた。cdp-philosophy.mdがL92で[[cdp-severity.md]]を参照済みだ'
+  tags:
+  - 'infra'
+  - 'cdp'
+  how: '未設定'
+  origin: '[[cmd_training_backlinks_hanzo_20260602]]'
+  source_cmd: 'cmd_training_backlinks_hanzo_20260602'
+  target_files:
+  - 'context/cdp-severity.md'
+  when: '未設定'
+- id: 'L729'
+  title: 'README除外ファイルのリンク修行は対象ファイル個別カウントを併用する'
+  summary: 'markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果'
+  tags:
+  - 'infra'
+  - 'bash'
+  how: '未設定'
+  origin: '[[cmd_training_backlinks_kagemaru_20260602]]'
+  source_cmd: 'cmd_training_backlinks_kagemaru_20260602'
+  target_files:
+  - 'context/README.md'
+  when: '未設定'
 - id: 'L728'
   title: 'universal+target_filesありの教訓はtarget_files_matchでフィルタリング必須'
   summary: '_universal_without_target_files_is_relevantはtarget_filesがある場合に_target_files_matc'
@@ -46,9 +121,6 @@ lessons:
   summary: 'cmd_3118で31636件の空conceptsに対し素朴なconcepts_for_text()を実行した結果、約15分を要した。全履歴backfill系は'
   tags:
   - 'infra'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_3118]]'
   source_cmd: 'cmd_3118'
@@ -1210,6 +1282,9 @@ lessons:
   - 'gate'
   - 'bash'
   - 'yaml'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_training_speed_hanzo_3]]'
   source_cmd: 'cmd_training_speed_hanzo_3'
@@ -1350,9 +1425,6 @@ lessons:
   - 'infra'
   - 'db'
   - 'api'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_karo_kj_role_filter]]'
   source_cmd: 'cmd_karo_kj_role_filter'
@@ -1367,6 +1439,9 @@ lessons:
   tags:
   - 'infra'
   - 'gate'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_karo_ci_fix_verdict_derive]]'
   source_cmd: 'cmd_karo_ci_fix_verdict_derive'
@@ -1409,6 +1484,9 @@ lessons:
   - 'infra'
   - 'bash'
   - 'yaml'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_2856]]'
   source_cmd: 'cmd_2856'
@@ -1543,9 +1621,6 @@ lessons:
   tags:
   - 'infra'
   - 'git'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[parallel_training]] -> [[duplicate_fix]] -> [[git_log_check]]'
   source_cmd: 'cmd_training_L4_auto_202605181241_kotaro'
@@ -1572,6 +1647,9 @@ lessons:
   - 'recon'
   - 'gate'
   - 'bash'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_2848]]'
   source_cmd: 'cmd_2848'
@@ -1584,9 +1662,6 @@ lessons:
   tags:
   - 'infra'
   - 'bash'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_2818]]'
   source_cmd: 'cmd_2818'
@@ -1623,9 +1698,6 @@ lessons:
   - 'testing'
   - 'yaml'
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '未設定'
   origin: '[[cmd_2811]]'
   source_cmd: 'cmd_2811'
@@ -1823,6 +1895,9 @@ lessons:
   - 'deploy'
   - 'bash'
   - 'yaml'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '手動YAML禁止'
   origin: '[[cmd_2691]]'
   source_cmd: 'cmd_2691'
@@ -1852,9 +1927,6 @@ lessons:
   - 'infra'
   - 'recon'
   - 'yaml'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:36+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=22 referenced=0'
   how: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)'
   origin: '[[cmd_2690]]'
   source_cmd: 'cmd_2690'
@@ -1884,6 +1956,9 @@ lessons:
   - 'review'
   - 'gate'
   - 'lesson'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK'
   origin: '[[cmd_2686]]'
   source_cmd: 'cmd_2686'
@@ -1901,6 +1976,9 @@ lessons:
   - 'review'
   - 'gate'
   - 'git'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/review/report_mergeなどは完了処理の前提欠落である'
   origin: '[[cmd_2686]]'
   source_cmd: 'cmd_2686'
@@ -1917,9 +1995,6 @@ lessons:
   - 'infra'
   - 'bash'
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'REFLUX_KEYWORDS空チェック後にelse節でPI/RUNBOOK/INSTRUCTIONSをSKIPPEDに設定'
   origin: '[[cmd_training_L4_r14_hanzo]]'
   source_cmd: 'cmd_training_L4_r14_hanzo'
@@ -1965,6 +2040,9 @@ lessons:
   - 'deploy'
   - 'testing'
   - 'bash'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'inbox_write呼出しをsafe wrapperまたはif分岐で囲み、永続化失敗はWARN記録に分離して後続確認を継続できる形にする'
   origin: '[[cmd_karo_lk004_inbox_root_cause]]'
   source_cmd: 'cmd_karo_lk004_inbox_root_cause'
@@ -2056,6 +2134,9 @@ lessons:
   tags:
   - 'infra'
   - 'lesson'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'WHY/WHAT/WHEN/HOWで止めずWHERE(どのファイル/フロー/環境)とWHO(誰が実行/送信/影響)も必ず埋める。6項目全て埋まるまで分析を終えない'
   origin: '[[gunshi_session_20260510]]'
   source_cmd: 'gunshi_session_20260510'
@@ -2134,9 +2215,6 @@ lessons:
   - 'infra'
   - 'review'
   - 'yaml'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:34+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   how: 'STALE_FIELDSから除外したフィールドに対してresolve_cmd側で未設定時falseを明示すると、STKにscout_exemptが無いcmdで家老がtask YAMLへ事前設定したtrueを再び消してしまう'
   origin: '[[cmd_2614]]'
   source_cmd: 'cmd_2614'
@@ -2152,9 +2230,6 @@ lessons:
   - 'gate'
   - 'yaml'
   - 'reporting'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:32+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=23 referenced=0'
   how: '先着完了確認後、後着忍者のtask idle化+report YAML削除が必須'
   origin: '[[cmd_2611]]'
   source_cmd: 'cmd_2611'
@@ -2181,9 +2256,6 @@ lessons:
   - 'testing'
   - 'bash'
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'lesson_write.shのfixture検証で、entry挿入後に挿入前contentのmatch offsetを使うとlast_synced_lesson markerが意図しない位置へ入ることを確認した'
   origin: '[[cmd_2611]]'
   source_cmd: 'cmd_2611'
@@ -2212,9 +2284,6 @@ lessons:
   - 'infra'
   - 'testing'
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象targetに注入されないことまで検証する'
   origin: '[[cmd_2606]]'
   source_cmd: 'cmd_2606'
@@ -2230,9 +2299,6 @@ lessons:
   summary: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
   tags:
   - 'infra'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:29+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=10 referenced=0'
   how: 'skill_indexは設定skills_dirsを優先しログ由来pathはフォールバックとする'
   origin: '[[cmd_2605]]'
   source_cmd: 'cmd_2605'
@@ -2266,6 +2332,9 @@ lessons:
   - 'infra'
   - 'gate'
   - 'bash'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '2026-05-09'
   origin: '[[cmd_2603]]'
   source_cmd: 'cmd_2603'
@@ -2400,9 +2469,6 @@ lessons:
   - 'testing'
   - 'review'
   - 'gate'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'レビュー時は(1)SSOT更新経路 (2)重複排除/lock (3)下流再生成 (4)失敗時のgate扱いを別々に確認するチェックを追加すべき'
   origin: '[[cmd_karo_direct_semantic_index_review]]'
   source_cmd: 'cmd_karo_direct_semantic_index_review'
@@ -2588,9 +2654,6 @@ lessons:
   tags:
   - 'infra'
   - 'deploy'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'is_direct=sys.argv[2]==''true''で判定しacceptance_criteriaリセットを条件付き追加'
   origin: '[[cmd_karo_fix_direct_ac_loss]]'
   source_cmd: 'cmd_karo_fix_direct_ac_loss'
@@ -2731,9 +2794,6 @@ lessons:
   - 'infra'
   - 'bash'
   - 'yaml'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'YAML構造の一部を削る場合は構造化ロード後にフィールド単位で扱うか、対象操作自体を撤去するチェックを追加すべき'
   origin: '[[cmd_2404]]'
   source_cmd: 'cmd_2404'
@@ -2786,6 +2846,9 @@ lessons:
   - 'infra'
   - 'testing'
   - 'lesson'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→flockロック競合WARN→WARN_COUNT>0→保存確認NG'
   origin: '[[cmd_karo_ci_fix_357]]'
   source_cmd: 'cmd_karo_ci_fix_357'
@@ -2859,9 +2922,6 @@ lessons:
   tags:
   - 'infra'
   - 'git'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:26+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   how: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する'
   origin: '[[cmd_2278]]'
   source_cmd: 'cmd_2278'
@@ -2901,9 +2961,6 @@ lessons:
   summary: '単純なin演算子(presence)より頻度カウント(title.count(kw)*3)の方が、キーワードが多い教訓を正確に上位にランクできる。プロジェクト一'
   tags:
   - 'infra'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:24+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=8 referenced=0'
   how: '2026-04-25'
   origin: '[[cmd_2270]]'
   source_cmd: 'cmd_2270'
@@ -2931,9 +2988,6 @@ lessons:
   - 'infra'
   - 'process'
   - 'gate'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:21+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'cmd_save.shに『assumptions claimに日付なし』チェックを追加した際、既存6テストファイルのフィクスチャが未対応でCI REDとなった'
   origin: '[[cmd_karo_ci_fix_2252]]'
   source_cmd: 'cmd_karo_ci_fix_2252'
@@ -2975,9 +3029,6 @@ lessons:
   tags:
   - 'infra'
   - 'gate'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:20+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: '2026-04-22'
   origin: '[[cmd_karo_ci_fix_ga158]]'
   source_cmd: 'cmd_karo_ci_fix_ga158'
@@ -3189,9 +3240,6 @@ lessons:
   summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
   tags:
   - 'universal'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '2026-04-18'
   origin: '[[cmd_2090]]'
   source_cmd: 'cmd_2090'
@@ -3248,9 +3296,6 @@ lessons:
   summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOC'
   tags:
   - 'universal'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される'
   origin: '[[cmd_karo_ci_fix_571]]'
   source_cmd: 'cmd_karo_ci_fix_571'
@@ -3282,9 +3327,6 @@ lessons:
   summary: 'grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~40'
   tags:
   - 'universal'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '2026-04-18'
   origin: '[[cmd_2055]]'
   source_cmd: 'cmd_2055'
@@ -3550,9 +3592,6 @@ lessons:
   summary: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:19+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=45 referenced=0'
   how: '忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生'
   origin: '[[cmd_1885]]'
   source_cmd: 'cmd_1885'
@@ -3685,9 +3724,6 @@ lessons:
   summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:18+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=26 referenced=0'
   how: '.gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる'
   origin: '[[cmd_root_fixes]]'
   source_cmd: 'cmd_root_fixes'
@@ -3697,9 +3733,6 @@ lessons:
   summary: 'commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:17+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=34 referenced=0'
   how: '復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須'
   origin: '[[cmd_1800]]'
   source_cmd: 'cmd_1800'
@@ -3709,9 +3742,6 @@ lessons:
   summary: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:15+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
   how: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった'
   origin: '[[cmd_karo_ci_fix]]'
   source_cmd: 'cmd_karo_ci_fix'
@@ -3732,9 +3762,6 @@ lessons:
   summary: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:14+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=35 referenced=0'
   how: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい'
   origin: '[[cmd_gunshi_ruling_20260408]]'
   source_cmd: 'cmd_gunshi_ruling_20260408'
@@ -3744,9 +3771,6 @@ lessons:
   summary: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:12+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=29 referenced=0'
   how: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く'
   origin: '[[cmd_karo_fix_gate_split_loop]]'
   source_cmd: 'cmd_karo_fix_gate_split_loop'
@@ -3758,9 +3782,6 @@ lessons:
   summary: 'draft教訓12件が未査読のままGATE到達'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:12+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=19 referenced=0'
   how: '2026-04-08'
   origin: '[[cmd_karo_fix_precommit_comment]]'
   source_cmd: 'cmd_karo_fix_precommit_comment'
@@ -3770,9 +3791,6 @@ lessons:
   summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:11+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=17 referenced=0'
   how: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止'
   origin: '[[cmd_step2c_push]]'
   source_cmd: 'cmd_step2c_push'
@@ -3793,9 +3811,6 @@ lessons:
   summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:10+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=21 referenced=0'
   how: '2026-04-07'
   origin: '[[cmd_deploy_yaml_speedup]]'
   source_cmd: 'cmd_deploy_yaml_speedup'
@@ -3825,9 +3840,6 @@ lessons:
   summary: '複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:08+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=11 referenced=0'
   how: 'IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認'
   origin: '[[cmd_precheck_consolidate]]'
   source_cmd: 'cmd_precheck_consolidate'
@@ -3864,9 +3876,6 @@ lessons:
   summary: 'Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では cmd_1'
   tags:
   - 'universal'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '2026-04-04'
   origin: '[[cmd_1738]]'
   source_cmd: 'cmd_1738'
@@ -3905,6 +3914,9 @@ lessons:
   summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
   tags:
   - 'universal'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
   origin: '[[gunshi_self_drive]]'
   source_cmd: 'gunshi_self_drive'
@@ -4021,9 +4033,6 @@ lessons:
   - 'yaml'
   - 'wsl2'
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '2026-04-01'
   origin: '[[cmd_training_L4_R3]]'
   source_cmd: 'cmd_training_L4_R3'
@@ -4152,9 +4161,6 @@ lessons:
   summary: 'set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:08+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: '2026-03-31'
   origin: '[[cmd_cycle_L4_085]]'
   source_cmd: 'cmd_cycle_L4_085'
@@ -4191,9 +4197,6 @@ lessons:
   summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:06+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: 'aware/naive混在を許さない設計が必要'
   origin: '[[cmd_cycle_L4_086]]'
   source_cmd: 'cmd_cycle_L4_086'
@@ -4215,9 +4218,6 @@ lessons:
   summary: 'switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set -e即死で、P'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:04+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=13 referenced=0'
   how: '((var++))のgrepスキャンを定期実行すべき'
   origin: '[[cmd_cycle_L4_082]]'
   source_cmd: 'cmd_cycle_L4_082'
@@ -4516,9 +4516,6 @@ lessons:
   summary: 'section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった。内部データをraw_m'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:03+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった'
   origin: '[[cmd_cycle_L4_053]]'
   source_cmd: 'cmd_cycle_L4_053'
@@ -4751,6 +4748,9 @@ lessons:
   - 'gate'
   - 'monitor'
   - 'reporting'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '2026-03-31'
   origin: '[[cmd_cycle_L4_033]]'
   source_cmd: 'cmd_cycle_L4_033'
@@ -4783,9 +4783,6 @@ lessons:
   summary: 'sed -nで抽出した値が空文字の場合、後段の比較(==MISSING)に静かに不一致し処理がスキップされる。抽出直後に空文字チェック+exit1が必須。set'
   tags:
   - 'universal'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:58:01+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: '2026-03-31'
   origin: '[[cmd_cycle_L4_034]]'
   source_cmd: 'cmd_cycle_L4_034'
@@ -4898,9 +4895,6 @@ lessons:
   summary: 'lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)は'
   tags:
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '2026-03-31'
   origin: '[[cmd_cycle_L4_020]]'
   source_cmd: 'cmd_cycle_L4_020'
@@ -4918,7 +4912,7 @@ lessons:
   - 'monitor'
   - 'inbox'
   deprecated: true
-  deprecated_at: '2026-06-02T21:58:05+09:00'
+  deprecated_at: '2026-06-02T23:32:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
   how: 'git add -fで回避可能だが、ホワイトリスト追加が正規対応'
   origin: '[[cmd_cycle_L4_019]]'
@@ -5241,6 +5235,9 @@ lessons:
   - 'gate'
   - 'yaml'
   - 'inbox'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '内容は補完的(異なるテストケース)だが、同一ファイルに統合すればCI実行時のsetup/teardownオーバーヘッドを削減可能'
   origin: '[[cmd_1562]]'
   source_cmd: 'cmd_1562'
@@ -5348,9 +5345,6 @@ lessons:
   tags:
   - 'deploy'
   - 'reporting'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'inject_task_modifiers.pyが設定するフィールドとSTALE_FIELDSの差分を定期チェックすべき'
   origin: '[[cmd_training_structural_001]]'
   source_cmd: 'cmd_training_structural_001'
@@ -5403,9 +5397,6 @@ lessons:
   tags:
   - 'deploy'
   - 'yaml'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510)'
   origin: '[[cmd_1493]]'
   source_cmd: 'cmd_1493'
@@ -5428,9 +5419,6 @@ lessons:
   summary: 'lesson_write.shのREFLUX_CHECKでRUNBOOK=MISSINGが検出された。silent fallbackパターンのランブック反映が未'
   tags:
   - 'lesson'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'silent fallbackパターンのランブック反映が未実施'
   origin: '[[cmd_1486]]'
   source_cmd: 'cmd_1486'
@@ -5711,6 +5699,9 @@ lessons:
   - 'communication'
   - 'git'
   - 'reporting'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: '小太郎は実装済みコードをテスト確認のみで報告'
   origin: '[[cmd_1267]]'
   source_cmd: 'cmd_1267'
@@ -5990,6 +5981,9 @@ lessons:
   tags:
   - 'yaml'
   - 'lesson'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'ファイルサイズやCTX占有率を実測し、単調増加ファイルは削除ではなくアーカイブ/索引化で制御する'
   origin: '[[cmd_1121]]'
   source_cmd: 'cmd_1121'
@@ -6345,9 +6339,6 @@ lessons:
   tags:
   - 'deploy'
   - 'yaml'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'テストはmissing/Noneだけでなく空文字と空リストのsentinelも再現せよ'
   origin: '[[cmd_926]]'
   source_cmd: 'cmd_926'
@@ -6945,9 +6936,6 @@ lessons:
   summary: 'IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS'
   tags:
   - 'lesson'
-  deprecated: true
-  deprecated_at: '2026-06-02T21:57:59+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(unused): injected=6 referenced=0'
   how: 'IF_THEN_FLAGSの文字列結合ではなく、個別にquotedした引数として渡す'
   origin: '[[cmd_575]]'
   source_cmd: 'cmd_575'
@@ -7147,6 +7135,9 @@ lessons:
   - 'deploy'
   - 'yaml'
   - 'lesson'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-02'
   how: 'AC6を成立させるには(1) lessons.yamlへdetail同期追加、または(2)summaryをdetailへフォールバック注入する実装が必要'
   origin: '[[cmd_533]]'
   source_cmd: 'cmd_533'
@@ -7184,9 +7175,6 @@ lessons:
   - 'recon'
   - 'gate'
   - 'git'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'gate_metricsではなく専用guardログから集計せよ'
   origin: '[[cmd_534]]'
   source_cmd: 'cmd_534'
@@ -7490,9 +7478,6 @@ lessons:
   - 'yaml'
   - 'lesson'
   - 'reporting'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '後方互換フォールバックも各箇所に必要'
   origin: '[[cmd_466]]'
   source_cmd: 'cmd_466'
@@ -7657,7 +7642,7 @@ lessons:
   - 'yaml'
   - 'lesson'
   deprecated: true
-  deprecated_at: '2026-06-02T21:58:07+09:00'
+  deprecated_at: '2026-06-02T23:32:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
   how: '2026-02-27'
   origin: '[[cmd_414]]'
@@ -7845,9 +7830,6 @@ lessons:
   - 'gate'
   - 'lesson'
   - 'deploy'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: '本preflight実装で補完しているが、根本的にはauto_draft_lesson.shにCMD_IDを伝搬する修正が望ましい'
   origin: '[[cmd_391]]'
   source_cmd: 'cmd_391'
@@ -8035,9 +8017,6 @@ lessons:
   - 'yaml-key-mismatch'
   - 'silent-fail'
   - 'deploy'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-02'
   how: 'grep -E ''^\s+フィールド名:''に統一せよ'
   origin: '[[cmd_370]]'
   source_cmd: 'cmd_370'

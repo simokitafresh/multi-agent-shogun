@@ -760,7 +760,7 @@ Runtime tests:
 E2E responsibility:
 
 - E2Eは家老が担当する（Test Rules）。Unitだけでmulti-CLI成立を完了扱いにしない。
-- 家老E2E: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback→dashboard/掲示板へ結果記録。
+- 家老E2E: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback→dashboard/掲示板へ結果記録。timeout 300秒(5分)でhang時は自動脱出する。
 
 Rollback plan:
 
@@ -769,6 +769,7 @@ Rollback plan:
 3. `.claude/settings.json` はPhase 1ではcheck-only。rollback時は生成物を書いていないため、guard/gateを無効化するだけで戻せる。
 4. `config/cli_events.yaml` を削除/無効化する場合は、先に `generate_cli_hooks.sh --check` とdrift guardをWARN化し、全忍者idle確認後に撤去する。
 5. 稼働影響が出た場合は既存CLI復旧手順を優先し、hook共通化実装を後退させる。稼働中忍者のpane respawnは家老判断で直列に行う。
+6. rollback後に `gate_multi_cli_event_coverage.sh --check` を再実行し、Claude状態でPASSを確認する。
 
 ## 8. Success Metrics
 

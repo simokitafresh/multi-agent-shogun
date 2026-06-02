@@ -7300,3 +7300,69 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - _universal_without_target_files_is_relevantはtarget_filesがある場合に_target_files_matchを迂回してTrueを返していた。正しくは_target_files_matchでタスクファイルとのマッチングを確認すべき。1行修正で教訓有効率が大幅改善される。
+
+### L729: README除外ファイルのリンク修行は対象ファイル個別カウントを併用する
+- **日付**: 2026-06-02
+- **出典**: cmd_training_backlinks_kagemaru_20260602
+- **記録者**: kagemaru
+- **tags**: [infra,bash]
+- **target_files**: [context/README.md]
+- **origin**: [[cmd_training_backlinks_kagemaru_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果を測れない。baselineの全体コマンドに加え、対象ファイルのwikiリンク数を個別カウントすると、直接[[ファイル名]]リンク数の増加を二値確認できる。origin: [[cmd_training_backlinks_kagemaru_20260602]] -> [[markdown_link_counts_README_exclusion]] -> [[target_specific_link_validation]]
+
+### L730: 孤立Markdownは因果リンクセクション追加で双方向接続を確立できる
+- **日付**: 2026-06-02
+- **出典**: cmd_training_backlinks_hanzo_20260602
+- **記録者**: hanzo
+- **tags**: [infra,cdp]
+- **target_files**: [context/cdp-severity.md]
+- **origin**: [[cmd_training_backlinks_hanzo_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- cdp-severity.mdは[[リンク]]ゼロで孤立していた。cdp-philosophy.mdがL92で[[cdp-severity.md]]を参照済みだった。逆リンク(cdp-severity→cdp-philosophy)を因果リンクセクションとして追加することで双方向接続が完成した。孤立ファイルへの対処パターン: 既存の逆リンクを探し、因果リンクセクションで接続する
+
+### L731: 孤立Markdown修行ではincoming backlinkとoutgoing wiki linkを分けて報告する
+- **日付**: 2026-06-02
+- **出典**: cmd_training_backlinks_saizo_20260602
+- **記録者**: saizo
+- **tags**: [infra,bash,git,reporting]
+- **target_files**: [context/gunshi-fof-deterioration-analysis.md]
+- **origin**: [[cmd_training_backlinks_saizo_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数増加でも達成可能だった。次回はbaselineでincoming/outgoingを明示的に分け、対象がzero一覧に残る場合でもoutgoing link増加をgit diffとrgで証明する。 origin: [[cmd_training_backlinks_saizo_20260602]] -> [[リンク密度計測不在]] -> [[直接wiki link追加]]
+
+### L732: docs/research孤立ファイルへのsemantic-links+origin+[[根拠リンク]]+因果リンクセクション一括追加パターン
+- **日付**: 2026-06-02
+- **出典**: cmd_training_backlinks_tobisaru_20260602
+- **記録者**: tobisaru
+- **tags**: [infra,process]
+- **target_files**: [docs/research/android-ssh-input-loss-investigation.md]
+- **origin**: [[cmd_training_backlinks_tobisaru_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- android-ssh-input-loss-investigation.mdはincoming backlinks=0で完全孤立していた。改善手順: (1)semantic-links/originメタデータをファイル先頭に追加、(2)根拠セクションの生パス参照を[[ファイル名]]リンク化、(3)末尾に##因果リンクセクション追加。このパターンで0→18リンクを達成。docs/researchの孤立ファイルへの標準改善手順として再利用可能。
+
+### L733: 軍師分析Markdownの因果リンクセクション欠如パターン: 速度分析-耐性分析ペアは片方向リンクのみになりやすい
+- **日付**: 2026-06-02
+- **出典**: cmd_training_backlinks_kotaro_20260602
+- **記録者**: kotaro
+- **tags**: [infra,fullrecalculate]
+- **target_files**: [context/gunshi-fullrecalc-resilience-analysis.md]
+- **origin**: [[cmd_training_backlinks_kotaro_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- gunshi-fullrecalc-speed-analysis→resilience-analysisの一方向リンクは存在したが逆方向なし。2ファイルが補完関係にある場合は双方向リンク+第三ファイル(dm-signal-ops/infrastructure)への接続を同時に追加することで孤立ノード問題を根本解消できる
+
+### L734: ロック競合テストは保持時間を待機上限より十分長くする
+- **日付**: 2026-06-02
+- **出典**: cmd_karo_ci_red_fix_26821340025
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **target_files**: [tests/unit/test_cmd_save_block_aggregation.bats,tests/unit/test_lord_conversation.bats]
+- **origin**: [[cmd_karo_ci_red_fix_26821340025]]
+- **when**: 未設定
+- **how**: 未設定
+- 並列Batsではテストプロセス開始が遅れ、短いsleepで保持したロックが検証前に解放されると、本来FAILすべきlock timeoutテストがPASSして偽陰性になる。ロック競合テストはlock acquired sentinelで保持開始を確認し、保持sleepを検証側timeoutより長くしてから実行する。

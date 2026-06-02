@@ -1,8 +1,37 @@
 task:
-  _ac_task_id: cmd_3099_normal
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3099 (deployed 2026-05-29T19:21:33). Read from the beginning.
-  cmd_id: cmd_training_speed_block_get_field_20260529
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
+    AC2:
+      binary_checks:
+      - '最高インパクト1件を実装したか: yes/no'
+      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
+      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
+    AC3:
+      binary_checks:
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+    AC5:
+      binary_checks:
+      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
+      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
+      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
+      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
+  command: '因果リンク修行対象: docs/research/android-ssh-input-loss-investigation.md。関連確認に scripts/causal_backlinks.sh を使用する。'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,62 +46,64 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
+  parent_cmd: cmd_training_backlinks_tobisaru_20260602
   project: infra
-  purpose: '軍師報告(blt_20260529_190957)で修行分27件中26件がCoDD台帳(codd_refactor_registry.md)未記載(96.3%漏れ)と判明。根因仮説: 修行cmdはcmd_complete_gateの自動台帳記載が発火しないフローで処理されている。一括台帳記載+自動記載フロー修正の2層対処'
+  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
   status: idle
   stop_for: []
-  target_path: docs/research/codd_refactor_registry.md
-  task_id: cmd_3099_normal
-  task_type: normal
+  target_path: docs/research/android-ssh-input-loss-investigation.md
+  task_id: cmd_training_backlinks_tobisaru_20260602_normal
+  task_type: training
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'assumption_invalidation: MISSING'
+    tried_approaches:
+    - 'assumption_invalidation: MISSING'
+    approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'assumption_invalidation: MISSING'
+      approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
   related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
   - id: 'L633'
     summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
     detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L615'
-    summary: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
-    detail: 'inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi'
-  - id: 'L544'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-  - id: 'L623'
-    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-  - id: 'L353'
-    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-  - id: 'L624'
-    summary: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
-    detail: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L317'
+    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+  - id: 'L255'
+    summary: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar'
+    detail: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar'
+  - id: 'L279'
+    summary: '才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_'
+    detail: '才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_'
+  - id: 'L598'
+    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+  - id: 'L630'
+    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
+    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
-  recommended_skills:
-  - "report-write"
-  - "verdict-check"
-  - "codd"
-  - "codd-refactor"
-  related_causal_links:
-  - "[[修行cmdフロー不発]]"
-  - "[[知見還流断絶]]"
-  - "[[軍師報告_96%台帳漏れ]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -87,40 +118,24 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
       - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L615: inject_task_modifiers.pyのyaml.dumpがwidth未指定だとコロン含む長文字列をマルチライン折り畳みスカラーに変換。yaml_fi
-      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
-      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
-      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
-      - L624: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
+      - L255: 定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar
+      - L279: 才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_
+      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
+      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '修行分26件の速度改善結果(スクリプト名+実測時間+改善手法)がcodd_refactor_registry.mdに記載されていることがgrep確認されている'
-  - id: 'AC2'
-    checks:
-    - check: '修行cmdの完了時にCoDD台帳記載が自動発火するフローの修正箇所が特定され実装されていることが確認されている'
-  ac_version: 671ee86a
+  ac_version: b9649a49
+  _ac_task_id: cmd_training_backlinks_tobisaru_20260602_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3099.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3099.yaml
+  report_filename: tobisaru_report_cmd_training_backlinks_tobisaru_20260602.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_backlinks_tobisaru_20260602.yaml
   bloom_level: 
-  deployed_at: "2026-05-29T19:22:15"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'assumption_invalidation: MISSING'
-    tried_approaches:
-    - 'assumption_invalidation: MISSING'
-    approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'assumption_invalidation: MISSING'
-      approach_summary: '修行速度改善27件中26件をcodd_refactor_registry.mdに記載(AC1)、cmd_complete_gate.shにtype:training自動検出を実装(AC2)'
+  deployed_at: "2026-06-02T23:05:21"

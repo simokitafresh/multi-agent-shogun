@@ -510,3 +510,11 @@ lessons:
   created_at: '2026-06-02'
   automated: true
   enforcement: 'type=gate; file=scripts/gates/gate_shogun_startup.sh; pattern=gate_skill_script_refs'
+- id: 'LS043'
+  title: 'F001適用範囲曖昧+掲示板依頼チャネル混同: 設計書を家老にinbox依頼(将軍直接編集すべき)+軍師レビューを掲示板で直接依頼(cmd経由すべき)'
+  origin: '[[cmd_3137]]'
+  detail: 'F001のpositive_ruleに設計書=将軍直接編集が未記載→家老に委任。掲示板は報告チャネルだが依頼にも使い、F010(cmd_idなし直接配備)の変形が発生。殿指摘: ルール違反はバグ。L0-L7貫通で埋め込め。修正: (1)shogun.md F001に設計書直接編集明記 (2)bulletin_write.shにshogun action_required時のcmd_id未指定WARN'
+  source_cmd: 'cmd_3137'
+  created_at: '2026-06-02'
+  automated: true
+  enforcement: 'type=lesson; file=instructions/shogun.md; pattern=positive_rule'
