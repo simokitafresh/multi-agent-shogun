@@ -1960,44 +1960,74 @@ PY
 
 log_cmd_save_block() {
     local block_reason="${1:-}"
+    [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
-    # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
-    CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
-    CMD_QUALITY_SOURCE="cmd_save" \
-    CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
-    CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
-    CMD_QUALITY_FAST_METADATA=1 \
-    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 &
+    if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
+        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+        CMD_QUALITY_SOURCE="cmd_save" \
+        CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
+        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1
+    else
+        # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
+        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+        CMD_QUALITY_SOURCE="cmd_save" \
+        CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
+        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 &
+    fi
 }
 
 log_cmd_save_warns() {
+    [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     local warn_note
     local _project
     _project="$(cmd_block_get_field "project" 2>/dev/null || true)"
     for warn_note in "${WARN_REASONS[@]}"; do
-        # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
-        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
-        CMD_QUALITY_SOURCE="cmd_save_warn" \
-        CMD_QUALITY_DIAGNOSIS="" \
-        CMD_QUALITY_PROJECT="$_project" \
-        CMD_QUALITY_FAST_METADATA=1 \
-        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 &
+        if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
+            CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+            CMD_QUALITY_SOURCE="cmd_save_warn" \
+            CMD_QUALITY_DIAGNOSIS="" \
+            CMD_QUALITY_PROJECT="$_project" \
+            CMD_QUALITY_FAST_METADATA=1 \
+            bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1
+        else
+            # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
+            CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+            CMD_QUALITY_SOURCE="cmd_save_warn" \
+            CMD_QUALITY_DIAGNOSIS="" \
+            CMD_QUALITY_PROJECT="$_project" \
+            CMD_QUALITY_FAST_METADATA=1 \
+            bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 &
+        fi
     done
 }
 
 log_cmd_save_pass() {
+    [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$CMD_ID" ]] || return 0
     [[ -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
-    # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
-    CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
-    CMD_QUALITY_SOURCE="cmd_save" \
-    CMD_QUALITY_DIAGNOSIS="" \
-    CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
-    CMD_QUALITY_FAST_METADATA=1 \
-    bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
-    # perf: 非同期化 — yaml_auto_archive.sh は結果に影響しない後処理。
-    bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 &
+    if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
+        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+        CMD_QUALITY_SOURCE="cmd_save" \
+        CMD_QUALITY_DIAGNOSIS="" \
+        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1
+    else
+        # perf: 非同期化 — logging は fire-and-forget。flock で並列書き込み安全。
+        CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+        CMD_QUALITY_SOURCE="cmd_save" \
+        CMD_QUALITY_DIAGNOSIS="" \
+        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
+        # perf: 非同期化 — yaml_auto_archive.sh は結果に影響しない後処理。
+        bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 &
+    fi
 }
 
 count_same_warn_pattern() {
@@ -2802,7 +2832,9 @@ QG_TEMPLATE
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         ')
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
-            show_q11_semantic_search_matches "$CMD_BLOCK_NC"
+            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+                show_q11_semantic_search_matches "$CMD_BLOCK_NC"
+            fi
 
             _Q11_TARGETS=$(
                 printf '%s\n' "$_Q11_COMMAND_SECTION" \
@@ -3127,7 +3159,7 @@ check_pi_number_collision
 # 起源: insights 18件死蔵発見(2026-03-28) — 書込み専用で消費者不在
 # 目的: cmd起票時にpending insightsを表示し、将軍がinsightsを消費する動線を作る
 show_pending_insights() {
-    local INSIGHTS_FILE="$PROJECT_DIR/queue/insights.yaml"
+    local INSIGHTS_FILE="${CMD_SAVE_INSIGHTS_FILE:-$PROJECT_DIR/queue/insights.yaml}"
     [[ ! -f "$INSIGHTS_FILE" ]] && return 0
 
     local insight_summary PENDING_COUNT
@@ -3619,7 +3651,11 @@ PY
 }
 
 # WSL2最適化: lord_conversation検索を非同期化（全出力>&2、判定に影響しない）
-show_lord_conversation_matches &
+# Unit tests pass CMD_QUALITY_FAST_METADATA=1 and assert gate decisions, not
+# best-effort metadata. Avoid spawning slow background scans in that mode.
+if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" || "${CMD_SAVE_FORCE_LORD_CONVERSATION:-0}" == "1" ]]; then
+    show_lord_conversation_matches &
+fi
 
 # --- Check 11.10: cmd-chronicle.md強制検索（informational — WARN_COUNTに加算しない） ---
 # 目的: cmdのtitle/purposeから完了済みcmd履歴を自動検索し、
@@ -3747,12 +3783,18 @@ PY
 }
 
 # WSL2最適化: cmd-chronicle検索を非同期化（全出力>&2、判定に影響しない）
-show_cmd_chronicle_matches &
+# Unit tests pass CMD_QUALITY_FAST_METADATA=1 and assert gate decisions, not
+# best-effort metadata. Avoid spawning slow background scans in that mode.
+if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+    show_cmd_chronicle_matches &
+fi
 
 # --- Check 11.11: target_path git履歴表示（informational — WARN_COUNTに加算しない） ---
 # 目的: target_pathの変更経緯を起票時に自動表示し、現物履歴未確認のままcmdを書く余地を減らす。
 # WSL2最適化: 全出力が >&2 のみ（判定に影響しない）のでバックグラウンド化。
-show_target_path_git_history &
+if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+    show_target_path_git_history &
+fi
 check_causal_verification_requirement
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
@@ -4004,7 +4046,9 @@ PY
 }
 
 # WSL2最適化: archive scan(cold ~1-2s)を非同期化（全出力>&2、判定に影響しない）
-check_content_duplicate &
+if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+    check_content_duplicate &
+fi
 
 # --- Check 13: ACパラメータ充足度チェック（WARN — WARN_COUNTに加算） ---
 # 起源: cmd_1681事故 — ACに「前処理4条件」とだけ書き具体値未記載→忍者が独自判断でKalman_auto使用→条件不一致

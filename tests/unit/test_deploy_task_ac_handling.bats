@@ -1173,7 +1173,7 @@ print(','.join(ids))
     [ "$status" -eq 0 ]
 }
 
-@test "deploy_task cross-project opt-in allows lessons with a project-specific matched keyword" {
+@test "deploy_task project filter blocks lessons from a non-platform project even with specific keyword match" {
     mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
     # symlink→実体書換え防止: configをローカルコピーに差替え
     if [ -L "$TEST_PROJECT/config" ]; then
@@ -1220,14 +1220,14 @@ import yaml
 with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 ids = [entry.get('id') for entry in (data.get('task') or {}).get('related_lessons') or []]
-assert 'L_DM_SPECIFIC' in ids, ids
+assert 'L_DM_SPECIFIC' not in ids, ids
 print(','.join(ids))
 "
     echo "CI-DEBUG test649 python3 status=$status output=$output" >&2
     [ "$status" -eq 0 ]
 }
 
-@test "deploy_task auto-deprecates zero-useful cross-project lessons and excludes them" {
+@test "deploy_task project filter leaves non-platform project lessons untouched and excluded" {
     mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
     # symlink→実体書換え防止: configをローカルコピーに差替え
     if [ -L "$TEST_PROJECT/config" ]; then
@@ -1286,11 +1286,62 @@ with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     task = (yaml.safe_load(f) or {}).get('task') or {}
 ids = [entry.get('id') for entry in task.get('related_lessons') or []]
 assert 'L_DM_BAD' not in ids, ids
-assert 'L_DM_GOOD' in ids, ids
+assert 'L_DM_GOOD' not in ids, ids
 with open('$TEST_PROJECT/projects/dm-signal/lessons.yaml', encoding='utf-8') as f:
     lessons = (yaml.safe_load(f) or {}).get('lessons') or []
 bad = next(item for item in lessons if item.get('id') == 'L_DM_BAD')
-assert bad.get('deprecated') is True, bad
+assert bad.get('deprecated') is not True, bad
+print(','.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
+@test "deploy_task injects platform project lessons into non-platform tasks" {
+    mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
+    if [ -L "$TEST_PROJECT/config" ]; then
+        local _real_config; _real_config="$(readlink -f "$TEST_PROJECT/config")"
+        rm "$TEST_PROJECT/config"
+        cp -r "$_real_config" "$TEST_PROJECT/config"
+    fi
+    cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
+projects:
+  - id: infra
+    type: platform
+  - id: dm-signal
+    type: product
+EOF
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_INFRA_PLATFORM
+    title: deploy platform guard
+    summary: deploy platform guard
+    status: confirmed
+    helpful_count: 10
+EOF
+    cat > "$TEST_PROJECT/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "dm signal platform deploy"
+  command: "deploy platform guard"
+  task_id: cmd_platform_lessons
+  assigned_to: sasuke
+  task_type: impl
+  project: dm-signal
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    task = (yaml.safe_load(f) or {}).get('task') or {}
+ids = [entry.get('id') for entry in task.get('related_lessons') or []]
+assert 'L_INFRA_PLATFORM' in ids, ids
 print(','.join(ids))
 "
     [ "$status" -eq 0 ]
@@ -1353,7 +1404,7 @@ print('|'.join(ids))
     [ "$output" = "L921|L922|L923|L920" ]
 }
 
-@test "deploy_task injects cross-project lessons when command keywords match lesson title threshold" {
+@test "deploy_task does not inject non-platform cross-project lessons when command keywords match" {
     mkdir -p "$TEST_PROJECT/projects/mainproj" "$TEST_PROJECT/projects/otherproj"
     cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
 projects:
@@ -1411,7 +1462,7 @@ with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 related = (data.get('task') or {}).get('related_lessons') or []
 ids = [entry.get('id') for entry in related]
-assert 'L931' in ids, ids
+assert 'L931' not in ids, ids
 assert 'L932' not in ids, ids
 print('|'.join(ids))
 "

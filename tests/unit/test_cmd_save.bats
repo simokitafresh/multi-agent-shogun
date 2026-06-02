@@ -83,7 +83,9 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_save_caller_check_name()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate
+    eval "$(sed -n '/^warn_q5_pair_missing_session_state()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_depends_on_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate warn_q5_pair_missing_session_state check_depends_on_field
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -142,6 +144,7 @@ DOC
     export PROJECT_DIR="$TEST_SHARED_TMP"
     export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
     export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
+    export CMD_QUALITY_FAST_METADATA=1
 }
 
 teardown_file() {
@@ -160,6 +163,7 @@ setup() {
     export BLOCK_COUNT=0
     export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
     export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
+    export CMD_QUALITY_FAST_METADATA=1
     declare -ga BLOCK_REASONS=()
     declare -ga WARN_REASONS=()
     declare -gA CMD_BLOCK_CACHE=()

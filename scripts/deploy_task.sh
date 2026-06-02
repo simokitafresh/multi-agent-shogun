@@ -3891,7 +3891,6 @@ try:
     task_type = str(task.get('task_type') or task.get('type') or task.get('scope_mode') or 'unknown').lower().strip()
     MIN_KEYWORD_SCORE = MIN_KEYWORD_SCORE_BY_TASK_TYPE.get(task_type, MIN_KEYWORD_SCORE_BY_TASK_TYPE['default'])
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
-    CROSS_PROJECT_SCORE_THRESHOLD = 9  # 3キーワード以上要求(FP率0%是正: 旧3=1kw通過→37件全NOT_USEFUL)
 
     def extract_keywords(text, min_len=4):
         words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', str(text or ''))
@@ -3915,7 +3914,6 @@ try:
             command_text = str(cmd_entry.get('command', '') or '')
         except Exception as e:
             print(f'[INJECT] WARN: shogun_to_karo.yaml read failed for command keywords: {e}', file=sys.stderr)
-    command_keywords = extract_keywords(command_text)
     useful_rates, feedback_totals, useful_counts = compute_useful_rates(script_dir)
 
     # ═══ 偵察固有教訓リスト (cmd_1340) ═══
@@ -4013,11 +4011,14 @@ try:
     cross_project_count = 0
     cross_project_projects = 0
     pdata = {}
+    platform_project_ids = set()
     if os.path.exists(projects_yaml_path):
         try:
             with open(projects_yaml_path) as pf:
                 pdata = yaml.load(pf, Loader=yaml.SafeLoader)
             for pj in (pdata or {}).get('projects', []):
+                if pj.get('type') == 'platform':
+                    platform_project_ids.add(str(pj.get('id', '') or '').strip())
                 if pj.get('type') == 'platform' and pj.get('id') != project:
                     plat_index = os.path.join(script_dir, 'projects', pj['id'], 'lessons.yaml')
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
@@ -4032,79 +4033,20 @@ try:
         except Exception as pe:
             print(f'[INJECT] WARN: platform lessons load failed: {pe}', file=sys.stderr)
 
-    CROSS_PROJECT_GENERIC_KEYWORDS = {
-        'task', 'tasks', 'cmd', 'command', 'project', 'lesson', 'lessons',
-        'deploy', 'deployment', 'check', 'verify', 'test', 'tests', 'fix',
-        'gate', 'report', 'yaml', 'script', 'scripts', 'status', 'error',
-        'filter', 'score', 'scores', 'rate', 'useful', 'feedback', 'context',
-        'implementation', 'change', 'changes', 'update', 'updates',
-        '確認', '検証', '修正', '実装', '教訓', '注入', '候補', '本番',
-    }
+    def _lesson_project_allowed(lesson):
+        source_project = str(lesson.get('_source_project', '') or '').strip()
+        lesson_project = str(lesson.get('project', '') or '').strip()
+        if source_project in platform_project_ids:
+            return True
+        if source_project != project:
+            return False
+        return not lesson_project or lesson_project == project
 
-    def _lesson_keyword_terms(lesson_list):
-        terms = set()
-        for lesson in lesson_list:
-            text = f"{lesson.get('title','')} {lesson.get('summary','')} {lesson.get('content','')}"
-            terms.update(extract_keywords(text, min_len=3))
-        return terms
-
-    same_context_terms = _lesson_keyword_terms(lessons)
-
-    def _cross_project_specific_terms(matched_terms):
-        specific = []
-        for term in sorted(set(matched_terms)):
-            if term in CROSS_PROJECT_GENERIC_KEYWORDS:
-                continue
-            if term in same_context_terms:
-                continue
-            specific.append(term)
-        return specific
-
-    # GStack #13: Cross-project learnings
-    # task.command由来キーワードで other project lesson.title を照合し、
-    # 関連度スコア(タイトル一致回数×3)が閾値以上かつ他PJ固有語を含むもののみopt-in候補化する。
-    if command_keywords and pdata:
-        for pj in (pdata or {}).get('projects', []):
-            other_id = str(pj.get('id', '') or '').strip()
-            if not other_id or other_id == project or pj.get('type') == 'platform':
-                continue
-            other_index = os.path.join(script_dir, 'projects', other_id, 'lessons.yaml')
-            other_archive = os.path.join(script_dir, 'projects', other_id, 'lessons_archive.yaml')
-            other_path = other_index if os.path.exists(other_index) else other_archive
-            other_lessons = load_lessons_cached(other_path)
-            if not other_lessons:
-                continue
-            apply_zero_useful_deprecation(other_lessons, other_path, feedback_totals, useful_counts)
-            matched = []
-            for _l in other_lessons:
-                if _l.get('deprecated', False) or str(_l.get('status', '')).lower() == 'deprecated':
-                    continue
-                title_text = str(_l.get('title', '') or '').lower()
-                if not title_text:
-                    continue
-                score = 0
-                matched_terms = []
-                for kw in command_keywords:
-                    count = title_text.count(kw)
-                    if count:
-                        score += count * 3
-                        matched_terms.append(kw)
-                if score < CROSS_PROJECT_SCORE_THRESHOLD:
-                    continue
-                specific_terms = _cross_project_specific_terms(matched_terms)
-                if not specific_terms:
-                    continue
-                _copy = dict(_l)
-                _copy['_source_project'] = other_id
-                _copy['_cross_project_opt_in'] = True
-                _copy['_cross_project_score'] = score
-                _copy['_cross_project_specific_terms'] = specific_terms
-                matched.append(_copy)
-            if matched:
-                cross_project_projects += 1
-                cross_project_count += len(matched)
-                lessons.extend(matched)
-                print(f'[INJECT] cross_project opt-in: {other_id} matched {len(matched)} lessons (threshold={CROSS_PROJECT_SCORE_THRESHOLD})', file=sys.stderr)
+    _pre_project_filter = len(lessons)
+    lessons = [lesson for lesson in lessons if _lesson_project_allowed(lesson)]
+    _project_filtered = _pre_project_filter - len(lessons)
+    if _project_filtered:
+        print(f'[INJECT] project filter: removed {_project_filtered} lessons outside project={project} (platform allowed)', file=sys.stderr)
 
     # Deduplicate lessons by ID — last wins (後勝ち: 同一IDで内容が異なる場合は後の値を採用)
     _id_to_lesson = {}
