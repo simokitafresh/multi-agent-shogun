@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_android_ssh_input_loss_20260603 -->
+<!-- last_updated: 2026-06-03 cmd_3145 -->
 # fullrecalculate構造的脆弱性分析 — 速度分析補遺 (軍師)
 # 2026-03-28T22:10 | 前回速度分析の発展。cmd_1461/cmd_1456知見の統合
 
