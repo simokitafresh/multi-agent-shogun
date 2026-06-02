@@ -839,6 +839,131 @@ def event_concept_rows(
     return rows
 
 
+def concept_names_from_json(concepts_raw: str) -> list[str]:
+    try:
+        concept_names = json.loads(concepts_raw)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(concept_names, list):
+        return []
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for concept_name_raw in concept_names:
+        concept_name = normalize_text(concept_name_raw)
+        if not concept_name or concept_name in seen:
+            continue
+        seen.add(concept_name)
+        normalized.append(concept_name)
+    return normalized
+
+
+def concept_rows_from_event_concepts(
+    rows: Iterable[tuple[str, str]],
+) -> list[tuple[str, str]]:
+    normalized_rows: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for event_id, concepts_raw in rows:
+        for concept_name in concept_names_from_json(concepts_raw):
+            key = (event_id, concept_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized_rows.append(key)
+    return normalized_rows
+
+
+def concepts_empty_sql() -> str:
+    return "(concepts IS NULL OR concepts = '' OR concepts = '[]')"
+
+
+def concept_fill_stats(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return list(
+        conn.execute(
+            f"""
+            SELECT
+                event_type,
+                COUNT(*) AS total,
+                SUM(CASE WHEN {concepts_empty_sql()} THEN 0 ELSE 1 END) AS filled
+            FROM events
+            GROUP BY event_type
+            ORDER BY event_type
+            """
+        )
+    )
+
+
+def print_concept_fill_stats(label: str, rows: list[sqlite3.Row]) -> None:
+    print(f"{label}:")
+    for row in rows:
+        total = int(row["total"] or 0)
+        filled = int(row["filled"] or 0)
+        rate = (filled / total * 100) if total else 0.0
+        print(f"  {row['event_type']}: {filled}/{total} ({rate:.1f}%)")
+
+
+def backfill_event_concepts(db_path: Path, semantic_index_path: Path) -> dict[str, Any]:
+    concepts = list(iter_semantic_concepts(semantic_index_path))
+    if not concepts:
+        raise RuntimeError(f"No semantic concepts found: {semantic_index_path}")
+
+    with sqlite3.connect(db_path) as conn:
+        configure_connection(conn)
+        conn.row_factory = sqlite3.Row
+        before = concept_fill_stats(conn)
+        empty_rows = conn.execute(
+            f"""
+            SELECT id, summary, detail
+            FROM events
+            WHERE {concepts_empty_sql()}
+            ORDER BY rowid
+            """
+        ).fetchall()
+        updates: list[tuple[str, str]] = []
+        for row in empty_rows:
+            concepts_json = concepts_for_text(f"{row['summary']}\n{row['detail']}", concepts)
+            if concepts_json == "[]":
+                continue
+            updates.append((concepts_json, row["id"]))
+        conn.executemany("UPDATE events SET concepts = ? WHERE id = ?", updates)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS event_concepts (
+                event_id TEXT NOT NULL,
+                concept_name TEXT NOT NULL,
+                PRIMARY KEY (event_id, concept_name),
+                FOREIGN KEY (event_id) REFERENCES events(id)
+            )
+            """
+        )
+        if updates:
+            event_ids = [event_id for _concepts_json, event_id in updates]
+            conn.executemany("DELETE FROM event_concepts WHERE event_id = ?", [(event_id,) for event_id in event_ids])
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO event_concepts (event_id, concept_name)
+                VALUES (?, ?)
+                """,
+                concept_rows_from_event_concepts((event_id, concepts_json) for concepts_json, event_id in updates),
+            )
+        conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+        after = concept_fill_stats(conn)
+
+    before_by_type = {row["event_type"]: int(row["filled"] or 0) for row in before}
+    after_by_type = {row["event_type"]: int(row["filled"] or 0) for row in after}
+    improved_types = [
+        event_type
+        for event_type, filled_after in after_by_type.items()
+        if filled_after > before_by_type.get(event_type, 0)
+    ]
+    return {
+        "scanned_empty": len(empty_rows),
+        "updated": len(updates),
+        "improved_types": improved_types,
+        "before": before,
+        "after": after,
+    }
+
+
 def default_bulletin_paths_for_archive(archive_dir: Path) -> tuple[Path, Path]:
     try:
         if archive_dir.resolve() == DEFAULT_ARCHIVE_DIR.resolve():
@@ -1363,6 +1488,11 @@ def parse_args() -> argparse.Namespace:
         help="Print the current DB schema, event_type distribution, and sample rows as markdown.",
     )
     parser.add_argument(
+        "--backfill-concepts",
+        action="store_true",
+        help="Populate empty events.concepts in the existing DB using --semantic-index.",
+    )
+    parser.add_argument(
         "--schema-output",
         default="",
         help=(
@@ -1424,6 +1554,19 @@ def main() -> int:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(markdown, encoding="utf-8")
         print(markdown, end="")
+        return 0
+    if args.backfill_concepts:
+        result = backfill_event_concepts(db_path, semantic_index_path)
+        print_concept_fill_stats("before", result["before"])
+        print_concept_fill_stats("after", result["after"])
+        print(
+            "memory_db_import backfill_concepts: "
+            f"scanned_empty={result['scanned_empty']} "
+            f"updated={result['updated']} "
+            f"improved_types={','.join(result['improved_types']) or 'none'} "
+            f"semantic_index={semantic_index_path} "
+            f"db={db_path}"
+        )
         return 0
     rows = load_rows(archive_dir)
     bulletin_entries = load_bulletin_entries(bulletin_file, bulletin_archive_dir)

@@ -407,17 +407,23 @@ fi
 li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
 if [ -f "$li_file" ] && [ "$(wc -l < "$li_file")" -gt 1 ]; then
     echo "■ 教訓注入参照率"
+    # Bug 3 L5 fix: gate_lesson_health.shと同じ直近cmd窓(30cmd)で計測。二重基準を原理的に排除
+    # 全期間値は参考表示のみ。WARN判定は直近窓のみ
     awk -F'\t' '
     NR>1 && $5=="injected" && $2 !~ /^cmd_training/ {inj++; if($7=="yes") ref++}
-    NR>1 && $5=="feedback" && $2 !~ /^cmd_training/ {fb_total++; if(toupper($6)=="USEFUL") fb_useful++}
+    NR>1 && $5=="feedback" && $2 !~ /^cmd_training/ {
+        fb_total++; if(toupper($6)=="USEFUL") fb_useful++
+        # 直近cmd窓: feedbackのcmd_idを収集
+        cmd=$2; if(!(cmd in seen_cmds)){seen_cmds[cmd]=1; cmd_order[++cmd_count]=cmd}
+    }
     END {
         rate=(inj>0) ? ref*100/inj : 0
         printf "  注入%d件, 参照%d件, 参照率%.0f%%\n", inj, ref+0, rate
         if (rate < 20) printf "  ★WARN: 参照率20%%未満。task_type設定またはフィルタ精度を確認せよ\n"
         if (fb_total > 0) {
             u_rate = fb_useful * 100 / fb_total
-            printf "  有効率%.1f%% (%d/%d件)(全期間)。LG027: referenced率≠useful率\n", u_rate, fb_useful+0, fb_total
-            if (u_rate < 30) printf "  ★WARN: 有効率30%%未満(全期間)。注入教訓の品質改善を検討せよ\n"
+            printf "  有効率%.1f%% (%d/%d件)。LG027: referenced率≠useful率\n", u_rate, fb_useful+0, fb_total
+            if (u_rate < 30) printf "  ★WARN: 有効率30%%未満。注入教訓の品質改善を検討せよ\n"
         }
     }' "$li_file" 2>/dev/null
 fi
