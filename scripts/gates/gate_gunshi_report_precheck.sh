@@ -80,11 +80,28 @@ fi
 # ─── Batch git data (WSL2最適化: N*2 per-file git log → 2 batch calls) ───
 _PRE_CMD_FILES=""
 _PRE_RECENT_DATA=""
+_REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,12}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
 if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
-    # PRE3用: cmd固有commitが触れたファイル一覧 (1 call)
-    _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
-    # PRE14用: 直近20 commitとファイル (1 call)
-    _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && git log --oneline -20 --name-only 2>/dev/null) || true
+    if [ -n "$_REPORT_HASHES" ]; then
+        # PRE3/PRE14: report記載hashがあれば広域git logを避ける(WSL2 NTFS対策)
+        while IFS= read -r _hash; do
+            [ -z "$_hash" ] && continue
+            _PRE_CMD_FILES+="$(
+                cd "${PROJECT_DIR:-$REPO_ROOT}" \
+                    && git show --format="" --name-only "$_hash" 2>/dev/null
+            )"$'\n'
+            _PRE_RECENT_DATA+="$(
+                cd "$REPO_ROOT" \
+                    && git show --oneline --name-only "$_hash" 2>/dev/null
+            )"$'\n'
+        done <<< "$_REPORT_HASHES"
+        _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
+    else
+        # PRE3用: cmd固有commitが触れたファイル一覧 (1 call)
+        _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
+        # PRE14用: 直近20 commitとファイル (1 call)
+        _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && git log --oneline -20 --name-only 2>/dev/null) || true
+    fi
 fi
 
 # ─── SG-PRE3: commit検証 ───
@@ -119,7 +136,7 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     # ─── SG-PRE3b: commit hash実在検証 (バグ2対策: 忍者手動記入hash検証) ───
     echo ""
     echo "■ SG-PRE3b: commit hash実在検証"
-    REPORT_HASHES=$(grep -oiP '(?:commit)\s+\K[0-9a-f]{7,12}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
+    REPORT_HASHES="$_REPORT_HASHES"
     if [ -n "$REPORT_HASHES" ]; then
         while IFS= read -r hash; do
             [ -z "$hash" ] && continue
@@ -429,19 +446,35 @@ echo "■ SG-PRE19: total changed_lines(adversarial review必要性判定)"
 TOTAL_ADDED=0
 TOTAL_DELETED=0
 if [ -n "${PARENT_CMD:-}" ]; then
-    # shogunリポジトリ
-    while IFS=$'\t' read -r added deleted _; do
-        [[ "$added" == "-" ]] && continue
-        TOTAL_ADDED=$((TOTAL_ADDED + added))
-        TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-    done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
-    # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
-    if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+    if [ -n "$_REPORT_HASHES" ]; then
+        while IFS=$'\t' read -r added deleted _; do
+            [[ "$added" == "-" || -z "$added" ]] && continue
+            TOTAL_ADDED=$((TOTAL_ADDED + added))
+            TOTAL_DELETED=$((TOTAL_DELETED + deleted))
+        done < <(
+            while IFS= read -r _hash; do
+                [ -z "$_hash" ] && continue
+                git -C "$REPO_ROOT" show --format="" --numstat "$_hash" 2>/dev/null || true
+                if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+                    git -C "/mnt/c/Python_app/DM-Signal" show --format="" --numstat "$_hash" 2>/dev/null || true
+                fi
+            done <<< "$_REPORT_HASHES"
+        )
+    else
+        # shogunリポジトリ
         while IFS=$'\t' read -r added deleted _; do
             [[ "$added" == "-" ]] && continue
             TOTAL_ADDED=$((TOTAL_ADDED + added))
             TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-        done < <(git -C "/mnt/c/Python_app/DM-Signal" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+        done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+        # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
+        if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+            while IFS=$'\t' read -r added deleted _; do
+                [[ "$added" == "-" ]] && continue
+                TOTAL_ADDED=$((TOTAL_ADDED + added))
+                TOTAL_DELETED=$((TOTAL_DELETED + deleted))
+            done < <(git -C "/mnt/c/Python_app/DM-Signal" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+        fi
     fi
     TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))
     echo "  changed_lines: +${TOTAL_ADDED}/-${TOTAL_DELETED} = ${TOTAL_CHANGED}"
