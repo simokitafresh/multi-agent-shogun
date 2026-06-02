@@ -1,5 +1,5 @@
 # context ディレクトリ
-<!-- last_updated: 2026-06-02 cmd_training_backlinks_kagemaru_20260602 -->
+<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
 
 プロジェクト固有のコンテキストを管理する索引層。詳細データは `docs/research/*.md` に置き、context側は結論・参照先・grep入口を保持する。詳細ルールは [[AGENTS]] のDesign for Retrieval節を正本とし、関連運用は [[infrastructure]]、概念到達は [[semantic-map]] を参照する。
 
