@@ -807,7 +807,7 @@ Purpose:
 
 > multi-CLI event commonization foundationを作り、Claude/Codexのhook coverage差分を機械検出できるようにする。
 
-Acceptance criteria (軍師覚醒レビュー反映 2026-06-02 v3):
+Acceptance criteria (軍師最終覚醒レビュー反映 2026-06-02 v4):
 
 1. `config/cli_events.yaml` が§4.1 Confirmed schema **v3** (13 event)に従い作成されている（Claude全event+Codex coverage+補完方式が定義）
 2. `scripts/gates/gate_multi_cli_event_coverage.sh --check` が13 eventに対して現在の差分を検出し、Codex Stop block forbiddenとschema外Claude hookを検査する
@@ -816,10 +816,10 @@ Acceptance criteria (軍師覚醒レビュー反映 2026-06-02 v3):
 5. `scripts/gates/gate_multi_cli_switch.sh` がswitch前に5点検証（settings/pane process/watcher/hook coverage/reset semantics）を実行する
 6. `switch_all_codex.sh` のYAML更新が `yaml_field_set.sh` 経由に変更されている（yaml.safe_dump排除）
 7. ninja_monitorのheartbeat file + cron watchdog(STALL検知)が実装されている
-8. UserPromptSubmit Codex代替は案D'（永続queue非同期enqueue）として実装され、inbox_watcherのnudge送達遅延p95<100ms・semantic timeout時も送達PASS・ninja_monitor再起動後drain PASSをbatsで検証する
-9. `gate_hot_path_no_sync_io.sh` がhot path対象10ファイルに対し、重い同期I/O混入を初期WARN→連続PASS後BLOCKの段階導入で検査する
-10. 家老E2E検証計画が実行される: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback。結果をdashboard/掲示板に記録する
-11. rollback手順（guard/gate WARN化、generated block rollback、全忍者idle確認、直列pane復旧）が設計書に明記されている
+8. UserPromptSubmit Codex代替は案D'（永続queue非同期enqueue）として実装され、inbox_watcherのnudge送達遅延**N=50以上の計測でp95<100ms**・semantic timeout時も送達PASS・ninja_monitor再起動後drain PASSをbatsで検証する
+9. `gate_hot_path_no_sync_io.sh` がhot path対象10ファイルに対し、重い同期I/O混入を初期WARN→**10セッション連続PASS後にBLOCK昇格**の段階導入で検査する
+10. 家老E2E検証計画が実行される: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback。**timeout 300秒(5分)でhang時自動脱出**。結果をdashboard/掲示板に記録する
+11. rollback手順（guard/gate WARN化、generated block rollback、全忍者idle確認、直列pane復旧）が設計書に明記されている。**rollback後に `gate_multi_cli_event_coverage.sh --check` を再実行しClaude状態でPASSを確認する**
 12. 上記1-11のbats/E2Eテストが追加されている
 
 Not in scope:

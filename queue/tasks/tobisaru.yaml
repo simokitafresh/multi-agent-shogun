@@ -17,10 +17,10 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3099
+  parent_cmd: 
   project: infra
   purpose: '軍師報告(blt_20260529_190957)で修行分27件中26件がCoDD台帳(codd_refactor_registry.md)未記載(96.3%漏れ)と判明。根因仮説: 修行cmdはcmd_complete_gateの自動台帳記載が発火しないフローで処理されている。一括台帳記載+自動記載フロー修正の2層対処'
-  status: acknowledged
+  status: idle
   stop_for: []
   target_path: docs/research/codd_refactor_registry.md
   task_id: cmd_3099_normal

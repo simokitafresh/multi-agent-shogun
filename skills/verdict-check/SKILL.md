@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
 
 # /verdict-check — binary_checks確認スキル
 
@@ -101,6 +101,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 
 ## 注意ポイント
 
+- 2026-06-02: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
+- 2026-06-02: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
+
 - 2026-05-21: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 - 2026-05-19: gate=cmd_complete_gate result=FAIL executor=hanzo reason=hanzo:binary_checks_fail
 
@@ -121,3 +124,5 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=binary_checks.commit[0].result: \"waive\" は不正。\"yes\" または \"no\" のみ
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=kagemaru:binary_checks_fail
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。binary_checks未記入または欠落時はverdict自動導出できずBLOCKするため、verdict編集ではなくbinary_checksを修正する。

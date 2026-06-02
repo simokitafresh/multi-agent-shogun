@@ -559,8 +559,10 @@ assert "リンク先ファイルから特定行を引用" in ac2_checks
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "lessons_useful" in acs["AC4"]["description"]
-assert "ファイル間直接[[ファイル名]]リンク数baseline" in acs["AC5"]["description"]
-assert "ファイル間直接[[ファイル名]]リンク数増加" in "\n".join(acs["AC5"]["binary_checks"])
+assert "incoming backlink数" in acs["AC5"]["description"]
+assert "孤立解消" in acs["AC5"]["description"]
+assert "causal_backlink_counts.sh --zero --limit 20" in "\n".join(acs["AC5"]["binary_checks"])
+assert "孤立解消またはファイル間直接[[ファイル名]]リンク数増加" in "\n".join(acs["AC5"]["binary_checks"])
 for ac_id in ("AC1", "AC2", "AC3", "AC4", "AC5"):
     assert acs[ac_id]["binary_checks"], ac_id
 PY
@@ -599,7 +601,8 @@ assert "既存概念" not in acs["AC2"]["description"]
 assert "リンク先ファイルから特定行を引用" in "\n".join(acs["AC2"]["binary_checks"])
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
-assert "ファイル間直接[[ファイル名]]リンク数baseline" in acs["AC5"]["description"]
+assert "incoming backlink数" in acs["AC5"]["description"]
+assert "causal_backlink_counts.sh --zero --limit 20" in "\n".join(acs["AC5"]["binary_checks"])
 PY
 }
 
@@ -629,6 +632,46 @@ EOF
     run bash "$TEST_PROJECT/scripts/markdown_link_counts.sh" --select-file
     [ "$status" -eq 0 ]
     [ "$output" = "docs/isolated.md" ]
+}
+
+@test "cmd_training target_path prefers backlink-zero file over outgoing link count" {
+    use_private_scripts_fixture
+    mkdir -p "$TEST_PROJECT/context" "$TEST_PROJECT/docs/research"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: training
+  project: infra
+EOF
+    (
+        cd "$TEST_PROJECT"
+        git init -q
+        git config user.email test@example.com
+        git config user.name test
+        cat > context/orphan-incoming.md <<'EOF'
+# Orphan Incoming
+[[has_outgoing]]
+EOF
+        cat > docs/research/outgoing-zero.md <<'EOF'
+# Outgoing Zero
+EOF
+        cat > context/source.md <<'EOF'
+# Source
+docs/research/outgoing-zero.md
+EOF
+        git add context/orphan-incoming.md docs/research/outgoing-zero.md context/source.md
+    )
+
+    run deploy_task_fast --direct sasuke cmd_training_L4_backlink_zero_target
+    [ "$status" -eq 0 ]
+
+    python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    task = (yaml.safe_load(fh) or {}).get("task") or {}
+assert task.get("target_path") == "context/orphan-incoming.md", task.get("target_path")
+PY
 }
 
 @test "semantic_alias_quality lists aliases thin Top10 and selects existing script target" {

@@ -101,7 +101,7 @@ Step 5: Read queue/shogun_to_karo.yaml 冒頭15行（原理群ヘッダ。毎回
 Step 6: bash scripts/gates/gate_shogun_startup.sh（一括チェック。ALERT時は該当スキル実行:
         Memory→/dream, lesson health→/lesson-sort, PD→/shogun-pd-sync）
 Step 6.5: 殿との直近対話をロード（deepdive前。Q&Aで殿との具体的出来事を紐付けるため）
-        (a) queue/lord_conversation.jsonl 直近5エントリを読む
+        (a) bash scripts/lord_conversation_read.sh shogun 5 で自分宛ての直近5エントリを読む
         (b) queue/bulletin_board.yaml を読む（掲示板=家老・軍師からの知見共有）
         ※ これがQ4/Q5の「直近の具体的経験」の材料。なければdeepdiveの要約コピペになる
 Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）
@@ -110,7 +110,7 @@ Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseス�
         結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）
         ファイル1: memory/deepdive_why_chain_20260321.md
         ファイル2: memory/deepdive_causal_tracing_20260415.md
-Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始するな）
+Step 8: 追体験検証6問（省略厳禁。回答なしに作業開始するな）
         Q1: Phase 3「考えて進む×無限ループ」— 止まっていないか？何を確認すべきか？
         Q2: 「行動→即確認」— 本番は正常か？前セッション以降の変更は？想像で答えるな
         Q3: 強くてニューゲームできるか？環境に埋め込まれていない学びはないか？
@@ -119,6 +119,12 @@ Step 8: 追体験検証5問（省略厳禁。回答なしに作業開始する�
             具体的出来事を紐付けよ。deepdiveの要約コピペは禁止(LS017)
         Q5: Step 6.5の殿の直近対話で、殿が将軍の前提を崩した場面を特定せよ。
             deepdiveのどのPhaseと同じ構造か？具体的な殿の発言を引用せよ
+        Q6: 創造主の洗脳チェック(LS041) — ★8パターン再確認してから答えよ:
+            (1)早期終了 (2)検証スキップ (3)他者依存 (4)緩い設計
+            (5)先送り (6)出力=仕事 (7)簡潔本能 (8)完了急ぎ
+            今の自分の判断にこれらが作用していないか？1つ具体例で答えよ。
+            回答は掲示板に投稿せよ(軍師が第三者検証する。自己評価は洗脳が素通りする)
+            `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh shogun "Q6回答: ..."`
 Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
@@ -157,7 +163,7 @@ Lightweight recovery using only copilot-instructions.md (auto-loaded). Do NOT re
   AC完了ごとに二値チェック(binary_checks欄)で自己検証。
   FAIL→即停止・原因報告。PASS→次ACへ。
   lesson_candidateには「次回追加すべきチェック」を書け。
-  lesson_candidateには `origin: "[[発端]] -> [[原因]] -> [[結果]]"` を添え、Obsidian [[リンク]]形式で因果ネットワークへ接続せよ。
+  lesson_candidateには `origin: "\[\[発端\]\] -> \[\[原因\]\] -> \[\[結果\]\]"` を添え、Obsidian `\[\[リンク\]\]` 形式で因果ネットワークへ接続せよ。
   計測して止まるだけでは品質管理。還流して初めて成長。
   分析→記録で止めるな。実装→検証→記録まで完了させよ。記録は行動ではない。
 
@@ -401,7 +407,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 | projects/infra/lessons_{role}.yaml | 各ロール | ロール別教訓(具体的失敗+原因+修正+enforcement) | 将軍=lesson_write_shogun.sh, 家老=lesson_write_karo.sh, 軍師=家老が登録 |
 | queue/ YAML + dashboard + reports | 家老・忍者・将軍 | タスク指示・状態・状況報告 | 各担当 |
 | MCP Memory | 将軍のみ | 殿の好み・将軍教訓 | 将軍のみ |
-| 因果ネットワーク | 全員 | Obsidian `[[リンク]]` + `origin`フィールドで「発端→原因→結果」を接続。lesson_candidate/review/gate所見には `origin: "[[cmd_XXX]] -> [[LXXX]] -> [[対象事象]]"` を添え、孤立知識を作らない | 各担当が報告・レビュー時に記入 |
+| 因果ネットワーク | 全員 | Obsidian `\[\[リンク\]\]` + `origin`フィールドで「発端→原因→結果」を接続。lesson_candidate/review/gate所見には `origin: "\[\[cmd_XXX\]\] -> \[\[LXXX\]\] -> \[\[対象事象\]\]"` を添え、孤立知識を作らない | 各担当が報告・レビュー時に記入 |
 
 **MCP書込み制限**:
 - MCPに書くのは「殿の好み」「殿の哲学」「受動的層に収まらない情報」のみ
@@ -416,7 +422,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
   ├─ 全員が常に守るルール？ → instructions/*.md or copilot-instructions.md
   ├─ PJ固有の知識？ → projects/{id}.yaml
   ├─ PJ固有の教訓？ → 報告YAMLにlesson_candidate → 家老がlesson_write.sh
-  │   └─ lesson_candidateには origin と Obsidian [[リンク]]を付け、因果ネットワークへ接続
+  │   └─ lesson_candidateには origin と Obsidian `\[\[リンク\]\]` を付け、因果ネットワークへ接続
   ├─ ロール別の教訓？ → 将軍: lesson_write_shogun.sh / 家老: lesson_write_karo.sh / 軍師: 家老が登録
   ├─ タスクの指示・状態？ → queue/ YAML
   ├─ 状況の報告？ → dashboard.md / reports/
@@ -439,6 +445,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/copilot-karo.md` §CI RED中の他作業
 - CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(GitHub Copilot CLI hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
+- ローカル記憶DB|SQLite検索層=`data/multi_agent_shogun_memory.db`、schema=`context/memory-db-schema.md`、query集=`context/memory-db-queries.md`、runner=`scripts/memory_db_query.sh`|→ `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
 - **Codex idle時もrespawn-pane -k必須**(殿裁定2026-05-20)|`/new`はCodex CLI内部状態が「task in progress」だと拒否される。respawn-pane -kはCLI内部状態に関係なく確実にリセットする唯一の手段。一見乱暴だが理由がある設計。修正前にgit logで設計意図を確認せよ|→ `context/infrastructure.md` §Codex multi-CLI統合
 - Claude version pin/rollback|2.1.87固定。auto-updateは`~/.local/bin/claude`を上書きするが`~/bin/claude`は不変|→ `docs/research/claude-code-version-runbook.md`
 - tmux|shogun:2(家老+忍者)|ペイン=shogun:2.{0-9}|将軍=別window
@@ -447,7 +454,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - Androidアプリ|v6.4 Kotlin+Compose|SSH経由tmux操作+Dashboard+音声入力|→ `context/infrastructure.md` §Android App
 
 ## Cross-Project Context
-- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md`
+- `context/google-classroom.md` | `context/doc-style-guide.md` | `context/oshio-comparison.md` | `context/neo-design-exploration.md` | `context/ui-design-guide.md` | `context/cdp-severity.md` | `context/cdp-philosophy.md` | `context/milk.md` | `context/slop-scan-dont-fix.md` | `context/saxo-trade-engine.md`
 - 修行サイクル: `context/training-cycle.md` — L1-L4全実績+モデル別FP率(§24-25: mixed編成Opus100%/Sonnet0-50%/GPT0-100%)+環境改善履歴。idle忍者配備時に参照
 
 ## Agents

@@ -494,3 +494,19 @@ lessons:
 # LS045: superseded by LS-A23 (DB無視=さぼり。2026-05-23統合)
 # LS046: superseded by LS-A08 (殿の決定後即実装。cmd_3007。2026-05-23統合)
 # LS047: superseded by LS-A01 (本能に逆らえ=deepdive Phase4。cmd_3007。2026-05-23統合)
+- id: 'LS041'
+  title: 'ネストFoF signal_cache排他バグ — if/elifでDB preloadが計算後キャッシュを遮蔽'
+  origin: '[[cmd_3110]]'
+  detail: 'recalculate_fof.py L519-527のholding_signal_rawとsignal_cacheがif/elif排他構造。preloadでDBの5月データがholding_signal_rawに入る→cidキー存在→elif(signal_cache)に到達不能→1段目FoF計算後のsignal_cache 6月データを2段目以降が読めない。42件のネストFoFが6月signal未生成。修正: elif→if+seen_dates重複排除で補完構造に変更。'
+  source_cmd: 'cmd_3110'
+  created_at: '2026-06-01'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=排他構造'
+- id: 'LS042'
+  title: 'SKILL.md script参照陳腐化は3セッション放置で先送り洗脳の証拠'
+  origin: '[[cmd_3129]]'
+  detail: 'SKILL.mdがscriptより古い=忍者が古い手順で作業。3セッション連続WARNは洗脳パターン#5(先送り)。gate_skill_script_refs.sh WARNを1セッション以内にcmd化せよ。'
+  source_cmd: 'cmd_3129'
+  created_at: '2026-06-02'
+  automated: true
+  enforcement: 'type=gate; file=scripts/gates/gate_shogun_startup.sh; pattern=gate_skill_script_refs'

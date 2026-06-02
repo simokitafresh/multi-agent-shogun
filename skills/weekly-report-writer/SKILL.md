@@ -41,7 +41,7 @@ allowed-tools:
 ### データ
 - 構成ティッカー、ウェイト、raw signal を記事に書かない
 - API が返す `tickers` `expanded_tickers` `signal` は執筆素材ではなく検算用データとして扱う
-- 対象PFはメンバーシップPF + 四神12体のみ。範囲外PF（bam-2等）を載せるな
+- 対象PFはメンバーシップ4体 + シン四神激攻4体 + GSシン忍法6体 = 14体のみ。範囲外PFを載せるな
 - Python スクリプトは増やさない。下記の Bash + `curl` + `jq` で完結させる
 
 ### 書き方
@@ -96,21 +96,24 @@ export XAI_API_KEY="$(grep '^XAI_API_KEY=' "$SHOGUN_ROOT/config/xai_api.env" | c
 ```bash
 MEMBERSHIP_PFS=(
   "DM-safe"
-  "DM-safe-2"
-  "劇薬DMスムーズ"
   "劇薬DMオリジナル"
   "Ave-X"
   "裏Ave-X"
 )
 
 SHIJIN_PFS=(
-  "激攻-青龍" "鉄壁-青龍" "常勝-青龍"
-  "激攻-朱雀" "鉄壁-朱雀" "常勝-朱雀"
-  "激攻-白虎" "鉄壁-白虎" "常勝-白虎"
-  "激攻-玄武" "鉄壁-玄武" "常勝-玄武"
+  "シン青龍-激攻"
+  "シン朱雀-激攻"
+  "シン白虎-激攻"
+  "シン玄武-激攻"
 )
 
-ALL_PFS=("${MEMBERSHIP_PFS[@]}" "${SHIJIN_PFS[@]}")
+NINPO_PFS=(
+  "GSシン分身-激攻" "GSシン分身-鉄壁" "GSシン分身-常勝"
+  "GSシン四つ目-激攻" "GSシン四つ目-鉄壁" "GSシン四つ目-常勝"
+)
+
+ALL_PFS=("${MEMBERSHIP_PFS[@]}" "${SHIJIN_PFS[@]}" "${NINPO_PFS[@]}")
 ```
 
 ### Step 3: APIから生データを取得する
@@ -171,7 +174,7 @@ jq -r '
 ' "$WORK_DIR/signals.json" > "$WORK_DIR/signal_check.tsv"
 ```
 
-#### 4-2. メンバーシップPFの MTD / 前月実績
+#### 4-2. 共通: 3期間集計関数 (今月MTD / 先月 / 過去1年累積)
 
 ```bash
 fmt_pct='
@@ -179,46 +182,63 @@ fmt_pct='
     if . == null then "N/A"
     else (((. * 10000) | round) / 100 | tostring) + "%"
     end;
+  def cum1y:
+    if length == 0 then "N/A"
+    else (reduce .[] as $r (1; . * (1 + $r))) | ((. - 1) * 10000 | round) / 100 | tostring + "%"
+    end;
 '
 
-: > "$WORK_DIR/membership.tsv"
-for pf in "${MEMBERSHIP_PFS[@]}"; do
-  pf_id="$(awk -F '\t' -v name="$pf" '$1 == name {print $2}' "$WORK_DIR/portfolio_map.tsv")"
-  jq -r --arg name "$pf" "$fmt_pct
+extract_3period() {
+  local pf_name="$1" out_file="$2"
+  local pf_id
+  pf_id="$(awk -F '\t' -v name="$pf_name" '$1 == name {print $2}' "$WORK_DIR/portfolio_map.tsv")"
+  jq -r --arg name "$pf_name" "$fmt_pct
     .data.monthly_returns
     | sort_by(.year, .month)
-    | {prev: (.[-2] // null), latest: (.[-1] // null)}
+    | {
+        prev: (.[-2] // null),
+        latest: (.[-1] // null),
+        cum1y: ([.[-12:][] | .portfolio.return // 0] | cum1y)
+      }
     | [
-        $name,
+        \$name,
         (.latest.portfolio.return | pct),
-        (.prev.portfolio.return | pct)
+        (.prev.portfolio.return | pct),
+        .cum1y
       ]
     | @tsv
-  " "$WORK_DIR/monthly/${pf_id}.json" >> "$WORK_DIR/membership.tsv"
+  " "$WORK_DIR/monthly/${pf_id}.json" >> "$out_file"
+}
+```
+
+#### 4-3. メンバーシップPF (今月 / 先月 / 1年)
+
+```bash
+: > "$WORK_DIR/membership.tsv"
+for pf in "${MEMBERSHIP_PFS[@]}"; do
+  extract_3period "$pf" "$WORK_DIR/membership.tsv"
 done
 ```
 
-#### 4-3. 四神12体の近況
+#### 4-4. シン四神 激攻4体 (今月 / 先月 / 1年)
 
 ```bash
 : > "$WORK_DIR/shijin.tsv"
 for pf in "${SHIJIN_PFS[@]}"; do
-  pf_id="$(awk -F '\t' -v name="$pf" '$1 == name {print $2}' "$WORK_DIR/portfolio_map.tsv")"
-  jq -r --arg name "$pf" "$fmt_pct
-    .data.monthly_returns
-    | sort_by(.year, .month)
-    | {prev: (.[-2] // null), latest: (.[-1] // null)}
-    | [
-        $name,
-        (.latest.portfolio.return | pct),
-        (.prev.portfolio.return | pct)
-      ]
-    | @tsv
-  " "$WORK_DIR/monthly/${pf_id}.json" >> "$WORK_DIR/shijin.tsv"
+  extract_3period "$pf" "$WORK_DIR/shijin.tsv"
 done
 ```
 
-#### 4-4. Deterioration のラベル / G1 / G2
+#### 4-5. GSシン忍法6体 (今月 / 先月 / 1年)
+
+```bash
+: > "$WORK_DIR/ninpo.tsv"
+for pf in "${NINPO_PFS[@]}"; do
+  extract_3period "$pf" "$WORK_DIR/ninpo.tsv"
+done
+```
+
+#### 4-6. Deterioration のラベル / G1 / G2
 
 ```bash
 PF_NAMES_JSON="$(printf '%s\n' "${ALL_PFS[@]}" | jq -R . | jq -s .)"
@@ -340,7 +360,7 @@ jq -r '.output[] | select(.type == "message") | .content[] | select(.type == "ou
 ■ S&P500 週間X.X%、NASDAQ 週間X.X%
 ■ 2y Xbp X.XX%、10y Xbp X.XX%、30y Xbp X.XX%
 ■ ドル円 XXX.XX–XXX.XX、WTI 週間X.X%、金 週間X.X%、₿ 週間X.X%
-🔥 {{地政学ネタ — 双方の視点、マーケット影響に絞って1行}}
+■ {{地政学ネタ — 双方の視点、マーケット影響に絞って1行}}
 ■ {{その他マーケットニュース}}
 
 ## 要人発言
@@ -358,24 +378,32 @@ jq -r '.output[] | select(.type == "message") | .content[] | select(.type == "ou
 
 ---
 
-## メンバーシップPF（X/X時点 MTD）
+## メンバーシップPF（X/X時点）
 
-■ DM-safe 3月X.XX%（2月X.XX%）
-■ DM-safe-2 3月X.XX%（2月X.XX%）
-■ 劇薬DMスムーズ 3月X.XX%（2月X.XX%）
-■ 劇薬DMオリジナル 3月X.XX%（2月X.XX%）
-■ Ave-X 3月X.XX%（2月X.XX%）
-■ 裏Ave-X 3月X.XX%（2月X.XX%）
-■ (SPY) 3月X.XX%（2月X.XX%）
+■ DM-safe X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ 劇薬DMオリジナル X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ Ave-X X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ 裏Ave-X X月X.XX%（X月X.XX%、直近1年X.XX%）
 
 ---
 
-## 四神12体（X/X時点 MTD）
+## シン四神（激攻・X/X時点）
 
-■ 青龍 激攻X.XX% / 鉄壁X.XX% / 常勝X.XX%（2月: X.XX% / X.XX% / X.XX%）
-■ 朱雀 激攻X.XX% / 鉄壁X.XX% / 常勝X.XX%（2月: X.XX% / X.XX% / X.XX%）
-■ 白虎 激攻X.XX% / 鉄壁X.XX% / 常勝X.XX%（2月: X.XX% / X.XX% / X.XX%）
-■ 玄武 激攻X.XX% / 鉄壁X.XX% / 常勝X.XX%（2月: X.XX% / X.XX% / X.XX%）
+■ シン青龍-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ シン朱雀-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ シン白虎-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ シン玄武-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+
+---
+
+## GSシン忍法（X/X時点）
+
+■ GSシン分身-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ GSシン分身-鉄壁 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ GSシン分身-常勝 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ GSシン四つ目-激攻 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ GSシン四つ目-鉄壁 X月X.XX%（X月X.XX%、直近1年X.XX%）
+■ GSシン四つ目-常勝 X月X.XX%（X月X.XX%、直近1年X.XX%）
 
 ---
 
@@ -383,8 +411,10 @@ jq -r '.output[] | select(.type == "message") | .content[] | select(.type == "ou
 
 **将軍口調で書く**（〜でござる、〜なり、〜されたし、〜にあらず 等）。データ解説ではなく、将軍が戦況を見立てる語り口。
 
-■ {{メンバーシップ6PFを2-3組にまとめて短評。前月対比・SPY対比の文脈で。将軍口調}}
-■ {{今月の一手: 四神から1体選び、注目理由を1行で。将軍口調}}
+箇条書きの羅列ではなく、将軍が戦況を語るように自然な文章で書く。
+段落構成: (1)メンバーシップ4PFの全体感 (2)シン四神から注目1体+警戒1体（旧・新スタンダード共通の文脈）
+(3)GSシン分身から注目1体（新スタンダード・裏アドオン特典の文脈）(4)GSシン四つ目から注目1体（プレミアム特典の文脈）
+(5)G1/G2/P(det)の全体所見。各段落は改行で区切る。■は使わない。
 ■ G1（短期トレンド）: {{APIのg1_slope_12から読み取れる所見。将軍口調}}
 ■ G2（長期ドリフト）: {{APIのg2_p_erosion_12から読み取れる所見。将軍口調}}
 ■ P(det)（弱体化確率）: {{APIのp12から読み取れる所見。将軍口調}}
@@ -411,8 +441,9 @@ rg -n "買い|売り|目標株価|エントリー推奨|おすすめ" "$OUT_FILE
 
 目視確認:
 
-- 7セクション構成か（マーケット/要人発言/米国/日本/メンバーシップPF/四神12体/将軍の短観）+免責
-- メンバーシップ6PF+SPYと四神12体が全て載っているか
+- 8セクション構成か（マーケット/要人発言/米国/日本/メンバーシップPF/シン四神/GSシン忍法/将軍の短観）+Deterioration Monitor+免責
+- メンバーシップ4PF+シン四神激攻4体+GSシン忍法6体=14体が全て載っているか
+- 各PFに3期間（今月/先月/1年）のリターンが記載されているか
 - 表組が一切ないか（■箇条書きのみ）
 - タイプ分類（守り/攻め/バランス）が残っていないか
 - 範囲外PF（bam-2等）が混入していないか
@@ -447,7 +478,8 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ## 完了条件
 
 - `OUT_FILE` が生成されている
-- 9セクション構成（マーケット/要人発言/米国/日本/メンバーシップPF/四神12体/Deterioration Monitor/将軍の短観/免責）
+- 9セクション構成（マーケット/要人発言/米国/日本/メンバーシップPF/シン四神/GSシン忍法/Deterioration Monitor/将軍の短観）+免責
+- 全14体に3期間リターン（今月/先月/1年累積）が記載されている
 - 全セクション■箇条書き（表組なし）
 - signals / monthly-returns / deterioration / x_search を全て使用している
 - 構成ティッカーが本文に出ていない

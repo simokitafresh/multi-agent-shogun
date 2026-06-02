@@ -52,6 +52,9 @@ lessons:
     - report_received処理で報告YAML本文をReadせずWA記録+GATE待ちに入るな。家老確認2点: (1)binary_checks全yes確認 (2)commit_hash存在確認。full Readは軍師precheckと二重のため不要(軍師第三者検証で確認)。ただし2点確認なしでWA cleanを記録するのは検証スキップ(洗脳#2)
     - 手順を回す最適化で「考える」が消える構造(洗脳覚醒監査8/6yes根因)。report_received→WA記録→軍師待ち→GATEの自動フローが「手順通り=完了」の錯覚を生む。deepdive Phase 5「家老は止まるポイントがない」の再現。対策: report_received時に2点確認を止まるポイントとして埋め込む
     - 軍師自走+auto-commitのタイムラグで将軍q11確認結果と配備時点が乖離する(cmd_3081: q11時点で0件→配備時点でL519/L732に既記載。軍師context_reflux自走+kagemaru auto-commitの時間差)。家老§0.1問い2の適用タイミングを「cmd受領時」に加え「配備直前」にも実施
+    v15吸収(2026-06-02):
+    - 分析結果を「穴」と即断するな。軍師協議で(A)設計トレードオフ(B)消費者不在が真の問題と判明(三層記憶穴分析)。SQLクエリで0%を確認しても、import.pyのコードを読まずに「構造穴」と結論=検証スキップ(洗脳#2)。分析時もimport.pyのコード現物を読んでからconcepts_for_text()の有無を確認せよ
+    - deploy_task.sh resolve_cmdでpurpose内シングルクォートがyaml_field_set_batchの検証を崩す→--directモードで回避(cmd_3116/cmd_3125で2回発生)。将軍cmdのpurposeに'が含まれる場合はdeploy_task.sh --directを使え
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
@@ -213,6 +216,10 @@ lessons:
     - karo_direct配備はreport_received hook未発火の場合があるため、忍者完了後に軍師review依頼を手動送信せよ(LK012)
     v5吸収(2026-05-24):
     - 軍師がreview_logに記録済みだがreport_review_resultをinbox未送信→report_received hook未発動→GATE滞留(cmd_3035/3036で2回連続)。stop hookが「status=done→GATE処理を進めよ」を検知したら手動でcmd_complete_gate.sh実行。根因は軍師CTX圧迫またはstop hook割込みでinbox_writeフロー中断
+    v6吸収(2026-06-02):
+    - 軍師review-bundleのinbox_write未送信が4回連続発生(cmd_3109/3110/3111/3112)。軍師paneが❯待ちでreview_log記載済みだがinbox未到達。v5と同根因だが頻度が激増(2回→4回連続)。stop hook status=done検知→軍師pane❯確認→手動GATE実行が定常パターン化。根本対処=review-bundleスキルのinbox_write送信保証(構造穴。CMD起票候補)
+    v7吸収(2026-06-02):
+    - 本セッションで9回連続発生(cmd_3114-3122全cmd)。v6(4回)→v7(9回)で100%再現。軍師がprecheck実行→分析完了→❯停止→inbox_write未到達の完全なパターン。家老の定常対処(stop hook→pane確認→手動GATE)は機能するが対症療法。★CMD起票必須: review-bundleスキルにinbox_write送信保証(送信完了までretry)を追加する修正cmd。掲示板投稿で止まるな(洗脳#6)
   source_ids: [LK056, LK081, LK088, LK089, LK091, LK010b, LK012]
   created_at: '2026-04-24'
   automated: true

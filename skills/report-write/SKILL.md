@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
 
 # /report-write — 報告YAML作成スキル
 
@@ -125,6 +125,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-02: gate=gate_report_format result=FAIL executor=hayate reason=lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; b...
 
 - 2026-05-22: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: item count 1/13 (<50% of task template); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; re...
 - 2026-05-22: gate=gate_report_format result=FAIL executor=kagemaru reason=parent_cmd: MISSING (empty value); binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING...
@@ -233,3 +234,5 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=lesson_candidate: found=false but no no_lesson_reason; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; purpose_validation: MISSING; status: \"pending\" はテンプレート初期値。完了後...
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=files_modified: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。

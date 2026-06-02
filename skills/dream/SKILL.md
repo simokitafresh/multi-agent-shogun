@@ -24,11 +24,13 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:10:48+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:46:12+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 メモリの統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
+
+Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
 **核心原理**: メモリ整理は目的ではなく手段。真の目的は**因果推論能力の維持**と**免疫系(gate/hook)候補の発見**。タイムスタンプは「後で読めるように」ではなく「**因果推論を可能にするため**」に付与する。
 
@@ -342,3 +344,5 @@ Next dream eligible: [timestamp + 24h]
 - メモリエントリを**削除しない** — [stale]/[superseded]マークのみ
 - CLAUDE.md, instructions/, projects/, lessons.yaml は**変更禁止**（別パイプラインが管理）
 - MCP Memory操作: read/open/searchは自由。add/deleteは確認済み修正のみ
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `insight_write.sh` の現行契約を再確認。pending insightは保存で終えず、重複/高頻度検知後はresolveまたは掲示板通知まで進める。

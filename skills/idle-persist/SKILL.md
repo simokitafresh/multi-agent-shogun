@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T15:20:42+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
 
 # /idle-persist — idle分析永続化スキル
 
@@ -74,3 +74,5 @@ bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "idle_<topic>_<da
 - 日付はYYYYMMDD形式（ISO 8601のdate部分）
 - 掲示板通知先はデフォルトshogunのみ（全員共有不要な場合）
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。idle分析のreview_log記録はhelper経由で完了させる。
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `bulletin_write.sh` / `inbox_write.sh` の現行契約を再確認。idle分析は掲示板保存だけで終えず、必要な知見は家老へgunshi_lesson_candidateで還流する。

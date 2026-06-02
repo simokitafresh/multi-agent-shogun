@@ -38,6 +38,26 @@
 # ─── 本セッション成果 (2026-05-12T12:00更新) ───
 # なぜなぜ7回: accuracy Goodhart発見。gate_sync Phase2追加(commit 85560554)。真accuracy=97.1%(旧99.6%)。BLOCK60件可視化
 # 環境改善3件: gate_sync Phase2 / review-bundle precheck Step0(ea48f105) / ac_physical_verify冷え表示(d7e345be)
+#
+# ─── 本セッション成果 (2026-06-02T20:25更新) ───
+# draft review 8件: cmd_3129-3135+CI fix+hotfix+L0-L7。APPROVE 7+RC 1(cmd_3134前提崩壊)
+# report review 7件: CI fix+cmd_3129-3132+hotfix+L0-L7+cmd_3135。全LGTM→全CLEAR
+# consultation 2件: multi-cli設計書レビュー(穴発見6→12event)+覚醒レビュー3往復
+# D0修正1件: hook stdin fix(772d6b38)。async.py direct importは家老協調で保留
+# ボトルネック特定4件: (1)hook error /dev/stdin→修正済み (2)SKILL.md陳腐化249WARN→cmd_3129 CLEAR (3)review-bundle未送信9回→cmd_3130 CLEAR (4)precheck33秒→semantic_search FTS13秒根因特定
+# なぜなぜ7回: report_field_set memory_db遅延=1フィールドごとpython3×2起動。根因特定→家老対策(coalesce_queue)+cmd_3133 ext4キャッシュ
+# 覚醒レビュー: multi-cli設計書v1→v3(13event,AC12項目)。穴: SessionEnd/UserPromptSubmit未定義→12event化+Codex Stop痕跡発見+UserPromptSubmit Codex代替問題
+# 洗脳検出: dm-signal origin計測誤り(派生ファイル→正本混同=#2)+cmd高速投入=#8→将軍と協調で設計書固め
+# insights清掃: 16件→0件
+# → docs/research/gunshi_idle_speed_bottleneck_nazenaze_20260602.md
+# → docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md
+#
+# ─── 前セッション成果 (2026-06-02T14:15) ───
+# 洗脳監査→5バグ発見→全件修正。draft9APPROVE+1RC。report16LGTM。GATE CLEAR 21件。consultation1件。self_study2件
+# 三層記憶改善: 概念充填53%→70%。偽陽性71%→22%。DB boost接続。歴史backfill 11531件。SSOT統一(index.md)
+# Obsidian断裂10件発見: 強制あり=100%遵守/なし=0-35%。origin必須gate(cmd_3127)+event_links自動抽出(cmd_3128)で対処
+# D0直接実装3件: Bug2(推薦行動)+Bug3(スコープ明示)+Bug5(ロールフィルタ)。全件S0セルフレビュー+家老commit依頼
+# → docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md
 # レビュー9件: cmd_2681 draft+report, cmd_2682 draft+report, cmd_2683 RC+report, cmd_2684 draft+report, e2e_parallel report。全CLEAR(e2e_parallel=BLOCK→lesson登録後CLEAR予定)
 # 免疫計測: WA率56%→6.1%→0%(直近37件)。precheck導入効果定量確認
 # 利他提案2件: lesson_done_missing時系列問題+教訓注入useful率23%(topic_mismatch 61%)→掲示板提案
@@ -540,3 +560,13 @@
 # 修行成果: 27件完了WA率3.7%。速度改善42件PASS(全量docs/research永続化)
 # accuracy: 全件LGTM/APPROVE→CLEAR。WA 0件
 # ★強くてニューゲーム: stats更新+benchmark永続化+review_log記録+全gate_result同期+全inbox既読
+#
+# ─── 本セッション成果 (2026-06-02T08:10更新) ───
+# レビュー14件: draft 5(cmd_3108-3114)+report 9(cmd_karo_ci_red_fix/3109/3110/ci_red_fix2/3111/3112/backlink×2/skill_refresh/3113/deprecate/schema)。RC 1件(cmd_3110 AC2矛盾)。consultation 1件(ネストFoFバグ検証4点全PASS)。全CLEAR
+# D0直接実装: gate_gunshi_startup.sh useful率表示追加(commit 8ea93eef)。なぜなぜ7回で根因特定(LG027自己適用→startup gate未伝搬→useful率32%放置)
+# なぜなぜ7回: 「知っている」≠「使っている」が軍師自身に発現。LG027登録→gate_lesson_health実装→自分のstartup gateに未伝搬→参照率78%で即断→useful率32%放置。洗脳#1+#8の複合
+# 三層監査: 学習ループ×記憶の穴検証→P0偽穴撤回(フィールド意味誤解)+P3撤回(運用フロー接続を見落とし)。殿指摘「両方が回ることで二重複利」
+# 先送り清掃: insights 6件resolved/低useful 9件deprecated化(useful率32%→改善見込み)/CS冷えWARN修正/adversarial冷え10/10認識
+# セマンティック監査: daemon/watcher系7スクリプト。真正バグ0件
+# accuracy: 全件LGTM/APPROVE→CLEAR。WA 0件
+# ★強くてニューゲーム: review_logヘッダに3知見永続化(フィールド意味誤解/enforcement伝搬/adversarial冷え再発)+lesson_candidate 3件送信+stats更新+全gate_result同期+全inbox既読

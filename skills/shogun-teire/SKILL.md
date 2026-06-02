@@ -24,11 +24,13 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:10:48+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:46:12+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
 7層知識基盤を横断的に監査し、衛生状態・整合性・鮮度を検査する。殿の承認なしに変更を実行してはならない。
+
+Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
 ---
 

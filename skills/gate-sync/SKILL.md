@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
 
 # /gate-sync — gate結果同期スキル
 
@@ -66,3 +66,5 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 - gate_sync.shが一括処理する場合と競合しない（yaml_field_set.shのflock排他）
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_log更新はこのhelper以外で行わない。
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化、Windows path用/tmp lock、検証込み)。
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `bulletin_write.sh` の現行契約を再確認。明示posted_by、action_type制約、全文inbox通知、DB live insert非同期化を前提にする。

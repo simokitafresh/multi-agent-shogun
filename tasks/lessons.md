@@ -7257,3 +7257,46 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - grep -cは0件でも0を出力するが終了コードは1のため、set -e直下のコマンド置換代入で関数全体が早期exitする。YAMLキーが引用付きになるなど正規表現が0件になり得る集計は、awk ENDでcount+0を出すか明示的に|| trueで握る。
+
+### L725: 全件backfillは概念辞書をプリコンパイルしてから実行する
+- **日付**: 2026-06-02
+- **出典**: cmd_3118
+- **記録者**: kagemaru
+- **tags**: [infra]
+- **target_files**: [scripts/memory_db_import.py,tests/unit/test_memory_db.bats,context/memory-db-schema.md,data/multi_agent_shogun_memory.db]
+- **origin**: [[cmd_3118]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3118で31636件の空conceptsに対し素朴なconcepts_for_text()を実行した結果、約15分を要した。全履歴backfill系はAC上範囲縮小できないため、次回はalias集合の事前正規化・正規表現化などで照合コストを下げるチェックを追加すべき。origin: [[cmd_3118]] -> [[素朴な全alias照合]] -> [[backfill長時間化]]
+
+### L726: timeoutは後段fallbackまで含めてboundedにする
+- **日付**: 2026-06-02
+- **出典**: cmd_karo_hotfix_semantic_search_timeout_20260602
+- **記録者**: saizo
+- **tags**: [infra,db]
+- **target_files**: [scripts/semantic_search.sh,scripts/semantic_index.py,tests/unit/test_semantic_search.bats]
+- **origin**: [[cmd_karo_hotfix_semantic_search_timeout_20260602]]
+- **when**: 未設定
+- **how**: 未設定
+- memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fallbackは、各段のtimeoutだけでなく後段遷移条件も明示許可にし、デフォルト経路はNO_MATCH/WARNで停止させるべき。origin: [[cmd_karo_hotfix_semantic_search_timeout_20260602]] -> [[memory_db_fts_timeout]] -> [[llm_fallback_unbounded]]
+
+### L727: 正本/派生ファイルを混同せず計測対象を確認せよ
+- **日付**: 2026-06-02
+- **出典**: cmd_3134
+- **記録者**: gunshi
+- **tags**: [infra,testing,gate,yaml]
+- **origin**: [[cmd_3134]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_healthは正本を計測するが、grepや手動集計は対象ファイルに依存する。lessons.md等の正本とlessons.yaml等の派生/indexを混同すると0%などの誤報告になる。計測時は最初に対象が正本かderivedかを確認し、報告に対象パスを明記せよ。origin: [[cmd_3134_RC]] -> [[派生正本混同]] -> [[洗脳#2検証スキップ]]
+
+### L728: universal+target_filesありの教訓はtarget_files_matchでフィルタリング必須
+- **日付**: 2026-06-02
+- **出典**: cmd_3136
+- **記録者**: kotaro
+- **tags**: [infra,lesson]
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_3136]]
+- **when**: 未設定
+- **how**: 未設定
+- _universal_without_target_files_is_relevantはtarget_filesがある場合に_target_files_matchを迂回してTrueを返していた。正しくは_target_files_matchでタスクファイルとのマッチングを確認すべき。1行修正で教訓有効率が大幅改善される。

@@ -12,9 +12,25 @@
 # Local runtime / sandbox artifacts
 .codex-tmp/
 .codex_tmp/
+.codex/
+.codd/
+.obsidian/
+.pytest_cache/
+.ruff_cache/
+.tmp/
+tmp_report_merge_*/
+**/__pycache__/
+android/app/build/
 tmp/
 .venv/
 .claude/worktrees/
+memory/.obsidian/
+test-results/
+queue/dispatch_ntfy_started/
+queue/draft_review_started/
+queue/gates/
+queue/locks/
+queue/memory_db_live_insert_queue/
 
 # Step 3: OSS公開対象ファイルを許可
 !.gitignore

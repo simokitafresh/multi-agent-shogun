@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
 
 # /dashboard-update — KARO_SECTION自動生成
 
@@ -154,3 +154,5 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 - 2026-05-04: gate=gate_report_format result=FAIL executor=unknown reason=self_gate_check: is str (must be dict)
 
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=knowledge_candidate: is str (must be dict)
+
+Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。dashboard更新前の報告YAML検証は、binary_checks由来verdict自動導出・lessons_useful空リストBLOCK・中間FAILログ抑止を含む現在のgate出力を正本にする。

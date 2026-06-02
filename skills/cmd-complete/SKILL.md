@@ -26,6 +26,7 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 - <!-- skill-auto-improve:bf42976b4e85 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|hanzo:lesson_done_missing」(cmd_2686以降WARN化済み)。lesson.doneはdeploy_task.shのpreflight_gate_flags()が自動生成する(found:trueなしならlesson_check.sh経由)。忍者は何もしなくてよい。
 - <!-- skill-auto-improve:38f7fb84d163 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「missing_gate:lesson|<ninja>:lesson_done_missing」(cmd_2686以降WARN化済み)。BLOCKしない設計。lesson.doneはpreflight_gate_flags()が自動生成。手動対処不要。
 - <!-- skill-auto-improve:cmd_2944 --> 自動防止: ac_version_mismatch(task=d41d8cd9)。ac_versionはACのdescription/check文字列のmd5(deploy_task.sh _compute_ac_hash)。gitハッシュ(git rev-parse --short HEAD)ではない。karo_direct配備のtask.ac_versionとreport.ac_version_readはdeploy_task.shが自動で一致させる。手動でgit hashを書き込むことは禁止。
+- <!-- skill-auto-improve:75c5317166e9 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「<ninja>:ac_version_mismatch:task=d41d8cd9:report=88572c76」(count=1, last=2026-05-02T23:46:44+0900)を避ける。確認: ac_version_read がHEADの短縮ハッシュと一致するか `git rev-parse --short HEAD` で確認する。修正: `report_field_set.sh <report> ac_version_read $(git rev-parse --short HEAD)` で記入する。
 ### Step 1: lesson review
 ```bash
 bash scripts/lesson_review.sh
