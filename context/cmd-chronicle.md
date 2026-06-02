@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-02 -->
+<!-- last_updated: 2026-06-02 cmd_3115 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -517,3 +517,4 @@
 | cmd_3111 | portfolio_config_snapshotsテーブルは076マイグレーションで作成済みだが書込みロジックが未接続(0件)。PF設定のロールバック手段がない。recalculate Phase 0直前とPF保存時に自動スナップショットを取る | dm-signal | 06-01 | portfolio_config_snapshotsへのPF |
 | cmd_3113 | memory_db_import.py L839-865のCJK LIKEフォールバックが長文クエリで部分文字列マッチしない。文字種境界分割でクエリを短いトークンに分解し、各トークンのAND LIKE検索に変更して長文でもヒットさせる。記憶DB検索品質向上 | infra | 06-02 | CJK長文検索を文字種境界トークンのAND LIKEへ変更し |
 | cmd_3114 | 将軍がcmd_idなしのtype=cmd_newをinbox_writeで送信するとcmd_new_gateをバイパスし、品質gate/軍師レビュー/教訓サイクルを全スキップする穴がある。L0-L7の全レベルで封鎖する | infra | 06-02 | cmd_idなしshogun cmd_newをL4 BLOC |
+| cmd_3116 | memory_db_live_insert.pyの全関数でconcepts='[]'ハードコード。学習ループ出力(報告/gate/教訓/workaround)8185件が概念空間に未接続。軽量キャッシュ辞書でlive_insert時に概念付与し横断検索可能にする | infra | 06-02 | memory_db_live_insertのlive挿入でs |
