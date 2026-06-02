@@ -195,7 +195,7 @@ run_session_memory_db_import() {
   if [ -f "$memory_db" ] && ! memory_db_needs_rebuild "$memory_db"; then
     local current_mtime
     current_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
-    echo "  OK: ${memory_db#$ROOT_DIR/} mtime=${current_mtime}"
+    echo "  OK: ${memory_db#"$ROOT_DIR"/} mtime=${current_mtime}"
     echo "  memory_db_import: cache_fresh db=${memory_db}"
     return 0
   fi
@@ -212,7 +212,7 @@ run_session_memory_db_import() {
       after_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
     fi
     if [ "$after_mtime" -gt 0 ] && [ "$after_mtime" -ge "$before_mtime" ]; then
-      echo "  OK: ${memory_db#$ROOT_DIR/} mtime=${after_mtime}"
+      echo "  OK: ${memory_db#"$ROOT_DIR"/} mtime=${after_mtime}"
       echo "  ${import_output}"
     else
       echo "  ALERT: DB mtime未更新 before=${before_mtime} after=${after_mtime}"
@@ -221,7 +221,7 @@ run_session_memory_db_import() {
     fi
   else
     echo "  ALERT: memory_db_import.py failed"
-    echo "$import_output" | sed 's/^/  /'
+    echo "${import_output//$'\n'/$'\n'  }"
     issues=$((issues + 1))
     issue_reasons+=("記憶DB再構築失敗")
   fi
