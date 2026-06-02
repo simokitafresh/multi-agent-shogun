@@ -44,7 +44,7 @@ SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
 if [ "${ASW_PROCESS_TIMEOUT:-}" = "0" ]; then
     SEND_KEYS_TIMEOUT=0  # timeout 0 = no limit
 fi
-DEBOUNCE_SEC=10
+DEBOUNCE_SEC="${NUDGE_COOLDOWN_SEC:-30}"
 DEBOUNCE_FILE="${STATE_DIR}/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
 RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
@@ -97,6 +97,19 @@ fi
 # instead of PyYAML full-load on every watch cycle.
 # IMPORTANT: Empty fields use placeholder '-' to prevent bash IFS='\t' read
 # from merging consecutive tabs (tab is IFS-whitespace → adjacent tabs collapse)
+fingerprint_unread_ids() {
+    local unread_ids="$1"
+    [ -n "$unread_ids" ] && [ "$unread_ids" != "-" ] || {
+        printf '%s\n' "-"
+        return
+    }
+    if command -v sha256sum >/dev/null 2>&1; then
+        printf '%s' "$unread_ids" | sha256sum | awk '{print $1}'
+    else
+        printf '%s' "$unread_ids" | shasum -a 256 | awk '{print $1}'
+    fi
+}
+
 get_unread_info() {
     # Fast path: skip Python3 startup (~40ms) when no unread messages exist
     if ! grep -qF 'read: false' "$INBOX" 2>/dev/null; then
@@ -107,7 +120,8 @@ get_unread_info() {
     # watcher cycle; fall back to the parser below when special CLI commands
     # may need multiline/base64 handling.
     if ! grep -qE 'type:[[:space:]]*['"'"'"]?(clear_command|model_switch)['"'"'"]?' "$INBOX" 2>/dev/null; then
-        awk '
+        local fast_info fast_count fast_has_task fast_ids fast_fp
+        fast_info=$(awk '
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
 function unquote(s) {
     s = trim(s)
@@ -146,7 +160,7 @@ in_msg && /^  [A-Za-z0-9_.-]+:/ {
 END {
     if (in_msg) flush_message()
     if (count == 0) {
-        print "0\tfalse\t-\t-\tfalse"
+        print "0\tfalse\t-"
         exit
     }
     for (i = 1; i <= count; i++) {
@@ -156,15 +170,25 @@ END {
             }
         }
     }
-    fp = ids[1]
-    for (i = 2; i <= count; i++) fp = fp "," ids[i]
-    print count "\tfalse\t" fp "\t-\t" has_task
+    fp_ids = ids[1]
+    for (i = 2; i <= count; i++) fp_ids = fp_ids "," ids[i]
+    print count "\t" has_task "\t" fp_ids
 }
-' "$INBOX"
+' "$INBOX")
+        IFS=$'\t' read -r fast_count fast_has_task fast_ids <<< "$fast_info"
+        fast_count="${fast_count:-0}"
+        fast_has_task="${fast_has_task:-false}"
+        fast_ids="${fast_ids:--}"
+        if [ "$fast_count" -gt 0 ] 2>/dev/null; then
+            fast_fp="$(fingerprint_unread_ids "$fast_ids")"
+            printf '%s\tfalse\t%s\t-\t%s\n' "$fast_count" "$fast_fp" "$fast_has_task"
+        else
+            printf '0\tfalse\t-\t-\tfalse\n'
+        fi
         return
     fi
     INBOX_PATH="$INBOX" python3 -c "
-import sys, os, base64, ast
+import sys, os, base64, ast, hashlib
 
 SPECIAL_TYPES = {'clear_command', 'model_switch'}
 TASK_NUDGE_TYPES = {'task_assigned'}
@@ -250,7 +274,8 @@ try:
         sys.exit(0)
 
     normal_count = len(normal_ids)
-    normal_ids = ','.join(sorted(normal_ids)) or '-'
+    normal_id_set = ','.join(sorted(normal_ids))
+    normal_fp = hashlib.sha256(normal_id_set.encode('utf-8')).hexdigest() if normal_id_set else '-'
     specials_tsv = '-'
     if specials:
         lines = []
@@ -259,7 +284,7 @@ try:
             lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
     has_task_assigned = 'true' if task_nudge_ids else 'false'
-    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_ids}\t{specials_tsv}\t{has_task_assigned}\")
+    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_fp}\t{specials_tsv}\t{has_task_assigned}\")
 except Exception:
     print('0\tfalse\t-\t-\tfalse')
 " 2>/dev/null
@@ -613,7 +638,8 @@ send_wakeup() {
             _now="$(date +%s)"
 
             if [ -f "$DEBOUNCE_FILE" ]; then
-                read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || _last=""
+                _last=""
+                IFS= read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || true
                 if [[ "$_last" =~ ^[0-9]+$ ]]; then
                     _elapsed=$((_now - _last))
                     if [ "$_elapsed" -lt "$DEBOUNCE_SEC" ]; then
@@ -625,7 +651,7 @@ send_wakeup() {
 
             _prev_fp=""
             if [ -f "$FINGERPRINT_FILE" ]; then
-                read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || _prev_fp=""
+                IFS= read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || true
             fi
 
             if [ "$current_fp" != "$_prev_fp" ]; then
@@ -638,7 +664,7 @@ send_wakeup() {
 
             _retry_count=0
             if [ -f "$RETRY_COUNT_FILE" ]; then
-                read -r _retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || _retry_count=0
+                IFS= read -r _retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || true
             fi
 
             if [ "$_retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
@@ -674,7 +700,8 @@ send_wakeup() {
         [ "$decision" = "send" ] || return 0
     else
         if [ -f "$DEBOUNCE_FILE" ]; then
-            read -r last < "$DEBOUNCE_FILE" 2>/dev/null || last=""
+            last=""
+            IFS= read -r last < "$DEBOUNCE_FILE" 2>/dev/null || true
             if [[ "$last" =~ ^[0-9]+$ ]]; then
                 now="$(date +%s)"
                 elapsed=$((now - last))

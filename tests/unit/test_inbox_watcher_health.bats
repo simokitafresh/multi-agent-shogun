@@ -318,7 +318,8 @@ IFS=$'\''\t'\'' read -r normal_count has_specials fingerprint specials_b64 has_t
 
 [ "$normal_count" = "1" ]
 [ "$has_specials" = "true" ]
-[ "$fingerprint" = "msg_002" ]
+expected_fingerprint="$(printf msg_002 | sha256sum | cut -d " " -f1)"
+[ "$fingerprint" = "$expected_fingerprint" ]
 [ "$has_task_assigned" = "true" ]
 
 decoded="$(printf %s "$specials_b64" | base64 -d)"
