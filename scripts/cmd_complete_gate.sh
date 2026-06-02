@@ -4095,6 +4095,109 @@ collect_report_modified_files() {
     done | awk 'NF && !seen[$0]++'
 }
 
+collect_cmd_command_file_refs() {
+    local cmd_id="$1"
+
+    CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" python3 - <<'PY' 2>/dev/null || true
+import os
+import re
+import yaml
+
+cmd_id = os.environ.get("CMD_ID_ENV", "")
+yaml_file = os.environ.get("YAML_FILE_ENV", "")
+
+try:
+    with open(yaml_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    data = {}
+
+commands = data.get("commands", data.get("cmds", data))
+entry = None
+if isinstance(commands, dict):
+    entry = commands.get(cmd_id)
+elif isinstance(commands, list):
+    for row in commands:
+        if isinstance(row, dict) and str(row.get("id", "")) == cmd_id:
+            entry = row
+            break
+
+if not isinstance(entry, dict):
+    raise SystemExit(0)
+
+command = entry.get("command", "")
+if isinstance(command, (list, tuple)):
+    command = " ".join(str(v) for v in command)
+elif not isinstance(command, str):
+    command = str(command)
+
+pattern = re.compile(
+    r"(?<![A-Za-z0-9_./-])"
+    r"((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
+    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+    r"(?![A-Za-z0-9_.-])"
+)
+seen = set()
+for match in pattern.finditer(command):
+    ref = match.group(1).strip().strip("`'\".,:;()[]{}")
+    if not ref or ref in seen:
+        continue
+    seen.add(ref)
+    print(ref)
+PY
+}
+
+check_command_files_modified_coverage() {
+    level_heading "[L3]" "Command/files_modified coverage check:"
+
+    local command_refs report_paths
+    command_refs="$(collect_cmd_command_file_refs "$CMD_ID" || true)"
+    if [ -z "$command_refs" ]; then
+        echo "  SKIP (command欄に拡張子付きファイル参照なし)"
+        return 0
+    fi
+
+    report_paths="$(collect_report_modified_files || true)"
+    if [ -z "$report_paths" ]; then
+        echo "  [CRITICAL] COMMAND_SCOPE_MISSING: command欄ファイル参照あり、files_modified記載なし"
+        printf '%s\n' "$command_refs" | sed 's/^/    missing: /'
+        record_block_reason "command_files_modified_mismatch"
+        ALL_CLEAR=false
+        return 0
+    fi
+
+    local missing_count=0 total_count=0 missing_list=""
+    local ref modified matched ref_base modified_base
+    while IFS= read -r ref; do
+        [ -z "$ref" ] && continue
+        total_count=$((total_count + 1))
+        ref_base="$(basename "$ref")"
+        matched=false
+        while IFS= read -r modified; do
+            [ -z "$modified" ] && continue
+            modified_base="$(basename "$modified")"
+            if [ "$modified" = "$ref" ] || [[ "$modified" == */"$ref" ]] || [ "$modified_base" = "$ref_base" ]; then
+                matched=true
+                break
+            fi
+        done <<< "$report_paths"
+        if [ "$matched" = false ]; then
+            missing_count=$((missing_count + 1))
+            missing_list="${missing_list}    missing: ${ref}\n"
+        fi
+    done <<< "$command_refs"
+
+    if [ "$missing_count" -gt 0 ]; then
+        echo "  [CRITICAL] COMMAND_SCOPE_MISSING: ${missing_count}/${total_count} command欄ファイル参照がfiles_modifiedに未記載"
+        printf '%b' "$missing_list" | head -10
+        echo "    -> report files_modifiedへ不足ファイルを記録してから再実行せよ"
+        record_block_reason "command_files_modified_mismatch"
+        ALL_CLEAR=false
+    else
+        echo "  OK (command欄ファイル参照 全${total_count}件がfiles_modifiedに記載済み)"
+    fi
+}
+
 cmd_requires_cdp_production_check() {
     [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
 
@@ -5871,6 +5974,7 @@ else
 fi
 
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
+check_command_files_modified_coverage
 check_scope_drift
 check_review_staleness
 check_partial_completion

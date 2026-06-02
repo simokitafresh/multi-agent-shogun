@@ -42,6 +42,10 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_report_modified_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_cmd_command_file_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^check_command_files_modified_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^run_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -167,6 +171,71 @@ EOF
     BLOCK_REASONS=()
 
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+}
+
+_run_command_files_modified_coverage_with_state() {
+    check_command_files_modified_coverage
+    echo "ALL_CLEAR=$ALL_CLEAR"
+    echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
+}
+
+_write_command_coverage_fixture() {
+    local command_text="$1"
+    local files_modified_block="$2"
+
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    export ALL_CLEAR=true
+    BLOCK_REASONS=()
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    command: "$command_text"
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+$files_modified_block
+EOF
+}
+
+@test "command/files_modified coverage blocks when command target is missing from report" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh と scripts/stop_check_inbox.sh を修正" \
+        "  - path: tests/unit/test_cmd_complete_gate.bats
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" == *"missing: scripts/stop_check_inbox.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
+@test "command/files_modified coverage accepts full path and basename matches" {
+    _write_command_coverage_fixture \
+        "cmd_complete_gate.sh と scripts/stop_check_inbox.sh を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified
+  - path: hooks/stop_check_inbox.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全2件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
 @test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {
