@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-02 -->
+<!-- last_updated: 2026-06-02 cmd_3131 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -527,3 +527,4 @@
 | cmd_3127 | infra教訓585/685件(85%)がorigin([[リンク]])なし。教訓が孤立し因果をたどれない。lesson_write.shにorigin必須化gateを追加し新規登録時の因果接続を強制 | infra | 06-02 | lesson_write.shにorigin必須gateを追 |
 | cmd_3128 | event_concepts(概念タグ)は70.3%改善したがevent_links(因果リンク)は1.2%(813/67875件)。memory_db_live_insert.pyにorigin/[[リンク]]自動抽出→event_links自動INSERTを追加 | infra | 06-02 | memory_db_live_insert.pyのappen |
 | cmd_3125 | hook_automation_framework(14389件)が突出し概念付与が偏集中。広すぎるaliasesが原因で横断検索にノイズ。aliasesを精査し概念分散を改善 | infra | 06-02 | hook_automation_frameworkの広すぎる |
+| cmd_3129 | idle-persist/karo-direct/recon-dual の3 SKILL.mdが参照先script(inbox_write.sh, deploy_task.sh)より古い。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.sh WARNを解消する | infra | 06-02 | idle-persist/karo-direct/recon |
