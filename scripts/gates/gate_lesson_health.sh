@@ -103,9 +103,9 @@ _compute_lesson_stats() {
         -v thr="$inject_thr" -v pid="$pid" '
     function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
     function inline_value(line, field,    pat,m,v) {
-        pat = field ":[[:space:]]*([^,}]+)"
+        pat = "(^|[,][[:space:]]*)" field ":[[:space:]]*([^,}]+)"
         if (match(line, pat, m)) {
-            v = trim(m[1])
+            v = trim(m[2])
             gsub(/^['\''"]|['\''"]$/, "", v)
             return trim(v)
         }

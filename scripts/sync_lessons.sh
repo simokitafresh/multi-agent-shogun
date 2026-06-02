@@ -329,10 +329,8 @@ while i < len(lines):
     entry['source_cmd'] = source_cmd
     if tags:
         entry['tags'] = tags
-    if when_cond:
-        entry['when'] = when_cond
-    if how_action:
-        entry['how'] = how_action
+    entry['when'] = when_cond if when_cond else f'{title} の状況で判断・実装・検証する時'
+    entry['how'] = how_action if how_action else f'{summary or title} を根拠に、実体確認と再発防止の手順を先に通す'
     if subdomain:
         entry['subdomain'] = subdomain
     entry['origin'] = origin if origin else f'[[{source_cmd}]]'
