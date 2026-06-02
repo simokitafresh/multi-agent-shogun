@@ -424,6 +424,7 @@ codd:
 | lesson | `L726` timeoutは後段fallbackまで含めてboundedにする |
 | lesson | `L728` universal+target_filesありの教訓はtarget_files_matchでフィルタリング必須 |
 | lesson | `L729` README除外ファイルのリンク修行は対象ファイル個別カウントを併用する |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-02T23:34:47+09:00 ５W1Hが抜けている。今理解したことをL0-L7に埋め込むのにはどうすればいい。まだCMDを起票するな |
 | causal_chain | `[[cmd_2291]]` (L653) |
 | causal_chain | `[[cmd_2323]]` (L659) |
 | causal_chain | `[[cmd_2326]]` (L661) |
