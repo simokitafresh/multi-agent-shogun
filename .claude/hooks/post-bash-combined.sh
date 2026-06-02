@@ -3,7 +3,7 @@
 # cmd_1661: 2 hooks → 1 script. Eliminates 1 bash startup cost (~60ms).
 set -eu
 
-payload="$(</dev/stdin)"
+payload="$(cat 2>/dev/null || true)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 

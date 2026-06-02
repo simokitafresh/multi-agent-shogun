@@ -3,7 +3,7 @@
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -eu
 
-payload="$(</dev/stdin)"
+payload="$(cat 2>/dev/null || true)"
 case "$payload" in
     *[![:space:]]*) ;;
     *) exit 0 ;;
@@ -106,7 +106,7 @@ auto_q11_script_grep_results() {
 # Extract tool_name and file_path without jq/awk on the hot path.
 json_string_after() {
     local line="$1" key="$2" rest c result i
-    rest="${line#*\"$key\"}"
+    rest="${line#*\""$key"\"}"
     [[ "$rest" != "$line" ]] || return 0
     rest="${rest#*:}"
     rest="${rest#"${rest%%[![:space:]]*}"}"
