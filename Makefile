@@ -1,4 +1,4 @@
-.PHONY: test build lint check help install-deps clean setup-hooks
+.PHONY: test test-affected build lint check help install-deps clean setup-hooks
 
 # Default target
 help:
@@ -6,6 +6,7 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  make test          - Run bats unit tests"
+	@echo "  make test-affected - Run affected bats unit tests"
 	@echo "  make test-int      - Run bats integration tests"
 	@echo "  make build         - Run build_instructions.sh"
 	@echo "  make lint          - Run shellcheck on lib/ and scripts/"
@@ -29,14 +30,15 @@ test:
 		echo "ERROR: bats not installed. Run 'make install-deps' first."; \
 		exit 1; \
 	fi
-	@if ls tests/*.bats 1>/dev/null 2>&1; then \
-		echo "--- Root-level tests ---"; \
-		bats tests/*.bats --timing; \
+	@bash scripts/run_tests.sh all
+
+test-affected:
+	@echo "Running affected unit tests..."
+	@if ! command -v bats >/dev/null 2>&1; then \
+		echo "ERROR: bats not installed. Run 'make install-deps' first."; \
+		exit 1; \
 	fi
-	@if [ -d tests/unit ] && ls tests/unit/*.bats 1>/dev/null 2>&1; then \
-		echo "--- Unit tests ---"; \
-		bats tests/unit/ --timing; \
-	fi
+	@bash scripts/run_tests.sh affected
 
 # Run integration tests
 test-int:

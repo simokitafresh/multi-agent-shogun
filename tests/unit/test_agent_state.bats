@@ -121,6 +121,26 @@ check_agent_busy "shogun:agents.2" "sasuke"
     [ "$status" -eq 1 ]
 }
 
+@test "check_agent_busy returns busy when Codex goal is active with idle footer" {
+    run bash -lc '
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/lib/agent_state.sh"
+tmux() {
+    case "$1" in
+        display-message) echo "idle"; return 0 ;;
+        capture-pane) printf "Goal active Objective: 全体bats時間を30秒未満にせよ\n›\ngpt-5.5 medium fast · Context … Pursuing goal (2m)\n"; return 0 ;;
+        set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+pstree() { return 1; }
+pgrep() { return 1; }
+ps() { return 1; }
+check_agent_busy "shogun:agents.4" "kagemaru"
+'
+    [ "$status" -eq 1 ]
+}
+
 @test "check_agent_busy returns unknown when neither busy nor idle pattern matches" {
     run bash -lc '
 PROJECT_ROOT="'"$PROJECT_ROOT"'"

@@ -308,6 +308,7 @@ function unquote(s) {
             gsub(/\\"/, "\"", s)
         } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
+            gsub(/'"'"''"'"'/, "'"'"'", s)
         }
     }
     return s
@@ -365,6 +366,7 @@ function unquote(s) {
             gsub(/\\"/, "\"", s)
         } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
+            gsub(/'"'"''"'"'/, "'"'"'", s)
         }
     }
     return s
@@ -585,6 +587,7 @@ function unquote(s) {
             gsub(/\\"/, "\"", s)
         } else if (substr(s,1,1) == "'"'"'" && substr(s,length(s),1) == "'"'"'") {
             s = substr(s, 2, length(s)-2)
+            gsub(/'"'"''"'"'/, "'"'"'", s)
         }
     }
     return s
@@ -889,6 +892,7 @@ function unquote(s) {
             s = substr(s, 2, length(s)-2); gsub(/\\"/, "\"", s)
         } else if (substr(s,1,1) == "\047" && substr(s,length(s),1) == "\047") {
             s = substr(s, 2, length(s)-2)
+            gsub(/\047\047/, "\047", s)
         }
     }
     return s

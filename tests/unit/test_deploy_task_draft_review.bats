@@ -248,6 +248,23 @@ EOF
     [ "$output" = "1" ]
 }
 
+@test "already reviewed cmd skips draft review without marker" {
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_normal
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+YAML
+
+    run_draft_review "cmd_normal"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"draft_review: SKIP (already reviewed: cmd_normal)"* ]]
+    [ ! -e "$TEST_PROJECT/queue/draft_review_started/cmd_normal.draft_review.started" ]
+    [ ! -f "$TEST_PROJECT/logs/inbox_write_calls.log" ]
+}
+
 @test "CI RED title skips draft review" {
     run_draft_review "cmd_ci_red"
 

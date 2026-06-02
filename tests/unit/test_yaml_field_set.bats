@@ -457,3 +457,25 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"PIPE_OK"* ]]
 }
+
+@test "yaml_field_set_batch: 単引用符を含むクォート値を検証で誤FAILしない" {
+    local yaml="$TEST_TMPDIR/batch_single_quote_value.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  purpose: old
+YAML
+
+    local value="target_re=r'自動化ターゲット\\s*[:：]\\s*(.+)'がMarkdown太字にマッチする"
+    run bash -lc "source \"$YFS\" && yaml_field_set_batch \"$yaml\" task \"purpose=$value\""
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$yaml").read_text(encoding="utf-8"))
+assert data["task"]["purpose"] == "target_re=r'自動化ターゲット\\\\s*[:：]\\\\s*(.+)'がMarkdown太字にマッチする", data
+print("SINGLE_QUOTE_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SINGLE_QUOTE_OK"* ]]
+}

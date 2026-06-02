@@ -6562,6 +6562,27 @@ EOF
     return 1
 }
 
+draft_review_already_completed() {
+    local cmd_id="$1"
+    local review_log="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+
+    [ -n "$cmd_id" ] || return 1
+    [ -f "$review_log" ] || return 1
+
+    awk -v cmd="$cmd_id" '
+        /^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/ { in_cmd=0 }
+        $0 ~ "^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*[\"'\'']?" cmd "[\"'\'']?[[:space:]]*$" {
+            in_cmd=1
+            next
+        }
+        in_cmd && /^[[:space:]]*verdict:[[:space:]]*[A-Za-z_]+/ {
+            found=1
+            exit
+        }
+        END { exit found ? 0 : 1 }
+    ' "$review_log"
+}
+
 maybe_notify_draft_review() {
     local task_file="$1"
     local cmd_id="$2"
@@ -6581,6 +6602,11 @@ maybe_notify_draft_review() {
 
     if [ -z "$cmd_id" ]; then
         log "draft_review: SKIP (cmd_id empty)"
+        return 0
+    fi
+
+    if draft_review_already_completed "$cmd_id"; then
+        log "draft_review: SKIP (already reviewed: ${cmd_id})"
         return 0
     fi
 

@@ -7,7 +7,7 @@
 #   get_pane_state_label <pane_target> <agent_id>  -> alias of get_agent_state_label
 #   check_agent_busy <pane_target> <agent_id>      -> 0=idle, 1=busy, 2=unknown
 
-AGENT_STATE_DEFAULT_BUSY_PATTERN="background terminal running|Working|Thinking|Planning|Sending|task is in progress|Compacting conversation|thought for|thinking|思考中|考え中|計画中|送信中|処理中|実行中"
+AGENT_STATE_DEFAULT_BUSY_PATTERN="background terminal running|Working|Thinking|Planning|Sending|task is in progress|Compacting conversation|Goal active|Pursuing goal|thought for|thinking|思考中|考え中|計画中|送信中|処理中|実行中"
 AGENT_STATE_DEFAULT_IDLE_PATTERN="❯|›|\\? for shortcuts|[0-9]+% (context )?left"
 
 _agent_state_runtime_dir() {
