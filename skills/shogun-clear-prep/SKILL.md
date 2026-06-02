@@ -13,7 +13,7 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-03T10:00:00+09:00 -->
 
 # /shogun-clear-prep — 将軍の/clear前準備
 
@@ -71,3 +71,5 @@ bash scripts/ntfy.sh "【将軍】/clear準備完了。PD:{件数} cmd:{件数} 
 - **裁定はその場で記録** — /clear前にまとめてMCPに書くな。殿の裁定があった時点で即add_observations + pending_decision_write.sh resolve を実行する（shogun.md裁定同時記録ルール）。この原則が守られていれば/clear前に退避する情報はない
 - **MEMORY.mdは/clear前に触らない** — 更新が必要なら別途/dreamで棚卸しする。/clear準備とは混ぜない
 - **所要時間: 30秒以内** — スクリプト実行+ntfyだけ。ファイル読みやEdit不要
+
+Script refs verified: 2026-06-03 cmd_3144. `clear_prep_check.sh` 直近変更(0bc175a0)はShellCheck SC2295/SC2001違反修正(純スタイル修正、動作変更なし)。SKILL.md記載の9項目チェック手順は現行と一致。

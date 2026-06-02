@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:46:12+09:00 -->
+<!-- script_refs_checked_at: 2026-06-03T10:00:00+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
@@ -345,4 +345,4 @@ Next dream eligible: [timestamp + 24h]
 - CLAUDE.md, instructions/, projects/, lessons.yaml は**変更禁止**（別パイプラインが管理）
 - MCP Memory操作: read/open/searchは自由。add/deleteは確認済み修正のみ
 
-Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `insight_write.sh` の現行契約を再確認。pending insightは保存で終えず、重複/高頻度検知後はresolveまたは掲示板通知まで進める。
+Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb9c9)は運用ファイルauto-commit(mtimeのみ変化)。スクリプト本体の動作・インターフェース変更なし。SKILL.md記載の仕様(引数/priority/source/--resolve/dedup/source repeat通知)は現行と一致。

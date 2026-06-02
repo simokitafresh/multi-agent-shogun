@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
+<!-- script_refs_checked_at: 2026-06-03T10:00:00+09:00 -->
 
 # /karo-direct — 家老自立配備スキル
 
@@ -114,4 +114,4 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 - 複数行ACやdescriptionはdeploy_task.shの手動YAML構築でindent保持される。YAML注入後に `python3 -c "import yaml; yaml.safe_load(open('queue/tasks/<ninja>.yaml'))"` で構文確認する。
 - 家老自立配備は殿裁定済み（CI RED即修正等は将軍cmd不要）
 
-Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `deploy_task.sh` の現行契約を再確認。semantic/memory DB lesson boost、pending report BLOCK、safe_inbox_write通知を共通経路で使うため、手動task上書きや手動nudgeを追加しない。
+Script refs verified: 2026-06-03 cmd_3144. `deploy_task.sh` 直近変更(670918b3)は`draft_review_already_completed()`関数追加によるdraft review重複通知防止(内部追加のみ、配備手順変更なし)。SKILL.md記載の`--yaml`/`--direct`呼び出し方法は現行と一致。

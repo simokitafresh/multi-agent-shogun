@@ -16,7 +16,7 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-03T10:00:00+09:00 -->
 
 # /switch-to-codex -- エージェント個別Codex切替
 
@@ -75,6 +75,7 @@ tmux set-option -p -t "$PANE_ID" @agent_cli codex
 ```
 
 Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。settings.yaml更新はhelperの検証完了後にtmux変数同期へ進む。
+Script refs verified: 2026-06-03 cmd_3144. `yaml_field_set.sh` 直近変更(670918b3)はsingle-quoteエスケープ修正(内部バグフィックス、インターフェース変更なし)。SKILL.md記載のStep 2呼び出し方法は現行と一致。
 
 重要: `@agent_cli` tmux変数の更新が必須。inbox_watcherはsettings.yamlのキャッシュを保持しており、
 tmux変数が唯一のリアルタイム通知経路（穴4対策）。
