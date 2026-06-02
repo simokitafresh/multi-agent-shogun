@@ -440,7 +440,6 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
 - **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)
 - **防御階層原則(Level1-6)**|Level5=事前コンテキスト提供、Level6=学習速度最大化。ゲート発火=未熟さの証拠|`context/growth-loop.md` §11
-- **因果確認L0-L7**|変更前に「なぜ現在の実装がそうなっているか」をgit log/blame+教訓+設計書+semantic/causal linksで確認。導入理由/守るべき設計意図/今回壊れている因果を残す|`docs/research/causal-verification-l0-l7-design_20260602.md`|multi-CLI前提: Claude/Codex hook差へ依存禁止。正本は`cmd_save.sh`/`deploy_task.sh`/`gate_report_format.sh`/task・report YAML/semantic index/Memory DB/daemon-gate。hookは補助
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED自走修正(殿裁定2026-04-15)**|家老がCI RED検知→idle忍者に即修正配備。**将軍cmd不要**|手順: `gh run view <run_id> --log-failed`→失敗テスト特定→タスクYAML作成→idle忍者配備→dashboard報告|理由: CI REDは緊急・定型・判断不要。将軍待ちは時間の無駄
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/codex-karo.md` §CI RED中の他作業

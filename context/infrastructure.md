@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-02 cmd_karo_ci_red_fix_26821340025 -->
+<!-- last_updated: 2026-06-03 cmd_3142 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -633,7 +633,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation.md]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L734 -->
+<!-- last_synced_lesson: L735 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1085,6 +1085,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L732: docs/research孤立ファイルへのsemantic-links+origin+[[根拠リンク]]+因果リンクセクション一括追加パターン（cmd_training_backlinks_tobisaru_20260602）
 - L733: 軍師分析Markdownの因果リンクセクション欠如パターン: 速度分析-耐性分析ペアは片方向リンクのみになりやすい（cmd_training_backlinks_kotaro_20260602）
 - L734: ロック競合テストは保持時間を待機上限より十分長くする（cmd_karo_ci_red_fix_26821340025）
+- L735: 末尾改行なしstateファイルはread失敗時に値を消すな（cmd_3142）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

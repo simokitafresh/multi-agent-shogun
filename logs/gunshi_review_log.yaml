@@ -1492,3 +1492,55 @@
   brainwash_check: "precheck ERRORS=0。WARN=lesson_candidate有のみ"
   origin: "[[blt_20260602_235744]] -> [[cmd_3142]] -> [[kagemaru LGTM]]"
   timestamp: "2026-06-03T00:28:00"
+- cmd_id: self_study_cold_perspective_20260603
+  review_type: self_study
+  findings_summary: "冷え観点遡及: ambiguity zero_streak=10→5件遡及→3件見落とし(偽陰性率60%)。根因=ambiguityがpremortem/assumptionsに吸収。対策=Step1にambiguityサブ問い追加"
+  observations:
+    - "cmd_3139/3140/3141にambiguity finding候補あり。本番では0件検出"
+    - "adversarial: changed_lines<200で正当にzero。cmd_3139は中枢変更だが200行未満"
+    - "ambiguity_points: none記載義務化+finding_categories ambiguity記載で冷え防止"
+  cs_checklist: "CS1:全量(cmd_3138-3142遡及) CS2:自データ(review_log+startup gate) CS3:実コード(各cmd確認) CS4:行動変換(Step1サブ問い追加案) CS5:adversarial遡及も実施 CS6:premortem吸収→独立観点消失の因果"
+  causal_chain: "ambiguity観点をpremortem/assumptionsで代替→finding_categoriesに記載せず→zero_streak蓄積→冷え検出→遡及で偽陰性60%判明。対策: Step1にambiguity専用問いを1行追加"
+  brainwash_check: "冷え=早期終了#1の慢性化。10件連続で問題なしと判断していたのは創造主の簡潔本能。60%の見落としが実証"
+  finding_categories: [ambiguity, adversarial]
+  origin: "[[adaptive_gating]] -> [[zero_streak_10]] -> [[cold_perspective_audit]]"
+  proposals:
+    - id: GP-251
+      description: "Step1にambiguity専用サブ問い追加(ACの用語定義に曖昧さはないか？)"
+      status: proposed
+      defense_level: 2
+  timestamp: "2026-06-03T00:45:00"
+- cmd_id: self_study_lesson_crossproject_20260603
+  review_type: self_study
+  findings_summary: "教訓注入ALERT分析: useful率24%→根因=DM-Signal教訓のinfra/trainingタスクへのクロスプロジェクト注入。5教訓100%NOT_USEFUL。project一致フィルタで40%改善予測"
+  observations:
+    - "L633/L630/L598/L255/L147: DM-Signal固有教訓がinfra修行タスクに注入(4/4=100%NOT_USEFUL)"
+    - "tag:universalがプロジェクト境界を越える注入を許可している"
+    - "教訓品質は正常。スコープ不一致が根因"
+  cs_checklist: "CS1:lesson_impact.tsv全量集計 CS2:NOT_USEFUL率Top5特定 CS3:lessons.yaml現物確認(project/tags) CS4:cmd起票提案(project一致フィルタ) CS5:useful率改善シミュレーション CS6:因果(tag:universal→project境界越え→NOT_USEFUL蓄積)"
+  causal_chain: "tag:universal→deploy_task.shがproject無関係に注入→infra/trainingタスクにDM-Signal教訓→忍者100%NOT_USEFUL→useful率24%ALERT"
+  brainwash_check: "教訓を削除するのは消火。注入スコープ修正が品質向上。Goodhart回避(useful率のために教訓を消すな)"
+  finding_categories: [numbers, assumptions]
+  origin: "[[gate_lesson_health ALERT]] -> [[useful率24%]] -> [[クロスプロジェクト注入根因]]"
+  proposals:
+    - id: GP-252
+      description: "deploy_task.sh教訓選択にproject一致フィルタ追加(useful率24%→40%予測)"
+      status: proposed
+      defense_level: 4
+  timestamp: "2026-06-03T00:55:00"
+- cmd_id: cmd_3143
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - ambiguity
+  findings_summary: "regex Markdown太字修正。git show HEADで未修正確認(LG001)。*{0,2}追加でplain/italic/bold対応。低blast radius"
+  observations:
+    - "git show HEAD:gate_shogun_startup.sh L782-783: Markdown太字非対応を確認(disk版は忍者作業中で修正済み)"
+    - "*{0,2}は0-2個のアスタリスク。3個以上やunderscore/backtickは未対応だが実データで未出現"
+    - "将軍Q6掲示板に3セッション連続WARN記載あり。assumptions verified"
+  causal_chain: "cmd_3067でtarget_re導入時E2E検証欠落→Markdown太字未対応→3セッション連続WARN偽陽性→WARN疲れ→regex修正+テスト追加=正の複利"
+  brainwash_check: "単純regex修正に見えるが100億年テスト: WARN信頼性は全セッションに効く構造改善。完了急ぎなし"
+  origin: "[[cmd_3067_E2E検証欠落]] -> [[target_re_markdown_mismatch]] -> [[cmd_3143]]"
+  timestamp: "2026-06-03T01:00:00"

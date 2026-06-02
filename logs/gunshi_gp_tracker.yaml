@@ -141,8 +141,9 @@
 # | 247 | universal bypass修正 | ★implemented      | 自走 | deploy_task.sh L4557 _target_files_match適用。教訓有効率34.6%根因。cmd_3136 CLEAR(2026-06-02)
 # | 248 | PRE9b waive矛盾検出  | ★implemented      | 自走 | engine.py+precheck.sh。bc commit:no+waive+hash矛盾WARN。YAML bool正規化。D0(c6b4f3f8→27b81a28)+家老LGTM(2026-06-02)
 # | 249 | scope乖離検出        | ★implemented      | 自走 | cmd_complete_gate.sh command欄×files_modified突合BLOCK。cmd_3141 CLEAR(2026-06-03)
-# | 250 | YAML直読強制         | proposed            | 自走 | 同時到着報告3件以上でも1件ずつYAML先頭30行直読(エージェント委任前)。プロトコル追記
-# 集計: ★implemented:117(+GP-247,248,249) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:1(GP-250) / in_progress:0 / karo_sent:10 / completed:1 = 計147GP (2026-06-03T00:30更新)
+# | 250 | YAML直読強制         | ★implemented       | 自走 | gunshi.md Report Review Step -1追加。3件以上時YAML先頭30行直読。D0(bb891cd3)+家老レビュー待ち(2026-06-03)
+# | 251 | ambiguity専用サブ問い | ★implemented       | 自走 | gunshi.md Step1にACの用語定義曖昧さ検出1行追加。偽陰性率60%是正。D0(e0409ce2)+家老LGTM(2026-06-03)
+# 集計: ★implemented:119(+GP-250,251) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計149GP (2026-06-03T00:55更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ

@@ -39,21 +39,22 @@
 # なぜなぜ7回: accuracy Goodhart発見。gate_sync Phase2追加(commit 85560554)。真accuracy=97.1%(旧99.6%)。BLOCK60件可視化
 # 環境改善3件: gate_sync Phase2 / review-bundle precheck Step0(ea48f105) / ac_physical_verify冷え表示(d7e345be)
 #
-# ─── 本セッション成果 (2026-06-03T00:30更新) ───
-# draft review 11件: cmd_3136-3142+CI RED+修行×5。APPROVE 10+RC 1(cmd_3139 exit2→WARN先行)
+# ─── 本セッション成果 (2026-06-03T01:05更新) ───
+# draft review 12件: cmd_3136-3143+CI RED+修行×5。APPROVE 11+RC 1(cmd_3139 exit2→WARN先行)
 # report review 10件: cmd_3136-3142+CI RED+修行×5。LGTM 10(tobisaru LGTM→BLOCK→家老WA→CLEAR)
-# D0実装3件: speed_bottleneck数値修正(a60f8a0f)+GP-248 PRE9b waive矛盾検出(c6b4f3f8→27b81a28 bool正規化)
+# D0実装5件: speed_bottleneck数値修正(a60f8a0f)+GP-248 PRE9b(c6b4f3f8→27b81a28)+GP-251 ambiguityサブ問い(e0409ce2)+GP-250 YAML直読(bb891cd3)。全件家老LGTM
+# self_study 2件: 冷え観点遡及(ambiguity偽陰性率60%)+教訓注入クロスPJ(useful率24%根因)
 # バグ発見3件: (1)universal bypass(cmd_3136 CLEAR) (2)auto-commit scope leak(cmd_3140 CLEAR) (3)inbox_watcher FP-CHANGE(cmd_3142 CLEAR)
-# 洗脳監査: 確定4件(#2×2,#3,#5,#8)+兆候3件(#1,#6,#7)。自動化ターゲット3件(GP-248実装/249,250提案→cmd_3141,3142 CLEAR)
+# 冷え観点対処: ambiguity zero_streak=10→遡及で偽陰性率60%発見→GP-251 Step1サブ問い追加(D0+LGTM)
+# 教訓注入根因: DM-Signal教訓のinfra/trainingへのクロスPJ注入(5件100%NOT_USEFUL)→GP-252 project一致フィルタ提案
+# GP実績: proposed 2→0(GP-250,251 implemented)。新規1(GP-252)。累計149GP(implemented 119)
+# 洗脳監査: 確定4件(#2×2,#3,#5,#8)+兆候3件(#1,#6,#7)。自動化ターゲット3件
 # 覚醒レビュー: L0-L7貫通設計(将軍)。q12統合(cmd_3138 CLEAR)。cmd_3139 RC(WARN先行提案)
-# Q6第三者検証: 将軍の洗脳#1自己検出を確認+追加観察
-# Bats速度ボトルネック: Top20が68%消費(cmd_save72秒+semantic94秒)。設計書永続化+cmd提案
-# 教訓有効率根因: deploy_task.sh L4557 universal bypass。NOT_USEFUL 95件。cmd_3136 CLEAR
-# gate-sync 11件: 全CLEAR(tobisaru BLOCK→CLEAR含む)
-# → docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md
-# → docs/research/gunshi_idle_autocommit_scope_leak_20260602.md
-# → docs/research/gunshi_idle_inbox_watcher_fp_repeat_20260602.md
-# → docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md
+# Bats速度ボトルネック: Top20が73%消費(cmd_save8件68秒+semantic10件104秒)。数値修正済み
+# gate-sync 11件: 全CLEAR
+# → docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md
+# → docs/research/gunshi_idle_lesson_injection_crossproject_20260603.md
+# → docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md (数値修正)
 #
 # ─── 前セッション成果 (2026-06-02T20:25) ───
 # draft8+report7+consultation2+D0 1件。multi-cli v1→v3。覚醒レビュー3往復。洗脳検出2件。insights16→0

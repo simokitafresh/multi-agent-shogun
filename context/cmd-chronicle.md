@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-02 cmd_3137 -->
+<!-- last_updated: 2026-06-03 cmd_3142 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,40 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2486 | skill_gate_feedback.shのスキル特定を名前推測(haystack keyword照合)から skill_execution_log.yamlの実行記録ベースに変更する。誤帰属によるゴミデータを根絶。 | infra | 05-03 | skill_gate_feedback.shのスキル帰属をh |
-| cmd_2487 | つまずきパターンからSKILL.mdの手順自体を構造的に更新する変換器を実装する。 caution_points=付箋貼りではなく、手順に具体的防止ステップを自動追加する。 | infra | 05-03 | skill_execution_logのFAIL集計からスキ |
-| cmd_2489 | SKILL.mdが参照するスクリプト・パスが変更された時、壊れる前に検知する監査仕組み。 段階0: つまずき記録(段階2)は事後検出。壊れる前の予防的検知が必要。 | infra | 05-03 | SKILL.md内script参照の存在・鮮度を監査するga |
-| cmd_2490 | on_holdのcmdをcmd_publish.shに直接入力できるようにする。 現状: on_hold→Edit toolで手動draft変更→cmd_publish.sh。手動変更時にgate未通過で修正機会を逃す。 改善: cmd_publish.shがon_hold入力を受け付け、内部でon_hold→draft昇格→gate検証→pending→delegateの4ステップを実行。 | infra | 05-03 | cmd_publish.shでstatus=on_holdの |
-| cmd_2491 | cmd_2490のrollback失敗リスクを根本解消する。 現状: on_hold→draft(YAML書込み)→cmd_save→失敗→rollback(壊れうる)。 改善: YAML書込みをcmd_save成功後に遅延。失敗時はYAML未変更(on_holdのまま)。rollback不要。 | infra | 05-03 | cmd_publish.shのon_hold公開経路を、cm |
-| cmd_2492 | 報告YAMLテンプレートの必須フィールド欠落を配備経路に依存せず防止する。 現状: deploy_task.sh経由時のみgenerate_report_template()が走る。karo_direct/task YAML直接編集では未実行→必須4フィールド欠落(cmd_2481 hanzo r3で実証)。 改善: 忍者/clear Recovery Step 4.5でreport_pathのテンプレート検証+欠落フィールド自動補完。 | infra | 05-03 | 既存の不完全な報告テンプレートでも必須4フィールドを自動補完 |
-| cmd_2493 | 215本のスクリプト(scripts/144+gates/37+hooks/34)を計測し、最適化ボトルネックを特定する。 台帳(codd_refactor_registry.md)の約100件と突合し、未計測スクリプトと再最適化候補を洗い出す。 | infra | 05-03 | scripts/*.sh 144本を安全なbash -n解析 |
-| cmd_2495 | gate_silent_fallback.shがリグレッション(25ms→769ms、31x悪化)。 CoDD正規手順(spec→設計書→実装→計測→台帳記入)で台帳値25ms以下に復帰させる。 | infra | 05-03 | gate_silent_fallback.shの--help |
-| cmd_2498 | gate_shogun_memory.shがリグレッション(9ms→82ms、9.1x悪化)。 601行。load_memory_cache()でMEMORY.mdをawk解析+6項目チェック(行数/陳腐化/重複/MCP obs数/curation日/sync鮮度)。 CoDD正規手順で台帳値9ms以下に復帰させる。 | infra | 05-03 | gate_shogun_memory.shをline-cou |
-| cmd_2500 | gate_karo_startup.shがリグレッション(110ms→251ms、2.3x悪化)。 592行。前回3回最適化(464→225→190→110ms)。前回revert時に真因特定済み: _META_PIDS awk(deepdiveファイルon /mnt/c NTFS)が~100ms支配。WA rateキャッシュは効果なし(revert)。 CoDD正規手順で110ms以下に復帰。ボトルネックが/mnt/c I/O支配なら代替アプローチ(キャッシュ/遅延読込)をspec段階で設計。 | infra | 05-03 | gate_karo_startup.sh R4 CoDD再改 |
-| cmd_2501 | gate_skill_script_refs.shが未最適化で408ms(偵察計測)。台帳未登録。 143行。全体がpython3ヒアドキュメントでSKILL.mdからスクリプト参照を抽出し存在確認+更新日比較。 python3起動コスト+pathlib走査がボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_script_refs.shに短TTL |
-| cmd_2502 | gate_autofix_proposal.shが未最適化で272ms(偵察計測)。台帳未登録。 178行。直近50件のgate_metrics.logからBLOCKパターンを集計し、instructions修正提案をinsights.yamlに還流する。 mktemp+tail+awk+insight_write.sh呼出しがボトルネック候補。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_autofix_proposal.shに短TTL出 |
-| cmd_2503 | gate_wa_data_quality.shがリグレッション(52.9ms→111ms、2.1x悪化)。213行。 前回(2026-04-18 hayate): 106.6→52.9ms(-50.4%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_wa_data_quality.shの通常chec |
-| cmd_2506 | gate_skill_health.shが未最適化で139ms(偵察計測)。台帳未登録。241行。 SKILL.mdのTRIGGER/MECE/DRY検証を行うgate。CoDD正規手順で初回最適化。 | infra | 05-03 | gate_skill_health.shの既定skills走 |
-| cmd_2505 | gate_field_get.shがリグレッション(40ms→71ms、1.8x悪化)。213行。 前回(2026-04-18 saizo): 404→40ms(-90.1%)。CoDD正規手順で台帳値復帰。 | infra | 05-03 | gate_field_get.sh R2 CoDD再改善を完 |
-| cmd_2508 | gateの最適化(cmd_2495-2507)は偵察計測値ベースで進行中。次はhooks+通常スクリプトを対象に、 頻度x実行時間=インパクトの観点で最適化ROI順位を付ける。 cmd_2493のTSVは呼出頻度あるが実行時間がbash -n(構文チェック)で正確でない。実測が必要。 | infra | 05-03 | hooks全34本をmedian 3runで実測し、Clau |
-| cmd_2509 | 軍師利他提案: cmd_complete_gate.sh内でlesson_candidate(found:true)をlesson_write.sh自動呼出しで登録。 現状: 軍師LGTM→gate即時発火→家老lesson未登録→BLOCK→手動登録→再GATE(38%=5/13件)。 gate内でlesson_write.shを自動呼出しし、BLOCK→CLEAR往復を構造的に解消する。 | infra | 05-03 | cmd_complete_gateのlesson_candi |
-| cmd_2511 | cmd_2508偵察結果: stop_check_inbox.shがインパクト1位(187,739 ms/day)。 未読0件時にinotifywait(5sタイムアウト)で毎回ブロック。inbox_watcher.shが同機能を提供しており冗長。 inotifywait待機ブロックを除去し、全エージェントのStop操作を高速化する。 | infra | 05-03 | stop_check_inbox.shの未読0件inotif |
-| cmd_2514 | 家老バグ報告: ninja_monitorが/clear→CLI再起動した直後のCodex CLIは初期画面表示中。 inbox_watcherのpaste-buffer nudgeが空振りし、忍者がプロンプト待ち状態に陥る(5連発実績)。 deploy_task.shにpost-deploy re-nudge(5秒後に再送)を追加し、初期画面通過後にnudgeを確実に届ける。 | infra | 05-03 | — |
-| cmd_2515 | cmd_2508偵察結果2位(31,915 ms/day)。Pre/PostToolUse両方で発火(1958回/day)×16.3ms。 tmux set-option 2回(state+timestamp)を1回に統合し、プロセス起動コストを削減する。 | infra | 05-03 | bash_state_hookのtmux state更新がP |
-| cmd_2516 | スキル自動成長(段階3)の出力品質が不十分。report-write/verdict-check FAIL率100%が継続。 根因: (1)stumbling_pointsではなくgate名で帰属→防止ステップが的外れ(2)汎用テンプレートで具体性なし。 skill_auto_improve.shの出力テンプレートを改善し、実際のFAILパターンに対する具体的防止手順を生成させる。 | infra | 05-03 | skill FAIL原因から具体的な確認/修正手順をSKIL |
-| cmd_2517 | CI全体287s→240s削減の第一段階。cmd_save系slowテスト8ファイル(32.2s)の fixture共有+統合で50%以上短縮する。偵察cmd_2494で特定済みの統合候補: test_cmd_save_ac_test_scope(2.7s), test_cmd_save_block_aggregation(2.1s), test_cmd_save_check19_fp(4.1s), test_cmd_save_command_steps_vs_ac(2.0s), test_cmd_save_diagnose(4.7s), test_cmd_save_diagnosis_quality(6.9s), test_cmd_save_environment_change(4.3s), test_cmd_save_warn_logging(5.5s)。 既存cmd_2480/2481でfixture閉鎖+helper共有の前例あり(70-83%短縮実績)。 | infra | 05-03 | cmd_save系slowテスト8本を32.236sから11 |
-| cmd_2519 | CI時間削減の第三段階。偵察cmd_2494で特定済みの残りslow 7ファイル(20.7s)の fixture共有+統合で50%以上短縮する。対象: test_cmd_complete_gate_locking(2tests/2.4s), test_cmd_complete_gate_subsystems(17tests/3.5s), test_gate_report_format_learning(3tests/2.7s), test_gate_skill_script_refs(3tests/2.5s), test_lesson_harvest(3tests/3.0s), test_session_state(8tests/2.5s), test_skill_feedback_loop(11tests/4.2s)。 cmd_2517/2518と並列実施。 | infra | 05-03 | 対象7本のBats合計時間を16.287sから7.567sへ |
-| cmd_2518 | CI時間削減の第二段階。deploy_task系slowテスト4ファイル(32.8s)の fixture共有+統合で50%以上短縮する。偵察cmd_2494で特定済みの統合候補: test_deploy_task_ac_handling(26tests/15.4s), test_deploy_task_codd_failure_history(9tests/2.5s), test_deploy_task_lifecycle(41tests/12.0s), test_deploy_task_template_generation(24tests/3.0s)。 cmd_2517(cmd_save系)と並列実施。 | infra | 05-03 | deploy_task系4本の軽量化を試行したが、AC1の5 |
-| cmd_2521 | dashboard_update.shはcmd完了ごとに実行(呼出頻度18)で未最適化。 CoDDリファクタリングパイプラインで計測→設計→実装→検証を実施し高速化する。 プロファイリング結果に基づきbash -n 16msから実行時パスのボトルネックを特定する。 | infra | 05-03 | dashboard_update.sh --dry-runを |
-| cmd_2522 | context_freshness_check.shはgate内部で頻繁呼出し(呼出頻度44)で未最適化。 gate_context_freshness.shは台帳済み(156ms→62ms)だが、その内部で呼ぶ context_freshness_check.sh自体は未最適化。CoDDで計測→高速化。 | infra | 05-03 | context_freshness_check.shを短TT |
-| cmd_2523 | ninja_monitor.shは常駐デーモンで呼出頻度最大(118)、未最適化。 全忍者の状態監視・idle検知・/clear判定・snapshot生成を担う。 CoDDで計測→ボトルネック特定→高速化。 | infra | 05-03 | ninja_monitor.shのループ相当処理を23.84 |
-| cmd_2527 | report_field_set.sh L400のyaml.dumpが文字列'yes'/'no'を裸のYAML boolean(true/false) として出力する。autofix_main.py L250-252が毎回bool→str変換で消火中。 根本修正: yaml.dump出力で引用符付き文字列化+消火コード除去。 report-write/verdict-check FAIL率100%の根因(軍師現物確認済み)。 | infra | 05-03 | report_field_setのyes文字列保持とauto |
-| cmd_2530 | cmd_complete_gate.sh L1975-1990のfallback globがstale reportを無差別に拾い偽BLOCK。加えてreview_gate.done作成後のgate_metrics CLEAR書込みが保証されていない。再配備時の偽BLOCK根絶+統計精度向上 | infra | 05-03 | cmd_complete_gate lesson track |
-| cmd_2529 | archive_completed.shが3パターン(archive.done不在/placeholder/review_gate.done不在)で報告YAMLをSKIPし永久残存させている。169件蓄積=交差汚染(バグ2)の増幅源。負の複利を解消する | infra | 05-03 | archive_completed.shの報告sweepを修 |
-| cmd_2533 | サブシェル内のreturn 1は親に伝播しない→flock timeout後もecho synced が無条件実行→chronicle更新失敗が成功として記録される。3箇所(L137,L219,L1437)を修正 | infra | 05-03 | archive_completed.shのchronicle |
-| cmd_2532 | auto_unwrap_report_yamlでflock timeout→exit 1→サブシェル内のためunwrap_resultが空文字→case文のどのパターンにもマッチせず完全沈黙。デフォルトパターン追加で空文字をキャッチする | infra | 05-03 | auto_unwrap_report_yamlの空文字/未知 |
-| cmd_2537 | L2848のglob展開でMATCHING_TASK_FILESを構築→後続ループ中にdeploy_task.shがタスクYAML追加/archive_completed.shが移動→処理漏れ/不整合。glob結果をスナップショットとして固定し、ループ中の変更に耐性を持たせる | infra | 05-03 | MATCHING_TASK_FILES参照ループへ消失ファイ |
-| cmd_2538 | deploy_task.sh L5008-5009でparent_cmd+statusは設定するがtask_idが漏れている。旧cmdのtask_idが残存→cmd_complete_gate.shが旧cmdのreportを参照→交差汚染。1行追加で解消 | infra | 05-03 | direct_mode配備でtask_idが新cmdへ更新さ |
 | cmd_2543 | report_field_set.shのverdict書込みとstatus=completed更新を1回のflock内でatomicに実行するようbatch化 | infra | 05-04 | report_field_set.shのverdict確定時 |
 | cmd_2545 | archive_overflow_reports_to_capでGATE CLEAR待ち(status=pending)reportがcap超え時に強制archiveされないよう除外チェックを追加 | infra | 05-04 | archive_overflow_reports_to_ca |
 | cmd_2547 | L221のinbox_write成功後にwatcher存在チェックがない→watcher未起動時にnudgeが喪失しても沈黙。pgrep確認+WARN出力を追加する | infra | 05-04 | bulletin_write.sh L221(inbox_w |
@@ -531,3 +497,5 @@
 | cmd_3132 | 将軍がshogun_to_karo.yamlにcmd起票時、q5記入済みだがq5_verified_source未記入というパターンをcmd_save.sh到達前に検知する。pre-write-edit-combined.shにquality_gateフィールド対チェックを追加し、片方だけ記入のパターンマッチ漏れを構造的に防止する | infra | 06-02 | pre-write/edit hookでquality_ga |
 | cmd_3135 | cmd_3132でL4(pre-edit WARN)を実装したが、L6(学習速度最大化)が未接続。cmd_save.shのSession Stateにq5/q5_verified_source対フィールドの片方欠落パターンを累計追跡し、再発時に検出ロジックを自動表示する | infra | 06-02 | cmd_save.shのSession Stateにq5/q |
 | cmd_3136 | 教訓有効率34.6%(startup WARN)の根因。L4555の_universal_without_target_files_is_relevant()がtarget_files存在時に_target_files_matchを迂回してTrue返却→無関係教訓が全cmdに注入される。NOT_USEFUL 95件中の大部分がこの経路。1行修正で教訓注入精度を大幅改善 | infra | 06-02 | _universal_without_target_file |
+| cmd_3140 | ninja_monitor.sh L338のauto_commit_before_clear()がgit addで全未commit変更を拾い、忍者Aの成果物を忍者Bのauto-commitが包含する。本セッション4件発生。task YAML target_pathでscopeフィルタを追加し、triggering ninja以外のファイルを除外する | infra | 06-03 | ninja_monitor auto-commitをtask |
+| cmd_3141 | CI RED fixでcmd=7スクリプト対象だがreport files_modified=テスト2本のみという乖離が未検証で通過した。precheckにshogun_to_karo command欄のファイルパス抽出→files_modified突合→乖離WARN追加。L3(gate)の穴 | infra | 06-03 | cmd_complete_gate.shにcommand欄フ |

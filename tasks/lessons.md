@@ -7366,3 +7366,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 並列Batsではテストプロセス開始が遅れ、短いsleepで保持したロックが検証前に解放されると、本来FAILすべきlock timeoutテストがPASSして偽陰性になる。ロック競合テストはlock acquired sentinelで保持開始を確認し、保持sleepを検証側timeoutより長くしてから実行する。
+
+### L735: 末尾改行なしstateファイルはread失敗時に値を消すな
+- **日付**: 2026-06-03
+- **出典**: cmd_3142
+- **記録者**: kagemaru
+- **tags**: [infra,bash]
+- **target_files**: [scripts/inbox_watcher.sh,tests/unit/test_inbox_watcher_dedup.bats,tests/unit/test_inbox_watcher_health.bats]
+- **origin**: [[cmd_3142]]
+- **when**: 未設定
+- **how**: 未設定
+- printfで書いたstateファイルは末尾改行がないため、bash readは変数へ値を入れてもEOFで非0を返す。read ... || var="" と書くと値を消し、今回のようにdebounce/fingerprint stateが毎回空扱いになる。state読取は var=""; IFS= read -r var < file || true の形にする。
