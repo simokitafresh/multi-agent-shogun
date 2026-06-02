@@ -111,5 +111,6 @@ cmd_1461の結果と統合すれば、zero-signal問題の完全な根因理解+
 ## 因果リンク
 
 - → [[gunshi-fullrecalc-speed-analysis]] 元速度分析。7285s→260s改善でPhase 5完走→zero-signal解消(Q1-Q2)の実証基盤。speed-analysis L33に逆方向リンクあり
+- → [[fullrecalculate-architecture-2026-03-28]] fullrecalculate全体構造の一次解析。docs/research/fullrecalculate-architecture-2026-03-28.md L10で全PF再計算エンジン、L20でPhase 0の全計算データDELETEを定義
 - → [[dm-signal-ops]] crash-safety実装先: shutdown警告+recalculation_statusテーブル+pg_advisory_lock(cmd_1463/1465)。dm-signal-ops L13: `crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御`
 - → [[infrastructure]] fullrecalculate baseline自動保存(cmd_1540)。infrastructure L123: `| 1540 | **fullrecalculate baseline自動保存** | 実行前baseline自動保存+実行後差分サマリ出力`
