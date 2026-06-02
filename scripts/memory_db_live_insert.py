@@ -4,12 +4,16 @@
 
 import os
 import sys
+import json
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB_PATH = os.path.join(REPO_ROOT, "data", "multi_agent_shogun_memory.db")
+DEFAULT_SEMANTIC_MAP_PATH = os.path.join(REPO_ROOT, "context", "semantic-map.md")
+DEFAULT_SEMANTIC_INDEX_PATH = os.path.join(REPO_ROOT, "docs", "semantic-index", "index.md")
 SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
+_SEMANTIC_CONCEPT_CACHE = None
 
 
 def normalize_text(value: object) -> str:
@@ -38,6 +42,95 @@ def infer_cmd_id(summary: str, detail: str) -> str:
     return ""
 
 
+def _split_markdown_row(line: str) -> list[str]:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        return []
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def _semantic_index_label_to_id(index_path: str) -> dict[str, str]:
+    if not os.path.exists(index_path):
+        return {}
+    mapping: dict[str, str] = {}
+    concept_id = ""
+    with open(index_path, encoding="utf-8", errors="replace") as handle:
+        for raw_line in handle:
+            line = raw_line.rstrip("\n")
+            if line.startswith("## ") and " — " in line:
+                heading = line[3:].strip()
+                concept_id, label = heading.split(" — ", 1)
+                mapping[normalize_text(label)] = normalize_text(concept_id)
+                continue
+            cells = _split_markdown_row(line)
+            if len(cells) >= 2 and cells[0] == "id":
+                concept_id = normalize_text(cells[1])
+                if concept_id:
+                    mapping[concept_id] = concept_id
+            elif len(cells) >= 2 and cells[0] == "label":
+                label = normalize_text(cells[1])
+                if label and concept_id:
+                    mapping[label] = concept_id
+    return mapping
+
+
+def load_semantic_map_concept_cache(
+    semantic_map_path: str = DEFAULT_SEMANTIC_MAP_PATH,
+    semantic_index_path: str = DEFAULT_SEMANTIC_INDEX_PATH,
+) -> list[dict[str, object]]:
+    """Load concept aliases once from context/semantic-map.md for live inserts."""
+    label_to_id = _semantic_index_label_to_id(semantic_index_path)
+    if not os.path.exists(semantic_map_path):
+        return []
+
+    concepts: list[dict[str, object]] = []
+    with open(semantic_map_path, encoding="utf-8", errors="replace") as handle:
+        for raw_line in handle:
+            cells = _split_markdown_row(raw_line)
+            if len(cells) < 2:
+                continue
+            label = normalize_text(cells[0])
+            if not label or label in {"概念", "------"} or set(label) <= {"-"}:
+                continue
+            concept_id = label_to_id.get(label, label)
+            aliases = [normalize_text(part) for part in cells[1].split(",") if normalize_text(part)]
+            terms = [concept_id, label, *aliases]
+            concepts.append(
+                {
+                    "id": concept_id,
+                    "terms": [term for term in terms if len(term) >= 3],
+                }
+            )
+    return concepts
+
+
+def semantic_concept_cache() -> list[dict[str, object]]:
+    global _SEMANTIC_CONCEPT_CACHE
+    if _SEMANTIC_CONCEPT_CACHE is None:
+        _SEMANTIC_CONCEPT_CACHE = load_semantic_map_concept_cache()
+    return _SEMANTIC_CONCEPT_CACHE
+
+
+def concepts_for_text(text: str, concepts: list[dict[str, object]] | None = None) -> str:
+    haystack = text.casefold()
+    matched: list[str] = []
+    for concept in semantic_concept_cache() if concepts is None else concepts:
+        terms = concept.get("terms", [])
+        if any(str(term).casefold() in haystack for term in terms):
+            matched.append(str(concept["id"]))
+    return json.dumps(sorted(set(matched)), ensure_ascii=False)
+
+
+def event_concept_rows(event_id: object, concepts_json: str) -> list[tuple[str, str]]:
+    try:
+        concepts = json.loads(concepts_json)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(concepts, list):
+        return []
+    return [(str(event_id), str(concept)) for concept in concepts if str(concept).strip()]
+
+
 def require_live_tables(conn) -> bool:
     for table_name in ("events", "events_fts"):
         if conn.execute(
@@ -53,10 +146,25 @@ def append_event(db_path: str, row: tuple[object, ...]) -> None:
         return
     import sqlite3
 
+    mutable_row = list(row)
+    concept_text = f"{mutable_row[6]}\n{mutable_row[7]}"
+    mutable_row[10] = concepts_for_text(concept_text)
+    row = tuple(mutable_row)
+
     with sqlite3.connect(db_path) as conn:
         conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         if not require_live_tables(conn):
             return
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS event_concepts (
+                event_id TEXT NOT NULL,
+                concept_name TEXT NOT NULL,
+                PRIMARY KEY (event_id, concept_name),
+                FOREIGN KEY (event_id) REFERENCES events(id)
+            )
+            """
+        )
         cursor = conn.execute(
             """
             INSERT OR IGNORE INTO events (
@@ -71,6 +179,10 @@ def append_event(db_path: str, row: tuple[object, ...]) -> None:
             conn.execute(
                 "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
                 (rowid, row[6], row[7]),
+            )
+            conn.executemany(
+                "INSERT OR IGNORE INTO event_concepts (event_id, concept_name) VALUES (?, ?)",
+                event_concept_rows(row[0], str(row[10])),
             )
 
 

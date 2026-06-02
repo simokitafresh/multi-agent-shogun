@@ -137,3 +137,98 @@ PY
     [ "${result[1]}" = "PASS" ]
     [ "${result[2]}" = "cmd_quality|cmd_2991|PASS|cmd_2991" ]
 }
+
+@test "memory_db_live_insert attaches semantic concepts for report lesson gate workaround and cmd_quality" {
+    init_memory_db
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        report \
+        --report-path "queue/reports/hayate_report_cmd_3116.yaml" \
+        --ts "2026-06-02T09:31:00Z" \
+        --dot-key "report_field_set.result.summary" \
+        --agent "hayate" \
+        --parent-cmd "cmd_3116" \
+        --source-file "queue/reports/hayate_report_cmd_3116.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        lesson \
+        --lesson-id "L999" \
+        --title "semantic index growth and lesson lifecycle" \
+        --detail "lesson_candidate origin links semantic index to lesson lifecycle" \
+        --source-cmd "cmd_3116" \
+        --project "infra" \
+        --ts "2026-06-02T09:31:01Z" \
+        --source-file "projects/infra/lessons_karo.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        gate \
+        --gate-name "gate_report_format" \
+        --result "PASS" \
+        --cmd-id "cmd_3116" \
+        --detail "report YAML quality_gate framework PASS" \
+        --ts "2026-06-02T09:31:02Z" \
+        --source-file "scripts/gates/gate_report_format.sh"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        workaround \
+        --cmd-id "cmd_3116" \
+        --ts "2026-06-02T09:31:03Z" \
+        --ninja "hayate" \
+        --category "report_yaml_format" \
+        --issue "yaml_field_set and report_field_set protected YAML safe write" \
+        --root-cause "YAML safe write rule" \
+        --source-file "logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        cmd_quality \
+        --cmd-id "cmd_3116" \
+        --ts "2026-06-02T09:31:04Z" \
+        --gate-result "PASS" \
+        --karo-rework "no" \
+        --gunshi-verdict "APPROVE" \
+        --ninja-blockers "0" \
+        --ac-count "3" \
+        --supplementary-cmds "0" \
+        --project "infra" \
+        --source "cmd_complete_gate" \
+        --diagnosis "セマンティック辞書構想 quality gate" \
+        --notes "growth loop concept check" \
+        --source-file "logs/cmd_design_quality.yaml"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import json
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+expected = {
+    "report:hayate_report_cmd_3116.yaml:report_field_set.result.summary:2026-06-02T09:31:00Z": "report_quality_protocol",
+    "lesson:L999": "lesson_lifecycle",
+    "gate:gate_report_format:cmd_3116:2026-06-02T09:31:02Z": "gate_quality_framework",
+    "workaround:cmd_3116:hayate:2026-06-02T09:31:03Z": "yaml_safe_write",
+    "cmd_quality:cmd_3116:PASS:cmd_complete_gate:2026-06-02T09:31:04Z": "semantic_dictionary_design",
+}
+for event_id, concept in expected.items():
+    row = conn.execute("SELECT concepts FROM events WHERE id = ?", (event_id,)).fetchone()
+    concepts = json.loads(row[0]) if row else []
+    junction = conn.execute(
+        "SELECT COUNT(*) FROM event_concepts WHERE event_id = ? AND concept_name = ?",
+        (event_id, concept),
+    ).fetchone()[0]
+    print(f"{event_id}|{concept in concepts}|{junction}")
+PY
+)
+    [ "${#result[@]}" -eq 5 ]
+    for line in "${result[@]}"; do
+        [[ "$line" == *"|True|1" ]]
+    done
+}
