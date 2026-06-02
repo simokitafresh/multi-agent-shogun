@@ -1373,10 +1373,11 @@ ac_lines = [
     "        - \"task.related_lessonsの注入教訓を1件以上参照したか: yes/no\"",
     "        - \"参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no\"",
     "    AC5:",
-    "      description: \"対象ファイルの現在のファイル間直接[[ファイル名]]リンク数baselineと変更後リンク数を計測し、直接リンク数増加を報告する\"",
+    "      description: \"対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する\"",
     "      binary_checks:",
+    "        - \"bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no\"",
     "        - \"bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no\"",
-    "        - \"git diffで対象Markdownのファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no\"",
+    "        - \"git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no\"",
 ]
 
 with open(task_file, encoding="utf-8") as f:
@@ -1517,10 +1518,21 @@ inject_training_target_path_from_alias_quality() {
     fi
 
     local selected_target=""
-    local markdown_selector="$SCRIPT_DIR/scripts/markdown_link_counts.sh"
-    if [ -f "$markdown_selector" ]; then
-        selected_target=$(bash "$markdown_selector" --select-file 2>/dev/null | head -1 || true)
+    local backlink_selector="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+    if [ -f "$backlink_selector" ]; then
+        selected_target=$(
+            CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$backlink_selector" --zero --limit 1 2>/dev/null \
+                | awk -F '\t' 'NF >= 2 { print $2; exit }' \
+            || true
+        )
     else
+        log "WARN: causal_backlink_counts selector missing; falling back to markdown_link_counts"
+    fi
+
+    local markdown_selector="$SCRIPT_DIR/scripts/markdown_link_counts.sh"
+    if [ -z "$selected_target" ] && [ -f "$markdown_selector" ]; then
+        selected_target=$(bash "$markdown_selector" --select-file 2>/dev/null | head -1 || true)
+    elif [ -z "$selected_target" ]; then
         log "WARN: markdown_link_counts selector missing; falling back to semantic_alias_quality"
     fi
 

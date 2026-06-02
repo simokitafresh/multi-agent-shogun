@@ -382,10 +382,23 @@ def memory_db_concept_rows(
                     e.agent,
                     e.cmd_id,
                     e.importance,
-                    e.summary
+                    e.summary,
+                    e.source_file,
+                    GROUP_CONCAT(DISTINCT el.target_concept) AS causal_links
                 FROM matched_event_ids AS m
                 JOIN events AS e
                   ON e.id = m.event_id
+                LEFT JOIN event_links AS el
+                  ON el.source_event_id = e.id
+                GROUP BY
+                    e.id,
+                    e.ts,
+                    e.event_type,
+                    e.agent,
+                    e.cmd_id,
+                    e.importance,
+                    e.summary,
+                    e.source_file
                 ORDER BY
                     CASE e.importance WHEN 'high' THEN 0 ELSE 1 END,
                     e.ts DESC,
@@ -440,6 +453,7 @@ def memory_db_fts_concept_rank_rows(
                     e.target,
                     e.cmd_id,
                     e.importance,
+                    e.source_file,
                     e.summary,
                     bm25(events_fts) AS rank
                 FROM events_fts
@@ -493,6 +507,17 @@ def memory_db_fts_concept_rank_rows(
                 event_ids,
             )
         )
+        link_rows = list(
+            conn.execute(
+                f"""
+                SELECT source_event_id, target_concept
+                FROM event_links
+                WHERE source_event_id IN ({event_sql})
+                ORDER BY source_event_id, target_concept
+                """,
+                event_ids,
+            )
+        )
         lord_conversation_stats = {}
         if debug_recency:
             matched_concepts = sorted({str(row["concept_name"]) for row in concept_rows})
@@ -523,9 +548,18 @@ def memory_db_fts_concept_rank_rows(
     concepts_by_event: dict[str, list[str]] = {}
     for row in concept_rows:
         concepts_by_event.setdefault(str(row["event_id"]), []).append(str(row["concept_name"]))
+    links_by_event: dict[str, list[str]] = {}
+    for row in link_rows:
+        links_by_event.setdefault(str(row["source_event_id"]), []).append(
+            str(row["target_concept"])
+        )
 
     scores: dict[str, dict] = {}
-    event_by_id = {str(row["id"]): row for row in rows}
+    event_by_id = {}
+    for row in rows:
+        event = dict(row)
+        event["causal_links"] = links_by_event.get(str(row["id"]), [])
+        event_by_id[str(row["id"])] = event
     for position, row in enumerate(rows, 1):
         event_id = str(row["id"])
         concepts_for_event = concepts_by_event.get(event_id, [])
@@ -655,6 +689,15 @@ def print_memory_db_fts_concept_search(
             print(f"      agent: {event['agent']}")
             if event["cmd_id"]:
                 print(f"      cmd_id: {event['cmd_id']}")
+            if event.get("causal_links"):
+                print("      causal_path:")
+                print(f"        concept: {item['concept']}")
+                print(
+                    "        links: "
+                    + " -> ".join(f"[[{link}]]" for link in event["causal_links"])
+                )
+                if event.get("source_file"):
+                    print(f"        source_file: {event['source_file']}")
             summary = str(event["summary"]).replace("\n", " ")
             print(f"      summary: {summary}")
 
@@ -708,6 +751,19 @@ def print_memory_db_concept_search_for_ids(
         if row["cmd_id"]:
             print(f"    cmd_id: {row['cmd_id']}")
         print(f"    importance: {row['importance']}")
+        causal_links = [
+            item for item in str(row["causal_links"] or "").split(",") if item
+        ]
+        if causal_links:
+            print("    causal_path:")
+            print(
+                "      links: "
+                + " -> ".join(f"[[{link}]]" for link in causal_links)
+            )
+            if row["cmd_id"]:
+                print(f"      cmd_id: {row['cmd_id']}")
+            if row["source_file"]:
+                print(f"      source_file: {row['source_file']}")
         summary = str(row["summary"]).replace("\n", " ")
         print(f"    summary: {summary}")
     return 0
