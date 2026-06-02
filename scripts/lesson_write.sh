@@ -1065,8 +1065,8 @@ PY
             fi
         fi
         # DB INSERT: eventsテーブルへ教訓記録（非ブロック）
-        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert.py" ] && [ -n "$NEW_LESSON_ID" ]; then
-            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" lesson \
+        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" ] && [ -n "$NEW_LESSON_ID" ]; then
+            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" lesson \
                 --lesson-id "$NEW_LESSON_ID" \
                 --title "$TITLE" \
                 --detail "$DETAIL" \
@@ -1074,7 +1074,8 @@ PY
                 --agent "${AUTHOR:-karo}" \
                 --ts "$(date -Is)" \
                 --project "$PROJECT_ID" \
-                --source-file "$LESSONS_FILE" 2>/dev/null || true
+                --source-file "$LESSONS_FILE" >/dev/null 2>&1 &
+            disown 2>/dev/null || true
         fi
         exit 0
     else

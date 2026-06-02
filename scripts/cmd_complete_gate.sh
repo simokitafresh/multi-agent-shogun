@@ -952,10 +952,11 @@ run_skill_script_refs_check() {
     if [ "$rc" -eq 2 ]; then
         echo "  [WARN] SKILL.md script refs need follow-up (non-blocking after CLEAR)"
         append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" stale_or_missing_refs"
-        python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" gate \
+        python3 "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" gate \
             --gate-name "cmd_complete_gate:skill_script_refs" --result "WARN" \
             --cmd-id "${CMD_ID:-}" --ts "$(date -Is)" --detail "stale_or_missing_refs" \
-            --source-file "$LOG_DIR/gate_fire_log.yaml" 2>/dev/null || true
+            --source-file "$LOG_DIR/gate_fire_log.yaml" >/dev/null 2>&1 &
+        disown 2>/dev/null || true
         if printf '%s\n' "${CMD_CHANGED_FILES:-}" | grep -qE '^scripts/'; then
             local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
             local changed_scripts
@@ -992,10 +993,11 @@ run_skill_script_refs_check() {
     else
         echo "  [WARN] gate_skill_script_refs.sh failed rc=${rc} (non-blocking after CLEAR)"
         append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${CMD_ID} gate: \"skill_script_refs\" execution_failed rc=${rc}"
-        python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" gate \
+        python3 "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" gate \
             --gate-name "cmd_complete_gate:skill_script_refs" --result "WARN" \
             --cmd-id "${CMD_ID:-}" --ts "$(date -Is)" --detail "execution_failed rc=${rc}" \
-            --source-file "$LOG_DIR/gate_fire_log.yaml" 2>/dev/null || true
+            --source-file "$LOG_DIR/gate_fire_log.yaml" >/dev/null 2>&1 &
+        disown 2>/dev/null || true
     fi
     return 0
 }
@@ -3992,10 +3994,11 @@ preflight_gate_flags() {
     if [ "$tp_warn_count" -gt 0 ]; then
         echo "    -> ${tp_warn_count} file(s) with uncommitted changes (WARN, non-blocking)"
             append_line_locked "$LOG_DIR/gate_fire_log.yaml" "$(date '+%Y-%m-%dT%H:%M:%S') [WARN] ${cmd_id} gate: \"cmd_complete_gate\" target_path_uncommitted: ${tp_warn_count} file(s)"
-            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" gate \
+            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" gate \
                 --gate-name "cmd_complete_gate:target_path_uncommitted" --result "WARN" \
                 --cmd-id "${cmd_id:-}" --ts "$(date -Is)" --detail "${tp_warn_count} file(s) uncommitted" \
-                --source-file "$LOG_DIR/gate_fire_log.yaml" 2>/dev/null || true
+                --source-file "$LOG_DIR/gate_fire_log.yaml" >/dev/null 2>&1 &
+            disown 2>/dev/null || true
     else
         echo "    all target_path committed (OK)"
     fi

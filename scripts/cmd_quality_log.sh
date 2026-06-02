@@ -21,7 +21,7 @@ SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
 PROJECT_ID="${CMD_QUALITY_PROJECT:-}"
-MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$REPO_ROOT/scripts/memory_db_live_insert.py}"
+MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$REPO_ROOT/scripts/memory_db_live_insert_async.py}"
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -267,7 +267,7 @@ EOF
 ) 200>"$LOCK_FILE"
 
 if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
-    if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_quality \
+    python3 "$MEMORY_DB_LIVE_INSERT" cmd_quality \
         --cmd-id "$CMD_ID" \
         --ts "$TIMESTAMP" \
         --gate-result "$GATE_RESULT" \
@@ -280,7 +280,7 @@ if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         --source "$SOURCE_STAGE" \
         --diagnosis "$DIAGNOSIS_TEXT" \
         --notes "$NOTES" \
-        --source-file "${LOG_FILE#$REPO_ROOT/}"; then
-        echo "[cmd_quality_log] WARN: DB INSERT skipped for ${CMD_ID}" >&2
-    fi
+        --source-file "${LOG_FILE#$REPO_ROOT/}" \
+        >/dev/null 2>&1 &
+    disown 2>/dev/null || true
 fi

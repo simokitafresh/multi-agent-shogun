@@ -61,7 +61,7 @@ fi
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""
 echo "■ SG-PRE1: gate_report_format.sh"
-if bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
+if SHOGUN_DISABLE_MEMORY_DB_CACHE=1 bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
     echo "  PASS"
 else
     echo "  FAIL — フォーマット不備あり。詳細は上記出力参照"
@@ -88,7 +88,7 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
             [ -z "$_hash" ] && continue
             _PRE_CMD_FILES+="$(
                 cd "${PROJECT_DIR:-$REPO_ROOT}" \
-                    && git show --format="" --name-only "$_hash" 2>/dev/null
+                    && git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null
             )"$'\n'
             _PRE_RECENT_DATA+="$(
                 cd "$REPO_ROOT" \
@@ -447,19 +447,23 @@ TOTAL_ADDED=0
 TOTAL_DELETED=0
 if [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
+        _NUMSTAT_DATA=""
+        while IFS= read -r _hash; do
+            [ -z "$_hash" ] && continue
+            _NUMSTAT_DATA+="$(
+                git -C "$REPO_ROOT" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true
+            )"$'\n'
+            if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+                _NUMSTAT_DATA+="$(
+                    git -C "/mnt/c/Python_app/DM-Signal" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true
+                )"$'\n'
+            fi
+        done <<< "$_REPORT_HASHES"
         while IFS=$'\t' read -r added deleted _; do
             [[ "$added" == "-" || -z "$added" ]] && continue
             TOTAL_ADDED=$((TOTAL_ADDED + added))
             TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-        done < <(
-            while IFS= read -r _hash; do
-                [ -z "$_hash" ] && continue
-                git -C "$REPO_ROOT" show --format="" --numstat "$_hash" 2>/dev/null || true
-                if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
-                    git -C "/mnt/c/Python_app/DM-Signal" show --format="" --numstat "$_hash" 2>/dev/null || true
-                fi
-            done <<< "$_REPORT_HASHES"
-        )
+        done <<< "$_NUMSTAT_DATA"
     else
         # shogunリポジトリ
         while IFS=$'\t' read -r added deleted _; do

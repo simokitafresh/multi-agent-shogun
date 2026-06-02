@@ -102,6 +102,8 @@ LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
 LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
 BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
+MEMORY_DB_LIVE_DRAIN_INTERVAL=${MEMORY_DB_LIVE_DRAIN_INTERVAL:-60}  # live insert退避queue drain間隔（秒）
+LAST_MEMORY_DB_LIVE_DRAIN=0     # memory_db_live_insert_queue最終drain時刻（epoch秒）
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 LESSON_DEPRECATION_INTERVAL=86400  # effectiveness低下教訓のdeprecate候補抽出間隔（秒）— 1日
@@ -1189,7 +1191,7 @@ find_completed_parent_cmd_report_for_other_ninja() {
 
     for dir in "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports"; do
         [ -d "$dir" ] || continue
-        while IFS= read -r report_file; do
+        for report_file in "$dir"/*_report_*.yaml "$dir"/*_report.yaml; do
             [ -f "$report_file" ] || continue
             base=$(basename "$report_file")
             case "$base" in
@@ -1210,7 +1212,7 @@ find_completed_parent_cmd_report_for_other_ninja() {
 
             echo "$report_file"
             return 0
-        done < <(find "$dir" -maxdepth 1 -name '*_report_*.yaml' -o -name '*_report.yaml' 2>/dev/null | sort)
+        done
     done
 
     return 1
@@ -4346,6 +4348,24 @@ check_bulletin_archive() {
     LAST_BULLETIN_ARCHIVE=$now
 }
 
+# ═══ memory_db live insert退避queue drain ═══
+# 正本処理(YAML/inbox/report/gate)はDBロック待ちで止めない。副作用はasync queueへ退避し、
+# ninja_monitorが定期的に排水する。新daemonを増やさず既存監視基盤に載せる。
+drain_memory_db_live_insert_queue() {
+    local now=$EPOCHSECONDS
+    local elapsed=$((now - LAST_MEMORY_DB_LIVE_DRAIN))
+    if [ "$elapsed" -lt "$MEMORY_DB_LIVE_DRAIN_INTERVAL" ]; then
+        return 0
+    fi
+
+    local drain_script="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
+    if [ -f "$drain_script" ]; then
+        python3 "$drain_script" >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
+    LAST_MEMORY_DB_LIVE_DRAIN=$now
+}
+
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
@@ -4718,6 +4738,7 @@ while true; do
     check_ninja_cli_dead        # 忍者CLI死亡検知+自動再起動 (cmd_1851)
     run_lock_cleanup            # /tmp orphan lock files定期削除
     check_bulletin_archive      # 掲示板自動アーカイブ（肥大防止）
+    drain_memory_db_live_insert_queue  # memory_db live insert退避queue排水
 
     # ═══ STEP 2: ダッシュボード自動更新 (cmd_404) ═══
     # 状態変化時のみ呼び出す（コスト最適化）

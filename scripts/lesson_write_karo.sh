@@ -180,9 +180,9 @@ PYEOF
 
     ) 200>"$LOCKFILE"; then
         # DB INSERT: eventsテーブルへ教訓記録（非ブロック）
-        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert.py" ]; then
+        if [ -f "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" ]; then
             _LW_KARO_NEW_ID=$(grep '^- id:' "$LESSONS_FILE" | tail -1 | sed "s/^- id: '//;s/'\$//" | tr -d "'" 2>/dev/null || true)
-            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert.py" lesson \
+            python3 "$SCRIPT_DIR/scripts/memory_db_live_insert_async.py" lesson \
                 --lesson-id "${_LW_KARO_NEW_ID:-unknown}" \
                 --title "$TITLE" \
                 --detail "$DETAIL" \
@@ -190,7 +190,8 @@ PYEOF
                 --agent "karo" \
                 --ts "$(date -Is)" \
                 --project "infra" \
-                --source-file "$LESSONS_FILE" 2>/dev/null || true
+                --source-file "$LESSONS_FILE" >/dev/null 2>&1 &
+            disown 2>/dev/null || true
         fi
         exit 0
     else

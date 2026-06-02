@@ -1562,7 +1562,7 @@ fi
 # --- 記憶DB: report event INSERT (非破壊的) ---
 # フィールド書込み成功後にeventsテーブルへevent_type=reportでINSERT。
 # INSERT失敗時も報告YAML書込みは成功扱い(AC2: 非破壊的追加)
-_MEMORY_DB_INSERT_SCRIPT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+_MEMORY_DB_INSERT_SCRIPT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 if [ -f "$_MEMORY_DB_INSERT_SCRIPT" ] && [ -f "$REPORT_PATH" ]; then
     printf -v _rfs_ts '%(%Y-%m-%dT%H:%M:%SZ)T' -1
     _rfs_agent=""
@@ -1604,5 +1604,6 @@ if [ -f "$_MEMORY_DB_INSERT_SCRIPT" ] && [ -f "$REPORT_PATH" ]; then
         --verdict "${_rfs_verdict:-}" \
         --dot-key "$DOT_KEY" \
         --source-file "$REPORT_PATH" \
-        2>/dev/null || true
+        >/dev/null 2>&1 &
+    disown 2>/dev/null || true
 fi

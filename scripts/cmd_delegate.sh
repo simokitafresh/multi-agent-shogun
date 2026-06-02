@@ -37,7 +37,7 @@ SHOGUN_TO_KARO="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 KARO_INBOX="$PROJECT_DIR/queue/inbox/karo.yaml"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 ARCHIVE_DIR="$PROJECT_DIR/queue/archive/cmds"
-MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert.py}"
+MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert_async.py}"
 
 CMD_ID="${1:-}"
 MESSAGE="${2:-}"
@@ -397,15 +397,15 @@ bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
 
 MEMORY_DB_PATH="${SHOGUN_MEMORY_DB:-$PROJECT_DIR/data/multi_agent_shogun_memory.db}"
 if [[ -f "$MEMORY_DB_LIVE_INSERT" && -f "$MEMORY_DB_PATH" ]]; then
-    if ! python3 "$MEMORY_DB_LIVE_INSERT" cmd_delegate \
+    python3 "$MEMORY_DB_LIVE_INSERT" cmd_delegate \
         --cmd-id "$CMD_ID" \
         --ts "$TIMESTAMP" \
         --delegated-at "$TIMESTAMP" \
         --message "$MESSAGE" \
         --summary "$MESSAGE" \
-        --source-file "${SHOGUN_TO_KARO#$PROJECT_DIR/}"; then
-        echo "[cmd_delegate] WARN: DB INSERT skipped for ${CMD_ID}" >&2
-    fi
+        --source-file "${SHOGUN_TO_KARO#$PROJECT_DIR/}" \
+        >/dev/null 2>&1 &
+    disown 2>/dev/null || true
 fi
 
 # Step 6: 成功出力

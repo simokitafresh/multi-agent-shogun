@@ -16,7 +16,7 @@ _insight_self="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="${_insight_self%/scripts/insight_write.sh}"
 INSIGHTS_FILE="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
 BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
-MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
 # --resolve mode: mark insight as done
@@ -233,7 +233,7 @@ PYEOF
   echo "$result"
 
   if [[ "$result" == INS-* && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
-    if ! python3 "$MEMORY_DB_LIVE_INSERT" insight \
+    python3 "$MEMORY_DB_LIVE_INSERT" insight \
       --entry-id "$result" \
       --ts "$ts" \
       --insight "$msg" \
@@ -241,9 +241,9 @@ PYEOF
       --source "$source_info" \
       --status "$status" \
       --resolved-at "$resolved_at" \
-      --source-file "$INSIGHTS_FILE"; then
-      echo "WARN: insight DB INSERT skipped for ${result}" >&2
-    fi
+      --source-file "$INSIGHTS_FILE" \
+      >/dev/null 2>&1 &
+    disown 2>/dev/null || true
   fi
 
   # Escalate repeated pending insights from the same source so important patterns

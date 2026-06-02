@@ -671,7 +671,7 @@ trigger_cmd_complete_gate_background() {
 }
 
 record_inbox_event_to_memory_db() {
-    local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+    local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 
     [ -f "$live_insert_script" ] || return 0
 
@@ -683,7 +683,9 @@ record_inbox_event_to_memory_db() {
         --content "$CONTENT" \
         --message-type "$TYPE" \
         --action "$ACTION" \
-        --source-file "$INBOX"
+        --source-file "$INBOX" \
+        >/dev/null 2>&1 &
+    disown 2>/dev/null || true
 }
 
 inbox_append_message_fast_locked() {
@@ -1358,16 +1360,18 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "
             if [ "$TASK_SCOUT_EXEMPT" = "true" ]; then
                 echo "[git_uncommitted_gate] SKIP: scout_exempt=true (ninja: ${FROM})" >&2
             else
-                GIT_CHECK_PATHS=$(
-                    (
-                        inbox_extract_report_paths "$FULL_REPORT"
-                        inbox_extract_task_paths "$TASK_YAML"
-                    ) | awk '!seen[$0]++'
-                )
+                REPORT_CHECK_PATHS="$(inbox_extract_report_paths "$FULL_REPORT" | awk 'NF && $0 != "偵察のみ"')"
+                if [ -n "$REPORT_CHECK_PATHS" ]; then
+                    # Report YAMLのfiles_modifiedは忍者の実変更申告。これがある時は
+                    # task.target_pathの広いディレクトリ指定を混ぜない。混ぜると
+                    # 家老/他忍者の同時インフラ変更で完了報告が誤BLOCKされる。
+                    GIT_CHECK_PATHS="$(printf '%s\n' "$REPORT_CHECK_PATHS" | awk '!seen[$0]++')"
+                else
+                    GIT_CHECK_PATHS="$(inbox_extract_task_paths "$TASK_YAML" | awk '!seen[$0]++')"
+                fi
             fi
 
             if [ "$TASK_SCOUT_EXEMPT" != "true" ] && [ -n "$GIT_CHECK_PATHS" ]; then
-                mapfile -t _check_paths <<< "$GIT_CHECK_PATHS"
                 # プロジェクトリポジトリの解決: task YAMLのproject:からprojects/{project}.yamlのpath:を参照
                 # cmd_1412教訓: SCRIPT_DIR(multi-agent-shogun)でDM-signalファイルをチェックしても検出不能
                 GIT_REPO_DIR="$SCRIPT_DIR"
@@ -1380,7 +1384,23 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "
                         fi
                     fi
                 fi
-                UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_check_paths[@]}" 2>/dev/null || true)
+                _filtered_check_paths=()
+                while IFS= read -r _candidate_path; do
+                    [ -n "$_candidate_path" ] || continue
+                    # Directory target_path (e.g. scripts/, projects/) is too broad for
+                    # report completion gating. It can include unrelated concurrent work.
+                    # Concrete files from files_modified remain checked above.
+                    if [ -d "$GIT_REPO_DIR/$_candidate_path" ]; then
+                        echo "[git_uncommitted_gate] SKIP directory target_path: $_candidate_path" >&2
+                        continue
+                    fi
+                    _filtered_check_paths+=("$_candidate_path")
+                done <<< "$GIT_CHECK_PATHS"
+                if [ "${#_filtered_check_paths[@]}" -eq 0 ]; then
+                    UNCOMMITTED=""
+                else
+                    UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_filtered_check_paths[@]}" 2>/dev/null || true)
+                fi
                 if [ -n "$UNCOMMITTED" ]; then
                     echo "[git_uncommitted_gate] BLOCKED: 未commitファイルあり (ninja: ${FROM})" >&2
                     while IFS= read -r _uline; do

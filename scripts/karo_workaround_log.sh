@@ -404,8 +404,8 @@ EOF
 EOF
         } >> "$LOG_FILE"
 
-        if [[ -f "$SCRIPT_DIR/memory_db_live_insert.py" ]]; then
-            python3 "$SCRIPT_DIR/memory_db_live_insert.py" \
+        if [[ -f "$SCRIPT_DIR/memory_db_live_insert_async.py" ]]; then
+            python3 "$SCRIPT_DIR/memory_db_live_insert_async.py" \
                 workaround \
                 --cmd-id "$CMD_ID" \
                 --ts "$TIMESTAMP" \
@@ -413,7 +413,9 @@ EOF
                 --category "$CATEGORY" \
                 --issue "$ISSUE" \
                 --root-cause "$FIX" \
-                --source-file "$LOG_FILE" >/dev/null 2>&1 || true
+                --source-file "$LOG_FILE" \
+                >/dev/null 2>&1 &
+            disown 2>/dev/null || true
         fi
 
         # --- Alert mechanism (AC1: cmd_1211) ---
