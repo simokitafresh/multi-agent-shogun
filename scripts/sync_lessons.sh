@@ -325,6 +325,8 @@ while i < len(lines):
         entry['deprecated_by'] = deprecated_by
     if merged_from:
         entry['merged_from'] = merged_from
+    source_cmd = source.strip() if source else f'legacy_lesson_{lesson_id}'
+    entry['source_cmd'] = source_cmd
     if tags:
         entry['tags'] = tags
     if when_cond:
@@ -333,8 +335,7 @@ while i < len(lines):
         entry['how'] = how_action
     if subdomain:
         entry['subdomain'] = subdomain
-    if origin:
-        entry['origin'] = origin
+    entry['origin'] = origin if origin else f'[[{source_cmd}]]'
     if retired:
         entry['retired'] = True
     if retired_at:
@@ -528,6 +529,8 @@ for l in active_lessons:
     })
     if l.get('subdomain'):
         entry['subdomain'] = l['subdomain']
+    if l.get('source_cmd'):
+        entry['source_cmd'] = l['source_cmd']
     if l.get('when'):
         entry['when'] = l['when']
     if l.get('how'):
