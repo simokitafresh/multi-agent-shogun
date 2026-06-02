@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-02T15:35:00+09:00 -->
 
 # /review-bundle — レビュー完了後処理スキル
 
@@ -103,10 +103,53 @@ review_log追記後、今回のレビューで使った判断パターンがrevi
 目的: レビュー中の判断パターンを/clear後も残す。「初遭遇パターンが頭の中だけに残り/clearで消失」を構造的に防止。
 根拠: なぜなぜ7回(2026-05-15殿指示)で根因特定。5件/セッションの判断パターンが未埋込みだった。
 
-### Step 3: 家老inbox送信
+### Step 3: 家老inbox送信 + 永続化確認 + retry
 ```bash
-bash scripts/inbox_write.sh karo "cmd_<cmd_id>レビュー完了。verdict=<verdict>。" review_feedback gunshi
+CMD_ID="<cmd_id>"
+VERDICT="<verdict>"
+MESSAGE="${CMD_ID}レビュー完了。verdict=${VERDICT}。"
+MAX_ATTEMPTS=3
+attempt=1
+
+while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
+  bash scripts/inbox_write.sh karo "$MESSAGE" review_feedback gunshi
+
+  if python3 - "queue/inbox/karo.yaml" "$MESSAGE" <<'PY'
+import sys
+import yaml
+
+path, expected = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+for msg in reversed(data.get("messages") or []):
+    if (
+        str(msg.get("content") or "") == expected
+        and str(msg.get("from") or "") == "gunshi"
+        and str(msg.get("type") or "") == "review_feedback"
+    ):
+        print(msg.get("id", "id_missing"))
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+  then
+    echo "[review-bundle] inbox_write verified: karo received review_feedback"
+    break
+  fi
+
+  if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+    echo "[review-bundle] BLOCKED: karo inbox verification failed after ${MAX_ATTEMPTS} attempts" >&2
+    exit 1
+  fi
+
+  echo "[review-bundle] WARN: karo inbox verification failed; retry ${attempt}/${MAX_ATTEMPTS}" >&2
+  sleep 1
+  attempt=$((attempt + 1))
+done
 ```
+
+送信後は必ず `queue/inbox/karo.yaml` に同一 `content` + `from: gunshi` + `type: review_feedback` が存在することを確認せよ。確認不能のままStep 4へ進むな。
 
 ### Step 4: 掲示板投稿（FAIL時のみ）
 FAIL時は将軍にも共有:
