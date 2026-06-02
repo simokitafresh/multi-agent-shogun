@@ -516,3 +516,4 @@
 | cmd_3110 | recalculate_fof.pyのs_data構築(L517-527)でholding_signal_rawとsignal_cacheがif/elif排他構造のため、preloadでDBの古いデータがholding_signal_rawに入ると、1段目FoF計算後にsignal_cacheに書き戻された新データを2段目以降のネストFoFが読めない。6月signal未生成42件(奥義-GS 18/旧忍法系16/秘奥義4/NFF3/Ward1)の根因 | dm-signal | 06-01 | recalculate_fof.pyのFoF s_data構 |
 | cmd_3111 | portfolio_config_snapshotsテーブルは076マイグレーションで作成済みだが書込みロジックが未接続(0件)。PF設定のロールバック手段がない。recalculate Phase 0直前とPF保存時に自動スナップショットを取る | dm-signal | 06-01 | portfolio_config_snapshotsへのPF |
 | cmd_3113 | memory_db_import.py L839-865のCJK LIKEフォールバックが長文クエリで部分文字列マッチしない。文字種境界分割でクエリを短いトークンに分解し、各トークンのAND LIKE検索に変更して長文でもヒットさせる。記憶DB検索品質向上 | infra | 06-02 | CJK長文検索を文字種境界トークンのAND LIKEへ変更し |
+| cmd_3114 | 将軍がcmd_idなしのtype=cmd_newをinbox_writeで送信するとcmd_new_gateをバイパスし、品質gate/軍師レビュー/教訓サイクルを全スキップする穴がある。L0-L7の全レベルで封鎖する | infra | 06-02 | cmd_idなしshogun cmd_newをL4 BLOC |
