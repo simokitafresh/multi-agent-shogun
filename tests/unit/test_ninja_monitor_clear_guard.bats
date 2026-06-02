@@ -48,6 +48,57 @@ test "$context_files" = "context/foo.md "
     [[ "$output" == *"context=context/foo.md"* ]]
 }
 
+@test "auto_commit: task target_path limits regular git add scope" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > scripts/other.sh
+git add scripts/a.sh scripts/other.sh
+git commit -qm initial
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
+task:
+  status: done
+  target_path: scripts/a.sh
+INNEREOF
+
+printf "change\n" >> scripts/a.sh
+printf "change\n" >> scripts/other.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "committed=$committed_files"
+echo "worktree=$worktree_files"
+cat "$LOG"
+test "$committed_files" = "scripts/a.sh "
+test "$worktree_files" = "scripts/other.sh "
+grep -q "AUTO-COMMIT-SCOPE-SKIP: hayate excluded scripts/other.sh (outside target_path)" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"committed=scripts/a.sh"* ]]
+    [[ "$output" == *"worktree=scripts/other.sh"* ]]
+    [[ "$output" == *"AUTO-COMMIT-SCOPE-SKIP"* ]]
+}
+
 @test "auto_commit: regular auto-commit skips within 30 minutes" {
     run bash -lc '
 set -eo pipefail

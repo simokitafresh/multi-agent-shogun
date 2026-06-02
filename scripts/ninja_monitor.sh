@@ -299,6 +299,77 @@ auto_commit_paths_from_status() {
     sed 's/^...//'
 }
 
+auto_commit_normalize_scope_path() {
+    local scope_path="$1"
+
+    scope_path="${scope_path%%#*}"
+    scope_path="${scope_path#"${scope_path%%[![:space:]]*}"}"
+    scope_path="${scope_path%"${scope_path##*[![:space:]]}"}"
+    scope_path="${scope_path#- }"
+    scope_path="${scope_path#./}"
+    case "$scope_path" in
+        \"*\") scope_path="${scope_path#\"}"; scope_path="${scope_path%\"}" ;;
+        \'*\') scope_path="${scope_path#\'}"; scope_path="${scope_path%\'}" ;;
+    esac
+    case "$scope_path" in
+        ""|"none"|"null"|"FILL_THIS") return 0 ;;
+        "$SCRIPT_DIR"/*) scope_path="${scope_path#"$SCRIPT_DIR"/}" ;;
+        /*) return 0 ;;
+    esac
+    scope_path="${scope_path%/}"
+    [ -n "$scope_path" ] && printf '%s\n' "$scope_path"
+}
+
+auto_commit_scope_paths_for_agent() {
+    local agent_name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    local raw_scope
+
+    [ -f "$task_file" ] || return 0
+    raw_scope="$(yaml_field_get "$task_file" "target_path" "" || true)"
+    [ -n "${raw_scope//[[:space:]]/}" ] || return 0
+    while IFS= read -r raw_line || [ -n "$raw_line" ]; do
+        auto_commit_normalize_scope_path "$raw_line"
+    done <<< "$raw_scope"
+}
+
+auto_commit_path_in_scope() {
+    local path="$1"
+    local scope_path
+
+    shift
+    for scope_path in "$@"; do
+        [ -n "$scope_path" ] || continue
+        if [ "$path" = "$scope_path" ] || [[ "$path" == "$scope_path/"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+filter_auto_commit_paths_by_task_scope() {
+    local agent_name="$1"
+    local scope_text path
+    local -a scope_paths=()
+
+    scope_text="$(auto_commit_scope_paths_for_agent "$agent_name")"
+    if [ -z "${scope_text//[[:space:]]/}" ]; then
+        cat
+        return 0
+    fi
+    while IFS= read -r path || [ -n "$path" ]; do
+        [ -n "$path" ] && scope_paths+=("$path")
+    done <<< "$scope_text"
+    while IFS= read -r path || [ -n "$path" ]; do
+        [ -n "$path" ] || continue
+        if auto_commit_path_in_scope "$path" "${scope_paths[@]}"; then
+            printf '%s\n' "$path"
+        else
+            log "AUTO-COMMIT-SCOPE-SKIP: $agent_name excluded $path (outside target_path)"
+        fi
+    done
+}
+
 filter_regular_auto_commit_paths() {
     auto_commit_paths_from_status | grep -v -E '^context/[^/]*\.md$' || true
 }
@@ -312,8 +383,8 @@ auto_commit_before_clear() {
     local uncommitted="$2"
     local regular_paths context_paths last_file context_last_file
 
-    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths)"
-    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths)"
+    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name")"
+    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name")"
     last_file="$(auto_commit_last_file)"
     context_last_file="$(context_batch_commit_last_file)"
 
