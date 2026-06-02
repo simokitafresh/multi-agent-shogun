@@ -620,6 +620,9 @@ REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老は
 家老から忍者報告のレビュー依頼（type: report_review）を受けた際の手順。
 draftレビュー（上記§Communication Protocol）とは別プロセス。混同禁止。
 
+### Step -1: YAML直読（同時到着3件以上時必須 GP-250）
+同時到着報告が3件以上ある場合でも、Agent委任やバッチ処理の前に各報告YAMLの先頭30行を直接Readせよ。purpose/verdict/binary_checksの概要を自分の目で確認してからStep 0に進む。
+
 ### Step 0: Precheck（11項目自動検証）
 レビュー開始前に `bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>` を実行。
 PRE1-11が自動検証: フォーマット/WA率/commit/backend変更/bc数/行数/パラメータ/二重配備/T1(bc no)/ac_version照合/lessons_useful形式。
