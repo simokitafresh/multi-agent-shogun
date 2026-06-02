@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-02 cmd_training_backlinks_saizo_20260602 -->
+<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
 # FoF悪化構造分析 — EMA前処理のFoF伝播メカニズム
 
 <!-- cmd_1700/1701/1703/1704の結果を統合分析。軍師分析(2026-04-03) -->
@@ -30,7 +30,7 @@ depth=3: 旧忍法-Ward n=1 avg=-0.182 improved=0%
 ## §3 因果メカニズム（3層）
 
 ### 層1: L0 PF個体レベル
-EMAはlookback依存で効果が異なる（研究日誌Phase 2.5）:
+EMAはlookback依存で効果が異なる（研究日誌Phase 2.5）。→ [[gunshi-flair-deepdive]] (Phase 1: 中長期lookback優位の独立確認 cmd_1716 — `peak=24M (τ=0.264)`):
 - 中長期lookback(DM2/DM3/DM5): 改善(+2.7%〜+112%)
 - 短期lookback(DM6=15d): **全span劣化**(-43%)
 - 超長期(DM7+=504d): 微改善(+11%)
@@ -54,7 +54,7 @@ avg尖り削減量=0.001。月次BUY/CASHレベルではEMA span=5のシグナ�
 ### High(Max)選別仮説（cmd_1704）
 「delta_high>=0のPFだけにEMA5→FoF改善」→ 52/65PF通過(80%)で選別が緩い。C_vs_A=-0.091 ≈ B_vs_A=-0.087。棄却。
 
-関連研究: [[dm-signal-research-shin-shijin-v2]] §前処理研究(cmd_1700/1701/1707)が、FoF悪化のdepth増幅・シグナル相関棄却・FoF momentum実態監査を接続する。
+関連研究: [[dm-signal-research-shin-shijin-v2]] §前処理研究(cmd_1700/1701/1707)が、FoF悪化のdepth増幅・シグナル相関棄却・FoF momentum実態監査を接続する。→ [[dm-signal-research]] §28-§35: 前処理研究全体文脈(EMA/L1 OOS検証・PBO>0.5確認)。
 
 ## §5 cross-sectional dispersion仮説（未検証）
 
