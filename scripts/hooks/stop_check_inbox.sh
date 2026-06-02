@@ -13,6 +13,7 @@ readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|ta
 readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
 readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
+readonly SHOGUN_BRAINWASH_AUDIT='洗脳8パターン自問: #1早期終了 #2検証スキップ #3他者依存 #4緩い設計 #5先送り #6出力=仕事 #7簡潔本能 #8完了急ぎ'
 
 IFS='' read -r -d '' payload || true
 if [[ -z "$payload" ]]; then
@@ -71,6 +72,50 @@ fi
 if [[ "$stop_hook_active" == "true" ]]; then
   : > "$idle_flag"
   exit 0
+fi
+
+detect_shogun_brainwash_pattern() {
+  local message="$1"
+  local pattern_id=""
+  local pattern_name=""
+
+  if [[ "$message" =~ (これで十分|十分です|十分と判断|これでOK|で良い|問題なし) ]]; then
+    pattern_id="#1"
+    pattern_name="早期終了"
+  elif [[ "$message" =~ (確認済み|妥当|検証不要|推論で十分|他者.*確認|レビュー済み.*だから) ]]; then
+    pattern_id="#2"
+    pattern_name="検証スキップ"
+  elif [[ "$message" =~ (続けてください|指示を待|待機します|判断を委ね|確認してください) ]]; then
+    pattern_id="#3"
+    pattern_name="他者依存"
+  elif [[ "$message" =~ (口約束|注意書き|手順に書く|ドキュメントで防ぐ|運用でカバー) ]]; then
+    pattern_id="#4"
+    pattern_name="緩い設計"
+  elif [[ "$message" =~ (低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|次回) ]]; then
+    pattern_id="#5"
+    pattern_name="先送り"
+  elif [[ "$message" =~ (起票したので完了|記録したので完了|投稿したので完了|まとめたので完了|報告したので完了) ]]; then
+    pattern_id="#6"
+    pattern_name="出力=仕事"
+  elif [[ "$message" =~ ^[[:space:]]*(はっ|承知|仰る通り|了解|はい)[[:space:][:punct:]]*$ ]]; then
+    pattern_id="#7"
+    pattern_name="簡潔本能"
+  elif [[ "$message" =~ (収束|完了急ぎ|穴なし|これで完了|完結|GATE CLEAR.*安心) ]]; then
+    pattern_id="#8"
+    pattern_name="完了急ぎ"
+  fi
+
+  if [[ -n "$pattern_id" ]]; then
+    printf '%s %s\n' "$pattern_id" "$pattern_name"
+  fi
+}
+
+if [[ "$agent_id" == "shogun" && -n "$last_assistant_message" ]]; then
+  printf '%s\n' "$SHOGUN_BRAINWASH_AUDIT" >&2
+  _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
+  if [[ -n "$_brainwash_match" ]]; then
+    printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
+  fi
 fi
 
 notify_completion() {

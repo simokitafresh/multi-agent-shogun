@@ -115,6 +115,33 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ ! -s "$INBOX_WRITE_LOG" ]
 }
 
+@test "T-SCI-014: shogun turn shows brainwash audit prompt" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して次に進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"洗脳8パターン自問"* ]]
+    [[ "$output" != *"WARN: 洗脳検出"* ]]
+}
+
+@test "T-SCI-015: shogun brainwash phrase warns with pattern number without blocking" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"この穴は低優先なので次セッションで対応する"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 洗脳検出 #5 先送り"* ]]
+}
+
 @test "T-SCI-004: unread summary is embedded in block reason" {
     cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
 messages:

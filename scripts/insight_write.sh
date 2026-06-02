@@ -252,7 +252,7 @@ PYEOF
         echo "WARN: insight DB INSERT skipped" >&2
       fi
     else
-      python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 &
+      python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 200>&- &
       disown 2>/dev/null || true
     fi
   fi
