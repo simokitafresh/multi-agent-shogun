@@ -694,7 +694,7 @@ check_yaml_freshness() {
     # command欄からスクリプトパスを抽出（bash scripts/foo.sh または scripts/foo.sh 形式）
     local script_paths
     script_paths=$(grep -oE '(bash )?scripts/[^ "\\]+\.sh' "$yaml_file" 2>/dev/null \
-        | sed 's/^bash //' | sort -u)
+        | sed 's/^bash //' | sort -u || true)
 
     [ -z "$script_paths" ] && return 0
 
