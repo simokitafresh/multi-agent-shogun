@@ -113,9 +113,16 @@ EOF
     MEMORY_DB_LESSON_BOOST=20 run deploy_task_lessons_only sasuke
     [ "$status" -eq 0 ]
 
+    run grep -F "[INJECT] memory_db_boost: " "$TEST_PROJECT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+
     run related_lesson_ids
     [ "$status" -eq 0 ]
     [[ "$output" == *"L777"* ]]
+
+    run awk -F'\t' '$4=="L777" && $5=="injected"{print $4 "|" $5}' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "L777|injected" ]
 }
 
 @test "cmd_3119 AC2: static semantic boost and event_concepts boost are deduped by lesson id" {

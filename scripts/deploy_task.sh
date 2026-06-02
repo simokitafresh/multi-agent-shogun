@@ -4218,6 +4218,14 @@ try:
         task_text,
         semantic_matched_concepts,
     )
+    if memory_db_matched_concepts or memory_db_lesson_boosts or memory_db_event_count:
+        print(
+            '[INJECT] memory_db_boost: '
+            f'concepts={len(memory_db_matched_concepts)} '
+            f'lessons={len(memory_db_lesson_boosts)} '
+            f'events={memory_db_event_count}',
+            file=sys.stderr,
+        )
     lesson_boosts = dict(semantic_lesson_boosts)
     for _lid, _boost in memory_db_lesson_boosts.items():
         lesson_boosts[_lid] = max(lesson_boosts.get(_lid, 0), _boost)
