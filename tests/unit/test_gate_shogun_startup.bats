@@ -1175,11 +1175,22 @@ EOF
 run1	inbox未読: 1件
 run2	inbox未読: 1件
 EOF
+    cat > "$TEST_TMPDIR/context/cmd-chronicle.md" <<'EOF'
+# CMD年代記
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_188 | inbox未読カウンタ復元 — nudge欠落時も未読件数を復元する | infra | 03-01 | unread inbox count handling |
+EOF
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ startup WARN/ALERT連続出現"* ]]
     [[ "$output" == *"BLOCK: inbox未読: 1件 が3セッション連続"* ]]
+    [[ "$output" == *"類似cmd候補:"* ]]
+    [[ "$output" == *"cmd_id=cmd_188"* ]]
+    [[ "$output" == *"類似度="* ]]
+    [[ "$output" == *"title=inbox未読カウンタ復元"* ]]
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
