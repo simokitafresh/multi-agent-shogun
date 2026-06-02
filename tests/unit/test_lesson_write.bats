@@ -202,7 +202,7 @@ run_lesson_write_with_sync() {
 # ============================================================
 
 @test "blocks duplicate title (similarity > 75%)" {
-    run_lesson_write testproj "初期教訓サンプル" "これは重複タイトルのテスト。類似度が高いため拒否されるべき"
+    run_lesson_write testproj "初期教訓サンプル" "これは重複タイトルのテスト。類似度が高いため拒否されるべき" "cmd_599"
     [ "$status" -eq 1 ]
     [[ "$output" == *"類似教訓あり"* ]]
 }
@@ -301,6 +301,12 @@ EOF
     run grep "origin" "$EXT_PROJECT/tasks/lessons.md"
     [ "$status" -eq 0 ]
     [[ "$output" == *"**origin**: [[cmd_704]]"* ]]
+}
+
+@test "cmd_3127: blocks lesson registration when origin and source_cmd are empty" {
+    run_lesson_write testproj "origin空BLOCK教訓" "originもsource_cmdもない登録は因果リンク断裂を防ぐため拒否される" "" "karo"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"origin is required"* ]]
 }
 
 @test "--help mentions subdomain option" {

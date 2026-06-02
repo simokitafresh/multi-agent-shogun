@@ -452,3 +452,89 @@ PY
     [[ "${result[1]}" == *"Report Value Target"* ]]
     [[ "${result[1]}" == *"|1" ]]
 }
+
+@test "cmd_3128: memory_db_live_insert extracts event_links from report lesson and gate inserts" {
+    init_empty_memory_db
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/reports"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_links.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_links
+lesson_candidate:
+  origin: "[[cmd_links]] -> [[因果層空白]] -> [[event_links_1.2%]]"
+EOF
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        report \
+        --report-path "queue/reports/hayate_report_cmd_links.yaml" \
+        --ts "2026-06-02T14:12:00Z" \
+        --dot-key "lesson_candidate.origin" \
+        --agent "hayate" \
+        --parent-cmd "cmd_links" \
+        --source-file "queue/reports/hayate_report_cmd_links.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        lesson \
+        --lesson-id "L1234" \
+        --title "event links live insert" \
+        --detail "origin: [[cmd_links]] -> [[軍師断裂2]] -> [[因果層空白]]" \
+        --source-cmd "cmd_links" \
+        --project "infra" \
+        --ts "2026-06-02T14:12:01Z" \
+        --source-file "projects/infra/lessons_karo.yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        gate \
+        --gate-name "gate_report_format" \
+        --result "PASS" \
+        --cmd-id "cmd_links" \
+        --detail "[[event_links_1.2%]] linked from live gate insert" \
+        --ts "2026-06-02T14:12:02Z" \
+        --source-file "scripts/gates/gate_report_format.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+expected = {
+    "report:hayate_report_cmd_links.yaml:lesson_candidate.origin:2026-06-02T14:12:00Z": {
+        "cmd_links",
+        "因果層空白",
+        "event_links_1.2%",
+    },
+    "lesson:L1234": {
+        "cmd_links",
+        "軍師断裂2",
+        "因果層空白",
+    },
+    "gate:gate_report_format:cmd_links:2026-06-02T14:12:02Z": {
+        "event_links_1.2%",
+    },
+}
+cols = [row[1] for row in conn.execute("PRAGMA table_info(event_links)")]
+print(",".join(cols))
+for event_id, targets in expected.items():
+    rows = {
+        row[0]
+        for row in conn.execute(
+            "SELECT target_concept FROM event_links WHERE source_event_id = ? AND link_type = 'obsidian'",
+            (event_id,),
+        )
+    }
+    print(f"{event_id}|{targets.issubset(rows)}|{len(rows)}")
+PY
+)
+    [ "${result[0]}" = "source_event_id,target_concept,link_type" ]
+    [ "${#result[@]}" -eq 4 ]
+    for line in "${result[@]:1}"; do
+        [[ "$line" == *"|True|"* ]]
+    done
+}

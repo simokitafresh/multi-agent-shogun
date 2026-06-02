@@ -17,6 +17,17 @@ SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
 _SEMANTIC_CONCEPT_CACHE = None
 _CMD_CONTEXT_CACHE: dict[str, str] = {}
+OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
+OBSIDIAN_LINK_NOISE_TARGETS = {
+    "リンク",
+    "概念名",
+    "ファイル名",
+    "発端",
+    "原因",
+    "結果",
+    "対象事象",
+    "レビュー結果",
+}
 REPORT_METADATA_DOT_KEYS = {
     "ac_version_read",
     "files_modified",
@@ -336,6 +347,21 @@ def event_concept_rows(event_id: object, concepts_json: str) -> list[tuple[str, 
     return [(str(event_id), str(concept)) for concept in concepts if str(concept).strip()]
 
 
+def event_link_rows(event_id: object, text: str) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for match in OBSIDIAN_LINK_RE.finditer(normalize_text(text)):
+        concept = match.group(1).strip()
+        if not concept or concept in OBSIDIAN_LINK_NOISE_TARGETS:
+            continue
+        key = (str(event_id), concept, "obsidian")
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(key)
+    return rows
+
+
 def require_live_tables(conn) -> bool:
     for table_name in ("events", "events_fts"):
         if conn.execute(
@@ -352,6 +378,8 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
     import sqlite3
 
     mutable_row = list(row)
+    link_text_extra = "" if concept_text_extra is None else concept_text_extra
+    link_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{link_text_extra}"
     if concept_text_extra is not None:
         concept_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{concept_text_extra}"
         mutable_row[10] = concepts_for_text(concept_text)
@@ -368,6 +396,17 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
                 concept_name TEXT NOT NULL,
                 PRIMARY KEY (event_id, concept_name),
                 FOREIGN KEY (event_id) REFERENCES events(id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS event_links (
+                source_event_id TEXT NOT NULL,
+                target_concept TEXT NOT NULL,
+                link_type TEXT NOT NULL DEFAULT 'obsidian',
+                PRIMARY KEY (source_event_id, target_concept, link_type),
+                FOREIGN KEY (source_event_id) REFERENCES events(id)
             )
             """
         )
@@ -390,6 +429,12 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
                 "INSERT OR IGNORE INTO event_concepts (event_id, concept_name) VALUES (?, ?)",
                 event_concept_rows(row[0], str(row[10])),
             )
+            conn.executemany(
+                "INSERT OR IGNORE INTO event_links (source_event_id, target_concept, link_type) VALUES (?, ?, ?)",
+                event_link_rows(row[0], link_text),
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_source_event_id ON event_links(source_event_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_target_concept ON event_links(target_concept)")
 
 
 def append_bulletin(args) -> None:

@@ -443,6 +443,20 @@ resolve_origin_value() {
     fi
 }
 
+require_origin_value() {
+    local resolved_origin
+    resolved_origin="$(resolve_origin_value)"
+    if [ -z "$resolved_origin" ]; then
+        echo "ERROR: origin is required. Pass --origin \"[[cmd_XXX]] -> [[原因]] -> [[結果]]\" or provide source_cmd." >&2
+        exit 1
+    fi
+    if [[ "$resolved_origin" != *"[[ "* && "$resolved_origin" != *"[["* ]]; then
+        echo "ERROR: origin must contain Obsidian-style [[link]] syntax (got: $resolved_origin)" >&2
+        exit 1
+    fi
+    printf '%s\n' "$resolved_origin"
+}
+
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
 if [ -n "$RETAG_ID" ]; then
     if [ -z "$PROJECT_ID" ] || [ -z "$RETAG_TAGS" ]; then
@@ -673,6 +687,7 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 TIMESTAMP=$(date "+%Y-%m-%d")
+RESOLVED_ORIGIN="$(require_origin_value)"
 
 # 忍者成長速度改善2: source_cmdのtarget_pathを教訓のtarget_filesに自動設定
 _LW_TARGET_FILES=""
@@ -826,7 +841,7 @@ print(','.join(tags[:3]))
 
         _lw_when="${WHEN_COND:-${IF_COND:-未設定}}"
         _lw_how="${HOW_ACTION:-${THEN_ACTION:-未設定}}"
-        _lw_origin="$(resolve_origin_value)"
+        _lw_origin="$RESOLVED_ORIGIN"
 
         # Build and append new entry
         {
