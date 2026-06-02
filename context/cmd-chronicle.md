@@ -529,3 +529,4 @@
 | cmd_3125 | hook_automation_framework(14389件)が突出し概念付与が偏集中。広すぎるaliasesが原因で横断検索にノイズ。aliasesを精査し概念分散を改善 | infra | 06-02 | hook_automation_frameworkの広すぎる |
 | cmd_3129 | idle-persist/karo-direct/recon-dual の3 SKILL.mdが参照先script(inbox_write.sh, deploy_task.sh)より古い。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.sh WARNを解消する | infra | 06-02 | idle-persist/karo-direct/recon |
 | cmd_3132 | 将軍がshogun_to_karo.yamlにcmd起票時、q5記入済みだがq5_verified_source未記入というパターンをcmd_save.sh到達前に検知する。pre-write-edit-combined.shにquality_gateフィールド対チェックを追加し、片方だけ記入のパターンマッチ漏れを構造的に防止する | infra | 06-02 | pre-write/edit hookでquality_ga |
+| cmd_3135 | cmd_3132でL4(pre-edit WARN)を実装したが、L6(学習速度最大化)が未接続。cmd_save.shのSession Stateにq5/q5_verified_source対フィールドの片方欠落パターンを累計追跡し、再発時に検出ロジックを自動表示する | infra | 06-02 | cmd_save.shのSession Stateにq5/q |
