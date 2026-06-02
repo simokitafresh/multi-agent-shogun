@@ -145,6 +145,20 @@ def main():
     result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
     result['TEST_TRIAGE'] = str(report.get('test_triage', '') or '').strip()
 
+    # ── 2b2. waive_reason×commit_hash矛盾検出 (GP-248) ───────────────
+    # commit bc:no + waive_reason付き だが commit_hash非空 → 矛盾WARN
+    commit_hash = str(report.get('commit_hash', '') or '').strip()
+    waive_commit_contradiction = ''
+    if isinstance(report_bc, dict):
+        for check_item in (report_bc.get('commit') or []):
+            if not isinstance(check_item, dict):
+                continue
+            res = str(check_item.get('result', '')).strip().lower()
+            waive = str(check_item.get('waive_reason', '')).strip()
+            if res == 'no' and waive and commit_hash:
+                waive_commit_contradiction = f'bc commit:no(waive={waive!r}) but commit_hash={commit_hash[:12]} exists'
+    result['WAIVE_COMMIT_CONTRADICTION'] = waive_commit_contradiction
+
     # ── 2c. ac_version照合 → ac_version_mismatch BLOCK予防 ─────────────
     ac_ver_msg = '  SKIP: task YAML not loaded'
     if task_file and os.path.exists(task_file):

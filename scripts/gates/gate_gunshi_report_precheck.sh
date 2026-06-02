@@ -239,6 +239,12 @@ fi
 # ─── SG-PRE9: binary_checks result:no → gate_prediction BLOCK予告 (GP-193) ───
 print_sg_pre9
 
+# ─── SG-PRE9b: waive_reason×commit_hash矛盾検出 (GP-248) ───
+if [ -n "${WAIVE_COMMIT_CONTRADICTION:-}" ]; then
+    echo "  ★★★ WARN: ${WAIVE_COMMIT_CONTRADICTION}"
+    echo "  → waive_reasonが事実と矛盾。commit存在するのにbc commit:no。FAILが正しい可能性"
+fi
+
 # ─── SG-PRE10: ac_version照合 ───
 echo ""
 echo "■ SG-PRE10: ac_version照合"
