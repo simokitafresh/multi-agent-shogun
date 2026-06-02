@@ -57,12 +57,65 @@ def queued_items() -> list[Path]:
     return sorted(QUEUE_DIR.glob("*.json"))[: max(DRAIN_LIMIT, 0)]
 
 
+def coalesce_queue() -> None:
+    """Drop stale queued updates that are superseded by a later same-object event."""
+    if not QUEUE_DIR.is_dir():
+        return
+
+    latest_by_key: dict[tuple[str, str], Path] = {}
+    stale: list[Path] = []
+    for path in sorted(QUEUE_DIR.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            args = payload.get("args")
+            if not isinstance(args, list) or not args:
+                continue
+            event_type = args[0]
+            key_value = ""
+            if event_type == "report" and "--report-path" in args:
+                key_value = args[args.index("--report-path") + 1]
+            elif event_type == "bulletin" and "--entry-id" in args:
+                key_value = args[args.index("--entry-id") + 1]
+            elif event_type == "inbox" and "--message-id" in args:
+                key_value = args[args.index("--message-id") + 1]
+            elif event_type == "gate" and "--gate-name" in args and "--cmd-id" in args:
+                key_value = f"{args[args.index('--gate-name') + 1]}:{args[args.index('--cmd-id') + 1]}"
+            else:
+                continue
+            key = (event_type, key_value)
+            previous = latest_by_key.get(key)
+            if previous is not None:
+                stale.append(previous)
+            latest_by_key[key] = path
+        except Exception:
+            continue
+
+    for path in stale:
+        path.unlink(missing_ok=True)
+
+
+def source_file_is_ephemeral(args: list[str]) -> bool:
+    if "--source-file" not in args:
+        return False
+    if os.environ.get("SHOGUN_MEMORY_DB"):
+        return False
+    try:
+        source_file = Path(args[args.index("--source-file") + 1])
+    except (IndexError, TypeError):
+        return False
+    return str(source_file).startswith("/tmp/")
+
+
 def drain_queue() -> None:
+    coalesce_queue()
     for path in queued_items():
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
             args = payload.get("args")
             if not isinstance(args, list) or not all(isinstance(item, str) for item in args):
+                path.unlink(missing_ok=True)
+                continue
+            if source_file_is_ephemeral(args):
                 path.unlink(missing_ok=True)
                 continue
             if run_insert(args):

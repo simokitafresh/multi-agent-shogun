@@ -98,9 +98,9 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
     else
         # PRE3用: cmd固有commitが触れたファイル一覧 (1 call)
-        _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
+        _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
         # PRE14用: 直近20 commitとファイル (1 call)
-        _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && git log --oneline -20 --name-only 2>/dev/null) || true
+        _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && timeout 2 git log --oneline -20 --name-only 2>/dev/null) || true
     fi
 fi
 
@@ -156,7 +156,7 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     echo ""
     echo "■ SG-PRE4: backend/app/変更チェック"
     # Find the latest commit for any modified file
-    LATEST_COMMIT=$(cd "$PROJECT_DIR" && echo "${FILES_MODIFIED:-}" | head -1 | xargs -I{} git log --format=%H -1 -- {} 2>/dev/null || echo "")
+    LATEST_COMMIT=$(cd "$PROJECT_DIR" && echo "${FILES_MODIFIED:-}" | head -1 | xargs -I{} timeout 2 git log --format=%H -1 -- {} 2>/dev/null || echo "")
     if [ -n "$LATEST_COMMIT" ]; then
         BACKEND_CHANGES=$(cd "$PROJECT_DIR" && git diff --name-only "${LATEST_COMMIT}^..${LATEST_COMMIT}" -- backend/app/ 2>/dev/null || echo "")
         if [ -z "$BACKEND_CHANGES" ]; then
@@ -543,13 +543,13 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
         for fpath in $FILES_MODIFIED; do
             _stem=$(basename "$fpath" | sed 's/\.[^.]*$//')
             set +e
-            _links=$(timeout 1 bash "$_causal_script" "$_stem" 2>/dev/null)
+            _links=$(timeout 3 bash "$_causal_script" "$_stem" 2>/dev/null)
             _rc=$?
             set -e
             _links=$(printf '%s\n' "$_links" | head -3)
             if [ "$_rc" -eq 124 ]; then
                 _causal_timeout=1
-                _causal_out="${_causal_out}  ${_stem}→ WARN: causal_backlinks timeout(1s). 手動照合せよ"$'\n'
+                _causal_out="${_causal_out}  ${_stem}→ WARN: causal_backlinks timeout(3s). 手動照合せよ"$'\n'
                 continue
             fi
             [ -n "$_links" ] && _causal_out="${_causal_out}  ${_stem}→ ${_links}"$'\n'

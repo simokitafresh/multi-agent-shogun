@@ -141,6 +141,34 @@ prepare_memory_db_for_read() {
         return 0
     fi
 
+    if [ -s "$cache_path" ]; then
+        (
+            flock -n 9 2>/dev/null || exit 0
+            tmp_path="${cache_path}.tmp.$$"
+            rm -f "$tmp_path" 2>/dev/null || true
+            cp "$source_path" "$tmp_path" 2>/dev/null || exit 0
+            if [ -f "${source_path}-wal" ]; then
+                cp "${source_path}-wal" "${tmp_path}-wal" 2>/dev/null || true
+            else
+                rm -f "${cache_path}-wal" 2>/dev/null || true
+            fi
+            if [ -f "${source_path}-shm" ]; then
+                cp "${source_path}-shm" "${tmp_path}-shm" 2>/dev/null || true
+            else
+                rm -f "${cache_path}-shm" 2>/dev/null || true
+            fi
+            mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
+            if [ -f "${tmp_path}-wal" ]; then
+                mv "${tmp_path}-wal" "${cache_path}-wal" 2>/dev/null || rm -f "${tmp_path}-wal"
+            fi
+            if [ -f "${tmp_path}-shm" ]; then
+                mv "${tmp_path}-shm" "${cache_path}-shm" 2>/dev/null || rm -f "${tmp_path}-shm"
+            fi
+        ) 9>"$lock_path" &
+        printf '%s\n' "$cache_path"
+        return 0
+    fi
+
     (
         flock 9 2>/dev/null || exit 0
         if [ ! -s "$cache_path" ] || [ "$source_path" -nt "$cache_path" ]; then

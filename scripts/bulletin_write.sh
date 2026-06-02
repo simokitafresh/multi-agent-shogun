@@ -276,7 +276,8 @@ printf '%s\n' "$WRITE_RESULT"
 
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
-    python3 "$MEMORY_DB_LIVE_INSERT" bulletin \
+    _memory_db_insert_cmd=(
+        python3 "$MEMORY_DB_LIVE_INSERT" bulletin
         --entry-id "$WRITE_RESULT" \
         --ts "$POSTED_AT" \
         --agent "$POSTED_BY" \
@@ -285,9 +286,14 @@ if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         --action-type "$ACTION_TYPE" \
         --actioned-by "" \
         --status "open" \
-        --source-file "$BULLETIN_FILE" \
-        >/dev/null 2>&1 &
-    disown 2>/dev/null || true
+        --source-file "$BULLETIN_FILE"
+    )
+    if [[ "${MEMORY_DB_LIVE_INSERT_SYNC:-0}" == "1" ]]; then
+        "${_memory_db_insert_cmd[@]}" >/dev/null 2>&1 || true
+    else
+        "${_memory_db_insert_cmd[@]}" >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
 fi
 
 if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then

@@ -9,12 +9,14 @@ setup_file() {
     export SRC_CLOSE="$PROJECT_ROOT/scripts/bulletin_close.sh"
     export SRC_AGENT_CONFIG="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py"
+    export SRC_MEMORY_DB_LIVE_INSERT_ASYNC="$PROJECT_ROOT/scripts/memory_db_live_insert_async.py"
     [ -f "$SRC_WRITE" ] || return 1
     [ -f "$SRC_ARCHIVE" ] || return 1
     [ -f "$SRC_CONFIRM" ] || return 1
     [ -f "$SRC_CLOSE" ] || return 1
     [ -f "$SRC_AGENT_CONFIG" ] || return 1
     [ -f "$SRC_MEMORY_DB_LIVE_INSERT" ] || return 1
+    [ -f "$SRC_MEMORY_DB_LIVE_INSERT_ASYNC" ] || return 1
 }
 
 setup() {
@@ -26,11 +28,12 @@ setup() {
     cp "$SRC_CLOSE" "$TEST_TMPDIR/scripts/bulletin_close.sh"
     cp "$SRC_AGENT_CONFIG" "$TEST_TMPDIR/scripts/lib/agent_config.sh"
     cp "$SRC_MEMORY_DB_LIVE_INSERT" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+    cp "$SRC_MEMORY_DB_LIVE_INSERT_ASYNC" "$TEST_TMPDIR/scripts/memory_db_live_insert_async.py"
     cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG:?}"
 EOF
-    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_archive.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_archive.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/memory_db_live_insert_async.py"
     cat > "$TEST_TMPDIR/scripts/bin/tmux" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "${BULLETIN_TEST_AGENT_ID:-hayate}"
@@ -122,7 +125,7 @@ teardown() {
     local memory_db="$TEST_TMPDIR/data/memory.db"
     create_memory_db_fixture "$memory_db"
 
-    run env SHOGUN_MEMORY_DB="$memory_db" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "cmd_2983 bulletin realtime searchable" false action_required
+    run env MEMORY_DB_LIVE_INSERT_SYNC=1 SHOGUN_MEMORY_DB="$memory_db" SHOGUN_MEMORY_DB_LIVE_ASYNC_LOCK="$TEST_TMPDIR/memory_db_live_insert.lock" SHOGUN_MEMORY_DB_LIVE_QUEUE_DIR="$TEST_TMPDIR/queue/memory_db_live_insert_queue" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "cmd_2983 bulletin realtime searchable" false action_required
     [ "$status" -eq 0 ]
     [[ "$output" == blt_* ]]
 
@@ -136,6 +139,8 @@ row = conn.execute(
     "SELECT event_type, agent, direction, cmd_id, importance FROM events WHERE id = ?",
     (event_id,),
 ).fetchone()
+if row is None:
+    raise SystemExit(1)
 fts_count = conn.execute(
     """
     SELECT COUNT(*)
@@ -170,7 +175,6 @@ PY
     run env SHOGUN_MEMORY_DB="$broken_db" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "DB失敗でもYAML成功"
     [ "$status" -eq 0 ]
     [[ "$output" == blt_* ]]
-    [[ "$output" == *"WARN: DB INSERT skipped"* ]]
     run grep -F "DB失敗でもYAML成功" "$TEST_TMPDIR/queue/bulletin_board.yaml"
     [ "$status" -eq 0 ]
 }

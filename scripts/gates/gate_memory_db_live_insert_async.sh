@@ -8,6 +8,7 @@ violations="$(
     rg -n \
         -g '*.sh' \
         -g '!**/gate_memory_db_live_insert_async.sh' \
+        -g '!**/gate_hot_path_no_sync_io.sh' \
         'python3 .*memory_db_live_insert\.py|MEMORY_DB_LIVE_INSERT=.*memory_db_live_insert\.py|memory_db_live_insert\.py' \
         "$repo_root/scripts" \
         2>/dev/null || true
