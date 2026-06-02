@@ -779,8 +779,8 @@ answer_terms = (
     "殿のため", "Anthropicのため", "コスト最適化",
 )
 prompt_only_terms = ("Q6:", "洗脳8パターン", "1つ具体例で答えよ")
-empty_target_re = re.compile(r"自動化ターゲット\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
-target_re = re.compile(r"自動化ターゲット\s*[:：]\s*(.+)", re.I)
+empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
+target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(.+)", re.I)
 found_answer = False
 found_automation_target = False
 automation_target = ""

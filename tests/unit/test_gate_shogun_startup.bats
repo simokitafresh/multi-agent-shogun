@@ -318,6 +318,30 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 automation target accepts markdown bold label → 総合判定: OK" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。**自動化ターゲット**: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "Q6 empty automation target accepts markdown bold label → same alert key" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データで検証する。**自動化ターゲット**: なし"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
+    [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons:
