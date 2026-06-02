@@ -219,7 +219,7 @@ EOF
     run _run_command_files_modified_coverage_with_state
     [ "$status" -eq 0 ]
     [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
-    [[ "$output" == *"missing: scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" != *"missing: scripts/cmd_complete_gate.sh"* ]]
     [[ "$output" == *"missing: scripts/stop_check_inbox.sh"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
@@ -238,6 +238,41 @@ EOF
     [[ "$output" == *"OK (command欄ファイル参照 全2件がfiles_modifiedに記載済み)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage accepts abbreviated test name by substring match" {
+    mkdir -p "$TEST_PROJECT/tests/unit"
+    touch "$TEST_PROJECT/tests/unit/test_semantic_index_update.bats"
+
+    _write_command_coverage_fixture \
+        "semantic_index_updateテストを高速化" \
+        "  - file: tests/unit/test_semantic_index_update.bats
+    change: modified" \
+        "tests/unit"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage blocks unrelated file despite substring mode" {
+    mkdir -p "$TEST_PROJECT/tests/unit"
+    touch "$TEST_PROJECT/tests/unit/test_semantic_index_update.bats"
+
+    _write_command_coverage_fixture \
+        "semantic_index_updateテストを高速化" \
+        "  - file: tests/unit/test_unrelated.bats
+    change: modified" \
+        "tests/unit"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: semantic_index_update"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
 @test "command/files_modified coverage ignores read-only command refs when write target is reported" {

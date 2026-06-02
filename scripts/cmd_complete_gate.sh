@@ -4085,9 +4085,9 @@ collect_report_modified_files() {
         awk '
             /^files_modified:/ { in_files=1; next }
             in_files && /^[^[:space:]-]/ { in_files=0 }
-            in_files && /path:/ {
+            in_files && /^[[:space:]-]*(path|file):/ {
                 v=$0
-                sub(/.*path:[[:space:]]*/, "", v)
+                sub(/.*(path|file):[[:space:]]*/, "", v)
                 gsub(/^["'"'"']+|["'"'"']+$/, "", v)
                 if (v != "") print v
             }
@@ -4098,13 +4098,15 @@ collect_report_modified_files() {
 collect_cmd_command_file_refs() {
     local cmd_id="$1"
 
-    CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" python3 - <<'PY' 2>/dev/null || true
+    CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY' 2>/dev/null || true
+import glob
 import os
 import re
 import yaml
 
 cmd_id = os.environ.get("CMD_ID_ENV", "")
 yaml_file = os.environ.get("YAML_FILE_ENV", "")
+script_dir = os.environ.get("SCRIPT_DIR_ENV", "")
 
 try:
     with open(yaml_file, encoding="utf-8") as f:
@@ -4169,6 +4171,23 @@ def ref_matches_target(ref, target):
         return True
     return os.path.basename(ref) == os.path.basename(target)
 
+def token_has_target_file(token):
+    if not script_dir or not target_paths:
+        return False
+    candidates = []
+    for target in target_paths:
+        clean_target = target.strip().strip("./")
+        if not clean_target:
+            continue
+        target_abs = clean_target if os.path.isabs(clean_target) else os.path.join(script_dir, clean_target)
+        if os.path.isdir(target_abs):
+            candidates.extend(glob.glob(os.path.join(target_abs, f"*{token}*.*")))
+        else:
+            base = os.path.basename(target_abs)
+            if token in base:
+                return True
+    return any(os.path.isfile(path) for path in candidates)
+
 matches = list(pattern.finditer(command))
 seen = set()
 refs = []
@@ -4201,6 +4220,16 @@ for idx, match in enumerate(matches):
         write_pos < 0 or next_ref_before_write
     )
     refs.append((ref, readonly_ref))
+
+token_pattern = re.compile(r"(?<![A-Za-z0-9_./-])([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?![A-Za-z0-9_./-])")
+for match in token_pattern.finditer(command):
+    ref = match.group(1).strip()
+    if not ref or ref in seen:
+        continue
+    if not token_has_target_file(ref):
+        continue
+    seen.add(ref)
+    refs.append((ref, False))
 
 target_refs = []
 if target_paths:
@@ -4242,16 +4271,22 @@ check_command_files_modified_coverage() {
     fi
 
     local missing_count=0 total_count=0 missing_list=""
-    local ref modified matched ref_base modified_base
+    local ref modified matched ref_base modified_base ref_stem modified_stem
     while IFS= read -r ref; do
         [ -z "$ref" ] && continue
         total_count=$((total_count + 1))
         ref_base="$(basename "$ref")"
+        ref_stem="${ref_base%.*}"
         matched=false
         while IFS= read -r modified; do
             [ -z "$modified" ] && continue
             modified_base="$(basename "$modified")"
-            if [ "$modified" = "$ref" ] || [[ "$modified" == */"$ref" ]] || [ "$modified_base" = "$ref_base" ]; then
+            modified_stem="${modified_base%.*}"
+            if [ "$modified" = "$ref" ] \
+                || [[ "$modified" == */"$ref" ]] \
+                || [ "$modified_base" = "$ref_base" ] \
+                || [[ "$modified_base" == *"$ref_base"* ]] \
+                || [[ "$modified_stem" == *"$ref_stem"* ]]; then
                 matched=true
                 break
             fi
