@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-02 -->
+<!-- last_updated: 2026-06-02 cmd_3137 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -530,3 +530,4 @@
 | cmd_3129 | idle-persist/karo-direct/recon-dual の3 SKILL.mdが参照先script(inbox_write.sh, deploy_task.sh)より古い。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.sh WARNを解消する | infra | 06-02 | idle-persist/karo-direct/recon |
 | cmd_3132 | 将軍がshogun_to_karo.yamlにcmd起票時、q5記入済みだがq5_verified_source未記入というパターンをcmd_save.sh到達前に検知する。pre-write-edit-combined.shにquality_gateフィールド対チェックを追加し、片方だけ記入のパターンマッチ漏れを構造的に防止する | infra | 06-02 | pre-write/edit hookでquality_ga |
 | cmd_3135 | cmd_3132でL4(pre-edit WARN)を実装したが、L6(学習速度最大化)が未接続。cmd_save.shのSession Stateにq5/q5_verified_source対フィールドの片方欠落パターンを累計追跡し、再発時に検出ロジックを自動表示する | infra | 06-02 | cmd_save.shのSession Stateにq5/q |
+| cmd_3136 | 教訓有効率34.6%(startup WARN)の根因。L4555の_universal_without_target_files_is_relevant()がtarget_files存在時に_target_files_matchを迂回してTrue返却→無関係教訓が全cmdに注入される。NOT_USEFUL 95件中の大部分がこの経路。1行修正で教訓注入精度を大幅改善 | infra | 06-02 | _universal_without_target_file |
