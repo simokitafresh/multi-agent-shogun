@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-02 cmd_3115 -->
+<!-- last_updated: 2026-06-02 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -518,3 +518,6 @@
 | cmd_3113 | memory_db_import.py L839-865のCJK LIKEフォールバックが長文クエリで部分文字列マッチしない。文字種境界分割でクエリを短いトークンに分解し、各トークンのAND LIKE検索に変更して長文でもヒットさせる。記憶DB検索品質向上 | infra | 06-02 | CJK長文検索を文字種境界トークンのAND LIKEへ変更し |
 | cmd_3114 | 将軍がcmd_idなしのtype=cmd_newをinbox_writeで送信するとcmd_new_gateをバイパスし、品質gate/軍師レビュー/教訓サイクルを全スキップする穴がある。L0-L7の全レベルで封鎖する | infra | 06-02 | cmd_idなしshogun cmd_newをL4 BLOC |
 | cmd_3116 | memory_db_live_insert.pyの全関数でconcepts='[]'ハードコード。学習ループ出力(報告/gate/教訓/workaround)8185件が概念空間に未接続。軽量キャッシュ辞書でlive_insert時に概念付与し横断検索可能にする | infra | 06-02 | memory_db_live_insertのlive挿入でs |
+| cmd_3117 | live_insertの概念付与入力テキストがevent_type別に品質差大。report=フィールド名メタデータ(充填0.8%)、cmd_delegate=定型文(4.7%)。concept_textにcmd title/purposeを逆引き注入し意味密度を向上 | infra | 06-02 | memory_db_live_insertの概念抽出にcmd |
+| cmd_3120 | 軍師startup gateのWARN表示→推薦行動が人間依存(L2)。idle活動率5.4%(37件中2件)。WARN検出→対応するidle自走ステップを自動実行指示をpromptに注入し、WARNを見て判断する工程を排除(L4化) | infra | 06-02 | 軍師startup gateのWARN/ALERTをidle |
+| cmd_3118 | 記憶DB 67456件中31617件(46.9%)が概念空。cmd_3116/3117は新規INSERT改善だが歴史データは空のまま。memory_db_import.pyのconcepts_for_text()で既存データを一括backfill | infra | 06-02 | events.concepts空履歴31636件をbackf |
