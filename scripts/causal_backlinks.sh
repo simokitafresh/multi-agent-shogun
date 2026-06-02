@@ -38,23 +38,37 @@ fi
 
 needle="[[$id]]"
 
+SEARCH_PATHS=(
+    AGENTS.md
+    instructions
+    context
+    projects
+    skills
+    scripts
+    docs/research
+    tasks
+)
+
+existing_search_paths=()
+for path in "${SEARCH_PATHS[@]}"; do
+    if [ -e "$SCRIPT_DIR/$path" ]; then
+        existing_search_paths+=("$path")
+    fi
+done
+
 if [ "$DETAIL" -eq 1 ]; then
     # Show file path + origin/causal_chain context
     rg --fixed-strings --hidden -n \
         --glob '!.git/**' \
-        --glob '!queue/archive/**' \
-        --glob '!archive/**' \
         --glob '!node_modules/**' \
         --glob '!__pycache__/**' \
-        "$needle" . 2>/dev/null | grep -E 'origin:|causal_chain:|→ \[\[' | head -20
+        "$needle" "${existing_search_paths[@]}" 2>/dev/null | grep -E 'origin:|causal_chain:|→ \[\[' | head -20
 else
     rg -l --fixed-strings --hidden \
         --glob '!.git/**' \
-        --glob '!queue/archive/**' \
-        --glob '!archive/**' \
         --glob '!node_modules/**' \
         --glob '!__pycache__/**' \
-        "$needle" . 2>/dev/null
+        "$needle" "${existing_search_paths[@]}" 2>/dev/null
 fi
 
 # Semantic concept reverse lookup

@@ -61,7 +61,7 @@ fi
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""
 echo "■ SG-PRE1: gate_report_format.sh"
-if SHOGUN_DISABLE_MEMORY_DB_CACHE=1 bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
+if GATE_NO_LOG=1 SHOGUN_DISABLE_MEMORY_DB_CACHE=1 bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
     echo "  PASS"
 else
     echo "  FAIL — フォーマット不備あり。詳細は上記出力参照"
@@ -88,7 +88,7 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
             [ -z "$_hash" ] && continue
             _PRE_CMD_FILES+="$(
                 cd "${PROJECT_DIR:-$REPO_ROOT}" \
-                    && git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null
+                    && timeout 2 git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null
             )"$'\n'
             _PRE_RECENT_DATA+="$(
                 cd "$REPO_ROOT" \
@@ -289,8 +289,8 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
         case "$fpath" in
             *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
                 # git diff --statで変更規模を確認
-                added=$(git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{a+=$1}END{print a+0}')
-                deleted=$(git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null | awk '{d+=$2}END{print d+0}')
+                added=$({ timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | awk '{a+=$1}END{print a+0}')
+                deleted=$({ timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | awk '{d+=$2}END{print d+0}')
                 if [ "$deleted" -gt 0 ]; then
                     total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数
                     delete_ratio=$((deleted * 100 / total_before))
@@ -447,23 +447,49 @@ TOTAL_ADDED=0
 TOTAL_DELETED=0
 if [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
-        _NUMSTAT_DATA=""
-        while IFS= read -r _hash; do
-            [ -z "$_hash" ] && continue
-            _NUMSTAT_DATA+="$(
-                git -C "$REPO_ROOT" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true
-            )"$'\n'
-            if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
-                _NUMSTAT_DATA+="$(
-                    git -C "/mnt/c/Python_app/DM-Signal" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true
-                )"$'\n'
-            fi
-        done <<< "$_REPORT_HASHES"
-        while IFS=$'\t' read -r added deleted _; do
-            [[ "$added" == "-" || -z "$added" ]] && continue
-            TOTAL_ADDED=$((TOTAL_ADDED + added))
-            TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-        done <<< "$_NUMSTAT_DATA"
+        _changed_counts=$(
+            REPORT_HASHES="$_REPORT_HASHES" \
+            REPO_ROOT="$REPO_ROOT" \
+            IS_DM_SIGNAL="${IS_DM_SIGNAL:-0}" \
+            python3 - <<'PY'
+import os
+import subprocess
+
+repos = [os.environ["REPO_ROOT"]]
+if os.environ.get("IS_DM_SIGNAL") == "1" and os.path.isdir("/mnt/c/Python_app/DM-Signal/.git"):
+    repos.append("/mnt/c/Python_app/DM-Signal")
+
+added_total = 0
+deleted_total = 0
+for commit_hash in os.environ.get("REPORT_HASHES", "").splitlines():
+    commit_hash = commit_hash.strip()
+    if not commit_hash:
+        continue
+    for repo in repos:
+        try:
+            proc = subprocess.run(
+                ["git", "-C", repo, "diff-tree", "--no-commit-id", "--numstat", "-r", commit_hash],
+                text=True,
+                capture_output=True,
+                timeout=2,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            continue
+        for line in proc.stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) < 2 or parts[0] == "-" or parts[1] == "-":
+                continue
+            try:
+                added_total += int(parts[0])
+                deleted_total += int(parts[1])
+            except ValueError:
+                continue
+print(f"{added_total} {deleted_total}")
+PY
+        )
+        TOTAL_ADDED="${_changed_counts%% *}"
+        TOTAL_DELETED="${_changed_counts##* }"
     else
         # shogunリポジトリ
         while IFS=$'\t' read -r added deleted _; do
