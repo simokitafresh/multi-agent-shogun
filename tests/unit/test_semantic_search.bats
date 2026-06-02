@@ -127,7 +127,19 @@ teardown() {
     [[ "$output" != *"should-not-run"* ]]
 }
 
-@test "unmatched first layer falls back to LLM and resolves resources" {
+@test "unmatched first layer does not use LLM by default" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "品質を伸ばす輪"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NO_MATCH: 品質を伸ばす輪"* ]]
+    [[ "$output" == *"WARN: LLM fallback disabled by default"* ]]
+    [[ "$output" != *"LLM_MATCH"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "explicit env allows unmatched first layer to fall back to LLM and resolve resources" {
     mock_llm="$TEST_TMPDIR/mock_llm.sh"
     cat > "$mock_llm" <<'EOF'
 #!/usr/bin/env bash
@@ -138,6 +150,7 @@ echo "alias candidate: 品質を伸ばす輪"
 EOF
     chmod +x "$mock_llm"
     export SEMANTIC_LLM_CMD="$mock_llm"
+    export SEMANTIC_ENABLE_LLM_FALLBACK=1
 
     run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "品質を伸ばす輪"
 
@@ -277,6 +290,32 @@ EOF
     export SEMANTIC_MEMORY_DB_PATH="$db_path"
     unset SEMANTIC_DISABLE_MEMORY_DB
     export SEMANTIC_MEMORY_DB_TIMEOUT=1
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN: memory DB FTS fallback timed out after 1s"* ]]
+    [[ "$output" == *"NO_MATCH: foobarmemoryonly"* ]]
+    [[ "$output" == *"WARN: LLM fallback disabled by default"* ]]
+    [[ "$output" != *"LLM_MATCH"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "memory DB fallback timeout can use LLM only when explicitly enabled" {
+    db_path="$TEST_TMPDIR/data/memory.db"
+    mkdir -p "$TEST_TMPDIR/data" "$TEST_TMPDIR/bin"
+    : > "$db_path"
+    cat > "$TEST_TMPDIR/bin/timeout" <<'EOF'
+#!/usr/bin/env bash
+exit 124
+EOF
+    chmod +x "$TEST_TMPDIR/bin/timeout"
+    export PATH="$TEST_TMPDIR/bin:$PATH"
+    export SEMANTIC_MEMORY_DB_PATH="$db_path"
+    unset SEMANTIC_DISABLE_MEMORY_DB
+    export SEMANTIC_MEMORY_DB_TIMEOUT=1
+    export SEMANTIC_ENABLE_LLM_FALLBACK=1
     export SEMANTIC_LLM_CMD="bash -c 'cat >/dev/null; echo MATCH: growth_loop'"
 
     run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "foobarmemoryonly"
@@ -314,6 +353,8 @@ EOF
     [[ "$output" == *"seed_concepts: semantic_dictionary_design, growth_loop"* ]]
     [[ "$output" == *"expanded_concepts: cmd_related_step"* ]]
     [[ "$output" == *"concept bridge"* ]]
+    [[ "$output" == *"causal_path:"* ]]
+    [[ "$output" == *"links: [[cmd_related_step]] -> [[semantic_dictionary_design]]"* || "$output" == *"links: [[semantic_dictionary_design]] -> [[cmd_related_step]]"* ]]
     [[ "$output" != *"should-not-run"* ]]
 }
 
@@ -340,7 +381,7 @@ EOF
 @test "LLM command failure preserves the original exit status" {
     export SEMANTIC_LLM_CMD="exit 7"
 
-    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "未知の問い"
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" --llm "未知の問い"
 
     [ "$status" -eq 7 ]
     [[ "$output" == *"ERROR: LLM semantic search failed with exit code 7"* ]]
@@ -360,12 +401,12 @@ EOF
     chmod +x "$mock_llm"
     export SEMANTIC_LLM_CMD="$mock_llm"
 
-    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "キャッシュ確認"
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" --llm "キャッシュ確認"
     [ "$status" -eq 0 ]
     [[ "$output" == *"## growth_loop"* ]]
     [ "$(wc -l < "$counter_file")" -eq 1 ]
 
-    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "キャッシュ確認"
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" --llm "キャッシュ確認"
     [ "$status" -eq 0 ]
     [[ "$output" == *"## growth_loop"* ]]
     [ "$(wc -l < "$counter_file")" -eq 1 ]
@@ -385,9 +426,9 @@ EOF
     chmod +x "$mock_llm"
     export SEMANTIC_LLM_CMD="$mock_llm"
 
-    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "再呼出し確認"
+    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" --llm "再呼出し確認"
     [ "$status" -eq 0 ]
-    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "再呼出し確認"
+    SEMANTIC_NO_CACHE=1 run bash "$PROJECT_ROOT/scripts/semantic_search.sh" --llm "再呼出し確認"
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$counter_file")" -eq 2 ]
 }

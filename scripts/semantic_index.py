@@ -471,31 +471,6 @@ def memory_db_fts_concept_rank_rows(
 
         event_ids = [str(row["id"]) for row in rows]
         event_sql = placeholders(event_ids)
-        concept_counts = {
-            str(row["concept_name"]): int(row["doc_count"])
-            for row in conn.execute(
-                f"""
-                SELECT concept_name, COUNT(DISTINCT event_id) AS doc_count
-                FROM event_concepts
-                GROUP BY concept_name
-                """
-            )
-        }
-        concept_timestamps: dict[str, list[object]] = {concept: [] for concept in concept_counts}
-        for row in conn.execute(
-            """
-            SELECT ec.concept_name, e.ts
-            FROM event_concepts AS ec
-            JOIN events AS e
-              ON e.id = ec.event_id
-            """
-        ):
-            concept_timestamps.setdefault(str(row["concept_name"]), []).append(row["ts"])
-        recency_weights = iqr_scaled_recency_weights(concept_timestamps)
-        debug_recency = env_flag("SEMANTIC_RECENCY_DEBUG")
-        recency_diagnostics = (
-            recency_distribution_diagnostics(concept_timestamps) if debug_recency else {}
-        )
         concept_rows = list(
             conn.execute(
                 f"""
@@ -506,6 +481,44 @@ def memory_db_fts_concept_rank_rows(
                 """,
                 event_ids,
             )
+        )
+        matched_concepts = sorted({str(row["concept_name"]) for row in concept_rows})
+        if not matched_concepts:
+            return [], total_events, {
+                "matched_event_count": len(rows),
+                "matched_document_count": sum(1 for row in rows if row["event_type"] == "document"),
+                "matched_concept_count": 0,
+            }
+
+        matched_concept_sql = placeholders(matched_concepts)
+        concept_counts = {
+            str(row["concept_name"]): int(row["doc_count"])
+            for row in conn.execute(
+                f"""
+                SELECT concept_name, COUNT(DISTINCT event_id) AS doc_count
+                FROM event_concepts
+                WHERE concept_name IN ({matched_concept_sql})
+                GROUP BY concept_name
+                """,
+                matched_concepts,
+            )
+        }
+        concept_timestamps: dict[str, list[object]] = {concept: [] for concept in matched_concepts}
+        for row in conn.execute(
+            f"""
+            SELECT ec.concept_name, e.ts
+            FROM event_concepts AS ec
+            JOIN events AS e
+              ON e.id = ec.event_id
+            WHERE ec.concept_name IN ({matched_concept_sql})
+            """,
+            matched_concepts,
+        ):
+            concept_timestamps.setdefault(str(row["concept_name"]), []).append(row["ts"])
+        recency_weights = iqr_scaled_recency_weights(concept_timestamps)
+        debug_recency = env_flag("SEMANTIC_RECENCY_DEBUG")
+        recency_diagnostics = (
+            recency_distribution_diagnostics(concept_timestamps) if debug_recency else {}
         )
         link_rows = list(
             conn.execute(
@@ -520,30 +533,27 @@ def memory_db_fts_concept_rank_rows(
         )
         lord_conversation_stats = {}
         if debug_recency:
-            matched_concepts = sorted({str(row["concept_name"]) for row in concept_rows})
-            if matched_concepts:
-                matched_concept_sql = placeholders(matched_concepts)
-                lord_conversation_stats = {
-                    str(row["concept_name"]): {
-                        "count": int(row["occurrence_count"]),
-                        "latest_ts": str(row["latest_ts"] or ""),
-                    }
-                    for row in conn.execute(
-                        f"""
-                        SELECT
-                            ec.concept_name,
-                            COUNT(DISTINCT ec.event_id) AS occurrence_count,
-                            MAX(e.ts) AS latest_ts
-                        FROM event_concepts AS ec
-                        JOIN events AS e
-                          ON e.id = ec.event_id
-                        WHERE ec.concept_name IN ({matched_concept_sql})
-                          AND e.source_file LIKE '%lord_conversation%'
-                        GROUP BY ec.concept_name
-                        """,
-                        matched_concepts,
-                    )
+            lord_conversation_stats = {
+                str(row["concept_name"]): {
+                    "count": int(row["occurrence_count"]),
+                    "latest_ts": str(row["latest_ts"] or ""),
                 }
+                for row in conn.execute(
+                    f"""
+                    SELECT
+                        ec.concept_name,
+                        COUNT(DISTINCT ec.event_id) AS occurrence_count,
+                        MAX(e.ts) AS latest_ts
+                    FROM event_concepts AS ec
+                    JOIN events AS e
+                      ON e.id = ec.event_id
+                    WHERE ec.concept_name IN ({matched_concept_sql})
+                      AND e.source_file LIKE '%lord_conversation%'
+                    GROUP BY ec.concept_name
+                    """,
+                    matched_concepts,
+                )
+            }
 
     concepts_by_event: dict[str, list[str]] = {}
     for row in concept_rows:
@@ -612,6 +622,7 @@ def memory_db_fts_concept_rank_rows(
         ),
         "matched_event_count": len(rows),
         "matched_document_count": sum(1 for row in rows if row["event_type"] == "document"),
+        "matched_concept_count": len(matched_concepts),
         **recency_diagnostics,
     }
     return ranked, total_events, diagnostics

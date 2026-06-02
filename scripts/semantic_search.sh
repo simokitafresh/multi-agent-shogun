@@ -9,13 +9,16 @@ usage() {
 Usage: bash scripts/semantic_search.sh [--llm] <query>
 
 Search docs/semantic-index/index.md by concept label and aliases. If the
-first layer has no match, fall back to LLM semantic matching. Use --llm to
-skip the alias layer and run semantic matching directly.
+first layer has no match, fall back to memory DB FTS5 concept matching.
+Use --llm to skip the alias layer and run semantic matching directly.
 
 Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
   SEMANTIC_DISABLE_LLM Set to 1 to stop after the alias layer
+  SEMANTIC_ENABLE_LLM_FALLBACK
+                       Set to 1 to allow LLM after first-layer and memory DB
+                       fallback both miss. Default is 0.
   SEMANTIC_MEMORY_DB_PATH
                        Override data/multi_agent_shogun_memory.db for FTS fallback
   SEMANTIC_DISABLE_MEMORY_DB
@@ -305,6 +308,12 @@ fi
 
 if [ "$force_llm" = false ] && memory_db_search; then
     exit 0
+fi
+
+if [ "$force_llm" = false ] && [ "${SEMANTIC_ENABLE_LLM_FALLBACK:-0}" != "1" ]; then
+    echo "NO_MATCH: $query"
+    echo "WARN: LLM fallback disabled by default. Use --llm or SEMANTIC_ENABLE_LLM_FALLBACK=1 to enable semantic LLM matching." >&2
+    exit 1
 fi
 
 llm_search
