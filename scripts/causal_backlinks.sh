@@ -45,7 +45,7 @@ SEARCH_PATHS=(
     projects
     skills
     scripts
-    docs/research
+    docs
     tasks
 )
 

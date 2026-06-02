@@ -672,6 +672,9 @@ trigger_cmd_complete_gate_background() {
 
 record_inbox_event_to_memory_db() {
     local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
+    if [ ! -f "$live_insert_script" ]; then
+        live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+    fi
 
     [ -f "$live_insert_script" ] || return 0
 
@@ -684,8 +687,7 @@ record_inbox_event_to_memory_db() {
         --message-type "$TYPE" \
         --action "$ACTION" \
         --source-file "$INBOX" \
-        >/dev/null 2>&1 &
-    disown 2>/dev/null || true
+        >/dev/null
 }
 
 inbox_append_message_fast_locked() {

@@ -404,18 +404,27 @@ EOF
 EOF
         } >> "$LOG_FILE"
 
-        if [[ -f "$SCRIPT_DIR/memory_db_live_insert_async.py" ]]; then
-            python3 "$SCRIPT_DIR/memory_db_live_insert_async.py" \
-                workaround \
-                --cmd-id "$CMD_ID" \
-                --ts "$TIMESTAMP" \
-                --ninja "$NINJA_NAME" \
-                --category "$CATEGORY" \
-                --issue "$ISSUE" \
-                --root-cause "$FIX" \
-                --source-file "$LOG_FILE" \
-                >/dev/null 2>&1 &
-            disown 2>/dev/null || true
+        memory_db_live_insert="$SCRIPT_DIR/memory_db_live_insert_async.py"
+        if [[ ! -f "$memory_db_live_insert" ]]; then
+            memory_db_live_insert="$SCRIPT_DIR/memory_db_live_insert.py"
+        fi
+        if [[ -f "$memory_db_live_insert" ]]; then
+            memory_db_args=(
+                workaround
+                --cmd-id "$CMD_ID"
+                --ts "$TIMESTAMP"
+                --ninja "$NINJA_NAME"
+                --category "$CATEGORY"
+                --issue "$ISSUE"
+                --root-cause "$FIX"
+                --source-file "$LOG_FILE"
+            )
+            if [[ -n "${SHOGUN_MEMORY_DB:-}" ]]; then
+                python3 "$memory_db_live_insert" "${memory_db_args[@]}" >/dev/null 2>&1 || true
+            else
+                python3 "$memory_db_live_insert" "${memory_db_args[@]}" >/dev/null 2>&1 &
+                disown 2>/dev/null || true
+            fi
         fi
 
         # --- Alert mechanism (AC1: cmd_1211) ---

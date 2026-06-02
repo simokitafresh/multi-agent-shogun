@@ -17,6 +17,9 @@ SCRIPT_DIR="${_insight_self%/scripts/insight_write.sh}"
 INSIGHTS_FILE="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
 BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
+if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+  MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+fi
 SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
 # --resolve mode: mark insight as done
@@ -233,17 +236,25 @@ PYEOF
   echo "$result"
 
   if [[ "$result" == INS-* && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
-    python3 "$MEMORY_DB_LIVE_INSERT" insight \
-      --entry-id "$result" \
-      --ts "$ts" \
-      --insight "$msg" \
-      --priority "$priority" \
-      --source "$source_info" \
-      --status "$status" \
-      --resolved-at "$resolved_at" \
-      --source-file "$INSIGHTS_FILE" \
-      >/dev/null 2>&1 &
-    disown 2>/dev/null || true
+    memory_db_args=(
+      insight
+      --entry-id "$result"
+      --ts "$ts"
+      --insight "$msg"
+      --priority "$priority"
+      --source "$source_info"
+      --status "$status"
+      --resolved-at "$resolved_at"
+      --source-file "$INSIGHTS_FILE"
+    )
+    if [[ -n "${SHOGUN_MEMORY_DB:-}" ]]; then
+      if ! python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null; then
+        echo "WARN: insight DB INSERT skipped" >&2
+      fi
+    else
+      python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 &
+      disown 2>/dev/null || true
+    fi
   fi
 
   # Escalate repeated pending insights from the same source so important patterns

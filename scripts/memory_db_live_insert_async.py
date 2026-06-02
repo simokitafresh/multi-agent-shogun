@@ -38,7 +38,7 @@ def enqueue(args: list[str]) -> None:
 
 def run_insert(args: list[str]) -> bool:
     try:
-        subprocess.run(
+        completed = subprocess.run(
             [sys.executable, str(LIVE_INSERT), *args],
             cwd=str(REPO_ROOT),
             timeout=TIMEOUT_SECONDS,
@@ -46,7 +46,7 @@ def run_insert(args: list[str]) -> bool:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        return True
+        return completed.returncode == 0
     except subprocess.TimeoutExpired:
         return False
 
@@ -131,6 +131,8 @@ def drain_queue() -> None:
 def main(argv: list[str]) -> int:
     if not LIVE_INSERT.is_file():
         return 0
+    if os.environ.get("SHOGUN_MEMORY_DB"):
+        return 0 if run_insert(argv) else 1
 
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with LOCK_PATH.open("w", encoding="utf-8") as lock_handle:

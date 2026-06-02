@@ -275,6 +275,9 @@ fi
 printf '%s\n' "$WRITE_RESULT"
 
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
+if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
+fi
 if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
     _memory_db_insert_cmd=(
         python3 "$MEMORY_DB_LIVE_INSERT" bulletin
@@ -288,7 +291,7 @@ if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         --status "open" \
         --source-file "$BULLETIN_FILE"
     )
-    if [[ "${MEMORY_DB_LIVE_INSERT_SYNC:-0}" == "1" ]]; then
+    if [[ "${MEMORY_DB_LIVE_INSERT_SYNC:-0}" == "1" || -n "${SHOGUN_MEMORY_DB:-}" || ( "$SCRIPT_DIR" != /mnt/c/* && "$SCRIPT_DIR" != /mnt/d/* ) ]]; then
         "${_memory_db_insert_cmd[@]}" >/dev/null 2>&1 || true
     else
         "${_memory_db_insert_cmd[@]}" >/dev/null 2>&1 &

@@ -22,6 +22,9 @@ DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
 PROJECT_ID="${CMD_QUALITY_PROJECT:-}"
 MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$REPO_ROOT/scripts/memory_db_live_insert_async.py}"
+if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    MEMORY_DB_LIVE_INSERT="$REPO_ROOT/scripts/memory_db_live_insert.py"
+fi
 
 # --- Argument validation ---
 if [[ $# -lt 4 || $# -gt 5 ]]; then
@@ -267,20 +270,26 @@ EOF
 ) 200>"$LOCK_FILE"
 
 if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
-    python3 "$MEMORY_DB_LIVE_INSERT" cmd_quality \
-        --cmd-id "$CMD_ID" \
-        --ts "$TIMESTAMP" \
-        --gate-result "$GATE_RESULT" \
-        --karo-rework "$KARO_REWORK" \
-        --gunshi-verdict "$GUNSHI_VERDICT" \
-        --ninja-blockers "$NINJA_BLOCKERS" \
-        --ac-count "$AC_COUNT" \
-        --supplementary-cmds "$SUPPLEMENTARY_CMDS" \
-        --project "$PROJECT_ID" \
-        --source "$SOURCE_STAGE" \
-        --diagnosis "$DIAGNOSIS_TEXT" \
-        --notes "$NOTES" \
-        --source-file "${LOG_FILE#$REPO_ROOT/}" \
-        >/dev/null 2>&1 &
-    disown 2>/dev/null || true
+    memory_db_args=(
+        cmd_quality
+        --cmd-id "$CMD_ID"
+        --ts "$TIMESTAMP"
+        --gate-result "$GATE_RESULT"
+        --karo-rework "$KARO_REWORK"
+        --gunshi-verdict "$GUNSHI_VERDICT"
+        --ninja-blockers "$NINJA_BLOCKERS"
+        --ac-count "$AC_COUNT"
+        --supplementary-cmds "$SUPPLEMENTARY_CMDS"
+        --project "$PROJECT_ID"
+        --source "$SOURCE_STAGE"
+        --diagnosis "$DIAGNOSIS_TEXT"
+        --notes "$NOTES"
+        --source-file "${LOG_FILE#$REPO_ROOT/}"
+    )
+    if [[ -n "${SHOGUN_MEMORY_DB:-}" ]]; then
+        python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 || true
+    else
+        python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
 fi
