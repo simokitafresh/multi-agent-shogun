@@ -2836,6 +2836,9 @@ QG_TEMPLATE
                 show_q11_semantic_search_matches "$CMD_BLOCK_NC"
             fi
 
+            # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
+            # FAST_METADATAモードでは教育的表示(関連成果物検出)をスキップ。
+            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
             _Q11_TARGETS=$(
                 printf '%s\n' "$_Q11_COMMAND_SECTION" \
                     | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \
@@ -2927,6 +2930,7 @@ QG_TEMPLATE
                     } > "$_Q11_CACHE_FILE"
                 fi
             fi
+            fi  # end FAST_METADATA guard for Q11 research dir scan
         fi
     fi
 

@@ -9,6 +9,9 @@ setup() {
     export SEMANTIC_MAP_PATH="$TEST_TMPDIR/context/semantic-map.md"
     export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
     export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
+    # Speed: デフォルトでは本番246MB DBを参照しない。memory DB tag propagationテストは自身でオーバーライドする
+    export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/nonexistent_memory.db"
+    export SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -125,7 +128,7 @@ conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
 conn.commit()
 PY
 
-    run env SEMANTIC_TAG_PROPAGATION_LIMIT=10 bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
+    run env SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=0 SEMANTIC_TAG_PROPAGATION_LIMIT=10 bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MEMORY_TAG_PROPAGATION"* ]]
 
