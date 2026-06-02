@@ -4554,7 +4554,7 @@ try:
         if isinstance(lesson_target_files, str):
             lesson_target_files = [lesson_target_files]
         if any(str(p).strip() for p in lesson_target_files):
-            return True
+            return _target_files_match(lesson_target_files, _all_task_files)
         non_universal_tags = {t for t in l_tags if t != 'universal'}
         if task_tags and (set(task_tags) & non_universal_tags):
             return True

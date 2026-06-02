@@ -106,7 +106,7 @@ archive_lord_conversation() {
 
   cp -p "$LORD_CONV" "$archive_file"
   if ! cmp -s "$LORD_CONV" "$archive_file"; then
-    echo "[0.会話退避] ALERT: archive diff mismatch: ${archive_file#$ROOT_DIR/}"
+    echo "[0.会話退避] ALERT: archive diff mismatch: ${archive_file#"$ROOT_DIR"/}"
     issues=$((issues + 1))
     issue_reasons+=("会話退避diff不一致")
     return 0
@@ -177,7 +177,7 @@ with open(knowledge_path, "w", encoding="utf-8") as out:
     out.write("\n")
 PY
 
-  echo "[0.会話退避] OK: ${archive_file#$ROOT_DIR/} (diff一致), knowledge=${knowledge_file#$ROOT_DIR/}"
+  echo "[0.会話退避] OK: ${archive_file#"$ROOT_DIR"/} (diff一致), knowledge=${knowledge_file#"$ROOT_DIR"/}"
 }
 
 archive_lord_conversation
@@ -971,6 +971,74 @@ PY
   summary_detail="${summary_result#*|}"
 fi
 echo "[11.session_summary] ${summary_status}: ${summary_detail}"
+
+# ─── Check 12: 掲示板 action_required 未対応 ───
+_bb_file="$ROOT_DIR/queue/bulletin_board.yaml"
+bb_unactioned=0
+bb_unactioned_ids_str=""
+if [ -f "$_bb_file" ]; then
+  bb_result="$(python3 - "$_bb_file" <<'PY'
+import sys
+import re
+
+path = sys.argv[1]
+ids = []
+current_id = ""
+current_action_type = ""
+current_actioned_by = None
+
+with open(path, encoding="utf-8") as f:
+    for line in f:
+        stripped = line.strip()
+        m = re.match(r"-\s+id:\s+['\"]?([^'\"]+)['\"]?", stripped)
+        if m:
+            if (current_id
+                    and current_action_type == "action_required"
+                    and current_actioned_by is not None
+                    and not current_actioned_by.strip()):
+                ids.append(current_id)
+            current_id = m.group(1).strip()
+            current_action_type = ""
+            current_actioned_by = None
+            continue
+        if not current_id:
+            continue
+        m = re.match(r"action_type:\s+['\"]?([^'\"]+)['\"]?", stripped)
+        if m:
+            current_action_type = m.group(1).strip()
+            continue
+        m = re.match(r"actioned_by:\s+['\"]?([^'\"]*)['\"]?", stripped)
+        if m:
+            current_actioned_by = m.group(1).strip()
+
+# 最後のエントリを判定
+if (current_id
+        and current_action_type == "action_required"
+        and current_actioned_by is not None
+        and not current_actioned_by.strip()):
+    ids.append(current_id)
+
+if ids:
+    print(f"{len(ids)}|" + ",".join(ids))
+else:
+    print("0|")
+PY
+)"
+  bb_unactioned="${bb_result%%|*}"
+  bb_unactioned_ids_str="${bb_result#*|}"
+fi
+
+echo "[12.掲示板未対応] action_required+actioned_by空: ${bb_unactioned}件"
+if [ "${bb_unactioned:-0}" -gt 0 ]; then
+  IFS=',' read -ra _bb_ids_arr <<< "$bb_unactioned_ids_str"
+  for _id in "${_bb_ids_arr[@]}"; do
+    [ -n "$_id" ] && echo "  - ${_id}"
+  done
+  issues=$((issues + bb_unactioned))
+  issue_reasons+=("掲示板未対応${bb_unactioned}")
+else
+  echo "  OK"
+fi
 
 # ─── 総合判定 ───
 echo ""
