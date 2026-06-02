@@ -99,7 +99,7 @@ PY
     [[ "$output" == *"L_KEYWORD:8"* ]]
 
     grep -q 'SEMANTIC_LESSON_BOOST' "$PROJECT_ROOT/scripts/deploy_task.sh"
-    grep -q 'semantic_lesson_boosts.get(lid' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    grep -q 'lesson_boosts.get(lid' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
 # ─── AC1: 上位10件スコアリングテスト ───

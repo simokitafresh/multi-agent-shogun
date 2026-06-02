@@ -4137,7 +4137,89 @@ try:
                 break
         return boosts, matched_concepts
 
+    def _memory_db_concept_lesson_boosts(query_text, seed_concepts=None):
+        """Boost lesson IDs found in memory events connected to matched event_concepts."""
+        import sqlite3
+
+        db_path = os.environ.get(
+            'MEMORY_DB_PATH',
+            os.path.join(script_dir, 'data', 'multi_agent_shogun_memory.db'),
+        )
+        if not os.path.exists(db_path):
+            return {}, [], 0
+
+        query_fold = str(query_text or '').casefold()
+        if not query_fold.strip():
+            return {}, [], 0
+
+        try:
+            conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True, timeout=2.0)
+        except Exception:
+            return {}, [], 0
+
+        matched_concepts = []
+        seed_concepts = [str(c).strip() for c in (seed_concepts or []) if str(c).strip()]
+        try:
+            rows = conn.execute(
+                """
+                SELECT concept_name
+                FROM event_concepts
+                GROUP BY concept_name
+                ORDER BY MAX(relevance_score) DESC, COUNT(*) DESC
+                LIMIT 1000
+                """
+            ).fetchall()
+            available_concepts = {str(c or '').strip() for (c,) in rows}
+            for concept in seed_concepts:
+                if concept in available_concepts and concept not in matched_concepts:
+                    matched_concepts.append(concept)
+            for (concept_name,) in rows:
+                concept = str(concept_name or '').strip()
+                if not concept:
+                    continue
+                concept_fold = concept.casefold()
+                if concept_fold in query_fold or query_fold in concept_fold:
+                    matched_concepts.append(concept)
+                if len(matched_concepts) >= 10:
+                    break
+
+            if not matched_concepts:
+                return {}, [], 0
+
+            placeholders = ','.join('?' for _ in matched_concepts)
+            event_rows = conn.execute(
+                f"""
+                SELECT e.summary, e.detail, e.concepts, e.cmd_id
+                FROM event_concepts AS c
+                JOIN events AS e ON e.id = c.event_id
+                WHERE c.concept_name IN ({placeholders})
+                ORDER BY COALESCE(e.ts, '') DESC
+                LIMIT 300
+                """,
+                matched_concepts,
+            ).fetchall()
+        except Exception:
+            return {}, [], 0
+        finally:
+            conn.close()
+
+        boost = int(os.environ.get('MEMORY_DB_LESSON_BOOST', str(SEMANTIC_LESSON_BOOST)))
+        boosts = {}
+        lesson_re = re.compile(r'(?<![A-Za-z0-9_])L\d{2,4}(?![A-Za-z0-9_])')
+        for row in event_rows:
+            event_text = ' '.join(str(v or '') for v in row)
+            for lid in lesson_re.findall(event_text):
+                boosts[lid] = max(boosts.get(lid, 0), boost)
+        return boosts, matched_concepts, len(event_rows)
+
     semantic_lesson_boosts, semantic_matched_concepts = _semantic_concept_lesson_boosts(task_text)
+    memory_db_lesson_boosts, memory_db_matched_concepts, memory_db_event_count = _memory_db_concept_lesson_boosts(
+        task_text,
+        semantic_matched_concepts,
+    )
+    lesson_boosts = dict(semantic_lesson_boosts)
+    for _lid, _boost in memory_db_lesson_boosts.items():
+        lesson_boosts[_lid] = max(lesson_boosts.get(_lid, 0), _boost)
 
     # cmd_2606: target_path由来のサブドメインで教訓を絞る。
     # subdomain未設定の既存教訓は後方互換のため全サブドメインにマッチさせる。
@@ -4387,7 +4469,7 @@ try:
         for _l in confirmed_lessons:
             if _l.get('_cross_project_opt_in'):
                 continue
-            if _l.get('id', '') in semantic_lesson_boosts:
+            if _l.get('id', '') in lesson_boosts:
                 continue
             _ltf = _l.get('target_files', [])
             if not _ltf:
@@ -4407,7 +4489,7 @@ try:
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
             if _ltf and any(str(p).strip() for p in _ltf):
-                if _l.get('id', '') in semantic_lesson_boosts:
+                if _l.get('id', '') in lesson_boosts:
                     continue
                 _tf_excluded_ids.add(_l.get('id', ''))
         if _tf_excluded_ids:
@@ -4428,7 +4510,7 @@ try:
             tag_candidates.append(lesson)
             continue
 
-        if lesson.get('id', '') in semantic_lesson_boosts:
+        if lesson.get('id', '') in lesson_boosts:
             tag_candidates.append(lesson)
             continue
 
@@ -4496,7 +4578,7 @@ try:
             # タイトル内出現回数×3 + その他テキスト内出現回数×1
             score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
-        semantic_boost = semantic_lesson_boosts.get(lid, 0)
+        semantic_boost = lesson_boosts.get(lid, 0)
         if semantic_boost:
             score += semantic_boost
 
@@ -4526,6 +4608,14 @@ try:
         print(
             f'[INJECT] semantic lesson boost: concepts={semantic_matched_concepts} '
             f'candidate_lessons={sorted(semantic_lesson_boosts)} boosted={boosted_ids} boost={SEMANTIC_LESSON_BOOST}',
+            file=sys.stderr,
+        )
+    if memory_db_lesson_boosts:
+        boosted_ids = sorted(set(memory_db_lesson_boosts) & {lid for _, lid, _ in scored})
+        print(
+            f'[INJECT] memory_db lesson boost: concepts={memory_db_matched_concepts} '
+            f'events={memory_db_event_count} candidate_lessons={sorted(memory_db_lesson_boosts)} '
+            f'boosted={boosted_ids} boost={os.environ.get("MEMORY_DB_LESSON_BOOST", str(SEMANTIC_LESSON_BOOST))}',
             file=sys.stderr,
         )
 
