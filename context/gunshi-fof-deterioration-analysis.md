@@ -54,6 +54,8 @@ avg尖り削減量=0.001。月次BUY/CASHレベルではEMA span=5のシグナ�
 ### High(Max)選別仮説（cmd_1704）
 「delta_high>=0のPFだけにEMA5→FoF改善」→ 52/65PF通過(80%)で選別が緩い。C_vs_A=-0.091 ≈ B_vs_A=-0.087。棄却。
 
+関連研究: [[dm-signal-research-shin-shijin-v2]] §前処理研究(cmd_1700/1701/1707)が、FoF悪化のdepth増幅・シグナル相関棄却・FoF momentum実態監査を接続する。
+
 ## §5 cross-sectional dispersion仮説（未検証）
 
 将軍の有力仮説: EMAが全PFのリターンを平均方向に寄せる → cross-sectional dispersion(PF間リターン分散)縮小 → EqualWeight FoFの分散効果が減少。
