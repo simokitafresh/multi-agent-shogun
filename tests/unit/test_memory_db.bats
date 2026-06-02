@@ -465,6 +465,59 @@ PY
     [ "${result[5]}" = "True" ]
 }
 
+@test "memory_db_import backfills empty event concepts in existing DB" {
+    cat > "$TEST_TMPDIR/semantic-index.md" <<'EOF'
+## local_memory_db — ローカル記憶DB
+| field | value |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db |
+EOF
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:56:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2966 eventsテーブル拡張","detail":"multi_agent_shogun_memory.db とセマンティクスインデックスを連携する"}
+{"ts":"2026-05-22T12:57:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2970 FTS5","detail":"SQLite記憶DBをFTS5対応にする"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --semantic-index "$TEST_TMPDIR/semantic-index.md"
+    [ "$status" -eq 0 ]
+
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("UPDATE events SET concepts = '[]'")
+conn.execute("DELETE FROM event_concepts")
+conn.commit()
+PY
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --semantic-index "$TEST_TMPDIR/semantic-index.md" \
+        --backfill-concepts
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scanned_empty=2"* ]]
+    [[ "$output" == *"updated=2"* ]]
+    [[ "$output" == *"improved_types=conversation"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import json
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE concepts = '[]'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM event_concepts WHERE concept_name='local_memory_db'").fetchone()[0])
+print(all(
+    "local_memory_db" in json.loads(row[0])
+    for row in conn.execute("SELECT concepts FROM events ORDER BY id")
+))
+PY
+)
+    [ "${result[0]}" = "0" ]
+    [ "${result[1]}" = "2" ]
+    [ "${result[2]}" = "True" ]
+}
+
 @test "memory_db_import imports bulletin_board entries as bulletin events" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}

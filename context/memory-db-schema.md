@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-02 cmd_3115 -->
+<!-- last_updated: 2026-06-02 -->
 
 # Memory DB Schema
 
@@ -9,10 +9,10 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 83321 | event_id, concept_name, relevance_score |
+| table | event_concepts | 105018 | event_id, concept_name, relevance_score |
 | table | event_links | 2334 | source_event_id, target_concept, link_type |
-| table | events | 67277 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 67277 | summary, detail |
+| table | events | 67667 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
+| table | events_fts | 67667 | summary, detail |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -23,7 +23,7 @@
 | table | test_trigram_data | 2 | id, block |
 | table | test_trigram_docsize | 0 | id, sz |
 | table | test_trigram_idx | 0 | segid, term, pgno |
-| view | conversations | 34299 | ts, agent, direction, summary, detail, session_id |
+| view | conversations | 34384 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -38,18 +38,18 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 34299 |
-| report | 8185 |
+| conversation | 34384 |
+| report | 8345 |
 | cmd_archive | 7651 |
 | skill_execution | 4822 |
-| bulletin | 3860 |
-| insight | 2929 |
-| inbox | 2324 |
-| cmd_quality | 1606 |
-| gate | 501 |
-| cmd_save | 496 |
+| bulletin | 3869 |
+| insight | 2955 |
+| inbox | 2383 |
+| cmd_quality | 1633 |
+| cmd_save | 510 |
+| gate | 505 |
 | document | 352 |
-| cmd_delegate | 125 |
+| cmd_delegate | 131 |
 | lesson | 51 |
 | pending_decision | 43 |
 | workaround | 26 |
