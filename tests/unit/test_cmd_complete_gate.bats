@@ -182,6 +182,7 @@ _run_command_files_modified_coverage_with_state() {
 _write_command_coverage_fixture() {
     local command_text="$1"
     local files_modified_block="$2"
+    local target_path="${3:-}"
 
     export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
@@ -194,6 +195,7 @@ _write_command_coverage_fixture() {
 commands:
   $TEST_CMD_ID:
     command: "$command_text"
+    target_path: "$target_path"
 EOF
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
@@ -236,6 +238,37 @@ EOF
     [[ "$output" == *"OK (command欄ファイル参照 全2件がfiles_modifiedに記載済み)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage ignores read-only command refs when write target is reported" {
+    _write_command_coverage_fixture \
+        "scripts/build_instructions.sh を読んで skills/reset-layout/SKILL.md を更新" \
+        "  - path: skills/reset-layout/SKILL.md
+    change: modified" \
+        "skills/reset-layout/SKILL.md"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"missing: scripts/build_instructions.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage still blocks when write target is missing after read-only refs" {
+    _write_command_coverage_fixture \
+        "scripts/build_instructions.sh を読んで skills/reset-layout/SKILL.md を更新" \
+        "  - path: scripts/build_instructions.sh
+    change: read" \
+        "skills/reset-layout/SKILL.md"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: skills/reset-layout/SKILL.md"* ]]
+    [[ "$output" != *"missing: scripts/build_instructions.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
 @test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {

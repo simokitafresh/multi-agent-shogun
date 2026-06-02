@@ -4131,19 +4131,94 @@ if isinstance(command, (list, tuple)):
 elif not isinstance(command, str):
     command = str(command)
 
+raw_targets = entry.get("target_path", entry.get("target_paths", ""))
+if isinstance(raw_targets, str):
+    target_paths = [raw_targets]
+elif isinstance(raw_targets, (list, tuple)):
+    target_paths = [str(v) for v in raw_targets]
+else:
+    target_paths = []
+target_paths = [p.strip().strip("`'\"") for p in target_paths if str(p).strip()]
+
 pattern = re.compile(
     r"(?<![A-Za-z0-9_./-])"
     r"((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
     r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
     r"(?![A-Za-z0-9_.-])"
 )
+read_markers = (
+    "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
+)
+write_markers = (
+    "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
+    "modify", "update", "edit", "add", "remove", "delete", "create", "write", "implement",
+)
+
+def marker_pos(text, markers):
+    positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
+    return min(positions) if positions else -1
+
+def ref_matches_target(ref, target):
+    ref = ref.strip().strip("./")
+    target = target.strip().strip("./")
+    if not ref or not target:
+        return False
+    if ref == target or ref.endswith("/" + target) or target.endswith("/" + ref):
+        return True
+    if ref.startswith(target.rstrip("/") + "/"):
+        return True
+    return os.path.basename(ref) == os.path.basename(target)
+
+matches = list(pattern.finditer(command))
 seen = set()
-for match in pattern.finditer(command):
+refs = []
+for idx, match in enumerate(matches):
     ref = match.group(1).strip().strip("`'\".,:;()[]{}")
     if not ref or ref in seen:
         continue
     seen.add(ref)
-    print(ref)
+    sentence_end_candidates = [
+        pos for pos in (
+            command.find("\n", match.end()),
+            command.find("。", match.end()),
+            command.find("；", match.end()),
+            command.find(";", match.end()),
+        )
+        if pos >= 0
+    ]
+    sentence_end = min(sentence_end_candidates) if sentence_end_candidates else len(command)
+    next_file_start = matches[idx + 1].start() if idx + 1 < len(matches) else sentence_end
+    local = command[match.end():next_file_start]
+    sentence_tail = command[match.end():sentence_end]
+    read_pos = marker_pos(local, read_markers)
+    if read_pos < 0:
+        read_pos = marker_pos(sentence_tail, read_markers)
+    write_pos = marker_pos(sentence_tail, write_markers)
+    next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
+        write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
+    )
+    readonly_ref = read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
+        write_pos < 0 or next_ref_before_write
+    )
+    refs.append((ref, readonly_ref))
+
+target_refs = []
+if target_paths:
+    for ref, _readonly_ref in refs:
+        if any(ref_matches_target(ref, target) for target in target_paths):
+            target_refs.append(ref)
+
+if target_refs:
+    for ref in target_refs:
+        print(ref)
+elif not target_paths:
+    for ref, _readonly_ref in refs:
+        print(ref)
+else:
+    for ref, readonly_ref in refs:
+        if readonly_ref:
+            continue
+        print(ref)
 PY
 }
 
