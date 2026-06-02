@@ -40,6 +40,7 @@ if os.environ.get("SEMANTIC_BOOST_ID"):
     semantic_boosts[os.environ["SEMANTIC_BOOST_ID"]] = int(os.environ.get("SEMANTIC_BOOST_SCORE", "20"))
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': 2,
+    'impl': 6,
     'exact': 4,
     'focused': 4,
 }
@@ -137,7 +138,7 @@ PY
           {"id": "L_LOW",  "title": "deploy step",                  "_source_project": "infra"}
         ]'
     [ "$status" -eq 0 ]
-    first_id=$(echo "$output" | head -1 | cut -d: -f1)
+    first_id=$(echo "$output" | grep '^L_' | head -1 | cut -d: -f1)
     [ "$first_id" = "L_HIGH" ]
 }
 
@@ -216,10 +217,10 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" != *"L_SINGLE:"* ]]
     [[ "$output" == *"L_STRONG"* ]]
-    [[ "$output" == *"excluded L_SINGLE score=1 < MIN_KEYWORD_SCORE=2"* ]]
+    [[ "$output" == *"excluded L_SINGLE score=1 < MIN_KEYWORD_SCORE=6"* ]]
 }
 
-@test "cmd_2901: task_type=exactはimplより高いMIN_KEYWORD_SCOREを使う" {
+@test "cmd_2901: task_type=exactはscore=3の弱い一致を除外する" {
     run run_scoring "infra" \
         '["deploy"]' \
         '[
@@ -239,7 +240,24 @@ PY
         ]' \
         "impl"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"L_SCORE_3:3"* ]]
+    [[ "$output" != *"L_SCORE_3:"* ]]
+    [[ "$output" == *"excluded L_SCORE_3 score=3 < MIN_KEYWORD_SCORE=6"* ]]
+}
+
+@test "cmd_3121: task_type=implはexactより厳しいMIN_KEYWORD_SCOREを使う" {
+    run run_scoring "infra" \
+        '["deploy"]' \
+        '[
+          {"id": "L_SCORE_4", "title": "deploy", "summary": "deploy", "_source_project": "other"},
+          {"id": "L_SCORE_6", "title": "deploy deploy", "summary": "", "_source_project": "other"}
+        ]' \
+        "impl"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L_SCORE_4:"* ]]
+    [[ "$output" == *"L_SCORE_6:6"* ]]
+    [[ "$output" == *"excluded L_SCORE_4 score=4 < MIN_KEYWORD_SCORE=6"* ]]
+
+    grep -q "'impl': int(os.environ.get('MIN_KEYWORD_SCORE_IMPL', '6'))" "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
 @test "AC3: 全教訓がマッチしない場合は出力が空" {

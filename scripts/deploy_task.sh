@@ -3544,6 +3544,7 @@ USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that com
 TARGET_PATH_MATCH_BOOST = int(os.environ.get('TARGET_PATH_MATCH_BOOST', '50'))
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': int(os.environ.get('MIN_KEYWORD_SCORE', '2')),
+    'impl': int(os.environ.get('MIN_KEYWORD_SCORE_IMPL', '6')),
     'exact': int(os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4')),
     'focused': int(os.environ.get('MIN_KEYWORD_SCORE_FOCUSED', os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4'))),
 }
