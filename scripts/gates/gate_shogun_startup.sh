@@ -2661,6 +2661,110 @@ fi
 	# --- 総合判定 ---
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+show_startup_streak_cmd_proposals() {
+    local streak_key="$1"
+    [ -n "$streak_key" ] || return 0
+
+    python3 - "$SCRIPT_DIR" "$streak_key" <<'PY' 2>/dev/null || true
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+query = sys.argv[2]
+
+def tokenize(text):
+    if not text:
+        return set()
+    tokens = set()
+    for token in re.findall(r"[a-zA-Z][a-zA-Z0-9_.-]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}", text.lower()):
+        tokens.add(token)
+    jp_chars = re.sub(r"[\x00-\x7f\s]", "", text)
+    for i in range(len(jp_chars) - 1):
+        tokens.add(jp_chars[i:i + 2])
+    return tokens
+
+def similarity(left, right):
+    if not left or not right:
+        return 0.0
+    union = left | right
+    return len(left & right) / len(union) * 100 if union else 0.0
+
+def add_candidate(candidates, seen, cmd_id, title, body):
+    cmd_id = (cmd_id or "").strip()
+    title = re.sub(r"\s+", " ", (title or "").strip())
+    body = re.sub(r"\s+", " ", (body or "").strip())
+    if not re.match(r"^cmd_[A-Za-z0-9_-]+$", cmd_id):
+        return
+    if cmd_id in seen:
+        return
+    score = similarity(query_words, tokenize(f"{title} {body}"))
+    if score <= 0:
+        return
+    seen.add(cmd_id)
+    candidates.append((score, cmd_id, title[:120] or "(title不明)"))
+
+query_words = tokenize(query)
+if not query_words:
+    raise SystemExit(0)
+
+candidates = []
+seen = set()
+
+chronicle = root / "context" / "cmd-chronicle.md"
+if chronicle.exists():
+    try:
+        raw = chronicle.read_text(encoding="utf-8", errors="ignore")
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line.startswith("| cmd_"):
+                continue
+            parts = [part.strip() for part in line.strip("|").split("|")]
+            if len(parts) < 2:
+                continue
+            cmd_id = parts[0]
+            title = parts[1]
+            body = " ".join(parts[2:])
+            add_candidate(candidates, seen, cmd_id, title, body)
+    except OSError:
+        pass
+
+archive_dir = root / "queue" / "archive" / "cmds"
+if len(candidates) < 3 and archive_dir.exists():
+    try:
+        files = sorted(
+            (p for p in archive_dir.glob("*.yaml") if p.is_file()),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )[:400]
+    except OSError:
+        files = []
+    for path in files:
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        cmd_match = re.search(r"\bcmd_id:\s*['\"]?([^'\"\s]+)", text)
+        if cmd_match:
+            cmd_id = cmd_match.group(1)
+        else:
+            stem_match = re.search(r"(cmd_[A-Za-z0-9_-]+)", path.stem)
+            cmd_id = stem_match.group(1) if stem_match else ""
+        title_match = re.search(r"(?m)^\s*(?:title|purpose):\s*['\"]?(.+?)['\"]?\s*$", text)
+        title = title_match.group(1) if title_match else path.stem
+        body = " ".join(re.findall(r"(?m)^\s*(?:purpose|key_result|summary|command):\s*['\"]?(.+?)['\"]?\s*$", text)[:4])
+        add_candidate(candidates, seen, cmd_id, title, body)
+
+candidates.sort(key=lambda item: (-item[0], item[1]))
+if not candidates:
+    print("    類似cmd候補: none (context/cmd-chronicle.md または queue/archive/cmds に関連履歴なし)")
+    raise SystemExit(0)
+
+print("    類似cmd候補:")
+for score, cmd_id, title in candidates[:3]:
+    print(f"    - cmd_id={cmd_id} 類似度={score:.0f}% title={title}")
+PY
+}
 if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
     _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${alerts[@]}" <<'PY' 2>/dev/null || true
@@ -2708,6 +2812,7 @@ PY
             [ -n "$_streak_key" ] || continue
             echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
             echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
+            show_startup_streak_cmd_proposals "$_streak_key" | sed 's/^/  /'
             alerts+=("startup連続出現BLOCK: ${_streak_key}")
             alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"
