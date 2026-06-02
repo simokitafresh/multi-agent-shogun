@@ -618,6 +618,8 @@ STALE_FIELDS = [
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
     # 第11層: cmd固有scope/context(LK-A02 v7: 2件連続FAIL cmd_2875+cmd_2880。前taskのscope/contextが残存し忍者が旧scopeで作業)
     'scope', 'context_hints', 'context',
+    # 第12層: 因果確認L0-L7テンプレート。scopeごとに再判定して注入する
+    'causal_verification',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
@@ -1898,6 +1900,62 @@ print(yaml.safe_dump({'binary_checks': bc}, allow_unicode=True, sort_keys=False)
 PY_BC_WAIVE
 }
 
+deploy_task_needs_causal_verification() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 1
+
+    local task_text
+    task_text="$(awk '
+        /^  (purpose|title|command|target_path|scope|context|semantic_concepts|task_type|type|scope_mode):/ { print; in_block=1; next }
+        in_block && /^  [A-Za-z_][A-Za-z0-9_]*:/ { in_block=0 }
+        in_block && /^    / { print }
+    ' "$task_file" 2>/dev/null)"
+    printf '%s\n' "$task_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor'
+}
+
+inject_causal_verification_template() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+    deploy_task_needs_causal_verification "$task_file" || return 0
+
+    local inject_block
+    inject_block='  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]'
+
+    local tmp_file insert_file
+    tmp_file=$(mktemp)
+    awk '
+        /^  causal_verification:/ { skip=1; next }
+        skip && /^    / { next }
+        skip && /^  [A-Za-z_][A-Za-z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    insert_file=$(mktemp)
+    printf '%s\n' "$inject_block" > "$insert_file"
+    if grep -q "^  description:" "$tmp_file"; then
+        awk -v insert_file="$insert_file" '
+            /^  description:/ && !inserted {
+                while ((getline line < insert_file) > 0) print line
+                close(insert_file)
+                inserted=1
+            }
+            { print }
+        ' "$tmp_file" > "${tmp_file}.inserted"
+        mv "${tmp_file}.inserted" "$tmp_file"
+    else
+        printf '%s\n' "$inject_block" >> "$tmp_file"
+    fi
+    rm -f "$insert_file"
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_causal_verification_template: causal_verification injected"
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -2064,6 +2122,17 @@ regression: ""  # yes or no
 EOF
 )
     fi
+    local _causal_verification_block=""
+    if deploy_task_needs_causal_verification "$task_file"; then
+        _causal_verification_block=$(cat <<'EOF'
+causal_verification:
+  cause_checked: ""  # git log/blame・教訓・設計書・semantic/causal確認結果を3行以上で記入
+  design_intent_checked: ""  # 守るべき設計意図/既存防御を記入
+  evidence: ""  # bounded確認: git log/blame, rg, causal_backlinks, semantic_search(timeout/scope限定)
+  origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+EOF
+)
+    fi
 
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
@@ -2109,6 +2178,7 @@ task_clarity:
 status_detail: ""  # DONE / WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT
 test_triage: ""  # in_branch / pre_existing / unknown
 ${_before_after_block}
+${_causal_verification_block}
 files_modified: []
 lesson_candidate:
   # found: true/false を書け。リスト形式[] 禁止
@@ -2788,6 +2858,17 @@ assumption_invalidation:
   found: false
   affected_cmds: []
   detail: ""
+EOF
+        modified=true
+    fi
+
+    if deploy_task_needs_causal_verification "$task_file" && ! grep -Eq '^causal_verification:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+causal_verification:
+  cause_checked: ""
+  design_intent_checked: ""
+  evidence: ""
+  origin: ""
 EOF
         modified=true
     fi
@@ -7065,6 +7146,7 @@ deploy_task_apply_task_mutations() {
     inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
+    inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)

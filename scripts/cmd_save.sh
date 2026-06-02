@@ -1370,6 +1370,40 @@ show_target_path_git_history() {
     done <<< "$targets"
 }
 
+cmd_save_is_causal_verification_scope() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 1
+    local search_text
+    search_text="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*(title|purpose|command|target_path|scope|project):[[:space:]]*/ { print; next }
+        /^[[:space:]]*acceptance_criteria:[[:space:]]*/ { in_ac=1; print; next }
+        in_ac && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_ac=0 }
+        in_ac { print }
+    ')"
+    printf '%s\n' "$search_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor'
+}
+
+check_causal_verification_requirement() {
+    cmd_save_is_causal_verification_scope || return 0
+
+    echo "INFO: [CAUSAL_VERIFICATION] infra hook/gate/daemon/semantic/search/memory DB/配備フロー対象cmdです" >&2
+    echo "  参照: docs/research/causal-verification-l0-l7-design_20260602.md" >&2
+    echo "  必須: git log/blame・関連教訓・設計書・semantic/causal確認をq5/q8/origin/ACへ記録" >&2
+
+    local origin_value q5_value q8_value combined
+    origin_value="$(cmd_block_get_field "origin")"
+    q5_value="$(cmd_block_get_field "quality_gate.q5_verified_source")"
+    q8_value="$(cmd_block_get_field "quality_gate.q8_why_what")"
+    combined="${origin_value}
+${q5_value}
+${q8_value}
+$(extract_acceptance_criteria_block)"
+
+    if ! printf '%s\n' "$combined" | grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602'; then
+        echo "WARNING: 因果確認不足。対象scopeでは origin/q5/q8/AC に git log/blame・教訓・設計意図・semantic/causal確認を明記せよ" >&2
+        record_warn_reason "causal_verification_missing" "check=check_causal_verification_requirement"
+    fi
+}
+
 check_self_reread_red_flag() {
     local combined
 
@@ -3704,6 +3738,7 @@ show_cmd_chronicle_matches &
 # 目的: target_pathの変更経緯を起票時に自動表示し、現物履歴未確認のままcmdを書く余地を減らす。
 # WSL2最適化: 全出力が >&2 のみ（判定に影響しない）のでバックグラウンド化。
 show_target_path_git_history &
+check_causal_verification_requirement
 
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止

@@ -221,6 +221,43 @@ TASK
     [[ "$output" == *"PASS"* ]]
 }
 
+@test "causal verification scope report warns without hook dependency" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'
+task:
+  purpose: "gate_report_formatをmulti-CLI共通gateとして修正する"
+  target_path: scripts/gates/gate_report_format_main.py
+TASK
+    _prepare_report "$TEST_TMPDIR/queue/reports/report.yaml" "empty"
+
+    _run_gate "$TEST_TMPDIR/queue/reports/report.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: causal_verification欄が空/未記入"* ]]
+}
+
+@test "causal verification scope report accepts filled causal record" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'
+task:
+  purpose: "deploy_task.shの配備フローへ因果確認テンプレートを注入する"
+  target_path: scripts/deploy_task.sh
+TASK
+    _prepare_report "$TEST_TMPDIR/queue/reports/report.yaml" "empty"
+    cat >> "$TEST_TMPDIR/queue/reports/report.yaml" <<'REPORT'
+causal_verification:
+  cause_checked: "git log/blameと設計書を確認"
+  design_intent_checked: "CLI非依存gateを正本にする"
+  evidence: "timeout 5 semantic_search / causal_backlinks"
+  origin: "[[multi_cli_hook_gap]] -> [[hook_only_enforcement_gap]] -> [[common_gate_required]]"
+REPORT
+
+    _run_gate "$TEST_TMPDIR/queue/reports/report.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: causal_verification欄が空/未記入"* ]]
+}
+
 @test "GP/改善cmdはbefore/after/regression未記入でもWARNを出す" {
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
     cat > "$TEST_TMPDIR/queue/tasks/test_ninja.yaml" <<'TASK'

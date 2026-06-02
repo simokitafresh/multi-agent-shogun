@@ -56,6 +56,56 @@ def _count_task_binary_checks(task_data, assigned_acs):
     return task_bc_count
 
 
+CAUSAL_SCOPE_RE = re.compile(
+    r"hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor",
+    re.IGNORECASE,
+)
+
+
+def _flatten_for_scope(value):
+    if value is None:
+        return ""
+    if isinstance(value, (str, int, float, bool)):
+        return str(value)
+    if isinstance(value, dict):
+        return " ".join(f"{k} {_flatten_for_scope(v)}" for k, v in value.items())
+    if isinstance(value, list):
+        return " ".join(_flatten_for_scope(v) for v in value)
+    return str(value)
+
+
+def _task_needs_causal_verification(task_data):
+    if not isinstance(task_data, dict) or not task_data:
+        return False
+    fields = [
+        "purpose",
+        "title",
+        "command",
+        "target_path",
+        "scope",
+        "context",
+        "semantic_concepts",
+        "task_type",
+        "type",
+        "scope_mode",
+    ]
+    haystack = " ".join(_flatten_for_scope(task_data.get(field)) for field in fields)
+    return bool(CAUSAL_SCOPE_RE.search(haystack))
+
+
+def _causal_verification_filled(value):
+    placeholders = {"", "none", "null", "n/a", "na", "fill_this", "fILL_THIS".lower()}
+    if isinstance(value, str):
+        return value.strip().lower() not in placeholders
+    if isinstance(value, dict):
+        for key in ("cause_checked", "design_intent_checked", "evidence", "origin"):
+            item = value.get(key)
+            if isinstance(item, str) and item.strip().lower() not in placeholders:
+                return True
+        return False
+    return bool(value)
+
+
 def _rfs_cmd(report_path, key, value):
     return "bash scripts/report_field_set.sh {} {} {}".format(
         shlex.quote(report_path),
@@ -535,6 +585,12 @@ def main() -> int:
             "WARN: origin欄が空/未記入 — 因果ネットワーク接続のため "
             'bash scripts/report_field_set.sh <report> origin "[[cmd_xxx]] -> [[原因]] -> [[結果]]" '
             "で記入せよ"
+        )
+
+    if _task_needs_causal_verification(task_data) and not _causal_verification_filled(data.get("causal_verification")):
+        hints.append(
+            "WARN: causal_verification欄が空/未記入 — hook/gate/daemon/semantic/search/memory DB/配備フロー変更では "
+            "git log/blame・関連教訓・設計書・semantic/causal確認結果を記録せよ"
         )
 
     ai = data.get("assumption_invalidation")
