@@ -160,3 +160,7 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 - 認証が必要な場合、PJ contextの認証方式を確認してからログインしている。
 - 最終回答に、確認URL、スクリーンショット保存先、画面上の確認結果が含まれている。
 - 失敗時は、preflight、auth、navigate、screenshot のどこで失敗したかを分けて報告している。
+
+## 因果リンク
+
+- → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）

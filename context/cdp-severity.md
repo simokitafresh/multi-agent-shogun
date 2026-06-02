@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-04-25 -->
+<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
 <!-- GStack/GBrain takeaway #15 -->
 # CDP Severity
 
@@ -23,3 +23,4 @@ CDP計測・canary・ブラウザ実測の異常は、以下の4段階で扱う�
 ## 因果リンク
 
 - → [[cdp-philosophy.md]] CDP操作哲学・技術スタック・`cdp_measure.sh`フロー（severity判断の前提知識）
+- ← [[cdp-browse/SKILL.md]] CDP操作手順・ブラウザ起動・計測フロー（本ファイルのseverity基準を参照する実行層）
