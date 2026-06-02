@@ -204,6 +204,16 @@ if [[ "$startup_gate_name" != "none" ]]; then
   fi
 fi
 
+# --- Auto idle actions ---
+# gate_gunshi_startup.sh writes this file when WARN/ALERT maps to a concrete
+# idle self-run step. Inject it separately so the action is visible even when
+# startup_gate_output is truncated.
+auto_idle_actions="none"
+auto_idle_actions_file="$SCRIPT_DIR/queue/auto_idle_actions.txt"
+if [[ "$agent_id" == "gunshi" && -s "$auto_idle_actions_file" ]]; then
+  auto_idle_actions="$(< "$auto_idle_actions_file")"
+fi
+
 # --- Build additionalContext ---
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
@@ -217,6 +227,9 @@ startup_gate: ${startup_gate_name}
 compact_section="
 --- compact_state ---
 ${compact_state}"
+auto_idle_section="
+--- auto_idle_actions ---
+${auto_idle_actions}"
 startup_gate_section="
 --- startup_gate_output ---
 ${startup_gate_output}"
@@ -225,6 +238,7 @@ ${startup_gate_output}"
 # snapshot/compactより優先して広めに残す。
 snapshot_budget=500
 compact_budget=1000
+auto_idle_budget=3000
 startup_gate_budget=20000
 
 if (( ${#karo_snapshot} > snapshot_budget )); then
@@ -235,12 +249,16 @@ if (( ${#compact_section} > compact_budget )); then
   compact_section="${compact_section:0:$compact_budget}
 (truncated)"
 fi
+if (( ${#auto_idle_section} > auto_idle_budget )); then
+  auto_idle_section="${auto_idle_section:0:$auto_idle_budget}
+(truncated)"
+fi
 if (( ${#startup_gate_section} > startup_gate_budget )); then
   startup_gate_section="${startup_gate_section:0:$startup_gate_budget}
 (truncated)"
 fi
 
-additional_context="${fixed_part}${karo_snapshot}${compact_section}${startup_gate_section}"
+additional_context="${fixed_part}${karo_snapshot}${compact_section}${auto_idle_section}${startup_gate_section}"
 
 # --- Output JSON ---
 _session_start_emit_output "SessionStart" "$additional_context"
