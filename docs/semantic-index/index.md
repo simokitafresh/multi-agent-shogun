@@ -2100,7 +2100,7 @@ codd:
 |------|---|
 | id | hook_automation_framework |
 | label | Hook自動化フレームワーク |
-| aliases | PreToolUse, PostToolUse, SessionStart, Stop, pre-bash-combined, post-bash-combined, pre-write-edit-combined, Guard, session_start_inject, stop_check_inbox, hook, フック, 自動化×強制 |
+| aliases | PreToolUse, PostToolUse, SessionStart, Stop hook, pre-bash-combined, post-bash-combined, pre-write-edit-combined, session_start_inject, stop_check_inbox |
 | skills | |
 | related_concepts | defense_hierarchy, gate_quality_framework, inbox_processing_discipline, gate_bypass_prevention, skill_design_rules, agent_formation_management |
 
