@@ -7027,7 +7027,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-05-29'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code
@@ -7086,7 +7086,7 @@ lessons:
   - gate
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-05-29'
+  last_referenced: '2026-06-02'
   how: 65%(214件)がmissing_gate(archive/lesson/review_gate)=家老の処理順序とゲート実行タイミングの不一致
   when: gateやhookの検知・補正ロジックを変更する時
 - id: L077
