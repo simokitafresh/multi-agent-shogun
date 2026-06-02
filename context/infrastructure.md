@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-02 cmd_3125 -->
+<!-- last_updated: 2026-06-02 cmd_karo_hotfix_semantic_search_timeout_20260602 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -179,6 +179,10 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 → `lib/cli_adapter.sh` L88 | 詳細: `docs/research/gunshi-cli-model-context.md`（respawn手順/セレクタの罠/effort優先順位/codex config設定方法）
 
 ### Codex multi-CLI統合(2026-05-11確立)
+
+**2026-06-02上書き原則**: CLI固有hook設定(`.claude/settings.json` / `.codex/hooks.json`)を安全網の正本にするな。正本は共通イベント層(`config/cli_events.yaml`予定)とし、Claude/Codexで使えるeventはhookへ生成、Codex Stopのように危険または未対応のeventはdaemon/gate/scriptで補完する。詳細設計: `docs/research/multi-cli-hook-event-commonization-design_20260602.md`。因果: [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[common_event_layer_required]]。
+
+**因果確認L0-L7**: hook/gate/daemon/semantic/search等を変更する前に、git log/blame、教訓、設計書、semantic/causal linksで「なぜ現在の実装がそうなっているか」を確認する。multi-CLI前提のため、因果確認の強制もClaude/Codex固有hookではなく、`cmd_save.sh`、`deploy_task.sh`、`gate_report_format.sh`、task/report YAML、memory DB、semantic index、daemon/gateを正本にする。詳細: `docs/research/causal-verification-l0-l7-design_20260602.md`。因果: [[semantic_search_timeout_infra_bug]] -> [[past_design_intent_unchecked_risk]] -> [[causal_verification_l0_l7_required]]。
 
 | 項目 | 設定 | 正本 |
 |------|------|------|

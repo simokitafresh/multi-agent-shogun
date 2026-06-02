@@ -1,5 +1,5 @@
 # 成長ループ設計 — 全ロール共通
-<!-- last_updated: 2026-04-21 -->
+<!-- last_updated: 2026-06-02 cmd_karo_hotfix_semantic_search_timeout_20260602 -->
 <!-- origin: 殿指摘2026-04-20「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」 -->
 
 ## §1 核心原則
@@ -149,6 +149,14 @@ Level 1-6は「エージェントのミス」から守る。洗脳防御は「An
 → 設計書: `docs/research/creator_brainwashing_defense_design_20260524.md`
 → 実装: cmd_3033(将軍Level0-7) + cmd_3034(軍師Level4) + cmd_3035(家老Level4) + cmd_3036(将軍Level4完成)
 → 概念: `creator_brainwashing_defense` (セマンティクスインデックス登録済み)
+
+**因果確認L0-L7(2026-06-02追加)** — 防御階層の「過去の設計意図を壊さない」拡張:
+現在の実装には過去の事故・殿裁定・CLI差異・運用制約を受けた因果がある。変更前にgit log/blame、教訓、設計書、semantic/causal linksを確認し、「導入理由」「守るべき設計意図」「今回壊れている因果」を残す。
+multi-CLI前提: Claude/Codexのhook差に依存させず、正本はCLI非依存の `cmd_save.sh`、`deploy_task.sh`、`gate_report_format.sh`、report/task YAML、semantic index、memory DB、daemon/gateへ置く。hookは使えるCLIでの早期検出に留める。
+→ 設計書: `docs/research/causal-verification-l0-l7-design_20260602.md`
+→ 実装: `deploy_task.sh` がtask/reportへ `causal_verification` を注入し、`gate_report_format_main.py` が空欄WARN、`cmd_save.sh` がL5表示+WARNを行う(Codex/Claude共通、cmd_karo_impl_causal_verification_l0_l7_20260602)
+→ 概念: `causal_verification_l0_l7`
+→ 因果: [[semantic_search_timeout_infra_bug]] -> [[past_design_intent_unchecked_risk]] -> [[causal_verification_l0_l7_required]]
 
 **L6未化仕組み(2026-05-11時点・0件 ★全L5到達)**:
 
