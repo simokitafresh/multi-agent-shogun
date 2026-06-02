@@ -228,6 +228,34 @@ PY
     [ "${result[0]}" = "False" ]
 }
 
+@test "SSH-003c2: prompt_state semantic cache is isolated per prompt" {
+    export MOCK_AGENT_ID="shogun"
+    semantic_mock="$TEST_TMPDIR/semantic_search_cache.sh"
+    cat > "$semantic_mock" <<'EOF'
+#!/usr/bin/env bash
+printf 'result for %s\n' "$1"
+EOF
+    chmod +x "$semantic_mock"
+    export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$semantic_mock"
+
+    prompt_one="cache prompt one"
+    prompt_two="cache prompt two"
+    hash_one="$(printf '%s' "$prompt_one" | sha256sum | awk '{print $1}')"
+    hash_two="$(printf '%s' "$prompt_two" | sha256sum | awk '{print $1}')"
+    rm -f "/tmp/prompt_state_semantic_cache_shogun" \
+          "/tmp/prompt_state_semantic_cache_shogun_${hash_one}" \
+          "/tmp/prompt_state_semantic_cache_shogun_${hash_two}"
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"cache prompt one\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"cache prompt two\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+
+    [ -f "/tmp/prompt_state_semantic_cache_shogun_${hash_one}" ]
+    [ -f "/tmp/prompt_state_semantic_cache_shogun_${hash_two}" ]
+    [ ! -f "/tmp/prompt_state_semantic_cache_shogun" ]
+}
+
 @test "SSH-003d: prompt_state_inject records semantic NO_MATCH count without prompt text" {
     export MOCK_AGENT_ID="shogun"
     semantic_mock="$TEST_TMPDIR/semantic_search_nomatch.sh"

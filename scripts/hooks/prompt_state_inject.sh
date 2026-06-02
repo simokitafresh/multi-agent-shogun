@@ -213,7 +213,7 @@ prompt_state_semantic_cached_search() {
   [[ -n "${query//[[:space:]]/}" ]] || return 1
 
   prompt_hash="$(printf '%s' "$query" | sha256sum | awk '{print $1}')"
-  cache_file="/tmp/prompt_state_semantic_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
+  cache_file="/tmp/prompt_state_semantic_cache_${agent_id//[^A-Za-z0-9_.-]/_}_${prompt_hash}"
 
   if [[ -f "$cache_file" ]]; then
     cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
