@@ -609,6 +609,7 @@ check_gate_hook_action_conversion() {
 check_lord_30min_cost_question() {
     if ! cmd_block_has_field "quality_gate.q12_lord_30min_cost"; then
         echo "WARNING: q12_lord_30min_cost未記入。「この判断は殿に30分コストを課すか？」をyes/noで記載せよ" >&2
+        echo "  自問: 将軍が直接Editで直せる小変更か？直接Edit所要時間 vs cmd委任全体時間(起票→配備→実装→レビュー→完了)を比較せよ。直接の方が速いならcmd起票はF001前提条件に反する" >&2
         echo '  例: q12_lord_30min_cost: "no — 起票時に確認を埋め込み、殿の誘導コストを増やさない"' >&2
         return 0
     fi
