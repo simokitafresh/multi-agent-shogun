@@ -95,6 +95,8 @@ Codex側にない、または現状未移植の重要安全網:
 
 同じ役割のagentは、Claude Code / Codex / Copilot / Kimi のどのCLIで起動しても、以下の軍規が同じ意味で保証されること。
 
+この要件は忍者だけでなく、将軍・家老・軍師にも適用する。現状は将軍/家老/軍師がClaude中心でも、Claude API障害や編成変更でCodexへ切り替わるため、roleを限定した設計は禁止。
+
 1. 作業開始時に正しい復帰手順へ入る。
 2. tool実行前後の禁止操作が同じ粒度で検査される。
 3. Read-before-Writeなどの状態依存ガードがCLI差異で抜けない。
@@ -389,6 +391,12 @@ project_docは静的(起動時1回)。殿入力テキストに応じた動的検
 
 実装先: inbox_watcher.sh内のsend-keys後処理（既にnudge送信で入力検知している箇所）に「prompt_state_inject相当queue enqueue」を追加。実処理は別workerまたはninja_monitor低頻度drain。同期semantic_search禁止、timeout必須、dedup必須、失敗時はnudge配送を絶対に止めない。
 
+Queue正本:
+- PASS: queueはrepo/state配下など再起動後も残るファイルベースに置く（例: `queue/prompt_state_inject_queue/`）。`/tmp`のみは禁止。
+- PASS: enqueueはatomic write (`*.tmp`→rename) + fingerprint dedup。
+- PASS: ninja_monitor/worker再起動後に未処理queueを再drainできる。
+- FAIL: tmux/inbox watcherプロセスのメモリ、またはtmpfsのみへ保存する。
+
 案D'の二値条件:
 - PASS: send-keys/nudge処理の追加遅延p95が100ms未満。
 - PASS: semantic_search/DB/cacheがtimeoutしてもinbox nudgeは送達される。
@@ -428,6 +436,11 @@ Implementation constraint:
   - **部分更新**: `python3 -c "import json; d=json.load(...); d['hooks']['...'] = ...; json.dump(d, ...)"` でhooksブロックのみ更新
   - **検証のみ(Phase 1)**: `--check` で差分検出。書込みなし
 - `switch_all_codex.sh` のYAML更新(§2.3): `yaml_field_set.sh` でsettings.yamlのCLI種別フィールドのみ更新。yaml.safe_dumpによる全書き換え禁止
+
+Drift guard:
+- `scripts/hooks/post_cli_hook_drift_guard.sh` を新設し、`.claude/settings.json` / `.codex/hooks.json` / `config/cli_events.yaml` の変更後に `scripts/generate_cli_hooks.sh --check` を自動実行する。
+- `scripts/gates/gate_multi_cli_event_coverage.sh --check` は「settings/hooksに存在するがcli_events.yamlにないhook」をBLOCKする。
+- 理由: 実運用ではhook追加cmdが`.claude/settings.json`を直接編集しがちで、正本→生成物の因果が逆転する。PostToolUse guardでドリフトを即検出し、正本追従漏れを残さない。
 - 初期実装は `--check` only で差分検出から始める。
 
 ### 4.3 Common Hook Wrappers
@@ -620,6 +633,32 @@ Mitigation:
 - Avoid `jq`/Python in hot path unless necessary.
 - Reuse `docs/research/codd_spec_bash_state_hook_20260418.md` optimization pattern.
 
+### Risk F: Hot pathに重い同期I/Oが戻る
+
+Cause:
+
+- inbox/report/gate/deployの経路にmemory DB live insert、semantic_search、causal_backlinks、広域git走査を同期で戻す。
+- `deploy_task.sh` は1配備あたり多数の記憶・概念処理を呼び得るため、watcher同様hot path扱いにする。
+
+Hot path対象:
+
+- `scripts/inbox_watcher.sh`
+- `scripts/inbox_write.sh`
+- `scripts/bulletin_write.sh`
+- `scripts/report_field_set.sh`
+- `scripts/gates/gate_report_format.sh`
+- `scripts/gates/gate_gunshi_report_precheck.sh`
+- `scripts/cmd_save.sh`
+- `scripts/cmd_complete_gate.sh`
+- `scripts/deploy_task.sh`
+- `scripts/ninja_monitor.sh`
+
+Mitigation:
+
+- `scripts/gates/gate_hot_path_no_sync_io.sh` で重い同期I/OをBLOCKする。
+- memory DB live insertはasync queue、semantic/causal/gitはtimeoutまたは非同期/キャッシュ経由。
+- UserPromptSubmit代替D'もwatcher内同期実行は禁止。
+
 ## 6. Implementation Plan
 
 ### Phase 1: Audit and Spec
@@ -718,6 +757,19 @@ Runtime tests:
 4. Run watcher restart and verify parent watcher + child inotify processes.
 5. Revert to peacetime allocation and verify gate passes.
 
+E2E responsibility:
+
+- E2Eは家老が担当する（Test Rules）。Unitだけでmulti-CLI成立を完了扱いにしない。
+- 家老E2E: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback→dashboard/掲示板へ結果記録。
+
+Rollback plan:
+
+1. `gate_multi_cli_event_coverage.sh` / `gate_hot_path_no_sync_io.sh` は初期導入をWARNにする。連続PASS確認後にBLOCKへ昇格。
+2. `.codex/hooks.json` はgenerated block単位で戻せるようにし、既存手書きhookを巻き込まない。
+3. `.claude/settings.json` はPhase 1ではcheck-only。rollback時は生成物を書いていないため、guard/gateを無効化するだけで戻せる。
+4. `config/cli_events.yaml` を削除/無効化する場合は、先に `generate_cli_hooks.sh --check` とdrift guardをWARN化し、全忍者idle確認後に撤去する。
+5. 稼働影響が出た場合は既存CLI復旧手順を優先し、hook共通化実装を後退させる。稼働中忍者のpane respawnは家老判断で直列に行う。
+
 ## 8. Success Metrics
 
 Binary metrics:
@@ -755,16 +807,20 @@ Purpose:
 
 > multi-CLI event commonization foundationを作り、Claude/Codexのhook coverage差分を機械検出できるようにする。
 
-Acceptance criteria (軍師覚醒レビュー反映 2026-06-02 v2):
+Acceptance criteria (軍師覚醒レビュー反映 2026-06-02 v3):
 
 1. `config/cli_events.yaml` が§4.1 Confirmed schema **v3** (13 event)に従い作成されている（Claude全event+Codex coverage+補完方式が定義）
 2. `scripts/gates/gate_multi_cli_event_coverage.sh --check` が13 eventに対して現在の差分を検出し、Codex Stop block forbiddenとschema外Claude hookを検査する
 3. `scripts/generate_cli_hooks.sh --check` が `.codex/hooks.json` と `.claude/settings.json` の現物に対してcoverage PASS/WARN/BLOCKを出す
-4. `scripts/gates/gate_multi_cli_switch.sh` がswitch前に5点検証（settings/pane process/watcher/hook coverage/reset semantics）を実行する
-5. `switch_all_codex.sh` のYAML更新が `yaml_field_set.sh` 経由に変更されている（yaml.safe_dump排除）
-6. ninja_monitorのheartbeat file + cron watchdog(STALL検知)が実装されている
-7. UserPromptSubmit Codex代替は案D'（非同期enqueue）として実装され、inbox_watcherのnudge送達遅延p95<100ms・semantic timeout時も送達PASSをbatsで検証する
-8. 上記1-7のbatsテストが追加されている
+4. `.claude/settings.json` / `.codex/hooks.json` 変更時にPostToolUse guardが `generate_cli_hooks.sh --check` を実行し、schema外hookと正本未追従をBLOCKする
+5. `scripts/gates/gate_multi_cli_switch.sh` がswitch前に5点検証（settings/pane process/watcher/hook coverage/reset semantics）を実行する
+6. `switch_all_codex.sh` のYAML更新が `yaml_field_set.sh` 経由に変更されている（yaml.safe_dump排除）
+7. ninja_monitorのheartbeat file + cron watchdog(STALL検知)が実装されている
+8. UserPromptSubmit Codex代替は案D'（永続queue非同期enqueue）として実装され、inbox_watcherのnudge送達遅延p95<100ms・semantic timeout時も送達PASS・ninja_monitor再起動後drain PASSをbatsで検証する
+9. `gate_hot_path_no_sync_io.sh` がhot path対象10ファイルに対し、重い同期I/O混入を初期WARN→連続PASS後BLOCKの段階導入で検査する
+10. 家老E2E検証計画が実行される: idle忍者1名をCodexへ切替→13 event coverage check→D' queue enqueue/drain→inbox nudge送達→元CLIへrollback。結果をdashboard/掲示板に記録する
+11. rollback手順（guard/gate WARN化、generated block rollback、全忍者idle確認、直列pane復旧）が設計書に明記されている
+12. 上記1-11のbats/E2Eテストが追加されている
 
 Not in scope:
 
