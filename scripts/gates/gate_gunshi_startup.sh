@@ -370,8 +370,8 @@ if [ -f "$li_file" ] && [ "$(wc -l < "$li_file")" -gt 1 ]; then
         if (rate < 20) printf "  ★WARN: 参照率20%%未満。task_type設定またはフィルタ精度を確認せよ\n"
         if (fb_total > 0) {
             u_rate = fb_useful * 100 / fb_total
-            printf "  有効率%.1f%% (%d/%d件)。LG027: referenced率≠useful率\n", u_rate, fb_useful+0, fb_total
-            if (u_rate < 30) printf "  ★WARN: 有効率30%%未満。注入教訓の品質改善を検討せよ\n"
+            printf "  有効率%.1f%% (%d/%d件)(全期間)。LG027: referenced率≠useful率\n", u_rate, fb_useful+0, fb_total
+            if (u_rate < 30) printf "  ★WARN: 有効率30%%未満(全期間)。注入教訓の品質改善を検討せよ\n"
         }
     }' "$li_file" 2>/dev/null
 fi

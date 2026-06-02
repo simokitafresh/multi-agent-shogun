@@ -2856,11 +2856,24 @@ inject_semantic_concepts() {
     done <<< "$matches"
 
     if [ -n "$recommended_skills" ]; then
-        inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
+        # Bug fix: filter out role-restricted skills (軍師専用/家老専用/将軍専用)
+        local filtered_skills=""
         while IFS= read -r skill; do
             [ -z "$skill" ] && continue
-            inject_block="${inject_block}"$'\n'"${indent}- \"${skill}\""
+            local skill_md="$SCRIPT_DIR/skills/${skill}/SKILL.md"
+            if [ -f "$skill_md" ] && grep -q '軍師専用\|家老専用\|将軍専用' "$skill_md" 2>/dev/null; then
+                continue
+            fi
+            filtered_skills="${filtered_skills}${skill}"$'\n'
         done <<< "$recommended_skills"
+        recommended_skills="$filtered_skills"
+        if [ -n "$recommended_skills" ]; then
+            inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
+            while IFS= read -r skill; do
+                [ -z "$skill" ] && continue
+                inject_block="${inject_block}"$'\n'"${indent}- \"${skill}\""
+            done <<< "$recommended_skills"
+        fi
     fi
 
     # 既存のsemantic_concepts/recommended_skillsを除去してから追加
