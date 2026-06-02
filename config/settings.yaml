@@ -12,8 +12,8 @@ cli:
       role: shogun
       japanese_name: 将軍
     karo:
-      type: claude
-      model_name: claude-opus-4-6
+      type: codex
+      model_name: gpt-5.5-medium
       role: karo
       japanese_name: 家老
     gunshi:
