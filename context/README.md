@@ -1,12 +1,13 @@
 # context ディレクトリ
-<!-- last_updated: 2026-04-09 -->
+<!-- last_updated: 2026-06-02 cmd_training_backlinks_kagemaru_20260602 -->
 
-プロジェクト固有のコンテキストを管理するディレクトリ。
+プロジェクト固有のコンテキストを管理する索引層。詳細データは `docs/research/*.md` に置き、context側は結論・参照先・grep入口を保持する。詳細ルールは [[AGENTS]] のDesign for Retrieval節を正本とし、関連運用は [[infrastructure]]、概念到達は [[semantic-map]] を参照する。
 
 ## 目的
 - プロジェクトごとの知識・決定事項を保存
 - セッション間での情報共有
 - 新規参加者（足軽）への引継ぎ
+- contextファイル同士を直接 [[ファイル名]] リンクで接続し、因果探索で孤立知識を作らない
 
 ## ファイル構成
 ```
@@ -17,6 +18,12 @@ context/
   infrastructure.md      ← インフラ知識ベース
   dm-signal.md           ← DM-signalプロジェクトコンテキスト
 ```
+
+## 記述ルール
+- context/*.md は1-2行結論 + 参照先パス + 必要なら§番号/grep語で書く
+- 調査詳細・経緯・表は `docs/research/*.md` に保存し、context側からリンクする
+- 圧縮時は先にリンク先を作成し、存在確認してからcontextを索引化する
+- 用語や到達先が曖昧な時は [[semantic-map]] と `bash scripts/semantic_search.sh "<query>"` を使う
 
 ## 使い方
 
@@ -68,3 +75,10 @@ context/
 - 重要な決定があったら即座に更新
 - 日付を必ず更新
 - 不要になった情報は削除（シンプルに保つ）
+- 削除ではなく圧縮する場合は、リンク先なき圧縮を避ける
+
+## 因果リンク
+- ← [[AGENTS]] Design for Retrieval = context/*.mdの記述ルール正本
+- → [[infrastructure]] インフラ運用コンテキストの入口
+- → [[semantic-map]] 概念検索・関連ファイル到達の入口
+- → [[training-cycle]] 修行タスクがcontextリンク密度を育てる仕組み
