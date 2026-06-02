@@ -103,6 +103,63 @@ auto_q11_script_grep_results() {
     done <<< "$script_paths"
 }
 
+quality_gate_field_pair_warnings() {
+    local cmd_text="$1"
+    printf '%s\n' "$cmd_text" | awk '
+        function ltrim(value) {
+            sub(/^[[:space:]]+/, "", value)
+            return value
+        }
+        function rtrim(value) {
+            sub(/[[:space:]]+$/, "", value)
+            return value
+        }
+        function clean_value(line, value) {
+            value = line
+            sub(/^[^:]*:[[:space:]]*/, "", value)
+            sub(/[[:space:]]*#.*/, "", value)
+            value = rtrim(ltrim(value))
+            return value
+        }
+        function is_filled(value) {
+            return value != "" && value != "\"\"" && value != "''" && value != "null" && value != "~"
+        }
+        function flush_qg() {
+            if (in_qg && q5_present && !q5_verified_source_filled) {
+                print "WARN(q5_verified_source必須フィールド対): quality_gate.q5 が記入済みだが q5_verified_source が空/未記入。cmd_save.sh到達前に q5_verified_source: \"structure_verified — 確認方法と対象\" を記入せよ。"
+            }
+            q5_present = 0
+            q5_verified_source_filled = 0
+        }
+        /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+        {
+            indent = match($0, /[^[:space:]]/) - 1
+            if ($0 ~ /^[[:space:]]*quality_gate:[[:space:]]*$/) {
+                flush_qg()
+                in_qg = 1
+                qg_indent = indent
+                next
+            }
+            if (in_qg && indent <= qg_indent) {
+                flush_qg()
+                in_qg = 0
+            }
+            if (in_qg) {
+                if ($0 ~ /^[[:space:]]+q5:[[:space:]]*/) {
+                    if (is_filled(clean_value($0))) {
+                        q5_present = 1
+                    }
+                } else if ($0 ~ /^[[:space:]]+q5_verified_source:[[:space:]]*/) {
+                    if (is_filled(clean_value($0))) {
+                        q5_verified_source_filled = 1
+                    }
+                }
+            }
+        }
+        END { flush_qg() }
+    ' | sort -u
+}
+
 # Extract tool_name and file_path without jq/awk on the hot path.
 json_string_after() {
     local line="$1" key="$2" rest c result i
@@ -268,6 +325,12 @@ ${_cmd_save_block_top3}"
             _checklist="${_checklist}
 
 ${_auto_q11_grep_results}"
+        fi
+        _qg_pair_warnings="$(quality_gate_field_pair_warnings "$_stk_content")"
+        if [[ -n "$_qg_pair_warnings" ]]; then
+            _checklist="${_checklist}
+
+${_qg_pair_warnings}"
         fi
         emit_context "$_checklist"
     fi
