@@ -21,6 +21,12 @@ Environment:
                        fallback both miss. Default is 0.
   SEMANTIC_MEMORY_DB_PATH
                        Override data/multi_agent_shogun_memory.db for FTS fallback
+  SEMANTIC_MEMORY_DB_CACHE_PATH
+                       Override ext4 cache path used for the memory DB fallback
+  SEMANTIC_MEMORY_DB_CACHE_DIR
+                       Override ext4 cache dir (default: /tmp/shogun_memory_db_cache)
+  SEMANTIC_DISABLE_MEMORY_DB_CACHE
+                       Set to 1 to read SEMANTIC_MEMORY_DB_PATH directly
   SEMANTIC_DISABLE_MEMORY_DB
                        Set to 1 to skip memory DB FTS fallback
   SEMANTIC_MEMORY_DB_LIMIT
@@ -96,11 +102,84 @@ if [ ! -f "$index_path" ]; then
     exit 1
 fi
 
+default_memory_db_path="$script_dir/data/multi_agent_shogun_memory.db"
+
+memory_db_cache_path_for() {
+    local source_path="$1"
+    if [ -n "${SEMANTIC_MEMORY_DB_CACHE_PATH:-}" ]; then
+        printf '%s\n' "$SEMANTIC_MEMORY_DB_CACHE_PATH"
+        return 0
+    fi
+    local cache_dir="${SEMANTIC_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+    local cache_key
+    cache_key="${script_dir//[^A-Za-z0-9_.-]/_}"
+    printf '%s/%s_%s\n' "$cache_dir" "$cache_key" "$(basename "$source_path")"
+}
+
+prepare_memory_db_for_read() {
+    local source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
+    [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" != "1" ] || {
+        printf '%s\n' "$source_path"
+        return 0
+    }
+    [ -f "$source_path" ] || {
+        printf '%s\n' "$source_path"
+        return 0
+    }
+
+    local cache_path lock_path tmp_path
+    cache_path="$(memory_db_cache_path_for "$source_path")"
+    lock_path="${cache_path}.lock"
+    tmp_path="${cache_path}.tmp.$$"
+    mkdir -p "$(dirname "$cache_path")" 2>/dev/null || {
+        printf '%s\n' "$source_path"
+        return 0
+    }
+
+    if [ -s "$cache_path" ] && [ ! "$source_path" -nt "$cache_path" ]; then
+        printf '%s\n' "$cache_path"
+        return 0
+    fi
+
+    (
+        flock 9 2>/dev/null || exit 0
+        if [ ! -s "$cache_path" ] || [ "$source_path" -nt "$cache_path" ]; then
+            rm -f "$tmp_path" 2>/dev/null || true
+            cp "$source_path" "$tmp_path" 2>/dev/null || exit 0
+            if [ -f "${source_path}-wal" ]; then
+                cp "${source_path}-wal" "${tmp_path}-wal" 2>/dev/null || true
+            else
+                rm -f "${cache_path}-wal" 2>/dev/null || true
+            fi
+            if [ -f "${source_path}-shm" ]; then
+                cp "${source_path}-shm" "${tmp_path}-shm" 2>/dev/null || true
+            else
+                rm -f "${cache_path}-shm" 2>/dev/null || true
+            fi
+            mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
+            if [ -f "${tmp_path}-wal" ]; then
+                mv "${tmp_path}-wal" "${cache_path}-wal" 2>/dev/null || rm -f "${tmp_path}-wal"
+            fi
+            if [ -f "${tmp_path}-shm" ]; then
+                mv "${tmp_path}-shm" "${cache_path}-shm" 2>/dev/null || rm -f "${tmp_path}-shm"
+            fi
+        fi
+    ) 9>"$lock_path"
+
+    if [ -s "$cache_path" ]; then
+        printf '%s\n' "$cache_path"
+    else
+        printf '%s\n' "$source_path"
+    fi
+}
+
+memory_db_path="$(prepare_memory_db_for_read)"
+
 semantic_index_python() {
     local mode="$1"
     local mode_arg="${2:-}"
     SEMANTIC_INDEX_CACHE_DIR="${SEMANTIC_INDEX_CACHE_DIR:-$script_dir/tmp/semantic_index_cache}" \
-        SEMANTIC_MEMORY_DB_PATH="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}" \
+        SEMANTIC_MEMORY_DB_PATH="$memory_db_path" \
         python3 "$script_dir/scripts/semantic_index.py" "$index_path" "$query" "$mode" "$mode_arg"
 }
 
@@ -114,7 +193,7 @@ memory_db_search() {
 
     local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-15}"
     local target="${SEMANTIC_MEMORY_DB_TARGET:-${AGENT_ID:-}}"
-    local db_path="${SEMANTIC_MEMORY_DB_PATH:-$script_dir/data/multi_agent_shogun_memory.db}"
+    local db_path="$memory_db_path"
     [ -f "$db_path" ] || return 1
 
     if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then

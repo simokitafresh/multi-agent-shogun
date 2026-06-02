@@ -7,10 +7,13 @@ import sys
 import json
 import glob
 import re
+import tempfile
+import shutil
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB_PATH = os.path.join(REPO_ROOT, "data", "multi_agent_shogun_memory.db")
+DEFAULT_CACHE_DIR = os.path.join(tempfile.gettempdir(), "shogun_memory_db_cache")
 DEFAULT_SEMANTIC_MAP_PATH = os.path.join(REPO_ROOT, "context", "semantic-map.md")
 DEFAULT_SEMANTIC_INDEX_PATH = os.path.join(REPO_ROOT, "docs", "semantic-index", "index.md")
 SUMMARY_LIMIT = 240
@@ -61,6 +64,61 @@ REPORT_MEANINGFUL_PREFIXES = (
     "purpose_validation.",
     "result.",
 )
+
+
+def memory_db_cache_path(db_path: str) -> str:
+    override = os.environ.get("SHOGUN_MEMORY_DB_CACHE_PATH", "").strip()
+    if override:
+        return override
+    cache_dir = os.environ.get("SHOGUN_MEMORY_DB_CACHE_DIR", DEFAULT_CACHE_DIR)
+    repo_key = re.sub(r"[^A-Za-z0-9_.-]", "_", REPO_ROOT)
+    return os.path.join(cache_dir, f"{repo_key}_{os.path.basename(db_path)}")
+
+
+def sync_memory_db_ext4_cache(db_path: str) -> None:
+    if os.environ.get("SHOGUN_DISABLE_MEMORY_DB_CACHE", "0") == "1":
+        return
+    if not os.path.exists(db_path):
+        return
+
+    import fcntl
+
+    cache_path = memory_db_cache_path(db_path)
+    cache_dir = os.path.dirname(cache_path)
+    os.makedirs(cache_dir, exist_ok=True)
+    lock_path = f"{cache_path}.lock"
+    tmp_path = ""
+    with open(lock_path, "w", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        fd, tmp_path = tempfile.mkstemp(
+            prefix=f".{os.path.basename(cache_path)}.",
+            suffix=".tmp",
+            dir=cache_dir,
+        )
+        os.close(fd)
+        try:
+            shutil.copyfile(db_path, tmp_path)
+            for suffix in ("-wal", "-shm"):
+                source_sidecar = f"{db_path}{suffix}"
+                tmp_sidecar = f"{tmp_path}{suffix}"
+                cache_sidecar = f"{cache_path}{suffix}"
+                if os.path.exists(source_sidecar):
+                    shutil.copyfile(source_sidecar, tmp_sidecar)
+                elif os.path.exists(cache_sidecar):
+                    os.unlink(cache_sidecar)
+            os.replace(tmp_path, cache_path)
+            for suffix in ("-wal", "-shm"):
+                tmp_sidecar = f"{tmp_path}{suffix}"
+                if os.path.exists(tmp_sidecar):
+                    os.replace(tmp_sidecar, f"{cache_path}{suffix}")
+            tmp_path = ""
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            for suffix in ("-wal", "-shm"):
+                tmp_sidecar = f"{tmp_path}{suffix}" if tmp_path else ""
+                if tmp_sidecar and os.path.exists(tmp_sidecar):
+                    os.unlink(tmp_sidecar)
 
 
 def normalize_text(value: object) -> str:
@@ -1047,6 +1105,10 @@ def main() -> int:
         append_lesson(args)
     elif args.event_type == "gate":
         append_gate(args)
+    try:
+        sync_memory_db_ext4_cache(args.db_path)
+    except Exception as exc:
+        print(f"WARN: memory DB ext4 cache sync failed: {exc}", file=sys.stderr)
     return 0
 
 
