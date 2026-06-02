@@ -35,7 +35,7 @@ CMD_SAVE_LORD_CONVERSATION_MAX_LINES="${CMD_SAVE_LORD_CONVERSATION_MAX_LINES:-10
 CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="${CMD_SAVE_LORD_CONVERSATION_MAX_BYTES:-2097152}"
 CMD_SAVE_CHRONICLE_MAX_LINES="${CMD_SAVE_CHRONICLE_MAX_LINES:-1200}"
 CMD_SAVE_CHRONICLE_MAX_BYTES="${CMD_SAVE_CHRONICLE_MAX_BYTES:-2097152}"
-MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert.py}"
+MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert_async.py}"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
@@ -1714,6 +1714,15 @@ record_warn_reason() {
     fi
 }
 
+warn_q5_pair_missing_session_state() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+    cmd_block_has_field "quality_gate.q5" || return 0
+    cmd_block_has_field "quality_gate.q5_verified_source" && return 0
+
+    echo "WARNING: q5_verified_source必須フィールド対。quality_gate.q5 が記入済みだが q5_verified_source が空/未記入です" >&2
+    record_warn_reason "q5_verified_source必須フィールド対" "check=warn_q5_pair_missing_session_state"
+}
+
 warn_note_check_name() {
     local note="${1:-}"
     local segment
@@ -2508,6 +2517,8 @@ QG_TEMPLATE
     # 修正: 全必須項目を一括チェックし、全ての不足を1回で表示してexit 1
     MISSING_KEYS=()
     MISSING_HINTS=()
+
+    warn_q5_pair_missing_session_state
 
     for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
         if ! cmd_block_has_field "quality_gate.${_QG_KEY}"; then
@@ -5433,13 +5444,14 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
         ')"
         [[ -n "$_CMD_SAVE_MEMORY_SUMMARY" ]] || _CMD_SAVE_MEMORY_SUMMARY="$CMD_ID saved"
         # WSL2最適化: memory_db_live_insert を非同期化（DB書込みは判定に影響しない）
-        ( python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
+        python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
             --cmd-id "$CMD_ID" \
             --ts "$_CMD_SAVE_MEMORY_TS" \
             --summary "$_CMD_SAVE_MEMORY_SUMMARY" \
             --detail "$CMD_BLOCK_NC" \
             --source-file "${QUEUE_FILE#"$PROJECT_DIR"/}" \
-            2>/dev/null || echo "[cmd_save] WARN: DB INSERT skipped for ${CMD_ID}" >&2 ) &
+            >/dev/null 2>&1 &
+        disown 2>/dev/null || true
     fi
     _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
     if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then

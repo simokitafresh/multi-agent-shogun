@@ -153,6 +153,67 @@ run_warn_save() {
         bash "$SAVE_SCRIPT" cmd_warntest
 }
 
+write_q5_pair_cmd() {
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_q5pairtest:
+    id: cmd_q5pairtest
+    title: "infra — q5対フィールドSession Stateテスト"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_3132_L4化]] -> [[L6未接続]] -> [[Session State累計追跡]]"
+    command: "cmd_save.shのq5対フィールド欠落Session Stateを検証する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow"
+      q5: "structure_verified"
+      q6_not_hiding: "no — 欠落検出をSession Stateへ接続する"
+      q8_why_what: "WHY: cmd_3132でq5対フィールドWARNをL4化した → WHAT: Session Stateで累計追跡しL6化する → WHEN: q5のみ記入されたcmd_save時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: 同一WARNの2回目以降に検出ロジック行を表示する。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save_diagnosis_quality.bats fixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg warn_q5_pair_missing_session_state scripts/cmd_save.sh で新規追加を確認"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "2026-06-02時点でq5のみ記入時の対フィールド欠落をfixtureで再現する"
+        source: "tests/unit/test_cmd_save_diagnosis_quality.bats"
+        trust: "verified"
+YAML
+}
+
+q5_pair_seed_log() {
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: "cmd_q5pair_hist"
+    ac_count: 0
+    gate_result: "WARN"
+    karo_rework: "no"
+    gunshi_verdict: "unknown"
+    ninja_blockers: 0
+    project: "infra"
+    supplementary_cmds: 0
+    source: "cmd_save_warn"
+    timestamp: "2026-06-02T00:00:00Z"
+    notes: "q5_verified_source必須フィールド対|check=warn_q5_pair_missing_session_state"
+YAML
+}
+
+run_q5_pair_save() {
+    run env \
+        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
+        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_LOCK_FILE="$TEST_LOCK" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SAVE_SCRIPT" cmd_q5pairtest
+}
+
 # --- AC1: 低品質diagnosis再BLOCK ---
 
 @test "AC1-1: diagnosisなしはPASS(通常のBLOCKあり→通常ブロック)" {
@@ -314,4 +375,27 @@ YAML
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
+}
+
+@test "cmd_3135 AC1: q5対フィールド欠落WARNが累計追跡される" {
+    write_q5_pair_cmd
+    run_q5_pair_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARNING: q5_verified_source必須フィールド対"* ]]
+    [[ "$output" == *"WARNトリガーマップ"* ]]
+    [[ "$output" == *"check=warn_q5_pair_missing_session_state"* ]]
+}
+
+@test "cmd_3135 AC2: q5対フィールド欠落2回目はSession Stateが検出ロジック行を表示する" {
+    write_q5_pair_cmd
+    q5_pair_seed_log
+    run_q5_pair_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"このWARN(q5_verified_source必須フィールド対)は過去1回出現"* ]]
+    [[ "$output" == *"Session State: 検出ロジック該当行"* ]]
+    [[ "$output" == *"warn_q5_pair_missing_session_state"* ]]
 }
