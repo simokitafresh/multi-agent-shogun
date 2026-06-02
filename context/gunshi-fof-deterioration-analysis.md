@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
+<!-- last_updated: 2026-06-03 cmd_3147 -->
 # FoF悪化構造分析 — EMA前処理のFoF伝播メカニズム
 
 <!-- cmd_1700/1701/1703/1704の結果を統合分析。軍師分析(2026-04-03) -->
