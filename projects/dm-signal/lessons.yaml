@@ -904,6 +904,9 @@ lessons:
   - scripts/analysis/gs_grid_robustness.py
   - outputs/robustness/20260428/L0/
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-03'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1108,6 +1111,9 @@ lessons:
   target_files:
   - 偵察のみ
   when: FE設計書の計測セクション(§2)はcmd更新時に
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-03'
 - id: L653
   title: cdp_measure baseline比較は生成JSONへの統合確認を必須にする
   summary: cdp_measure.sh Phase4はcdp_benchmark.pyを--baseline/current比較器として呼ぶが、実際のcdp_benchm
@@ -1914,6 +1920,9 @@ lessons:
   - outputs/analysis/cmd_1848_is_oos_champion_analysis.md
   - scripts/oneshot/cmd_1848_is_oos_champion_analysis.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-03'
 - id: L603
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4'
   summary: cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確
@@ -5857,7 +5866,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-03'
   how: '2026-03-16'
   origin: '[[cmd_976]]'
   source_cmd: cmd_976
@@ -8453,6 +8462,9 @@ lessons:
   target_files:
   - recalculate_fast.py
   when: MultiView/SingleView/TrendReversalを含むFoF再計算やGS parityを調整する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-03'
 - id: L100
   title: MultiViewMomentumFilterBlockはbase_period_months≥4必須(skip=3で0ヶ月問題)
   summary: IF MultiViewはSKIP_MONTHS_LIST=[0,1,2,3]固定のため、base_period_months≤3だとeffective_mon
@@ -8588,7 +8600,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-03'
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
   origin: '[[cmd_218]]'
   source_cmd: cmd_218
@@ -8718,6 +8730,9 @@ lessons:
   - logs/cmd_design_quality.yaml
   - logs/gunshi_review_log.yaml
   when: PortfolioRepository.load()がNoneを返す、または1PFのvalidation errorで全PF再計算が停止する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-03'
 - id: L077
   title: GS CSV monthly_return = open-based / Production cumulative_return = close-based
   summary: nukimiパリティ検証でGS CSV(mode月次リターン)がDB monthly_return_openと90%一致を確認。ProductionのCompo

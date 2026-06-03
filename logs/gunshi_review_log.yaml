@@ -1957,3 +1957,31 @@
   brainwash_check: "CI RED修正定型。precheck ERRORS=0で客観裏付け"
   origin: "[[CI RED 26841389916]] -> [[cmd_save 2件]] -> [[kagemaru LGTM]]"
   timestamp: "2026-06-03T09:36:00"
+- cmd_id: cmd_karo_context_freshness_ga407_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "context freshness ALERT GA-407解消。dm-signal context鮮度更新。hotfix定型"
+  observations:
+    - "target_path=context/dm-signal.md。context更新定型パターン"
+  causal_chain: "context_freshness ALERT→context更新→鮮度ゲート解消"
+  brainwash_check: "hotfix定型。target_path確認済み"
+  origin: "[[GA-407]] -> [[context freshness]]"
+  timestamp: "2026-06-03T13:20:00"
+- cmd_id: cmd_karo_context_freshness_ga407_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  finding_categories: [assumptions, premortem]
+  findings_summary: "GA-407解消。pathspec追加で分割context偽陽性を根治。単なるlast_updated更新ではなく構造修正"
+  observations:
+    - "根因: source_repo_for_contextがrepo全体commitを分割context全体に適用→frontend/researchに無関係ALERT"
+    - "修正: dm-signal-frontend/research/ops別pathspecを追加。backend変更がfrontend/researchにALERT出さない"
+    - "bc全yes。gate再実行で総合OK確認。lesson_candidate: なぜなぜ5問で根因→横展開余地記載"
+  causal_chain: "repo全体commit→分割context全適用→偽陽性ALERT→pathspec追加で領域限定=正の複利"
+  brainwash_check: "hotfixだが根治(pathspec設計)まで到達。消火(last_updated更新のみ)ではない"
+  origin: "[[GA-407]] -> [[pathspec未設計]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-03T13:26:00"

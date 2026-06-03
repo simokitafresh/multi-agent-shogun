@@ -7399,3 +7399,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を追加した際、CMD_QUALITY_FAST_METADATA=1ガードが漏れた。unitテストはFAST_METADATA=1を常に渡すが、ガードがない表示処理がNTFS I/O(350KB読込+50+ファイルgrep=10-20s)を実行し、Session State系テスト全体の72%を占拠した。教育的表示を追加するときは実装と同じターンでFAST_METADATAガードを必ず追加せよ
+
+### L738: 分割context freshnessは外部repo全体でなく領域pathspecを使う
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_context_freshness_ga407_20260603
+- **記録者**: hayate
+- **tags**: [infra,frontend,git]
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats,context/dm-signal.md,context/dm-signal-ops.md]
+- **origin**: [[cmd_karo_context_freshness_ga407_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split contextはファイルごとの関心pathspecをsource_repo_for_contextに持たせ、内容更新が必要な領域だけを鳴らす。
