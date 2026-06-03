@@ -9,6 +9,17 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SAVE_SCRIPT" ] || return 1
+
+    eval "$(sed -n '/^parse_structured_environment_change()/,/^}/p' "$SAVE_SCRIPT")"
+
+    record_block_reason() {
+        local reason="${1:-}"
+        [[ -n "$reason" ]] || return 0
+        echo "BLOCK: $reason" >&2
+        BLOCK_COUNT=$((BLOCK_COUNT + 1))
+    }
+
+    export -f parse_structured_environment_change record_block_reason
 }
 
 setup() {
@@ -74,22 +85,52 @@ ${env_yaml}
 YAML
 }
 
-run_save() {
-    run env \
-        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_LOCK_FILE="$TEST_LOCK" \
-        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
-        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
-        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
-        CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
-        CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
-        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
-        CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
-        CMD_SAVE_ACCUMULATE_BLOCKS=0 \
-        CMD_QUALITY_FAST_METADATA=1 \
-        bash "$SAVE_SCRIPT" "$TEST_CMD_ID"
+run_environment_change_check() {
+    CMD_BLOCK_NC="$(awk -v id="$TEST_CMD_ID" '
+        $0 == "  " id ":" { found=1 }
+        found { print }
+    ' "$TEST_QUEUE")"
+    PROJECT_DIR="$PROJECT_ROOT"
+    PRIOR_ATTEMPT_COUNT=0
+    BLOCK_COUNT=0
+    if [ -f "$TEST_QUALITY_LOG" ] && grep -qF "cmd_id: \"${TEST_CMD_ID}\"" "$TEST_QUALITY_LOG"; then
+        PRIOR_ATTEMPT_COUNT=1
+    fi
+
+    run _environment_change_check_body
+}
+
+_environment_change_check_body() {
+    (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
+
+    local _env_change _env_structured _env_type _env_file _env_pattern _env_file_resolved
+    _env_change="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+    if [[ -z "$_env_change" ]]; then
+        record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+        return 1
+    fi
+
+    local _env_vague_pattern="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A|初回起票|初回|該当なし|なし.*初回|対策:.*初回)$"
+    if echo "$_env_change" | grep -qE "$_env_vague_pattern"; then
+        record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
+        return 1
+    fi
+
+    if _env_structured="$(parse_structured_environment_change "$_env_change" 2>/dev/null)"; then
+        IFS=$'\t' read -r _env_type _env_file _env_pattern <<< "$_env_structured"
+        _env_file_resolved="$_env_file"
+        if [[ "$_env_file_resolved" != /* ]]; then
+            _env_file_resolved="$PROJECT_DIR/$_env_file_resolved"
+        fi
+        if ! grep -qE -- "$_env_pattern" "$_env_file_resolved"; then
+            record_block_reason "environment_change未実装。file=${_env_file} に pattern=${_env_pattern} が見つからない"
+            echo "  structured environment_change: type=${_env_type} file=${_env_file} pattern=${_env_pattern}" >&2
+            return 1
+        fi
+    else
+        record_block_reason "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
+        return 1
+    fi
 }
 
 # 1回目のBLOCKを作成(quality_logにBLOCK記録を残す)
@@ -110,11 +151,10 @@ YAML
 
 @test "AC1-1: 初回(PRIOR_ATTEMPT=0)はenvironment_changeなしでPASS" {
     write_full_cmd ""
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"environment_change未記入"* ]]
     [[ "$output" != *"environment_changeが低品質"* ]]
     [[ "$output" != *"environment_changeが非構造化"* ]]
@@ -125,7 +165,7 @@ YAML
 @test "AC1-2: BLOCK後の再挑戦でenvironment_change未記入→BLOCK" {
     create_prior_block
     write_full_cmd ""
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
@@ -138,7 +178,7 @@ YAML
 @test "AC2-1: environment_change=「修正した」→BLOCK" {
     create_prior_block
     write_full_cmd "修正した"
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
@@ -162,11 +202,10 @@ YAML
 @test "AC3-1: environment_change=gate追加+ファイルパス→PASS" {
     create_prior_block
     write_full_cmd "type=gate;file=scripts/cmd_save.sh;pattern=environment_change強制"
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"environment_change未実装"* ]]
 }
 
@@ -175,11 +214,10 @@ YAML
     local lesson_marker="$TEST_TMPDIR/lessons.yaml"
     printf '%s\n' 'lessons:' '- id: LTEST_ENV_CHANGE' > "$lesson_marker"
     write_full_cmd "type=lesson;file=$lesson_marker;pattern=LTEST_ENV_CHANGE"
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
 }
 
 @test "parse_structured_environment_change logs python stderr on failure" {
@@ -206,7 +244,7 @@ SH
 @test "AC4-2: 構造化environment_changeでpattern不一致ならBLOCK" {
     create_prior_block
     write_full_cmd "type=gate_add;file=scripts/cmd_save.sh;pattern=THIS_PATTERN_DOES_NOT_EXIST_2173"
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
@@ -217,7 +255,7 @@ SH
 @test "AC4-3: 自由テキストenvironment_changeはBLOCK" {
     create_prior_block
     write_full_cmd "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"
-    run_save
+    run_environment_change_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]

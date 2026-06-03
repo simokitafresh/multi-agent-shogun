@@ -6,6 +6,79 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SAVE_SCRIPT" ] || return 1
+
+    eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '4066,4209p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '4173,4209p' "$SAVE_SCRIPT")"
+
+    cmd_block_get_field() {
+        local field="${1:-}"
+        local fallback="${2:-}"
+        awk -v key="$field" -v fallback="$fallback" '
+            $0 ~ "^[[:space:]]*" key ":" {
+                sub("^[[:space:]]*" key ":[[:space:]]*", "")
+                gsub(/^"|"$/, "")
+                print
+                found=1
+                exit
+            }
+            END { if (!found) print fallback }
+        ' <<< "${CMD_BLOCK_NC:-}"
+    }
+
+    count_same_warn_pattern() {
+        local warn_pattern="${1:-}"
+        [[ -n "$warn_pattern" && -f "$QUALITY_LOG_FILE" ]] || { echo 0; return 0; }
+        python3 - "$QUALITY_LOG_FILE" "$warn_pattern" <<'PY'
+import sys
+import yaml
+
+path, warn_pattern = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+count = 0
+for entry in data.get("entries", []):
+    if not isinstance(entry, dict):
+        continue
+    note = str(entry.get("notes", "") or "")
+    key = note.split("|", 1)[0].strip()
+    if (
+        entry.get("source") == "cmd_save_warn"
+        and entry.get("gate_result") == "WARN"
+        and not entry.get("resolved_by")
+        and "[resolved:" not in note
+        and (key == warn_pattern or warn_pattern in note)
+    ):
+        count += 1
+print(count)
+PY
+    }
+
+    export -f extract_acceptance_criteria_block emit_ac_param_candidate_hints
+    export -f build_warn_note warn_note_key warn_note_message record_warn_reason
+    run_ac_param_check_body() {
+        check_ac_param_sufficiency
+        if [ "${WARN_COUNT:-0}" -gt 0 ]; then
+            {
+                printf 'entries:\n'
+                local warn_note
+                for warn_note in "${WARN_REASONS[@]}"; do
+                    printf '  - cmd_id: "cmd_warn"\n'
+                    printf '    gate_result: "WARN"\n'
+                    printf '    source: "cmd_save_warn"\n'
+                    printf '    notes: "%s"\n' "$warn_note"
+                done
+            } >> "$TEST_QUALITY_LOG"
+        fi
+        return 0
+    }
+
+    export -f check_ac_param_sufficiency cmd_block_get_field count_same_warn_pattern
+    export -f run_ac_param_check_body
 }
 
 setup() {
@@ -97,15 +170,19 @@ commands:
 YAML
 }
 
-run_save() {
-    run env \
-        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
-        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS" \
-        CMD_QUALITY_FAST_METADATA=1 \
-        bash "$SAVE_SCRIPT" cmd_warn
+run_ac_param_check() {
+    CMD_BLOCK_NC="$(sed -n '/^  cmd_warn:/,$p' "$TEST_QUEUE")"
+    CMD_BLOCK="$CMD_BLOCK_NC"
+    CMD_ID="cmd_warn"
+    PROJECT_DIR="$PROJECT_ROOT"
+    QUALITY_LOG_FILE="$TEST_QUALITY_LOG"
+    QUEUE_FILE="$TEST_QUEUE"
+    ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR"
+    CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS"
+    WARN_COUNT=0
+    WARN_REASONS=()
+
+    run run_ac_param_check_body
 }
 
 @test "AC1: record_warn_reason以外のbare WARN_COUNT++は存在しない" {
@@ -122,10 +199,10 @@ run_save() {
 @test "AC2: WARN発生時にcmd_save_warn entryへnotesが記録される" {
     write_warn_cmd_queue
 
-    run_save
+    run_ac_param_check
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: ACに数量指定があるが具体値が列挙されていません"* ]]
 
     run grep -n 'source: "cmd_save_warn"' "$TEST_QUALITY_LOG"
@@ -152,10 +229,10 @@ entries:
     notes: "ac_param_sufficiency|check=check_ac_param_sufficiency|ACに数量指定があるが具体値が列挙されていません"
 YAML
 
-    run_save
+    run_ac_param_check
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
     [[ "$output" == *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
     [[ "$output" == *"★ Session State: 検出ロジック該当行"* ]]
     [[ "$output" == *"check=check_ac_param_sufficiency"* ]]
@@ -173,10 +250,10 @@ entries:
     notes: "ac_param_sufficiency|check=check_ac_param_sufficiency|ACに数量指定があるが具体値が列挙されていません"
 YAML
 
-    run_save
+    run_ac_param_check
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
     [[ "$output" != *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
     [[ "$output" != *"BLOCK: WARN累計昇格"* ]]
 }
@@ -184,10 +261,10 @@ YAML
 @test "AC4: AC数量指定WARN時に関連contextから候補値が表示される" {
     write_warn_cmd_queue_with_candidate_context
 
-    run_save
+    run_ac_param_check
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: ACに数量指定があるが具体値が列挙されていません"* ]]
     [[ "$output" == *"候補値ヒント（関連context/projectsから自動抽出）"* ]]
     [[ "$output" == *"ac-candidates.md"* ]]

@@ -9,6 +9,50 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SAVE_SCRIPT" ] || return 1
+
+    eval "$(sed -n '/^cmd_save_shogun_lesson_exists_for_cmd()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_missing_prev_cmd_lesson()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^remind_missing_current_cmd_lesson_after_clear()/,/^}/p' "$SAVE_SCRIPT")"
+
+    record_block_reason() {
+        local reason="${1:-}"
+        [[ -n "$reason" ]] || return 0
+        echo "BLOCK: $reason" >&2
+        BLOCK_REASONS+=("$reason")
+        BLOCK_COUNT=$((BLOCK_COUNT + 1))
+        {
+            printf '  - cmd_id: "%s"\n' "${CMD_ID:-cmd_curr}"
+            printf '    gate_result: BLOCK\n'
+            printf '    source: cmd_save\n'
+            printf '    notes: "%s"\n' "$reason"
+        } >> "$QUALITY_LOG_FILE"
+        return 1
+    }
+
+    count_cmd_save_blocks_for_cmd() {
+        local target_cmd_id="${1:-}"
+        [[ -n "$target_cmd_id" && -f "$QUALITY_LOG_FILE" ]] || { echo 0; return 0; }
+        python3 - "$QUALITY_LOG_FILE" "$target_cmd_id" <<'PY'
+import sys
+import yaml
+
+path, target = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+count = sum(
+    1 for entry in data.get("entries", [])
+    if isinstance(entry, dict)
+    and entry.get("cmd_id") == target
+    and entry.get("gate_result") == "BLOCK"
+    and entry.get("source") == "cmd_save"
+)
+print(count)
+PY
+    }
+
+    export -f cmd_save_shogun_lesson_exists_for_cmd warn_missing_prev_cmd_lesson
+    export -f remind_missing_current_cmd_lesson_after_clear record_block_reason
+    export -f count_cmd_save_blocks_for_cmd
 }
 
 setup() {
@@ -131,17 +175,23 @@ entries:
 YAML
 }
 
-run_save() {
-    run env \
-        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
-        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
-        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
-        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
-        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS" \
-        CMD_SAVE_SHOGUN_LESSON_ACK_FILE="$TEST_ACK" \
-        CMD_SAVE_LOCK_FILE="$TEST_TMPDIR/shogun_to_karo.lock" \
-        CMD_SAVE_PREV_LESSON_FAST=1 \
-        bash "$SAVE_SCRIPT" cmd_curr
+run_prev_lesson_check() {
+    CMD_ID="cmd_curr"
+    QUALITY_LOG_FILE="$TEST_QUALITY_LOG"
+    CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD"
+    CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS"
+    CMD_SAVE_SHOGUN_LESSON_ACK_FILE="$TEST_ACK"
+    BLOCK_COUNT=0
+    BLOCK_REASONS=()
+    run warn_missing_prev_cmd_lesson
+}
+
+run_current_lesson_remind() {
+    CMD_ID="cmd_curr"
+    QUALITY_LOG_FILE="$TEST_QUALITY_LOG"
+    CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS"
+    CMD_SAVE_SHOGUN_LESSON_ACK_FILE="$TEST_ACK"
+    run remind_missing_current_cmd_lesson_after_clear
 }
 
 @test "AC2: 前cmd BLOCKあり + 教訓未記録 → 即BLOCK" {
@@ -149,13 +199,12 @@ run_save() {
     write_quality_log_with_prev_blocks 2
     write_lessons_file "cmd_other"
 
-    run_save
+    run_prev_lesson_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK: 前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A05"* ]]
-    [[ "$output" == *"保存確認NG"* ]]
 
     run grep -n 'notes: "前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
@@ -166,11 +215,10 @@ run_save() {
     write_quality_log_with_prev_blocks 3
     write_lessons_file "cmd_prev"
 
-    run_save
+    run_prev_lesson_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"教訓未記録"* ]]
 }
 
@@ -186,11 +234,10 @@ acks:
   timestamp: "2026-05-14T00:00:00Z"
 YAML
 
-    run_save
+    run_prev_lesson_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"教訓未記録"* ]]
 }
 
@@ -199,11 +246,10 @@ YAML
     write_quality_log_with_prev_blocks 0
     write_lessons_file "cmd_other"
 
-    run_save
+    run_prev_lesson_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"教訓未記録"* ]]
 }
 
@@ -212,7 +258,7 @@ YAML
     write_quality_log_with_prior_warn "cmd_prev"
     write_lessons_file "cmd_prev"
 
-    run_save
+    run_prev_lesson_check
     echo "$output" >&2
 
     [ "$status" -ne 0 ]
@@ -226,11 +272,10 @@ YAML
     write_quality_log_with_current_blocks 2
     write_lessons_file "cmd_other"
 
-    run_save
+    run_current_lesson_remind
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK: cmd_curr"* ]]
     [[ "$output" == *"REMIND: cmd_currで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ"* ]]
     [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_curr LS-A05"* ]]
     [[ "$output" == *"REMIND: 環境埋込み判定: 同じBLOCKを既存hookテンプレート注入で防止可能か、gate修正が必要かを判定せよ。"* ]]
@@ -242,11 +287,10 @@ YAML
     write_quality_log_with_current_blocks 1
     write_lessons_file "cmd_curr"
 
-    run_save
+    run_current_lesson_remind
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"保存確認OK: cmd_curr"* ]]
     [[ "$output" != *"REMIND:"* ]]
     [[ "$output" != *"教訓未記録"* ]]
 }

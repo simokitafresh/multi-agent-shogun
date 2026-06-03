@@ -27,6 +27,7 @@ setup() {
     TEST_TMPDIR="$(mktemp -d)"
     export TEST_TMPDIR
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
+    export TEST_CMD_BLOCK_NC=""
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
     export CMD_BLOCK_NC=""
     export WARN_COUNT=0
@@ -42,8 +43,7 @@ write_cmd_queue() {
     local acceptance_criteria_block="$1"
     local command_block="$2"
 
-    cat > "$TEST_QUEUE" <<YAML
-commands:
+    TEST_CMD_BLOCK_NC="$(cat <<YAML
   cmd_steps:
     id: cmd_steps
     title: "infra — command step vs AC regression"
@@ -73,10 +73,15 @@ ${acceptance_criteria_block}
         source: "command_steps_over_ac logic reviewed"
         trust: "verified"
 YAML
+)"
+    cat > "$TEST_QUEUE" <<YAML
+commands:
+$TEST_CMD_BLOCK_NC
+YAML
 }
 
-run_save() {
-    CMD_BLOCK_NC="$(sed -n '/^  cmd_steps:/,$p' "$TEST_QUEUE")"
+run_command_steps_check() {
+    CMD_BLOCK_NC="$TEST_CMD_BLOCK_NC"
     run check_command_steps_vs_ac
 }
 
@@ -94,7 +99,7 @@ run_save() {
       4. step4
       5. step5"
 
-    run_save
+    run_command_steps_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -112,7 +117,7 @@ run_save() {
       2. step2
       3. step3"
 
-    run_save
+    run_command_steps_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -135,7 +140,7 @@ run_save() {
       2. step2
       3. step3"
 
-    run_save
+    run_command_steps_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -153,7 +158,7 @@ run_save() {
 "      1. implementation
       2. verification"
 
-    run_save
+    run_command_steps_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -171,7 +176,7 @@ run_save() {
         3. インフラ観点を確認
       2. 報告する"
 
-    run_save
+    run_command_steps_check
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
