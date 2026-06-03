@@ -14,6 +14,8 @@ setup() {
     export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
     export SEMANTIC_DISABLE_MEMORY_DB_CACHE=1
     export SEMANTIC_MEMORY_DB_CACHE_DIR="$TEST_TMPDIR/memory_db_cache"
+    mkdir -p "$TEST_TMPDIR/data"
+    export SEMANTIC_SEARCH_LOG_DB_PATH="$TEST_TMPDIR/data/search_logs.db"
     export SEMANTIC_DISABLE_CAUSAL=1
     unset SEMANTIC_MEMORY_DB_PATH
     export SEMANTIC_DISABLE_MEMORY_DB=1
@@ -249,6 +251,70 @@ weights = module.iqr_scaled_recency_weights(
 assert weights["old"] < weights["new"] < weights["recent"], weights
 PY
     [ "$status" -eq 0 ]
+}
+
+@test "search_log_write creates search_logs rows with caller separate from agent_id" {
+    run bash "$PROJECT_ROOT/scripts/search_log_write.sh" \
+        --db "$SEMANTIC_SEARCH_LOG_DB_PATH" \
+        --caller semantic_search \
+        --agent-id hayate \
+        --elapsed-ms 12 \
+        --exit-code 0 \
+        "意味検索" 2 0
+
+    [ "$status" -eq 0 ]
+
+    readarray -t rows < <(python3 - "$SEMANTIC_SEARCH_LOG_DB_PATH" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    "SELECT caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code FROM search_logs"
+).fetchone()
+print("|".join("" if value is None else str(value) for value in row))
+PY
+)
+    [ "${rows[0]}" = "semantic_search|hayate|意味検索|2|0|12|0" ]
+
+    run python3 - "$SEMANTIC_SEARCH_LOG_DB_PATH" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+columns = [row[1] for row in conn.execute("PRAGMA table_info(search_logs)")]
+assert "ts" in columns, columns
+assert "elapsed_ms" in columns, columns
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "semantic_search records hit and NO_MATCH rows after search completion" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "品質を伸ばす輪"
+    [ "$status" -eq 1 ]
+
+    readarray -t rows < <(python3 - "$SEMANTIC_SEARCH_LOG_DB_PATH" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+for row in conn.execute(
+    """
+    SELECT caller, query, hit_count, no_match, elapsed_ms, exit_code
+    FROM search_logs
+    ORDER BY id
+    """
+):
+    print("|".join(str(value) for value in row))
+PY
+)
+    [ "${#rows[@]}" -eq 2 ]
+    [[ "${rows[0]}" == "semantic_search|意味検索|"* ]]
+    [[ "${rows[0]}" == *"|0" ]]
+    [[ "${rows[0]}" =~ ^semantic_search\\|意味検索\\|[0-9]+\\|0\\|[0-9]+\\|0$ ]]
+    [[ "${rows[1]}" =~ ^semantic_search\\|品質を伸ばす輪\\|0\\|1\\|[0-9]+\\|1$ ]]
 }
 
 @test "memory DB fallback filters hits to current agent target" {
