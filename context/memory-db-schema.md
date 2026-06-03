@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-02 -->
+<!-- last_updated: 2026-06-03 -->
 
 # Memory DB Schema
 
@@ -13,6 +13,7 @@
 | table | event_links | 2551 | source_event_id, target_concept, link_type |
 | table | events | 69845 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
 | table | events_fts | 69845 | summary, detail |
+| table | search_logs | created on first search | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -33,6 +34,9 @@
 | index | idx_events_importance |  |  |
 | index | idx_events_parent_event_id |  |  |
 | index | idx_events_ts |  |  |
+| index | idx_search_logs_no_match |  |  |
+| index | idx_search_logs_query |  |  |
+| index | idx_search_logs_ts |  |  |
 
 ## Event Type Distribution
 
@@ -87,6 +91,24 @@
 | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… |
 | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな<br>status: pending<br>priority: low<br>source… |
 | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ<br>status: pending<br>priority: low<br>source: s… |
+
+## `search_logs`
+
+cmd_3150で追加。`scripts/semantic_search.sh` の検索完了後に `scripts/search_log_write.sh` が記録する。
+検索結果そのものではなく、三層記憶の保守と殿の使用パターン分析のための実行メトリクスである。
+
+| column | meaning |
+| --- | --- |
+| id | AUTOINCREMENT primary key |
+| ts | 検索実行時刻。旧 `executed_at` 形式がある場合は移行時に `ts` へ反映 |
+| caller | 呼出し元機能名。`semantic_search` など。agent_idとは分離 |
+| agent_id | 実行エージェントID。取得できない場合はNULL |
+| query | 検索語 |
+| hit_count | 検索結果件数。NO_MATCH時は0 |
+| no_match | 0/1。NO_MATCHなら1 |
+| elapsed_ms | 検索開始から検索完了までの経過ms。ログ書込時間は含めない |
+| exit_code | 検索コマンドの終了コード |
+| created_at | DB行作成時刻 |
 
 ## `test_trigram`
 
