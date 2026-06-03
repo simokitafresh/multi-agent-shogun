@@ -23,7 +23,9 @@ setup() {
     export TEST_BULLETIN="$TEST_TMPDIR/bulletin_board.yaml"
     export TEST_MEMORY_DB="$TEST_TMPDIR/data/memory.db"
     export TEST_Q11_RESEARCH_DIR="$TEST_TMPDIR/docs/research"
+    export TEST_INSIGHTS="$TEST_TMPDIR/insights.yaml"
     mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR"
+    printf '%s\n' '[]' > "$TEST_INSIGHTS"
 }
 
 teardown() {
@@ -42,8 +44,12 @@ run_cmd_save() {
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
+        CMD_SAVE_SYNC_QUALITY_LOG=1 \
+        CMD_SAVE_DISABLE_QUALITY_LOG=1 \
+        MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_multi_block
 }
@@ -60,9 +66,13 @@ run_cmd_save_pass() {
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
+        CMD_SAVE_FORCE_LORD_CONVERSATION="${CMD_SAVE_FORCE_LORD_CONVERSATION:-0}" \
         SHOGUN_MEMORY_DB="$TEST_MEMORY_DB" \
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
+        CMD_SAVE_SYNC_QUALITY_LOG=1 \
+        MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_pass
 }
@@ -238,7 +248,7 @@ commands:
         detail: "target条件の回帰テストfixtureで検証する"
 YAML
 
-    run_cmd_save_pass
+    CMD_SAVE_FORCE_LORD_CONVERSATION=1 run_cmd_save_pass
     echo "$output" >&2
 
     [ "$status" -eq 0 ]

@@ -2837,8 +2837,12 @@ QG_TEMPLATE
             fi
 
             # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
-            # FAST_METADATAモードでは教育的表示(関連成果物検出)をスキップ。
-            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+            # FAST_METADATAモードでは本番docs走査を避けるが、テストで明示された小さいresearch dirは走査する。
+            _Q11_ALLOW_RESEARCH_SCAN=0
+            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" || -n "${CMD_SAVE_Q11_RESEARCH_DIR:-}" || "${_Q11_PROJECT_DIR}" != "${PROJECT_ROOT:-$PROJECT_DIR}" ]]; then
+                _Q11_ALLOW_RESEARCH_SCAN=1
+            fi
+            if [[ "$_Q11_ALLOW_RESEARCH_SCAN" == "1" ]]; then
             _Q11_TARGETS=$(
                 printf '%s\n' "$_Q11_COMMAND_SECTION" \
                     | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \
@@ -3657,7 +3661,9 @@ PY
 # WSL2最適化: lord_conversation検索を非同期化（全出力>&2、判定に影響しない）
 # Unit tests pass CMD_QUALITY_FAST_METADATA=1 and assert gate decisions, not
 # best-effort metadata. Avoid spawning slow background scans in that mode.
-if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" || "${CMD_SAVE_FORCE_LORD_CONVERSATION:-0}" == "1" ]]; then
+if [[ "${CMD_SAVE_FORCE_LORD_CONVERSATION:-0}" == "1" ]]; then
+    show_lord_conversation_matches
+elif [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
     show_lord_conversation_matches &
 fi
 
