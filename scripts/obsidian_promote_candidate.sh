@@ -71,19 +71,29 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$db_path" "$backup_dir" "$limit" "$min_concept_frequency" "$min_links" "$importance" "$dry_run" <<'PY'
+python3 - "$script_dir" "$db_path" "$backup_dir" "$limit" "$min_concept_frequency" "$min_links" "$importance" "$dry_run" <<'PY'
 from __future__ import annotations
 
+import importlib.util
 import re
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
 
 
 SQLITE_BUSY_TIMEOUT_MS = 5000
 INT_RE = re.compile(r"^[0-9]+$")
 NORMAL_STATES = ("raw", "verified")
+
+
+def load_state_module(repo_root: Path):
+    module_path = repo_root / "scripts" / "memory_db_live_insert.py"
+    spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"obsidian_promote_candidate: cannot load {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def parse_positive_int(value: str, name: str) -> int:
@@ -101,26 +111,16 @@ def require_columns(conn: sqlite3.Connection, table: str, columns: set[str]) -> 
         )
 
 
-def ensure_backup(db_path: Path, backup_dir_arg: str) -> Path:
-    backup_dir = Path(backup_dir_arg) if backup_dir_arg else db_path.parent
-    backup_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-    backup_path = backup_dir / f"{db_path.name}.bak_obsidian_candidate_{stamp}"
-    with sqlite3.connect(db_path) as src, sqlite3.connect(backup_path) as dst:
-        src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        src.backup(dst)
-    return backup_path
-
-
 def main() -> int:
-    db_path = Path(sys.argv[1])
-    backup_dir = sys.argv[2]
-    limit = parse_positive_int(sys.argv[3], "--limit")
-    min_concept_frequency = parse_positive_int(sys.argv[4], "--min-concept-frequency")
-    min_links = parse_positive_int(sys.argv[5], "--min-links")
-    importance = sys.argv[6]
-    dry_run = sys.argv[7] == "1"
+    repo_root = Path(sys.argv[1])
+    state_module = load_state_module(repo_root)
+    db_path = Path(sys.argv[2])
+    backup_dir = sys.argv[3]
+    limit = parse_positive_int(sys.argv[4], "--limit")
+    min_concept_frequency = parse_positive_int(sys.argv[5], "--min-concept-frequency")
+    min_links = parse_positive_int(sys.argv[6], "--min-links")
+    importance = sys.argv[7]
+    dry_run = sys.argv[8] == "1"
 
     if not db_path.exists():
         print(f"obsidian_promote_candidate: database not found: {db_path}", file=sys.stderr)
@@ -186,15 +186,19 @@ def main() -> int:
                 )
             return 0
 
-        backup_path = ensure_backup(db_path, backup_dir)
-        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
+        backup_path = state_module.create_sqlite_backup(
+            str(db_path), backup_dir or None, "obsidian_candidate"
+        )
         with conn:
-            conn.executemany(
-                "UPDATE events SET state = 'obsidian_candidate', updated_at = ? WHERE id = ?",
-                [(now, row["id"]) for row in rows],
+            updated = state_module.update_event_state(
+                conn,
+                [row["id"] for row in rows],
+                "obsidian_candidate",
+                "high-value event selected for Obsidian promotion review",
+                "obsidian_promote_candidate",
             )
         print(f"backup={backup_path}")
-        print(f"updated={len(rows)}")
+        print(f"updated={updated}")
         for row in rows:
             print(
                 f"{row['id']}|{row['importance']}|links={row['link_count']}|"

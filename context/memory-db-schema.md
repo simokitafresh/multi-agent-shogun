@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_3160 -->
+<!-- last_updated: 2026-06-03 cmd_3164 -->
 
 # Memory DB Schema
 
@@ -86,9 +86,13 @@
 
 `raw_content` はcmd_3159で追加。live insert経路の新規イベントのみ、検索用に加工された`summary`/`detail`とは別に入力原文を保存する。既存行はNULLのまま保持する。
 
-`state` は記憶状態を表す。live insert経路は通常イベントを`raw`で保存し、cmd_3160で候補イベント用に`contradiction_candidate` / `duplicate_candidate`を追加した。矛盾候補は`event_type=memory_candidate`、`state=contradiction_candidate`、`direction=<矛盾分類>`で記録し、分類は三層記憶運用原則§11の10種（誤情報、古い、文脈違い、定義違い、分野違い、時点違い、観測条件違い、意見違い、仮説競合、過去判断と現在判断違い）へ対応する。重複候補は`event_type=memory_candidate`、`state=duplicate_candidate`、`direction=duplicate`で記録する。候補は削除・統合の確定ではなく、人間/家老の後続判断の入力である。
+`state` は記憶状態を表す。正本の許可値は `scripts/memory_db_live_insert.py` の `VALID_EVENT_STATES` で、`raw` / `verified` / `stale_candidate` / `contradiction_candidate` / `duplicate_candidate` / `obsidian_candidate` / `archived` を持つ。live insert経路は通常イベントを`raw`で保存し、cmd_3160で候補イベント用に`contradiction_candidate` / `duplicate_candidate`を追加した。矛盾候補は`event_type=memory_candidate`、`state=contradiction_candidate`、`direction=<矛盾分類>`で記録し、分類は三層記憶運用原則§11の10種（誤情報、古い、文脈違い、定義違い、分野違い、時点違い、観測条件違い、意見違い、仮説競合、過去判断と現在判断違い）へ対応する。重複候補は`event_type=memory_candidate`、`state=duplicate_candidate`、`direction=duplicate`で記録する。候補は削除・統合の確定ではなく、人間/家老の後続判断の入力である。
 
-`obsidian_candidate` はObsidian昇格の人間確認待ち状態。`scripts/obsidian_promote_candidate.sh` が、高importance・高頻度参照概念・複数Obsidianリンクを同時に満たす通常イベント（`raw` / `verified`）を抽出し、DBバックアップ作成後に`state='obsidian_candidate'`へ更新する。これは昇格確定ではなく、直接リンク化すべき記憶候補のレビューキューである。
+state遷移は削除ではなく想起制御である。`update_event_state(conn, event_ids, new_state, reason, actor)` が共通遷移関数で、`events.state` と `events.updated_at` を更新し、`event_state_transitions` に `event_id/from_state/to_state/reason/actor/transitioned_at` を記録する。DBを変更するstate遷移スクリプトは、更新前に `create_sqlite_backup()` でSQLite backupを作成する。
+
+`obsidian_candidate` はObsidian昇格の人間確認待ち状態。`scripts/obsidian_promote_candidate.sh` が、高importance・高頻度参照概念・複数Obsidianリンクを同時に満たす通常イベント（`raw` / `verified`）を抽出し、DBバックアップ作成後に共通state遷移関数で`state='obsidian_candidate'`へ更新する。これは昇格確定ではなく、直接リンク化すべき記憶候補のレビューキューである。
+
+`archived` は古い記憶を削除せず通常想起から外す状態。`scripts/memory_recall_control.sh` は条件に合う古い`verified`イベントを抽出し、DBバックアップ作成後に共通state遷移関数で`verified -> archived`へ遷移する。既定条件は`updated_at`（なければ`ts`）が90日以上古いverifiedイベントで、`--older-than-days` / `--limit` / `--dry-run` で制御する。
 
 ## `events_fts`
 

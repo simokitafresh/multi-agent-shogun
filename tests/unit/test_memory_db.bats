@@ -1326,6 +1326,94 @@ PY
     [ "${result[1]}" = "0" ]
 }
 
+@test "memory_db_live_insert defines the complete event state set" {
+    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" <<'PY'
+import importlib.util
+import sys
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(",".join(sorted(module.VALID_EVENT_STATES)))
+PY
+)
+    [ "${result[0]}" = "archived,contradiction_candidate,duplicate_candidate,obsidian_candidate,raw,stale_candidate,verified" ]
+}
+
+@test "update_event_state updates state and logs transition reason" {
+    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/data/memory.db" <<'PY'
+import importlib.util
+import sqlite3
+import sys
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+conn = sqlite3.connect(sys.argv[2])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.execute("INSERT INTO events (id, summary, state) VALUES ('event:1', '遷移対象', 'verified')")
+with conn:
+    print(module.update_event_state(conn, ["event:1"], "archived", "recall window exceeded", "unit_test"))
+print(conn.execute("SELECT state FROM events WHERE id='event:1'").fetchone()[0])
+print(conn.execute("SELECT from_state, to_state, reason, actor FROM event_state_transitions WHERE event_id='event:1'").fetchone())
+print(conn.execute("SELECT updated_at IS NOT NULL FROM events WHERE id='event:1'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "archived" ]
+    [ "${result[2]}" = "('verified', 'archived', 'recall window exceeded', 'unit_test')" ]
+    [ "${result[3]}" = "1" ]
+}
+
+@test "memory_recall_control backs up DB and archives old verified events" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, summary TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.executemany(
+    "INSERT INTO events VALUES (?, ?, ?, ?, ?)",
+    [
+        ("event:old", "2026-01-01T00:00:00+09:00", "古いverified", "verified", "2026-01-01T00:00:00+09:00"),
+        ("event:new", "2026-06-01T00:00:00+09:00", "新しいverified", "verified", "2026-06-01T00:00:00+09:00"),
+        ("event:raw", "2026-01-01T00:00:00+09:00", "rawは対象外", "raw", "2026-01-01T00:00:00+09:00"),
+    ],
+)
+conn.commit()
+PY
+
+    mkdir -p "$TEST_TMPDIR/backups"
+    run bash "$PROJECT_ROOT/scripts/memory_recall_control.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --older-than-days 30 \
+        --reason "unit recall policy"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"backup=$TEST_TMPDIR/backups/memory.db.bak_recall_control_"* ]]
+    [[ "$output" == *"updated=1"* ]]
+    [[ "$output" == *"event:old|古いverified"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" "$TEST_TMPDIR/backups" <<'PY'
+import sqlite3
+import sys
+from pathlib import Path
+conn = sqlite3.connect(sys.argv[1])
+backup_paths = sorted(Path(sys.argv[2]).glob("memory.db.bak_recall_control_*"))
+print(len(backup_paths))
+print(conn.execute("SELECT state FROM events WHERE id='event:old'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:new'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:raw'").fetchone()[0])
+print(conn.execute("SELECT reason FROM event_state_transitions WHERE event_id='event:old'").fetchone()[0])
+backup_conn = sqlite3.connect(backup_paths[0])
+print(backup_conn.execute("SELECT state FROM events WHERE id='event:old'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "archived" ]
+    [ "${result[2]}" = "verified" ]
+    [ "${result[3]}" = "raw" ]
+    [ "${result[4]}" = "unit recall policy" ]
+    [ "${result[5]}" = "verified" ]
+}
+
 @test "memory_db_import records confidence freshness source_type defaults" {
     cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
 {"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"属性列テスト","detail":"confidence freshness source_type のデフォルト確認"}
