@@ -12,6 +12,10 @@ setup() {
     # Speed: デフォルトでは本番246MB DBを参照しない。memory DB tag propagationテストは自身でオーバーライドする
     export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/nonexistent_memory.db"
     export SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1
+    unset SEMANTIC_CMD_HISTORY_FILES
+    unset SEMANTIC_INSIGHTS_PATH
+    unset SEMANTIC_NEW_FILE_LIST
+    unset SEMANTIC_PROJECTS_CONFIG
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
@@ -82,6 +86,27 @@ teardown() {
     grep -q '| cmd | `cmd_2564` セマンティクスインデックス' "$SEMANTIC_INDEX_PATH"
     grep -q 'セマンティック辞書構想' "$SEMANTIC_MAP_PATH"
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+}
+
+@test "related_concepts relation_type format is preserved during index update" {
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |\n",
+    "| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |\n| related_concepts | growth_loop(relation_type=上位) |\n",
+    1,
+)
+path.write_text(text, encoding="utf-8")
+PY
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_3151_fixture","title":"意味検索","purpose":"属性付きrelated_conceptsを保持","files":["scripts/semantic_index.py"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
+
+    grep -Fq '| related_concepts | growth_loop(relation_type=上位) |' "$SEMANTIC_INDEX_PATH"
 }
 
 @test "memory DB tag propagation uses FTS5 bm25 one-hop R(c) BH decay" {

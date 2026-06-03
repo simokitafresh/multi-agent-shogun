@@ -137,6 +137,23 @@ def format_related_concepts(values):
         cleaned.append(item)
     return ", ".join(cleaned)
 
+def parse_related_concept_entry(value):
+    item = str(value).strip().strip("`")
+    if not item:
+        return "", item
+    match = re.match(r"^([A-Za-z0-9_-]+)\s*\((.*?)\)$", item)
+    if match:
+        return match.group(1).strip(), item
+    return item, item
+
+def parse_related_concepts_cell(value):
+    parsed = []
+    for raw_item in str(value or "").split(","):
+        concept_id, display = parse_related_concept_entry(raw_item)
+        if concept_id:
+            parsed.append({"id": concept_id, "display": display})
+    return parsed
+
 def set_related_concepts_row(block_text, related_ids):
     row = f"| related_concepts | {format_related_concepts(related_ids)} |"
     if re.search(r"(?m)^\|\s*related_concepts\s*\|", block_text):
@@ -165,16 +182,18 @@ def ensure_bidirectional_related_concepts(text):
         for raw in block["block"].splitlines():
             row = re.match(r"^\|\s*related_concepts\s*\|\s*(.*?)\s*\|$", raw.strip())
             if row:
-                rel = [item.strip().strip("`") for item in row.group(1).split(",") if item.strip()]
+                rel = parse_related_concepts_cell(row.group(1))
                 break
         related_by_id[block["id"]] = rel
 
     additions = {block_id: [] for block_id in by_id}
     for source_id, related_ids in related_by_id.items():
-        for target_id in related_ids:
+        for related in related_ids:
+            target_id = related["id"]
             if target_id not in by_id:
                 continue
-            if source_id not in related_by_id.get(target_id, []):
+            target_related_ids = {item["id"] for item in related_by_id.get(target_id, [])}
+            if source_id not in target_related_ids:
                 additions[target_id].append(source_id)
 
     additions = {block_id: values for block_id, values in additions.items() if values}
@@ -186,7 +205,7 @@ def ensure_bidirectional_related_concepts(text):
         add = additions.get(block["id"])
         if not add:
             continue
-        new_related = [*related_by_id.get(block["id"], []), *add]
+        new_related = [*[item["display"] for item in related_by_id.get(block["id"], [])], *add]
         new_block = set_related_concepts_row(block["block"], new_related)
         updated = updated[: block["start"]] + new_block + updated[block["end"] :]
     return updated, sum(len(values) for values in additions.values())

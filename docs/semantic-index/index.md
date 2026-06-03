@@ -9,6 +9,7 @@ codd:
 
 <!-- created: 2026-05-04 | parent_cmd: cmd_2562 -->
 <!-- scope: multi-agent-shogun conceptual reverse index -->
+<!-- related_concepts format: concept_id or concept_id(relation_type=同義|上位|混同注意|関連). Parsers must keep legacy concept_id entries backward-compatible. -->
 
 ## cmd_chronicle — CMD年代記
 

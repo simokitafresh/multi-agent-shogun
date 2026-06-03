@@ -11,6 +11,8 @@ Usage: bash scripts/semantic_search.sh [--llm] <query>
 Search docs/semantic-index/index.md by concept label and aliases. If the
 first layer has no match, fall back to memory DB FTS5 concept matching.
 Use --llm to skip the alias layer and run semantic matching directly.
+related_concepts accepts legacy concept_id entries and concept_id(relation_type=...)
+entries; relation_type is rendered as metadata and does not control expansion.
 
 Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md

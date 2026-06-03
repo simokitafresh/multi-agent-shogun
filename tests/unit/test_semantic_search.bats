@@ -30,7 +30,7 @@ setup() {
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
 | aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 共通概念 |
-| related_concepts | growth_loop |
+| related_concepts | growth_loop(relation_type=上位) |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -92,11 +92,33 @@ teardown() {
     [[ "$output" == *"matched: 意味検索"* ]]
     [[ "$output" == *"docs/research/semantic_index_design.md"* ]]
     [[ "$output" == *"related_concepts:"* ]]
+    [[ "$output" == *"relation_type: 上位"* ]]
     [[ "$output" == *"path_b_score:"* ]]
     [[ "$output" == *"## growth_loop — 学習ループ"* ]]
     [[ "$output" == *"context/growth-loop.md"* ]]
     [[ "$output" == *"- url: \`https://github.com/example/semantic-index-reference\`"* ]]
     [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "semantic index parser accepts related_concepts with relation_type and legacy ids" {
+    run python3 - "$PROJECT_ROOT" "$SEMANTIC_INDEX_PATH" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+index_path = pathlib.Path(sys.argv[2])
+spec = importlib.util.spec_from_file_location("semantic_index", root / "scripts" / "semantic_index.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+concepts = {concept["id"]: concept for concept in module.parse_index(index_path)}
+semantic = concepts["semantic_dictionary_design"]["related_concepts"]
+growth = concepts["growth_loop"]["related_concepts"]
+assert semantic == [{"id": "growth_loop", "relation_type": "上位"}], semantic
+assert growth == [{"id": "semantic_dictionary_design", "relation_type": "related"}], growth
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "first layer expands related concept resources only for a single concept match" {

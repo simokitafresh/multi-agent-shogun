@@ -520,6 +520,24 @@ def is_operational_noise_target(target):
         or STRUCTURAL_METADATA_RE.search(target_n)
     )
 
+def parse_related_concepts_cell(value):
+    related = []
+    for raw_item in str(value or "").split(","):
+        item = raw_item.strip().strip("`")
+        if not item:
+            continue
+        relation_type = "related"
+        concept_id = item
+        match = re.match(r"^([A-Za-z0-9_-]+)\s*\((.*?)\)$", item)
+        if match:
+            concept_id = match.group(1).strip()
+            for attr in match.group(2).split(";"):
+                key, sep, attr_value = attr.partition("=")
+                if sep and key.strip() == "relation_type" and attr_value.strip():
+                    relation_type = attr_value.strip()
+        related.append({"id": concept_id, "relation_type": relation_type})
+    return related
+
 def parse_concepts(text):
     matches = list(re.finditer(r"(?m)^##\s+(.+)$", text))
     concepts = []
@@ -535,7 +553,7 @@ def parse_concepts(text):
             if not m:
                 continue
             left, right = m.group(1).strip(), m.group(2).strip()
-            if left in {"id", "label", "aliases"}:
+            if left in {"id", "label", "aliases", "related_concepts"}:
                 attrs[left] = right
         aliases = [a.strip() for a in attrs.get("aliases", "").split(",") if a.strip()]
         cid = attrs.get("id") or concept_id
@@ -549,6 +567,7 @@ def parse_concepts(text):
                 "id": cid,
                 "label": attrs.get("label") or heading,
                 "aliases": aliases,
+                "related_concepts": parse_related_concepts_cell(attrs.get("related_concepts", "")),
             }
         )
     return concepts

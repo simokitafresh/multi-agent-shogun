@@ -16,6 +16,38 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def parse_related_concepts_cell(value: str) -> list[dict[str, str]]:
+    """Parse related_concepts entries with optional per-edge attributes."""
+    related: list[dict[str, str]] = []
+    for raw_item in str(value or "").split(","):
+        item = raw_item.strip().strip("`")
+        if not item:
+            continue
+        relation_type = "related"
+        concept_id = item
+        match = re.match(r"^([A-Za-z0-9_-]+)\s*\((.*?)\)$", item)
+        if match:
+            concept_id = match.group(1).strip()
+            attrs = match.group(2)
+            for attr in attrs.split(";"):
+                key, sep, attr_value = attr.partition("=")
+                if sep and key.strip() == "relation_type" and attr_value.strip():
+                    relation_type = attr_value.strip()
+        related.append({"id": concept_id, "relation_type": relation_type})
+    return related
+
+
+def related_concept_ids(concept: dict) -> list[str]:
+    return [item["id"] for item in concept.get("related_concepts", [])]
+
+
+def relation_type_for(seed: dict, related_id: str) -> str:
+    for item in seed.get("related_concepts", []):
+        if item.get("id") == related_id:
+            return item.get("relation_type") or "related"
+    return "related"
+
+
 def parse_index(index_path: Path) -> list:
     """Parse index.md sections into concept dicts."""
     text = index_path.read_text(encoding="utf-8")
@@ -64,11 +96,9 @@ def parse_index(index_path: Path) -> list:
                     for item in attrs.get("skills", "").split(",")
                     if item.strip()
                 ],
-                "related_concepts": [
-                    item.strip().strip("`")
-                    for item in attrs.get("related_concepts", "").split(",")
-                    if item.strip()
-                ],
+                "related_concepts": parse_related_concepts_cell(
+                    attrs.get("related_concepts", "")
+                ),
                 "related_lessons": [
                     item.strip().strip("`")
                     for item in attrs.get("related_lessons", "").split(",")
@@ -138,7 +168,9 @@ def print_related_concepts(concept: dict, concepts: list) -> None:
             print("")
             print("related_concepts:")
             printed = True
+        relation_type = relation_type_for(concept, related["id"])
         print(f"## {related['id']} — {related['label']}")
+        print(f"relation_type: {relation_type}")
         print(
             "path_b_score: "
             f"{score:.3f} (density={density}, connection_strength={strength:.3f}, backlinks={backlinks})"
@@ -153,7 +185,7 @@ def precompute_related_concept_backlinks(concepts: list[dict]) -> dict[str, int]
     counts: dict[str, int] = {}
     known_ids = {concept["id"] for concept in concepts}
     for concept in concepts:
-        for related_id in concept.get("related_concepts", []):
+        for related_id in related_concept_ids(concept):
             if related_id in known_ids:
                 counts[related_id] = counts.get(related_id, 0) + 1
     return counts
@@ -173,14 +205,14 @@ def rank_related_concepts(
     by_id: dict[str, dict],
     backlink_counts: dict[str, int],
 ) -> list[tuple[dict, float, int, float, int]]:
-    seed_related = set(seed.get("related_concepts", []))
+    seed_related = set(related_concept_ids(seed))
     ranked: list[tuple[dict, float, int, float, int]] = []
-    for position, related_id in enumerate(seed.get("related_concepts", []), 1):
+    for position, related_id in enumerate(related_concept_ids(seed), 1):
         related = by_id.get(related_id)
         if not related:
             continue
-        reciprocal = 1.0 if seed["id"] in related.get("related_concepts", []) else 0.0
-        shared_neighbors = len(seed_related.intersection(related.get("related_concepts", [])))
+        reciprocal = 1.0 if seed["id"] in related_concept_ids(related) else 0.0
+        shared_neighbors = len(seed_related.intersection(related_concept_ids(related)))
         backlinks = backlink_counts.get(related_id, 0)
         strength = 1.0 + reciprocal + (shared_neighbors * 0.25) + math.log1p(backlinks)
         density = concept_density(related)
@@ -837,7 +869,7 @@ def main() -> None:
             result_limit = int(os.environ.get("SEMANTIC_MEMORY_DB_LIMIT", "10"))
             seed_concepts = [concept["id"] for concept, _matched_terms in matches]
             if len(matches) == 1:
-                seed_concepts.extend(matches[0][0].get("related_concepts", []))
+                seed_concepts.extend(related_concept_ids(matches[0][0]))
             print_memory_db_concept_search_for_ids(db_path, seed_concepts, expansion_limit, result_limit)
 
     elif mode == "render-llm-resources":
