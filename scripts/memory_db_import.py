@@ -1132,16 +1132,16 @@ def event_row_with_attributes(event_row: EventRow) -> EventRow:
             DEFAULT_FRESHNESS,
             DEFAULT_SOURCE_TYPE,
             event_row[14],  # state
-            ts,   # occurred_at
-            ts,   # recorded_at
-            "",   # updated_at
+            ts,    # occurred_at
+            ts,    # recorded_at
+            None,  # updated_at (未設定 = NULL)
         )
     if len(event_row) == 18:
         return (
             *event_row,
-            ts,   # occurred_at
-            ts,   # recorded_at
-            "",   # updated_at
+            ts,    # occurred_at
+            ts,    # recorded_at
+            None,  # updated_at (未設定 = NULL)
         )
     if len(event_row) == 21:
         return event_row

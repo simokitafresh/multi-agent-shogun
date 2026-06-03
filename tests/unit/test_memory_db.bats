@@ -43,7 +43,7 @@ print(conn.execute("SELECT event_type FROM events ORDER BY ts LIMIT 1").fetchone
 PY
 )
     [ "${result[0]}" = "ts,agent,direction,summary,detail,session_id" ]
-    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance,state" ]
+    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance,confidence,freshness,source_type,state,occurred_at,recorded_at,updated_at" ]
     [ "${result[2]}" = "view" ]
     [ "${result[3]}" = "2" ]
     [ "${result[4]}" = "2026-05-01" ]
@@ -1122,4 +1122,126 @@ PY
 )
     [ "${result[0]}" = "True" ]
     [ "${result[1]}" = "True" ]
+}
+
+@test "memory_db_import adds occurred_at recorded_at updated_at columns to events table" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"timestamp列テスト","detail":"3種タイムスタンプ列追加確認"}
+{"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"timestamp列応答","detail":"occurred_at recorded_at updated_at"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("occurred_at" in cols)
+print("recorded_at" in cols)
+print("updated_at" in cols)
+# occurred_at と recorded_at は ts と同値
+rows = conn.execute(
+    "SELECT ts, occurred_at, recorded_at FROM events WHERE ts <> '' ORDER BY ts LIMIT 2"
+).fetchall()
+print(len(rows))
+print(rows[0][0] == rows[0][1])
+print(rows[0][0] == rows[0][2])
+# updated_at は NULL
+null_count = conn.execute(
+    "SELECT COUNT(*) FROM events WHERE updated_at IS NULL"
+).fetchone()[0]
+print(null_count > 0)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "2" ]
+    [ "${result[4]}" = "True" ]
+    [ "${result[5]}" = "True" ]
+    [ "${result[6]}" = "True" ]
+}
+
+@test "memory_db_import migrates existing DB by adding timestamp columns via ALTER TABLE" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"既存DBタイムスタンプ","detail":"timestamp列なしのDBへ追加"}
+EOF
+
+    # stateのみ存在するレガシーDB作成
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id INTEGER,
+        importance TEXT,
+        state TEXT DEFAULT 'raw'
+    )
+    """
+)
+conn.execute(
+    "INSERT INTO events (id, ts, event_type, summary, detail, importance, state) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ("legacy:1", "2026-05-01T00:00:00+09:00", "conversation", "既存行", "occurred_at未設定", "normal", "raw")
+)
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid', tokenize='trigram')")
+conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+conn.commit()
+PY
+
+    # occurred_at列が存在しないことを確認
+    run python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("occurred_at" in cols)
+PY
+    [ "$output" = "False" ]
+
+    # importを実行 → occurred_at/recorded_at/updated_at が追加されバックフィルされる
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("occurred_at" in cols)
+print("recorded_at" in cols)
+print("updated_at" in cols)
+# 既存レガシー行はバックフィルされず、新規importされた行のみ確認
+count_with_occurred = conn.execute(
+    "SELECT COUNT(*) FROM events WHERE occurred_at IS NOT NULL AND ts <> ''"
+).fetchone()[0]
+count_with_ts = conn.execute(
+    "SELECT COUNT(*) FROM events WHERE ts <> ''"
+).fetchone()[0]
+print(count_with_occurred == count_with_ts)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "True" ]
 }
