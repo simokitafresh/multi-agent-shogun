@@ -641,6 +641,37 @@ assert re.search(r"^\|\s*related_concepts\s*\|.*semantic_dictionary_design", blo
 PY
 }
 
+@test "semantic map generator excludes confusion-warning related_concepts from bidirectional links" {
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |\n",
+    "| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |\n| related_concepts | growth_loop(relation_type=混同注意) |\n",
+    1,
+)
+path.write_text(text, encoding="utf-8")
+PY
+
+    run bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"related_concepts bidirectional links added"* ]]
+
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+import re
+import sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+blocks = {}
+for part in re.split(r"(?m)(?=^## )", text):
+    if part.startswith("## "):
+        blocks[part.splitlines()[0][3:].split(" — ", 1)[0].strip()] = part
+assert not re.search(r"^\|\s*related_concepts\s*\|.*semantic_dictionary_design", blocks["growth_loop"], re.M)
+PY
+}
+
 @test "semantic map generator auto-resolves semantic_index_update insights when enabled" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'

@@ -121,6 +121,31 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "semantic search excludes relation_type confusion-warning related concepts from expansion" {
+    python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "| related_concepts | growth_loop(relation_type=上位) |",
+    "| related_concepts | growth_loop(relation_type=混同注意) |",
+    1,
+)
+path.write_text(text, encoding="utf-8")
+PY
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"## semantic_dictionary_design — セマンティック辞書構想"* ]]
+    [[ "$output" != *"related_concepts:"* ]]
+    [[ "$output" != *"## growth_loop — 学習ループ"* ]]
+    [[ "$output" != *"relation_type: 混同注意"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
 @test "first layer expands related concept resources only for a single concept match" {
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
 

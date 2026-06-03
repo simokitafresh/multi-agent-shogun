@@ -41,6 +41,18 @@ def related_concept_ids(concept: dict) -> list[str]:
     return [item["id"] for item in concept.get("related_concepts", [])]
 
 
+def relation_expands(item: dict) -> bool:
+    return item.get("relation_type") != "混同注意"
+
+
+def expansion_related_concept_ids(concept: dict) -> list[str]:
+    return [
+        item["id"]
+        for item in concept.get("related_concepts", [])
+        if relation_expands(item)
+    ]
+
+
 def relation_type_for(seed: dict, related_id: str) -> str:
     for item in seed.get("related_concepts", []):
         if item.get("id") == related_id:
@@ -185,7 +197,7 @@ def precompute_related_concept_backlinks(concepts: list[dict]) -> dict[str, int]
     counts: dict[str, int] = {}
     known_ids = {concept["id"] for concept in concepts}
     for concept in concepts:
-        for related_id in related_concept_ids(concept):
+        for related_id in expansion_related_concept_ids(concept):
             if related_id in known_ids:
                 counts[related_id] = counts.get(related_id, 0) + 1
     return counts
@@ -205,14 +217,15 @@ def rank_related_concepts(
     by_id: dict[str, dict],
     backlink_counts: dict[str, int],
 ) -> list[tuple[dict, float, int, float, int]]:
-    seed_related = set(related_concept_ids(seed))
+    seed_related_ids = expansion_related_concept_ids(seed)
+    seed_related = set(seed_related_ids)
     ranked: list[tuple[dict, float, int, float, int]] = []
-    for position, related_id in enumerate(related_concept_ids(seed), 1):
+    for position, related_id in enumerate(seed_related_ids, 1):
         related = by_id.get(related_id)
         if not related:
             continue
-        reciprocal = 1.0 if seed["id"] in related_concept_ids(related) else 0.0
-        shared_neighbors = len(seed_related.intersection(related_concept_ids(related)))
+        reciprocal = 1.0 if seed["id"] in expansion_related_concept_ids(related) else 0.0
+        shared_neighbors = len(seed_related.intersection(expansion_related_concept_ids(related)))
         backlinks = backlink_counts.get(related_id, 0)
         strength = 1.0 + reciprocal + (shared_neighbors * 0.25) + math.log1p(backlinks)
         density = concept_density(related)
@@ -869,7 +882,7 @@ def main() -> None:
             result_limit = int(os.environ.get("SEMANTIC_MEMORY_DB_LIMIT", "10"))
             seed_concepts = [concept["id"] for concept, _matched_terms in matches]
             if len(matches) == 1:
-                seed_concepts.extend(related_concept_ids(matches[0][0]))
+                seed_concepts.extend(expansion_related_concept_ids(matches[0][0]))
             print_memory_db_concept_search_for_ids(db_path, seed_concepts, expansion_limit, result_limit)
 
     elif mode == "render-llm-resources":
