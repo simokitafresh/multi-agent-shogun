@@ -122,6 +122,33 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # docs/rule/*.md は運用ルールの正本。実行コードではないが、索引/参照層の
+    # ドリフトはgate品質に影響するため、未知ファイルWARNではなく焦点テストへ送る。
+    if [[ "$changed" == docs/rule/*.md ]]; then
+        for tf in \
+            "$TEST_DIR"/test_semantic_index_update.bats \
+            "$TEST_DIR"/test_context_freshness_check.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
+    # 軍師instruction正本はCLI選択・軍師gate・semantic索引に影響する。
+    if [[ "$changed" == instructions/gunshi.md ]]; then
+        for tf in \
+            "$TEST_DIR"/test_cli_adapter.bats \
+            "$TEST_DIR"/test_gate_gunshi_cs_checklist.bats \
+            "$TEST_DIR"/test_gunshi_next_action.bats \
+            "$TEST_DIR"/test_semantic_index_update.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # L1+L2: マップから検索
     for key in "${!TEST_MAP[@]}"; do
         if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$ch_base"* ]]; then

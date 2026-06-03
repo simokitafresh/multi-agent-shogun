@@ -49,3 +49,21 @@ setup_file() {
     [[ "$output" == *"tests/unit/test_gate_vercel_phase.bats"* ]]
     [[ "$output" != *"WARN"* ]]
 }
+
+@test "test_select maps docs rule markdown changes without warnings" {
+    run bash "$TEST_SELECT" docs/rule/bash-conventions.md
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_semantic_index_update.bats"* ]]
+    [[ "$output" == *"tests/unit/test_context_freshness_check.bats"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
+
+@test "test_select maps gunshi instruction changes without warnings" {
+    run bash "$TEST_SELECT" instructions/gunshi.md
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_cli_adapter.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_gunshi_cs_checklist.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gunshi_next_action.bats"* ]]
+    [[ "$output" == *"tests/unit/test_semantic_index_update.bats"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
