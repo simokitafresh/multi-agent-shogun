@@ -7,13 +7,23 @@ setup_file() {
     export SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SAVE_SCRIPT" ] || return 1
 
+    extract_function_until_next() {
+        local name="$1"
+        local next_name="$2"
+        awk -v start="${name}() {" -v next_fn="${next_name}() {" '
+            $0 == start { in_fn=1 }
+            in_fn && $0 == next_fn { exit }
+            in_fn { print }
+        ' "$SAVE_SCRIPT"
+    }
+
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SAVE_SCRIPT")"
-    eval "$(sed -n '4066,4209p' "$SAVE_SCRIPT")"
+    eval "$(extract_function_until_next emit_ac_param_candidate_hints check_ac_param_sufficiency)"
     eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SAVE_SCRIPT")"
-    eval "$(sed -n '4173,4209p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_ac_param_sufficiency()/,/^}/p' "$SAVE_SCRIPT")"
 
     cmd_block_get_field() {
         local field="${1:-}"
