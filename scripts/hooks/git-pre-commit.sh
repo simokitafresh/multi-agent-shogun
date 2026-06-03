@@ -97,6 +97,31 @@ is_yaml_dump_scan_target() {
     [[ "$file" == *.sh || "$file" == *.py ]]
 }
 
+is_operational_yaml_commit_file() {
+    local file="${1:-}"
+    [[ -n "$file" ]] || return 1
+    [[ "$file" == queue/*.yaml || "$file" == queue/**/*.yaml || "$file" == logs/*.yaml ]]
+}
+
+collect_task_yaml_mixed_commit_violations() {
+    local has_task_yaml=false file violations=""
+
+    while IFS= read -r file; do
+        [[ -n "$file" ]] || continue
+        if [[ "$file" == queue/tasks/*.yaml ]]; then
+            has_task_yaml=true
+            continue
+        fi
+        if ! is_operational_yaml_commit_file "$file"; then
+            violations+=$(printf '  %s\n' "$file")
+        fi
+    done < <(list_staged_files)
+
+    if [[ "$has_task_yaml" == "true" && -n "$violations" ]]; then
+        printf '%s' "$violations"
+    fi
+}
+
 collect_yaml_dump_violations() {
     local current_file="" current_matches="" violations="" line added_line
 
@@ -133,10 +158,19 @@ collect_yaml_dump_violations() {
 }
 
 main() {
-    local _yaml_dump_violations="" _instructions_changed=false _has_yaml_dump_scan_target=false
+    local _yaml_dump_violations="" _task_yaml_mixed_violations="" _instructions_changed=false _has_yaml_dump_scan_target=false
     local _staged_file
 
     warn_test_file_granularity
+
+    _task_yaml_mixed_violations="$(collect_task_yaml_mixed_commit_violations)"
+
+    if [[ -n "$_task_yaml_mixed_violations" ]]; then
+        echo "BLOCKED: queue/tasks/*.yaml cannot be committed with implementation files (GA-408)" >&2
+        echo "Commit task/status YAML separately from scripts/lib/context/docs/tests changes." >&2
+        echo "$_task_yaml_mixed_violations" >&2
+        exit 1
+    fi
 
     while IFS= read -r _staged_file; do
         [[ -n "$_staged_file" ]] || continue

@@ -12,7 +12,8 @@ setup() {
     export TEST_ROOT
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/git_pre_commit.XXXXXX")"
     mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts/lib" "$TEST_ROOT/scripts" \
-        "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests/unit"
+        "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests/unit" \
+        "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs"
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
     chmod +x "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
@@ -38,7 +39,16 @@ EOF
     [ 1 -eq 1 ]
 }
 EOF
-    mkdir -p "$TEST_ROOT/logs"
+    cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: idle
+EOF
+    cat > "$TEST_ROOT/queue/reports/kagemaru_report.yaml" <<'EOF'
+status: pending
+EOF
+    cat > "$TEST_ROOT/logs/hook_failures.yaml" <<'EOF'
+[]
+EOF
 
     (
         cd "$TEST_ROOT"
@@ -46,7 +56,8 @@ EOF
         git config user.email test@example.com
         git config user.name "Test User"
         git add scripts/hooks/git-pre-commit.sh scripts/build_instructions.sh tool.py \
-            instructions/base.md instructions/generated/base.md tests/unit/test_cmd_save.bats
+            instructions/base.md instructions/generated/base.md tests/unit/test_cmd_save.bats \
+            queue/tasks/kagemaru.yaml queue/reports/kagemaru_report.yaml logs/hook_failures.yaml
         git commit -qm "init"
     )
 }
@@ -157,6 +168,63 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: Generated instructions out of sync."* ]]
+}
+
+@test "blocks queue task yaml mixed with implementation files" {
+    cat > "$TEST_ROOT/scripts/lib/context_helper.sh" <<'EOF'
+#!/usr/bin/env bash
+echo helper
+EOF
+    cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: in_progress
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add scripts/lib/context_helper.sh queue/tasks/kagemaru.yaml
+    )
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCKED: queue/tasks/*.yaml cannot be committed with implementation files"* ]]
+    [[ "$output" == *"scripts/lib/context_helper.sh"* ]]
+}
+
+@test "allows queue task yaml only commit" {
+    cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: acknowledged
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add queue/tasks/kagemaru.yaml
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+}
+
+@test "allows queue task yaml with operational yaml only" {
+    cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: done
+EOF
+    cat > "$TEST_ROOT/queue/reports/kagemaru_report.yaml" <<'EOF'
+status: completed
+EOF
+    cat > "$TEST_ROOT/logs/hook_failures.yaml" <<'EOF'
+- hook: pre-commit
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add queue/tasks/kagemaru.yaml queue/reports/kagemaru_report.yaml logs/hook_failures.yaml
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
 }
 
 @test "warns when added bats file has existing script-level candidates" {
