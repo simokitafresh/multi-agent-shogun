@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 -->
+<!-- last_updated: 2026-06-03 cmd_3159 -->
 
 # Memory DB Schema
 
@@ -9,11 +9,11 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 93199 | event_id, concept_name, relevance_score |
-| table | event_links | 2551 | source_event_id, target_concept, link_type |
-| table | events | 69845 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance |
-| table | events_fts | 69845 | summary, detail |
-| table | search_logs | created on first search | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| table | event_concepts | 96433 | event_id, concept_name, relevance_score |
+| table | event_links | 2782 | source_event_id, target_concept, link_type |
+| table | events | 71637 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, state, confidence, freshness, source_type, occurred_at, recorded_at, updated_at, raw_content |
+| table | events_fts | 71637 | summary, detail |
+| table | search_logs | 384 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
 | table | test_trigram | 0 | summary, detail |
 | table | test_trigram2 | 0 | txt |
 | table | test_trigram2_config | 1 | k, v |
@@ -24,7 +24,7 @@
 | table | test_trigram_data | 2 | id, block |
 | table | test_trigram_docsize | 0 | id, sz |
 | table | test_trigram_idx | 0 | segid, term, pgno |
-| view | conversations | 34717 | ts, agent, direction, summary, detail, session_id |
+| view | conversations | 35310 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -42,19 +42,19 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 34717 |
-| report | 8998 |
-| cmd_archive | 8139 |
-| skill_execution | 4946 |
-| bulletin | 3940 |
-| insight | 3079 |
-| inbox | 2600 |
-| cmd_quality | 1728 |
-| cmd_save | 546 |
-| gate | 527 |
+| conversation | 35310 |
+| report | 9062 |
+| cmd_archive | 8393 |
+| skill_execution | 5220 |
+| bulletin | 4058 |
+| insight | 3231 |
+| inbox | 2689 |
+| cmd_quality | 1921 |
+| cmd_save | 592 |
+| gate | 532 |
 | document | 352 |
 | cmd_delegate | 146 |
-| lesson | 51 |
+| lesson | 55 |
 | pending_decision | 43 |
 | workaround | 26 |
 | knowledge | 6 |
@@ -78,11 +78,13 @@
 
 ## `events`
 
-| id | ts | event_type | agent | target | direction | summary | detail | session_id | cmd_id | concepts | source_file | parent_event_id | importance |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| insight:INS-20260522-125918816-bf9e | 2026-05-22T12:59:18+09:00 | insight | semantic_stress_test |  | pending | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… |  | cmd_2965 | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high |
-| insight:INS-20260522-125918937-af74 | 2026-05-22T12:59:18+09:00 | insight | semantic_stress_test |  | pending | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな<br>status: pending<br>priority: low<br>source… |  |  | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high |
-| insight:INS-20260522-125919062-864d | 2026-05-22T12:59:19+09:00 | insight | semantic_stress_test |  | pending | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ<br>status: pending<br>priority: low<br>source: s… |  |  | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high |
+| id | ts | event_type | agent | target | direction | summary | detail | session_id | cmd_id | concepts | source_file | parent_event_id | importance | state | confidence | freshness | source_type | occurred_at | recorded_at | updated_at | raw_content |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| insight:INS-20260522-125918816-bf9e | 2026-05-22T12:59:18+09:00 | insight | semantic_stress_test |  | pending | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… | [[**PASS DELEGATED**]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=殿、cmd_2965 **PASS+DELEGATED**。 本セッション9cmd: \| cmd \| 内容 \| 状態 \| \|-----\|------\|------\… |  | cmd_2965 | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high | raw | medium | current | fact | 2026-05-22T12:59:18+09:00 | 2026-05-22T12:59:18+09:00 |  |  |
+| insight:INS-20260522-125918937-af74 | 2026-05-22T12:59:18+09:00 | insight | semantic_stress_test |  | pending | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな | [[おまえらは成長しないから]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おまえらは成長しないから、さきに飛びつく材料としてローカルにSliteを作ってしまうのが現実的だな<br>status: pending<br>priority: low<br>source… |  |  | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high | raw | medium | current | fact | 2026-05-22T12:59:18+09:00 | 2026-05-22T12:59:18+09:00 |  |  |
+| insight:INS-20260522-125919062-864d | 2026-05-22T12:59:19+09:00 | insight | semantic_stress_test |  | pending | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ<br>status: pending<br>priority: low<br>source: s… |  |  | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high | raw | medium | current | fact | 2026-05-22T12:59:19+09:00 | 2026-05-22T12:59:19+09:00 |  |  |
+
+`raw_content` はcmd_3159で追加。live insert経路の新規イベントのみ、検索用に加工された`summary`/`detail`とは別に入力原文を保存する。既存行はNULLのまま保持する。
 
 ## `events_fts`
 
@@ -94,21 +96,11 @@
 
 ## `search_logs`
 
-cmd_3150で追加。`scripts/semantic_search.sh` の検索完了後に `scripts/search_log_write.sh` が記録する。
-検索結果そのものではなく、三層記憶の保守と殿の使用パターン分析のための実行メトリクスである。
-
-| column | meaning |
-| --- | --- |
-| id | AUTOINCREMENT primary key |
-| ts | 検索実行時刻。旧 `executed_at` 形式がある場合は移行時に `ts` へ反映 |
-| caller | 呼出し元機能名。`semantic_search` など。agent_idとは分離 |
-| agent_id | 実行エージェントID。取得できない場合はNULL |
-| query | 検索語 |
-| hit_count | 検索結果件数。NO_MATCH時は0 |
-| no_match | 0/1。NO_MATCHなら1 |
-| elapsed_ms | 検索開始から検索完了までの経過ms。ログ書込時間は含めない |
-| exit_code | 検索コマンドの終了コード |
-| created_at | DB行作成時刻 |
+| id | ts | caller | agent_id | query | hit_count | no_match | elapsed_ms | exit_code | created_at |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-06-03T16:20:34+0900 | semantic_search | gunshi | 実装commitとqueue/tasks混入はpre-commitで止める hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_selectでWARN露出した。ninja-commit手順だけでは防げず、pre-commitでstaged queue/… | 2 | 0 | 149 | 0 | 2026-06-03 07:20:34 |
+| 2 | 2026-06-03T16:24:30+0900 | semantic_search | kagemaru | pre-commit queue tasks staged implementation files | 1 | 0 | 7562 | 0 | 2026-06-03 07:24:30 |
+| 3 | 2026-06-03T16:28:26+0900 | semantic_search | hayate | semantic_causal_automation | 9 | 0 | 41977 | 0 | 2026-06-03 07:28:27 |
 
 ## `test_trigram`
 

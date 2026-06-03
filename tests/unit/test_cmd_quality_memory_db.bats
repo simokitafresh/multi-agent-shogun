@@ -102,6 +102,33 @@ PY
     [ "${result[1]}" = "1" ]
 }
 
+@test "memory_db_live_insert adds raw_content column and stores original inbox content" {
+    init_empty_memory_db
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        inbox \
+        --message-id "msg_raw_content" \
+        --ts "2026-06-03T19:30:00Z" \
+        --target-agent "hayate" \
+        --from-agent "karo" \
+        --content "cmd_3159 原文をraw_contentへ保存する" \
+        --message-type "task_assigned" \
+        --source-file "queue/inbox/hayate.yaml"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM pragma_table_info('events') WHERE name='raw_content'").fetchone()[0])
+print(conn.execute("SELECT raw_content FROM events WHERE id='inbox:msg_raw_content'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "cmd_3159 原文をraw_contentへ保存する" ]
+}
+
 @test "cmd_quality_log keeps YAML success when live DB insert fails" {
     mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/bad-db"
 

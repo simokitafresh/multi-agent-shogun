@@ -443,9 +443,16 @@ def ensure_event_attribute_columns(conn) -> None:
         conn.execute(f"ALTER TABLE events ADD COLUMN source_type TEXT DEFAULT '{DEFAULT_SOURCE_TYPE}'")
     if "state" not in cols:
         conn.execute("ALTER TABLE events ADD COLUMN state TEXT DEFAULT 'raw'")
+    if "raw_content" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN raw_content TEXT")
 
 
-def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str | None = "") -> None:
+def append_event(
+    db_path: str,
+    row: tuple[object, ...],
+    concept_text_extra: str | None = "",
+    raw_content: object | None = None,
+) -> None:
     if not os.path.exists(db_path):
         return
     import sqlite3
@@ -457,6 +464,7 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
         concept_text = f"{mutable_row[6]}\n{mutable_row[7]}\n{concept_text_extra}"
         mutable_row[10] = concepts_for_text(concept_text)
     row = tuple(mutable_row)
+    raw_content_value = normalize_text(raw_content if raw_content is not None else row[7])
 
     with sqlite3.connect(db_path) as conn:
         conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
@@ -489,10 +497,10 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
             INSERT OR IGNORE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
                 session_id, cmd_id, concepts, source_file, parent_event_id, importance,
-                confidence, freshness, source_type, state
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'medium', 'current', 'fact', 'raw')
+                confidence, freshness, source_type, state, raw_content
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'medium', 'current', 'fact', 'raw', ?)
             """,
-            row,
+            row + (raw_content_value,),
         )
         if cursor.rowcount == 1:
             rowid = conn.execute("SELECT rowid FROM events WHERE id = ?", (row[0],)).fetchone()[0]
@@ -549,6 +557,7 @@ def append_bulletin(args) -> None:
             None,
             importance,
         ),
+        raw_content=content,
     )
 
 
@@ -589,6 +598,7 @@ def append_insight(args) -> None:
             None,
             importance,
         ),
+        raw_content=insight,
     )
 
 
@@ -631,6 +641,7 @@ def append_inbox(args) -> None:
             importance,
         ),
         concept_text_extra=command_context_text(cmd_id),
+        raw_content=content,
     )
 
 
@@ -657,6 +668,7 @@ def append_cmd_save(args) -> None:
             "high",
         ),
         concept_text_extra=command_context_text(cmd_id),
+        raw_content=detail,
     )
 
 
@@ -704,6 +716,7 @@ def append_cmd_quality(args) -> None:
             None,
             importance,
         ),
+        raw_content=detail,
     )
 
 
@@ -739,6 +752,7 @@ def append_cmd_delegate(args) -> None:
             "high",
         ),
         concept_text_extra=command_context_text(cmd_id),
+        raw_content=message,
     )
 
 
@@ -778,6 +792,7 @@ def append_lesson(args) -> None:
             None,
             "normal",
         ),
+        raw_content=detail,
     )
 
 
@@ -819,6 +834,7 @@ def append_gate(args) -> None:
             None,
             importance,
         ),
+        raw_content=detail,
     )
 
 
@@ -907,10 +923,12 @@ def append_report(args) -> None:
     importance = "high" if verdict in ("PASS", "FAIL", "PASS_NO_IMPROVEMENT") else "normal"
     ts = normalize_text(args.ts)
     concept_text_extra = None
+    raw_field_value = ""
     if _report_field_has_concepts(dot_key):
+        raw_field_value = _extract_report_field_value(report_path, dot_key)
         concept_text_extra = "\n".join(
             line for line in [
-                _extract_report_field_value(report_path, dot_key),
+                raw_field_value,
                 command_context_text(parent_cmd),
             ] if line
         )
@@ -934,6 +952,7 @@ def append_report(args) -> None:
             importance,
         ),
         concept_text_extra=concept_text_extra,
+        raw_content=raw_field_value or detail,
     )
 
 
@@ -973,6 +992,7 @@ def append_workaround(args) -> None:
             None,
             "high",
         ),
+        raw_content=issue,
     )
 
 
