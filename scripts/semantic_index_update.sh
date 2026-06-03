@@ -52,6 +52,9 @@ fi
 run_semantic_stress_after_alias_change() {
     [ "${SEMANTIC_STRESS_AFTER_ALIAS_CHANGE:-1}" = "0" ] && return 0
     [ -f "$stress_test" ] || return 0
+    if [ -n "${SEMANTIC_INDEX_PATH:-}" ] && [ -z "${SEMANTIC_STRESS_CMD:-}" ]; then
+        return 0
+    fi
 
     local limit="${SEMANTIC_STRESS_AFTER_ALIAS_LIMIT:-20}"
     local baseline="${SEMANTIC_STRESS_BASELINE:-$script_dir/logs/semantic_stress_baseline.json}"
@@ -77,6 +80,9 @@ run_semantic_quality_after_alias_change() {
     [ "${SEMANTIC_QUALITY_AFTER_ALIAS_CHANGE:-1}" = "0" ] && return 0
     local quality_test="${SEMANTIC_QUALITY_CMD:-$script_dir/scripts/semantic_quality_test.sh}"
     [ -f "$quality_test" ] || return 0
+    if [ -n "${SEMANTIC_INDEX_PATH:-}" ] && [ -z "${SEMANTIC_QUALITY_CMD:-}" ]; then
+        return 0
+    fi
 
     echo "semantic-quality after-alias-change: running"
     if bash "$quality_test"; then

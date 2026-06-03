@@ -12,6 +12,9 @@ setup() {
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
     export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
+    export SEMANTIC_DISABLE_MEMORY_DB_CACHE=1
+    export SEMANTIC_MEMORY_DB_CACHE_DIR="$TEST_TMPDIR/memory_db_cache"
+    export SEMANTIC_DISABLE_CAUSAL=1
     unset SEMANTIC_MEMORY_DB_PATH
     export SEMANTIC_DISABLE_MEMORY_DB=1
 
@@ -455,6 +458,7 @@ EOF
 }
 
 @test "first layer appends causal backlink resources for Obsidian links" {
+    unset SEMANTIC_DISABLE_CAUSAL
     mkdir -p "$TEST_TMPDIR/docs"
     python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
 from pathlib import Path
