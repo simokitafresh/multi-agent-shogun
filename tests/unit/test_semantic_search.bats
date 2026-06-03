@@ -364,6 +364,28 @@ PY
     [[ "${rows[1]}" =~ ^semantic_search\\|品質を伸ばす輪\\|0\\|1\\|[0-9]+\\|1$ ]]
 }
 
+@test "semantic_search records logs when search_log_write is not executable" {
+    helper_root="$TEST_TMPDIR/helper_root"
+    mkdir -p "$helper_root/scripts"
+    cp "$PROJECT_ROOT/scripts/semantic_search.sh" "$helper_root/scripts/semantic_search.sh"
+    cp "$PROJECT_ROOT/scripts/semantic_index.py" "$helper_root/scripts/semantic_index.py"
+    cp "$PROJECT_ROOT/scripts/search_log_write.sh" "$helper_root/scripts/search_log_write.sh"
+    chmod 0644 "$helper_root/scripts/search_log_write.sh"
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$helper_root/scripts/semantic_search.sh" "意味検索"
+
+    [ "$status" -eq 0 ]
+    run python3 - "$SEMANTIC_SEARCH_LOG_DB_PATH" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute("SELECT query, no_match, exit_code FROM search_logs").fetchone()
+assert row == ("意味検索", 0, 0), row
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "memory DB fallback filters hits to current agent target" {
     archive_dir="$TEST_TMPDIR/archive"
     db_path="$TEST_TMPDIR/data/memory.db"

@@ -258,7 +258,7 @@ record_search_log() {
     if [ -n "${BATS_TEST_FILENAME:-}" ] && [ -z "${SEMANTIC_SEARCH_LOG_DB_PATH:-}" ]; then
         return 0
     fi
-    [ -x "$script_dir/scripts/search_log_write.sh" ] || return 0
+    [ -f "$script_dir/scripts/search_log_write.sh" ] || return 0
 
     local hit_count no_match elapsed_ms now_ms
     hit_count="$(search_log_hit_count "$output_file")"
