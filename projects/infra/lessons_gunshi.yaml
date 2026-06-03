@@ -431,3 +431,17 @@ lessons:
   enforcement: pre-bash-combined.sh Guard 9
   when: タスク内容が利用可能スキルのTRIGGER条件に合致した時
   how: Skill toolを必ず使う。手動操作で進めようとしたらGuard 9でBLOCKし、スキル以外の経路を塞ぐ
+- id: LG036
+  title: command×files_modified突合は件数一致で止めるな — 各command項目をファイル名へ1対1対応させよ
+  detail: |
+    cmd_3166で軍師APPROVE後にcmd_complete_gateがcommand_files_modified_mismatchでBLOCK。
+    根因はcommand欄の対象 `memory_db_live_insert.py` と報告files_modifiedの `obsidian_promote_candidate.sh` が入れ替わっていたのに、変更ファイル数の一致で安心し、command項目ごとのファイル名突合を省略したこと。
+    auto-commit混入や既存依存検証がある場合も、cmd本文に出る対象ファイルはfiles_modifiedへ `verified_existing_dependency` などの形で明示し、レビュー時に1対1で説明できる状態にせよ。
+  source_cmd: cmd_3166
+  origin: '[[cmd_3166]] -> [[command_files_modified_mismatch]] -> [[軍師APPROVE後GATE_BLOCK]]'
+  created_at: '2026-06-04'
+  automated: true
+  enforcement_level: 3
+  enforcement: report review Step 3.5でcommand各項目とfiles_modified各pathの対応表を確認。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK
+  when: report reviewで成果物・files_modified・cmd command欄を突合する時。件数一致していても中身の対応を確認する
+  how: command項目ごとに対象ファイルを抽出し、files_modifiedのpathへ1対1で紐付ける。既存実装を検証しただけの対象もverified_existing_dependencyとして記録し、未記載にしない
