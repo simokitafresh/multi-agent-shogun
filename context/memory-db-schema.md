@@ -88,6 +88,8 @@
 
 `state` は記憶状態を表す。live insert経路は通常イベントを`raw`で保存し、cmd_3160で候補イベント用に`contradiction_candidate` / `duplicate_candidate`を追加した。矛盾候補は`event_type=memory_candidate`、`state=contradiction_candidate`、`direction=<矛盾分類>`で記録し、分類は三層記憶運用原則§11の10種（誤情報、古い、文脈違い、定義違い、分野違い、時点違い、観測条件違い、意見違い、仮説競合、過去判断と現在判断違い）へ対応する。重複候補は`event_type=memory_candidate`、`state=duplicate_candidate`、`direction=duplicate`で記録する。候補は削除・統合の確定ではなく、人間/家老の後続判断の入力である。
 
+`obsidian_candidate` はObsidian昇格の人間確認待ち状態。`scripts/obsidian_promote_candidate.sh` が、高importance・高頻度参照概念・複数Obsidianリンクを同時に満たす通常イベント（`raw` / `verified`）を抽出し、DBバックアップ作成後に`state='obsidian_candidate'`へ更新する。これは昇格確定ではなく、直接リンク化すべき記憶候補のレビューキューである。
+
 ## `events_fts`
 
 | summary | detail |

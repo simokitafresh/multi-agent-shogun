@@ -1205,6 +1205,127 @@ EOF
     [[ "$output" == *"invalid contradiction_type"* ]]
 }
 
+@test "obsidian_promote_candidate backs up DB and marks high-value events as candidates" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, event_type TEXT, importance TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.execute("CREATE TABLE event_concepts (event_id TEXT, concept_name TEXT)")
+conn.execute("CREATE TABLE event_links (source_event_id TEXT, target_concept TEXT, link_type TEXT)")
+events = [
+    ("event:promote", "昇格対象", "conversation", "high", "verified", None),
+    ("event:freq", "頻度供給", "conversation", "high", "raw", None),
+    ("event:low", "importance不足", "conversation", "normal", "verified", None),
+    ("event:onelink", "リンク不足", "conversation", "high", "verified", None),
+    ("event:existing", "既存候補除外", "conversation", "high", "obsidian_candidate", None),
+]
+conn.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)", events)
+conn.executemany(
+    "INSERT INTO event_concepts VALUES (?, ?)",
+    [
+        ("event:promote", "三層記憶"),
+        ("event:freq", "三層記憶"),
+        ("event:low", "三層記憶"),
+        ("event:onelink", "三層記憶"),
+        ("event:existing", "三層記憶"),
+    ],
+)
+conn.executemany(
+    "INSERT INTO event_links VALUES (?, ?, 'obsidian')",
+    [
+        ("event:promote", "リンクA"),
+        ("event:promote", "リンクB"),
+        ("event:low", "リンクA"),
+        ("event:low", "リンクB"),
+        ("event:onelink", "リンクA"),
+        ("event:existing", "リンクA"),
+        ("event:existing", "リンクB"),
+    ],
+)
+conn.commit()
+PY
+
+    mkdir -p "$TEST_TMPDIR/backups"
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --min-concept-frequency 3 \
+        --min-links 2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"backup=$TEST_TMPDIR/backups/memory.db.bak_obsidian_candidate_"* ]]
+    [[ "$output" == *"updated=1"* ]]
+    [[ "$output" == *"event:promote|high|links=2|concept_frequency=5|昇格対象"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" "$TEST_TMPDIR/backups" <<'PY'
+import sqlite3
+import sys
+from pathlib import Path
+conn = sqlite3.connect(sys.argv[1])
+backup_paths = sorted(Path(sys.argv[2]).glob("memory.db.bak_obsidian_candidate_*"))
+print(len(backup_paths))
+print(conn.execute("SELECT state FROM events WHERE id='event:promote'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:low'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:onelink'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:existing'").fetchone()[0])
+backup_conn = sqlite3.connect(backup_paths[0])
+print(backup_conn.execute("SELECT state FROM events WHERE id='event:promote'").fetchone()[0])
+print(conn.execute("SELECT updated_at IS NOT NULL FROM events WHERE id='event:promote'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "obsidian_candidate" ]
+    [ "${result[2]}" = "verified" ]
+    [ "${result[3]}" = "verified" ]
+    [ "${result[4]}" = "obsidian_candidate" ]
+    [ "${result[5]}" = "verified" ]
+    [ "${result[6]}" = "1" ]
+}
+
+@test "obsidian_promote_candidate dry-run lists candidates without backup or update" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, event_type TEXT, importance TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.execute("CREATE TABLE event_concepts (event_id TEXT, concept_name TEXT)")
+conn.execute("CREATE TABLE event_links (source_event_id TEXT, target_concept TEXT, link_type TEXT)")
+conn.executemany(
+    "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
+    [
+        ("event:a", "dry対象", "conversation", "high", "raw", None),
+        ("event:b", "頻度供給", "conversation", "high", "raw", None),
+        ("event:c", "頻度供給2", "conversation", "high", "raw", None),
+    ],
+)
+conn.executemany("INSERT INTO event_concepts VALUES (?, '候補概念')", [("event:a",), ("event:b",), ("event:c",)])
+conn.executemany("INSERT INTO event_links VALUES (?, ?, 'obsidian')", [("event:a", "L1"), ("event:a", "L2")])
+conn.commit()
+PY
+
+    mkdir -p "$TEST_TMPDIR/backups"
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidates=1"* ]]
+    [[ "$output" == *"dry_run=true"* ]]
+    [[ "$output" == *"event:a|high|links=2|concept_frequency=3|dry対象"* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" "$TEST_TMPDIR/backups" <<'PY'
+import sqlite3
+import sys
+from pathlib import Path
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT state FROM events WHERE id='event:a'").fetchone()[0])
+print(len(list(Path(sys.argv[2]).glob("memory.db.bak_obsidian_candidate_*"))))
+PY
+)
+    [ "${result[0]}" = "raw" ]
+    [ "${result[1]}" = "0" ]
+}
+
 @test "memory_db_import records confidence freshness source_type defaults" {
     cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
 {"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"属性列テスト","detail":"confidence freshness source_type のデフォルト確認"}
