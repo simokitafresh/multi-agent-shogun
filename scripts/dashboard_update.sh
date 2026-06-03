@@ -109,6 +109,18 @@ STK_FILE = os.environ['STK_FILE']
 CMD_ID = os.environ['CMD_ID']
 DRY_RUN = os.environ['DRY_RUN'] == 'true'
 
+def atomic_write_text(path, content):
+    tmp_path = f"{path}.tmp.{os.getpid()}"
+    try:
+        with open(tmp_path, 'w') as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
 # Build NAME_MAP dynamically from settings.yaml (cmd_1136)
 def _build_name_map():
     import yaml as _y
@@ -408,8 +420,7 @@ if status_label == '完了' and not is_replacement:
             m.group(0),
             f'| cmd完了/配備 | {c}/{t} |')
 
-with open(DASHBOARD, 'w') as f:
-    f.write(content)
+atomic_write_text(DASHBOARD, content)
 
 if is_replacement:
     print(f'UPDATED: {CMD_ID} line replaced in 最新更新')
@@ -447,6 +458,18 @@ import os, sys, re
 dashboard_path = os.environ['DASHBOARD']
 pd_file = os.environ['_PD_FILE']
 dry_run = os.environ.get('DRY_RUN', 'false') == 'true'
+
+def atomic_write_text(path, content):
+    tmp_path = f"{path}.tmp.{os.getpid()}"
+    try:
+        with open(tmp_path, 'w') as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 # Read pending_decisions.yaml (manual parse to avoid yaml import overhead if already loaded)
 try:
@@ -507,8 +530,7 @@ if dry_run:
     print(f'DRY-RUN: 要対応セクション → {len(pending_items)}件')
     sys.exit(0)
 
-with open(dashboard_path, 'w') as f:
-    f.write(content)
+atomic_write_text(dashboard_path, content)
 
 print(f'UPDATED: 要対応セクション同期完了 ({len(pending_items)}件)')
 STEP67_PY
