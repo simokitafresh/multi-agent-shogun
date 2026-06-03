@@ -188,6 +188,36 @@ STKYAML
     [[ "$output" == *"source commits"* ]]
 }
 
+@test "dm-signal split contexts use scoped source pathspecs" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/jobs"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    _create_context "context/dm-signal-frontend.md" "$STALE_DATE"
+    _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
+    git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "test: backend ops update"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal-ops.md"* ]]
+    [[ "$output" != *"context/dm-signal-frontend.md"* ]]
+    [[ "$output" != *"context/dm-signal-research.md"* ]]
+}
+
 @test "--dashboard-warnings excludes low-frequency context files" {
     _create_context "context/README.md" "$STALE_DATE"
     _create_context "context/cdp-philosophy.md" "$STALE_DATE"

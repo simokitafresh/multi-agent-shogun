@@ -334,6 +334,32 @@ def load_project_paths() -> dict[str, str]:
 
 PROJECT_PATHS = load_project_paths()
 AUTO_COMMIT_SUBJECT_RE = re.compile(r"^chore: (auto-commit|batch context)\b")
+DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
+    "context/dm-signal-frontend.md": [
+        "frontend",
+        "docs/research/frontend-components.md",
+        "docs/research/frontend-api-spec.md",
+        "docs/research/frontend-deploy.md",
+        "docs/research/fe-speed-improvement-design.md",
+    ],
+    "context/dm-signal-research.md": [
+        "docs/research",
+        "analysis",
+        "outputs",
+        "tasks/lessons.md",
+        "marketing-director",
+    ],
+    "context/dm-signal-ops.md": [
+        "backend/app/api",
+        "backend/app/jobs",
+        "backend/app/services",
+        "backend/tests",
+        "docs/rule",
+        "docs/research",
+        "render.yaml",
+        "tasks/lessons.md",
+    ],
+}
 # WSL2 NTFS上でgit logが7秒以上かかるため並列実行と組み合わせてこの値で打ち切る。
 # テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
@@ -345,6 +371,8 @@ def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[s
     base = os.path.basename(rel_path)
     if project_path and os.path.abspath(project_path) != os.path.abspath(root):
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
+            if project_id == "dm-signal" and rel_path in DM_SIGNAL_CONTEXT_PATHS:
+                return project_path, DM_SIGNAL_CONTEXT_PATHS[rel_path]
             return project_path, []
 
     return root, [rel_path]

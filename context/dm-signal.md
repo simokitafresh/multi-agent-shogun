@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-05-29 cmd_3091 -->
+<!-- last_updated: 2026-06-03 cmd_karo_context_freshness_ga407_20260603 -->
 <!-- last_synced_lesson: L722 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -193,6 +193,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | FoF表示/監査 | Monthly TradeのFoF表示はprecomputed weights / year_month月初Signal優先へ修正。signal change audit logging追加。FoF valid_start_date/lookback型も修正済み | `context/dm-signal-core.md` §21 / commits 85f42b3c〜c7e91634 |
+| FoF cache/PF削除 | 2026-06-01のFoF signal_cache統合、PF config snapshot、legacy PF物理削除手順は運用層に反映済み | `context/dm-signal-ops.md` §40 / commits 89761e7d, 77372987, f84b7ad8 |
 | 認証/CI | auth token count eviction削除。pytest GitHub Actions追加、PyYAML/依存導入、PostgreSQL service付きCIへ拡張 | `context/dm-signal-core.md` §22 / commits 2e9e1b7d〜86661769 |
 | FE/指標 | Compare SummaryにAvg UWP/PTU/MaxDD UWP/TQQQ benchmark/right-tail metricsを追加。Drawdowns全件化はrevert済み。Monthly Trade masked表示修正 | `context/dm-signal-frontend.md` §2.6 |
 | 用語/知識 | DM-Signal用語disambiguation拡張、UWP/PTU区別追加、method全件へinvestment knowledge links接続 | `context/dm-signal-research.md` §37 |

@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-05-29 cmd_3091 -->
+<!-- last_updated: 2026-06-03 cmd_karo_context_freshness_ga407_20260603 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -758,6 +758,14 @@ import metrics_research_engine as MRE
 **実績**: 四神(12)+忍法(15)+L0(30)+旧忍法Ward(1)=58件。NO ACTION関連260,965行。config全量バックアップ済み(`docs/research/pf_config_backup_20260601_pre_delete.json`)
 
 → [[production_parity]] FK制約+削除手順 / [[LS040]] バックアップファースト
+
+## §40 2026-06-01 backend運用更新
+
+| 領域 | 結論 | 参照 |
+|------|------|------|
+| FoF signal cache | FoF構成PFがDB preloaded cacheと当回生成signal_cacheの両方に存在する場合、DB行を保持し欠損日だけ当回生成cacheで補完する。`elif cid in signal_cache`から独立`if`へ変更し、FoF-of-FoFの同日/欠損混在を吸収 | commit 89761e7d / `backend/app/jobs/recalculate_fof.py` |
+| PF config snapshot | `save_portfolios`と`recalculate_history_fast`のPhase 0 cleanup前に`portfolio_config_snapshots`を作成。既存configの削除・上書き前バックアップをDBへ残す | commit 77372987 / `backend/app/services/verification_service.py` |
+| legacy PF削除 | 58件削除は`delete_legacy_portfolios_cmd_3112.py`で実施。バックアップJSON検証、保護名重複拒否、NO ACTION 9テーブル先行DELETE、逆依存順削除、残存行検証を含む | commit f84b7ad8 / `backend/app/jobs/delete_legacy_portfolios_cmd_3112.py` |
 
 ## 因果リンク
 
