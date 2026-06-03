@@ -9,6 +9,7 @@ import glob
 import re
 import tempfile
 import shutil
+import sqlite3
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,8 +24,12 @@ DEFAULT_FRESHNESS = "current"
 DEFAULT_SOURCE_TYPE = "fact"
 VALID_EVENT_STATES = {
     "raw",
+    "verified",
+    "stale_candidate",
     "contradiction_candidate",
     "duplicate_candidate",
+    "obsidian_candidate",
+    "archived",
 }
 CONTRADICTION_TYPES = {
     "false_info",
@@ -84,6 +89,91 @@ REPORT_MEANINGFUL_PREFIXES = (
     "purpose_validation.",
     "result.",
 )
+
+
+def now_timestamp() -> str:
+    from datetime import datetime
+
+    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
+
+
+def create_sqlite_backup(db_path: str, backup_dir: str | None = None, suffix: str = "state_transition") -> str:
+    from datetime import datetime
+
+    source_path = os.path.abspath(db_path)
+    backup_root = os.path.abspath(backup_dir) if backup_dir else os.path.dirname(source_path)
+    os.makedirs(backup_root, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+    backup_path = os.path.join(
+        backup_root,
+        f"{os.path.basename(source_path)}.bak_{suffix}_{stamp}",
+    )
+    with sqlite3.connect(source_path) as src, sqlite3.connect(backup_path) as dst:
+        src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        src.backup(dst)
+    return backup_path
+
+
+def ensure_event_state_transition_log(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS event_state_transitions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT NOT NULL,
+            from_state TEXT,
+            to_state TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            actor TEXT NOT NULL,
+            transitioned_at TEXT NOT NULL
+        )
+        """
+    )
+
+
+def update_event_state(
+    conn,
+    event_ids: list[str] | tuple[str, ...],
+    new_state: str,
+    reason: str,
+    actor: str = "memory_db_live_insert",
+) -> int:
+    state_value = normalize_text(new_state)
+    reason_value = normalize_text(reason)
+    actor_value = normalize_text(actor) or "memory_db_live_insert"
+    if state_value not in VALID_EVENT_STATES:
+        raise ValueError(f"invalid event state: {state_value}")
+    if not reason_value:
+        raise ValueError("state transition reason is required")
+    if not event_ids:
+        return 0
+
+    ensure_event_attribute_columns(conn)
+    ensure_event_state_transition_log(conn)
+    transitioned_at = now_timestamp()
+    updated = 0
+    for event_id in event_ids:
+        row = conn.execute(
+            "SELECT state FROM events WHERE id = ?",
+            (event_id,),
+        ).fetchone()
+        if row is None:
+            continue
+        from_state = row[0] or "raw"
+        conn.execute(
+            "UPDATE events SET state = ?, updated_at = ? WHERE id = ?",
+            (state_value, transitioned_at, event_id),
+        )
+        conn.execute(
+            """
+            INSERT INTO event_state_transitions (
+                event_id, from_state, to_state, reason, actor, transitioned_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (event_id, from_state, state_value, reason_value, actor_value, transitioned_at),
+        )
+        updated += 1
+    return updated
 
 
 def memory_db_cache_path(db_path: str) -> str:
