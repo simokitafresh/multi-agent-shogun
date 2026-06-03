@@ -18,6 +18,9 @@ DEFAULT_SEMANTIC_MAP_PATH = os.path.join(REPO_ROOT, "context", "semantic-map.md"
 DEFAULT_SEMANTIC_INDEX_PATH = os.path.join(REPO_ROOT, "docs", "semantic-index", "index.md")
 SUMMARY_LIMIT = 240
 SQLITE_BUSY_TIMEOUT_MS = 5000
+DEFAULT_CONFIDENCE = "medium"
+DEFAULT_FRESHNESS = "current"
+DEFAULT_SOURCE_TYPE = "fact"
 _SEMANTIC_CONCEPT_CACHE = None
 _CMD_CONTEXT_CACHE: dict[str, str] = {}
 OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
@@ -430,6 +433,18 @@ def require_live_tables(conn) -> bool:
     return True
 
 
+def ensure_event_attribute_columns(conn) -> None:
+    cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+    if "confidence" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN confidence TEXT DEFAULT '{DEFAULT_CONFIDENCE}'")
+    if "freshness" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN freshness TEXT DEFAULT '{DEFAULT_FRESHNESS}'")
+    if "source_type" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN source_type TEXT DEFAULT '{DEFAULT_SOURCE_TYPE}'")
+    if "state" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN state TEXT DEFAULT 'raw'")
+
+
 def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str | None = "") -> None:
     if not os.path.exists(db_path):
         return
@@ -447,6 +462,7 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
         conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         if not require_live_tables(conn):
             return
+        ensure_event_attribute_columns(conn)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS event_concepts (
@@ -472,8 +488,9 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
             """
             INSERT OR IGNORE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file, parent_event_id, importance, state
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'raw')
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance,
+                confidence, freshness, source_type, state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'medium', 'current', 'fact', 'raw')
             """,
             row,
         )

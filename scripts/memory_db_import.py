@@ -31,7 +31,10 @@ DEFAULT_PENDING_DECISIONS_FILE = REPO_ROOT / "queue" / "pending_decisions.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
 SQLITE_BUSY_TIMEOUT_MS = 5000
-EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str, str]
+DEFAULT_CONFIDENCE = "medium"
+DEFAULT_FRESHNESS = "current"
+DEFAULT_SOURCE_TYPE = "fact"
+EventRow = tuple[Any, ...]
 FTS_QUERY_TOKEN_RE = re.compile(
     r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]{2,}"
 )
@@ -1097,11 +1100,52 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
         )
 
 
-def ensure_state_column(conn: sqlite3.Connection) -> None:
-    """Add state column to events if missing; existing rows return 'raw' via DEFAULT."""
+def ensure_event_attribute_columns(conn: sqlite3.Connection) -> None:
+    """Add memory attribute columns if missing; legacy rows get conservative defaults."""
     cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+    if "confidence" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN confidence TEXT DEFAULT '{DEFAULT_CONFIDENCE}'")
+    if "freshness" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN freshness TEXT DEFAULT '{DEFAULT_FRESHNESS}'")
+    if "source_type" not in cols:
+        conn.execute(f"ALTER TABLE events ADD COLUMN source_type TEXT DEFAULT '{DEFAULT_SOURCE_TYPE}'")
     if "state" not in cols:
         conn.execute("ALTER TABLE events ADD COLUMN state TEXT DEFAULT 'raw'")
+    if "occurred_at" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN occurred_at TEXT")
+    if "recorded_at" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN recorded_at TEXT")
+    if "updated_at" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN updated_at TEXT")
+    # バックフィル: 既存行のoccurred_at/recorded_atにtsをコピー
+    conn.execute(
+        "UPDATE events SET occurred_at = ts, recorded_at = ts WHERE occurred_at IS NULL AND ts <> ''"
+    )
+
+
+def event_row_with_attributes(event_row: EventRow) -> EventRow:
+    ts = event_row[1]
+    if len(event_row) == 15:
+        return (
+            *event_row[:14],
+            DEFAULT_CONFIDENCE,
+            DEFAULT_FRESHNESS,
+            DEFAULT_SOURCE_TYPE,
+            event_row[14],  # state
+            ts,   # occurred_at
+            ts,   # recorded_at
+            "",   # updated_at
+        )
+    if len(event_row) == 18:
+        return (
+            *event_row,
+            ts,   # occurred_at
+            ts,   # recorded_at
+            "",   # updated_at
+        )
+    if len(event_row) == 21:
+        return event_row
+    raise ValueError(f"Unexpected EventRow length: {len(event_row)}")
 
 
 def configure_connection(conn: sqlite3.Connection) -> None:
@@ -1285,19 +1329,28 @@ def build_db(
                 source_file TEXT,
                 parent_event_id INTEGER,
                 importance TEXT,
-                state TEXT DEFAULT 'raw'
+                confidence TEXT DEFAULT 'medium',
+                freshness TEXT DEFAULT 'current',
+                source_type TEXT DEFAULT 'fact',
+                state TEXT DEFAULT 'raw',
+                occurred_at TEXT,
+                recorded_at TEXT,
+                updated_at TEXT
             )
             """
         )
-        ensure_state_column(conn)
+        ensure_event_attribute_columns(conn)
+        event_rows_for_insert = [event_row_with_attributes(event_row) for event_row in event_rows]
         conn.executemany(
             """
             INSERT OR REPLACE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file, parent_event_id, importance, state
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance,
+                confidence, freshness, source_type, state,
+                occurred_at, recorded_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            event_rows,
+            event_rows_for_insert,
         )
         conn.execute(
             """
@@ -1378,25 +1431,9 @@ def build_db(
 def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> None:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     rows = [
-        (event_id, ts, event_type, cmd_id, summary, detail)
-        for (
-            event_id,
-            ts,
-            event_type,
-            agent,
-            _target,
-            direction,
-            summary,
-            detail,
-            _session_id,
-            cmd_id,
-            _concepts,
-            _source_file,
-            _parent_event_id,
-            _importance,
-            _state,
-        ) in event_rows
-        if event_type == "conversation" and agent == "lord" and direction == "inbound"
+        (event_row[0], event_row[1], event_row[2], event_row[9], event_row[6], event_row[7])
+        for event_row in event_rows
+        if event_row[2] == "conversation" and event_row[3] == "lord" and event_row[5] == "inbound"
     ]
     with sqlite3.connect(cache_path) as conn:
         conn.execute("PRAGMA journal_mode=WAL")
