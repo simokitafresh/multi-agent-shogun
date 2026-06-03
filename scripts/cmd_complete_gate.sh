@@ -4270,6 +4270,16 @@ check_command_files_modified_coverage() {
         return 0
     fi
 
+    # 偵察cmd等でfiles_modifiedに実在ファイルがない場合はSKIP（偽陽性防止）
+    local real_file_count=0
+    while IFS= read -r rp; do
+        [ -f "$rp" ] && real_file_count=$((real_file_count + 1))
+    done <<< "$report_paths"
+    if [ "$real_file_count" -eq 0 ]; then
+        echo "  SKIP (files_modifiedに実在ファイルなし — 偵察cmd等)"
+        return 0
+    fi
+
     local missing_count=0 total_count=0 missing_list=""
     local ref modified matched ref_base modified_base ref_stem modified_stem
     while IFS= read -r ref; do
