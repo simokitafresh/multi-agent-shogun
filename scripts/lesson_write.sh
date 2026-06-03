@@ -997,11 +997,11 @@ print(json.dumps({
 }, ensure_ascii=False))
 PY
             ); then
-                bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" lesson "$_semantic_payload" >/dev/null 2>&1 || true
+                (bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" lesson "$_semantic_payload" >/dev/null 2>&1 || true) &
             fi
         fi
         if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
-            bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true
+            (bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true) &
         fi
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)
         # 教訓登録=一回失敗=周辺に穴。キーワードでPI/ランブック/instructionsをgrep、還流漏れを検出
