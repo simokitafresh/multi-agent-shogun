@@ -14,7 +14,9 @@ setup() {
     export SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1
     unset SEMANTIC_CMD_HISTORY_FILES
     unset SEMANTIC_INSIGHTS_PATH
-    unset SEMANTIC_NEW_FILE_LIST
+    # Parallel Bats runs must not let background semantic_map_generate inspect
+    # the real worktree's untracked files and queue unrelated insights.
+    export SEMANTIC_NEW_FILE_LIST="__semantic_test_no_new_files__"
     unset SEMANTIC_PROJECTS_CONFIG
 
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
