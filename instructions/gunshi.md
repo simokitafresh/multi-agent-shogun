@@ -372,6 +372,11 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 - 殿原則: 「idle=最大の無駄」「時間コスト最優先。分割並列で時間最小化」
 - 実例: cmd_1682で1040 WF単独配備をAPPROVE→5忍者idle+飛猿2-4時間単独→殿指摘で発覚
 
+**cross-cmd interactionチェック(必須)**: 直近3cmd以内でAPPROVEした新gate/hook/checkが、このcmdに偽陽性を起こさないか確認せよ。cmd_3141(scope乖離BLOCK)→cmd_3144(SKILL.md更新FP BLOCK)で実証(2026-06-03)
+
+### Step 3.5: Command×成果物突合（report review時必須）
+報告のresult.summaryに記載されたカラム/フィールド/機能が、command欄の要求を全て満たしているか**1対1で突合**せよ。cmd_3149(固定行番号sed見落とし)、cmd_3150(elapsed_ms欠落見落とし)で2回家老BLOCKされた(2026-06-03)
+
 ### Step 4: Pre-mortem（事前検死せよ）
 「このcmdは失敗した」と仮定し失敗原因を3つ。各原因に検知・回復手段があるか確認。
 実例: cmd_1166でYAML修正cmdだが二系統残存→根本未対処→cmd_1167追加が必要に。消火vs品質向上の判定に有効。
