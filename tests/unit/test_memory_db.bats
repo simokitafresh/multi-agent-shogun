@@ -1124,6 +1124,104 @@ PY
     [ "${result[1]}" = "True" ]
 }
 
+@test "memory_db_import records confidence freshness source_type defaults" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"属性列テスト","detail":"confidence freshness source_type のデフォルト確認"}
+{"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"属性列応答","detail":"importance と信頼度を分離する"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("confidence" in cols)
+print("freshness" in cols)
+print("source_type" in cols)
+rows = conn.execute(
+    "SELECT confidence, freshness, source_type FROM events ORDER BY ts"
+).fetchall()
+print(len(rows))
+print(all(row == ("medium", "current", "fact") for row in rows))
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "2" ]
+    [ "${result[4]}" = "True" ]
+}
+
+@test "memory_db_import migrates existing DB by adding confidence freshness source_type columns" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"既存DB属性列","detail":"属性列なしのDBへ追加"}
+EOF
+
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id INTEGER,
+        importance TEXT
+    )
+    """
+)
+conn.execute(
+    "INSERT INTO events (id, ts, event_type, summary, detail, importance) VALUES (?, ?, ?, ?, ?, ?)",
+    ("legacy:1", "2026-05-01T00:00:00+09:00", "conversation", "既存行", "属性列なし", "normal")
+)
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid', tokenize='trigram')")
+conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+conn.commit()
+PY
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("confidence" in cols)
+print("freshness" in cols)
+print("source_type" in cols)
+defaults = conn.execute(
+    "SELECT COUNT(*) FROM events WHERE confidence = 'medium' AND freshness = 'current' AND source_type = 'fact'"
+).fetchone()[0]
+count_all = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+print(defaults == count_all)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "True" ]
+}
+
 @test "memory_db_import adds occurred_at recorded_at updated_at columns to events table" {
     cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
 {"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"timestamp列テスト","detail":"3種タイムスタンプ列追加確認"}
