@@ -9,7 +9,7 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-04T07:51:46+09:00 -->
 
 # codd-fix
 
@@ -74,7 +74,7 @@ git diff --stat
 bash scripts/test_select.sh <changed-file>
 ```
 
-共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`はgate関連テストに加えて`tests/unit/test_cmd_complete_gate*.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。`memory_db_import.py`・`memory_db_query.sh`・`semantic_search.sh`変更はmemory_db/semantic関連テストを選択する（cmd_3026確認: cmd_38aaf66f）。SKIPはFAILとして扱う。
+共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`はgate関連テストに加えて`tests/unit/test_cmd_complete_gate*.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`docs/rule/*.md`を変更した場合、`scripts/test_select.sh`は`test_semantic_index_update.bats`・`test_context_freshness_check.bats`を選択する。`instructions/gunshi.md`を変更した場合、`scripts/test_select.sh`は`test_cli_adapter.bats`・`test_gate_gunshi_cs_checklist.bats`・`test_gunshi_next_action.bats`・`test_semantic_index_update.bats`を選択する。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。`memory_db_import.py`・`memory_db_query.sh`・`semantic_search.sh`変更はmemory_db/semantic関連テストを選択する（cmd_3026確認: cmd_38aaf66f）。SKIPはFAILとして扱う。
 
 ## 報告
 
