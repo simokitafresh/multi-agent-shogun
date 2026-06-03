@@ -21,6 +21,23 @@ SQLITE_BUSY_TIMEOUT_MS = 5000
 DEFAULT_CONFIDENCE = "medium"
 DEFAULT_FRESHNESS = "current"
 DEFAULT_SOURCE_TYPE = "fact"
+VALID_EVENT_STATES = {
+    "raw",
+    "contradiction_candidate",
+    "duplicate_candidate",
+}
+CONTRADICTION_TYPES = {
+    "false_info",
+    "outdated",
+    "context_mismatch",
+    "definition_mismatch",
+    "domain_mismatch",
+    "time_mismatch",
+    "observation_condition_mismatch",
+    "opinion_mismatch",
+    "competing_hypotheses",
+    "past_vs_current_judgment",
+}
 _SEMANTIC_CONCEPT_CACHE = None
 _CMD_CONTEXT_CACHE: dict[str, str] = {}
 OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
@@ -452,10 +469,15 @@ def append_event(
     row: tuple[object, ...],
     concept_text_extra: str | None = "",
     raw_content: object | None = None,
+    state: str = "raw",
 ) -> None:
     if not os.path.exists(db_path):
         return
     import sqlite3
+
+    state_value = normalize_text(state) or "raw"
+    if state_value not in VALID_EVENT_STATES:
+        raise ValueError(f"invalid event state: {state_value}")
 
     mutable_row = list(row)
     link_text_extra = "" if concept_text_extra is None else concept_text_extra
@@ -498,9 +520,9 @@ def append_event(
                 id, ts, event_type, agent, target, direction, summary, detail,
                 session_id, cmd_id, concepts, source_file, parent_event_id, importance,
                 confidence, freshness, source_type, state, raw_content
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'medium', 'current', 'fact', 'raw', ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'medium', 'current', 'fact', ?, ?)
             """,
-            row + (raw_content_value,),
+            row + (state_value, raw_content_value),
         )
         if cursor.rowcount == 1:
             rowid = conn.execute("SELECT rowid FROM events WHERE id = ?", (row[0],)).fetchone()[0]
@@ -996,6 +1018,91 @@ def append_workaround(args) -> None:
     )
 
 
+def append_contradiction_candidate(args) -> None:
+    contradiction_type = normalize_text(args.contradiction_type)
+    if contradiction_type not in CONTRADICTION_TYPES:
+        allowed = ", ".join(sorted(CONTRADICTION_TYPES))
+        raise ValueError(f"invalid contradiction_type: {contradiction_type}; allowed: {allowed}")
+    candidate_id = normalize_text(args.candidate_id)
+    source_event_id = normalize_text(args.source_event_id)
+    conflicting_event_id = normalize_text(args.conflicting_event_id)
+    ts = normalize_text(args.ts)
+    summary = summarize(args.summary) or f"contradiction candidate: {contradiction_type}"
+    detail = "\n".join(
+        line
+        for line in [
+            normalize_text(args.detail),
+            f"contradiction_type: {contradiction_type}",
+            f"source_event_id: {source_event_id}" if source_event_id else "",
+            f"conflicting_event_id: {conflicting_event_id}" if conflicting_event_id else "",
+            f"current_event_id: {normalize_text(args.current_event_id)}" if normalize_text(args.current_event_id) else "",
+            f"historical_decision: {normalize_text(args.historical_decision)}" if normalize_text(args.historical_decision) else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            f"contradiction_candidate:{candidate_id}",
+            ts,
+            "memory_candidate",
+            normalize_text(args.agent) or "memory_db_live_insert",
+            source_event_id,
+            contradiction_type,
+            summary,
+            detail,
+            "",
+            infer_cmd_id(summary, detail),
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "high",
+        ),
+        raw_content=normalize_text(args.detail),
+        state="contradiction_candidate",
+    )
+
+
+def append_duplicate_candidate(args) -> None:
+    candidate_id = normalize_text(args.candidate_id)
+    primary_event_id = normalize_text(args.primary_event_id)
+    duplicate_event_id = normalize_text(args.duplicate_event_id)
+    ts = normalize_text(args.ts)
+    similarity = normalize_text(args.similarity)
+    summary = summarize(args.summary) or "duplicate candidate"
+    detail = "\n".join(
+        line
+        for line in [
+            normalize_text(args.detail),
+            f"primary_event_id: {primary_event_id}" if primary_event_id else "",
+            f"duplicate_event_id: {duplicate_event_id}" if duplicate_event_id else "",
+            f"similarity: {similarity}" if similarity else "",
+        ]
+        if line
+    )
+    append_event(
+        args.db_path,
+        (
+            f"duplicate_candidate:{candidate_id}",
+            ts,
+            "memory_candidate",
+            normalize_text(args.agent) or "memory_db_live_insert",
+            primary_event_id,
+            "duplicate",
+            summary,
+            detail,
+            "",
+            infer_cmd_id(summary, detail),
+            "[]",
+            normalize_text(args.source_file),
+            None,
+            "normal",
+        ),
+        raw_content=normalize_text(args.detail),
+        state="duplicate_candidate",
+    )
+
+
 def parse_args():
     specs = {
         "inbox": (
@@ -1079,6 +1186,24 @@ def parse_args():
             },
             ["gate_name", "result", "ts", "source_file"],
         ),
+        "contradiction_candidate": (
+            {
+                "agent": "memory_db_live_insert",
+                "current_event_id": "",
+                "historical_decision": "",
+            },
+            [
+                "candidate_id", "ts", "contradiction_type", "source_event_id",
+                "conflicting_event_id", "summary", "detail", "source_file",
+            ],
+        ),
+        "duplicate_candidate": (
+            {
+                "agent": "memory_db_live_insert",
+                "similarity": "",
+            },
+            ["candidate_id", "ts", "primary_event_id", "duplicate_event_id", "summary", "detail", "source_file"],
+        ),
     }
 
     argv = sys.argv[1:]
@@ -1142,6 +1267,10 @@ def main() -> int:
         append_lesson(args)
     elif args.event_type == "gate":
         append_gate(args)
+    elif args.event_type == "contradiction_candidate":
+        append_contradiction_candidate(args)
+    elif args.event_type == "duplicate_candidate":
+        append_duplicate_candidate(args)
     try:
         sync_memory_db_ext4_cache(args.db_path)
     except Exception as exc:
