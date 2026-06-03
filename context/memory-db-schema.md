@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_3159 -->
+<!-- last_updated: 2026-06-03 cmd_3160 -->
 
 # Memory DB Schema
 
@@ -85,6 +85,8 @@
 | insight:INS-20260522-125919062-864d | 2026-05-22T12:59:19+09:00 | insight | semantic_stress_test |  | pending | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ | [[この危険思想を封じる方法は？パターンマッチングは危険思想だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この危険思想を封じる方法は？パターンマッチングは危険思想だ<br>status: pending<br>priority: low<br>source: s… |  |  | ["semantic_dictionary_design"] | /mnt/c/tools/multi-agent-shogun/queue/insights.yaml |  | high | raw | medium | current | fact | 2026-05-22T12:59:19+09:00 | 2026-05-22T12:59:19+09:00 |  |  |
 
 `raw_content` はcmd_3159で追加。live insert経路の新規イベントのみ、検索用に加工された`summary`/`detail`とは別に入力原文を保存する。既存行はNULLのまま保持する。
+
+`state` は記憶状態を表す。live insert経路は通常イベントを`raw`で保存し、cmd_3160で候補イベント用に`contradiction_candidate` / `duplicate_candidate`を追加した。矛盾候補は`event_type=memory_candidate`、`state=contradiction_candidate`、`direction=<矛盾分類>`で記録し、分類は三層記憶運用原則§11の10種（誤情報、古い、文脈違い、定義違い、分野違い、時点違い、観測条件違い、意見違い、仮説競合、過去判断と現在判断違い）へ対応する。重複候補は`event_type=memory_candidate`、`state=duplicate_candidate`、`direction=duplicate`で記録する。候補は削除・統合の確定ではなく、人間/家老の後続判断の入力である。
 
 ## `events_fts`
 

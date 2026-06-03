@@ -1124,6 +1124,87 @@ PY
     [ "${result[1]}" = "True" ]
 }
 
+@test "memory_db_live_insert appends contradiction and duplicate candidates with candidate states" {
+    cat > "$TEST_TMPDIR/archive/2026-06-03.jsonl" <<'EOF'
+{"ts":"2026-06-03T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"記憶候補テスト","detail":"候補イベントのstate確認"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        contradiction_candidate \
+        --candidate-id "contradiction-test" \
+        --ts "2026-06-03T19:50:00+09:00" \
+        --contradiction-type "time_mismatch" \
+        --source-event-id "event:a" \
+        --conflicting-event-id "event:b" \
+        --summary "時点違いの矛盾候補" \
+        --detail "AとBは時点が違うため削除せず候補化する" \
+        --source-file "tests/unit/test_memory_db.bats"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        duplicate_candidate \
+        --candidate-id "duplicate-test" \
+        --ts "2026-06-03T19:51:00+09:00" \
+        --primary-event-id "event:a" \
+        --duplicate-event-id "event:c" \
+        --similarity "0.92" \
+        --summary "重複候補" \
+        --detail "AとCは同一内容の可能性がある" \
+        --source-file "tests/unit/test_memory_db.bats"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+for event_id in ("contradiction_candidate:contradiction-test", "duplicate_candidate:duplicate-test"):
+    row = conn.execute(
+        "SELECT event_type, direction, state, summary, replace(detail, char(10), '|') FROM events WHERE id = ?",
+        (event_id,),
+    ).fetchone()
+    print("|".join(row))
+print(conn.execute("SELECT COUNT(*) FROM events WHERE state='contradiction_candidate'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE state='duplicate_candidate'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "memory_candidate|time_mismatch|contradiction_candidate|時点違いの矛盾候補|AとBは時点が違うため削除せず候補化する|contradiction_type: time_mismatch|source_event_id: event:a|conflicting_event_id: event:b" ]
+    [ "${result[1]}" = "memory_candidate|duplicate|duplicate_candidate|重複候補|AとCは同一内容の可能性がある|primary_event_id: event:a|duplicate_event_id: event:c|similarity: 0.92" ]
+    [ "${result[2]}" = "1" ]
+    [ "${result[3]}" = "1" ]
+}
+
+@test "memory_db_live_insert rejects unclassified contradiction candidates" {
+    cat > "$TEST_TMPDIR/archive/2026-06-03.jsonl" <<'EOF'
+{"ts":"2026-06-03T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"記憶候補テスト","detail":"候補イベントのstate確認"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        --db-path "$TEST_TMPDIR/data/memory.db" \
+        contradiction_candidate \
+        --candidate-id "bad-contradiction-test" \
+        --ts "2026-06-03T19:52:00+09:00" \
+        --contradiction-type "unknown" \
+        --source-event-id "event:a" \
+        --conflicting-event-id "event:b" \
+        --summary "未分類の矛盾候補" \
+        --detail "分類なしは記録しない" \
+        --source-file "tests/unit/test_memory_db.bats"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalid contradiction_type"* ]]
+}
+
 @test "memory_db_import records confidence freshness source_type defaults" {
     cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
 {"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"属性列テスト","detail":"confidence freshness source_type のデフォルト確認"}
