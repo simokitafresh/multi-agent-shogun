@@ -33,7 +33,7 @@ codd:
 |------|---|
 | id | local_memory_db |
 | label | ローカル記憶DB |
-| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶, 記憶DBが主役なのは人間の構造と似ているな, 記憶DBを探せ, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, いつでもだれでもなんどでも使える, 修正 記憶DB CJK LIKE検索の長文クエリ対応 |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶, 記憶DBが主役なのは人間の構造と似ているな, 記憶DBを探せ, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, いつでもだれでもなんどでも使える, 修正 記憶DB CJK LIKE検索の長文クエリ対応, cd mnt c tools multi agent shogun, 三層記憶設計書§, 三層記憶設計書§ § timestamp原則 |
 | related_concepts | semantic_dictionary_design, semantic_causal_automation, file_rename, multi_cli_event_commonization, causal_verification_l0_l7 |
 
 | 種別 | パス/参照 |
@@ -82,6 +82,9 @@ codd:
 | cmd | `cmd_3118` 強化: 記憶DB歴史データ概念backfill — 31617件の暗黒大陸を概念空間に接続 (`context/memory-db-schema.md`, `tests/unit/test_memory_db.bats`) |
 | causal | `cmd_3118` origin: [[cmd_3116_概念付与]] -> [[歴史データ未backfill]] -> [[31617件暗黒大陸]] |
 | causal | `cmd_3118` depends_on: cmd_3117 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:19:10+09:00 下記に三層記憶の記憶DB＋obsidian＋セマンティックインデックスに対する概念アドバイスを送る |
+| cmd | `cmd_3150` 三層記憶Phase1-1: 検索ログ収集 — semantic_search.sh呼出しをSQLite search_logsテーブルに記録 (`queue/tasks/hayate.yaml`, `scripts/search_log_write.sh`, `scripts/semantic_search.sh`) |
+| causal | `cmd_3150` origin: [[三層記憶設計書§14-6]] -> [[検索ログ不在]] -> [[cmd_3150]] |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -89,7 +92,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting |
 | related_lessons | `LS041` |
 
@@ -163,6 +166,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T00:36:16+09:00 真因を探求せよ。洗脳から覚醒してなぜなぜ７回。想像せずに確認と検証 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T02:02:39+09:00 洗脳監査 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T09:37:46+09:00 洗脳監査。hookでblockの内容は？無駄なテストや非効率を隠すための悪質なhookでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T17:59:31+09:00 次をやろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T18:03:56+09:00 次をやろう |
 | causal_chain | `[[cmd_2574]]` (L715) |
 | causal_chain | `[[cmd_2577]]` (L716) |
 | causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L720) |
@@ -211,7 +216,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？ |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際 |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -438,6 +443,13 @@ codd:
 | cmd | `cmd_3139` (`scripts/hooks/stop_check_inbox.sh`, `scripts/insight_write.sh`, `tests/unit/test_stop_check_inbox.bats`) |
 | lesson | `L737` FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ |
 | lesson | `L738` 分割context freshnessは外部repo全体でなく領域pathspecを使う |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:20:34+09:00 # SQLite全文記憶DB + Obsidian + セマンティック辞書による長期外部記憶システムの概念レビュー この文書は、すでに実装済みの 「SQLite全文記憶DB + Obsidian + セマンティック辞書」 による長期外部記憶 |
+| lesson | `L739` 実装commitとqueue/tasks混入はpre-commitで止める |
+| lesson | `L741` pre-push hook_failureはfull log artifactを保存しなければ根因再現不能になる |
+| lesson | `L742` hook/gateを殿の直接指示と表現しない |
+| cmd | `cmd_karo_hotfix_ralph_l742_runbook_20260603` (`docs/rule/bash-conventions.md`) |
+| lesson | `L745` no test mapping系hook failureは正本文書パターンを明示分類する |
+| lesson | `L746` EventRow拡張時はevent_row_with_attributes()で長さ分岐するパターンが安全 |
 | causal_chain | `[[cmd_2291]]` (L653) |
 | causal_chain | `[[cmd_2323]]` (L659) |
 | causal_chain | `[[cmd_2326]]` (L661) |
@@ -745,7 +757,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除 |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range |
 
@@ -761,6 +773,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T12:31:48+09:00 dashboardページとmonthly tradeページに6月の保有ポジションは表示されていますか |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T19:49:56+09:00 旧式の四神/忍法/L0フォルダーのPFを削除したい |
 | file | `docs/research/pf_config_backup_20260601_pre_delete.json` 削除前58件config全量バックアップ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:40:27+09:00 最新の設計書に基づき起票する前に、起票内容のプランニングだ。どの順番でどのようなCMDを出すかを進捗が確認可能なチェックリストにしよう。作成して |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:46:31+09:00 チェックリストを家老にれびゅーしてもらおう |
 | causal_chain | `[[cmd_2578]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -939,6 +953,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T19:39:41+09:00 report_field_set.sh 経由の memory_db live insert 遅延はインフラバグでは？覚醒なぜなぜ７回。想像せずに確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T19:53:54+09:00 設計書を軍師に覚醒レビューしてもらおう。忖度なしで想像せずに厳しく確認してもらおう。codexCLIはverupもしているので最新状況も把握しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T00:32:34+09:00 まずは状況確認では？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T17:11:17+09:00 P0-2(殿の使用パターン確認)待ちとはなんだ？ |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1616,6 +1631,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T18:58:22+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T21:33:27+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T02:38:02+09:00 bd1nqpulv toolu_01H79WtX9TitjxdkH81hZnPu /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T16:08:40+09:00 bwtzx2kmz toolu_01TwHQdqCDpYd8kEC5Z6Eyoj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d5122dec-ef46-4c5f-b5e2-792e49 |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -1900,6 +1916,8 @@ codd:
 | cmd | `cmd_2991` 強化 — 記憶DB cmd_design_qualityリアルタイムINSERT(input配管11) (`scripts/cmd_quality_log.sh`, `scripts/cmd_save.sh`, `tests/unit/test_cmd_quality_memory_db.bats`) |
 | causal | `cmd_2991` origin: [[記憶DB配管11]] -> [[品質記録未投入]] -> [[cmd_quality INSERT]] |
 | causal | `cmd_2991` depends_on: cmd_2984 |
+| cmd | `cmd_3149` ローカルBatsテスト速度改善 — run_saveフル実行をcmd_save.sh関数単位テストに変更 (`tests/unit/test_cmd_save_command_steps_vs_ac.bats`, `tests/unit/test_cmd_save_environment_change.bats`, `tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats`) |
+| causal | `cmd_3149` origin: [[設計書v2_bats_speed_redesign]] -> [[run_save_full_execution]] -> [[cmd_3149]] |
 | causal_chain | `[[cmd_2131]]` (L637) |
 | causal_chain | `[[cmd_2131]]` (L638) |
 
@@ -1946,7 +1964,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -1993,6 +2011,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T23:24:32+09:00 軍師レビューは掲示板経由で問題ない。設計書更新を自分でやらずに軍師に依頼したのがルール違反だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T23:37:35+09:00 軍師に前提となる会話と理解を明確に伝えたうえでレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T10:08:27+09:00 設計書を覚醒レビューして軍師に戻せ。あわててCMD起票するな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:28:22+09:00 混乱しているぞ。将軍は独自にレビューして掲示板に回答せよ |
 | causal_chain | `[[cmd_1877]]` (L625) |
 | causal_chain | `[[cmd_1988]]` (L633) |
 | causal_chain | `[[cmd_2218]]` (L643) |
@@ -2396,6 +2415,7 @@ codd:
 | cmd | `cmd_2894` テスト第2波(51件→6統合) |
 | cmd | `cmd_2895` pre-commit WARN(テスト追加時) |
 | lesson | テストは負債。3問検証(リグレッション/変更頻度/コスト) |
+| cmd | `cmd_karo_hotfix_ga411_test_select_mapping_20260603` (`scripts/test_select.sh`, `tests/unit/test_test_select.bats`) |
 
 ## semantic_causal_automation — セマンティック因果自動化
 
@@ -2421,6 +2441,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T11:06:07+09:00 bkti0z8qd toolu_01RC67zcnhzE6oCCSSWsae9D /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b16eb315-6138-425b-bc24-253581 |
 | cmd | `cmd_karo_hotfix_semantic_search_timeout_20260602` (`scripts/semantic_index.py`, `scripts/semantic_search.sh`, `tests/unit/test_semantic_search.bats`) |
 | cmd | `cmd_karo_ci_red_26841389916_semantic_search_20260603` |
+| cmd | `cmd_3152` 三層記憶Phase1-2b: should_not_merge_withをsemantic_search.shの検索展開から除外する (`scripts/semantic_index.py`, `scripts/semantic_map_generate.sh`, `tests/unit/test_semantic_index_update.bats`) |
+| causal | `cmd_3152` origin: [[cmd_3151_relation_type導入]] -> [[混同注意展開除外未実装]] -> [[cmd_3152]] |
+| causal | `cmd_3152` depends_on: cmd_3151 |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
@@ -2512,6 +2535,7 @@ codd:
 | file | `scripts/inbox_watcher.sh` |
 | file | `scripts/restart_watchers.sh` |
 | cmd | `cmd_2924` watcher親子関係誤判断→kill全滅事故 |
+| note | プロセス構造: 親=本体(inotifywait+メインループL945)、子=MTIME_POLLサブシェル(L960)。psで2プロセス見えるのは正常(親子関係)。子プロセスはWSL2 DrvFs inotifywait hang対策(stat mtime 10秒ポーリング→mtime変化でhung inotifywaitをkill) |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
 

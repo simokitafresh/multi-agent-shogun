@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-03 cmd_karo_context_freshness_ga407_20260603 -->
+<!-- last_updated: 2026-06-03 cmd_3154 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -403,6 +403,7 @@ L112対応履歴: `task_id || subtask_id` フォールバック適用済み。�
 ## inbox_watcher.sh
 
 inotifywait検知→`inboxN`短ナッジ送信。symlink注意。fingerprint dedup(cmd_255)。
+プロセス構造: 親=本体(inotifywait+メインループ)、子=MTIME_POLLサブシェル(L960)。WSL2 DrvFsでinotifywaitがinode置換でhangする問題への対策として、stat mtimeポーリングを子プロセスで並列実行しmtime変化検知時にinotifywaitをkillする。psで2プロセス見えるのは正常（親子関係。二重起動ではない）。
 2026-03-03 運用修正: Codexで`@agent_state=active`残留時はcapture-paneでidle/busyを再判定し補正。BUSY deferはretry消費しない。`profiles.codex.inbox_busy_max_defer_sec`(既定30秒)超過で強制nudge。
 - L002: FG bashでnudge不可（cmd_125）
 - L018: Edit tool flock未対応→inbox既読化はinbox_mark_read.sh必須（cmd_189）
@@ -633,7 +634,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation.md]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L738 -->
+<!-- last_synced_lesson: L746 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1089,6 +1090,14 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L736: background子プロセスはflock FDを閉じて起動せよ（cmd_3139）
 - L737: FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ（cmd_3145）
 - L738: 分割context freshnessは外部repo全体でなく領域pathspecを使う（cmd_karo_context_freshness_ga407_20260603）
+- L739: 実装commitとqueue/tasks混入はpre-commitで止める（cmd_karo_hotfix_ga408_hook_failure_20260603）
+- L740: 新hook機能実装時のtest setup()ディレクトリ作成漏れパターン（cmd_karo_hotfix_ga409_hook_failure_20260603）
+- L741: pre-push hook_failureはfull log artifactを保存しなければ根因再現不能になる（cmd_karo_hotfix_ga410_hook_failure_20260603）
+- L742: hook/gateを殿の直接指示と表現しない（lord_session_20260603）
+- L743: テスト高速化は不要テスト削除から始める（cmd_3149）
+- L744: EventRow型タプル拡張時はアンパック箇所を全て更新せよ（cmd_3153）
+- L745: no test mapping系hook failureは正本文書パターンを明示分類する（cmd_karo_hotfix_ga411_test_select_mapping_20260603）
+- L746: EventRow拡張時はevent_row_with_attributes()で長さ分岐するパターンが安全（cmd_3154）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
