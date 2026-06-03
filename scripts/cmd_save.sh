@@ -5121,9 +5121,14 @@ is_db_operation_command_text() {
 }
 
 check_db_backup_ac_warn() {
-    local command_text
+    local command_text ac_text
     command_text="$(extract_command_text_block)"
     is_db_operation_command_text "$command_text" || return 0
+
+    ac_text="$(extract_acceptance_criteria_block)"
+    if printf '%s\n' "$ac_text" | grep -qiE 'バックアップ|backup'; then
+        return 0
+    fi
 
     echo "WARNING: DB操作cmdを検出。ACに「変更前バックアップ実行済みであること」を追加せよ" >&2
     record_warn_reason "変更前バックアップ実行済みであること" "check=db_backup_required"
