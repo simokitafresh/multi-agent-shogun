@@ -1167,3 +1167,105 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-03T04:25:43Z"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:21:49Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:21:49Z"
+  notes: "info|check=measurement_env_info|measurement_env記入提案"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-03T05:21:49Z"
+  diagnosis: "初回起票のため前回BLOCK情報なし / 対策: テンプレートルール(LS-A04)全項目準拠、q8を5W1H+複利の7部構成で記載"
+  notes: "WARN累計昇格: 「causal_verification_missing|check=check_causal_verification_requirement」が5回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:22:41Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:22:41Z"
+  notes: "info|check=measurement_env_info|measurement_env記入提案"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-03T05:22:42Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: テンプレートルール(LS-A04)全項目準拠、q8を5W1H+複利の7部構成で記載"
+  notes: "WARN累計昇格: 「info|check=measurement_env_info|measurement_env記入提案」が1回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:25:35Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-03T05:25:35Z"
+  notes: "info|check=measurement_env_info|measurement_env記入提案"
+- cmd_id: "cmd_3149"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-03T05:25:35Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: テンプレートルール(LS-A04)全項目準拠、q8を5W1H+複利の7部構成で記載"
+  notes: "WARN累計昇格: 「info|check=measurement_env_info|measurement_env記入提案」が2回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
