@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
+<!-- last_updated: 2026-06-03 cmd_karo_ci_red_26841389916_cmd_save_20260603 -->
 <!-- GStack/GBrain takeaway #15 -->
 # CDP Severity
 

@@ -198,7 +198,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -209,7 +209,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -220,7 +220,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -232,7 +232,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -242,7 +242,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -428,7 +428,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -439,7 +439,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -450,7 +450,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -461,7 +461,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -473,7 +473,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -484,7 +484,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -495,7 +495,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -507,7 +507,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -517,7 +517,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -527,7 +527,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -539,7 +539,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -549,9 +549,601 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-02T16:13:06Z"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:14:12Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:14:12Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "前cmd_3144で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3144 LS-A05"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:14:28Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:14:28Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が1回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:14:59Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:14:59Z"
+  diagnosis: "BLOCK理由: check_gunshi_reference_numeric_relaxation累計2回(設計書数値緩和FP)。AC1/AC2の44秒→15秒/76秒→30秒は速度改善目標値であり設計書閾値の緩和ではない(偽陽性) 対策: diagnosis明記で累計昇格解消"
+  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が2回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:15:33Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:15:33Z"
+  diagnosis: "BLOCK理由: AC内の秒数目標値がgate FPでトリガー(速度改善目標を閾値変更と誤検出)。対策: ACを比率表現(現状比N%短縮)に変更しトリガー回避"
+  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が3回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:16:23Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:16:23Z"
+  diagnosis: "BLOCK理由: AC内の秒数目標値がgate FPでトリガー(速度改善目標を閾値変更と誤検出)。対策: ACを比率表現(現状比N%短縮)に変更しトリガー回避"
+  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が4回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:16:50Z"
+  notes: "計測研究cmd timeout_minutes未記入|check=check_timebox_minutes_required"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:17:11Z"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T16:17:20Z"
+- cmd_id: "cmd_3143"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:28:39Z"
+- cmd_id: "cmd_3143"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:28:49Z"
+- cmd_id: "cmd_nonexist"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-02T16:29:16Z"
+  notes: "cmd_block_missing|check=session_state_cmd_block_presence"
+- cmd_id: "cmd_3144"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:49:13Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3144"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:50:24Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3144"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:52:48Z"
+- cmd_id: "cmd_3139"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:54:52Z"
+- cmd_id: "cmd_3139"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T16:55:54Z"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:08:53Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "前cmd_3145で5回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3145 LS-A05"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:10:23Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "environment_change未実装。file=projects/infra/lessons.yaml に pattern=keyword_score が見つからない"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:12:03Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "environment_change未実装。file=projects/infra/lessons.yaml に pattern=keyword_score が見つからない"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:13:17Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "other_draft_exists"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:13:32Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "other_draft_exists"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:14:50Z"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:14:58Z"
+- cmd_id: "cmd_3147"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:15:45Z"
+- cmd_id: "cmd_3147"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T17:16:01Z"
+- cmd_id: "cmd_karo_training_backlinks_readme_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:33:15Z"
+- cmd_id: "cmd_karo_training_backlinks_readme_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "yes"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:34:04Z"
+- cmd_id: "cmd_karo_training_backlinks_fof_deterioration_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:38:42Z"
+- cmd_id: "cmd_karo_training_backlinks_fof_deterioration_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:39:01Z"
+- cmd_id: "cmd_karo_training_backlinks_cdp_severity_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:40:23Z"
+- cmd_id: "cmd_3147"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:43:28Z"
+- cmd_id: "cmd_karo_training_backlinks_android_ssh_input_loss_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:48:25Z"
+- cmd_id: "cmd_karo_training_backlinks_fullrecalc_resilience_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T17:56:54Z"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T18:06:13Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし 対策: 2部構成形式で記載"
+  notes: "cmd_3146 は既に委任済みです。"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:17:48Z"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:31:08Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3148"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T18:33:43Z"
+- cmd_id: "cmd_3148"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-02T18:34:00Z"
+- cmd_id: "cmd_karo_training_backlinks_cdp_severity_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "yes"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:48:29Z"
+- cmd_id: "cmd_3147"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:48:32Z"
+- cmd_id: "cmd_karo_training_backlinks_android_ssh_input_loss_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:48:36Z"
+- cmd_id: "cmd_karo_training_backlinks_fullrecalc_resilience_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:48:40Z"
+- cmd_id: "cmd_3146"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:48:44Z"
+- cmd_id: "cmd_3148"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:55:37Z"
+- cmd_id: "cmd_3148"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:56:00Z"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:57:03Z"
+- cmd_id: "cmd_3145"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-02T18:57:25Z"
+- cmd_id: "cmd_karo_ci_red_26841389916_semantic_search_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-03T00:28:27Z"
+- cmd_id: "cmd_karo_ci_red_26841389916_semantic_search_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-03T00:30:08Z"
+- cmd_id: "cmd_karo_ci_red_26841389916_cmd_save_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-03T00:35:06Z"
+- cmd_id: "cmd_karo_ci_red_26841389916_cmd_save_20260603"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-03T00:35:24Z"

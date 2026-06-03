@@ -793,11 +793,6 @@ EOF
     run_embedded_test 'tests/unit/test_gate_autofix_proposal.bats' 'gate_autofix_proposal uses only the most recent 50 BLOCK rows' content_test_gate_autofix_proposal
 }
 
-@test 'test_gate_fp_relaxation_proposal.bats :: AC1: high FP WARN gate prints rate and relaxation proposal' {
-    run bats --filter '^escalated_to_block WARN is treated as TP, not FP$' tests/unit/test_gate_fp_relaxation_proposal.bats
-    [ "$status" -eq 0 ]
-}
-
 @test 'test_gate_fp_relaxation_proposal.bats :: AC1: limit uses only recent cmd_design_quality entries' {
     run_embedded_test 'tests/unit/test_gate_fp_relaxation_proposal.bats' 'AC1: limit uses only recent cmd_design_quality entries' content_test_gate_fp_relaxation_proposal
 }

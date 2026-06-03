@@ -245,6 +245,7 @@ setup() {
     export PATH="$TEST_TMPDIR/bin:$PATH"
     export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
     export SHOGUN_STARTUP_LIGHTWEIGHT=1
+    export SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1
 }
 
 teardown() {
@@ -252,12 +253,13 @@ teardown() {
     export HOME="$ORIG_HOME"
     unset SHOGUN_STARTUP_ROOT
     unset SHOGUN_STARTUP_LIGHTWEIGHT
+    unset SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
 @test "all checks pass → 総合判定: OK" {
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
@@ -299,7 +301,7 @@ MOCK
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `definitely_missing_q6_probe` をgrep検証する。"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"BLOCK: 自動化ターゲット実装証拠未検出"* ]]
     [[ "$output" == *"definitely_missing_q6_probe"* ]]
@@ -311,7 +313,7 @@ EOF
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
@@ -323,7 +325,7 @@ EOF
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。**自動化ターゲット**: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
@@ -335,7 +337,7 @@ EOF
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データで検証する。**自動化ターゲット**: なし"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
@@ -955,7 +957,7 @@ EOF
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6(創造主の洗脳チェック)回答未検出"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
@@ -967,7 +969,7 @@ EOF
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データで検証する。"}
 EOF
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
@@ -975,7 +977,7 @@ EOF
 }
 
 @test "Q6 brainwashing answer present → no Q6 WARN" {
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出"* ]]
     [[ "$output" != *"追体験自動化ターゲット: WARN"* ]]
@@ -1038,7 +1040,7 @@ echo "教訓健全度: ALERT — 未振り分け10件"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"教訓健全度"* ]]
@@ -1053,7 +1055,7 @@ echo "METRIC: lesson_effectiveness_threshold status=ALERT rate=64.0% useful_rate
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: ALERT"* ]]
     [[ "$output" == *"when/how品質向上"* ]]
@@ -1067,7 +1069,7 @@ echo "ALERT: infraの未振り分け教訓12件 → /lesson-sort推奨"
 MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
 
-    run run_gate_shogun_startup
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: ALERT"* ]]
     [[ "$output" == *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]

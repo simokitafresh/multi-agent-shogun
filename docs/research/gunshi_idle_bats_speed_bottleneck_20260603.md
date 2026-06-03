@@ -39,12 +39,12 @@
 
 ## パターン分析
 
-### パターン1: cmd_save Session State系 (7件, 合計~72秒)
+### パターン1: cmd_save Session State系 (8件, 合計~68秒)
 
 根因推定: 各テストがcmd_save.sh(2735行)全体をsourceしpython3サブプロセスを起動。
 Session State系は複数回のcmd_save呼出しが必要(2回目以降の挙動テスト)。
 
-### パターン2: semantic_index_update系 (9件, 合計~94秒)
+### パターン2: semantic_index_update系 (10件, 合計~104秒)
 
 根因推定: python3 semantic_index_update.py起動+FTSクエリ+alias処理。
 各テストが独立してpython3を起動。fixture共有なし。
@@ -55,10 +55,10 @@ Session State系は複数回のcmd_save呼出しが必要(2回目以降の挙動
 
 ## 合計影響
 
-- Top20: ~174秒 = 全体256秒の**68%**
-- cmd_save系7件: ~72秒 (28%)
-- semantic系9件: ~94秒 (37%)
-- その他4件: ~8秒 (3%)
+- Top20: ~186秒 = 全体256秒の**73%**
+- cmd_save系8件: ~68秒 (27%)
+- semantic系10件: ~104秒 (41%)
+- その他2件(bulletin+report): ~14秒 (5%)
 
 ## 対策案
 
@@ -71,7 +71,7 @@ setup_file()でpython3プロセスを1回起動→各テストがstdinで入力�
 ### 案3: bats --jobs最適化
 現在jobs=8。WSL2 NTFSではI/O競合で逆効果の可能性。jobs=4とのA/B比較。
 
-### 推奨優先順: 案2(94秒削減) > 案1(72秒削減) > 案3(計測必要)
+### 推奨優先順: 案2(104秒削減) > 案1(68秒削減) > 案3(計測必要)
 
 ## 因果リンク
 

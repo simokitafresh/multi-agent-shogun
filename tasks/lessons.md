@@ -7377,3 +7377,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - printfで書いたstateファイルは末尾改行がないため、bash readは変数へ値を入れてもEOFで非0を返す。read ... || var="" と書くと値を消し、今回のようにdebounce/fingerprint stateが毎回空扱いになる。state読取は var=""; IFS= read -r var < file || true の形にする。
+
+### L736: background子プロセスはflock FDを閉じて起動せよ
+- **日付**: 2026-06-03
+- **出典**: cmd_3139
+- **記録者**: hayate
+- **tags**: [infra,db,bash]
+- **target_files**: [scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats,scripts/insight_write.sh]
+- **origin**: [[cmd_3139]]
+- **when**: 未設定
+- **how**: 未設定
+- flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_write.shがtimeoutした。background childは不要なlock FDを200>&-で閉じて起動する。
+
+### L737: FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ
+- **日付**: 2026-06-03
+- **出典**: cmd_3145
+- **記録者**: tobisaru
+- **tags**: [infra,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_semantic_index_update.bats]
+- **origin**: [[cmd_3145]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を追加した際、CMD_QUALITY_FAST_METADATA=1ガードが漏れた。unitテストはFAST_METADATA=1を常に渡すが、ガードがない表示処理がNTFS I/O(350KB読込+50+ファイルgrep=10-20s)を実行し、Session State系テスト全体の72%を占拠した。教育的表示を追加するときは実装と同じターンでFAST_METADATAガードを必ず追加せよ

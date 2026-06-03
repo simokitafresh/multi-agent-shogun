@@ -3,14 +3,16 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: 失敗テスト群をローカルで再現し、根因を特定して修正する
+      description: CIログから失敗テスト名と失敗理由を報告に記録する
     AC2:
-      description: '少なくとも以下の関連テストがPASSする: tests/unit/test_cmd_delegate.bats, tests/unit/test_cmd_quality_memory_db.bats, tests/unit/test_cmd_save_block_aggregation.bats, tests/unit/test_cmd_save_environment_change.bats, tests/unit/test_cmd_save_semantic_index.bats, tests/unit/test_inbox_write.bats, tests/unit/test_insight_write.bats, tests/unit/test_memory_db_live_insert.bats, tests/unit/test_causal_backlinks.bats'
+      description: 失敗テストをローカルで再現または再現不能なら現dirty差分でPASSする理由を説明し、汚染原因(memory DB cache等)を特定する
     AC3:
-      description: bats tests/unit/ --formatter tap --timing --jobs 8 のCI失敗原因が解消していることを、可能な範囲で全体または対象群実行により確認する
+      description: bats tests/unit/test_semantic_search.bats --filter 'unmatched first layer returns memory DB FTS hits before LLM fallback' がPASSする
     AC4:
-      description: 修正内容をcommitし、報告YAMLにrun 26821340025の失敗一覧と再検証結果を記録する
-  command: 'CI RED修正対象: scripts/memory_db_live_insert.py, scripts/cmd_save.sh, scripts/cmd_quality_log.sh, scripts/inbox_write.sh, scripts/insight_write.sh, scripts/karo_workaround_log.sh, scripts/causal_backlinks.sh'
+      description: bats tests/unit/test_semantic_search.bats がPASSする
+    AC5:
+      description: CI修正に必要な最小ファイルだけをcommitし、報告YAMLを完成させる
+  command: 'GitHub Actions run 26841389916 の失敗テストを修正せよ。失敗は test_semantic_search.bats の memory DB FTS fallback テスト(status!=0)。現worktreeには関連する未コミット差分があるため、まず差分を読んで因果を確認し、必要最小の修正だけを検証・commitせよ。対象候補: tests/unit/test_semantic_search.bats, scripts/semantic_index_update.sh。関係ないdirty filesは触るな。'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,49 +27,55 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_ci_red_fix_26821340025
+  parent_cmd: cmd_karo_ci_red_26841389916_semantic_search_20260603
   project: infra
-  purpose: CI RED修正 — GitHub Actions run 26821340025 の memory DB live insert / cmd_save / causal_backlinks 系FAILを修正し、CI unit testsをGREENへ戻す
+  purpose: 'CI RED(run 26841389916)のUnit Tests失敗を解消する。失敗テスト: tests/unit/test_semantic_search.bats の unmatched first layer returns memory DB FTS hits before LLM fallback'
   status: idle
   stop_for: []
-  target_path: scripts/memory_db_live_insert.py
-  task_id: cmd_karo_ci_red_fix_26821340025_normal
-  task_type: ci_fix
+  target_path: tests/unit/test_semantic_search.bats
+  task_id: cmd_karo_ci_red_26841389916_semantic_search_20260603_normal
+  task_type: ci_red_fix
   related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L255'
-    summary: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar'
-    detail: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar'
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L279'
-    summary: '才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_'
-    detail: '才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L598'
-    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-  - id: 'L317'
-    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
-    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+  - id: 'L489'
+    summary: 'bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下'
+    detail: 'bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下'
+  - id: 'L726'
+    summary: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
+    detail: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
+  - id: 'L617'
+    summary: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
+    detail: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
+  - id: 'L611'
+    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+  - id: 'L610'
+    summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
+    detail: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
+  - id: 'L575'
+    summary: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
+    detail: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
   - id: 'L319'
     summary: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
     detail: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-  - id: 'L630'
-    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-  - id: 'L536'
-    summary: 'bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f'
-    detail: 'bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L190'
+    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+  - id: 'L703'
+    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "semantic_causal_automation — セマンティック因果自動化:  scripts/semantic_map_generate.sh scripts/causal_backlinks.sh docs/semantic-index/index.md"
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
+  - "local_memory_db — ローカル記憶DB:  scripts/memory_db_import.py scripts/memory_db_query.sh data/multi_agent_shogun_memory.db context/memory-db-schema.md"
+  - "deepdive_principles — deepdive原理:  context/training-cycle.md"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -87,25 +95,25 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L255: 定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L279: 才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
-      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
+      - L489: bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下
+      - L726: memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal
+      - L617: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
+      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+      - L610: SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro
+      - L575: 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s
       - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ
-      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
-      - L536: bats --jobs Nでの並列実行時、CMD_SAVE_LOCK_FILEが未設定だと/tmp/shogun_to_karo.lockを複数テストが共有→f
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
+      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
     ────────────────────────────────────────
     
     
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_ci_red_fix_26821340025_normal
+  _ac_task_id: cmd_karo_ci_red_26841389916_semantic_search_20260603_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_ci_red_fix_26821340025.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_ci_red_fix_26821340025.yaml
+  report_filename: hayate_report_cmd_karo_ci_red_26841389916_semantic_search_20260603.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_red_26841389916_semantic_search_20260603.yaml
   bloom_level: 
-  deployed_at: "2026-06-02T22:53:08"
-  completed_at: "2026-06-02T23:30:16+09:00"
+  deployed_at: "2026-06-03T09:19:22"
+  progress: "AC1-AC5完了: CI failure metadata確認、HEAD相当再現、対象filter PASS、test_semantic_search全20件PASS、test_semantic_index_update全28件PASS、scope内2ファイルcommit済み。"

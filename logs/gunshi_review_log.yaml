@@ -1369,6 +1369,7 @@
   timestamp: "2026-06-02T23:58:00"
 - cmd_id: cmd_3139
   review_type: draft
+  gate_result: CLEAR
   verdict: REQUEST_CHANGES
   confidence: MEDIUM
   finding_categories:
@@ -1530,6 +1531,7 @@
   timestamp: "2026-06-03T00:55:00"
 - cmd_id: cmd_3143
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories:
@@ -1544,3 +1546,414 @@
   brainwash_check: "単純regex修正に見えるが100億年テスト: WARN信頼性は全セッションに効く構造改善。完了急ぎなし"
   origin: "[[cmd_3067_E2E検証欠落]] -> [[target_re_markdown_mismatch]] -> [[cmd_3143]]"
   timestamp: "2026-06-03T01:00:00"
+- cmd_id: cmd_3144
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - ambiguity
+  findings_summary: "SKILL.md 7件script追従更新。gate_skill_script_refs.sh 9件WARN verified。文書変更のみ、低blast radius"
+  observations:
+    - "gate_skill_script_refs.sh WARN 9件(7スキル)。LS042教訓: 3セッション放置=洗脳#5"
+    - "対象: dream/gate-sync/idle-persist/karo-direct/recon-dual/review-bundle/shogun-clear-prep"
+    - "AC1がgate再実行で二値判定。AC2は主観だがgateがカバー。ambiguity_points: none"
+  causal_chain: "script更新→SKILL.md未追従→gate WARN 3セッション→LS042発火→忍者が古い手順参照リスク→SKILL.md同期=正の複利"
+  brainwash_check: "文書更新は地味だが忍者の作業品質基盤。100億年テスト: SKILL.md正確性は全スキル実行に効く構造改善"
+  origin: "[[LS042]] -> [[gate_skill_script_refs_9件WARN]] -> [[cmd_3144]]"
+  timestamp: "2026-06-03T01:20:00"
+- cmd_id: cmd_3145
+  review_type: draft
+  gate_result: BLOCK
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - ambiguity
+  findings_summary: "Bats速度ボトルネック修正。purpose/titleの数値が設計書修正前の旧版(3件44秒/8件76秒)。修正済み: 8件68秒/10件104秒。ACは定性表現で影響なし"
+  observations:
+    - "purpose数値がdocs/research/gunshi_idle_bats_speed_bottleneck_20260603.md修正前の旧版を参照"
+    - "修正済み設計書: cmd_save 8件68秒, semantic 10件104秒, 合計172秒=67%(旧: 3件44秒+8件76秒=120秒=47%)"
+    - "AC1/AC2は定性(大幅に短縮+before/after計測)なので数値不整合はverdictに影響しない"
+  causal_chain: "殿指摘(バグに近い)→軍師分析→Top20特定→2パターン解消→CI高速化=全cmd×数十秒短縮の正の複利"
+  brainwash_check: "自分の分析がcmd化→確証バイアスリスク。数値不整合を指摘し独立検証。100億年テスト: CI速度は永続的に全忍者に効く"
+  origin: "[[殿指摘_Bats時間]] -> [[軍師分析]] -> [[cmd_3145]]"
+  timestamp: "2026-06-03T01:22:00"
+- cmd_id: cmd_3143
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  finding_categories:
+    - assumptions
+    - numbers
+  findings_summary: "regex Markdown太字修正。52+2058テストPASS。bc全yes。commit adbc47f0"
+  observations:
+    - "files_modified: gate_shogun_startup.sh+test_gate_shogun_startup.bats(2ファイル。expected)"
+    - "L696/L274/L611が有用(3/10=30%)。set -e意識+FOUND_WITH_AUTOMATION判定維持"
+    - "git blameでcmd_3067導入箇所確認。causal_verification充実"
+  causal_chain: "target_re Markdown未対応→3セッションWARN偽陽性→regex修正+テスト追加→WARN正常化"
+  brainwash_check: "自分のdraft APPROVEのcmd。確証バイアスリスク→precheck ERRORS=0で客観裏付け"
+  origin: "[[cmd_3067]] -> [[cmd_3143]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-03T01:28:00"
+- cmd_id: cmd_3144
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kotaro
+  verdict: LGTM
+  finding_categories:
+    - assumptions
+    - numbers
+  findings_summary: "SKILL.md 9件更新。script内部変更のみで手順影響なし。gate 0件確認。2053テストPASS"
+  observations:
+    - "files_modified 9件(7スキル+switch-to-codex+switch-to-opus)。cmdの7件より多いが関連スキル"
+    - "lessons_useful 0/10。全て文書更新タスクと無関係なinfra教訓→GP-252裏付け"
+    - "script_refs_checked_at更新+検証メモ追記の最小変更"
+  causal_chain: "gate WARN 9件→script diff確認→内部変更のみ→SKILL.md timestamp更新→gate WARN解消"
+  brainwash_check: "文書タイムスタンプ更新は地味だが忍者の手順正確性基盤。100億年テスト: SKILL.md鮮度は全スキル実行に効く"
+  origin: "[[LS042]] -> [[cmd_3144]] -> [[kotaro LGTM]]"
+  timestamp: "2026-06-03T01:48:00"
+- cmd_id: cmd_3139
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+  findings_summary: "洗脳8パターンWARN実装。軍師RC(exit2→WARN)採用確認。fd200 flock継承バグ副次修正。2053テストPASS"
+  observations:
+    - "AC2がexit 2→WARNに変更(軍師RC反映)。偽陽性BLOCK→殿時間コスト問題を回避"
+    - "insight_write.sh fd200>&-修正: background子プロセスがflock FDを継承→2回目timeout。汎用教訓"
+    - "lessons_useful 3/10(L488並列バグ+L621 git log確認+L611 useful記入)。7件は無関係"
+  causal_chain: "殿L2空白指摘→stop hook洗脳WARN追加→軍師RC反映(WARN先行)→fd200副次発見→flock継承防止"
+  brainwash_check: "自分のRC指摘が反映されたcmd。確証バイアス→precheck ERRORS=0+2053 PASS+fd修正の独立検証で裏付け"
+  origin: "[[殿指摘_L2空白]] -> [[cmd_3139]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-03T01:52:00"
+- cmd_id: cmd_3144
+  review_type: report
+  gate_result: CLEAR
+  gate_result: BLOCK
+  report_ninja: kotaro
+  verdict: LGTM
+  finding_categories:
+    - assumptions
+    - premortem
+  findings_summary: "LGTM→BLOCK(command_files_modified_mismatch偽陽性)。cmd_3141実装の新チェックがcommand欄の参照ファイル(読み対象スクリプト)をfiles_modified(書き対象SKILL.md)と突合→不一致BLOCK。cmd_3141 FM2見落とし"
+  observations:
+    - "command欄にスクリプト名(insight_write.sh等)が参照として記載→files_modifiedにSKILL.mdのみ→mismatch BLOCK"
+    - "cmd_3141レビューでFM2(偽陽性)を指摘したが、参照vs変更ターゲット区別の具体例を特定できず"
+    - "gate_predictionはCLEARだった→予測も外れ。新gateの偽陽性パターンを未学習"
+  causal_chain: "cmd_3141(scope乖離BLOCK)→cmd_3144(参照スクリプト≠変更ファイル)→偽陽性BLOCK。軍師はFM2を抽象的に指摘したが具体パターンを特定できず"
+  brainwash_check: "LGTM→BLOCKは見落とし。cmd_3141レビューの事前検死が甘かった。#1(早期終了)が作用した可能性"
+  origin: "[[cmd_3141]] -> [[command_files_modified_mismatch]] -> [[cmd_3144 FP BLOCK]]"
+  timestamp: "2026-06-03T01:55:00"
+- cmd_id: cmd_3146
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - ambiguity
+    - premortem
+  findings_summary: "GP-252 教訓注入クロスPJフィルタ。自分の分析がcmd化→確証バイアスリスク→cross-cmd+FM3件で独立検証。軽微ambiguity(教訓project属性の決定方法未明示)"
+  observations:
+    - "q11: rg -n project_filter deploy_task.sh 0件。未実装確認"
+    - "cross-cmd interaction: cmd_3145(tests/)/cmd_3147(cmd_complete_gate.sh)と競合なし"
+    - "FM2: lessons_karo/gunshi/shogun.yamlはprojects/infra/配下→AC2(infra全タスク注入)でカバー"
+  causal_chain: "DM-Signal教訓→infra/training誤注入→useful率24%→project一致フィルタ→候補プール縮小→useful率40%改善予測"
+  brainwash_check: "自分のGP-252がcmd化。確証バイアス最大リスク。cross-cmd確認(#2対策)+FM3件独立検証+ambiguity明示で対抗。100億年テスト: 教訓注入精度は永続的に全cmd配備に効く"
+  origin: "[[GP-252]] -> [[クロスPJ誤注入根因]] -> [[cmd_3146]]"
+  timestamp: "2026-06-03T02:20:00"
+- cmd_id: cmd_3147
+  review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - ambiguity
+    - premortem
+  findings_summary: "cmd_3141 FP修正。target_path基準の読み/書き区別。自分発見の偽陽性→確証バイアスリスク→cross-cmd+FM3+edge case検証で対抗"
+  observations:
+    - "target_path=''(未設定)時のfallback動作がACに未明示。全参照チェック(現状維持)が安全なfallback"
+    - "cross-cmd: cmd_3146(deploy_task.sh)/cmd_3145(tests/)と競合なし"
+    - "cmd_3141のregex抽出精度は引き継ぎ。新規リスクなし"
+  causal_chain: "cmd_3141(scope乖離BLOCK)→cmd_3144 FP発火→軍師分析(読み/書き未区別)→target_path基準区別で構造的解消"
+  brainwash_check: "自分発見FPの修正cmd。確証バイアス最大→cross-cmd確認(#2対策)+FM3件+target_path edge case指摘で対抗"
+  origin: "[[cmd_3141]] -> [[cmd_3144_FP]] -> [[cmd_3147_修正]]"
+  timestamp: "2026-06-03T02:22:00"
+- cmd_id: cmd_karo_training_backlinks_readme_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+  findings_summary: "修行cmd。README.mdにbacklink追加。低リスク。related_lessonsにL255/L633(DM-Signal)がinfra trainingに注入=GP-252問題の現在進行証拠"
+  observations:
+    - "AC3件(baseline→リンク追加→diff)。修行タスクとして適切"
+    - "related_lessonsにDM-Signal教訓(L255,L633)がinfra trainingに注入中。cmd_3146(GP-252)で解消予定"
+  causal_chain: "backlinks=0修行→知識ネットワーク接続→孤立ドキュメント減少"
+  brainwash_check: "修行cmdは低リスクだが#1で即判定していないか→AC構造・target_path確認済み"
+  origin: "[[修行サイクル]] -> [[README backlinks=0]] -> [[リンク追加修行]]"
+  timestamp: "2026-06-03T02:25:00"
+- cmd_id: cmd_karo_training_backlinks_cdp_severity_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+  findings_summary: "修行cmd。cdp-severity.mdにbacklink追加。L730(CDP孤立リンク)は関連性あり。L255はGP-252問題"
+  observations:
+    - "前件(README修行)と同パターン。AC3件。低リスク"
+    - "L730: cdp-severity.md孤立→cdp-philosophy.mdが既にL92で参照。関連性高い教訓"
+  causal_chain: "backlinks=0修行→cdp-severity孤立解消→知識ネットワーク接続"
+  brainwash_check: "同パターン修行の連続レビュー。#1で流していないか→target_path/L730関連性を個別確認"
+  origin: "[[修行サイクル]] -> [[cdp-severity backlinks=0]] -> [[リンク追加修行]]"
+  timestamp: "2026-06-03T02:27:00"
+- cmd_id: cmd_karo_training_backlinks_fof_deterioration_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "修行cmd。gunshi-fof-deterioration-analysis.mdにbacklink追加。同パターン低リスク"
+  observations:
+    - "AC3件。前件2件と同パターン。target_path個別確認済み"
+  causal_chain: "backlinks=0修行→孤立ドキュメント接続→知識ネットワーク強化"
+  brainwash_check: "3件連続同パターン。#1リスクあるが各target_pathを個別確認"
+  origin: "[[修行サイクル]] -> [[fof-deterioration backlinks=0]] -> [[リンク追加修行]]"
+  timestamp: "2026-06-03T02:30:00"
+- cmd_id: cmd_karo_training_backlinks_readme_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "修行報告。README.mdに[[doc-style-guide]]追加。直接リンク9→10。bc全yes。precheck ERRORS=0"
+  observations:
+    - "incoming backlink=0維持、直接リンク+1。L731に従いoutgoing増加で達成"
+    - "lessons_useful 0/10。修行タスクにDM-Signal教訓注入=GP-252問題の継続証拠"
+  causal_chain: "README孤立→doc-style-guide直接リンク追加→知識ネットワーク+1接続"
+  brainwash_check: "修行報告は低リスクだがprecheck+bc全確認で手抜きなし"
+  origin: "[[修行]] -> [[README]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-03T02:33:00"
+- cmd_id: cmd_karo_training_backlinks_fof_deterioration_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kotaro
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "修行報告。fof-deterioration.mdに[[gunshi-flair-deepdive]]+[[dm-signal-research]]追加。直接リンク1→3"
+  observations:
+    - "リンク先特定行引用あり(flair Phase1 line9, research §28-§35)。AC2品質高い"
+    - "bc全yes。precheck ERRORS=0"
+  causal_chain: "fof-deterioration孤立→関連分析2件接続→知識ネットワーク+2"
+  brainwash_check: "修行報告連続。precheck+bc+リンク先引用品質を個別確認"
+  origin: "[[修行]] -> [[fof-deterioration]] -> [[kotaro LGTM]]"
+  timestamp: "2026-06-03T02:39:00"
+- cmd_id: cmd_karo_training_backlinks_cdp_severity_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hanzo
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "修行報告。cdp-severity.mdに双方向リンク追加。直接1→2、incoming 1→2。cdp-browse/SKILL.mdにも因果リンク新設"
+  observations:
+    - "双方向リンク: cdp-severity→cdp-browse + cdp-browse→cdp-severity。L730既知パターン"
+    - "files_modified 2件(cdp-severity.md+cdp-browse/SKILL.md)。SKILL.md変更はcmd_3147 FP対象だが、command欄に skills/ 含むため正当"
+  causal_chain: "cdp-severity孤立→双方向リンク+2→知識ネットワーク接続強化"
+  brainwash_check: "SKILL.md変更がcmd_3141 FPに該当しないかcross-cmd確認(#2対策)→command欄にskills含むため正当"
+  origin: "[[修行]] -> [[cdp-severity]] -> [[hanzo LGTM]]"
+  timestamp: "2026-06-03T02:42:00"
+- cmd_id: cmd_3147
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  finding_categories: [assumptions, premortem]
+  findings_summary: "cmd_3141 FP修正。target_path優先フィルタ+読み取り動詞除外fallback。軍師ambiguity指摘(target_path未設定fallback)反映確認"
+  observations:
+    - "target_path未設定→全参照チェック維持(軍師補足採用)。target_path設定→配下のみBLOCK対象"
+    - "読み取り動詞除外は追加安全弁。回帰テスト(PASS+BLOCKケース)追加"
+    - "bc全yes。files_modified: cmd_complete_gate.sh+test(expected)"
+  causal_chain: "cmd_3141 FP→軍師分析→target_path基準区別→読み/書き区別で偽陽性構造的解消"
+  brainwash_check: "自分発見FPの修正報告。確証バイアス→AC2(真陽性維持)の独立確認+fallback実装確認で対抗"
+  origin: "[[cmd_3141_FP]] -> [[cmd_3147]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-03T02:45:00"
+- cmd_id: cmd_karo_training_backlinks_fullrecalc_resilience_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "修行cmd。fullrecalc-resilience.mdにbacklink追加。同パターン低リスク"
+  observations:
+    - "AC3件。修行同パターン。target_path個別確認済み"
+  causal_chain: "backlinks=0修行→孤立ドキュメント接続"
+  brainwash_check: "修行連続。target_path個別確認"
+  origin: "[[修行]] -> [[fullrecalc-resilience backlinks=0]]"
+  timestamp: "2026-06-03T02:48:00"
+- cmd_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "修行cmd。android-ssh-input-loss.mdにbacklink追加。同パターン低リスク"
+  observations:
+    - "AC3件。修行同パターン。target_path個別確認済み"
+  causal_chain: "backlinks=0修行→孤立ドキュメント接続"
+  brainwash_check: "修行連続。target_path個別確認"
+  origin: "[[修行]] -> [[android-ssh-input-loss backlinks=0]]"
+  timestamp: "2026-06-03T02:50:00"
+- cmd_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kotaro
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "修行報告。android-ssh-input-loss.mdに[[cmd_1756_android]]追加。直接リンク17→18"
+  observations:
+    - "§根拠4にSSH exec実装差分(§3.2-3.4)を接続。因果が明確"
+    - "bc全yes。precheck ERRORS=0"
+  causal_chain: "android-ssh孤立→cmd_1756_android接続→H2仮説根拠の因果ネットワーク強化"
+  brainwash_check: "修行報告連続。precheck+bc+リンク先引用を個別確認"
+  origin: "[[修行]] -> [[android-ssh]] -> [[kotaro LGTM]]"
+  timestamp: "2026-06-03T02:52:00"
+- cmd_id: cmd_karo_training_backlinks_fullrecalc_resilience_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "修行報告。fullrecalc-resilience.mdに[[fullrecalculate-architecture]]追加。直接リンク3→4"
+  observations:
+    - "リンク先引用あり(L10全PF再計算エンジン, L20 Phase0 DELETE)。因果明確"
+    - "bc全yes。precheck ERRORS=0。commit 2件(リンク+メタデータ分離)"
+  causal_chain: "fullrecalc-resilience孤立→architecture接続→知識ネットワーク+1"
+  brainwash_check: "修行報告連続。precheck+bc+リンク先引用を個別確認"
+  origin: "[[修行]] -> [[fullrecalc-resilience]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-03T02:58:00"
+- cmd_id: cmd_3146
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "GP-252 教訓注入クロスPJフィルタ実装。_source_project+個別project二重判定。platform例外維持。170 bats PASS"
+  observations:
+    - "files_modified 5件: deploy_task.sh+cmd_save.sh+run_tests.sh+テスト2件。cmd_save変更はFAST_METADATA q11 INFO維持(副次修正)"
+    - "軍師ambiguity(project属性決定)を_source_project(ファイルパス由来)で解消"
+    - "非platform cross-project opt-in削除。platform教訓は全タスク注入維持(AC2)"
+  causal_chain: "DM-Signal教訓→infra誤注入→project一致フィルタ→useful率改善予測(24%→40%)"
+  brainwash_check: "自分のGP-252がcmd化。files_modified 5件を個別検証(cmd_save副次修正=FAST_METADATA対応)。170 bats PASSで客観裏付け"
+  origin: "[[GP-252]] -> [[cmd_3146]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-03T03:20:00"
+- cmd_id: cmd_3145
+  review_type: report
+  gate_result: BLOCK
+  report_ninja: tobisaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "Bats速度改善。AC1: 122s→34s(72%削減)。AC2: 104s→40s(61%削減)。FAST_METADATAガード+本番DB除外"
+  observations:
+    - "根本原因: FAST_METADATAガード適用漏れ(350KB NTFS読込+50+ファイルgrep)+本番246MB DB参照"
+    - "session state grepは7ms(ガード不要)→一度追加→FAIL→実測で戻した。実証的判断"
+    - "lesson_candidate有: 教育的表示追加時にFAST_METADATAガード同時追加ルール。register_recommended"
+  causal_chain: "殿指摘(バグに近い)→軍師分析→FAST_METADATAガード漏れ+本番DB参照→修正→CI 152s削減"
+  brainwash_check: "自分の分析がcmd化。数値を独立検証(122→34=72%、104→40=61%)。session state grep例外の実測根拠も確認"
+  origin: "[[殿指摘_Bats時間]] -> [[cmd_3145]] -> [[tobisaru LGTM]]"
+  timestamp: "2026-06-03T03:33:00"
+- cmd_id: cmd_3148
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "cmd_3147カバー漏れ修正。substring一致追加。AC2で無関係ファイルBLOCK維持。低リスク"
+  observations:
+    - "cmd_3147(basename完全一致)→cmd_3145でsubstring不一致FP→substring照合追加"
+    - "FM: substring過度緩和→command欄参照は通常ファイル名相当の長さで短い共通文字列リスクは低い"
+    - "cross-cmd競合なし"
+  causal_chain: "cmd_3147 basename完全一致→省略形参照未対応→cmd_3145 FP→substring追加で解消"
+  brainwash_check: "自分発見FPの2段目修正。確証バイアス→AC2(真陽性維持)+FM(過度緩和リスク)で対抗"
+  origin: "[[cmd_3147]] -> [[basename不一致]] -> [[cmd_3148]]"
+  timestamp: "2026-06-03T03:50:00"
+- cmd_id: cmd_3148
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "cmd_3147カバー漏れ修正。substring+fileキー対応。120テストPASS。cmd_3145実データでALL_CLEAR確認"
+  observations:
+    - "target_path配下実在のsnake_case tokenのみ追加対象に限定(過度緩和防止)"
+    - "files_modified[].fileキー形式にも対応(cmd_3145実データで発見した追加原因)"
+    - "bc全yes。120テストPASS"
+  causal_chain: "basename完全一致→省略形FP→substring+fileキー対応→cmd_3145 FP構造的解消"
+  brainwash_check: "自分発見FPの2段目修正報告。cmd_3145実データ確認で客観裏付け"
+  origin: "[[cmd_3147]] -> [[cmd_3148]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-03T03:57:00"
+- cmd_id: cmd_karo_ci_red_26841389916_semantic_search_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "CI RED修正。memory DB cache/causal fixture汚染。テスト隔離強化。定型修正"
+  observations:
+    - "CI run 26841389916 Unit Tests failure。test_semantic_search status!=0"
+    - "環境変数制御のみで隔離。新規仕組み追加なし"
+  causal_chain: "memory DB cache共有→causal expansion汚染→テスト不安定→CI RED→隔離強化"
+  brainwash_check: "CI RED修正は定型。scope 2ファイル10行"
+  origin: "[[CI RED 26841389916]] -> [[fixture汚染]] -> [[隔離修正]]"
+  timestamp: "2026-06-03T09:28:00"
+- cmd_id: cmd_karo_ci_red_26841389916_semantic_search_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "CI RED修正。20/20+28/28テストPASS。bc全yes。scope 2ファイル"
+  observations:
+    - "memory DB cache隔離+causal expansion無効化で fixture汚染解消"
+    - "semantic_index_update stress/quality本番コマンド自動起動抑止も追加"
+  causal_chain: "CI RED→fixture汚染特定→隔離強化→GREEN回復"
+  brainwash_check: "CI RED修正は定型低リスク。precheck ERRORS=0で客観裏付け"
+  origin: "[[CI RED]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-03T09:30:00"
+- cmd_id: cmd_karo_ci_red_26841389916_cmd_save_20260603
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "CI RED修正(cmd_save系)。同CI runの残り2件。定型修正"
+  observations:
+    - "target_path=tests/unit/test_cmd_save.bats。CI RED fix定型パターン"
+  causal_chain: "CI RED 26841389916→cmd_save系テスト失敗→修正"
+  brainwash_check: "CI RED修正定型。低リスク"
+  origin: "[[CI RED 26841389916]] -> [[cmd_save tests]]"
+  timestamp: "2026-06-03T09:32:00"
+- cmd_id: cmd_karo_ci_red_26841389916_cmd_save_20260603
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  finding_categories: [assumptions, numbers]
+  findings_summary: "CI RED修正(cmd_save系2件)。q11 docs検索+殿発言target filter修正。103+5テストPASS"
+  observations:
+    - "FAST_METADATA中でも明示/fixture research dirならq11 docs検索実行"
+    - "CMD_SAVE_FORCE_LORD_CONVERSATION=1で殿発言検索同期実行+target filter修正"
+  causal_chain: "CI RED→q11+殿発言検索テスト失敗→FAST_METADATA/同期化修正→PASS"
+  brainwash_check: "CI RED修正定型。precheck ERRORS=0で客観裏付け"
+  origin: "[[CI RED 26841389916]] -> [[cmd_save 2件]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-03T09:36:00"

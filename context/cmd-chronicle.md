@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-03 cmd_3142 -->
+<!-- last_updated: 2026-06-03 cmd_karo_ci_red_26841389916_cmd_save_20260603 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -499,3 +499,7 @@
 | cmd_3136 | 教訓有効率34.6%(startup WARN)の根因。L4555の_universal_without_target_files_is_relevant()がtarget_files存在時に_target_files_matchを迂回してTrue返却→無関係教訓が全cmdに注入される。NOT_USEFUL 95件中の大部分がこの経路。1行修正で教訓注入精度を大幅改善 | infra | 06-02 | _universal_without_target_file |
 | cmd_3140 | ninja_monitor.sh L338のauto_commit_before_clear()がgit addで全未commit変更を拾い、忍者Aの成果物を忍者Bのauto-commitが包含する。本セッション4件発生。task YAML target_pathでscopeフィルタを追加し、triggering ninja以外のファイルを除外する | infra | 06-03 | ninja_monitor auto-commitをtask |
 | cmd_3141 | CI RED fixでcmd=7スクリプト対象だがreport files_modified=テスト2本のみという乖離が未検証で通過した。precheckにshogun_to_karo command欄のファイルパス抽出→files_modified突合→乖離WARN追加。L3(gate)の穴 | infra | 06-03 | cmd_complete_gate.shにcommand欄フ |
+| cmd_3143 | gate_shogun_startup.sh L783のtarget_re=r'自動化ターゲット\s*[:：]\s*(.+)'がMarkdown太字(**自動化ターゲット**:)にマッチせず、将軍が自動化ターゲットを記入してもWARN判定される。3セッション連続WARNの真因。regexにMarkdown装飾を許容させ、テストでMarkdown太字パターンの通過を検証する | infra | 06-03 | gate_shogun_startup.shのQ6自動化ター |
+| cmd_3144 | gate_skill_script_refs.shが検出した9件(7スキル)のSKILL.mdがscriptより古い。忍者がSKILL.mdを参照して作業する際に古い手順を使うリスク。LS042教訓: 3セッション放置は洗脳#5(先送り)の証拠 | infra | 06-03 | 9件(9スキル)のSKILL.mdをscript参照調査し、 |
+| cmd_3146 | 軍師分析(docs/research/gunshi_idle_lesson_injection_crossproject_20260603.md): DM-Signal教訓(L633/L630/L598/L255/L147)がinfra/trainingタスクにクロスプロジェクト注入され100%NOT_USEFUL。教訓品質は正常、スコープ不一致が根因。deploy_task.shにproject一致フィルタを追加し、タスクのproject属性と教訓のproject属性が一致する場合のみ注入する | infra | 06-03 | deploy_task.shの教訓注入にproject一致フ |
+| cmd_3148 | cmd_3147で実装したtarget_path基準の読み/書き区別がcmd_3145で再発FP。根因: command欄がテスト名を省略形で参照(semantic_index_update→test_semantic_index_update.bats)しbasename完全一致では照合不能。部分一致(substring/contains)をfiles_modified照合に追加する | infra | 06-03 | cmd_complete_gateのcommand/file |

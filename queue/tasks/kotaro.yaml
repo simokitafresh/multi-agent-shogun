@@ -1,8 +1,14 @@
 task:
-  _ac_task_id: cmd_3144_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3144 (deployed 2026-06-03T01:15:48). Read from the beginning.
-  ac_version: 86d083fc
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: 対象ファイルのincoming backlink baselineと直接リンクbaselineを計測する
+    AC2:
+      description: context/skills/docsから関連する直接[[ファイル名]]リンクを1件以上追加し、リンク先の特定行を引用して報告する
+    AC3:
+      description: 変更後にbacklinkまたは直接リンク増加をgit diffと計測で確認し、報告YAMLを完成させる
+  command: '因果リンク修行対象: docs/research/android-ssh-input-loss-investigation.md。context/skills/docsから関連する直接[[ファイル名]]リンクを追加し、baseline/diffを報告する。'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,75 +17,55 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3144
+  parent_cmd: cmd_karo_training_backlinks_android_ssh_input_loss_20260603
   project: infra
-  purpose: 'gate_skill_script_refs.shが検出した9件(7スキル)のSKILL.mdがscriptより古い。忍者がSKILL.mdを参照して作業する際に古い手順を使うリスク。LS042教訓: 3セッション放置は洗脳#5(先送り)の証拠'
-  status: acknowledged
+  purpose: 'backlinks=0修行: docs/research/android-ssh-input-loss-investigation.md にcontext/skills/docsから因果リンクを接続し、知識ネットワークを育てる'
+  status: idle
   stop_for: []
-  target_path: skills
-  task_id: cmd_3144_exact
-  task_type: exact
+  target_path: docs/research/android-ssh-input-loss-investigation.md
+  task_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603_normal
+  task_type: training
   related_lessons:
-  - id: 'L603'
-    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-  - id: 'L594'
-    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-  - id: 'L550'
-    summary: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
-    detail: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
-  - id: 'L599'
-    summary: 'lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし'
-    detail: 'lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-  - id: 'L144'
-    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
-    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
-  - id: 'L499'
-    summary: 'gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_'
-    detail: 'gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_'
-  - id: 'L310'
-    summary: '修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ'
-    detail: '修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ'
-  - id: 'L588'
-    summary: 'cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro'
-    detail: 'cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro'
-  - id: 'L619'
-    summary: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
-    detail: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+  - id: 'L611'
+    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+  - id: 'L731'
+    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+  - id: 'L544'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+  - id: 'L630'
+    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
+    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
+  - id: 'L357'
+    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L353'
+    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
+    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
+  - id: 'L600'
+    summary: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
+    detail: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
+  - id: 'L540'
+    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+  - id: 'L414'
+    summary: '全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se'
+    detail: '全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  docs/research/creator_brainwashing_defense_design_20260524.md scripts/cmd_save.sh"
-  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応)"
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
-  recommended_skills:
-  - "skill-creator"
-  - "skill-installer"
-  related_causal_links:
-  - "[[LS042_SKILL_md陳腐化]]"
-  - "[[gate_skill_script_refs_9件WARN]]"
-  - "[[忍者が古い手順参照]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -87,43 +73,26 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
-      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
-      - L550: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
-      - L599: lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし
-      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
-      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
-      - L499: gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_
-      - L310: 修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ
-      - L588: cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro
-      - L619: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
+      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
+      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
+      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
+      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
+      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
+      - L600: 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+      - L414: 全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'bash scripts/gates/gate_skill_script_refs.shの出力に要更新スキルが0件'
-  - id: 'AC2'
-    checks:
-    - check: '更新した各SKILL.mdの手順が対応scriptの現在の引数・動作と整合している'
-  - id: 'AC3'
-    checks:
-    - check: '既存batsテストが全件PASS'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603_normal
+  _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3144.yaml
-  report_path: queue/reports/kotaro_report_cmd_3144.yaml
+  report_filename: kotaro_report_cmd_karo_training_backlinks_android_ssh_input_loss_20260603.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_training_backlinks_android_ssh_input_loss_20260603.yaml
   bloom_level: 
-  deployed_at: "2026-06-03T01:16:26"
+  deployed_at: "2026-06-03T02:43:16"

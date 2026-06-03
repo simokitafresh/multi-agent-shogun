@@ -22,7 +22,9 @@ setup() {
     export TEST_PREFLIGHT_AUTOLEARN="$TEST_TMPDIR/preflight_autolearn.txt"
     export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
+    export TEST_INSIGHTS="$TEST_TMPDIR/insights.yaml"
     mkdir -p "$TEST_ARCHIVE_DIR"
+    printf '%s\n' '[]' > "$TEST_INSIGHTS"
 }
 
 teardown() {
@@ -78,6 +80,7 @@ run_diag_save() {
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_diagqtest
 }
@@ -149,6 +152,7 @@ run_warn_save() {
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_warntest
 }
@@ -210,6 +214,7 @@ run_q5_pair_save() {
         CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_q5pairtest
 }

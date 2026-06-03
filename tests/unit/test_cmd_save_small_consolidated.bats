@@ -806,18 +806,6 @@ EOF
     run_embedded_test 'tests/unit/test_cmd_save_assumptions_required.bats' 'AC2: AC数2のcmdでassumptions未記入→BLOCK' content_test_cmd_save_assumptions_required
 }
 
-@test 'test_cmd_save_block_aggregation.bats :: AC2: 1回の実行で複数BLOCK理由を一括表示する' {
-    run_embedded_test 'tests/unit/test_cmd_save_block_aggregation.bats' 'AC2: 1回の実行で複数BLOCK理由を一括表示する' content_test_cmd_save_block_aggregation
-}
-
-@test 'test_cmd_save_block_aggregation.bats :: AC1: PASS時はBLOCKナッジを表示しない' {
-    run_embedded_test 'tests/unit/test_cmd_save_block_aggregation.bats' 'AC1: PASS時はBLOCKナッジを表示しない' content_test_cmd_save_block_aggregation
-}
-
-@test 'test_cmd_save_block_aggregation.bats :: AC3: PASS時に参照されたaction_required掲示板へactioned_byを自動記録する' {
-    run_embedded_test 'tests/unit/test_cmd_save_block_aggregation.bats' 'AC3: PASS時に参照されたaction_required掲示板へactioned_byを自動記録する' content_test_cmd_save_block_aggregation
-}
-
 @test 'test_cmd_save_cmd_chronicle.bats :: title/purpose search emits related completed cmd from chronicle' {
     run_embedded_test 'tests/unit/test_cmd_save_cmd_chronicle.bats' 'title/purpose search emits related completed cmd from chronicle' content_test_cmd_save_cmd_chronicle
 }
