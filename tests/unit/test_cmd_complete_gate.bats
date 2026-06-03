@@ -306,6 +306,31 @@ EOF
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
+@test "command/files_modified coverage skips for recon sentinel (no code change)" {
+    _write_command_coverage_fixture \
+        "memory_db_import.pyのsummary/detail書込み処理を特定する" \
+        "  - path: 偵察のみ（コード変更なし）
+    change: none"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (files_modified=no-code-change sentinel"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage blocks typo path even when file does not exist" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh を修正" \
+        "  - path: scripts/typo_nonexistent_file.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
 @test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {
     rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
     export ALL_GATES=()

@@ -4270,13 +4270,16 @@ check_command_files_modified_coverage() {
         return 0
     fi
 
-    # 偵察cmd等でfiles_modifiedに実在ファイルがない場合はSKIP（偽陽性防止）
-    local real_file_count=0
+    # 偵察cmd等: files_modifiedが明示的no-code-change sentinelのみの場合はSKIP
+    local has_sentinel=false has_real_path=false
     while IFS= read -r rp; do
-        [ -f "$rp" ] && real_file_count=$((real_file_count + 1))
+        case "$rp" in
+            *偵察のみ*|*コード変更なし*|*変更なし*|*no*change*|none|N/A|"") has_sentinel=true ;;
+            *) has_real_path=true ;;
+        esac
     done <<< "$report_paths"
-    if [ "$real_file_count" -eq 0 ]; then
-        echo "  SKIP (files_modifiedに実在ファイルなし — 偵察cmd等)"
+    if [ "$has_sentinel" = true ] && [ "$has_real_path" = false ]; then
+        echo "  SKIP (files_modified=no-code-change sentinel — 偵察cmd等)"
         return 0
     fi
 
