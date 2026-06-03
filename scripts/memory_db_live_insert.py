@@ -472,8 +472,8 @@ def append_event(db_path: str, row: tuple[object, ...], concept_text_extra: str 
             """
             INSERT OR IGNORE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file, parent_event_id, importance
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance, state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'raw')
             """,
             row,
         )

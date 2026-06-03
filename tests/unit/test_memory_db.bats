@@ -43,7 +43,7 @@ print(conn.execute("SELECT event_type FROM events ORDER BY ts LIMIT 1").fetchone
 PY
 )
     [ "${result[0]}" = "ts,agent,direction,summary,detail,session_id" ]
-    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance" ]
+    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance,state" ]
     [ "${result[2]}" = "view" ]
     [ "${result[3]}" = "2" ]
     [ "${result[4]}" = "2026-05-01" ]
@@ -1021,4 +1021,105 @@ PY
     [ "${result[5]}" = "event_links因果辺" ]
     [ "${result[6]}" = "True" ]
     [ "${result[7]}" = "True" ]
+}
+
+@test "memory_db_import adds state column with default raw to events table" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"state列テスト","detail":"eventsテーブルstate列追加確認"}
+{"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"state列応答","detail":"新規行のstateはrawである"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("state" in cols)
+count_raw = conn.execute("SELECT COUNT(*) FROM events WHERE state = 'raw'").fetchone()[0]
+count_all = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+print(count_raw == count_all)
+print(count_all)
+row = conn.execute("SELECT state FROM events ORDER BY ts LIMIT 1").fetchone()
+print(row[0])
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "2" ]
+    [ "${result[3]}" = "raw" ]
+}
+
+@test "memory_db_import migrates existing DB by adding state column via ALTER TABLE" {
+    cat > "$TEST_TMPDIR/archive/2026-06-01.jsonl" <<'EOF'
+{"ts":"2026-06-01T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"既存DB","detail":"state列なしのDBにstate列を追加する"}
+EOF
+
+    # Build initial DB without state column (simulate legacy DB)
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id INTEGER,
+        importance TEXT
+    )
+    """
+)
+conn.execute(
+    "INSERT INTO events (id, ts, event_type, summary, detail, importance) VALUES (?, ?, ?, ?, ?, ?)",
+    ("legacy:1", "2026-05-01T00:00:00", "conversation", "既存行", "state列なし", "normal")
+)
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid', tokenize='trigram')")
+conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+conn.commit()
+PY
+
+    # Verify no state column yet
+    run python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("state" in cols)
+PY
+    [ "$output" = "False" ]
+
+    # Run import: should migrate and add state column
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+print("state" in cols)
+count_raw = conn.execute("SELECT COUNT(*) FROM events WHERE state = 'raw'").fetchone()[0]
+count_all = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+print(count_raw == count_all)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
 }

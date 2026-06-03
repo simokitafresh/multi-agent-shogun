@@ -31,7 +31,7 @@ DEFAULT_PENDING_DECISIONS_FILE = REPO_ROOT / "queue" / "pending_decisions.yaml"
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 OBSIDIAN_LINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
 SQLITE_BUSY_TIMEOUT_MS = 5000
-EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str]
+EventRow = tuple[str, str, str, str, str, str, str, str, str, str, str, str, None, str, str]
 FTS_QUERY_TOKEN_RE = re.compile(
     r"cmd_[A-Za-z0-9_]+|[A-Za-z0-9_]{2,}|[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]{2,}"
 )
@@ -464,6 +464,7 @@ def event_rows_from_conversations(
                 source_file,
                 None,
                 "normal",
+                "raw",
             )
         )
     return event_rows
@@ -528,6 +529,7 @@ def event_rows_from_bulletins(
                 normalize_text(entry.get("_source_file")),
                 None,
                 "high" if action_type == "action_required" and status != "closed" else "normal",
+                "raw",
             )
         )
     return event_rows
@@ -579,6 +581,7 @@ def event_rows_from_insights(
                 normalize_text(entry.get("_source_file")),
                 None,
                 importance,
+                "raw",
             )
         )
     return event_rows
@@ -638,6 +641,7 @@ def event_rows_from_skill_executions(
                 normalize_text(entry.get("_source_file")),
                 None,
                 "high" if result == "FAIL" else "normal",
+                "raw",
             )
         )
     return event_rows
@@ -693,6 +697,7 @@ def event_rows_from_cmd_archives(
                 normalize_text(entry.get("_source_file")),
                 None,
                 "normal",
+                "raw",
             )
         )
     return event_rows
@@ -741,6 +746,7 @@ def event_rows_from_pending_decisions(
                 normalize_text(entry.get("_source_file")),
                 None,
                 "high" if status == "pending" else "normal",
+                "raw",
             )
         )
     return event_rows
@@ -784,6 +790,7 @@ def event_rows_from_documents(
                 source_file,
                 None,
                 "normal",
+                "raw",
             )
         )
     return event_rows
@@ -1090,6 +1097,13 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
         )
 
 
+def ensure_state_column(conn: sqlite3.Connection) -> None:
+    """Add state column to events if missing; existing rows return 'raw' via DEFAULT."""
+    cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+    if "state" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN state TEXT DEFAULT 'raw'")
+
+
 def configure_connection(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
@@ -1270,16 +1284,18 @@ def build_db(
                 concepts TEXT,
                 source_file TEXT,
                 parent_event_id INTEGER,
-                importance TEXT
+                importance TEXT,
+                state TEXT DEFAULT 'raw'
             )
             """
         )
+        ensure_state_column(conn)
         conn.executemany(
             """
             INSERT OR REPLACE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file, parent_event_id, importance
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance, state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             event_rows,
         )
@@ -1378,6 +1394,7 @@ def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> Non
             _source_file,
             _parent_event_id,
             _importance,
+            _state,
         ) in event_rows
         if event_type == "conversation" and agent == "lord" and direction == "inbound"
     ]
