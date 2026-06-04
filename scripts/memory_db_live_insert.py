@@ -29,6 +29,7 @@ VALID_EVENT_STATES = {
     "contradiction_candidate",
     "duplicate_candidate",
     "obsidian_candidate",
+    "obsidian_promoted",
     "archived",
 }
 CONTRADICTION_TYPES = {
