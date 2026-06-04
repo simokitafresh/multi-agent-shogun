@@ -238,6 +238,51 @@ EOF
     [ "$output" = "query wrapper|shogun|" ]
 }
 
+@test "memory_db_query can prefer ext4 cache generated through sqlite backup API" {
+    cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
+{"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"cache wrapper","detail":"ext4 cache read path"}
+EOF
+
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT summary FROM events ORDER BY ts"
+    [ "$status" -eq 0 ]
+    [ "$output" = "cache wrapper" ]
+    [ -s "$TEST_TMPDIR/cache/memory.db" ]
+}
+
+@test "three-layer tmp cleanup dry-run reports stale candidates without deleting" {
+    mkdir -p "$TEST_TMPDIR/cache"
+    touch "$TEST_TMPDIR/cache/.memory.db.old.tmp"
+    touch -d '3 days ago' "$TEST_TMPDIR/cache/.memory.db.old.tmp"
+
+    run bash "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" \
+        --dry-run \
+        --ttl-hours 24 \
+        --cache-dir "$TEST_TMPDIR/cache"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidates=1"* ]]
+    [ -f "$TEST_TMPDIR/cache/.memory.db.old.tmp" ]
+}
+
+@test "gate_three_layer_health emits cache capacity section" {
+    mkdir -p "$TEST_TMPDIR/cache"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
+
+    run bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cache容量チェック"* ]]
+    [[ "$output" == *"tmp残骸cleanup dry-run"* ]]
+}
+
 @test "memory_db_query supports FTS5 MATCH queries" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"FTS wrapper","detail":"uniqueftsneedle works through MATCH"}
