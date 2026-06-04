@@ -3,12 +3,40 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: 対象ファイルのincoming backlink baselineと直接リンクbaselineを計測する
+      description: atomic_write_text 2箇所のguard実装案と共通化可否を確認する
     AC2:
-      description: context/skills/docsから関連する直接[[ファイル名]]リンクを1件以上追加し、リンク先の特定行を引用して報告する
+      description: 空contentと最新更新セクション欠落時にファイルが変更されない検証方法を提示する
     AC3:
-      description: 変更後にbacklinkまたは直接リンク増加をgit diffと計測で確認し、報告YAMLを完成させる
-  command: '因果リンク修行対象: docs/research/android-ssh-input-loss-investigation.md。context/skills/docsから関連する直接[[ファイル名]]リンクを追加し、baseline/diffを報告する。'
+      description: 正常dashboard更新が壊れない確認方法と関連テストを明記する
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
+      - L211: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
+      - L104: IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ
+    ────────────────────────────────────────
+    
+    【3-strike rule】
+      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
+      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
+      ────────────────────────────────────────
+    
+    
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,82 +45,37 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_training_backlinks_android_ssh_input_loss_20260603
+  parent_cmd: cmd_3180_recon2
   project: infra
-  purpose: 'backlinks=0修行: docs/research/android-ssh-input-loss-investigation.md にcontext/skills/docsから因果リンクを接続し、知識ネットワークを育てる'
-  status: idle
+  purpose: 'cmd_3180偵察2: 独立観点でdashboard_update.sh 0バイト化防止guardのテスト方針・副作用を調査する。実装禁止。'
+  status: done
   stop_for: []
-  target_path: docs/research/android-ssh-input-loss-investigation.md
-  task_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603_normal
-  task_type: training
+  target_path: scripts/dashboard_update.sh
+  task_id: cmd_3180_recon2_normal
+  task_type: scout
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
   related_lessons:
-  - id: 'L434'
-    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
-    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
-  - id: 'L611'
-    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-  - id: 'L731'
-    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-  - id: 'L544'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-  - id: 'L630'
-    summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-    detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-  - id: 'L353'
-    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-  - id: 'L600'
-    summary: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
-    detail: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L414'
-    summary: '全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se'
-    detail: '全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
-      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
-      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
-      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
-      - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
-      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
-      - L600: 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L414: 全ファイル書換えが必要な場合は_sv関数パターン(inbox_prune.sh参照)で手動YAML構築。単一フィールド変更のみの場合はyaml_field_se
-    ────────────────────────────────────────
-    
-    
+  - id: 'L213'
+    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
+    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
+  - id: 'L211'
+    summary: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
+    detail: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
+  - id: 'L104'
+    summary: 'IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ'
+    detail: 'IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_training_backlinks_android_ssh_input_loss_20260603_normal
+  _ac_task_id: cmd_3180_recon2_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_karo_training_backlinks_android_ssh_input_loss_20260603.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_training_backlinks_android_ssh_input_loss_20260603.yaml
+  report_filename: kotaro_report_cmd_3180_recon2.yaml
+  report_path: queue/reports/kotaro_report_cmd_3180_recon2.yaml
   bloom_level: 
-  deployed_at: "2026-06-03T02:43:16"
+  deployed_at: "2026-06-04T14:33:35"
