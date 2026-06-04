@@ -514,7 +514,7 @@ detect_skill_triggers() {
 	  set +e
 	  _psi_result="$(
 	    PROMPT_STATE_FTS_QUERY="$_psi_query" PROMPT_STATE_FTS_DB="$_psi_db_path" \
-	      timeout "${PROMPT_STATE_MEMORY_DB_TIMEOUT:-0.5}" python3 - <<'PY'
+      PROMPT_STATE_AGENT_ID="$agent_id" timeout "${PROMPT_STATE_MEMORY_DB_TIMEOUT:-0.5}" python3 - <<'PY'
 from __future__ import annotations
 
 import os
@@ -742,7 +742,7 @@ fi
 # --- 研究日誌全文注入モード検知 ---
 research_diary_mode=false
 research_diary_file="$SCRIPT_DIR/memory/dialogue_preprocessing_research_20260331.md"
-if echo "$prompt_text" | grep -qiE '研究日誌|日誌を読め|日誌を読んで|diary'; then
+if [[ "$agent_id" == "shogun" ]] && echo "$prompt_text" | grep -qiE '研究日誌|日誌を読め|日誌を読んで|diary'; then
   if [[ -f "$research_diary_file" ]]; then
     research_diary_mode=true
   fi
