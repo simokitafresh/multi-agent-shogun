@@ -237,6 +237,9 @@ if conversation_file and os.path.exists(conversation_file):
                     continue
                 if entry.get("direction") != "inbound":
                     continue
+                entry_target = str(entry.get("target", "")).strip()
+                if entry_target and entry_target != os.environ.get("PROMPT_STATE_AGENT_ID", "shogun"):
+                    continue
                 text = entry_text(entry)
                 if not any(keyword in text for keyword in approval_keywords):
                     continue
