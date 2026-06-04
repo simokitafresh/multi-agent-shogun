@@ -64,6 +64,8 @@ avg尖り削減量=0.001。月次BUY/CASHレベルではEMA span=5のシグナ�
 
 検証方法: 各月のPFリターンcross-sectional std(baseline vs EMA5)を比較。FoF別にdispersion変化量とΔCAGRの相関を見る。
 
+検証接続: [[robustness-verification-catalog]] のアルファ空間検証/デケイ分析を併用し、dispersion縮小が「一時的な悪化」か「パラメータ空間全体の構造劣化」かを切り分ける。
+
 ## §6 次の問い
 
 1. **構成PFのlookback分布が支配的なら、PF別にEMAの適用/非適用を決めるべき** → cmd_1704の選別基準(delta_high)は無効だった。lookback長による選別が有効か？
