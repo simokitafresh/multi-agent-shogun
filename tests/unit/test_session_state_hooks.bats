@@ -161,11 +161,94 @@ PY
     [ "${result[1]}" = "True" ]
 }
 
-@test "SSH-002: prompt_state_inject returns nothing for non-shogun" {
+@test "SSH-002: prompt_state_inject exposes memory candidate counts for non-shogun" {
     export MOCK_AGENT_ID="saizo"
-    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
+    mkdir -p "$TEST_TMPDIR/data"
+    db_path="$TEST_TMPDIR/data/multi_agent_shogun_memory.db"
+    python3 - "$db_path" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript(
+    """
+    CREATE TABLE events (
+        event_id TEXT PRIMARY KEY,
+        state TEXT
+    );
+    INSERT INTO events (event_id, state) VALUES
+      ('e1', 'obsidian_candidate'),
+      ('e2', 'duplicate_candidate'),
+      ('e3', 'contradiction_candidate');
+    """
+)
+conn.commit()
+conn.close()
+PY
+
+    run bash -c "cd '$TEST_TMPDIR' && export PROMPT_STATE_MEMORY_DB_PATH='$db_path' && printf '%s' '{\"prompt\":\"通常入力\"}' | scripts/hooks/prompt_state_inject.sh"
     [ "$status" -eq 0 ]
-    [ -z "$output" ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
+print("agent: saizo" in ctx)
+print("--- memory_candidates ---" in ctx)
+print("memory_candidate_pending: contradiction=1, duplicate=1, obsidian=1" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+}
+
+@test "SSH-002b: prompt_state_inject exposes memory db FTS5 matches for gunshi" {
+    export MOCK_AGENT_ID="gunshi"
+    mkdir -p "$TEST_TMPDIR/data"
+    cache_path="$TEST_TMPDIR/data/lord_ruling_cache.db"
+    python3 - "$cache_path" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript(
+    """
+    CREATE TABLE lord_rulings (
+        event_id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        cmd_id TEXT,
+        summary TEXT,
+        detail TEXT
+    );
+    INSERT INTO lord_rulings (
+        event_id, ts, event_type, cmd_id, summary, detail
+    ) VALUES (
+        'lord-1', '2026-06-04T14:00:00+09:00', 'conversation', 'cmd_3179',
+        '三層記憶 全ロール開放', 'prompt_state_inject'
+    );
+    """
+)
+conn.commit()
+conn.close()
+PY
+
+    run bash -c "cd '$TEST_TMPDIR' && export PROMPT_STATE_LORD_RULING_CACHE_PATH='$cache_path' && printf '%s' '{\"prompt\":\"三層記憶\"}' | scripts/hooks/prompt_state_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
+print("agent: gunshi" in ctx)
+print("--- memory_db_fts5 ---" in ctx)
+print("summary: 三層記憶 全ロール開放" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
 }
 
 @test "SSH-003: prompt_state_inject warns shogun about unread inbox" {

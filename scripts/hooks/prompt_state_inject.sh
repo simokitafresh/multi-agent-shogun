@@ -478,17 +478,8 @@ detect_skill_triggers() {
   fi
 }
 
-# --- All roles: non-shogun receives only skill recommendations, otherwise stays silent. ---
-if [[ "$agent_id" != "shogun" ]]; then
-  skill_trigger_warning="$(detect_skill_triggers 2>/dev/null || true)"
-  if [[ -n "$skill_trigger_warning" ]]; then
-    _prompt_state_emit_output "UserPromptSubmit" "=== Skill Context (auto-injected) ===
-timestamp: ${timestamp}
-agent: ${agent_id}
-${skill_trigger_warning}"
-  fi
-  exit 0
-fi
+# All roles pass through the three-layer memory injection path. Role-specific
+# filtering belongs in each section below, not in an early global exit.
 
 	# --- Semantic auto-injection (first-layer only, no LLM fallback) ---
 	_prompt_state_semantic_inject() {
@@ -724,7 +715,9 @@ PY
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
-record_shogun_growth_metrics "$lord_response_count" 2>/dev/null || true
+if [[ "$agent_id" == "shogun" ]]; then
+  record_shogun_growth_metrics "$lord_response_count" 2>/dev/null || true
+fi
 
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
@@ -784,8 +777,13 @@ fi
 inbox_warning=""
 # 1通でも重要な報告が含まれる可能性(殿指摘2026-04-16)。全未読で警告
 if (( unread_count >= 1 )); then
-  inbox_warning="
+  if [[ "$agent_id" == "shogun" ]]; then
+    inbox_warning="
 ⚠️ INBOX ${unread_count}件未読。殿に応答する前にinboxと掲示板を確認せよ。"
+  else
+    inbox_warning="
+⚠️ INBOX ${unread_count}件未読。作業前に自分のinboxを確認せよ。"
+  fi
 fi
 
 # --- Question pattern detection → confirmation injection (cmd_2293) ---

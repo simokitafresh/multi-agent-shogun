@@ -219,7 +219,7 @@ EOF
   [[ "$output" != *"/report-write"* ]]
 }
 
-@test "semantic_search without skills rows stays silent when no trigger matches" {
+@test "semantic_search without skills rows emits no skill recommendation when no trigger matches" {
   export PROMPT_STATE_AGENT_ID="hayate"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_no_skills.sh"
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
@@ -235,7 +235,9 @@ EOF
   run bash "$HOOK" <<< '{"prompt":"セマンティック推薦して"}'
 
   [ "$status" -eq 0 ]
-  [ "$output" = "" ]
+  [[ "$output" != *"SKILL RECOMMENDATION"* ]]
+  [[ "$output" != *"/cdp-browse"* ]]
+  [[ "$output" != *"/db-check"* ]]
 }
 
 @test "shogun semantic knowledge deduplicates discussion rows by timestamp and summary" {
@@ -302,7 +304,9 @@ EOF
   run bash "$HOOK" <<< '{"prompt":"報告YAML作成"}'
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
-  [ "$(wc -l < "$SEMANTIC_CALL_LOG" | tr -d ' ')" -eq 1 ]
+  # One call is for semantic_search-derived skill recommendation and one is
+  # for the normal semantic knowledge layer. The second prompt reuses caches.
+  [ "$(wc -l < "$SEMANTIC_CALL_LOG" | tr -d ' ')" -eq 2 ]
   run python3 - "$PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE" <<'PY'
 import sys
 import yaml
