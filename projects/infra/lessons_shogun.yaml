@@ -518,3 +518,11 @@ lessons:
   created_at: '2026-06-02'
   automated: true
   enforcement: 'type=lesson; file=instructions/shogun.md; pattern=positive_rule'
+- id: 'LS044'
+  title: '前セッション発言の時系列・文脈・ターゲット未確認でパターンマッチ反応'
+  origin: '[[cmd_session_20260604]]'
+  detail: '★確認すべき事リストの「攻か確認してくれ」を(1)前セッション発言と認識せず今の指示と誤認(時系列欠如) (2)音声入力の打ち間違い「効果→攻か」を文脈なしにDM-signal攻守と解釈(パターンマッチ) (3)前セッション将軍の対応済み事実をlord_conversationで確認せず重複対応。修正: post-shogun-inbox-check.shに2パス処理+[前]マーカー+[済]応答追跡を追加。情報量は制限しない(三層記憶原則)、タイムスタンプで時系列を明確化。'
+  source_cmd: 'cmd_session_20260604'
+  created_at: '2026-06-04'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=前'

@@ -55,7 +55,7 @@ UNREAD=$(awk '/read: false/{n++}END{print n+0}' "$INBOX")
 LORD_CONV="${SHOGUN_LORD_CONV_PATH:-/mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl}"
 LORD_LAST=""
 if [ -f "$LORD_CONV" ]; then
-    LORD_LAST=$(tail -50 "$LORD_CONV" 2>/dev/null | awk '
+    LORD_LAST=$(tail -100 "$LORD_CONV" 2>/dev/null | awk '
     function json_value(line, key,    s, prefix) {
         s = line
         prefix = "\"" key "\"[[:space:]]*:[[:space:]]*\""
