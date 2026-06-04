@@ -97,17 +97,26 @@ def now_timestamp() -> str:
     return datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
-def create_sqlite_backup(db_path: str, backup_dir: str | None = None, suffix: str = "state_transition") -> str:
+def create_sqlite_backup(
+    db_path: str,
+    backup_dir: str | None = None,
+    suffix: str = "state_transition",
+    output_path: str | None = None,
+) -> str:
     from datetime import datetime
 
     source_path = os.path.abspath(db_path)
-    backup_root = os.path.abspath(backup_dir) if backup_dir else os.path.dirname(source_path)
-    os.makedirs(backup_root, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-    backup_path = os.path.join(
-        backup_root,
-        f"{os.path.basename(source_path)}.bak_{suffix}_{stamp}",
-    )
+    if output_path:
+        backup_path = os.path.abspath(output_path)
+        os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+    else:
+        backup_root = os.path.abspath(backup_dir) if backup_dir else os.path.dirname(source_path)
+        os.makedirs(backup_root, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup_path = os.path.join(
+            backup_root,
+            f"{os.path.basename(source_path)}.bak_{suffix}_{stamp}",
+        )
     with sqlite3.connect(source_path) as src, sqlite3.connect(backup_path) as dst:
         src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
@@ -185,11 +194,11 @@ def memory_db_cache_path(db_path: str) -> str:
     return os.path.join(cache_dir, f"{repo_key}_{os.path.basename(db_path)}")
 
 
-def sync_memory_db_ext4_cache(db_path: str) -> None:
+def create_memory_db_ext4_cache(db_path: str) -> str:
     if os.environ.get("SHOGUN_DISABLE_MEMORY_DB_CACHE", "0") == "1":
-        return
+        return db_path
     if not os.path.exists(db_path):
-        return
+        return db_path
 
     import fcntl
 
@@ -207,28 +216,21 @@ def sync_memory_db_ext4_cache(db_path: str) -> None:
         )
         os.close(fd)
         try:
-            shutil.copyfile(db_path, tmp_path)
-            for suffix in ("-wal", "-shm"):
-                source_sidecar = f"{db_path}{suffix}"
-                tmp_sidecar = f"{tmp_path}{suffix}"
-                cache_sidecar = f"{cache_path}{suffix}"
-                if os.path.exists(source_sidecar):
-                    shutil.copyfile(source_sidecar, tmp_sidecar)
-                elif os.path.exists(cache_sidecar):
-                    os.unlink(cache_sidecar)
+            create_sqlite_backup(db_path, output_path=tmp_path, suffix="ext4_cache")
             os.replace(tmp_path, cache_path)
             for suffix in ("-wal", "-shm"):
-                tmp_sidecar = f"{tmp_path}{suffix}"
-                if os.path.exists(tmp_sidecar):
-                    os.replace(tmp_sidecar, f"{cache_path}{suffix}")
+                cache_sidecar = f"{cache_path}{suffix}"
+                if os.path.exists(cache_sidecar):
+                    os.unlink(cache_sidecar)
             tmp_path = ""
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
-            for suffix in ("-wal", "-shm"):
-                tmp_sidecar = f"{tmp_path}{suffix}" if tmp_path else ""
-                if tmp_sidecar and os.path.exists(tmp_sidecar):
-                    os.unlink(tmp_sidecar)
+    return cache_path
+
+
+def sync_memory_db_ext4_cache(db_path: str) -> None:
+    create_memory_db_ext4_cache(db_path)
 
 
 def normalize_text(value: object) -> str:
