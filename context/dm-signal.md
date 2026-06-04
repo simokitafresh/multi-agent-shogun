@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-03 cmd_karo_context_freshness_ga407_20260603 -->
-<!-- last_synced_lesson: L722 -->
+<!-- last_updated: 2026-06-04 cmd_karo_recon_context_freshness_dm_signal_research_202606041656 -->
+<!-- last_synced_lesson: L723 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -255,6 +255,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 
 ---
 - L722: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する（cmd_3079）
+- L723: context freshnessはprojects/{id}.yaml欠落時のsource repo fallbackを検証対象に含める（cmd_karo_recon_context_freshness_dm_signal_research_202606041656）
 
 ## 因果リンク
 
