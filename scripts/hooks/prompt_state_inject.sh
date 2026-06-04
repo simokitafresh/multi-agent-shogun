@@ -604,14 +604,23 @@ terms = like_terms_for_text(os.environ.get("PROMPT_STATE_FTS_QUERY", ""))
 if not db_path or not terms:
     raise SystemExit(0)
 
+agent_id = os.environ.get("PROMPT_STATE_AGENT_ID", "shogun")
 where_clause, params = build_where_clause(terms)
+# targetフィルタ: 自分宛(target=agent_id)または全員宛(target='')のみ
+target_filter = " AND (target = '' OR target = ?)"
+params.append(agent_id)
 with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
     conn.execute("PRAGMA busy_timeout=500")
+    # targetカラム存在確認(後方互換)
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(lord_rulings)")}
+    if "target" not in cols:
+        target_filter = ""
+        params.pop()
     rows = conn.execute(
         f"""
         SELECT ts, event_type, cmd_id, summary
         FROM lord_rulings
-        WHERE {where_clause}
+        WHERE ({where_clause}){target_filter}
         ORDER BY ts DESC
         LIMIT 3
         """,

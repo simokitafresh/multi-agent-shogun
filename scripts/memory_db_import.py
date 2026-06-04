@@ -1431,31 +1431,32 @@ def build_db(
 def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> None:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     rows = [
-        (event_row[0], event_row[1], event_row[2], event_row[9], event_row[6], event_row[7])
+        (event_row[0], event_row[1], event_row[2], event_row[9], event_row[6], event_row[7], event_row[4])
         for event_row in event_rows
         if event_row[2] == "conversation" and event_row[3] == "lord" and event_row[5] == "inbound"
     ]
     with sqlite3.connect(cache_path) as conn:
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        conn.execute("DROP TABLE IF EXISTS lord_rulings")
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS lord_rulings (
+            CREATE TABLE lord_rulings (
                 event_id TEXT PRIMARY KEY,
                 ts TEXT,
                 event_type TEXT,
                 cmd_id TEXT,
                 summary TEXT,
-                detail TEXT
+                detail TEXT,
+                target TEXT DEFAULT ''
             )
             """
         )
-        conn.execute("DELETE FROM lord_rulings")
         conn.executemany(
             """
             INSERT OR REPLACE INTO lord_rulings (
-                event_id, ts, event_type, cmd_id, summary, detail
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                event_id, ts, event_type, cmd_id, summary, detail, target
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             rows,
         )
