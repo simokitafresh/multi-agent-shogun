@@ -1408,6 +1408,77 @@ $(extract_acceptance_criteria_block)"
     fi
 }
 
+extract_cmd_target_path_text() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*target_path:[[:space:]]*/ {
+            line = $0
+            sub(/^[[:space:]]*target_path:[[:space:]]*/, "", line)
+            if (line ~ /^[|>][-+]?([[:space:]]*#.*)?$/) {
+                in_target = 1
+            } else {
+                print line
+                in_target = 0
+            }
+            next
+        }
+        in_target && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ {
+            in_target = 0
+            next
+        }
+        in_target && /^[[:space:]]{2,}/ { print }
+    '
+}
+
+check_three_layer_penetration() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    local target_text
+    target_text="$(extract_cmd_target_path_text)"
+    [[ -n "${target_text//[[:space:]]/}" ]] || return 0
+
+    if ! printf '%s\n' "$target_text" | grep -qiE 'memory_db|memory[_-]recall|obsidian[_-]promote|memory[_-]candidate|semantic-index|memory-db-schema'; then
+        return 0
+    fi
+
+    local ac_block command_block q8_value combined missing=()
+    ac_block="$(extract_acceptance_criteria_block)"
+    command_block="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            found=1
+            sub(/^[[:space:]]*command:[[:space:]]*/, "")
+            print
+            next
+        }
+        found && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ { exit }
+        found { print }
+    ')"
+    q8_value="$(cmd_block_get_field "quality_gate.q8_why_what")"
+    combined="${ac_block}
+${command_block}
+${q8_value}"
+
+    if printf '%s\n' "$combined" | grep -qiE 'L0-L7.*(除外|対象外|不要|not applicable|n/a)|coverage.*(除外|対象外|不要|not applicable|n/a)|貫通.*(除外|対象外|不要)'; then
+        return 0
+    fi
+
+    printf '%s\n' "$combined" | grep -qiE 'infrastructure\.md|context/infrastructure|infrastructure' || missing+=("infrastructure.md")
+    printf '%s\n' "$combined" | grep -qiE 'startup[ _-]?gate|gate_(shogun|karo|gunshi)_startup|起動時|起動gate|起動ゲート' || missing+=("startup gate")
+    printf '%s\n' "$combined" | grep -qiE 'deploy_task(\.sh)?|配備|task YAML|タスクYAML' || missing+=("deploy_task")
+    printf '%s\n' "$combined" | grep -qiE 'prompt_state_inject|prompt[ _-]?state|state injection|プロンプト.*注入|状態注入' || missing+=("prompt_state_inject")
+    printf '%s\n' "$combined" | grep -qiE 'ninja_monitor(\.sh)?|idle自動|自動トリガー|定期実行' || missing+=("ninja_monitor")
+
+    if (( ${#missing[@]} > 0 )); then
+        echo "WARNING: 三層記憶L0-L7 coverage map不足。記憶DB関連target_pathでは5接続先への言及または明示除外理由が必要です" >&2
+        echo "  対象target_path: $(printf '%s' "$target_text" | tr '\n' ' ' | cut -c1-160)" >&2
+        echo "  不足: ${missing[*]}" >&2
+        echo "  必須接続先: infrastructure.md / startup gate / deploy_task / prompt_state_inject / ninja_monitor" >&2
+        record_warn_reason "three_layer_penetration_missing" "check=check_three_layer_penetration"
+    fi
+}
+
 check_self_reread_red_flag() {
     local combined
 
@@ -3388,6 +3459,10 @@ check_impl_push_ac() {
 }
 
 check_impl_push_ac
+
+# --- Check 11.0: 三層記憶L0-L7 coverage map要求（WARN） ---
+# 目的: 記憶DB関連cmdで、部品だけ作られて導線なしで放置されることを起票時に検出する
+check_three_layer_penetration
 
 # --- Check 11.1: dm-signal raw layer notation warning ---
 # 目的: dm-signal cmdで文脈なし生L0-L4を使うと、PF階層と計算階層が混線するためcanonical名を促す

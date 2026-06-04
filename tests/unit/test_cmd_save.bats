@@ -72,6 +72,8 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^numeric_derivation_source_evidence_exists()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_numeric_literal_derivation_source_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^extract_cmd_target_path_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_three_layer_penetration()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_db_operation_command_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -85,7 +87,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_q5_pair_missing_session_state()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_depends_on_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate warn_q5_pair_missing_session_state check_depends_on_field
+    export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag extract_cmd_target_path_text check_three_layer_penetration check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate warn_q5_pair_missing_session_state check_depends_on_field
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -235,6 +237,45 @@ _setup_cmd_block() {
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"q12_lord_30min_costが二値でない"* ]]
+}
+
+@test "three_layer_penetration: memory_db target without coverage map emits WARN" {
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    CMD_BLOCK_NC='    title: "三層記憶 live insert 修正"
+    target_path: scripts/memory_db_live_insert.py
+    acceptance_criteria:
+      - id: AC1
+        description: "memory_db_live_insert.pyが更新される"
+    command: "memory_db_live_insert.pyを修正する"
+    quality_gate:
+      q8_why_what: "WHY: 記憶DBを改善する / WHAT: live insert修正"'
+    export CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED CMD_BLOCK_NC
+
+    run bash -c 'declare -gA CMD_BLOCK_CACHE=(); declare -ga WARN_REASONS=(); WARN_COUNT=0; check_three_layer_penetration 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: 三層記憶L0-L7 coverage map不足"* ]]
+    [[ "$output" == *"不足: infrastructure.md startup gate deploy_task prompt_state_inject ninja_monitor"* ]]
+}
+
+@test "three_layer_penetration: full coverage map does not WARN" {
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    CMD_BLOCK_NC='    title: "三層記憶 live insert 修正"
+    target_path: scripts/memory_db_live_insert.py
+    acceptance_criteria:
+      - id: AC1
+        description: "infrastructure.md、startup gate、deploy_task、prompt_state_inject、ninja_monitorへの接続を確認する"
+    command: "memory_db_live_insert.pyを修正し、startup gateとdeploy_taskとprompt_state_injectとninja_monitor導線を確認する"
+    quality_gate:
+      q8_why_what: "WHY: 記憶DB導線を維持 / WHAT: context/infrastructure.mdとstartup gateとdeploy_taskとprompt_state_injectとninja_monitorのL0-L7 coverageを維持"'
+    export CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED CMD_BLOCK_NC
+
+    run bash -c 'declare -gA CMD_BLOCK_CACHE=(); declare -ga WARN_REASONS=(); WARN_COUNT=0; check_three_layer_penetration 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: 三層記憶L0-L7 coverage map不足"* ]]
 }
 
 @test "deferral language emits warn with hit lines" {
