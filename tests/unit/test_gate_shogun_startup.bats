@@ -23,6 +23,7 @@ setup_file() {
              "$SHARED_BASE/memory" \
              "$SHARED_BASE/logs" \
              "$SHARED_BASE/context" \
+             "$SHARED_BASE/data" \
              "$SHARED_BASE/docs/semantic-index" \
              "$SHARED_BASE/config" \
              "$SHARED_BASE/instructions" \
@@ -30,6 +31,11 @@ setup_file() {
              "$SHARED_BASE/fakehome/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory"
 
     cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$SHARED_BASE/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$SHARED_BASE/scripts/"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$SHARED_BASE/scripts/"
+    chmod +x "$SHARED_BASE/scripts/gates/gate_three_layer_health.sh" \
+             "$SHARED_BASE/scripts/cleanup_three_layer_tmp.sh"
     cat > "$SHARED_BASE/scripts/gates/q6_target_fixture.sh" <<'EOF'
 #!/usr/bin/env bash
 q6_target_probe() {
@@ -180,6 +186,27 @@ EOF
 entries: []
 EOF
 
+    # Gate 12.1: three-layer memory health minimal PASS fixture
+    python3 - "$SHARED_BASE/data/three_layer_health.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT DEFAULT 'raw', raw_content TEXT)")
+conn.execute("CREATE TABLE search_logs (ts TEXT, created_at TEXT)")
+conn.executemany(
+    "INSERT INTO events (id, state, raw_content) VALUES (?, ?, ?)",
+    [
+        ("event:raw", "raw", "raw content"),
+        ("event:verified", "verified", "verified content"),
+        ("event:candidate", "contradiction_candidate", "candidate content"),
+    ],
+)
+conn.execute("INSERT INTO search_logs (ts, created_at) VALUES (datetime('now'), datetime('now'))")
+conn.commit()
+conn.close()
+PY
+
     # Gate 14: no gunshi context files (pass)
     # (no gunshi-*.md in context/)
 
@@ -246,6 +273,8 @@ setup() {
     export SHOGUN_STARTUP_ROOT="$TEST_TMPDIR"
     export SHOGUN_STARTUP_LIGHTWEIGHT=1
     export SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
+    export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
 }
 
 teardown() {
@@ -254,6 +283,8 @@ teardown() {
     unset SHOGUN_STARTUP_ROOT
     unset SHOGUN_STARTUP_LIGHTWEIGHT
     unset SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT
+    unset SHOGUN_MEMORY_DB_CACHE_PATH
+    unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 

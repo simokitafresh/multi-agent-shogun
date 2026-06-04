@@ -274,6 +274,25 @@ EOF
 
 @test "gate_three_layer_health emits cache capacity section" {
     mkdir -p "$TEST_TMPDIR/cache"
+    python3 - "$TEST_TMPDIR/cache/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT DEFAULT 'raw', raw_content TEXT)")
+conn.execute("CREATE TABLE search_logs (ts TEXT, created_at TEXT)")
+conn.executemany(
+    "INSERT INTO events (id, state, raw_content) VALUES (?, ?, ?)",
+    [
+        ("event:raw", "raw", "raw content"),
+        ("event:verified", "verified", "verified content"),
+        ("event:candidate", "duplicate_candidate", "candidate content"),
+    ],
+)
+conn.execute("INSERT INTO search_logs (ts, created_at) VALUES (datetime('now'), datetime('now'))")
+conn.commit()
+conn.close()
+PY
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
 
@@ -1381,7 +1400,7 @@ spec.loader.exec_module(module)
 print(",".join(sorted(module.VALID_EVENT_STATES)))
 PY
 )
-    [ "${result[0]}" = "archived,contradiction_candidate,duplicate_candidate,obsidian_candidate,raw,stale_candidate,verified" ]
+    [ "${result[0]}" = "archived,contradiction_candidate,duplicate_candidate,obsidian_candidate,obsidian_promoted,raw,stale_candidate,verified" ]
 }
 
 @test "update_event_state updates state and logs transition reason" {

@@ -17,6 +17,7 @@ setup() {
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/memory" \
              "$TEST_TMPDIR/logs" \
+             "$TEST_TMPDIR/data" \
              "$TEST_TMPDIR/docs/semantic-index"
 
     # Copy the gate script
@@ -24,7 +25,12 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
+    cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
+    chmod +x "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_TMPDIR/scripts/skill_execution_log.sh"
     chmod +x "$TEST_TMPDIR/scripts/skill_execution_log.sh"
 
@@ -90,6 +96,27 @@ executions:
   stumbling_points: "none"
 EOF
 
+    # Check 9.5: three-layer memory health minimal PASS fixture
+    python3 - "$TEST_TMPDIR/data/three_layer_health.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT DEFAULT 'raw', raw_content TEXT)")
+conn.execute("CREATE TABLE search_logs (ts TEXT, created_at TEXT)")
+conn.executemany(
+    "INSERT INTO events (id, state, raw_content) VALUES (?, ?, ?)",
+    [
+        ("event:raw", "raw", "raw content"),
+        ("event:verified", "verified", "verified content"),
+        ("event:candidate", "obsidian_candidate", "candidate content"),
+    ],
+)
+conn.execute("INSERT INTO search_logs (ts, created_at) VALUES (datetime('now'), datetime('now'))")
+conn.commit()
+conn.close()
+PY
+
     # Check 6: mock gate_workaround_rate.sh
     cat > "$TEST_TMPDIR/scripts/gates/gate_workaround_rate.sh" <<'MOCK'
 #!/usr/bin/env bash
@@ -140,12 +167,16 @@ MOCK
     export KARO_NINJA_WA_CACHE="$TEST_TMPDIR/karo_ninja_wa_cache"
     export KARO_SKILL_SUMMARY_CACHE="$TEST_TMPDIR/karo_skill_summary_cache"
     export KARO_AGGREGATE_CACHE="$TEST_TMPDIR/karo_startup_aggregate_cache"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
+    export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
 }
 
 teardown() {
     export PATH="$ORIG_PATH"
+    unset SHOGUN_MEMORY_DB_CACHE_PATH
+    unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
