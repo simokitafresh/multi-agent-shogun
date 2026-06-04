@@ -2101,7 +2101,7 @@ _handle_training_auto_deploy() {
             ;;
         *)
             training_target="scripts/ninja_monitor.sh"
-            training_purpose="L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、報告YAMLを一発PASS品質で完成させる"
+            training_purpose="L4修行: 指定スクリプトの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる"
             ;;
     esac
     if ! cat > "$tmp_task" <<EOF
