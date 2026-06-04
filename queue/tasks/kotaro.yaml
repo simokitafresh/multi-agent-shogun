@@ -3,15 +3,90 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: atomic_write_text 2箇所のguard実装案と共通化可否を確認する
+      binary_checks:
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
     AC2:
-      description: 空contentと最新更新セクション欠落時にファイルが変更されない検証方法を提示する
+      binary_checks:
+      - '最高インパクト1件を実装したか: yes/no'
+      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
+      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
     AC3:
-      description: 正常dashboard更新が壊れない確認方法と関連テストを明記する
+      binary_checks:
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+    AC5:
+      binary_checks:
+      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
+      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
+      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
+      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
+  engineering_preferences: []
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_training_L4_auto_202606041637_kotaro
+  project: infra
+  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
+  scout_exempt: true
+  status: done
+  stop_for: []
+  target_path: scripts/ninja_monitor.sh
+  task_id: cmd_training_L4_auto_202606041637_kotaro_normal
+  task_type: training
+  related_lessons:
+  - id: 'L622'
+    summary: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
+    detail: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L731'
+    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+  - id: 'L750'
+    summary: 'context/infrastructure.md:637の[[android-ssh-input-loss-investigation.md]](.md付き)'
+    detail: 'context/infrastructure.md:637の[[android-ssh-input-loss-investigation.md]](.md付き)'
+  - id: 'L672'
+    summary: 'assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず'
+    detail: 'assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず'
+  - id: 'L343'
+    summary: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+    detail: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+  - id: 'L256'
+    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+  - id: 'L384'
+    summary: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
+    detail: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
+  - id: 'L134'
+    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+  - id: 'L119'
+    summary: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
+    detail: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -26,56 +101,35 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
-      - L211: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
-      - L104: IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ
+      - L622: _cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
+      - L750: context/infrastructure.md:637の[[android-ssh-input-loss-investigation.md]](.md付き)
+      - L672: assumption_invalidation.found=trueはaffected_cmds/detailなしだとgate_report_formatで必ず
+      - L343: lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:
+      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
+      - L384: result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_
+      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
+      - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
     ────────────────────────────────────────
     
-    【3-strike rule】
-      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
-      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
-      ────────────────────────────────────────
     
-    
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  hypothesis_count: 3
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_training_backlinks_android_ssh_input_loss_20260604
-  project: infra
-  purpose: "L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる"
-  status: done
-  stop_for: []
-  target_path: docs/research/android-ssh-input-loss-investigation.md
-  task_id: cmd_training_backlinks_android_ssh_input_loss_20260604_normal
-  task_type: training
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  related_lessons:
-  - id: 'L213'
-    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-  - id: 'L211'
-    summary: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
-    detail: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
-  - id: 'L104'
-    summary: 'IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ'
-    detail: 'IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ'
   ac_version: b9649a49
-  _ac_task_id: cmd_training_backlinks_android_ssh_input_loss_20260604_normal
+  _ac_task_id: cmd_training_L4_auto_202606041637_kotaro_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_backlinks_android_ssh_input_loss_20260604.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_backlinks_android_ssh_input_loss_20260604.yaml
+  report_filename: kotaro_report_cmd_training_L4_auto_202606041637_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_L4_auto_202606041637_kotaro.yaml
   bloom_level: 
-  deployed_at: "2026-06-04T15:19:49"
+  deployed_at: "2026-06-04T16:37:56"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
+    tried_approaches:
+    - 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
+    approach_summary: 'scripts/ninja_monitor.shの改善点3件特定: (1)check_shogun_ctx内_ctx_band_fileのSTATE_DIR不整合(line3724→修正済), (2)_cleanup_stale_keysのアクティブ忍者stale cmd_id蓄積(L622), (3)doc-linksにninja_monitor_requirements.md欠落(→追加済). 最高インパクト1+3を実装: STATE_DIR修正+[[ninja_monitor_requirements.md]]リンク追加.'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
+      approach_summary: 'scripts/ninja_monitor.shの改善点3件特定: (1)check_shogun_ctx内_ctx_band_fileのSTATE_DIR不整合(line3724→修正済), (2)_cleanup_stale_keysのアクティブ忍者stale cmd_id蓄積(L622), (3)doc-linksにninja_monitor_requirements.md欠落(→追加済). 最高インパクト1+3を実装: STATE_DIR修正+[[ninja_monitor_requirements.md]]リンク追加.'
