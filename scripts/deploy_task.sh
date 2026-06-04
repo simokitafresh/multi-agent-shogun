@@ -109,6 +109,61 @@ log() {
     echo "[DEPLOY] $1" >&2
 }
 
+warn_three_layer_candidate_backlog() {
+    local db_path="${SHOGUN_MEMORY_DB:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+    local warn_threshold="${SHOGUN_THREE_LAYER_CANDIDATE_WARN_THRESHOLD:-10}"
+    local counts total
+
+    case "$warn_threshold" in
+        ''|*[!0-9]*) warn_threshold=10 ;;
+    esac
+    [ -f "$db_path" ] || return 0
+
+    counts="$(
+        python3 - "$db_path" <<'PY' 2>/dev/null || true
+import sqlite3
+import sys
+
+db_path = sys.argv[1]
+states = ("obsidian_candidate", "contradiction_candidate", "duplicate_candidate")
+
+try:
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        has_events = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='events'"
+        ).fetchone() is not None
+        if not has_events:
+            raise SystemExit(0)
+        has_state = any(row[1] == "state" for row in conn.execute("PRAGMA table_info(events)"))
+        if not has_state:
+            raise SystemExit(0)
+        values = {
+            state: int(conn.execute("SELECT COUNT(*) FROM events WHERE state = ?", (state,)).fetchone()[0] or 0)
+            for state in states
+        }
+    finally:
+        conn.close()
+except Exception:
+    raise SystemExit(0)
+
+print("\t".join(str(values[state]) for state in states))
+PY
+    )"
+    [ -n "$counts" ] || return 0
+
+    IFS=$'\t' read -r obsidian_count contradiction_count duplicate_count <<< "$counts"
+    obsidian_count="${obsidian_count:-0}"
+    contradiction_count="${contradiction_count:-0}"
+    duplicate_count="${duplicate_count:-0}"
+    total=$((obsidian_count + contradiction_count + duplicate_count))
+
+    if [ "$total" -gt "$warn_threshold" ] 2>/dev/null; then
+        log "WARN: three_layer_candidate_backlog total=${total} threshold=${warn_threshold} obsidian_candidate=${obsidian_count} contradiction_candidate=${contradiction_count} duplicate_candidate=${duplicate_count}"
+    fi
+    return 0
+}
+
 deploy_task_lock_path() {
     local lock_key="$1"
     mkdir -p "$SCRIPT_DIR/queue/locks"
@@ -7452,6 +7507,9 @@ except Exception:
 
     # cmd_3019: q11_not_already_doneを配備時に再実行し、既実装レースをWARNで可視化
     warn_q11_not_already_done_drift "$task_yaml"
+
+    # cmd_3181: 三層記憶candidate蓄積を配備時にWARNで可視化。WARN止まりで配備は継続。
+    warn_three_layer_candidate_backlog || true
 
     # AC3: _STALE_RESET_DONE確認ゲート — CMD_ID配備時にreset_stale_fieldsが実行済みか検証
     if [ -n "$CMD_ID" ] && [ "${_STALE_RESET_DONE:-0}" != "1" ]; then
