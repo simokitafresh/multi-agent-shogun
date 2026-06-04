@@ -445,3 +445,17 @@ lessons:
   enforcement: report review Step 3.5でcommand各項目とfiles_modified各pathの対応表を確認。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK
   when: report reviewで成果物・files_modified・cmd command欄を突合する時。件数一致していても中身の対応を確認する
   how: command項目ごとに対象ファイルを抽出し、files_modifiedのpathへ1対1で紐付ける。既存実装を検証しただけの対象もverified_existing_dependencyとして記録し、未記載にしない
+- id: LG037
+  title: command欄の実行参照を変更対象と混同するな — 実行のみスクリプトはfiles_modified要求から外せ
+  detail: |
+    cmd_3167/cmd_3168で2連続BLOCK。cmd本文のcommand欄に `gate_skill_script_refs.sh` など実行だけのスクリプト参照があると、cmd_complete_gateがcommand_files_modified_mismatchとしてfiles_modified記載を要求した。
+    軍師draftレビューでは、command欄のファイル参照を「変更対象」「既存依存の検証対象」「実行のみ」の3種に分類してから承認せよ。実行のみならcmd本文側で「実行のみ・変更対象外」と明記させ、files_modifiedに入れない。
+    LG036は変更対象同士の1対1突合、本教訓は実行参照を変更対象から除外する前段の分類である。
+  source_cmd: cmd_3167
+  origin: '[[cmd_3167 BLOCK]] -> [[command欄実行参照]] -> [[gate files_modified_mismatch]]'
+  created_at: '2026-06-04'
+  automated: true
+  enforcement_level: 3
+  enforcement: draft review時にcommand欄のファイル参照を変更対象/既存依存/実行のみへ分類し、実行のみは変更対象外と明記させる
+  when: draft reviewでcmd command欄にスクリプトパスが出ている時
+  how: 各参照ファイルを分類する。変更対象はfiles_modifiedへ、既存依存はverified_existing_dependencyへ、実行のみはcmd本文に「実行のみ・変更対象外」と明記させる
