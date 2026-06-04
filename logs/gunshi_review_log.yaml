@@ -3236,6 +3236,22 @@
   ambiguity_points: none
   origin: "[[cmd_3178]] -> [[kagemaru LGTM]] -> [[三層記憶L0-L7完結]]"
   timestamp: "2026-06-04T10:15:00"
+- cmd_id: cmd_karo_ci_fix_three_layer_startup_tests_20260604
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  finding_categories: [assumptions]
+  findings_summary: "CI RED修正。11件FAIL→116件PASS/0 SKIP。テストfixture3ファイル修正。VALID_EVENT_STATES 8値更新"
+  observations:
+    - "三層記憶startup gate接続(cmd_3172/3174)でfixtureが旧前提のまま→11件FAIL"
+    - "本体変更なし。fixture内にhealth gate PASS条件の最小DBを作成"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_3172/3174 startup接続→fixture旧前提→11件FAIL→fixture更新→CI GREEN(正の複利)"
+  brainwash_check: "CI fix定型。116件PASS/0 SKIP確認"
+  ambiguity_points: none
+  origin: "[[cmd_3172]] -> [[fixture旧前提]] -> [[CI fix]]"
+  timestamp: "2026-06-04T12:15:00"
 - cmd_id: cmd_3175
   review_type: report
   report_ninja: saizo

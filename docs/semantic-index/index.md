@@ -112,6 +112,7 @@ codd:
 | causal | `cmd_3178` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L7候補確定パイプライン]] |
 | causal | `cmd_3178` depends_on: cmd_3177 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:58:05+09:00 三層記憶が順調か実際に実験してみてくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-04T12:08:24+09:00 三層記憶は全員がそれぞれのロールで使えるようにするべきだよな？将軍専用のってなんだ？ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -2290,6 +2291,7 @@ codd:
 | cmd | `cmd_3172` 三層記憶#2: startup gate三層記憶健全性チェック(全role共通gate関数) (`queue/tasks/hayate.yaml`, `scripts/gates/gate_gunshi_startup.sh`, `scripts/gates/gate_karo_startup.sh`) |
 | causal | `cmd_3172` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L1_L6 startup gate貫通]] |
 | causal | `cmd_3172` depends_on: cmd_3168 |
+| cmd | `cmd_karo_ci_fix_three_layer_startup_tests_20260604` (`tests/unit/test_gate_karo_startup.bats`, `tests/unit/test_gate_shogun_startup.bats`, `tests/unit/test_memory_db.bats`) |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |

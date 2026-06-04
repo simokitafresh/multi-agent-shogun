@@ -1,8 +1,15 @@
 task:
-  _ac_task_id: cmd_3176_exact
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3176 (deployed 2026-06-04T09:50:18). Read from the beginning.
-  ac_version: 05224ed2
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: tests/unit/test_gate_shogun_startup.bats と tests/unit/test_gate_karo_startup.bats の三層記憶health呼出しをテスト環境で破綻しない形に修正し、該当テストがPASSする
+    AC2:
+      description: tests/unit/test_memory_db.bats の VALID_EVENT_STATES 期待値を現行8値(raw, verified, stale_candidate, contradiction_candidate, duplicate_candidate, obsidian_candidate, obsidian_promoted, archived)へ更新しPASSする
+    AC3:
+      description: scripts/gates/gate_three_layer_health.sh単体のテスト環境動作を修正またはテスト前提を更新し、関連BatsをPASSさせる
+    AC4:
+      description: bats tests/unit/test_gate_shogun_startup.bats tests/unit/test_gate_karo_startup.bats tests/unit/test_memory_db.bats を実行しSKIPなしでPASSする
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,68 +18,55 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3176
+  parent_cmd: cmd_karo_ci_fix_three_layer_startup_tests_20260604
   project: infra
-  purpose: L0-L7貫通設計書v6 cmd#8。cmd_save.shに記憶DB関連cmdのL0-L7 coverage map要求チェックを追加。部品だけ作られて導線なしで放置される免疫系
+  purpose: CI RED修正 — 三層記憶startup gate接続後のBats失敗11件を解消する
   status: idle
   stop_for: []
-  target_path: scripts/cmd_save.sh
-  task_id: cmd_3176_exact
-  task_type: exact
+  target_path: tests/unit/
+  task_id: cmd_karo_ci_fix_three_layer_startup_tests_20260604_normal
+  task_type: ci_fix
   related_lessons:
-  - id: 'L446'
-    summary: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準'
-    detail: 'cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準'
-  - id: 'L577'
-    summary: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-    detail: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-  - id: 'L737'
-    summary: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
-    detail: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
-  - id: 'L373'
-    summary: 'cmd_save.sh Check3内でecho CMD_BLOCK|grep -v comment|grep -q keyのパターンが7箇所に重複。各回3サブ'
-    detail: 'cmd_save.sh Check3内でecho CMD_BLOCK|grep -v comment|grep -q keyのパターンが7箇所に重複。各回3サブ'
-  - id: 'L702'
-    summary: 'if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$? 内で捕捉すること。'
-    detail: 'if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$? 内で捕捉すること。'
-  - id: 'L631'
-    summary: 'q11_has_guard_duplicate_checkを最初はguard文字列の有無で判定したため sample_guard_hook.sh のファイル名に'
-    detail: 'q11_has_guard_duplicate_checkを最初はguard文字列の有無で判定したため sample_guard_hook.sh のファイル名に'
-  - id: 'L584'
-    summary: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
-    detail: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
   - id: 'L510'
     summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
     detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-  - id: 'L209'
-    summary: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
-    detail: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
+  - id: 'L482'
+    summary: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << '''
+    detail: 'python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << '''
   - id: 'L188'
     summary: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
     detail: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
+  - id: 'L590'
+    summary: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
+    detail: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
+  - id: 'L389'
+    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L240'
+    summary: 'parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293'
+    detail: 'parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293'
+  - id: 'L721'
+    summary: '本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp'
+    detail: '本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp'
+  - id: 'L710'
+    summary: 'spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHI'
+    detail: 'spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHI'
+  - id: 'L662'
+    summary: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
+    detail: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
+  - id: 'L639'
+    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
+    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[LS-A23]]"
-  - "[[three-layer-memory-l0-l7-penetration-design]]"
-  - "[[免疫系貫通チェック]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -92,28 +86,25 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L446: cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準
-      - L577: cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通
-      - L737: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を
-      - L373: cmd_save.sh Check3内でecho CMD_BLOCK|grep -v comment|grep -q keyのパターンが7箇所に重複。各回3サブ
-      - L702: if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$? 内で捕捉すること。
-      - L631: q11_has_guard_duplicate_checkを最初はguard文字列の有無で判定したため sample_guard_hook.sh のファイル名に
-      - L584: run_python_logged ... <<'MARKER'; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc
       - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check
-      - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも
+      - L482: python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << '
       - L188: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
+      - L590: 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一
+      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L240: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293
+      - L721: 本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp
+      - L710: spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHI
+      - L662: gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す
+      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'cmd_save.shにcheck_three_layer_penetration関数が存在する。確認: grep check_three_layer_penetration scripts/cmd_save.sh で1件以上'
-  - id: 'AC2'
-    checks:
-    - check: '記憶DB関連cmdのtarget_pathでチェックが自動発火しWARN表示される。確認: テストcmdでtarget_path=scripts/memory_db_live_insert.pyを指定してcmd_save.sh実行しcoverage関連のWARN行が出力'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_ci_fix_three_layer_startup_tests_20260604_normal
+  _ac_worker_id:
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3176.yaml
-  report_path: queue/reports/hayate_report_cmd_3176.yaml
+  report_filename: hayate_report_cmd_karo_ci_fix_three_layer_startup_tests_20260604.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_three_layer_startup_tests_20260604.yaml
   bloom_level: 
-  deployed_at: "2026-06-04T09:50:43"
+  deployed_at: "2026-06-04T12:05:36"
+  progress: "AC1-AC4 PASS: bats tests/unit/test_gate_shogun_startup.bats tests/unit/test_gate_karo_startup.bats tests/unit/test_memory_db.bats -> 116 tests, 0 skip"
