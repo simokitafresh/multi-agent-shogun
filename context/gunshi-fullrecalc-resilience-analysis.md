@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-03 cmd_3145 -->
+<!-- last_updated: 2026-06-04 cmd_karo_ci_red_26933377730_memory_db_import_20260604 -->
 # fullrecalculate構造的脆弱性分析 — 速度分析補遺 (軍師)
 # 2026-03-28T22:10 | 前回速度分析の発展。cmd_1461/cmd_1456知見の統合
 
@@ -95,6 +95,17 @@ Ward計算自体は~280ms/call。投資対効果なし。
 - 0b: ✅ `recalculation_status`テーブル永続化。start/end/status/mode/error_message。起動時check_interrupted_recalculations()でstale running→interrupted更新+WARNING (commit cf90126a)
 - 0b+: ✅ pg_advisory_lock排他制御 (cmd_1465, commit 457dd72d)。threading.Lock(プロセス内)+pg_try_advisory_lock(プロセス間)の2層排他。fail-open設計。SIGKILL時はPostgreSQLセッション切断で自動解放
 - 0c/0d: 未着手。効果は大きいがcleanup戦略の根本変更。偵察先行推奨
+
+### 現況照合(2026-06-04)
+
+| 防御層 | 現況 | 参照 |
+|---|---|---|
+| 中断検知 | `recalculation_status`永続化+pg_advisory_lockは運用正本へ反映済み。SIGKILL時もPostgreSQLセッション切断でlock自動解放 | [[dm-signal-ops]] L13 |
+| 完了判定 | PF登録後の完了判定はAPI statusだけでなくDB `recalculation_status`を照合する運用へ移行済み | [[dm-signal-core]] L516 |
+| signal欠損検知 | GP-124でfullrecalculate後のzero-signal自動検知WARN+signal COUNT記録が追加済み | [[dm-signal-ops]] L14 |
+| 残リスク | Phase 0 cleanup後に中断しても旧データを残すshadow processing(0c)とPhase別resume(0d)は未着手 | 本分析Q4/Q5 |
+
+結論: 当初の「中断を検知できない」状態は0a/0b/0b+とGP-124で改善済み。ただしcleanup戦略は未変更のため、速度・検知・排他は防御層であり、Phase 0の破壊的先行削除リスクそのものは0c/0dまで残る。
 
 ### cmd_1461との関係
 
