@@ -1,10 +1,9 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-04 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-04T15:33:12+09:00 -->
+<!-- generated_at: 2026-06-04T15:33:07+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-04T15:33:11+09:00 | terminal | response | 了解。idle待機します。 [meta] stop_reason=end_turn
 - 2026-06-04T15:33:06+09:00 | terminal | response | 未読inboxなし。タスク完了。 --- **完了サマリー:** **AC1 — 改善点3つ:** 1. 因果リンクセクション: 具体ファイルパス付き `[[cmd_1756_android]]`・`[[enable_pane_trace…
 - 2026-06-04T15:28:52+09:00 | terminal | response | inboxに新規未読なし。inbox1通知は先ほどのgate_clear(既に処理済み)だった。 全inbox処理完了。本セッション実績: - **idle自走**: 冷え観点遡及(GP-252 D0実装) + 前セッション設計書2件の還…
 - 2026-06-04T15:27:07+09:00 | terminal | inbound | <task-notification> <task-id>bdqcghmfp</task-id> <tool-use-id>toolu_019hsyv7A4T3ivEimdzv5Mms</tool-use-id> <output-file…
@@ -14,6 +13,7 @@
 - 2026-06-04T15:24:43+09:00 | terminal | response | 全6件処理完了: | # | cmd | type | verdict | 処理 | |---|-----|------|---------|------| | 1 | hotfix_shogun_clear_prep | draft |…
 - 2026-06-04T15:23:32+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率99% 連勝174
 - 2026-06-04T15:23:12+09:00 | ntfy | outbound | 教訓効果率WARN: 0.0%
+- 2026-06-04T15:20:20+09:00 | terminal | response | draftレビュー完了。APPROVE送信済み。 忍者は既にstatus:done(AC1-4全PASS)。報告レビュー依頼が来次第、report reviewに進む。idle待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 未読inboxなし。タスク完了。 --- **完了サマリー:** **AC1 — 改善点3つ:** 1. 因果リンクセクション: 具体ファイルパス付き `[[cmd_1756_android]]`・`[[enable_pane_trace]]` を新規追加、既存5件にファイルパ…

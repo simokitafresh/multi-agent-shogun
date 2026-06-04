@@ -210,7 +210,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | 記憶DB | lord_conversationはJSONL/アーカイブを一次データ、SQLiteを検索層として扱う | cmd_2963〜2982、cmd_3001/3002 |
 | target filter | 殿発言検索は`direction=inbound`の前にtarget/agentスコープを必ず確認 | cmd_3008/3009/3017/3028、L689/L698 |
 | CI並列隔離 | 並列Bats/CIでは共有状態を4系統で隔離: (1) per-test `TEST_TMPDIR`、(2) lock/cacheをTMPDIR配下、(3) script_dir基準の絶対パス、(4) repo内scriptはgit実行権限または`bash script.sh`呼出 | cmd_2663/2975、L477/L488/L535/L536/L690/L691/L694 |
-| 新スクリプトCI | 新規script追加時はscript_dir絶対パス、git mode 100755またはbash経由テスト、既存実行パターン踏襲の3点確認 | `docs/research/gunshi_idle_ci_red_chain_new_script_20260523.md` |
+| 新スクリプトCI | 新規script追加時はscript_dir絶対パス、git mode 100755またはbash経由テスト、既存実行パターン踏襲の3点確認 | `logs/archive/gunshi_review_log_20260524a.yaml` の `idle_ci_red_chain_new_script_20260523` |
 
 ## Claude Code バージョン固定と復帰
 
