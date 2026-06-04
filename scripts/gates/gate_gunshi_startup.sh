@@ -826,3 +826,21 @@ _lessons_count=$(awk '/^- id: LG/{count++} END{print count+0}' "$SCRIPT_DIR/proj
 _auto_count=$(awk '/automated: true/{count++} END{print count+0}' "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" 2>/dev/null)
 echo "  第一層(個): 教訓${_lessons_count}件(automated:${_auto_count}件)"
 echo "  ★ FAIL→PASS遷移が免疫の直接計測。累積FAILは旧報告ノイズ含む(なぜなぜ7回, 2026-04-18殿指摘)"
+
+# --- Check 11.5: 三層記憶DB健全性 ---
+echo ""
+echo "■ 三層記憶DB健全性"
+three_layer_health_script="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
+if [ -x "$three_layer_health_script" ]; then
+    if ! three_layer_health_output="$(bash "$three_layer_health_script" 2>&1)"; then
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("三層記憶DB健全性: WARN")
+    else
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+    fi
+else
+    echo "  WARN: gate_three_layer_health.sh不在"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+    alerts+=("三層記憶DB健全性: gate不在")
+fi

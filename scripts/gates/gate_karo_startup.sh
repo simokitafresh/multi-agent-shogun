@@ -1162,6 +1162,23 @@ echo ""
 rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
     "$_aggregate_tmp"
 
+# --- Check 9.5: 三層記憶DB健全性 ---
+echo "■ 三層記憶DB健全性"
+three_layer_health_script="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
+if [ -x "$three_layer_health_script" ]; then
+    if ! three_layer_health_output="$(bash "$three_layer_health_script" 2>&1)"; then
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("三層記憶DB健全性: WARN")
+    else
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+    fi
+else
+    echo "  WARN: gate_three_layer_health.sh不在"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+    alerts+=("三層記憶DB健全性: gate不在")
+fi
+
 # --- Check 10: スキル品質サマリ ---
 echo "■ スキル品質"
 echo "  フェーズ別スキル一覧:"

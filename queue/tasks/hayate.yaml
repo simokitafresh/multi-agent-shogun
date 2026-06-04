@@ -1,20 +1,8 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: GA-407の直接原因と根本原因仮説を、gate出力・source repo差分・対象contextヘッダに基づいて報告する
-    AC2:
-      description: 対象4ファイルごとに、更新要否・反映内容・反映不要なら根拠を報告する
-    AC3:
-      description: 必要なcontext更新または鮮度ベースライン/除外設計の修正を実施し、単なるlast_updated更新で済ませていないことを示す
-    AC4:
-      description: bash scripts/gates/gate_context_freshness.sh 再実行で対象4ファイルのALERTが解消している
-    AC5:
-      description: Q1-Q3の回答と、次回同種ALERTを減らす防御層案を報告YAMLに記録する
-    AC6:
-      description: 必要最小ファイルだけをcommitし、gate_report_format.sh PASSで報告する
-  command: "gate_improvement_trigger から context_freshness ALERT GA-407 が来た。\n検知内容:\n  - ALERT: dm-signal-frontend.md (source commits since last_updated=2026-05-29)\n  - ALERT: dm-signal-ops.md (source commits since last_updated=2026-05-29)\n  - ALERT: dm-signal-research.md (source commits since last_updated=2026-05-29)\n  - ALERT: dm-signal.md (source commits since last_updated=2026-05-29)\n\n対象ファイル:\n  - context/dm-signal.md\n  - context/dm-signal-frontend.md\n  - context/dm-signal-ops.md\n  - context/dm-signal-research.md\n\n実施せよ:\n  1. scripts/gates/gate_context_freshness.sh と scripts/context_freshness_check.sh の現物出力を確認し、GA-407の直接原因を記録する。\n  2. /mnt/c/Python_app/DM-signal の該当source commit差分を確認し、context更新が必要な実変更か、除外/ベースライン更新が妥当なケースかを判定する。\n  3. 必要なcontext更新を行う。単にlast_updatedだけを上げるな。反映不要なら、その根拠と防御層案を報告する。\n  4. bash scripts/gates/gate_context_freshness.sh を再実行し、対象4ファイルがALERTから外れることを確認する。\n  5. gate穴検出3問に回答する:\n     Q1: なぜこのgateが鳴ったか。直接原因と根本原因。\n     Q2: 同カテゴリの穴が他にないか。横展開候補。\n     Q3: 次にこのgateが鳴らないようにする防御層。\n  6. lesson_candidate または defense_layer_update_candidate を報告に残し、必要最小ファイルだけcommitする。\n\n既存dirtyに注意:\n  context/lord-conversation-index.md、docs/semantic-index/index.md、docs/research/gunshi_idle_bats_speed_redesign_20260603.md は別系統の自動生成/軍師分析dirtyの可能性がある。今回scope外なら触るな。\n"
+  _ac_task_id: cmd_3172_exact
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3172 (deployed 2026-06-04T09:19:54). Read from the beginning.
+  ac_version: 5a5a21a2
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,61 +11,68 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_context_freshness_ga407_20260603
+  parent_cmd: cmd_3172
   project: infra
-  purpose: context_freshness ALERT GA-407を解消し、dm-signal context鮮度ゲートの穴を調査する
-  status: idle
+  purpose: L0-L7貫通設計書v6 cmd#2。gate_three_layer_health.sh共通関数を作成し、全roleのstartup gateから呼出し。events.state分布/raw_content充填率/矛盾候補件数/昇格候補件数の4指標を起動時表示
+  status: done
   stop_for: []
-  target_path: context/dm-signal.md
-  task_id: cmd_karo_context_freshness_ga407_20260603_normal
-  task_type: hotfix
+  target_path: scripts/gates/
+  task_id: cmd_3172_exact
+  task_type: exact
   related_lessons:
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、'
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L611'
-    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-  - id: 'L317'
-    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
-    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
-  - id: 'L101'
-    summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-    detail: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: '
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L667'
-    summary: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
-    detail: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
-  - id: 'L654'
-    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
-    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
-  - id: 'L604'
-    summary: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
-    detail: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
-  - id: 'L274'
-    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+  - id: 'L411'
+    summary: 'cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_'
+    detail: 'cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_'
+  - id: 'L584'
+    summary: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
+    detail: 'run_python_logged ... <<''MARKER''; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc'
+  - id: 'L551'
+    summary: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+    detail: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+  - id: 'L232'
+    summary: 'bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ'
+    detail: 'bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ'
+  - id: 'L188'
+    summary: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
+    detail: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
+  - id: 'L178'
+    summary: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+    detail: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+  - id: 'L153'
+    summary: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
+    detail: 'IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認'
+  - id: 'L130'
+    summary: 'IF PowerShellのGet-Clipboard -Format Imageで画像を取得する時 THEN try/catchだけでなくnull判定も必須化'
+    detail: 'IF PowerShellのGet-Clipboard -Format Imageで画像を取得する時 THEN try/catchだけでなくnull判定も必須化'
+  - id: 'L662'
+    summary: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
+    detail: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  docs/research/creator_brainwashing_defense_design_20260524.md scripts/cmd_save.sh"
-  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  related_causal_links:
+  - "[[L1_L6 startup gate貫通]]"
+  - "[[LS-A23]]"
+  - "[[three-layer-memory-l0-l7-penetration-design]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -97,25 +92,34 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L506: report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
-      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
-      - L101: gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: 
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L667: self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re
-      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
-      - L604: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自
-      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
+      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
+      - L411: cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_
+      - L584: run_python_logged ... <<'MARKER'; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc
+      - L551: cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.
+      - L232: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ
+      - L188: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
+      - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
+      - L153: IF レビューACにpush条件がある時 THEN git rev-list --left-right --countでorigin/mainとの差分を事前確認
+      - L130: IF PowerShellのGet-Clipboard -Format Imageで画像を取得する時 THEN try/catchだけでなくnull判定も必須化
+      - L662: gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す
     ────────────────────────────────────────
     
     
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_context_freshness_ga407_20260603_normal
-  _ac_worker_id: 
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'gate_three_layer_health.shにevents.state分布表示セクションが存在する。確認: grep ''state分布'' scripts/gates/gate_three_layer_health.sh で1件以上'
+  - id: 'AC2'
+    checks:
+    - check: 'gate_three_layer_health.shにraw_content充填率、矛盾候補件数、昇格候補件数の3指標が表示される。確認: grep raw_content scripts/gates/gate_three_layer_health.sh と grep contradiction 同ファイル と grep promote 同ファイル が各1件以上'
+  - id: 'AC3'
+    checks:
+    - check: 'gate_shogun_startup.shからgate_three_layer_health.shが呼び出されている。確認: grep gate_three_layer_health scripts/gates/gate_shogun_startup.sh で1件以上'
+  - id: 'AC4'
+    checks:
+    - check: 'gate_karo_startup.sh+gate_gunshi_startup.shからも呼び出されている。確認: grep gate_three_layer_health scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh で各1件以上'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_context_freshness_ga407_20260603.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_context_freshness_ga407_20260603.yaml
+  report_filename: hayate_report_cmd_3172.yaml
+  report_path: queue/reports/hayate_report_cmd_3172.yaml
   bloom_level: 
-  deployed_at: "2026-06-03T13:17:15"
-  progress: "done: commit f045375c; report gate PASS; context freshness gate OK"
+  deployed_at: "2026-06-04T09:20:27"

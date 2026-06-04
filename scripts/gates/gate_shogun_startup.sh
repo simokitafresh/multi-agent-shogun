@@ -1641,6 +1641,22 @@ else
     echo "  gate_loop_health.sh不在"
 fi
 
+# --- Gate 12.1: 三層記憶DB健全性 ---
+echo "■ 三層記憶DB健全性"
+if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
+    if ! three_layer_health_output="$(bash "$GATE_DIR/gate_three_layer_health.sh" 2>&1)"; then
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("三層記憶DB健全性: WARN")
+    else
+        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+    fi
+else
+    echo "  WARN: gate_three_layer_health.sh不在"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+    alerts+=("三層記憶DB健全性: gate不在")
+fi
+
 # --- Gate 12.5: 遡及学習 — WARN/BLOCK頻度TOP 5 + 再発率/有効率 (殿裁定2026-04-21, cmd_2289拡張) ---
 # 目的: 毎セッション起動時に「何を根本修正すべきか」+「ワクチンが効いているか」を自動表示
 # 再発率=前50cmdに出現したパターンが直近50cmdにも再出現した割合(将軍定義 2026-04-26)

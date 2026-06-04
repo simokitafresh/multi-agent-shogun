@@ -27,6 +27,83 @@ echo "=== three-layer memory health ==="
 echo "db_path=$db_path"
 echo "cache_path=${cache_path:-unknown}"
 
+query_db="${cache_path:-}"
+
+echo "■ events.state分布"
+if [ -f "$query_db" ]; then
+    if ! python3 - "$query_db" <<'PY'; then
+import sqlite3
+import sys
+
+db_path = sys.argv[1]
+
+def has_column(conn, table, column):
+    return any(row[1] == column for row in conn.execute(f"PRAGMA table_info({table})"))
+
+conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+try:
+    has_events = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='events'"
+    ).fetchone()
+    if not has_events:
+        raise RuntimeError("events table not found")
+
+    has_state = has_column(conn, "events", "state")
+    has_raw_content = has_column(conn, "events", "raw_content")
+
+    if has_state:
+        state_rows = list(
+            conn.execute(
+                """
+                SELECT COALESCE(NULLIF(TRIM(state), ''), 'raw') AS state_name, COUNT(*)
+                FROM events
+                GROUP BY state_name
+                ORDER BY COUNT(*) DESC, state_name
+                """
+            )
+        )
+    else:
+        state_rows = [("state_column_missing", 0)]
+    for state_name, count in state_rows:
+        print(f"  state分布 {state_name}: {count}")
+
+    if has_raw_content:
+        total, filled = conn.execute(
+            """
+            SELECT COUNT(*),
+                   SUM(CASE WHEN raw_content IS NOT NULL AND TRIM(raw_content) != '' THEN 1 ELSE 0 END)
+            FROM events
+            """
+        ).fetchone()
+        filled = filled or 0
+        rate = (filled * 100.0 / total) if total else 0.0
+        print(f"  raw_content充填率: {filled}/{total} ({rate:.1f}%)")
+    else:
+        print("  raw_content充填率: raw_content column missing")
+
+    if has_state:
+        contradiction_candidates = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE state = 'contradiction_candidate'"
+        ).fetchone()[0]
+        promote_candidates = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE state = 'obsidian_candidate'"
+        ).fetchone()[0]
+    else:
+        contradiction_candidates = 0
+        promote_candidates = 0
+    print(f"  contradiction候補件数: {contradiction_candidates}")
+    print(f"  promote昇格候補件数: {promote_candidates}")
+finally:
+    conn.close()
+PY
+        echo "WARN: 三層記憶DB指標を取得できない: $query_db"
+        overall="WARN"
+    fi
+else
+    echo "WARN: 三層記憶DBが存在しない: $query_db"
+    overall="WARN"
+fi
+
 echo "■ cache容量チェック"
 if [ -d "$cache_dir" ]; then
     cache_bytes="$(du -sb "$cache_dir" 2>/dev/null | awk '{print $1+0}')"
