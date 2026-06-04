@@ -1284,6 +1284,16 @@ def should_write_default_schema_doc(db_path: Path) -> bool:
         return db_path == DEFAULT_DB_PATH
 
 
+def default_lord_ruling_cache_path(db_path: Path) -> Path:
+    try:
+        is_default_db = db_path.resolve() == DEFAULT_DB_PATH.resolve()
+    except FileNotFoundError:
+        is_default_db = db_path == DEFAULT_DB_PATH
+    if is_default_db:
+        return DEFAULT_LORD_RULING_CACHE_PATH
+    return db_path.parent / "lord_ruling_cache.db"
+
+
 def write_schema_markdown(db_path: Path, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(schema_markdown(db_path), encoding="utf-8")
@@ -1519,7 +1529,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--lord-ruling-cache",
-        default=str(DEFAULT_LORD_RULING_CACHE_PATH),
+        default="",
         help="SQLite cache path for fast lord-only LIKE search used by prompt_state_inject.sh.",
     )
     parser.add_argument(
@@ -1581,7 +1591,9 @@ def main() -> int:
         else default_pending_decisions_path_for_archive(archive_dir)
     )
     doc_dirs = parse_doc_dirs(args.doc_dirs)
-    lord_ruling_cache_path = Path(args.lord_ruling_cache)
+    lord_ruling_cache_path = (
+        Path(args.lord_ruling_cache) if args.lord_ruling_cache else default_lord_ruling_cache_path(db_path)
+    )
     if args.search:
         for row in search_events(db_path, args.search, args.limit, args.target):
             print(
