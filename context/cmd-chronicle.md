@@ -518,3 +518,4 @@
 | cmd_3176 | L0-L7貫通設計書v6 cmd#8。cmd_save.shに記憶DB関連cmdのL0-L7 coverage map要求チェックを追加。部品だけ作られて導線なしで放置される免疫系 | infra | 06-04 | cmd_save.shに三層記憶L0-L7 coverage |
 | cmd_3177 | L0-L7貫通設計書v6 cmd#6。obsidian_candidate→Obsidianノート雛形生成→state=obsidian_promoted更新→対応関係記録の一連フロー | infra | 06-04 | obsidian_candidateをObsidianノート |
 | cmd_3178 | L0-L7貫通設計書v6 cmd#9。4種候補(矛盾、重複、昇格、アーカイブ)に対する統一確定スクリプト。approve、reject、deferの3アクション+検証+ntfy通知 | infra | 06-04 | memory_candidate_resolve.shを新規 |
+| cmd_3181 | 三層記憶が全員に使われていない根因の1つは候補蓄積の放置。deploy_task.sh配備時にcandidate件数(obsidian_candidate/contradiction_candidate/duplicate_candidate)を確認し、閾値超でWARN表示。放置防止の構造的仕組み(殿指示: 三層記憶を全員が使う状態を作る) | infra | 06-04 | deploy_task.sh配備時に三層記憶candidat |
