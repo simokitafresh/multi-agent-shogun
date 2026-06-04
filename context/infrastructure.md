@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-03 cmd_3154 -->
+<!-- last_updated: 2026-06-04 cmd_3170 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -27,6 +27,9 @@
 
 記憶DB構造: DB pathは`data/multi_agent_shogun_memory.db`。主表は`events(id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance)`、全文検索はFTS5仮想表`events_fts(summary, detail)`、概念正規化は`event_concepts(event_id, concept_name)`、因果/Obsidianリンクは`event_links(source_event_id, target_concept, link_type)`。会話ビュー`conversations`は`events`由来。
 → `context/memory-db-schema.md` / `context/memory-db-queries.md` / `context/lord-conversation-index.md`
+
+三層記憶新機能: `update_event_state`でstate遷移を記録し、`memory_recall_control.sh`で想起制御、`obsidian_promote_candidate.sh`でObsidian昇格候補、`append_contradiction_candidate`で矛盾検出候補を扱う。
+→ `docs/research/three-layer-memory-l0-l7-penetration-design_20260604.md` §3 / `scripts/memory_db_live_insert.py` / `scripts/memory_recall_control.sh` / `scripts/obsidian_promote_candidate.sh`
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
 
