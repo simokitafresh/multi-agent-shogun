@@ -1,5 +1,5 @@
 # context ディレクトリ
-<!-- last_updated: 2026-06-03 cmd_karo_training_backlinks_readme_20260603 -->
+<!-- last_updated: 2026-06-04 cmd_training_backlinks_context_readme_20260604 -->
 
 プロジェクト固有のコンテキストを管理する索引層。詳細データは `docs/research/*.md` に置き、context側は結論・参照先・grep入口を保持する。詳細ルールは [[AGENTS]] のDesign for Retrieval節を正本とし、関連運用は [[infrastructure]]、概念到達は [[semantic-map]] を参照する。
 
@@ -16,8 +16,18 @@ context/
   {project_id}.md        ← プロジェクト固有のコンテキスト
   doc-style-guide.md     ← ドキュメントスタイルガイド（Vercel実証5原則）
   infrastructure.md      ← インフラ知識ベース
+  growth-loop.md         ← 成長ループ設計
+  semantic-map.md        ← 概念検索・関連ファイル到達の入口
+  training-cycle.md      ← 忍者修行サイクル設計
   dm-signal.md           ← DM-signalプロジェクトコンテキスト
 ```
+
+## 関連コンテキスト
+- [[doc-style-guide]]: context/*.mdの記述密度・索引化ルール
+- [[growth-loop]]: 二値計測・知見還流・環境埋込みの共通設計
+- [[infrastructure]]: inbox、gate、hook、tmux、記憶DBなどの運用正本
+- [[semantic-map]]: 曖昧な語から関連context・script・skillへ到達する概念索引
+- [[training-cycle]]: 修行タスクで報告品質とcontextリンク密度を育てる設計
 
 ## 記述ルール
 - context/*.md は [[doc-style-guide]] に従い、1-2行結論 + 参照先パス + 必要なら§番号/grep語で書く
