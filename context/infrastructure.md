@@ -329,7 +329,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | handler | `_handle_idle_notify` | idle通知の送信・抑制を扱う内部handler。 |
 | handler | `_handle_deploy_stall` | 配備後STALLを検知し、本人/家老への回復通知へつなぐ。 |
 | 修行自動化 | `_training_condition_met` | training自動配備の発火条件を判定する。 |
-| 修行自動化 | `_handle_training_auto_deploy` | training候補をidle忍者へ自動配備する処理を担う。 |
+| 修行自動化 | `_handle_training_auto_deploy` | training候補をidle忍者へ自動配備する処理を担う。設計正本は[[training-cycle.md]]。 |
 | 健全性監視 | `check_ninja_cli_dead` | 忍者CLI死亡を検知し、pane復旧や通知判断につなげる。 |
 | 健全性監視 | `check_loop_health` | 監視ループ自体の健全性を確認し、停止や劣化を検出する。 |
 | 健全性監視 | `check_inbox_renudge` | 未読inboxが放置されたpaneへ再nudgeする。 |
