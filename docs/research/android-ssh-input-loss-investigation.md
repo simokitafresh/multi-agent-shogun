@@ -145,8 +145,10 @@ logs/pane_trace/shogun_main.log
 
 ## 因果リンク
 
-- → [[infrastructure]] tmux/inbox_watcher/hook群の設計意図
-- → [[inbox_watcher]] watcher競合分析の根拠スクリプト
-- → [[prompt_state_inject]] 将軍hook再描画の主因候補
-- → [[ShogunViewModel]] Androidアプリ送信実装（2段階send-keys）
+- → [[infrastructure]] `context/infrastructure.md §Android App` — tmux/inbox_watcher/hook群の設計意図・Android入力ロス調査へのバックリンク元
+- → [[inbox_watcher]] `scripts/inbox_watcher.sh:384-523` — watcher競合分析の根拠スクリプト（nudgeはpaste-buffer+flock排他。direct SSH主経路とは別）
+- → [[prompt_state_inject]] `scripts/hooks/prompt_state_inject.sh:1-117` — 将軍hook再描画の主因候補（UserPromptSubmitごとContext注入）
+- → [[ShogunViewModel]] `android/app/src/main/java/com/shogun/android/viewmodel/ShogunViewModel.kt:94-117` — Androidアプリ送信実装（2段階send-keys・paste-buffer/排他なし）
+- → [[cmd_1756_android]] `docs/research/cmd_1756_android.md §3.2-3.4` — stderr capture未取込(§3.2: stderrは読み捨て)・2>&1 redirect不在(§3.4: usage_status.sh呼出でstderr統合なし)の詳細
+- → [[enable_pane_trace]] `scripts/enable_pane_trace.sh` — pane trace有効化スクリプト（症状発生時刻前後の生I/Oを`logs/pane_trace/shogun_main.log`に記録）
 - ← [[cmd_2104_recon]] この調査を発動した偵察cmd
