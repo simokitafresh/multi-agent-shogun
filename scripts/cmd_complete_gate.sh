@@ -5611,10 +5611,15 @@ run_review_quality_check
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
 # cmdのprojectを取得
-CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
-    /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
-    found && /^    project:/ { sub(/^[[:space:]]*project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
-' "$YAML_FILE")
+CMD_PROJECT=""
+if [ -f "$YAML_FILE" ]; then
+    CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
+        /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+        found && /^    project:/ { sub(/^[[:space:]]*project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
+    ' "$YAML_FILE")
+else
+    echo "  SKIP (cmd source YAML missing: ${YAML_FILE#"$SCRIPT_DIR"/})"
+fi
 
 if [ -n "$CMD_PROJECT" ]; then
     # projectのSSOTパスを取得
@@ -5764,10 +5769,15 @@ fi
 # ─── 穴4: 調査恒久化チェック（WARNのみ、ブロックしない） ───
 level_heading "[L3]" "Recon knowledge persistence check (穴4):"
 # purposeを取得（append_changelog内と同じawk）
-CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
-    /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
-    found && /^    (title|purpose):/ { sub(/^[[:space:]]*(title|purpose):[[:space:]]*"?/, ""); sub(/"[[:space:]]*$/, ""); print; exit }
-' "$YAML_FILE")
+CMD_PURPOSE=""
+if [ -f "$YAML_FILE" ]; then
+    CMD_PURPOSE=$(awk -v cmd="${CMD_ID}" '
+        /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
+        found && /^    (title|purpose):/ { sub(/^[[:space:]]*(title|purpose):[[:space:]]*"?/, ""); sub(/"[[:space:]]*$/, ""); print; exit }
+    ' "$YAML_FILE")
+else
+    echo "  SKIP (cmd source YAML missing: ${YAML_FILE#"$SCRIPT_DIR"/})"
+fi
 
 IS_RECON=false
 if echo "$CMD_PURPOSE" | grep -qE '偵察|調査|棚卸し|recon|investigation'; then
