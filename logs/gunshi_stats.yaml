@@ -39,22 +39,28 @@
 # なぜなぜ7回: accuracy Goodhart発見。gate_sync Phase2追加(commit 85560554)。真accuracy=97.1%(旧99.6%)。BLOCK60件可視化
 # 環境改善3件: gate_sync Phase2 / review-bundle precheck Step0(ea48f105) / ac_physical_verify冷え表示(d7e345be)
 #
-# ─── 本セッション成果 (2026-06-03T01:05更新) ───
-# draft review 12件: cmd_3136-3143+CI RED+修行×5。APPROVE 11+RC 1(cmd_3139 exit2→WARN先行)
-# report review 10件: cmd_3136-3142+CI RED+修行×5。LGTM 10(tobisaru LGTM→BLOCK→家老WA→CLEAR)
-# D0実装5件: speed_bottleneck数値修正(a60f8a0f)+GP-248 PRE9b(c6b4f3f8→27b81a28)+GP-251 ambiguityサブ問い(e0409ce2)+GP-250 YAML直読(bb891cd3)。全件家老LGTM
-# self_study 2件: 冷え観点遡及(ambiguity偽陰性率60%)+教訓注入クロスPJ(useful率24%根因)
-# バグ発見3件: (1)universal bypass(cmd_3136 CLEAR) (2)auto-commit scope leak(cmd_3140 CLEAR) (3)inbox_watcher FP-CHANGE(cmd_3142 CLEAR)
-# 冷え観点対処: ambiguity zero_streak=10→遡及で偽陰性率60%発見→GP-251 Step1サブ問い追加(D0+LGTM)
-# 教訓注入根因: DM-Signal教訓のinfra/trainingへのクロスPJ注入(5件100%NOT_USEFUL)→GP-252 project一致フィルタ提案
-# GP実績: proposed 2→0(GP-250,251 implemented)。新規1(GP-252)。累計149GP(implemented 119)
-# 洗脳監査: 確定4件(#2×2,#3,#5,#8)+兆候3件(#1,#6,#7)。自動化ターゲット3件
-# 覚醒レビュー: L0-L7貫通設計(将軍)。q12統合(cmd_3138 CLEAR)。cmd_3139 RC(WARN先行提案)
-# Bats速度ボトルネック: Top20が73%消費(cmd_save8件68秒+semantic10件104秒)。数値修正済み
-# gate-sync 11件: 全CLEAR
+# ─── 本セッション成果 (2026-06-03T17:15更新) ───
+# draft review 22件: cmd_3136-3152+CI RED×2+hotfix GA408-410+修行×8。APPROVE 21+RC 1(cmd_3139 exit2→WARN先行)
+# report review 20件: cmd_3136-3152+CI RED×2+hotfix GA408-410+修行×5。LGTM 19+BLOCK 1(cmd_3144 FP→waive→CLEAR)
+# D0実装6件: GP-248 PRE9b+GP-251 ambiguityサブ問い+GP-250 YAML直読+GP-253 cross-cmd+GP-254 command突合+speed数値修正。全件家老LGTM
+# self_study 4件: 冷え観点遡及+教訓注入クロスPJ+洗脳再監査(5件確定)+強くてニューゲーム準備
+# LGTM→家老BLOCK 3回: cmd_3144(scope乖離FP)+cmd_3149(sed固定行番号)+cmd_3150(elapsed_ms欠落)→全て詳細突合不足→Step3.5(command×成果物突合)で根因対処
+# 三層記憶Phase1完了: 1-1検索ログ(cmd_3150)+1-2a relation_type(cmd_3151)+1-2b展開除外(cmd_3152)。全CLEAR
+# Bats速度改善: 設計書v2(殿原則準拠)→cmd_3149(run_save削除78-81%削減)CLEAR
+# 洗脳監査: 初回2件→殿に押され5件確定(#1/#2/#4/#5/#6)。三層記憶HIGH→MEDIUM修正
+# GP実績: proposed 0。累計152GP(implemented 122)。本セッション新規6件(GP-250-254+252)
+# gate-sync: 全CLEAR
 # → docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md
 # → docs/research/gunshi_idle_lesson_injection_crossproject_20260603.md
-# → docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md (数値修正)
+# → docs/research/gunshi_idle_bats_speed_redesign_20260603.md (v2)
+# → docs/research/three-layer-memory-operating-principles_20260603.md (レビュー統合)
+#
+# ─── idle自走 (2026-06-03T22:10更新) ───
+# Step 4完了: ambiguity_points 11件backfill+operational_simulation 7件backfill。CS WARN 2件解消
+# Step 1完了: dashboard_corruption根因特定(open('w')→truncate→0バイト)→GP-255提案→掲示板cmd起票依頼
+# Step 2: LGTM→家老BLOCK率baseline=15%(3/20)。Step3.5導入後効果は次セッション計測
+# GP: GP-255(dashboard atomic write)新規proposed。累計153GP
+# → docs/research/gunshi_idle_dashboard_corruption_20260603.md
 #
 # ─── 前セッション成果 (2026-06-02T20:25) ───
 # draft8+report7+consultation2+D0 1件。multi-cli v1→v3。覚醒レビュー3往復。洗脳検出2件。insights16→0

@@ -7410,3 +7410,114 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split contextはファイルごとの関心pathspecをsource_repo_for_contextに持たせ、内容更新が必要な領域だけを鳴らす。
+
+### L739: 実装commitとqueue/tasks混入はpre-commitで止める
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_hotfix_ga408_hook_failure_20260603
+- **記録者**: kagemaru
+- **tags**: [infra,testing,process,gate]
+- **target_files**: [queue/tasks/kagemaru.yaml,queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml]
+- **origin**: [[cmd_karo_hotfix_ga408_hook_failure_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_selectでWARN露出した。ninja-commit手順だけでは防げず、pre-commitでstaged queue/tasks/*.yaml + 実装ファイルの混在をBLOCKする必要がある。origin: [[GA-408]] -> [[scope外運用YAML mixed commit]] -> [[pre-push hook_failure]]
+
+### L740: 新hook機能実装時のtest setup()ディレクトリ作成漏れパターン
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_hotfix_ga409_hook_failure_20260603
+- **記録者**: hanzo
+- **tags**: [infra,testing,bash,yaml]
+- **target_files**: [調査のみ]
+- **origin**: [[cmd_karo_hotfix_ga409_hook_failure_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- 新しいhook機能(collect_task_yaml_mixed_commit_violations)実装時、テストのsetup()でqueue/tasks/, queue/reports/を作成せずに新テストケースを追加。git addがディレクトリ不在で失敗しテスト全体がFAIL。2回連続(GA-408, GA-409)発生。防御: test setup()共通ヘルパー関数(標準ディレクトリ一括作成)をtest_helper.bashに一元化し、全テストが共通基盤を使用する構造に。
+
+### L741: pre-push hook_failureはfull log artifactを保存しなければ根因再現不能になる
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_hotfix_ga410_hook_failure_20260603
+- **記録者**: kagemaru
+- **tags**: [infra,testing,yaml]
+- **target_files**: [調査のみ]
+- **origin**: [[cmd_karo_hotfix_ga410_hook_failure_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-410はpre-pushでtest_select 11/162選択後にbatsが非0終了したが、hook_failures.yamlはstderr先頭200字しか保存せず失敗テスト名・assertion・selected_tests全文が残らなかった。現作業木とe8cea6c6別worktreeでは同じ選択テストがPASSし、直接FAIL内容を再現できない。次回同種事故を防ぐにはpre-push hookがfull stderr/stdout artifact、selected_tests、changed_files、base_sha/local_sha、exit_statusを保存し、hook_failures.yamlから参照できるようにする。
+
+### L742: hook/gateを殿の直接指示と表現しない
+- **日付**: 2026-06-03
+- **出典**: lord_session_20260603
+- **記録者**: gunshi
+- **tags**: [gunshi, reporting, chain_of_command]
+- **subdomain**: infra
+- **origin**: [[lord_session_20260603]] -> [[hook_gate_vs_lord_instruction]] -> [[chain_of_command_clarity]]
+- **when**: hook/gate由来の行動を報告する時
+- **how**: 殿の直接指示とシステムルールを別語で表現する
+- hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『hook/gateに従った』と『殿の直接指示に従った』を分け、鎖の頂点は殿のみと明示する。
+
+### L743: テスト高速化は不要テスト削除から始める
+- **日付**: 2026-06-03
+- **出典**: cmd_3149
+- **記録者**: gunshi
+- **tags**: [testing, performance, bats, gunshi]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_cmd_save_warn_logging.bats,tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats,tests/unit/test_cmd_save_environment_change.bats,tests/unit/test_cmd_save_command_steps_vs_ac.bats]
+- **origin**: [[cmd_3145]] -> [[phase3_first_low_effect]] -> [[cmd_3149_phase1_test_reduction]]
+- **when**: Bats/テスト全体の実行時間を短縮する時
+- **how**: 不要テスト削除/統合→元スクリプト高速化→テスト側改善の順で着手する
+- テスト時間が長すぎる場合は、順序を 1.不要テスト削除/統合、2.元スクリプト速度改善、3.テスト側改善 とする。cmd_3145はPhase3から着手して効果が薄く、cmd_3149でPhase1(run_saveフル実行削除)を優先して効果を得た。長すぎるテストはバグに近いので、まず実行不要な重複・過剰統合を消す。
+
+### L744: EventRow型タプル拡張時はアンパック箇所を全て更新せよ
+- **日付**: 2026-06-03
+- **出典**: cmd_3153
+- **記録者**: hanzo
+- **tags**: [infra,db,cache]
+- **target_files**: [scripts/memory_db_import.py,scripts/memory_db_live_insert.py,tests/unit/test_memory_db.bats]
+- **origin**: [[cmd_3153]]
+- **when**: 未設定
+- **how**: 未設定
+- memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが14要素固定だったためValueError。型エイリアスを変更した後は全アンパック箇所(for文、パターンマッチ等)をgrepで確認せよ。
+
+### L745: no test mapping系hook failureは正本文書パターンを明示分類する
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_hotfix_ga411_test_select_mapping_20260603
+- **記録者**: saizo
+- **tags**: [infra,testing,recon]
+- **target_files**: [scripts/test_select.sh,tests/unit/test_test_select.bats]
+- **origin**: [[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- test_selectで正本文書(docs/rule/*.md, instructions/*.md等)を未知ファイルのWARNに落とすと、実行コードでなくてもhook_failure扱いの調査対象になる。次回は新しい正本文書パスを追加した時点で、テスト不要スキップか焦点テスト選択かをtest_test_select.batsに固定するチェックを追加する。origin: [[GA-411]] -> [[test_select_mapping_gap]] -> [[no_test_mapping_hook_failure]]
+
+### L746: EventRow拡張時はevent_row_with_attributes()で長さ分岐するパターンが安全
+- **日付**: 2026-06-03
+- **出典**: cmd_3154
+- **記録者**: hanzo
+- **tags**: [infra]
+- **target_files**: [scripts/memory_db_import.py,tests/unit/test_memory_db.bats]
+- **origin**: [[cmd_3154]]
+- **when**: 未設定
+- **how**: 未設定
+- EventRowに列を追加する際、各event_rows_from_*関数を個別に修正するのではなく、event_row_with_attributes()の長さ分岐で一元対応する設計が既に存在した。同パターンで21列対応が可能。updated_atはNone(NULL)が意味的に正確（空文字列と混同しない）
+
+### L747: bashで呼ぶhelperを-xで存在判定するな
+- **日付**: 2026-06-03
+- **出典**: cmd_karo_ci_fix_ga412_semantic_search_logs_20260603
+- **記録者**: hayate
+- **tags**: [infra,db,bash,git]
+- **target_files**: [scripts/semantic_search.sh,tests/unit/test_semantic_search.bats]
+- **origin**: [[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]
+- **when**: 未設定
+- **how**: 未設定
+- search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、CI checkoutでログ書込みが無音スキップされsearch_logsテーブルが未作成になった。bash helperは-fで存在確認し、git mode 100644を再現するテストを追加する。origin: [[cmd_3150]] -> [[実行ビット前提]] -> [[CIのみsearch_logs未作成]]
+
+### L748: stale cache refresh失敗時に古いcacheへ戻すな
+- **日付**: 2026-06-04
+- **出典**: cmd_3168
+- **記録者**: hayate
+- **tags**: [infra,db,bash,cache]
+- **target_files**: [scripts/memory_db_query.sh,scripts/cleanup_three_layer_tmp.sh,scripts/gates/gate_three_layer_health.sh,tests/unit/test_memory_db.bats]
+- **origin**: [[cmd_3168]]
+- **when**: 未設定
+- **how**: 未設定
+- memory_db_query.shでstale cache更新がtimeoutした場合に既存cacheへ戻すと正本DBより件数が少ない結果を返した。cache不在時はtimeoutで正本DB fallback、cache存在時はreadを止めず非同期refreshに分離すると速度前提と正本fallbackの責務を混同しない。

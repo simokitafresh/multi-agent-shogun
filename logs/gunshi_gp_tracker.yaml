@@ -143,7 +143,11 @@
 # | 249 | scope乖離検出        | ★implemented      | 自走 | cmd_complete_gate.sh command欄×files_modified突合BLOCK。cmd_3141 CLEAR(2026-06-03)
 # | 250 | YAML直読強制         | ★implemented       | 自走 | gunshi.md Report Review Step -1追加。3件以上時YAML先頭30行直読。D0(bb891cd3)+家老レビュー待ち(2026-06-03)
 # | 251 | ambiguity専用サブ問い | ★implemented       | 自走 | gunshi.md Step1にACの用語定義曖昧さ検出1行追加。偽陰性率60%是正。D0(e0409ce2)+家老LGTM(2026-06-03)
-# 集計: ★implemented:119(+GP-250,251) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計149GP (2026-06-03T00:55更新)
+# | 252 | 教訓クロスPJフィルタ  | ★implemented       | 自走 | deploy_task.shにproject一致フィルタ追加。useful率24%→改善。cmd_3146 CLEAR(2026-06-03)
+# | 253 | cross-cmd interaction | ★implemented       | 自走 | gunshi.md Step3にcross-cmd interactionチェック追加。cmd_3141→3144 FP根因対処。D0(c005058c)(2026-06-03)
+# | 254 | command×成果物突合    | ★implemented       | 自走 | gunshi.md Step3.5にcommand欄×成果物1対1突合追加。cmd_3149/3150家老BLOCK根因対処。D0(c005058c)(2026-06-03)
+# | 255 | dashboard atomic write | ★implemented       | 自走 | dashboard_update.sh Step5/6.7をatomic write(tmp+fsync+os.replace)化。0バイト化2件連続WA根因修正。cmd_3162(1dcb8211)APPROVE。設計書=gunshi_idle_dashboard_corruption_20260603.md(2026-06-03)
+# 集計: ★implemented:122(+GP-252,253,254) / ★resolved:8 / ★将軍解決:3 / ✗撤去(消火):5 / ★monitoring:1 / ★partial:1(GP-032) / ✗obsolete:5(+GP-216) / ✗rejected:2 / pending:0 / ★karo_applied:2 / proposed:0 / in_progress:0 / karo_sent:10 / completed:1 = 計153GP (2026-06-03T22:05更新)
 # ─── GP品質ゲート(S105新設) ───
 # GP提案時に以下を必須とする。検証なきGPは仮説(hypothesis)であり提案(proposal)ではない。
 # 1. テストデータ作成: 提案が解決する問題を再現するテストデータ
@@ -502,7 +506,7 @@
   implemented_at: "2026-04-22T14:05:00"
   implemented_by: gunshi_direct
   self_executable: true
-  existing_impl_check: "grep -n 'existing_impl\|既存実装.*確認' gunshi.md gp_tracker review_log → 0件(変更前)"
+  existing_impl_check: 'grep -n ''existing_impl\|既存実装.*確認'' gunshi.md gp_tracker review_log → 0件(変更前)'
   defense_level: 2
   reason: "GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費。LG033(Level 2)が行動を変えなかった→フロー3箇所に1行埋込で毎回目に入る構造に"
   evidence: "gunshi.md L825+gp_tracker L17+review_log L43に埋込確認。S0全6項PASS"
@@ -524,7 +528,7 @@
   implemented_at: "2026-04-25T03:30:00"
   implemented_by: gunshi_direct
   self_executable: true
-  existing_impl_check: "grep -n '_done_\|_completed_' gunshi_gate_sync.sh → L60のみ。_delegated_/_cancelled_/_halted_未対応"
+  existing_impl_check: 'grep -n ''_done_\|_completed_'' gunshi_gate_sync.sh → L60のみ。_delegated_/_cancelled_/_halted_未対応'
   defense_level: 3
   reason: "gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%)"
   evidence: "dry-run 20件正常更新確認。実行後null 0件。commit d575e390。S0全6項PASS"
@@ -557,7 +561,7 @@
   implemented_at: "2026-04-25T19:00:00"
   implemented_by: gunshi_direct
   self_executable: true
-  existing_impl_check: "grep -n 'DIRECT_MODE\|--direct' deploy_task.sh → L40,96-99,4417。--directはresolve_cmdスキップのみ。YAML上書き機能なし"
+  existing_impl_check: 'grep -n ''DIRECT_MODE\|--direct'' deploy_task.sh → L40,96-99,4417。--directはresolve_cmdスキップのみ。YAML上書き機能なし'
   defense_level: 3
   reason: "家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件"
   evidence: "テスト2件(不在→exit 1, 正常→cp+配備成功)。commit 83f32eaa。S0全6項PASS"
@@ -568,7 +572,7 @@
   implemented_at: "2026-04-25T20:15:00"
   implemented_by: gunshi_direct
   self_executable: true
-  existing_impl_check: "grep -n 'scored\|score_lesson\|keyword' deploy_task.sh → L2538-2554。title+summary+tagsのみ。purpose/context_files未参照"
+  existing_impl_check: 'grep -n ''scored\|score_lesson\|keyword'' deploy_task.sh → L2538-2554。title+summary+tagsのみ。purpose/context_files未参照'
   defense_level: 4
   reason: "cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘"
   evidence: "commit 06677487。deploy_task.sh L2201-2208。GP-225(CJKアクロニム)と連携"
@@ -652,7 +656,7 @@
   implemented_at: "2026-04-26T10:35:00"
   implemented_by: gunshi_direct
   self_executable: true
-  existing_impl_check: "grep -n 'stale.*AC\|AC.*照合' scripts/gates/gate_gunshi_report_precheck.sh → 0件(実装前)"
+  existing_impl_check: 'grep -n ''stale.*AC\|AC.*照合'' scripts/gates/gate_gunshi_report_precheck.sh → 0件(実装前)'
   defense_level: 3
   reason: "cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN"
   evidence: "commit 79ebceb7。テスト: 正常AC→PASS、stale AC5→WARN検出。S0全6項PASS"

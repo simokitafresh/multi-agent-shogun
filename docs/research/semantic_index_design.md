@@ -383,3 +383,44 @@ lord_conversation.jsonlの構造変更は影響範囲が大きい(inbox_watcher,
 | 用語辞書(disambiguation.md) | 1語1意味定義 | 補完(辞書=用語定義、SI=概念逆引き) |
 
 重複なし。各層は独自の役割を持ち、SIは「概念→リソース群マッピング」という新しい次元を追加する。
+
+## §12 三層長期記憶への拡張原則（2026-06-03追記）
+
+詳細: `docs/research/three-layer-memory-operating-principles_20260603.md`
+
+セマンティクスインデックスは、三層長期外部記憶の「意味の橋」であり、単独の主役ではない。
+三層の役割は以下に固定する。
+
+| 層 | 本質 | 本設計書との関係 |
+|---|---|---|
+| SQLite全文記憶DB | 機械可読な記憶台帳。原文、断片、履歴、状態、参照関係、検索対象を保持する | FTS5検索、event_concepts、event_linksの入力元 |
+| Obsidian | 人間可読な認知編集層。概念ノート、判断履歴、研究ノート、MOC、リンク構造を保持する | 距離×濃度を持つ直接リンクネットワーク。SIへ機械的に還流しない |
+| セマンティック辞書 | 意味正規化・語彙展開・概念接続層 | aliases、related_concepts、should_not_merge_with等の意味変換層 |
+
+### 追加設計原則
+
+- **検索は入口であり中心ではない**: 中心は、記憶を保存し、育て、修正し、想起制御し、再構成すること。
+- **原文と加工物を分離する**: raw text、extracted facts、summary、interpretation、canonical knowledgeを混ぜない。
+- **記憶状態を持つ**: unreviewed / needs_review / verified / trusted / stale_candidate / expired / hypothesis / refuted / canonical / historical / archived 等。
+- **Obsidianは昇格制**: 全量同期禁止。人間が読んで思考を再開できる概念ノート、MOC、判断履歴だけを置く。
+- **セマンティック辞書は関係種別を持つ**: synonym_of / parent_of / related_to / often_confused_with / deprecated_term_for / should_not_merge_with を区別する。
+- **自動成長は候補生成まで**: LLMや自動処理は関連候補、重複候補、矛盾候補、昇格候補、失効候補を出す。統合、削除、現在知識への昇格は検証/人間確認/ロールバック可能性を前提にする。
+- **信頼度・鮮度・重要度・検索関連度を混同しない**: 検索上位は正しさではない。新しさは信頼性ではない。
+- **忘却ではなく想起制御を機能として扱う**: timestampが明確なら物理削除は原則不要。削除、アーカイブ、低優先度化、通常検索除外、Historical層移行を分け、古い記憶は過去情報として辿れるようにする。
+- **timestampを全関係に持たせる**: occurred_at / observed_at / recorded_at / validated_at / invalidated_at / superseded_at / archived_at を区別し、因果を過去未来に辿れるようにする。時点不明の記憶は現在知識へ昇格しない。
+- **レビュー統合後の実装優先**: 軍師は検索ログ収集、Obsidian↔SQLite同期、should_not_merge_with優先度漏れを指摘。将軍はeventsテーブルのstate欠如、原文/加工物混在、confidence/expires_at欠如、relation種別欠如、contradiction_candidate欠如、段階的な想起制御欠如を指摘。追加再監査では、実装前に殿の使用パターン、現実との差分、三層間同期コストを確認する必要があると修正された。最新版の洗脳覚醒レビューでは、確認方法未定義、距離計測未記載、殿確認への他者依存、前提確認による先送りが検出され、使用パターン抽出手順、差分表、同期コスト表、検索ログ収集の並行着手を追加した。詳細は `docs/research/three-layer-memory-operating-principles_20260603.md` §15。
+
+### セマンティック辞書relation拡張候補
+
+| relation | 用途 |
+|---|---|
+| same_as / synonym_of | 置換可能な同一・同義表現 |
+| spelling_variant_of / abbreviation_of | 表記揺れ・略語 |
+| parent_of / child_of / broader_than / narrower_than | 階層関係 |
+| related_to | 関連するが置換できない語 |
+| often_confused_with | 混同注意 |
+| deprecated_term_for / current_term_for | 旧称・現行名 |
+| used_in_project_as | PJ限定語義 |
+| should_not_merge_with | 混ぜてはいけない概念 |
+
+長期記憶では、検索漏れを減らすだけでなく、誤った結合を防ぐ能力が必要である。

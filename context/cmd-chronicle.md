@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-03 cmd_karo_ci_red_26841389916_cmd_save_20260603 -->
+<!-- last_updated: 2026-06-04 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,18 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2543 | report_field_set.shのverdict書込みとstatus=completed更新を1回のflock内でatomicに実行するようbatch化 | infra | 05-04 | report_field_set.shのverdict確定時 |
-| cmd_2545 | archive_overflow_reports_to_capでGATE CLEAR待ち(status=pending)reportがcap超え時に強制archiveされないよう除外チェックを追加 | infra | 05-04 | archive_overflow_reports_to_ca |
-| cmd_2547 | L221のinbox_write成功後にwatcher存在チェックがない→watcher未起動時にnudgeが喪失しても沈黙。pgrep確認+WARN出力を追加する | infra | 05-04 | bulletin_write.sh L221(inbox_w |
-| cmd_2544 | auto_draft_lesson.sh L215のSOURCE_CMD二重渡し引数修正 + cmd_absorb.sh L243のgrep空変数ガード追加 | infra | 05-04 | auto_draft_lessonの6番目引数空文字仕様とc |
-| cmd_2548 | deploy_task.shの2バグ修正。(1)purposeに二重パイプ演算子を含むcmd配備時にyaml_field_set_batch内で値がシェル展開され切り詰まる。(2)count_task_acceptance_criteria失敗時にac_count=0となりdraft_reviewが常にSKIPされ軍師レビューが届かない | infra | 05-04 | cmd_2548のdeploy_task回帰検証を追加。pu |
-| cmd_2553 | DM-Signal関連の全知識ファイル(multi-agent-shogun側context/projects + DM-signal側docs/rule/backend)を横断し、同一用語が複数の意味で使われている箇所を全数洗い出す。MECE定義辞書を設計し、1語1意味の構造に向けた改名計画を策定する | dm-signal | 05-04 | DM-Signal多義語全数調査完了。9用語を対象に多層調査 |
-| cmd_2554 | cmd_2553第1波(grep中心)で13群の多義衝突を検出したが、同義語や暗黙的参照はgrepで拾えない。第2波はセマンティック検索(LLMがファイルを読み概念単位で分類)を中心に、第1波未カバー領域を網羅する。3名並列で独立調査し結果を突合統合する | dm-signal | 05-04 | MECE辞書第2波調査完了。knowledge-base/r |
-| cmd_2556 | CoDD v1.10.0のpropagate機能が「ソースコード変更→設計書追随」方向に設計されているが、我々の用途は「辞書yaml変更→context md追随」方向。frontmatterのmodules指定やカスタム設定で逆方向が可能か、実際にコマンドを試行して確認する | infra | 05-04 | CoDD v1.10.0は辞書YAML→context MD |
-| cmd_2557 | 設計書(docs/research/cmd_2555_disambiguation_design.md)の段階0を実装する。P0の4群(L0-L4, signal, monthly_return, date)のdisambiguation.md(SSOT正本+CoDD frontmatter)とdm-signal-terminology.md(エージェント向け索引、80行以内)を作成し、CLAUDE.mdのcontext_filesに追記して起動時自動ロード対象にする | dm-signal | 05-04 | P0 4群の用語曖昧性解消辞書と80行以内の起動時索引を作成 |
-| cmd_2560 | cmd_2557-2559で完成した用語辞書(disambiguation.md 全27群+terminology.md索引+context注釈+gate)の整合性をCodexで横断確認する。辞書定義とcontext/BE/FEコードの実際の用語使用が矛盾していないか、辞書に漏れがないか、gate除外条件が適切かをセマンティック検索で検証 | dm-signal | 05-04 | 辞書27ファミリーとterminology索引、contex |
-| cmd_2561 | DM-Signal用語辞書(disambiguation.md+terminology.md)がDM-Signalリポに配置されたが、multi-agent-shogun側のCLAUDE.mdとcontext/dm-signal.mdに辞書パスへの参照がなく、将軍/家老/軍師がcmd起票時に辞書の存在を知れない。導線を環境に埋め込む | infra | 05-04 | DM-Signal用語辞書2ファイルへの導線をCLAUDE. |
-| cmd_2555 | cmd_2553/2554偵察で特定した27群の多義衝突に対し、(1)用語曖昧性解消辞書(disambiguation dictionary)と(2)生L*検出gate強制の2層設計書を作成する。コードは変更しない。エージェントの知識基盤として埋め込みgate強制で参照を保証する | dm-signal | 05-04 | — |
 | cmd_2562 | セマンティクスインデックス設計書(docs/research/semantic_index_design.md)の段階1を実装する。/clear後に概念で情報を逆引きできる仕組みの基盤。10概念のSSOT(index.md)と索引層(semantic-map.md)を作成する | infra | 05-05 | セマンティクスインデックス段階1としてSSOT 10概念とa |
 | cmd_2563 | セマンティクスインデックス設計書§8/§7の段階2を実装。aliases照合による第一層検索スクリプト(semantic_search.sh)と、startup gateへのインデックス鮮度チェック追加 | infra | 05-05 | セマンティクスインデックス第一層検索CLIと将軍startu |
 | cmd_2564 | セマンティクスインデックス設計書§7の段階3を実装。cmd完了/lesson追加/殿の発言記録時にaliases照合で既存概念にリソースを自動追記するフック。confidence閾値分岐(HIGH→自動/LOW→候補キュー/NONE→新概念候補)を含む | infra | 05-05 | semantic_index_update.shを追加し、c |
@@ -503,3 +491,30 @@
 | cmd_3144 | gate_skill_script_refs.shが検出した9件(7スキル)のSKILL.mdがscriptより古い。忍者がSKILL.mdを参照して作業する際に古い手順を使うリスク。LS042教訓: 3セッション放置は洗脳#5(先送り)の証拠 | infra | 06-03 | 9件(9スキル)のSKILL.mdをscript参照調査し、 |
 | cmd_3146 | 軍師分析(docs/research/gunshi_idle_lesson_injection_crossproject_20260603.md): DM-Signal教訓(L633/L630/L598/L255/L147)がinfra/trainingタスクにクロスプロジェクト注入され100%NOT_USEFUL。教訓品質は正常、スコープ不一致が根因。deploy_task.shにproject一致フィルタを追加し、タスクのproject属性と教訓のproject属性が一致する場合のみ注入する | infra | 06-03 | deploy_task.shの教訓注入にproject一致フ |
 | cmd_3148 | cmd_3147で実装したtarget_path基準の読み/書き区別がcmd_3145で再発FP。根因: command欄がテスト名を省略形で参照(semantic_index_update→test_semantic_index_update.bats)しbasename完全一致では照合不能。部分一致(substring/contains)をfiles_modified照合に追加する | infra | 06-03 | cmd_complete_gateのcommand/file |
+| cmd_3149 | ローカルWSL2でBatsテスト全量が遅い根因=run_save(cmd_save.shフル実行)を毎テスト呼ぶファイル群(warn_logging/prev_cmd_lesson_warn/env_change/command_steps_vs_ac)。run_saveを関数単位テスト(source+対象関数呼出し)に変更し、テスト品質を維持しつつ実行時間を大幅削減する | infra | 06-03 | cmd_save系Bats 4ファイルのrun_saveフル |
+| cmd_3150 | 三層記憶設計書§14-6。semantic_search.shの検索語・ヒット件数・ヒット0件フラグ・実行時刻をSQLiteに記録する専用スクリプトsearch_log_write.shを新規作成し、semantic_search.shから呼出す。保守クエリ(NO_MATCH傾向分析/検索頻度/未到達概念)と殿の使用パターン分析の前提データを蓄積する | infra | 06-03 | search_log_write.shを新規追加し、sema |
+| cmd_3151 | 三層記憶設計書§14-8+家老F4。現在のaliasesは平坦リストで関係種別(同義/上位/混同注意)を区別できない。cmd_3125事故(alias広すぎ14389件)の構造的再発防止。index.mdの概念定義にrelation_type属性を導入し、semantic_index_update.shおよびsemantic_search.shのparserが無害に読めるようにする(構造変更のみ、検索展開制御は後続cmd) | infra | 06-03 | related_conceptsにrelation_type |
+| cmd_3152 | cmd_3151でrelation_type属性が導入された。次のステップとして、relation_type=混同注意の概念をrelated_concepts自動双方向化および検索展開から除外し、誤結合を構造的に防止する。cmd_3125事故(alias広すぎ)の再発防止の完成 | infra | 06-03 | relation_type=混同注意のrelated_con |
+| cmd_3153 | 三層記憶設計書§14-2。現在のeventsテーブル(14列70K行)には記憶の状態を表す列がなく、全イベントが同じ重みで扱われる。state列(raw/verified/stale_candidate/expired/hypothesis/refuted/canonical/historical/archived)を追加し、memory_db_import.pyのINSERT時にデフォルト値rawを設定する。記憶運用装置への最小変更 | infra | 06-03 | eventsテーブルにstate列(DEFAULT 'raw |
+| cmd_3156 | 三層記憶設計書§14-4。原文と加工物がsummary/detail列に混在。分離設計の前に書込み元/読取り元/データパターンを調査する | infra | 06-03 | 記憶DB events.summary/detail の書込 |
+| cmd_3158 | lesson_write.sh L1000/L1004でsemantic_index_update.sh(10秒)+semantic_map_generate.sh(3.3秒)が同期実行されており、教訓N件登録でN*13.3秒ブロック。cmd_3154で5分超遅延(家老infra_signal)。L1000/L1004を&でバックグラウンド化する(cmd_complete_gate.sh L6190と同パターン) | infra | 06-03 | lesson_write.shのsemantic_index |
+| cmd_3157 | command欄の自然言語テキストからファイル参照を過剰抽出し、偵察cmdや自然言語記述のcmdでcommand_files_modified_mismatch BLOCKが誤発火する問題を修正する。cmd_3153+cmd_3156で2連続BLOCK(家老修正でCLEAR)。軍師LG014提案 | infra | 06-03 | — |
+| cmd_3159 | 三層記憶設計書§14-4。eventsテーブルのsummary/detail列は検索用投影の混在列(68.3%がderived/metadata, cmd_3156偵察)。新規イベントにraw_content列を追加し、書込みスクリプト(memory_db_live_insert.py)のappend_eventで原文を保存する。既存70,810行は変更しない(新規のみ分離) | infra | 06-03 | events.raw_content列を追加し、memory |
+| cmd_3160 | 三層記憶設計書§11。記憶DBに矛盾・重複候補を記録する仕組みがない。eventsテーブルのstate列(cmd_3153で追加済み)にcontradiction_candidate/duplicate_candidateを追加し、候補イベントを記録するスクリプトを作成する。矛盾は分類(§11の10種)付きで記録する | infra | 06-03 | 記憶DB live insertにcontradiction |
+| cmd_3161 | 三層記憶設計書§8/§7。記憶DBに蓄積されたイベントのうち高頻度参照・高importance・複数リンクを持つものをObsidian昇格候補として抽出するスクリプトを新規作成する。候補はstate列をobsidian_candidateに更新し、人間確認待ちキューに入れる | infra | 06-03 | Obsidian昇格候補抽出スクリプトを追加し、本番DBで1 |
+| cmd_3162 | dashboard_update.sh L411/L510のopen(path,'w')が即時truncateし、crash/timeout時にdashboard.mdが0バイトになる(2日連続WA)。tmp+os.replaceのatomic writeパターンに変更する。dashboard_auto_section.shは既にatomic write実装済みで0件WA | infra | 06-03 | dashboard_update.sh の2箇所の dash |
+| cmd_3163 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state列にarchived/stale値を追加し、state遷移スクリプトを実装する。同時にVALID_EVENT_STATESにobsidian_candidate/verifiedが不在の不整合(軍師blt_20260603_221154)も修正しSSOT化する | infra | 06-03 | — |
+| cmd_3164 | memory_db_live_insert.py VALID_EVENT_STATESに{raw,contradiction_candidate,duplicate_candidate}しかなく、cmd_3161で追加したobsidian_candidateとcmd_3153のverified、設計書§9のarchivedが不在(軍師blt_20260603_221154)。全state値を統一定義する | infra | 06-03 | VALID_EVENT_STATESは現行HEADで7種全て |
+| cmd_3165 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state遷移関数update_event_stateとrecall_controlスクリプトを実装し、条件に基づくverified→archived遷移を可能にする。cmd_3164(SSOT化)完了後に着手 | infra | 06-03 | — |
+| cmd_3166 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state遷移関数update_event_stateとrecall_controlスクリプトを実装し、条件に基づくverified→archived遷移を可能にする。cmd_3164(SSOT化)完了済み | infra | 06-04 | 想起制御用のmemory_recall_control.sh |
+| cmd_3167 | 3セッション連続startup BLOCK解消。テスト選択スクリプトの3commit分(docs/rule mapping+軍師instruction tests+速度改善)がスキル定義に未反映 | infra | 06-04 | skills/codd-fix/SKILL.mdの手順6へd |
+| cmd_3168 | L0-L7貫通設計書v6 cmd#-1。既存ext4キャッシュ(0.086秒/クエリ)をgate/prompt/healthの正本read pathへ昇格し、182GB tmp残骸をcleanup。全後続cmdの速度前提 | infra | 06-04 | memory_db_query.shをext4 cache優 |
+| cmd_3169 | L0-L7貫通設計書v6 cmd#0。設計書2本をgit commit+event_state_transitionsテーブル存在確認+VALID_EVENT_STATESにobsidian_promotedを追加し8値化 | infra | 06-04 | 設計書2本をcommitし、実DBにevent_state_ |
+| cmd_3171 | L0-L7貫通設計書v6 cmd#3。local_memory_db概念にstate管理スクリプト(recall_control/update_event_state/obsidian_promote)のresource行を追加。忍者タスク注入(L4)で三層記憶関連cmdに自動注入される | infra | 06-04 | docs/semantic-index/index.mdのl |
+| cmd_3172 | L0-L7貫通設計書v6 cmd#2。gate_three_layer_health.sh共通関数を作成し、全roleのstartup gateから呼出し。events.state分布/raw_content充填率/矛盾候補件数/昇格候補件数の4指標を起動時表示 | infra | 06-04 | gate_three_layer_health.shに三層記 |
+| cmd_3173 | L0-L7貫通設計書v6 cmd#4。将軍プロンプトにcontradiction_candidate、duplicate_candidate、obsidian_candidateの未処理件数を1行表示。候補が放置される構造を防止 | infra | 06-04 | prompt_state_inject.shに三層記憶候補の |
+| cmd_3174 | L0-L7貫通設計書v6 cmd#7。gate_three_layer_health.shに三層記憶各機能の使用回数(検索、state遷移、原文保存、候補生成)を表示。使用0件の機能をWARN。接続した=使われたではない問題を検出 | infra | 06-04 | gate_three_layer_health.shに三層記 |
+| cmd_3175 | L0-L7貫通設計書v6 cmd#5。ninja_monitorのidle自動トリガーにtmp cleanup(TTL24h)とrecall_control(dry-run)+obsidian_promote(dry-run)の定期実行を追加。掃除の自動化で18GB残存tmp蓄積を防止 | infra | 06-04 | ninja_monitorに三層記憶の日次メンテナンストリガ |
+| cmd_3176 | L0-L7貫通設計書v6 cmd#8。cmd_save.shに記憶DB関連cmdのL0-L7 coverage map要求チェックを追加。部品だけ作られて導線なしで放置される免疫系 | infra | 06-04 | cmd_save.shに三層記憶L0-L7 coverage |
+| cmd_3177 | L0-L7貫通設計書v6 cmd#6。obsidian_candidate→Obsidianノート雛形生成→state=obsidian_promoted更新→対応関係記録の一連フロー | infra | 06-04 | obsidian_candidateをObsidianノート |
+| cmd_3178 | L0-L7貫通設計書v6 cmd#9。4種候補(矛盾、重複、昇格、アーカイブ)に対する統一確定スクリプト。approve、reject、deferの3アクション+検証+ntfy通知 | infra | 06-04 | memory_candidate_resolve.shを新規 |

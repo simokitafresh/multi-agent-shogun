@@ -102,6 +102,16 @@ codd:
 | script | `scripts/memory_recall_control.sh` — recall_control: 想起制御state遷移(Active/Inactive/Historical)スクリプト |
 | func | `update_event_state` in `scripts/memory_db_live_insert.py` — イベントstate遷移関数(stateカラム更新) |
 | script | `scripts/obsidian_promote_candidate.sh` — obsidian_promote: Obsidian昇格候補生成(高頻度参照イベント抽出) |
+| cmd | `cmd_3174` 三層記憶#7: startup gate使用計測(機能別使用回数表示) (`scripts/gates/gate_three_layer_health.sh`) |
+| causal | `cmd_3174` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A18]] -> [[L6使用計測貫通]] |
+| causal | `cmd_3174` depends_on: cmd_3172 |
+| cmd | `cmd_3176` 三層記憶#8: cmd_save.sh貫通自動チェック(記憶DB関連cmdでL0-L7 coverage要求) (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save.bats`) |
+| causal | `cmd_3176` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[免疫系貫通チェック]] |
+| causal | `cmd_3176` depends_on: cmd_3172 |
+| cmd | `cmd_3178` 三層記憶#9: 候補確定共通パイプライン(矛盾、重複、昇格、アーカイブ統一確定フロー) (`scripts/memory_candidate_resolve.sh`) |
+| causal | `cmd_3178` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L7候補確定パイプライン]] |
+| causal | `cmd_3178` depends_on: cmd_3177 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:58:05+09:00 三層記憶が順調か実際に実験してみてくれ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -477,6 +487,14 @@ codd:
 | lesson | `L748` stale cache refresh失敗時に古いcacheへ戻すな |
 | cmd | `cmd_3169` 三層記憶#0: 設計書commit+DB schema確認+obsidian_promoted 8値化 (`docs/research/three-layer-memory-l0-l7-penetration-design_20260604.md`, `docs/research/three-layer-memory-operating-principles_20260603.md`, `scripts/memory_db_live_insert.py`) |
 | causal | `cmd_3169` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[obsidian_promoted_8値化]] |
+| cmd | `cmd_3171` 三層記憶#3: セマンティック辞書にstate管理resource追加 (`docs/semantic-index/index.md`) |
+| causal | `cmd_3171` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L4セマンティック辞書貫通]] |
+| cmd | `cmd_3175` 三層記憶#5: ninja_monitor定期cleanup+recall_control+obsidian_promote自動トリガー (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| causal | `cmd_3175` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L7自動成長貫通]] |
+| causal | `cmd_3175` depends_on: cmd_3172 |
+| cmd | `cmd_3177` 三層記憶#6: Obsidian正式昇格→SQLite戻り経路スクリプト (`scripts/obsidian_promote_finalize.sh`) |
+| causal | `cmd_3177` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L7 Obsidian戻り経路]] |
+| causal | `cmd_3177` depends_on: cmd_3175 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -998,6 +1016,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T19:53:54+09:00 設計書を軍師に覚醒レビューしてもらおう。忖度なしで想像せずに厳しく確認してもらおう。codexCLIはverupもしているので最新状況も把握しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T00:32:34+09:00 まずは状況確認では？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T17:11:17+09:00 P0-2(殿の使用パターン確認)待ちとはなんだ？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:56:14+09:00 攻か確認してくれ |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -2268,6 +2287,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T03:25:10+09:00 b457pvbc1 toolu_01Gh6RJ5muWZd5U9NN22NaKm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/350901fc-5c5b-46e2-995d-8d6b13 |
 | cmd | `cmd_karo_ci_red_26841389916_cmd_save_20260603` (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_block_aggregation.bats`) |
 | cmd | `cmd_karo_context_freshness_ga407_20260603` (`context/dm-signal-ops.md`, `context/dm-signal.md`, `scripts/context_freshness_check.sh`) |
+| cmd | `cmd_3172` 三層記憶#2: startup gate三層記憶健全性チェック(全role共通gate関数) (`queue/tasks/hayate.yaml`, `scripts/gates/gate_gunshi_startup.sh`, `scripts/gates/gate_karo_startup.sh`) |
+| causal | `cmd_3172` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L1_L6 startup gate貫通]] |
+| causal | `cmd_3172` depends_on: cmd_3168 |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
