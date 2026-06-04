@@ -1,6 +1,6 @@
 #!/bin/bash
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
-# doc-links: [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]]
+# doc-links: [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]]
 # shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
 # Usage: bash scripts/ninja_monitor.sh
@@ -81,11 +81,13 @@ MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 WATCHED_DEPS=(
     "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
     "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+    "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
     "$SCRIPT_DIR/scripts/lib/field_get.sh"
     "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
     "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
     "$SCRIPT_DIR/lib/agent_state.sh"
     "$SCRIPT_DIR/lib/rotate_log.sh"
+    "$SCRIPT_DIR/lib/cli_adapter.sh"
     "$SCRIPT_DIR/scripts/lib/model_colors.sh"
     "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 )
@@ -1255,7 +1257,6 @@ report_file_has_verdict() {
             return 1
             ;;
     esac
-    return 0
 }
 
 find_completed_parent_cmd_report_for_other_ninja() {
@@ -3722,7 +3723,7 @@ check_shogun_ctx() {
 
     # CTX帯dedup: 同じ10%帯(50-59,60-69,70-79...)なら再送しない
     local ctx_band=$(( ctx_num / 10 * 10 ))
-    local _ctx_band_file="/tmp/mas-shogun-ctx-band-last.txt"
+    local _ctx_band_file="${STATE_DIR:-/tmp}/mas-shogun-ctx-band-last.txt"
     local _last_band=0
     if [[ -f "$_ctx_band_file" ]]; then
         _last_band=$(cat "$_ctx_band_file" 2>/dev/null || echo 0)
