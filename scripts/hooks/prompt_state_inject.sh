@@ -638,6 +638,80 @@ PY
 	  return 0
 	}
 
+	memory_candidate_counts_inject() {
+	  local _psi_source_db="${PROMPT_STATE_MEMORY_DB_PATH:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+	  local _psi_cache_path _psi_db_path _psi_result _psi_rc
+	  [[ -f "$_psi_source_db" ]] || return 0
+
+	  _psi_cache_path="$(
+	    PROMPT_STATE_MEMORY_DB_SOURCE="$_psi_source_db" PROMPT_STATE_SCRIPT_DIR="$SCRIPT_DIR" python3 - <<'PY' 2>/dev/null || true
+import os
+import sys
+
+script_dir = os.environ.get("PROMPT_STATE_SCRIPT_DIR", "")
+source_db = os.environ.get("PROMPT_STATE_MEMORY_DB_SOURCE", "")
+if not script_dir or not source_db:
+    raise SystemExit(1)
+sys.path.insert(0, f"{script_dir}/scripts")
+import memory_db_live_insert as live_insert
+
+print(live_insert.memory_db_cache_path(source_db))
+PY
+	  )"
+	  _psi_db_path="$_psi_source_db"
+	  if [[ -n "$_psi_cache_path" && -s "$_psi_cache_path" ]]; then
+	    _psi_db_path="$_psi_cache_path"
+	  fi
+
+	  set +e
+	  _psi_result="$(
+	    PROMPT_STATE_MEMORY_CANDIDATE_DB="$_psi_db_path" timeout "${PROMPT_STATE_MEMORY_CANDIDATE_TIMEOUT:-0.5}" python3 - <<'PY'
+from __future__ import annotations
+
+import os
+import sqlite3
+
+db_path = os.environ.get("PROMPT_STATE_MEMORY_CANDIDATE_DB", "")
+if not db_path:
+    raise SystemExit(0)
+
+states = ("contradiction_candidate", "duplicate_candidate", "obsidian_candidate")
+with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+    conn.execute("PRAGMA busy_timeout=300")
+    rows = conn.execute(
+        """
+        SELECT state, COUNT(*)
+        FROM events
+        WHERE state IN (?, ?, ?)
+        GROUP BY state
+        """,
+        states,
+    ).fetchall()
+
+counts = {state: 0 for state in states}
+for state, count in rows:
+    counts[state] = int(count)
+
+total = sum(counts.values())
+if total <= 0:
+    raise SystemExit(0)
+
+print(
+    "memory_candidate_pending: "
+    f"contradiction={counts['contradiction_candidate']}, "
+    f"duplicate={counts['duplicate_candidate']}, "
+    f"obsidian={counts['obsidian_candidate']}"
+)
+PY
+	  )"
+	  _psi_rc=$?
+	  set -e
+	  [[ "$_psi_rc" -eq 0 ]] || return 0
+	  [[ -n "$_psi_result" ]] || return 0
+	  printf '%s' "$_psi_result"
+	  return 0
+	}
+
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
@@ -761,6 +835,13 @@ if [[ -n "$memory_db_result" ]]; then
   additional_context="${additional_context}
 --- memory_db_fts5 ---
 ${memory_db_result}"
+fi
+
+memory_candidate_counts="$(memory_candidate_counts_inject)"
+if [[ -n "$memory_candidate_counts" ]]; then
+  additional_context="${additional_context}
+--- memory_candidates ---
+${memory_candidate_counts}"
 fi
 
 # --- Output JSON ---
