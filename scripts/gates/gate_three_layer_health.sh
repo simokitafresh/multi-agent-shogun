@@ -37,14 +37,24 @@ import sys
 
 db_path = sys.argv[1]
 
+warn = False
+
 def has_column(conn, table, column):
     return any(row[1] == column for row in conn.execute(f"PRAGMA table_info({table})"))
 
+def has_table(conn, table):
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+        (table,),
+    ).fetchone() is not None
+
+def scalar(conn, query, params=()):
+    value = conn.execute(query, params).fetchone()[0]
+    return int(value or 0)
+
 conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
 try:
-    has_events = conn.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='events'"
-    ).fetchone()
+    has_events = has_table(conn, "events")
     if not has_events:
         raise RuntimeError("events table not found")
 
@@ -93,10 +103,76 @@ try:
         promote_candidates = 0
     print(f"  contradiction候補件数: {contradiction_candidates}")
     print(f"  promote昇格候補件数: {promote_candidates}")
+
+    print("■ 三層記憶 使用計測")
+    if has_table(conn, "search_logs"):
+        search_logs_7d = scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM search_logs
+            WHERE COALESCE(ts, created_at, '') >= datetime('now', '-7 days')
+            """,
+        )
+        print(f"  search_logs検索件数(直近7日): {search_logs_7d}")
+        if search_logs_7d == 0:
+            print("WARN: search_logs検索件数が0。三層記憶検索が使われていない可能性あり。")
+            warn = True
+    else:
+        print("WARN: search_logs table missing")
+        warn = True
+
+    if has_state:
+        state_transition_count = scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM events
+            WHERE COALESCE(NULLIF(TRIM(state), ''), 'raw') != 'raw'
+            """,
+        )
+        candidate_count = scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM events
+            WHERE COALESCE(state, '') LIKE '%candidate'
+            """,
+        )
+    else:
+        state_transition_count = 0
+        candidate_count = 0
+    print(f"  state遷移件数(state!=raw): {state_transition_count}")
+    if state_transition_count == 0:
+        print("WARN: state遷移件数が0。想起制御/候補化が使われていない可能性あり。")
+        warn = True
+
+    if has_raw_content:
+        raw_content_saved = scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM events
+            WHERE raw_content IS NOT NULL AND TRIM(raw_content) != ''
+            """,
+        )
+    else:
+        raw_content_saved = 0
+    print(f"  raw_content原文保存件数: {raw_content_saved}")
+    if raw_content_saved == 0:
+        print("WARN: raw_content原文保存件数が0。原文保存経路が使われていない可能性あり。")
+        warn = True
+
+    print(f"  candidate候補生成件数: {candidate_count}")
+    if candidate_count == 0:
+        print("WARN: candidate候補生成件数が0。矛盾/重複/Obsidian候補生成が使われていない可能性あり。")
+        warn = True
+
+    if warn:
+        sys.exit(2)
 finally:
     conn.close()
 PY
-        echo "WARN: 三層記憶DB指標を取得できない: $query_db"
         overall="WARN"
     fi
 else
