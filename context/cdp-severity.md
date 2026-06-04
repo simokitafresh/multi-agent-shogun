@@ -20,6 +20,15 @@ CDP計測・canary・ブラウザ実測の異常は、以下の4段階で扱う�
 - severity は主観でなく、ユーザー影響と blast radius で決める
 - `critical` と `high` は canary / deploy 後監視の優先対象とする
 
+## 運用アンカー
+
+| 用途 | 参照先 | 使いどころ |
+|---|---|---|
+| CDP操作前提 | [[cdp-philosophy.md]] | ポート不通・未ログイン・ブラウザ未起動を中断理由にしない |
+| CDP実行手順 | [[cdp-browse/SKILL.md]] | 画面確認・認証・スクリーンショット取得の実行層 |
+| canary実装 | [[cdp_canary.sh]] | 連続アラート閾値を持つdeploy後監視の実装 |
+| 由来カタログ | [[gstack-gbrain-takeaway-catalog.md]] | `/canary`由来のdeploy後継続監視と4段階severityの設計根拠 |
+
 ## 因果リンク
 
 - → [[cdp-philosophy.md]] CDP操作哲学・技術スタック・`cdp_measure.sh`フロー（severity判断の前提知識）
