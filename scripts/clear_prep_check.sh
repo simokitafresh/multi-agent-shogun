@@ -49,6 +49,8 @@ function trim_recent(    i) {
   }
 }
 /"direction"[[:space:]]*:[[:space:]]*"inbound"/ {
+  _target = json_value($0, "target")
+  if (_target != "" && _target != "shogun") next
   count++
   ts[count] = json_value($0, "ts")
   if (ts[count] == "") ts[count] = json_value($0, "timestamp")
@@ -156,6 +158,9 @@ for entry in entries:
     if direction == "session_summary" and ts:
         session_start = ts
     if direction == "inbound":
+        target = str(entry.get("target", "")).strip()
+        if target not in ("", "shogun"):
+            continue
         latest_inbound = {"ts": ts, "text": text_of(entry)[:240]}
         text = text_of(entry)
         if any(keyword in text for keyword in decision_keywords):

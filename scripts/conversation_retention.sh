@@ -88,6 +88,13 @@ def entry_sort_key(entry: dict[str, Any]) -> datetime:
     return dt
 
 
+def is_broadcast(entry: dict[str, Any]) -> bool:
+    """target未指定 or response/outbound = 全員が見てよいエントリ"""
+    target = str(entry.get("target", "")).strip()
+    direction = str(entry.get("direction", "")).strip()
+    return target == "" or direction in ("response", "outbound", "session_summary")
+
+
 def render_recent(entries: list[dict[str, Any]]) -> str:
     if not entries:
         return "- 該当なし"
@@ -104,6 +111,8 @@ def render_unresolved(entries: list[dict[str, Any]]) -> str:
     patterns = ("?", "確認", "未解決", "要確認", "TODO", "保留")
     found: list[str] = []
     for entry in sorted(entries, key=entry_sort_key, reverse=True):
+        if not is_broadcast(entry):
+            continue
         text = f"{entry.get('summary', '')}\n{entry.get('detail', '')}"
         if any(token in text for token in patterns):
             line = clip(entry.get("summary") or entry.get("detail"), 140)
@@ -121,6 +130,8 @@ def render_lord_decisions(entries: list[dict[str, Any]]) -> str:
     lines: list[str] = []
     for entry in sorted(entries, key=entry_sort_key, reverse=True):
         if entry.get("direction") != "inbound":
+            continue
+        if not is_broadcast(entry):
             continue
         source = str(entry.get("source", "")).lower()
         text = f"{entry.get('summary', '')}\n{entry.get('detail', '')}"
