@@ -104,6 +104,10 @@ BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 MEMORY_DB_LIVE_DRAIN_INTERVAL=${MEMORY_DB_LIVE_DRAIN_INTERVAL:-60}  # live insert退避queue drain間隔（秒）
 LAST_MEMORY_DB_LIVE_DRAIN=0     # memory_db_live_insert_queue最終drain時刻（epoch秒）
+THREE_LAYER_MAINTENANCE_INTERVAL=${THREE_LAYER_MAINTENANCE_INTERVAL:-86400}  # 三層記憶tmp cleanup+dry-run候補抽出間隔（秒）— 1日
+THREE_LAYER_MAINTENANCE_TIMEOUT=${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}
+THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/shogun_three_layer_maintenance.last"
+THREE_LAYER_MAINTENANCE_LOG="$SCRIPT_DIR/logs/three_layer_maintenance.log"
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 LESSON_DEPRECATION_INTERVAL=86400  # effectiveness低下教訓のdeprecate候補抽出間隔（秒）— 1日
@@ -4060,6 +4064,59 @@ check_lesson_deprecation_candidates() {
     printf '%s\n' "$now" > "$LESSON_DEPRECATION_STATE_FILE" 2>/dev/null || true
 }
 
+check_three_layer_maintenance() {
+    local now last elapsed cleanup_script recall_script promote_script maintenance_timeout
+    now=$EPOCHSECONDS
+    maintenance_timeout="${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}"
+    last=0
+    if [ -f "$THREE_LAYER_MAINTENANCE_STATE_FILE" ]; then
+        read -r last < "$THREE_LAYER_MAINTENANCE_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$THREE_LAYER_MAINTENANCE_INTERVAL" ] && return
+
+    mkdir -p "$(dirname "$THREE_LAYER_MAINTENANCE_LOG")"
+
+    cleanup_script="$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
+    if [ -f "$cleanup_script" ]; then
+        log "THREE-LAYER-MAINTENANCE: tmp cleanup start"
+        if timeout "$maintenance_timeout" bash "$cleanup_script" --apply --ttl-hours 24 >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+            log "THREE-LAYER-MAINTENANCE: tmp cleanup done"
+        else
+            log "THREE-LAYER-MAINTENANCE: tmp cleanup failed (non-blocking)"
+        fi
+    else
+        log "THREE-LAYER-MAINTENANCE: cleanup_three_layer_tmp.sh not found, skip"
+    fi
+
+    recall_script="$SCRIPT_DIR/scripts/memory_recall_control.sh"
+    if [ -f "$recall_script" ]; then
+        log "THREE-LAYER-MAINTENANCE: recall_control dry-run start"
+        if timeout "$maintenance_timeout" bash "$recall_script" --dry-run >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+            log "THREE-LAYER-MAINTENANCE: recall_control dry-run done"
+        else
+            log "THREE-LAYER-MAINTENANCE: recall_control dry-run failed (non-blocking)"
+        fi
+    else
+        log "THREE-LAYER-MAINTENANCE: memory_recall_control.sh not found, skip"
+    fi
+
+    promote_script="$SCRIPT_DIR/scripts/obsidian_promote_candidate.sh"
+    if [ -f "$promote_script" ]; then
+        log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run start"
+        if timeout "$maintenance_timeout" bash "$promote_script" --dry-run >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+            log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run done"
+        else
+            log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run failed (non-blocking)"
+        fi
+    else
+        log "THREE-LAYER-MAINTENANCE: obsidian_promote_candidate.sh not found, skip"
+    fi
+
+    printf '%s\n' "$now" > "$THREE_LAYER_MAINTENANCE_STATE_FILE" 2>/dev/null || true
+}
+
 check_script_size_thresholds() {
     local now last elapsed stats alerts alert_count bulletin_content
     now=$EPOCHSECONDS
@@ -4766,6 +4823,9 @@ while true; do
 
     # ═══ effectiveness低下教訓deprecate候補の日次抽出（cmd_2757） ═══
     check_lesson_deprecation_candidates
+
+    # ═══ 三層記憶tmp cleanup + dry-run候補抽出（日次 cmd_3175） ═══
+    check_three_layer_maintenance
 
     # ═══ scripts/主要スクリプト肥大化チェック（cmd_2759） ═══
     check_script_size_thresholds

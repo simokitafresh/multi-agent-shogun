@@ -558,6 +558,59 @@ cat "$LOG"
     [[ "$output" == *"LOCK-CLEANUP: Removed 2 stale lock files"* ]]
 }
 
+@test "check_three_layer_maintenance runs cleanup apply and recall/promote dry-run once per interval" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+THREE_LAYER_MAINTENANCE_INTERVAL=86400
+THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/shogun_three_layer_maintenance.last"
+THREE_LAYER_MAINTENANCE_LOG="$TMP_ROOT/logs/three_layer_maintenance.log"
+export THREE_LAYER_MAINTENANCE_LOG
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "cleanup:%s\n" "$*" >> "$THREE_LAYER_MAINTENANCE_LOG"
+EOF
+cat > "$SCRIPT_DIR/scripts/memory_recall_control.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "recall:%s\n" "$*" >> "$THREE_LAYER_MAINTENANCE_LOG"
+EOF
+cat > "$SCRIPT_DIR/scripts/obsidian_promote_candidate.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "promote:%s\n" "$*" >> "$THREE_LAYER_MAINTENANCE_LOG"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/"*.sh
+
+log() { echo "$1" >> "$LOG"; }
+
+check_three_layer_maintenance
+check_three_layer_maintenance
+
+cat "$THREE_LAYER_MAINTENANCE_LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cleanup:--apply --ttl-hours 24"* ]]
+    [[ "$output" == *"recall:--dry-run"* ]]
+    [[ "$output" == *"promote:--dry-run"* ]]
+    [[ "$(printf '%s\n' "$output" | grep -c '^cleanup:')" -eq 1 ]]
+    [[ "$(printf '%s\n' "$output" | grep -c '^recall:')" -eq 1 ]]
+    [[ "$(printf '%s\n' "$output" | grep -c '^promote:')" -eq 1 ]]
+    [[ "$output" == *"THREE-LAYER-MAINTENANCE: tmp cleanup done"* ]]
+    [[ "$output" == *"THREE-LAYER-MAINTENANCE: recall_control dry-run done"* ]]
+    [[ "$output" == *"THREE-LAYER-MAINTENANCE: obsidian_promote dry-run done"* ]]
+}
+
 @test "build_pane_head_tail_excerpt filters blanks and keeps head tail in one pass" {
     run bash -lc '
 set -euo pipefail
