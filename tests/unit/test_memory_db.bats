@@ -261,15 +261,21 @@ EOF
 @test "three-layer tmp cleanup dry-run reports stale candidates without deleting" {
     mkdir -p "$TEST_TMPDIR/cache"
     touch "$TEST_TMPDIR/cache/.memory.db.old.tmp"
+    touch "$TEST_TMPDIR/cache/.memory.db.old.tmp-journal"
+    touch "$TEST_TMPDIR/cache/_tmp_bats_memory.db"
     touch -d '3 days ago' "$TEST_TMPDIR/cache/.memory.db.old.tmp"
+    touch -d '3 days ago' "$TEST_TMPDIR/cache/.memory.db.old.tmp-journal"
+    touch -d '3 days ago' "$TEST_TMPDIR/cache/_tmp_bats_memory.db"
 
     run bash "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" \
         --dry-run \
-        --ttl-hours 24 \
+        --ttl-hours 6 \
         --cache-dir "$TEST_TMPDIR/cache"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"candidates=1"* ]]
+    [[ "$output" == *"candidates=3"* ]]
     [ -f "$TEST_TMPDIR/cache/.memory.db.old.tmp" ]
+    [ -f "$TEST_TMPDIR/cache/.memory.db.old.tmp-journal" ]
+    [ -f "$TEST_TMPDIR/cache/_tmp_bats_memory.db" ]
 }
 
 @test "gate_three_layer_health emits cache capacity section" {

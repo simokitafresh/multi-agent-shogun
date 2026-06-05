@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dry_run=1
-ttl_hours="${SHOGUN_THREE_LAYER_TMP_TTL_HOURS:-24}"
+ttl_hours="${SHOGUN_THREE_LAYER_TMP_TTL_HOURS:-6}"
 cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
 
 usage() {
@@ -54,7 +54,7 @@ fi
 ttl_minutes=$((ttl_hours * 60))
 mapfile -d '' candidates < <(
     find "$real_cache_dir" -maxdepth 1 -type f \
-        \( -name '*.tmp' -o -name '.*.tmp' -o -name '*.tmp.*' \) \
+        \( -name '*.tmp' -o -name '.*.tmp' -o -name '*.tmp.*' -o -name '.*.tmp.*' -o -name '*.tmp-*' -o -name '.*.tmp-*' -o -name '_tmp_*' \) \
         -mmin +"$ttl_minutes" -print0
 )
 

@@ -571,7 +571,7 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-THREE_LAYER_MAINTENANCE_INTERVAL=86400
+THREE_LAYER_MAINTENANCE_INTERVAL=21600
 THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/shogun_three_layer_maintenance.last"
 THREE_LAYER_MAINTENANCE_LOG="$TMP_ROOT/logs/three_layer_maintenance.log"
 export THREE_LAYER_MAINTENANCE_LOG
@@ -600,7 +600,7 @@ cat "$THREE_LAYER_MAINTENANCE_LOG"
 cat "$LOG"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"cleanup:--apply --ttl-hours 24"* ]]
+    [[ "$output" == *"cleanup:--apply --ttl-hours 6"* ]]
     [[ "$output" == *"recall:"* ]]
     [[ "$output" != *"recall:--dry-run"* ]]
     [[ "$output" == *"promote:"* ]]
