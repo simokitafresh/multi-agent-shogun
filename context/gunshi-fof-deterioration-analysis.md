@@ -30,7 +30,7 @@ depth=3: 旧忍法-Ward n=1 avg=-0.182 improved=0%
 ## §3 因果メカニズム（3層）
 
 ### 層1: L0 PF個体レベル
-EMAはlookback依存で効果が異なる（研究日誌Phase 2.5）。→ [[gunshi-flair-deepdive]] (Phase 1: 中長期lookback優位の独立確認 cmd_1716 — `peak=24M (τ=0.264)`):
+EMAはlookback依存で効果が異なる（[[dialogue_preprocessing_research_20260331]] Phase 2.5）。→ [[gunshi-flair-deepdive]] (Phase 1: 中長期lookback優位の独立確認 cmd_1716 — `peak=24M (τ=0.264)`):
 - 中長期lookback(DM2/DM3/DM5): 改善(+2.7%〜+112%)
 - 短期lookback(DM6=15d): **全span劣化**(-43%)
 - 超長期(DM7+=504d): 微改善(+11%)
@@ -68,9 +68,9 @@ avg尖り削減量=0.001。月次BUY/CASHレベルではEMA span=5のシグナ�
 
 ## §6 次の問い
 
-1. **構成PFのlookback分布が支配的なら、PF別にEMAの適用/非適用を決めるべき** → cmd_1704の選別基準(delta_high)は無効だった。lookback長による選別が有効か？
-2. **cross-sectional dispersion検証** → EMA前後のPFリターン分散変化を定量化
-3. **depth=2で劣薬のみ改善した理由** → 劇薬FoFの構成PF特性を確認（防御的PF比率が高い？）
+1. **構成PFのlookback分布が支配的なら、PF別にEMAの適用/非適用を決めるべき** → cmd_1704の選別基準(delta_high)は無効だった。lookback長による選別が有効か？ → [[gunshi-flair-deepdive]] Phase 1
+2. **cross-sectional dispersion検証** → EMA前後のPFリターン分散変化を定量化 → [[robustness-verification-catalog]] デケイ分析
+3. **depth=2で劣薬のみ改善した理由** → 劇薬FoFの構成PF特性を確認（防御的PF比率が高い？） → [[dm-signal-research]] §28
 
 ---
 → データソース: `outputs/analysis/standard_pf_preprocessing/fof_all59_preprocessing_results.yaml` (cmd_1700)

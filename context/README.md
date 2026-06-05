@@ -32,13 +32,6 @@ context/
 - [[cmd-chronicle]]: cmd履歴の索引層
 - [[lord-conversation-index]]: 殿との対話記録と記憶DBの索引
 
-## 専門コンテキスト入口
-- [[cdp-philosophy]] / [[cdp-severity]]: CDP運用の思想と重大度判断
-- [[gunshi-codd-analysis]] / [[gunshi-alm-38metrics-design]]: 軍師分析のCoDD・ALM設計入口
-- [[gunshi-fof-deterioration-analysis]] / [[gunshi-fullrecalc-resilience-analysis]]: FoF劣化とfullrecalculate耐性分析
-- [[memory-db-queries]]: 記憶DBの検索クエリ例
-- [[rebalancer]]: 外部PJ rebalancer のcontext入口
-
 ## 記述ルール
 - context/*.md は [[doc-style-guide]] に従い、1-2行結論 + 参照先パス + 必要なら§番号/grep語で書く
 - 調査詳細・経緯・表は `docs/research/*.md` に保存し、context側からリンクする
