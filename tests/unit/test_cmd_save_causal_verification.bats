@@ -67,6 +67,28 @@ teardown() {
     [[ "$output" == *"semantic/causal確認:"* ]]
 }
 
+@test "causal scope debug output includes extracted q5_verified_source" {
+    local CMD_BLOCK='    project: infra
+    title: "改善 — cmd_save causal_verification q5抽出"
+    purpose: "cmd_save.shでq5抽出値をcombinedへ渡す"
+    target_path: scripts/cmd_save.sh
+    command: |
+      scripts/cmd_save.sh の q5抽出を検証する
+    acceptance_criteria:
+      - id: AC1
+        description: "DEBUG出力にq5抽出値が表示される"
+    quality_gate:
+      q5_verified_source: "structure_verified — git log確認: c5273891c; git blame確認: scripts/cmd_save.sh; semantic/causal確認: causal-verification"
+      q8_why_what: "WHY: q5がcombinedに入らないと因果確認済みcmdがWARNになる → WHAT: q5抽出を確認する"'
+
+    run env CMD_SAVE_DEBUG=1 bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEBUG: [CAUSAL_VERIFICATION] q5_value=structure_verified — git log確認: c5273891c; git blame確認: scripts/cmd_save.sh; semantic/causal確認: causal-verification"* ]]
+    [[ "$output" != *"WARNING: 因果確認不足"* ]]
+}
+
 @test "non causal scope does not emit q5 template" {
     local CMD_BLOCK='    project: infra
     title: "文言整理"

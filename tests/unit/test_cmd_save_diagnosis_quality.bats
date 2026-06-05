@@ -310,6 +310,7 @@ run_q5_pair_save() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
+    [[ "$output" == *"cmd_ids=cmd_warntest"* ]]
     [ -f "$TEST_PREFLIGHT_AUTOLEARN" ]
     [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"check=quality_gate_q8_compound_question"* ]]
     [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"count=1"* ]]
@@ -328,6 +329,7 @@ run_q5_pair_save() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
     [[ "$output" == *"q8_複利の問い"* ]]
+    [[ "$output" == *"cmd_ids=cmd_warntest,cmd_warntest"* ]]
     [[ "$output" == *"BLOCK"* ]]
 }
 

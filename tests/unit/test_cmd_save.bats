@@ -441,6 +441,22 @@ YAML
     [ "$output" = "" ]
 }
 
+@test "Check21.2: command本文にバックアップ記載があればDB操作WARNなし" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    command: |
+      SQLite schemaを変更する前にバックアップを取得し、ALTER TABLE users ADD COLUMN role TEXTを実行する
+    acceptance_criteria:
+      - "AC1: migrationが適用される"
+YAML
+
+    load_cmd_block
+    run check_db_backup_ac_warn
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+}
+
 @test "Check6: GP番号なしcmdはスキップ" {
     create_queue_file << 'YAML'
 commands:
