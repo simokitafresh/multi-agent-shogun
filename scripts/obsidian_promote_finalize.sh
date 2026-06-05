@@ -254,6 +254,11 @@ def main() -> int:
             print("candidates=0")
             if dry_run:
                 print("dry_run=true")
+            else:
+                try:
+                    state_module.sync_memory_db_ext4_cache(str(db_path))
+                except Exception as exc:
+                    print(f"warn: cache sync failed (non-blocking): {exc}", file=sys.stderr)
             return 0
 
         generated_at = state_module.now_timestamp()

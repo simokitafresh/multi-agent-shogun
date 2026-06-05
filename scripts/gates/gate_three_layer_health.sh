@@ -164,8 +164,8 @@ try:
         warn = True
 
     print(f"  candidate候補生成件数: {candidate_count}")
-    if candidate_count == 0:
-        print("WARN: candidate候補生成件数が0。矛盾/重複/Obsidian候補生成が使われていない可能性あり。")
+    if candidate_count == 0 and state_transition_count == 0:
+        print("WARN: candidate候補生成件数が0かつstate遷移件数が0。矛盾/重複/Obsidian候補生成が使われていない可能性あり。")
         warn = True
 
     if warn:
