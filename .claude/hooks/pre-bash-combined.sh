@@ -3,7 +3,11 @@
 # cmd_1661: 4 hooks → 1 script. Eliminates 3 bash startup costs (~60ms each).
 set -euo pipefail
 
-payload="$(cat)"
+if [ -n "${HOOK_PAYLOAD+x}" ]; then
+    payload="$HOOK_PAYLOAD"
+else
+    payload="$(cat)"
+fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 command=""
