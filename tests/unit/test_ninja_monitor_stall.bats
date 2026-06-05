@@ -843,6 +843,70 @@ fi
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
+@test "check_inbox_renudge: reviewed done report does not create duplicate karo pending inbox" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  parent_cmd: cmd_reviewed_done
+EOF
+cat > "$SCRIPT_DIR/logs/gunshi_review_log.yaml" <<'"'"'EOF'"'"'
+- cmd_id: cmd_reviewed_done
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  report_task_id: cmd_reviewed_done_focused
+EOF
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() {
+    echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
+    return 0
+}
+send_inbox_message() {
+    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
+    return 0
+}
+
+check_inbox_renudge
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
+    cat "$TMP_ROOT/inbox_messages.log"
+fi
+if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
+    cat "$TMP_ROOT/direct_nudge.log"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-SKIP-REVIEWED: cmd_reviewed_done already has gunshi report review"* ]]
+    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" != *"pending_work"* ]]
+    [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail

@@ -2929,6 +2929,29 @@ check_inbox_renudge() {
             # 家老専用: inbox未読0でもpending work(忍者done/delegated未配備)があればnudge
             if [ "$name" = "karo" ]; then
                 local _karo_pending=false
+                local _reviewed_report_cmds=""
+                if [ -f "$SCRIPT_DIR/logs/gunshi_review_log.yaml" ]; then
+                    _reviewed_report_cmds="|$(awk '
+                        function emit() {
+                            if (cmd != "" && review_type == "report" && verdict != "") print cmd
+                        }
+                        /^[[:space:]]*-[[:space:]]*cmd_id:/ {
+                            emit()
+                            cmd=$0; sub(/^[^:]*:[[:space:]]*/, "", cmd); gsub(/["'\''[:space:]]/, "", cmd)
+                            review_type=""; verdict=""
+                            next
+                        }
+                        /^[[:space:]]*review_type:/ {
+                            review_type=$0; sub(/^[^:]*:[[:space:]]*/, "", review_type); gsub(/["'\''[:space:]]/, "", review_type)
+                            next
+                        }
+                        /^[[:space:]]*verdict:/ {
+                            verdict=$0; sub(/^[^:]*:[[:space:]]*/, "", verdict); gsub(/["'\''[:space:]]/, "", verdict)
+                            next
+                        }
+                        END { emit() }
+                    ' "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 2>/dev/null | paste -sd'|' -)|"
+                fi
                 # L4最適化: for+awk×N(最大6プロセス) → awk×1の全ファイル一括スキャン(WSL2プロセス起動コスト削減 L511)
                 # FNR==1で新ファイル開始を検出し前ファイルの結果を出力。ls→compgen -Gに変更(エラー出力防止)
                 while IFS='|' read -r _kts _kpcmd; do
@@ -2936,6 +2959,11 @@ check_inbox_renudge() {
                     # GATE CLEAR済みならpending workではない
                     if [ -n "$_kpcmd" ] && compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
                         continue  # archived=GATE CLEAR済み
+                    fi
+                    # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
+                    if [ -n "$_kpcmd" ] && [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
+                        log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
+                        continue
                     fi
                     _karo_pending=true
                     break
