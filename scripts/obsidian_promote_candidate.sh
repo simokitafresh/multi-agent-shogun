@@ -204,6 +204,11 @@ def main() -> int:
                 f"{row['id']}|{row['importance']}|links={row['link_count']}|"
                 f"concept_frequency={row['max_concept_frequency']}|{row['summary']}"
             )
+        # Sync ext4 cache so gate_three_layer_health.sh sees fresh state immediately
+        try:
+            state_module.sync_memory_db_ext4_cache(str(db_path))
+        except Exception as exc:
+            print(f"warn: cache sync failed (non-blocking): {exc}", file=sys.stderr)
     return 0
 
 
