@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-05 cmd_karo_hotfix_codd_fix_skill_test_select_20260605 -->
+<!-- last_updated: 2026-06-05 cmd_3189 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -186,6 +186,8 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 **2026-06-02上書き原則**: CLI固有hook設定(`.claude/settings.json` / `.codex/hooks.json`)を安全網の正本にするな。正本は共通イベント層(`config/cli_events.yaml`予定)とし、Claude/Codexで使えるeventはhookへ生成、Codex Stopのように危険または未対応のeventはdaemon/gate/scriptで補完する。詳細設計: `docs/research/multi-cli-hook-event-commonization-design_20260602.md`。因果: [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[common_event_layer_required]]。
 
 **因果確認L0-L7**: hook/gate/daemon/semantic/search等を変更する前に、git log/blame、教訓、設計書、semantic/causal linksで「なぜ現在の実装がそうなっているか」を確認する。multi-CLI前提のため、因果確認の強制もClaude/Codex固有hookではなく、`cmd_save.sh`、`deploy_task.sh`、`gate_report_format.sh`、task/report YAML、memory DB、semantic index、daemon/gateを正本にする。詳細: `docs/research/causal-verification-l0-l7-design_20260602.md`。因果: [[semantic_search_timeout_infra_bug]] -> [[past_design_intent_unchecked_risk]] -> [[causal_verification_l0_l7_required]]。
+
+**hook速度偵察(cmd_3189)**: Bash no-op実測はPre 90.8ms(2 forks)+Post 76.8ms(3 forks)=167.6ms/呼出し。設計方針は品質チェック削除ではなくdispatcher統合で、PreToolUse 6設定→`pretool-dispatch.sh`、PostToolUse 4設定→`posttool-dispatch.sh`へ寄せ、95-115ms/呼出しを目標にする。実装時の必須リスク確認: permissionDecision出力順序、不要tool dispatch、Read→Write順序、DM-Signal PI混入、Claude/Codex設定差分。
 
 | 項目 | 設定 | 正本 |
 |------|------|------|
@@ -638,7 +640,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L755 -->
+<!-- last_synced_lesson: L759 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1111,6 +1113,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L753: STATE_DIR不使用のハードコード/tmpはSTATE_DIR環境変数による分離を無効化する（cmd_training_L4_auto_202606041637_kotaro）
 - L754: 候補0成功だけではstate遷移DDL欠落を検出できない（cmd_3182）
 - L755: tmp cleanupはSQLite sidecarまで候補数差分で検証せよ（cmd_3185）
+- L756: cmd_save表示追加はscope対象/非対象を同時に固定せよ（cmd_3186）
+- L757: gate仕様変更時は既存Bats fixture前提崩壊を事前検死する（cmd_3184）
+- L758: context freshness root fallback tests must separate context-only commits from source commits（cmd_3184）
+- L759: context freshness root fallbackはcontext-only/source commit fixtureを分離する（cmd_3184）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

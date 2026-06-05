@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-05 cmd_karo_hotfix_codd_fix_skill_test_select_20260605 -->
+<!-- last_updated: 2026-06-05 cmd_3189 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -504,3 +504,7 @@
 | cmd_3178 | L0-L7貫通設計書v6 cmd#9。4種候補(矛盾、重複、昇格、アーカイブ)に対する統一確定スクリプト。approve、reject、deferの3アクション+検証+ntfy通知 | infra | 06-04 | memory_candidate_resolve.shを新規 |
 | cmd_3181 | 三層記憶が全員に使われていない根因の1つは候補蓄積の放置。deploy_task.sh配備時にcandidate件数(obsidian_candidate/contradiction_candidate/duplicate_candidate)を確認し、閾値超でWARN表示。放置防止の構造的仕組み(殿指示: 三層記憶を全員が使う状態を作る) | infra | 06-04 | deploy_task.sh配備時に三層記憶candidat |
 | cmd_3182 | recall_control/obsidian_promoteが本番DB(data/multi_agent_shogun_memory.db)にeventsテーブル不在で機能停止中(require_columns L97-103でexit)。三層記憶11cmd全GATE CLEARだが自動state遷移ゼロの直接原因。memory_db_import.pyの本番DB実行でeventsテーブルを作成し、ninja_monitorのdry-run→apply切替で三層記憶を実稼働させる | infra | 06-05 | 本番記憶DBにevents関連表とevent_state_t |
+| cmd_3186 | causal_verification WARNが7回累計昇格→BLOCKの繰り返し。根因=gate/infra対象cmdのq5にgit log/因果キーワードを毎回手動追記する必要がある意志依存構造。cmd_save.shのcausal_verification scope判定時にq5にプレースホルダ(git log確認:)を自動表示し、記入漏れを防止する | infra | 06-05 | cmd_save.sh causal_verificatio |
+| cmd_3184 | context_freshness gateがdm-signal-research.mdのbacklink追記(context自身のcommit)をsource更新として検出→偽陽性ALERT。根因=projects/dm-signal.yaml不在時にroot repoフォールバックし、context自身のcommitがsource commitsに数えられる。偵察(cmd_karo_recon_context_freshness)で特定した候補Bを実装: rootフォールバック時のcontext自身commitをsource更新から除外 | infra | 06-05 | context_freshness root fallbac |
+| cmd_3187 | cancelled — WARN累計蓄積によりcmd_3188に再起票 | infra | 06-05 | — |
+| cmd_3188 | cancelled — FP WARN累計蓄積によりcmd_3189に再起票 | infra | 06-05 | — |
