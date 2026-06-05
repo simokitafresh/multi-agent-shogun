@@ -356,6 +356,29 @@ else
     echo "  PASS: 全忍者idle。計測値は信頼可能"
 fi
 
+# ─── SG-PRE15.5: L5 adversarial事前リマインド (§5.6自動化系cmd) ───
+echo ""
+echo "■ SG-PRE15.5: adversarial事前リマインド(自動化系cmd)"
+if [ -n "${TASK_FILE:-}" ] && [ -f "${TASK_FILE}" ]; then
+    _adv_target=$(python3 -c "
+import yaml, sys
+try:
+    d = yaml.safe_load(open('${TASK_FILE}'))
+    t = d.get('task', {})
+    tp = str(t.get('target_path', ''))
+    if any(k in tp for k in ['scripts/', '.sh', 'gate_', 'hook_', 'monitor', 'cron', 'cleanup']):
+        print('automation')
+except OSError: pass
+" || true)
+    if [ "$_adv_target" = "automation" ]; then
+        echo "  ★ target_pathが自動化系ファイル。finding_categoriesにadversarialを含めよ(§5.6)"
+    else
+        echo "  PASS: 非自動化系target"
+    fi
+else
+    echo "  SKIP: task YAML不在"
+fi
+
 # ─── SG-PRE16: BE impl ゴールデンデータ突合チェック (L-GoldenDataFirst) ───
 echo ""
 echo "■ SG-PRE16: ゴールデンデータ突合チェック"

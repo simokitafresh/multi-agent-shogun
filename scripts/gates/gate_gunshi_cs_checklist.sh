@@ -665,6 +665,28 @@ if [ -n "$_lg034_hits" ]; then
     warn=1
 fi
 
+# --- §5.6: 自動化系cmd×adversarial交差チェック ---
+# target_path=scripts/のdraft/reportでfinding_categoriesにadversarialがないケースを検出
+_automation_no_adv=$(awk '
+    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); fc=""; obs=""; rt="" }
+    /^  review_type:/ { rt=substr($0,index($0,":")+2); gsub(/[" \t]/,"",rt) }
+    /^  finding_categories:.*\[/ { fc=$0 }
+    /^    - .*/ { obs=obs " " $0 }
+    /^  timestamp:/ && rt ~ /draft|report/ && fc !~ /adversarial/ && id != "" {
+        if (obs ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|cron|cleanup|trigger/) {
+            print id
+        }
+        obs=""
+    }
+' "$LOG_FILE" 2>/dev/null | tail -10)
+if [ -n "$_automation_no_adv" ]; then
+    echo "WARN(§5.6): 自動化系cmd(scripts/対象)でadversarial未検討:"
+    printf '%s\n' "$_automation_no_adv" | while read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: finding_categoriesにadversarialを追加せよ"
+    done
+    warn=1
+fi
+
 # --- LG010: GP提案のdefense_level < 4 検出 ---
 _lg010_weak=$(grep -B2 'defense_level: [123]$' "$REVIEW_LOG" 2>/dev/null | grep 'id: GP-' | head -5)
 if [ -n "$_lg010_weak" ]; then
