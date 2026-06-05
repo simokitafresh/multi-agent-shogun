@@ -6,7 +6,7 @@
 
 直近20コミットのshellスクリプト変更から5ファイルを選定し、silent failureパターンを検出。
 
-## P0 (重大) — 直ちに対処が必要
+## P2 (中) — 診断ログ改善候補
 
 ### 1. sync_lessons.sh L110-133: subprocess.run exception握りつぶし
 
@@ -26,24 +26,20 @@ def _add_tracked_filenames_from_git(base):
 ```
 
 - **問題**: TimeoutExpired/git失敗の区別なくreturn False→fallback os.walkが発動。ログ出力なし
-- **影響**: target_files自動抽出がサイレント失敗→lessons.yamlのtarget_files未設定→教訓参照精度低下
+- **影響**: fallback os.walkにより処理継続するためP0ではないが、git失敗診断が残らず調査性が落ちる
 - **推奨**: 例外型別分岐(TimeoutExpired→warn、その他→error) + fallback時にstderrへ診断ログ記録
+
+## 偽陽性
 
 ### 2. cmd_complete_gate.sh L452,454: tmux操作の戻り値チェック喪失
 
-```bash
-pane_target=$(agent_pane_target "$agent" 2>/dev/null || true)
-```
-
-- **問題**: agent_pane_targetのtmuxエラーを2>/dev/null+||trueで完全消音。GATE処理中にtmux操作失敗がサイレント通過
-- **影響**: GATE処理がpane_target未解決のまま進行→cmd_complete通知の送信先ミスの可能性
-- **推奨**: ||trueを除去し、pane_target空文字チェックを追加
+初回監査ではP0候補としたが、現物確認により偽陽性。L452-453に空文字guardがあり、pane_target未解決のまま通知先ミスへ進む構造ではない。
 
 ## 対処判定
 
 | # | 対象 | D0適用可 | 理由 |
 |---|------|---------|------|
-| 1 | sync_lessons.sh | NO | Python embedded script、例外分岐追加は20行超 |
-| 2 | cmd_complete_gate.sh | YES | 1行修正(||true除去+空文字guard) |
+| 1 | sync_lessons.sh | NO | P2。fallback正常動作あり。診断ログ改善候補 |
+| 2 | cmd_complete_gate.sh | NO | 偽陽性。既存guard確認済み |
 
-→ P0-2はD0候補だが、cmd_complete_gate.shは高リスクファイル(7125行)のため家老経由cmd推奨。
+→ 即時D0修正対象なし。sync_lessons.shは診断性改善cmd候補として扱う。

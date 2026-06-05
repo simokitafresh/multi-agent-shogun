@@ -90,6 +90,7 @@ blocking_reason: "{reason}"
 - 失敗モードを3つ以上列挙したか
 - 検知手段（gate / test / binary check）が設計に含まれるか
 - `except Exception -> 正常値返却` の silent fallback が紛れていないか
+- gate/hook/scripts変更cmdでは、target_pathの関連Bats fixture前提が崩れないかを確認したか。`ac_physical_verify.sh` の関連テスト一覧で影響範囲を確認せよ（cmd_3184 CI RED事故: 除外フィルタ追加で既存Bats 3件の前提崩壊）
 
 出力:
 
@@ -100,6 +101,12 @@ failure_modes:
     likelihood: high/medium/low
     mitigation: "{mitigation}"
 ```
+
+### 4.5 D0実装の全入力モード検証
+
+- 軍師D0実装時は、stdinモードだけでなく cmd_id モード、archive モード、空結果モードを検証せよ。
+- 「既存バグ」と切り離す判断は、全入力モードのテストがPASSした後だけ許される。
+- D0事故 2026-06-05: stdinのみテストして既存バグ扱いした結果、cmd_idモードでset -u/pipefailバグ4件が残り、家老修正が必要になった。
 
 ### 5. 確信度ラベル
 

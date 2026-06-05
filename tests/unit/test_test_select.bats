@@ -67,6 +67,14 @@ setup_file() {
     [[ "$output" != *"WARN"* ]]
 }
 
+@test "test_select maps docs research markdown changes without warnings" {
+    run bash "$TEST_SELECT" docs/research/gunshi_idle_silent_failure_audit_20260605.md
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_semantic_index_update.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_vercel_phase.bats"* ]]
+    [[ "$output" != *"WARN: no test mapping"* ]]
+}
+
 @test "test_select maps gunshi instruction changes without warnings" {
     run bash "$TEST_SELECT" instructions/gunshi.md
     [ "$status" -eq 0 ]

@@ -145,6 +145,20 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # docs/research/*.md は設計・分析の保存先。実行コードではないが、
+    # context索引やsemantic indexから参照されるため、未知ファイルWARNではなく
+    # 参照/索引の軽量テストへ送る。
+    if [[ "$changed" == docs/research/*.md ]]; then
+        for tf in \
+            "$TEST_DIR"/test_semantic_index_update.bats \
+            "$TEST_DIR"/test_gate_vercel_phase.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # 軍師instruction正本はCLI選択・軍師gate・semantic索引に影響する。
     if [[ "$changed" == instructions/gunshi.md ]]; then
         for tf in \

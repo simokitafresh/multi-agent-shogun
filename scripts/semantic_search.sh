@@ -49,7 +49,7 @@ Environment:
   SEMANTIC_DISABLE_CAUSAL
                        Set to 1 to suppress causal backlink expansion
   SEMANTIC_CAUSAL_EXPANSION_LIMIT
-                       Maximum causal links to expand (default: 3)
+                       Maximum causal links to expand (default: 2)
   SEMANTIC_CAUSAL_BACKLINK_TIMEOUT
                        Maximum seconds per causal_backlinks lookup (default: 1)
   SEMANTIC_CAUSAL_ROOT Override backlink search root (default: repository root)
@@ -335,10 +335,10 @@ append_causal_expansion() {
     local links
 
     [ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ] || return 0
-    local expansion_limit="${SEMANTIC_CAUSAL_EXPANSION_LIMIT:-3}"
+    local expansion_limit="${SEMANTIC_CAUSAL_EXPANSION_LIMIT:-2}"
     local backlink_timeout="${SEMANTIC_CAUSAL_BACKLINK_TIMEOUT:-1}"
     case "$expansion_limit" in
-        ''|*[!0-9]*) expansion_limit=3 ;;
+        ''|*[!0-9]*) expansion_limit=2 ;;
     esac
     case "$backlink_timeout" in
         ''|*[!0-9]*) backlink_timeout=1 ;;
@@ -350,7 +350,19 @@ append_causal_expansion() {
         grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' "$search_output" 2>/dev/null \
             | awk -v limit="$expansion_limit" '{
                 sub(/^\[\[/, ""); sub(/\]\]$/, "")
-                if ($0 && !seen[$0]++) { print; if (++n >= limit) exit }
+                if (!$0 || seen[$0]++) next
+                if ($0 ~ /^cmd_/) {
+                    print
+                    if (++n >= limit) exit
+                    next
+                }
+                deferred[++d] = $0
+            }
+            END {
+                for (i = 1; i <= d && n < limit; i++) {
+                    print deferred[i]
+                    n++
+                }
             }' \
         || true
     )
