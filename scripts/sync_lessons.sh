@@ -117,9 +117,11 @@ def _add_tracked_filenames_from_git(base):
             stderr=subprocess.DEVNULL,
             timeout=8,
         )
-    except Exception:
+    except Exception as exc:
+        print(f'[WARN] sync_lessons git ls-files failed for {base}: {type(exc).__name__}: {exc}', file=sys.stderr)
         return False
     if proc.returncode != 0:
+        print(f'[WARN] sync_lessons git ls-files rc={proc.returncode} for {base}', file=sys.stderr)
         return False
     for rel in proc.stdout.splitlines():
         if rel:
