@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-05 cmd_3189 -->
+<!-- last_updated: 2026-06-05 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -508,3 +508,4 @@
 | cmd_3184 | context_freshness gateがdm-signal-research.mdのbacklink追記(context自身のcommit)をsource更新として検出→偽陽性ALERT。根因=projects/dm-signal.yaml不在時にroot repoフォールバックし、context自身のcommitがsource commitsに数えられる。偵察(cmd_karo_recon_context_freshness)で特定した候補Bを実装: rootフォールバック時のcontext自身commitをsource更新から除外 | infra | 06-05 | context_freshness root fallbac |
 | cmd_3187 | cancelled — WARN累計蓄積によりcmd_3188に再起票 | infra | 06-05 | — |
 | cmd_3188 | cancelled — FP WARN累計蓄積によりcmd_3189に再起票 | infra | 06-05 | — |
+| cmd_3190 | 偵察cmd_3189計測: Pre 90.8ms(2 fork)+Post 76.8ms(3 fork)=167.6ms/Bash呼出し。fork 1回=10ms。5→2 forkで30ms削減。100回/セッション×30ms=3秒/セッション。品質不変(チェック項目削除なし、設定層fork統合のみ) | infra | 06-05 | Claude Code settingsのPre/Post |
