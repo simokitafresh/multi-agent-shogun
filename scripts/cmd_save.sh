@@ -1386,12 +1386,17 @@ cmd_save_is_causal_verification_scope() {
     printf '%s\n' "$search_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor'
 }
 
+show_causal_verification_q5_template() {
+    echo "  q5テンプレート: q5_verified_source: \"structure_verified — git log確認: <対象path/keywordと結果>; git blame確認: <file:line/理由>; semantic/causal確認: <concept/link>; 関連教訓: <Lxxx/none>\"" >&2
+}
+
 check_causal_verification_requirement() {
     cmd_save_is_causal_verification_scope || return 0
 
     echo "INFO: [CAUSAL_VERIFICATION] infra hook/gate/daemon/semantic/search/memory DB/配備フロー対象cmdです" >&2
     echo "  参照: docs/research/causal-verification-l0-l7-design_20260602.md" >&2
     echo "  必須: git log/blame・関連教訓・設計書・semantic/causal確認をq5/q8/origin/ACへ記録" >&2
+    show_causal_verification_q5_template
 
     local origin_value q5_value q8_value combined
     origin_value="$(cmd_block_get_field "origin")"

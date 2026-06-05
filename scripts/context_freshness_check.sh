@@ -366,22 +366,82 @@ DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
 _GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "3"))
 
 
-def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str]]:
+def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str], bool]:
     project_path = PROJECT_PATHS.get(project_id, "")
     base = os.path.basename(rel_path)
     if project_path and os.path.abspath(project_path) != os.path.abspath(root):
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
             if project_id == "dm-signal" and rel_path in DM_SIGNAL_CONTEXT_PATHS:
-                return project_path, DM_SIGNAL_CONTEXT_PATHS[rel_path]
-            return project_path, []
+                return project_path, DM_SIGNAL_CONTEXT_PATHS[rel_path], False
+            return project_path, [], False
 
-    return root, [rel_path]
+    return root, [], True
+
+
+def _root_fallback_commit_count_since(updated_at: date) -> int:
+    cmd = [
+        "git",
+        "-C",
+        root,
+        "log",
+        f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00",
+        "--pretty=format:__CFC_COMMIT__%x00%s",
+        "--name-only",
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=_GIT_TIMEOUT,
+        )
+    except Exception as e:
+        print(f"WARN: source_commit_count_since git failed: {root} — {e}", file=sys.stderr)
+        return 0
+
+    if result.returncode != 0:
+        print(f"WARN: source_commit_count_since git returncode={result.returncode}: {root}", file=sys.stderr)
+        return 0
+
+    count = 0
+    current_subject = ""
+    changed_paths: list[str] = []
+
+    def flush_commit() -> None:
+        nonlocal count, current_subject, changed_paths
+        subject = current_subject.strip()
+        if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
+            return
+        source_paths = [
+            path.strip()
+            for path in changed_paths
+            if path.strip() and not path.strip().startswith("context/")
+        ]
+        if source_paths:
+            count += 1
+
+    for line in result.stdout.splitlines():
+        if line.startswith("__CFC_COMMIT__\x00"):
+            flush_commit()
+            current_subject = line.split("\x00", 1)[1]
+            changed_paths = []
+            continue
+        if line.strip():
+            changed_paths.append(line.strip())
+
+    flush_commit()
+    return count
 
 
 def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) -> int:
-    repo_path, pathspecs = source_repo_for_context(project_id, rel_path)
+    repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
         return 0
+    if root_fallback:
+        return _root_fallback_commit_count_since(updated_at)
 
     cmd = [
         "git",
