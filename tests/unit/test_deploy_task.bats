@@ -568,6 +568,46 @@ for ac_id in ("AC1", "AC2", "AC3", "AC4", "AC5"):
 PY
 }
 
+@test "deploy_task --direct cmd_training excludes superseded lessons from related_lessons" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_OLD
+    title: "deploy_task old training lesson"
+    summary: "deploy_task training obsolete"
+    detail: "obsolete deploy_task training"
+    status: confirmed
+    superseded_by: L_NEW
+  - id: L_NEW
+    title: "deploy_task new training lesson"
+    summary: "deploy_task training active"
+    detail: "active deploy_task training"
+    status: confirmed
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: training
+  project: infra
+  target_path: scripts/deploy_task.sh
+  command: "deploy_task training lesson"
+EOF
+
+    MIN_KEYWORD_SCORE=1 run deploy_task_fast --direct sasuke cmd_training_L4_superseded_lessons
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+ids = [entry.get("id") for entry in task.get("related_lessons") or []]
+assert "L_OLD" not in ids, ids
+assert "L_NEW" in ids, ids
+PY
+}
+
 @test "deploy_task --direct cmd_training overwrites pre-existing purpose and ACs with L4+AC5 template" {
     # karo_direct手動YAML作成方式では目的/AC未注入が発生する（cmd_training_L4_r16事故）
     # deploy_task.sh --directを使えば既存purpose/ACを上書きして修行テンプレートを注入する

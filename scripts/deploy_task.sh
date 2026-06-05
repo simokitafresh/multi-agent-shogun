@@ -4463,6 +4463,9 @@ try:
         if lesson.get('deprecated', False):
             filtered_deprecated += 1
             continue
+        if str(lesson.get('superseded_by', '') or '').strip():
+            filtered_deprecated += 1
+            continue
         if l_status != 'confirmed':
             filtered_draft += 1
             continue
