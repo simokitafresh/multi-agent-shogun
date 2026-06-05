@@ -48,6 +48,10 @@ Environment:
   SEMANTIC_NO_CACHE    Set to 1 to disable LLM cache lookup and writes
   SEMANTIC_DISABLE_CAUSAL
                        Set to 1 to suppress causal backlink expansion
+  SEMANTIC_CAUSAL_EXPANSION_LIMIT
+                       Maximum causal links to expand (default: 3)
+  SEMANTIC_CAUSAL_BACKLINK_TIMEOUT
+                       Maximum seconds per causal_backlinks lookup (default: 1)
   SEMANTIC_CAUSAL_ROOT Override backlink search root (default: repository root)
   SEMANTIC_DISABLE_SEARCH_LOG
                        Set to 1 to skip search_logs recording
@@ -331,13 +335,22 @@ append_causal_expansion() {
     local links
 
     [ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ] || return 0
+    local expansion_limit="${SEMANTIC_CAUSAL_EXPANSION_LIMIT:-3}"
+    local backlink_timeout="${SEMANTIC_CAUSAL_BACKLINK_TIMEOUT:-1}"
+    case "$expansion_limit" in
+        ''|*[!0-9]*) expansion_limit=3 ;;
+    esac
+    case "$backlink_timeout" in
+        ''|*[!0-9]*) backlink_timeout=1 ;;
+    esac
+    [ "$expansion_limit" -gt 0 ] 2>/dev/null || return 0
 
     # sed+head を awk 内に統合: subprocess 2個削減（L324原則: pipe fork最小化）
     links=$(
         grep -oE '\[\[[^]]+\]\]|cmd_[A-Za-z0-9_-]+|L[0-9][0-9A-Za-z_-]*|LS-[A-Za-z0-9_-]+|PI-[A-Za-z0-9_-]+|LK[0-9][0-9A-Za-z_-]*' "$search_output" 2>/dev/null \
-            | awk '{
+            | awk -v limit="$expansion_limit" '{
                 sub(/^\[\[/, ""); sub(/\]\]$/, "")
-                if ($0 && !seen[$0]++) { print; if (++n >= 20) exit }
+                if ($0 && !seen[$0]++) { print; if (++n >= limit) exit }
             }' \
         || true
     )
@@ -352,7 +365,7 @@ append_causal_expansion() {
         local backlink_output
         backlink_output=$(
             if cd "${SEMANTIC_CAUSAL_ROOT:-$script_dir}" 2>/dev/null; then
-                bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
+                timeout "$backlink_timeout" bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
                     | head -10 \
                 || true
             fi

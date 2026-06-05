@@ -25,6 +25,7 @@ SCRIPT_DIR="${_apv_self%/*}"
 REPO_ROOT="${SCRIPT_DIR%/*}"
 
 CMD_ID="${1:-}"
+CMD_TEXT=""
 
 if [[ -z "$CMD_ID" ]]; then
     echo "Usage: bash scripts/ac_physical_verify.sh <cmd_id>" >&2
@@ -54,14 +55,33 @@ if cmd_id == '-':
     cmd_text = sys.stdin.read()
 else:
     try:
+        import glob
         import yaml
-        with open(os.path.join(repo_root, 'queue', 'shogun_to_karo.yaml')) as f:
-            data = yaml.safe_load(f)
-        cmds = data.get('commands', data)
-        cmd = cmds.get(cmd_id, {})
+
+        cmd = {}
+        candidate_files = [os.path.join(repo_root, 'queue', 'shogun_to_karo.yaml')]
+        candidate_files.extend(
+            sorted(glob.glob(os.path.join(repo_root, 'queue', 'archive', 'cmds', f'{cmd_id}_*.yaml')), reverse=True)
+        )
+        for candidate in candidate_files:
+            if not os.path.exists(candidate):
+                continue
+            with open(candidate) as f:
+                data = yaml.safe_load(f) or {}
+            cmds = data.get('commands', data)
+            if isinstance(cmds, dict) and isinstance(cmds.get(cmd_id), dict):
+                cmd = cmds[cmd_id]
+                break
+            if isinstance(cmds, list):
+                for entry in cmds:
+                    if isinstance(entry, dict) and entry.get('id') == cmd_id:
+                        cmd = entry
+                        break
+            if cmd:
+                break
         cmd_text = cmd.get('command', '')
         if not cmd_text:
-            print(f\"FAIL: cmd_id '{cmd_id}' not found in shogun_to_karo.yaml\", file=sys.stderr)
+            print(f\"FAIL: cmd_id '{cmd_id}' not found in active/archive cmd YAML\", file=sys.stderr)
             sys.exit(1)
 
         project = cmd.get('project', '')
@@ -303,7 +323,14 @@ fi
 # target_pathのスクリプト名でtests/unit/*.batsを検索し、変更影響テストを表示
 _target_path=""
 if [[ "$CMD_ID" != "-" ]] && [[ -f "$REPO_ROOT/queue/shogun_to_karo.yaml" ]]; then
-    _target_path=$(grep -A2 "^  *${CMD_ID}:" "$REPO_ROOT/queue/shogun_to_karo.yaml" 2>/dev/null | grep 'target_path:' | head -1 | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'")
+    _target_path=$(grep -A2 "^  *${CMD_ID}:" "$REPO_ROOT/queue/shogun_to_karo.yaml" 2>/dev/null | grep 'target_path:' | head -1 | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'" || true)
+fi
+if [[ -z "$_target_path" ]] && [[ "$CMD_ID" != "-" ]]; then
+    for _cf in "$REPO_ROOT"/queue/archive/cmds/"${CMD_ID}"_*.yaml; do
+        [[ -f "$_cf" ]] || continue
+        _target_path=$(grep 'target_path:' "$_cf" 2>/dev/null | head -1 | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'")
+        [[ -n "$_target_path" ]] && break
+    done
 fi
 if [[ -z "$_target_path" ]]; then
     for _tf in "$REPO_ROOT"/queue/tasks/*.yaml; do
@@ -316,7 +343,7 @@ if [[ -z "$_target_path" ]]; then
 fi
 if [[ -n "$_target_path" ]]; then
     _script_name=$(basename "$_target_path" .sh)
-    _affected=$(grep -rl "$_script_name" "$REPO_ROOT/tests/unit/"*.bats 2>/dev/null | xargs -I{} basename {} 2>/dev/null | sort -u)
+    _affected=$(grep -rl "$_script_name" "$REPO_ROOT/tests/unit/"*.bats 2>/dev/null | xargs -r -I{} basename {} 2>/dev/null | sort -u || true)
     if [[ -n "$_affected" ]]; then
         echo ""
         echo "--- 関連テスト一覧(target: $_target_path) ---"

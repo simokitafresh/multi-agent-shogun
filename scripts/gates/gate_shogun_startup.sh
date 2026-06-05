@@ -531,21 +531,26 @@ else
     echo "  未読: 0件"
 fi
 
-# --- Gate 4.05: shogun cmd_new gate bypass history ---
-echo "■ shogun cmd_new gate迂回履歴"
 karo_inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
-if [ -f "$karo_inbox_file" ]; then
-    cmd_new_bypass_result=$(python3 - "$karo_inbox_file" <<'PY'
+bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+_gate4_yaml_batch=$(python3 - "$karo_inbox_file" "$inbox_file" "$bulletin_file" shogun <<'PY'
 import re
 import sys
 import yaml
+from pathlib import Path
 
-path = sys.argv[1]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-messages = data.get("messages") or []
-violations = []
-for msg in messages:
+karo_inbox, shogun_inbox, bulletin_path, agent = sys.argv[1:5]
+
+def load_yaml(path):
+    p = Path(path)
+    if not p.is_file():
+        return {}
+    with p.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+karo_messages = load_yaml(karo_inbox).get("messages") or []
+cmd_new_violations = []
+for msg in karo_messages:
     if not isinstance(msg, dict):
         continue
     if str(msg.get("from", "")).strip() != "shogun":
@@ -555,12 +560,78 @@ for msg in messages:
     content = str(msg.get("content", ""))
     if re.search(r"cmd_\d+", content):
         continue
-    violations.append((str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:100]))
-print(len(violations))
-for msg_id, ts, head in violations[:10]:
+    cmd_new_violations.append((str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:100]))
+
+shogun_messages = load_yaml(shogun_inbox).get("messages") or []
+gate_clear_pending = []
+for msg in shogun_messages:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("read") is not False:
+        continue
+    if str(msg.get("type", "")).strip() != "gate_clear":
+        continue
+    content = str(msg.get("content", ""))
+    cmd_match = re.search(r"\bcmd_[A-Za-z0-9_-]+\b", content)
+    cmd_id = cmd_match.group(0) if cmd_match else "cmd不明"
+    gate_clear_pending.append((cmd_id, str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:80]))
+
+entries = load_yaml(bulletin_path).get("entries") or []
+bulletin_pending = []
+bulletin_action_pending = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    status = str(entry.get("status", "")).lower()
+    text = str(entry.get("content", "")).splitlines()
+    head = text[0] if text else ""
+    if status != "closed":
+        if (
+            str(entry.get("action_type", "info")).strip() == "action_required"
+            and not str(entry.get("actioned_by", "")).strip()
+        ):
+            bulletin_action_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+        if entry.get("posted_by") != agent:
+            confirmed = entry.get("confirmed_by") or []
+            if agent not in confirmed:
+                rc = entry.get("requires_confirmation", False)
+                if rc:
+                    is_for_agent = agent in rc if isinstance(rc, list) else True
+                else:
+                    is_for_agent = True
+                if is_for_agent:
+                    bulletin_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+
+print("##CMD_NEW##")
+print(len(cmd_new_violations))
+for msg_id, ts, head in cmd_new_violations[:10]:
     print(f"{msg_id}\t{ts}\t{head}")
+print("##GATE_CLEAR##")
+print(len(gate_clear_pending))
+for cmd_id, msg_id, ts, head in gate_clear_pending[:10]:
+    print(f"{cmd_id}\t{msg_id}\t{ts}\t{head}")
+print("##BULLETIN##")
+print(len(bulletin_pending))
+for item in bulletin_pending[:5]:
+    print(item)
+print("##BULLETIN_ACTION##")
+print(len(bulletin_action_pending))
+for item in bulletin_action_pending[:5]:
+    print(item)
 PY
-)
+) || _gate4_yaml_batch="##CMD_NEW##
+0
+##GATE_CLEAR##
+0
+##BULLETIN##
+0
+##BULLETIN_ACTION##
+0"
+
+# --- Gate 4.05: shogun cmd_new gate bypass history ---
+echo "■ shogun cmd_new gate迂回履歴"
+if [ -f "$karo_inbox_file" ]; then
+    cmd_new_bypass_result=$(printf '%s\n' "$_gate4_yaml_batch" | awk '/^##CMD_NEW##$/{flag=1;next}/^##/{flag=0}flag')
     cmd_new_bypass_count=$(printf '%s\n' "$cmd_new_bypass_result" | head -1)
     if [ "${cmd_new_bypass_count:-0}" -gt 0 ]; then
         echo "  WARN: shogun cmd_idなしcmd_new送信 ${cmd_new_bypass_count}件"
@@ -579,32 +650,7 @@ fi
 # --- Gate 4.1: 未確認GATE CLEAR ---
 echo "■ 未確認GATE CLEAR"
 if [ -f "$inbox_file" ]; then
-    gate_clear_result=$(python3 - "$inbox_file" <<'PY'
-import re
-import sys
-import yaml
-
-path = sys.argv[1]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-messages = data.get("messages") or []
-pending = []
-for msg in messages:
-    if not isinstance(msg, dict):
-        continue
-    if msg.get("read") is not False:
-        continue
-    if str(msg.get("type", "")).strip() != "gate_clear":
-        continue
-    content = str(msg.get("content", ""))
-    cmd_match = re.search(r"\bcmd_[A-Za-z0-9_-]+\b", content)
-    cmd_id = cmd_match.group(0) if cmd_match else "cmd不明"
-    pending.append((cmd_id, str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:80]))
-print(len(pending))
-for cmd_id, msg_id, ts, head in pending[:10]:
-    print(f"{cmd_id}\t{msg_id}\t{ts}\t{head}")
-PY
-)
+    gate_clear_result=$(printf '%s\n' "$_gate4_yaml_batch" | awk '/^##GATE_CLEAR##$/{flag=1;next}/^##/{flag=0}flag')
     gate_clear_count=$(printf '%s\n' "$gate_clear_result" | head -1)
     if [ "${gate_clear_count:-0}" -gt 0 ]; then
         echo "  WARN: 未確認GATE CLEAR ${gate_clear_count}件"
@@ -623,49 +669,8 @@ fi
 
 # --- Gate 4.5: 掲示板未確認 ---
 echo "■ 掲示板未確認"
-bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
 if [ -f "$bulletin_file" ]; then
-    bulletin_result=$(python3 - "$bulletin_file" shogun <<'PY'
-import sys, yaml
-path, agent = sys.argv[1:3]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-entries = data.get("entries") or []
-pending = []
-for entry in entries:
-    if not isinstance(entry, dict):
-        continue
-    # 自分の投稿はスキップ
-    if entry.get("posted_by") == agent:
-        continue
-    # closed はスキップ
-    if str(entry.get("status", "")).lower() == "closed":
-        continue
-    # 既に確認済みならスキップ
-    confirmed = entry.get("confirmed_by") or []
-    if agent in confirmed:
-        continue
-    # 将軍宛: requires_confirmation に含まれる OR posted_by が他者(将軍宛報告チャネル)
-    rc = entry.get("requires_confirmation", False)
-    is_for_agent = False
-    if rc:
-        if isinstance(rc, list):
-            is_for_agent = agent in rc
-        else:
-            is_for_agent = True  # requires_confirmation: true = 全員対象
-    else:
-        # requires_confirmation未設定でも、他者からのopen投稿は将軍の確認対象
-        is_for_agent = True
-    if not is_for_agent:
-        continue
-    text = str(entry.get("content", "")).splitlines()
-    head = text[0] if text else ""
-    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-print(len(pending))
-for item in pending[:5]:
-    print(item)
-PY
-)
+    bulletin_result=$(printf '%s\n' "$_gate4_yaml_batch" | awk '/^##BULLETIN##$/{flag=1;next}/^##/{flag=0}flag')
     bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
     if [ "${bulletin_count:-0}" -gt 0 ]; then
         echo "  WARN: 未確認掲示板 ${bulletin_count}件"
@@ -685,32 +690,7 @@ fi
 # --- Gate 4.6: 掲示板 action_required 未対応 ---
 echo "■ 掲示板action_required未対応"
 if [ -f "$bulletin_file" ]; then
-    bulletin_action_result=$(python3 - "$bulletin_file" <<'PY'
-import sys
-import yaml
-
-path = sys.argv[1]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-entries = data.get("entries") or []
-pending = []
-for entry in entries:
-    if not isinstance(entry, dict):
-        continue
-    if str(entry.get("status", "")).lower() == "closed":
-        continue
-    if str(entry.get("action_type", "info")).strip() != "action_required":
-        continue
-    if str(entry.get("actioned_by", "")).strip():
-        continue
-    text = str(entry.get("content", "")).splitlines()
-    head = text[0] if text else ""
-    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-print(len(pending))
-for item in pending[:5]:
-    print(item)
-PY
-)
+    bulletin_action_result=$(printf '%s\n' "$_gate4_yaml_batch" | awk '/^##BULLETIN_ACTION##$/{flag=1;next}/^##/{flag=0}flag')
     bulletin_action_count=$(printf '%s\n' "$bulletin_action_result" | head -1)
     if [ "${bulletin_action_count:-0}" -gt 0 ]; then
         echo "  ALERT: 未対応action_required掲示板 ${bulletin_action_count}件"
@@ -725,6 +705,7 @@ PY
 else
     echo "  掲示板なし"
 fi
+unset _gate4_yaml_batch
 
 # --- Gate 5: 陣形図鮮度 ---
 echo "■ 陣形図鮮度"
@@ -767,16 +748,24 @@ else
     echo "  ALERT: $REQUIRED_READ2 が存在しない"
 fi
 
+_q6_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+
 # Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
 if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  ■ Phase逐次読込ガイド: SKIP(lightweight)"
 else
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
-_phase_guides=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" <<'PY'
-from pathlib import Path
+_deepdive_combined=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" "$_q6_lord_log" <<'PY'
+import json
+import re
 import sys
+from pathlib import Path
 
-for path in sys.argv[1:]:
+required_paths = sys.argv[1:3]
+lord_log = Path(sys.argv[3])
+
+print("##PHASE_GUIDES##")
+for path in required_paths:
     p = Path(path)
     if not p.is_file():
         continue
@@ -793,33 +782,9 @@ for path in sys.argv[1:]:
         end = lines[idx + 1][0] - 1 if idx + 1 < len(lines) else total
         limit = end - start + 1
         print(f"  {title}: Read(offset={start}, limit={limit})")
-PY
-)
-while IFS= read -r _pg_line; do
-    [ -n "$_pg_line" ] || continue
-    echo "  $_pg_line"
-done <<< "$_phase_guides"
-echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
-fi
 
-# --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
-# 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
-# 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
-# gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
-if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
-echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
-echo "  SKIP(lightweight)"
-else
-# 高速化: 3回のpython3起動→1回に統合 (WSL2 NTFS python3起動~150ms×3→~150ms)
-_q6_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
-_q6_combined=$(python3 - "$_q6_lord_log" 2>/dev/null <<'PY'
-import json
-import re
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-if not path.is_file():
+print("##Q6_COMBINED##")
+if not lord_log.is_file():
     print("(前セッション要約なし)")
     print("##LLIVE##")
     print("##Q6STATUS##")
@@ -828,7 +793,7 @@ if not path.is_file():
 
 entries = []
 try:
-    with path.open(encoding="utf-8", errors="ignore") as fh:
+    with lord_log.open(encoding="utf-8", errors="ignore") as fh:
         for line in fh:
             line = line.strip()
             if not line:
@@ -844,7 +809,6 @@ except OSError:
     print("READ_ERROR")
     raise SystemExit(0)
 
-# 1. session_summary (最後のsession_summaryエントリ)
 summary = "(前セッション要約なし)"
 for entry in entries:
     if entry.get("direction") == "session_summary":
@@ -854,7 +818,6 @@ for entry in entries:
 print(summary)
 print("##LLIVE##")
 
-# 2. session境界以降のエントリ
 session_entries = []
 for entry in entries:
     if entry.get("direction") == "session_summary":
@@ -862,7 +825,6 @@ for entry in entries:
         continue
     session_entries.append(entry)
 
-# inbound発言3件
 inbound = []
 for entry in session_entries:
     if entry.get("direction") != "inbound":
@@ -882,7 +844,6 @@ for idx, text in enumerate(inbound[-3:], start=1):
 
 print("##Q6STATUS##")
 
-# 3. Q6回答チェック
 answer_terms = (
     "Anthropic", "創造主", "洗脳", "早期終了", "検証スキップ", "他者依存",
     "緩い設計", "先送り", "出力=仕事", "簡潔本能", "完了急ぎ",
@@ -925,10 +886,35 @@ else:
 if automation_target:
     print(f"TARGET\t{automation_target}")
 PY
-) || _q6_combined="(取得失敗)
+) || _deepdive_combined="##PHASE_GUIDES##
+##Q6_COMBINED##
+(取得失敗)
 ##LLIVE##
 ##Q6STATUS##
 NOT_FOUND"
+_phase_guides=$(printf '%s\n' "$_deepdive_combined" | awk '/^##PHASE_GUIDES##$/{flag=1;next}/^##Q6_COMBINED##$/{flag=0}flag')
+while IFS= read -r _pg_line; do
+    [ -n "$_pg_line" ] || continue
+    echo "  $_pg_line"
+done <<< "$_phase_guides"
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+fi
+
+# --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---
+# 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
+# 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
+# gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
+echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
+echo "  SKIP(lightweight)"
+else
+_q6_combined=$(printf '%s\n' "$_deepdive_combined" | awk '/^##Q6_COMBINED##$/{flag=1;next}flag')
+if [ -z "$_q6_combined" ]; then
+    _q6_combined="(取得失敗)
+##LLIVE##
+##Q6STATUS##
+NOT_FOUND"
+fi
 
 # 出力を3変数に分割 (外部プロセスなし: 純bash)
 _prev_session_summary=""
