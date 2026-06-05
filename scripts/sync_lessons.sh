@@ -54,7 +54,7 @@ mkdir -p "$(dirname "$CACHE_FILE")"
     export SSOT_FILE INDEX_FILE ARCHIVE_FILE SCRIPT_DIR PROJECT_ID PROJECT_PATH
     python3 << 'PYEOF'
 import csv
-import re, yaml, os, sys, tempfile
+import re, yaml, os, sys, tempfile, subprocess
 from datetime import datetime
 from collections import defaultdict
 
@@ -100,20 +100,46 @@ _tf_path_pat = re.compile(r'(?:scripts|tests|context|backend|frontend|config|que
 _tf_file_pat = re.compile(r'[a-zA-Z_][\w-]*\.(?:sh|py|bats|yaml|md|json)')
 _tf_file_cache = set()
 _tf_search_bases = []
+_tf_scan_dirs = ('scripts', 'tests', 'context', 'config', 'backend', 'frontend', 'docs')
 for _tf_candidate in (os.environ.get('SCRIPT_DIR', ''), os.environ.get('PROJECT_PATH', '')):
     if _tf_candidate and _tf_candidate not in _tf_search_bases:
         _tf_search_bases.append(_tf_candidate)
 if project_id == 'dm-signal' and '/mnt/c/Python_app/DM-signal' not in _tf_search_bases:
     _tf_search_bases.append('/mnt/c/Python_app/DM-signal')
 
+def _add_tracked_filenames_from_git(base):
+    try:
+        proc = subprocess.run(
+            ['git', '-C', base, 'ls-files', '--', *_tf_scan_dirs],
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=8,
+        )
+    except Exception:
+        return False
+    if proc.returncode != 0:
+        return False
+    for rel in proc.stdout.splitlines():
+        if rel:
+            _tf_file_cache.add(os.path.basename(rel))
+    return True
+
 for _tf_search_base in _tf_search_bases:
     if not _tf_search_base or not os.path.isdir(_tf_search_base):
         continue
-    for _tf_sd in ('scripts', 'tests', 'context', 'config', 'backend', 'frontend', 'docs'):
+    if _add_tracked_filenames_from_git(_tf_search_base):
+        continue
+    for _tf_sd in _tf_scan_dirs:
         _tf_dir = os.path.join(_tf_search_base, _tf_sd)
         if not os.path.isdir(_tf_dir):
             continue
-        for _tf_root, _, _tf_files in os.walk(_tf_dir):
+        for _tf_root, _tf_dirs, _tf_files in os.walk(_tf_dir):
+            _tf_dirs[:] = [
+                d for d in _tf_dirs
+                if d not in ('.git', 'node_modules', '.next', 'dist', 'build', '__pycache__')
+            ]
             for _tf_f in _tf_files:
                 _tf_file_cache.add(_tf_f)
 
