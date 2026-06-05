@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
+<!-- script_refs_checked_at: 2026-06-05T19:21:10+09:00 -->
 
 # /report-write — 報告YAML作成スキル
 
@@ -38,6 +38,36 @@ description: |
 ### 必須事前検査
 - verdict自動導出: 忍者は verdict を手動記入禁止。`binary_checks` 全resultを `yes` または `no` で埋め、`gate_report_format.sh` に verdict を自動導出させる。空欄、`None`、`null`、`FILL_THIS` が1つでもあれば該当ACを `report_field_set.sh` で修正する。
 - FILL_THIS残存防止: 家老通知前に `rg -n "FILL_THIS" "$REPORT"` を実行する。1件でも出たら通知禁止。`lesson_candidate.no_lesson_reason`、`lessons_useful.reason`、`files_modified`、`result.summary` などを実値へ置換してから `gate_report_format.sh` を再実行する。
+- フィールド未記入pre-flight: `gate_report_format.sh` 前に下記を実行し、`MISSING` または `BAD_BC` が1件でも出たら通知禁止。該当フィールドを `report_field_set.sh` で埋めてから再実行する。
+
+```bash
+python3 - "$REPORT" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path)) or {}
+required = [
+    ('worker_id', data.get('worker_id')),
+    ('parent_cmd', data.get('parent_cmd')),
+    ('ac_version_read', data.get('ac_version_read')),
+    ('result.summary', (data.get('result') or {}).get('summary') if isinstance(data.get('result'), dict) else None),
+    ('purpose_validation', data.get('purpose_validation')),
+    ('files_modified', data.get('files_modified')),
+    ('lesson_candidate.found', (data.get('lesson_candidate') or {}).get('found') if isinstance(data.get('lesson_candidate'), dict) else None),
+    ('lessons_useful', data.get('lessons_useful')),
+]
+for name, value in required:
+    if value in (None, '', [], {}):
+        print(f'MISSING {name}')
+for ac, checks in (data.get('binary_checks') or {}).items():
+    if not isinstance(checks, list):
+        print(f'MISSING binary_checks.{ac}')
+        continue
+    for i, item in enumerate(checks):
+        result = str((item or {}).get('result', '')).strip()
+        if result not in ('yes', 'no'):
+            print(f'BAD_BC binary_checks.{ac}[{i}].result={result!r}')
+PY
+```
 - Script refs verified: 2026-05-19 cmd_2883. `report_field_set.sh` は空文字値をYAML空文字として許可し、構造体/複数行/stdin YAMLはPython fallbackを使う。`lessons_useful`、`binary_checks`、`self_gate_check`、`assumption_invalidation`、`knowledge_candidate` は書込み前に型/値をBLOCK検証する。`report_field_set.sh <report> origin [value]` は `lesson_candidate.origin` へ書き、value省略時はworker task/reportのcmdからoriginを自動継承する。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
 ### Step 1: 報告パスを確認
 ```bash
@@ -125,6 +155,14 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-05: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"compl...
+- 2026-06-05: gate=gate_report_format result=FAIL executor=kagemaru reason=lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: id=\"growth_loop_defense\" is invalid (must match L+number, ...
+
+- 2026-06-04: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING
+- 2026-06-04: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful[0]: is NoneType (must be dict); lessons_useful[1]: missing \"id\" field (must have lesson ID li...
+
+- 2026-06-04: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: item count 1/14 (<50% of task template); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; re...
 - 2026-06-02: gate=gate_report_format result=FAIL executor=hayate reason=lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; b...
 
 - 2026-05-22: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: item count 1/13 (<50% of task template); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; re...

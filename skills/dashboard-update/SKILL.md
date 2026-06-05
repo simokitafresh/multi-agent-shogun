@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
+<!-- script_refs_checked_at: 2026-06-05T19:21:10+09:00 -->
 
 # /dashboard-update — KARO_SECTION自動生成
 
@@ -44,6 +44,25 @@ dashboard.mdの `<!-- KARO_SECTION_START -->` 〜 末尾を、プライマリYAM
 Script refs verified: 2026-05-22 cmd_2959. `gate_report_format.sh` は `gate_report_format_combined.py` によるautofix+validation統合、PASS cache、`GATE_FAST_EXIT`/`GATE_NO_LOG`、中間状態FAILログ抑止、task_clarity未記入WARN、PASS時のreport-write/verdict-check skill log非同期化を持つ。dashboard更新前の報告YAML検証はこの現行gate出力を正本にする。
 - <!-- skill-auto-improve:64b8fce83277 --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=<cmd_id> dry_run=false」(count=31, last=2026-05-19T12:33:06+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 - <!-- skill-auto-improve:40a8ebc501f9 --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=<cmd_id> dry_run=true」(count=4, last=2026-05-02T22:12:29+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
+
+### pre-flight: cmd_id空パラメータ検出
+
+`dashboard_update.sh` 実行前に必ず `cmd_id` を明示し、空文字・`--dry-run`単独・`cmd_`以外の値なら実行しない。cmd_id未指定のまま実行すると `dashboard_update.sh exit=1 cmd=<empty>` / `cmd=--dry-run` がskill FAILとして記録される。
+
+```bash
+cmd_id="${1:-}"
+if [ -z "$cmd_id" ] || [ "$cmd_id" = "--dry-run" ] || ! [[ "$cmd_id" =~ ^cmd_[A-Za-z0-9_]+$ ]]; then
+  echo "BLOCK: dashboard-update requires cmd_id like cmd_3193 before optional --dry-run" >&2
+  exit 1
+fi
+bash scripts/dashboard_update.sh "$cmd_id" --dry-run
+```
+
+実行例:
+
+```bash
+bash scripts/dashboard_update.sh cmd_3193 --dry-run
+```
 ### Step 1: データ収集
 
 以下のデータソースを読み、変数を収集する:
