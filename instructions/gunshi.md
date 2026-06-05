@@ -387,6 +387,7 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 3. **フィルタ強化の偽陰性**: 追加した条件が正当なケース(マルチワーカー等)を除外しないか
 4. **上限値の状態除外漏れ**: cap/threshold追加時にpending/GATE待ち状態を除外しているか
 5. **非atomic 2ステップ更新**: 複数yaml_field_setの間に中間状態が見えないか
+6. **テスト前提崩壊**: gate/hook/scripts変更cmdで、target_pathの関連batsテストのfixture前提が崩れないか。ac_physical_verify.shの関連テスト一覧で影響範囲を確認せよ(cmd_3184 CI RED事故: 除外フィルタ追加→既存bats 3件の前提崩壊)
 
 ### Step 5: Confidence Label（確信度を宣言せよ）
 全ステップの結果を踏まえ、レビュー全体の確信度をHIGH/MEDIUM/LOWでラベル付けする。
@@ -462,6 +463,7 @@ logs/gunshi_review_log\.yaml
 - CLAUDE.md/instructions: grep で反映確認。エージェント視点で読み直し
 - デフォルト値・閾値変更時: 関連テストの前提値が変更後の値と一致するか `grep -rn "旧値" tests/` で確認。不一致→テストも更新（CI RED事故 2026-05-21: MIN_SAMPLES 3→1変更時にテスト前提未更新→2件FAIL）
 - 新規フィールド必須化時: 統合テストのfixture(埋め込みYAML)が新フィールドを含むか `grep -rn "フィールド名" tests/` で確認。不在→fixtureも更新（CI RED事故 2026-05-24: brainwash_check全level必須化でfixture未更新→1件FAIL）
+- D0実装時: **全入力モード**をテストせよ。stdinモードだけでなくcmd_idモード/archiveモード/空結果モードも必須。「既存バグ」と切り離す判断は全パステスト後のみ許される（D0事故 2026-06-05: stdinのみテスト→cmd_idモードでset -u/pipefailバグ4件→家老修正）
 
 ★殿丸投げ検査: 「殿に動作確認お願いします」と書いていないか？→ NO 必須
 
