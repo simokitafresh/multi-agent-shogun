@@ -17,9 +17,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
-API_BASE="https://dm-signal-backend.onrender.com"
-CACHE_FILE="/tmp/gate_p_average_cache.txt"
+ENV_FILE="${P_AVERAGE_ENV_FILE:-/mnt/c/Python_app/DM-signal/backend/.env}"
+API_BASE="${P_AVERAGE_API_BASE:-https://dm-signal-backend.onrender.com}"
+CACHE_FILE="${P_AVERAGE_CACHE_FILE:-/tmp/gate_p_average_cache.txt}"
+CURL_BIN="${P_AVERAGE_CURL_BIN:-curl}"
 CACHE_TTL_SECONDS=21600  # 6時間キャッシュ(p̄は月次更新のため十分)
 
 # キャッシュチェック: 6時間以内ならAPI呼出しをスキップ
@@ -57,14 +58,54 @@ if [ -z "$ADMIN_USER" ] || [ -z "$ADMIN_PASS" ]; then
 fi
 
 # API呼出し
-response=$(curl -s -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
-    --max-time 15 \
-    "${API_BASE}/api/p-average" 2>/dev/null) || {
-    echo "ALERT: p̄鮮度: API呼出し失敗"
-    echo "  action: Render バックエンド (${API_BASE}) が起動中か確認せよ。curl -u \$ADMIN_USER:\$ADMIN_PASS ${API_BASE}/api/p-average で手動確認"
-    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API応答なし"
-    exit 1
+response_file="$(mktemp)"
+curl_meta_file="$(mktemp)"
+curl_err_file="$(mktemp)"
+cleanup_tmp() {
+    rm -f "$response_file" "$curl_meta_file" "$curl_err_file"
 }
+trap cleanup_tmp EXIT
+
+curl_exit=0
+"$CURL_BIN" -sS -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
+    --max-time 15 \
+    -o "$response_file" \
+    -w '%{http_code} %{time_total}' \
+    "${API_BASE}/api/p-average" >"$curl_meta_file" 2>"$curl_err_file" || curl_exit=$?
+
+curl_meta="$(cat "$curl_meta_file" 2>/dev/null || true)"
+http_code="$(printf '%s\n' "$curl_meta" | awk '{print $1}')"
+elapsed="$(printf '%s\n' "$curl_meta" | awk '{print $2}')"
+http_code="${http_code:-000}"
+elapsed="${elapsed:-unknown}"
+
+if [ "$curl_exit" -ne 0 ]; then
+    case "$curl_exit:$http_code" in
+        22:401|22:403)
+            echo "ALERT: p̄鮮度: API認証失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+            echo "  action: backend/.env の ADMIN_USER/ADMIN_PASS と Render 側の認証設定を照合せよ"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API認証失敗 HTTP ${http_code}"
+            ;;
+        22:5*)
+            echo "ALERT: p̄鮮度: APIサーバーエラー (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+            echo "  action: Render バックエンド (${API_BASE}) の稼働状態とログを確認せよ"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API 5xx HTTP ${http_code}"
+            ;;
+        28:*)
+            echo "ALERT: p̄鮮度: APIタイムアウト (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+            echo "  action: Render バックエンド (${API_BASE}) のcold start/timeoutを確認せよ"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — APIタイムアウト"
+            ;;
+        *)
+            echo "ALERT: p̄鮮度: API呼出し失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+            echo "  action: Render バックエンド (${API_BASE}) が起動中か確認せよ。curl -u \$ADMIN_USER:\$ADMIN_PASS ${API_BASE}/api/p-average で手動確認"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API応答なし HTTP ${http_code} curl ${curl_exit}"
+            ;;
+    esac
+    exit 1
+fi
+
+response="$(cat "$response_file")"
 
 # calculated_at を抽出（トップレベルのdata.calculated_at）
 calculated_at=$(echo "$response" | python3 -c "
