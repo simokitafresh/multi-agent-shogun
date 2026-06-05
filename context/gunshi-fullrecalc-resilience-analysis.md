@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-04 cmd_training_backlinks_android_ssh_input_loss_20260604 -->
+<!-- last_updated: 2026-06-05 cmd_training_L4_backlinks_20260605a_tobisaru -->
 # fullrecalculate構造的脆弱性分析 — 速度分析補遺 (軍師)
 # 2026-03-28T22:10 | 前回速度分析の発展。cmd_1461/cmd_1456知見の統合
 
@@ -121,7 +121,9 @@ cmd_1461の結果と統合すれば、zero-signal問題の完全な根因理解+
 
 ## 因果リンク
 
-- → [[gunshi-fullrecalc-speed-analysis]] 元速度分析。7285s→260s改善でPhase 5完走→zero-signal解消(Q1-Q2)の実証基盤。speed-analysis L33に逆方向リンクあり
+- ← [[gunshi-fullrecalc-speed-analysis]] 速度分析がこの耐性分析を参照。速度改善が正確性保証に依存する構造的リスクを指摘
+- ← [[README]] context/README.md §専門コンテキスト入口 L38 にFoF劣化とセットで参照
+- → [[gunshi-fullrecalc-speed-analysis]] 元速度分析。7285s→260s改善でPhase 5完走→zero-signal解消(Q1-Q2)の実証基盤
 - → [[fullrecalculate-architecture-2026-03-28]] fullrecalculate全体構造の一次解析。docs/research/fullrecalculate-architecture-2026-03-28.md L10で全PF再計算エンジン、L20でPhase 0の全計算データDELETEを定義
 - → [[dm-signal-ops]] crash-safety実装先: shutdown警告+recalculation_statusテーブル+pg_advisory_lock(cmd_1463/1465)。dm-signal-ops L13: `crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御`
 - → [[infrastructure]] fullrecalculate baseline自動保存(cmd_1540)。infrastructure L123: `| 1540 | **fullrecalculate baseline自動保存** | 実行前baseline自動保存+実行後差分サマリ出力`
