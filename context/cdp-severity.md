@@ -33,3 +33,5 @@ CDP計測・canary・ブラウザ実測の異常は、以下の4段階で扱う�
 
 - → [[cdp-philosophy.md]] CDP操作哲学・技術スタック・`cdp_measure.sh`フロー（severity判断の前提知識）
 - ← [[cdp-browse/SKILL.md]] CDP操作手順・ブラウザ起動・計測フロー（本ファイルのseverity基準を参照する実行層）
+- → [[cdp_canary.sh]] deploy後監視の実装（本ファイルのseverity閾値を使う連続アラート）
+- → [[gstack-gbrain-takeaway-catalog.md]] `/canary`由来のdeploy後継続監視と4段階severity設計根拠
