@@ -80,6 +80,17 @@ _create_context() {
     git -C "$TEST_TMPDIR" commit -q -m "test source update for $rel_path"
 }
 
+_create_source_commit() {
+    local rel_path="${1:-src/source.txt}" subject="${2:-test: source project changed}"
+    local abs_path="$TEST_TMPDIR/$rel_path"
+    mkdir -p "$(dirname "$abs_path")"
+    printf 'source update\n' >> "$abs_path"
+    git -C "$TEST_TMPDIR" add "$rel_path"
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$TEST_TMPDIR" commit -q -m "$subject"
+}
+
 # ── Helper: create archive cmd entry ──
 _create_archive_cmd() {
     local cmd_id="$1" project="$2" status="${3:-completed}" completed_date="${4:-$TODAY}"
@@ -179,6 +190,7 @@ STKYAML
 # === Test 5: --dashboard-warnings 陳腐化ファイル → WARN出力 ===
 @test "--dashboard-warnings with stale context → WARN output" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -186,6 +198,17 @@ STKYAML
     [[ "$output" == *"ALERT:"* ]]
     [[ "$output" == *"context/dm-signal.md"* ]]
     [[ "$output" == *"source commits"* ]]
+}
+
+@test "root fallback ignores context-only commits" {
+    _create_context "context/dm-signal.md" "$TODAY"
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 @test "dm-signal split contexts use scoped source pathspecs" {
@@ -226,6 +249,7 @@ PROJ
     _create_context "context/checklist-shin-v2-registration.md" "$STALE_DATE"
     _create_context "context/checklist-ward-fof-production.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "scripts/source_change.sh"
     _create_archive_cmd "cmd_900" "infra" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -245,6 +269,7 @@ context/gunshi-opt12-analysis.md
 EOF
     _create_context "context/gunshi-opt12-analysis.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "scripts/source_change.sh"
     _create_archive_cmd "cmd_900" "infra" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -275,6 +300,7 @@ EOF
 @test "--cmd-warnings with valid cmd_id → warnings for that project" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_shogun_to_karo "cmd_500" "dm-signal"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_500
@@ -292,6 +318,7 @@ EOF
     _create_context "context/checklist-shin-v2-registration.md" "$STALE_DATE"
     _create_context "context/checklist-ward-fof-production.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "scripts/source_change.sh"
     _create_shogun_to_karo "cmd_503" "infra"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_503
@@ -308,6 +335,7 @@ EOF
 @test "--cmd-warnings reads shogun_to_karo mapping command format" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_shogun_to_karo_mapping "cmd_502" "dm-signal"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_502
@@ -319,6 +347,7 @@ EOF
 @test "--cmd-warnings finds project from archived nested command format" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_nested_archive_cmd "cmd_501" "dm-signal" "done" "$TODAY"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_501
@@ -359,6 +388,7 @@ EOF
     ten_days_ago="$(date -d '10 days ago' +%Y-%m-%d 2>/dev/null || date -v-10d +%Y-%m-%d)"
 
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_archive_cmd "cmd_850" "dm-signal" "completed" "$ten_days_ago"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -372,6 +402,7 @@ EOF
 
 @test "--dashboard-warnings reads nested archived command format" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_nested_archive_cmd "cmd_910" "dm-signal" "done" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -381,6 +412,7 @@ EOF
 
 @test "--dashboard-warnings uses fresh cmd-chronicle as fast index" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_cmd_chronicle "cmd_920" "dm-signal"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -391,6 +423,7 @@ EOF
 @test "--cmd-warnings finds project from cmd-chronicle" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
     _create_cmd_chronicle "cmd_921" "dm-signal"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_921
@@ -423,6 +456,7 @@ EOF
 @test "infra context uses same-repo path git log" {
     _create_context "context/infrastructure.md" "$STALE_DATE"
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "scripts/source_change.sh"
     _create_shogun_to_karo "cmd_931" "infra"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_931

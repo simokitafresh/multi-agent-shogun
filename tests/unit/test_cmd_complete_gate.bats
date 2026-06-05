@@ -1380,6 +1380,10 @@ run_report_format_validation() {
     git -C "$TEST_PROJECT" config user.name "Test User"
     git -C "$TEST_PROJECT" add context/infrastructure.md
     git -C "$TEST_PROJECT" commit -q -m "test source update for context/infrastructure.md"
+    mkdir -p "$TEST_PROJECT/scripts"
+    printf 'source update\n' > "$TEST_PROJECT/scripts/source_change.sh"
+    git -C "$TEST_PROJECT" add scripts/source_change.sh
+    git -C "$TEST_PROJECT" commit -q -m "test source update for infra script"
 
     run run_context_freshness_nudge
     [ "$status" -eq 0 ]
