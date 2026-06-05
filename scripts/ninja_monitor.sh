@@ -2950,9 +2950,12 @@ check_inbox_renudge() {
                     if [ -n "$_karo_target" ] && check_idle "$_karo_target" "karo"; then
                         local _last="${RENUDGE_LAST_SEND[$name]:-0}"
                         if [ $((now - _last)) -ge 120 ]; then
-                            log "KARO-PENDING-NUDGE: karo idle with pending work (ninja done), sending nudge"
-                            safe_send_keys_atomic "$_karo_target" "inbox0" 0.3
-                            RENUDGE_LAST_SEND[$name]=$now
+                            log "KARO-PENDING-INBOX: karo idle with pending work (ninja done), sending inbox message"
+                            if send_inbox_message karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。" pending_work ninja_monitor; then
+                                RENUDGE_LAST_SEND[$name]=$now
+                            else
+                                log "ERROR: KARO-PENDING-INBOX inbox_write failed"
+                            fi
                         fi
                     fi
                 fi
