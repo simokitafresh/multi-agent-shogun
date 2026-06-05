@@ -2960,7 +2960,7 @@ check_inbox_renudge() {
                     fi
                 fi
             fi
-            if [ -n "${RENUDGE_FINGERPRINT[$name]}" ] || [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
+            if [ -n "${RENUDGE_FINGERPRINT[$name]:-}" ] || [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then
                 log "RENUDGE-RESET: $name unread=0, fingerprint+counter reset"
             fi
             RENUDGE_FINGERPRINT[$name]=""
