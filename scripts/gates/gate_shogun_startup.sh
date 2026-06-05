@@ -187,8 +187,9 @@ check_shogun_watcher_escalation_env
 _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
 _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
 _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
+_TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_SCRIPT_INDEX=$(mktemp)
-trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_SCRIPT_INDEX"' EXIT
+trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_SCRIPT_INDEX"' EXIT
 if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
     tail -n "${SHOGUN_STARTUP_DQ_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/cmd_design_quality.yaml" > "$_TMP_DQ_RECENT"
 fi
@@ -1376,65 +1377,90 @@ fi
 # 9c: 軍師draft RC傾向 (直近20件)
 REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 REVIEW_LOG_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
-rc_data=$(python3 - "$REVIEW_LOG" "$REVIEW_LOG_ARCHIVE_DIR" 2>/dev/null <<'END_RC_PY'
-import sys, os, glob, re
-
-review_log = sys.argv[1]
-archive_dir = sys.argv[2]
-
-# データソース: gunshi_review_log.yaml + archive直近2ファイル
-sources = []
-if os.path.exists(review_log):
-    sources.append(review_log)
-archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
-sources.extend(archives[-2:])
-
-drafts = []
-kw_patterns = [
-    ('前提崩壊', re.compile(r'前提崩壊|premise', re.I)),
-    ('パス誤り', re.compile(r'パス.*誤|誤.*パス|path.*err|wrong.*path', re.I)),
-    ('runtime', re.compile(r'runtime', re.I)),
-    ('scope', re.compile(r'scope|スコープ', re.I)),
-]
-
-for src in sources:
-    try:
-        with open(src, encoding='utf-8') as f:
-            content = f.read()
-    except Exception:
-        continue
-    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
-        entry = m.group(0)
-        if 'review_type: draft' not in entry:
-            continue
-        vm = re.search(r'verdict:\s*(\S+)', entry)
-        verdict = vm.group(1).strip('"\'') if vm else 'unknown'
-        fm = re.search(r'findings_summary:\s*"(.+?)"', entry, re.DOTALL)
-        summary = fm.group(1) if fm else ''
-        drafts.append((verdict, summary))
-
-drafts = drafts[-20:]
-total = len(drafts)
-if total == 0:
-    print("N/A (データなし)")
-    sys.exit(0)
-
-rc_count = sum(1 for v, _ in drafts if v == 'REQUEST_CHANGES')
-rc_pct = rc_count * 100 // total
-
-kw_counts = {}
-for v, summary in drafts:
-    if v != 'REQUEST_CHANGES':
-        continue
-    for kw, pat in kw_patterns:
-        if pat.search(summary):
-            kw_counts[kw] = kw_counts.get(kw, 0) + 1
-
-kw_parts = sorted(kw_counts.items(), key=lambda x: -x[1])
-kw_str = '  ' + ', '.join(f'{k}: {v}件' for k, v in kw_parts) if kw_parts else ''
-print(f"RC={rc_count}/{total} ({rc_pct}%){kw_str}")
-END_RC_PY
-) || rc_data="N/A (スクリプトエラー)"
+rc_sources=()
+[ -f "$REVIEW_LOG" ] && rc_sources+=("$REVIEW_LOG")
+if [ -d "$REVIEW_LOG_ARCHIVE_DIR" ]; then
+    while IFS= read -r _rc_archive; do
+        [ -n "$_rc_archive" ] && rc_sources+=("$_rc_archive")
+    done < <(ls -1 "$REVIEW_LOG_ARCHIVE_DIR"/gunshi_review_log*.yaml 2>/dev/null | tail -n 2)
+fi
+if [ "${#rc_sources[@]}" -gt 0 ]; then
+    rc_data=$(awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function flush_entry() {
+    if (is_draft) {
+        total_all++
+        verdicts[total_all] = verdict
+        summaries[total_all] = summary
+    }
+    is_draft = 0
+    verdict = "unknown"
+    summary = ""
+}
+BEGIN { verdict = "unknown" }
+/^- cmd_id:/ { flush_entry(); next }
+/^[[:space:]]*review_type:[[:space:]]*draft[[:space:]]*$/ { is_draft = 1; next }
+/^[[:space:]]*verdict:/ && is_draft {
+    v = $0
+    sub(/^[[:space:]]*verdict:[[:space:]]*/, "", v)
+    verdict = trim(v)
+    next
+}
+/^[[:space:]]*findings_summary:/ && is_draft {
+    s = $0
+    sub(/^[[:space:]]*findings_summary:[[:space:]]*/, "", s)
+    summary = summary " " trim(s)
+    next
+}
+END {
+    flush_entry()
+    if (total_all == 0) {
+        print "N/A (データなし)"
+        exit
+    }
+    start = total_all - 19
+    if (start < 1) start = 1
+    total = 0
+    rc = 0
+    for (i = start; i <= total_all; i++) {
+        total++
+        if (verdicts[i] == "REQUEST_CHANGES") {
+            rc++
+            lower = tolower(summaries[i])
+            if (summaries[i] ~ /前提崩壊/ || lower ~ /premise/) kw["前提崩壊"]++
+            if (summaries[i] ~ /パス.*誤|誤.*パス/ || lower ~ /path.*err|wrong.*path/) kw["パス誤り"]++
+            if (lower ~ /runtime/) kw["runtime"]++
+            if (summaries[i] ~ /スコープ/ || lower ~ /scope/) kw["scope"]++
+        }
+    }
+    pct = int(rc * 100 / total)
+    printf "RC=%d/%d (%d%%)", rc, total, pct
+    order[1] = "前提崩壊"; order[2] = "パス誤り"; order[3] = "runtime"; order[4] = "scope"
+    sep = "  "
+    for (rank = 1; rank <= 4; rank++) {
+        best = ""
+        best_count = 0
+        best_pos = 0
+        for (j = 1; j <= 4; j++) {
+            key = order[j]
+            if (used[key] || !(key in kw)) continue
+            if (kw[key] > best_count) {
+                best = key
+                best_count = kw[key]
+                best_pos = j
+            }
+        }
+        if (best == "") continue
+        printf "%s%s: %d件", sep, best, best_count
+        sep = ", "
+        used[best] = 1
+    }
+    printf "\n"
+}
+' "${rc_sources[@]}" 2>/dev/null) || rc_data="N/A (スクリプトエラー)"
+else
+    rc_data="N/A (データなし)"
+fi
 echo "  軍師draft RC傾向(直近20件): ${rc_data}"
 fi
 
@@ -1540,65 +1566,47 @@ fi
 # 目的: karo_sent のまま長期滞留するGPを起動時ALERT化し、「低優先=やらない」を防ぐ。
 gp_stale_days="${GP_STALE_DAYS:-14}"
 if [ -f "$REVIEW_LOG" ]; then
-    stale_gp=$(python3 - "$REVIEW_LOG" "$gp_stale_days" <<'PY' 2>/dev/null || true
-import sys, yaml
-from datetime import datetime, timezone, timedelta
-
-path, days_s = sys.argv[1], sys.argv[2]
-try:
-    days = int(days_s)
-except ValueError:
-    days = 14
-cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-
-def parse_ts(value):
-    if not value:
-        return None
-    if isinstance(value, datetime):
-        dt = value
-    else:
-        text = str(value).strip().strip('"').replace("Z", "+00:00")
-        try:
-            dt = datetime.fromisoformat(text)
-        except ValueError:
-            return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
-
-def iter_entries(data):
-    if isinstance(data, list):
-        yield from data
-    elif isinstance(data, dict):
-        entries = data.get("entries")
-        if isinstance(entries, list):
-            yield from entries
-
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or []
-rows = []
-for entry in iter_entries(data):
-    if not isinstance(entry, dict):
-        continue
-    entry_ts = parse_ts(entry.get("timestamp") or entry.get("ts"))
-    proposals = entry.get("proposals") or []
-    if not isinstance(proposals, list):
-        continue
-    for proposal in proposals:
-        if not isinstance(proposal, dict):
-            continue
-        if str(proposal.get("status", "")).strip() != "karo_sent":
-            continue
-        dt = parse_ts(proposal.get("sent_at") or proposal.get("timestamp") or entry_ts)
-        if dt and dt <= cutoff:
-            age = (datetime.now(timezone.utc) - dt).days
-            rows.append((age, str(proposal.get("id", "?"))))
-if rows:
-    print(f"__TOTAL__\t{len(rows)}")
-    for age, gid in sorted(rows, reverse=True)[:5]:
-        print(f"{gid}:{age}日")
-PY
-)
+    _gp_cutoff_epoch=$(date -d "${gp_stale_days} days ago" +%s 2>/dev/null || echo 0)
+    _gp_now_epoch=$(date +%s)
+    stale_gp=$(awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function emit() {
+    if (status == "karo_sent") {
+        ts = sent_at
+        if (ts == "") ts = proposal_ts
+        if (ts == "") ts = entry_ts
+        if (id == "") id = "?"
+        if (ts != "") print id "\t" ts
+    }
+    id = ""; status = ""; sent_at = ""; proposal_ts = ""
+}
+/^- cmd_id:/ { emit(); entry_ts = ""; in_proposal = 0; next }
+/^[[:space:]]*timestamp:/ && !in_proposal {
+    s = $0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", s); entry_ts = trim(s); next
+}
+/^[[:space:]]*- id: GP-/ {
+    emit()
+    in_proposal = 1
+    s = $0; sub(/^[[:space:]]*- id:[[:space:]]*/, "", s); id = trim(s); next
+}
+in_proposal && /^[[:space:]]*status:/ {
+    s = $0; sub(/^[[:space:]]*status:[[:space:]]*/, "", s); status = trim(s); next
+}
+in_proposal && /^[[:space:]]*sent_at:/ {
+    s = $0; sub(/^[[:space:]]*sent_at:[[:space:]]*/, "", s); sent_at = trim(s); next
+}
+in_proposal && /^[[:space:]]*timestamp:/ {
+    s = $0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", s); proposal_ts = trim(s); next
+}
+END { emit() }
+' "$REVIEW_LOG" 2>/dev/null | while IFS=$'\t' read -r _gp_id _gp_ts; do
+        [ -n "$_gp_id" ] && [ -n "$_gp_ts" ] || continue
+        _gp_epoch=$(date -d "$_gp_ts" +%s 2>/dev/null || echo 0)
+        [ "$_gp_epoch" -gt 0 ] || continue
+        if [ "$_gp_epoch" -le "$_gp_cutoff_epoch" ]; then
+            printf '%s\t%s\n' "$(( (_gp_now_epoch - _gp_epoch) / 86400 ))" "$_gp_id"
+        fi
+    done | sort -rn | awk 'BEGIN{count=0} {count++; rows[count]=$2 ":" $1 "日"} END{if(count){print "__TOTAL__\t" count; for(i=1;i<=count && i<=5;i++) print rows[i]}}')
     if [ -n "$stale_gp" ]; then
         stale_gp_count=$(printf '%s\n' "$stale_gp" | awk -F'\t' '$1=="__TOTAL__"{print $2; found=1} END{if(!found) print 0}')
         echo "■ GP proposal滞留"
@@ -1664,91 +1672,100 @@ fi
 echo "■ 遡及学習(WARN/BLOCK頻度+再発率)"
 _DQ_FILE_125="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE_125" ]; then
-    _retro_result=$(python3 - "$_TMP_DQ_RECENT" <<'RETRO_PY'
-import sys
-from collections import Counter
-
-dq_file = sys.argv[1]
-NINJA_NAMES = {'hayate', 'kagemaru', 'hanzo', 'saizo', 'kotaro', 'tobisaru'}
-SKIP_STARTS = ('draft_lessons', 'ci_failure')
-
-def normalize_class(p):
-    p = p.strip()
-    if not p: return None
-    if any(p.startswith(s) for s in SKIP_STARTS) or ':binary_checks_fail' in p: return None
-    parts = p.split(':')
-    cls = parts[0].strip()
-    if cls in NINJA_NAMES and len(parts) > 1:
-        cls = parts[1].strip()
-    return cls if cls else None
-
-# Fast line-based parse (yaml.safe_load takes ~4s on WSL2/NTFS)
-entries_raw = []
-current = {}
-with open(dq_file, encoding='utf-8', errors='ignore') as f:
-    for line in f:
-        line = line.rstrip()
-        if '  - cmd_id:' in line:
-            if current.get('cmd_id') and current.get('timestamp'):
-                entries_raw.append(current)
-            current = {}
-            current['cmd_id'] = line.split('cmd_id:', 1)[1].strip().strip('"')
-        elif 'gate_result:' in line and current:
-            current['gate_result'] = line.split('gate_result:', 1)[1].strip().strip('"')
-        elif '    notes:' in line and current:
-            current['notes'] = line.split('notes:', 1)[1].strip().strip('"')
-        elif 'timestamp:' in line and current:
-            current['timestamp'] = line.split('timestamp:', 1)[1].strip().strip('"')
-    if current.get('cmd_id') and current.get('timestamp'):
-        entries_raw.append(current)
-
-entries = sorted(entries_raw, key=lambda e: e.get('timestamp', ''))
-
-# Sliding windows: 直近50cmd vs 前50cmd
-recent50 = entries[-50:]
-prev50 = entries[-100:-50] if len(entries) >= 100 else []
-
-# TOP 5: 直近50件のWARN/BLOCK頻出パターン (full pattern for specificity)
-c = Counter()
-for e in recent50:
-    notes = e.get('notes', '') or ''
-    for p in notes.split('|'):
-        p = p.strip()
-        if p and not p.startswith('draft_lessons') and ':binary_checks_fail' not in p and not p.startswith('ci_failure'):
-            c[p] += 1
-if c:
-    for reason, count in c.most_common(5):
-        print(f'  {count:4d}回(50cmd)  {reason[:65]}')
-else:
-    print('  直近50cmdのWARN/BLOCKなし — 学習ループ健全')
-
-# 再発率/有効率: 前50cmdパターン vs 直近50cmdパターン (class-normalized)
-def extract_classes(entry_list):
-    classes = set()
-    for e in entry_list:
-        if e.get('gate_result') not in ('BLOCK', 'WARN'):
-            continue
-        notes = e.get('notes', '') or ''
-        for p in notes.split('|'):
-            cls = normalize_class(p)
-            if cls and 'environment_change' not in cls and 'WARN累計昇格' not in cls:
-                classes.add(cls)
-    return classes
-
-classes_recent = extract_classes(recent50)
-classes_prev = extract_classes(prev50)
-
-if classes_prev:
-    recur = classes_prev & classes_recent
-    elim = classes_prev - classes_recent
-    rate = len(recur) * 100 // len(classes_prev)
-    eff = len(elim) * 100 // len(classes_prev)
-    print(f'  再発率 {rate}% — 前50cmdパターンが直近50cmdに再出現({len(recur)}/{len(classes_prev)}クラス)')
-    print(f'  有効率 {eff}% — 前50cmdパターンが直近50cmdで消滅({len(elim)}/{len(classes_prev)}クラス)')
-else:
-    print('  再発率/有効率: データ不足(前50cmd未満)')
-RETRO_PY
-) 2>/dev/null
+    _retro_result=$(awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
+function normalize_class(p, parts, cls) {
+    p = trim(p)
+    if (p == "" || skip_pattern(p)) return ""
+    split(p, parts, ":")
+    cls = trim(parts[1])
+    if (cls ~ /^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$/ && length(parts) > 1) cls = trim(parts[2])
+    if (cls ~ /environment_change/ || cls ~ /WARN累計昇格/) return ""
+    return cls
+}
+function flush_entry() {
+    if (cmd_id != "" && timestamp != "") {
+        n++
+        gate[n] = gate_result
+        notes_arr[n] = notes
+    }
+    cmd_id = ""; timestamp = ""; gate_result = ""; notes = ""
+}
+/^[[:space:]]*-[[:space:]]*cmd_id:/ { flush_entry(); s=$0; sub(/.*cmd_id:[[:space:]]*/, "", s); cmd_id=trim(s); next }
+/^[[:space:]]*gate_result:/ { s=$0; sub(/^[[:space:]]*gate_result:[[:space:]]*/, "", s); gate_result=trim(s); next }
+/^[[:space:]]*notes:/ { s=$0; sub(/^[[:space:]]*notes:[[:space:]]*/, "", s); notes=trim(s); next }
+/^[[:space:]]*timestamp:/ { s=$0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", s); timestamp=trim(s); next }
+END {
+    flush_entry()
+    recent_start = n - 49
+    if (recent_start < 1) recent_start = 1
+    prev_start = n - 99
+    prev_end = n - 50
+    if (prev_start < 1) prev_start = 1
+    for (i = recent_start; i <= n; i++) {
+        split(notes_arr[i], pats, "|")
+        for (j in pats) {
+            p = trim(pats[j])
+            if (p != "" && !skip_pattern(p)) {
+                top_count[p]++
+                if (!(p in top_seen)) {
+                    top_seen[p] = ++top_order_count
+                    top_order[top_order_count] = p
+                }
+            }
+            if (gate[i] == "BLOCK" || gate[i] == "WARN") {
+                cls = normalize_class(p)
+                if (cls != "") recent_cls[cls] = 1
+            }
+        }
+    }
+    for (i = prev_start; i <= prev_end; i++) {
+        if (gate[i] != "BLOCK" && gate[i] != "WARN") continue
+        split(notes_arr[i], pats, "|")
+        for (j in pats) {
+            cls = normalize_class(pats[j])
+            if (cls != "") prev_cls[cls] = 1
+        }
+    }
+    printed = 0
+    for (rank = 1; rank <= 5; rank++) {
+        best = ""
+        best_count = 0
+        best_order = 999999
+        for (i = 1; i <= top_order_count; i++) {
+            p = top_order[i]
+            if (used[p]) continue
+            if (top_count[p] > best_count || (top_count[p] == best_count && i < best_order)) {
+                best = p
+                best_count = top_count[p]
+                best_order = i
+            }
+        }
+        if (best == "") break
+        printf "  %4d回(50cmd)  %s\n", best_count, substr(best, 1, 65)
+        used[best] = 1
+        printed = 1
+    }
+    if (!printed) print "  直近50cmdのWARN/BLOCKなし — 学習ループ健全"
+    prev_total = 0
+    recur = 0
+    elim = 0
+    for (cls in prev_cls) {
+        prev_total++
+        if (cls in recent_cls) recur++
+        else elim++
+    }
+    if (prev_total > 0) {
+        rate = int(recur * 100 / prev_total)
+        eff = int(elim * 100 / prev_total)
+        printf "  再発率 %d%% — 前50cmdパターンが直近50cmdに再出現(%d/%dクラス)\n", rate, recur, prev_total
+        printf "  有効率 %d%% — 前50cmdパターンが直近50cmdで消滅(%d/%dクラス)\n", eff, elim, prev_total
+    } else {
+        print "  再発率/有効率: データ不足(前50cmd未満)"
+    }
+}
+' "$_TMP_DQ_RECENT" 2>/dev/null)
     if [ -n "$_retro_result" ]; then
         echo "$_retro_result"
     else
@@ -2677,6 +2694,111 @@ fi
 	# --- 総合判定 ---
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+awk '
+function flush_run() {
+    if (current_run != "") {
+        run_count++
+        run_ids[run_count] = current_run
+        run_keys[run_count] = current_keys
+    }
+}
+function add_key(key) {
+    if (key == "" || key == "__OK__") return
+    if (key ~ /^startup連続出現BLOCK:/ || key ~ /^先送り判断:/) return
+    if (current_keys == "") current_keys = key
+    else current_keys = current_keys "\034" key
+}
+BEGIN {
+    if (ARGV[1] == "") {
+        print "  INFO: 履歴なし"
+        exit
+    }
+}
+{
+    split($0, parts, "\t")
+    if (length(parts) < 2) next
+    run_id = parts[1]
+    key = substr($0, length(run_id) + 2)
+    if (current_run == "") current_run = run_id
+    if (run_id != current_run) {
+        flush_run()
+        current_run = run_id
+        current_keys = ""
+    }
+    add_key(key)
+}
+END {
+    flush_run()
+    for (i = 1; i <= run_count; i++) {
+        if (run_keys[i] != "") {
+            nonempty_count++
+            nonempty_ids[nonempty_count] = run_ids[i]
+            nonempty_keys[nonempty_count] = run_keys[i]
+        }
+    }
+    if (nonempty_count == 0) {
+        print "  none"
+        exit
+    }
+    last_run = nonempty_ids[nonempty_count]
+    split(nonempty_keys[nonempty_count], last_keys_raw, "\034")
+    start = nonempty_count - 19
+    if (start < 1) start = 1
+    for (i = start; i <= nonempty_count; i++) {
+        delete seen
+        split(nonempty_keys[i], keys, "\034")
+        for (j in keys) {
+            key = keys[j]
+            if (key == "" || seen[key]) continue
+            seen[key] = 1
+            counts[key]++
+            if (!(key in first_seen)) first_seen[key] = nonempty_ids[i]
+            last_seen[key] = nonempty_ids[i]
+        }
+    }
+    hole_count = 0
+    delete seen_last
+    for (j in last_keys_raw) {
+        key = last_keys_raw[j]
+        if (key == "" || seen_last[key]) continue
+        seen_last[key] = 1
+        hole_count++
+        holes[hole_count] = key
+    }
+    if (hole_count == 0) {
+        print "  none"
+        exit
+    }
+    print "  source: " last_run
+    for (rank = 1; rank <= 5; rank++) {
+        best_idx = 0
+        best_count = -1
+        best_key = ""
+        for (i = 1; i <= hole_count; i++) {
+            key = holes[i]
+            if (used[key]) continue
+            if (counts[key] > best_count || (counts[key] == best_count && key > best_key)) {
+                best_idx = i
+                best_count = counts[key]
+                best_key = key
+            }
+        }
+        if (best_idx == 0) break
+        used[best_key] = 1
+        print "  " rank ". " best_key
+        print "     repeated_last20=" counts[best_key] " first_seen=" first_seen[best_key] " last_seen=" last_seen[best_key]
+        print "     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ"
+    }
+}
+' "$STARTUP_ALERT_HISTORY" > "$_TMP_DEFERRED_HOLES" 2>/dev/null || echo "  INFO: 解析失敗" > "$_TMP_DEFERRED_HOLES" &
+_PID_DEFERRED_HOLES=$!
+_backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+if [ -f "$_backlink_counts_script" ]; then
+    CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
+    _PID_BACKLINK_ZERO=$!
+else
+    _PID_BACKLINK_ZERO=""
+fi
 show_startup_streak_cmd_proposals() {
     local streak_key="$1"
     [ -n "$streak_key" ] || return 0
@@ -2837,69 +2959,8 @@ PY
 fi
 
 echo "■ 前セッションの先送り穴一覧"
-_deferred_holes=$(python3 - "$STARTUP_ALERT_HISTORY" <<'PY' 2>/dev/null || true
-import sys
-from collections import Counter
-from pathlib import Path
-
-path = Path(sys.argv[1])
-if not path.exists():
-    print("  INFO: 履歴なし")
-    raise SystemExit(0)
-
-runs = []
-current_run = None
-current_keys = []
-for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-    parts = raw.split("\t", 1)
-    if len(parts) != 2:
-        continue
-    run_id, key = parts
-    if current_run is None:
-        current_run = run_id
-    if run_id != current_run:
-        runs.append((current_run, current_keys))
-        current_run = run_id
-        current_keys = []
-    if key != "__OK__":
-        current_keys.append(key)
-if current_run is not None:
-    runs.append((current_run, current_keys))
-
-runs = [(run_id, keys) for run_id, keys in runs if keys]
-if not runs:
-    print("  none")
-    raise SystemExit(0)
-
-last_run, last_keys = runs[-1]
-counts = Counter()
-first_seen = {}
-last_seen = {}
-for run_id, keys in runs[-20:]:
-    for key in set(keys):
-        if key.startswith("startup連続出現BLOCK:") or key.startswith("先送り判断:"):
-            continue
-        counts[key] += 1
-        first_seen.setdefault(key, run_id)
-        last_seen[key] = run_id
-
-holes = []
-for key in set(last_keys):
-    if key.startswith("startup連続出現BLOCK:") or key.startswith("先送り判断:"):
-        continue
-    holes.append((counts.get(key, 0), key))
-
-if not holes:
-    print("  none")
-    raise SystemExit(0)
-
-print(f"  source: {last_run}")
-for idx, (count, key) in enumerate(sorted(holes, reverse=True)[:5], start=1):
-    print(f"  {idx}. {key}")
-    print(f"     repeated_last20={count} first_seen={first_seen.get(key, last_run)} last_seen={last_seen.get(key, last_run)}")
-    print("     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ")
-PY
-)
+wait "$_PID_DEFERRED_HOLES" || true
+_deferred_holes=$(cat "$_TMP_DEFERRED_HOLES" 2>/dev/null)
 if [ -n "$_deferred_holes" ]; then
     printf '%s\n' "$_deferred_holes"
 else
@@ -2907,9 +2968,9 @@ else
 fi
 
 echo "■ backlinks=0 修行候補"
-_backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
 if [ -f "$_backlink_counts_script" ]; then
-    _backlink_zero_output="$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 2>/dev/null || true)"
+    [ -n "$_PID_BACKLINK_ZERO" ] && wait "$_PID_BACKLINK_ZERO" || true
+    _backlink_zero_output="$(cat "$_TMP_BACKLINK_ZERO" 2>/dev/null)"
     if [ -n "$_backlink_zero_output" ]; then
         printf '%s\n' "$_backlink_zero_output" | awk -F '\t' '{ printf "  WARN: backlinks=0 %s (link_id=%s)\n", $2, $3 }'
         echo "  action: 上記ファイルを修行タスク候補にし、context/skills/docsから因果リンクを接続せよ"
