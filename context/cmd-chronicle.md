@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-04 -->
+<!-- last_updated: 2026-06-05 cmd_karo_hotfix_codd_fix_skill_test_select_20260605 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,22 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2562 | セマンティクスインデックス設計書(docs/research/semantic_index_design.md)の段階1を実装する。/clear後に概念で情報を逆引きできる仕組みの基盤。10概念のSSOT(index.md)と索引層(semantic-map.md)を作成する | infra | 05-05 | セマンティクスインデックス段階1としてSSOT 10概念とa |
-| cmd_2563 | セマンティクスインデックス設計書§8/§7の段階2を実装。aliases照合による第一層検索スクリプト(semantic_search.sh)と、startup gateへのインデックス鮮度チェック追加 | infra | 05-05 | セマンティクスインデックス第一層検索CLIと将軍startu |
-| cmd_2564 | セマンティクスインデックス設計書§7の段階3を実装。cmd完了/lesson追加/殿の発言記録時にaliases照合で既存概念にリソースを自動追記するフック。confidence閾値分岐(HIGH→自動/LOW→候補キュー/NONE→新概念候補)を含む | infra | 05-05 | semantic_index_update.shを追加し、c |
-| cmd_2566 | セマンティクスインデックス設計書§6/§7の最終段階を実装。index.md変更時のCoDD propagateでsemantic-map.md自動再生成+軍師idleにdrift/gap/candidateスキャンを組込み。段階1-4の全成果物を統合し完成させる | infra | 05-05 | semantic-map deterministic gen |
-| cmd_2567 | /clear後の将軍がセマンティクスインデックスの存在を知り使える状態にする。CLAUDE.mdのinfraセクションにsemantic-map.md/semantic_search.shへの参照を追加し、startup手順にsemantic-map.md読込を組込む。用語辞書のcmd_2561(導線埋込み)と同パターン | infra | 05-05 | CLAUDE.mdにsemantic-map.md読込とse |
-| cmd_2568 | スキル自動成長ループのFAIL帰属精度が64%誤帰属(21/33件)。cmd_complete_gate.sh L5336-5343のcase文でworkflow系FAIL(missing_gate, lesson_done_missing, draft_lessons)がreport-writeに帰属されている。report-write FAIL率100%の根因。帰属を分離しスキル成長ループの診断精度を回復する | infra | 05-05 | cmd_complete_gateのGATE BLOCK時ス |
-| cmd_2569 | Compare chart画面でPF選択するとperfLoading/benchmarkLoadingが全画面Loadingを発火し、UIが全消失して再読み込みされたように見える。殿報告の使いづらさの根因。全画面Loadingは初回signals取得(loading)で発火する設計に変更し、perfLoading/benchmarkLoadingはチャートセクション内のインライン表示に移設する | dm-signal | 05-05 | Compare chartの全画面Loading条件をsig |
-| cmd_2570 | DrawdownPeriodのlimit=10問題(UWP設計レビューで殿が発見)と同様に、metrics計算で使われるデータにlimit/サンプリング/切り捨て/丸め等の制限があり実測値と乖離するメトリクスがないか全数調査する。metrics_calculator.py+drawdowns_calculator.py+関連generator全体を対象とする | dm-signal | 05-05 | metrics_calculator.pyのadd_metr |
-| cmd_2572 | UWP三指標(UWP MaxDD/Avg UWP/Total UWP)追加に伴い、既存UWPの意味が曖昧になる。disambiguation.mdに3エントリ追加+terminology.md索引追加で1語1意味を維持する。設計書§6に準拠 | dm-signal | 05-05 | UWP三指標の用語曖昧性を解消するため、disambigua |
-| cmd_2573 | Avg/Total UWP計算に全DDが必要。drawdowns.py limit=10をNoneに変更し全DD格納。signal_flush.py IN句修正(5c8a9cf2)済みのためfullrecalculateは安全に通る。パリティ検証でsignals/monthly_returnsが不変であることを実証する | dm-signal | 05-05 | drawdowns.py limit=10→None変更(全 |
-| cmd_2574 | cmd_2573でDrawdownPeriod全DD格納が完了。metrics_calculator.pyのget_drawdown_stats_from_dbを拡張し、全rankからAvg/Total UWPを集計してmetrics APIレスポンスに2行追加する。既存UWP(rank=1)と同じデータソース+同じ構造で一貫性を維持 | dm-signal | 05-05 | Avg/Total Underwater Periodをme |
-| cmd_2575 | cmd_2574でmetrics APIがAvg/Total Underwater Periodを返す状態になった。FEのMetrics/Compare Summary/Termsページに表示を追加し、既存UWPラベルをUWP (MaxDD)に変更してユーザーが3指標を区別できるようにする | dm-signal | 05-05 | FE Metrics/Compare Summary/Ter |
-| cmd_2576 | UWP(MaxDD)がNULL(未回復DD)の場合にCompare Summaryで—表示される。未計算/エラー/未回復の区別がつかない(殿指摘)。NULLの場合にOngoing表示にする。既存Metricsページでは既にOngoing表示されておりCompare Summaryだけ不整合 | dm-signal | 05-05 | Compare SummaryのUWP(MaxDD)で未回復 |
-| cmd_2578 | Compare SummaryにSPYとTQQQの両方をベンチマーク行として常時表示する(殿指示)。現在はPFのbenchmark_tickerから自動収集(SPYのみ)。TQQQを追加ベンチマークとしてハードコード追加し、SPYと並んで常時表示する。TQQQ株価データは本番pricesテーブルに存在(2010-2026) | dm-signal | 05-05 | Compare Summaryの追加ベンチマークとしてTQQ |
-| cmd_2579 | CDPの本質はLLMが人間と同じようにWebブラウザを使えること(殿定義2026-05-05)。ブラウザ起動→ログイン→スクショ→状況確認の一連フローを1コマンドで実行するスキルを作成し全エージェントの基礎能力にする。DM-Signal本番確認、Render Dashboard確認、任意Webサイトの状態確認に汎用的に使える | infra | 05-05 | skills/cdp-browse/SKILL.mdを新規作 |
-| cmd_2581 | Total UWPは絶対月数でバックテスト期間に依存し異なる開始日のPF間で比較不能。total_uwp/全期間月数で比率化(PTU: Percentage Time Underwater, 0-100%)しPF間の公平比較を可能にする(殿指示2026-05-05) | dm-signal | 05-05 | PTU(%)をtotal_uwp/monthly_retur |
 | cmd_2582 | cmd_2581でPTU計算ロジックをデプロイ済みだがportfolio_metricsキャッシュが旧フォーマット(Total Underwater Period: 110 months)のまま。Compare Summaryは キャッシュ参照のためPTU(%)メトリクスが見つからず空白表示。fullrecalculateでキャッシュ再計算し全PFのPTUを反映する | dm-signal | 05-06 | fullrecalculate(mode=full)を本番で |
 | cmd_2584 | test_select.sh(191行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | test_select.shのCoDD計測・設計書・afte |
 | cmd_2585 | cmd_publish.sh(168行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_publish.sh CoDD refactorを計 |
@@ -519,3 +503,4 @@
 | cmd_3177 | L0-L7貫通設計書v6 cmd#6。obsidian_candidate→Obsidianノート雛形生成→state=obsidian_promoted更新→対応関係記録の一連フロー | infra | 06-04 | obsidian_candidateをObsidianノート |
 | cmd_3178 | L0-L7貫通設計書v6 cmd#9。4種候補(矛盾、重複、昇格、アーカイブ)に対する統一確定スクリプト。approve、reject、deferの3アクション+検証+ntfy通知 | infra | 06-04 | memory_candidate_resolve.shを新規 |
 | cmd_3181 | 三層記憶が全員に使われていない根因の1つは候補蓄積の放置。deploy_task.sh配備時にcandidate件数(obsidian_candidate/contradiction_candidate/duplicate_candidate)を確認し、閾値超でWARN表示。放置防止の構造的仕組み(殿指示: 三層記憶を全員が使う状態を作る) | infra | 06-04 | deploy_task.sh配備時に三層記憶candidat |
+| cmd_3182 | recall_control/obsidian_promoteが本番DB(data/multi_agent_shogun_memory.db)にeventsテーブル不在で機能停止中(require_columns L97-103でexit)。三層記憶11cmd全GATE CLEARだが自動state遷移ゼロの直接原因。memory_db_import.pyの本番DB実行でeventsテーブルを作成し、ninja_monitorのdry-run→apply切替で三層記憶を実稼働させる | infra | 06-05 | 本番記憶DBにevents関連表とevent_state_t |

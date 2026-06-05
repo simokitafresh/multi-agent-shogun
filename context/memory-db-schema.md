@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-05 -->
+<!-- last_updated: 2026-06-05 cmd_karo_hotfix_codd_fix_skill_test_select_20260605 -->
 
 # Memory DB Schema
 
