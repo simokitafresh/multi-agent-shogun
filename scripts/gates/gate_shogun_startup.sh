@@ -34,7 +34,7 @@ _d_idle_trigger=""
 	    fi
 
 	    local ci_json ci_conclusion
-	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-15}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
+	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-0.3}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
 	    [ -n "$ci_json" ] || return 0
 
 	    ci_conclusion="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
@@ -177,7 +177,9 @@ if [ "$LIGHT_MODE" != "1" ] && [ -x "$YAML_AUTO_ARCHIVE" ]; then
 fi
 
 # --- Gate 0.9: CI RED自動修正配備 ---
-check_ci_red_autodeploy
+_TMP_CI_RED=$(mktemp)
+check_ci_red_autodeploy > "$_TMP_CI_RED" 2>&1 &
+_PID_CI_RED=$!
 
 # --- Gate 0.5: 将軍watcher環境変数 ---
 echo "■ 将軍watcher環境変数"
@@ -188,8 +190,115 @@ _TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_
 _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
 _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
+_TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 _TMP_SCRIPT_INDEX=$(mktemp)
-trap 'rm -f "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_SCRIPT_INDEX"' EXIT
+trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
+STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+awk '
+function flush_run() {
+    if (current_run != "") {
+        run_count++
+        run_ids[run_count] = current_run
+        run_keys[run_count] = current_keys
+    }
+}
+function add_key(key) {
+    if (key == "" || key == "__OK__") return
+    if (key ~ /^startup連続出現BLOCK:/ || key ~ /^先送り判断:/) return
+    if (current_keys == "") current_keys = key
+    else current_keys = current_keys "\034" key
+}
+{
+    split($0, parts, "\t")
+    if (length(parts) < 2) next
+    run_id = parts[1]
+    key = substr($0, length(run_id) + 2)
+    if (current_run == "") current_run = run_id
+    if (run_id != current_run) {
+        flush_run()
+        current_run = run_id
+        current_keys = ""
+    }
+    add_key(key)
+}
+END {
+    flush_run()
+    for (i = 1; i <= run_count; i++) {
+        if (run_keys[i] != "") {
+            nonempty_count++
+            nonempty_ids[nonempty_count] = run_ids[i]
+            nonempty_keys[nonempty_count] = run_keys[i]
+        }
+    }
+    if (nonempty_count == 0) {
+        print "  none"
+        exit
+    }
+    last_run = nonempty_ids[nonempty_count]
+    split(nonempty_keys[nonempty_count], last_keys_raw, "\034")
+    start = nonempty_count - 19
+    if (start < 1) start = 1
+    for (i = start; i <= nonempty_count; i++) {
+        delete seen
+        split(nonempty_keys[i], keys, "\034")
+        for (j in keys) {
+            key = keys[j]
+            if (key == "" || seen[key]) continue
+            seen[key] = 1
+            counts[key]++
+            if (!(key in first_seen)) first_seen[key] = nonempty_ids[i]
+            last_seen[key] = nonempty_ids[i]
+        }
+    }
+    hole_count = 0
+    delete seen_last
+    for (j in last_keys_raw) {
+        key = last_keys_raw[j]
+        if (key == "" || seen_last[key]) continue
+        seen_last[key] = 1
+        hole_count++
+        holes[hole_count] = key
+    }
+    if (hole_count == 0) {
+        print "  none"
+        exit
+    }
+    print "  source: " last_run
+    for (rank = 1; rank <= 5; rank++) {
+        best_idx = 0
+        best_count = -1
+        best_key = ""
+        for (i = 1; i <= hole_count; i++) {
+            key = holes[i]
+            if (used[key]) continue
+            if (counts[key] > best_count || (counts[key] == best_count && key > best_key)) {
+                best_idx = i
+                best_count = counts[key]
+                best_key = key
+            }
+        }
+        if (best_idx == 0) break
+        used[best_key] = 1
+        print "  " rank ". " best_key
+        print "     repeated_last20=" counts[best_key] " first_seen=" first_seen[best_key] " last_seen=" last_seen[best_key]
+        print "     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ"
+    }
+}
+' "$STARTUP_ALERT_HISTORY" > "$_TMP_DEFERRED_HOLES" 2>/dev/null || echo "  INFO: 解析失敗" > "$_TMP_DEFERRED_HOLES" &
+_PID_DEFERRED_HOLES=$!
+_backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+if [ -f "$_backlink_counts_script" ]; then
+    CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
+    _PID_BACKLINK_ZERO=$!
+else
+    _PID_BACKLINK_ZERO=""
+fi
+if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
+    (bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1; printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS") &
+    _PID_THREE_LAYER=$!
+else
+    _PID_THREE_LAYER=""
+fi
 if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
     tail -n "${SHOGUN_STARTUP_DQ_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/cmd_design_quality.yaml" > "$_TMP_DQ_RECENT"
 fi
@@ -1652,7 +1761,10 @@ fi
 # --- Gate 12.1: 三層記憶DB健全性 ---
 echo "■ 三層記憶DB健全性"
 if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
-    if ! three_layer_health_output="$(bash "$GATE_DIR/gate_three_layer_health.sh" 2>&1)"; then
+    [ -n "$_PID_THREE_LAYER" ] && wait "$_PID_THREE_LAYER" || true
+    three_layer_health_output="$(cat "$_TMP_THREE_LAYER" 2>/dev/null)"
+    three_layer_health_status="$(cat "$_TMP_THREE_LAYER_STATUS" 2>/dev/null)"
+    if [ "${three_layer_health_status:-1}" -ne 0 ]; then
         printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
         alerts+=("三層記憶DB健全性: WARN")
@@ -1672,7 +1784,7 @@ fi
 echo "■ 遡及学習(WARN/BLOCK頻度+再発率)"
 _DQ_FILE_125="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE_125" ]; then
-    _retro_result=$(awk '
+    _retro_result=$(grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$_TMP_DQ_RECENT" 2>/dev/null | awk '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
 function normalize_class(p, parts, cls) {
@@ -2693,112 +2805,6 @@ fi
 	
 	# --- 総合判定 ---
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
-STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
-awk '
-function flush_run() {
-    if (current_run != "") {
-        run_count++
-        run_ids[run_count] = current_run
-        run_keys[run_count] = current_keys
-    }
-}
-function add_key(key) {
-    if (key == "" || key == "__OK__") return
-    if (key ~ /^startup連続出現BLOCK:/ || key ~ /^先送り判断:/) return
-    if (current_keys == "") current_keys = key
-    else current_keys = current_keys "\034" key
-}
-BEGIN {
-    if (ARGV[1] == "") {
-        print "  INFO: 履歴なし"
-        exit
-    }
-}
-{
-    split($0, parts, "\t")
-    if (length(parts) < 2) next
-    run_id = parts[1]
-    key = substr($0, length(run_id) + 2)
-    if (current_run == "") current_run = run_id
-    if (run_id != current_run) {
-        flush_run()
-        current_run = run_id
-        current_keys = ""
-    }
-    add_key(key)
-}
-END {
-    flush_run()
-    for (i = 1; i <= run_count; i++) {
-        if (run_keys[i] != "") {
-            nonempty_count++
-            nonempty_ids[nonempty_count] = run_ids[i]
-            nonempty_keys[nonempty_count] = run_keys[i]
-        }
-    }
-    if (nonempty_count == 0) {
-        print "  none"
-        exit
-    }
-    last_run = nonempty_ids[nonempty_count]
-    split(nonempty_keys[nonempty_count], last_keys_raw, "\034")
-    start = nonempty_count - 19
-    if (start < 1) start = 1
-    for (i = start; i <= nonempty_count; i++) {
-        delete seen
-        split(nonempty_keys[i], keys, "\034")
-        for (j in keys) {
-            key = keys[j]
-            if (key == "" || seen[key]) continue
-            seen[key] = 1
-            counts[key]++
-            if (!(key in first_seen)) first_seen[key] = nonempty_ids[i]
-            last_seen[key] = nonempty_ids[i]
-        }
-    }
-    hole_count = 0
-    delete seen_last
-    for (j in last_keys_raw) {
-        key = last_keys_raw[j]
-        if (key == "" || seen_last[key]) continue
-        seen_last[key] = 1
-        hole_count++
-        holes[hole_count] = key
-    }
-    if (hole_count == 0) {
-        print "  none"
-        exit
-    }
-    print "  source: " last_run
-    for (rank = 1; rank <= 5; rank++) {
-        best_idx = 0
-        best_count = -1
-        best_key = ""
-        for (i = 1; i <= hole_count; i++) {
-            key = holes[i]
-            if (used[key]) continue
-            if (counts[key] > best_count || (counts[key] == best_count && key > best_key)) {
-                best_idx = i
-                best_count = counts[key]
-                best_key = key
-            }
-        }
-        if (best_idx == 0) break
-        used[best_key] = 1
-        print "  " rank ". " best_key
-        print "     repeated_last20=" counts[best_key] " first_seen=" first_seen[best_key] " last_seen=" last_seen[best_key]
-        print "     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ"
-    }
-}
-' "$STARTUP_ALERT_HISTORY" > "$_TMP_DEFERRED_HOLES" 2>/dev/null || echo "  INFO: 解析失敗" > "$_TMP_DEFERRED_HOLES" &
-_PID_DEFERRED_HOLES=$!
-_backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
-if [ -f "$_backlink_counts_script" ]; then
-    CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
-    _PID_BACKLINK_ZERO=$!
-else
-    _PID_BACKLINK_ZERO=""
-fi
 show_startup_streak_cmd_proposals() {
     local streak_key="$1"
     [ -n "$streak_key" ] || return 0
@@ -2981,6 +2987,25 @@ if [ -f "$_backlink_counts_script" ]; then
     fi
 else
     echo "  SKIP: causal_backlink_counts.sh不在"
+fi
+
+if kill -0 "$_PID_CI_RED" 2>/dev/null; then
+    disown "$_PID_CI_RED" 2>/dev/null || true
+else
+    wait "$_PID_CI_RED" || true
+    _ci_red_output=$(cat "$_TMP_CI_RED" 2>/dev/null)
+    if [ -n "$_ci_red_output" ]; then
+        printf '%s\n' "$_ci_red_output"
+        if printf '%s\n' "$_ci_red_output" | grep -q "ALERT: karoへのci_red_fix通知失敗"; then
+            overall="ALERT"
+            alerts+=("CI RED自動修正配備: inbox送信失敗")
+        elif printf '%s\n' "$_ci_red_output" | grep -q "WARN: 最新CI conclusion=failure"; then
+            if [ "$overall" = "OK" ]; then
+                overall="WARN"
+            fi
+            alerts+=("CI RED自動修正配備: WARN")
+        fi
+    fi
 fi
 
 echo ""
