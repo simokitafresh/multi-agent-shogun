@@ -1406,6 +1406,9 @@ check_causal_verification_requirement() {
 ${q5_value}
 ${q8_value}
 $(extract_acceptance_criteria_block)"
+    if [[ "${CMD_SAVE_DEBUG:-0}" == "1" ]]; then
+        echo "DEBUG: [CAUSAL_VERIFICATION] q5_value=${q5_value}" >&2
+    fi
 
     if ! printf '%s\n' "$combined" | grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602'; then
         echo "WARNING: 因果確認不足。対象scopeでは origin/q5/q8/AC に git log/blame・教訓・設計意図・semantic/causal確認を明記せよ" >&2
@@ -2108,8 +2111,9 @@ log_cmd_save_pass() {
 
 count_same_warn_pattern() {
     local warn_pattern="${1:-}"
+    local output_mode="${2:-count}"
     [[ -n "$warn_pattern" && -f "$QUALITY_LOG_FILE" ]] || {
-        echo 0
+        [[ "$output_mode" == "cmd_ids" ]] && echo "" || echo 0
         return 0
     }
     local current_project
@@ -2122,6 +2126,7 @@ count_same_warn_pattern() {
     CMD_SAVE_CMD_ID="$CMD_ID" \
     CMD_SAVE_QUALITY_LOG="$scan_file" \
     CMD_SAVE_WARN_PATTERN="$warn_pattern" \
+    CMD_SAVE_WARN_OUTPUT_MODE="$output_mode" \
     CMD_SAVE_CURRENT_PROJECT="$current_project" \
     CMD_SAVE_QUEUE_FILE="$QUEUE_FILE" \
     CMD_SAVE_ARCHIVE_CMD_DIR="$ARCHIVE_CMD_DIR" \
@@ -2136,13 +2141,14 @@ import yaml
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 warn_pattern = os.environ.get("CMD_SAVE_WARN_PATTERN", "").strip()
+output_mode = os.environ.get("CMD_SAVE_WARN_OUTPUT_MODE", "count").strip()
 current_project = os.environ.get("CMD_SAVE_CURRENT_PROJECT", "").strip()
 queue_path = os.environ.get("CMD_SAVE_QUEUE_FILE", "")
 archive_dir = os.environ.get("CMD_SAVE_ARCHIVE_CMD_DIR", "")
 lessons_path = os.environ.get("CMD_SAVE_SHOGUN_LESSONS_FILE", "")
 
 if not cmd_id or not warn_pattern or not log_path or not os.path.exists(log_path):
-    print(0)
+    print("" if output_mode == "cmd_ids" else 0)
     raise SystemExit(0)
 
 resolved_source_cmds = set()
@@ -2221,30 +2227,38 @@ def project_matches(entry):
     return current_project == "infra"
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
-count = sum(
-    1
-    for entry in entries
-    if isinstance(entry, dict)
-    and project_matches(entry)
-    and entry.get("source") == "cmd_save_warn"
-    and entry.get("gate_result") == "WARN"
-    and (
-        lambda note: (
-            (note.split("|", 1)[0].strip() == warn_pattern or warn_pattern in note)
-            and "[resolved:" not in note
-            and not entry.get("resolved_by")
-            and not (
-                note.split("|", 1)[0].strip() == "missing_prev_cmd_lesson"
-                and any(
-                    part.startswith("source_cmd=")
-                    and part.split("=", 1)[1].strip() in resolved_source_cmds
-                    for part in note.split("|")[1:]
-                )
+matching_count = 0
+matching_cmd_ids = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    note = str(entry.get("notes", "") or "").strip()
+    if not (
+        project_matches(entry)
+        and entry.get("source") == "cmd_save_warn"
+        and entry.get("gate_result") == "WARN"
+        and (note.split("|", 1)[0].strip() == warn_pattern or warn_pattern in note)
+        and "[resolved:" not in note
+        and not entry.get("resolved_by")
+        and not (
+            note.split("|", 1)[0].strip() == "missing_prev_cmd_lesson"
+            and any(
+                part.startswith("source_cmd=")
+                and part.split("=", 1)[1].strip() in resolved_source_cmds
+                for part in note.split("|")[1:]
             )
         )
-    )(str(entry.get("notes", "") or "").strip())
-)
-print(count)
+    ):
+        continue
+    matching_count += 1
+    entry_cmd = str(entry.get("cmd_id", "") or "").strip()
+    if entry_cmd:
+        matching_cmd_ids.append(entry_cmd)
+
+if output_mode == "cmd_ids":
+    print(",".join(matching_cmd_ids[-10:]))
+else:
+    print(matching_count)
 PY
 }
 
@@ -5201,12 +5215,14 @@ is_db_operation_command_text() {
 }
 
 check_db_backup_ac_warn() {
-    local command_text ac_text
+    local command_text ac_text backup_check_text
     command_text="$(extract_command_text_block)"
     is_db_operation_command_text "$command_text" || return 0
 
     ac_text="$(extract_acceptance_criteria_block)"
-    if printf '%s\n' "$ac_text" | grep -qiE 'バックアップ|backup'; then
+    backup_check_text="${command_text}
+${ac_text}"
+    if printf '%s\n' "$backup_check_text" | grep -qiE 'バックアップ|backup'; then
         return 0
     fi
 
@@ -5556,8 +5572,13 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
         _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
         [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
         if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
+            _warn_prior_cmd_ids="$(count_same_warn_pattern "$_warn_r" cmd_ids 2>/dev/null || true)"
             log_preflight_autolearn "$_warn_r" "$_warn_prior_count"
-            record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+            if [[ -n "${_warn_prior_cmd_ids:-}" ]]; then
+                record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています(cmd_ids=${_warn_prior_cmd_ids})。WARNを解消してからcmd_save.shを実行せよ"
+            else
+                record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
+            fi
             echo "  ★ 前回このWARNに対してenvironment_changeを書いたはず。効いていない。" >&2
             echo "  ★ 前回の環境変化の質が低い(根に到達していない)。なぜなぜ7回で深く掘り直せ。" >&2
         fi
