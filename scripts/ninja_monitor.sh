@@ -1,6 +1,6 @@
 #!/bin/bash
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
-# doc-links: [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]]
+# doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]]
 # shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
 # Usage: bash scripts/ninja_monitor.sh
@@ -1321,7 +1321,7 @@ auto_void_if_parent_cmd_completed() {
     completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || return 1
     completed_base=$(basename "$completed_report")
 
-    local lock_file="/tmp/task_${name}.lock"
+    local lock_file="${STATE_DIR:-/tmp}/task_${name}.lock"
     local voided_at
     printf -v voided_at '%(%Y-%m-%dT%H:%M:%S)T' -1
     (
@@ -1403,7 +1403,7 @@ check_and_update_done_task() {
     case "$report_status" in
         done|completed|success)
             # 完了確認 — タスクYAMLをdoneに自動更新（flock排他制御）
-            local lock_file="/tmp/task_${name}.lock"
+            local lock_file="${STATE_DIR:-/tmp}/task_${name}.lock"
             local completed_ts
             printf -v completed_ts '%(%Y-%m-%dT%H:%M:%S)T' -1
             (
@@ -2601,10 +2601,12 @@ list_pending_cmds_cached() {
 check_stale_cmds() {
     local now
     now=$EPOCHSECONDS
+    local -A _current_pending=()  # 現サイクルのpending cmd集合 (STALE_CMD_NOTIFIEDプルーン用)
 
     while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
         [ -z "$cmd_id" ] && continue
         [ -z "$cmd_timestamp" ] && continue
+        _current_pending["$cmd_id"]=1
 
         # デバウンス: 同一cmdの再通知を30分間隔で抑制
         local last_stale_notify="${STALE_CMD_NOTIFIED[$cmd_id]:-0}"
@@ -2641,6 +2643,15 @@ check_stale_cmds() {
             log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
         fi
     done < <(list_pending_cmds_cached)
+
+    # pending_cmdsから外れたcmdのSTALE_CMD_NOTIFIEDエントリを削除 (check_undeployed_cmds同パターン)
+    local _stale_cmd_id
+    for _stale_cmd_id in "${!STALE_CMD_NOTIFIED[@]}"; do
+        if [ -z "${_current_pending[$_stale_cmd_id]:-}" ]; then
+            unset "STALE_CMD_NOTIFIED[$_stale_cmd_id]"
+            log "STALE-CMD-RESOLVED: ${_stale_cmd_id} no longer pending, pruned from STALE_CMD_NOTIFIED"
+        fi
+    done
 }
 
 check_undeployed_cmds() {
