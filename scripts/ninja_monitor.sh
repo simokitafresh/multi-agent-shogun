@@ -1,6 +1,6 @@
 #!/bin/bash
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
-# doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]]
+# doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]]
 # shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
 # Usage: bash scripts/ninja_monitor.sh
@@ -90,6 +90,7 @@ WATCHED_DEPS=(
     "$SCRIPT_DIR/lib/cli_adapter.sh"
     "$SCRIPT_DIR/scripts/lib/model_colors.sh"
     "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+    "$SCRIPT_DIR/scripts/lib/script_update.sh"
 )
 DEPS_HASH="$(compute_deps_hash)"
 LAST_NTFY_RESTART=0  # ntfy_listener最終再起動時刻（epoch秒）
