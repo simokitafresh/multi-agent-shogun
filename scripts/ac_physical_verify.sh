@@ -298,3 +298,29 @@ if [ -f "$REVIEW_LOG" ]; then
         echo "  → これらの観点を意識的に検討し、finding_categoriesに記録せよ"
     fi
 fi
+
+# --- 関連テスト一覧(Level 5: 事前コンテキスト提供) ---
+# target_pathのスクリプト名でtests/unit/*.batsを検索し、変更影響テストを表示
+_target_path=""
+if [[ "$CMD_ID" != "-" ]] && [[ -f "$REPO_ROOT/queue/shogun_to_karo.yaml" ]]; then
+    _target_path=$(grep -A2 "^  *${CMD_ID}:" "$REPO_ROOT/queue/shogun_to_karo.yaml" 2>/dev/null | grep 'target_path:' | head -1 | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'")
+fi
+if [[ -z "$_target_path" ]]; then
+    for _tf in "$REPO_ROOT"/queue/tasks/*.yaml; do
+        [[ -f "$_tf" ]] || continue
+        grep -q "parent_cmd:.*${CMD_ID}" "$_tf" 2>/dev/null && {
+            _target_path=$(grep 'target_path:' "$_tf" | head -1 | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'")
+            break
+        }
+    done
+fi
+if [[ -n "$_target_path" ]]; then
+    _script_name=$(basename "$_target_path" .sh)
+    _affected=$(grep -rl "$_script_name" "$REPO_ROOT/tests/unit/"*.bats 2>/dev/null | xargs -I{} basename {} 2>/dev/null | sort -u)
+    if [[ -n "$_affected" ]]; then
+        echo ""
+        echo "--- 関連テスト一覧(target: $_target_path) ---"
+        echo "$_affected" | while read -r t; do echo "  tests/unit/$t"; done
+        echo "  → 挙動変更時はこれらのfixture前提崩壊を事前検死で検証せよ"
+    fi
+fi
