@@ -85,6 +85,16 @@ done < <(grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/d
 declare -A AFFECTED_TESTS
 UNMATCHED=()
 
+add_test_if_exists() {
+    local tf
+    for tf in "$@"; do
+        if [ -f "$tf" ]; then
+            AFFECTED_TESTS["$tf"]=1
+            matched=1
+        fi
+    done
+}
+
 for changed in "${CHANGED_FILES[@]}"; do
     matched=0
     # perf: pre-compute basename once (replaces $(basename "$changed") subshell per key in inner loop)
@@ -170,15 +180,27 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
-    # L3: scripts/gates/ 変更→gate関連テスト全体 + 上位cmd完了ゲートテスト
+    # L3: scripts/gates/ 変更→直接テスト。
+    # 旧実装は単一gate変更でも test_gate*.bats + test_cmd_complete_gate*.bats を
+    # 全選択し、pre-pushが30秒を超えた。startup系テストは子gateをmockするため、
+    # 子gate実装変更の検証にはならない。
     if [[ "$changed" == scripts/gates/* ]]; then
-        gate_base=$(basename "$changed" .sh)
-        for tf in "$TEST_DIR"/test_gate*.bats "$TEST_DIR"/test_"${gate_base}"*.bats "$TEST_DIR"/test_cmd_complete_gate*.bats; do
-            if [ -f "$tf" ]; then
-                AFFECTED_TESTS["$tf"]=1
-                matched=1
-            fi
-        done
+        gate_file="${changed##*/}"
+        gate_base="${gate_file%.sh}"
+
+        add_test_if_exists "$TEST_DIR"/test_"${gate_base}"*.bats
+
+        if rg -qF "$gate_file" "$REPO_ROOT/scripts/cmd_complete_gate.sh" 2>/dev/null; then
+            add_test_if_exists "$TEST_DIR"/test_cmd_complete_gate*.bats
+        fi
+
+        case "$gate_file" in
+            gate_report_format.sh|gate_report_autofix.sh|gate_dc_duplicate.sh|gate_diagnose_check.sh)
+                add_test_if_exists \
+                    "$TEST_DIR"/test_cmd_complete_gate*.bats \
+                    "$TEST_DIR"/test_gate_small_consolidated.bats
+                ;;
+        esac
     fi
 
     # deploy_task.sh変更→全deploy_taskテスト

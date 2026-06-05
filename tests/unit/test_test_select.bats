@@ -24,7 +24,16 @@ setup_file() {
 @test "test_select maps gate script changes to cmd_complete_gate tests" {
     run bash "$TEST_SELECT" scripts/gates/gate_context_freshness.sh
     [ "$status" -eq 0 ]
-    [[ "$output" == *"tests/unit/test_cmd_complete_gate.bats"* ]]
+    [[ "$output" == *"tests/unit/test_gate_context_freshness.bats"* ]]
+    [[ "$output" != *"tests/unit/test_cmd_complete_gate.bats"* ]]
+}
+
+@test "test_select maps p-average gate changes to focused tests only" {
+    run bash "$TEST_SELECT" scripts/gates/gate_p_average_freshness.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_gate_p_average_freshness.bats"* ]]
+    [[ "$output" != *"tests/unit/test_gate_shogun_startup.bats"* ]]
+    [[ "$output" != *"tests/unit/test_cmd_complete_gate.bats"* ]]
 }
 
 @test "test_select warns but succeeds when no mapping exists" {
