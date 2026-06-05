@@ -788,7 +788,9 @@ fi
 
 # --- Question pattern detection → confirmation injection (cmd_2293) ---
 question_warning=""
+question_detected=0
 if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知って'; then
+  question_detected=1
   current_project="unknown"
   projects_yaml="$SCRIPT_DIR/config/projects.yaml"
   if [[ -f "$projects_yaml" ]]; then
@@ -832,9 +834,14 @@ additional_context="${fixed_part}${karo_snapshot}"
 # --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
 semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
 if [[ -n "$semantic_result" ]]; then
+  semantic_quote_warning=""
+  if (( question_detected > 0 )); then
+    semantic_quote_warning="⚠ 殿の質問検知。回答では下記semantic_knowledgeの該当resource/議論を引用し、概念混同がないことを確認せよ。
+"
+  fi
   additional_context="${additional_context}
 --- semantic_knowledge ---
-${semantic_result}"
+${semantic_quote_warning}${semantic_result}"
 fi
 
 memory_db_result="$(memory_db_fts5_inject "$prompt_text")"

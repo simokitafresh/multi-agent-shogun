@@ -602,7 +602,7 @@ if [ -n "$ambiguity_missing" ]; then
 fi
 if [ -n "$single_scenario" ]; then
     single_scenario_count=$(printf '%s\n' "$single_scenario" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
-    echo "WARN: ${single_scenario_count}件のdraftエントリが1シナリオ観測のみ:"
+    echo "WARN(GP-262): ${single_scenario_count}件のdraftエントリが1シナリオ観測のみ。定型cmdでも最低2観測シナリオを記録せよ:"
     printf '%s\n' "$single_scenario" | tr ',' '\n' | while read -r id; do
         [ -n "$id" ] && echo "  - $id: 観測が1件のみ。mizchi Red flag『1シナリオで充分』の可能性"
     done

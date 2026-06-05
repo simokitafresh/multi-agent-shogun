@@ -306,6 +306,7 @@ import os
 obj = json.loads(os.environ["OUTPUT_JSON"])
 ctx = obj["hookSpecificOutput"]["additionalContext"]
 print("--- semantic_knowledge ---" in ctx)
+print("semantic_knowledgeの該当resource/議論を引用" in ctx)
 print("semantic_dictionary_design" in ctx)
 print("docs/research/semantic_index_design.md" in ctx)
 PY
@@ -313,6 +314,7 @@ PY
     [ "${result[0]}" = "True" ]
     [ "${result[1]}" = "True" ]
     [ "${result[2]}" = "True" ]
+    [ "${result[3]}" = "True" ]
     [ "$(cat "$SEMANTIC_MOCK_LOG")" = "query=意味検索を使えるか？" ]
 }
 

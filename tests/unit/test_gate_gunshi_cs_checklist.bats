@@ -99,7 +99,8 @@ YAML
 
     run bash "$TEST_GATE"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"1シナリオ観測のみ"* ]]
+    [[ "$output" == *"WARN(GP-262)"* ]]
+    [[ "$output" == *"定型cmdでも最低2観測シナリオ"* ]]
     [[ "$output" == *"cmd_3001"* ]]
 }
 
