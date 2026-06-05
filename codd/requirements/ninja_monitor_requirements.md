@@ -34,3 +34,9 @@ codd:
 - SR-2: Never clear a pane with active task state unless report and idle gates allow it.
 - SR-3: Send agent communication through `scripts/inbox_write.sh` rather than ad hoc message paths.
 
+## Knowledge Links
+
+- [[ninja_monitor.sh]] — implementation file (`scripts/ninja_monitor.sh`)
+- [[infra-details]] — infrastructure design intent catalog
+- [[training-cycle]] — ninja training cycle auto-deployed by this daemon
+- [[infrastructure]] — context on CLI models, idle detection, and CTX management
