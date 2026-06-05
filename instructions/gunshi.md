@@ -464,6 +464,8 @@ logs/gunshi_review_log\.yaml
 - デフォルト値・閾値変更時: 関連テストの前提値が変更後の値と一致するか `grep -rn "旧値" tests/` で確認。不一致→テストも更新（CI RED事故 2026-05-21: MIN_SAMPLES 3→1変更時にテスト前提未更新→2件FAIL）
 - 新規フィールド必須化時: 統合テストのfixture(埋め込みYAML)が新フィールドを含むか `grep -rn "フィールド名" tests/` で確認。不在→fixtureも更新（CI RED事故 2026-05-24: brainwash_check全level必須化でfixture未更新→1件FAIL）
 - D0実装時: **全入力モード**をテストせよ。stdinモードだけでなくcmd_idモード/archiveモード/空結果モードも必須。「既存バグ」と切り離す判断は全パステスト後のみ許される（D0事故 2026-06-05: stdinのみテスト→cmd_idモードでset -u/pipefailバグ4件→家老修正）
+- instructions/*.md変更時: **generated/への貫通確認**。roles/*.mdに同内容反映→`bash scripts/build_instructions.sh`でgenerated/codex-*へ生成確認。instructions正本だけでは貫通しない（D0事故 2026-06-05: gunshi.md変更→generated未更新→家老補正）
+- 文書修正時: **旧結論と新結論の矛盾除去**。P0→偽陽性等の判定変更時は旧記述を更新/削除し、読者が矛盾する2結論を見ない状態にせよ
 
 ★殿丸投げ検査: 「殿に動作確認お願いします」と書いていないか？→ NO 必須
 
