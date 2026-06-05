@@ -309,6 +309,11 @@ def main() -> int:
         print(f"updated={updated}")
         for row, _note_path, rel_note_path in note_plan:
             print(f"{row['id']}|note={rel_note_path}")
+        # Sync ext4 cache so gate_three_layer_health.sh sees fresh state immediately
+        try:
+            state_module.sync_memory_db_ext4_cache(str(db_path))
+        except Exception as exc:
+            print(f"warn: cache sync failed (non-blocking): {exc}", file=sys.stderr)
     return 0
 
 
