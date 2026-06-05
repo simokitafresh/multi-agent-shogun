@@ -1123,6 +1123,23 @@ def ensure_event_attribute_columns(conn: sqlite3.Connection) -> None:
     )
 
 
+def ensure_event_state_transition_log(conn: sqlite3.Connection) -> None:
+    """Create the state transition audit table used by memory state updates."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS event_state_transitions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT NOT NULL,
+            from_state TEXT,
+            to_state TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            actor TEXT NOT NULL,
+            transitioned_at TEXT NOT NULL
+        )
+        """
+    )
+
+
 def event_row_with_attributes(event_row: EventRow) -> EventRow:
     ts = event_row[1]
     if len(event_row) == 15:
@@ -1350,6 +1367,7 @@ def build_db(
             """
         )
         ensure_event_attribute_columns(conn)
+        ensure_event_state_transition_log(conn)
         event_rows_for_insert = [event_row_with_attributes(event_row) for event_row in event_rows]
         conn.executemany(
             """

@@ -4094,11 +4094,11 @@ check_three_layer_maintenance() {
 
     recall_script="$SCRIPT_DIR/scripts/memory_recall_control.sh"
     if [ -f "$recall_script" ]; then
-        log "THREE-LAYER-MAINTENANCE: recall_control dry-run start"
-        if timeout "$maintenance_timeout" bash "$recall_script" --dry-run >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
-            log "THREE-LAYER-MAINTENANCE: recall_control dry-run done"
+        log "THREE-LAYER-MAINTENANCE: recall_control apply start"
+        if timeout "$maintenance_timeout" bash "$recall_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+            log "THREE-LAYER-MAINTENANCE: recall_control apply done"
         else
-            log "THREE-LAYER-MAINTENANCE: recall_control dry-run failed (non-blocking)"
+            log "THREE-LAYER-MAINTENANCE: recall_control apply failed (non-blocking)"
         fi
     else
         log "THREE-LAYER-MAINTENANCE: memory_recall_control.sh not found, skip"
@@ -4106,11 +4106,11 @@ check_three_layer_maintenance() {
 
     promote_script="$SCRIPT_DIR/scripts/obsidian_promote_candidate.sh"
     if [ -f "$promote_script" ]; then
-        log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run start"
-        if timeout "$maintenance_timeout" bash "$promote_script" --dry-run >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
-            log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run done"
+        log "THREE-LAYER-MAINTENANCE: obsidian_promote apply start"
+        if timeout "$maintenance_timeout" bash "$promote_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+            log "THREE-LAYER-MAINTENANCE: obsidian_promote apply done"
         else
-            log "THREE-LAYER-MAINTENANCE: obsidian_promote dry-run failed (non-blocking)"
+            log "THREE-LAYER-MAINTENANCE: obsidian_promote apply failed (non-blocking)"
         fi
     else
         log "THREE-LAYER-MAINTENANCE: obsidian_promote_candidate.sh not found, skip"

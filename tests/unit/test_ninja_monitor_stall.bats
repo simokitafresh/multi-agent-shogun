@@ -558,7 +558,7 @@ cat "$LOG"
     [[ "$output" == *"LOCK-CLEANUP: Removed 2 stale lock files"* ]]
 }
 
-@test "check_three_layer_maintenance runs cleanup apply and recall/promote dry-run once per interval" {
+@test "check_three_layer_maintenance runs cleanup, recall, and promote apply once per interval" {
     run bash -lc '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -601,14 +601,16 @@ cat "$LOG"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"cleanup:--apply --ttl-hours 24"* ]]
-    [[ "$output" == *"recall:--dry-run"* ]]
-    [[ "$output" == *"promote:--dry-run"* ]]
+    [[ "$output" == *"recall:"* ]]
+    [[ "$output" != *"recall:--dry-run"* ]]
+    [[ "$output" == *"promote:"* ]]
+    [[ "$output" != *"promote:--dry-run"* ]]
     [[ "$(printf '%s\n' "$output" | grep -c '^cleanup:')" -eq 1 ]]
     [[ "$(printf '%s\n' "$output" | grep -c '^recall:')" -eq 1 ]]
     [[ "$(printf '%s\n' "$output" | grep -c '^promote:')" -eq 1 ]]
     [[ "$output" == *"THREE-LAYER-MAINTENANCE: tmp cleanup done"* ]]
-    [[ "$output" == *"THREE-LAYER-MAINTENANCE: recall_control dry-run done"* ]]
-    [[ "$output" == *"THREE-LAYER-MAINTENANCE: obsidian_promote dry-run done"* ]]
+    [[ "$output" == *"THREE-LAYER-MAINTENANCE: recall_control apply done"* ]]
+    [[ "$output" == *"THREE-LAYER-MAINTENANCE: obsidian_promote apply done"* ]]
 }
 
 @test "build_pane_head_tail_excerpt filters blanks and keeps head tail in one pass" {
