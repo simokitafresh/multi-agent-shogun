@@ -5,8 +5,11 @@
 # @source: cmd_1502
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/*}"
+REPO_ROOT="${SCRIPT_DIR%/*}"
+unset _self
 
 if [ "$#" -lt 2 ]; then
     echo "Usage: bash scripts/insight_resolve.sh <insight_id> \"<reason>\"" >&2
