@@ -43,12 +43,40 @@ setup() {
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 共通概念 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 共通概念, 三層学習ループ |
 | related_concepts | semantic_dictionary_design |
 
 | 種別 | パス/参照 |
 |------|----------|
 | file | `context/growth-loop.md` |
+
+## local_memory_db — ローカル記憶DB
+
+| 属性 | 値 |
+|------|---|
+| id | local_memory_db |
+| label | ローカル記憶DB |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, 記憶DB |
+| related_concepts | three_layer_memory_system(relation_type=混同注意) |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/memory_db_query.sh` |
+| should_not_merge_with | three_layer_memory_system — ローカル記憶DBはSQLite/FTS5検索層 |
+
+## three_layer_memory_system — 三層記憶システム
+
+| 属性 | 値 |
+|------|---|
+| id | three_layer_memory_system |
+| label | 三層記憶システム |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ |
+| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/memory-db-schema.md` |
+| should_not_merge_with | local_memory_db — 三層記憶システムはDB単体ではなく全体アーキテクチャ |
 
 ## alm_research — ALM研究
 
@@ -144,6 +172,43 @@ PY
     [[ "$output" != *"## growth_loop — 学習ループ"* ]]
     [[ "$output" != *"relation_type: 混同注意"* ]]
     [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "three-layer memory query reaches three_layer_memory_system and keeps local_memory_db as confusion warning" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "三層記憶"
+
+    [ "$status" -eq 0 ]
+    first_heading="$(grep '^## ' <<< "$output" | head -n 1)"
+    [ "$first_heading" = "## three_layer_memory_system — 三層記憶システム" ]
+    [[ "$output" == *"matched: 三層記憶"* ]]
+    [[ "$output" == *"- should_not_merge_with: local_memory_db"* ]]
+    [[ "$output" != *"relation_type: 混同注意"* ]]
+    [[ "$output" != *"## local_memory_db — ローカル記憶DB"* ]]
+}
+
+@test "generic memory query does not overexpand into three_layer_memory_system" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "記憶"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NO_MATCH: 記憶"* ]]
+    [[ "$output" != *"three_layer_memory_system"* ]]
+    [[ "$output" != *"local_memory_db"* ]]
+}
+
+@test "three-layer learning loop remains routed to growth_loop" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "三層学習ループ"
+
+    [ "$status" -eq 0 ]
+    first_heading="$(grep '^## ' <<< "$output" | head -n 1)"
+    [ "$first_heading" = "## growth_loop — 学習ループ" ]
+    [[ "$output" == *"三層学習ループ"* ]]
+    [[ "$output" != *"## three_layer_memory_system — 三層記憶システム"* ]]
 }
 
 @test "first layer expands related concept resources only for a single concept match" {

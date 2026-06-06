@@ -33,8 +33,8 @@ codd:
 |------|---|
 | id | local_memory_db |
 | label | ローカル記憶DB |
-| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶, 記憶DBが主役なのは人間の構造と似ているな, 記憶DBを探せ, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, いつでもだれでもなんどでも使える, 修正 記憶DB CJK LIKE検索の長文クエリ対応, cd mnt c tools multi agent shogun, 三層記憶設計書§, 三層記憶設計書§ § timestamp原則, 三層記憶設計書§ § |
-| related_concepts | semantic_dictionary_design, semantic_causal_automation, file_rename, multi_cli_event_commonization, causal_verification_l0_l7 |
+| aliases | SQLite記憶DB, multi_agent_shogun_memory.db, ローカルSlite, 全文記録DB, lord_conversation 202行で溢れ, lord conversation jsonlが202行でMAX ENTRIES 200を超過しsession summ, 記憶DBが主役なのは人間の構造と似ているな, 記憶DBを探せ, いつでもだれでもなんどでも使える, 修正 記憶DB CJK LIKE検索の長文クエリ対応, cd mnt c tools multi agent shogun |
+| related_concepts | semantic_dictionary_design, semantic_causal_automation, file_rename, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system(relation_type=混同注意) |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -113,6 +113,29 @@ codd:
 | causal | `cmd_3178` depends_on: cmd_3177 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:58:05+09:00 三層記憶が順調か実際に実験してみてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T12:08:24+09:00 三層記憶は全員がそれぞれのロールで使えるようにするべきだよな？将軍専用のってなんだ？ |
+| should_not_merge_with | three_layer_memory_system — ローカル記憶DBはSQLite/FTS5の永続検索層。三層記憶システムは記憶DB・セマンティック索引・Obsidian/因果辺を貫通させる全体アーキテクチャ |
+
+## three_layer_memory_system — 三層記憶システム
+
+| 属性 | 値 |
+|------|---|
+| id | three_layer_memory_system |
+| label | 三層記憶システム |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる |
+| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/memory-db-schema.md` |
+| file | `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー |
+| file | `scripts/semantic_search.sh` |
+| file | `scripts/obsidian_promote_candidate.sh` |
+| file | `scripts/memory_recall_control.sh` |
+| cmd | `cmd_3060` 強化 — 三層記憶の最初の接続(記憶DB FTS5→event_concepts→概念到達) (`tests/unit/test_semantic_search.bats`) |
+| cmd | `cmd_3065` 三層記憶パスB — related_concepts連想トラバース+双方向リンク強制化 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_index_update.bats`) |
+| cmd | `cmd_3083` 強化: 三層記憶リアルタイム概念紐付け(event_concepts即時INSERT) (`lib/lord_conversation.sh`, `tests/unit/test_lord_conversation.bats`) |
+| causal | [[殿指摘_三層記憶概念混同]] -> [[local_memory_db_alias過拡張]] -> [[three_layer_memory_system分離]] |
+| should_not_merge_with | local_memory_db — local_memory_dbは第一層SQLite/FTS5検索基盤。three_layer_memory_systemは第一層DB、第二層semantic-index、第三層Obsidian/因果辺/還流をつなぐ運用概念 |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -250,7 +273,7 @@ codd:
 | label | セマンティック辞書構想 |
 | aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する |
 | skills | なし |
-| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting |
+| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
 
 | 種別 | パス/参照 |
@@ -916,9 +939,9 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層, 三層学習ループ, 教訓, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる |
 | skills | なし |
-| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7 |
+| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2155,7 +2178,7 @@ codd:
 | label | 因果辺トラバース統合パイプライン(Obsidian×セマンティック) |
 | aliases | 因果辺トラバース, causal_traversal, 因果辺拡張, Obsidian統合パイプライン, backlink traverse, 概念拡張検索, semantic causal integration, backlinks双方向, コードベース理解, ノイズ1件で全汚染, ファイル間直接リンク, リンク修行の複利, リンク品質原則, 修行=リンク構築, 孤立=存在しない, 知識の幅, 読んで理解してリンク, 距離×濃度 |
 | skills | なし |
-| related_concepts | semantic_dictionary_design, semantic_causal_automation, lesson_lifecycle, investment_knowledge_base |
+| related_concepts | semantic_dictionary_design, semantic_causal_automation, lesson_lifecycle, investment_knowledge_base, three_layer_memory_system |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2501,7 +2524,7 @@ codd:
 | label | セマンティック因果自動化 |
 | aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索 |
 | skills | |
-| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7 |
+| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system |
 
 | 種別 | パス/参照 |
 |------|----------|

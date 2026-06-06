@@ -244,3 +244,38 @@ EOF
     grep -q 'regression_detection_only' "$TEST_TMPDIR/quality_fixture.json"
     grep -q 'セマンティック辞書の新しい穴をテストセットに入れる' "$TEST_TMPDIR/quality_fixture.json"
 }
+
+@test "dirty hit candidates: generic hits are surfaced without converting them to NO_MATCH aliases" {
+    cat > "$SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$*" == *"記憶"* ]]; then
+  echo "## local_memory_db — ローカル記憶DB"
+  echo "matched: 記憶"
+  exit 0
+fi
+echo "NO_MATCH: $*"
+exit 1
+EOF
+    chmod +x "$SEMANTIC_SEARCH_CMD"
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"記憶","direction":"inbound"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/dirty-hit-baseline.json" \
+        --log "$TEST_TMPDIR/logs/dirty-hit-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml" \
+        --no-insights
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SEMANTIC_STRESS total=1 hits=1 no_match=0 errors=0 hit_rate=100.0%"* ]]
+    [[ "$output" == *"candidate_aliases=0"* ]]
+    [[ "$output" == *"dirty_hit_candidates=1"* ]]
+    [[ "$output" == *"DIRTY_HIT 記憶 (lord) -> local_memory_db: generic_short_query:記憶->local_memory_db"* ]]
+    grep -q '"dirty_hit_candidates"' "$TEST_TMPDIR/logs/dirty-hit-stress.log"
+}
