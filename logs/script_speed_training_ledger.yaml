@@ -1426,16 +1426,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:47:34"
   - script_path: "scripts/karo_workaround_log.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 11
+    before_real_ms: 15
+    after_real_ms: 11
+    real_measurement_command: "bash scripts/karo_workaround_log.sh (0 args, usage exit — exercises SCRIPT_DIR/REPO_ROOT; 5 cold runs median)"
+    test_result: "39/39 PASS SKIP=0 (test_karo_workaround_category.bats + test_karo_workaround_validation.bats); BASH_SOURCE string ops (SCRIPT_DIR/REPO_ROOT) + mktemp→PID in --reclassify/--normalize: 15ms→11ms (-27%)"
+    commit: "e5c16ec00"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T06:51:43"
+    updated_at: "2026-06-07T07:00:00"
   - script_path: "scripts/knowledge_metrics.sh"
     status: assigned
     before_ms: 16
