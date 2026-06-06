@@ -612,16 +612,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T00:17:39"
   - script_path: "scripts/gate_fire_log.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 3021
+    after_real_ms: 2523
+    real_measurement_command: "for _i in $(seq 1 30); do rm -f /tmp/gate_fire_log_stats_* 2>/dev/null || true; GATE_FIRE_LOG_FILE=/tmp/kagemaru_gate_fire_log_speed.yaml bash scripts/gate_fire_log.sh >/dev/null; done"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_fire_log.bats 6/6 PASS; cold 30-run output PASS; SKIP=0"
+    commit: "327db17a0"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T00:18:40"
   - script_path: "scripts/gate_improvement_trigger.sh"
     status: pending
     before_ms: 8
