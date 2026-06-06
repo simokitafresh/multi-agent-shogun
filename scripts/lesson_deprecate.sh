@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="${LESSON_DEPRECATE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PROJECT="${1:-}"
 LESSON_ID="${2:-}"
 REASON="${3:-}"
@@ -25,133 +25,73 @@ if [ ! -f "$LESSONS_FILE" ]; then
     exit 1
 fi
 
+TIMESTAMP=$(date -Iseconds)
+
 attempt=0
 max_attempts=3
-PY_EXIT_FILE=$(mktemp)
-trap 'rm -f "$PY_EXIT_FILE"' EXIT
 
 while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        export PROJECT LESSONS_FILE LESSON_ID REASON CMD_ID PY_EXIT_FILE
-        python3 << 'PYEOF'
-import os
-import sys
-import tempfile
-from datetime import datetime
+        TMP=$(mktemp --tmpdir="$(dirname "$LESSONS_FILE")" .lesson_dep_XXXXXX.tmp)
 
-import yaml
-
-project = os.environ["PROJECT"]
-lessons_file = os.environ["LESSONS_FILE"]
-lesson_id = os.environ["LESSON_ID"]
-reason = os.environ["REASON"]
-cmd_id = os.environ.get("CMD_ID", "")
-py_exit_file = os.environ["PY_EXIT_FILE"]
-
-def fail(msg):
-    print(msg, file=sys.stderr)
-    with open(py_exit_file, "w", encoding="utf-8") as f:
-        f.write("1")
-    raise SystemExit(0)
-
-try:
-    with open(lessons_file, encoding="utf-8") as f:
-        original = f.read()
-
-    data = yaml.safe_load(original)
-    if not isinstance(data, dict) or not isinstance(data.get("lessons"), list):
-        fail(f"ERROR: No lessons list found in {lessons_file}")
-
-    target = None
-    for lesson in data["lessons"]:
-        if isinstance(lesson, dict) and lesson.get("id") == lesson_id:
-            target = lesson
-            break
-
-    if target is None:
-        fail(f"ERROR: lesson_id '{lesson_id}' not found in {lessons_file}")
-
-    # Append-only metadata: keep existing lesson content and add deprecation fields.
-    target["deprecated"] = True
-    target["deprecated_at"] = datetime.now().astimezone().replace(microsecond=0).isoformat()
-    target["deprecated_reason"] = reason
-    if cmd_id:
-        target["deprecated_by"] = cmd_id
-
-    header_lines = []
-    for line in original.splitlines():
-        if line.startswith("#"):
-            header_lines.append(line)
-        else:
-            break
-    header = "\n".join(header_lines)
-    if header:
-        header += "\n"
-
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(lessons_file), suffix=".tmp")
-    try:
-        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-            if header:
-                f.write(header)
-            # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-            def _sv(v):
-                if isinstance(v, bool): return str(v).lower()
-                if isinstance(v, (int, float)): return str(v)
-                s = str(v)
-                if '\n' in s:
-                    return '|-\n' + '\n'.join('      ' + ln for ln in s.split('\n'))
-                sq = chr(39)
-                return sq + s.replace(sq, sq+sq) + sq
-
-            top_scalars = ['ssot_path', 'last_synced', 'archive_path', 'lesson_count']
-            for k in top_scalars:
-                if k in data:
-                    f.write(f'{k}: {_sv(data[k])}\n')
-            for k in data:
-                if k not in top_scalars and k != 'lessons':
-                    f.write(f'{k}: {_sv(data[k])}\n')
-
-            lessons = data.get('lessons', [])
-            if not lessons:
-                f.write('lessons: []\n')
-            else:
-                f.write('lessons:\n')
-                l_keys = ['id', 'title', 'summary', 'tags',
-                          'deprecated', 'deprecated_at', 'deprecated_reason', 'deprecated_by',
-                          'helpful_count', 'harmful_count', 'last_referenced', 'retired']
-                for lesson in lessons:
-                    first = True
-                    for k in l_keys + sorted(k2 for k2 in lesson if k2 not in l_keys):
-                        if k not in lesson:
-                            continue
-                        p = '- ' if first else '  '
-                        first = False
-                        v = lesson[k]
-                        if isinstance(v, list):
-                            f.write(f'{p}{k}:\n')
-                            for item in v:
-                                f.write(f'  - {_sv(item)}\n')
-                        else:
-                            f.write(f'{p}{k}: {_sv(v)}\n')
-        os.replace(tmp_path, lessons_file)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
-
-except Exception as e:
-    fail(f"ERROR: {e}")
-
-with open(py_exit_file, "w", encoding="utf-8") as f:
-    f.write("0")
-print(f"DEPRECATED: {project}/{lesson_id} — {reason}")
-PYEOF
-    ) 200>"$LOCKFILE"; then
-        PY_EXIT=$(cat "$PY_EXIT_FILE" 2>/dev/null || echo "1")
-        if [ "$PY_EXIT" != "0" ]; then
+        # awk-based: yaml.dump/safe_load不要。ターゲット教訓ブロックのみ編集し他は無変更パス
+        # deprecated_*フィールドが既存でも正しく更新する
+        if LESSON_ID="$LESSON_ID" REASON="$REASON" CMD_ID="$CMD_ID" TIMESTAMP="$TIMESTAMP" \
+           awk '
+           function sq(s,    q) {
+               q = sprintf("%c", 39)
+               gsub(q, q q, s)
+               return q s q
+           }
+           function flush_block(    i) {
+               for (i = 0; i < block_n; i++) print block[i]
+               print "  deprecated: true"
+               print "  deprecated_at: " sq(ts)
+               print "  deprecated_reason: " sq(reason)
+               if (cmd_id != "") print "  deprecated_by: " sq(cmd_id)
+               block_n = 0; in_skip = 0
+           }
+           BEGIN {
+               lid = ENVIRON["LESSON_ID"]
+               reason = ENVIRON["REASON"]
+               cmd_id = ENVIRON["CMD_ID"]
+               ts = ENVIRON["TIMESTAMP"]
+               found = 0; in_target = 0; in_skip = 0; block_n = 0
+           }
+           /^- id:[[:space:]]/ {
+               if (in_target) { flush_block(); in_target = 0 }
+               if ($0 ~ ("^- id:[[:space:]]+" lid "[[:space:]]*$")) {
+                   in_target = 1; found = 1; block[block_n++] = $0; next
+               }
+               print; next
+           }
+           in_target {
+               if (/^  deprecated(_at|_reason|_by)?:[[:space:]]/) {
+                   in_skip = ($0 ~ /:[[:space:]]*(\|-|>)/)
+                   next
+               }
+               if (in_skip && /^    /) { next }
+               in_skip = 0
+               block[block_n++] = $0; next
+           }
+           { print }
+           END {
+               if (in_target) flush_block()
+               if (!found) {
+                   printf "ERROR: lesson_id '"'"'%s'"'"' not found\n", lid > "/dev/stderr"
+                   exit 1
+               }
+           }
+           ' "$LESSONS_FILE" > "$TMP"; then
+            mv "$TMP" "$LESSONS_FILE"
+            echo "DEPRECATED: ${PROJECT}/${LESSON_ID} — ${REASON}"
+        else
+            rm -f "$TMP"
             exit 1
         fi
+    ) 200>"$LOCKFILE"; then
         exit 0
     else
         attempt=$((attempt + 1))
