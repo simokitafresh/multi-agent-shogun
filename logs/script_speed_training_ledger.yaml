@@ -568,16 +568,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T00:03:52"
   - script_path: "scripts/deploy_training.sh"
-    status: assigned
+    status: completed
     before_ms: 29
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 1536
+    after_real_ms: 1277
+    real_measurement_command: "for i in $(seq 1 80); do bash scripts/deploy_training.sh --help >/dev/null 2>&1 || true; done"
+    test_result: "bash -n scripts/deploy_training.sh PASS; safe --help-loop PASS; SKIP=0"
+    commit: "f926137d8"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T00:06:30"
+    updated_at: "2026-06-07T00:09:03"
   - script_path: "scripts/enable_pane_trace.sh"
     status: assigned
     before_ms: 19
