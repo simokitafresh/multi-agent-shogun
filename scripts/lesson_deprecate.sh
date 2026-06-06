@@ -27,16 +27,22 @@ fi
 
 TIMESTAMP=$(date -Iseconds)
 
+# AWK_EXIT_FILE: awk成功/失敗をflockサブシェル外へ伝達（lockタイムアウトと区別するため）
+AWK_EXIT_FILE=$(mktemp)
+trap 'rm -f "$AWK_EXIT_FILE"' EXIT
+
 attempt=0
 max_attempts=3
 
 while [ $attempt -lt $max_attempts ]; do
+    echo "1" > "$AWK_EXIT_FILE"  # pessimistic default
     if (
         flock -w 10 200 || exit 1
 
         TMP=$(mktemp --tmpdir="$(dirname "$LESSONS_FILE")" .lesson_dep_XXXXXX.tmp)
 
         # awk-based: yaml.dump/safe_load不要。ターゲット教訓ブロックのみ編集し他は無変更パス
+        # ブロック形式(- id: L722)とインライン形式(- {id: L751, ...})の両方に対応
         # deprecated_*フィールドが既存でも正しく更新する
         if LESSON_ID="$LESSON_ID" REASON="$REASON" CMD_ID="$CMD_ID" TIMESTAMP="$TIMESTAMP" \
            awk '
@@ -59,6 +65,22 @@ while [ $attempt -lt $max_attempts ]; do
                cmd_id = ENVIRON["CMD_ID"]
                ts = ENVIRON["TIMESTAMP"]
                found = 0; in_target = 0; in_skip = 0; block_n = 0
+           }
+           /^- \{id:[[:space:]]/ {
+               if ($0 ~ ("^- \\{id:[[:space:]]+" lid "[[:space:]]*[,}]")) {
+                   found = 1
+                   line = $0
+                   dep_start = index(line, ", deprecated:")
+                   if (dep_start > 0) {
+                       line = substr(line, 1, dep_start - 1) "}"
+                   }
+                   base = substr(line, 1, length(line) - 1)
+                   printf "%s, deprecated: true, deprecated_at: %s, deprecated_reason: %s", base, sq(ts), sq(reason)
+                   if (cmd_id != "") printf ", deprecated_by: %s", sq(cmd_id)
+                   print "}"
+                   next
+               }
+               print; next
            }
            /^- id:[[:space:]]/ {
                if (in_target) { flush_block(); in_target = 0 }
@@ -87,11 +109,16 @@ while [ $attempt -lt $max_attempts ]; do
            ' "$LESSONS_FILE" > "$TMP"; then
             mv "$TMP" "$LESSONS_FILE"
             echo "DEPRECATED: ${PROJECT}/${LESSON_ID} — ${REASON}"
+            echo "0" > "$AWK_EXIT_FILE"
         else
             rm -f "$TMP"
+        fi
+        exit 0
+    ) 200>"$LOCKFILE"; then
+        AWK_EC=$(cat "$AWK_EXIT_FILE" 2>/dev/null || echo "1")
+        if [ "$AWK_EC" != "0" ]; then
             exit 1
         fi
-    ) 200>"$LOCKFILE"; then
         exit 0
     else
         attempt=$((attempt + 1))
