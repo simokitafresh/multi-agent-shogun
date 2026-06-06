@@ -1096,27 +1096,27 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:17:05"
   - script_path: "scripts/gist_sync.sh"
-    status: pending
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 15
+    before_real_ms: 1464
+    after_real_ms: 1277
+    real_measurement_command: "time bash scripts/gist_sync.sh --once"
+    test_result: "bash_n PASS; no batsfile; --once exit0 PASS"
+    commit: "bec1dc9ec"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:35:00"
   - script_path: "scripts/gunshi_gate_reflux.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 58
+    after_real_ms: 43
+    real_measurement_command: "bash scripts/gunshi_gate_reflux.sh NONEXISTENT_CMD_00000 CLEAR"
+    test_result: "bash -n scripts/gunshi_gate_reflux.sh PASS; functional test PASS (fake cmd_id no-match + invalid gate_result validation)"
+    commit: "cc8298b39"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T05:35:00"
   - script_path: "scripts/gunshi_gate_sync.sh"
     status: completed
     before_ms: 14
