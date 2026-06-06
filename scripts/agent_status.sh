@@ -11,8 +11,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/agent_status.sh}"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+unset _self
 
 # 表示順序はpane_lookup.shから取得
 AGENT_ORDER=("${PANE_LOOKUP_AGENT_ORDER[@]}")
@@ -39,9 +42,17 @@ format_age() {
 printf "%-10s %-9s %-5s %-12s %s\n" "AGENT" "STATE" "CTX" "LAST_ACTIVE" "AGE"
 
 NOW=$(date +%s)
+declare -A CURRENT_PANES=()
+while read -r pane_index agent_name; do
+    [ -n "$agent_name" ] || continue
+    CURRENT_PANES[$agent_name]="shogun:agents.$pane_index"
+done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
 
 for name in "${AGENT_ORDER[@]}"; do
-    pane=$(pane_lookup "$name")
+    pane="${CURRENT_PANES[$name]:-}"
+    if [ -z "$pane" ]; then
+        pane=$(pane_lookup "$name")
+    fi
 
     if [ -z "$pane" ]; then
         printf "%-10s %-9s %-5s %-12s %s\n" "$name" "missing" "—" "—" "—"
@@ -78,7 +89,7 @@ for name in "${AGENT_ORDER[@]}"; do
         age_display="—"
         age_seconds=""
     else
-        time_display=$(date -d "@$last_active" '+%H:%M:%S' 2>/dev/null) || time_display="$last_active"
+        printf -v time_display '%(%H:%M:%S)T' "$last_active" 2>/dev/null || time_display="$last_active"
         age_seconds=$((NOW - last_active))
         if [ "$age_seconds" -lt 0 ]; then
             age_seconds=0
