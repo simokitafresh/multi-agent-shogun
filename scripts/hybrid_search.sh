@@ -77,80 +77,52 @@ done
 [[ -n "$QUERY" ]] || die "QUERY is required"
 [[ -d "$ROOT" ]] || die "search root not found: $ROOT"
 
-tmp_keyword="$(mktemp)"
-tmp_mcp="$(mktemp)"
 tmp_merged="$(mktemp)"
-trap 'rm -f "$tmp_keyword" "$tmp_mcp" "$tmp_merged"' EXIT
+trap 'rm -f "$tmp_merged"' EXIT
 
-if command -v rg >/dev/null 2>&1; then
-    rg --fixed-strings --ignore-case --line-number --no-heading \
-        --glob '!/.git/**' \
-        --glob '!/.codex_tmp/**' \
-        --glob '!queue/archive/**' \
-        --glob '!node_modules/**' \
-        --glob '!__pycache__/**' \
-        "$QUERY" "$ROOT" 2>/dev/null \
-        | head -n "$((LIMIT * 3))" \
-        | awk -F: -v root="$ROOT" '
-            {
-                path=$1
-                line=$2
-                $1=""; $2=""
-                sub(/^::?/, "", $0)
-                if (index(path, root "/") == 1) {
-                    path=substr(path, length(root) + 2)
-                }
-                printf "keyword\t%d\t%s:%s\t%s\n", 100 - NR, path, line, $0
+_keyword_awk='
+    {
+        path=$1; line=$2; $1=""; $2=""
+        sub(/^::?/, "", $0)
+        if (index(path, root "/") == 1) { path=substr(path, length(root) + 2) }
+        printf "keyword\t%d\t%s:%s\t%s\n", 100 - NR, path, line, $0
+    }
+'
+{
+    if command -v rg >/dev/null 2>&1; then
+        rg --fixed-strings --ignore-case --line-number --no-heading \
+            --glob '!/.git/**' \
+            --glob '!/.codex_tmp/**' \
+            --glob '!queue/archive/**' \
+            --glob '!node_modules/**' \
+            --glob '!__pycache__/**' \
+            "$QUERY" "$ROOT" 2>/dev/null \
+            | head -n "$((LIMIT * 3))" \
+            | awk -F: -v root="$ROOT" "$_keyword_awk"
+    else
+        grep -RIn --exclude-dir=.git --exclude-dir=.codex_tmp --exclude-dir=node_modules \
+            -- "$QUERY" "$ROOT" 2>/dev/null \
+            | head -n "$((LIMIT * 3))" \
+            | awk -F: -v root="$ROOT" "$_keyword_awk"
+    fi
+    if [[ -n "$MCP_FILE" && -f "$MCP_FILE" ]]; then
+        awk -v query="$QUERY" '
+            NF == 0 { next }
+            index($0, "|") > 0 {
+                split($0, parts, "|")
+                source=parts[1]; path=parts[2]; snippet=parts[3]
+                for (i=4; i<=length(parts); i++) snippet=snippet "|" parts[i]
+                if (source == "") source="mcp"
+                if (path == "") path="mcp"
+                printf "%s\t90\t%s\t%s\n", source, path, snippet
+                next
             }
-        ' > "$tmp_keyword"
-else
-    grep -RIn --exclude-dir=.git --exclude-dir=.codex_tmp --exclude-dir=node_modules \
-        -- "$QUERY" "$ROOT" 2>/dev/null \
-        | head -n "$((LIMIT * 3))" \
-        | awk -F: -v root="$ROOT" '
-            {
-                path=$1
-                line=$2
-                $1=""; $2=""
-                sub(/^::?/, "", $0)
-                if (index(path, root "/") == 1) {
-                    path=substr(path, length(root) + 2)
-                }
-                printf "keyword\t%d\t%s:%s\t%s\n", 100 - NR, path, line, $0
-            }
-        ' > "$tmp_keyword"
-fi
-
-if [[ -n "$MCP_FILE" && -f "$MCP_FILE" ]]; then
-    awk -v query="$QUERY" '
-        NF == 0 { next }
-        index($0, "|") > 0 {
-            split($0, parts, "|")
-            source=parts[1]
-            path=parts[2]
-            snippet=parts[3]
-            for (i=4; i<=length(parts); i++) snippet=snippet "|" parts[i]
-            if (source == "") source="mcp"
-            if (path == "") path="mcp"
-            printf "%s\t90\t%s\t%s\n", source, path, snippet
-            next
-        }
-        {
-            printf "mcp\t90\tmcp\t%s\n", $0
-        }
-    ' "$MCP_FILE" > "$tmp_mcp"
-fi
-
-cat "$tmp_keyword" "$tmp_mcp" \
-    | awk -F'\t' '
-        {
-            key=$3
-            if (seen[key]++) next
-            print
-        }
-    ' \
-    | sort -t $'\t' -k2,2nr \
-    | head -n "$LIMIT" > "$tmp_merged"
+            { printf "mcp\t90\tmcp\t%s\n", $0 }
+        ' "$MCP_FILE"
+    fi
+} | awk -F'\t' '{ key=$3; if (seen[key]++) next; print }' \
+  | sort -t $'\t' -k2,2nr \
+  | head -n "$LIMIT" > "$tmp_merged"
 
 count="$(wc -l < "$tmp_merged" | tr -d ' ')"
 echo "HYBRID_SEARCH query=${QUERY} results=${count} root=${ROOT}"
