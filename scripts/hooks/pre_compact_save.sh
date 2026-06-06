@@ -2,10 +2,10 @@
 # @source: initial (pre-compact state save hook)
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 
 # Read compact metadata from stdin JSON (best effort fallback on parse errors).
-payload="$(cat 2>/dev/null || true)"
+IFS= read -r -d '' payload <&0 2>/dev/null || true
 if [[ -z "$payload" ]]; then
   payload='{}'
 fi
@@ -42,7 +42,7 @@ if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
 
-safe_agent_id="$(printf '%s' "$agent_id" | tr -cd '[:alnum:]_.-')"
+safe_agent_id="${agent_id//[^[:alnum:]_.-]/}"
 if [[ -z "$safe_agent_id" ]]; then
   safe_agent_id="unknown"
 fi
@@ -50,7 +50,7 @@ fi
 mkdir -p "$ROOT_DIR/queue/compact_state"
 
 state_file="$ROOT_DIR/queue/compact_state/${safe_agent_id}.yaml"
-timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+TZ=UTC printf -v timestamp '%(%Y-%m-%dT%H:%M:%SZ)T' -1
 
 cat > "$state_file" <<EOF
 agent: $agent_id
