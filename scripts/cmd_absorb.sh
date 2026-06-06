@@ -122,9 +122,9 @@ append_changelog() {
     completed_at="$(date '+%Y-%m-%dT%H:%M:%S')"
     # R1: purpose + project を1回のawkパスで取得
     local fields
-    fields="$(get_cmd_fields_multi)"
-    purpose="$(echo "$fields" | sed -n '1p')"
-    project="$(echo "$fields" | sed -n '2p')"
+    mapfile -t fields < <(get_cmd_fields_multi)
+    purpose="${fields[0]:-}"
+    project="${fields[1]:-}"
     [ -z "$project" ] && project="unknown"
     purpose_escaped="$(yaml_escape_double_quoted "$purpose")"
     # R2: REASON_ESCAPEDはグローバル変数を再利用
@@ -161,10 +161,11 @@ abort_deployed_ninjas() {
 
     local cmd_id="$ABSORBED_CMD"
     local ninjas_to_abort
-    ninjas_to_abort=$(grep "^ninja|" "$snapshot" \
-        | grep "|${cmd_id}_" \
-        | awk -F'|' '$4 == "in_progress" || $4 == "acknowledged" { print $2 }' \
-        || true)
+    ninjas_to_abort=$(awk -F'|' -v cmd_id="$cmd_id" '
+        $1 == "ninja" && index($3, cmd_id "_") == 1 && ($4 == "in_progress" || $4 == "acknowledged") {
+            print $2
+        }
+    ' "$snapshot")
 
     if [ -z "$ninjas_to_abort" ]; then
         return 0
