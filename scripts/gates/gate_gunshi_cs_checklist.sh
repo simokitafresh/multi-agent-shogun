@@ -24,6 +24,22 @@ log_stderr_file() {
     done < "$stderr_file"
 }
 
+csv_count() {
+    local csv="$1"
+    local count=0
+    local item
+
+    [ -n "$csv" ] || {
+        echo 0
+        return 0
+    }
+    IFS=',' read -ra items <<< "$csv"
+    for item in "${items[@]}"; do
+        [ -n "$item" ] && count=$((count + 1))
+    done
+    echo "$count"
+}
+
 if [ ! -f "$LOG_FILE" ]; then
     echo "ALERT: gunshi_review_log.yaml not found — レビューログ不在は異常"
     exit 1
@@ -553,7 +569,8 @@ fi
 
 if [ -n "$fm_flagged" ]; then
     echo "WARN: APPROVE+FM許容パターン検出(発見≠解決):"
-    printf '%s\n' "$fm_flagged" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$fm_flagged"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: FMを発見しながらmitigationが許容/TBD。REQUEST_CHANGESの再検討を"
     done
     warn=1
@@ -568,7 +585,8 @@ fi
 
 if [ -n "$convergence_once" ]; then
     echo "INFO: ambiguity_points=0 が1回だけのdraftを検出。mizchi Red flag『不明瞭点0が1回出たから終わり』を避け、連続ゼロ収束を確認せよ:"
-    printf '%s\n' "$convergence_once" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$convergence_once"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id"
     done
 fi
@@ -577,65 +595,73 @@ if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -
     exit 0
 fi
 if [ -n "$cs_missing" ]; then
-    cs_count=$(printf '%s\n' "$cs_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    cs_count=$(csv_count "$cs_missing")
     echo "WARN: ${cs_count}件のエントリにcs_checklistなし:"
-    printf '%s\n' "$cs_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$cs_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id"
     done
     warn=1
 fi
 if [ -n "$causal_missing" ]; then
-    causal_count=$(printf '%s\n' "$causal_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    causal_count=$(csv_count "$causal_missing")
     echo "WARN: ${causal_count}件のエントリにcausal_chainなし:"
-    printf '%s\n' "$causal_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$causal_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id"
     done
     warn=1
 fi
 if [ -n "$ambiguity_missing" ]; then
-    ambiguity_count=$(printf '%s\n' "$ambiguity_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    ambiguity_count=$(csv_count "$ambiguity_missing")
     echo "WARN: ${ambiguity_count}件のdraftエントリにambiguity_pointsなし:"
-    printf '%s\n' "$ambiguity_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$ambiguity_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id"
     done
     warn=1
 fi
 if [ -n "$single_scenario" ]; then
-    single_scenario_count=$(printf '%s\n' "$single_scenario" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    single_scenario_count=$(csv_count "$single_scenario")
     echo "WARN(GP-262): ${single_scenario_count}件のdraftエントリが1シナリオ観測のみ。定型cmdでも最低2観測シナリオを記録せよ:"
-    printf '%s\n' "$single_scenario" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$single_scenario"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: 観測が1件のみ。mizchi Red flag『1シナリオで充分』の可能性"
     done
     warn=1
 fi
 if [ -n "$adversarial_missing" ]; then
-    adversarial_count=$(printf '%s\n' "$adversarial_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    adversarial_count=$(csv_count "$adversarial_missing")
     echo "WARN: ${adversarial_count}件のdraftエントリでAdversarial review欠落:"
-    printf '%s\n' "$adversarial_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$adversarial_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: changed_lines>=200 なのに adversarial_review 記録なし"
     done
     warn=1
 fi
 if [ -n "$hole_action_missing" ]; then
-    hole_count=$(printf '%s\n' "$hole_action_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    hole_count=$(csv_count "$hole_action_missing")
     echo "WARN: ${hole_count}件のREQUEST_CHANGESにhole_action未記入(穴を即ふさいだか？殿厳命2026-05-24):"
-    printf '%s\n' "$hole_action_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$hole_action_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: hole_action: none/d0_implemented/cmd_proposed を記入せよ"
     done
     warn=1
 fi
 if [ -n "$ops_sim_missing" ]; then
-    ops_count=$(printf '%s\n' "$ops_sim_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    ops_count=$(csv_count "$ops_sim_missing")
     echo "WARN: ${ops_count}件のconsultation/self_studyにoperational_simulation未記入(構造有無ではなく実運用で何が起きるかをStep3で検証せよ。殿指摘2026-05-27):"
-    printf '%s\n' "$ops_sim_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$ops_sim_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: operational_simulation: 実運用シミュレーション結果を記入せよ"
     done
     warn=1
 fi
 if [ -n "$brainwash_missing" ]; then
-    brainwash_count=$(printf '%s\n' "$brainwash_missing" | tr ',' '\n' | awk 'NF{c++} END{print c+0}')
+    brainwash_count=$(csv_count "$brainwash_missing")
     echo "WARN: ${brainwash_count}件のdraftにbrainwash_check未記入(全confidence level必須):"
-    printf '%s\n' "$brainwash_missing" | tr ',' '\n' | while read -r id; do
+    IFS=',' read -ra items <<< "$brainwash_missing"
+    for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: 創造主の洗脳/ポジショントークに乗っていないか自問し、brainwash_checkを記入せよ"
     done
     warn=1
