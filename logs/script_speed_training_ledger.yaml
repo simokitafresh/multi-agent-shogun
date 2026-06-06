@@ -1030,16 +1030,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_vercel_phase.sh"
-    status: pending
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    before_real_ms: 503
+    after_real_ms: 147
+    real_measurement_command: "bash scripts/gates/gate_vercel_phase.sh context/infrastructure.md"
+    test_result: "bash_n PASS; tests/unit/test_gate_vercel_phase.bats 8/8 PASS SKIP=0; scoped context/infrastructure.md PASS; full scan pre-existing broken ref context/growth-loop.md"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T05:07:00"
   - script_path: "scripts/gates/gate_wa_data_quality.sh"
     status: pending
     before_ms: 19

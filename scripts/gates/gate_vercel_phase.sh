@@ -30,6 +30,7 @@ ANY_EXTERNAL_EXISTS=false
 # cmd_1976最適化: RESOLVE_BASES配列を事前構築しprocess substitutionを排除
 declare -a RESOLVE_BASES=()
 declare -A FILE_CACHE=()
+FILE_CACHE_READY=false
 
 load_external_repos() {
     # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
@@ -49,6 +50,7 @@ is_glob_ref() {
 }
 
 build_file_cache() {
+    [ "$FILE_CACHE_READY" = true ] && return 0
     local filepath base
     for base in "$SCRIPT_DIR" "${EXTERNAL_REPO_PATHS[@]}"; do
         [ -d "${base}/docs/research" ] || continue
@@ -56,6 +58,7 @@ build_file_cache() {
             FILE_CACHE["$filepath"]=1
         done < <(find "${base}/docs/research" \( -type f -o -type d \) 2>/dev/null)
     done
+    FILE_CACHE_READY=true
 }
 
 ref_exists_in_base() {
@@ -66,7 +69,7 @@ ref_exists_in_base() {
     if is_glob_ref "$ref"; then
         compgen -G "${base_dir}/${ref}" > /dev/null
     else
-        [[ -n "${FILE_CACHE[${base_dir}/${ref}]:-}" ]]
+        [[ -e "${base_dir}/${ref}" ]]
     fi
 }
 
@@ -88,6 +91,7 @@ candidate_display_path() {
 
 suggest_ref_candidates() {
     local ref="$1"
+    build_file_cache
     local ref_base ref_stem ref_stem_lc tokens
     ref_base="$(basename "$ref")"
     ref_stem="${ref_base%.*}"
@@ -190,8 +194,6 @@ main() {
         [ -d "${ext_path}/docs/research" ] && ANY_EXTERNAL_EXISTS=true
         RESOLVE_BASES+=("$ext_path")
     done
-
-    build_file_cache
 
     local -a context_files=()
     mapfile -t context_files < <(collect_context_files "$@")
