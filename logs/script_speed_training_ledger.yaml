@@ -435,16 +435,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_quality_log.sh"
-    status: pending
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 5220
+    after_real_ms: 3160
+    real_measurement_command: "CMD_QUALITY_LOG_FILE=<tmp>/log.yaml CMD_QUALITY_FAST_METADATA=1 MEMORY_DB_LIVE_INSERT=<tmp>/missing.py CMD_QUALITY_SOURCE=bench CMD_QUALITY_PROJECT=infra bash scripts/cmd_quality_log.sh cmd_bench PASS no 0 'note \"quoted\" \\ slash' (100-run total)"
+    test_result: "bash -n scripts/cmd_quality_log.sh PASS; bats tests/unit/test_cmd_quality_memory_db.bats 9/9 PASS SKIP=0; bats tests/unit/test_cmd_save_diagnose.bats 4/4 PASS SKIP=0"
+    commit: "f61bdd1a609e01c0f8295be5e35590180256c1b2"
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:41:07"
   - script_path: "scripts/cmd_save.sh"
     status: pending
     before_ms: 31
