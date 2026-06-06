@@ -27,69 +27,45 @@ prune_inbox() {
     (
         flock -w 5 200 || exit 1
 
-        INBOX_PATH="$INBOX" KEEP_READ="$KEEP_READ" AGENT_ID="$agent" python3 -c "
-import yaml, sys, os, tempfile
+        # Fast exit: count read messages without python3
+        local read_count
+        read_count=$(grep -c '^  read: true' "$INBOX" 2>/dev/null) || read_count=0
+        if (( read_count <= KEEP_READ )); then
+            exit 0
+        fi
 
-inbox_path = os.environ['INBOX_PATH']
-keep_read = int(os.environ['KEEP_READ'])
-agent_id = os.environ['AGENT_ID']
+        local tmp
+        tmp=$(mktemp --tmpdir="$(dirname "$INBOX")" .inbox_prune_XXXXXX.tmp)
 
-try:
-    with open(inbox_path, encoding='utf-8') as f:
-        data = yaml.safe_load(f)
+        # awk: parse message blocks, keep unread + last KEEP_READ read (no re-serialization)
+        awk -v keep="$KEEP_READ" -v agent="$agent" '
+        BEGIN { n_ur=0; n_r=0; in_msg=0; block=""; is_read=0 }
+        /^messages:/ { next }
+        /^- / {
+            if (in_msg) {
+                if (is_read) { n_r++; r[n_r]=block } else { n_ur++; ur[n_ur]=block }
+            }
+            in_msg=1; block=$0"\n"; is_read=0; next
+        }
+        in_msg {
+            if (/^[[:space:]]*read:[[:space:]]*true[[:space:]]*$/) is_read=1
+            block=block $0"\n"; next
+        }
+        END {
+            if (in_msg) {
+                if (is_read) { n_r++; r[n_r]=block } else { n_ur++; ur[n_ur]=block }
+            }
+            pruned = n_r - keep
+            printf "messages:\n"
+            if (n_ur == 0 && n_r == 0) { printf "messages: []\n"; exit }
+            for (i=1; i<=n_ur; i++) printf "%s", ur[i]
+            start = n_r - keep + 1
+            if (start < 1) start = 1
+            for (i=start; i<=n_r; i++) printf "%s", r[i]
+            printf "PRUNED: %s %d messages removed\n", agent, pruned > "/dev/stderr"
+        }
+        ' "$INBOX" > "$tmp" && mv "$tmp" "$INBOX"
 
-    if not data or not data.get('messages'):
-        sys.exit(0)
-
-    msgs = data['messages']
-    unread = [m for m in msgs if not m.get('read', False)]
-    read_msgs = [m for m in msgs if m.get('read', False)]
-
-    if len(read_msgs) <= keep_read:
-        sys.exit(0)  # Nothing to prune
-
-    # Keep only the last N read messages (newest)
-    pruned_count = len(read_msgs) - keep_read
-    kept_read = read_msgs[-keep_read:]
-
-    data['messages'] = unread + kept_read
-
-    # Atomic write
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-            # yaml.dump禁止(CLAUDE.md): 手動YAML構築でデータ消失を防止
-            def _sv(v):
-                if isinstance(v, bool): return str(v).lower()
-                s = str(v)
-                if '\n' in s:
-                    return '|-\n' + '\n'.join('    ' + ln for ln in s.split('\n'))
-                sq = chr(39)
-                return sq + s.replace(sq, sq+sq) + sq
-            if not data['messages']:
-                f.write('messages: []\n')
-            else:
-                f.write('messages:\n')
-                for m in data['messages']:
-                    keys = ['content', 'from', 'id', 'read', 'timestamp', 'type']
-                    extra = sorted(k for k in m if k not in keys)
-                    first = True
-                    for k in keys + extra:
-                        if k not in m: continue
-                        p = '- ' if first else '  '
-                        first = False
-                        f.write(f'{p}{k}: {_sv(m[k])}\n')
-        os.replace(tmp_path, inbox_path)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-    print(f'PRUNED: {agent_id} {pruned_count} messages removed', file=sys.stderr)
-
-except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
-    sys.exit(1)
-"
     ) 200>"$LOCKFILE"
 }
 
