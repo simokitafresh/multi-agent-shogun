@@ -156,20 +156,27 @@ else:
 
 # --- task duration anomaly detection from recent CLEAR cmds ---
 duration_rows = []
+ctx_rows = []
 if os.path.isfile(gate_metrics_path):
     with open(gate_metrics_path, encoding='utf-8', errors='replace') as f:
         for line in f:
             parts = line.rstrip('\n').split('\t')
-            if len(parts) < 10 or parts[2] != 'CLEAR':
+            if len(parts) < 3 or parts[2] != 'CLEAR':
                 continue
-            m = re.search(r'duration_sec=(\d+)', parts[9])
-            if not m:
-                continue
-            duration_rows.append({
-                'ts': parts[0],
-                'cmd_id': parts[1],
-                'duration_sec': int(m.group(1)),
-            })
+            duration_m = re.search(r'duration_sec=(\d+)', line)
+            if duration_m:
+                duration_rows.append({
+                    'ts': parts[0],
+                    'cmd_id': parts[1],
+                    'duration_sec': int(duration_m.group(1)),
+                })
+            ctx_m = re.search(r'ctx_pct=(\d+)', line)
+            if ctx_m:
+                ctx_rows.append({
+                    'ts': parts[0],
+                    'cmd_id': parts[1],
+                    'ctx_pct': int(ctx_m.group(1)),
+                })
 
 recent_duration_rows = duration_rows[-20:] if len(duration_rows) > 20 else duration_rows
 if len(recent_duration_rows) >= 5:
@@ -192,22 +199,6 @@ if len(recent_duration_rows) >= 5:
             )
 
 # --- CTX% anomaly detection from recent CLEAR cmds (cmd_2129) ---
-ctx_rows = []
-if os.path.isfile(gate_metrics_path):
-    with open(gate_metrics_path, encoding='utf-8', errors='replace') as f:
-        for line in f:
-            parts = line.rstrip('\n').split('\t')
-            if len(parts) < 3 or parts[2] != 'CLEAR':
-                continue
-            m = re.search(r'ctx_pct=(\d+)', line)
-            if not m:
-                continue
-            ctx_rows.append({
-                'ts': parts[0],
-                'cmd_id': parts[1],
-                'ctx_pct': int(m.group(1)),
-            })
-
 recent_ctx_rows = ctx_rows[-20:] if len(ctx_rows) > 20 else ctx_rows
 if len(recent_ctx_rows) >= 5:
     median_ctx = statistics.median(row['ctx_pct'] for row in recent_ctx_rows)
