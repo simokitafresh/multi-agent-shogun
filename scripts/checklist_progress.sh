@@ -7,14 +7,14 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 CHECKLIST_FILE="$1"
 
 if [ -z "$CHECKLIST_FILE" ]; then
     echo "Usage: checklist_progress.sh <checklist_file>" >&2
     exit 1
 fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Resolve relative paths from project root
 case "$CHECKLIST_FILE" in
