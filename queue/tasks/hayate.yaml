@@ -1,20 +1,8 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  acceptance_criteria:
-  - checks:
-    - check: before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference
-    - check: before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)
-    id: AC1
-  - checks:
-    - check: implementation improves runtime without reducing behavior or safety
-    - check: script-specific verification passes with SKIP=0
-    id: AC2
-  - checks:
-    - check: after_real_ms is measured with the same command as before_real_ms
-    - check: after_real_ms is strictly lower than before_real_ms
-    - check: real_measurement_command/test_result/commit are written back to script_speed_training_ledger
-    id: AC3
+  _ac_task_id: cmd_3183_impl
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3183 (deployed 2026-06-07T03:52:39). Read from the beginning.
+  ac_version: 8ae34981
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,63 +11,79 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_training_speed_gates_gate_cmd_state_20260607002149
+  parallel_ok: []
+  parent_cmd: cmd_3183
   project: infra
-  purpose: 'Speed-train scripts/gates/gate_cmd_state.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 将軍startup gateが8秒かかり毎セッション起動を遅延させている。セクション別プロファイルで特定したボトルネック5箇所を改善する。python3起動コスト(24回×16ms=0.4秒)ではなく、大ファイルYAML parse(review_log 297ms+cmd_design_quality 216ms)とセクション直列実行(相互依存なし区間の並列化)が真因
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
-  target_path: scripts/gates/gate_cmd_state.sh
-  task_id: cmd_training_speed_gates_gate_cmd_state_20260607002149_normal
-  task_type: speed_training
+  target_path: scripts/gates/gate_shogun_startup.sh
+  task_id: cmd_3183_impl
+  task_type: impl
   related_lessons:
-  - id: 'L092'
-    summary: 'get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEG'
-    detail: 'get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEG'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
-  - id: 'L703'
-    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-  - id: 'L470'
-    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-  - id: 'L188'
-    summary: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
-    detail: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
-  - id: 'L705'
-    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-  - id: 'L692'
-    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
-    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+  - id: 'L473'
+    summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
+    detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
+  - id: 'L287'
+    summary: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+    detail: 'karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様'
+  - id: 'L696'
+    summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+    detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+  - id: 'L637'
+    summary: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
+    detail: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
+  - id: 'L697'
+    summary: 'REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g'
+    detail: 'REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g'
+  - id: 'L583'
+    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L585'
+    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+  - id: 'L410'
+    summary: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+    detail: 'datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive'
+  - id: 'L335'
+    summary: 'grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)'
+    detail: 'grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
+  - "gunshi_review_lifecycle — 軍師レビューライフサイクル:  logs/gunshi_review_log.yaml skills/review-bundle/SKILL.md skills/gate-sync/SKILL.md skills/idle-persist/SKILL.md"
   - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh"
   - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  related_causal_links:
+  - "[[将軍現物検証]]"
+  - "[[真因=YAML parse+直列実行]]"
+  - "[[軍師速度分析blt_20260605_140808]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -93,22 +97,38 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L092: get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEG
-      - L509: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
-      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
-      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
-      - L188: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
-      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
-      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
+      - L473: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
+      - L287: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
+      - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
+      - L637: cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi
+      - L697: REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g
+      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
+      - L410: datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive
+      - L335: grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)
     ────────────────────────────────────────
     
     
-  ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_gates_gate_cmd_state_20260607002149_normal
-  _ac_worker_id: 
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'gate_shogun_startup.shの実行時間が計測前8秒から4秒以下に短縮されていることをtime計測で確認'
+  - id: 'AC2'
+    checks:
+    - check: 'review_log解析(L1379付近)がyaml.safe_loadではなくgrepベースに変更されている'
+  - id: 'AC3'
+    checks:
+    - check: 'cmd_design_quality解析(L1667付近)がyaml.safe_loadではなくgrepベースに変更されている'
+  - id: 'AC4'
+    checks:
+    - check: '相互依存のないセクション(軍師分析状態、backlinks、先送り穴等)がバックグラウンド並列実行されている'
+  - id: 'AC5'
+    checks:
+    - check: 'gate出力内容が変更前と同一であることをdiff確認(速度改善のみ、出力不変)'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_speed_gates_gate_cmd_state_20260607002149.yaml
-  report_path: queue/reports/hayate_report_cmd_training_speed_gates_gate_cmd_state_20260607002149.yaml
+  report_filename: hayate_report_cmd_3183.yaml
+  report_path: queue/reports/hayate_report_cmd_3183.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -118,10 +138,10 @@ task:
     warning: '⚠ 過去1件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 20
+      count: 24
     - pattern: 'verdict_invalid'
-      count: 3
+      count: 4
     - pattern: 'lu_structure_error'
       count: 2
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
-  deployed_at: "2026-06-07T00:22:27"
+  deployed_at: "2026-06-07T03:53:03"
