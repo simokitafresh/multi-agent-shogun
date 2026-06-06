@@ -116,16 +116,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-06T22:10:49"
   - script_path: "scripts/backfill_review_gate_done.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: "kotaro"
-    updated_at: "2026-06-06T22:11:39"
+    before_real_ms: 3024
+    after_real_ms: 1850
+    real_measurement_command: "sandbox copied script with 120 archive gate dirs and 80 copied report YAMLs; timeout 20 bash temp/scripts/backfill_review_gate_done.sh"
+    test_result: "bash_n_exit_0; sandbox_exit_0_count_120_SKIP_0"
+    commit: "d2b5fff00"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T22:27:04"
   - script_path: "scripts/backfill_task_type.sh"
     status: completed
     before_ms: 16
