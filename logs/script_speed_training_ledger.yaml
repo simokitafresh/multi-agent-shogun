@@ -1019,16 +1019,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:05:00"
   - script_path: "scripts/gates/gate_three_layer_health.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 124
+    after_real_ms: 50
+    real_measurement_command: "SHOGUN_MEMORY_DB=/tmp/nonexistent_shogun.db bash scripts/gates/gate_three_layer_health.sh"
+    test_result: "bash -n scripts/gates/gate_three_layer_health.sh && bats tests/unit/test_gate_three_layer_health.bats PASS 2/2 SKIP=0"
+    commit: "c85956117"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T04:54:23"
+    updated_at: "2026-06-07T05:18:58"
   - script_path: "scripts/gates/gate_vercel_phase.sh"
     status: completed
     before_ms: 19
@@ -2800,9 +2800,4 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-before_real_ms: 234
-after_real_ms: 68
-real_measurement_command: SHOGUN_MEMORY_DB=/tmp/nonexistent_shogun.db bash scripts/gates/gate_three_layer_health.sh
-test_result: bash -n scripts/gates/gate_three_layer_health.sh && bats tests/unit/test_gate_three_layer_health.bats PASS 2/2 SKIP=0
-commit: 0b64dd9ef
-status: completed
+
