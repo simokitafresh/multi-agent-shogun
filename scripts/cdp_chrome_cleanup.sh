@@ -8,12 +8,16 @@ PID_DIR="/tmp"
 PID_PREFIX="cdp_chrome_"
 LOG_PREFIX="[cdp_cleanup]"
 
+timestamp() {
+    printf '%(%Y-%m-%d %H:%M:%S)T' -1
+}
+
 log() {
-    echo "${LOG_PREFIX} $(date '+%Y-%m-%d %H:%M:%S') $*"
+    echo "${LOG_PREFIX} $(timestamp) $*"
 }
 
 log_err() {
-    echo "${LOG_PREFIX} $(date '+%Y-%m-%d %H:%M:%S') ERROR: $*" >&2
+    echo "${LOG_PREFIX} $(timestamp) ERROR: $*" >&2
 }
 
 cleanup_all() {
