@@ -1624,16 +1624,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:03:00"
   - script_path: "scripts/lesson_update_score.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 267
+    after_real_ms: 322
+    real_measurement_command: "bash scripts/lesson_update_score.sh infra L756 helpful (backup/restore method)"
+    test_result: "bash -n OK; L756 helpful_count incremented correctly"
+    commit: "65786bd02"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T08:08:33"
+    updated_at: "2026-06-07T08:15:00"
   - script_path: "scripts/lesson_write.sh"
     status: pending
     before_ms: 18
