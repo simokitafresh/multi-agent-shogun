@@ -549,6 +549,80 @@ grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
     [[ "$output" == *"PASS: missing report_received → return 1 (blocked)"* ]]
 }
 
+@test "report_gate: archived report_received after report timestamp allows clear even when report mtime changed later" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" "$SCRIPT_DIR/scripts"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: done
+  task_id: cmd_test_archived_notify
+  parent_cmd: cmd_test_archived_notify
+  report_filename: kagemaru_report_cmd_test_archived_notify.yaml
+INNEREOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_archived_notify.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_archived_notify
+parent_cmd: cmd_test_archived_notify
+timestamp: "2026-06-06T09:28:00+09:00"
+verdict: PASS
+INNEREOF
+touch -d "2026-06-06T09:35:00+09:00" "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_archived_notify.yaml"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages: []
+INNEREOF
+cat > "$SCRIPT_DIR/archive/inbox/karo_20260606.yaml" <<INNEREOF
+messages:
+- content: "影丸、cmd_test_archived_notify 完了。report=kagemaru_report_cmd_test_archived_notify.yaml"
+  from: kagemaru
+  id: msg_archived
+  read: true
+  timestamp: "2026-06-06T09:28:16+09:00"
+  type: report_received
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+can_send_clear_with_report_gate kagemaru "test_trigger"
+result=$?
+
+if [ "$result" -eq 0 ]; then
+    echo "PASS: archived report_received → return 0 (allowed)"
+else
+    echo "FAIL: expected return 0, got $result"
+    cat "$LOG"
+    exit 1
+fi
+
+if grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"; then
+    echo "FAIL: false missing notification block"
+    cat "$LOG"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: archived report_received → return 0 (allowed)"* ]]
+}
+
 # verdict値チェック: report存在+verdict不正値→return 1(clearブロック)
 @test "report_gate: invalid verdict blocks clear" {
     run bash -lc '
