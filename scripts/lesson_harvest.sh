@@ -175,7 +175,7 @@ def load_registered_titles():
 def load_report_fallback(report_path):
     try:
         with report_path.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+            data = yaml.load(f, Loader=yaml.CSafeLoader)
     except Exception:
         return None
     if not data or not isinstance(data, dict):
