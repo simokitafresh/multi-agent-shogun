@@ -20,7 +20,10 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${_self%/*}"
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
 ROOT_DIR="${CONTEXT_FRESHNESS_ROOT:-$SCRIPT_DIR}"
 CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
@@ -142,15 +145,20 @@ notify_context_alert() {
     fi
 }
 
-if [[ -n "$TODAY_OVERRIDE" ]]; then
-    TODAY_EPOCH=$(date -d "$TODAY_OVERRIDE" +%s 2>/dev/null) || {
-        echo "WARN: CONTEXT_FRESHNESS_TODAY の日付形式不正: $TODAY_OVERRIDE"
-        echo "  action: YYYY-MM-DD 形式に修正せよ。"
-        exit 2
-    }
-else
-    TODAY_EPOCH=$(date +%s)
-fi
+TODAY_EPOCH=""
+
+today_epoch() {
+    [[ -n "$TODAY_EPOCH" ]] && return 0
+    if [[ -n "$TODAY_OVERRIDE" ]]; then
+        TODAY_EPOCH=$(date -d "$TODAY_OVERRIDE" +%s 2>/dev/null) || {
+            echo "WARN: CONTEXT_FRESHNESS_TODAY の日付形式不正: $TODAY_OVERRIDE"
+            echo "  action: YYYY-MM-DD 形式に修正せよ。"
+            exit 2
+        }
+    else
+        TODAY_EPOCH=$(date +%s)
+    fi
+}
 
 if [[ ! -f "$CHECK_SCRIPT" ]]; then
     echo "WARN: context_freshness_check.sh not found"
@@ -209,7 +217,10 @@ declare -A source_alerts=()
 target_rel_paths=()
 while IFS= read -r warning_line; do
     [[ -n "$warning_line" ]] || continue
-    rel_path="$(printf '%s\n' "$warning_line" | sed -nE 's/^(WARN|ALERT): ([^ ]+) .*$/\2/p')"
+    rel_path=""
+    if [[ "$warning_line" =~ ^(WARN|ALERT):[[:space:]]([^[:space:]]+) ]]; then
+        rel_path="${BASH_REMATCH[2]}"
+    fi
     [[ -n "$rel_path" ]] || continue
     if [[ "$warning_line" == ALERT:*"source commits"* ]]; then
         source_alerts["$rel_path"]="$warning_line"
@@ -258,6 +269,7 @@ for rel_path in "${target_rel_paths[@]}"; do
         HAS_WARN=1
         continue
     }
+    today_epoch
 
     days_ago=$(( (TODAY_EPOCH - file_epoch) / 86400 ))
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
