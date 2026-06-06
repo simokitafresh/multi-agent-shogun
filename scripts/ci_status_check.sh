@@ -19,11 +19,6 @@
 # ============================================================
 set -euo pipefail
 
-_ci_script="${BASH_SOURCE[0]:-$0}"
-[[ "$_ci_script" != /* ]] && _ci_script="$PWD/$_ci_script"
-SCRIPT_DIR="${_ci_script%/*}"
-unset _ci_script
-
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
 LAST_NOTIFY_FILE="/tmp/last_ci_notify_state"
@@ -71,6 +66,11 @@ if $STATUS_MODE; then
     fi
     exit 0
 fi
+
+_ci_script="${BASH_SOURCE[0]:-$0}"
+[[ "$_ci_script" != /* ]] && _ci_script="$PWD/$_ci_script"
+SCRIPT_DIR="${_ci_script%/*}"
+unset _ci_script
 
 last_notified=""
 [[ -f "$LAST_NOTIFY_FILE" ]] && last_notified=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || true)
