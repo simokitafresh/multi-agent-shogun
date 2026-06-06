@@ -214,6 +214,15 @@ Always: `date "+%Y-%m-%dT%H:%M:%S"` — Never guess.
 
 commit前の`git add`に含めるな: `queue/tasks/`, `queue/reports/`, `queue/gates/` (運用データ、.gitignore対象)
 
+**GIT_INDEX_LOCK禁止**: `.git/index.lock`が存在しても削除するな。別プロセスが実行中のサイン。5秒待機→再試行。3回失敗→家老に報告して停止せよ。`rm -f .git/index.lock`は絶対禁止。
+
+**scope外一括commit禁止**: `git add -A`・`git add .`を使うな。`git add <スコープ内ファイル>`で個別指定せよ(L529)。スコープ外ファイルを含む`git add`は他忍者の変更を巻き込みcommit汚染を起こす(L712)。
+
+**並行commit待機手順**:
+1. flockエラー/index.lockエラー → 5秒待機後に再試行
+2. 3回失敗 → 家老に報告(`inbox_write.sh karo "commit失敗: {エラー詳細}" blocked {ninja_name}`)して停止
+3. 復旧判断は家老に委ねよ。自力でlockを削除しようとするな
+
 ## Bisect Commit Rule (git commit)
 <!-- GStack/GBrain takeaway #21 (Bisect commit — 論理単位分割) -->
 
