@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SCRIPT_DIR unused but kept for reference
-_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GH_CMD="${GH_CMD:-gh}"
 GIST_OWNER="${GIST_OWNER:-simokitafresh}"
 GIST_INDEX_ID="${GIST_INDEX_ID:-83a17157247174e9faefc3962968fe1b}"
