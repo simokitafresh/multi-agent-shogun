@@ -733,29 +733,29 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T00:44:05"
   - script_path: "scripts/gates/gate_enforcement_audit.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 114
+    after_real_ms: 103
+    real_measurement_command: "bash scripts/gates/gate_enforcement_audit.sh"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_meta_quality.bats 9/9 PASS SKIP=0; runtime exit 0"
+    commit: "d00080b0e"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T00:52:54"
   - script_path: "scripts/gates/gate_field_get.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 91
+    after_real_ms: 54
+    real_measurement_command: "bash scripts/gates/gate_field_get.sh >/dev/null (7-run median)"
+    test_result: "bash -n PASS; gate_field_get PASS 8/8; field_get self-test 16/16 PASS; bats tests/unit/test_field_get.bats 15/15 PASS, SKIP=0"
+    commit: "8efc1263ce072a0376c92f53b40f832df3a2f8c0"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T00:53:34"
   - script_path: "scripts/gates/gate_gunshi_cs_checklist.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -763,19 +763,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T00:51:11"
   - script_path: "scripts/gates/gate_gunshi_observations.sh"
-    status: pending
+    status: "completed"
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: "21"
+    after_real_ms: "11"
+    real_measurement_command: "time bash scripts/gates/gate_gunshi_observations.sh >/dev/null (5回平均)"
+    test_result: "bash -n scripts/gates/gate_gunshi_observations.sh PASS; FAIL case(missing obs)検証済み SKIP=0"
+    commit: "74ae4c613"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T00:59:17"
   - script_path: "scripts/gates/gate_gunshi_report_precheck.sh"
     status: pending
     before_ms: 20
