@@ -38,11 +38,22 @@ fi
 #   L3: scripts/gates/ 配下→ gate系テスト全体
 
 declare -A TEST_MAP  # script_basename → test_file
+declare -A SCRIPT_PATHS_BY_BASENAME
+declare -A SCRIPT_EXISTS
+
+while IFS= read -r script_path; do
+    script_base="${script_path##*/}"
+    rel_path="${script_path#"$REPO_ROOT"/}"
+    SCRIPT_PATHS_BY_BASENAME["$script_base"]+="$rel_path "
+    SCRIPT_EXISTS["$rel_path"]=1
+done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name '*.sh' 2>/dev/null)
 
 # L1: 命名規則マッチ
 for test_file in "$TEST_DIR"/test_*.bats; do
     [ -f "$test_file" ] || continue
-    base=$(basename "$test_file" .bats | sed 's/^test_//')
+    _base_file="${test_file##*/}"
+    base="${_base_file%.bats}"
+    base="${base#test_}"
     # スクリプト候補
     for candidate in \
         "scripts/${base}.sh" \
@@ -50,32 +61,32 @@ for test_file in "$TEST_DIR"/test_*.bats; do
         "scripts/gates/gate_${base}.sh" \
         "scripts/lib/${base}.sh" \
         "lib/${base}.sh"; do
-        if [ -f "$REPO_ROOT/$candidate" ]; then
+        if [[ -n "${SCRIPT_EXISTS[$candidate]+x}" ]]; then
             TEST_MAP["$candidate"]+="$test_file "
         fi
     done
 done
 
 # L2: テスト内のsource/bash解析（静的grep）
-for test_file in "$TEST_DIR"/test_*.bats; do
-    [ -f "$test_file" ] || continue
-    # sourceまたはbashで呼んでいるスクリプト名を抽出
-    while IFS= read -r script_ref; do
-        # パス正規化: $PROJECT_ROOT/ 等の変数を除去してbasename取得
-        script_base=$(echo "$script_ref" | sed 's|.*[/]||' | sed 's/["\x27]//g')
-        [ -z "$script_base" ] && continue
-        # scripts/ 配下で一致するファイルを探す
-        while IFS= read -r found; do
-            rel_path="${found#"$REPO_ROOT"/}"
-            TEST_MAP["$rel_path"]+="$test_file "
-        done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name "$script_base" 2>/dev/null)
-    done < <(grep -ohE '(source|bash|\.) +[^ ]+\.sh' "$test_file" 2>/dev/null | sed 's/^[^ ]* //')
-done
+while IFS= read -r line; do
+    test_file="${line%%:*}"
+    match="${line#*:}"
+    script_ref="${match#* }"
+    script_base="${script_ref##*/}"
+    script_base="${script_base//\"/}"
+    script_base="${script_base//\'/}"
+    [ -z "$script_base" ] && continue
+    for rel_path in ${SCRIPT_PATHS_BY_BASENAME[$script_base]:-}; do
+        [ -n "$rel_path" ] || continue
+        TEST_MAP["$rel_path"]+="$test_file "
+    done
+done < <(grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/dev/null)
 
 # --- 影響テスト特定 ---
 declare -A AFFECTED_TESTS
 
 for changed in "${CHANGED_FILES[@]}"; do
+    changed_base="${changed##*/}"
     # 変更ファイル自体がテストなら直接追加
     if [[ "$changed" == tests/unit/*.bats ]]; then
         full_path="$REPO_ROOT/$changed"
@@ -85,7 +96,7 @@ for changed in "${CHANGED_FILES[@]}"; do
 
     # L1+L2: マップから検索
     for key in "${!TEST_MAP[@]}"; do
-        if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$(basename "$changed")"* ]]; then
+        if [[ "$changed" == *"$key"* ]] || [[ "$key" == *"$changed_base"* ]]; then
             for tf in ${TEST_MAP[$key]}; do
                 AFFECTED_TESTS["$tf"]=1
             done
@@ -128,12 +139,16 @@ for changed in "${CHANGED_FILES[@]}"; do
 done
 
 # --- 結果出力 ---
-if [ ${#AFFECTED_TESTS[@]} -eq 0 ]; then
+count=0
+for _affected_test in "${!AFFECTED_TESTS[@]}"; do
+    count=$((count + 1))
+done
+
+if [ "$count" -eq 0 ]; then
     echo "# No affected tests found for: ${CHANGED_FILES[*]}" >&2
     echo "# Falling back to full test suite" >&2
     echo "$TEST_DIR"
 else
-    count=${#AFFECTED_TESTS[@]}
     total=$(find "$TEST_DIR" -maxdepth 1 -name 'test_*.bats' 2>/dev/null | wc -l)
     echo "# Affected: $count/$total test files ($(( (total - count) * 100 / total ))% skipped)" >&2
     printf '%s\n' "${!AFFECTED_TESTS[@]}" | sort
