@@ -32,22 +32,19 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_lesson_deprecation_scan_20260607071651
+  parent_cmd: cmd_training_speed_lesson_find_duplicates_20260607072531
   project: infra
-  purpose: 'Speed-train scripts/lesson_deprecation_scan.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/lesson_find_duplicates.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
   status: completed
   stop_for: []
-  target_path: scripts/lesson_deprecation_scan.sh
-  task_id: cmd_training_speed_lesson_deprecation_scan_20260607071651_normal
+  target_path: scripts/lesson_find_duplicates.sh
+  task_id: cmd_training_speed_lesson_find_duplicates_20260607072531_normal
   task_type: speed_training
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L141'
-    summary: 'IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)'
-    detail: 'IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53'
   - id: 'L630'
     summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
     detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
@@ -69,9 +66,9 @@ task:
   - id: 'L614'
     summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
     detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-  - id: 'L406'
-    summary: 'cmd_num>=900をテストcmd除外フィルタとして実装したが、cmd番号は1613まで連番で正規使用。1200レコードが黙殺されmax_cmd_numが固'
-    detail: 'cmd_num>=900をテストcmd除外フィルタとして実装したが、cmd番号は1613まで連番で正規使用。1200レコードが黙殺されmax_cmd_numが固'
+  - id: 'L705'
+    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -98,8 +95,7 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L141: IF lesson_deprecation_scan.shで大量教訓を自動退役する時 THEN 教訓数に応じてバッチ処理(1回のPython内で複数教訓を更新)
+      - L504: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
       - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
@@ -107,15 +103,15 @@ task:
       - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
       - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
       - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
-      - L406: cmd_num>=900をテストcmd除外フィルタとして実装したが、cmd番号は1613まで連番で正規使用。1200レコードが黙殺されmax_cmd_numが固
+      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
     ────────────────────────────────────────
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_lesson_deprecation_scan_20260607071651_normal
+  _ac_task_id: cmd_training_speed_lesson_find_duplicates_20260607072531_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_lesson_deprecation_scan_20260607071651.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_lesson_deprecation_scan_20260607071651.yaml
+  report_filename: kotaro_report_cmd_training_speed_lesson_find_duplicates_20260607072531.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_lesson_find_duplicates_20260607072531.yaml
   bloom_level: 
-  deployed_at: "2026-06-07T07:17:12"
+  deployed_at: "2026-06-07T07:25:54"
