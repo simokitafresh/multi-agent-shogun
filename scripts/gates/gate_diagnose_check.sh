@@ -93,91 +93,80 @@ if [ "$NINJA_NAME" != "unknown" ] && [ -f "$TASK_DIR/${NINJA_NAME}.yaml" ] && [ 
     while IFS=$'\001' read -r _sim_level _sim_message; do
         SIM_LEVEL="${_sim_level:-none}"
         SIM_MESSAGE="${_sim_message:-}"
-    done < <(python3 - "$TASK_DIR/${NINJA_NAME}.yaml" "$DIAGNOSE_REASON" "$APPROACH_SUMMARY" <<'PY'
-import re
-import sys
-import yaml
-
-task_yaml = sys.argv[1]
-current_diag = sys.argv[2].strip()
-current_approach = sys.argv[3].strip()
-
-def tokenize(text: str):
-    text = text.lower()
-    tokens = set(re.findall(r"[a-z0-9_]{2,}", text))
-    jp = re.sub(r"[\x00-\x7f\s]", "", text)
-    for i in range(len(jp) - 1):
-        tokens.add(jp[i:i+2])
-    return tokens
-
-def similarity(a: str, b: str) -> float:
-    if not a or not b:
-        return 0.0
-    ta = tokenize(a)
-    tb = tokenize(b)
-    if not ta or not tb:
-        return 0.0
-    union = ta | tb
-    return len(ta & tb) / len(union) if union else 0.0
-
-def collect_attempts(node):
-    attempts = []
-    for key in ("session_state", "previous_failures"):
-        ss = node.get(key) if isinstance(node, dict) else None
-        if not isinstance(ss, dict):
-            continue
-        pa = ss.get("prior_attempts")
-        if isinstance(pa, list):
-            for item in pa:
-                if isinstance(item, dict):
-                    attempts.append(item)
-        elif ss.get("attempt") or ss.get("last_block_reason"):
-            attempts.append({
-                "attempt": ss.get("attempt", 0),
-                "block_reason": ss.get("last_block_reason", ""),
-                "diagnose_reason": ss.get("diagnose_reason", ""),
-                "approach_summary": ss.get("approach_summary", ""),
-            })
-    return attempts
-
-try:
-    with open(task_yaml, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    print("none\001")
-    raise SystemExit(0)
-
-task_node = data.get("task") or data
-attempts = collect_attempts(task_node)
-if not attempts:
-    print("none\001")
-    raise SystemExit(0)
-
-best = None
-for item in attempts:
-    prev_diag = str(item.get("diagnose_reason", "") or item.get("block_reason", "")).strip()
-    prev_app = str(item.get("approach_summary", "") or "").strip()
-    diag_sim = similarity(current_diag, prev_diag)
-    app_sim = similarity(current_approach, prev_app)
-    if best is None or (diag_sim + app_sim) > (best[0] + best[1]):
-        best = (diag_sim, app_sim, item)
-
-if best is None:
-    print("none\001")
-    raise SystemExit(0)
-
-diag_sim, app_sim, item = best
-attempt_no = item.get("attempt", "?")
-msg = f"prior_attempts[{attempt_no}] diag={diag_sim:.2f} approach={app_sim:.2f}"
-
-if current_diag and current_approach and diag_sim >= 0.70 and app_sim >= 0.70:
-    print(f"block\001{msg}")
-elif diag_sim >= 0.80 or app_sim >= 0.80:
-    print(f"warn\001{msg}")
-else:
-    print(f"none\001{msg}")
-PY
-)
+    done < <(awk -v current_diag="$DIAGNOSE_REASON" -v current_approach="$APPROACH_SUMMARY" '
+function trim(s) {
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+    gsub(/^["\047]|["\047]$/, "", s)
+    return s
+}
+function norm(s) {
+    s = trim(tolower(s))
+    gsub(/[[:space:]]+/, " ", s)
+    return s
+}
+function sim(a, b,    na, nb, n, i, ta, tb, seen, hit, total) {
+    na = norm(a); nb = norm(b)
+    if (na == "" || nb == "") return 0
+    if (na == nb) return 1
+    if (index(na, nb) || index(nb, na)) return 0.85
+    n = split(na, ta, /[^[:alnum:]_]+/)
+    split(nb, tb, /[^[:alnum:]_]+/)
+    total = 0
+    for (i in ta) if (length(ta[i]) >= 2) { seen[ta[i]] = 1; total++ }
+    if (total == 0) return 0
+    hit = 0
+    for (i in tb) if (length(tb[i]) >= 2 && seen[tb[i]]) hit++
+    return hit / total
+}
+function flush_attempt(    ds, as, total) {
+    if (!in_attempt) return
+    if (diag == "") diag = block_reason
+    ds = sim(current_diag, diag)
+    as = sim(current_approach, approach)
+    total = ds + as
+    if (best_set == 0 || total > best_total) {
+        best_set = 1
+        best_total = total
+        best_diag = ds
+        best_app = as
+        best_attempt = (attempt == "" ? "?" : attempt)
+    }
+}
+BEGIN { in_attempt = 0; best_set = 0 }
+/^[[:space:]]*-[[:space:]]+attempt:/ {
+    flush_attempt()
+    in_attempt = 1
+    line = $0
+    sub(/^.*attempt:[[:space:]]*/, "", line)
+    attempt = trim(line)
+    block_reason = ""; diag = ""; approach = ""
+    next
+}
+in_attempt && /^[[:space:]]+block_reason:/ {
+    line = $0; sub(/^.*block_reason:[[:space:]]*/, "", line); block_reason = trim(line); next
+}
+in_attempt && /^[[:space:]]+diagnose_reason:/ {
+    line = $0; sub(/^.*diagnose_reason:[[:space:]]*/, "", line); diag = trim(line); next
+}
+in_attempt && /^[[:space:]]+approach_summary:/ {
+    line = $0; sub(/^.*approach_summary:[[:space:]]*/, "", line); approach = trim(line); next
+}
+END {
+    flush_attempt()
+    if (!best_set) {
+        printf "none\001\n"
+        exit
+    }
+    msg = sprintf("prior_attempts[%s] diag=%.2f approach=%.2f", best_attempt, best_diag, best_app)
+    if (current_diag != "" && current_approach != "" && best_diag >= 0.70 && best_app >= 0.70) {
+        printf "block\001%s\n", msg
+    } else if (best_diag >= 0.80 || best_app >= 0.80) {
+        printf "warn\001%s\n", msg
+    } else {
+        printf "none\001%s\n", msg
+    }
+}
+' "$TASK_DIR/${NINJA_NAME}.yaml" 2>/dev/null)
 fi
 
 # --- 4. 診断メッセージ出力 ---
