@@ -164,6 +164,65 @@ PY
     return 0
 }
 
+deploy_task_idle_codex_ninjas() {
+    local target_ninja="$1"
+    local task_file candidate status
+
+    for task_file in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
+        [ -f "$task_file" ] || continue
+        candidate=$(basename "$task_file" .yaml)
+        [ "$candidate" = "$target_ninja" ] && continue
+        [ "$(cli_type "$candidate")" = "codex" ] || continue
+
+        status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "" 2>/dev/null || true)
+        status="${status,,}"
+        case "$status" in
+            ""|idle|unknown)
+                printf '%s\n' "$candidate"
+                ;;
+        esac
+    done
+}
+
+deploy_task_enforce_gpt_priority() {
+    local target_ninja="$1"
+    local deploy_scope_mode="$2"
+    local target_cli idle_codex_ninjas override_reason
+
+    [ "${DEPLOY_TASK_GPT_PRIORITY:-1}" != "0" ] || return 0
+    [ "${TYPE:-task_assigned}" = "task_assigned" ] || return 0
+
+    target_cli=$(cli_type "$target_ninja")
+    [ "$target_cli" != "codex" ] || return 0
+
+    case "${deploy_scope_mode,,}" in
+        training|train|修行)
+            return 0
+            ;;
+    esac
+
+    idle_codex_ninjas=$(deploy_task_idle_codex_ninjas "$target_ninja" | paste -sd, -)
+    [ -n "$idle_codex_ninjas" ] || return 0
+
+    if [ "${DEPLOY_TASK_ALLOW_NON_GPT:-0}" = "1" ] || [ "${GPT_PRIORITY_OVERRIDE:-0}" = "1" ]; then
+        override_reason="${DEPLOY_TASK_GPT_PRIORITY_REASON:-${GPT_PRIORITY_REASON:-}}"
+        if [ -z "$override_reason" ]; then
+            log "BLOCK(GPT_PRIORITY): ${target_ninja} is ${target_cli}, idle Codex ninja exists (${idle_codex_ninjas}), override reason missing"
+            echo "BLOCK: GPT優先配備。${target_ninja} は非GPT(${target_cli})だが、idle GPT忍者(${idle_codex_ninjas})がいる。" >&2
+            echo "Sonnetへ意図的に配備する場合は DEPLOY_TASK_ALLOW_NON_GPT=1 DEPLOY_TASK_GPT_PRIORITY_REASON='理由' を付けよ。" >&2
+            return 1
+        fi
+        log "WARN(GPT_PRIORITY_OVERRIDE): ${target_ninja}=${target_cli}, idle_codex=${idle_codex_ninjas}, reason=${override_reason}"
+        echo "WARN: GPT優先override。${target_ninja}(${target_cli})へ配備。idle GPT=${idle_codex_ninjas}。reason=${override_reason}" >&2
+        return 0
+    fi
+
+    log "BLOCK(GPT_PRIORITY): ${target_ninja} is ${target_cli}, idle Codex ninja exists (${idle_codex_ninjas})"
+    echo "BLOCK: GPT優先配備。${target_ninja} は非GPT(${target_cli})だが、idle GPT忍者(${idle_codex_ninjas})がいる。" >&2
+    echo "GPT忍者へ配備するか、意図的にSonnetへ回す場合は DEPLOY_TASK_ALLOW_NON_GPT=1 DEPLOY_TASK_GPT_PRIORITY_REASON='理由' を付けよ。" >&2
+    return 1
+}
+
 deploy_task_lock_path() {
     local lock_key="$1"
     mkdir -p "$SCRIPT_DIR/queue/locks"
@@ -7262,6 +7321,7 @@ deploy_task_main() {
     local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
     local deploy_parent_cmd deploy_task_id deploy_scope_mode dd_task dd_ninja dd_pcmd dd_tid dd_status
     local deploy_lock_fd="" deploy_lock_file=""
+    local deploy_task_resolved_mutated=0
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
     normalize_task_yaml "$task_yaml" || true
@@ -7346,6 +7406,7 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
             inject_direct_training_template "$task_yaml" "$CMD_ID" || true
+            deploy_task_resolved_mutated=1
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
             elif [ -n "$CMD_FORCED" ]; then
             # --cmd mode: shogun_to_karo.yaml不在cmdを強制展開（修行cmd等に対応）
@@ -7367,8 +7428,10 @@ except Exception:
                 || { log "FATAL: yaml_field_set failed for _ac_worker_id (cmd_forced)"; return 1; }
             _overwrite_ac_from_cmd "$task_yaml" || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_FORCED" || true
+            deploy_task_resolved_mutated=1
             log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
             elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
+                deploy_task_resolved_mutated=1
                 log "cmd_resolve: ${CMD_ID} → task YAML updated for ${NINJA_NAME}"
             else
                 log "ERROR: cmd_resolve failed for ${CMD_ID}. Aborting deployment."
@@ -7428,6 +7491,21 @@ except Exception:
     [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${scope_mode:-}"
     [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${type:-}"
     deploy_scope_mode="${deploy_scope_mode,,}"
+
+    if ! deploy_task_enforce_gpt_priority "$NINJA_NAME" "$deploy_scope_mode"; then
+        if [ "$deploy_task_resolved_mutated" = "1" ]; then
+            yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
+            yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
+            log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after GPT priority BLOCK"
+        else
+            log "ROLLBACK: skipped after GPT priority BLOCK because task YAML was not rewritten in this deploy attempt"
+        fi
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    fi
 
     if [ -n "$deploy_parent_cmd" ]; then
         warn_same_ninja_redeploy "$task_yaml" "$NINJA_NAME" "$deploy_parent_cmd"
