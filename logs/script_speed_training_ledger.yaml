@@ -281,16 +281,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T23:01:07"
   - script_path: "scripts/check_project_codd_ready.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 254
+    after_real_ms: 48
+    real_measurement_command: "bash scripts/check_project_codd_ready.sh dm-signal 2>/dev/null"
+    test_result: "bash -n PASS; dm-signal rc=0 OK; infra rc=1 ALERT; nonexistent rc=1 ALERT; SKIP=0"
+    commit: "6096a3e53"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-06T22:58:58"
+    updated_at: "2026-06-06T23:08:00"
   - script_path: "scripts/checklist_progress.sh"
     status: completed
     before_ms: 17
@@ -314,7 +314,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T23:06:45"
   - script_path: "scripts/chronicle_metrics.sh"
-    status: pending
+    status: assigned
     before_ms: 25
     after_ms: ""
     before_real_ms: ""
@@ -322,8 +322,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:08:34"
   - script_path: "scripts/ci_status_check.sh"
     status: pending
     before_ms: 11
