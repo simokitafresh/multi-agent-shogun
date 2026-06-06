@@ -756,7 +756,7 @@ review_gate.shがtitle/descriptionフィールドを検索していたが、タ�
 
 | 忍者 | モデル | 対象 | 初回gate | FP | FAIL原因 |
 |------|--------|------|---------|-----|---------|
-| hayate | GPT-5.4 | agent_status.sh | PASS | **YES** | — |
+| hayate | GPT-5.4 | [[agent_status.sh]] | PASS | **YES** | — |
 | saizo | GPT-5.4 | api_usage.sh | PASS | **YES** | — |
 | kagemaru | Sonnet 4.6 | auto_failure_lesson.sh | FAIL→PASS | **NO** | bc AC self-verification missing(0/3) |
 | kotaro | Sonnet 4.6 | cmd_friction_log.sh | FAIL→PASS | **NO** | bc AC self-verification missing(0/3) |

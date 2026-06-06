@@ -7,7 +7,7 @@
 #   active  : @agent_state == "active"
 #   idle    : @agent_state == "idle"
 #   unknown : @agent_state未設定
-#   ⚠ stale : STATE=active かつ AGE>600秒（10分）
+#   STALE   : STATE=active かつ AGE>600秒（10分）
 
 set -euo pipefail
 
@@ -37,6 +37,7 @@ format_age() {
 
 # ヘッダー出力
 printf "%-10s %-9s %-5s %-12s %s\n" "AGENT" "STATE" "CTX" "LAST_ACTIVE" "AGE"
+printf "%-10s %-9s %-5s %-12s %s\n" "----------" "---------" "-----" "------------" "-------"
 
 NOW=$(date +%s)
 
@@ -88,7 +89,7 @@ for name in "${AGENT_ORDER[@]}"; do
 
     # stale検知: active + AGE > 600秒
     if [ "$state" = "active" ] && [ -n "$age_seconds" ] && [ "$age_seconds" -gt "$STALE_THRESHOLD" ]; then
-        state="⚠ stale"
+        state="STALE"
     fi
 
     printf "%-10s %-9s %-5s %-12s %s\n" "$name" "$state" "$ctx_display" "$time_display" "$age_display"
