@@ -244,6 +244,13 @@ write_training_task() {
     local cmd_id="$2"
     local script_path="$3"
     cat > "$tmp_task" <<EOF
+parent_cmd: ${cmd_id}
+task_id: ${cmd_id}_standard
+task_type: speed_training
+project: infra
+target_path: ${script_path}
+scout_exempt: true
+status: assigned
 task:
   parent_cmd: ${cmd_id}
   task_id: ${cmd_id}_standard

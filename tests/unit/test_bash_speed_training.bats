@@ -68,6 +68,13 @@ teardown() {
     grep -Fq 'real_measurement_command/test_result/commit are written back to script_speed_training_ledger' "$generated_task"
     ! grep -Fq 'L4修行:' "$generated_task"
 
+    run env FIELD_GET_NO_LOG=1 bash -c '
+        source "$1/scripts/lib/field_get.sh"
+        printf "%s %s" "$(field_get "$2" task_type "")" "$(field_get "$2" scout_exempt "")"
+    ' _ "$PROJECT_ROOT" "$generated_task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "speed_training true" ]
+
     run env DEPLOY_TASK_LIB_ONLY=1 bash -c '
         set -euo pipefail
         source "$1/scripts/deploy_task.sh"
