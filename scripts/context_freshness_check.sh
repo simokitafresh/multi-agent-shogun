@@ -496,11 +496,35 @@ def batch_source_commit_counts(
     if not infos:
         return {}
     counts: dict[tuple[str, str], int] = {}
+
+    root_fallback_groups: dict[date, list[tuple[str, str]]] = {}
+    direct_infos: list[tuple[str, str, str, date]] = []
+
+    for project_id, rel_path, abs_path, updated_at in infos:
+        _repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
+        if root_fallback:
+            root_fallback_groups.setdefault(updated_at, []).append((project_id, rel_path))
+        else:
+            direct_infos.append((project_id, rel_path, abs_path, updated_at))
+
     with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = {executor.submit(_compute_one_commit_count, info): info for info in infos}
-        for future in as_completed(futures):
-            key, count = future.result()
-            counts[key] = count
+        root_futures = {
+            executor.submit(_root_fallback_commit_count_since, updated_at): keys
+            for updated_at, keys in root_fallback_groups.items()
+        }
+        direct_futures = {
+            executor.submit(_compute_one_commit_count, info): info
+            for info in direct_infos
+        }
+
+        for future in as_completed([*root_futures, *direct_futures]):
+            if future in root_futures:
+                count = future.result()
+                for key in root_futures[future]:
+                    counts[key] = count
+            else:
+                key, count = future.result()
+                counts[key] = count
     return counts
 
 
