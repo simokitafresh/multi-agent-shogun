@@ -11,8 +11,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "${0%/*}" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/*}"
+REPO_ROOT="${SCRIPT_DIR%/*}"
+unset _self
 LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
@@ -31,7 +34,7 @@ if [[ "${1:-}" == "--reclassify" ]]; then
     NEW_CAT="$2"
     (
         flock -w 10 200 || { echo "[reclassify] Error: lock" >&2; exit 1; }
-        TMPFILE=$(mktemp)
+        TMPFILE="/tmp/.kwl_reclassify_$$"
         awk -v pat="$PATTERN" -v newcat="$NEW_CAT" '
         function trim_scalar(value) {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
@@ -90,7 +93,7 @@ if [[ "${1:-}" == "--normalize" ]]; then
         flock -w 10 200 || { echo "[normalize] Error: lock" >&2; exit 1; }
         BEFORE=$(awk 'BEGIN { count = 0 } /^- cmd: / { count++ } END { print count + 0 }' "$LOG_FILE" 2>/dev/null)
         if [[ "$BEFORE" -gt 0 ]]; then
-            TMPFILE=$(mktemp)
+            TMPFILE="/tmp/.kwl_normalize_$$"
             sed "s/^- cmd: /- cmd_id: /" "$LOG_FILE" > "$TMPFILE"
             mv "$TMPFILE" "$LOG_FILE"
         fi
