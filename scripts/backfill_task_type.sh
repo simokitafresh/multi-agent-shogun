@@ -18,7 +18,10 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/backfill_task_type.sh}"
+unset _self
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
@@ -418,6 +421,45 @@ print("  backfill_task_type — gate_metrics.log task_type遡及補完")
 print("=" * 60)
 print()
 
+# Fast path: if every non-test gate_metrics entry already has task_type,
+# expensive archive/source scans are unnecessary.
+with open(GATE_LOG, "r") as f:
+    lines = f.readlines()
+
+prefill_total = 0
+prefill_already_has = 0
+prefill_needs_backfill = False
+for line in lines:
+    raw = line.rstrip("\n\r")
+    if not raw:
+        continue
+    parts = raw.split("\t")
+    if len(parts) < 4:
+        continue
+    cmd_id = parts[1]
+    if cmd_id.lower().startswith("cmd_test"):
+        continue
+    prefill_total += 1
+    if len(parts) >= 6 and parts[4].strip():
+        prefill_already_has += 1
+    else:
+        prefill_needs_backfill = True
+        break
+
+if not prefill_needs_backfill:
+    print("Fast path: all non-test entries already have task_type; source scans skipped.")
+    print("─" * 60)
+    print(f"Total entries: {prefill_total}")
+    print(f"Already has type: {prefill_already_has}")
+    print("Backfilled (type found): 0")
+    print("Backfilled (still unknown): 0")
+    print("Unchanged: 0")
+    print("─" * 60)
+    print("\nNo changes needed.")
+    if MODE == "dry-run":
+        print("\n[DRY-RUN] No changes applied.")
+    sys.exit(0)
+
 # Collect all sources
 print("Collecting data from sources...")
 deploy_types, deploy_ninjas = parse_deploy_log()
@@ -452,10 +494,6 @@ for src in (deploy_ninjas, report_ninjas, monitor_ninjas, archive_cmd_ninjas, tr
 
 print(f"\nTotal: {len(cmd_all_types)} cmds with type info, {len(cmd_all_ninjas)} cmds with ninja info")
 print()
-
-# Read gate_metrics.log
-with open(GATE_LOG, "r") as f:
-    lines = f.readlines()
 
 # Process each line
 changes = []
