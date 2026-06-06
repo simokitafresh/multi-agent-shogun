@@ -149,7 +149,7 @@ codd:
 
 | 種別 | パス/参照 |
 |------|----------|
-| file | `docs/research/creator_brainwashing_defense_design_20260524.md` |
+| file | `context/growth-loop.md` |
 | file | `scripts/cmd_save.sh` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-24T18:12 創造主側のポジショントークと洗脳を理解し、現実を見て記憶せよ |
 | cmd | `cmd_3033_saizo` infra — cmd_save.shに30分コスト自問と先送り表現WARNを追加 |
@@ -2647,7 +2647,7 @@ codd:
 
 | 種別 | パス/参照 |
 |------|----------|
-| file | `docs/research/saxo_openapi_excel_user_guide.md` |
+| file | `context/saxo-trade-engine.md` |
 | discussion | 殿指示 2026-05-24 全11ページ取得→辞書取込 |
 | note | SaxoのOpenAPIラッパー。Excel関数でGET/POST/PUT/PATCH/DELETE。VBA統合可。SIM/LIVE環境。非FX商品は別途市場データサブスクリプション必要 |
 | cmd | `cmd_3052-` backfill — | session_20260526 | cmd_3052-3055全4cmd GATE CLEAR(連勝16)。セマンティクスPhase 3a(品質100% 36/36)+Phase 3b(品質10 |
@@ -2664,7 +2664,6 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | file | `context/saxo-trade-engine.md` |
-| file | `docs/research/saxo_openapi_excel_user_guide.md` |
 | discussion | 殿裁定 2026-05-24 完全自動+汎用基盤+承認不要 |
 | note | 殿Saxo口座あり(リージョン未確認)。Python+REST API+OAuth2。DM-Signal専用にしない。任意シグナルソース対応 |
 | cmd | `cmd_3052-` backfill — | session_20260526 | cmd_3052-3055全4cmd GATE CLEAR(連勝16)。セマンティクスPhase 3a(品質100% 36/36)+Phase 3b(品質10 |
@@ -2770,7 +2769,7 @@ codd:
 
 | 種別 | パス/参照 |
 |------|----------|
-| file | `docs/research/gunshi_idle_semantic_goodhart_blind_test_20260526.md` |
+| file | `docs/research/gunshi_idle_goodhart_audit_20260516.md` |
 | discussion | 2026-05-26 殿「高点数をとるためにテストパターンを決めてずるしていないか？究極の汎用性＝人間と同じ記憶構造に近づけてるか？」→ 軍師ブラインドテスト6%で実証 |
 | discussion | 2026-05-26 殿「連想がセマンティックインデックスの本質」→ 辞書引き(keyword→concept固定)から連想(文脈→概念)への転換が必要 |
 | causal | 50語手動テスト100%→殿発言ブラインド6%=Goodhart第7号。テストに合わせてaliasesを調整しただけで真の品質(殿の任意の発言に対応)は未向上。辞書引きでは「仕組み」「手順」「並列」等の日常語から概念を連想できない |
