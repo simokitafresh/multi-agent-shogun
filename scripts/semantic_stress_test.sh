@@ -456,11 +456,49 @@ def should_record_no_match(row, alias):
         return False
     return True
 
+GENERIC_SHORT_HIT_RE = re.compile(
+    r"^(?:記憶|memory|context|仕組み|手順|確認|テスト|test|DB|API)$",
+    re.IGNORECASE,
+)
+
+def first_line_concept(row):
+    match = re.match(r"^##\s+([A-Za-z0-9_-]+)\s+—\s+(.+)$", str(row.get("first_line", "")))
+    if not match:
+        return "", ""
+    return match.group(1), match.group(2).strip()
+
+def dirty_hit_reason(row):
+    query = str(row.get("query", "")).strip()
+    concept_id, concept_label = first_line_concept(row)
+    if row.get("status") != "hit" or not concept_id:
+        return ""
+    if GENERIC_SHORT_HIT_RE.fullmatch(query):
+        return f"generic_short_query:{query}->{concept_id}"
+    alias = alias_candidate(query)
+    if alias and semantic_query_length(alias) >= MIN_INSIGHT_QUERY_CHARS and concept_label and alias not in concept_label and concept_label not in alias:
+        return f"long_query_maybe_misrouted:{alias}->{concept_id}"
+    return ""
+
 sources = {}
 total = len(rows)
 hits = sum(1 for row in rows if row["status"] == "hit")
 no_matches = [row for row in rows if row["status"] == "no_match"]
 errors = [row for row in rows if row["status"] == "error"]
+dirty_hit_candidates = []
+for row in rows:
+    reason = dirty_hit_reason(row)
+    if reason:
+        candidate = {
+            "query": row["query"],
+            "source": row["source"],
+            "first_line": row.get("first_line", ""),
+            "reason": reason,
+        }
+        concept_id, concept_label = first_line_concept(row)
+        if concept_id:
+            candidate["concept_id"] = concept_id
+            candidate["concept_label"] = concept_label
+        dirty_hit_candidates.append(candidate)
 
 for source, source_rows in sorted(by_source.items()):
     source_hits = sum(1 for row in source_rows if row["status"] == "hit")
@@ -515,6 +553,7 @@ summary = {
     "sources": sources,
     "candidate_aliases": candidates,
     "high_frequency_no_match_terms": high_frequency_no_match_terms,
+    "dirty_hit_candidates": dirty_hit_candidates,
     "status_counts": dict(Counter(row["status"] for row in rows)),
     "baseline_created": baseline_created,
 }
@@ -652,8 +691,11 @@ for source, data in summary["sources"].items():
     print(f'  {source}: hit_rate={data["hit_rate"]}% hits={data["hits"]}/{data["total"]} no_match={data["no_match"]} errors={data["errors"]}')
 print(f'candidate_aliases={len(summary["candidate_aliases"])}')
 print(f'high_frequency_NO_MATCH={len(summary.get("high_frequency_no_match_terms", []))}')
+print(f'dirty_hit_candidates={len(summary.get("dirty_hit_candidates", []))}')
 for item in summary["candidate_aliases"][:10]:
     print(f'  - {item["alias"]} ({item["source"]})')
+for item in summary.get("dirty_hit_candidates", [])[:10]:
+    print(f'  - DIRTY_HIT {item["query"]} ({item["source"]}) -> {item.get("concept_id", "")}: {item["reason"]}')
 if summary["baseline_created"]:
     print(f'baseline: created {baseline_path}')
 else:

@@ -37,6 +37,9 @@ def parse_related_concepts_cell(value: str) -> list[dict[str, str]]:
     return related
 
 
+AMBIGUOUS_SINGLE_TERM_QUERIES = {"記憶"}
+
+
 def related_concept_ids(concept: dict) -> list[str]:
     return [item["id"] for item in concept.get("related_concepts", [])]
 
@@ -840,6 +843,10 @@ def main() -> None:
     if mode == "first-layer":
         no_match_mode = mode_arg
         query_fold = query.casefold()
+        if query_fold in AMBIGUOUS_SINGLE_TERM_QUERIES:
+            if no_match_mode != "silent":
+                print(f"NO_MATCH: {query}")
+            sys.exit(1)
         matches = []
         for concept in concepts:
             terms = [concept["id"], concept["label"], *concept["aliases"]]

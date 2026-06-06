@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga005_20260606 -->
+<!-- last_updated: 2026-06-06 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -508,3 +508,4 @@
 | cmd_3196 | cmd_3194でcandidate生成(0→14)成功だがfinalize未実行。洗脳#8(完了急ぎ)検出。パイプライン最後まで回す | infra | 06-05 | obsidian_promote_finalize.sh - |
 | cmd_3197 | 軍師分析: 教訓注入useful率27.4%。根因=deprecated教訓が修行タスクYAML再利用で残存。inject_direct_training_templateでdeprecated教訓を除外しuseful率向上 | infra | 06-05 | deploy_task.shの教訓注入フィルタにsupers |
 | cmd_3198 | 覚醒監査で検出した2件の改良を環境に埋め込む。(1)GP-262: 定型cmdでも洗脳#1(早期終了)で1観測止まり防止 (2)殿の質問時にsemantic_knowledge結果を引用強制し概念混同を防止 | infra | 06-05 | GP-262の最低2観測明示と、殿の質問時のsemantic |
+| cmd_3199 | 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく | infra | 06-06 | 三層記憶第一優先化L0-L7貫通: instructions |
