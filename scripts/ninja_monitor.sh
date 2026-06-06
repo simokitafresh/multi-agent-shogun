@@ -132,6 +132,7 @@ TRAINING_AUTO_DEPLOY_MIN_GATES=${TRAINING_AUTO_DEPLOY_MIN_GATES:-5}             
 TRAINING_AUTO_DEPLOY_RECENT=${TRAINING_AUTO_DEPLOY_RECENT:-50}                   # 忍者別直近gate参照件数
 TRAINING_AUTO_DEPLOY_VARIANT=${TRAINING_AUTO_DEPLOY_VARIANT:-script}             # script / codd — L4修行テンプレート種別
 TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
+SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
@@ -1957,6 +1958,42 @@ _training_pipeline_has_work() {
     grep -qE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
 }
 
+_speed_training_pipeline_has_work() {
+    local helper="$SCRIPT_DIR/tools/bash_speed_training.sh"
+    [ -r "$helper" ] || return 1
+    [ -f "$SPEED_TRAINING_LEDGER" ] || return 1
+    bash "$helper" next "$SPEED_TRAINING_LEDGER" >/dev/null 2>&1
+}
+
+_handle_speed_training_auto_deploy() {
+    local name="$1"
+    local now="$2"
+    local helper="$SCRIPT_DIR/tools/bash_speed_training.sh"
+    local output status
+
+    [ -n "$name" ] || return 1
+    [ -r "$helper" ] || return 1
+
+    if _training_pipeline_has_work; then
+        log "SPEED-TRAINING-AUTO-SKIP: $name production pipeline has pending work"
+        return 1
+    fi
+
+    if ! _speed_training_pipeline_has_work; then
+        return 1
+    fi
+
+    output=$(bash "$helper" auto-deploy "$name" "$SPEED_TRAINING_LEDGER" 2>&1)
+    status=$?
+    if [ "$status" -eq 0 ]; then
+        log "SPEED-TRAINING-AUTO-DEPLOY: $name ${output}"
+        return 0
+    fi
+
+    log "SPEED-TRAINING-AUTO-FAIL: $name status=${status} output=${output}"
+    return 1
+}
+
 _training_auto_state_file() {
     local name="$1"
     printf '%s_%s.last\n' "$TRAINING_AUTO_DEPLOY_STATE_PREFIX" "$name"
@@ -2274,6 +2311,7 @@ handle_confirmed_idle() {
     _clear_stall_tracking_for_completed_idle "$name"
     _handle_idle_notify "$name" "$now"
     _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
+    if _handle_speed_training_auto_deploy "$name" "$now"; then return; fi
     if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
 
