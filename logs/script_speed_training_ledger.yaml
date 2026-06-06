@@ -457,16 +457,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/context_freshness_check.sh"
-    status: pending
+    status: completed
     before_ms: 9
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 510
+    after_real_ms: 280
+    real_measurement_command: "CFC_OUTPUT_CACHE_TTL=0 CFC_GIT_TIMEOUT=1 bash scripts/context_freshness_check.sh --cmd-warnings cmd_training_speed_context_freshness_check_20260606234618 >/tmp/cfc_cmd.out"
+    test_result: "bash -n scripts/context_freshness_check.sh PASS; bats tests/unit/test_context_freshness_check.bats 23/23 PASS SKIP=0; bats tests/unit/test_cmd_complete_gate.bats 53/53 PASS SKIP=0"
+    commit: "0f03756a40c33fb0452968ebc4d54bcb84ac3c46"
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:50:31"
   - script_path: "scripts/conversation_retention.sh"
     status: pending
     before_ms: 8
