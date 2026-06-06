@@ -23,6 +23,24 @@
 
 set -euo pipefail
 
+if [ "$#" -lt 2 ]; then
+    echo "Usage: cmd_delegate.sh <cmd_id> \"<message>\"" >&2
+    exit 1
+fi
+
+CMD_ID="$1"
+MESSAGE="$2"
+
+if [[ "$MESSAGE" != *[![:space:]]* ]]; then
+    echo "ERROR: message must contain non-whitespace content" >&2
+    exit 1
+fi
+
+if [[ ! "$CMD_ID" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "ERROR: invalid cmd_id '$CMD_ID' (allowed: A-Z a-z 0-9 _ . -)" >&2
+    exit 1
+fi
+
 if [ -n "${CMD_DELEGATE_SCRIPT_DIR:-}" ]; then
     SCRIPT_DIR="$CMD_DELEGATE_SCRIPT_DIR"
     PROJECT_DIR="${CMD_DELEGATE_PROJECT_DIR:-${SCRIPT_DIR%/scripts}}"
@@ -40,24 +58,6 @@ ARCHIVE_DIR="$PROJECT_DIR/queue/archive/cmds"
 MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$PROJECT_DIR/scripts/memory_db_live_insert_async.py}"
 if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
     MEMORY_DB_LIVE_INSERT="$PROJECT_DIR/scripts/memory_db_live_insert.py"
-fi
-
-CMD_ID="${1:-}"
-MESSAGE="${2:-}"
-
-if [ -z "$CMD_ID" ] || [ -z "$MESSAGE" ]; then
-    echo "Usage: cmd_delegate.sh <cmd_id> \"<message>\"" >&2
-    exit 1
-fi
-
-if [[ "$MESSAGE" != *[![:space:]]* ]]; then
-    echo "ERROR: message must contain non-whitespace content" >&2
-    exit 1
-fi
-
-if [[ ! "$CMD_ID" =~ ^[A-Za-z0-9_.-]+$ ]]; then
-    echo "ERROR: invalid cmd_id '$CMD_ID' (allowed: A-Z a-z 0-9 _ . -)" >&2
-    exit 1
 fi
 
 if [ ! -f "$SHOGUN_TO_KARO" ]; then
