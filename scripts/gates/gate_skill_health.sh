@@ -251,8 +251,9 @@ maybe_cache_gate_skill_health() {
     cache_ttl="${SKILL_HEALTH_CACHE_TTL_SECONDS:-5}"
     [ "$cache_ttl" -gt 0 ] 2>/dev/null || return 90
 
-    local cache_key cache_base cache_out cache_code now cache_mtime cache_age
-    cache_key="$(printf '%s\0%s\0%s' "$SCRIPT_DIR" "$SKILLS_DIR" "$(stat -c %Y "$0" 2>/dev/null || printf 0)" | md5sum | cut -c1-16)"
+    local cache_key cache_base cache_out cache_code now cache_mtime cache_age script_mtime cached_code
+    script_mtime="$(stat -c %Y "$0" 2>/dev/null || printf 0)"
+    cache_key="${SCRIPT_DIR//[^A-Za-z0-9._-]/_}_${SKILLS_DIR//[^A-Za-z0-9._-]/_}_${script_mtime}"
     cache_base="/tmp/shogun_gate_skill_health_${cache_key}"
     cache_out="${cache_base}.out"
     cache_code="${cache_base}.code"
@@ -263,7 +264,8 @@ maybe_cache_gate_skill_health() {
         cache_age=$((now - cache_mtime))
         if [ "$cache_age" -ge 0 ] && [ "$cache_age" -le "$cache_ttl" ]; then
             cat "$cache_out"
-            return "$(cat "$cache_code")"
+            IFS= read -r cached_code <"$cache_code" || cached_code=1
+            return "$cached_code"
         fi
     fi
 
