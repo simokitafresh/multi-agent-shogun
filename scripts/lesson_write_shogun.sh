@@ -18,7 +18,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     esac
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
 LOCKFILE="${LESSONS_FILE}.lock"
 
