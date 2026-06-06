@@ -806,7 +806,7 @@ entries:
     after_real_ms: 38
     real_measurement_command: "time bash scripts/gates/gate_hot_path_no_sync_io.sh (cache-hit; cache miss ~294ms)"
     test_result: "bats: 8 passed, 0 skipped"
-    commit: ""
+    commit: "c66d5db00"
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T04:11:00"
   - script_path: "scripts/gates/gate_karo_startup.sh"
