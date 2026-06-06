@@ -305,6 +305,33 @@ process_gate_cached() {
     evaluate_gate_result "$gate_name" "$output" "${exit_code:-0}" "$extra_alert_exit" "$extra_alert_pattern"
 }
 
+output_has_alert_prefix() {
+    local output="$1"
+    local extra_alert_pattern="${2:-}"
+    if [[ "$output" == ALERT:* || "$output" == *$'\n'ALERT:* ]]; then
+        return 0
+    fi
+    if [[ -n "$extra_alert_pattern" && ( "$output" == "$extra_alert_pattern"* || "$output" == *$'\n'"$extra_alert_pattern"* ) ]]; then
+        return 0
+    fi
+    return 1
+}
+
+extract_alert_lines() {
+    local output="$1"
+    local extra_alert_pattern="${2:-}"
+    local line count=0
+    while IFS= read -r line; do
+        if [[ "$line" == ALERT:* || ( -n "$extra_alert_pattern" && "$line" == "$extra_alert_pattern"* ) ]]; then
+            printf '%s\n' "$line"
+            count=$((count + 1))
+            if [ "$count" -ge 5 ]; then
+                return 0
+            fi
+        fi
+    done <<< "$output"
+}
+
 evaluate_gate_result() {
     local gate_name="$1"
     local output="$2"
@@ -314,24 +341,20 @@ evaluate_gate_result() {
 
     # ALERT判定: exit_code=1 または出力に "ALERT:" を含む
     local is_alert=false
-    if [ "$exit_code" -eq 1 ] || echo "$output" | grep -q "^ALERT:"; then
+    if [ "$exit_code" -eq 1 ] || output_has_alert_prefix "$output"; then
         is_alert=true
     fi
     if [ -n "$extra_alert_exit" ] && [ "$exit_code" -eq "$extra_alert_exit" ]; then
         is_alert=true
     fi
-    if [ -n "$extra_alert_pattern" ] && echo "$output" | grep -q "^${extra_alert_pattern}"; then
+    if [ -n "$extra_alert_pattern" ] && output_has_alert_prefix "$output" "$extra_alert_pattern"; then
         is_alert=true
     fi
 
     if [ "$is_alert" = true ]; then
         # ALERT行を抽出（複数あり得る）
         local alert_lines
-        if [ -n "$extra_alert_pattern" ]; then
-            alert_lines=$(echo "$output" | grep -E "^(ALERT|${extra_alert_pattern})" | head -5)
-        else
-            alert_lines=$(echo "$output" | grep "^ALERT:" | head -5)
-        fi
+        alert_lines=$(extract_alert_lines "$output" "$extra_alert_pattern")
         if [ -z "$alert_lines" ]; then
             alert_lines="exit_code=$exit_code (ALERT detail not captured)"
         fi
