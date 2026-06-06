@@ -1,36 +1,20 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
+  ac_priority: AC1 > AC2 > AC3
   acceptance_criteria:
-    AC1:
-      binary_checks:
-      - '改善点を3つ特定したか: yes/no'
-      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
-      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
-    AC2:
-      binary_checks:
-      - '最高インパクト1件を実装したか: yes/no'
-      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
-      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
-      - '関連テストまたは明示的な検証を実行したか: yes/no'
-      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
-    AC3:
-      binary_checks:
-      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
-      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
-      - 'verdictがbinary_checksと矛盾していないか: yes/no'
-      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
-    AC4:
-      binary_checks:
-      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
-      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
-      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
-    AC5:
-      binary_checks:
-      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
-      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
-      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
-      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
+  - checks:
+    - check: before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference
+    - check: before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)
+    id: AC1
+  - checks:
+    - check: implementation improves runtime without reducing behavior or safety
+    - check: script-specific verification passes with SKIP=0
+    id: AC2
+  - checks:
+    - check: after_real_ms is measured with the same command as before_real_ms
+    - check: after_real_ms is strictly lower than before_real_ms
+    - check: real_measurement_command/test_result/commit are written back to script_speed_training_ledger
+    id: AC3
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -44,63 +28,55 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_training_speed_agent_status_20260606212707
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_training_speed_api_usage_20260606220008
   project: infra
-  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
+  purpose: 'Speed-train scripts/api_usage.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: failed
+  status: acknowledged
   stop_for: []
-  target_path: scripts/agent_status.sh
-  task_id: cmd_training_speed_agent_status_20260606212707_normal
-  task_type: training
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
-    tried_approaches:
-    - 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
-    approach_summary: 'scripts/ninja_monitor.shの改善点3件特定: (1)check_shogun_ctx内_ctx_band_fileのSTATE_DIR不整合(line3724→修正済), (2)_cleanup_stale_keysのアクティブ忍者stale cmd_id蓄積(L622), (3)doc-linksにninja_monitor_req…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful: MISSING'
-      approach_summary: 'scripts/ninja_monitor.shの改善点3件特定: (1)check_shogun_ctx内_ctx_band_fileのSTATE_DIR不整合(line3724→修正済), (2)_cleanup_stale_keysのアクティブ忍者stale cmd_id蓄積(L622), (3)doc-linksにninja_monitor_req…'
+  target_path: scripts/api_usage.sh
+  task_id: cmd_training_speed_api_usage_20260606220008_normal
+  task_type: speed_training
   related_lessons:
-  - id: 'L492'
-    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
-    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L603'
-    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
-  - id: 'L712'
-    summary: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
-    detail: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
-  - id: 'L726'
-    summary: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
-    detail: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
-  - id: 'L720'
-    summary: '3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:'
-    detail: '3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:'
-  - id: 'L719'
-    summary: '未タグeventごとにFTS5 MATCHを発行するとWSL2上で30件でも1分超、5000件では停止相当。既存タグ付き代表イベントを起点に未タグ候補へ伝播すれ'
-    detail: '未タグeventごとにFTS5 MATCHを発行するとWSL2上で30件でも1分超、5000件では停止相当。既存タグ付き代表イベントを起点に未タグ候補へ伝播すれ'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L731'
-    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-  - id: 'L623'
-    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
+  - id: 'L454'
+    summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+    detail: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+  - id: 'L696'
+    summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+    detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+  - id: 'L602'
+    summary: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
+    detail: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
+  - id: 'L660'
+    summary: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
+    detail: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
+  - id: 'L690'
+    summary: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
+    detail: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
+  - id: 'L614'
+    summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
+    detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
+  - id: 'L162'
+    summary: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
+    detail: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
+  - id: 'L705'
+    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+  - id: 'L692'
+    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh"
   - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   recommended_skills:
   - "report-write"
@@ -111,6 +87,7 @@ task:
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -124,24 +101,24 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L492: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
-      - L712: auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収
-      - L726: memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal
-      - L720: 3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:
-      - L719: 未タグeventごとにFTS5 MATCHを発行するとWSL2上で30件でも1分超、5000件では停止相当。既存タグ付き代表イベントを起点に未タグ候補へ伝播すれ
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
-      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
+      - L454: **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+      - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
+      - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
+      - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
+      - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
+      - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
+      - L162: IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
+      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
+      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
     ────────────────────────────────────────
     
     
-  ac_version: b9649a49
-  _ac_task_id: cmd_training_speed_agent_status_20260606212707_normal
+  ac_version: 719e89b4
+  _ac_task_id: cmd_training_speed_api_usage_20260606220008_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_agent_status_20260606212707.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_agent_status_20260606212707.yaml
+  report_filename: kotaro_report_cmd_training_speed_api_usage_20260606220008.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_api_usage_20260606220008.yaml
   bloom_level: 
-  deployed_at: "2026-06-06T21:27:43"
+  deployed_at: "2026-06-06T22:00:40"

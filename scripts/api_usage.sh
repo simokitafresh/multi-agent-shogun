@@ -106,31 +106,29 @@ format_openai() {
     local h5_ago=$((now - 5 * 3600))
     local d1_ago=$((now - 86400))
     local d7_ago=$((now - 7 * 86400))
+    local active_ago=$((now - 1800))
 
-    # 5時間枠
-    local h5_tokens h5_sessions
-    h5_tokens=$(sqlite3 "$codex_db" "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $h5_ago;" 2>/dev/null) || h5_tokens=0
-    h5_sessions=$(sqlite3 "$codex_db" "SELECT COUNT(*) FROM threads WHERE model_provider='openai' AND updated_at > $h5_ago;" 2>/dev/null) || h5_sessions=0
+    # Single query: all aggregates in one pass (7→1 sqlite3 invocation)
+    local h5_tokens=0 h5_sessions=0 d1_tokens=0 d1_sessions=0 d7_tokens=0 d7_sessions=0 active=0
+    local _result
+    _result=$(sqlite3 -separator $'\t' "$codex_db" \
+        "SELECT COALESCE(SUM(CASE WHEN updated_at>$h5_ago THEN tokens_used ELSE 0 END),0),\
+COUNT(CASE WHEN updated_at>$h5_ago THEN 1 ELSE NULL END),\
+COALESCE(SUM(CASE WHEN updated_at>$d1_ago THEN tokens_used ELSE 0 END),0),\
+COUNT(CASE WHEN updated_at>$d1_ago THEN 1 ELSE NULL END),\
+COALESCE(SUM(CASE WHEN updated_at>$d7_ago THEN tokens_used ELSE 0 END),0),\
+COUNT(CASE WHEN updated_at>$d7_ago THEN 1 ELSE NULL END),\
+COUNT(CASE WHEN updated_at>$active_ago THEN 1 ELSE NULL END)\
+ FROM threads WHERE model_provider='openai';" 2>/dev/null) || _result=""
+    if [[ -n "$_result" ]]; then
+        IFS=$'\t' read -r h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active <<< "$_result"
+    fi
 
-    # 24時間枠
-    local d1_tokens d1_sessions
-    d1_tokens=$(sqlite3 "$codex_db" "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $d1_ago;" 2>/dev/null) || d1_tokens=0
-    d1_sessions=$(sqlite3 "$codex_db" "SELECT COUNT(*) FROM threads WHERE model_provider='openai' AND updated_at > $d1_ago;" 2>/dev/null) || d1_sessions=0
-
-    # 7日枠
-    local d7_tokens d7_sessions
-    d7_tokens=$(sqlite3 "$codex_db" "SELECT COALESCE(SUM(tokens_used),0) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" 2>/dev/null) || d7_tokens=0
-    d7_sessions=$(sqlite3 "$codex_db" "SELECT COUNT(*) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" 2>/dev/null) || d7_sessions=0
-
-    # Format token counts (K/M)
+    # Format token counts (K/M) — pure bash, no awk
     local h5_fmt d1_fmt d7_fmt
     h5_fmt=$(format_tokens "$h5_tokens")
     d1_fmt=$(format_tokens "$d1_tokens")
     d7_fmt=$(format_tokens "$d7_tokens")
-
-    # Active sessions (last 30 min)
-    local active
-    active=$(sqlite3 "$codex_db" "SELECT COUNT(*) FROM threads WHERE model_provider='openai' AND updated_at > $((now - 1800));" 2>/dev/null) || active=0
 
     local status_raw h5_left h5_reset d7_left d7_reset
     status_raw=$(read_usage_status codex) || true
@@ -166,9 +164,12 @@ MD
 format_tokens() {
     local tokens="$1"
     if (( tokens >= 1000000 )); then
-        awk -v t="$tokens" 'BEGIN { printf "%.1fM", t / 1000000 }'
+        local _int=$(( tokens / 1000000 ))
+        local _dec=$(( (tokens % 1000000 + 50000) / 100000 ))
+        if (( _dec >= 10 )); then _int=$(( _int + 1 )); _dec=0; fi
+        echo "${_int}.${_dec}M"
     elif (( tokens >= 1000 )); then
-        awk -v t="$tokens" 'BEGIN { printf "%.0fK", t / 1000 }'
+        echo "$(( (tokens + 500) / 1000 ))K"
     else
         echo "${tokens}"
     fi

@@ -62,22 +62,9 @@ EOF
     touch "$TEST_DIR/home/.codex/state_5.sqlite"
     cat > "$TEST_DIR/bin/sqlite3" <<'SH'
 #!/usr/bin/env bash
-set -euo pipefail
-state="${TEST_DIR:?}/sqlite3_calls"
-call=0
-if [ -f "$state" ]; then
-    call="$(cat "$state")"
-fi
-call=$((call + 1))
-printf "%s" "$call" > "$state"
-case "$call" in
-    1|3) echo 70 ;;
-    5) echo 120 ;;
-    2|4) echo 2 ;;
-    6) echo 3 ;;
-    7) echo 1 ;;
-    *) echo 0 ;;
-esac
+# Single combined query returns all aggregates in one tab-separated row:
+# h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active
+printf "70\t2\t70\t2\t120\t3\t1\n"
 SH
     chmod +x "$TEST_DIR/bin/sqlite3"
 
