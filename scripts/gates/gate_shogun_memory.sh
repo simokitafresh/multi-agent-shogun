@@ -371,18 +371,27 @@ check_referenced_files() {
     [ -f "$MEMORY_FILE" ] || return
     load_memory_cache
 
-    local memory_dir ref_path basename_ref full_path alt_path
+    local memory_dir ref_path basename_ref
     local checked=0
     local missing=()
     memory_dir="${MEMORY_FILE%/*}"
 
+    # Build existence set from ls once (avoids N individual stat calls on WSL2 NTFS).
+    local -A _mem_exists=()
+    local -A _alt_exists=()
+    local _f
+    while IFS= read -r _f; do
+        _mem_exists["$_f"]=1
+    done < <(ls "$memory_dir/" 2>/dev/null)
+    while IFS= read -r _f; do
+        _alt_exists["$_f"]=1
+    done < <(ls "$SCRIPT_DIR/memory/" 2>/dev/null)
+
     for ref_path in "${MEMORY_REFS[@]}"; do
         [ -z "$ref_path" ] && continue
         basename_ref="${ref_path#memory/}"
-        full_path="$memory_dir/$basename_ref"
-        alt_path="$SCRIPT_DIR/memory/$basename_ref"
         checked=$((checked + 1))
-        if [ ! -f "$full_path" ] && [ ! -f "$alt_path" ]; then
+        if [ -z "${_mem_exists[$basename_ref]+x}" ] && [ -z "${_alt_exists[$basename_ref]+x}" ]; then
             missing+=("$ref_path")
         fi
     done
