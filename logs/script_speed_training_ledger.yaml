@@ -480,16 +480,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-06T23:57:00"
   - script_path: "scripts/count_bats_skips.sh"
-    status: assigned
+    status: completed
     before_ms: 20
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 18
+    after_real_ms: 15
+    real_measurement_command: "time bash scripts/count_bats_skips.sh /dev/null"
+    test_result: "bats 3/3 PASS SKIP=0"
+    commit: "26c7811034802dad4eab30e20c7578e8088c0673"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-06T23:48:37"
+    updated_at: "2026-06-06T23:58:30"
   - script_path: "scripts/count_gate_metrics.sh"
     status: completed
     before_ms: 18
