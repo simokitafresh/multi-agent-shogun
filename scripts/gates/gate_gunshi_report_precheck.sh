@@ -661,28 +661,50 @@ if [ "${#_instr_files[@]}" -gt 0 ] && [ -d "$REPO_ROOT/instructions/generated" ]
         # generated/内の対応ファイルを検索
         _gen_files=$(find "$REPO_ROOT/instructions/generated/" -name "*${_rname}*" -type f 2>/dev/null)
         if [ -z "$_gen_files" ]; then
-            echo "  ★ WARN: ${_ifile}変更だがgenerated/に対応ファイルなし。build_instructions.sh再実行要"
+            echo "  ★ BLOCK: ${_ifile}変更だがgenerated/に対応ファイルなし。build_instructions.sh再実行要"
             _pre24_pass=false
-        else
-            # 正本のcommit hashとgenerated/のcommit hashを比較(変更が貫通しているか)
+            continue
+        fi
+        _gen_first=$(echo "$_gen_files" | head -1)
+        # 判定: marker存在 OR generated commit/mtime が正本以降 → PASS
+        _file_pass=false
+        # Check 1: marker — 正本diffから代表語句を抽出し、generatedに存在するか
+        _marker=$(git diff HEAD~1 -- "$REPO_ROOT/$_ifile" 2>/dev/null | grep '^+[^+]' | grep -v '^+++' | head -5 | sed 's/^+//' | grep -oP '\S{8,}' | head -1 || true)
+        if [ -n "$_marker" ] && grep -qF "$_marker" "$_gen_first" 2>/dev/null; then
+            echo "  PASS: ${_ifile} → marker「${_marker}」がgenerated/に存在"
+            _file_pass=true
+        fi
+        # Check 2: commit/mtime — generatedのcommitが正本と同一以降か
+        if [ "$_file_pass" = false ]; then
             _src_hash=$(git log --format=%H -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || true)
-            _gen_hash=$(echo "$_gen_files" | head -1 | xargs git log --format=%H -1 -- 2>/dev/null || true)
-            if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ] && [ "$_src_hash" != "$_gen_hash" ]; then
-                # 正本の方が新しい=generatedが古い
-                _src_ts=$(git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
-                _gen_ts=$(echo "$_gen_files" | head -1 | xargs git log --format=%ct -1 -- 2>/dev/null || echo 0)
-                if [ "$_src_ts" -gt "$_gen_ts" ]; then
-                    echo "  ★ WARN: ${_ifile}が正本で新しいがgenerated/が古い。build_instructions.sh再実行要"
-                    _pre24_pass=false
+            _gen_hash=$(echo "$_gen_first" | xargs git log --format=%H -1 -- 2>/dev/null || true)
+            if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ]; then
+                if [ "$_src_hash" = "$_gen_hash" ]; then
+                    # 同一commitで両方更新 → 貫通済み
+                    echo "  PASS: ${_ifile} → generated/が同一commitで更新済み"
+                    _file_pass=true
                 else
-                    echo "  PASS: ${_ifile} → generated/貫通済み(generated側が同等以降)"
+                    _src_ts=$(git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
+                    _gen_ts=$(echo "$_gen_first" | xargs git log --format=%ct -1 -- 2>/dev/null || echo 0)
+                    if [ "$_gen_ts" -ge "$_src_ts" ]; then
+                        echo "  PASS: ${_ifile} → generated/が正本以降のcommitで更新済み"
+                        _file_pass=true
+                    fi
                 fi
-            else
-                echo "  PASS: ${_ifile} → generated/貫通済み"
             fi
         fi
+        if [ "$_file_pass" = false ]; then
+            echo "  ★ BLOCK: ${_ifile}変更がgenerated/に未反映。build_instructions.sh再実行要"
+            [ -n "$_marker" ] && echo "    marker「${_marker}」がgenerated/に不在"
+            _pre24_pass=false
+        fi
     done
-    $_pre24_pass || { echo "  ★ generated/未貫通をWARN表示"; }
+    if ! $_pre24_pass; then
+        echo "  ★ generated/未貫通 BLOCK"
+        ERRORS=$((ERRORS + 1))
+        GATE_PREDICTION="BLOCK"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }generated_not_penetrated"
+    fi
 else
     echo "  SKIP: instructions正本変更なし or generated/不在"
 fi
