@@ -1217,16 +1217,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T05:48:58"
   - script_path: "scripts/hooks/pre-bash-test-fullrun-guard.sh"
-    status: assigned
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 34
+    after_real_ms: 28
+    real_measurement_command: "printf '%s\\n' '{\"tool_input\":{\"command\":\"bats tests/unit/test_inbox.bats\"}}' | bash scripts/hooks/pre-bash-test-fullrun-guard.sh >/dev/null 2>&1"
+    test_result: "bash_n_pass;test_hooks_pass;allow_output_diff_empty;block_output_diff_empty;before_34_after_28;SKIP=0"
+    commit: "c64af705d"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T05:49:53"
+    updated_at: "2026-06-07T05:52:59"
   - script_path: "scripts/hooks/pre-karo-edit-guard.sh"
     status: pending
     before_ms: 15
