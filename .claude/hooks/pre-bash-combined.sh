@@ -31,6 +31,7 @@ fi
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+    printf '%s\n' "$1" >&2
     exit 2  # exit 2 = intentional block (Codex CLI continues). exit 1 = hook error (Codex CLI crashes)
 }
 

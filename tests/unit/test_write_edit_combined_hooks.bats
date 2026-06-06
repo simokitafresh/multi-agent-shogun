@@ -45,6 +45,24 @@ _run_post() {
     [[ "$output" == *'report_field_set.sh'* ]]
 }
 
+@test "pre combined hook writes deny reason to stderr for Codex direct hook path" {
+    local out_file="$BATS_TEST_TMPDIR/stdout.txt"
+    local err_file="$BATS_TEST_TMPDIR/stderr.txt"
+    run env PRE_HOOK="$PRE_HOOK" TMP_REPORT="$TMP_REPORT" OUT_FILE="$out_file" ERR_FILE="$err_file" bash -c '
+        printf "%s" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$TMP_REPORT\"}}" \
+            | bash "$PRE_HOOK" >"$OUT_FILE" 2>"$ERR_FILE"
+        rc=$?
+        printf "stdout:\n"
+        cat "$OUT_FILE"
+        printf "\nstderr:\n"
+        cat "$ERR_FILE"
+        exit "$rc"
+    '
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'stdout:'*'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'stderr:'*'report_field_set.sh'* ]]
+}
+
 @test "pre combined hook denies report yaml edits" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_REPORT"'"}}'
     [ "$status" -ne 0 ]

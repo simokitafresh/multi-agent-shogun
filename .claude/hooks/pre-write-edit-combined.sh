@@ -17,6 +17,7 @@ esac
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+    printf '%s\n' "$1" >&2
 }
 
 emit_context() {
