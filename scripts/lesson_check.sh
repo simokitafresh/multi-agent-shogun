@@ -5,7 +5,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 CMD_ID="$1"
 REASON="$2"
 
@@ -24,11 +28,13 @@ fi
 # Write .done flag
 gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 mkdir -p "$gates_dir"
+printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
 cat > "$gates_dir/lesson.done" <<EOF
-timestamp: $(date +%Y-%m-%dT%H:%M:%S)
+timestamp: $_ts
 source: lesson_check
 reason: "$REASON"
 EOF
+unset _ts
 
 echo "LESSON CHECK: ${CMD_ID} — ${REASON}"
 exit 0
