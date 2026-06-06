@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-05 cmd_3193 -->
+<!-- last_updated: 2026-06-06 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 49583 | event_id, concept_name, relevance_score |
-| table | event_links | 738 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 0 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 38330 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 38330 | summary, detail |
-| table | search_logs | 306 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 30594 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 50022 | event_id, concept_name, relevance_score |
+| table | event_links | 782 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 32 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 38568 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 38568 | summary, detail |
+| table | search_logs | 585 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 30754 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -33,16 +33,17 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 30594 |
-| bulletin | 4171 |
+| conversation | 30754 |
+| bulletin | 4174 |
 | cmd_archive | 3336 |
 | skill_execution | 108 |
 | pending_decision | 43 |
-| insight | 21 |
-| inbox | 20 |
-| cmd_quality | 17 |
-| cmd_save | 10 |
-| report | 9 |
+| insight | 39 |
+| inbox | 38 |
+| report | 33 |
+| cmd_quality | 23 |
+| cmd_save | 16 |
+| gate | 3 |
 | lesson | 1 |
 
 ## `event_concepts`
@@ -65,7 +66,9 @@
 
 | id | event_id | from_state | to_state | reason | actor | transitioned_at |
 | --- | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |  |
+| 1 | cmd_save:cmd_3190:2026-06-05T17:21:27 | raw | obsidian_candidate | high-value event selected for Obsidian promotion review | obsidian_promote_candidate | 2026-06-05T19:32:30 |
+| 2 | cmd_save:cmd_3190:2026-06-05T17:23:25 | raw | obsidian_candidate | high-value event selected for Obsidian promotion review | obsidian_promote_candidate | 2026-06-05T19:32:30 |
+| 3 | cmd_save:cmd_3183:2026-06-05T14:21:31 | raw | obsidian_candidate | high-value event selected for Obsidian promotion review | obsidian_promote_candidate | 2026-06-05T19:32:30 |
 
 ## `events`
 
