@@ -17,7 +17,11 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "${PWD}/scripts/lib/field_get.sh" ]]; then
+  SCRIPT_DIR="$PWD"
+else
+  SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+fi
 
 # field_get.sh をsource (FIELD_GET_NO_LOG=1 でテスト中の依存記録を抑制)
 export FIELD_GET_NO_LOG=1
@@ -48,18 +52,6 @@ assert_match() {
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $desc (expected pattern: $pattern, actual: $actual)"
-    FAIL=$((FAIL + 1))
-  fi
-}
-
-assert_warn() {
-  local desc="$1"
-  local stderr_output="$2"
-  if [[ "$stderr_output" == *"[field_get] WARN"* ]]; then
-    echo "  PASS: $desc"
-    PASS=$((PASS + 1))
-  else
-    echo "  FAIL: $desc (no WARN in stderr: $stderr_output)"
     FAIL=$((FAIL + 1))
   fi
 }
