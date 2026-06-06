@@ -5,7 +5,8 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lc_self="${BASH_SOURCE[0]}"; [[ "$_lc_self" != /* ]] && _lc_self="$PWD/$_lc_self"
+SCRIPT_DIR="${_lc_self%/scripts/lesson_confirm.sh}"
 PROJECT_ID="${1:-}"
 LESSON_ID="${2:-}"
 
@@ -15,8 +16,8 @@ if [ -z "$PROJECT_ID" ] || [ -z "$LESSON_ID" ]; then
     exit 1
 fi
 
-# Normalize lesson ID (accept L23 or L023)
-LESSON_ID=$(echo "$LESSON_ID" | sed -E 's/^L0*([0-9]+)$/L\1/')
+# Normalize lesson ID (accept L23 or L023) — pure bash, no subprocess
+_lc_n="${LESSON_ID#L}"; LESSON_ID="L$(( 10#$_lc_n ))"
 
 # Get project path from config/projects.yaml
 export SCRIPT_DIR PROJECT_ID
@@ -25,7 +26,7 @@ import yaml, os
 script_dir = os.environ["SCRIPT_DIR"]
 project_id = os.environ["PROJECT_ID"]
 with open(f'{script_dir}/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
+    cfg = yaml.load(f, Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))
 for p in cfg.get('projects', []):
     if p['id'] == project_id:
         print(p['path'])

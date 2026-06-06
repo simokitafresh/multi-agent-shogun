@@ -5,7 +5,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 PROJECT_ID="${1:-}"
 LESSON_ID="${2:-}"
 
@@ -16,7 +20,9 @@ if [ -z "$PROJECT_ID" ] || [ -z "$LESSON_ID" ]; then
 fi
 
 # Normalize lesson ID (accept L23 or L023)
-LESSON_ID=$(echo "$LESSON_ID" | sed -E 's/^L0*([0-9]+)$/L\1/')
+if [[ "$LESSON_ID" =~ ^L([0-9]+)$ ]]; then
+    LESSON_ID="L$((10#${BASH_REMATCH[1]}))"
+fi
 
 # Get project path from config/projects.yaml
 # Note: env vars prevent shell interpolation code injection (cf. flock section L56-57)
@@ -46,7 +52,7 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 # Temp file for python exit code (L022)
-PY_EXIT_FILE=$(mktemp)
+PY_EXIT_FILE="/tmp/.lesson_delete_py_$$"
 trap 'rm -f "$PY_EXIT_FILE"' EXIT
 
 attempt=0
