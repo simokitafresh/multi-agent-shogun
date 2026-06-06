@@ -1668,16 +1668,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:33:00"
   - script_path: "scripts/lib/agent_config.sh"
-    status: pending
+    status: completed
     before_ms: 9
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 25
+    after_real_ms: 28
+    real_measurement_command: "bash -c 'source scripts/lib/agent_config.sh; get_ninja_names; get_layout_col1_width_pct; get_layout_karo_height'"
+    test_result: "bash -n OK; get_layout values correct (col1:36, karo_h:24)"
+    commit: "976eb61aa"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T08:42:00"
   - script_path: "scripts/lib/cli_lookup.sh"
     status: pending
     before_ms: 16
