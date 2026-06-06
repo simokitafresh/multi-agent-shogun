@@ -176,19 +176,23 @@ RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
 SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
 
 if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
-    CACHE_KEY="$(printf '%s\0%s\0%s' "$REPO_ROOT" "$RAW_ROOTS" "$SCRIPT_MTIME" | md5sum | cut -c1-16)"
+    CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${RAW_ROOTS//[^A-Za-z0-9._-]/_}_${SCRIPT_MTIME}"
     CACHE_BASE="/tmp/shogun_gate_skill_script_refs_${CACHE_KEY}"
     # Single cache file: first line = exit code, remaining lines = output.
     # Eliminates the race window between writing CACHE_OUT and CACHE_CODE separately.
     CACHE_FILE="${CACHE_BASE}.cache"
-    NOW="$(date +%s)"
+    printf -v NOW '%(%s)T' -1
 
     if [ -f "$CACHE_FILE" ]; then
         CACHE_MTIME="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || printf '0')"
         CACHE_AGE=$((NOW - CACHE_MTIME))
         if [ "$CACHE_AGE" -ge 0 ] && [ "$CACHE_AGE" -le "$CACHE_TTL_SECONDS" ]; then
-            IFS= read -r CACHED_CODE < "$CACHE_FILE"
-            tail -n +2 "$CACHE_FILE"
+            {
+                IFS= read -r CACHED_CODE
+                while IFS= read -r CACHE_LINE || [ -n "$CACHE_LINE" ]; do
+                    printf '%s\n' "$CACHE_LINE"
+                done
+            } < "$CACHE_FILE"
             exit "$CACHED_CODE"
         fi
     fi
