@@ -41,7 +41,8 @@ for _row in "${_rows[@]}"; do
     if [[ "$_gs" == *"✅"* ]] && [[ "$_art" == *"GS:"* ]]; then
         _p="${_art#*GS: }"; _p="${_p%% (*}"
         _sub="${_p%%/*}"
-        if [[ -n "$_sub" ]] && [[ "$_sub" != "$_p" ]]; then
+        # R2: Skip invalid dir names (e.g. "cache(arr" from partial artifact strings)
+        if [[ -n "$_sub" ]] && [[ "$_sub" != "$_p" ]] && [[ ! "$_sub" =~ [^a-zA-Z0-9_-] ]]; then
             _gs_subdirs_seen[$_sub]=1
         fi
     fi
