@@ -894,7 +894,7 @@ entries:
     after_real_ms: 78
     real_measurement_command: "python perf_counter around bash scripts/gates/gate_p_average_freshness.sh with fake curl, isolated env file, and per-run cache"
     test_result: "bash_n_pass;bats tests/unit/test_gate_p_average_freshness.bats 4/4 PASS SKIP=0; before median 111.201ms; after median 77.804ms"
-    commit: ""
+    commit: "47842297f"
     assigned_to: "hayate"
     updated_at: "2026-06-07T04:28:40"
   - script_path: "scripts/gates/gate_pd_sync.sh"

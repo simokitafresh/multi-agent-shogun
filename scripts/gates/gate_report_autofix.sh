@@ -25,7 +25,13 @@ fi
 
 fast_no_fix_needed() {
     local report_path="$1"
-    awk '
+    local awk_bin
+    if [ -x /usr/bin/mawk ]; then
+        awk_bin=/usr/bin/mawk
+    else
+        awk_bin=awk
+    fi
+    LC_ALL=C "$awk_bin" '
         BEGIN {
             need_python = 0
             section = ""
