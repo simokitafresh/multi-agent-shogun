@@ -1470,29 +1470,29 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:03:00"
   - script_path: "scripts/lesson_confirm.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 137
+    after_real_ms: 118
+    real_measurement_command: bash scripts/lesson_confirm.sh infra L999999 (non-existent, 10回中央値)
+    test_result: "smoke test PASS (infra L999999: ERROR not found as expected); cd+pwd+sed removed+CSafeLoader: 137ms->118ms (-19ms, -14%)"
+    commit: 5db4aeed3
     assigned_to: "kotaro"
     updated_at: "2026-06-07T07:08:09"
   - script_path: "scripts/lesson_delete.sh"
-    status: assigned
+    status: completed
     before_ms: 17
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 7
+    before_real_ms: 11
+    after_real_ms: 7
+    real_measurement_command: "bash scripts/lesson_delete.sh (0 args, usage exit — exercises SCRIPT_DIR; 5 cold runs median)"
+    test_result: "functional verification PASS (LESSON_ID normalization: L023→L23 L23→L23 L001→L1; SCRIPT_DIR resolution: /mnt/c/tools/multi-agent-shogun match OK); BASH_SOURCE string ops (SCRIPT_DIR) + bash arithmetic (LESSON_ID) + PID temp (PY_EXIT_FILE): 11ms→7ms (-36%)"
+    commit: "5db4aeed3"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T07:08:36"
+    updated_at: "2026-06-07T07:12:00"
   - script_path: "scripts/lesson_deprecate.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1500,8 +1500,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T07:12:50"
   - script_path: "scripts/lesson_deprecation_scan.sh"
     status: pending
     before_ms: 18
