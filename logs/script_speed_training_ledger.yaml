@@ -1052,16 +1052,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T04:59:51"
   - script_path: "scripts/gates/gate_workaround_rate.sh"
-    status: pending
+    status: completed
     before_ms: 22
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 40
+    after_real_ms: 30
+    real_measurement_command: "bash scripts/gates/gate_workaround_rate.sh --last 10 >/dev/null"
+    test_result: "bash_n_pass;HEAD_current_output_diff_empty;fallback_fixture_ALERT_output_pass;SKIP=0"
+    commit: "81dba9c00"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:00:34"
   - script_path: "scripts/gates/gate_yaml_status.sh"
     status: pending
     before_ms: 17
