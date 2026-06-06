@@ -1547,16 +1547,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T07:25:31"
   - script_path: "scripts/lesson_harvest.sh"
-    status: assigned
+    status: "completed"
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: "7607"
+    after_real_ms: "4960"
+    real_measurement_command: "rm -f /tmp/lesson_harvest_*.pkl && bash scripts/lesson_harvest.sh (cold run 3回中央値)"
+    test_result: "bats test_learning_ops_small_consolidated.bats --filter lesson_harvest 3/3 PASS SKIP=0; CSafeLoader+ThreadPoolExecutor 7607ms->4960ms (-35%)"
+    commit: "0232bdd41"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T07:39:45"
+    updated_at: "2026-06-07T07:49:22+09:00"
   - script_path: "scripts/lesson_health_report.sh"
     status: "completed"
     before_ms: 17
@@ -1580,7 +1580,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:44:00"
   - script_path: "scripts/lesson_impact_rotate.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1588,8 +1588,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:50:25"
   - script_path: "scripts/lesson_merge.sh"
     status: pending
     before_ms: 16
