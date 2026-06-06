@@ -1305,7 +1305,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T06:04:06"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
-    status: pending
+    status: assigned
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1313,21 +1313,21 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T06:08:02"
   - script_path: "scripts/hooks/test_hooks.sh"
-    status: pending
+    status: completed
     before_ms: 17
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 17
+    before_real_ms: 2611
+    after_real_ms: 2611
+    real_measurement_command: "bash scripts/hooks/test_hooks.sh"
+    test_result: "PASS_NO_IMPROVEMENT: 80/80 PASS。主コストはpython3(Guard4)とsqlite3。test_hooks.sh自体の最適化余地なし"
+    commit: "no_change"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T06:13:00"
   - script_path: "scripts/hooks/test_result_guard.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1335,8 +1335,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T06:12:07"
   - script_path: "scripts/hybrid_search.sh"
     status: pending
     before_ms: 16
@@ -2801,8 +2801,8 @@ entries:
     assigned_to: ""
     updated_at: ""
 status: completed
-before_real_ms: 39
-after_real_ms: 27
-commit: 50bae2050
-real_measurement_command: 'echo PAYLOAD | bash scripts/hooks/pre-mcp-lord-attribution-guard.sh (mcp__memory__add_observations, no-keyword path)'
-test_result: bash -n PASS; 6-path manual test PASS; no bats file
+before_real_ms: 86
+after_real_ms: 35
+commit: 34fcd0c00
+real_measurement_command: 'printf {"stop_hook_active":false} | TMUX_AGENT_ID=hanzo bash scripts/hooks/stop_check_inbox.sh'
+test_result: bash -n PASS; 4-path manual test PASS; no bats file
