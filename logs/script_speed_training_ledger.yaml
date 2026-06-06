@@ -50,16 +50,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-06T22:10:00"
   - script_path: "scripts/archive_completed.sh"
-    status: assigned
+    status: completed
     before_ms: 19
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 362
+    before_real_ms: 873
+    after_real_ms: 362
+    real_measurement_command: "time bash scripts/archive_completed.sh"
+    test_result: "bats tests/unit/test_archive_completed.bats PASS 24/24 SKIP=0"
+    commit: "46d24a780"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-06T22:01:32"
+    updated_at: "2026-06-06T22:35:00"
   - script_path: "scripts/auto_deploy_next.sh"
     status: completed
     before_ms: 18
@@ -105,16 +105,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-06T22:14:35"
   - script_path: "scripts/backfill_lesson_target_files.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 120000
+    after_real_ms: 3661
+    real_measurement_command: "bash scripts/backfill_lesson_target_files.sh --dry-run >/dev/null"
+    test_result: "bash -n scripts/backfill_lesson_target_files.sh && bash scripts/backfill_lesson_target_files.sh --dry-run PASS SKIP=0"
+    commit: "e3eda3d96"
     assigned_to: "hayate"
-    updated_at: "2026-06-06T22:10:49"
+    updated_at: "2026-06-06T22:17:00"
   - script_path: "scripts/backfill_review_gate_done.sh"
     status: completed
     before_ms: 15
@@ -2799,3 +2799,4 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+before_real_ms: 873
