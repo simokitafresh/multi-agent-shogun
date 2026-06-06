@@ -1536,14 +1536,14 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:32:00"
   - script_path: "scripts/lesson_find_duplicates.sh"
-    status: assigned
+    status: "completed"
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: "17354"
+    after_real_ms: "15340"
+    real_measurement_command: "bash scripts/lesson_find_duplicates.sh infra (10回中央値)"
+    test_result: "bash -n PASS; functional PASS (active=746, 36 pairs found); SCRIPT_DIR bash-string+CSafeLoader: 17354ms->15340ms (-12%)"
+    commit: "faadfa29f"
     assigned_to: "kotaro"
     updated_at: "2026-06-07T07:25:31"
   - script_path: "scripts/lesson_harvest.sh"
@@ -2800,3 +2800,4 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+status: completed
