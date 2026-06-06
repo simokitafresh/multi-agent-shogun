@@ -1580,18 +1580,18 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:44:00"
   - script_path: "scripts/lesson_impact_rotate.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 72
+    after_real_ms: 65
+    real_measurement_command: "cp /tmp/lesson_impact_backup.tsv logs/lesson_impact.tsv && bash scripts/lesson_impact_rotate.sh"
+    test_result: "bash -n OK; no unit tests for this script"
+    commit: "7645c8b46"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T07:50:25"
+    updated_at: "2026-06-07T08:00:00"
   - script_path: "scripts/lesson_merge.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1599,8 +1599,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T07:54:57"
   - script_path: "scripts/lesson_review.sh"
     status: pending
     before_ms: 16
