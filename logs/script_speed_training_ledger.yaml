@@ -402,16 +402,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T23:27:11"
   - script_path: "scripts/cmd_friction_log.sh"
-    status: assigned
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 32
+    after_real_ms: 15
+    real_measurement_command: "bash scripts/cmd_friction_log.sh (31-run median; no-args usage path; no log append)"
+    test_result: "bash -n scripts/cmd_friction_log.sh PASS; isolated append/entries_empty YAML tests 2/2 PASS SKIP=0"
+    commit: "722f60b155cf7024d1d312d0d79c6158875a8ab6"
     assigned_to: "hayate"
-    updated_at: "2026-06-06T23:30:39"
+    updated_at: "2026-06-06T23:33:41"
   - script_path: "scripts/cmd_halt.sh"
     status: completed
     before_ms: 18
@@ -424,16 +424,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-06T23:40:03"
   - script_path: "scripts/cmd_publish.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 17
+    after_real_ms: 9
+    real_measurement_command: "bash scripts/cmd_publish.sh cmd_dummy (one-arg usage path, 100-run median; exits before project YAML/inbox side effects)"
+    test_result: "bash -n scripts/cmd_publish.sh PASS; bats tests/unit/test_cmd_publish_preflight.bats 10/10 PASS SKIP=0; usage output unchanged rc=1"
+    commit: "08f6c0fb6"
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T23:36:09"
   - script_path: "scripts/cmd_quality_log.sh"
     status: completed
     before_ms: 19
@@ -446,16 +446,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-06T23:41:07"
   - script_path: "scripts/cmd_save.sh"
-    status: pending
+    status: completed
     before_ms: 31
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 67
+    after_real_ms: 25
+    real_measurement_command: "bash scripts/cmd_save.sh (no-arg usage path, 100-run median; exits before project YAML/quality log/memory DB side effects)"
+    test_result: "bash -n scripts/cmd_save.sh PASS; test_select affected cmd_save suite bats 333/333 PASS SKIP=0; usage output unchanged rc=1"
+    commit: "7ed8badab"
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T23:49:16"
   - script_path: "scripts/context_freshness_check.sh"
     status: completed
     before_ms: 9
@@ -467,19 +467,20 @@ entries:
     commit: "0f03756a40c33fb0452968ebc4d54bcb84ac3c46"
     assigned_to: "hayate"
     updated_at: "2026-06-06T23:50:31"
+    updated_at: "2026-06-06T23:46:17"
   - script_path: "scripts/conversation_retention.sh"
-    status: pending
+    status: completed
     before_ms: 8
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 98
+    after_real_ms: 91
+    real_measurement_command: "time bash scripts/conversation_retention.sh <tmpjsonl> <tmpindex> <tmparchive> (10 entries, 8-run avg; empty-JSONL: 90ms->37ms -59%)"
+    test_result: "bats tests/unit/test_lord_conversation.bats: 17/17 PASS SKIP=0"
+    commit: "26c7811034802dad4eab30e20c7578e8088c0673"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-06T23:57:00"
   - script_path: "scripts/count_bats_skips.sh"
-    status: pending
+    status: assigned
     before_ms: 20
     after_ms: ""
     before_real_ms: ""
@@ -487,21 +488,21 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-06T23:48:37"
   - script_path: "scripts/count_gate_metrics.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 24
+    after_real_ms: 22
+    real_measurement_command: "time bash scripts/count_gate_metrics.sh"
+    test_result: "output_match_verified_SKIP_0"
+    commit: "3911802cfeab4d2c9c6a329864de817e7d9751a7"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T00:00:00"
   - script_path: "scripts/daemon_supervisor.sh"
-    status: pending
+    status: assigned
     before_ms: 21
     after_ms: ""
     before_real_ms: ""
@@ -509,10 +510,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:56:28"
   - script_path: "scripts/daemon_watchdog.sh"
-    status: pending
+    status: assigned
     before_ms: 13
     after_ms: ""
     before_real_ms: ""
@@ -520,8 +521,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T23:57:08"
   - script_path: "scripts/dashboard_auto_section.sh"
     status: pending
     before_ms: 21
