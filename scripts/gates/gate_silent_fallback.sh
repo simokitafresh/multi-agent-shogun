@@ -133,30 +133,44 @@ VIOLATIONS=0
 TOTAL_EXCEPT=0
 FLAGGED_FILES=()
 
-cur_file="" cur_line=""
-declare -a cur_block=()
+cur_file="" cur_line="" cur_first_line=""
+cur_has_legit=false cur_has_data=false cur_data_line=""
+
+_reset_block() {
+    cur_file=""; cur_first_line=""
+    cur_has_legit=false; cur_has_data=false; cur_data_line=""
+}
+
+_update_flags() {
+    local content="$1"
+    if [[ "$cur_has_legit" == false ]] && [[ "$content" =~ $LEGIT_RE ]]; then
+        cur_has_legit=true
+    fi
+    if [[ "$cur_has_data" == false ]] && [[ "$content" =~ $DATA_RE ]]; then
+        cur_has_data=true
+        cur_data_line="${content#"${content%%[! ]*}"}"  # ltrim spaces
+    fi
+}
 
 emit_block() {
     [[ -z "$cur_file" ]] && return
     # コメント行のexceptは除外
-    if [[ "${cur_block[0]}" == *'#'*'except'* ]]; then
-        cur_file=""; cur_block=(); return
+    if [[ "$cur_first_line" == *'#'*'except'* ]]; then
+        _reset_block; return
     fi
     TOTAL_EXCEPT=$((TOTAL_EXCEPT + 1))
     # 正当パターン（raise等）があればスキップ
-    if printf '%s\n' "${cur_block[@]}" | grep -qE "$LEGIT_RE"; then
-        cur_file=""; cur_block=(); return
+    if [[ "$cur_has_legit" == true ]]; then
+        _reset_block; return
     fi
     # データ値パターン検出
-    if printf '%s\n' "${cur_block[@]}" | grep -qE "$DATA_RE"; then
+    if [[ "$cur_has_data" == true ]]; then
         VIOLATIONS=$((VIOLATIONS + 1))
         local relpath="${cur_file#"${DM_SIGNAL_PATH}"/}"
-        local match_line
-        match_line=$(printf '%s\n' "${cur_block[@]}" | grep -E "$DATA_RE" | head -1 | sed 's/^[[:space:]]*//')
-        echo "  SUSPECT: ${relpath}:${cur_line} — except Exception + [${match_line}]"
+        echo "  SUSPECT: ${relpath}:${cur_line} — except Exception + [${cur_data_line}]"
         FLAGGED_FILES+=("${relpath}:${cur_line}")
     fi
-    cur_file=""; cur_block=()
+    _reset_block
 }
 
 while IFS= read -r line || [[ -n "$line" ]]; do
@@ -170,18 +184,19 @@ while IFS= read -r line || [[ -n "$line" ]]; do
             emit_block  # 前ブロック処理
             cur_file="${BASH_REMATCH[1]}"
             cur_line="${BASH_REMATCH[2]}"
-            cur_block=("$matched_content")
+            cur_first_line="$matched_content"
+            cur_has_legit=false; cur_has_data=false; cur_data_line=""
             continue
         fi
     fi
-    # コンテキスト行: プレフィックス除去してブロックに追加
+    # コンテキスト行: プレフィックス除去してフラグ更新
     if [[ -n "$cur_file" ]]; then
         if [[ "$line" =~ ^.+\.py[-][0-9]+[-](.*)$ ]]; then
-            cur_block+=("${BASH_REMATCH[1]}")
+            _update_flags "${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^.+\.py:[0-9]+:(.*)$ ]]; then
-            cur_block+=("${BASH_REMATCH[1]}")
+            _update_flags "${BASH_REMATCH[1]}"
         else
-            cur_block+=("$line")
+            _update_flags "$line"
         fi
     fi
 done <<< "$grep_output"
