@@ -24,10 +24,26 @@ HEARTBEAT_FILE="/tmp/daemon_watchdog_heartbeat"
 # 多重起動防止: 手動実行時も短時間で完了するため内部lockは持たない。
 # 各デーモンの重複防止はPIDファイル/プロセス生存確認に寄せる。
 
-mkdir -p "$SCRIPT_DIR/logs"
+LOG_DIR_READY=0
+RESTART_STATE_DIR_READY=0
+
+ensure_log_dir() {
+    if (( LOG_DIR_READY == 0 )); then
+        mkdir -p "$(dirname "$LOG")"
+        LOG_DIR_READY=1
+    fi
+}
+
+ensure_restart_state_dir() {
+    if (( RESTART_STATE_DIR_READY == 0 )); then
+        mkdir -p "$RESTART_STATE_DIR"
+        RESTART_STATE_DIR_READY=1
+    fi
+}
 
 # ログローテーション: 1MB超過時に末尾500行を残して切り詰め
 rotate_log() {
+    ensure_log_dir
     local max_bytes=1048576  # 1MB
     if [[ -f "$LOG" ]]; then
         local size
@@ -40,6 +56,7 @@ rotate_log() {
 }
 
 log() {
+    ensure_log_dir
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"
 }
 
@@ -51,7 +68,6 @@ RESTARTED=0
 RESTART_STATE_DIR="${RESTART_STATE_DIR:-/tmp/daemon_watchdog_state}"
 RESTART_THROTTLE_WINDOW=600  # 10 minutes
 RESTART_THROTTLE_MAX=3       # max restarts within window
-mkdir -p "$RESTART_STATE_DIR"
 
 pid_is_live() {
     local pid="${1:-}"
@@ -97,6 +113,7 @@ pid_file_has_live_daemon() {
 # Returns 0 if restart is allowed, 1 if throttled
 check_restart_throttle() {
     local daemon_name="$1"
+    ensure_restart_state_dir
     local state_file="$RESTART_STATE_DIR/${daemon_name}.restarts"
     local now
     now=$(date +%s)
@@ -124,6 +141,7 @@ check_restart_throttle() {
 # Record a restart event
 record_restart() {
     local daemon_name="$1"
+    ensure_restart_state_dir
     local state_file="$RESTART_STATE_DIR/${daemon_name}.restarts"
     date +%s >> "$state_file"
 }
