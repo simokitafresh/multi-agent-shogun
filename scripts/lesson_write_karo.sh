@@ -6,7 +6,8 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lwk_self="${BASH_SOURCE[0]}"; [[ "$_lwk_self" != /* ]] && _lwk_self="$PWD/$_lwk_self"
+SCRIPT_DIR="${_lwk_self%/scripts/lesson_write_karo.sh}"
 TITLE="${1:-}"
 DETAIL="${2:-}"
 SOURCE_CMD="${3:-}"
@@ -98,6 +99,8 @@ while [ $attempt -lt $max_attempts ]; do
 import yaml, os, sys
 from difflib import SequenceMatcher
 
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 lessons_file = os.environ["LESSONS_FILE"]
 timestamp = os.environ["TIMESTAMP"]
 title = os.environ["TITLE"]
@@ -108,7 +111,7 @@ when_cond = os.environ.get("WHEN_COND", "")
 how_action = os.environ.get("HOW_ACTION", "")
 
 with open(lessons_file, encoding='utf-8') as f:
-    data = yaml.safe_load(f)
+    data = yaml.load(f, Loader=_CLoader)
 
 if data is None:
     data = {}
