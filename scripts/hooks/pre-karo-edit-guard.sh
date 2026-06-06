@@ -9,7 +9,7 @@
 # それ以外（忍者稼働中ならBLOCK）: ~/.claude/skills/ scripts/ tests/ 外部プロジェクト等
 set -euo pipefail
 
-PROJ_DIR="/mnt/c/tools/multi-agent-shogun"
+PROJ_DIR="${PRE_KARO_EDIT_PROJ_DIR:-/mnt/c/tools/multi-agent-shogun}"
 TASKS_DIR="${PROJ_DIR}/queue/tasks"
 
 emit_deny() {
@@ -35,7 +35,10 @@ if [[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]]; then
 fi
 
 # --- Agent check: only applies to karo ---
-agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo "")"
+agent_id="${AGENT_ID:-}"
+if [ -z "$agent_id" ]; then
+    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo "")"
+fi
 if [ "$agent_id" != "karo" ]; then
     exit 0
 fi
