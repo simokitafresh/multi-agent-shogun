@@ -45,7 +45,7 @@ if [ -f "$_WA_CACHE" ]; then
     IFS= read -r _WA_CACHED_MTIME < "$_WA_CACHE" || _WA_CACHED_MTIME=-1
 fi
 if [ "$_WA_MTIME" = "$_WA_CACHED_MTIME" ] && [ -f "$_WA_CACHE" ]; then
-    awk 'NR > 1 { print }' "$_WA_CACHE"
+    sed '1d' "$_WA_CACHE"
     exit 0
 fi
 
