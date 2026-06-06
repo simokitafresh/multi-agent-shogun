@@ -1404,16 +1404,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T06:41:56"
   - script_path: "scripts/insight_resolve.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 15
+    after_real_ms: 11
+    real_measurement_command: "bash scripts/insight_resolve.sh INVALID_TIMING_ID reason (early-exit, 5 cold runs median)"
+    test_result: "bats tests/unit/test_insight_write.bats 15/15 PASS SKIP=0 (test9-11 cover resolve)"
+    commit: "4e79bc14d"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T06:42:20"
+    updated_at: "2026-06-07T06:45:32"
   - script_path: "scripts/insight_write.sh"
     status: pending
     before_ms: 6
