@@ -4,7 +4,50 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-python3 - "$repo_root" <<'PY'
+# Fast path: mtime cache — skip Python when hot_paths are unchanged.
+# Caches both OK and BLOCK results; invalidated on any hot_path file change.
+_HPNSI_CACHE="${TMPDIR:-/tmp}/gate_hpnsi_cache"
+_hot_paths=(
+    "scripts/inbox_watcher.sh"
+    "scripts/inbox_write.sh"
+    "scripts/bulletin_write.sh"
+    "scripts/report_field_set.sh"
+    "scripts/gates/gate_report_format.sh"
+    "scripts/gates/gate_gunshi_report_precheck.sh"
+    "scripts/cmd_save.sh"
+    "scripts/cmd_complete_gate.sh"
+    "scripts/deploy_task.sh"
+    "scripts/ninja_monitor.sh"
+)
+
+_existing_paths=()
+for _rel in "${_hot_paths[@]}"; do
+    [[ -f "$repo_root/$_rel" ]] && _existing_paths+=("$repo_root/$_rel")
+done
+
+_max_mtime=""
+if [[ ${#_existing_paths[@]} -gt 0 ]]; then
+    _max_mtime=$(stat -c '%Y' "${_existing_paths[@]}" 2>/dev/null | sort -rn | head -1)
+    if [[ -f "$_HPNSI_CACHE" ]]; then
+        IFS=' ' read -r _c_mtime _c_exit <<<"$(head -1 "$_HPNSI_CACHE" 2>/dev/null)" || true
+        if [[ "${_c_mtime:-}" == "$_max_mtime" && -n "${_c_exit:-}" ]]; then
+            if [[ "${_c_exit}" -eq 0 ]]; then
+                tail -n +2 "$_HPNSI_CACHE"
+            else
+                tail -n +2 "$_HPNSI_CACHE" >&2
+            fi
+            exit "${_c_exit}"
+        fi
+    fi
+fi
+
+# Full Python check: capture stderr to replay and cache.
+_py_err_tmp=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -f '$_py_err_tmp'" EXIT
+
+_py_exit=0
+_py_stdout=$(python3 - "$repo_root" 2>"$_py_err_tmp" <<'PY'
 from __future__ import annotations
 
 import re
@@ -72,3 +115,25 @@ if violations:
 
 print("OK: hot paths have no unbounded heavy synchronous I/O")
 PY
+) || _py_exit=$?
+
+# Write cache atomically.
+if [[ -n "${_max_mtime}" ]]; then
+    {
+        printf '%s %s\n' "$_max_mtime" "$_py_exit"
+        if [[ $_py_exit -eq 0 ]]; then
+            printf '%s\n' "$_py_stdout"
+        else
+            cat "$_py_err_tmp"
+        fi
+    } > "${_HPNSI_CACHE}.$$" 2>/dev/null && mv "${_HPNSI_CACHE}.$$" "$_HPNSI_CACHE" 2>/dev/null || true
+fi
+
+# Output results to correct streams.
+if [[ $_py_exit -eq 0 ]]; then
+    printf '%s\n' "$_py_stdout"
+else
+    cat "$_py_err_tmp" >&2
+fi
+
+exit $_py_exit
