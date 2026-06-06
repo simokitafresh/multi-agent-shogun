@@ -2800,10 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-status: completed
-before_real_ms: 9976
-after_real_ms: 3678
-real_measurement_command: time bash scripts/gates/gate_gunshi_startup.sh (cold)
-test_result: 'bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats: 1 passed, 0 skipped'
-commit: f75f657c5
-updated_at: '2026-06-06T19:15:42'
