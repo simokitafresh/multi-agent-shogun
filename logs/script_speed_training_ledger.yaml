@@ -1492,16 +1492,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:12:00"
   - script_path: "scripts/lesson_deprecate.sh"
-    status: assigned
+    status: "completed"
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: "625"
+    after_real_ms: "23"
+    real_measurement_command: "LESSON_DEPRECATE_ROOT=sandbox bash scripts/lesson_deprecate.sh infra L751 reason (infra 746件 5回中央値)"
+    test_result: "bats tests/unit/test_lesson_deprecate.bats 14/14 PASS SKIP=0; awk inline+block両形式: 625ms->23ms (-96%)"
+    commit: "e62036f4c"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T07:12:50"
+    updated_at: "2026-06-07T07:34:39+09:00"
   - script_path: "scripts/lesson_deprecation_scan.sh"
     status: "completed"
     before_ms: 18
