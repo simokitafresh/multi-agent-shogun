@@ -23,7 +23,7 @@ get_ctx_pct() {
     # Source 1: tmux pane variable (@context_pct)
     local ctx_val
     ctx_val=$(tmux show-options -p -t "$pane_target" -v @context_pct 2>/dev/null || true)
-    ctx_num=$(echo "$ctx_val" | grep -oE '[0-9]+' | tail -1)
+    [[ "$ctx_val" =~ ([0-9]+)[^0-9]*$ ]] && ctx_num="${BASH_REMATCH[1]}" || ctx_num=""
     if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
         echo "$ctx_num"
         return 0
@@ -57,14 +57,14 @@ get_ctx_pct() {
     fi
 
     # Source 3: フォールバック — 両パターン試行
-    ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
+    [[ "$output" =~ CTX:([0-9]+)% ]] && ctx_num="${BASH_REMATCH[1]}" || ctx_num=""
     if [ -n "$ctx_num" ]; then
         echo "$ctx_num"
         return 0
     fi
 
     local remaining
-    remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
+    [[ "$output" =~ ([0-9]+)%\ context\ left ]] && remaining="${BASH_REMATCH[1]}" || remaining=""
     if [ -n "$remaining" ]; then
         echo $((100 - remaining))
         return 0
