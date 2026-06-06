@@ -1074,16 +1074,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:08:01"
   - script_path: "scripts/gates/mark_no_learning.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 18
+    after_real_ms: 18
+    real_measurement_command: "bash scripts/gates/mark_no_learning.sh cmd_test_bench 2>/dev/null"
+    test_result: "bash_n PASS; test_mark_no_learning.bats 2/2 PASS SKIP=0 (causal_backlinks 2 FAIL pre-existing)"
+    commit: "454782549"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:12:00"
   - script_path: "scripts/gist_index_update.sh"
     status: pending
     before_ms: 16
@@ -2800,3 +2800,9 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+before_real_ms: 234
+after_real_ms: 68
+real_measurement_command: SHOGUN_MEMORY_DB=/tmp/nonexistent_shogun.db bash scripts/gates/gate_three_layer_health.sh
+test_result: bash -n scripts/gates/gate_three_layer_health.sh && bats tests/unit/test_gate_three_layer_health.bats PASS 2/2 SKIP=0
+commit: 0b64dd9ef
+status: completed
