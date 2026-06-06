@@ -75,24 +75,22 @@ if [[ ! -x "$CODD_BIN" ]]; then
     exit 1
 fi
 
-installed_output="$("$CODD_BIN" lexicon list --path "$PROJECT_PATH" --installed 2>&1)" || {
-    echo "ALERT: codd lexicon check failed for ${PROJECT_ID}: ${installed_output}" >&2
-    exit 1
-}
-
-installed_count="$(printf '%s\n' "$installed_output" | awk '
-    /^Installed \([0-9]+\):/ {
-        line = $0
-        sub(/^Installed \(/, "", line)
-        sub(/\):$/, "", line)
-        print line
-        exit
-    }
-')"
+# Fast path: read project_lexicon.yaml directly instead of running codd lexicon list.
+# codd stores installed lexicons in project_lexicon.yaml `extends:` list.
+LEXICON_FILE="$PROJECT_PATH/project_lexicon.yaml"
+if [[ -f "$LEXICON_FILE" ]]; then
+    installed_count="$(awk '
+        /^extends:/ { inext=1; next }
+        inext && /^[[:space:]]*-/ { count++ }
+        inext && /^[^[:space:]]/ { exit }
+        END { print count+0 }
+    ' "$LEXICON_FILE")"
+else
+    installed_count=0
+fi
 
 if [[ -z "$installed_count" || "$installed_count" -lt 1 ]]; then
     echo "ALERT: codd lexicon not installed for ${PROJECT_ID}: run codd lexicon install --path ${PROJECT_PATH} shogun_core" >&2
-    printf '%s\n' "$installed_output" >&2
     exit 1
 fi
 
