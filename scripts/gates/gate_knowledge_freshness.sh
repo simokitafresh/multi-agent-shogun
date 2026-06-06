@@ -35,50 +35,80 @@ if [[ -n "${_cache_file:-}" ]]; then
 fi
 
 run_scan() {
-python3 - "$ROOT_DIR" "$TODAY_OVERRIDE" <<'PY'
-from __future__ import annotations
+    local targets=()
+    shopt -s nullglob
+    targets+=("$ROOT_DIR"/docs/research/systems-knowledge-base/systems/*.md)
+    targets+=("$ROOT_DIR"/docs/research/systems-knowledge-base/sources/*.md)
+    shopt -u nullglob
 
-import re
-import shlex
+    if [[ "${#targets[@]}" -eq 0 ]]; then
+        printf '%s\n' "WARN: systems-knowledge-base targets not found"
+        printf '%s\n' "知識鮮度: WARN — fresh=0 stale=0 warn=1 total=0"
+        return 2
+    fi
+
+    local today total
+    if [[ -n "$TODAY_OVERRIDE" ]]; then
+        if [[ ! "$TODAY_OVERRIDE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            printf 'WARN: KNOWLEDGE_FRESHNESS_TODAY format invalid: %s\n' "$TODAY_OVERRIDE"
+            printf '%s\n' "知識鮮度: WARN — fresh=0 stale=0 warn=1 total=0"
+            return 2
+        fi
+        today="$TODAY_OVERRIDE"
+    else
+        today="$(date +%F)"
+    fi
+    total="${#targets[@]}"
+
+    python3 - "$ROOT_DIR" "$today" "$total" "${targets[@]}" <<'PY'
 import sys
-from datetime import date
-from pathlib import Path
 
-root = Path(sys.argv[1])
-today_override = sys.argv[2].strip()
+root = sys.argv[1]
+today = sys.argv[2]
+total = int(sys.argv[3])
+targets = sys.argv[4:]
+prefix = root.rstrip("/") + "/"
 
-try:
-    today = date.fromisoformat(today_override) if today_override else date.today()
-except ValueError:
-    print(f"WARN: KNOWLEDGE_FRESHNESS_TODAY format invalid: {today_override}")
-    print("知識鮮度: WARN — fresh=0 stale=0 warn=1 total=0")
-    raise SystemExit(2)
+def trim(value):
+    return value.strip()
 
-targets = sorted((root / "docs/research/systems-knowledge-base/systems").glob("*.md"))
-targets += sorted((root / "docs/research/systems-knowledge-base/sources").glob("*.md"))
+def days_from_civil(iso):
+    y = int(iso[0:4])
+    m = int(iso[5:7])
+    d = int(iso[8:10])
+    y -= m <= 2
+    era = (y if y >= 0 else y - 399) // 400
+    yoe = y - era * 400
+    doy = (153 * (m + (-3 if m > 2 else 9)) + 2) // 5 + d - 1
+    doe = yoe * 365 + yoe // 4 - yoe // 100 + doy
+    return era * 146097 + doe - 719468
 
-if not targets:
-    print("WARN: systems-knowledge-base targets not found")
-    print("知識鮮度: WARN — fresh=0 stale=0 warn=1 total=0")
-    raise SystemExit(2)
+def shell_quote(value):
+    allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-/.,:"
+    if value and all(ch in allowed for ch in value):
+        return value
+    return "'" + value.replace("'", "'\"'\"'") + "'"
 
-table_pattern = re.compile(r"^\|\s*verified_at\s*\|\s*([^|]+?)\s*\|")
-list_pattern = re.compile(r"^\s*-\s*verified_at:\s*(.+?)\s*$")
-date_pattern = re.compile(r"(\d{4}-\d{2}-\d{2})")
-
-fresh_count = 0
-stale_count = 0
-warn_count = 0
+today_days = days_from_civil(today)
+fresh_count = stale_count = warn_count = 0
 stale_entries = []
 
 for path in targets:
-    rel_path = path.relative_to(root).as_posix()
+    rel_path = path[len(prefix):] if path.startswith(prefix) else path
     raw_value = None
-    for line in path.read_text(encoding="utf-8").splitlines():
-        match = table_pattern.match(line) or list_pattern.match(line)
-        if match:
-            raw_value = match.group(1).strip()
-            break
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if stripped.startswith("|"):
+                cells = stripped.strip("|").split("|", 2)
+                if len(cells) >= 2 and trim(cells[0]) == "verified_at":
+                    raw_value = trim(cells[1])
+                    break
+            elif stripped.startswith("-"):
+                item = stripped[1:].lstrip()
+                if item.startswith("verified_at:"):
+                    raw_value = trim(item.split(":", 1)[1])
+                    break
 
     if raw_value is None:
         print(f"WARN: {rel_path} (verified_at missing)")
@@ -92,16 +122,20 @@ for path in targets:
         warn_count += 1
         continue
 
-    match = date_pattern.search(raw_value)
-    if not match:
+    verified_iso = ""
+    limit = len(raw_value) - 9
+    for idx in range(limit if limit > 0 else 0):
+        candidate = raw_value[idx:idx + 10]
+        if candidate[4:5] == "-" and candidate[7:8] == "-" and candidate[:4].isdigit() and candidate[5:7].isdigit() and candidate[8:].isdigit():
+            verified_iso = candidate
+            break
+    if not verified_iso:
         print(f"WARN: {rel_path} (verified_at parse failed: {raw_value})")
         print(f"  action: {rel_path} の verified_at を YYYY-MM-DD 形式に修正せよ")
         warn_count += 1
         continue
 
-    verified_date = date.fromisoformat(match.group(1))
-    age_days = (today - verified_date).days
-
+    age_days = today_days - days_from_civil(verified_iso)
     if age_days > 30:
         print(f"STALE: {rel_path} ({age_days} days old; verified_at={raw_value})")
         print(f"  action: {rel_path} を開き verified_at を {today} に更新せよ")
@@ -114,38 +148,21 @@ for path in targets:
         print(f"FRESH: {rel_path} ({age_days} days old; verified_at={raw_value})")
         fresh_count += 1
 
-total = len(targets)
-
 if stale_count:
-    print(
-        f"知識鮮度: ALERT — fresh={fresh_count} stale={stale_count} "
-        f"warn={warn_count} total={total}"
-    )
+    print(f"知識鮮度: ALERT — fresh={fresh_count} stale={stale_count} warn={warn_count} total={total}")
     print("■ STALE更新候補 TOP3 (経過日数降順)")
-    for idx, (age_days, rel_path, raw_value) in enumerate(
-        sorted(stale_entries, key=lambda item: (-item[0], item[1]))[:3],
-        start=1,
-    ):
+    for idx, (age_days, rel_path, raw_value) in enumerate(sorted(stale_entries, key=lambda item: (-item[0], item[1]))[:3], start=1):
         print(f"  {idx}. {rel_path} ({age_days} days old; verified_at={raw_value})")
-        print(
-            "     command: "
-            f"python3 scripts/update_verified_at.py {shlex.quote(rel_path)} {today}"
-        )
+        print(f"     command: python3 scripts/update_verified_at.py {shell_quote(rel_path)} {today}")
     print("  action: 上記 STALE ファイルの verified_at を更新し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ")
     raise SystemExit(1)
 
 if warn_count:
-    print(
-        f"知識鮮度: WARN — fresh={fresh_count} stale={stale_count} "
-        f"warn={warn_count} total={total}"
-    )
+    print(f"知識鮮度: WARN — fresh={fresh_count} stale={stale_count} warn={warn_count} total={total}")
     print("  action: 上記 WARN ファイルの verified_at フィールドを追記/修正し、bash scripts/gates/gate_knowledge_freshness.sh で再確認せよ")
     raise SystemExit(2)
 
-print(
-    f"知識鮮度: OK — fresh={fresh_count} stale={stale_count} "
-    f"warn={warn_count} total={total}"
-)
+print(f"知識鮮度: OK — fresh={fresh_count} stale={stale_count} warn={warn_count} total={total}")
 PY
 }
 
