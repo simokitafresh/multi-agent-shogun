@@ -182,14 +182,14 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-06T22:44:57"
   - script_path: "scripts/bulletin_write.sh"
-    status: assigned
+    status: "completed"
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 117
+    after_real_ms: 42
+    real_measurement_command: "BULLETIN_ROOT_OVERRIDE=$TMPDIR bash scripts/bulletin_write.sh hanzo 'test msg'"
+    test_result: "bats tests/unit/test_bulletin_board.bats 17/17 PASS SKIP=0"
+    commit: "f5b5381fc"
     assigned_to: "hanzo"
     updated_at: "2026-06-06T22:41:36"
   - script_path: "scripts/capture_clipboard_image.sh"
@@ -292,16 +292,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-06T22:58:58"
   - script_path: "scripts/checklist_progress.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 20
+    after_real_ms: 15
+    real_measurement_command: "timeout 20 bash scripts/checklist_progress.sh (no-arg usage, 10-run average)"
+    test_result: "bash -n scripts/checklist_progress.sh PASS; checklist_progress on context/checklist-shin-v2-registration.md, context/checklist-alm-registration.md, context/checklist-ward-fof-production.md PASS SKIP=0"
+    commit: "efdd6b222"
     assigned_to: ""
-    updated_at: ""
+    updated_at: "2026-06-06T23:05:04"
   - script_path: "scripts/checklist_update.sh"
     status: pending
     before_ms: 19
