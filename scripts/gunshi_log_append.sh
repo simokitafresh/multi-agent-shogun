@@ -29,8 +29,8 @@ if [ -z "$ENTRY" ]; then
 fi
 
 # --- observations必須チェック(draft/report/self_study) ---
-if echo "$ENTRY" | grep -qE 'review_type:\s*(draft|report|self_study)'; then
-    if ! echo "$ENTRY" | grep -q 'observations:'; then
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
+    if [[ "$ENTRY" != *"observations:"* ]]; then
         echo "BLOCK: observationsが未記入(review_type=draft/report/self_study)。事実3点以上を記入してから再実行せよ" >&2
         exit 2
     fi
