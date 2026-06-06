@@ -689,16 +689,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T00:24:28"
   - script_path: "scripts/gates/gate_context_freshness.sh"
-    status: pending
+    status: completed
     before_ms: 9
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 87
+    after_real_ms: 81
+    real_measurement_command: "CONTEXT_FRESHNESS_ROOT=/mnt/c/tools/multi-agent-shogun CONTEXT_FRESHNESS_CHECK_SCRIPT=/mnt/c/tools/multi-agent-shogun/scripts/context_freshness_check.sh CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true bash scripts/gates/gate_context_freshness.sh (cache-hit path)"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_context_freshness.bats tests/unit/test_gate_meta_quality.bats 14/14 PASS SKIP=0"
+    commit: "3069c31ae"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T00:33:47"
   - script_path: "scripts/gates/gate_cycle_health.sh"
     status: pending
     before_ms: 17
