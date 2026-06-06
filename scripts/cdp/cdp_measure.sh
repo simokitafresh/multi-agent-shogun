@@ -16,6 +16,14 @@
 #   - 忍者判断依存 → 全ステップ自動化
 set -euo pipefail
 
+# ─── 引数解析 ───
+CMD_ID="${1:-}"
+if [[ -z "$CMD_ID" ]]; then
+    echo "ERROR: cmd_id必須。Usage: bash scripts/cdp/cdp_measure.sh <cmd_id> [--baseline <path>]" >&2
+    exit 1
+fi
+shift
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
 
@@ -33,14 +41,6 @@ OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
 FRONTEND_URL="${FRONTEND_URL:-https://dm-signal-frontend.onrender.com}"
 FRONTEND_HEALTH_URL="${FRONTEND_HEALTH_URL:-${FRONTEND_URL}/}"
 # BACKEND_URL不要 — CDP哲学: UI操作でログイン。API直呼出しはしない
-
-# ─── 引数解析 ───
-CMD_ID="${1:-}"
-if [[ -z "$CMD_ID" ]]; then
-    echo "ERROR: cmd_id必須。Usage: bash scripts/cdp/cdp_measure.sh <cmd_id> [--baseline <path>]" >&2
-    exit 1
-fi
-shift
 
 BASELINE_PATH=""
 EXTRA_ARGS=()
