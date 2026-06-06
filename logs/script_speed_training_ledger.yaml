@@ -1448,7 +1448,7 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T06:56:00"
   - script_path: "scripts/lesson_auto_tag.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1456,19 +1456,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:00:12"
   - script_path: "scripts/lesson_check.sh"
-    status: pending
+    status: completed
     before_ms: 12
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 6
+    before_real_ms: 11
+    after_real_ms: 6
+    real_measurement_command: "bash scripts/lesson_check.sh (0 args, usage exit — exercises SCRIPT_DIR; 5 cold runs median)"
+    test_result: "functional verification PASS (cmd_test_speed_timing_check: lesson.done created with correct timestamp+reason); BASH_SOURCE string ops (SCRIPT_DIR) + printf -v builtin (date): 11ms→6ms (-45%)"
+    commit: "e3ca23cc8"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T07:03:00"
   - script_path: "scripts/lesson_confirm.sh"
     status: pending
     before_ms: 15
