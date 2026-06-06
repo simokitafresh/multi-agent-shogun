@@ -1393,16 +1393,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:34:36"
   - script_path: "scripts/inbox_write.sh"
-    status: assigned
+    status: completed
     before_ms: 10
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 28
+    after_real_ms: 17
+    real_measurement_command: "INBOX_WRITE_ROOT_OVERRIDE=tmpdir INBOX_WRITE_TEST=1 bash scripts/inbox_write.sh karo test wake_up hanzo"
+    test_result: "bats tests/unit/test_inbox_write.bats: 36/36 PASS SKIP=0"
+    commit: "b6a0c60fc"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T06:41:56"
+    updated_at: "2026-06-07T06:50:00"
   - script_path: "scripts/insight_resolve.sh"
     status: completed
     before_ms: 14
