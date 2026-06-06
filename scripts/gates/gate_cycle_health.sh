@@ -7,7 +7,11 @@
 # @source: cmd_1494セッション(CoDD→なぜなぜ→L-CycleNeverStop)
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="${SCRIPT_PATH%/scripts/gates/gate_cycle_health.sh}"
+if [ "$SCRIPT_DIR" = "$SCRIPT_PATH" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
+fi
 cd "$SCRIPT_DIR"
 
 ALERTS=()
@@ -19,8 +23,13 @@ PI_RATIO="?"
 
 # --- 1. 未消化insights aging check (resolved除外) ---
 if [ -f queue/insights.yaml ]; then
-    TOTAL_INSIGHTS=$(grep -c "^- " queue/insights.yaml 2>/dev/null) || TOTAL_INSIGHTS=0
-    RESOLVED=$(grep -c "status: resolved" queue/insights.yaml 2>/dev/null) || RESOLVED=0
+    read -r TOTAL_INSIGHTS RESOLVED < <(
+        awk '
+            /^- / { total++ }
+            /status: resolved/ { resolved++ }
+            END { print total + 0, resolved + 0 }
+        ' queue/insights.yaml
+    )
     INSIGHT_COUNT=$((TOTAL_INSIGHTS - RESOLVED))
     if [ "$INSIGHT_COUNT" -gt 15 ]; then
         ALERTS+=("insights: ${INSIGHT_COUNT}件未消化(閾値15, resolved除外)。気づきが行動に変わっていない")
@@ -31,10 +40,21 @@ fi
 
 # --- 2. idle忍者 check (稼働可能な手が遊んでいる) ---
 if [ -f queue/karo_snapshot.txt ]; then
-    IDLE_LINE=$(grep "^idle|" queue/karo_snapshot.txt 2>/dev/null || echo "")
+    IDLE_LINE=""
+    while IFS= read -r line; do
+        case "$line" in
+            idle\|*)
+                IDLE_LINE="$line"
+                break
+                ;;
+        esac
+    done < queue/karo_snapshot.txt
     if [ -n "$IDLE_LINE" ]; then
-        IDLE_NAMES=$(echo "$IDLE_LINE" | cut -d'|' -f2)
-        IDLE_COUNT=$(echo "$IDLE_NAMES" | tr ',' '\n' | grep -c . 2>/dev/null) || IDLE_COUNT=0
+        IDLE_NAMES="${IDLE_LINE#idle|}"
+        IFS=',' read -r -a idle_agents <<< "$IDLE_NAMES"
+        for agent in "${idle_agents[@]}"; do
+            [ -n "$agent" ] && IDLE_COUNT=$((IDLE_COUNT + 1))
+        done
         if [ "$IDLE_COUNT" -ge 4 ]; then
             ALERTS+=("idle忍者: ${IDLE_COUNT}名(${IDLE_NAMES})。手が遊んでいる=進化が止まっている")
         elif [ "$IDLE_COUNT" -ge 2 ]; then
