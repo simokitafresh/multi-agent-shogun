@@ -4,7 +4,9 @@
 # Usage: bash scripts/backfill_lesson_target_files.sh [--dry-run]
 
 set -e
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_bltf_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_bltf_self" != /* ]] && _bltf_self="$PWD/$_bltf_self"
+SCRIPT_DIR="${_bltf_self%/scripts/backfill_lesson_target_files.sh}"
 DM_SIGNAL_DIR="/mnt/c/Python_app/DM-signal"
 LESSONS_FILE="$DM_SIGNAL_DIR/tasks/lessons.md"
 DRY_RUN="${1:-}"
@@ -54,6 +56,67 @@ if current:
 insertions = []
 stats = {"total": len(lessons), "skip_has_tf": 0, "skip_no_cmd": 0,
          "skip_no_tags": 0, "added": 0, "no_git": 0}
+repo_file_cache = {}
+
+def build_repo_file_cache(repo_dir, needed_cmds):
+    if not needed_cmds or not os.path.isdir(os.path.join(repo_dir, ".git")):
+        return {}
+    grep_pattern = "|".join(re.escape(cmd) for cmd in sorted(needed_cmds))
+    try:
+        result = subprocess.run(
+            ["git", "log", "--extended-regexp", f"--grep={grep_pattern}",
+             "--format=__COMMIT__%n%B%n__FILES__", "--name-only"],
+            cwd=repo_dir, capture_output=True, text=True, timeout=30
+        )
+    except Exception:
+        return {}
+
+    cache = {}
+    current_cmds = set()
+    in_files = False
+    files = []
+
+    def flush():
+        if not current_cmds or not files:
+            return
+        seen = set()
+        unique = []
+        for path in files:
+            if path and path not in seen:
+                seen.add(path)
+                unique.append(path)
+            if len(unique) >= 5:
+                break
+        for cmd in current_cmds:
+            cache.setdefault(cmd, unique)
+
+    for line in result.stdout.splitlines():
+        if line == "__COMMIT__":
+            flush()
+            current_cmds = set()
+            in_files = False
+            files = []
+            continue
+        if line == "__FILES__":
+            in_files = True
+            continue
+        if in_files:
+            stripped = line.strip()
+            if stripped:
+                files.append(stripped)
+        else:
+            current_cmds.update(cmd for cmd in re.findall(r'cmd_\d+', line) if cmd in needed_cmds)
+
+    flush()
+    return cache
+
+needed_cmds = {
+    lesson["source_cmd"]
+    for lesson in lessons
+    if not lesson["has_tf"] and lesson["source_cmd"] and lesson["tags_idx"] is not None
+}
+for repo_dir in [DM_SIGNAL_DIR, SCRIPT_DIR]:
+    repo_file_cache[repo_dir] = build_repo_file_cache(repo_dir, needed_cmds)
 
 for lesson in lessons:
     if lesson["has_tf"]:
@@ -70,23 +133,7 @@ for lesson in lessons:
     git_files = []
 
     for repo_dir in [DM_SIGNAL_DIR, SCRIPT_DIR]:
-        if not os.path.isdir(os.path.join(repo_dir, ".git")):
-            continue
-        try:
-            result = subprocess.run(
-                ["git", "log", f"--grep={cmd}", "--format=", "--name-only"],
-                cwd=repo_dir, capture_output=True, text=True, timeout=10
-            )
-            raw = [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
-            seen = set()
-            for f in raw:
-                if f not in seen:
-                    seen.add(f)
-                    git_files.append(f)
-                if len(git_files) >= 5:
-                    break
-        except Exception:
-            pass
+        git_files = repo_file_cache.get(repo_dir, {}).get(cmd, [])
         if git_files:
             break
 
