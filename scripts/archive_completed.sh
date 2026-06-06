@@ -28,6 +28,7 @@ ARCHIVE_DIR="$PROJECT_DIR/queue/archive"
 ARCHIVE_CMD_DIR="$ARCHIVE_DIR/cmds"
 DASHBOARD="$PROJECT_DIR/dashboard.md"
 DASH_ARCHIVE="$ARCHIVE_DIR/dashboard_archive.md"
+DASHBOARD_TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORT_DIR="$ARCHIVE_DIR/reports"
 CHRONICLE_FILE="$PROJECT_DIR/context/cmd-chronicle.md"
@@ -1408,10 +1409,18 @@ archive_karo_section() {
 
     local karo_archive="$ARCHIVE_DIR/dashboard_karo_archive.md"
     local update_start update_end
+    if ! grep -q '^## 最新更新' "$DASHBOARD" 2>/dev/null; then
+        if [[ -f "$DASHBOARD_TEMPLATE" && ! -s "$DASHBOARD" ]]; then
+            cp "$DASHBOARD_TEMPLATE" "$DASHBOARD"
+            echo "[archive] WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; restored empty dashboard from config/dashboard_template.md"
+        else
+            echo "[archive] WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; karo_section archive skipped"
+        fi
+    fi
     update_start=$(grep -n '^## 最新更新' "$DASHBOARD" | head -1 | cut -d: -f1 || true)
 
     if [[ -z "$update_start" ]]; then
-        echo "[archive] karo_section: '## 最新更新' not found, skip"
+        echo "[archive] WARN: DATA_QUALITY karo_section '## 最新更新' not found after recovery check"
         return 0
     fi
 

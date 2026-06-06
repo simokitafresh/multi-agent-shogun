@@ -1270,13 +1270,20 @@ if [[ ! -f "$DASHBOARD" ]]; then
     exit 1
 fi
 
+if ! grep -qF "$MARKER_START" "$DASHBOARD" || ! grep -qF "$MARKER_END" "$DASHBOARD"; then
+    if [[ -f "$PROJECT_DIR/config/dashboard_template.md" ]] && [[ ! -s "$DASHBOARD" ]]; then
+        cp "$PROJECT_DIR/config/dashboard_template.md" "$DASHBOARD"
+        echo "WARN: DATA_QUALITY dashboard.md auto markers missing; restored empty dashboard from config/dashboard_template.md" >&2
+    fi
+fi
+
 if ! grep -qF "$MARKER_START" "$DASHBOARD"; then
-    echo "ERROR: $MARKER_START not found in dashboard.md" >&2
+    echo "ERROR: DATA_QUALITY $MARKER_START not found in dashboard.md; refusing to overwrite non-empty dashboard without auto markers" >&2
     exit 1
 fi
 
 if ! grep -qF "$MARKER_END" "$DASHBOARD"; then
-    echo "ERROR: $MARKER_END not found in dashboard.md" >&2
+    echo "ERROR: DATA_QUALITY $MARKER_END not found in dashboard.md; refusing to overwrite non-empty dashboard without auto markers" >&2
     exit 1
 fi
 

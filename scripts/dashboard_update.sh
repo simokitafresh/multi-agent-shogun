@@ -381,6 +381,18 @@ if TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
 with open(DASHBOARD) as f:
     lines = f.read().split('\n')
 
+if not any(line.startswith(insert_target) for line in lines):
+    dashboard_is_empty = all(not line.strip() for line in lines)
+    if dashboard_is_empty and TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
+        with open(TEMPLATE_PATH) as tf:
+            template_content = tf.read()
+        atomic_write_text(DASHBOARD, template_content)
+        print(f'WARN: DATA_QUALITY dashboard.md missing {insert_target}; restored empty dashboard from template', file=sys.stderr)
+        lines = template_content.split('\n')
+    else:
+        print(f"ERROR: DATA_QUALITY '{insert_target}' section not found in dashboard.md; dashboard_update cannot append latest update", file=sys.stderr)
+        sys.exit(1)
+
 # Remove existing entry for this cmd_id (dedup) and track if it existed
 cmd_pattern = re.compile(rf'^- \*\*{re.escape(CMD_ID)}\*\*:')
 is_replacement = any(cmd_pattern.match(l) for l in lines)
@@ -396,7 +408,7 @@ for line in lines:
         inserted = True
 
 if not inserted:
-    print(f"ERROR: '{insert_target}' section not found in dashboard.md", file=sys.stderr)
+    print(f"ERROR: DATA_QUALITY '{insert_target}' section not found in dashboard.md; dashboard_update cannot append latest update", file=sys.stderr)
     sys.exit(1)
 
 content = '\n'.join(result)

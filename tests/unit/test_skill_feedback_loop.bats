@@ -636,6 +636,92 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "dashboard_update.sh restores empty dashboard from template when 最新更新 is missing" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/config/dashboard_template.md" <<'EOF'
+# Dashboard
+<!-- DASHBOARD_AUTO_START -->
+<!-- DASHBOARD_AUTO_END -->
+## 最新更新
+EOF
+    : > "$TEST_REPO/dashboard.md"
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_4000:
+    purpose: recovered purpose
+EOF
+    cat > "$TEST_REPO/queue/reports/saizo_report_cmd_4000.yaml" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_4000
+status: completed
+result:
+  summary: recovered report
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4000
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPDATED: cmd_4000 line appended"* ]]
+    [[ "$output" == *"WARN: DATA_QUALITY dashboard.md missing ## 最新更新"* ]]
+    grep -q '<!-- DASHBOARD_AUTO_START -->' "$TEST_REPO/dashboard.md"
+    grep -q '^## 最新更新' "$TEST_REPO/dashboard.md"
+    grep -q 'cmd_4000' "$TEST_REPO/dashboard.md"
+}
+
+@test "dashboard_update.sh blocks non-empty dashboard without 最新更新" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/config/dashboard_template.md" <<'EOF'
+## 最新更新
+EOF
+    printf '# Broken dashboard\nNo latest section\n' > "$TEST_REPO/dashboard.md"
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_4001:
+    purpose: blocked purpose
+EOF
+    cat > "$TEST_REPO/queue/reports/saizo_report_cmd_4001.yaml" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_4001
+status: completed
+result:
+  summary: blocked report
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4001
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ERROR: DATA_QUALITY '## 最新更新' section not found"* ]]
+    ! grep -q 'cmd_4001' "$TEST_REPO/dashboard.md"
+}
+
 @test "skill_auto_improve outputs per-skill Top3 FAIL reasons" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/cmd-complete"
     cat > "$TEST_SKILL_LOG" <<'EOF'

@@ -782,3 +782,21 @@ YAML
     # report should still be in queue/reports/ (not archived)
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_999.yaml" ]
 }
+
+@test "dashboard karo archive restores empty dashboard from template before latest-update pruning" {
+    mkdir -p "$TEST_PROJECT/config"
+    cat > "$TEST_PROJECT/config/dashboard_template.md" <<'EOF'
+# Dashboard
+<!-- DASHBOARD_AUTO_START -->
+<!-- DASHBOARD_AUTO_END -->
+## 最新更新
+EOF
+    : > "$TEST_PROJECT/dashboard.md"
+    touch "$TEST_PROJECT/queue/shogun_to_karo.yaml" "$TEST_PROJECT/queue/completed_changelog.yaml"
+
+    run bash "$TEST_PROJECT/scripts/archive_completed.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; restored empty dashboard"* ]]
+    grep -q '<!-- DASHBOARD_AUTO_START -->' "$TEST_PROJECT/dashboard.md"
+    grep -q '^## 最新更新' "$TEST_PROJECT/dashboard.md"
+}
