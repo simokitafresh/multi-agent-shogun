@@ -32,32 +32,22 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_hooks_pre_compact_save_20260607055904
+  parent_cmd: cmd_training_speed_hooks_test_result_guard_20260607061207
   project: infra
-  purpose: 'Speed-train scripts/hooks/pre_compact_save.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/hooks/test_result_guard.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: done
+  status: completed
   stop_for: []
-  target_path: scripts/hooks/pre_compact_save.sh
-  task_id: cmd_training_speed_hooks_pre_compact_save_20260607055904_normal
+  target_path: scripts/hooks/test_result_guard.sh
+  task_id: cmd_training_speed_hooks_test_result_guard_20260607061207_normal
   task_type: speed_training
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    approach_summary: 'dirname排除+P2.5 N×(grep|sed|tr)→1grep-l。5005ms→4463ms(11%削減)。bats 1/1 PASS SKIP=0。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-      approach_summary: 'dirname排除+P2.5 N×(grep|sed|tr)→1grep-l。5005ms→4463ms(11%削減)。bats 1/1 PASS SKIP=0。'
   related_lessons:
   - id: 'L454'
     summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
     detail: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+  - id: 'L240'
+    summary: 'parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293'
+    detail: 'parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293'
   - id: 'L630'
     summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
     detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
@@ -73,18 +63,15 @@ task:
   - id: 'L660'
     summary: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
     detail: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
+  - id: 'L539'
+    summary: 'cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman'
+    detail: 'cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman'
+  - id: 'L191'
+    summary: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
+    detail: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
   - id: 'L164'
     summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
     detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-  - id: 'L705'
-    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-  - id: 'L690'
-    summary: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
-    detail: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
-  - id: 'L614'
-    summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-    detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -112,24 +99,24 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L454: **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.
+      - L240: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力 "ok 293
       - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
       - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
       - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
+      - L539: cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman
+      - L191: IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす
       - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
-      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
-      - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
-      - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
     ────────────────────────────────────────
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_hooks_pre_compact_save_20260607055904_normal
+  _ac_task_id: cmd_training_speed_hooks_test_result_guard_20260607061207_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_training_speed_hooks_pre_compact_save_20260607055904.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_speed_hooks_pre_compact_save_20260607055904.yaml
+  report_filename: tobisaru_report_cmd_training_speed_hooks_test_result_guard_20260607061207.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_speed_hooks_test_result_guard_20260607061207.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -149,4 +136,15 @@ task:
     - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-  deployed_at: "2026-06-07T05:59:32"
+  deployed_at: "2026-06-07T06:12:26"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'test_result_guard.sh 6ms→5ms (17%削減): O(n)whitespace-strip → O(1)empty check。大ペイロード(30KB)で23ms→3ms (87%改善)'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'test_result_guard.sh 6ms→5ms (17%削減): O(n)whitespace-strip → O(1)empty check。大ペイロード(30KB)で23ms→3ms (87%改善)'
