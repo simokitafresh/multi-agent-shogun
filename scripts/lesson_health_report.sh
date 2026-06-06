@@ -6,7 +6,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lhr_self="${BASH_SOURCE[0]}"; [[ "$_lhr_self" != /* ]] && _lhr_self="$PWD/$_lhr_self"
+SCRIPT_DIR="${_lhr_self%/scripts/lesson_health_report.sh}"
 PROJECTS_YAML="$SCRIPT_DIR/config/projects.yaml"
 GATE_METRICS_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 LESSON_TRACKING_TSV="$SCRIPT_DIR/logs/lesson_tracking.tsv"
@@ -22,6 +23,8 @@ from pathlib import Path
 
 import yaml
 
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 SCRIPT_DIR = os.environ["SCRIPT_DIR"]
 PROJECTS_YAML = os.environ["PROJECTS_YAML"]
 GATE_METRICS_LOG = os.environ["GATE_METRICS_LOG"]
@@ -32,7 +35,7 @@ BASELINE_FILE = os.environ["BASELINE_FILE"]
 def load_projects():
     """config/projects.yamlからactiveプロジェクト一覧を取得"""
     with open(PROJECTS_YAML, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=_CLoader)
     projects = []
     for p in data.get("projects", []):
         if p.get("status") == "active":
@@ -46,7 +49,7 @@ def load_lessons(project_id):
     if not os.path.exists(path):
         return []
     with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=_CLoader)
     if not isinstance(data, dict):
         return []
     return data.get("lessons", []) or []
@@ -163,7 +166,7 @@ def load_baseline():
     if not os.path.exists(BASELINE_FILE):
         return None
     with open(BASELINE_FILE, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        return yaml.load(f, Loader=_CLoader)
 
 
 def save_baseline(data):
