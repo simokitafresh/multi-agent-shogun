@@ -97,7 +97,16 @@ def parse_row(path: Path, raw_line: str, lineno: int) -> tuple[str, str, str, st
 
 chronicle_path = Path(sys.argv[1])
 archive_dir = Path(sys.argv[2])
-records: list[dict[str, object]] = []
+today = date.today()
+start_7 = today - timedelta(days=6)
+start_30 = today - timedelta(days=29)
+
+count_7 = 0
+count_30 = 0
+project_counts: Counter[str] = Counter()
+type_counts: Counter[str] = Counter()
+recent_project_counts: Counter[str] = Counter()
+recent_type_counts: Counter[str] = Counter()
 
 
 def infer_year_from_path(path: Path) -> int | None:
@@ -111,6 +120,7 @@ def collect_chronicle_paths() -> list[Path]:
 
 
 def parse_chronicle(path: Path) -> None:
+    global count_7, count_30
     current_year = infer_year_from_path(path)
     for lineno, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         month_match = MONTH_RE.match(raw_line)
@@ -138,45 +148,21 @@ def parse_chronicle(path: Path) -> None:
             print(f"WARNING: skipping invalid date at {path}:{lineno}: {mm_dd} ({exc})", file=sys.stderr)
             continue
 
-        records.append(
-            {
-                "cmd_id": cmd_id,
-                "title": title,
-                "project": normalize_project(project),
-                "date": record_date,
-                "key_result": "" if blankish(key_result) else key_result,
-                "type": infer_type(title, key_result),
-            }
-        )
+        normalized_project = normalize_project(project)
+        record_type = infer_type(title, key_result)
+        project_counts[normalized_project] += 1
+        type_counts[record_type] += 1
+
+        if start_30 <= record_date <= today:
+            count_30 += 1
+            recent_project_counts[normalized_project] += 1
+            recent_type_counts[record_type] += 1
+            if record_date >= start_7:
+                count_7 += 1
 
 
 for path in collect_chronicle_paths():
     parse_chronicle(path)
-
-
-today = date.today()
-start_7 = today - timedelta(days=6)
-start_30 = today - timedelta(days=29)
-
-count_7 = 0
-count_30 = 0
-project_counts: Counter[str] = Counter()
-type_counts: Counter[str] = Counter()
-recent_project_counts: Counter[str] = Counter()
-recent_type_counts: Counter[str] = Counter()
-
-for record in records:
-    d = record["date"]
-    proj = record["project"]
-    rtype = record["type"]
-    project_counts[proj] += 1
-    type_counts[rtype] += 1
-    if start_30 <= d <= today:
-        count_30 += 1
-        recent_project_counts[proj] += 1
-        recent_type_counts[rtype] += 1
-        if d >= start_7:
-            count_7 += 1
 
 recent_rows = [
     ["last_7_days", start_7.isoformat(), today.isoformat(), str(count_7), f"{count_7 / 7:.1f}"],

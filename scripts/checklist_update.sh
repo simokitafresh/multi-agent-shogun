@@ -44,159 +44,166 @@ while [ $attempt -lt $max_attempts ]; do
     (
         flock -w 10 200 || exit 100
 
-        CHECKLIST_PATH="$CHECKLIST_FILE" \
-        ITEM_NUMBER="$ITEM_NUMBER" \
-        STATUS="$STATUS" \
-        RESULT="$RESULT" \
-        NINJA_NAME="$NINJA_NAME" \
-        python3 -c "
-import os, sys, tempfile, re
+        if ! [[ "$ITEM_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "FATAL: checklist_update: item_number must be an integer: $ITEM_NUMBER" >&2
+            exit 2
+        fi
 
-checklist_path = os.environ['CHECKLIST_PATH']
-try:
-    item_number = int(os.environ['ITEM_NUMBER'])
-except ValueError:
-    print(f'FATAL: checklist_update: item_number must be an integer: {os.environ[\"ITEM_NUMBER\"]}', file=sys.stderr)
-    sys.exit(2)
-status = os.environ['STATUS']
-result = os.environ['RESULT']
-ninja_name = os.environ['NINJA_NAME']
-
-def split_markdown_row(line):
-    cells = []
-    current = []
-    escaped = False
-    for char in line.strip():
-        if char == '|' and not escaped:
-            cells.append(''.join(current))
-            current = []
-            escaped = False
+        tmp_path="$(mktemp "$CHECKLIST_DIR/.checklist_tmp_XXXXXX")"
+        summary_path="${tmp_path}.summary"
+        if ! awk \
+            -v item_number="$ITEM_NUMBER" \
+            -v status="$STATUS" \
+            -v result="$RESULT" \
+            -v ninja_name="$NINJA_NAME" \
+            -v summary_path="$summary_path" \
+            '
+function trim(s) {
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+    return s
+}
+function lower_trim(s) {
+    return tolower(trim(s))
+}
+function split_markdown_row(line, cells,    s,i,char,current,n,escaped) {
+    delete cells
+    s = trim(line)
+    current = ""
+    n = 1
+    escaped = 0
+    for (i = 1; i <= length(s); i++) {
+        char = substr(s, i, 1)
+        if (char == "|" && !escaped) {
+            cells[n++] = current
+            current = ""
+            escaped = 0
             continue
-        current.append(char)
-        escaped = (char == '\\\\' and not escaped)
-        if char != '\\\\':
-            escaped = False
-    cells.append(''.join(current))
-    return cells
-
-def markdown_cell(value):
-    return str(value).replace('\\r', ' ').replace('\\n', ' ').replace('|', '\\\\|')
-
-def row_cells(line):
-    cells = split_markdown_row(line)
-    if cells and cells[0].strip() == '':
-        cells = cells[1:]
-    if cells and cells[-1].strip() == '':
-        cells = cells[:-1]
-    return [cell.strip().lower() for cell in cells]
-
-def is_checklist_header(line):
-    cells = row_cells(line)
-    if len(cells) < 8:
-        return False
-    return (
-        cells[0] in ('#', 'no')
-        and cells[1] in ('target', '対象')
-        and cells[4] in ('status', '状態')
-        and cells[5] in ('result', '結果')
-        and cells[6] in ('owner', '担当')
-        and cells[7] in ('actual', '実績')
-    )
-
-def is_table_separator(line):
-    return bool(re.match(r'^\|\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$', line.strip()))
-
-with open(checklist_path, 'r', encoding='utf-8') as f:
-    lines = f.readlines()
-
-# Parse and update the table
-updated = False
-checklist_header_seen = any(is_checklist_header(line.strip()) for line in lines)
-done_count = 0
-total_count = 0
-
-# First pass: find and update the target row
-new_lines = []
-in_checklist_table = False
-for line in lines:
-    stripped = line.strip()
-    if is_checklist_header(stripped):
-        in_checklist_table = True
-        new_lines.append(line)
-        continue
-    if in_checklist_table and not stripped.startswith('|'):
-        in_checklist_table = False
-    should_process_row = (in_checklist_table or not checklist_header_seen) and not is_table_separator(stripped)
-    # Match table data rows: | N | ... |
-    m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
-    if should_process_row and m:
-        row_num = int(m.group(1))
-        # Split into cells
-        cells = split_markdown_row(stripped)
-        # cells[0]='' cells[1]=N cells[2]=対象 ... cells[5]=状態 cells[6]=結果 cells[7]=担当 cells[8]=実績
-        if len(cells) >= 9 and row_num == item_number:
-            cells[5] = f' {markdown_cell(status)} '
-            cells[6] = f' {markdown_cell(result)} '
-            cells[7] = f' {markdown_cell(ninja_name)} '
-            new_line = '|'.join(cells)
-            if not new_line.endswith('\n'):
-                new_line += '\n'
-            new_lines.append(new_line)
-            updated = True
+        }
+        current = current char
+        if (char == "\\" && !escaped) {
+            escaped = 1
+        } else if (char != "\\") {
+            escaped = 0
+        }
+    }
+    cells[n] = current
+    return n
+}
+function markdown_cell(value,    out) {
+    out = value
+    gsub(/\r/, " ", out)
+    gsub(/\n/, " ", out)
+    gsub(/\|/, "\\|", out)
+    return out
+}
+function join_cells(cells, n,    i,out) {
+    out = cells[1]
+    for (i = 2; i <= n; i++) {
+        out = out "|" cells[i]
+    }
+    return out
+}
+function is_table_separator(line) {
+    return trim(line) ~ /^\|[[:space:]]*:?-{2,}:?[[:space:]]*(\|[[:space:]]*:?-{2,}:?[[:space:]]*)+\|?$/
+}
+function is_checklist_header(line,    cells,n,start,end,len) {
+    n = split_markdown_row(line, cells)
+    start = 1
+    end = n
+    if (trim(cells[start]) == "") start++
+    if (trim(cells[end]) == "") end--
+    len = end - start + 1
+    if (len < 8) return 0
+    return (lower_trim(cells[start]) == "#" || lower_trim(cells[start]) == "no") &&
+        (lower_trim(cells[start + 1]) == "target" || lower_trim(cells[start + 1]) == "対象") &&
+        (lower_trim(cells[start + 4]) == "status" || lower_trim(cells[start + 4]) == "状態") &&
+        (lower_trim(cells[start + 5]) == "result" || lower_trim(cells[start + 5]) == "結果") &&
+        (lower_trim(cells[start + 6]) == "owner" || lower_trim(cells[start + 6]) == "担当") &&
+        (lower_trim(cells[start + 7]) == "actual" || lower_trim(cells[start + 7]) == "実績")
+}
+{
+    lines[NR] = $0
+    if (is_checklist_header($0)) checklist_header_seen = 1
+}
+END {
+    updated = 0
+    in_checklist_table = 0
+    for (i = 1; i <= NR; i++) {
+        stripped = trim(lines[i])
+        if (is_checklist_header(stripped)) {
+            in_checklist_table = 1
+            new_lines[++new_count] = lines[i]
             continue
-    new_lines.append(line)
+        }
+        if (in_checklist_table && stripped !~ /^\|/) {
+            in_checklist_table = 0
+        }
+        should_process_row = (in_checklist_table || !checklist_header_seen) && !is_table_separator(stripped)
+        if (should_process_row && match(stripped, /^\|[[:space:]]*[0-9]+[[:space:]]*\|/)) {
+            row_num = substr(stripped, RSTART, RLENGTH)
+            gsub(/[^0-9]/, "", row_num)
+            n = split_markdown_row(stripped, cells)
+            if (n >= 9 && row_num + 0 == item_number + 0) {
+                cells[6] = " " markdown_cell(status) " "
+                cells[7] = " " markdown_cell(result) " "
+                cells[8] = " " markdown_cell(ninja_name) " "
+                new_lines[++new_count] = join_cells(cells, n)
+                updated = 1
+                continue
+            }
+        }
+        new_lines[++new_count] = lines[i]
+    }
 
-if not updated:
-    print(f'FATAL: checklist_update: item_number {item_number} not found', file=sys.stderr)
-    sys.exit(2)
+    if (!updated) {
+        print "FATAL: checklist_update: item_number " item_number " not found" > "/dev/stderr"
+        exit 2
+    }
 
-# Second pass: count done items and recalculate progress
-done_count = 0
-total_count = 0
-in_checklist_table = False
-for line in new_lines:
-    stripped = line.strip()
-    if is_checklist_header(stripped):
-        in_checklist_table = True
-        continue
-    if in_checklist_table and not stripped.startswith('|'):
-        in_checklist_table = False
-    should_count_row = (in_checklist_table or not checklist_header_seen) and not is_table_separator(stripped)
-    m = re.match(r'^\|\s*(\d+)\s*\|', stripped)
-    if should_count_row and m:
-        cells = split_markdown_row(stripped)
-        if len(cells) >= 9:
-            total_count += 1
-            cell_status = cells[5].strip()
-            if cell_status.lower() in ('done', 'pass', 'o', 'ok'):
-                done_count += 1
+    done_count = 0
+    total_count = 0
+    in_checklist_table = 0
+    for (i = 1; i <= new_count; i++) {
+        stripped = trim(new_lines[i])
+        if (is_checklist_header(stripped)) {
+            in_checklist_table = 1
+            continue
+        }
+        if (in_checklist_table && stripped !~ /^\|/) {
+            in_checklist_table = 0
+        }
+        should_count_row = (in_checklist_table || !checklist_header_seen) && !is_table_separator(stripped)
+        if (should_count_row && match(stripped, /^\|[[:space:]]*[0-9]+[[:space:]]*\|/)) {
+            n = split_markdown_row(stripped, cells)
+            if (n >= 9) {
+                total_count++
+                cell_status = lower_trim(cells[6])
+                if (cell_status == "done" || cell_status == "pass" || cell_status == "o" || cell_status == "ok") {
+                    done_count++
+                }
+            }
+        }
+    }
 
-# Update progress line: # 進捗: N/M (X%)
-pct = int(done_count * 100 / total_count) if total_count > 0 else 0
-progress_line = f'# 進捗: {done_count}/{total_count} ({pct}%)\n'
-
-final_lines = []
-progress_updated = False
-for line in new_lines:
-    if not progress_updated and line.startswith('# 進捗:'):
-        final_lines.append(progress_line)
-        progress_updated = True
-    else:
-        final_lines.append(line)
-
-# Atomic write via tempfile + os.replace
-dir_name = os.path.dirname(checklist_path)
-fd, tmp_path = tempfile.mkstemp(dir=dir_name, prefix='.checklist_tmp_')
-try:
-    with os.fdopen(fd, 'w', encoding='utf-8') as tmp_f:
-        tmp_f.writelines(final_lines)
-    os.replace(tmp_path, checklist_path)
-except Exception:
-    os.unlink(tmp_path)
-    raise
-
-print(f'[checklist_update] Updated item {item_number}: status={status} result={result} ninja={ninja_name} progress={done_count}/{total_count} ({pct}%)')
-"
+    pct = total_count > 0 ? int(done_count * 100 / total_count) : 0
+    progress_updated = 0
+    for (i = 1; i <= new_count; i++) {
+        if (!progress_updated && new_lines[i] ~ /^# 進捗:/) {
+            print "# 進捗: " done_count "/" total_count " (" pct "%)"
+            progress_updated = 1
+        } else {
+            print new_lines[i]
+        }
+    }
+    print "[checklist_update] Updated item " item_number ": status=" status " result=" result " ninja=" ninja_name " progress=" done_count "/" total_count " (" pct "%)" > summary_path
+}
+' "$CHECKLIST_FILE" > "$tmp_path"; then
+            rm -f "$tmp_path" "$summary_path"
+            exit 2
+        fi
+        mv "$tmp_path" "$CHECKLIST_FILE"
+        cat "$summary_path"
+        rm -f "$summary_path"
     ) 200>"$LOCKFILE"
     exit_code=$?
 
