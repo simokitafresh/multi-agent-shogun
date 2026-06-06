@@ -1162,18 +1162,18 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:37:42"
   - script_path: "scripts/health_check.sh"
-    status: pending
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 15
+    before_real_ms: 19
+    after_real_ms: 14
+    real_measurement_command: "time bash -c 'source scripts/lib/agent_config.sh; ...' (init cost)"
+    test_result: "bash_n PASS; no batsfile; daemon script"
+    commit: "73ff33ebe"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:48:00"
   - script_path: "scripts/hooks/bash_state_hook.sh"
-    status: pending
+    status: assigned
     before_ms: 6
     after_ms: ""
     before_real_ms: ""
@@ -1181,10 +1181,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T05:43:11"
   - script_path: "scripts/hooks/block_destructive.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1192,8 +1192,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T05:43:55"
   - script_path: "scripts/hooks/git-pre-commit.sh"
     status: pending
     before_ms: 16
@@ -2800,4 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-
