@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-07 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-07T08:13:15+09:00 -->
+<!-- generated_at: 2026-06-07T08:30:57+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-07T08:30:57+09:00 | terminal | response | 未読0件。遅延通知。idle待機。 [meta] stop_reason=tool_use
+- 2026-06-07T08:30:36+09:00 | terminal | response | APPROVE送信済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-07T08:30:34+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_write_shogun_20260607083004 初回配備開始 (title=(untitled), ninja=tobisaru) 📋 https://gis…
+- 2026-06-07T08:30:01+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_write_karo_20260607082939 初回配備開始 (title=(untitled), ninja=kotaro) 📋 https://gist.gi…
+- 2026-06-07T08:19:12+09:00 | terminal | response | APPROVE送信済み。idle待機。 [meta] stop_reason=tool_use
+- 2026-06-07T08:18:45+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_write_20260607081825 初回配備開始 (title=(untitled), ninja=hanzo) 📋 https://gist.github.c…
+- 2026-06-07T08:15:54+09:00 | terminal | response | ABテスト結果整理: before=304ms/after=322msで改善なし。計測不可能な改善幅。 [meta] stop_reason=tool_use
 - 2026-06-07T08:13:14+09:00 | terminal | response | **残114本の内訳:** | カテゴリ | 残数 | 備考 | |---------|------|------| | scripts/ | 108本 | メインスクリプト群 | | hooks/ | 5本 | prompt_state…
 - 2026-06-07T08:12:35+09:00 | terminal | inbound | 残っているものの内訳は？
 - 2026-06-07T08:12:05+09:00 | terminal | response | タスク完了。 **cmd_training_speed_lesson_merge_20260607075457 完了報告** - **対象**: `scripts/lesson_merge.sh` - **改善**: Python sub…
-- 2026-06-07T08:10:24+09:00 | terminal | response | **速度改善修行 実績:** | 指標 | 値 | |------|-----| | 完了 | 140/254本 (55%) | | 計測前合計 | 356.8秒 | | 計測後合計 | 112.4秒 | | **削減** | **244…
-- 2026-06-07T08:09:57+09:00 | terminal | inbound | 133本でどれだけ早くなった？
-- 2026-06-07T08:09:22+09:00 | terminal | response | 速度修行標準テンプレート（lesson_update_score、kotaro向け）。 [meta] stop_reason=tool_use
-- 2026-06-07T08:08:53+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_update_score_20260607080833 初回配備開始 (title=(untitled), ninja=kotaro) 📋 https://gist.…
-- 2026-06-07T08:08:17+09:00 | terminal | response | 殿。速度改善修行の進捗を報告する。 **速度改善エンドレス修行: 133/254完了 (52%)** - 前セッション終了時: 60本 → 現在: 133本 (+73本、殿の介入なしで自走) - 全6忍者稼働中だが、**家老(Codex)…
-- 2026-06-07T08:07:36+09:00 | terminal | inbound | どこまですすんだ？
-- 2026-06-07T08:04:29+09:00 | terminal | response | idle待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - gunshi補足確認（APPROVE）。タスク完了。idleで待機。 [meta] stop_reason=tool_use
