@@ -216,17 +216,21 @@ _PID_CI_RED=$!
 echo "■ 将軍watcher環境変数"
 check_shogun_watcher_escalation_env
 
-# --- Parallel launch: Gate 1, 12, 13 (独立サブスクリプト並列化 cmd_1516) ---
-_TMP_G1=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
+# --- Parallel launch: independent sub-gates ---
+_TMP_G1=$(mktemp) _TMP_G2=$(mktemp) _TMP_G3=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
 _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
 _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 	_TMP_SCRIPT_INDEX=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
+	"$GATE_DIR/gate_p_average_freshness.sh" > "$_TMP_G2" 2>&1 &
+	_PID_G2=$!
+	"$GATE_DIR/gate_cmd_state.sh" > "$_TMP_G3" 2>&1 &
+	_PID_G3=$!
 	if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
 	    bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
 	    _PID_G12=$!
@@ -489,7 +493,8 @@ fi
 
 # --- Gate 2: p̄鮮度 (Step 2.57) ---
 echo "■ p̄鮮度"
-result2=$("$GATE_DIR/gate_p_average_freshness.sh" 2>&1 | tail -1)
+wait $_PID_G2 || true
+result2=$(tail -1 "$_TMP_G2")
 echo "  $result2"
 if echo "$result2" | grep -q "ALERT\|WARN"; then
     if echo "$result2" | grep -q "ALERT"; then
@@ -548,7 +553,8 @@ show_semantic_no_match_metrics
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ cmd委任状態"
-result3=$("$GATE_DIR/gate_cmd_state.sh" 2>&1 | tail -1)
+wait $_PID_G3 || true
+result3=$(tail -1 "$_TMP_G3")
 echo "  $result3"
 if echo "$result3" | grep -q "ALERT"; then
     overall="ALERT"
