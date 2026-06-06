@@ -248,15 +248,19 @@ memory_db_needs_rebuild() {
     fi
   done
 
-  local newer_archive
-  newer_archive="$(
-    find \
+  # WSL2 NTFS最適化: find(3700ms)→ディレクトリmtime比較(O(1))
+  # アーカイブファイルは追加のみ(不変)なのでディレクトリmtimeが最新ファイルmtimeと等価
+  local newer_archive=""
+  for _check_dir in \
       "$ROOT_DIR/logs/lord_conversation_archive" \
       "$ROOT_DIR/queue/archive/cmds" \
-      "$ROOT_DIR/queue/archive/bulletin_board" \
-      -type f \( -name '*.jsonl' -o -name '*.yaml' \) \
-      -newer "$memory_db" -print -quit 2>/dev/null || true
-  )"
+      "$ROOT_DIR/queue/archive/bulletin_board"
+  do
+    if [[ -d "$_check_dir" && "$_check_dir" -nt "$memory_db" ]]; then
+      newer_archive="$_check_dir"
+      break
+    fi
+  done
   if [ -n "$newer_archive" ]; then
     return 0
   fi
@@ -660,11 +664,14 @@ uncommitted_count=0
 uncommitted_files=""
 if command -v git &>/dev/null && git -C "$ROOT_DIR" rev-parse --git-dir &>/dev/null; then
   # Staged + unstaged modified + untracked (excluding queue/ logs/ etc.)
-  # WSL2 NTFS最適化: git diff HEAD(~0.82s) + ls-files --others は git status --porcelain(~1.1s)より速い
-  uncommitted_files=$(
-    { git -C "$ROOT_DIR" diff HEAD --name-only -- scripts/ instructions/ config/ context/ CLAUDE.md;
-      git -C "$ROOT_DIR" ls-files --others --exclude-standard -- scripts/ instructions/ config/ context/ CLAUDE.md; } 2>/dev/null | head -20
-  )
+  # WSL2 NTFS最適化: 各ディレクトリを並列git diffで最大3xスループット向上
+  _uc_tmp1=$(mktemp); _uc_tmp2=$(mktemp); _uc_tmp3=$(mktemp)
+  git -C "$ROOT_DIR" diff HEAD --name-only -- context/ > "$_uc_tmp1" 2>/dev/null &
+  git -C "$ROOT_DIR" diff HEAD --name-only -- scripts/ instructions/ config/ CLAUDE.md > "$_uc_tmp2" 2>/dev/null &
+  git -C "$ROOT_DIR" ls-files --others --exclude-standard -- scripts/ instructions/ config/ context/ CLAUDE.md > "$_uc_tmp3" 2>/dev/null &
+  wait
+  uncommitted_files=$(cat "$_uc_tmp1" "$_uc_tmp2" "$_uc_tmp3" 2>/dev/null | sort -u | head -20)
+  rm -f "$_uc_tmp1" "$_uc_tmp2" "$_uc_tmp3"
   uncommitted_count=$(echo "$uncommitted_files" | grep -c '[^ ]' || true)
 fi
 echo "[6.未commit] ${uncommitted_count}件"
