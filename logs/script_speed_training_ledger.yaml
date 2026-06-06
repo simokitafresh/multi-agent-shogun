@@ -810,16 +810,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_karo_startup.sh"
-    status: pending
+    status: completed
     before_ms: 19
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: 10
+    before_real_ms: 6640
+    after_real_ms: 4760
+    real_measurement_command: "env KARO_WA_RATE_CACHE=/tmp/hayate_karo_startup_speed/<run>/wa_rate KARO_NINJA_WA_CACHE=/tmp/hayate_karo_startup_speed/<run>/ninja_wa KARO_SKILL_SUMMARY_CACHE=/tmp/hayate_karo_startup_speed/<run>/skill_summary KARO_AGGREGATE_CACHE=/tmp/hayate_karo_startup_speed/<run>/aggregate KARO_STARTUP_SEMANTIC_CACHE_DIR=/tmp/hayate_karo_startup_speed/<run>/semantic bash scripts/gates/gate_karo_startup.sh"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_karo_startup.bats PASS 24/24 SKIP=0; before_real median 6640ms (6.64,3.17,6.68,9.68,6.60); after_real median 4760ms (3.59,4.76,3.29,5.61,4.79)"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T04:09:41"
   - script_path: "scripts/gates/gate_knowledge_freshness.sh"
     status: pending
     before_ms: 15
@@ -843,16 +843,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T04:07:26"
   - script_path: "scripts/gates/gate_loop_health.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1080
+    after_real_ms: 880
+    real_measurement_command: "sandbox copy with real logs/reports symlink and stub insight_write: bash <tmp>/scripts/gates/gate_loop_health.sh"
+    test_result: "bash_n_pass;bats_test_gate_loop_health_4_4_pass_skip0;output_diff_empty"
+    commit: "bf55601e4"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T04:13:53"
   - script_path: "scripts/gates/gate_mcp_access.sh"
     status: pending
     before_ms: 13

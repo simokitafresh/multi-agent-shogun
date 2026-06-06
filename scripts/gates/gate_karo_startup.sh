@@ -58,6 +58,108 @@ phase_guide_cached() {
     tail -n +2 "$cache_file"
 }
 
+collect_causal_backlink_hits() {
+    local pattern_file="$1"
+    local backlink_cache_dir="$2"
+    local backlink_cache_key backlink_cache_file backlink_lock_dir backlink_tmp waited backlink_hits
+
+    backlink_cache_key="$(sha256sum "$pattern_file" 2>/dev/null | awk '{print $1}')"
+    backlink_cache_file="$backlink_cache_dir/${backlink_cache_key}.cache"
+    backlink_lock_dir="$backlink_cache_file.lock"
+    mkdir -p "$backlink_cache_dir" 2>/dev/null || true
+
+    if [ -f "$backlink_cache_file" ]; then
+        cat "$backlink_cache_file" 2>/dev/null || true
+        return 0
+    fi
+
+    if mkdir "$backlink_lock_dir" 2>/dev/null; then
+        if command -v timeout >/dev/null 2>&1; then
+            backlink_hits="$(
+                cd "$SCRIPT_DIR" \
+                    && timeout -k 1 1 rg -n --fixed-strings --hidden \
+                        --glob '!.git/**' \
+                        --glob '!queue/archive/**' \
+                        --glob '!queue/**' \
+                        --glob '!archive/**' \
+                        --glob '!logs/**' \
+                        --glob '!tasks/**' \
+                        --glob '!tmp/**' \
+                        --glob '!data/**' \
+                        --glob '!node_modules/**' \
+                        --glob '!__pycache__/**' \
+                        -f "$pattern_file" . 2>/dev/null \
+                    || true
+            )"
+        else
+            backlink_hits="$(
+                cd "$SCRIPT_DIR" \
+                    && rg -n --fixed-strings --hidden \
+                        --glob '!.git/**' \
+                        --glob '!queue/archive/**' \
+                        --glob '!queue/**' \
+                        --glob '!archive/**' \
+                        --glob '!logs/**' \
+                        --glob '!tasks/**' \
+                        --glob '!tmp/**' \
+                        --glob '!data/**' \
+                        --glob '!node_modules/**' \
+                        --glob '!__pycache__/**' \
+                        -f "$pattern_file" . 2>/dev/null \
+                    || true
+            )"
+        fi
+        backlink_tmp="$(mktemp)"
+        printf '%s\n' "$backlink_hits" > "$backlink_tmp" 2>/dev/null || true
+        mv "$backlink_tmp" "$backlink_cache_file" 2>/dev/null || rm -f "$backlink_tmp"
+        rmdir "$backlink_lock_dir" 2>/dev/null || true
+        printf '%s\n' "$backlink_hits"
+        return 0
+    fi
+
+    waited=0
+    while [ "$waited" -lt 20 ] && [ ! -f "$backlink_cache_file" ]; do
+        sleep 0.05
+        waited=$((waited + 1))
+    done
+    if [ -f "$backlink_cache_file" ]; then
+        cat "$backlink_cache_file" 2>/dev/null || true
+        return 0
+    fi
+
+    if command -v timeout >/dev/null 2>&1; then
+        cd "$SCRIPT_DIR" \
+            && timeout -k 1 1 rg -n --fixed-strings --hidden \
+                --glob '!.git/**' \
+                --glob '!queue/archive/**' \
+                --glob '!queue/**' \
+                --glob '!archive/**' \
+                --glob '!logs/**' \
+                --glob '!tasks/**' \
+                --glob '!tmp/**' \
+                --glob '!data/**' \
+                --glob '!node_modules/**' \
+                --glob '!__pycache__/**' \
+                -f "$pattern_file" . 2>/dev/null \
+            || true
+    else
+        cd "$SCRIPT_DIR" \
+            && rg -n --fixed-strings --hidden \
+                --glob '!.git/**' \
+                --glob '!queue/archive/**' \
+                --glob '!queue/**' \
+                --glob '!archive/**' \
+                --glob '!logs/**' \
+                --glob '!tasks/**' \
+                --glob '!tmp/**' \
+                --glob '!data/**' \
+                --glob '!node_modules/**' \
+                --glob '!__pycache__/**' \
+                -f "$pattern_file" . 2>/dev/null \
+            || true
+    fi
+}
+
 show_active_cmd_semantic_context_one() {
     local semantic_script="$SCRIPT_DIR/scripts/semantic_search.sh"
     local causal_script="$SCRIPT_DIR/scripts/causal_backlinks.sh"
@@ -69,6 +171,7 @@ show_active_cmd_semantic_context_one() {
     local semantic_output links link_id backlink_output rc
     local link_tmp link_idx link_tmp_list
     local semantic_cache_dir semantic_cache_key semantic_cache_file semantic_cache_sig semantic_current_sig
+    local backlink_cache_dir
 
     echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
     semantic_cache_dir="${KARO_STARTUP_SEMANTIC_CACHE_DIR:-/tmp/karo_startup_semantic_cache}"
@@ -136,41 +239,8 @@ show_active_cmd_semantic_context_one() {
                     [ -n "$link_id" ] || continue
                     printf '[[%s]]\n' "$link_id" >> "$pattern_file"
                 done <<< "$links"
-                if command -v timeout >/dev/null 2>&1; then
-                    backlink_hits="$(
-                        cd "$SCRIPT_DIR" \
-                            && timeout -k 1 1 rg -n --fixed-strings --hidden \
-                                --glob '!.git/**' \
-                                --glob '!queue/archive/**' \
-                                --glob '!queue/**' \
-                                --glob '!archive/**' \
-                                --glob '!logs/**' \
-                                --glob '!tasks/**' \
-                                --glob '!tmp/**' \
-                                --glob '!data/**' \
-                                --glob '!node_modules/**' \
-                                --glob '!__pycache__/**' \
-                                -f "$pattern_file" . 2>/dev/null \
-                            || true
-                    )"
-                else
-                    backlink_hits="$(
-                        cd "$SCRIPT_DIR" \
-                            && rg -n --fixed-strings --hidden \
-                                --glob '!.git/**' \
-                                --glob '!queue/archive/**' \
-                                --glob '!queue/**' \
-                                --glob '!archive/**' \
-                                --glob '!logs/**' \
-                                --glob '!tasks/**' \
-                                --glob '!tmp/**' \
-                                --glob '!data/**' \
-                                --glob '!node_modules/**' \
-                                --glob '!__pycache__/**' \
-                                -f "$pattern_file" . 2>/dev/null \
-                            || true
-                    )"
-                fi
+                backlink_cache_dir="${KARO_STARTUP_BACKLINK_CACHE_DIR:-$semantic_cache_dir/backlinks}"
+                backlink_hits="$(collect_causal_backlink_hits "$pattern_file" "$backlink_cache_dir")"
                 rm -f "$pattern_file"
                 while IFS= read -r link_id; do
                     [ -n "$link_id" ] || continue
@@ -202,11 +272,13 @@ show_active_cmd_semantic_context_one() {
 show_active_cmd_semantic_context() {
     local semantic_script="$SCRIPT_DIR/scripts/semantic_search.sh"
     local task_file ninja status cmd_id target_path active_count shown_count
-    local out_file shown_file pid
+    local out_file shown_file pid first_ninja
     local active_ninjas=()
     local out_files=()
     local shown_files=()
     local pids=()
+    declare -A target_seen=()
+    declare -A target_first_ninja=()
 
     echo "■ 稼働中cmd関連因果概念"
     if [ ! -f "$semantic_script" ]; then
@@ -262,10 +334,27 @@ show_active_cmd_semantic_context() {
             continue
         fi
 
+        if [ -n "${target_seen[$target_path]:-}" ]; then
+            out_file=$(mktemp)
+            shown_file=$(mktemp)
+            first_ninja="${target_first_ninja[$target_path]}"
+            {
+                echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
+                echo "    semantic_context_reused: ${first_ninja} と同一target_pathのため再利用"
+            } > "$out_file"
+            active_ninjas+=("$ninja")
+            out_files+=("$out_file")
+            shown_files+=("$shown_file")
+            pids+=("")
+            continue
+        fi
+
         out_file=$(mktemp)
         shown_file=$(mktemp)
         show_active_cmd_semantic_context_one "$ninja" "$cmd_id" "$target_path" "$shown_file" > "$out_file" &
         pid=$!
+        target_seen[$target_path]=1
+        target_first_ninja[$target_path]="$ninja"
         active_ninjas+=("$ninja")
         out_files+=("$out_file")
         shown_files+=("$shown_file")
