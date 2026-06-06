@@ -196,10 +196,11 @@ if section_refs:
 # Gitignore check — detect gitignored files with commit ACs (workaround prevention)
 gitignored = []
 rel_paths = []
+has_commit_ac = bool(re.search(r'commit|push|git\s+add', cmd_text, re.IGNORECASE))
 for p in sorted(paths):
     rel_path = p if not p.startswith('/') else os.path.relpath(p, repo_root)
     rel_paths.append(rel_path)
-if rel_paths:
+if rel_paths and (cmd_id != '-' or has_commit_ac):
     try:
         import subprocess
         result = subprocess.run(
@@ -212,7 +213,6 @@ if rel_paths:
         gitignored = []
 
 if gitignored:
-    has_commit_ac = bool(re.search(r'commit|push|git\s+add', cmd_text, re.IGNORECASE))
     print(f'\n--- Gitignore Check ---')
     for gp in gitignored:
         if has_commit_ac:
@@ -294,6 +294,10 @@ else:
     print(f'\nRESULT: ALL PATHS VERIFIED')
     sys.exit(0)
 " <<< "$CMD_TEXT"
+
+if [[ "$CMD_ID" == "-" ]]; then
+    exit 0
+fi
 
 # --- Adaptive Gating冷え観点サマリ (draft review時の盲点提示) ---
 REVIEW_LOG="${REPO_ROOT}/logs/gunshi_review_log.yaml"
