@@ -942,16 +942,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_shogun_memory.sh"
-    status: pending
+    status: completed
     before_ms: 21
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 109
+    after_real_ms: 61
+    real_measurement_command: "time bash scripts/gates/gate_shogun_memory.sh"
+    test_result: "bats tests/unit/test_gate_shogun_memory.bats: 4 passed, 0 skipped"
+    commit: "2081139cb"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T04:36:00"
   - script_path: "scripts/gates/gate_shogun_startup.sh"
     status: pending
     before_ms: 19
