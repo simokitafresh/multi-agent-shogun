@@ -876,16 +876,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T04:21:35"
   - script_path: "scripts/gates/gate_ninja_workaround_rate.sh"
-    status: pending
+    status: completed
     before_ms: 23
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 50
+    after_real_ms: 40
+    real_measurement_command: "rm -f /tmp/shogun_wa_rate_cache_all_30.txt; bash scripts/gates/gate_ninja_workaround_rate.sh --quiet --last 30 >/dev/null"
+    test_result: "bash_n_pass;quiet_and_ninja_output_diff_empty;cache_hit_output_diff_empty;skip0"
+    commit: "87b5ddffe"
     assigned_to: ""
-    updated_at: ""
+    updated_at: "2026-06-07T04:23:23"
   - script_path: "scripts/gates/gate_p_average_freshness.sh"
     status: pending
     before_ms: 8
