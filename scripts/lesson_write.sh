@@ -789,8 +789,102 @@ while [ $attempt -lt $max_attempts ]; do
             exit 1
         fi
 
+        # ── Combined Python: Jaccard similarity + auto-tag (single spawn) ───────
+        # Jaccard: FORCE!=1 and title has ≥3 ASCII tokens
+        # Auto-tag: TAGS empty and lesson_tags.yaml exists
+        # Both run → 1 Python spawn instead of 2 (saves ~50ms on WSL2 NTFS)
+        _lw_do_sim=0
         if [ "${FORCE:-0}" != "1" ]; then
-            warn_similar_title "$LESSONS_FILE" "$TITLE"
+            _lw_tok=0; _lw_rest="$TITLE"
+            while [[ "$_lw_rest" =~ [a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,} ]]; do
+                (( _lw_tok++ ))
+                _lw_rest="${_lw_rest#*"${BASH_REMATCH[0]}"}"
+                [[ $_lw_tok -ge 3 ]] && break
+            done
+            (( _lw_tok >= 3 )) && _lw_do_sim=1
+        fi
+
+        _lw_do_tags=0
+        if [ -z "${TAGS:-}" ] && [ -f "$SCRIPT_DIR/config/lesson_tags.yaml" ]; then
+            _lw_do_tags=1
+        fi
+
+        _lw_auto_tags=""
+        if [ "$_lw_do_sim" = "1" ] || [ "$_lw_do_tags" = "1" ]; then
+            _lw_auto_tags=$(
+                LESSONS_FILE_ENV="$LESSONS_FILE" \
+                TITLE_ENV="$TITLE" \
+                LESSON_TEXT_ENV="${TITLE} ${DETAIL}" \
+                TAGS_FILE_ENV="$SCRIPT_DIR/config/lesson_tags.yaml" \
+                DO_SIM_ENV="$_lw_do_sim" \
+                DO_TAGS_ENV="$_lw_do_tags" \
+                python3 <<'PYCOMBINED'
+import re, yaml, os, sys
+
+do_sim  = os.environ.get('DO_SIM_ENV',  '0') == '1'
+do_tags = os.environ.get('DO_TAGS_ENV', '0') == '1'
+
+# ── Auto-tag ──────────────────────────────────────────────────────────────
+auto_tags = []
+if do_tags:
+    text      = os.environ.get('LESSON_TEXT_ENV', '')
+    tags_file = os.environ.get('TAGS_FILE_ENV',   '')
+    try:
+        with open(tags_file) as f:
+            rules = yaml.safe_load(f).get('tag_rules', [])
+        for r in rules:
+            for p in r.get('patterns', []):
+                if re.search(p, text):
+                    auto_tags.append(r['tag'])
+                    break
+    except Exception:
+        pass
+
+# ── Jaccard similarity ────────────────────────────────────────────────────
+if do_sim:
+    lessons_file = os.environ.get('LESSONS_FILE_ENV', '')
+    new_title    = os.environ.get('TITLE_ENV', '')
+    threshold    = 0.6
+    min_tokens   = 3
+
+    def tokenize(t):
+        tokens = set()
+        for tok in re.findall(r'[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]|[a-zA-Z0-9]{2,}', t.lower()):
+            tokens.add(tok)
+        jp = re.sub(r'[\x00-\x7f\s]', '', t)
+        for i in range(len(jp) - 1):
+            tokens.add(jp[i:i+2])
+        return tokens
+
+    def jaccard(a, b):
+        u = a | b
+        return len(a & b) / len(u) if u else 0.0
+
+    new_tok = tokenize(new_title)
+    if len(new_tok) >= min_tokens:
+        best = None
+        pat = re.compile(r'^### L(\d+): (.+)$', re.MULTILINE)
+        try:
+            with open(lessons_file, encoding='utf-8') as f:
+                content = f.read()
+            for m in pat.finditer(content):
+                eid  = f'L{int(m.group(1)):03d}'
+                etit = m.group(2).strip()
+                etok = tokenize(etit)
+                if len(etok) < min_tokens:
+                    continue
+                sc = jaccard(new_tok, etok)
+                if sc >= threshold and (best is None or sc > best[0]):
+                    best = (sc, eid, etit)
+            if best:
+                sc, eid, etit = best
+                print(f'WARN: 類似教訓候補: {eid}: {etit} (Jaccard: {sc:.2f})', file=sys.stderr)
+        except Exception:
+            pass
+
+print(','.join(auto_tags[:3]))
+PYCOMBINED
+            )
         fi
 
         # Tag processing (bash native)
@@ -809,24 +903,6 @@ while [ $attempt -lt $max_attempts ]; do
             _lw_tags_yaml+="]"
         else
             _lw_default_tag="$(infer_default_project_tag)"
-            # 忍者成長速度改善: lesson_tags.yamlルールで教訓テキストからタグ自動推定
-            _lw_auto_tags=""
-            _lw_lesson_text="${TITLE} ${DETAIL}"
-            if [ -f "$SCRIPT_DIR/config/lesson_tags.yaml" ]; then
-                _lw_auto_tags=$(python3 -c "
-import re, yaml, sys
-text = sys.argv[1]
-with open(sys.argv[2]) as f:
-    rules = yaml.safe_load(f).get('tag_rules', [])
-tags = []
-for r in rules:
-    for p in r.get('patterns', []):
-        if re.search(p, text):
-            tags.append(r['tag'])
-            break
-print(','.join(tags[:3]))
-" "$_lw_lesson_text" "$SCRIPT_DIR/config/lesson_tags.yaml" 2>/dev/null || true)
-            fi
             _lw_all_tags=""
             [ -n "$_lw_default_tag" ] && _lw_all_tags="$_lw_default_tag"
             if [ -n "$_lw_auto_tags" ]; then
