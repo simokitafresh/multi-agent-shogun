@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-06 cmd_3199 -->
+<!-- last_updated: 2026-06-06 cmd_3201 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -332,6 +332,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | handler | `_handle_deploy_stall` | 配備後STALLを検知し、本人/家老への回復通知へつなぐ。 |
 | 修行自動化 | `_training_condition_met` | training自動配備の発火条件を判定する。 |
 | 修行自動化 | `_handle_training_auto_deploy` | training候補をidle忍者へ自動配備する処理を担う。設計正本は[[training-cycle.md]]。 |
+| bash速度修行 | `tools/bash_speed_training.sh` + `logs/script_speed_training_ledger.yaml` + `_handle_speed_training_auto_deploy` | scripts配下254本を非破壊`bash -n` baselineで台帳化し、pendingがあれば既存training_autoより先にidle忍者へ配備する。停止/再開はledgerの`global_status: running/paused`。 |
 | 健全性監視 | `check_ninja_cli_dead` | 忍者CLI死亡を検知し、pane復旧や通知判断につなげる。 |
 | 健全性監視 | `check_loop_health` | 監視ループ自体の健全性を確認し、停止や劣化を検出する。 |
 | 健全性監視 | `check_inbox_renudge` | 未読inboxが放置されたpaneへ再nudgeする。 |
