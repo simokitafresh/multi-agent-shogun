@@ -1547,7 +1547,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T07:25:31"
   - script_path: "scripts/lesson_harvest.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -1555,30 +1555,30 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T07:39:45"
   - script_path: "scripts/lesson_health_report.sh"
-    status: pending
+    status: "completed"
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: "1529"
+    after_real_ms: "241"
+    real_measurement_command: "bash scripts/lesson_health_report.sh (10回中央値)"
+    test_result: "bash -n PASS; functional PASS (total=1535, active=1422, deprecated=113, dep_rate=7.4%); SCRIPT_DIR bash-string+CSafeLoader 3箇所: 1529ms->241ms (-84%)"
+    commit: "1cebdb165"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:40:05"
   - script_path: "scripts/lesson_impact_analysis.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 46
+    after_real_ms: 24
+    real_measurement_command: "bash scripts/lesson_impact_analysis.sh > /dev/null"
+    test_result: "bash -n OK; functional 0-args awk PASS (2766 lines TSV); SCRIPT_DIR match OK"
+    commit: "bceacd3dc"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T07:44:00"
   - script_path: "scripts/lesson_impact_rotate.sh"
     status: pending
     before_ms: 14
