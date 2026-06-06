@@ -1602,27 +1602,27 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T07:54:57"
   - script_path: "scripts/lesson_review.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 97
+    after_real_ms: 85
+    real_measurement_command: "bash scripts/lesson_review.sh infra"
+    test_result: "bash -n OK; output verified: No draft lessons found"
+    commit: "3c32af0a8"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T08:05:00"
   - script_path: "scripts/lesson_status_migration.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 18
+    after_real_ms: 12
+    real_measurement_command: "bash scripts/lesson_status_migration.sh 2>/dev/null"
+    test_result: "bash -n OK; usage message PASS; SCRIPT_DIR=/mnt/c/tools/multi-agent-shogun match OK"
+    commit: "3e73e9a66"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T08:03:00"
   - script_path: "scripts/lesson_update_score.sh"
     status: pending
     before_ms: 16
