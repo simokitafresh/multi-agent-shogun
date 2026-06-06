@@ -20,23 +20,31 @@ BASELINE_DIR="${SHOGUN_DIR}/outputs/baselines"
 MODE="${1:-baseline}"
 DIFF_BASELINE="${2:-}"
 
-mkdir -p "$BASELINE_DIR"
+usage() {
+    echo "Usage: bash scripts/fullrecalculate.sh [baseline|full|diff <file>]"
+    echo "  baseline  Save current DB state to outputs/baselines/ (default)"
+    echo "  full      Save baseline -> run recalculate -> diff -> health check"
+    echo "  diff      Compare given baseline file with current DB"
+}
 
-# Load DATABASE_URL
-if [[ ! -f "$ENV_PATH" ]]; then
-    echo "FAIL: backend/.env not found at ${ENV_PATH}"
-    exit 1
-fi
+load_database_url() {
+    mkdir -p "$BASELINE_DIR"
 
-DATABASE_URL=$(grep '^DATABASE_URL=' "$ENV_PATH" | cut -d= -f2-)
-if [[ -z "$DATABASE_URL" ]]; then
-    echo "FAIL: DATABASE_URL not found in backend/.env"
-    exit 1
-fi
+    if [[ ! -f "$ENV_PATH" ]]; then
+        echo "FAIL: backend/.env not found at ${ENV_PATH}"
+        exit 1
+    fi
 
-export DATABASE_URL
-export BASELINE_DIR
-export DM_SIGNAL_PATH
+    DATABASE_URL=$(grep -m 1 '^DATABASE_URL=' "$ENV_PATH" | cut -d= -f2-)
+    if [[ -z "$DATABASE_URL" ]]; then
+        echo "FAIL: DATABASE_URL not found in backend/.env"
+        exit 1
+    fi
+
+    export DATABASE_URL
+    export BASELINE_DIR
+    export DM_SIGNAL_PATH
+}
 
 # ============================================================
 # save_baseline: DB現在値をJSONに保存
@@ -412,6 +420,7 @@ PYEOF
 # ============================================================
 case "$MODE" in
     baseline)
+        load_database_url
         TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
         BASELINE_FILE="${BASELINE_DIR}/baseline_${TIMESTAMP}.json"
         save_baseline "$BASELINE_FILE"
@@ -419,6 +428,7 @@ case "$MODE" in
         echo "Done. To compare later: bash scripts/fullrecalculate.sh diff ${BASELINE_FILE}"
         ;;
     full)
+        load_database_url
         TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
         BASELINE_FILE="${BASELINE_DIR}/baseline_${TIMESTAMP}.json"
         save_baseline "$BASELINE_FILE"
@@ -438,13 +448,11 @@ case "$MODE" in
             echo "FAIL: Baseline file not found: ${DIFF_BASELINE}"
             exit 1
         fi
+        load_database_url
         diff_baseline "$DIFF_BASELINE"
         ;;
     *)
-        echo "Usage: bash scripts/fullrecalculate.sh [baseline|full|diff <file>]"
-        echo "  baseline  Save current DB state to outputs/baselines/ (default)"
-        echo "  full      Save baseline -> run recalculate -> diff -> health check"
-        echo "  diff      Compare given baseline file with current DB"
+        usage
         exit 1
         ;;
 esac
