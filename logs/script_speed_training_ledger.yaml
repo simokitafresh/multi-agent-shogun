@@ -1437,16 +1437,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:00:00"
   - script_path: "scripts/knowledge_metrics.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 148
+    before_real_ms: 175
+    after_real_ms: 148
+    real_measurement_command: "time bash scripts/knowledge_metrics.sh"
+    test_result: "bash -n SYNTAX OK; bash scripts/knowledge_metrics.sh (default/--json/--by-project/--by-model/--model/--since/--threshold/--time) 全モード exit 0"
+    commit: "f671f9771"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T06:56:00"
+    updated_at: "2026-06-07T07:08:30"
   - script_path: "scripts/lesson_auto_tag.sh"
     status: completed
     before_ms: 15
@@ -1470,7 +1470,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:03:00"
   - script_path: "scripts/lesson_confirm.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1478,10 +1478,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:08:09"
   - script_path: "scripts/lesson_delete.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -1489,8 +1489,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T07:08:36"
   - script_path: "scripts/lesson_deprecate.sh"
     status: pending
     before_ms: 16
