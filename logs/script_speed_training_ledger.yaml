@@ -413,16 +413,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-06T23:30:39"
   - script_path: "scripts/cmd_halt.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 31
+    after_real_ms: 18
+    real_measurement_command: "bash scripts/cmd_halt.sh (no-arg usage path, 20-run average; no inbox/ntfy side effects)"
+    test_result: "bash -n PASS; no-arg usage output unchanged; bad_id validation PASS; no dedicated cmd_halt bats found SKIP=0"
+    commit: "683650fbe"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T23:32:48"
   - script_path: "scripts/cmd_publish.sh"
     status: pending
     before_ms: 17
