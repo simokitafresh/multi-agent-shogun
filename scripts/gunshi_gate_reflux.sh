@@ -8,7 +8,7 @@ set -euo pipefail
 CMD_ID="${1:?Usage: gunshi_gate_reflux.sh <cmd_id> <gate_result>}"
 GATE_RESULT="${2:?Usage: gunshi_gate_reflux.sh <cmd_id> <gate_result>}"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
 LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 
 case "$GATE_RESULT" in
@@ -28,8 +28,8 @@ fi
 # archiveファイルは対象外（LOG_FILEのみ操作）
 
 # 方針: awkで状態機械。cmd_idマッチ中にgate_result: nullを見つけたら置換
-TMPFILE=$(mktemp "${LOG_FILE}.tmp.XXXXXX")
-COUNT_TMPFILE=$(mktemp "${LOG_FILE}.count.XXXXXX")
+TMPFILE="${LOG_FILE}.tmp.$$"
+COUNT_TMPFILE="/tmp/gunshi_gate_reflux_count.$$"
 trap 'rm -f "$TMPFILE" "$COUNT_TMPFILE"' EXIT
 
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
@@ -70,7 +70,7 @@ match_cmd && /^  gate_result: null/ {
 END { print updated+0 > "/dev/stderr" }
 ' "$LOG_FILE" > "$TMPFILE" 2>"$COUNT_TMPFILE"
 
-UPDATE_COUNT=$(cat "$COUNT_TMPFILE" 2>/dev/null || echo "0")
+read -r UPDATE_COUNT < "$COUNT_TMPFILE" 2>/dev/null || UPDATE_COUNT="0"
 
 if [ "$UPDATE_COUNT" -gt 0 ]; then
     mv "$TMPFILE" "$LOG_FILE"
