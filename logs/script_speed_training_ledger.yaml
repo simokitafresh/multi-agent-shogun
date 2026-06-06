@@ -336,18 +336,18 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-06T23:12:26"
   - script_path: "scripts/cleanup_three_layer_tmp.sh"
-    status: pending
+    status: completed
     before_ms: 20
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 16
+    before_real_ms: 35
+    after_real_ms: 26
+    real_measurement_command: "bash scripts/cleanup_three_layer_tmp.sh --dry-run"
+    test_result: "ok 1 three-layer tmp cleanup dry-run reports stale candidates without deleting (SKIP=0)"
+    commit: "804d8c91787959b0338214807f4814dda222efc6"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-06T23:19:00"
   - script_path: "scripts/clear_prep_check.sh"
-    status: pending
+    status: assigned
     before_ms: 21
     after_ms: ""
     before_real_ms: ""
@@ -355,10 +355,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-06T23:13:45"
   - script_path: "scripts/clipboard_watcher.sh"
-    status: pending
+    status: assigned
     before_ms: 32
     after_ms: ""
     before_real_ms: ""
@@ -366,10 +366,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-06T23:14:33"
   - script_path: "scripts/cmd_absorb.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -377,10 +377,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:17:44"
   - script_path: "scripts/cmd_complete_gate.sh"
-    status: pending
+    status: assigned
     before_ms: 32
     after_ms: ""
     before_real_ms: ""
@@ -388,10 +388,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T23:19:14"
   - script_path: "scripts/cmd_delegate.sh"
-    status: pending
+    status: assigned
     before_ms: 21
     after_ms: ""
     before_real_ms: ""
@@ -399,8 +399,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T23:20:02"
   - script_path: "scripts/cmd_friction_log.sh"
     status: pending
     before_ms: 18
