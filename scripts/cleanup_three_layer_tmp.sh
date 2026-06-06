@@ -39,7 +39,7 @@ if [ ! -d "$cache_dir" ]; then
     exit 0
 fi
 
-real_cache_dir="$(realpath -m "$cache_dir")"
+real_cache_dir="$(cd "$cache_dir" && pwd -P)"
 case "$real_cache_dir" in
     /|/home|/home/*|/mnt/c|/mnt/c/Windows|/mnt/c/Windows/*|/mnt/c/Users|/mnt/c/Users/*|/mnt/c/Program\ Files|/mnt/c/Program\ Files/*)
         echo "ERROR: unsafe cleanup cache_dir: $real_cache_dir" >&2
@@ -60,10 +60,9 @@ mapfile -d '' candidates < <(
 
 count="${#candidates[@]}"
 bytes=0
-for path in "${candidates[@]}"; do
-    size="$(stat -c '%s' "$path" 2>/dev/null || echo 0)"
-    bytes=$((bytes + size))
-done
+if [ "$count" -gt 0 ]; then
+    bytes="$(stat -c '%s' -- "${candidates[@]}" 2>/dev/null | awk '{s+=$1} END{print s+0}')"
+fi
 
 mode="apply"
 [ "$dry_run" -eq 1 ] && mode="dry-run"
