@@ -1239,7 +1239,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:59:00"
   - script_path: "scripts/hooks/pre-mcp-lord-attribution-guard.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1247,10 +1247,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:58:10"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1258,10 +1258,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T05:58:34"
   - script_path: "scripts/hooks/pre_compact_save.sh"
-    status: pending
+    status: assigned
     before_ms: 13
     after_ms: ""
     before_real_ms: ""
@@ -1269,10 +1269,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T05:59:04"
   - script_path: "scripts/hooks/prompt_state_inject.sh"
-    status: pending
+    status: assigned
     before_ms: 8
     after_ms: ""
     before_real_ms: ""
@@ -1280,10 +1280,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T05:59:49"
   - script_path: "scripts/hooks/session_end_clear_check.sh"
-    status: pending
+    status: assigned
     before_ms: 18
     after_ms: ""
     before_real_ms: ""
@@ -1291,8 +1291,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T06:00:25"
   - script_path: "scripts/hooks/session_start_inject.sh"
     status: pending
     before_ms: 15
@@ -2800,3 +2800,9 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+status: completed
+before_real_ms: 39
+after_real_ms: 27
+commit: 50bae2050
+real_measurement_command: 'echo PAYLOAD | bash scripts/hooks/pre-mcp-lord-attribution-guard.sh (mcp__memory__add_observations, no-keyword path)'
+test_result: bash -n PASS; 6-path manual test PASS; no bats file
