@@ -27,16 +27,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/agent_status.sh"
-    status: pending
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 4410
+    after_real_ms: 2800
+    real_measurement_command: "/usr/bin/time -f 'REAL_SECONDS=%e' bash -c 'for i in {1..20}; do bash scripts/agent_status.sh >/dev/null; done'"
+    test_result: "bash -n scripts/agent_status.sh && shellcheck -x scripts/agent_status.sh && bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0"
+    commit: "e85e3e8c7"
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T22:01:20"
   - script_path: "scripts/api_usage.sh"
     status: pending
     before_ms: 39
