@@ -33,7 +33,7 @@ if [[ ! -f "$WA_FILE" ]]; then
     exit 0
 fi
 
-if [[ "$FIX_MODE" == "false" ]]; then
+run_check_mode_scan() {
     awk -v known_ninjas_csv="$KNOWN_NINJAS_CSV" '
     function trim(s) {
         sub(/^[[:space:]]+/, "", s)
@@ -183,6 +183,37 @@ if [[ "$FIX_MODE" == "false" ]]; then
         exit 1
     }
     ' "$WA_FILE"
+}
+
+maybe_cache_check_mode() {
+    local cache_dir cache_scope cache_base cache_sig current_sig output status
+    cache_dir="${XDG_CACHE_HOME:-/tmp}/shogun_gate_wa_data_quality"
+    mkdir -p "$cache_dir"
+
+    cache_scope="${WA_FILE//[\/: .#*?!]/_}"
+    cache_base="$cache_dir/check_v1_${cache_scope: -48}"
+    current_sig="$(stat -c '%Y:%s' "$WA_FILE" 2>/dev/null):$KNOWN_NINJAS_CSV"
+
+    if [[ -f "$cache_base.out" && -f "$cache_base.exit" && -f "$cache_base.sig" ]] \
+        && [[ "$(cat "$cache_base.sig" 2>/dev/null)" == "$current_sig" ]]; then
+        cat "$cache_base.out"
+        return "$(cat "$cache_base.exit")"
+    fi
+
+    set +e
+    output="$(run_check_mode_scan)"
+    status=$?
+    set -e
+
+    printf '%s\n' "$output"
+    printf '%s\n' "$output" > "$cache_base.out"
+    printf '%s\n' "$status" > "$cache_base.exit"
+    printf '%s\n' "$current_sig" > "$cache_base.sig"
+    return "$status"
+}
+
+if [[ "$FIX_MODE" == "false" ]]; then
+    maybe_cache_check_mode
     exit $?
 fi
 
