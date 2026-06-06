@@ -22,9 +22,7 @@ if [ ! -f "$REGISTRY" ]; then
     exit 0
 fi
 
-# REGISTRY内の "→" を ASCII SOH (0x01) に変換してからawk処理
-# (UTF-8の→を安全にフィールド分割するため)
-LC_ALL=C sed 's/\xe2\x86\x92/\x01/g' "$REGISTRY" | awk -v last_n="$LAST_N" '
+awk -v last_n="$LAST_N" '
 
 # タイミング文字列から最初の数値をms単位に変換
 # 対応形式: Nms, N.Nms, Ns, N.Ns (先頭のバッククォート・チルダ・スペースは無視)
@@ -54,13 +52,12 @@ function first_ms(s,    tmp) {
     cols_n = split($0, cols, "|")
     if (cols_n < 7) next
 
-    # col[4] = 対象スクリプト, col[6] = Before→After (→はSOHに置換済み)
+    # col[4] = 対象スクリプト, col[6] = Before→After
     col4 = cols[4]; col6 = cols[6]
     gsub(/^[[:space:]]+|[[:space:]]+$/, "", col4)
     gsub(/^[[:space:]]+|[[:space:]]+$/, "", col6)
 
-    # SOH (\x01) で分割
-    n_parts = split(col6, parts, "\001")
+    n_parts = split(col6, parts, "→")
     if (n_parts < 2) next
 
     before_str = parts[1]
@@ -96,7 +93,7 @@ END {
     } else if (ok_count > 0) {
         printf "OK: 最新%d件 悪化なし (%d件チェック済み)\n", last_n, ok_count
     } else {
-        print "SKIP: Before\001After形式のエントリなし (Before→After列が不明)"
+        print "SKIP: Before→After形式のエントリなし (Before→After列が不明)"
     }
 }
-'
+' "$REGISTRY"

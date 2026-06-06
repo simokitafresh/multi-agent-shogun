@@ -7532,3 +7532,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - WSL2からPS呼び出す際、pwsh.exe -NoProfile -NonInteractiveはpowershell.exe -NoProfileより平均627ms(34%)高速(5-run avg: 1843ms→1216ms)。pwsh.exeはPATHに存在しAdd-Type/Get-Clipboard等の同等動作を確認。daemonスクリプトのPS呼び出しをpwsh.exeに切替えることで応答速度改善が可能
+
+### L750: printf形式文字列が'-'始まりの場合は'--'セパレータが必要
+- **日付**: 2026-06-07
+- **出典**: cmd_training_speed_decision_write_20260607000310
+- **記録者**: tobisaru
+- **tags**: [infra,bash]
+- **target_files**: [scripts/decision_write.sh]
+- **origin**: [[cmd_training_speed_decision_write_20260607000310]]
+- **when**: 未設定
+- **how**: 未設定
+- bash printfは形式文字列が'-'で始まるとオプションフラグとして解釈しエラー。printf -- '- **field**: %s project: infra ' で回避。bashに限らずPOSIX printfでも同様
+
+### L751: inject_direct_training_templateのguard条件は除外対象task_typeを直接指定せよ
+- **日付**: 2026-06-07
+- **出典**: cmd_training_speed_deploy_task_20260607000353
+- **記録者**: hanzo
+- **tags**: [infra]
+- **target_files**: [scripts/deploy_task.sh,logs/script_speed_training_ledger.yaml]
+- **origin**: [[cmd_training_speed_deploy_task_20260607000353]]
+- **when**: 未設定
+- **how**: 未設定
+- eb08cec22でspeed_training保護にtask_type!=trainingを使用したが、normalも除外した。除外意図が明確な場合は==speed_trainingのように肯定的条件を使え

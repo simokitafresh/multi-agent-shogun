@@ -52,179 +52,149 @@ if [[ ! -s "$_tmp_recent" ]]; then
     exit 0
 fi
 
-python3 - "$REPO_ROOT" "$INSIGHT_SCRIPT" "$MIN_COUNT" "$WINDOW" "$_tmp_recent" <<'PY' | tee "$_tmp_output"
-import os
-import subprocess
-import sys
-from collections import Counter, defaultdict
-
-repo_root = sys.argv[1]
-insight_script = sys.argv[2]
-min_count = int(sys.argv[3])
-window = int(sys.argv[4])
-recent_path = sys.argv[5]
-
-PROPOSAL_MAP = {
-    "report_format": {
-        "category": "report_yaml",
-        "target": "instructions/ashigaru-procedures.md",
-        "action": "report_field_set.sh再実行手順と提出前gate再確認を先頭へ固定化",
-    },
-    "fill_this_remaining": {
-        "category": "report_yaml",
-        "target": "instructions/ashigaru-procedures.md",
-        "action": "FILL_THIS全置換と提出前grep確認を報告手順へ追記",
-    },
-    "binary_checks_fail": {
-        "category": "report_yaml",
-        "target": "instructions/ashigaru.md",
-        "action": "binary_checksは全AC yes/no必須を記入例付きで強調",
-    },
-    "purpose_validation_fit_false": {
-        "category": "scope_alignment",
-        "target": "instructions/ashigaru.md",
-        "action": "purpose_validation記入前にcmd目的との差分確認を必須化",
-    },
-    "draft_lessons": {
-        "category": "lesson_flow",
-        "target": "instructions/karo.md",
-        "action": "draft lessons解消手順と完了条件をレビュー工程に追記",
-    },
-    "ac_version_mismatch": {
-        "category": "task_sync",
-        "target": "instructions/ashigaru.md",
-        "action": "復帰時のtask再読込とac_version_read同期確認を提出前必須化",
-    },
+# Count patterns and collect examples with awk (replaces python3 to eliminate startup overhead)
+_awk_data="$(awk -F'\t' '
+function normalize(raw,    s, t, n, i) {
+    s = raw
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+    if (!s) return ""
+    n = split(s, t, ":")
+    for (i = 1; i <= n; i++) gsub(/^[[:space:]]+|[[:space:]]+$/, "", t[i])
+    if (t[1] == "report_format") return "report_format"
+    for (i = 1; i <= n; i++) {
+        if (t[i] == "fill_this_remaining") return "fill_this_remaining"
+        if (t[i] == "binary_checks_fail") return "binary_checks_fail"
+        if (t[i] == "purpose_validation_fit_false") return "purpose_validation_fit_false"
+        if (t[i] == "ac_version_mismatch") return "ac_version_mismatch"
+    }
+    if (t[1] == "draft_lessons") return "draft_lessons"
+    return s
 }
-
-# Patterns already handled by Level 4+ gates (gate_report_format_main.py BLOCK + FIX hint).
-# The gate BLOCK itself IS the immune system — doc proposals are structurally invalid.
-GATED_PATTERNS = {
-    "report_format",                  # gate_report_format_main.py L165-204
-    "fill_this_remaining",            # gate_report_format_main.py L36
-    "binary_checks_fail",             # gate_report_format_main.py L223-224
-    "purpose_validation_fit_false",   # gate_report_format_main.py L318-322
-    "ac_version_mismatch",            # gate_report_format_main.py L404+
+NF > 0 { rows++ }
+NF >= 4 && $4 {
+    n = split($4, reasons, "|")
+    for (i = 1; i <= n; i++) {
+        r = normalize(reasons[i])
+        if (r) {
+            cnt[r]++
+            if (ecnt[r] < 2) {
+                ex_raw = reasons[i]
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", ex_raw)
+                if (ex_raw != "" && !seen[r, ex_raw]) {
+                    seen[r, ex_raw] = 1
+                    examples[r] = (examples[r] == "") ? ex_raw : (examples[r] " ; " ex_raw)
+                    ecnt[r]++
+                }
+            }
+        }
+    }
 }
+END {
+    printf "ROWS\t%d\n", rows
+    for (p in cnt) printf "PAT\t%d\t%s\t%s\n", cnt[p], p, examples[p]
+}' "$_tmp_recent")"
 
-# Ninja recovery explicitly does not read these files after /new. Proposing changes
-# here for ninja-originated report mistakes creates unread instructions instead of
-# changing the execution path.
-NINJA_UNREAD_TARGETS = {
-    "instructions/ashigaru.md",
-    "instructions/ashigaru-procedures.md",
-}
+# Parse awk output into bash associative arrays
+_rows=0
+declare -A _pat_counts=()
+declare -A _pat_examples=()
+while IFS=$'\t' read -r _tag _f1 _f2 _f3; do
+    case "$_tag" in
+        ROWS) _rows="$_f1" ;;
+        PAT)
+            _pat_counts["$_f2"]="$_f1"
+            _pat_examples["$_f2"]="${_f3:-}"
+            ;;
+    esac
+done <<< "$_awk_data"
 
+# Sort patterns by count descending
+mapfile -t _sorted_patterns < <(
+    for _p in "${!_pat_counts[@]}"; do
+        printf '%s\t%s\n' "${_pat_counts[$_p]}" "$_p"
+    done | sort -rn | cut -f2
+)
 
-def proposal_skip_reason(pattern, spec):
-    target = spec.get("target", "")
-    if pattern in GATED_PATTERNS:
-        return "Level4 gate handles this; gate_report_format already BLOCKS it"
-    if target in NINJA_UNREAD_TARGETS:
-        return "target file ninja-unread"
-    return None
+{
+    echo "=== Auto-Fix Proposal Scan ==="
+    echo "Recent BLOCK window: $WINDOW"
+    echo "Analyzed BLOCK rows: $_rows"
+    echo "Recurring patterns:"
+    for _p in "${_sorted_patterns[@]}"; do
+        _cnt="${_pat_counts[$_p]}"
+        case "$_p" in
+            report_format|fill_this_remaining|binary_checks_fail) _cat="report_yaml" ;;
+            purpose_validation_fit_false) _cat="scope_alignment" ;;
+            draft_lessons) _cat="lesson_flow" ;;
+            ac_version_mismatch) _cat="task_sync" ;;
+            *) _cat="other" ;;
+        esac
+        _ex="${_pat_examples[$_p]:-}"
+        [[ -z "$_ex" ]] && _ex="-"
+        echo "  [$_cnt] $_p :: $_cat :: $_ex"
+    done
 
+    echo "Proposal threshold: $MIN_COUNT"
+    echo "Proposals:"
 
-def normalize_reason(raw):
-    raw = raw.strip()
-    if not raw:
-        return None
+    if [[ ! -f "$INSIGHT_SCRIPT" ]]; then
+        echo "  SKIP: insight_write.sh not found"
+    else
+        _created=0
+        for _p in "${_sorted_patterns[@]}"; do
+            _cnt="${_pat_counts[$_p]}"
+            [[ "$_cnt" -lt "$MIN_COUNT" ]] && continue
 
-    tokens = [token.strip() for token in raw.split(":") if token.strip()]
-    if not tokens:
-        return None
+            # Patterns already handled by Level 4+ gates
+            case "$_p" in
+                report_format|fill_this_remaining|binary_checks_fail|purpose_validation_fit_false|ac_version_mismatch)
+                    echo "  $_p: SKIP (Level4 gate handles this; gate_report_format already BLOCKS it)"
+                    continue ;;
+            esac
 
-    if tokens[0] == "report_format":
-        return "report_format"
-    if "fill_this_remaining" in tokens:
-        return "fill_this_remaining"
-    if "binary_checks_fail" in tokens:
-        return "binary_checks_fail"
-    if "purpose_validation_fit_false" in tokens:
-        return "purpose_validation_fit_false"
-    if tokens[0] == "draft_lessons":
-        return "draft_lessons"
-    if "ac_version_mismatch" in tokens:
-        return "ac_version_mismatch"
-    return raw
+            # PROPOSAL_MAP lookup
+            case "$_p" in
+                report_format)
+                    _cat="report_yaml"; _tgt="instructions/ashigaru-procedures.md"
+                    _act="report_field_set.sh再実行手順と提出前gate再確認を先頭へ固定化" ;;
+                fill_this_remaining)
+                    _cat="report_yaml"; _tgt="instructions/ashigaru-procedures.md"
+                    _act="FILL_THIS全置換と提出前grep確認を報告手順へ追記" ;;
+                binary_checks_fail)
+                    _cat="report_yaml"; _tgt="instructions/ashigaru.md"
+                    _act="binary_checksは全AC yes/no必須を記入例付きで強調" ;;
+                purpose_validation_fit_false)
+                    _cat="scope_alignment"; _tgt="instructions/ashigaru.md"
+                    _act="purpose_validation記入前にcmd目的との差分確認を必須化" ;;
+                draft_lessons)
+                    _cat="lesson_flow"; _tgt="instructions/karo.md"
+                    _act="draft lessons解消手順と完了条件をレビュー工程に追記" ;;
+                ac_version_mismatch)
+                    _cat="task_sync"; _tgt="instructions/ashigaru.md"
+                    _act="復帰時のtask再読込とac_version_read同期確認を提出前必須化" ;;
+                *)
+                    continue ;;
+            esac
 
+            # Ninja recovery does not read these files after /new — proposals would be unread
+            case "$_tgt" in
+                "instructions/ashigaru.md"|"instructions/ashigaru-procedures.md")
+                    echo "  $_p: SKIP (target file ninja-unread)"
+                    continue ;;
+            esac
 
-pattern_counts = Counter()
-pattern_examples = defaultdict(list)
-rows = []
+            _ex="${_pat_examples[$_p]:-}"
+            _msg="AUTOFIX-PROPOSAL: $_p -> $_tgt :: $_act (recent${WINDOW}=${_cnt}; category=${_cat}; examples=${_ex})"
+            _out="$(bash "$INSIGHT_SCRIPT" "$_msg" "high" "gate_autofix_proposal" 2>&1)" || _out="ERROR"
+            echo "  $_p: ${_out:-NO_OUTPUT}"
+            (( _created++ )) || true
+        done
 
-with open(recent_path, encoding="utf-8") as fh:
-    for line in fh:
-        line = line.rstrip("\n")
-        if not line:
-            continue
-        rows.append(line)
-        cols = line.split("\t")
-        if len(cols) < 4:
-            continue
-        reason_text = cols[3].strip()
-        if not reason_text:
-            continue
-        for raw_reason in reason_text.split("|"):
-            normalized = normalize_reason(raw_reason)
-            if not normalized:
-                continue
-            pattern_counts[normalized] += 1
-            bucket = pattern_examples[normalized]
-            example = raw_reason.strip()
-            if example and example not in bucket and len(bucket) < 3:
-                bucket.append(example)
-
-print("=== Auto-Fix Proposal Scan ===")
-print(f"Recent BLOCK window: {window}")
-print(f"Analyzed BLOCK rows: {len(rows)}")
-print("Recurring patterns:")
-for pattern, count in pattern_counts.most_common():
-    category = PROPOSAL_MAP.get(pattern, {}).get("category", "other")
-    examples = " ; ".join(pattern_examples.get(pattern, [])[:2]) or "-"
-    print(f"  [{count}] {pattern} :: {category} :: {examples}")
-
-print(f"Proposal threshold: {min_count}")
-created = 0
-
-if not os.path.isfile(insight_script):
-    print("Proposals:")
-    print("  SKIP: insight_write.sh not found")
-    sys.exit(0)
-
-print("Proposals:")
-for pattern, count in pattern_counts.most_common():
-    spec = PROPOSAL_MAP.get(pattern)
-    if spec is None or count < min_count:
-        continue
-    skip_reason = proposal_skip_reason(pattern, spec)
-    if skip_reason:
-        print(f"  {pattern}: SKIP ({skip_reason})")
-        continue
-
-    examples = " ; ".join(pattern_examples.get(pattern, [])[:2])
-    message = (
-        f"AUTOFIX-PROPOSAL: {pattern} -> {spec['target']} :: {spec['action']} "
-        f"(recent{window}={count}; category={spec['category']}; examples={examples})"
-    )
-    try:
-        result = subprocess.run(
-            ["bash", insight_script, message, "high", "gate_autofix_proposal"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-            check=False,
-            cwd=repo_root,
-        )
-        output = (result.stdout or result.stderr).strip() or "NO_OUTPUT"
-        print(f"  {pattern}: {output}")
-        created += 1
-    except Exception as exc:
-        print(f"  {pattern}: ERROR:{exc}")
-
-if created == 0:
-    print("  none")
-PY
+        if [[ "${_created:-0}" -eq 0 ]]; then
+            echo "  none"
+        fi
+    fi
+} | tee "$_tmp_output"
 
 if [[ -n "$_cache_file" ]]; then
     cp "$_tmp_output" "$_cache_file"

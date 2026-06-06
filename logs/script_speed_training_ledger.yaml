@@ -634,16 +634,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T00:19:13"
   - script_path: "scripts/gates/gate_artifact_map.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 253
+    after_real_ms: 148
+    real_measurement_command: "time bash scripts/gates/gate_artifact_map.sh context/l2-okugi-progress.md"
+    test_result: "PASS (14/14, SKIP=0, bats test_clear_prep_check)"
+    commit: "0781e82d597e63b7601734a20bdef0f3b271a0dd"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T00:16:26"
+    updated_at: "2026-06-07T00:20:00"
   - script_path: "scripts/gates/gate_autofix_proposal.sh"
     status: assigned
     before_ms: 15
@@ -678,7 +678,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T00:23:09"
   - script_path: "scripts/gates/gate_codex_safe_write.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -686,8 +686,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T00:24:28"
   - script_path: "scripts/gates/gate_context_freshness.sh"
     status: pending
     before_ms: 9
@@ -2800,9 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-status: completed
-before_real_ms: 253
-after_real_ms: 148
-real_measurement_command: time bash scripts/gates/gate_artifact_map.sh context/l2-okugi-progress.md
-test_result: PASS (14/14, SKIP=0, bats test_clear_prep_check)
-commit: 0781e82d597e63b7601734a20bdef0f3b271a0dd

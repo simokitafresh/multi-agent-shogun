@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-06-07 | kotaro | `scripts/dashboard_update.sh`, `scripts/gates/gate_report_format.sh` | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_dashboard_update_20260607000233) | `1156ms → 1000ms` | `cmd_training_speed_dashboard_update_20260607000233` report-derived |
 | 2026-06-07 | saizo | `scripts/dashboard_auto_section.sh`, `scripts/gates/gate_report_format.sh` | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_dashboard_auto_section_20260606235801) | `550ms → 430ms` | `cmd_training_speed_dashboard_auto_section_20260606235801` report-derived |
 | 2026-06-07 | kagemaru | `scripts/daemon_watchdog.sh`, `scripts/gates/gate_report_format.sh`, `scripts/ninja_monitor.sh` (+7) | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_daemon_watchdog_20260606235708) | `70ms → 30ms` | `cmd_training_speed_daemon_watchdog_20260606235708` report-derived |
 | 2026-06-06 | kagemaru | `scripts/cmd_complete_gate.sh`, `scripts/gates/gate_report_format.sh`, `scripts/gates/gate_report_format_main.py` (+1) | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_cmd_complete_gate_20260606231914) | `32ms → 25ms` | `cmd_training_speed_cmd_complete_gate_20260606231914` report-derived |
