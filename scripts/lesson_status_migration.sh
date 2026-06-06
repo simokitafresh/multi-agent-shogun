@@ -4,7 +4,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 
