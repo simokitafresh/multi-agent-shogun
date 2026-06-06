@@ -12,6 +12,9 @@ local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
 local LIGHT_SKIP_HEAVY="${SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT:-}"
 local YAML_AUTO_ARCHIVE="$SCRIPT_DIR/scripts/yaml_auto_archive.sh"
+local SHORT_CACHE_TTL="${SHOGUN_STARTUP_SHORT_CACHE_TTL_SEC:-10}"
+local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_backlink_zero.cache}"
+local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_three_layer_health.cache}"
 if [ -z "$LIGHT_SKIP_HEAVY" ]; then
     if [ -n "${SHOGUN_STARTUP_ROOT:-}" ]; then
         LIGHT_SKIP_HEAVY=0
@@ -27,6 +30,34 @@ _d_insights=0
 _d_proposals=0
 _d_inbox=0
 _d_idle_trigger=""
+
+	run_startup_short_cache() {
+	    local cache_file="$1"
+	    local ttl="$2"
+	    shift 2
+
+	    local rc_file="${cache_file}.rc"
+	    local now mtime age tmp rc
+	    now=$(date +%s)
+	    if [ "${ttl:-0}" -gt 0 ] && [ -f "$cache_file" ] && [ -f "$rc_file" ]; then
+	        mtime=$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)
+	        age=$((now - mtime))
+	        if [ "$age" -lt "$ttl" ]; then
+	            cat "$cache_file"
+	            return "$(cat "$rc_file" 2>/dev/null || echo 1)"
+	        fi
+	    fi
+
+	    tmp=$(mktemp)
+	    "$@" > "$tmp" 2>&1
+	    rc=$?
+	    mkdir -p "$(dirname "$cache_file")"
+	    printf '%s\n' "$rc" > "${tmp}.rc"
+	    mv "$tmp" "$cache_file"
+	    mv "${tmp}.rc" "$rc_file"
+	    cat "$cache_file"
+	    return "$rc"
+	}
 
 	check_ci_red_autodeploy() {
 	    if ! command -v gh >/dev/null 2>&1; then
@@ -301,13 +332,21 @@ END {
 _PID_DEFERRED_HOLES=$!
 _backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
 if [ -f "$_backlink_counts_script" ]; then
-    CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$_backlink_counts_script" --zero --limit 5 > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
+    (
+        CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" \
+            run_startup_short_cache "$BACKLINK_CACHE_FILE" "$SHORT_CACHE_TTL" \
+                bash "$_backlink_counts_script" --zero --limit 5
+    ) > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
     _PID_BACKLINK_ZERO=$!
 else
     _PID_BACKLINK_ZERO=""
 fi
 if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
-    (bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1; printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS") &
+    (
+        run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$SHORT_CACHE_TTL" \
+            bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1
+        printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS"
+    ) &
     _PID_THREE_LAYER=$!
 else
     _PID_THREE_LAYER=""
