@@ -1041,16 +1041,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T05:07:00"
   - script_path: "scripts/gates/gate_wa_data_quality.sh"
-    status: pending
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 50
+    after_real_ms: 40
+    real_measurement_command: "bash scripts/gates/gate_wa_data_quality.sh >/dev/null (check mode, cache warmed default WA_FILE hot path)"
+    test_result: "bash_n PASS; bats tests/unit/test_gate_meta_quality.bats --filter gate_wa_data_quality 5/5 PASS SKIP=0; full/cache output diff PASS rc=0; before median 50ms; after median 40ms"
+    commit: "931a2151a"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T04:59:51"
   - script_path: "scripts/gates/gate_workaround_rate.sh"
     status: pending
     before_ms: 22
