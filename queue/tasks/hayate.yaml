@@ -1,8 +1,8 @@
 task:
-  parent_cmd: cmd_3183
+  parent_cmd: 
   project: infra
-  status: failed
-  task_id: cmd_3183_impl
+  status: idle
+  task_id: idle
   task_type: impl
   standard_skills:
   - "report-write"

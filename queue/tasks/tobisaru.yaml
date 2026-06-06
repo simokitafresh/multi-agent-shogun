@@ -26,14 +26,14 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3199
+  parent_cmd: 
   project: infra
   purpose: 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: instructions/shogun.md
-  task_id: cmd_3199_focused
+  task_id: idle
   task_type: focused
   previous_failures:
     attempt: 2
