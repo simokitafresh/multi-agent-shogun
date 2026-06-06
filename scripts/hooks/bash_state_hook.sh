@@ -12,10 +12,7 @@
 set -eu
 
 # Read hook payload from stdin without forking cat subprocess
-IFS='' read -r -d '' payload || true
-if [ -z "${payload//[[:space:]]/}" ]; then
-    exit 0
-fi
+payload=$(</dev/stdin)
 
 # Extract hookEventName using bash regex (avoids jq subprocess)
 hook_event=""
@@ -34,16 +31,21 @@ fi
 case "$hook_event" in
     PreToolUse)
         # Mark as bash_running + record timestamp for crash detection
-        # printf -v builtin avoids spawning date subprocess
-        _ts=""
-        printf -v _ts '%(%s)T' -1
+        _ts="${EPOCHSECONDS:-}"
+        if [ -z "$_ts" ]; then
+            printf -v _ts '%(%s)T' -1
+        fi
+        set +e
         tmux set-option -p -t "$pane" @agent_state bash_running \; \
-            set-option -p -t "$pane" @bash_running_since "$_ts" 2>/dev/null || true
+            set-option -p -t "$pane" @bash_running_since "$_ts" 2>/dev/null
+        exit 0
         ;;
     PostToolUse)
         # Restore to active
+        set +e
         tmux set-option -p -t "$pane" @agent_state active \; \
-            set-option -p -t "$pane" @bash_running_since "" 2>/dev/null || true
+            set-option -p -t "$pane" @bash_running_since "" 2>/dev/null
+        exit 0
         ;;
 esac
 

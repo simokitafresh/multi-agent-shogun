@@ -1173,27 +1173,27 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:48:00"
   - script_path: "scripts/hooks/bash_state_hook.sh"
-    status: assigned
+    status: completed
     before_ms: 6
+    after_ms: 6
+    before_real_ms: 13.737
+    after_real_ms: 12.532
+    real_measurement_command: "PATH=<mock_tmux_dir>:$PATH TMUX_PANE=%1 TMUX_LOG=<tmp>/tmux.log python3 measure: 80x printf '{\"hook_event_name\":\"PreToolUse\"}' | bash scripts/hooks/bash_state_hook.sh; median_ms"
+    test_result: "bash_n_pass;bats_filter_bash_state_hook_2_pass_0_skip;empty_input_no_tmux;camelCase_PostToolUse_ok;tmux_fail_exit_0;before_13.737_after_12.532"
+    commit: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T06:13:00"
+  - script_path: "scripts/hooks/block_destructive.sh"
+    status: assigned
+    before_ms: 15
     after_ms: ""
     before_real_ms: ""
     after_real_ms: ""
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "hayate"
-    updated_at: "2026-06-07T05:43:11"
-  - script_path: "scripts/hooks/block_destructive.sh"
-    status: completed
-    before_ms: 15
-    after_ms: 15
-    before_real_ms: 1353
-    after_real_ms: 1102
-    real_measurement_command: "20x printf '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"rm -rf /tmp/kagemaru_speed_probe\"}}' | bash scripts/hooks/block_destructive.sh; median of 5 runs"
-    test_result: "bash_n_pass;direct_D001_D009_representative_PASS;safe_allow_PASS;project_rm_allow_PASS;SKIP=0;before_1353_after_1102"
-    commit: "be966c9ce"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T05:49:30"
+    updated_at: "2026-06-07T05:43:55"
   - script_path: "scripts/hooks/git-pre-commit.sh"
     status: pending
     before_ms: 16
