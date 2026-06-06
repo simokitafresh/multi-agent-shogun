@@ -777,18 +777,18 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T00:59:17"
   - script_path: "scripts/gates/gate_gunshi_report_precheck.sh"
-    status: pending
+    status: completed
     before_ms: 20
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 5445
+    after_real_ms: 4404
+    real_measurement_command: "time bash scripts/gates/gate_gunshi_report_precheck.sh reports/hanzo_report_cmd_training_speed_context_freshness_20260529.yaml"
+    test_result: "bats tests/unit/test_sg_pre24_generated_penetration.bats PASS 5/5 SKIP=0"
+    commit: 8845ac868
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T04:00:58"
   - script_path: "scripts/gates/gate_gunshi_startup.sh"
-    status: pending
+    status: assigned
     before_ms: 20
     after_ms: ""
     before_real_ms: ""
@@ -796,19 +796,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T04:01:17"
   - script_path: "scripts/gates/gate_hot_path_no_sync_io.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    before_real_ms: 321
+    after_real_ms: 38
+    real_measurement_command: "time bash scripts/gates/gate_hot_path_no_sync_io.sh (cache-hit; cache miss ~294ms)"
+    test_result: "bats: 8 passed, 0 skipped"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T04:11:00"
   - script_path: "scripts/gates/gate_karo_startup.sh"
     status: completed
     before_ms: 19
@@ -817,20 +817,20 @@ entries:
     after_real_ms: 4760
     real_measurement_command: "env KARO_WA_RATE_CACHE=/tmp/hayate_karo_startup_speed/<run>/wa_rate KARO_NINJA_WA_CACHE=/tmp/hayate_karo_startup_speed/<run>/ninja_wa KARO_SKILL_SUMMARY_CACHE=/tmp/hayate_karo_startup_speed/<run>/skill_summary KARO_AGGREGATE_CACHE=/tmp/hayate_karo_startup_speed/<run>/aggregate KARO_STARTUP_SEMANTIC_CACHE_DIR=/tmp/hayate_karo_startup_speed/<run>/semantic bash scripts/gates/gate_karo_startup.sh"
     test_result: "bash -n PASS; bats tests/unit/test_gate_karo_startup.bats PASS 24/24 SKIP=0; before_real median 6640ms (6.64,3.17,6.68,9.68,6.60); after_real median 4760ms (3.59,4.76,3.29,5.61,4.79)"
-    commit: ""
+    commit: "f2b89d522"
     assigned_to: "hayate"
     updated_at: "2026-06-07T04:09:41"
   - script_path: "scripts/gates/gate_knowledge_freshness.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 220
+    after_real_ms: 190
+    real_measurement_command: "env KNOWLEDGE_FRESHNESS_ROOT=$PWD KNOWLEDGE_FRESHNESS_DISABLE_CACHE=1 bash scripts/gates/gate_knowledge_freshness.sh >/dev/null (5-run median; HEAD baseline vs current)"
+    test_result: "bash -n scripts/gates/gate_knowledge_freshness.sh; bats tests/unit/test_gate_small_consolidated.bats --filter test_gate_knowledge_freshness PASS 3/3 SKIP=0; bats tests/unit/test_bash_speed_training.bats PASS 8/8 SKIP=0"
+    commit: "dbf14f10a"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T04:11:51"
   - script_path: "scripts/gates/gate_lesson_health.sh"
     status: completed
     before_ms: 11
