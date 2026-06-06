@@ -656,16 +656,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T00:17:13"
   - script_path: "scripts/gates/gate_cmd_state.sh"
-    status: assigned
+    status: completed
     before_ms: 9
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 69
+    after_real_ms: 55
+    real_measurement_command: "bash scripts/gates/gate_cmd_state.sh"
+    test_result: "bash -n PASS; bats tests/unit/test_cmd_delegate.bats 33/33 PASS SKIP=0"
+    commit: "b5c3167ed"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T00:21:49"
+    updated_at: "2026-06-07T00:24:29"
   - script_path: "scripts/gates/gate_codd_regression.sh"
     status: assigned
     before_ms: 32
