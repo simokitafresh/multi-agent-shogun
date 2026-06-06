@@ -986,16 +986,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T04:42:38"
   - script_path: "scripts/gates/gate_skill_quality.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 30
+    after_real_ms: 20
+    real_measurement_command: "bash scripts/gates/gate_skill_quality.sh >/dev/null (cache warmed default skills dir hot path)"
+    test_result: "bash_n PASS; default full/cache output diff PASS rc=1; fixture FAIL rc=1 and OK rc=0; SKIP=0"
+    commit: "7745435d2"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T04:50:18"
   - script_path: "scripts/gates/gate_skill_script_refs.sh"
     status: pending
     before_ms: 16
