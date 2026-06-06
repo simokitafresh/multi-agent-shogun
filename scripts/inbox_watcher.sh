@@ -20,7 +20,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_iw_self="${BASH_SOURCE[0]}"; [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
+SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
@@ -59,7 +60,8 @@ HANG_DETECT_SEC="${HANG_DETECT_SEC:-300}"  # seconds before daemon_watchdog.sh c
 LOOP_HEARTBEAT_FILE="${STATE_DIR}/inbox_watcher_loop_hb_${AGENT_ID}"
 
 # Self-restart on script change (cmd_100)
-SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_PATH="$_iw_self"  # reuse already-resolved path (avoids realpath subprocess)
+unset _iw_self
 SCRIPT_HASH="$(stat -c %Y "$SCRIPT_PATH" 2>/dev/null)"
 STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
