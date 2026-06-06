@@ -53,6 +53,36 @@ teardown() {
     grep -Fq 'assigned_to: "hayate"' "$LEDGER"
 }
 
+@test "auto-deploy generated task preserves speed purpose and real runtime ACs" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+
+    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    [ "$status" -eq 0 ]
+
+    generated_task=$(find "$SHOGUN_STATE_DIR" -type f -name 'speed_training_hayate.*.yaml' | head -n 1)
+    [ -n "$generated_task" ]
+    grep -Fq 'task_type: speed_training' "$generated_task"
+    grep -Fq 'purpose: "Speed-train ' "$generated_task"
+    grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
+    grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
+    grep -Fq 'real_measurement_command/test_result/commit are written back to script_speed_training_ledger' "$generated_task"
+    ! grep -Fq 'L4修行:' "$generated_task"
+
+    run env DEPLOY_TASK_LIB_ONLY=1 bash -c '
+        set -euo pipefail
+        source "$1/scripts/deploy_task.sh"
+        log() { :; }
+        inject_direct_training_template "$2" cmd_training_speed_sample_20260606213918
+    ' _ "$PROJECT_ROOT" "$generated_task"
+    [ "$status" -eq 0 ]
+    grep -Fq 'task_type: speed_training' "$generated_task"
+    grep -Fq 'purpose: "Speed-train ' "$generated_task"
+    grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
+    grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
+    grep -Fq 'real_measurement_command/test_result/commit are written back to script_speed_training_ledger' "$generated_task"
+    ! grep -Fq 'L4修行:' "$generated_task"
+}
+
 @test "record-after writes after measurement, test result, commit, and terminal status" {
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")

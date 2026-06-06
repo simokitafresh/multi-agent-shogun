@@ -1453,6 +1453,12 @@ inject_direct_training_template() {
         log "inject_direct_training_template: task file not found: $task_file"
         return 1
     fi
+    local task_type
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    if [ "$task_type" != "training" ]; then
+        log "direct_mode: skip L4 training template for ${cmd_id} (task_type=${task_type:-unset})"
+        return 0
+    fi
 
     TASK_FILE_ENV="$task_file" python3 - <<'TRAINING_TEMPLATE_PY'
 import os
