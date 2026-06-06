@@ -832,16 +832,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_lesson_health.sh"
-    status: pending
+    status: completed
     before_ms: 11
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 2243
+    after_real_ms: 1800
+    real_measurement_command: "LESSON_EFFECT_NTFY_ENABLED=0 bash scripts/gates/gate_lesson_health.sh infra"
+    test_result: "bash_n_pass;bats_test_gate_lesson_health_10_10_pass_skip0;output_diff_empty"
+    commit: "ca97c6efe"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T04:07:26"
   - script_path: "scripts/gates/gate_loop_health.sh"
     status: pending
     before_ms: 16
