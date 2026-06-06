@@ -601,16 +601,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T00:11:32"
   - script_path: "scripts/gate_auto_respond.sh"
-    status: pending
+    status: completed
     before_ms: 21
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 8204
+    after_real_ms: 5367
+    real_measurement_command: "sandboxed 80-run OK-path gate_auto_respond.sh with stub gates/ntfy/inbox_write/gh"
+    test_result: "bash -n PASS; sandbox OK-path timing PASS; ALERT idempotency behavior PASS; SKIP=0"
+    commit: "dafe3ce81"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T00:17:39"
   - script_path: "scripts/gate_fire_log.sh"
     status: pending
     before_ms: 18
