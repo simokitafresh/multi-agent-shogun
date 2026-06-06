@@ -1591,16 +1591,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T08:00:00"
   - script_path: "scripts/lesson_merge.sh"
-    status: assigned
+    status: "completed"
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: "173"
+    after_real_ms: "53"
+    real_measurement_command: "sandboxed: LESSON_MERGE_SCRIPT_DIR=$SANDBOX bash scripts/lesson_merge.sh testprj L001 L002 title summary"
+    test_result: "bats test_lesson_merge.bats: 11/11 PASS SKIP=0; pure-bash+awk: 173ms->53ms (-69%)"
+    commit: "3a851065b"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T07:54:57"
+    updated_at: "2026-06-07T08:08:00+09:00"
   - script_path: "scripts/lesson_review.sh"
     status: completed
     before_ms: 16
@@ -1624,7 +1624,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:03:00"
   - script_path: "scripts/lesson_update_score.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1632,8 +1632,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T08:08:33"
   - script_path: "scripts/lesson_write.sh"
     status: pending
     before_ms: 18
@@ -2800,4 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-status: completed
