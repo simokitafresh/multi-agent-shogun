@@ -47,7 +47,13 @@ else
     _HAS_GATE="false"
 fi
 
-result=$(awk -v has_gate="$_HAS_GATE" -v gate_log="$GATE_LOG" -v last_n="$LAST_N" '
+if [ -x /usr/bin/mawk ]; then
+    _AWK_BIN=/usr/bin/mawk
+else
+    _AWK_BIN=awk
+fi
+
+result=$(LC_ALL=C "$_AWK_BIN" -v has_gate="$_HAS_GATE" -v gate_log="$GATE_LOG" -v last_n="$LAST_N" '
 BEGIN {
     cur_cmd = ""; has_wa_field = 0; cur_wa = 0; cur_cat = "uncategorized"
     item_count = 0; clear_count = 0
