@@ -20,7 +20,8 @@ echo "[clipboard_watcher] started (poll=${POLL_INTERVAL}s)"
 
 while true; do
     # PowerShellでクリップボード画像のハッシュ取得+temp保存を一括実行（2回→1回に統合）
-    RESULT=$(powershell.exe -NoProfile -Command "
+    # pwsh.exe (PS7) はpowershell.exe (PS5) より~38%高速
+    RESULT=$(pwsh.exe -NoProfile -NonInteractive -Command "
 Add-Type -AssemblyName System.Drawing
 \$img = Get-Clipboard -Format Image
 if (\$null -eq \$img) {
